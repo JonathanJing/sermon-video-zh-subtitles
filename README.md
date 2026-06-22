@@ -24,6 +24,7 @@ The more promising input is the official live service. Mariners Online lists Sun
 - [Bilingual analysis report](docs/youtube-sermon-subtitle-pipeline-analysis.zh-en.md)
 - [Historical publish timing dataset](data/mariners_church_sunday_sermon_publish_times.csv)
 - [Live source findings dataset](data/mariners_church_live_source_findings.csv)
+- [Frontend operator prototype](web/)
 - [Project notes](docs/development-notes.md)
 
 ## Source Video

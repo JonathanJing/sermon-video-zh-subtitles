@@ -1,0 +1,12 @@
+{
+  "name": "证道中文字幕控制台",
+  "short_name": "证道字幕",
+  "description": "Operator console for realtime Chinese sermon subtitles.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f7fbff",
+  "theme_color": "#f7fbff",
+  "orientation": "any",
+  "icons": []
+}
+
