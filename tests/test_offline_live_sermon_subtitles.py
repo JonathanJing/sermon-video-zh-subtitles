@@ -1,5 +1,7 @@
 import importlib.util
 import sys
+import tempfile
+from types import SimpleNamespace
 import unittest
 from pathlib import Path
 
@@ -56,6 +58,30 @@ After sermon
         other = "Misplaced Fear - Eric Geiger | Mariners Church"
         self.assertEqual(mod.title_similarity(live, vod), 1.0)
         self.assertLess(mod.title_similarity(live, other), 0.6)
+
+    def test_download_subtitles_reuses_existing_lang_file_on_rerun(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raw_dir = Path(tmp)
+            existing = raw_dir / "V6OKiwbjDZE.en.vtt"
+            existing.write_text("WEBVTT\n\n00:00:00.000 --> 00:00:01.000\nHello\n", encoding="utf-8")
+            original_run = mod.subprocess.run
+            try:
+                mod.subprocess.run = lambda *args, **kwargs: SimpleNamespace(
+                    returncode=0,
+                    stdout="",
+                    stderr="",
+                )
+                downloaded, warnings = mod.download_subtitles(
+                    yt_dlp="yt-dlp",
+                    url="https://youtube.test/watch?v=V6OKiwbjDZE",
+                    raw_dir=raw_dir,
+                    langs=["en"],
+                )
+            finally:
+                mod.subprocess.run = original_run
+
+            self.assertEqual(downloaded, [existing])
+            self.assertIn("Reused existing VTT file for lang=en.", warnings)
 
 
 if __name__ == "__main__":

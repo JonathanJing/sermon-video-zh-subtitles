@@ -376,16 +376,20 @@ def download_subtitles(yt_dlp: str, url: str, raw_dir: Path, langs: list[str]) -
         )
         after = {path for path in raw_dir.glob("*.vtt") if path.stat().st_size > 0}
         new_files = after - before
-        downloaded.update(new_files)
+        lang_files = {path for path in after if infer_lang_from_path(path) == lang}
+        usable_files = new_files or lang_files
+        downloaded.update(usable_files)
         if proc.returncode != 0:
             warnings.append(
                 f"Subtitle download failed for lang={lang}: "
                 f"{last_error_line(proc.stderr) or 'yt-dlp returned non-zero exit'}"
             )
-        elif not new_files:
+        elif not usable_files:
             warnings.append(f"No new VTT file was written for lang={lang}.")
-        else:
+        elif new_files:
             print(proc.stdout, end="")
+        else:
+            warnings.append(f"Reused existing VTT file for lang={lang}.")
     return sorted(downloaded), warnings
 
 

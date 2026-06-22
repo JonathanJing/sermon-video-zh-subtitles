@@ -39,7 +39,16 @@ The more promising input is the official live service. Mariners Online lists Sun
 
 ## Offline POC
 
-Extract sermon subtitles from a live archive link:
+Prepare the web playback simulation from a live archive link:
+
+```bash
+python3 scripts/prepare_live_link_playback.py \
+  --live-url 'https://www.youtube.com/watch?v=FsUijL9uB1I'
+```
+
+Then open `web/index.html` and click `模拟播放`. The page shows the sermon title, live-link status, and the caption line currently being generated for the 11:30 congregation view.
+
+For lower-level debugging, extract sermon subtitles from a live archive link:
 
 ```bash
 python3 scripts/offline_live_sermon_subtitles.py \

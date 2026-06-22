@@ -12,16 +12,11 @@ Prototype scope:
 - Scripture sidebar, glossary, notes placeholder.
 - Review/publish timeline controls and VTT/SRT export buttons for fallback and archival use.
 
-To test with a live archive link:
+From the repository root, test with a live archive link:
 
 ```bash
-python3 ../scripts/offline_live_sermon_subtitles.py \
-  --live-url 'https://www.youtube.com/watch?v=FsUijL9uB1I' \
-  --out-dir ../artifacts/offline-live-sermon-poc
-
-python3 ../scripts/build_playback_simulation.py \
-  --report ../artifacts/offline-live-sermon-poc/report.json \
-  --out ./playback-simulation.generated.js
+python3 scripts/prepare_live_link_playback.py \
+  --live-url 'https://www.youtube.com/watch?v=FsUijL9uB1I'
 ```
 
-Then reload `index.html` and click `模拟播放`.
+Then reload `index.html` and click `模拟播放`. The caption stage should show the sermon title, generation status, and the currently generated caption segment.

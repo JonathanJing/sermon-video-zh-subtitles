@@ -63,6 +63,11 @@ This repository started with feasibility analysis. The current product goal is t
   - Let the PWA simulate a live archive playback timeline from the real live link output.
   - Preserve English source captions as sidecar text when Chinese captions are not yet generated, so the next model-integration step can be tested without changing the playback contract.
 
+- `scripts/prepare_live_link_playback.py`
+  - Operator-facing POC command: accept a YouTube live archive URL and prepare the browser playback file in one step.
+  - Run the offline-live extractor, build merged playback segments, and emit `web/playback-simulation.generated.js`.
+  - Support the current goal that a given live link can produce a visible sermon title plus a generated-caption playback view.
+
 ## Design Boundary
 
 The first production milestone is not a general video platform. It is a service-time caption system: an operator-first PWA plus a low-friction congregation caption view that makes Chinese captions usable during the 11:30 sermon.
@@ -73,8 +78,8 @@ For Mariners Church, the public YouTube VOD source should be treated as post-eve
 
 ## Current POC Loop
 
-1. Run `scripts/offline_live_sermon_subtitles.py` with a YouTube live archive URL.
-2. Confirm the inferred sermon start and generated live-aligned VTT/SRT.
-3. Run `scripts/build_playback_simulation.py` to generate `web/playback-simulation.generated.js`.
-4. Open the PWA and click `模拟播放` to verify that the congregation caption view can advance through real live-link subtitle timecodes.
+1. Run `scripts/prepare_live_link_playback.py --live-url <youtube-live-archive-url>`.
+2. Confirm the inferred sermon start and generated live-aligned VTT/SRT in `artifacts/offline-live-sermon-poc/`.
+3. Open the PWA and click `模拟播放`.
+4. Verify that the sermon title is visible above the caption window and the status changes to `正在生成`.
 5. Replace `AI 中文待生成` placeholders with model-generated Chinese captions in the next integration step.

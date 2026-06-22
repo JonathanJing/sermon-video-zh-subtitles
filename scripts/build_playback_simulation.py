@@ -220,6 +220,7 @@ def build_simulation(
     live = report.get("live") or {}
     sermon = report.get("sermon_candidate") or {}
     sermon_start = report.get("sermon_start") or {}
+    sermon_title = sermon.get("title") or live.get("title") or "Untitled sermon"
 
     segments = []
     for index, cue in enumerate(cues, start=1):
@@ -247,6 +248,7 @@ def build_simulation(
         "playbackSpeed": playback_speed,
         "lang": lang,
         "sourceVtt": str(source_vtt),
+        "sermonTitle": sermon_title,
         "live": {
             "id": live.get("id"),
             "title": live.get("title"),

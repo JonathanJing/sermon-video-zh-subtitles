@@ -51,6 +51,7 @@ Moses and Aaron stood before the people.
             )
 
             self.assertEqual(simulation["translationStatus"], "needs_translation")
+            self.assertEqual(simulation["sermonTitle"], "Sermon")
             self.assertEqual(len(simulation["segments"]), 2)
             self.assertEqual(simulation["segments"][0]["ref"], "Numbers 16")
             self.assertTrue(simulation["segments"][0]["zh"].startswith("AI 中文待生成"))

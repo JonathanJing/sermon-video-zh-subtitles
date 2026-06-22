@@ -274,7 +274,7 @@ ul {
 .subtitle-stage {
   grid-area: stage;
   display: grid;
-  grid-template-rows: auto minmax(280px, 1fr) auto minmax(116px, 0.32fr);
+  grid-template-rows: auto auto minmax(280px, 1fr) auto minmax(116px, 0.32fr);
   gap: 12px;
   padding: 14px;
   overflow: hidden;
@@ -606,6 +606,64 @@ ul {
   font-size: 0.82rem;
   line-height: 1.35;
   overflow-wrap: anywhere;
+}
+
+.sermon-meta {
+  min-height: 78px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: #fbfdff;
+}
+
+.sermon-meta h3 {
+  margin-top: 6px;
+  color: var(--ink);
+  font-size: 1.02rem;
+  font-weight: 900;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.sermon-meta p {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 750;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.generation-badge {
+  min-width: 86px;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 9px;
+  border: 1px solid #ead18f;
+  border-radius: 999px;
+  background: var(--amber-100);
+  color: var(--amber-700);
+  font-size: 0.8rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.generation-badge.is-live {
+  border-color: #a9dbc6;
+  background: var(--green-100);
+  color: var(--green-700);
+}
+
+.generation-badge.is-ready {
+  border-color: #afd8ee;
+  background: var(--blue-050);
+  color: var(--blue-700);
 }
 
 .caption-window {
@@ -1060,7 +1118,7 @@ ul {
 
   .subtitle-stage {
     min-height: auto;
-    grid-template-rows: auto minmax(250px, 42svh) auto minmax(116px, auto);
+    grid-template-rows: auto auto minmax(250px, 42svh) auto minmax(116px, auto);
   }
 
   .panel-heading,
@@ -1095,6 +1153,15 @@ ul {
   .sidecar {
     grid-template-columns: minmax(0, 1fr);
     align-items: start;
+  }
+
+  .sermon-meta {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .generation-badge {
+    justify-self: start;
   }
 
   .confidence-meter {
@@ -1184,7 +1251,7 @@ ul {
 
   .subtitle-stage {
     min-height: 0;
-    grid-template-rows: auto minmax(190px, 1fr) auto;
+    grid-template-rows: auto auto minmax(190px, 1fr) auto;
   }
 
   .caption-window {

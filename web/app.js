@@ -86,6 +86,9 @@
     stableCaption: document.getElementById("stableCaption"),
     englishSidecar: document.getElementById("englishSidecar"),
     confidenceMeter: document.getElementById("confidenceMeter"),
+    sermonTitle: document.getElementById("sermonTitle"),
+    sermonMeta: document.getElementById("sermonMeta"),
+    generationStatus: document.getElementById("generationStatus"),
     segmentList: document.getElementById("segmentList"),
     segmentCount: document.getElementById("segmentCount"),
     scriptureCandidates: document.getElementById("scriptureCandidates"),
@@ -130,7 +133,14 @@
     }
 
     const liveTitle = simulation.live?.title || "live archive";
+    const sermonTitle = simulation.sermonTitle || simulation.sermonCandidate?.title || liveTitle;
     const start = simulation.sermonStart?.timecode || "unknown";
+    updateSermonMeta({
+      title: sermonTitle,
+      meta: `${simulation.live?.url || "直播链接已加载"} · 证道开始 ${start}`,
+      status: "已加载",
+      tone: "ready"
+    });
     log(`已加载直播链接回放数据：${liveTitle}；证道开始 ${start}；${state.playbackSegments.length} 个片段。`);
     if (simulation.translationStatus === "needs_translation") {
       log("当前 POC 片段为英文字幕源，中文字幕位置将显示 AI 待生成状态，用于验证播放和对齐。");
@@ -323,6 +333,12 @@
     setStatus("直播链接模拟播放", "live");
     setSla("验证 11:30 会众视图", "live");
     el.sessionLabel.textContent = `Session: playback-${dateStamp()}`;
+    updateSermonMeta({
+      title: window.SERMON_PLAYBACK_SIMULATION?.sermonTitle || "直播链接证道",
+      meta: `正在根据直播链接时间轴生成字幕 · ${state.playbackSegments.length} 个候选片段`,
+      status: "正在生成",
+      tone: "live"
+    });
     log(`开始按真实 live-aligned 时间轴模拟播放，速度 ${state.playbackSpeed}x。`);
     tickPlayback();
     startProgress();
@@ -349,6 +365,7 @@
       setStatus("回放模拟完成", "ready");
       setSla("可复核对齐", "ready");
       state.captioning = false;
+      setGenerationStatus("可复核", "ready");
       log(`直播链接模拟播放完成，共推出 ${state.segments.length} 个片段。`);
       return;
     }
@@ -577,6 +594,7 @@
     stopStreamingTimers();
     setStatus("会众视图已发布", "ready");
     setSla("11:30 会众可用", "ready");
+    setGenerationStatus("已发布", "ready");
     log("已冻结并发布会众字幕视图；VTT/SRT 可作为兜底和归档导出。");
     updateTimeline(100);
   }
@@ -677,6 +695,20 @@
     node.textContent = text;
     node.className = "status-pill";
     node.classList.add(`status-pill--${tone || "ready"}`);
+  }
+
+  function updateSermonMeta({ title, meta, status, tone }) {
+    if (el.sermonTitle) el.sermonTitle.textContent = title || "等待直播链接";
+    if (el.sermonMeta) el.sermonMeta.textContent = meta || "准备直播链接后，会在这里显示证道标题和开始时间。";
+    setGenerationStatus(status || "待开始", tone || "pending");
+  }
+
+  function setGenerationStatus(text, tone) {
+    if (!el.generationStatus) return;
+    el.generationStatus.textContent = text;
+    el.generationStatus.className = "generation-badge";
+    if (tone === "live") el.generationStatus.classList.add("is-live");
+    if (tone === "ready") el.generationStatus.classList.add("is-ready");
   }
 
   function log(message) {
