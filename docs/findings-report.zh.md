@@ -1,5 +1,7 @@
 # 证道视频中文字幕 Pipeline 发现报告
 
+English version: [findings-report.md](./findings-report.md)
+
 报告日期：2026-06-22  
 分析对象：Mariners Church YouTube 频道  
 目标视频：The Cure for Our Rebellion - Eric Geiger | Mariners Church  
@@ -164,4 +166,3 @@ public-youtube-source-cannot-meet-sla
 ```
 
 如果能获得频道方提前视频、音频、讲稿或直播源，项目才具备满足 11:50 PT deadline 的现实基础。
-

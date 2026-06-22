@@ -4,9 +4,14 @@
   <a href="./README.md">
     <img src="https://img.shields.io/badge/Language-English-blue" alt="English README" />
   </a>
+  <a href="./LICENSE">
+    <img src="https://img.shields.io/badge/License-MIT-green" alt="MIT License" />
+  </a>
 </p>
 
 这个项目用于在 Mariners Church 周日 11:30 PT 场证道中，为正在听道的中文会众提供可使用的中文字幕，让中文会众可以在证道进行时跟上信息。
+
+这是一个独立开源项目，并非 Mariners Church 官方项目，也不代表 Mariners Church 背书或运营。
 
 ## 产品北星
 
@@ -33,15 +38,20 @@
 
 更可行的输入是官方 live service。Mariners Online 列出周日直播时间为 7:00、8:30、10:00、11:30 AM PT。系统设计因此选择从最早可验证的同篇早场直播准备字幕，将 10:00 PT 作为保守生产默认，并将公开视频 VOD 作为后续离线质量补齐源。
 
-## Repo 内容
+## 文档
 
-- [英文文档索引](docs/README.md)
-- [中文文档索引](docs/README.zh.md)
-- [中文 System Design](docs/system-design.zh.md)
-- [中文 Findings Report](docs/findings-report.zh.md)
-- [中英文分析报告](docs/youtube-sermon-subtitle-pipeline-analysis.zh-en.md)
-- [开发 Backlog](docs/backlog.md)
-- [Review / Testing Notes](docs/review-testing.md)
+| 主题 | English | 中文 |
+|---|---|---|
+| 文档索引 | [docs/README.md](docs/README.md) | [docs/README.zh.md](docs/README.zh.md) |
+| System Design | [docs/system-design.md](docs/system-design.md) | [docs/system-design.zh.md](docs/system-design.zh.md) |
+| Findings Report | [docs/findings-report.md](docs/findings-report.md) | [docs/findings-report.zh.md](docs/findings-report.zh.md) |
+| 模型/Provider 比较 | [docs/model-provider-comparison.md](docs/model-provider-comparison.md) | [docs/model-provider-comparison.zh.md](docs/model-provider-comparison.zh.md) |
+| Cloud Run 部署准备 | [docs/cloud-run-deployment-prep.md](docs/cloud-run-deployment-prep.md) | [docs/cloud-run-deployment-prep.zh.md](docs/cloud-run-deployment-prep.zh.md) |
+| YouTube source analysis | [中英文报告](docs/youtube-sermon-subtitle-pipeline-analysis.zh-en.md) | [同一份中英文报告](docs/youtube-sermon-subtitle-pipeline-analysis.zh-en.md) |
+| Backlog / Review | [docs/backlog.md](docs/backlog.md), [docs/review-testing.md](docs/review-testing.md) | [docs/backlog.zh.md](docs/backlog.zh.md) |
+
+其他项目文件：
+
 - [历史发布时间数据](data/mariners_church_sunday_sermon_publish_times.csv)
 - [Live source findings 数据](data/mariners_church_live_source_findings.csv)
 - [前端 operator 原型](web/)
@@ -86,6 +96,21 @@ python3 scripts/build_playback_simulation.py \
 ```
 
 如果当前只有英文字幕源，UI 会保留 English sidecar，并在中文行显示 `AI 中文待生成`，直到后续接入翻译模型。
+
+## 开源安全边界
+
+- 不提交 API key、cookies、生成转写、生成字幕、模型输出 JSONL、私有媒体或 service account JSON。
+- 运行时 secret 进入 Google Secret Manager，详见 [Cloud Run 部署准备](docs/cloud-run-deployment-prep.zh.md)。
+- 生成物进入 GCS 或本地忽略目录 `artifacts/`。
+- 尊重平台权限、版权和服务条款。本项目不绕过访问控制或 DRM。
+
+## 贡献
+
+见 [CONTRIBUTING.zh.md](CONTRIBUTING.zh.md)、[CONTRIBUTING.md](CONTRIBUTING.md)、[SECURITY.zh.md](SECURITY.zh.md) 和 [SECURITY.md](SECURITY.md)。
+
+## License
+
+MIT，见 [LICENSE](LICENSE)。
 
 ## Source Video
 

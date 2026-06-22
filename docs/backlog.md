@@ -1,214 +1,152 @@
-# 11:30 会众中文字幕 Backlog
+# Development Backlog
 
-日期：2026-06-22
+Last updated: 2026-06-22
 
-## 产品目标
+Chinese version: [backlog.zh.md](./backlog.zh.md)
 
-北星目标：在每周日 11:30 PT 场证道开始时，中文会众可以打开一个稳定、低干扰、可阅读的中文字幕界面，帮助他们在现场听道。
+This backlog keeps implementation work aligned with the product north star: Chinese-speaking congregants should have usable Chinese captions during the Sunday 11:30 PT sermon.
 
-Backlog 排序原则：
+## Current POC State
 
-1. 先保证 11:30 会众能看到可用中文字幕。
-2. 再降低延迟、提高经文/人名/术语准确度。
-3. 最后完善离线字幕、笔记、金句和运营工具。
+- The live-link POC can discover a matching edited sermon VOD from a live archive link, infer sermon start, and extract existing captions.
+- The web prototype can show operator controls, sermon title, source status, generated-state captions, scripture sidebar, and VTT/SRT export actions.
+- Generated reports, subtitles, playback data, and cloud manifests can be published to GCS.
+- API/model key material is not written into artifacts; Secret Manager resource names are validated when provided.
+- The next product step is replacing placeholder Chinese captions with real model-generated Chinese captions while keeping the public congregation view clean.
 
-## 当前基线
+## P0 - Service-Time Caption Usability
 
-- 已有静态 Web/PWA 原型，可展示 operator 控制台、证道标题、生成状态、字幕片段、经文 sidebar、VTT/SRT 导出。
-- 已有 `prepare_live_link_playback.py`，可从 YouTube live archive link 生成播放模拟数据。
-- 已有 GCS 发布参数和 Secret Manager resource name 边界，生成物可进入 GCS，API key 明文不进入 artifact。
-- 当前播放模拟仍以可用字幕源为基础；如果只有英文字幕，中文行显示 `AI 中文待生成`，下一步必须接入真实翻译/生成。
+### P0.1 Translation Provider Integration
 
-## P0 - 11:30 会众可用闭环
+Goal: replace `AI 中文待生成` placeholders with real Chinese captions while preserving English sidecar text.
 
-### P0.1 接入真实中文生成链路
+Acceptance criteria:
 
-目标：把 `AI 中文待生成` 替换为真实可读中文字幕。
+- Add a provider interface for realtime or segment-level translation.
+- Support at least one model provider in a mockable way.
+- Apply glossary constraints for Bible books, names, and common theological terms.
+- Keep API keys only in Secret Manager or runtime env vars, never in generated reports, manifests, JS, logs, or subtitle files.
+- Tests cover successful translation, fallback behavior, empty segments, and secret hygiene.
 
-开发 owner：Fix/Dev agent  
-测试 owner：Review/Test agent  
-Debug owner：Fix/Debug agent
+### P0.2 Separate Congregation And Operator Views
 
-验收标准：
+Goal: the 11:30 congregation sees a clean caption page; only operators see monitoring and review controls.
 
-- 给定直播链接运行 POC 后，`web/playback-simulation.generated.js` 中每个可展示 segment 有非占位中文 `zh` 文本。
-- 英文 sidecar 保留，可用于回查翻译来源。
-- 生成失败的 segment 明确标记为 `needs_review` 或等价状态，而不是静默显示空字幕。
-- API key 只通过 Secret Manager resource name 配置，不写入 report、manifest、JS、日志或字幕文件。
-- 单元测试覆盖：英文输入生成中文占位替换、失败 fallback、secret 不落盘。
+Acceptance criteria:
 
-### P0.2 会众视图与 operator 视图分离
+- Support `operator` and `congregation` view modes.
+- Congregation view hides monitor, simulation, export, publish, and log controls.
+- Operator view keeps source status, review, scripture sidebar, and publish controls.
+- Public playback JS contains no secret values or Secret Manager resource names.
+- iPhone/iPad portrait and landscape layouts remain readable.
 
-目标：11:30 会众看到的是干净字幕页，operator 才看到监控、按钮、日志和导出。
+### P0.3 Readiness And Publish State
 
-开发 owner：UI/Dev agent  
-测试 owner：Review/Test agent  
-Debug owner：Fix/Debug agent
+Goal: the operator can decide by 11:25 PT whether captions are ready for the 11:30 service.
 
-验收标准：
+Acceptance criteria:
 
-- Web 原型至少支持 `operator` 和 `congregation` 两种 view mode。
-- iPhone 竖屏会众视图默认只显示证道标题、当前中文字幕、必要经文提示和连接/生成状态。
-- 会众视图不显示 `开始监控`、`生成会众字幕`、`模拟播放`、导出按钮、运行日志等 operator 控件。
-- iPad 横屏 operator 视图保留监控、发布、review、经文 sidebar。
-- 手动 smoke test 覆盖 iPhone 竖屏、iPhone 横屏、iPad 竖屏、iPad 横屏。
+- Track readiness states: `source_detected`, `caption_generating`, `needs_review`, `ready`, `published`, `fallback`.
+- Show source URL, sermon title, generated segment count, last update time, and warnings.
+- Record publish timestamp and published artifact URI.
+- Store state in a shape that can move from local POC to Firestore.
 
-### P0.3 发布状态与 11:25 readiness gate
+### P0.4 Cloud-Readable Artifact Manifest
 
-目标：operator 能在 11:25 前判断是否可以发布给 11:30 会众。
+Goal: Cloud Run or the web app can load generated content from GCS through a stable manifest.
 
-开发 owner：Dev agent  
-测试 owner：Review/Test agent  
-Debug owner：Fix/Debug agent
+Acceptance criteria:
 
-验收标准：
+- `cloud-manifest.json` includes playback JS, report, subtitle files, generation time, live URL, sermon title, and translation status.
+- Manifest marks completion state so partial GCS uploads are not treated as valid.
+- Manifest can be loaded by server-side Cloud Run code.
+- Public browser artifacts do not expose secret references.
 
-- UI 有明确状态：`未开始`、`正在生成`、`可发布`、`已发布`、`需要人工处理`。
-- 至少基于 segment 数量、中文可用率、低置信片段数量、证道标题和开始时间存在性，计算 readiness。
-- 当 readiness 不满足时，`冻结并发布` 或等价发布动作需要显示原因。
-- 当 readiness 满足并发布后，会众视图显示 `已发布` 或等价状态。
-- 测试覆盖 readiness pass/fail、发布后状态、缺标题/缺中文/segment 太少时的阻止逻辑。
+## P1 - Realtime Reliability And Review
 
-### P0.4 GCS artifact manifest 可被 Cloud Run / Web 加载
+### P1.1 Scripture And Term Resolver
 
-目标：生成物上传到 GCS 后，前端或服务端可以根据 manifest 找到最新播放数据。
+Goal: realtime captions should prefer stable Bible, name, and theological terminology.
 
-开发 owner：Dev agent  
-测试 owner：Review/Test agent  
-Debug owner：Fix/Debug agent
+Acceptance criteria:
 
-验收标准：
+- Add a deterministic Bible-book/name glossary.
+- Detect explicit references such as `Numbers 16` / `John 3:16`.
+- Attach scripture candidates to caption segments.
+- Low-confidence terms enter the operator review list.
 
-- `cloud-manifest.json` 包含 playback JS、report、字幕文件、生成时间、live URL、sermon title、translation status。
-- 支持 dry-run 测试，不需要真实上传即可验证 manifest shape。
-- 支持真实 GCS URI 的路径规范：`gs://<bucket>/runs/<date>/<session_id>/...`。
-- 任何 artifact 都不包含 API key 明文。
-- 测试覆盖 manifest shape、路径、secret 边界、dry-run 输出。
+### P1.2 Latency Metrics
 
-## P1 - 质量、延迟与现场可用性
+Goal: monitor whether captions are fast enough for the 11:30 congregation.
 
-### P1.1 翻译质量策略：经文、人名、术语优先
+Acceptance criteria:
 
-目标：字幕不是逐字机器翻译，而是服务听道理解。
+- Segment data includes `received_at`, `generated_at`, `published_at`, or equivalent timestamps.
+- Operator view shows latest, average, and worst caption latency.
+- Warnings appear when stable/published latency exceeds target thresholds.
+- Logs or manifests include a latency summary.
 
-开发 owner：Dev agent  
-测试 owner：Review/Test agent  
-Debug owner：Fix/Debug agent
+### P1.3 Live Source Monitor
 
-验收标准：
+Goal: move from manual live archive POC to Sunday source discovery.
 
-- 支持术语表输入，至少覆盖 `Numbers`、`Moses`、`Aaron`、`Rebellion`、`Mediator`、`Intercede` 等当前证道词汇。
-- 支持经文引用检测并给 segment 附上 `scripture_refs` 或等价字段。
-- 术语/经文命中时，中文翻译优先使用固定译法。
-- 低置信术语进入 operator review 列表。
-- 测试覆盖术语固定、经文命中、低置信标记。
+Acceptance criteria:
 
-### P1.2 延迟指标与生成进度可观测
+- Monitor Mariners Online, YouTube streams, and manually configured fallbacks.
+- Output structured evidence: source URL, state, timestamp, title, and same-sermon confidence.
+- Mark 10:00 PT as the conservative fallback if earlier sources fail.
+- Alert the operator by 09:58 PT if no usable source is found.
+- Tests use fixtures/mocks instead of live network calls.
 
-目标：知道字幕是否足够快，能不能跟上现场听道。
+### P1.4 Minimal Timeline Review Tool
 
-开发 owner：Dev agent  
-测试 owner：Review/Test agent  
-Debug owner：Fix/Debug agent
+Goal: the operator can fix alignment instead of only watching simulation playback.
 
-验收标准：
+Acceptance criteria:
 
-- segment 数据包含 `received_at`、`generated_at`、`published_at` 或等价时间戳。
-- UI 显示最近字幕延迟、平均延迟、最慢片段。
-- 当 stable/published 延迟超过目标时，operator view 显示 warning。
-- 日志或 manifest 可追溯每次生成的延迟摘要。
-- 测试覆盖延迟计算和 warning 阈值。
+- Support segment offset, split, merge, and lock.
+- Batch offset does not modify locked segments.
+- Edited timeline exports valid VTT/SRT.
+- iPad landscape operator view remains usable.
 
-### P1.3 Live source monitor POC
+## P2 - Offline Enhancement
 
-目标：从手动 live archive POC 推进到周日自动发现源。
+### P2.1 Notes And Quote Extraction
 
-开发 owner：Dev agent  
-测试 owner：Review/Test agent  
-Debug owner：Fix/Debug agent
+Goal: after service, generate traceable sermon notes, summary, application questions, and quote candidates.
 
-验收标准：
+Acceptance criteria:
 
-- 新增或实现 `live_source_monitor`，检查 Mariners Online、YouTube streams、手动配置 fallback。
-- 输出结构化 evidence：source URL、状态、时间、标题、是否同篇证道候选。
-- 8:30 失败时自动标记 10:00 fallback。
-- 09:58 前没有可用源时生成 operator alert。
-- 测试使用 fixture/mock，不依赖实时网络。
+- Generate notes from reviewed/published captions.
+- Each quote keeps source segment id, English source text, Chinese caption, and timecode.
+- Results write to GCS under `insights/*.json`.
+- UI can display the notes tab.
 
-### P1.4 时间轴 review 工具最小可用版
+### P2.2 Cloud Run Deployment Skeleton
 
-目标：operator 可以修正对齐，而不是只看模拟播放。
+Goal: move the POC from local static files to a deployable service.
 
-开发 owner：UI/Dev agent  
-测试 owner：Review/Test agent  
-Debug owner：Fix/Debug agent
+Acceptance criteria:
 
-验收标准：
+- Minimal Cloud Run service serves PWA static assets and manifest/playback data.
+- Deployment docs cover service account, GCS bucket, and Secret Manager permissions.
+- Use [Cloud Run deployment prep](./cloud-run-deployment-prep.md) as the pre-deploy checklist.
+- Local start and deployment commands are documented.
+- Health check endpoint is available.
 
-- 支持单个 segment 的时间平移、split、merge、lock。
-- 批量 offset 不改动 locked segment。
-- 修改后 VTT/SRT 导出使用 edited timeline。
-- UI 在 iPad 横屏上可操作，不挤压主字幕。
-- 测试覆盖 offset、lock、split/merge、导出时间码。
+### P2.3 Historical Quality Replay Set
 
-## P2 - 离线增强与会后复盘
+Goal: continuously test translation quality and UI stability against multiple sermons.
 
-### P2.1 证道笔记与金句生成
+Acceptance criteria:
 
-目标：会后自动生成可追溯笔记、摘要、应用问题和金句。
+- Maintain a small set of metadata-only replay fixtures.
+- Do not commit long transcripts or generated sermon content.
+- Quality regression checks detect placeholder Chinese, empty captions, reversed timecodes, and secret leakage.
 
-开发 owner：Dev agent  
-测试 owner：Review/Test agent  
-Debug owner：Fix/Debug agent
+## Coordination Notes
 
-验收标准：
-
-- 从 reviewed/published captions 生成摘要、大纲、应用问题、金句候选。
-- 每条金句保留 source segment id、英文原文、中文字幕、timecode。
-- 生成结果写入 GCS `insights/*.json`。
-- UI notes tab 可以显示生成结果。
-- 测试覆盖 schema、timecode、source traceability。
-
-### P2.2 Cloud Run 部署骨架
-
-目标：让 POC 从本地静态页面走向可部署服务。
-
-开发 owner：DevOps/Dev agent  
-测试 owner：Review/Test agent  
-Debug owner：Fix/Debug agent
-
-验收标准：
-
-- 有最小 Cloud Run 服务入口，可提供 PWA 静态资源和 manifest/playback 数据。
-- 配置说明包含 service account、GCS bucket、Secret Manager 权限。
-- 本地启动命令和部署命令写入 README 或 deployment doc。
-- 健康检查 endpoint 可用。
-- 测试覆盖本地服务启动和静态资源加载。
-
-### P2.3 历史质量回放集
-
-目标：用多场证道回放持续测试字幕质量和 UI 稳定性。
-
-开发 owner：Dev agent  
-测试 owner：Review/Test agent  
-Debug owner：Fix/Debug agent
-
-验收标准：
-
-- 至少保存 3 场不同证道的 sanitized playback fixture 或生成命令。
-- 每场包含标题、sermon start、若干字幕片段、已知经文/术语样例。
-- Smoke test 可以切换 fixture 验证 UI。
-- 质量回归测试能发现占位中文、空字幕、时间倒序、secret 泄漏。
-
-## 下一步建议
-
-最优先启动 P0.1 和 P0.2：
-
-- P0.1 让当前 POC 从“显示正在生成的字幕”推进到“显示真正中文生成结果”。
-- P0.2 让产品形态从 operator demo 变成 11:30 会众可以实际打开的界面。
-
-并行安排：
-
-- Review/Test agent 先为 P0.1/P0.2 写验收测试和 smoke checklist。
-- Fix/Debug agent 先检查当前播放模拟、secret 边界、GCS manifest 是否有已知失败点。
-- UI/Dev agent 先做 view mode 分离，不要等待完整后端。
+- UI work should prioritize the congregation view first, then operator controls.
+- Dev work should keep provider interfaces mockable and artifact storage explicit.
+- Review/testing should focus on secret hygiene, public JS boundaries, GCS manifest validity, and latency calculations.
+- Debug work should start with playback simulation, secret boundaries, and manifest loading.

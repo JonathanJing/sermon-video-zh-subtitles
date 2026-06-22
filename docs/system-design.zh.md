@@ -1,5 +1,7 @@
 # 证道视频中文字幕 Pipeline System Design
 
+English version: [system-design.md](./system-design.md)
+
 日期：2026-06-22  
 目标频道：Mariners Church  
 主要目标：每周日 11:30 PT 场开始时，让正在听证道的中文会众有可使用的中文字幕
@@ -106,7 +108,7 @@ flowchart TD
 | `worker` | 离线 ASR、翻译、时间轴归一、经文解析、笔记和金句 |
 | `live-source-monitor` | 周日定时检查官方 live 页面、YouTube streams、fallback 状态 |
 
-默认部署在 Cloud Run。Firestore 存储状态和字幕片段，Cloud Storage/GCS 存储所有生成物，包括音频片段、原始模型输出、字幕 VTT/SRT、播放模拟 JS、离线笔记和金句。Secret Manager 存储模型/API key；Cloud Run 只通过 service account 读取 secret，代码和生成文件不包含 key 明文。Cloud Tasks 用于离线 job 编排。
+默认部署在 Cloud Run。Firestore 存储状态和字幕片段，Cloud Storage/GCS 存储所有生成物，包括音频片段、原始模型输出、字幕 VTT/SRT、播放模拟 JS、离线笔记和金句。Secret Manager 存储模型/API key；Cloud Run 只通过 service account 读取 secret，代码和生成文件不包含 key 明文。Cloud Tasks 用于离线 job 编排。部署前 secret 清单详见 [Cloud Run 部署准备与 Secret Manager 清单](./cloud-run-deployment-prep.zh.md)。
 
 ### 3.1.1 生成物与 Secret 边界
 
@@ -127,6 +129,7 @@ projects/<project-id>/secrets/openai-api-key/versions/latest
 ```
 
 系统配置只保存 Secret Manager resource name，例如 `api_key_secret`。任何 report、playback JS、manifest、日志都必须标记 `apiKeyMaterialIncluded=false`，不能写入 key 值。
+生产版 public playback JS 不应包含 Secret Manager resource name；secret resource name 只允许保留在 server-side manifest 或部署配置中。
 
 ### 3.2 Frontend
 
@@ -305,6 +308,7 @@ submitted
 ## 8. Model Strategy
 
 默认使用 provider interface，避免业务代码绑定单一模型。
+模型价格、延迟和 benchmark 方案详见 [翻译模型与 Provider 比较](./model-provider-comparison.zh.md)。
 
 | 任务 | Primary | Fallback |
 |---|---|---|

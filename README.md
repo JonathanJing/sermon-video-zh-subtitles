@@ -4,9 +4,14 @@
   <a href="./README.zh.md">
     <img src="https://img.shields.io/badge/Language-中文说明-blue" alt="中文说明" />
   </a>
+  <a href="./LICENSE">
+    <img src="https://img.shields.io/badge/License-MIT-green" alt="MIT License" />
+  </a>
 </p>
 
 This project builds a pipeline for usable Chinese captions during the Mariners Church Sunday 11:30 PT sermon, so Chinese-speaking congregants can follow the message while it is being preached.
+
+This is an independent open-source project and is not affiliated with, endorsed by, or operated by Mariners Church.
 
 ## Product North Star
 
@@ -33,15 +38,20 @@ Based on the current public YouTube metadata analysis for Mariners Church, waiti
 
 The more promising input is the official live service. Mariners Online lists Sunday live services at 7:00, 8:30, 10:00, and 11:30 AM PT. The system design therefore prepares captions from the earliest verified same-sermon service, treats 10:00 PT as the conservative production default, and uses public VOD as a later offline-quality source.
 
-## Repository Contents
+## Documentation
 
-- [Documentation index](docs/README.md)
-- [Chinese documentation index](docs/README.zh.md)
-- [Chinese system design](docs/system-design.zh.md)
-- [Chinese findings report](docs/findings-report.zh.md)
-- [Bilingual analysis report](docs/youtube-sermon-subtitle-pipeline-analysis.zh-en.md)
-- [Development backlog](docs/backlog.md)
-- [Review/testing notes](docs/review-testing.md)
+| Area | English | Chinese |
+|---|---|---|
+| Documentation index | [docs/README.md](docs/README.md) | [docs/README.zh.md](docs/README.zh.md) |
+| System design | [docs/system-design.md](docs/system-design.md) | [docs/system-design.zh.md](docs/system-design.zh.md) |
+| Findings report | [docs/findings-report.md](docs/findings-report.md) | [docs/findings-report.zh.md](docs/findings-report.zh.md) |
+| Model/provider comparison | [docs/model-provider-comparison.md](docs/model-provider-comparison.md) | [docs/model-provider-comparison.zh.md](docs/model-provider-comparison.zh.md) |
+| Cloud Run deployment prep | [docs/cloud-run-deployment-prep.md](docs/cloud-run-deployment-prep.md) | [docs/cloud-run-deployment-prep.zh.md](docs/cloud-run-deployment-prep.zh.md) |
+| YouTube source analysis | [bilingual report](docs/youtube-sermon-subtitle-pipeline-analysis.zh-en.md) | [same bilingual report](docs/youtube-sermon-subtitle-pipeline-analysis.zh-en.md) |
+| Backlog and review | [docs/backlog.md](docs/backlog.md), [docs/review-testing.md](docs/review-testing.md) | [docs/backlog.zh.md](docs/backlog.zh.md) |
+
+Other project files:
+
 - [Historical publish timing dataset](data/mariners_church_sunday_sermon_publish_times.csv)
 - [Live source findings dataset](data/mariners_church_live_source_findings.csv)
 - [Frontend operator prototype](web/)
@@ -86,6 +96,21 @@ python3 scripts/build_playback_simulation.py \
 ```
 
 If the available source captions are English, the UI keeps the English sidecar and marks the Chinese line as `AI 中文待生成` until the translation model is connected.
+
+## Open-Source Hygiene
+
+- Do not commit API keys, cookies, generated transcripts, generated captions, model output JSONL, private media, or service account JSON files.
+- Runtime secrets belong in Google Secret Manager. See [Cloud Run deployment prep](docs/cloud-run-deployment-prep.md).
+- Generated artifacts belong in GCS or ignored local `artifacts/`.
+- Respect platform permissions, copyright, and terms of service. This project does not bypass access controls or DRM.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md), [CONTRIBUTING.zh.md](CONTRIBUTING.zh.md), [SECURITY.md](SECURITY.md), and [SECURITY.zh.md](SECURITY.zh.md).
+
+## License
+
+MIT. See [LICENSE](LICENSE).
 
 ## Source Video
 
