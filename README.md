@@ -27,6 +27,17 @@ The more promising input is the official live service. Mariners Online lists Sun
 - [Frontend operator prototype](web/)
 - [Project notes](docs/development-notes.md)
 
+## Offline POC
+
+Extract sermon subtitles from a live archive link:
+
+```bash
+python3 scripts/offline_live_sermon_subtitles.py \
+  --live-url 'https://www.youtube.com/watch?v=FsUijL9uB1I'
+```
+
+The POC first checks the live archive for captions. If none are available, it tries to find a same-title edited sermon VOD from the channel, infers where the sermon starts inside the live archive, and writes both sermon-local and live-aligned VTT/SRT files under `artifacts/offline-live-sermon-poc/`.
+
 ## Source Video
 
 - Target video: [The Cure for Our Rebellion - Eric Geiger | Mariners Church](https://www.youtube.com/watch?v=V6OKiwbjDZE)

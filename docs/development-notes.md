@@ -43,6 +43,12 @@ This repository started with feasibility analysis. The current design direction 
   - Extract audio and run ASR when captions are missing.
   - Translate, align, enrich scripture references, generate notes, and export VTT/SRT.
 
+- `scripts/offline_live_sermon_subtitles.py`
+  - POC for accepting a YouTube live archive URL.
+  - Discover a same-title edited sermon VOD when the live archive has no captions.
+  - Infer sermon start from `live_duration - sermon_duration` unless manually overridden.
+  - Download available VTT captions and emit sermon-local plus live-aligned VTT/SRT files.
+
 ## Design Boundary
 
 The first production milestone is not a general video platform. It is an operator-first PWA that can monitor a live source, show realtime Chinese captions, preserve stable segments, and export usable subtitles before the Sunday deadline.
