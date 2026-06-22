@@ -1,7 +1,7 @@
 {
-  "name": "证道中文字幕控制台",
-  "short_name": "证道字幕",
-  "description": "Operator console for realtime Chinese sermon subtitles.",
+  "name": "11:30 会众中文字幕",
+  "short_name": "会众字幕",
+  "description": "Caption support for Chinese-speaking congregants during the 11:30 sermon.",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f7fbff",
@@ -9,4 +9,3 @@
   "orientation": "any",
   "icons": []
 }
-

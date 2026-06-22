@@ -2,19 +2,35 @@
 
 日期：2026-06-22  
 目标频道：Mariners Church  
-主要目标：每周日 11:30 PT 前可用中文字幕，最晚 11:50 PT 前完成  
-默认策略：优先使用 11:30 前最早可验证的同篇证道直播；10:00 PT 作为保守生产默认；公开视频 VOD 作为离线归档源
+主要目标：每周日 11:30 PT 场开始时，让正在听证道的中文会众有可使用的中文字幕
+默认策略：优先使用 11:30 前最早可验证的同篇证道直播准备字幕；10:00 PT 作为保守生产默认；公开视频 VOD 作为离线质量补齐源
+
+## 0. 产品北星
+
+这个项目的核心目的不是单纯“生成字幕文件”，也不是只做事后归档。核心目的是：
+
+```text
+在 11:30 PT 场证道进行时，帮助听不懂英文或更依赖中文阅读的会众，实时理解正在被传讲的信息。
+```
+
+因此所有开发优先级按下面顺序排序：
+
+1. 11:30 场会众是否能在证道开始时看到可用中文字幕。
+2. 字幕是否足够及时，不打断听道节奏。
+3. 圣经经文、人名、神学术语是否足够准确，帮助理解而不是制造干扰。
+4. operator 是否能在 11:30 前确认源、发现问题、发布字幕。
+5. 离线字幕、笔记、金句是否能帮助后续复盘和提升下周质量。
 
 ## 1. 设计结论
 
-公开视频 VOD 不能满足 11:50 PT SLA。目标视频 `V6OKiwbjDZE` 在公开层面约 12:28 PT 才可见，历史主证道视频也集中在 12:28-12:43 PT 公开。
+公开视频 VOD 不能满足 11:30 场会众实时使用的目标。目标视频 `V6OKiwbjDZE` 在公开层面约 12:28 PT 才可见，历史主证道视频也集中在 12:28-12:43 PT 公开。公开视频只能服务回看和离线质量补齐，不能作为现场会众字幕的主输入。
 
-新的可行路径是使用 Mariners Online / YouTube Live 的直播源。官方 Mariners Online 页面显示周日直播时间为 7:00、8:30、10:00、11:30 AM PT；YouTube `@marinerschurch/streams` 也存在同一篇证道的 live archive `FsUijL9uB1I`，metadata 显示 `live_status=was_live`、`media_type=livestream`，其 `release_timestamp` 换算为 2026-06-21 08:21:04 PDT。这个时间点说明 8:30 场很可能已经是可用来源。V1 应优先尝试 8:30 场；若 8:30 无法稳定验证或接入，则使用 10:00 PT 直播作为保守生产输入源。
+新的可行路径是使用 Mariners Online / YouTube Live 的早场直播源，为 11:30 场提前准备中文字幕。官方 Mariners Online 页面显示周日直播时间为 7:00、8:30、10:00、11:30 AM PT；YouTube `@marinerschurch/streams` 也存在同一篇证道的 live archive `FsUijL9uB1I`，metadata 显示 `live_status=was_live`、`media_type=livestream`，其 `release_timestamp` 换算为 2026-06-21 08:21:04 PDT。这个时间点说明 8:30 场很可能已经是可用来源。V1 应优先尝试 8:30 场；若 8:30 无法稳定验证或接入，则使用 10:00 PT 直播作为保守生产输入源。
 
 系统分成两条链路：
 
-- 实时链路：8:20 PT 开始尝试 8:30 场；若失败，9:50 PT 再尝试 10:00 场；直播期间边听边生成中文字幕，11:30 前产出可用版本。
-- 离线链路：公开视频或直播归档可用后，生成高质量字幕、时间轴编辑、经文 sidebar、笔记和金句。
+- 会众字幕链路：8:20 PT 开始尝试 8:30 场；若失败，9:50 PT 再尝试 10:00 场；直播期间边听边生成中文字幕，11:30 前发布给 11:30 场会众使用。
+- 离线质量链路：公开视频或直播归档可用后，生成高质量字幕、时间轴编辑、经文 sidebar、笔记和金句，用于修正、归档和提升下一次服务。
 
 ## 2. Source Strategy
 
@@ -26,8 +42,8 @@
 | 2 | 8:30 PT YouTube Live / Mariners Online | 实时字幕 | 高 | 若同篇证道确认，SLA 余量最大 |
 | 3 | 10:00 PT YouTube Live / Mariners Online | 实时字幕 | 高 | 保守生产默认，仍有足够 11:30 前处理余量 |
 | 4 | Operator 设备麦克风/外接音频 | 实时兜底 | 中 | iPhone/iPad 可用，但音质依赖环境 |
-| 5 | YouTube live archive | 快速离线补齐 | 中 | 归档公开时间可能晚于直播结束 |
-| 6 | 公开视频 VOD | 高质量离线 | 低 | 不满足 11:50 SLA，只适合事后字幕 |
+| 5 | YouTube live archive | 会前补齐/复核 | 中 | 若归档及时可辅助 11:30 前复核，否则进入事后质量链路 |
+| 6 | 公开视频 VOD | 高质量离线 | 低 | 不满足 11:30 会众实时使用，只适合事后字幕 |
 
 ### 2.2 周日运行时间线
 
@@ -40,9 +56,10 @@
 | 09:58 | 如果 10:00 直播源仍未发现，提醒 operator 准备手动音频输入 |
 | 10:00 | 开始接入 10:00 场直播音频，启动或重启 realtime caption session |
 | 10:00-10:55 | 实时生成英文转写、中文字幕、经文候选、术语标注 |
-| 10:55-11:15 | 自动整理 stable captions，补齐低置信片段 |
-| 11:15-11:30 | 生成可发布 VTT/SRT 和 UI 可读字幕轨 |
-| 11:30-11:50 | 人工快速 review、修正关键经文/人名、发布 |
+| 10:55-11:15 | 自动整理 stable captions，补齐低置信片段，突出经文/人名待确认项 |
+| 11:15-11:25 | operator 快速 review，修正关键经文、人名、术语 |
+| 11:25-11:30 | 发布会众可用字幕视图，并确认 iPhone/iPad/会场显示可访问 |
+| 11:30-11:50 | 会众实时使用字幕听道；operator 只做轻量监控和必要热修正 |
 | 12:28+ | 公开视频 VOD 出现后进入离线高质量重处理 |
 
 ### 2.3 合规边界
@@ -83,7 +100,7 @@ flowchart TD
 
 | Service | 责任 |
 |---|---|
-| `web` | iPhone/iPad PWA，显示实时字幕、时间轴、sidebar、review UI |
+| `web` | iPhone/iPad PWA，面向 operator 和 11:30 会众字幕视图，显示实时字幕、经文 sidebar、review/publish UI |
 | `api` | session、job、segments、exports、operator auth |
 | `realtime-relay` | 可选，接入非浏览器音频源并转发给 realtime provider |
 | `worker` | 离线 ASR、翻译、时间轴归一、经文解析、笔记和金句 |
@@ -93,18 +110,23 @@ flowchart TD
 
 ### 3.2 Frontend
 
-V1 使用 Web/PWA，而不是先做 iOS App。原因是：
+V1 使用 Web/PWA，而不是先做 iOS App。Web 端必须同时支持两个使用面：
 
-- iPhone/iPad Safari 可以快速访问和部署，适合 operator-first 工作流。
+- operator view：11:30 前确认源、字幕质量、经文/人名、发布状态。
+- congregation view：11:30 场会众打开后只看到清晰、稳定、低干扰的中文字幕和必要经文提示。
+
+原因是：
+
+- iPhone/iPad Safari 可以快速访问和部署，适合 operator 和会众现场使用。
 - 主要 UI 是字幕监控、review、经文 sidebar、时间轴编辑，Web 足够。
 - iOS 浏览器不能可靠捕获其他 app 或标签页系统音频，所以音频输入要通过官方源、服务器 relay、外接输入或后续 iOS companion app 解决。
 
 PWA 布局要求：
 
-- iPhone 竖屏：主字幕大字显示，经文 sidebar 作为底部抽屉。
-- iPhone 横屏：视频/字幕左侧，经文和状态右侧。
-- iPad 竖屏：字幕区 + 下方时间轴，经文 sidebar 可折叠。
-- iPad 横屏：三栏布局，左侧视频/字幕，中间时间轴，右侧经文/笔记。
+- iPhone 竖屏会众视图：主字幕大字显示，经文提示可收起，不显示复杂控制。
+- iPhone 横屏会众视图：字幕优先，保留少量经文/当前段落提示。
+- iPad 竖屏 operator 视图：字幕区 + 下方时间轴，经文 sidebar 可折叠。
+- iPad 横屏 operator 视图：三栏布局，左侧源/状态，中间字幕，右侧经文/笔记。
 
 ## 4. Realtime Pipeline
 
@@ -117,7 +139,7 @@ PWA 布局要求：
 5. `StreamingASRProvider` 同时生成英文 sidecar transcript。
 6. `stable_caption_assembler` 合并、去重、修正断句，产出 stable captions。
 7. `scripture_resolver` 异步解析经文、人名、术语，不阻塞字幕显示。
-8. `exporter` 持续生成 rolling VTT/SRT，11:15 后冻结可 review 版本。
+8. `publisher` 在 11:25 前发布会众可用字幕视图；`exporter` 同步生成 rolling VTT/SRT 作为兜底和归档。
 
 ### 4.2 Latency Budget
 
@@ -128,6 +150,7 @@ PWA 布局要求：
 | stable caption | p95 <= 6 s |
 | 经文 sidebar 更新 | stable 后 1-3 s |
 | 断线重连恢复 | <= 10 s |
+| 会众视图热修正生效 | <= 3 s |
 
 ### 4.3 Caption States
 
@@ -135,12 +158,13 @@ PWA 布局要求：
 |---|---|
 | `draft` | 快速显示，可被替换，不导出 |
 | `stable` | 已确认片段，可进入 sidebar 和 rolling export |
-| `reviewed` | 人工确认后用于最终发布 |
+| `reviewed` | 人工确认后用于会众视图和最终导出 |
+| `published` | 已发布给 11:30 场会众使用，可被热修正 |
 | `locked` | 关键经文、人名、金句引用，不再被自动流程覆盖 |
 
 ## 5. Offline Pipeline
 
-离线链路服务两个目标：对公开视频/直播归档做高质量重处理；为时间轴编辑、笔记、金句提供稳定来源。
+离线链路服务主目标：为 11:30 会众字幕体验提供会前准备、质量复核和事后修正。它不是产品核心体验的替代品；如果离线链路不能帮助 11:30 场会众听道，就应降级为后续质量工具。
 
 状态机：
 
@@ -243,6 +267,7 @@ submitted
 | `GET` | `/api/realtime/sessions/{id}/events` | SSE 推送 caption/status/scripture events |
 | `POST` | `/api/realtime/sessions/{id}:reconnect` | 断线重连，从最新 cursor 恢复 |
 | `POST` | `/api/realtime/sessions/{id}:freeze` | 冻结 rolling captions 进入 review |
+| `POST` | `/api/realtime/sessions/{id}:publish` | 发布给 11:30 场会众字幕视图 |
 
 ### 7.2 Offline
 
@@ -314,6 +339,7 @@ Glossary 数据：
 |---|---|
 | 8:30 live source 未发现或不是同篇证道 | 自动转入 10:00 场监控 |
 | 10:00 live source 未发现 | 9:58 提醒 operator，切换麦克风/外接音频 |
+| 11:25 前无法发布会众视图 | 触发 no-go 告警，转为人工解释/备用翻译方式 |
 | 直播页面变更 | 保留 YouTube streams、Mariners Online、manual URL 三种入口 |
 | Cloud Run 连接超时 | 主动重连，Firestore 保存 cursor |
 | Realtime provider 限流 | 降级为 streaming ASR + batch translation |
@@ -330,8 +356,10 @@ Realtime：
 - first Chinese caption p50 <= 2.5 秒。
 - stable Chinese caption p95 <= 6 秒。
 - 30 分钟内断线重连不丢失 stable segment。
-- 11:30 PT 前生成可发布 `edited_zh` rolling caption track。
-- 11:50 PT 前导出 VTT/SRT。
+- 11:25 PT 前 operator 能确认并发布会众字幕视图。
+- 11:30 PT 场开始时，会众可在 iPhone/iPad 打开可读中文字幕。
+- 11:30-11:50 PT 证道进行中，字幕持续更新，热修正可在 3 秒内进入会众视图。
+- VTT/SRT 导出作为兜底和归档，不是唯一成功标准。
 
 Offline：
 
@@ -343,8 +371,8 @@ Offline：
 
 UI：
 
-- iPhone 竖屏/横屏可完成实时监控。
-- iPad 竖屏/横屏可完成 review、经文查看、时间轴调整。
+- iPhone 竖屏/横屏会众视图可读、低干扰、无需复杂操作。
+- iPad 竖屏/横屏 operator 视图可完成 review、经文查看、时间轴调整和发布。
 - 字幕、按钮、sidebar 不重叠。
 
 ## 12. Implementation Phases
@@ -357,11 +385,11 @@ UI：
 
 ### Phase 2: Realtime MVP
 
-- 实现 PWA operator screen。
+- 实现 PWA operator screen 和 congregation caption view。
 - 实现 realtime session API。
 - 接入 realtime translation provider。
 - 保存 stable captions 到 Firestore。
-- 导出 rolling VTT/SRT。
+- 发布 11:30 会众字幕视图，并导出 rolling VTT/SRT 作为兜底。
 
 ### Phase 3: Offline Quality Pipeline
 

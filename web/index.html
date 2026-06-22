@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#f7fbff" />
-    <title>证道中文字幕 Operator Console</title>
+    <title>11:30 会众中文字幕控制台</title>
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
@@ -14,14 +14,14 @@
         <div class="brand-block">
           <span class="brand-mark" aria-hidden="true">道</span>
           <div>
-            <p class="eyebrow">Mariners Live Subtitle Pipeline</p>
-            <h1>证道中文字幕控制台</h1>
+            <p class="eyebrow">11:30 Congregation Caption Support</p>
+            <h1>11:30 会众中文字幕</h1>
           </div>
         </div>
 
         <div class="status-cluster" aria-label="系统状态">
           <span class="status-pill status-pill--watching" id="sourceStatus">等待监控</span>
-          <span class="status-pill" id="slaStatus">SLA 11:30 / 11:50</span>
+          <span class="status-pill" id="slaStatus">11:30 会众可用</span>
           <button class="icon-button" type="button" data-action="toggle-sidebar" aria-label="切换经文侧栏" title="切换经文侧栏">章</button>
         </div>
       </header>
@@ -30,8 +30,8 @@
         <section class="control-panel" aria-labelledby="live-source-title">
           <div class="panel-heading">
             <div>
-              <p class="eyebrow">Live Source</p>
-              <h2 id="live-source-title">直播源监控</h2>
+              <p class="eyebrow">Prepare Before 11:30</p>
+              <h2 id="live-source-title">会前字幕源监控</h2>
             </div>
             <span class="runtime" id="clock">--:--:-- PT</span>
           </div>
@@ -68,7 +68,7 @@
 
           <div class="button-row">
             <button class="button button--primary" type="button" data-action="start-monitor">开始监控</button>
-            <button class="button" type="button" data-action="start-caption">启动字幕</button>
+            <button class="button" type="button" data-action="start-caption">生成会众字幕</button>
             <button class="button" type="button" data-action="use-fallback">切换兜底</button>
           </div>
 
@@ -84,8 +84,8 @@
         <section class="subtitle-stage" aria-labelledby="caption-title">
           <div class="stage-toolbar">
             <div>
-              <p class="eyebrow">Realtime Caption</p>
-              <h2 id="caption-title">实时中文字幕</h2>
+              <p class="eyebrow">Congregation Caption</p>
+              <h2 id="caption-title">11:30 场可用中文字幕</h2>
             </div>
             <div class="button-row button-row--compact">
               <button class="icon-button" type="button" data-action="mark-segment" aria-label="标记当前片段" title="标记当前片段">记</button>
@@ -95,8 +95,8 @@
           </div>
 
           <div class="caption-window" id="captionWindow">
-            <p class="caption-line caption-line--draft" id="draftCaption">等待直播音频...</p>
-            <p class="caption-line" id="stableCaption">请先开始监控并启动字幕。</p>
+            <p class="caption-line caption-line--draft" id="draftCaption">等待会前直播音频...</p>
+            <p class="caption-line" id="stableCaption">请先确认字幕源，为 11:30 场会众准备中文字幕。</p>
           </div>
 
           <div class="sidecar">
@@ -109,7 +109,7 @@
 
           <div class="review-strip" aria-label="字幕片段">
             <div class="review-strip__head">
-              <h3>Stable Segments</h3>
+              <h3>会众可用片段</h3>
               <span id="segmentCount">0 segments</span>
             </div>
             <ul class="segment-list" id="segmentList"></ul>
@@ -151,7 +151,7 @@
           <div class="tab-panel is-hidden" data-tab-panel="notes">
             <div class="note-block" id="noteBlock">
               <h3>证道笔记草稿</h3>
-              <p>离线字幕完成后会生成摘要、大纲、应用问题和可追溯金句。</p>
+              <p>离线字幕用于复核 11:30 会众字幕质量，并在证道后生成摘要、大纲、应用问题和可追溯金句。</p>
             </div>
           </div>
         </aside>
@@ -159,8 +159,8 @@
 
       <footer class="timeline-panel" aria-label="时间轴和导出">
         <div class="timeline-meta">
-          <span id="sessionLabel">Session: not started</span>
-          <span id="deadlineLabel">Deadline: 11:50 PT</span>
+          <span id="sessionLabel">11:30 caption session: not started</span>
+          <span id="deadlineLabel">Publish target: 11:25 PT</span>
         </div>
         <div class="timeline-track">
           <div class="timeline-fill" id="timelineFill"></div>
@@ -173,7 +173,7 @@
             <span>ms</span>
           </label>
           <button class="button" type="button" data-action="apply-offset">应用平移</button>
-          <button class="button" type="button" data-action="freeze-review">冻结 Review</button>
+          <button class="button" type="button" data-action="freeze-review">冻结并发布</button>
           <button class="button button--primary" type="button" data-action="export-vtt">导出 VTT</button>
           <button class="button button--primary" type="button" data-action="export-srt">导出 SRT</button>
         </div>
@@ -183,4 +183,3 @@
     <script src="./app.js" defer></script>
   </body>
 </html>
-

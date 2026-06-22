@@ -1,21 +1,31 @@
 # Sermon Video Chinese Subtitles
 
-证道视频中文字幕项目，用于研究并建设从英文证道视频自动生成中文字幕的 pipeline。
+证道视频中文字幕项目，用于在 Mariners Church 周日 11:30 场证道中，为正在听道的中文会众提供可使用的中文字幕。
 
-The project explores and builds a pipeline for generating Chinese subtitles from English sermon videos.
+The project builds a pipeline for usable Chinese captions during the Sunday 11:30 sermon, so Chinese-speaking congregants can follow the message while it is being preached.
+
+## Product North Star
+
+The core product goal is not only to archive or translate sermons after the fact. The core goal is:
+
+```text
+By the time the 11:30 PT service begins, Chinese-speaking congregants should have a usable caption experience that helps them listen to the sermon in real time.
+```
+
+All realtime, offline, UI, and export work should be evaluated by whether it improves that 11:30 listener experience.
 
 ## Current Focus
 
-- Detect when a target YouTube sermon video becomes publicly available.
-- Analyze historical publish timing for the same channel.
-- Use the earliest verified pre-11:30 PT Mariners live service as the realtime source for the Sunday 11:30-11:50 PT subtitle SLA, with 10:00 PT as the conservative default.
-- Design realtime and offline subtitle pipelines for Chinese captions, scripture sidebars, notes, and quote extraction.
+- Prepare usable Chinese captions before the 11:30 PT service audience needs them.
+- Use the earliest verified pre-11:30 PT Mariners live service as the preparation source, with 10:00 PT as the conservative default.
+- Let an operator monitor readiness, review key terms/scripture, and publish captions for the 11:30 service.
+- Keep offline processing, notes, and quote extraction as support features for quality, review, and follow-up.
 
 ## Key Finding
 
 Based on the current public YouTube metadata analysis for Mariners Church, waiting for the public VOD to appear cannot meet a Sunday 11:50 PT completion deadline. Recent Sunday sermon videos typically become public around 12:28-12:43 PT, with a median around 12:31 PT.
 
-The more promising input is the official live service. Mariners Online lists Sunday live services at 7:00, 8:30, 10:00, and 11:30 AM PT. The system design therefore tries the earliest verified same-sermon service first, treats 10:00 PT as the conservative production default, and uses public VOD as a later offline-quality source.
+The more promising input is the official live service. Mariners Online lists Sunday live services at 7:00, 8:30, 10:00, and 11:30 AM PT. The system design therefore prepares captions from the earliest verified same-sermon service, treats 10:00 PT as the conservative production default, and uses public VOD as a later offline-quality source.
 
 ## Repository Contents
 

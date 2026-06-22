@@ -2,7 +2,14 @@
 
 ## Scope
 
-This repository started with feasibility analysis. The current design direction is to use the earliest verified pre-11:30 PT Mariners live service as the primary realtime source, keep 10:00 PT as the conservative production default, then use public VOD/live archive sources for offline quality passes.
+This repository started with feasibility analysis. The current product goal is to help Chinese-speaking congregants understand the sermon while they are attending the 11:30 PT service. The design direction is to use the earliest verified pre-11:30 PT Mariners live service as the preparation source, keep 10:00 PT as the conservative production default, publish usable captions before the 11:30 service begins, then use public VOD/live archive sources for offline quality passes.
+
+## Product Priority
+
+1. The 11:30 PT congregation can open and read usable Chinese captions during the sermon.
+2. The operator can confirm readiness and publish before 11:30 PT.
+3. Scripture, names, and theological terms are accurate enough to help listening comprehension.
+4. Offline processing improves quality and follow-up, but does not replace the live congregation experience.
 
 ## Proposed Modules
 
@@ -20,7 +27,8 @@ This repository started with feasibility analysis. The current design direction 
 - `services/realtime_caption_worker`
   - Ingest live audio.
   - Produce draft and stable Chinese captions.
-  - Persist stable segments and rolling VTT/SRT outputs.
+  - Persist stable segments.
+  - Publish reviewed captions to the 11:30 congregation view and keep rolling VTT/SRT as fallback outputs.
 
 - `scripts/detect_video_availability.py`
   - Poll a target YouTube video URL and channel videos feed.
@@ -36,7 +44,8 @@ This repository started with feasibility analysis. The current design direction 
 - `scripts/run_sunday_sla_watch.py`
   - Scheduled runner for Sunday monitoring.
   - Escalate when no live source is available by 09:58 PT.
-  - Continue VOD monitoring after the realtime service for offline-quality processing.
+  - Escalate if no congregation-ready caption view is published by 11:25 PT.
+  - Continue VOD monitoring after the 11:30 service for offline-quality processing.
 
 - `services/offline_job_worker`
   - Import existing captions when available.
@@ -51,8 +60,8 @@ This repository started with feasibility analysis. The current design direction 
 
 ## Design Boundary
 
-The first production milestone is not a general video platform. It is an operator-first PWA that can monitor a live source, show realtime Chinese captions, preserve stable segments, and export usable subtitles before the Sunday deadline.
+The first production milestone is not a general video platform. It is a service-time caption system: an operator-first PWA plus a low-friction congregation caption view that makes Chinese captions usable during the 11:30 sermon.
 
 ## Current Operating Assumption
 
-For Mariners Church, the public YouTube VOD source should be treated as post-event input. The earliest verified pre-11:30 PT live service is the preferred source for meeting the Sunday 11:30-11:50 PT Chinese subtitle SLA, with 10:00 PT as the conservative default.
+For Mariners Church, the public YouTube VOD source should be treated as post-event input. The earliest verified pre-11:30 PT live service is the preferred source for preparing captions for the 11:30 congregation, with 10:00 PT as the conservative default.

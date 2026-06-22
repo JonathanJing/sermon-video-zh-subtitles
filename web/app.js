@@ -100,8 +100,8 @@
       el.clock.textContent = formatClock();
     }, 1000);
     setStatus("等待监控", "watching");
-    setSla("SLA 11:30 / 11:50", "ready");
-    log("控制台已就绪，默认优先验证 8:30 场直播。");
+    setSla("11:30 会众可用", "ready");
+    log("控制台已就绪：目标是在 11:30 场开始时，为正在听道的会众提供可用中文字幕。");
     updateSourceCards("idle");
     updateTimeline();
   }
@@ -155,10 +155,10 @@
     state.sourceReady = false;
     const label = serviceLabel(state.selectedService);
     setStatus(`监控中 ${label}`, "watching");
-    setSla("等待直播源", "warning");
+    setSla("等待会前字幕源", "warning");
     el.sessionLabel.textContent = `Session: monitor-${state.selectedService}`;
     updateSourceCards("checking");
-    log(`开始监控 ${label} 直播源。`);
+    log(`开始监控 ${label} 直播源，用于提前准备 11:30 会众字幕。`);
 
     state.monitorTimers.push(window.setTimeout(() => {
       setSourceState("mariners-online", "checking", "探测中");
@@ -184,8 +184,8 @@
     setSourceState("youtube-streams", "warning", "同篇未确认");
     setSourceState("operator-audio", "idle", "可备用");
     setStatus("8:30 未确认，转 10:00", "warning");
-    setSla("自动兜底到 10:00", "warning");
-    log("8:30 live source 未通过同篇证道 gate，自动切换到 10:00 兜底。");
+    setSla("兜底准备 11:30 字幕", "warning");
+    log("8:30 live source 未通过同篇证道 gate，自动切换到 10:00 兜底，确保 11:30 会众仍有字幕。");
     state.selectedService = "1000";
     state.fallback = true;
     syncServiceButtons();
@@ -210,8 +210,8 @@
     setSourceState("youtube-streams", "warning", "候选");
     setSourceState("operator-audio", "idle", "可备用");
     setStatus(`${label} 源已确认`, "ready");
-    setSla(service === "830" ? "8:30 SLA 余量最大" : "10:00 兜底可启动字幕", "ready");
-    log(`${label} live source 已确认，建议启动实时字幕。`);
+    setSla(service === "830" ? "8:30 准备余量最大" : "10:00 可准备会众字幕", "ready");
+    log(`${label} live source 已确认，可以开始生成 11:30 会众可用字幕。`);
     if (state.captionRequested) {
       state.captionRequested = false;
       startCaptioning();
@@ -222,11 +222,11 @@
     if (!state.sourceReady) {
       if (state.monitoring) {
         state.captionRequested = true;
-        log("字幕启动请求已排队，将在 live source 确认后自动启动。");
-        setStatus("字幕待启动", "warning");
+        log("会众字幕生成请求已排队，将在 live source 确认后自动启动。");
+        setStatus("会众字幕待启动", "warning");
         return;
       }
-      log("请先开始监控并等待 8:30/10:00 live source 确认，或选择手动音频。");
+      log("请先开始监控并等待 8:30/10:00 live source 确认，或选择手动音频，才能为 11:30 会众生成字幕。");
       setStatus("等待直播源确认", "error");
       return;
     }
@@ -235,10 +235,10 @@
     state.paused = false;
     state.frozen = false;
     state.startedAt = state.startedAt || Date.now();
-    setStatus("实时字幕中", "live");
-    setSla("11:30 前生成 rolling track", "live");
+    setStatus("会众字幕生成中", "live");
+    setSla("11:25 前发布会众视图", "live");
     el.sessionLabel.textContent = `Session: rt-${dateStamp()}-${state.selectedService}`;
-    log("实时字幕 session 已启动，开始模拟低延迟字幕流。");
+    log("会众字幕 session 已启动，开始模拟低延迟字幕流。");
     scheduleNextCaption(300);
     startProgress();
   }
@@ -347,8 +347,8 @@
     setSourceState("youtube-streams", "warning", "跳过");
     setSourceState("operator-audio", "live", "使用中");
     setStatus("Operator Audio", "ready");
-    setSla("兜底源可启动", "warning");
-    log("已切换到 operator audio 兜底输入。");
+    setSla("兜底源可准备会众字幕", "warning");
+    log("已切换到 operator audio 兜底输入，目标仍是服务 11:30 场会众。");
   }
 
   function markCurrentSegment() {
@@ -382,8 +382,8 @@
     button.classList.toggle("is-active", state.paused);
     button.setAttribute("aria-pressed", String(state.paused));
     button.textContent = state.paused ? "续" : "停";
-    setStatus(state.paused ? "字幕已暂停" : "实时字幕中", state.paused ? "warning" : "live");
-    log(state.paused ? "已暂停实时字幕流。" : "已继续实时字幕流。");
+    setStatus(state.paused ? "字幕已暂停" : "会众字幕生成中", state.paused ? "warning" : "live");
+    log(state.paused ? "已暂停会众字幕流。" : "已继续会众字幕流。");
     if (!state.paused) scheduleNextCaption(400);
   }
 
@@ -435,9 +435,9 @@
     state.frozen = true;
     state.captioning = false;
     window.clearTimeout(state.streamTimer);
-    setStatus("Review 已冻结", "ready");
-    setSla("可导出 VTT/SRT", "ready");
-    log("已冻结 rolling captions，进入 review/export 状态。");
+    setStatus("会众视图已发布", "ready");
+    setSla("11:30 会众可用", "ready");
+    log("已冻结并发布会众字幕视图；VTT/SRT 可作为兜底和归档导出。");
     updateTimeline(100);
   }
 
@@ -491,7 +491,7 @@
     document.documentElement.style.setProperty("--timeline-progress", `${percent}%`);
     document.documentElement.style.setProperty("--timeline-cursor", `${percent}%`);
     if (el.deadlineLabel) {
-      el.deadlineLabel.textContent = state.frozen ? "Deadline: export ready" : "Deadline: 11:50 PT";
+      el.deadlineLabel.textContent = state.frozen ? "Published: congregation view ready" : "Publish target: 11:25 PT";
     }
   }
 
