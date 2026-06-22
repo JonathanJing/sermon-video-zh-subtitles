@@ -17,6 +17,7 @@ Based on the current public YouTube metadata analysis for Mariners Church, waiti
 
 ## Repository Contents
 
+- [Findings report in Chinese](docs/findings-report.zh.md)
 - [Bilingual analysis report](docs/youtube-sermon-subtitle-pipeline-analysis.zh-en.md)
 - [Historical publish timing dataset](data/mariners_church_sunday_sermon_publish_times.csv)
 - [Project notes](docs/development-notes.md)
@@ -25,4 +26,3 @@ Based on the current public YouTube metadata analysis for Mariners Church, waiti
 
 - Target video: [The Cure for Our Rebellion - Eric Geiger | Mariners Church](https://www.youtube.com/watch?v=V6OKiwbjDZE)
 - Channel: [Mariners Church](https://www.youtube.com/@marinerschurch)
-
