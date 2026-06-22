@@ -60,13 +60,19 @@
     offsetMs: 0,
     nextStartMs: 0,
     captionIndex: 0,
+    playbackIndex: 0,
     currentSegmentId: null,
     segments: [],
+    playbackSegments: [],
     monitorTimers: [],
     streamTimer: null,
+    playbackTimer: null,
     clockTimer: null,
     progressTimer: null,
     startedAt: null,
+    playbackStartedAt: null,
+    playbackBaseMs: 0,
+    playbackSpeed: 18,
     lastExport: null
   };
 
@@ -102,8 +108,56 @@
     setStatus("等待监控", "watching");
     setSla("11:30 会众可用", "ready");
     log("控制台已就绪：目标是在 11:30 场开始时，为正在听道的会众提供可用中文字幕。");
+    loadPlaybackSimulation();
     updateSourceCards("idle");
     updateTimeline();
+  }
+
+  function loadPlaybackSimulation() {
+    const simulation = window.SERMON_PLAYBACK_SIMULATION;
+    if (!simulation || !Array.isArray(simulation.segments) || !simulation.segments.length) {
+      log("未检测到直播链接回放数据，当前使用内置 mock 字幕流。");
+      return;
+    }
+
+    state.playbackSegments = simulation.segments
+      .map((segment, index) => normalizePlaybackSegment(segment, index))
+      .filter(Boolean);
+    state.playbackSpeed = Number(simulation.playbackSpeed) || 18;
+    if (!state.playbackSegments.length) {
+      log("直播链接回放数据为空，当前使用内置 mock 字幕流。");
+      return;
+    }
+
+    const liveTitle = simulation.live?.title || "live archive";
+    const start = simulation.sermonStart?.timecode || "unknown";
+    log(`已加载直播链接回放数据：${liveTitle}；证道开始 ${start}；${state.playbackSegments.length} 个片段。`);
+    if (simulation.translationStatus === "needs_translation") {
+      log("当前 POC 片段为英文字幕源，中文字幕位置将显示 AI 待生成状态，用于验证播放和对齐。");
+    }
+  }
+
+  function normalizePlaybackSegment(segment, index) {
+    const startMs = Number(segment.startMs);
+    const endMs = Number(segment.endMs);
+    if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) return null;
+    const en = String(segment.en || "").trim();
+    const zh = String(segment.zh || segment.text || en || "").trim();
+    return {
+      id: segment.id || `sim_${String(index + 1).padStart(4, "0")}`,
+      startMs,
+      endMs,
+      zh: zh || "AI 中文待生成",
+      draft: String(segment.draft || zh || "正在生成中文字幕..."),
+      en,
+      ref: segment.ref || "",
+      note: segment.note || "直播链接模拟播放片段。",
+      confidence: Number(segment.confidence) || 70,
+      locked: false,
+      marked: false,
+      offsetMs: 0,
+      translationStatus: segment.translationStatus || "unknown"
+    };
   }
 
   function onActionClick(event) {
@@ -114,6 +168,7 @@
     if (action === "select-service") selectService(control.dataset.service);
     if (action === "start-monitor") startMonitor();
     if (action === "start-caption") startCaptioning();
+    if (action === "start-playback") startPlaybackSimulation();
     if (action === "use-fallback") useFallback();
     if (action === "clear-log") clearLog();
     if (action === "mark-segment") markCurrentSegment();
@@ -234,6 +289,8 @@
     state.captioning = true;
     state.paused = false;
     state.frozen = false;
+    stopStreamingTimers();
+    state.playbackStartedAt = null;
     state.startedAt = state.startedAt || Date.now();
     setStatus("会众字幕生成中", "live");
     setSla("11:25 前发布会众视图", "live");
@@ -241,6 +298,83 @@
     log("会众字幕 session 已启动，开始模拟低延迟字幕流。");
     scheduleNextCaption(300);
     startProgress();
+  }
+
+  function startPlaybackSimulation() {
+    if (!state.playbackSegments.length) {
+      log("没有可播放的直播链接模拟数据。请先运行 scripts/build_playback_simulation.py 生成 web/playback-simulation.generated.js。");
+      setStatus("缺少回放数据", "error");
+      return;
+    }
+
+    stopStreamingTimers();
+    state.captioning = true;
+    state.paused = false;
+    state.frozen = false;
+    state.sourceReady = true;
+    state.playbackIndex = 0;
+    state.segments = [];
+    state.currentSegmentId = null;
+    state.playbackBaseMs = state.playbackSegments[0].startMs;
+    state.playbackStartedAt = Date.now();
+    setSourceState("mariners-online", "live", "回放中");
+    setSourceState("youtube-streams", "live", "live link");
+    setSourceState("operator-audio", "idle", "可备用");
+    setStatus("直播链接模拟播放", "live");
+    setSla("验证 11:30 会众视图", "live");
+    el.sessionLabel.textContent = `Session: playback-${dateStamp()}`;
+    log(`开始按真实 live-aligned 时间轴模拟播放，速度 ${state.playbackSpeed}x。`);
+    tickPlayback();
+    startProgress();
+  }
+
+  function tickPlayback() {
+    window.clearTimeout(state.playbackTimer);
+    if (!state.captioning || state.paused || state.frozen) return;
+
+    const elapsedMs = (Date.now() - state.playbackStartedAt) * state.playbackSpeed;
+    const playheadMs = state.playbackBaseMs + elapsedMs;
+    let pushed = 0;
+    while (
+      state.playbackIndex < state.playbackSegments.length &&
+      state.playbackSegments[state.playbackIndex].startMs <= playheadMs
+    ) {
+      pushPlaybackSegment(state.playbackSegments[state.playbackIndex]);
+      state.playbackIndex += 1;
+      pushed += 1;
+    }
+
+    updateTimeline(playbackProgressPercent(playheadMs));
+    if (state.playbackIndex >= state.playbackSegments.length) {
+      setStatus("回放模拟完成", "ready");
+      setSla("可复核对齐", "ready");
+      state.captioning = false;
+      log(`直播链接模拟播放完成，共推出 ${state.segments.length} 个片段。`);
+      return;
+    }
+
+    const nextStart = state.playbackSegments[state.playbackIndex].startMs;
+    const delay = Math.max(80, Math.min(1200, (nextStart - playheadMs) / state.playbackSpeed));
+    state.playbackTimer = window.setTimeout(tickPlayback, pushed ? 80 : delay);
+  }
+
+  function pushPlaybackSegment(source) {
+    const segment = {
+      ...source,
+      id: source.id || `sim_${String(state.segments.length + 1).padStart(4, "0")}`,
+      locked: Boolean(source.locked),
+      marked: Boolean(source.marked),
+      offsetMs: Number(source.offsetMs) || 0
+    };
+    state.currentSegmentId = segment.id;
+    state.segments.push(segment);
+    el.draftCaption.textContent = segment.draft;
+    el.stableCaption.textContent = segment.zh;
+    el.englishSidecar.textContent = segment.en || "字幕源为中文或暂无英文 sidecar。";
+    el.confidenceMeter.textContent = `${segment.confidence}%`;
+    renderSegments();
+    addScriptureCandidate(segment);
+    updateNotes();
   }
 
   function scheduleNextCaption(delay) {
@@ -384,7 +518,13 @@
     button.textContent = state.paused ? "续" : "停";
     setStatus(state.paused ? "字幕已暂停" : "会众字幕生成中", state.paused ? "warning" : "live");
     log(state.paused ? "已暂停会众字幕流。" : "已继续会众字幕流。");
-    if (!state.paused) scheduleNextCaption(400);
+    if (!state.paused) {
+      if (state.playbackSegments.length && state.playbackStartedAt) {
+        tickPlayback();
+      } else {
+        scheduleNextCaption(400);
+      }
+    }
   }
 
   function toggleSidebar() {
@@ -434,7 +574,7 @@
     }
     state.frozen = true;
     state.captioning = false;
-    window.clearTimeout(state.streamTimer);
+    stopStreamingTimers();
     setStatus("会众视图已发布", "ready");
     setSla("11:30 会众可用", "ready");
     log("已冻结并发布会众字幕视图；VTT/SRT 可作为兜底和归档导出。");
@@ -495,6 +635,14 @@
     }
   }
 
+  function playbackProgressPercent(playheadMs) {
+    if (!state.playbackSegments.length) return 0;
+    const first = state.playbackSegments[0].startMs;
+    const last = state.playbackSegments[state.playbackSegments.length - 1].endMs;
+    if (last <= first) return 0;
+    return Math.min(100, Math.max(0, ((playheadMs - first) / (last - first)) * 100));
+  }
+
   function updateSourceCards(mode) {
     const labels = {
       idle: ["待检测", "待检测", "可备用"],
@@ -552,6 +700,11 @@
   function clearMonitorTimers() {
     state.monitorTimers.forEach((timer) => window.clearTimeout(timer));
     state.monitorTimers = [];
+  }
+
+  function stopStreamingTimers() {
+    window.clearTimeout(state.streamTimer);
+    window.clearTimeout(state.playbackTimer);
   }
 
   function serviceLabel(service) {
@@ -622,6 +775,7 @@
     state,
     startMonitor,
     startCaptioning,
+    startPlaybackSimulation,
     selectService,
     useFallback,
     useOperatorAudio,

@@ -58,6 +58,11 @@ This repository started with feasibility analysis. The current product goal is t
   - Infer sermon start from `live_duration - sermon_duration` unless manually overridden.
   - Download available VTT captions and emit sermon-local plus live-aligned VTT/SRT files.
 
+- `scripts/build_playback_simulation.py`
+  - Convert the offline-live POC report and live-aligned VTT into browser-loadable playback data.
+  - Let the PWA simulate a live archive playback timeline from the real live link output.
+  - Preserve English source captions as sidecar text when Chinese captions are not yet generated, so the next model-integration step can be tested without changing the playback contract.
+
 ## Design Boundary
 
 The first production milestone is not a general video platform. It is a service-time caption system: an operator-first PWA plus a low-friction congregation caption view that makes Chinese captions usable during the 11:30 sermon.
@@ -65,3 +70,11 @@ The first production milestone is not a general video platform. It is a service-
 ## Current Operating Assumption
 
 For Mariners Church, the public YouTube VOD source should be treated as post-event input. The earliest verified pre-11:30 PT live service is the preferred source for preparing captions for the 11:30 congregation, with 10:00 PT as the conservative default.
+
+## Current POC Loop
+
+1. Run `scripts/offline_live_sermon_subtitles.py` with a YouTube live archive URL.
+2. Confirm the inferred sermon start and generated live-aligned VTT/SRT.
+3. Run `scripts/build_playback_simulation.py` to generate `web/playback-simulation.generated.js`.
+4. Open the PWA and click `模拟播放` to verify that the congregation caption view can advance through real live-link subtitle timecodes.
+5. Replace `AI 中文待生成` placeholders with model-generated Chinese captions in the next integration step.

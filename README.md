@@ -48,6 +48,16 @@ python3 scripts/offline_live_sermon_subtitles.py \
 
 The POC first checks the live archive for captions. If none are available, it tries to find a same-title edited sermon VOD from the channel, infers where the sermon starts inside the live archive, and writes both sermon-local and live-aligned VTT/SRT files under `artifacts/offline-live-sermon-poc/`.
 
+Build browser playback simulation data from the POC output:
+
+```bash
+python3 scripts/build_playback_simulation.py \
+  --report artifacts/offline-live-sermon-poc/report.json \
+  --out web/playback-simulation.generated.js
+```
+
+Then open `web/index.html` and click `模拟播放`. The browser uses the live-aligned subtitle timecodes to simulate how the 11:30 congregation caption view behaves during playback. If the available source captions are English, the UI keeps the English sidecar and marks the Chinese line as `AI 中文待生成` until the translation model is connected.
+
 ## Source Video
 
 - Target video: [The Cure for Our Rebellion - Eric Geiger | Mariners Church](https://www.youtube.com/watch?v=V6OKiwbjDZE)

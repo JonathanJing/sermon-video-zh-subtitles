@@ -8,4 +8,4 @@ dist/
 build/
 data/raw/
 artifacts/
-
+web/playback-simulation.generated.js
