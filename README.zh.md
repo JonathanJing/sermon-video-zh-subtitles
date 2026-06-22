@@ -29,7 +29,7 @@
 - 优先使用 11:30 PT 之前最早可验证的同篇 Mariners live service 作为准备源，10:00 PT 作为保守默认。
 - 让 operator 监控 readiness，复核关键术语/经文，并在 11:30 场前发布字幕。
 - 生成内容物进入 GCS，便于 Cloud Run 和生产式流程使用。
-- API/model key 存在 Google Secret Manager；生成文件可以引用 secret resource name，但不能包含 key 明文。
+- API/model key 存在 Google Secret Manager；server-side manifest 可以引用 secret resource name，但 public browser 文件和生成物不能包含 key 明文。
 - 离线处理、笔记、金句提取作为质量复核、归档和后续改进功能。
 
 ## 关键发现
@@ -57,6 +57,20 @@
 - [前端 operator 原型](web/)
 - [Development notes](docs/development-notes.md)
 
+## 运行前提
+
+本地 POC 需要：
+
+- Python 3.10 或更新版本。
+- `yt-dlp` 已安装并在 `PATH` 中，用于公开视频 metadata 和字幕提取。
+- 可以访问 POC 使用的公开源 URL。
+
+如果要发布生成物到 GCS / 模拟 Cloud Run 流程，还需要：
+
+- Google Cloud SDK `gcloud` 已安装并完成认证。
+- 对目标 GCS bucket 有访问权限。
+- 使用 Secret Manager resource name 配置模型/API key；不要传入 raw key。
+
 ## Live-Link POC
 
 用直播归档链接准备网页播放模拟数据：
@@ -78,7 +92,7 @@ python3 scripts/prepare_live_link_playback.py \
   --api-key-secret projects/PROJECT_ID/secrets/openai-api-key/versions/latest
 ```
 
-脚本会把 report、VTT/SRT、playback data 和 `cloud-manifest.json` 上传到 GCS。它只记录 Secret Manager resource name，不会把 API key 明文写入生成文件。
+脚本会把 report、VTT/SRT、playback data 和 `cloud-manifest.json` 上传到 GCS。server-side manifest 可以记录 Secret Manager resource name；API key 明文不会写入生成文件或 public browser artifact。
 
 底层调试时，也可以直接从直播归档链接提取证道字幕：
 

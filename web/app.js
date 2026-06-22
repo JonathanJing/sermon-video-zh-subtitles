@@ -73,7 +73,9 @@
     playbackStartedAt: null,
     playbackBaseMs: 0,
     playbackSpeed: 18,
-    lastExport: null
+    lastExport: null,
+    segmentAutoFollow: true,
+    segmentScrollProgrammatic: false
   };
 
   const el = {
@@ -91,6 +93,7 @@
     generationStatus: document.getElementById("generationStatus"),
     segmentList: document.getElementById("segmentList"),
     segmentCount: document.getElementById("segmentCount"),
+    returnLiveButton: document.getElementById("returnLiveButton"),
     scriptureCandidates: document.getElementById("scriptureCandidates"),
     termList: document.getElementById("termList"),
     noteBlock: document.getElementById("noteBlock"),
@@ -104,6 +107,8 @@
 
   function init() {
     document.addEventListener("click", onActionClick);
+    el.segmentList.addEventListener("scroll", onSegmentTrackScroll, { passive: true });
+    el.segmentList.addEventListener("click", onSegmentTrackClick);
     el.clock.textContent = formatClock();
     state.clockTimer = window.setInterval(() => {
       el.clock.textContent = formatClock();
@@ -190,6 +195,7 @@
     if (action === "freeze-review") freezeReview();
     if (action === "export-vtt") exportCaptions("vtt");
     if (action === "export-srt") exportCaptions("srt");
+    if (action === "return-live") returnToLive();
   }
 
   function selectService(service) {
@@ -437,8 +443,10 @@
   }
 
   function renderSegments() {
+    const previousScrollTop = el.segmentList.scrollTop;
+    const shouldFollow = state.segmentAutoFollow || segmentTrackNearBottom();
     el.segmentList.textContent = "";
-    state.segments.slice(-8).forEach((segment) => {
+    state.segments.slice(-40).forEach((segment) => {
       const item = document.createElement("li");
       item.dataset.segmentId = segment.id;
       const flags = [
@@ -451,6 +459,66 @@
       el.segmentList.appendChild(item);
     });
     el.segmentCount.textContent = `${state.segments.length} segments`;
+    if (shouldFollow) {
+      scrollSegmentTrackToLive();
+    } else {
+      el.segmentList.scrollTop = previousScrollTop;
+    }
+    updateReturnLiveButton();
+  }
+
+  function onSegmentTrackScroll() {
+    if (state.segmentScrollProgrammatic) return;
+    state.segmentAutoFollow = segmentTrackNearBottom();
+    updateReturnLiveButton();
+  }
+
+  function onSegmentTrackClick(event) {
+    const item = event.target.closest("[data-segment-id]");
+    if (!item) return;
+    const segment = state.segments.find((candidate) => candidate.id === item.dataset.segmentId);
+    if (!segment) return;
+    state.segmentAutoFollow = false;
+    state.currentSegmentId = segment.id;
+    el.draftCaption.textContent = segment.draft || "正在查看历史字幕片段。";
+    el.stableCaption.textContent = segment.zh;
+    el.englishSidecar.textContent = segment.en || "字幕源为中文或暂无英文 sidecar。";
+    el.confidenceMeter.textContent = `${segment.confidence || "--"}%`;
+    renderSegments();
+    log(`已查看历史字幕片段 ${segment.id}；点“回到实时”恢复自动跟随。`);
+  }
+
+  function returnToLive() {
+    state.segmentAutoFollow = true;
+    const latest = state.segments[state.segments.length - 1];
+    if (latest) {
+      state.currentSegmentId = latest.id;
+      el.draftCaption.textContent = latest.draft || "正在跟随实时字幕。";
+      el.stableCaption.textContent = latest.zh;
+      el.englishSidecar.textContent = latest.en || "字幕源为中文或暂无英文 sidecar。";
+      el.confidenceMeter.textContent = `${latest.confidence || "--"}%`;
+    }
+    renderSegments();
+    scrollSegmentTrackToLive();
+    log("已回到实时字幕轨道，后续片段会自动跟随。");
+  }
+
+  function segmentTrackNearBottom() {
+    const remaining = el.segmentList.scrollHeight - el.segmentList.clientHeight - el.segmentList.scrollTop;
+    return remaining <= 24;
+  }
+
+  function scrollSegmentTrackToLive() {
+    state.segmentScrollProgrammatic = true;
+    el.segmentList.scrollTop = el.segmentList.scrollHeight;
+    window.setTimeout(() => {
+      state.segmentScrollProgrammatic = false;
+    }, 0);
+  }
+
+  function updateReturnLiveButton() {
+    const show = state.segments.length > 0 && !state.segmentAutoFollow;
+    el.returnLiveButton.classList.toggle("is-hidden", !show);
   }
 
   function addScriptureCandidate(segment) {

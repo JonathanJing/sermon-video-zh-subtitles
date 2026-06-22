@@ -29,7 +29,7 @@ All realtime, offline, UI, storage, and export work should be evaluated by wheth
 - Use the earliest verified pre-11:30 PT Mariners live service as the preparation source, with 10:00 PT as the conservative default.
 - Let an operator monitor readiness, review key terms/scripture, and publish captions for the 11:30 service.
 - Store generated content in GCS for durable Cloud Run workflows.
-- Keep API/model keys in Google Secret Manager; generated files may reference secret resource names but must never include key material.
+- Keep API/model keys in Google Secret Manager; server-side manifests may reference secret resource names, but public browser files and generated artifacts must never include key material.
 - Keep offline processing, notes, and quote extraction as support features for quality, review, and follow-up.
 
 ## Key Finding
@@ -57,6 +57,20 @@ Other project files:
 - [Frontend operator prototype](web/)
 - [Development notes](docs/development-notes.md)
 
+## Prerequisites
+
+For local POC runs:
+
+- Python 3.10 or newer.
+- `yt-dlp` available on `PATH` for public YouTube metadata and subtitle extraction.
+- Network access to the public source URLs used in the POC.
+
+For GCS / Cloud Run-style artifact publishing:
+
+- Google Cloud SDK `gcloud` installed and authenticated.
+- Access to the target GCS bucket.
+- Secret Manager resource names for model/API keys; do not pass raw key material.
+
 ## Live-Link POC
 
 Prepare the web playback simulation from a live archive link:
@@ -78,7 +92,7 @@ python3 scripts/prepare_live_link_playback.py \
   --api-key-secret projects/PROJECT_ID/secrets/openai-api-key/versions/latest
 ```
 
-The script uploads generated reports, VTT/SRT files, playback data, and `cloud-manifest.json` to GCS. It records only the Secret Manager resource name; API key material is never written into generated files.
+The script uploads generated reports, VTT/SRT files, playback data, and `cloud-manifest.json` to GCS. Server-side manifests may record Secret Manager resource names; API key material is never written into generated files or public browser artifacts.
 
 For lower-level debugging, extract sermon subtitles from a live archive link:
 

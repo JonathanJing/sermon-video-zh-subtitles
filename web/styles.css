@@ -342,7 +342,7 @@ ul {
 .segment,
 .tab {
   min-width: 0;
-  min-height: 38px;
+  min-height: var(--tap);
   border: 0;
   border-radius: var(--radius);
   background: transparent;
@@ -553,8 +553,9 @@ ul {
 }
 
 .text-button {
-  min-height: 34px;
-  padding: 4px 8px;
+  min-width: var(--tap);
+  min-height: var(--tap);
+  padding: 7px 10px;
   border: 1px solid transparent;
   background: transparent;
   color: var(--blue-700);
@@ -765,6 +766,14 @@ ul {
   gap: 8px;
 }
 
+.review-strip__actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .review-strip__head span {
   color: var(--muted);
   font-size: 0.8rem;
@@ -779,6 +788,9 @@ ul {
   gap: 7px;
   overflow: auto;
   list-style: none;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
 }
 
 .segment-list li {
@@ -790,6 +802,12 @@ ul {
   font-size: 0.88rem;
   line-height: 1.35;
   overflow-wrap: anywhere;
+}
+
+.segment-list li.is-active {
+  border-color: #94bed5;
+  background: var(--blue-050);
+  color: var(--blue-900);
 }
 
 .tab-panel {
@@ -1008,19 +1026,18 @@ ul {
   }
 
   .workspace {
-    grid-template-columns: minmax(260px, 0.38fr) minmax(0, 1fr);
+    grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
     grid-template-areas:
-      "stage stage"
-      "controls scripture";
+      "controls stage"
+      "scripture stage";
     align-content: start;
     overflow: visible;
   }
 
   .app-shell[data-sidebar="closed"] .workspace {
-    grid-template-columns: minmax(260px, 0.38fr) minmax(0, 1fr);
+    grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
     grid-template-areas:
-      "stage stage"
-      "controls controls";
+      "controls stage";
   }
 
   .control-panel,

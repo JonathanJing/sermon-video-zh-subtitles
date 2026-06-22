@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#f7fbff" />
     <title>11:30 会众中文字幕控制台</title>
     <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./styles.css?v=20260622-ui3" />
   </head>
   <body>
     <div class="app-shell" data-sidebar="open">
@@ -120,9 +120,12 @@
           <div class="review-strip" aria-label="字幕片段">
             <div class="review-strip__head">
               <h3>会众可用片段</h3>
-              <span id="segmentCount">0 segments</span>
+              <div class="review-strip__actions">
+                <span id="segmentCount">0 segments</span>
+                <button class="text-button is-hidden" type="button" data-action="return-live" id="returnLiveButton">回到实时</button>
+              </div>
             </div>
-            <ul class="segment-list" id="segmentList"></ul>
+            <ul class="segment-list" id="segmentList" aria-label="可触屏滚动的字幕轨道"></ul>
           </div>
         </section>
 
@@ -191,6 +194,6 @@
     </div>
 
     <script src="./playback-simulation.generated.js" defer></script>
-    <script src="./app.js" defer></script>
+    <script src="./app.js?v=20260622-ui3" defer></script>
   </body>
 </html>
