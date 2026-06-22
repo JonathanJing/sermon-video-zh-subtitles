@@ -1,0 +1,94 @@
+# 证道视频中文字幕
+
+<p>
+  <a href="./README.md">
+    <img src="https://img.shields.io/badge/Language-English-blue" alt="English README" />
+  </a>
+</p>
+
+这个项目用于在 Mariners Church 周日 11:30 PT 场证道中，为正在听道的中文会众提供可使用的中文字幕，让中文会众可以在证道进行时跟上信息。
+
+## 产品北星
+
+这个项目的核心目标不是只做事后归档，也不是单纯翻译视频。核心目标是：
+
+```text
+到 11:30 PT 场证道开始时，中文会众应该已经有一个可用的字幕体验，帮助他们实时听懂正在被传讲的信息。
+```
+
+所有实时链路、离线链路、UI、存储和导出工作，都应该用“是否改善 11:30 会众现场听道体验”来评估。
+
+## 当前重点
+
+- 在 11:30 PT 会众需要字幕之前，准备可用的中文字幕。
+- 优先使用 11:30 PT 之前最早可验证的同篇 Mariners live service 作为准备源，10:00 PT 作为保守默认。
+- 让 operator 监控 readiness，复核关键术语/经文，并在 11:30 场前发布字幕。
+- 生成内容物进入 GCS，便于 Cloud Run 和生产式流程使用。
+- API/model key 存在 Google Secret Manager；生成文件可以引用 secret resource name，但不能包含 key 明文。
+- 离线处理、笔记、金句提取作为质量复核、归档和后续改进功能。
+
+## 关键发现
+
+根据当前 Mariners Church YouTube 公开视频 metadata 分析，等待公开视频 VOD 出现无法满足周日 11:50 PT 前完成字幕的目标。近期主证道视频通常在 12:28-12:43 PT 公开，中位数约 12:31 PT。
+
+更可行的输入是官方 live service。Mariners Online 列出周日直播时间为 7:00、8:30、10:00、11:30 AM PT。系统设计因此选择从最早可验证的同篇早场直播准备字幕，将 10:00 PT 作为保守生产默认，并将公开视频 VOD 作为后续离线质量补齐源。
+
+## Repo 内容
+
+- [英文文档索引](docs/README.md)
+- [中文文档索引](docs/README.zh.md)
+- [中文 System Design](docs/system-design.zh.md)
+- [中文 Findings Report](docs/findings-report.zh.md)
+- [中英文分析报告](docs/youtube-sermon-subtitle-pipeline-analysis.zh-en.md)
+- [开发 Backlog](docs/backlog.md)
+- [Review / Testing Notes](docs/review-testing.md)
+- [历史发布时间数据](data/mariners_church_sunday_sermon_publish_times.csv)
+- [Live source findings 数据](data/mariners_church_live_source_findings.csv)
+- [前端 operator 原型](web/)
+- [Development notes](docs/development-notes.md)
+
+## Live-Link POC
+
+用直播归档链接准备网页播放模拟数据：
+
+```bash
+python3 scripts/prepare_live_link_playback.py \
+  --live-url 'https://www.youtube.com/watch?v=FsUijL9uB1I'
+```
+
+然后打开 `web/index.html`，点击 `模拟播放`。页面会显示证道标题、直播链接状态，以及正在为 11:30 会众视图生成的字幕片段。
+
+如果生成内容需要进入 Cloud Run / 生产式测试流程，可以上传到 GCS，并通过 Secret Manager 引用模型 API key：
+
+```bash
+python3 scripts/prepare_live_link_playback.py \
+  --live-url 'https://www.youtube.com/watch?v=FsUijL9uB1I' \
+  --gcs-bucket sermon-zh-artifacts \
+  --gcs-prefix runs/2026-06-22/FsUijL9uB1I \
+  --api-key-secret projects/PROJECT_ID/secrets/openai-api-key/versions/latest
+```
+
+脚本会把 report、VTT/SRT、playback data 和 `cloud-manifest.json` 上传到 GCS。它只记录 Secret Manager resource name，不会把 API key 明文写入生成文件。
+
+底层调试时，也可以直接从直播归档链接提取证道字幕：
+
+```bash
+python3 scripts/offline_live_sermon_subtitles.py \
+  --live-url 'https://www.youtube.com/watch?v=FsUijL9uB1I'
+```
+
+从 POC 输出生成浏览器播放模拟数据：
+
+```bash
+python3 scripts/build_playback_simulation.py \
+  --report artifacts/offline-live-sermon-poc/report.json \
+  --out web/playback-simulation.generated.js
+```
+
+如果当前只有英文字幕源，UI 会保留 English sidecar，并在中文行显示 `AI 中文待生成`，直到后续接入翻译模型。
+
+## Source Video
+
+- 目标视频：[The Cure for Our Rebellion - Eric Geiger | Mariners Church](https://www.youtube.com/watch?v=V6OKiwbjDZE)
+- Live archive candidate：[The Cure for Our Rebellion - Eric Geiger | Mariners Church](https://www.youtube.com/watch?v=FsUijL9uB1I)
+- Channel：[Mariners Church](https://www.youtube.com/@marinerschurch)
