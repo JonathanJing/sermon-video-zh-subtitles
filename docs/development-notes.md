@@ -66,6 +66,8 @@ This repository started with feasibility analysis. The current product goal is t
 - `scripts/prepare_live_link_playback.py`
   - Operator-facing POC command: accept a YouTube live archive URL and prepare the browser playback file in one step.
   - Run the offline-live extractor, build merged playback segments, and emit `web/playback-simulation.generated.js`.
+  - Optionally publish generated reports, subtitles, playback data, and cloud manifest to a GCS bucket.
+  - Accept a Google Secret Manager resource name for API/model keys without writing key material into generated artifacts.
   - Support the current goal that a given live link can produce a visible sermon title plus a generated-caption playback view.
 
 ## Design Boundary
@@ -80,6 +82,14 @@ For Mariners Church, the public YouTube VOD source should be treated as post-eve
 
 1. Run `scripts/prepare_live_link_playback.py --live-url <youtube-live-archive-url>`.
 2. Confirm the inferred sermon start and generated live-aligned VTT/SRT in `artifacts/offline-live-sermon-poc/`.
-3. Open the PWA and click `模拟播放`.
-4. Verify that the sermon title is visible above the caption window and the status changes to `正在生成`.
-5. Replace `AI 中文待生成` placeholders with model-generated Chinese captions in the next integration step.
+3. For production-style runs, add `--gcs-bucket <bucket>` and `--api-key-secret projects/<project>/secrets/<name>/versions/latest`.
+4. Open the PWA and click `模拟播放`.
+5. Verify that the sermon title is visible above the caption window and the status changes to `正在生成`.
+6. Replace `AI 中文待生成` placeholders with model-generated Chinese captions in the next integration step.
+
+## Cloud Storage and Secret Handling
+
+- Generated content should be treated as durable output only after it is written to GCS.
+- Local `artifacts/` and `web/playback-simulation.generated.js` are POC working files, not the production source of truth.
+- API keys must live in Google Secret Manager. Generated reports, manifests, playback JS, logs, and subtitle files may include the Secret Manager resource name but must not include secret values.
+- Cloud Run should use a service account with the narrow permissions needed to read the configured secret and write/read the generated-content bucket.

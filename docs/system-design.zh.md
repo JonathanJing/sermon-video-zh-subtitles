@@ -106,7 +106,27 @@ flowchart TD
 | `worker` | 离线 ASR、翻译、时间轴归一、经文解析、笔记和金句 |
 | `live-source-monitor` | 周日定时检查官方 live 页面、YouTube streams、fallback 状态 |
 
-默认部署在 Cloud Run。Firestore 存储状态和字幕片段，Cloud Storage 存储音频片段、原始模型输出、导出文件。Cloud Tasks 用于离线 job 编排。
+默认部署在 Cloud Run。Firestore 存储状态和字幕片段，Cloud Storage/GCS 存储所有生成物，包括音频片段、原始模型输出、字幕 VTT/SRT、播放模拟 JS、离线笔记和金句。Secret Manager 存储模型/API key；Cloud Run 只通过 service account 读取 secret，代码和生成文件不包含 key 明文。Cloud Tasks 用于离线 job 编排。
+
+### 3.1.1 生成物与 Secret 边界
+
+所有“内容物生成”默认进入 GCS bucket，而不是只留在 Cloud Run 容器本地磁盘：
+
+| 类型 | GCS 路径建议 | 说明 |
+|---|---|---|
+| POC report | `gs://<bucket>/runs/<date>/<session_id>/artifacts/report.json` | 记录 live link、匹配 VOD、证道开始时间、warnings |
+| 字幕文件 | `gs://<bucket>/runs/<date>/<session_id>/artifacts/*.vtt|*.srt` | live-aligned 与 local timeline 都保留 |
+| 播放数据 | `gs://<bucket>/runs/<date>/<session_id>/web/playback-simulation.generated.js` | PWA/Cloud Run 可加载的字幕播放数据 |
+| 模型原始输出 | `gs://<bucket>/runs/<date>/<session_id>/model-output/*.jsonl` | 只存生成内容，不存 secret |
+| 笔记/金句 | `gs://<bucket>/runs/<date>/<session_id>/insights/*.json` | 后续离线功能输出 |
+
+Secret Manager 只保存敏感 key，例如：
+
+```text
+projects/<project-id>/secrets/openai-api-key/versions/latest
+```
+
+系统配置只保存 Secret Manager resource name，例如 `api_key_secret`。任何 report、playback JS、manifest、日志都必须标记 `apiKeyMaterialIncluded=false`，不能写入 key 值。
 
 ### 3.2 Frontend
 

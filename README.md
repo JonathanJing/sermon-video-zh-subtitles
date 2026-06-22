@@ -48,6 +48,18 @@ python3 scripts/prepare_live_link_playback.py \
 
 Then open `web/index.html` and click `模拟播放`. The page shows the sermon title, live-link status, and the caption line currently being generated for the 11:30 congregation view.
 
+When generated content should be persisted for Cloud Run / production-style testing, publish it to GCS and reference the model API key through Secret Manager:
+
+```bash
+python3 scripts/prepare_live_link_playback.py \
+  --live-url 'https://www.youtube.com/watch?v=FsUijL9uB1I' \
+  --gcs-bucket sermon-zh-artifacts \
+  --gcs-prefix runs/2026-06-22/FsUijL9uB1I \
+  --api-key-secret projects/PROJECT_ID/secrets/openai-api-key/versions/latest
+```
+
+The script uploads generated reports, VTT/SRT files, playback data, and `cloud-manifest.json` to GCS. It records only the Secret Manager resource name; API key material is never written into generated files.
+
 For lower-level debugging, extract sermon subtitles from a live archive link:
 
 ```bash

@@ -45,6 +45,7 @@ def main() -> int:
         cues=cues,
         source_vtt=vtt_path,
         playback_speed=args.playback_speed,
+        api_key_secret=args.api_key_secret,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(render_js(simulation), encoding="utf-8")
@@ -90,6 +91,10 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=18.0,
         help="Simulation speed multiplier. 18 means 18 seconds of sermon time per real second.",
+    )
+    parser.add_argument(
+        "--api-key-secret",
+        help="Optional Google Secret Manager resource name for the translation/model API key.",
     )
     parser.add_argument(
         "--no-merge-cues",
@@ -214,6 +219,7 @@ def build_simulation(
     cues: list[Any],
     source_vtt: Path,
     playback_speed: float,
+    api_key_secret: str | None = None,
 ) -> dict[str, Any]:
     lang = output.get("lang") or "unknown"
     has_zh = lang.startswith("zh")
@@ -249,6 +255,10 @@ def build_simulation(
         "lang": lang,
         "sourceVtt": str(source_vtt),
         "sermonTitle": sermon_title,
+        "secrets": {
+            "apiKeySecret": api_key_secret,
+            "apiKeyMaterialIncluded": False,
+        },
         "live": {
             "id": live.get("id"),
             "title": live.get("title"),

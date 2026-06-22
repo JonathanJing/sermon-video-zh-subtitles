@@ -48,10 +48,16 @@ Moses and Aaron stood before the people.
                 cues=mod.subtitle_mod.parse_vtt(vtt.read_text(encoding="utf-8")),
                 source_vtt=vtt,
                 playback_speed=18,
+                api_key_secret="projects/p/secrets/openai-api-key/versions/latest",
             )
 
             self.assertEqual(simulation["translationStatus"], "needs_translation")
             self.assertEqual(simulation["sermonTitle"], "Sermon")
+            self.assertEqual(
+                simulation["secrets"]["apiKeySecret"],
+                "projects/p/secrets/openai-api-key/versions/latest",
+            )
+            self.assertFalse(simulation["secrets"]["apiKeyMaterialIncluded"])
             self.assertEqual(len(simulation["segments"]), 2)
             self.assertEqual(simulation["segments"][0]["ref"], "Numbers 16")
             self.assertTrue(simulation["segments"][0]["zh"].startswith("AI 中文待生成"))
