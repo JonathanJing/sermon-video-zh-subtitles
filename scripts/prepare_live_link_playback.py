@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -13,10 +14,14 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 OFFLINE_POC = REPO_ROOT / "scripts" / "offline_live_sermon_subtitles.py"
 BUILD_PLAYBACK = REPO_ROOT / "scripts" / "build_playback_simulation.py"
+SECRET_RESOURCE_RE = re.compile(
+    r"^projects/[^/\s]+/secrets/[^/\s]+(?:/versions/[^/\s]+)?$"
+)
 
 
 def main() -> int:
     args = parse_args()
+    validate_args(args)
     out_dir = resolve_repo_path(args.out_dir)
     web_out = resolve_repo_path(args.web_out)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -153,6 +158,22 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def validate_args(args: argparse.Namespace) -> None:
+    if args.api_key_secret:
+        validate_secret_resource_name(args.api_key_secret)
+    if args.gcs_bucket:
+        normalize_gcs_bucket(args.gcs_bucket)
+        normalize_gcs_prefix(args.gcs_prefix)
+
+
+def validate_secret_resource_name(value: str) -> None:
+    if not SECRET_RESOURCE_RE.fullmatch(value):
+        raise SystemExit(
+            "--api-key-secret must be a Google Secret Manager resource name like "
+            "projects/PROJECT_ID/secrets/SECRET_ID/versions/latest. Do not pass raw API key material."
+        )
+
+
 def optional(flag: str, value: str | None) -> list[str]:
     return [flag, value] if value else []
 
@@ -201,16 +222,40 @@ def publish_files_to_gcs(
     dry_run: bool = False,
 ) -> list[dict[str, str]]:
     uploads = []
-    clean_prefix = prefix.strip("/")
+    clean_bucket = normalize_gcs_bucket(bucket)
+    clean_prefix = normalize_gcs_prefix(prefix)
     for file_path in files:
         rel = relative_artifact_path(file_path, out_dir, web_out)
-        gcs_uri = f"gs://{bucket}/{clean_prefix}/{rel.as_posix()}" if clean_prefix else f"gs://{bucket}/{rel.as_posix()}"
+        gcs_uri = (
+            f"gs://{clean_bucket}/{clean_prefix}/{rel.as_posix()}"
+            if clean_prefix
+            else f"gs://{clean_bucket}/{rel.as_posix()}"
+        )
         command = ["gcloud", "storage", "cp", str(file_path), gcs_uri]
         print("$ " + " ".join(command))
         if not dry_run:
             subprocess.run(command, cwd=REPO_ROOT, check=True)
-        uploads.append({"localPath": str(file_path), "gcsUri": gcs_uri})
+        uploads.append({"localPath": rel.as_posix(), "gcsUri": gcs_uri})
     return uploads
+
+
+def normalize_gcs_bucket(bucket: str) -> str:
+    clean = bucket.strip()
+    if clean.startswith("gs://"):
+        clean = clean[5:]
+    clean = clean.strip("/")
+    if not clean or "/" in clean:
+        raise SystemExit("--gcs-bucket must be a bucket name, not a path.")
+    return clean
+
+
+def normalize_gcs_prefix(prefix: str) -> str:
+    clean = prefix.strip().strip("/")
+    if "\\" in clean:
+        raise SystemExit("--gcs-prefix must use forward slashes.")
+    if any(part in {".", ".."} for part in clean.split("/") if part):
+        raise SystemExit("--gcs-prefix cannot contain . or .. path segments.")
+    return clean
 
 
 def generated_content_files(out_dir: Path, web_out: Path) -> list[Path]:
@@ -224,6 +269,9 @@ def generated_content_files(out_dir: Path, web_out: Path) -> list[Path]:
 
 
 def relative_artifact_path(file_path: Path, out_dir: Path, web_out: Path) -> Path:
+    file_path = file_path.resolve()
+    out_dir = out_dir.resolve()
+    web_out = web_out.resolve()
     if file_path == web_out:
         return Path("web") / web_out.name
     try:
@@ -241,7 +289,7 @@ def write_cloud_manifest(
     manifest = {
         "schemaVersion": 1,
         "generatedContentStorage": "gcs",
-        "playbackSimulation": str(web_out),
+        "playbackSimulation": relative_artifact_path(web_out, out_dir, web_out).as_posix(),
         "apiKeySecret": api_key_secret,
         "apiKeyMaterialIncluded": False,
         "outputs": gcs_outputs,

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +18,10 @@ import sys
 
 
 POC_SCRIPT = Path(__file__).with_name("offline_live_sermon_subtitles.py")
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SECRET_RESOURCE_RE = re.compile(
+    r"^projects/[^/\s]+/secrets/[^/\s]+(?:/versions/[^/\s]+)?$"
+)
 SPEC = importlib.util.spec_from_file_location("offline_live_sermon_subtitles", POC_SCRIPT)
 subtitle_mod = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
@@ -26,6 +31,8 @@ SPEC.loader.exec_module(subtitle_mod)
 
 def main() -> int:
     args = parse_args()
+    if args.api_key_secret:
+        validate_secret_resource_name(args.api_key_secret)
     report = json.loads(args.report.read_text(encoding="utf-8"))
     output = select_output(report, args.lang)
     vtt_path = Path(output["live_aligned_vtt" if args.live_aligned else "local_vtt"])
@@ -51,6 +58,14 @@ def main() -> int:
     args.out.write_text(render_js(simulation), encoding="utf-8")
     print(json.dumps(summarize(simulation, args.out), ensure_ascii=False, indent=2))
     return 0
+
+
+def validate_secret_resource_name(value: str) -> None:
+    if not SECRET_RESOURCE_RE.fullmatch(value):
+        raise SystemExit(
+            "--api-key-secret must be a Google Secret Manager resource name like "
+            "projects/PROJECT_ID/secrets/SECRET_ID/versions/latest. Do not pass raw API key material."
+        )
 
 
 def parse_args() -> argparse.Namespace:
@@ -253,7 +268,7 @@ def build_simulation(
         "mode": "live-link-playback-simulation",
         "playbackSpeed": playback_speed,
         "lang": lang,
-        "sourceVtt": str(source_vtt),
+        "sourceVtt": safe_display_path(source_vtt),
         "sermonTitle": sermon_title,
         "secrets": {
             "apiKeySecret": api_key_secret,
@@ -275,6 +290,14 @@ def build_simulation(
         "translationStatus": "ready" if has_zh else "needs_translation",
         "segments": segments,
     }
+
+
+def safe_display_path(path: Path) -> str:
+    resolved = path.resolve()
+    try:
+        return resolved.relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        return resolved.name
 
 
 def detect_reference(text: str) -> str:

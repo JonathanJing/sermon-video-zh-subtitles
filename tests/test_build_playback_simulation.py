@@ -53,6 +53,7 @@ Moses and Aaron stood before the people.
 
             self.assertEqual(simulation["translationStatus"], "needs_translation")
             self.assertEqual(simulation["sermonTitle"], "Sermon")
+            self.assertEqual(simulation["sourceVtt"], "live.en.vtt")
             self.assertEqual(
                 simulation["secrets"]["apiKeySecret"],
                 "projects/p/secrets/openai-api-key/versions/latest",
@@ -90,6 +91,10 @@ Moses and Aaron stood before the people.
             merged[0].text,
             "Welcome to Mariners Church. I'm so glad that you are with us today. I want to welcome those watching online.",
         )
+
+    def test_rejects_raw_api_key_material_for_generated_web_file(self):
+        with self.assertRaises(SystemExit):
+            mod.validate_secret_resource_name("sk-this-looks-like-raw-key-material")
 
 
 if __name__ == "__main__":

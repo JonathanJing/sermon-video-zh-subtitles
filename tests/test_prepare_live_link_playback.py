@@ -52,6 +52,10 @@ class PrepareLiveLinkPlaybackTest(unittest.TestCase):
                 "gs://sermon-zh-poc/runs/2026-06-22/web/playback-simulation.generated.js",
                 [item["gcsUri"] for item in uploads],
             )
+            self.assertIn(
+                {"localPath": "artifacts/report.json", "gcsUri": "gs://sermon-zh-poc/runs/2026-06-22/artifacts/report.json"},
+                uploads,
+            )
 
     def test_cloud_manifest_never_contains_api_key_material(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -67,6 +71,37 @@ class PrepareLiveLinkPlaybackTest(unittest.TestCase):
             text = manifest.read_text(encoding="utf-8")
             self.assertIn("projects/p/secrets/openai-api-key/versions/latest", text)
             self.assertIn('"apiKeyMaterialIncluded": false', text)
+            self.assertNotIn(str(out_dir), text)
+
+    def test_gcs_bucket_and_prefix_are_normalized(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            out_dir = root / "artifacts"
+            out_dir.mkdir()
+            report = out_dir / "report.json"
+            report.write_text("{}", encoding="utf-8")
+
+            uploads = mod.publish_files_to_gcs(
+                files=[report],
+                bucket="gs://sermon-zh-poc/",
+                prefix="/runs/2026-06-22/",
+                out_dir=out_dir,
+                web_out=root / "web" / "playback-simulation.generated.js",
+                dry_run=True,
+            )
+
+            self.assertEqual(
+                uploads[0]["gcsUri"],
+                "gs://sermon-zh-poc/runs/2026-06-22/artifacts/report.json",
+            )
+
+    def test_rejects_raw_api_key_material_for_secret_reference(self):
+        with self.assertRaises(SystemExit):
+            mod.validate_secret_resource_name("sk-this-looks-like-raw-key-material")
+
+    def test_rejects_unsafe_gcs_prefix(self):
+        with self.assertRaises(SystemExit):
+            mod.normalize_gcs_prefix("../runs")
 
 
 if __name__ == "__main__":
