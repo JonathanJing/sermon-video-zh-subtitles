@@ -1,0 +1,11 @@
+observed_at_pt,source,source_url,field,value,notes
+2026-06-22 11:56:57 PDT,Mariners Online,https://www.marinerschurch.org/online/,Sunday live times,"7, 8:30, 10, 11:30a","Official page states all times are Pacific Time"
+2026-06-22 11:56:57 PDT,Mariners Church home,https://www.marinerschurch.org/,Irvine Sunday service times,"8:30, 10, 11:30a","Official home page location schedule"
+2026-06-22 11:57:13 PDT,YouTube streams,https://www.youtube.com/@marinerschurch/streams,latest stream archive,FsUijL9uB1I,"Same sermon title as target VOD"
+2026-06-22 11:57:32 PDT,YouTube live archive,https://www.youtube.com/watch?v=FsUijL9uB1I,live_status,was_live,"yt-dlp public metadata"
+2026-06-22 11:57:32 PDT,YouTube live archive,https://www.youtube.com/watch?v=FsUijL9uB1I,media_type,livestream,"yt-dlp public metadata"
+2026-06-22 11:57:32 PDT,YouTube live archive,https://www.youtube.com/watch?v=FsUijL9uB1I,release_timestamp_pt,2026-06-21 08:21:04 PDT,"Converted from epoch 1782055264"
+2026-06-22 11:57:32 PDT,YouTube live archive,https://www.youtube.com/watch?v=FsUijL9uB1I,timestamp_pt,2026-06-21 12:28:19 PDT,"Converted from epoch 1782070099"
+2026-06-22 11:58:12 PDT,Target VOD,https://www.youtube.com/watch?v=V6OKiwbjDZE,live_status,not_live,"yt-dlp public metadata"
+2026-06-22 11:58:12 PDT,Target VOD,https://www.youtube.com/watch?v=V6OKiwbjDZE,media_type,video,"yt-dlp public metadata"
+2026-06-22 11:58:12 PDT,Target VOD,https://www.youtube.com/watch?v=V6OKiwbjDZE,timestamp_pt,2026-06-21 12:28:32 PDT,"Converted from epoch 1782070112"
