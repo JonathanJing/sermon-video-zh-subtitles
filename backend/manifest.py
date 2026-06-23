@@ -37,6 +37,7 @@ class SundaySliceService:
         manifest = self._read_json(manifest_uri)
         artifacts = self._public_artifacts(manifest)
         report = self._read_report(manifest)
+        playback = self._read_playback_simulation(manifest)
         resolved_sunday = self._resolve_sunday(sunday)
         route_sunday = "current" if sunday == "current" else resolved_sunday
         return {
@@ -45,8 +46,8 @@ class SundaySliceService:
             "status": manifest.get("status", "ready"),
             "sermonTitle": self._sermon_title(report),
             "translationStatus": self._translation_status(manifest, report),
-            "totalSegments": self._report_number(report, "totalSegments"),
-            "translatedSegments": self._report_number(report, "translatedSegments"),
+            "totalSegments": self._report_number(report, "totalSegments") or self._total_segments(playback),
+            "translatedSegments": self._report_number(report, "translatedSegments") or self._translated_segments(playback),
             "readyTime": manifest.get("readyTime") or manifest.get("promotedAt"),
             "lastUpdated": manifest.get("updatedAt") or manifest.get("promotedAt"),
             "artifactCount": len(artifacts),
@@ -137,6 +138,22 @@ class SundaySliceService:
                     return None
         return None
 
+    def _read_playback_simulation(self, manifest: dict[str, Any]) -> dict[str, Any] | None:
+        for item in manifest.get("outputs", []):
+            if item.get("localPath") == "web/playback-simulation.generated.js" and item.get("gcsUri"):
+                try:
+                    text = self.reader.read_text(item["gcsUri"])
+                except Exception:
+                    return None
+                prefix = "window.SERMON_PLAYBACK_SIMULATION = "
+                if not text.startswith(prefix):
+                    return None
+                try:
+                    return json.loads(text[len(prefix) :].rstrip(";\n"))
+                except json.JSONDecodeError:
+                    return None
+        return None
+
     def _sermon_title(self, report: dict[str, Any] | None) -> str | None:
         if not report:
             return None
@@ -157,3 +174,24 @@ class SundaySliceService:
             return None
         value = report.get(key)
         return value if isinstance(value, int) else None
+
+    def _total_segments(self, playback: dict[str, Any] | None) -> int | None:
+        if not playback:
+            return None
+        segments = playback.get("segments")
+        return len(segments) if isinstance(segments, list) else None
+
+    def _translated_segments(self, playback: dict[str, Any] | None) -> int | None:
+        if not playback:
+            return None
+        segments = playback.get("segments")
+        if not isinstance(segments, list):
+            return None
+        count = 0
+        for segment in segments:
+            if not isinstance(segment, dict):
+                continue
+            zh = str(segment.get("zh") or "").strip()
+            if segment.get("translationStatus") == "ready" or (zh and not zh.startswith("AI 中文待生成")):
+                count += 1
+        return count

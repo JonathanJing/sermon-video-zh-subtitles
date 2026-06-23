@@ -48,7 +48,20 @@ class SundaySliceServiceTest(unittest.TestCase):
                     }
                 },
             )
-            (root / "playback.js").write_text("window.SERMON_PLAYBACK_SIMULATION = {}", encoding="utf-8")
+            (root / "playback.js").write_text(
+                "window.SERMON_PLAYBACK_SIMULATION = "
+                + json.dumps(
+                    {
+                        "segments": [
+                            {"id": "s1", "zh": "已翻译。", "translationStatus": "ready"},
+                            {"id": "s2", "zh": "AI 中文待生成", "translationStatus": "needs_translation"},
+                        ]
+                    },
+                    ensure_ascii=False,
+                )
+                + ";\n",
+                encoding="utf-8",
+            )
             (root / "sermon.vtt").write_text("WEBVTT\n\n", encoding="utf-8")
 
             service = SundaySliceService(
@@ -71,6 +84,8 @@ class SundaySliceServiceTest(unittest.TestCase):
             self.assertEqual(public_slice["artifactCount"], 2)
             self.assertEqual(public_slice["status"], "ready")
             self.assertEqual(public_slice["translationStatus"], "ready")
+            self.assertEqual(public_slice["totalSegments"], 2)
+            self.assertEqual(public_slice["translatedSegments"], 1)
             self.assertEqual(
                 public_slice["sermonTitle"],
                 "The Cure for Our Rebellion - Eric Geiger | Mariners Church",
