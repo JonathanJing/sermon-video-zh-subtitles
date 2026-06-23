@@ -163,16 +163,6 @@
   function loadPublicPublishedSnapshot() {
     if (state.viewMode !== "congregation") return;
     if (!state.playbackSegments.length) return;
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("autoplay") === "1") {
-      window.setTimeout(() => {
-        if (!state.captioning && !state.segments.length) {
-          startPlaybackSimulation();
-        }
-      }, 250);
-      return;
-    }
-
     stopStreamingTimers();
     state.captioning = false;
     state.paused = false;

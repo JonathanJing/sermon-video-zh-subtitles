@@ -113,8 +113,16 @@ def run_browser_checks(base_url: str, headed: bool = False) -> list[dict[str, ob
                 check_public_controls_hidden(page)
                 check_no_horizontal_overflow(page)
                 check_public_playback(page)
+                check_public_layout_bounds(page)
                 results.append({"viewport": name, "width": width, "height": height, "ok": True})
                 page.close()
+
+            autoplay_page = browser.new_page(viewport={"width": 390, "height": 844}, is_mobile=True)
+            autoplay_page.goto(base_url.rstrip("/") + "/?autoplay=1", wait_until="networkidle")
+            check_public_playback(autoplay_page)
+            check_public_layout_bounds(autoplay_page)
+            results.append({"viewport": "iphone-autoplay-param", "width": 390, "height": 844, "ok": True})
+            autoplay_page.close()
 
             operator_page = browser.new_page(viewport={"width": 1366, "height": 900})
             operator_page.goto(base_url.rstrip("/") + "/?mode=operator", wait_until="networkidle")
@@ -219,6 +227,35 @@ def check_public_playback(page) -> None:
         raise AssertionError(f"Public page started playback on load: {runtime_state}")
     if runtime_state["segmentCount"] != runtime_state["playbackIndex"]:
         raise AssertionError(f"Public page did not load a static published snapshot: {runtime_state}")
+
+
+def check_public_layout_bounds(page) -> None:
+    layout = page.evaluate(
+        """
+        () => {
+          const caption = document.querySelector("#captionWindow").getBoundingClientRect();
+          const review = document.querySelector(".review-strip").getBoundingClientRect();
+          const segmentList = document.querySelector("#segmentList");
+          return {
+            viewportWidth: window.innerWidth,
+            viewportHeight: window.innerHeight,
+            captionHeight: Math.round(caption.height),
+            reviewHeight: Math.round(review.height),
+            segmentClientHeight: segmentList.clientHeight,
+            segmentScrollHeight: segmentList.scrollHeight,
+            documentHeight: document.documentElement.scrollHeight
+          };
+        }
+        """
+    )
+    caption_limit = max(460, int(layout["viewportHeight"] * 0.6))
+    review_limit = max(260, int(layout["viewportHeight"] * 0.36))
+    if layout["captionHeight"] > caption_limit:
+        raise AssertionError(f"Caption window grew beyond viewport bounds: {layout}")
+    if layout["reviewHeight"] > review_limit:
+        raise AssertionError(f"Subtitle track grew beyond viewport bounds: {layout}")
+    if layout["segmentScrollHeight"] > 0 and layout["segmentClientHeight"] <= 0:
+        raise AssertionError(f"Subtitle track is not scrollable: {layout}")
 
 
 def check_operator_mode(page) -> None:
