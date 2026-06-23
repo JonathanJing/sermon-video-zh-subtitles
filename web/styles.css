@@ -64,7 +64,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -74,6 +75,7 @@ button {
 
 button:focus-visible,
 input:focus-visible,
+select:focus-visible,
 [tabindex]:focus-visible {
   outline: 3px solid rgba(19, 120, 182, 0.28);
   outline-offset: 2px;
@@ -263,8 +265,8 @@ ul {
 
 .control-panel {
   grid-area: controls;
-  display: grid;
-  grid-template-rows: auto auto auto auto minmax(120px, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 14px;
   padding: 14px;
   overflow: auto;
@@ -274,7 +276,7 @@ ul {
 .subtitle-stage {
   grid-area: stage;
   display: grid;
-  grid-template-rows: auto auto minmax(280px, 1fr) auto minmax(116px, 0.32fr);
+  grid-template-rows: auto auto auto minmax(260px, 1fr) auto minmax(116px, 0.32fr);
   gap: 12px;
   padding: 14px;
   overflow: hidden;
@@ -374,6 +376,116 @@ ul {
 .source-list {
   display: grid;
   gap: 10px;
+}
+
+.admin-settings {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: #fbfdff;
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.settings-header h3 {
+  margin-top: 6px;
+  color: var(--ink);
+  font-size: 0.96rem;
+  font-weight: 850;
+  line-height: 1.2;
+}
+
+.settings-mode {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  border: 1px solid #afd8ee;
+  border-radius: 999px;
+  background: var(--blue-050);
+  color: var(--blue-700);
+  font-size: 0.76rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.settings-mode.is-manual {
+  border-color: #ead18f;
+  background: var(--amber-100);
+  color: var(--amber-700);
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field span {
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.field input,
+.field select {
+  width: 100%;
+  min-height: var(--tap);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 750;
+}
+
+.field input {
+  padding: 8px 10px;
+}
+
+.field select {
+  padding: 8px 34px 8px 10px;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.settings-grid > div {
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.settings-grid span,
+.settings-grid strong {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.settings-grid span {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 850;
+}
+
+.settings-grid strong {
+  margin-top: 5px;
+  color: var(--blue-800);
+  font-size: 0.82rem;
+  font-weight: 900;
+  line-height: 1.25;
 }
 
 .source-card {
@@ -665,6 +777,40 @@ ul {
   border-color: #afd8ee;
   background: var(--blue-050);
   color: var(--blue-700);
+}
+
+.viewer-disclaimer {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #ead18f;
+  border-radius: var(--radius-lg);
+  background: #fffaf0;
+  color: var(--amber-700);
+}
+
+.viewer-disclaimer strong {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--amber-100);
+  color: var(--amber-700);
+  font-size: 0.78rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.viewer-disclaimer p {
+  color: var(--ink-soft);
+  font-size: 0.84rem;
+  font-weight: 750;
+  line-height: 1.42;
+  overflow-wrap: anywhere;
 }
 
 .caption-window {
@@ -1130,12 +1276,12 @@ ul {
   }
 
   .control-panel {
-    grid-template-rows: auto auto auto auto auto;
+    display: flex;
   }
 
   .subtitle-stage {
     min-height: auto;
-    grid-template-rows: auto auto minmax(250px, 42svh) auto minmax(116px, auto);
+    grid-template-rows: auto auto auto minmax(250px, 42svh) auto minmax(116px, auto);
   }
 
   .panel-heading,
@@ -1149,6 +1295,10 @@ ul {
     width: 100%;
   }
 
+  .settings-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .button {
     width: 100%;
   }
@@ -1156,6 +1306,15 @@ ul {
   .caption-window {
     padding: 16px;
     gap: 12px;
+  }
+
+  .viewer-disclaimer {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 7px;
+  }
+
+  .viewer-disclaimer strong {
+    justify-self: start;
   }
 
   .caption-line {

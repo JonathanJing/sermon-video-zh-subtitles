@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#f7fbff" />
     <title>11:30 会众中文字幕控制台</title>
     <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="stylesheet" href="./styles.css?v=20260622-ui3" />
+    <link rel="stylesheet" href="./styles.css?v=20260623-disclaimer1" />
   </head>
   <body>
     <div class="app-shell" data-sidebar="open">
@@ -41,6 +41,57 @@
             <button type="button" class="segment" data-action="select-service" data-service="1000">10:00</button>
             <button type="button" class="segment" data-action="select-service" data-service="manual">手动</button>
           </div>
+
+          <form class="admin-settings" id="adminSettings" aria-label="Admin source settings">
+            <div class="settings-header">
+              <div>
+                <span class="sidecar-label">Admin Settings</span>
+                <h3>直播链接与周日页面</h3>
+              </div>
+              <span class="settings-mode" id="captureMode">自动抓取</span>
+            </div>
+
+            <label class="field">
+              <span>本周日页面</span>
+              <select id="sundaySelect">
+                <option value="2026-06-21">2026-06-21</option>
+                <option value="2026-06-28">2026-06-28</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>手动直播链接</span>
+              <input
+                type="url"
+                id="manualLiveUrl"
+                inputmode="url"
+                autocomplete="url"
+                placeholder="https://www.youtube.com/watch?v=..."
+              />
+            </label>
+
+            <label class="field">
+              <span>证道大致开始时间</span>
+              <input type="text" id="approxStartTime" inputmode="numeric" placeholder="例如 00:23:25，可留空" />
+            </label>
+
+            <div class="settings-grid" aria-label="自动抓取状态">
+              <div>
+                <span>自动探测</span>
+                <strong id="autoDiscoveryStatus">周日 08:20 PT</strong>
+              </div>
+              <div>
+                <span>会众页面</span>
+                <strong id="publicSliceLabel">同一周日切片</strong>
+              </div>
+            </div>
+
+            <div class="button-row">
+              <button class="button" type="button" data-action="save-admin-settings">保存设置</button>
+              <button class="button button--primary" type="button" data-action="trigger-manual-ingest">手动触发</button>
+              <button class="button" type="button" data-action="run-auto-discovery">模拟自动抓取</button>
+            </div>
+          </form>
 
           <div class="source-list" id="sourceList" aria-live="polite">
             <article class="source-card is-primary" data-source="mariners-online">
@@ -103,6 +154,11 @@
             </div>
             <span class="generation-badge" id="generationStatus">待开始</span>
           </div>
+
+          <aside class="viewer-disclaimer" aria-label="字幕免责声明">
+            <strong>字幕免责声明</strong>
+            <p>本页面中文字幕由 AI 辅助生成，供现场听道理解参考，可能存在延迟、遗漏或翻译不准确。请以讲员原文、教会正式发布内容和正式圣经译本为准。</p>
+          </aside>
 
           <div class="caption-window" id="captionWindow">
             <p class="caption-line caption-line--draft" id="draftCaption">等待会前直播音频...</p>
@@ -194,6 +250,6 @@
     </div>
 
     <script src="./playback-simulation.generated.js" defer></script>
-    <script src="./app.js?v=20260622-ui3" defer></script>
+    <script src="./app.js?v=20260623-disclaimer1" defer></script>
   </body>
 </html>

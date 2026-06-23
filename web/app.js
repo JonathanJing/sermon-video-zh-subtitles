@@ -75,7 +75,13 @@
     playbackSpeed: 18,
     lastExport: null,
     segmentAutoFollow: true,
-    segmentScrollProgrammatic: false
+    segmentScrollProgrammatic: false,
+    adminSettings: {
+      sunday: "2026-06-21",
+      manualLiveUrl: "",
+      approxStartTime: "",
+      captureMode: "automatic"
+    }
   };
 
   const el = {
@@ -84,6 +90,13 @@
     sourceStatus: document.getElementById("sourceStatus"),
     slaStatus: document.getElementById("slaStatus"),
     sourceList: document.getElementById("sourceList"),
+    adminSettings: document.getElementById("adminSettings"),
+    captureMode: document.getElementById("captureMode"),
+    sundaySelect: document.getElementById("sundaySelect"),
+    manualLiveUrl: document.getElementById("manualLiveUrl"),
+    approxStartTime: document.getElementById("approxStartTime"),
+    autoDiscoveryStatus: document.getElementById("autoDiscoveryStatus"),
+    publicSliceLabel: document.getElementById("publicSliceLabel"),
     draftCaption: document.getElementById("draftCaption"),
     stableCaption: document.getElementById("stableCaption"),
     englishSidecar: document.getElementById("englishSidecar"),
@@ -107,6 +120,15 @@
 
   function init() {
     document.addEventListener("click", onActionClick);
+    if (el.adminSettings) {
+      el.adminSettings.addEventListener("submit", (event) => event.preventDefault());
+    }
+    if (el.sundaySelect) {
+      el.sundaySelect.addEventListener("change", () => {
+        saveAdminSettings({ quiet: true });
+        log(`会众页面已切换到 ${state.adminSettings.sunday} 周日切片；所有普通用户看到同一份发布内容。`);
+      });
+    }
     el.segmentList.addEventListener("scroll", onSegmentTrackScroll, { passive: true });
     el.segmentList.addEventListener("click", onSegmentTrackClick);
     el.clock.textContent = formatClock();
@@ -117,6 +139,7 @@
     setSla("11:30 会众可用", "ready");
     log("控制台已就绪：目标是在 11:30 场开始时，为正在听道的会众提供可用中文字幕。");
     loadPlaybackSimulation();
+    syncAdminSettings();
     updateSourceCards("idle");
     updateTimeline();
   }
@@ -140,6 +163,8 @@
     const liveTitle = simulation.live?.title || "live archive";
     const sermonTitle = simulation.sermonTitle || simulation.sermonCandidate?.title || liveTitle;
     const start = simulation.sermonStart?.timecode || "unknown";
+    state.adminSettings.manualLiveUrl = simulation.live?.url || state.adminSettings.manualLiveUrl;
+    state.adminSettings.approxStartTime = start !== "unknown" ? start : state.adminSettings.approxStartTime;
     updateSermonMeta({
       title: sermonTitle,
       meta: `${simulation.live?.url || "直播链接已加载"} · 证道开始 ${start}`,
@@ -185,6 +210,9 @@
     if (action === "start-caption") startCaptioning();
     if (action === "start-playback") startPlaybackSimulation();
     if (action === "use-fallback") useFallback();
+    if (action === "save-admin-settings") saveAdminSettings();
+    if (action === "trigger-manual-ingest") triggerManualIngest();
+    if (action === "run-auto-discovery") runAutoDiscovery();
     if (action === "clear-log") clearLog();
     if (action === "mark-segment") markCurrentSegment();
     if (action === "lock-segment") lockCurrentSegment();
@@ -219,9 +247,10 @@
   }
 
   function startMonitor() {
+    saveAdminSettings({ quiet: true });
     clearMonitorTimers();
     state.monitoring = true;
-    state.fallback = state.selectedService === "1000";
+    state.fallback = state.selectedService === "1000" || state.selectedService === "manual";
     state.frozen = false;
     state.sourceReady = false;
     const label = serviceLabel(state.selectedService);
@@ -239,7 +268,7 @@
 
     state.monitorTimers.push(window.setTimeout(() => {
       if (state.selectedService === "manual") {
-        useOperatorAudio();
+        confirmManualLiveSource();
         return;
       }
       if (state.selectedService === "830") {
@@ -289,7 +318,40 @@
     }
   }
 
+  function confirmManualLiveSource() {
+    saveAdminSettings({ quiet: true });
+    const url = state.adminSettings.manualLiveUrl;
+    if (!isProbablyUrl(url)) {
+      useOperatorAudio();
+      log("手动模式没有可用直播链接，已降级为 operator audio 兜底。");
+      return;
+    }
+
+    state.selectedService = "manual";
+    state.sourceReady = true;
+    state.fallback = false;
+    syncServiceButtons();
+    setSourceState("mariners-online", "warning", "手动跳过");
+    setSourceState("youtube-streams", "live", "手动链接");
+    setSourceState("operator-audio", "idle", "可备用");
+    setStatus("手动直播链接已确认", "ready");
+    setSla("快速定位证道开始", "ready");
+    updateCaptureMode("manual");
+    updateSermonMeta({
+      title: "手动 live archive / live source",
+      meta: `${url} · 大致开始 ${state.adminSettings.approxStartTime || "待自动判断"}`,
+      status: "待生成",
+      tone: "ready"
+    });
+    log(`已确认手动直播链接：${url}${state.adminSettings.approxStartTime ? `；证道大致开始 ${state.adminSettings.approxStartTime}` : "；将自动判断证道开始" }。`);
+    if (state.captionRequested) {
+      state.captionRequested = false;
+      startCaptioning();
+    }
+  }
+
   function startCaptioning() {
+    saveAdminSettings({ quiet: true });
     if (!state.sourceReady) {
       if (state.monitoring) {
         state.captionRequested = true;
@@ -310,7 +372,7 @@
     state.startedAt = state.startedAt || Date.now();
     setStatus("会众字幕生成中", "live");
     setSla("11:25 前发布会众视图", "live");
-    el.sessionLabel.textContent = `Session: rt-${dateStamp()}-${state.selectedService}`;
+    el.sessionLabel.textContent = `Session: ${sessionSliceId()}-${state.selectedService}`;
     log("会众字幕 session 已启动，开始模拟低延迟字幕流。");
     scheduleNextCaption(300);
     startProgress();
@@ -338,7 +400,7 @@
     setSourceState("operator-audio", "idle", "可备用");
     setStatus("直播链接模拟播放", "live");
     setSla("验证 11:30 会众视图", "live");
-    el.sessionLabel.textContent = `Session: playback-${dateStamp()}`;
+    el.sessionLabel.textContent = `Session: playback-${sessionSliceId()}`;
     updateSermonMeta({
       title: window.SERMON_PLAYBACK_SIMULATION?.sermonTitle || "直播链接证道",
       meta: `正在根据直播链接时间轴生成字幕 · ${state.playbackSegments.length} 个候选片段`,
@@ -348,6 +410,58 @@
     log(`开始按真实 live-aligned 时间轴模拟播放，速度 ${state.playbackSpeed}x。`);
     tickPlayback();
     startProgress();
+  }
+
+  function saveAdminSettings(options = {}) {
+    const sunday = el.sundaySelect?.value || state.adminSettings.sunday;
+    const manualLiveUrl = (el.manualLiveUrl?.value || "").trim();
+    const approxStartTime = (el.approxStartTime?.value || "").trim();
+    state.adminSettings = {
+      ...state.adminSettings,
+      sunday,
+      manualLiveUrl,
+      approxStartTime
+    };
+    syncAdminSettings();
+    if (!options.quiet) {
+      log(`Admin settings 已保存：${sunday} 周日切片${manualLiveUrl ? "；手动 live link 已设置" : "；等待自动抓取 live link"}。`);
+    }
+  }
+
+  function triggerManualIngest() {
+    saveAdminSettings({ quiet: true });
+    state.selectedService = "manual";
+    syncServiceButtons();
+    updateCaptureMode("manual");
+    if (!isProbablyUrl(state.adminSettings.manualLiveUrl)) {
+      setStatus("需要直播链接", "error");
+      setSla("手动触发未启动", "warning");
+      log("手动触发需要先输入直播链接；如果现场没有链接，可以使用 operator audio 兜底。");
+      return;
+    }
+    clearMonitorTimers();
+    state.monitoring = true;
+    state.sourceReady = false;
+    setStatus("手动抓取中", "watching");
+    setSla("定位证道开始", "warning");
+    setSourceState("mariners-online", "warning", "跳过");
+    setSourceState("youtube-streams", "checking", "抓取中");
+    setSourceState("operator-audio", "idle", "可备用");
+    el.sessionLabel.textContent = `Session: manual-${sessionSliceId()}`;
+    log(`手动触发 live link ingest：${state.adminSettings.manualLiveUrl}。后端会优先使用大致开始时间定位证道。`);
+    state.monitorTimers.push(window.setTimeout(confirmManualLiveSource, 800));
+  }
+
+  function runAutoDiscovery() {
+    saveAdminSettings({ quiet: true });
+    updateCaptureMode("automatic");
+    state.selectedService = "830";
+    syncServiceButtons();
+    setStatus("自动抓取排程", "watching");
+    setSla("周日 08:20 开始", "ready");
+    el.sessionLabel.textContent = `Session: auto-${sessionSliceId()}`;
+    log(`自动抓取模拟已排程：${state.adminSettings.sunday} 08:20 PT 探测 8:30，失败则 09:50 探测 10:00。`);
+    startMonitor();
   }
 
   function tickPlayback() {
@@ -765,6 +879,30 @@
     node.classList.add(`status-pill--${tone || "ready"}`);
   }
 
+  function syncAdminSettings() {
+    if (el.sundaySelect) el.sundaySelect.value = state.adminSettings.sunday;
+    if (el.manualLiveUrl) el.manualLiveUrl.value = state.adminSettings.manualLiveUrl;
+    if (el.approxStartTime) el.approxStartTime.value = state.adminSettings.approxStartTime;
+    if (el.publicSliceLabel) el.publicSliceLabel.textContent = state.adminSettings.sunday;
+    if (el.autoDiscoveryStatus) {
+      el.autoDiscoveryStatus.textContent = state.adminSettings.captureMode === "manual"
+        ? "手动链接优先"
+        : "08:20/09:50 PT";
+    }
+    updateCaptureMode(state.adminSettings.captureMode);
+  }
+
+  function updateCaptureMode(mode) {
+    state.adminSettings.captureMode = mode === "manual" ? "manual" : "automatic";
+    if (!el.captureMode) return;
+    const manual = state.adminSettings.captureMode === "manual";
+    el.captureMode.textContent = manual ? "手动触发" : "自动抓取";
+    el.captureMode.classList.toggle("is-manual", manual);
+    if (el.autoDiscoveryStatus) {
+      el.autoDiscoveryStatus.textContent = manual ? "手动链接优先" : "08:20/09:50 PT";
+    }
+  }
+
   function updateSermonMeta({ title, meta, status, tone }) {
     if (el.sermonTitle) el.sermonTitle.textContent = title || "等待直播链接";
     if (el.sermonMeta) el.sermonMeta.textContent = meta || "准备直播链接后，会在这里显示证道标题和开始时间。";
@@ -810,7 +948,21 @@
   function serviceLabel(service) {
     if (service === "830") return "8:30 PT";
     if (service === "1000") return "10:00 PT";
-    return "手动音频";
+    return state.adminSettings.manualLiveUrl ? "手动直播链接" : "手动音频";
+  }
+
+  function isProbablyUrl(value) {
+    if (!value) return false;
+    try {
+      const parsed = new URL(value);
+      return parsed.protocol === "https:" || parsed.protocol === "http:";
+    } catch (_error) {
+      return false;
+    }
+  }
+
+  function sessionSliceId() {
+    return `sunday-${state.adminSettings.sunday.replaceAll("-", "")}`;
   }
 
   function formatClock() {

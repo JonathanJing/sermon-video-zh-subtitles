@@ -1,6 +1,6 @@
 # System Design
 
-Last updated: 2026-06-22
+Last updated: 2026-06-23
 
 Chinese version: [system-design.zh.md](./system-design.zh.md)
 
@@ -32,11 +32,34 @@ The production design therefore prioritizes earlier sources:
 | 11:30-11:50 | Congregation uses captions during the sermon |
 | After service | Offline quality pass, notes, quotes, exports |
 
+## Trigger Model
+
+V1 keeps both a manual admin path and a scheduled automatic path.
+
+| Path | Owner | Purpose |
+|---|---|---|
+| Manual admin trigger | Operator/admin | Enter a live or live-archive URL, optionally provide an approximate sermon start time such as `00:23:25`, and start ingestion quickly when the automatic monitor misses a source or a known URL is available. |
+| Scheduled discovery | Backend | Run on Sunday before the 8:30 and 10:00 services, discover official live links, verify that the sermon source is usable, automatically estimate the sermon start time, and start caption generation without ordinary user action. |
+
+The congregation-facing page is read-only. Caption capture, translation, scripture enrichment, notes, quote extraction, and publish decisions are performed by admin tools or backend jobs. Multiple congregants opening the website for the same Sunday should see the same published artifact set, not separate per-user generation.
+
+Generated content is sliced by service Sunday:
+
+```text
+public page: /sundays/2026-06-21
+GCS prefix:  gs://<bucket>/sundays/2026-06-21/<session_id>/
+session id:  sunday-20260621-1000
+```
+
+The Sunday slice is the primary read model for the web UI. Realtime sessions and offline jobs can write rolling updates into the slice, while public clients only subscribe to published captions, scripture cards, notes, and quote artifacts.
+
 ## Architecture
 
 ```mermaid
 flowchart TD
-  A["Live source monitor"] --> B["Source evidence"]
+  Z["Cloud Scheduler Sunday triggers"] --> A["Live source monitor"]
+  Y["Admin manual trigger"] --> B["Source evidence"]
+  A --> B
   B --> C{"Usable pre-11:30 source?"}
   C -->|yes| D["Realtime or pre-generation pipeline"]
   C -->|no| E["Operator audio fallback"]
@@ -45,12 +68,12 @@ flowchart TD
   F --> H["Stable correction translation"]
   G --> I["Caption segments"]
   H --> I
-  I --> J["Firestore state"]
-  I --> K["GCS generated artifacts"]
+  I --> J["Firestore session state"]
+  I --> K["GCS Sunday artifacts"]
   J --> L["Cloud Run API"]
   K --> L
   L --> M["Operator PWA"]
-  L --> N["Congregation caption view"]
+  L --> N["Read-only congregation view"]
 ```
 
 ## Services
@@ -99,7 +122,16 @@ Secrets must not appear in Git, generated browser JS, public manifests, logs, VT
 | Mode | Audience | Content |
 |---|---|---|
 | Congregation view | Chinese-speaking listeners | Large readable Chinese captions, minimal controls, optional scripture panel |
-| Operator view | Reviewer/operator | Source status, readiness, timeline controls, scripture and term review, publish controls |
+| Operator view | Reviewer/operator | Admin settings, manual trigger, source status, readiness, timeline controls, scripture and term review, publish controls |
+
+Admin settings must include:
+
+- Sunday slice selector, so generated content is grouped by service date.
+- Manual live URL input.
+- Optional approximate sermon start time, used as a fast seek hint but not as the only source of truth.
+- Scheduled discovery status, showing the automatic 8:20/9:50 PT monitor path.
+
+The public congregation view should not expose provider keys, admin tokens, Secret Manager resource names, raw model traces, or controls that start generation. It should read only the current Sunday slice's published state.
 
 V1 stays web-first because iPhone/iPad Safari offers the fastest path for both operator and congregation use. A native iOS app can be revisited if background audio capture or lock-screen behavior becomes necessary.
 

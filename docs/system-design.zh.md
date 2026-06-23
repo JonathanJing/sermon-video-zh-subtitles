@@ -3,6 +3,7 @@
 English version: [system-design.md](./system-design.md)
 
 日期：2026-06-22  
+更新：2026-06-23  
 目标频道：Mariners Church  
 主要目标：每周日 11:30 PT 场开始时，让正在听证道的中文会众有可使用的中文字幕
 默认策略：优先使用 11:30 前最早可验证的同篇证道直播准备字幕；10:00 PT 作为保守生产默认；公开视频 VOD 作为离线质量补齐源
@@ -33,6 +34,25 @@ English version: [system-design.md](./system-design.md)
 
 - 会众字幕链路：8:20 PT 开始尝试 8:30 场；若失败，9:50 PT 再尝试 10:00 场；直播期间边听边生成中文字幕，11:30 前发布给 11:30 场会众使用。
 - 离线质量链路：公开视频或直播归档可用后，生成高质量字幕、时间轴编辑、经文 sidebar、笔记和金句，用于修正、归档和提升下一次服务。
+
+触发方式分成两种：
+
+| 触发方式 | 负责人 | 用途 |
+|---|---|---|
+| Admin 手动触发 | operator/admin | 手动输入直播或直播归档链接，可选填写证道大致开始时间，例如 `00:23:25`，用于自动监控失败、已知链接可用、或需要快速定位时救场。 |
+| 定时自动抓取 | 后端 | 每周日自动检查 8:30 和 10:00 场官方 live source，自动判断证道开始时间，自动开始字幕采集、翻译、经文解析、总结和金句生成。 |
+
+普通会众打开网页时不触发生成任务。字幕采集、翻译、总结、金句抓取、发布状态都由 admin 或后端完成；普通用户只读取同一个周日切片里的发布内容。因此多个用户进入网页，理论上看到的是同一份正在生成或已经生成的字幕，而不是每人启动一套独立 pipeline。
+
+周日切片作为主要页面和存储单位：
+
+```text
+public page: /sundays/2026-06-21
+GCS prefix:  gs://<bucket>/sundays/2026-06-21/<session_id>/
+session id:  sunday-20260621-1000
+```
+
+同一个周日切片下可以有 realtime session、offline job、review export、notes、quotes 等多类生成物，但会众页面只读取已发布或正在发布的 caption/scripture/insight state。
 
 ## 2. Source Strategy
 
@@ -73,7 +93,9 @@ English version: [system-design.md](./system-design.md)
 ```mermaid
 flowchart TD
   A["Scheduler / Cloud Scheduler"] --> B["live_source_monitor"]
+  AA["Admin manual trigger"] --> BB["manual live URL + optional start hint"]
   B --> C{"Live source found?"}
+  BB --> C
   C -->|yes| D["realtime_session_api"]
   C -->|no| E["operator_audio_fallback"]
   E --> D
@@ -86,7 +108,9 @@ flowchart TD
   I --> K["stable caption assembler"]
   J --> K
   K --> L["Firestore caption_segments"]
-  K --> M["PWA caption UI"]
+  K --> W["GCS Sunday artifacts"]
+  L --> M["PWA caption UI"]
+  W --> M
   K --> N["async scripture resolver"]
   N --> O["sidebar scripture cards"]
   L --> P["VTT/SRT exporter"]
@@ -109,6 +133,13 @@ flowchart TD
 | `live-source-monitor` | 周日定时检查官方 live 页面、YouTube streams、fallback 状态 |
 
 默认部署在 Cloud Run。Firestore 存储状态和字幕片段，Cloud Storage/GCS 存储所有生成物，包括音频片段、原始模型输出、字幕 VTT/SRT、播放模拟 JS、离线笔记和金句。Secret Manager 存储模型/API key；Cloud Run 只通过 service account 读取 secret，代码和生成文件不包含 key 明文。Cloud Tasks 用于离线 job 编排。部署前 secret 清单详见 [Cloud Run 部署准备与 Secret Manager 清单](./cloud-run-deployment-prep.zh.md)。
+
+Admin UI 与会众 UI 的权限边界：
+
+| UI | 可做的事 | 不应暴露 |
+|---|---|---|
+| Admin/operator view | 设置周日切片、手动 live URL、可选开始时间、启动自动抓取、发布/冻结字幕、review 经文和术语 | API key 明文、普通用户 token、内部 model trace |
+| Congregation view | 读取当前周日已发布或正在发布的中文字幕、经文 sidebar、证道笔记和金句 | 手动触发按钮、Secret Manager resource name、后台 job 控制 |
 
 ### 3.1.1 生成物与 Secret 边界
 
@@ -150,6 +181,7 @@ PWA 布局要求：
 - iPhone 横屏会众视图：字幕优先，保留少量经文/当前段落提示。
 - iPad 竖屏 operator 视图：字幕区 + 下方时间轴，经文 sidebar 可折叠。
 - iPad 横屏 operator 视图：三栏布局，左侧源/状态，中间字幕，右侧经文/笔记。
+- Admin settings 必须保留手动触发入口：直播链接输入、证道大致开始时间、周日切片 selector、自动抓取状态。
 
 ## 4. Realtime Pipeline
 
