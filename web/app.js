@@ -227,7 +227,7 @@
     setSla("11:30 会众视图", "ready");
     updateSermonMeta({
       title: window.SERMON_PLAYBACK_SIMULATION?.sermonTitle || "直播链接证道",
-      meta: `正在显示本周日发布的中文字幕 · ${state.segments.length} 个片段`,
+      meta: "正在显示本周日发布的中文字幕",
       status: "已加载",
       tone: "ready"
     });
@@ -498,7 +498,7 @@
       title: window.SERMON_PLAYBACK_SIMULATION?.sermonTitle || "直播链接证道",
       meta: state.viewMode === "operator"
         ? `正在根据直播链接时间轴生成字幕 · ${state.playbackSegments.length} 个候选片段`
-        : `正在显示本周日发布的中文字幕 · ${state.playbackSegments.length} 个候选片段`,
+        : "正在显示本周日发布的中文字幕",
       status: "正在生成",
       tone: "live"
     });

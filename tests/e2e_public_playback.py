@@ -222,6 +222,9 @@ def check_no_horizontal_overflow(page) -> None:
 def check_public_playback(page) -> None:
     expect(page.locator("#generationStatus")).to_contain_text("已加载", timeout=5000)
     expect(page.locator("#segmentCount")).not_to_have_text("0 segments", timeout=5000)
+    sermon_meta = page.locator("#sermonMeta").inner_text(timeout=5000)
+    if "个片段" in sermon_meta or "候选片段" in sermon_meta:
+        raise AssertionError(f"Public sermon meta exposes ambiguous segment count: {sermon_meta!r}")
     stable_caption = page.locator("#stableCaption").inner_text(timeout=5000)
     if not stable_caption or "请先确认字幕源" in stable_caption:
         raise AssertionError(f"Public playback did not render a usable caption: {stable_caption!r}")
