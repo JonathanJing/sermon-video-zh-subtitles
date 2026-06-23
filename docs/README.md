@@ -13,6 +13,7 @@ This folder contains product, system design, research, backlog, and testing note
 | Topic | English | Chinese |
 |---|---|---|
 | System design | [system-design.md](./system-design.md) | [system-design.zh.md](./system-design.zh.md) |
+| System design gap analysis | [system-design-gap-analysis.md](./system-design-gap-analysis.md) | [system-design-gap-analysis.zh.md](./system-design-gap-analysis.zh.md) |
 | Findings report | [findings-report.md](./findings-report.md) | [findings-report.zh.md](./findings-report.zh.md) |
 | Model/provider comparison | [model-provider-comparison.md](./model-provider-comparison.md) | [model-provider-comparison.zh.md](./model-provider-comparison.zh.md) |
 | Cloud Run deployment prep | [cloud-run-deployment-prep.md](./cloud-run-deployment-prep.md) | [cloud-run-deployment-prep.zh.md](./cloud-run-deployment-prep.zh.md) |
@@ -28,7 +29,7 @@ This folder contains product, system design, research, backlog, and testing note
 2. Read [system-design.md](./system-design.md) for the 11:30 congregation caption architecture.
 3. Read [findings-report.md](./findings-report.md) to understand why public VOD is not enough.
 4. Use [model-provider-comparison.md](./model-provider-comparison.md), [cloud-run-deployment-prep.md](./cloud-run-deployment-prep.md), and [sunday-live-test-runbook.md](./sunday-live-test-runbook.md) before provider, Cloud Run, or live-test work.
-5. Use [backlog.md](./backlog.md) and [review-testing.md](./review-testing.md) to pick and verify implementation work.
+5. Use [system-design-gap-analysis.md](./system-design-gap-analysis.md), [backlog.md](./backlog.md), and [review-testing.md](./review-testing.md) to pick and verify implementation work.
 
 ## Current Documentation Language
 

@@ -13,6 +13,7 @@
 | 主题 | English | 中文 |
 |---|---|---|
 | System Design | [system-design.md](./system-design.md) | [system-design.zh.md](./system-design.zh.md) |
+| System Design 实现差距审计 | [system-design-gap-analysis.md](./system-design-gap-analysis.md) | [system-design-gap-analysis.zh.md](./system-design-gap-analysis.zh.md) |
 | Findings Report | [findings-report.md](./findings-report.md) | [findings-report.zh.md](./findings-report.zh.md) |
 | 模型/Provider 比较 | [model-provider-comparison.md](./model-provider-comparison.md) | [model-provider-comparison.zh.md](./model-provider-comparison.zh.md) |
 | Cloud Run 部署准备 | [cloud-run-deployment-prep.md](./cloud-run-deployment-prep.md) | [cloud-run-deployment-prep.zh.md](./cloud-run-deployment-prep.zh.md) |
@@ -28,7 +29,7 @@
 2. 再读 [system-design.zh.md](./system-design.zh.md)，理解 11:30 会众字幕架构。
 3. 读 [findings-report.zh.md](./findings-report.zh.md)，理解为什么公开视频 VOD 不满足现场目标。
 4. 做模型、Cloud Run 或 live-test 工作前，读 [model-provider-comparison.zh.md](./model-provider-comparison.zh.md)、[cloud-run-deployment-prep.zh.md](./cloud-run-deployment-prep.zh.md) 和 [sunday-live-test-runbook.zh.md](./sunday-live-test-runbook.zh.md)。
-5. 用 [backlog.md](./backlog.md) 和 [review-testing.md](./review-testing.md) 选择与验证下一步开发任务。
+5. 用 [system-design-gap-analysis.zh.md](./system-design-gap-analysis.zh.md)、[backlog.md](./backlog.md) 和 [review-testing.md](./review-testing.md) 选择与验证下一步开发任务。
 
 ## 文档语言策略
 
