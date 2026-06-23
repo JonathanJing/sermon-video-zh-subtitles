@@ -243,6 +243,40 @@ ul {
   overflow: hidden;
 }
 
+.app-shell[data-view-mode="congregation"] [data-operator-only] {
+  display: none !important;
+}
+
+.app-shell[data-view-mode="congregation"] {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.app-shell[data-view-mode="congregation"] .workspace {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  grid-template-areas: "stage scripture";
+}
+
+.app-shell[data-view-mode="congregation"][data-sidebar="closed"] .workspace {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "stage";
+}
+
+.app-shell[data-view-mode="congregation"] .subtitle-stage {
+  grid-template-rows: auto auto auto minmax(340px, 1fr) minmax(150px, 0.36fr);
+}
+
+.app-shell[data-view-mode="congregation"] .stage-toolbar {
+  min-height: 44px;
+}
+
+.app-shell[data-view-mode="congregation"] .caption-window {
+  min-height: 340px;
+}
+
+.app-shell[data-view-mode="congregation"] .review-strip {
+  min-height: 150px;
+}
+
 .app-shell[data-sidebar="closed"] .workspace {
   grid-template-columns: minmax(270px, 320px) minmax(0, 1fr);
   grid-template-areas: "controls stage";
@@ -1180,6 +1214,14 @@ ul {
     overflow: visible;
   }
 
+  .app-shell[data-view-mode="congregation"] .workspace,
+  .app-shell[data-view-mode="congregation"][data-sidebar="closed"] .workspace {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "stage"
+      "scripture";
+  }
+
   .app-shell[data-sidebar="closed"] .workspace {
     grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
     grid-template-areas:
@@ -1263,6 +1305,18 @@ ul {
       "controls"
       "scripture";
     padding: var(--pad);
+  }
+
+  .app-shell[data-view-mode="congregation"] .workspace,
+  .app-shell[data-view-mode="congregation"][data-sidebar="closed"] .workspace {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "stage"
+      "scripture";
+  }
+
+  .app-shell[data-view-mode="congregation"] .subtitle-stage {
+    grid-template-rows: auto auto auto minmax(300px, 46svh) minmax(136px, auto);
   }
 
   .app-shell[data-sidebar="closed"] .scripture-panel {
@@ -1415,6 +1469,12 @@ ul {
   .app-shell[data-sidebar="closed"] .workspace {
     grid-template-columns: minmax(250px, 0.36fr) minmax(0, 1fr);
     grid-template-areas: "controls stage";
+  }
+
+  .app-shell[data-view-mode="congregation"] .workspace,
+  .app-shell[data-view-mode="congregation"][data-sidebar="closed"] .workspace {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "stage";
   }
 
   .scripture-panel {

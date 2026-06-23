@@ -76,6 +76,7 @@
     lastExport: null,
     segmentAutoFollow: true,
     segmentScrollProgrammatic: false,
+    viewMode: "congregation",
     adminSettings: {
       sunday: "2026-06-21",
       manualLiveUrl: "",
@@ -119,6 +120,7 @@
   };
 
   function init() {
+    configureViewMode();
     document.addEventListener("click", onActionClick);
     if (el.adminSettings) {
       el.adminSettings.addEventListener("submit", (event) => event.preventDefault());
@@ -142,6 +144,30 @@
     syncAdminSettings();
     updateSourceCards("idle");
     updateTimeline();
+    startPublicPlaybackIfReady();
+  }
+
+  function configureViewMode() {
+    const params = new URLSearchParams(window.location.search);
+    const modeParam = (params.get("mode") || "").toLowerCase();
+    const path = window.location.pathname.toLowerCase();
+    state.viewMode = modeParam === "operator" || modeParam === "admin" || path.endsWith("/operator")
+      ? "operator"
+      : "congregation";
+    el.shell.dataset.viewMode = state.viewMode;
+    document.title = state.viewMode === "operator"
+      ? "11:30 会众中文字幕控制台"
+      : "11:30 会众中文字幕";
+  }
+
+  function startPublicPlaybackIfReady() {
+    if (state.viewMode !== "congregation") return;
+    if (!state.playbackSegments.length) return;
+    window.setTimeout(() => {
+      if (!state.captioning && !state.segments.length) {
+        startPlaybackSimulation();
+      }
+    }, 250);
   }
 
   function loadPlaybackSimulation() {
@@ -398,12 +424,14 @@
     setSourceState("mariners-online", "live", "回放中");
     setSourceState("youtube-streams", "live", "live link");
     setSourceState("operator-audio", "idle", "可备用");
-    setStatus("直播链接模拟播放", "live");
-    setSla("验证 11:30 会众视图", "live");
+    setStatus(state.viewMode === "operator" ? "直播链接模拟播放" : "字幕正在更新", "live");
+    setSla(state.viewMode === "operator" ? "验证 11:30 会众视图" : "11:30 会众视图", "live");
     el.sessionLabel.textContent = `Session: playback-${sessionSliceId()}`;
     updateSermonMeta({
       title: window.SERMON_PLAYBACK_SIMULATION?.sermonTitle || "直播链接证道",
-      meta: `正在根据直播链接时间轴生成字幕 · ${state.playbackSegments.length} 个候选片段`,
+      meta: state.viewMode === "operator"
+        ? `正在根据直播链接时间轴生成字幕 · ${state.playbackSegments.length} 个候选片段`
+        : `正在显示本周日发布的中文字幕 · ${state.playbackSegments.length} 个候选片段`,
       status: "正在生成",
       tone: "live"
     });
@@ -918,6 +946,7 @@
   }
 
   function log(message) {
+    if (!el.eventLog) return;
     const item = document.createElement("li");
     item.textContent = `${formatClock()} ${message}`;
     el.eventLog.prepend(item);

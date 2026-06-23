@@ -110,10 +110,18 @@ def run_browser_checks(base_url: str, headed: bool = False) -> list[dict[str, ob
                 )
                 page.goto(base_url, wait_until="networkidle")
                 check_disclaimer(page)
+                check_public_controls_hidden(page)
                 check_no_horizontal_overflow(page)
-                check_playback(page)
+                check_public_playback(page)
                 results.append({"viewport": name, "width": width, "height": height, "ok": True})
                 page.close()
+
+            operator_page = browser.new_page(viewport={"width": 1366, "height": 900})
+            operator_page.goto(base_url.rstrip("/") + "/?mode=operator", wait_until="networkidle")
+            check_operator_mode(operator_page)
+            check_playback(operator_page)
+            results.append({"viewport": "operator-desktop", "width": 1366, "height": 900, "ok": True})
+            operator_page.close()
 
             js_text = fetch_text(base_url.rstrip("/") + "/playback-simulation.generated.js")
             check_sanitized_text(js_text, "playback-simulation.generated.js")
@@ -129,6 +137,33 @@ def check_disclaimer(page) -> None:
     text = disclaimer.inner_text()
     if "AI 辅助生成" not in text or "讲员原文" not in text:
         raise AssertionError(f"Disclaimer text is incomplete: {text!r}")
+
+
+def check_public_controls_hidden(page) -> None:
+    body_text = page.locator("body").inner_text(timeout=5000)
+    forbidden_visible_text = [
+        "Admin Settings",
+        "会前字幕源监控",
+        "手动触发",
+        "模拟播放",
+        "导出 VTT",
+        "导出 SRT",
+        "运行日志",
+        "冻结并发布",
+        "时间轴平移",
+    ]
+    leaked = [text for text in forbidden_visible_text if text in body_text]
+    if leaked:
+        raise AssertionError(f"Public congregation view exposes operator controls: {leaked}")
+
+    for selector in [
+        ".control-panel",
+        ".timeline-panel",
+        "[data-action='start-playback']",
+        "[data-action='trigger-manual-ingest']",
+        "[data-action='export-vtt']",
+    ]:
+        expect(page.locator(selector)).to_be_hidden()
 
 
 def check_no_horizontal_overflow(page) -> None:
@@ -162,6 +197,21 @@ def check_no_horizontal_overflow(page) -> None:
     )
     if offenders["documentScrollWidth"] > offenders["viewportWidth"] + 1 or offenders["offenders"]:
         raise AssertionError(f"Horizontal overflow detected: {json.dumps(offenders, ensure_ascii=False)}")
+
+
+def check_public_playback(page) -> None:
+    expect(page.locator("#generationStatus")).to_contain_text("正在生成", timeout=5000)
+    expect(page.locator("#segmentCount")).not_to_have_text("0 segments", timeout=5000)
+    stable_caption = page.locator("#stableCaption").inner_text(timeout=5000)
+    if not stable_caption or "请先确认字幕源" in stable_caption:
+        raise AssertionError(f"Public playback did not render a usable caption: {stable_caption!r}")
+
+
+def check_operator_mode(page) -> None:
+    expect(page.locator(".control-panel")).to_be_visible()
+    expect(page.locator("[data-action='trigger-manual-ingest']")).to_be_visible()
+    expect(page.locator("[data-action='start-playback']")).to_be_visible()
+    expect(page.locator("[data-action='export-vtt']")).to_be_visible()
 
 
 def check_playback(page) -> None:
