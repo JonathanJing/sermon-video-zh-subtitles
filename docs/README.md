@@ -17,6 +17,7 @@ This folder contains product, system design, research, backlog, and testing note
 | Findings report | [findings-report.md](./findings-report.md) | [findings-report.zh.md](./findings-report.zh.md) |
 | Model/provider comparison | [model-provider-comparison.md](./model-provider-comparison.md) | [model-provider-comparison.zh.md](./model-provider-comparison.zh.md) |
 | Cloud Run deployment prep | [cloud-run-deployment-prep.md](./cloud-run-deployment-prep.md) | [cloud-run-deployment-prep.zh.md](./cloud-run-deployment-prep.zh.md) |
+| Observability and logs | Chinese-first content in same file | [observability.zh.md](./observability.zh.md) |
 | Sunday live test runbook | [sunday-live-test-runbook.md](./sunday-live-test-runbook.md) | [sunday-live-test-runbook.zh.md](./sunday-live-test-runbook.zh.md) |
 | YouTube source analysis | [youtube-sermon-subtitle-pipeline-analysis.zh-en.md](./youtube-sermon-subtitle-pipeline-analysis.zh-en.md) | same bilingual document |
 | Development backlog | [backlog.md](./backlog.md) | [backlog.zh.md](./backlog.zh.md) |

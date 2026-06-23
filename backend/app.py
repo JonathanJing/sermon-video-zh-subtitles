@@ -8,6 +8,15 @@ from urllib.parse import unquote, urlparse
 
 from .config import AppConfig
 from .manifest import SundaySliceService
+from .observability import (
+    client_ip_hash,
+    command_stage,
+    log_event,
+    scheduler_job,
+    stable_hash,
+    trigger_source,
+    url_summary,
+)
 from .storage import GcsArtifactReader
 from .worker import build_generation_plan, parse_generation_request
 
@@ -103,6 +112,9 @@ class ApiHandler(BaseHTTPRequestHandler):
         try:
             path = urlparse(self.path).path
             parts = [part for part in path.split("/") if part]
+            if parts == ["api", "telemetry", "page-view"]:
+                self.handle_page_view()
+                return
             if parts[:3] == ["api", "admin", "sundays"] and len(parts) == 5 and parts[4] == "generate":
                 if not self.authorized():
                     self.write_json({"error": "unauthorized"}, status=401)
@@ -110,7 +122,29 @@ class ApiHandler(BaseHTTPRequestHandler):
                 payload = self.read_json_body()
                 request = parse_generation_request(payload, parts[3])
                 plan = build_generation_plan(request, self.config)
+                source = trigger_source(self.headers, payload)
+                log_event(
+                    "live_capture_triggered",
+                    component="api",
+                    sunday=parts[3],
+                    sessionId=plan.session_id,
+                    runPrefix=plan.prefix,
+                    triggerSource=source,
+                    schedulerJob=scheduler_job(self.headers),
+                    liveSource=url_summary(request.live_url),
+                    sermonStart=request.sermon_start,
+                    dryRunGcs=request.dry_run_gcs,
+                )
                 if not self.config.enable_inline_worker:
+                    log_event(
+                        "live_capture_planned",
+                        component="api",
+                        sunday=parts[3],
+                        sessionId=plan.session_id,
+                        runPrefix=plan.prefix,
+                        triggerSource=source,
+                        commandCount=len(plan.commands),
+                    )
                     self.write_json(
                         {
                             "status": "planned",
@@ -126,7 +160,21 @@ class ApiHandler(BaseHTTPRequestHandler):
 
                 outputs = []
                 for command in plan.commands:
+                    log_event(
+                        "worker_stage_started",
+                        component="api-inline-worker",
+                        sunday=parts[3],
+                        sessionId=plan.session_id,
+                        stage=command_stage(command),
+                    )
                     completed = subprocess.run(command, check=True, capture_output=True, text=True)
+                    log_event(
+                        "worker_stage_completed",
+                        component="api-inline-worker",
+                        sunday=parts[3],
+                        sessionId=plan.session_id,
+                        stage=command_stage(command),
+                    )
                     outputs.append(
                         {
                             "command": command,
@@ -147,6 +195,29 @@ class ApiHandler(BaseHTTPRequestHandler):
             self.write_json({"error": "not_found"}, status=404)
         except Exception as exc:
             self.write_json({"error": str(exc)}, status=400)
+
+    def handle_page_view(self) -> None:
+        payload = self.read_json_body()
+        device_id = str(payload.get("anonymousDeviceId") or payload.get("deviceId") or "")[:80]
+        if not device_id:
+            self.write_json({"error": "anonymousDeviceId_required"}, status=400)
+            return
+        log_event(
+            "congregation_page_view",
+            component="web",
+            anonymousDeviceId=device_id,
+            visitId=str(payload.get("visitId") or "")[:80],
+            sunday=str(payload.get("sunday") or "")[:20],
+            viewMode=str(payload.get("viewMode") or "")[:32],
+            path=str(payload.get("path") or "")[:160],
+            timezone=str(payload.get("timezone") or "")[:80],
+            language=str(payload.get("language") or "")[:40],
+            viewport=payload.get("viewport") if isinstance(payload.get("viewport"), dict) else None,
+            screen=payload.get("screen") if isinstance(payload.get("screen"), dict) else None,
+            userAgentHash=stable_hash(self.headers.get("User-Agent", "")) if self.headers.get("User-Agent") else None,
+            clientIpHash=client_ip_hash(self.headers, self.client_address),
+        )
+        self.write_json({"status": "logged"}, status=202)
 
     def authorized(self) -> bool:
         auth_header = self.headers.get("Authorization", "")

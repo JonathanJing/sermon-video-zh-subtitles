@@ -9,6 +9,7 @@ from datetime import datetime
 from pathlib import Path
 
 from .config import AppConfig
+from .observability import command_stage, log_event, url_summary
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -210,10 +211,51 @@ def main() -> int:
     )
     plan = build_generation_plan(request, AppConfig.from_env())
     if args.plan_only:
+        log_event(
+            "live_capture_plan_created",
+            component="worker",
+            sunday=request.sunday,
+            sessionId=plan.session_id,
+            runPrefix=plan.prefix,
+            liveSource=url_summary(request.live_url),
+            commandCount=len(plan.commands),
+        )
         print(json.dumps({"sessionId": plan.session_id, "prefix": plan.prefix, "commands": plan.commands}, indent=2))
         return 0
+    log_event(
+        "live_capture_worker_started",
+        component="worker",
+        sunday=request.sunday,
+        sessionId=plan.session_id,
+        runPrefix=plan.prefix,
+        liveSource=url_summary(request.live_url),
+    )
     for command in plan.commands:
+        stage = command_stage(command)
+        log_event(
+            "worker_stage_started",
+            component="worker",
+            sunday=request.sunday,
+            sessionId=plan.session_id,
+            runPrefix=plan.prefix,
+            stage=stage,
+        )
         subprocess.run(command, cwd=REPO_ROOT, check=True)
+        log_event(
+            "worker_stage_completed",
+            component="worker",
+            sunday=request.sunday,
+            sessionId=plan.session_id,
+            runPrefix=plan.prefix,
+            stage=stage,
+        )
+    log_event(
+        "captions_ready",
+        component="worker",
+        sunday=request.sunday,
+        sessionId=plan.session_id,
+        runPrefix=plan.prefix,
+    )
     return 0
 
 

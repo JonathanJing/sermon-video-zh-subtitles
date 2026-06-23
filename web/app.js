@@ -185,6 +185,7 @@
     updateTimeline();
     loadPublicPublishedSnapshot();
     renderPrimaryScriptureReference();
+    reportPageView();
   }
 
   function configureViewMode() {
@@ -1075,6 +1076,69 @@
   function clearLog() {
     el.eventLog.textContent = "";
     log("日志已清空。");
+  }
+
+  function reportPageView() {
+    const payload = {
+      anonymousDeviceId: anonymousDeviceId(),
+      visitId: visitId(),
+      sunday: state.adminSettings.sunday,
+      viewMode: state.viewMode,
+      path: window.location.pathname,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      language: navigator.language,
+      viewport: {
+        width: window.innerWidth,
+        height: window.innerHeight,
+        devicePixelRatio: window.devicePixelRatio || 1
+      },
+      screen: {
+        width: window.screen?.width,
+        height: window.screen?.height
+      }
+    };
+    const body = JSON.stringify(payload);
+    if (navigator.sendBeacon) {
+      const blob = new Blob([body], { type: "application/json" });
+      if (navigator.sendBeacon("/api/telemetry/page-view", blob)) return;
+    }
+    fetch("/api/telemetry/page-view", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+      keepalive: true
+    }).catch(() => {});
+  }
+
+  function anonymousDeviceId() {
+    const key = "sermonCaptionAnonymousDeviceId";
+    try {
+      const existing = window.localStorage.getItem(key);
+      if (existing) return existing;
+      const created = `dev_${randomId()}`;
+      window.localStorage.setItem(key, created);
+      return created;
+    } catch {
+      return `dev_${randomId()}`;
+    }
+  }
+
+  function visitId() {
+    const key = "sermonCaptionVisitId";
+    try {
+      const existing = window.sessionStorage.getItem(key);
+      if (existing) return existing;
+      const created = `visit_${randomId()}`;
+      window.sessionStorage.setItem(key, created);
+      return created;
+    } catch {
+      return `visit_${randomId()}`;
+    }
+  }
+
+  function randomId() {
+    if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+    return `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 12)}`;
   }
 
   function currentSegment() {

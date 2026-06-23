@@ -17,6 +17,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from backend.observability import log_event
 from backend.storage import LocalArtifactReader
 
 
@@ -33,6 +34,16 @@ def main() -> int:
         sunday=args.sunday,
     )
     write_json(destination, promoted, dry_run=args.dry_run)
+    log_event(
+        "captions_ready",
+        component="promote-sunday-manifest",
+        sunday=args.sunday,
+        sourceManifest=args.source_manifest,
+        destinationManifest=destination,
+        translationStatus=promoted.get("translationStatus"),
+        artifactCount=len(promoted.get("outputs", [])),
+        dryRun=args.dry_run,
+    )
     print(
         json.dumps(
             {
