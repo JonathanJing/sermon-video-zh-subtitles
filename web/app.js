@@ -667,7 +667,7 @@
       if (segment.id === state.currentSegmentId) item.classList.add("is-active");
       el.segmentList.appendChild(item);
     });
-    el.segmentCount.textContent = `${state.segments.length} segments`;
+    el.segmentCount.textContent = state.viewMode === "operator" ? `${state.segments.length} segments` : "已加载";
     if (shouldFollow) {
       scrollSegmentTrackToLive();
     } else {

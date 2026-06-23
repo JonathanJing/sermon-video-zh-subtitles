@@ -221,7 +221,11 @@ def check_no_horizontal_overflow(page) -> None:
 
 def check_public_playback(page) -> None:
     expect(page.locator("#generationStatus")).to_contain_text("已加载", timeout=5000)
-    expect(page.locator("#segmentCount")).not_to_have_text("0 segments", timeout=5000)
+    expect(page.locator(".review-strip h3")).to_have_text("完整字幕")
+    expect(page.locator("#segmentCount")).to_have_text("已加载", timeout=5000)
+    body_text = page.locator("body").inner_text(timeout=5000)
+    if "会众可用片段" in body_text:
+        raise AssertionError("Public transcript heading still uses ambiguous segment wording")
     sermon_meta = page.locator("#sermonMeta").inner_text(timeout=5000)
     if "个片段" in sermon_meta or "候选片段" in sermon_meta:
         raise AssertionError(f"Public sermon meta exposes ambiguous segment count: {sermon_meta!r}")
