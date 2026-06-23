@@ -219,8 +219,7 @@
     const latest = state.segments[state.segments.length - 1];
     if (!latest) return;
     state.currentSegmentId = latest.id;
-    el.draftCaption.textContent = latest.draft || "已加载本周日发布字幕。";
-    el.stableCaption.textContent = latest.zh;
+    setCaptionWindow(latest);
     el.englishSidecar.textContent = latest.en || "字幕源为中文或暂无英文 sidecar。";
     el.confidenceMeter.textContent = `${latest.confidence || "--"}%`;
     setStatus("字幕已加载", "ready");
@@ -600,8 +599,7 @@
     };
     state.currentSegmentId = segment.id;
     state.segments.push(segment);
-    el.draftCaption.textContent = segment.draft;
-    el.stableCaption.textContent = segment.zh;
+    setCaptionWindow(segment);
     el.englishSidecar.textContent = segment.en || "字幕源为中文或暂无英文 sidecar。";
     el.confidenceMeter.textContent = `${segment.confidence}%`;
     renderSegments();
@@ -641,8 +639,7 @@
     state.currentSegmentId = segment.id;
     state.segments.push(segment);
 
-    el.draftCaption.textContent = item.draft;
-    el.stableCaption.textContent = item.zh;
+    setCaptionWindow(segment);
     el.englishSidecar.textContent = item.en;
     el.confidenceMeter.textContent = `${item.confidence}%`;
     renderSegments();
@@ -689,8 +686,7 @@
     if (!segment) return;
     state.segmentAutoFollow = false;
     state.currentSegmentId = segment.id;
-    el.draftCaption.textContent = segment.draft || "正在查看历史字幕片段。";
-    el.stableCaption.textContent = segment.zh;
+    setCaptionWindow(segment);
     el.englishSidecar.textContent = segment.en || "字幕源为中文或暂无英文 sidecar。";
     el.confidenceMeter.textContent = `${segment.confidence || "--"}%`;
     renderSegments();
@@ -702,14 +698,22 @@
     const latest = state.segments[state.segments.length - 1];
     if (latest) {
       state.currentSegmentId = latest.id;
-      el.draftCaption.textContent = latest.draft || "正在跟随实时字幕。";
-      el.stableCaption.textContent = latest.zh;
+      setCaptionWindow(latest);
       el.englishSidecar.textContent = latest.en || "字幕源为中文或暂无英文 sidecar。";
       el.confidenceMeter.textContent = `${latest.confidence || "--"}%`;
     }
     renderSegments();
     scrollSegmentTrackToLive();
     log("已回到实时字幕轨道，后续片段会自动跟随。");
+  }
+
+  function setCaptionWindow(segment) {
+    el.draftCaption.textContent = sourceTranscriptText(segment);
+    el.stableCaption.textContent = segment.zh || "等待中文字幕...";
+  }
+
+  function sourceTranscriptText(segment) {
+    return segment.en || segment.draft || "Waiting for English transcript...";
   }
 
   function segmentTrackNearBottom() {

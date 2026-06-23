@@ -232,6 +232,11 @@ def check_public_playback(page) -> None:
     stable_caption = page.locator("#stableCaption").inner_text(timeout=5000)
     if not stable_caption or "请先确认字幕源" in stable_caption:
         raise AssertionError(f"Public playback did not render a usable caption: {stable_caption!r}")
+    draft_caption = page.locator("#draftCaption").inner_text(timeout=5000)
+    if not re.search(r"[A-Za-z]{3,}", draft_caption):
+        raise AssertionError(f"Caption window top line is not the English transcript: {draft_caption!r}")
+    if not re.search(r"[\u4e00-\u9fff]", stable_caption):
+        raise AssertionError(f"Caption window bottom line is not the Chinese translation: {stable_caption!r}")
     runtime_state = page.evaluate(
         """
         () => ({
