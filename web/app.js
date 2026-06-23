@@ -51,7 +51,7 @@
     "Numbers 16": {
       badge: "经文",
       title: "民数记 16",
-      source: "和合本（公版） · Numbers 16",
+      source: "中文圣经：和合本 · Numbers 16",
       summary: "可拉一党背叛，摩西与亚伦为百姓代求。系统会在实时字幕中优先固定明确经文。",
       passages: [
         {
@@ -75,7 +75,7 @@
     "Numbers 16:48": {
       badge: "经文",
       title: "民数记 16:48",
-      source: "和合本（公版） · Numbers 16:48",
+      source: "中文圣经：和合本 · Numbers 16:48",
       summary: "亚伦站在死人和活人中间，为百姓代求，瘟疫就止住了。",
       passages: [
         {
