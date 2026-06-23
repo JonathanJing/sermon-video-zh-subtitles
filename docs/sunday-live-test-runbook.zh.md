@@ -25,7 +25,7 @@ English version: [sunday-live-test-runbook.md](./sunday-live-test-runbook.md)
 - 静态资源 `/app.js` 和 `/playback-simulation.generated.js` 返回 `HTTP 200`。
 - Cloud Run service 状态为 `Ready`。
 - 快照验证时 `100%` 流量指向 revision `sermon-zh-caption-web-00012-bqj`。每次 deploy 或周日测试前都要重新确认 live revision。
-- 当前 env vars 为 `APP_TIMEZONE=America/Los_Angeles`、`SERMON_ARTIFACT_BUCKET=sermon-zh-artifacts-ai-for-god`、`SERMON_ARTIFACT_PREFIX=sundays`，以及 server-side `OPENAI_API_KEY_SECRET=projects/760303847302/secrets/openai-api-key/versions/latest`。
+- 当前 env vars 为 `APP_TIMEZONE=America/Los_Angeles`、`SERMON_ARTIFACT_BUCKET=sermon-zh-artifacts-ai-for-god`、`SERMON_ARTIFACT_PREFIX=sundays`，以及 server-side `OPENAI_API_KEY_SECRET=projects/PROJECT_NUMBER/secrets/openai-api-key/versions/latest`。
 - service IAM 允许 `allUsers` 以 `roles/run.invoker` 访问，适合公开 PWA smoke test。
 - GCS bucket 位于 `US-WEST1`，启用 uniform bucket-level access，并强制 public access prevention。
 - 当前配置的 GCS prefix 下有 translated report、model JSONL 和 playback JS。

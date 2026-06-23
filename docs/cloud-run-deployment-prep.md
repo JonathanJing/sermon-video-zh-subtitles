@@ -105,12 +105,12 @@ Verified on 2026-06-23 around 13:29 PT:
 | Recent ready rollback candidates at snapshot time | `sermon-zh-caption-web-00011-2nz`, `sermon-zh-caption-web-00010-54f`, `sermon-zh-caption-web-00009-bqz`, `sermon-zh-caption-web-00008-frx` |
 | Traffic | `100%` to latest ready revision |
 | Public invoker | `allUsers` has `roles/run.invoker` |
-| Service account | `760303847302-compute@developer.gserviceaccount.com` |
+| Service account | Default Compute Engine service account, redacted in public docs |
 | Artifact bucket | `sermon-zh-artifacts-ai-for-god` |
 | Max scale | `20` |
 | Container concurrency | `80` |
 
-The service account is currently the default Compute Engine service account. Before a real production Sunday, prefer moving to a dedicated Cloud Run service account such as `sermon-caption-runner@ai-for-god.iam.gserviceaccount.com` with only the required Secret Manager and GCS permissions.
+The service account is currently the default Compute Engine service account. Before a real production Sunday, prefer moving to a dedicated Cloud Run service account such as `sermon-caption-runner@PROJECT_ID.iam.gserviceaccount.com` with only the required Secret Manager and GCS permissions.
 
 ## Current Service Env Vars
 
@@ -121,7 +121,7 @@ Verified config on the current revision:
 | `APP_TIMEZONE` | `America/Los_Angeles` | No | Required for 11:30 PT workflow decisions. |
 | `SERMON_ARTIFACT_BUCKET` | `sermon-zh-artifacts-ai-for-god` | No | Matches the verified bucket. |
 | `SERMON_ARTIFACT_PREFIX` | `sundays` | No | Stable Sunday manifest prefix for congregation reads. |
-| `OPENAI_API_KEY_SECRET` | `projects/760303847302/secrets/openai-api-key/versions/latest` | Resource reference only | Server-side pointer used by the backend to resolve the OpenAI key. Do not expose this in public artifacts or browser JS. |
+| `OPENAI_API_KEY_SECRET` | `projects/PROJECT_NUMBER/secrets/openai-api-key/versions/latest` | Resource reference only | Server-side pointer used by the backend to resolve the OpenAI key. Do not expose this in public artifacts or browser JS. |
 
 No raw provider API keys or operator tokens were visible in the Cloud Run service env var list returned by `gcloud run services describe`. The Secret Manager resource reference is deployment metadata and must stay server-side.
 

@@ -164,12 +164,12 @@ gcloud secrets add-iam-policy-binding openai-api-key \
 | 快照验证时近期 ready rollback candidates | `sermon-zh-caption-web-00011-2nz`, `sermon-zh-caption-web-00010-54f`, `sermon-zh-caption-web-00009-bqz`, `sermon-zh-caption-web-00008-frx` |
 | Traffic | `100%` 指向 latest ready revision |
 | Public invoker | `allUsers` 拥有 `roles/run.invoker` |
-| Service account | `760303847302-compute@developer.gserviceaccount.com` |
+| Service account | Default Compute Engine service account，公开文档中已 redacted |
 | Artifact bucket | `sermon-zh-artifacts-ai-for-god` |
 | Max scale | `20` |
 | Container concurrency | `80` |
 
-当前 service account 是 default Compute Engine service account。真实生产周日前，建议迁移到专用 Cloud Run service account，例如 `sermon-caption-runner@ai-for-god.iam.gserviceaccount.com`，只授予本服务需要的 Secret Manager 和 GCS 权限。
+当前 service account 是 default Compute Engine service account。真实生产周日前，建议迁移到专用 Cloud Run service account，例如 `sermon-caption-runner@PROJECT_ID.iam.gserviceaccount.com`，只授予本服务需要的 Secret Manager 和 GCS 权限。
 
 ## 9. 当前 Service Env Vars
 
@@ -180,7 +180,7 @@ gcloud secrets add-iam-policy-binding openai-api-key \
 | `APP_TIMEZONE` | `America/Los_Angeles` | 否 | 11:30 PT workflow 判断需要。 |
 | `SERMON_ARTIFACT_BUCKET` | `sermon-zh-artifacts-ai-for-god` | 否 | 与已验证 bucket 一致。 |
 | `SERMON_ARTIFACT_PREFIX` | `sundays` | 否 | 会众页面读取稳定 Sunday manifest 的 prefix。 |
-| `OPENAI_API_KEY_SECRET` | `projects/760303847302/secrets/openai-api-key/versions/latest` | 只有 resource reference | 后端 server-side 用它读取 OpenAI key；不要暴露到 public artifacts 或浏览器 JS。 |
+| `OPENAI_API_KEY_SECRET` | `projects/PROJECT_NUMBER/secrets/openai-api-key/versions/latest` | 只有 resource reference | 后端 server-side 用它读取 OpenAI key；不要暴露到 public artifacts 或浏览器 JS。 |
 
 `gcloud run services describe` 返回的 Cloud Run env var 列表中没有可见 raw provider API key 或 operator token。Secret Manager resource reference 属于部署元数据，必须保持 server-side。
 

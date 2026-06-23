@@ -2,6 +2,10 @@
 
 Thanks for helping improve the sermon Chinese caption pipeline.
 
+This project is being prepared for broader open-source collaboration. The most
+useful contributions are the ones that make the 11:30 PT congregation caption
+experience more reliable, readable, accurate, and easy to operate.
+
 ## Project Goal
 
 The north star is practical: Chinese-speaking congregants should have usable Chinese captions during the Sunday 11:30 PT sermon. Please evaluate product, model, UI, and infrastructure changes by whether they improve that service-time experience.
@@ -14,6 +18,16 @@ The north star is practical: Chinese-speaking congregants should have usable Chi
 - Respect platform permissions and copyright. Do not add code or docs that bypass access controls, DRM, or terms of service.
 - Keep the congregation view simple and low-distraction; keep review controls in the operator view.
 - Prefer deterministic tests and fixtures over live network calls.
+
+## Good First Contribution Areas
+
+- Improve Chinese terminology consistency for scripture, names, and sermon phrases.
+- Add fixtures that test translation quality around Bible references and proper names.
+- Improve mobile and tablet reading ergonomics for the congregation view.
+- Add provider benchmark cases for OpenAI, Gemini, and OpenRouter.
+- Improve Cloud Run, Cloud Scheduler, Cloud Run Job, and GCS deployment examples.
+- Improve observability for trigger time, caption-ready time, stage duration, and anonymous device counts.
+- Improve bilingual documentation without changing runtime behavior.
 
 ## Documentation Language
 
@@ -34,6 +48,8 @@ python3 -m unittest discover -s tests
 ```
 
 For documentation-only changes, also check that links point to existing files and that no generated artifacts are staged.
+
+Before a broad public release, run the [open-source readiness checklist](./docs/open-source-readiness.md).
 
 ## Pull Request Checklist
 

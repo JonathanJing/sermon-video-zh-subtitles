@@ -25,7 +25,7 @@ Verified on 2026-06-23 around 13:29 PT:
 - Static assets `/app.js` and `/playback-simulation.generated.js` return `HTTP 200`.
 - Cloud Run service status is `Ready`.
 - Traffic was `100%` to revision `sermon-zh-caption-web-00012-bqj` at snapshot time. Re-check the live revision before each deploy or Sunday test.
-- Current env vars are `APP_TIMEZONE=America/Los_Angeles`, `SERMON_ARTIFACT_BUCKET=sermon-zh-artifacts-ai-for-god`, `SERMON_ARTIFACT_PREFIX=sundays`, and server-side `OPENAI_API_KEY_SECRET=projects/760303847302/secrets/openai-api-key/versions/latest`.
+- Current env vars are `APP_TIMEZONE=America/Los_Angeles`, `SERMON_ARTIFACT_BUCKET=sermon-zh-artifacts-ai-for-god`, `SERMON_ARTIFACT_PREFIX=sundays`, and server-side `OPENAI_API_KEY_SECRET=projects/PROJECT_NUMBER/secrets/openai-api-key/versions/latest`.
 - The service is publicly invokable with `roles/run.invoker` granted to `allUsers`.
 - The GCS bucket exists in `US-WEST1`, has uniform bucket-level access, and has public access prevention enforced.
 - The configured GCS prefix contains translated report, model JSONL, and playback JS outputs.

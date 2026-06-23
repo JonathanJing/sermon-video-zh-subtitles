@@ -2,6 +2,8 @@
 
 谢谢你帮助改进证道中文字幕 pipeline。
 
+这个项目正在为更广泛的开源协作做准备。最有价值的贡献，是让 11:30 PT 会众字幕体验更可靠、更易读、更准确、更容易运维。
+
 ## 项目目标
 
 本项目的北星目标很实际：周日 11:30 PT 场证道进行时，中文会众应该能使用中文字幕听道。产品、模型、UI 和基础设施改动，都应该用是否改善这个现场体验来评估。
@@ -14,6 +16,16 @@
 - 尊重平台权限和版权。不要加入绕过访问控制、DRM 或服务条款的代码或文档。
 - 会众视图保持简单、低干扰；review 控制放在 operator 视图。
 - 测试优先使用 deterministic fixture，不依赖实时网络。
+
+## 适合开始贡献的方向
+
+- 改进经文、人名和证道词汇的中文术语一致性。
+- 增加覆盖 Bible references 和 proper names 的翻译质量 fixtures。
+- 改进会众视图在手机和平板上的阅读体验。
+- 增加 OpenAI、Gemini、OpenRouter 的 provider benchmark cases。
+- 改进 Cloud Run、Cloud Scheduler、Cloud Run Job 和 GCS 部署示例。
+- 改进 trigger time、caption-ready time、stage duration、匿名设备数量的 observability。
+- 改进中英文文档，但不改变 runtime 行为。
 
 ## 文档语言
 
@@ -34,6 +46,8 @@ python3 -m unittest discover -s tests
 ```
 
 如果只是文档改动，也要确认链接指向真实文件，并确认没有 staged 的生成物。
+
+大范围公开发布前，请先跑 [开源准备检查](./docs/open-source-readiness.zh.md)。
 
 ## Pull Request Checklist
 

@@ -13,6 +13,8 @@ This project builds a pipeline for usable Chinese captions during the Mariners C
 
 This is an independent open-source project and is not affiliated with, endorsed by, or operated by Mariners Church.
 
+This repository is currently being prepared for broader open-source collaboration. Contributions are welcome when they improve the 11:30 congregation caption experience, especially around translation quality, latency, scripture terminology, mobile/tablet UX, deployment reliability, testing, and documentation.
+
 ## Product North Star
 
 The core product goal is not only to archive or translate sermons after the fact. The core goal is:
@@ -49,6 +51,7 @@ The more promising input is the official live service. Mariners Online lists Sun
 | Model/provider comparison | [docs/model-provider-comparison.md](docs/model-provider-comparison.md) | [docs/model-provider-comparison.zh.md](docs/model-provider-comparison.zh.md) |
 | Cloud Run deployment prep | [docs/cloud-run-deployment-prep.md](docs/cloud-run-deployment-prep.md) | [docs/cloud-run-deployment-prep.zh.md](docs/cloud-run-deployment-prep.zh.md) |
 | Observability and logs | [docs/observability.md](docs/observability.md) | [docs/observability.zh.md](docs/observability.zh.md) |
+| Open-source readiness | [docs/open-source-readiness.md](docs/open-source-readiness.md) | [docs/open-source-readiness.zh.md](docs/open-source-readiness.zh.md) |
 | Sunday live test runbook | [docs/sunday-live-test-runbook.md](docs/sunday-live-test-runbook.md) | [docs/sunday-live-test-runbook.zh.md](docs/sunday-live-test-runbook.zh.md) |
 | YouTube source analysis | [bilingual report](docs/youtube-sermon-subtitle-pipeline-analysis.zh-en.md) | [same bilingual report](docs/youtube-sermon-subtitle-pipeline-analysis.zh-en.md) |
 | Backlog and review | [docs/backlog.md](docs/backlog.md), [docs/review-testing.md](docs/review-testing.md) | [docs/backlog.zh.md](docs/backlog.zh.md) |
@@ -124,10 +127,11 @@ If the available source captions are English, the UI keeps the English sidecar a
 - Runtime secrets belong in Google Secret Manager. See [Cloud Run deployment prep](docs/cloud-run-deployment-prep.md).
 - Generated artifacts belong in GCS or ignored local `artifacts/`.
 - Respect platform permissions, copyright, and terms of service. This project does not bypass access controls or DRM.
+- Before making the repository public, run the [open-source readiness checklist](docs/open-source-readiness.md).
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md), [CONTRIBUTING.zh.md](CONTRIBUTING.zh.md), [SECURITY.md](SECURITY.md), and [SECURITY.zh.md](SECURITY.zh.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md), [CONTRIBUTING.zh.md](CONTRIBUTING.zh.md), [SECURITY.md](SECURITY.md), and [SECURITY.zh.md](SECURITY.zh.md). Good first areas include caption quality, provider benchmarking, mobile/tablet ergonomics, scripture matching, deployment automation, and observability.
 
 ## License
 

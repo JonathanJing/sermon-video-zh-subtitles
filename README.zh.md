@@ -13,6 +13,8 @@
 
 这是一个独立开源项目，并非 Mariners Church 官方项目，也不代表 Mariners Church 背书或运营。
 
+这个 repo 正在为更广泛的开源协作做准备。欢迎大家一起帮助完善，尤其是字幕质量、生成延迟、经文术语、手机/平板 UX、部署可靠性、测试和文档。
+
 ## 产品北星
 
 这个项目的核心目标不是只做事后归档，也不是单纯翻译视频。核心目标是：
@@ -49,6 +51,7 @@
 | 模型/Provider 比较 | [docs/model-provider-comparison.md](docs/model-provider-comparison.md) | [docs/model-provider-comparison.zh.md](docs/model-provider-comparison.zh.md) |
 | Cloud Run 部署准备 | [docs/cloud-run-deployment-prep.md](docs/cloud-run-deployment-prep.md) | [docs/cloud-run-deployment-prep.zh.md](docs/cloud-run-deployment-prep.zh.md) |
 | 观测与日志 | [docs/observability.md](docs/observability.md) | [docs/observability.zh.md](docs/observability.zh.md) |
+| 开源准备检查 | [docs/open-source-readiness.md](docs/open-source-readiness.md) | [docs/open-source-readiness.zh.md](docs/open-source-readiness.zh.md) |
 | 周日 live test runbook | [docs/sunday-live-test-runbook.md](docs/sunday-live-test-runbook.md) | [docs/sunday-live-test-runbook.zh.md](docs/sunday-live-test-runbook.zh.md) |
 | YouTube source analysis | [中英文报告](docs/youtube-sermon-subtitle-pipeline-analysis.zh-en.md) | [同一份中英文报告](docs/youtube-sermon-subtitle-pipeline-analysis.zh-en.md) |
 | Backlog / Review | [docs/backlog.md](docs/backlog.md), [docs/review-testing.md](docs/review-testing.md) | [docs/backlog.zh.md](docs/backlog.zh.md) |
@@ -124,10 +127,11 @@ python3 scripts/build_playback_simulation.py \
 - 运行时 secret 进入 Google Secret Manager，详见 [Cloud Run 部署准备](docs/cloud-run-deployment-prep.zh.md)。
 - 生成物进入 GCS 或本地忽略目录 `artifacts/`。
 - 尊重平台权限、版权和服务条款。本项目不绕过访问控制或 DRM。
+- repo 改成 public 前，先跑 [开源准备检查](docs/open-source-readiness.zh.md)。
 
 ## 贡献
 
-见 [CONTRIBUTING.zh.md](CONTRIBUTING.zh.md)、[CONTRIBUTING.md](CONTRIBUTING.md)、[SECURITY.zh.md](SECURITY.zh.md) 和 [SECURITY.md](SECURITY.md)。
+见 [CONTRIBUTING.zh.md](CONTRIBUTING.zh.md)、[CONTRIBUTING.md](CONTRIBUTING.md)、[SECURITY.zh.md](SECURITY.zh.md) 和 [SECURITY.md](SECURITY.md)。适合先参与的方向包括字幕质量、provider benchmark、手机/平板阅读体验、经文匹配、部署自动化和 observability。
 
 ## License
 
