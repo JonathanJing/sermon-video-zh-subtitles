@@ -54,17 +54,18 @@ Moses and Aaron stood before the people.
             self.assertEqual(simulation["translationStatus"], "needs_translation")
             self.assertEqual(simulation["sermonTitle"], "Sermon")
             self.assertEqual(simulation["sourceVtt"], "live.en.vtt")
-            self.assertEqual(
-                simulation["secrets"]["apiKeySecret"],
-                "projects/p/secrets/openai-api-key/versions/latest",
-            )
             self.assertFalse(simulation["secrets"]["apiKeyMaterialIncluded"])
+            self.assertFalse(simulation["secrets"]["secretResourceNamesIncluded"])
+            self.assertTrue(simulation["secrets"]["serverSideSecretConfigured"])
             self.assertEqual(len(simulation["segments"]), 2)
             self.assertEqual(simulation["segments"][0]["ref"], "Numbers 16")
             self.assertTrue(simulation["segments"][0]["zh"].startswith("AI 中文待生成"))
 
             rendered = mod.render_js(simulation)
             self.assertTrue(rendered.startswith("window.SERMON_PLAYBACK_SIMULATION = "))
+            self.assertNotIn("apiKeySecret", rendered)
+            self.assertNotIn("openai-api-key", rendered)
+            self.assertNotIn("projects/p/secrets", rendered)
             payload = rendered.split(" = ", 1)[1].rstrip(";\n")
             self.assertEqual(json.loads(payload)["live"]["id"], "live1")
 

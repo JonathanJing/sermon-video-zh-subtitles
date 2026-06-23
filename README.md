@@ -29,7 +29,7 @@ All realtime, offline, UI, storage, and export work should be evaluated by wheth
 - Use the earliest verified pre-11:30 PT Mariners live service as the preparation source, with 10:00 PT as the conservative default.
 - Let an operator monitor readiness, review key terms/scripture, and publish captions for the 11:30 service.
 - Store generated content in GCS for durable Cloud Run workflows.
-- Keep API/model keys in Google Secret Manager; server-side manifests may reference secret resource names, but public browser files and generated artifacts must never include key material.
+- Keep API/model keys in Google Secret Manager; public browser files and generated artifacts must never include key material or Secret Manager resource names.
 - Keep offline processing, notes, and quote extraction as support features for quality, review, and follow-up.
 
 ## Key Finding
@@ -47,6 +47,7 @@ The more promising input is the official live service. Mariners Online lists Sun
 | Findings report | [docs/findings-report.md](docs/findings-report.md) | [docs/findings-report.zh.md](docs/findings-report.zh.md) |
 | Model/provider comparison | [docs/model-provider-comparison.md](docs/model-provider-comparison.md) | [docs/model-provider-comparison.zh.md](docs/model-provider-comparison.zh.md) |
 | Cloud Run deployment prep | [docs/cloud-run-deployment-prep.md](docs/cloud-run-deployment-prep.md) | [docs/cloud-run-deployment-prep.zh.md](docs/cloud-run-deployment-prep.zh.md) |
+| Sunday live test runbook | [docs/sunday-live-test-runbook.md](docs/sunday-live-test-runbook.md) | [docs/sunday-live-test-runbook.zh.md](docs/sunday-live-test-runbook.zh.md) |
 | YouTube source analysis | [bilingual report](docs/youtube-sermon-subtitle-pipeline-analysis.zh-en.md) | [same bilingual report](docs/youtube-sermon-subtitle-pipeline-analysis.zh-en.md) |
 | Backlog and review | [docs/backlog.md](docs/backlog.md), [docs/review-testing.md](docs/review-testing.md) | [docs/backlog.zh.md](docs/backlog.zh.md) |
 
@@ -92,7 +93,7 @@ python3 scripts/prepare_live_link_playback.py \
   --api-key-secret projects/PROJECT_ID/secrets/openai-api-key/versions/latest
 ```
 
-The script uploads generated reports, VTT/SRT files, playback data, and `cloud-manifest.json` to GCS. Server-side manifests may record Secret Manager resource names; API key material is never written into generated files or public browser artifacts.
+The script uploads generated reports, VTT/SRT files, playback data, and `cloud-manifest.json` to GCS. The Secret Manager resource name is validated at runtime but is not written into public generated artifacts; they only record `apiKeyMaterialIncluded=false` and `secretResourceNamesIncluded=false`.
 
 For lower-level debugging, extract sermon subtitles from a live archive link:
 

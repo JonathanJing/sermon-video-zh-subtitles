@@ -271,8 +271,9 @@ def build_simulation(
         "sourceVtt": safe_display_path(source_vtt),
         "sermonTitle": sermon_title,
         "secrets": {
-            "apiKeySecret": api_key_secret,
             "apiKeyMaterialIncluded": False,
+            "secretResourceNamesIncluded": False,
+            "serverSideSecretConfigured": bool(api_key_secret),
         },
         "live": {
             "id": live.get("id"),

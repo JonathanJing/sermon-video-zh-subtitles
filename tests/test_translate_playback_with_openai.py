@@ -98,6 +98,25 @@ class TranslatePlaybackWithOpenAITest(unittest.TestCase):
         self.assertFalse(sanitized["secrets"]["apiKeyMaterialIncluded"])
         self.assertFalse(sanitized["translationProvider"]["secretResourceNamesIncluded"])
 
+    def test_translation_report_omits_secret_resource_name(self):
+        report = mod.build_report(
+            original={"translationStatus": "needs_translation"},
+            translated={"segments": [{"id": "sim_0001"}], "translationStatus": "ready"},
+            translations=[{"id": "sim_0001"}],
+            model="gpt-4.1-mini",
+            api_key_secret="projects/p/secrets/openai-api-key/versions/latest",
+            jsonl_path=Path("artifacts/openai-translation-output.jsonl"),
+            out_path=Path("web/playback-simulation.generated.js"),
+        )
+        rendered = json.dumps(report, ensure_ascii=False)
+
+        self.assertNotIn("apiKeySecret", rendered)
+        self.assertNotIn("projects/p/secrets", rendered)
+        self.assertNotIn("openai-api-key", rendered)
+        self.assertFalse(report["apiKeyMaterialIncluded"])
+        self.assertFalse(report["secretResourceNamesIncluded"])
+        self.assertTrue(report["serverSideSecretConfigured"])
+
     def test_rejects_raw_api_key_as_secret_resource(self):
         with self.assertRaises(SystemExit):
             mod.validate_secret_resource_name("sk-this-should-not-be-accepted")

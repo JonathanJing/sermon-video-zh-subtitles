@@ -91,5 +91,5 @@ For Mariners Church, the public YouTube VOD source should be treated as post-eve
 
 - Generated content should be treated as durable output only after it is written to GCS.
 - Local `artifacts/` and `web/playback-simulation.generated.js` are POC working files, not the production source of truth.
-- API keys must live in Google Secret Manager. Generated reports, manifests, playback JS, logs, and subtitle files may include the Secret Manager resource name but must not include secret values.
+- API keys must live in Google Secret Manager. Generated reports, manifests, playback JS, logs, and subtitle files must not include raw key material or Secret Manager resource names.
 - Cloud Run should use a service account with the narrow permissions needed to read the configured secret and write/read the generated-content bucket.

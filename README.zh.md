@@ -29,7 +29,7 @@
 - 优先使用 11:30 PT 之前最早可验证的同篇 Mariners live service 作为准备源，10:00 PT 作为保守默认。
 - 让 operator 监控 readiness，复核关键术语/经文，并在 11:30 场前发布字幕。
 - 生成内容物进入 GCS，便于 Cloud Run 和生产式流程使用。
-- API/model key 存在 Google Secret Manager；server-side manifest 可以引用 secret resource name，但 public browser 文件和生成物不能包含 key 明文。
+- API/model key 存在 Google Secret Manager；public browser 文件和生成物不能包含 key 明文或 Secret Manager resource name。
 - 离线处理、笔记、金句提取作为质量复核、归档和后续改进功能。
 
 ## 关键发现
@@ -47,6 +47,7 @@
 | Findings Report | [docs/findings-report.md](docs/findings-report.md) | [docs/findings-report.zh.md](docs/findings-report.zh.md) |
 | 模型/Provider 比较 | [docs/model-provider-comparison.md](docs/model-provider-comparison.md) | [docs/model-provider-comparison.zh.md](docs/model-provider-comparison.zh.md) |
 | Cloud Run 部署准备 | [docs/cloud-run-deployment-prep.md](docs/cloud-run-deployment-prep.md) | [docs/cloud-run-deployment-prep.zh.md](docs/cloud-run-deployment-prep.zh.md) |
+| 周日 live test runbook | [docs/sunday-live-test-runbook.md](docs/sunday-live-test-runbook.md) | [docs/sunday-live-test-runbook.zh.md](docs/sunday-live-test-runbook.zh.md) |
 | YouTube source analysis | [中英文报告](docs/youtube-sermon-subtitle-pipeline-analysis.zh-en.md) | [同一份中英文报告](docs/youtube-sermon-subtitle-pipeline-analysis.zh-en.md) |
 | Backlog / Review | [docs/backlog.md](docs/backlog.md), [docs/review-testing.md](docs/review-testing.md) | [docs/backlog.zh.md](docs/backlog.zh.md) |
 
@@ -92,7 +93,7 @@ python3 scripts/prepare_live_link_playback.py \
   --api-key-secret projects/PROJECT_ID/secrets/openai-api-key/versions/latest
 ```
 
-脚本会把 report、VTT/SRT、playback data 和 `cloud-manifest.json` 上传到 GCS。server-side manifest 可以记录 Secret Manager resource name；API key 明文不会写入生成文件或 public browser artifact。
+脚本会把 report、VTT/SRT、playback data 和 `cloud-manifest.json` 上传到 GCS。Secret Manager resource name 只在运行时校验，不写入公开生成物；公开 artifact 只记录 `apiKeyMaterialIncluded=false` 和 `secretResourceNamesIncluded=false`。
 
 底层调试时，也可以直接从直播归档链接提取证道字幕：
 

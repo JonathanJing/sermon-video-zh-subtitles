@@ -290,8 +290,9 @@ def write_cloud_manifest(
         "schemaVersion": 1,
         "generatedContentStorage": "gcs",
         "playbackSimulation": relative_artifact_path(web_out, out_dir, web_out).as_posix(),
-        "apiKeySecret": api_key_secret,
         "apiKeyMaterialIncluded": False,
+        "secretResourceNamesIncluded": False,
+        "serverSideSecretConfigured": bool(api_key_secret),
         "outputs": gcs_outputs,
     }
     (out_dir / "cloud-manifest.json").write_text(

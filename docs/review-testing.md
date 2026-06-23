@@ -19,18 +19,17 @@ Scope: current POC for live-link input, sermon title display, "正在生成" cap
    - Evidence: `loadPlaybackSimulation()` and `startPlaybackSimulation()` drive the core user-visible requirements: title display, `正在生成`, and caption segment rendering. Existing tests validate generated JS shape, but not browser behavior.
    - Suggested fix: add a small Playwright smoke test that loads `web/index.html`, clicks `模拟播放`, and asserts `#sermonTitle`, `#generationStatus`, `#stableCaption`, and `#segmentCount`.
 
-4. P3 - Secret Manager resource name is exposed in generated playback JS.
-   - File: `scripts/build_playback_simulation.py:258`
-   - Evidence: `apiKeySecret` is written into `window.SERMON_PLAYBACK_SIMULATION`. This does not include key material, but a public congregation page does not need the secret resource name.
-   - Suggested fix: keep secret references in server-side manifests only, or strip `secrets` from the public playback JS before production deployment.
+4. Resolved - Secret Manager resource names are stripped from public generated artifacts.
+   - Files: `scripts/build_playback_simulation.py`, `scripts/prepare_live_link_playback.py`, `scripts/translate_playback_with_openai.py`
+   - Evidence: browser playback JS, GCS `cloud-manifest.json`, and OpenAI translation reports now record `apiKeyMaterialIncluded=false` and `secretResourceNamesIncluded=false` without writing `apiKeySecret` or `projects/.../secrets/...`.
 
 ## Suggested Tests
 
 - `test_gcs_upload_invokes_gcloud_in_expected_order`: monkeypatch `subprocess.run`, call `publish_files_to_gcs(..., dry_run=False)`, assert commands and returned `gcsUri` values.
 - `test_gcs_upload_failure_does_not_claim_manifest_ready`: simulate one upload raising `CalledProcessError`; assert the command fails before reporting success and no ready manifest is produced.
 - `test_cloud_manifest_has_ready_status_and_outputs`: once status is added, assert final manifest includes `status`, `schemaVersion`, `outputs`, and `apiKeyMaterialIncluded: false`.
-- `test_public_playback_js_omits_secret_reference`: production-mode build should exclude `secrets.apiKeySecret` from browser-loaded JS.
-- Playwright smoke: generated playback data present, click `模拟播放`, assert sermon title is visible, generation status is `正在生成`, and at least one caption segment appears.
+- `test_public_playback_js_omits_secret_reference`: covered by `tests/test_build_playback_simulation.py`.
+- Playwright smoke: covered by `tests/e2e_public_playback.py`.
 
 ## Commands Run
 

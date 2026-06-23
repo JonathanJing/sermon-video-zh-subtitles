@@ -160,7 +160,7 @@ projects/<project-id>/secrets/openai-api-key/versions/latest
 ```
 
 系统配置只保存 Secret Manager resource name，例如 `api_key_secret`。任何 report、playback JS、manifest、日志都必须标记 `apiKeyMaterialIncluded=false`，不能写入 key 值。
-生产版 public playback JS 不应包含 Secret Manager resource name；secret resource name 只允许保留在 server-side manifest 或部署配置中。
+生产版 public playback JS 和公开 GCS artifact 不应包含 Secret Manager resource name；secret resource name 只允许保留在非公开部署配置中。
 
 ### 3.2 Frontend
 

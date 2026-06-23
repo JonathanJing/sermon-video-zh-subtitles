@@ -57,7 +57,7 @@ class PrepareLiveLinkPlaybackTest(unittest.TestCase):
                 uploads,
             )
 
-    def test_cloud_manifest_never_contains_api_key_material(self):
+    def test_cloud_manifest_never_contains_secret_reference_or_api_key_material(self):
         with tempfile.TemporaryDirectory() as tmp:
             out_dir = Path(tmp)
             web_out = out_dir / "playback.js"
@@ -69,8 +69,12 @@ class PrepareLiveLinkPlaybackTest(unittest.TestCase):
             )
 
             text = manifest.read_text(encoding="utf-8")
-            self.assertIn("projects/p/secrets/openai-api-key/versions/latest", text)
+            self.assertNotIn("apiKeySecret", text)
+            self.assertNotIn("projects/p/secrets", text)
+            self.assertNotIn("openai-api-key", text)
             self.assertIn('"apiKeyMaterialIncluded": false', text)
+            self.assertIn('"secretResourceNamesIncluded": false', text)
+            self.assertIn('"serverSideSecretConfigured": true', text)
             self.assertNotIn(str(out_dir), text)
 
     def test_gcs_bucket_and_prefix_are_normalized(self):
