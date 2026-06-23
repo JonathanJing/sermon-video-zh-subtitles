@@ -19,13 +19,13 @@ English version: [sunday-live-test-runbook.md](./sunday-live-test-runbook.md)
 
 ## 当前已验证状态
 
-2026-06-23 约 11:34 PT 验证结果：
+2026-06-23 约 13:29 PT 验证结果：
 
 - Cloud Run public URL 返回 `HTTP 200`，`content-type: text/html`。
 - 静态资源 `/app.js` 和 `/playback-simulation.generated.js` 返回 `HTTP 200`。
 - Cloud Run service 状态为 `Ready`。
-- 快照验证时 `100%` 流量指向 revision `sermon-zh-caption-web-00002-58c`。每次 deploy 或周日测试前都要重新确认 live revision。
-- 当前普通 env vars 为 `APP_TIMEZONE=America/Los_Angeles`、`SERMON_ARTIFACT_BUCKET=sermon-zh-artifacts-ai-for-god`、`SERMON_ARTIFACT_PREFIX=runs/2026-06-23/openai-translation-e2e-FsUijL9uB1I`。
+- 快照验证时 `100%` 流量指向 revision `sermon-zh-caption-web-00012-bqj`。每次 deploy 或周日测试前都要重新确认 live revision。
+- 当前 env vars 为 `APP_TIMEZONE=America/Los_Angeles`、`SERMON_ARTIFACT_BUCKET=sermon-zh-artifacts-ai-for-god`、`SERMON_ARTIFACT_PREFIX=sundays`，以及 server-side `OPENAI_API_KEY_SECRET=projects/760303847302/secrets/openai-api-key/versions/latest`。
 - service IAM 允许 `allUsers` 以 `roles/run.invoker` 访问，适合公开 PWA smoke test。
 - GCS bucket 位于 `US-WEST1`，启用 uniform bucket-level access，并强制 public access prevention。
 - 当前配置的 GCS prefix 下有 translated report、model JSONL 和 playback JS。
@@ -76,13 +76,15 @@ gcloud run services update sermon-zh-caption-web \
 | T-40 min | 验证 bucket 和当天 prefix。 | bucket 可访问；目标 prefix 存在，或在生成前按计划为空。 |
 | T-30 min | 确认 rollback revision 和 log URL。 | 已记录 previous known-good revision。 |
 | 9:55 或 10:00 | 对选定 source 启动 live-source 或 E2E generation workflow。 | artifact 开始写入计划中的 GCS prefix。 |
+| 10:01 | 在 Cloud Logging 检查 `live_capture_triggered`。 | event 包含正确的 `sunday`、`triggerSource` 和 live-source hash。 |
 | 10:10 | 检查第一批可用 caption segments。 | report/playback data 有非零 segments，且没有 secret material flag。 |
 | 10:45 | 检查翻译完整度。 | `translationStatus=ready`，或记录明确 fallback 决策。 |
+| 10:50 | 在 Cloud Logging 检查 `captions_ready`。 | event 对应目标 `sunday`，并指向稳定 Sunday manifest。 |
 | 11:10 | operator 审阅。 | sermon title、source、首屏字幕看起来正确。 |
 | 11:20 | 发布或冻结 11:30 audience artifact set。 | artifact prefix 稳定，并且和 Cloud Run env 或选定 manifest 一致。 |
-| 11:30 | audience smoke test。 | 干净浏览器 session 可以加载当天发布的字幕体验。 |
+| 11:30 | audience smoke test。 | 干净浏览器 session 可以加载当天发布的字幕体验，并产生 `congregation_page_view`。 |
 | 11:50 | SLA 后检查。 | 字幕体验仍可用；失败和 fallback 时间已记录。 |
-| 礼拜后 | 保存证据。 | 记录 revision、prefix、object generation、rollback/fallback 动作。 |
+| 礼拜后 | 保存证据。 | 记录 revision、prefix、object generation、trigger/ready log 时间、设备数估算、rollback/fallback 动作。 |
 
 ## Cloud Run Smoke Commands
 
@@ -97,6 +99,43 @@ gcloud run services describe sermon-zh-caption-web \
   --project=ai-for-god \
   --region=us-west1 \
   --format=json
+```
+
+```bash
+curl -sS --max-time 20 https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app/api/health
+curl -sS --max-time 20 https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app/api/sundays/current
+```
+
+## 日志验证
+
+完整 event 字段见 [observability.zh.md](./observability.zh.md)。
+
+周日必须留证的日志：
+
+- 目标 `sunday` 的 `live_capture_triggered`。
+- prepare、translate、upload、promote 阶段的 `worker_stage_completed`。
+- 11:30 会众窗口前出现 `captions_ready`。
+- 用干净浏览器 session 打开 public page 后出现 `congregation_page_view`。
+
+Cloud Logging 示例：
+
+```text
+resource.type="cloud_run_revision"
+jsonPayload.event="live_capture_triggered"
+jsonPayload.sunday="YYYY-MM-DD"
+```
+
+```text
+resource.type=("cloud_run_revision" OR "cloud_run_job")
+jsonPayload.event="captions_ready"
+jsonPayload.sunday="YYYY-MM-DD"
+```
+
+```text
+resource.type="cloud_run_revision"
+jsonPayload.event="congregation_page_view"
+jsonPayload.viewMode="congregation"
+jsonPayload.sunday="YYYY-MM-DD"
 ```
 
 ## GCS Artifact Verification
@@ -136,7 +175,7 @@ gcloud storage cat \
 gcloud run services update-traffic sermon-zh-caption-web \
   --project=ai-for-god \
   --region=us-west1 \
-  --to-revisions=sermon-zh-caption-web-00001-mqg=100
+  --to-revisions=REVISION_NAME=100
 ```
 
 然后重新跑 Cloud Run smoke commands，并确认实际 revision：
@@ -150,6 +189,8 @@ gcloud run services describe sermon-zh-caption-web \
 
 如果只是 artifact prefix 指错，优先把 `SERMON_ARTIFACT_PREFIX` 指向 last known-good prefix，并记录因此创建的新 revision。事故处理中不要删除失败的周日 artifact，保留用于复盘。
 
+`REVISION_NAME` 应从当前 `gcloud run revisions list` 输出中选择。2026-06-23 13:29 PT 快照时，近期 ready candidates 包括 `sermon-zh-caption-web-00011-2nz`、`sermon-zh-caption-web-00010-54f`、`sermon-zh-caption-web-00009-bqz` 和 `sermon-zh-caption-web-00008-frx`。
+
 ## 周日证据记录模板
 
 ```text
@@ -159,10 +200,14 @@ Cloud Run revision before test:
 Cloud Run revision after test:
 Artifact prefix:
 Live source URL:
+Generation trigger source:
+live_capture_triggered log time PT:
 First artifact write time PT:
 First usable caption time PT:
 Ready/publish time PT:
+captions_ready log time PT:
 11:30 audience smoke result:
+Unique device estimate:
 11:50 SLA result:
 Rollback used: yes/no
 Known issues:

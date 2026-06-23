@@ -9,10 +9,15 @@ current static PWA untouched while adding a Cloud Run-compatible API surface.
 - `GET /api/sundays/current`
 - `GET /api/sundays/YYYY-MM-DD`
 - `GET /api/sundays/YYYY-MM-DD/artifacts/<artifact-key>`
+- `POST /api/telemetry/page-view`
 
 The public Sunday response is intentionally filtered. It exposes only playback
 JS and caption files from the server-side manifest. It strips Secret Manager
 resource names, admin controls, raw model output, and generated report JSON.
+
+The page-view telemetry endpoint accepts anonymous browser/device metadata and
+writes a `congregation_page_view` JSON log event. It does not create a login
+identity and should not receive cookies, API keys, or raw user identifiers.
 
 Required config:
 
@@ -66,3 +71,18 @@ Sunday pointer:
 gs://$SERMON_ARTIFACT_BUCKET/$SERMON_ARTIFACT_PREFIX/YYYY-MM-DD/cloud-manifest.json
 ```
 
+## Observability
+
+Backend and worker logs are structured JSON records written to stdout for Cloud
+Logging. Key events are:
+
+- `live_capture_triggered`
+- `live_capture_planned`
+- `live_capture_worker_started`
+- `worker_stage_started`
+- `worker_stage_completed`
+- `captions_ready`
+- `congregation_page_view`
+
+See [docs/observability.md](../docs/observability.md) for Cloud Logging queries
+and the privacy boundary for device counts.

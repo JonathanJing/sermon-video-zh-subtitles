@@ -151,7 +151,7 @@ gcloud secrets add-iam-policy-binding openai-api-key \
 
 ## 8. 当前线上部署快照
 
-2026-06-23 约 11:34 PT 已验证：
+2026-06-23 约 13:29 PT 已验证：
 
 | 字段 | 值 |
 |---|---|
@@ -160,26 +160,29 @@ gcloud secrets add-iam-policy-binding openai-api-key \
 | Service | `sermon-zh-caption-web` |
 | URL | `https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app/` |
 | Status | `Ready` |
-| 快照验证时的 revision | `sermon-zh-caption-web-00002-58c` |
-| 快照验证时的 rollback revision | `sermon-zh-caption-web-00001-mqg` |
+| 快照验证时的 revision | `sermon-zh-caption-web-00012-bqj` |
+| 快照验证时近期 ready rollback candidates | `sermon-zh-caption-web-00011-2nz`, `sermon-zh-caption-web-00010-54f`, `sermon-zh-caption-web-00009-bqz`, `sermon-zh-caption-web-00008-frx` |
 | Traffic | `100%` 指向 latest ready revision |
 | Public invoker | `allUsers` 拥有 `roles/run.invoker` |
 | Service account | `760303847302-compute@developer.gserviceaccount.com` |
 | Artifact bucket | `sermon-zh-artifacts-ai-for-god` |
+| Max scale | `20` |
+| Container concurrency | `80` |
 
 当前 service account 是 default Compute Engine service account。真实生产周日前，建议迁移到专用 Cloud Run service account，例如 `sermon-caption-runner@ai-for-god.iam.gserviceaccount.com`，只授予本服务需要的 Secret Manager 和 GCS 权限。
 
 ## 9. 当前 Service Env Vars
 
-当前 revision 已验证的公开配置：
+当前 revision 已验证的配置：
 
 | Env var | 值 | 是否 secret | 说明 |
 |---|---|---:|---|
 | `APP_TIMEZONE` | `America/Los_Angeles` | 否 | 11:30 PT workflow 判断需要。 |
 | `SERMON_ARTIFACT_BUCKET` | `sermon-zh-artifacts-ai-for-god` | 否 | 与已验证 bucket 一致。 |
-| `SERMON_ARTIFACT_PREFIX` | `runs/2026-06-23/openai-translation-e2e-FsUijL9uB1I` | 否 | 当前 E2E test run prefix。真实 live test 请改成当天 dated prefix。 |
+| `SERMON_ARTIFACT_PREFIX` | `sundays` | 否 | 会众页面读取稳定 Sunday manifest 的 prefix。 |
+| `OPENAI_API_KEY_SECRET` | `projects/760303847302/secrets/openai-api-key/versions/latest` | 只有 resource reference | 后端 server-side 用它读取 OpenAI key；不要暴露到 public artifacts 或浏览器 JS。 |
 
-`gcloud run services describe` 返回的 Cloud Run env var 列表中没有可见 provider API key 或 operator token。
+`gcloud run services describe` 返回的 Cloud Run env var 列表中没有可见 raw provider API key 或 operator token。Secret Manager resource reference 属于部署元数据，必须保持 server-side。
 
 ## 10. 上线后验证命令
 
@@ -187,6 +190,8 @@ gcloud secrets add-iam-policy-binding openai-api-key \
 curl -I -L --max-time 20 https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app/
 curl -I -L --max-time 20 https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app/app.js
 curl -I -L --max-time 20 https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app/playback-simulation.generated.js
+curl -sS --max-time 20 https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app/api/health
+curl -sS --max-time 20 https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app/api/sundays/current
 ```
 
 ```bash
@@ -207,11 +212,36 @@ gcloud run revisions list \
 
 - Root URL 返回 `HTTP 200`，且 `content-type: text/html`。
 - 必要静态 JS assets 返回 `HTTP 200`。
+- `/api/health` 返回 `status=ok`。
+- `/api/sundays/current` 返回过滤后的 public Sunday payload，并且不暴露 Secret Manager resource name。
 - Service condition 为 `Ready=True`。
 - Traffic 指向预期 revision。
 - Public browser artifacts 不暴露 raw API key、operator token、webhook URL 或 Secret Manager resource name。
 
-## 11. GCS Artifact Verification
+## 11. Observability Smoke
+
+事件字段和标准查询见 [observability.zh.md](./observability.zh.md)。
+
+部署后发送一次测试 page-view telemetry，并在 Cloud Logging 中确认收到 `congregation_page_view`：
+
+```bash
+curl -sS -X POST \
+  -H 'content-type: application/json' \
+  -d '{"anonymousDeviceId":"dev-deploy-smoke","visitId":"deploy-smoke","sunday":"2026-06-28","viewMode":"congregation","path":"/","timezone":"America/Los_Angeles","language":"en-US","viewport":{"width":390,"height":844},"screen":{"width":390,"height":844}}' \
+  https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app/api/telemetry/page-view
+```
+
+Cloud Logging 查询：
+
+```text
+resource.type="cloud_run_revision"
+jsonPayload.event="congregation_page_view"
+jsonPayload.anonymousDeviceId="dev-deploy-smoke"
+```
+
+周日 workflow 还需要按当天 `sunday` 确认 `live_capture_triggered`、`worker_stage_completed` 和 `captions_ready`。
+
+## 12. GCS Artifact Verification
 
 Bucket 验证：
 
@@ -244,7 +274,7 @@ Report 中 `status=ok`、`translationStatus=ready`、`totalSegments=80`、`trans
 
 验证时该 OpenAI translation E2E prefix 下没有 `cloud-manifest.json`。这是 E2E publish path 的后续缺口；周日运行时不要假设 manifest 存在，除非当场明确验证。
 
-## 12. Rollback Notes
+## 13. Rollback Notes
 
 当前 service 的 revision rollback：
 
@@ -252,10 +282,10 @@ Report 中 `status=ok`、`translationStatus=ready`、`totalSegments=80`、`trans
 gcloud run services update-traffic sermon-zh-caption-web \
   --project=ai-for-god \
   --region=us-west1 \
-  --to-revisions=sermon-zh-caption-web-00001-mqg=100
+  --to-revisions=REVISION_NAME=100
 ```
 
-Rollback 后重新跑上线后验证命令，并确认 traffic 指向预期 revision。
+`REVISION_NAME` 应从当前 `gcloud run revisions list` 输出中选择。2026-06-23 13:29 PT 快照时，近期 ready candidates 包括 `sermon-zh-caption-web-00011-2nz`、`sermon-zh-caption-web-00010-54f`、`sermon-zh-caption-web-00009-bqz` 和 `sermon-zh-caption-web-00008-frx`。Rollback 后重新跑上线后验证命令，并确认 traffic 指向预期 revision。
 
 如果只是 artifact prefix 指错，优先把 `SERMON_ARTIFACT_PREFIX` 更新到 last known-good prefix，而不是回滚静态 assets：
 

@@ -92,7 +92,7 @@ Prefer per-secret IAM bindings instead of granting access to every project secre
 
 ## Live Deployment Snapshot
 
-Verified on 2026-06-23 around 11:34 PT:
+Verified on 2026-06-23 around 13:29 PT:
 
 | Field | Value |
 |---|---|
@@ -101,26 +101,29 @@ Verified on 2026-06-23 around 11:34 PT:
 | Service | `sermon-zh-caption-web` |
 | URL | `https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app/` |
 | Status | `Ready` |
-| Verified revision at snapshot time | `sermon-zh-caption-web-00002-58c` |
-| Known rollback revision at snapshot time | `sermon-zh-caption-web-00001-mqg` |
+| Verified revision at snapshot time | `sermon-zh-caption-web-00012-bqj` |
+| Recent ready rollback candidates at snapshot time | `sermon-zh-caption-web-00011-2nz`, `sermon-zh-caption-web-00010-54f`, `sermon-zh-caption-web-00009-bqz`, `sermon-zh-caption-web-00008-frx` |
 | Traffic | `100%` to latest ready revision |
 | Public invoker | `allUsers` has `roles/run.invoker` |
 | Service account | `760303847302-compute@developer.gserviceaccount.com` |
 | Artifact bucket | `sermon-zh-artifacts-ai-for-god` |
+| Max scale | `20` |
+| Container concurrency | `80` |
 
 The service account is currently the default Compute Engine service account. Before a real production Sunday, prefer moving to a dedicated Cloud Run service account such as `sermon-caption-runner@ai-for-god.iam.gserviceaccount.com` with only the required Secret Manager and GCS permissions.
 
 ## Current Service Env Vars
 
-Verified public config on the current revision:
+Verified config on the current revision:
 
 | Env var | Value | Secret? | Notes |
 |---|---|---:|---|
 | `APP_TIMEZONE` | `America/Los_Angeles` | No | Required for 11:30 PT workflow decisions. |
 | `SERMON_ARTIFACT_BUCKET` | `sermon-zh-artifacts-ai-for-god` | No | Matches the verified bucket. |
-| `SERMON_ARTIFACT_PREFIX` | `runs/2026-06-23/openai-translation-e2e-FsUijL9uB1I` | No | Current E2E test run prefix. Use a dated Sunday prefix for live tests. |
+| `SERMON_ARTIFACT_PREFIX` | `sundays` | No | Stable Sunday manifest prefix for congregation reads. |
+| `OPENAI_API_KEY_SECRET` | `projects/760303847302/secrets/openai-api-key/versions/latest` | Resource reference only | Server-side pointer used by the backend to resolve the OpenAI key. Do not expose this in public artifacts or browser JS. |
 
-No provider API keys or operator tokens were visible in the Cloud Run service env var list returned by `gcloud run services describe`.
+No raw provider API keys or operator tokens were visible in the Cloud Run service env var list returned by `gcloud run services describe`. The Secret Manager resource reference is deployment metadata and must stay server-side.
 
 ## Post-Deploy Validation Commands
 
@@ -128,6 +131,8 @@ No provider API keys or operator tokens were visible in the Cloud Run service en
 curl -I -L --max-time 20 https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app/
 curl -I -L --max-time 20 https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app/app.js
 curl -I -L --max-time 20 https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app/playback-simulation.generated.js
+curl -sS --max-time 20 https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app/api/health
+curl -sS --max-time 20 https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app/api/sundays/current
 ```
 
 ```bash
@@ -148,9 +153,34 @@ Pass criteria:
 
 - Root URL returns `HTTP 200` and `content-type: text/html`.
 - Required static JS assets return `HTTP 200`.
+- `/api/health` returns `status=ok`.
+- `/api/sundays/current` returns a filtered public Sunday payload and does not expose Secret Manager resource names.
 - Service condition `Ready=True`.
 - Traffic points to the intended revision.
 - Public browser artifacts do not expose raw API keys, operator tokens, webhook URLs, or Secret Manager resource names.
+
+## Observability Smoke
+
+See [observability.md](./observability.md) for the event schema and standard queries.
+
+After deployment, send one test page-view telemetry event and verify that Cloud Logging receives `congregation_page_view`:
+
+```bash
+curl -sS -X POST \
+  -H 'content-type: application/json' \
+  -d '{"anonymousDeviceId":"dev-deploy-smoke","visitId":"deploy-smoke","sunday":"2026-06-28","viewMode":"congregation","path":"/","timezone":"America/Los_Angeles","language":"en-US","viewport":{"width":390,"height":844},"screen":{"width":390,"height":844}}' \
+  https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app/api/telemetry/page-view
+```
+
+Cloud Logging query:
+
+```text
+resource.type="cloud_run_revision"
+jsonPayload.event="congregation_page_view"
+jsonPayload.anonymousDeviceId="dev-deploy-smoke"
+```
+
+For a Sunday workflow, also verify `live_capture_triggered`, `worker_stage_completed`, and `captions_ready` for the target `sunday`.
 
 ## GCS Artifact Verification
 
@@ -193,10 +223,10 @@ Revision rollback for the current service:
 gcloud run services update-traffic sermon-zh-caption-web \
   --project=ai-for-god \
   --region=us-west1 \
-  --to-revisions=sermon-zh-caption-web-00001-mqg=100
+  --to-revisions=REVISION_NAME=100
 ```
 
-After rollback, rerun the post-deploy validation commands and confirm traffic points to the intended revision.
+Choose `REVISION_NAME` from the current `gcloud run revisions list` output. At the 2026-06-23 13:29 PT snapshot, recent ready candidates included `sermon-zh-caption-web-00011-2nz`, `sermon-zh-caption-web-00010-54f`, `sermon-zh-caption-web-00009-bqz`, and `sermon-zh-caption-web-00008-frx`. After rollback, rerun the post-deploy validation commands and confirm traffic points to the intended revision.
 
 If only the artifact prefix is wrong, prefer updating `SERMON_ARTIFACT_PREFIX` to a last known-good prefix instead of rolling back static assets:
 

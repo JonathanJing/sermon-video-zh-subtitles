@@ -48,6 +48,7 @@
 | Findings Report | [docs/findings-report.md](docs/findings-report.md) | [docs/findings-report.zh.md](docs/findings-report.zh.md) |
 | 模型/Provider 比较 | [docs/model-provider-comparison.md](docs/model-provider-comparison.md) | [docs/model-provider-comparison.zh.md](docs/model-provider-comparison.zh.md) |
 | Cloud Run 部署准备 | [docs/cloud-run-deployment-prep.md](docs/cloud-run-deployment-prep.md) | [docs/cloud-run-deployment-prep.zh.md](docs/cloud-run-deployment-prep.zh.md) |
+| 观测与日志 | [docs/observability.md](docs/observability.md) | [docs/observability.zh.md](docs/observability.zh.md) |
 | 周日 live test runbook | [docs/sunday-live-test-runbook.md](docs/sunday-live-test-runbook.md) | [docs/sunday-live-test-runbook.zh.md](docs/sunday-live-test-runbook.zh.md) |
 | YouTube source analysis | [中英文报告](docs/youtube-sermon-subtitle-pipeline-analysis.zh-en.md) | [同一份中英文报告](docs/youtube-sermon-subtitle-pipeline-analysis.zh-en.md) |
 | Backlog / Review | [docs/backlog.md](docs/backlog.md), [docs/review-testing.md](docs/review-testing.md) | [docs/backlog.zh.md](docs/backlog.zh.md) |
@@ -72,6 +73,10 @@
 - Google Cloud SDK `gcloud` 已安装并完成认证。
 - 对目标 GCS bucket 有访问权限。
 - 使用 Secret Manager resource name 配置模型/API key；不要传入 raw key。
+
+## 运维与日志
+
+Cloud Run API 和 worker 会把结构化 JSON 日志写到 stdout，并进入 Cloud Logging。当前日志覆盖直播采集触发、worker 阶段耗时、字幕可用时间、会众页面匿名设备访问。详见 [观测与日志](docs/observability.zh.md)，里面包含 event 名称、Cloud Logging 查询和设备数量统计的隐私边界。
 
 ## Live-Link POC
 

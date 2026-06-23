@@ -48,6 +48,7 @@ The more promising input is the official live service. Mariners Online lists Sun
 | Findings report | [docs/findings-report.md](docs/findings-report.md) | [docs/findings-report.zh.md](docs/findings-report.zh.md) |
 | Model/provider comparison | [docs/model-provider-comparison.md](docs/model-provider-comparison.md) | [docs/model-provider-comparison.zh.md](docs/model-provider-comparison.zh.md) |
 | Cloud Run deployment prep | [docs/cloud-run-deployment-prep.md](docs/cloud-run-deployment-prep.md) | [docs/cloud-run-deployment-prep.zh.md](docs/cloud-run-deployment-prep.zh.md) |
+| Observability and logs | [docs/observability.md](docs/observability.md) | [docs/observability.zh.md](docs/observability.zh.md) |
 | Sunday live test runbook | [docs/sunday-live-test-runbook.md](docs/sunday-live-test-runbook.md) | [docs/sunday-live-test-runbook.zh.md](docs/sunday-live-test-runbook.zh.md) |
 | YouTube source analysis | [bilingual report](docs/youtube-sermon-subtitle-pipeline-analysis.zh-en.md) | [same bilingual report](docs/youtube-sermon-subtitle-pipeline-analysis.zh-en.md) |
 | Backlog and review | [docs/backlog.md](docs/backlog.md), [docs/review-testing.md](docs/review-testing.md) | [docs/backlog.zh.md](docs/backlog.zh.md) |
@@ -72,6 +73,10 @@ For GCS / Cloud Run-style artifact publishing:
 - Google Cloud SDK `gcloud` installed and authenticated.
 - Access to the target GCS bucket.
 - Secret Manager resource names for model/API keys; do not pass raw key material.
+
+## Operations And Logs
+
+The Cloud Run API and worker write structured JSON logs to stdout for Cloud Logging. The current operational events cover live-capture triggers, worker stage timing, caption readiness, and anonymous congregation page views. See [Observability and logs](docs/observability.md) for event names, Cloud Logging queries, and the privacy boundary for device counts.
 
 ## Live-Link POC
 
