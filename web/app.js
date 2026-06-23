@@ -121,7 +121,8 @@
       manualLiveUrl: "",
       approxStartTime: "",
       captureMode: "automatic"
-    }
+    },
+    adminStatus: null
   };
 
   const el = {
@@ -155,7 +156,26 @@
     deadlineLabel: document.getElementById("deadlineLabel"),
     timelineFill: document.getElementById("timelineFill"),
     timelineCursor: document.getElementById("timelineCursor"),
-    offsetInput: document.getElementById("offsetInput")
+    offsetInput: document.getElementById("offsetInput"),
+    adminSunday: document.getElementById("adminSunday"),
+    adminManifestStatus: document.getElementById("adminManifestStatus"),
+    adminManifestDetail: document.getElementById("adminManifestDetail"),
+    adminCaptionStatus: document.getElementById("adminCaptionStatus"),
+    adminCaptionDetail: document.getElementById("adminCaptionDetail"),
+    adminReadyTime: document.getElementById("adminReadyTime"),
+    adminUpdatedAt: document.getElementById("adminUpdatedAt"),
+    adminBucket: document.getElementById("adminBucket"),
+    adminPrefix: document.getElementById("adminPrefix"),
+    adminProvider: document.getElementById("adminProvider"),
+    adminDeadline: document.getElementById("adminDeadline"),
+    adminSecretStatus: document.getElementById("adminSecretStatus"),
+    pipelineSummary: document.getElementById("pipelineSummary"),
+    pipelineList: document.getElementById("pipelineList"),
+    evidenceTriggered: document.getElementById("evidenceTriggered"),
+    evidenceWorker: document.getElementById("evidenceWorker"),
+    evidenceReady: document.getElementById("evidenceReady"),
+    evidencePageViews: document.getElementById("evidencePageViews"),
+    evidenceDevices: document.getElementById("evidenceDevices")
   };
 
   function init() {
@@ -170,21 +190,32 @@
         log(`会众页面已切换到 ${state.adminSettings.sunday} 周日切片；所有普通用户看到同一份发布内容。`);
       });
     }
-    el.segmentList.addEventListener("scroll", onSegmentTrackScroll, { passive: true });
-    el.segmentList.addEventListener("click", onSegmentTrackClick);
-    el.clock.textContent = formatClock();
-    state.clockTimer = window.setInterval(() => {
+    if (el.segmentList) {
+      el.segmentList.addEventListener("scroll", onSegmentTrackScroll, { passive: true });
+      el.segmentList.addEventListener("click", onSegmentTrackClick);
+    }
+    if (el.clock) {
       el.clock.textContent = formatClock();
-    }, 1000);
+      state.clockTimer = window.setInterval(() => {
+        el.clock.textContent = formatClock();
+      }, 1000);
+    }
     setStatus("等待监控", "watching");
     setSla("11:30 会众可用", "ready");
-    log("控制台已就绪：目标是在 11:30 场开始时，为正在听道的会众提供可用中文字幕。");
+    log(state.viewMode === "admin"
+      ? "Admin 已就绪：检查 11:30 会众字幕生成状态，并保留手动触发入口。"
+      : "会众页已就绪：正在加载本周日可用中文字幕。");
     loadPlaybackSimulation();
     syncAdminSettings();
     updateSourceCards("idle");
     updateTimeline();
     loadPublicPublishedSnapshot();
     renderPrimaryScriptureReference();
+    if (state.viewMode === "admin") {
+      refreshAdminStatus();
+      updatePipelineForState("idle");
+      updateAdminEvidence("pageView", "Admin telemetry 已启用；会众访问会记录 congregation_page_view。");
+    }
     reportPageView();
   }
 
@@ -192,12 +223,12 @@
     const params = new URLSearchParams(window.location.search);
     const modeParam = (params.get("mode") || "").toLowerCase();
     const path = window.location.pathname.toLowerCase();
-    state.viewMode = modeParam === "operator" || modeParam === "admin" || path.endsWith("/operator")
-      ? "operator"
+    state.viewMode = path.endsWith("/admin") || path.endsWith("/admin/") || path.endsWith("/admin.html") || modeParam === "admin"
+      ? "admin"
       : "congregation";
     el.shell.dataset.viewMode = state.viewMode;
-    document.title = state.viewMode === "operator"
-      ? "11:30 会众中文字幕控制台"
+    document.title = state.viewMode === "admin"
+      ? "Admin | 11:30 会众中文字幕"
       : "11:30 会众中文字幕";
   }
 
@@ -221,8 +252,7 @@
     if (!latest) return;
     state.currentSegmentId = latest.id;
     setCaptionWindow(latest);
-    el.englishSidecar.textContent = latest.en || "字幕源为中文或暂无英文 sidecar。";
-    el.confidenceMeter.textContent = `${latest.confidence || "--"}%`;
+    setEnglishSidecar(latest.en || "字幕源为中文或暂无英文 sidecar。", latest.confidence);
     setStatus("字幕已加载", "ready");
     setSla("11:30 会众视图", "ready");
     updateSermonMeta({
@@ -349,8 +379,9 @@
     const label = serviceLabel(state.selectedService);
     setStatus(`监控中 ${label}`, "watching");
     setSla("等待会前字幕源", "warning");
-    el.sessionLabel.textContent = `Session: monitor-${state.selectedService}`;
+    if (el.sessionLabel) el.sessionLabel.textContent = `Session: monitor-${state.selectedService}`;
     updateSourceCards("checking");
+    updatePipelineForState("source");
     log(`开始监控 ${label} 直播源，用于提前准备 11:30 会众字幕。`);
 
     state.monitorTimers.push(window.setTimeout(() => {
@@ -404,6 +435,8 @@
     setSourceState("operator-audio", "idle", "可备用");
     setStatus(`${label} 源已确认`, "ready");
     setSla(service === "830" ? "8:30 准备余量最大" : "10:00 可准备会众字幕", "ready");
+    updatePipelineStage("source-discovery", "done", "已确认");
+    updatePipelineStage("live-capture", "active", "可接入");
     log(`${label} live source 已确认，可以开始生成 11:30 会众可用字幕。`);
     if (state.captionRequested) {
       state.captionRequested = false;
@@ -430,6 +463,8 @@
     setStatus("手动直播链接已确认", "ready");
     setSla("快速定位证道开始", "ready");
     updateCaptureMode("manual");
+    updatePipelineStage("source-discovery", "done", "手动链接");
+    updatePipelineStage("live-capture", "active", "抓取中");
     updateSermonMeta({
       title: "手动 live archive / live source",
       meta: `${url} · 大致开始 ${state.adminSettings.approxStartTime || "待自动判断"}`,
@@ -465,7 +500,8 @@
     state.startedAt = state.startedAt || Date.now();
     setStatus("会众字幕生成中", "live");
     setSla("11:25 前发布会众视图", "live");
-    el.sessionLabel.textContent = `Session: ${sessionSliceId()}-${state.selectedService}`;
+    if (el.sessionLabel) el.sessionLabel.textContent = `Session: ${sessionSliceId()}-${state.selectedService}`;
+    updatePipelineForState("captioning");
     log("会众字幕 session 已启动，开始模拟低延迟字幕流。");
     scheduleNextCaption(300);
     startProgress();
@@ -491,12 +527,13 @@
     setSourceState("mariners-online", "live", "回放中");
     setSourceState("youtube-streams", "live", "live link");
     setSourceState("operator-audio", "idle", "可备用");
-    setStatus(state.viewMode === "operator" ? "直播链接模拟播放" : "字幕正在更新", "live");
-    setSla(state.viewMode === "operator" ? "验证 11:30 会众视图" : "11:30 会众视图", "live");
-    el.sessionLabel.textContent = `Session: playback-${sessionSliceId()}`;
+    setStatus(state.viewMode === "admin" ? "直播链接模拟播放" : "字幕正在更新", "live");
+    setSla(state.viewMode === "admin" ? "验证 11:30 会众视图" : "11:30 会众视图", "live");
+    if (el.sessionLabel) el.sessionLabel.textContent = `Session: playback-${sessionSliceId()}`;
+    updatePipelineForState("captioning");
     updateSermonMeta({
       title: window.SERMON_PLAYBACK_SIMULATION?.sermonTitle || "直播链接证道",
-      meta: state.viewMode === "operator"
+      meta: state.viewMode === "admin"
         ? `正在根据直播链接时间轴生成字幕 · ${state.playbackSegments.length} 个候选片段`
         : "正在显示本周日发布的中文字幕",
       status: "正在生成",
@@ -539,11 +576,14 @@
     state.sourceReady = false;
     setStatus("手动抓取中", "watching");
     setSla("定位证道开始", "warning");
+    updateAdminEvidence("triggered", "operator manual trigger requested");
+    updatePipelineForState("source");
     setSourceState("mariners-online", "warning", "跳过");
     setSourceState("youtube-streams", "checking", "抓取中");
     setSourceState("operator-audio", "idle", "可备用");
-    el.sessionLabel.textContent = `Session: manual-${sessionSliceId()}`;
+    if (el.sessionLabel) el.sessionLabel.textContent = `Session: manual-${sessionSliceId()}`;
     log(`手动触发 live link ingest：${state.adminSettings.manualLiveUrl}。后端会优先使用大致开始时间定位证道。`);
+    postManualGenerateRequest();
     state.monitorTimers.push(window.setTimeout(confirmManualLiveSource, 800));
   }
 
@@ -554,9 +594,42 @@
     syncServiceButtons();
     setStatus("自动抓取排程", "watching");
     setSla("周日 08:20 开始", "ready");
-    el.sessionLabel.textContent = `Session: auto-${sessionSliceId()}`;
+    if (el.sessionLabel) el.sessionLabel.textContent = `Session: auto-${sessionSliceId()}`;
+    updateAdminEvidence("triggered", "cloud-scheduler simulation scheduled");
     log(`自动抓取模拟已排程：${state.adminSettings.sunday} 08:20 PT 探测 8:30，失败则 09:50 探测 10:00。`);
     startMonitor();
+  }
+
+  async function postManualGenerateRequest() {
+    if (state.viewMode !== "admin") return;
+    try {
+      const response = await fetch(`/api/admin/sundays/${encodeURIComponent(state.adminSettings.sunday)}/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          triggerSource: "operator",
+          liveUrl: state.adminSettings.manualLiveUrl,
+          sermonStart: state.adminSettings.approxStartTime || undefined
+        })
+      });
+      const body = await response.json().catch(() => ({}));
+      if (response.ok) {
+        updateAdminEvidence("triggered", `live_capture_triggered · ${body.status || "accepted"} · ${body.sessionId || "session pending"}`);
+        updateAdminEvidence("worker", body.prefix ? `planned prefix: ${body.prefix}` : "worker plan accepted");
+        log(`后端已接收手动触发请求：${body.status || response.status}。`);
+        return;
+      }
+      if (response.status === 401) {
+        updateAdminEvidence("triggered", "后端已保护：需要 operator token / OIDC，未执行真实触发。");
+        log("后端 generate endpoint 已启用鉴权；本页没有发送 token，因此只保留本地模拟状态。");
+        return;
+      }
+      updateAdminEvidence("triggered", `后端返回 ${response.status}: ${body.error || "request failed"}`);
+      log(`手动触发请求失败：${body.error || response.status}。`);
+    } catch (error) {
+      updateAdminEvidence("triggered", "无法连接后端，当前仅显示本地模拟状态。");
+      log(`手动触发请求未送达：${error.message || error}。`);
+    }
   }
 
   function tickPlayback() {
@@ -601,8 +674,7 @@
     state.currentSegmentId = segment.id;
     state.segments.push(segment);
     setCaptionWindow(segment);
-    el.englishSidecar.textContent = segment.en || "字幕源为中文或暂无英文 sidecar。";
-    el.confidenceMeter.textContent = `${segment.confidence}%`;
+    setEnglishSidecar(segment.en || "字幕源为中文或暂无英文 sidecar。", segment.confidence);
     renderSegments();
     addScriptureCandidate(segment);
     updateNotes();
@@ -641,8 +713,7 @@
     state.segments.push(segment);
 
     setCaptionWindow(segment);
-    el.englishSidecar.textContent = item.en;
-    el.confidenceMeter.textContent = `${item.confidence}%`;
+    setEnglishSidecar(item.en, item.confidence);
     renderSegments();
     addScriptureCandidate(segment);
     updateNotes();
@@ -650,6 +721,7 @@
   }
 
   function renderSegments() {
+    if (!el.segmentList) return;
     const previousScrollTop = el.segmentList.scrollTop;
     const shouldFollow = state.segmentAutoFollow || segmentTrackNearBottom();
     el.segmentList.textContent = "";
@@ -665,7 +737,9 @@
       if (segment.id === state.currentSegmentId) item.classList.add("is-active");
       el.segmentList.appendChild(item);
     });
-    el.segmentCount.textContent = state.viewMode === "operator" ? `${state.segments.length} segments` : "已加载";
+    if (el.segmentCount) {
+      el.segmentCount.textContent = state.viewMode === "admin" ? `${state.segments.length} segments` : "已加载";
+    }
     if (shouldFollow) {
       scrollSegmentTrackToLive();
     } else {
@@ -688,8 +762,7 @@
     state.segmentAutoFollow = false;
     state.currentSegmentId = segment.id;
     setCaptionWindow(segment);
-    el.englishSidecar.textContent = segment.en || "字幕源为中文或暂无英文 sidecar。";
-    el.confidenceMeter.textContent = `${segment.confidence || "--"}%`;
+    setEnglishSidecar(segment.en || "字幕源为中文或暂无英文 sidecar。", segment.confidence);
     renderSegments();
     log(`已查看历史字幕片段 ${segment.id}；点“回到实时”恢复自动跟随。`);
   }
@@ -700,8 +773,7 @@
     if (latest) {
       state.currentSegmentId = latest.id;
       setCaptionWindow(latest);
-      el.englishSidecar.textContent = latest.en || "字幕源为中文或暂无英文 sidecar。";
-      el.confidenceMeter.textContent = `${latest.confidence || "--"}%`;
+      setEnglishSidecar(latest.en || "字幕源为中文或暂无英文 sidecar。", latest.confidence);
     }
     renderSegments();
     scrollSegmentTrackToLive();
@@ -797,7 +869,7 @@
   }
 
   function updateNotes() {
-    if (!state.segments.length) return;
+    if (!state.segments.length || !el.noteBlock) return;
     const latest = state.segments[state.segments.length - 1];
     el.noteBlock.innerHTML = `
       <h3>证道笔记草稿</h3>
@@ -890,6 +962,7 @@
   }
 
   function applyOffset() {
+    if (!el.offsetInput) return;
     const value = Number(el.offsetInput.value);
     const delta = Number.isFinite(value) ? value : 0;
     if (delta === 0) {
@@ -923,6 +996,8 @@
     setStatus("会众视图已发布", "ready");
     setSla("11:30 会众可用", "ready");
     setGenerationStatus("已发布", "ready");
+    updatePipelineForState("ready");
+    updateAdminEvidence("ready", `captions_ready · ${state.adminSettings.sunday} · ${formatClock()}`);
     log("已冻结并发布会众字幕视图；VTT/SRT 可作为兜底和归档导出。");
     updateTimeline(100);
   }
@@ -977,7 +1052,9 @@
     document.documentElement.style.setProperty("--timeline-progress", `${percent}%`);
     document.documentElement.style.setProperty("--timeline-cursor", `${percent}%`);
     if (el.deadlineLabel) {
-      el.deadlineLabel.textContent = state.frozen ? "Published: congregation view ready" : "Publish target: 11:25 PT";
+      el.deadlineLabel.textContent = state.frozen
+        ? "Published: congregation view ready"
+        : "Ready target: 11:30 PT · latest acceptable: 11:50 PT";
     }
   }
 
@@ -1020,6 +1097,7 @@
   }
 
   function setPill(node, text, tone) {
+    if (!node) return;
     node.textContent = text;
     node.className = "status-pill";
     node.classList.add(`status-pill--${tone || "ready"}`);
@@ -1036,6 +1114,7 @@
         : "08:20/09:50 PT";
     }
     updateCaptureMode(state.adminSettings.captureMode);
+    updateAdminStatusSummary();
   }
 
   function updateCaptureMode(mode) {
@@ -1074,8 +1153,119 @@
   }
 
   function clearLog() {
+    if (!el.eventLog) return;
     el.eventLog.textContent = "";
     log("日志已清空。");
+  }
+
+  async function refreshAdminStatus() {
+    try {
+      const response = await fetch("/api/admin/status", { headers: { "Accept": "application/json" } });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      state.adminStatus = await response.json();
+      if (state.adminStatus?.sunday) {
+        state.adminSettings.sunday = state.adminStatus.sunday;
+      }
+      updateAdminStatusSummary();
+      log("已读取后端 Admin status 摘要。");
+    } catch (error) {
+      state.adminStatus = {
+        artifact: { manifestStatus: "unavailable", manifestError: error.message || String(error) },
+        captions: { translationStatus: "unknown" },
+        settings: { provider: "openai", readinessDeadline: "11:50 PT" },
+        secrets: { openaiApiKey: "unknown", operatorAdminToken: "unknown", internalTaskToken: "unknown" }
+      };
+      updateAdminStatusSummary();
+      log(`Admin status 读取失败：${error.message || error}。`);
+    }
+  }
+
+  function updateAdminStatusSummary() {
+    if (state.viewMode !== "admin") return;
+    const status = state.adminStatus || {};
+    const artifact = status.artifact || {};
+    const captionsStatus = status.captions || {};
+    const settings = status.settings || {};
+    const secrets = status.secrets || {};
+    const sunday = status.sunday || state.adminSettings.sunday;
+    setOptionalText(el.adminSunday, sunday || "--");
+    setOptionalText(el.adminManifestStatus, artifact.manifestStatus || "未检查");
+    setOptionalText(el.adminManifestDetail, artifact.manifestError
+      ? `读取失败：${artifact.manifestError}`
+      : `${artifact.artifactCount || 0} public artifacts`);
+    setOptionalText(el.adminCaptionStatus, captionsStatus.translationStatus || "unknown");
+    setOptionalText(el.adminCaptionDetail, captionCountText(captionsStatus));
+    setOptionalText(el.adminReadyTime, captionsStatus.readyTime || "待发布");
+    setOptionalText(el.adminUpdatedAt, `last updated ${captionsStatus.lastUpdated || formatClock()}`);
+    setOptionalText(el.adminBucket, artifact.bucket || "未配置");
+    setOptionalText(el.adminPrefix, artifact.prefix || "sundays");
+    setOptionalText(el.adminProvider, settings.provider || "openai");
+    setOptionalText(el.adminDeadline, settings.readinessDeadline || "11:50 PT");
+    const secretReady = secrets.openaiApiKey === "configured";
+    if (el.adminSecretStatus) {
+      el.adminSecretStatus.textContent = secretReady ? "OpenAI secret configured" : "OpenAI secret missing";
+      el.adminSecretStatus.classList.toggle("is-manual", !secretReady);
+    }
+  }
+
+  function captionCountText(captionsStatus) {
+    const total = captionsStatus.totalSegments;
+    const translated = captionsStatus.translatedSegments;
+    if (Number.isFinite(total) && Number.isFinite(translated)) {
+      return `${translated} / ${total} translated`;
+    }
+    if (state.segments.length) {
+      return `${state.segments.length} local segments`;
+    }
+    return "waiting for manifest report";
+  }
+
+  function updateAdminEvidence(kind, text) {
+    const target = {
+      triggered: el.evidenceTriggered,
+      worker: el.evidenceWorker,
+      ready: el.evidenceReady,
+      pageView: el.evidencePageViews,
+      devices: el.evidenceDevices
+    }[kind];
+    setOptionalText(target, text);
+  }
+
+  function updatePipelineForState(mode) {
+    if (!el.pipelineList) return;
+    const states = {
+      idle: [],
+      source: ["source-discovery"],
+      captioning: ["source-discovery", "live-capture", "sermon-start", "transcript", "translation"],
+      ready: ["source-discovery", "live-capture", "sermon-start", "transcript", "translation", "scripture", "promotion", "public-ready"]
+    };
+    const done = new Set(states[mode] || []);
+    el.pipelineList.querySelectorAll("[data-stage]").forEach((item) => {
+      const active = mode === "source" && item.dataset.stage === "source-discovery"
+        || mode === "captioning" && item.dataset.stage === "translation";
+      const completed = done.has(item.dataset.stage) && !active;
+      item.dataset.state = completed ? "done" : active ? "active" : "waiting";
+      const label = item.querySelector("em");
+      if (label) label.textContent = completed ? "完成" : active ? "进行中" : "等待";
+    });
+    setOptionalText(el.pipelineSummary, mode === "ready" ? "ready" : mode === "captioning" ? "running" : mode === "source" ? "source" : "waiting");
+  }
+
+  function updatePipelineStage(stage, stateName, labelText) {
+    const item = el.pipelineList?.querySelector(`[data-stage="${stage}"]`);
+    if (!item) return;
+    item.dataset.state = stateName;
+    const label = item.querySelector("em");
+    if (label) label.textContent = labelText;
+  }
+
+  function setOptionalText(node, value) {
+    if (node) node.textContent = value;
+  }
+
+  function setEnglishSidecar(text, confidence) {
+    if (el.englishSidecar) el.englishSidecar.textContent = text;
+    if (el.confidenceMeter) el.confidenceMeter.textContent = `${confidence || "--"}%`;
   }
 
   function reportPageView() {

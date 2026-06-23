@@ -4,9 +4,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#f7fbff" />
-    <title>11:30 会众中文字幕控制台</title>
+    <title>11:30 会众中文字幕</title>
     <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="stylesheet" href="./styles.css?v=20260623-scripture1" />
+    <link rel="stylesheet" href="./styles.css?v=20260623-admin1" />
   </head>
   <body>
     <div class="app-shell" data-sidebar="open" data-view-mode="congregation">
@@ -27,112 +27,6 @@
       </header>
 
       <main class="workspace">
-        <section class="control-panel" aria-labelledby="live-source-title" data-operator-only>
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow">Prepare Before 11:30</p>
-              <h2 id="live-source-title">会前字幕源监控</h2>
-            </div>
-            <span class="runtime" id="clock">--:--:-- PT</span>
-          </div>
-
-          <div class="segmented-control" role="tablist" aria-label="直播场次">
-            <button type="button" class="segment is-active" data-action="select-service" data-service="830">8:30</button>
-            <button type="button" class="segment" data-action="select-service" data-service="1000">10:00</button>
-            <button type="button" class="segment" data-action="select-service" data-service="manual">手动</button>
-          </div>
-
-          <form class="admin-settings" id="adminSettings" aria-label="Admin source settings">
-            <div class="settings-header">
-              <div>
-                <span class="sidecar-label">Admin Settings</span>
-                <h3>直播链接与周日页面</h3>
-              </div>
-              <span class="settings-mode" id="captureMode">自动抓取</span>
-            </div>
-
-            <label class="field">
-              <span>本周日页面</span>
-              <select id="sundaySelect">
-                <option value="2026-06-21">2026-06-21</option>
-                <option value="2026-06-28">2026-06-28</option>
-              </select>
-            </label>
-
-            <label class="field">
-              <span>手动直播链接</span>
-              <input
-                type="url"
-                id="manualLiveUrl"
-                inputmode="url"
-                autocomplete="url"
-                placeholder="https://www.youtube.com/watch?v=..."
-              />
-            </label>
-
-            <label class="field">
-              <span>证道大致开始时间</span>
-              <input type="text" id="approxStartTime" inputmode="numeric" placeholder="例如 00:23:25，可留空" />
-            </label>
-
-            <div class="settings-grid" aria-label="自动抓取状态">
-              <div>
-                <span>自动探测</span>
-                <strong id="autoDiscoveryStatus">周日 08:20 PT</strong>
-              </div>
-              <div>
-                <span>会众页面</span>
-                <strong id="publicSliceLabel">同一周日切片</strong>
-              </div>
-            </div>
-
-            <div class="button-row">
-              <button class="button" type="button" data-action="save-admin-settings">保存设置</button>
-              <button class="button button--primary" type="button" data-action="trigger-manual-ingest">手动触发</button>
-              <button class="button" type="button" data-action="run-auto-discovery">模拟自动抓取</button>
-            </div>
-          </form>
-
-          <div class="source-list" id="sourceList" aria-live="polite">
-            <article class="source-card is-primary" data-source="mariners-online">
-              <div>
-                <h3>Mariners Online</h3>
-                <p>优先探测官方 Church Online live 页面</p>
-              </div>
-              <span class="source-state">待检测</span>
-            </article>
-            <article class="source-card" data-source="youtube-streams">
-              <div>
-                <h3>YouTube Streams</h3>
-                <p>@marinerschurch/streams live / upcoming</p>
-              </div>
-              <span class="source-state">待检测</span>
-            </article>
-            <article class="source-card" data-source="operator-audio">
-              <div>
-                <h3>Operator Audio</h3>
-                <p>外接音频或麦克风兜底</p>
-              </div>
-              <span class="source-state">可备用</span>
-            </article>
-          </div>
-
-          <div class="button-row">
-            <button class="button button--primary" type="button" data-action="start-monitor">开始监控</button>
-            <button class="button" type="button" data-action="start-caption">生成会众字幕</button>
-            <button class="button" type="button" data-action="start-playback">模拟播放</button>
-            <button class="button" type="button" data-action="use-fallback">切换兜底</button>
-          </div>
-
-          <div class="event-log" aria-live="polite">
-            <div class="event-log__header">
-              <h3>运行日志</h3>
-              <button class="text-button" type="button" data-action="clear-log">清空</button>
-            </div>
-            <ol id="eventLog"></ol>
-          </div>
-        </section>
-
         <section class="subtitle-stage" aria-labelledby="caption-title">
           <div class="stage-toolbar">
             <div>
@@ -233,30 +127,9 @@
         </aside>
       </main>
 
-      <footer class="timeline-panel" aria-label="时间轴和导出" data-operator-only>
-        <div class="timeline-meta">
-          <span id="sessionLabel">11:30 caption session: not started</span>
-          <span id="deadlineLabel">Publish target: 11:25 PT</span>
-        </div>
-        <div class="timeline-track">
-          <div class="timeline-fill" id="timelineFill"></div>
-          <div class="timeline-cursor" id="timelineCursor"></div>
-        </div>
-        <div class="timeline-controls">
-          <label class="offset-control">
-            <span>时间轴平移</span>
-            <input type="number" id="offsetInput" value="0" step="250" />
-            <span>ms</span>
-          </label>
-          <button class="button" type="button" data-action="apply-offset">应用平移</button>
-          <button class="button" type="button" data-action="freeze-review">冻结并发布</button>
-          <button class="button button--primary" type="button" data-action="export-vtt">导出 VTT</button>
-          <button class="button button--primary" type="button" data-action="export-srt">导出 SRT</button>
-        </div>
-      </footer>
     </div>
 
     <script src="./playback-simulation.generated.js" defer></script>
-    <script src="./app.js?v=20260623-telemetry1" defer></script>
+    <script src="./app.js?v=20260623-admin1" defer></script>
   </body>
 </html>

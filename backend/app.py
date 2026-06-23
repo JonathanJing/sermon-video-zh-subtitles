@@ -61,6 +61,9 @@ class ApiHandler(BaseHTTPRequestHandler):
         if path == "/api/health":
             self.write_json({"status": "ok"})
             return
+        if path == "/api/admin/status":
+            self.write_json(self.admin_status())
+            return
         parts = [part for part in path.split("/") if part]
         if parts[:2] == ["api", "sundays"] and len(parts) == 3:
             self.write_json(self.service.get_public_slice(parts[2]))
@@ -96,6 +99,10 @@ class ApiHandler(BaseHTTPRequestHandler):
         clean_path = unquote(path.split("?", 1)[0])
         if clean_path in {"", "/"}:
             clean_path = "/index.html"
+        if clean_path in {"/admin", "/admin/"}:
+            admin = WEB_ROOT / "admin.html"
+            if admin.is_file():
+                return admin
         if clean_path.endswith("/"):
             clean_path += "index.html"
         candidate = (WEB_ROOT / clean_path.lstrip("/")).resolve()
@@ -103,6 +110,10 @@ class ApiHandler(BaseHTTPRequestHandler):
             raise FileNotFoundError(clean_path)
         if candidate.is_file():
             return candidate
+        if clean_path == "/admin/index.html":
+            admin = WEB_ROOT / "admin.html"
+            if admin.is_file():
+                return admin
         # Keep direct Sunday/operator links browser-routable for the PWA.
         if "." not in Path(clean_path).name:
             return WEB_ROOT / "index.html"
@@ -218,6 +229,63 @@ class ApiHandler(BaseHTTPRequestHandler):
             clientIpHash=client_ip_hash(self.headers, self.client_address),
         )
         self.write_json({"status": "logged"}, status=202)
+
+    def admin_status(self) -> dict:
+        sunday = self.service._resolve_sunday("current")
+        public_slice = None
+        manifest_status = "missing"
+        manifest_error = None
+        try:
+            public_slice = self.service.get_public_slice("current")
+            manifest_status = str(public_slice.get("status") or "ready")
+        except Exception as exc:
+            manifest_error = str(exc)
+        return {
+            "schemaVersion": 1,
+            "status": "ok",
+            "sunday": sunday,
+            "timezone": self.config.timezone,
+            "service": {
+                "runtime": "cloud-run-compatible",
+                "health": "ok",
+            },
+            "artifact": {
+                "bucket": self.config.artifact_bucket,
+                "prefix": self.config.artifact_prefix,
+                "manifestStatus": manifest_status,
+                "manifestError": manifest_error,
+                "artifactCount": public_slice.get("artifactCount") if public_slice else 0,
+            },
+            "captions": {
+                "sermonTitle": public_slice.get("sermonTitle") if public_slice else None,
+                "translationStatus": public_slice.get("translationStatus") if public_slice else "unknown",
+                "totalSegments": public_slice.get("totalSegments") if public_slice else None,
+                "translatedSegments": public_slice.get("translatedSegments") if public_slice else None,
+                "readyTime": public_slice.get("readyTime") if public_slice else None,
+                "lastUpdated": public_slice.get("lastUpdated") if public_slice else None,
+            },
+            "settings": {
+                "provider": "openai",
+                "targetServiceTime": "11:30 PT",
+                "readinessDeadline": "11:50 PT",
+                "manualTriggerEndpoint": "/api/admin/sundays/{sunday}/generate",
+                "telemetryEndpoint": "/api/telemetry/page-view",
+            },
+            "secrets": {
+                "openaiApiKey": "configured" if self.config.openai_api_key_secret else "missing",
+                "operatorAdminToken": "configured" if self.config.operator_admin_token else "missing",
+                "internalTaskToken": "configured" if self.config.internal_task_token else "missing",
+            },
+            "observability": {
+                "events": [
+                    "live_capture_triggered",
+                    "worker_stage_completed",
+                    "captions_ready",
+                    "congregation_page_view",
+                ],
+                "pageViewTelemetry": "enabled",
+            },
+        }
 
     def authorized(self) -> bool:
         auth_header = self.headers.get("Authorization", "")

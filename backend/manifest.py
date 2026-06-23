@@ -45,6 +45,10 @@ class SundaySliceService:
             "status": manifest.get("status", "ready"),
             "sermonTitle": self._sermon_title(report),
             "translationStatus": self._translation_status(manifest, report),
+            "totalSegments": self._report_number(report, "totalSegments"),
+            "translatedSegments": self._report_number(report, "translatedSegments"),
+            "readyTime": manifest.get("readyTime") or manifest.get("promotedAt"),
+            "lastUpdated": manifest.get("updatedAt") or manifest.get("promotedAt"),
             "artifactCount": len(artifacts),
             "artifacts": [
                 {
@@ -147,3 +151,9 @@ class SundaySliceService:
         if report.get("translation_status"):
             return str(report["translation_status"])
         return "source-captions-ready"
+
+    def _report_number(self, report: dict[str, Any] | None, key: str) -> int | None:
+        if not report:
+            return None
+        value = report.get(key)
+        return value if isinstance(value, int) else None

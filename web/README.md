@@ -1,16 +1,22 @@
 # Web Prototype
 
-This is a frontend-only prototype for preparing and publishing Chinese captions for the Mariners Church 11:30 service congregation.
+This is the browser prototype for preparing, publishing, and viewing Chinese captions for the Mariners Church 11:30 service congregation.
 
 Open `index.html` directly in a browser, or serve the `web/` folder with any static server.
 
+Pages:
+
+- `index.html`: public congregation caption page.
+- `admin.html`: operator/Admin page for source status, manual trigger, pipeline stages, settings, and observability evidence.
+
 Prototype scope:
 
-- Live source monitoring flow for 8:30 PT first, 10:00 PT fallback, so captions are ready before the 11:30 service.
+- Public congregation view with captions, disclaimer, full transcript, and scripture/sidebar content.
+- Admin live source monitoring flow for 8:30 PT first, 10:00 PT fallback, so captions are ready before the 11:30 service.
 - Realtime Chinese caption workspace focused on what congregants can use while listening to the sermon.
 - Live-link playback simulation using `playback-simulation.generated.js` from the offline POC.
 - Scripture sidebar, glossary, notes placeholder.
-- Review/publish timeline controls and VTT/SRT export buttons for fallback and archival use.
+- Admin review/publish timeline controls and VTT/SRT export buttons for fallback and archival use.
 
 From the repository root, test with a live archive link:
 

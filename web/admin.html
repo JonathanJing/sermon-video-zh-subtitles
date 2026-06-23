@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f7fbff" />
+    <title>Admin | 11:30 会众中文字幕</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="stylesheet" href="./styles.css?v=20260623-admin1" />
+  </head>
+  <body>
+    <div class="app-shell admin-shell" data-sidebar="open" data-view-mode="admin">
+      <header class="topbar">
+        <div class="brand-block">
+          <span class="brand-mark" aria-hidden="true">道</span>
+          <div>
+            <p class="eyebrow">Admin Console</p>
+            <h1>11:30 字幕生成管理</h1>
+          </div>
+        </div>
+
+        <div class="status-cluster" aria-label="系统状态">
+          <span class="status-pill status-pill--watching" id="sourceStatus">等待监控</span>
+          <span class="status-pill" id="slaStatus">11:30 会众可用</span>
+          <a class="button button--small" href="./">会众页</a>
+          <button class="icon-button" type="button" data-action="toggle-sidebar" aria-label="切换经文侧栏" title="切换经文侧栏">章</button>
+        </div>
+      </header>
+
+      <section class="admin-overview" aria-labelledby="admin-overview-title">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Readiness Overview</p>
+            <h2 id="admin-overview-title">周日字幕状态总览</h2>
+          </div>
+          <span class="runtime" id="clock">--:--:-- PT</span>
+        </div>
+        <div class="admin-kpis" aria-label="当前周日状态">
+          <article class="admin-kpi">
+            <span>Sunday</span>
+            <strong id="adminSunday">--</strong>
+            <p>当前会众页面切片</p>
+          </article>
+          <article class="admin-kpi">
+            <span>Manifest</span>
+            <strong id="adminManifestStatus">未检查</strong>
+            <p id="adminManifestDetail">等待读取 GCS manifest</p>
+          </article>
+          <article class="admin-kpi">
+            <span>Captions</span>
+            <strong id="adminCaptionStatus">待生成</strong>
+            <p id="adminCaptionDetail">0 / 0 translated</p>
+          </article>
+          <article class="admin-kpi">
+            <span>Ready Time</span>
+            <strong id="adminReadyTime">--</strong>
+            <p id="adminUpdatedAt">last updated --</p>
+          </article>
+        </div>
+      </section>
+
+      <main class="workspace">
+        <section class="control-panel" aria-labelledby="live-source-title" data-operator-only>
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Prepare Before 11:30</p>
+              <h2 id="live-source-title">直播源与手动触发</h2>
+            </div>
+            <span class="settings-mode" id="adminSecretStatus">Secret 未检查</span>
+          </div>
+
+          <div class="segmented-control" role="tablist" aria-label="直播场次">
+            <button type="button" class="segment is-active" data-action="select-service" data-service="830">8:30</button>
+            <button type="button" class="segment" data-action="select-service" data-service="1000">10:00</button>
+            <button type="button" class="segment" data-action="select-service" data-service="manual">手动</button>
+          </div>
+
+          <form class="admin-settings" id="adminSettings" aria-label="Admin source settings">
+            <div class="settings-header">
+              <div>
+                <span class="sidecar-label">Admin Settings</span>
+                <h3>直播链接与周日页面</h3>
+              </div>
+              <span class="settings-mode" id="captureMode">自动抓取</span>
+            </div>
+
+            <label class="field">
+              <span>本周日页面</span>
+              <select id="sundaySelect">
+                <option value="2026-06-21">2026-06-21</option>
+                <option value="2026-06-28">2026-06-28</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>手动直播链接</span>
+              <input
+                type="url"
+                id="manualLiveUrl"
+                inputmode="url"
+                autocomplete="url"
+                placeholder="https://www.youtube.com/watch?v=..."
+              />
+            </label>
+
+            <label class="field">
+              <span>证道大致开始时间</span>
+              <input type="text" id="approxStartTime" inputmode="numeric" placeholder="例如 00:23:25，可留空" />
+            </label>
+
+            <div class="settings-grid" aria-label="自动抓取状态">
+              <div>
+                <span>自动探测窗口</span>
+                <strong id="autoDiscoveryStatus">周日 08:20 PT</strong>
+              </div>
+              <div>
+                <span>会众页面</span>
+                <strong id="publicSliceLabel">同一周日切片</strong>
+              </div>
+              <div>
+                <span>GCS Bucket</span>
+                <strong id="adminBucket">--</strong>
+              </div>
+              <div>
+                <span>GCS Prefix</span>
+                <strong id="adminPrefix">--</strong>
+              </div>
+              <div>
+                <span>Provider</span>
+                <strong id="adminProvider">OpenAI translation chain</strong>
+              </div>
+              <div>
+                <span>Deadline</span>
+                <strong id="adminDeadline">11:50 PT</strong>
+              </div>
+            </div>
+
+            <div class="button-row">
+              <button class="button" type="button" data-action="save-admin-settings">保存设置</button>
+              <button class="button button--primary" type="button" data-action="trigger-manual-ingest">手动触发</button>
+              <button class="button" type="button" data-action="run-auto-discovery">模拟自动抓取</button>
+            </div>
+          </form>
+
+          <div class="source-list" id="sourceList" aria-live="polite">
+            <article class="source-card is-primary" data-source="mariners-online">
+              <div>
+                <h3>Mariners Online</h3>
+                <p>优先探测官方 Church Online live 页面</p>
+              </div>
+              <span class="source-state">待检测</span>
+            </article>
+            <article class="source-card" data-source="youtube-streams">
+              <div>
+                <h3>YouTube Streams</h3>
+                <p>@marinerschurch/streams live / upcoming</p>
+              </div>
+              <span class="source-state">待检测</span>
+            </article>
+            <article class="source-card" data-source="operator-audio">
+              <div>
+                <h3>Operator Audio</h3>
+                <p>外接音频或麦克风兜底</p>
+              </div>
+              <span class="source-state">可备用</span>
+            </article>
+          </div>
+
+          <div class="button-row">
+            <button class="button button--primary" type="button" data-action="start-monitor">开始监控</button>
+            <button class="button" type="button" data-action="start-caption">生成会众字幕</button>
+            <button class="button" type="button" data-action="start-playback">模拟播放</button>
+            <button class="button" type="button" data-action="use-fallback">切换兜底</button>
+          </div>
+
+          <div class="pipeline-panel" aria-labelledby="pipeline-title">
+            <div class="event-log__header">
+              <h3 id="pipeline-title">生成阶段</h3>
+              <span class="source-state" id="pipelineSummary">waiting</span>
+            </div>
+            <ol class="pipeline-list" id="pipelineList">
+              <li data-stage="source-discovery"><span>1</span><div><strong>发现直播源</strong><p>source discovery</p></div><em>等待</em></li>
+              <li data-stage="live-capture"><span>2</span><div><strong>采集直播/归档</strong><p>live capture / archive ingest</p></div><em>等待</em></li>
+              <li data-stage="sermon-start"><span>3</span><div><strong>判断证道开始</strong><p>sermon start detection</p></div><em>等待</em></li>
+              <li data-stage="transcript"><span>4</span><div><strong>英文听写</strong><p>English transcript extraction</p></div><em>等待</em></li>
+              <li data-stage="translation"><span>5</span><div><strong>生成中文翻译</strong><p>Chinese translation</p></div><em>等待</em></li>
+              <li data-stage="scripture"><span>6</span><div><strong>经文与术语匹配</strong><p>scripture / glossary matching</p></div><em>等待</em></li>
+              <li data-stage="promotion"><span>7</span><div><strong>发布 Manifest</strong><p>manifest promotion</p></div><em>等待</em></li>
+              <li data-stage="public-ready"><span>8</span><div><strong>会众页可用</strong><p>public page readiness</p></div><em>等待</em></li>
+            </ol>
+          </div>
+
+          <div class="observability-panel" aria-labelledby="observability-title">
+            <div class="event-log__header">
+              <h3 id="observability-title">日志证据</h3>
+              <span class="source-state">Cloud Logging</span>
+            </div>
+            <dl class="admin-evidence">
+              <div><dt>live_capture_triggered</dt><dd id="evidenceTriggered">暂无本页事件</dd></div>
+              <div><dt>worker_stage_completed</dt><dd id="evidenceWorker">等待 worker 日志</dd></div>
+              <div><dt>captions_ready</dt><dd id="evidenceReady">等待发布</dd></div>
+              <div><dt>page views</dt><dd id="evidencePageViews">浏览器 telemetry 已启用</dd></div>
+              <div><dt>unique devices</dt><dd id="evidenceDevices">需 Cloud Logging / BigQuery 查询</dd></div>
+            </dl>
+          </div>
+
+          <div class="event-log" aria-live="polite">
+            <div class="event-log__header">
+              <h3>运行日志</h3>
+              <button class="text-button" type="button" data-action="clear-log">清空</button>
+            </div>
+            <ol id="eventLog"></ol>
+          </div>
+        </section>
+
+        <section class="subtitle-stage" aria-labelledby="caption-title">
+          <div class="stage-toolbar">
+            <div>
+              <p class="eyebrow">Congregation Caption</p>
+              <h2 id="caption-title">11:30 场可用中文字幕</h2>
+            </div>
+            <div class="button-row button-row--compact" data-operator-only>
+              <button class="icon-button" type="button" data-action="mark-segment" aria-label="标记当前片段" title="标记当前片段">记</button>
+              <button class="icon-button" type="button" data-action="lock-segment" aria-label="锁定当前片段" title="锁定当前片段">锁</button>
+              <button class="icon-button" type="button" data-action="toggle-stream" aria-label="暂停或继续字幕流" title="暂停或继续字幕流">停</button>
+            </div>
+          </div>
+
+          <div class="sermon-meta" aria-live="polite">
+            <div>
+              <span class="sidecar-label">Sermon title</span>
+              <h3 id="sermonTitle">等待直播链接</h3>
+              <p id="sermonMeta">准备直播链接后，会在这里显示证道标题和开始时间。</p>
+            </div>
+            <span class="generation-badge" id="generationStatus">待开始</span>
+          </div>
+
+          <aside class="viewer-disclaimer" aria-label="字幕免责声明">
+            <strong>字幕免责声明</strong>
+            <p>本页面中文字幕由 AI 辅助生成，供现场听道理解参考，可能存在延迟、遗漏或翻译不准确。请以讲员原文、教会正式发布内容和正式圣经译本为准。</p>
+          </aside>
+
+          <div class="caption-window" id="captionWindow">
+            <p class="caption-line caption-line--draft" id="draftCaption">Waiting for English transcript...</p>
+            <p class="caption-line" id="stableCaption">等待中文字幕...</p>
+          </div>
+
+          <div class="sidecar" data-operator-only>
+            <div>
+              <span class="sidecar-label">English sidecar</span>
+              <p id="englishSidecar">Waiting for streaming transcript.</p>
+            </div>
+            <span class="confidence-meter" id="confidenceMeter">--%</span>
+          </div>
+
+          <div class="review-strip" aria-label="完整字幕">
+            <div class="review-strip__head">
+              <h3>完整字幕</h3>
+              <div class="review-strip__actions">
+                <span id="segmentCount">待加载</span>
+                <button class="text-button is-hidden" type="button" data-action="return-live" id="returnLiveButton">回到实时</button>
+              </div>
+            </div>
+            <ul class="segment-list" id="segmentList" aria-label="可触屏滚动的字幕轨道"></ul>
+          </div>
+        </section>
+
+        <aside class="scripture-panel" id="scripturePanel" aria-labelledby="scripture-title">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Scripture Sidebar</p>
+              <h2 id="scripture-title">经文与术语</h2>
+            </div>
+            <button class="icon-button" type="button" data-action="toggle-sidebar" aria-label="关闭经文侧栏" title="关闭经文侧栏">收</button>
+          </div>
+
+          <div class="tabs" role="tablist" aria-label="侧栏视图">
+            <button class="tab is-active" type="button" data-action="select-tab" data-tab="scripture">经文</button>
+            <button class="tab" type="button" data-action="select-tab" data-tab="terms">术语</button>
+            <button class="tab" type="button" data-action="select-tab" data-tab="notes">笔记</button>
+          </div>
+
+          <div class="tab-panel" data-tab-panel="scripture">
+            <article class="scripture-card is-exact" id="primaryScriptureCard">
+              <span>经文</span>
+              <h3>民数记 16</h3>
+              <p class="scripture-source">中文圣经：和合本 · Numbers 16</p>
+              <p>可拉一党背叛，摩西与亚伦为百姓代求。系统会在实时字幕中优先固定明确经文。</p>
+              <div class="scripture-passage">
+                <p><strong>16:1-3</strong> 可拉、大坍、亚比兰等人聚集攻击摩西、亚伦，说：“你们擅自专权！全会众个个既是圣洁，耶和华也在他们中间。”</p>
+                <p><strong>16:20-22</strong> 耶和华吩咐摩西和亚伦离开会众，摩西与亚伦却俯伏在地，为百姓代求。</p>
+                <p><strong>16:31-35</strong> 地开口吞下叛逆的人，又有火从耶和华那里出来，烧灭献香的二百五十个人。</p>
+                <p><strong>16:46-48</strong> 摩西吩咐亚伦拿香炉为百姓赎罪；亚伦站在活人死人中间，瘟疫就止住了。</p>
+              </div>
+            </article>
+            <div id="scriptureCandidates"></div>
+          </div>
+
+          <div class="tab-panel is-hidden" data-tab-panel="terms">
+            <ul class="term-list" id="termList">
+              <li><strong>Mediator</strong><span>中保</span></li>
+              <li><strong>Intercede</strong><span>代求</span></li>
+              <li><strong>Rebellion</strong><span>悖逆</span></li>
+            </ul>
+          </div>
+
+          <div class="tab-panel is-hidden" data-tab-panel="notes">
+            <div class="note-block" id="noteBlock">
+              <h3>证道笔记草稿</h3>
+              <p>离线字幕用于复核 11:30 会众字幕质量，并在证道后生成摘要、大纲、应用问题和可追溯金句。</p>
+            </div>
+          </div>
+        </aside>
+      </main>
+
+      <footer class="timeline-panel" aria-label="时间轴和导出" data-operator-only>
+        <div class="timeline-meta">
+          <span id="sessionLabel">11:30 caption session: not started</span>
+          <span id="deadlineLabel">Ready target: 11:30 PT · latest acceptable: 11:50 PT</span>
+        </div>
+        <div class="timeline-track">
+          <div class="timeline-fill" id="timelineFill"></div>
+          <div class="timeline-cursor" id="timelineCursor"></div>
+        </div>
+        <div class="timeline-controls">
+          <label class="offset-control">
+            <span>时间轴平移</span>
+            <input type="number" id="offsetInput" value="0" step="250" />
+            <span>ms</span>
+          </label>
+          <button class="button" type="button" data-action="apply-offset">应用平移</button>
+          <button class="button" type="button" data-action="freeze-review">冻结并发布</button>
+          <button class="button button--primary" type="button" data-action="export-vtt">导出 VTT</button>
+          <button class="button button--primary" type="button" data-action="export-srt">导出 SRT</button>
+        </div>
+      </footer>
+    </div>
+
+    <script src="./playback-simulation.generated.js" defer></script>
+    <script src="./app.js?v=20260623-admin1" defer></script>
+  </body>
+</html>

@@ -125,12 +125,12 @@ def run_browser_checks(base_url: str, headed: bool = False) -> list[dict[str, ob
             results.append({"viewport": "iphone-autoplay-param", "width": 390, "height": 844, "ok": True})
             autoplay_page.close()
 
-            operator_page = browser.new_page(viewport={"width": 1366, "height": 900})
-            operator_page.goto(base_url.rstrip("/") + "/?mode=operator", wait_until="networkidle")
-            check_operator_mode(operator_page)
-            check_playback(operator_page)
-            results.append({"viewport": "operator-desktop", "width": 1366, "height": 900, "ok": True})
-            operator_page.close()
+            admin_page = browser.new_page(viewport={"width": 1366, "height": 900})
+            admin_page.goto(base_url.rstrip("/") + "/admin.html", wait_until="networkidle")
+            check_admin_mode(admin_page)
+            check_playback(admin_page)
+            results.append({"viewport": "admin-desktop", "width": 1366, "height": 900, "ok": True})
+            admin_page.close()
 
             js_text = fetch_text(base_url.rstrip("/") + "/playback-simulation.generated.js")
             check_sanitized_text(js_text, "playback-simulation.generated.js")
@@ -282,11 +282,16 @@ def check_public_layout_bounds(page) -> None:
         raise AssertionError(f"Subtitle track is not scrollable: {layout}")
 
 
-def check_operator_mode(page) -> None:
+def check_admin_mode(page) -> None:
+    expect(page.locator("h1")).to_contain_text("字幕生成管理")
+    expect(page.locator(".admin-overview")).to_be_visible()
+    expect(page.locator("#adminManifestStatus")).to_be_visible()
     expect(page.locator(".control-panel")).to_be_visible()
     expect(page.locator("[data-action='trigger-manual-ingest']")).to_be_visible()
     expect(page.locator("[data-action='start-playback']")).to_be_visible()
     expect(page.locator("[data-action='export-vtt']")).to_be_visible()
+    expect(page.locator("#pipelineList")).to_be_visible()
+    expect(page.locator("#observability-title")).to_be_visible()
 
 
 def check_playback(page) -> None:

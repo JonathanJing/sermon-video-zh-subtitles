@@ -10,6 +10,7 @@ current static PWA untouched while adding a Cloud Run-compatible API surface.
 - `GET /api/sundays/YYYY-MM-DD`
 - `GET /api/sundays/YYYY-MM-DD/artifacts/<artifact-key>`
 - `POST /api/telemetry/page-view`
+- `GET /api/admin/status`
 
 The public Sunday response is intentionally filtered. It exposes only playback
 JS and caption files from the server-side manifest. It strips Secret Manager
@@ -18,6 +19,11 @@ resource names, admin controls, raw model output, and generated report JSON.
 The page-view telemetry endpoint accepts anonymous browser/device metadata and
 writes a `congregation_page_view` JSON log event. It does not create a login
 identity and should not receive cookies, API keys, or raw user identifiers.
+
+`GET /api/admin/status` returns a safe Admin summary for the operator page. It
+may show bucket/prefix, manifest status, timezone, and secret configured/missing
+state, but must never return raw key material, tokens, cookies, or Secret
+Manager resource names.
 
 Required config:
 
