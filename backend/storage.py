@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import subprocess
+from urllib.error import URLError
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
@@ -69,7 +71,12 @@ class GcsArtifactReader(ArtifactReader):
         if client is not None:
             bucket = client.bucket(parsed.bucket)
             return bucket.blob(parsed.object_name).download_as_bytes()
-        return self._read_with_authenticated_http(parsed)
+        try:
+            return self._read_with_authenticated_http(parsed)
+        except URLError:
+            return self._read_with_gcloud(parsed)
+        except OSError:
+            return self._read_with_gcloud(parsed)
 
     def _default_client(self):
         try:
@@ -100,3 +107,10 @@ class GcsArtifactReader(ArtifactReader):
 
         return json.loads(data)["access_token"]
 
+    def _read_with_gcloud(self, parsed: GcsUri) -> bytes:
+        completed = subprocess.run(
+            ["gcloud", "storage", "cat", parsed.uri],
+            check=True,
+            capture_output=True,
+        )
+        return completed.stdout

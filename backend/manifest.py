@@ -44,7 +44,7 @@ class SundaySliceService:
             "sunday": resolved_sunday,
             "status": manifest.get("status", "ready"),
             "sermonTitle": self._sermon_title(report),
-            "translationStatus": self._translation_status(report),
+            "translationStatus": self._translation_status(manifest, report),
             "artifactCount": len(artifacts),
             "artifacts": [
                 {
@@ -139,7 +139,9 @@ class SundaySliceService:
         candidate = report.get("sermon_candidate") or report.get("live") or {}
         return candidate.get("title")
 
-    def _translation_status(self, report: dict[str, Any] | None) -> str:
+    def _translation_status(self, manifest: dict[str, Any], report: dict[str, Any] | None) -> str:
+        if manifest.get("translationStatus"):
+            return str(manifest["translationStatus"])
         if not report:
             return "unknown"
         if report.get("translation_status"):

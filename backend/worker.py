@@ -13,6 +13,8 @@ from .config import AppConfig
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PREPARE_SCRIPT = REPO_ROOT / "scripts" / "prepare_live_link_playback.py"
+TRANSLATE_SCRIPT = REPO_ROOT / "scripts" / "translate_playback_with_openai.py"
+PROMOTE_SCRIPT = REPO_ROOT / "scripts" / "promote_sunday_manifest.py"
 
 
 @dataclass(frozen=True)
@@ -26,6 +28,13 @@ class GenerationRequest:
     max_segments: int = 80
     playback_speed: float = 18.0
     dry_run_gcs: bool = False
+
+
+@dataclass(frozen=True)
+class GenerationPlan:
+    session_id: str
+    prefix: str
+    commands: list[list[str]]
 
 
 def build_generation_command(
@@ -79,6 +88,84 @@ def build_generation_command(
     return command
 
 
+def build_generation_plan(
+    request: GenerationRequest,
+    config: AppConfig,
+    work_root: Path = Path("/tmp/sermon-worker"),
+) -> GenerationPlan:
+    if not config.artifact_bucket:
+        raise ValueError("SERMON_ARTIFACT_BUCKET is required to generate Sunday artifacts")
+    if not config.openai_api_key_secret:
+        raise ValueError("OPENAI_API_KEY_SECRET must point to Secret Manager, not raw key material")
+
+    session_id = request.session_id or default_session_id()
+    run_root = work_root / request.sunday / session_id
+    web_out = run_root / "web" / "playback-simulation.generated.js"
+    translation_out_dir = run_root / "model-output"
+    prefix = "/".join(
+        part.strip("/")
+        for part in [config.artifact_prefix, request.sunday, "runs", session_id]
+        if part.strip("/")
+    )
+    stable_manifest_prefix = config.artifact_prefix.strip("/")
+
+    prepare = build_generation_command(
+        GenerationRequest(
+            sunday=request.sunday,
+            live_url=request.live_url,
+            session_id=session_id,
+            sermon_url=request.sermon_url,
+            sermon_start=request.sermon_start,
+            playback_lang=request.playback_lang,
+            max_segments=request.max_segments,
+            playback_speed=request.playback_speed,
+            dry_run_gcs=request.dry_run_gcs,
+        ),
+        config,
+        work_root=work_root,
+    )
+    translate = [
+        sys.executable,
+        str(TRANSLATE_SCRIPT),
+        "--input",
+        str(web_out),
+        "--out",
+        str(web_out),
+        "--out-dir",
+        str(translation_out_dir),
+        "--api-key-secret",
+        config.openai_api_key_secret,
+        "--max-segments",
+        str(request.max_segments),
+    ]
+    upload_translated_playback = [
+        "gcloud",
+        "storage",
+        "cp",
+        str(web_out),
+        f"gs://{config.artifact_bucket}/{prefix}/web/playback-simulation.generated.js",
+    ]
+    promote = [
+        sys.executable,
+        str(PROMOTE_SCRIPT),
+        "--source-manifest",
+        f"gs://{config.artifact_bucket}/{prefix}/artifacts/cloud-manifest.json",
+        "--sunday",
+        request.sunday,
+        "--gcs-bucket",
+        config.artifact_bucket,
+        "--gcs-prefix",
+        stable_manifest_prefix,
+    ]
+    if request.dry_run_gcs:
+        promote.append("--dry-run")
+    return GenerationPlan(
+        session_id=session_id,
+        prefix=prefix,
+        commands=[prepare, translate, upload_translated_playback, promote],
+    )
+
+
 def default_session_id() -> str:
     return "worker-" + datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
 
@@ -121,14 +208,14 @@ def main() -> int:
         playback_lang=args.playback_lang,
         dry_run_gcs=args.dry_run_gcs,
     )
-    command = build_generation_command(request, AppConfig.from_env())
+    plan = build_generation_plan(request, AppConfig.from_env())
     if args.plan_only:
-        print(json.dumps({"command": command}, indent=2))
+        print(json.dumps({"sessionId": plan.session_id, "prefix": plan.prefix, "commands": plan.commands}, indent=2))
         return 0
-    subprocess.run(command, cwd=REPO_ROOT, check=True)
+    for command in plan.commands:
+        subprocess.run(command, cwd=REPO_ROOT, check=True)
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

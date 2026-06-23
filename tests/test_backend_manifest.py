@@ -16,6 +16,8 @@ class SundaySliceServiceTest(unittest.TestCase):
                 root / "manifest.json",
                 {
                     "schemaVersion": 1,
+                    "status": "ready",
+                    "translationStatus": "ready",
                     "apiKeySecret": "projects/p/secrets/openai-api-key/versions/latest",
                     "apiKeyMaterialIncluded": False,
                     "outputs": [
@@ -67,6 +69,8 @@ class SundaySliceServiceTest(unittest.TestCase):
             public_slice = service.get_public_slice("current")
 
             self.assertEqual(public_slice["artifactCount"], 2)
+            self.assertEqual(public_slice["status"], "ready")
+            self.assertEqual(public_slice["translationStatus"], "ready")
             self.assertEqual(
                 public_slice["sermonTitle"],
                 "The Cure for Our Rebellion - Eric Geiger | Mariners Church",
