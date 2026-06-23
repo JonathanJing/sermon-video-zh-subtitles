@@ -22,7 +22,6 @@ coverage/
 *.log
 artifacts/
 data/raw/
-scripts/
 tests/
 docs/
 data/
