@@ -144,7 +144,7 @@
     syncAdminSettings();
     updateSourceCards("idle");
     updateTimeline();
-    startPublicPlaybackIfReady();
+    loadPublicPublishedSnapshot();
   }
 
   function configureViewMode() {
@@ -160,14 +160,51 @@
       : "11:30 会众中文字幕";
   }
 
-  function startPublicPlaybackIfReady() {
+  function loadPublicPublishedSnapshot() {
     if (state.viewMode !== "congregation") return;
     if (!state.playbackSegments.length) return;
-    window.setTimeout(() => {
-      if (!state.captioning && !state.segments.length) {
-        startPlaybackSimulation();
-      }
-    }, 250);
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("autoplay") === "1") {
+      window.setTimeout(() => {
+        if (!state.captioning && !state.segments.length) {
+          startPlaybackSimulation();
+        }
+      }, 250);
+      return;
+    }
+
+    stopStreamingTimers();
+    state.captioning = false;
+    state.paused = false;
+    state.frozen = false;
+    state.sourceReady = true;
+    state.playbackIndex = state.playbackSegments.length;
+    state.segments = state.playbackSegments.map((segment) => ({
+      ...segment,
+      locked: Boolean(segment.locked),
+      marked: Boolean(segment.marked),
+      offsetMs: Number(segment.offsetMs) || 0
+    }));
+
+    const latest = state.segments[state.segments.length - 1];
+    if (!latest) return;
+    state.currentSegmentId = latest.id;
+    el.draftCaption.textContent = latest.draft || "已加载本周日发布字幕。";
+    el.stableCaption.textContent = latest.zh;
+    el.englishSidecar.textContent = latest.en || "字幕源为中文或暂无英文 sidecar。";
+    el.confidenceMeter.textContent = `${latest.confidence || "--"}%`;
+    setStatus("字幕已加载", "ready");
+    setSla("11:30 会众视图", "ready");
+    updateSermonMeta({
+      title: window.SERMON_PLAYBACK_SIMULATION?.sermonTitle || "直播链接证道",
+      meta: `正在显示本周日发布的中文字幕 · ${state.segments.length} 个片段`,
+      status: "已加载",
+      tone: "ready"
+    });
+    renderSegments();
+    state.segments.slice(-5).forEach(addScriptureCandidate);
+    updateNotes();
+    updateTimeline(100);
   }
 
   function loadPlaybackSimulation() {
