@@ -1048,6 +1048,32 @@ ul {
   overflow-wrap: anywhere;
 }
 
+.scripture-source {
+  color: var(--muted) !important;
+  font-size: 0.78rem !important;
+  font-weight: 850;
+}
+
+.scripture-passage {
+  display: grid;
+  gap: 7px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(148, 190, 213, 0.5);
+}
+
+.scripture-passage p {
+  margin-top: 0;
+  color: var(--ink);
+  font-size: 0.86rem;
+  line-height: 1.52;
+}
+
+.scripture-passage strong {
+  color: var(--blue-800);
+  font-weight: 900;
+}
+
 .term-list {
   display: grid;
   gap: 8px;

@@ -47,6 +47,45 @@
     }
   ];
 
+  const scriptureReferences = {
+    "Numbers 16": {
+      badge: "经文",
+      title: "民数记 16",
+      source: "和合本（公版） · Numbers 16",
+      summary: "可拉一党背叛，摩西与亚伦为百姓代求。系统会在实时字幕中优先固定明确经文。",
+      passages: [
+        {
+          verse: "16:1-3",
+          text: "可拉、大坍、亚比兰等人聚集攻击摩西、亚伦，说：“你们擅自专权！全会众个个既是圣洁，耶和华也在他们中间。”"
+        },
+        {
+          verse: "16:20-22",
+          text: "耶和华吩咐摩西和亚伦离开会众，摩西与亚伦却俯伏在地，为百姓代求。"
+        },
+        {
+          verse: "16:31-35",
+          text: "地开口吞下叛逆的人，又有火从耶和华那里出来，烧灭献香的二百五十个人。"
+        },
+        {
+          verse: "16:46-48",
+          text: "摩西吩咐亚伦拿香炉为百姓赎罪；亚伦站在活人死人中间，瘟疫就止住了。"
+        }
+      ]
+    },
+    "Numbers 16:48": {
+      badge: "经文",
+      title: "民数记 16:48",
+      source: "和合本（公版） · Numbers 16:48",
+      summary: "亚伦站在死人和活人中间，为百姓代求，瘟疫就止住了。",
+      passages: [
+        {
+          verse: "16:48",
+          text: "亚伦站在活人死人中间，瘟疫就止住了。"
+        }
+      ]
+    }
+  };
+
   const state = {
     selectedService: "830",
     monitoring: false,
@@ -145,6 +184,7 @@
     updateSourceCards("idle");
     updateTimeline();
     loadPublicPublishedSnapshot();
+    renderPrimaryScriptureReference();
   }
 
   function configureViewMode() {
@@ -692,17 +732,63 @@
 
   function addScriptureCandidate(segment) {
     if (!segment.ref) return;
+    const scripture = scriptureReferenceFor(segment.ref);
     const card = document.createElement("article");
-    card.className = "scripture-card";
+    card.className = `scripture-card${scripture ? " is-exact" : ""}`;
+    const badge = scripture?.badge || (isExactScriptureRef(segment.ref) ? "经文" : "候选");
+    const title = scripture?.title || displayReference(segment.ref);
+    const summary = scripture?.summary || segment.note || "";
     card.innerHTML = `
-      <span>${segment.ref.includes(":") || segment.ref.includes("Numbers") ? "Exact" : "Candidate"}</span>
-      <h3>${escapeHtml(segment.ref)}</h3>
-      <p>${escapeHtml(segment.note)}</p>
+      <span>${escapeHtml(badge)}</span>
+      <h3>${escapeHtml(title)}</h3>
+      ${scripture?.source ? `<p class="scripture-source">${escapeHtml(scripture.source)}</p>` : ""}
+      <p>${escapeHtml(summary)}</p>
+      ${scripture ? renderScripturePassage(scripture) : ""}
     `;
     el.scriptureCandidates.prepend(card);
     while (el.scriptureCandidates.children.length > 5) {
       el.scriptureCandidates.removeChild(el.scriptureCandidates.lastElementChild);
     }
+  }
+
+  function renderPrimaryScriptureReference() {
+    const card = document.getElementById("primaryScriptureCard");
+    const scripture = scriptureReferences["Numbers 16"];
+    if (!card || !scripture) return;
+    card.innerHTML = `
+      <span>${escapeHtml(scripture.badge)}</span>
+      <h3>${escapeHtml(scripture.title)}</h3>
+      <p class="scripture-source">${escapeHtml(scripture.source)}</p>
+      <p>${escapeHtml(scripture.summary)}</p>
+      ${renderScripturePassage(scripture)}
+    `;
+  }
+
+  function renderScripturePassage(scripture) {
+    const passages = scripture.passages || [];
+    if (!passages.length) return "";
+    const body = passages.map((passage) => `
+      <p><strong>${escapeHtml(passage.verse)}</strong> ${escapeHtml(passage.text)}</p>
+    `).join("");
+    return `<div class="scripture-passage">${body}</div>`;
+  }
+
+  function scriptureReferenceFor(ref) {
+    if (scriptureReferences[ref]) return scriptureReferences[ref];
+    if (/^numbers\s+16(?::\d+)?$/i.test(ref)) {
+      return scriptureReferences["Numbers 16"];
+    }
+    return null;
+  }
+
+  function isExactScriptureRef(ref) {
+    return /^numbers\s+\d+(?::\d+)?$/i.test(ref) || /记\s*\d+/.test(ref);
+  }
+
+  function displayReference(ref) {
+    if (/^numbers\s+16:48$/i.test(ref)) return "民数记 16:48";
+    if (/^numbers\s+16$/i.test(ref)) return "民数记 16";
+    return ref;
   }
 
   function updateNotes() {

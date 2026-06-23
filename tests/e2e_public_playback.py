@@ -111,6 +111,7 @@ def run_browser_checks(base_url: str, headed: bool = False) -> list[dict[str, ob
                 page.goto(base_url, wait_until="networkidle")
                 check_disclaimer(page)
                 check_public_controls_hidden(page)
+                check_scripture_sidebar(page)
                 check_no_horizontal_overflow(page)
                 check_public_playback(page)
                 check_public_layout_bounds(page)
@@ -172,6 +173,17 @@ def check_public_controls_hidden(page) -> None:
         "[data-action='export-vtt']",
     ]:
         expect(page.locator(selector)).to_be_hidden()
+
+
+def check_scripture_sidebar(page) -> None:
+    sidebar = page.locator("#scripturePanel")
+    expect(sidebar).to_be_visible()
+    expect(sidebar.locator("h3").first).to_contain_text("民数记 16")
+    sidebar_text = sidebar.inner_text(timeout=5000)
+    required_text = ["和合本", "16:1-3", "可拉", "16:46-48", "亚伦站在活人死人中间"]
+    missing = [text for text in required_text if text not in sidebar_text]
+    if missing:
+        raise AssertionError(f"Scripture sidebar is missing Chinese passage text: {missing}")
 
 
 def check_no_horizontal_overflow(page) -> None:
