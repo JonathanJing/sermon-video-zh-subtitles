@@ -47,12 +47,12 @@
     }
   ];
 
-  const scriptureReferences = {
+  const fallbackScriptureReferences = {
     "Numbers 16": {
       badge: "经文",
       title: "民数记 16",
-      source: "中文圣经：和合本 · Numbers 16",
-      summary: "可拉一党背叛，摩西与亚伦为百姓代求。系统会在实时字幕中优先固定明确经文。",
+      source: "中文圣经：新标点和合本（简体） · eBible.org cmn-cu89s · Public Domain",
+      summary: "可拉一党背叛，摩西与亚伦为百姓代求。系统会在实时字幕中优先固定明确经文，并显示完整章节经文。",
       passages: [
         {
           verse: "16:1-3",
@@ -68,22 +68,26 @@
         },
         {
           verse: "16:46-48",
-          text: "摩西吩咐亚伦拿香炉为百姓赎罪；亚伦站在活人死人中间，瘟疫就止住了。"
+          text: "摩西吩咐亚伦拿香炉为百姓赎罪；他站在活人死人中间，瘟疫就止住了。"
         }
       ]
     },
     "Numbers 16:48": {
       badge: "经文",
       title: "民数记 16:48",
-      source: "中文圣经：和合本 · Numbers 16:48",
-      summary: "亚伦站在死人和活人中间，为百姓代求，瘟疫就止住了。",
+      source: "中文圣经：新标点和合本（简体） · eBible.org cmn-cu89s · Public Domain",
+      summary: "亚伦为百姓赎罪；他站在活人死人中间，瘟疫就止住了。",
       passages: [
         {
           verse: "16:48",
-          text: "亚伦站在活人死人中间，瘟疫就止住了。"
+          text: "他站在活人死人中间，瘟疫就止住了。"
         }
       ]
     }
+  };
+  const scriptureReferences = {
+    ...fallbackScriptureReferences,
+    ...((window.SERMON_SCRIPTURE_INDEX && window.SERMON_SCRIPTURE_INDEX.references) || {})
   };
 
   const state = {
@@ -808,6 +812,7 @@
   }
 
   function addScriptureCandidate(segment) {
+    if (!el.scriptureCandidates) return;
     if (!segment.ref) return;
     const scripture = scriptureReferenceFor(segment.ref);
     const card = document.createElement("article");
@@ -842,12 +847,13 @@
   }
 
   function renderScripturePassage(scripture) {
-    const passages = scripture.passages || [];
+    const passages = scripture.verses || scripture.passages || [];
     if (!passages.length) return "";
     const body = passages.map((passage) => `
       <p><strong>${escapeHtml(passage.verse)}</strong> ${escapeHtml(passage.text)}</p>
     `).join("");
-    return `<div class="scripture-passage">${body}</div>`;
+    const fullClass = scripture.verses && scripture.verses.length > 8 ? " scripture-passage--full" : "";
+    return `<div class="scripture-passage${fullClass}">${body}</div>`;
   }
 
   function scriptureReferenceFor(ref) {

@@ -180,7 +180,15 @@ def check_scripture_sidebar(page) -> None:
     expect(sidebar).to_be_visible()
     expect(sidebar.locator("h3").first).to_contain_text("民数记 16")
     sidebar_text = sidebar.inner_text(timeout=5000)
-    required_text = ["中文圣经：和合本", "16:1-3", "可拉", "16:46-48", "亚伦站在活人死人中间"]
+    required_text = [
+        "中文圣经：新标点和合本（简体）",
+        "eBible.org cmn-cu89s",
+        "Public Domain",
+        "16:1",
+        "16:48",
+        "16:50",
+        "他站在活人死人中间",
+    ]
     missing = [text for text in required_text if text not in sidebar_text]
     if missing:
         raise AssertionError(f"Scripture sidebar is missing Chinese passage text: {missing}")

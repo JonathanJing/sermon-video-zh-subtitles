@@ -1,0 +1,273 @@
+#!/usr/bin/env python3
+"""Build browser scripture slices from eBible VPL data.
+
+The POC keeps the browser payload small by publishing only referenced passages,
+not a full Bible bundle. Source data is the public-domain eBible
+`cmn-cu89s_vpl.zip` archive.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import urllib.request
+import zipfile
+from dataclasses import dataclass
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from typing import Iterable
+
+
+DEFAULT_SOURCE_URL = "https://ebible.org/Scriptures/cmn-cu89s_vpl.zip"
+DEFAULT_DETAILS_URL = "https://ebible.org/find/details.php?id=cmn-cu89s"
+DEFAULT_REFS = ["Numbers 16", "Numbers 16:48"]
+JS_PREFIX = "window.SERMON_SCRIPTURE_INDEX = "
+
+BOOKS = {
+    "GEN": ("Genesis", "创世记"),
+    "EXO": ("Exodus", "出埃及记"),
+    "LEV": ("Leviticus", "利未记"),
+    "NUM": ("Numbers", "民数记"),
+    "DEU": ("Deuteronomy", "申命记"),
+    "JOS": ("Joshua", "约书亚记"),
+    "JDG": ("Judges", "士师记"),
+    "RUT": ("Ruth", "路得记"),
+    "1SA": ("1 Samuel", "撒母耳记上"),
+    "2SA": ("2 Samuel", "撒母耳记下"),
+    "1KI": ("1 Kings", "列王纪上"),
+    "2KI": ("2 Kings", "列王纪下"),
+    "1CH": ("1 Chronicles", "历代志上"),
+    "2CH": ("2 Chronicles", "历代志下"),
+    "EZR": ("Ezra", "以斯拉记"),
+    "NEH": ("Nehemiah", "尼希米记"),
+    "EST": ("Esther", "以斯帖记"),
+    "JOB": ("Job", "约伯记"),
+    "PSA": ("Psalms", "诗篇"),
+    "PRO": ("Proverbs", "箴言"),
+    "ECC": ("Ecclesiastes", "传道书"),
+    "SNG": ("Song of Songs", "雅歌"),
+    "ISA": ("Isaiah", "以赛亚书"),
+    "JER": ("Jeremiah", "耶利米书"),
+    "LAM": ("Lamentations", "耶利米哀歌"),
+    "EZK": ("Ezekiel", "以西结书"),
+    "DAN": ("Daniel", "但以理书"),
+    "HOS": ("Hosea", "何西阿书"),
+    "JOL": ("Joel", "约珥书"),
+    "AMO": ("Amos", "阿摩司书"),
+    "OBA": ("Obadiah", "俄巴底亚书"),
+    "JON": ("Jonah", "约拿书"),
+    "MIC": ("Micah", "弥迦书"),
+    "NAM": ("Nahum", "那鸿书"),
+    "HAB": ("Habakkuk", "哈巴谷书"),
+    "ZEP": ("Zephaniah", "西番雅书"),
+    "HAG": ("Haggai", "哈该书"),
+    "ZEC": ("Zechariah", "撒迦利亚书"),
+    "MAL": ("Malachi", "玛拉基书"),
+    "MAT": ("Matthew", "马太福音"),
+    "MRK": ("Mark", "马可福音"),
+    "LUK": ("Luke", "路加福音"),
+    "JHN": ("John", "约翰福音"),
+    "ACT": ("Acts", "使徒行传"),
+    "ROM": ("Romans", "罗马书"),
+    "1CO": ("1 Corinthians", "哥林多前书"),
+    "2CO": ("2 Corinthians", "哥林多后书"),
+    "GAL": ("Galatians", "加拉太书"),
+    "EPH": ("Ephesians", "以弗所书"),
+    "PHP": ("Philippians", "腓立比书"),
+    "COL": ("Colossians", "歌罗西书"),
+    "1TH": ("1 Thessalonians", "帖撒罗尼迦前书"),
+    "2TH": ("2 Thessalonians", "帖撒罗尼迦后书"),
+    "1TI": ("1 Timothy", "提摩太前书"),
+    "2TI": ("2 Timothy", "提摩太后书"),
+    "TIT": ("Titus", "提多书"),
+    "PHM": ("Philemon", "腓利门书"),
+    "HEB": ("Hebrews", "希伯来书"),
+    "JAS": ("James", "雅各书"),
+    "1PE": ("1 Peter", "彼得前书"),
+    "2PE": ("2 Peter", "彼得后书"),
+    "1JN": ("1 John", "约翰一书"),
+    "2JN": ("2 John", "约翰二书"),
+    "3JN": ("3 John", "约翰三书"),
+    "JUD": ("Jude", "犹大书"),
+    "REV": ("Revelation", "启示录"),
+}
+
+BOOK_ALIASES = {
+    "numbers": "NUM",
+    "num": "NUM",
+    "民数记": "NUM",
+}
+
+
+@dataclass(frozen=True)
+class Verse:
+    book: str
+    chapter: int
+    verse: int
+    text: str
+
+
+@dataclass(frozen=True)
+class Reference:
+    raw: str
+    book: str
+    chapter: int
+    start_verse: int | None = None
+    end_verse: int | None = None
+
+    @property
+    def key(self) -> str:
+        english = BOOKS[self.book][0]
+        if self.start_verse is None:
+            return f"{english} {self.chapter}"
+        if self.end_verse and self.end_verse != self.start_verse:
+            return f"{english} {self.chapter}:{self.start_verse}-{self.end_verse}"
+        return f"{english} {self.chapter}:{self.start_verse}"
+
+
+def main() -> int:
+    args = parse_args()
+    archive = Path(args.zip) if args.zip else download_source(args.source_url)
+    verses = load_vpl_archive(archive)
+    refs = [parse_reference(ref) for ref in args.ref]
+    payload = build_payload(verses, refs, args.source_url)
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(render_js(payload), encoding="utf-8")
+    print(json.dumps({"status": "ok", "out": str(args.out), "references": sorted(payload["references"])}, ensure_ascii=False))
+    return 0
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--zip", help="Existing cmn-cu89s_vpl.zip path. If omitted, download from eBible.")
+    parser.add_argument("--source-url", default=DEFAULT_SOURCE_URL)
+    parser.add_argument("--out", type=Path, default=Path("web/scripture-cmn-cu89s.generated.js"))
+    parser.add_argument("--ref", action="append", default=[], help="Reference to include, e.g. 'Numbers 16'.")
+    args = parser.parse_args()
+    if not args.ref:
+        args.ref = DEFAULT_REFS
+    return args
+
+
+def download_source(url: str) -> Path:
+    tmp = TemporaryDirectory()
+    path = Path(tmp.name) / "cmn-cu89s_vpl.zip"
+    urllib.request.urlretrieve(url, path)
+    # Keep the temporary directory alive for the duration of this process.
+    download_source._tmp = tmp  # type: ignore[attr-defined]
+    return path
+
+
+def load_vpl_archive(path: Path) -> list[Verse]:
+    with zipfile.ZipFile(path) as archive:
+        names = [name for name in archive.namelist() if name.endswith("_vpl.txt")]
+        if not names:
+            raise SystemExit(f"No *_vpl.txt file found in {path}")
+        text = archive.read(names[0]).decode("utf-8-sig")
+    return parse_vpl_text(text.splitlines())
+
+
+def parse_vpl_text(lines: Iterable[str]) -> list[Verse]:
+    verses = []
+    pattern = re.compile(r"^([1-3]?[A-Z]{2,3})\s+(\d+):(\d+)\s+(.+)$")
+    for line in lines:
+        match = pattern.match(line.strip())
+        if not match:
+            continue
+        book, chapter, verse, text = match.groups()
+        verses.append(Verse(book=book, chapter=int(chapter), verse=int(verse), text=normalize_text(text)))
+    return verses
+
+
+def normalize_text(text: str) -> str:
+    return re.sub(r"\s+", " ", text.replace("\u3000", " ")).strip()
+
+
+def parse_reference(value: str) -> Reference:
+    clean = value.strip()
+    match = re.match(r"^(.+?)\s+(\d+)(?::(\d+)(?:-(\d+))?)?$", clean, re.IGNORECASE)
+    if not match:
+        raise SystemExit(f"Unsupported scripture reference: {value}")
+    book_name, chapter, start, end = match.groups()
+    book = BOOK_ALIASES.get(book_name.strip().lower()) or BOOK_ALIASES.get(book_name.strip())
+    if not book:
+        raise SystemExit(f"Unsupported scripture book: {book_name}")
+    return Reference(
+        raw=value,
+        book=book,
+        chapter=int(chapter),
+        start_verse=int(start) if start else None,
+        end_verse=int(end) if end else int(start) if start else None,
+    )
+
+
+def build_payload(verses: list[Verse], refs: list[Reference], source_url: str) -> dict:
+    by_ref = {}
+    for ref in refs:
+        ref_verses = select_verses(verses, ref)
+        if not ref_verses:
+            raise SystemExit(f"No verses matched {ref.raw}")
+        by_ref[ref.key] = reference_payload(ref, ref_verses)
+    return {
+        "schemaVersion": 1,
+        "translation": {
+            "id": "cmn-cu89s",
+            "nameZh": "新标点和合本（简体）",
+            "nameEn": "Chinese Union Version (simplified)",
+            "sourceName": "eBible.org",
+            "sourceUrl": DEFAULT_DETAILS_URL,
+            "downloadUrl": source_url,
+            "license": "Public Domain",
+            "sourceUpdated": "2021-10-15",
+        },
+        "references": by_ref,
+    }
+
+
+def select_verses(verses: list[Verse], ref: Reference) -> list[Verse]:
+    selected = [
+        verse for verse in verses
+        if verse.book == ref.book and verse.chapter == ref.chapter
+    ]
+    if ref.start_verse is None:
+        return selected
+    end = ref.end_verse or ref.start_verse
+    return [verse for verse in selected if ref.start_verse <= verse.verse <= end]
+
+
+def reference_payload(ref: Reference, verses: list[Verse]) -> dict:
+    english, chinese = BOOKS[ref.book]
+    verse_label = f"{ref.chapter}" if ref.start_verse is None else (
+        f"{ref.chapter}:{ref.start_verse}-{ref.end_verse}"
+        if ref.end_verse and ref.end_verse != ref.start_verse
+        else f"{ref.chapter}:{ref.start_verse}"
+    )
+    return {
+        "badge": "经文",
+        "title": f"{chinese} {verse_label}",
+        "source": "中文圣经：新标点和合本（简体） · eBible.org cmn-cu89s · Public Domain",
+        "summary": summary_for(ref),
+        "canonicalRef": ref.key,
+        "book": english,
+        "bookZh": chinese,
+        "chapter": ref.chapter,
+        "verses": [
+            {"verse": f"{ref.chapter}:{verse.verse}", "text": verse.text}
+            for verse in verses
+        ],
+    }
+
+
+def summary_for(ref: Reference) -> str:
+    if ref.book == "NUM" and ref.chapter == 16:
+        return "可拉一党背叛，摩西与亚伦为百姓代求。系统会在实时字幕中优先固定明确经文，并显示完整章节经文。"
+    return "讲道中提到的明确经文章节。"
+
+
+def render_js(payload: dict) -> str:
+    return JS_PREFIX + json.dumps(payload, ensure_ascii=False, indent=2) + ";\n"
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
