@@ -24,7 +24,9 @@ artifacts/
 data/raw/
 tests/
 docs/
-data/
+data/*
+!data/scripture/
+!data/scripture/**
 README*
 CONTRIBUTING*
 SECURITY*
