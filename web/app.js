@@ -215,6 +215,7 @@
     updateTimeline();
     loadPublicPublishedSnapshot();
     renderPrimaryScriptureReference();
+    refreshPrimaryScriptureFromApi();
     if (state.viewMode === "admin") {
       refreshAdminStatus();
       updatePipelineForState("idle");
@@ -844,6 +845,48 @@
       <p>${escapeHtml(scripture.summary)}</p>
       ${renderScripturePassage(scripture)}
     `;
+  }
+
+  async function refreshPrimaryScriptureFromApi() {
+    const card = document.getElementById("primaryScriptureCard");
+    if (!card) return;
+    try {
+      const response = await fetch("/api/scripture/cmn-cu89s/Numbers/16", {
+        headers: { "Accept": "application/json" }
+      });
+      if (!response.ok) return;
+      const payload = await response.json();
+      const scripture = scriptureFromApiPayload(payload);
+      if (!scripture) return;
+      scriptureReferences["Numbers 16"] = scripture;
+      card.innerHTML = `
+        <span>${escapeHtml(scripture.badge)}</span>
+        <h3>${escapeHtml(scripture.title)}</h3>
+        <p class="scripture-source">${escapeHtml(scripture.source)}</p>
+        <p>${escapeHtml(scripture.summary)}</p>
+        ${renderScripturePassage(scripture)}
+      `;
+    } catch {
+      // Static preview servers do not expose /api/scripture; keep generated fallback.
+    }
+  }
+
+  function scriptureFromApiPayload(payload) {
+    const reference = payload?.reference || {};
+    const translation = payload?.translation || {};
+    const verses = Array.isArray(payload?.verses) ? payload.verses : [];
+    if (!reference.title || !verses.length) return null;
+    return {
+      badge: "经文",
+      title: reference.title,
+      source: `中文圣经：${translation.nameZh || "新标点和合本（简体）"} · eBible.org cmn-cu89s · ${translation.license || "Public Domain"}`,
+      summary: "讲道中提到的完整经文章节。经文由 Cloud Run 后端完整 Bible index 返回。",
+      canonicalRef: reference.canonicalRef,
+      book: reference.book,
+      bookZh: reference.bookZh,
+      chapter: reference.chapter,
+      verses
+    };
   }
 
   function renderScripturePassage(scripture) {

@@ -17,6 +17,7 @@ from .observability import (
     trigger_source,
     url_summary,
 )
+from .scripture import ScriptureNotFoundError, ScriptureService
 from .storage import GcsArtifactReader
 from .worker import build_generation_plan, parse_generation_request
 
@@ -28,6 +29,7 @@ WEB_ROOT = REPO_ROOT / "web"
 class ApiHandler(BaseHTTPRequestHandler):
     config = AppConfig.from_env()
     service = SundaySliceService(config, GcsArtifactReader())
+    scripture_service = ScriptureService()
 
     def do_GET(self) -> None:
         try:
@@ -58,6 +60,7 @@ class ApiHandler(BaseHTTPRequestHandler):
             self.end_headers()
 
     def handle_api_get(self, path: str) -> None:
+        path = unquote(path)
         if path == "/api/health":
             self.write_json({"status": "ok"})
             return
@@ -65,6 +68,9 @@ class ApiHandler(BaseHTTPRequestHandler):
             self.write_json(self.admin_status())
             return
         parts = [part for part in path.split("/") if part]
+        if parts[:2] == ["api", "scripture"]:
+            self.handle_scripture_get(parts)
+            return
         if parts[:2] == ["api", "sundays"] and len(parts) == 3:
             self.write_json(self.service.get_public_slice(parts[2]))
             return
@@ -75,6 +81,28 @@ class ApiHandler(BaseHTTPRequestHandler):
             self.send_header("Cache-Control", "public, max-age=30")
             self.end_headers()
             self.wfile.write(body)
+            return
+        self.write_json({"error": "not_found"}, status=404)
+
+    def handle_scripture_get(self, parts: list[str]) -> None:
+        if len(parts) == 2:
+            self.write_json(self.scripture_service.metadata())
+            return
+        if parts[2] != "cmn-cu89s":
+            self.write_json({"error": "translation_not_found"}, status=404)
+            return
+        try:
+            if len(parts) == 3:
+                self.write_json(self.scripture_service.metadata())
+                return
+            if len(parts) == 4 and parts[3] == "books":
+                self.write_json(self.scripture_service.books())
+                return
+            if len(parts) == 5:
+                self.write_json(self.scripture_service.chapter(parts[3], parts[4]))
+                return
+        except ScriptureNotFoundError:
+            self.write_json({"error": "scripture_not_found"}, status=404)
             return
         self.write_json({"error": "not_found"}, status=404)
 

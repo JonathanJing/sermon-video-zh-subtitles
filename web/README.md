@@ -34,8 +34,11 @@ Regenerate the scripture sidebar slice:
 ```bash
 python3 scripts/build_scripture_index.py \
   --out web/scripture-cmn-cu89s.generated.js \
+  --full-out data/scripture/cmn-cu89s.json \
   --ref "Numbers 16" \
   --ref "Numbers 16:48"
 ```
 
-See `docs/scripture-source.md` for source and license notes.
+Cloud Run serves the full Bible index through `/api/scripture/cmn-cu89s/...`, while
+the generated browser file remains a small static fallback. See
+`docs/scripture-source.md` for source and license notes.

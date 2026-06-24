@@ -34,6 +34,12 @@ class BuildScriptureIndexTest(unittest.TestCase):
         self.assertEqual(payload["references"]["Numbers 16:48"]["verses"][0]["verse"], "16:48")
         self.assertIn("eBible.org cmn-cu89s", payload["references"]["Numbers 16"]["source"])
 
+        full_payload = mod.build_full_bible_payload(verses, mod.DEFAULT_SOURCE_URL)
+        self.assertEqual(full_payload["translation"]["id"], "cmn-cu89s")
+        self.assertEqual(full_payload["verseCount"], 5)
+        self.assertEqual(full_payload["books"][0]["code"], "NUM")
+        self.assertEqual(full_payload["chapters"]["NUM"]["16"][2]["verse"], 48)
+
 
 if __name__ == "__main__":
     unittest.main()
