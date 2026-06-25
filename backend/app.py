@@ -20,6 +20,7 @@ from .observability import (
 from .realtime import (
     DEFAULT_REALTIME_MODEL,
     DEFAULT_TARGET_LANGUAGE,
+    RealtimeEventArchive,
     RealtimeSessionStore,
     create_openai_translation_session,
     resolve_openai_api_key,
@@ -37,7 +38,7 @@ class ApiHandler(BaseHTTPRequestHandler):
     config = AppConfig.from_env()
     service = SundaySliceService(config, GcsArtifactReader())
     scripture_service = ScriptureService()
-    realtime_store = RealtimeSessionStore()
+    realtime_store = RealtimeSessionStore(RealtimeEventArchive(Path(config.realtime_event_log_dir)))
 
     def do_GET(self) -> None:
         try:
@@ -168,6 +169,9 @@ class ApiHandler(BaseHTTPRequestHandler):
             if parts == ["api", "admin", "realtime", "sessions"]:
                 self.handle_realtime_session_create()
                 return
+            if parts == ["api", "admin", "realtime", "local-sessions"]:
+                self.handle_realtime_local_session_create()
+                return
             if parts[:3] == ["api", "realtime", "sessions"] and len(parts) == 5 and parts[4] == "events":
                 self.handle_realtime_event_post(parts[3])
                 return
@@ -283,11 +287,6 @@ class ApiHandler(BaseHTTPRequestHandler):
         sunday = str(payload.get("sunday") or self.service._resolve_sunday("current"))[:20]
         model = str(payload.get("model") or DEFAULT_REALTIME_MODEL)[:80]
         target_language = str(payload.get("targetLanguage") or DEFAULT_TARGET_LANGUAGE)[:20]
-        session = self.realtime_store.create(
-            sunday=sunday,
-            model=model,
-            target_language=target_language,
-        )
         try:
             api_key = resolve_openai_api_key(
                 self.config.openai_api_key,
@@ -303,7 +302,6 @@ class ApiHandler(BaseHTTPRequestHandler):
                 "realtime_session_create_failed",
                 component="api",
                 sunday=sunday,
-                sessionId=session.session_id,
                 error=str(exc)[:200],
                 severity="ERROR",
             )
@@ -314,6 +312,12 @@ class ApiHandler(BaseHTTPRequestHandler):
         if not isinstance(client_secret, dict) or not client_secret.get("value"):
             self.write_json({"error": "missing_client_secret"}, status=502)
             return
+
+        session = self.realtime_store.create(
+            sunday=sunday,
+            model=model,
+            target_language=target_language,
+        )
 
         log_event(
             "realtime_session_created",
@@ -338,6 +342,40 @@ class ApiHandler(BaseHTTPRequestHandler):
                     "url": "https://api.openai.com/v1/realtime",
                     "model": model,
                 },
+            },
+            status=201,
+        )
+
+    def handle_realtime_local_session_create(self) -> None:
+        if not self.authorized_for_admin_browser():
+            self.write_json({"error": "unauthorized"}, status=401)
+            return
+        payload = self.read_json_body()
+        sunday = str(payload.get("sunday") or self.service._resolve_sunday("current"))[:20]
+        model = str(payload.get("model") or DEFAULT_REALTIME_MODEL)[:80]
+        target_language = str(payload.get("targetLanguage") or DEFAULT_TARGET_LANGUAGE)[:20]
+        session = self.realtime_store.create(
+            sunday=sunday,
+            model=model,
+            target_language=target_language,
+        )
+        log_event(
+            "realtime_session_created",
+            component="api",
+            sunday=sunday,
+            sessionId=session.session_id,
+            model=model,
+            targetLanguage=target_language,
+            triggerSource=str(payload.get("triggerSource") or "local-realtime-session")[:80],
+        )
+        self.write_json(
+            {
+                "status": "ready",
+                "sessionId": session.session_id,
+                "eventToken": session.event_token,
+                "model": model,
+                "targetLanguage": target_language,
+                "webrtc": None,
             },
             status=201,
         )
@@ -448,8 +486,13 @@ class ApiHandler(BaseHTTPRequestHandler):
                 "readinessDeadline": "11:50 PT",
                 "manualTriggerEndpoint": "/api/admin/sundays/{sunday}/generate",
                 "realtimeSessionEndpoint": "/api/admin/realtime/sessions",
+                "localRealtimeSessionEndpoint": "/api/admin/realtime/local-sessions",
                 "realtimeEventsEndpoint": "/api/realtime/sessions/current/events",
                 "telemetryEndpoint": "/api/telemetry/page-view",
+            },
+            "realtime": {
+                "currentSessionId": self.realtime_store.current_session_id(),
+                "eventArchive": self.realtime_store.archive_status(),
             },
             "secrets": {
                 "openaiApiKey": "configured" if self.openai_key_configured() else "missing",
@@ -460,6 +503,9 @@ class ApiHandler(BaseHTTPRequestHandler):
                 "events": [
                     "live_capture_triggered",
                     "worker_stage_completed",
+                    "realtime_session_created",
+                    "realtime_media_worker_event",
+                    "realtime_caption_event",
                     "captions_ready",
                     "congregation_page_view",
                 ],

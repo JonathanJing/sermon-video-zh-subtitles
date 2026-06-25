@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import mimetypes
 import re
 import shutil
 import subprocess
@@ -22,9 +23,16 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
+import requests
+
 
 DEFAULT_LANGS = ["en-orig", "en"]
 DEFAULT_ASR_MODEL = "gpt-4o-transcribe"
+OPENAI_TRANSCRIPTIONS_URL = "https://api.openai.com/v1/audio/transcriptions"
+SECRET_RESOURCE_RE = re.compile(
+    r"^projects/(?P<project>[^/\s]+)/secrets/(?P<secret>[^/\s]+)(?:/versions/(?P<version>[^/\s]+))?$"
+)
+ASR_AUDIO_EXTENSIONS = {".m4a", ".mp3", ".webm", ".opus", ".wav", ".mp4"}
 TIMESTAMP_RE = re.compile(
     r"(?P<start>(?:\d{2}:)?\d{2}:\d{2}[\.,]\d{3})\s+-->\s+"
     r"(?P<end>(?:\d{2}:)?\d{2}:\d{2}[\.,]\d{3})(?P<settings>.*)"
@@ -99,13 +107,53 @@ def main() -> int:
     }
 
     if not caption_source_url or not caption_source_meta:
-        report["status"] = "needs_asr"
-        report["warnings"].append(
-            "No requested caption track was found on the live archive or matching sermon VOD. "
-            f"Next step is extracting the sermon audio window and sending it to {args.asr_model} ASR."
+        if not args.api_key_secret:
+            report["status"] = "needs_asr"
+            report["warnings"].append(
+                "No requested caption track was found on the live archive or matching sermon VOD. "
+                f"Next step is extracting the sermon audio window and sending it to {args.asr_model} ASR."
+            )
+            write_reports(out_dir, report)
+            return 2
+        sermon_duration_ms = int((sermon_meta or live_meta).get("duration") or 0) * 1000
+        if sermon_duration_ms <= 0:
+            sermon_duration_ms = None  # type: ignore[assignment]
+        try:
+            audio_path = extract_audio_window(
+                yt_dlp=yt_dlp,
+                url=args.live_url,
+                raw_dir=raw_dir,
+                live_meta=live_meta,
+                start_ms=start_ms,
+                duration_ms=sermon_duration_ms,
+            )
+            cues = transcribe_audio_to_cues(
+                audio_path=audio_path,
+                api_key_secret=args.api_key_secret,
+                model=args.asr_model,
+                fallback_duration_ms=sermon_duration_ms,
+            )
+        except Exception as exc:
+            report["status"] = "asr_failed"
+            report["warnings"].append(f"ASR fallback failed: {exc}")
+            write_reports(out_dir, report)
+            return 5
+        write_asr_outputs(
+            out_dir=out_dir,
+            report=report,
+            live_meta=live_meta,
+            audio_path=audio_path,
+            cues=cues,
+            start_ms=start_ms,
         )
+        report["caption_source"] = {
+            "kind": "openai_asr",
+            "video": summarize_video(live_meta),
+        }
+        report["status"] = "ok" if report["outputs"] else "no_cues"
         write_reports(out_dir, report)
-        return 2
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+        return 0 if report["status"] == "ok" else 4
 
     downloaded, download_warnings = download_subtitles(
         yt_dlp=yt_dlp,
@@ -215,10 +263,24 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_ASR_MODEL,
         help="OpenAI transcription model to use when captions are unavailable.",
     )
+    parser.add_argument(
+        "--api-key-secret",
+        help="Google Secret Manager resource name for the OpenAI key used by ASR fallback.",
+    )
     args = parser.parse_args()
     if not args.lang:
         args.lang = DEFAULT_LANGS
+    if args.api_key_secret:
+        validate_secret_resource_name(args.api_key_secret)
     return args
+
+
+def validate_secret_resource_name(value: str) -> None:
+    if not SECRET_RESOURCE_RE.fullmatch(value):
+        raise SystemExit(
+            "--api-key-secret must be a Google Secret Manager resource name like "
+            "projects/PROJECT_ID/secrets/SECRET_ID/versions/latest. Do not pass raw API key material."
+        )
 
 
 def require_yt_dlp(name: str) -> str:
@@ -404,6 +466,185 @@ def download_subtitles(yt_dlp: str, url: str, raw_dir: Path, langs: list[str]) -
         else:
             warnings.append(f"Reused existing VTT file for lang={lang}.")
     return sorted(downloaded), warnings
+
+
+def extract_audio_window(
+    yt_dlp: str,
+    url: str,
+    raw_dir: Path,
+    live_meta: dict[str, Any],
+    start_ms: int,
+    duration_ms: int | None,
+) -> Path:
+    base = f"{safe_id(live_meta)}.sermon-audio"
+    output_template = raw_dir / f"{base}.%(ext)s"
+    before = usable_audio_files(raw_dir, base)
+    command = [
+        yt_dlp,
+        "--extract-audio",
+        "--audio-format",
+        "m4a",
+        "--output",
+        str(output_template),
+        "--no-cache-dir",
+    ]
+    section = download_section_spec(start_ms, duration_ms)
+    if section:
+        command.extend(["--download-sections", section])
+    command.append(url)
+    proc = subprocess.run(command, text=True, capture_output=True, check=False)
+    after = usable_audio_files(raw_dir, base)
+    candidates = [path for path in after if path not in before] or after
+    if proc.returncode != 0 or not candidates:
+        raise RuntimeError(last_error_line(proc.stderr) or "yt-dlp did not write an audio file")
+    return max(candidates, key=lambda path: (path.stat().st_mtime, path.stat().st_size))
+
+
+def usable_audio_files(raw_dir: Path, base: str) -> set[Path]:
+    return {
+        path
+        for path in raw_dir.glob(f"{base}.*")
+        if path.suffix.lower() in ASR_AUDIO_EXTENSIONS and path.stat().st_size > 0
+    }
+
+
+def download_section_spec(start_ms: int, duration_ms: int | None) -> str | None:
+    if start_ms <= 0 and duration_ms is None:
+        return None
+    start = format_section_time(start_ms)
+    end = "inf" if duration_ms is None else format_section_time(start_ms + duration_ms)
+    return f"*{start}-{end}"
+
+
+def format_section_time(ms: int) -> str:
+    seconds = max(0, int(ms // 1000))
+    hours = seconds // 3600
+    seconds %= 3600
+    minutes = seconds // 60
+    seconds %= 60
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+
+
+def transcribe_audio_to_cues(
+    audio_path: Path,
+    api_key_secret: str,
+    model: str,
+    fallback_duration_ms: int | None,
+) -> list[Cue]:
+    api_key = access_secret(api_key_secret)
+    mime_type = mimetypes.guess_type(audio_path.name)[0] or "application/octet-stream"
+    with audio_path.open("rb") as audio_file:
+        response = requests.post(
+            OPENAI_TRANSCRIPTIONS_URL,
+            headers={"Authorization": f"Bearer {api_key}"},
+            data=[
+                ("model", model),
+                ("response_format", "verbose_json"),
+                ("timestamp_granularities[]", "segment"),
+            ],
+            files={"file": (audio_path.name, audio_file, mime_type)},
+            timeout=300,
+        )
+    if response.status_code >= 400:
+        raise RuntimeError(f"OpenAI ASR request failed with HTTP {response.status_code}: {safe_error_message(response)}")
+    return cues_from_transcription_response(response.json(), fallback_duration_ms)
+
+
+def access_secret(resource_name: str) -> str:
+    match = SECRET_RESOURCE_RE.fullmatch(resource_name)
+    if not match:
+        raise RuntimeError("Invalid Secret Manager resource name.")
+    project = match.group("project")
+    secret = match.group("secret")
+    version = match.group("version") or "latest"
+    proc = subprocess.run(
+        [
+            "gcloud",
+            "secrets",
+            "versions",
+            "access",
+            version,
+            "--secret",
+            secret,
+            "--project",
+            project,
+        ],
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+    value = proc.stdout.strip()
+    if not value:
+        raise RuntimeError(f"Secret {resource_name} returned an empty value.")
+    return value
+
+
+def cues_from_transcription_response(data: dict[str, Any], fallback_duration_ms: int | None) -> list[Cue]:
+    segments = data.get("segments") if isinstance(data, dict) else None
+    cues: list[Cue] = []
+    if isinstance(segments, list):
+        for index, segment in enumerate(segments):
+            text = str(segment.get("text") or "").strip()
+            if not text:
+                continue
+            start_ms = int(float(segment.get("start") or 0) * 1000)
+            end_ms = int(float(segment.get("end") or 0) * 1000)
+            if end_ms <= start_ms:
+                end_ms = start_ms + estimate_text_duration_ms(text)
+            cues.append(Cue(start_ms=start_ms, end_ms=end_ms, text=text, identifier=f"asr_{index + 1:04d}"))
+    if cues:
+        return cues
+    text = str((data or {}).get("text") or "").strip()
+    if not text:
+        return []
+    return [Cue(0, fallback_duration_ms or estimate_text_duration_ms(text), text, identifier="asr_0001")]
+
+
+def estimate_text_duration_ms(text: str) -> int:
+    return max(1500, min(15000, len(text) * 55))
+
+
+def write_asr_outputs(
+    out_dir: Path,
+    report: dict[str, Any],
+    live_meta: dict[str, Any],
+    audio_path: Path,
+    cues: list[Cue],
+    start_ms: int,
+) -> None:
+    base = f"{safe_id(live_meta)}.sermon.en"
+    local_vtt = out_dir / f"{base}.local.vtt"
+    live_vtt = out_dir / f"{base}.live-aligned.vtt"
+    local_srt = out_dir / f"{base}.local.srt"
+    live_srt = out_dir / f"{base}.live-aligned.srt"
+    live_aligned = offset_cues(cues, start_ms)
+    local_vtt.write_text(render_vtt(cues), encoding="utf-8")
+    live_vtt.write_text(render_vtt(live_aligned), encoding="utf-8")
+    local_srt.write_text(render_srt(cues), encoding="utf-8")
+    live_srt.write_text(render_srt(live_aligned), encoding="utf-8")
+    report["outputs"].append(
+        {
+            "lang": "en",
+            "source_file": str(audio_path),
+            "source_kind": "openai_asr",
+            "cue_count": len(cues),
+            "local_vtt": str(local_vtt),
+            "live_aligned_vtt": str(live_vtt),
+            "local_srt": str(local_srt),
+            "live_aligned_srt": str(live_srt),
+        }
+    )
+
+
+def safe_error_message(response: requests.Response) -> str:
+    try:
+        data = response.json()
+    except ValueError:
+        return response.text[:400]
+    error = data.get("error") if isinstance(data, dict) else None
+    if isinstance(error, dict):
+        return str(error.get("message") or error.get("type") or "unknown error")
+    return str(data)[:400]
 
 
 def last_error_line(stderr: str) -> str:

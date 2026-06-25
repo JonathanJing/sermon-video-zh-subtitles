@@ -17,6 +17,45 @@ class PrepareLiveLinkPlaybackTest(unittest.TestCase):
     def test_default_asr_model_uses_gpt_4o_transcribe(self):
         self.assertEqual(mod.DEFAULT_ASR_MODEL, "gpt-4o-transcribe")
 
+    def test_prepare_command_passes_api_key_secret_to_asr_fallback(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            commands = []
+            original_parse_args = mod.parse_args
+            original_run = mod.run
+            try:
+                mod.parse_args = lambda: type(
+                    "Args",
+                    (),
+                    {
+                        "live_url": "https://youtube.test/watch?v=abc123",
+                        "sermon_url": None,
+                        "sermon_start": None,
+                        "lang": [],
+                        "playback_lang": None,
+                        "out_dir": root / "artifacts",
+                        "web_out": root / "web" / "test-asr.generated.js",
+                        "playlist_end": 1,
+                        "max_segments": 8,
+                        "playback_speed": 18.0,
+                        "asr_model": "gpt-4o-transcribe",
+                        "gcs_bucket": None,
+                        "gcs_prefix": "poc/live-link",
+                        "gcs_dry_run": True,
+                        "api_key_secret": "projects/p/secrets/openai-api-key/versions/latest",
+                    },
+                )()
+                mod.run = lambda command, cwd: commands.append(command)
+                rc = mod.main()
+            finally:
+                mod.parse_args = original_parse_args
+                mod.run = original_run
+
+        self.assertEqual(rc, 0)
+        self.assertIn("--api-key-secret", commands[0])
+        self.assertIn("projects/p/secrets/openai-api-key/versions/latest", commands[0])
+        self.assertIn("--asr-model", commands[0])
+
     def test_generated_content_files_and_dry_run_gcs_uris(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

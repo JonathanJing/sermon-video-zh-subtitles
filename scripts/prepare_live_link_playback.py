@@ -42,6 +42,7 @@ def main() -> int:
         ]
         + optional("--sermon-url", args.sermon_url)
         + optional("--sermon-start", args.sermon_start)
+        + optional("--api-key-secret", args.api_key_secret)
         + repeat("--lang", args.lang),
         cwd=REPO_ROOT,
     )

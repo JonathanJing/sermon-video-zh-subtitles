@@ -82,6 +82,53 @@ Sunday pointer:
 gs://$SERMON_ARTIFACT_BUCKET/$SERMON_ARTIFACT_PREFIX/YYYY-MM-DD/cloud-manifest.json
 ```
 
+## Realtime Events
+
+Realtime sessions use short-lived OpenAI client secrets for browser WebRTC and
+store sanitized English/Chinese delta events in backend memory plus JSONL files
+under `REALTIME_EVENT_LOG_DIR` (default `/tmp/sermon-realtime-events`). The JSONL
+archive intentionally omits API keys, client secrets, event tokens, and request
+authorization headers. Firestore/GCS can replace this first local archive once
+the production state store is wired.
+
+Server-side media workers can create a backend-only realtime session and publish
+events into the same SSE/public-caption contract:
+
+```bash
+python3 scripts/realtime_media_worker.py \
+  --sunday 2026-06-28 \
+  --backend-url http://127.0.0.1:8080 \
+  --create-backend-session \
+  --replay-jsonl /tmp/sermon-realtime-events/<session_id>.jsonl
+```
+
+For an authorized local audio source, the worker plans an `ffmpeg` normalization
+step:
+
+```bash
+python3 scripts/realtime_media_worker.py \
+  --sunday 2026-06-28 \
+  --audio-file /path/to/authorized-sermon-audio.m4a \
+  --dry-run
+```
+
+For an authorized YouTube live/archive source, it plans a conservative `yt-dlp`
+audio extraction command. The scaffold intentionally stops at source preparation
+and session-event publishing; server-side OpenAI Realtime audio streaming still
+needs provider-specific implementation and live validation.
+
+Saved realtime JSONL can be stabilized with `gpt-5.5-mini` after a short delay:
+
+```bash
+python3 scripts/stabilize_realtime_deltas_with_openai.py \
+  --input-jsonl /tmp/sermon-realtime-events/<session_id>.jsonl \
+  --api-key-secret projects/PROJECT_ID/secrets/openai-api-key/versions/latest
+```
+
+The output is `artifacts/realtime-stable-corrections/stable-corrections.json`
+plus a report and raw model-output JSONL. This is the bridge from low-latency
+draft captions to higher-quality stable captions.
+
 ## Observability
 
 Backend and worker logs are structured JSON records written to stdout for Cloud
@@ -92,6 +139,8 @@ Logging. Key events are:
 - `live_capture_worker_started`
 - `worker_stage_started`
 - `worker_stage_completed`
+- `realtime_session_created`
+- `realtime_caption_event`
 - `captions_ready`
 - `congregation_page_view`
 

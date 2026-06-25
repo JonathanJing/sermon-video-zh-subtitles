@@ -4,6 +4,7 @@ from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import json
+from pathlib import Path
 import secrets
 import subprocess
 import threading
@@ -16,6 +17,10 @@ DEFAULT_REALTIME_MODEL = "gpt-realtime-translate"
 DEFAULT_TRANSCRIPTION_MODEL = "gpt-4o-transcribe"
 DEFAULT_TARGET_LANGUAGE = "zh-CN"
 OPENAI_TRANSLATION_SESSION_URL = "https://api.openai.com/v1/realtime/translations"
+
+
+def utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
 @dataclass
@@ -31,11 +36,35 @@ class RealtimeSession:
     events: deque[dict[str, Any]] = field(default_factory=lambda: deque(maxlen=500))
 
 
+class RealtimeEventArchive:
+    def __init__(self, root: Path | str) -> None:
+        self.root = Path(root)
+
+    def append(self, session: RealtimeSession, event: dict[str, Any]) -> Path:
+        self.root.mkdir(parents=True, exist_ok=True)
+        path = self.path_for(session.session_id)
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(event, ensure_ascii=False, sort_keys=True))
+            handle.write("\n")
+        return path
+
+    def path_for(self, session_id: str) -> Path:
+        safe_session_id = "".join(char if char.isalnum() or char in {"-", "_"} else "_" for char in session_id)
+        return self.root / f"{safe_session_id}.jsonl"
+
+    def status(self) -> dict[str, Any]:
+        return {
+            "enabled": True,
+            "directory": str(self.root),
+        }
+
+
 class RealtimeSessionStore:
-    def __init__(self) -> None:
+    def __init__(self, archive: RealtimeEventArchive | None = None) -> None:
         self._condition = threading.Condition()
         self._sessions: dict[str, RealtimeSession] = {}
         self._current_session_id: str | None = None
+        self.archive = archive
 
     def create(
         self,
@@ -103,6 +132,8 @@ class RealtimeSessionStore:
                 **sanitize_event(payload),
             }
             session.events.append(event)
+            if self.archive:
+                self.archive.append(session, event)
             self._condition.notify_all()
             return event
 
@@ -120,6 +151,11 @@ class RealtimeSessionStore:
                 if remaining <= 0:
                     return []
                 self._condition.wait(remaining)
+
+    def archive_status(self) -> dict[str, Any]:
+        if not self.archive:
+            return {"enabled": False}
+        return self.archive.status()
 
 
 def sanitize_event(payload: dict[str, Any]) -> dict[str, Any]:
@@ -209,7 +245,3 @@ def access_secret_with_gcloud(resource_name: str) -> str:
     if not value:
         raise RuntimeError("OpenAI API key secret returned an empty value")
     return value
-
-
-def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat()

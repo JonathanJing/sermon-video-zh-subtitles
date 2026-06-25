@@ -51,7 +51,7 @@ GCS prefix:  gs://<bucket>/sundays/2026-06-21/<session_id>/
 session id:  sunday-20260621-1000
 ```
 
-The Sunday slice is the primary read model for the web UI. Realtime sessions and offline jobs can write rolling updates into the slice, while public clients only subscribe to published captions, scripture cards, notes, and quote artifacts.
+The Sunday slice is the primary read model for the web UI. Realtime sessions and offline jobs can write rolling updates into the slice, while public clients only subscribe to published captions, scripture cards, notes, and quote artifacts. The current realtime MVP stores sanitized English/Chinese deltas in backend memory and JSONL files under `REALTIME_EVENT_LOG_DIR`; iPad/iPhone mic input uses browser WebRTC with `gpt-realtime-translate`, while `scripts/realtime_media_worker.py` can create backend-only sessions, prepare authorized audio/YouTube sources, and replay or publish events into the same public caption stream. `scripts/stabilize_realtime_deltas_with_openai.py` turns saved English windows plus draft Chinese captions into `gpt-5.5-mini` stable corrections. Firestore remains the production durable-state target.
 
 ## Architecture
 
@@ -84,7 +84,8 @@ flowchart TD
 | `api` | sessions, caption segments, manifests, exports, publish state, operator auth |
 | `worker` | offline ASR, translation, timeline normalization, scripture resolution, notes and quotes |
 | `live-source-monitor` | Sunday source discovery and fallback alerts |
-| `realtime-relay` | Optional relay for non-browser audio sources |
+| `realtime-media-worker` | Server-side authorized audio/YouTube source preparation and realtime session-event publishing |
+| `realtime-relay` | Optional provider relay for non-browser audio sources once server-side OpenAI Realtime streaming is wired |
 
 Cloud Run is the default deployment target. Firestore stores sessions and caption segment state. GCS stores generated artifacts. Secret Manager stores provider keys and sensitive runtime tokens. Cloud Tasks or Cloud Scheduler can trigger monitor and worker jobs.
 
@@ -97,8 +98,8 @@ Use provider interfaces so the product is not hard-bound to one model vendor.
 | Realtime Chinese captions | OpenAI `gpt-realtime-translate` | Gemini Live Translate |
 | Realtime English sidecar | OpenAI `gpt-realtime-whisper` | Google/Gemini ASR path |
 | Offline ASR | OpenAI `gpt-4o-transcribe` | `gpt-4o-mini-transcribe` / Google batch STT |
-| Stable correction translation | OpenAI `gpt-5.4-mini` | Gemini Flash-Lite / OpenRouter text models |
-| Offline translation | Higher-quality text model with glossary | Batch translation fallback |
+| Stable correction translation | OpenAI `gpt-5.5-mini` | Gemini Flash-Lite / OpenRouter text models |
+| Offline translation | OpenAI `gpt-5.5-mini` with glossary | Batch translation fallback |
 | Scripture resolution | Deterministic Bible index + fuzzy candidates | Rules only |
 | Notes and quotes | OpenAI GPT-5.5 mini, reasoning effort medium | Smaller model with review |
 

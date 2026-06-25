@@ -159,7 +159,9 @@
     testRun: null,
     micStream: null,
     recognition: null,
-    micTranscriptIndex: 0
+    micTranscriptIndex: 0,
+    realtime: null,
+    realtimeEventSource: null
   };
 
   const el = {
@@ -262,6 +264,8 @@
       refreshAdminStatus();
       updatePipelineForState("idle");
       updateAdminEvidence("pageView", "管理端访问记录已启用；会众访问会记录为 congregation_page_view。");
+    } else {
+      connectPublicRealtimeEvents();
     }
     reportPageView();
   }
@@ -620,8 +624,142 @@
     useOperatorAudio();
     setStatus("请求麦克风权限", "watching");
     setSla("现场实时字幕测试", "live");
-    recordTestNote("正在请求麦克风权限；iPad Safari/Chrome 需要 HTTPS 环境。");
+    recordTestNote("正在请求麦克风权限并创建 OpenAI Realtime 翻译 session；iPad Safari/Chrome 需要 HTTPS 环境。");
 
+    try {
+      await startRealtimeTranslationMicTest();
+      return;
+    } catch (error) {
+      recordTestNote(`OpenAI Realtime 未启动，退回浏览器本地听写测试：${error.message || error}`);
+      await startBrowserSpeechMicFallback();
+    }
+  }
+
+  async function startRealtimeTranslationMicTest() {
+    if (!navigator.mediaDevices?.getUserMedia || !window.RTCPeerConnection) {
+      throw new Error("当前浏览器不支持 getUserMedia 或 WebRTC");
+    }
+    state.micStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
+      }
+    });
+    recordLatency("captureStart", Date.now());
+    updatePipelineStage("live-capture", "done", "麦克风已接入");
+    updatePipelineStage("transcript", "active", "Realtime 听写中");
+    updatePipelineStage("translation", "active", "Realtime 翻译中");
+    setStatus("OpenAI Realtime 翻译中", "live");
+    recordTestNote("麦克风已接入，正在通过 WebRTC 发送到 gpt-realtime-translate。");
+
+    const session = await createRealtimeSession();
+    const pc = new RTCPeerConnection();
+    const dataChannel = pc.createDataChannel("oai-events");
+    state.micStream.getAudioTracks().forEach((track) => pc.addTrack(track, state.micStream));
+    state.realtime = {
+      sessionId: session.sessionId,
+      eventToken: session.eventToken,
+      peerConnection: pc,
+      dataChannel,
+      startedAt: Date.now(),
+      currentSegmentId: null,
+      partialZh: "",
+      partialEn: ""
+    };
+
+    dataChannel.addEventListener("open", () => {
+      recordTestNote("OpenAI Realtime data channel 已打开，等待中文 transcript delta。");
+      updateAdminEvidence("worker", `Realtime session ${session.sessionId} 已连接`);
+    });
+    dataChannel.addEventListener("message", (event) => handleRealtimeDataChannelMessage(event.data));
+    dataChannel.addEventListener("error", () => {
+      recordTestNote("OpenAI Realtime data channel 出错。");
+    });
+    pc.addEventListener("connectionstatechange", () => {
+      if (pc.connectionState === "connected") {
+        setStatus("Realtime 翻译已连接", "live");
+      }
+      if (["failed", "disconnected", "closed"].includes(pc.connectionState)) {
+        recordTestNote(`Realtime WebRTC 状态：${pc.connectionState}`);
+      }
+    });
+
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    const sdpResponse = await fetch(`${session.webrtc.url}?model=${encodeURIComponent(session.model)}`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${session.clientSecret.value}`,
+        "Content-Type": "application/sdp"
+      },
+      body: offer.sdp
+    });
+    if (!sdpResponse.ok) {
+      throw new Error(`OpenAI WebRTC SDP 交换失败：HTTP ${sdpResponse.status}`);
+    }
+    await pc.setRemoteDescription({ type: "answer", sdp: await sdpResponse.text() });
+    log(`OpenAI Realtime 翻译 session 已启动：${session.sessionId}。`);
+  }
+
+  async function createRealtimeSession() {
+    const payload = {
+      sunday: state.adminSettings.sunday,
+      model: "gpt-realtime-translate",
+      targetLanguage: "zh-CN",
+      source: "ipad-mic"
+    };
+    let response = await fetch("/api/admin/realtime/sessions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...adminAuthHeaders()
+      },
+      body: JSON.stringify(payload)
+    });
+    if (response.status === 401) {
+      const token = requestAdminToken();
+      if (token) {
+        response = await fetch("/api/admin/realtime/sessions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        });
+      }
+    }
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(body.message || body.error || `Realtime session 请求失败：HTTP ${response.status}`);
+    }
+    if (!body.clientSecret?.value || !body.eventToken || !body.sessionId) {
+      throw new Error("Realtime session 响应缺少 client secret 或 event token");
+    }
+    return body;
+  }
+
+  function adminAuthHeaders() {
+    try {
+      const token = window.sessionStorage.getItem("sermonOperatorAdminToken");
+      return token ? { "Authorization": `Bearer ${token}` } : {};
+    } catch {
+      return {};
+    }
+  }
+
+  function requestAdminToken() {
+    const token = window.prompt("请输入管理端 token，用于创建 OpenAI Realtime session。");
+    const clean = String(token || "").trim();
+    if (!clean) return "";
+    try {
+      window.sessionStorage.setItem("sermonOperatorAdminToken", clean);
+    } catch {}
+    return clean;
+  }
+
+  async function startBrowserSpeechMicFallback() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!navigator.mediaDevices?.getUserMedia || !SpeechRecognition) {
       recordTestNote("当前浏览器不支持 getUserMedia 或 Web Speech Recognition，不能完成 iPad 麦克风实时测试。");
@@ -664,6 +802,145 @@
       updateTestPassState("失败：麦克风不可用", "error");
       setStatus("麦克风不可用", "error");
     }
+  }
+
+  function handleRealtimeDataChannelMessage(raw) {
+    let event;
+    try {
+      event = JSON.parse(raw);
+    } catch {
+      return;
+    }
+    const captionEvent = realtimeCaptionEventFromOpenAI(event);
+    if (!captionEvent) return;
+    handleRealtimeCaptionEvent(captionEvent);
+    postRealtimeSessionEvent(captionEvent);
+  }
+
+  function realtimeCaptionEventFromOpenAI(event) {
+    const type = String(event.type || "");
+    const delta = String(event.delta || event.text || event.transcript || "");
+    const finalText = String(event.text || event.transcript || "");
+    const text = finalText || delta;
+    if (!text) return null;
+    const isFinal = type.endsWith(".done") || type.includes("final") || type.includes("completed");
+    const isInput = type.includes("input_transcript") || type.includes("input_audio_transcription");
+    const isOutput = type.includes("output_transcript") || type.includes("audio_transcript") || type.includes("translation");
+    if (!isInput && !isOutput) return null;
+    return {
+      type: isInput
+        ? isFinal ? "input_transcript_final" : "input_transcript_delta"
+        : isFinal ? "caption_final" : "caption_delta",
+      delta,
+      text,
+      final: isFinal,
+      segmentId: event.item_id || event.response_id || event.event_id || null,
+      openaiEventType: type,
+      source: "openai-realtime-webrtc"
+    };
+  }
+
+  function handleRealtimeCaptionEvent(event) {
+    if (!event || !String(event.text || event.delta || "").trim()) return;
+    const isInput = String(event.type || "").startsWith("input_transcript");
+    const text = String(event.text || event.delta || "").trim();
+    if (isInput) {
+      updateRealtimeEnglish(text, event);
+      return;
+    }
+    upsertRealtimeChineseSegment(text, event);
+  }
+
+  function updateRealtimeEnglish(text, event) {
+    if (!state.realtime) state.realtime = {};
+    state.realtime.partialEn = event.final ? text : `${state.realtime.partialEn || ""}${event.delta || text}`;
+    setEnglishSidecar(state.realtime.partialEn || text, event.final ? 86 : 65);
+    recordLatency("firstEnglish", Date.now());
+    updatePipelineStage("transcript", event.final ? "done" : "active", event.final ? "英文已确认" : "英文生成中");
+  }
+
+  function upsertRealtimeChineseSegment(text, event) {
+    if (!state.realtime) state.realtime = {};
+    const now = Date.now();
+    const startMs = state.testRun?.startedAt ? now - state.testRun.startedAt : state.nextStartMs;
+    let segment = state.segments.find((item) => item.id === state.realtime.currentSegmentId);
+    if (!segment || segment.final) {
+      segment = {
+        id: `rt_${String(state.micTranscriptIndex + 1).padStart(4, "0")}`,
+        startMs,
+        endMs: startMs + 2400,
+        zh: "",
+        en: state.realtime.partialEn || "",
+        refs: [],
+        note: "OpenAI Realtime WebRTC 现场麦克风翻译片段。",
+        confidence: 78,
+        locked: false,
+        marked: false,
+        offsetMs: 0,
+        sourceMode: "openai-realtime",
+        final: false
+      };
+      state.micTranscriptIndex += 1;
+      state.segments.push(segment);
+      state.realtime.currentSegmentId = segment.id;
+    }
+    segment.zh = event.final ? text : `${segment.zh || ""}${event.delta || text}`;
+    segment.en = state.realtime.partialEn || segment.en || "";
+    segment.endMs = Math.max(segment.endMs, startMs + Math.max(1800, Math.min(8000, segment.zh.length * 90)));
+    segment.final = Boolean(event.final);
+    segment.refs = normalizeSegmentReferences(segment, [segment.en, segment.zh]);
+    state.currentSegmentId = segment.id;
+    setCaptionWindow(segment);
+    renderSegments();
+    addScriptureCandidate(segment);
+    updateNotes();
+    recordLatency("firstChinese", now);
+    recordLatencySample(Number(event.latencyMs) || 1200);
+    updatePipelineStage("translation", event.final ? "done" : "active", event.final ? "中文已确认" : "中文显示中");
+    setGenerationStatus("Realtime 翻译", "live");
+    updateTestPassStateFromMetrics();
+    if (event.final) {
+      state.realtime.currentSegmentId = null;
+      state.realtime.partialZh = "";
+    }
+  }
+
+  function postRealtimeSessionEvent(event) {
+    const rt = state.realtime;
+    if (!rt?.sessionId || !rt.eventToken) return;
+    fetch(`/api/realtime/sessions/${encodeURIComponent(rt.sessionId)}/events`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Realtime-Event-Token": rt.eventToken
+      },
+      body: JSON.stringify(event),
+      keepalive: true
+    }).catch(() => {});
+  }
+
+  function connectPublicRealtimeEvents() {
+    if (!window.EventSource || state.realtimeEventSource) return;
+    const source = new EventSource("/api/realtime/sessions/current/events");
+    state.realtimeEventSource = source;
+    const onCaption = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        state.captioning = true;
+        state.sourceReady = true;
+        setStatus("实时字幕更新中", "live");
+        setSla("现场实时字幕", "live");
+        handleRealtimeCaptionEvent(payload);
+      } catch (_error) {}
+    };
+    ["caption_delta", "caption_final", "input_transcript_delta", "input_transcript_final"].forEach((type) => {
+      source.addEventListener(type, onCaption);
+    });
+    source.onerror = () => {
+      source.close();
+      state.realtimeEventSource = null;
+      window.setTimeout(connectPublicRealtimeEvents, 5000);
+    };
   }
 
   function handleSpeechRecognitionResult(event) {
@@ -722,6 +999,7 @@
   }
 
   function stopMicLatencyTest(reason = "operator") {
+    stopRealtimeSession();
     if (state.recognition) {
       state.recognition.onend = null;
       try {
@@ -739,6 +1017,17 @@
       updateTestPassStateFromMetrics();
     }
     setStatus("麦克风测试已停止", "ready");
+  }
+
+  function stopRealtimeSession() {
+    if (!state.realtime) return;
+    try {
+      state.realtime.dataChannel?.close();
+    } catch (_error) {}
+    try {
+      state.realtime.peerConnection?.close();
+    } catch (_error) {}
+    state.realtime = null;
   }
 
   function markSermonStartForTest() {
@@ -1876,6 +2165,8 @@
     const captionsStatus = status.captions || {};
     const settings = status.settings || {};
     const secrets = status.secrets || {};
+    const realtime = status.realtime || {};
+    const eventArchive = realtime.eventArchive || {};
     const sunday = status.sunday || state.adminSettings.sunday;
     setOptionalText(el.adminSunday, sunday || "--");
     setOptionalText(el.adminManifestStatus, statusLabel(artifact.manifestStatus || "unchecked"));
@@ -1894,6 +2185,9 @@
     if (el.adminSecretStatus) {
       el.adminSecretStatus.textContent = secretReady ? "OpenAI 密钥已配置" : "OpenAI 密钥缺失";
       el.adminSecretStatus.classList.toggle("is-manual", !secretReady);
+    }
+    if (eventArchive.enabled) {
+      updateAdminEvidence("worker", `Realtime deltas 写入 ${eventArchive.directory || "backend JSONL archive"}`);
     }
   }
 

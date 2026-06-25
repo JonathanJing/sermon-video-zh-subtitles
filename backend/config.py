@@ -21,6 +21,7 @@ class AppConfig:
     internal_task_token: str | None
     enable_inline_worker: bool
     openai_api_key: str | None = None
+    realtime_event_log_dir: str = "/tmp/sermon-realtime-events"
 
     @classmethod
     def from_env(cls) -> "AppConfig":
@@ -38,6 +39,7 @@ class AppConfig:
             enable_inline_worker=os.getenv("ENABLE_INLINE_WORKER", "").lower()
             in {"1", "true", "yes"},
             openai_api_key=empty_to_none(os.getenv("OPENAI_API_KEY")),
+            realtime_event_log_dir=os.getenv("REALTIME_EVENT_LOG_DIR", "/tmp/sermon-realtime-events"),
         )
 
 

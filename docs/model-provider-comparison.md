@@ -23,7 +23,7 @@ OpenRouter should not be the realtime audio primary path. It is better used afte
 | Realtime English sidecar | OpenAI `gpt-realtime-whisper` | High | Runs in parallel | Provides correction and replay baseline | Adds cost |
 | Realtime audio translation | Gemini `gemini-3.5-live-translate-preview` | High | Low-latency live translation | Strong OpenAI competitor | Preview behavior and noisy audio need testing |
 | Low-cost realtime audio | Gemini `gemini-3.1-flash-live-preview` | Medium | Cheapest realtime audio candidate | Useful experiment group | Not a dedicated translation model |
-| ASR-to-text translation | OpenAI `gpt-5.4-mini` | High | Segment-level translation, usually seconds | Good controllability and structured output | Requires ASR |
+| ASR-to-text translation | OpenAI `gpt-5.5-mini` | High | Segment-level translation, usually seconds | Good controllability and structured output | Requires ASR |
 | ASR-to-text translation | Gemini `gemini-3.1-flash-lite` | High | Low-cost, high-throughput | Strong cost/performance for translation | Needs sermon-domain benchmark |
 | ASR-to-text translation | OpenRouter Qwen / MiniMax | Medium | Depends on router and provider | Useful fallback/benchmark | Provider drift and SLA consistency |
 
@@ -42,7 +42,7 @@ Text translation is much cheaper than realtime audio. Based on the local POC VTT
 
 | Plan | 50-minute text translation estimate |
 |---|---:|
-| OpenAI `gpt-5.4-mini` | $0.17-$0.23 |
+| OpenAI `gpt-5.5-mini` | Check current OpenAI pricing before Sunday production use |
 | Gemini `gemini-3.1-flash-lite` | $0.06-$0.08 |
 | Gemini `gemini-3.5-flash` | $0.33-$0.46 |
 | OpenRouter `qwen/qwen3.7-plus` | about $0.05-$0.07 before platform fees |

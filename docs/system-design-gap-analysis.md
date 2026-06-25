@@ -23,7 +23,7 @@ The current POC is valuable, but it is not yet the production system described i
 | OpenAI translation E2E | Partial | `scripts/translate_playback_with_openai.py` can replace placeholder Chinese with real segment-level translations for a prepared playback file. |
 | Static PWA | Partial | The Cloud Run deployment serves the current web prototype and local/remote E2E checks pass. |
 | Public disclaimer and secret hygiene | Partial | Public UI includes disclaimer text, tests scan browser playback output, and generated public artifacts avoid raw keys and Secret Manager resource names. |
-| Backend scaffold | Partial, not deployed | `backend/` defines public Sunday read APIs, admin generation APIs, manifest filtering, and a worker planner, but the current Dockerfile only serves static `web/` files. |
+| Backend scaffold | Partial | `backend/` defines public Sunday read APIs, admin generation APIs, realtime session/event APIs, manifest filtering, and a worker planner. The current Dockerfile starts `python -m backend.app`. |
 | GCS artifact storage | Partial | Generated artifacts can be uploaded to GCS, but there is no stable Sunday promotion flow that public clients can rely on every week. |
 
 ## Requirement Matrix
@@ -35,26 +35,28 @@ The current POC is valuable, but it is not yet the production system described i
 | Same Sunday, same artifact set for all users | Partial | The storage model is documented, but there is no promoted `sundays/YYYY-MM-DD/cloud-manifest.json` pointer flow. |
 | Read-only congregation view | Missing | Current page still mixes congregation playback with operator controls. Public users should not see generation, export, publish, or admin controls. |
 | 11:25 readiness and publish gate | Missing | There is no durable readiness state, publish timestamp, published artifact URI, or fallback state. |
-| Real generated Chinese captions | Partial | Batch OpenAI translation exists for prepared playback, but the worker planner does not yet run the translation step automatically. |
-| Realtime low-latency captioning | Missing | No streaming audio ingest, realtime ASR/translation provider, WebSocket/SSE caption stream, or latency instrumentation. |
+| Real generated Chinese captions | Partial | Batch OpenAI translation exists for prepared playback and the worker plan includes prepare -> translate -> notes -> upload -> promote; production verification still needs real Sunday inputs. |
+| Offline ASR fallback | Partial | When no English captions are available, the live-archive preparation path can extract audio and request `gpt-4o-transcribe` before `gpt-5.5-mini` translation, but this still needs live YouTube/archive validation. |
+| Realtime low-latency captioning | Partial | Admin iPad/iPhone mic can create an OpenAI Realtime translation session, send browser WebRTC audio, post English/Chinese deltas to backend memory/JSONL, and stream them to the public caption view over SSE. `scripts/realtime_media_worker.py` can create backend-only sessions, plan authorized audio/YouTube source preparation, and replay/publish events into the same session stream. `scripts/stabilize_realtime_deltas_with_openai.py` can use `gpt-5.5-mini` to turn saved realtime English windows into stable Chinese corrections. Production server-side OpenAI Realtime audio streaming and durable state storage are still missing. |
 | Scripture/name/term priority | Missing | Static scripture/sidebar examples exist, but no deterministic Bible index, glossary resolver, or review queue. |
-| Notes and quote extraction | Missing | Planned only; no traceable `insights/*.json` output or UI integration. |
-| Cloud Run API deployment | Missing | Current `Dockerfile` runs `python -m http.server` over `web/`; `/api/*` is not served by the deployed Cloud Run service. |
+| Notes and quote extraction | Partial | Worker plan includes `generate_notes_with_openai.py` with `gpt-5.5-mini`; production review and UI surfacing still need hardening. |
+| Cloud Run API deployment | Partial | Current `Dockerfile` starts `backend.app`; deployment still needs environment verification for `/api/*`, Secret Manager, and realtime session creation. |
 | Firestore state | Missing | Session and caption state are modeled in docs but not persisted. |
 | GCS/Secret boundary | Partial | Artifacts are sanitized, but automated worker logs, runbooks, and future manifests must keep the same boundary. |
 
 ## P0 Blocking Gaps
 
 1. **Split public and operator surfaces.** The 11:30 congregation page must be a clean read-only caption view. Operator controls belong behind an admin route or authenticated mode.
-2. **Deploy the backend/API surface.** The current Cloud Run service is static-only. Production needs a combined static/API service or separate `web` and `api` services with documented routing.
+2. **Verify and deploy the backend/API surface.** The repository container now serves static assets and `/api/*` from `backend.app`; production still needs environment verification for routing, auth, Secret Manager, and realtime session creation.
 3. **Promote stable Sunday manifests.** Each Sunday needs a stable server-side pointer such as `gs://<bucket>/sundays/YYYY-MM-DD/cloud-manifest.json`, with completion/readiness state.
-4. **Make backend generation run the real translation chain.** `backend.worker` currently plans `prepare_live_link_playback.py`; it does not automatically run OpenAI translation, publish translated playback, and promote the Sunday manifest.
+4. **Validate the real generation chain on a fresh Sunday input.** `backend.worker` now plans prepare -> translate -> notes -> upload -> promote, but it needs an end-to-end run with live archive captions and the no-caption ASR fallback.
 5. **Add readiness/publish state.** Operators need `source_detected`, `caption_generating`, `needs_review`, `ready`, `published`, and `fallback` states before 11:25 PT.
 6. **Implement source discovery.** Manual links are useful, but the Sunday system still needs automatic discovery of 8:30/10:00 live sources and same-sermon validation.
 
 ## P1/P2 Gaps
 
-- Realtime streaming provider interface and latency budget enforcement.
+- Durable realtime session/segment storage and latency budget enforcement.
+- Server-side OpenAI Realtime audio streaming from YouTube live / authorized audio sources beyond the current media-worker source-prep and event-publishing scaffold.
 - Firestore or equivalent durable session/segment state.
 - Cloud Scheduler/Tasks configuration for Sunday monitor and worker jobs.
 - Dedicated service account and IAM least-privilege wiring for GCS and Secret Manager.
@@ -69,7 +71,7 @@ The current POC is valuable, but it is not yet the production system described i
 
 - Congregation-mode DOM/E2E test: the public view must not show monitoring, manual trigger, simulation playback, export, publish, logs, or other operator controls.
 - Manifest contract test: a public Sunday manifest must include readiness/completion state, generation time, live URL, sermon title, translation status, and complete output references before being treated as ready.
-- Docker/API shape test: prevent a deployment from being described as an API deployment when the container only serves static files.
+- Docker/API shape test: prevent a deployment from being described as production-ready when `/api/*`, auth, Secret Manager, and realtime session creation are not verified.
 - 11:25 no-go checklist: document the exact evidence an operator needs before publishing to the 11:30 congregation.
 - 11:30 congregation smoke evidence: record mobile/tablet access, subtitle readability, current Sunday slice, and whether the published captions are generated or placeholder text.
 
@@ -77,11 +79,11 @@ The current POC is valuable, but it is not yet the production system described i
 
 1. **P0-A: Public/operator split.** Add explicit congregation and operator modes, hide all admin controls from public mode, and update E2E coverage for iPhone/iPad widths.
 2. **P0-B: Sunday manifest promotion.** Write a small promotion command that validates a run manifest and copies/promotes it to the stable Sunday pointer.
-3. **P0-C: Deploy backend API.** Replace the static-only Cloud Run container with an API server that also serves static assets, or deploy a separate API service and update docs.
-4. **P0-D: Full worker chain.** Make the backend worker run prepare -> translate -> sanitize -> upload -> promote, with a dry-run mode and tests.
+3. **P0-C: Verify backend API deployment.** Deploy or redeploy the `backend.app` container and smoke test `/api/health`, admin status, realtime session creation, and public Sunday reads.
+4. **P0-D: Full worker chain E2E.** Run prepare -> ASR fallback if needed -> translate -> notes -> upload -> promote with a dry-run mode and tests.
 5. **P0-E: Readiness/publish gate.** Persist readiness state and expose it to the operator UI and public Sunday read path.
 6. **P1: Scheduled live monitor.** Add Sunday source discovery with fixture-based tests before relying on live network behavior.
 
 ## Deployment Decision
 
-The current static PWA can remain deployed for UI and playback simulation testing. A production-style redeploy should wait until at least the public/operator split and backend API routing are implemented. Deploying the current static-only image again would not reduce the main 11:30 service risk because it still cannot trigger, publish, or serve Sunday manifests through the backend API.
+The current PWA can remain deployed for UI and playback simulation testing. A production-style redeploy should use the `backend.app` container and should not be treated as ready until `/api/health`, admin status, realtime session creation, Sunday manifest reads, and Secret Manager access have all been smoke-tested in Cloud Run.

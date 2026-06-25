@@ -21,6 +21,43 @@ class OfflineLiveSermonSubtitlesTest(unittest.TestCase):
     def test_default_asr_model_uses_gpt_4o_transcribe(self):
         self.assertEqual(mod.DEFAULT_ASR_MODEL, "gpt-4o-transcribe")
 
+    def test_download_section_spec_uses_sermon_window(self):
+        self.assertEqual(
+            mod.download_section_spec(start_ms=1_405_000, duration_ms=1_858_000),
+            "*00:23:25-00:54:23",
+        )
+        self.assertIsNone(mod.download_section_spec(start_ms=0, duration_ms=None))
+
+    def test_cues_from_transcription_segments(self):
+        cues = mod.cues_from_transcription_response(
+            {
+                "segments": [
+                    {"start": 0.25, "end": 2.5, "text": " Jesus is our mediator. "},
+                    {"start": 2.5, "end": 5.0, "text": "He brings mercy."},
+                ]
+            },
+            fallback_duration_ms=None,
+        )
+
+        self.assertEqual(len(cues), 2)
+        self.assertEqual(cues[0].start_ms, 250)
+        self.assertEqual(cues[0].end_ms, 2500)
+        self.assertEqual(cues[0].text, "Jesus is our mediator.")
+
+    def test_cues_from_plain_transcription_text(self):
+        cues = mod.cues_from_transcription_response(
+            {"text": "Jesus is our mediator."},
+            fallback_duration_ms=5000,
+        )
+
+        self.assertEqual(len(cues), 1)
+        self.assertEqual(cues[0].end_ms, 5000)
+        self.assertEqual(cues[0].text, "Jesus is our mediator.")
+
+    def test_rejects_raw_api_key_material_for_asr_secret_reference(self):
+        with self.assertRaises(SystemExit):
+            mod.validate_secret_resource_name("sk-this-looks-like-raw-key-material")
+
     def test_parse_time_to_ms_supports_seconds_and_vtt_time(self):
         self.assertEqual(mod.parse_time_to_ms("23.5"), 23500)
         self.assertEqual(mod.parse_time_to_ms("00:23:25.000"), 1_405_000)
