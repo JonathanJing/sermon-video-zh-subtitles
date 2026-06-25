@@ -29,6 +29,7 @@ import requests
 DEFAULT_LANGS = ["en-orig", "en"]
 DEFAULT_ASR_MODEL = "gpt-4o-transcribe"
 FORBIDDEN_ASR_MODEL = "gpt-realtime-translate"
+MAX_ASR_CHUNK_SECONDS = 600
 OPENAI_TRANSCRIPTIONS_URL = "https://api.openai.com/v1/audio/transcriptions"
 SECRET_RESOURCE_RE = re.compile(
     r"^projects/(?P<project>[^/\s]+)/secrets/(?P<secret>[^/\s]+)(?:/versions/(?P<version>[^/\s]+))?$"
@@ -124,6 +125,8 @@ def main() -> int:
             write_reports(out_dir, report)
             return 2
         sermon_duration_ms = int((sermon_meta or live_meta).get("duration") or 0) * 1000
+        if sermon_meta is None and start_ms > 0 and sermon_duration_ms > start_ms:
+            sermon_duration_ms = sermon_duration_ms - start_ms
         if sermon_duration_ms <= 0:
             sermon_duration_ms = None  # type: ignore[assignment]
         try:
@@ -584,6 +587,101 @@ def transcribe_audio_to_cues(
     fallback_duration_ms: int | None,
 ) -> list[Cue]:
     api_key = access_secret(api_key_secret)
+    if fallback_duration_ms and fallback_duration_ms > MAX_ASR_CHUNK_SECONDS * 1000:
+        return transcribe_audio_chunks_to_cues(
+            audio_path=audio_path,
+            api_key=api_key,
+            model=model,
+            fallback_duration_ms=fallback_duration_ms,
+        )
+    return transcribe_single_audio_to_cues(
+        audio_path=audio_path,
+        api_key=api_key,
+        model=model,
+        fallback_duration_ms=fallback_duration_ms,
+    )
+
+
+def transcribe_audio_chunks_to_cues(
+    audio_path: Path,
+    api_key: str,
+    model: str,
+    fallback_duration_ms: int,
+) -> list[Cue]:
+    cues: list[Cue] = []
+    chunk_ms = MAX_ASR_CHUNK_SECONDS * 1000
+    chunk_dir = audio_path.parent / f"{audio_path.stem}.chunks"
+    chunk_dir.mkdir(parents=True, exist_ok=True)
+    total_chunks = (fallback_duration_ms + chunk_ms - 1) // chunk_ms
+    for index in range(total_chunks):
+        start_ms = index * chunk_ms
+        duration_ms = min(chunk_ms, fallback_duration_ms - start_ms)
+        if duration_ms <= 0:
+            continue
+        chunk_path = split_audio_chunk(
+            audio_path=audio_path,
+            chunk_dir=chunk_dir,
+            index=index,
+            start_ms=start_ms,
+            duration_ms=duration_ms,
+        )
+        chunk_cues = transcribe_single_audio_to_cues(
+            audio_path=chunk_path,
+            api_key=api_key,
+            model=model,
+            fallback_duration_ms=duration_ms,
+        )
+        cues.extend(
+            Cue(
+                start_ms=cue.start_ms + start_ms,
+                end_ms=cue.end_ms + start_ms,
+                text=cue.text,
+                settings=cue.settings,
+                identifier=f"asr_{index + 1:02d}_{cue.identifier or f'{len(cues) + 1:04d}'}",
+            )
+            for cue in chunk_cues
+        )
+    return cues
+
+
+def split_audio_chunk(
+    audio_path: Path,
+    chunk_dir: Path,
+    index: int,
+    start_ms: int,
+    duration_ms: int,
+) -> Path:
+    chunk_path = chunk_dir / f"{audio_path.stem}.part{index + 1:03d}.m4a"
+    command = [
+        "ffmpeg",
+        "-y",
+        "-ss",
+        format_section_time(start_ms),
+        "-t",
+        format_seconds(duration_ms),
+        "-i",
+        str(audio_path),
+        "-vn",
+        "-acodec",
+        "aac",
+        str(chunk_path),
+    ]
+    proc = subprocess.run(command, text=True, capture_output=True, check=False)
+    if proc.returncode != 0 or not chunk_path.exists() or chunk_path.stat().st_size <= 0:
+        raise RuntimeError(last_error_line(proc.stderr) or "ffmpeg did not write an ASR audio chunk")
+    return chunk_path
+
+
+def format_seconds(ms: int) -> str:
+    return f"{max(0.001, ms / 1000):.3f}"
+
+
+def transcribe_single_audio_to_cues(
+    audio_path: Path,
+    api_key: str,
+    model: str,
+    fallback_duration_ms: int | None,
+) -> list[Cue]:
     mime_type = mimetypes.guess_type(audio_path.name)[0] or "application/octet-stream"
     with audio_path.open("rb") as audio_file:
         response = requests.post(

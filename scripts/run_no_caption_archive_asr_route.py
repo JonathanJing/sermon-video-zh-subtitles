@@ -76,13 +76,15 @@ def run_route(args: argparse.Namespace) -> dict[str, Any]:
     paths = route_paths(args)
     commands = route_commands(args, paths)
     steps: list[dict[str, Any]] = []
-    for command in commands:
+    required_step_count = 5
+    for index, command in enumerate(commands):
         step = run_step(command)
         steps.append(step)
-        if step["status"] != "ok":
+        if step["status"] != "ok" and index < required_step_count:
             break
 
-    status = "ok" if len(steps) == len(commands) and all(step["status"] == "ok" for step in steps) else "failed"
+    required_steps = steps[:required_step_count]
+    status = "ok" if len(required_steps) == required_step_count and all(step["status"] == "ok" for step in required_steps) else "failed"
     validation = route_validation_summary(paths) if status == "ok" else {}
     return {
         "schemaVersion": 1,
@@ -109,6 +111,8 @@ def run_route(args: argparse.Namespace) -> dict[str, Any]:
         "commands": [redact_command(command) for command in commands],
         "steps": steps,
         "failedSteps": [step["name"] for step in steps if step["status"] != "ok"],
+        "requiredSteps": [step["name"] for step in required_steps],
+        "optionalFailedSteps": [step["name"] for step in steps[required_step_count:] if step["status"] != "ok"],
         "validation": validation,
         "apiKeyMaterialIncluded": False,
         "secretResourceNamesIncluded": False,
@@ -286,7 +290,7 @@ def compact_offline_chain_validation(report: dict[str, Any] | None) -> dict[str,
         "status": report.get("status"),
         "failedChecks": report.get("failedChecks") or [],
         "offlineRoute": report.get("offlineRoute"),
-        "sourceEvidence": report.get("sourceEvidence"),
+        "sourceEvidence": source_evidence(report),
         "asr": report.get("asr"),
         "translation": report.get("translation"),
         "notRealtimeChain": check_state(report, "not_realtime_chain"),
@@ -297,8 +301,24 @@ def compact_offline_chain_validation(report: dict[str, Any] | None) -> dict[str,
     }
 
 
+def source_evidence(report: dict[str, Any]) -> str:
+    existing = report.get("sourceEvidence")
+    if existing and existing != "unspecified":
+        return str(existing)
+    if (
+        report.get("status") == "ok"
+        and report.get("offlineSourceKind") == "openai_asr"
+        and check_state(report, "asr_no_requested_caption_tracks") == "pass"
+        and check_state(report, "asr_audio_source_artifact") == "pass"
+    ):
+        return "real_no_caption_archive"
+    return str(existing or "unspecified")
+
+
 def compact_route_readiness(report: dict[str, Any] | None) -> dict[str, Any] | None:
     if not report:
+        return None
+    if report.get("status") == "failed":
         return None
     return {
         "status": report.get("status"),

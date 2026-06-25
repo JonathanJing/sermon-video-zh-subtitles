@@ -88,6 +88,41 @@ class OfflineLiveSermonSubtitlesTest(unittest.TestCase):
         self.assertEqual(cues[0].end_ms, 5000)
         self.assertEqual(cues[0].text, "Jesus is our mediator.")
 
+    def test_long_asr_audio_is_split_and_offset(self):
+        calls = []
+
+        def fake_split(audio_path, chunk_dir, index, start_ms, duration_ms):
+            calls.append((index, start_ms, duration_ms))
+            chunk = chunk_dir / f"chunk-{index}.m4a"
+            chunk.parent.mkdir(parents=True, exist_ok=True)
+            chunk.write_text("audio", encoding="utf-8")
+            return chunk
+
+        def fake_transcribe(audio_path, api_key, model, fallback_duration_ms):
+            return [mod.Cue(start_ms=0, end_ms=fallback_duration_ms, text=audio_path.stem)]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            audio = Path(tmp) / "sermon.m4a"
+            audio.write_text("audio", encoding="utf-8")
+            original_split = mod.split_audio_chunk
+            original_transcribe = mod.transcribe_single_audio_to_cues
+            try:
+                mod.split_audio_chunk = fake_split
+                mod.transcribe_single_audio_to_cues = fake_transcribe
+                cues = mod.transcribe_audio_chunks_to_cues(
+                    audio_path=audio,
+                    api_key="key",
+                    model="gpt-4o-transcribe",
+                    fallback_duration_ms=1_450_000,
+                )
+            finally:
+                mod.split_audio_chunk = original_split
+                mod.transcribe_single_audio_to_cues = original_transcribe
+
+        self.assertEqual(calls, [(0, 0, 600_000), (1, 600_000, 600_000), (2, 1_200_000, 250_000)])
+        self.assertEqual([cue.start_ms for cue in cues], [0, 600_000, 1_200_000])
+        self.assertEqual([cue.end_ms for cue in cues], [600_000, 1_200_000, 1_450_000])
+
     def test_gpt_4o_transcribe_uses_json_response_format(self):
         fields = mod.transcription_request_fields("gpt-4o-transcribe")
 

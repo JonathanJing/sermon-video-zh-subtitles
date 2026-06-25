@@ -108,6 +108,56 @@ class RunNoCaptionArchiveAsrRouteTest(unittest.TestCase):
         self.assertEqual(report["validation"]["offlineChain"]["translation"]["model"], "gpt-5.4-mini")
         self.assertEqual(report["validation"]["routeReadiness"]["status"], "ok")
 
+    def test_optional_readiness_failure_does_not_fail_completed_asr_route(self):
+        def fake_run(command, **kwargs):
+            if "scripts/validate_offline_chain.py" in command:
+                write_json_arg(
+                    command,
+                    {
+                        "status": "ok",
+                        "failedChecks": [],
+                        "sourceEvidence": "unspecified",
+                        "offlineSourceKind": "openai_asr",
+                        "offlineRoute": {
+                            "decision": "use_asr_fallback",
+                            "selectedSourceKind": "openai_asr",
+                        },
+                        "asr": {"used": True, "model": "gpt-4o-transcribe"},
+                        "translation": {"model": "gpt-5.4-mini"},
+                        "checks": [
+                            {"name": "asr_no_requested_caption_tracks", "state": "pass"},
+                            {"name": "asr_audio_source_artifact", "state": "pass"},
+                            {"name": "not_realtime_chain", "state": "pass"},
+                            {"name": "zh_vtt_timeline_alignment", "state": "pass"},
+                            {"name": "zh_srt_timeline_alignment", "state": "pass"},
+                        ],
+                    },
+                )
+            if "scripts/validate_production_readiness.py" in command:
+                write_json_arg(command, {"status": "failed", "failedChecks": ["sunday_manifest"]})
+                return completed(2, stdout="failed", stderr="")
+            return completed(0, stdout="ok", stderr="")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            args = args_for(Path(tmp))
+            original_route_paths = mod.route_paths
+
+            def temp_route_paths(route_args):
+                paths = original_route_paths(route_args)
+                paths["offlineChainValidation"] = route_args.run_root / "no-caption-offline-chain-validation.json"
+                paths["routeReadiness"] = route_args.run_root / "asr-route-readiness.json"
+                return paths
+
+            with patch.object(mod, "route_paths", side_effect=temp_route_paths), patch.object(
+                mod.subprocess, "run", side_effect=fake_run
+            ):
+                report = mod.run_route(args)
+
+        self.assertEqual(report["status"], "ok")
+        self.assertEqual(report["optionalFailedSteps"], ["validate_production_readiness"])
+        self.assertEqual(report["validation"]["offlineChain"]["sourceEvidence"], "real_no_caption_archive")
+        self.assertIsNone(report["validation"]["routeReadiness"])
+
     def test_apply_gcs_removes_dry_run_flags(self):
         with tempfile.TemporaryDirectory() as tmp:
             args = args_for(Path(tmp), apply_gcs=True)
