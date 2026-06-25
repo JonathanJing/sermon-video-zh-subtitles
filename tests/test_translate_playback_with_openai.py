@@ -78,6 +78,7 @@ class TranslatePlaybackWithOpenAITest(unittest.TestCase):
 
         self.assertEqual(translated["translationStatus"], "ready")
         self.assertEqual(translated["segments"][0]["zh"], "耶稣是我们的中保。")
+        self.assertEqual(translated["rawSegments"][0]["zh"], "耶稣是我们的中保。")
         self.assertEqual(translated["segments"][0]["translationStatus"], "ready")
         self.assertFalse(translated["secrets"]["apiKeyMaterialIncluded"])
         self.assertFalse(translated["translationProvider"]["apiKeyMaterialIncluded"])

@@ -134,6 +134,8 @@
     currentSegmentId: null,
     segments: [],
     playbackSegments: [],
+    rawSegments: [],
+    reviewSegments: [],
     monitorTimers: [],
     streamTimer: null,
     playbackTimer: null,
@@ -399,7 +401,12 @@
       return;
     }
 
-    state.playbackSegments = simulation.segments
+    const playbackSource = Array.isArray(simulation.displaySegments) && simulation.displaySegments.length
+      ? simulation.displaySegments
+      : simulation.segments;
+    state.rawSegments = Array.isArray(simulation.rawSegments) ? simulation.rawSegments : [];
+    state.reviewSegments = Array.isArray(simulation.reviewSegments) ? simulation.reviewSegments : [];
+    state.playbackSegments = playbackSource
       .map((segment, index) => normalizePlaybackSegment(segment, index))
       .filter(Boolean);
     state.playbackSpeed = Number(simulation.playbackSpeed) || 18;
@@ -457,7 +464,9 @@
       locked: false,
       marked: false,
       offsetMs: 0,
-      translationStatus: segment.translationStatus || "unknown"
+      translationStatus: segment.translationStatus || "unknown",
+      sourceSegmentIds: Array.isArray(segment.sourceSegmentIds) ? segment.sourceSegmentIds.map(String) : [],
+      sourceCueCount: Number(segment.sourceCueCount) || 0
     };
   }
 
@@ -1524,25 +1533,25 @@
     const previousScrollTop = el.segmentList.scrollTop;
     const shouldFollow = state.segmentAutoFollow || segmentTrackNearBottom();
     el.segmentList.textContent = "";
-    state.segments.slice(-40).forEach((segment) => {
+    const reviewGroups = reviewGroupsForRender().slice(-28);
+    reviewGroups.forEach((group) => {
       const item = document.createElement("li");
-      item.dataset.segmentId = segment.id;
-      const flags = [
-        segment.locked ? "锁定" : "",
-        segment.marked ? "已标记" : "",
-        segment.ref ? segment.ref : ""
-      ].filter(Boolean);
+      item.dataset.segmentId = group.liveSegmentId;
+      item.dataset.segmentRange = group.segmentIds.join(",");
+      const flags = group.flags;
       item.innerHTML = `
-        <span class="segment-time">${escapeHtml(msToClock(segmentStart(segment)))}</span>
-        <span class="segment-zh">${escapeHtml(segment.zh || "等待中文字幕")}</span>
-        <span class="segment-en">${escapeHtml(segment.en || "暂无英文原文")}</span>
+        <span class="segment-time">${escapeHtml(group.timeLabel)}</span>
+        <span class="segment-zh">${escapeHtml(group.zh || "等待中文字幕")}</span>
+        <span class="segment-en">${escapeHtml(group.en || "暂无英文原文")}</span>
         ${flags.length ? `<small>${escapeHtml(flags.join(" / "))}</small>` : ""}
       `;
-      if (segment.id === state.currentSegmentId) item.classList.add("is-active");
+      if (group.segmentIds.includes(state.currentSegmentId)) item.classList.add("is-active");
       el.segmentList.appendChild(item);
     });
     if (el.segmentCount) {
-      el.segmentCount.textContent = state.viewMode === "admin" ? `${state.segments.length} 个片段` : "已加载";
+      el.segmentCount.textContent = state.viewMode === "admin"
+        ? `${reviewGroups.length} 组 / ${state.rawSegments.length || state.segments.length} 原始片段`
+        : "已加载";
     }
     updateSegmentCountNote();
     if (shouldFollow) {
@@ -1551,6 +1560,117 @@
       el.segmentList.scrollTop = previousScrollTop;
     }
     updateReturnLiveButton();
+  }
+
+  function reviewGroupsForRender() {
+    if (state.reviewSegments.length) {
+      const byDisplayId = new Map(state.segments.map((segment) => [segment.id, segment]));
+      return state.reviewSegments
+        .map((review, index) => normalizeReviewSegment(review, index, byDisplayId))
+        .filter(Boolean);
+    }
+    return groupedReviewSegments(state.segments);
+  }
+
+  function normalizeReviewSegment(review, index, byDisplayId) {
+    const displayId = String(review.displaySegmentId || review.id || "");
+    const display = byDisplayId.get(displayId);
+    const ids = Array.isArray(review.sourceSegmentIds) ? review.sourceSegmentIds.map(String) : display?.sourceSegmentIds || [];
+    const refs = Array.isArray(review.refs) ? review.refs : display?.refs || [];
+    return {
+      liveSegmentId: displayId || display?.id || `review_${index + 1}`,
+      segmentIds: [displayId || display?.id || `review_${index + 1}`],
+      sourceSegmentIds: ids,
+      flags: [
+        ids.length ? `${ids.length} 个原始 cue` : "",
+        ...refs.map((ref) => ref?.canonicalRef || "").filter(Boolean)
+      ].filter(Boolean),
+      zh: review.zh || display?.zh || "",
+      en: review.en || display?.en || "",
+      timeLabel: `${msToClock(Number(review.startMs ?? display?.startMs ?? 0))}-${msToClock(Number(review.endMs ?? display?.endMs ?? 0))}`,
+    };
+  }
+
+  function groupedReviewSegments(segments) {
+    const groups = [];
+    let current = null;
+    segments
+      .slice()
+      .sort((a, b) => segmentStart(a) - segmentStart(b))
+      .forEach((segment) => {
+        if (!current) {
+          current = createReviewGroup(segment);
+          return;
+        }
+        if (shouldStartReviewGroup(current, segment)) {
+          groups.push(finalizeReviewGroup(current));
+          current = createReviewGroup(segment);
+          return;
+        }
+        addSegmentToReviewGroup(current, segment);
+      });
+    if (current) groups.push(finalizeReviewGroup(current));
+    return groups;
+  }
+
+  function createReviewGroup(segment) {
+    return {
+      startMs: segmentStart(segment),
+      endMs: segmentEnd(segment),
+      zhParts: [segment.zh || ""].filter(Boolean),
+      enParts: [segment.en || ""].filter(Boolean),
+      refs: new Set(segment.ref ? [segment.ref] : []),
+      marked: Boolean(segment.marked),
+      locked: Boolean(segment.locked),
+      segmentIds: [segment.id],
+      liveSegmentId: segment.id
+    };
+  }
+
+  function addSegmentToReviewGroup(group, segment) {
+    group.endMs = Math.max(group.endMs, segmentEnd(segment));
+    if (segment.zh) group.zhParts.push(segment.zh);
+    if (segment.en) group.enParts.push(segment.en);
+    if (segment.ref) group.refs.add(segment.ref);
+    group.marked = group.marked || Boolean(segment.marked);
+    group.locked = group.locked || Boolean(segment.locked);
+    group.segmentIds.push(segment.id);
+    group.liveSegmentId = segment.id;
+  }
+
+  function finalizeReviewGroup(group) {
+    const flags = [
+      group.locked ? "锁定" : "",
+      group.marked ? "已标记" : "",
+      ...Array.from(group.refs)
+    ].filter(Boolean);
+    return {
+      ...group,
+      zh: compactJoinedCaption(group.zhParts),
+      en: compactJoinedCaption(group.enParts),
+      flags,
+      timeLabel: group.endMs > group.startMs ? `${msToClock(group.startMs)}-${msToClock(group.endMs)}` : msToClock(group.startMs)
+    };
+  }
+
+  function shouldStartReviewGroup(group, segment) {
+    const gapMs = segmentStart(segment) - group.endMs;
+    const zhText = compactJoinedCaption(group.zhParts);
+    const enText = compactJoinedCaption(group.enParts);
+    if (gapMs > 2600) return true;
+    if (zhText.length >= 600 || enText.length >= 900) return true;
+    if (group.zhParts.length >= 10) return true;
+    const zhEnds = endsSentence(zhText);
+    const enEnds = endsSentence(enText);
+    return (zhEnds && (!enText || enEnds)) || (enEnds && (!zhText || zhEnds));
+  }
+
+  function compactJoinedCaption(parts) {
+    return parts.join(" ").replace(/\s+/g, " ").replace(/\s+([，。！？；：,.!?;:])/g, "$1").trim();
+  }
+
+  function endsSentence(text) {
+    return /(?:[。！？；]|\.\s*|[!?]\s*|……)$/.test(String(text || "").trim());
   }
 
   function onSegmentTrackScroll() {
@@ -2802,10 +2922,11 @@
       return;
     }
     const count = state.playbackSegments.length || state.segments.length;
+    const rawCount = state.rawSegments.length || count;
     const isGeneratedSample = Boolean(window.SERMON_PLAYBACK_SIMULATION?.generatedFrom);
-    el.segmentCountNote.textContent = count >= 80 && isGeneratedSample
-      ? "当前样本按字幕时间码切到 80 段；生成请求上限也是 80"
-      : "片段由 VTT/实时字幕的开始和结束时间码决定";
+    el.segmentCountNote.textContent = isGeneratedSample
+      ? `默认显示成品断句；${rawCount} 个原始 cue 保留用于追溯和导出`
+      : "默认显示成品断句；原始 cue 由 VTT/实时字幕时间码决定";
   }
 
   function updatePipelineStage(stage, stateName, labelText) {

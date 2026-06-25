@@ -58,6 +58,10 @@ Moses and Aaron stood before the people.
             self.assertFalse(simulation["secrets"]["secretResourceNamesIncluded"])
             self.assertTrue(simulation["secrets"]["serverSideSecretConfigured"])
             self.assertEqual(len(simulation["segments"]), 2)
+            self.assertEqual(len(simulation["rawSegments"]), 2)
+            self.assertEqual(simulation["segments"], simulation["displaySegments"])
+            self.assertEqual(simulation["reviewSegments"][0]["displaySegmentId"], simulation["displaySegments"][0]["id"])
+            self.assertEqual(simulation["displaySegments"][0]["sourceSegmentIds"], ["sim_0001"])
             self.assertEqual(simulation["segments"][0]["ref"], "Numbers 16")
             self.assertEqual(simulation["segments"][0]["refs"][0]["title"], "民数记 16")
             self.assertEqual(simulation["scriptureReferences"][0]["canonicalRef"], "Numbers 16")
@@ -70,6 +74,47 @@ Moses and Aaron stood before the people.
             self.assertNotIn("projects/p/secrets", rendered)
             payload = rendered.split(" = ", 1)[1].rstrip(";\n")
             self.assertEqual(json.loads(payload)["live"]["id"], "live1")
+
+    def test_builds_display_segments_that_avoid_half_sentence_breaks(self):
+        raw_segments = [
+            {
+                "id": "sim_0001",
+                "startMs": 0,
+                "endMs": 2500,
+                "zh": "如果我们真的相信神比其他一切都好，",
+                "en": "But if we really believe that God is better than everything else,",
+                "translationStatus": "ready",
+                "confidence": 84,
+                "refs": [],
+            },
+            {
+                "id": "sim_0002",
+                "startMs": 2510,
+                "endMs": 5000,
+                "zh": "认清我们挣扎的地方其实很有帮助，因为我们可以",
+                "en": "identifying what we struggle with is actually really helpful because we can",
+                "translationStatus": "ready",
+                "confidence": 84,
+                "refs": [],
+            },
+            {
+                "id": "sim_0003",
+                "startMs": 5010,
+                "endMs": 6500,
+                "zh": "把这些放下，更加信靠祂。",
+                "en": "leave that behind and trust him more.",
+                "translationStatus": "ready",
+                "confidence": 84,
+                "refs": [],
+            },
+        ]
+
+        display = mod.build_display_segments(raw_segments)
+
+        self.assertEqual(len(display), 1)
+        self.assertEqual(display[0]["sourceSegmentIds"], ["sim_0001", "sim_0002", "sim_0003"])
+        self.assertIn("因为我们可以 把这些放下", display[0]["zh"])
+        self.assertTrue(display[0]["en"].endswith("trust him more."))
 
     def test_merges_progressive_youtube_cues_into_readable_segments(self):
         cues = [

@@ -271,6 +271,10 @@ def ends_sentence(text: str) -> bool:
     return text.endswith((".", "?", "!", ":", ";"))
 
 
+def ends_display_sentence(text: str) -> bool:
+    return bool(re.search(r"(?:[。！？；]|\.\s*|[!?]\s*)$", text.strip()))
+
+
 def build_simulation(
     report: dict[str, Any],
     output: dict[str, Any],
@@ -287,12 +291,12 @@ def build_simulation(
     caption_source = report.get("caption_source") or {}
     sermon_title = sermon.get("title") or live.get("title") or "Untitled sermon"
 
-    segments = []
+    raw_segments = []
     for index, cue in enumerate(cues, start=1):
         source_text = cue.text.strip()
         zh_text = source_text if has_zh else "AI 中文待生成：" + source_text
         references = detect_references(source_text)
-        segments.append(
+        raw_segments.append(
             {
                 "id": f"sim_{index:04d}",
                 "startMs": cue.start_ms,
@@ -307,6 +311,9 @@ def build_simulation(
                 "translationStatus": "ready" if has_zh else "needs_translation",
             }
         )
+
+    display_segments = build_display_segments(raw_segments)
+    review_segments = build_review_segments(display_segments)
 
     return {
         "schemaVersion": 1,
@@ -336,9 +343,189 @@ def build_simulation(
         },
         "sermonStart": sermon_start,
         "translationStatus": "ready" if has_zh else "needs_translation",
-        "scriptureReferences": merge_segment_references(segments),
-        "segments": segments,
+        "scriptureReferences": merge_segment_references(display_segments),
+        "rawSegments": raw_segments,
+        "displaySegments": display_segments,
+        "reviewSegments": review_segments,
+        "segments": display_segments,
     }
+
+
+def refresh_polished_layers(simulation: dict[str, Any]) -> dict[str, Any]:
+    """Rebuild display/review layers after translations or raw segment edits."""
+    current_segments = [
+        segment
+        for segment in simulation.get("segments") or []
+        if isinstance(segment, dict)
+    ]
+    if current_segments and any(segment.get("sourceSegmentIds") for segment in current_segments):
+        display_segments = current_segments
+        simulation.setdefault("rawSegments", simulation.get("rawSegments") or [])
+        simulation["displaySegments"] = display_segments
+        simulation["reviewSegments"] = build_review_segments(display_segments)
+        simulation["segments"] = display_segments
+        simulation["scriptureReferences"] = merge_segment_references(display_segments)
+        return simulation
+
+    raw_segments = simulation.get("rawSegments")
+    if not isinstance(raw_segments, list) or not raw_segments:
+        raw_segments = current_segments
+    translated_by_id = {
+        str(segment.get("id")): segment
+        for segment in simulation.get("segments") or []
+        if isinstance(segment, dict)
+    }
+    hydrated_raw = []
+    for segment in raw_segments:
+        if not isinstance(segment, dict):
+            continue
+        raw = dict(segment)
+        translated = translated_by_id.get(str(raw.get("id")))
+        if translated:
+            for key in ("zh", "draft", "ref", "refs", "note", "confidence", "translationStatus"):
+                if key in translated:
+                    raw[key] = translated[key]
+        hydrated_raw.append(raw)
+    display_segments = build_display_segments(hydrated_raw)
+    simulation["rawSegments"] = hydrated_raw
+    simulation["displaySegments"] = display_segments
+    simulation["reviewSegments"] = build_review_segments(display_segments)
+    simulation["segments"] = display_segments
+    simulation["scriptureReferences"] = merge_segment_references(display_segments)
+    return simulation
+
+
+def build_display_segments(raw_segments: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    groups = []
+    current: dict[str, Any] | None = None
+    for segment in sorted(raw_segments, key=lambda item: int(item.get("startMs") or 0)):
+        if current is None:
+            current = create_display_group(segment)
+            continue
+        if should_start_display_group(current, segment):
+            groups.append(finalize_display_group(current, len(groups) + 1))
+            current = create_display_group(segment)
+            continue
+        add_segment_to_display_group(current, segment)
+    if current is not None:
+        groups.append(finalize_display_group(current, len(groups) + 1))
+    return groups
+
+
+def create_display_group(segment: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "startMs": int(segment.get("startMs") or 0),
+        "endMs": int(segment.get("endMs") or 0),
+        "zhParts": [str(segment.get("zh") or "").strip()],
+        "draftParts": [str(segment.get("draft") or segment.get("zh") or "").strip()],
+        "enParts": [str(segment.get("en") or "").strip()],
+        "sourceSegmentIds": [str(segment.get("id") or "")],
+        "refs": references_from_segment(segment),
+        "notes": [str(segment.get("note") or "").strip()],
+        "confidence": int(segment.get("confidence") or 0),
+        "translationStatuses": {str(segment.get("translationStatus") or "unknown")},
+    }
+
+
+def add_segment_to_display_group(group: dict[str, Any], segment: dict[str, Any]) -> None:
+    group["endMs"] = max(int(group["endMs"]), int(segment.get("endMs") or group["endMs"]))
+    for key, source_key in (("zhParts", "zh"), ("draftParts", "draft"), ("enParts", "en")):
+        text = str(segment.get(source_key) or "").strip()
+        if text:
+            group[key].append(text)
+    group["sourceSegmentIds"].append(str(segment.get("id") or ""))
+    merge_refs_into(group["refs"], references_from_segment(segment))
+    note = str(segment.get("note") or "").strip()
+    if note:
+        group["notes"].append(note)
+    group["confidence"] = max(int(group.get("confidence") or 0), int(segment.get("confidence") or 0))
+    group["translationStatuses"].add(str(segment.get("translationStatus") or "unknown"))
+
+
+def finalize_display_group(group: dict[str, Any], index: int) -> dict[str, Any]:
+    statuses = set(group["translationStatuses"])
+    translation_status = "ready" if statuses <= {"ready", "reviewed", "published"} else "needs_translation"
+    refs = list(group["refs"].values())
+    source_ids = [source_id for source_id in group["sourceSegmentIds"] if source_id]
+    return {
+        "id": f"disp_{index:04d}",
+        "startMs": group["startMs"],
+        "endMs": group["endMs"],
+        "zh": compact_join(group["zhParts"]),
+        "draft": compact_join(group["draftParts"]),
+        "en": compact_join(group["enParts"]),
+        "ref": refs[0]["canonicalRef"] if refs else "",
+        "refs": refs,
+        "note": first_non_empty(group["notes"]) or "Offline polished display segment.",
+        "confidence": group["confidence"] or 70,
+        "translationStatus": translation_status,
+        "sourceSegmentIds": source_ids,
+        "sourceCueCount": len(source_ids),
+    }
+
+
+def build_review_segments(display_segments: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        {
+            "id": f"review_{index:04d}",
+            "displaySegmentId": segment["id"],
+            "startMs": segment["startMs"],
+            "endMs": segment["endMs"],
+            "zh": segment.get("zh", ""),
+            "en": segment.get("en", ""),
+            "sourceSegmentIds": segment.get("sourceSegmentIds", []),
+            "sourceCueCount": segment.get("sourceCueCount", 0),
+            "translationStatus": segment.get("translationStatus", "unknown"),
+            "refs": segment.get("refs", []),
+        }
+        for index, segment in enumerate(display_segments, start=1)
+    ]
+
+
+def should_start_display_group(group: dict[str, Any], segment: dict[str, Any]) -> bool:
+    gap_ms = int(segment.get("startMs") or 0) - int(group["endMs"])
+    zh_text = compact_join(group["zhParts"])
+    en_text = compact_join(group["enParts"])
+    if gap_ms > 2600:
+        return True
+    if len(zh_text) >= 600 or len(en_text) >= 900:
+        return True
+    if len(group["sourceSegmentIds"]) >= 10:
+        return True
+    zh_ends = ends_display_sentence(zh_text)
+    en_ends = ends_display_sentence(en_text)
+    return (zh_ends and (not en_text or en_ends)) or (en_ends and (not zh_text or zh_ends))
+
+
+def compact_join(parts: list[str]) -> str:
+    text = " ".join(part for part in parts if part)
+    text = re.sub(r"\s+", " ", text)
+    text = re.sub(r"\s+([，。！？；：,.!?;:])", r"\1", text)
+    return text.strip()
+
+
+def references_from_segment(segment: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    refs = {}
+    for ref in segment.get("refs") or []:
+        if isinstance(ref, dict) and ref.get("canonicalRef"):
+            refs[str(ref["canonicalRef"])] = ref
+    ref_text = str(segment.get("ref") or "").strip()
+    if ref_text and ref_text not in refs:
+        for detected in detect_references(ref_text):
+            refs[detected["canonicalRef"]] = detected
+    return refs
+
+
+def merge_refs_into(target: dict[str, dict[str, Any]], refs: dict[str, dict[str, Any]]) -> None:
+    for key, ref in refs.items():
+        target.setdefault(key, ref)
+
+
+def first_non_empty(values: list[str]) -> str:
+    for value in values:
+        if value:
+            return value
+    return ""
 
 
 def safe_display_path(path: Path) -> str:

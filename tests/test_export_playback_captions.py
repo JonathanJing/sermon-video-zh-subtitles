@@ -35,6 +35,40 @@ def write_simulation(path: Path, segments: list[dict]) -> None:
     )
 
 
+def write_layered_simulation(path: Path) -> None:
+    payload = {
+        "schemaVersion": 1,
+        "translationStatus": "ready",
+        "rawSegments": [
+            {"startMs": 1000, "endMs": 2000, "zh": "因为我们可以", "en": "because we can", "translationStatus": "ready"},
+            {"startMs": 2010, "endMs": 3200, "zh": "更加信靠祂。", "en": "trust him more.", "translationStatus": "ready"},
+        ],
+        "displaySegments": [
+            {
+                "startMs": 1000,
+                "endMs": 3200,
+                "zh": "因为我们可以更加信靠祂。",
+                "en": "because we can trust him more.",
+                "translationStatus": "ready",
+                "sourceSegmentIds": ["sim_0001", "sim_0002"],
+            }
+        ],
+        "segments": [
+            {
+                "startMs": 1000,
+                "endMs": 3200,
+                "zh": "因为我们可以更加信靠祂。",
+                "en": "because we can trust him more.",
+                "translationStatus": "ready",
+            }
+        ],
+    }
+    path.write_text(
+        "window.SERMON_PLAYBACK_SIMULATION = " + json.dumps(payload, ensure_ascii=False) + ";\n",
+        encoding="utf-8",
+    )
+
+
 class ExportPlaybackCaptionsTest(unittest.TestCase):
     def test_exports_ready_chinese_segments_to_vtt_and_srt(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -86,6 +120,20 @@ class ExportPlaybackCaptionsTest(unittest.TestCase):
             cues = mod.cues_from_simulation(mod.read_simulation(source), lang="zh", allow_draft=False)
 
             self.assertEqual(cues, [])
+
+    def test_defaults_to_polished_display_segments_but_can_export_raw_layer(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp) / "playback.js"
+            write_layered_simulation(source)
+            simulation = mod.read_simulation(source)
+
+            display_cues = mod.cues_from_simulation(simulation, lang="zh", allow_draft=False)
+            raw_cues = mod.cues_from_simulation(simulation, lang="zh", allow_draft=False, segment_layer="raw")
+
+            self.assertEqual(len(display_cues), 1)
+            self.assertEqual(display_cues[0].text, "因为我们可以更加信靠祂。")
+            self.assertEqual(len(raw_cues), 2)
+            self.assertEqual(raw_cues[0].text, "因为我们可以")
 
     def test_updates_manifest_with_exported_caption_outputs(self):
         with tempfile.TemporaryDirectory() as tmp:

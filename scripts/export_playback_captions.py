@@ -33,7 +33,12 @@ class CaptionCue:
 def main() -> int:
     args = parse_args()
     simulation = read_simulation(resolve_repo_path(args.input))
-    cues = cues_from_simulation(simulation, lang=args.lang, allow_draft=args.allow_draft)
+    cues = cues_from_simulation(
+        simulation,
+        lang=args.lang,
+        allow_draft=args.allow_draft,
+        segment_layer=args.segment_layer,
+    )
     if not cues:
         raise SystemExit("No exportable translated caption segments found.")
 
@@ -89,6 +94,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--stem", help="Output filename stem without extension.")
     parser.add_argument("--lang", default="zh", choices=["zh", "en"], help="Caption text to export.")
     parser.add_argument(
+        "--segment-layer",
+        default="display",
+        choices=["display", "raw", "legacy"],
+        help="Export polished display segments by default, or raw VTT/ASR cues for traceability.",
+    )
+    parser.add_argument(
         "--allow-draft",
         action="store_true",
         help="Allow draft/placeholder Chinese text. Production offline exports should leave this off.",
@@ -113,9 +124,15 @@ def read_simulation(path: Path) -> dict[str, Any]:
     return data
 
 
-def cues_from_simulation(simulation: dict[str, Any], *, lang: str, allow_draft: bool) -> list[CaptionCue]:
+def cues_from_simulation(
+    simulation: dict[str, Any],
+    *,
+    lang: str,
+    allow_draft: bool,
+    segment_layer: str = "display",
+) -> list[CaptionCue]:
     cues: list[CaptionCue] = []
-    for segment in simulation.get("segments") or []:
+    for segment in segment_layer_items(simulation, segment_layer):
         if not isinstance(segment, dict):
             continue
         text = export_text(segment, lang=lang, allow_draft=allow_draft)
@@ -127,6 +144,14 @@ def cues_from_simulation(simulation: dict[str, Any], *, lang: str, allow_draft: 
             end_ms = start_ms + estimate_text_duration_ms(text)
         cues.append(CaptionCue(start_ms=start_ms, end_ms=end_ms, text=text))
     return cues
+
+
+def segment_layer_items(simulation: dict[str, Any], segment_layer: str) -> list[dict[str, Any]]:
+    if segment_layer == "raw":
+        return simulation.get("rawSegments") or simulation.get("segments") or []
+    if segment_layer == "legacy":
+        return simulation.get("segments") or []
+    return simulation.get("displaySegments") or simulation.get("segments") or []
 
 
 def export_text(segment: dict[str, Any], *, lang: str, allow_draft: bool) -> str:

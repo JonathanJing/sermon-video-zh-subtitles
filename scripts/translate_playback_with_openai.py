@@ -10,6 +10,7 @@ Manager and is never written to generated files.
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import re
 import subprocess
@@ -26,6 +27,13 @@ if str(REPO_ROOT) not in sys.path:
 
 from backend.cloud import access_secret as cloud_access_secret
 from backend.cloud import upload_file_to_gcs
+
+PLAYBACK_BUILDER_PATH = Path(__file__).with_name("build_playback_simulation.py")
+PLAYBACK_BUILDER_SPEC = importlib.util.spec_from_file_location("build_playback_simulation", PLAYBACK_BUILDER_PATH)
+playback_builder = importlib.util.module_from_spec(PLAYBACK_BUILDER_SPEC)
+assert PLAYBACK_BUILDER_SPEC.loader is not None
+sys.modules[PLAYBACK_BUILDER_SPEC.name] = playback_builder
+PLAYBACK_BUILDER_SPEC.loader.exec_module(playback_builder)
 
 JS_PREFIX = "window.SERMON_PLAYBACK_SIMULATION = "
 OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
@@ -441,6 +449,8 @@ def apply_translations(
         segment["translationStatus"] = "ready"
         translated_count += 1
 
+    simulation = playback_builder.refresh_polished_layers(simulation)
+
     simulation["generatedFrom"] = "openai-translation-e2e"
     simulation["translationStatus"] = "ready" if translated_count else simulation.get("translationStatus")
     simulation["translationProvider"] = {
@@ -521,6 +531,8 @@ def build_report(
         and segment.get("translationStatus") == "ready"
         and str(segment.get("zh") or "").strip()
     }
+    provider_count = (translated.get("translationProvider") or {}).get("translatedSegments")
+    translated_count = int(provider_count) if isinstance(provider_count, int) else len(applied_ids)
     return {
         "schemaVersion": 1,
         "status": "ok",
@@ -534,7 +546,7 @@ def build_report(
         "sourceTranslationStatus": original.get("translationStatus"),
         "translationStatus": translated.get("translationStatus"),
         "totalSegments": total_segments,
-        "translatedSegments": len(applied_ids),
+        "translatedSegments": translated_count,
         "output": safe_display_path(out_path),
         "modelOutputJsonl": safe_display_path(jsonl_path),
     }

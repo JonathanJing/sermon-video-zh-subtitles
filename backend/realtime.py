@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 import base64
 import json
 from pathlib import Path
+import re
 import secrets
 import subprocess
 import threading
@@ -31,6 +32,52 @@ def utc_now() -> str:
 
 
 @dataclass
+class RealtimeCaptionStabilizer:
+    """Create low-latency stable caption commits from realtime draft events."""
+
+    stable_delay_ms: int = 1200
+    stable_window_ms: int = 8000
+    max_context_events: int = 12
+    recent_events: deque[dict[str, Any]] = field(default_factory=lambda: deque(maxlen=12))
+    last_stable_text_by_segment: dict[str, str] = field(default_factory=dict)
+
+    def observe(self, event: dict[str, Any]) -> list[dict[str, Any]]:
+        event_type = str(event.get("type") or "")
+        if event_type in {"input_transcript_delta", "input_transcript_final", "caption_delta", "caption_final"}:
+            self.recent_events.append(event)
+        if event_type not in {"caption_delta", "caption_final"}:
+            return []
+        source = str(event.get("source") or "")
+        if "stable-correction" in source or source == "realtime-caption-stabilizer":
+            return []
+        segment_id = str(event.get("segmentId") or "").strip()
+        text = event_text(event)
+        if not segment_id or not text:
+            return []
+        final = event_type == "caption_final" or bool(event.get("final"))
+        if not final and not ready_for_stable_commit(text):
+            return []
+        if self.last_stable_text_by_segment.get(segment_id) == text:
+            return []
+        self.last_stable_text_by_segment[segment_id] = text
+        return [
+            {
+                "type": "caption_stable",
+                "text": text,
+                "zh": text,
+                "en": recent_input_context(self.recent_events, segment_id),
+                "final": False,
+                "segmentId": segment_id,
+                "source": "realtime-caption-stabilizer",
+                "stability": "stable",
+                "stabilizerWindowMs": self.stable_window_ms,
+                "latencyMs": int(event.get("latencyMs") or self.stable_delay_ms),
+                "draftZh": text,
+            }
+        ]
+
+
+@dataclass
 class RealtimeSession:
     session_id: str
     event_token: str
@@ -42,6 +89,7 @@ class RealtimeSession:
     created_at: str = field(default_factory=utc_now)
     last_event_id: int = 0
     events: deque[dict[str, Any]] = field(default_factory=lambda: deque(maxlen=500))
+    stabilizer: RealtimeCaptionStabilizer = field(default_factory=RealtimeCaptionStabilizer)
 
 
 class RealtimeEventArchive:
@@ -263,18 +311,24 @@ class RealtimeSessionStore:
     def append_event(self, session_id: str, payload: dict[str, Any]) -> dict[str, Any]:
         with self._condition:
             session = self._sessions[session_id]
-            session.last_event_id += 1
-            event = {
-                "id": session.last_event_id,
-                "sessionId": session.session_id,
-                "createdAt": utc_now(),
-                **sanitize_event(payload),
-            }
-            session.events.append(event)
-            if self.archive:
-                self.archive.append(session, event)
+            event = self._append_sanitized_event_locked(session, payload)
+            for stable_event in session.stabilizer.observe(event):
+                self._append_sanitized_event_locked(session, stable_event)
             self._condition.notify_all()
             return event
+
+    def _append_sanitized_event_locked(self, session: RealtimeSession, payload: dict[str, Any]) -> dict[str, Any]:
+        session.last_event_id += 1
+        event = {
+            "id": session.last_event_id,
+            "sessionId": session.session_id,
+            "createdAt": utc_now(),
+            **sanitize_event(payload),
+        }
+        session.events.append(event)
+        if self.archive:
+            self.archive.append(session, event)
+        return event
 
     def wait_for_events(self, session_id: str, after_id: int, timeout: float) -> list[dict[str, Any]]:
         deadline = time.monotonic() + timeout
@@ -313,9 +367,25 @@ def sanitize_event(payload: dict[str, Any]) -> dict[str, Any]:
         "targetLanguage",
         "audioSourceKind",
         "openaiEventType",
+        "stability",
+        "stabilizerWindowMs",
+        "draftZh",
+        "sourceTextEn",
     }
     clean = {key: value for key, value in payload.items() if key in allowed}
-    for key in ["text", "delta", "zh", "en", "source", "segmentId", "audioSourceKind", "openaiEventType"]:
+    for key in [
+        "text",
+        "delta",
+        "zh",
+        "en",
+        "source",
+        "segmentId",
+        "audioSourceKind",
+        "openaiEventType",
+        "stability",
+        "draftZh",
+        "sourceTextEn",
+    ]:
         if key in clean and clean[key] is not None:
             clean[key] = str(clean[key])[:4000]
     if "final" in clean:
@@ -325,8 +395,71 @@ def sanitize_event(payload: dict[str, Any]) -> dict[str, Any]:
             clean["latencyMs"] = max(0, int(clean["latencyMs"]))
         except (TypeError, ValueError):
             clean.pop("latencyMs", None)
+    if "stabilizerWindowMs" in clean:
+        try:
+            clean["stabilizerWindowMs"] = max(0, int(clean["stabilizerWindowMs"]))
+        except (TypeError, ValueError):
+            clean.pop("stabilizerWindowMs", None)
     clean.setdefault("type", "caption_delta")
     return clean
+
+
+def event_text(event: dict[str, Any]) -> str:
+    return str(event.get("text") or event.get("zh") or event.get("delta") or event.get("en") or "").strip()
+
+
+def ready_for_stable_commit(text: str) -> bool:
+    stripped = text.strip()
+    if len(stripped) < 8:
+        return False
+    if ends_with_connector(stripped):
+        return False
+    return bool(re.search(r"(?:[。！？；]|\.\s*|[!?]\s*|……)$", stripped))
+
+
+def ends_with_connector(text: str) -> bool:
+    lowered = text.strip().lower()
+    connector_suffixes = (
+        "因为",
+        "如果",
+        "当",
+        "但是",
+        "可是",
+        "所以",
+        "然后",
+        "以及",
+        "并且",
+        "which",
+        "because",
+        "that",
+        "when",
+        "if",
+        "but",
+        "and",
+    )
+    return lowered.endswith(connector_suffixes)
+
+
+def recent_input_context(events: deque[dict[str, Any]], segment_id: str) -> str:
+    matching = [
+        event_text(event)
+        for event in events
+        if str(event.get("segmentId") or "") == segment_id
+        and str(event.get("type") or "").startswith("input_transcript")
+        and event_text(event)
+    ]
+    if matching:
+        return compact_context(matching[-2:])
+    fallback = [
+        event_text(event)
+        for event in events
+        if str(event.get("type") or "").startswith("input_transcript") and event_text(event)
+    ]
+    return compact_context(fallback[-2:])
+
+
+def compact_context(parts: list[str]) -> str:
+    return re.sub(r"\s+", " ", " ".join(parts)).strip()[:4000]
 
 
 def create_openai_translation_session(
