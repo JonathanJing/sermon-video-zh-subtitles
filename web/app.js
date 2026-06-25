@@ -287,7 +287,6 @@
       tone: "ready"
     });
     renderSegments();
-    renderDefaultScriptureCard();
     state.segments.forEach(addScriptureCandidate);
     updateNotes();
     updateTimeline(100);
@@ -866,20 +865,6 @@
   function updateReturnLiveButton() {
     const show = state.segments.length > 0 && !state.segmentAutoFollow;
     el.returnLiveButton.classList.toggle("is-hidden", !show);
-  }
-
-  function renderDefaultScriptureCard() {
-    if (!el.scriptureCandidates) return;
-    const ref = canonicalChapterRef("Numbers 16");
-    const scripture = scriptureReferences["Numbers 16"];
-    if (!ref || !scripture || state.scriptureKeys.has(ref.canonicalRef)) return;
-    state.scriptureKeys.add(ref.canonicalRef);
-    const card = document.createElement("details");
-    card.className = "scripture-card is-exact";
-    card.dataset.scriptureKey = ref.canonicalRef;
-    card.open = true;
-    card.innerHTML = renderScriptureCard(ref, scripture, null);
-    el.scriptureCandidates.prepend(card);
   }
 
   function addScriptureCandidate(segment) {
