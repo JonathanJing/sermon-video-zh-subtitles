@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#f7fbff" />
     <title>管理端 | 11:30 会众中文字幕</title>
     <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="stylesheet" href="./styles.css?v=20260624-admin-ui1" />
+    <link rel="stylesheet" href="./styles.css?v=20260624-admin-ui2" />
   </head>
   <body>
     <div class="app-shell admin-shell" data-sidebar="open" data-view-mode="admin">
@@ -240,9 +240,10 @@
             <p>本页面中文字幕由 AI 辅助生成，供现场听道理解参考，可能存在延迟、遗漏或翻译不准确。请以讲员原文、教会正式发布内容和正式圣经译本为准。</p>
           </aside>
 
-          <div class="caption-window" id="captionWindow">
-            <p class="caption-line caption-line--draft" id="draftCaption">等待英文听写...</p>
-            <p class="caption-line" id="stableCaption">等待中文字幕...</p>
+          <div class="caption-window" id="captionWindow" data-context-mode="realtime">
+            <p class="caption-line caption-line--context caption-line--previous" id="draftCaption">等待上一句中文字幕...</p>
+            <p class="caption-line caption-line--current" id="stableCaption">等待中文字幕...</p>
+            <p class="caption-line caption-line--context caption-line--next" id="nextCaption">等待下一句中文字幕...</p>
           </div>
 
           <div class="sidecar" data-operator-only>
@@ -326,6 +327,6 @@
 
     <script src="./scripture-cmn-cu89s.generated.js?v=20260623-scripture2" defer></script>
     <script src="./playback-simulation.generated.js" defer></script>
-    <script src="./app.js?v=20260624-admin-ui1" defer></script>
+    <script src="./app.js?v=20260624-admin-ui2" defer></script>
   </body>
 </html>

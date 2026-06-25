@@ -1023,7 +1023,7 @@ ul {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 18px;
+  gap: 16px;
   padding: 22px;
   overflow: auto;
   border: 1px solid #16486d;
@@ -1044,14 +1044,45 @@ ul {
   word-break: break-word;
 }
 
-.caption-line--draft {
-  color: #bdd7e8;
-  font-size: 1.35rem;
-  font-weight: 750;
+.caption-line--current {
+  color: #ffffff;
+  font-size: 2.35rem;
+  font-weight: 900;
+}
+
+.caption-line--context {
+  color: rgba(211, 226, 236, 0.5);
+  font-size: 1.75rem;
+  font-weight: 850;
+}
+
+.caption-line--previous {
+  margin-bottom: 4px;
+}
+
+.caption-line--next {
+  margin-top: 4px;
+}
+
+.caption-window[data-context-mode="realtime"] .caption-line--next,
+.caption-line.is-empty {
+  display: none;
+}
+
+.caption-window[data-context-mode="realtime"] {
+  justify-content: flex-end;
+}
+
+.caption-window[data-context-mode="offline"] {
+  justify-content: center;
+}
+
+.caption-window[data-context-mode="offline"] .caption-line--current {
+  transform: scale(1.03);
 }
 
 .caption-line.is-alert,
-.caption-window.is-alert .caption-line:not(.caption-line--draft) {
+.caption-window.is-alert .caption-line--current {
   color: #ffe6b0;
 }
 
@@ -1680,8 +1711,12 @@ ul {
     line-height: 1.36;
   }
 
-  .caption-line--draft {
-    font-size: 1.04rem;
+  .caption-line--current {
+    font-size: 1.86rem;
+  }
+
+  .caption-line--context {
+    font-size: 1.12rem;
   }
 
   .sidecar {
@@ -1804,6 +1839,14 @@ ul {
 
   .caption-line {
     font-size: 1.45rem;
+  }
+
+  .caption-line--current {
+    font-size: 1.56rem;
+  }
+
+  .caption-line--context {
+    font-size: 1rem;
   }
 
   .review-strip {

@@ -162,8 +162,10 @@
     approxStartTime: document.getElementById("approxStartTime"),
     autoDiscoveryStatus: document.getElementById("autoDiscoveryStatus"),
     publicSliceLabel: document.getElementById("publicSliceLabel"),
+    captionWindow: document.getElementById("captionWindow"),
     draftCaption: document.getElementById("draftCaption"),
     stableCaption: document.getElementById("stableCaption"),
+    nextCaption: document.getElementById("nextCaption"),
     englishSidecar: document.getElementById("englishSidecar"),
     confidenceMeter: document.getElementById("confidenceMeter"),
     sermonTitle: document.getElementById("sermonTitle"),
@@ -807,12 +809,44 @@
   }
 
   function setCaptionWindow(segment) {
-    el.draftCaption.textContent = sourceTranscriptText(segment);
-    el.stableCaption.textContent = segment.zh || "等待中文字幕...";
+    const context = captionContextFor(segment);
+    const mode = captionDisplayMode(segment);
+    if (el.captionWindow) {
+      el.captionWindow.dataset.contextMode = mode;
+      el.captionWindow.classList.toggle("has-previous", Boolean(context.previous));
+      el.captionWindow.classList.toggle("has-next", Boolean(context.next) && mode === "offline");
+    }
+    setCaptionLine(el.draftCaption, context.previous, "等待上一句中文字幕...");
+    setCaptionLine(el.stableCaption, context.current, "等待中文字幕...");
+    setCaptionLine(el.nextCaption, mode === "offline" ? context.next : "", "等待下一句中文字幕...");
   }
 
-  function sourceTranscriptText(segment) {
-    return segment.en || segment.draft || "等待英文听写...";
+  function captionContextFor(segment) {
+    const index = state.segments.findIndex((candidate) => candidate.id === segment?.id);
+    const previous = index > 0 ? state.segments[index - 1] : null;
+    const next = index >= 0 && index < state.segments.length - 1 ? state.segments[index + 1] : null;
+    return {
+      previous: captionText(previous),
+      current: captionText(segment),
+      next: captionText(next)
+    };
+  }
+
+  function captionDisplayMode(segment) {
+    if (state.frozen || !state.captioning) return "offline";
+    const index = state.segments.findIndex((candidate) => candidate.id === segment?.id);
+    return index >= 0 && index < state.segments.length - 1 ? "offline" : "realtime";
+  }
+
+  function captionText(segment) {
+    return segment?.zh || "";
+  }
+
+  function setCaptionLine(node, text, fallback) {
+    if (!node) return;
+    const display = text || fallback;
+    node.textContent = display;
+    node.classList.toggle("is-empty", !text);
   }
 
   function segmentTrackNearBottom() {
@@ -831,95 +865,6 @@
   function updateReturnLiveButton() {
     const show = state.segments.length > 0 && !state.segmentAutoFollow;
     el.returnLiveButton.classList.toggle("is-hidden", !show);
-  }
-
-  function buildScriptureAliases() {
-    const aliases = new Map();
-    scriptureBooks.forEach(({ book, bookZh }) => {
-      const values = [
-        book,
-        bookZh,
-        book.replace(/\s+/g, ""),
-        bookZh.replace(/\s+/g, "")
-      ];
-      values.forEach((value) => aliases.set(normalizeScriptureName(value), { book, bookZh }));
-    });
-    aliases.set("num", { book: "Numbers", bookZh: "民数记" });
-    aliases.set("numbers", { book: "Numbers", bookZh: "民数记" });
-    aliases.set("民数记", { book: "Numbers", bookZh: "民数记" });
-    return aliases;
-  }
-
-  function referencesForSegment(segment) {
-    const values = [
-      segment?.ref,
-      segment?.en,
-      segment?.zh,
-      segment?.draft,
-      segment?.note
-    ].filter(Boolean);
-    const seen = new Set();
-    const refs = [];
-    values.forEach((value) => {
-      extractScriptureRefs(String(value)).forEach((ref) => {
-        if (seen.has(ref.canonicalRef)) return;
-        seen.add(ref.canonicalRef);
-        refs.push(ref);
-      });
-    });
-    return refs;
-  }
-
-  function extractScriptureRefs(text) {
-    const refs = [];
-    scriptureBooks.forEach(({ book, bookZh }) => {
-      const names = [book, bookZh, book.replace(/\s+/g, "\\s+")]
-        .map(escapeRegExp)
-        .map((name) => name.replaceAll("\\\\s\\+", "\\s+"));
-      const pattern = new RegExp(`(?:${names.join("|")})\\s*(\\d+)(?::(\\d+)(?:-(\\d+))?)?`, "gi");
-      let match;
-      while ((match = pattern.exec(text))) {
-        const parsed = canonicalChapterRef(`${book} ${match[1]}${match[2] ? `:${match[2]}${match[3] ? `-${match[3]}` : ""}` : ""}`);
-        if (parsed) refs.push(parsed);
-      }
-    });
-    return refs;
-  }
-
-  function canonicalChapterRef(value) {
-    if (!value) return null;
-    const clean = String(value).trim();
-    const match = clean.match(/^(.+?)\s*(\d+)(?::(\d+)(?:-(\d+))?)?$/i);
-    if (!match) return null;
-    const [, rawBook, rawChapter, rawVerse] = match;
-    const bookInfo = scriptureAliases.get(normalizeScriptureName(rawBook));
-    if (!bookInfo) return null;
-    const chapter = Number(rawChapter);
-    if (!Number.isFinite(chapter)) return null;
-    const canonicalRef = `${bookInfo.book} ${chapter}`;
-    const title = `${bookInfo.bookZh} ${chapter}`;
-    return {
-      canonicalRef,
-      title: rawVerse ? `${title}:${rawVerse}` : title,
-      book: bookInfo.book,
-      bookZh: bookInfo.bookZh,
-      chapter
-    };
-  }
-
-  function normalizeScriptureName(value) {
-    return String(value || "").toLowerCase().replace(/\s+/g, "");
-  }
-
-  function cssEscape(value) {
-    if (window.CSS && typeof window.CSS.escape === "function") {
-      return window.CSS.escape(value);
-    }
-    return String(value).replace(/["\\]/g, "\\$&");
-  }
-
-  function escapeRegExp(value) {
-    return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 
   function addScriptureCandidate(segment) {
