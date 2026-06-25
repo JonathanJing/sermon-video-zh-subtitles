@@ -1402,13 +1402,18 @@ ul {
   box-shadow: var(--shadow-md);
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 1366px) {
   body {
     overflow: auto;
   }
 
   .app-shell {
     min-height: 100dvh;
+    grid-template-rows: auto auto;
+  }
+
+  .admin-shell {
+    grid-template-rows: auto auto auto auto;
   }
 
   .workspace {
