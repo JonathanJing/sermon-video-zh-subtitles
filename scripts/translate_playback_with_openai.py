@@ -137,7 +137,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--model",
-        default="gpt-4.1-mini",
+        default="gpt-5.5-mini",
         help="OpenAI chat-completions model used for translation.",
     )
     parser.add_argument(

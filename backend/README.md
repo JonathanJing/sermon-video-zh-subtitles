@@ -70,6 +70,11 @@ The worker command writes generated content under:
 gs://$SERMON_ARTIFACT_BUCKET/$SERMON_ARTIFACT_PREFIX/YYYY-MM-DD/runs/<session_id>/
 ```
 
+The planned worker chain prepares playback data, translates captions, generates
+traceable notes/quote candidates with `gpt-5.5-mini` using reasoning effort
+`medium`, updates `insights/openai-notes.json`, and then promotes the Sunday
+manifest.
+
 The next deployment step is to promote the selected run manifest to the stable
 Sunday pointer:
 

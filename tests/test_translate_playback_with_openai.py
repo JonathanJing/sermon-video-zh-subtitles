@@ -63,7 +63,7 @@ class TranslatePlaybackWithOpenAITest(unittest.TestCase):
         translated = mod.apply_translations(
             simulation=simulation,
             translations=translations,
-            model="gpt-4.1-mini",
+            model="gpt-5.5-mini",
             api_key_secret="projects/p/secrets/openai-api-key/versions/latest",
         )
 
@@ -103,7 +103,7 @@ class TranslatePlaybackWithOpenAITest(unittest.TestCase):
             original={"translationStatus": "needs_translation"},
             translated={"segments": [{"id": "sim_0001"}], "translationStatus": "ready"},
             translations=[{"id": "sim_0001"}],
-            model="gpt-4.1-mini",
+            model="gpt-5.5-mini",
             api_key_secret="projects/p/secrets/openai-api-key/versions/latest",
             jsonl_path=Path("artifacts/openai-translation-output.jsonl"),
             out_path=Path("web/playback-simulation.generated.js"),

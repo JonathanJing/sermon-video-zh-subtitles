@@ -349,7 +349,7 @@ submitted
 | 离线 ASR | OpenAI `gpt-4o-transcribe` | `gpt-4o-mini-transcribe` / Google batch STT |
 | 离线翻译 | OpenAI GPT-5.5, reasoning effort medium | Google Translation Advanced + glossary |
 | 经文识别 | deterministic Bible index + fuzzy model | rules only |
-| 笔记和金句 | OpenAI GPT-5.5, reasoning effort medium | smaller model + stricter review |
+| 笔记和金句 | OpenAI GPT-5.5 mini, reasoning effort medium | smaller model + stricter review |
 
 Provider interfaces：
 

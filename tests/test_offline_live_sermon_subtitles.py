@@ -15,6 +15,12 @@ SPEC.loader.exec_module(mod)
 
 
 class OfflineLiveSermonSubtitlesTest(unittest.TestCase):
+    def test_default_langs_prefer_stable_original_captions(self):
+        self.assertEqual(mod.DEFAULT_LANGS, ["en-orig", "en"])
+
+    def test_default_asr_model_uses_gpt_4o_transcribe(self):
+        self.assertEqual(mod.DEFAULT_ASR_MODEL, "gpt-4o-transcribe")
+
     def test_parse_time_to_ms_supports_seconds_and_vtt_time(self):
         self.assertEqual(mod.parse_time_to_ms("23.5"), 23500)
         self.assertEqual(mod.parse_time_to_ms("00:23:25.000"), 1_405_000)

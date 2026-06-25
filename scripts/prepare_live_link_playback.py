@@ -14,6 +14,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 OFFLINE_POC = REPO_ROOT / "scripts" / "offline_live_sermon_subtitles.py"
 BUILD_PLAYBACK = REPO_ROOT / "scripts" / "build_playback_simulation.py"
+DEFAULT_ASR_MODEL = "gpt-4o-transcribe"
 SECRET_RESOURCE_RE = re.compile(
     r"^projects/[^/\s]+/secrets/[^/\s]+(?:/versions/[^/\s]+)?$"
 )
@@ -36,6 +37,8 @@ def main() -> int:
             str(out_dir),
             "--playlist-end",
             str(args.playlist_end),
+            "--asr-model",
+            args.asr_model,
         ]
         + optional("--sermon-url", args.sermon_url)
         + optional("--sermon-start", args.sermon_start)
@@ -134,6 +137,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--playlist-end", type=int, default=40)
     parser.add_argument("--max-segments", type=int, default=80)
     parser.add_argument("--playback-speed", type=float, default=18.0)
+    parser.add_argument(
+        "--asr-model",
+        default=DEFAULT_ASR_MODEL,
+        help="OpenAI transcription model to use when captions are unavailable.",
+    )
     parser.add_argument(
         "--gcs-bucket",
         help="Optional GCS bucket for generated content, e.g. sermon-zh-artifacts.",

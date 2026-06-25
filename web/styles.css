@@ -1411,6 +1411,47 @@ ul {
   background: #fbfdff;
 }
 
+.note-block .note-model {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.note-slice-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  padding-left: 0;
+  list-style: none;
+}
+
+.note-slice-list li {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(148, 190, 213, 0.55);
+  border-radius: var(--radius);
+  background: #ffffff;
+}
+
+.note-slice-list strong {
+  display: block;
+  color: var(--blue-800);
+  font-size: 0.84rem;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.note-slice-list small {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
 .timeline-panel {
   min-height: var(--footer-min);
   display: grid;

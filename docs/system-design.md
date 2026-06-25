@@ -96,10 +96,11 @@ Use provider interfaces so the product is not hard-bound to one model vendor.
 |---|---|---|
 | Realtime Chinese captions | OpenAI `gpt-realtime-translate` | Gemini Live Translate |
 | Realtime English sidecar | OpenAI `gpt-realtime-whisper` | Google/Gemini ASR path |
+| Offline ASR | OpenAI `gpt-4o-transcribe` | `gpt-4o-mini-transcribe` / Google batch STT |
 | Stable correction translation | OpenAI `gpt-5.4-mini` | Gemini Flash-Lite / OpenRouter text models |
 | Offline translation | Higher-quality text model with glossary | Batch translation fallback |
 | Scripture resolution | Deterministic Bible index + fuzzy candidates | Rules only |
-| Notes and quotes | Structured text model pass | Smaller model with review |
+| Notes and quotes | OpenAI GPT-5.5 mini, reasoning effort medium | Smaller model with review |
 
 See [model-provider-comparison.md](./model-provider-comparison.md) for model, latency, quality, and cost tradeoffs.
 

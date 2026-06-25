@@ -47,16 +47,27 @@ If the user only gives a URL, proceed with conservative defaults and report whic
 First try existing caption tracks before ASR.
 
 1. Confirm the URL is reachable and inspect metadata.
-2. Prefer caption languages in this order: `zh-Hans`, `en-orig`, `en`.
-3. If the URL is a live archive, attempt to align the sermon segment back to the live timeline.
-4. If an edited sermon VOD is discoverable from the same channel, use it as a caption source only when the title/date/source evidence matches.
-5. Generate both local sermon timeline files and live-aligned files when possible.
+2. Prefer stable original-language caption tracks in this order: `en-orig`, `en`.
+3. Request platform `zh-Hans` captions only as an optional shortcut or cross-check; do not depend on them for the Chinese fallback, because auto-translated captions can be rate-limited or unavailable.
+4. If the URL is a live archive, attempt to align the sermon segment back to the live timeline.
+5. If an edited sermon VOD is discoverable from the same channel, use it as a caption source only when the title/date/source evidence matches.
+6. Generate both local sermon timeline files and live-aligned files when possible.
 
 Preferred local command for this repo:
 
 ```bash
 python3 scripts/offline_live_sermon_subtitles.py \
   --live-url 'PASTE_LIVE_OR_ARCHIVE_URL_HERE'
+```
+
+To explicitly try YouTube/platform Chinese captions as a cross-check:
+
+```bash
+python3 scripts/offline_live_sermon_subtitles.py \
+  --live-url 'PASTE_LIVE_OR_ARCHIVE_URL_HERE' \
+  --lang en-orig \
+  --lang en \
+  --lang zh-Hans
 ```
 
 With a known edited sermon URL:
@@ -147,7 +158,8 @@ Preferred local command when playback data already exists:
 ```bash
 python3 scripts/translate_playback_with_openai.py \
   --input web/playback-simulation.generated.js \
-  --output web/playback-simulation.generated.js
+  --out web/playback-simulation.generated.js \
+  --api-key-secret projects/PROJECT_ID/secrets/SECRET_ID/versions/latest
 ```
 
 If using a different translation provider, keep the same output contract: Chinese subtitle text must remain attached to the original cue timing and must not leak secrets into generated browser files.

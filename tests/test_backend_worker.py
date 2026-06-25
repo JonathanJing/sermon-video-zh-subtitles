@@ -55,7 +55,7 @@ class BackendWorkerTest(unittest.TestCase):
                 config,
             )
 
-    def test_build_generation_plan_runs_prepare_translate_upload_and_promote(self):
+    def test_build_generation_plan_runs_prepare_translate_notes_and_promote(self):
         plan = build_generation_plan(
             GenerationRequest(
                 sunday="2026-06-28",
@@ -77,15 +77,19 @@ class BackendWorkerTest(unittest.TestCase):
 
         self.assertEqual(plan.session_id, "test-session")
         self.assertEqual(plan.prefix, "sundays/2026-06-28/runs/test-session")
-        self.assertEqual(len(plan.commands), 4)
+        self.assertEqual(len(plan.commands), 5)
         joined_commands = [" ".join(command) for command in plan.commands]
         self.assertIn("prepare_live_link_playback.py", joined_commands[0])
         self.assertIn("translate_playback_with_openai.py", joined_commands[1])
         self.assertIn("gcloud storage cp", joined_commands[2])
         self.assertIn("web/playback-simulation.generated.js", joined_commands[2])
-        self.assertIn("promote_sunday_manifest.py", joined_commands[3])
-        self.assertIn("sundays/2026-06-28/runs/test-session/artifacts/cloud-manifest.json", joined_commands[3])
-        self.assertIn("--gcs-prefix sundays", joined_commands[3])
+        self.assertIn("generate_notes_with_openai.py", joined_commands[3])
+        self.assertIn("--model gpt-5.5-mini", joined_commands[3])
+        self.assertIn("--reasoning-effort medium", joined_commands[3])
+        self.assertIn("insights", joined_commands[3])
+        self.assertIn("promote_sunday_manifest.py", joined_commands[4])
+        self.assertIn("sundays/2026-06-28/runs/test-session/artifacts/cloud-manifest.json", joined_commands[4])
+        self.assertIn("--gcs-prefix sundays", joined_commands[4])
 
 
 if __name__ == "__main__":

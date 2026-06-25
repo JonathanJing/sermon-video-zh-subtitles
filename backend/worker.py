@@ -15,7 +15,10 @@ from .observability import command_stage, log_event, url_summary
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PREPARE_SCRIPT = REPO_ROOT / "scripts" / "prepare_live_link_playback.py"
 TRANSLATE_SCRIPT = REPO_ROOT / "scripts" / "translate_playback_with_openai.py"
+NOTES_SCRIPT = REPO_ROOT / "scripts" / "generate_notes_with_openai.py"
 PROMOTE_SCRIPT = REPO_ROOT / "scripts" / "promote_sunday_manifest.py"
+NOTES_MODEL = "gpt-5.5-mini"
+NOTES_REASONING_EFFORT = "medium"
 
 
 @dataclass(frozen=True)
@@ -103,6 +106,8 @@ def build_generation_plan(
     run_root = work_root / request.sunday / session_id
     web_out = run_root / "web" / "playback-simulation.generated.js"
     translation_out_dir = run_root / "model-output"
+    insights_out_dir = run_root / "insights"
+    manifest_path = run_root / "artifacts" / "cloud-manifest.json"
     prefix = "/".join(
         part.strip("/")
         for part in [config.artifact_prefix, request.sunday, "runs", session_id]
@@ -146,6 +151,30 @@ def build_generation_plan(
         str(web_out),
         f"gs://{config.artifact_bucket}/{prefix}/web/playback-simulation.generated.js",
     ]
+    generate_notes = [
+        sys.executable,
+        str(NOTES_SCRIPT),
+        "--input",
+        str(web_out),
+        "--out-dir",
+        str(insights_out_dir),
+        "--model-output-dir",
+        str(translation_out_dir),
+        "--manifest",
+        str(manifest_path),
+        "--api-key-secret",
+        config.openai_api_key_secret,
+        "--model",
+        NOTES_MODEL,
+        "--reasoning-effort",
+        NOTES_REASONING_EFFORT,
+        "--gcs-bucket",
+        config.artifact_bucket,
+        "--gcs-prefix",
+        prefix,
+    ]
+    if request.dry_run_gcs:
+        generate_notes.append("--gcs-dry-run")
     promote = [
         sys.executable,
         str(PROMOTE_SCRIPT),
@@ -163,7 +192,7 @@ def build_generation_plan(
     return GenerationPlan(
         session_id=session_id,
         prefix=prefix,
-        commands=[prepare, translate, upload_translated_playback, promote],
+        commands=[prepare, translate, upload_translated_playback, generate_notes, promote],
     )
 
 

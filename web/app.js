@@ -52,7 +52,6 @@
       badge: "经文",
       title: "民数记 16",
       source: "中文圣经：新标点和合本（简体） · eBible.org cmn-cu89s · Public Domain",
-      summary: "可拉一党背叛，摩西与亚伦为百姓代求。系统会在实时字幕中优先固定明确经文，并显示完整章节经文。",
       passages: [
         {
           verse: "16:1-3",
@@ -89,6 +88,16 @@
     ...fallbackScriptureReferences,
     ...((window.SERMON_SCRIPTURE_INDEX && window.SERMON_SCRIPTURE_INDEX.references) || {})
   };
+  const NOTE_SLICE_TARGET_MS = 5 * 60 * 1000;
+  const NOTE_SLICE_MAX_CHARS = 900;
+  const NOTE_SLICE_MIN_CHARS = 120;
+  const NOTE_PREVIEW_MAX_CHARS = 120;
+  const NOTE_AI_CONFIG = Object.freeze({
+    provider: "openai",
+    model: "gpt-5.5-mini",
+    displayName: "OpenAI GPT-5.5 mini",
+    reasoningEffort: "medium"
+  });
   const scriptureBooks = [
     ["Genesis", "创世记"], ["Exodus", "出埃及记"], ["Leviticus", "利未记"], ["Numbers", "民数记"], ["Deuteronomy", "申命记"],
     ["Joshua", "约书亚记"], ["Judges", "士师记"], ["Ruth", "路得记"], ["1 Samuel", "撒母耳记上"], ["2 Samuel", "撒母耳记下"],
@@ -179,7 +188,6 @@
     segmentCount: document.getElementById("segmentCount"),
     returnLiveButton: document.getElementById("returnLiveButton"),
     scriptureCandidates: document.getElementById("scriptureCandidates"),
-    termList: document.getElementById("termList"),
     noteBlock: document.getElementById("noteBlock"),
     eventLog: document.getElementById("eventLog"),
     sessionLabel: document.getElementById("sessionLabel"),
@@ -1062,7 +1070,6 @@
     const card = document.createElement("details");
     card.className = "scripture-card is-exact";
     card.dataset.scriptureKey = ref.canonicalRef;
-    card.open = true;
     card.innerHTML = renderScriptureCard(ref, scripture, null);
     renderScriptureSourceNote(scripture);
     el.scriptureCandidates.prepend(card);
@@ -1121,13 +1128,155 @@
 
   function displayScriptureSummary(summary) {
     const text = String(summary || "").trim();
+    if (text.includes("系统会在实时字幕中")) return "";
     const templateSummaries = new Set([
-      "可拉一党背叛，摩西与亚伦为百姓代求。系统会在实时字幕中优先固定明确经文，并显示完整章节经文。",
       "讲道中提到的完整经文章节。",
       "讲道中提到的完整经文章节。经文由 Cloud Run 后端完整 Bible index 返回。",
       "讲道中提到的明确经文章节。"
     ]);
     return templateSummaries.has(text) ? "" : text;
+  }
+
+  function buildNoteSlices(segments) {
+    const slices = [];
+    let current = null;
+    const noteSegments = noteSegmentParts(segments);
+
+    noteSegments.forEach((item) => {
+      if (!current) {
+        current = createNoteSlice(item);
+        return;
+      }
+
+      const combinedChars = current.charCount + item.text.length + 1;
+      const combinedDuration = Math.max(current.endMs, item.endMs) - current.startMs;
+      const shouldSplitByChars = combinedChars > NOTE_SLICE_MAX_CHARS;
+      const shouldSplitByTime = combinedDuration > NOTE_SLICE_TARGET_MS && current.charCount >= NOTE_SLICE_MIN_CHARS;
+
+      if (shouldSplitByChars || shouldSplitByTime) {
+        slices.push(finalizeNoteSlice(current, slices.length));
+        current = createNoteSlice(item);
+        return;
+      }
+
+      addItemToNoteSlice(current, item);
+    });
+
+    if (current) slices.push(finalizeNoteSlice(current, slices.length));
+    return slices;
+  }
+
+  function buildNoteGenerationPayload(segments) {
+    const slices = buildNoteSlices(segments);
+    return {
+      provider: NOTE_AI_CONFIG.provider,
+      model: NOTE_AI_CONFIG.model,
+      reasoningEffort: NOTE_AI_CONFIG.reasoningEffort,
+      tasks: ["summary_zh", "outline_zh", "application_questions_zh", "quotes_zh"],
+      slices: slices.map((slice) => ({
+        index: slice.index,
+        startMs: slice.startMs,
+        endMs: slice.endMs,
+        text: slice.text,
+        refs: slice.refs
+      }))
+    };
+  }
+
+  function noteSegmentParts(segments) {
+    const parts = [];
+    segments
+      .map((segment, index) => ({ segment, index }))
+      .filter(({ segment }) => noteTextForSegment(segment))
+      .sort((a, b) => segmentStart(a.segment) - segmentStart(b.segment))
+      .forEach(({ segment, index }) => {
+        splitNoteText(noteTextForSegment(segment)).forEach((text, partIndex) => {
+          parts.push({
+            segment,
+            index,
+            partIndex,
+            text,
+            startMs: segmentStart(segment),
+            endMs: segmentEnd(segment)
+          });
+        });
+      });
+    return parts;
+  }
+
+  function createNoteSlice(item) {
+    const slice = {
+      startMs: item.startMs,
+      endMs: item.endMs,
+      texts: [],
+      segmentIds: [],
+      refs: [],
+      charCount: 0
+    };
+    addItemToNoteSlice(slice, item);
+    return slice;
+  }
+
+  function addItemToNoteSlice(slice, item) {
+    slice.startMs = Math.min(slice.startMs, item.startMs);
+    slice.endMs = Math.max(slice.endMs, item.endMs);
+    slice.texts.push(item.text);
+    slice.charCount += item.text.length;
+    const segmentId = item.segment?.id || `segment-${item.index}`;
+    if (!slice.segmentIds.includes(segmentId)) slice.segmentIds.push(segmentId);
+    referencesForSegment(item.segment).forEach((ref) => {
+      const label = ref.title || ref.canonicalRef;
+      if (label && !slice.refs.includes(label)) slice.refs.push(label);
+    });
+  }
+
+  function finalizeNoteSlice(slice, index) {
+    const text = compactText(slice.texts.join(" "));
+    return {
+      index: index + 1,
+      startMs: slice.startMs,
+      endMs: slice.endMs,
+      text,
+      preview: notePreview(text),
+      segmentCount: slice.segmentIds.length,
+      charCount: text.length,
+      refs: slice.refs
+    };
+  }
+
+  function noteTextForSegment(segment) {
+    return compactText(segment?.zh || segment?.draft || segment?.text || segment?.en || "");
+  }
+
+  function splitNoteText(text) {
+    const chunks = [];
+    let remaining = compactText(text);
+    while (remaining.length > NOTE_SLICE_MAX_CHARS) {
+      const breakAt = noteTextBreakIndex(remaining, NOTE_SLICE_MAX_CHARS);
+      chunks.push(remaining.slice(0, breakAt).trim());
+      remaining = remaining.slice(breakAt).trim();
+    }
+    if (remaining) chunks.push(remaining);
+    return chunks;
+  }
+
+  function noteTextBreakIndex(text, limit) {
+    const floor = Math.max(NOTE_SLICE_MIN_CHARS, limit - 240);
+    for (let index = Math.min(limit, text.length); index > floor; index -= 1) {
+      if (/[。！？；，,]/.test(text[index - 1])) return index;
+    }
+    return Math.min(limit, text.length);
+  }
+
+  function notePreview(text) {
+    const compact = compactText(text);
+    if (compact.length <= NOTE_PREVIEW_MAX_CHARS) return compact;
+    const breakAt = noteTextBreakIndex(compact, NOTE_PREVIEW_MAX_CHARS);
+    return `${compact.slice(0, breakAt).trim()}...`;
+  }
+
+  function compactText(text) {
+    return String(text || "").replace(/\s+/g, " ").trim();
   }
 
   async function refreshScriptureFromApi(ref) {
@@ -1380,12 +1529,41 @@
   }
 
   function updateNotes() {
-    if (!state.segments.length || !el.noteBlock) return;
-    const latest = state.segments[state.segments.length - 1];
+    if (!el.noteBlock) return;
+    const slices = buildNoteSlices(state.segments);
+    if (!slices.length) {
+      el.noteBlock.innerHTML = `
+        <h3>证道笔记草稿</h3>
+        <p>等待稳定字幕片段。</p>
+      `;
+      return;
+    }
+    const totalChars = slices.reduce((sum, slice) => sum + slice.charCount, 0);
     el.noteBlock.innerHTML = `
       <h3>证道笔记草稿</h3>
-      <p>当前主线：${escapeHtml(latest.zh)}</p>
-      <p>已积累 ${state.segments.length} 个稳定字幕片段。离线阶段会生成摘要、大纲、应用问题和金句。</p>
+      <p>已积累 ${state.segments.length} 个稳定字幕片段，切成 ${slices.length} 段，约 ${totalChars} 字。</p>
+      <p class="note-model">模型：${escapeHtml(NOTE_AI_CONFIG.displayName)} · reasoning ${escapeHtml(NOTE_AI_CONFIG.reasoningEffort)}</p>
+      <ol class="note-slice-list">
+        ${slices.map(renderNoteSlice).join("")}
+      </ol>
+    `;
+  }
+
+  function renderNoteSlice(slice) {
+    const refs = slice.refs.length
+      ? `<span>经文：${escapeHtml(slice.refs.slice(0, 3).join("、"))}</span>`
+      : "";
+    return `
+      <li>
+        <strong>${escapeHtml(msToClock(slice.startMs))} - ${escapeHtml(msToClock(slice.endMs))}</strong>
+        <p>${escapeHtml(slice.preview)}</p>
+        <small>
+          <span>${slice.segmentCount} 个字幕片段</span>
+          <span>约 ${slice.charCount} 字</span>
+          ${refs}
+          <span>待 ${escapeHtml(NOTE_AI_CONFIG.displayName)} 总结</span>
+        </small>
+      </li>
     `;
   }
 
@@ -2134,7 +2312,9 @@
     useOperatorAudio,
     freezeReview,
     exportCaptions,
-    applyOffset
+    applyOffset,
+    buildNoteSlices,
+    buildNoteGenerationPayload
   };
 
   init();

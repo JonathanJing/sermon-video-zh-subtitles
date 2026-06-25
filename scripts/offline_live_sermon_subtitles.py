@@ -23,7 +23,8 @@ from pathlib import Path
 from typing import Any
 
 
-DEFAULT_LANGS = ["zh-Hans", "en-orig", "en"]
+DEFAULT_LANGS = ["en-orig", "en"]
+DEFAULT_ASR_MODEL = "gpt-4o-transcribe"
 TIMESTAMP_RE = re.compile(
     r"(?P<start>(?:\d{2}:)?\d{2}:\d{2}[\.,]\d{3})\s+-->\s+"
     r"(?P<end>(?:\d{2}:)?\d{2}:\d{2}[\.,]\d{3})(?P<settings>.*)"
@@ -89,6 +90,10 @@ def main() -> int:
             "kind": caption_source_kind,
             "video": summarize_video(caption_source_meta) if caption_source_meta else None,
         },
+        "asr": {
+            "provider": "openai",
+            "model": args.asr_model,
+        },
         "outputs": [],
         "warnings": [],
     }
@@ -97,7 +102,7 @@ def main() -> int:
         report["status"] = "needs_asr"
         report["warnings"].append(
             "No requested caption track was found on the live archive or matching sermon VOD. "
-            "Next step is extracting the sermon audio window and sending it to ASR."
+            f"Next step is extracting the sermon audio window and sending it to {args.asr_model} ASR."
         )
         write_reports(out_dir, report)
         return 2
@@ -183,7 +188,10 @@ def parse_args() -> argparse.Namespace:
         "--lang",
         action="append",
         default=[],
-        help="Subtitle language to request. Repeatable. Defaults to zh-Hans, en-orig, en.",
+        help=(
+            "Subtitle language to request. Repeatable. Defaults to en-orig, en. "
+            "Request zh-Hans explicitly only when you want to try platform-generated Chinese captions."
+        ),
     )
     parser.add_argument(
         "--sermon-start",
@@ -202,6 +210,11 @@ def parse_args() -> argparse.Namespace:
         help="Output directory for reports and subtitle files.",
     )
     parser.add_argument("--yt-dlp", default="yt-dlp", help="Path to yt-dlp executable.")
+    parser.add_argument(
+        "--asr-model",
+        default=DEFAULT_ASR_MODEL,
+        help="OpenAI transcription model to use when captions are unavailable.",
+    )
     args = parser.parse_args()
     if not args.lang:
         args.lang = DEFAULT_LANGS

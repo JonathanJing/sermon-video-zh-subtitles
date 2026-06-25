@@ -14,6 +14,9 @@ SPEC.loader.exec_module(mod)
 
 
 class PrepareLiveLinkPlaybackTest(unittest.TestCase):
+    def test_default_asr_model_uses_gpt_4o_transcribe(self):
+        self.assertEqual(mod.DEFAULT_ASR_MODEL, "gpt-4o-transcribe")
+
     def test_generated_content_files_and_dry_run_gcs_uris(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
