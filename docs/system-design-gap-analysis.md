@@ -31,15 +31,15 @@ The current POC is valuable, but it is not yet the production system described i
 | Requirement | Status | Gap |
 |---|---|---|
 | Manual admin trigger with live URL and optional sermon start hint | Partial | UI concept exists and backend planner accepts fields, but the deployed service does not expose a working admin generation API. |
-| Scheduled automatic live-source discovery | Missing | No implemented `live-source-monitor`, Cloud Scheduler trigger, same-sermon confidence check, or 09:58 fallback alert. |
+| Scheduled automatic live-source discovery | Partial | `scripts/live_source_monitor.py` can evaluate Mariners Online, YouTube streams, and manual authorized URLs; fixture tests cover same-sermon confidence, 8:30 -> 10:00 fallback, and 09:58 operator-audio alert. `/api/admin/sundays/{sunday}/discover-source` exposes the same handoff and can return a sanitized generation-plan summary. `scripts/configure_live_source_scheduler.py` now generates a redacted Cloud Scheduler job plan for `/api/admin/sundays/current/discover-source`; real Cloud Scheduler apply, Cloud Logging evidence, and real page validation are still missing. |
 | Same Sunday, same artifact set for all users | Partial | The storage model is documented, but there is no promoted `sundays/YYYY-MM-DD/cloud-manifest.json` pointer flow. |
 | Read-only congregation view | Implemented locally | `web/index.html` is now a read-only caption view with no operator controls in the DOM; `web/admin.html` keeps generation, export, test, and publish controls. `tests/test_public_admin_boundary.py` and browser E2E checks guard the split. Deployment smoke evidence is still needed. |
-| 11:25 readiness and publish gate | Missing | There is no durable readiness state, publish timestamp, published artifact URI, or fallback state. |
-| Real generated Chinese captions | Partial | Batch OpenAI translation exists for prepared playback and the worker plan includes prepare -> translate -> notes -> upload -> promote; production verification still needs real Sunday inputs. |
+| 11:25 readiness and publish gate | Partial | `promote_sunday_manifest.py` now writes a `readiness` contract with state, checks, publish time, published manifest URI, source mode, fallback reason, and model routing. `SundaySliceService` and `/api/admin/status` expose it. Deployment smoke evidence and real Sunday publish evidence are still missing. |
+| Real generated Chinese captions | Partial | Batch OpenAI translation exists for prepared playback and the default worker plan now runs prepare -> translate -> export zh VTT/SRT -> validate offline chain -> upload playback/manifest -> promote. Optional notes run only when requested, so they do not block caption publication. `validate_production_readiness.py` can now aggregate offline, promoted-manifest, and realtime JSONL evidence; production verification still needs real Sunday inputs. |
 | Offline ASR fallback | Partial | When no English captions are available, the live-archive preparation path can extract audio and request `gpt-4o-transcribe` before `gpt-5.5-mini` translation, but this still needs live YouTube/archive validation. |
-| Realtime low-latency captioning | Partial | Admin iPad/iPhone mic can create an OpenAI Realtime translation session, send browser WebRTC audio, post English/Chinese deltas to backend memory/JSONL, and stream them to the public caption view over SSE. `scripts/realtime_media_worker.py` can create backend-only sessions, plan authorized audio/YouTube source preparation, stream 24 kHz PCM16 audio to the OpenAI translation WebSocket, and publish English/Chinese deltas into the same session stream. `scripts/realtime_openai_smoke_test.py` now verifies a short authorized audio clip through OpenAI Realtime and backend SSE when credentials/source audio are available. `scripts/stabilize_realtime_deltas_with_openai.py` can use `gpt-5.5-mini` to turn saved realtime English windows into stable Chinese corrections and post them back as `caption_final` events; `scripts/run_realtime_stabilizer_loop.py` repeats that delayed pass and skips already-posted segments. Production live validation with real authorized sources and durable state storage are still missing. |
+| Realtime low-latency captioning | Partial | Admin iPad/iPhone mic can create an OpenAI Realtime translation session, send browser WebRTC audio, post English/Chinese deltas to backend memory/JSONL, and stream them to the public caption view over SSE. `scripts/realtime_media_worker.py` can create backend-only sessions, accept local authorized audio files, venue-provided authorized HTTP(S) audio streams, or authorized YouTube sources, stream 24 kHz PCM16 audio to the OpenAI translation WebSocket, and publish English/Chinese deltas into the same session stream. `scripts/realtime_openai_smoke_test.py` now verifies a short authorized audio clip through OpenAI Realtime and backend SSE when credentials/source audio are available. `scripts/stabilize_realtime_deltas_with_openai.py` can use `gpt-5.5-mini` to turn saved realtime English windows into stable Chinese corrections and post them back as `caption_final` events; `scripts/run_realtime_stabilizer_loop.py` repeats that delayed pass and skips already-posted segments. Production live validation with real authorized sources and durable state storage are still missing. |
 | Scripture/name/term priority | Missing | Static scripture/sidebar examples exist, but no deterministic Bible index, glossary resolver, or review queue. |
-| Notes and quote extraction | Partial | Worker plan includes `generate_notes_with_openai.py` with `gpt-5.5-mini`; production review and UI surfacing still need hardening. |
+| Notes and quote extraction | Partial | Worker plan can append `generate_notes_with_openai.py` with `gpt-5.5-mini` when `includeInsights` is requested; production review and UI surfacing still need hardening. |
 | Cloud Run API deployment | Partial | Current `Dockerfile` starts `backend.app`; deployment still needs environment verification for `/api/*`, Secret Manager, and realtime session creation. |
 | Firestore state | Missing | Session and caption state are modeled in docs but not persisted. |
 | GCS/Secret boundary | Partial | Artifacts are sanitized, but automated worker logs, runbooks, and future manifests must keep the same boundary. |
@@ -47,17 +47,16 @@ The current POC is valuable, but it is not yet the production system described i
 ## P0 Blocking Gaps
 
 1. **Verify and deploy the backend/API surface.** The repository container now serves static assets and `/api/*` from `backend.app`; production still needs environment verification for routing, auth, Secret Manager, realtime session creation, and the read-only public/admin split.
-2. **Promote stable Sunday manifests.** Each Sunday needs a stable server-side pointer such as `gs://<bucket>/sundays/YYYY-MM-DD/cloud-manifest.json`, with completion/readiness state.
-3. **Validate the real generation chain on a fresh Sunday input.** `backend.worker` now plans prepare -> translate -> notes -> upload -> promote, but it needs an end-to-end run with live archive captions and the no-caption ASR fallback.
-4. **Add readiness/publish state.** Operators need `source_detected`, `caption_generating`, `needs_review`, `ready`, `published`, and `fallback` states before 11:25 PT.
-5. **Implement source discovery.** Manual links are useful, but the Sunday system still needs automatic discovery of 8:30/10:00 live sources and same-sermon validation.
+2. **Validate stable Sunday manifest promotion in Cloud Run/GCS.** Each Sunday needs the stable pointer `gs://<bucket>/sundays/YYYY-MM-DD/cloud-manifest.json` to be written and read back with readiness state.
+3. **Validate the real generation chain on a fresh Sunday input.** `backend.worker` now plans prepare -> translate -> export zh VTT/SRT -> validate offline chain -> upload playback/manifest -> promote with `gpt-4o-transcribe` and `gpt-5.5-mini`, and `validate_production_readiness.py` can bundle the evidence, but it still needs an end-to-end run with live archive captions and the no-caption ASR fallback.
+4. **Validate scheduled source discovery in Cloud Run.** `scripts/live_source_monitor.py`, `/api/admin/sundays/{sunday}/discover-source`, and `scripts/configure_live_source_scheduler.py` exist with fixture tests and a redacted dry-run path, but they still need `--apply` verification, Cloud Logging evidence, and real Mariners/YouTube page validation.
 
 ## P1/P2 Gaps
 
 - Durable realtime session/segment storage and latency budget enforcement.
 - Real-source live validation and hardening for server-side OpenAI Realtime audio streaming from YouTube live / authorized audio sources; the smoke runner exists, but a real credentialed source pass is still required.
 - Firestore or equivalent durable session/segment state.
-- Cloud Scheduler/Tasks configuration for Sunday monitor and worker jobs.
+- Cloud Scheduler/Tasks production verification for Sunday monitor and worker jobs.
 - Dedicated service account and IAM least-privilege wiring for GCS and Secret Manager.
 - Operator authentication fully wired to deployed admin APIs.
 - Deterministic scripture, Bible book, person-name, and theology-term resolver.
@@ -79,9 +78,9 @@ The current POC is valuable, but it is not yet the production system described i
 1. **P0-A: Public/operator split.** Add explicit congregation and operator modes, hide all admin controls from public mode, and update E2E coverage for iPhone/iPad widths.
 2. **P0-B: Sunday manifest promotion.** Write a small promotion command that validates a run manifest and copies/promotes it to the stable Sunday pointer.
 3. **P0-C: Verify backend API deployment.** Deploy or redeploy the `backend.app` container and smoke test `/api/health`, admin status, realtime session creation, and public Sunday reads.
-4. **P0-D: Full worker chain E2E.** Run prepare -> ASR fallback if needed -> translate -> notes -> upload -> promote with a dry-run mode and tests.
+4. **P0-D: Full worker chain E2E.** Run prepare -> ASR fallback if needed -> translate -> export zh VTT/SRT -> validate offline chain -> upload playback/manifest -> promote with a dry-run mode and tests; run optional notes separately with `includeInsights`.
 5. **P0-E: Readiness/publish gate.** Persist readiness state and expose it to the operator UI and public Sunday read path.
-6. **P1: Scheduled live monitor.** Add Sunday source discovery with fixture-based tests before relying on live network behavior.
+6. **P1: Scheduled live monitor.** Apply and verify the Sunday source discovery Scheduler job in Cloud Run before relying on live network behavior.
 
 ## Deployment Decision
 

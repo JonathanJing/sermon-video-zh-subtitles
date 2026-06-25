@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import deque
+from concurrent.futures import Future, ThreadPoolExecutor, wait
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import json
@@ -15,7 +16,7 @@ from urllib.request import Request, urlopen
 
 DEFAULT_REALTIME_MODEL = "gpt-realtime-translate"
 DEFAULT_TRANSCRIPTION_MODEL = "gpt-4o-transcribe"
-DEFAULT_TARGET_LANGUAGE = "zh-CN"
+DEFAULT_TARGET_LANGUAGE = "zh"
 OPENAI_TRANSLATION_CLIENT_SECRET_URL = "https://api.openai.com/v1/realtime/translations/client_secrets"
 OPENAI_TRANSLATION_CALLS_URL = "https://api.openai.com/v1/realtime/translations/calls"
 
@@ -31,6 +32,7 @@ class RealtimeSession:
     sunday: str
     model: str = DEFAULT_REALTIME_MODEL
     target_language: str = DEFAULT_TARGET_LANGUAGE
+    audio_source_kind: str = "unknown"
     transcription_model: str = DEFAULT_TRANSCRIPTION_MODEL
     created_at: str = field(default_factory=utc_now)
     last_event_id: int = 0
@@ -47,6 +49,10 @@ class RealtimeEventArchive:
         self.root = Path(root)
         self.gcs_prefix = normalize_gcs_prefix(gcs_prefix)
         self.uploader = uploader or GcloudStorageUploader()
+        self._mirror_failures: deque[dict[str, Any]] = deque(maxlen=10)
+        self._mirror_futures: deque[Future] = deque(maxlen=100)
+        self._mirror_lock = threading.Lock()
+        self._mirror_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="realtime-gcs-mirror")
 
     def append(self, session: RealtimeSession, event: dict[str, Any]) -> Path:
         self.root.mkdir(parents=True, exist_ok=True)
@@ -55,8 +61,32 @@ class RealtimeEventArchive:
             handle.write(json.dumps(event, ensure_ascii=False, sort_keys=True))
             handle.write("\n")
         if self.gcs_prefix:
-            self.uploader.upload(path, self.gcs_uri_for(session))
+            self.mirror_to_gcs(path, session)
         return path
+
+    def mirror_to_gcs(self, path: Path, session: RealtimeSession) -> None:
+        future = self._mirror_executor.submit(self._upload_to_gcs, path, self.gcs_uri_for(session), session.session_id)
+        with self._mirror_lock:
+            self._mirror_futures.append(future)
+
+    def _upload_to_gcs(self, path: Path, gcs_uri: str, session_id: str) -> None:
+        try:
+            self.uploader.upload(path, gcs_uri)
+        except Exception as exc:
+            with self._mirror_lock:
+                self._mirror_failures.append(
+                    {
+                        "sessionId": session_id,
+                        "at": utc_now(),
+                        "error": str(exc)[:300],
+                    }
+                )
+
+    def wait_for_pending_mirrors(self, timeout: float | None = None) -> None:
+        with self._mirror_lock:
+            futures = list(self._mirror_futures)
+        if futures:
+            wait(futures, timeout=timeout)
 
     def path_for(self, session_id: str) -> Path:
         safe_session_id = "".join(char if char.isalnum() or char in {"-", "_"} else "_" for char in session_id)
@@ -69,13 +99,21 @@ class RealtimeEventArchive:
         return f"{self.gcs_prefix}/{safe_sunday}/{self.path_for(session.session_id).name}"
 
     def status(self) -> dict[str, Any]:
+        with self._mirror_lock:
+            failures = list(self._mirror_failures)
+            pending = sum(1 for future in self._mirror_futures if not future.done())
         status = {
             "enabled": True,
             "directory": str(self.root),
             "gcsMirrorEnabled": bool(self.gcs_prefix),
+            "gcsMirrorHealthy": not failures,
+            "gcsMirrorPending": pending,
         }
         if self.gcs_prefix:
             status["gcsPrefix"] = self.gcs_prefix
+        if failures:
+            status["gcsMirrorFailureCount"] = len(failures)
+            status["gcsMirrorLastError"] = failures[-1]
         return status
 
 
@@ -86,6 +124,7 @@ class GcloudStorageUploader:
             check=True,
             capture_output=True,
             text=True,
+            timeout=30,
         )
 
 
@@ -121,6 +160,7 @@ class RealtimeSessionStore:
         sunday: str,
         model: str = DEFAULT_REALTIME_MODEL,
         target_language: str = DEFAULT_TARGET_LANGUAGE,
+        audio_source_kind: str = "unknown",
         transcription_model: str = DEFAULT_TRANSCRIPTION_MODEL,
     ) -> RealtimeSession:
         session = RealtimeSession(
@@ -129,6 +169,7 @@ class RealtimeSessionStore:
             sunday=sunday,
             model=model,
             target_language=target_language,
+            audio_source_kind=audio_source_kind,
             transcription_model=transcription_model,
         )
         with self._condition:
@@ -142,6 +183,7 @@ class RealtimeSessionStore:
                 "sunday": sunday,
                 "model": model,
                 "targetLanguage": target_language,
+                "audioSourceKind": audio_source_kind,
             },
         )
         return session
@@ -221,10 +263,11 @@ def sanitize_event(payload: dict[str, Any]) -> dict[str, Any]:
         "sunday",
         "model",
         "targetLanguage",
+        "audioSourceKind",
         "openaiEventType",
     }
     clean = {key: value for key, value in payload.items() if key in allowed}
-    for key in ["text", "delta", "zh", "en", "source", "segmentId", "openaiEventType"]:
+    for key in ["text", "delta", "zh", "en", "source", "segmentId", "audioSourceKind", "openaiEventType"]:
         if key in clean and clean[key] is not None:
             clean[key] = str(clean[key])[:4000]
     if "final" in clean:
@@ -245,6 +288,9 @@ def create_openai_translation_session(
     target_language: str = DEFAULT_TARGET_LANGUAGE,
     transcription_model: str = DEFAULT_TRANSCRIPTION_MODEL,
 ) -> dict[str, Any]:
+    policy_error = realtime_translation_policy_error(model, target_language)
+    if policy_error:
+        raise ValueError(policy_error["message"])
     payload = {
         "session": {
             "model": model,
@@ -273,6 +319,22 @@ def create_openai_translation_session(
     with urlopen(request, timeout=20) as response:
         data = json.loads(response.read().decode("utf-8"))
     return data if isinstance(data, dict) else {}
+
+
+def realtime_translation_policy_error(model: str, target_language: str) -> dict[str, str] | None:
+    if model != DEFAULT_REALTIME_MODEL:
+        return {
+            "error": "unsupported_realtime_model",
+            "message": "Realtime live captions must use gpt-realtime-translate.",
+            "expectedModel": DEFAULT_REALTIME_MODEL,
+        }
+    if target_language != DEFAULT_TARGET_LANGUAGE:
+        return {
+            "error": "unsupported_realtime_target_language",
+            "message": "Realtime live captions must target Simplified Chinese.",
+            "expectedTargetLanguage": DEFAULT_TARGET_LANGUAGE,
+        }
+    return None
 
 
 def resolve_openai_api_key(raw_key: str | None, secret_resource: str | None) -> str:

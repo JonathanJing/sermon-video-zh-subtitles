@@ -167,6 +167,132 @@ Required checks:
 - `translatedSegments` equals `totalSegments` for a complete OpenAI translation E2E run.
 - Object generation numbers are recorded for the final playback JS and report.
 
+Run the realtime draft smoke first for the live path:
+
+```bash
+python3 scripts/realtime_openai_smoke_test.py \
+  --audio-file authorized-smoke.wav \
+  --api-key-secret projects/PROJECT_ID/secrets/openai-api-key/versions/latest \
+  --backend-url https://CLOUD_RUN_URL \
+  --sunday YYYY-MM-DD \
+  --admin-token "$ADMIN_TOKEN" \
+  --realtime-event-gcs-prefix gs://sermon-zh-artifacts-ai-for-god/realtime-events \
+  --out artifacts/realtime-openai-smoke/report.json
+```
+
+Then run the stabilized realtime smoke. This creates the backend session itself,
+keeps the event token in memory only, posts one `gpt-5.5-mini` stable correction,
+and validates the saved realtime JSONL with `--require-stable-correction`:
+
+```bash
+python3 scripts/realtime_stabilized_smoke_test.py \
+  --audio-file authorized-smoke.wav \
+  --api-key-secret projects/PROJECT_ID/secrets/openai-api-key/versions/latest \
+  --backend-url https://CLOUD_RUN_URL \
+  --sunday YYYY-MM-DD \
+  --admin-token "$ADMIN_TOKEN" \
+  --realtime-event-gcs-prefix gs://sermon-zh-artifacts-ai-for-god/realtime-events \
+  --read-events-from-gcs \
+  --out artifacts/realtime-stabilized-smoke/report.json
+```
+
+Required checks for the stabilized report:
+
+- `status` is `ok`.
+- `models.realtimeDraft` is `gpt-realtime-translate`.
+- `models.stableCorrection` is `gpt-5.5-mini`.
+- `stableCorrection.postedStableCorrections` is greater than `0`.
+- `validation.status` is `ok`.
+- `eventTokenIncluded`, `apiKeyMaterialIncluded`, and `secretResourceNamesIncluded` are all `false`.
+
+For the 11:30 live run, use the live-session wrapper instead of separate worker
+and stabilizer commands. It creates the backend session, keeps the event token in
+memory, streams the authorized source through `gpt-realtime-translate`, and runs
+`gpt-5.5-mini` stable corrections against the saved realtime JSONL:
+
+```bash
+python3 scripts/run_realtime_live_session.py \
+  --audio-url 'https://AUTHORIZED_AUDIO_SOURCE/live.m3u8?token=...' \
+  --api-key-secret projects/PROJECT_ID/secrets/openai-api-key/versions/latest \
+  --backend-url https://CLOUD_RUN_URL \
+  --sunday YYYY-MM-DD \
+  --admin-token "$ADMIN_TOKEN" \
+  --realtime-event-gcs-prefix gs://sermon-zh-artifacts-ai-for-god/realtime-events \
+  --read-events-from-gcs \
+  --require-stable-correction \
+  --out artifacts/realtime-live-session/report.json
+```
+
+If the authorized source is YouTube live, replace `--audio-url ...` with
+`--youtube-url 'https://www.youtube.com/watch?v=...'` after confirming access
+and platform rules. For iPad/iPhone mic, use the admin browser WebRTC path; the
+backend event contract and stabilizer output are the same. After the browser
+creates a realtime session, run the stabilizer loop with admin/internal auth so
+the event token stays inside the browser session:
+
+```bash
+python3 scripts/run_realtime_stabilizer_loop.py \
+  --input-jsonl gs://sermon-zh-artifacts-ai-for-god/realtime-events/YYYY-MM-DD/<browser_session_id>.jsonl \
+  --api-key-secret projects/PROJECT_ID/secrets/openai-api-key/versions/latest \
+  --backend-url https://CLOUD_RUN_URL \
+  --session-id <browser_session_id> \
+  --internal-task-token "$INTERNAL_TASK_TOKEN" \
+  --interval-seconds 6 \
+  --min-age-seconds 4
+```
+
+The loop writes `<browser_session_id>.model-access-preflight.json` first. If
+`gpt-5.5-mini` is unavailable through OpenAI Responses, it exits before reading
+the event log or posting corrections; the low-latency `gpt-realtime-translate`
+draft session should keep running.
+
+Build the combined evidence command first:
+
+```bash
+python3 scripts/run_sunday_evidence_bundle.py \
+  --sunday YYYY-MM-DD \
+  --session-id <worker_session_id> \
+  --artifact-location gcs \
+  --artifact-bucket sermon-zh-artifacts-ai-for-god \
+  --artifact-prefix sundays \
+  --realtime-location gcs \
+  --realtime-event-gcs-prefix gs://sermon-zh-artifacts-ai-for-god/realtime-events \
+  --realtime-smoke-report artifacts/realtime-live-session/report.json \
+  --require-readable-sunday-artifacts \
+  --cloud-run-config-report artifacts/evidence/cloud-run-realtime-config.json \
+  --cloud-run-api-preflight-report artifacts/evidence/cloud-run-api-preflight.json \
+  --web-realtime-contract-report artifacts/evidence/web-realtime-contract.json \
+  --realtime-public-sse-smoke-report artifacts/evidence/realtime-public-sse-smoke.json \
+  --realtime-session-validation-report artifacts/evidence/realtime-live-session/realtime-session-validation.json \
+  --offline-chain-validation-report artifacts/evidence/offline-chain-validation.json \
+  --offline-asr-smoke-report artifacts/evidence/offline-asr-fallback-smoke/report.json \
+  --sunday-manifest-validation-report artifacts/evidence/sunday-manifest-validation.json \
+  --openai-model-access-preflight-report artifacts/evidence/openai-model-access-preflight.json \
+  --openai-alternative-model-access-preflight-report artifacts/evidence/openai-model-access-preflight-gpt-5.5.json \
+  --out artifacts/evidence/caption-route-readiness.json \
+  --evidence-matrix-out artifacts/evidence/production-evidence-matrix.json \
+  --goal-audit-out artifacts/evidence/production-goal-readiness-audit.json \
+  --bundle-report-out artifacts/evidence/sunday-evidence-bundle.json \
+  --dry-run
+```
+
+Then rerun without `--dry-run`. The command calls the production readiness gate,
+then writes the production evidence matrix and goal audit. It fails if offline
+artifacts, the promoted Sunday manifest, realtime JSONL evidence, Cloud Run
+config, or API preflight evidence are missing or invalid. If you already know
+the realtime session id, you can pass `--realtime-session-id` instead of
+`--realtime-smoke-report`. When the smoke report contains `realtimeEventsJsonl`,
+that exact JSONL URI is used. Use the live-session report for the 11:30
+production gate; use the stabilized smoke report for rehearsal evidence. In
+both cases, the realtime JSONL must already include at least one
+`gpt-5.5-mini` stable correction event. If the production-readiness validator
+exits before writing its report, the bundle writes a minimal failed report and
+continues with matrix/audit generation so the operator still gets one status
+board. If matrix generation exits before writing its report, the bundle writes a
+minimal incomplete matrix and still runs the goal audit.
+Alternative model access reports are recorded only as side evidence; do not treat
+`gpt-5.5` availability as a substitute for required `gpt-5.5-mini` access.
+
 ## Rollback
 
 Use revision rollback when the deployed static app or env vars are wrong:

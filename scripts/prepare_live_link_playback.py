@@ -15,6 +15,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 OFFLINE_POC = REPO_ROOT / "scripts" / "offline_live_sermon_subtitles.py"
 BUILD_PLAYBACK = REPO_ROOT / "scripts" / "build_playback_simulation.py"
 DEFAULT_ASR_MODEL = "gpt-4o-transcribe"
+FORBIDDEN_ASR_MODEL = "gpt-realtime-translate"
 SECRET_RESOURCE_RE = re.compile(
     r"^projects/[^/\s]+/secrets/[^/\s]+(?:/versions/[^/\s]+)?$"
 )
@@ -79,6 +80,8 @@ def main() -> int:
             web_out=web_out,
             gcs_outputs=gcs_outputs,
             api_key_secret=args.api_key_secret,
+            report_path=out_dir / "report.json",
+            playback_path=web_out,
         )
         gcs_outputs.extend(
             publish_files_to_gcs(
@@ -170,9 +173,20 @@ def parse_args() -> argparse.Namespace:
 def validate_args(args: argparse.Namespace) -> None:
     if args.api_key_secret:
         validate_secret_resource_name(args.api_key_secret)
+    validate_asr_model(args.asr_model)
     if args.gcs_bucket:
         normalize_gcs_bucket(args.gcs_bucket)
         normalize_gcs_prefix(args.gcs_prefix)
+
+
+def validate_asr_model(model: str) -> None:
+    if model == FORBIDDEN_ASR_MODEL:
+        raise SystemExit(
+            "Offline no-caption ASR fallback must not use gpt-realtime-translate; "
+            "use gpt-4o-transcribe."
+        )
+    if model != DEFAULT_ASR_MODEL:
+        raise SystemExit("Offline no-caption ASR fallback must use gpt-4o-transcribe.")
 
 
 def validate_secret_resource_name(value: str) -> None:
@@ -294,11 +308,15 @@ def write_cloud_manifest(
     web_out: Path,
     gcs_outputs: list[dict[str, str]],
     api_key_secret: str | None,
+    report_path: Path | None = None,
+    playback_path: Path | None = None,
 ) -> None:
+    route_metadata = manifest_route_metadata(report_path=report_path, playback_path=playback_path)
     manifest = {
         "schemaVersion": 1,
         "generatedContentStorage": "gcs",
         "playbackSimulation": relative_artifact_path(web_out, out_dir, web_out).as_posix(),
+        **route_metadata,
         "apiKeyMaterialIncluded": False,
         "secretResourceNamesIncluded": False,
         "serverSideSecretConfigured": bool(api_key_secret),
@@ -309,6 +327,63 @@ def write_cloud_manifest(
         encoding="utf-8",
     )
     return out_dir / "cloud-manifest.json"
+
+
+def manifest_route_metadata(report_path: Path | None = None, playback_path: Path | None = None) -> dict:
+    metadata: dict[str, object] = {}
+    report = read_json_object(report_path) if report_path and report_path.exists() else {}
+    playback = read_playback_js(playback_path) if playback_path and playback_path.exists() else {}
+    route = report.get("offline_route") if isinstance(report.get("offline_route"), dict) else {}
+    source_kind = (
+        nested(report, "caption_source", "kind")
+        or route.get("selectedSourceKind")
+        or playback.get("offlineSourceKind")
+    )
+    if source_kind:
+        metadata["offlineSourceKind"] = source_kind
+    if route:
+        metadata["offlineRoute"] = {
+            "strategy": route.get("strategy"),
+            "decision": route.get("decision"),
+            "selectedSourceKind": route.get("selectedSourceKind"),
+            "asrFallbackRequired": route.get("asrFallbackRequired"),
+            "audioExtractionAttempted": route.get("audioExtractionAttempted"),
+            "fallbackReason": route.get("fallbackReason"),
+        }
+    return metadata
+
+
+def read_json_object(path: Path) -> dict:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def read_playback_js(path: Path) -> dict:
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return {}
+    prefix = "window.SERMON_PLAYBACK_SIMULATION = "
+    if not text.startswith(prefix):
+        return {}
+    payload = text[len(prefix) :].strip().rstrip(";")
+    try:
+        data = json.loads(payload)
+    except json.JSONDecodeError:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def nested(data: dict, *keys: str):
+    current = data
+    for key in keys:
+        if not isinstance(current, dict):
+            return None
+        current = current.get(key)
+    return current
 
 
 if __name__ == "__main__":

@@ -14,6 +14,7 @@ All backend, worker, and promotion logs are written as structured JSON to stdout
 
 | Event | Source | Purpose |
 |---|---|---|
+| `live_source_monitor_completed` | `POST /api/admin/sundays/YYYY-MM-DD/discover-source` or `scripts/live_source_monitor.py` | Records source discovery status, selected service/source kind, fallback/operator-alert state, and candidate count. |
 | `live_capture_triggered` | `POST /api/admin/sundays/YYYY-MM-DD/generate` | Records that live capture was requested, including `triggerSource`, `sunday`, `sessionId`, `runPrefix`, and a safe live-source summary. |
 | `live_capture_planned` | API when inline worker is disabled | Records the generated worker plan when the API is only planning or queueing work. |
 | `live_capture_worker_started` | `python -m backend.worker` | Records that a Cloud Run Job or manual worker run actually started. |
@@ -35,8 +36,9 @@ Cloud Scheduler should send an explicit payload:
 ```json
 {
   "triggerSource": "cloud-scheduler",
-  "liveUrl": "https://www.youtube.com/watch?v=...",
-  "sermonStart": "00:23:25"
+  "service": "auto",
+  "operatorAlertTime": "09:58",
+  "autoGenerate": true
 }
 ```
 
@@ -47,6 +49,14 @@ Live capture trigger:
 ```text
 resource.type="cloud_run_revision"
 jsonPayload.event="live_capture_triggered"
+jsonPayload.sunday="2026-06-28"
+```
+
+Live-source discovery:
+
+```text
+resource.type="cloud_run_revision"
+jsonPayload.event="live_source_monitor_completed"
 jsonPayload.sunday="2026-06-28"
 ```
 

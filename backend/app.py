@@ -4,6 +4,7 @@ import json
 import mimetypes
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from types import SimpleNamespace
 from urllib.parse import parse_qs, unquote, urlparse
 
 from .config import AppConfig
@@ -24,11 +25,13 @@ from .realtime import (
     RealtimeSessionStore,
     OPENAI_TRANSLATION_CALLS_URL,
     create_openai_translation_session,
+    realtime_translation_policy_error,
     resolve_openai_api_key,
 )
 from .scripture import ScriptureNotFoundError, ScriptureService
 from .storage import GcsArtifactReader
 from .worker import build_generation_plan, parse_generation_request
+from scripts import live_source_monitor
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -181,18 +184,22 @@ class ApiHandler(BaseHTTPRequestHandler):
             if parts[:3] == ["api", "realtime", "sessions"] and len(parts) == 5 and parts[4] == "events":
                 self.handle_realtime_event_post(parts[3])
                 return
+            if parts[:3] == ["api", "admin", "sundays"] and len(parts) == 5 and parts[4] == "discover-source":
+                self.handle_live_source_discovery(parts[3])
+                return
             if parts[:3] == ["api", "admin", "sundays"] and len(parts) == 5 and parts[4] == "generate":
                 if not self.authorized():
                     self.write_json({"error": "unauthorized"}, status=401)
                     return
+                sunday = self.resolve_admin_sunday(parts[3])
                 payload = self.read_json_body()
-                request = parse_generation_request(payload, parts[3])
+                request = parse_generation_request(payload, sunday)
                 plan = build_generation_plan(request, self.config)
                 source = trigger_source(self.headers, payload)
                 log_event(
                     "live_capture_triggered",
                     component="api",
-                    sunday=parts[3],
+                    sunday=sunday,
                     sessionId=plan.session_id,
                     runPrefix=plan.prefix,
                     triggerSource=source,
@@ -205,7 +212,7 @@ class ApiHandler(BaseHTTPRequestHandler):
                     log_event(
                         "live_capture_planned",
                         component="api",
-                        sunday=parts[3],
+                        sunday=sunday,
                         sessionId=plan.session_id,
                         runPrefix=plan.prefix,
                         triggerSource=source,
@@ -229,7 +236,7 @@ class ApiHandler(BaseHTTPRequestHandler):
                     log_event(
                         "worker_stage_started",
                         component="api-inline-worker",
-                        sunday=parts[3],
+                        sunday=sunday,
                         sessionId=plan.session_id,
                         stage=command_stage(command),
                     )
@@ -237,7 +244,7 @@ class ApiHandler(BaseHTTPRequestHandler):
                     log_event(
                         "worker_stage_completed",
                         component="api-inline-worker",
-                        sunday=parts[3],
+                        sunday=sunday,
                         sessionId=plan.session_id,
                         stage=command_stage(command),
                     )
@@ -261,6 +268,94 @@ class ApiHandler(BaseHTTPRequestHandler):
             self.write_json({"error": "not_found"}, status=404)
         except Exception as exc:
             self.write_json({"error": str(exc)}, status=400)
+
+    def handle_live_source_discovery(self, sunday: str) -> None:
+        if not self.authorized():
+            self.write_json({"error": "unauthorized"}, status=401)
+            return
+        sunday = self.resolve_admin_sunday(sunday)
+        payload = self.read_json_body()
+        monitor_args = self.live_source_monitor_args(payload, sunday)
+        report = live_source_monitor.run_monitor(monitor_args)
+        log_event(
+            "live_source_monitor_completed",
+            component="api",
+            sunday=sunday,
+            status=report.get("status"),
+            selectedService=(report.get("selectedSource") or {}).get("service"),
+            selectedKind=(report.get("selectedSource") or {}).get("kind"),
+            operatorAlert=report.get("operatorAlert"),
+            candidateCount=len(report.get("candidates") or []),
+            triggerSource=trigger_source(self.headers, payload),
+            schedulerJob=scheduler_job(self.headers),
+        )
+        response = {
+            "status": report.get("status"),
+            "sunday": sunday,
+            "selectedSource": report.get("selectedSource"),
+            "operatorAlert": report.get("operatorAlert"),
+            "fallbackReason": report.get("fallbackReason"),
+            "generationRequest": report.get("generationRequest"),
+            "candidateCount": len(report.get("candidates") or []),
+            "apiKeyMaterialIncluded": False,
+            "secretResourceNamesIncluded": False,
+        }
+        if payload.get("includeCandidates"):
+            response["candidates"] = report.get("candidates") or []
+        if payload.get("autoGenerate") and isinstance(report.get("generationRequest"), dict):
+            request = parse_generation_request(report["generationRequest"], sunday)
+            plan = build_generation_plan(request, self.config)
+            log_event(
+                "live_capture_planned",
+                component="api",
+                sunday=sunday,
+                sessionId=plan.session_id,
+                runPrefix=plan.prefix,
+                triggerSource="live-source-monitor",
+                commandCount=len(plan.commands),
+                liveSource=url_summary(request.live_url),
+            )
+            response["generationPlan"] = {
+                "status": "planned",
+                "sessionId": plan.session_id,
+                "prefix": plan.prefix,
+                "commandCount": len(plan.commands),
+            }
+        self.write_json(response, status=202)
+
+    def resolve_admin_sunday(self, sunday: str) -> str:
+        return self.service._resolve_sunday(sunday)
+
+    def live_source_monitor_args(self, payload: dict, sunday: str) -> SimpleNamespace:
+        manual_urls = payload.get("manualUrls") or payload.get("manual_urls") or []
+        if payload.get("manualUrl") or payload.get("manual_url"):
+            manual_urls = [payload.get("manualUrl") or payload.get("manual_url"), *manual_urls]
+        if isinstance(manual_urls, str):
+            manual_urls = [manual_urls]
+        if not isinstance(manual_urls, list):
+            manual_urls = []
+        sources = payload.get("sources")
+        if sources is not None and not isinstance(sources, list):
+            sources = []
+        return SimpleNamespace(
+            sunday=sunday,
+            service=str(payload.get("service") or "auto"),
+            expected_title=payload.get("expectedTitle") or payload.get("expected_title"),
+            manual_url=[str(url) for url in manual_urls if str(url or "").strip()],
+            mariners_online_url=str(payload.get("marinersOnlineUrl") or live_source_monitor.DEFAULT_MARINERS_ONLINE_URL),
+            youtube_streams_url=str(payload.get("youtubeStreamsUrl") or live_source_monitor.DEFAULT_YOUTUBE_STREAMS_URL),
+            fixture_json=None,
+            fixture_sources=sources,
+            out=Path("artifacts/live-source-monitor/backend-report.json"),
+            timezone=str(payload.get("timezone") or self.config.timezone),
+            now=payload.get("now"),
+            min_confidence=float(payload.get("minConfidence", 0.70)),
+            operator_alert_time=str(payload.get("operatorAlertTime") or "09:58"),
+            backend_url="",
+            post_generate=False,
+            admin_token=None,
+            internal_task_token=None,
+        )
 
     def handle_page_view(self) -> None:
         payload = self.read_json_body()
@@ -293,6 +388,11 @@ class ApiHandler(BaseHTTPRequestHandler):
         sunday = str(payload.get("sunday") or self.service._resolve_sunday("current"))[:20]
         model = str(payload.get("model") or DEFAULT_REALTIME_MODEL)[:80]
         target_language = str(payload.get("targetLanguage") or DEFAULT_TARGET_LANGUAGE)[:20]
+        policy_error = realtime_translation_policy_error(model, target_language)
+        if policy_error:
+            self.write_json(policy_error, status=400)
+            return
+        audio_source_kind = normalize_realtime_audio_source_kind(payload)
         try:
             api_key = resolve_openai_api_key(
                 self.config.openai_api_key,
@@ -323,6 +423,7 @@ class ApiHandler(BaseHTTPRequestHandler):
             sunday=sunday,
             model=model,
             target_language=target_language,
+            audio_source_kind=audio_source_kind,
         )
 
         log_event(
@@ -332,6 +433,7 @@ class ApiHandler(BaseHTTPRequestHandler):
             sessionId=session.session_id,
             model=model,
             targetLanguage=target_language,
+            audioSourceKind=audio_source_kind,
         )
         self.write_json(
             {
@@ -340,6 +442,7 @@ class ApiHandler(BaseHTTPRequestHandler):
                 "eventToken": session.event_token,
                 "model": model,
                 "targetLanguage": target_language,
+                "audioSourceKind": audio_source_kind,
                 "clientSecret": {
                     "value": client_secret.get("value"),
                     "expiresAt": client_secret.get("expires_at"),
@@ -360,10 +463,16 @@ class ApiHandler(BaseHTTPRequestHandler):
         sunday = str(payload.get("sunday") or self.service._resolve_sunday("current"))[:20]
         model = str(payload.get("model") or DEFAULT_REALTIME_MODEL)[:80]
         target_language = str(payload.get("targetLanguage") or DEFAULT_TARGET_LANGUAGE)[:20]
+        policy_error = realtime_translation_policy_error(model, target_language)
+        if policy_error:
+            self.write_json(policy_error, status=400)
+            return
+        audio_source_kind = normalize_realtime_audio_source_kind(payload)
         session = self.realtime_store.create(
             sunday=sunday,
             model=model,
             target_language=target_language,
+            audio_source_kind=audio_source_kind,
         )
         log_event(
             "realtime_session_created",
@@ -372,6 +481,7 @@ class ApiHandler(BaseHTTPRequestHandler):
             sessionId=session.session_id,
             model=model,
             targetLanguage=target_language,
+            audioSourceKind=audio_source_kind,
             triggerSource=str(payload.get("triggerSource") or "local-realtime-session")[:80],
         )
         self.write_json(
@@ -381,17 +491,20 @@ class ApiHandler(BaseHTTPRequestHandler):
                 "eventToken": session.event_token,
                 "model": model,
                 "targetLanguage": target_language,
+                "audioSourceKind": audio_source_kind,
                 "webrtc": None,
             },
             status=201,
         )
 
     def handle_realtime_event_post(self, session_id: str) -> None:
+        payload = self.read_json_body()
         token = self.headers.get("X-Realtime-Event-Token") or bearer_token(self.headers.get("Authorization", ""))
-        if not self.realtime_store.validate_event_token(session_id, token):
+        event_token_authorized = self.realtime_store.validate_event_token(session_id, token)
+        stable_admin_authorized = self.authorized() and is_stable_correction_payload(payload)
+        if not event_token_authorized and not stable_admin_authorized:
             self.write_json({"error": "unauthorized"}, status=401)
             return
-        payload = self.read_json_body()
         event = self.realtime_store.append_event(session_id, payload)
         if event.get("type") in {"caption_delta", "caption_final", "input_transcript_delta", "input_transcript_final"}:
             log_event(
@@ -488,6 +601,7 @@ class ApiHandler(BaseHTTPRequestHandler):
                 "manifestStatus": manifest_status,
                 "manifestError": manifest_error,
                 "artifactCount": public_slice.get("artifactCount") if public_slice else 0,
+                "generationMode": public_slice.get("generationMode") if public_slice else None,
             },
             "captions": {
                 "sermonTitle": public_slice.get("sermonTitle") if public_slice else None,
@@ -495,12 +609,19 @@ class ApiHandler(BaseHTTPRequestHandler):
                 "totalSegments": public_slice.get("totalSegments") if public_slice else None,
                 "translatedSegments": public_slice.get("translatedSegments") if public_slice else None,
                 "readyTime": public_slice.get("readyTime") if public_slice else None,
+                "publishedAt": public_slice.get("publishedAt") if public_slice else None,
                 "lastUpdated": public_slice.get("lastUpdated") if public_slice else None,
+            },
+            "readiness": public_slice.get("readiness") if public_slice else {
+                "state": "missing",
+                "publicArtifactsReady": False,
+                "fallback": False,
             },
             "settings": {
                 "provider": "openai",
                 "targetServiceTime": "11:30 PT",
                 "readinessDeadline": "11:50 PT",
+                "sourceDiscoveryEndpoint": "/api/admin/sundays/{sunday}/discover-source",
                 "manualTriggerEndpoint": "/api/admin/sundays/{sunday}/generate",
                 "realtimeSessionEndpoint": "/api/admin/realtime/sessions",
                 "localRealtimeSessionEndpoint": "/api/admin/realtime/local-sessions",
@@ -566,6 +687,31 @@ class ApiHandler(BaseHTTPRequestHandler):
 def bearer_token(value: str) -> str | None:
     prefix = "Bearer "
     return value[len(prefix) :] if value.startswith(prefix) else None
+
+
+def normalize_realtime_audio_source_kind(payload: dict) -> str:
+    raw_value = payload.get("audioSourceKind") or payload.get("source") or "unknown"
+    value = str(raw_value).strip().lower().replace("-", "_")[:80]
+    if value in {"ipad_microphone", "ipadmic"}:
+        return "ipad_mic"
+    if value in {"iphone_microphone", "iphonemic"}:
+        return "iphone_mic"
+    if value in {"youtube_live", "youtube", "authorized_youtube_live"}:
+        return "authorized_youtube_source"
+    if value in {"authorized_audio", "audio_url"}:
+        return "authorized_audio_url"
+    return value or "unknown"
+
+
+def is_stable_correction_payload(payload: dict) -> bool:
+    return (
+        payload.get("type") == "caption_final"
+        and payload.get("final") is True
+        and payload.get("source") == "gpt-5.5-mini-stable-correction"
+        and payload.get("model") == "gpt-5.5-mini"
+        and bool(str(payload.get("segmentId") or "").strip())
+        and bool(str(payload.get("text") or payload.get("zh") or "").strip())
+    )
 
 
 def main() -> None:

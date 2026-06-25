@@ -44,7 +44,7 @@ Do not use cookies, OAuth secrets, or source tokens to bypass access controls, D
 |---|---|
 | GCS bucket | `SERMON_ARTIFACT_BUCKET` |
 | GCS prefix | `SERMON_ARTIFACT_PREFIX` |
-| Realtime event GCS mirror prefix | `REALTIME_EVENT_GCS_PREFIX=gs://<bucket>/realtime-events` |
+| Realtime event GCS mirror prefix | `REALTIME_EVENT_GCS_PREFIX=gs://<bucket>/realtime-events` for the background best-effort JSONL mirror; upload failures do not block live SSE |
 | Firestore database / collection prefix | `FIRESTORE_DATABASE`, `FIRESTORE_COLLECTION_PREFIX` |
 | Time zone | `APP_TIMEZONE=America/Los_Angeles` |
 | Public base URL | `PUBLIC_BASE_URL` |
@@ -160,6 +160,41 @@ Pass criteria:
 - Traffic points to the intended revision.
 - Public browser artifacts do not expose raw API keys, operator tokens, webhook URLs, or Secret Manager resource names.
 
+## Cloud Scheduler Live-Source Job
+
+Configure the weekly live-source discovery job with a redacted dry run first:
+
+```bash
+python3 scripts/configure_live_source_scheduler.py \
+  --project ai-for-god \
+  --location us-west1 \
+  --service-url https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app
+```
+
+The job targets:
+
+```text
+/api/admin/sundays/current/discover-source
+```
+
+Payload shape:
+
+```json
+{
+  "triggerSource": "cloud-scheduler",
+  "service": "auto",
+  "operatorAlertTime": "09:58",
+  "autoGenerate": true
+}
+```
+
+The backend resolves `current` to the active Sunday before planning artifact
+paths, so generated runs still publish under
+`sundays/YYYY-MM-DD/runs/<session_id>/`. When the dry-run output looks correct,
+set `INTERNAL_TASK_TOKEN` in the shell and add `--apply` to create or update the
+Cloud Scheduler job. The script redacts the token in its report; do not paste
+the raw token into docs, shell transcripts, tickets, or logs.
+
 ## Observability Smoke
 
 See [observability.md](./observability.md) for the event schema and standard queries.
@@ -198,6 +233,399 @@ Current bucket checks passed on 2026-06-23:
 - Uniform bucket-level access is enabled.
 - Public access prevention is enforced.
 - Top-level `runs/` prefix exists.
+
+After the worker exports translated captions and before treating the run as
+publishable, validate the local/offline chain:
+
+```bash
+python3 scripts/validate_offline_chain.py \
+  --report /tmp/sermon-worker/YYYY-MM-DD/<session_id>/artifacts/report.json \
+  --playback-js /tmp/sermon-worker/YYYY-MM-DD/<session_id>/web/playback-simulation.generated.js \
+  --zh-vtt /tmp/sermon-worker/YYYY-MM-DD/<session_id>/artifacts/sermon.zh.live-aligned.vtt \
+  --zh-srt /tmp/sermon-worker/YYYY-MM-DD/<session_id>/artifacts/sermon.zh.live-aligned.srt \
+  --manifest /tmp/sermon-worker/YYYY-MM-DD/<session_id>/artifacts/cloud-manifest.json
+```
+
+Pass criteria: the verifier reports `status=ok`, uses a caption source or
+`gpt-4o-transcribe` ASR fallback, confirms `gpt-5.5-mini` translation, rejects
+any `gpt-realtime-translate` use in the offline path, confirms
+`offline_route.strategy=captions_first_then_asr`, confirms caption routes did
+not extract audio and ASR routes are marked as `no_requested_caption_track`
+fallbacks, and finds readable Chinese VTT/SRT plus translated playback JS.
+
+If the `gpt-5.5-mini` call has already produced a saved model-output JSONL but
+the caption/export step must be resumed, replay the saved translations without
+calling OpenAI again:
+
+```bash
+python3 scripts/translate_playback_with_openai.py \
+  --input /tmp/sermon-worker/YYYY-MM-DD/<session_id>/web/playback-simulation.generated.js \
+  --out /tmp/sermon-worker/YYYY-MM-DD/<session_id>/web/playback-simulation.generated.js \
+  --out-dir /tmp/sermon-worker/YYYY-MM-DD/<session_id>/model-output \
+  --translations-jsonl /tmp/sermon-worker/YYYY-MM-DD/<session_id>/model-output/openai-translation-output.jsonl \
+  --model gpt-5.5-mini
+```
+
+This replay mode is only artifact recovery. It proves the saved translations can
+be turned into playback/VTT/SRT/manifest outputs, but it is not evidence that a
+fresh `gpt-5.5-mini` API call succeeded.
+
+After a Sunday worker run and promotion, validate the stable Sunday manifest and
+its public artifacts:
+
+```bash
+python3 scripts/validate_sunday_manifest.py \
+  --manifest gs://sermon-zh-artifacts-ai-for-god/sundays/YYYY-MM-DD/cloud-manifest.json \
+  --sunday YYYY-MM-DD \
+  --require-readable-artifacts \
+  --out artifacts/evidence/sunday-manifest-validation.json
+```
+
+Pass criteria: the verifier reports `status=ok`, includes translated Chinese
+VTT/SRT outputs, confirms the playback JS has `translationStatus=ready`, records
+`gpt-4o-transcribe` for offline ASR, `gpt-5.5-mini` for offline translation and
+stable correction, `gpt-realtime-translate` for realtime draft, and finds no raw
+key material or Secret Manager resource names.
+
+For a live realtime session, validate the durable JSONL mirror as a separate
+gate:
+
+```bash
+python3 scripts/validate_realtime_session.py \
+  --events-jsonl gs://sermon-zh-artifacts-ai-for-god/realtime-events/YYYY-MM-DD/<session_id>.jsonl \
+  --require-stable-correction
+```
+
+Pass criteria: the verifier reports `status=ok`, sees a
+`gpt-realtime-translate` model event, English input transcript events, Chinese
+caption events, approved realtime sources, at least one
+`gpt-5.5-mini-stable-correction` caption final when the correction gate is
+enabled, and no raw key material, client secrets, event tokens, or Secret
+Manager resource names.
+
+Because the current realtime public SSE stream keeps the active session in the
+Cloud Run process while mirroring sanitized deltas to JSONL/GCS, the first
+production realtime deployment must run as a single-instance service unless a
+shared realtime fanout store is deployed. Validate the deployed service config:
+
+For a quick read-only refresh before the 11:30 live run, use the consolidated
+preflight wrapper. It does not run `gcloud run services update` and continues
+through matrix/audit generation even when `gpt-5.5-mini` access or Cloud Run
+realtime config fails. It also refreshes the non-mutating Cloud Run update plan
+and apply dry-run evidence, but never passes `--approve`:
+
+```bash
+python3 scripts/refresh_production_preflight_evidence.py \
+  --out artifacts/evidence/production-preflight-refresh.json
+```
+
+Pass criteria for production readiness is still the matrix/audit result, not the
+wrapper finishing all steps. If the wrapper returns `status=incomplete`, inspect
+`failedSteps` and the refreshed reports it wrote under `artifacts/evidence/`,
+including the update plan and dry-run execution report.
+
+```bash
+gcloud run services describe sermon-zh-caption-web \
+  --project=ai-for-god \
+  --region=us-west1 \
+  --format=json > artifacts/evidence/cloud-run-service.json
+
+python3 scripts/validate_cloud_run_realtime_config.py \
+  --service-json artifacts/evidence/cloud-run-service.json \
+  --out artifacts/evidence/cloud-run-realtime-config.json
+```
+
+Pass criteria: `status=ok`, `maxInstances=1`, `REALTIME_EVENT_GCS_PREFIX` is
+configured, Sunday artifact env vars are configured, OpenAI key material remains
+server-side, operator/internal task tokens are present, and no sensitive env var
+is set as a direct plaintext value.
+
+If the config verifier fails, generate the approval bundle before changing the
+service:
+
+```bash
+python3 scripts/prepare_cloud_run_realtime_update_plan.py \
+  --config-report artifacts/evidence/cloud-run-realtime-config.json \
+  --service sermon-zh-caption-web \
+  --project ai-for-god \
+  --region us-west1 \
+  --realtime-event-gcs-prefix gs://sermon-zh-artifacts-ai-for-god/realtime-events \
+  --out artifacts/evidence/cloud-run-realtime-update-plan.json
+```
+
+The plan is non-mutating. It records the failed checks, the exact apply command,
+the rollback command, and the post-apply validation commands. Execute the apply
+command only after an operator explicitly approves the Cloud Run runtime/secret
+wiring change.
+
+The update plan may include short Secret Manager references in `--update-secrets`
+and therefore sets `secretReferencesIncluded=true`. It must still keep
+`apiKeyMaterialIncluded=false` and `secretResourceNamesIncluded=false`; the
+redacted execution report removes those short secret references as well.
+
+After approval, use the plan runner so the apply, validation, and optional
+rollback are recorded in one redacted execution report:
+
+```bash
+python3 scripts/apply_cloud_run_realtime_update_plan.py \
+  --plan artifacts/evidence/cloud-run-realtime-update-plan.json \
+  --approve \
+  --rollback-on-failure \
+  --out artifacts/evidence/cloud-run-realtime-update-execution.json
+```
+
+For validation tokens, the runner uses the shell environment first; if the token
+is not present, it reads the Secret Manager mapping from the approved
+`--update-secrets` plan before applying the Cloud Run change. If token access
+fails, the runner stops before `gcloud run services update`.
+
+Without `--approve`, the runner is a dry-run and does not mutate Cloud Run.
+
+Then run the deployed API preflight. The first command is read-only and leaves
+realtime session creation as a warning:
+
+```bash
+python3 scripts/run_cloud_run_realtime_preflight.py \
+  --base-url https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app \
+  --cloud-run-config-report artifacts/evidence/cloud-run-realtime-config.json \
+  --out artifacts/evidence/cloud-run-api-preflight-readonly.json
+```
+
+After the operator/internal token deployment is approved, run the mutation-aware
+session check and use this report for the final audit:
+
+```bash
+python3 scripts/run_cloud_run_realtime_preflight.py \
+  --base-url https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app \
+  --cloud-run-config-report artifacts/evidence/cloud-run-realtime-config.json \
+  --create-realtime-session \
+  --internal-task-token "$INTERNAL_TASK_TOKEN" \
+  --out artifacts/evidence/cloud-run-api-preflight.json
+```
+
+Pass criteria: root HTML, `/api/health`, `/api/sundays/current`, and
+`/api/admin/status` are readable and sanitized. The final audit report must also
+show realtime local session creation with `gpt-realtime-translate`; it records
+whether an event token was returned but never writes the token value.
+
+Also verify the public SSE contract without calling OpenAI:
+
+```bash
+python3 scripts/run_realtime_public_sse_smoke.py \
+  --base-url https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app \
+  --sunday YYYY-MM-DD \
+  --internal-task-token "$INTERNAL_TASK_TOKEN" \
+  --realtime-event-gcs-prefix gs://sermon-zh-artifacts-ai-for-god/realtime-events \
+  --session-validation-out artifacts/evidence/realtime-public-sse-session-validation.json \
+  --out artifacts/evidence/realtime-public-sse-smoke.json
+```
+
+For local backend runs before Cloud Run, replace the GCS prefix with the local
+event log directory:
+
+```bash
+python3 scripts/run_realtime_public_sse_smoke.py \
+  --base-url http://127.0.0.1:8080 \
+  --sunday YYYY-MM-DD \
+  --internal-task-token "$INTERNAL_TASK_TOKEN" \
+  --event-log-dir /tmp/sermon-realtime-events \
+  --session-validation-out artifacts/evidence/realtime-public-sse-session-validation-local.json \
+  --out artifacts/evidence/realtime-public-sse-smoke-local.json
+```
+
+This synthetic smoke creates a realtime session, posts one English transcript
+delta, one Chinese caption delta, and one `gpt-5.5-mini` stable correction, then
+reads them back from `/api/realtime/sessions/current/events`. It proves the
+backend/public stream contract and, when the GCS prefix is supplied, validates
+that the same events were saved to the durable session JSONL. With
+`--event-log-dir`, it performs the same archive validation against the local
+JSONL file. It still does not replace the real OpenAI realtime smoke.
+
+Before the OpenAI realtime smoke, validate the authorized audio source without
+calling OpenAI:
+
+```bash
+python3 scripts/run_realtime_audio_source_preflight.py \
+  --sunday YYYY-MM-DD \
+  --audio-file /path/to/authorized-rehearsal-audio.wav \
+  --prepare-audio \
+  --out artifacts/evidence/realtime-audio-source-preflight.json
+```
+
+Use exactly one of `--audio-file`, `--audio-url`, or `--youtube-url`. Reports
+redact URL query strings and record only the source kind/display path, readiness
+checks, and sanitized command results.
+
+Validate the browser-side iPad/iPhone mic contract as its own local evidence:
+
+```bash
+python3 scripts/validate_web_realtime_contract.py \
+  --out artifacts/evidence/web-realtime-contract.json
+```
+
+Pass criteria: `status=ok`, the report confirms browser `getUserMedia`, WebRTC
+session creation for `gpt-realtime-translate`, OpenAI transcript event
+normalization, backend event posting, public SSE subscription, and stable
+correction display. The report must not include client secrets, event tokens,
+API keys, or Secret Manager resource names.
+
+Before the offline OpenAI/translation chain, validate the YouTube archive route
+without downloading captions or calling OpenAI:
+
+```bash
+python3 scripts/run_offline_archive_preflight.py \
+  --live-url "https://www.youtube.com/watch?v=VIDEO_ID" \
+  --sunday YYYY-MM-DD \
+  --out artifacts/evidence/offline-archive-preflight.json
+```
+
+Pass criteria: `status=ok` and `offlineRoute.strategy=captions_first_then_asr`.
+If `offlineRoute.decision=use_caption_track`, proceed with the caption route. If
+`decision=use_asr_fallback`, confirm the ASR fallback run uses
+`gpt-4o-transcribe` and does not touch realtime.
+
+Before any offline translation or stable-correction run, preflight the text
+model through the same OpenAI Responses route used by production:
+
+```bash
+python3 scripts/run_openai_model_access_preflight.py \
+  --cloud-run-service sermon-zh-caption-web \
+  --project ai-for-god \
+  --region us-west1 \
+  --model gpt-5.5-mini \
+  --out artifacts/evidence/openai-model-access-preflight.json
+```
+
+Pass criteria: the report has `status=ok` and the
+`responses_model:gpt-5.5-mini` check passes. If this fails with a model
+404 or access error, do not treat offline Chinese VTT/SRT or stable correction
+as production-ready; fix the model name/access first, then rerun translation and
+stable-correction validation.
+
+When all three evidence sets are available, run the combined readiness gate:
+
+```bash
+python3 scripts/run_sunday_evidence_bundle.py \
+  --sunday YYYY-MM-DD \
+  --session-id <worker_session_id> \
+  --artifact-location gcs \
+  --artifact-bucket sermon-zh-artifacts-ai-for-god \
+  --artifact-prefix sundays \
+  --realtime-location gcs \
+  --realtime-event-gcs-prefix gs://sermon-zh-artifacts-ai-for-god/realtime-events \
+  --require-readable-sunday-artifacts \
+  --realtime-smoke-report artifacts/realtime-openai-smoke/report.json \
+  --cloud-run-config-report artifacts/evidence/cloud-run-realtime-config.json \
+  --cloud-run-api-preflight-report artifacts/evidence/cloud-run-api-preflight.json \
+  --realtime-audio-source-preflight-report artifacts/evidence/realtime-audio-source-preflight.json \
+  --web-realtime-contract-report artifacts/evidence/web-realtime-contract.json \
+  --realtime-public-sse-smoke-report artifacts/evidence/realtime-public-sse-smoke.json \
+  --realtime-openai-smoke-report artifacts/evidence/realtime-openai-smoke/report.json \
+  --realtime-session-validation-report artifacts/evidence/realtime-openai-smoke/realtime-session-validation.json \
+  --offline-archive-preflight-report artifacts/evidence/offline-archive-preflight.json \
+  --offline-chain-validation-report artifacts/evidence/offline-chain-validation.json \
+  --offline-asr-smoke-report artifacts/evidence/offline-asr-fallback-smoke/report.json \
+  --offline-translation-report artifacts/evidence/offline-caption-route/model-output/openai-translation-report.json \
+  --sunday-manifest-validation-report artifacts/evidence/sunday-manifest-validation.json \
+  --openai-model-access-preflight-report artifacts/evidence/openai-model-access-preflight.json \
+  --openai-alternative-model-access-preflight-report artifacts/evidence/openai-model-access-preflight-gpt-5.5.json \
+  --cloud-run-update-plan artifacts/evidence/cloud-run-realtime-update-plan.json \
+  --cloud-run-update-execution artifacts/evidence/cloud-run-realtime-update-execution.json \
+  --out artifacts/evidence/caption-route-readiness.json \
+  --evidence-matrix-out artifacts/evidence/production-evidence-matrix.json \
+  --goal-audit-out artifacts/evidence/production-goal-readiness-audit.json \
+  --bundle-report-out artifacts/evidence/sunday-evidence-bundle.json
+```
+
+Treat `run_sunday_evidence_bundle.py` as the Sunday evidence entrypoint. It
+expands the standard local/GCS paths, calls `validate_production_readiness.py`,
+can then call `collect_production_evidence_matrix.py` and
+`audit_production_goal_readiness.py`, and returns non-zero if any required
+evidence is missing or failed. Pass `--realtime-session-id` directly when you
+already know the session id; otherwise the runner can read it from the realtime
+smoke report. If the smoke report contains `realtimeEventsJsonl`, the runner uses
+that exact JSONL URI. If `--evidence-matrix-out` or `--goal-audit-out` is passed
+without `--out`, the runner writes a dated production-readiness report under
+`artifacts/evidence/`.
+Use `--bundle-report-out` to persist the top-level runner summary, including all
+expanded commands and step return codes.
+Alternative model access reports are only side evidence; a green `gpt-5.5`
+preflight does not satisfy the required `gpt-5.5-mini` stable/offline route.
+If the production-readiness validator exits before it can write `--out`, the
+bundle writes a minimal failed readiness report and still runs the matrix/audit
+steps. That keeps the Sunday handoff focused on the final status board instead
+of dropping downstream evidence when an early artifact is missing.
+Likewise, if matrix generation exits before writing `--evidence-matrix-out`, the
+bundle writes a minimal incomplete matrix so the goal audit can still run and
+record the handoff failure.
+
+After collecting provider, offline, Cloud Run, and Sunday-manifest evidence,
+generate the readable evidence matrix:
+
+```bash
+python3 scripts/collect_production_evidence_matrix.py \
+  --cloud-run-config-report artifacts/evidence/cloud-run-realtime-config.json \
+  --cloud-run-api-preflight-report artifacts/evidence/cloud-run-api-preflight.json \
+  --realtime-audio-source-preflight-report artifacts/evidence/realtime-audio-source-preflight.json \
+  --web-realtime-contract-report artifacts/evidence/web-realtime-contract.json \
+  --realtime-public-sse-smoke-report artifacts/evidence/realtime-public-sse-smoke.json \
+  --realtime-openai-smoke-report artifacts/evidence/realtime-openai-smoke/report.json \
+  --realtime-session-validation-report artifacts/evidence/realtime-openai-smoke/realtime-session-validation.json \
+  --offline-archive-preflight-report artifacts/evidence/offline-archive-preflight.json \
+  --offline-chain-validation-report artifacts/evidence/offline-chain-validation.json \
+  --offline-asr-smoke-report artifacts/evidence/offline-asr-fallback-smoke/report.json \
+  --offline-translation-report artifacts/evidence/offline-caption-route/model-output/openai-translation-report.json \
+  --sunday-manifest-validation-report artifacts/evidence/sunday-manifest-validation.json \
+  --openai-model-access-preflight-report artifacts/evidence/openai-model-access-preflight.json \
+  --openai-alternative-model-access-preflight-report artifacts/evidence/openai-model-access-preflight-gpt-5.5.json \
+  --update-plan artifacts/evidence/cloud-run-realtime-update-plan.json \
+  --update-execution artifacts/evidence/cloud-run-realtime-update-execution.json \
+  --production-readiness-report artifacts/evidence/caption-route-readiness.json \
+  --production-readiness-report artifacts/evidence/asr-route-readiness.json \
+  --out artifacts/evidence/production-evidence-matrix.json
+```
+
+Use the matrix as the Sunday status board: it lists each requirement, the exact
+evidence file that proves it, and the next action for every failed or missing
+row. A realtime OpenAI smoke report only proves provider behavior; pair it with
+`realtime-session-validation.json` so the saved JSONL is checked for session id
+continuity, strictly increasing event ids, English input transcript events, and
+Chinese caption events. Pair the offline translation report with
+`offline-chain-validation.json` so missing Chinese VTT/SRT/playback/manifest
+outputs remain visible when model access fails before export.
+
+For the current handoff flow, prefer the refresh wrapper before reading the
+matrix. It regenerates the local Sunday manifest evidence under
+`artifacts/evidence/manifest-promotion-guard`, writes
+`artifacts/evidence/offline-chain-validation.json`, prepares
+`artifacts/evidence/gcs-sunday-manifest-publish-plan.json`, and then refreshes
+the matrix/unblock/audit artifacts without applying Cloud Run changes or
+uploading GCS artifacts:
+
+```bash
+python3 scripts/refresh_production_preflight_evidence.py \
+  --sunday YYYY-MM-DD \
+  --out artifacts/evidence/production-preflight-refresh.json
+```
+
+After generating the matrix, run the goal-level audit:
+
+```bash
+python3 scripts/audit_production_goal_readiness.py \
+  --production-readiness-report artifacts/evidence/caption-route-readiness.json \
+  --production-readiness-report artifacts/evidence/asr-route-readiness.json \
+  --cloud-run-config-report artifacts/evidence/cloud-run-realtime-config.json \
+  --cloud-run-api-preflight-report artifacts/evidence/cloud-run-api-preflight.json \
+  --evidence-matrix-report artifacts/evidence/production-evidence-matrix.json
+```
+
+The audit is intentionally stricter than a single Sunday bundle: it remains
+`incomplete` until realtime live evidence, stable-correction evidence, a
+caption-route archive run, a no-caption ASR fallback archive run, and Cloud
+Run/GCS manifest plus realtime-safe Cloud Run config/API evidence are all
+present. The matrix is the human-readable handoff view and the audit input that
+prevents proven row-level evidence, such as the realtime session JSONL
+validation, from being dropped during goal-level verification.
 
 Current E2E run prefix:
 

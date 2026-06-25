@@ -23,10 +23,14 @@ def base_args(**overrides):
         "admin_token": None,
         "internal_task_token": None,
         "max_audio_seconds": 8.0,
-        "target_language": "zh-CN",
+        "target_language": "zh",
         "model": "gpt-realtime-translate",
         "out": Path("artifacts/realtime-openai-smoke/report.json"),
         "worker_report_out": Path("artifacts/realtime-openai-smoke/worker-report.json"),
+        "session_validation_out": Path("artifacts/realtime-openai-smoke/realtime-session-validation.json"),
+        "skip_session_validation": False,
+        "event_log_dir": Path("/tmp/sermon-realtime-smoke-events"),
+        "realtime_event_gcs_prefix": None,
         "sse_timeout_seconds": 4.0,
     }
     values.update(overrides)
@@ -77,6 +81,25 @@ class RealtimeOpenAiSmokeTest(unittest.TestCase):
         self.assertEqual(worker_args.api_key_secret, "projects/example/secrets/openai-api-key/versions/latest")
         self.assertEqual(worker_args.openai_safety_identifier, "sermon-realtime-smoke-test")
         self.assertEqual(worker_args.max_audio_seconds, 8.0)
+        self.assertTrue(worker_args.disable_input_transcript_sidecar)
+        self.assertEqual(worker_args.input_transcript_session_model, "gpt-realtime-2")
+        self.assertEqual(worker_args.input_transcript_model, "gpt-realtime-whisper")
+
+    def test_realtime_events_jsonl_uri_uses_sanitized_session_id(self):
+        uri = mod.realtime_events_gcs_uri(
+            prefix="gs://sermon-zh-artifacts/realtime-events/",
+            sunday="2026-06-28",
+            session_id="rt bad/id",
+        )
+
+        self.assertEqual(uri, "gs://sermon-zh-artifacts/realtime-events/2026-06-28/rt_bad_id.jsonl")
+
+    def test_realtime_events_jsonl_uri_uses_local_event_log_without_gcs_prefix(self):
+        args = base_args(event_log_dir=Path("/tmp/smoke-events"), realtime_event_gcs_prefix=None)
+
+        uri = mod.realtime_events_jsonl_uri(args=args, session_id="rt bad/id")
+
+        self.assertEqual(uri, "/tmp/smoke-events/rt_bad_id.jsonl")
 
     def test_read_sse_events_stops_after_caption_and_input_events(self):
         lines = [
@@ -111,7 +134,7 @@ class RealtimeOpenAiSmokeTest(unittest.TestCase):
         self.assertTrue(mod.has_openai_caption_and_input(events))
 
     def test_run_smoke_reports_ok_when_worker_and_sse_have_transcripts(self):
-        args = base_args()
+        args = base_args(realtime_event_gcs_prefix="gs://sermon-zh-artifacts/realtime-events")
         fake_worker_report = {
             "status": "ok",
             "sessionId": "rt_smoke",
@@ -120,6 +143,11 @@ class RealtimeOpenAiSmokeTest(unittest.TestCase):
                 "openaiEventsReceived": 4,
                 "captionEventsPosted": 1,
                 "inputTranscriptEventsPosted": 1,
+                "eventTypeCounts": {
+                    "session.output_transcript.delta": 1,
+                    "session.input_transcript.delta": 1,
+                },
+                "inputTranscriptFallback": {"enabled": True, "model": "gpt-4o-transcribe", "eventsPosted": 0},
             },
         }
         fake_events = [
@@ -134,6 +162,7 @@ class RealtimeOpenAiSmokeTest(unittest.TestCase):
 
         original_run_worker = mod.realtime_media_worker.run_worker
         original_read_sse_events = mod.read_sse_events
+        original_run_session_validation = mod.run_session_validation
         try:
             def fake_run_worker(worker_args):
                 seen["worker_args"] = worker_args
@@ -143,25 +172,75 @@ class RealtimeOpenAiSmokeTest(unittest.TestCase):
                 seen["sse_kwargs"] = kwargs
                 return fake_events
 
+            def fake_run_session_validation(**kwargs):
+                seen["validation_kwargs"] = kwargs
+                return {
+                    "status": "ok",
+                    "report": "artifacts/realtime-openai-smoke/realtime-session-validation.json",
+                    "failedChecks": [],
+                    "counts": {"events": 4, "inputTranscriptEvents": 1, "realtimeCaptionEvents": 1},
+                }
+
             mod.realtime_media_worker.run_worker = fake_run_worker
             mod.read_sse_events = fake_read_sse_events
+            mod.run_session_validation = fake_run_session_validation
+
+            report = mod.run_smoke(args)
+        finally:
+            mod.realtime_media_worker.run_worker = original_run_worker
+            mod.read_sse_events = original_read_sse_events
+            mod.run_session_validation = original_run_session_validation
+
+        self.assertEqual(report["status"], "ok")
+        self.assertEqual(report["sessionId"], "rt_smoke")
+        self.assertEqual(
+            report["realtimeEventsJsonl"],
+            "gs://sermon-zh-artifacts/realtime-events/2026-06-28/rt_smoke.jsonl",
+        )
+        self.assertEqual(report["sse"]["captionEvents"], 1)
+        self.assertEqual(report["sse"]["inputTranscriptEvents"], 1)
+        self.assertEqual(report["sessionValidation"]["status"], "ok")
+        self.assertEqual(report["openaiRealtime"]["eventTypeCounts"]["session.input_transcript.delta"], 1)
+        self.assertEqual(report["openaiRealtime"]["inputTranscriptFallback"]["model"], "gpt-4o-transcribe")
+        self.assertFalse(report["apiKeyMaterialIncluded"])
+        self.assertFalse(report["secretResourceNamesIncluded"])
+        self.assertTrue(seen["worker_args"].connect_openai)
+        self.assertEqual(seen["worker_args"].event_log_dir, Path("/tmp/sermon-realtime-smoke-events"))
+        self.assertEqual(seen["sse_kwargs"]["session_id"], "rt_smoke")
+        self.assertTrue(seen["validation_kwargs"]["should_validate"])
+
+    def test_run_smoke_requires_input_transcript_for_ok_status(self):
+        args = base_args(skip_session_validation=True)
+        fake_worker_report = {
+            "status": "ok",
+            "sessionId": "rt_smoke",
+            "openaiRealtime": {
+                "audioChunksSent": 2,
+                "openaiEventsReceived": 3,
+                "captionEventsPosted": 1,
+                "inputTranscriptEventsPosted": 0,
+            },
+        }
+        fake_events = [
+            {"type": "caption_delta", "source": "openai_realtime_translation_ws", "zh": "神爱世人"},
+        ]
+        original_run_worker = mod.realtime_media_worker.run_worker
+        original_read_sse_events = mod.read_sse_events
+        try:
+            mod.realtime_media_worker.run_worker = lambda worker_args: fake_worker_report
+            mod.read_sse_events = lambda **kwargs: fake_events
 
             report = mod.run_smoke(args)
         finally:
             mod.realtime_media_worker.run_worker = original_run_worker
             mod.read_sse_events = original_read_sse_events
 
-        self.assertEqual(report["status"], "ok")
-        self.assertEqual(report["sessionId"], "rt_smoke")
-        self.assertEqual(report["sse"]["captionEvents"], 1)
-        self.assertEqual(report["sse"]["inputTranscriptEvents"], 1)
-        self.assertFalse(report["apiKeyMaterialIncluded"])
-        self.assertFalse(report["secretResourceNamesIncluded"])
-        self.assertTrue(seen["worker_args"].connect_openai)
-        self.assertEqual(seen["sse_kwargs"]["session_id"], "rt_smoke")
+        self.assertEqual(report["status"], "missing_input_transcript")
+        self.assertFalse(report["inputTranscriptAvailable"])
+        self.assertIn("openai_input_transcript_unavailable", report["warnings"])
 
     def test_run_smoke_reports_worker_failed_before_transcript_status(self):
-        args = base_args()
+        args = base_args(skip_session_validation=True)
         original_run_worker = mod.realtime_media_worker.run_worker
         original_read_sse_events = mod.read_sse_events
         try:
@@ -175,6 +254,96 @@ class RealtimeOpenAiSmokeTest(unittest.TestCase):
 
         self.assertEqual(report["status"], "worker_failed")
         self.assertEqual(report["sse"]["eventsRead"], 0)
+
+    def test_run_smoke_marks_validation_failed_when_session_jsonl_fails(self):
+        args = base_args()
+        fake_worker_report = {
+            "status": "ok",
+            "sessionId": "rt_smoke",
+            "openaiRealtime": {
+                "audioChunksSent": 2,
+                "openaiEventsReceived": 4,
+                "captionEventsPosted": 1,
+                "inputTranscriptEventsPosted": 1,
+            },
+        }
+        fake_events = [
+            {"type": "caption_delta", "source": "openai_realtime_translation_ws", "zh": "神爱世人"},
+            {
+                "type": "input_transcript_final",
+                "source": "openai_audio_transcription_fallback",
+                "en": "God loved the world",
+            },
+        ]
+        original_run_worker = mod.realtime_media_worker.run_worker
+        original_read_sse_events = mod.read_sse_events
+        original_run_session_validation = mod.run_session_validation
+        try:
+            mod.realtime_media_worker.run_worker = lambda worker_args: fake_worker_report
+            mod.read_sse_events = lambda **kwargs: fake_events
+            mod.run_session_validation = lambda **kwargs: {
+                "status": "failed",
+                "report": "artifacts/realtime-openai-smoke/realtime-session-validation.json",
+                "failedChecks": ["realtime_model"],
+                "counts": {"events": 2},
+            }
+
+            report = mod.run_smoke(args)
+        finally:
+            mod.realtime_media_worker.run_worker = original_run_worker
+            mod.read_sse_events = original_read_sse_events
+            mod.run_session_validation = original_run_session_validation
+
+        self.assertEqual(report["status"], "validation_failed")
+        self.assertIn("session_validation_failed", report["warnings"])
+        self.assertEqual(report["sessionValidation"]["failedChecks"], ["realtime_model"])
+
+    def test_run_session_validation_writes_report_for_local_jsonl(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            events_jsonl = root / "rt_smoke.jsonl"
+            out = root / "validation.json"
+            rows = [
+                {
+                    "id": 1,
+                    "type": "media_worker_started",
+                    "source": "realtime_media_worker",
+                    "sessionId": "rt_smoke",
+                    "model": "gpt-realtime-translate",
+                    "targetLanguage": "zh",
+                    "audioSourceKind": "authorized_audio_file",
+                },
+                {
+                    "id": 2,
+                    "type": "input_transcript_final",
+                    "source": "openai_audio_transcription_fallback",
+                    "sessionId": "rt_smoke",
+                    "en": "God loved the world",
+                    "segmentId": "seg_1",
+                },
+                {
+                    "id": 3,
+                    "type": "caption_delta",
+                    "source": "openai_realtime_translation_ws",
+                    "sessionId": "rt_smoke",
+                    "model": "gpt-realtime-translate",
+                    "zh": "神爱世人",
+                    "segmentId": "seg_1",
+                },
+            ]
+            events_jsonl.write_text(
+                "\n".join(json.dumps(row, ensure_ascii=False) for row in rows) + "\n",
+                encoding="utf-8",
+            )
+            args = base_args(session_validation_out=out)
+
+            summary = mod.run_session_validation(args=args, events_uri=str(events_jsonl), should_validate=True)
+
+            self.assertEqual(summary["status"], "ok")
+            self.assertEqual(summary["counts"]["events"], 3)
+            written = json.loads(out.read_text(encoding="utf-8"))
+            self.assertEqual(written["status"], "ok")
+            self.assertEqual(written["models"], ["gpt-realtime-translate"])
 
     def test_main_writes_report_and_returns_nonzero_without_transcripts(self):
         with tempfile.TemporaryDirectory() as tmp:

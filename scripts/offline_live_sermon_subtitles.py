@@ -28,6 +28,7 @@ import requests
 
 DEFAULT_LANGS = ["en-orig", "en"]
 DEFAULT_ASR_MODEL = "gpt-4o-transcribe"
+FORBIDDEN_ASR_MODEL = "gpt-realtime-translate"
 OPENAI_TRANSCRIPTIONS_URL = "https://api.openai.com/v1/audio/transcriptions"
 SECRET_RESOURCE_RE = re.compile(
     r"^projects/(?P<project>[^/\s]+)/secrets/(?P<secret>[^/\s]+)(?:/versions/(?P<version>[^/\s]+))?$"
@@ -98,6 +99,12 @@ def main() -> int:
             "kind": caption_source_kind,
             "video": summarize_video(caption_source_meta) if caption_source_meta else None,
         },
+        "offline_route": caption_route_decision(
+            live_meta=live_meta,
+            sermon_meta=sermon_meta,
+            requested_langs=args.lang,
+            selected_source_kind=caption_source_kind,
+        ),
         "asr": {
             "provider": "openai",
             "model": args.asr_model,
@@ -109,6 +116,7 @@ def main() -> int:
     if not caption_source_url or not caption_source_meta:
         if not args.api_key_secret:
             report["status"] = "needs_asr"
+            report["offline_route"]["status"] = "needs_asr_credentials"
             report["warnings"].append(
                 "No requested caption track was found on the live archive or matching sermon VOD. "
                 f"Next step is extracting the sermon audio window and sending it to {args.asr_model} ASR."
@@ -133,8 +141,11 @@ def main() -> int:
                 model=args.asr_model,
                 fallback_duration_ms=sermon_duration_ms,
             )
+            report["offline_route"]["audioExtractionAttempted"] = True
+            report["offline_route"]["asrModel"] = args.asr_model
         except Exception as exc:
             report["status"] = "asr_failed"
+            report["offline_route"]["status"] = "asr_failed"
             report["warnings"].append(f"ASR fallback failed: {exc}")
             write_reports(out_dir, report)
             return 5
@@ -150,6 +161,8 @@ def main() -> int:
             "kind": "openai_asr",
             "video": summarize_video(live_meta),
         }
+        report["offline_route"]["selectedSourceKind"] = "openai_asr"
+        report["offline_route"]["status"] = "asr_completed"
         report["status"] = "ok" if report["outputs"] else "no_cues"
         write_reports(out_dir, report)
         print(json.dumps(report, ensure_ascii=False, indent=2))
@@ -270,9 +283,20 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_args()
     if not args.lang:
         args.lang = DEFAULT_LANGS
+    validate_asr_model(args.asr_model)
     if args.api_key_secret:
         validate_secret_resource_name(args.api_key_secret)
     return args
+
+
+def validate_asr_model(model: str) -> None:
+    if model == FORBIDDEN_ASR_MODEL:
+        raise SystemExit(
+            "Offline no-caption ASR fallback must not use gpt-realtime-translate; "
+            "use gpt-4o-transcribe."
+        )
+    if model != DEFAULT_ASR_MODEL:
+        raise SystemExit("Offline no-caption ASR fallback must use gpt-4o-transcribe.")
 
 
 def validate_secret_resource_name(value: str) -> None:
@@ -425,6 +449,34 @@ def has_requested_captions(meta: dict[str, Any], requested_langs: list[str]) -> 
     return any(lang in available for lang in requested_langs)
 
 
+def caption_route_decision(
+    *,
+    live_meta: dict[str, Any],
+    sermon_meta: dict[str, Any] | None,
+    requested_langs: list[str],
+    selected_source_kind: str,
+) -> dict[str, Any]:
+    uses_captions = selected_source_kind in {"live_archive", "sermon_vod"}
+    return {
+        "strategy": "captions_first_then_asr",
+        "requestedLangs": requested_langs,
+        "liveCaptionLangs": caption_langs(live_meta),
+        "sermonVodCaptionLangs": caption_langs(sermon_meta),
+        "selectedSourceKind": selected_source_kind,
+        "decision": "use_caption_track" if uses_captions else "use_asr_fallback",
+        "asrFallbackRequired": not uses_captions,
+        "audioExtractionAttempted": False,
+        "fallbackReason": None if uses_captions else "no_requested_caption_track",
+        "status": "caption_track_selected" if uses_captions else "asr_pending",
+    }
+
+
+def caption_langs(meta: dict[str, Any] | None) -> list[str]:
+    if not meta:
+        return []
+    return sorted(set((meta.get("subtitles") or {}) | (meta.get("automatic_captions") or {})))
+
+
 def download_subtitles(yt_dlp: str, url: str, raw_dir: Path, langs: list[str]) -> tuple[list[Path], list[str]]:
     downloaded: set[Path] = set()
     warnings: list[str] = []
@@ -537,17 +589,29 @@ def transcribe_audio_to_cues(
         response = requests.post(
             OPENAI_TRANSCRIPTIONS_URL,
             headers={"Authorization": f"Bearer {api_key}"},
-            data=[
-                ("model", model),
-                ("response_format", "verbose_json"),
-                ("timestamp_granularities[]", "segment"),
-            ],
+            data=transcription_request_fields(model),
             files={"file": (audio_path.name, audio_file, mime_type)},
             timeout=300,
         )
     if response.status_code >= 400:
         raise RuntimeError(f"OpenAI ASR request failed with HTTP {response.status_code}: {safe_error_message(response)}")
     return cues_from_transcription_response(response.json(), fallback_duration_ms)
+
+
+def transcription_request_fields(model: str) -> list[tuple[str, str]]:
+    response_format = transcription_response_format(model)
+    fields = [("model", model), ("response_format", response_format)]
+    if response_format == "verbose_json":
+        fields.append(("timestamp_granularities[]", "segment"))
+    return fields
+
+
+def transcription_response_format(model: str) -> str:
+    # The current gpt-4o transcription endpoint rejects verbose_json; json returns
+    # the transcript text, which we convert into a single timed cue.
+    if model.startswith(("gpt-4o-transcribe", "gpt-4o-mini-transcribe")):
+        return "json"
+    return "verbose_json"
 
 
 def access_secret(resource_name: str) -> str:
@@ -820,7 +884,7 @@ def summarize_video(meta: dict[str, Any] | None) -> dict[str, Any] | None:
         "media_type": meta.get("media_type"),
         "timestamp": meta.get("timestamp"),
         "release_timestamp": meta.get("release_timestamp"),
-        "caption_langs": sorted(set((meta.get("subtitles") or {}) | (meta.get("automatic_captions") or {}))),
+        "caption_langs": caption_langs(meta),
     }
 
 

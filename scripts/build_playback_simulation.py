@@ -284,6 +284,7 @@ def build_simulation(
     live = report.get("live") or {}
     sermon = report.get("sermon_candidate") or {}
     sermon_start = report.get("sermon_start") or {}
+    caption_source = report.get("caption_source") or {}
     sermon_title = sermon.get("title") or live.get("title") or "Untitled sermon"
 
     segments = []
@@ -313,6 +314,7 @@ def build_simulation(
         "mode": "live-link-playback-simulation",
         "playbackSpeed": playback_speed,
         "lang": lang,
+        "offlineSourceKind": caption_source.get("kind") or output.get("source_kind") or "unknown",
         "sourceVtt": safe_display_path(source_vtt),
         "sermonTitle": sermon_title,
         "secrets": {

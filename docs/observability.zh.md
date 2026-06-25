@@ -12,6 +12,7 @@
 
 | Event | 来源 | 用途 |
 |---|---|---|
+| `live_source_monitor_completed` | `POST /api/admin/sundays/YYYY-MM-DD/discover-source` 或 `scripts/live_source_monitor.py` | 记录找源结果、选中的 service/source kind、fallback/operator alert 状态和候选数量。 |
 | `live_capture_triggered` | `POST /api/admin/sundays/YYYY-MM-DD/generate` | 记录直播采集被触发，包含 `triggerSource`、`sunday`、`sessionId`、`runPrefix`、live source 摘要。 |
 | `live_capture_planned` | API inline worker 关闭时 | 记录后端已生成 worker plan，适合 Cloud Scheduler 只负责排队/计划的模式。 |
 | `live_capture_worker_started` | `python -m backend.worker` | 记录 Cloud Run Job / 手动 worker 真正开始跑。 |
@@ -33,8 +34,9 @@ Cloud Scheduler 建议请求 payload 中显式带上：
 ```json
 {
   "triggerSource": "cloud-scheduler",
-  "liveUrl": "https://www.youtube.com/watch?v=...",
-  "sermonStart": "00:23:25"
+  "service": "auto",
+  "operatorAlertTime": "09:58",
+  "autoGenerate": true
 }
 ```
 
@@ -45,6 +47,14 @@ Cloud Scheduler 建议请求 payload 中显式带上：
 ```text
 resource.type="cloud_run_revision"
 jsonPayload.event="live_capture_triggered"
+jsonPayload.sunday="2026-06-28"
+```
+
+找源结果：
+
+```text
+resource.type="cloud_run_revision"
+jsonPayload.event="live_source_monitor_completed"
 jsonPayload.sunday="2026-06-28"
 ```
 

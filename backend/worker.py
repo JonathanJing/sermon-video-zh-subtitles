@@ -5,7 +5,7 @@ import json
 import subprocess
 import sys
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from .config import AppConfig
@@ -14,9 +14,16 @@ from .observability import command_stage, log_event, url_summary
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PREPARE_SCRIPT = REPO_ROOT / "scripts" / "prepare_live_link_playback.py"
+MODEL_ACCESS_PREFLIGHT_SCRIPT = REPO_ROOT / "scripts" / "run_openai_model_access_preflight.py"
 TRANSLATE_SCRIPT = REPO_ROOT / "scripts" / "translate_playback_with_openai.py"
+EXPORT_CAPTIONS_SCRIPT = REPO_ROOT / "scripts" / "export_playback_captions.py"
+VALIDATE_OFFLINE_SCRIPT = REPO_ROOT / "scripts" / "validate_offline_chain.py"
 NOTES_SCRIPT = REPO_ROOT / "scripts" / "generate_notes_with_openai.py"
 PROMOTE_SCRIPT = REPO_ROOT / "scripts" / "promote_sunday_manifest.py"
+OFFLINE_ASR_MODEL = "gpt-4o-transcribe"
+OFFLINE_TRANSLATION_MODEL = "gpt-5.5-mini"
+REALTIME_DRAFT_MODEL = "gpt-realtime-translate"
+STABLE_CORRECTION_MODEL = "gpt-5.5-mini"
 NOTES_MODEL = "gpt-5.5-mini"
 NOTES_REASONING_EFFORT = "medium"
 
@@ -32,6 +39,8 @@ class GenerationRequest:
     max_segments: int = 80
     playback_speed: float = 18.0
     dry_run_gcs: bool = False
+    include_insights: bool = False
+    translations_jsonl: str | None = None
 
 
 @dataclass(frozen=True)
@@ -80,6 +89,8 @@ def build_generation_command(
         prefix,
         "--api-key-secret",
         config.openai_api_key_secret,
+        "--asr-model",
+        OFFLINE_ASR_MODEL,
     ]
     if request.sermon_url:
         command.extend(["--sermon-url", request.sermon_url])
@@ -126,10 +137,22 @@ def build_generation_plan(
             max_segments=request.max_segments,
             playback_speed=request.playback_speed,
             dry_run_gcs=request.dry_run_gcs,
+            include_insights=request.include_insights,
+            translations_jsonl=request.translations_jsonl,
         ),
         config,
         work_root=work_root,
     )
+    model_access_preflight = [
+        sys.executable,
+        str(MODEL_ACCESS_PREFLIGHT_SCRIPT),
+        "--api-key-secret",
+        config.openai_api_key_secret,
+        "--model",
+        OFFLINE_TRANSLATION_MODEL,
+        "--out",
+        str(translation_out_dir / "openai-model-access-preflight.json"),
+    ]
     translate = [
         sys.executable,
         str(TRANSLATE_SCRIPT),
@@ -139,10 +162,52 @@ def build_generation_plan(
         str(web_out),
         "--out-dir",
         str(translation_out_dir),
-        "--api-key-secret",
-        config.openai_api_key_secret,
+        "--model",
+        OFFLINE_TRANSLATION_MODEL,
         "--max-segments",
         str(request.max_segments),
+    ]
+    if request.translations_jsonl:
+        translate.extend(["--translations-jsonl", request.translations_jsonl])
+    else:
+        translate.extend(["--api-key-secret", config.openai_api_key_secret])
+    export_translated_captions = [
+        sys.executable,
+        str(EXPORT_CAPTIONS_SCRIPT),
+        "--input",
+        str(web_out),
+        "--out-dir",
+        str(manifest_path.parent),
+        "--stem",
+        "sermon.zh.live-aligned",
+        "--lang",
+        "zh",
+        "--manifest",
+        str(manifest_path),
+        "--gcs-bucket",
+        config.artifact_bucket,
+        "--gcs-prefix",
+        prefix,
+    ]
+    if request.dry_run_gcs:
+        export_translated_captions.append("--gcs-dry-run")
+    validate_offline_chain = [
+        sys.executable,
+        str(VALIDATE_OFFLINE_SCRIPT),
+        "--report",
+        str(manifest_path.parent / "report.json"),
+        "--playback-js",
+        str(web_out),
+        "--zh-vtt",
+        str(manifest_path.parent / "sermon.zh.live-aligned.vtt"),
+        "--zh-srt",
+        str(manifest_path.parent / "sermon.zh.live-aligned.srt"),
+        "--manifest",
+        str(manifest_path),
+        "--expected-asr-model",
+        OFFLINE_ASR_MODEL,
+        "--expected-translation-model",
+        OFFLINE_TRANSLATION_MODEL,
     ]
     upload_translated_playback = [
         "gcloud",
@@ -151,30 +216,13 @@ def build_generation_plan(
         str(web_out),
         f"gs://{config.artifact_bucket}/{prefix}/web/playback-simulation.generated.js",
     ]
-    generate_notes = [
-        sys.executable,
-        str(NOTES_SCRIPT),
-        "--input",
-        str(web_out),
-        "--out-dir",
-        str(insights_out_dir),
-        "--model-output-dir",
-        str(translation_out_dir),
-        "--manifest",
+    upload_run_manifest = [
+        "gcloud",
+        "storage",
+        "cp",
         str(manifest_path),
-        "--api-key-secret",
-        config.openai_api_key_secret,
-        "--model",
-        NOTES_MODEL,
-        "--reasoning-effort",
-        NOTES_REASONING_EFFORT,
-        "--gcs-bucket",
-        config.artifact_bucket,
-        "--gcs-prefix",
-        prefix,
+        f"gs://{config.artifact_bucket}/{prefix}/artifacts/cloud-manifest.json",
     ]
-    if request.dry_run_gcs:
-        generate_notes.append("--gcs-dry-run")
     promote = [
         sys.executable,
         str(PROMOTE_SCRIPT),
@@ -186,18 +234,67 @@ def build_generation_plan(
         config.artifact_bucket,
         "--gcs-prefix",
         stable_manifest_prefix,
+        "--source-mode",
+        "youtube-live-archive",
+        "--readiness-state",
+        "published",
+        "--offline-asr-model",
+        OFFLINE_ASR_MODEL,
+        "--offline-translation-model",
+        OFFLINE_TRANSLATION_MODEL,
+        "--realtime-draft-model",
+        REALTIME_DRAFT_MODEL,
+        "--stable-correction-model",
+        STABLE_CORRECTION_MODEL,
     ]
     if request.dry_run_gcs:
         promote.append("--dry-run")
+    commands = [
+        prepare,
+        translate,
+        export_translated_captions,
+        validate_offline_chain,
+        upload_translated_playback,
+        upload_run_manifest,
+        promote,
+    ]
+    if not request.translations_jsonl:
+        commands.insert(0, model_access_preflight)
+    if request.include_insights:
+        generate_notes = [
+            sys.executable,
+            str(NOTES_SCRIPT),
+            "--input",
+            str(web_out),
+            "--out-dir",
+            str(insights_out_dir),
+            "--model-output-dir",
+            str(translation_out_dir),
+            "--manifest",
+            str(manifest_path),
+            "--api-key-secret",
+            config.openai_api_key_secret,
+            "--model",
+            NOTES_MODEL,
+            "--reasoning-effort",
+            NOTES_REASONING_EFFORT,
+            "--gcs-bucket",
+            config.artifact_bucket,
+            "--gcs-prefix",
+            prefix,
+        ]
+        if request.dry_run_gcs:
+            generate_notes.append("--gcs-dry-run")
+        commands.append(generate_notes)
     return GenerationPlan(
         session_id=session_id,
         prefix=prefix,
-        commands=[prepare, translate, upload_translated_playback, generate_notes, promote],
+        commands=commands,
     )
 
 
 def default_session_id() -> str:
-    return "worker-" + datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    return "worker-" + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
 
 def parse_generation_request(payload: dict, sunday: str) -> GenerationRequest:
@@ -214,6 +311,8 @@ def parse_generation_request(payload: dict, sunday: str) -> GenerationRequest:
         max_segments=int(payload.get("maxSegments", 80)),
         playback_speed=float(payload.get("playbackSpeed", 18.0)),
         dry_run_gcs=bool(payload.get("dryRunGcs", False)),
+        include_insights=bool(payload.get("includeInsights") or payload.get("include_insights") or False),
+        translations_jsonl=payload.get("translationsJsonl") or payload.get("translations_jsonl"),
     )
 
 
@@ -226,6 +325,11 @@ def main() -> int:
     parser.add_argument("--sermon-start")
     parser.add_argument("--playback-lang")
     parser.add_argument("--dry-run-gcs", action="store_true")
+    parser.add_argument("--include-insights", action="store_true")
+    parser.add_argument(
+        "--translations-jsonl",
+        help="Replay saved gpt-5.5-mini translation JSONL instead of calling OpenAI for offline translation.",
+    )
     parser.add_argument("--plan-only", action="store_true")
     args = parser.parse_args()
 
@@ -237,6 +341,8 @@ def main() -> int:
         sermon_start=args.sermon_start,
         playback_lang=args.playback_lang,
         dry_run_gcs=args.dry_run_gcs,
+        include_insights=args.include_insights,
+        translations_jsonl=args.translations_jsonl,
     )
     plan = build_generation_plan(request, AppConfig.from_env())
     if args.plan_only:

@@ -11,6 +11,7 @@ from backend.realtime import (
     RealtimeSessionStore,
     create_openai_translation_session,
     normalize_gcs_prefix,
+    realtime_translation_policy_error,
     sanitize_event,
 )
 
@@ -23,6 +24,7 @@ class RealtimeSessionStoreTest(unittest.TestCase):
         self.assertEqual(store.current_session_id(), session.session_id)
         self.assertTrue(store.validate_event_token(session.session_id, session.event_token))
         self.assertFalse(store.validate_event_token(session.session_id, "wrong-token"))
+        self.assertFalse(store.validate_event_token(session.session_id, None))
 
     def test_appends_and_reads_caption_events_after_cursor(self):
         store = RealtimeSessionStore()
@@ -99,6 +101,7 @@ class RealtimeSessionStoreTest(unittest.TestCase):
             store = RealtimeSessionStore(archive)
             session = store.create(sunday="2026-06-28")
             store.append_event(session.session_id, {"type": "caption_final", "text": "神爱世人。"})
+            archive.wait_for_pending_mirrors(timeout=2)
 
             self.assertEqual(len(uploader.uploads), 2)
             self.assertEqual(
@@ -108,6 +111,35 @@ class RealtimeSessionStoreTest(unittest.TestCase):
             self.assertTrue(uploader.uploads[-1][0].read_text(encoding="utf-8").endswith("\n"))
             self.assertTrue(archive.status()["gcsMirrorEnabled"])
             self.assertEqual(archive.status()["gcsPrefix"], "gs://sermon-zh-artifacts/realtime-events")
+            self.assertTrue(archive.status()["gcsMirrorHealthy"])
+            self.assertEqual(archive.status()["gcsMirrorPending"], 0)
+
+    def test_gcs_mirror_failure_does_not_block_realtime_event_storage(self):
+        class FailingUploader:
+            def upload(self, local_path, gcs_uri):
+                raise RuntimeError("gcloud storage upload failed")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            archive = RealtimeEventArchive(
+                Path(tmp),
+                gcs_prefix="gs://sermon-zh-artifacts/realtime-events",
+                uploader=FailingUploader(),
+            )
+            store = RealtimeSessionStore(archive)
+            session = store.create(sunday="2026-06-28")
+            event = store.append_event(session.session_id, {"type": "caption_delta", "zh": "神爱世人"})
+            archive.wait_for_pending_mirrors(timeout=2)
+
+            events = store.wait_for_events(session.session_id, after_id=0, timeout=0)
+            path = archive.path_for(session.session_id)
+            status = archive.status()
+
+            self.assertEqual(events[-1]["id"], event["id"])
+            self.assertIn('"zh": "神爱世人"', path.read_text(encoding="utf-8"))
+            self.assertTrue(status["gcsMirrorEnabled"])
+            self.assertFalse(status["gcsMirrorHealthy"])
+            self.assertEqual(status["gcsMirrorFailureCount"], 2)
+            self.assertIn("upload failed", status["gcsMirrorLastError"]["error"])
 
     def test_rejects_unsafe_realtime_gcs_prefix(self):
         with self.assertRaises(ValueError):
@@ -141,15 +173,42 @@ class RealtimeSessionStoreTest(unittest.TestCase):
             data = create_openai_translation_session(
                 api_key="sk-test",
                 model="gpt-realtime-translate",
-                target_language="zh-CN",
+                target_language="zh",
             )
         finally:
             realtime.urlopen = original_urlopen
 
         self.assertEqual(captured["url"], OPENAI_TRANSLATION_CLIENT_SECRET_URL)
         self.assertEqual(captured["payload"]["session"]["model"], "gpt-realtime-translate")
-        self.assertEqual(captured["payload"]["session"]["audio"]["output"]["language"], "zh-CN")
+        self.assertEqual(captured["payload"]["session"]["audio"]["output"]["language"], "zh")
         self.assertEqual(data["client_secret"]["value"], "ek_test")
+
+    def test_create_openai_translation_session_rejects_wrong_model_before_http(self):
+        calls = []
+        original_urlopen = realtime.urlopen
+        try:
+            def fake_urlopen(request, timeout):
+                calls.append(request)
+                raise AssertionError("urlopen should not be called for unsupported realtime model")
+
+            realtime.urlopen = fake_urlopen
+            with self.assertRaises(ValueError) as context:
+                create_openai_translation_session(
+                    api_key="sk-test",
+                    model="gpt-realtime-2",
+                    target_language="zh",
+                )
+        finally:
+            realtime.urlopen = original_urlopen
+
+        self.assertEqual(calls, [])
+        self.assertIn("gpt-realtime-translate", str(context.exception))
+
+    def test_realtime_translation_policy_rejects_non_chinese_target(self):
+        error = realtime_translation_policy_error("gpt-realtime-translate", "es")
+
+        self.assertEqual(error["error"], "unsupported_realtime_target_language")
+        self.assertEqual(error["expectedTargetLanguage"], "zh")
 
     def test_translation_calls_endpoint_is_dedicated_webrtc_url(self):
         self.assertEqual(

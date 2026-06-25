@@ -1,4 +1,5 @@
 import importlib.util
+import json
 import sys
 import tempfile
 import unittest
@@ -56,6 +57,14 @@ class PrepareLiveLinkPlaybackTest(unittest.TestCase):
         self.assertIn("projects/p/secrets/openai-api-key/versions/latest", commands[0])
         self.assertIn("--asr-model", commands[0])
 
+    def test_rejects_realtime_model_for_offline_asr(self):
+        with self.assertRaises(SystemExit):
+            mod.validate_asr_model("gpt-realtime-translate")
+
+    def test_rejects_non_required_model_for_offline_asr(self):
+        with self.assertRaises(SystemExit):
+            mod.validate_asr_model("gpt-4o-mini-transcribe")
+
     def test_generated_content_files_and_dry_run_gcs_uris(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -103,17 +112,30 @@ class PrepareLiveLinkPlaybackTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             out_dir = Path(tmp)
             web_out = out_dir / "playback.js"
+            (out_dir / "report.json").write_text(
+                '{"caption_source":{"kind":"live_archive"},"offline_route":{"strategy":"captions_first_then_asr","decision":"use_caption_track","selectedSourceKind":"live_archive","asrFallbackRequired":false,"audioExtractionAttempted":false,"fallbackReason":null}}',
+                encoding="utf-8",
+            )
+            web_out.write_text(
+                'window.SERMON_PLAYBACK_SIMULATION = {"offlineSourceKind":"live_archive"};\n',
+                encoding="utf-8",
+            )
             manifest = mod.write_cloud_manifest(
                 out_dir=out_dir,
                 web_out=web_out,
                 gcs_outputs=[{"localPath": "x", "gcsUri": "gs://bucket/x"}],
                 api_key_secret="projects/p/secrets/openai-api-key/versions/latest",
+                report_path=out_dir / "report.json",
+                playback_path=web_out,
             )
 
             text = manifest.read_text(encoding="utf-8")
+            payload = json.loads(text)
             self.assertNotIn("apiKeySecret", text)
             self.assertNotIn("projects/p/secrets", text)
             self.assertNotIn("openai-api-key", text)
+            self.assertEqual(payload["offlineSourceKind"], "live_archive")
+            self.assertEqual(payload["offlineRoute"]["decision"], "use_caption_track")
             self.assertIn('"apiKeyMaterialIncluded": false', text)
             self.assertIn('"secretResourceNamesIncluded": false', text)
             self.assertIn('"serverSideSecretConfigured": true', text)

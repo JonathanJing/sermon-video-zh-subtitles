@@ -18,8 +18,9 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 SECRET_RESOURCE_RE = re.compile(
     r"^projects/(?P<project>[^/\s]+)/secrets/(?P<secret>[^/\s]+)(?:/versions/(?P<version>[^/\s]+))?$"
 )
-OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions"
+OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
 DEFAULT_MODEL = "gpt-5.5-mini"
+FORBIDDEN_STABLE_MODEL = "gpt-realtime-translate"
 
 
 def main() -> int:
@@ -70,6 +71,8 @@ def main() -> int:
             backend_url=args.post_backend_url,
             session_id=args.post_session_id,
             event_token=args.post_event_token,
+            admin_token=args.post_admin_token,
+            internal_task_token=args.post_internal_task_token,
             model=args.model,
         )
         report["postedStableCorrections"] = posted
@@ -107,6 +110,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--post-backend-url", help="Optional backend base URL for posting stable corrections.")
     parser.add_argument("--post-session-id", help="Realtime session id to receive stable correction events.")
     parser.add_argument("--post-event-token", help="Realtime event token for posting stable correction events.")
+    parser.add_argument("--post-admin-token", help="Operator admin token for posting stable corrections only.")
+    parser.add_argument("--post-internal-task-token", help="Internal task token for posting stable corrections only.")
     args = parser.parse_args()
     args.input_jsonl = resolve_repo_path(args.input_jsonl)
     args.out = resolve_repo_path(args.out)
@@ -115,11 +120,26 @@ def parse_args() -> argparse.Namespace:
         raise SystemExit("--batch-size must be >= 1")
     if args.max_windows == 0:
         args.max_windows = None
-    if any([args.post_backend_url, args.post_session_id, args.post_event_token]) and not all(
-        [args.post_backend_url, args.post_session_id, args.post_event_token]
+    validate_stable_correction_model(args.model)
+    post_auth = args.post_event_token or args.post_admin_token or args.post_internal_task_token
+    if any([args.post_backend_url, args.post_session_id, post_auth]) and not all(
+        [args.post_backend_url, args.post_session_id, post_auth]
     ):
-        raise SystemExit("--post-backend-url, --post-session-id, and --post-event-token must be provided together.")
+        raise SystemExit(
+            "--post-backend-url, --post-session-id, and one post auth token "
+            "(--post-event-token, --post-admin-token, or --post-internal-task-token) must be provided together."
+        )
     return args
+
+
+def validate_stable_correction_model(model: str) -> None:
+    if model == FORBIDDEN_STABLE_MODEL:
+        raise SystemExit(
+            "Delayed stable corrections must not use gpt-realtime-translate; "
+            "use gpt-5.5-mini."
+        )
+    if model != DEFAULT_MODEL:
+        raise SystemExit("Delayed stable corrections must use gpt-5.5-mini.")
 
 
 def resolve_repo_path(path: Path) -> Path:
@@ -250,29 +270,39 @@ def batched(items: list[dict[str, Any]], size: int) -> list[list[dict[str, Any]]
 def stabilize_batch(batch: list[dict[str, Any]], api_key: str, model: str) -> list[dict[str, Any]]:
     payload = {
         "model": model,
-        "messages": [
+        "input": [
             {
                 "role": "system",
-                "content": (
-                    "You are stabilizing realtime draft Simplified Chinese sermon captions. "
-                    "Use the English transcript as source of truth. Improve readability, faithfulness, "
-                    "Bible/person/theology terms, and subtitle length. Do not add commentary. Return strict JSON only."
-                ),
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": (
+                            "You are stabilizing realtime draft Simplified Chinese sermon captions. "
+                            "Use the English transcript as source of truth. Improve readability, faithfulness, "
+                            "Bible/person/theology terms, and subtitle length. Do not add commentary. Return strict JSON only."
+                        ),
+                    }
+                ],
             },
             {
                 "role": "user",
-                "content": (
-                    "For each window, return exactly this JSON shape: "
-                    "{\"segments\":[{\"id\":\"...\",\"zh\":\"...\",\"note\":\"...\"}]}.\n"
-                    "Keep ids unchanged. Use the draft Chinese only as a hint; correct it from English.\n"
-                    f"Windows:\n{json.dumps(batch, ensure_ascii=False)}"
-                ),
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": (
+                            "For each window, return exactly this JSON shape: "
+                            "{\"segments\":[{\"id\":\"...\",\"zh\":\"...\",\"note\":\"...\"}]}.\n"
+                            "Keep ids unchanged. Use the draft Chinese only as a hint; correct it from English.\n"
+                            f"Windows:\n{json.dumps(batch, ensure_ascii=False)}"
+                        ),
+                    }
+                ],
             },
         ],
-        "response_format": {"type": "json_object"},
+        "text": {"format": {"type": "json_object"}},
     }
     response = requests.post(
-        OPENAI_CHAT_COMPLETIONS_URL,
+        OPENAI_RESPONSES_URL,
         headers={
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
@@ -283,12 +313,28 @@ def stabilize_batch(batch: list[dict[str, Any]], api_key: str, model: str) -> li
     if response.status_code >= 400:
         raise SystemExit(f"OpenAI request failed with HTTP {response.status_code}: {safe_error_message(response)}")
     data = response.json()
-    content = data["choices"][0]["message"]["content"]
+    content = extract_response_text(data)
     parsed = parse_json_object(content)
     segments = parsed.get("segments")
     if not isinstance(segments, list):
         raise SystemExit("OpenAI stable correction response did not include a segments array.")
     return [normalize_correction(item) for item in segments]
+
+
+def extract_response_text(data: dict[str, Any]) -> str:
+    direct = data.get("output_text")
+    if isinstance(direct, str) and direct.strip():
+        return direct
+    for item in data.get("output") or []:
+        if not isinstance(item, dict):
+            continue
+        for content in item.get("content") or []:
+            if not isinstance(content, dict):
+                continue
+            text = content.get("text") or content.get("output_text")
+            if isinstance(text, str) and text.strip():
+                return text
+    raise SystemExit("OpenAI stable correction response did not include output text.")
 
 
 def parse_json_object(content: str) -> dict[str, Any]:
@@ -385,8 +431,10 @@ def post_stable_corrections(
     output: dict[str, Any],
     backend_url: str,
     session_id: str,
-    event_token: str,
     model: str,
+    event_token: str | None = None,
+    admin_token: str | None = None,
+    internal_task_token: str | None = None,
 ) -> int:
     events = stable_correction_events(output, model)
     if not events:
@@ -397,10 +445,11 @@ def post_stable_corrections(
     for event in events:
         response = requests.post(
             endpoint,
-            headers={
-                "Content-Type": "application/json",
-                "X-Realtime-Event-Token": event_token,
-            },
+            headers=stable_correction_post_headers(
+                event_token=event_token,
+                admin_token=admin_token,
+                internal_task_token=internal_task_token,
+            ),
             json=event,
             timeout=20,
         )
@@ -410,6 +459,24 @@ def post_stable_corrections(
             )
         posted += 1
     return posted
+
+
+def stable_correction_post_headers(
+    *,
+    event_token: str | None = None,
+    admin_token: str | None = None,
+    internal_task_token: str | None = None,
+) -> dict[str, str]:
+    headers = {"Content-Type": "application/json"}
+    if event_token:
+        headers["X-Realtime-Event-Token"] = event_token
+    elif admin_token:
+        headers["Authorization"] = f"Bearer {admin_token}"
+    elif internal_task_token:
+        headers["X-Internal-Task-Token"] = internal_task_token
+    else:
+        raise SystemExit("Posting stable corrections requires an event, admin, or internal task token.")
+    return headers
 
 
 def normalize_backend_url(value: str) -> str:

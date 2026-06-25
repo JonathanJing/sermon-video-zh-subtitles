@@ -21,6 +21,40 @@ class OfflineLiveSermonSubtitlesTest(unittest.TestCase):
     def test_default_asr_model_uses_gpt_4o_transcribe(self):
         self.assertEqual(mod.DEFAULT_ASR_MODEL, "gpt-4o-transcribe")
 
+    def test_rejects_realtime_model_for_offline_asr(self):
+        with self.assertRaises(SystemExit):
+            mod.validate_asr_model("gpt-realtime-translate")
+
+    def test_rejects_non_required_model_for_offline_asr(self):
+        with self.assertRaises(SystemExit):
+            mod.validate_asr_model("gpt-4o-mini-transcribe")
+
+    def test_caption_route_decision_records_captions_first_path(self):
+        route = mod.caption_route_decision(
+            live_meta={"subtitles": {"en": [{}]}, "automatic_captions": {"es": [{}]}},
+            sermon_meta=None,
+            requested_langs=["en-orig", "en"],
+            selected_source_kind="live_archive",
+        )
+
+        self.assertEqual(route["strategy"], "captions_first_then_asr")
+        self.assertEqual(route["decision"], "use_caption_track")
+        self.assertFalse(route["asrFallbackRequired"])
+        self.assertFalse(route["audioExtractionAttempted"])
+        self.assertEqual(route["liveCaptionLangs"], ["en", "es"])
+
+    def test_caption_route_decision_records_asr_fallback_reason(self):
+        route = mod.caption_route_decision(
+            live_meta={"subtitles": {}, "automatic_captions": {}},
+            sermon_meta=None,
+            requested_langs=["en-orig", "en"],
+            selected_source_kind="none",
+        )
+
+        self.assertEqual(route["decision"], "use_asr_fallback")
+        self.assertTrue(route["asrFallbackRequired"])
+        self.assertEqual(route["fallbackReason"], "no_requested_caption_track")
+
     def test_download_section_spec_uses_sermon_window(self):
         self.assertEqual(
             mod.download_section_spec(start_ms=1_405_000, duration_ms=1_858_000),
@@ -53,6 +87,19 @@ class OfflineLiveSermonSubtitlesTest(unittest.TestCase):
         self.assertEqual(len(cues), 1)
         self.assertEqual(cues[0].end_ms, 5000)
         self.assertEqual(cues[0].text, "Jesus is our mediator.")
+
+    def test_gpt_4o_transcribe_uses_json_response_format(self):
+        fields = mod.transcription_request_fields("gpt-4o-transcribe")
+
+        self.assertIn(("response_format", "json"), fields)
+        self.assertNotIn(("response_format", "verbose_json"), fields)
+        self.assertNotIn(("timestamp_granularities[]", "segment"), fields)
+
+    def test_whisper_style_transcription_can_request_segments(self):
+        fields = mod.transcription_request_fields("whisper-1")
+
+        self.assertIn(("response_format", "verbose_json"), fields)
+        self.assertIn(("timestamp_granularities[]", "segment"), fields)
 
     def test_rejects_raw_api_key_material_for_asr_secret_reference(self):
         with self.assertRaises(SystemExit):

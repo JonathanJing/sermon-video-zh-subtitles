@@ -59,6 +59,10 @@ def command_stage(command: list[str]) -> str:
         return "prepare-live-playback"
     if "translate_playback_with_openai.py" in joined:
         return "translate-captions"
+    if "export_playback_captions.py" in joined:
+        return "export-translated-captions"
+    if "validate_offline_chain.py" in joined:
+        return "validate-offline-chain"
     if "generate_notes_with_openai.py" in joined:
         return "generate-insights"
     if "promote_sunday_manifest.py" in joined:

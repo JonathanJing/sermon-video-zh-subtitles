@@ -31,15 +31,15 @@ English version: [system-design-gap-analysis.md](./system-design-gap-analysis.md
 | 需求 | 状态 | 缺口 |
 |---|---|---|
 | Admin 手动触发 live URL 和可选证道开始时间 | 部分完成 | UI 概念和 backend planner 字段存在，但线上服务没有真正可用的 admin generation API。 |
-| 定时自动抓取 live source | 未完成 | 没有 `live-source-monitor`、Cloud Scheduler、same-sermon confidence check、09:58 fallback alert。 |
+| 定时自动抓取 live source | 部分完成 | `scripts/live_source_monitor.py` 可以评估 Mariners Online、YouTube streams 和手动授权 URL；fixture tests 覆盖 same-sermon confidence、8:30 -> 10:00 fallback、09:58 operator-audio alert。`/api/admin/sundays/{sunday}/discover-source` 暴露同一套 handoff，并可返回 sanitized generation-plan summary。`scripts/configure_live_source_scheduler.py` 现在可以生成 redacted Cloud Scheduler job plan，固定调用 `/api/admin/sundays/current/discover-source`；仍缺真实 `--apply`、Cloud Logging 证据和真实页面验证。 |
 | 同一周日所有用户看到同一份生成物 | 部分完成 | 存储模型已写入设计，但没有 promoted `sundays/YYYY-MM-DD/cloud-manifest.json` 指针。 |
 | 会众只读视图 | 本地已实现 | `web/index.html` 现在是只读字幕视图，DOM 中没有 operator controls；`web/admin.html` 保留 generation、export、test、publish controls。`tests/test_public_admin_boundary.py` 和 browser E2E 会守住这个拆分；仍需部署后 smoke evidence。 |
-| 11:25 readiness 和 publish gate | 未完成 | 没有 durable readiness state、publish timestamp、published artifact URI、fallback state。 |
-| 真实生成中文字幕 | 部分完成 | prepared playback 已能 batch OpenAI 翻译，worker plan 已包含 prepare -> translate -> notes -> upload -> promote；仍需用真实周日输入做 production 验证。 |
+| 11:25 readiness 和 publish gate | 部分完成 | `promote_sunday_manifest.py` 现在会写入 `readiness` 合约，包含 state、checks、publish time、published manifest URI、source mode、fallback reason 和模型路由。`SundaySliceService` 与 `/api/admin/status` 会暴露这些状态。仍缺 Cloud Run 部署 smoke evidence 和真实周日发布证据。 |
+| 真实生成中文字幕 | 部分完成 | prepared playback 已能 batch OpenAI 翻译；默认 worker plan 现在是 prepare -> translate -> export zh VTT/SRT -> validate offline chain -> upload playback/manifest -> promote。可选 notes 只在显式请求时运行，不阻塞字幕发布。`validate_production_readiness.py` 现在可以汇总 offline、promoted manifest、realtime JSONL 三类证据；仍需用真实周日输入做 production 验证。 |
 | 离线 ASR fallback | 部分完成 | 没有英文 captions 时，live-archive preparation path 可以抽音频并请求 `gpt-4o-transcribe`，再进入 `gpt-5.5-mini` 翻译；还需要用真实 YouTube/archive 验证。 |
-| 低延迟实时字幕 | 部分完成 | Admin iPad/iPhone mic 可以创建 OpenAI Realtime translation session，用 browser WebRTC 送音频，把英文/中文 deltas 发回 backend memory/JSONL，并通过 SSE 推给会众字幕页。`scripts/realtime_media_worker.py` 可以创建 backend-only session、规划授权音频/YouTube source prep，把 24 kHz PCM16 音频送入 OpenAI translation WebSocket，并把英文/中文 deltas 发布到同一条 session stream。`scripts/realtime_openai_smoke_test.py` 现在可以在有凭据和短授权音频时验证 OpenAI Realtime 到 backend SSE 的端到端路径。`scripts/stabilize_realtime_deltas_with_openai.py` 可以用 `gpt-5.5-mini` 把保存的 realtime 英文窗口生成 stable Chinese corrections，并作为 `caption_final` events 回灌；`scripts/run_realtime_stabilizer_loop.py` 会重复执行延迟修正并跳过已回灌片段。还缺真实授权源 live validation 和 durable state storage。 |
+| 低延迟实时字幕 | 部分完成 | Admin iPad/iPhone mic 可以创建 OpenAI Realtime translation session，用 browser WebRTC 送音频，把英文/中文 deltas 发回 backend memory/JSONL，并通过 SSE 推给会众字幕页。`scripts/realtime_media_worker.py` 可以创建 backend-only session，接收本地授权音频文件、场地提供的授权 HTTP(S) 音频流或授权 YouTube source，把 24 kHz PCM16 音频送入 OpenAI translation WebSocket，并把英文/中文 deltas 发布到同一条 session stream。`scripts/realtime_openai_smoke_test.py` 现在可以在有凭据和短授权音频时验证 OpenAI Realtime 到 backend SSE 的端到端路径。`scripts/stabilize_realtime_deltas_with_openai.py` 可以用 `gpt-5.5-mini` 把保存的 realtime 英文窗口生成 stable Chinese corrections，并作为 `caption_final` events 回灌；`scripts/run_realtime_stabilizer_loop.py` 会重复执行延迟修正并跳过已回灌片段。还缺真实授权源 live validation 和 durable state storage。 |
 | 经文、人名、术语优先 | 未完成 | UI 有静态 sidebar 示例，但没有 Bible index、glossary resolver、review queue。 |
-| 笔记和金句提取 | 部分完成 | Worker plan 已包含 `generate_notes_with_openai.py` 和 `gpt-5.5-mini`；production review 和 UI 展示还要继续硬化。 |
+| 笔记和金句提取 | 部分完成 | Worker plan 可在请求 `includeInsights` 时追加 `generate_notes_with_openai.py` 和 `gpt-5.5-mini`；production review 和 UI 展示还要继续硬化。 |
 | Cloud Run API 部署 | 部分完成 | 当前 `Dockerfile` 启动 `backend.app`；仍需验证部署环境里的 `/api/*`、Secret Manager 和 realtime session creation。 |
 | Firestore 状态 | 未完成 | session 和 caption state 只在文档模型中，还没有持久化。 |
 | GCS/Secret 边界 | 部分完成 | 当前 artifact 已做清理；后续 worker logs、runbook、manifest 也必须持续遵守。 |
@@ -47,17 +47,16 @@ English version: [system-design-gap-analysis.md](./system-design-gap-analysis.md
 ## P0 阻塞缺口
 
 1. **验证并部署 backend/API surface。** 仓库 container 现在由 `backend.app` 同时服务 static assets 和 `/api/*`；production 还需要验证 routing、auth、Secret Manager、realtime session creation，以及 public/admin 只读拆分。
-2. **稳定 Sunday manifest promotion。** 每个周日需要稳定 server-side pointer，例如 `gs://<bucket>/sundays/YYYY-MM-DD/cloud-manifest.json`，并包含 completion/readiness state。
-3. **用新周日输入验证真实 generation chain。** `backend.worker` 现在规划 prepare -> translate -> notes -> upload -> promote，但还需要用 live archive captions 和无 captions 的 ASR fallback 各跑一次 E2E。
-4. **加入 readiness/publish state。** Operator 需要在 11:25 PT 前看到 `source_detected`、`caption_generating`、`needs_review`、`ready`、`published`、`fallback` 等状态。
-5. **实现 source discovery。** 手动链接有救场价值，但 Sunday system 仍需要自动发现 8:30/10:00 live source，并验证是否同篇证道。
+2. **在 Cloud Run/GCS 验证稳定 Sunday manifest promotion。** 每个周日需要稳定 pointer `gs://<bucket>/sundays/YYYY-MM-DD/cloud-manifest.json`，并能读回 readiness state。
+3. **用新周日输入验证真实 generation chain。** `backend.worker` 现在规划 prepare -> translate -> export zh VTT/SRT -> validate offline chain -> upload playback/manifest -> promote，并显式使用 `gpt-4o-transcribe` 和 `gpt-5.5-mini`；`validate_production_readiness.py` 可以打包证据，但还需要用 live archive captions 和无 captions 的 ASR fallback 各跑一次 E2E。
+4. **在 Cloud Run 验证 scheduled source discovery。** `scripts/live_source_monitor.py`、`/api/admin/sundays/{sunday}/discover-source` 和 `scripts/configure_live_source_scheduler.py` 已有 fixture tests 和 redacted dry-run path，但还需要真实 `--apply`、Cloud Logging 证据和真实 Mariners/YouTube 页面验证。
 
 ## P1/P2 缺口
 
 - Durable realtime session/segment storage 和 latency budget enforcement。
 - Browser WebRTC 之外的 YouTube live / 授权音频 server-side OpenAI Realtime audio streaming 仍需完成真实凭据/真实授权源 live validation；smoke runner 已经具备，但还没有真实源通过记录。
 - Firestore 或等价的 durable session/segment state。
-- Cloud Scheduler/Tasks 触发 Sunday monitor 和 worker job。
+- Cloud Scheduler/Tasks 触发 Sunday monitor 和 worker job 的生产验证。
 - Dedicated service account 和 GCS/Secret Manager 最小权限 IAM。
 - Operator authentication 真正接入 deployed admin API。
 - 确定性的经文、Bible book、人名、神学术语 resolver。
@@ -79,9 +78,9 @@ English version: [system-design-gap-analysis.md](./system-design-gap-analysis.md
 1. **P0-A: Public/operator split。** 增加明确的 congregation/operator mode，从 public mode 隐藏所有 admin controls，并补 iPhone/iPad E2E。
 2. **P0-B: Sunday manifest promotion。** 写一个小的 promotion command，验证 run manifest 后复制/提升到稳定 Sunday pointer。
 3. **P0-C: 验证 backend API deployment。** 部署或重部署 `backend.app` container，并 smoke test `/api/health`、admin status、realtime session creation、public Sunday reads。
-4. **P0-D: Full worker chain E2E。** 跑 prepare -> 必要时 ASR fallback -> translate -> notes -> upload -> promote，并保留 dry-run mode 和测试。
+4. **P0-D: Full worker chain E2E。** 跑 prepare -> 必要时 ASR fallback -> translate -> export zh VTT/SRT -> validate offline chain -> upload playback/manifest -> promote，并保留 dry-run mode 和测试；可选 notes 用 `includeInsights` 单独开启。
 5. **P0-E: Readiness/publish gate。** 持久化 readiness state，并暴露给 operator UI 和 public Sunday read path。
-6. **P1: Scheduled live monitor。** 加 Sunday source discovery，并先用 fixture tests 覆盖，再依赖 live network 行为。
+6. **P1: Scheduled live monitor。** 在 Cloud Run apply 并验证 Sunday source discovery Scheduler job，再依赖 live network 行为。
 
 ## 部署判断
 

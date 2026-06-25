@@ -44,12 +44,15 @@ class SundaySliceService:
             "schemaVersion": 1,
             "sunday": resolved_sunday,
             "status": manifest.get("status", "ready"),
+            "generationMode": manifest.get("generationMode"),
+            "readiness": self._readiness(manifest),
             "sermonTitle": self._sermon_title(report),
             "translationStatus": self._translation_status(manifest, report),
             "totalSegments": self._report_number(report, "totalSegments") or self._total_segments(playback),
             "translatedSegments": self._report_number(report, "translatedSegments") or self._translated_segments(playback),
-            "readyTime": manifest.get("readyTime") or manifest.get("promotedAt"),
-            "lastUpdated": manifest.get("updatedAt") or manifest.get("promotedAt"),
+            "readyTime": self._ready_time(manifest),
+            "publishedAt": self._published_at(manifest),
+            "lastUpdated": manifest.get("updatedAt") or manifest.get("publishedAt") or manifest.get("promotedAt"),
             "artifactCount": len(artifacts),
             "artifacts": [
                 {
@@ -116,6 +119,41 @@ class SundaySliceService:
                 )
             )
         return sorted(artifacts, key=lambda item: item.key)
+
+    def _readiness(self, manifest: dict[str, Any]) -> dict[str, Any]:
+        raw = manifest.get("readiness")
+        if isinstance(raw, dict):
+            allowed = {
+                "state",
+                "publicArtifactsReady",
+                "operatorReviewed",
+                "fallback",
+                "fallbackReason",
+                "sourceMode",
+                "translationStatus",
+                "readyTime",
+                "publishedAt",
+                "publishedManifest",
+                "realtimeSessionId",
+                "checks",
+            }
+            return {key: value for key, value in raw.items() if key in allowed}
+        return {
+            "state": manifest.get("status", "ready"),
+            "publicArtifactsReady": True,
+            "operatorReviewed": False,
+            "fallback": manifest.get("status") == "fallback",
+            "readyTime": manifest.get("readyTime") or manifest.get("promotedAt"),
+            "publishedAt": manifest.get("publishedAt"),
+        }
+
+    def _ready_time(self, manifest: dict[str, Any]) -> str | None:
+        readiness = self._readiness(manifest)
+        return readiness.get("readyTime") or manifest.get("readyTime") or manifest.get("promotedAt")
+
+    def _published_at(self, manifest: dict[str, Any]) -> str | None:
+        readiness = self._readiness(manifest)
+        return readiness.get("publishedAt") or manifest.get("publishedAt")
 
     def _artifact_key(self, local_path: str) -> str:
         path = PurePosixPath(local_path)

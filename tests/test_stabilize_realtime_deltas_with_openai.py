@@ -79,6 +79,14 @@ class StabilizeRealtimeDeltasWithOpenAITest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             mod.validate_secret_resource_name("sk-this-looks-like-raw-key-material")
 
+    def test_rejects_realtime_model_for_stable_correction(self):
+        with self.assertRaises(SystemExit):
+            mod.validate_stable_correction_model("gpt-realtime-translate")
+
+    def test_rejects_non_required_model_for_stable_correction(self):
+        with self.assertRaises(SystemExit):
+            mod.validate_stable_correction_model("gpt-5.5")
+
     def test_normalize_correction_accepts_translation_alias(self):
         normalized = mod.normalize_correction({"segment_id": "seg_1", "translation": "耶稣是我们的中保。"})
 
@@ -149,6 +157,46 @@ class StabilizeRealtimeDeltasWithOpenAITest(unittest.TestCase):
         self.assertEqual(calls[0]["json"]["type"], "caption_final")
         self.assertEqual(calls[0]["json"]["model"], "gpt-5.5-mini")
 
+    def test_post_stable_corrections_can_use_admin_token_for_browser_session(self):
+        calls = []
+
+        class FakeResponse:
+            status_code = 202
+            text = '{"status":"accepted"}'
+
+            def json(self):
+                return {"status": "accepted"}
+
+        original_post = mod.requests.post
+        try:
+            def fake_post(url, headers, json, timeout):
+                calls.append({"url": url, "headers": headers, "json": json, "timeout": timeout})
+                return FakeResponse()
+
+            mod.requests.post = fake_post
+            posted = mod.post_stable_corrections(
+                output={
+                    "segments": [
+                        {
+                            "id": "seg_1",
+                            "en": "Jesus is our mediator.",
+                            "stableZh": "耶稣是我们的中保。",
+                        }
+                    ]
+                },
+                backend_url="http://127.0.0.1:8080/",
+                session_id="rt_test",
+                admin_token="operator-token",
+                model="gpt-5.5-mini",
+            )
+        finally:
+            mod.requests.post = original_post
+
+        self.assertEqual(posted, 1)
+        self.assertEqual(calls[0]["headers"]["Authorization"], "Bearer operator-token")
+        self.assertNotIn("X-Realtime-Event-Token", calls[0]["headers"])
+        self.assertEqual(calls[0]["json"]["source"], "gpt-5.5-mini-stable-correction")
+
     def test_post_backend_args_must_be_supplied_together(self):
         original_argv = sys.argv
         try:
@@ -165,6 +213,53 @@ class StabilizeRealtimeDeltasWithOpenAITest(unittest.TestCase):
                 mod.parse_args()
         finally:
             sys.argv = original_argv
+
+    def test_stabilize_batch_uses_responses_api_and_typed_output(self):
+        calls = []
+
+        class FakeResponse:
+            status_code = 200
+            text = ""
+
+            def json(self):
+                return {
+                    "output": [
+                        {
+                            "type": "message",
+                            "content": [
+                                {
+                                    "type": "output_text",
+                                    "text": (
+                                        "{\"segments\":[{\"id\":\"seg_1\","
+                                        "\"zh\":\"耶稣是我们的中保。\",\"note\":\"术语修正。\"}]}"
+                                    ),
+                                }
+                            ],
+                        }
+                    ]
+                }
+
+        original_post = mod.requests.post
+        try:
+            def fake_post(url, headers, json, timeout):
+                calls.append({"url": url, "headers": headers, "json": json, "timeout": timeout})
+                return FakeResponse()
+
+            mod.requests.post = fake_post
+            corrections = mod.stabilize_batch(
+                [{"id": "seg_1", "en": "Jesus is our mediator.", "draftZh": "耶稣是中保。"}],
+                api_key="sk-test",
+                model="gpt-5.5-mini",
+            )
+        finally:
+            mod.requests.post = original_post
+
+        self.assertEqual(corrections[0]["zh"], "耶稣是我们的中保。")
+        self.assertEqual(calls[0]["url"], mod.OPENAI_RESPONSES_URL)
+        self.assertEqual(calls[0]["json"]["model"], "gpt-5.5-mini")
+        self.assertIn("input", calls[0]["json"])
+        self.assertNotIn("messages", calls[0]["json"])
+        self.assertEqual(calls[0]["json"]["text"]["format"]["type"], "json_object")
 
 
 if __name__ == "__main__":

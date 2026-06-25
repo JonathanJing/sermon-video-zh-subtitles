@@ -22,14 +22,25 @@ import requests
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 JS_PREFIX = "window.SERMON_PLAYBACK_SIMULATION = "
+OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
+EXPECTED_TRANSLATION_MODEL = "gpt-5.5-mini"
+FORBIDDEN_OFFLINE_MODEL = "gpt-realtime-translate"
 SECRET_RESOURCE_RE = re.compile(
     r"^projects/(?P<project>[^/\s]+)/secrets/(?P<secret>[^/\s]+)(?:/versions/(?P<version>[^/\s]+))?$"
 )
 
 
+class OpenAIRequestError(RuntimeError):
+    def __init__(self, status_code: int, message: str):
+        super().__init__(message)
+        self.status_code = status_code
+        self.message = message
+
+
 def main() -> int:
     args = parse_args()
-    validate_secret_resource_name(args.api_key_secret)
+    if args.api_key_secret:
+        validate_secret_resource_name(args.api_key_secret)
     simulation = read_simulation(args.input)
     if args.sanitize_only:
         sanitized = sanitize_public_simulation(simulation)
@@ -54,31 +65,54 @@ def main() -> int:
     if not candidates:
         raise SystemExit("No English segments need translation.")
 
-    api_key = access_secret(args.api_key_secret)
-    translations: list[dict[str, Any]] = []
-    for batch in batched(candidates, args.batch_size):
-        translations.extend(translate_batch(batch, api_key=api_key, model=args.model))
+    translations: list[dict[str, Any]]
+    jsonl_path = args.out_dir / "openai-translation-output.jsonl"
+    if args.translations_jsonl:
+        translations = read_translations_jsonl(args.translations_jsonl)
+        jsonl_path = args.translations_jsonl
+    else:
+        if not args.api_key_secret:
+            raise SystemExit("--api-key-secret is required unless --translations-jsonl or --sanitize-only is used.")
+        api_key = access_secret(args.api_key_secret)
+        translations = []
+        try:
+            for batch in batched(candidates, args.batch_size):
+                translations.extend(translate_batch(batch, api_key=api_key, model=args.model))
+        except OpenAIRequestError as exc:
+            args.out_dir.mkdir(parents=True, exist_ok=True)
+            report_path = args.out_dir / "openai-translation-report.json"
+            report = build_failure_report(
+                original=simulation,
+                model=args.model,
+                api_key_secret=args.api_key_secret,
+                status_code=exc.status_code,
+                message=exc.message,
+                out_path=args.out,
+            )
+            report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+            print(json.dumps(report, ensure_ascii=False, indent=2))
+            return 4
 
     translated = apply_translations(
         simulation=simulation,
         translations=translations,
         model=args.model,
-        api_key_secret=args.api_key_secret,
+        api_key_secret=args.api_key_secret or "",
     )
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(render_js(translated), encoding="utf-8")
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    jsonl_path = args.out_dir / "openai-translation-output.jsonl"
-    write_jsonl(jsonl_path, translations)
+    if not args.translations_jsonl:
+        write_jsonl(jsonl_path, translations)
     report_path = args.out_dir / "openai-translation-report.json"
     report = build_report(
         original=simulation,
         translated=translated,
         translations=translations,
         model=args.model,
-        api_key_secret=args.api_key_secret,
+        api_key_secret=args.api_key_secret or "",
         jsonl_path=jsonl_path,
         out_path=args.out,
     )
@@ -132,13 +166,17 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--api-key-secret",
-        required=True,
         help="Google Secret Manager resource name for the OpenAI key.",
+    )
+    parser.add_argument(
+        "--translations-jsonl",
+        type=Path,
+        help="Apply saved OpenAI translation JSONL instead of calling the API. Useful for resuming artifact export.",
     )
     parser.add_argument(
         "--model",
         default="gpt-5.5-mini",
-        help="OpenAI chat-completions model used for translation.",
+        help="OpenAI Responses model used for translation.",
     )
     parser.add_argument(
         "--max-segments",
@@ -171,11 +209,24 @@ def parse_args() -> argparse.Namespace:
     args.input = resolve_repo_path(args.input)
     args.out = resolve_repo_path(args.out)
     args.out_dir = resolve_repo_path(args.out_dir)
+    if args.translations_jsonl:
+        args.translations_jsonl = resolve_repo_path(args.translations_jsonl)
     if args.max_segments == 0:
         args.max_segments = None
     if args.batch_size < 1:
         raise SystemExit("--batch-size must be >= 1")
+    validate_offline_translation_model(args.model)
     return args
+
+
+def validate_offline_translation_model(model: str) -> None:
+    if model == FORBIDDEN_OFFLINE_MODEL:
+        raise SystemExit(
+            "Offline YouTube archive translation must not use gpt-realtime-translate; "
+            "use gpt-5.5-mini."
+        )
+    if model != EXPECTED_TRANSLATION_MODEL:
+        raise SystemExit("Offline YouTube archive translation must use gpt-5.5-mini.")
 
 
 def resolve_repo_path(path: Path) -> Path:
@@ -262,29 +313,39 @@ def batched(items: list[dict[str, str]], size: int) -> list[list[dict[str, str]]
 def translate_batch(batch: list[dict[str, str]], api_key: str, model: str) -> list[dict[str, Any]]:
     payload = {
         "model": model,
-        "messages": [
+        "input": [
             {
                 "role": "system",
-                "content": (
-                    "You translate English Christian sermon captions into Simplified Chinese for live church attendees. "
-                    "Prioritize readability, low latency, faithful meaning, and accurate Bible/person/theology terms. "
-                    "Do not add commentary. Return strict JSON only."
-                ),
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": (
+                            "You translate English Christian sermon captions into Simplified Chinese for live church attendees. "
+                            "Prioritize readability, low latency, faithful meaning, and accurate Bible/person/theology terms. "
+                            "Do not add commentary. Return strict JSON only."
+                        ),
+                    }
+                ],
             },
             {
                 "role": "user",
-                "content": (
-                    "Translate each segment. Preserve ids. Return exactly this JSON shape: "
-                    "{\"segments\":[{\"id\":\"...\",\"zh\":\"...\",\"draft\":\"...\",\"ref\":\"...\",\"note\":\"...\"}]}.\n"
-                    "Use natural Chinese punctuation. Keep Bible references in English if explicit, e.g. Numbers 16.\n"
-                    f"Segments:\n{json.dumps(batch, ensure_ascii=False)}"
-                ),
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": (
+                            "Translate each segment. Preserve ids. Return exactly this JSON shape: "
+                            "{\"segments\":[{\"id\":\"...\",\"zh\":\"...\",\"draft\":\"...\",\"ref\":\"...\",\"note\":\"...\"}]}.\n"
+                            "Use natural Chinese punctuation. Keep Bible references in English if explicit, e.g. Numbers 16.\n"
+                            f"Segments:\n{json.dumps(batch, ensure_ascii=False)}"
+                        ),
+                    }
+                ],
             },
         ],
-        "response_format": {"type": "json_object"},
+        "text": {"format": {"type": "json_object"}},
     }
     response = requests.post(
-        "https://api.openai.com/v1/chat/completions",
+        OPENAI_RESPONSES_URL,
         headers={
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
@@ -294,14 +355,30 @@ def translate_batch(batch: list[dict[str, str]], api_key: str, model: str) -> li
     )
     if response.status_code >= 400:
         message = safe_error_message(response)
-        raise SystemExit(f"OpenAI request failed with HTTP {response.status_code}: {message}")
+        raise OpenAIRequestError(response.status_code, message)
     data = response.json()
-    content = data["choices"][0]["message"]["content"]
+    content = extract_response_text(data)
     parsed = parse_json_object(content)
     segments = parsed.get("segments")
     if not isinstance(segments, list):
         raise SystemExit("OpenAI response did not include a segments array.")
     return [normalize_translation(item) for item in segments]
+
+
+def extract_response_text(data: dict[str, Any]) -> str:
+    direct = data.get("output_text")
+    if isinstance(direct, str) and direct.strip():
+        return direct
+    for item in data.get("output") or []:
+        if not isinstance(item, dict):
+            continue
+        for content in item.get("content") or []:
+            if not isinstance(content, dict):
+                continue
+            text = content.get("text") or content.get("output_text")
+            if isinstance(text, str) and text.strip():
+                return text
+    raise SystemExit("OpenAI translation response did not include output text.")
 
 
 def safe_error_message(response: requests.Response) -> str:
@@ -412,6 +489,32 @@ def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
     )
 
 
+def read_translations_jsonl(path: Path) -> list[dict[str, Any]]:
+    translations: list[dict[str, Any]] = []
+    for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        if not line.strip():
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise SystemExit(f"Could not parse translations JSONL line {line_number}: {exc}") from exc
+        translations.extend(translations_from_saved_row(row, line_number=line_number))
+    if not translations:
+        raise SystemExit("--translations-jsonl did not contain any translation rows.")
+    return translations
+
+
+def translations_from_saved_row(row: Any, *, line_number: int) -> list[dict[str, Any]]:
+    if isinstance(row, list):
+        return [normalize_translation(item) for item in row]
+    if not isinstance(row, dict):
+        raise SystemExit(f"Translations JSONL line {line_number} must be an object or array.")
+    segments = row.get("segments")
+    if isinstance(segments, list):
+        return [normalize_translation(item) for item in segments]
+    return [normalize_translation(row)]
+
+
 def build_report(
     original: dict[str, Any],
     translated: dict[str, Any],
@@ -423,6 +526,14 @@ def build_report(
 ) -> dict[str, Any]:
     total_segments = len(translated.get("segments") or [])
     translated_ids = {item["id"] for item in translations}
+    applied_ids = {
+        str(segment.get("id"))
+        for segment in translated.get("segments") or []
+        if isinstance(segment, dict)
+        and str(segment.get("id")) in translated_ids
+        and segment.get("translationStatus") == "ready"
+        and str(segment.get("zh") or "").strip()
+    }
     return {
         "schemaVersion": 1,
         "status": "ok",
@@ -436,10 +547,66 @@ def build_report(
         "sourceTranslationStatus": original.get("translationStatus"),
         "translationStatus": translated.get("translationStatus"),
         "totalSegments": total_segments,
-        "translatedSegments": len(translated_ids),
+        "translatedSegments": len(applied_ids),
         "output": safe_display_path(out_path),
         "modelOutputJsonl": safe_display_path(jsonl_path),
     }
+
+
+def build_failure_report(
+    original: dict[str, Any],
+    model: str,
+    api_key_secret: str,
+    status_code: int,
+    message: str,
+    out_path: Path,
+) -> dict[str, Any]:
+    return {
+        "schemaVersion": 1,
+        "status": "failed",
+        "failureStage": "openai_translation",
+        "model": model,
+        "httpStatus": status_code,
+        "failureKind": classify_model_access_failure(status_code, message),
+        "error": sanitize_error_message(message),
+        "apiKeyMaterialIncluded": False,
+        "secretResourceNamesIncluded": False,
+        "serverSideSecretConfigured": bool(api_key_secret),
+        "sourceTranslationStatus": original.get("translationStatus"),
+        "totalSegments": len(original.get("segments") or []),
+        "translatedSegments": 0,
+        "output": safe_display_path(out_path),
+    }
+
+
+def sanitize_error_message(message: str) -> str:
+    clean = str(message or "unknown error")
+    clean = re.sub(r"sk-[A-Za-z0-9_-]+", "sk-REDACTED", clean)
+    clean = re.sub(
+        r"projects/[^/\s]+/secrets/[^/\s]+(?:/versions/[^/\s]+)?",
+        "projects/REDACTED/secrets/REDACTED/versions/REDACTED",
+        clean,
+    )
+    return clean[:500]
+
+
+def classify_model_access_failure(status_code: int, message: str) -> str:
+    lower = str(message or "").lower()
+    if status_code in {400, 404} and (
+        "does not exist" in lower
+        or "not found" in lower
+        or "do not have access" in lower
+        or "don't have access" in lower
+        or ("model" in lower and "access" in lower)
+    ):
+        return "model_unavailable_or_not_found"
+    if status_code in {401, 403}:
+        return "auth_or_permission_denied"
+    if status_code == 429:
+        return "rate_limited"
+    if status_code >= 500:
+        return "provider_server_error"
+    return "request_failed"
 
 
 def safe_display_path(path: Path) -> str:

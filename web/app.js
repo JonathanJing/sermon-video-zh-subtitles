@@ -630,8 +630,11 @@
       await startRealtimeTranslationMicTest();
       return;
     } catch (error) {
-      recordTestNote(`OpenAI Realtime 未启动，退回浏览器本地听写测试：${error.message || error}`);
-      await startBrowserSpeechMicFallback();
+      recordTestNote(`OpenAI Realtime 未启动，本次实时翻译测试失败；不使用浏览器本地听写代替 gpt-realtime-translate：${error.message || error}`);
+      updatePipelineStage("translation", "error", "Realtime 未启动");
+      updateTestPassState("失败：Realtime 翻译未启动", "error");
+      setStatus("Realtime 翻译未启动", "error");
+      stopMicLatencyTest("realtime-startup-failed");
     }
   }
 
@@ -665,7 +668,9 @@
       startedAt: Date.now(),
       currentSegmentId: null,
       partialZh: "",
-      partialEn: ""
+      partialEn: "",
+      backendPersistedEvents: 0,
+      backendPersistFailures: 0
     };
 
     dataChannel.addEventListener("open", () => {
@@ -706,7 +711,8 @@
     const payload = {
       sunday: state.adminSettings.sunday,
       model: "gpt-realtime-translate",
-      targetLanguage: "zh-CN",
+      targetLanguage: "zh",
+      audioSourceKind: "ipad_mic",
       source: "ipad-mic"
     };
     let response = await fetch("/api/admin/realtime/sessions", {
@@ -819,36 +825,149 @@
 
   function realtimeCaptionEventFromOpenAI(event) {
     const type = String(event.type || "");
-    const delta = String(event.delta || event.text || event.transcript || "");
-    const finalText = String(event.text || event.transcript || "");
-    const text = finalText || delta;
+    const transcript = extractRealtimeTranscriptText(event);
+    const delta = transcript.delta;
+    const text = transcript.text;
     if (!text) return null;
     const isFinal = type.endsWith(".done") || type.includes("final") || type.includes("completed");
     const isInput = type.includes("input_transcript") || type.includes("input_audio_transcription");
     const isOutput = type.includes("output_transcript") || type.includes("audio_transcript") || type.includes("translation");
     if (!isInput && !isOutput) return null;
-    return {
+    const payload = {
       type: isInput
         ? isFinal ? "input_transcript_final" : "input_transcript_delta"
         : isFinal ? "caption_final" : "caption_delta",
       delta,
       text,
       final: isFinal,
-      segmentId: event.item_id || event.response_id || event.event_id || null,
+      segmentId: realtimeSegmentIdFromOpenAI(event),
       openaiEventType: type,
       source: "openai-realtime-webrtc"
     };
+    if (isInput) {
+      payload.en = text;
+    } else {
+      payload.zh = text;
+    }
+    return payload;
+  }
+
+  function extractRealtimeTranscriptText(event) {
+    const delta = firstRealtimeText([
+      event.delta,
+      event.text_delta,
+      event.transcript_delta,
+      event.input_transcript_delta,
+      event.output_transcript_delta,
+      event.input_audio_transcription_delta,
+      event.audio_transcript_delta,
+      event.input_transcript?.delta,
+      event.output_transcript?.delta,
+      event.input_audio_transcription?.delta,
+      event.audio_transcript?.delta,
+      ...nestedRealtimeTranscriptValues(event.input_transcript, "delta"),
+      ...nestedRealtimeTranscriptValues(event.output_transcript, "delta"),
+      ...nestedRealtimeTranscriptValues(event.input_audio_transcription, "delta"),
+      ...nestedRealtimeTranscriptValues(event.audio_transcript, "delta"),
+      ...nestedRealtimeTranscriptValues(event.part, "delta"),
+      ...nestedRealtimeTranscriptValues(event.item, "delta"),
+      ...nestedRealtimeTranscriptValues(event.response, "delta")
+    ]);
+    const finalText = firstRealtimeText([
+      event.text,
+      event.transcript,
+      event.output_text,
+      event.input_transcript,
+      event.output_transcript,
+      event.input_audio_transcription,
+      event.audio_transcript,
+      event.part?.text,
+      event.part?.transcript,
+      event.item?.text,
+      event.item?.transcript,
+      event.response?.text,
+      event.response?.transcript,
+      ...nestedRealtimeTranscriptValues(event.input_transcript, "text"),
+      ...nestedRealtimeTranscriptValues(event.output_transcript, "text"),
+      ...nestedRealtimeTranscriptValues(event.input_audio_transcription, "text"),
+      ...nestedRealtimeTranscriptValues(event.audio_transcript, "text"),
+      ...realtimeContentTexts(event.item?.content),
+      ...realtimeOutputTexts(event.response?.output)
+    ]);
+    return {
+      delta: delta || finalText,
+      text: finalText || delta
+    };
+  }
+
+  function realtimeContentTexts(content) {
+    if (!Array.isArray(content)) return [];
+    return content.flatMap((item) => [
+      item?.text,
+      item?.transcript,
+      item?.input_transcript,
+      item?.output_text,
+      item?.output_transcript,
+      item?.input_audio_transcription,
+      item?.audio_transcript
+    ]);
+  }
+
+  function realtimeOutputTexts(output) {
+    if (!Array.isArray(output)) return [];
+    return output.flatMap((item) => [
+      item?.text,
+      item?.transcript,
+      ...realtimeContentTexts(item?.content)
+    ]);
+  }
+
+  function nestedRealtimeTranscriptValues(value, mode) {
+    if (!value || typeof value !== "object") return [];
+    const fields = mode === "delta"
+      ? ["delta", "text_delta", "transcript_delta", "input_transcript_delta", "output_transcript_delta", "input_audio_transcription_delta", "audio_transcript_delta"]
+      : ["text", "transcript", "output_text", "input_transcript", "output_transcript", "input_audio_transcription", "audio_transcript"];
+    const values = fields.map((field) => value?.[field]);
+    if (Array.isArray(value.content)) {
+      value.content.forEach((item) => values.push(...nestedRealtimeTranscriptValues(item, mode)));
+    }
+    if (Array.isArray(value.output)) {
+      value.output.forEach((item) => values.push(...nestedRealtimeTranscriptValues(item, mode)));
+    }
+    return values;
+  }
+
+  function firstRealtimeText(values) {
+    for (const value of values) {
+      if (typeof value === "string" && value.trim()) return value.trim();
+      if (typeof value === "number" && Number.isFinite(value)) return String(value);
+    }
+    return "";
+  }
+
+  function realtimeSegmentIdFromOpenAI(event) {
+    return event.item_id
+      || event.content_index
+      || event.response_id
+      || event.event_id
+      || event.item?.id
+      || event.response?.id
+      || null;
   }
 
   function handleRealtimeCaptionEvent(event) {
-    if (!event || !String(event.text || event.delta || "").trim()) return;
+    if (!event || !realtimeEventText(event)) return;
     const isInput = String(event.type || "").startsWith("input_transcript");
-    const text = String(event.text || event.delta || "").trim();
+    const text = realtimeEventText(event);
     if (isInput) {
       updateRealtimeEnglish(text, event);
       return;
     }
     upsertRealtimeChineseSegment(text, event);
+  }
+
+  function realtimeEventText(event) {
+    return String(event.text || event.delta || event.zh || event.en || event.transcript || "").trim();
   }
 
   function updateRealtimeEnglish(text, event) {
@@ -927,7 +1046,25 @@
       },
       body: JSON.stringify(event),
       keepalive: true
-    }).catch(() => {});
+    }).then((response) => {
+      if (!state.realtime || state.realtime.sessionId !== rt.sessionId) return;
+      if (response.ok) {
+        state.realtime.backendPersistedEvents = (state.realtime.backendPersistedEvents || 0) + 1;
+        state.realtime.backendPersistFailures = 0;
+        if (state.realtime.backendPersistedEvents === 1 || event.final) {
+          updateAdminEvidence("worker", `Realtime deltas 已保存 ${state.realtime.backendPersistedEvents} 条`);
+        }
+        return;
+      }
+      state.realtime.backendPersistFailures = (state.realtime.backendPersistFailures || 0) + 1;
+      recordTestNote(`后台保存 realtime delta 失败：HTTP ${response.status}`);
+      updateAdminEvidence("worker", `Realtime deltas 保存失败 HTTP ${response.status}`);
+    }).catch((error) => {
+      if (!state.realtime || state.realtime.sessionId !== rt.sessionId) return;
+      state.realtime.backendPersistFailures = (state.realtime.backendPersistFailures || 0) + 1;
+      recordTestNote(`后台保存 realtime delta 失败：${error.message || error}`);
+      updateAdminEvidence("worker", "Realtime deltas 保存失败，检查后台连接");
+    });
   }
 
   function connectPublicRealtimeEvents() {
@@ -1025,9 +1162,15 @@
     if (state.testRun?.mode === "ipad-mic") {
       state.testRun.active = false;
       recordTestNote(reason === "operator" ? "操作者已停止麦克风测试。" : "麦克风测试已停止。");
-      updateTestPassStateFromMetrics();
+      if (reason !== "realtime-startup-failed") {
+        updateTestPassStateFromMetrics();
+      }
     }
-    setStatus("麦克风测试已停止", "ready");
+    if (reason === "realtime-startup-failed") {
+      setStatus("Realtime 翻译未启动", "error");
+    } else {
+      setStatus("麦克风测试已停止", "ready");
+    }
   }
 
   function stopRealtimeSession() {
@@ -2162,6 +2305,7 @@
       state.adminStatus = {
         artifact: { manifestStatus: "unavailable", manifestError: error.message || String(error) },
         captions: { translationStatus: "unknown" },
+        readiness: { state: "unavailable", publicArtifactsReady: false, fallback: false },
         settings: { provider: "openai", readinessDeadline: "11:50 PT" },
         secrets: { openaiApiKey: "unknown", operatorAdminToken: "unknown", internalTaskToken: "unknown" }
       };
@@ -2175,6 +2319,7 @@
     const status = state.adminStatus || {};
     const artifact = status.artifact || {};
     const captionsStatus = status.captions || {};
+    const readiness = status.readiness || {};
     const settings = status.settings || {};
     const secrets = status.secrets || {};
     const realtime = status.realtime || {};
@@ -2185,9 +2330,10 @@
     setOptionalText(el.adminManifestDetail, artifact.manifestError
       ? `读取失败：${artifact.manifestError}`
       : `${artifact.artifactCount || 0} 个会众页面文件`);
-    setOptionalText(el.adminCaptionStatus, statusLabel(captionsStatus.translationStatus || "unknown"));
+    const readinessState = readiness.state || captionsStatus.translationStatus || "unknown";
+    setOptionalText(el.adminCaptionStatus, statusLabel(readinessState));
     setOptionalText(el.adminCaptionDetail, captionCountText(captionsStatus));
-    setOptionalText(el.adminReadyTime, captionsStatus.readyTime || "待发布");
+    setOptionalText(el.adminReadyTime, captionsStatus.publishedAt || captionsStatus.readyTime || readiness.publishedAt || readiness.readyTime || "待发布");
     setOptionalText(el.adminUpdatedAt, `最后更新 ${captionsStatus.lastUpdated || formatClock()}`);
     setOptionalText(el.adminBucket, artifact.bucket || "未配置");
     setOptionalText(el.adminPrefix, artifact.prefix || "sundays");
@@ -2230,7 +2376,12 @@
       processing: "处理中",
       running: "运行中",
       translated: "已翻译",
-      needs_translation: "待翻译"
+      needs_translation: "待翻译",
+      source_detected: "已发现源",
+      caption_generating: "字幕生成中",
+      needs_review: "待复核",
+      published: "已发布",
+      fallback: "兜底"
     };
     return labels[normalized] || String(value || "未知");
   }
@@ -2620,7 +2771,12 @@
     exportCaptions,
     applyOffset,
     buildNoteSlices,
-    buildNoteGenerationPayload
+    buildNoteGenerationPayload,
+    createRealtimeSession,
+    handleRealtimeDataChannelMessage,
+    postRealtimeSessionEvent,
+    normalizeRealtimeOpenAIEvent: realtimeCaptionEventFromOpenAI,
+    pushRealtimeEvent: handleRealtimeCaptionEvent
   };
 
   init();

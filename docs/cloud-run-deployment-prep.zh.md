@@ -49,7 +49,7 @@ V1 Cloud Run 服务建议先拆成一个最小服务，后续再拆：
 | GCP project id | `GOOGLE_CLOUD_PROJECT` | Cloud Run 通常自动提供 |
 | GCS bucket name | `SERMON_ARTIFACT_BUCKET` | bucket 名不是 secret |
 | GCS prefix | `SERMON_ARTIFACT_PREFIX` | 例如 `runs` |
-| Realtime event GCS mirror prefix | `REALTIME_EVENT_GCS_PREFIX=gs://<bucket>/realtime-events` | 保存实时 deltas 的 durable JSONL mirror |
+| Realtime event GCS mirror prefix | `REALTIME_EVENT_GCS_PREFIX=gs://<bucket>/realtime-events` | 保存实时 deltas 的 durable JSONL mirror；后台尽力同步，失败不阻塞现场 SSE |
 | Firestore database / collection names | `FIRESTORE_DATABASE`, `FIRESTORE_COLLECTION_PREFIX` | 名称不是 secret |
 | 默认时区 | `APP_TIMEZONE=America/Los_Angeles` | 用于 11:30 PT SLA |
 | 默认 live URL / channel URL | `MARINERS_LIVE_URL`, `MARINERS_CHANNEL_URL` | 公共 URL 不是 secret |
@@ -219,7 +219,40 @@ gcloud run revisions list \
 - Traffic 指向预期 revision。
 - Public browser artifacts 不暴露 raw API key、operator token、webhook URL 或 Secret Manager resource name。
 
-## 11. Observability Smoke
+## 11. Cloud Scheduler live-source job
+
+先用 redacted dry-run 检查 Cloud Scheduler job 形状：
+
+```bash
+python3 scripts/configure_live_source_scheduler.py \
+  --project ai-for-god \
+  --location us-west1 \
+  --service-url https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app
+```
+
+这个 job 会打：
+
+```text
+/api/admin/sundays/current/discover-source
+```
+
+payload 形状：
+
+```json
+{
+  "triggerSource": "cloud-scheduler",
+  "service": "auto",
+  "operatorAlertTime": "09:58",
+  "autoGenerate": true
+}
+```
+
+后端会先把 `current` 解析成当周 Sunday，再规划 artifact path，所以生成物仍然落在
+`sundays/YYYY-MM-DD/runs/<session_id>/`，不会写成 `sundays/current/...`。dry-run
+确认无误后，在 shell 里设置 `INTERNAL_TASK_TOKEN`，再加 `--apply` 创建或更新 job。脚本
+输出会对 token 做 redaction；不要把 raw token 贴进文档、终端记录、ticket 或日志。
+
+## 12. Observability Smoke
 
 事件字段和标准查询见 [observability.zh.md](./observability.zh.md)。
 
@@ -242,7 +275,7 @@ jsonPayload.anonymousDeviceId="dev-deploy-smoke"
 
 周日 workflow 还需要按当天 `sunday` 确认 `live_capture_triggered`、`worker_stage_completed` 和 `captions_ready`。
 
-## 12. GCS Artifact Verification
+## 13. GCS Artifact Verification
 
 Bucket 验证：
 
@@ -257,6 +290,359 @@ gcloud storage ls gs://sermon-zh-artifacts-ai-for-god
 - 已启用 uniform bucket-level access。
 - 已强制 public access prevention。
 - 顶层 `runs/` prefix 存在。
+
+Worker 导出中文字幕之后、把 run 视为可发布之前，先验证本地/offline chain：
+
+```bash
+python3 scripts/validate_offline_chain.py \
+  --report /tmp/sermon-worker/YYYY-MM-DD/<session_id>/artifacts/report.json \
+  --playback-js /tmp/sermon-worker/YYYY-MM-DD/<session_id>/web/playback-simulation.generated.js \
+  --zh-vtt /tmp/sermon-worker/YYYY-MM-DD/<session_id>/artifacts/sermon.zh.live-aligned.vtt \
+  --zh-srt /tmp/sermon-worker/YYYY-MM-DD/<session_id>/artifacts/sermon.zh.live-aligned.srt \
+  --manifest /tmp/sermon-worker/YYYY-MM-DD/<session_id>/artifacts/cloud-manifest.json
+```
+
+通过标准：verifier 输出 `status=ok`，确认使用 caption source 或
+`gpt-4o-transcribe` ASR fallback，翻译模型是 `gpt-5.5-mini`，offline path 没有使用
+`gpt-realtime-translate`，确认 `offline_route.strategy=captions_first_then_asr`，
+caption route 没有抽音频，ASR route 标记为 `no_requested_caption_track` fallback，
+并且中文 VTT/SRT 与已翻译 playback JS 都可读。
+
+如果 `gpt-5.5-mini` 已经产出过保存的 model-output JSONL，但后续 caption/export
+步骤需要续跑，可以不再调用 OpenAI，直接重放已保存翻译：
+
+```bash
+python3 scripts/translate_playback_with_openai.py \
+  --input /tmp/sermon-worker/YYYY-MM-DD/<session_id>/web/playback-simulation.generated.js \
+  --out /tmp/sermon-worker/YYYY-MM-DD/<session_id>/web/playback-simulation.generated.js \
+  --out-dir /tmp/sermon-worker/YYYY-MM-DD/<session_id>/model-output \
+  --translations-jsonl /tmp/sermon-worker/YYYY-MM-DD/<session_id>/model-output/openai-translation-output.jsonl \
+  --model gpt-5.5-mini
+```
+
+这个 replay mode 只用于 artifact recovery。它能证明已保存翻译可以继续生成
+playback/VTT/SRT/manifest，但不能当作新的 `gpt-5.5-mini` API 调用成功证据。
+
+每次 Sunday worker run 和 promotion 后，用 verifier 检查稳定 Sunday manifest 和公开 artifacts：
+
+```bash
+python3 scripts/validate_sunday_manifest.py \
+  --manifest gs://sermon-zh-artifacts-ai-for-god/sundays/YYYY-MM-DD/cloud-manifest.json \
+  --sunday YYYY-MM-DD \
+  --require-readable-artifacts \
+  --out artifacts/evidence/sunday-manifest-validation.json
+```
+
+通过标准：verifier 输出 `status=ok`，包含已翻译中文 VTT/SRT，playback JS 的
+`translationStatus=ready`，模型路由为离线 ASR `gpt-4o-transcribe`、离线翻译和稳定修正
+`gpt-5.5-mini`、实时草稿 `gpt-realtime-translate`，并且没有 raw key material 或 Secret
+Manager resource name。
+
+实时 session 的 durable JSONL mirror 要单独验证：
+
+```bash
+python3 scripts/validate_realtime_session.py \
+  --events-jsonl gs://sermon-zh-artifacts-ai-for-god/realtime-events/YYYY-MM-DD/<session_id>.jsonl \
+  --require-stable-correction
+```
+
+通过标准：verifier 输出 `status=ok`，看到 `gpt-realtime-translate` model event、英文
+input transcript events、中文 caption events、认可的 realtime sources；开启 correction
+gate 时，还必须至少有一条 `gpt-5.5-mini-stable-correction` 的 `caption_final`，并且没有
+raw key material、client secrets、event tokens 或 Secret Manager resource name。
+
+因为当前 realtime public SSE stream 仍把 active session 放在 Cloud Run 进程内，同时把
+sanitize 后的 deltas mirror 到 JSONL/GCS，第一版生产实时字幕部署必须先用单实例 service；
+除非已经上线共享 realtime fanout store，否则不要让 media worker 和会众页随机落到不同实例。
+部署后验证 Cloud Run 配置：
+
+11:30 现场前如果要快速刷新只读证据，先跑这个汇总 wrapper。它不会执行
+`gcloud run services update`，即使 `gpt-5.5-mini` access 或 Cloud Run realtime
+config 失败，也会继续生成 matrix/audit。它还会刷新非变更的 Cloud Run update plan 和
+apply dry-run 证据，但不会传 `--approve`：
+
+```bash
+python3 scripts/refresh_production_preflight_evidence.py \
+  --out artifacts/evidence/production-preflight-refresh.json
+```
+
+生产 ready 的判断仍以 matrix/audit 为准，不是 wrapper 本身跑完就算通过。如果 wrapper 返回
+`status=incomplete`，看 `failedSteps` 和它刷新到 `artifacts/evidence/` 下的报告，包括
+update plan 和 dry-run execution report。
+
+```bash
+gcloud run services describe sermon-zh-caption-web \
+  --project=ai-for-god \
+  --region=us-west1 \
+  --format=json > artifacts/evidence/cloud-run-service.json
+
+python3 scripts/validate_cloud_run_realtime_config.py \
+  --service-json artifacts/evidence/cloud-run-service.json \
+  --out artifacts/evidence/cloud-run-realtime-config.json
+```
+
+通过标准：`status=ok`、`maxInstances=1`、已配置 `REALTIME_EVENT_GCS_PREFIX`，
+Sunday artifact env vars 已配置，OpenAI key 仍只在 server-side，operator/internal task
+tokens 存在，并且敏感 env var 没有以 plaintext direct value 形式配置。
+
+如果 config verifier 失败，先生成审批包，再改 service：
+
+```bash
+python3 scripts/prepare_cloud_run_realtime_update_plan.py \
+  --config-report artifacts/evidence/cloud-run-realtime-config.json \
+  --service sermon-zh-caption-web \
+  --project ai-for-god \
+  --region us-west1 \
+  --realtime-event-gcs-prefix gs://sermon-zh-artifacts-ai-for-god/realtime-events \
+  --out artifacts/evidence/cloud-run-realtime-update-plan.json
+```
+
+这个 plan 不会改线上。它会记录失败项、精确 apply 命令、rollback 命令和 apply 后验证命令。
+只有 operator 明确批准 Cloud Run runtime/secret wiring 变更后，才执行 apply 命令。
+
+因为 update plan 的 `--update-secrets` 会包含短 Secret Manager 引用，所以它会标记
+`secretReferencesIncluded=true`。但它仍必须保持 `apiKeyMaterialIncluded=false` 和
+`secretResourceNamesIncluded=false`；去敏后的 execution report 还会移除这些短 secret 引用。
+
+获批后，用 plan runner 执行，这样 apply、validation 和可选 rollback 会写进同一份去敏执行报告：
+
+```bash
+python3 scripts/apply_cloud_run_realtime_update_plan.py \
+  --plan artifacts/evidence/cloud-run-realtime-update-plan.json \
+  --approve \
+  --rollback-on-failure \
+  --out artifacts/evidence/cloud-run-realtime-update-execution.json
+```
+
+validation token 会先读 shell 环境；如果环境里没有，runner 会从已批准 plan 的
+`--update-secrets` mapping 读取 Secret Manager。若 token 读取失败，runner 会在
+`gcloud run services update` 前停止。
+
+不加 `--approve` 时，runner 只做 dry-run，不会改 Cloud Run。
+
+然后跑部署后的 API preflight。第一条命令只读，会把 realtime session creation 留成 warning：
+
+```bash
+python3 scripts/run_cloud_run_realtime_preflight.py \
+  --base-url https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app \
+  --cloud-run-config-report artifacts/evidence/cloud-run-realtime-config.json \
+  --out artifacts/evidence/cloud-run-api-preflight-readonly.json
+```
+
+等 operator/internal token 部署获批后，再跑会创建 session 的 smoke，并把这份报告交给最终 audit：
+
+```bash
+python3 scripts/run_cloud_run_realtime_preflight.py \
+  --base-url https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app \
+  --cloud-run-config-report artifacts/evidence/cloud-run-realtime-config.json \
+  --create-realtime-session \
+  --internal-task-token "$INTERNAL_TASK_TOKEN" \
+  --out artifacts/evidence/cloud-run-api-preflight.json
+```
+
+通过标准：root HTML、`/api/health`、`/api/sundays/current`、`/api/admin/status`
+都可读且响应中无 secret material。最终 audit 使用的报告还必须显示 realtime local
+session creation 成功，模型是 `gpt-realtime-translate`；报告只记录 event token 是否返回，
+不写 token 值。
+
+同时验证 public SSE contract，不调用 OpenAI：
+
+```bash
+python3 scripts/run_realtime_public_sse_smoke.py \
+  --base-url https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app \
+  --sunday YYYY-MM-DD \
+  --internal-task-token "$INTERNAL_TASK_TOKEN" \
+  --realtime-event-gcs-prefix gs://sermon-zh-artifacts-ai-for-god/realtime-events \
+  --session-validation-out artifacts/evidence/realtime-public-sse-session-validation.json \
+  --out artifacts/evidence/realtime-public-sse-smoke.json
+```
+
+Cloud Run 前的本地 backend smoke，可以把 GCS prefix 换成本地 event log directory：
+
+```bash
+python3 scripts/run_realtime_public_sse_smoke.py \
+  --base-url http://127.0.0.1:8080 \
+  --sunday YYYY-MM-DD \
+  --internal-task-token "$INTERNAL_TASK_TOKEN" \
+  --event-log-dir /tmp/sermon-realtime-events \
+  --session-validation-out artifacts/evidence/realtime-public-sse-session-validation-local.json \
+  --out artifacts/evidence/realtime-public-sse-smoke-local.json
+```
+
+这个 synthetic smoke 会创建 realtime session，写入一条英文 transcript delta、一条中文
+caption delta 和一条 `gpt-5.5-mini` stable correction，再从
+`/api/realtime/sessions/current/events` 读回来。传入 GCS prefix 时，它还会验证同一批
+events 已保存到 durable session JSONL；传入 `--event-log-dir` 时，则验证本地 JSONL 文件。
+它证明 backend/public stream contract 和 archive contract，但不能替代真实 OpenAI realtime
+smoke。
+
+跑 OpenAI realtime smoke 前，先验证授权音频源本身，不调用 OpenAI：
+
+```bash
+python3 scripts/run_realtime_audio_source_preflight.py \
+  --sunday YYYY-MM-DD \
+  --audio-file /path/to/authorized-rehearsal-audio.wav \
+  --prepare-audio \
+  --out artifacts/evidence/realtime-audio-source-preflight.json
+```
+
+`--audio-file`、`--audio-url`、`--youtube-url` 三选一。报告会去掉 URL query string，
+只记录 source kind/display path、readiness checks 和 sanitize 后的命令结果。
+
+把浏览器侧 iPad/iPhone mic contract 也单独验证成一份本地 evidence：
+
+```bash
+python3 scripts/validate_web_realtime_contract.py \
+  --out artifacts/evidence/web-realtime-contract.json
+```
+
+通过标准：`status=ok`，报告确认浏览器 `getUserMedia`、`gpt-realtime-translate`
+WebRTC session 创建、OpenAI transcript event normalization、backend event posting、
+public SSE subscription，以及 stable correction display；报告里不能包含 client secret、
+event token、API key 或 Secret Manager resource name。
+
+跑离线 OpenAI/翻译链路前，先验证 YouTube archive route，不下载 captions，也不调用 OpenAI：
+
+```bash
+python3 scripts/run_offline_archive_preflight.py \
+  --live-url "https://www.youtube.com/watch?v=VIDEO_ID" \
+  --sunday YYYY-MM-DD \
+  --out artifacts/evidence/offline-archive-preflight.json
+```
+
+通过标准：`status=ok`，并且 `offlineRoute.strategy=captions_first_then_asr`。如果
+`offlineRoute.decision=use_caption_track`，继续 caption route；如果
+`decision=use_asr_fallback`，确认后续 ASR fallback 使用 `gpt-4o-transcribe`，且不走
+realtime。
+
+跑离线翻译或 stable-correction 前，先用生产同款 OpenAI Responses 路径预检文本模型：
+
+```bash
+python3 scripts/run_openai_model_access_preflight.py \
+  --cloud-run-service sermon-zh-caption-web \
+  --project ai-for-god \
+  --region us-west1 \
+  --model gpt-5.5-mini \
+  --out artifacts/evidence/openai-model-access-preflight.json
+```
+
+通过标准：报告是 `status=ok`，并且 `responses_model:gpt-5.5-mini`
+检查通过。如果这里出现 model 404 或 access error，不要把离线中文字幕 VTT/SRT 或稳定修正版
+视为 production-ready；先修正模型名/权限，再重跑翻译和 stable-correction 验证。
+
+三份证据都可用后，跑统一 readiness gate：
+
+```bash
+python3 scripts/run_sunday_evidence_bundle.py \
+  --sunday YYYY-MM-DD \
+  --session-id <worker_session_id> \
+  --artifact-location gcs \
+  --artifact-bucket sermon-zh-artifacts-ai-for-god \
+  --artifact-prefix sundays \
+  --realtime-location gcs \
+  --realtime-event-gcs-prefix gs://sermon-zh-artifacts-ai-for-god/realtime-events \
+  --require-readable-sunday-artifacts \
+  --realtime-smoke-report artifacts/realtime-openai-smoke/report.json \
+  --cloud-run-config-report artifacts/evidence/cloud-run-realtime-config.json \
+  --cloud-run-api-preflight-report artifacts/evidence/cloud-run-api-preflight.json \
+  --realtime-audio-source-preflight-report artifacts/evidence/realtime-audio-source-preflight.json \
+  --web-realtime-contract-report artifacts/evidence/web-realtime-contract.json \
+  --realtime-public-sse-smoke-report artifacts/evidence/realtime-public-sse-smoke.json \
+  --realtime-openai-smoke-report artifacts/evidence/realtime-openai-smoke/report.json \
+  --realtime-session-validation-report artifacts/evidence/realtime-openai-smoke/realtime-session-validation.json \
+  --offline-archive-preflight-report artifacts/evidence/offline-archive-preflight.json \
+  --offline-chain-validation-report artifacts/evidence/offline-chain-validation.json \
+  --offline-asr-smoke-report artifacts/evidence/offline-asr-fallback-smoke/report.json \
+  --offline-translation-report artifacts/evidence/offline-caption-route/model-output/openai-translation-report.json \
+  --sunday-manifest-validation-report artifacts/evidence/sunday-manifest-validation.json \
+  --openai-model-access-preflight-report artifacts/evidence/openai-model-access-preflight.json \
+  --openai-alternative-model-access-preflight-report artifacts/evidence/openai-model-access-preflight-gpt-5.5.json \
+  --cloud-run-update-plan artifacts/evidence/cloud-run-realtime-update-plan.json \
+  --cloud-run-update-execution artifacts/evidence/cloud-run-realtime-update-execution.json \
+  --out artifacts/evidence/caption-route-readiness.json \
+  --evidence-matrix-out artifacts/evidence/production-evidence-matrix.json \
+  --goal-audit-out artifacts/evidence/production-goal-readiness-audit.json \
+  --bundle-report-out artifacts/evidence/sunday-evidence-bundle.json
+```
+
+把 `run_sunday_evidence_bundle.py` 当作周日 evidence 入口：它会展开标准 local/GCS
+路径、调用 `validate_production_readiness.py`，并可继续调用
+`collect_production_evidence_matrix.py` 和 `audit_production_goal_readiness.py`；
+任何必需证据缺失或失败都会返回非零。如果已经知道 session id，也可以直接传
+`--realtime-session-id`；否则 runner 会从 realtime smoke report 读取。如果 smoke report
+里包含 `realtimeEventsJsonl`，runner 会优先使用这个精确 JSONL URI。如果传了
+`--evidence-matrix-out` 或 `--goal-audit-out` 但没有传 `--out`，runner 会自动在
+`artifacts/evidence/` 下写一份带日期和 session id 的 production-readiness report。
+用 `--bundle-report-out` 保存顶层 runner summary，里面包含展开后的命令和每一步 return code。
+alternative model access report 只是旁证；`gpt-5.5` preflight 变绿，并不代表 required
+`gpt-5.5-mini` stable/offline route 已满足。
+如果 production-readiness verifier 在写出 `--out` 前就退出，bundle 会写一份最小 failed
+readiness report，然后继续跑 matrix/audit；这样早期 artifact 缺失时，周日交接仍然能看到
+最终状态板和下一步动作。
+同样，如果 matrix generation 在写出 `--evidence-matrix-out` 前退出，bundle 会写一份最小
+incomplete matrix，让 goal audit 仍然可以运行并记录交接失败点。
+
+收集到 provider、offline、Cloud Run、Sunday-manifest 证据后，先生成更可读的 evidence
+matrix：
+
+```bash
+python3 scripts/collect_production_evidence_matrix.py \
+  --cloud-run-config-report artifacts/evidence/cloud-run-realtime-config.json \
+  --cloud-run-api-preflight-report artifacts/evidence/cloud-run-api-preflight.json \
+  --realtime-audio-source-preflight-report artifacts/evidence/realtime-audio-source-preflight.json \
+  --web-realtime-contract-report artifacts/evidence/web-realtime-contract.json \
+  --realtime-public-sse-smoke-report artifacts/evidence/realtime-public-sse-smoke.json \
+  --realtime-openai-smoke-report artifacts/evidence/realtime-openai-smoke/report.json \
+  --realtime-session-validation-report artifacts/evidence/realtime-openai-smoke/realtime-session-validation.json \
+  --offline-archive-preflight-report artifacts/evidence/offline-archive-preflight.json \
+  --offline-chain-validation-report artifacts/evidence/offline-chain-validation.json \
+  --offline-asr-smoke-report artifacts/evidence/offline-asr-fallback-smoke/report.json \
+  --offline-translation-report artifacts/evidence/offline-caption-route/model-output/openai-translation-report.json \
+  --sunday-manifest-validation-report artifacts/evidence/sunday-manifest-validation.json \
+  --openai-model-access-preflight-report artifacts/evidence/openai-model-access-preflight.json \
+  --openai-alternative-model-access-preflight-report artifacts/evidence/openai-model-access-preflight-gpt-5.5.json \
+  --update-plan artifacts/evidence/cloud-run-realtime-update-plan.json \
+  --update-execution artifacts/evidence/cloud-run-realtime-update-execution.json \
+  --production-readiness-report artifacts/evidence/caption-route-readiness.json \
+  --production-readiness-report artifacts/evidence/asr-route-readiness.json \
+  --out artifacts/evidence/production-evidence-matrix.json
+```
+
+把 matrix 当作周日状态板：它会列出每个要求、证明它的具体 evidence file，以及每个
+failed/missing row 的下一步动作。Realtime OpenAI smoke report 只证明 provider 行为；
+要同时传入 `realtime-session-validation.json`，让已保存 JSONL 经过 session id 连续性、
+event id 严格递增、英文 input transcript events、中文 caption events 的检查。离线翻译
+report 要配合 `offline-chain-validation.json`，这样模型访问失败导致中文 VTT/SRT/playback/manifest
+未产出的事实也会留在 matrix 里。
+
+当前交接流程优先使用 refresh wrapper 再读 matrix。它会先重建
+`artifacts/evidence/manifest-promotion-guard` 下的本地 Sunday manifest evidence，
+写出 `artifacts/evidence/offline-chain-validation.json`，准备
+`artifacts/evidence/gcs-sunday-manifest-publish-plan.json`，然后刷新 matrix/unblock/audit；
+这个流程不会 apply Cloud Run，也不会上传 GCS：
+
+```bash
+python3 scripts/refresh_production_preflight_evidence.py \
+  --sunday YYYY-MM-DD \
+  --out artifacts/evidence/production-preflight-refresh.json
+```
+
+生成 matrix 后，再跑目标级审计：
+
+```bash
+python3 scripts/audit_production_goal_readiness.py \
+  --production-readiness-report artifacts/evidence/caption-route-readiness.json \
+  --production-readiness-report artifacts/evidence/asr-route-readiness.json \
+  --cloud-run-config-report artifacts/evidence/cloud-run-realtime-config.json \
+  --cloud-run-api-preflight-report artifacts/evidence/cloud-run-api-preflight.json \
+  --evidence-matrix-report artifacts/evidence/production-evidence-matrix.json
+```
+
+这个 audit 故意比单次 Sunday bundle 更严格：只有 realtime live evidence、stable-correction
+evidence、caption-route archive run、no-caption ASR fallback archive run、Cloud Run/GCS
+manifest evidence，以及 realtime-safe Cloud Run config/API evidence 都齐了，才会从
+`incomplete` 变成 `complete`。matrix 是人类可读交接视图，也是 audit 的输入，避免
+已经证明的 row-level evidence，例如 realtime session JSONL validation，在目标级验证里被漏掉。
 
 当前 E2E run prefix：
 
@@ -275,7 +661,7 @@ Report 中 `status=ok`、`translationStatus=ready`、`totalSegments=80`、`trans
 
 验证时该 OpenAI translation E2E prefix 下没有 `cloud-manifest.json`。这是 E2E publish path 的后续缺口；周日运行时不要假设 manifest 存在，除非当场明确验证。
 
-## 13. Rollback Notes
+## 14. Rollback Notes
 
 当前 service 的 revision rollback：
 

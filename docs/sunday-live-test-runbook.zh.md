@@ -167,6 +167,126 @@ gcloud storage cat \
 - 完整 OpenAI translation E2E run 中，`translatedSegments` 等于 `totalSegments`。
 - 记录最终 playback JS 和 report 的 object generation number。
 
+先跑 live path 的 realtime draft smoke：
+
+```bash
+python3 scripts/realtime_openai_smoke_test.py \
+  --audio-file authorized-smoke.wav \
+  --api-key-secret projects/PROJECT_ID/secrets/openai-api-key/versions/latest \
+  --backend-url https://CLOUD_RUN_URL \
+  --sunday YYYY-MM-DD \
+  --admin-token "$ADMIN_TOKEN" \
+  --realtime-event-gcs-prefix gs://sermon-zh-artifacts-ai-for-god/realtime-events \
+  --out artifacts/realtime-openai-smoke/report.json
+```
+
+再跑 stabilized realtime smoke。这个脚本会自己创建 backend session，event token 只留在进程内，
+用 `gpt-5.5-mini` 回写一条 stable correction，然后用 `--require-stable-correction`
+验证保存下来的 realtime JSONL：
+
+```bash
+python3 scripts/realtime_stabilized_smoke_test.py \
+  --audio-file authorized-smoke.wav \
+  --api-key-secret projects/PROJECT_ID/secrets/openai-api-key/versions/latest \
+  --backend-url https://CLOUD_RUN_URL \
+  --sunday YYYY-MM-DD \
+  --admin-token "$ADMIN_TOKEN" \
+  --realtime-event-gcs-prefix gs://sermon-zh-artifacts-ai-for-god/realtime-events \
+  --read-events-from-gcs \
+  --out artifacts/realtime-stabilized-smoke/report.json
+```
+
+stabilized report 必须确认：
+
+- `status` 是 `ok`。
+- `models.realtimeDraft` 是 `gpt-realtime-translate`。
+- `models.stableCorrection` 是 `gpt-5.5-mini`。
+- `stableCorrection.postedStableCorrections` 大于 `0`。
+- `validation.status` 是 `ok`。
+- `eventTokenIncluded`、`apiKeyMaterialIncluded`、`secretResourceNamesIncluded` 都是 `false`。
+
+11:30 现场运行时，用 live-session wrapper，不要拆成 worker 和 stabilizer 两条手动命令。
+这个脚本会创建 backend session，把 event token 留在进程内，把授权音频源送进
+`gpt-realtime-translate`，并基于保存下来的 realtime JSONL 周期性跑 `gpt-5.5-mini`
+stable correction：
+
+```bash
+python3 scripts/run_realtime_live_session.py \
+  --audio-url 'https://AUTHORIZED_AUDIO_SOURCE/live.m3u8?token=...' \
+  --api-key-secret projects/PROJECT_ID/secrets/openai-api-key/versions/latest \
+  --backend-url https://CLOUD_RUN_URL \
+  --sunday YYYY-MM-DD \
+  --admin-token "$ADMIN_TOKEN" \
+  --realtime-event-gcs-prefix gs://sermon-zh-artifacts-ai-for-god/realtime-events \
+  --read-events-from-gcs \
+  --require-stable-correction \
+  --out artifacts/realtime-live-session/report.json
+```
+
+如果授权源是 YouTube live，确认访问权限和平台规则后，把 `--audio-url ...` 换成
+`--youtube-url 'https://www.youtube.com/watch?v=...'`。如果现场用 iPad/iPhone mic，
+走 admin browser WebRTC；backend event contract 和 stabilizer 回写格式保持一致。浏览器创建
+realtime session 后，用 admin/internal auth 跑后台 stabilizer loop，让 event token 留在浏览器
+session 内：
+
+```bash
+python3 scripts/run_realtime_stabilizer_loop.py \
+  --input-jsonl gs://sermon-zh-artifacts-ai-for-god/realtime-events/YYYY-MM-DD/<browser_session_id>.jsonl \
+  --api-key-secret projects/PROJECT_ID/secrets/openai-api-key/versions/latest \
+  --backend-url https://CLOUD_RUN_URL \
+  --session-id <browser_session_id> \
+  --internal-task-token "$INTERNAL_TASK_TOKEN" \
+  --interval-seconds 6 \
+  --min-age-seconds 4
+```
+
+loop 会先写 `<browser_session_id>.model-access-preflight.json`。如果
+`gpt-5.5-mini` 在 OpenAI Responses 上不可用，它会在读取 event log 或回写修正版前退出；
+低延迟的 `gpt-realtime-translate` draft session 应继续运行。
+
+先生成 combined evidence command：
+
+```bash
+python3 scripts/run_sunday_evidence_bundle.py \
+  --sunday YYYY-MM-DD \
+  --session-id <worker_session_id> \
+  --artifact-location gcs \
+  --artifact-bucket sermon-zh-artifacts-ai-for-god \
+  --artifact-prefix sundays \
+  --realtime-location gcs \
+  --realtime-event-gcs-prefix gs://sermon-zh-artifacts-ai-for-god/realtime-events \
+  --realtime-smoke-report artifacts/realtime-live-session/report.json \
+  --require-readable-sunday-artifacts \
+  --cloud-run-config-report artifacts/evidence/cloud-run-realtime-config.json \
+  --cloud-run-api-preflight-report artifacts/evidence/cloud-run-api-preflight.json \
+  --web-realtime-contract-report artifacts/evidence/web-realtime-contract.json \
+  --realtime-public-sse-smoke-report artifacts/evidence/realtime-public-sse-smoke.json \
+  --realtime-session-validation-report artifacts/evidence/realtime-live-session/realtime-session-validation.json \
+  --offline-chain-validation-report artifacts/evidence/offline-chain-validation.json \
+  --offline-asr-smoke-report artifacts/evidence/offline-asr-fallback-smoke/report.json \
+  --sunday-manifest-validation-report artifacts/evidence/sunday-manifest-validation.json \
+  --openai-model-access-preflight-report artifacts/evidence/openai-model-access-preflight.json \
+  --openai-alternative-model-access-preflight-report artifacts/evidence/openai-model-access-preflight-gpt-5.5.json \
+  --out artifacts/evidence/caption-route-readiness.json \
+  --evidence-matrix-out artifacts/evidence/production-evidence-matrix.json \
+  --goal-audit-out artifacts/evidence/production-goal-readiness-audit.json \
+  --bundle-report-out artifacts/evidence/sunday-evidence-bundle.json \
+  --dry-run
+```
+
+确认路径正确后去掉 `--dry-run` 重跑。该命令会调用 production readiness gate，并继续写出
+production evidence matrix 和 goal audit；如果 offline artifacts、promoted Sunday manifest、
+realtime JSONL、Cloud Run config 或 API preflight 证据缺失/无效，会直接失败。如果已经知道
+realtime session id，可以用 `--realtime-session-id` 代替 `--realtime-smoke-report`。如果 smoke
+report 里包含 `realtimeEventsJsonl`，runner 会优先使用这个精确 JSONL URI。11:30 production
+gate 使用 live-session report；rehearsal evidence 可以使用 stabilized smoke report。两种情况下，
+realtime JSONL 都必须已经包含至少一条 `gpt-5.5-mini` stable correction event。如果
+production-readiness verifier 在写 report 前退出，bundle 会写一份最小 failed report，并继续生成
+matrix/audit，让 operator 仍然能看到一张状态板。如果 matrix generation 在写 report 前退出，
+bundle 会写一份最小 incomplete matrix，并继续跑 goal audit。
+alternative model access report 只作为旁证记录；不要把 `gpt-5.5` 可用当作 required
+`gpt-5.5-mini` access 的替代。
+
 ## Rollback
 
 如果部署后的静态 app 或 env vars 有问题，用 revision rollback：

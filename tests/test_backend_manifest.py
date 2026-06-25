@@ -17,7 +17,21 @@ class SundaySliceServiceTest(unittest.TestCase):
                 {
                     "schemaVersion": 1,
                     "status": "ready",
+                    "generationMode": "youtube-live-archive",
                     "translationStatus": "ready",
+                    "publishedAt": "2026-06-28T18:20:00+00:00",
+                    "readiness": {
+                        "state": "published",
+                        "publicArtifactsReady": True,
+                        "operatorReviewed": False,
+                        "fallback": False,
+                        "sourceMode": "youtube-live-archive",
+                        "translationStatus": "ready",
+                        "readyTime": "2026-06-28T18:18:00+00:00",
+                        "publishedAt": "2026-06-28T18:20:00+00:00",
+                        "publishedManifest": "gs://bucket/sundays/2026-06-28/cloud-manifest.json",
+                        "checks": [{"name": "public_playback_js", "state": "pass"}],
+                    },
                     "apiKeySecret": "projects/p/secrets/openai-api-key/versions/latest",
                     "apiKeyMaterialIncluded": False,
                     "outputs": [
@@ -83,7 +97,13 @@ class SundaySliceServiceTest(unittest.TestCase):
 
             self.assertEqual(public_slice["artifactCount"], 2)
             self.assertEqual(public_slice["status"], "ready")
+            self.assertEqual(public_slice["generationMode"], "youtube-live-archive")
             self.assertEqual(public_slice["translationStatus"], "ready")
+            self.assertEqual(public_slice["readiness"]["state"], "published")
+            self.assertEqual(public_slice["readiness"]["sourceMode"], "youtube-live-archive")
+            self.assertEqual(public_slice["readiness"]["publishedAt"], "2026-06-28T18:20:00+00:00")
+            self.assertEqual(public_slice["readyTime"], "2026-06-28T18:18:00+00:00")
+            self.assertEqual(public_slice["publishedAt"], "2026-06-28T18:20:00+00:00")
             self.assertEqual(public_slice["totalSegments"], 2)
             self.assertEqual(public_slice["translatedSegments"], 1)
             self.assertEqual(
