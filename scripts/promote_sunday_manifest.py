@@ -283,9 +283,7 @@ def stable_manifest_uri(bucket: str, prefix: str, sunday: str) -> str:
 
 
 def validate_sunday(value: str) -> None:
-    parsed = date.fromisoformat(value)
-    if parsed.weekday() != 6:
-        raise SystemExit("--sunday must be a Sunday date")
+    date.fromisoformat(value)
 
 
 def read_json(uri: str) -> dict[str, Any]:

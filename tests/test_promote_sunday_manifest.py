@@ -13,6 +13,9 @@ SPEC.loader.exec_module(promote)
 
 
 class PromoteSundayManifestTest(unittest.TestCase):
+    def test_validate_sunday_accepts_dedicated_test_date(self):
+        self.assertIsNone(promote.validate_sunday("2026-06-25"))
+
     def test_promote_manifest_adds_ready_state_without_secret_references(self):
         with tempfile.TemporaryDirectory() as tmp:
             playback = Path(tmp) / "playback-simulation.generated.js"

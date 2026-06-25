@@ -88,10 +88,8 @@ class SundaySliceService:
         if sunday == "current":
             return current_sunday(timezone=self.config.timezone).isoformat()
         if not SUNDAY_RE.fullmatch(sunday):
-            raise ValueError("Sunday must be current or YYYY-MM-DD")
-        parsed = date.fromisoformat(sunday)
-        if parsed.weekday() != 6:
-            raise ValueError("Sunday slice date must be a Sunday")
+            raise ValueError("Sunday slice must be current or YYYY-MM-DD")
+        date.fromisoformat(sunday)
         return sunday
 
     def _read_json(self, uri: str) -> dict[str, Any]:

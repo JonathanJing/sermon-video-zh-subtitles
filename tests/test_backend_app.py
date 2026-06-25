@@ -18,6 +18,15 @@ class BackendAppTest(unittest.TestCase):
             WEB_ROOT / "index.html",
         )
 
+    def test_date_slice_allows_non_sunday_test_page(self):
+        handler = object.__new__(ApiHandler)
+        handler.service = type(
+            "FakeService",
+            (),
+            {"_resolve_sunday": staticmethod(lambda value: value)},
+        )()
+        self.assertEqual(ApiHandler.resolve_admin_sunday(handler, "2026-06-25"), "2026-06-25")
+
     def test_static_admin_route_serves_admin_page(self):
         self.assertEqual(ApiHandler.static_path_for(ApiHandler, "/admin"), WEB_ROOT / "admin.html")
         self.assertEqual(ApiHandler.static_path_for(ApiHandler, "/admin/"), WEB_ROOT / "admin.html")

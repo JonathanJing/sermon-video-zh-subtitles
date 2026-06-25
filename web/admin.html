@@ -85,10 +85,10 @@
             </div>
 
             <label class="field">
-              <span>本周日页面</span>
+              <span>日期页面</span>
               <select id="sundaySelect">
-                <option value="2026-06-21">2026-06-21</option>
-                <option value="2026-06-28">2026-06-28</option>
+                <option value="2026-06-25">测试页面 2026-06-25</option>
+                <option value="2026-06-28">正式周日 2026-06-28</option>
               </select>
             </label>
 
@@ -141,6 +141,34 @@
               <button class="button" type="button" data-action="run-auto-discovery">测试自动抓取</button>
             </div>
           </form>
+
+          <section class="test-panel cloud-test-panel" aria-labelledby="cloud-test-title">
+            <div class="settings-header">
+              <div>
+                <span class="sidecar-label">Cloud Run 测试页</span>
+                <h3 id="cloud-test-title">按日期发布测试</h3>
+              </div>
+              <span class="settings-mode" id="cloudRunTestState">未开始</span>
+            </div>
+            <dl class="admin-evidence">
+              <div>
+                <dt>测试日期</dt>
+                <dd id="cloudRunTestDate">--</dd>
+              </div>
+              <div>
+                <dt>运行结果</dt>
+                <dd id="cloudRunTestResult">输入链接后可触发 Cloud Run 生成。</dd>
+              </div>
+              <div>
+                <dt>用户页面</dt>
+                <dd><a id="cloudRunPublicLink" href="./" target="_blank" rel="noreferrer">等待生成</a></dd>
+              </div>
+              <div>
+                <dt>Admin 页面</dt>
+                <dd><a id="cloudRunAdminLink" href="./admin.html" target="_blank" rel="noreferrer">当前管理页</a></dd>
+              </div>
+            </dl>
+          </section>
 
           <div class="source-list" id="sourceList" aria-live="polite">
             <article class="source-card is-primary" data-source="mariners-online">

@@ -150,7 +150,7 @@
     segmentScrollProgrammatic: false,
     viewMode: "congregation",
     adminSettings: {
-      sunday: "2026-06-21",
+      sunday: "2026-06-25",
       manualLiveUrl: "",
       approxStartTime: "",
       captureMode: "automatic"
@@ -225,7 +225,12 @@
     latencyWorst: document.getElementById("latencyWorst"),
     latencySegments: document.getElementById("latencySegments"),
     latencyPassState: document.getElementById("latencyPassState"),
-    latencyNote: document.getElementById("latencyNote")
+    latencyNote: document.getElementById("latencyNote"),
+    cloudRunTestState: document.getElementById("cloudRunTestState"),
+    cloudRunTestDate: document.getElementById("cloudRunTestDate"),
+    cloudRunTestResult: document.getElementById("cloudRunTestResult"),
+    cloudRunPublicLink: document.getElementById("cloudRunPublicLink"),
+    cloudRunAdminLink: document.getElementById("cloudRunAdminLink")
   };
 
   function init() {
@@ -255,11 +260,13 @@
     log(state.viewMode === "admin"
       ? "管理端已就绪：检查 11:30 会众字幕生成状态，并保留手动触发入口。"
       : "会众页已就绪：正在加载本周日可用中文字幕。");
+    applyDateFromRoute();
     loadPlaybackSimulation();
     syncAdminSettings();
     updateSourceCards("idle");
     updateTimeline();
     loadPublicPublishedSnapshot();
+    loadCloudRunDatePlayback();
     if (state.viewMode === "admin") {
       refreshAdminStatus();
       updatePipelineForState("idle");
@@ -281,6 +288,36 @@
     document.title = state.viewMode === "admin"
       ? "管理端 | 11:30 会众中文字幕"
       : "11:30 会众中文字幕";
+  }
+
+  function applyDateFromRoute() {
+    const targetDate = targetDateFromRoute();
+    if (!targetDate) return;
+    state.adminSettings.sunday = targetDate;
+    if (el.publicSliceLabel) el.publicSliceLabel.textContent = targetDate;
+  }
+
+  function targetDateFromRoute() {
+    const params = new URLSearchParams(window.location.search);
+    const queryDate = params.get("sunday") || params.get("date");
+    if (isIsoDate(queryDate)) return queryDate;
+    const match = window.location.pathname.match(/\/sundays\/(\d{4}-\d{2}-\d{2})(?:\/|$)/);
+    return match ? match[1] : "";
+  }
+
+  function currentIsoDate() {
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Los_Angeles",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    });
+    const parts = Object.fromEntries(formatter.formatToParts(new Date()).map((part) => [part.type, part.value]));
+    return `${parts.year}-${parts.month}-${parts.day}`;
+  }
+
+  function isIsoDate(value) {
+    return /^\d{4}-\d{2}-\d{2}$/.test(String(value || ""));
   }
 
   function loadPublicPublishedSnapshot() {
@@ -319,6 +356,34 @@
     updateTimeline(100);
   }
 
+  async function loadCloudRunDatePlayback(dateOverride = "") {
+    const targetDate = dateOverride || targetDateFromRoute();
+    if (!targetDate) return;
+    try {
+      const sliceResponse = await fetch(`/api/sundays/${encodeURIComponent(targetDate)}`, { cache: "no-store" });
+      if (!sliceResponse.ok) throw new Error(`日期页面清单读取失败：HTTP ${sliceResponse.status}`);
+      const slice = await sliceResponse.json();
+      const playbackArtifact = (slice.artifacts || []).find((item) => item.key === "playback-js");
+      if (!playbackArtifact?.apiPath) throw new Error("日期页面没有 playback-js artifact");
+      const playbackResponse = await fetch(playbackArtifact.apiPath, { cache: "no-store" });
+      if (!playbackResponse.ok) throw new Error(`playback-js 读取失败：HTTP ${playbackResponse.status}`);
+      const simulation = parsePlaybackSimulationJs(await playbackResponse.text());
+      window.SERMON_PLAYBACK_SIMULATION = simulation;
+      state.playbackSegments = [];
+      loadPlaybackSimulation();
+      loadPublicPublishedSnapshot();
+      if (state.viewMode === "admin") {
+        updateCloudRunTestStatus("已加载", `${targetDate} 已发布：${slice.sermonTitle || "测试字幕"}，${slice.translatedSegments || 0}/${slice.totalSegments || 0} 已翻译。`, "ready");
+      }
+      log(`已从 Cloud Run 日期页面加载 ${targetDate} 的发布字幕。`);
+    } catch (error) {
+      if (state.viewMode === "admin") {
+        updateCloudRunTestStatus("未发布", `${targetDate} 还没有可读 playback-js：${error.message || error}`, "manual");
+      }
+      log(`日期页面 ${targetDate} 尚未加载发布字幕：${error.message || error}。`);
+    }
+  }
+
   function loadPlaybackSimulation() {
     const simulation = window.SERMON_PLAYBACK_SIMULATION;
     if (!simulation || !Array.isArray(simulation.segments) || !simulation.segments.length) {
@@ -350,6 +415,16 @@
     if (simulation.translationStatus === "needs_translation") {
       log("当前 POC 片段为英文字幕源，中文字幕位置将显示 AI 待生成状态，用于验证播放和对齐。");
     }
+  }
+
+  function parsePlaybackSimulationJs(text) {
+    const prefix = "window.SERMON_PLAYBACK_SIMULATION = ";
+    if (!String(text || "").startsWith(prefix)) {
+      throw new Error("playback-simulation.generated.js 格式不正确");
+    }
+    let payload = String(text).slice(prefix.length).trim();
+    if (payload.endsWith(";")) payload = payload.slice(0, -1);
+    return JSON.parse(payload);
   }
 
   function normalizePlaybackSegment(segment, index) {
@@ -756,7 +831,7 @@
   }
 
   function requestAdminToken() {
-    const token = window.prompt("请输入管理端 token，用于创建 OpenAI Realtime session。");
+    const token = window.prompt("请输入管理端 token，用于执行 Cloud Run 管理操作。");
     const clean = String(token || "").trim();
     if (!clean) return "";
     try {
@@ -1207,7 +1282,7 @@
     };
     syncAdminSettings();
     if (!options.quiet) {
-      log(`管理端设置已保存：${sunday} 周日切片${manualLiveUrl ? "；手动直播链接已设置" : "；等待自动抓取直播链接"}。`);
+      log(`管理端设置已保存：${sunday} 日期页面${manualLiveUrl ? "；手动直播链接已设置" : "；等待自动抓取直播链接"}。`);
     }
   }
 
@@ -1253,34 +1328,61 @@
 
   async function postManualGenerateRequest() {
     if (state.viewMode !== "admin") return;
+    updateCloudRunTestStatus("请求中", "正在请求 Cloud Run 生成日期测试页。", "manual");
     try {
-      const response = await fetch(`/api/admin/sundays/${encodeURIComponent(state.adminSettings.sunday)}/generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          triggerSource: "operator",
-          liveUrl: state.adminSettings.manualLiveUrl,
-          sermonStart: state.adminSettings.approxStartTime || undefined
-        })
-      });
+      let response = await requestManualGeneration();
+      if (response.status === 401) {
+        const token = requestAdminToken();
+        if (token) response = await requestManualGeneration(token);
+      }
       const body = await response.json().catch(() => ({}));
       if (response.ok) {
-        updateAdminEvidence("triggered", `直播抓取已触发 · ${body.status || "已接收"} · ${body.sessionId || "任务待创建"}`);
+        const status = body.status || "accepted";
+        updateAdminEvidence("triggered", `直播抓取已触发 · ${status} · ${body.sessionId || "任务待创建"}`);
         updateAdminEvidence("worker", body.prefix ? `计划写入路径：${body.prefix}` : "后台计划已接收");
-        log(`后端已接收手动触发请求：${body.status || response.status}。`);
+        if (status === "completed") {
+          updateCloudRunTestStatus("完成", `已发布到 ${state.adminSettings.sunday} 日期页面；用户页和 Admin 页可打开查看。`, "ready");
+          updatePipelineForState("ready");
+          await refreshAdminStatus();
+          await loadCloudRunDatePlayback(state.adminSettings.sunday);
+        } else {
+          const commandCount = Array.isArray(body.commands) ? body.commands.length : body.commandCount;
+          updateCloudRunTestStatus("已排程", `后端返回 ${status}；${commandCount || 0} 个 worker 步骤。若 Cloud Run 未启用 inline worker，需要用返回计划启动 Job。`, "manual");
+        }
+        log(`后端已接收手动触发请求：${status}。`);
         return;
       }
       if (response.status === 401) {
         updateAdminEvidence("triggered", "后端已保护：需要操作者 token / OIDC，未执行真实触发。");
-        log("后端 generate endpoint 已启用鉴权；本页没有发送 token，因此只保留本地模拟状态。");
+        updateCloudRunTestStatus("需授权", "请输入管理端 token 后再触发生成。", "manual");
+        log("后端 generate endpoint 已启用鉴权；本页没有可用 token，因此只保留本地模拟状态。");
         return;
       }
       updateAdminEvidence("triggered", `后端返回 ${response.status}: ${body.error || "请求失败"}`);
+      updateCloudRunTestStatus("失败", body.error || `HTTP ${response.status}`, "manual");
       log(`手动触发请求失败：${body.error || response.status}。`);
     } catch (error) {
       updateAdminEvidence("triggered", "无法连接后端，当前仅显示本地模拟状态。");
+      updateCloudRunTestStatus("未送达", error.message || String(error), "manual");
       log(`手动触发请求未送达：${error.message || error}。`);
     }
+  }
+
+  function requestManualGeneration(token) {
+    return fetch(`/api/admin/sundays/${encodeURIComponent(state.adminSettings.sunday)}/generate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { "Authorization": `Bearer ${token}` } : adminAuthHeaders())
+      },
+      body: JSON.stringify({
+        triggerSource: "operator-cloud-run-test",
+        liveUrl: state.adminSettings.manualLiveUrl,
+        sermonStart: state.adminSettings.approxStartTime || undefined,
+        maxSegments: 80,
+        playbackSpeed: 18
+      })
+    });
   }
 
   function tickPlayback() {
@@ -2241,6 +2343,7 @@
     if (el.manualLiveUrl) el.manualLiveUrl.value = state.adminSettings.manualLiveUrl;
     if (el.approxStartTime) el.approxStartTime.value = state.adminSettings.approxStartTime;
     if (el.publicSliceLabel) el.publicSliceLabel.textContent = state.adminSettings.sunday;
+    updateCloudRunTestLinks();
     if (el.autoDiscoveryStatus) {
       el.autoDiscoveryStatus.textContent = state.adminSettings.captureMode === "manual"
         ? "手动链接优先"
@@ -2248,6 +2351,26 @@
     }
     updateCaptureMode(state.adminSettings.captureMode);
     updateAdminStatusSummary();
+  }
+
+  function updateCloudRunTestLinks() {
+    const sunday = state.adminSettings.sunday || currentIsoDate();
+    setOptionalText(el.cloudRunTestDate, sunday);
+    if (el.cloudRunPublicLink) {
+      el.cloudRunPublicLink.href = `/sundays/${encodeURIComponent(sunday)}`;
+      el.cloudRunPublicLink.textContent = `/sundays/${sunday}`;
+    }
+    if (el.cloudRunAdminLink) {
+      el.cloudRunAdminLink.href = `/admin.html?sunday=${encodeURIComponent(sunday)}`;
+      el.cloudRunAdminLink.textContent = `/admin.html?sunday=${sunday}`;
+    }
+  }
+
+  function updateCloudRunTestStatus(label, detail, tone = "manual") {
+    setOptionalText(el.cloudRunTestState, label);
+    if (el.cloudRunTestState) el.cloudRunTestState.classList.toggle("is-manual", tone !== "ready");
+    setOptionalText(el.cloudRunTestResult, detail);
+    updateCloudRunTestLinks();
   }
 
   function updateCaptureMode(mode) {
