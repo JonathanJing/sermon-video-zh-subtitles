@@ -465,6 +465,7 @@
       marked: false,
       offsetMs: 0,
       translationStatus: segment.translationStatus || "unknown",
+      realtimeStage: segment.realtimeStage || "",
       sourceSegmentIds: Array.isArray(segment.sourceSegmentIds) ? segment.sourceSegmentIds.map(String) : [],
       sourceCueCount: Number(segment.sourceCueCount) || 0
     };
@@ -1117,22 +1118,28 @@
         marked: false,
         offsetMs: 0,
         sourceMode: "openai-realtime",
+        realtimeStage: "draft",
         final: false
       };
       state.micTranscriptIndex += 1;
       state.segments.push(segment);
       state.realtime.currentSegmentId = segment.id;
     }
+    const isStableCommit = event.type === "caption_stable" || event.stability === "stable";
     const isStableCorrection = String(event.source || "").includes("stable-correction");
-    segment.zh = event.final || isStableCorrection ? text : `${segment.zh || ""}${event.delta || text}`;
+    segment.zh = event.final || isStableCorrection || isStableCommit ? text : `${segment.zh || ""}${event.delta || text}`;
     segment.en = state.realtime.partialEn || segment.en || "";
     if (event.en) segment.en = event.en;
     segment.endMs = Math.max(segment.endMs, startMs + Math.max(1800, Math.min(8000, segment.zh.length * 90)));
-    segment.final = Boolean(event.final);
-    segment.stable = Boolean(segment.stable || isStableCorrection);
+    segment.final = Boolean(event.final || isStableCorrection);
+    segment.stable = Boolean(segment.stable || isStableCorrection || isStableCommit);
+    segment.realtimeStage = isStableCorrection ? "final" : isStableCommit ? "stable" : event.final ? "final" : "draft";
     if (isStableCorrection) {
       segment.note = "gpt-5.4-mini 稳定修正版。";
       segment.confidence = Math.max(Number(segment.confidence) || 0, 88);
+    } else if (isStableCommit) {
+      segment.note = "Realtime 稳定字幕，等待最终轻量修正。";
+      segment.confidence = Math.max(Number(segment.confidence) || 0, 84);
     }
     segment.refs = normalizeSegmentReferences(segment, [segment.en, segment.zh]);
     state.currentSegmentId = segment.id;
@@ -1142,7 +1149,11 @@
     updateNotes();
     recordLatency("firstChinese", now);
     recordLatencySample(Number(event.latencyMs) || 1200);
-    updatePipelineStage("translation", event.final ? "done" : "active", event.final ? "中文已确认" : "中文显示中");
+    updatePipelineStage(
+      "translation",
+      event.final || isStableCorrection ? "done" : isStableCommit ? "active" : "active",
+      event.final || isStableCorrection ? "中文已确认" : isStableCommit ? "中文已稳定" : "中文显示中"
+    );
     setGenerationStatus("Realtime 翻译", "live");
     updateTestPassStateFromMetrics();
     if (event.final) {
@@ -1197,7 +1208,7 @@
         handleRealtimeCaptionEvent(payload);
       } catch (_error) {}
     };
-    ["caption_delta", "caption_final", "input_transcript_delta", "input_transcript_final"].forEach((type) => {
+    ["caption_delta", "caption_stable", "caption_final", "input_transcript_delta", "input_transcript_final"].forEach((type) => {
       source.addEventListener(type, onCaption);
     });
     source.onerror = () => {
@@ -1583,6 +1594,7 @@
       sourceSegmentIds: ids,
       flags: [
         ids.length ? `${ids.length} 个原始 cue` : "",
+        realtimeStageLabel(display?.realtimeStage || review.realtimeStage || ""),
         ...refs.map((ref) => ref?.canonicalRef || "").filter(Boolean)
       ].filter(Boolean),
       zh: review.zh || display?.zh || "",
@@ -1620,6 +1632,7 @@
       zhParts: [segment.zh || ""].filter(Boolean),
       enParts: [segment.en || ""].filter(Boolean),
       refs: new Set(segment.ref ? [segment.ref] : []),
+      realtimeStage: segment.realtimeStage || (segment.final ? "final" : segment.stable ? "stable" : ""),
       marked: Boolean(segment.marked),
       locked: Boolean(segment.locked),
       segmentIds: [segment.id],
@@ -1632,6 +1645,10 @@
     if (segment.zh) group.zhParts.push(segment.zh);
     if (segment.en) group.enParts.push(segment.en);
     if (segment.ref) group.refs.add(segment.ref);
+    group.realtimeStage = strongestRealtimeStage(
+      group.realtimeStage,
+      segment.realtimeStage || (segment.final ? "final" : segment.stable ? "stable" : "")
+    );
     group.marked = group.marked || Boolean(segment.marked);
     group.locked = group.locked || Boolean(segment.locked);
     group.segmentIds.push(segment.id);
@@ -1642,6 +1659,7 @@
     const flags = [
       group.locked ? "锁定" : "",
       group.marked ? "已标记" : "",
+      realtimeStageLabel(group.realtimeStage),
       ...Array.from(group.refs)
     ].filter(Boolean);
     return {
@@ -1671,6 +1689,18 @@
 
   function endsSentence(text) {
     return /(?:[。！？；]|\.\s*|[!?]\s*|……)$/.test(String(text || "").trim());
+  }
+
+  function realtimeStageLabel(stage) {
+    if (stage === "final") return "最终";
+    if (stage === "stable") return "稳定";
+    if (stage === "draft") return "草稿";
+    return "";
+  }
+
+  function strongestRealtimeStage(current, next) {
+    const rank = { "": 0, draft: 1, stable: 2, final: 3 };
+    return (rank[next] || 0) > (rank[current] || 0) ? next : current;
   }
 
   function onSegmentTrackScroll() {

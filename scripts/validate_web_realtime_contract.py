@@ -120,7 +120,7 @@ REQUIREMENTS = [
         "needles": [
             "function connectPublicRealtimeEvents()",
             'new EventSource("/api/realtime/sessions/current/events")',
-            '["caption_delta", "caption_final", "input_transcript_delta", "input_transcript_final"]',
+            '["caption_delta", "caption_stable", "caption_final", "input_transcript_delta", "input_transcript_final"]',
             "handleRealtimeCaptionEvent(payload)",
         ],
     },
@@ -129,8 +129,9 @@ REQUIREMENTS = [
         "description": "Delayed gpt-5.4-mini stable corrections replace realtime draft segments.",
         "needles": [
             'String(event.source || "").includes("stable-correction")',
+            'event.type === "caption_stable"',
             'segment.note = "gpt-5.4-mini 稳定修正版。"',
-            "segment.stable = Boolean(segment.stable || isStableCorrection)",
+            "segment.stable = Boolean(segment.stable || isStableCorrection || isStableCommit)",
         ],
     },
 ]

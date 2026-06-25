@@ -48,6 +48,26 @@ class ValidateRealtimeSessionTest(unittest.TestCase):
             {
                 "id": 4,
                 "sessionId": "rt_test",
+                "type": "caption_stable",
+                "source": "realtime-caption-stabilizer",
+                "stability": "stable",
+                "zh": "神爱世人。",
+                "en": "God loved the world.",
+                "final": False,
+                "segmentId": "seg_1",
+                "stabilizerWindowMs": 8000,
+                "stabilizerWindow": {
+                    "windowMs": 8000,
+                    "segmentId": "seg_1",
+                    "sourceEventIds": [2, 3],
+                    "inputTextEn": "God loved the world.",
+                    "draftZh": "神爱世人。",
+                },
+                "latencyMs": 1200,
+            },
+            {
+                "id": 5,
+                "sessionId": "rt_test",
                 "type": "caption_final",
                 "source": "gpt-5.4-mini-stable-correction",
                 "model": "gpt-5.4-mini",
@@ -65,6 +85,7 @@ class ValidateRealtimeSessionTest(unittest.TestCase):
             "events": events,
             "raw_text": raw_text,
             "events_uri": "/tmp/rt_test.jsonl",
+            "require_caption_stable": True,
             "require_stable_correction": True,
         }
         kwargs.update(overrides)
@@ -77,12 +98,14 @@ class ValidateRealtimeSessionTest(unittest.TestCase):
         self.assertEqual(report["failedChecks"], [])
         self.assertEqual(report["counts"]["realtimeInputTranscriptEvents"], 1)
         self.assertEqual(report["counts"]["realtimeCaptionEvents"], 1)
+        self.assertEqual(report["counts"]["stableCaptionEvents"], 1)
         self.assertEqual(report["counts"]["stableCorrectionEvents"], 1)
+        self.assertEqual(report["stableLatency"]["p95Ms"], 1200)
         self.assertEqual(report["sessionIds"], ["rt_test"])
         self.assertEqual(report["targetLanguages"], ["zh"])
         self.assertEqual(report["audioSourceKinds"], ["ipad_mic"])
         self.assertNotIn("stable_correction_context", report["failedChecks"])
-        self.assertEqual(report["latency"]["maxMs"], 420)
+        self.assertEqual(report["latency"]["maxMs"], 1200)
         self.assertFalse(report["apiKeyMaterialIncluded"])
         self.assertFalse(report["secretResourceNamesIncluded"])
 
@@ -245,6 +268,29 @@ class ValidateRealtimeSessionTest(unittest.TestCase):
 
         self.assertEqual(report["status"], "failed")
         self.assertIn("stable_correction", report["failedChecks"])
+
+    def test_fails_when_caption_stable_is_required_but_missing(self):
+        events = [
+            event
+            for event in self.ready_events()
+            if event.get("source") != "realtime-caption-stabilizer"
+        ]
+
+        report = self.report_for(events)
+
+        self.assertEqual(report["status"], "failed")
+        self.assertIn("caption_stable", report["failedChecks"])
+
+    def test_fails_when_caption_stable_lacks_window_context(self):
+        events = self.ready_events()
+        for event in events:
+            if event.get("type") == "caption_stable":
+                event.pop("stabilizerWindow", None)
+
+        report = self.report_for(events)
+
+        self.assertEqual(report["status"], "failed")
+        self.assertIn("caption_stable_window", report["failedChecks"])
 
     def test_fails_when_stable_correction_does_not_match_realtime_draft_segment(self):
         events = self.ready_events()

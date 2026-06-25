@@ -34,13 +34,77 @@ class RealtimeSessionStoreTest(unittest.TestCase):
     def test_appends_and_reads_caption_events_after_cursor(self):
         store = RealtimeSessionStore()
         session = store.create(sunday="2026-06-28")
-        first = store.append_event(session.session_id, {"type": "caption_delta", "text": "神爱世人"})
-        second = store.append_event(session.session_id, {"type": "caption_final", "text": "神爱世人。", "final": True})
+        first = store.append_event(
+            session.session_id,
+            {"type": "caption_delta", "text": "神爱世人", "segmentId": "seg_1"},
+        )
+        second = store.append_event(
+            session.session_id,
+            {"type": "caption_final", "text": "神爱世人。", "final": True, "segmentId": "seg_1"},
+        )
 
         events = store.wait_for_events(session.session_id, after_id=first["id"], timeout=0)
-        self.assertEqual([event["id"] for event in events], [second["id"]])
+        self.assertEqual([event["id"] for event in events], [second["id"], second["id"] + 1])
         self.assertEqual(events[0]["text"], "神爱世人。")
         self.assertTrue(events[0]["final"])
+        self.assertEqual(events[1]["type"], "caption_stable")
+        self.assertEqual(events[1]["segmentId"], "seg_1")
+
+    def test_derives_caption_stable_for_semantic_realtime_boundary(self):
+        store = RealtimeSessionStore()
+        session = store.create(sunday="2026-06-28")
+        store.append_event(
+            session.session_id,
+            {
+                "type": "input_transcript_delta",
+                "text": "God loved the world.",
+                "segmentId": "seg_1",
+                "source": "openai_realtime_translation_ws",
+            },
+        )
+        draft = store.append_event(
+            session.session_id,
+            {
+                "type": "caption_delta",
+                "text": "神爱世人。",
+                "segmentId": "seg_1",
+                "source": "openai_realtime_translation_ws",
+                "latencyMs": 980,
+            },
+        )
+
+        events = store.wait_for_events(session.session_id, after_id=draft["id"], timeout=0)
+
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0]["type"], "caption_stable")
+        self.assertEqual(events[0]["zh"], "神爱世人。")
+        self.assertEqual(events[0]["en"], "God loved the world.")
+        self.assertEqual(events[0]["source"], "realtime-caption-stabilizer")
+        self.assertEqual(events[0]["stability"], "stable")
+        self.assertEqual(events[0]["stabilizerWindowMs"], 8000)
+        self.assertEqual(events[0]["stabilizerWindow"]["windowMs"], 8000)
+        self.assertEqual(events[0]["stabilizerWindow"]["segmentId"], "seg_1")
+        self.assertEqual(events[0]["stabilizerWindow"]["inputTextEn"], "God loved the world.")
+        self.assertEqual(events[0]["stabilizerWindow"]["draftZh"], "神爱世人。")
+        self.assertEqual(events[0]["stabilizerWindow"]["sourceEventIds"], [2, 3])
+        self.assertEqual(events[0]["latencyMs"], 980)
+
+    def test_does_not_stabilize_connector_ending_delta(self):
+        store = RealtimeSessionStore()
+        session = store.create(sunday="2026-06-28")
+        draft = store.append_event(
+            session.session_id,
+            {
+                "type": "caption_delta",
+                "text": "这很重要，因为",
+                "segmentId": "seg_1",
+                "source": "openai_realtime_translation_ws",
+            },
+        )
+
+        events = store.wait_for_events(session.session_id, after_id=draft["id"], timeout=0)
+
+        self.assertEqual(events, [])
 
     def test_sanitize_event_drops_untrusted_fields(self):
         event = sanitize_event(
@@ -57,6 +121,27 @@ class RealtimeSessionStoreTest(unittest.TestCase):
         self.assertEqual(event["latencyMs"], 1200)
         self.assertNotIn("apiKey", event)
         self.assertNotIn("Authorization", event)
+
+    def test_sanitize_event_keeps_only_safe_stabilizer_window_fields(self):
+        event = sanitize_event(
+            {
+                "type": "caption_stable",
+                "text": "神爱世人。",
+                "segmentId": "seg_1",
+                "stabilizerWindow": {
+                    "windowMs": "8000",
+                    "segmentId": "seg_1",
+                    "inputTextEn": "God loved the world.",
+                    "draftZh": "神爱世人。",
+                    "sourceEventIds": ["2", 3, "bad"],
+                    "apiKey": "sk-secret",
+                },
+            }
+        )
+
+        self.assertEqual(event["stabilizerWindow"]["windowMs"], 8000)
+        self.assertEqual(event["stabilizerWindow"]["sourceEventIds"], [2, 3])
+        self.assertNotIn("apiKey", event["stabilizerWindow"])
 
     def test_archive_writes_sanitized_jsonl_events(self):
         with tempfile.TemporaryDirectory() as tmp:

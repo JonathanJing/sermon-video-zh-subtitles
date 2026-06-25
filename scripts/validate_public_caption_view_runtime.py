@@ -66,7 +66,7 @@ def validate_public_caption_view_runtime(app_js: Path, *, node_bin: str = "node"
     checks.append(
         check(
             "public_sse_subscription_registered",
-            "caption_delta" in set(probe.get("eventSourceListeners") or []),
+            {"caption_delta", "caption_stable"}.issubset(set(probe.get("eventSourceListeners") or [])),
             {"eventSourceListeners": probe.get("eventSourceListeners") or []},
         )
     )
@@ -75,6 +75,13 @@ def validate_public_caption_view_runtime(app_js: Path, *, node_bin: str = "node"
             "realtime_draft_visible",
             probe.get("draftCaption") == "神爱世人",
             {"draftCaption": probe.get("draftCaption")},
+        )
+    )
+    checks.append(
+        check(
+            "realtime_stable_commit_visible",
+            probe.get("stableCommitCaption") == "神爱世人。",
+            {"stableCommitCaption": probe.get("stableCommitCaption")},
         )
     )
     checks.append(
@@ -271,6 +278,24 @@ app.pushRealtimeEvent({{
 }});
 const draftCaption = getElement("stableCaption").textContent;
 app.pushRealtimeEvent({{
+  type: "caption_stable",
+  segmentId: "seg_runtime_1",
+  text: "神爱世人。",
+  zh: "神爱世人。",
+  en: "God loved the world",
+  final: false,
+  source: "realtime-caption-stabilizer",
+  stability: "stable",
+  stabilizerWindow: {{
+    windowMs: 8000,
+    segmentId: "seg_runtime_1",
+    sourceEventIds: [1, 2],
+    inputTextEn: "God loved the world",
+    draftZh: "神爱世人。"
+  }}
+}});
+const stableCommitCaption = getElement("stableCaption").textContent;
+app.pushRealtimeEvent({{
   type: "caption_final",
   segmentId: "seg_runtime_1",
   text: "神爱世人。",
@@ -286,7 +311,9 @@ process.stdout.write(JSON.stringify({{
   eventSourceUrl: eventSources[0] ? eventSources[0].url : null,
   eventSourceListeners: eventSources[0] ? Object.keys(eventSources[0].listeners) : [],
   draftCaption,
+  stableCommitCaption,
   stableCaption: getElement("stableCaption").textContent,
+  stableWindowReceived: segment.stable === true,
   previousCaption: getElement("draftCaption").textContent,
   segmentCount: app.state.segments.length,
   segmentId: segment.id,

@@ -96,7 +96,7 @@ class WebAppRealtimeContractTest(unittest.TestCase):
 
         self.assertIn("function connectPublicRealtimeEvents()", app_js)
         self.assertIn('new EventSource("/api/realtime/sessions/current/events")', app_js)
-        self.assertIn('["caption_delta", "caption_final", "input_transcript_delta", "input_transcript_final"]', app_js)
+        self.assertIn('["caption_delta", "caption_stable", "caption_final", "input_transcript_delta", "input_transcript_final"]', app_js)
         self.assertIn("handleRealtimeCaptionEvent(payload)", app_js)
         self.assertIn('setStatus("实时字幕更新中", "live")', app_js)
         self.assertIn('setSla("现场实时字幕", "live")', app_js)
@@ -105,8 +105,9 @@ class WebAppRealtimeContractTest(unittest.TestCase):
         app_js = self.app_js
 
         self.assertIn('String(event.source || "").includes("stable-correction")', app_js)
+        self.assertIn('event.type === "caption_stable"', app_js)
         self.assertIn('segment.note = "gpt-5.4-mini 稳定修正版。"', app_js)
-        self.assertIn("segment.stable = Boolean(segment.stable || isStableCorrection)", app_js)
+        self.assertIn("segment.stable = Boolean(segment.stable || isStableCorrection || isStableCommit)", app_js)
 
 
 if __name__ == "__main__":

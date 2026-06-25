@@ -60,12 +60,13 @@ class RealtimeCaptionStabilizer:
         if self.last_stable_text_by_segment.get(segment_id) == text:
             return []
         self.last_stable_text_by_segment[segment_id] = text
+        window = stabilizer_window(self.recent_events, segment_id, text, self.stable_window_ms)
         return [
             {
                 "type": "caption_stable",
                 "text": text,
                 "zh": text,
-                "en": recent_input_context(self.recent_events, segment_id),
+                "en": window["inputTextEn"],
                 "final": False,
                 "segmentId": segment_id,
                 "source": "realtime-caption-stabilizer",
@@ -73,6 +74,7 @@ class RealtimeCaptionStabilizer:
                 "stabilizerWindowMs": self.stable_window_ms,
                 "latencyMs": int(event.get("latencyMs") or self.stable_delay_ms),
                 "draftZh": text,
+                "stabilizerWindow": window,
             }
         ]
 
@@ -369,6 +371,7 @@ def sanitize_event(payload: dict[str, Any]) -> dict[str, Any]:
         "openaiEventType",
         "stability",
         "stabilizerWindowMs",
+        "stabilizerWindow",
         "draftZh",
         "sourceTextEn",
     }
@@ -400,6 +403,12 @@ def sanitize_event(payload: dict[str, Any]) -> dict[str, Any]:
             clean["stabilizerWindowMs"] = max(0, int(clean["stabilizerWindowMs"]))
         except (TypeError, ValueError):
             clean.pop("stabilizerWindowMs", None)
+    if "stabilizerWindow" in clean:
+        window = sanitize_stabilizer_window(clean["stabilizerWindow"])
+        if window:
+            clean["stabilizerWindow"] = window
+        else:
+            clean.pop("stabilizerWindow", None)
     clean.setdefault("type", "caption_delta")
     return clean
 
@@ -410,7 +419,7 @@ def event_text(event: dict[str, Any]) -> str:
 
 def ready_for_stable_commit(text: str) -> bool:
     stripped = text.strip()
-    if len(stripped) < 8:
+    if len(stripped) < 4:
         return False
     if ends_with_connector(stripped):
         return False
@@ -456,6 +465,57 @@ def recent_input_context(events: deque[dict[str, Any]], segment_id: str) -> str:
         if str(event.get("type") or "").startswith("input_transcript") and event_text(event)
     ]
     return compact_context(fallback[-2:])
+
+
+def stabilizer_window(events: deque[dict[str, Any]], segment_id: str, draft_zh: str, window_ms: int) -> dict[str, Any]:
+    matching_events = [
+        event
+        for event in events
+        if str(event.get("segmentId") or "") == segment_id
+        and str(event.get("type") or "") in {"input_transcript_delta", "input_transcript_final", "caption_delta", "caption_final"}
+    ]
+    if not matching_events:
+        matching_events = [
+            event
+            for event in events
+            if str(event.get("type") or "") in {"input_transcript_delta", "input_transcript_final", "caption_delta", "caption_final"}
+        ]
+    input_text = compact_context(
+        [
+            event_text(event)
+            for event in matching_events
+            if str(event.get("type") or "").startswith("input_transcript") and event_text(event)
+        ][-3:]
+    )
+    return {
+        "windowMs": window_ms,
+        "segmentId": segment_id,
+        "sourceEventIds": [int(event["id"]) for event in matching_events if isinstance(event.get("id"), int)][-6:],
+        "inputTextEn": input_text,
+        "draftZh": draft_zh[:4000],
+    }
+
+
+def sanitize_stabilizer_window(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        return {}
+    clean: dict[str, Any] = {}
+    try:
+        clean["windowMs"] = max(0, int(value.get("windowMs") or 0))
+    except (TypeError, ValueError):
+        clean["windowMs"] = 0
+    for key in ("segmentId", "inputTextEn", "draftZh"):
+        if value.get(key) is not None:
+            clean[key] = str(value.get(key))[:4000]
+    source_ids = value.get("sourceEventIds")
+    if isinstance(source_ids, list):
+        clean["sourceEventIds"] = []
+        for item in source_ids[:12]:
+            try:
+                clean["sourceEventIds"].append(max(0, int(item)))
+            except (TypeError, ValueError):
+                continue
+    return clean
 
 
 def compact_context(parts: list[str]) -> str:

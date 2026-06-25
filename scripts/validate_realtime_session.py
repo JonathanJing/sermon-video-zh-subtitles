@@ -29,8 +29,9 @@ INPUT_TRANSCRIPT_SOURCES = REALTIME_SOURCES | {
     "openai_audio_transcription_fallback",
 }
 STABLE_CORRECTION_SOURCE = "gpt-5.4-mini-stable-correction"
+STABLE_CAPTION_SOURCE = "realtime-caption-stabilizer"
 INPUT_TYPES = {"input_transcript_delta", "input_transcript_final"}
-CAPTION_TYPES = {"caption_delta", "caption_final"}
+CAPTION_TYPES = {"caption_delta", "caption_stable", "caption_final"}
 SECRET_PATTERNS = [
     "Authorization",
     "Bearer ",
@@ -61,9 +62,12 @@ def main() -> int:
         expected_target_language=args.expected_target_language,
         require_session_id=not args.allow_missing_session_id,
         require_model_event=not args.allow_missing_model_event,
+        require_caption_stable=args.require_caption_stable,
         require_stable_correction=args.require_stable_correction,
         min_caption_events=args.min_caption_events,
         min_input_events=args.min_input_events,
+        min_stable_p95_ms=args.min_stable_p95_ms,
+        max_stable_p95_ms=args.max_stable_p95_ms,
     )
     if args.out:
         out = Path(args.out)
@@ -90,16 +94,25 @@ def parse_args() -> argparse.Namespace:
         help="Do not fail when no session/lifecycle event records the realtime model.",
     )
     parser.add_argument(
+        "--require-caption-stable",
+        action="store_true",
+        help="Require at least one realtime-caption-stabilizer caption_stable event.",
+    )
+    parser.add_argument(
         "--require-stable-correction",
         action="store_true",
         help="Require at least one gpt-5.4-mini stable correction caption_final event.",
     )
     parser.add_argument("--min-caption-events", type=int, default=1)
     parser.add_argument("--min-input-events", type=int, default=1)
+    parser.add_argument("--min-stable-p95-ms", type=int, default=0)
+    parser.add_argument("--max-stable-p95-ms", type=int, default=6000)
     parser.add_argument("--out", help="Optional JSON report path.")
     args = parser.parse_args()
     if args.min_caption_events < 0 or args.min_input_events < 0:
         raise SystemExit("--min-caption-events and --min-input-events must be >= 0")
+    if args.min_stable_p95_ms < 0 or args.max_stable_p95_ms < 0:
+        raise SystemExit("--min-stable-p95-ms and --max-stable-p95-ms must be >= 0")
     return args
 
 
@@ -113,9 +126,12 @@ def validate_realtime_session(
     expected_target_language: str = EXPECTED_TARGET_LANGUAGE,
     require_session_id: bool = True,
     require_model_event: bool = True,
+    require_caption_stable: bool = False,
     require_stable_correction: bool = False,
     min_caption_events: int = 1,
     min_input_events: int = 1,
+    min_stable_p95_ms: int = 0,
+    max_stable_p95_ms: int = 6000,
 ) -> dict[str, Any]:
     checks: list[dict[str, Any]] = []
     type_counts = Counter(str(event.get("type") or "unknown") for event in events)
@@ -136,6 +152,8 @@ def validate_realtime_session(
     realtime_captions = [event for event in events if event.get("type") in CAPTION_TYPES and is_realtime_source(event)]
     input_with_english = [event for event in input_transcripts if contains_latin(event_text(event))]
     caption_with_chinese = [event for event in realtime_captions if contains_cjk(event_text(event))]
+    stable_caption_commits = [event for event in events if is_stable_caption_event(event)]
+    stable_latency = latency_summary(stable_caption_commits)
     stable_corrections = [event for event in events if is_stable_correction_event(event, expected_stable_model)]
     realtime_caption_segments = segment_ids(realtime_captions)
     input_transcript_segments = segment_ids(input_transcripts)
@@ -196,6 +214,21 @@ def validate_realtime_session(
         (not require_model_event) or expected_model in model_values,
         model_values,
     )
+    if require_caption_stable:
+        add_check(checks, "caption_stable", bool(stable_caption_commits), sample_texts(stable_caption_commits))
+        add_check(
+            checks,
+            "caption_stable_window",
+            bool(stable_caption_commits) and all(has_stabilizer_window(event) for event in stable_caption_commits),
+            [event.get("stabilizerWindow") for event in stable_caption_commits[:2]],
+        )
+        add_check(
+            checks,
+            "caption_stable_latency_p95",
+            bool(stable_latency)
+            and min_stable_p95_ms <= int(stable_latency.get("p95Ms") or 0) <= max_stable_p95_ms,
+            stable_latency,
+        )
     if require_stable_correction:
         add_check(checks, "stable_correction", bool(stable_corrections), sample_texts(stable_corrections))
         add_check(
@@ -233,6 +266,7 @@ def validate_realtime_session(
             "inputTranscriptEvents": len(input_transcripts),
             "realtimeInputTranscriptEvents": len(realtime_inputs),
             "realtimeCaptionEvents": len(realtime_captions),
+            "stableCaptionEvents": len(stable_caption_commits),
             "stableCorrectionEvents": len(stable_corrections),
         },
         "models": model_values,
@@ -241,6 +275,7 @@ def validate_realtime_session(
         "targetLanguages": target_language_values,
         "audioSourceKinds": audio_source_values,
         "latency": latency_summary(events),
+        "stableLatency": stable_latency,
         "apiKeyMaterialIncluded": False,
         "secretResourceNamesIncluded": False,
     }
@@ -261,6 +296,27 @@ def is_stable_correction_event(event: dict[str, Any], expected_model: str) -> bo
     model = str(event.get("model") or "")
     text = event_text(event)
     return STABLE_CORRECTION_SOURCE in source and model == expected_model and contains_cjk(text)
+
+
+def is_stable_caption_event(event: dict[str, Any]) -> bool:
+    return (
+        event.get("type") == "caption_stable"
+        and str(event.get("source") or "") == STABLE_CAPTION_SOURCE
+        and str(event.get("stability") or "") == "stable"
+        and contains_cjk(event_text(event))
+    )
+
+
+def has_stabilizer_window(event: dict[str, Any]) -> bool:
+    window = event.get("stabilizerWindow")
+    if not isinstance(window, dict):
+        return False
+    return (
+        int(window.get("windowMs") or 0) >= 5000
+        and str(window.get("segmentId") or "") == str(event.get("segmentId") or "")
+        and contains_latin(str(window.get("inputTextEn") or ""))
+        and contains_cjk(str(window.get("draftZh") or ""))
+    )
 
 
 def segment_ids(events: list[dict[str, Any]]) -> set[str]:
@@ -390,8 +446,17 @@ def latency_summary(events: list[dict[str, Any]]) -> dict[str, Any] | None:
         "count": len(values),
         "minMs": min(values),
         "maxMs": max(values),
+        "p95Ms": percentile(values, 0.95),
         "avgMs": round(sum(values) / len(values), 1),
     }
+
+
+def percentile(values: list[int], fraction: float) -> int:
+    ordered = sorted(values)
+    if not ordered:
+        return 0
+    index = min(len(ordered) - 1, max(0, int(round((len(ordered) - 1) * fraction))))
+    return ordered[index]
 
 
 def safe_uri(uri: str) -> str:

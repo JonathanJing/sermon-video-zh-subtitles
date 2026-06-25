@@ -506,7 +506,13 @@ class ApiHandler(BaseHTTPRequestHandler):
             self.write_json({"error": "unauthorized"}, status=401)
             return
         event = self.realtime_store.append_event(session_id, payload)
-        if event.get("type") in {"caption_delta", "caption_final", "input_transcript_delta", "input_transcript_final"}:
+        if event.get("type") in {
+            "caption_delta",
+            "caption_stable",
+            "caption_final",
+            "input_transcript_delta",
+            "input_transcript_final",
+        }:
             log_event(
                 "realtime_caption_event",
                 component="api",
