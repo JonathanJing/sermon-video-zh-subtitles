@@ -30,6 +30,22 @@ def parse_html(name):
 
 
 class PublicAdminBoundaryTest(unittest.TestCase):
+    def test_public_and_admin_disclaimers_state_independence_and_source_boundary(self):
+        required_text = [
+            "独立个人开源项目",
+            "并非 Mariners Church 官方项目",
+            "公开可访问或已授权",
+            "英文听写与中文翻译",
+            "不绕过访问控制",
+            "DRM",
+            "版权保护",
+        ]
+
+        for name in ["index.html", "admin.html"]:
+            text = (WEB_ROOT / name).read_text(encoding="utf-8")
+            for expected in required_text:
+                self.assertIn(expected, text, f"{name} missing disclaimer text: {expected}")
+
     def test_public_page_has_no_operator_controls_in_dom(self):
         public = parse_html("index.html")
         forbidden_actions = {

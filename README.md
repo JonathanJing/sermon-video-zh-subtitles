@@ -11,7 +11,13 @@
 
 This project builds a pipeline for usable Chinese captions during the Mariners Church Sunday 11:30 PT sermon, so Chinese-speaking congregants can follow the message while it is being preached.
 
-This is an independent open-source project and is not affiliated with, endorsed by, or operated by Mariners Church.
+## Disclaimer
+
+This is an independent personal open-source project. It is not affiliated with, endorsed by, sponsored by, approved by, or operated by Mariners Church.
+
+The project uses publicly accessible Mariners Church live streams, live archives, and public video metadata as source material for transcription, translation, subtitle timing, and technical feasibility research. It does not use private Mariners Church systems, private media, YouTube Studio access, internal files, or any non-public channel permissions.
+
+The project does not bypass paywalls, access controls, DRM, platform restrictions, or copyright protections. Operators are responsible for using the tools only with public or otherwise authorized audio/video sources and for respecting Mariners Church, YouTube, and other applicable terms and rights.
 
 This repository is currently being prepared for broader open-source collaboration. Contributions are welcome when they improve the 11:30 congregation caption experience, especially around translation quality, latency, scripture terminology, mobile/tablet UX, deployment reliability, testing, and documentation.
 
@@ -40,6 +46,8 @@ Based on the current public YouTube metadata analysis for Mariners Church, waiti
 
 The more promising input is the official live service. Mariners Online lists Sunday live services at 7:00, 8:30, 10:00, and 11:30 AM PT. The system design therefore prepares captions from the earliest verified same-sermon service, treats 10:00 PT as the conservative production default, and uses public VOD as a later offline-quality source.
 
+Current YouTube Streams metadata also supports the offline live-link route: among current visible Sunday live records, standard live links almost always start around 08:21 PT, leaving roughly three hours before the 11:30 PT congregation service for live/archive capture, English transcription, Chinese translation, and operator review. See [offline live-archive timing feasibility](docs/offline-live-archive-timing-feasibility.zh.md).
+
 ## Documentation
 
 | Area | English | Chinese |
@@ -56,6 +64,7 @@ The more promising input is the official live service. Mariners Online lists Sun
 | Open-source readiness | [docs/open-source-readiness.md](docs/open-source-readiness.md) | [docs/open-source-readiness.zh.md](docs/open-source-readiness.zh.md) |
 | Sunday live test runbook | [docs/sunday-live-test-runbook.md](docs/sunday-live-test-runbook.md) | [docs/sunday-live-test-runbook.zh.md](docs/sunday-live-test-runbook.zh.md) |
 | YouTube source analysis | [bilingual report](docs/youtube-sermon-subtitle-pipeline-analysis.zh-en.md) | [same bilingual report](docs/youtube-sermon-subtitle-pipeline-analysis.zh-en.md) |
+| Offline live-archive timing feasibility | [Chinese report](docs/offline-live-archive-timing-feasibility.zh.md) | [same Chinese report](docs/offline-live-archive-timing-feasibility.zh.md) |
 | Backlog and review | [docs/backlog.md](docs/backlog.md), [docs/review-testing.md](docs/review-testing.md) | [docs/backlog.zh.md](docs/backlog.zh.md) |
 
 Other project files:

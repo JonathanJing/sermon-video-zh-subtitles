@@ -11,7 +11,13 @@
 
 这个项目用于在 Mariners Church 周日 11:30 PT 场证道中，为正在听道的中文会众提供可使用的中文字幕，让中文会众可以在证道进行时跟上信息。
 
-这是一个独立开源项目，并非 Mariners Church 官方项目，也不代表 Mariners Church 背书或运营。
+## 免责声明
+
+这是一个独立的个人开源项目，不属于 Mariners Church 官方项目，也没有获得 Mariners Church 的隶属、背书、赞助、批准或运营支持。
+
+本项目只基于公开可访问的 Mariners Church 直播、直播归档和公开视频 metadata，进行英文听写、中文翻译、字幕时间轴处理和技术可行性研究。本项目不使用 Mariners Church 私有系统、私有媒体、YouTube Studio 权限、内部文件或任何非公开频道权限。
+
+本项目不绕过付费墙、访问控制、DRM、平台限制或版权保护。使用者应只在公开或已授权的音视频来源上运行这些工具，并自行遵守 Mariners Church、YouTube 以及其他适用的平台条款和权利边界。
 
 这个 repo 正在为更广泛的开源协作做准备。欢迎大家一起帮助完善，尤其是字幕质量、生成延迟、经文术语、手机/平板 UX、部署可靠性、测试和文档。
 
@@ -40,6 +46,8 @@
 
 更可行的输入是官方 live service。Mariners Online 列出周日直播时间为 7:00、8:30、10:00、11:30 AM PT。系统设计因此选择从最早可验证的同篇早场直播准备字幕，将 10:00 PT 作为保守生产默认，并将公开视频 VOD 作为后续离线质量补齐源。
 
+当前 YouTube Streams metadata 也支持离线直播链接路线：在当前可见的周日直播记录中，标准直播链接几乎都在 08:21 PT 左右启动，距离 11:30 PT 会众场约 3 小时，可用于直播/归档抓取、英文听写、中文字幕生成和 operator 复核。详见 [离线直播链接字幕链路的时间可行性证据](docs/offline-live-archive-timing-feasibility.zh.md)。
+
 ## 文档
 
 | 主题 | English | 中文 |
@@ -56,6 +64,7 @@
 | 开源准备检查 | [docs/open-source-readiness.md](docs/open-source-readiness.md) | [docs/open-source-readiness.zh.md](docs/open-source-readiness.zh.md) |
 | 周日 live test runbook | [docs/sunday-live-test-runbook.md](docs/sunday-live-test-runbook.md) | [docs/sunday-live-test-runbook.zh.md](docs/sunday-live-test-runbook.zh.md) |
 | YouTube source analysis | [中英文报告](docs/youtube-sermon-subtitle-pipeline-analysis.zh-en.md) | [同一份中英文报告](docs/youtube-sermon-subtitle-pipeline-analysis.zh-en.md) |
+| 离线直播链接时间可行性 | [中文报告](docs/offline-live-archive-timing-feasibility.zh.md) | [同一份中文报告](docs/offline-live-archive-timing-feasibility.zh.md) |
 | Backlog / Review | [docs/backlog.md](docs/backlog.md), [docs/review-testing.md](docs/review-testing.md) | [docs/backlog.zh.md](docs/backlog.zh.md) |
 
 其他项目文件：

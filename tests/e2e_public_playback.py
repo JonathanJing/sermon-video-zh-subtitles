@@ -153,8 +153,17 @@ def check_disclaimer(page) -> None:
     disclaimer = page.locator(".viewer-disclaimer")
     expect(disclaimer).to_be_visible()
     text = disclaimer.inner_text()
-    if "AI 辅助生成" not in text or "讲员原文" not in text:
-        raise AssertionError(f"Disclaimer text is incomplete: {text!r}")
+    required = [
+        "AI 辅助生成",
+        "独立个人开源项目",
+        "并非 Mariners Church 官方项目",
+        "公开可访问或已授权",
+        "不绕过访问控制",
+        "讲员原文",
+    ]
+    missing = [item for item in required if item not in text]
+    if missing:
+        raise AssertionError(f"Disclaimer text is incomplete; missing {missing!r}: {text!r}")
 
 
 def check_public_controls_hidden(page) -> None:
