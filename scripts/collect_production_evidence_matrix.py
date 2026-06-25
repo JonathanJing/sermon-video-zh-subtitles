@@ -790,6 +790,7 @@ def state_from_public_sse_smoke(report: dict[str, Any] | None, path: str | None)
         "browser_normalized_event_payloads",
         "create_local_session_metadata",
         "sse_session_metadata",
+        "sse_receives_caption_stable",
         "sse_stable_correction_matches_draft_segment",
     }
     missing_checks = sorted(required_checks - check_names)
@@ -1115,14 +1116,17 @@ def state_from_public_sse_stable_correction(
         "baseUrl": report.get("baseUrl"),
         "status": report.get("status"),
         "sessionValidation": compact_session_validation_summary(session_validation),
+        "stableCaption": nested(report, "sse", "stableCaption"),
         "stableCorrection": stable_match,
     }
     has_stable_validation = (
         session_validation.get("status") == "ok"
+        and (nested(session_validation, "counts", "stableCaptionEvents") or 0) > 0
         and (nested(session_validation, "counts", "stableCorrectionEvents") or 0) > 0
     )
     stable_matches_draft = isinstance(stable_match, dict) and stable_match.get("matched") is True
-    if has_stable_validation and stable_matches_draft:
+    stable_caption_ok = bool(nested(report, "sse", "stableCaption", "segments"))
+    if has_stable_validation and stable_matches_draft and stable_caption_ok:
         if is_local_base_url(str(report.get("baseUrl") or "")):
             return {
                 "state": "warn",
@@ -1671,6 +1675,7 @@ def compact_session_validation_summary(report: dict[str, Any] | None) -> dict[st
         "report": report.get("report"),
         "failedChecks": report.get("failedChecks") or [],
         "counts": report.get("counts"),
+        "stableLatency": report.get("stableLatency"),
         "targetLanguages": report.get("targetLanguages"),
         "audioSourceKinds": report.get("audioSourceKinds"),
     }

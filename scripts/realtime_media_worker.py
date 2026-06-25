@@ -729,6 +729,7 @@ def receive_openai_events(
     stats: dict[str, Any],
     source: str = "openai_realtime_translation_ws",
 ) -> None:
+    receive_started_at = time.monotonic()
     while True:
         try:
             message = ws.recv()
@@ -746,7 +747,11 @@ def receive_openai_events(
         event_counts[event_type or "unknown"] = int(event_counts.get(event_type or "unknown", 0)) + 1
         if event_type == "error":
             stats.setdefault("errors", []).append(redact_openai_error(event.get("error")))
-        payload = openai_event_to_realtime_payload(event, source=source)
+        payload = openai_event_to_realtime_payload(
+            event,
+            source=source,
+            latency_ms=openai_event_latency_ms(event, receive_started_at=receive_started_at),
+        )
         if payload:
             sink.emit(payload)
             if payload["type"].startswith("caption_"):
@@ -760,6 +765,7 @@ def receive_openai_events(
 def openai_event_to_realtime_payload(
     event: dict[str, Any],
     source: str = "openai_realtime_translation_ws",
+    latency_ms: int | None = None,
 ) -> dict[str, Any] | None:
     event_type = str(event.get("type") or "")
     text = extract_openai_transcript_text(event)
@@ -769,10 +775,10 @@ def openai_event_to_realtime_payload(
     segment_id = openai_segment_id(event)
     if "output_transcript" in event_type:
         payload_type = "caption_final" if is_final else "caption_delta"
-        return transcript_payload(payload_type, text, event_type, segment_id, source=source, final=is_final)
+        return transcript_payload(payload_type, text, event_type, segment_id, source=source, final=is_final, latency_ms=latency_ms)
     if "input_transcript" in event_type or "input_audio_transcription" in event_type:
         payload_type = "input_transcript_final" if is_final else "input_transcript_delta"
-        return transcript_payload(payload_type, text, event_type, segment_id, source=source, final=is_final)
+        return transcript_payload(payload_type, text, event_type, segment_id, source=source, final=is_final, latency_ms=latency_ms)
     return None
 
 
@@ -847,6 +853,34 @@ def openai_segment_id(event: dict[str, Any]) -> str:
         if text:
             return text[:120]
     return ""
+
+
+def openai_event_latency_ms(event: dict[str, Any], *, receive_started_at: float | None = None) -> int | None:
+    for value in [
+        event.get("latencyMs"),
+        event.get("latency_ms"),
+        event.get("elapsed_ms"),
+        nested_number(event.get("response"), "latency_ms"),
+        nested_number(event.get("response"), "elapsed_ms"),
+    ]:
+        parsed = safe_positive_int(value)
+        if parsed is not None:
+            return parsed
+    if receive_started_at is None:
+        return None
+    return max(0, int((time.monotonic() - receive_started_at) * 1000))
+
+
+def nested_number(value: Any, key: str) -> Any:
+    return value.get(key) if isinstance(value, dict) else None
+
+
+def safe_positive_int(value: Any) -> int | None:
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return None
+    return max(0, parsed)
 
 
 def redact_openai_error(error: Any) -> dict[str, Any] | str:
@@ -966,6 +1000,7 @@ def transcript_payload(
     *,
     source: str,
     final: bool,
+    latency_ms: int | None = None,
 ) -> dict[str, Any]:
     payload = {
         "type": payload_type,
@@ -982,6 +1017,8 @@ def transcript_payload(
         payload["en"] = text
     if segment_id:
         payload["segmentId"] = segment_id
+    if latency_ms is not None:
+        payload["latencyMs"] = max(0, int(latency_ms))
     return payload
 
 

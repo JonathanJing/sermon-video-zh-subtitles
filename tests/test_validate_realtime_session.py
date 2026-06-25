@@ -63,7 +63,8 @@ class ValidateRealtimeSessionTest(unittest.TestCase):
                     "inputTextEn": "God loved the world.",
                     "draftZh": "神爱世人。",
                 },
-                "latencyMs": 1200,
+                "stabilizerDelayMs": 1200,
+                "latencyMs": 3400,
             },
             {
                 "id": 5,
@@ -100,12 +101,12 @@ class ValidateRealtimeSessionTest(unittest.TestCase):
         self.assertEqual(report["counts"]["realtimeCaptionEvents"], 1)
         self.assertEqual(report["counts"]["stableCaptionEvents"], 1)
         self.assertEqual(report["counts"]["stableCorrectionEvents"], 1)
-        self.assertEqual(report["stableLatency"]["p95Ms"], 1200)
+        self.assertEqual(report["stableLatency"]["p95Ms"], 3400)
         self.assertEqual(report["sessionIds"], ["rt_test"])
         self.assertEqual(report["targetLanguages"], ["zh"])
         self.assertEqual(report["audioSourceKinds"], ["ipad_mic"])
         self.assertNotIn("stable_correction_context", report["failedChecks"])
-        self.assertEqual(report["latency"]["maxMs"], 1200)
+        self.assertEqual(report["latency"]["maxMs"], 3400)
         self.assertFalse(report["apiKeyMaterialIncluded"])
         self.assertFalse(report["secretResourceNamesIncluded"])
 

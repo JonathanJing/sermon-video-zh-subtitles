@@ -87,7 +87,8 @@ class RealtimeSessionStoreTest(unittest.TestCase):
         self.assertEqual(events[0]["stabilizerWindow"]["inputTextEn"], "God loved the world.")
         self.assertEqual(events[0]["stabilizerWindow"]["draftZh"], "神爱世人。")
         self.assertEqual(events[0]["stabilizerWindow"]["sourceEventIds"], [2, 3])
-        self.assertEqual(events[0]["latencyMs"], 980)
+        self.assertEqual(events[0]["stabilizerDelayMs"], 1200)
+        self.assertEqual(events[0]["latencyMs"], 2180)
 
     def test_does_not_stabilize_connector_ending_delta(self):
         store = RealtimeSessionStore()

@@ -110,6 +110,27 @@ def validate_public_caption_view_runtime(app_js: Path, *, node_bin: str = "node"
     )
     checks.append(
         check(
+            "admin_realtime_stage_history_visible",
+            probe.get("segmentRealtimeStages") == ["draft", "stable", "final"]
+            and "草稿 / 稳定 / 最终" in str(probe.get("segmentListHtml") or ""),
+            {
+                "segmentRealtimeStages": probe.get("segmentRealtimeStages"),
+                "segmentListHtml": probe.get("segmentListHtml"),
+            },
+        )
+    )
+    checks.append(
+        check(
+            "stable_window_retained_on_segment",
+            probe.get("stableWindowSegmentId") == "seg_runtime_1",
+            {
+                "stableWindowReceived": probe.get("stableWindowReceived"),
+                "stableWindowSegmentId": probe.get("stableWindowSegmentId"),
+            },
+        )
+    )
+    checks.append(
+        check(
             "no_secret_material",
             not contains_secret_material(json.dumps(probe, ensure_ascii=False)),
             None,
@@ -320,6 +341,11 @@ process.stdout.write(JSON.stringify({{
   segmentZh: segment.zh,
   segmentEn: segment.en,
   segmentStable: segment.stable === true,
+  segmentRealtimeStage: segment.realtimeStage,
+  segmentRealtimeStages: segment.realtimeStages || [],
+  segmentListText: getElement("segmentList").textContent,
+  segmentListHtml: getElement("segmentList").children.map((child) => child.innerHTML || child.textContent || "").join("\\n"),
+  stableWindowSegmentId: segment.stabilizerWindow ? segment.stabilizerWindow.segmentId : null,
   segmentSourceMode: segment.sourceMode,
   apiKeyMaterialIncluded: false,
   secretResourceNamesIncluded: false,

@@ -15,8 +15,97 @@ sys.modules[SPEC.name] = mod
 SPEC.loader.exec_module(mod)
 
 
-def write_playback(path: Path, *, source_kind: str = "live_archive", model: str = "gpt-5.4-mini", placeholder: bool = False) -> None:
+def write_playback(
+    path: Path,
+    *,
+    source_kind: str = "live_archive",
+    model: str = "gpt-5.4-mini",
+    placeholder: bool = False,
+    include_polished_layers: bool = True,
+    connector_boundary: bool = False,
+) -> None:
     zh = "神爱世人。" if not placeholder else "AI 中文待生成：God loved the world."
+    raw_segments = [
+        {
+            "id": "sim_0001",
+            "startMs": 1000,
+            "endMs": 3500,
+            "en": "God loved the world.",
+            "zh": zh,
+            "translationStatus": "ready",
+        }
+    ]
+    display_segments = [
+        {
+            "id": "disp_0001",
+            "startMs": 1000,
+            "endMs": 3500,
+            "en": "God loved the world.",
+            "zh": zh,
+            "translationStatus": "ready",
+            "sourceSegmentIds": ["sim_0001"],
+            "sourceCueCount": 1,
+            "sourceCueRange": "sim_0001",
+        }
+    ]
+    if connector_boundary:
+        raw_segments = [
+            {
+                "id": "sim_0001",
+                "startMs": 1000,
+                "endMs": 3500,
+                "en": "This helps us be honest with ourselves.",
+                "zh": "这帮助我们诚实面对自己。",
+                "translationStatus": "ready",
+            },
+            {
+                "id": "sim_0002",
+                "startMs": 3510,
+                "endMs": 6100,
+                "en": "Because we see what our hearts rely on.",
+                "zh": "因为我们会看见内心倚靠什么。",
+                "translationStatus": "ready",
+            },
+        ]
+        display_segments = [
+            {
+                "id": "disp_0001",
+                "startMs": 1000,
+                "endMs": 3500,
+                "en": "This helps us be honest with ourselves.",
+                "zh": "这帮助我们诚实面对自己。",
+                "translationStatus": "ready",
+                "sourceSegmentIds": ["sim_0001"],
+                "sourceCueCount": 1,
+                "sourceCueRange": "sim_0001",
+            },
+            {
+                "id": "disp_0002",
+                "startMs": 3510,
+                "endMs": 6100,
+                "en": "Because we see what our hearts rely on.",
+                "zh": "因为我们会看见内心倚靠什么。",
+                "translationStatus": "ready",
+                "sourceSegmentIds": ["sim_0002"],
+                "sourceCueCount": 1,
+                "sourceCueRange": "sim_0002",
+            },
+        ]
+    review_segments = [
+        {
+            "id": f"review_{index:04d}",
+            "displaySegmentId": segment["id"],
+            "startMs": segment["startMs"],
+            "endMs": segment["endMs"],
+            "zh": segment["zh"],
+            "en": segment["en"],
+            "translationStatus": segment["translationStatus"],
+            "sourceSegmentIds": segment["sourceSegmentIds"],
+            "sourceCueCount": segment["sourceCueCount"],
+            "sourceCueRange": segment["sourceCueRange"],
+        }
+        for index, segment in enumerate(display_segments, start=1)
+    ]
     payload = {
         "schemaVersion": 1,
         "generatedFrom": "openai-translation-e2e",
@@ -29,17 +118,24 @@ def write_playback(path: Path, *, source_kind: str = "live_archive", model: str 
             "apiKeyMaterialIncluded": False,
             "secretResourceNamesIncluded": False,
         },
-        "segments": [
-            {
-                "id": "sim_0001",
-                "startMs": 1000,
-                "endMs": 2500,
-                "en": "God loved the world.",
-                "zh": zh,
-                "translationStatus": "ready",
-            }
-        ],
+        "segments": display_segments if include_polished_layers else raw_segments,
     }
+    if include_polished_layers:
+        payload.update(
+            {
+                "displayPolicy": {
+                    "source": "offline-caption-polisher",
+                    "minMs": 2000,
+                    "targetMaxMs": 7000,
+                    "hardMaxMs": 10000,
+                    "targetZhChars": 54,
+                    "avoidsConnectorBoundaries": True,
+                },
+                "rawSegments": raw_segments,
+                "displaySegments": display_segments,
+                "reviewSegments": review_segments,
+            }
+        )
     path.write_text(
         "window.SERMON_PLAYBACK_SIMULATION = " + json.dumps(payload, ensure_ascii=False) + ";\n",
         encoding="utf-8",
@@ -64,6 +160,42 @@ def offline_route_for(source_kind: str = "live_archive") -> dict:
         "audioExtractionAttempted": False,
         "fallbackReason": None,
     }
+
+
+def render_test_vtt(segments: list[dict]) -> str:
+    rows = ["WEBVTT", ""]
+    for segment in segments:
+        rows.append(f"{format_vtt_time(segment['startMs'])} --> {format_vtt_time(segment['endMs'])}")
+        rows.append(segment["zh"])
+        rows.append("")
+    return "\n".join(rows)
+
+
+def render_test_srt(segments: list[dict]) -> str:
+    rows = []
+    for index, segment in enumerate(segments, start=1):
+        rows.append(str(index))
+        rows.append(f"{format_srt_time(segment['startMs'])} --> {format_srt_time(segment['endMs'])}")
+        rows.append(segment["zh"])
+        rows.append("")
+    return "\n".join(rows)
+
+
+def format_vtt_time(ms: int) -> str:
+    hours, minutes, seconds, millis = split_ms(ms)
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}.{millis:03d}"
+
+
+def format_srt_time(ms: int) -> str:
+    hours, minutes, seconds, millis = split_ms(ms)
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d},{millis:03d}"
+
+
+def split_ms(ms: int) -> tuple[int, int, int, int]:
+    total_seconds, millis = divmod(ms, 1000)
+    minutes, seconds = divmod(total_seconds, 60)
+    hours, minutes = divmod(minutes, 60)
+    return hours, minutes, seconds, millis
 
 
 class ValidateOfflineChainTest(unittest.TestCase):
@@ -138,19 +270,37 @@ class ValidateOfflineChainTest(unittest.TestCase):
             ],
         }
 
-    def report_for(self, root: Path, *, source_kind: str = "live_archive", model: str = "gpt-5.4-mini", placeholder: bool = False, report_overrides=None):
+    def report_for(
+        self,
+        root: Path,
+        *,
+        source_kind: str = "live_archive",
+        model: str = "gpt-5.4-mini",
+        placeholder: bool = False,
+        include_polished_layers: bool = True,
+        connector_boundary: bool = False,
+        report_overrides=None,
+    ):
         report = self.ready_report(source_kind=source_kind)
         if report_overrides:
             report.update(report_overrides)
         playback = root / "playback.js"
-        write_playback(playback, source_kind=source_kind, model=model, placeholder=placeholder)
-        vtt_text = "WEBVTT\n\n00:00:01.000 --> 00:00:02.500\n神爱世人。\n"
-        srt_text = "1\n00:00:01,000 --> 00:00:02,500\n神爱世人。\n"
+        write_playback(
+            playback,
+            source_kind=source_kind,
+            model=model,
+            placeholder=placeholder,
+            include_polished_layers=include_polished_layers,
+            connector_boundary=connector_boundary,
+        )
+        parsed_playback = mod.parse_playback_js(playback.read_text(encoding="utf-8"))
+        vtt_text = render_test_vtt(parsed_playback["segments"])
+        srt_text = render_test_srt(parsed_playback["segments"])
         return mod.validate_offline_chain(
             report=report,
             report_text=json.dumps(report, ensure_ascii=False),
             report_uri=str(root / "report.json"),
-            playback=mod.parse_playback_js(playback.read_text(encoding="utf-8")),
+            playback=parsed_playback,
             playback_text=playback.read_text(encoding="utf-8"),
             playback_uri=str(playback),
             zh_vtt_text=vtt_text,
@@ -171,6 +321,33 @@ class ValidateOfflineChainTest(unittest.TestCase):
         self.assertEqual(report["offlineRoute"]["decision"], "use_caption_track")
         self.assertFalse(report["asr"]["used"])
         self.assertEqual(report["translation"]["model"], "gpt-5.4-mini")
+
+    def test_validates_polished_display_layers(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            report = self.report_for(Path(tmp), source_kind="live_archive")
+
+        check_names = {check["name"]: check for check in report["checks"]}
+        self.assertEqual(check_names["playback_polished_layers_present"]["state"], "pass")
+        self.assertEqual(check_names["playback_segments_use_display_layer"]["state"], "pass")
+        self.assertEqual(check_names["display_segments_trace_raw_cues"]["state"], "pass")
+        self.assertEqual(check_names["review_segments_trace_display_segments"]["state"], "pass")
+        self.assertEqual(check_names["display_segment_readability"]["state"], "pass")
+        self.assertEqual(check_names["display_segment_connector_boundaries"]["state"], "pass")
+
+    def test_fails_playback_without_polished_layers(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            report = self.report_for(Path(tmp), include_polished_layers=False)
+
+        self.assertEqual(report["status"], "failed")
+        self.assertIn("playback_polished_layers_present", report["failedChecks"])
+        self.assertIn("playback_segments_use_display_layer", report["failedChecks"])
+
+    def test_fails_display_segments_cut_at_connector_boundary(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            report = self.report_for(Path(tmp), connector_boundary=True)
+
+        self.assertEqual(report["status"], "failed")
+        self.assertIn("display_segment_connector_boundaries", report["failedChecks"])
 
     def test_validates_asr_fallback_offline_chain(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -290,9 +467,9 @@ class ValidateOfflineChainTest(unittest.TestCase):
                 playback=mod.parse_playback_js(playback.read_text(encoding="utf-8")),
                 playback_text=playback.read_text(encoding="utf-8"),
                 playback_uri=str(playback),
-                zh_vtt_text="WEBVTT\n\n00:00:01.000 --> 00:00:02.500\n神爱世人。\n",
+                zh_vtt_text="WEBVTT\n\n00:00:01.000 --> 00:00:03.500\n神爱世人。\n",
                 zh_vtt_uri=str(root / "sermon.zh.live-aligned.vtt"),
-                zh_srt_text="1\n00:00:01,000 --> 00:00:02,500\n神爱世人。\n",
+                zh_srt_text="1\n00:00:01,000 --> 00:00:03,500\n神爱世人。\n",
                 zh_srt_uri=str(root / "sermon.zh.live-aligned.srt"),
                 manifest=manifest,
                 manifest_text=json.dumps(manifest),
@@ -317,9 +494,9 @@ class ValidateOfflineChainTest(unittest.TestCase):
                 playback=mod.parse_playback_js(playback.read_text(encoding="utf-8")),
                 playback_text=playback.read_text(encoding="utf-8"),
                 playback_uri=str(playback),
-                zh_vtt_text="WEBVTT\n\n00:00:01.000 --> 00:00:02.500\n神爱世人。\n",
+                zh_vtt_text="WEBVTT\n\n00:00:01.000 --> 00:00:03.500\n神爱世人。\n",
                 zh_vtt_uri=str(root / "sermon.zh.live-aligned.vtt"),
-                zh_srt_text="1\n00:00:01,000 --> 00:00:02,500\n神爱世人。\n",
+                zh_srt_text="1\n00:00:01,000 --> 00:00:03,500\n神爱世人。\n",
                 zh_srt_uri=str(root / "sermon.zh.live-aligned.srt"),
                 manifest=manifest,
                 manifest_text=json.dumps(manifest),
@@ -350,9 +527,9 @@ class ValidateOfflineChainTest(unittest.TestCase):
                 playback=mod.parse_playback_js(playback.read_text(encoding="utf-8")),
                 playback_text=playback.read_text(encoding="utf-8"),
                 playback_uri=str(playback),
-                zh_vtt_text="WEBVTT\n\n00:00:01.000 --> 00:00:02.500\n神爱世人。\n",
+                zh_vtt_text="WEBVTT\n\n00:00:01.000 --> 00:00:03.500\n神爱世人。\n",
                 zh_vtt_uri=str(root / "sermon.zh.live-aligned.vtt"),
-                zh_srt_text="1\n00:00:01,000 --> 00:00:02,500\n神爱世人。\n",
+                zh_srt_text="1\n00:00:01,000 --> 00:00:03,500\n神爱世人。\n",
                 zh_srt_uri=str(root / "sermon.zh.live-aligned.srt"),
                 manifest=manifest,
                 manifest_text=json.dumps(manifest),
@@ -378,9 +555,9 @@ class ValidateOfflineChainTest(unittest.TestCase):
                 playback=mod.parse_playback_js(playback.read_text(encoding="utf-8")),
                 playback_text=playback.read_text(encoding="utf-8"),
                 playback_uri=str(playback),
-                zh_vtt_text="WEBVTT\n\n00:00:01.000 --> 00:00:02.500\n神爱世人。\n",
+                zh_vtt_text="WEBVTT\n\n00:00:01.000 --> 00:00:03.500\n神爱世人。\n",
                 zh_vtt_uri=str(root / "sermon.zh.live-aligned.vtt"),
-                zh_srt_text="1\n00:00:01,000 --> 00:00:02,500\n神爱世人。\n",
+                zh_srt_text="1\n00:00:01,000 --> 00:00:03,500\n神爱世人。\n",
                 zh_srt_uri=str(root / "sermon.zh.live-aligned.srt"),
                 manifest=manifest,
                 manifest_text=json.dumps(manifest),
@@ -411,9 +588,9 @@ class ValidateOfflineChainTest(unittest.TestCase):
                 playback=mod.parse_playback_js(playback.read_text(encoding="utf-8")),
                 playback_text=playback.read_text(encoding="utf-8"),
                 playback_uri=str(playback),
-                zh_vtt_text="WEBVTT\n\n00:00:01.000 --> 00:00:02.500\n神爱世人。\n",
+                zh_vtt_text="WEBVTT\n\n00:00:01.000 --> 00:00:03.500\n神爱世人。\n",
                 zh_vtt_uri=str(root / "sermon.zh.live-aligned.vtt"),
-                zh_srt_text="1\n00:00:01,000 --> 00:00:02,500\n神爱世人。\n",
+                zh_srt_text="1\n00:00:01,000 --> 00:00:03,500\n神爱世人。\n",
                 zh_srt_uri=str(root / "sermon.zh.live-aligned.srt"),
                 manifest=manifest,
                 manifest_text=json.dumps(manifest),
@@ -434,8 +611,8 @@ class ValidateOfflineChainTest(unittest.TestCase):
             out_path = root / "validation.json"
             report_path.write_text(json.dumps(self.ready_report()), encoding="utf-8")
             write_playback(playback_path)
-            vtt_path.write_text("WEBVTT\n\n00:00:01.000 --> 00:00:02.500\n神爱世人。\n", encoding="utf-8")
-            srt_path.write_text("1\n00:00:01,000 --> 00:00:02,500\n神爱世人。\n", encoding="utf-8")
+            vtt_path.write_text("WEBVTT\n\n00:00:01.000 --> 00:00:03.500\n神爱世人。\n", encoding="utf-8")
+            srt_path.write_text("1\n00:00:01,000 --> 00:00:03,500\n神爱世人。\n", encoding="utf-8")
             argv = [
                 "validate_offline_chain.py",
                 "--report",

@@ -61,6 +61,7 @@ class RealtimeCaptionStabilizer:
             return []
         self.last_stable_text_by_segment[segment_id] = text
         window = stabilizer_window(self.recent_events, segment_id, text, self.stable_window_ms)
+        stable_latency_ms = stable_total_latency_ms(event, self.stable_delay_ms)
         return [
             {
                 "type": "caption_stable",
@@ -72,7 +73,8 @@ class RealtimeCaptionStabilizer:
                 "source": "realtime-caption-stabilizer",
                 "stability": "stable",
                 "stabilizerWindowMs": self.stable_window_ms,
-                "latencyMs": int(event.get("latencyMs") or self.stable_delay_ms),
+                "stabilizerDelayMs": self.stable_delay_ms,
+                "latencyMs": stable_latency_ms,
                 "draftZh": text,
                 "stabilizerWindow": window,
             }
@@ -372,6 +374,7 @@ def sanitize_event(payload: dict[str, Any]) -> dict[str, Any]:
         "stability",
         "stabilizerWindowMs",
         "stabilizerWindow",
+        "stabilizerDelayMs",
         "draftZh",
         "sourceTextEn",
     }
@@ -403,6 +406,11 @@ def sanitize_event(payload: dict[str, Any]) -> dict[str, Any]:
             clean["stabilizerWindowMs"] = max(0, int(clean["stabilizerWindowMs"]))
         except (TypeError, ValueError):
             clean.pop("stabilizerWindowMs", None)
+    if "stabilizerDelayMs" in clean:
+        try:
+            clean["stabilizerDelayMs"] = max(0, int(clean["stabilizerDelayMs"]))
+        except (TypeError, ValueError):
+            clean.pop("stabilizerDelayMs", None)
     if "stabilizerWindow" in clean:
         window = sanitize_stabilizer_window(clean["stabilizerWindow"])
         if window:
@@ -415,6 +423,16 @@ def sanitize_event(payload: dict[str, Any]) -> dict[str, Any]:
 
 def event_text(event: dict[str, Any]) -> str:
     return str(event.get("text") or event.get("zh") or event.get("delta") or event.get("en") or "").strip()
+
+
+def stable_total_latency_ms(event: dict[str, Any], stable_delay_ms: int) -> int:
+    try:
+        upstream_latency_ms = max(0, int(event.get("latencyMs") or 0))
+    except (TypeError, ValueError):
+        upstream_latency_ms = 0
+    if upstream_latency_ms <= 0:
+        upstream_latency_ms = 2000
+    return upstream_latency_ms + max(0, int(stable_delay_ms))
 
 
 def ready_for_stable_commit(text: str) -> bool:

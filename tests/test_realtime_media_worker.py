@@ -230,6 +230,7 @@ class RealtimeMediaWorkerTest(unittest.TestCase):
                 "type": "session.output_transcript.delta",
                 "delta": "神爱世人",
                 "item_id": "seg_1",
+                "latency_ms": 740,
             }
         )
         source = mod.openai_event_to_realtime_payload(
@@ -243,8 +244,21 @@ class RealtimeMediaWorkerTest(unittest.TestCase):
         self.assertEqual(caption["type"], "caption_delta")
         self.assertEqual(caption["zh"], "神爱世人")
         self.assertEqual(caption["source"], "openai_realtime_translation_ws")
+        self.assertEqual(caption["latencyMs"], 740)
         self.assertEqual(source["type"], "input_transcript_delta")
         self.assertEqual(source["en"], "God loved the world")
+
+    def test_maps_nested_openai_response_latency_to_realtime_payload(self):
+        caption = mod.openai_event_to_realtime_payload(
+            {
+                "type": "session.output_transcript.delta",
+                "delta": "神爱世人",
+                "item_id": "seg_1",
+                "response": {"latency_ms": 1280},
+            }
+        )
+
+        self.assertEqual(caption["latencyMs"], 1280)
 
     def test_maps_nested_openai_output_transcript_payloads(self):
         caption = mod.openai_event_to_realtime_payload(

@@ -1431,12 +1431,17 @@ def public_sse_smoke(base_url="https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run
         "baseUrl": base_url,
         "sessionId": "rt_test",
         "sse": {
-            "eventsRead": 4,
-            "types": ["session_started", "input_transcript_delta", "caption_delta", "caption_final"],
+            "eventsRead": 5,
+            "types": ["session_started", "input_transcript_delta", "caption_delta", "caption_stable", "caption_final"],
             "sessionStarted": {
                 "model": "gpt-realtime-translate",
                 "targetLanguage": "zh",
                 "audioSourceKind": "ipad_mic",
+            },
+            "stableCaption": {
+                "segments": ["smoke_1"],
+                "latencyP95Ms": 3400,
+                "windowed": True,
             },
             "stableCorrection": {
                 "matched": True,
@@ -1457,6 +1462,7 @@ def public_sse_smoke(base_url="https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run
             {"name": "browser_normalized_event_payloads", "state": "pass", "observed": None},
             {"name": "create_local_session_metadata", "state": "pass", "observed": None},
             {"name": "sse_session_metadata", "state": "pass", "observed": None},
+            {"name": "sse_receives_caption_stable", "state": "pass", "observed": None},
             {
                 "name": "sse_stable_correction_matches_draft_segment",
                 "state": "pass",
@@ -1477,12 +1483,14 @@ def stable_public_sse_session_validation():
         "status": "ok",
         "eventsJsonl": "rt_test.jsonl",
         "counts": {
-            "events": 4,
+            "events": 5,
             "inputTranscriptEvents": 1,
             "realtimeInputTranscriptEvents": 1,
             "realtimeCaptionEvents": 1,
+            "stableCaptionEvents": 1,
             "stableCorrectionEvents": 1,
         },
+        "stableLatency": {"count": 1, "p95Ms": 3400},
         "targetLanguages": ["zh"],
         "audioSourceKinds": ["ipad_mic"],
         "failedChecks": [],

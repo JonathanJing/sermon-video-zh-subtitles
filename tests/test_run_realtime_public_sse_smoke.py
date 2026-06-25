@@ -17,12 +17,16 @@ class RealtimePublicSseSmokeTest(unittest.TestCase):
 
         self.assertEqual(report["status"], "ok")
         self.assertEqual(report["sessionId"], "rt_test")
-        self.assertEqual(report["sse"]["eventsRead"], 4)
+        self.assertEqual(report["sse"]["eventsRead"], 5)
         self.assertEqual(report["sse"]["sessionStarted"]["targetLanguage"], "zh")
         self.assertEqual(report["sse"]["sessionStarted"]["audioSourceKind"], "ipad_mic")
+        self.assertEqual(report["sse"]["stableCaption"]["segments"], ["smoke_1"])
+        self.assertEqual(report["sse"]["stableCaption"]["latencyP95Ms"], 3400)
+        self.assertTrue(report["sse"]["stableCaption"]["windowed"])
         self.assertEqual(report["sse"]["stableCorrection"]["matchedSegments"], ["smoke_1"])
         self.assertEqual(report["sessionValidation"]["status"], "skipped")
         self.assertIn("caption_final", report["sse"]["types"])
+        self.assertIn("caption_stable", report["sse"]["types"])
         rendered = json.dumps(report)
         self.assertNotIn("event-token-secret", rendered)
         self.assertFalse(report["eventTokenIncluded"])
@@ -150,6 +154,24 @@ class RealtimePublicSseSmokeTest(unittest.TestCase):
                         },
                         {
                             "id": 4,
+                            "type": "caption_stable",
+                            "sessionId": "rt_test",
+                            "source": "realtime-caption-stabilizer",
+                            "stability": "stable",
+                            "zh": "神爱世人。",
+                            "en": "God loved the world",
+                            "segmentId": "smoke_1",
+                            "latencyMs": 3400,
+                            "stabilizerWindow": {
+                                "windowMs": 8000,
+                                "segmentId": "smoke_1",
+                                "sourceEventIds": [2, 3],
+                                "inputTextEn": "God loved the world",
+                                "draftZh": "神爱世人。",
+                            },
+                        },
+                        {
+                            "id": 5,
                             "type": "caption_final",
                             "sessionId": "rt_test",
                             "source": "gpt-5.4-mini-stable-correction",
@@ -174,6 +196,7 @@ class RealtimePublicSseSmokeTest(unittest.TestCase):
 
             self.assertEqual(report["status"], "ok")
             self.assertEqual(report["sessionValidation"]["status"], "ok")
+            self.assertEqual(report["sessionValidation"]["counts"]["stableCaptionEvents"], 1)
             self.assertEqual(report["sessionValidation"]["counts"]["stableCorrectionEvents"], 1)
             self.assertIn("session_jsonl_validation", [check["name"] for check in report["checks"]])
             written = json.loads(validation_out.read_text(encoding="utf-8"))
@@ -214,6 +237,24 @@ class RealtimePublicSseSmokeTest(unittest.TestCase):
                         },
                         {
                             "id": 4,
+                            "type": "caption_stable",
+                            "sessionId": "rt_test",
+                            "source": "realtime-caption-stabilizer",
+                            "stability": "stable",
+                            "zh": "神爱世人。",
+                            "en": "God loved the world",
+                            "segmentId": "smoke_1",
+                            "latencyMs": 3400,
+                            "stabilizerWindow": {
+                                "windowMs": 8000,
+                                "segmentId": "smoke_1",
+                                "sourceEventIds": [2, 3],
+                                "inputTextEn": "God loved the world",
+                                "draftZh": "神爱世人。",
+                            },
+                        },
+                        {
+                            "id": 5,
                             "type": "caption_final",
                             "sessionId": "rt_test",
                             "source": "gpt-5.4-mini-stable-correction",
@@ -233,7 +274,7 @@ class RealtimePublicSseSmokeTest(unittest.TestCase):
 
         self.assertEqual(report["status"], "ok")
         self.assertEqual(report["sessionValidation"]["eventsJsonl"], "rt_test.jsonl")
-        self.assertEqual(report["sessionValidation"]["counts"]["events"], 4)
+        self.assertEqual(report["sessionValidation"]["counts"]["events"], 5)
 
     def test_smoke_fails_when_configured_session_jsonl_validation_fails(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -352,13 +393,55 @@ def fake_urlopen(calls, create_status=201, sse_session_metadata=True, stable_seg
                 'event: session_started\n',
                 f"data: {session_started}\n",
                 '\n',
-                f'data: {{"id":2,"type":"input_transcript_delta","source":"openai-realtime-webrtc","en":"God loved the world","segmentId":"{draft_segment_id}"}}\n',
+                sse_data(
+                    {
+                        "id": 2,
+                        "type": "input_transcript_delta",
+                        "source": "openai-realtime-webrtc",
+                        "en": "God loved the world",
+                        "segmentId": draft_segment_id,
+                    }
+                ),
                 '\n',
-                f'data: {{"id":3,"type":"caption_delta","source":"openai-realtime-webrtc","zh":"神爱世人","segmentId":"{draft_segment_id}"}}\n',
+                sse_data(
+                    {
+                        "id": 3,
+                        "type": "caption_delta",
+                        "source": "openai-realtime-webrtc",
+                        "zh": "神爱世人",
+                        "segmentId": draft_segment_id,
+                    }
+                ),
                 '\n',
-                (
-                    'data: {"id":4,"type":"caption_final","source":"gpt-5.4-mini-stable-correction",'
-                    f'"model":"gpt-5.4-mini","zh":"神爱世人。","segmentId":"{stable_segment_id}"}}\n'
+                sse_data(
+                    {
+                        "id": 4,
+                        "type": "caption_stable",
+                        "source": "realtime-caption-stabilizer",
+                        "stability": "stable",
+                        "zh": "神爱世人。",
+                        "en": "God loved the world",
+                        "segmentId": draft_segment_id,
+                        "latencyMs": 3400,
+                        "stabilizerWindow": {
+                            "windowMs": 8000,
+                            "segmentId": draft_segment_id,
+                            "sourceEventIds": [2, 3],
+                            "inputTextEn": "God loved the world",
+                            "draftZh": "神爱世人。",
+                        },
+                    }
+                ),
+                '\n',
+                sse_data(
+                    {
+                        "id": 5,
+                        "type": "caption_final",
+                        "source": "gpt-5.4-mini-stable-correction",
+                        "model": "gpt-5.4-mini",
+                        "zh": "神爱世人。",
+                        "segmentId": stable_segment_id,
+                    }
                 ),
                 '\n',
             ]
@@ -366,6 +449,10 @@ def fake_urlopen(calls, create_status=201, sse_session_metadata=True, stable_seg
         raise AssertionError(f"unexpected URL: {request.full_url}")
 
     return _fake_urlopen
+
+
+def sse_data(payload):
+    return "data: " + json.dumps(payload, ensure_ascii=False) + "\n"
 
 
 if __name__ == "__main__":

@@ -466,8 +466,10 @@
       offsetMs: 0,
       translationStatus: segment.translationStatus || "unknown",
       realtimeStage: segment.realtimeStage || "",
+      realtimeStages: Array.isArray(segment.realtimeStages) ? segment.realtimeStages.map(String) : [],
       sourceSegmentIds: Array.isArray(segment.sourceSegmentIds) ? segment.sourceSegmentIds.map(String) : [],
-      sourceCueCount: Number(segment.sourceCueCount) || 0
+      sourceCueCount: Number(segment.sourceCueCount) || 0,
+      sourceCueRange: segment.sourceCueRange || ""
     };
   }
 
@@ -1127,13 +1129,18 @@
     }
     const isStableCommit = event.type === "caption_stable" || event.stability === "stable";
     const isStableCorrection = String(event.source || "").includes("stable-correction");
+    const realtimeStage = isStableCorrection ? "final" : isStableCommit ? "stable" : event.final ? "final" : "draft";
     segment.zh = event.final || isStableCorrection || isStableCommit ? text : `${segment.zh || ""}${event.delta || text}`;
     segment.en = state.realtime.partialEn || segment.en || "";
     if (event.en) segment.en = event.en;
     segment.endMs = Math.max(segment.endMs, startMs + Math.max(1800, Math.min(8000, segment.zh.length * 90)));
     segment.final = Boolean(event.final || isStableCorrection);
     segment.stable = Boolean(segment.stable || isStableCorrection || isStableCommit);
-    segment.realtimeStage = isStableCorrection ? "final" : isStableCommit ? "stable" : event.final ? "final" : "draft";
+    segment.realtimeStage = realtimeStage;
+    appendRealtimeStage(segment, realtimeStage, event);
+    if (event.stabilizerWindow && typeof event.stabilizerWindow === "object") {
+      segment.stabilizerWindow = event.stabilizerWindow;
+    }
     if (isStableCorrection) {
       segment.note = "gpt-5.4-mini 稳定修正版。";
       segment.confidence = Math.max(Number(segment.confidence) || 0, 88);
@@ -1160,6 +1167,20 @@
       state.realtime.currentSegmentId = null;
       state.realtime.partialZh = "";
     }
+  }
+
+  function appendRealtimeStage(segment, stage, event) {
+    if (!stage) return;
+    const stages = Array.isArray(segment.realtimeStages) ? segment.realtimeStages : [];
+    if (!stages.includes(stage)) stages.push(stage);
+    segment.realtimeStages = stages;
+    segment.realtimeStageEvents = Array.isArray(segment.realtimeStageEvents) ? segment.realtimeStageEvents : [];
+    segment.realtimeStageEvents.push({
+      stage,
+      type: event.type || "",
+      source: event.source || "",
+      latencyMs: Number(event.latencyMs) || 0
+    });
   }
 
   function postRealtimeSessionEvent(event) {
@@ -1594,7 +1615,7 @@
       sourceSegmentIds: ids,
       flags: [
         ids.length ? `${ids.length} 个原始 cue` : "",
-        realtimeStageLabel(display?.realtimeStage || review.realtimeStage || ""),
+        realtimeStageHistoryLabel(display?.realtimeStages || review.realtimeStages || [], display?.realtimeStage || review.realtimeStage || ""),
         ...refs.map((ref) => ref?.canonicalRef || "").filter(Boolean)
       ].filter(Boolean),
       zh: review.zh || display?.zh || "",
@@ -1633,6 +1654,7 @@
       enParts: [segment.en || ""].filter(Boolean),
       refs: new Set(segment.ref ? [segment.ref] : []),
       realtimeStage: segment.realtimeStage || (segment.final ? "final" : segment.stable ? "stable" : ""),
+      realtimeStages: Array.isArray(segment.realtimeStages) ? segment.realtimeStages.slice() : [],
       marked: Boolean(segment.marked),
       locked: Boolean(segment.locked),
       segmentIds: [segment.id],
@@ -1649,6 +1671,7 @@
       group.realtimeStage,
       segment.realtimeStage || (segment.final ? "final" : segment.stable ? "stable" : "")
     );
+    mergeRealtimeStages(group.realtimeStages, segment.realtimeStages || []);
     group.marked = group.marked || Boolean(segment.marked);
     group.locked = group.locked || Boolean(segment.locked);
     group.segmentIds.push(segment.id);
@@ -1659,7 +1682,7 @@
     const flags = [
       group.locked ? "锁定" : "",
       group.marked ? "已标记" : "",
-      realtimeStageLabel(group.realtimeStage),
+      realtimeStageHistoryLabel(group.realtimeStages, group.realtimeStage),
       ...Array.from(group.refs)
     ].filter(Boolean);
     return {
@@ -1696,6 +1719,20 @@
     if (stage === "stable") return "稳定";
     if (stage === "draft") return "草稿";
     return "";
+  }
+
+  function realtimeStageHistoryLabel(stages, fallbackStage = "") {
+    const ordered = ["draft", "stable", "final"].filter((stage) => Array.isArray(stages) && stages.includes(stage));
+    if (!ordered.length && fallbackStage) ordered.push(fallbackStage);
+    const labels = ordered.map(realtimeStageLabel).filter(Boolean);
+    return labels.length > 1 ? labels.join(" / ") : labels[0] || "";
+  }
+
+  function mergeRealtimeStages(target, stages) {
+    if (!Array.isArray(target) || !Array.isArray(stages)) return;
+    ["draft", "stable", "final"].forEach((stage) => {
+      if (stages.includes(stage) && !target.includes(stage)) target.push(stage);
+    });
   }
 
   function strongestRealtimeStage(current, next) {

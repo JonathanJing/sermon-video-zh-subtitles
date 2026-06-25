@@ -70,6 +70,74 @@ CHINESE_DIGITS = {
     "八": 8,
     "九": 9,
 }
+DISPLAY_MIN_MS = 2000
+DISPLAY_TARGET_MAX_MS = 7000
+DISPLAY_HARD_MAX_MS = 10000
+DISPLAY_TARGET_ZH_CHARS = 54
+DISPLAY_HARD_ZH_CHARS = 92
+DISPLAY_TARGET_EN_CHARS = 145
+DISPLAY_HARD_EN_CHARS = 240
+CONNECTOR_ZH_STARTS = (
+    "因为",
+    "所以",
+    "如果",
+    "当",
+    "但是",
+    "可是",
+    "而且",
+    "并且",
+    "或者",
+    "然后",
+    "就",
+    "也许",
+    "这",
+    "那",
+)
+CONNECTOR_EN_STARTS = (
+    "and ",
+    "but ",
+    "because ",
+    "so ",
+    "if ",
+    "when ",
+    "that ",
+    "which ",
+    "who ",
+    "or ",
+    "then ",
+)
+CONNECTOR_ZH_ENDS = (
+    "因为",
+    "如果",
+    "当",
+    "但是",
+    "可是",
+    "而且",
+    "并且",
+    "或者",
+    "所以",
+    "让",
+    "把",
+    "被",
+    "会",
+    "可以",
+)
+CONNECTOR_EN_ENDS = (
+    "because",
+    "if",
+    "when",
+    "but",
+    "and",
+    "or",
+    "so",
+    "that",
+    "which",
+    "who",
+    "to",
+    "of",
+    "for",
+    "with",
+)
 
 
 def main() -> int:
@@ -343,6 +411,14 @@ def build_simulation(
         },
         "sermonStart": sermon_start,
         "translationStatus": "ready" if has_zh else "needs_translation",
+        "displayPolicy": {
+            "source": "offline-caption-polisher",
+            "minMs": DISPLAY_MIN_MS,
+            "targetMaxMs": DISPLAY_TARGET_MAX_MS,
+            "hardMaxMs": DISPLAY_HARD_MAX_MS,
+            "targetZhChars": DISPLAY_TARGET_ZH_CHARS,
+            "avoidsConnectorBoundaries": True,
+        },
         "scriptureReferences": merge_segment_references(display_segments),
         "rawSegments": raw_segments,
         "displaySegments": display_segments,
@@ -461,6 +537,7 @@ def finalize_display_group(group: dict[str, Any], index: int) -> dict[str, Any]:
         "translationStatus": translation_status,
         "sourceSegmentIds": source_ids,
         "sourceCueCount": len(source_ids),
+        "sourceCueRange": source_cue_range(source_ids),
     }
 
 
@@ -475,6 +552,7 @@ def build_review_segments(display_segments: list[dict[str, Any]]) -> list[dict[s
             "en": segment.get("en", ""),
             "sourceSegmentIds": segment.get("sourceSegmentIds", []),
             "sourceCueCount": segment.get("sourceCueCount", 0),
+            "sourceCueRange": segment.get("sourceCueRange", ""),
             "translationStatus": segment.get("translationStatus", "unknown"),
             "refs": segment.get("refs", []),
         }
@@ -482,19 +560,70 @@ def build_review_segments(display_segments: list[dict[str, Any]]) -> list[dict[s
     ]
 
 
+def source_cue_range(source_ids: list[str]) -> str:
+    if not source_ids:
+        return ""
+    if len(source_ids) == 1:
+        return source_ids[0]
+    return f"{source_ids[0]}-{source_ids[-1]}"
+
+
 def should_start_display_group(group: dict[str, Any], segment: dict[str, Any]) -> bool:
     gap_ms = int(segment.get("startMs") or 0) - int(group["endMs"])
     zh_text = compact_join(group["zhParts"])
     en_text = compact_join(group["enParts"])
-    if gap_ms > 2600:
+    next_zh = str(segment.get("zh") or "").strip()
+    next_en = str(segment.get("en") or "").strip()
+    current_duration_ms = int(group["endMs"]) - int(group["startMs"])
+    candidate_duration_ms = int(segment.get("endMs") or group["endMs"]) - int(group["startMs"])
+    candidate_zh = compact_join(group["zhParts"] + ([next_zh] if next_zh else []))
+    candidate_en = compact_join(group["enParts"] + ([next_en] if next_en else []))
+    boundary_safe = is_safe_display_boundary(zh_text, en_text, next_zh, next_en)
+
+    if gap_ms > 2600 and current_duration_ms >= 1200:
         return True
-    if len(zh_text) >= 600 or len(en_text) >= 900:
-        return True
+    if boundary_safe and current_duration_ms >= DISPLAY_MIN_MS:
+        if candidate_duration_ms > DISPLAY_TARGET_MAX_MS:
+            return True
+        if readable_len(candidate_zh) > DISPLAY_TARGET_ZH_CHARS:
+            return True
+        if len(candidate_en) > DISPLAY_TARGET_EN_CHARS:
+            return True
+    if candidate_duration_ms > DISPLAY_HARD_MAX_MS:
+        return current_duration_ms >= DISPLAY_MIN_MS
+    if readable_len(candidate_zh) > DISPLAY_HARD_ZH_CHARS or len(candidate_en) > DISPLAY_HARD_EN_CHARS:
+        return current_duration_ms >= DISPLAY_MIN_MS
     if len(group["sourceSegmentIds"]) >= 10:
         return True
     zh_ends = ends_display_sentence(zh_text)
     en_ends = ends_display_sentence(en_text)
-    return (zh_ends and (not en_text or en_ends)) or (en_ends and (not zh_text or zh_ends))
+    if current_duration_ms < DISPLAY_MIN_MS:
+        return False
+    return boundary_safe and ((zh_ends and (not en_text or en_ends)) or (en_ends and (not zh_text or zh_ends)))
+
+
+def is_safe_display_boundary(current_zh: str, current_en: str, next_zh: str, next_en: str) -> bool:
+    if not current_zh and not current_en:
+        return False
+    if ends_with_connector(current_zh, CONNECTOR_ZH_ENDS) or starts_with_connector(next_zh, CONNECTOR_ZH_STARTS):
+        return False
+    if ends_with_connector(current_en, CONNECTOR_EN_ENDS) or starts_with_connector(next_en, CONNECTOR_EN_STARTS):
+        return False
+    return ends_display_sentence(current_zh) or ends_display_sentence(current_en)
+
+
+def starts_with_connector(text: str, connectors: tuple[str, ...]) -> bool:
+    stripped = text.strip().lower()
+    return bool(stripped and any(stripped.startswith(connector.lower()) for connector in connectors))
+
+
+def ends_with_connector(text: str, connectors: tuple[str, ...]) -> bool:
+    stripped = re.sub(r"[，。！？；：,.!?;:\s]+$", "", text.strip().lower())
+    return bool(stripped and any(stripped.endswith(connector.lower()) for connector in connectors))
+
+
+def readable_len(text: str) -> int:
+    return len(re.sub(r"\s+", "", text))
 
 
 def compact_join(parts: list[str]) -> str:

@@ -170,11 +170,13 @@ def stable_correction_candidates(
         event_type = str(event.get("type") or "")
         segment_id = str(event.get("segmentId") or "").strip()
         text = event_text(event)
-        if event_type in {"caption_delta", "caption_final"} and segment_id:
+        if event_type in {"caption_delta", "caption_stable", "caption_final"} and segment_id:
             draft_zh_by_segment[segment_id] = append_or_replace(
                 draft_zh_by_segment.get(segment_id, ""),
                 text,
-                final=event_type == "caption_final" or bool(event.get("final")),
+                final=event_type in {"caption_stable", "caption_final"}
+                or str(event.get("stability") or "") == "stable"
+                or bool(event.get("final")),
             )
             continue
 

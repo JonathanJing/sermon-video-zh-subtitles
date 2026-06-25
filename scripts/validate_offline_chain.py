@@ -19,6 +19,15 @@ EXPECTED_TRANSLATION_MODEL = "gpt-5.4-mini"
 EXPECTED_REALTIME_MODEL = "gpt-realtime-translate"
 ALLOWED_OFFLINE_SOURCES = {"live_archive", "sermon_vod", "openai_asr"}
 AUDIO_SOURCE_EXTENSIONS = {".aac", ".aiff", ".caf", ".flac", ".m4a", ".mp3", ".wav"}
+DISPLAY_MIN_MS = 1200
+DISPLAY_TARGET_MIN_MS = 2000
+DISPLAY_TARGET_MAX_MS = 7000
+DISPLAY_HARD_MAX_MS = 10000
+DISPLAY_HARD_ZH_CHARS = 92
+CONNECTOR_ZH_STARTS = ("因为", "所以", "如果", "当", "但是", "可是", "而且", "并且", "或者", "然后")
+CONNECTOR_ZH_ENDS = ("因为", "如果", "当", "但是", "可是", "而且", "并且", "或者", "所以", "让", "把", "被", "会", "可以")
+CONNECTOR_EN_STARTS = ("and ", "but ", "because ", "so ", "if ", "when ", "that ", "which ", "who ", "or ", "then ")
+CONNECTOR_EN_ENDS = ("because", "if", "when", "but", "and", "or", "so", "that", "which", "who", "to", "of", "for", "with")
 SECRET_PATTERNS = [
     "apiKeySecret",
     "Authorization",
@@ -164,6 +173,10 @@ def validate_offline_chain(
     playback_source_kind = str(playback.get("offlineSourceKind") or "")
     provider = playback.get("translationProvider") if isinstance(playback.get("translationProvider"), dict) else {}
     segments = playback.get("segments") if isinstance(playback.get("segments"), list) else []
+    raw_segments = playback.get("rawSegments") if isinstance(playback.get("rawSegments"), list) else []
+    display_segments = playback.get("displaySegments") if isinstance(playback.get("displaySegments"), list) else []
+    review_segments = playback.get("reviewSegments") if isinstance(playback.get("reviewSegments"), list) else []
+    display_policy = playback.get("displayPolicy") if isinstance(playback.get("displayPolicy"), dict) else {}
     translated_segments = [segment for segment in segments if is_ready_chinese_segment(segment)]
     expected_cues = cues_from_segments(translated_segments)
     zh_vtt_cues = parse_vtt_cues(zh_vtt_text)
@@ -255,6 +268,41 @@ def validate_offline_chain(
     add_check(checks, "playback_translation_status", playback.get("translationStatus") == "ready", playback.get("translationStatus"))
     add_check(checks, "offline_translation_model", provider.get("model") == expected_translation_model, provider.get("model"))
     add_check(checks, "playback_translated_segments", bool(segments) and len(translated_segments) == len(segments), {"translated": len(translated_segments), "total": len(segments)})
+    add_check(
+        checks,
+        "playback_polished_layers_present",
+        bool(raw_segments) and bool(display_segments) and bool(review_segments),
+        {"raw": len(raw_segments), "display": len(display_segments), "review": len(review_segments)},
+    )
+    add_check(
+        checks,
+        "playback_segments_use_display_layer",
+        bool(display_segments) and segments == display_segments,
+        {"segments": len(segments), "display": len(display_segments)},
+    )
+    add_check(
+        checks,
+        "playback_display_policy",
+        display_policy.get("source") == "offline-caption-polisher"
+        and display_policy.get("avoidsConnectorBoundaries") is True,
+        display_policy,
+    )
+    add_check(
+        checks,
+        "display_segments_trace_raw_cues",
+        display_segments_trace_raw_cues(display_segments, raw_segments),
+        display_trace_observed(display_segments, raw_segments),
+    )
+    add_check(
+        checks,
+        "review_segments_trace_display_segments",
+        review_segments_trace_display_segments(review_segments, display_segments),
+        review_trace_observed(review_segments, display_segments),
+    )
+    quality = display_quality_observed(display_segments)
+    add_check(checks, "display_segment_readability", quality["ok"], quality)
+    boundary = display_connector_boundary_observed(display_segments)
+    add_check(checks, "display_segment_connector_boundaries", boundary["ok"], boundary)
 
     add_check(checks, "zh_vtt_secret_strings", not contains_secret_material(zh_vtt_text), None)
     add_check(checks, "zh_vtt_shape", zh_vtt_text.lstrip().startswith("WEBVTT"), first_line(zh_vtt_text))
@@ -441,6 +489,145 @@ def cues_from_segments(segments: list[Any]) -> list[dict[str, Any]]:
             }
         )
     return cues
+
+
+def display_segments_trace_raw_cues(display_segments: list[Any], raw_segments: list[Any]) -> bool:
+    raw_ids = {
+        str(segment.get("id") or "")
+        for segment in raw_segments
+        if isinstance(segment, dict) and segment.get("id")
+    }
+    if not display_segments or not raw_ids:
+        return False
+    for segment in display_segments:
+        if not isinstance(segment, dict):
+            return False
+        source_ids = [str(value) for value in segment.get("sourceSegmentIds") or [] if str(value)]
+        if not source_ids or not set(source_ids) <= raw_ids:
+            return False
+        if int(segment.get("sourceCueCount") or 0) != len(source_ids):
+            return False
+        if not str(segment.get("sourceCueRange") or "").strip():
+            return False
+    return True
+
+
+def display_trace_observed(display_segments: list[Any], raw_segments: list[Any]) -> dict[str, Any]:
+    samples = []
+    for segment in display_segments[:3]:
+        if not isinstance(segment, dict):
+            continue
+        samples.append(
+            {
+                "id": segment.get("id"),
+                "sourceSegmentIds": segment.get("sourceSegmentIds"),
+                "sourceCueCount": segment.get("sourceCueCount"),
+                "sourceCueRange": segment.get("sourceCueRange"),
+            }
+        )
+    return {"displayCount": len(display_segments), "rawCount": len(raw_segments), "samples": samples}
+
+
+def review_segments_trace_display_segments(review_segments: list[Any], display_segments: list[Any]) -> bool:
+    display_ids = {
+        str(segment.get("id") or "")
+        for segment in display_segments
+        if isinstance(segment, dict) and segment.get("id")
+    }
+    if not review_segments or len(review_segments) != len(display_segments) or not display_ids:
+        return False
+    for review in review_segments:
+        if not isinstance(review, dict):
+            return False
+        display_id = str(review.get("displaySegmentId") or "")
+        if display_id not in display_ids:
+            return False
+        if not review.get("sourceSegmentIds") or not str(review.get("sourceCueRange") or "").strip():
+            return False
+        if "startMs" not in review or "endMs" not in review:
+            return False
+    return True
+
+
+def review_trace_observed(review_segments: list[Any], display_segments: list[Any]) -> dict[str, Any]:
+    return {
+        "reviewCount": len(review_segments),
+        "displayCount": len(display_segments),
+        "samples": [
+            {
+                "displaySegmentId": review.get("displaySegmentId"),
+                "sourceSegmentIds": review.get("sourceSegmentIds"),
+                "sourceCueRange": review.get("sourceCueRange"),
+            }
+            for review in review_segments[:3]
+            if isinstance(review, dict)
+        ],
+    }
+
+
+def display_quality_observed(display_segments: list[Any]) -> dict[str, Any]:
+    failures = []
+    durations = []
+    for segment in display_segments:
+        if not isinstance(segment, dict):
+            failures.append({"reason": "not_object"})
+            continue
+        start_ms = safe_int(segment.get("startMs"))
+        end_ms = safe_int(segment.get("endMs"))
+        duration_ms = end_ms - start_ms
+        zh = str(segment.get("zh") or "")
+        durations.append(duration_ms)
+        if duration_ms < DISPLAY_MIN_MS or duration_ms > DISPLAY_HARD_MAX_MS:
+            failures.append({"id": segment.get("id"), "reason": "duration", "durationMs": duration_ms})
+        if readable_len(zh) > DISPLAY_HARD_ZH_CHARS:
+            failures.append({"id": segment.get("id"), "reason": "zh_length", "zhChars": readable_len(zh)})
+        if not contains_cjk(zh):
+            failures.append({"id": segment.get("id"), "reason": "missing_chinese"})
+    near_target = sum(1 for duration in durations if DISPLAY_TARGET_MIN_MS <= duration <= DISPLAY_TARGET_MAX_MS)
+    return {
+        "ok": bool(display_segments) and not failures,
+        "segmentCount": len(display_segments),
+        "targetDurationSegments": near_target,
+        "durationRangeMs": [min(durations), max(durations)] if durations else [],
+        "failures": failures[:5],
+    }
+
+
+def display_connector_boundary_observed(display_segments: list[Any]) -> dict[str, Any]:
+    failures = []
+    for previous, current in zip(display_segments, display_segments[1:]):
+        if not isinstance(previous, dict) or not isinstance(current, dict):
+            continue
+        previous_zh = str(previous.get("zh") or "")
+        current_zh = str(current.get("zh") or "")
+        previous_en = str(previous.get("en") or "")
+        current_en = str(current.get("en") or "")
+        if ends_with_connector(previous_zh, CONNECTOR_ZH_ENDS) or starts_with_connector(current_zh, CONNECTOR_ZH_STARTS):
+            failures.append({"previous": previous.get("id"), "current": current.get("id"), "language": "zh"})
+        if ends_with_connector(previous_en, CONNECTOR_EN_ENDS) or starts_with_connector(current_en, CONNECTOR_EN_STARTS):
+            failures.append({"previous": previous.get("id"), "current": current.get("id"), "language": "en"})
+    return {"ok": not failures, "failures": failures[:5]}
+
+
+def starts_with_connector(text: str, connectors: tuple[str, ...]) -> bool:
+    stripped = text.strip().lower()
+    return bool(stripped and any(stripped.startswith(connector.lower()) for connector in connectors))
+
+
+def ends_with_connector(text: str, connectors: tuple[str, ...]) -> bool:
+    stripped = re.sub(r"[，。！？；：,.!?;:\s]+$", "", text.strip().lower())
+    return bool(stripped and any(stripped.endswith(connector.lower()) for connector in connectors))
+
+
+def readable_len(text: str) -> int:
+    return len(re.sub(r"\s+", "", text))
+
+
+def safe_int(value: Any) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return 0
 
 
 def read_text(uri: str) -> str:

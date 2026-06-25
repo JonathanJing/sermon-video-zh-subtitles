@@ -151,7 +151,7 @@ def run_smoke(args: argparse.Namespace) -> dict[str, Any]:
     sse_events = read_sse_events(
         base_url + "/api/realtime/sessions/current/events",
         timeout=args.timeout_seconds,
-        min_events=4,
+        min_events=5,
     )
     event_types = [str(event.get("type") or "") for event in sse_events]
     session_started = first_event_of_type(sse_events, "session_started")
@@ -171,6 +171,7 @@ def run_smoke(args: argparse.Namespace) -> dict[str, Any]:
     )
     add_check(checks, "sse_receives_input_transcript", "input_transcript_delta" in event_types, event_types)
     add_check(checks, "sse_receives_caption_delta", "caption_delta" in event_types, event_types)
+    add_check(checks, "sse_receives_caption_stable", "caption_stable" in event_types, event_types)
     add_check(checks, "sse_receives_stable_caption_final", "caption_final" in event_types, event_types)
     stable_segment_summary = stable_correction_segment_summary(sse_events)
     add_check(
@@ -212,6 +213,7 @@ def run_session_validation(args: argparse.Namespace, session_id: str) -> dict[st
             events_uri=events_uri,
             expected_model=EXPECTED_MODEL,
             require_model_event=True,
+            require_caption_stable=True,
             require_stable_correction=True,
             min_caption_events=1,
             min_input_events=1,
@@ -325,6 +327,7 @@ def report_from_checks(
             "eventsRead": len(sse_events),
             "types": [event.get("type") for event in sse_events],
             "sessionStarted": public_session_started_summary(sse_events),
+            "stableCaption": stable_caption_segment_summary(sse_events),
             "stableCorrection": stable_correction_segment_summary(sse_events),
         },
         "sessionValidation": session_validation or {"status": "skipped"},
@@ -507,6 +510,35 @@ def stable_correction_segment_summary(events: list[dict[str, Any]]) -> dict[str,
         "stableCorrectionSegments": sorted(stable_segments)[:5],
         "matchedSegments": sorted(matched_segments)[:5],
     }
+
+
+def stable_caption_segment_summary(events: list[dict[str, Any]]) -> dict[str, Any]:
+    stable_events = [
+        event
+        for event in events
+        if event.get("type") == "caption_stable"
+        and str(event.get("source") or "") == "realtime-caption-stabilizer"
+        and str(event.get("segmentId") or "").strip()
+    ]
+    return {
+        "segments": sorted({str(event.get("segmentId")) for event in stable_events})[:5],
+        "latencyP95Ms": latency_p95(stable_events),
+        "windowed": all(isinstance(event.get("stabilizerWindow"), dict) for event in stable_events) if stable_events else False,
+    }
+
+
+def latency_p95(events: list[dict[str, Any]]) -> int | None:
+    values = []
+    for event in events:
+        try:
+            values.append(int(event.get("latencyMs")))
+        except (TypeError, ValueError):
+            continue
+    if not values:
+        return None
+    values.sort()
+    index = min(len(values) - 1, max(0, round((len(values) - 1) * 0.95)))
+    return values[index]
 
 
 def contains_secret_material(text: str) -> bool:

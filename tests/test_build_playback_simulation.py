@@ -62,6 +62,10 @@ Moses and Aaron stood before the people.
             self.assertEqual(simulation["segments"], simulation["displaySegments"])
             self.assertEqual(simulation["reviewSegments"][0]["displaySegmentId"], simulation["displaySegments"][0]["id"])
             self.assertEqual(simulation["displaySegments"][0]["sourceSegmentIds"], ["sim_0001"])
+            self.assertEqual(simulation["displaySegments"][0]["sourceCueRange"], "sim_0001")
+            self.assertEqual(simulation["reviewSegments"][0]["sourceCueRange"], "sim_0001")
+            self.assertEqual(simulation["displayPolicy"]["source"], "offline-caption-polisher")
+            self.assertTrue(simulation["displayPolicy"]["avoidsConnectorBoundaries"])
             self.assertEqual(simulation["segments"][0]["ref"], "Numbers 16")
             self.assertEqual(simulation["segments"][0]["refs"][0]["title"], "民数记 16")
             self.assertEqual(simulation["scriptureReferences"][0]["canonicalRef"], "Numbers 16")
@@ -113,8 +117,61 @@ Moses and Aaron stood before the people.
 
         self.assertEqual(len(display), 1)
         self.assertEqual(display[0]["sourceSegmentIds"], ["sim_0001", "sim_0002", "sim_0003"])
+        self.assertEqual(display[0]["sourceCueRange"], "sim_0001-sim_0003")
         self.assertIn("因为我们可以 把这些放下", display[0]["zh"])
         self.assertTrue(display[0]["en"].endswith("trust him more."))
+
+    def test_keeps_connector_start_with_previous_sentence(self):
+        raw_segments = [
+            {
+                "id": "sim_0001",
+                "startMs": 0,
+                "endMs": 2800,
+                "zh": "这能帮助我们诚实面对自己。",
+                "en": "This helps us be honest with ourselves.",
+                "translationStatus": "ready",
+            },
+            {
+                "id": "sim_0002",
+                "startMs": 2810,
+                "endMs": 5200,
+                "zh": "因为我们会看见内心真正倚靠的是什么。",
+                "en": "Because we see what our hearts are really relying on.",
+                "translationStatus": "ready",
+            },
+        ]
+
+        display = mod.build_display_segments(raw_segments)
+
+        self.assertEqual(len(display), 1)
+        self.assertEqual(display[0]["sourceSegmentIds"], ["sim_0001", "sim_0002"])
+        self.assertIn("因为我们会看见", display[0]["zh"])
+
+    def test_splits_long_complete_thoughts_at_safe_sentence_boundary(self):
+        raw_segments = [
+            {
+                "id": "sim_0001",
+                "startMs": 0,
+                "endMs": 3200,
+                "zh": "神的百姓站在应许之地边缘，他们需要凭信心向前。",
+                "en": "God's people stood at the edge of the promised land, and they needed to move forward by faith.",
+                "translationStatus": "ready",
+            },
+            {
+                "id": "sim_0002",
+                "startMs": 3210,
+                "endMs": 6600,
+                "zh": "他们也需要记得，真正供应他们的是神自己。",
+                "en": "They also needed to remember that God himself was the one who supplied them.",
+                "translationStatus": "ready",
+            },
+        ]
+
+        display = mod.build_display_segments(raw_segments)
+
+        self.assertEqual(len(display), 2)
+        self.assertEqual(display[0]["sourceSegmentIds"], ["sim_0001"])
+        self.assertEqual(display[1]["sourceSegmentIds"], ["sim_0002"])
 
     def test_merges_progressive_youtube_cues_into_readable_segments(self):
         cues = [

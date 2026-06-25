@@ -108,6 +108,18 @@ class WebAppRealtimeContractTest(unittest.TestCase):
         self.assertIn('event.type === "caption_stable"', app_js)
         self.assertIn('segment.note = "gpt-5.4-mini 稳定修正版。"', app_js)
         self.assertIn("segment.stable = Boolean(segment.stable || isStableCorrection || isStableCommit)", app_js)
+        self.assertIn("appendRealtimeStage(segment, realtimeStage, event)", app_js)
+        self.assertIn("segment.stabilizerWindow = event.stabilizerWindow", app_js)
+
+    def test_admin_review_shows_realtime_draft_stable_final_history(self):
+        app_js = self.app_js
+
+        self.assertIn("function appendRealtimeStage(segment, stage, event)", app_js)
+        self.assertIn("segment.realtimeStages = stages", app_js)
+        self.assertIn("function realtimeStageHistoryLabel(stages, fallbackStage = \"\")", app_js)
+        self.assertIn('labels.join(" / ")', app_js)
+        self.assertIn('["draft", "stable", "final"]', app_js)
+        self.assertIn("realtimeStageHistoryLabel(group.realtimeStages, group.realtimeStage)", app_js)
 
 
 if __name__ == "__main__":

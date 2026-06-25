@@ -58,6 +58,28 @@ class StabilizeRealtimeDeltasWithOpenAITest(unittest.TestCase):
         self.assertEqual(candidates[0]["id"], "rt_stable_0001")
         self.assertEqual(candidates[0]["en"], "Jesus is our mediator.")
 
+    def test_uses_caption_stable_as_correction_draft(self):
+        events = [
+            {"id": 1, "type": "caption_delta", "segmentId": "seg_1", "delta": "耶稣是"},
+            {
+                "id": 2,
+                "type": "caption_stable",
+                "segmentId": "seg_1",
+                "zh": "耶稣是中保。",
+                "stability": "stable",
+            },
+            {
+                "id": 3,
+                "type": "input_transcript_final",
+                "segmentId": "seg_1",
+                "text": "Jesus is our mediator.",
+            },
+        ]
+
+        candidates = mod.stable_correction_candidates(events, max_windows=None)
+
+        self.assertEqual(candidates[0]["draftZh"], "耶稣是中保。")
+
     def test_build_output_omits_secret_resource_name(self):
         output = mod.build_output(
             input_jsonl=Path("artifacts/realtime.jsonl"),
