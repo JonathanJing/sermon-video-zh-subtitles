@@ -173,6 +173,56 @@ class PrepareLiveLinkPlaybackTest(unittest.TestCase):
             self.assertIn('"serverSideSecretConfigured": true', text)
             self.assertNotIn(str(out_dir), text)
 
+    def test_cloud_manifest_records_offline_caption_layers_and_display_policy(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out_dir = Path(tmp)
+            web_out = out_dir / "playback.js"
+            (out_dir / "report.json").write_text(
+                '{"offline_route":{"strategy":"captions_first_then_asr","decision":"use_caption_track"}}',
+                encoding="utf-8",
+            )
+            web_out.write_text(
+                'window.SERMON_PLAYBACK_SIMULATION = '
+                + json.dumps(
+                    {
+                        "offlineSourceKind": "live_archive",
+                        "displayPolicy": {
+                            "source": "offline-caption-polisher",
+                            "minMs": 2000,
+                            "targetMaxMs": 7000,
+                            "hardMaxMs": 9000,
+                            "targetZhChars": 42,
+                            "avoidsConnectorBoundaries": True,
+                        },
+                        "rawSegments": [{"id": "raw_1"}],
+                        "displaySegments": [{"id": "display_1", "sourceCueRange": "raw_1"}],
+                        "reviewSegments": [{"id": "display_1", "sourceCueRange": "raw_1"}],
+                        "segments": [{"id": "display_1"}],
+                    },
+                    ensure_ascii=False,
+                )
+                + ";\n",
+                encoding="utf-8",
+            )
+
+            manifest = mod.write_cloud_manifest(
+                out_dir=out_dir,
+                web_out=web_out,
+                gcs_outputs=[],
+                api_key_secret=None,
+                report_path=out_dir / "report.json",
+                playback_path=web_out,
+            )
+
+            payload = json.loads(manifest.read_text(encoding="utf-8"))
+            self.assertEqual(payload["captionLayers"]["rawSegments"], 1)
+            self.assertEqual(payload["captionLayers"]["displaySegments"], 1)
+            self.assertEqual(payload["captionLayers"]["reviewSegments"], 1)
+            self.assertEqual(payload["captionLayers"]["publicDefault"], "displaySegments")
+            self.assertTrue(payload["captionLayers"]["rawTraceability"])
+            self.assertEqual(payload["displayPolicy"]["source"], "offline-caption-polisher")
+            self.assertTrue(payload["displayPolicy"]["avoidsConnectorBoundaries"])
+
     def test_gcs_bucket_and_prefix_are_normalized(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

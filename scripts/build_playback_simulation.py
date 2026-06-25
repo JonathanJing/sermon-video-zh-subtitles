@@ -411,14 +411,7 @@ def build_simulation(
         },
         "sermonStart": sermon_start,
         "translationStatus": "ready" if has_zh else "needs_translation",
-        "displayPolicy": {
-            "source": "offline-caption-polisher",
-            "minMs": DISPLAY_MIN_MS,
-            "targetMaxMs": DISPLAY_TARGET_MAX_MS,
-            "hardMaxMs": DISPLAY_HARD_MAX_MS,
-            "targetZhChars": DISPLAY_TARGET_ZH_CHARS,
-            "avoidsConnectorBoundaries": True,
-        },
+        "displayPolicy": display_policy(),
         "scriptureReferences": merge_segment_references(display_segments),
         "rawSegments": raw_segments,
         "displaySegments": display_segments,
@@ -441,6 +434,7 @@ def refresh_polished_layers(simulation: dict[str, Any]) -> dict[str, Any]:
         simulation["reviewSegments"] = build_review_segments(display_segments)
         simulation["segments"] = display_segments
         simulation["scriptureReferences"] = merge_segment_references(display_segments)
+        simulation["displayPolicy"] = display_policy()
         return simulation
 
     raw_segments = simulation.get("rawSegments")
@@ -468,7 +462,19 @@ def refresh_polished_layers(simulation: dict[str, Any]) -> dict[str, Any]:
     simulation["reviewSegments"] = build_review_segments(display_segments)
     simulation["segments"] = display_segments
     simulation["scriptureReferences"] = merge_segment_references(display_segments)
+    simulation["displayPolicy"] = display_policy()
     return simulation
+
+
+def display_policy() -> dict[str, Any]:
+    return {
+        "source": "offline-caption-polisher",
+        "minMs": DISPLAY_MIN_MS,
+        "targetMaxMs": DISPLAY_TARGET_MAX_MS,
+        "hardMaxMs": DISPLAY_HARD_MAX_MS,
+        "targetZhChars": DISPLAY_TARGET_ZH_CHARS,
+        "avoidsConnectorBoundaries": True,
+    }
 
 
 def build_display_segments(raw_segments: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -485,6 +491,7 @@ def build_display_segments(raw_segments: list[dict[str, Any]]) -> list[dict[str,
         add_segment_to_display_group(current, segment)
     if current is not None:
         groups.append(finalize_display_group(current, len(groups) + 1))
+    annotate_unavoidable_continuations(groups)
     return groups
 
 
@@ -558,6 +565,30 @@ def build_review_segments(display_segments: list[dict[str, Any]]) -> list[dict[s
         }
         for index, segment in enumerate(display_segments, start=1)
     ]
+
+
+def annotate_unavoidable_continuations(display_segments: list[dict[str, Any]]) -> None:
+    for previous, current in zip(display_segments, display_segments[1:]):
+        if ends_with_connector(str(previous.get("zh") or ""), CONNECTOR_ZH_ENDS):
+            previous["zh"] = append_continuation_marker(str(previous.get("zh") or ""))
+            previous["draft"] = append_continuation_marker(str(previous.get("draft") or previous.get("zh") or ""))
+        if starts_with_connector(str(current.get("zh") or ""), CONNECTOR_ZH_STARTS):
+            current["zh"] = prepend_continuation_marker(str(current.get("zh") or ""))
+            current["draft"] = prepend_continuation_marker(str(current.get("draft") or current.get("zh") or ""))
+        if ends_with_connector(str(previous.get("en") or ""), CONNECTOR_EN_ENDS):
+            previous["en"] = append_continuation_marker(str(previous.get("en") or ""))
+        if starts_with_connector(str(current.get("en") or ""), CONNECTOR_EN_STARTS):
+            current["en"] = prepend_continuation_marker(str(current.get("en") or ""))
+
+
+def append_continuation_marker(text: str) -> str:
+    clean = text.strip()
+    return clean if not clean or clean.endswith("(continues)") else f"{clean} (continues)"
+
+
+def prepend_continuation_marker(text: str) -> str:
+    clean = text.strip()
+    return clean if not clean or clean.startswith("...") else f"... {clean}"
 
 
 def source_cue_range(source_ids: list[str]) -> str:

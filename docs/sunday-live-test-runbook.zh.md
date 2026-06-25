@@ -244,6 +244,13 @@ loop 会先写 `<browser_session_id>.model-access-preflight.json`。如果
 `gpt-5.4-mini` 在 OpenAI Responses 上不可用，它会在读取 event log 或回写修正版前退出；
 低延迟的 `gpt-realtime-translate` draft session 应继续运行。
 
+每次 loop 迭代还会写
+`artifacts/realtime-stable-corrections/<browser_session_id>.stable-corrections.latest.json`，
+其中包含 `stableCaption` 和 `stableLatency`。只有当报告里至少有一个
+`caption_stable`、至少一个带 stabilizer window 的 stable event，并且
+`stableLatency.p95Ms` 在 3000 到 6000 之间时，才把 realtime stabilizer 视为可用。
+把这个文件用 `--realtime-stabilizer-loop-report` 喂给 production matrix。
+
 先生成 combined evidence command：
 
 ```bash

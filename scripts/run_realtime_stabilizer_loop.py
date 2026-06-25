@@ -150,6 +150,7 @@ def run_iteration(
     now = now or datetime.now(timezone.utc)
     state = read_state(args.state_file)
     events = read_jsonl_uri(args.input_jsonl)
+    stable_caption = summarize_stable_caption_events(events)
     all_candidates = stable_correction_candidates(events, max_windows=args.max_windows)
     candidates = filter_ready_candidates(
         all_candidates,
@@ -206,11 +207,75 @@ def run_iteration(
         "readyWindows": len(candidates),
         "correctedWindows": len(corrections),
         "postedStableCorrections": posted,
+        "stableCaption": stable_caption,
+        "stableLatency": stable_caption.get("latency"),
         "stateFile": safe_display_path(args.state_file),
         "out": safe_display_path(output_path),
         "apiKeyMaterialIncluded": False,
         "secretResourceNamesIncluded": False,
     }
+
+
+def summarize_stable_caption_events(events: list[dict[str, Any]]) -> dict[str, Any]:
+    stable_events = [event for event in events if isinstance(event, dict) and event.get("type") == "caption_stable"]
+    latencies = [
+        latency
+        for latency in (coerce_int(event.get("latencyMs")) for event in stable_events)
+        if latency is not None
+    ]
+    windowed = [
+        event
+        for event in stable_events
+        if isinstance(event.get("stabilizerWindow"), dict) or coerce_int(event.get("stabilizerWindowMs")) is not None
+    ]
+    segment_ids = sorted(
+        {
+            str(event.get("segmentId")).strip()
+            for event in stable_events
+            if str(event.get("segmentId") or "").strip()
+        }
+    )
+    return {
+        "events": len(stable_events),
+        "windowedEvents": len(windowed),
+        "segmentIds": segment_ids,
+        "latency": summarize_latency(latencies),
+        "p95LatencyInTarget": latency_p95_in_target(latencies),
+    }
+
+
+def summarize_latency(values: list[int]) -> dict[str, Any]:
+    if not values:
+        return {"count": 0, "p95Ms": None}
+    ordered = sorted(values)
+    return {
+        "count": len(ordered),
+        "minMs": ordered[0],
+        "maxMs": ordered[-1],
+        "avgMs": round(sum(ordered) / len(ordered), 1),
+        "p95Ms": percentile_nearest_rank(ordered, 0.95),
+    }
+
+
+def percentile_nearest_rank(ordered_values: list[int], percentile: float) -> int:
+    if not ordered_values:
+        raise ValueError("ordered_values must not be empty")
+    index = max(0, min(len(ordered_values) - 1, int(len(ordered_values) * percentile + 0.999999) - 1))
+    return ordered_values[index]
+
+
+def latency_p95_in_target(values: list[int]) -> bool:
+    if not values:
+        return False
+    p95_ms = percentile_nearest_rank(sorted(values), 0.95)
+    return 3000 <= p95_ms <= 6000
+
+
+def coerce_int(value: Any) -> int | None:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def filter_ready_candidates(

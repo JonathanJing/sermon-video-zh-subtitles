@@ -696,6 +696,35 @@ class CollectProductionEvidenceMatrixTest(unittest.TestCase):
         self.assertEqual(row["state"], "pass")
         self.assertEqual(row["observed"]["sessionValidation"]["counts"]["stableCorrectionEvents"], 1)
         self.assertTrue(row["observed"]["stableCorrection"]["matched"])
+        self.assertEqual(row["observed"]["stableLatency"]["p95Ms"], 3400)
+
+    def test_public_sse_stable_correction_requires_windowed_stable_caption(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            data = public_sse_smoke(session_validation=stable_public_sse_session_validation())
+            data["sse"]["stableCaption"]["windowed"] = False
+            sse = write_json(root / "sse.json", data)
+
+            report = mod.collect_matrix(args_for(sse=sse))
+
+        row = next(row for row in report["matrix"] if row["id"] == "stable_correction")
+        self.assertEqual(row["state"], "fail")
+        self.assertFalse(row["observed"]["stableCaptionWindowed"])
+        self.assertIn("windowed caption_stable", row["nextAction"])
+
+    def test_public_sse_stable_correction_requires_target_latency(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            validation = stable_public_sse_session_validation()
+            validation["stableLatency"] = {"count": 1, "p95Ms": 900}
+            sse = write_json(root / "sse.json", public_sse_smoke(session_validation=validation))
+
+            report = mod.collect_matrix(args_for(sse=sse))
+
+        row = next(row for row in report["matrix"] if row["id"] == "stable_correction")
+        self.assertEqual(row["state"], "fail")
+        self.assertFalse(row["observed"]["stableLatencyInTarget"])
+        self.assertIn("p95 stable latency", row["nextAction"])
 
     def test_local_public_sse_stable_correction_is_warning_not_production_pass(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -714,6 +743,33 @@ class CollectProductionEvidenceMatrixTest(unittest.TestCase):
         self.assertEqual(row["state"], "warn")
         self.assertIn("deployed Cloud Run URL", row["nextAction"])
         self.assertEqual(row["observed"]["sessionValidation"]["counts"]["stableCorrectionEvents"], 1)
+
+    def test_realtime_stabilizer_loop_report_can_prove_stable_caption_layer(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            loop = write_json(root / "stabilizer-loop.json", realtime_stabilizer_loop_report())
+
+            report = mod.collect_matrix(args_for(realtime_stabilizer_loop=loop))
+
+        row = next(row for row in report["matrix"] if row["id"] == "stable_correction")
+        self.assertEqual(row["state"], "pass")
+        self.assertEqual(row["observed"]["stableCaption"]["events"], 1)
+        self.assertEqual(row["observed"]["stableLatency"]["p95Ms"], 3400)
+
+    def test_realtime_stabilizer_loop_report_requires_windowed_target_latency(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            data = realtime_stabilizer_loop_report()
+            data["stableCaption"]["windowedEvents"] = 0
+            data["stableLatency"] = {"count": 1, "p95Ms": 900}
+            loop = write_json(root / "stabilizer-loop.json", data)
+
+            report = mod.collect_matrix(args_for(realtime_stabilizer_loop=loop))
+
+        row = next(row for row in report["matrix"] if row["id"] == "stable_correction")
+        self.assertEqual(row["state"], "fail")
+        self.assertFalse(row["observed"]["checks"]["windowed_stable_events"])
+        self.assertFalse(row["observed"]["checks"]["stable_latency"])
 
     def test_failed_offline_translation_report_marks_caption_route_failed(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -1098,7 +1154,7 @@ class CollectProductionEvidenceMatrixTest(unittest.TestCase):
         self.assertEqual(row["observed"]["failedChecks"], ["caption_readable_vtt"])
 
 
-def args_for(config=None, preflight=None, audio=None, server=None, web=None, deployed_webrtc=None, live_1130_plan=None, handoff=None, public_view=None, sse=None, realtime_openai=None, realtime_validation=None, stable_contract=None, archive=None, worker_plan=None, offline_chain_validation=None, offline_asr_chain_validation=None, offline_asr_route_run=None, offline_asr_sample_chain_validation=None, no_caption_plan=None, asr_smoke=None, translation=None, sunday_manifest=None, gcs_publish_plan=None, model_access=None, alternative_model_access=None, plan=None, execution=None, readiness=None):
+def args_for(config=None, preflight=None, audio=None, server=None, web=None, deployed_webrtc=None, live_1130_plan=None, handoff=None, public_view=None, sse=None, realtime_openai=None, realtime_validation=None, realtime_stabilizer_loop=None, stable_contract=None, archive=None, worker_plan=None, offline_chain_validation=None, offline_asr_chain_validation=None, offline_asr_route_run=None, offline_asr_sample_chain_validation=None, no_caption_plan=None, asr_smoke=None, translation=None, sunday_manifest=None, gcs_publish_plan=None, model_access=None, alternative_model_access=None, plan=None, execution=None, readiness=None):
     return Namespace(
         production_readiness_report=[str(path) for path in readiness or []],
         cloud_run_config_report=str(config) if config else None,
@@ -1113,6 +1169,7 @@ def args_for(config=None, preflight=None, audio=None, server=None, web=None, dep
         realtime_public_sse_smoke_report=str(sse) if sse else None,
         realtime_openai_smoke_report=str(realtime_openai) if realtime_openai else None,
         realtime_session_validation_report=str(realtime_validation) if realtime_validation else None,
+        realtime_stabilizer_loop_report=str(realtime_stabilizer_loop) if realtime_stabilizer_loop else None,
         stable_correction_contract_report=str(stable_contract) if stable_contract else None,
         offline_archive_preflight_report=str(archive) if archive else None,
         offline_worker_plan_report=str(worker_plan) if worker_plan else None,
@@ -1497,6 +1554,29 @@ def stable_public_sse_session_validation():
     }
 
 
+def realtime_stabilizer_loop_report():
+    return {
+        "schemaVersion": 1,
+        "status": "ok",
+        "sessionId": "rt_test",
+        "model": "gpt-5.4-mini",
+        "candidateWindows": 1,
+        "readyWindows": 1,
+        "correctedWindows": 1,
+        "postedStableCorrections": 1,
+        "stableCaption": {
+            "events": 1,
+            "windowedEvents": 1,
+            "segmentIds": ["seg_1"],
+            "latency": {"count": 1, "p95Ms": 3400},
+            "p95LatencyInTarget": True,
+        },
+        "stableLatency": {"count": 1, "p95Ms": 3400},
+        "apiKeyMaterialIncluded": False,
+        "secretResourceNamesIncluded": False,
+    }
+
+
 def realtime_openai_smoke(*, status: str, fallback_input: bool = False):
     caption_count = 1 if status in {"ok", "missing_input_transcript"} else 0
     input_count = 1 if status == "ok" else 0
@@ -1554,8 +1634,10 @@ def realtime_session_validation(*, check_names=None, stable_corrections=0, realt
             "inputTranscriptEvents": 1,
             "realtimeInputTranscriptEvents": realtime_input_events,
             "realtimeCaptionEvents": 1,
+            "stableCaptionEvents": 1 if stable_corrections else 0,
             "stableCorrectionEvents": stable_corrections,
         },
+        "stableLatency": {"count": 1, "p95Ms": 3400} if stable_corrections else {"count": 0, "p95Ms": None},
         "models": ["gpt-realtime-translate"],
         "sessionIds": ["rt_test"],
         "realtimeSources": ["openai_realtime_translation_ws"],
@@ -1943,8 +2025,10 @@ def readiness_report(decision: str):
         "realtime": {
             "counts": {
                 "realtimeCaptionEvents": 2,
+                "stableCaptionEvents": 1,
                 "stableCorrectionEvents": 1,
-            }
+            },
+            "stableLatency": {"count": 1, "p95Ms": 3400},
         },
     }
 

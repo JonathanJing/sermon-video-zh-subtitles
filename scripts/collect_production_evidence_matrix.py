@@ -164,6 +164,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--realtime-public-sse-smoke-report")
     parser.add_argument("--realtime-openai-smoke-report")
     parser.add_argument("--realtime-session-validation-report")
+    parser.add_argument("--realtime-stabilizer-loop-report")
     parser.add_argument("--stable-correction-contract-report")
     parser.add_argument("--offline-archive-preflight-report")
     parser.add_argument("--offline-worker-plan-report")
@@ -236,6 +237,9 @@ def collect_matrix(args: argparse.Namespace) -> dict[str, Any]:
     realtime_session_validation = (
         read_optional_json(args.realtime_session_validation_report)
     )
+    realtime_stabilizer_loop = (
+        read_optional_json(args.realtime_stabilizer_loop_report)
+    )
     stable_correction_contract = (
         read_optional_json(args.stable_correction_contract_report)
     )
@@ -299,6 +303,8 @@ def collect_matrix(args: argparse.Namespace) -> dict[str, Any]:
             args.production_readiness_report,
             realtime_session_validation,
             args.realtime_session_validation_report,
+            realtime_stabilizer_loop,
+            args.realtime_stabilizer_loop_report,
             public_sse_smoke,
             args.realtime_public_sse_smoke_report,
             model_access,
@@ -1064,6 +1070,8 @@ def state_from_readiness_stable(
     paths: list[str],
     realtime_session_validation: dict[str, Any] | None = None,
     realtime_session_validation_path: str | None = None,
+    realtime_stabilizer_loop: dict[str, Any] | None = None,
+    realtime_stabilizer_loop_path: str | None = None,
     public_sse_smoke: dict[str, Any] | None = None,
     public_sse_smoke_path: str | None = None,
     model_access: dict[str, Any] | None = None,
@@ -1071,8 +1079,21 @@ def state_from_readiness_stable(
     available_alternative_models: list[str] | None = None,
 ) -> dict[str, Any]:
     for report, path in zip(reports, paths):
-        if report.get("status") == "ok" and (nested(report, "realtime", "counts", "stableCorrectionEvents") or 0) > 0:
-            return passed(path, nested(report, "realtime", "counts"))
+        counts = nested(report, "realtime", "counts") or {}
+        stable_latency = nested(report, "realtime", "stableLatency")
+        if (
+            report.get("status") == "ok"
+            and (counts.get("stableCaptionEvents") or 0) > 0
+            and (counts.get("stableCorrectionEvents") or 0) > 0
+            and stable_latency_in_target(stable_latency)
+        ):
+            return passed(path, {"counts": counts, "stableLatency": stable_latency})
+    stabilizer_loop_state = state_from_realtime_stabilizer_loop(
+        realtime_stabilizer_loop,
+        realtime_stabilizer_loop_path,
+    )
+    if stabilizer_loop_state:
+        return stabilizer_loop_state
     public_sse_stable_state = state_from_public_sse_stable_correction(
         public_sse_smoke,
         public_sse_smoke_path,
@@ -1104,6 +1125,36 @@ def state_from_readiness_stable(
     )
 
 
+def state_from_realtime_stabilizer_loop(
+    report: dict[str, Any] | None,
+    path: str | None,
+) -> dict[str, Any] | None:
+    if not report:
+        return None
+    stable_caption = report.get("stableCaption") if isinstance(report.get("stableCaption"), dict) else {}
+    observed = {
+        "status": report.get("status"),
+        "sessionId": report.get("sessionId"),
+        "stableCaption": stable_caption,
+        "stableLatency": report.get("stableLatency"),
+        "postedStableCorrections": report.get("postedStableCorrections"),
+    }
+    checks = {
+        "status": report.get("status") == "ok",
+        "stable_events": (stable_caption.get("events") or 0) > 0,
+        "windowed_stable_events": (stable_caption.get("windowedEvents") or 0) > 0,
+        "stable_latency": stable_latency_in_target(report.get("stableLatency")),
+    }
+    observed["checks"] = checks
+    if all(checks.values()):
+        return passed(path, observed)
+    return failed(
+        path,
+        observed,
+        "Run run_realtime_stabilizer_loop.py on a realtime JSONL that includes windowed caption_stable events with p95 latency between 3s and 6s.",
+    )
+
+
 def state_from_public_sse_stable_correction(
     report: dict[str, Any] | None,
     path: str | None,
@@ -1117,6 +1168,7 @@ def state_from_public_sse_stable_correction(
         "status": report.get("status"),
         "sessionValidation": compact_session_validation_summary(session_validation),
         "stableCaption": nested(report, "sse", "stableCaption"),
+        "stableLatency": nested(session_validation, "stableLatency"),
         "stableCorrection": stable_match,
     }
     has_stable_validation = (
@@ -1126,7 +1178,9 @@ def state_from_public_sse_stable_correction(
     )
     stable_matches_draft = isinstance(stable_match, dict) and stable_match.get("matched") is True
     stable_caption_ok = bool(nested(report, "sse", "stableCaption", "segments"))
-    if has_stable_validation and stable_matches_draft and stable_caption_ok:
+    stable_caption_windowed = nested(report, "sse", "stableCaption", "windowed") is True
+    stable_latency_ok = stable_latency_in_target(nested(session_validation, "stableLatency"))
+    if has_stable_validation and stable_matches_draft and stable_caption_ok and stable_caption_windowed and stable_latency_ok:
         if is_local_base_url(str(report.get("baseUrl") or "")):
             return {
                 "state": "warn",
@@ -1152,6 +1206,16 @@ def state_from_public_sse_stable_correction(
             path,
             {**observed, "failedChecks": failed_checks},
             "Fix public SSE stable correction validation, then rerun realtime public SSE smoke.",
+        )
+    if has_stable_validation and stable_matches_draft and stable_caption_ok:
+        return failed(
+            path,
+            {
+                **observed,
+                "stableCaptionWindowed": stable_caption_windowed,
+                "stableLatencyInTarget": stable_latency_ok,
+            },
+            "Rerun realtime public SSE smoke with a windowed caption_stable event and p95 stable latency between 3s and 6s.",
         )
     return None
 
@@ -1648,6 +1712,15 @@ def realtime_validation_state(
             compact_realtime_validation(report),
             "Run gpt-5.4-mini stable correction and validate realtime JSONL with --require-stable-correction.",
         )
+    if require_stable_correction and (
+        (nested(report, "counts", "stableCaptionEvents") or 0) <= 0
+        or not stable_latency_in_target(report.get("stableLatency"))
+    ):
+        return failed(
+            path,
+            compact_realtime_validation(report),
+            "Validate realtime JSONL includes caption_stable events with p95 stable latency between 3s and 6s.",
+        )
     return None
 
 
@@ -1661,9 +1734,20 @@ def compact_realtime_validation(report: dict[str, Any] | None) -> dict[str, Any]
         "models": report.get("models"),
         "sessionIds": report.get("sessionIds"),
         "realtimeSources": report.get("realtimeSources"),
+        "stableLatency": report.get("stableLatency"),
         "targetLanguages": report.get("targetLanguages"),
         "audioSourceKinds": report.get("audioSourceKinds"),
     }
+
+
+def stable_latency_in_target(value: Any) -> bool:
+    if not isinstance(value, dict):
+        return False
+    try:
+        p95_ms = int(value.get("p95Ms"))
+    except (TypeError, ValueError):
+        return False
+    return 3000 <= p95_ms <= 6000
 
 
 def compact_session_validation_summary(report: dict[str, Any] | None) -> dict[str, Any] | None:

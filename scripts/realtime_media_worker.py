@@ -773,6 +773,8 @@ def openai_event_to_realtime_payload(
         return None
     is_final = event_type.endswith((".done", ".completed", ".final"))
     segment_id = openai_segment_id(event)
+    if latency_ms is None:
+        latency_ms = openai_event_latency_ms(event)
     if "output_transcript" in event_type:
         payload_type = "caption_final" if is_final else "caption_delta"
         return transcript_payload(payload_type, text, event_type, segment_id, source=source, final=is_final, latency_ms=latency_ms)

@@ -46,6 +46,7 @@ def args_for_all(
 def readiness_report(*, offline_decision: str, include_input_transcript: bool = True) -> dict:
     realtime_counts = {
         "realtimeCaptionEvents": 2,
+        "stableCaptionEvents": 1,
         "stableCorrectionEvents": 1,
     }
     if include_input_transcript:
@@ -70,6 +71,7 @@ def readiness_report(*, offline_decision: str, include_input_transcript: bool = 
         "realtime": {
             "status": "ok",
             "counts": realtime_counts,
+            "stableLatency": {"count": 1, "p95Ms": 3400},
         },
         "apiKeyMaterialIncluded": False,
         "secretResourceNamesIncluded": False,
@@ -186,7 +188,7 @@ class AuditProductionGoalReadinessTest(unittest.TestCase):
 
         self.assertEqual(report["status"], "incomplete")
         self.assertEqual(report["summary"]["localFailed"], 0)
-        self.assertEqual(report["summary"]["externalMissing"], 9)
+        self.assertEqual(report["summary"]["externalMissing"], 10)
         self.assertTrue(all(check["state"] == "pass" for check in report["localImplementation"]))
         self.assertIn(
             "browser_webrtc_public_caption_view",
@@ -197,6 +199,7 @@ class AuditProductionGoalReadinessTest(unittest.TestCase):
             [check["id"] for check in report["localImplementation"]],
         )
         self.assertIn("external_realtime_live", report["failedChecks"])
+        self.assertIn("external_realtime_stable_caption", report["failedChecks"])
         self.assertIn("external_offline_asr_route", report["failedChecks"])
         self.assertIn("external_offline_not_realtime_chain", report["failedChecks"])
         self.assertIn("external_cloud_run_realtime_config", report["failedChecks"])
@@ -282,6 +285,38 @@ class AuditProductionGoalReadinessTest(unittest.TestCase):
 
         self.assertEqual(report["status"], "incomplete")
         self.assertIn("external_realtime_live", report["failedChecks"])
+
+    def test_realtime_stable_caption_requires_stable_event_and_latency(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            caption = root / "caption-route.json"
+            asr = root / "asr-route.json"
+            cloud_run = root / "cloud-run-config.json"
+            preflight = root / "cloud-run-preflight.json"
+            model_access = root / "model-access.json"
+            caption_report = readiness_report(offline_decision="use_caption_track")
+            caption_report["realtime"]["counts"]["stableCaptionEvents"] = 0
+            caption_report["realtime"]["stableLatency"] = {"count": 0, "p95Ms": None}
+            caption.write_text(json.dumps(caption_report), encoding="utf-8")
+            asr_report = readiness_report(offline_decision="use_asr_fallback")
+            asr_report["realtime"]["counts"]["stableCaptionEvents"] = 0
+            asr_report["realtime"]["stableLatency"] = {"count": 0, "p95Ms": None}
+            asr.write_text(json.dumps(asr_report), encoding="utf-8")
+            cloud_run.write_text(json.dumps(cloud_run_config_report()), encoding="utf-8")
+            preflight.write_text(json.dumps(cloud_run_api_preflight_report()), encoding="utf-8")
+            model_access.write_text(json.dumps(model_access_report()), encoding="utf-8")
+
+            report = mod.audit_goal_readiness(
+                args_for_all(
+                    [str(caption), str(asr)],
+                    str(cloud_run),
+                    str(preflight),
+                    model_access_report=str(model_access),
+                )
+            )
+
+        self.assertEqual(report["status"], "incomplete")
+        self.assertIn("external_realtime_stable_caption", report["failedChecks"])
 
     def test_readiness_reports_without_cloud_run_config_still_incomplete(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -379,7 +414,7 @@ class AuditProductionGoalReadinessTest(unittest.TestCase):
         self.assertIn("external_offline_caption_route", report["failedChecks"])
         self.assertIn("external_offline_asr_route", report["failedChecks"])
         self.assertIn("external_offline_not_realtime_chain", report["failedChecks"])
-        self.assertEqual(report["summary"]["externalMissing"], 4)
+        self.assertEqual(report["summary"]["externalMissing"], 5)
         actions = {action["id"]: action for action in report["nextActions"]}
         self.assertEqual(actions["external_stable_correction"]["sourceRow"], "stable_correction")
         self.assertEqual(actions["external_stable_correction"]["sourceRowState"], "fail")

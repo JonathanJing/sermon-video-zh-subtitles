@@ -306,7 +306,10 @@ python3 scripts/validate_offline_chain.py \
 `gpt-4o-transcribe` ASR fallback，翻译模型是 `gpt-5.4-mini`，offline path 没有使用
 `gpt-realtime-translate`，确认 `offline_route.strategy=captions_first_then_asr`，
 caption route 没有抽音频，ASR route 标记为 `no_requested_caption_track` fallback，
-并且中文 VTT/SRT 与已翻译 playback JS 都可读。
+中文 VTT/SRT 与已翻译 playback JS 都可读，并确认 playback JS 含有
+`rawSegments`、`displaySegments`、`reviewSegments`，`segments` 等于
+`displaySegments`，manifest 记录 `captionLayers.publicDefault=displaySegments`
+且保留 raw traceability。
 
 如果 `gpt-5.4-mini` 已经产出过保存的 model-output JSONL，但后续 caption/export
 步骤需要续跑，可以不再调用 OpenAI，直接重放已保存翻译：

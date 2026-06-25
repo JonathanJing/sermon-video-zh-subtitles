@@ -246,6 +246,13 @@ The loop writes `<browser_session_id>.model-access-preflight.json` first. If
 the event log or posting corrections; the low-latency `gpt-realtime-translate`
 draft session should keep running.
 
+Each loop iteration also writes
+`artifacts/realtime-stable-corrections/<browser_session_id>.stable-corrections.latest.json`
+with `stableCaption` and `stableLatency`. Treat the realtime stabilizer as ready
+only when that report shows at least one `caption_stable`, at least one windowed
+stable event, and `stableLatency.p95Ms` between 3000 and 6000. Feed that file to
+the production matrix with `--realtime-stabilizer-loop-report`.
+
 Build the combined evidence command first:
 
 ```bash

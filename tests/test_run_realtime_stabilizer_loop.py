@@ -125,6 +125,38 @@ class RunRealtimeStabilizerLoopTest(unittest.TestCase):
 
         self.assertEqual([item["id"] for item in ready], ["old", "no_time"])
 
+    def test_summarize_stable_caption_events_reports_window_and_latency(self):
+        summary = mod.summarize_stable_caption_events(
+            [
+                {"type": "caption_delta", "segmentId": "seg_1", "latencyMs": 800},
+                {
+                    "type": "caption_stable",
+                    "segmentId": "seg_1",
+                    "latencyMs": 3400,
+                    "stabilizerWindow": {"inputTextEn": "God loved the world."},
+                },
+                {
+                    "type": "caption_stable",
+                    "segmentId": "seg_2",
+                    "latencyMs": "4100",
+                    "stabilizerWindowMs": 8000,
+                },
+            ]
+        )
+
+        self.assertEqual(summary["events"], 2)
+        self.assertEqual(summary["windowedEvents"], 2)
+        self.assertEqual(summary["segmentIds"], ["seg_1", "seg_2"])
+        self.assertEqual(summary["latency"]["p95Ms"], 4100)
+        self.assertTrue(summary["p95LatencyInTarget"])
+
+    def test_summarize_stable_caption_events_marks_missing_latency_not_ready(self):
+        summary = mod.summarize_stable_caption_events([{"type": "caption_stable", "segmentId": "seg_1"}])
+
+        self.assertEqual(summary["events"], 1)
+        self.assertEqual(summary["latency"]["count"], 0)
+        self.assertFalse(summary["p95LatencyInTarget"])
+
     def test_resolve_input_jsonl_preserves_gcs_uri(self):
         uri = "gs://sermon-zh-artifacts-ai-for-god/realtime-events/2026-06-28/rt_browser.jsonl"
 
@@ -142,6 +174,16 @@ class RunRealtimeStabilizerLoopTest(unittest.TestCase):
                 "\n".join(
                     [
                         json.dumps({"id": 1, "type": "caption_final", "segmentId": "seg_1", "text": "耶稣是中保。"}),
+                        json.dumps(
+                            {
+                                "id": 10,
+                                "type": "caption_stable",
+                                "segmentId": "seg_1",
+                                "text": "耶稣是中保。",
+                                "latencyMs": 3400,
+                                "stabilizerWindow": {"inputTextEn": "Jesus is our mediator."},
+                            }
+                        ),
                         json.dumps(
                             {
                                 "id": 2,
@@ -182,6 +224,9 @@ class RunRealtimeStabilizerLoopTest(unittest.TestCase):
 
             self.assertEqual(report["postedStableCorrections"], 1)
             self.assertEqual(report["correctedWindows"], 1)
+            self.assertEqual(report["stableCaption"]["events"], 1)
+            self.assertEqual(report["stableLatency"]["p95Ms"], 3400)
+            self.assertTrue(report["stableCaption"]["p95LatencyInTarget"])
             self.assertEqual(state["postedSegmentIds"], ["seg_1"])
             self.assertEqual(output["segments"][0]["stableZh"], "耶稣是我们的中保。")
             self.assertEqual(calls[0]["event_token"], "secret-event-token")

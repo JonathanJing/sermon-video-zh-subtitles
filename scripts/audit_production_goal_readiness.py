@@ -70,6 +70,25 @@ LOCAL_REQUIREMENTS = [
         "needles": ["gpt-5.4-mini", "gpt-5.4-mini-stable-correction", "caption_final"],
     },
     {
+        "id": "realtime_fluent_stabilizer",
+        "description": "Realtime captions expose draft/stable/final layers with stabilizer window and admin visibility.",
+        "files": [
+            "backend/realtime.py",
+            "web/app.js",
+            "scripts/validate_public_caption_view_runtime.py",
+            "scripts/run_realtime_stable_reconnect_smoke.py",
+            "scripts/validate_realtime_session.py",
+        ],
+        "needles": [
+            "caption_stable",
+            "stabilizerWindow",
+            "stableLatency",
+            "admin_realtime_stage_history_visible",
+            "realtimeStages",
+            "草稿 / 稳定 / 最终",
+        ],
+    },
+    {
         "id": "offline_captions_first",
         "description": "Offline route prefers captions/VTT before ASR fallback.",
         "files": ["scripts/offline_live_sermon_subtitles.py", "scripts/validate_offline_chain.py"],
@@ -92,6 +111,29 @@ LOCAL_REQUIREMENTS = [
         ],
         "needles": ["sermon.zh.live-aligned.vtt", "sermon.zh.live-aligned.srt", "playback-simulation.generated.js"],
     },
+    {
+        "id": "offline_caption_polishing",
+        "description": "Offline playback publishes raw/display/review layers with readable display segments and raw cue traceability.",
+        "files": [
+            "scripts/build_playback_simulation.py",
+            "scripts/prepare_live_link_playback.py",
+            "scripts/export_playback_captions.py",
+            "scripts/validate_offline_chain.py",
+            "web/app.js",
+        ],
+        "needles": [
+            "offline-caption-polisher",
+            "rawSegments",
+            "displaySegments",
+            "reviewSegments",
+            "display_segment_readability",
+            "display_segment_connector_boundaries",
+            "sourceCueRange",
+            "segment_layer",
+            "captionLayers",
+            "publicDefault",
+        ],
+    },
 ]
 
 
@@ -103,6 +145,10 @@ EXTERNAL_REQUIREMENTS = [
     {
         "id": "external_stable_correction",
         "description": "A real realtime session received at least one gpt-5.4-mini stable correction.",
+    },
+    {
+        "id": "external_realtime_stable_caption",
+        "description": "A real realtime session emitted caption_stable with stabilizer window and 3-6s p95 stable latency.",
     },
     {
         "id": "external_offline_caption_route",
@@ -137,6 +183,7 @@ EXTERNAL_REQUIREMENTS = [
 EXTERNAL_MATRIX_ROWS = {
     "external_realtime_live": "realtime_live",
     "external_stable_correction": "stable_correction",
+    "external_realtime_stable_caption": "stable_correction",
     "external_offline_caption_route": "offline_caption_route",
     "external_offline_asr_route": "offline_asr_route",
     "external_offline_not_realtime_chain": "offline_caption_route",
@@ -264,6 +311,11 @@ def external_requirement_checks(
     has_stable = matrix_states.get("stable_correction") == "pass" or any(
         (nested(report, "realtime", "counts", "stableCorrectionEvents") or 0) > 0 for report in any_ok
     )
+    has_realtime_stable_caption = matrix_states.get("stable_correction") == "pass" or any(
+        (nested(report, "realtime", "counts", "stableCaptionEvents") or 0) > 0
+        and stable_latency_in_target(nested(report, "realtime", "stableLatency"))
+        for report in any_ok
+    )
     has_caption_route = matrix_states.get("offline_caption_route") == "pass" or any(
         nested(report, "offline", "offlineRoute", "decision") == "use_caption_track" for report in any_ok
     )
@@ -302,6 +354,7 @@ def external_requirement_checks(
         "matrixRows": matrix_states,
         "realtime": has_realtime,
         "stableCorrection": has_stable,
+        "realtimeStableCaption": has_realtime_stable_caption,
         "offlineCaptionRoute": has_caption_route,
         "offlineAsrRoute": has_asr_route,
         "offlineNotRealtimeChain": has_offline_not_realtime_chain,
@@ -313,6 +366,7 @@ def external_requirement_checks(
     return [
         external_check("external_realtime_live", has_realtime, observed, matrix_rows),
         external_check("external_stable_correction", has_stable, observed, matrix_rows),
+        external_check("external_realtime_stable_caption", has_realtime_stable_caption, observed, matrix_rows),
         external_check("external_offline_caption_route", has_caption_route, observed, matrix_rows),
         external_check("external_offline_asr_route", has_asr_route, observed, matrix_rows),
         external_check("external_offline_not_realtime_chain", has_offline_not_realtime_chain, observed, matrix_rows),
@@ -334,6 +388,16 @@ def realtime_report_has_caption_and_input(report: dict[str, Any]) -> bool:
         or 0
     )
     return caption_events > 0 and input_events > 0
+
+
+def stable_latency_in_target(value: Any) -> bool:
+    if not isinstance(value, dict):
+        return False
+    try:
+        p95_ms = int(value.get("p95Ms"))
+    except (TypeError, ValueError):
+        return False
+    return 3000 <= p95_ms <= 6000
 
 
 def report_check_passed(report: dict[str, Any], name: str) -> bool:

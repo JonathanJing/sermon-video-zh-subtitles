@@ -431,8 +431,12 @@ python3 scripts/run_realtime_stabilizer_loop.py \
 ```
 
 The output is `artifacts/realtime-stable-corrections/stable-corrections.json`
-plus a report and raw model-output JSONL. This is the bridge from low-latency
-draft captions to higher-quality stable captions.
+plus a report and raw model-output JSONL. The loop report includes
+`stableCaption` and `stableLatency`; production evidence should include it with
+`scripts/collect_production_evidence_matrix.py --realtime-stabilizer-loop-report`
+and should show windowed `caption_stable` events with p95 stable latency between
+3000 and 6000 ms. This is the bridge from low-latency draft captions to
+higher-quality stable captions.
 
 The loop writes `<session_id>.model-access-preflight.json` before the first
 iteration. If `gpt-5.4-mini` is unavailable through OpenAI Responses, it exits

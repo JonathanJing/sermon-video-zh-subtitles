@@ -381,6 +381,19 @@ def manifest_route_metadata(report_path: Path | None = None, playback_path: Path
             "audioExtractionAttempted": route.get("audioExtractionAttempted"),
             "fallbackReason": route.get("fallbackReason"),
         }
+    caption_layers = playback_caption_layers(playback)
+    if caption_layers:
+        metadata["captionLayers"] = caption_layers
+    display_policy = playback.get("displayPolicy") if isinstance(playback.get("displayPolicy"), dict) else {}
+    if display_policy:
+        metadata["displayPolicy"] = {
+            "source": display_policy.get("source"),
+            "minMs": display_policy.get("minMs"),
+            "targetMaxMs": display_policy.get("targetMaxMs"),
+            "hardMaxMs": display_policy.get("hardMaxMs"),
+            "targetZhChars": display_policy.get("targetZhChars"),
+            "avoidsConnectorBoundaries": display_policy.get("avoidsConnectorBoundaries"),
+        }
     metadata["models"] = {
         "realtimeDraft": DEFAULT_REALTIME_MODEL,
         "offlineAsr": nested(report, "asr", "model") or DEFAULT_ASR_MODEL,
@@ -388,6 +401,22 @@ def manifest_route_metadata(report_path: Path | None = None, playback_path: Path
         "stableCorrection": DEFAULT_TRANSLATION_MODEL,
     }
     return metadata
+
+
+def playback_caption_layers(playback: dict) -> dict[str, object]:
+    layer_counts = {
+        "rawSegments": len(playback.get("rawSegments") or []) if isinstance(playback.get("rawSegments"), list) else 0,
+        "displaySegments": len(playback.get("displaySegments") or []) if isinstance(playback.get("displaySegments"), list) else 0,
+        "reviewSegments": len(playback.get("reviewSegments") or []) if isinstance(playback.get("reviewSegments"), list) else 0,
+    }
+    if not any(layer_counts.values()):
+        return {}
+    return {
+        **layer_counts,
+        "publicDefault": "displaySegments" if layer_counts["displaySegments"] else "segments",
+        "adminReview": "reviewSegments" if layer_counts["reviewSegments"] else "segments",
+        "rawTraceability": layer_counts["rawSegments"] > 0,
+    }
 
 
 def read_json_object(path: Path) -> dict:

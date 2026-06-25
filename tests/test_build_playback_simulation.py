@@ -121,6 +121,28 @@ Moses and Aaron stood before the people.
         self.assertIn("因为我们可以 把这些放下", display[0]["zh"])
         self.assertTrue(display[0]["en"].endswith("trust him more."))
 
+    def test_refresh_polished_layers_adds_display_policy_to_legacy_segments(self):
+        simulation = {
+            "segments": [
+                {
+                    "id": "sim_0001",
+                    "startMs": 0,
+                    "endMs": 3000,
+                    "zh": "神的百姓站在应许之地边缘。",
+                    "en": "God's people are at the edge of the promised land.",
+                    "translationStatus": "ready",
+                }
+            ]
+        }
+
+        refreshed = mod.refresh_polished_layers(simulation)
+
+        self.assertEqual(refreshed["segments"], refreshed["displaySegments"])
+        self.assertEqual(refreshed["rawSegments"][0]["id"], "sim_0001")
+        self.assertEqual(refreshed["reviewSegments"][0]["sourceCueRange"], "sim_0001")
+        self.assertEqual(refreshed["displayPolicy"]["source"], "offline-caption-polisher")
+        self.assertTrue(refreshed["displayPolicy"]["avoidsConnectorBoundaries"])
+
     def test_keeps_connector_start_with_previous_sentence(self):
         raw_segments = [
             {

@@ -251,7 +251,10 @@ Pass criteria: the verifier reports `status=ok`, uses a caption source or
 any `gpt-realtime-translate` use in the offline path, confirms
 `offline_route.strategy=captions_first_then_asr`, confirms caption routes did
 not extract audio and ASR routes are marked as `no_requested_caption_track`
-fallbacks, and finds readable Chinese VTT/SRT plus translated playback JS.
+fallbacks, finds readable Chinese VTT/SRT plus translated playback JS, confirms
+the playback JS contains `rawSegments`, `displaySegments`, and `reviewSegments`,
+confirms `segments` matches `displaySegments`, and confirms the manifest records
+`captionLayers.publicDefault=displaySegments` with raw traceability.
 
 If the `gpt-5.4-mini` call has already produced a saved model-output JSONL but
 the caption/export step must be resumed, replay the saved translations without
