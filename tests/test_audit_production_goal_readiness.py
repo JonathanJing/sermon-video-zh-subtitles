@@ -130,12 +130,20 @@ def cloud_run_api_preflight_report(*, skipped_realtime_session=False, missing_me
     }
 
 
-def evidence_matrix_report(*, realtime_live="pass", stable="pass", caption="pass", asr="pass", model_access="pass") -> dict:
+def evidence_matrix_report(
+    *,
+    realtime_live="pass",
+    public_sse="pass",
+    stable="pass",
+    caption="pass",
+    asr="pass",
+    model_access="pass",
+) -> dict:
     states = {
         "cloud_run_realtime_config": "pass",
         "cloud_run_api_preflight": "pass",
         "realtime_audio_source_preflight": "pass",
-        "realtime_public_sse_contract": "pass",
+        "realtime_public_sse_contract": public_sse,
         "realtime_live": realtime_live,
         "stable_correction": stable,
         "offline_archive_preflight": "pass",
@@ -188,7 +196,7 @@ class AuditProductionGoalReadinessTest(unittest.TestCase):
 
         self.assertEqual(report["status"], "incomplete")
         self.assertEqual(report["summary"]["localFailed"], 0)
-        self.assertEqual(report["summary"]["externalMissing"], 10)
+        self.assertEqual(report["summary"]["externalMissing"], 11)
         self.assertTrue(all(check["state"] == "pass" for check in report["localImplementation"]))
         self.assertIn(
             "browser_webrtc_public_caption_view",
@@ -199,6 +207,7 @@ class AuditProductionGoalReadinessTest(unittest.TestCase):
             [check["id"] for check in report["localImplementation"]],
         )
         self.assertIn("external_realtime_live", report["failedChecks"])
+        self.assertIn("external_realtime_public_sse_contract", report["failedChecks"])
         self.assertIn("external_realtime_stable_caption", report["failedChecks"])
         self.assertIn("external_offline_asr_route", report["failedChecks"])
         self.assertIn("external_offline_not_realtime_chain", report["failedChecks"])
@@ -237,6 +246,7 @@ class AuditProductionGoalReadinessTest(unittest.TestCase):
             cloud_run = root / "cloud-run-config.json"
             preflight = root / "cloud-run-preflight.json"
             model_access = root / "model-access.json"
+            matrix = root / "matrix.json"
             caption.write_text(json.dumps(readiness_report(offline_decision="use_caption_track")), encoding="utf-8")
             asr.write_text(
                 json.dumps(readiness_report(offline_decision="use_asr_fallback", include_input_transcript=False)),
@@ -245,12 +255,14 @@ class AuditProductionGoalReadinessTest(unittest.TestCase):
             cloud_run.write_text(json.dumps(cloud_run_config_report()), encoding="utf-8")
             preflight.write_text(json.dumps(cloud_run_api_preflight_report()), encoding="utf-8")
             model_access.write_text(json.dumps(model_access_report()), encoding="utf-8")
+            matrix.write_text(json.dumps(evidence_matrix_report(public_sse="pass")), encoding="utf-8")
 
             report = mod.audit_goal_readiness(
                 args_for_all(
                     [str(caption), str(asr)],
                     str(cloud_run),
                     str(preflight),
+                    evidence_matrix_report=str(matrix),
                     model_access_report=str(model_access),
                 )
             )
@@ -317,6 +329,28 @@ class AuditProductionGoalReadinessTest(unittest.TestCase):
 
         self.assertEqual(report["status"], "incomplete")
         self.assertIn("external_realtime_stable_caption", report["failedChecks"])
+
+    def test_matrix_missing_public_sse_keeps_goal_incomplete(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            matrix = evidence_matrix_report(
+                realtime_live="pass",
+                stable="pass",
+                caption="pass",
+                asr="pass",
+                public_sse="missing",
+            )
+            matrix_path = root / "matrix.json"
+            matrix_path.write_text(json.dumps(matrix), encoding="utf-8")
+            model_access = root / "model-access.json"
+            model_access.write_text(json.dumps(model_access_report()), encoding="utf-8")
+
+            report = mod.audit_goal_readiness(
+                args_for_all(evidence_matrix_report=str(matrix_path), model_access_report=str(model_access))
+            )
+
+        self.assertEqual(report["status"], "incomplete")
+        self.assertIn("external_realtime_public_sse_contract", report["failedChecks"])
 
     def test_readiness_reports_without_cloud_run_config_still_incomplete(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -1163,12 +1163,15 @@ def state_from_public_sse_stable_correction(
         return None
     session_validation = report.get("sessionValidation") if isinstance(report.get("sessionValidation"), dict) else {}
     stable_match = nested(report, "sse", "stableCorrection")
+    stable_latency = nested(session_validation, "stableLatency")
+    if stable_latency is None:
+        stable_latency = {"p95Ms": nested(report, "sse", "stableCaption", "latencyP95Ms")}
     observed = {
         "baseUrl": report.get("baseUrl"),
         "status": report.get("status"),
         "sessionValidation": compact_session_validation_summary(session_validation),
         "stableCaption": nested(report, "sse", "stableCaption"),
-        "stableLatency": nested(session_validation, "stableLatency"),
+        "stableLatency": stable_latency,
         "stableCorrection": stable_match,
     }
     has_stable_validation = (
@@ -1179,7 +1182,7 @@ def state_from_public_sse_stable_correction(
     stable_matches_draft = isinstance(stable_match, dict) and stable_match.get("matched") is True
     stable_caption_ok = bool(nested(report, "sse", "stableCaption", "segments"))
     stable_caption_windowed = nested(report, "sse", "stableCaption", "windowed") is True
-    stable_latency_ok = stable_latency_in_target(nested(session_validation, "stableLatency"))
+    stable_latency_ok = stable_latency_in_target(stable_latency)
     if has_stable_validation and stable_matches_draft and stable_caption_ok and stable_caption_windowed and stable_latency_ok:
         if is_local_base_url(str(report.get("baseUrl") or "")):
             return {

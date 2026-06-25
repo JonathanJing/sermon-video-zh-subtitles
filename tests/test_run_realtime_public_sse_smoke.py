@@ -31,9 +31,14 @@ class RealtimePublicSseSmokeTest(unittest.TestCase):
         self.assertNotIn("event-token-secret", rendered)
         self.assertFalse(report["eventTokenIncluded"])
         self.assertEqual(calls[0]["headers"]["X-internal-task-token"], "task-token")
-        event_posts = [call for call in calls if "/api/realtime/sessions/rt_test/events" in call["url"]]
-        self.assertEqual(len(event_posts), 3)
+        event_posts = [
+            call for call in calls
+            if "/api/realtime/sessions/rt_test/events" in call["url"] and call["method"] == "POST"
+        ]
+        self.assertEqual(len(event_posts), 4)
         self.assertTrue(all(call["headers"]["X-realtime-event-token"] == "event-token-secret" for call in event_posts))
+        self.assertEqual(event_posts[-2]["json"]["type"], "caption_stable")
+        self.assertEqual(event_posts[-2]["json"]["stabilizerWindow"]["inputTextEn"], "God loved the world")
         self.assertEqual(event_posts[-1]["json"]["en"], "God loved the world")
         self.assertEqual(report["eventPayloadSource"]["kind"], "inline_smoke_fixture")
 
@@ -85,12 +90,17 @@ class RealtimePublicSseSmokeTest(unittest.TestCase):
 
         self.assertEqual(report["status"], "ok")
         self.assertEqual(report["eventPayloadSource"]["kind"], "web_realtime_contract_normalization_probe")
-        payloads = [call["json"] for call in calls if "/api/realtime/sessions/rt_test/events" in call["url"]]
-        self.assertEqual([payload["type"] for payload in payloads], ["input_transcript_delta", "caption_delta", "caption_final"])
+        payloads = [
+            call["json"] for call in calls
+            if "/api/realtime/sessions/rt_test/events" in call["url"] and call["method"] == "POST"
+        ]
+        self.assertEqual([payload["type"] for payload in payloads], ["input_transcript_delta", "caption_delta", "caption_stable", "caption_final"])
         self.assertEqual(payloads[0]["openaiEventType"], "session.input_transcript.delta")
         self.assertEqual(payloads[1]["openaiEventType"], "session.output_transcript.delta")
         self.assertEqual(payloads[2]["segmentId"], "seg_browser")
-        self.assertEqual(payloads[2]["en"], "God loved the world")
+        self.assertEqual(payloads[2]["source"], "realtime-caption-stabilizer")
+        self.assertEqual(payloads[3]["segmentId"], "seg_browser")
+        self.assertEqual(payloads[3]["en"], "God loved the world")
         browser_check = next(check for check in report["checks"] if check["name"] == "browser_normalized_event_payloads")
         self.assertEqual(browser_check["state"], "pass")
 
@@ -380,9 +390,9 @@ def fake_urlopen(calls, create_status=201, sse_session_metadata=True, stable_seg
                     else {"error": "unauthorized"}
                 ),
             )
-        if "/api/realtime/sessions/rt_test/events" in request.full_url:
+        if "/api/realtime/sessions/rt_test/events" in request.full_url and request.get_method() == "POST":
             return FakeResponse(status=202, body=json.dumps({"status": "accepted", "id": 2}))
-        if request.full_url.startswith("https://example.run.app/api/realtime/sessions/current/events"):
+        if request.full_url.startswith("https://example.run.app/api/realtime/sessions/rt_test/events"):
             session_started = (
                 '{"id":1,"type":"session_started","model":"gpt-realtime-translate","targetLanguage":"zh","audioSourceKind":"ipad_mic"}'
                 if sse_session_metadata

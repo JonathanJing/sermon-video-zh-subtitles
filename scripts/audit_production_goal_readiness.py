@@ -143,6 +143,10 @@ EXTERNAL_REQUIREMENTS = [
         "description": "A real authorized source or iPad mic reached gpt-realtime-translate and produced realtime deltas.",
     },
     {
+        "id": "external_realtime_public_sse_contract",
+        "description": "Cloud Run public SSE delivered realtime caption events, including the stable caption path.",
+    },
+    {
         "id": "external_stable_correction",
         "description": "A real realtime session received at least one gpt-5.4-mini stable correction.",
     },
@@ -182,6 +186,7 @@ EXTERNAL_REQUIREMENTS = [
 
 EXTERNAL_MATRIX_ROWS = {
     "external_realtime_live": "realtime_live",
+    "external_realtime_public_sse_contract": "realtime_public_sse_contract",
     "external_stable_correction": "stable_correction",
     "external_realtime_stable_caption": "stable_correction",
     "external_offline_caption_route": "offline_caption_route",
@@ -308,6 +313,7 @@ def external_requirement_checks(
     has_realtime = matrix_states.get("realtime_live") == "pass" or any(
         realtime_report_has_caption_and_input(report) for report in any_ok
     )
+    has_realtime_public_sse = matrix_states.get("realtime_public_sse_contract") == "pass"
     has_stable = matrix_states.get("stable_correction") == "pass" or any(
         (nested(report, "realtime", "counts", "stableCorrectionEvents") or 0) > 0 for report in any_ok
     )
@@ -353,6 +359,7 @@ def external_requirement_checks(
         "okReports": len(any_ok),
         "matrixRows": matrix_states,
         "realtime": has_realtime,
+        "realtimePublicSse": has_realtime_public_sse,
         "stableCorrection": has_stable,
         "realtimeStableCaption": has_realtime_stable_caption,
         "offlineCaptionRoute": has_caption_route,
@@ -365,6 +372,7 @@ def external_requirement_checks(
     }
     return [
         external_check("external_realtime_live", has_realtime, observed, matrix_rows),
+        external_check("external_realtime_public_sse_contract", has_realtime_public_sse, observed, matrix_rows),
         external_check("external_stable_correction", has_stable, observed, matrix_rows),
         external_check("external_realtime_stable_caption", has_realtime_stable_caption, observed, matrix_rows),
         external_check("external_offline_caption_route", has_caption_route, observed, matrix_rows),

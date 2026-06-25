@@ -424,11 +424,7 @@ def worker_args_from_args(args: argparse.Namespace, session_id: str, event_token
 
 def realtime_events_uri(args: argparse.Namespace, session_id: str) -> str:
     if args.read_events_from_gcs:
-        return realtime_openai_smoke_test.realtime_events_jsonl_uri(
-            prefix=args.realtime_event_gcs_prefix,
-            sunday=args.sunday,
-            session_id=session_id,
-        )
+        return realtime_openai_smoke_test.realtime_events_jsonl_uri(args=args, session_id=session_id)
     return str(args.event_log_dir / f"{safe_path_component(session_id)}.jsonl")
 
 

@@ -149,7 +149,7 @@ def run_smoke(args: argparse.Namespace) -> dict[str, Any]:
     add_check(checks, "post_smoke_events", all(item["status"] == 202 for item in posted), posted)
 
     sse_events = read_sse_events(
-        base_url + "/api/realtime/sessions/current/events",
+        base_url + f"/api/realtime/sessions/{session_id}/events",
         timeout=args.timeout_seconds,
         min_events=5,
     )
@@ -382,6 +382,25 @@ def browser_normalized_smoke_events(web_realtime_contract_report: str | None) ->
     segment_id = str(caption_event.get("segmentId") or "smoke_1")
     english_context = str(input_event.get("en") or input_event.get("text") or input_event.get("delta") or "")
     stable_event = {
+        "type": "caption_stable",
+        "source": "realtime-caption-stabilizer",
+        "zh": "神爱世人",
+        "text": "神爱世人",
+        "en": english_context,
+        "final": True,
+        "stability": "stable",
+        "segmentId": segment_id,
+        "latencyMs": 3400,
+        "stabilizerWindowMs": 8000,
+        "stabilizerWindow": {
+            "windowMs": 8000,
+            "segmentId": segment_id,
+            "sourceEventIds": [2, 3],
+            "inputTextEn": english_context,
+            "draftZh": "神爱世人",
+        },
+    }
+    correction_event = {
         "type": "caption_final",
         "source": "gpt-5.4-mini-stable-correction",
         "model": "gpt-5.4-mini",
@@ -398,6 +417,7 @@ def browser_normalized_smoke_events(web_realtime_contract_report: str | None) ->
             sanitize_smoke_event(input_event),
             sanitize_smoke_event(caption_event),
             stable_event,
+            correction_event,
         ],
         "warnings": [],
     }
@@ -420,6 +440,25 @@ def default_smoke_events() -> list[dict[str, Any]]:
             "text": "神爱世人",
             "delta": "神爱世人",
             "segmentId": "smoke_1",
+        },
+        {
+            "type": "caption_stable",
+            "source": "realtime-caption-stabilizer",
+            "zh": "神爱世人",
+            "text": "神爱世人",
+            "en": "God loved the world",
+            "final": True,
+            "stability": "stable",
+            "segmentId": "smoke_1",
+            "latencyMs": 3400,
+            "stabilizerWindowMs": 8000,
+            "stabilizerWindow": {
+                "windowMs": 8000,
+                "segmentId": "smoke_1",
+                "sourceEventIds": [2, 3],
+                "inputTextEn": "God loved the world",
+                "draftZh": "神爱世人",
+            },
         },
         {
             "type": "caption_final",
@@ -452,7 +491,21 @@ def matching_input_event(events: list[dict[str, Any]], segment_id: Any) -> dict[
 
 
 def sanitize_smoke_event(event: dict[str, Any]) -> dict[str, Any]:
-    allowed = {"type", "source", "en", "zh", "text", "delta", "final", "segmentId", "openaiEventType"}
+    allowed = {
+        "type",
+        "source",
+        "en",
+        "zh",
+        "text",
+        "delta",
+        "final",
+        "stability",
+        "segmentId",
+        "openaiEventType",
+        "latencyMs",
+        "stabilizerWindow",
+        "stabilizerWindowMs",
+    }
     return {key: value for key, value in event.items() if key in allowed}
 
 
