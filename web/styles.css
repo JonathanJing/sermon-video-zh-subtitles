@@ -175,6 +175,14 @@ ul {
   overflow-wrap: anywhere;
 }
 
+.brand-subtitle {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
 .status-cluster {
   justify-content: flex-end;
   gap: 8px;
@@ -1577,6 +1585,10 @@ ul {
 
   .topbar h1 {
     font-size: 1rem;
+  }
+
+  .brand-subtitle {
+    font-size: 0.74rem;
   }
 
   .status-cluster {
