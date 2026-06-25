@@ -27,7 +27,7 @@ EXPECTED_CLOUD_RUN_API_PREFLIGHT_CHECKS = [
     "realtime_local_session_metadata",
     "no_secret_material_in_http_responses",
 ]
-EXPECTED_INCOMPLETE_STEPS = {"productionMatrix", "goalAudit"}
+EXPECTED_INCOMPLETE_STEPS = {"productionMatrix", "goalAudit", "productionUnblockPlan"}
 POST_REPORT_STEPS = ("productionGoLiveSequence", "realtimeHandoffValidation")
 POST_REPORT_RERUN_STEPS = ("productionMatrix", "goalAudit")
 LOCAL_ONLY_SKIP_STEPS = {
@@ -85,11 +85,15 @@ def refresh_evidence(args: argparse.Namespace) -> dict[str, Any]:
 
     steps = {}
     selected_commands = select_commands(commands, local_only=args.local_only)
+    preserved_steps = preserved_evidence_steps(paths, local_only=args.local_only)
+    selected_commands = {
+        name: command for name, command in selected_commands.items() if name not in preserved_steps
+    }
     for name, command in selected_commands.items():
         if name in POST_REPORT_STEPS:
             continue
         steps[name] = run_command(name, command)
-    report = report_from_steps(args, commands, steps, status_from_steps(steps))
+    report = report_from_steps(args, commands, steps, status_from_steps(steps), preserved_steps=preserved_steps)
     write_report(args.out, report)
 
     for name in POST_REPORT_STEPS:
@@ -100,13 +104,38 @@ def refresh_evidence(args: argparse.Namespace) -> dict[str, Any]:
         command = selected_commands.get(name)
         if command:
             steps[name] = run_command(name, command)
-    return report_from_steps(args, commands, steps, status_from_steps(steps))
+    return report_from_steps(args, commands, steps, status_from_steps(steps), preserved_steps=preserved_steps)
 
 
 def select_commands(commands: dict[str, list[str]], *, local_only: bool) -> dict[str, list[str]]:
     if not local_only:
         return commands
     return {name: command for name, command in commands.items() if name not in LOCAL_ONLY_SKIP_STEPS}
+
+
+def preserved_evidence_steps(paths: dict[str, Path], *, local_only: bool) -> set[str]:
+    if local_only:
+        return set()
+    if has_verified_gcs_sunday_manifest(paths.get("sundayManifestValidation")):
+        return {"localSundayManifestEvidence", "gcsManifestPublishPlan"}
+    return set()
+
+
+def has_verified_gcs_sunday_manifest(path: Path | None) -> bool:
+    if not path or not path.is_file():
+        return False
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    return (
+        isinstance(data, dict)
+        and data.get("status") == "ok"
+        and data.get("artifactLocation") == "gcs"
+        and data.get("publicGcsArtifacts") is True
+        and data.get("readableArtifactsRequired") is True
+        and not data.get("failedChecks")
+    )
 
 
 def evidence_paths(evidence_dir: Path) -> dict[str, Path]:
@@ -575,7 +604,9 @@ def report_from_steps(
     commands: dict[str, list[str]],
     steps: dict[str, dict[str, Any]],
     status: str,
+    preserved_steps: set[str] | None = None,
 ) -> dict[str, Any]:
+    preserved_steps = preserved_steps or set()
     return {
         "schemaVersion": 1,
         "status": status,
@@ -599,7 +630,7 @@ def report_from_steps(
         "commands": commands,
         "steps": steps,
         "mode": "local_only" if args.local_only else "full",
-        "skippedSteps": sorted(LOCAL_ONLY_SKIP_STEPS) if args.local_only else [],
+        "skippedSteps": sorted(LOCAL_ONLY_SKIP_STEPS) if args.local_only else sorted(preserved_steps),
         "failedSteps": [name for name, step in steps.items() if step.get("status") == "failed"],
         "incompleteSteps": [name for name, step in steps.items() if step.get("status") == "incomplete"],
         "apiKeyMaterialIncluded": False,

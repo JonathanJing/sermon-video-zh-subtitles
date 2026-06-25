@@ -92,6 +92,11 @@ class RunNoCaptionArchiveAsrRouteTest(unittest.TestCase):
         self.assertIn("--sunday-manifest", calls[-1])
         self.assertIn("--gcs-dry-run", calls[1])
         self.assertIn("--gcs-dry-run", calls[3])
+        self.assertIn("--no-discover", calls[0])
+        self.assertIn("--no-discover", calls[1])
+        self.assertIn("--sermon-start", calls[0])
+        self.assertIn("--sermon-start", calls[1])
+        self.assertIn("00:23:25", calls[0])
         self.assertIn("projects/p/secrets/openai-api-key/versions/latest", calls[1])
         self.assertNotIn("projects/p/secrets", rendered)
         self.assertNotIn("openai-api-key", rendered)
@@ -149,6 +154,7 @@ def args_for(root: Path, **overrides):
         "sunday": "2026-06-28",
         "session_id": "no-caption-asr-route",
         "lang": ["en-orig", "en"],
+        "sermon_start": "00:23:25",
         "asr_model": "gpt-4o-transcribe",
         "translation_model": "gpt-5.4-mini",
         "gcs_bucket": "sermon-zh-artifacts-ai-for-god",

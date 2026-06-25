@@ -15,6 +15,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 OFFLINE_POC = REPO_ROOT / "scripts" / "offline_live_sermon_subtitles.py"
 BUILD_PLAYBACK = REPO_ROOT / "scripts" / "build_playback_simulation.py"
 DEFAULT_ASR_MODEL = "gpt-4o-transcribe"
+DEFAULT_REALTIME_MODEL = "gpt-realtime-translate"
+DEFAULT_TRANSLATION_MODEL = "gpt-5.4-mini"
 FORBIDDEN_ASR_MODEL = "gpt-realtime-translate"
 SECRET_RESOURCE_RE = re.compile(
     r"^projects/[^/\s]+/secrets/[^/\s]+(?:/versions/[^/\s]+)?$"
@@ -42,6 +44,7 @@ def main() -> int:
             args.asr_model,
         ]
         + optional("--sermon-url", args.sermon_url)
+        + flag("--no-discover", args.no_discover)
         + optional("--sermon-start", args.sermon_start)
         + optional("--api-key-secret", args.api_key_secret)
         + repeat("--lang", args.lang),
@@ -111,6 +114,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--sermon-url",
         help="Optional edited sermon VOD URL when discovery should be skipped or pinned.",
+    )
+    parser.add_argument(
+        "--no-discover",
+        action="store_true",
+        help="Disable same-channel edited sermon VOD discovery.",
     )
     parser.add_argument(
         "--sermon-start",
@@ -199,6 +207,10 @@ def validate_secret_resource_name(value: str) -> None:
 
 def optional(flag: str, value: str | None) -> list[str]:
     return [flag, value] if value else []
+
+
+def flag(name: str, enabled: bool) -> list[str]:
+    return [name] if enabled else []
 
 
 def repeat(flag: str, values: list[str]) -> list[str]:
@@ -364,6 +376,12 @@ def manifest_route_metadata(report_path: Path | None = None, playback_path: Path
             "audioExtractionAttempted": route.get("audioExtractionAttempted"),
             "fallbackReason": route.get("fallbackReason"),
         }
+    metadata["models"] = {
+        "realtimeDraft": DEFAULT_REALTIME_MODEL,
+        "offlineAsr": nested(report, "asr", "model") or DEFAULT_ASR_MODEL,
+        "offlineTranslation": nested(playback, "translationProvider", "model") or DEFAULT_TRANSLATION_MODEL,
+        "stableCorrection": DEFAULT_TRANSLATION_MODEL,
+    }
     return metadata
 
 

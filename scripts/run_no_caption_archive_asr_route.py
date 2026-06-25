@@ -42,6 +42,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sunday", required=True)
     parser.add_argument("--session-id", default=DEFAULT_SESSION_ID)
     parser.add_argument("--lang", action="append", default=["en-orig", "en"])
+    parser.add_argument("--sermon-start", help="Optional live timeline sermon start override, e.g. 00:23:25.")
     parser.add_argument("--asr-model", default=DEFAULT_ASR_MODEL)
     parser.add_argument("--translation-model", default=DEFAULT_TRANSLATION_MODEL)
     parser.add_argument("--gcs-bucket", default=DEFAULT_BUCKET)
@@ -142,7 +143,9 @@ def route_commands(args: argparse.Namespace, paths: dict[str, Path]) -> list[lis
             "scripts/run_offline_archive_preflight.py",
             "--live-url",
             args.live_url,
+            "--no-discover",
             *lang_args,
+            *optional("--sermon-start", args.sermon_start),
             "--asr-model",
             args.asr_model,
             "--out",
@@ -153,7 +156,9 @@ def route_commands(args: argparse.Namespace, paths: dict[str, Path]) -> list[lis
             "scripts/prepare_live_link_playback.py",
             "--live-url",
             args.live_url,
+            "--no-discover",
             *lang_args,
+            *optional("--sermon-start", args.sermon_start),
             "--asr-model",
             args.asr_model,
             "--api-key-secret",
@@ -328,6 +333,10 @@ def repeat(flag: str, values: list[str]) -> list[str]:
     for value in values:
         args.extend([flag, value])
     return args
+
+
+def optional(flag: str, value: str | None) -> list[str]:
+    return [flag, value] if value else []
 
 
 def redact_command(command: list[str]) -> list[str]:

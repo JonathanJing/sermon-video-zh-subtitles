@@ -40,6 +40,11 @@ class WriteNoCaptionAsrFallbackPlanTest(unittest.TestCase):
             "sundays/2026-06-28/runs/no-caption-asr-route",
         )
         self.assertIn("--gcs-dry-run", prepare_command)
+        self.assertIn("--no-discover", prepare_command)
+        self.assertIn("--sermon-start", prepare_command)
+        preflight_command = next(command for command in report["commands"] if "scripts/run_offline_archive_preflight.py" in command)
+        self.assertIn("--no-discover", preflight_command)
+        self.assertIn("--sermon-start", preflight_command)
         self.assertEqual(translate_command[translate_command.index("--input") + 1], playback_js)
         self.assertEqual(translate_command[translate_command.index("--out") + 1], playback_js)
         self.assertIn("--api-key-secret", translate_command)

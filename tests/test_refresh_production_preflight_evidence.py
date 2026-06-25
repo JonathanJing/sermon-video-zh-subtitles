@@ -210,6 +210,41 @@ class RefreshProductionPreflightEvidenceTest(unittest.TestCase):
         self.assertTrue(any("validate_realtime_handoff.py" in " ".join(call) for call in calls))
         self.assertFalse(any("gcloud" in " ".join(call) for call in calls))
 
+    def test_refresh_preserves_verified_gcs_sunday_manifest_evidence(self):
+        calls = []
+
+        def fake_run(command, **kwargs):
+            calls.append(command)
+            joined = " ".join(command)
+            self.assertNotIn("build_local_sunday_manifest_evidence.py", joined)
+            self.assertNotIn("plan_gcs_sunday_manifest_publish.py", joined)
+            return completed(0)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            evidence_dir = Path(tmp) / "evidence"
+            evidence_dir.mkdir(parents=True)
+            (evidence_dir / "sunday-manifest-validation.json").write_text(
+                json.dumps(
+                    {
+                        "status": "ok",
+                        "artifactLocation": "gcs",
+                        "publicGcsArtifacts": True,
+                        "readableArtifactsRequired": True,
+                        "failedChecks": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            args = args_for(evidence_dir=evidence_dir, out=evidence_dir / "refresh.json")
+            with patch.dict(mod.os.environ, {"INTERNAL_TASK_TOKEN": "test-runtime-token"}), patch.object(
+                mod.subprocess, "run", side_effect=fake_run
+            ):
+                report = mod.refresh_evidence(args)
+
+        self.assertEqual(report["status"], "ok")
+        self.assertFalse(any("build_local_sunday_manifest_evidence.py" in " ".join(call) for call in calls))
+        self.assertFalse(any("plan_gcs_sunday_manifest_publish.py" in " ".join(call) for call in calls))
+
     def test_refresh_separates_expected_incomplete_reports_from_failed_steps(self):
         def fake_run(command, **kwargs):
             joined = " ".join(command)

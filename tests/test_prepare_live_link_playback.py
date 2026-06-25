@@ -33,6 +33,7 @@ class PrepareLiveLinkPlaybackTest(unittest.TestCase):
                     {
                         "live_url": "https://youtube.test/watch?v=abc123",
                         "sermon_url": None,
+                        "no_discover": True,
                         "sermon_start": None,
                         "lang": [],
                         "playback_lang": None,
@@ -58,6 +59,7 @@ class PrepareLiveLinkPlaybackTest(unittest.TestCase):
         self.assertIn("--api-key-secret", commands[0])
         self.assertIn("projects/p/secrets/openai-api-key/versions/latest", commands[0])
         self.assertIn("--asr-model", commands[0])
+        self.assertIn("--no-discover", commands[0])
 
     def test_run_redacts_api_key_secret_in_printed_command(self):
         command = [
@@ -162,6 +164,10 @@ class PrepareLiveLinkPlaybackTest(unittest.TestCase):
             self.assertNotIn("openai-api-key", text)
             self.assertEqual(payload["offlineSourceKind"], "live_archive")
             self.assertEqual(payload["offlineRoute"]["decision"], "use_caption_track")
+            self.assertEqual(payload["models"]["realtimeDraft"], "gpt-realtime-translate")
+            self.assertEqual(payload["models"]["offlineAsr"], "gpt-4o-transcribe")
+            self.assertEqual(payload["models"]["offlineTranslation"], "gpt-5.4-mini")
+            self.assertEqual(payload["models"]["stableCorrection"], "gpt-5.4-mini")
             self.assertIn('"apiKeyMaterialIncluded": false', text)
             self.assertIn('"secretResourceNamesIncluded": false', text)
             self.assertIn('"serverSideSecretConfigured": true', text)
