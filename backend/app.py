@@ -22,6 +22,7 @@ from .realtime import (
     DEFAULT_TARGET_LANGUAGE,
     RealtimeEventArchive,
     RealtimeSessionStore,
+    OPENAI_TRANSLATION_CALLS_URL,
     create_openai_translation_session,
     resolve_openai_api_key,
 )
@@ -339,7 +340,7 @@ class ApiHandler(BaseHTTPRequestHandler):
                     "expiresAt": client_secret.get("expires_at"),
                 },
                 "webrtc": {
-                    "url": "https://api.openai.com/v1/realtime",
+                    "url": OPENAI_TRANSLATION_CALLS_URL,
                     "model": model,
                 },
             },
@@ -394,6 +395,17 @@ class ApiHandler(BaseHTTPRequestHandler):
                 sessionId=session_id,
                 eventType=event.get("type"),
                 segmentId=event.get("segmentId"),
+            )
+        if str(event.get("type") or "").startswith("media_worker_") or event.get("type") in {
+            "audio_source_ready",
+            "replay_source_ready",
+        }:
+            log_event(
+                "realtime_media_worker_event",
+                component="api",
+                sessionId=session_id,
+                eventType=event.get("type"),
+                source=event.get("source"),
             )
         self.write_json({"status": "accepted", "id": event["id"]}, status=202)
 

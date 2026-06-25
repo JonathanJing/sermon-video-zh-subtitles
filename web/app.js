@@ -687,7 +687,7 @@
 
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
-    const sdpResponse = await fetch(`${session.webrtc.url}?model=${encodeURIComponent(session.model)}`, {
+    const sdpResponse = await fetch(session.webrtc.url, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${session.clientSecret.value}`,

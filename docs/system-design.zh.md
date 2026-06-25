@@ -52,7 +52,7 @@ GCS prefix:  gs://<bucket>/sundays/2026-06-21/<session_id>/
 session id:  sunday-20260621-1000
 ```
 
-同一个周日切片下可以有 realtime session、offline job、review export、notes、quotes 等多类生成物，但会众页面只读取已发布或正在发布的 caption/scripture/insight state。当前 realtime MVP 会把 sanitize 后的英文/中文 deltas 同时保存在 backend memory 和 `REALTIME_EVENT_LOG_DIR` 下的 JSONL 文件；iPad/iPhone mic 走 browser WebRTC + `gpt-realtime-translate`，`scripts/realtime_media_worker.py` 可以创建 backend-only session、准备授权音频/YouTube source，并把 replay 或 worker events 发布到同一条会众字幕 SSE 流。`scripts/stabilize_realtime_deltas_with_openai.py` 会把保存下来的英文窗口和实时中文 draft 送给 `gpt-5.5-mini` 生成 stable corrections。Firestore 仍是 production durable-state 目标。
+同一个周日切片下可以有 realtime session、offline job、review export、notes、quotes 等多类生成物，但会众页面只读取已发布或正在发布的 caption/scripture/insight state。当前 realtime MVP 会把 sanitize 后的英文/中文 deltas 同时保存在 backend memory 和 `REALTIME_EVENT_LOG_DIR` 下的 JSONL 文件；iPad/iPhone mic 走 browser WebRTC + `gpt-realtime-translate`，`scripts/realtime_media_worker.py` 可以创建 backend-only session、准备授权音频/YouTube source，把 24 kHz PCM16 音频送进 OpenAI translation WebSocket，并把英文/中文 deltas 发布到同一条会众字幕 SSE 流。`scripts/stabilize_realtime_deltas_with_openai.py` 会把保存下来的英文窗口和实时中文 draft 送给 `gpt-5.5-mini` 生成 stable corrections。Firestore 仍是 production durable-state 目标。
 
 ## 2. Source Strategy
 
@@ -128,8 +128,8 @@ flowchart TD
 |---|---|
 | `web` | iPhone/iPad PWA，面向 operator 和 11:30 会众字幕视图，显示实时字幕、经文 sidebar、review/publish UI |
 | `api` | session、job、segments、exports、operator auth |
-| `realtime-media-worker` | server-side 授权音频/YouTube source 准备，并向 realtime session-event 合约发布事件 |
-| `realtime-relay` | 可选，在 server-side OpenAI Realtime streaming 接上后转发非浏览器音频源 |
+| `realtime-media-worker` | server-side 授权音频/YouTube source 准备，以及 OpenAI Realtime translation WebSocket relay |
+| `realtime-relay` | 如果后续 media ingest 需要独立服务，可拆出的 provider relay |
 | `worker` | 离线 ASR、翻译、时间轴归一、经文解析、笔记和金句 |
 | `live-source-monitor` | 周日定时检查官方 live 页面、YouTube streams、fallback 状态 |
 

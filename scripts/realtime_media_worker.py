@@ -10,13 +10,17 @@ used by the public caption view.
 from __future__ import annotations
 
 import argparse
+import base64
+import os
 import json
 import subprocess
 import sys
+import threading
+import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
-from urllib.parse import urlparse
+from typing import Any, Callable
+from urllib.parse import quote, urlparse
 from urllib.request import Request, urlopen
 
 
@@ -29,6 +33,7 @@ from backend.realtime import (  # noqa: E402
     DEFAULT_TARGET_LANGUAGE,
     RealtimeEventArchive,
     RealtimeSessionStore,
+    resolve_openai_api_key,
 )
 
 
@@ -36,6 +41,7 @@ DEFAULT_EVENT_LOG_DIR = Path("/tmp/sermon-realtime-events")
 DEFAULT_OUT_DIR = Path("artifacts/realtime-media-worker")
 ALLOWED_AUDIO_SUFFIXES = {".aac", ".m4a", ".mp3", ".mp4", ".opus", ".wav", ".webm"}
 YOUTUBE_HOSTS = {"youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"}
+OPENAI_TRANSLATION_WS_BASE = "wss://api.openai.com/v1/realtime/translations"
 
 
 @dataclass(frozen=True)
@@ -106,6 +112,33 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--target-language", default=DEFAULT_TARGET_LANGUAGE)
     parser.add_argument("--dry-run", action="store_true", help="Print the plan without writing events or running commands.")
     parser.add_argument(
+        "--connect-openai",
+        action="store_true",
+        help="Stream source audio to OpenAI Realtime translation over server-side WebSocket.",
+    )
+    parser.add_argument(
+        "--api-key-secret",
+        help="Secret Manager resource for the OpenAI API key. If omitted, OPENAI_API_KEY is used.",
+    )
+    parser.add_argument(
+        "--openai-api-key-env",
+        default="OPENAI_API_KEY",
+        help="Environment variable containing the OpenAI API key when --api-key-secret is not used.",
+    )
+    parser.add_argument(
+        "--openai-safety-identifier",
+        default="sermon-realtime-media-worker",
+        help="Privacy-preserving OpenAI-Safety-Identifier header value.",
+    )
+    parser.add_argument("--chunk-ms", type=int, default=100, help="PCM16 audio chunk size sent to OpenAI.")
+    parser.add_argument("--max-audio-seconds", type=float, help="Optional cap for live smoke tests.")
+    parser.add_argument(
+        "--no-realtime-throttle",
+        action="store_true",
+        help="Send prepared audio as fast as possible instead of pacing chunks in wall-clock time.",
+    )
+    parser.add_argument("--openai-close-timeout", type=float, default=20.0)
+    parser.add_argument(
         "--prepare-audio",
         action="store_true",
         help="Run the source preparation command. Network access is only used for --youtube-url.",
@@ -116,6 +149,10 @@ def parse_args() -> argparse.Namespace:
         raise SystemExit("--sample-rate must be at least 8000")
     if args.max_replay_events < 1:
         raise SystemExit("--max-replay-events must be >= 1")
+    if args.chunk_ms < 20:
+        raise SystemExit("--chunk-ms must be at least 20")
+    if args.connect_openai and args.replay_jsonl:
+        raise SystemExit("--connect-openai requires --audio-file or --youtube-url, not --replay-jsonl")
     return args
 
 
@@ -133,10 +170,19 @@ def run_worker(args: argparse.Namespace) -> dict[str, Any]:
             "authorizationAssumption": "operator-provided-authorized-source",
         },
         "normalizedAudioPath": safe_display_path(plan.normalized_audio_path) if plan.normalized_audio_path else None,
-        "commands": plan.commands,
+        "commands": redact_commands_for_report(plan.commands),
         "warnings": plan.warnings,
         "eventsPosted": 0,
     }
+    if args.connect_openai:
+        report["openaiRealtime"] = {
+            "enabled": True,
+            "websocketEndpoint": OPENAI_TRANSLATION_WS_BASE,
+            "inputAudioFormat": f"pcm16/{args.sample_rate}Hz/mono",
+            "chunkMs": args.chunk_ms,
+            "apiKeyMaterialIncluded": False,
+            "secretResourceNamesIncluded": False,
+        }
     if args.dry_run:
         return report
 
@@ -171,6 +217,25 @@ def run_worker(args: argparse.Namespace) -> dict[str, Any]:
         report["eventsPosted"] += replayed
         report["replayedEvents"] = replayed
 
+    if args.connect_openai:
+        api_key = resolve_openai_api_key(
+            os.getenv(args.openai_api_key_env),
+            args.api_key_secret,
+        )
+        realtime_stats = relay_openai_translation(
+            args=args,
+            plan=plan,
+            sink=sink,
+            api_key=api_key,
+        )
+        report["openaiRealtime"] = {
+            "enabled": True,
+            **realtime_stats,
+            "apiKeyMaterialIncluded": False,
+            "secretResourceNamesIncluded": False,
+        }
+        report["eventsPosted"] += int(realtime_stats.get("captionEventsPosted") or 0)
+
     emit_worker_event(
         sink,
         event_type="media_worker_completed",
@@ -186,10 +251,16 @@ def run_worker(args: argparse.Namespace) -> dict[str, Any]:
 def build_audio_source_plan(args: argparse.Namespace) -> AudioSourcePlan:
     out_dir = resolve_repo_path(args.out_dir)
     normalized_audio_path = out_dir / "source.normalized.wav"
-    warnings = [
-        "Server-side OpenAI Realtime audio streaming is intentionally not enabled in this scaffold; "
-        "the worker publishes to the session event contract and can replay saved events for end-to-end UI testing."
-    ]
+    warnings = []
+    if args.connect_openai:
+        warnings.append(
+            "OpenAI Realtime WebSocket relay is enabled; validate with the real authorized audio source before Sunday production."
+        )
+    else:
+        warnings.append(
+            "OpenAI Realtime WebSocket relay is disabled unless --connect-openai is set; "
+            "the worker can still publish lifecycle/replay events for end-to-end UI testing."
+        )
 
     if args.audio_file:
         audio_file = resolve_repo_path(args.audio_file)
@@ -316,6 +387,254 @@ def replay_events(path: Path, sink: LocalSink | BackendSink, max_events: int) ->
     return count
 
 
+def relay_openai_translation(
+    *,
+    args: argparse.Namespace,
+    plan: AudioSourcePlan,
+    sink: LocalSink | BackendSink,
+    api_key: str,
+    ws_factory: Callable[[str, list[str]], Any] | None = None,
+    popen_factory: Callable[..., Any] | None = None,
+) -> dict[str, Any]:
+    ws = connect_openai_translation_ws(
+        api_key=api_key,
+        model=args.model,
+        safety_identifier=args.openai_safety_identifier,
+        ws_factory=ws_factory,
+    )
+    stats: dict[str, Any] = {
+        "model": args.model,
+        "targetLanguage": args.target_language,
+        "audioChunksSent": 0,
+        "bytesSent": 0,
+        "openaiEventsReceived": 0,
+        "captionEventsPosted": 0,
+        "inputTranscriptEventsPosted": 0,
+    }
+    ws.send(
+        json.dumps(
+            {
+                "type": "session.update",
+                "session": {
+                    "audio": {
+                        "output": {
+                            "language": args.target_language,
+                        },
+                    },
+                },
+            }
+        )
+    )
+    receive_thread = threading.Thread(
+        target=receive_openai_events,
+        kwargs={"ws": ws, "sink": sink, "stats": stats},
+        daemon=True,
+    )
+    receive_thread.start()
+
+    proc = open_audio_pcm_process(args=args, plan=plan, popen_factory=popen_factory)
+    chunk_size = pcm_chunk_size(args.sample_rate, args.chunk_ms)
+    max_bytes = int(args.sample_rate * 2 * args.max_audio_seconds) if args.max_audio_seconds else None
+    sent_bytes = 0
+    try:
+        while True:
+            if max_bytes is not None and sent_bytes >= max_bytes:
+                break
+            read_size = chunk_size if max_bytes is None else min(chunk_size, max_bytes - sent_bytes)
+            if read_size <= 0:
+                break
+            chunk = proc.stdout.read(read_size)
+            if not chunk:
+                break
+            sent_bytes += len(chunk)
+            ws.send(
+                json.dumps(
+                    {
+                        "type": "session.input_audio_buffer.append",
+                        "audio": base64.b64encode(chunk).decode("ascii"),
+                    }
+                )
+            )
+            stats["audioChunksSent"] += 1
+            stats["bytesSent"] += len(chunk)
+            if not args.no_realtime_throttle:
+                time.sleep(args.chunk_ms / 1000)
+    finally:
+        wait_for_process(proc)
+
+    ws.send(json.dumps({"type": "session.close"}))
+    receive_thread.join(args.openai_close_timeout)
+    close_ws(ws)
+    if receive_thread.is_alive():
+        stats["warning"] = "OpenAI realtime receive loop did not close before timeout."
+    return stats
+
+
+def connect_openai_translation_ws(
+    *,
+    api_key: str,
+    model: str,
+    safety_identifier: str,
+    ws_factory: Callable[[str, list[str]], Any] | None = None,
+) -> Any:
+    url = f"{OPENAI_TRANSLATION_WS_BASE}?model={quote(model)}"
+    headers = [
+        f"Authorization: Bearer {api_key}",
+        f"OpenAI-Safety-Identifier: {safety_identifier}",
+    ]
+    if ws_factory:
+        return ws_factory(url, headers)
+    try:
+        import websocket
+    except ImportError as exc:
+        raise SystemExit("Install websocket-client or run pip install -r requirements.txt.") from exc
+    ws = websocket.WebSocket()
+    ws.connect(url, header=headers)
+    return ws
+
+
+def receive_openai_events(ws: Any, sink: LocalSink | BackendSink, stats: dict[str, Any]) -> None:
+    while True:
+        message = ws.recv()
+        if not message:
+            continue
+        try:
+            event = json.loads(message)
+        except json.JSONDecodeError:
+            continue
+        event_type = str(event.get("type") or "")
+        stats["openaiEventsReceived"] += 1
+        payload = openai_event_to_realtime_payload(event)
+        if payload:
+            sink.emit(payload)
+            if payload["type"].startswith("caption_"):
+                stats["captionEventsPosted"] += 1
+            if payload["type"].startswith("input_transcript_"):
+                stats["inputTranscriptEventsPosted"] += 1
+        if event_type == "session.closed":
+            break
+
+
+def openai_event_to_realtime_payload(event: dict[str, Any]) -> dict[str, Any] | None:
+    event_type = str(event.get("type") or "")
+    text = str(event.get("delta") or event.get("text") or event.get("transcript") or "").strip()
+    if not text:
+        return None
+    is_final = event_type.endswith((".done", ".completed", ".final"))
+    segment_id = str(
+        event.get("item_id")
+        or event.get("content_index")
+        or event.get("response_id")
+        or event.get("id")
+        or ""
+    )[:120]
+    if "output_transcript" in event_type:
+        payload_type = "caption_final" if is_final else "caption_delta"
+        return transcript_payload(payload_type, text, event_type, segment_id, final=is_final)
+    if "input_transcript" in event_type:
+        payload_type = "input_transcript_final" if is_final else "input_transcript_delta"
+        return transcript_payload(payload_type, text, event_type, segment_id, final=is_final)
+    return None
+
+
+def transcript_payload(
+    payload_type: str,
+    text: str,
+    openai_event_type: str,
+    segment_id: str,
+    *,
+    final: bool,
+) -> dict[str, Any]:
+    payload = {
+        "type": payload_type,
+        "text": text,
+        "source": "openai_realtime_translation_ws",
+        "openaiEventType": openai_event_type,
+        "final": final,
+    }
+    if payload_type.endswith("_delta"):
+        payload["delta"] = text
+    if payload_type.startswith("caption_"):
+        payload["zh"] = text
+    else:
+        payload["en"] = text
+    if segment_id:
+        payload["segmentId"] = segment_id
+    return payload
+
+
+def open_audio_pcm_process(
+    *,
+    args: argparse.Namespace,
+    plan: AudioSourcePlan,
+    popen_factory: Callable[..., Any] | None = None,
+) -> Any:
+    command = raw_pcm_command(args=args, plan=plan)
+    factory = popen_factory or subprocess.Popen
+    return factory(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+
+def raw_pcm_command(*, args: argparse.Namespace, plan: AudioSourcePlan) -> list[str]:
+    if plan.kind == "authorized_audio_file":
+        source = plan.source
+    elif plan.kind == "authorized_youtube_source":
+        source = resolve_youtube_audio_stream_url(args.yt_dlp, plan.source)
+    else:
+        raise SystemExit("--connect-openai requires --audio-file or --youtube-url")
+    return [
+        args.ffmpeg,
+        "-hide_banner",
+        "-nostdin",
+        "-loglevel",
+        "error",
+        "-i",
+        source,
+        "-vn",
+        "-ac",
+        "1",
+        "-ar",
+        str(args.sample_rate),
+        "-f",
+        "s16le",
+        "pipe:1",
+    ]
+
+
+def resolve_youtube_audio_stream_url(yt_dlp: str, url: str) -> str:
+    proc = subprocess.run(
+        [yt_dlp, "-f", "ba/bestaudio", "--no-playlist", "-g", url],
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+    for line in proc.stdout.splitlines():
+        candidate = line.strip()
+        if candidate.startswith(("http://", "https://")):
+            return candidate
+    raise SystemExit("yt-dlp did not return an audio stream URL.")
+
+
+def pcm_chunk_size(sample_rate: int, chunk_ms: int) -> int:
+    return max(1, int(sample_rate * 2 * (chunk_ms / 1000)))
+
+
+def wait_for_process(proc: Any) -> None:
+    try:
+        proc.wait(timeout=5)
+    except TypeError:
+        proc.wait()
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait()
+
+
+def close_ws(ws: Any) -> None:
+    try:
+        ws.close()
+    except Exception:
+        pass
+
+
 def read_jsonl(path: Path) -> list[dict[str, Any]]:
     rows = []
     for line in path.read_text(encoding="utf-8").splitlines():
@@ -432,6 +751,14 @@ def safe_display_path(path: Path | None) -> str | None:
 def redact_url(value: str) -> str:
     parsed = urlparse(value)
     return f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+
+
+def redact_commands_for_report(commands: list[list[str]]) -> list[list[str]]:
+    return [[redact_url(arg) if looks_like_url(arg) else arg for arg in command] for command in commands]
+
+
+def looks_like_url(value: str) -> bool:
+    return value.startswith(("http://", "https://"))
 
 
 def archive_path_for_sink(args: argparse.Namespace, sink: LocalSink | BackendSink) -> str | None:

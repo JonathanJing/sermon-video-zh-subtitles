@@ -37,7 +37,7 @@ The current POC is valuable, but it is not yet the production system described i
 | 11:25 readiness and publish gate | Missing | There is no durable readiness state, publish timestamp, published artifact URI, or fallback state. |
 | Real generated Chinese captions | Partial | Batch OpenAI translation exists for prepared playback and the worker plan includes prepare -> translate -> notes -> upload -> promote; production verification still needs real Sunday inputs. |
 | Offline ASR fallback | Partial | When no English captions are available, the live-archive preparation path can extract audio and request `gpt-4o-transcribe` before `gpt-5.5-mini` translation, but this still needs live YouTube/archive validation. |
-| Realtime low-latency captioning | Partial | Admin iPad/iPhone mic can create an OpenAI Realtime translation session, send browser WebRTC audio, post English/Chinese deltas to backend memory/JSONL, and stream them to the public caption view over SSE. `scripts/realtime_media_worker.py` can create backend-only sessions, plan authorized audio/YouTube source preparation, and replay/publish events into the same session stream. `scripts/stabilize_realtime_deltas_with_openai.py` can use `gpt-5.5-mini` to turn saved realtime English windows into stable Chinese corrections. Production server-side OpenAI Realtime audio streaming and durable state storage are still missing. |
+| Realtime low-latency captioning | Partial | Admin iPad/iPhone mic can create an OpenAI Realtime translation session, send browser WebRTC audio, post English/Chinese deltas to backend memory/JSONL, and stream them to the public caption view over SSE. `scripts/realtime_media_worker.py` can create backend-only sessions, plan authorized audio/YouTube source preparation, stream 24 kHz PCM16 audio to the OpenAI translation WebSocket, and publish English/Chinese deltas into the same session stream. `scripts/stabilize_realtime_deltas_with_openai.py` can use `gpt-5.5-mini` to turn saved realtime English windows into stable Chinese corrections. Production live validation with real authorized sources and durable state storage are still missing. |
 | Scripture/name/term priority | Missing | Static scripture/sidebar examples exist, but no deterministic Bible index, glossary resolver, or review queue. |
 | Notes and quote extraction | Partial | Worker plan includes `generate_notes_with_openai.py` with `gpt-5.5-mini`; production review and UI surfacing still need hardening. |
 | Cloud Run API deployment | Partial | Current `Dockerfile` starts `backend.app`; deployment still needs environment verification for `/api/*`, Secret Manager, and realtime session creation. |
@@ -56,7 +56,7 @@ The current POC is valuable, but it is not yet the production system described i
 ## P1/P2 Gaps
 
 - Durable realtime session/segment storage and latency budget enforcement.
-- Server-side OpenAI Realtime audio streaming from YouTube live / authorized audio sources beyond the current media-worker source-prep and event-publishing scaffold.
+- Live validation and hardening for server-side OpenAI Realtime audio streaming from YouTube live / authorized audio sources.
 - Firestore or equivalent durable session/segment state.
 - Cloud Scheduler/Tasks configuration for Sunday monitor and worker jobs.
 - Dedicated service account and IAM least-privilege wiring for GCS and Secret Manager.

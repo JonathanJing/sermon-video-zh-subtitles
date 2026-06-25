@@ -1,4 +1,6 @@
 import importlib.util
+import io
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -35,6 +37,14 @@ def base_args(**overrides):
         "model": "gpt-realtime-translate",
         "target_language": "zh-CN",
         "dry_run": False,
+        "connect_openai": False,
+        "api_key_secret": None,
+        "openai_api_key_env": "OPENAI_API_KEY",
+        "openai_safety_identifier": "sermon-realtime-media-worker",
+        "chunk_ms": 100,
+        "max_audio_seconds": None,
+        "no_realtime_throttle": True,
+        "openai_close_timeout": 1.0,
         "prepare_audio": False,
         "max_replay_events": 200,
     }
@@ -76,6 +86,21 @@ class RealtimeMediaWorkerTest(unittest.TestCase):
         self.assertEqual(plan.display_source, "https://www.youtube.com/watch")
         self.assertIn("--extract-audio", plan.commands[0])
         self.assertNotIn("secret=not-for-report", plan.display_source)
+
+    def test_dry_run_report_redacts_url_query_from_commands(self):
+        args = base_args(
+            youtube_url="https://www.youtube.com/watch?v=abc123&secret=not-for-report",
+            out_dir=Path("/tmp/realtime-worker-out"),
+            connect_openai=True,
+            dry_run=True,
+        )
+
+        report = mod.run_worker(args)
+        rendered = json.dumps(report)
+
+        self.assertEqual(report["openaiRealtime"]["websocketEndpoint"], mod.OPENAI_TRANSLATION_WS_BASE)
+        self.assertFalse(report["openaiRealtime"]["apiKeyMaterialIncluded"])
+        self.assertNotIn("secret=not-for-report", rendered)
 
     def test_replay_jsonl_writes_sanitized_local_archive(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -134,6 +159,113 @@ class RealtimeMediaWorkerTest(unittest.TestCase):
 
             self.assertTrue((root / "nested").is_dir())
             self.assertFalse((Path("https:")).exists())
+
+    def test_maps_openai_translation_events_to_realtime_payloads(self):
+        caption = mod.openai_event_to_realtime_payload(
+            {
+                "type": "session.output_transcript.delta",
+                "delta": "神爱世人",
+                "item_id": "seg_1",
+            }
+        )
+        source = mod.openai_event_to_realtime_payload(
+            {
+                "type": "session.input_transcript.delta",
+                "delta": "God loved the world",
+                "item_id": "seg_1",
+            }
+        )
+
+        self.assertEqual(caption["type"], "caption_delta")
+        self.assertEqual(caption["zh"], "神爱世人")
+        self.assertEqual(caption["source"], "openai_realtime_translation_ws")
+        self.assertEqual(source["type"], "input_transcript_delta")
+        self.assertEqual(source["en"], "God loved the world")
+
+    def test_raw_pcm_command_for_audio_file_streams_s16le_to_stdout(self):
+        args = base_args(audio_file=Path("/tmp/sermon.wav"))
+        plan = mod.AudioSourcePlan(
+            kind="authorized_audio_file",
+            source="/tmp/sermon.wav",
+            display_source="sermon.wav",
+            normalized_audio_path=Path("/tmp/out.wav"),
+            commands=[],
+            warnings=[],
+        )
+
+        command = mod.raw_pcm_command(args=args, plan=plan)
+
+        self.assertEqual(command[:4], ["ffmpeg", "-hide_banner", "-nostdin", "-loglevel"])
+        self.assertIn("-f", command)
+        self.assertIn("s16le", command)
+        self.assertEqual(command[-1], "pipe:1")
+
+    def test_relay_openai_translation_sends_pcm_and_publishes_deltas(self):
+        class FakeWs:
+            def __init__(self):
+                self.sent = []
+                self.closed = False
+                self.incoming = [
+                    json.dumps({"type": "session.output_transcript.delta", "delta": "神爱世人", "item_id": "seg_1"}),
+                    json.dumps({"type": "session.input_transcript.delta", "delta": "God loved the world", "item_id": "seg_1"}),
+                    json.dumps({"type": "session.closed"}),
+                ]
+
+            def send(self, payload):
+                self.sent.append(json.loads(payload))
+
+            def recv(self):
+                return self.incoming.pop(0) if self.incoming else json.dumps({"type": "session.closed"})
+
+            def close(self):
+                self.closed = True
+
+        class FakeProc:
+            def __init__(self):
+                self.stdout = io.BytesIO(b"\x00\x01" * 2400)
+
+            def wait(self, timeout=None):
+                return 0
+
+        events = []
+        sink = SimpleNamespace(
+            session_id="rt_test",
+            emit=lambda payload: events.append(payload) or {"id": len(events)},
+        )
+        fake_ws = FakeWs()
+        args = base_args(
+            audio_file=Path("/tmp/sermon.wav"),
+            connect_openai=True,
+            chunk_ms=100,
+            no_realtime_throttle=True,
+        )
+        plan = mod.AudioSourcePlan(
+            kind="authorized_audio_file",
+            source="/tmp/sermon.wav",
+            display_source="sermon.wav",
+            normalized_audio_path=Path("/tmp/out.wav"),
+            commands=[],
+            warnings=[],
+        )
+
+        stats = mod.relay_openai_translation(
+            args=args,
+            plan=plan,
+            sink=sink,
+            api_key="sk-test",
+            ws_factory=lambda url, headers: fake_ws,
+            popen_factory=lambda *args, **kwargs: FakeProc(),
+        )
+
+        sent_types = [payload["type"] for payload in fake_ws.sent]
+        self.assertEqual(sent_types[0], "session.update")
+        self.assertIn("session.input_audio_buffer.append", sent_types)
+        self.assertEqual(sent_types[-1], "session.close")
+        self.assertTrue(fake_ws.closed)
+        self.assertEqual(stats["captionEventsPosted"], 1)
+        self.assertEqual(stats["inputTranscriptEventsPosted"], 1)
+        self.assertEqual(events[0]["type"], "caption_delta")
+        self.assertEqual(events[1]["type"], "input_transcript_delta")
 
 
 if __name__ == "__main__":

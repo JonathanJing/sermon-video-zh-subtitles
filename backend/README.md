@@ -112,10 +112,26 @@ python3 scripts/realtime_media_worker.py \
   --dry-run
 ```
 
-For an authorized YouTube live/archive source, it plans a conservative `yt-dlp`
-audio extraction command. The scaffold intentionally stops at source preparation
-and session-event publishing; server-side OpenAI Realtime audio streaming still
-needs provider-specific implementation and live validation.
+To stream a server-side media source into `gpt-realtime-translate`, enable the
+OpenAI WebSocket relay. The worker sends base64 24 kHz PCM16 chunks to
+`/v1/realtime/translations`, maps `session.output_transcript.delta` to Chinese
+caption deltas, maps `session.input_transcript.delta` to English sidecar deltas,
+and posts both to the backend event stream:
+
+```bash
+python3 scripts/realtime_media_worker.py \
+  --sunday 2026-06-28 \
+  --audio-file /path/to/authorized-sermon-audio.m4a \
+  --backend-url http://127.0.0.1:8080 \
+  --create-backend-session \
+  --connect-openai \
+  --api-key-secret projects/PROJECT_ID/secrets/openai-api-key/versions/latest
+```
+
+For an authorized YouTube live/archive source, the worker can use `yt-dlp` to
+resolve the best audio stream before piping it through `ffmpeg` into the same
+WebSocket relay. This path must still be live-validated with the actual
+authorized source and platform rules before Sunday production.
 
 Saved realtime JSONL can be stabilized with `gpt-5.5-mini` after a short delay:
 
@@ -140,6 +156,7 @@ Logging. Key events are:
 - `worker_stage_started`
 - `worker_stage_completed`
 - `realtime_session_created`
+- `realtime_media_worker_event`
 - `realtime_caption_event`
 - `captions_ready`
 - `congregation_page_view`

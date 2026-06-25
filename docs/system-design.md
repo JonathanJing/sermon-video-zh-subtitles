@@ -51,7 +51,7 @@ GCS prefix:  gs://<bucket>/sundays/2026-06-21/<session_id>/
 session id:  sunday-20260621-1000
 ```
 
-The Sunday slice is the primary read model for the web UI. Realtime sessions and offline jobs can write rolling updates into the slice, while public clients only subscribe to published captions, scripture cards, notes, and quote artifacts. The current realtime MVP stores sanitized English/Chinese deltas in backend memory and JSONL files under `REALTIME_EVENT_LOG_DIR`; iPad/iPhone mic input uses browser WebRTC with `gpt-realtime-translate`, while `scripts/realtime_media_worker.py` can create backend-only sessions, prepare authorized audio/YouTube sources, and replay or publish events into the same public caption stream. `scripts/stabilize_realtime_deltas_with_openai.py` turns saved English windows plus draft Chinese captions into `gpt-5.5-mini` stable corrections. Firestore remains the production durable-state target.
+The Sunday slice is the primary read model for the web UI. Realtime sessions and offline jobs can write rolling updates into the slice, while public clients only subscribe to published captions, scripture cards, notes, and quote artifacts. The current realtime MVP stores sanitized English/Chinese deltas in backend memory and JSONL files under `REALTIME_EVENT_LOG_DIR`; iPad/iPhone mic input uses browser WebRTC with `gpt-realtime-translate`, while `scripts/realtime_media_worker.py` can create backend-only sessions, prepare authorized audio/YouTube sources, stream 24 kHz PCM16 audio to the OpenAI translation WebSocket, and publish English/Chinese deltas into the same public caption stream. `scripts/stabilize_realtime_deltas_with_openai.py` turns saved English windows plus draft Chinese captions into `gpt-5.5-mini` stable corrections. Firestore remains the production durable-state target.
 
 ## Architecture
 
@@ -84,8 +84,8 @@ flowchart TD
 | `api` | sessions, caption segments, manifests, exports, publish state, operator auth |
 | `worker` | offline ASR, translation, timeline normalization, scripture resolution, notes and quotes |
 | `live-source-monitor` | Sunday source discovery and fallback alerts |
-| `realtime-media-worker` | Server-side authorized audio/YouTube source preparation and realtime session-event publishing |
-| `realtime-relay` | Optional provider relay for non-browser audio sources once server-side OpenAI Realtime streaming is wired |
+| `realtime-media-worker` | Server-side authorized audio/YouTube source preparation plus OpenAI Realtime translation WebSocket relay |
+| `realtime-relay` | Optional future split-out provider relay if media ingest needs a separate service |
 
 Cloud Run is the default deployment target. Firestore stores sessions and caption segment state. GCS stores generated artifacts. Secret Manager stores provider keys and sensitive runtime tokens. Cloud Tasks or Cloud Scheduler can trigger monitor and worker jobs.
 

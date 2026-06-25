@@ -1,8 +1,17 @@
 import unittest
 import tempfile
+import json
 from pathlib import Path
 
-from backend.realtime import RealtimeEventArchive, RealtimeSessionStore, sanitize_event
+import backend.realtime as realtime
+from backend.realtime import (
+    OPENAI_TRANSLATION_CALLS_URL,
+    OPENAI_TRANSLATION_CLIENT_SECRET_URL,
+    RealtimeEventArchive,
+    RealtimeSessionStore,
+    create_openai_translation_session,
+    sanitize_event,
+)
 
 
 class RealtimeSessionStoreTest(unittest.TestCase):
@@ -69,6 +78,48 @@ class RealtimeSessionStoreTest(unittest.TestCase):
 
         self.assertTrue(store.archive_status()["enabled"])
         self.assertEqual(store.archive_status()["directory"], "/tmp/realtime-test")
+
+    def test_create_openai_translation_session_uses_client_secret_endpoint(self):
+        captured = {}
+
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def read(self):
+                return b'{"client_secret":{"value":"ek_test","expires_at":123}}'
+
+        original_urlopen = realtime.urlopen
+        try:
+            def fake_urlopen(request, timeout):
+                captured["url"] = request.full_url
+                captured["headers"] = dict(request.header_items())
+                captured["payload"] = json.loads(request.data.decode("utf-8"))
+                captured["timeout"] = timeout
+                return FakeResponse()
+
+            realtime.urlopen = fake_urlopen
+            data = create_openai_translation_session(
+                api_key="sk-test",
+                model="gpt-realtime-translate",
+                target_language="zh-CN",
+            )
+        finally:
+            realtime.urlopen = original_urlopen
+
+        self.assertEqual(captured["url"], OPENAI_TRANSLATION_CLIENT_SECRET_URL)
+        self.assertEqual(captured["payload"]["session"]["model"], "gpt-realtime-translate")
+        self.assertEqual(captured["payload"]["session"]["audio"]["output"]["language"], "zh-CN")
+        self.assertEqual(data["client_secret"]["value"], "ek_test")
+
+    def test_translation_calls_endpoint_is_dedicated_webrtc_url(self):
+        self.assertEqual(
+            OPENAI_TRANSLATION_CALLS_URL,
+            "https://api.openai.com/v1/realtime/translations/calls",
+        )
 
 
 if __name__ == "__main__":

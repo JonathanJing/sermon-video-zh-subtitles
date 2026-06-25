@@ -16,7 +16,8 @@ from urllib.request import Request, urlopen
 DEFAULT_REALTIME_MODEL = "gpt-realtime-translate"
 DEFAULT_TRANSCRIPTION_MODEL = "gpt-4o-transcribe"
 DEFAULT_TARGET_LANGUAGE = "zh-CN"
-OPENAI_TRANSLATION_SESSION_URL = "https://api.openai.com/v1/realtime/translations"
+OPENAI_TRANSLATION_CLIENT_SECRET_URL = "https://api.openai.com/v1/realtime/translations/client_secrets"
+OPENAI_TRANSLATION_CALLS_URL = "https://api.openai.com/v1/realtime/translations/calls"
 
 
 def utc_now() -> str:
@@ -197,17 +198,23 @@ def create_openai_translation_session(
     transcription_model: str = DEFAULT_TRANSCRIPTION_MODEL,
 ) -> dict[str, Any]:
     payload = {
-        "model": model,
-        "target_language": target_language,
-        "input_audio_transcription": {"model": transcription_model},
-        "instructions": (
-            "Translate spoken English Christian sermon audio into readable Simplified Chinese captions "
-            "for live church attendees. Prioritize faithful meaning, short subtitle lines, and stable "
-            "Bible/person/theology terms. Do not add commentary."
-        ),
+        "session": {
+            "model": model,
+            "audio": {
+                "output": {
+                    "language": target_language,
+                },
+            },
+            "input_audio_transcription": {"model": transcription_model},
+            "instructions": (
+                "Translate spoken English Christian sermon audio into readable Simplified Chinese captions "
+                "for live church attendees. Prioritize faithful meaning, short subtitle lines, and stable "
+                "Bible/person/theology terms. Do not add commentary."
+            ),
+        },
     }
     request = Request(
-        OPENAI_TRANSLATION_SESSION_URL,
+        OPENAI_TRANSLATION_CLIENT_SECRET_URL,
         data=json.dumps(payload).encode("utf-8"),
         headers={
             "Authorization": f"Bearer {api_key}",
