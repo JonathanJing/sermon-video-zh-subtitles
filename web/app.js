@@ -94,7 +94,7 @@
   const NOTE_PREVIEW_MAX_CHARS = 120;
   const NOTE_AI_CONFIG = Object.freeze({
     provider: "openai",
-    model: "gpt-5.5-mini",
+    model: "gpt-5.4-mini",
     displayName: "OpenAI GPT-5.5 mini",
     reasoningEffort: "medium"
   });
@@ -1015,7 +1015,7 @@
     segment.final = Boolean(event.final);
     segment.stable = Boolean(segment.stable || isStableCorrection);
     if (isStableCorrection) {
-      segment.note = "gpt-5.5-mini 稳定修正版。";
+      segment.note = "gpt-5.4-mini 稳定修正版。";
       segment.confidence = Math.max(Number(segment.confidence) || 0, 88);
     }
     segment.refs = normalizeSegmentReferences(segment, [segment.en, segment.zh]);

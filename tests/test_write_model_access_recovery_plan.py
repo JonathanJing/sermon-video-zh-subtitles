@@ -13,7 +13,7 @@ class WriteModelAccessRecoveryPlanTest(unittest.TestCase):
         report = mod.build_plan(
             Namespace(
                 sunday="2026-06-28",
-                required_model="gpt-5.5-mini",
+                required_model="gpt-5.4-mini",
                 alternative_model="gpt-5.5",
                 required_report=Path("missing-required.json"),
                 alternative_report=Path("missing-alternative.json"),
@@ -34,7 +34,7 @@ class WriteModelAccessRecoveryPlanTest(unittest.TestCase):
         self.assertIn("stabilize_realtime_deltas_with_openai.py", commands)
         self.assertIn("validate_realtime_session.py", commands)
         self.assertIn("--require-stable-correction", commands)
-        self.assertIn("gpt-5.5-mini", commands)
+        self.assertIn("gpt-5.4-mini", commands)
         self.assertIn("refresh_production_preflight_evidence.py", commands)
         self.assertIn("write_production_go_live_sequence.py", commands)
         self.assertNotIn("collect_production_evidence_matrix.py", commands)
@@ -57,7 +57,7 @@ class WriteModelAccessRecoveryPlanTest(unittest.TestCase):
             required = root / "required.json"
             alternative = root / "alternative.json"
             required.write_text(
-                json.dumps(model_report("gpt-5.5-mini", "ok", http_status=200)),
+                json.dumps(model_report("gpt-5.4-mini", "ok", http_status=200)),
                 encoding="utf-8",
             )
             alternative.write_text(
@@ -67,7 +67,7 @@ class WriteModelAccessRecoveryPlanTest(unittest.TestCase):
             report = mod.build_plan(
                 Namespace(
                     sunday="2026-06-28",
-                    required_model="gpt-5.5-mini",
+                    required_model="gpt-5.4-mini",
                     alternative_model="gpt-5.5",
                     required_report=required,
                     alternative_report=alternative,
@@ -106,7 +106,7 @@ class WriteModelAccessRecoveryPlanTest(unittest.TestCase):
             written = json.loads(out.read_text(encoding="utf-8"))
 
         self.assertEqual(exit_code, 0)
-        self.assertEqual(written["requiredModel"], "gpt-5.5-mini")
+        self.assertEqual(written["requiredModel"], "gpt-5.4-mini")
 
 
 def model_report(model, status, http_status=None):

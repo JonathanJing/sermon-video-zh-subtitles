@@ -36,7 +36,10 @@ class WriteProductionUnblockPlanTest(unittest.TestCase):
         self.assertIn("--plan", report["steps"][0]["commands"][0])
         self.assertIn("artifacts/evidence/cloud-run-realtime-update-plan.json", report["steps"][0]["commands"][0])
         self.assertEqual(report["steps"][1]["id"], "publish_sunday_manifest_to_gcs")
-        model_step = next(step for step in report["steps"] if step["id"] == "fix_required_gpt_5_5_mini_access")
+        rendered_publish_commands = json.dumps(report["steps"][1]["commands"])
+        self.assertIn("--apply", rendered_publish_commands)
+        self.assertIn("--confirm-production-stable", rendered_publish_commands)
+        model_step = next(step for step in report["steps"] if step["id"] == "fix_required_gpt_5_4_mini_access")
         self.assertTrue(model_step["doNotSubstitute"])
         self.assertEqual(model_step["availableButNotConfiguredModels"], ["gpt-5.5"])
         self.assertEqual(model_step["recoveryPlan"], "artifacts/evidence/model-access-recovery-plan.json")
@@ -64,7 +67,7 @@ class WriteProductionUnblockPlanTest(unittest.TestCase):
         self.assertIn("run_realtime_live_session.py", rendered_realtime_commands)
         self.assertIn("validate_realtime_session.py", rendered_realtime_commands)
         self.assertIn("gpt-realtime-translate", rendered_realtime_commands)
-        self.assertIn("gpt-5.5-mini", rendered_realtime_commands)
+        self.assertIn("gpt-5.4-mini", rendered_realtime_commands)
         self.assertIn("stable_correction_matches_realtime_draft_segment", realtime_step["expectedChecks"])
         self.assertIn("stable_correction_context", realtime_step["expectedChecks"])
         asr_step = next(step for step in report["steps"] if step["id"] == "run_real_no_caption_archive_asr_route")
@@ -171,12 +174,12 @@ def matrix_report():
             {
                 "id": "stable_correction",
                 "state": "fail",
-                "nextAction": "Fix gpt-5.5-mini model access.",
+                "nextAction": "Fix gpt-5.4-mini model access.",
                 "observed": {
-                    "model": "gpt-5.5-mini",
+                    "model": "gpt-5.4-mini",
                     "failureKind": "model_unavailable_or_not_found",
                     "httpStatus": 400,
-                    "error": "The requested model 'gpt-5.5-mini' does not exist.",
+                    "error": "The requested model 'gpt-5.4-mini' does not exist.",
                     "availableButNotConfiguredModels": ["gpt-5.5"],
                 },
             },
@@ -185,10 +188,10 @@ def matrix_report():
                 "state": "fail",
                 "nextAction": "Fix offline translation model/access issue.",
                 "observed": {
-                    "model": "gpt-5.5-mini",
+                    "model": "gpt-5.4-mini",
                     "failureKind": "model_unavailable_or_not_found",
                     "httpStatus": 400,
-                    "error": "The requested model 'gpt-5.5-mini' does not exist.",
+                    "error": "The requested model 'gpt-5.4-mini' does not exist.",
                 },
             },
             {

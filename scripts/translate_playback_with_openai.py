@@ -23,7 +23,7 @@ import requests
 REPO_ROOT = Path(__file__).resolve().parents[1]
 JS_PREFIX = "window.SERMON_PLAYBACK_SIMULATION = "
 OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
-EXPECTED_TRANSLATION_MODEL = "gpt-5.5-mini"
+EXPECTED_TRANSLATION_MODEL = "gpt-5.4-mini"
 FORBIDDEN_OFFLINE_MODEL = "gpt-realtime-translate"
 SECRET_RESOURCE_RE = re.compile(
     r"^projects/(?P<project>[^/\s]+)/secrets/(?P<secret>[^/\s]+)(?:/versions/(?P<version>[^/\s]+))?$"
@@ -175,7 +175,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--model",
-        default="gpt-5.5-mini",
+        default="gpt-5.4-mini",
         help="OpenAI Responses model used for translation.",
     )
     parser.add_argument(
@@ -223,10 +223,10 @@ def validate_offline_translation_model(model: str) -> None:
     if model == FORBIDDEN_OFFLINE_MODEL:
         raise SystemExit(
             "Offline YouTube archive translation must not use gpt-realtime-translate; "
-            "use gpt-5.5-mini."
+            "use gpt-5.4-mini."
         )
     if model != EXPECTED_TRANSLATION_MODEL:
-        raise SystemExit("Offline YouTube archive translation must use gpt-5.5-mini.")
+        raise SystemExit("Offline YouTube archive translation must use gpt-5.4-mini.")
 
 
 def resolve_repo_path(path: Path) -> Path:

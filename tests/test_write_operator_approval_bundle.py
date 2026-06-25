@@ -29,6 +29,7 @@ class WriteOperatorApprovalBundleTest(unittest.TestCase):
         )
         self.assertTrue(report["guards"]["doesNotApplyCloudRun"])
         self.assertTrue(report["guards"]["doesNotUploadGcs"])
+        self.assertTrue(report["guards"]["gcsProductionStableRequiresConfirmFlag"])
         steps = {step["id"]: step for step in report["approvalSteps"]}
         cloud = steps["apply_cloud_run_realtime_config"]
         publish = steps["publish_sunday_manifest_to_gcs"]
@@ -61,14 +62,15 @@ class WriteOperatorApprovalBundleTest(unittest.TestCase):
         self.assertIn("rerun_cloud_run_api_preflight", [step["id"] for step in report["postApprovalFollowupSteps"]])
         no_caption_followup = next(step for step in report["postApprovalFollowupSteps"] if step["id"] == "run_real_no_caption_archive_asr_route")
         rendered_no_caption = json.dumps(no_caption_followup["commands"])
-        self.assertIn("run_offline_archive_preflight.py", rendered_no_caption)
+        self.assertIn("run_no_caption_archive_asr_route.py", rendered_no_caption)
         self.assertIn("gpt-4o-transcribe", rendered_no_caption)
-        self.assertIn("gpt-5.5-mini", rendered_no_caption)
+        self.assertIn("gpt-5.4-mini", rendered_no_caption)
+        self.assertIn("run_offline_archive_preflight.py", json.dumps(no_caption_followup["expandedCommands"]))
         self.assertEqual(no_caption_followup["planStatus"], "needs_real_no_caption_archive")
         self.assertEqual(report["live1130Runbook"]["status"], "ready_for_operator_review")
         self.assertEqual(report["live1130Runbook"]["targetWindow"]["liveCaptionStart"], "11:30 PT")
         self.assertEqual(report["live1130Runbook"]["modelPolicy"]["realtimeDraftModel"], "gpt-realtime-translate")
-        self.assertEqual(report["live1130Runbook"]["modelPolicy"]["offlineTranslationModel"], "gpt-5.5-mini")
+        self.assertEqual(report["live1130Runbook"]["modelPolicy"]["offlineTranslationModel"], "gpt-5.4-mini")
         self.assertEqual(
             report["live1130Runbook"]["defaultPath"],
             "browser WebRTC -> gpt-realtime-translate -> backend session events -> public caption SSE",
@@ -100,11 +102,13 @@ class WriteOperatorApprovalBundleTest(unittest.TestCase):
         rendered_server_command = json.dumps(server_choice["command"])
         self.assertIn("scripts/run_realtime_live_session.py", rendered_server_command)
         self.assertIn("gpt-realtime-translate", rendered_server_command)
-        self.assertIn("gpt-5.5-mini", rendered_server_command)
+        self.assertIn("gpt-5.4-mini", rendered_server_command)
         self.assertTrue(cloud["secretReferencesIncluded"])
         self.assertEqual(publish["approvalKind"], "gcs_manifest_publish")
         self.assertEqual(publish["stableManifestUri"], "gs://bucket/sundays/2026-06-28/cloud-manifest.json")
         self.assertEqual(publish["artifactCount"], 3)
+        self.assertTrue(publish["productionStableConfirmRequired"])
+        self.assertIn("--confirm-production-stable", json.dumps(publish["approvalCommands"]))
         rendered = json.dumps(report)
         self.assertNotIn("projects/", rendered)
         self.assertNotIn("/secrets/", rendered)
@@ -212,7 +216,14 @@ def unblock_plan(no_caption_plan=None):
                 "reason": "Upload/promote the manifest and artifacts to GCS.",
                 "stableManifestUri": "gs://bucket/sundays/2026-06-28/cloud-manifest.json",
                 "artifactCount": 3,
-                "commands": [["python3", "scripts/plan_gcs_sunday_manifest_publish.py", "--apply"]],
+                "commands": [
+                    [
+                        "python3",
+                        "scripts/plan_gcs_sunday_manifest_publish.py",
+                        "--apply",
+                        "--confirm-production-stable",
+                    ]
+                ],
             },
             {
                 "id": "rerun_cloud_run_api_preflight",
@@ -300,11 +311,11 @@ def live_1130_run_plan():
         },
         "modelPolicy": {
             "realtimeDraftModel": "gpt-realtime-translate",
-            "stableCorrectionModel": "gpt-5.5-mini",
+            "stableCorrectionModel": "gpt-5.4-mini",
             "offlineAsrModel": "gpt-4o-transcribe",
-            "offlineTranslationModel": "gpt-5.5-mini",
+            "offlineTranslationModel": "gpt-5.4-mini",
             "forbiddenOfflineModel": "gpt-realtime-translate",
-            "doNotSubstituteGpt55ForGpt55Mini": True,
+            "doNotSubstituteAlternativeForRequiredMini": True,
         },
         "operatorChoices": [
             {
@@ -331,7 +342,7 @@ def live_1130_run_plan():
                     "--realtime-model",
                     "gpt-realtime-translate",
                     "--stable-model",
-                    "gpt-5.5-mini",
+                    "gpt-5.4-mini",
                 ],
             },
         ],
@@ -357,12 +368,12 @@ def live_1130_run_plan():
             "python3",
             "scripts/run_realtime_stabilizer_loop.py",
             "--model",
-            "gpt-5.5-mini",
+            "gpt-5.4-mini",
         ],
         "postLiveOfflineHandoff": {
             "trigger": "Run only after the YouTube live archive is available.",
-            "captionFirst": ["Try requested English captions/VTT first.", "Translate with gpt-5.5-mini."],
-            "noCaptionFallback": ["Transcribe with gpt-4o-transcribe.", "Translate with gpt-5.5-mini."],
+            "captionFirst": ["Try requested English captions/VTT first.", "Translate with gpt-5.4-mini."],
+            "noCaptionFallback": ["Transcribe with gpt-4o-transcribe.", "Translate with gpt-5.4-mini."],
         },
         "guards": {
             "doesNotApplyCloudRun": True,
@@ -376,6 +387,22 @@ def live_1130_run_plan():
 def no_caption_asr_plan():
     return {
         "status": "needs_real_no_caption_archive",
+        "runnerCommand": [
+            "python3",
+            "scripts/run_no_caption_archive_asr_route.py",
+            "--live-url",
+            "<NO_CAPTION_YOUTUBE_LIVE_ARCHIVE_URL>",
+            "--api-key-secret",
+            "<OPENAI_API_KEY_SECRET_RESOURCE>",
+            "--sunday",
+            "2026-06-28",
+            "--session-id",
+            "no-caption-asr-route",
+            "--asr-model",
+            "gpt-4o-transcribe",
+            "--translation-model",
+            "gpt-5.4-mini",
+        ],
         "commands": [
             [
                 "python3",
@@ -389,7 +416,7 @@ def no_caption_asr_plan():
                 "python3",
                 "scripts/translate_playback_with_openai.py",
                 "--model",
-                "gpt-5.5-mini",
+                "gpt-5.4-mini",
             ],
         ],
     }

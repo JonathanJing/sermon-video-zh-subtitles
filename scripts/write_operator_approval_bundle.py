@@ -80,6 +80,7 @@ def build_bundle(args: argparse.Namespace) -> dict[str, Any]:
             "doesNotUploadGcs": True,
             "cloudRunApplyRequiresApproveFlag": True,
             "gcsPublishRequiresApplyFlag": True,
+            "gcsProductionStableRequiresConfirmFlag": True,
         },
         "postApprovalEvidence": [
             "artifacts/evidence/cloud-run-realtime-config.json",
@@ -195,9 +196,11 @@ def approval_step_summary(
             "stableManifestUri": gcs_plan.get("stableManifestUri") or step.get("stableManifestUri"),
             "runManifestUri": gcs_plan.get("runManifestUri"),
             "artifactCount": step.get("artifactCount") or len(gcs_plan.get("artifacts") or []),
+            "approvalCommands": step.get("commands") or [],
             "commands": gcs_plan.get("commands") or step.get("commands") or [],
             "localValidation": gcs_plan.get("localValidation"),
             "gcsManifestValidation": gcs_plan.get("gcsManifestValidation"),
+            "productionStableConfirmRequired": gcs_production_confirm_required(step),
             "requiresExplicitApproval": True,
             "secretResourceNamesIncluded": False,
         }
@@ -210,6 +213,13 @@ def approval_step_summary(
         "requiresExplicitApproval": True,
         "secretResourceNamesIncluded": False,
     }
+
+
+def gcs_production_confirm_required(step: dict[str, Any]) -> bool:
+    for command in step.get("commands") or []:
+        if isinstance(command, list) and "--confirm-production-stable" in command:
+            return True
+    return False
 
 
 def cloud_run_followup_validation_commands(unblock: dict[str, Any]) -> list[list[str]]:
@@ -228,18 +238,22 @@ def followup_step_summary(step: dict[str, Any]) -> dict[str, Any]:
     plan_report = str(step.get("planReport") or "")
     plan = read_optional_json(resolve_repo_path(Path(plan_report))) if plan_report else None
     plan_commands = plan.get("commands") if isinstance(plan, dict) and isinstance(plan.get("commands"), list) else []
-    return {
+    runner_command = plan.get("runnerCommand") if isinstance(plan, dict) and isinstance(plan.get("runnerCommand"), list) else None
+    summary = {
         "id": step.get("id"),
         "state": step.get("state"),
         "dependency": step.get("dependency"),
         "sourceRow": step.get("sourceRow"),
         "reason": step.get("reason"),
-        "commands": step.get("commands") or plan_commands,
+        "commands": step.get("commands") or ([runner_command] if runner_command else plan_commands),
         "expectedChecks": step.get("expectedChecks") or [],
         "planReport": plan_report or None,
         "planStatus": plan.get("status") if isinstance(plan, dict) else None,
         "requiresExplicitApproval": False,
     }
+    if runner_command and plan_commands:
+        summary["expandedCommands"] = plan_commands
+    return summary
 
 
 def live_1130_runbook_summary(plan: dict[str, Any]) -> dict[str, Any] | None:

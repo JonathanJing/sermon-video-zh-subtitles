@@ -21,10 +21,10 @@ VALIDATE_OFFLINE_SCRIPT = REPO_ROOT / "scripts" / "validate_offline_chain.py"
 NOTES_SCRIPT = REPO_ROOT / "scripts" / "generate_notes_with_openai.py"
 PROMOTE_SCRIPT = REPO_ROOT / "scripts" / "promote_sunday_manifest.py"
 OFFLINE_ASR_MODEL = "gpt-4o-transcribe"
-OFFLINE_TRANSLATION_MODEL = "gpt-5.5-mini"
+OFFLINE_TRANSLATION_MODEL = "gpt-5.4-mini"
 REALTIME_DRAFT_MODEL = "gpt-realtime-translate"
-STABLE_CORRECTION_MODEL = "gpt-5.5-mini"
-NOTES_MODEL = "gpt-5.5-mini"
+STABLE_CORRECTION_MODEL = "gpt-5.4-mini"
+NOTES_MODEL = "gpt-5.4-mini"
 NOTES_REASONING_EFFORT = "medium"
 
 
@@ -328,7 +328,7 @@ def main() -> int:
     parser.add_argument("--include-insights", action="store_true")
     parser.add_argument(
         "--translations-jsonl",
-        help="Replay saved gpt-5.5-mini translation JSONL instead of calling OpenAI for offline translation.",
+        help="Replay saved gpt-5.4-mini translation JSONL instead of calling OpenAI for offline translation.",
     )
     parser.add_argument("--plan-only", action="store_true")
     args = parser.parse_args()

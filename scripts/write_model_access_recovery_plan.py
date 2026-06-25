@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Write a sanitized recovery plan for the required gpt-5.5-mini routes."""
+"""Write a sanitized recovery plan for the required gpt-5.4-mini routes."""
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ def main() -> int:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--sunday", required=True)
-    parser.add_argument("--required-model", default="gpt-5.5-mini")
+    parser.add_argument("--required-model", default="gpt-5.4-mini")
     parser.add_argument("--alternative-model", default="gpt-5.5")
     parser.add_argument("--required-report", type=Path, default=DEFAULT_REQUIRED_REPORT)
     parser.add_argument("--alternative-report", type=Path, default=DEFAULT_ALTERNATIVE_REPORT)
@@ -172,7 +172,7 @@ def build_plan(args: argparse.Namespace) -> dict[str, Any]:
             f"run_openai_model_access_preflight.py reports responses_model:{args.required_model}=pass.",
             f"Offline translation report uses {args.required_model}.",
             "validate_offline_chain.py status is ok and not_realtime_chain passes.",
-            f"Stable correction events have source gpt-5.5-mini-stable-correction and model {args.required_model}.",
+            f"Stable correction events have source gpt-5.4-mini-stable-correction and model {args.required_model}.",
             "validate_realtime_session.py passes with --require-stable-correction.",
             f"{args.alternative_model} availability is not used as a substitute for {args.required_model}.",
         ],

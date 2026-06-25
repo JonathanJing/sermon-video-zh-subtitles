@@ -21,7 +21,7 @@ class ValidateStableCorrectionContractTest(unittest.TestCase):
 
         self.assertEqual(report["status"], "ok")
         self.assertEqual(report["failedChecks"], [])
-        self.assertEqual(report["models"]["stableCorrection"], "gpt-5.5-mini")
+        self.assertEqual(report["models"]["stableCorrection"], "gpt-5.4-mini")
         event_check = next(
             check for check in report["checks"] if check["name"] == "stable_corrections_are_caption_final_events"
         )
@@ -29,9 +29,9 @@ class ValidateStableCorrectionContractTest(unittest.TestCase):
         self.assertEqual(event_check["observed"]["segmentId"], "seg_1")
         self.assertTrue(event_check["observed"]["final"])
         model_policy = next(check for check in report["checks"] if check["name"] == "stable_correction_model_policy")
-        self.assertTrue(model_policy["observed"]["allowsGpt55Mini"])
+        self.assertTrue(model_policy["observed"]["allowsRequiredMini"])
         self.assertTrue(model_policy["observed"]["rejectsRealtimeTranslate"])
-        self.assertTrue(model_policy["observed"]["rejectsGpt55Substitute"])
+        self.assertTrue(model_policy["observed"]["rejectsAlternativeSubstitute"])
         self.assertFalse(report["apiKeyMaterialIncluded"])
         self.assertFalse(report["secretResourceNamesIncluded"])
         self.assertFalse(report["eventTokenIncluded"])

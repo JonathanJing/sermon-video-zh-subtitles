@@ -45,11 +45,11 @@ class GenerateNotesWithOpenAITest(unittest.TestCase):
         payload = mod.build_openai_request(
             slices=slices,
             simulation={"sermonTitle": "Test Sermon"},
-            model="gpt-5.5-mini",
+            model="gpt-5.4-mini",
             reasoning_effort="medium",
         )
 
-        self.assertEqual(payload["model"], "gpt-5.5-mini")
+        self.assertEqual(payload["model"], "gpt-5.4-mini")
         self.assertEqual(payload["reasoning"], {"effort": "medium"})
         self.assertEqual(payload["text"]["format"]["type"], "json_object")
 
@@ -79,13 +79,13 @@ class GenerateNotesWithOpenAITest(unittest.TestCase):
                 }
             ],
             simulation={"translationStatus": "ready", "segments": [{"id": "seg_1"}]},
-            model="gpt-5.5-mini",
+            model="gpt-5.4-mini",
             reasoning_effort="medium",
             api_key_secret="projects/p/secrets/openai-api-key/versions/latest",
         )
         rendered = json.dumps(insights, ensure_ascii=False)
 
-        self.assertEqual(insights["model"], "gpt-5.5-mini")
+        self.assertEqual(insights["model"], "gpt-5.4-mini")
         self.assertEqual(insights["reasoningEffort"], "medium")
         self.assertTrue(insights["traceability"]["allQuotesHaveSource"])
         self.assertEqual(insights["quotes"][0]["sourceSegmentId"], "seg_1")
@@ -115,7 +115,7 @@ class GenerateNotesWithOpenAITest(unittest.TestCase):
                     {"localPath": "insights/openai-notes.json", "gcsUri": "gs://b/p/insights/openai-notes.json"},
                     {"localPath": "model-output/openai-notes-output.jsonl", "gcsUri": "gs://b/p/model-output/openai-notes-output.jsonl"},
                 ],
-                insights={"status": "ready", "model": "gpt-5.5-mini", "reasoningEffort": "medium"},
+                insights={"status": "ready", "model": "gpt-5.4-mini", "reasoningEffort": "medium"},
                 gcs_bucket=None,
                 gcs_prefix="p",
             )
@@ -123,7 +123,7 @@ class GenerateNotesWithOpenAITest(unittest.TestCase):
 
         local_paths = {item["localPath"] for item in updated["outputs"]}
         self.assertIn("insights/openai-notes.json", local_paths)
-        self.assertEqual(updated["insightsProvider"]["model"], "gpt-5.5-mini")
+        self.assertEqual(updated["insightsProvider"]["model"], "gpt-5.4-mini")
         self.assertEqual(updated["insightsProvider"]["reasoningEffort"], "medium")
         self.assertFalse(updated["secretResourceNamesIncluded"])
 

@@ -56,6 +56,11 @@ REQUIREMENTS = [
         "description": "Browser mic path maps OpenAI realtime transcript deltas to backend events and public SSE.",
     },
     {
+        "id": "deployed_webrtc_session",
+        "label": "Deployed WebRTC session",
+        "description": "Cloud Run can create a gpt-realtime-translate iPad/iPhone WebRTC session with redacted client secret and event token.",
+    },
+    {
         "id": "live_1130_realtime_run_plan",
         "label": "11:30 realtime run plan",
         "description": "Operator plan preserves iPad/iPhone WebRTC mic and server worker authorized audio options for the 11:30 realtime run.",
@@ -68,7 +73,7 @@ REQUIREMENTS = [
     {
         "id": "public_caption_view_runtime",
         "label": "Public caption view runtime",
-        "description": "Public caption page displays realtime draft captions and replaces them with gpt-5.5-mini stable corrections.",
+        "description": "Public caption page displays realtime draft captions and replaces them with gpt-5.4-mini stable corrections.",
     },
     {
         "id": "realtime_public_sse_contract",
@@ -83,12 +88,17 @@ REQUIREMENTS = [
     {
         "id": "stable_correction_contract",
         "label": "Stable correction contract",
-        "description": "Delayed corrections are gpt-5.5-mini caption_final events, not realtime draft reuse.",
+        "description": "Delayed corrections are gpt-5.4-mini caption_final events, not realtime draft reuse.",
+    },
+    {
+        "id": "required_text_model_access",
+        "label": "Required text model access",
+        "description": "The OpenAI key can call gpt-5.4-mini for stable correction and offline Chinese translation.",
     },
     {
         "id": "stable_correction",
         "label": "Stable correction path",
-        "description": "Saved realtime deltas received at least one gpt-5.5-mini stable correction.",
+        "description": "Saved realtime deltas received at least one gpt-5.4-mini stable correction.",
     },
     {
         "id": "offline_archive_preflight",
@@ -108,7 +118,12 @@ REQUIREMENTS = [
     {
         "id": "offline_asr_fallback_plan",
         "label": "Offline ASR fallback plan",
-        "description": "No-caption archive fallback plan preserves audio extraction, gpt-4o-transcribe ASR, gpt-5.5-mini translation, and not-realtime validation.",
+        "description": "No-caption archive fallback plan preserves audio extraction, gpt-4o-transcribe ASR, gpt-5.4-mini translation, and not-realtime validation.",
+    },
+    {
+        "id": "offline_asr_sample_chain_contract",
+        "label": "Offline ASR sample chain contract",
+        "description": "Authorized extracted-audio sample proves openai_asr, gpt-4o-transcribe, gpt-5.4-mini-shaped playback, VTT/SRT, manifest, and timeline validation without claiming production archive evidence.",
     },
     {
         "id": "offline_asr_route",
@@ -142,6 +157,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--realtime-audio-source-preflight-report")
     parser.add_argument("--server-realtime-contract-report")
     parser.add_argument("--web-realtime-contract-report")
+    parser.add_argument("--deployed-webrtc-session-report")
     parser.add_argument("--live-1130-run-plan-report")
     parser.add_argument("--realtime-handoff-validation-report")
     parser.add_argument("--public-caption-view-runtime-report")
@@ -153,6 +169,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--offline-worker-plan-report")
     parser.add_argument("--offline-chain-validation-report")
     parser.add_argument("--offline-asr-chain-validation-report")
+    parser.add_argument("--offline-asr-route-run-report")
+    parser.add_argument("--offline-asr-sample-chain-validation-report")
     parser.add_argument("--no-caption-asr-plan-report")
     parser.add_argument("--offline-asr-smoke-report")
     parser.add_argument("--offline-translation-report")
@@ -174,6 +192,7 @@ def collect_matrix(args: argparse.Namespace) -> dict[str, Any]:
         read_optional_json(args.realtime_audio_source_preflight_report)
     )
     web_realtime_contract = read_optional_json(args.web_realtime_contract_report)
+    deployed_webrtc_session = read_optional_json(args.deployed_webrtc_session_report)
     live_1130_run_plan = read_optional_json(args.live_1130_run_plan_report)
     realtime_handoff_validation = read_optional_json(args.realtime_handoff_validation_report)
     public_caption_view_runtime = read_optional_json(args.public_caption_view_runtime_report)
@@ -190,6 +209,8 @@ def collect_matrix(args: argparse.Namespace) -> dict[str, Any]:
     offline_asr_chain_validation = (
         read_optional_json(args.offline_asr_chain_validation_report)
     )
+    offline_asr_route_run = read_optional_json(args.offline_asr_route_run_report)
+    offline_asr_sample_chain_validation = read_optional_json(args.offline_asr_sample_chain_validation_report)
     no_caption_asr_plan = read_optional_json(args.no_caption_asr_plan_report)
     offline_asr_smoke = read_optional_json(args.offline_asr_smoke_report)
     offline_translation = (
@@ -236,6 +257,10 @@ def collect_matrix(args: argparse.Namespace) -> dict[str, Any]:
             web_realtime_contract,
             args.web_realtime_contract_report,
         ),
+        "deployed_webrtc_session": state_from_deployed_webrtc_session(
+            deployed_webrtc_session,
+            args.deployed_webrtc_session_report,
+        ),
         "live_1130_realtime_run_plan": state_from_live_1130_run_plan(
             live_1130_run_plan,
             args.live_1130_run_plan_report,
@@ -263,6 +288,11 @@ def collect_matrix(args: argparse.Namespace) -> dict[str, Any]:
         "stable_correction_contract": state_from_stable_correction_contract(
             stable_correction_contract,
             args.stable_correction_contract_report,
+        ),
+        "required_text_model_access": state_from_required_model_access(
+            model_access,
+            args.openai_model_access_preflight_report,
+            available_alternative_models,
         ),
         "stable_correction": state_from_readiness_stable(
             readiness_reports,
@@ -299,10 +329,16 @@ def collect_matrix(args: argparse.Namespace) -> dict[str, Any]:
             no_caption_asr_plan,
             args.no_caption_asr_plan_report,
         ),
+        "offline_asr_sample_chain_contract": state_from_offline_asr_sample_chain_contract(
+            offline_asr_sample_chain_validation,
+            args.offline_asr_sample_chain_validation_report,
+        ),
         "offline_asr_route": state_from_offline_route(
             readiness_reports,
             args.production_readiness_report,
             "use_asr_fallback",
+            offline_asr_route_run=offline_asr_route_run,
+            offline_asr_route_run_path=args.offline_asr_route_run_report,
             offline_chain_validation=offline_asr_chain_validation,
             offline_chain_validation_path=args.offline_asr_chain_validation_report,
             offline_asr_smoke=offline_asr_smoke,
@@ -514,6 +550,56 @@ def state_from_web_realtime_contract(report: dict[str, Any] | None, path: str | 
     return failed(path, observed, "Fix the browser WebRTC realtime contract, then rerun validation.")
 
 
+def state_from_deployed_webrtc_session(report: dict[str, Any] | None, path: str | None) -> dict[str, Any]:
+    if not report:
+        return missing(
+            path,
+            "Run the deployed WebRTC session smoke against /api/admin/realtime/sessions and include its report.",
+        )
+    session = report.get("realtimeSession") if isinstance(report.get("realtimeSession"), dict) else {}
+    checks = {
+        "status": report.get("status") == "ok",
+        "no_failed_checks": not report.get("failedChecks"),
+        "no_secret_flags": report.get("apiKeyMaterialIncluded") is False
+        and report.get("secretResourceNamesIncluded") is False
+        and report.get("eventTokenIncluded") is False
+        and report.get("clientSecretIncluded") is False,
+        "http_status": session.get("httpStatus") == 201,
+        "ready": session.get("ready") is True,
+        "model": session.get("model") == "gpt-realtime-translate",
+        "target_language": session.get("targetLanguage") == "zh",
+        "audio_source_kind": session.get("audioSourceKind") in {"ipad_mic", "iphone_mic"},
+        "client_secret_returned": session.get("clientSecretReturned") is True,
+        "event_token_returned": session.get("eventTokenReturned") is True,
+        "webrtc_calls_url": session.get("webrtcUrl") == "https://api.openai.com/v1/realtime/calls",
+    }
+    observed = {
+        "baseUrl": report.get("baseUrl"),
+        "generatedAt": report.get("generatedAt"),
+        "failedChecks": report.get("failedChecks") or [],
+        "checks": checks,
+        "realtimeSession": {
+            "audioSourceKind": session.get("audioSourceKind"),
+            "clientSecretExpiresAtReturned": session.get("clientSecretExpiresAtReturned"),
+            "clientSecretReturned": session.get("clientSecretReturned"),
+            "eventTokenReturned": session.get("eventTokenReturned"),
+            "httpStatus": session.get("httpStatus"),
+            "model": session.get("model"),
+            "ready": session.get("ready"),
+            "sessionId": session.get("sessionId"),
+            "targetLanguage": session.get("targetLanguage"),
+            "webrtcUrl": session.get("webrtcUrl"),
+        },
+    }
+    if all(checks.values()):
+        return passed(path, observed)
+    return failed(
+        path,
+        observed,
+        "Fix deployed WebRTC session creation, then rerun the deployed WebRTC session smoke without exposing client secret or event token values.",
+    )
+
+
 def state_from_live_1130_run_plan(report: dict[str, Any] | None, path: str | None) -> dict[str, Any]:
     if not report:
         return missing(path, "Generate live-1130-realtime-run-plan.json and include it in the evidence matrix.")
@@ -531,9 +617,9 @@ def state_from_live_1130_run_plan(report: dict[str, Any] | None, path: str | Non
     }
     expected_model_policy = {
         "realtimeDraftModel": "gpt-realtime-translate",
-        "stableCorrectionModel": "gpt-5.5-mini",
+        "stableCorrectionModel": "gpt-5.4-mini",
         "offlineAsrModel": "gpt-4o-transcribe",
-        "offlineTranslationModel": "gpt-5.5-mini",
+        "offlineTranslationModel": "gpt-5.4-mini",
         "forbiddenOfflineModel": "gpt-realtime-translate",
     }
     mismatched_policy = {
@@ -554,7 +640,7 @@ def state_from_live_1130_run_plan(report: dict[str, Any] | None, path: str | Non
         failed_checks.append("live_caption_start")
     if mismatched_policy:
         failed_checks.append("model_policy")
-    if model_policy.get("doNotSubstituteGpt55ForGpt55Mini") is not True:
+    if model_policy.get("doNotSubstituteAlternativeForRequiredMini") is not True:
         failed_checks.append("mini_substitution_guard")
     if missing_choices:
         failed_checks.append("operator_choices")
@@ -925,8 +1011,8 @@ def state_from_stable_correction_contract(report: dict[str, Any] | None, path: s
     event_shape_ok = (
         event_check.get("state") == "pass"
         and event_observed.get("type") == "caption_final"
-        and event_observed.get("source") == "gpt-5.5-mini-stable-correction"
-        and event_observed.get("model") == "gpt-5.5-mini"
+        and event_observed.get("source") == "gpt-5.4-mini-stable-correction"
+        and event_observed.get("model") == "gpt-5.4-mini"
         and event_observed.get("final") is True
         and event_observed.get("hasSegmentId") is True
         and event_observed.get("hasChinese") is True
@@ -939,6 +1025,36 @@ def state_from_stable_correction_contract(report: dict[str, Any] | None, path: s
         path,
         observed,
         "Fix the stable correction event contract and model policy, then rerun validation.",
+    )
+
+
+def state_from_required_model_access(
+    report: dict[str, Any] | None,
+    path: str | None,
+    available_alternative_models: list[str] | None = None,
+) -> dict[str, Any]:
+    if not report:
+        return missing(path, "Run run_openai_model_access_preflight.py for gpt-5.4-mini and include the report.")
+    observed = {
+        "status": report.get("status"),
+        "models": report.get("models") or [],
+        "failedChecks": report.get("failedChecks") or [],
+        "availableButNotConfiguredModels": available_alternative_models or [],
+    }
+    checks = {
+        "status": report.get("status") == "ok",
+        "model": "gpt-5.4-mini" in (report.get("models") or []),
+        "no_failed_checks": not report.get("failedChecks"),
+        "no_secret_flags": report.get("apiKeyMaterialIncluded") is False
+        and report.get("secretResourceNamesIncluded") is False,
+    }
+    observed["checks"] = checks
+    if all(checks.values()):
+        return passed(path, observed)
+    return failed(
+        path,
+        with_available_alternatives(observed, available_alternative_models),
+        "Fix gpt-5.4-mini model access before relying on stable corrections or offline Chinese translation.",
     )
 
 
@@ -971,19 +1087,19 @@ def state_from_readiness_stable(
         return validation_state
     if (nested(realtime_session_validation or {}, "counts", "stableCorrectionEvents") or 0) > 0:
         return passed(realtime_session_validation_path, compact_realtime_validation(realtime_session_validation))
-    model_failure = model_access_failure(model_access, "gpt-5.5-mini")
+    model_failure = model_access_failure(model_access, "gpt-5.4-mini")
     if model_failure:
         return failed(
             model_access_path,
             with_available_alternatives(model_failure, available_alternative_models),
-            "Fix gpt-5.5-mini model access, then rerun stable correction validation.",
+            "Fix gpt-5.4-mini model access, then rerun stable correction validation.",
         )
     if not realtime_session_validation:
-        return missing(None, "Run gpt-5.5-mini stable correction and validate realtime JSONL with --require-stable-correction.")
+        return missing(None, "Run gpt-5.4-mini stable correction and validate realtime JSONL with --require-stable-correction.")
     return failed(
         realtime_session_validation_path,
         compact_realtime_validation(realtime_session_validation),
-        "Run gpt-5.5-mini stable correction and validate realtime JSONL with --require-stable-correction.",
+        "Run gpt-5.4-mini stable correction and validate realtime JSONL with --require-stable-correction.",
     )
 
 
@@ -1044,6 +1160,8 @@ def state_from_offline_route(
     offline_translation_path: str | None = None,
     model_access: dict[str, Any] | None = None,
     model_access_path: str | None = None,
+    offline_asr_route_run: dict[str, Any] | None = None,
+    offline_asr_route_run_path: str | None = None,
     offline_chain_validation: dict[str, Any] | None = None,
     offline_chain_validation_path: str | None = None,
     offline_asr_smoke: dict[str, Any] | None = None,
@@ -1055,7 +1173,7 @@ def state_from_offline_route(
         if (
             offline_chain_validation.get("status") == "ok"
             and nested(offline_chain_validation, "offlineRoute", "decision") == decision
-            and nested(offline_chain_validation, "translation", "model") == "gpt-5.5-mini"
+            and nested(offline_chain_validation, "translation", "model") == "gpt-5.4-mini"
             and offline_chain_check_state(offline_chain_validation, "not_realtime_chain") == "pass"
         ):
             return passed(offline_chain_validation_path, observed_chain)
@@ -1073,12 +1191,12 @@ def state_from_offline_route(
                     "offlineChainValidation": observed_chain,
                     "availableButNotConfiguredModels": available_alternative_models or [],
                 },
-                "Fix the offline translation model/access issue, then rerun gpt-5.5-mini translation and export zh VTT/SRT.",
+                "Fix the offline translation model/access issue, then rerun gpt-5.4-mini translation and export zh VTT/SRT.",
             )
         return failed(
             offline_chain_validation_path,
             observed_chain,
-            "Fix offline chain validation failures, then rerun gpt-5.5-mini translation and export zh VTT/SRT.",
+            "Fix offline chain validation failures, then rerun gpt-5.4-mini translation and export zh VTT/SRT.",
         )
     if decision == "use_caption_track" and offline_translation and offline_translation.get("status") == "failed":
         return failed(
@@ -1094,7 +1212,7 @@ def state_from_offline_route(
                 "offlineChainValidation": compact_offline_chain_validation(offline_chain_validation),
                 "availableButNotConfiguredModels": available_alternative_models or [],
             },
-            "Fix the offline translation model/access issue, then rerun gpt-5.5-mini translation and export zh VTT/SRT.",
+            "Fix the offline translation model/access issue, then rerun gpt-5.4-mini translation and export zh VTT/SRT.",
         )
     for report, path in zip(reports, paths):
         if report.get("status") == "ok" and nested(report, "offline", "offlineRoute", "decision") == decision:
@@ -1119,25 +1237,33 @@ def state_from_offline_route(
                 "nextAction": "Export translated VTT/SRT and run validate_production_readiness.py.",
             }
     if decision == "use_caption_track":
-        model_failure = model_access_failure(model_access, "gpt-5.5-mini")
+        model_failure = model_access_failure(model_access, "gpt-5.4-mini")
         if model_failure:
             return failed(
                 model_access_path,
                 with_available_alternatives(model_failure, available_alternative_models),
-                "Fix gpt-5.5-mini model access, then rerun offline translation and export zh VTT/SRT.",
+                "Fix gpt-5.4-mini model access, then rerun offline translation and export zh VTT/SRT.",
             )
     if decision == "use_caption_track":
         return missing(None, "Run a real YouTube archive with English captions through the offline chain.")
+    if decision == "use_asr_fallback" and offline_asr_route_run:
+        runner_state = state_from_offline_asr_route_run(
+            offline_asr_route_run,
+            offline_asr_route_run_path,
+        )
+        if runner_state:
+            return runner_state
     if decision == "use_asr_fallback" and offline_chain_validation:
         observed_chain = compact_offline_chain_validation(offline_chain_validation)
         chain_ok = (
             offline_chain_validation.get("status") == "ok"
             and nested(offline_chain_validation, "offlineRoute", "decision") == decision
-            and nested(offline_chain_validation, "translation", "model") == "gpt-5.5-mini"
+            and nested(offline_chain_validation, "translation", "model") == "gpt-5.4-mini"
             and nested(offline_chain_validation, "asr", "used") is True
             and nested(offline_chain_validation, "asr", "model") == "gpt-4o-transcribe"
             and offline_chain_check_state(offline_chain_validation, "not_realtime_chain") == "pass"
         )
+        real_no_caption_archive = offline_chain_validation.get("sourceEvidence") == "real_no_caption_archive"
         if offline_asr_smoke and offline_asr_smoke.get("status") != "ok":
             return failed(
                 offline_asr_smoke_path,
@@ -1149,7 +1275,7 @@ def state_from_offline_route(
                 },
                 "Fix gpt-4o-transcribe ASR fallback smoke, then rerun the no-caption offline chain validation.",
             )
-        if chain_ok and offline_asr_smoke and offline_asr_smoke.get("status") == "ok":
+        if chain_ok and offline_asr_smoke and offline_asr_smoke.get("status") == "ok" and real_no_caption_archive:
             return passed(
                 offline_chain_validation_path,
                 {
@@ -1161,6 +1287,23 @@ def state_from_offline_route(
                     },
                 },
             )
+        if chain_ok and offline_asr_smoke and offline_asr_smoke.get("status") == "ok":
+            return {
+                "state": "warn",
+                "evidence": offline_chain_validation_path,
+                "observed": {
+                    **(observed_chain or {}),
+                    "asrSmoke": {
+                        "model": nested(offline_asr_smoke, "asr", "model"),
+                        "cueCount": offline_asr_smoke.get("cueCount"),
+                        "source": offline_asr_smoke.get("source"),
+                    },
+                },
+                "nextAction": (
+                    "ASR sample chain validation passed. Run a real no-caption YouTube archive and set "
+                    "sourceEvidence=real_no_caption_archive before treating the ASR fallback route as production evidence."
+                ),
+            }
         if chain_ok:
             return {
                 "state": "warn",
@@ -1174,7 +1317,7 @@ def state_from_offline_route(
         return failed(
             offline_chain_validation_path,
             observed_chain,
-            "Fix the no-caption offline chain validation so it proves openai_asr, gpt-4o-transcribe, gpt-5.5-mini, and not_realtime_chain.",
+            "Fix the no-caption offline chain validation so it proves openai_asr, gpt-4o-transcribe, gpt-5.4-mini, and not_realtime_chain.",
         )
     if offline_asr_smoke:
         if offline_asr_smoke.get("status") == "ok":
@@ -1188,7 +1331,7 @@ def state_from_offline_route(
                 },
                 "nextAction": (
                     "ASR smoke passed on extracted/authorized audio. Run the no-caption archive through "
-                    "extraction, gpt-4o-transcribe, gpt-5.5-mini translation, export zh VTT/SRT/manifest, "
+                    "extraction, gpt-4o-transcribe, gpt-5.4-mini translation, export zh VTT/SRT/manifest, "
                     "and feed --offline-asr-chain-validation-report from validate_offline_chain.py."
                 ),
             }
@@ -1204,11 +1347,93 @@ def state_from_offline_route(
     return missing(None, "Run a real no-caption archive through gpt-4o-transcribe ASR fallback.")
 
 
+def state_from_offline_asr_route_run(report: dict[str, Any], path: str | None) -> dict[str, Any] | None:
+    offline_chain = nested(report, "validation", "offlineChain")
+    route_readiness = nested(report, "validation", "routeReadiness")
+    if not isinstance(offline_chain, dict):
+        return failed(
+            path,
+            compact_offline_asr_route_run(report),
+            "Rerun run_no_caption_archive_asr_route.py with the current script so it embeds offline chain validation evidence.",
+        )
+    checks = offline_asr_route_run_checks(report)
+    observed = compact_offline_asr_route_run(report)
+    observed["checks"] = checks
+    if all(checks.values()):
+        return passed(path, observed)
+    if (
+        report.get("status") == "ok"
+        and checks["status"]
+        and checks["models"]
+        and checks["offline_chain_status"]
+        and checks["decision"]
+        and checks["asr_used"]
+        and checks["asr_model"]
+        and checks["translation_model"]
+        and checks["not_realtime_chain"]
+        and checks["timeline_alignment"]
+        and checks["secret_flags"]
+        and not checks["source_evidence"]
+    ):
+        return {
+            "state": "warn",
+            "evidence": path,
+            "observed": observed,
+            "nextAction": (
+                "The no-caption ASR runner completed, but sourceEvidence is not real_no_caption_archive. "
+                "Run it against a real no-caption YouTube live archive before treating the ASR route as production evidence."
+            ),
+        }
+    if isinstance(route_readiness, dict) and route_readiness.get("status") == "failed":
+        return failed(
+            path,
+            observed,
+            "Fix route readiness failures from run_no_caption_archive_asr_route.py, then rerun the no-caption ASR route.",
+        )
+    return failed(
+        path,
+        observed,
+        "Fix the no-caption ASR route runner so it proves real_no_caption_archive, gpt-4o-transcribe, gpt-5.4-mini, timeline alignment, and not_realtime_chain.",
+    )
+
+
+def offline_asr_route_run_checks(report: dict[str, Any]) -> dict[str, bool]:
+    offline_chain = nested(report, "validation", "offlineChain")
+    route_readiness = nested(report, "validation", "routeReadiness")
+    offline_chain = offline_chain if isinstance(offline_chain, dict) else {}
+    route_readiness = route_readiness if isinstance(route_readiness, dict) else {}
+    models = report.get("models") if isinstance(report.get("models"), dict) else {}
+    return {
+        "status": report.get("status") == "ok",
+        "models": models.get("offlineAsr") == "gpt-4o-transcribe"
+        and models.get("offlineTranslation") == "gpt-5.4-mini"
+        and models.get("forbiddenOfflineModel") == "gpt-realtime-translate",
+        "offline_chain_status": offline_chain.get("status") == "ok",
+        "route_readiness_status": route_readiness.get("status") in {None, "ok"},
+        "decision": nested(offline_chain, "offlineRoute", "decision") == "use_asr_fallback",
+        "selected_source_kind": nested(offline_chain, "offlineRoute", "selectedSourceKind") == "openai_asr",
+        "source_evidence": offline_chain.get("sourceEvidence") == "real_no_caption_archive",
+        "asr_used": nested(offline_chain, "asr", "used") is True,
+        "asr_model": nested(offline_chain, "asr", "model") == "gpt-4o-transcribe",
+        "translation_model": nested(offline_chain, "translation", "model") == "gpt-5.4-mini",
+        "not_realtime_chain": offline_chain.get("notRealtimeChain") == "pass",
+        "timeline_alignment": nested(offline_chain, "timelineAlignment", "zhVtt") == "pass"
+        and nested(offline_chain, "timelineAlignment", "zhSrt") == "pass",
+        "secret_flags": report.get("apiKeyMaterialIncluded") is False
+        and report.get("secretResourceNamesIncluded") is False
+        and report.get("eventTokenIncluded") is False
+        and nested(route_readiness, "secretFlags", "apiKeyMaterialIncluded") in {None, False}
+        and nested(route_readiness, "secretFlags", "secretResourceNamesIncluded") in {None, False},
+    }
+
+
 def state_from_no_caption_asr_plan(report: dict[str, Any] | None, path: str | None) -> dict[str, Any]:
     if not report:
         return missing(path, "Generate no-caption-asr-fallback-plan.json for the real no-caption archive ASR fallback.")
     commands = report.get("commands") if isinstance(report.get("commands"), list) else []
     command_text = json.dumps(commands, ensure_ascii=False)
+    runner_command = report.get("runnerCommand") if isinstance(report.get("runnerCommand"), list) else []
+    runner_text = json.dumps(runner_command, ensure_ascii=False)
     criteria = report.get("passCriteria") if isinstance(report.get("passCriteria"), list) else []
     criteria_text = "\n".join(str(item) for item in criteria)
     required_models = report.get("requiredModels") if isinstance(report.get("requiredModels"), dict) else {}
@@ -1219,14 +1444,19 @@ def state_from_no_caption_asr_plan(report: dict[str, Any] | None, path: str | No
         "captionRequirement": "No requested English caption track" in str(required_source.get("captionRequirement") or ""),
         "authorizationRequirement": bool(str(required_source.get("authorizationRequirement") or "").strip()),
         "offlineAsrModel": required_models.get("offlineAsr") == "gpt-4o-transcribe",
-        "offlineTranslationModel": required_models.get("offlineTranslation") == "gpt-5.5-mini",
+        "offlineTranslationModel": required_models.get("offlineTranslation") == "gpt-5.4-mini",
         "forbiddenOfflineModel": required_models.get("forbiddenOfflineModel") == "gpt-realtime-translate",
+        "runnerCommand": "scripts/run_no_caption_archive_asr_route.py" in runner_text
+        and "gpt-4o-transcribe" in runner_text
+        and "gpt-5.4-mini" in runner_text
+        and "artifacts/evidence/no-caption-asr-route-run.json" in runner_text,
         "preflightCommand": "scripts/run_offline_archive_preflight.py" in command_text and "use_asr_fallback" in criteria_text,
         "audioExtractionCommand": "scripts/prepare_live_link_playback.py" in command_text and "gpt-4o-transcribe" in command_text,
-        "translationCommand": "scripts/translate_playback_with_openai.py" in command_text and "gpt-5.5-mini" in command_text,
+        "translationCommand": "scripts/translate_playback_with_openai.py" in command_text and "gpt-5.4-mini" in command_text,
         "exportCommand": "scripts/export_playback_captions.py" in command_text and "--gcs-dry-run" in command_text,
         "offlineValidationCommand": "scripts/validate_offline_chain.py" in command_text and "not_realtime_chain" in criteria_text,
-        "readinessCommand": "scripts/validate_production_readiness.py" in command_text,
+        "readinessCommand": "scripts/validate_production_readiness.py" in command_text
+        and "--allow-missing-realtime" in command_text,
         "asrSourceCriterion": "caption_source.kind=openai_asr" in criteria_text,
         "noSecretMaterialFlags": report.get("apiKeyMaterialIncluded") is False
         and report.get("secretResourceNamesIncluded") is False,
@@ -1236,6 +1466,7 @@ def state_from_no_caption_asr_plan(report: dict[str, Any] | None, path: str | No
         "requiredSource": required_source,
         "requiredModels": required_models,
         "commandCount": len(commands),
+        "runnerCommand": runner_command,
         "checks": checks,
         "failedChecks": [name for name, ok in checks.items() if not ok],
     }
@@ -1244,7 +1475,36 @@ def state_from_no_caption_asr_plan(report: dict[str, Any] | None, path: str | No
     return failed(
         path,
         observed,
-        "Regenerate no-caption-asr-fallback-plan.json with ASR extraction, gpt-4o-transcribe, gpt-5.5-mini translation, and not-realtime validation.",
+        "Regenerate no-caption-asr-fallback-plan.json with ASR extraction, gpt-4o-transcribe, gpt-5.4-mini translation, and not-realtime validation.",
+    )
+
+
+def state_from_offline_asr_sample_chain_contract(report: dict[str, Any] | None, path: str | None) -> dict[str, Any]:
+    if not report:
+        return missing(
+            path,
+            "Run build_no_caption_asr_sample_chain.py after the ASR smoke to prove the sample no-caption ASR output contract.",
+        )
+    observed = compact_offline_chain_validation(report) or {}
+    checks = {
+        "status": report.get("status") == "ok",
+        "source_evidence": report.get("sourceEvidence") == "authorized_extracted_audio_sample",
+        "decision": nested(report, "offlineRoute", "decision") == "use_asr_fallback",
+        "selected_source_kind": nested(report, "offlineRoute", "selectedSourceKind") == "openai_asr",
+        "asr_model": nested(report, "asr", "model") == "gpt-4o-transcribe",
+        "asr_used": nested(report, "asr", "used") is True,
+        "translation_model": nested(report, "translation", "model") == "gpt-5.4-mini",
+        "not_realtime_chain": offline_chain_check_state(report, "not_realtime_chain") == "pass",
+        "zh_vtt_timeline_alignment": offline_chain_check_state(report, "zh_vtt_timeline_alignment") == "pass",
+        "zh_srt_timeline_alignment": offline_chain_check_state(report, "zh_srt_timeline_alignment") == "pass",
+    }
+    observed["checks"] = checks
+    if all(checks.values()):
+        return passed(path, observed)
+    return failed(
+        path,
+        observed,
+        "Fix the ASR sample chain contract so it proves openai_asr, gpt-4o-transcribe, gpt-5.4-mini-shaped offline output, VTT/SRT timeline alignment, and not_realtime_chain.",
     )
 
 
@@ -1353,7 +1613,7 @@ def realtime_validation_state(
     if missing_checks:
         if require_stable_correction and "stable_correction_matches_realtime_draft_segment" in missing_checks:
             next_action = (
-                "Run gpt-5.5-mini stable correction on saved realtime deltas so caption_final uses the same "
+                "Run gpt-5.4-mini stable correction on saved realtime deltas so caption_final uses the same "
                 "segmentId as the realtime draft, then rerun validate_realtime_session.py with "
                 "--require-stable-correction."
             )
@@ -1382,7 +1642,7 @@ def realtime_validation_state(
         return failed(
             path,
             compact_realtime_validation(report),
-            "Run gpt-5.5-mini stable correction and validate realtime JSONL with --require-stable-correction.",
+            "Run gpt-5.4-mini stable correction and validate realtime JSONL with --require-stable-correction.",
         )
     return None
 
@@ -1436,6 +1696,7 @@ def compact_offline_chain_validation(report: dict[str, Any] | None) -> dict[str,
         "failedChecks": report.get("failedChecks") or [],
         "inputs": report.get("inputs"),
         "offlineRoute": report.get("offlineRoute"),
+        "sourceEvidence": report.get("sourceEvidence"),
         "notRealtimeChain": offline_chain_check_state(report, "not_realtime_chain"),
         "timelineAlignment": {
             "zhVtt": offline_chain_check_state(report, "zh_vtt_timeline_alignment"),
@@ -1443,6 +1704,30 @@ def compact_offline_chain_validation(report: dict[str, Any] | None) -> dict[str,
         },
         "translation": report.get("translation"),
         "asr": report.get("asr"),
+    }
+
+
+def compact_offline_asr_route_run(report: dict[str, Any] | None) -> dict[str, Any]:
+    if not report:
+        return {}
+    validation = report.get("validation") if isinstance(report.get("validation"), dict) else {}
+    offline_chain = validation.get("offlineChain") if isinstance(validation.get("offlineChain"), dict) else None
+    route_readiness = validation.get("routeReadiness") if isinstance(validation.get("routeReadiness"), dict) else None
+    return {
+        "status": report.get("status"),
+        "sunday": report.get("sunday"),
+        "sessionId": report.get("sessionId"),
+        "source": report.get("source"),
+        "models": report.get("models"),
+        "gcs": report.get("gcs"),
+        "failedSteps": report.get("failedSteps") or [],
+        "offlineChain": offline_chain,
+        "routeReadiness": route_readiness,
+        "secretFlags": {
+            "apiKeyMaterialIncluded": report.get("apiKeyMaterialIncluded"),
+            "secretResourceNamesIncluded": report.get("secretResourceNamesIncluded"),
+            "eventTokenIncluded": report.get("eventTokenIncluded"),
+        },
     }
 
 
@@ -1520,7 +1805,7 @@ def with_available_alternatives(observed: dict[str, Any], alternatives: list[str
     return {
         **observed,
         "availableButNotConfiguredModels": alternatives,
-        "alternativeModelPolicy": "Observed availability only; do not substitute for required gpt-5.5-mini without an explicit routing decision.",
+        "alternativeModelPolicy": "Observed availability only; do not substitute for required gpt-5.4-mini without an explicit routing decision.",
     }
 
 

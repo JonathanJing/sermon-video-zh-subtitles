@@ -99,6 +99,7 @@ class CollectProductionEvidenceMatrixTest(unittest.TestCase):
             audio = write_json(root / "audio.json", audio_source_preflight(prepared=True))
             server = write_json(root / "server-realtime.json", server_realtime_contract())
             web = write_json(root / "web-realtime.json", web_realtime_contract())
+            deployed = write_json(root / "deployed-webrtc.json", deployed_webrtc_session())
             live_1130_plan = write_json(root / "live-1130.json", live_1130_run_plan())
             handoff = write_json(root / "handoff.json", realtime_handoff_validation())
             public_view = write_json(root / "public-view.json", public_caption_view_runtime())
@@ -110,8 +111,16 @@ class CollectProductionEvidenceMatrixTest(unittest.TestCase):
             no_caption_plan = write_json(root / "no-caption-plan.json", no_caption_asr_plan())
             caption = write_json(root / "caption.json", readiness_report("use_caption_track"))
             asr_smoke = write_json(root / "asr-smoke.json", offline_asr_smoke(status="ok"))
-            asr_chain = write_json(root / "asr-chain.json", ok_offline_chain_validation("use_asr_fallback"))
+            asr_chain = write_json(
+                root / "asr-chain.json",
+                ok_offline_chain_validation("use_asr_fallback", source_evidence="real_no_caption_archive"),
+            )
+            asr_sample_chain = write_json(
+                root / "asr-sample-chain.json",
+                ok_offline_chain_validation("use_asr_fallback", source_evidence="authorized_extracted_audio_sample"),
+            )
             sunday_manifest = write_json(root / "sunday-manifest-validation.json", sunday_manifest_validation())
+            model_access = write_json(root / "model-access.json", ok_model_access_report("gpt-5.4-mini"))
 
             report = mod.collect_matrix(
                 args_for(
@@ -120,6 +129,7 @@ class CollectProductionEvidenceMatrixTest(unittest.TestCase):
                     audio=audio,
                     server=server,
                     web=web,
+                    deployed_webrtc=deployed,
                     live_1130_plan=live_1130_plan,
                     handoff=handoff,
                     public_view=public_view,
@@ -129,19 +139,37 @@ class CollectProductionEvidenceMatrixTest(unittest.TestCase):
                     worker_plan=worker_plan,
                     offline_chain_validation=offline_chain,
                     offline_asr_chain_validation=asr_chain,
+                    offline_asr_sample_chain_validation=asr_sample_chain,
                     no_caption_plan=no_caption_plan,
                     asr_smoke=asr_smoke,
                     sunday_manifest=sunday_manifest,
+                    model_access=model_access,
                     readiness=[caption],
                 )
             )
 
         self.assertEqual(report["status"], "complete")
-        self.assertEqual(report["summary"]["passed"], 18)
+        self.assertEqual(report["summary"]["passed"], 21)
         self.assertEqual(report["nextActions"], [])
         preflight_row = next(row for row in report["matrix"] if row["id"] == "cloud_run_api_preflight")
         self.assertEqual(preflight_row["observed"]["expectedRealtimeSession"]["audioSourceKind"], "ipad_mic")
         self.assertIn("realtime_local_session_metadata", preflight_row["observed"]["expectedChecks"])
+
+    def test_required_model_access_failure_blocks_matrix(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            model_access = write_json(root / "model-access.json", failed_model_access_report())
+            alternative = write_json(root / "alternative-model-access.json", ok_model_access_report("gpt-5.5"))
+
+            report = mod.collect_matrix(
+                args_for(model_access=model_access, alternative_model_access=[alternative])
+            )
+
+        row = next(row for row in report["matrix"] if row["id"] == "required_text_model_access")
+        self.assertEqual(row["state"], "fail")
+        self.assertEqual(row["observed"]["models"], ["gpt-5.4-mini"])
+        self.assertIn("gpt-5.5", row["observed"]["availableButNotConfiguredModels"])
+        self.assertIn("gpt-5.4-mini model access", row["nextAction"])
 
     def test_caption_readiness_without_offline_chain_validation_is_warning(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -163,7 +191,7 @@ class CollectProductionEvidenceMatrixTest(unittest.TestCase):
 
         row = next(row for row in report["matrix"] if row["id"] == "offline_caption_route")
         self.assertEqual(row["state"], "pass")
-        self.assertEqual(row["observed"]["translation"]["model"], "gpt-5.5-mini")
+        self.assertEqual(row["observed"]["translation"]["model"], "gpt-5.4-mini")
         self.assertEqual(row["observed"]["notRealtimeChain"], "pass")
 
     def test_no_caption_asr_fallback_plan_report_marks_plan_passed(self):
@@ -176,7 +204,8 @@ class CollectProductionEvidenceMatrixTest(unittest.TestCase):
         row = next(row for row in report["matrix"] if row["id"] == "offline_asr_fallback_plan")
         self.assertEqual(row["state"], "pass")
         self.assertEqual(row["observed"]["requiredModels"]["offlineAsr"], "gpt-4o-transcribe")
-        self.assertEqual(row["observed"]["requiredModels"]["offlineTranslation"], "gpt-5.5-mini")
+        self.assertEqual(row["observed"]["requiredModels"]["offlineTranslation"], "gpt-5.4-mini")
+        self.assertTrue(row["observed"]["checks"]["runnerCommand"])
         self.assertTrue(row["observed"]["checks"]["offlineValidationCommand"])
 
     def test_no_caption_asr_fallback_plan_fails_without_not_realtime_guard(self):
@@ -366,6 +395,49 @@ class CollectProductionEvidenceMatrixTest(unittest.TestCase):
             ["await startBrowserSpeechMicFallback();"],
         )
 
+    def test_deployed_webrtc_session_report_marks_session_passed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            deployed = write_json(root / "deployed-webrtc.json", deployed_webrtc_session())
+
+            report = mod.collect_matrix(args_for(deployed_webrtc=deployed))
+
+        row = next(row for row in report["matrix"] if row["id"] == "deployed_webrtc_session")
+        self.assertEqual(row["state"], "pass")
+        self.assertTrue(row["observed"]["realtimeSession"]["clientSecretReturned"])
+        self.assertTrue(row["observed"]["realtimeSession"]["eventTokenReturned"])
+        self.assertEqual(row["observed"]["realtimeSession"]["model"], "gpt-realtime-translate")
+        self.assertEqual(row["observed"]["realtimeSession"]["targetLanguage"], "zh")
+        self.assertEqual(row["observed"]["realtimeSession"]["audioSourceKind"], "ipad_mic")
+        self.assertEqual(row["observed"]["realtimeSession"]["webrtcUrl"], "https://api.openai.com/v1/realtime/calls")
+        self.assertTrue(row["observed"]["checks"]["no_secret_flags"])
+
+    def test_deployed_webrtc_session_report_rejects_old_translation_calls_url(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            data = deployed_webrtc_session()
+            data["realtimeSession"]["webrtcUrl"] = "https://api.openai.com/v1/realtime/translations/calls"
+            deployed = write_json(root / "deployed-webrtc.json", data)
+
+            report = mod.collect_matrix(args_for(deployed_webrtc=deployed))
+
+        row = next(row for row in report["matrix"] if row["id"] == "deployed_webrtc_session")
+        self.assertEqual(row["state"], "fail")
+        self.assertFalse(row["observed"]["checks"]["webrtc_calls_url"])
+
+    def test_deployed_webrtc_session_report_rejects_secret_leak_flags(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            data = deployed_webrtc_session()
+            data["clientSecretIncluded"] = True
+            deployed = write_json(root / "deployed-webrtc.json", data)
+
+            report = mod.collect_matrix(args_for(deployed_webrtc=deployed))
+
+        row = next(row for row in report["matrix"] if row["id"] == "deployed_webrtc_session")
+        self.assertEqual(row["state"], "fail")
+        self.assertFalse(row["observed"]["checks"]["no_secret_flags"])
+
     def test_live_1130_run_plan_report_marks_operator_plan_passed(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -474,11 +546,11 @@ class CollectProductionEvidenceMatrixTest(unittest.TestCase):
 
         row = next(row for row in report["matrix"] if row["id"] == "stable_correction_contract")
         self.assertEqual(row["state"], "pass")
-        self.assertEqual(row["observed"]["models"]["stableCorrection"], "gpt-5.5-mini")
+        self.assertEqual(row["observed"]["models"]["stableCorrection"], "gpt-5.4-mini")
         self.assertTrue(row["observed"]["stableEvent"]["hasSegmentId"])
-        self.assertTrue(row["observed"]["stableModelPolicy"]["allowsGpt55Mini"])
+        self.assertTrue(row["observed"]["stableModelPolicy"]["allowsRequiredMini"])
         self.assertTrue(row["observed"]["stableModelPolicy"]["rejectsRealtimeTranslate"])
-        self.assertTrue(row["observed"]["stableModelPolicy"]["rejectsGpt55Substitute"])
+        self.assertTrue(row["observed"]["stableModelPolicy"]["rejectsAlternativeSubstitute"])
 
     def test_stable_correction_contract_report_fails_without_segment_id_proof(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -652,7 +724,7 @@ class CollectProductionEvidenceMatrixTest(unittest.TestCase):
 
         row = next(row for row in report["matrix"] if row["id"] == "offline_caption_route")
         self.assertEqual(row["state"], "fail")
-        self.assertEqual(row["observed"]["model"], "gpt-5.5-mini")
+        self.assertEqual(row["observed"]["model"], "gpt-5.4-mini")
         self.assertEqual(row["observed"]["httpStatus"], 404)
         self.assertEqual(row["observed"]["failureKind"], "model_unavailable_or_not_found")
         self.assertIn("model/access", row["nextAction"])
@@ -668,7 +740,7 @@ class CollectProductionEvidenceMatrixTest(unittest.TestCase):
         row = next(row for row in report["matrix"] if row["id"] == "offline_caption_route")
         self.assertEqual(row["state"], "fail")
         self.assertTrue(row["evidence"].endswith("translation.json"))
-        self.assertEqual(row["observed"]["model"], "gpt-5.5-mini")
+        self.assertEqual(row["observed"]["model"], "gpt-5.4-mini")
         self.assertEqual(row["observed"]["failureKind"], "model_unavailable_or_not_found")
         self.assertEqual(
             row["observed"]["offlineChainValidation"]["failedChecks"],
@@ -686,7 +758,7 @@ class CollectProductionEvidenceMatrixTest(unittest.TestCase):
         caption = next(row for row in report["matrix"] if row["id"] == "offline_caption_route")
         self.assertEqual(stable["state"], "fail")
         self.assertEqual(caption["state"], "fail")
-        self.assertEqual(stable["observed"]["model"], "gpt-5.5-mini")
+        self.assertEqual(stable["observed"]["model"], "gpt-5.4-mini")
         self.assertEqual(stable["observed"]["failureKind"], "model_unavailable_or_not_found")
         self.assertEqual(caption["observed"]["failureKind"], "model_unavailable_or_not_found")
         self.assertEqual(caption["observed"]["httpStatus"], 404)
@@ -703,7 +775,7 @@ class CollectProductionEvidenceMatrixTest(unittest.TestCase):
         caption = next(row for row in report["matrix"] if row["id"] == "offline_caption_route")
         self.assertEqual(stable["state"], "fail")
         self.assertEqual(caption["state"], "fail")
-        self.assertEqual(stable["observed"]["model"], "gpt-5.5-mini")
+        self.assertEqual(stable["observed"]["model"], "gpt-5.4-mini")
         self.assertEqual(stable["observed"]["availableButNotConfiguredModels"], ["gpt-5.5"])
         self.assertIn("do not substitute", stable["observed"]["alternativeModelPolicy"])
 
@@ -845,7 +917,10 @@ class CollectProductionEvidenceMatrixTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             asr_smoke = write_json(root / "asr-smoke.json", offline_asr_smoke(status="ok"))
-            asr_chain = write_json(root / "asr-chain.json", ok_offline_chain_validation("use_asr_fallback"))
+            asr_chain = write_json(
+                root / "asr-chain.json",
+                ok_offline_chain_validation("use_asr_fallback", source_evidence="real_no_caption_archive"),
+            )
 
             report = mod.collect_matrix(
                 args_for(asr_smoke=asr_smoke, offline_asr_chain_validation=asr_chain)
@@ -856,9 +931,76 @@ class CollectProductionEvidenceMatrixTest(unittest.TestCase):
         self.assertEqual(row["observed"]["offlineRoute"]["decision"], "use_asr_fallback")
         self.assertEqual(row["observed"]["asr"]["model"], "gpt-4o-transcribe")
         self.assertTrue(row["observed"]["asr"]["used"])
-        self.assertEqual(row["observed"]["translation"]["model"], "gpt-5.5-mini")
+        self.assertEqual(row["observed"]["translation"]["model"], "gpt-5.4-mini")
         self.assertEqual(row["observed"]["notRealtimeChain"], "pass")
         self.assertEqual(row["observed"]["asrSmoke"]["cueCount"], 1)
+
+    def test_no_caption_asr_route_run_report_can_prove_asr_route(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            route_run = write_json(
+                root / "route-run.json",
+                no_caption_asr_route_run(source_evidence="real_no_caption_archive"),
+            )
+
+            report = mod.collect_matrix(args_for(offline_asr_route_run=route_run))
+
+        row = next(row for row in report["matrix"] if row["id"] == "offline_asr_route")
+        self.assertEqual(row["state"], "pass")
+        self.assertEqual(row["observed"]["offlineChain"]["sourceEvidence"], "real_no_caption_archive")
+        self.assertEqual(row["observed"]["offlineChain"]["asr"]["model"], "gpt-4o-transcribe")
+        self.assertEqual(row["observed"]["offlineChain"]["translation"]["model"], "gpt-5.4-mini")
+        self.assertTrue(row["observed"]["checks"]["not_realtime_chain"])
+        self.assertTrue(row["observed"]["checks"]["route_readiness_status"])
+
+    def test_no_caption_asr_route_run_sample_evidence_is_warning_not_pass(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            route_run = write_json(
+                root / "route-run.json",
+                no_caption_asr_route_run(source_evidence="authorized_extracted_audio_sample"),
+            )
+
+            report = mod.collect_matrix(args_for(offline_asr_route_run=route_run))
+
+        row = next(row for row in report["matrix"] if row["id"] == "offline_asr_route")
+        self.assertEqual(row["state"], "warn")
+        self.assertEqual(row["observed"]["offlineChain"]["sourceEvidence"], "authorized_extracted_audio_sample")
+        self.assertFalse(row["observed"]["checks"]["source_evidence"])
+        self.assertIn("real no-caption YouTube live archive", row["nextAction"])
+
+    def test_asr_sample_chain_validation_is_warning_not_production_pass(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            asr_smoke = write_json(root / "asr-smoke.json", offline_asr_smoke(status="ok"))
+            asr_chain = write_json(
+                root / "asr-chain.json",
+                ok_offline_chain_validation("use_asr_fallback", source_evidence="authorized_extracted_audio_sample"),
+            )
+
+            report = mod.collect_matrix(
+                args_for(asr_smoke=asr_smoke, offline_asr_chain_validation=asr_chain)
+            )
+
+        row = next(row for row in report["matrix"] if row["id"] == "offline_asr_route")
+        self.assertEqual(row["state"], "warn")
+        self.assertEqual(row["observed"]["sourceEvidence"], "authorized_extracted_audio_sample")
+        self.assertIn("real no-caption YouTube archive", row["nextAction"])
+
+    def test_asr_sample_chain_contract_row_passes_for_authorized_sample(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            asr_sample_chain = write_json(
+                root / "asr-sample-chain.json",
+                ok_offline_chain_validation("use_asr_fallback", source_evidence="authorized_extracted_audio_sample"),
+            )
+
+            report = mod.collect_matrix(args_for(offline_asr_sample_chain_validation=asr_sample_chain))
+
+        row = next(row for row in report["matrix"] if row["id"] == "offline_asr_sample_chain_contract")
+        self.assertEqual(row["state"], "pass")
+        self.assertEqual(row["observed"]["sourceEvidence"], "authorized_extracted_audio_sample")
+        self.assertTrue(row["observed"]["checks"]["not_realtime_chain"])
 
     def test_asr_chain_validation_must_be_for_asr_route(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -956,7 +1098,7 @@ class CollectProductionEvidenceMatrixTest(unittest.TestCase):
         self.assertEqual(row["observed"]["failedChecks"], ["caption_readable_vtt"])
 
 
-def args_for(config=None, preflight=None, audio=None, server=None, web=None, live_1130_plan=None, handoff=None, public_view=None, sse=None, realtime_openai=None, realtime_validation=None, stable_contract=None, archive=None, worker_plan=None, offline_chain_validation=None, offline_asr_chain_validation=None, no_caption_plan=None, asr_smoke=None, translation=None, sunday_manifest=None, gcs_publish_plan=None, model_access=None, alternative_model_access=None, plan=None, execution=None, readiness=None):
+def args_for(config=None, preflight=None, audio=None, server=None, web=None, deployed_webrtc=None, live_1130_plan=None, handoff=None, public_view=None, sse=None, realtime_openai=None, realtime_validation=None, stable_contract=None, archive=None, worker_plan=None, offline_chain_validation=None, offline_asr_chain_validation=None, offline_asr_route_run=None, offline_asr_sample_chain_validation=None, no_caption_plan=None, asr_smoke=None, translation=None, sunday_manifest=None, gcs_publish_plan=None, model_access=None, alternative_model_access=None, plan=None, execution=None, readiness=None):
     return Namespace(
         production_readiness_report=[str(path) for path in readiness or []],
         cloud_run_config_report=str(config) if config else None,
@@ -964,6 +1106,7 @@ def args_for(config=None, preflight=None, audio=None, server=None, web=None, liv
         realtime_audio_source_preflight_report=str(audio) if audio else None,
         server_realtime_contract_report=str(server) if server else None,
         web_realtime_contract_report=str(web) if web else None,
+        deployed_webrtc_session_report=str(deployed_webrtc) if deployed_webrtc else None,
         live_1130_run_plan_report=str(live_1130_plan) if live_1130_plan else None,
         realtime_handoff_validation_report=str(handoff) if handoff else None,
         public_caption_view_runtime_report=str(public_view) if public_view else None,
@@ -975,6 +1118,8 @@ def args_for(config=None, preflight=None, audio=None, server=None, web=None, liv
         offline_worker_plan_report=str(worker_plan) if worker_plan else None,
         offline_chain_validation_report=str(offline_chain_validation) if offline_chain_validation else None,
         offline_asr_chain_validation_report=str(offline_asr_chain_validation) if offline_asr_chain_validation else None,
+        offline_asr_route_run_report=str(offline_asr_route_run) if offline_asr_route_run else None,
+        offline_asr_sample_chain_validation_report=str(offline_asr_sample_chain_validation) if offline_asr_sample_chain_validation else None,
         no_caption_asr_plan_report=str(no_caption_plan) if no_caption_plan else None,
         offline_asr_smoke_report=str(asr_smoke) if asr_smoke else None,
         offline_translation_report=str(translation) if translation else None,
@@ -1083,9 +1228,34 @@ def web_realtime_contract(*, status: str = "ok"):
         },
         "models": {
             "realtimeDraft": "gpt-realtime-translate",
-            "stableCorrection": "gpt-5.5-mini",
+            "stableCorrection": "gpt-5.4-mini",
         },
         "path": "ipad/iphone mic -> browser WebRTC -> gpt-realtime-translate -> backend session events -> public caption SSE",
+    }
+
+
+def deployed_webrtc_session(*, status: str = "ok"):
+    return {
+        "status": status,
+        "failedChecks": [] if status == "ok" else ["create_webrtc_realtime_session"],
+        "apiKeyMaterialIncluded": False,
+        "secretResourceNamesIncluded": False,
+        "eventTokenIncluded": False,
+        "clientSecretIncluded": False,
+        "baseUrl": "https://example.run.app",
+        "generatedAt": "2026-06-25T15:22:12+00:00",
+        "realtimeSession": {
+            "audioSourceKind": "ipad_mic",
+            "clientSecretExpiresAtReturned": True,
+            "clientSecretReturned": status == "ok",
+            "eventTokenReturned": status == "ok",
+            "httpStatus": 201 if status == "ok" else 502,
+            "model": "gpt-realtime-translate",
+            "ready": status == "ok",
+            "sessionId": "rt_test",
+            "targetLanguage": "zh",
+            "webrtcUrl": "https://api.openai.com/v1/realtime/calls",
+        },
     }
 
 
@@ -1096,7 +1266,7 @@ def public_caption_view_runtime(*, status: str = "ok"):
         "failedChecks": failed,
         "models": {
             "realtimeDraft": "gpt-realtime-translate",
-            "stableCorrection": "gpt-5.5-mini",
+            "stableCorrection": "gpt-5.4-mini",
         },
         "path": "public caption view receives realtime session events and replaces draft with stable correction",
         "probe": {
@@ -1159,11 +1329,11 @@ def live_1130_run_plan():
         },
         "modelPolicy": {
             "realtimeDraftModel": "gpt-realtime-translate",
-            "stableCorrectionModel": "gpt-5.5-mini",
+            "stableCorrectionModel": "gpt-5.4-mini",
             "offlineAsrModel": "gpt-4o-transcribe",
-            "offlineTranslationModel": "gpt-5.5-mini",
+            "offlineTranslationModel": "gpt-5.4-mini",
             "forbiddenOfflineModel": "gpt-realtime-translate",
-            "doNotSubstituteGpt55ForGpt55Mini": True,
+            "doNotSubstituteAlternativeForRequiredMini": True,
         },
         "operatorChoices": [
             {
@@ -1206,9 +1376,9 @@ def realtime_handoff_validation():
         ],
         "models": {
             "realtimeDraftModel": "gpt-realtime-translate",
-            "stableCorrectionModel": "gpt-5.5-mini",
+            "stableCorrectionModel": "gpt-5.4-mini",
             "offlineAsrModel": "gpt-4o-transcribe",
-            "offlineTranslationModel": "gpt-5.5-mini",
+            "offlineTranslationModel": "gpt-5.4-mini",
             "forbiddenOfflineModel": "gpt-realtime-translate",
         },
         "apiKeyMaterialIncluded": False,
@@ -1229,8 +1399,8 @@ def stable_correction_contract(*, status: str = "ok"):
                 "observed": {
                     "count": 1,
                     "type": "caption_final",
-                    "source": "gpt-5.5-mini-stable-correction",
-                    "model": "gpt-5.5-mini",
+                    "source": "gpt-5.4-mini-stable-correction",
+                    "model": "gpt-5.4-mini",
                     "final": True,
                     "segmentId": "seg_1",
                     "hasSegmentId": True,
@@ -1242,16 +1412,16 @@ def stable_correction_contract(*, status: str = "ok"):
                 "name": "stable_correction_model_policy",
                 "state": "pass",
                 "observed": {
-                    "allowsGpt55Mini": True,
+                    "allowsRequiredMini": True,
                     "rejectsRealtimeTranslate": True,
-                    "rejectsGpt55Substitute": True,
+                    "rejectsAlternativeSubstitute": True,
                 },
             },
         ],
         "models": {
-            "stableCorrection": "gpt-5.5-mini",
+            "stableCorrection": "gpt-5.4-mini",
         },
-        "path": "saved realtime English/Chinese deltas -> gpt-5.5-mini -> caption_final stable corrections -> backend session events",
+        "path": "saved realtime English/Chinese deltas -> gpt-5.4-mini -> caption_final stable corrections -> backend session events",
     }
 
 
@@ -1432,9 +1602,19 @@ def no_caption_asr_plan():
         },
         "requiredModels": {
             "offlineAsr": "gpt-4o-transcribe",
-            "offlineTranslation": "gpt-5.5-mini",
+            "offlineTranslation": "gpt-5.4-mini",
             "forbiddenOfflineModel": "gpt-realtime-translate",
         },
+        "runnerCommand": [
+            "python3",
+            "scripts/run_no_caption_archive_asr_route.py",
+            "--asr-model",
+            "gpt-4o-transcribe",
+            "--translation-model",
+            "gpt-5.4-mini",
+            "--out",
+            "artifacts/evidence/no-caption-asr-route-run.json",
+        ],
         "commands": [
             [
                 "python3",
@@ -1453,7 +1633,7 @@ def no_caption_asr_plan():
                 "python3",
                 "scripts/translate_playback_with_openai.py",
                 "--model",
-                "gpt-5.5-mini",
+                "gpt-5.4-mini",
             ],
             [
                 "python3",
@@ -1466,15 +1646,15 @@ def no_caption_asr_plan():
                 "--expected-asr-model",
                 "gpt-4o-transcribe",
                 "--expected-translation-model",
-                "gpt-5.5-mini",
+                "gpt-5.4-mini",
             ],
-            ["python3", "scripts/validate_production_readiness.py"],
+            ["python3", "scripts/validate_production_readiness.py", "--allow-missing-realtime"],
         ],
         "passCriteria": [
             "run_offline_archive_preflight.py reports decision=use_asr_fallback.",
             "Prepared offline report has caption_source.kind=openai_asr.",
             "ASR model is gpt-4o-transcribe.",
-            "Chinese translation model is gpt-5.5-mini.",
+            "Chinese translation model is gpt-5.4-mini.",
             "validate_offline_chain.py status is ok and not_realtime_chain passes.",
             "validate_production_readiness.py output records offlineRoute.decision=use_asr_fallback.",
         ],
@@ -1510,7 +1690,7 @@ def failed_translation_report():
     return {
         "status": "failed",
         "failureStage": "openai_translation",
-        "model": "gpt-5.5-mini",
+        "model": "gpt-5.4-mini",
         "httpStatus": 404,
         "failureKind": "model_unavailable_or_not_found",
         "error": "The model does not exist or you do not have access to it.",
@@ -1540,10 +1720,11 @@ def failed_offline_chain_validation():
     }
 
 
-def ok_offline_chain_validation(decision: str):
+def ok_offline_chain_validation(decision: str, *, source_evidence: str = "unspecified"):
     return {
         "schemaVersion": 1,
         "status": "ok",
+        "sourceEvidence": source_evidence,
         "failedChecks": [],
         "checks": [
             {"name": "not_realtime_chain", "state": "pass", "observed": None},
@@ -1558,7 +1739,7 @@ def ok_offline_chain_validation(decision: str):
             "audioExtractionAttempted": decision == "use_asr_fallback",
         },
         "translation": {
-            "model": "gpt-5.5-mini",
+            "model": "gpt-5.4-mini",
             "translatedSegments": 12,
             "totalSegments": 12,
         },
@@ -1574,8 +1755,8 @@ def ok_offline_chain_validation(decision: str):
 def failed_model_access_report():
     return {
         "status": "failed",
-        "models": ["gpt-5.5-mini"],
-        "failedChecks": ["responses_model:gpt-5.5-mini"],
+        "models": ["gpt-5.4-mini"],
+        "failedChecks": ["responses_model:gpt-5.4-mini"],
         "checks": [
             {
                 "name": "api_key_secret_access",
@@ -1583,11 +1764,11 @@ def failed_model_access_report():
                 "observed": "secret value read from Secret Manager",
             },
             {
-                "name": "responses_model:gpt-5.5-mini",
+                "name": "responses_model:gpt-5.4-mini",
                 "state": "fail",
                 "observed": {
                     "status": "failed",
-                    "model": "gpt-5.5-mini",
+                    "model": "gpt-5.4-mini",
                     "endpoint": "responses",
                     "httpStatus": 404,
                     "failureKind": "model_unavailable_or_not_found",
@@ -1637,6 +1818,59 @@ def offline_asr_smoke(*, status: str):
         "error": None if status == "ok" else "ASR failed",
         "apiKeyMaterialIncluded": False,
         "secretResourceNamesIncluded": False,
+    }
+
+
+def no_caption_asr_route_run(*, source_evidence: str):
+    offline_chain = ok_offline_chain_validation(
+        "use_asr_fallback",
+        source_evidence=source_evidence,
+    )
+    return {
+        "schemaVersion": 1,
+        "status": "ok",
+        "sunday": "2026-06-28",
+        "sessionId": "no-caption-asr-route",
+        "source": {
+            "kind": "youtube_live_archive",
+            "url": "https://youtube.test/watch?v=abc123",
+            "captionRequirement": "No requested English caption track is available.",
+        },
+        "models": {
+            "offlineAsr": "gpt-4o-transcribe",
+            "offlineTranslation": "gpt-5.4-mini",
+            "forbiddenOfflineModel": "gpt-realtime-translate",
+        },
+        "gcs": {
+            "bucket": "sermon-zh-artifacts-ai-for-god",
+            "prefix": "sundays/2026-06-28/runs/no-caption-asr-route",
+            "apply": False,
+        },
+        "failedSteps": [],
+        "validation": {
+            "offlineChain": {
+                "status": offline_chain["status"],
+                "failedChecks": offline_chain["failedChecks"],
+                "offlineRoute": offline_chain["offlineRoute"],
+                "sourceEvidence": offline_chain["sourceEvidence"],
+                "asr": offline_chain["asr"],
+                "translation": offline_chain["translation"],
+                "notRealtimeChain": "pass",
+                "timelineAlignment": {"zhVtt": "pass", "zhSrt": "pass"},
+            },
+            "routeReadiness": {
+                "status": "ok",
+                "failedChecks": [],
+                "warnings": ["realtime_session"],
+                "secretFlags": {
+                    "apiKeyMaterialIncluded": False,
+                    "secretResourceNamesIncluded": False,
+                },
+            },
+        },
+        "apiKeyMaterialIncluded": False,
+        "secretResourceNamesIncluded": False,
+        "eventTokenIncluded": False,
     }
 
 

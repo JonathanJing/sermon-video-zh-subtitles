@@ -126,10 +126,10 @@ REQUIREMENTS = [
     },
     {
         "name": "stable_correction_display",
-        "description": "Delayed gpt-5.5-mini stable corrections replace realtime draft segments.",
+        "description": "Delayed gpt-5.4-mini stable corrections replace realtime draft segments.",
         "needles": [
             'String(event.source || "").includes("stable-correction")',
-            'segment.note = "gpt-5.5-mini 稳定修正版。"',
+            'segment.note = "gpt-5.4-mini 稳定修正版。"',
             "segment.stable = Boolean(segment.stable || isStableCorrection)",
         ],
     },
@@ -247,7 +247,7 @@ def validate_web_realtime_contract(app_js: Path, *, node_bin: str = "node") -> d
         "normalizationProbe": probe,
         "models": {
             "realtimeDraft": "gpt-realtime-translate",
-            "stableCorrection": "gpt-5.5-mini",
+            "stableCorrection": "gpt-5.4-mini",
         },
         "path": "ipad/iphone mic -> browser WebRTC -> gpt-realtime-translate -> backend session events -> public caption SSE",
         "apiKeyMaterialIncluded": False,
@@ -266,7 +266,7 @@ def validate_web_realtime_contract(app_js: Path, *, node_bin: str = "node") -> d
                 "publicView": "handleRealtimeCaptionEvent -> updateRealtimeEnglish",
             },
             {
-                "sourceEvent": "gpt-5.5-mini stable correction",
+                "sourceEvent": "gpt-5.4-mini stable correction",
                 "backendEvent": "caption_final",
                 "publicView": "same segmentId replaces realtime draft",
             },

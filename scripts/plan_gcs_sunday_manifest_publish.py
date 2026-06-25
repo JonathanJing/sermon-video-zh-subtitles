@@ -52,8 +52,19 @@ def parse_args() -> argparse.Namespace:
         help="Run session id under <prefix>/<sunday>/runs/<session-id>/.",
     )
     parser.add_argument("--apply", action="store_true", help="Execute gcloud storage cp commands.")
+    parser.add_argument(
+        "--confirm-production-stable",
+        action="store_true",
+        help="Required with --apply when writing the production stable sundays/<date>/cloud-manifest.json pointer.",
+    )
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.apply and is_production_stable_prefix(args.prefix) and not args.confirm_production_stable:
+        raise SystemExit(
+            "--confirm-production-stable is required when --apply writes the production "
+            "sundays/<date>/cloud-manifest.json pointer"
+        )
+    return args
 
 
 def build_publish_plan(
@@ -337,6 +348,10 @@ def normalize_prefix(prefix: str) -> str:
     if any(part in {".", ".."} for part in clean.split("/") if part):
         raise SystemExit("--prefix cannot contain . or ..")
     return clean
+
+
+def is_production_stable_prefix(prefix: str) -> bool:
+    return normalize_prefix(prefix) == "sundays"
 
 
 def sanitize_path_part(value: str) -> str:

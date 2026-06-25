@@ -14,7 +14,7 @@ from typing import Any
 
 
 EXPECTED_REALTIME_MODEL = "gpt-realtime-translate"
-EXPECTED_STABLE_CORRECTION_MODEL = "gpt-5.5-mini"
+EXPECTED_STABLE_CORRECTION_MODEL = "gpt-5.4-mini"
 EXPECTED_TARGET_LANGUAGE = "zh"
 ALLOWED_AUDIO_SOURCE_KINDS = {
     "ipad_mic",
@@ -28,7 +28,7 @@ INPUT_TRANSCRIPT_SOURCES = REALTIME_SOURCES | {
     "openai_realtime_transcription_ws",
     "openai_audio_transcription_fallback",
 }
-STABLE_CORRECTION_SOURCE = "gpt-5.5-mini-stable-correction"
+STABLE_CORRECTION_SOURCE = "gpt-5.4-mini-stable-correction"
 INPUT_TYPES = {"input_transcript_delta", "input_transcript_final"}
 CAPTION_TYPES = {"caption_delta", "caption_final"}
 SECRET_PATTERNS = [
@@ -92,7 +92,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--require-stable-correction",
         action="store_true",
-        help="Require at least one gpt-5.5-mini stable correction caption_final event.",
+        help="Require at least one gpt-5.4-mini stable correction caption_final event.",
     )
     parser.add_argument("--min-caption-events", type=int, default=1)
     parser.add_argument("--min-input-events", type=int, default=1)

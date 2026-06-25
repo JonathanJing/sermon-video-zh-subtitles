@@ -181,7 +181,7 @@ python3 scripts/realtime_openai_smoke_test.py \
 ```
 
 Then run the stabilized realtime smoke. This creates the backend session itself,
-keeps the event token in memory only, posts one `gpt-5.5-mini` stable correction,
+keeps the event token in memory only, posts one `gpt-5.4-mini` stable correction,
 and validates the saved realtime JSONL with `--require-stable-correction`:
 
 ```bash
@@ -200,7 +200,7 @@ Required checks for the stabilized report:
 
 - `status` is `ok`.
 - `models.realtimeDraft` is `gpt-realtime-translate`.
-- `models.stableCorrection` is `gpt-5.5-mini`.
+- `models.stableCorrection` is `gpt-5.4-mini`.
 - `stableCorrection.postedStableCorrections` is greater than `0`.
 - `validation.status` is `ok`.
 - `eventTokenIncluded`, `apiKeyMaterialIncluded`, and `secretResourceNamesIncluded` are all `false`.
@@ -208,7 +208,7 @@ Required checks for the stabilized report:
 For the 11:30 live run, use the live-session wrapper instead of separate worker
 and stabilizer commands. It creates the backend session, keeps the event token in
 memory, streams the authorized source through `gpt-realtime-translate`, and runs
-`gpt-5.5-mini` stable corrections against the saved realtime JSONL:
+`gpt-5.4-mini` stable corrections against the saved realtime JSONL:
 
 ```bash
 python3 scripts/run_realtime_live_session.py \
@@ -242,7 +242,7 @@ python3 scripts/run_realtime_stabilizer_loop.py \
 ```
 
 The loop writes `<browser_session_id>.model-access-preflight.json` first. If
-`gpt-5.5-mini` is unavailable through OpenAI Responses, it exits before reading
+`gpt-5.4-mini` is unavailable through OpenAI Responses, it exits before reading
 the event log or posting corrections; the low-latency `gpt-realtime-translate`
 draft session should keep running.
 
@@ -285,13 +285,13 @@ the realtime session id, you can pass `--realtime-session-id` instead of
 that exact JSONL URI is used. Use the live-session report for the 11:30
 production gate; use the stabilized smoke report for rehearsal evidence. In
 both cases, the realtime JSONL must already include at least one
-`gpt-5.5-mini` stable correction event. If the production-readiness validator
+`gpt-5.4-mini` stable correction event. If the production-readiness validator
 exits before writing its report, the bundle writes a minimal failed report and
 continues with matrix/audit generation so the operator still gets one status
 board. If matrix generation exits before writing its report, the bundle writes a
 minimal incomplete matrix and still runs the goal audit.
 Alternative model access reports are recorded only as side evidence; do not treat
-`gpt-5.5` availability as a substitute for required `gpt-5.5-mini` access.
+`gpt-5.5` availability as a substitute for required `gpt-5.4-mini` access.
 
 ## Rollback
 

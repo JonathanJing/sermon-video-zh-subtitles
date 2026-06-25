@@ -131,7 +131,7 @@ def live_plan(*, remove_browser_evidence=False, remove_asr_model=False):
     no_caption = [
         "If requested English captions are absent, extract authorized archive audio.",
         "Transcribe with gpt-4o-transcribe.",
-        "Translate with gpt-5.5-mini.",
+        "Translate with gpt-5.4-mini.",
         "Validate not_realtime_chain before publishing.",
     ]
     if remove_asr_model:
@@ -141,9 +141,9 @@ def live_plan(*, remove_browser_evidence=False, remove_asr_model=False):
         "status": "ready_for_operator_review",
         "modelPolicy": {
             "realtimeDraftModel": "gpt-realtime-translate",
-            "stableCorrectionModel": "gpt-5.5-mini",
+            "stableCorrectionModel": "gpt-5.4-mini",
             "offlineAsrModel": "gpt-4o-transcribe",
-            "offlineTranslationModel": "gpt-5.5-mini",
+            "offlineTranslationModel": "gpt-5.4-mini",
             "forbiddenOfflineModel": "gpt-realtime-translate",
         },
         "operatorChoices": [
@@ -168,7 +168,7 @@ def live_plan(*, remove_browser_evidence=False, remove_asr_model=False):
                     "--realtime-model",
                     "gpt-realtime-translate",
                     "--stable-model",
-                    "gpt-5.5-mini",
+                    "gpt-5.4-mini",
                 ],
             },
         ],
@@ -185,7 +185,7 @@ def live_plan(*, remove_browser_evidence=False, remove_asr_model=False):
                 "--expected-model",
                 "gpt-realtime-translate",
                 "--expected-stable-model",
-                "gpt-5.5-mini",
+                "gpt-5.4-mini",
                 "--require-stable-correction",
             ],
         ],
@@ -193,7 +193,7 @@ def live_plan(*, remove_browser_evidence=False, remove_asr_model=False):
             "trigger": "Run only after the YouTube live archive is available.",
             "captionFirst": [
                 "Try requested English captions/VTT first.",
-                "Translate with gpt-5.5-mini.",
+                "Translate with gpt-5.4-mini.",
                 "Export zh VTT/SRT/playback JS/GCS manifest.",
             ],
             "noCaptionFallback": no_caption,
@@ -240,9 +240,19 @@ def go_live_sequence(live, *, remove_asr_stage=False, incomplete_asr_stage=False
             "id": "real_no_caption_asr_validation",
             "state": "needs_real_no_caption_archive",
             "commands": [
+                [
+                    "python3",
+                    "scripts/run_no_caption_archive_asr_route.py",
+                    "--asr-model",
+                    "gpt-4o-transcribe",
+                    "--translation-model",
+                    "gpt-5.4-mini",
+                ],
+            ],
+            "expandedCommands": [
                 ["python3", "scripts/run_offline_archive_preflight.py", "--asr-model", "gpt-4o-transcribe"],
                 ["python3", "scripts/prepare_live_link_playback.py", "--asr-model", "gpt-4o-transcribe"],
-                ["python3", "scripts/translate_playback_with_openai.py", "--model", "gpt-5.5-mini"],
+                ["python3", "scripts/translate_playback_with_openai.py", "--model", "gpt-5.4-mini"],
                 ["python3", "scripts/export_playback_captions.py", "--stem", "sermon.zh.live-aligned"],
                 [
                     "python3",
@@ -250,7 +260,7 @@ def go_live_sequence(live, *, remove_asr_stage=False, incomplete_asr_stage=False
                     "--expected-asr-model",
                     "gpt-4o-transcribe",
                     "--expected-translation-model",
-                    "gpt-5.5-mini",
+                    "gpt-5.4-mini",
                     "--out",
                     "artifacts/evidence/no-caption-offline-chain-validation.json",
                 ],
@@ -258,7 +268,7 @@ def go_live_sequence(live, *, remove_asr_stage=False, incomplete_asr_stage=False
             ],
             "requiredModels": {
                 "offlineAsr": "gpt-4o-transcribe",
-                "offlineTranslation": "gpt-5.5-mini",
+                "offlineTranslation": "gpt-5.4-mini",
                 "forbiddenOfflineModel": "gpt-realtime-translate",
             },
             "requiredReports": [

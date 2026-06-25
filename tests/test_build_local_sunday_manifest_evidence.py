@@ -34,14 +34,14 @@ class BuildLocalSundayManifestEvidenceTest(unittest.TestCase):
         self.assertEqual(promoted["translationStatus"], "ready")
         self.assertEqual(promoted["models"]["realtimeDraft"], "gpt-realtime-translate")
         self.assertEqual(promoted["models"]["offlineAsr"], "gpt-4o-transcribe")
-        self.assertEqual(promoted["models"]["offlineTranslation"], "gpt-5.5-mini")
-        self.assertEqual(promoted["models"]["stableCorrection"], "gpt-5.5-mini")
+        self.assertEqual(promoted["models"]["offlineTranslation"], "gpt-5.4-mini")
+        self.assertEqual(promoted["models"]["stableCorrection"], "gpt-5.4-mini")
         self.assertEqual(validation["status"], "ok")
         self.assertEqual(validation["failedChecks"], [])
         self.assertEqual(validation["playback"]["translatedSegments"], 1)
         self.assertEqual(report["offlineChainValidation"]["status"], "ok")
         self.assertEqual(report["offlineChainValidation"]["offlineRoute"]["decision"], "use_caption_track")
-        self.assertEqual(report["offlineChainValidation"]["translation"]["model"], "gpt-5.5-mini")
+        self.assertEqual(report["offlineChainValidation"]["translation"]["model"], "gpt-5.4-mini")
         self.assertTrue(copied_report_exists)
         self.assertFalse(report["apiKeyMaterialIncluded"])
         self.assertFalse(report["secretResourceNamesIncluded"])
@@ -72,7 +72,7 @@ def write_source_run(root: Path) -> None:
                 "generatedFrom": "openai-translation-e2e",
                 "translationStatus": "ready",
                 "offlineSourceKind": "live_archive",
-                "translationProvider": {"model": "gpt-5.5-mini"},
+                "translationProvider": {"model": "gpt-5.4-mini"},
                 "segments": [
                     {
                         "id": "seg_1",

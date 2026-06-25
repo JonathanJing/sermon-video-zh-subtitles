@@ -77,7 +77,7 @@ class ValidateProductionReadinessTest(unittest.TestCase):
             },
             "translationProvider": {
                 "provider": "openai",
-                "model": "gpt-5.5-mini",
+                "model": "gpt-5.4-mini",
                 "apiKeyMaterialIncluded": False,
                 "secretResourceNamesIncluded": False,
             },
@@ -114,8 +114,8 @@ class ValidateProductionReadinessTest(unittest.TestCase):
             "models": {
                 "realtimeDraft": "gpt-realtime-translate",
                 "offlineAsr": "gpt-4o-transcribe",
-                "offlineTranslation": "gpt-5.5-mini",
-                "stableCorrection": "gpt-5.5-mini",
+                "offlineTranslation": "gpt-5.4-mini",
+                "stableCorrection": "gpt-5.4-mini",
             },
             "offlineSourceKind": "live_archive",
             "offlineRoute": {
@@ -176,8 +176,8 @@ class ValidateProductionReadinessTest(unittest.TestCase):
                             "id": 4,
                             "sessionId": "rt_test",
                             "type": "caption_final",
-                            "source": "gpt-5.5-mini-stable-correction",
-                            "model": "gpt-5.5-mini",
+                            "source": "gpt-5.4-mini-stable-correction",
+                            "model": "gpt-5.4-mini",
                             "zh": "神爱世人。",
                             "en": "God loved the world.",
                             "final": True,

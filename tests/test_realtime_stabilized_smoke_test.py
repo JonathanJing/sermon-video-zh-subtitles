@@ -32,7 +32,7 @@ def args_for(root: Path, **overrides):
         "max_audio_seconds": 8.0,
         "target_language": "zh",
         "realtime_model": "gpt-realtime-translate",
-        "stable_model": "gpt-5.5-mini",
+        "stable_model": "gpt-5.4-mini",
         "batch_size": 4,
         "max_windows": 12,
         "stable_min_age_seconds": 0,
@@ -136,7 +136,7 @@ class RealtimeStabilizedSmokeTest(unittest.TestCase):
 
             def fake_stabilize_batch(batch, api_key, model):
                 self.assertEqual(api_key, "sk-test")
-                self.assertEqual(model, "gpt-5.5-mini")
+                self.assertEqual(model, "gpt-5.4-mini")
                 self.assertEqual(batch[0]["id"], "seg_1")
                 return [{"id": "seg_1", "zh": "耶稣是我们的中保。", "note": "术语稳定。"}]
 
@@ -148,8 +148,8 @@ class RealtimeStabilizedSmokeTest(unittest.TestCase):
                         "id": 4,
                         "sessionId": "rt_test",
                         "type": "caption_final",
-                        "source": "gpt-5.5-mini-stable-correction",
-                        "model": "gpt-5.5-mini",
+                        "source": "gpt-5.4-mini-stable-correction",
+                        "model": "gpt-5.4-mini",
                         "segmentId": "seg_1",
                         "text": "耶稣是我们的中保。",
                         "zh": "耶稣是我们的中保。",

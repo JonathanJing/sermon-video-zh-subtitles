@@ -15,7 +15,7 @@ sys.modules[SPEC.name] = mod
 SPEC.loader.exec_module(mod)
 
 
-def write_playback(path: Path, *, source_kind: str = "live_archive", model: str = "gpt-5.5-mini", placeholder: bool = False) -> None:
+def write_playback(path: Path, *, source_kind: str = "live_archive", model: str = "gpt-5.4-mini", placeholder: bool = False) -> None:
     zh = "神爱世人。" if not placeholder else "AI 中文待生成：God loved the world."
     payload = {
         "schemaVersion": 1,
@@ -128,8 +128,8 @@ class ValidateOfflineChainTest(unittest.TestCase):
             "models": {
                 "realtimeDraft": "gpt-realtime-translate",
                 "offlineAsr": "gpt-4o-transcribe",
-                "offlineTranslation": "gpt-5.5-mini",
-                "stableCorrection": "gpt-5.5-mini",
+                "offlineTranslation": "gpt-5.4-mini",
+                "stableCorrection": "gpt-5.4-mini",
             },
             "outputs": [
                 {"localPath": "web/playback-simulation.generated.js", "gcsUri": ""},
@@ -138,7 +138,7 @@ class ValidateOfflineChainTest(unittest.TestCase):
             ],
         }
 
-    def report_for(self, root: Path, *, source_kind: str = "live_archive", model: str = "gpt-5.5-mini", placeholder: bool = False, report_overrides=None):
+    def report_for(self, root: Path, *, source_kind: str = "live_archive", model: str = "gpt-5.4-mini", placeholder: bool = False, report_overrides=None):
         report = self.ready_report(source_kind=source_kind)
         if report_overrides:
             report.update(report_overrides)
@@ -170,7 +170,7 @@ class ValidateOfflineChainTest(unittest.TestCase):
         self.assertEqual(report["offlineSourceKind"], "live_archive")
         self.assertEqual(report["offlineRoute"]["decision"], "use_caption_track")
         self.assertFalse(report["asr"]["used"])
-        self.assertEqual(report["translation"]["model"], "gpt-5.5-mini")
+        self.assertEqual(report["translation"]["model"], "gpt-5.4-mini")
 
     def test_validates_asr_fallback_offline_chain(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -49,8 +49,8 @@ class ValidateRealtimeSessionTest(unittest.TestCase):
                 "id": 4,
                 "sessionId": "rt_test",
                 "type": "caption_final",
-                "source": "gpt-5.5-mini-stable-correction",
-                "model": "gpt-5.5-mini",
+                "source": "gpt-5.4-mini-stable-correction",
+                "model": "gpt-5.4-mini",
                 "zh": "神爱世人。",
                 "en": "God loved the world.",
                 "final": True,
@@ -238,7 +238,7 @@ class ValidateRealtimeSessionTest(unittest.TestCase):
         events = [
             event
             for event in self.ready_events()
-            if event.get("source") != "gpt-5.5-mini-stable-correction"
+            if event.get("source") != "gpt-5.4-mini-stable-correction"
         ]
 
         report = self.report_for(events)

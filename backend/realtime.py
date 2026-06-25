@@ -4,6 +4,7 @@ from collections import deque
 from concurrent.futures import Future, ThreadPoolExecutor, wait
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+import base64
 import json
 from pathlib import Path
 import secrets
@@ -11,14 +12,18 @@ import subprocess
 import threading
 import time
 from typing import Any
+from urllib.parse import quote
 from urllib.request import Request, urlopen
 
 
 DEFAULT_REALTIME_MODEL = "gpt-realtime-translate"
 DEFAULT_TRANSCRIPTION_MODEL = "gpt-4o-transcribe"
 DEFAULT_TARGET_LANGUAGE = "zh"
-OPENAI_TRANSLATION_CLIENT_SECRET_URL = "https://api.openai.com/v1/realtime/translations/client_secrets"
-OPENAI_TRANSLATION_CALLS_URL = "https://api.openai.com/v1/realtime/translations/calls"
+OPENAI_TRANSLATION_CLIENT_SECRET_URL = "https://api.openai.com/v1/realtime/client_secrets"
+OPENAI_TRANSLATION_CALLS_URL = "https://api.openai.com/v1/realtime/calls"
+METADATA_TOKEN_URL = "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token"
+GCS_UPLOAD_BASE_URL = "https://storage.googleapis.com/upload/storage/v1/b"
+SECRET_MANAGER_ACCESS_BASE_URL = "https://secretmanager.googleapis.com/v1"
 
 
 def utc_now() -> str:
@@ -48,7 +53,7 @@ class RealtimeEventArchive:
     ) -> None:
         self.root = Path(root)
         self.gcs_prefix = normalize_gcs_prefix(gcs_prefix)
-        self.uploader = uploader or GcloudStorageUploader()
+        self.uploader = uploader or GcsJsonApiUploader()
         self._mirror_failures: deque[dict[str, Any]] = deque(maxlen=10)
         self._mirror_futures: deque[Future] = deque(maxlen=100)
         self._mirror_lock = threading.Lock()
@@ -117,6 +122,28 @@ class RealtimeEventArchive:
         return status
 
 
+class GcsJsonApiUploader:
+    def upload(self, local_path: Path, gcs_uri: str) -> None:
+        bucket, object_name = split_gcs_uri(gcs_uri)
+        token = metadata_access_token()
+        body = local_path.read_bytes()
+        upload_url = (
+            f"{GCS_UPLOAD_BASE_URL}/{quote(bucket, safe='')}/o"
+            f"?uploadType=media&name={quote(object_name, safe='')}"
+        )
+        request = Request(
+            upload_url,
+            data=body,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/jsonl; charset=utf-8",
+            },
+            method="POST",
+        )
+        with urlopen(request, timeout=30) as response:
+            response.read()
+
+
 class GcloudStorageUploader:
     def upload(self, local_path: Path, gcs_uri: str) -> None:
         subprocess.run(
@@ -126,6 +153,27 @@ class GcloudStorageUploader:
             text=True,
             timeout=30,
         )
+
+
+def metadata_access_token() -> str:
+    request = Request(METADATA_TOKEN_URL, headers={"Metadata-Flavor": "Google"})
+    with urlopen(request, timeout=5) as response:
+        data = json.loads(response.read().decode("utf-8"))
+    token = data.get("access_token") if isinstance(data, dict) else None
+    if not token:
+        raise RuntimeError("Metadata server did not return an access token")
+    return str(token)
+
+
+def split_gcs_uri(value: str) -> tuple[str, str]:
+    if not value.startswith("gs://"):
+        raise ValueError("GCS URI must start with gs://")
+    bucket, sep, object_name = value[5:].partition("/")
+    if not bucket or not sep or not object_name:
+        raise ValueError("GCS URI must be gs://bucket/object")
+    if any(part in {".", ".."} for part in object_name.split("/")):
+        raise ValueError("GCS URI contains an unsafe path segment")
+    return bucket, object_name
 
 
 def normalize_gcs_prefix(value: str | None) -> str | None:
@@ -293,13 +341,17 @@ def create_openai_translation_session(
         raise ValueError(policy_error["message"])
     payload = {
         "session": {
+            "type": "realtime",
             "model": model,
+            "output_modalities": ["text"],
             "audio": {
-                "output": {
-                    "language": target_language,
+                "input": {
+                    "transcription": {
+                        "language": "en",
+                        "model": transcription_model,
+                    },
                 },
             },
-            "input_audio_transcription": {"model": transcription_model},
             "instructions": (
                 "Translate spoken English Christian sermon audio into readable Simplified Chinese captions "
                 "for live church attendees. Prioritize faithful meaning, short subtitle lines, and stable "
@@ -318,7 +370,16 @@ def create_openai_translation_session(
     )
     with urlopen(request, timeout=20) as response:
         data = json.loads(response.read().decode("utf-8"))
-    return data if isinstance(data, dict) else {}
+    if not isinstance(data, dict):
+        return {}
+    if "client_secret" not in data and data.get("value"):
+        normalized = dict(data)
+        normalized["client_secret"] = {
+            "value": data.get("value"),
+            "expires_at": data.get("expires_at"),
+        }
+        return normalized
+    return data
 
 
 def realtime_translation_policy_error(model: str, target_language: str) -> dict[str, str] | None:
@@ -342,16 +403,46 @@ def resolve_openai_api_key(raw_key: str | None, secret_resource: str | None) -> 
         return raw_key
     if not secret_resource:
         raise RuntimeError("OpenAI API key is not configured")
-    return access_secret_with_gcloud(secret_resource)
+    try:
+        return access_secret_with_secret_manager_api(secret_resource)
+    except Exception:
+        return access_secret_with_gcloud(secret_resource)
+
+
+def access_secret_with_secret_manager_api(resource_name: str) -> str:
+    normalized = normalize_secret_version_resource(resource_name)
+    token = metadata_access_token()
+    request = Request(
+        f"{SECRET_MANAGER_ACCESS_BASE_URL}/{quote(normalized, safe='/:')}:access",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    with urlopen(request, timeout=10) as response:
+        data = json.loads(response.read().decode("utf-8"))
+    payload = data.get("payload") if isinstance(data, dict) else None
+    encoded_value = payload.get("data") if isinstance(payload, dict) else None
+    if not encoded_value:
+        raise RuntimeError("OpenAI API key secret returned an empty value")
+    value = base64.b64decode(str(encoded_value)).decode("utf-8").strip()
+    if not value:
+        raise RuntimeError("OpenAI API key secret returned an empty value")
+    return value
+
+
+def normalize_secret_version_resource(resource_name: str) -> str:
+    parts = resource_name.strip().split("/")
+    if len(parts) == 4 and parts[0] == "projects" and parts[2] == "secrets":
+        return f"{resource_name.strip()}/versions/latest"
+    if len(parts) == 6 and parts[0] == "projects" and parts[2] == "secrets" and parts[4] == "versions":
+        return resource_name.strip()
+    raise RuntimeError("OPENAI_API_KEY_SECRET must be a Secret Manager resource name")
 
 
 def access_secret_with_gcloud(resource_name: str) -> str:
-    parts = resource_name.strip().split("/")
-    if len(parts) not in {4, 6} or parts[0] != "projects" or parts[2] != "secrets":
-        raise RuntimeError("OPENAI_API_KEY_SECRET must be a Secret Manager resource name")
+    normalized = normalize_secret_version_resource(resource_name)
+    parts = normalized.split("/")
     project = parts[1]
     secret = parts[3]
-    version = parts[5] if len(parts) == 6 else "latest"
+    version = parts[5]
     completed = subprocess.run(
         ["gcloud", "secrets", "versions", "access", version, "--secret", secret, "--project", project],
         check=True,

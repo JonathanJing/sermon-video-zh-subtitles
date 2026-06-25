@@ -107,8 +107,8 @@ def build_local_sunday_manifest_evidence(
         readiness_state="published",
         realtime_draft_model="gpt-realtime-translate",
         offline_asr_model="gpt-4o-transcribe",
-        offline_translation_model="gpt-5.5-mini",
-        stable_correction_model="gpt-5.5-mini",
+        offline_translation_model="gpt-5.4-mini",
+        stable_correction_model="gpt-5.4-mini",
     )
     write_json(promoted_manifest_path, promoted)
 

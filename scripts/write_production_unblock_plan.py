@@ -91,9 +91,9 @@ def build_unblock_plan(
         "externalDependencyCount": sum(1 for step in steps if step.get("dependency") == "external"),
         "approvalStepCount": sum(1 for step in steps if step.get("requiresApproval")),
         "modelPolicy": {
-            "requiredStableAndOfflineModel": "gpt-5.5-mini",
+            "requiredStableAndOfflineModel": "gpt-5.4-mini",
             "observedAlternativeModelsAreNotSubstitutes": True,
-            "note": "A green gpt-5.5 preflight is side evidence only; do not satisfy gpt-5.5-mini gates with it.",
+            "note": "A green gpt-5.5 preflight is side evidence only; do not satisfy gpt-5.4-mini gates with it.",
         },
         "apiKeyMaterialIncluded": False,
         "secretResourceNamesIncluded": False,
@@ -154,6 +154,7 @@ def add_gcs_publish_step(steps: list[dict[str, Any]], row: dict[str, Any] | None
                 "--session-id",
                 str(publish_plan.get("sessionId")),
                 "--apply",
+                *production_stable_confirmation_args(str(publish_plan.get("prefix") or "")),
                 "--out",
                 "artifacts/evidence/gcs-sunday-manifest-publish-plan.json",
             ]
@@ -189,6 +190,10 @@ def add_gcs_publish_step(steps: list[dict[str, Any]], row: dict[str, Any] | None
     )
 
 
+def production_stable_confirmation_args(prefix: str) -> list[str]:
+    return ["--confirm-production-stable"] if prefix.strip().strip("/") == "sundays" else []
+
+
 def add_model_access_step(
     steps: list[dict[str, Any]],
     stable_row: dict[str, Any] | None,
@@ -199,12 +204,12 @@ def add_model_access_step(
         return
     steps.append(
         {
-            "id": "fix_required_gpt_5_5_mini_access",
+            "id": "fix_required_gpt_5_4_mini_access",
             "sourceRows": ["stable_correction", "offline_caption_route"],
             "state": "external_dependency",
             "requiresApproval": False,
             "dependency": "external",
-            "model": "gpt-5.5-mini",
+            "model": "gpt-5.4-mini",
             "failureKind": model_failure.get("failureKind"),
             "httpStatus": model_failure.get("httpStatus"),
             "error": model_failure.get("error"),
@@ -216,7 +221,7 @@ def add_model_access_step(
                     "python3",
                     "scripts/run_openai_model_access_preflight.py",
                     "--model",
-                    "gpt-5.5-mini",
+                    "gpt-5.4-mini",
                     "--out",
                     "artifacts/evidence/openai-model-access-preflight.json",
                 ]
@@ -313,7 +318,7 @@ def add_realtime_field_run_step(steps: list[dict[str, Any]], row: dict[str, Any]
                 "--realtime-model",
                 "gpt-realtime-translate",
                 "--stable-model",
-                "gpt-5.5-mini",
+                "gpt-5.4-mini",
                 "--realtime-event-gcs-prefix",
                 DEFAULT_REALTIME_EVENT_GCS_PREFIX,
                 "--require-stable-correction",
@@ -332,7 +337,7 @@ def add_realtime_field_run_step(steps: list[dict[str, Any]], row: dict[str, Any]
                 "--expected-model",
                 "gpt-realtime-translate",
                 "--expected-stable-model",
-                "gpt-5.5-mini",
+                "gpt-5.4-mini",
                 "--require-stable-correction",
                 "--out",
                 "artifacts/evidence/realtime-live-session/session-validation.json",
@@ -382,7 +387,7 @@ def add_stable_correction_step(steps: list[dict[str, Any]], row: dict[str, Any] 
             "--expected-model",
             "gpt-realtime-translate",
             "--expected-stable-model",
-            "gpt-5.5-mini",
+            "gpt-5.4-mini",
             "--require-stable-correction",
             "--out",
             "artifacts/evidence/realtime-live-session/session-validation.json",
@@ -434,7 +439,7 @@ def first_model_failure(*rows: dict[str, Any] | None) -> dict[str, Any] | None:
         observed = row.get("observed") if row else None
         if not isinstance(observed, dict):
             continue
-        if observed.get("model") == "gpt-5.5-mini" and observed.get("failureKind"):
+        if observed.get("model") == "gpt-5.4-mini" and observed.get("failureKind"):
             return observed
     return None
 
@@ -443,7 +448,7 @@ def row_has_model_access_failure(row: dict[str, Any]) -> bool:
     observed = row.get("observed")
     if not isinstance(observed, dict):
         return False
-    return observed.get("model") == "gpt-5.5-mini" and bool(observed.get("failureKind"))
+    return observed.get("model") == "gpt-5.4-mini" and bool(observed.get("failureKind"))
 
 
 def status_from_steps(steps: list[dict[str, Any]], matrix_status: str | None) -> str:

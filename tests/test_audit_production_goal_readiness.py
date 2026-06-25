@@ -15,12 +15,13 @@ sys.modules[SPEC.name] = mod
 SPEC.loader.exec_module(mod)
 
 
-def args_for(reports=None, cloud_run_config_report=None):
+def args_for(reports=None, cloud_run_config_report=None, model_access_report=None):
     return SimpleNamespace(
         production_readiness_report=reports or [],
         cloud_run_config_report=cloud_run_config_report,
         cloud_run_api_preflight_report=None,
         evidence_matrix_report=None,
+        openai_model_access_preflight_report=model_access_report,
         out=None,
     )
 
@@ -30,12 +31,14 @@ def args_for_all(
     cloud_run_config_report=None,
     cloud_run_api_preflight_report=None,
     evidence_matrix_report=None,
+    model_access_report=None,
 ):
     return SimpleNamespace(
         production_readiness_report=reports or [],
         cloud_run_config_report=cloud_run_config_report,
         cloud_run_api_preflight_report=cloud_run_api_preflight_report,
         evidence_matrix_report=evidence_matrix_report,
+        openai_model_access_preflight_report=model_access_report,
         out=None,
     )
 
@@ -125,7 +128,7 @@ def cloud_run_api_preflight_report(*, skipped_realtime_session=False, missing_me
     }
 
 
-def evidence_matrix_report(*, realtime_live="pass", stable="pass", caption="pass", asr="pass") -> dict:
+def evidence_matrix_report(*, realtime_live="pass", stable="pass", caption="pass", asr="pass", model_access="pass") -> dict:
     states = {
         "cloud_run_realtime_config": "pass",
         "cloud_run_api_preflight": "pass",
@@ -137,6 +140,7 @@ def evidence_matrix_report(*, realtime_live="pass", stable="pass", caption="pass
         "offline_caption_route": caption,
         "offline_asr_route": asr,
         "cloud_run_gcs_manifest": "pass",
+        "required_text_model_access": model_access,
     }
     return {
         "schemaVersion": 1,
@@ -159,10 +163,21 @@ def matrix_row(key: str, value: str) -> dict:
     if key == "offline_caption_route" and value == "pass":
         row["observed"] = {
             "notRealtimeChain": "pass",
-            "translation": {"model": "gpt-5.5-mini"},
+            "translation": {"model": "gpt-5.4-mini"},
             "offlineRoute": {"decision": "use_caption_track"},
         }
     return row
+
+
+def model_access_report(*, status: str = "ok") -> dict:
+    return {
+        "schemaVersion": 1,
+        "status": status,
+        "models": ["gpt-5.4-mini"],
+        "failedChecks": [] if status == "ok" else ["responses_model:gpt-5.4-mini"],
+        "apiKeyMaterialIncluded": False,
+        "secretResourceNamesIncluded": False,
+    }
 
 
 class AuditProductionGoalReadinessTest(unittest.TestCase):
@@ -171,7 +186,7 @@ class AuditProductionGoalReadinessTest(unittest.TestCase):
 
         self.assertEqual(report["status"], "incomplete")
         self.assertEqual(report["summary"]["localFailed"], 0)
-        self.assertEqual(report["summary"]["externalMissing"], 8)
+        self.assertEqual(report["summary"]["externalMissing"], 9)
         self.assertTrue(all(check["state"] == "pass" for check in report["localImplementation"]))
         self.assertIn(
             "browser_webrtc_public_caption_view",
@@ -218,6 +233,7 @@ class AuditProductionGoalReadinessTest(unittest.TestCase):
             asr = root / "asr-route.json"
             cloud_run = root / "cloud-run-config.json"
             preflight = root / "cloud-run-preflight.json"
+            model_access = root / "model-access.json"
             caption.write_text(json.dumps(readiness_report(offline_decision="use_caption_track")), encoding="utf-8")
             asr.write_text(
                 json.dumps(readiness_report(offline_decision="use_asr_fallback", include_input_transcript=False)),
@@ -225,9 +241,15 @@ class AuditProductionGoalReadinessTest(unittest.TestCase):
             )
             cloud_run.write_text(json.dumps(cloud_run_config_report()), encoding="utf-8")
             preflight.write_text(json.dumps(cloud_run_api_preflight_report()), encoding="utf-8")
+            model_access.write_text(json.dumps(model_access_report()), encoding="utf-8")
 
             report = mod.audit_goal_readiness(
-                args_for_all([str(caption), str(asr)], str(cloud_run), str(preflight))
+                args_for_all(
+                    [str(caption), str(asr)],
+                    str(cloud_run),
+                    str(preflight),
+                    model_access_report=str(model_access),
+                )
             )
 
         self.assertEqual(report["status"], "complete")
@@ -370,7 +392,7 @@ class AuditProductionGoalReadinessTest(unittest.TestCase):
         matrix = evidence_matrix_report(stable="fail", caption="fail", asr="warn")
         for row in matrix["matrix"]:
             if row["id"] == "stable_correction":
-                row["nextAction"] = "Fix gpt-5.5-mini model access."
+                row["nextAction"] = "Fix gpt-5.4-mini model access."
             if row["id"] == "offline_asr_route":
                 row["nextAction"] = "Run a real no-caption YouTube archive."
 
@@ -384,7 +406,7 @@ class AuditProductionGoalReadinessTest(unittest.TestCase):
         stable_action = actions["external_stable_correction"]
         asr_action = actions["external_offline_asr_route"]
         self.assertEqual(stable_action["sourceRow"], "stable_correction")
-        self.assertEqual(stable_action["nextAction"], "Fix gpt-5.5-mini model access.")
+        self.assertEqual(stable_action["nextAction"], "Fix gpt-5.4-mini model access.")
         self.assertEqual(asr_action["sourceRow"], "offline_asr_route")
         self.assertEqual(asr_action["nextAction"], "Run a real no-caption YouTube archive.")
 

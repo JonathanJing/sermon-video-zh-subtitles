@@ -277,8 +277,8 @@ app.pushRealtimeEvent({{
   zh: "神爱世人。",
   en: "God loved the world",
   final: true,
-  source: "gpt-5.5-mini-stable-correction",
-  model: "gpt-5.5-mini"
+  source: "gpt-5.4-mini-stable-correction",
+  model: "gpt-5.4-mini"
 }});
 const segment = app.state.segments.find((item) => item.id === "seg_runtime_1") || {{}};
 process.stdout.write(JSON.stringify({{
@@ -314,7 +314,7 @@ def report_from_checks(app_js: Path, checks: list[dict[str, Any]], probe: dict[s
         "probe": probe,
         "models": {
             "realtimeDraft": "gpt-realtime-translate",
-            "stableCorrection": "gpt-5.5-mini",
+            "stableCorrection": "gpt-5.4-mini",
         },
         "path": "public caption view receives realtime session events and replaces draft with stable correction",
         "apiKeyMaterialIncluded": False,

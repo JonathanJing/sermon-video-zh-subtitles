@@ -318,7 +318,7 @@ def report_from_checks(
         "sessionId": session_id or None,
         "models": {
             "realtimeDraft": EXPECTED_MODEL,
-            "stableCorrection": "gpt-5.5-mini",
+            "stableCorrection": "gpt-5.4-mini",
         },
         "postedEvents": posted,
         "sse": {
@@ -377,12 +377,14 @@ def browser_normalized_smoke_events(web_realtime_contract_report: str | None) ->
             "warnings": ["normalization_probe_missing_required_input_or_caption_event"],
         }
     segment_id = str(caption_event.get("segmentId") or "smoke_1")
+    english_context = str(input_event.get("en") or input_event.get("text") or input_event.get("delta") or "")
     stable_event = {
         "type": "caption_final",
-        "source": "gpt-5.5-mini-stable-correction",
-        "model": "gpt-5.5-mini",
+        "source": "gpt-5.4-mini-stable-correction",
+        "model": "gpt-5.4-mini",
         "zh": "神爱世人。",
         "text": "神爱世人。",
+        "en": english_context,
         "final": True,
         "segmentId": segment_id,
     }
@@ -418,10 +420,11 @@ def default_smoke_events() -> list[dict[str, Any]]:
         },
         {
             "type": "caption_final",
-            "source": "gpt-5.5-mini-stable-correction",
-            "model": "gpt-5.5-mini",
+            "source": "gpt-5.4-mini-stable-correction",
+            "model": "gpt-5.4-mini",
             "zh": "神爱世人。",
             "text": "神爱世人。",
+            "en": "God loved the world",
             "final": True,
             "segmentId": "smoke_1",
         },
@@ -493,8 +496,8 @@ def stable_correction_segment_summary(events: list[dict[str, Any]]) -> dict[str,
         str(event.get("segmentId"))
         for event in events
         if event.get("type") == "caption_final"
-        and str(event.get("source") or "") == "gpt-5.5-mini-stable-correction"
-        and event.get("model") == "gpt-5.5-mini"
+        and str(event.get("source") or "") == "gpt-5.4-mini-stable-correction"
+        and event.get("model") == "gpt-5.4-mini"
         and str(event.get("segmentId") or "").strip()
     }
     matched_segments = draft_segments & stable_segments

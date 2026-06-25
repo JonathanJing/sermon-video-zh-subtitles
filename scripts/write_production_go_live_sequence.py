@@ -103,9 +103,9 @@ def build_sequence(args: argparse.Namespace) -> dict[str, Any]:
         "passCriteria": [
             "Operator approval bundle has no remaining approval_required steps, or approved Cloud Run/GCS evidence is present.",
             "Cloud Run realtime config and API preflight pass after any approved runtime update.",
-            "Required gpt-5.5-mini model access passes; gpt-5.5 availability is side evidence only.",
+            "Required gpt-5.4-mini model access passes; gpt-5.5 availability is side evidence only.",
             "11:30 realtime operator plan is ready and preserves browser WebRTC plus server worker options.",
-            "Offline translation and stable correction routes use gpt-5.5-mini.",
+            "Offline translation and stable correction routes use gpt-5.4-mini.",
             "Offline post-live subtitle evidence includes not_realtime_chain=pass.",
             "A real authorized YouTube archive with no requested English caption track proves the gpt-4o-transcribe ASR fallback from an extracted audio artifact.",
             "Final production evidence matrix and goal readiness audit are complete.",
@@ -113,8 +113,8 @@ def build_sequence(args: argparse.Namespace) -> dict[str, Any]:
         "modelPolicy": {
             "realtimeDraftModel": "gpt-realtime-translate",
             "offlineAsrModel": "gpt-4o-transcribe",
-            "offlineAndStableCorrectionModel": "gpt-5.5-mini",
-            "doNotSubstituteGpt55ForGpt55Mini": True,
+            "offlineAndStableCorrectionModel": "gpt-5.4-mini",
+            "doNotSubstituteAlternativeForRequiredMini": True,
         },
         "guards": {
             "doesNotApplyCloudRun": True,
@@ -158,9 +158,9 @@ def live_1130_realtime_run_stage(
         "modelPolicy": live_plan.get("modelPolicy")
         or {
             "realtimeDraftModel": "gpt-realtime-translate",
-            "stableCorrectionModel": "gpt-5.5-mini",
+            "stableCorrectionModel": "gpt-5.4-mini",
             "offlineAsrModel": "gpt-4o-transcribe",
-            "offlineTranslationModel": "gpt-5.5-mini",
+            "offlineTranslationModel": "gpt-5.4-mini",
             "forbiddenOfflineModel": "gpt-realtime-translate",
         },
         "operatorChoices": operator_choices_summary(live_plan),
@@ -293,7 +293,7 @@ def required_model_recovery_stage(args: argparse.Namespace, model_plan: dict[str
         "state": state,
         "dependsOn": ["post_approval_validation"],
         "handoffReport": display_path(args.model_access_recovery_plan),
-        "requiredModel": model_plan.get("requiredModel") or "gpt-5.5-mini",
+        "requiredModel": model_plan.get("requiredModel") or "gpt-5.4-mini",
         "alternativeModel": model_plan.get("alternativeModel") or "gpt-5.5",
         "doNotSubstitute": bool((model_plan.get("modelPolicy") or {}).get("doNotSubstitute", True)),
         "nextAction": "Rerun required model access preflight, then offline translation and stable correction validation.",
@@ -308,7 +308,9 @@ def real_no_caption_asr_validation_stage(
 ) -> dict[str, Any]:
     plan_status = str(no_caption_plan.get("status") or "missing")
     state = "needs_real_no_caption_archive" if plan_status != "complete" else "complete"
-    commands = dedupe_commands(no_caption_plan.get("commands") or [])
+    expanded_commands = dedupe_commands(no_caption_plan.get("commands") or [])
+    runner_command = sanitized_command(no_caption_plan.get("runnerCommand"))
+    commands = [runner_command] if runner_command else expanded_commands
     pass_criteria = string_list(no_caption_plan.get("passCriteria"))
     required_reports = [
         "artifacts/evidence/no-caption-archive-preflight.json",
@@ -324,17 +326,18 @@ def real_no_caption_asr_validation_stage(
         "requiredModels": no_caption_plan.get("requiredModels")
         or {
             "offlineAsr": "gpt-4o-transcribe",
-            "offlineTranslation": "gpt-5.5-mini",
+            "offlineTranslation": "gpt-5.4-mini",
             "forbiddenOfflineModel": "gpt-realtime-translate",
         },
         "commands": commands,
+        "expandedCommands": expanded_commands if runner_command and expanded_commands else [],
         "requiredReports": required_reports,
         "passCriteria": pass_criteria
         or [
             "run_offline_archive_preflight.py reports decision=use_asr_fallback.",
             "Prepared offline report has caption_source.kind=openai_asr.",
             "ASR model is gpt-4o-transcribe.",
-            "Chinese translation model is gpt-5.5-mini.",
+            "Chinese translation model is gpt-5.4-mini.",
             "validate_offline_chain.py status is ok and not_realtime_chain passes.",
         ],
         "nextAction": (
@@ -390,7 +393,7 @@ def required_model_recovery_needed(preflight: dict[str, Any], unblock: dict[str,
     for step in unblock.get("steps") or []:
         if not isinstance(step, dict):
             continue
-        if step.get("id") == "fix_required_gpt_5_5_mini_access":
+        if step.get("id") == "fix_required_gpt_5_4_mini_access":
             return True
         if step.get("dependency") == "model_access":
             return True

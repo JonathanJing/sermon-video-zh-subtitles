@@ -15,7 +15,7 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[1]
 JS_PREFIX = "window.SERMON_PLAYBACK_SIMULATION = "
 EXPECTED_ASR_MODEL = "gpt-4o-transcribe"
-EXPECTED_TRANSLATION_MODEL = "gpt-5.5-mini"
+EXPECTED_TRANSLATION_MODEL = "gpt-5.4-mini"
 EXPECTED_REALTIME_MODEL = "gpt-realtime-translate"
 ALLOWED_OFFLINE_SOURCES = {"live_archive", "sermon_vod", "openai_asr"}
 AUDIO_SOURCE_EXTENSIONS = {".aac", ".aiff", ".caf", ".flac", ".m4a", ".mp3", ".wav"}
@@ -368,6 +368,7 @@ def validate_offline_chain(
             "manifest": safe_uri(manifest_uri) if manifest_uri else None,
         },
         "offlineSourceKind": caption_source_kind,
+        "sourceEvidence": report.get("sourceEvidence") or "unspecified",
         "offlineRoute": {
             "strategy": route.get("strategy"),
             "decision": route.get("decision"),

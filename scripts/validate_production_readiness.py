@@ -64,7 +64,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--allow-missing-stable-correction",
         action="store_true",
-        help="Do not require gpt-5.5-mini stable correction events in realtime JSONL.",
+        help="Do not require gpt-5.4-mini stable correction events in realtime JSONL.",
     )
     parser.add_argument("--out", help="Optional JSON report path.")
     return parser.parse_args()

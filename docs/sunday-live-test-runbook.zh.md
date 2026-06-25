@@ -181,7 +181,7 @@ python3 scripts/realtime_openai_smoke_test.py \
 ```
 
 再跑 stabilized realtime smoke。这个脚本会自己创建 backend session，event token 只留在进程内，
-用 `gpt-5.5-mini` 回写一条 stable correction，然后用 `--require-stable-correction`
+用 `gpt-5.4-mini` 回写一条 stable correction，然后用 `--require-stable-correction`
 验证保存下来的 realtime JSONL：
 
 ```bash
@@ -200,14 +200,14 @@ stabilized report 必须确认：
 
 - `status` 是 `ok`。
 - `models.realtimeDraft` 是 `gpt-realtime-translate`。
-- `models.stableCorrection` 是 `gpt-5.5-mini`。
+- `models.stableCorrection` 是 `gpt-5.4-mini`。
 - `stableCorrection.postedStableCorrections` 大于 `0`。
 - `validation.status` 是 `ok`。
 - `eventTokenIncluded`、`apiKeyMaterialIncluded`、`secretResourceNamesIncluded` 都是 `false`。
 
 11:30 现场运行时，用 live-session wrapper，不要拆成 worker 和 stabilizer 两条手动命令。
 这个脚本会创建 backend session，把 event token 留在进程内，把授权音频源送进
-`gpt-realtime-translate`，并基于保存下来的 realtime JSONL 周期性跑 `gpt-5.5-mini`
+`gpt-realtime-translate`，并基于保存下来的 realtime JSONL 周期性跑 `gpt-5.4-mini`
 stable correction：
 
 ```bash
@@ -241,7 +241,7 @@ python3 scripts/run_realtime_stabilizer_loop.py \
 ```
 
 loop 会先写 `<browser_session_id>.model-access-preflight.json`。如果
-`gpt-5.5-mini` 在 OpenAI Responses 上不可用，它会在读取 event log 或回写修正版前退出；
+`gpt-5.4-mini` 在 OpenAI Responses 上不可用，它会在读取 event log 或回写修正版前退出；
 低延迟的 `gpt-realtime-translate` draft session 应继续运行。
 
 先生成 combined evidence command：
@@ -280,12 +280,12 @@ realtime JSONL、Cloud Run config 或 API preflight 证据缺失/无效，会直
 realtime session id，可以用 `--realtime-session-id` 代替 `--realtime-smoke-report`。如果 smoke
 report 里包含 `realtimeEventsJsonl`，runner 会优先使用这个精确 JSONL URI。11:30 production
 gate 使用 live-session report；rehearsal evidence 可以使用 stabilized smoke report。两种情况下，
-realtime JSONL 都必须已经包含至少一条 `gpt-5.5-mini` stable correction event。如果
+realtime JSONL 都必须已经包含至少一条 `gpt-5.4-mini` stable correction event。如果
 production-readiness verifier 在写 report 前退出，bundle 会写一份最小 failed report，并继续生成
 matrix/audit，让 operator 仍然能看到一张状态板。如果 matrix generation 在写 report 前退出，
 bundle 会写一份最小 incomplete matrix，并继续跑 goal audit。
 alternative model access report 只作为旁证记录；不要把 `gpt-5.5` 可用当作 required
-`gpt-5.5-mini` access 的替代。
+`gpt-5.4-mini` access 的替代。
 
 ## Rollback
 

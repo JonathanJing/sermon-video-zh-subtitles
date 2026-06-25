@@ -213,9 +213,23 @@ def resolve_repo_path(path: Path) -> Path:
 
 
 def run(command: list[str], cwd: Path) -> None:
-    printable = " ".join(command)
+    printable = " ".join(redact_command(command))
     print(f"$ {printable}")
     subprocess.run(command, cwd=cwd, check=True)
+
+
+def redact_command(command: list[str]) -> list[str]:
+    redacted = []
+    redact_next = False
+    for item in command:
+        if redact_next:
+            redacted.append("<redacted-secret-resource>")
+            redact_next = False
+            continue
+        redacted.append(item)
+        if item == "--api-key-secret":
+            redact_next = True
+    return redacted
 
 
 def publish_generated_content_to_gcs(

@@ -61,7 +61,7 @@ class StabilizeRealtimeDeltasWithOpenAITest(unittest.TestCase):
     def test_build_output_omits_secret_resource_name(self):
         output = mod.build_output(
             input_jsonl=Path("artifacts/realtime.jsonl"),
-            model="gpt-5.5-mini",
+            model="gpt-5.4-mini",
             candidates=[{"id": "seg_1", "en": "Jesus is our mediator.", "draftZh": "耶稣是中保。"}],
             corrections=[{"id": "seg_1", "zh": "耶稣是我们的中保。", "note": "术语修正。"}],
             api_key_secret="projects/p/secrets/openai-api-key/versions/latest",
@@ -106,7 +106,7 @@ class StabilizeRealtimeDeltasWithOpenAITest(unittest.TestCase):
                     {"id": "seg_2", "en": "No correction.", "stableZh": ""},
                 ]
             },
-            model="gpt-5.5-mini",
+            model="gpt-5.4-mini",
         )
 
         self.assertEqual(len(events), 1)
@@ -114,7 +114,7 @@ class StabilizeRealtimeDeltasWithOpenAITest(unittest.TestCase):
         self.assertEqual(events[0]["segmentId"], "seg_1")
         self.assertEqual(events[0]["zh"], "耶稣是我们的中保。")
         self.assertEqual(events[0]["en"], "Jesus is our mediator.")
-        self.assertEqual(events[0]["source"], "gpt-5.5-mini-stable-correction")
+        self.assertEqual(events[0]["source"], "gpt-5.4-mini-stable-correction")
 
     def test_post_stable_corrections_sends_event_token_header_without_returning_it(self):
         calls = []
@@ -146,7 +146,7 @@ class StabilizeRealtimeDeltasWithOpenAITest(unittest.TestCase):
                 backend_url="http://127.0.0.1:8080/",
                 session_id="rt_test",
                 event_token="secret-event-token",
-                model="gpt-5.5-mini",
+                model="gpt-5.4-mini",
             )
         finally:
             mod.requests.post = original_post
@@ -155,7 +155,7 @@ class StabilizeRealtimeDeltasWithOpenAITest(unittest.TestCase):
         self.assertEqual(calls[0]["url"], "http://127.0.0.1:8080/api/realtime/sessions/rt_test/events")
         self.assertEqual(calls[0]["headers"]["X-Realtime-Event-Token"], "secret-event-token")
         self.assertEqual(calls[0]["json"]["type"], "caption_final")
-        self.assertEqual(calls[0]["json"]["model"], "gpt-5.5-mini")
+        self.assertEqual(calls[0]["json"]["model"], "gpt-5.4-mini")
 
     def test_post_stable_corrections_can_use_admin_token_for_browser_session(self):
         calls = []
@@ -187,7 +187,7 @@ class StabilizeRealtimeDeltasWithOpenAITest(unittest.TestCase):
                 backend_url="http://127.0.0.1:8080/",
                 session_id="rt_test",
                 admin_token="operator-token",
-                model="gpt-5.5-mini",
+                model="gpt-5.4-mini",
             )
         finally:
             mod.requests.post = original_post
@@ -195,7 +195,7 @@ class StabilizeRealtimeDeltasWithOpenAITest(unittest.TestCase):
         self.assertEqual(posted, 1)
         self.assertEqual(calls[0]["headers"]["Authorization"], "Bearer operator-token")
         self.assertNotIn("X-Realtime-Event-Token", calls[0]["headers"])
-        self.assertEqual(calls[0]["json"]["source"], "gpt-5.5-mini-stable-correction")
+        self.assertEqual(calls[0]["json"]["source"], "gpt-5.4-mini-stable-correction")
 
     def test_post_backend_args_must_be_supplied_together(self):
         original_argv = sys.argv
@@ -249,14 +249,14 @@ class StabilizeRealtimeDeltasWithOpenAITest(unittest.TestCase):
             corrections = mod.stabilize_batch(
                 [{"id": "seg_1", "en": "Jesus is our mediator.", "draftZh": "耶稣是中保。"}],
                 api_key="sk-test",
-                model="gpt-5.5-mini",
+                model="gpt-5.4-mini",
             )
         finally:
             mod.requests.post = original_post
 
         self.assertEqual(corrections[0]["zh"], "耶稣是我们的中保。")
         self.assertEqual(calls[0]["url"], mod.OPENAI_RESPONSES_URL)
-        self.assertEqual(calls[0]["json"]["model"], "gpt-5.5-mini")
+        self.assertEqual(calls[0]["json"]["model"], "gpt-5.4-mini")
         self.assertIn("input", calls[0]["json"])
         self.assertNotIn("messages", calls[0]["json"])
         self.assertEqual(calls[0]["json"]["text"]["format"]["type"], "json_object")

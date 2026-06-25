@@ -19,7 +19,7 @@ SECRET_RESOURCE_RE = re.compile(
     r"^projects/(?P<project>[^/\s]+)/secrets/(?P<secret>[^/\s]+)(?:/versions/(?P<version>[^/\s]+))?$"
 )
 OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
-DEFAULT_MODEL = "gpt-5.5-mini"
+DEFAULT_MODEL = "gpt-5.4-mini"
 FORBIDDEN_STABLE_MODEL = "gpt-realtime-translate"
 
 
@@ -84,7 +84,7 @@ def main() -> int:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Use gpt-5.5-mini to stabilize realtime English/Chinese delta JSONL events."
+        description="Use gpt-5.4-mini to stabilize realtime English/Chinese delta JSONL events."
     )
     parser.add_argument("--input-jsonl", type=Path, required=True, help="Realtime event JSONL file.")
     parser.add_argument(
@@ -136,10 +136,10 @@ def validate_stable_correction_model(model: str) -> None:
     if model == FORBIDDEN_STABLE_MODEL:
         raise SystemExit(
             "Delayed stable corrections must not use gpt-realtime-translate; "
-            "use gpt-5.5-mini."
+            "use gpt-5.4-mini."
         )
     if model != DEFAULT_MODEL:
-        raise SystemExit("Delayed stable corrections must use gpt-5.5-mini.")
+        raise SystemExit("Delayed stable corrections must use gpt-5.4-mini.")
 
 
 def resolve_repo_path(path: Path) -> Path:
@@ -419,7 +419,7 @@ def stable_correction_events(output: dict[str, Any], model: str) -> list[dict[st
                 "en": str(segment.get("en") or "").strip(),
                 "final": True,
                 "segmentId": segment_id,
-                "source": "gpt-5.5-mini-stable-correction",
+                "source": "gpt-5.4-mini-stable-correction",
                 "model": model,
             }
         )

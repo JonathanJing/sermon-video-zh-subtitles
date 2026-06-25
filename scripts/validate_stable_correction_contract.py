@@ -19,8 +19,8 @@ if str(SCRIPT_DIR) not in sys.path:
 import stabilize_realtime_deltas_with_openai as stable  # noqa: E402
 
 
-EXPECTED_MODEL = "gpt-5.5-mini"
-EXPECTED_SOURCE = "gpt-5.5-mini-stable-correction"
+EXPECTED_MODEL = "gpt-5.4-mini"
+EXPECTED_SOURCE = "gpt-5.4-mini-stable-correction"
 FORBIDDEN_REPORT_NEEDLES = [
     "OPENAI_API_KEY",
     "projects/",
@@ -89,7 +89,7 @@ def validate_stable_correction_contract() -> dict[str, Any]:
         "models": {
             "stableCorrection": EXPECTED_MODEL,
         },
-        "path": "saved realtime English/Chinese deltas -> gpt-5.5-mini -> caption_final stable corrections -> backend session events",
+        "path": "saved realtime English/Chinese deltas -> gpt-5.4-mini -> caption_final stable corrections -> backend session events",
         "apiKeyMaterialIncluded": False,
         "secretResourceNamesIncluded": False,
         "eventTokenIncluded": False,
@@ -128,7 +128,7 @@ def check_output(output: dict[str, Any]) -> dict[str, Any]:
         and output.get("secretResourceNamesIncluded") is False
     )
     return {
-        "name": "output_uses_gpt_5_5_mini_without_secret_material",
+        "name": "output_uses_gpt_5_4_mini_without_secret_material",
         "description": "Stable correction output is model-stamped and omits raw key or Secret Manager resource names.",
         "state": "pass" if passed else "fail",
         "observed": {
@@ -155,7 +155,7 @@ def check_events(events: list[dict[str, Any]]) -> dict[str, Any]:
     )
     return {
         "name": "stable_corrections_are_caption_final_events",
-        "description": "Stable corrections post as caption_final events with the gpt-5.5-mini stable-correction source.",
+        "description": "Stable corrections post as caption_final events with the gpt-5.4-mini stable-correction source.",
         "state": "pass" if passed else "fail",
         "observed": {
             "count": len(events),
@@ -173,19 +173,19 @@ def check_events(events: list[dict[str, Any]]) -> dict[str, Any]:
 
 def check_stable_model_policy() -> dict[str, Any]:
     observed = {
-        "allowsGpt55Mini": returns_ok(stable.validate_stable_correction_model, EXPECTED_MODEL),
+        "allowsRequiredMini": returns_ok(stable.validate_stable_correction_model, EXPECTED_MODEL),
         "rejectsRealtimeTranslate": raises_system_exit(
             stable.validate_stable_correction_model,
             "gpt-realtime-translate",
         ),
-        "rejectsGpt55Substitute": raises_system_exit(
+        "rejectsAlternativeSubstitute": raises_system_exit(
             stable.validate_stable_correction_model,
             "gpt-5.5",
         ),
     }
     return {
         "name": "stable_correction_model_policy",
-        "description": "Stable correction CLI only permits gpt-5.5-mini and rejects realtime or substitute models.",
+        "description": "Stable correction CLI only permits gpt-5.4-mini and rejects realtime or substitute models.",
         "state": "pass" if all(observed.values()) else "fail",
         "observed": observed,
     }

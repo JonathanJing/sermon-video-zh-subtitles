@@ -7,8 +7,13 @@ import backend.realtime as realtime
 from backend.realtime import (
     OPENAI_TRANSLATION_CALLS_URL,
     OPENAI_TRANSLATION_CLIENT_SECRET_URL,
+    GCS_UPLOAD_BASE_URL,
+    METADATA_TOKEN_URL,
+    SECRET_MANAGER_ACCESS_BASE_URL,
+    GcsJsonApiUploader,
     RealtimeEventArchive,
     RealtimeSessionStore,
+    access_secret_with_secret_manager_api,
     create_openai_translation_session,
     normalize_gcs_prefix,
     realtime_translation_policy_error,
@@ -114,6 +119,57 @@ class RealtimeSessionStoreTest(unittest.TestCase):
             self.assertTrue(archive.status()["gcsMirrorHealthy"])
             self.assertEqual(archive.status()["gcsMirrorPending"], 0)
 
+    def test_gcs_json_api_uploader_uses_metadata_token_and_upload_endpoint(self):
+        requests = []
+
+        class FakeResponse:
+            def __init__(self, body):
+                self.body = body
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def read(self):
+                return self.body
+
+        original_urlopen = realtime.urlopen
+        try:
+            def fake_urlopen(request, timeout):
+                requests.append(
+                    {
+                        "url": request.full_url,
+                        "headers": dict(request.header_items()),
+                        "data": request.data,
+                        "method": request.get_method(),
+                        "timeout": timeout,
+                    }
+                )
+                if request.full_url == METADATA_TOKEN_URL:
+                    return FakeResponse(b'{"access_token":"metadata-token"}')
+                return FakeResponse(b'{"name":"realtime-events/2026-06-28/rt.jsonl"}')
+
+            realtime.urlopen = fake_urlopen
+            with tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp) / "rt.jsonl"
+                path.write_text('{"type":"caption_delta","zh":"神爱世人"}\n', encoding="utf-8")
+                GcsJsonApiUploader().upload(
+                    path,
+                    "gs://sermon-zh-artifacts/realtime-events/2026-06-28/rt.jsonl",
+                )
+        finally:
+            realtime.urlopen = original_urlopen
+
+        self.assertEqual(requests[0]["url"], METADATA_TOKEN_URL)
+        self.assertEqual(requests[0]["headers"]["Metadata-flavor"], "Google")
+        self.assertEqual(requests[1]["method"], "POST")
+        self.assertTrue(requests[1]["url"].startswith(f"{GCS_UPLOAD_BASE_URL}/sermon-zh-artifacts/o?"))
+        self.assertIn("name=realtime-events%2F2026-06-28%2Frt.jsonl", requests[1]["url"])
+        self.assertEqual(requests[1]["headers"]["Authorization"], "Bearer metadata-token")
+        self.assertEqual(requests[1]["data"], b'{"type":"caption_delta","zh":"\xe7\xa5\x9e\xe7\x88\xb1\xe4\xb8\x96\xe4\xba\xba"}\n')
+
     def test_gcs_mirror_failure_does_not_block_realtime_event_storage(self):
         class FailingUploader:
             def upload(self, local_path, gcs_uri):
@@ -158,7 +214,7 @@ class RealtimeSessionStoreTest(unittest.TestCase):
                 return False
 
             def read(self):
-                return b'{"client_secret":{"value":"ek_test","expires_at":123}}'
+                return b'{"value":"ek_test","expires_at":123,"session":{"model":"gpt-realtime-translate"}}'
 
         original_urlopen = realtime.urlopen
         try:
@@ -179,9 +235,57 @@ class RealtimeSessionStoreTest(unittest.TestCase):
             realtime.urlopen = original_urlopen
 
         self.assertEqual(captured["url"], OPENAI_TRANSLATION_CLIENT_SECRET_URL)
+        self.assertEqual(captured["payload"]["session"]["type"], "realtime")
         self.assertEqual(captured["payload"]["session"]["model"], "gpt-realtime-translate")
-        self.assertEqual(captured["payload"]["session"]["audio"]["output"]["language"], "zh")
+        self.assertEqual(captured["payload"]["session"]["output_modalities"], ["text"])
+        self.assertEqual(captured["payload"]["session"]["audio"]["input"]["transcription"]["model"], "gpt-4o-transcribe")
+        self.assertEqual(captured["payload"]["session"]["audio"]["input"]["transcription"]["language"], "en")
         self.assertEqual(data["client_secret"]["value"], "ek_test")
+
+    def test_secret_manager_api_access_uses_metadata_token_without_gcloud(self):
+        requests = []
+
+        class FakeResponse:
+            def __init__(self, body):
+                self.body = body
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def read(self):
+                return self.body
+
+        original_urlopen = realtime.urlopen
+        try:
+            def fake_urlopen(request, timeout):
+                requests.append(
+                    {
+                        "url": request.full_url,
+                        "headers": dict(request.header_items()),
+                        "timeout": timeout,
+                    }
+                )
+                if request.full_url == METADATA_TOKEN_URL:
+                    return FakeResponse(b'{"access_token":"metadata-token"}')
+                return FakeResponse(b'{"payload":{"data":"c2stdGVzdAo="}}')
+
+            realtime.urlopen = fake_urlopen
+            value = access_secret_with_secret_manager_api(
+                "projects/ai-for-god/secrets/openai-api-key/versions/latest"
+            )
+        finally:
+            realtime.urlopen = original_urlopen
+
+        self.assertEqual(value, "sk-test")
+        self.assertEqual(requests[0]["url"], METADATA_TOKEN_URL)
+        self.assertEqual(
+            requests[1]["url"],
+            f"{SECRET_MANAGER_ACCESS_BASE_URL}/projects/ai-for-god/secrets/openai-api-key/versions/latest:access",
+        )
+        self.assertEqual(requests[1]["headers"]["Authorization"], "Bearer metadata-token")
 
     def test_create_openai_translation_session_rejects_wrong_model_before_http(self):
         calls = []
@@ -213,7 +317,7 @@ class RealtimeSessionStoreTest(unittest.TestCase):
     def test_translation_calls_endpoint_is_dedicated_webrtc_url(self):
         self.assertEqual(
             OPENAI_TRANSLATION_CALLS_URL,
-            "https://api.openai.com/v1/realtime/translations/calls",
+            "https://api.openai.com/v1/realtime/calls",
         )
 
 

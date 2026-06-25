@@ -1,8 +1,10 @@
 import importlib.util
+import io
 import json
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 
 
@@ -56,6 +58,30 @@ class PrepareLiveLinkPlaybackTest(unittest.TestCase):
         self.assertIn("--api-key-secret", commands[0])
         self.assertIn("projects/p/secrets/openai-api-key/versions/latest", commands[0])
         self.assertIn("--asr-model", commands[0])
+
+    def test_run_redacts_api_key_secret_in_printed_command(self):
+        command = [
+            "python3",
+            "script.py",
+            "--api-key-secret",
+            "projects/p/secrets/openai-api-key/versions/latest",
+            "--other",
+            "value",
+        ]
+        stdout = io.StringIO()
+        calls = []
+        original_run = mod.subprocess.run
+        try:
+            mod.subprocess.run = lambda command, **kwargs: calls.append((command, kwargs))
+            with redirect_stdout(stdout):
+                mod.run(command, cwd=Path("/tmp"))
+        finally:
+            mod.subprocess.run = original_run
+
+        printed = stdout.getvalue()
+        self.assertIn("--api-key-secret <redacted-secret-resource>", printed)
+        self.assertNotIn("projects/p/secrets", printed)
+        self.assertEqual(calls[0][0], command)
 
     def test_rejects_realtime_model_for_offline_asr(self):
         with self.assertRaises(SystemExit):

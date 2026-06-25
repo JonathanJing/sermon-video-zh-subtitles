@@ -200,8 +200,8 @@ class BackendAppTest(unittest.TestCase):
         event_count = len(handler.realtime_store.get(session.session_id).events)
         handler.read_json_body = lambda: {
             "type": "caption_final",
-            "source": "gpt-5.5-mini-stable-correction",
-            "model": "gpt-5.5-mini",
+            "source": "gpt-5.4-mini-stable-correction",
+            "model": "gpt-5.4-mini",
             "segmentId": "seg_1",
             "text": "耶稣是我们的中保。",
             "zh": "耶稣是我们的中保。",
@@ -216,8 +216,8 @@ class BackendAppTest(unittest.TestCase):
 
         self.assertEqual(captured["status"], 202)
         event = handler.realtime_store.get(session.session_id).events[-1]
-        self.assertEqual(event["source"], "gpt-5.5-mini-stable-correction")
-        self.assertEqual(event["model"], "gpt-5.5-mini")
+        self.assertEqual(event["source"], "gpt-5.4-mini-stable-correction")
+        self.assertEqual(event["model"], "gpt-5.4-mini")
 
     def test_admin_token_can_post_stable_realtime_correction_with_zh_only(self):
         handler = object.__new__(ApiHandler)
@@ -238,8 +238,8 @@ class BackendAppTest(unittest.TestCase):
         event_count = len(handler.realtime_store.get(session.session_id).events)
         handler.read_json_body = lambda: {
             "type": "caption_final",
-            "source": "gpt-5.5-mini-stable-correction",
-            "model": "gpt-5.5-mini",
+            "source": "gpt-5.4-mini-stable-correction",
+            "model": "gpt-5.4-mini",
             "segmentId": "seg_1",
             "zh": "神爱世人。",
             "final": True,
@@ -274,8 +274,8 @@ class BackendAppTest(unittest.TestCase):
         event_count = len(handler.realtime_store.get(session.session_id).events)
         handler.read_json_body = lambda: {
             "type": "caption_final",
-            "source": "gpt-5.5-mini-stable-correction",
-            "model": "gpt-5.5-mini",
+            "source": "gpt-5.4-mini-stable-correction",
+            "model": "gpt-5.4-mini",
             "segmentId": "seg_1",
             "zh": "神爱世人。",
             "final": False,
@@ -310,8 +310,8 @@ class BackendAppTest(unittest.TestCase):
         event_count = len(handler.realtime_store.get(session.session_id).events)
         handler.read_json_body = lambda: {
             "type": "caption_final",
-            "source": "gpt-5.5-mini-stable-correction",
-            "model": "gpt-5.5-mini",
+            "source": "gpt-5.4-mini-stable-correction",
+            "model": "gpt-5.4-mini",
             "zh": "神爱世人。",
             "final": True,
         }

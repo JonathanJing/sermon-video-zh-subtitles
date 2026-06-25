@@ -61,13 +61,13 @@ LOCAL_REQUIREMENTS = [
     },
     {
         "id": "realtime_stable_correction",
-        "description": "Delayed stable corrections use gpt-5.5-mini and write caption_final events.",
+        "description": "Delayed stable corrections use gpt-5.4-mini and write caption_final events.",
         "files": [
             "scripts/stabilize_realtime_deltas_with_openai.py",
             "scripts/run_realtime_stabilizer_loop.py",
             "scripts/run_realtime_live_session.py",
         ],
-        "needles": ["gpt-5.5-mini", "gpt-5.5-mini-stable-correction", "caption_final"],
+        "needles": ["gpt-5.4-mini", "gpt-5.4-mini-stable-correction", "caption_final"],
     },
     {
         "id": "offline_captions_first",
@@ -77,9 +77,9 @@ LOCAL_REQUIREMENTS = [
     },
     {
         "id": "offline_model_route",
-        "description": "Offline ASR and translation use gpt-4o-transcribe plus gpt-5.5-mini, not realtime.",
+        "description": "Offline ASR and translation use gpt-4o-transcribe plus gpt-5.4-mini, not realtime.",
         "files": ["backend/worker.py", "scripts/validate_offline_chain.py"],
-        "needles": ["gpt-4o-transcribe", "gpt-5.5-mini", "gpt-realtime-translate"],
+        "needles": ["gpt-4o-transcribe", "gpt-5.4-mini", "gpt-realtime-translate"],
     },
     {
         "id": "offline_outputs",
@@ -102,7 +102,7 @@ EXTERNAL_REQUIREMENTS = [
     },
     {
         "id": "external_stable_correction",
-        "description": "A real realtime session received at least one gpt-5.5-mini stable correction.",
+        "description": "A real realtime session received at least one gpt-5.4-mini stable correction.",
     },
     {
         "id": "external_offline_caption_route",
@@ -128,6 +128,10 @@ EXTERNAL_REQUIREMENTS = [
         "id": "external_cloud_run_api_preflight",
         "description": "Cloud Run API preflight proves health, public Sunday reads, admin status, and realtime session creation.",
     },
+    {
+        "id": "external_required_text_model_access",
+        "description": "The OpenAI key can call gpt-5.4-mini for stable correction and offline Chinese translation.",
+    },
 ]
 
 EXTERNAL_MATRIX_ROWS = {
@@ -139,6 +143,7 @@ EXTERNAL_MATRIX_ROWS = {
     "external_cloud_run_gcs_manifest": "cloud_run_gcs_manifest",
     "external_cloud_run_realtime_config": "cloud_run_realtime_config",
     "external_cloud_run_api_preflight": "cloud_run_api_preflight",
+    "external_required_text_model_access": "required_text_model_access",
 }
 
 
@@ -173,6 +178,10 @@ def parse_args() -> argparse.Namespace:
         "--evidence-matrix-report",
         help="collect_production_evidence_matrix.py report.json with row-level production evidence.",
     )
+    parser.add_argument(
+        "--openai-model-access-preflight-report",
+        help="run_openai_model_access_preflight.py report.json proving gpt-5.4-mini access.",
+    )
     parser.add_argument("--out", type=Path, help="Optional audit report path.")
     return parser.parse_args()
 
@@ -193,11 +202,13 @@ def audit_goal_readiness(args: argparse.Namespace) -> dict[str, Any]:
         read_optional_json_report(args.cloud_run_api_preflight_report, missing_report_paths)
     )
     evidence_matrix_report = read_optional_json_report(args.evidence_matrix_report, missing_report_paths)
+    model_access_report = read_optional_json_report(args.openai_model_access_preflight_report, missing_report_paths)
     external_checks = external_requirement_checks(
         readiness_reports,
         cloud_run_config_report,
         cloud_run_api_preflight_report,
         evidence_matrix_report,
+        model_access_report,
     )
     failed = [check for check in local_checks + external_checks if check["state"] != "pass"]
     return {
@@ -242,6 +253,7 @@ def external_requirement_checks(
     cloud_run_config_report: dict[str, Any] | None,
     cloud_run_api_preflight_report: dict[str, Any] | None,
     evidence_matrix_report: dict[str, Any] | None = None,
+    model_access_report: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     matrix_states = matrix_row_states(evidence_matrix_report)
     matrix_rows = matrix_row_details(evidence_matrix_report)
@@ -279,6 +291,12 @@ def external_requirement_checks(
             and report_check_passed(cloud_run_api_preflight_report, "realtime_local_session_metadata")
         )
     )
+    has_required_text_model_access = matrix_states.get("required_text_model_access") == "pass" or bool(
+        model_access_report
+        and model_access_report.get("status") == "ok"
+        and "gpt-5.4-mini" in (model_access_report.get("models") or [])
+        and not model_access_report.get("failedChecks")
+    )
     observed = {
         "okReports": len(any_ok),
         "matrixRows": matrix_states,
@@ -290,6 +308,7 @@ def external_requirement_checks(
         "cloudRunManifest": has_cloud_run_manifest,
         "cloudRunRealtimeConfig": has_cloud_run_realtime_config,
         "cloudRunApiPreflight": has_cloud_run_api_preflight,
+        "requiredTextModelAccess": has_required_text_model_access,
     }
     return [
         external_check("external_realtime_live", has_realtime, observed, matrix_rows),
@@ -300,6 +319,7 @@ def external_requirement_checks(
         external_check("external_cloud_run_gcs_manifest", has_cloud_run_manifest, observed, matrix_rows),
         external_check("external_cloud_run_realtime_config", has_cloud_run_realtime_config, observed, matrix_rows),
         external_check("external_cloud_run_api_preflight", has_cloud_run_api_preflight, observed, matrix_rows),
+        external_check("external_required_text_model_access", has_required_text_model_access, observed, matrix_rows),
     ]
 
 

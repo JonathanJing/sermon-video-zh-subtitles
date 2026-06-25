@@ -28,7 +28,7 @@ def args_for(root: Path, **overrides):
         "event_token": "secret-event-token",
         "admin_token": None,
         "internal_task_token": None,
-        "model": "gpt-5.5-mini",
+        "model": "gpt-5.4-mini",
         "batch_size": 4,
         "max_windows": 20,
         "min_age_seconds": 4.0,
@@ -51,7 +51,7 @@ class RunRealtimeStabilizerLoopTest(unittest.TestCase):
             original_smoke = mod.responses_smoke
             try:
                 def fake_smoke(model, api_key):
-                    self.assertEqual(model, "gpt-5.5-mini")
+                    self.assertEqual(model, "gpt-5.4-mini")
                     self.assertEqual(api_key, "sk-test")
                     return {
                         "status": "failed",
@@ -68,7 +68,7 @@ class RunRealtimeStabilizerLoopTest(unittest.TestCase):
 
         rendered = json.dumps(report)
         self.assertEqual(report["status"], "failed")
-        self.assertIn("responses_model:gpt-5.5-mini", report["failedChecks"])
+        self.assertIn("responses_model:gpt-5.4-mini", report["failedChecks"])
         self.assertNotIn("sk-test", rendered)
         self.assertNotIn("sk-secret123", rendered)
         self.assertNotIn("openai-api-key", rendered)
@@ -160,7 +160,7 @@ class RunRealtimeStabilizerLoopTest(unittest.TestCase):
 
             def fake_stabilize(batch, api_key, model):
                 self.assertEqual(api_key, "sk-test")
-                self.assertEqual(model, "gpt-5.5-mini")
+                self.assertEqual(model, "gpt-5.4-mini")
                 self.assertEqual(batch[0]["id"], "seg_1")
                 return [{"id": "seg_1", "zh": "耶稣是我们的中保。", "note": "术语修正。"}]
 

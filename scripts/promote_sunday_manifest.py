@@ -25,8 +25,8 @@ REQUIRED_PUBLIC_OUTPUTS = {"web/playback-simulation.generated.js"}
 DEFAULT_SOURCE_MODE = "youtube-live-archive"
 DEFAULT_REALTIME_DRAFT_MODEL = "gpt-realtime-translate"
 DEFAULT_OFFLINE_ASR_MODEL = "gpt-4o-transcribe"
-DEFAULT_OFFLINE_TRANSLATION_MODEL = "gpt-5.5-mini"
-DEFAULT_STABLE_CORRECTION_MODEL = "gpt-5.5-mini"
+DEFAULT_OFFLINE_TRANSLATION_MODEL = "gpt-5.4-mini"
+DEFAULT_STABLE_CORRECTION_MODEL = "gpt-5.4-mini"
 READINESS_STATES = {
     "source_detected",
     "caption_generating",
@@ -182,7 +182,7 @@ def validate_readiness_translation_status(readiness_state: str, translation_stat
     if readiness_state in {"ready", "published"} and translation_status != "ready":
         raise SystemExit(
             f"cannot promote readiness={readiness_state} when playback translationStatus={translation_status!r}; "
-            "rerun gpt-5.5-mini translation or publish an explicit fallback manifest."
+            "rerun gpt-5.4-mini translation or publish an explicit fallback manifest."
         )
 
 

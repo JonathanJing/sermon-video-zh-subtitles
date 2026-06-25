@@ -105,7 +105,7 @@ class WebAppRealtimeContractTest(unittest.TestCase):
         app_js = self.app_js
 
         self.assertIn('String(event.source || "").includes("stable-correction")', app_js)
-        self.assertIn('segment.note = "gpt-5.5-mini 稳定修正版。"', app_js)
+        self.assertIn('segment.note = "gpt-5.4-mini 稳定修正版。"', app_js)
         self.assertIn("segment.stable = Boolean(segment.stable || isStableCorrection)", app_js)
 
 

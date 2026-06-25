@@ -16,7 +16,7 @@ from urllib.request import Request, urlopen
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_REALTIME_MODEL = "gpt-realtime-translate"
-EXPECTED_STABLE_MODEL = "gpt-5.5-mini"
+EXPECTED_STABLE_MODEL = "gpt-5.4-mini"
 EXPECTED_TARGET_LANGUAGE = "zh"
 EXPECTED_AUDIO_SOURCE_KIND = "ipad_mic"
 SECRET_PATTERNS = [

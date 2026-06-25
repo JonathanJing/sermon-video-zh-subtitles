@@ -56,7 +56,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Create a backend realtime session, stream an authorized live audio source through "
-            "gpt-realtime-translate, and run gpt-5.5-mini stable corrections on saved deltas."
+            "gpt-realtime-translate, and run gpt-5.4-mini stable corrections on saved deltas."
         )
     )
     source = parser.add_mutually_exclusive_group(required=True)
@@ -273,7 +273,7 @@ def run_worker_thread(*, args: argparse.Namespace, result: dict[str, Any], error
     try:
         result["report"] = realtime_media_worker.run_worker(args)
     except Exception as exc:  # pragma: no cover - defensive boundary for live runner
-        error.append(str(exc)[:300])
+        error.append(sanitize_live_error(str(exc)))
 
 
 def run_stabilizer_iteration(

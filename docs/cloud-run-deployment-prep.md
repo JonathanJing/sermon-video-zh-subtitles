@@ -247,13 +247,13 @@ python3 scripts/validate_offline_chain.py \
 ```
 
 Pass criteria: the verifier reports `status=ok`, uses a caption source or
-`gpt-4o-transcribe` ASR fallback, confirms `gpt-5.5-mini` translation, rejects
+`gpt-4o-transcribe` ASR fallback, confirms `gpt-5.4-mini` translation, rejects
 any `gpt-realtime-translate` use in the offline path, confirms
 `offline_route.strategy=captions_first_then_asr`, confirms caption routes did
 not extract audio and ASR routes are marked as `no_requested_caption_track`
 fallbacks, and finds readable Chinese VTT/SRT plus translated playback JS.
 
-If the `gpt-5.5-mini` call has already produced a saved model-output JSONL but
+If the `gpt-5.4-mini` call has already produced a saved model-output JSONL but
 the caption/export step must be resumed, replay the saved translations without
 calling OpenAI again:
 
@@ -263,12 +263,12 @@ python3 scripts/translate_playback_with_openai.py \
   --out /tmp/sermon-worker/YYYY-MM-DD/<session_id>/web/playback-simulation.generated.js \
   --out-dir /tmp/sermon-worker/YYYY-MM-DD/<session_id>/model-output \
   --translations-jsonl /tmp/sermon-worker/YYYY-MM-DD/<session_id>/model-output/openai-translation-output.jsonl \
-  --model gpt-5.5-mini
+  --model gpt-5.4-mini
 ```
 
 This replay mode is only artifact recovery. It proves the saved translations can
 be turned into playback/VTT/SRT/manifest outputs, but it is not evidence that a
-fresh `gpt-5.5-mini` API call succeeded.
+fresh `gpt-5.4-mini` API call succeeded.
 
 After a Sunday worker run and promotion, validate the stable Sunday manifest and
 its public artifacts:
@@ -283,7 +283,7 @@ python3 scripts/validate_sunday_manifest.py \
 
 Pass criteria: the verifier reports `status=ok`, includes translated Chinese
 VTT/SRT outputs, confirms the playback JS has `translationStatus=ready`, records
-`gpt-4o-transcribe` for offline ASR, `gpt-5.5-mini` for offline translation and
+`gpt-4o-transcribe` for offline ASR, `gpt-5.4-mini` for offline translation and
 stable correction, `gpt-realtime-translate` for realtime draft, and finds no raw
 key material or Secret Manager resource names.
 
@@ -299,7 +299,7 @@ python3 scripts/validate_realtime_session.py \
 Pass criteria: the verifier reports `status=ok`, sees a
 `gpt-realtime-translate` model event, English input transcript events, Chinese
 caption events, approved realtime sources, at least one
-`gpt-5.5-mini-stable-correction` caption final when the correction gate is
+`gpt-5.4-mini-stable-correction` caption final when the correction gate is
 enabled, and no raw key material, client secrets, event tokens, or Secret
 Manager resource names.
 
@@ -310,7 +310,7 @@ shared realtime fanout store is deployed. Validate the deployed service config:
 
 For a quick read-only refresh before the 11:30 live run, use the consolidated
 preflight wrapper. It does not run `gcloud run services update` and continues
-through matrix/audit generation even when `gpt-5.5-mini` access or Cloud Run
+through matrix/audit generation even when `gpt-5.4-mini` access or Cloud Run
 realtime config fails. It also refreshes the non-mutating Cloud Run update plan
 and apply dry-run evidence, but never passes `--approve`:
 
@@ -434,7 +434,7 @@ python3 scripts/run_realtime_public_sse_smoke.py \
 ```
 
 This synthetic smoke creates a realtime session, posts one English transcript
-delta, one Chinese caption delta, and one `gpt-5.5-mini` stable correction, then
+delta, one Chinese caption delta, and one `gpt-5.4-mini` stable correction, then
 reads them back from `/api/realtime/sessions/current/events`. It proves the
 backend/public stream contract and, when the GCS prefix is supplied, validates
 that the same events were saved to the durable session JSONL. With
@@ -492,12 +492,12 @@ python3 scripts/run_openai_model_access_preflight.py \
   --cloud-run-service sermon-zh-caption-web \
   --project ai-for-god \
   --region us-west1 \
-  --model gpt-5.5-mini \
+  --model gpt-5.4-mini \
   --out artifacts/evidence/openai-model-access-preflight.json
 ```
 
 Pass criteria: the report has `status=ok` and the
-`responses_model:gpt-5.5-mini` check passes. If this fails with a model
+`responses_model:gpt-5.4-mini` check passes. If this fails with a model
 404 or access error, do not treat offline Chinese VTT/SRT or stable correction
 as production-ready; fix the model name/access first, then rerun translation and
 stable-correction validation.
@@ -550,7 +550,7 @@ without `--out`, the runner writes a dated production-readiness report under
 Use `--bundle-report-out` to persist the top-level runner summary, including all
 expanded commands and step return codes.
 Alternative model access reports are only side evidence; a green `gpt-5.5`
-preflight does not satisfy the required `gpt-5.5-mini` stable/offline route.
+preflight does not satisfy the required `gpt-5.4-mini` stable/offline route.
 If the production-readiness validator exits before it can write `--out`, the
 bundle writes a minimal failed readiness report and still runs the matrix/audit
 steps. That keeps the Sunday handoff focused on the final status board instead

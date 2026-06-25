@@ -24,9 +24,9 @@ EXPECTED_BROWSER_EVIDENCE = {
 }
 EXPECTED_MODELS = {
     "realtimeDraftModel": "gpt-realtime-translate",
-    "stableCorrectionModel": "gpt-5.5-mini",
+    "stableCorrectionModel": "gpt-5.4-mini",
     "offlineAsrModel": "gpt-4o-transcribe",
-    "offlineTranslationModel": "gpt-5.5-mini",
+    "offlineTranslationModel": "gpt-5.4-mini",
     "forbiddenOfflineModel": "gpt-realtime-translate",
 }
 
@@ -148,7 +148,7 @@ def add_operator_choices_check(checks: list[dict[str, Any]], name: str, choices:
         and not observed["browserEvidenceMissing"]
         and "scripts/run_realtime_live_session.py" in server_command
         and "gpt-realtime-translate" in server_command
-        and "gpt-5.5-mini" in server_command
+        and "gpt-5.4-mini" in server_command
     )
     add_check(checks, name, ok, observed)
 
@@ -160,7 +160,7 @@ def add_live_validation_commands_check(checks: list[dict[str, Any]], name: str, 
         "hasWebContractReport": "--web-realtime-contract-report" in command_text,
         "hasSessionValidator": "scripts/validate_realtime_session.py" in command_text,
         "hasRealtimeModel": "gpt-realtime-translate" in command_text,
-        "hasStableModel": "gpt-5.5-mini" in command_text,
+        "hasStableModel": "gpt-5.4-mini" in command_text,
         "requiresStableCorrection": "--require-stable-correction" in command_text,
     }
     add_check(checks, name, all(observed.values()), observed)
@@ -172,7 +172,7 @@ def add_offline_handoff_check(checks: list[dict[str, Any]], name: str, handoff: 
         "archiveTrigger": "YouTube live archive" in text,
         "captionFirst": "captions/VTT" in text or "captions" in text,
         "asrModel": "gpt-4o-transcribe" in text,
-        "translationModel": "gpt-5.5-mini" in text,
+        "translationModel": "gpt-5.4-mini" in text,
         "forbidsRealtimeOffline": "Offline post-live route never uses gpt-realtime-translate." in text,
         "exportsSubtitleArtifacts": "VTT/SRT/playback JS/GCS manifest" in text or "VTT/SRT" in text,
     }
@@ -181,12 +181,16 @@ def add_offline_handoff_check(checks: list[dict[str, Any]], name: str, handoff: 
 
 def add_no_caption_asr_stage_check(checks: list[dict[str, Any]], name: str, stage: Any) -> None:
     stage_obj = stage if isinstance(stage, dict) else {}
-    command_text = json.dumps(stage_obj.get("commands") if isinstance(stage_obj.get("commands"), list) else [], ensure_ascii=False)
+    commands = stage_obj.get("commands") if isinstance(stage_obj.get("commands"), list) else []
+    expanded_commands = stage_obj.get("expandedCommands") if isinstance(stage_obj.get("expandedCommands"), list) else []
+    command_text = json.dumps(commands + expanded_commands, ensure_ascii=False)
+    runner_text = json.dumps(commands, ensure_ascii=False)
     report_paths = set(item for item in stage_obj.get("requiredReports") or [] if isinstance(item, str))
     pass_criteria_text = "\n".join(str(item) for item in stage_obj.get("passCriteria") or [])
     required_models = stage_obj.get("requiredModels") if isinstance(stage_obj.get("requiredModels"), dict) else {}
     observed = {
         "state": stage_obj.get("state"),
+        "hasRunnerCommand": "scripts/run_no_caption_archive_asr_route.py" in runner_text,
         "hasArchivePreflight": "scripts/run_offline_archive_preflight.py" in command_text,
         "hasPreparePlayback": "scripts/prepare_live_link_playback.py" in command_text,
         "hasTranslate": "scripts/translate_playback_with_openai.py" in command_text,
@@ -194,7 +198,7 @@ def add_no_caption_asr_stage_check(checks: list[dict[str, Any]], name: str, stag
         "hasOfflineChainValidation": "scripts/validate_offline_chain.py" in command_text,
         "hasProductionReadinessValidation": "scripts/validate_production_readiness.py" in command_text,
         "hasAsrModel": "gpt-4o-transcribe" in command_text and required_models.get("offlineAsr") == "gpt-4o-transcribe",
-        "hasTranslationModel": "gpt-5.5-mini" in command_text and required_models.get("offlineTranslation") == "gpt-5.5-mini",
+        "hasTranslationModel": "gpt-5.4-mini" in command_text and required_models.get("offlineTranslation") == "gpt-5.4-mini",
         "forbidsRealtimeOffline": required_models.get("forbiddenOfflineModel") == "gpt-realtime-translate",
         "hasOfflineAsrChainReport": "artifacts/evidence/no-caption-offline-chain-validation.json" in report_paths,
         "hasArchivePreflightReport": "artifacts/evidence/no-caption-archive-preflight.json" in report_paths,

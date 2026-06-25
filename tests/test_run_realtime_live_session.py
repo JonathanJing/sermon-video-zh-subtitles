@@ -30,7 +30,7 @@ def args_for(root: Path, **overrides):
         "internal_task_token": None,
         "target_language": "zh",
         "realtime_model": "gpt-realtime-translate",
-        "stable_model": "gpt-5.5-mini",
+        "stable_model": "gpt-5.4-mini",
         "max_audio_seconds": 8.0,
         "event_log_dir": root / "events",
         "realtime_event_gcs_prefix": None,
@@ -193,7 +193,7 @@ class RunRealtimeLiveSessionTest(unittest.TestCase):
 
             def fake_stabilize_batch(batch, api_key, model):
                 self.assertEqual(api_key, "sk-test")
-                self.assertEqual(model, "gpt-5.5-mini")
+                self.assertEqual(model, "gpt-5.4-mini")
                 self.assertEqual(batch[0]["id"], "seg_1")
                 return [{"id": "seg_1", "zh": "耶稣是我们的中保。", "note": "术语稳定。"}]
 
@@ -204,8 +204,8 @@ class RunRealtimeLiveSessionTest(unittest.TestCase):
                     {
                         "id": 4,
                         "type": "caption_final",
-                        "source": "gpt-5.5-mini-stable-correction",
-                        "model": "gpt-5.5-mini",
+                        "source": "gpt-5.4-mini-stable-correction",
+                        "model": "gpt-5.4-mini",
                         "segmentId": "seg_1",
                         "text": "耶稣是我们的中保。",
                         "zh": "耶稣是我们的中保。",
@@ -335,6 +335,47 @@ class RunRealtimeLiveSessionTest(unittest.TestCase):
                         self.assertIn("stable_correction_failed_non_blocking", report["stableCorrection"]["warnings"])
                     self.assertNotIn("sk-secret123", rendered)
                     self.assertNotIn("openai-api-key", rendered)
+
+    def test_worker_exception_is_sanitized_in_live_report(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            args = args_for(root, require_stable_correction=False, final_stabilizer_iterations=0)
+            args.audio_file.write_bytes(b"fake audio")
+
+            def fake_create_backend_local_session(session_args, audio_source_kind=None):
+                return {"sessionId": "rt_live", "eventToken": "secret-event-token"}
+
+            def fake_run_worker(worker_args):
+                raise RuntimeError(
+                    "failed with sk-secret123 and projects/p/secrets/openai-api-key/versions/latest"
+                )
+
+            originals = (
+                mod.realtime_media_worker.create_backend_local_session,
+                mod.realtime_media_worker.run_worker,
+                mod.access_secret,
+                mod.time.sleep,
+            )
+            try:
+                mod.realtime_media_worker.create_backend_local_session = fake_create_backend_local_session
+                mod.realtime_media_worker.run_worker = fake_run_worker
+                mod.access_secret = lambda secret: "sk-test"
+                mod.time.sleep = lambda _seconds: None
+
+                report = mod.run_live_session(args)
+            finally:
+                (
+                    mod.realtime_media_worker.create_backend_local_session,
+                    mod.realtime_media_worker.run_worker,
+                    mod.access_secret,
+                    mod.time.sleep,
+                ) = originals
+
+            rendered = json.dumps(report)
+            self.assertEqual(report["status"], "worker_failed")
+            self.assertNotIn("sk-secret123", rendered)
+            self.assertNotIn("openai-api-key", rendered)
+            self.assertNotIn("secret-event-token", rendered)
 
 
 if __name__ == "__main__":

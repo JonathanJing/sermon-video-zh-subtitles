@@ -52,7 +52,7 @@ class WriteProductionGoLiveSequenceTest(unittest.TestCase):
         rendered_server_choice = json.dumps(live_choices["server_worker_authorized_audio"]["command"])
         self.assertIn("run_realtime_live_session.py", rendered_server_choice)
         self.assertIn("gpt-realtime-translate", rendered_server_choice)
-        self.assertIn("gpt-5.5-mini", rendered_server_choice)
+        self.assertIn("gpt-5.4-mini", rendered_server_choice)
         post_approval_commands = json.dumps(stages["post_approval_validation"]["commands"])
         self.assertIn("--create-realtime-session", post_approval_commands)
         self.assertIn("--internal-task-token", post_approval_commands)
@@ -76,12 +76,14 @@ class WriteProductionGoLiveSequenceTest(unittest.TestCase):
         self.assertTrue(stages["required_model_recovery"]["doNotSubstitute"])
         self.assertEqual(stages["real_no_caption_asr_validation"]["state"], "needs_real_no_caption_archive")
         asr_commands = json.dumps(stages["real_no_caption_asr_validation"]["commands"])
-        self.assertIn("prepare_live_link_playback.py", asr_commands)
+        self.assertIn("run_no_caption_archive_asr_route.py", asr_commands)
         self.assertIn("gpt-4o-transcribe", asr_commands)
-        self.assertIn("translate_playback_with_openai.py", asr_commands)
-        self.assertIn("gpt-5.5-mini", asr_commands)
-        self.assertIn("validate_offline_chain.py", asr_commands)
-        self.assertIn("no-caption-offline-chain-validation.json", asr_commands)
+        self.assertIn("gpt-5.4-mini", asr_commands)
+        expanded_asr_commands = json.dumps(stages["real_no_caption_asr_validation"]["expandedCommands"])
+        self.assertIn("prepare_live_link_playback.py", expanded_asr_commands)
+        self.assertIn("translate_playback_with_openai.py", expanded_asr_commands)
+        self.assertIn("validate_offline_chain.py", expanded_asr_commands)
+        self.assertIn("no-caption-offline-chain-validation.json", expanded_asr_commands)
         self.assertIn(
             "artifacts/evidence/no-caption-offline-chain-validation.json",
             stages["real_no_caption_asr_validation"]["requiredReports"],
@@ -158,7 +160,7 @@ class WriteProductionGoLiveSequenceTest(unittest.TestCase):
                 },
                 model={
                     "status": "waiting_for_required_model_access",
-                    "requiredModel": "gpt-5.5-mini",
+                    "requiredModel": "gpt-5.4-mini",
                     "alternativeModel": "gpt-5.5",
                     "modelPolicy": {"doNotSubstitute": True},
                 },
@@ -270,7 +272,7 @@ def write_reports(root: Path, **overrides):
         "operator": {"status": "approval_required", "approvalStepCount": 2},
         "model": {
             "status": "waiting_for_required_model_access",
-            "requiredModel": "gpt-5.5-mini",
+            "requiredModel": "gpt-5.4-mini",
             "alternativeModel": "gpt-5.5",
             "modelPolicy": {"doNotSubstitute": True},
         },
@@ -278,9 +280,23 @@ def write_reports(root: Path, **overrides):
             "status": "needs_real_no_caption_archive",
             "requiredModels": {
                 "offlineAsr": "gpt-4o-transcribe",
-                "offlineTranslation": "gpt-5.5-mini",
+                "offlineTranslation": "gpt-5.4-mini",
                 "forbiddenOfflineModel": "gpt-realtime-translate",
             },
+            "runnerCommand": [
+                "python3",
+                "scripts/run_no_caption_archive_asr_route.py",
+                "--live-url",
+                "<NO_CAPTION_YOUTUBE_LIVE_ARCHIVE_URL>",
+                "--api-key-secret",
+                "<OPENAI_API_KEY_SECRET_RESOURCE>",
+                "--sunday",
+                "2026-06-28",
+                "--asr-model",
+                "gpt-4o-transcribe",
+                "--translation-model",
+                "gpt-5.4-mini",
+            ],
             "commands": [
                 [
                     "python3",
@@ -294,7 +310,7 @@ def write_reports(root: Path, **overrides):
                     "python3",
                     "scripts/translate_playback_with_openai.py",
                     "--model",
-                    "gpt-5.5-mini",
+                    "gpt-5.4-mini",
                 ],
                 [
                     "python3",
@@ -309,7 +325,7 @@ def write_reports(root: Path, **overrides):
                 "validate_offline_chain.py confirms no requested English caption track exists before ASR fallback.",
                 "validate_offline_chain.py confirms the openai_asr output source_file is an extracted audio artifact.",
                 "ASR model is gpt-4o-transcribe.",
-                "Chinese translation model is gpt-5.5-mini.",
+                "Chinese translation model is gpt-5.4-mini.",
                 "validate_offline_chain.py status is ok and not_realtime_chain passes.",
             ],
         },
@@ -318,9 +334,9 @@ def write_reports(root: Path, **overrides):
             "targetWindow": {"liveCaptionStart": "11:30 PT", "publicReadinessDeadline": "11:50 PT"},
             "modelPolicy": {
                 "realtimeDraftModel": "gpt-realtime-translate",
-                "stableCorrectionModel": "gpt-5.5-mini",
+                "stableCorrectionModel": "gpt-5.4-mini",
                 "offlineAsrModel": "gpt-4o-transcribe",
-                "offlineTranslationModel": "gpt-5.5-mini",
+                "offlineTranslationModel": "gpt-5.4-mini",
                 "forbiddenOfflineModel": "gpt-realtime-translate",
             },
             "operatorChoices": [
@@ -348,7 +364,7 @@ def write_reports(root: Path, **overrides):
                         "--realtime-model",
                         "gpt-realtime-translate",
                         "--stable-model",
-                        "gpt-5.5-mini",
+                        "gpt-5.4-mini",
                     ],
                 },
             ],
@@ -370,7 +386,7 @@ def write_reports(root: Path, **overrides):
                 "python3",
                 "scripts/run_realtime_stabilizer_loop.py",
                 "--model",
-                "gpt-5.5-mini",
+                "gpt-5.4-mini",
             ],
         },
     }

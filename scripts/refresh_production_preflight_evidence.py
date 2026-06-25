@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 from datetime import date, datetime, timedelta, timezone
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -34,6 +35,7 @@ LOCAL_ONLY_SKIP_STEPS = {
     "cloudRunUpdatePlan",
     "cloudRunUpdateDryRun",
     "cloudRunApiPreflight",
+    "deployedWebrtcSession",
     "requiredModelAccess",
     "alternativeModelAccess",
 }
@@ -62,7 +64,7 @@ def parse_args() -> argparse.Namespace:
         "--realtime-event-gcs-prefix",
         default="gs://sermon-zh-artifacts-ai-for-god/realtime-events",
     )
-    parser.add_argument("--required-model", default="gpt-5.5-mini")
+    parser.add_argument("--required-model", default="gpt-5.4-mini")
     parser.add_argument("--alternative-model", default="gpt-5.5")
     parser.add_argument("--evidence-dir", type=Path, default=Path("artifacts/evidence"))
     parser.add_argument("--out", type=Path, default=Path("artifacts/evidence/production-preflight-refresh.json"))
@@ -125,8 +127,9 @@ def evidence_paths(evidence_dir: Path) -> dict[str, Path]:
         "realtimeAudioSource": root / "realtime-audio-source-preflight.json",
         "serverRealtimeContract": root / "server-realtime-contract.json",
         "webRealtimeContract": root / "web-realtime-contract.json",
+        "deployedWebrtcSession": root / "deployed-webrtc-realtime-session-smoke.json",
         "publicCaptionViewRuntime": root / "public-caption-view-runtime.json",
-        "realtimePublicSse": root / "realtime-public-sse-smoke.local.json",
+        "realtimePublicSse": root / "realtime-public-sse-smoke.json",
         "realtimeOpenaiSmoke": root / "realtime-openai-smoke" / "report.json",
         "realtimeSessionValidation": root / "realtime-openai-smoke" / "realtime-session-validation.json",
         "stableCorrectionContract": root / "stable-correction-contract.json",
@@ -138,6 +141,10 @@ def evidence_paths(evidence_dir: Path) -> dict[str, Path]:
         "localSundayManifestRoot": root / "manifest-promotion-guard",
         "offlineChainValidation": root / "offline-chain-validation.json",
         "offlineAsrChainValidation": root / "no-caption-offline-chain-validation.json",
+        "offlineAsrRouteRun": root / "no-caption-asr-route-run.json",
+        "offlineAsrSampleChainRoot": root / "no-caption-asr-sample-chain",
+        "offlineAsrSampleChainReport": root / "no-caption-asr-sample-chain" / "sample-chain-report.json",
+        "offlineAsrSampleChainValidation": root / "no-caption-asr-sample-chain-validation.json",
         "offlineAsrSmoke": root / "offline-asr-fallback-smoke" / "report.json",
         "offlineTranslation": root / "offline-caption-route" / "model-output" / "openai-translation-report.json",
         "sundayManifestValidation": root / "sunday-manifest-validation.json",
@@ -197,6 +204,18 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
             "$INTERNAL_TASK_TOKEN",
             "--out",
             str(paths["cloudRunApiPreflight"]),
+        ],
+        "deployedWebrtcSession": [
+            sys.executable,
+            "scripts/run_deployed_webrtc_session_smoke.py",
+            "--base-url",
+            args.base_url,
+            "--sunday",
+            args.sunday,
+            "--internal-task-token",
+            "$INTERNAL_TASK_TOKEN",
+            "--out",
+            str(paths["deployedWebrtcSession"]),
         ],
         "requiredModelAccess": [
             sys.executable,
@@ -290,6 +309,20 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
             "--out",
             str(paths["noCaptionAsrPlan"]),
         ],
+        "offlineAsrSampleChain": [
+            sys.executable,
+            "scripts/build_no_caption_asr_sample_chain.py",
+            "--asr-smoke-report",
+            str(paths["offlineAsrSmoke"]),
+            "--sunday",
+            args.sunday,
+            "--out-root",
+            str(paths["offlineAsrSampleChainRoot"]),
+            "--validation-out",
+            str(paths["offlineAsrSampleChainValidation"]),
+            "--out",
+            str(paths["offlineAsrSampleChainReport"]),
+        ],
         "localSundayManifestEvidence": [
             sys.executable,
             "scripts/build_local_sunday_manifest_evidence.py",
@@ -343,6 +376,8 @@ def production_matrix_command(paths: dict[str, Path]) -> list[str]:
         str(paths["serverRealtimeContract"]),
         "--web-realtime-contract-report",
         str(paths["webRealtimeContract"]),
+        "--deployed-webrtc-session-report",
+        str(paths["deployedWebrtcSession"]),
         "--live-1130-run-plan-report",
         str(paths["live1130RunPlan"]),
         "--realtime-handoff-validation-report",
@@ -365,6 +400,10 @@ def production_matrix_command(paths: dict[str, Path]) -> list[str]:
         str(paths["offlineChainValidation"]),
         "--offline-asr-chain-validation-report",
         str(paths["offlineAsrChainValidation"]),
+        "--offline-asr-route-run-report",
+        str(paths["offlineAsrRouteRun"]),
+        "--offline-asr-sample-chain-validation-report",
+        str(paths["offlineAsrSampleChainValidation"]),
         "--no-caption-asr-plan-report",
         str(paths["noCaptionAsrPlan"]),
         "--offline-asr-smoke-report",
@@ -398,6 +437,8 @@ def goal_audit_command(paths: dict[str, Path]) -> list[str]:
         str(paths["cloudRunApiPreflight"]),
         "--evidence-matrix-report",
         str(paths["productionMatrix"]),
+        "--openai-model-access-preflight-report",
+        str(paths["requiredModelAccess"]),
         "--out",
         str(paths["goalAudit"]),
     ]
@@ -480,8 +521,17 @@ def realtime_handoff_validation_command(paths: dict[str, Path]) -> list[str]:
 
 
 def run_command(name: str, command: list[str]) -> dict[str, Any]:
+    try:
+        executable_command = expand_runtime_placeholders(command)
+    except RuntimeError as exc:
+        return {
+            "returnCode": 2,
+            "status": classify_step_status(name, 2),
+            "stdoutTail": "",
+            "stderrTail": sanitize_tail(str(exc)),
+        }
     completed = subprocess.run(
-        command,
+        executable_command,
         cwd=REPO_ROOT,
         check=False,
         capture_output=True,
@@ -497,6 +547,19 @@ def run_command(name: str, command: list[str]) -> dict[str, Any]:
 
 def status_from_steps(steps: dict[str, dict[str, Any]]) -> str:
     return "ok" if all(step["status"] == "ok" for step in steps.values()) else "incomplete"
+
+
+def expand_runtime_placeholders(command: list[str]) -> list[str]:
+    expanded = []
+    for value in command:
+        if value == "$INTERNAL_TASK_TOKEN":
+            token = os.getenv("INTERNAL_TASK_TOKEN")
+            if not token:
+                raise RuntimeError("INTERNAL_TASK_TOKEN is required for this preflight step.")
+            expanded.append(token)
+        else:
+            expanded.append(value)
+    return expanded
 
 
 def classify_step_status(name: str, return_code: int) -> str:

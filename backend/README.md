@@ -137,27 +137,27 @@ gs://$SERMON_ARTIFACT_BUCKET/$SERMON_ARTIFACT_PREFIX/YYYY-MM-DD/runs/<session_id
 ```
 
 The planned worker chain first preflights OpenAI Responses access for
-`gpt-5.5-mini`, prepares playback data, translates captions with
-`gpt-5.5-mini`, exports translated Chinese VTT/SRT files, validates the offline
+`gpt-5.4-mini`, prepares playback data, translates captions with
+`gpt-5.4-mini`, exports translated Chinese VTT/SRT files, validates the offline
 chain contract, uploads the translated playback JS plus run manifest, and then
 promotes the Sunday manifest. This keeps the caption publish path independent
 from optional notes/quote generation.
 
 To generate traceable notes/quote candidates after the caption manifest is
 published, pass `includeInsights: true` in the generation request or
-`--include-insights` on the worker CLI. That optional step uses `gpt-5.5-mini`
+`--include-insights` on the worker CLI. That optional step uses `gpt-5.4-mini`
 with reasoning effort `medium` and updates `insights/openai-notes.json`.
 
-If a `gpt-5.5-mini` translation JSONL already exists and only the export or
+If a `gpt-5.4-mini` translation JSONL already exists and only the export or
 publish steps need to be resumed, pass `translationsJsonl` in the generation
 request or `--translations-jsonl` on the worker CLI. In that recovery mode the
 worker replays the saved translations instead of making a fresh translation API
 call. Treat that as artifact recovery evidence, not proof that new
-`gpt-5.5-mini` access succeeded.
+`gpt-5.4-mini` access succeeded.
 
 For YouTube live archives, the planned offline route is explicit:
 `gpt-4o-transcribe` is used only when captions/VTT are unavailable, and
-`gpt-5.5-mini` translates the aligned text. The translated playback JS is then
+`gpt-5.4-mini` translates the aligned text. The translated playback JS is then
 exported to `artifacts/sermon.zh.live-aligned.vtt` and
 `artifacts/sermon.zh.live-aligned.srt`, and the archive path does not use
 `gpt-realtime-translate`.
@@ -203,7 +203,7 @@ python3 scripts/validate_sunday_manifest.py \
 ```
 
 This gate requires translated Chinese VTT/SRT, a ready translated playback JS,
-the expected model routing (`gpt-4o-transcribe`, `gpt-5.5-mini`, and
+the expected model routing (`gpt-4o-transcribe`, `gpt-5.4-mini`, and
 `gpt-realtime-translate`), readiness state, and clean secret flags.
 
 When offline artifacts, the promoted Sunday manifest, and realtime JSONL are all
@@ -333,7 +333,7 @@ does not include API key material or Secret Manager resource names.
 
 For the 11:30 live run, prefer the live-session wrapper. It creates the backend
 session once, keeps the event token in memory, starts the server media worker,
-and runs `gpt-5.5-mini` stable corrections every few seconds against the saved
+and runs `gpt-5.4-mini` stable corrections every few seconds against the saved
 realtime JSONL. Use `--audio-url` for a venue-authorized stream, `--youtube-url`
 for an authorized YouTube live source, or `--audio-file` for rehearsal:
 
@@ -371,7 +371,7 @@ resolve the best audio stream before piping it through `ffmpeg` into the same
 WebSocket relay. This path must still be live-validated with the actual
 authorized source and platform rules before Sunday production.
 
-Saved realtime JSONL can be stabilized with `gpt-5.5-mini` after a short delay:
+Saved realtime JSONL can be stabilized with `gpt-5.4-mini` after a short delay:
 
 ```bash
 python3 scripts/stabilize_realtime_deltas_with_openai.py \
@@ -383,7 +383,7 @@ To publish those stable corrections back into the live caption stream, include
 the realtime session id and one posting credential. Browser WebRTC sessions do
 not expose the event token to backend jobs, so use the operator admin token or
 internal task token; the backend accepts those tokens only for
-`gpt-5.5-mini-stable-correction` `caption_final` events:
+`gpt-5.4-mini-stable-correction` `caption_final` events:
 
 ```bash
 python3 scripts/stabilize_realtime_deltas_with_openai.py \
@@ -395,7 +395,7 @@ python3 scripts/stabilize_realtime_deltas_with_openai.py \
 ```
 
 The script posts each stable correction as a `caption_final` event with source
-`gpt-5.5-mini-stable-correction`, so the public SSE caption view can replace the
+`gpt-5.4-mini-stable-correction`, so the public SSE caption view can replace the
 low-latency draft with the more stable Chinese line.
 
 After stable corrections have posted, rerun the realtime session verifier with
@@ -427,7 +427,7 @@ plus a report and raw model-output JSONL. This is the bridge from low-latency
 draft captions to higher-quality stable captions.
 
 The loop writes `<session_id>.model-access-preflight.json` before the first
-iteration. If `gpt-5.5-mini` is unavailable through OpenAI Responses, it exits
+iteration. If `gpt-5.4-mini` is unavailable through OpenAI Responses, it exits
 before reading event JSONL or posting any correction, which keeps the realtime
 draft stream independent from delayed stable-correction failures.
 

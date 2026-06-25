@@ -23,7 +23,7 @@ class ValidateSundayManifestTest(unittest.TestCase):
             + json.dumps(
                 {
                     "translationStatus": "ready",
-                    "translationProvider": {"model": "gpt-5.5-mini"},
+                    "translationProvider": {"model": "gpt-5.4-mini"},
                     "offlineSourceKind": "live_archive",
                     "segments": [
                         {
@@ -59,8 +59,8 @@ class ValidateSundayManifestTest(unittest.TestCase):
             "models": {
                 "realtimeDraft": "gpt-realtime-translate",
                 "offlineAsr": "gpt-4o-transcribe",
-                "offlineTranslation": "gpt-5.5-mini",
-                "stableCorrection": "gpt-5.5-mini",
+                "offlineTranslation": "gpt-5.4-mini",
+                "stableCorrection": "gpt-5.4-mini",
             },
             "offlineSourceKind": "live_archive",
             "offlineRoute": {

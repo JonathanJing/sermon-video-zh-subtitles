@@ -72,7 +72,7 @@ class TranslatePlaybackWithOpenAITest(unittest.TestCase):
         translated = mod.apply_translations(
             simulation=simulation,
             translations=translations,
-            model="gpt-5.5-mini",
+            model="gpt-5.4-mini",
             api_key_secret="projects/p/secrets/openai-api-key/versions/latest",
         )
 
@@ -112,7 +112,7 @@ class TranslatePlaybackWithOpenAITest(unittest.TestCase):
             original={"translationStatus": "needs_translation"},
             translated={"segments": [{"id": "sim_0001"}], "translationStatus": "ready"},
             translations=[{"id": "sim_0001"}],
-            model="gpt-5.5-mini",
+            model="gpt-5.4-mini",
             api_key_secret="projects/p/secrets/openai-api-key/versions/latest",
             jsonl_path=Path("artifacts/openai-translation-output.jsonl"),
             out_path=Path("web/playback-simulation.generated.js"),
@@ -137,7 +137,7 @@ class TranslatePlaybackWithOpenAITest(unittest.TestCase):
                 ],
             },
             translations=[{"id": "sim_0001"}, {"id": "missing"}],
-            model="gpt-5.5-mini",
+            model="gpt-5.4-mini",
             api_key_secret="",
             jsonl_path=Path("artifacts/openai-translation-output.jsonl"),
             out_path=Path("web/playback-simulation.generated.js"),
@@ -185,7 +185,7 @@ class TranslatePlaybackWithOpenAITest(unittest.TestCase):
                 "--translations-jsonl",
                 str(translations_jsonl),
                 "--model",
-                "gpt-5.5-mini",
+                "gpt-5.4-mini",
             ]
             original_argv = mod.sys.argv
             original_stdout = mod.sys.stdout
@@ -205,7 +205,7 @@ class TranslatePlaybackWithOpenAITest(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         self.assertEqual(translated["translationStatus"], "ready")
         self.assertEqual(translated["segments"][0]["zh"], "神爱世人。")
-        self.assertEqual(translated["translationProvider"]["model"], "gpt-5.5-mini")
+        self.assertEqual(translated["translationProvider"]["model"], "gpt-5.4-mini")
         self.assertEqual(report["translatedSegments"], 1)
         self.assertEqual(report["modelOutputJsonl"], "saved-output.jsonl")
         self.assertNotIn("apiKeySecret", rendered)
@@ -215,10 +215,10 @@ class TranslatePlaybackWithOpenAITest(unittest.TestCase):
     def test_failure_report_omits_secret_resource_name(self):
         report = mod.build_failure_report(
             original={"translationStatus": "needs_translation", "segments": [{"id": "sim_0001"}]},
-            model="gpt-5.5-mini",
+            model="gpt-5.4-mini",
             api_key_secret="projects/p/secrets/openai-api-key/versions/latest",
             status_code=404,
-            message="The model gpt-5.5-mini does not exist.",
+            message="The model gpt-5.4-mini does not exist.",
             out_path=Path("web/playback-simulation.generated.js"),
         )
         rendered = json.dumps(report, ensure_ascii=False)
@@ -305,14 +305,14 @@ class TranslatePlaybackWithOpenAITest(unittest.TestCase):
             translations = mod.translate_batch(
                 [{"id": "sim_0001", "en": "Jesus is our mediator.", "ref": "", "note": ""}],
                 api_key="sk-test",
-                model="gpt-5.5-mini",
+                model="gpt-5.4-mini",
             )
         finally:
             mod.requests.post = original_post
 
         self.assertEqual(translations[0]["zh"], "耶稣是我们的中保。")
         self.assertEqual(calls[0]["url"], mod.OPENAI_RESPONSES_URL)
-        self.assertEqual(calls[0]["json"]["model"], "gpt-5.5-mini")
+        self.assertEqual(calls[0]["json"]["model"], "gpt-5.4-mini")
         self.assertIn("input", calls[0]["json"])
         self.assertNotIn("messages", calls[0]["json"])
         self.assertEqual(calls[0]["json"]["text"]["format"]["type"], "json_object")

@@ -51,7 +51,7 @@ GCS prefix:  gs://<bucket>/sundays/2026-06-21/<session_id>/
 session id:  sunday-20260621-1000
 ```
 
-The Sunday slice is the primary read model for the web UI. Realtime sessions and offline jobs can write rolling updates into the slice, while public clients only subscribe to published captions, scripture cards, notes, and quote artifacts. The current realtime MVP stores sanitized English/Chinese deltas in backend memory and JSONL files under `REALTIME_EVENT_LOG_DIR`; when `REALTIME_EVENT_GCS_PREFIX` is configured, the GCS JSONL mirror runs on a background single-worker queue. Mirror upload failures are reported through `gcsMirrorHealthy/gcsMirrorLastError` status and do not block live caption event posts or SSE fanout. iPad/iPhone mic input uses browser WebRTC with `gpt-realtime-translate`, while `scripts/realtime_media_worker.py` can create backend-only sessions, prepare authorized audio/YouTube sources, stream 24 kHz PCM16 audio to the OpenAI translation WebSocket, and publish English/Chinese deltas into the same public caption stream. `scripts/stabilize_realtime_deltas_with_openai.py` turns saved English windows plus draft Chinese captions into `gpt-5.5-mini` stable corrections, and can post them back as `caption_final` events so the SSE caption view replaces the low-latency draft; `scripts/run_realtime_stabilizer_loop.py` repeats that pass every few seconds and skips already-posted segments. Firestore remains the production durable-state target.
+The Sunday slice is the primary read model for the web UI. Realtime sessions and offline jobs can write rolling updates into the slice, while public clients only subscribe to published captions, scripture cards, notes, and quote artifacts. The current realtime MVP stores sanitized English/Chinese deltas in backend memory and JSONL files under `REALTIME_EVENT_LOG_DIR`; when `REALTIME_EVENT_GCS_PREFIX` is configured, the GCS JSONL mirror runs on a background single-worker queue. Mirror upload failures are reported through `gcsMirrorHealthy/gcsMirrorLastError` status and do not block live caption event posts or SSE fanout. iPad/iPhone mic input uses browser WebRTC with `gpt-realtime-translate`, while `scripts/realtime_media_worker.py` can create backend-only sessions, prepare authorized audio/YouTube sources, stream 24 kHz PCM16 audio to the OpenAI translation WebSocket, and publish English/Chinese deltas into the same public caption stream. `scripts/stabilize_realtime_deltas_with_openai.py` turns saved English windows plus draft Chinese captions into `gpt-5.4-mini` stable corrections, and can post them back as `caption_final` events so the SSE caption view replaces the low-latency draft; `scripts/run_realtime_stabilizer_loop.py` repeats that pass every few seconds and skips already-posted segments. Firestore remains the production durable-state target.
 
 ## Architecture
 
@@ -98,8 +98,8 @@ Use provider interfaces so the product is not hard-bound to one model vendor.
 | Realtime Chinese captions | OpenAI `gpt-realtime-translate` | Gemini Live Translate |
 | Realtime English sidecar | OpenAI `gpt-realtime-whisper` | Google/Gemini ASR path |
 | Offline ASR | OpenAI `gpt-4o-transcribe` | `gpt-4o-mini-transcribe` / Google batch STT |
-| Stable correction translation | OpenAI `gpt-5.5-mini` | Gemini Flash-Lite / OpenRouter text models |
-| Offline translation | OpenAI `gpt-5.5-mini` with glossary | Batch translation fallback |
+| Stable correction translation | OpenAI `gpt-5.4-mini` | Gemini Flash-Lite / OpenRouter text models |
+| Offline translation | OpenAI `gpt-5.4-mini` with glossary | Batch translation fallback |
 | Scripture resolution | Deterministic Bible index + fuzzy candidates | Rules only |
 | Notes and quotes | OpenAI GPT-5.5 mini, reasoning effort medium | Smaller model with review |
 

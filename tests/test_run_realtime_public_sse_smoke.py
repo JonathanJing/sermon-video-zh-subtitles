@@ -30,6 +30,7 @@ class RealtimePublicSseSmokeTest(unittest.TestCase):
         event_posts = [call for call in calls if "/api/realtime/sessions/rt_test/events" in call["url"]]
         self.assertEqual(len(event_posts), 3)
         self.assertTrue(all(call["headers"]["X-realtime-event-token"] == "event-token-secret" for call in event_posts))
+        self.assertEqual(event_posts[-1]["json"]["en"], "God loved the world")
         self.assertEqual(report["eventPayloadSource"]["kind"], "inline_smoke_fixture")
 
     def test_smoke_posts_browser_normalized_events_when_web_contract_report_is_provided(self):
@@ -85,6 +86,7 @@ class RealtimePublicSseSmokeTest(unittest.TestCase):
         self.assertEqual(payloads[0]["openaiEventType"], "session.input_transcript.delta")
         self.assertEqual(payloads[1]["openaiEventType"], "session.output_transcript.delta")
         self.assertEqual(payloads[2]["segmentId"], "seg_browser")
+        self.assertEqual(payloads[2]["en"], "God loved the world")
         browser_check = next(check for check in report["checks"] if check["name"] == "browser_normalized_event_payloads")
         self.assertEqual(browser_check["state"], "pass")
 
@@ -150,8 +152,8 @@ class RealtimePublicSseSmokeTest(unittest.TestCase):
                             "id": 4,
                             "type": "caption_final",
                             "sessionId": "rt_test",
-                            "source": "gpt-5.5-mini-stable-correction",
-                            "model": "gpt-5.5-mini",
+                            "source": "gpt-5.4-mini-stable-correction",
+                            "model": "gpt-5.4-mini",
                             "zh": "神爱世人。",
                             "en": "God loved the world",
                             "segmentId": "smoke_1",
@@ -214,8 +216,8 @@ class RealtimePublicSseSmokeTest(unittest.TestCase):
                             "id": 4,
                             "type": "caption_final",
                             "sessionId": "rt_test",
-                            "source": "gpt-5.5-mini-stable-correction",
-                            "model": "gpt-5.5-mini",
+                            "source": "gpt-5.4-mini-stable-correction",
+                            "model": "gpt-5.4-mini",
                             "zh": "神爱世人。",
                             "en": "God loved the world",
                             "segmentId": "smoke_1",
@@ -355,8 +357,8 @@ def fake_urlopen(calls, create_status=201, sse_session_metadata=True, stable_seg
                 f'data: {{"id":3,"type":"caption_delta","source":"openai-realtime-webrtc","zh":"神爱世人","segmentId":"{draft_segment_id}"}}\n',
                 '\n',
                 (
-                    'data: {"id":4,"type":"caption_final","source":"gpt-5.5-mini-stable-correction",'
-                    f'"model":"gpt-5.5-mini","zh":"神爱世人。","segmentId":"{stable_segment_id}"}}\n'
+                    'data: {"id":4,"type":"caption_final","source":"gpt-5.4-mini-stable-correction",'
+                    f'"model":"gpt-5.4-mini","zh":"神爱世人。","segmentId":"{stable_segment_id}"}}\n'
                 ),
                 '\n',
             ]

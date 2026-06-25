@@ -52,7 +52,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Verify authorized audio -> gpt-realtime-translate draft events -> "
-            "gpt-5.5-mini stable correction -> backend realtime event stream."
+            "gpt-5.4-mini stable correction -> backend realtime event stream."
         )
     )
     source = parser.add_mutually_exclusive_group(required=True)

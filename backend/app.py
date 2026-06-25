@@ -707,8 +707,8 @@ def is_stable_correction_payload(payload: dict) -> bool:
     return (
         payload.get("type") == "caption_final"
         and payload.get("final") is True
-        and payload.get("source") == "gpt-5.5-mini-stable-correction"
-        and payload.get("model") == "gpt-5.5-mini"
+        and payload.get("source") == "gpt-5.4-mini-stable-correction"
+        and payload.get("model") == "gpt-5.4-mini"
         and bool(str(payload.get("segmentId") or "").strip())
         and bool(str(payload.get("text") or payload.get("zh") or "").strip())
     )

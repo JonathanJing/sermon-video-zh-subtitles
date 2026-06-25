@@ -17,8 +17,8 @@ JS_PREFIX = "window.SERMON_PLAYBACK_SIMULATION = "
 EXPECTED_MODELS = {
     "realtimeDraft": "gpt-realtime-translate",
     "offlineAsr": "gpt-4o-transcribe",
-    "offlineTranslation": "gpt-5.5-mini",
-    "stableCorrection": "gpt-5.5-mini",
+    "offlineTranslation": "gpt-5.4-mini",
+    "stableCorrection": "gpt-5.4-mini",
 }
 ALLOWED_OFFLINE_SOURCES = {"live_archive", "sermon_vod", "openai_asr"}
 SECRET_PATTERNS = [

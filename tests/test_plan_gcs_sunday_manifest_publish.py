@@ -78,6 +78,61 @@ class PlanGcsSundayManifestPublishTest(unittest.TestCase):
         self.assertEqual(len(report["appliedSteps"]), 5)
         self.assertTrue(all(step["returnCode"] == 0 for step in report["appliedSteps"]))
 
+    def test_parse_args_requires_confirmation_for_production_stable_apply(self):
+        argv = [
+            "plan_gcs_sunday_manifest_publish.py",
+            "--sunday",
+            "2026-06-28",
+            "--bucket",
+            "sermon-zh-artifacts-ai-for-god",
+            "--prefix",
+            "sundays",
+            "--apply",
+        ]
+
+        with mock.patch("sys.argv", argv):
+            with self.assertRaises(SystemExit) as exc:
+                mod.parse_args()
+
+        self.assertIn("--confirm-production-stable", str(exc.exception))
+
+    def test_parse_args_allows_confirmed_production_stable_apply(self):
+        argv = [
+            "plan_gcs_sunday_manifest_publish.py",
+            "--sunday",
+            "2026-06-28",
+            "--bucket",
+            "sermon-zh-artifacts-ai-for-god",
+            "--prefix",
+            "sundays",
+            "--apply",
+            "--confirm-production-stable",
+        ]
+
+        with mock.patch("sys.argv", argv):
+            args = mod.parse_args()
+
+        self.assertTrue(args.apply)
+        self.assertTrue(args.confirm_production_stable)
+
+    def test_parse_args_allows_staging_apply_without_production_confirmation(self):
+        argv = [
+            "plan_gcs_sunday_manifest_publish.py",
+            "--sunday",
+            "2026-06-28",
+            "--bucket",
+            "sermon-zh-artifacts-ai-for-god",
+            "--prefix",
+            "staging/sundays",
+            "--apply",
+        ]
+
+        with mock.patch("sys.argv", argv):
+            args = mod.parse_args()
+
+        self.assertTrue(args.apply)
+        self.assertFalse(args.confirm_production_stable)
+
     def test_refuses_when_local_contract_is_not_ready(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

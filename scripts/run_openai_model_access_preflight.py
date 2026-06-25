@@ -16,7 +16,7 @@ import requests
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
-DEFAULT_MODELS = ["gpt-5.5-mini"]
+DEFAULT_MODELS = ["gpt-5.4-mini"]
 SECRET_RESOURCE_RE = re.compile(
     r"^projects/(?P<project>[^/\s]+)/secrets/(?P<secret>[^/\s]+)(?:/versions/(?P<version>[^/\s]+))?$"
 )

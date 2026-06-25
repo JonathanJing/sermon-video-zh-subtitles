@@ -54,7 +54,7 @@ def main() -> int:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Continuously stabilize saved realtime deltas with gpt-5.5-mini and post corrections."
+        description="Continuously stabilize saved realtime deltas with gpt-5.4-mini and post corrections."
     )
     parser.add_argument("--input-jsonl", required=True, help="Realtime event JSONL file or gs:// URI.")
     parser.add_argument("--api-key-secret", required=True, help="Secret Manager resource for the OpenAI API key.")
@@ -75,7 +75,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--model-preflight-out",
         type=Path,
-        help="Write the gpt-5.5-mini Responses model-access preflight report before stabilizing.",
+        help="Write the gpt-5.4-mini Responses model-access preflight report before stabilizing.",
     )
     parser.add_argument(
         "--skip-model-preflight",
