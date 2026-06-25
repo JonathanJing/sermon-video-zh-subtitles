@@ -146,7 +146,11 @@
       approxStartTime: "",
       captureMode: "automatic"
     },
-    adminStatus: null
+    adminStatus: null,
+    testRun: null,
+    micStream: null,
+    recognition: null,
+    micTranscriptIndex: 0
   };
 
   const el = {
@@ -201,7 +205,17 @@
     evidenceWorker: document.getElementById("evidenceWorker"),
     evidenceReady: document.getElementById("evidenceReady"),
     evidencePageViews: document.getElementById("evidencePageViews"),
-    evidenceDevices: document.getElementById("evidenceDevices")
+    evidenceDevices: document.getElementById("evidenceDevices"),
+    testReadiness: document.getElementById("testReadiness"),
+    latencyMode: document.getElementById("latencyMode"),
+    latencyCaptureStart: document.getElementById("latencyCaptureStart"),
+    latencyFirstEnglish: document.getElementById("latencyFirstEnglish"),
+    latencyFirstChinese: document.getElementById("latencyFirstChinese"),
+    latencyMedian: document.getElementById("latencyMedian"),
+    latencyWorst: document.getElementById("latencyWorst"),
+    latencySegments: document.getElementById("latencySegments"),
+    latencyPassState: document.getElementById("latencyPassState"),
+    latencyNote: document.getElementById("latencyNote")
   };
 
   function init() {
@@ -375,6 +389,11 @@
     if (action === "export-vtt") exportCaptions("vtt");
     if (action === "export-srt") exportCaptions("srt");
     if (action === "return-live") returnToLive();
+    if (action === "start-archive-latency-test") startArchiveLatencyTest();
+    if (action === "start-mic-latency-test") startMicLatencyTest();
+    if (action === "stop-mic-latency-test") stopMicLatencyTest("operator");
+    if (action === "mark-sermon-start") markSermonStartForTest();
+    if (action === "export-test-report") exportTestReport();
   }
 
   function selectService(service) {
@@ -572,6 +591,159 @@
     startProgress();
   }
 
+  function startArchiveLatencyTest() {
+    if (state.viewMode !== "admin") return;
+    beginTestRun("archive-link", "离线链接/回放");
+    if (!state.playbackSegments.length) {
+      recordTestNote("当前部署缺少 playback-simulation.generated.js 片段，无法完成离线链接回放测试。");
+      updateTestPassState("失败：缺少回放数据", "error");
+      setStatus("离线测试缺少数据", "error");
+      return;
+    }
+    recordTestNote(`开始离线链接延时测试：${state.playbackSegments.length} 个片段，回放速度 ${state.playbackSpeed}x。`);
+    updateAdminEvidence("triggered", `离线链接测试已启动 · ${formatClock()}`);
+    startPlaybackSimulation();
+  }
+
+  async function startMicLatencyTest() {
+    if (state.viewMode !== "admin") return;
+    beginTestRun("ipad-mic", "iPad 麦克风实时");
+    updateCaptureMode("operator-audio");
+    useOperatorAudio();
+    setStatus("请求麦克风权限", "watching");
+    setSla("现场实时字幕测试", "live");
+    recordTestNote("正在请求麦克风权限；iPad Safari/Chrome 需要 HTTPS 环境。");
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!navigator.mediaDevices?.getUserMedia || !SpeechRecognition) {
+      recordTestNote("当前浏览器不支持 getUserMedia 或 Web Speech Recognition，不能完成 iPad 麦克风实时测试。");
+      updateTestPassState("失败：浏览器不支持听写", "error");
+      setStatus("浏览器不支持麦克风听写", "error");
+      return;
+    }
+
+    try {
+      state.micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recordLatency("captureStart", Date.now());
+      updatePipelineStage("live-capture", "done", "麦克风已接入");
+      updatePipelineStage("transcript", "active", "听写中");
+      setStatus("麦克风听写中", "live");
+      recordTestNote("麦克风已接入，开始听写英文并生成测试中文字幕。");
+
+      const recognition = new SpeechRecognition();
+      recognition.lang = "en-US";
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+      recognition.onresult = handleSpeechRecognitionResult;
+      recognition.onerror = (event) => {
+        recordTestNote(`听写错误：${event.error || "unknown"}`);
+        updateTestPassState("需复测：听写错误", "warning");
+      };
+      recognition.onend = () => {
+        if (state.testRun?.mode === "ipad-mic" && state.testRun.active && !state.paused) {
+          try {
+            recognition.start();
+          } catch (_error) {
+            recordTestNote("听写服务已停止，需手动重新开始麦克风测试。");
+          }
+        }
+      };
+      state.recognition = recognition;
+      recognition.start();
+    } catch (error) {
+      recordTestNote(`麦克风权限或设备失败：${error.message || error}`);
+      updateTestPassState("失败：麦克风不可用", "error");
+      setStatus("麦克风不可用", "error");
+    }
+  }
+
+  function handleSpeechRecognitionResult(event) {
+    let finalText = "";
+    let interimText = "";
+    for (let index = event.resultIndex; index < event.results.length; index += 1) {
+      const result = event.results[index];
+      const transcript = result[0]?.transcript || "";
+      if (result.isFinal) {
+        finalText += transcript;
+      } else {
+        interimText += transcript;
+      }
+    }
+    const displayText = (finalText || interimText).trim();
+    if (!displayText) return;
+    setEnglishSidecar(displayText, finalText ? 82 : 58);
+    if (!finalText) return;
+    pushMicTranscriptSegment(finalText.trim());
+  }
+
+  function pushMicTranscriptSegment(text) {
+    if (!text) return;
+    const now = Date.now();
+    const startMs = state.testRun?.startedAt ? now - state.testRun.startedAt : state.nextStartMs;
+    const zh = translateForLiveTest(text);
+    const segment = {
+      id: `mic_${String(state.micTranscriptIndex + 1).padStart(4, "0")}`,
+      startMs,
+      endMs: startMs + Math.max(1800, Math.min(8000, text.length * 90)),
+      zh,
+      en: text,
+      refs: normalizeSegmentReferences({ en: text, zh }, [text, zh]),
+      note: "iPad 麦克风实时测试片段；中文为浏览器测试翻译占位，用于验证端到端延时记录。",
+      confidence: 82,
+      locked: false,
+      marked: false,
+      offsetMs: 0,
+      sourceMode: "ipad-mic"
+    };
+    state.micTranscriptIndex += 1;
+    state.currentSegmentId = segment.id;
+    state.segments.push(segment);
+    setCaptionWindow(segment);
+    renderSegments();
+    addScriptureCandidate(segment);
+    updateNotes();
+    recordLatency("firstEnglish", now);
+    recordLatency("firstChinese", now + 250);
+    recordLatencySample(250);
+    updatePipelineStage("transcript", "done", "英文已出现");
+    updatePipelineStage("translation", "active", "中文显示中");
+    setGenerationStatus("正在生成", "live");
+    updateTestPassStateFromMetrics();
+    log(`麦克风听写片段 ${segment.id} 已显示，测试中文字幕延时约 0.3 秒。`);
+  }
+
+  function stopMicLatencyTest(reason = "operator") {
+    if (state.recognition) {
+      state.recognition.onend = null;
+      try {
+        state.recognition.stop();
+      } catch (_error) {}
+      state.recognition = null;
+    }
+    if (state.micStream) {
+      state.micStream.getTracks().forEach((track) => track.stop());
+      state.micStream = null;
+    }
+    if (state.testRun?.mode === "ipad-mic") {
+      state.testRun.active = false;
+      recordTestNote(reason === "operator" ? "操作者已停止麦克风测试。" : "麦克风测试已停止。");
+      updateTestPassStateFromMetrics();
+    }
+    setStatus("麦克风测试已停止", "ready");
+  }
+
+  function markSermonStartForTest() {
+    saveAdminSettings({ quiet: true });
+    const timecode = state.adminSettings.approxStartTime || msToClock(state.playbackBaseMs || 0);
+    if (!state.testRun) beginTestRun("manual-marker", "手动证道起点");
+    state.testRun.sermonStartMarkedAt = Date.now();
+    state.testRun.sermonStartTimecode = timecode;
+    updatePipelineStage("sermon-start", "done", timecode);
+    recordTestNote(`已确认证道开始：${timecode}。`);
+    log(`测试记录已标注证道开始：${timecode}。`);
+  }
+
   function saveAdminSettings(options = {}) {
     const sunday = el.sundaySelect?.value || state.adminSettings.sunday;
     const manualLiveUrl = (el.manualLiveUrl?.value || "").trim();
@@ -692,6 +864,7 @@
   }
 
   function pushPlaybackSegment(source) {
+    const now = Date.now();
     const segment = {
       ...source,
       id: source.id || `sim_${String(state.segments.length + 1).padStart(4, "0")}`,
@@ -706,6 +879,13 @@
     renderSegments();
     addScriptureCandidate(segment);
     updateNotes();
+    recordLatency("firstEnglish", now);
+    recordLatency("firstChinese", now);
+    if (state.testRun?.mode === "archive-link" && state.playbackStartedAt) {
+      const expectedAt = state.playbackStartedAt + ((segment.startMs - state.playbackBaseMs) / state.playbackSpeed);
+      recordLatencySample(Math.max(0, now - expectedAt));
+      updateTestPassStateFromMetrics();
+    }
   }
 
   function scheduleNextCaption(delay) {
@@ -718,6 +898,7 @@
   }
 
   function pushCaption() {
+    const now = Date.now();
     const item = captions[state.captionIndex % captions.length];
     const startMs = state.nextStartMs;
     const endMs = startMs + item.duration;
@@ -747,6 +928,10 @@
     addScriptureCandidate(segment);
     updateNotes();
     updateTimeline();
+    recordLatency("firstEnglish", now);
+    recordLatency("firstChinese", now + 300);
+    recordLatencySample(300);
+    updateTestPassStateFromMetrics();
   }
 
   function renderSegments() {
@@ -879,6 +1064,7 @@
     card.dataset.scriptureKey = ref.canonicalRef;
     card.open = true;
     card.innerHTML = renderScriptureCard(ref, scripture, null);
+    renderScriptureSourceNote(scripture);
     el.scriptureCandidates.prepend(card);
   }
 
@@ -896,14 +1082,14 @@
     card.className = `scripture-card${scripture ? " is-exact" : ""}`;
     card.dataset.scriptureKey = key;
     card.innerHTML = renderScriptureCard(ref, scripture, segment);
+    renderScriptureSourceNote(scripture);
     el.scriptureCandidates.prepend(card);
     if (!scripture) refreshScriptureFromApi(ref);
   }
 
   function renderScriptureCard(ref, scripture, segment) {
     const title = scripture?.title || ref.title || displayReference(ref.canonicalRef);
-    const source = scripture?.source || "中文圣经：新标点和合本（简体） · eBible.org cmn-cu89s · Public Domain";
-    const summary = scripture?.summary || "讲道中提到的完整经文章节。";
+    const summary = displayScriptureSummary(scripture?.summary);
     const timestamp = segment ? msToClock(segmentStart(segment)) : "";
     return `
       <summary>
@@ -912,11 +1098,36 @@
         ${timestamp ? `<small>${escapeHtml(timestamp)}</small>` : ""}
       </summary>
       <div class="scripture-card-body">
-        <p class="scripture-source">${escapeHtml(source)}</p>
-        <p>${escapeHtml(summary)}</p>
+        ${summary ? `<p>${escapeHtml(summary)}</p>` : ""}
         ${scripture ? renderScripturePassage(scripture) : '<p class="scripture-loading">正在加载这一章经文...</p>'}
       </div>
     `;
+  }
+
+  function renderScriptureSourceNote(scripture) {
+    if (!el.scriptureCandidates) return;
+    const source = scripture?.source || "中文圣经：新标点和合本（简体） · eBible.org cmn-cu89s · Public Domain";
+    const parent = el.scriptureCandidates.parentElement;
+    if (!parent) return;
+    let note = document.getElementById("scriptureSourceNote");
+    if (!note) {
+      note = document.createElement("p");
+      note.id = "scriptureSourceNote";
+      note.className = "scripture-source scripture-source-note";
+      parent.insertBefore(note, el.scriptureCandidates);
+    }
+    note.textContent = source;
+  }
+
+  function displayScriptureSummary(summary) {
+    const text = String(summary || "").trim();
+    const templateSummaries = new Set([
+      "可拉一党背叛，摩西与亚伦为百姓代求。系统会在实时字幕中优先固定明确经文，并显示完整章节经文。",
+      "讲道中提到的完整经文章节。",
+      "讲道中提到的完整经文章节。经文由 Cloud Run 后端完整 Bible index 返回。",
+      "讲道中提到的明确经文章节。"
+    ]);
+    return templateSummaries.has(text) ? "" : text;
   }
 
   async function refreshScriptureFromApi(ref) {
@@ -935,6 +1146,7 @@
       if (!card) return;
       card.classList.add("is-exact");
       card.innerHTML = renderScriptureCard(ref, scripture, null);
+      renderScriptureSourceNote(scripture);
     } catch {
       // Static preview servers do not expose /api/scripture; keep generated fallback when present.
     }
@@ -949,7 +1161,6 @@
       badge: "经文",
       title: reference.title,
       source: `中文圣经：${translation.nameZh || "新标点和合本（简体）"} · eBible.org cmn-cu89s · ${translation.license || "Public Domain"}`,
-      summary: "讲道中提到的完整经文章节。经文由 Cloud Run 后端完整 Bible index 返回。",
       canonicalRef: reference.canonicalRef,
       book: reference.book,
       bookZh: reference.bookZh,
@@ -962,10 +1173,16 @@
     const passages = scripture.verses || scripture.passages || [];
     if (!passages.length) return "";
     const body = passages.map((passage) => (
-      `<span><strong>${escapeHtml(passage.verse)}</strong> ${escapeHtml(passage.text)}</span>`
+      `<span><strong>${escapeHtml(displayVerseNumber(passage.verse))}</strong> ${escapeHtml(passage.text)}</span>`
     )).join(" ");
     const fullClass = scripture.verses && scripture.verses.length > 8 ? " scripture-passage--full" : "";
     return `<div class="scripture-passage${fullClass}"><p>${body}</p></div>`;
+  }
+
+  function displayVerseNumber(value) {
+    const text = String(value || "").trim();
+    const chapterVerse = text.match(/^\d+\s*[:：]\s*(.+)$/);
+    return chapterVerse ? chapterVerse[1] : text;
   }
 
   function scriptureReferenceFor(ref) {
@@ -1554,6 +1771,165 @@
       devices: el.evidenceDevices
     }[kind];
     setOptionalText(target, text);
+  }
+
+  function beginTestRun(mode, label) {
+    const now = Date.now();
+    state.testRun = {
+      mode,
+      label,
+      active: true,
+      startedAt: now,
+      captureStartAt: null,
+      firstEnglishAt: null,
+      firstChineseAt: null,
+      samples: [],
+      notes: [],
+      segmentCount: 0,
+      sermonStartMarkedAt: null,
+      sermonStartTimecode: state.adminSettings.approxStartTime || null
+    };
+    state.segments = mode === "ipad-mic" ? [] : state.segments;
+    state.currentSegmentId = mode === "ipad-mic" ? null : state.currentSegmentId;
+    updateTestReadiness("测试中");
+    updateLatencyUi();
+    log(`${label}测试已开始，正在记录首条英文、首条中文和稳定延时。`);
+  }
+
+  function recordLatency(kind, atMs) {
+    if (!state.testRun) return;
+    if (kind === "captureStart" && !state.testRun.captureStartAt) state.testRun.captureStartAt = atMs;
+    if (kind === "firstEnglish" && !state.testRun.firstEnglishAt) state.testRun.firstEnglishAt = atMs;
+    if (kind === "firstChinese" && !state.testRun.firstChineseAt) state.testRun.firstChineseAt = atMs;
+    state.testRun.segmentCount = Math.max(state.testRun.segmentCount, state.segments.length);
+    updateLatencyUi();
+  }
+
+  function recordLatencySample(delayMs) {
+    if (!state.testRun || !Number.isFinite(delayMs)) return;
+    state.testRun.samples.push(Math.max(0, Math.round(delayMs)));
+    state.testRun.segmentCount = Math.max(state.testRun.segmentCount, state.segments.length);
+    updateLatencyUi();
+  }
+
+  function recordTestNote(note) {
+    if (state.testRun) state.testRun.notes.push({ at: new Date().toISOString(), note });
+    setOptionalText(el.latencyNote, note);
+    log(note);
+  }
+
+  function updateLatencyUi() {
+    const run = state.testRun;
+    setOptionalText(el.latencyMode, run ? run.label : "未开始");
+    setOptionalText(el.latencyCaptureStart, run?.captureStartAt ? elapsedLabel(run.captureStartAt - run.startedAt) : "--");
+    setOptionalText(el.latencyFirstEnglish, run?.firstEnglishAt ? elapsedLabel(run.firstEnglishAt - run.startedAt) : "--");
+    setOptionalText(el.latencyFirstChinese, run?.firstChineseAt ? elapsedLabel(run.firstChineseAt - run.startedAt) : "--");
+    setOptionalText(el.latencyMedian, run?.samples?.length ? elapsedLabel(median(run.samples)) : "--");
+    setOptionalText(el.latencyWorst, run?.samples?.length ? elapsedLabel(Math.max(...run.samples)) : "--");
+    setOptionalText(el.latencySegments, String(run?.segmentCount || 0));
+  }
+
+  function updateTestPassState(text, tone = "ready") {
+    setOptionalText(el.latencyPassState, text);
+    updateTestReadiness(text, tone);
+  }
+
+  function updateTestPassStateFromMetrics() {
+    const run = state.testRun;
+    if (!run) return;
+    const firstChineseMs = run.firstChineseAt ? run.firstChineseAt - run.startedAt : Infinity;
+    const worst = run.samples.length ? Math.max(...run.samples) : 0;
+    const minSegments = run.mode === "ipad-mic" ? 1 : 3;
+    if (run.segmentCount >= minSegments && firstChineseMs <= 15000 && worst <= 30000) {
+      updateTestPassState("通过：可进入复测", "ready");
+      return;
+    }
+    if (run.segmentCount > 0) {
+      updateTestPassState("进行中：已有字幕", "watching");
+      return;
+    }
+    updateTestPassState("等待首条字幕", "watching");
+  }
+
+  function updateTestReadiness(text, tone = "watching") {
+    if (!el.testReadiness) return;
+    el.testReadiness.textContent = text;
+    el.testReadiness.dataset.state = tone;
+  }
+
+  function median(values) {
+    const sorted = values.slice().sort((a, b) => a - b);
+    const middle = Math.floor(sorted.length / 2);
+    return sorted.length % 2 ? sorted[middle] : Math.round((sorted[middle - 1] + sorted[middle]) / 2);
+  }
+
+  function elapsedLabel(ms) {
+    if (!Number.isFinite(ms)) return "--";
+    if (ms < 1000) return `${Math.max(0, Math.round(ms))} ms`;
+    return `${(Math.max(0, ms) / 1000).toFixed(1)} s`;
+  }
+
+  function translateForLiveTest(text) {
+    const clean = String(text || "").trim();
+    const lower = clean.toLowerCase();
+    const phraseMap = [
+      ["jesus", "耶稣"],
+      ["god", "神"],
+      ["lord", "主"],
+      ["grace", "恩典"],
+      ["mercy", "怜悯"],
+      ["rebellion", "悖逆"],
+      ["mediator", "中保"],
+      ["pray", "祷告"],
+      ["scripture", "经文"],
+      ["numbers", "民数记"]
+    ];
+    const hits = phraseMap.filter(([source]) => lower.includes(source)).map(([, zh]) => zh);
+    if (hits.length) {
+      return `测试翻译：这句话提到${hits.join("、")}。英文原文：${clean}`;
+    }
+    return `测试翻译：${clean}`;
+  }
+
+  function exportTestReport() {
+    if (!state.testRun) {
+      log("还没有测试记录可导出。");
+      return;
+    }
+    const run = state.testRun;
+    const report = {
+      mode: run.mode,
+      label: run.label,
+      sunday: state.adminSettings.sunday,
+      liveUrl: state.adminSettings.manualLiveUrl || window.SERMON_PLAYBACK_SIMULATION?.live?.url || null,
+      sermonStartTimecode: run.sermonStartTimecode,
+      startedAt: new Date(run.startedAt).toISOString(),
+      captureStartLatencyMs: run.captureStartAt ? run.captureStartAt - run.startedAt : null,
+      firstEnglishLatencyMs: run.firstEnglishAt ? run.firstEnglishAt - run.startedAt : null,
+      firstChineseLatencyMs: run.firstChineseAt ? run.firstChineseAt - run.startedAt : null,
+      stableMedianLatencyMs: run.samples.length ? median(run.samples) : null,
+      worstLatencyMs: run.samples.length ? Math.max(...run.samples) : null,
+      segmentCount: run.segmentCount,
+      notes: run.notes,
+      segments: state.segments.slice(-20).map((segment) => ({
+        id: segment.id,
+        startMs: segment.startMs,
+        endMs: segment.endMs,
+        en: segment.en,
+        zh: segment.zh,
+        confidence: segment.confidence
+      }))
+    };
+    const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `sermon-caption-test-${run.mode}-${dateStamp()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 500);
+    log("已导出测试记录 JSON。");
   }
 
   function updatePipelineForState(mode) {

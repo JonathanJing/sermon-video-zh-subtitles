@@ -319,7 +319,6 @@ def reference_payload(ref: Reference, verses: list[Verse]) -> dict:
         "badge": "经文",
         "title": f"{chinese} {verse_label}",
         "source": "中文圣经：新标点和合本（简体） · eBible.org cmn-cu89s · Public Domain",
-        "summary": summary_for(ref),
         "canonicalRef": ref.key,
         "book": english,
         "bookZh": chinese,
@@ -329,13 +328,6 @@ def reference_payload(ref: Reference, verses: list[Verse]) -> dict:
             for verse in verses
         ],
     }
-
-
-def summary_for(ref: Reference) -> str:
-    if ref.book == "NUM" and ref.chapter == 16:
-        return "可拉一党背叛，摩西与亚伦为百姓代求。系统会在实时字幕中优先固定明确经文，并显示完整章节经文。"
-    return "讲道中提到的明确经文章节。"
-
 
 def render_js(payload: dict) -> str:
     return JS_PREFIX + json.dumps(payload, ensure_ascii=False, indent=2) + ";\n"

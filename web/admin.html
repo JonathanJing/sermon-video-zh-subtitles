@@ -184,7 +184,7 @@
               <li data-stage="sermon-start"><span>3</span><div><strong>判断证道开始</strong><p>定位证道起点，避开敬拜与公告</p></div><em>等待</em></li>
               <li data-stage="transcript"><span>4</span><div><strong>英文听写</strong><p>生成可复核的英文原文</p></div><em>等待</em></li>
               <li data-stage="translation"><span>5</span><div><strong>生成中文翻译</strong><p>输出会众可读的中文字幕</p></div><em>等待</em></li>
-              <li data-stage="scripture"><span>6</span><div><strong>经文与术语匹配</strong><p>补充经文、术语和讲章线索</p></div><em>等待</em></li>
+              <li data-stage="scripture"><span>6</span><div><strong>经文匹配</strong><p>补充经文和讲章线索</p></div><em>等待</em></li>
               <li data-stage="promotion"><span>7</span><div><strong>发布清单</strong><p>更新本周日会众页面数据</p></div><em>等待</em></li>
               <li data-stage="public-ready"><span>8</span><div><strong>会众页可用</strong><p>11:30 页面可以打开观看</p></div><em>等待</em></li>
             </ol>
@@ -202,6 +202,31 @@
               <div><dt>页面访问</dt><dd id="evidencePageViews">浏览器访问记录已启用</dd></div>
               <div><dt>设备数量</dt><dd id="evidenceDevices">需要查询 Cloud Logging / BigQuery</dd></div>
             </dl>
+          </div>
+
+          <div class="test-panel" aria-labelledby="test-panel-title">
+            <div class="event-log__header">
+              <h3 id="test-panel-title">两种测试准备</h3>
+              <span class="source-state" id="testReadiness">待测试</span>
+            </div>
+            <div class="test-actions" aria-label="字幕测试操作">
+              <button class="button button--primary" type="button" data-action="start-archive-latency-test">离线链接延时测试</button>
+              <button class="button button--primary" type="button" data-action="start-mic-latency-test">iPad 麦克风实时测试</button>
+              <button class="button" type="button" data-action="mark-sermon-start">确认证道开始</button>
+              <button class="button" type="button" data-action="stop-mic-latency-test">停止麦克风</button>
+              <button class="button" type="button" data-action="export-test-report">导出测试记录</button>
+            </div>
+            <dl class="latency-grid">
+              <div><dt>模式</dt><dd id="latencyMode">未开始</dd></div>
+              <div><dt>采集启动</dt><dd id="latencyCaptureStart">--</dd></div>
+              <div><dt>首条英文</dt><dd id="latencyFirstEnglish">--</dd></div>
+              <div><dt>首条中文</dt><dd id="latencyFirstChinese">--</dd></div>
+              <div><dt>稳定中位延时</dt><dd id="latencyMedian">--</dd></div>
+              <div><dt>最差延时</dt><dd id="latencyWorst">--</dd></div>
+              <div><dt>片段数</dt><dd id="latencySegments">0</dd></div>
+              <div><dt>通过状态</dt><dd id="latencyPassState">等待</dd></div>
+            </dl>
+            <p class="test-note" id="latencyNote">离线链接测试验证从直播/归档链接到中文字幕播放；iPad 麦克风测试验证现场英文听写、测试翻译和显示延时。</p>
           </div>
 
           <div class="event-log" aria-live="polite">
@@ -270,27 +295,18 @@
           <div class="panel-heading">
             <div>
               <p class="eyebrow">经文侧栏</p>
-              <h2 id="scripture-title">经文与术语</h2>
+              <h2 id="scripture-title">经文与笔记</h2>
             </div>
             <button class="button button--small" type="button" data-action="toggle-sidebar" aria-label="关闭经文侧栏" title="关闭经文侧栏">收起侧栏</button>
           </div>
 
           <div class="tabs" role="tablist" aria-label="侧栏视图">
             <button class="tab is-active" type="button" data-action="select-tab" data-tab="scripture">经文</button>
-            <button class="tab" type="button" data-action="select-tab" data-tab="terms">术语</button>
             <button class="tab" type="button" data-action="select-tab" data-tab="notes">笔记</button>
           </div>
 
           <div class="tab-panel" data-tab-panel="scripture">
             <div id="scriptureCandidates"></div>
-          </div>
-
-          <div class="tab-panel is-hidden" data-tab-panel="terms">
-            <ul class="term-list" id="termList">
-              <li><strong>Mediator</strong><span>中保</span></li>
-              <li><strong>Intercede</strong><span>代求</span></li>
-              <li><strong>Rebellion</strong><span>悖逆</span></li>
-            </ul>
           </div>
 
           <div class="tab-panel is-hidden" data-tab-panel="notes">

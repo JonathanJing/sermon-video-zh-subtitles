@@ -132,6 +132,13 @@ def run_browser_checks(base_url: str, headed: bool = False) -> list[dict[str, ob
             results.append({"viewport": "admin-desktop", "width": 1366, "height": 900, "ok": True})
             admin_page.close()
 
+            admin_ipad_page = browser.new_page(viewport={"width": 1024, "height": 768}, is_mobile=False)
+            admin_ipad_page.goto(base_url.rstrip("/") + "/admin.html", wait_until="networkidle")
+            check_admin_mode(admin_ipad_page)
+            check_no_horizontal_overflow(admin_ipad_page)
+            results.append({"viewport": "admin-ipad-landscape", "width": 1024, "height": 768, "ok": True})
+            admin_ipad_page.close()
+
             js_text = fetch_text(base_url.rstrip("/") + "/playback-simulation.generated.js")
             check_sanitized_text(js_text, "playback-simulation.generated.js")
             results.append({"artifact": "playback-simulation.generated.js", "ok": True})
@@ -179,15 +186,15 @@ def check_scripture_sidebar(page) -> None:
     sidebar = page.locator("#scripturePanel")
     expect(sidebar).to_be_visible()
     expect(sidebar.locator("h3").first).to_contain_text("民数记 16")
+    expect(sidebar).to_contain_text("他站在活人死人中间", timeout=10000)
     sidebar_text = sidebar.inner_text(timeout=5000)
     required_text = [
         "中文圣经：新标点和合本（简体）",
         "eBible.org cmn-cu89s",
         "Public Domain",
-        "16:1",
-        "16:48",
-        "16:50",
+        "利未的曾孙",
         "他站在活人死人中间",
+        "亚伦回到会幕门口",
     ]
     missing = [text for text in required_text if text not in sidebar_text]
     if missing:
@@ -301,15 +308,20 @@ def check_admin_mode(page) -> None:
     expect(page.locator(".control-panel")).to_be_visible()
     expect(page.locator("[data-action='trigger-manual-ingest']")).to_be_visible()
     expect(page.locator("[data-action='start-playback']")).to_be_visible()
+    expect(page.locator("[data-action='start-archive-latency-test']")).to_be_visible()
+    expect(page.locator("[data-action='start-mic-latency-test']")).to_be_visible()
+    expect(page.locator("#test-panel-title")).to_be_visible()
     expect(page.locator("[data-action='export-vtt']")).to_be_visible()
     expect(page.locator("#pipelineList")).to_be_visible()
     expect(page.locator("#observability-title")).to_be_visible()
 
 
 def check_playback(page) -> None:
-    page.locator("[data-action='start-playback']").click()
+    page.locator("[data-action='start-archive-latency-test']").click()
     expect(page.locator("#generationStatus")).to_contain_text("正在生成", timeout=3000)
     expect(page.locator("#segmentCount")).not_to_have_text("0 segments", timeout=5000)
+    expect(page.locator("#latencyMode")).to_contain_text("离线链接", timeout=3000)
+    expect(page.locator("#latencyFirstChinese")).not_to_have_text("--", timeout=5000)
     stable_caption = page.locator("#stableCaption").inner_text(timeout=5000)
     if not stable_caption or "请先确认字幕源" in stable_caption:
         raise AssertionError(f"Playback did not render a usable caption: {stable_caption!r}")

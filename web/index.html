@@ -12,7 +12,6 @@
     <div class="app-shell" data-sidebar="open" data-view-mode="congregation">
       <header class="topbar">
         <div class="brand-block">
-          <span class="brand-mark" aria-hidden="true">译</span>
           <div>
             <p class="eyebrow">Mariners 11:30 Service</p>
             <h1>中文听道辅助</h1>
@@ -85,27 +84,18 @@
           <div class="panel-heading">
             <div>
               <p class="eyebrow">Scripture Sidebar</p>
-              <h2 id="scripture-title">经文与术语</h2>
+              <h2 id="scripture-title">经文与笔记</h2>
             </div>
             <button class="icon-button" type="button" data-action="toggle-sidebar" aria-label="关闭经文侧栏" title="关闭经文侧栏">收</button>
           </div>
 
           <div class="tabs" role="tablist" aria-label="侧栏视图">
             <button class="tab is-active" type="button" data-action="select-tab" data-tab="scripture">经文</button>
-            <button class="tab" type="button" data-action="select-tab" data-tab="terms">术语</button>
             <button class="tab" type="button" data-action="select-tab" data-tab="notes">笔记</button>
           </div>
 
           <div class="tab-panel" data-tab-panel="scripture">
             <div id="scriptureCandidates"></div>
-          </div>
-
-          <div class="tab-panel is-hidden" data-tab-panel="terms">
-            <ul class="term-list" id="termList">
-              <li><strong>Mediator</strong><span>中保</span></li>
-              <li><strong>Intercede</strong><span>代求</span></li>
-              <li><strong>Rebellion</strong><span>悖逆</span></li>
-            </ul>
           </div>
 
           <div class="tab-panel is-hidden" data-tab-panel="notes">

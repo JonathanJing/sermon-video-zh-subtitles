@@ -797,7 +797,8 @@ ul {
 }
 
 .pipeline-panel,
-.observability-panel {
+.observability-panel,
+.test-panel {
   display: grid;
   gap: 9px;
   padding: 12px;
@@ -847,7 +848,8 @@ ul {
 }
 
 .pipeline-list strong,
-.admin-evidence dt {
+.admin-evidence dt,
+.latency-grid dt {
   color: var(--ink);
   font-size: 0.84rem;
   font-weight: 900;
@@ -855,7 +857,9 @@ ul {
 
 .pipeline-list p,
 .pipeline-list em,
-.admin-evidence dd {
+.admin-evidence dd,
+.latency-grid dd,
+.test-note {
   color: var(--muted);
   font-size: 0.76rem;
   line-height: 1.35;
@@ -880,13 +884,15 @@ ul {
   color: var(--green-700);
 }
 
-.admin-evidence {
+.admin-evidence,
+.latency-grid {
   display: grid;
   gap: 7px;
   margin: 0;
 }
 
-.admin-evidence div {
+.admin-evidence div,
+.latency-grid div {
   min-width: 0;
   display: grid;
   grid-template-columns: minmax(120px, 0.8fr) minmax(0, 1fr);
@@ -897,9 +903,30 @@ ul {
   background: var(--surface);
 }
 
-.admin-evidence dd {
+.admin-evidence dd,
+.latency-grid dd {
   margin: 0;
   overflow-wrap: anywhere;
+}
+
+.test-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.test-note {
+  margin: 0;
+}
+
+#testReadiness[data-state="ready"] {
+  background: rgba(22, 163, 74, 0.14);
+  color: #166534;
+}
+
+#testReadiness[data-state="error"] {
+  background: rgba(220, 38, 38, 0.12);
+  color: #991b1b;
 }
 
 .event-log__header {
@@ -1299,6 +1326,10 @@ ul {
   color: var(--muted) !important;
   font-size: 0.78rem !important;
   font-weight: 850;
+}
+
+.scripture-source-note {
+  margin: 2px 0 10px;
 }
 
 .scripture-passage {
