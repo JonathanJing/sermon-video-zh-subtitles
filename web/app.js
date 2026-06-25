@@ -863,10 +863,14 @@
     if (!state.realtime) state.realtime = {};
     const now = Date.now();
     const startMs = state.testRun?.startedAt ? now - state.testRun.startedAt : state.nextStartMs;
-    let segment = state.segments.find((item) => item.id === state.realtime.currentSegmentId);
-    if (!segment || segment.final) {
+    const eventSegmentId = String(event.segmentId || "").trim();
+    let segment = eventSegmentId ? state.segments.find((item) => item.id === eventSegmentId) : null;
+    if (!segment) {
+      segment = state.segments.find((item) => item.id === state.realtime.currentSegmentId);
+    }
+    if (!segment || (segment.final && !eventSegmentId)) {
       segment = {
-        id: `rt_${String(state.micTranscriptIndex + 1).padStart(4, "0")}`,
+        id: eventSegmentId || `rt_${String(state.micTranscriptIndex + 1).padStart(4, "0")}`,
         startMs,
         endMs: startMs + 2400,
         zh: "",
@@ -884,10 +888,17 @@
       state.segments.push(segment);
       state.realtime.currentSegmentId = segment.id;
     }
-    segment.zh = event.final ? text : `${segment.zh || ""}${event.delta || text}`;
+    const isStableCorrection = String(event.source || "").includes("stable-correction");
+    segment.zh = event.final || isStableCorrection ? text : `${segment.zh || ""}${event.delta || text}`;
     segment.en = state.realtime.partialEn || segment.en || "";
+    if (event.en) segment.en = event.en;
     segment.endMs = Math.max(segment.endMs, startMs + Math.max(1800, Math.min(8000, segment.zh.length * 90)));
     segment.final = Boolean(event.final);
+    segment.stable = Boolean(segment.stable || isStableCorrection);
+    if (isStableCorrection) {
+      segment.note = "gpt-5.5-mini 稳定修正版。";
+      segment.confidence = Math.max(Number(segment.confidence) || 0, 88);
+    }
     segment.refs = normalizeSegmentReferences(segment, [segment.en, segment.zh]);
     state.currentSegmentId = segment.id;
     setCaptionWindow(segment);
@@ -1359,6 +1370,7 @@
     const card = document.createElement("details");
     card.className = "scripture-card is-exact";
     card.dataset.scriptureKey = ref.canonicalRef;
+    card.open = true;
     card.innerHTML = renderScriptureCard(ref, scripture, null);
     renderScriptureSourceNote(scripture);
     el.scriptureCandidates.prepend(card);

@@ -33,11 +33,11 @@ The current POC is valuable, but it is not yet the production system described i
 | Manual admin trigger with live URL and optional sermon start hint | Partial | UI concept exists and backend planner accepts fields, but the deployed service does not expose a working admin generation API. |
 | Scheduled automatic live-source discovery | Missing | No implemented `live-source-monitor`, Cloud Scheduler trigger, same-sermon confidence check, or 09:58 fallback alert. |
 | Same Sunday, same artifact set for all users | Partial | The storage model is documented, but there is no promoted `sundays/YYYY-MM-DD/cloud-manifest.json` pointer flow. |
-| Read-only congregation view | Missing | Current page still mixes congregation playback with operator controls. Public users should not see generation, export, publish, or admin controls. |
+| Read-only congregation view | Implemented locally | `web/index.html` is now a read-only caption view with no operator controls in the DOM; `web/admin.html` keeps generation, export, test, and publish controls. `tests/test_public_admin_boundary.py` and browser E2E checks guard the split. Deployment smoke evidence is still needed. |
 | 11:25 readiness and publish gate | Missing | There is no durable readiness state, publish timestamp, published artifact URI, or fallback state. |
 | Real generated Chinese captions | Partial | Batch OpenAI translation exists for prepared playback and the worker plan includes prepare -> translate -> notes -> upload -> promote; production verification still needs real Sunday inputs. |
 | Offline ASR fallback | Partial | When no English captions are available, the live-archive preparation path can extract audio and request `gpt-4o-transcribe` before `gpt-5.5-mini` translation, but this still needs live YouTube/archive validation. |
-| Realtime low-latency captioning | Partial | Admin iPad/iPhone mic can create an OpenAI Realtime translation session, send browser WebRTC audio, post English/Chinese deltas to backend memory/JSONL, and stream them to the public caption view over SSE. `scripts/realtime_media_worker.py` can create backend-only sessions, plan authorized audio/YouTube source preparation, stream 24 kHz PCM16 audio to the OpenAI translation WebSocket, and publish English/Chinese deltas into the same session stream. `scripts/stabilize_realtime_deltas_with_openai.py` can use `gpt-5.5-mini` to turn saved realtime English windows into stable Chinese corrections. Production live validation with real authorized sources and durable state storage are still missing. |
+| Realtime low-latency captioning | Partial | Admin iPad/iPhone mic can create an OpenAI Realtime translation session, send browser WebRTC audio, post English/Chinese deltas to backend memory/JSONL, and stream them to the public caption view over SSE. `scripts/realtime_media_worker.py` can create backend-only sessions, plan authorized audio/YouTube source preparation, stream 24 kHz PCM16 audio to the OpenAI translation WebSocket, and publish English/Chinese deltas into the same session stream. `scripts/realtime_openai_smoke_test.py` now verifies a short authorized audio clip through OpenAI Realtime and backend SSE when credentials/source audio are available. `scripts/stabilize_realtime_deltas_with_openai.py` can use `gpt-5.5-mini` to turn saved realtime English windows into stable Chinese corrections and post them back as `caption_final` events; `scripts/run_realtime_stabilizer_loop.py` repeats that delayed pass and skips already-posted segments. Production live validation with real authorized sources and durable state storage are still missing. |
 | Scripture/name/term priority | Missing | Static scripture/sidebar examples exist, but no deterministic Bible index, glossary resolver, or review queue. |
 | Notes and quote extraction | Partial | Worker plan includes `generate_notes_with_openai.py` with `gpt-5.5-mini`; production review and UI surfacing still need hardening. |
 | Cloud Run API deployment | Partial | Current `Dockerfile` starts `backend.app`; deployment still needs environment verification for `/api/*`, Secret Manager, and realtime session creation. |
@@ -46,17 +46,16 @@ The current POC is valuable, but it is not yet the production system described i
 
 ## P0 Blocking Gaps
 
-1. **Split public and operator surfaces.** The 11:30 congregation page must be a clean read-only caption view. Operator controls belong behind an admin route or authenticated mode.
-2. **Verify and deploy the backend/API surface.** The repository container now serves static assets and `/api/*` from `backend.app`; production still needs environment verification for routing, auth, Secret Manager, and realtime session creation.
-3. **Promote stable Sunday manifests.** Each Sunday needs a stable server-side pointer such as `gs://<bucket>/sundays/YYYY-MM-DD/cloud-manifest.json`, with completion/readiness state.
-4. **Validate the real generation chain on a fresh Sunday input.** `backend.worker` now plans prepare -> translate -> notes -> upload -> promote, but it needs an end-to-end run with live archive captions and the no-caption ASR fallback.
-5. **Add readiness/publish state.** Operators need `source_detected`, `caption_generating`, `needs_review`, `ready`, `published`, and `fallback` states before 11:25 PT.
-6. **Implement source discovery.** Manual links are useful, but the Sunday system still needs automatic discovery of 8:30/10:00 live sources and same-sermon validation.
+1. **Verify and deploy the backend/API surface.** The repository container now serves static assets and `/api/*` from `backend.app`; production still needs environment verification for routing, auth, Secret Manager, realtime session creation, and the read-only public/admin split.
+2. **Promote stable Sunday manifests.** Each Sunday needs a stable server-side pointer such as `gs://<bucket>/sundays/YYYY-MM-DD/cloud-manifest.json`, with completion/readiness state.
+3. **Validate the real generation chain on a fresh Sunday input.** `backend.worker` now plans prepare -> translate -> notes -> upload -> promote, but it needs an end-to-end run with live archive captions and the no-caption ASR fallback.
+4. **Add readiness/publish state.** Operators need `source_detected`, `caption_generating`, `needs_review`, `ready`, `published`, and `fallback` states before 11:25 PT.
+5. **Implement source discovery.** Manual links are useful, but the Sunday system still needs automatic discovery of 8:30/10:00 live sources and same-sermon validation.
 
 ## P1/P2 Gaps
 
 - Durable realtime session/segment storage and latency budget enforcement.
-- Live validation and hardening for server-side OpenAI Realtime audio streaming from YouTube live / authorized audio sources.
+- Real-source live validation and hardening for server-side OpenAI Realtime audio streaming from YouTube live / authorized audio sources; the smoke runner exists, but a real credentialed source pass is still required.
 - Firestore or equivalent durable session/segment state.
 - Cloud Scheduler/Tasks configuration for Sunday monitor and worker jobs.
 - Dedicated service account and IAM least-privilege wiring for GCS and Secret Manager.

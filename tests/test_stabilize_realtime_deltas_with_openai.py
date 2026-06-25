@@ -85,6 +85,87 @@ class StabilizeRealtimeDeltasWithOpenAITest(unittest.TestCase):
         self.assertEqual(normalized["id"], "seg_1")
         self.assertEqual(normalized["zh"], "耶稣是我们的中保。")
 
+    def test_stable_correction_events_are_caption_finals(self):
+        events = mod.stable_correction_events(
+            {
+                "segments": [
+                    {
+                        "id": "seg_1",
+                        "en": "Jesus is our mediator.",
+                        "draftZh": "耶稣是中保。",
+                        "stableZh": "耶稣是我们的中保。",
+                    },
+                    {"id": "seg_2", "en": "No correction.", "stableZh": ""},
+                ]
+            },
+            model="gpt-5.5-mini",
+        )
+
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0]["type"], "caption_final")
+        self.assertEqual(events[0]["segmentId"], "seg_1")
+        self.assertEqual(events[0]["zh"], "耶稣是我们的中保。")
+        self.assertEqual(events[0]["en"], "Jesus is our mediator.")
+        self.assertEqual(events[0]["source"], "gpt-5.5-mini-stable-correction")
+
+    def test_post_stable_corrections_sends_event_token_header_without_returning_it(self):
+        calls = []
+
+        class FakeResponse:
+            status_code = 202
+            text = '{"status":"accepted"}'
+
+            def json(self):
+                return {"status": "accepted"}
+
+        original_post = mod.requests.post
+        try:
+            def fake_post(url, headers, json, timeout):
+                calls.append({"url": url, "headers": headers, "json": json, "timeout": timeout})
+                return FakeResponse()
+
+            mod.requests.post = fake_post
+            posted = mod.post_stable_corrections(
+                output={
+                    "segments": [
+                        {
+                            "id": "seg_1",
+                            "en": "Jesus is our mediator.",
+                            "stableZh": "耶稣是我们的中保。",
+                        }
+                    ]
+                },
+                backend_url="http://127.0.0.1:8080/",
+                session_id="rt_test",
+                event_token="secret-event-token",
+                model="gpt-5.5-mini",
+            )
+        finally:
+            mod.requests.post = original_post
+
+        self.assertEqual(posted, 1)
+        self.assertEqual(calls[0]["url"], "http://127.0.0.1:8080/api/realtime/sessions/rt_test/events")
+        self.assertEqual(calls[0]["headers"]["X-Realtime-Event-Token"], "secret-event-token")
+        self.assertEqual(calls[0]["json"]["type"], "caption_final")
+        self.assertEqual(calls[0]["json"]["model"], "gpt-5.5-mini")
+
+    def test_post_backend_args_must_be_supplied_together(self):
+        original_argv = sys.argv
+        try:
+            sys.argv = [
+                "stabilize",
+                "--input-jsonl",
+                "events.jsonl",
+                "--api-key-secret",
+                "projects/p/secrets/openai-api-key/versions/latest",
+                "--post-backend-url",
+                "http://127.0.0.1:8080",
+            ]
+            with self.assertRaises(SystemExit):
+                mod.parse_args()
+        finally:
+            sys.argv = original_argv
+
 
 if __name__ == "__main__":
     unittest.main()

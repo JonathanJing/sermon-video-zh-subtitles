@@ -49,6 +49,7 @@ V1 Cloud Run 服务建议先拆成一个最小服务，后续再拆：
 | GCP project id | `GOOGLE_CLOUD_PROJECT` | Cloud Run 通常自动提供 |
 | GCS bucket name | `SERMON_ARTIFACT_BUCKET` | bucket 名不是 secret |
 | GCS prefix | `SERMON_ARTIFACT_PREFIX` | 例如 `runs` |
+| Realtime event GCS mirror prefix | `REALTIME_EVENT_GCS_PREFIX=gs://<bucket>/realtime-events` | 保存实时 deltas 的 durable JSONL mirror |
 | Firestore database / collection names | `FIRESTORE_DATABASE`, `FIRESTORE_COLLECTION_PREFIX` | 名称不是 secret |
 | 默认时区 | `APP_TIMEZONE=America/Los_Angeles` | 用于 11:30 PT SLA |
 | 默认 live URL / channel URL | `MARINERS_LIVE_URL`, `MARINERS_CHANNEL_URL` | 公共 URL 不是 secret |

@@ -38,8 +38,15 @@ class RealtimeSession:
 
 
 class RealtimeEventArchive:
-    def __init__(self, root: Path | str) -> None:
+    def __init__(
+        self,
+        root: Path | str,
+        gcs_prefix: str | None = None,
+        uploader: Any | None = None,
+    ) -> None:
         self.root = Path(root)
+        self.gcs_prefix = normalize_gcs_prefix(gcs_prefix)
+        self.uploader = uploader or GcloudStorageUploader()
 
     def append(self, session: RealtimeSession, event: dict[str, Any]) -> Path:
         self.root.mkdir(parents=True, exist_ok=True)
@@ -47,17 +54,58 @@ class RealtimeEventArchive:
         with path.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(event, ensure_ascii=False, sort_keys=True))
             handle.write("\n")
+        if self.gcs_prefix:
+            self.uploader.upload(path, self.gcs_uri_for(session))
         return path
 
     def path_for(self, session_id: str) -> Path:
         safe_session_id = "".join(char if char.isalnum() or char in {"-", "_"} else "_" for char in session_id)
         return self.root / f"{safe_session_id}.jsonl"
 
+    def gcs_uri_for(self, session: RealtimeSession) -> str:
+        if not self.gcs_prefix:
+            raise RuntimeError("Realtime event GCS prefix is not configured")
+        safe_sunday = safe_path_component(session.sunday or "unknown-sunday")
+        return f"{self.gcs_prefix}/{safe_sunday}/{self.path_for(session.session_id).name}"
+
     def status(self) -> dict[str, Any]:
-        return {
+        status = {
             "enabled": True,
             "directory": str(self.root),
+            "gcsMirrorEnabled": bool(self.gcs_prefix),
         }
+        if self.gcs_prefix:
+            status["gcsPrefix"] = self.gcs_prefix
+        return status
+
+
+class GcloudStorageUploader:
+    def upload(self, local_path: Path, gcs_uri: str) -> None:
+        subprocess.run(
+            ["gcloud", "storage", "cp", str(local_path), gcs_uri],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+
+def normalize_gcs_prefix(value: str | None) -> str | None:
+    if not value:
+        return None
+    clean = value.strip().rstrip("/")
+    if not clean.startswith("gs://"):
+        raise ValueError("REALTIME_EVENT_GCS_PREFIX must start with gs://")
+    rest = clean[5:]
+    bucket, sep, object_prefix = rest.partition("/")
+    if not bucket or not sep or not object_prefix:
+        raise ValueError("REALTIME_EVENT_GCS_PREFIX must be gs://bucket/prefix")
+    if any(part in {".", ".."} for part in object_prefix.split("/")):
+        raise ValueError("REALTIME_EVENT_GCS_PREFIX contains an unsafe path segment")
+    return clean
+
+
+def safe_path_component(value: str) -> str:
+    return "".join(char if char.isalnum() or char in {"-", "_"} else "_" for char in value)[:80]
 
 
 class RealtimeSessionStore:

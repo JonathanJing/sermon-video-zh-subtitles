@@ -44,6 +44,7 @@ Do not use cookies, OAuth secrets, or source tokens to bypass access controls, D
 |---|---|
 | GCS bucket | `SERMON_ARTIFACT_BUCKET` |
 | GCS prefix | `SERMON_ARTIFACT_PREFIX` |
+| Realtime event GCS mirror prefix | `REALTIME_EVENT_GCS_PREFIX=gs://<bucket>/realtime-events` |
 | Firestore database / collection prefix | `FIRESTORE_DATABASE`, `FIRESTORE_COLLECTION_PREFIX` |
 | Time zone | `APP_TIMEZONE=America/Los_Angeles` |
 | Public base URL | `PUBLIC_BASE_URL` |

@@ -31,6 +31,7 @@ def base_args(**overrides):
         "internal_task_token": None,
         "event_log_dir": Path("/tmp/sermon-realtime-events-test"),
         "out_dir": Path("artifacts/realtime-media-worker-test"),
+        "report_out": None,
         "yt_dlp": "yt-dlp",
         "ffmpeg": "ffmpeg",
         "sample_rate": 24000,
@@ -88,19 +89,24 @@ class RealtimeMediaWorkerTest(unittest.TestCase):
         self.assertNotIn("secret=not-for-report", plan.display_source)
 
     def test_dry_run_report_redacts_url_query_from_commands(self):
-        args = base_args(
-            youtube_url="https://www.youtube.com/watch?v=abc123&secret=not-for-report",
-            out_dir=Path("/tmp/realtime-worker-out"),
-            connect_openai=True,
-            dry_run=True,
-        )
+        with tempfile.TemporaryDirectory() as tmp:
+            report_out = Path(tmp) / "worker-report.json"
+            args = base_args(
+                youtube_url="https://www.youtube.com/watch?v=abc123&secret=not-for-report",
+                out_dir=Path("/tmp/realtime-worker-out"),
+                connect_openai=True,
+                dry_run=True,
+                report_out=report_out,
+            )
 
-        report = mod.run_worker(args)
-        rendered = json.dumps(report)
+            report = mod.run_worker(args)
+            rendered = json.dumps(report)
+            saved = report_out.read_text(encoding="utf-8")
 
-        self.assertEqual(report["openaiRealtime"]["websocketEndpoint"], mod.OPENAI_TRANSLATION_WS_BASE)
-        self.assertFalse(report["openaiRealtime"]["apiKeyMaterialIncluded"])
-        self.assertNotIn("secret=not-for-report", rendered)
+            self.assertEqual(report["openaiRealtime"]["websocketEndpoint"], mod.OPENAI_TRANSLATION_WS_BASE)
+            self.assertFalse(report["openaiRealtime"]["apiKeyMaterialIncluded"])
+            self.assertNotIn("secret=not-for-report", rendered)
+            self.assertNotIn("secret=not-for-report", saved)
 
     def test_replay_jsonl_writes_sanitized_local_archive(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -266,6 +272,40 @@ class RealtimeMediaWorkerTest(unittest.TestCase):
         self.assertEqual(stats["inputTranscriptEventsPosted"], 1)
         self.assertEqual(events[0]["type"], "caption_delta")
         self.assertEqual(events[1]["type"], "input_transcript_delta")
+
+    def test_worker_counts_openai_caption_and_input_transcript_events(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            audio = root / "sermon.wav"
+            audio.write_bytes(b"fake wav")
+            args = base_args(
+                audio_file=audio,
+                connect_openai=True,
+                event_log_dir=root / "events",
+                no_realtime_throttle=True,
+            )
+            original_resolve_key = mod.resolve_openai_api_key
+            original_relay = mod.relay_openai_translation
+            try:
+                mod.resolve_openai_api_key = lambda raw_key, secret: "sk-test"
+                mod.relay_openai_translation = lambda **kwargs: {
+                    "model": "gpt-realtime-translate",
+                    "targetLanguage": "zh-CN",
+                    "audioChunksSent": 1,
+                    "bytesSent": 4800,
+                    "openaiEventsReceived": 2,
+                    "captionEventsPosted": 1,
+                    "inputTranscriptEventsPosted": 1,
+                }
+
+                report = mod.run_worker(args)
+            finally:
+                mod.resolve_openai_api_key = original_resolve_key
+                mod.relay_openai_translation = original_relay
+
+            self.assertEqual(report["eventsPosted"], 5)
+            self.assertEqual(report["openaiRealtime"]["captionEventsPosted"], 1)
+            self.assertEqual(report["openaiRealtime"]["inputTranscriptEventsPosted"], 1)
 
 
 if __name__ == "__main__":

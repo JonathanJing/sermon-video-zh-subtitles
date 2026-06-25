@@ -33,11 +33,11 @@ English version: [system-design-gap-analysis.md](./system-design-gap-analysis.md
 | Admin 手动触发 live URL 和可选证道开始时间 | 部分完成 | UI 概念和 backend planner 字段存在，但线上服务没有真正可用的 admin generation API。 |
 | 定时自动抓取 live source | 未完成 | 没有 `live-source-monitor`、Cloud Scheduler、same-sermon confidence check、09:58 fallback alert。 |
 | 同一周日所有用户看到同一份生成物 | 部分完成 | 存储模型已写入设计，但没有 promoted `sundays/YYYY-MM-DD/cloud-manifest.json` 指针。 |
-| 会众只读视图 | 未完成 | 当前页面仍混合了会众播放和 operator 控制；普通用户不应看到 generation/export/publish/admin controls。 |
+| 会众只读视图 | 本地已实现 | `web/index.html` 现在是只读字幕视图，DOM 中没有 operator controls；`web/admin.html` 保留 generation、export、test、publish controls。`tests/test_public_admin_boundary.py` 和 browser E2E 会守住这个拆分；仍需部署后 smoke evidence。 |
 | 11:25 readiness 和 publish gate | 未完成 | 没有 durable readiness state、publish timestamp、published artifact URI、fallback state。 |
 | 真实生成中文字幕 | 部分完成 | prepared playback 已能 batch OpenAI 翻译，worker plan 已包含 prepare -> translate -> notes -> upload -> promote；仍需用真实周日输入做 production 验证。 |
 | 离线 ASR fallback | 部分完成 | 没有英文 captions 时，live-archive preparation path 可以抽音频并请求 `gpt-4o-transcribe`，再进入 `gpt-5.5-mini` 翻译；还需要用真实 YouTube/archive 验证。 |
-| 低延迟实时字幕 | 部分完成 | Admin iPad/iPhone mic 可以创建 OpenAI Realtime translation session，用 browser WebRTC 送音频，把英文/中文 deltas 发回 backend memory/JSONL，并通过 SSE 推给会众字幕页。`scripts/realtime_media_worker.py` 可以创建 backend-only session、规划授权音频/YouTube source prep，把 24 kHz PCM16 音频送入 OpenAI translation WebSocket，并把英文/中文 deltas 发布到同一条 session stream。`scripts/stabilize_realtime_deltas_with_openai.py` 可以用 `gpt-5.5-mini` 把保存的 realtime 英文窗口生成 stable Chinese corrections。还缺真实授权源 live validation 和 durable state storage。 |
+| 低延迟实时字幕 | 部分完成 | Admin iPad/iPhone mic 可以创建 OpenAI Realtime translation session，用 browser WebRTC 送音频，把英文/中文 deltas 发回 backend memory/JSONL，并通过 SSE 推给会众字幕页。`scripts/realtime_media_worker.py` 可以创建 backend-only session、规划授权音频/YouTube source prep，把 24 kHz PCM16 音频送入 OpenAI translation WebSocket，并把英文/中文 deltas 发布到同一条 session stream。`scripts/realtime_openai_smoke_test.py` 现在可以在有凭据和短授权音频时验证 OpenAI Realtime 到 backend SSE 的端到端路径。`scripts/stabilize_realtime_deltas_with_openai.py` 可以用 `gpt-5.5-mini` 把保存的 realtime 英文窗口生成 stable Chinese corrections，并作为 `caption_final` events 回灌；`scripts/run_realtime_stabilizer_loop.py` 会重复执行延迟修正并跳过已回灌片段。还缺真实授权源 live validation 和 durable state storage。 |
 | 经文、人名、术语优先 | 未完成 | UI 有静态 sidebar 示例，但没有 Bible index、glossary resolver、review queue。 |
 | 笔记和金句提取 | 部分完成 | Worker plan 已包含 `generate_notes_with_openai.py` 和 `gpt-5.5-mini`；production review 和 UI 展示还要继续硬化。 |
 | Cloud Run API 部署 | 部分完成 | 当前 `Dockerfile` 启动 `backend.app`；仍需验证部署环境里的 `/api/*`、Secret Manager 和 realtime session creation。 |
@@ -46,17 +46,16 @@ English version: [system-design-gap-analysis.md](./system-design-gap-analysis.md
 
 ## P0 阻塞缺口
 
-1. **拆分 public 和 operator surface。** 11:30 会众页面必须是干净的只读字幕视图；operator controls 需要放在 admin route 或认证模式里。
-2. **验证并部署 backend/API surface。** 仓库 container 现在由 `backend.app` 同时服务 static assets 和 `/api/*`；production 还需要验证 routing、auth、Secret Manager 和 realtime session creation。
-3. **稳定 Sunday manifest promotion。** 每个周日需要稳定 server-side pointer，例如 `gs://<bucket>/sundays/YYYY-MM-DD/cloud-manifest.json`，并包含 completion/readiness state。
-4. **用新周日输入验证真实 generation chain。** `backend.worker` 现在规划 prepare -> translate -> notes -> upload -> promote，但还需要用 live archive captions 和无 captions 的 ASR fallback 各跑一次 E2E。
-5. **加入 readiness/publish state。** Operator 需要在 11:25 PT 前看到 `source_detected`、`caption_generating`、`needs_review`、`ready`、`published`、`fallback` 等状态。
-6. **实现 source discovery。** 手动链接有救场价值，但 Sunday system 仍需要自动发现 8:30/10:00 live source，并验证是否同篇证道。
+1. **验证并部署 backend/API surface。** 仓库 container 现在由 `backend.app` 同时服务 static assets 和 `/api/*`；production 还需要验证 routing、auth、Secret Manager、realtime session creation，以及 public/admin 只读拆分。
+2. **稳定 Sunday manifest promotion。** 每个周日需要稳定 server-side pointer，例如 `gs://<bucket>/sundays/YYYY-MM-DD/cloud-manifest.json`，并包含 completion/readiness state。
+3. **用新周日输入验证真实 generation chain。** `backend.worker` 现在规划 prepare -> translate -> notes -> upload -> promote，但还需要用 live archive captions 和无 captions 的 ASR fallback 各跑一次 E2E。
+4. **加入 readiness/publish state。** Operator 需要在 11:25 PT 前看到 `source_detected`、`caption_generating`、`needs_review`、`ready`、`published`、`fallback` 等状态。
+5. **实现 source discovery。** 手动链接有救场价值，但 Sunday system 仍需要自动发现 8:30/10:00 live source，并验证是否同篇证道。
 
 ## P1/P2 缺口
 
 - Durable realtime session/segment storage 和 latency budget enforcement。
-- Browser WebRTC 之外的 YouTube live / 授权音频 server-side OpenAI Realtime audio streaming 的 live validation 和生产加固。
+- Browser WebRTC 之外的 YouTube live / 授权音频 server-side OpenAI Realtime audio streaming 仍需完成真实凭据/真实授权源 live validation；smoke runner 已经具备，但还没有真实源通过记录。
 - Firestore 或等价的 durable session/segment state。
 - Cloud Scheduler/Tasks 触发 Sunday monitor 和 worker job。
 - Dedicated service account 和 GCS/Secret Manager 最小权限 IAM。

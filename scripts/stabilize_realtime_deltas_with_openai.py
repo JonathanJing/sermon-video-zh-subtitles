@@ -9,6 +9,7 @@ import re
 import subprocess
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 import requests
 
@@ -60,7 +61,18 @@ def main() -> int:
         "apiKeyMaterialIncluded": False,
         "secretResourceNamesIncluded": False,
         "serverSideSecretConfigured": bool(args.api_key_secret),
+        "backendPostConfigured": bool(args.post_backend_url),
+        "postedStableCorrections": 0,
     }
+    if args.post_backend_url:
+        posted = post_stable_corrections(
+            output=output,
+            backend_url=args.post_backend_url,
+            session_id=args.post_session_id,
+            event_token=args.post_event_token,
+            model=args.model,
+        )
+        report["postedStableCorrections"] = posted
     report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
 
     print(json.dumps({**report, "report": safe_display_path(report_path)}, ensure_ascii=False, indent=2))
@@ -92,6 +104,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("--batch-size", type=int, default=6)
     parser.add_argument("--max-windows", type=int, default=40)
+    parser.add_argument("--post-backend-url", help="Optional backend base URL for posting stable corrections.")
+    parser.add_argument("--post-session-id", help="Realtime session id to receive stable correction events.")
+    parser.add_argument("--post-event-token", help="Realtime event token for posting stable correction events.")
     args = parser.parse_args()
     args.input_jsonl = resolve_repo_path(args.input_jsonl)
     args.out = resolve_repo_path(args.out)
@@ -100,6 +115,10 @@ def parse_args() -> argparse.Namespace:
         raise SystemExit("--batch-size must be >= 1")
     if args.max_windows == 0:
         args.max_windows = None
+    if any([args.post_backend_url, args.post_session_id, args.post_event_token]) and not all(
+        [args.post_backend_url, args.post_session_id, args.post_event_token]
+    ):
+        raise SystemExit("--post-backend-url, --post-session-id, and --post-event-token must be provided together.")
     return args
 
 
@@ -335,6 +354,69 @@ def build_output(
         "secretResourceNamesIncluded": False,
         "serverSideSecretConfigured": bool(api_key_secret),
     }
+
+
+def stable_correction_events(output: dict[str, Any], model: str) -> list[dict[str, Any]]:
+    events = []
+    for segment in output.get("segments") or []:
+        if not isinstance(segment, dict):
+            continue
+        segment_id = str(segment.get("id") or "").strip()
+        stable_zh = str(segment.get("stableZh") or "").strip()
+        if not segment_id or not stable_zh:
+            continue
+        events.append(
+            {
+                "type": "caption_final",
+                "text": stable_zh,
+                "zh": stable_zh,
+                "en": str(segment.get("en") or "").strip(),
+                "final": True,
+                "segmentId": segment_id,
+                "source": "gpt-5.5-mini-stable-correction",
+                "model": model,
+            }
+        )
+    return events
+
+
+def post_stable_corrections(
+    *,
+    output: dict[str, Any],
+    backend_url: str,
+    session_id: str,
+    event_token: str,
+    model: str,
+) -> int:
+    events = stable_correction_events(output, model)
+    if not events:
+        return 0
+    base_url = normalize_backend_url(backend_url)
+    endpoint = f"{base_url}/api/realtime/sessions/{quote(session_id)}/events"
+    posted = 0
+    for event in events:
+        response = requests.post(
+            endpoint,
+            headers={
+                "Content-Type": "application/json",
+                "X-Realtime-Event-Token": event_token,
+            },
+            json=event,
+            timeout=20,
+        )
+        if response.status_code >= 400:
+            raise SystemExit(
+                f"Posting stable correction failed with HTTP {response.status_code}: {safe_error_message(response)}"
+            )
+        posted += 1
+    return posted
+
+
+def normalize_backend_url(value: str) -> str:
+    clean = str(value or "").strip().rstrip("/")
+    if not clean.startswith(("http://", "https://")):
+        raise SystemExit("--post-backend-url must start with http:// or https://")
+    return clean
 
 
 def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:

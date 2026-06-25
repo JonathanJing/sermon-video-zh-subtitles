@@ -105,6 +105,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--internal-task-token", help="Internal task token for backend session creation.")
     parser.add_argument("--event-log-dir", type=Path, default=DEFAULT_EVENT_LOG_DIR)
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
+    parser.add_argument("--report-out", type=Path, help="Optional JSON report path for smoke-test evidence.")
     parser.add_argument("--yt-dlp", default="yt-dlp")
     parser.add_argument("--ffmpeg", default="ffmpeg")
     parser.add_argument("--sample-rate", type=int, default=24000)
@@ -184,6 +185,7 @@ def run_worker(args: argparse.Namespace) -> dict[str, Any]:
             "secretResourceNamesIncluded": False,
         }
     if args.dry_run:
+        write_report_if_requested(args, report)
         return report
 
     sink = make_sink(args)
@@ -235,6 +237,7 @@ def run_worker(args: argparse.Namespace) -> dict[str, Any]:
             "secretResourceNamesIncluded": False,
         }
         report["eventsPosted"] += int(realtime_stats.get("captionEventsPosted") or 0)
+        report["eventsPosted"] += int(realtime_stats.get("inputTranscriptEventsPosted") or 0)
 
     emit_worker_event(
         sink,
@@ -245,6 +248,7 @@ def run_worker(args: argparse.Namespace) -> dict[str, Any]:
     )
     report["eventsPosted"] += 1
     report["status"] = "ok"
+    write_report_if_requested(args, report)
     return report
 
 
@@ -645,6 +649,15 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
         if isinstance(value, dict):
             rows.append(value)
     return rows
+
+
+def write_report_if_requested(args: argparse.Namespace, report: dict[str, Any]) -> None:
+    report_out = getattr(args, "report_out", None)
+    if not report_out:
+        return
+    path = resolve_repo_path(report_out)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
 
 
 def create_backend_local_session(args: argparse.Namespace) -> dict[str, Any]:

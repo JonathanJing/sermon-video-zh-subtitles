@@ -39,7 +39,12 @@ class ApiHandler(BaseHTTPRequestHandler):
     config = AppConfig.from_env()
     service = SundaySliceService(config, GcsArtifactReader())
     scripture_service = ScriptureService()
-    realtime_store = RealtimeSessionStore(RealtimeEventArchive(Path(config.realtime_event_log_dir)))
+    realtime_store = RealtimeSessionStore(
+        RealtimeEventArchive(
+            Path(config.realtime_event_log_dir),
+            gcs_prefix=config.realtime_event_gcs_prefix,
+        )
+    )
 
     def do_GET(self) -> None:
         try:

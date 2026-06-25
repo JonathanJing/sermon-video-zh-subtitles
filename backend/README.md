@@ -88,8 +88,17 @@ Realtime sessions use short-lived OpenAI client secrets for browser WebRTC and
 store sanitized English/Chinese delta events in backend memory plus JSONL files
 under `REALTIME_EVENT_LOG_DIR` (default `/tmp/sermon-realtime-events`). The JSONL
 archive intentionally omits API keys, client secrets, event tokens, and request
-authorization headers. Firestore/GCS can replace this first local archive once
-the production state store is wired.
+authorization headers. Set `REALTIME_EVENT_GCS_PREFIX=gs://BUCKET/PREFIX` to
+mirror each session JSONL to GCS after every append, for example:
+
+```text
+REALTIME_EVENT_GCS_PREFIX=gs://sermon-zh-artifacts-ai-for-god/realtime-events
+```
+
+The mirror object path is `<prefix>/<sunday>/<session_id>.jsonl`. This keeps the
+fast local archive for SSE/stabilizer reads while giving Cloud Run a durable
+copy outside the container filesystem. Firestore can still replace this archive
+later when exact segment state and richer query patterns are needed.
 
 Server-side media workers can create a backend-only realtime session and publish
 events into the same SSE/public-caption contract:
@@ -128,6 +137,23 @@ python3 scripts/realtime_media_worker.py \
   --api-key-secret projects/PROJECT_ID/secrets/openai-api-key/versions/latest
 ```
 
+Use the end-to-end smoke wrapper for a short authorized audio clip when
+validating `iPad/iPhone mic or captured audio -> gpt-realtime-translate ->
+backend event stream -> public SSE`:
+
+```bash
+python3 scripts/realtime_openai_smoke_test.py \
+  --sunday 2026-06-28 \
+  --audio-file /path/to/authorized-short-sermon-audio.wav \
+  --backend-url http://127.0.0.1:8080 \
+  --api-key-secret projects/PROJECT_ID/secrets/openai-api-key/versions/latest
+```
+
+Success requires both OpenAI realtime Chinese caption events and English input
+transcript events to appear in the backend SSE stream. The report is written to
+`artifacts/realtime-openai-smoke/report.json`; it records counts and paths but
+does not include API key material or Secret Manager resource names.
+
 For an authorized YouTube live/archive source, the worker can use `yt-dlp` to
 resolve the best audio stream before piping it through `ffmpeg` into the same
 WebSocket relay. This path must still be live-validated with the actual
@@ -139,6 +165,36 @@ Saved realtime JSONL can be stabilized with `gpt-5.5-mini` after a short delay:
 python3 scripts/stabilize_realtime_deltas_with_openai.py \
   --input-jsonl /tmp/sermon-realtime-events/<session_id>.jsonl \
   --api-key-secret projects/PROJECT_ID/secrets/openai-api-key/versions/latest
+```
+
+To publish those stable corrections back into the live caption stream, include
+the realtime session id and event token:
+
+```bash
+python3 scripts/stabilize_realtime_deltas_with_openai.py \
+  --input-jsonl /tmp/sermon-realtime-events/<session_id>.jsonl \
+  --api-key-secret projects/PROJECT_ID/secrets/openai-api-key/versions/latest \
+  --post-backend-url http://127.0.0.1:8080 \
+  --post-session-id <session_id> \
+  --post-event-token <event_token>
+```
+
+The script posts each stable correction as a `caption_final` event with source
+`gpt-5.5-mini-stable-correction`, so the public SSE caption view can replace the
+low-latency draft with the more stable Chinese line.
+
+For Sunday operation, run the loop wrapper so the correction pass repeats every
+few seconds and skips segments it has already posted:
+
+```bash
+python3 scripts/run_realtime_stabilizer_loop.py \
+  --input-jsonl /tmp/sermon-realtime-events/<session_id>.jsonl \
+  --api-key-secret projects/PROJECT_ID/secrets/openai-api-key/versions/latest \
+  --backend-url http://127.0.0.1:8080 \
+  --session-id <session_id> \
+  --event-token <event_token> \
+  --interval-seconds 6 \
+  --min-age-seconds 4
 ```
 
 The output is `artifacts/realtime-stable-corrections/stable-corrections.json`

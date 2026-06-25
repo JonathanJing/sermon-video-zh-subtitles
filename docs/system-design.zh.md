@@ -52,7 +52,7 @@ GCS prefix:  gs://<bucket>/sundays/2026-06-21/<session_id>/
 session id:  sunday-20260621-1000
 ```
 
-同一个周日切片下可以有 realtime session、offline job、review export、notes、quotes 等多类生成物，但会众页面只读取已发布或正在发布的 caption/scripture/insight state。当前 realtime MVP 会把 sanitize 后的英文/中文 deltas 同时保存在 backend memory 和 `REALTIME_EVENT_LOG_DIR` 下的 JSONL 文件；iPad/iPhone mic 走 browser WebRTC + `gpt-realtime-translate`，`scripts/realtime_media_worker.py` 可以创建 backend-only session、准备授权音频/YouTube source，把 24 kHz PCM16 音频送进 OpenAI translation WebSocket，并把英文/中文 deltas 发布到同一条会众字幕 SSE 流。`scripts/stabilize_realtime_deltas_with_openai.py` 会把保存下来的英文窗口和实时中文 draft 送给 `gpt-5.5-mini` 生成 stable corrections。Firestore 仍是 production durable-state 目标。
+同一个周日切片下可以有 realtime session、offline job、review export、notes、quotes 等多类生成物，但会众页面只读取已发布或正在发布的 caption/scripture/insight state。当前 realtime MVP 会把 sanitize 后的英文/中文 deltas 同时保存在 backend memory 和 `REALTIME_EVENT_LOG_DIR` 下的 JSONL 文件；iPad/iPhone mic 走 browser WebRTC + `gpt-realtime-translate`，`scripts/realtime_media_worker.py` 可以创建 backend-only session、准备授权音频/YouTube source，把 24 kHz PCM16 音频送进 OpenAI translation WebSocket，并把英文/中文 deltas 发布到同一条会众字幕 SSE 流。`scripts/stabilize_realtime_deltas_with_openai.py` 会把保存下来的英文窗口和实时中文 draft 送给 `gpt-5.5-mini` 生成 stable corrections，并可作为 `caption_final` events 回灌到同一条 SSE，让会众页用稳定修正版替换低延迟草稿；`scripts/run_realtime_stabilizer_loop.py` 会每隔几秒重复这个修正 pass，并跳过已回灌片段。Firestore 仍是 production durable-state 目标。
 
 ## 2. Source Strategy
 
@@ -150,6 +150,7 @@ Admin UI 与会众 UI 的权限边界：
 |---|---|---|
 | POC report | `gs://<bucket>/runs/<date>/<session_id>/artifacts/report.json` | 记录 live link、匹配 VOD、证道开始时间、warnings |
 | 字幕文件 | `gs://<bucket>/runs/<date>/<session_id>/artifacts/*.vtt|*.srt` | live-aligned 与 local timeline 都保留 |
+| 实时英文/中文 deltas | `gs://<bucket>/realtime-events/YYYY-MM-DD/<session_id>.jsonl` | sanitized JSONL mirror，不含 token/key/header |
 | 播放数据 | `gs://<bucket>/runs/<date>/<session_id>/web/playback-simulation.generated.js` | PWA/Cloud Run 可加载的字幕播放数据 |
 | 模型原始输出 | `gs://<bucket>/runs/<date>/<session_id>/model-output/*.jsonl` | 只存生成内容，不存 secret |
 | 笔记/金句 | `gs://<bucket>/runs/<date>/<session_id>/insights/*.json` | 后续离线功能输出 |

@@ -10,6 +10,7 @@ from backend.realtime import (
     RealtimeEventArchive,
     RealtimeSessionStore,
     create_openai_translation_session,
+    normalize_gcs_prefix,
     sanitize_event,
 )
 
@@ -78,6 +79,41 @@ class RealtimeSessionStoreTest(unittest.TestCase):
 
         self.assertTrue(store.archive_status()["enabled"])
         self.assertEqual(store.archive_status()["directory"], "/tmp/realtime-test")
+        self.assertFalse(store.archive_status()["gcsMirrorEnabled"])
+
+    def test_archive_can_mirror_jsonl_to_gcs_prefix(self):
+        class FakeUploader:
+            def __init__(self):
+                self.uploads = []
+
+            def upload(self, local_path, gcs_uri):
+                self.uploads.append((Path(local_path), gcs_uri))
+
+        with tempfile.TemporaryDirectory() as tmp:
+            uploader = FakeUploader()
+            archive = RealtimeEventArchive(
+                Path(tmp),
+                gcs_prefix="gs://sermon-zh-artifacts/realtime-events",
+                uploader=uploader,
+            )
+            store = RealtimeSessionStore(archive)
+            session = store.create(sunday="2026-06-28")
+            store.append_event(session.session_id, {"type": "caption_final", "text": "神爱世人。"})
+
+            self.assertEqual(len(uploader.uploads), 2)
+            self.assertEqual(
+                uploader.uploads[-1][1],
+                f"gs://sermon-zh-artifacts/realtime-events/2026-06-28/{archive.path_for(session.session_id).name}",
+            )
+            self.assertTrue(uploader.uploads[-1][0].read_text(encoding="utf-8").endswith("\n"))
+            self.assertTrue(archive.status()["gcsMirrorEnabled"])
+            self.assertEqual(archive.status()["gcsPrefix"], "gs://sermon-zh-artifacts/realtime-events")
+
+    def test_rejects_unsafe_realtime_gcs_prefix(self):
+        with self.assertRaises(ValueError):
+            normalize_gcs_prefix("gs://bucket/../events")
+        with self.assertRaises(ValueError):
+            normalize_gcs_prefix("https://storage.googleapis.com/bucket/events")
 
     def test_create_openai_translation_session_uses_client_secret_endpoint(self):
         captured = {}
