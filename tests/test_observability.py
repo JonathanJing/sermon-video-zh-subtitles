@@ -27,6 +27,10 @@ class ObservabilityTest(unittest.TestCase):
         self.assertEqual(command_stage(["python", "scripts/translate_playback_with_openai.py"]), "translate-captions")
         self.assertEqual(command_stage(["python", "scripts/export_playback_captions.py"]), "export-translated-captions")
         self.assertEqual(command_stage(["python", "scripts/validate_offline_chain.py"]), "validate-offline-chain")
+        self.assertEqual(
+            command_stage(["python", "scripts/upload_file_to_gcs.py", "--source", "web/playback-simulation.generated.js"]),
+            "upload-translated-playback",
+        )
         self.assertEqual(command_stage(["gcloud", "storage", "cp", "a", "b"]), "upload-translated-playback")
         self.assertEqual(command_stage(["python", "scripts/promote_sunday_manifest.py"]), "promote-sunday-manifest")
 

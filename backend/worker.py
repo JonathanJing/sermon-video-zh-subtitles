@@ -20,6 +20,7 @@ EXPORT_CAPTIONS_SCRIPT = REPO_ROOT / "scripts" / "export_playback_captions.py"
 VALIDATE_OFFLINE_SCRIPT = REPO_ROOT / "scripts" / "validate_offline_chain.py"
 NOTES_SCRIPT = REPO_ROOT / "scripts" / "generate_notes_with_openai.py"
 PROMOTE_SCRIPT = REPO_ROOT / "scripts" / "promote_sunday_manifest.py"
+UPLOAD_FILE_TO_GCS_SCRIPT = REPO_ROOT / "scripts" / "upload_file_to_gcs.py"
 OFFLINE_ASR_MODEL = "gpt-4o-transcribe"
 OFFLINE_TRANSLATION_MODEL = "gpt-5.4-mini"
 REALTIME_DRAFT_MODEL = "gpt-realtime-translate"
@@ -210,17 +211,19 @@ def build_generation_plan(
         OFFLINE_TRANSLATION_MODEL,
     ]
     upload_translated_playback = [
-        "gcloud",
-        "storage",
-        "cp",
+        sys.executable,
+        str(UPLOAD_FILE_TO_GCS_SCRIPT),
+        "--source",
         str(web_out),
+        "--destination",
         f"gs://{config.artifact_bucket}/{prefix}/web/playback-simulation.generated.js",
     ]
     upload_run_manifest = [
-        "gcloud",
-        "storage",
-        "cp",
+        sys.executable,
+        str(UPLOAD_FILE_TO_GCS_SCRIPT),
+        "--source",
         str(manifest_path),
+        "--destination",
         f"gs://{config.artifact_bucket}/{prefix}/artifacts/cloud-manifest.json",
     ]
     promote = [

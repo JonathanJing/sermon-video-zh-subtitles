@@ -7,12 +7,18 @@ import argparse
 import json
 import re
 import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from backend.cloud import upload_file_to_gcs
+
 JS_PREFIX = "window.SERMON_PLAYBACK_SIMULATION = "
 PLACEHOLDER_PREFIX = "AI 中文待生成"
 
@@ -201,10 +207,10 @@ def publish_files_to_gcs(
             if clean_prefix
             else f"gs://{clean_bucket}/{rel.as_posix()}"
         )
-        command = ["gcloud", "storage", "cp", str(path), gcs_uri]
+        command = ["upload_file_to_gcs.py", "--source", str(path), "--destination", gcs_uri]
         print("$ " + " ".join(command))
         if not dry_run:
-            subprocess.run(command, cwd=REPO_ROOT, check=True)
+            upload_file_to_gcs(path, gcs_uri)
         uploads.append({"localPath": rel.as_posix(), "gcsUri": gcs_uri})
     return uploads
 

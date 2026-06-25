@@ -26,6 +26,12 @@ from typing import Any
 import requests
 
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from backend.cloud import access_secret as cloud_access_secret
+
 DEFAULT_LANGS = ["en-orig", "en"]
 DEFAULT_ASR_MODEL = "gpt-4o-transcribe"
 FORBIDDEN_ASR_MODEL = "gpt-realtime-translate"
@@ -716,29 +722,7 @@ def access_secret(resource_name: str) -> str:
     match = SECRET_RESOURCE_RE.fullmatch(resource_name)
     if not match:
         raise RuntimeError("Invalid Secret Manager resource name.")
-    project = match.group("project")
-    secret = match.group("secret")
-    version = match.group("version") or "latest"
-    proc = subprocess.run(
-        [
-            "gcloud",
-            "secrets",
-            "versions",
-            "access",
-            version,
-            "--secret",
-            secret,
-            "--project",
-            project,
-        ],
-        check=True,
-        text=True,
-        capture_output=True,
-    )
-    value = proc.stdout.strip()
-    if not value:
-        raise RuntimeError(f"Secret {resource_name} returned an empty value.")
-    return value
+    return cloud_access_secret(resource_name)
 
 
 def cues_from_transcription_response(data: dict[str, Any], fallback_duration_ms: int | None) -> list[Cue]:

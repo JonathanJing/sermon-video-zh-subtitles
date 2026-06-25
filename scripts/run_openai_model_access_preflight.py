@@ -9,12 +9,18 @@ import json
 from pathlib import Path
 import re
 import subprocess
+import sys
 from typing import Any
 
 import requests
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from backend.cloud import access_secret as cloud_access_secret
+
 OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
 DEFAULT_MODELS = ["gpt-5.4-mini"]
 SECRET_RESOURCE_RE = re.compile(
@@ -312,6 +318,10 @@ def access_secret(resource_name: str) -> str:
     match = SECRET_RESOURCE_RE.fullmatch(resource_name)
     if not match:
         raise SystemExit("Invalid Secret Manager resource name.")
+    try:
+        return cloud_access_secret(resource_name)
+    except RuntimeError:
+        raise
     project = match.group("project")
     secret = match.group("secret")
     version = match.group("version") or "latest"

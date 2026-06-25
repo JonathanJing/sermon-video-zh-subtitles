@@ -67,6 +67,10 @@ def command_stage(command: list[str]) -> str:
         return "generate-insights"
     if "promote_sunday_manifest.py" in joined:
         return "promote-sunday-manifest"
+    if "upload_file_to_gcs.py" in joined and "playback-simulation.generated.js" in joined:
+        return "upload-translated-playback"
+    if "upload_file_to_gcs.py" in joined and "cloud-manifest.json" in joined:
+        return "upload-run-manifest"
     if command[:3] == ["gcloud", "storage", "cp"]:
         return "upload-translated-playback"
     return "unknown"

@@ -6,9 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import subprocess
 import sys
-import tempfile
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -19,6 +17,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from backend.observability import log_event
 from backend.storage import LocalArtifactReader
+from backend.cloud import read_gcs_text, write_gcs_text
 
 
 REQUIRED_PUBLIC_OUTPUTS = {"web/playback-simulation.generated.js"}
@@ -292,13 +291,7 @@ def read_json(uri: str) -> dict[str, Any]:
 
 def read_text(uri: str) -> str:
     if uri.startswith("gs://"):
-        completed = subprocess.run(
-            ["gcloud", "storage", "cat", uri],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        return completed.stdout
+        return read_gcs_text(uri)
     path = Path(uri)
     reader = LocalArtifactReader(path.parent if path.parent != Path("") else Path("."))
     return reader.read_text(path.name)
@@ -307,14 +300,9 @@ def read_text(uri: str) -> str:
 def write_json(uri: str, payload: dict[str, Any], dry_run: bool = False) -> None:
     body = json.dumps(payload, ensure_ascii=False, indent=2)
     if uri.startswith("gs://"):
-        with tempfile.NamedTemporaryFile("w", encoding="utf-8", suffix=".json", delete=False) as handle:
-            handle.write(body)
-            temp_path = Path(handle.name)
-        command = ["gcloud", "storage", "cp", str(temp_path), uri]
-        print("$ " + " ".join(command))
+        print(f"$ write {uri}")
         if not dry_run:
-            subprocess.run(command, check=True)
-        temp_path.unlink(missing_ok=True)
+            write_gcs_text(uri, body)
         return
     path = Path(uri)
     print(f"$ write {path}")

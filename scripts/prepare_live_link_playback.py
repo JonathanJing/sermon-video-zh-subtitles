@@ -12,6 +12,11 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from backend.cloud import upload_file_to_gcs
+
 OFFLINE_POC = REPO_ROOT / "scripts" / "offline_live_sermon_subtitles.py"
 BUILD_PLAYBACK = REPO_ROOT / "scripts" / "build_playback_simulation.py"
 DEFAULT_ASR_MODEL = "gpt-4o-transcribe"
@@ -280,10 +285,10 @@ def publish_files_to_gcs(
             if clean_prefix
             else f"gs://{clean_bucket}/{rel.as_posix()}"
         )
-        command = ["gcloud", "storage", "cp", str(file_path), gcs_uri]
+        command = ["upload_file_to_gcs.py", "--source", str(file_path), "--destination", gcs_uri]
         print("$ " + " ".join(command))
         if not dry_run:
-            subprocess.run(command, cwd=REPO_ROOT, check=True)
+            upload_file_to_gcs(file_path, gcs_uri)
         uploads.append({"localPath": rel.as_posix(), "gcsUri": gcs_uri})
     return uploads
 

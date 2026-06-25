@@ -50,6 +50,14 @@ resolves it to the active Sunday before writing logs, run prefixes, or
 manifests. This keeps scheduled jobs stable without producing
 `sundays/current/...` artifact paths.
 
+For Cloud Run archive tests, use a dedicated ISO date slice such as
+`2026-06-25` even though it is not a Sunday. The Admin page includes that test
+date in the Sunday selector, and generated artifacts publish under:
+
+```text
+gs://$SERMON_ARTIFACT_BUCKET/$SERMON_ARTIFACT_PREFIX/2026-06-25/cloud-manifest.json
+```
+
 Auth accepts either:
 
 ```text

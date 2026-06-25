@@ -1,2 +1,5 @@
 requests>=2.32,<3
 websocket-client>=1.8,<2
+google-cloud-secret-manager>=2.20,<3
+google-cloud-storage>=2.18,<3
+yt-dlp>=2025.6.25

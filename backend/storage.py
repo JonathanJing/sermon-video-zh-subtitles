@@ -7,6 +7,8 @@ from urllib.error import URLError
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
+from .cloud import read_gcs_bytes
+
 
 @dataclass(frozen=True)
 class GcsUri:
@@ -71,6 +73,10 @@ class GcsArtifactReader(ArtifactReader):
         if client is not None:
             bucket = client.bucket(parsed.bucket)
             return bucket.blob(parsed.object_name).download_as_bytes()
+        try:
+            return read_gcs_bytes(parsed.uri)
+        except (ImportError, OSError, subprocess.CalledProcessError):
+            pass
         try:
             return self._read_with_authenticated_http(parsed)
         except URLError:

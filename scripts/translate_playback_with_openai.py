@@ -21,6 +21,12 @@ import requests
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from backend.cloud import access_secret as cloud_access_secret
+from backend.cloud import upload_file_to_gcs
+
 JS_PREFIX = "window.SERMON_PLAYBACK_SIMULATION = "
 OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
 EXPECTED_TRANSLATION_MODEL = "gpt-5.4-mini"
@@ -281,29 +287,10 @@ def access_secret(resource_name: str) -> str:
     match = SECRET_RESOURCE_RE.fullmatch(resource_name)
     if not match:
         raise SystemExit("Invalid Secret Manager resource name.")
-    project = match.group("project")
-    secret = match.group("secret")
-    version = match.group("version") or "latest"
-    proc = subprocess.run(
-        [
-            "gcloud",
-            "secrets",
-            "versions",
-            "access",
-            version,
-            "--secret",
-            secret,
-            "--project",
-            project,
-        ],
-        check=True,
-        text=True,
-        capture_output=True,
-    )
-    value = proc.stdout.strip()
-    if not value:
-        raise SystemExit(f"Secret {resource_name} returned an empty value.")
-    return value
+    try:
+        return cloud_access_secret(resource_name)
+    except RuntimeError as exc:
+        raise SystemExit(str(exc))
 
 
 def batched(items: list[dict[str, str]], size: int) -> list[list[dict[str, str]]]:
@@ -629,10 +616,10 @@ def publish_files_to_gcs(
     for file_path in files:
         rel = safe_display_path(file_path)
         gcs_uri = f"gs://{clean_bucket}/{clean_prefix}/{rel}" if clean_prefix else f"gs://{clean_bucket}/{rel}"
-        command = ["gcloud", "storage", "cp", str(file_path), gcs_uri]
+        command = ["upload_file_to_gcs.py", "--source", str(file_path), "--destination", gcs_uri]
         print("$ " + " ".join(command))
         if not dry_run:
-            subprocess.run(command, cwd=REPO_ROOT, check=True)
+            upload_file_to_gcs(file_path, gcs_uri)
         uploads.append({"localPath": rel, "gcsUri": gcs_uri})
     return uploads
 
