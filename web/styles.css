@@ -47,7 +47,7 @@ body {
   min-height: 100vh;
   min-height: 100svh;
   margin: 0;
-  overflow: hidden;
+  overflow: auto;
   background: var(--app-bg);
   color: var(--ink);
   font-family:

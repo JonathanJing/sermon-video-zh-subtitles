@@ -20,6 +20,7 @@ class WriteProductionGoLiveSequenceTest(unittest.TestCase):
         self.assertEqual(report["handoffReports"]["modelAccessRecoveryPlan"], str(paths["model"]))
         self.assertEqual(report["handoffReports"]["noCaptionAsrFallbackPlan"], str(paths["asr"]))
         self.assertEqual(report["handoffReports"]["live1130RealtimeRunPlan"], str(paths["live"]))
+        self.assertEqual(report["handoffReports"]["productionMatrix"], str(paths["matrix"]))
         stages = {stage["id"]: stage for stage in report["sequence"]}
         self.assertEqual(stages["operator_approval"]["state"], "approval_required")
         self.assertEqual(stages["post_approval_validation"]["state"], "blocked_until_operator_approval")
@@ -143,6 +144,50 @@ class WriteProductionGoLiveSequenceTest(unittest.TestCase):
         self.assertEqual(report["status"], "ready_for_go_live")
         self.assertEqual(report["blockingSummary"]["blockingStages"], [])
 
+    def test_sequence_uses_current_matrix_when_no_caption_plan_is_stale(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            paths = write_reports(
+                root,
+                preflight={
+                    "status": "incomplete",
+                    "failedSteps": [],
+                    "incompleteSteps": ["productionMatrix", "productionUnblockPlan", "goalAudit"],
+                },
+                goal={"status": "complete", "failedChecks": [], "summary": {"externalMissing": 0}},
+                unblock={"status": "complete", "approvalStepCount": 0, "steps": []},
+                operator={"status": "no_approval_steps", "approvalStepCount": 0},
+                asr={"status": "needs_real_no_caption_archive"},
+                matrix={
+                    "status": "complete",
+                    "matrix": [
+                        {
+                            "id": "offline_asr_route",
+                            "state": "pass",
+                            "evidence": "artifacts/evidence/no-caption-asr-route-run.json",
+                            "observed": {
+                                "status": "ok",
+                                "models": {
+                                    "offlineAsr": "gpt-4o-transcribe",
+                                    "offlineTranslation": "gpt-5.4-mini",
+                                },
+                            },
+                        }
+                    ],
+                },
+            )
+            report = mod.build_sequence(args_for(paths))
+
+        stages = {stage["id"]: stage for stage in report["sequence"]}
+        self.assertEqual(stages["real_no_caption_asr_validation"]["state"], "complete")
+        self.assertEqual(stages["final_readiness_audit"]["state"], "complete")
+        self.assertEqual(report["status"], "ready_for_go_live")
+        self.assertEqual(report["blockingSummary"]["incompletePreflightSteps"], [])
+        self.assertEqual(
+            stages["real_no_caption_asr_validation"]["currentEvidence"]["matrixRow"],
+            "offline_asr_route",
+        )
+
     def test_model_recovery_stage_is_omitted_when_current_matrix_does_not_need_it(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -229,6 +274,8 @@ class WriteProductionGoLiveSequenceTest(unittest.TestCase):
                     str(paths["asr"]),
                     "--live-1130-run-plan",
                     str(paths["live"]),
+                    "--production-matrix",
+                    str(paths["matrix"]),
                     "--out",
                     str(out),
                 ]
@@ -252,6 +299,7 @@ def args_for(paths):
         model_access_recovery_plan=paths["model"],
         no_caption_asr_plan=paths["asr"],
         live_1130_run_plan=paths["live"],
+        production_matrix=paths["matrix"],
         out=None,
     )
 
@@ -389,6 +437,15 @@ def write_reports(root: Path, **overrides):
                 "gpt-5.4-mini",
             ],
         },
+        "matrix": {
+            "status": "incomplete",
+            "matrix": [
+                {
+                    "id": "offline_asr_route",
+                    "state": "missing",
+                }
+            ],
+        },
     }
     defaults.update(overrides)
     paths = {
@@ -399,6 +456,7 @@ def write_reports(root: Path, **overrides):
         "model": root / "model-access-recovery-plan.json",
         "asr": root / "no-caption-asr-fallback-plan.json",
         "live": root / "live-1130-realtime-run-plan.json",
+        "matrix": root / "production-evidence-matrix.json",
     }
     for key, path in paths.items():
         path.write_text(json.dumps(defaults[key]), encoding="utf-8")

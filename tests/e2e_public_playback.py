@@ -39,6 +39,7 @@ VIEWPORTS = [
     ("iphone-portrait", 390, 844),
     ("ipad-landscape", 1024, 768),
     ("desktop", 1366, 900),
+    ("wide-desktop", 1440, 900),
 ]
 
 
@@ -115,6 +116,7 @@ def run_browser_checks(base_url: str, headed: bool = False) -> list[dict[str, ob
                 check_no_horizontal_overflow(page)
                 check_public_playback(page)
                 check_public_layout_bounds(page)
+                check_page_scroll_not_locked(page)
                 results.append({"viewport": name, "width": width, "height": height, "ok": True})
                 page.close()
 
@@ -299,6 +301,21 @@ def check_public_layout_bounds(page) -> None:
         raise AssertionError(f"Subtitle track grew beyond viewport bounds: {layout}")
     if layout["segmentScrollHeight"] > 0 and layout["segmentClientHeight"] <= 0:
         raise AssertionError(f"Subtitle track is not scrollable: {layout}")
+
+
+def check_page_scroll_not_locked(page) -> None:
+    scroll_state = page.evaluate(
+        """
+        () => ({
+          bodyOverflowY: getComputedStyle(document.body).overflowY,
+          htmlOverflowY: getComputedStyle(document.documentElement).overflowY,
+          documentHeight: document.documentElement.scrollHeight,
+          viewportHeight: window.innerHeight
+        })
+        """
+    )
+    if scroll_state["bodyOverflowY"] == "hidden" or scroll_state["htmlOverflowY"] == "hidden":
+        raise AssertionError(f"Page vertical scrolling is CSS-locked: {scroll_state}")
 
 
 def check_admin_mode(page) -> None:

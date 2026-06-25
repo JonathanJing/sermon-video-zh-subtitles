@@ -19,6 +19,7 @@ DEFAULT_OPERATOR_APPROVAL_BUNDLE = REPO_ROOT / "artifacts" / "evidence" / "opera
 DEFAULT_MODEL_ACCESS_RECOVERY_PLAN = REPO_ROOT / "artifacts" / "evidence" / "model-access-recovery-plan.json"
 DEFAULT_NO_CAPTION_ASR_PLAN = REPO_ROOT / "artifacts" / "evidence" / "no-caption-asr-fallback-plan.json"
 DEFAULT_LIVE_1130_RUN_PLAN = REPO_ROOT / "artifacts" / "evidence" / "live-1130-realtime-run-plan.json"
+DEFAULT_PRODUCTION_MATRIX = REPO_ROOT / "artifacts" / "evidence" / "production-evidence-matrix.json"
 DEFAULT_REALTIME_EVENT_GCS_PREFIX = "gs://sermon-zh-artifacts-ai-for-god/realtime-events"
 DEFAULT_WEB_REALTIME_CONTRACT_REPORT = "artifacts/evidence/web-realtime-contract.json"
 
@@ -44,6 +45,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--model-access-recovery-plan", type=Path, default=DEFAULT_MODEL_ACCESS_RECOVERY_PLAN)
     parser.add_argument("--no-caption-asr-plan", type=Path, default=DEFAULT_NO_CAPTION_ASR_PLAN)
     parser.add_argument("--live-1130-run-plan", type=Path, default=DEFAULT_LIVE_1130_RUN_PLAN)
+    parser.add_argument("--production-matrix", type=Path, default=DEFAULT_PRODUCTION_MATRIX)
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
     return parser.parse_args()
 
@@ -56,6 +58,7 @@ def build_sequence(args: argparse.Namespace) -> dict[str, Any]:
     model_plan = read_optional_json(resolve_repo_path(args.model_access_recovery_plan)) or {}
     no_caption_plan = read_optional_json(resolve_repo_path(args.no_caption_asr_plan)) or {}
     live_1130_plan = read_optional_json(resolve_repo_path(args.live_1130_run_plan)) or {}
+    production_matrix = read_optional_json(resolve_repo_path(args.production_matrix)) or {}
 
     model_recovery_needed = required_model_recovery_needed(preflight, unblock)
     required_model_stage = required_model_recovery_stage(args, model_plan) if model_recovery_needed else None
@@ -74,11 +77,23 @@ def build_sequence(args: argparse.Namespace) -> dict[str, Any]:
         post_approval_validation_stage(args, unblock, operator_bundle),
         live_1130_realtime_run_stage(args, live_1130_plan, unblock),
         required_model_stage,
-        real_no_caption_asr_validation_stage(args, no_caption_plan, depends_on=real_no_caption_depends_on),
-        final_readiness_audit_stage(args, preflight, goal_audit, depends_on=final_dependencies),
+        real_no_caption_asr_validation_stage(
+            args,
+            no_caption_plan,
+            production_matrix,
+            depends_on=real_no_caption_depends_on,
+        ),
+        final_readiness_audit_stage(
+            args,
+            preflight,
+            goal_audit,
+            unblock,
+            production_matrix,
+            depends_on=final_dependencies,
+        ),
     ]
     stages = [stage for stage in stages if stage is not None]
-    blockers = current_blockers(preflight, goal_audit, unblock, stages)
+    blockers = current_blockers(preflight, goal_audit, unblock, production_matrix, stages)
     return {
         "schemaVersion": 1,
         "status": "not_ready_for_go_live" if has_blockers(blockers) else "ready_for_go_live",
@@ -97,6 +112,7 @@ def build_sequence(args: argparse.Namespace) -> dict[str, Any]:
             "preflightRefresh": display_path(args.preflight_refresh),
             "goalAudit": display_path(args.goal_audit),
             "unblockPlan": display_path(args.unblock_plan),
+            "productionMatrix": display_path(args.production_matrix),
         },
         "sequence": stages,
         "blockingSummary": blockers,
@@ -303,11 +319,14 @@ def required_model_recovery_stage(args: argparse.Namespace, model_plan: dict[str
 def real_no_caption_asr_validation_stage(
     args: argparse.Namespace,
     no_caption_plan: dict[str, Any],
+    production_matrix: dict[str, Any],
     *,
     depends_on: list[str],
 ) -> dict[str, Any]:
     plan_status = str(no_caption_plan.get("status") or "missing")
-    state = "needs_real_no_caption_archive" if plan_status != "complete" else "complete"
+    matrix_row = matrix_entry(production_matrix, "offline_asr_route")
+    matrix_passed = matrix_row_passed(matrix_row)
+    state = "complete" if plan_status == "complete" or matrix_passed else "needs_real_no_caption_archive"
     expanded_commands = dedupe_commands(no_caption_plan.get("commands") or [])
     runner_command = sanitized_command(no_caption_plan.get("runnerCommand"))
     commands = [runner_command] if runner_command else expanded_commands
@@ -331,6 +350,7 @@ def real_no_caption_asr_validation_stage(
         },
         "commands": commands,
         "expandedCommands": expanded_commands if runner_command and expanded_commands else [],
+        "currentEvidence": matrix_row_evidence(matrix_row),
         "requiredReports": required_reports,
         "passCriteria": pass_criteria
         or [
@@ -352,10 +372,12 @@ def final_readiness_audit_stage(
     args: argparse.Namespace,
     preflight: dict[str, Any],
     goal_audit: dict[str, Any],
+    unblock: dict[str, Any],
+    production_matrix: dict[str, Any],
     *,
     depends_on: list[str],
 ) -> dict[str, Any]:
-    complete = preflight.get("status") == "ok" and goal_audit.get("status") == "complete"
+    complete = final_readiness_complete(preflight, goal_audit, unblock, production_matrix)
     return {
         "id": "final_readiness_audit",
         "state": "complete" if complete else "pending_final_audit",
@@ -435,11 +457,17 @@ def current_blockers(
     preflight: dict[str, Any],
     goal_audit: dict[str, Any],
     unblock: dict[str, Any],
+    production_matrix: dict[str, Any],
     stages: list[dict[str, Any]],
 ) -> dict[str, Any]:
     return {
         "failedPreflightSteps": list(preflight.get("failedSteps") or []),
-        "incompletePreflightSteps": list(preflight.get("incompleteSteps") or []),
+        "incompletePreflightSteps": effective_incomplete_preflight_steps(
+            preflight,
+            goal_audit,
+            unblock,
+            production_matrix,
+        ),
         "goalAuditFailedChecks": list(goal_audit.get("failedChecks") or []),
         "goalAuditExternalMissing": int((goal_audit.get("summary") or {}).get("externalMissing") or 0),
         "unblockPlanStatus": unblock.get("status") or "missing",
@@ -462,6 +490,63 @@ def has_blockers(blockers: dict[str, Any]) -> bool:
             blockers.get("blockingStages"),
         ]
     )
+
+
+def final_readiness_complete(
+    preflight: dict[str, Any],
+    goal_audit: dict[str, Any],
+    unblock: dict[str, Any],
+    production_matrix: dict[str, Any],
+) -> bool:
+    if preflight.get("status") == "ok" and goal_audit.get("status") == "complete":
+        return True
+    return (
+        production_matrix.get("status") == "complete"
+        and goal_audit.get("status") == "complete"
+        and unblock.get("status") == "complete"
+    )
+
+
+def effective_incomplete_preflight_steps(
+    preflight: dict[str, Any],
+    goal_audit: dict[str, Any],
+    unblock: dict[str, Any],
+    production_matrix: dict[str, Any],
+) -> list[str]:
+    incomplete = list(preflight.get("incompleteSteps") or [])
+    complete_replacements = {
+        "productionMatrix": production_matrix.get("status") == "complete",
+        "goalAudit": goal_audit.get("status") == "complete",
+        "productionUnblockPlan": unblock.get("status") == "complete",
+    }
+    return [step for step in incomplete if not complete_replacements.get(str(step), False)]
+
+
+def matrix_entry(production_matrix: dict[str, Any], entry_id: str) -> dict[str, Any]:
+    for entry in production_matrix.get("matrix") or []:
+        if isinstance(entry, dict) and entry.get("id") == entry_id:
+            return entry
+    return {}
+
+
+def matrix_row_passed(entry: dict[str, Any]) -> bool:
+    return entry.get("state") == "pass" or entry.get("status") == "pass"
+
+
+def matrix_row_evidence(entry: dict[str, Any]) -> dict[str, Any]:
+    if not entry:
+        return {}
+    evidence = {
+        "matrixRow": entry.get("id"),
+        "state": entry.get("state") or entry.get("status"),
+        "evidence": entry.get("evidence"),
+    }
+    observed = entry.get("observed")
+    if isinstance(observed, dict):
+        evidence["observedStatus"] = observed.get("status")
+        evidence["models"] = observed.get("models")
+        evidence["offlineChain"] = observed.get("offlineChain")
+    return {key: value for key, value in evidence.items() if value is not None}
 
 
 def read_optional_json(path: Path) -> dict[str, Any] | None:
