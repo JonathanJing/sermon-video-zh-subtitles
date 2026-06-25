@@ -18,6 +18,7 @@ import sys
 
 
 POC_SCRIPT = Path(__file__).with_name("offline_live_sermon_subtitles.py")
+SCRIPTURE_SCRIPT = Path(__file__).with_name("build_scripture_index.py")
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SECRET_RESOURCE_RE = re.compile(
     r"^projects/[^/\s]+/secrets/[^/\s]+(?:/versions/[^/\s]+)?$"
@@ -27,6 +28,48 @@ subtitle_mod = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
 sys.modules[SPEC.name] = subtitle_mod
 SPEC.loader.exec_module(subtitle_mod)
+
+SCRIPTURE_SPEC = importlib.util.spec_from_file_location("build_scripture_index", SCRIPTURE_SCRIPT)
+scripture_mod = importlib.util.module_from_spec(SCRIPTURE_SPEC)
+assert SCRIPTURE_SPEC.loader is not None
+sys.modules[SCRIPTURE_SPEC.name] = scripture_mod
+SCRIPTURE_SPEC.loader.exec_module(scripture_mod)
+
+ENGLISH_CHAPTER_WORDS = {
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+    "eleven": 11,
+    "twelve": 12,
+    "thirteen": 13,
+    "fourteen": 14,
+    "fifteen": 15,
+    "sixteen": 16,
+    "seventeen": 17,
+    "eighteen": 18,
+    "nineteen": 19,
+    "twenty": 20,
+}
+CHINESE_DIGITS = {
+    "零": 0,
+    "一": 1,
+    "二": 2,
+    "两": 2,
+    "三": 3,
+    "四": 4,
+    "五": 5,
+    "六": 6,
+    "七": 7,
+    "八": 8,
+    "九": 9,
+}
 
 
 def main() -> int:
@@ -247,6 +290,7 @@ def build_simulation(
     for index, cue in enumerate(cues, start=1):
         source_text = cue.text.strip()
         zh_text = source_text if has_zh else "AI 中文待生成：" + source_text
+        references = detect_references(source_text)
         segments.append(
             {
                 "id": f"sim_{index:04d}",
@@ -255,7 +299,8 @@ def build_simulation(
                 "zh": zh_text,
                 "draft": zh_text if has_zh else "正在根据英文字幕生成中文...",
                 "en": source_text if not has_zh else "",
-                "ref": detect_reference(source_text),
+                "ref": references[0]["canonicalRef"] if references else "",
+                "refs": references,
                 "note": "来自直播链接 POC 的真实时间轴字幕。",
                 "confidence": 86 if has_zh else 72,
                 "translationStatus": "ready" if has_zh else "needs_translation",
@@ -289,6 +334,7 @@ def build_simulation(
         },
         "sermonStart": sermon_start,
         "translationStatus": "ready" if has_zh else "needs_translation",
+        "scriptureReferences": merge_segment_references(segments),
         "segments": segments,
     }
 
@@ -302,14 +348,111 @@ def safe_display_path(path: Path) -> str:
 
 
 def detect_reference(text: str) -> str:
-    lowered = text.lower()
-    if "numbers" in lowered and "16" in lowered:
-        return "Numbers 16"
-    if "moses" in lowered or "aaron" in lowered:
-        return "Numbers 16"
-    if "jesus" in lowered:
-        return "Jesus"
-    return ""
+    references = detect_references(text)
+    return references[0]["canonicalRef"] if references else ""
+
+
+def detect_references(text: str) -> list[dict[str, Any]]:
+    matches: list[dict[str, Any]] = []
+    seen = set()
+    for book_code, alias in scripture_aliases():
+        for chapter in chapters_for_alias(text, alias):
+            book = scripture_mod.BOOKS[book_code]
+            canonical = f"{book[0]} {chapter}"
+            if canonical in seen:
+                continue
+            seen.add(canonical)
+            matches.append(
+                {
+                    "canonicalRef": canonical,
+                    "book": book[0],
+                    "bookZh": book[1],
+                    "chapter": chapter,
+                    "title": f"{book[1]} {chapter}",
+                }
+            )
+    return matches
+
+
+def scripture_aliases() -> list[tuple[str, str]]:
+    aliases = []
+    for book_code, (english, chinese) in scripture_mod.BOOKS.items():
+        aliases.extend([(book_code, english), (book_code, chinese)])
+    aliases.extend(
+        [
+            ("NUM", "Num"),
+            ("PSA", "Psalm"),
+            ("1CO", "1 Cor"),
+            ("2CO", "2 Cor"),
+            ("1JO", "1 John"),
+            ("2JO", "2 John"),
+            ("3JO", "3 John"),
+        ]
+    )
+    return sorted(aliases, key=lambda item: len(item[1]), reverse=True)
+
+
+def chapters_for_alias(text: str, alias: str) -> list[int]:
+    escaped = re.escape(alias)
+    if contains_cjk(alias):
+        pattern = re.compile(rf"{escaped}\s*([0-9一二两三四五六七八九十百]+)\s*(?:章|:|：)?")
+    else:
+        pattern = re.compile(
+            rf"\b(?:book\s+of\s+)?{escaped}\b\s*(?:chapter\s+)?([0-9]+|{'|'.join(ENGLISH_CHAPTER_WORDS)})\b",
+            re.IGNORECASE,
+        )
+    chapters = []
+    for match in pattern.finditer(text):
+        parsed = parse_chapter_number(match.group(1))
+        if parsed:
+            chapters.append(parsed)
+    return chapters
+
+
+def contains_cjk(value: str) -> bool:
+    return any("\u4e00" <= char <= "\u9fff" for char in value)
+
+
+def parse_chapter_number(value: str) -> int | None:
+    if value.isdigit():
+        return int(value)
+    lowered = value.lower()
+    if lowered in ENGLISH_CHAPTER_WORDS:
+        return ENGLISH_CHAPTER_WORDS[lowered]
+    if all(char in CHINESE_DIGITS or char in {"十", "百"} for char in value):
+        return chinese_number_to_int(value)
+    return None
+
+
+def chinese_number_to_int(value: str) -> int | None:
+    if not value:
+        return None
+    if value.isdigit():
+        return int(value)
+    if "百" in value:
+        left, _, right = value.partition("百")
+        hundreds = CHINESE_DIGITS.get(left, 1 if not left else 0)
+        tail = chinese_number_to_int(right) if right else 0
+        return hundreds * 100 + (tail or 0)
+    if "十" in value:
+        left, _, right = value.partition("十")
+        tens = CHINESE_DIGITS.get(left, 1 if not left else 0)
+        ones = CHINESE_DIGITS.get(right, 0) if right else 0
+        return tens * 10 + ones
+    total = 0
+    for char in value:
+        if char not in CHINESE_DIGITS:
+            return None
+        total = total * 10 + CHINESE_DIGITS[char]
+    return total
+
+
+def merge_segment_references(segments: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    by_ref = {}
+    for segment in segments:
+        for ref in segment.get("refs", []):
+            by_ref.setdefault(ref["canonicalRef"], ref)
+    return list(by_ref.values())
 
 
 def render_js(simulation: dict[str, Any]) -> str:

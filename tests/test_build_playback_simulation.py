@@ -59,6 +59,8 @@ Moses and Aaron stood before the people.
             self.assertTrue(simulation["secrets"]["serverSideSecretConfigured"])
             self.assertEqual(len(simulation["segments"]), 2)
             self.assertEqual(simulation["segments"][0]["ref"], "Numbers 16")
+            self.assertEqual(simulation["segments"][0]["refs"][0]["title"], "民数记 16")
+            self.assertEqual(simulation["scriptureReferences"][0]["canonicalRef"], "Numbers 16")
             self.assertTrue(simulation["segments"][0]["zh"].startswith("AI 中文待生成"))
 
             rendered = mod.render_js(simulation)
@@ -96,6 +98,22 @@ Moses and Aaron stood before the people.
     def test_rejects_raw_api_key_material_for_generated_web_file(self):
         with self.assertRaises(SystemExit):
             mod.validate_secret_resource_name("sk-this-looks-like-raw-key-material")
+
+    def test_detects_multiple_scripture_chapters(self):
+        refs = mod.detect_references("We will read Numbers 16, Romans chapter 8, and 1 Corinthians 13 today.")
+
+        self.assertEqual(
+            [ref["canonicalRef"] for ref in refs],
+            ["1 Corinthians 13", "Numbers 16", "Romans 8"],
+        )
+
+    def test_detects_chinese_scripture_chapter_numbers(self):
+        refs = mod.detect_references("今天也会提到民数记十六章和罗马书八章。")
+
+        self.assertEqual(
+            [ref["canonicalRef"] for ref in refs],
+            ["Numbers 16", "Romans 8"],
+        )
 
 
 if __name__ == "__main__":

@@ -95,10 +95,38 @@ BOOKS = {
 }
 
 BOOK_ALIASES = {
-    "numbers": "NUM",
-    "num": "NUM",
-    "民数记": "NUM",
+    code.lower(): code
+    for code in BOOKS
 }
+for code, (english, chinese) in BOOKS.items():
+    BOOK_ALIASES[english.lower()] = code
+    BOOK_ALIASES[chinese] = code
+BOOK_ALIASES.update(
+    {
+        "num": "NUM",
+        "psalm": "PSA",
+        "psalms": "PSA",
+        "song of solomon": "SOL",
+        "song of songs": "SOL",
+        "1 sam": "1SA",
+        "2 sam": "2SA",
+        "1 kings": "1KI",
+        "2 kings": "2KI",
+        "1 chron": "1CH",
+        "2 chron": "2CH",
+        "1 cor": "1CO",
+        "2 cor": "2CO",
+        "1 thess": "1TH",
+        "2 thess": "2TH",
+        "1 tim": "1TI",
+        "2 tim": "2TI",
+        "1 pet": "1PE",
+        "2 pet": "2PE",
+        "1 john": "1JO",
+        "2 john": "2JO",
+        "3 john": "3JO",
+    }
+)
 
 
 @dataclass(frozen=True)

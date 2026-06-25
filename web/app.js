@@ -89,6 +89,24 @@
     ...fallbackScriptureReferences,
     ...((window.SERMON_SCRIPTURE_INDEX && window.SERMON_SCRIPTURE_INDEX.references) || {})
   };
+  const scriptureBooks = [
+    ["Genesis", "创世记"], ["Exodus", "出埃及记"], ["Leviticus", "利未记"], ["Numbers", "民数记"], ["Deuteronomy", "申命记"],
+    ["Joshua", "约书亚记"], ["Judges", "士师记"], ["Ruth", "路得记"], ["1 Samuel", "撒母耳记上"], ["2 Samuel", "撒母耳记下"],
+    ["1 Kings", "列王纪上"], ["2 Kings", "列王纪下"], ["1 Chronicles", "历代志上"], ["2 Chronicles", "历代志下"],
+    ["Ezra", "以斯拉记"], ["Nehemiah", "尼希米记"], ["Esther", "以斯帖记"], ["Job", "约伯记"], ["Psalms", "诗篇"],
+    ["Proverbs", "箴言"], ["Ecclesiastes", "传道书"], ["Song of Songs", "雅歌"], ["Isaiah", "以赛亚书"], ["Jeremiah", "耶利米书"],
+    ["Lamentations", "耶利米哀歌"], ["Ezekiel", "以西结书"], ["Daniel", "但以理书"], ["Hosea", "何西阿书"], ["Joel", "约珥书"],
+    ["Amos", "阿摩司书"], ["Obadiah", "俄巴底亚书"], ["Jonah", "约拿书"], ["Micah", "弥迦书"], ["Nahum", "那鸿书"],
+    ["Habakkuk", "哈巴谷书"], ["Zephaniah", "西番雅书"], ["Haggai", "哈该书"], ["Zechariah", "撒迦利亚书"],
+    ["Malachi", "玛拉基书"], ["Matthew", "马太福音"], ["Mark", "马可福音"], ["Luke", "路加福音"], ["John", "约翰福音"],
+    ["Acts", "使徒行传"], ["Romans", "罗马书"], ["1 Corinthians", "哥林多前书"], ["2 Corinthians", "哥林多后书"],
+    ["Galatians", "加拉太书"], ["Ephesians", "以弗所书"], ["Philippians", "腓立比书"], ["Colossians", "歌罗西书"],
+    ["1 Thessalonians", "帖撒罗尼迦前书"], ["2 Thessalonians", "帖撒罗尼迦后书"], ["1 Timothy", "提摩太前书"],
+    ["2 Timothy", "提摩太后书"], ["Titus", "提多书"], ["Philemon", "腓利门书"], ["Hebrews", "希伯来书"],
+    ["James", "雅各书"], ["1 Peter", "彼得前书"], ["2 Peter", "彼得后书"], ["1 John", "约翰一书"],
+    ["2 John", "约翰二书"], ["3 John", "约翰三书"], ["Jude", "犹大书"], ["Revelation", "启示录"]
+  ].map(([book, bookZh]) => ({ book, bookZh }));
+  const scriptureAliases = buildScriptureAliases();
 
   const state = {
     selectedService: "830",
@@ -117,6 +135,8 @@
     playbackBaseMs: 0,
     playbackSpeed: 18,
     lastExport: null,
+    scriptureKeys: new Set(),
+    scriptureFetches: new Set(),
     segmentAutoFollow: true,
     segmentScrollProgrammatic: false,
     viewMode: "congregation",
@@ -207,19 +227,17 @@
     setStatus("等待监控", "watching");
     setSla("11:30 会众可用", "ready");
     log(state.viewMode === "admin"
-      ? "Admin 已就绪：检查 11:30 会众字幕生成状态，并保留手动触发入口。"
+      ? "管理端已就绪：检查 11:30 会众字幕生成状态，并保留手动触发入口。"
       : "会众页已就绪：正在加载本周日可用中文字幕。");
     loadPlaybackSimulation();
     syncAdminSettings();
     updateSourceCards("idle");
     updateTimeline();
     loadPublicPublishedSnapshot();
-    renderPrimaryScriptureReference();
-    refreshPrimaryScriptureFromApi();
     if (state.viewMode === "admin") {
       refreshAdminStatus();
       updatePipelineForState("idle");
-      updateAdminEvidence("pageView", "Admin telemetry 已启用；会众访问会记录 congregation_page_view。");
+      updateAdminEvidence("pageView", "管理端访问记录已启用；会众访问会记录为 congregation_page_view。");
     }
     reportPageView();
   }
@@ -233,7 +251,7 @@
       : "congregation";
     el.shell.dataset.viewMode = state.viewMode;
     document.title = state.viewMode === "admin"
-      ? "Admin | 11:30 会众中文字幕"
+      ? "管理端 | 11:30 会众中文字幕"
       : "11:30 会众中文字幕";
   }
 
@@ -257,7 +275,7 @@
     if (!latest) return;
     state.currentSegmentId = latest.id;
     setCaptionWindow(latest);
-    setEnglishSidecar(latest.en || "字幕源为中文或暂无英文 sidecar。", latest.confidence);
+    setEnglishSidecar(latest.en || "字幕源为中文，暂无英文原文。", latest.confidence);
     setStatus("字幕已加载", "ready");
     setSla("11:30 会众视图", "ready");
     updateSermonMeta({
@@ -267,7 +285,7 @@
       tone: "ready"
     });
     renderSegments();
-    state.segments.slice(-5).forEach(addScriptureCandidate);
+    state.segments.forEach(addScriptureCandidate);
     updateNotes();
     updateTimeline(100);
   }
@@ -288,7 +306,7 @@
       return;
     }
 
-    const liveTitle = simulation.live?.title || "live archive";
+    const liveTitle = simulation.live?.title || "直播归档";
     const sermonTitle = simulation.sermonTitle || simulation.sermonCandidate?.title || liveTitle;
     const start = simulation.sermonStart?.timecode || "unknown";
     state.adminSettings.manualLiveUrl = simulation.live?.url || state.adminSettings.manualLiveUrl;
@@ -311,6 +329,7 @@
     if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) return null;
     const en = String(segment.en || "").trim();
     const zh = String(segment.zh || segment.text || en || "").trim();
+    const refs = normalizeSegmentReferences(segment, [en, zh, segment.draft, segment.text]);
     return {
       id: segment.id || `sim_${String(index + 1).padStart(4, "0")}`,
       startMs,
@@ -318,7 +337,8 @@
       zh: zh || "AI 中文待生成",
       draft: String(segment.draft || zh || "正在生成中文字幕..."),
       en,
-      ref: segment.ref || "",
+      ref: refs[0]?.canonicalRef || segment.ref || "",
+      refs,
       note: segment.note || "直播链接模拟播放片段。",
       confidence: Number(segment.confidence) || 70,
       locked: false,
@@ -384,7 +404,7 @@
     const label = serviceLabel(state.selectedService);
     setStatus(`监控中 ${label}`, "watching");
     setSla("等待会前字幕源", "warning");
-    if (el.sessionLabel) el.sessionLabel.textContent = `Session: monitor-${state.selectedService}`;
+    if (el.sessionLabel) el.sessionLabel.textContent = `任务：监控 ${state.selectedService}`;
     updateSourceCards("checking");
     updatePipelineForState("source");
     log(`开始监控 ${label} 直播源，用于提前准备 11:30 会众字幕。`);
@@ -414,7 +434,7 @@
     setSourceState("operator-audio", "idle", "可备用");
     setStatus("8:30 未确认，转 10:00", "warning");
     setSla("兜底准备 11:30 字幕", "warning");
-    log("8:30 live source 未通过同篇证道 gate，自动切换到 10:00 兜底，确保 11:30 会众仍有字幕。");
+    log("8:30 直播源未通过同篇证道检查，自动切换到 10:00 兜底，确保 11:30 会众仍有字幕。");
     state.selectedService = "1000";
     state.fallback = true;
     syncServiceButtons();
@@ -442,7 +462,7 @@
     setSla(service === "830" ? "8:30 准备余量最大" : "10:00 可准备会众字幕", "ready");
     updatePipelineStage("source-discovery", "done", "已确认");
     updatePipelineStage("live-capture", "active", "可接入");
-    log(`${label} live source 已确认，可以开始生成 11:30 会众可用字幕。`);
+    log(`${label} 直播源已确认，可以开始生成 11:30 会众可用字幕。`);
     if (state.captionRequested) {
       state.captionRequested = false;
       startCaptioning();
@@ -454,7 +474,7 @@
     const url = state.adminSettings.manualLiveUrl;
     if (!isProbablyUrl(url)) {
       useOperatorAudio();
-      log("手动模式没有可用直播链接，已降级为 operator audio 兜底。");
+      log("手动模式没有可用直播链接，已降级为现场音频兜底。");
       return;
     }
 
@@ -471,7 +491,7 @@
     updatePipelineStage("source-discovery", "done", "手动链接");
     updatePipelineStage("live-capture", "active", "抓取中");
     updateSermonMeta({
-      title: "手动 live archive / live source",
+      title: "手动直播链接",
       meta: `${url} · 大致开始 ${state.adminSettings.approxStartTime || "待自动判断"}`,
       status: "待生成",
       tone: "ready"
@@ -488,11 +508,11 @@
     if (!state.sourceReady) {
       if (state.monitoring) {
         state.captionRequested = true;
-        log("会众字幕生成请求已排队，将在 live source 确认后自动启动。");
+        log("会众字幕生成请求已排队，将在直播源确认后自动启动。");
         setStatus("会众字幕待启动", "warning");
         return;
       }
-      log("请先开始监控并等待 8:30/10:00 live source 确认，或选择手动音频，才能为 11:30 会众生成字幕。");
+      log("请先开始监控并等待 8:30/10:00 直播源确认，或选择手动音频，才能为 11:30 会众生成字幕。");
       setStatus("等待直播源确认", "error");
       return;
     }
@@ -505,7 +525,7 @@
     state.startedAt = state.startedAt || Date.now();
     setStatus("会众字幕生成中", "live");
     setSla("11:25 前发布会众视图", "live");
-    if (el.sessionLabel) el.sessionLabel.textContent = `Session: ${sessionSliceId()}-${state.selectedService}`;
+    if (el.sessionLabel) el.sessionLabel.textContent = `任务：${sessionSliceId()}-${state.selectedService}`;
     updatePipelineForState("captioning");
     log("会众字幕 session 已启动，开始模拟低延迟字幕流。");
     scheduleNextCaption(300);
@@ -534,7 +554,7 @@
     setSourceState("operator-audio", "idle", "可备用");
     setStatus(state.viewMode === "admin" ? "直播链接模拟播放" : "字幕正在更新", "live");
     setSla(state.viewMode === "admin" ? "验证 11:30 会众视图" : "11:30 会众视图", "live");
-    if (el.sessionLabel) el.sessionLabel.textContent = `Session: playback-${sessionSliceId()}`;
+    if (el.sessionLabel) el.sessionLabel.textContent = `任务：回放测试 ${sessionSliceId()}`;
     updatePipelineForState("captioning");
     updateSermonMeta({
       title: window.SERMON_PLAYBACK_SIMULATION?.sermonTitle || "直播链接证道",
@@ -561,7 +581,7 @@
     };
     syncAdminSettings();
     if (!options.quiet) {
-      log(`Admin settings 已保存：${sunday} 周日切片${manualLiveUrl ? "；手动 live link 已设置" : "；等待自动抓取 live link"}。`);
+      log(`管理端设置已保存：${sunday} 周日切片${manualLiveUrl ? "；手动直播链接已设置" : "；等待自动抓取直播链接"}。`);
     }
   }
 
@@ -573,7 +593,7 @@
     if (!isProbablyUrl(state.adminSettings.manualLiveUrl)) {
       setStatus("需要直播链接", "error");
       setSla("手动触发未启动", "warning");
-      log("手动触发需要先输入直播链接；如果现场没有链接，可以使用 operator audio 兜底。");
+      log("手动触发需要先输入直播链接；如果现场没有链接，可以使用现场音频兜底。");
       return;
     }
     clearMonitorTimers();
@@ -581,13 +601,13 @@
     state.sourceReady = false;
     setStatus("手动抓取中", "watching");
     setSla("定位证道开始", "warning");
-    updateAdminEvidence("triggered", "operator manual trigger requested");
+    updateAdminEvidence("triggered", "操作者已请求手动触发");
     updatePipelineForState("source");
     setSourceState("mariners-online", "warning", "跳过");
     setSourceState("youtube-streams", "checking", "抓取中");
     setSourceState("operator-audio", "idle", "可备用");
-    if (el.sessionLabel) el.sessionLabel.textContent = `Session: manual-${sessionSliceId()}`;
-    log(`手动触发 live link ingest：${state.adminSettings.manualLiveUrl}。后端会优先使用大致开始时间定位证道。`);
+    if (el.sessionLabel) el.sessionLabel.textContent = `任务：手动链接 ${sessionSliceId()}`;
+    log(`手动触发直播链接抓取：${state.adminSettings.manualLiveUrl}。后端会优先使用大致开始时间定位证道。`);
     postManualGenerateRequest();
     state.monitorTimers.push(window.setTimeout(confirmManualLiveSource, 800));
   }
@@ -599,8 +619,8 @@
     syncServiceButtons();
     setStatus("自动抓取排程", "watching");
     setSla("周日 08:20 开始", "ready");
-    if (el.sessionLabel) el.sessionLabel.textContent = `Session: auto-${sessionSliceId()}`;
-    updateAdminEvidence("triggered", "cloud-scheduler simulation scheduled");
+    if (el.sessionLabel) el.sessionLabel.textContent = `任务：自动抓取 ${sessionSliceId()}`;
+    updateAdminEvidence("triggered", "自动抓取模拟已排程");
     log(`自动抓取模拟已排程：${state.adminSettings.sunday} 08:20 PT 探测 8:30，失败则 09:50 探测 10:00。`);
     startMonitor();
   }
@@ -619,17 +639,17 @@
       });
       const body = await response.json().catch(() => ({}));
       if (response.ok) {
-        updateAdminEvidence("triggered", `live_capture_triggered · ${body.status || "accepted"} · ${body.sessionId || "session pending"}`);
-        updateAdminEvidence("worker", body.prefix ? `planned prefix: ${body.prefix}` : "worker plan accepted");
+        updateAdminEvidence("triggered", `直播抓取已触发 · ${body.status || "已接收"} · ${body.sessionId || "任务待创建"}`);
+        updateAdminEvidence("worker", body.prefix ? `计划写入路径：${body.prefix}` : "后台计划已接收");
         log(`后端已接收手动触发请求：${body.status || response.status}。`);
         return;
       }
       if (response.status === 401) {
-        updateAdminEvidence("triggered", "后端已保护：需要 operator token / OIDC，未执行真实触发。");
+        updateAdminEvidence("triggered", "后端已保护：需要操作者 token / OIDC，未执行真实触发。");
         log("后端 generate endpoint 已启用鉴权；本页没有发送 token，因此只保留本地模拟状态。");
         return;
       }
-      updateAdminEvidence("triggered", `后端返回 ${response.status}: ${body.error || "request failed"}`);
+      updateAdminEvidence("triggered", `后端返回 ${response.status}: ${body.error || "请求失败"}`);
       log(`手动触发请求失败：${body.error || response.status}。`);
     } catch (error) {
       updateAdminEvidence("triggered", "无法连接后端，当前仅显示本地模拟状态。");
@@ -679,7 +699,7 @@
     state.currentSegmentId = segment.id;
     state.segments.push(segment);
     setCaptionWindow(segment);
-    setEnglishSidecar(segment.en || "字幕源为中文或暂无英文 sidecar。", segment.confidence);
+    setEnglishSidecar(segment.en || "字幕源为中文，暂无英文原文。", segment.confidence);
     renderSegments();
     addScriptureCandidate(segment);
     updateNotes();
@@ -705,6 +725,7 @@
       zh: item.zh,
       en: item.en,
       ref: item.ref,
+      refs: normalizeSegmentReferences(item, [item.en, item.zh, item.draft]),
       note: item.note,
       confidence: item.confidence,
       locked: false,
@@ -743,7 +764,7 @@
       el.segmentList.appendChild(item);
     });
     if (el.segmentCount) {
-      el.segmentCount.textContent = state.viewMode === "admin" ? `${state.segments.length} segments` : "已加载";
+      el.segmentCount.textContent = state.viewMode === "admin" ? `${state.segments.length} 个片段` : "已加载";
     }
     if (shouldFollow) {
       scrollSegmentTrackToLive();
@@ -767,7 +788,7 @@
     state.segmentAutoFollow = false;
     state.currentSegmentId = segment.id;
     setCaptionWindow(segment);
-    setEnglishSidecar(segment.en || "字幕源为中文或暂无英文 sidecar。", segment.confidence);
+    setEnglishSidecar(segment.en || "字幕源为中文，暂无英文原文。", segment.confidence);
     renderSegments();
     log(`已查看历史字幕片段 ${segment.id}；点“回到实时”恢复自动跟随。`);
   }
@@ -778,7 +799,7 @@
     if (latest) {
       state.currentSegmentId = latest.id;
       setCaptionWindow(latest);
-      setEnglishSidecar(latest.en || "字幕源为中文或暂无英文 sidecar。", latest.confidence);
+      setEnglishSidecar(latest.en || "字幕源为中文，暂无英文原文。", latest.confidence);
     }
     renderSegments();
     scrollSegmentTrackToLive();
@@ -791,7 +812,7 @@
   }
 
   function sourceTranscriptText(segment) {
-    return segment.en || segment.draft || "Waiting for English transcript...";
+    return segment.en || segment.draft || "等待英文听写...";
   }
 
   function segmentTrackNearBottom() {
@@ -812,62 +833,150 @@
     el.returnLiveButton.classList.toggle("is-hidden", !show);
   }
 
+  function buildScriptureAliases() {
+    const aliases = new Map();
+    scriptureBooks.forEach(({ book, bookZh }) => {
+      const values = [
+        book,
+        bookZh,
+        book.replace(/\s+/g, ""),
+        bookZh.replace(/\s+/g, "")
+      ];
+      values.forEach((value) => aliases.set(normalizeScriptureName(value), { book, bookZh }));
+    });
+    aliases.set("num", { book: "Numbers", bookZh: "民数记" });
+    aliases.set("numbers", { book: "Numbers", bookZh: "民数记" });
+    aliases.set("民数记", { book: "Numbers", bookZh: "民数记" });
+    return aliases;
+  }
+
+  function referencesForSegment(segment) {
+    const values = [
+      segment?.ref,
+      segment?.en,
+      segment?.zh,
+      segment?.draft,
+      segment?.note
+    ].filter(Boolean);
+    const seen = new Set();
+    const refs = [];
+    values.forEach((value) => {
+      extractScriptureRefs(String(value)).forEach((ref) => {
+        if (seen.has(ref.canonicalRef)) return;
+        seen.add(ref.canonicalRef);
+        refs.push(ref);
+      });
+    });
+    return refs;
+  }
+
+  function extractScriptureRefs(text) {
+    const refs = [];
+    scriptureBooks.forEach(({ book, bookZh }) => {
+      const names = [book, bookZh, book.replace(/\s+/g, "\\s+")]
+        .map(escapeRegExp)
+        .map((name) => name.replaceAll("\\\\s\\+", "\\s+"));
+      const pattern = new RegExp(`(?:${names.join("|")})\\s*(\\d+)(?::(\\d+)(?:-(\\d+))?)?`, "gi");
+      let match;
+      while ((match = pattern.exec(text))) {
+        const parsed = canonicalChapterRef(`${book} ${match[1]}${match[2] ? `:${match[2]}${match[3] ? `-${match[3]}` : ""}` : ""}`);
+        if (parsed) refs.push(parsed);
+      }
+    });
+    return refs;
+  }
+
+  function canonicalChapterRef(value) {
+    if (!value) return null;
+    const clean = String(value).trim();
+    const match = clean.match(/^(.+?)\s*(\d+)(?::(\d+)(?:-(\d+))?)?$/i);
+    if (!match) return null;
+    const [, rawBook, rawChapter, rawVerse] = match;
+    const bookInfo = scriptureAliases.get(normalizeScriptureName(rawBook));
+    if (!bookInfo) return null;
+    const chapter = Number(rawChapter);
+    if (!Number.isFinite(chapter)) return null;
+    const canonicalRef = `${bookInfo.book} ${chapter}`;
+    const title = `${bookInfo.bookZh} ${chapter}`;
+    return {
+      canonicalRef,
+      title: rawVerse ? `${title}:${rawVerse}` : title,
+      book: bookInfo.book,
+      bookZh: bookInfo.bookZh,
+      chapter
+    };
+  }
+
+  function normalizeScriptureName(value) {
+    return String(value || "").toLowerCase().replace(/\s+/g, "");
+  }
+
+  function cssEscape(value) {
+    if (window.CSS && typeof window.CSS.escape === "function") {
+      return window.CSS.escape(value);
+    }
+    return String(value).replace(/["\\]/g, "\\$&");
+  }
+
+  function escapeRegExp(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
   function addScriptureCandidate(segment) {
     if (!el.scriptureCandidates) return;
-    if (!segment.ref) return;
-    const scripture = scriptureReferenceFor(segment.ref);
-    const card = document.createElement("article");
+    referencesForSegment(segment).forEach((ref) => addScriptureChapter(ref, segment));
+  }
+
+  function addScriptureChapter(ref, segment) {
+    const key = ref.canonicalRef;
+    if (!key || state.scriptureKeys.has(key)) return;
+    state.scriptureKeys.add(key);
+    const scripture = scriptureReferenceFor(ref);
+    const card = document.createElement("details");
     card.className = `scripture-card${scripture ? " is-exact" : ""}`;
-    const badge = scripture?.badge || (isExactScriptureRef(segment.ref) ? "经文" : "候选");
-    const title = scripture?.title || displayReference(segment.ref);
-    const summary = scripture?.summary || segment.note || "";
-    card.innerHTML = `
-      <span>${escapeHtml(badge)}</span>
-      <h3>${escapeHtml(title)}</h3>
-      ${scripture?.source ? `<p class="scripture-source">${escapeHtml(scripture.source)}</p>` : ""}
-      <p>${escapeHtml(summary)}</p>
-      ${scripture ? renderScripturePassage(scripture) : ""}
-    `;
+    card.dataset.scriptureKey = key;
+    card.innerHTML = renderScriptureCard(ref, scripture, segment);
     el.scriptureCandidates.prepend(card);
-    while (el.scriptureCandidates.children.length > 5) {
-      el.scriptureCandidates.removeChild(el.scriptureCandidates.lastElementChild);
-    }
+    if (!scripture) refreshScriptureFromApi(ref);
   }
 
-  function renderPrimaryScriptureReference() {
-    const card = document.getElementById("primaryScriptureCard");
-    const scripture = scriptureReferences["Numbers 16"];
-    if (!card || !scripture) return;
-    card.innerHTML = `
-      <span>${escapeHtml(scripture.badge)}</span>
-      <h3>${escapeHtml(scripture.title)}</h3>
-      <p class="scripture-source">${escapeHtml(scripture.source)}</p>
-      <p>${escapeHtml(scripture.summary)}</p>
-      ${renderScripturePassage(scripture)}
+  function renderScriptureCard(ref, scripture, segment) {
+    const title = scripture?.title || ref.title || displayReference(ref.canonicalRef);
+    const source = scripture?.source || "中文圣经：新标点和合本（简体） · eBible.org cmn-cu89s · Public Domain";
+    const summary = scripture?.summary || "讲道中提到的完整经文章节。";
+    const timestamp = segment ? msToClock(segmentStart(segment)) : "";
+    return `
+      <summary>
+        <span>${escapeHtml(scripture?.badge || "经文")}</span>
+        <h3>${escapeHtml(title)}</h3>
+        ${timestamp ? `<small>${escapeHtml(timestamp)}</small>` : ""}
+      </summary>
+      <div class="scripture-card-body">
+        <p class="scripture-source">${escapeHtml(source)}</p>
+        <p>${escapeHtml(summary)}</p>
+        ${scripture ? renderScripturePassage(scripture) : '<p class="scripture-loading">正在加载这一章经文...</p>'}
+      </div>
     `;
   }
 
-  async function refreshPrimaryScriptureFromApi() {
-    const card = document.getElementById("primaryScriptureCard");
-    if (!card) return;
+  async function refreshScriptureFromApi(ref) {
+    if (state.scriptureFetches.has(ref.canonicalRef)) return;
+    state.scriptureFetches.add(ref.canonicalRef);
     try {
-      const response = await fetch("/api/scripture/cmn-cu89s/Numbers/16", {
+      const response = await fetch(`/api/scripture/cmn-cu89s/${encodeURIComponent(ref.book)}/${encodeURIComponent(ref.chapter)}`, {
         headers: { "Accept": "application/json" }
       });
       if (!response.ok) return;
       const payload = await response.json();
       const scripture = scriptureFromApiPayload(payload);
       if (!scripture) return;
-      scriptureReferences["Numbers 16"] = scripture;
-      card.innerHTML = `
-        <span>${escapeHtml(scripture.badge)}</span>
-        <h3>${escapeHtml(scripture.title)}</h3>
-        <p class="scripture-source">${escapeHtml(scripture.source)}</p>
-        <p>${escapeHtml(scripture.summary)}</p>
-        ${renderScripturePassage(scripture)}
-      `;
+      scriptureReferences[scripture.canonicalRef] = scripture;
+      const card = findScriptureCard(scripture.canonicalRef);
+      if (!card) return;
+      card.classList.add("is-exact");
+      card.innerHTML = renderScriptureCard(ref, scripture, null);
     } catch {
-      // Static preview servers do not expose /api/scripture; keep generated fallback.
+      // Static preview servers do not expose /api/scripture; keep generated fallback when present.
     }
   }
 
@@ -892,29 +1001,205 @@
   function renderScripturePassage(scripture) {
     const passages = scripture.verses || scripture.passages || [];
     if (!passages.length) return "";
-    const body = passages.map((passage) => `
-      <p><strong>${escapeHtml(passage.verse)}</strong> ${escapeHtml(passage.text)}</p>
-    `).join("");
+    const body = passages.map((passage) => (
+      `<span><strong>${escapeHtml(passage.verse)}</strong> ${escapeHtml(passage.text)}</span>`
+    )).join(" ");
     const fullClass = scripture.verses && scripture.verses.length > 8 ? " scripture-passage--full" : "";
-    return `<div class="scripture-passage${fullClass}">${body}</div>`;
+    return `<div class="scripture-passage${fullClass}"><p>${body}</p></div>`;
   }
 
   function scriptureReferenceFor(ref) {
-    if (scriptureReferences[ref]) return scriptureReferences[ref];
-    if (/^numbers\s+16(?::\d+)?$/i.test(ref)) {
-      return scriptureReferences["Numbers 16"];
-    }
+    const canonical = typeof ref === "string" ? canonicalChapterRef(ref)?.canonicalRef : ref?.canonicalRef;
+    if (canonical && scriptureReferences[canonical]) return scriptureReferences[canonical];
+    if (typeof ref === "string" && scriptureReferences[ref]) return scriptureReferences[ref];
     return null;
   }
 
   function isExactScriptureRef(ref) {
-    return /^numbers\s+\d+(?::\d+)?$/i.test(ref) || /记\s*\d+/.test(ref);
+    return Boolean(canonicalChapterRef(ref));
   }
 
   function displayReference(ref) {
-    if (/^numbers\s+16:48$/i.test(ref)) return "民数记 16:48";
-    if (/^numbers\s+16$/i.test(ref)) return "民数记 16";
+    const parsed = canonicalChapterRef(ref);
+    if (parsed) return parsed.title;
     return ref;
+  }
+
+  function normalizeSegmentReferences(segment, textCandidates = []) {
+    const refs = [];
+    const seen = new Set();
+    const add = (candidate) => {
+      const parsed = normalizeScriptureRefCandidate(candidate);
+      if (!parsed || seen.has(parsed.canonicalRef)) return;
+      seen.add(parsed.canonicalRef);
+      refs.push(parsed);
+    };
+
+    if (Array.isArray(segment?.refs)) segment.refs.forEach(add);
+    if (Array.isArray(segment?.scriptureRefs)) segment.scriptureRefs.forEach(add);
+    if (segment?.ref) add(segment.ref);
+    textCandidates.filter(Boolean).forEach((text) => {
+      detectScriptureReferencesInText(String(text)).forEach(add);
+    });
+    return refs;
+  }
+
+  function referencesForSegment(segment) {
+    if (Array.isArray(segment.refs) && segment.refs.length) {
+      return normalizeSegmentReferences(segment, []);
+    }
+    return normalizeSegmentReferences(segment, [segment.en, segment.zh, segment.draft, segment.text, segment.note, segment.ref]);
+  }
+
+  function normalizeScriptureRefCandidate(candidate) {
+    if (!candidate) return null;
+    if (typeof candidate === "object") {
+      if (candidate.canonicalRef) {
+        const parsed = canonicalChapterRef(candidate.canonicalRef);
+        if (parsed) return { ...parsed, ...candidate, canonicalRef: parsed.canonicalRef, chapter: parsed.chapter };
+      }
+      if (candidate.book && candidate.chapter) {
+        const book = scriptureBookFor(candidate.book);
+        const chapter = parseChapterNumber(String(candidate.chapter));
+        if (book && chapter) return scriptureRef(book, chapter);
+      }
+      return null;
+    }
+    return canonicalChapterRef(String(candidate));
+  }
+
+  function detectScriptureReferencesInText(text) {
+    const refs = [];
+    const seen = new Set();
+    scriptureAliases.forEach((alias) => {
+      chaptersForAlias(text, alias).forEach((chapter) => {
+        const ref = scriptureRef(alias, chapter);
+        if (seen.has(ref.canonicalRef)) return;
+        seen.add(ref.canonicalRef);
+        refs.push(ref);
+      });
+    });
+    return refs;
+  }
+
+  function canonicalChapterRef(value) {
+    const text = String(value || "").trim();
+    if (!text) return null;
+    const direct = detectScriptureReferencesInText(text)[0];
+    return direct || null;
+  }
+
+  function scriptureRef(book, chapter) {
+    return {
+      canonicalRef: `${book.book} ${chapter}`,
+      book: book.book,
+      bookZh: book.bookZh,
+      chapter,
+      title: `${book.bookZh} ${chapter}`
+    };
+  }
+
+  function scriptureBookFor(value) {
+    const normalized = normalizeBookKey(String(value));
+    return scriptureAliases.find((alias) => normalizeBookKey(alias.label) === normalized)
+      || scriptureBooks.find((book) => normalizeBookKey(book.book) === normalized || normalizeBookKey(book.bookZh) === normalized)
+      || null;
+  }
+
+  function buildScriptureAliases() {
+    const aliases = [];
+    scriptureBooks.forEach((book) => {
+      aliases.push({ ...book, label: book.book });
+      aliases.push({ ...book, label: book.bookZh });
+    });
+    [
+      ["Numbers", "民数记", "Num"],
+      ["Psalms", "诗篇", "Psalm"],
+      ["Song of Songs", "雅歌", "Song of Solomon"],
+      ["1 Corinthians", "哥林多前书", "1 Cor"],
+      ["2 Corinthians", "哥林多后书", "2 Cor"],
+      ["1 Thessalonians", "帖撒罗尼迦前书", "1 Thess"],
+      ["2 Thessalonians", "帖撒罗尼迦后书", "2 Thess"],
+      ["1 Timothy", "提摩太前书", "1 Tim"],
+      ["2 Timothy", "提摩太后书", "2 Tim"],
+      ["1 Peter", "彼得前书", "1 Pet"],
+      ["2 Peter", "彼得后书", "2 Pet"],
+      ["1 John", "约翰一书", "1 John"],
+      ["2 John", "约翰二书", "2 John"],
+      ["3 John", "约翰三书", "3 John"]
+    ].forEach(([bookName, bookZh, label]) => {
+      aliases.push({ book: bookName, bookZh, label });
+    });
+    return aliases.sort((a, b) => b.label.length - a.label.length);
+  }
+
+  function chaptersForAlias(text, alias) {
+    const pattern = containsCjk(alias.label)
+      ? new RegExp(`${escapeRegExp(alias.label)}\\s*([0-9一二两三四五六七八九十百]+)\\s*(?:章|[:：]\\s*\\d+)?`, "g")
+      : new RegExp(`\\b(?:book\\s+of\\s+)?${escapeRegExp(alias.label)}\\b\\s*(?:chapter\\s+)?([0-9]+|${englishChapterWords().join("|")})(?::\\d+(?:-\\d+)?)?\\b`, "gi");
+    const chapters = [];
+    let match;
+    while ((match = pattern.exec(text)) !== null) {
+      if (!containsCjk(alias.label) && !startsWithNumber(alias.label) && precededByNumberedBook(text, match.index)) continue;
+      const parsed = parseChapterNumber(match[1]);
+      if (parsed) chapters.push(parsed);
+    }
+    return chapters;
+  }
+
+  function englishChapterWords() {
+    return [
+      "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+      "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen",
+      "eighteen", "nineteen", "twenty"
+    ];
+  }
+
+  function parseChapterNumber(value) {
+    const text = String(value || "").trim().toLowerCase();
+    if (/^\d+$/.test(text)) return Number(text);
+    const wordIndex = englishChapterWords().indexOf(text);
+    if (wordIndex >= 0) return wordIndex + 1;
+    return chineseNumberToInt(text);
+  }
+
+  function chineseNumberToInt(value) {
+    const digits = { "零": 0, "一": 1, "二": 2, "两": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9 };
+    if (!value || /[^零一二两三四五六七八九十百]/.test(value)) return null;
+    if (value.includes("百")) {
+      const [left, right = ""] = value.split("百");
+      return (digits[left] || 1) * 100 + (right ? chineseNumberToInt(right) || 0 : 0);
+    }
+    if (value.includes("十")) {
+      const [left, right = ""] = value.split("十");
+      return (digits[left] || 1) * 10 + (right ? digits[right] || 0 : 0);
+    }
+    return digits[value] || null;
+  }
+
+  function normalizeBookKey(value) {
+    return value.toLowerCase().replace(/[\s_.-]+/g, "");
+  }
+
+  function containsCjk(value) {
+    return /[\u4e00-\u9fff]/.test(value);
+  }
+
+  function startsWithNumber(value) {
+    return /^[1-3]/.test(value);
+  }
+
+  function precededByNumberedBook(text, index) {
+    return /\b[1-3]\s*$/.test(text.slice(Math.max(0, index - 4), index));
+  }
+
+  function findScriptureCard(key) {
+    return Array.from(el.scriptureCandidates?.children || [])
+      .find((card) => card.dataset.scriptureKey === key);
+  }
+
+  function escapeRegExp(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 
   function updateNotes() {
@@ -923,7 +1208,7 @@
     el.noteBlock.innerHTML = `
       <h3>证道笔记草稿</h3>
       <p>当前主线：${escapeHtml(latest.zh)}</p>
-      <p>已积累 ${state.segments.length} 个 stable segments。离线阶段会生成摘要、大纲、应用问题和金句。</p>
+      <p>已积累 ${state.segments.length} 个稳定字幕片段。离线阶段会生成摘要、大纲、应用问题和金句。</p>
     `;
   }
 
@@ -931,7 +1216,7 @@
     state.selectedService = "1000";
     syncServiceButtons();
     state.fallback = true;
-    log("Operator 手动切换到 10:00 兜底监控。");
+    log("已手动切换到 10:00 兜底监控。");
     startMonitor();
   }
 
@@ -946,26 +1231,26 @@
     setSourceState("mariners-online", "warning", "跳过");
     setSourceState("youtube-streams", "warning", "跳过");
     setSourceState("operator-audio", "live", "使用中");
-    setStatus("Operator Audio", "ready");
+    setStatus("现场音频兜底", "ready");
     setSla("兜底源可准备会众字幕", "warning");
-    log("已切换到 operator audio 兜底输入，目标仍是服务 11:30 场会众。");
+    log("已切换到现场音频兜底输入，目标仍是服务 11:30 场会众。");
   }
 
   function markCurrentSegment() {
     const segment = currentSegment();
     if (!segment) {
-      log("还没有可标记的 stable segment。");
+      log("还没有可标记的稳定字幕片段。");
       return;
     }
     segment.marked = !segment.marked;
-    log(`${segment.id} ${segment.marked ? "已标记为 review 重点" : "已取消标记"}。`);
+    log(`${segment.id} ${segment.marked ? "已标记为复核重点" : "已取消标记"}。`);
     renderSegments();
   }
 
   function lockCurrentSegment() {
     const segment = currentSegment();
     if (!segment) {
-      log("还没有可锁定的 stable segment。");
+      log("还没有可锁定的稳定字幕片段。");
       return;
     }
     segment.locked = !segment.locked;
@@ -981,7 +1266,7 @@
     state.paused = !state.paused;
     button.classList.toggle("is-active", state.paused);
     button.setAttribute("aria-pressed", String(state.paused));
-    button.textContent = state.paused ? "续" : "停";
+    button.textContent = state.paused ? "继续" : "暂停";
     setStatus(state.paused ? "字幕已暂停" : "会众字幕生成中", state.paused ? "warning" : "live");
     log(state.paused ? "已暂停会众字幕流。" : "已继续会众字幕流。");
     if (!state.paused) {
@@ -1036,7 +1321,7 @@
 
   function freezeReview() {
     if (!state.segments.length) {
-      log("还没有字幕片段，不能冻结 review。");
+      log("还没有字幕片段，不能冻结会众版本。");
       return;
     }
     state.frozen = true;
@@ -1046,7 +1331,7 @@
     setSla("11:30 会众可用", "ready");
     setGenerationStatus("已发布", "ready");
     updatePipelineForState("ready");
-    updateAdminEvidence("ready", `captions_ready · ${state.adminSettings.sunday} · ${formatClock()}`);
+    updateAdminEvidence("ready", `字幕已发布 · ${state.adminSettings.sunday} · ${formatClock()}`);
     log("已冻结并发布会众字幕视图；VTT/SRT 可作为兜底和归档导出。");
     updateTimeline(100);
   }
@@ -1102,8 +1387,8 @@
     document.documentElement.style.setProperty("--timeline-cursor", `${percent}%`);
     if (el.deadlineLabel) {
       el.deadlineLabel.textContent = state.frozen
-        ? "Published: congregation view ready"
-        : "Ready target: 11:30 PT · latest acceptable: 11:50 PT";
+        ? "已发布：会众页面可用"
+        : "目标：11:30 PT 可用 · 最晚 11:50 PT";
     }
   }
 
@@ -1216,7 +1501,7 @@
         state.adminSettings.sunday = state.adminStatus.sunday;
       }
       updateAdminStatusSummary();
-      log("已读取后端 Admin status 摘要。");
+      log("已读取后端管理状态摘要。");
     } catch (error) {
       state.adminStatus = {
         artifact: { manifestStatus: "unavailable", manifestError: error.message || String(error) },
@@ -1225,7 +1510,7 @@
         secrets: { openaiApiKey: "unknown", operatorAdminToken: "unknown", internalTaskToken: "unknown" }
       };
       updateAdminStatusSummary();
-      log(`Admin status 读取失败：${error.message || error}。`);
+      log(`管理状态读取失败：${error.message || error}。`);
     }
   }
 
@@ -1238,21 +1523,21 @@
     const secrets = status.secrets || {};
     const sunday = status.sunday || state.adminSettings.sunday;
     setOptionalText(el.adminSunday, sunday || "--");
-    setOptionalText(el.adminManifestStatus, artifact.manifestStatus || "未检查");
+    setOptionalText(el.adminManifestStatus, statusLabel(artifact.manifestStatus || "unchecked"));
     setOptionalText(el.adminManifestDetail, artifact.manifestError
       ? `读取失败：${artifact.manifestError}`
-      : `${artifact.artifactCount || 0} public artifacts`);
-    setOptionalText(el.adminCaptionStatus, captionsStatus.translationStatus || "unknown");
+      : `${artifact.artifactCount || 0} 个会众页面文件`);
+    setOptionalText(el.adminCaptionStatus, statusLabel(captionsStatus.translationStatus || "unknown"));
     setOptionalText(el.adminCaptionDetail, captionCountText(captionsStatus));
     setOptionalText(el.adminReadyTime, captionsStatus.readyTime || "待发布");
-    setOptionalText(el.adminUpdatedAt, `last updated ${captionsStatus.lastUpdated || formatClock()}`);
+    setOptionalText(el.adminUpdatedAt, `最后更新 ${captionsStatus.lastUpdated || formatClock()}`);
     setOptionalText(el.adminBucket, artifact.bucket || "未配置");
     setOptionalText(el.adminPrefix, artifact.prefix || "sundays");
-    setOptionalText(el.adminProvider, settings.provider || "openai");
+    setOptionalText(el.adminProvider, providerLabel(settings.provider || "openai"));
     setOptionalText(el.adminDeadline, settings.readinessDeadline || "11:50 PT");
     const secretReady = secrets.openaiApiKey === "configured";
     if (el.adminSecretStatus) {
-      el.adminSecretStatus.textContent = secretReady ? "OpenAI secret configured" : "OpenAI secret missing";
+      el.adminSecretStatus.textContent = secretReady ? "OpenAI 密钥已配置" : "OpenAI 密钥缺失";
       el.adminSecretStatus.classList.toggle("is-manual", !secretReady);
     }
   }
@@ -1261,12 +1546,43 @@
     const total = captionsStatus.totalSegments;
     const translated = captionsStatus.translatedSegments;
     if (Number.isFinite(total) && Number.isFinite(translated)) {
-      return `${translated} / ${total} translated`;
+      return `${translated} / ${total} 已翻译`;
     }
     if (state.segments.length) {
-      return `${state.segments.length} local segments`;
+      return `${state.segments.length} 个本地片段`;
     }
-    return "waiting for manifest report";
+    return "等待发布清单回报";
+  }
+
+  function statusLabel(value) {
+    const normalized = String(value || "").toLowerCase();
+    const labels = {
+      unchecked: "未检查",
+      unavailable: "不可用",
+      unknown: "未知",
+      missing: "缺失",
+      configured: "已配置",
+      ready: "可用",
+      complete: "完成",
+      completed: "完成",
+      pending: "等待中",
+      processing: "处理中",
+      running: "运行中",
+      translated: "已翻译",
+      needs_translation: "待翻译"
+    };
+    return labels[normalized] || String(value || "未知");
+  }
+
+  function providerLabel(value) {
+    const normalized = String(value || "").toLowerCase();
+    const labels = {
+      openai: "OpenAI 翻译链路",
+      google: "Google 翻译链路",
+      gemini: "Gemini 翻译链路",
+      manual: "手动导入"
+    };
+    return labels[normalized] || String(value || "未配置");
   }
 
   function updateAdminEvidence(kind, text) {
@@ -1297,7 +1613,7 @@
       const label = item.querySelector("em");
       if (label) label.textContent = completed ? "完成" : active ? "进行中" : "等待";
     });
-    setOptionalText(el.pipelineSummary, mode === "ready" ? "ready" : mode === "captioning" ? "running" : mode === "source" ? "source" : "waiting");
+    setOptionalText(el.pipelineSummary, mode === "ready" ? "可用" : mode === "captioning" ? "生成中" : mode === "source" ? "找源中" : "等待");
   }
 
   function updatePipelineStage(stage, stateName, labelText) {
@@ -1411,7 +1727,7 @@
   }
 
   function sessionSliceId() {
-    return `sunday-${state.adminSettings.sunday.replaceAll("-", "")}`;
+    return `周日-${state.adminSettings.sunday.replaceAll("-", "")}`;
   }
 
   function formatClock() {
