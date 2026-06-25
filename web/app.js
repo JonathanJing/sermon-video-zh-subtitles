@@ -181,6 +181,7 @@
     draftCaption: document.getElementById("draftCaption"),
     stableCaption: document.getElementById("stableCaption"),
     nextCaption: document.getElementById("nextCaption"),
+    currentEnglishCaption: document.getElementById("currentEnglishCaption"),
     englishSidecar: document.getElementById("englishSidecar"),
     confidenceMeter: document.getElementById("confidenceMeter"),
     sermonTitle: document.getElementById("sermonTitle"),
@@ -188,6 +189,7 @@
     generationStatus: document.getElementById("generationStatus"),
     segmentList: document.getElementById("segmentList"),
     segmentCount: document.getElementById("segmentCount"),
+    segmentCountNote: document.getElementById("segmentCountNote"),
     returnLiveButton: document.getElementById("returnLiveButton"),
     scriptureCandidates: document.getElementById("scriptureCandidates"),
     noteBlock: document.getElementById("noteBlock"),
@@ -242,6 +244,7 @@
     if (el.sundaySelect) {
       el.sundaySelect.addEventListener("change", () => {
         saveAdminSettings({ quiet: true });
+        loadCloudRunDatePlayback(state.adminSettings.sunday);
         log(`会众页面已切换到 ${state.adminSettings.sunday} 周日切片；所有普通用户看到同一份发布内容。`);
       });
     }
@@ -266,10 +269,10 @@
     updateSourceCards("idle");
     updateTimeline();
     loadPublicPublishedSnapshot();
-    loadCloudRunDatePlayback();
+    loadCloudRunDatePlayback(state.viewMode === "admin" ? state.adminSettings.sunday : "");
     if (state.viewMode === "admin") {
       refreshAdminStatus();
-      updatePipelineForState("idle");
+      updatePipelineForState(state.segments.length ? "ready" : "idle");
       updateAdminEvidence("pageView", "管理端访问记录已启用；会众访问会记录为 congregation_page_view。");
     } else {
       connectPublicRealtimeEvents();
@@ -321,7 +324,6 @@
   }
 
   function loadPublicPublishedSnapshot() {
-    if (state.viewMode !== "congregation") return;
     if (!state.playbackSegments.length) return;
     stopStreamingTimers();
     state.captioning = false;
@@ -359,6 +361,9 @@
   async function loadCloudRunDatePlayback(dateOverride = "") {
     const targetDate = dateOverride || targetDateFromRoute();
     if (!targetDate) return;
+    if (state.viewMode === "admin" && !state.segments.length) {
+      setCaptionEmptyState(`正在读取 ${targetDate} 日期页面的已发布字幕...`);
+    }
     try {
       const sliceResponse = await fetch(`/api/sundays/${encodeURIComponent(targetDate)}`, { cache: "no-store" });
       if (!sliceResponse.ok) throw new Error(`日期页面清单读取失败：HTTP ${sliceResponse.status}`);
@@ -379,6 +384,9 @@
     } catch (error) {
       if (state.viewMode === "admin") {
         updateCloudRunTestStatus("未发布", `${targetDate} 还没有可读 playback-js：${error.message || error}`, "manual");
+        if (!state.segments.length) {
+          setCaptionEmptyState(`${targetDate} 暂无已发布字幕。请选择已发布回放日期，或用左侧链接生成测试页。`);
+        }
       }
       log(`日期页面 ${targetDate} 尚未加载发布字幕：${error.message || error}。`);
     }
@@ -415,6 +423,7 @@
     if (simulation.translationStatus === "needs_translation") {
       log("当前 POC 片段为英文字幕源，中文字幕位置将显示 AI 待生成状态，用于验证播放和对齐。");
     }
+    updateSegmentCountNote();
   }
 
   function parsePlaybackSimulationJs(text) {
@@ -487,11 +496,34 @@
     state.selectedService = service;
     state.sourceReady = false;
     syncServiceButtons();
+    updateCaptureMode(service === "manual" ? "manual" : "automatic");
     const label = serviceLabel(service);
+    setStatus(`已选择 ${label}`, "watching");
+    setSla(service === "830" ? "优先 8:30 源" : service === "1000" ? "10:00 兜底源" : "手动链接优先", "warning");
+    previewSelectedService(service);
     log(`已切换监控场次：${label}。`);
     if (state.monitoring) {
       startMonitor();
     }
+  }
+
+  function previewSelectedService(service) {
+    updateSourceCards("idle");
+    if (service === "830") {
+      setSourceState("mariners-online", "idle", "8:30 待检查");
+      setSourceState("youtube-streams", "idle", "8:30 候选");
+      setSourceState("operator-audio", "idle", "可备用");
+      return;
+    }
+    if (service === "1000") {
+      setSourceState("mariners-online", "warning", "10:00 兜底");
+      setSourceState("youtube-streams", "warning", "10:00 候选");
+      setSourceState("operator-audio", "idle", "可备用");
+      return;
+    }
+    setSourceState("mariners-online", "warning", "手动跳过");
+    setSourceState("youtube-streams", "idle", "等待链接");
+    setSourceState("operator-audio", "idle", "可备用");
   }
 
   function syncServiceButtons() {
@@ -1500,13 +1532,19 @@
         segment.marked ? "已标记" : "",
         segment.ref ? segment.ref : ""
       ].filter(Boolean);
-      item.textContent = `${msToClock(segmentStart(segment))} ${segment.zh}${flags.length ? ` (${flags.join(" / ")})` : ""}`;
+      item.innerHTML = `
+        <span class="segment-time">${escapeHtml(msToClock(segmentStart(segment)))}</span>
+        <span class="segment-zh">${escapeHtml(segment.zh || "等待中文字幕")}</span>
+        <span class="segment-en">${escapeHtml(segment.en || "暂无英文原文")}</span>
+        ${flags.length ? `<small>${escapeHtml(flags.join(" / "))}</small>` : ""}
+      `;
       if (segment.id === state.currentSegmentId) item.classList.add("is-active");
       el.segmentList.appendChild(item);
     });
     if (el.segmentCount) {
       el.segmentCount.textContent = state.viewMode === "admin" ? `${state.segments.length} 个片段` : "已加载";
     }
+    updateSegmentCountNote();
     if (shouldFollow) {
       scrollSegmentTrackToLive();
     } else {
@@ -1557,7 +1595,19 @@
     }
     setCaptionLine(el.draftCaption, context.previous, "等待上一句中文字幕...");
     setCaptionLine(el.stableCaption, context.current, "等待中文字幕...");
+    setCaptionLine(el.currentEnglishCaption, segment?.en || "", "Waiting for English transcript...");
     setCaptionLine(el.nextCaption, mode === "offline" ? context.next : "", "等待下一句中文字幕...");
+  }
+
+  function setCaptionEmptyState(message) {
+    if (el.captionWindow) {
+      el.captionWindow.dataset.contextMode = "offline";
+      el.captionWindow.classList.remove("has-previous", "has-next");
+    }
+    setCaptionLine(el.draftCaption, "", "");
+    setCaptionLine(el.stableCaption, message, message);
+    setCaptionLine(el.currentEnglishCaption, "", "");
+    setCaptionLine(el.nextCaption, "", "");
   }
 
   function captionContextFor(segment) {
@@ -1652,9 +1702,17 @@
       </summary>
       <div class="scripture-card-body">
         ${summary ? `<p>${escapeHtml(summary)}</p>` : ""}
-        ${scripture ? renderScripturePassage(scripture) : '<p class="scripture-loading">正在加载这一章经文...</p>'}
+        ${scripture ? renderScripturePassage(scripture) : `<p class="scripture-loading">${escapeHtml(scriptureLoadingMessage(ref))}</p>`}
       </div>
     `;
+  }
+
+  function scriptureLoadingMessage(ref) {
+    const reference = ref?.title || displayReference(ref?.canonicalRef || "");
+    if (window.location.protocol === "file:" || window.location.port === "8092") {
+      return `${reference} 已在字幕中识别；当前是静态预览，未连接经文 API。Cloud Run 或本地后端启动后会加载这一章。`;
+    }
+    return "正在加载这一章经文...";
   }
 
   function renderScriptureSourceNote(scripture) {
@@ -1832,7 +1890,10 @@
       const response = await fetch(`/api/scripture/cmn-cu89s/${encodeURIComponent(ref.book)}/${encodeURIComponent(ref.chapter)}`, {
         headers: { "Accept": "application/json" }
       });
-      if (!response.ok) return;
+      if (!response.ok) {
+        markScriptureLoadUnavailable(ref);
+        return;
+      }
       const payload = await response.json();
       const scripture = scriptureFromApiPayload(payload);
       if (!scripture) return;
@@ -1843,8 +1904,14 @@
       card.innerHTML = renderScriptureCard(ref, scripture, null);
       renderScriptureSourceNote(scripture);
     } catch {
-      // Static preview servers do not expose /api/scripture; keep generated fallback when present.
+      markScriptureLoadUnavailable(ref);
     }
+  }
+
+  function markScriptureLoadUnavailable(ref) {
+    const card = findScriptureCard(ref.canonicalRef);
+    const loading = card?.querySelector(".scripture-loading");
+    if (loading) loading.textContent = scriptureLoadingMessage(ref);
   }
 
   function scriptureFromApiPayload(payload) {
@@ -2419,9 +2486,6 @@
       const response = await fetch("/api/admin/status", { headers: { "Accept": "application/json" } });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       state.adminStatus = await response.json();
-      if (state.adminStatus?.sunday) {
-        state.adminSettings.sunday = state.adminStatus.sunday;
-      }
       updateAdminStatusSummary();
       log("已读取后端管理状态摘要。");
     } catch (error) {
@@ -2430,7 +2494,7 @@
         captions: { translationStatus: "unknown" },
         readiness: { state: "unavailable", publicArtifactsReady: false, fallback: false },
         settings: { provider: "openai", readinessDeadline: "11:50 PT" },
-        secrets: { openaiApiKey: "unknown", operatorAdminToken: "unknown", internalTaskToken: "unknown" }
+        secrets: { openaiApiKey: "unavailable", operatorAdminToken: "unknown", internalTaskToken: "unknown" }
       };
       updateAdminStatusSummary();
       log(`管理状态读取失败：${error.message || error}。`);
@@ -2452,7 +2516,7 @@
     setOptionalText(el.adminManifestStatus, statusLabel(artifact.manifestStatus || "unchecked"));
     setOptionalText(el.adminManifestDetail, artifact.manifestError
       ? `读取失败：${artifact.manifestError}`
-      : `${artifact.artifactCount || 0} 个会众页面文件`);
+      : manifestDetailText(artifact));
     const readinessState = readiness.state || captionsStatus.translationStatus || "unknown";
     setOptionalText(el.adminCaptionStatus, statusLabel(readinessState));
     setOptionalText(el.adminCaptionDetail, captionCountText(captionsStatus));
@@ -2464,7 +2528,11 @@
     setOptionalText(el.adminDeadline, settings.readinessDeadline || "11:50 PT");
     const secretReady = secrets.openaiApiKey === "configured";
     if (el.adminSecretStatus) {
-      el.adminSecretStatus.textContent = secretReady ? "OpenAI 密钥已配置" : "OpenAI 密钥缺失";
+      el.adminSecretStatus.textContent = secretReady
+        ? "OpenAI 密钥已配置"
+        : secrets.openaiApiKey === "missing"
+          ? "OpenAI 密钥缺失"
+          : "本地预览未检查密钥";
       el.adminSecretStatus.classList.toggle("is-manual", !secretReady);
     }
     if (eventArchive.enabled) {
@@ -2476,12 +2544,18 @@
     const total = captionsStatus.totalSegments;
     const translated = captionsStatus.translatedSegments;
     if (Number.isFinite(total) && Number.isFinite(translated)) {
-      return `${translated} / ${total} 已翻译`;
+      return `发布清单统计：${translated} 个已翻译 / 共 ${total} 个片段`;
     }
     if (state.segments.length) {
       return `${state.segments.length} 个本地片段`;
     }
     return "等待发布清单回报";
+  }
+
+  function manifestDetailText(artifact) {
+    const count = Number(artifact.artifactCount) || 0;
+    if (!count) return "还没有读到会众页发布文件";
+    return `发布清单包含 ${count} 个文件：字幕、回放数据、报告等会众页资源`;
   }
 
   function statusLabel(value) {
@@ -2708,6 +2782,30 @@
       if (label) label.textContent = completed ? "完成" : active ? "进行中" : "等待";
     });
     setOptionalText(el.pipelineSummary, mode === "ready" ? "可用" : mode === "captioning" ? "生成中" : mode === "source" ? "找源中" : "等待");
+    if (mode === "ready" && state.playbackSegments.length) {
+      setOptionalText(el.pipelineSummary, "本地回放可复核");
+      updatePipelineStage("source-discovery", "done", "已加载");
+      updatePipelineStage("live-capture", "done", "回放");
+      updatePipelineStage("sermon-start", "done", state.adminSettings.approxStartTime || "已定位");
+      updatePipelineStage("transcript", "done", "英文可见");
+      updatePipelineStage("translation", "done", "中文可见");
+      updatePipelineStage("scripture", "active", "待 API");
+      updatePipelineStage("promotion", "waiting", "Cloud Run");
+      updatePipelineStage("public-ready", "waiting", "未验证");
+    }
+  }
+
+  function updateSegmentCountNote() {
+    if (!el.segmentCountNote) return;
+    if (!state.segments.length && !state.playbackSegments.length) {
+      el.segmentCountNote.textContent = "等待字幕时间轴";
+      return;
+    }
+    const count = state.playbackSegments.length || state.segments.length;
+    const isGeneratedSample = Boolean(window.SERMON_PLAYBACK_SIMULATION?.generatedFrom);
+    el.segmentCountNote.textContent = count >= 80 && isGeneratedSample
+      ? "当前样本按字幕时间码切到 80 段；生成请求上限也是 80"
+      : "片段由 VTT/实时字幕的开始和结束时间码决定";
   }
 
   function updatePipelineStage(stage, stateName, labelText) {

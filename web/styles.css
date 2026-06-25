@@ -293,9 +293,9 @@ ul {
 
 .admin-overview {
   display: grid;
-  gap: 12px;
+  gap: 10px;
   margin: var(--pad) var(--pad) 0;
-  padding: 14px;
+  padding: 12px 14px;
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background: var(--surface);
@@ -310,7 +310,7 @@ ul {
 
 .admin-kpi {
   min-width: 0;
-  padding: 12px;
+  padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background: #fbfdff;
@@ -326,7 +326,7 @@ ul {
 
 .admin-kpi strong {
   display: block;
-  margin-top: 8px;
+  margin-top: 5px;
   color: var(--ink);
   font-size: 1.02rem;
   font-weight: 900;
@@ -335,7 +335,7 @@ ul {
 }
 
 .admin-kpi p {
-  margin-top: 6px;
+  margin-top: 4px;
   color: var(--muted);
   font-size: 0.8rem;
   font-weight: 750;
@@ -376,10 +376,16 @@ ul {
 .subtitle-stage {
   grid-area: stage;
   display: grid;
-  grid-template-rows: auto auto auto minmax(260px, 1fr) auto minmax(116px, 0.32fr);
+  grid-template-rows: auto auto auto auto auto minmax(170px, 1fr);
   gap: 12px;
   padding: 14px;
   overflow: hidden;
+}
+
+.admin-shell .caption-window {
+  min-height: 180px;
+  height: clamp(180px, 24svh, 260px);
+  max-height: 260px;
 }
 
 .scripture-panel {
@@ -1058,8 +1064,8 @@ ul {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 16px;
-  padding: 22px;
+  gap: 10px;
+  padding: 18px;
   overflow: auto;
   border: 1px solid #16486d;
   border-radius: var(--radius-lg);
@@ -1070,7 +1076,7 @@ ul {
 .caption-line {
   max-width: 100%;
   color: #f9fcff;
-  font-size: 2.2rem;
+  font-size: 1.75rem;
   font-weight: 850;
   line-height: 1.34;
   text-align: center;
@@ -1081,13 +1087,19 @@ ul {
 
 .caption-line--current {
   color: #ffffff;
-  font-size: 2.35rem;
+  font-size: 2rem;
   font-weight: 900;
+}
+
+.caption-line--english {
+  color: rgba(211, 226, 236, 0.72);
+  font-size: 1.04rem;
+  font-weight: 750;
 }
 
 .caption-line--context {
   color: rgba(211, 226, 236, 0.5);
-  font-size: 1.75rem;
+  font-size: 1.1rem;
   font-weight: 850;
 }
 
@@ -1211,6 +1223,9 @@ ul {
 }
 
 .segment-list li {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: 3px 8px;
   padding: 9px 10px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -1219,6 +1234,31 @@ ul {
   font-size: 0.88rem;
   line-height: 1.35;
   overflow-wrap: anywhere;
+}
+
+.segment-time {
+  grid-row: span 2;
+  color: var(--blue-800);
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+}
+
+.segment-zh {
+  color: var(--ink-soft);
+  font-weight: 800;
+}
+
+.segment-en {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.segment-list small {
+  grid-column: 2;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
 }
 
 .segment-list li.is-active {
@@ -1587,7 +1627,7 @@ ul {
   }
 
   .admin-kpis {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .app-shell[data-view-mode="congregation"] .workspace,

@@ -6,13 +6,12 @@
     <meta name="theme-color" content="#f7fbff" />
     <title>管理端 | 11:30 会众中文字幕</title>
     <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="stylesheet" href="./styles.css?v=20260624-admin-ui2" />
+    <link rel="stylesheet" href="./styles.css?v=20260625-admin-ux3" />
   </head>
   <body>
     <div class="app-shell admin-shell" data-sidebar="open" data-view-mode="admin">
       <header class="topbar">
         <div class="brand-block">
-          <span class="brand-mark" aria-hidden="true">道</span>
           <div>
             <p class="eyebrow">操作台</p>
             <h1>11:30 字幕生成管理</h1>
@@ -42,14 +41,14 @@
             <p>当前会众页面切片</p>
           </article>
           <article class="admin-kpi">
-            <span>发布文件</span>
+            <span>会众页数据</span>
             <strong id="adminManifestStatus">未检查</strong>
             <p id="adminManifestDetail">等待读取发布清单</p>
           </article>
           <article class="admin-kpi">
             <span>字幕片段</span>
             <strong id="adminCaptionStatus">待生成</strong>
-            <p id="adminCaptionDetail">0 / 0 已翻译</p>
+            <p id="adminCaptionDetail">等待读取字幕统计</p>
           </article>
           <article class="admin-kpi">
             <span>发布时间</span>
@@ -87,6 +86,7 @@
             <label class="field">
               <span>日期页面</span>
               <select id="sundaySelect">
+                <option value="2026-06-21">已发布回放 2026-06-21</option>
                 <option value="2026-06-25">测试页面 2026-06-25</option>
                 <option value="2026-06-28">正式周日 2026-06-28</option>
               </select>
@@ -294,9 +294,10 @@
           </aside>
 
           <div class="caption-window" id="captionWindow" data-context-mode="realtime">
-            <p class="caption-line caption-line--context caption-line--previous" id="draftCaption">等待上一句中文字幕...</p>
+            <p class="caption-line caption-line--context caption-line--previous" id="draftCaption">等待上一句字幕...</p>
             <p class="caption-line caption-line--current" id="stableCaption">等待中文字幕...</p>
-            <p class="caption-line caption-line--context caption-line--next" id="nextCaption">等待下一句中文字幕...</p>
+            <p class="caption-line caption-line--english" id="currentEnglishCaption">Waiting for English transcript...</p>
+            <p class="caption-line caption-line--context caption-line--next" id="nextCaption">等待下一句字幕...</p>
           </div>
 
           <div class="sidecar" data-operator-only>
@@ -312,6 +313,7 @@
               <h3>完整字幕</h3>
               <div class="review-strip__actions">
                 <span id="segmentCount">待加载</span>
+                <span id="segmentCountNote">片段来自字幕时间轴</span>
                 <button class="text-button is-hidden" type="button" data-action="return-live" id="returnLiveButton">回到实时</button>
               </div>
             </div>
