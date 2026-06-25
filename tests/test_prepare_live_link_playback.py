@@ -34,7 +34,8 @@ class PrepareLiveLinkPlaybackTest(unittest.TestCase):
                         "live_url": "https://youtube.test/watch?v=abc123",
                         "sermon_url": None,
                         "no_discover": True,
-                        "sermon_start": None,
+                        "sermon_start": "17:08",
+                        "sermon_end": "49:15",
                         "lang": [],
                         "playback_lang": None,
                         "out_dir": root / "artifacts",
@@ -60,6 +61,10 @@ class PrepareLiveLinkPlaybackTest(unittest.TestCase):
         self.assertIn("projects/p/secrets/openai-api-key/versions/latest", commands[0])
         self.assertIn("--asr-model", commands[0])
         self.assertIn("--no-discover", commands[0])
+        self.assertIn("--sermon-start", commands[0])
+        self.assertIn("17:08", commands[0])
+        self.assertIn("--sermon-end", commands[0])
+        self.assertIn("49:15", commands[0])
 
     def test_run_redacts_api_key_secret_in_printed_command(self):
         command = [

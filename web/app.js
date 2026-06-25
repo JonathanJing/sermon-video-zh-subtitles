@@ -153,8 +153,9 @@
     viewMode: "congregation",
     adminSettings: {
       sunday: "2026-06-25",
-      manualLiveUrl: "",
-      approxStartTime: "",
+      manualLiveUrl: "https://www.youtube.com/watch?v=A__MCqbAKYc",
+      approxStartTime: "17:08",
+      approxEndTime: "49:15",
       captureMode: "automatic"
     },
     adminStatus: null,
@@ -177,6 +178,7 @@
     sundaySelect: document.getElementById("sundaySelect"),
     manualLiveUrl: document.getElementById("manualLiveUrl"),
     approxStartTime: document.getElementById("approxStartTime"),
+    approxEndTime: document.getElementById("approxEndTime"),
     autoDiscoveryStatus: document.getElementById("autoDiscoveryStatus"),
     publicSliceLabel: document.getElementById("publicSliceLabel"),
     captionWindow: document.getElementById("captionWindow"),
@@ -192,6 +194,7 @@
     segmentList: document.getElementById("segmentList"),
     segmentCount: document.getElementById("segmentCount"),
     segmentCountNote: document.getElementById("segmentCountNote"),
+    segmentCoverage: document.getElementById("segmentCoverage"),
     returnLiveButton: document.getElementById("returnLiveButton"),
     scriptureCandidates: document.getElementById("scriptureCandidates"),
     noteBlock: document.getElementById("noteBlock"),
@@ -418,15 +421,18 @@
     const liveTitle = simulation.live?.title || "直播归档";
     const sermonTitle = simulation.sermonTitle || simulation.sermonCandidate?.title || liveTitle;
     const start = simulation.sermonStart?.timecode || "unknown";
-    state.adminSettings.manualLiveUrl = simulation.live?.url || state.adminSettings.manualLiveUrl;
-    state.adminSettings.approxStartTime = start !== "unknown" ? start : state.adminSettings.approxStartTime;
+    const end = simulation.sermonEnd?.timecode || state.adminSettings.approxEndTime || "";
+    const simulationLiveUrl = simulation.live?.url || "";
+    state.adminSettings.manualLiveUrl = state.adminSettings.manualLiveUrl || simulationLiveUrl;
+    state.adminSettings.approxStartTime = state.adminSettings.approxStartTime || (start !== "unknown" ? start : "");
+    state.adminSettings.approxEndTime = state.adminSettings.approxEndTime || end;
     updateSermonMeta({
       title: sermonTitle,
-      meta: `${simulation.live?.url || "直播链接已加载"} · 证道开始 ${start}`,
+      meta: `${simulation.live?.url || "直播链接已加载"} · 证道 ${start}${end ? `-${end}` : ""}`,
       status: "已加载",
       tone: "ready"
     });
-    log(`已加载直播链接回放数据：${liveTitle}；证道开始 ${start}；${state.playbackSegments.length} 个片段。`);
+    log(`已加载直播链接回放数据：${liveTitle}；证道 ${start}${end ? `-${end}` : ""}；${state.playbackSegments.length} 个片段。`);
     if (simulation.translationStatus === "needs_translation") {
       log("当前 POC 片段为英文字幕源，中文字幕位置将显示 AI 待生成状态，用于验证播放和对齐。");
     }
@@ -1347,11 +1353,13 @@
     const sunday = el.sundaySelect?.value || state.adminSettings.sunday;
     const manualLiveUrl = (el.manualLiveUrl?.value || "").trim();
     const approxStartTime = (el.approxStartTime?.value || "").trim();
+    const approxEndTime = (el.approxEndTime?.value || "").trim();
     state.adminSettings = {
       ...state.adminSettings,
       sunday,
       manualLiveUrl,
-      approxStartTime
+      approxStartTime,
+      approxEndTime
     };
     syncAdminSettings();
     if (!options.quiet) {
@@ -1381,7 +1389,7 @@
     setSourceState("youtube-streams", "checking", "抓取中");
     setSourceState("operator-audio", "idle", "可备用");
     if (el.sessionLabel) el.sessionLabel.textContent = `任务：手动链接 ${sessionSliceId()}`;
-    log(`手动触发直播链接抓取：${state.adminSettings.manualLiveUrl}。后端会优先使用大致开始时间定位证道。`);
+    log(`手动触发直播链接抓取：${state.adminSettings.manualLiveUrl}。后端会优先使用证道开始/结束时间裁剪离线字幕。`);
     postManualGenerateRequest();
     state.monitorTimers.push(window.setTimeout(confirmManualLiveSource, 800));
   }
@@ -1452,6 +1460,7 @@
         triggerSource: "operator-cloud-run-test",
         liveUrl: state.adminSettings.manualLiveUrl,
         sermonStart: state.adminSettings.approxStartTime || undefined,
+        sermonEnd: state.adminSettings.approxEndTime || undefined,
         maxSegments: 80,
         playbackSpeed: 18
       })
@@ -1565,7 +1574,7 @@
     const previousScrollTop = el.segmentList.scrollTop;
     const shouldFollow = state.segmentAutoFollow || segmentTrackNearBottom();
     el.segmentList.textContent = "";
-    const reviewGroups = reviewGroupsForRender().slice(-28);
+    const reviewGroups = reviewGroupsForRender();
     reviewGroups.forEach((group) => {
       const item = document.createElement("li");
       item.dataset.segmentId = group.liveSegmentId;
@@ -1581,11 +1590,13 @@
       el.segmentList.appendChild(item);
     });
     if (el.segmentCount) {
+      const rawCount = state.rawSegments.length || state.segments.length;
       el.segmentCount.textContent = state.viewMode === "admin"
-        ? `${reviewGroups.length} 组 / ${state.rawSegments.length || state.segments.length} 原始片段`
+        ? `${reviewGroups.length} 组 / ${rawCount} 原始 cue`
         : "已加载";
     }
     updateSegmentCountNote();
+    updateSegmentCoverage(reviewGroups);
     if (shouldFollow) {
       scrollSegmentTrackToLive();
     } else {
@@ -1613,6 +1624,8 @@
       liveSegmentId: displayId || display?.id || `review_${index + 1}`,
       segmentIds: [displayId || display?.id || `review_${index + 1}`],
       sourceSegmentIds: ids,
+      startMs: Number(review.startMs ?? display?.startMs ?? 0),
+      endMs: Number(review.endMs ?? display?.endMs ?? 0),
       flags: [
         ids.length ? `${ids.length} 个原始 cue` : "",
         realtimeStageHistoryLabel(display?.realtimeStages || review.realtimeStages || [], display?.realtimeStage || review.realtimeStage || ""),
@@ -2596,6 +2609,7 @@
     if (el.sundaySelect) el.sundaySelect.value = state.adminSettings.sunday;
     if (el.manualLiveUrl) el.manualLiveUrl.value = state.adminSettings.manualLiveUrl;
     if (el.approxStartTime) el.approxStartTime.value = state.adminSettings.approxStartTime;
+    if (el.approxEndTime) el.approxEndTime.value = state.adminSettings.approxEndTime;
     if (el.publicSliceLabel) el.publicSliceLabel.textContent = state.adminSettings.sunday;
     updateCloudRunTestLinks();
     if (el.autoDiscoveryStatus) {
@@ -2976,7 +2990,7 @@
       updatePipelineStage("sermon-start", "done", state.adminSettings.approxStartTime || "已定位");
       updatePipelineStage("transcript", "done", "英文可见");
       updatePipelineStage("translation", "done", "中文可见");
-      updatePipelineStage("scripture", "active", "待 API");
+      updatePipelineStage("scripture", "active", "待经文库");
       updatePipelineStage("promotion", "waiting", "Cloud Run");
       updatePipelineStage("public-ready", "waiting", "未验证");
     }
@@ -2992,8 +3006,27 @@
     const rawCount = state.rawSegments.length || count;
     const isGeneratedSample = Boolean(window.SERMON_PLAYBACK_SIMULATION?.generatedFrom);
     el.segmentCountNote.textContent = isGeneratedSample
-      ? `默认显示成品断句；${rawCount} 个原始 cue 保留用于追溯和导出`
-      : "默认显示成品断句；原始 cue 由 VTT/实时字幕时间码决定";
+      ? `显示全部成品断句；${rawCount} 个原始 cue 保留用于追溯和导出`
+      : "显示全部成品断句；原始 cue 由 VTT/实时字幕时间码决定";
+  }
+
+  function updateSegmentCoverage(reviewGroups) {
+    if (!el.segmentCoverage) return;
+    if (!reviewGroups.length) {
+      el.segmentCoverage.textContent = "等待覆盖范围";
+      return;
+    }
+    const starts = reviewGroups
+      .map((group) => Number(group.startMs))
+      .filter(Number.isFinite);
+    const ends = reviewGroups
+      .map((group) => Number(group.endMs))
+      .filter(Number.isFinite);
+    if (!starts.length || !ends.length) {
+      el.segmentCoverage.textContent = "已显示全部可用字幕";
+      return;
+    }
+    el.segmentCoverage.textContent = `覆盖 ${msToClock(Math.min(...starts))}-${msToClock(Math.max(...ends))}`;
   }
 
   function updatePipelineStage(stage, stateName, labelText) {
@@ -3010,7 +3043,11 @@
 
   function setEnglishSidecar(text, confidence) {
     if (el.englishSidecar) el.englishSidecar.textContent = text;
-    if (el.confidenceMeter) el.confidenceMeter.textContent = `${confidence || "--"}%`;
+    if (el.confidenceMeter) {
+      const label = confidence ? `听写把握 ${confidence}%` : "听写把握 --%";
+      el.confidenceMeter.textContent = label;
+      el.confidenceMeter.setAttribute("aria-label", `${label}，表示当前英文听写的模型把握度`);
+    }
   }
 
   function reportPageView() {

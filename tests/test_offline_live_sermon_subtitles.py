@@ -62,6 +62,27 @@ class OfflineLiveSermonSubtitlesTest(unittest.TestCase):
         )
         self.assertIsNone(mod.download_section_spec(start_ms=0, duration_ms=None))
 
+    def test_parse_time_accepts_chinese_fullwidth_colon(self):
+        self.assertEqual(mod.parse_time_to_ms("17：08"), 1_028_000)
+
+    def test_slice_live_cues_uses_manual_sermon_start_and_end_window(self):
+        cues = [
+            mod.Cue(start_ms=1_000_000, end_ms=1_025_000, text="before sermon"),
+            mod.Cue(start_ms=1_028_000, end_ms=1_035_000, text="sermon opens"),
+            mod.Cue(start_ms=2_950_000, end_ms=2_954_000, text="sermon closes"),
+            mod.Cue(start_ms=2_955_000, end_ms=2_958_000, text="boundary after sermon"),
+            mod.Cue(start_ms=2_960_000, end_ms=2_970_000, text="after sermon"),
+        ]
+        start_ms = mod.parse_time_to_ms("17:08")
+        end_ms = mod.parse_time_to_ms("49:15")
+
+        sliced = mod.slice_live_cues(cues, start_ms, end_ms - start_ms)
+
+        self.assertEqual([cue.text for cue in sliced], ["sermon opens", "sermon closes"])
+        self.assertEqual(sliced[0].start_ms, 0)
+        self.assertEqual(sliced[0].end_ms, 7_000)
+        self.assertEqual(sliced[1].start_ms, 1_922_000)
+
     def test_cues_from_transcription_segments(self):
         cues = mod.cues_from_transcription_response(
             {

@@ -16,6 +16,8 @@ class BackendWorkerTest(unittest.TestCase):
                 sunday="2026-06-28",
                 live_url="https://www.youtube.com/watch?v=abc123",
                 session_id="test-session",
+                sermon_start="17:08",
+                sermon_end="49:15",
                 dry_run_gcs=True,
             ),
             AppConfig(
@@ -37,6 +39,8 @@ class BackendWorkerTest(unittest.TestCase):
         self.assertIn("projects/p/secrets/openai-api-key/versions/latest", joined)
         self.assertIn("--gcs-dry-run", command)
         self.assertIn("--asr-model gpt-4o-transcribe", joined)
+        self.assertIn("--sermon-start 17:08", joined)
+        self.assertIn("--sermon-end 49:15", joined)
         self.assertNotIn("sk-", joined)
 
     def test_requires_bucket_and_secret_reference(self):
@@ -150,12 +154,16 @@ class BackendWorkerTest(unittest.TestCase):
         request = parse_generation_request(
             {
                 "liveUrl": "https://www.youtube.com/watch?v=abc123",
+                "sermonStart": "17:08",
+                "sermonEnd": "49:15",
                 "includeInsights": True,
             },
             "2026-06-28",
         )
 
         self.assertTrue(request.include_insights)
+        self.assertEqual(request.sermon_start, "17:08")
+        self.assertEqual(request.sermon_end, "49:15")
 
     def test_build_generation_plan_can_replay_saved_translation_jsonl(self):
         plan = build_generation_plan(

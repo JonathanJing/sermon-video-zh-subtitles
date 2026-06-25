@@ -356,6 +356,8 @@ def build_simulation(
     live = report.get("live") or {}
     sermon = report.get("sermon_candidate") or {}
     sermon_start = report.get("sermon_start") or {}
+    sermon_end = report.get("sermon_end") or None
+    sermon_window = report.get("sermon_window") or {}
     caption_source = report.get("caption_source") or {}
     sermon_title = sermon.get("title") or live.get("title") or "Untitled sermon"
 
@@ -410,6 +412,8 @@ def build_simulation(
             "durationSeconds": sermon.get("duration_seconds"),
         },
         "sermonStart": sermon_start,
+        "sermonEnd": sermon_end,
+        "sermonWindow": sermon_window,
         "translationStatus": "ready" if has_zh else "needs_translation",
         "displayPolicy": display_policy(),
         "scriptureReferences": merge_segment_references(display_segments),

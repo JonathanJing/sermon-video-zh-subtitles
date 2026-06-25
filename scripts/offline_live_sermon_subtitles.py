@@ -84,6 +84,10 @@ def main() -> int:
         manual_start=args.sermon_start,
         tail_padding_seconds=args.tail_padding_seconds,
     )
+    end_ms = parse_time_to_ms(args.sermon_end) if args.sermon_end else None
+    if end_ms is not None and end_ms <= start_ms:
+        raise ValueError("--sermon-end must be later than --sermon-start or inferred sermon start")
+    sermon_duration_override_ms = end_ms - start_ms if end_ms is not None else None
 
     caption_source_url, caption_source_meta, caption_source_kind = select_caption_source(
         live_url=args.live_url,
@@ -101,6 +105,18 @@ def main() -> int:
             "seconds": round(start_ms / 1000, 3),
             "timecode": format_clock(start_ms),
             "method": start_method,
+        },
+        "sermon_end": {
+            "seconds": round(end_ms / 1000, 3),
+            "timecode": format_clock(end_ms),
+            "method": "manual",
+        } if end_ms is not None else None,
+        "sermon_window": {
+            "start_seconds": round(start_ms / 1000, 3),
+            "start_timecode": format_clock(start_ms),
+            "end_seconds": round(end_ms / 1000, 3) if end_ms is not None else None,
+            "end_timecode": format_clock(end_ms) if end_ms is not None else None,
+            "duration_seconds": round(sermon_duration_override_ms / 1000, 3) if sermon_duration_override_ms is not None else None,
         },
         "caption_source": {
             "kind": caption_source_kind,
@@ -130,8 +146,8 @@ def main() -> int:
             )
             write_reports(out_dir, report)
             return 2
-        sermon_duration_ms = int((sermon_meta or live_meta).get("duration") or 0) * 1000
-        if sermon_meta is None and start_ms > 0 and sermon_duration_ms > start_ms:
+        sermon_duration_ms = sermon_duration_override_ms or int((sermon_meta or live_meta).get("duration") or 0) * 1000
+        if sermon_duration_override_ms is None and sermon_meta is None and start_ms > 0 and sermon_duration_ms > start_ms:
             sermon_duration_ms = sermon_duration_ms - start_ms
         if sermon_duration_ms <= 0:
             sermon_duration_ms = None  # type: ignore[assignment]
@@ -190,7 +206,7 @@ def main() -> int:
         write_reports(out_dir, report)
         return 3
 
-    sermon_duration_ms = int((sermon_meta or live_meta).get("duration") or 0) * 1000
+    sermon_duration_ms = sermon_duration_override_ms or int((sermon_meta or live_meta).get("duration") or 0) * 1000
     if sermon_duration_ms <= 0:
         sermon_duration_ms = None  # type: ignore[assignment]
 
@@ -202,8 +218,8 @@ def main() -> int:
             sermon_local = slice_live_cues(cues, start_ms, sermon_duration_ms)
             live_aligned = [cue for cue in cues if cue_overlaps(cue, start_ms, sermon_duration_ms)]
         else:
-            sermon_local = cues
-            live_aligned = offset_cues(cues, start_ms)
+            sermon_local = slice_live_cues(cues, 0, sermon_duration_ms)
+            live_aligned = offset_cues(sermon_local, start_ms)
 
         base = f"{safe_id(live_meta)}.sermon.{lang}"
         local_vtt = out_dir / f"{base}.local.vtt"
@@ -266,6 +282,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--sermon-start",
         help="Manual sermon start override, e.g. 00:23:25 or seconds.",
+    )
+    parser.add_argument(
+        "--sermon-end",
+        help="Manual sermon end override on the live timeline, e.g. 49:15 or seconds.",
     )
     parser.add_argument(
         "--tail-padding-seconds",
@@ -847,9 +867,9 @@ def slice_live_cues(cues: list[Cue], start_ms: int, duration_ms: int | None) -> 
 
 
 def cue_overlaps(cue: Cue, start_ms: int, duration_ms: int | None) -> bool:
-    if cue.end_ms < start_ms:
+    if cue.end_ms <= start_ms:
         return False
-    if duration_ms is not None and cue.start_ms > start_ms + duration_ms:
+    if duration_ms is not None and cue.start_ms >= start_ms + duration_ms:
         return False
     return True
 
@@ -890,7 +910,7 @@ def clean_vtt_text(text: str) -> str:
 
 
 def parse_time_to_ms(value: str) -> int:
-    value = value.strip().replace(",", ".")
+    value = value.strip().replace("：", ":").replace(",", ".")
     if re.fullmatch(r"\d+(?:\.\d+)?", value):
         return int(float(value) * 1000)
     parts = value.split(":")
@@ -983,6 +1003,7 @@ def render_report_md(report: dict[str, Any]) -> str:
         f"- Live: `{report.get('live', {}).get('id')}` {report.get('live', {}).get('title')}",
         f"- Sermon start: `{report.get('sermon_start', {}).get('timecode')}` "
         f"({report.get('sermon_start', {}).get('method')})",
+        f"- Sermon end: `{(report.get('sermon_end') or {}).get('timecode') or 'not set'}`",
         f"- Caption source: `{report.get('caption_source', {}).get('kind')}`",
         "",
         "## Outputs",

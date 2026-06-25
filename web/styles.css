@@ -534,6 +534,12 @@ ul {
   gap: 6px;
 }
 
+.sermon-window-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
 .field span {
   color: var(--ink-soft);
   font-size: 0.78rem;
@@ -1163,7 +1169,7 @@ ul {
 }
 
 .confidence-meter {
-  min-width: 58px;
+  min-width: 118px;
   min-height: 38px;
   display: inline-flex;
   align-items: center;
@@ -1207,7 +1213,8 @@ ul {
   color: var(--muted);
   font-size: 0.8rem;
   font-weight: 800;
-  white-space: nowrap;
+  white-space: normal;
+  text-align: right;
 }
 
 .segment-list {
@@ -1797,6 +1804,10 @@ ul {
   }
 
   .settings-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sermon-window-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 

@@ -103,10 +103,16 @@
               />
             </label>
 
-            <label class="field">
-              <span>证道大致开始时间</span>
-              <input type="text" id="approxStartTime" inputmode="numeric" placeholder="例如 00:23:25，可留空" />
-            </label>
+            <div class="sermon-window-grid" aria-label="离线字幕证道时间窗口">
+              <label class="field">
+                <span>证道开始时间</span>
+                <input type="text" id="approxStartTime" inputmode="numeric" placeholder="例如 17:08，可留空自动判断" />
+              </label>
+              <label class="field">
+                <span>证道结束时间</span>
+                <input type="text" id="approxEndTime" inputmode="numeric" placeholder="例如 49:15，可留空取到片尾" />
+              </label>
+            </div>
 
             <div class="settings-grid" aria-label="自动抓取状态">
               <div>
@@ -212,7 +218,7 @@
               <li data-stage="sermon-start"><span>3</span><div><strong>判断证道开始</strong><p>定位证道起点，避开敬拜与公告</p></div><em>等待</em></li>
               <li data-stage="transcript"><span>4</span><div><strong>英文听写</strong><p>生成可复核的英文原文</p></div><em>等待</em></li>
               <li data-stage="translation"><span>5</span><div><strong>生成中文翻译</strong><p>输出会众可读的中文字幕</p></div><em>等待</em></li>
-              <li data-stage="scripture"><span>6</span><div><strong>经文匹配</strong><p>补充经文和讲章线索</p></div><em>等待</em></li>
+              <li data-stage="scripture"><span>6</span><div><strong>经文匹配</strong><p>连接经文库后补充经文和讲章线索</p></div><em>等待</em></li>
               <li data-stage="promotion"><span>7</span><div><strong>发布清单</strong><p>更新本周日会众页面数据</p></div><em>等待</em></li>
               <li data-stage="public-ready"><span>8</span><div><strong>会众页可用</strong><p>11:30 页面可以打开观看</p></div><em>等待</em></li>
             </ol>
@@ -302,10 +308,10 @@
 
           <div class="sidecar" data-operator-only>
             <div>
-              <span class="sidecar-label">英文原文</span>
+              <span class="sidecar-label">英文原文 / 听写把握度</span>
               <p id="englishSidecar">等待实时听写。</p>
             </div>
-            <span class="confidence-meter" id="confidenceMeter">--%</span>
+            <span class="confidence-meter" id="confidenceMeter" title="当前英文听写的模型把握度">听写把握 --%</span>
           </div>
 
           <div class="review-strip" aria-label="字幕复核">
@@ -314,6 +320,7 @@
               <div class="review-strip__actions">
                 <span id="segmentCount">待加载</span>
                 <span id="segmentCountNote">片段来自字幕时间轴</span>
+                <span id="segmentCoverage">等待覆盖范围</span>
                 <button class="text-button is-hidden" type="button" data-action="return-live" id="returnLiveButton">回到实时</button>
               </div>
             </div>

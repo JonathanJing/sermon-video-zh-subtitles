@@ -206,6 +206,7 @@ class ApiHandler(BaseHTTPRequestHandler):
                     schedulerJob=scheduler_job(self.headers),
                     liveSource=url_summary(request.live_url),
                     sermonStart=request.sermon_start,
+                    sermonEnd=request.sermon_end,
                     dryRunGcs=request.dry_run_gcs,
                 )
                 if not self.config.enable_inline_worker:

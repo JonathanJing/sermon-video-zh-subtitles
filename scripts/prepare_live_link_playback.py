@@ -51,6 +51,7 @@ def main() -> int:
         + optional("--sermon-url", args.sermon_url)
         + flag("--no-discover", args.no_discover)
         + optional("--sermon-start", args.sermon_start)
+        + optional("--sermon-end", args.sermon_end)
         + optional("--api-key-secret", args.api_key_secret)
         + repeat("--lang", args.lang),
         cwd=REPO_ROOT,
@@ -128,6 +129,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--sermon-start",
         help="Optional live timeline sermon start override, e.g. 00:23:25.",
+    )
+    parser.add_argument(
+        "--sermon-end",
+        help="Optional live timeline sermon end override, e.g. 00:49:15.",
     )
     parser.add_argument(
         "--lang",

@@ -36,6 +36,7 @@ class GenerationRequest:
     session_id: str | None = None
     sermon_url: str | None = None
     sermon_start: str | None = None
+    sermon_end: str | None = None
     playback_lang: str | None = None
     max_segments: int = 80
     playback_speed: float = 18.0
@@ -97,6 +98,8 @@ def build_generation_command(
         command.extend(["--sermon-url", request.sermon_url])
     if request.sermon_start:
         command.extend(["--sermon-start", request.sermon_start])
+    if request.sermon_end:
+        command.extend(["--sermon-end", request.sermon_end])
     if request.playback_lang:
         command.extend(["--playback-lang", request.playback_lang])
     if request.dry_run_gcs:
@@ -134,6 +137,7 @@ def build_generation_plan(
             session_id=session_id,
             sermon_url=request.sermon_url,
             sermon_start=request.sermon_start,
+            sermon_end=request.sermon_end,
             playback_lang=request.playback_lang,
             max_segments=request.max_segments,
             playback_speed=request.playback_speed,
@@ -310,6 +314,7 @@ def parse_generation_request(payload: dict, sunday: str) -> GenerationRequest:
         session_id=payload.get("sessionId") or payload.get("session_id"),
         sermon_url=payload.get("sermonUrl") or payload.get("sermon_url"),
         sermon_start=payload.get("sermonStart") or payload.get("sermon_start"),
+        sermon_end=payload.get("sermonEnd") or payload.get("sermon_end"),
         playback_lang=payload.get("playbackLang") or payload.get("playback_lang"),
         max_segments=int(payload.get("maxSegments", 80)),
         playback_speed=float(payload.get("playbackSpeed", 18.0)),
@@ -326,6 +331,7 @@ def main() -> int:
     parser.add_argument("--session-id")
     parser.add_argument("--sermon-url")
     parser.add_argument("--sermon-start")
+    parser.add_argument("--sermon-end")
     parser.add_argument("--playback-lang")
     parser.add_argument("--dry-run-gcs", action="store_true")
     parser.add_argument("--include-insights", action="store_true")
@@ -342,6 +348,7 @@ def main() -> int:
         session_id=args.session_id,
         sermon_url=args.sermon_url,
         sermon_start=args.sermon_start,
+        sermon_end=args.sermon_end,
         playback_lang=args.playback_lang,
         dry_run_gcs=args.dry_run_gcs,
         include_insights=args.include_insights,

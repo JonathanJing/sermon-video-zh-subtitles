@@ -34,6 +34,8 @@ Moses and Aaron stood before the people.
                 "live": {"id": "live1", "title": "Sunday Service", "url": "https://youtube.test/live1"},
                 "sermon_candidate": {"id": "vod1", "title": "Sermon"},
                 "sermon_start": {"timecode": "0:23:25", "seconds": 1405},
+                "sermon_end": {"timecode": "0:49:15", "seconds": 2955, "method": "manual"},
+                "sermon_window": {"start_timecode": "0:23:25", "end_timecode": "0:49:15", "duration_seconds": 1550},
                 "outputs": [
                     {
                         "lang": "en",
@@ -53,6 +55,8 @@ Moses and Aaron stood before the people.
 
             self.assertEqual(simulation["translationStatus"], "needs_translation")
             self.assertEqual(simulation["sermonTitle"], "Sermon")
+            self.assertEqual(simulation["sermonEnd"]["timecode"], "0:49:15")
+            self.assertEqual(simulation["sermonWindow"]["duration_seconds"], 1550)
             self.assertEqual(simulation["sourceVtt"], "live.en.vtt")
             self.assertFalse(simulation["secrets"]["apiKeyMaterialIncluded"])
             self.assertFalse(simulation["secrets"]["secretResourceNamesIncluded"])

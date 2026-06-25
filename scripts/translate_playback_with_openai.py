@@ -543,6 +543,8 @@ def build_report(
         "live": translated.get("live"),
         "sermonCandidate": translated.get("sermonCandidate"),
         "sermonStart": translated.get("sermonStart"),
+        "sermonEnd": translated.get("sermonEnd"),
+        "sermonWindow": translated.get("sermonWindow"),
         "sourceTranslationStatus": original.get("translationStatus"),
         "translationStatus": translated.get("translationStatus"),
         "totalSegments": total_segments,
