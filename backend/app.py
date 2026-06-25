@@ -4,7 +4,7 @@ import json
 import mimetypes
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 from .config import AppConfig
 from .manifest import SundaySliceService
@@ -16,6 +16,13 @@ from .observability import (
     stable_hash,
     trigger_source,
     url_summary,
+)
+from .realtime import (
+    DEFAULT_REALTIME_MODEL,
+    DEFAULT_TARGET_LANGUAGE,
+    RealtimeSessionStore,
+    create_openai_translation_session,
+    resolve_openai_api_key,
 )
 from .scripture import ScriptureNotFoundError, ScriptureService
 from .storage import GcsArtifactReader
@@ -30,6 +37,7 @@ class ApiHandler(BaseHTTPRequestHandler):
     config = AppConfig.from_env()
     service = SundaySliceService(config, GcsArtifactReader())
     scripture_service = ScriptureService()
+    realtime_store = RealtimeSessionStore()
 
     def do_GET(self) -> None:
         try:
@@ -70,6 +78,9 @@ class ApiHandler(BaseHTTPRequestHandler):
         parts = [part for part in path.split("/") if part]
         if parts[:2] == ["api", "scripture"]:
             self.handle_scripture_get(parts)
+            return
+        if parts[:3] == ["api", "realtime", "sessions"] and len(parts) == 5 and parts[4] == "events":
+            self.handle_realtime_events_sse(parts[3])
             return
         if parts[:2] == ["api", "sundays"] and len(parts) == 3:
             self.write_json(self.service.get_public_slice(parts[2]))
@@ -153,6 +164,12 @@ class ApiHandler(BaseHTTPRequestHandler):
             parts = [part for part in path.split("/") if part]
             if parts == ["api", "telemetry", "page-view"]:
                 self.handle_page_view()
+                return
+            if parts == ["api", "admin", "realtime", "sessions"]:
+                self.handle_realtime_session_create()
+                return
+            if parts[:3] == ["api", "realtime", "sessions"] and len(parts) == 5 and parts[4] == "events":
+                self.handle_realtime_event_post(parts[3])
                 return
             if parts[:3] == ["api", "admin", "sundays"] and len(parts) == 5 and parts[4] == "generate":
                 if not self.authorized():
@@ -258,6 +275,139 @@ class ApiHandler(BaseHTTPRequestHandler):
         )
         self.write_json({"status": "logged"}, status=202)
 
+    def handle_realtime_session_create(self) -> None:
+        if not self.authorized_for_admin_browser():
+            self.write_json({"error": "unauthorized"}, status=401)
+            return
+        payload = self.read_json_body()
+        sunday = str(payload.get("sunday") or self.service._resolve_sunday("current"))[:20]
+        model = str(payload.get("model") or DEFAULT_REALTIME_MODEL)[:80]
+        target_language = str(payload.get("targetLanguage") or DEFAULT_TARGET_LANGUAGE)[:20]
+        session = self.realtime_store.create(
+            sunday=sunday,
+            model=model,
+            target_language=target_language,
+        )
+        try:
+            api_key = resolve_openai_api_key(
+                self.config.openai_api_key,
+                self.config.openai_api_key_secret,
+            )
+            openai_session = create_openai_translation_session(
+                api_key=api_key,
+                model=model,
+                target_language=target_language,
+            )
+        except Exception as exc:
+            log_event(
+                "realtime_session_create_failed",
+                component="api",
+                sunday=sunday,
+                sessionId=session.session_id,
+                error=str(exc)[:200],
+                severity="ERROR",
+            )
+            self.write_json({"error": "realtime_session_failed", "message": str(exc)}, status=502)
+            return
+
+        client_secret = openai_session.get("client_secret") if isinstance(openai_session, dict) else None
+        if not isinstance(client_secret, dict) or not client_secret.get("value"):
+            self.write_json({"error": "missing_client_secret"}, status=502)
+            return
+
+        log_event(
+            "realtime_session_created",
+            component="api",
+            sunday=sunday,
+            sessionId=session.session_id,
+            model=model,
+            targetLanguage=target_language,
+        )
+        self.write_json(
+            {
+                "status": "ready",
+                "sessionId": session.session_id,
+                "eventToken": session.event_token,
+                "model": model,
+                "targetLanguage": target_language,
+                "clientSecret": {
+                    "value": client_secret.get("value"),
+                    "expiresAt": client_secret.get("expires_at"),
+                },
+                "webrtc": {
+                    "url": "https://api.openai.com/v1/realtime",
+                    "model": model,
+                },
+            },
+            status=201,
+        )
+
+    def handle_realtime_event_post(self, session_id: str) -> None:
+        token = self.headers.get("X-Realtime-Event-Token") or bearer_token(self.headers.get("Authorization", ""))
+        if not self.realtime_store.validate_event_token(session_id, token):
+            self.write_json({"error": "unauthorized"}, status=401)
+            return
+        payload = self.read_json_body()
+        event = self.realtime_store.append_event(session_id, payload)
+        if event.get("type") in {"caption_delta", "caption_final", "input_transcript_delta", "input_transcript_final"}:
+            log_event(
+                "realtime_caption_event",
+                component="api",
+                sessionId=session_id,
+                eventType=event.get("type"),
+                segmentId=event.get("segmentId"),
+            )
+        self.write_json({"status": "accepted", "id": event["id"]}, status=202)
+
+    def handle_realtime_events_sse(self, session_id: str) -> None:
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Connection", "keep-alive")
+        self.end_headers()
+        cursor = self.sse_cursor()
+        active_session_id = None if session_id == "current" else session_id
+        try:
+            self.write_sse_comment("connected")
+            while True:
+                if session_id == "current":
+                    current = self.realtime_store.current_session_id() or self.realtime_store.wait_for_current_session_id(25)
+                    if not current:
+                        self.write_sse_comment("waiting-for-session")
+                        continue
+                    if current != active_session_id:
+                        active_session_id = current
+                        cursor = 0
+                if not active_session_id or not self.realtime_store.get(active_session_id):
+                    self.write_sse_comment("session-not-found")
+                    return
+                events = self.realtime_store.wait_for_events(active_session_id, cursor, 25)
+                if not events:
+                    self.write_sse_comment("keepalive")
+                    continue
+                for event in events:
+                    cursor = int(event["id"])
+                    self.write_sse_event(event)
+        except (BrokenPipeError, ConnectionResetError):
+            return
+
+    def sse_cursor(self) -> int:
+        query = parse_qs(urlparse(self.path).query)
+        try:
+            return max(0, int((query.get("cursor") or ["0"])[0]))
+        except ValueError:
+            return 0
+
+    def write_sse_comment(self, text: str) -> None:
+        self.wfile.write(f": {text}\n\n".encode("utf-8"))
+        self.wfile.flush()
+
+    def write_sse_event(self, event: dict) -> None:
+        event_type = str(event.get("type") or "message")
+        data = json.dumps(event, ensure_ascii=False)
+        self.wfile.write(f"id: {event['id']}\nevent: {event_type}\ndata: {data}\n\n".encode("utf-8"))
+        self.wfile.flush()
+
     def admin_status(self) -> dict:
         sunday = self.service._resolve_sunday("current")
         public_slice = None
@@ -297,10 +447,12 @@ class ApiHandler(BaseHTTPRequestHandler):
                 "targetServiceTime": "11:30 PT",
                 "readinessDeadline": "11:50 PT",
                 "manualTriggerEndpoint": "/api/admin/sundays/{sunday}/generate",
+                "realtimeSessionEndpoint": "/api/admin/realtime/sessions",
+                "realtimeEventsEndpoint": "/api/realtime/sessions/current/events",
                 "telemetryEndpoint": "/api/telemetry/page-view",
             },
             "secrets": {
-                "openaiApiKey": "configured" if self.config.openai_api_key_secret else "missing",
+                "openaiApiKey": "configured" if self.openai_key_configured() else "missing",
                 "operatorAdminToken": "configured" if self.config.operator_admin_token else "missing",
                 "internalTaskToken": "configured" if self.config.internal_task_token else "missing",
             },
@@ -324,6 +476,14 @@ class ApiHandler(BaseHTTPRequestHandler):
             return True
         return False
 
+    def authorized_for_admin_browser(self) -> bool:
+        if self.authorized():
+            return True
+        return not self.config.operator_admin_token and not self.config.internal_task_token
+
+    def openai_key_configured(self) -> bool:
+        return bool(self.config.openai_api_key or self.config.openai_api_key_secret)
+
     def read_json_body(self) -> dict:
         length = int(self.headers.get("Content-Length", "0"))
         if length == 0:
@@ -338,6 +498,11 @@ class ApiHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+
+def bearer_token(value: str) -> str | None:
+    prefix = "Bearer "
+    return value[len(prefix) :] if value.startswith(prefix) else None
 
 
 def main() -> None:
