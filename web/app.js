@@ -141,6 +141,7 @@
     playbackTimer: null,
     clockTimer: null,
     progressTimer: null,
+    adminProgressTimer: null,
     startedAt: null,
     playbackStartedAt: null,
     playbackBaseMs: 0,
@@ -159,6 +160,7 @@
       captureMode: "automatic"
     },
     adminStatus: null,
+    adminProgress: null,
     testRun: null,
     micStream: null,
     recognition: null,
@@ -277,6 +279,7 @@
     loadCloudRunDatePlayback(state.viewMode === "admin" ? state.adminSettings.sunday : "");
     if (state.viewMode === "admin") {
       refreshAdminStatus();
+      startAdminProgressPolling();
       updatePipelineForState(state.segments.length ? "ready" : "idle");
       updateAdminEvidence("pageView", "管理端访问记录已启用；会众访问会记录为 congregation_page_view。");
     } else {
@@ -1421,6 +1424,7 @@
         const status = body.status || "accepted";
         updateAdminEvidence("triggered", `直播抓取已触发 · ${status} · ${body.sessionId || "任务待创建"}`);
         updateAdminEvidence("worker", body.prefix ? `计划写入路径：${body.prefix}` : "后台计划已接收");
+        await refreshAdminProgress({ quiet: true });
         if (status === "completed") {
           updateCloudRunTestStatus("完成", `已发布到 ${state.adminSettings.sunday} 日期页面；用户页和 Admin 页可打开查看。`, "ready");
           updatePipelineForState("ready");
@@ -2549,6 +2553,13 @@
     state.progressTimer = window.setInterval(() => updateTimeline(), 1000);
   }
 
+  function startAdminProgressPolling() {
+    if (state.viewMode !== "admin") return;
+    window.clearInterval(state.adminProgressTimer);
+    refreshAdminProgress({ quiet: true });
+    state.adminProgressTimer = window.setInterval(() => refreshAdminProgress({ quiet: true }), 5000);
+  }
+
   function updateTimeline(forcedPercent) {
     const percent = forcedPercent ?? Math.min(100, Math.max(0, state.segments.length * 12));
     document.documentElement.style.setProperty("--timeline-progress", `${percent}%`);
@@ -2699,6 +2710,20 @@
       };
       updateAdminStatusSummary();
       log(`管理状态读取失败：${error.message || error}。`);
+    }
+  }
+
+  async function refreshAdminProgress(options = {}) {
+    if (state.viewMode !== "admin") return;
+    const sunday = encodeURIComponent(state.adminSettings.sunday || "current");
+    try {
+      const response = await fetch(`/api/admin/sundays/${sunday}/progress`, { headers: { "Accept": "application/json" } });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      state.adminProgress = await response.json();
+      updatePipelineFromAdminProgress(state.adminProgress);
+      if (!options.quiet) log("已读取后端生成进度。");
+    } catch (error) {
+      if (!options.quiet) log(`生成进度读取失败：${error.message || error}。`);
     }
   }
 
@@ -2994,6 +3019,44 @@
       updatePipelineStage("promotion", "waiting", "Cloud Run");
       updatePipelineStage("public-ready", "waiting", "未验证");
     }
+  }
+
+  function updatePipelineFromAdminProgress(progress) {
+    if (!el.pipelineList || !progress || progress.status === "missing") return;
+    const stages = Array.isArray(progress.pipelineStages) ? progress.pipelineStages : [];
+    stages.forEach((stage) => {
+      if (!stage || !stage.id) return;
+      const stateName = ["waiting", "active", "done", "failed"].includes(stage.state)
+        ? stage.state
+        : "waiting";
+      updatePipelineStage(stage.id, stateName, stage.statusLabel || pipelineFallbackLabel(stateName));
+    });
+    setOptionalText(el.pipelineSummary, adminProgressSummary(progress));
+    if (progress.status === "failed" && progress.error) {
+      updateAdminEvidence("worker", `生成失败：${progress.failedCommandStage || "unknown"} · ${progress.error}`);
+    } else if (progress.currentCommandStage) {
+      updateAdminEvidence("worker", `后台阶段进行中：${progress.currentCommandStage}`);
+    } else if (progress.status === "completed") {
+      updateAdminEvidence("ready", `字幕已发布 · ${progress.sunday || state.adminSettings.sunday}`);
+    } else if (progress.status === "planned") {
+      updateAdminEvidence("worker", `后台计划已记录：${progress.sessionId || "等待 session"}`);
+    }
+  }
+
+  function pipelineFallbackLabel(stateName) {
+    if (stateName === "done") return "完成";
+    if (stateName === "active") return "进行中";
+    if (stateName === "failed") return "失败";
+    return "等待";
+  }
+
+  function adminProgressSummary(progress) {
+    const status = String(progress.status || "");
+    if (status === "completed") return "已发布";
+    if (status === "failed") return "失败";
+    if (status === "running") return "生成中";
+    if (status === "planned") return "已排程";
+    return statusLabel(status || "unknown");
   }
 
   function updateSegmentCountNote() {

@@ -18,6 +18,7 @@ from .observability import (
     trigger_source,
     url_summary,
 )
+from .progress import GenerationProgressStore, default_generation_progress_gcs_prefix
 from .realtime import (
     DEFAULT_REALTIME_MODEL,
     DEFAULT_TARGET_LANGUAGE,
@@ -47,6 +48,14 @@ class ApiHandler(BaseHTTPRequestHandler):
             Path(config.realtime_event_log_dir),
             gcs_prefix=config.realtime_event_gcs_prefix,
         )
+    )
+    generation_progress = GenerationProgressStore(
+        Path(config.generation_progress_dir),
+        gcs_prefix=default_generation_progress_gcs_prefix(
+            config.artifact_bucket,
+            config.artifact_prefix,
+            config.generation_progress_gcs_prefix,
+        ),
     )
 
     def do_GET(self) -> None:
@@ -86,6 +95,15 @@ class ApiHandler(BaseHTTPRequestHandler):
             self.write_json(self.admin_status())
             return
         parts = [part for part in path.split("/") if part]
+        if parts[:3] == ["api", "admin", "sundays"] and len(parts) == 5 and parts[4] == "progress":
+            sunday = self.resolve_admin_sunday(parts[3])
+            self.write_json(self.generation_progress.status(sunday))
+            return
+        if parts[:3] == ["api", "admin", "runs"] and len(parts) == 5 and parts[4] == "progress":
+            query = parse_qs(urlparse(self.path).query)
+            sunday = self.resolve_admin_sunday((query.get("sunday") or ["current"])[0])
+            self.write_json(self.generation_progress.status(sunday, parts[3]))
+            return
         if parts[:2] == ["api", "scripture"]:
             self.handle_scripture_get(parts)
             return
@@ -209,6 +227,15 @@ class ApiHandler(BaseHTTPRequestHandler):
                     sermonEnd=request.sermon_end,
                     dryRunGcs=request.dry_run_gcs,
                 )
+                self.generation_progress.append(
+                    event="live_capture_triggered",
+                    sunday=sunday,
+                    session_id=plan.session_id,
+                    run_prefix=plan.prefix,
+                    trigger_source=source,
+                    command_count=len(plan.commands),
+                    status="running",
+                )
                 if not self.config.enable_inline_worker:
                     log_event(
                         "live_capture_planned",
@@ -218,6 +245,15 @@ class ApiHandler(BaseHTTPRequestHandler):
                         runPrefix=plan.prefix,
                         triggerSource=source,
                         commandCount=len(plan.commands),
+                    )
+                    self.generation_progress.append(
+                        event="live_capture_planned",
+                        sunday=sunday,
+                        session_id=plan.session_id,
+                        run_prefix=plan.prefix,
+                        trigger_source=source,
+                        command_count=len(plan.commands),
+                        status="planned",
                     )
                     self.write_json(
                         {
@@ -234,20 +270,58 @@ class ApiHandler(BaseHTTPRequestHandler):
 
                 outputs = []
                 for command in plan.commands:
+                    stage = command_stage(command)
                     log_event(
                         "worker_stage_started",
                         component="api-inline-worker",
                         sunday=sunday,
                         sessionId=plan.session_id,
-                        stage=command_stage(command),
+                        stage=stage,
                     )
-                    completed = subprocess.run(command, check=True, capture_output=True, text=True)
+                    self.generation_progress.append(
+                        event="worker_stage_started",
+                        sunday=sunday,
+                        session_id=plan.session_id,
+                        run_prefix=plan.prefix,
+                        command_stage=stage,
+                        status="running",
+                    )
+                    try:
+                        completed = subprocess.run(command, check=True, capture_output=True, text=True)
+                    except subprocess.CalledProcessError as exc:
+                        log_event(
+                            "worker_stage_failed",
+                            component="api-inline-worker",
+                            severity="ERROR",
+                            sunday=sunday,
+                            sessionId=plan.session_id,
+                            stage=stage,
+                            returnCode=exc.returncode,
+                        )
+                        self.generation_progress.append(
+                            event="worker_stage_failed",
+                            sunday=sunday,
+                            session_id=plan.session_id,
+                            run_prefix=plan.prefix,
+                            command_stage=stage,
+                            error=exc.stderr or exc.stdout or str(exc),
+                            status="failed",
+                        )
+                        raise
                     log_event(
                         "worker_stage_completed",
                         component="api-inline-worker",
                         sunday=sunday,
                         sessionId=plan.session_id,
-                        stage=command_stage(command),
+                        stage=stage,
+                    )
+                    self.generation_progress.append(
+                        event="worker_stage_completed",
+                        sunday=sunday,
+                        session_id=plan.session_id,
+                        run_prefix=plan.prefix,
+                        command_stage=stage,
+                        status="running",
                     )
                     outputs.append(
                         {
@@ -256,6 +330,20 @@ class ApiHandler(BaseHTTPRequestHandler):
                             "stderr": completed.stderr,
                         }
                     )
+                log_event(
+                    "captions_ready",
+                    component="api-inline-worker",
+                    sunday=sunday,
+                    sessionId=plan.session_id,
+                    runPrefix=plan.prefix,
+                )
+                self.generation_progress.append(
+                    event="captions_ready",
+                    sunday=sunday,
+                    session_id=plan.session_id,
+                    run_prefix=plan.prefix,
+                    status="completed",
+                )
                 self.write_json(
                     {
                         "status": "completed",
@@ -315,6 +403,15 @@ class ApiHandler(BaseHTTPRequestHandler):
                 triggerSource="live-source-monitor",
                 commandCount=len(plan.commands),
                 liveSource=url_summary(request.live_url),
+            )
+            self.generation_progress.append(
+                event="live_capture_planned",
+                sunday=sunday,
+                session_id=plan.session_id,
+                run_prefix=plan.prefix,
+                trigger_source="live-source-monitor",
+                command_count=len(plan.commands),
+                status="planned",
             )
             response["generationPlan"] = {
                 "status": "planned",

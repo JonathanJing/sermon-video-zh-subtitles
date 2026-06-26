@@ -10,6 +10,7 @@ from pathlib import Path
 
 from .config import AppConfig
 from .observability import command_stage, log_event, url_summary
+from .progress import GenerationProgressStore, default_generation_progress_gcs_prefix
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -354,7 +355,16 @@ def main() -> int:
         include_insights=args.include_insights,
         translations_jsonl=args.translations_jsonl,
     )
-    plan = build_generation_plan(request, AppConfig.from_env())
+    config = AppConfig.from_env()
+    plan = build_generation_plan(request, config)
+    progress_store = GenerationProgressStore(
+        Path(config.generation_progress_dir),
+        gcs_prefix=default_generation_progress_gcs_prefix(
+            config.artifact_bucket,
+            config.artifact_prefix,
+            config.generation_progress_gcs_prefix,
+        ),
+    )
     if args.plan_only:
         log_event(
             "live_capture_plan_created",
@@ -364,6 +374,15 @@ def main() -> int:
             runPrefix=plan.prefix,
             liveSource=url_summary(request.live_url),
             commandCount=len(plan.commands),
+        )
+        progress_store.append(
+            event="live_capture_planned",
+            sunday=request.sunday,
+            session_id=plan.session_id,
+            run_prefix=plan.prefix,
+            trigger_source="worker-plan-only",
+            command_count=len(plan.commands),
+            status="planned",
         )
         print(json.dumps({"sessionId": plan.session_id, "prefix": plan.prefix, "commands": plan.commands}, indent=2))
         return 0
@@ -375,6 +394,15 @@ def main() -> int:
         runPrefix=plan.prefix,
         liveSource=url_summary(request.live_url),
     )
+    progress_store.append(
+        event="live_capture_worker_started",
+        sunday=request.sunday,
+        session_id=plan.session_id,
+        run_prefix=plan.prefix,
+        trigger_source="worker-cli",
+        command_count=len(plan.commands),
+        status="running",
+    )
     for command in plan.commands:
         stage = command_stage(command)
         log_event(
@@ -385,7 +413,37 @@ def main() -> int:
             runPrefix=plan.prefix,
             stage=stage,
         )
-        subprocess.run(command, cwd=REPO_ROOT, check=True)
+        progress_store.append(
+            event="worker_stage_started",
+            sunday=request.sunday,
+            session_id=plan.session_id,
+            run_prefix=plan.prefix,
+            command_stage=stage,
+            status="running",
+        )
+        try:
+            subprocess.run(command, cwd=REPO_ROOT, check=True)
+        except subprocess.CalledProcessError as exc:
+            log_event(
+                "worker_stage_failed",
+                component="worker",
+                severity="ERROR",
+                sunday=request.sunday,
+                sessionId=plan.session_id,
+                runPrefix=plan.prefix,
+                stage=stage,
+                returnCode=exc.returncode,
+            )
+            progress_store.append(
+                event="worker_stage_failed",
+                sunday=request.sunday,
+                session_id=plan.session_id,
+                run_prefix=plan.prefix,
+                command_stage=stage,
+                error=str(exc),
+                status="failed",
+            )
+            raise
         log_event(
             "worker_stage_completed",
             component="worker",
@@ -394,12 +452,27 @@ def main() -> int:
             runPrefix=plan.prefix,
             stage=stage,
         )
+        progress_store.append(
+            event="worker_stage_completed",
+            sunday=request.sunday,
+            session_id=plan.session_id,
+            run_prefix=plan.prefix,
+            command_stage=stage,
+            status="running",
+        )
     log_event(
         "captions_ready",
         component="worker",
         sunday=request.sunday,
         sessionId=plan.session_id,
         runPrefix=plan.prefix,
+    )
+    progress_store.append(
+        event="captions_ready",
+        sunday=request.sunday,
+        session_id=plan.session_id,
+        run_prefix=plan.prefix,
+        status="completed",
     )
     return 0
 

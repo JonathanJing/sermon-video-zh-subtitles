@@ -847,6 +847,11 @@ ul {
   background: #f1fbf6;
 }
 
+.pipeline-list li[data-state="failed"] {
+  border-color: #f3b2b2;
+  background: #fff5f5;
+}
+
 .pipeline-list li > span {
   width: 28px;
   height: 28px;
@@ -894,6 +899,10 @@ ul {
 
 .pipeline-list li[data-state="done"] em {
   color: var(--green-700);
+}
+
+.pipeline-list li[data-state="failed"] em {
+  color: #b91c1c;
 }
 
 .admin-evidence,

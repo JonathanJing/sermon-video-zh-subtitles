@@ -55,6 +55,8 @@ def stable_hash(value: str) -> str:
 
 def command_stage(command: list[str]) -> str:
     joined = " ".join(command)
+    if "run_openai_model_access_preflight.py" in joined:
+        return "model-access-preflight"
     if "prepare_live_link_playback.py" in joined:
         return "prepare-live-playback"
     if "translate_playback_with_openai.py" in joined:

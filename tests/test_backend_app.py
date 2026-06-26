@@ -1,10 +1,12 @@
 import json
 import io
+import tempfile
 import unittest
 from pathlib import Path
 
 from backend.app import ApiHandler, WEB_ROOT
 from backend.config import AppConfig
+from backend.progress import GenerationProgressStore
 from backend.realtime import RealtimeSessionStore
 
 
@@ -87,6 +89,36 @@ class BackendAppTest(unittest.TestCase):
         self.assertFalse(status["realtime"]["eventArchive"]["enabled"])
         self.assertNotIn("projects/123/secrets", text)
         self.assertNotIn("secret-token", text)
+
+    def test_admin_progress_endpoint_returns_latest_sunday_progress(self):
+        class FakeService:
+            def _resolve_sunday(self, sunday):
+                return "2026-06-28" if sunday == "current" else sunday
+
+        with tempfile.TemporaryDirectory() as tmp:
+            handler = object.__new__(ApiHandler)
+            handler.path = "/api/admin/sundays/2026-06-28/progress"
+            handler.service = FakeService()
+            handler.generation_progress = GenerationProgressStore(Path(tmp))
+            handler.generation_progress.append(
+                event="live_capture_planned",
+                sunday="2026-06-28",
+                session_id="worker-test",
+                run_prefix="sundays/2026-06-28/runs/worker-test",
+                command_count=8,
+                status="planned",
+            )
+            captured = {}
+            handler.write_json = lambda payload, status=200: captured.update(
+                {"payload": payload, "status": status}
+            )
+
+            ApiHandler.handle_api_get(handler, "/api/admin/sundays/2026-06-28/progress")
+
+            self.assertEqual(captured["status"], 200)
+            self.assertEqual(captured["payload"]["status"], "planned")
+            self.assertEqual(captured["payload"]["sessionId"], "worker-test")
+            self.assertEqual(captured["payload"]["pipelineStages"][0]["id"], "source-discovery")
 
     def test_local_realtime_session_create_returns_event_token_without_client_secret(self):
         handler = object.__new__(ApiHandler)

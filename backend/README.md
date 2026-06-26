@@ -11,6 +11,8 @@ current static PWA untouched while adding a Cloud Run-compatible API surface.
 - `GET /api/sundays/YYYY-MM-DD/artifacts/<artifact-key>`
 - `POST /api/telemetry/page-view`
 - `GET /api/admin/status`
+- `GET /api/admin/sundays/YYYY-MM-DD/progress`
+- `GET /api/admin/runs/<session-id>/progress?sunday=YYYY-MM-DD`
 
 The public Sunday response is intentionally filtered. It exposes only playback
 JS and caption files from the server-side manifest. It strips Secret Manager
@@ -25,6 +27,10 @@ may show bucket/prefix, manifest status, timezone, and secret configured/missing
 state, but must never return raw key material, tokens, cookies, or Secret
 Manager resource names.
 
+The Admin progress endpoints return the sanitized generation stage state used by
+the left-side Admin pipeline. They read local JSONL first, then fall back to the
+shared GCS latest-status file when the worker ran in a separate Cloud Run Job.
+
 Required config:
 
 ```text
@@ -32,6 +38,19 @@ SERMON_ARTIFACT_BUCKET=sermon-zh-artifacts-ai-for-god
 SERMON_ARTIFACT_PREFIX=sundays
 APP_TIMEZONE=America/Los_Angeles
 ```
+
+Optional generation progress config:
+
+```text
+GENERATION_PROGRESS_DIR=/tmp/sermon-generation-progress
+GENERATION_PROGRESS_GCS_PREFIX=gs://sermon-zh-artifacts-ai-for-god/sundays/generation-progress
+```
+
+When `GENERATION_PROGRESS_GCS_PREFIX` is omitted and
+`SERMON_ARTIFACT_BUCKET` is set, the backend derives
+`gs://$SERMON_ARTIFACT_BUCKET/$SERMON_ARTIFACT_PREFIX/generation-progress`.
+Each worker append mirrors `<sunday>/<session-id>.jsonl`,
+`<sunday>/<session-id>.status.json`, and `<sunday>/latest-status.json`.
 
 For the already-generated POC run, the service can be pointed at an explicit
 manifest while the formal Sunday pointer is promoted:
@@ -453,6 +472,7 @@ Logging. Key events are:
 - `live_capture_worker_started`
 - `worker_stage_started`
 - `worker_stage_completed`
+- `worker_stage_failed`
 - `realtime_session_created`
 - `realtime_media_worker_event`
 - `realtime_caption_event`

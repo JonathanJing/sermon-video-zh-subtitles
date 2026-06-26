@@ -23,6 +23,7 @@ class ObservabilityTest(unittest.TestCase):
         self.assertNotIn("abc123", json.dumps(summary))
 
     def test_command_stage_labels_pipeline_steps(self):
+        self.assertEqual(command_stage(["python", "scripts/run_openai_model_access_preflight.py"]), "model-access-preflight")
         self.assertEqual(command_stage(["python", "scripts/prepare_live_link_playback.py"]), "prepare-live-playback")
         self.assertEqual(command_stage(["python", "scripts/translate_playback_with_openai.py"]), "translate-captions")
         self.assertEqual(command_stage(["python", "scripts/export_playback_captions.py"]), "export-translated-captions")

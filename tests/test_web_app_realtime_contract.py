@@ -101,6 +101,19 @@ class WebAppRealtimeContractTest(unittest.TestCase):
         self.assertIn('setStatus("实时字幕更新中", "live")', app_js)
         self.assertIn('setSla("现场实时字幕", "live")', app_js)
 
+    def test_admin_pipeline_polls_backend_generation_progress(self):
+        app_js = self.app_js
+
+        self.assertIn("function startAdminProgressPolling()", app_js)
+        self.assertIn("state.adminProgressTimer = window.setInterval(() => refreshAdminProgress({ quiet: true }), 5000)", app_js)
+        self.assertIn("function refreshAdminProgress(options = {})", app_js)
+        self.assertIn('fetch(`/api/admin/sundays/${sunday}/progress`', app_js)
+        self.assertIn("function updatePipelineFromAdminProgress(progress)", app_js)
+        self.assertIn('progress.status === "missing"', app_js)
+        self.assertIn('progress.pipelineStages', app_js)
+        self.assertIn('["waiting", "active", "done", "failed"].includes(stage.state)', app_js)
+        self.assertIn("adminProgressSummary(progress)", app_js)
+
     def test_stable_correction_from_public_sse_marks_segment_stable(self):
         app_js = self.app_js
 

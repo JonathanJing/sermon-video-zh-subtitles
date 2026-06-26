@@ -23,6 +23,8 @@ class AppConfig:
     openai_api_key: str | None = None
     realtime_event_log_dir: str = "/tmp/sermon-realtime-events"
     realtime_event_gcs_prefix: str | None = None
+    generation_progress_dir: str = "/tmp/sermon-generation-progress"
+    generation_progress_gcs_prefix: str | None = None
 
     @classmethod
     def from_env(cls) -> "AppConfig":
@@ -42,6 +44,8 @@ class AppConfig:
             openai_api_key=empty_to_none(os.getenv("OPENAI_API_KEY")),
             realtime_event_log_dir=os.getenv("REALTIME_EVENT_LOG_DIR", "/tmp/sermon-realtime-events"),
             realtime_event_gcs_prefix=empty_to_none(os.getenv("REALTIME_EVENT_GCS_PREFIX")),
+            generation_progress_dir=os.getenv("GENERATION_PROGRESS_DIR", "/tmp/sermon-generation-progress"),
+            generation_progress_gcs_prefix=empty_to_none(os.getenv("GENERATION_PROGRESS_GCS_PREFIX")),
         )
 
 
