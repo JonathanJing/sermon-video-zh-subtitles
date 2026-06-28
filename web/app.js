@@ -162,6 +162,7 @@
     },
     adminStatus: null,
     adminProgress: null,
+    publicPlaybackSunday: "",
     livePlayback: null,
     livePlaybackFetchedAt: null,
     livePlaybackAppliedMode: "",
@@ -281,7 +282,7 @@
     updateSourceCards("idle");
     updateTimeline();
     loadPublicPublishedSnapshot();
-    loadCloudRunDatePlayback(state.viewMode === "admin" ? state.adminSettings.sunday : (targetDateFromRoute() || "current"));
+    loadInitialCloudRunDatePlayback();
     startLivePlaybackPolling();
     if (state.viewMode === "admin") {
       refreshAdminStatus();
@@ -333,6 +334,14 @@
     return `${parts.year}-${parts.month}-${parts.day}`;
   }
 
+  function upcomingSundayIsoDate() {
+    const [year, month, day] = currentIsoDate().split("-").map(Number);
+    const current = new Date(Date.UTC(year, month - 1, day));
+    const daysUntilSunday = (7 - current.getUTCDay()) % 7;
+    current.setUTCDate(current.getUTCDate() + daysUntilSunday);
+    return current.toISOString().slice(0, 10);
+  }
+
   function isIsoDate(value) {
     return /^\d{4}-\d{2}-\d{2}$/.test(String(value || ""));
   }
@@ -372,9 +381,26 @@
     updateTimeline(100);
   }
 
-  async function loadCloudRunDatePlayback(dateOverride = "") {
+  async function loadInitialCloudRunDatePlayback() {
+    const targets = initialCloudRunDateTargets();
+    for (let index = 0; index < targets.length; index += 1) {
+      const loaded = await loadCloudRunDatePlayback(targets[index], {
+        quiet: index < targets.length - 1
+      });
+      if (loaded) return;
+    }
+  }
+
+  function initialCloudRunDateTargets() {
+    if (state.viewMode === "admin") return [state.adminSettings.sunday];
+    const routeDate = targetDateFromRoute();
+    if (routeDate) return [routeDate];
+    return [upcomingSundayIsoDate(), "current"];
+  }
+
+  async function loadCloudRunDatePlayback(dateOverride = "", options = {}) {
     const targetDate = dateOverride || targetDateFromRoute();
-    if (!targetDate) return;
+    if (!targetDate) return false;
     if (state.viewMode === "admin" && !state.segments.length) {
       setCaptionEmptyState(`正在读取 ${targetDate} 日期页面的已发布字幕...`);
     }
@@ -388,6 +414,7 @@
       if (!playbackResponse.ok) throw new Error(`playback-js 读取失败：HTTP ${playbackResponse.status}`);
       const simulation = parsePlaybackSimulationJs(await playbackResponse.text());
       window.SERMON_PLAYBACK_SIMULATION = simulation;
+      state.publicPlaybackSunday = slice.sunday || (isIsoDate(targetDate) ? targetDate : "");
       state.playbackSegments = [];
       loadPlaybackSimulation();
       loadPublicPublishedSnapshot();
@@ -395,6 +422,7 @@
         updateCloudRunTestStatus("已加载", `${targetDate} 已发布：${slice.sermonTitle || "测试字幕"}，${slice.translatedSegments || 0}/${slice.totalSegments || 0} 已翻译。`, "ready");
       }
       log(`已从 Cloud Run 日期页面加载 ${targetDate} 的发布字幕。`);
+      return true;
     } catch (error) {
       if (state.viewMode === "admin") {
         updateCloudRunTestStatus("未发布", `${targetDate} 还没有可读 playback-js：${error.message || error}`, "manual");
@@ -402,7 +430,8 @@
           setCaptionEmptyState(`${targetDate} 暂无已发布字幕。请选择已发布回放日期，或用左侧链接生成测试页。`);
         }
       }
-      log(`日期页面 ${targetDate} 尚未加载发布字幕：${error.message || error}。`);
+      if (!options.quiet) log(`日期页面 ${targetDate} 尚未加载发布字幕：${error.message || error}。`);
+      return false;
     }
   }
 
@@ -895,7 +924,7 @@
   function livePlaybackSunday() {
     return state.viewMode === "admin"
       ? state.adminSettings.sunday
-      : (targetDateFromRoute() || "current");
+      : (targetDateFromRoute() || state.publicPlaybackSunday || upcomingSundayIsoDate());
   }
 
   function livePlaybackSource() {

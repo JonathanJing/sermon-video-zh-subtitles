@@ -118,7 +118,10 @@ class WebAppRealtimeContractTest(unittest.TestCase):
         app_js = self.app_js
 
         self.assertIn("function startLivePlaybackPolling()", app_js)
-        self.assertIn('loadCloudRunDatePlayback(state.viewMode === "admin" ? state.adminSettings.sunday : (targetDateFromRoute() || "current"))', app_js)
+        self.assertIn("function loadInitialCloudRunDatePlayback()", app_js)
+        self.assertIn("function upcomingSundayIsoDate()", app_js)
+        self.assertIn('return [upcomingSundayIsoDate(), "current"];', app_js)
+        self.assertIn("state.publicPlaybackSunday", app_js)
         self.assertIn('fetch(`/api/sundays/${encodeURIComponent(sunday)}/live-playback`', app_js)
         self.assertIn("function livePlaybackPlayheadMs(playback)", app_js)
         self.assertIn("segmentForPlayhead(playheadMs)", app_js)
