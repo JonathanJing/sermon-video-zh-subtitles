@@ -325,6 +325,7 @@ def check_ipad_caption_readability(page) -> None:
             currentFontSize: Number.parseFloat(current.fontSize),
             currentLineHeight: Number.parseFloat(current.lineHeight),
             contextFontSize: Number.parseFloat(previous.fontSize),
+            previousDisplay: previous.display,
             nextDisplay: next.display
           };
         }
@@ -334,6 +335,8 @@ def check_ipad_caption_readability(page) -> None:
         raise AssertionError(f"iPad current caption font is too small: {metrics}")
     if metrics["contextFontSize"] < 22:
         raise AssertionError(f"iPad context caption font is too small: {metrics}")
+    if metrics["previousDisplay"] == "none":
+        raise AssertionError(f"iPad previous caption line is hidden: {metrics}")
     if metrics["nextDisplay"] == "none":
         raise AssertionError(f"iPad next caption line is hidden: {metrics}")
     if metrics["currentLineHeight"] < metrics["currentFontSize"] * 1.18:

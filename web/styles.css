@@ -1702,7 +1702,8 @@ ul {
   }
 
   .app-shell[data-view-mode="congregation"] .caption-line--next,
-  .app-shell[data-view-mode="congregation"] .caption-line--next.is-empty {
+  .app-shell[data-view-mode="congregation"] .caption-line--next.is-empty,
+  .app-shell[data-view-mode="congregation"] .caption-line--previous.is-empty {
     display: block;
   }
 }
