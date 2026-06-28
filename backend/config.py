@@ -25,6 +25,8 @@ class AppConfig:
     realtime_event_gcs_prefix: str | None = None
     generation_progress_dir: str = "/tmp/sermon-generation-progress"
     generation_progress_gcs_prefix: str | None = None
+    live_playback_dir: str = "/tmp/sermon-live-playback"
+    live_playback_gcs_prefix: str | None = None
 
     @classmethod
     def from_env(cls) -> "AppConfig":
@@ -46,6 +48,8 @@ class AppConfig:
             realtime_event_gcs_prefix=empty_to_none(os.getenv("REALTIME_EVENT_GCS_PREFIX")),
             generation_progress_dir=os.getenv("GENERATION_PROGRESS_DIR", "/tmp/sermon-generation-progress"),
             generation_progress_gcs_prefix=empty_to_none(os.getenv("GENERATION_PROGRESS_GCS_PREFIX")),
+            live_playback_dir=os.getenv("LIVE_PLAYBACK_DIR", "/tmp/sermon-live-playback"),
+            live_playback_gcs_prefix=empty_to_none(os.getenv("LIVE_PLAYBACK_GCS_PREFIX")),
         )
 
 

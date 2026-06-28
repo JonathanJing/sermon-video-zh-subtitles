@@ -6,6 +6,7 @@ from pathlib import Path
 
 from backend.app import ApiHandler, WEB_ROOT
 from backend.config import AppConfig
+from backend.live_playback import LivePlaybackStore, playhead_at
 from backend.progress import GenerationProgressStore
 from backend.realtime import RealtimeSessionStore
 
@@ -119,6 +120,118 @@ class BackendAppTest(unittest.TestCase):
             self.assertEqual(captured["payload"]["status"], "planned")
             self.assertEqual(captured["payload"]["sessionId"], "worker-test")
             self.assertEqual(captured["payload"]["pipelineStages"][0]["id"], "source-discovery")
+
+    def test_live_playback_admin_write_requires_auth(self):
+        class FakeService:
+            def _resolve_sunday(self, sunday):
+                return sunday
+
+        with tempfile.TemporaryDirectory() as tmp:
+            handler = object.__new__(ApiHandler)
+            handler.service = FakeService()
+            handler.headers = {}
+            handler.config = AppConfig(
+                artifact_bucket=None,
+                artifact_prefix="sundays",
+                current_manifest_uri=None,
+                sunday_manifest_uri_template=None,
+                timezone="America/Los_Angeles",
+                openai_api_key_secret=None,
+                operator_admin_token="secret-token",
+                internal_task_token=None,
+                enable_inline_worker=False,
+            )
+            handler.live_playback = LivePlaybackStore(Path(tmp))
+            handler.read_json_body = lambda: {"action": "start", "baseCaptionMs": 1000}
+            captured = {}
+            handler.write_json = lambda payload, status=200: captured.update(
+                {"payload": payload, "status": status}
+            )
+
+            ApiHandler.handle_live_playback_post(handler, "2026-06-28")
+
+            self.assertEqual(captured["status"], 401)
+            self.assertEqual(captured["payload"]["error"], "unauthorized")
+
+    def test_live_playback_start_and_adjust_offset(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = LivePlaybackStore(Path(tmp))
+            started = store.apply_action(
+                "2026-06-28",
+                {
+                    "action": "start",
+                    "baseCaptionMs": 12000,
+                    "currentSegmentId": "seg-1",
+                    "source": {"artifactKey": "playback-js", "sunday": "2026-06-28"},
+                },
+            )
+            adjusted = store.apply_action("2026-06-28", {"action": "adjustOffset", "deltaMs": 5000})
+
+            self.assertEqual(started["mode"], "live")
+            self.assertEqual(started["baseCaptionMs"], 12000)
+            self.assertEqual(started["currentSegmentId"], "seg-1")
+            self.assertEqual(adjusted["offsetMs"], 5000)
+            self.assertEqual(adjusted["baseCaptionMs"], started["baseCaptionMs"])
+            self.assertEqual(adjusted["version"], started["version"] + 1)
+
+    def test_live_playback_pause_resume_preserves_playhead(self):
+        store = LivePlaybackStore(Path("/tmp/unused"))
+        current = {
+            "schemaVersion": 1,
+            "mode": "paused",
+            "sunday": "2026-06-28",
+            "startedAt": "2026-06-28T18:00:00+00:00",
+            "pausedAt": "2026-06-28T18:00:10+00:00",
+            "baseCaptionMs": 20000,
+            "offsetMs": 250,
+            "currentSegmentId": "seg-1",
+            "updatedAt": "2026-06-28T18:00:10+00:00",
+            "version": 2,
+            "source": {"sunday": "2026-06-28", "artifactKey": "playback-js"},
+        }
+        before = playhead_at(current, current["pausedAt"])
+        resumed = store.resume_state(current, "2026-06-28T18:01:00+00:00")
+        after = playhead_at(resumed, resumed["startedAt"])
+
+        self.assertEqual(before, after)
+        self.assertEqual(resumed["mode"], "live")
+        self.assertIsNone(resumed["pausedAt"])
+
+    def test_live_playback_public_read_is_safe(self):
+        class FakeService:
+            def _resolve_sunday(self, sunday):
+                return sunday
+
+        with tempfile.TemporaryDirectory() as tmp:
+            handler = object.__new__(ApiHandler)
+            handler.service = FakeService()
+            handler.live_playback = LivePlaybackStore(Path(tmp))
+            handler.live_playback.apply_action(
+                "2026-06-28",
+                {
+                    "action": "start",
+                    "baseCaptionMs": 1000,
+                    "currentSegmentId": "seg-1",
+                    "source": {
+                        "artifactKey": "playback-js",
+                        "sunday": "2026-06-28",
+                        "text": "神爱世人",
+                        "token": "secret-token",
+                    },
+                },
+            )
+            captured = {}
+            handler.write_json = lambda payload, status=200: captured.update(
+                {"payload": payload, "status": status}
+            )
+
+            ApiHandler.handle_api_get(handler, "/api/sundays/2026-06-28/live-playback")
+
+            self.assertEqual(captured["status"], 200)
+            text = json.dumps(captured["payload"], ensure_ascii=False)
+            self.assertNotIn("神爱世人", text)
+            self.assertNotIn("secret-token", text)
+            self.assertEqual(captured["payload"]["source"]["artifactKey"], "playback-js")
 
     def test_local_realtime_session_create_returns_event_token_without_client_secret(self):
         handler = object.__new__(ApiHandler)

@@ -8,6 +8,7 @@ from types import SimpleNamespace
 from urllib.parse import parse_qs, unquote, urlparse
 
 from .config import AppConfig
+from .live_playback import LivePlaybackStore, default_live_playback_gcs_prefix
 from .manifest import SundaySliceService
 from .observability import (
     client_ip_hash,
@@ -55,6 +56,14 @@ class ApiHandler(BaseHTTPRequestHandler):
             config.artifact_bucket,
             config.artifact_prefix,
             config.generation_progress_gcs_prefix,
+        ),
+    )
+    live_playback = LivePlaybackStore(
+        Path(config.live_playback_dir),
+        gcs_prefix=default_live_playback_gcs_prefix(
+            config.artifact_bucket,
+            config.artifact_prefix,
+            config.live_playback_gcs_prefix,
         ),
     )
 
@@ -112,6 +121,10 @@ class ApiHandler(BaseHTTPRequestHandler):
             return
         if parts[:2] == ["api", "sundays"] and len(parts) == 3:
             self.write_json(self.service.get_public_slice(parts[2]))
+            return
+        if parts[:2] == ["api", "sundays"] and len(parts) == 4 and parts[3] == "live-playback":
+            sunday = self.resolve_public_sunday(parts[2])
+            self.write_json(self.live_playback.status(sunday))
             return
         if parts[:2] == ["api", "sundays"] and len(parts) == 5 and parts[3] == "artifacts":
             body, content_type = self.service.read_public_artifact(parts[2], parts[4])
@@ -201,6 +214,9 @@ class ApiHandler(BaseHTTPRequestHandler):
                 return
             if parts[:3] == ["api", "realtime", "sessions"] and len(parts) == 5 and parts[4] == "events":
                 self.handle_realtime_event_post(parts[3])
+                return
+            if parts[:3] == ["api", "admin", "sundays"] and len(parts) == 5 and parts[4] == "live-playback":
+                self.handle_live_playback_post(parts[3])
                 return
             if parts[:3] == ["api", "admin", "sundays"] and len(parts) == 5 and parts[4] == "discover-source":
                 self.handle_live_source_discovery(parts[3])
@@ -553,6 +569,19 @@ class ApiHandler(BaseHTTPRequestHandler):
             status=201,
         )
 
+    def handle_live_playback_post(self, sunday_value: str) -> None:
+        if not self.authorized():
+            self.write_json({"error": "unauthorized"}, status=401)
+            return
+        sunday = self.resolve_admin_sunday(sunday_value)
+        payload = self.read_json_body()
+        try:
+            state = self.live_playback.apply_action(sunday, payload)
+        except ValueError as exc:
+            self.write_json({"error": str(exc)}, status=400)
+            return
+        self.write_json(state)
+
     def handle_realtime_local_session_create(self) -> None:
         if not self.authorized_for_admin_browser():
             self.write_json({"error": "unauthorized"}, status=401)
@@ -730,6 +759,8 @@ class ApiHandler(BaseHTTPRequestHandler):
                 "realtimeSessionEndpoint": "/api/admin/realtime/sessions",
                 "localRealtimeSessionEndpoint": "/api/admin/realtime/local-sessions",
                 "realtimeEventsEndpoint": "/api/realtime/sessions/current/events",
+                "livePlaybackEndpoint": "/api/sundays/{sunday}/live-playback",
+                "adminLivePlaybackEndpoint": "/api/admin/sundays/{sunday}/live-playback",
                 "telemetryEndpoint": "/api/telemetry/page-view",
             },
             "realtime": {
@@ -771,6 +802,9 @@ class ApiHandler(BaseHTTPRequestHandler):
 
     def openai_key_configured(self) -> bool:
         return bool(self.config.openai_api_key or self.config.openai_api_key_secret)
+
+    def resolve_public_sunday(self, sunday: str) -> str:
+        return self.service._resolve_sunday(sunday)
 
     def read_json_body(self) -> dict:
         length = int(self.headers.get("Content-Length", "0"))

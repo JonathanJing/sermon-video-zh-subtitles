@@ -365,6 +365,16 @@
           <div class="timeline-cursor" id="timelineCursor"></div>
         </div>
         <div class="timeline-controls">
+          <span class="settings-mode" id="livePlaybackStatus">现场同步未启动</span>
+          <button class="button button--primary" type="button" data-action="live-playback-start">开始现场同步</button>
+          <button class="button" type="button" data-action="live-playback-pause">暂停同步</button>
+          <button class="button" type="button" data-action="live-playback-resume">继续同步</button>
+          <button class="button" type="button" data-action="live-playback-end">结束同步</button>
+          <button class="button" type="button" data-action="live-playback-adjust" data-delta-ms="-5000">-5s</button>
+          <button class="button" type="button" data-action="live-playback-adjust" data-delta-ms="-1000">-1s</button>
+          <button class="button" type="button" data-action="live-playback-adjust" data-delta-ms="1000">+1s</button>
+          <button class="button" type="button" data-action="live-playback-adjust" data-delta-ms="5000">+5s</button>
+          <button class="button" type="button" data-action="live-playback-jump">跳到此句</button>
           <label class="offset-control">
             <span>时间轴平移</span>
             <input type="number" id="offsetInput" value="0" step="250" />

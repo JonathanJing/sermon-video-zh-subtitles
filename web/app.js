@@ -142,6 +142,7 @@
     clockTimer: null,
     progressTimer: null,
     adminProgressTimer: null,
+    livePlaybackTimer: null,
     startedAt: null,
     playbackStartedAt: null,
     playbackBaseMs: 0,
@@ -161,6 +162,8 @@
     },
     adminStatus: null,
     adminProgress: null,
+    livePlayback: null,
+    livePlaybackFetchedAt: null,
     testRun: null,
     micStream: null,
     recognition: null,
@@ -239,7 +242,8 @@
     cloudRunTestDate: document.getElementById("cloudRunTestDate"),
     cloudRunTestResult: document.getElementById("cloudRunTestResult"),
     cloudRunPublicLink: document.getElementById("cloudRunPublicLink"),
-    cloudRunAdminLink: document.getElementById("cloudRunAdminLink")
+    cloudRunAdminLink: document.getElementById("cloudRunAdminLink"),
+    livePlaybackStatus: document.getElementById("livePlaybackStatus")
   };
 
   function init() {
@@ -277,6 +281,7 @@
     updateTimeline();
     loadPublicPublishedSnapshot();
     loadCloudRunDatePlayback(state.viewMode === "admin" ? state.adminSettings.sunday : "");
+    startLivePlaybackPolling();
     if (state.viewMode === "admin") {
       refreshAdminStatus();
       startAdminProgressPolling();
@@ -502,6 +507,12 @@
     if (action === "toggle-sidebar") toggleSidebar();
     if (action === "select-tab") selectTab(control.dataset.tab);
     if (action === "apply-offset") applyOffset();
+    if (action === "live-playback-start") startLivePlayback();
+    if (action === "live-playback-pause") postLivePlaybackAction("pause");
+    if (action === "live-playback-resume") postLivePlaybackAction("resume");
+    if (action === "live-playback-end") postLivePlaybackAction("end");
+    if (action === "live-playback-adjust") adjustLivePlayback(Number(control.dataset.deltaMs) || 0);
+    if (action === "live-playback-jump") jumpLivePlaybackToCurrentSegment();
     if (action === "freeze-review") freezeReview();
     if (action === "export-vtt") exportCaptions("vtt");
     if (action === "export-srt") exportCaptions("srt");
@@ -729,6 +740,185 @@
     log(`开始按真实 live-aligned 时间轴模拟播放，速度 ${state.playbackSpeed}x。`);
     tickPlayback();
     startProgress();
+  }
+
+  function startLivePlaybackPolling() {
+    window.clearInterval(state.livePlaybackTimer);
+    refreshLivePlayback({ quiet: true });
+    state.livePlaybackTimer = window.setInterval(() => refreshLivePlayback({ quiet: true }), 1000);
+  }
+
+  async function refreshLivePlayback(options = {}) {
+    const sunday = livePlaybackSunday();
+    if (!sunday) return;
+    try {
+      const response = await fetch(`/api/sundays/${encodeURIComponent(sunday)}/live-playback`, { cache: "no-store" });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const playback = await response.json();
+      state.livePlayback = playback;
+      state.livePlaybackFetchedAt = Date.now();
+      updateLivePlaybackStatus(playback);
+      applyLivePlaybackState(playback);
+    } catch (error) {
+      if (!options.quiet) log(`现场同步状态读取失败：${error.message || error}`);
+      if (el.livePlaybackStatus) el.livePlaybackStatus.textContent = "现场同步状态未知";
+    }
+  }
+
+  function applyLivePlaybackState(playback) {
+    if (!playback || !["live", "paused"].includes(playback.mode) || !state.playbackSegments.length) return;
+    if (!state.segments.length || state.segments.length !== state.playbackSegments.length) {
+      state.segments = state.playbackSegments.map((segment) => ({ ...segment }));
+    }
+    const playheadMs = livePlaybackPlayheadMs(playback);
+    const segment = segmentForPlayhead(playheadMs) || state.playbackSegments[0];
+    if (!segment) return;
+    state.currentSegmentId = segment.id;
+    setCaptionWindow(segment);
+    setEnglishSidecar(segment.en || "字幕源为中文，暂无英文原文。", segment.confidence);
+    setStatus(playback.mode === "paused" ? "现场同步已暂停" : "现场同步播放中", playback.mode === "paused" ? "warning" : "live");
+    setSla("跟随现场视频", playback.mode === "paused" ? "warning" : "live");
+    setGenerationStatus(playback.mode === "paused" ? "已暂停" : "现场同步", playback.mode === "paused" ? "warning" : "live");
+    updateTimeline(playbackProgressPercent(playheadMs));
+    renderSegments();
+  }
+
+  function livePlaybackPlayheadMs(playback) {
+    const base = Number(playback.baseCaptionMs) || 0;
+    const offset = Number(playback.offsetMs) || 0;
+    const serverNow = Date.parse(playback.serverNow || "");
+    const startedAt = Date.parse(playback.startedAt || "");
+    const pausedAt = Date.parse(playback.pausedAt || "");
+    if (!Number.isFinite(startedAt)) return Math.max(0, base + offset);
+    const serverElapsed = Number.isFinite(serverNow) ? Math.max(0, serverNow - startedAt) : 0;
+    if (playback.mode === "paused") {
+      const pausedElapsed = Number.isFinite(pausedAt) ? Math.max(0, pausedAt - startedAt) : serverElapsed;
+      return Math.max(0, base + offset + pausedElapsed);
+    }
+    const clientElapsed = state.livePlaybackFetchedAt ? Math.max(0, Date.now() - state.livePlaybackFetchedAt) : 0;
+    return Math.max(0, base + offset + serverElapsed + clientElapsed);
+  }
+
+  function segmentForPlayhead(playheadMs) {
+    return state.playbackSegments.find((segment) => segment.startMs <= playheadMs && segment.endMs > playheadMs)
+      || [...state.playbackSegments].reverse().find((segment) => segment.startMs <= playheadMs)
+      || null;
+  }
+
+  async function startLivePlayback() {
+    if (state.viewMode !== "admin") return;
+    if (!state.playbackSegments.length) {
+      log("没有可现场同步的已发布字幕。请先加载日期页面或生成 playback-js。");
+      return;
+    }
+    const segment = state.playbackSegments[0];
+    await postLivePlaybackAction("start", {
+      baseCaptionMs: segment.startMs,
+      currentSegmentId: segment.id,
+      source: livePlaybackSource()
+    });
+  }
+
+  async function adjustLivePlayback(deltaMs) {
+    if (state.viewMode !== "admin" || !deltaMs) return;
+    await postLivePlaybackAction("adjustOffset", { deltaMs });
+  }
+
+  async function jumpLivePlaybackToCurrentSegment() {
+    if (state.viewMode !== "admin") return;
+    const segment = currentOrFirstPlaybackSegment();
+    if (!segment) {
+      log("还没有可跳转的字幕片段。");
+      return;
+    }
+    await postLivePlaybackAction("jumpToSegment", {
+      baseCaptionMs: segment.startMs,
+      currentSegmentId: segment.id,
+      source: livePlaybackSource()
+    });
+  }
+
+  async function postLivePlaybackAction(action, extra = {}) {
+    if (state.viewMode !== "admin") return null;
+    const sunday = livePlaybackSunday();
+    const payload = { action, ...extra };
+    let response = await fetch(`/api/admin/sundays/${encodeURIComponent(sunday)}/live-playback`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...adminAuthHeaders()
+      },
+      body: JSON.stringify(payload)
+    });
+    if (response.status === 401) {
+      const token = requestAdminToken();
+      if (token) {
+        response = await fetch(`/api/admin/sundays/${encodeURIComponent(sunday)}/live-playback`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        });
+      }
+    }
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      log(`现场同步操作失败：${body.error || `HTTP ${response.status}`}`);
+      return null;
+    }
+    state.livePlayback = body;
+    state.livePlaybackFetchedAt = Date.now();
+    updateLivePlaybackStatus(body);
+    applyLivePlaybackState(body);
+    log(`现场同步已更新：${livePlaybackActionLabel(action)}。`);
+    return body;
+  }
+
+  function currentOrFirstPlaybackSegment() {
+    return state.playbackSegments.find((segment) => segment.id === state.currentSegmentId)
+      || state.playbackSegments[0]
+      || null;
+  }
+
+  function livePlaybackSunday() {
+    return state.viewMode === "admin"
+      ? state.adminSettings.sunday
+      : (targetDateFromRoute() || "current");
+  }
+
+  function livePlaybackSource() {
+    return {
+      sunday: livePlaybackSunday(),
+      artifactKey: "playback-js",
+      artifactDate: livePlaybackSunday()
+    };
+  }
+
+  function updateLivePlaybackStatus(playback) {
+    if (!el.livePlaybackStatus || !playback) return;
+    const playhead = ["live", "paused"].includes(playback.mode) ? ` · ${msToClock(livePlaybackPlayheadMs(playback))}` : "";
+    const offset = Number(playback.offsetMs) || 0;
+    const labels = {
+      idle: "现场同步未启动",
+      live: `现场同步中${playhead} · offset ${offset}ms`,
+      paused: `现场同步暂停${playhead} · offset ${offset}ms`,
+      ended: "现场同步已结束"
+    };
+    el.livePlaybackStatus.textContent = labels[playback.mode] || "现场同步状态未知";
+  }
+
+  function livePlaybackActionLabel(action) {
+    const labels = {
+      start: "开始",
+      pause: "暂停",
+      resume: "继续",
+      adjustOffset: "调整 offset",
+      jumpToSegment: "跳到当前句",
+      end: "结束"
+    };
+    return labels[action] || action;
   }
 
   function startArchiveLatencyTest() {
@@ -2475,6 +2665,10 @@
       log("时间轴平移为 0 ms，未修改字幕片段。");
       return;
     }
+    if (state.viewMode === "admin" && state.livePlayback && ["live", "paused"].includes(state.livePlayback.mode)) {
+      adjustLivePlayback(delta);
+      return;
+    }
 
     let shifted = 0;
     let skipped = 0;
@@ -3109,7 +3303,9 @@
     if (el.confidenceMeter) {
       const label = confidence ? `听写把握 ${confidence}%` : "听写把握 --%";
       el.confidenceMeter.textContent = label;
-      el.confidenceMeter.setAttribute("aria-label", `${label}，表示当前英文听写的模型把握度`);
+      if (typeof el.confidenceMeter.setAttribute === "function") {
+        el.confidenceMeter.setAttribute("aria-label", `${label}，表示当前英文听写的模型把握度`);
+      }
     }
   }
 

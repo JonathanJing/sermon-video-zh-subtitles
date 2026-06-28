@@ -114,6 +114,26 @@ class WebAppRealtimeContractTest(unittest.TestCase):
         self.assertIn('["waiting", "active", "done", "failed"].includes(stage.state)', app_js)
         self.assertIn("adminProgressSummary(progress)", app_js)
 
+    def test_public_caption_view_polls_live_playback_clock(self):
+        app_js = self.app_js
+
+        self.assertIn("function startLivePlaybackPolling()", app_js)
+        self.assertIn('fetch(`/api/sundays/${encodeURIComponent(sunday)}/live-playback`', app_js)
+        self.assertIn("function livePlaybackPlayheadMs(playback)", app_js)
+        self.assertIn("segmentForPlayhead(playheadMs)", app_js)
+        self.assertIn('["live", "paused"].includes(playback.mode)', app_js)
+        self.assertIn("state.livePlaybackFetchedAt", app_js)
+
+    def test_admin_posts_live_playback_actions(self):
+        app_js = self.app_js
+
+        self.assertIn('data-action="live-playback-start"', (REPO_ROOT / "web" / "admin.html").read_text(encoding="utf-8"))
+        self.assertIn("function postLivePlaybackAction(action, extra = {})", app_js)
+        self.assertIn('fetch(`/api/admin/sundays/${encodeURIComponent(sunday)}/live-playback`', app_js)
+        self.assertIn('postLivePlaybackAction("adjustOffset", { deltaMs })', app_js)
+        self.assertIn('postLivePlaybackAction("jumpToSegment"', app_js)
+        self.assertIn('state.livePlayback && ["live", "paused"].includes(state.livePlayback.mode)', app_js)
+
     def test_stable_correction_from_public_sse_marks_segment_stable(self):
         app_js = self.app_js
 
