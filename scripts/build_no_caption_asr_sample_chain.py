@@ -17,6 +17,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from scripts.export_playback_captions import render_srt, render_vtt, CaptionCue  # noqa: E402
+from scripts.build_playback_simulation import refresh_polished_layers  # noqa: E402
 from scripts.validate_offline_chain import (  # noqa: E402
     parse_json_object,
     parse_playback_js,
@@ -164,7 +165,7 @@ def build_offline_report(*, args: argparse.Namespace, asr_smoke: dict[str, Any])
 
 
 def build_playback(*, args: argparse.Namespace, segments: list[dict[str, Any]]) -> dict[str, Any]:
-    return {
+    playback = {
         "schemaVersion": 1,
         "generatedFrom": "openai-translation-e2e",
         "mode": "no-caption-asr-sample-chain",
@@ -181,6 +182,7 @@ def build_playback(*, args: argparse.Namespace, segments: list[dict[str, Any]]) 
         "sunday": args.sunday,
         "segments": segments,
     }
+    return refresh_polished_layers(playback)
 
 
 def build_manifest(*, args: argparse.Namespace) -> dict[str, Any]:

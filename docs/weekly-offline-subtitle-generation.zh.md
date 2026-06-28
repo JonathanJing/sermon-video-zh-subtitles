@@ -1,6 +1,6 @@
 # 每周离线字幕文件生成流程
 
-本文记录从 Codex thread `019f0bd5-622d-70f2-b0da-15060b7d85c9` 实跑提取出来的每周字幕文件生成流程。目标是把一场英文证道音频或视频生成可发布的中文字幕 SRT/VTT，并保留英文底稿、完整视频时间轴、QA 报告和可复盘的中间产物。
+本文记录从 Codex thread `019f0bd5-622d-70f2-b0da-15060b7d85c9` 实跑提取出来的每周字幕文件生成流程。目标是把一场英文证道音频或视频生成可发布的中文字幕 SRT/VTT 和手机版 PDF，并保留英文底稿、完整视频时间轴、QA 报告和可复盘的中间产物。
 
 这个流程服务于离线高质量字幕文件和回看归档；它不替代 11:30 现场会众实时字幕链路。
 
@@ -49,8 +49,9 @@ mariners_<youtube_video_id>
 6. gpt-5.4-mini 按 3-5 分钟窗口校正英文分段
 7. gpt-5.5 逐条生成中文字幕
 8. 写出 relative 和 full-video 两套 SRT/VTT
-9. 跑 QA，确认 hard failures 为 0
-10. 抽查术语、经文、人名、首尾边界后发布/归档
+9. 从 `sermon_zh_relative.srt` 生成手机阅读版 PDF
+10. 跑 QA，确认 hard failures 为 0
+11. 抽查术语、经文、人名、首尾边界后发布/归档
 ```
 
 ## 推荐 CLI
@@ -90,6 +91,7 @@ sermon_en_relative.srt
 sermon_en_relative.vtt
 sermon_zh_relative.srt
 sermon_zh_relative.vtt
+sermon_zh_mobile.pdf
 full_video_en_from_sermon.srt
 full_video_en_from_sermon.vtt
 full_video_zh_from_sermon.srt
@@ -214,6 +216,18 @@ python3 scripts/run_post_live_subtitle_generation.py \
 
 该脚本会从周六 `discover-source` 保存的 state 读取直播 URL，确认 YouTube metadata 已经是 `post_live` / `was_live`，再下载归档音频并调用 `scripts/sermon_pipeline.py`。如果还在直播或归档未稳定，它会返回 `waiting_for_post_live`，供 Scheduler 下次重试。
 
+自动化会在 `scripts/sermon_pipeline.py` 完成后调用：
+
+```bash
+python3 scripts/render_mobile_pdf_from_srt.py \
+  --input <pipeline_outdir>/sermon_zh_relative.srt \
+  --out <pipeline_outdir>/sermon_zh_mobile.pdf \
+  --title <slug> \
+  --subtitle '<Sunday date> sermon Chinese subtitles'
+```
+
+`sermon_zh_mobile.pdf` 使用手机竖屏阅读尺寸，适合作为会后分享或手机端离线阅读版。它从中文 relative SRT 生成，不使用完整视频绝对时间轴。
+
 ## 人工抽查清单
 
 发布前至少抽查：
@@ -231,6 +245,7 @@ python3 scripts/run_post_live_subtitle_generation.py \
 ```text
 sermon_zh_relative.srt
 sermon_zh_relative.vtt
+sermon_zh_mobile.pdf
 full_video_zh_from_sermon.srt
 full_video_zh_from_sermon.vtt
 qa_report.json

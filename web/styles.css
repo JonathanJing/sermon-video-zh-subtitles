@@ -1679,6 +1679,34 @@ ul {
   }
 }
 
+@media (min-width: 761px) and (max-width: 1366px) {
+  .app-shell[data-view-mode="congregation"] .caption-window {
+    padding: 22px;
+    gap: 16px;
+    justify-content: center;
+  }
+
+  .app-shell[data-view-mode="congregation"] .caption-line {
+    font-size: 2.25rem;
+    line-height: 1.28;
+  }
+
+  .app-shell[data-view-mode="congregation"] .caption-line--current {
+    font-size: 3rem;
+    line-height: 1.22;
+  }
+
+  .app-shell[data-view-mode="congregation"] .caption-line--context {
+    font-size: 1.38rem;
+    line-height: 1.32;
+  }
+
+  .app-shell[data-view-mode="congregation"] .caption-line--next,
+  .app-shell[data-view-mode="congregation"] .caption-line--next.is-empty {
+    display: block;
+  }
+}
+
 @media (max-width: 760px) {
   :root {
     --pad: 10px;

@@ -6,6 +6,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from scripts.build_playback_simulation import refresh_polished_layers
+
 
 SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "validate_production_readiness.py"
 SPEC = importlib.util.spec_from_file_location("validate_production_readiness", SCRIPT_PATH)
@@ -62,36 +64,38 @@ class ValidateProductionReadinessTest(unittest.TestCase):
             ),
             encoding="utf-8",
         )
-        playback_payload = {
-            "schemaVersion": 1,
-            "generatedFrom": "openai-translation-e2e",
-            "translationStatus": "ready",
-            "offlineSourceKind": "live_archive",
-            "offlineRoute": {
-                "strategy": "captions_first_then_asr",
-                "decision": "use_caption_track",
-                "selectedSourceKind": "live_archive",
-                "asrFallbackRequired": False,
-                "audioExtractionAttempted": False,
-                "fallbackReason": None,
-            },
-            "translationProvider": {
-                "provider": "openai",
-                "model": "gpt-5.4-mini",
-                "apiKeyMaterialIncluded": False,
-                "secretResourceNamesIncluded": False,
-            },
-            "segments": [
-                {
-                    "id": "sim_0001",
-                    "startMs": 1000,
-                    "endMs": 2500,
-                    "en": "God loved the world.",
-                    "zh": "神爱世人。",
-                    "translationStatus": "ready",
-                }
-            ],
-        }
+        playback_payload = refresh_polished_layers(
+            {
+                "schemaVersion": 1,
+                "generatedFrom": "openai-translation-e2e",
+                "translationStatus": "ready",
+                "offlineSourceKind": "live_archive",
+                "offlineRoute": {
+                    "strategy": "captions_first_then_asr",
+                    "decision": "use_caption_track",
+                    "selectedSourceKind": "live_archive",
+                    "asrFallbackRequired": False,
+                    "audioExtractionAttempted": False,
+                    "fallbackReason": None,
+                },
+                "translationProvider": {
+                    "provider": "openai",
+                    "model": "gpt-5.4-mini",
+                    "apiKeyMaterialIncluded": False,
+                    "secretResourceNamesIncluded": False,
+                },
+                "segments": [
+                    {
+                        "id": "sim_0001",
+                        "startMs": 1000,
+                        "endMs": 2500,
+                        "en": "God loved the world.",
+                        "zh": "神爱世人。",
+                        "translationStatus": "ready",
+                    }
+                ],
+            }
+        )
         playback.write_text(
             "window.SERMON_PLAYBACK_SIMULATION = "
             + json.dumps(playback_payload, ensure_ascii=False)

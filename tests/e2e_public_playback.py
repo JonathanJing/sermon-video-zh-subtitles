@@ -116,6 +116,8 @@ def run_browser_checks(base_url: str, headed: bool = False) -> list[dict[str, ob
                 check_no_horizontal_overflow(page)
                 check_public_playback(page)
                 check_public_layout_bounds(page)
+                if name == "ipad-landscape":
+                    check_ipad_caption_readability(page)
                 check_page_scroll_not_locked(page)
                 results.append({"viewport": name, "width": width, "height": height, "ok": True})
                 page.close()
@@ -310,6 +312,32 @@ def check_public_layout_bounds(page) -> None:
         raise AssertionError(f"Subtitle track grew beyond viewport bounds: {layout}")
     if layout["segmentScrollHeight"] > 0 and layout["segmentClientHeight"] <= 0:
         raise AssertionError(f"Subtitle track is not scrollable: {layout}")
+
+
+def check_ipad_caption_readability(page) -> None:
+    metrics = page.evaluate(
+        """
+        () => {
+          const current = getComputedStyle(document.querySelector("#stableCaption"));
+          const previous = getComputedStyle(document.querySelector("#draftCaption"));
+          const next = getComputedStyle(document.querySelector("#nextCaption"));
+          return {
+            currentFontSize: Number.parseFloat(current.fontSize),
+            currentLineHeight: Number.parseFloat(current.lineHeight),
+            contextFontSize: Number.parseFloat(previous.fontSize),
+            nextDisplay: next.display
+          };
+        }
+        """
+    )
+    if metrics["currentFontSize"] < 48:
+        raise AssertionError(f"iPad current caption font is too small: {metrics}")
+    if metrics["contextFontSize"] < 22:
+        raise AssertionError(f"iPad context caption font is too small: {metrics}")
+    if metrics["nextDisplay"] == "none":
+        raise AssertionError(f"iPad next caption line is hidden: {metrics}")
+    if metrics["currentLineHeight"] < metrics["currentFontSize"] * 1.18:
+        raise AssertionError(f"iPad current caption line height is too tight: {metrics}")
 
 
 def check_page_scroll_not_locked(page) -> None:

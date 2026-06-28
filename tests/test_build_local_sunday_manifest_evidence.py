@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 import scripts.build_local_sunday_manifest_evidence as mod
+from scripts.build_playback_simulation import refresh_polished_layers
 
 
 class BuildLocalSundayManifestEvidenceTest(unittest.TestCase):
@@ -65,28 +66,26 @@ class BuildLocalSundayManifestEvidenceTest(unittest.TestCase):
 def write_source_run(root: Path) -> None:
     (root / "web").mkdir(parents=True)
     (root / "artifacts").mkdir(parents=True)
+    playback = refresh_polished_layers(
+        {
+            "generatedFrom": "openai-translation-e2e",
+            "translationStatus": "ready",
+            "offlineSourceKind": "live_archive",
+            "translationProvider": {"model": "gpt-5.4-mini"},
+            "segments": [
+                {
+                    "id": "seg_1",
+                    "startMs": 1000,
+                    "endMs": 2500,
+                    "en": "Grace and peace.",
+                    "zh": "愿恩典与平安归给你们。",
+                    "translationStatus": "ready",
+                }
+            ],
+        }
+    )
     (root / "web" / "playback-simulation.generated.js").write_text(
-        "window.SERMON_PLAYBACK_SIMULATION = "
-        + json.dumps(
-            {
-                "generatedFrom": "openai-translation-e2e",
-                "translationStatus": "ready",
-                "offlineSourceKind": "live_archive",
-                "translationProvider": {"model": "gpt-5.4-mini"},
-                "segments": [
-                    {
-                        "id": "seg_1",
-                        "startMs": 1000,
-                        "endMs": 2500,
-                        "en": "Grace and peace.",
-                        "zh": "愿恩典与平安归给你们。",
-                        "translationStatus": "ready",
-                    }
-                ],
-            },
-            ensure_ascii=False,
-        )
-        + ";\n",
+        "window.SERMON_PLAYBACK_SIMULATION = " + json.dumps(playback, ensure_ascii=False) + ";\n",
         encoding="utf-8",
     )
     (root / "artifacts" / "report.json").write_text(

@@ -97,9 +97,15 @@ def stage_for_command(command: list[str]) -> str:
         return "export-captions"
     if "validate_offline_chain.py" in joined:
         return "validate-offline"
-    if command[:3] == ["gcloud", "storage", "cp"] and "playback-simulation.generated.js" in joined:
+    if (
+        ("upload_file_to_gcs.py" in joined or command[:3] == ["gcloud", "storage", "cp"])
+        and "playback-simulation.generated.js" in joined
+    ):
         return "upload-playback"
-    if command[:3] == ["gcloud", "storage", "cp"] and "cloud-manifest.json" in joined:
+    if (
+        ("upload_file_to_gcs.py" in joined or command[:3] == ["gcloud", "storage", "cp"])
+        and "cloud-manifest.json" in joined
+    ):
         return "upload-manifest"
     if "promote_sunday_manifest.py" in joined:
         return "promote"

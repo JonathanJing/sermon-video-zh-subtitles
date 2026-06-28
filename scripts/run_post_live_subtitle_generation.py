@@ -22,6 +22,7 @@ from scripts import live_source_monitor  # noqa: E402
 
 
 SERMON_PIPELINE_SCRIPT = REPO_ROOT / "scripts" / "sermon_pipeline.py"
+MOBILE_PDF_SCRIPT = REPO_ROOT / "scripts" / "render_mobile_pdf_from_srt.py"
 DEFAULT_WORK_ROOT = Path("/tmp/sermon-post-live-subtitles")
 POST_LIVE_STATES = {"was_live"}
 
@@ -108,6 +109,7 @@ def run_post_live_generation(
     audio_template = run_root / "download" / "source_audio.%(ext)s"
     pipeline_outdir = run_root / "pipeline"
     pipeline_command = build_pipeline_command(args, run_root / "download", pipeline_outdir, live_url)
+    mobile_pdf_command = build_mobile_pdf_command(args, pipeline_outdir, live_url)
     report = {
         **base_report,
         "status": "planned" if (args.plan_only or args.dry_run) else "running",
@@ -115,6 +117,7 @@ def run_post_live_generation(
         "downloadTemplate": str(audio_template),
         "pipelineOutdir": str(pipeline_outdir),
         "pipelineCommand": pipeline_command,
+        "mobilePdfCommand": mobile_pdf_command,
         "outputs": expected_outputs(pipeline_outdir),
     }
     if args.plan_only or args.dry_run:
@@ -124,13 +127,16 @@ def run_post_live_generation(
     set_openai_api_key(args)
     audio_path = download_archive_audio(live_url, audio_template, args.audio_format, args.yt_dlp, runner)
     pipeline_command = build_pipeline_command(args, audio_path.parent, pipeline_outdir, live_url, audio_path=audio_path)
+    mobile_pdf_command = build_mobile_pdf_command(args, pipeline_outdir, live_url)
     run_command(pipeline_command, runner)
+    run_command(mobile_pdf_command, runner)
     uploaded = upload_outputs(args, pipeline_outdir)
     report.update(
         {
             "status": "completed",
             "downloadedAudio": str(audio_path),
             "pipelineCommand": pipeline_command,
+            "mobilePdfCommand": mobile_pdf_command,
             "uploaded": uploaded,
             "completedAt": datetime.now(timezone.utc).isoformat(),
         }
@@ -244,6 +250,21 @@ def build_pipeline_command(
     return command
 
 
+def build_mobile_pdf_command(args: argparse.Namespace, pipeline_outdir: Path, live_url: str) -> list[str]:
+    return [
+        sys.executable,
+        str(MOBILE_PDF_SCRIPT),
+        "--input",
+        str(pipeline_outdir / "sermon_zh_relative.srt"),
+        "--out",
+        str(pipeline_outdir / "sermon_zh_mobile.pdf"),
+        "--title",
+        slug_for(args, live_url),
+        "--subtitle",
+        f"{args.sunday} sermon Chinese subtitles",
+    ]
+
+
 def download_archive_audio(
     live_url: str,
     output_template: Path,
@@ -284,6 +305,7 @@ def expected_outputs(pipeline_outdir: Path) -> list[str]:
     return [
         str(pipeline_outdir / "sermon_zh_relative.srt"),
         str(pipeline_outdir / "sermon_zh_relative.vtt"),
+        str(pipeline_outdir / "sermon_zh_mobile.pdf"),
         str(pipeline_outdir / "full_video_zh_from_sermon.srt"),
         str(pipeline_outdir / "full_video_zh_from_sermon.vtt"),
         str(pipeline_outdir / "qa_report.json"),
