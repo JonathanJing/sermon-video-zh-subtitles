@@ -8,7 +8,7 @@ import json
 import re
 import sys
 from dataclasses import dataclass
-from datetime import date, datetime, time
+from datetime import date, datetime, timedelta, time
 from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any, Callable
@@ -23,12 +23,14 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from backend.observability import log_event, stable_hash, url_summary  # noqa: E402
+from backend.cloud import read_gcs_text, write_gcs_text  # noqa: E402
 
 
 DEFAULT_TIMEZONE = "America/Los_Angeles"
 DEFAULT_MARINERS_ONLINE_URL = "https://www.marinerschurch.org/irvine/"
 DEFAULT_YOUTUBE_STREAMS_URL = "https://www.youtube.com/@marinerschurch/streams"
 USABLE_STATES = {"live", "upcoming", "was_live", "available", "manual_available"}
+YOUTUBE_STREAM_STATES = {"live", "upcoming", "was_live"}
 SERVICE_ORDER = ["830", "1000", "manual"]
 SATURDAY_SERVICE_ORDER = ["sat400", "sat530", "manual"]
 NOTIFIABLE_STATUSES = {"source_detected", "fallback"}
@@ -106,7 +108,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--youtube-streams-url", default=DEFAULT_YOUTUBE_STREAMS_URL)
     parser.add_argument("--fixture-json", type=Path, help="Offline fixture containing source candidates.")
     parser.add_argument("--out", type=Path, default=Path("artifacts/live-source-monitor/report.json"))
-    parser.add_argument("--state-file", type=Path, default=Path("artifacts/live-source-monitor/state.json"))
+    parser.add_argument("--state-file", default="artifacts/live-source-monitor/state.json")
     parser.add_argument("--notify-webhook-url", help="Operator notification webhook URL. Use env or secrets in production.")
     parser.add_argument("--timezone", default=DEFAULT_TIMEZONE)
     parser.add_argument("--now", help="Override current time, ISO-8601.")
@@ -123,7 +125,7 @@ def parse_args() -> argparse.Namespace:
 
 def run_monitor(args: argparse.Namespace) -> dict[str, Any]:
     checked_at = now_iso(args.now, args.timezone)
-    candidates = load_candidates(args)
+    candidates = load_candidates(args, checked_at)
     decision = choose_source(
         candidates,
         service=args.service,
@@ -156,7 +158,7 @@ def run_monitor(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
-def load_candidates(args: argparse.Namespace) -> list[SourceCandidate]:
+def load_candidates(args: argparse.Namespace, checked_at: str | None = None) -> list[SourceCandidate]:
     candidates: list[SourceCandidate] = []
     fixture_sources = getattr(args, "fixture_sources", None)
     if fixture_sources is not None:
@@ -165,7 +167,7 @@ def load_candidates(args: argparse.Namespace) -> list[SourceCandidate]:
         fixture = json.loads(resolve_repo_path(args.fixture_json).read_text(encoding="utf-8"))
         candidates.extend(candidates_from_fixture(fixture, args.expected_title))
     else:
-        candidates.extend(fetch_default_candidates(args))
+        candidates.extend(fetch_default_candidates(args, checked_at))
     for index, manual_url in enumerate(args.manual_url, start=1):
         candidates.append(
             SourceCandidate(
@@ -210,28 +212,34 @@ def candidates_from_fixture(fixture: dict[str, Any], expected_title: str | None)
     return candidates
 
 
-def fetch_default_candidates(args: argparse.Namespace) -> list[SourceCandidate]:
+def fetch_default_candidates(args: argparse.Namespace, checked_at: str | None = None) -> list[SourceCandidate]:
     fetcher = default_fetcher
     services = SATURDAY_SERVICE_ORDER[:2] if str(args.service).startswith("sat") else ["830", "1000"]
     candidates: list[SourceCandidate] = []
     for service in services:
-        candidates.extend(
-            [
+        target_date = target_service_date(args.sunday, service)
+        if not service.startswith("sat"):
+            candidates.append(
                 fetch_candidate(
                     kind="mariners-online",
                     service=service,
                     url=args.mariners_online_url,
                     expected_title=args.expected_title,
                     fetcher=fetcher,
-                ),
-                fetch_candidate(
-                    kind="youtube-streams",
-                    service=service,
-                    url=args.youtube_streams_url,
-                    expected_title=args.expected_title,
-                    fetcher=fetcher,
-                ),
-            ]
+                    target_date=target_date,
+                    timezone=args.timezone,
+                )
+            )
+        candidates.append(
+            fetch_candidate(
+                kind="youtube-streams",
+                service=service,
+                url=args.youtube_streams_url,
+                expected_title=args.expected_title,
+                fetcher=fetcher,
+                target_date=target_date,
+                timezone=args.timezone,
+            )
         )
     return candidates
 
@@ -243,6 +251,8 @@ def fetch_candidate(
     url: str,
     expected_title: str | None,
     fetcher: Callable[[str], str],
+    target_date: date | None = None,
+    timezone: str = DEFAULT_TIMEZONE,
 ) -> SourceCandidate:
     try:
         html = fetcher(url)
@@ -257,16 +267,167 @@ def fetch_candidate(
         )
     title = extract_title(html) or kind
     state = infer_state(html)
-    candidate_url = extracted_youtube_watch_url(html) if kind == "youtube-streams" else None
+    if kind == "youtube-streams":
+        youtube_candidate = youtube_stream_candidate_from_page(
+            service=service,
+            page_html=html,
+            page_url=url,
+            page_title=title,
+            page_state=state,
+            expected_title=expected_title,
+            fetcher=fetcher,
+            target_date=target_date,
+            timezone=timezone,
+        )
+        if youtube_candidate:
+            return youtube_candidate
     return SourceCandidate(
         kind=kind,
         service=service,
-        url=candidate_url or url,
+        url=url,
         state=state,
         title=title,
         same_sermon_confidence=score_same_sermon(title, expected_title),
         evidence="fetched-page",
     )
+
+
+def youtube_stream_candidate_from_page(
+    *,
+    service: str,
+    page_html: str,
+    page_url: str,
+    page_title: str,
+    page_state: str,
+    expected_title: str | None,
+    fetcher: Callable[[str], str],
+    target_date: date | None,
+    timezone: str,
+) -> SourceCandidate | None:
+    urls = extracted_youtube_watch_urls(page_html)
+    errors: list[str] = []
+    for watch_url in urls[:8]:
+        try:
+            video_html = fetcher(watch_url)
+        except Exception as exc:
+            errors.append(str(exc)[:80])
+            continue
+        metadata = youtube_video_metadata(watch_url)
+        title = string_or_none(metadata.get("title")) if metadata else None
+        state = state_from_youtube_metadata(metadata) if metadata else infer_state(video_html)
+        actual_start = local_iso_from_metadata(metadata, timezone) if metadata else None
+        if state in YOUTUBE_STREAM_STATES and metadata_is_target_service(metadata, target_date, timezone):
+            return SourceCandidate(
+                kind="youtube-streams",
+                service=service,
+                url=watch_url,
+                state=state,
+                title=title or extract_title(video_html) or page_title,
+                actual_start_at=actual_start,
+                same_sermon_confidence=score_same_sermon(title or extract_title(video_html) or page_title, expected_title),
+                evidence="yt-dlp-watch-metadata",
+            )
+    if urls:
+        return SourceCandidate(
+            kind="youtube-streams",
+            service=service,
+            url=page_url,
+            state="unavailable",
+            title=page_title,
+            same_sermon_confidence=0.0,
+            evidence="watch-page-validation-failed",
+            error="; ".join(errors[:2]) or "no extracted watch URL validated as live/upcoming/was_live",
+        )
+    if page_state in YOUTUBE_STREAM_STATES:
+        return SourceCandidate(
+            kind="youtube-streams",
+            service=service,
+            url=page_url,
+            state=page_state,
+            title=page_title,
+            same_sermon_confidence=score_same_sermon(page_title, expected_title),
+            evidence="fetched-page-no-watch-url",
+        )
+    return None
+
+
+def youtube_video_metadata(url: str) -> dict[str, Any] | None:
+    try:
+        from yt_dlp import YoutubeDL  # type: ignore
+    except ImportError:
+        return None
+    try:
+        with YoutubeDL({"quiet": True, "no_warnings": True, "skip_download": True}) as ydl:
+            info = ydl.extract_info(url, download=False)
+    except Exception:
+        return None
+    return info if isinstance(info, dict) else None
+
+
+def state_from_youtube_metadata(metadata: dict[str, Any] | None) -> str:
+    if not metadata:
+        return "unavailable"
+    live_status = str(metadata.get("live_status") or "")
+    if live_status == "is_live" or metadata.get("is_live") is True:
+        return "live"
+    if live_status in {"is_upcoming", "not_yet_live"}:
+        return "upcoming"
+    if live_status in {"was_live", "post_live"} or metadata.get("was_live") is True:
+        return "was_live"
+    if metadata.get("media_type") == "livestream":
+        return "was_live"
+    return "available"
+
+
+def metadata_is_target_service(metadata: dict[str, Any] | None, target_date: date | None, timezone: str) -> bool:
+    if not metadata:
+        return False
+    if metadata.get("media_type") != "livestream" and not (
+        metadata.get("was_live") is True or metadata.get("is_live") is True
+    ):
+        return False
+    if target_date is None:
+        return True
+    observed = local_date_from_metadata(metadata, timezone)
+    return observed == target_date
+
+
+def local_iso_from_metadata(metadata: dict[str, Any] | None, timezone: str) -> str | None:
+    timestamp = metadata_timestamp(metadata)
+    if timestamp is None:
+        return None
+    return datetime.fromtimestamp(timestamp, ZoneInfo(timezone)).isoformat()
+
+
+def local_date_from_metadata(metadata: dict[str, Any] | None, timezone: str) -> date | None:
+    timestamp = metadata_timestamp(metadata)
+    if timestamp is None:
+        return None
+    return datetime.fromtimestamp(timestamp, ZoneInfo(timezone)).date()
+
+
+def metadata_timestamp(metadata: dict[str, Any] | None) -> int | None:
+    if not metadata:
+        return None
+    for key in ("release_timestamp", "timestamp", "available_at"):
+        value = metadata.get(key)
+        if isinstance(value, (int, float)):
+            return int(value)
+    upload_date = str(metadata.get("upload_date") or "")
+    if re.fullmatch(r"\d{8}", upload_date):
+        parsed = date.fromisoformat(f"{upload_date[:4]}-{upload_date[4:6]}-{upload_date[6:]}")
+        return int(datetime.combine(parsed, time.min).timestamp())
+    return None
+
+
+def target_service_date(sunday: str, service: str) -> date | None:
+    try:
+        sunday_date = date.fromisoformat(sunday)
+    except ValueError:
+        return None
+    if str(service).startswith("sat"):
+        return sunday_date - timedelta(days=1)
+    return sunday_date
 
 
 def choose_source(
@@ -433,16 +594,21 @@ def extract_title(html: str) -> str | None:
     return None
 
 
-def extracted_youtube_watch_url(html: str) -> str | None:
+def extracted_youtube_watch_urls(html: str) -> list[str]:
     patterns = [
         r"watch\?v=([A-Za-z0-9_-]{11})",
         r'"videoId"\s*:\s*"([A-Za-z0-9_-]{11})"',
     ]
+    seen: set[str] = set()
+    urls: list[str] = []
     for pattern in patterns:
-        match = re.search(pattern, html)
-        if match:
-            return f"https://www.youtube.com/watch?v={match.group(1)}"
-    return None
+        for match in re.finditer(pattern, html):
+            video_id = match.group(1)
+            if video_id in seen:
+                continue
+            seen.add(video_id)
+            urls.append(f"https://www.youtube.com/watch?v={video_id}")
+    return urls
 
 
 def infer_state(html: str) -> str:
@@ -451,7 +617,7 @@ def infer_state(html: str) -> str:
         return "live"
     if any(token in lower for token in ["upcoming", "scheduled", "premieres"]):
         return "upcoming"
-    if any(token in lower for token in ["was live", "livestream"]):
+    if any(token in lower for token in ["was live", "livestream", "post_live", "\"live_status\":\"post_live\""]):
         return "was_live"
     return "available"
 
@@ -493,44 +659,67 @@ def normalize_service(value: Any) -> str:
     return aliases.get(text, text or "manual")
 
 
-def read_state(path: Path | None) -> dict[str, Any]:
+def read_state(path: Any) -> dict[str, Any]:
     if not path:
         return {}
-    resolved = resolve_repo_path(path)
-    if not resolved.exists():
+    try:
+        text = read_state_text(path)
+    except Exception:
         return {}
     try:
-        data = json.loads(resolved.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+        data = json.loads(text)
+    except json.JSONDecodeError:
         return {}
     return data if isinstance(data, dict) else {}
 
 
 def write_state(
-    path: Path | None,
+    path: Any,
     report: dict[str, Any],
     previous_state: dict[str, Any],
     notification: dict[str, Any],
 ) -> None:
     if not path:
         return
-    resolved = resolve_repo_path(path)
     notifications = previous_state.get("notifications")
     if not isinstance(notifications, dict):
         notifications = {}
-    if notification.get("shouldNotify") and notification.get("dedupeKey"):
+    if notification_delivered(notification) and notification.get("dedupeKey"):
         notifications[str(notification["dedupeKey"])] = report.get("checkedAt")
     state = {
         "schemaVersion": 1,
         "updatedAt": report.get("checkedAt"),
         "lastStatus": report.get("status"),
         "lastSunday": report.get("sunday"),
+        "lastSelectedSource": report.get("selectedSource"),
+        "lastGenerationRequest": report.get("generationRequest"),
         "lastSelectedUrlHash": (report.get("selectedSource") or {}).get("urlHash"),
         "lastOperatorAlert": report.get("operatorAlert"),
         "notifications": notifications,
+        "apiKeyMaterialIncluded": False,
+        "secretResourceNamesIncluded": False,
     }
+    write_state_text(path, json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True))
+
+
+def read_state_text(path: Any) -> str:
+    value = str(path)
+    if value.startswith("gs://"):
+        return read_gcs_text(value)
+    resolved = resolve_repo_path(Path(value))
+    if not resolved.exists():
+        raise FileNotFoundError(value)
+    return resolved.read_text(encoding="utf-8")
+
+
+def write_state_text(path: Any, text: str) -> None:
+    value = str(path)
+    if value.startswith("gs://"):
+        write_gcs_text(value, text)
+        return
+    resolved = resolve_repo_path(Path(value))
     resolved.parent.mkdir(parents=True, exist_ok=True)
-    resolved.write_text(json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
+    resolved.write_text(text, encoding="utf-8")
 
 
 def build_notification(report: dict[str, Any], previous_state: dict[str, Any]) -> dict[str, Any]:
@@ -559,6 +748,11 @@ def build_notification(report: dict[str, Any], previous_state: dict[str, Any]) -
         "apiKeyMaterialIncluded": False,
         "secretResourceNamesIncluded": False,
     }
+
+
+def notification_delivered(notification: dict[str, Any]) -> bool:
+    delivery = notification.get("delivery")
+    return isinstance(delivery, dict) and delivery.get("status") == "posted"
 
 
 def notification_message(title: str, report: dict[str, Any]) -> str:
@@ -592,7 +786,9 @@ def send_webhook_notification(webhook_url: str, notification: dict[str, Any]) ->
     try:
         with urlopen(request, timeout=15) as response:
             response.read()
-            return {"status": "posted", "statusCode": response.status, "authMaterialIncluded": False}
+            if 200 <= response.status <= 299:
+                return {"status": "posted", "statusCode": response.status, "authMaterialIncluded": False}
+            return {"status": "failed", "statusCode": response.status, "authMaterialIncluded": False}
     except HTTPError as exc:
         exc.read()
         return {"status": "failed", "statusCode": exc.code, "authMaterialIncluded": False}

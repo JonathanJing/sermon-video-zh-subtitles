@@ -40,6 +40,15 @@ Cloud Scheduler 建议请求 payload 中显式带上：
 }
 ```
 
+周六直播链接捕获建议用两个独立 Scheduler job，并把 endpoint 的 `{sunday}` 写成 `upcoming`，而不是周六当天的 `current`。`upcoming` 会解析到下一个周日字幕 slice；例如周六 2026-06-27 捕获的是 2026-06-28 周日字幕 slice：
+
+```text
+sermon-sat-400-source-discovery  */2 15-16 * * SAT  service=sat400  operatorAlertTime=16:20
+sermon-sat-530-source-discovery  */2 17 * * SAT     service=sat530  operatorAlertTime=17:50
+```
+
+如果配置 `OPERATOR_NOTIFY_WEBHOOK_URL`，`discover-source` 会在首次捕获到新直播 URL，或到达 `operatorAlertTime` 仍无可用来源时发一次 operator 通知。通知 state 会去重，避免每两分钟重复推送同一结果。默认 state path 在本地 `/tmp`；生产建议设置 `LIVE_SOURCE_MONITOR_STATE_URI=gs://.../backend-state.json`，这样 Cloud Run 多实例/重启后也能共享去重状态。
+
 ## Cloud Logging 查询
 
 直播采集触发：

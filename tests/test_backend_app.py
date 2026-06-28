@@ -662,6 +662,8 @@ class BackendAppTest(unittest.TestCase):
         self.assertEqual(captured["payload"]["error"], "unauthorized")
 
     def test_live_source_discovery_returns_sanitized_generation_request(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
         handler = object.__new__(ApiHandler)
         handler.config = AppConfig(
             artifact_bucket=None,
@@ -673,6 +675,7 @@ class BackendAppTest(unittest.TestCase):
             operator_admin_token=None,
             internal_task_token="task-token",
             enable_inline_worker=False,
+            live_source_monitor_state_dir=tmp.name,
         )
         handler.headers = {"X-Internal-Task-Token": "task-token"}
         handler.read_json_body = lambda: {
@@ -703,6 +706,7 @@ class BackendAppTest(unittest.TestCase):
         self.assertFalse(payload["apiKeyMaterialIncluded"])
         self.assertFalse(payload["secretResourceNamesIncluded"])
         self.assertNotIn("/secrets/", json.dumps(payload))
+        self.assertTrue((Path(tmp.name) / "backend-state.json").exists())
 
     def test_live_source_discovery_auto_generate_returns_plan_summary_without_secret_reference(self):
         class FakeService:
@@ -710,6 +714,8 @@ class BackendAppTest(unittest.TestCase):
                 return "2026-06-28" if sunday == "current" else sunday
 
         handler = object.__new__(ApiHandler)
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
         handler.config = AppConfig(
             artifact_bucket="sermon-zh-artifacts-ai-for-god",
             artifact_prefix="sundays",
@@ -720,6 +726,7 @@ class BackendAppTest(unittest.TestCase):
             operator_admin_token=None,
             internal_task_token="task-token",
             enable_inline_worker=False,
+            live_source_monitor_state_dir=tmp.name,
         )
         handler.service = FakeService()
         handler.headers = {"X-Internal-Task-Token": "task-token"}
@@ -753,6 +760,26 @@ class BackendAppTest(unittest.TestCase):
         self.assertNotIn("commands", payload["generationPlan"])
         self.assertFalse(payload["secretResourceNamesIncluded"])
         self.assertNotIn("projects/p/secrets", json.dumps(payload))
+
+    def test_live_source_monitor_args_prefers_configured_state_uri(self):
+        handler = object.__new__(ApiHandler)
+        handler.config = AppConfig(
+            artifact_bucket=None,
+            artifact_prefix="sundays",
+            current_manifest_uri=None,
+            sunday_manifest_uri_template=None,
+            timezone="America/Los_Angeles",
+            openai_api_key_secret=None,
+            operator_admin_token=None,
+            internal_task_token="task-token",
+            enable_inline_worker=False,
+            live_source_monitor_state_dir="/tmp/local-state",
+            live_source_monitor_state_uri="gs://bucket/source-monitor/backend-state.json",
+        )
+
+        args = ApiHandler.live_source_monitor_args(handler, {}, "2026-06-28")
+
+        self.assertEqual(args.state_file, "gs://bucket/source-monitor/backend-state.json")
 
     def test_dockerfile_starts_backend_app(self):
         dockerfile = Path(__file__).resolve().parents[1] / "Dockerfile"

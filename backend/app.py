@@ -381,7 +381,16 @@ class ApiHandler(BaseHTTPRequestHandler):
         sunday = self.resolve_admin_sunday(sunday)
         payload = self.read_json_body()
         monitor_args = self.live_source_monitor_args(payload, sunday)
+        previous_state = live_source_monitor.read_state(monitor_args.state_file)
         report = live_source_monitor.run_monitor(monitor_args)
+        notification = live_source_monitor.build_notification(report, previous_state)
+        if notification["shouldNotify"] and monitor_args.notify_webhook_url:
+            notification["delivery"] = live_source_monitor.send_webhook_notification(
+                monitor_args.notify_webhook_url,
+                notification,
+            )
+        report["notification"] = notification
+        live_source_monitor.write_state(monitor_args.state_file, report, previous_state, notification)
         log_event(
             "live_source_monitor_completed",
             component="api",
@@ -402,6 +411,7 @@ class ApiHandler(BaseHTTPRequestHandler):
             "fallbackReason": report.get("fallbackReason"),
             "generationRequest": report.get("generationRequest"),
             "candidateCount": len(report.get("candidates") or []),
+            "notification": report.get("notification"),
             "apiKeyMaterialIncluded": False,
             "secretResourceNamesIncluded": False,
         }
@@ -461,6 +471,9 @@ class ApiHandler(BaseHTTPRequestHandler):
             fixture_json=None,
             fixture_sources=sources,
             out=Path("artifacts/live-source-monitor/backend-report.json"),
+            state_file=self.config.live_source_monitor_state_uri
+            or Path(self.config.live_source_monitor_state_dir) / "backend-state.json",
+            notify_webhook_url=self.config.operator_notify_webhook_url,
             timezone=str(payload.get("timezone") or self.config.timezone),
             now=payload.get("now"),
             min_confidence=float(payload.get("minConfidence", 0.70)),

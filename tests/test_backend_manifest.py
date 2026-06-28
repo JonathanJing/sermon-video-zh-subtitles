@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 from backend.config import AppConfig
+import backend.manifest as manifest_mod
 from backend.manifest import SundaySliceService
 from backend.storage import LocalArtifactReader
 
@@ -139,6 +140,30 @@ class SundaySliceServiceTest(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             service.manifest_uri_for("2026-06-23")
+
+    def test_manifest_uri_resolves_upcoming_sunday_route(self):
+        service = SundaySliceService(
+            AppConfig(
+                artifact_bucket="bucket",
+                artifact_prefix="sundays",
+                current_manifest_uri=None,
+                sunday_manifest_uri_template=None,
+                timezone="America/Los_Angeles",
+                openai_api_key_secret=None,
+                operator_admin_token=None,
+                internal_task_token=None,
+                enable_inline_worker=False,
+            ),
+            LocalArtifactReader(Path(tempfile.gettempdir())),
+        )
+        original_upcoming = manifest_mod.upcoming_sunday
+        try:
+            manifest_mod.upcoming_sunday = lambda timezone: __import__("datetime").date(2026, 7, 5)
+            uri = service.manifest_uri_for("upcoming")
+        finally:
+            manifest_mod.upcoming_sunday = original_upcoming
+
+        self.assertEqual(uri, "gs://bucket/sundays/2026-07-05/cloud-manifest.json")
 
 
 def write_json(path: Path, payload: dict) -> None:

@@ -42,6 +42,15 @@ Cloud Scheduler should send an explicit payload:
 }
 ```
 
+For Saturday live-link capture, use two Scheduler jobs and set the route `{sunday}` to `upcoming`, not Saturday's `current` value. `upcoming` resolves to the next Sunday caption slice, so a Saturday 2026-06-27 capture targets the 2026-06-28 slice:
+
+```text
+sermon-sat-400-source-discovery  */2 15-16 * * SAT  service=sat400  operatorAlertTime=16:20
+sermon-sat-530-source-discovery  */2 17 * * SAT     service=sat530  operatorAlertTime=17:50
+```
+
+When `OPERATOR_NOTIFY_WEBHOOK_URL` is configured, `discover-source` sends one operator notification when a new live URL is first detected, or when `operatorAlertTime` arrives without a usable source. Notification state dedupes messages so a two-minute Scheduler cadence does not repeat the same result. The default state path is local `/tmp`; production should set `LIVE_SOURCE_MONITOR_STATE_URI=gs://.../backend-state.json` for durable cross-instance dedupe.
+
 ## Cloud Logging Queries
 
 Live capture trigger:

@@ -57,7 +57,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--schedule", default=DEFAULT_SCHEDULE, help="Cron schedule in the configured timezone.")
     parser.add_argument("--timezone", default=DEFAULT_TIMEZONE)
-    parser.add_argument("--service", default="auto", choices=["auto", "830", "1000"])
+    parser.add_argument("--service", default="auto", choices=["auto", "830", "1000", "sat-auto", "sat400", "sat530"])
     parser.add_argument("--operator-alert-time", default="09:58")
     parser.add_argument("--expected-title")
     parser.add_argument("--manual-url", action="append", default=[])

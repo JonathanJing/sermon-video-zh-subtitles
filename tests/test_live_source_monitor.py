@@ -27,6 +27,8 @@ def base_args(**overrides):
         "youtube_streams_url": mod.DEFAULT_YOUTUBE_STREAMS_URL,
         "fixture_json": None,
         "out": Path("artifacts/live-source-monitor/report.json"),
+        "state_file": Path("artifacts/live-source-monitor/state.json"),
+        "notify_webhook_url": None,
         "timezone": "America/Los_Angeles",
         "now": "2026-06-28T08:24:00-07:00",
         "min_confidence": 0.70,
@@ -111,6 +113,57 @@ class LiveSourceMonitorTest(unittest.TestCase):
         self.assertFalse(report["operatorAlert"])
         self.assertEqual(report["generationRequest"]["service"], "1000")
 
+    def test_saturday_auto_falls_forward_to_530_when_400_is_not_confirmed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            fixture = write_fixture(
+                tmp,
+                [
+                    {
+                        "kind": "youtube-streams",
+                        "service": "sat400",
+                        "url": "https://www.youtube.com/watch?v=four",
+                        "state": "available",
+                        "sameSermonConfidence": 0.1,
+                    },
+                    {
+                        "kind": "youtube-streams",
+                        "service": "sat530",
+                        "url": "https://www.youtube.com/watch?v=fivethirty",
+                        "state": "live",
+                        "sameSermonConfidence": 0.91,
+                    },
+                ],
+            )
+
+            report = mod.run_monitor(
+                base_args(
+                    service="sat-auto",
+                    fixture_json=fixture,
+                    now="2026-06-27T17:21:00-07:00",
+                )
+            )
+
+        self.assertEqual(report["status"], "source_detected")
+        self.assertEqual(report["selectedSource"]["service"], "sat530")
+        self.assertIn("5:30 Saturday", report["fallbackReason"])
+        self.assertEqual(report["generationRequest"]["service"], "sat530")
+
+    def test_saturday_default_candidates_do_not_use_generic_mariners_page(self):
+        original_fetcher = mod.default_fetcher
+        original_metadata = mod.youtube_video_metadata
+        try:
+            mod.default_fetcher = lambda url: "<html><body>Upcoming service</body></html>"
+            mod.youtube_video_metadata = lambda url: None
+            candidates = mod.fetch_default_candidates(
+                base_args(service="sat-auto", sunday="2026-06-28"),
+                checked_at="2026-06-27T17:21:00-07:00",
+            )
+        finally:
+            mod.default_fetcher = original_fetcher
+            mod.youtube_video_metadata = original_metadata
+
+        self.assertEqual([candidate.kind for candidate in candidates], ["youtube-streams", "youtube-streams"])
+
     def test_alerts_operator_after_deadline_when_no_source_is_usable(self):
         with tempfile.TemporaryDirectory() as tmp:
             fixture = write_fixture(
@@ -188,6 +241,129 @@ class LiveSourceMonitorTest(unittest.TestCase):
         self.assertEqual(candidate.title, "The Cure for Our Rebellion - Eric Geiger | Mariners Church")
         self.assertGreaterEqual(candidate.same_sermon_confidence, 0.99)
 
+    def test_fetch_youtube_streams_candidate_prefers_actual_watch_url(self):
+        channel_html = """
+        <html><head><title>Mariners Church - Live</title></head>
+        <body>Live now <a href="/watch?v=MEZHufeQBjc">watch</a></body></html>
+        """
+        video_html = """
+        <html><head><title>Mariners Online Worship Service</title></head>
+        <body>{"live_status":"post_live","media_type":"livestream"}</body></html>
+        """
+
+        original_metadata = mod.youtube_video_metadata
+        try:
+            mod.youtube_video_metadata = lambda url: {
+                "title": "Mariners Online Worship Service",
+                "live_status": "post_live",
+                "media_type": "livestream",
+                "release_timestamp": 1782606065,
+            }
+            candidate = mod.fetch_candidate(
+                kind="youtube-streams",
+                service="sat530",
+                url="https://www.youtube.com/@marinerschurch/streams",
+                expected_title=None,
+                fetcher=lambda url: video_html if "watch?v=MEZHufeQBjc" in url else channel_html,
+            )
+        finally:
+            mod.youtube_video_metadata = original_metadata
+
+        self.assertEqual(candidate.url, "https://www.youtube.com/watch?v=MEZHufeQBjc")
+        self.assertEqual(candidate.state, "was_live")
+        self.assertEqual(candidate.evidence, "yt-dlp-watch-metadata")
+
+    def test_fetch_youtube_streams_skips_stale_first_watch_url(self):
+        channel_html = """
+        <html><body>
+          <a href="/watch?v=OLDOLDOLD01">old</a>
+          <a href="/watch?v=MEZHufeQBjc">live</a>
+        </body></html>
+        """
+
+        def fake_fetcher(url):
+            if "OLDOLDOLD01" in url:
+                return "<html><head><title>Old Sermon</title></head><body>regular upload</body></html>"
+            if "MEZHufeQBjc" in url:
+                return '<html><head><title>Mariners Live</title></head><body>{"live_status":"post_live"}</body></html>'
+            return channel_html
+
+        def fake_metadata(url):
+            if "OLDOLDOLD01" in url:
+                return {"title": "Old Sermon", "live_status": "not_live", "media_type": "video"}
+            return {
+                "title": "Mariners Live",
+                "live_status": "post_live",
+                "media_type": "livestream",
+                "release_timestamp": 1782606065,
+            }
+
+        original_metadata = mod.youtube_video_metadata
+        try:
+            mod.youtube_video_metadata = fake_metadata
+            candidate = mod.fetch_candidate(
+                kind="youtube-streams",
+                service="sat530",
+                url="https://www.youtube.com/@marinerschurch/streams",
+                expected_title=None,
+                fetcher=fake_fetcher,
+            )
+        finally:
+            mod.youtube_video_metadata = original_metadata
+
+        self.assertEqual(candidate.url, "https://www.youtube.com/watch?v=MEZHufeQBjc")
+        self.assertEqual(candidate.state, "was_live")
+
+    def test_fetch_youtube_streams_rejects_unvalidated_watch_urls(self):
+        channel_html = '<html><body><a href="/watch?v=OLDOLDOLD01">old</a></body></html>'
+
+        original_metadata = mod.youtube_video_metadata
+        try:
+            mod.youtube_video_metadata = lambda url: {
+                "title": "Old Sermon",
+                "live_status": "not_live",
+                "media_type": "video",
+            }
+            candidate = mod.fetch_candidate(
+                kind="youtube-streams",
+                service="sat530",
+                url="https://www.youtube.com/@marinerschurch/streams",
+                expected_title=None,
+                fetcher=lambda url: "<html><body>regular upload</body></html>" if "watch?v=" in url else channel_html,
+            )
+        finally:
+            mod.youtube_video_metadata = original_metadata
+
+        self.assertEqual(candidate.url, "https://www.youtube.com/@marinerschurch/streams")
+        self.assertEqual(candidate.state, "unavailable")
+        self.assertEqual(candidate.evidence, "watch-page-validation-failed")
+
+    def test_fetch_youtube_streams_rejects_wrong_service_date(self):
+        channel_html = '<html><body><a href="/watch?v=FsUijL9uB1I">old</a></body></html>'
+        old_sunday_timestamp = 1782055264
+        original_metadata = mod.youtube_video_metadata
+        try:
+            mod.youtube_video_metadata = lambda url: {
+                "title": "Old Mariners Live",
+                "live_status": "post_live",
+                "media_type": "livestream",
+                "release_timestamp": old_sunday_timestamp,
+            }
+            candidate = mod.fetch_candidate(
+                kind="youtube-streams",
+                service="sat530",
+                url="https://www.youtube.com/@marinerschurch/streams",
+                expected_title=None,
+                fetcher=lambda url: channel_html,
+                target_date=__import__("datetime").date(2026, 6, 27),
+                timezone="America/Los_Angeles",
+            )
+        finally:
+            mod.youtube_video_metadata = original_metadata
+
+        self.assertEqual(candidate.state, "unavailable")
+        self.assertEqual(candidate.evidence, "watch-page-validation-failed")
+
     def test_main_writes_report(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -207,7 +383,7 @@ class LiveSourceMonitorTest(unittest.TestCase):
             original_parse_args = mod.parse_args
             original_log_event = mod.log_event
             try:
-                mod.parse_args = lambda: base_args(fixture_json=fixture, out=out)
+                mod.parse_args = lambda: base_args(fixture_json=fixture, out=out, state_file=root / "state.json")
                 mod.log_event = lambda *args, **kwargs: None
                 with contextlib.redirect_stdout(io.StringIO()):
                     exit_code = mod.main()
@@ -219,6 +395,7 @@ class LiveSourceMonitorTest(unittest.TestCase):
 
         self.assertEqual(exit_code, 0)
         self.assertEqual(saved["status"], "source_detected")
+        self.assertIn("notification", saved)
         self.assertEqual(saved["selectedSource"]["urlHash"], mod.stable_hash("https://www.youtube.com/watch?v=early"))
 
     def test_post_generation_request_sends_selected_source_without_returning_tokens(self):
@@ -285,6 +462,106 @@ class LiveSourceMonitorTest(unittest.TestCase):
 
         self.assertEqual(result["status"], "skipped")
         self.assertEqual(result["reason"], "no_generation_request")
+
+    def test_notification_dedupes_selected_source(self):
+        report = {
+            "status": "source_detected",
+            "sunday": "2026-06-28",
+            "checkedAt": "2026-06-27T17:21:00-07:00",
+            "selectedSource": {
+                "kind": "youtube-streams",
+                "service": "sat530",
+                "state": "live",
+                "url": "https://www.youtube.com/watch?v=MEZHufeQBjc",
+                "urlHash": "abc123",
+            },
+            "fallbackReason": None,
+        }
+
+        first = mod.build_notification(report, {})
+        delivered = {**first, "delivery": {"status": "posted", "statusCode": 204}}
+        with tempfile.TemporaryDirectory() as tmp:
+            state_path = Path(tmp) / "state.json"
+            mod.write_state(state_path, report, {}, delivered)
+            state = mod.read_state(state_path)
+        second = mod.build_notification(report, state)
+
+        self.assertTrue(first["shouldNotify"])
+        self.assertFalse(second["shouldNotify"])
+        self.assertEqual(second["reason"], "already_notified")
+
+    def test_failed_notification_delivery_does_not_dedupe(self):
+        report = {
+            "status": "source_detected",
+            "sunday": "2026-06-28",
+            "checkedAt": "2026-06-27T17:21:00-07:00",
+            "selectedSource": {
+                "kind": "youtube-streams",
+                "service": "sat530",
+                "state": "live",
+                "url": "https://www.youtube.com/watch?v=MEZHufeQBjc",
+                "urlHash": "abc123",
+            },
+            "fallbackReason": None,
+        }
+        notification = mod.build_notification(report, {})
+        failed = {**notification, "delivery": {"status": "failed", "statusCode": 500}}
+
+        with tempfile.TemporaryDirectory() as tmp:
+            state_path = Path(tmp) / "state.json"
+            mod.write_state(state_path, report, {}, failed)
+            state = mod.read_state(state_path)
+
+        retry = mod.build_notification(report, state)
+        self.assertTrue(retry["shouldNotify"])
+        self.assertEqual(retry["reason"], "new_state")
+
+    def test_state_can_round_trip_through_gcs_uri(self):
+        stored = {}
+
+        def fake_write(uri, text):
+            stored["uri"] = uri
+            stored["text"] = text
+
+        def fake_read(uri):
+            self.assertEqual(uri, "gs://bucket/source-monitor/state.json")
+            return stored["text"]
+
+        report = {
+            "status": "source_detected",
+            "sunday": "2026-06-28",
+            "checkedAt": "2026-06-27T17:21:00-07:00",
+            "operatorAlert": False,
+            "selectedSource": {"urlHash": "abc123"},
+        }
+        notification = {"dedupeKey": "source_detected:2026-06-28:abc123", "delivery": {"status": "posted"}}
+        original_write = mod.write_gcs_text
+        original_read = mod.read_gcs_text
+        try:
+            mod.write_gcs_text = fake_write
+            mod.read_gcs_text = fake_read
+            mod.write_state("gs://bucket/source-monitor/state.json", report, {}, notification)
+            state = mod.read_state("gs://bucket/source-monitor/state.json")
+        finally:
+            mod.write_gcs_text = original_write
+            mod.read_gcs_text = original_read
+
+        self.assertEqual(stored["uri"], "gs://bucket/source-monitor/state.json")
+        self.assertEqual(state["notifications"]["source_detected:2026-06-28:abc123"], report["checkedAt"])
+
+    def test_fallback_notification_waits_until_operator_alert(self):
+        report = {
+            "status": "fallback",
+            "sunday": "2026-06-28",
+            "checkedAt": "2026-06-27T17:49:00-07:00",
+            "operatorAlert": False,
+            "selectedSource": {"kind": "operator-audio", "service": "manual", "state": "fallback"},
+        }
+
+        notification = mod.build_notification(report, {})
+
+        self.assertFalse(notification["shouldNotify"])
+        self.assertEqual(notification["reason"], "waiting_for_alert_deadline")
 
 
 if __name__ == "__main__":

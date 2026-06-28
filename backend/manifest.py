@@ -7,7 +7,7 @@ from datetime import date
 from pathlib import PurePosixPath
 from typing import Any
 
-from .config import AppConfig, current_sunday
+from .config import AppConfig, current_sunday, upcoming_sunday
 from .storage import ArtifactReader
 
 
@@ -39,7 +39,7 @@ class SundaySliceService:
         report = self._read_report(manifest)
         playback = self._read_playback_simulation(manifest)
         resolved_sunday = self._resolve_sunday(sunday)
-        route_sunday = "current" if sunday == "current" else resolved_sunday
+        route_sunday = sunday if sunday in {"current", "upcoming", "next"} else resolved_sunday
         return {
             "schemaVersion": 1,
             "sunday": resolved_sunday,
@@ -87,9 +87,13 @@ class SundaySliceService:
     def _resolve_sunday(self, sunday: str) -> str:
         if sunday == "current":
             return current_sunday(timezone=self.config.timezone).isoformat()
+        if sunday in {"upcoming", "next"}:
+            return upcoming_sunday(timezone=self.config.timezone).isoformat()
         if not SUNDAY_RE.fullmatch(sunday):
-            raise ValueError("Sunday slice must be current or YYYY-MM-DD")
-        date.fromisoformat(sunday)
+            raise ValueError("Sunday slice must be current, upcoming, next, or YYYY-MM-DD")
+        parsed = date.fromisoformat(sunday)
+        if parsed.weekday() != 6:
+            raise ValueError("Sunday slice date must be a Sunday")
         return sunday
 
     def _read_json(self, uri: str) -> dict[str, Any]:
