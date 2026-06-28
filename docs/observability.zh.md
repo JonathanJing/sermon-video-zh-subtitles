@@ -49,6 +49,49 @@ sermon-sat-530-source-discovery  */2 17 * * SAT     service=sat530  operatorAler
 
 如果配置 `OPERATOR_NOTIFY_WEBHOOK_URL`，`discover-source` 会在首次捕获到新直播 URL，或到达 `operatorAlertTime` 仍无可用来源时发一次 operator 通知。通知 state 会去重，避免每两分钟重复推送同一结果。默认 state path 在本地 `/tmp`；生产建议设置 `LIVE_SOURCE_MONITOR_STATE_URI=gs://.../backend-state.json`，这样 Cloud Run 多实例/重启后也能共享去重状态。
 
+直播结束后的离线 SRT/VTT 生成使用同一个 state object。新增 post-live job 应打：
+
+```text
+POST /api/admin/sundays/upcoming/post-live-subtitles
+```
+
+推荐 Scheduler 窗口是在周六晚间每 10 分钟检查一次，直到 YouTube metadata 变成 `post_live` / `was_live` 后才下载归档音频并运行 `scripts/sermon_pipeline.py`：
+
+```text
+sermon-sat-post-live-subtitles  */10 18-23 * * SAT  action=post-live-subtitles
+```
+
+dry-run 配置示例：
+
+```bash
+python3 scripts/configure_live_source_scheduler.py \
+  --project ai-for-god \
+  --location us-west1 \
+  --service-url 'https://sermon-zh-caption-web-...' \
+  --job-id sermon-sat-post-live-subtitles \
+  --action post-live-subtitles \
+  --sunday upcoming \
+  --schedule '*/10 18-23 * * SAT' \
+  --timezone America/Los_Angeles \
+  --slug mariners_<youtube_video_id> \
+  --start-time 00:22:10 \
+  --end-time 00:55:36
+```
+
+如果 `ENABLE_INLINE_WORKER` 关闭，该 endpoint 只返回计划命令；生产长任务更推荐用返回的命令配置 Cloud Run Job。手动运行同一逻辑：
+
+```bash
+python3 scripts/run_post_live_subtitle_generation.py \
+  --sunday YYYY-MM-DD \
+  --state-file 'gs://sermon-zh-artifacts-ai-for-god/sundays/live-source-monitor/backend-state.json' \
+  --slug mariners_<youtube_video_id> \
+  --start-time 00:22:10 \
+  --end-time 00:55:36 \
+  --api-key-secret 'projects/ai-for-god/secrets/openai-api-key/versions/latest' \
+  --gcs-bucket sermon-zh-artifacts-ai-for-god \
+  --gcs-prefix sundays
+```
+
 ## Cloud Logging 查询
 
 直播采集触发：
@@ -64,6 +107,14 @@ jsonPayload.sunday="2026-06-28"
 ```text
 resource.type="cloud_run_revision"
 jsonPayload.event="live_source_monitor_completed"
+jsonPayload.sunday="2026-06-28"
+```
+
+直播后字幕生成检查：
+
+```text
+resource.type=("cloud_run_revision" OR "cloud_run_job")
+jsonPayload.event="post_live_subtitle_generation_checked"
 jsonPayload.sunday="2026-06-28"
 ```
 

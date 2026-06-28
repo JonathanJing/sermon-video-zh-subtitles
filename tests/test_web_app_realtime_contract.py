@@ -131,6 +131,16 @@ class WebAppRealtimeContractTest(unittest.TestCase):
         self.assertIn("state.livePlaybackFetchedAt", app_js)
         self.assertIn("state.livePlaybackAppliedMode", app_js)
 
+    def test_scripture_sidebar_has_no_stale_default_card_and_honors_scope(self):
+        app_js = self.app_js
+
+        self.assertIn("function resetScriptureCandidates()", app_js)
+        self.assertIn("state.scriptureScopeKeys = scriptureScopeKeysFromSimulation(simulation)", app_js)
+        self.assertIn("if (state.scriptureScopeKeys.size && !state.scriptureScopeKeys.has(key)) return;", app_js)
+        self.assertNotIn("function renderDefaultScriptureCard()", app_js)
+        self.assertNotIn('canonicalChapterRef("Numbers 16")', app_js)
+        self.assertNotIn("renderDefaultScriptureCard();", app_js)
+
     def test_admin_posts_live_playback_actions(self):
         app_js = self.app_js
 

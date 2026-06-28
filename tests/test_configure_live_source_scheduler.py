@@ -21,6 +21,7 @@ class ConfigureLiveSourceSchedulerTest(unittest.TestCase):
             "location": "us-west1",
             "job_id": "sermon-live-source-discovery",
             "service_url": "https://caption.example.test/",
+            "action": "discover-source",
             "sunday": "current",
             "schedule": "55 9 * * SUN",
             "timezone": "America/Los_Angeles",
@@ -30,6 +31,10 @@ class ConfigureLiveSourceSchedulerTest(unittest.TestCase):
             "manual_url": [],
             "include_candidates": False,
             "no_auto_generate": False,
+            "slug": None,
+            "start_time": None,
+            "end_time": None,
+            "plan_only": False,
             "attempt_deadline": "180s",
             "internal_task_token_env": "INTERNAL_TASK_TOKEN",
             "apply": False,
@@ -86,6 +91,31 @@ class ConfigureLiveSourceSchedulerTest(unittest.TestCase):
         self.assertFalse(report["authMaterialIncluded"])
         self.assertNotIn("test-redaction-value", text)
         self.assertIn("X-Internal-Task-Token=REDACTED", text)
+
+    def test_builds_post_live_subtitles_job_payload(self):
+        plan = mod.build_scheduler_plan(
+            self.make_args(
+                job_id="sermon-sat-post-live-subtitles",
+                action="post-live-subtitles",
+                sunday="upcoming",
+                schedule="*/10 18-23 * * SAT",
+                slug="mariners_MEZHufeQBjc",
+                start_time="00:22:10",
+                end_time="00:55:36",
+            ),
+            internal_task_token="task-token-value",
+        )
+
+        self.assertEqual(
+            plan.endpoint,
+            "https://caption.example.test/api/admin/sundays/upcoming/post-live-subtitles",
+        )
+        self.assertEqual(plan.payload["triggerSource"], "cloud-scheduler")
+        self.assertEqual(plan.payload["slug"], "mariners_MEZHufeQBjc")
+        self.assertEqual(plan.payload["startTime"], "00:22:10")
+        self.assertEqual(plan.payload["endTime"], "00:55:36")
+        self.assertNotIn("autoGenerate", plan.payload)
+        self.assertIn("*/10 18-23 * * SAT", plan.create_command)
 
     def test_ensure_scheduler_job_updates_when_job_exists(self):
         calls = []

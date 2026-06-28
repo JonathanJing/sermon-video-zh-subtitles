@@ -201,6 +201,19 @@ systematic translation offset: none
 
 先保住当前可播放音频；等 source 从 `is_live` 变成 `was_live` / `post_live` 后重新下载完整归档。线程实跑中，刚下播时 11 分钟快照不够用，归档稳定后才拿到约 72 分钟完整可下载媒体。
 
+当前 repo 已接入自动化脚本：
+
+```bash
+python3 scripts/run_post_live_subtitle_generation.py \
+  --sunday YYYY-MM-DD \
+  --state-file 'gs://sermon-zh-artifacts-ai-for-god/sundays/live-source-monitor/backend-state.json' \
+  --slug mariners_<youtube_video_id> \
+  --start-time 00:22:10 \
+  --end-time 00:55:36
+```
+
+该脚本会从周六 `discover-source` 保存的 state 读取直播 URL，确认 YouTube metadata 已经是 `post_live` / `was_live`，再下载归档音频并调用 `scripts/sermon_pipeline.py`。如果还在直播或归档未稳定，它会返回 `waiting_for_post_live`，供 Scheduler 下次重试。
+
 ## 人工抽查清单
 
 发布前至少抽查：

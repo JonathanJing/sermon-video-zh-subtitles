@@ -383,6 +383,9 @@ def build_simulation(
         )
 
     display_segments = build_display_segments(raw_segments)
+    scripture_display_references = select_scripture_display_references(display_segments, sermon_title)
+    apply_scripture_scope(raw_segments, scripture_display_references)
+    apply_scripture_scope(display_segments, scripture_display_references)
     review_segments = build_review_segments(display_segments)
 
     return {
@@ -416,7 +419,8 @@ def build_simulation(
         "sermonWindow": sermon_window,
         "translationStatus": "ready" if has_zh else "needs_translation",
         "displayPolicy": display_policy(),
-        "scriptureReferences": merge_segment_references(display_segments),
+        "scriptureReferences": scripture_display_references,
+        "scriptureDisplayReferences": scripture_display_references,
         "rawSegments": raw_segments,
         "displaySegments": display_segments,
         "reviewSegments": review_segments,
@@ -437,7 +441,7 @@ def refresh_polished_layers(simulation: dict[str, Any]) -> dict[str, Any]:
         simulation["displaySegments"] = display_segments
         simulation["reviewSegments"] = build_review_segments(display_segments)
         simulation["segments"] = display_segments
-        simulation["scriptureReferences"] = merge_segment_references(display_segments)
+        apply_simulation_scripture_scope(simulation)
         simulation["displayPolicy"] = display_policy()
         return simulation
 
@@ -465,7 +469,7 @@ def refresh_polished_layers(simulation: dict[str, Any]) -> dict[str, Any]:
     simulation["displaySegments"] = display_segments
     simulation["reviewSegments"] = build_review_segments(display_segments)
     simulation["segments"] = display_segments
-    simulation["scriptureReferences"] = merge_segment_references(display_segments)
+    apply_simulation_scripture_scope(simulation)
     simulation["displayPolicy"] = display_policy()
     return simulation
 
@@ -685,6 +689,83 @@ def merge_refs_into(target: dict[str, dict[str, Any]], refs: dict[str, dict[str,
         target.setdefault(key, ref)
 
 
+def apply_simulation_scripture_scope(simulation: dict[str, Any]) -> None:
+    display_segments = [
+        segment
+        for segment in simulation.get("displaySegments") or simulation.get("segments") or []
+        if isinstance(segment, dict)
+    ]
+    display_refs = select_scripture_display_references(display_segments, str(simulation.get("sermonTitle") or ""))
+    for key in ("rawSegments", "displaySegments", "reviewSegments", "segments"):
+        segments = simulation.get(key)
+        if isinstance(segments, list):
+            apply_scripture_scope(segments, display_refs)
+    simulation["scriptureReferences"] = display_refs
+    simulation["scriptureDisplayReferences"] = display_refs
+
+
+def apply_scripture_scope(segments: list[dict[str, Any]], display_refs: list[dict[str, Any]]) -> None:
+    allowed = {str(ref.get("canonicalRef")) for ref in display_refs if ref.get("canonicalRef")}
+    if not allowed:
+        return
+    for segment in segments:
+        refs = [
+            ref for ref in segment.get("refs", [])
+            if isinstance(ref, dict) and str(ref.get("canonicalRef")) in allowed
+        ]
+        segment["refs"] = refs
+        ref_text = str(segment.get("ref") or "").strip()
+        if ref_text and ref_text not in allowed:
+            segment["ref"] = refs[0]["canonicalRef"] if refs else ""
+
+
+def select_scripture_display_references(segments: list[dict[str, Any]], sermon_title: str = "") -> list[dict[str, Any]]:
+    title_refs = refs_from_text(sermon_title)
+    if title_refs:
+        return title_refs
+    anchored: dict[str, dict[str, Any]] = {}
+    for segment in segments:
+        text = " ".join(
+            str(segment.get(key) or "")
+            for key in ("en", "zh", "draft", "text", "note")
+        )
+        if not is_sermon_scripture_anchor(text):
+            continue
+        merge_refs_into(anchored, references_from_segment(segment) or refs_from_text(text, as_dict=True))
+    return list(anchored.values()) or merge_segment_references(segments)
+
+
+def refs_from_text(text: str, as_dict: bool = False) -> list[dict[str, Any]] | dict[str, dict[str, Any]]:
+    refs = detect_references(text)
+    if not as_dict:
+        return refs
+    return {ref["canonicalRef"]: ref for ref in refs}
+
+
+def is_sermon_scripture_anchor(text: str) -> bool:
+    lowered = text.lower()
+    return any(
+        marker in lowered
+        for marker in (
+            " today",
+            "today",
+            "this morning",
+            "this sermon",
+            "our passage",
+            "we are in",
+            "we're in",
+            "we will read",
+            "turn to",
+            "今天",
+            "本篇",
+            "这篇讲道",
+            "我们来看",
+            "我们读",
+            "今天读",
+        )
+    )
+
+
 def first_non_empty(values: list[str]) -> str:
     for value in values:
         if value:
@@ -759,6 +840,25 @@ def chapters_for_alias(text: str, alias: str) -> list[int]:
         parsed = parse_chapter_number(match.group(1))
         if parsed:
             chapters.append(parsed)
+            chapters.extend(following_same_book_chapters(text[match.end() : match.end() + 48]))
+    return chapters
+
+
+def following_same_book_chapters(tail: str) -> list[int]:
+    chapters = []
+    pattern = re.compile(
+        rf"^\s*(?:,|，|、|and|&|/|和|及)\s*([0-9一二两三四五六七八九十百]+|{'|'.join(ENGLISH_CHAPTER_WORDS)})(?:\s*章)?",
+        re.IGNORECASE,
+    )
+    remaining = tail
+    while remaining:
+        match = pattern.search(remaining)
+        if not match:
+            break
+        parsed = parse_chapter_number(match.group(1))
+        if parsed:
+            chapters.append(parsed)
+        remaining = remaining[match.end() :]
     return chapters
 
 

@@ -294,7 +294,8 @@ def expected_outputs(pipeline_outdir: Path) -> list[str]:
 def upload_outputs(args: argparse.Namespace, pipeline_outdir: Path) -> list[dict[str, str]]:
     if not args.gcs_bucket:
         return []
-    prefix = "/".join(part.strip("/") for part in [args.gcs_prefix, args.sunday, "post-live-subtitles", slug_for(args, "")] if part)
+    slug = args.slug or "sermon"
+    prefix = "/".join(part.strip("/") for part in [args.gcs_prefix, args.sunday, "post-live-subtitles", slug] if part)
     uploaded = []
     for path_text in expected_outputs(pipeline_outdir):
         path = Path(path_text)

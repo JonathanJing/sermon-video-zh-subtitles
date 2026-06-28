@@ -150,6 +150,7 @@
     lastExport: null,
     scriptureKeys: new Set(),
     scriptureFetches: new Set(),
+    scriptureScopeKeys: new Set(),
     segmentAutoFollow: true,
     segmentScrollProgrammatic: false,
     viewMode: "congregation",
@@ -375,7 +376,7 @@
       tone: "ready"
     });
     renderSegments();
-    renderDefaultScriptureCard();
+    resetScriptureCandidates();
     state.segments.forEach(addScriptureCandidate);
     updateNotes();
     updateTimeline(100);
@@ -445,6 +446,7 @@
     const playbackSource = Array.isArray(simulation.displaySegments) && simulation.displaySegments.length
       ? simulation.displaySegments
       : simulation.segments;
+    state.scriptureScopeKeys = scriptureScopeKeysFromSimulation(simulation);
     state.rawSegments = Array.isArray(simulation.rawSegments) ? simulation.rawSegments : [];
     state.reviewSegments = Array.isArray(simulation.reviewSegments) ? simulation.reviewSegments : [];
     state.playbackSegments = playbackSource
@@ -2089,19 +2091,10 @@
     el.returnLiveButton.classList.toggle("is-hidden", !show);
   }
 
-  function renderDefaultScriptureCard() {
-    if (!el.scriptureCandidates || el.scriptureCandidates.children.length) return;
-    const ref = canonicalChapterRef("Numbers 16");
-    const scripture = scriptureReferences["Numbers 16"];
-    if (!ref || !scripture || state.scriptureKeys.has(ref.canonicalRef)) return;
-    state.scriptureKeys.add(ref.canonicalRef);
-    const card = document.createElement("details");
-    card.className = "scripture-card is-exact";
-    card.dataset.scriptureKey = ref.canonicalRef;
-    card.open = true;
-    card.innerHTML = renderScriptureCard(ref, scripture, null);
-    renderScriptureSourceNote(scripture);
-    el.scriptureCandidates.prepend(card);
+  function resetScriptureCandidates() {
+    state.scriptureKeys.clear();
+    state.scriptureFetches.clear();
+    if (el.scriptureCandidates) el.scriptureCandidates.textContent = "";
   }
 
   function addScriptureCandidate(segment) {
@@ -2112,6 +2105,7 @@
   function addScriptureChapter(ref, segment) {
     const key = ref.canonicalRef;
     if (!key || state.scriptureKeys.has(key)) return;
+    if (state.scriptureScopeKeys.size && !state.scriptureScopeKeys.has(key)) return;
     state.scriptureKeys.add(key);
     const scripture = scriptureReferenceFor(ref);
     const card = document.createElement("details");
@@ -2385,6 +2379,18 @@
     if (canonical && scriptureReferences[canonical]) return scriptureReferences[canonical];
     if (typeof ref === "string" && scriptureReferences[ref]) return scriptureReferences[ref];
     return null;
+  }
+
+  function scriptureScopeKeysFromSimulation(simulation) {
+    const refs = Array.isArray(simulation?.scriptureDisplayReferences) && simulation.scriptureDisplayReferences.length
+      ? simulation.scriptureDisplayReferences
+      : Array.isArray(simulation?.scriptureReferences) ? simulation.scriptureReferences : [];
+    const keys = new Set();
+    refs.forEach((ref) => {
+      const parsed = normalizeScriptureRefCandidate(ref);
+      if (parsed?.canonicalRef) keys.add(parsed.canonicalRef);
+    });
+    return keys;
   }
 
   function isExactScriptureRef(ref) {

@@ -30,12 +30,15 @@ NOTE_SLICE_MAX_CHARS = 900
 NOTE_SLICE_MIN_CHARS = 120
 DEFAULT_MODEL = "gpt-5.4-mini"
 DEFAULT_REASONING_EFFORT = "medium"
+SRT_TIMESTAMP_RE = re.compile(
+    r"^\s*(?P<start>\d{1,2}:\d{2}:\d{2}[,.]\d{3})\s*-->\s*(?P<end>\d{1,2}:\d{2}:\d{2}[,.]\d{3})"
+)
 
 
 def main() -> int:
     args = parse_args()
     validate_secret_resource_name(args.api_key_secret)
-    simulation = read_simulation(args.input)
+    simulation = read_note_source(args)
     slices = build_note_slices(simulation.get("segments") or [], max_slices=args.max_slices)
     if not slices:
         raise SystemExit("No caption text available for note generation.")
@@ -112,6 +115,17 @@ def parse_args() -> argparse.Namespace:
         help="Input JS file defining window.SERMON_PLAYBACK_SIMULATION.",
     )
     parser.add_argument(
+        "--srt-input",
+        type=Path,
+        help="Optional SRT caption file to use directly for note generation instead of playback simulation JS.",
+    )
+    parser.add_argument(
+        "--srt-lang",
+        default="zh",
+        choices=["zh", "en"],
+        help="Language of --srt-input captions. Chinese SRT text is used as zh; English SRT text is used as en.",
+    )
+    parser.add_argument(
         "--out-dir",
         type=Path,
         default=Path("artifacts/insights"),
@@ -137,6 +151,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--gcs-dry-run", action="store_true")
     args = parser.parse_args()
     args.input = resolve_repo_path(args.input)
+    args.srt_input = resolve_repo_path(args.srt_input) if args.srt_input else None
     args.out_dir = resolve_repo_path(args.out_dir)
     args.model_output_dir = resolve_repo_path(args.model_output_dir)
     args.manifest = resolve_repo_path(args.manifest) if args.manifest else None
@@ -164,6 +179,81 @@ def read_simulation(path: Path) -> dict[str, Any]:
     if payload.endswith(";"):
         payload = payload[:-1]
     return json.loads(payload)
+
+
+def read_note_source(args: argparse.Namespace) -> dict[str, Any]:
+    if args.srt_input:
+        return read_srt_simulation(args.srt_input, lang=args.srt_lang)
+    return read_simulation(args.input)
+
+
+def read_srt_simulation(path: Path, *, lang: str) -> dict[str, Any]:
+    text = path.read_text(encoding="utf-8-sig")
+    segments = segments_from_srt(text, lang=lang)
+    return {
+        "schemaVersion": 1,
+        "sermonTitle": path.stem,
+        "translationStatus": "ready" if lang == "zh" else "source",
+        "sourceCaptionFormat": "srt",
+        "sourceCaptionPath": safe_display_path(path),
+        "sourceLanguage": lang,
+        "segments": segments,
+    }
+
+
+def segments_from_srt(text: str, *, lang: str) -> list[dict[str, Any]]:
+    blocks = re.split(r"\n\s*\n", text.replace("\r\n", "\n").replace("\r", "\n").strip())
+    segments: list[dict[str, Any]] = []
+    for block in blocks:
+        lines = [line.strip() for line in block.split("\n") if line.strip()]
+        if not lines:
+            continue
+        timestamp_index = next((index for index, line in enumerate(lines) if SRT_TIMESTAMP_RE.match(line)), -1)
+        if timestamp_index < 0:
+            continue
+        match = SRT_TIMESTAMP_RE.match(lines[timestamp_index])
+        if not match:
+            continue
+        caption_text = clean_srt_caption_text(" ".join(lines[timestamp_index + 1 :]))
+        if not caption_text:
+            continue
+        segment = {
+            "id": f"srt-{len(segments) + 1:04d}",
+            "startMs": parse_srt_timestamp(match.group("start")),
+            "endMs": parse_srt_timestamp(match.group("end")),
+            "source": "srt",
+        }
+        if lang == "en":
+            segment["en"] = caption_text
+        else:
+            segment["zh"] = caption_text
+            segment["translationStatus"] = "ready"
+        segments.append(segment)
+    return segments
+
+
+def parse_srt_timestamp(value: str) -> int:
+    hours, minutes, rest = value.replace(",", ".").split(":")
+    seconds, millis = rest.split(".")
+    return (
+        int(hours) * 60 * 60 * 1000
+        + int(minutes) * 60 * 1000
+        + int(seconds) * 1000
+        + int(millis)
+    )
+
+
+def clean_srt_caption_text(text: str) -> str:
+    text = re.sub(r"</?[^>]+>", "", text)
+    text = re.sub(r"\{\\[^}]+\}", "", text)
+    return compact_text(text)
+
+
+def safe_display_path(path: Path) -> str:
+    try:
+        return path.relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        return str(path)
 
 
 def build_note_slices(segments: list[dict[str, Any]], max_slices: int | None = None) -> list[dict[str, Any]]:

@@ -489,6 +489,38 @@ class LiveSourceMonitorTest(unittest.TestCase):
         self.assertTrue(first["shouldNotify"])
         self.assertFalse(second["shouldNotify"])
         self.assertEqual(second["reason"], "already_notified")
+        self.assertEqual(state["lastSelectedSource"]["url"], "https://www.youtube.com/watch?v=MEZHufeQBjc")
+
+    def test_state_persists_generation_request_for_post_live_worker(self):
+        report = {
+            "status": "source_detected",
+            "sunday": "2026-06-28",
+            "checkedAt": "2026-06-27T17:21:00-07:00",
+            "operatorAlert": False,
+            "selectedSource": {
+                "kind": "youtube-streams",
+                "service": "sat530",
+                "state": "was_live",
+                "url": "https://www.youtube.com/watch?v=MEZHufeQBjc",
+                "urlHash": "abc123",
+            },
+            "generationRequest": {
+                "triggerSource": "live-source-monitor",
+                "sunday": "2026-06-28",
+                "liveUrl": "https://www.youtube.com/watch?v=MEZHufeQBjc",
+            },
+        }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            state_path = Path(tmp) / "state.json"
+            mod.write_state(state_path, report, {}, {"shouldNotify": False})
+            state = mod.read_state(state_path)
+
+        self.assertEqual(state["lastStatus"], "source_detected")
+        self.assertEqual(state["lastSelectedSource"]["urlHash"], "abc123")
+        self.assertEqual(state["lastGenerationRequest"]["liveUrl"], "https://www.youtube.com/watch?v=MEZHufeQBjc")
+        self.assertFalse(state["apiKeyMaterialIncluded"])
+        self.assertFalse(state["secretResourceNamesIncluded"])
 
     def test_failed_notification_delivery_does_not_dedupe(self):
         report = {

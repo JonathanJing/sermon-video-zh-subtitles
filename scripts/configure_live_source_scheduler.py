@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Configure Cloud Scheduler to trigger Sunday live-source discovery."""
+"""Configure Cloud Scheduler to trigger live-source discovery or post-live subtitles."""
 
 from __future__ import annotations
 
@@ -50,6 +50,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--location", default="us-west1", help="Cloud Scheduler location.")
     parser.add_argument("--job-id", default=DEFAULT_JOB_ID)
     parser.add_argument("--service-url", required=True, help="Cloud Run service base URL.")
+    parser.add_argument("--action", default="discover-source", choices=["discover-source", "post-live-subtitles"])
     parser.add_argument(
         "--sunday",
         default="current",
@@ -63,6 +64,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--manual-url", action="append", default=[])
     parser.add_argument("--include-candidates", action="store_true")
     parser.add_argument("--no-auto-generate", action="store_true")
+    parser.add_argument("--slug", help="Post-live subtitle artifact slug.")
+    parser.add_argument("--start-time", help="Post-live subtitle sermon start time.")
+    parser.add_argument("--end-time", help="Post-live subtitle sermon end time.")
+    parser.add_argument("--plan-only", action="store_true", help="Ask post-live endpoint to plan without running.")
     parser.add_argument("--attempt-deadline", default="180s")
     parser.add_argument("--internal-task-token-env", default=DEFAULT_TOKEN_ENV)
     parser.add_argument("--apply", action="store_true", help="Run gcloud. Default is a redacted dry run.")
@@ -70,8 +75,8 @@ def parse_args() -> argparse.Namespace:
 
 
 def build_scheduler_plan(args: argparse.Namespace, *, internal_task_token: str) -> SchedulerPlan:
-    endpoint = discover_endpoint(args.service_url, args.sunday)
-    payload = discovery_payload(args)
+    endpoint = admin_endpoint(args.service_url, args.sunday, args.action)
+    payload = scheduler_payload(args)
     message_body = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
     headers = f"Content-Type=application/json,X-Internal-Task-Token={internal_task_token}"
     base = [
@@ -106,7 +111,7 @@ def build_scheduler_plan(args: argparse.Namespace, *, internal_task_token: str) 
         "create",
         *common,
         "--description",
-        "Sunday sermon live-source discovery and offline caption generation handoff.",
+        "Sunday sermon live-source discovery or post-live subtitle generation.",
     ]
     update_command = [*base, "update", *common]
     return SchedulerPlan(
@@ -116,6 +121,12 @@ def build_scheduler_plan(args: argparse.Namespace, *, internal_task_token: str) 
         update_command=update_command,
         create_command=create_command,
     )
+
+
+def scheduler_payload(args: argparse.Namespace) -> dict[str, Any]:
+    if args.action == "post-live-subtitles":
+        return post_live_payload(args)
+    return discovery_payload(args)
 
 
 def discovery_payload(args: argparse.Namespace) -> dict[str, Any]:
@@ -134,9 +145,24 @@ def discovery_payload(args: argparse.Namespace) -> dict[str, Any]:
     return payload
 
 
-def discover_endpoint(service_url: str, sunday: str) -> str:
+def post_live_payload(args: argparse.Namespace) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "triggerSource": "cloud-scheduler",
+    }
+    if args.slug:
+        payload["slug"] = args.slug
+    if args.start_time:
+        payload["startTime"] = args.start_time
+    if args.end_time:
+        payload["endTime"] = args.end_time
+    if args.plan_only:
+        payload["planOnly"] = True
+    return payload
+
+
+def admin_endpoint(service_url: str, sunday: str, action: str) -> str:
     base = service_url.rstrip("/")
-    return f"{base}/api/admin/sundays/{quote(sunday, safe='')}/discover-source"
+    return f"{base}/api/admin/sundays/{quote(sunday, safe='')}/{quote(action, safe='')}"
 
 
 def ensure_scheduler_job(

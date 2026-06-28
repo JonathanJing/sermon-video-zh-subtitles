@@ -15,6 +15,42 @@ SPEC.loader.exec_module(mod)
 
 
 class GenerateNotesWithOpenAITest(unittest.TestCase):
+    def test_parses_chinese_srt_as_note_segments(self):
+        srt = """1
+00:00:01,000 --> 00:00:04,500
+今天我们看见神的怜悯。
+
+2
+00:05:02.250 --> 00:05:08.000
+<i>基督站在我们中间</i>
+成为我们的中保。
+"""
+
+        segments = mod.segments_from_srt(srt, lang="zh")
+        slices = mod.build_note_slices(segments)
+
+        self.assertEqual(len(segments), 2)
+        self.assertEqual(segments[0]["id"], "srt-0001")
+        self.assertEqual(segments[0]["startMs"], 1000)
+        self.assertEqual(segments[1]["startMs"], 302_250)
+        self.assertEqual(segments[1]["endMs"], 308_000)
+        self.assertEqual(segments[1]["zh"], "基督站在我们中间 成为我们的中保。")
+        self.assertEqual(slices[0]["segmentIds"], ["srt-0001", "srt-0002"])
+        self.assertIn("今天我们看见神的怜悯", slices[0]["text"])
+
+    def test_parses_english_srt_as_source_text_for_chinese_notes(self):
+        srt = """1
+00:00:10,000 --> 00:00:14,000
+Jesus is our mediator.
+"""
+
+        segments = mod.segments_from_srt(srt, lang="en")
+        slices = mod.build_note_slices(segments)
+
+        self.assertEqual(segments[0]["en"], "Jesus is our mediator.")
+        self.assertNotIn("zh", segments[0])
+        self.assertEqual(slices[0]["text"], "Jesus is our mediator.")
+
     def test_builds_time_and_char_bounded_note_slices(self):
         long_text = "这是一段很长的证道字幕，用来测试字数兜底。" * 90
         segments = [

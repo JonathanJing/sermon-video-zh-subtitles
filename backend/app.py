@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import mimetypes
+import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from types import SimpleNamespace
@@ -34,6 +35,7 @@ from .scripture import ScriptureNotFoundError, ScriptureService
 from .storage import GcsArtifactReader
 from .worker import build_generation_plan, parse_generation_request
 from scripts import live_source_monitor
+from scripts import run_post_live_subtitle_generation
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -221,6 +223,9 @@ class ApiHandler(BaseHTTPRequestHandler):
             if parts[:3] == ["api", "admin", "sundays"] and len(parts) == 5 and parts[4] == "discover-source":
                 self.handle_live_source_discovery(parts[3])
                 return
+            if parts[:3] == ["api", "admin", "sundays"] and len(parts) == 5 and parts[4] == "post-live-subtitles":
+                self.handle_post_live_subtitles(parts[3])
+                return
             if parts[:3] == ["api", "admin", "sundays"] and len(parts) == 5 and parts[4] == "generate":
                 if not self.authorized():
                     self.write_json({"error": "unauthorized"}, status=401)
@@ -373,6 +378,115 @@ class ApiHandler(BaseHTTPRequestHandler):
             self.write_json({"error": "not_found"}, status=404)
         except Exception as exc:
             self.write_json({"error": str(exc)}, status=400)
+
+    def handle_post_live_subtitles(self, sunday: str) -> None:
+        if not self.authorized():
+            self.write_json({"error": "unauthorized"}, status=401)
+            return
+        sunday = self.resolve_admin_sunday(sunday)
+        payload = self.read_json_body()
+        command = self.post_live_subtitle_command(payload, sunday)
+        source = trigger_source(self.headers, payload)
+        log_event(
+            "post_live_subtitle_generation_triggered",
+            component="api",
+            sunday=sunday,
+            triggerSource=source,
+            schedulerJob=scheduler_job(self.headers),
+            inlineWorker=self.config.enable_inline_worker,
+        )
+        if not self.config.enable_inline_worker:
+            self.write_json(
+                {
+                    "status": "planned",
+                    "message": "Inline worker disabled; run the returned command from a Cloud Run Job or enable ENABLE_INLINE_WORKER=1.",
+                    "command": command,
+                    "apiKeyMaterialIncluded": False,
+                    "secretResourceNamesIncluded": "--api-key-secret" in command,
+                },
+                status=202,
+            )
+            return
+        import subprocess
+
+        completed = subprocess.run(command, check=True, capture_output=True, text=True)
+        self.write_json(
+            {
+                "status": "completed",
+                "command": command,
+                "stdout": completed.stdout,
+                "stderr": completed.stderr,
+                "apiKeyMaterialIncluded": False,
+                "secretResourceNamesIncluded": "--api-key-secret" in command,
+            },
+            status=201,
+        )
+
+    def post_live_subtitle_command(self, payload: dict, sunday: str) -> list[str]:
+        state_file = (
+            payload.get("stateFile")
+            or payload.get("state_file")
+            or self.config.live_source_monitor_state_uri
+            or str(Path(self.config.live_source_monitor_state_dir) / "backend-state.json")
+        )
+        out_path = payload.get("out") or f"/tmp/sermon-post-live-subtitles/{sunday}/report.json"
+        work_root = payload.get("workRoot") or payload.get("work_root") or "/tmp/sermon-post-live-subtitles"
+        command = [
+            sys.executable,
+            str(run_post_live_subtitle_generation.REPO_ROOT / "scripts" / "run_post_live_subtitle_generation.py"),
+            "--sunday",
+            sunday,
+            "--state-file",
+            str(state_file),
+            "--out",
+            str(out_path),
+            "--work-root",
+            str(work_root),
+        ]
+        optional_pairs = [
+            ("slug", "--slug"),
+            ("startTime", "--start-time"),
+            ("start_time", "--start-time"),
+            ("endTime", "--end-time"),
+            ("end_time", "--end-time"),
+            ("glossary", "--glossary"),
+            ("zhModel", "--zh-model"),
+            ("zh_model", "--zh-model"),
+            ("enCorrectionModel", "--en-correction-model"),
+            ("en_correction_model", "--en-correction-model"),
+            ("gpt4oModel", "--gpt4o-model"),
+            ("gpt4o_model", "--gpt4o-model"),
+            ("timingModel", "--timing-model"),
+            ("timing_model", "--timing-model"),
+            ("audioFormat", "--audio-format"),
+            ("audio_format", "--audio-format"),
+            ("metadataJson", "--metadata-json"),
+            ("metadata_json", "--metadata-json"),
+        ]
+        seen_flags = set()
+        for key, flag in optional_pairs:
+            if flag in seen_flags:
+                continue
+            value = payload.get(key)
+            if value:
+                command.extend([flag, str(value)])
+                seen_flags.add(flag)
+        api_key_secret = payload.get("apiKeySecret") or payload.get("api_key_secret") or self.config.openai_api_key_secret
+        if api_key_secret:
+            command.extend(["--api-key-secret", str(api_key_secret)])
+        bucket = payload.get("gcsBucket") or payload.get("gcs_bucket") or self.config.artifact_bucket
+        if bucket:
+            command.extend(["--gcs-bucket", str(bucket)])
+        gcs_prefix = payload.get("gcsPrefix") or payload.get("gcs_prefix") or self.config.artifact_prefix
+        if gcs_prefix:
+            command.extend(["--gcs-prefix", str(gcs_prefix)])
+        if payload.get("planOnly") or payload.get("plan_only"):
+            command.append("--plan-only")
+        if payload.get("dryRun") or payload.get("dry_run"):
+            command.append("--dry-run")
+        if payload.get("allowNonPostLive") or payload.get("allow_non_post_live"):
+            command.append("--allow-non-post-live")
+        return command
 
     def handle_live_source_discovery(self, sunday: str) -> None:
         if not self.authorized():

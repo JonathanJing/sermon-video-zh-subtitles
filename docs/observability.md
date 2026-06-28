@@ -51,6 +51,49 @@ sermon-sat-530-source-discovery  */2 17 * * SAT     service=sat530  operatorAler
 
 When `OPERATOR_NOTIFY_WEBHOOK_URL` is configured, `discover-source` sends one operator notification when a new live URL is first detected, or when `operatorAlertTime` arrives without a usable source. Notification state dedupes messages so a two-minute Scheduler cadence does not repeat the same result. The default state path is local `/tmp`; production should set `LIVE_SOURCE_MONITOR_STATE_URI=gs://.../backend-state.json` for durable cross-instance dedupe.
 
+Post-live offline SRT/VTT generation uses the same state object. The follow-up job should call:
+
+```text
+POST /api/admin/sundays/upcoming/post-live-subtitles
+```
+
+The recommended Scheduler window checks every 10 minutes on Saturday evening. It waits until YouTube metadata becomes `post_live` / `was_live`, then downloads archived audio and runs `scripts/sermon_pipeline.py`:
+
+```text
+sermon-sat-post-live-subtitles  */10 18-23 * * SAT  action=post-live-subtitles
+```
+
+Dry-run configuration example:
+
+```bash
+python3 scripts/configure_live_source_scheduler.py \
+  --project ai-for-god \
+  --location us-west1 \
+  --service-url 'https://sermon-zh-caption-web-...' \
+  --job-id sermon-sat-post-live-subtitles \
+  --action post-live-subtitles \
+  --sunday upcoming \
+  --schedule '*/10 18-23 * * SAT' \
+  --timezone America/Los_Angeles \
+  --slug mariners_<youtube_video_id> \
+  --start-time 00:22:10 \
+  --end-time 00:55:36
+```
+
+If `ENABLE_INLINE_WORKER` is disabled, this endpoint only returns the planned command; for production long-running work, prefer putting that command in a Cloud Run Job. Manual run shape:
+
+```bash
+python3 scripts/run_post_live_subtitle_generation.py \
+  --sunday YYYY-MM-DD \
+  --state-file 'gs://sermon-zh-artifacts-ai-for-god/sundays/live-source-monitor/backend-state.json' \
+  --slug mariners_<youtube_video_id> \
+  --start-time 00:22:10 \
+  --end-time 00:55:36 \
+  --api-key-secret 'projects/ai-for-god/secrets/openai-api-key/versions/latest' \
+  --gcs-bucket sermon-zh-artifacts-ai-for-god \
+  --gcs-prefix sundays
+```
+
 ## Cloud Logging Queries
 
 Live capture trigger:
@@ -66,6 +109,14 @@ Live-source discovery:
 ```text
 resource.type="cloud_run_revision"
 jsonPayload.event="live_source_monitor_completed"
+jsonPayload.sunday="2026-06-28"
+```
+
+Post-live subtitle generation check:
+
+```text
+resource.type=("cloud_run_revision" OR "cloud_run_job")
+jsonPayload.event="post_live_subtitle_generation_checked"
 jsonPayload.sunday="2026-06-28"
 ```
 

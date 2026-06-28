@@ -243,6 +243,65 @@ Moses and Aaron stood before the people.
             ["Numbers 16", "Romans 8"],
         )
 
+    def test_detects_adjacent_chapters_for_same_book_reference(self):
+        refs = mod.detect_references("Today we are in Numbers chapter 13 and 14.")
+
+        self.assertEqual(
+            [ref["canonicalRef"] for ref in refs],
+            ["Numbers 13", "Numbers 14"],
+        )
+
+    def test_scripture_display_scope_prefers_current_sermon_anchor(self):
+        segments = [
+            {
+                "id": "disp_0001",
+                "en": "Last week we were in Numbers 12.",
+                "ref": "Numbers 12",
+                "refs": mod.detect_references("Numbers 12"),
+            },
+            {
+                "id": "disp_0002",
+                "en": "Today we are in Numbers chapter 13 and 14.",
+                "ref": "Numbers 13",
+                "refs": mod.detect_references("Numbers chapter 13 and 14"),
+            },
+            {
+                "id": "disp_0003",
+                "en": "Paul says something similar in Romans 8.",
+                "ref": "Romans 8",
+                "refs": mod.detect_references("Romans 8"),
+            },
+        ]
+
+        refs = mod.select_scripture_display_references(segments, "")
+
+        self.assertEqual(
+            [ref["canonicalRef"] for ref in refs],
+            ["Numbers 13", "Numbers 14"],
+        )
+
+    def test_scripture_scope_removes_previous_and_cross_reference_segments(self):
+        segments = [
+            {
+                "id": "disp_0001",
+                "ref": "Numbers 12",
+                "refs": mod.detect_references("Numbers 12"),
+            },
+            {
+                "id": "disp_0002",
+                "ref": "Numbers 13",
+                "refs": mod.detect_references("Numbers 13"),
+            },
+        ]
+        display_refs = mod.detect_references("Numbers 13")
+
+        mod.apply_scripture_scope(segments, display_refs)
+
+        self.assertEqual(segments[0]["ref"], "")
+        self.assertEqual(segments[0]["refs"], [])
+        self.assertEqual(segments[1]["ref"], "Numbers 13")
+        self.assertEqual([ref["canonicalRef"] for ref in segments[1]["refs"]], ["Numbers 13"])
+
 
 if __name__ == "__main__":
     unittest.main()
