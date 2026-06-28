@@ -30,6 +30,8 @@ DEFAULT_MARINERS_ONLINE_URL = "https://www.marinerschurch.org/irvine/"
 DEFAULT_YOUTUBE_STREAMS_URL = "https://www.youtube.com/@marinerschurch/streams"
 USABLE_STATES = {"live", "upcoming", "was_live", "available", "manual_available"}
 SERVICE_ORDER = ["830", "1000", "manual"]
+SATURDAY_SERVICE_ORDER = ["sat400", "sat530", "manual"]
+NOTIFIABLE_STATUSES = {"source_detected", "fallback"}
 
 
 @dataclass(frozen=True)
@@ -63,9 +65,15 @@ class SourceCandidate:
 
 def main() -> int:
     args = parse_args()
+    previous_state = read_state(args.state_file)
     report = run_monitor(args)
     if args.post_generate:
         report["generationPost"] = post_generation_request(report, args)
+    notification = build_notification(report, previous_state)
+    if notification["shouldNotify"] and args.notify_webhook_url:
+        notification["delivery"] = send_webhook_notification(args.notify_webhook_url, notification)
+    report["notification"] = notification
+    write_state(args.state_file, report, previous_state, notification)
     out = resolve_repo_path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
@@ -89,8 +97,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--service",
         default="auto",
-        choices=["auto", "830", "1000"],
-        help="Which service window to evaluate. auto checks 8:30 then 10:00.",
+        choices=["auto", "830", "1000", "sat-auto", "sat400", "sat530"],
+        help="Which service window to evaluate. auto checks Sunday 8:30 then 10:00; sat-auto checks Saturday 4:00 then 5:30.",
     )
     parser.add_argument("--expected-title", help="Expected sermon title for same-sermon confidence.")
     parser.add_argument("--manual-url", action="append", default=[], help="Authorized/manual source URL fallback.")
@@ -98,6 +106,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--youtube-streams-url", default=DEFAULT_YOUTUBE_STREAMS_URL)
     parser.add_argument("--fixture-json", type=Path, help="Offline fixture containing source candidates.")
     parser.add_argument("--out", type=Path, default=Path("artifacts/live-source-monitor/report.json"))
+    parser.add_argument("--state-file", type=Path, default=Path("artifacts/live-source-monitor/state.json"))
+    parser.add_argument("--notify-webhook-url", help="Operator notification webhook URL. Use env or secrets in production.")
     parser.add_argument("--timezone", default=DEFAULT_TIMEZONE)
     parser.add_argument("--now", help="Override current time, ISO-8601.")
     parser.add_argument("--min-confidence", type=float, default=0.70)
@@ -202,36 +212,28 @@ def candidates_from_fixture(fixture: dict[str, Any], expected_title: str | None)
 
 def fetch_default_candidates(args: argparse.Namespace) -> list[SourceCandidate]:
     fetcher = default_fetcher
-    return [
-        fetch_candidate(
-            kind="mariners-online",
-            service="830",
-            url=args.mariners_online_url,
-            expected_title=args.expected_title,
-            fetcher=fetcher,
-        ),
-        fetch_candidate(
-            kind="youtube-streams",
-            service="830",
-            url=args.youtube_streams_url,
-            expected_title=args.expected_title,
-            fetcher=fetcher,
-        ),
-        fetch_candidate(
-            kind="mariners-online",
-            service="1000",
-            url=args.mariners_online_url,
-            expected_title=args.expected_title,
-            fetcher=fetcher,
-        ),
-        fetch_candidate(
-            kind="youtube-streams",
-            service="1000",
-            url=args.youtube_streams_url,
-            expected_title=args.expected_title,
-            fetcher=fetcher,
-        ),
-    ]
+    services = SATURDAY_SERVICE_ORDER[:2] if str(args.service).startswith("sat") else ["830", "1000"]
+    candidates: list[SourceCandidate] = []
+    for service in services:
+        candidates.extend(
+            [
+                fetch_candidate(
+                    kind="mariners-online",
+                    service=service,
+                    url=args.mariners_online_url,
+                    expected_title=args.expected_title,
+                    fetcher=fetcher,
+                ),
+                fetch_candidate(
+                    kind="youtube-streams",
+                    service=service,
+                    url=args.youtube_streams_url,
+                    expected_title=args.expected_title,
+                    fetcher=fetcher,
+                ),
+            ]
+        )
+    return candidates
 
 
 def fetch_candidate(
@@ -255,10 +257,11 @@ def fetch_candidate(
         )
     title = extract_title(html) or kind
     state = infer_state(html)
+    candidate_url = extracted_youtube_watch_url(html) if kind == "youtube-streams" else None
     return SourceCandidate(
         kind=kind,
         service=service,
-        url=url,
+        url=candidate_url or url,
         state=state,
         title=title,
         same_sermon_confidence=score_same_sermon(title, expected_title),
@@ -272,7 +275,12 @@ def choose_source(
     service: str,
     min_confidence: float,
 ) -> SourceCandidate | None:
-    order = [service] if service in {"830", "1000"} else SERVICE_ORDER
+    if service in {"830", "1000", "sat400", "sat530"}:
+        order = [service]
+    elif service in {"sat-auto", "saturday"}:
+        order = SATURDAY_SERVICE_ORDER
+    else:
+        order = SERVICE_ORDER
     for service_id in order:
         matching = [
             candidate
@@ -312,14 +320,16 @@ def should_alert_operator(
 
 def fallback_reason_for(selected: SourceCandidate | None, operator_alert: bool) -> str | None:
     if selected:
+        if selected.service == "sat530":
+            return "4:00 Saturday source missing or not confirmed; using 5:30 Saturday fallback."
         if selected.service == "1000":
             return "8:30 source missing or not confirmed; using 10:00 fallback."
         if selected.service == "manual":
             return "Automatic live source missing or not confirmed; using operator-provided source."
         return None
     if operator_alert:
-        return "No usable 8:30/10:00 source by alert deadline; prepare iPad mic or authorized audio fallback."
-    return "No usable 8:30/10:00 source found yet."
+        return "No usable scheduled source by alert deadline; prepare iPad mic or authorized audio fallback."
+    return "No usable scheduled source found yet."
 
 
 def operator_audio_candidate(sunday: str, checked_at: str, reason: str | None) -> SourceCandidate:
@@ -423,6 +433,18 @@ def extract_title(html: str) -> str | None:
     return None
 
 
+def extracted_youtube_watch_url(html: str) -> str | None:
+    patterns = [
+        r"watch\?v=([A-Za-z0-9_-]{11})",
+        r'"videoId"\s*:\s*"([A-Za-z0-9_-]{11})"',
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, html)
+        if match:
+            return f"https://www.youtube.com/watch?v={match.group(1)}"
+    return None
+
+
 def infer_state(html: str) -> str:
     lower = html.lower()
     if any(token in lower for token in ["live now", "watch live", "is live", "\"is_live\":true"]):
@@ -456,9 +478,126 @@ def normalize_service(value: Any) -> str:
         "1000": "1000",
         "10:00": "1000",
         "10 00": "1000",
+        "sat4": "sat400",
+        "sat400": "sat400",
+        "saturday400": "sat400",
+        "saturday4": "sat400",
+        "sat530": "sat530",
+        "saturday530": "sat530",
+        "saturday5:30": "sat530",
+        "saturday530pm": "sat530",
+        "sat-auto": "sat-auto",
+        "saturday": "sat-auto",
         "manual": "manual",
     }
     return aliases.get(text, text or "manual")
+
+
+def read_state(path: Path | None) -> dict[str, Any]:
+    if not path:
+        return {}
+    resolved = resolve_repo_path(path)
+    if not resolved.exists():
+        return {}
+    try:
+        data = json.loads(resolved.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def write_state(
+    path: Path | None,
+    report: dict[str, Any],
+    previous_state: dict[str, Any],
+    notification: dict[str, Any],
+) -> None:
+    if not path:
+        return
+    resolved = resolve_repo_path(path)
+    notifications = previous_state.get("notifications")
+    if not isinstance(notifications, dict):
+        notifications = {}
+    if notification.get("shouldNotify") and notification.get("dedupeKey"):
+        notifications[str(notification["dedupeKey"])] = report.get("checkedAt")
+    state = {
+        "schemaVersion": 1,
+        "updatedAt": report.get("checkedAt"),
+        "lastStatus": report.get("status"),
+        "lastSunday": report.get("sunday"),
+        "lastSelectedUrlHash": (report.get("selectedSource") or {}).get("urlHash"),
+        "lastOperatorAlert": report.get("operatorAlert"),
+        "notifications": notifications,
+    }
+    resolved.parent.mkdir(parents=True, exist_ok=True)
+    resolved.write_text(json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
+
+
+def build_notification(report: dict[str, Any], previous_state: dict[str, Any]) -> dict[str, Any]:
+    status = str(report.get("status") or "")
+    source = report.get("selectedSource") if isinstance(report.get("selectedSource"), dict) else {}
+    url_hash = source.get("urlHash")
+    service = source.get("service") or "unknown"
+    if status not in NOTIFIABLE_STATUSES:
+        return {"shouldNotify": False, "reason": "status_not_notifiable"}
+    if status == "source_detected" and url_hash:
+        dedupe_key = f"source_detected:{report.get('sunday')}:{url_hash}"
+        title = "已捕获直播链接"
+    elif status == "fallback" and report.get("operatorAlert"):
+        dedupe_key = f"fallback:{report.get('sunday')}:{service}"
+        title = "直播链接捕获失败，需要人工接管"
+    else:
+        return {"shouldNotify": False, "reason": "waiting_for_alert_deadline"}
+    notifications = previous_state.get("notifications") if isinstance(previous_state, dict) else {}
+    already_sent = isinstance(notifications, dict) and dedupe_key in notifications
+    return {
+        "shouldNotify": not already_sent,
+        "reason": "already_notified" if already_sent else "new_state",
+        "dedupeKey": dedupe_key,
+        "title": title,
+        "message": notification_message(title, report),
+        "apiKeyMaterialIncluded": False,
+        "secretResourceNamesIncluded": False,
+    }
+
+
+def notification_message(title: str, report: dict[str, Any]) -> str:
+    source = report.get("selectedSource") if isinstance(report.get("selectedSource"), dict) else {}
+    url = source.get("url") or "(no URL)"
+    return "\n".join(
+        [
+            title,
+            f"Sunday: {report.get('sunday')}",
+            f"Service: {source.get('service')}",
+            f"Status: {report.get('status')}",
+            f"Source: {source.get('kind')} / {source.get('state')}",
+            f"URL: {url}",
+            f"Checked: {report.get('checkedAt')}",
+            f"Next: {report.get('fallbackReason') or '已可进入字幕/翻译链路'}",
+        ]
+    )
+
+
+def send_webhook_notification(webhook_url: str, notification: dict[str, Any]) -> dict[str, Any]:
+    if not webhook_url.startswith(("https://", "http://")):
+        return {"status": "skipped", "reason": "invalid_webhook_url"}
+    body = json.dumps(
+        {
+            "content": notification.get("message"),
+            "text": notification.get("message"),
+        },
+        ensure_ascii=False,
+    ).encode("utf-8")
+    request = Request(webhook_url, data=body, headers={"Content-Type": "application/json"}, method="POST")
+    try:
+        with urlopen(request, timeout=15) as response:
+            response.read()
+            return {"status": "posted", "statusCode": response.status, "authMaterialIncluded": False}
+    except HTTPError as exc:
+        exc.read()
+        return {"status": "failed", "statusCode": exc.code, "authMaterialIncluded": False}
+    except Exception as exc:
+        return {"status": "failed", "error": str(exc)[:160], "authMaterialIncluded": False}
 
 
 def clamp_confidence(value: Any) -> float:

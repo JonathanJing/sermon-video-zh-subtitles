@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -11,12 +12,14 @@ from .cloud import read_gcs_text, write_gcs_text
 
 VALID_MODES = {"idle", "live", "paused", "ended"}
 VALID_ACTIONS = {"start", "pause", "resume", "adjustOffset", "jumpToSegment", "end"}
+GCS_READ_CACHE_TTL_SECONDS = 2.0
 
 
 class LivePlaybackStore:
     def __init__(self, root: Path, gcs_prefix: str | None = None) -> None:
         self.root = root
         self.gcs_prefix = normalize_gcs_prefix(gcs_prefix)
+        self._gcs_cache: dict[str, tuple[float, dict[str, Any] | None]] = {}
 
     def status(self, sunday: str) -> dict[str, Any]:
         state = self.read_state(sunday) or empty_state(sunday)
@@ -124,17 +127,26 @@ class LivePlaybackStore:
     def read_gcs_state(self, sunday: str) -> dict[str, Any] | None:
         if not self.gcs_prefix:
             return None
+        cache_key = safe_component(sunday)
+        cached = self._gcs_cache.get(cache_key)
+        now = time.monotonic()
+        if cached and now - cached[0] < GCS_READ_CACHE_TTL_SECONDS:
+            return cached[1]
         try:
             data = json.loads(read_gcs_text(self.gcs_uri(sunday)))
         except Exception:
+            self._gcs_cache[cache_key] = (now, None)
             return None
-        return sanitize_state(data) if isinstance(data, dict) else None
+        state = sanitize_state(data) if isinstance(data, dict) else None
+        self._gcs_cache[cache_key] = (now, state)
+        return state
 
     def write_state(self, sunday: str, state: dict[str, Any]) -> None:
         clean = sanitize_state(state)
         path = self.path_for(sunday)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(clean, ensure_ascii=False, sort_keys=True, indent=2), encoding="utf-8")
+        self._gcs_cache[safe_component(sunday)] = (time.monotonic(), clean)
         if self.gcs_prefix:
             try:
                 write_gcs_text(self.gcs_uri(sunday), path.read_text(encoding="utf-8"))

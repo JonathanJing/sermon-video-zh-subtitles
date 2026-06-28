@@ -6,6 +6,7 @@ from pathlib import Path
 
 from backend.app import ApiHandler, WEB_ROOT
 from backend.config import AppConfig
+import backend.live_playback as live_playback_mod
 from backend.live_playback import LivePlaybackStore, playhead_at
 from backend.progress import GenerationProgressStore
 from backend.realtime import RealtimeSessionStore
@@ -232,6 +233,36 @@ class BackendAppTest(unittest.TestCase):
             self.assertNotIn("神爱世人", text)
             self.assertNotIn("secret-token", text)
             self.assertEqual(captured["payload"]["source"]["artifactKey"], "playback-js")
+
+    def test_live_playback_gcs_reads_are_cached_briefly(self):
+        calls = []
+        original_read_gcs_text = live_playback_mod.read_gcs_text
+        try:
+            live_playback_mod.read_gcs_text = lambda uri: calls.append(uri) or json.dumps(
+                {
+                    "schemaVersion": 1,
+                    "mode": "live",
+                    "sunday": "2026-06-28",
+                    "startedAt": "2026-06-28T18:00:00+00:00",
+                    "pausedAt": None,
+                    "baseCaptionMs": 1000,
+                    "offsetMs": 0,
+                    "currentSegmentId": "seg-1",
+                    "updatedAt": "2026-06-28T18:00:00+00:00",
+                    "version": 1,
+                    "source": {"sunday": "2026-06-28", "artifactKey": "playback-js"},
+                }
+            )
+            with tempfile.TemporaryDirectory() as tmp:
+                store = LivePlaybackStore(Path(tmp), gcs_prefix="gs://bucket/live-playback")
+                first = store.status("2026-06-28")
+                second = store.status("2026-06-28")
+
+            self.assertEqual(first["mode"], "live")
+            self.assertEqual(second["mode"], "live")
+            self.assertEqual(len(calls), 1)
+        finally:
+            live_playback_mod.read_gcs_text = original_read_gcs_text
 
     def test_local_realtime_session_create_returns_event_token_without_client_secret(self):
         handler = object.__new__(ApiHandler)

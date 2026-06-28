@@ -164,6 +164,7 @@
     adminProgress: null,
     livePlayback: null,
     livePlaybackFetchedAt: null,
+    livePlaybackAppliedMode: "",
     testRun: null,
     micStream: null,
     recognition: null,
@@ -280,7 +281,7 @@
     updateSourceCards("idle");
     updateTimeline();
     loadPublicPublishedSnapshot();
-    loadCloudRunDatePlayback(state.viewMode === "admin" ? state.adminSettings.sunday : "");
+    loadCloudRunDatePlayback(state.viewMode === "admin" ? state.adminSettings.sunday : (targetDateFromRoute() || "current"));
     startLivePlaybackPolling();
     if (state.viewMode === "admin") {
       refreshAdminStatus();
@@ -766,7 +767,16 @@
   }
 
   function applyLivePlaybackState(playback) {
-    if (!playback || !["live", "paused"].includes(playback.mode) || !state.playbackSegments.length) return;
+    if (!playback) return;
+    const previousMode = state.livePlaybackAppliedMode;
+    state.livePlaybackAppliedMode = playback.mode;
+    if (["idle", "ended"].includes(playback.mode)) {
+      if (["live", "paused"].includes(previousMode) && state.playbackSegments.length) {
+        loadPublicPublishedSnapshot();
+      }
+      return;
+    }
+    if (!["live", "paused"].includes(playback.mode) || !state.playbackSegments.length) return;
     if (!state.segments.length || state.segments.length !== state.playbackSegments.length) {
       state.segments = state.playbackSegments.map((segment) => ({ ...segment }));
     }

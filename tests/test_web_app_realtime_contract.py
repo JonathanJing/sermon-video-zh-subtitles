@@ -118,11 +118,15 @@ class WebAppRealtimeContractTest(unittest.TestCase):
         app_js = self.app_js
 
         self.assertIn("function startLivePlaybackPolling()", app_js)
+        self.assertIn('loadCloudRunDatePlayback(state.viewMode === "admin" ? state.adminSettings.sunday : (targetDateFromRoute() || "current"))', app_js)
         self.assertIn('fetch(`/api/sundays/${encodeURIComponent(sunday)}/live-playback`', app_js)
         self.assertIn("function livePlaybackPlayheadMs(playback)", app_js)
         self.assertIn("segmentForPlayhead(playheadMs)", app_js)
         self.assertIn('["live", "paused"].includes(playback.mode)', app_js)
+        self.assertIn('["idle", "ended"].includes(playback.mode)', app_js)
+        self.assertIn("loadPublicPublishedSnapshot();", app_js)
         self.assertIn("state.livePlaybackFetchedAt", app_js)
+        self.assertIn("state.livePlaybackAppliedMode", app_js)
 
     def test_admin_posts_live_playback_actions(self):
         app_js = self.app_js
