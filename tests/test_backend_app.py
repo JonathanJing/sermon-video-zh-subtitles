@@ -162,6 +162,43 @@ class BackendAppTest(unittest.TestCase):
         self.assertEqual(command[command.index("--gcs-bucket") + 1], "sermon-zh-artifacts-ai-for-god")
         self.assertIn("--plan-only", command)
 
+    def test_post_live_timeline_command_uses_full_audio_and_requires_review(self):
+        handler = object.__new__(ApiHandler)
+        handler.config = AppConfig(
+            artifact_bucket="sermon-zh-artifacts-ai-for-god",
+            artifact_prefix="sundays",
+            current_manifest_uri=None,
+            sunday_manifest_uri_template=None,
+            timezone="America/Los_Angeles",
+            openai_api_key_secret="projects/ai-for-god/secrets/openai-api-key/versions/latest",
+            operator_admin_token="secret-token",
+            internal_task_token=None,
+            enable_inline_worker=False,
+            live_source_monitor_state_uri="gs://sermon-zh-artifacts-ai-for-god/sundays/live-source-monitor/backend-state.json",
+        )
+
+        command = ApiHandler.post_live_timeline_command(
+            handler,
+            {
+                "slug": "0D6yZW4_uEA",
+                "input": "/tmp/sermon-post-live-subtitles/2026-07-05/0D6yZW4_uEA/download/source_audio.m4a",
+                "chunkSeconds": 120,
+                "timelineModel": "gpt-4o-transcribe",
+            },
+            "2026-07-05",
+        )
+
+        self.assertIn("build_post_live_timeline.py", command[1])
+        self.assertEqual(
+            command[command.index("--input") + 1],
+            "/tmp/sermon-post-live-subtitles/2026-07-05/0D6yZW4_uEA/download/source_audio.m4a",
+        )
+        self.assertEqual(command[command.index("--chunk-seconds") + 1], "120")
+        self.assertEqual(command[command.index("--model") + 1], "gpt-4o-transcribe")
+        self.assertEqual(command[command.index("--api-key-secret") + 1], "projects/ai-for-god/secrets/openai-api-key/versions/latest")
+        self.assertNotIn("--start-time", command)
+        self.assertNotIn("--end-time", command)
+
     def test_post_live_subtitles_endpoint_plans_when_inline_disabled(self):
         class FakeService:
             def _resolve_sunday(self, sunday):
@@ -190,9 +227,41 @@ class BackendAppTest(unittest.TestCase):
 
         self.assertEqual(captured["status"], 202)
         self.assertEqual(captured["payload"]["status"], "planned")
+        self.assertEqual(captured["payload"]["mode"], "generate-reviewed")
         self.assertIn("run_post_live_subtitle_generation.py", captured["payload"]["command"][1])
         self.assertFalse(captured["payload"]["apiKeyMaterialIncluded"])
         self.assertTrue(captured["payload"]["secretResourceNamesIncluded"])
+
+    def test_post_live_subtitles_endpoint_can_plan_timeline_probe(self):
+        class FakeService:
+            def _resolve_sunday(self, sunday):
+                return "2026-07-05" if sunday == "upcoming" else sunday
+
+        handler = object.__new__(ApiHandler)
+        handler.headers = {"X-Internal-Task-Token": "task-token"}
+        handler.config = AppConfig(
+            artifact_bucket="sermon-zh-artifacts-ai-for-god",
+            artifact_prefix="sundays",
+            current_manifest_uri=None,
+            sunday_manifest_uri_template=None,
+            timezone="America/Los_Angeles",
+            openai_api_key_secret="projects/ai-for-god/secrets/openai-api-key/versions/latest",
+            operator_admin_token=None,
+            internal_task_token="task-token",
+            enable_inline_worker=False,
+            live_source_monitor_state_uri="gs://sermon-zh-artifacts-ai-for-god/sundays/live-source-monitor/backend-state.json",
+        )
+        handler.service = FakeService()
+        handler.read_json_body = lambda: {"mode": "timeline-probe", "slug": "0D6yZW4_uEA"}
+        captured = {}
+        handler.write_json = lambda payload, status=200: captured.update({"payload": payload, "status": status})
+
+        ApiHandler.handle_post_live_subtitles(handler, "upcoming")
+
+        self.assertEqual(captured["status"], 202)
+        self.assertEqual(captured["payload"]["status"], "planned")
+        self.assertEqual(captured["payload"]["mode"], "timeline-probe")
+        self.assertIn("build_post_live_timeline.py", captured["payload"]["command"][1])
 
     def test_live_playback_admin_write_requires_auth(self):
         class FakeService:

@@ -50,7 +50,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--location", default="us-west1", help="Cloud Scheduler location.")
     parser.add_argument("--job-id", default=DEFAULT_JOB_ID)
     parser.add_argument("--service-url", required=True, help="Cloud Run service base URL.")
-    parser.add_argument("--action", default="discover-source", choices=["discover-source", "post-live-subtitles"])
+    parser.add_argument(
+        "--action",
+        default="discover-source",
+        choices=["discover-source", "post-live-subtitles", "post-live-timeline"],
+    )
     parser.add_argument(
         "--sunday",
         default="current",
@@ -65,6 +69,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--include-candidates", action="store_true")
     parser.add_argument("--no-auto-generate", action="store_true")
     parser.add_argument("--slug", help="Post-live subtitle artifact slug.")
+    parser.add_argument("--input", help="Full downloaded audio path for post-live timeline probing.")
+    parser.add_argument("--chunk-seconds", type=float, help="Timeline probe chunk seconds.")
+    parser.add_argument("--timeline-model", help="Timeline probe ASR model.")
     parser.add_argument("--start-time", help="Post-live subtitle sermon start time.")
     parser.add_argument("--end-time", help="Post-live subtitle sermon end time.")
     parser.add_argument("--plan-only", action="store_true", help="Ask post-live endpoint to plan without running.")
@@ -124,6 +131,8 @@ def build_scheduler_plan(args: argparse.Namespace, *, internal_task_token: str) 
 
 
 def scheduler_payload(args: argparse.Namespace) -> dict[str, Any]:
+    if args.action == "post-live-timeline":
+        return post_live_timeline_payload(args)
     if args.action == "post-live-subtitles":
         return post_live_payload(args)
     return discovery_payload(args)
@@ -148,6 +157,7 @@ def discovery_payload(args: argparse.Namespace) -> dict[str, Any]:
 def post_live_payload(args: argparse.Namespace) -> dict[str, Any]:
     payload: dict[str, Any] = {
         "triggerSource": "cloud-scheduler",
+        "mode": "generate-reviewed",
     }
     if args.slug:
         payload["slug"] = args.slug
@@ -160,9 +170,26 @@ def post_live_payload(args: argparse.Namespace) -> dict[str, Any]:
     return payload
 
 
+def post_live_timeline_payload(args: argparse.Namespace) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "triggerSource": "cloud-scheduler",
+        "mode": "timeline-probe",
+    }
+    if args.slug:
+        payload["slug"] = args.slug
+    if args.input:
+        payload["input"] = args.input
+    if args.chunk_seconds:
+        payload["chunkSeconds"] = args.chunk_seconds
+    if args.timeline_model:
+        payload["timelineModel"] = args.timeline_model
+    return payload
+
+
 def admin_endpoint(service_url: str, sunday: str, action: str) -> str:
     base = service_url.rstrip("/")
-    return f"{base}/api/admin/sundays/{quote(sunday, safe='')}/{quote(action, safe='')}"
+    endpoint_action = "post-live-subtitles" if action == "post-live-timeline" else action
+    return f"{base}/api/admin/sundays/{quote(sunday, safe='')}/{quote(endpoint_action, safe='')}"
 
 
 def ensure_scheduler_job(

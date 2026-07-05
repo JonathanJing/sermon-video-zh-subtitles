@@ -15,10 +15,10 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[1]
 JS_PREFIX = "window.SERMON_PLAYBACK_SIMULATION = "
 EXPECTED_MODELS = {
-    "realtimeDraft": "gpt-realtime-translate",
-    "offlineAsr": "gpt-4o-transcribe",
-    "offlineTranslation": "gpt-5.4-mini",
-    "stableCorrection": "gpt-5.4-mini",
+    "realtimeDraft": {"gpt-realtime-translate"},
+    "offlineAsr": {"gpt-4o-transcribe"},
+    "offlineTranslation": {"gpt-5.4-mini", "gpt-5.5"},
+    "stableCorrection": {"gpt-5.4-mini"},
 }
 ALLOWED_OFFLINE_SOURCES = {"live_archive", "sermon_vod", "openai_asr"}
 SECRET_PATTERNS = [
@@ -102,7 +102,7 @@ def validate_manifest_contract(
 
     models = manifest.get("models") if isinstance(manifest.get("models"), dict) else {}
     for key, expected in EXPECTED_MODELS.items():
-        add_check(checks, f"model_{key}", models.get(key) == expected, models.get(key))
+        add_check(checks, f"model_{key}", models.get(key) in expected, models.get(key))
 
     playback_summary = None
     if playback_output:
@@ -185,7 +185,12 @@ def validate_playback_output(output: dict[str, str], *, manifest_uri: str, requi
     add_check(checks, "playback_translated_segments", total > 0 and translated == total, {"translated": translated, "total": total})
     provider = data.get("translationProvider") if isinstance(data.get("translationProvider"), dict) else {}
     if provider:
-        add_check(checks, "playback_translation_model", provider.get("model") == EXPECTED_MODELS["offlineTranslation"], provider.get("model"))
+        add_check(
+            checks,
+            "playback_translation_model",
+            provider.get("model") in EXPECTED_MODELS["offlineTranslation"],
+            provider.get("model"),
+        )
     offline_source_kind = data.get("offlineSourceKind")
     if offline_source_kind:
         add_check(checks, "playback_offline_source_kind", offline_source_kind in ALLOWED_OFFLINE_SOURCES, offline_source_kind)

@@ -114,6 +114,13 @@ class WebAppRealtimeContractTest(unittest.TestCase):
         self.assertIn('["waiting", "active", "done", "failed"].includes(stage.state)', app_js)
         self.assertIn("adminProgressSummary(progress)", app_js)
 
+    def test_admin_loads_status_before_sunday_playback(self):
+        app_js = self.app_js
+
+        self.assertIn("refreshAdminStatus()\n        .then(() => loadInitialCloudRunDatePlayback())", app_js)
+        self.assertIn(".finally(() => startLivePlaybackPolling());", app_js)
+        self.assertIn('ensureSundayOption(state.adminStatus.sunday, "正式周日");', app_js)
+
     def test_public_caption_view_polls_live_playback_clock(self):
         app_js = self.app_js
 

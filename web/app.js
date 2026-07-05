@@ -283,14 +283,16 @@
     updateSourceCards("idle");
     updateTimeline();
     loadPublicPublishedSnapshot();
-    loadInitialCloudRunDatePlayback();
-    startLivePlaybackPolling();
     if (state.viewMode === "admin") {
-      refreshAdminStatus();
+      refreshAdminStatus()
+        .then(() => loadInitialCloudRunDatePlayback())
+        .finally(() => startLivePlaybackPolling());
       startAdminProgressPolling();
       updatePipelineForState(state.segments.length ? "ready" : "idle");
       updateAdminEvidence("pageView", "管理端访问记录已启用；会众访问会记录为 congregation_page_view。");
     } else {
+      loadInitialCloudRunDatePlayback();
+      startLivePlaybackPolling();
       connectPublicRealtimeEvents();
     }
     reportPageView();
@@ -2856,6 +2858,7 @@
   }
 
   function syncAdminSettings() {
+    ensureSundayOption(state.adminSettings.sunday, "当前选择");
     if (el.sundaySelect) el.sundaySelect.value = state.adminSettings.sunday;
     if (el.manualLiveUrl) el.manualLiveUrl.value = state.adminSettings.manualLiveUrl;
     if (el.approxStartTime) el.approxStartTime.value = state.adminSettings.approxStartTime;
@@ -2937,6 +2940,11 @@
       const response = await fetch("/api/admin/status", { headers: { "Accept": "application/json" } });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       state.adminStatus = await response.json();
+      if (isIsoDate(state.adminStatus.sunday)) {
+        state.adminSettings.sunday = state.adminStatus.sunday;
+        ensureSundayOption(state.adminStatus.sunday, "正式周日");
+        syncAdminSettings();
+      }
       updateAdminStatusSummary();
       log("已读取后端管理状态摘要。");
     } catch (error) {
@@ -3003,6 +3011,19 @@
     if (eventArchive.enabled) {
       updateAdminEvidence("worker", `Realtime deltas 写入 ${eventArchive.directory || "backend JSONL archive"}`);
     }
+  }
+
+  function ensureSundayOption(sunday, labelPrefix = "周日页面") {
+    if (!el.sundaySelect || !isIsoDate(sunday)) return;
+    const existing = Array.from(el.sundaySelect.options).find((option) => option.value === sunday);
+    if (existing) {
+      existing.textContent = `${labelPrefix} ${sunday}`;
+      return;
+    }
+    const option = document.createElement("option");
+    option.value = sunday;
+    option.textContent = `${labelPrefix} ${sunday}`;
+    el.sundaySelect.appendChild(option);
   }
 
   function captionCountText(captionsStatus) {
