@@ -53,6 +53,41 @@ class BuildPostLiveTimelineTest(unittest.TestCase):
         self.assertGreaterEqual(analysis["endCandidates"][-1]["endScore"], 2)
         self.assertEqual(analysis["nonSermonEvidence"][0]["id"], 0)
 
+    def test_analyze_timeline_prefers_sermon_speaker_over_host_intro(self):
+        chunks = [
+            {
+                "id": 13,
+                "start": 1560.0,
+                "end": 1680.0,
+                "text": (
+                    "Amen. My name is Jeremy Robertson and I serve as the lead pastor "
+                    "of Mariners Yerba Linda. If you're watching from Southern California, "
+                    "I'd love to invite you to join us."
+                ),
+            },
+            {
+                "id": 14,
+                "start": 1680.0,
+                "end": 1800.0,
+                "text": (
+                    "My name is Steve Bang Lee. I'm one of the pastors. "
+                    "It is an absolute joy to be with you today."
+                ),
+            },
+            {
+                "id": 27,
+                "start": 3240.0,
+                "end": 3360.0,
+                "text": "So let's sing, let's respond, and remember God's love.",
+            },
+        ]
+
+        analysis = mod.analyze_timeline(chunks, start_buffer_seconds=30.0, end_buffer_seconds=45.0)
+
+        self.assertEqual(analysis["suggestedWindow"]["startTimecode"], "00:27:30.000")
+        self.assertEqual(analysis["startCandidates"][0]["id"], 14)
+        self.assertGreater(analysis["startCandidates"][0]["startScore"], 1)
+
     def test_build_report_from_saved_transcript_never_marks_ready(self):
         with tempfile.TemporaryDirectory() as tempdir:
             root = Path(tempdir)

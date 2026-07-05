@@ -33,6 +33,20 @@ START_PATTERNS = [
     r"\bjohn chapter\b",
 ]
 
+START_BOOST_PATTERNS = [
+    r"\bmy name is steve\b",
+    r"\bsteve bang lee\b",
+    r"\bone of the pastors\b",
+]
+
+START_PENALTY_PATTERNS = [
+    r"\bjeremy robertson\b",
+    r"\blead pastor\b",
+    r"\byorba linda\b",
+    r"\bsouthern california\b",
+    r"\bi'?d love to invite you\b",
+]
+
 END_PATTERNS = [
     r"\blet'?s pray\b",
     r"\bwould you pray with me\b",
@@ -206,18 +220,23 @@ def score_chunk(chunk: dict[str, Any]) -> dict[str, Any]:
     text = str(chunk.get("text") or "")
     lower = text.lower()
     start_hits = pattern_hits(lower, START_PATTERNS)
+    start_boost_hits = pattern_hits(lower, START_BOOST_PATTERNS)
+    start_penalty_hits = pattern_hits(lower, START_PENALTY_PATTERNS)
     end_hits = pattern_hits(lower, END_PATTERNS)
     non_sermon_hits = pattern_hits(lower, NON_SERMON_PATTERNS)
+    start_score = len(start_hits) + (2 * len(start_boost_hits)) - (2 * len(start_penalty_hits))
     return {
         "id": chunk.get("id"),
         "start": chunk.get("start"),
         "end": chunk.get("end"),
         "startTimecode": seconds_timecode(float(chunk.get("start") or 0)),
         "endTimecode": seconds_timecode(float(chunk.get("end") or 0)),
-        "startScore": len(start_hits),
+        "startScore": max(0, start_score),
         "endScore": len(end_hits),
         "nonSermonScore": len(non_sermon_hits),
         "startHits": start_hits,
+        "startBoostHits": start_boost_hits,
+        "startPenaltyHits": start_penalty_hits,
         "endHits": end_hits,
         "nonSermonHits": non_sermon_hits,
         "excerpt": excerpt(text),
