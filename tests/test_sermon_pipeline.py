@@ -3,6 +3,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "sermon_pipeline.py"
@@ -65,6 +66,22 @@ class SermonPipelineTest(unittest.TestCase):
         self.assertEqual(report["hardFailures"]["overlaps"], 1)
         self.assertEqual(report["hardFailures"]["translationIdMismatchCount"], 1)
         self.assertEqual(report["latinBibleTermWarnings"][0]["term"], "Moses")
+
+    def test_ffmpeg_commands_do_not_read_stdin(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            source = root / "source.m4a"
+            source.write_text("audio", encoding="utf-8")
+
+            with mock.patch.object(mod, "run") as fake_run:
+                mod.cut_chunk(source, root / "chunk.m4a", 0.0, 30.0)
+                mod.clip_and_normalize(source, root / "clip.m4a", 0.0, 60.0)
+
+        commands = [call.args[0] for call in fake_run.call_args_list]
+        self.assertEqual(len(commands), 2)
+        for command in commands:
+            self.assertEqual(command[0], "ffmpeg")
+            self.assertIn("-nostdin", command)
 
 
 if __name__ == "__main__":

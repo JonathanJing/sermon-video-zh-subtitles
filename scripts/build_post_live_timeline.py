@@ -35,16 +35,24 @@ START_PATTERNS = [
 
 START_BOOST_PATTERNS = [
     r"\bmy name is steve\b",
-    r"\bsteve bang lee\b",
+    r"\bmy name is steve bang lee\b",
     r"\bone of the pastors\b",
 ]
 
 START_PENALTY_PATTERNS = [
     r"\bjeremy robertson\b",
     r"\blead pastor\b",
+    r"\bserve as (the )?.{0,40}pastor\b",
     r"\byorba linda\b",
     r"\bsouthern california\b",
     r"\bi'?d love to invite you\b",
+    r"\bjoin me at mariners\b",
+    r"\byou can learn more\b",
+    r"\bcourse created by\b",
+    r"\bdeep dive\b",
+    r"\bwomen'?s discipleship pastor\b",
+    r"\bmother'?s day\b",
+    r"\bblessings? (unto|on|for) moms?\b",
 ]
 
 END_PATTERNS = [
@@ -56,6 +64,25 @@ END_PATTERNS = [
     r"\bamen\b",
     r"\bif you need prayer\b",
     r"\bthank you for joining\b",
+]
+
+STRONG_END_PATTERNS = [
+    r"\blet'?s sing\b",
+    r"\blet'?s respond\b",
+    r"\bas we respond\b",
+    r"\bwould you pray with me\b",
+]
+
+RESPONSE_SONG_PATTERNS = [
+    r"\ball my life\b",
+    r"\bgoodness of god\b",
+    r"\boh there'?s nothing better than you\b",
+    r"\bisn'?t he glorious\b",
+    r"\bholy, holy\b",
+    r"\byou are worthy\b",
+    r"\bworthy of it all\b",
+    r"\bthe god of the valley\b",
+    r"\blet me see jesus\b",
 ]
 
 NON_SERMON_PATTERNS = [
@@ -198,22 +225,59 @@ def analyze_timeline(
     start_candidates = [item for item in scored if item["startScore"] > 0]
     end_candidates = [item for item in scored if item["endScore"] > 0]
     strongest_start = max(start_candidates, key=lambda item: (item["startScore"], -item["start"])) if start_candidates else None
-    strongest_end = max(end_candidates, key=lambda item: (item["endScore"], item["end"])) if end_candidates else None
+    strongest_end = choose_end_marker(scored, end_candidates, strongest_start)
     suggested_window = None
     if strongest_start and strongest_end and strongest_end["end"] > strongest_start["start"]:
+        end_anchor = strongest_end["start"] if strongest_end.get("endMarkerKind") == "response_song" else strongest_end["end"]
         suggested_window = {
             "startSeconds": max(0.0, round(strongest_start["start"] - start_buffer_seconds, 3)),
-            "endSeconds": round(strongest_end["end"] + end_buffer_seconds, 3),
+            "endSeconds": round(end_anchor + end_buffer_seconds, 3),
             "startTimecode": seconds_timecode(max(0.0, strongest_start["start"] - start_buffer_seconds)),
-            "endTimecode": seconds_timecode(strongest_end["end"] + end_buffer_seconds),
+            "endTimecode": seconds_timecode(end_anchor + end_buffer_seconds),
             "confidence": "candidate_requires_review",
+            "endMarkerKind": strongest_end.get("endMarkerKind"),
         }
     return {
         "suggestedWindow": suggested_window,
         "startCandidates": start_candidates[:8],
         "endCandidates": end_candidates[-8:],
+        "responseSongCandidates": [item for item in scored if item["responseSongScore"] > 0][:8],
         "nonSermonEvidence": [item for item in scored if item["nonSermonScore"] > 0][:8],
     }
+
+
+def choose_end_marker(
+    scored: list[dict[str, Any]],
+    end_candidates: list[dict[str, Any]],
+    strongest_start: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    if not strongest_start:
+        return None
+    minimum_end_start = float(strongest_start.get("start") or 0) + 600.0
+    strong_explicit = [
+        {**item, "endMarkerKind": "explicit_transition"}
+        for item in end_candidates
+        if float(item.get("start") or 0) >= minimum_end_start and item.get("strongEndScore", 0) > 0
+    ]
+    response_song = [
+        {**item, "endMarkerKind": "response_song"}
+        for item in scored
+        if float(item.get("start") or 0) >= minimum_end_start and item.get("responseSongScore", 0) > 0
+    ]
+    if strong_explicit and response_song:
+        return min([*strong_explicit, *response_song], key=lambda item: float(item.get("start") or 0))
+    if strong_explicit:
+        return min(strong_explicit, key=lambda item: float(item.get("start") or 0))
+    if response_song:
+        return min(response_song, key=lambda item: float(item.get("start") or 0))
+    later_end_candidates = [
+        {**item, "endMarkerKind": "weak_end_phrase"}
+        for item in end_candidates
+        if float(item.get("start") or 0) >= minimum_end_start
+    ]
+    if later_end_candidates:
+        return max(later_end_candidates, key=lambda item: (item.get("endScore", 0), float(item.get("end") or 0)))
+    return None
 
 
 def score_chunk(chunk: dict[str, Any]) -> dict[str, Any]:
@@ -223,8 +287,10 @@ def score_chunk(chunk: dict[str, Any]) -> dict[str, Any]:
     start_boost_hits = pattern_hits(lower, START_BOOST_PATTERNS)
     start_penalty_hits = pattern_hits(lower, START_PENALTY_PATTERNS)
     end_hits = pattern_hits(lower, END_PATTERNS)
+    strong_end_hits = pattern_hits(lower, STRONG_END_PATTERNS)
+    response_song_hits = pattern_hits(lower, RESPONSE_SONG_PATTERNS)
     non_sermon_hits = pattern_hits(lower, NON_SERMON_PATTERNS)
-    start_score = len(start_hits) + (2 * len(start_boost_hits)) - (2 * len(start_penalty_hits))
+    start_score = len(start_hits) + (2 * len(start_boost_hits)) - (2 * len(start_penalty_hits)) - len(end_hits)
     return {
         "id": chunk.get("id"),
         "start": chunk.get("start"),
@@ -233,11 +299,15 @@ def score_chunk(chunk: dict[str, Any]) -> dict[str, Any]:
         "endTimecode": seconds_timecode(float(chunk.get("end") or 0)),
         "startScore": max(0, start_score),
         "endScore": len(end_hits),
+        "strongEndScore": len(strong_end_hits),
+        "responseSongScore": len(response_song_hits),
         "nonSermonScore": len(non_sermon_hits),
         "startHits": start_hits,
         "startBoostHits": start_boost_hits,
         "startPenaltyHits": start_penalty_hits,
         "endHits": end_hits,
+        "strongEndHits": strong_end_hits,
+        "responseSongHits": response_song_hits,
         "nonSermonHits": non_sermon_hits,
         "excerpt": excerpt(text),
     }

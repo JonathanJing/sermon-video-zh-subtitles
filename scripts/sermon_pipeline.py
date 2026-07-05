@@ -273,6 +273,7 @@ def clip_and_normalize(source, clip_path, start, end):
     run(
         [
             "ffmpeg",
+            "-nostdin",
             "-hide_banner",
             "-y",
             "-ss",
@@ -299,6 +300,7 @@ def cut_chunk(source, dest, start, duration):
     run(
         [
             "ffmpeg",
+            "-nostdin",
             "-hide_banner",
             "-loglevel",
             "error",

@@ -32,14 +32,14 @@ class BuildPostLiveTimelineTest(unittest.TestCase):
             },
             {
                 "id": 2,
-                "start": 240.0,
-                "end": 360.0,
+                "start": 720.0,
+                "end": 840.0,
                 "text": "The bronze snake points us to God's love and to Jesus lifted up for us.",
             },
             {
                 "id": 3,
-                "start": 360.0,
-                "end": 480.0,
+                "start": 900.0,
+                "end": 1020.0,
                 "text": "Would you pray with me? Let's respond and sing together.",
             },
         ]
@@ -47,8 +47,9 @@ class BuildPostLiveTimelineTest(unittest.TestCase):
         analysis = mod.analyze_timeline(chunks, start_buffer_seconds=30.0, end_buffer_seconds=45.0)
 
         self.assertEqual(analysis["suggestedWindow"]["startTimecode"], "00:01:30.000")
-        self.assertEqual(analysis["suggestedWindow"]["endTimecode"], "00:08:45.000")
+        self.assertEqual(analysis["suggestedWindow"]["endTimecode"], "00:17:45.000")
         self.assertEqual(analysis["suggestedWindow"]["confidence"], "candidate_requires_review")
+        self.assertEqual(analysis["suggestedWindow"]["endMarkerKind"], "explicit_transition")
         self.assertGreaterEqual(analysis["startCandidates"][0]["startScore"], 2)
         self.assertGreaterEqual(analysis["endCandidates"][-1]["endScore"], 2)
         self.assertEqual(analysis["nonSermonEvidence"][0]["id"], 0)
@@ -87,6 +88,96 @@ class BuildPostLiveTimelineTest(unittest.TestCase):
         self.assertEqual(analysis["suggestedWindow"]["startTimecode"], "00:27:30.000")
         self.assertEqual(analysis["startCandidates"][0]["id"], 14)
         self.assertGreater(analysis["startCandidates"][0]["startScore"], 1)
+
+    def test_analyze_timeline_penalizes_host_course_announcement(self):
+        chunks = [
+            {
+                "id": 9,
+                "start": 1080.0,
+                "end": 1200.0,
+                "text": (
+                    "My name is Aaron Kerr. Join me at Mariners Huntington Beach. "
+                    "You can learn more through the link below. A course created by Steve Bang Lee "
+                    "from our Deep Dive series begins soon."
+                ),
+            },
+            {
+                "id": 10,
+                "start": 1200.0,
+                "end": 1320.0,
+                "text": "We are going to be in Ecclesiastes today as we look for God's wisdom.",
+            },
+            {
+                "id": 24,
+                "start": 2880.0,
+                "end": 3000.0,
+                "text": "Would you pray with me as we respond to God's word?",
+            },
+        ]
+
+        analysis = mod.analyze_timeline(chunks, start_buffer_seconds=30.0, end_buffer_seconds=45.0)
+
+        self.assertEqual(analysis["startCandidates"][0]["id"], 10)
+        self.assertEqual(analysis["suggestedWindow"]["startTimecode"], "00:19:30.000")
+
+    def test_analyze_timeline_penalizes_prayer_amen_as_start(self):
+        chunks = [
+            {
+                "id": 8,
+                "start": 960.0,
+                "end": 1080.0,
+                "text": (
+                    "My name is Esther Chung. Father, give your special heaping of blessings unto moms. "
+                    "We pray this in Jesus name. Amen."
+                ),
+            },
+            {
+                "id": 11,
+                "start": 1320.0,
+                "end": 1440.0,
+                "text": "Today we are in Ecclesiastes as we study wisdom when life is complex.",
+            },
+            {
+                "id": 24,
+                "start": 2880.0,
+                "end": 3000.0,
+                "text": "The one who will never fail. He will never fail. Amen.",
+            },
+        ]
+
+        analysis = mod.analyze_timeline(chunks, start_buffer_seconds=30.0, end_buffer_seconds=45.0)
+
+        self.assertEqual(analysis["startCandidates"][0]["id"], 11)
+        self.assertEqual(analysis["suggestedWindow"]["startTimecode"], "00:21:30.000")
+
+    def test_analyze_timeline_uses_response_song_as_end_fallback(self):
+        chunks = [
+            {
+                "id": 10,
+                "start": 1200.0,
+                "end": 1320.0,
+                "text": "If you have your Bible, turn to Numbers chapter 21 as we continue our series.",
+            },
+            {
+                "id": 20,
+                "start": 2400.0,
+                "end": 2520.0,
+                "text": "Jesus is faithful in the wilderness and he is enough for us.",
+            },
+            {
+                "id": 26,
+                "start": 3120.0,
+                "end": 3240.0,
+                "text": "Isn't he glorious? Isn't he powerful? You are worthy of it all.",
+            },
+        ]
+
+        analysis = mod.analyze_timeline(chunks, start_buffer_seconds=30.0, end_buffer_seconds=45.0)
+
+        self.assertEqual(analysis["suggestedWindow"]["startTimecode"], "00:19:30.000")
+        self.assertEqual(analysis["suggestedWindow"]["endTimecode"], "00:52:45.000")
+        self.assertEqual(analysis["suggestedWindow"]["endMarkerKind"], "response_song")
+        self.assertEqual(analysis["responseSongCandidates"][0]["id"], 26)
 
     def test_build_report_from_saved_transcript_never_marks_ready(self):
         with tempfile.TemporaryDirectory() as tempdir:
