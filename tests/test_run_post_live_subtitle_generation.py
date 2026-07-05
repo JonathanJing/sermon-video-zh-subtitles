@@ -104,6 +104,7 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
                 make_args(state_file=str(state_path), work_root=Path(tempdir)),
                 metadata_loader=lambda _: {
                     "id": "MEZHufeQBjc",
+                    "title": "A Bronze Snake and God's Love - Steve Bang Lee | Mariners Church",
                     "live_status": "post_live",
                     "media_type": "livestream",
                     "was_live": True,
@@ -119,7 +120,12 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
         self.assertEqual(command[command.index("--gpt4o-model") + 1], "gpt-4o-transcribe")
         self.assertEqual(command[command.index("--timing-model") + 1], "whisper-1")
         self.assertIn("render_mobile_pdf_from_srt.py", report["mobilePdfCommand"][1])
+        self.assertEqual(
+            report["mobilePdfCommand"][report["mobilePdfCommand"].index("--title") + 1],
+            "A Bronze Snake and God's Love - Steve Bang Lee | Mariners Church",
+        )
         self.assertTrue(any("sermon_zh_relative.srt" in item for item in report["mobilePdfCommand"]))
+        self.assertTrue(any("sermon_en_relative.srt" in item for item in report["mobilePdfCommand"]))
         self.assertTrue(any(path.endswith("sermon_zh_mobile.pdf") for path in report["outputs"]))
 
     def test_run_downloads_audio_and_invokes_pipeline(self):
@@ -136,6 +142,10 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
                 outdir.mkdir(parents=True, exist_ok=True)
                 (outdir / "sermon_zh_relative.srt").write_text(
                     "1\n00:00:01,000 --> 00:00:02,500\n神爱世人。\n",
+                    encoding="utf-8",
+                )
+                (outdir / "sermon_en_relative.srt").write_text(
+                    "1\n00:00:01,000 --> 00:00:02,500\nFor God so loved the world.\n",
                     encoding="utf-8",
                 )
             elif "render_mobile_pdf_from_srt.py" in command[1]:
