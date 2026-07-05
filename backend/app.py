@@ -582,6 +582,7 @@ class ApiHandler(BaseHTTPRequestHandler):
             manual_url=[str(url) for url in manual_urls if str(url or "").strip()],
             mariners_online_url=str(payload.get("marinersOnlineUrl") or live_source_monitor.DEFAULT_MARINERS_ONLINE_URL),
             youtube_streams_url=str(payload.get("youtubeStreamsUrl") or live_source_monitor.DEFAULT_YOUTUBE_STREAMS_URL),
+            youtube_live_url=str(payload.get("youtubeLiveUrl") or live_source_monitor.DEFAULT_YOUTUBE_LIVE_URL),
             fixture_json=None,
             fixture_sources=sources,
             out=Path("artifacts/live-source-monitor/backend-report.json"),

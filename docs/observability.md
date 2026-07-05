@@ -42,11 +42,30 @@ Cloud Scheduler should send an explicit payload:
 }
 ```
 
-For Saturday live-link capture, use two Scheduler jobs and set the route `{sunday}` to `upcoming`, not Saturday's `current` value. `upcoming` resolves to the next Sunday caption slice, so a Saturday 2026-06-27 capture targets the 2026-06-28 slice:
+For Saturday live-link capture, start polling early on Saturday because YouTube
+watch URLs can be visible while the service is live/upcoming and later become
+unlisted. Use two Scheduler jobs and set the route `{sunday}` to `upcoming`,
+not Saturday's `current` value. `upcoming` resolves to the next Sunday caption
+slice, so a Saturday 2026-06-27 capture targets the 2026-06-28 slice:
 
 ```text
-sermon-sat-400-source-discovery  */2 15-16 * * SAT  service=sat400  operatorAlertTime=16:20
-sermon-sat-530-source-discovery  */2 17 * * SAT     service=sat530  operatorAlertTime=17:50
+sermon-sat-400-source-discovery  */5 8-16 * * SAT  service=sat400  operatorAlertTime=16:20
+sermon-sat-530-source-discovery  */5 8-17 * * SAT  service=sat530  operatorAlertTime=17:50
+```
+
+If the Saturday capture misses the YouTube link, keep Sunday 8:30 and 10:00
+fallback windows. These jobs target `current`, because on Sunday morning
+`current` is the active Sunday slice. The monitor still checks YouTube Streams
+first and prefers a validated `youtube-streams` watch URL over the generic
+Mariners page when both are usable. Keep the 10:00 job separate from the 8:30
+job so a missed 8:30 capture does not stop the later fallback window. The
+monitor checks both the YouTube Streams tab and the channel `/live` endpoint;
+the latter catches cases where the current live URL is not visible in the
+Streams listing yet:
+
+```text
+sermon-sun-830-source-discovery  */2 7-9 * * SUN  service=830  operatorAlertTime=08:45
+sermon-sun-1000-source-discovery */2 9-10 * * SUN service=1000 operatorAlertTime=10:15
 ```
 
 When `OPERATOR_NOTIFY_WEBHOOK_URL` is configured, `discover-source` sends one operator notification when a new live URL is first detected, or when `operatorAlertTime` arrives without a usable source. Notification state dedupes messages so a two-minute Scheduler cadence does not repeat the same result. The default state path is local `/tmp`; production should set `LIVE_SOURCE_MONITOR_STATE_URI=gs://.../backend-state.json` for durable cross-instance dedupe.

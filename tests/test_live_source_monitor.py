@@ -25,6 +25,7 @@ def base_args(**overrides):
         "manual_url": [],
         "mariners_online_url": mod.DEFAULT_MARINERS_ONLINE_URL,
         "youtube_streams_url": mod.DEFAULT_YOUTUBE_STREAMS_URL,
+        "youtube_live_url": mod.DEFAULT_YOUTUBE_LIVE_URL,
         "fixture_json": None,
         "out": Path("artifacts/live-source-monitor/report.json"),
         "state_file": Path("artifacts/live-source-monitor/state.json"),
@@ -162,7 +163,10 @@ class LiveSourceMonitorTest(unittest.TestCase):
             mod.default_fetcher = original_fetcher
             mod.youtube_video_metadata = original_metadata
 
-        self.assertEqual([candidate.kind for candidate in candidates], ["youtube-streams", "youtube-streams"])
+        self.assertEqual(
+            [candidate.kind for candidate in candidates],
+            ["youtube-streams", "youtube-live", "youtube-streams", "youtube-live"],
+        )
 
     def test_alerts_operator_after_deadline_when_no_source_is_usable(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -318,12 +322,14 @@ class LiveSourceMonitorTest(unittest.TestCase):
         channel_html = '<html><body><a href="/watch?v=OLDOLDOLD01">old</a></body></html>'
 
         original_metadata = mod.youtube_video_metadata
+        original_tab_urls = mod.youtube_stream_watch_urls_from_tab
         try:
             mod.youtube_video_metadata = lambda url: {
                 "title": "Old Sermon",
                 "live_status": "not_live",
                 "media_type": "video",
             }
+            mod.youtube_stream_watch_urls_from_tab = lambda url: []
             candidate = mod.fetch_candidate(
                 kind="youtube-streams",
                 service="sat530",
@@ -333,15 +339,172 @@ class LiveSourceMonitorTest(unittest.TestCase):
             )
         finally:
             mod.youtube_video_metadata = original_metadata
+            mod.youtube_stream_watch_urls_from_tab = original_tab_urls
 
         self.assertEqual(candidate.url, "https://www.youtube.com/@marinerschurch/streams")
         self.assertEqual(candidate.state, "unavailable")
         self.assertEqual(candidate.evidence, "watch-page-validation-failed")
 
+    def test_fetch_youtube_streams_uses_yt_dlp_tab_when_html_urls_are_stale(self):
+        channel_html = '<html><body><a href="/watch?v=OLDOLDOLD01">old</a></body></html>'
+
+        def fake_metadata(url):
+            if "OLDOLDOLD01" in url:
+                return {"title": "Old Sermon", "live_status": "not_live", "media_type": "video"}
+            return {
+                "title": "Mariners Online Worship Service",
+                "live_status": "is_live",
+                "is_live": True,
+                "media_type": "livestream",
+                "release_timestamp": 1783264864,
+            }
+
+        original_metadata = mod.youtube_video_metadata
+        original_tab_urls = mod.youtube_stream_watch_urls_from_tab
+        try:
+            mod.youtube_video_metadata = fake_metadata
+            mod.youtube_stream_watch_urls_from_tab = lambda url: ["https://www.youtube.com/watch?v=0D6yZW4_uEA"]
+            candidate = mod.fetch_candidate(
+                kind="youtube-streams",
+                service="830",
+                url="https://www.youtube.com/@marinerschurch/streams",
+                expected_title=None,
+                fetcher=lambda url: "<html><body>live</body></html>" if "watch?v=" in url else channel_html,
+                target_date=__import__("datetime").date(2026, 7, 5),
+                timezone="America/Los_Angeles",
+            )
+        finally:
+            mod.youtube_video_metadata = original_metadata
+            mod.youtube_stream_watch_urls_from_tab = original_tab_urls
+
+        self.assertEqual(candidate.url, "https://www.youtube.com/watch?v=0D6yZW4_uEA")
+        self.assertEqual(candidate.state, "live")
+        self.assertEqual(candidate.evidence, "yt-dlp-watch-metadata")
+
+    def test_fetch_default_candidates_uses_channel_live_url_when_streams_tab_misses_current_live(self):
+        def fake_fetcher(url):
+            if url == mod.DEFAULT_MARINERS_ONLINE_URL:
+                return "<html><head><title>Mariners Irvine</title></head><body>Online service</body></html>"
+            return "<html><head><title>Mariners Church</title></head><body>old stream tab</body></html>"
+
+        def fake_metadata(url):
+            if url == mod.DEFAULT_YOUTUBE_LIVE_URL:
+                return {
+                    "id": "0D6yZW4_uEA",
+                    "webpage_url": "https://www.youtube.com/watch?v=0D6yZW4_uEA",
+                    "title": "Mariners Online Worship Service",
+                    "live_status": "is_live",
+                    "is_live": True,
+                    "media_type": "livestream",
+                    "release_timestamp": 1783264864,
+                }
+            return {"title": "Old Sermon", "live_status": "not_live", "media_type": "video"}
+
+        original_fetcher = mod.default_fetcher
+        original_metadata = mod.youtube_video_metadata
+        original_tab_urls = mod.youtube_stream_watch_urls_from_tab
+        try:
+            mod.default_fetcher = fake_fetcher
+            mod.youtube_video_metadata = fake_metadata
+            mod.youtube_stream_watch_urls_from_tab = lambda url: []
+            report = mod.run_monitor(
+                base_args(
+                    sunday="2026-07-05",
+                    service="830",
+                    expected_title=None,
+                    now="2026-07-05T08:38:00-07:00",
+                )
+            )
+        finally:
+            mod.default_fetcher = original_fetcher
+            mod.youtube_video_metadata = original_metadata
+            mod.youtube_stream_watch_urls_from_tab = original_tab_urls
+
+        self.assertEqual(report["status"], "source_detected")
+        self.assertEqual(report["selectedSource"]["kind"], "youtube-live")
+        self.assertEqual(report["selectedSource"]["url"], "https://www.youtube.com/watch?v=0D6yZW4_uEA")
+        self.assertEqual(report["selectedSource"]["evidence"], "yt-dlp-channel-live-metadata")
+
+    def test_fetch_default_candidates_uses_channel_live_url_when_metadata_is_blocked(self):
+        def fake_fetcher(url):
+            if url == mod.DEFAULT_MARINERS_ONLINE_URL:
+                return "<html><head><title>Mariners Irvine</title></head><body>Online service</body></html>"
+            return "<html><head><title>Mariners Church</title></head><body>old stream tab</body></html>"
+
+        def fake_extract_info(url, *, flat=False):
+            if url == mod.DEFAULT_YOUTUBE_LIVE_URL and flat:
+                return {"id": "0D6yZW4_uEA", "url": "0D6yZW4_uEA"}
+            return None
+
+        original_fetcher = mod.default_fetcher
+        original_metadata = mod.youtube_video_metadata
+        original_extract_info = mod.youtube_extract_info
+        original_tab_urls = mod.youtube_stream_watch_urls_from_tab
+        try:
+            mod.default_fetcher = fake_fetcher
+            mod.youtube_video_metadata = lambda url: None
+            mod.youtube_extract_info = fake_extract_info
+            mod.youtube_stream_watch_urls_from_tab = lambda url: []
+            report = mod.run_monitor(
+                base_args(
+                    sunday="2026-07-05",
+                    service="830",
+                    expected_title=None,
+                    now="2026-07-05T08:38:00-07:00",
+                )
+            )
+        finally:
+            mod.default_fetcher = original_fetcher
+            mod.youtube_video_metadata = original_metadata
+            mod.youtube_extract_info = original_extract_info
+            mod.youtube_stream_watch_urls_from_tab = original_tab_urls
+
+        self.assertEqual(report["status"], "source_detected")
+        self.assertEqual(report["selectedSource"]["kind"], "youtube-live")
+        self.assertEqual(report["selectedSource"]["url"], "https://www.youtube.com/watch?v=0D6yZW4_uEA")
+        self.assertEqual(report["selectedSource"]["evidence"], "yt-dlp-channel-live-url")
+
+    def test_fetch_default_candidates_uses_channel_live_html_when_metadata_is_blocked(self):
+        def fake_fetcher(url):
+            if url == mod.DEFAULT_YOUTUBE_LIVE_URL:
+                return '<html><head><title>Mariners Live</title></head><body>{"videoId":"0D6yZW4_uEA"}</body></html>'
+            if url == mod.DEFAULT_MARINERS_ONLINE_URL:
+                return "<html><head><title>Mariners Irvine</title></head><body>Online service</body></html>"
+            return "<html><head><title>Mariners Church</title></head><body>old stream tab</body></html>"
+
+        original_fetcher = mod.default_fetcher
+        original_metadata = mod.youtube_video_metadata
+        original_extract_info = mod.youtube_extract_info
+        original_tab_urls = mod.youtube_stream_watch_urls_from_tab
+        try:
+            mod.default_fetcher = fake_fetcher
+            mod.youtube_video_metadata = lambda url: None
+            mod.youtube_extract_info = lambda url, *, flat=False: None
+            mod.youtube_stream_watch_urls_from_tab = lambda url: []
+            report = mod.run_monitor(
+                base_args(
+                    sunday="2026-07-05",
+                    service="830",
+                    expected_title=None,
+                    now="2026-07-05T08:38:00-07:00",
+                )
+            )
+        finally:
+            mod.default_fetcher = original_fetcher
+            mod.youtube_video_metadata = original_metadata
+            mod.youtube_extract_info = original_extract_info
+            mod.youtube_stream_watch_urls_from_tab = original_tab_urls
+
+        self.assertEqual(report["status"], "source_detected")
+        self.assertEqual(report["selectedSource"]["kind"], "youtube-live")
+        self.assertEqual(report["selectedSource"]["url"], "https://www.youtube.com/watch?v=0D6yZW4_uEA")
+        self.assertEqual(report["selectedSource"]["evidence"], "channel-live-html-watch-url")
+
     def test_fetch_youtube_streams_rejects_wrong_service_date(self):
         channel_html = '<html><body><a href="/watch?v=FsUijL9uB1I">old</a></body></html>'
         old_sunday_timestamp = 1782055264
         original_metadata = mod.youtube_video_metadata
+        original_tab_urls = mod.youtube_stream_watch_urls_from_tab
         try:
             mod.youtube_video_metadata = lambda url: {
                 "title": "Old Mariners Live",
@@ -349,6 +512,7 @@ class LiveSourceMonitorTest(unittest.TestCase):
                 "media_type": "livestream",
                 "release_timestamp": old_sunday_timestamp,
             }
+            mod.youtube_stream_watch_urls_from_tab = lambda url: []
             candidate = mod.fetch_candidate(
                 kind="youtube-streams",
                 service="sat530",
@@ -360,6 +524,7 @@ class LiveSourceMonitorTest(unittest.TestCase):
             )
         finally:
             mod.youtube_video_metadata = original_metadata
+            mod.youtube_stream_watch_urls_from_tab = original_tab_urls
 
         self.assertEqual(candidate.state, "unavailable")
         self.assertEqual(candidate.evidence, "watch-page-validation-failed")

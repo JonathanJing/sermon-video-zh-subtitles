@@ -10,6 +10,7 @@ import backend.live_playback as live_playback_mod
 from backend.live_playback import LivePlaybackStore, playhead_at
 from backend.progress import GenerationProgressStore
 from backend.realtime import RealtimeSessionStore
+from scripts import live_source_monitor
 
 
 class BackendAppTest(unittest.TestCase):
@@ -851,6 +852,14 @@ class BackendAppTest(unittest.TestCase):
         args = ApiHandler.live_source_monitor_args(handler, {}, "2026-06-28")
 
         self.assertEqual(args.state_file, "gs://bucket/source-monitor/backend-state.json")
+        self.assertEqual(args.youtube_live_url, live_source_monitor.DEFAULT_YOUTUBE_LIVE_URL)
+
+        custom_args = ApiHandler.live_source_monitor_args(
+            handler,
+            {"youtubeLiveUrl": "https://www.youtube.com/@custom/live"},
+            "2026-06-28",
+        )
+        self.assertEqual(custom_args.youtube_live_url, "https://www.youtube.com/@custom/live")
 
     def test_dockerfile_starts_backend_app(self):
         dockerfile = Path(__file__).resolve().parents[1] / "Dockerfile"

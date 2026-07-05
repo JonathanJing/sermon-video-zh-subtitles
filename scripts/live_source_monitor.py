@@ -6,6 +6,8 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shutil
+import subprocess
 import sys
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, time
@@ -29,6 +31,7 @@ from backend.cloud import read_gcs_text, write_gcs_text  # noqa: E402
 DEFAULT_TIMEZONE = "America/Los_Angeles"
 DEFAULT_MARINERS_ONLINE_URL = "https://www.marinerschurch.org/irvine/"
 DEFAULT_YOUTUBE_STREAMS_URL = "https://www.youtube.com/@marinerschurch/streams"
+DEFAULT_YOUTUBE_LIVE_URL = "https://www.youtube.com/@marinerschurch/live"
 USABLE_STATES = {"live", "upcoming", "was_live", "available", "manual_available"}
 YOUTUBE_STREAM_STATES = {"live", "upcoming", "was_live"}
 SERVICE_ORDER = ["830", "1000", "manual"]
@@ -106,6 +109,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--manual-url", action="append", default=[], help="Authorized/manual source URL fallback.")
     parser.add_argument("--mariners-online-url", default=DEFAULT_MARINERS_ONLINE_URL)
     parser.add_argument("--youtube-streams-url", default=DEFAULT_YOUTUBE_STREAMS_URL)
+    parser.add_argument("--youtube-live-url", default=DEFAULT_YOUTUBE_LIVE_URL)
     parser.add_argument("--fixture-json", type=Path, help="Offline fixture containing source candidates.")
     parser.add_argument("--out", type=Path, default=Path("artifacts/live-source-monitor/report.json"))
     parser.add_argument("--state-file", default="artifacts/live-source-monitor/state.json")
@@ -218,6 +222,28 @@ def fetch_default_candidates(args: argparse.Namespace, checked_at: str | None = 
     candidates: list[SourceCandidate] = []
     for service in services:
         target_date = target_service_date(args.sunday, service)
+        candidates.append(
+            fetch_candidate(
+                kind="youtube-streams",
+                service=service,
+                url=args.youtube_streams_url,
+                expected_title=args.expected_title,
+                fetcher=fetcher,
+                target_date=target_date,
+                timezone=args.timezone,
+            )
+        )
+        candidates.append(
+            fetch_candidate(
+                kind="youtube-live",
+                service=service,
+                url=args.youtube_live_url,
+                expected_title=args.expected_title,
+                fetcher=fetcher,
+                target_date=target_date,
+                timezone=args.timezone,
+            )
+        )
         if not service.startswith("sat"):
             candidates.append(
                 fetch_candidate(
@@ -230,17 +256,6 @@ def fetch_default_candidates(args: argparse.Namespace, checked_at: str | None = 
                     timezone=args.timezone,
                 )
             )
-        candidates.append(
-            fetch_candidate(
-                kind="youtube-streams",
-                service=service,
-                url=args.youtube_streams_url,
-                expected_title=args.expected_title,
-                fetcher=fetcher,
-                target_date=target_date,
-                timezone=args.timezone,
-            )
-        )
     return candidates
 
 
@@ -254,6 +269,21 @@ def fetch_candidate(
     target_date: date | None = None,
     timezone: str = DEFAULT_TIMEZONE,
 ) -> SourceCandidate:
+    if kind == "youtube-live":
+        page_html = None
+        try:
+            page_html = fetcher(url)
+        except Exception:
+            page_html = None
+        return youtube_live_candidate_from_url(
+            service=service,
+            url=url,
+            page_title=extract_title(page_html) if page_html else kind,
+            page_html=page_html,
+            expected_title=expected_title,
+            target_date=target_date,
+            timezone=timezone,
+        )
     try:
         html = fetcher(url)
     except Exception as exc:
@@ -281,6 +311,16 @@ def fetch_candidate(
         )
         if youtube_candidate:
             return youtube_candidate
+        return SourceCandidate(
+            kind="youtube-streams",
+            service=service,
+            url=url,
+            state="unavailable",
+            title=title,
+            same_sermon_confidence=0.0,
+            evidence="streams-page-validation-failed",
+            error="streams tab did not expose target live/upcoming/was_live stream",
+        )
     return SourceCandidate(
         kind=kind,
         service=service,
@@ -306,6 +346,7 @@ def youtube_stream_candidate_from_page(
 ) -> SourceCandidate | None:
     urls = extracted_youtube_watch_urls(page_html)
     errors: list[str] = []
+    urls.extend(url for url in youtube_stream_watch_urls_from_tab(page_url) if url not in urls)
     for watch_url in urls[:8]:
         try:
             video_html = fetcher(watch_url)
@@ -351,17 +392,184 @@ def youtube_stream_candidate_from_page(
     return None
 
 
-def youtube_video_metadata(url: str) -> dict[str, Any] | None:
+def youtube_live_candidate_from_url(
+    *,
+    service: str,
+    url: str,
+    page_title: str,
+    expected_title: str | None,
+    target_date: date | None,
+    timezone: str,
+    page_html: str | None = None,
+) -> SourceCandidate:
+    metadata = youtube_video_metadata(url)
+    title = string_or_none(metadata.get("title")) if metadata else None
+    state = state_from_youtube_metadata(metadata)
+    actual_start = local_iso_from_metadata(metadata, timezone) if metadata else None
+    video_id = youtube_video_id_from_url(str(metadata.get("webpage_url") or "")) if metadata else None
+    if not video_id and metadata:
+        video_id = string_or_none(metadata.get("id"))
+    watch_url = f"https://www.youtube.com/watch?v={video_id}" if video_id else url
+    if state in YOUTUBE_STREAM_STATES and metadata_is_target_service(metadata, target_date, timezone):
+        return SourceCandidate(
+            kind="youtube-live",
+            service=service,
+            url=watch_url,
+            state=state,
+            title=title or page_title,
+            actual_start_at=actual_start,
+            same_sermon_confidence=score_same_sermon(title or page_title, expected_title),
+            evidence="yt-dlp-channel-live-metadata",
+        )
+    live_watch_url = youtube_live_watch_url_from_html(page_html)
+    if live_watch_url:
+        return SourceCandidate(
+            kind="youtube-live",
+            service=service,
+            url=live_watch_url,
+            state="live",
+            title=title or page_title,
+            same_sermon_confidence=score_same_sermon(title or page_title, expected_title),
+            actual_start_at=actual_start,
+            evidence="channel-live-html-watch-url",
+        )
+    live_watch_url = youtube_live_watch_url_from_channel(url)
+    if live_watch_url:
+        return SourceCandidate(
+            kind="youtube-live",
+            service=service,
+            url=live_watch_url,
+            state="live",
+            title=title or page_title,
+            same_sermon_confidence=score_same_sermon(title or page_title, expected_title),
+            actual_start_at=actual_start,
+            evidence="yt-dlp-channel-live-url",
+        )
+    return SourceCandidate(
+        kind="youtube-live",
+        service=service,
+        url=url,
+        state="unavailable",
+        title=title or page_title,
+        same_sermon_confidence=0.0,
+        actual_start_at=actual_start,
+        evidence="channel-live-validation-failed",
+        error="channel live URL did not resolve to target live/upcoming/was_live stream",
+    )
+
+
+def youtube_live_watch_url_from_html(html: str | None) -> str | None:
+    if not html:
+        return None
+    urls = extracted_youtube_watch_urls(html)
+    return urls[0] if urls else None
+
+
+def youtube_live_watch_url_from_channel(url: str) -> str | None:
+    info = youtube_extract_info(url, flat=True)
+    if not isinstance(info, dict):
+        return None
+    direct_url = youtube_watch_url_from_entry(info)
+    if direct_url:
+        return direct_url
+    entries = info.get("entries")
+    if isinstance(entries, list):
+        for entry in entries:
+            if isinstance(entry, dict):
+                watch_url = youtube_watch_url_from_entry(entry)
+                if watch_url:
+                    return watch_url
+    return None
+
+
+def youtube_stream_watch_urls_from_tab(url: str) -> list[str]:
+    info = youtube_extract_info(url, flat=True)
+    if not isinstance(info, dict):
+        return []
+    entries = info.get("entries")
+    if not isinstance(entries, list):
+        return []
+    urls: list[str] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        watch_url = youtube_watch_url_from_entry(entry)
+        if watch_url and watch_url not in urls:
+            urls.append(watch_url)
+    return urls
+
+
+def youtube_extract_info(url: str, *, flat: bool = False) -> dict[str, Any] | None:
     try:
         from yt_dlp import YoutubeDL  # type: ignore
     except ImportError:
-        return None
+        return youtube_extract_info_with_cli(url, flat=flat)
     try:
-        with YoutubeDL({"quiet": True, "no_warnings": True, "skip_download": True}) as ydl:
+        options: dict[str, Any] = {"quiet": True, "no_warnings": True, "skip_download": True}
+        if flat:
+            options.update({"extract_flat": True, "playlistend": 8})
+        else:
+            options["noplaylist"] = True
+        with YoutubeDL(options) as ydl:
             info = ydl.extract_info(url, download=False)
     except Exception:
         return None
     return info if isinstance(info, dict) else None
+
+
+def youtube_extract_info_with_cli(url: str, *, flat: bool = False) -> dict[str, Any] | None:
+    executable = shutil.which("yt-dlp")
+    if not executable:
+        return None
+    command = [executable, "--dump-single-json", "--skip-download", "--no-warnings", "--quiet"]
+    if flat:
+        command.extend(["--flat-playlist", "--playlist-end", "8"])
+    else:
+        command.append("--no-playlist")
+    command.append(url)
+    try:
+        proc = subprocess.run(command, check=False, capture_output=True, text=True, timeout=30)
+    except Exception:
+        return None
+    if proc.returncode != 0 or not proc.stdout.strip():
+        return None
+    try:
+        info = json.loads(proc.stdout)
+    except json.JSONDecodeError:
+        return None
+    return info if isinstance(info, dict) else None
+
+
+def youtube_watch_url_from_entry(entry: dict[str, Any]) -> str | None:
+    webpage_url = string_or_none(entry.get("webpage_url") or entry.get("url"))
+    if webpage_url:
+        video_id = youtube_video_id_from_url(webpage_url)
+        if video_id:
+            return f"https://www.youtube.com/watch?v={video_id}"
+    video_id = string_or_none(entry.get("id"))
+    if video_id and re.fullmatch(r"[-_A-Za-z0-9]{11}", video_id):
+        return f"https://www.youtube.com/watch?v={video_id}"
+    return None
+
+
+def youtube_video_id_from_url(url: str) -> str | None:
+    patterns = [
+        r"(?:[?&]v=)([-_A-Za-z0-9]{11})",
+        r"youtube\.com/live/([-_A-Za-z0-9]{11})",
+        r"youtu\.be/([-_A-Za-z0-9]{11})",
+        r"youtube\.com/embed/([-_A-Za-z0-9]{11})",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+    if re.fullmatch(r"[-_A-Za-z0-9]{11}", url):
+        return url
+    return None
+
+
+def youtube_video_metadata(url: str) -> dict[str, Any] | None:
+    return youtube_extract_info(url, flat=False)
 
 
 def state_from_youtube_metadata(metadata: dict[str, Any] | None) -> str:
@@ -461,7 +669,9 @@ def candidate_is_usable(candidate: SourceCandidate, min_confidence: float) -> bo
 
 
 def candidate_rank(candidate: SourceCandidate) -> tuple[float, int]:
-    kind_rank = {"manual-url": 3, "youtube-streams": 2, "mariners-online": 1}.get(candidate.kind, 0)
+    kind_rank = {"manual-url": 3, "youtube-live": 2, "youtube-streams": 2, "mariners-online": 1}.get(
+        candidate.kind, 0
+    )
     return (candidate.same_sermon_confidence or 0.0, kind_rank)
 
 
