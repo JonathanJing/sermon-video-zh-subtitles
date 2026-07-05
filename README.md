@@ -48,6 +48,17 @@ The more promising input is the official live service. Mariners Online lists Sun
 
 Current YouTube Streams metadata also supports the offline live-link route: among current visible Sunday live records, standard live links almost always start around 08:21 PT, leaving roughly three hours before the 11:30 PT congregation service for live/archive capture, English transcription, Chinese translation, and operator review. See [offline live-archive timing feasibility](docs/offline-live-archive-timing-feasibility.zh.md).
 
+## Post-Live Safety Model
+
+The post-live workflow is intentionally semi-automated. Automation may find the live link, wait for the archive, download full audio, build a coarse English timeline, propose a sermon window, generate subtitles, render PDF/SRT/VTT files, upload artifacts, and validate Cloud Run reads.
+
+Automation must stop before two human gates:
+
+- **Sermon window review:** the operator confirms the local-audio start/end points from timeline evidence before the full generation pipeline runs.
+- **Reviewed subtitle approval:** the operator checks English ASR, Chinese translation, scripture terms, title/speaker metadata, and first/last cues before stable Sunday publication.
+
+Only reviewed artifacts should be promoted to `sundays/<date>/cloud-manifest.json`. The detailed runbook is [Post-live reviewed Sunday publication](docs/post-live-reviewed-sunday-publication.zh.md).
+
 ## Documentation
 
 | Area | English | Chinese |

@@ -48,6 +48,17 @@
 
 当前 YouTube Streams metadata 也支持离线直播链接路线：在当前可见的周日直播记录中，标准直播链接几乎都在 08:21 PT 左右启动，距离 11:30 PT 会众场约 3 小时，可用于直播/归档抓取、英文听写、中文字幕生成和 operator 复核。详见 [离线直播链接字幕链路的时间可行性证据](docs/offline-live-archive-timing-feasibility.zh.md)。
 
+## Post-live 安全模型
+
+post-live 流程目前定位为半自动，而不是无人值守全自动。自动化可以完成直播链接发现、等待归档、完整音频下载、粗英文时间轴、证道窗口候选、字幕生成、PDF/SRT/VTT 产物生成、GCS 上传和 Cloud Run 读取验证。
+
+自动化必须在两个关口停下来：
+
+- **证道时间窗审核：** operator 根据 timeline evidence 确认本地音频 start/end，再允许跑正式全量生成。
+- **reviewed 字幕批准：** operator 抽查英文听写、中文翻译、经文术语、标题/讲员 metadata 和首尾字幕，再允许发布正式 Sunday 页面。
+
+只有 reviewed artifacts 可以 promotion 到 `sundays/<date>/cloud-manifest.json`。详细路径见 [Post-live reviewed Sunday 发布路径](docs/post-live-reviewed-sunday-publication.zh.md)。
+
 ## 文档
 
 | 主题 | English | 中文 |
@@ -59,6 +70,7 @@
 | 模型/Provider 比较 | [docs/model-provider-comparison.md](docs/model-provider-comparison.md) | [docs/model-provider-comparison.zh.md](docs/model-provider-comparison.zh.md) |
 | Cloud Run 部署准备 | [docs/cloud-run-deployment-prep.md](docs/cloud-run-deployment-prep.md) | [docs/cloud-run-deployment-prep.zh.md](docs/cloud-run-deployment-prep.zh.md) |
 | Admin 工作流 | [docs/admin-workflow.md](docs/admin-workflow.md) | [docs/admin-workflow.zh.md](docs/admin-workflow.zh.md) |
+| Post-live reviewed Sunday 发布路径 | [中文 runbook](docs/post-live-reviewed-sunday-publication.zh.md) | [同一份中文 runbook](docs/post-live-reviewed-sunday-publication.zh.md) |
 | 中文圣经来源 | [docs/scripture-source.md](docs/scripture-source.md) | [docs/scripture-source.zh.md](docs/scripture-source.zh.md) |
 | 观测与日志 | [docs/observability.md](docs/observability.md) | [docs/observability.zh.md](docs/observability.zh.md) |
 | 开源准备检查 | [docs/open-source-readiness.md](docs/open-source-readiness.md) | [docs/open-source-readiness.zh.md](docs/open-source-readiness.zh.md) |

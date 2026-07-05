@@ -10,6 +10,23 @@
 4. **标题是正式 artifact 的一部分。** `report.json`、`playback-simulation.generated.js` 和 manifest metadata 都要统一标题。
 5. **发布后必须读线上 API。** 只看到 GCS 上传成功不够，要确认 `/api/sundays/<date>`、`/api/sundays/current`、`/api/admin/status` 和 playback artifact 都读到新内容。
 
+## Human in the loop 边界
+
+当前流程的稳定目标是：自动化负责重复、耗时、可缓存的工作；人只审核会影响正式发布正确性的决策点。不要把 human review 伪装成日志提示，也不要让 `timeline-probe` 自动 promotion。
+
+| 关口 | 自动化产物 | 人工必须确认 | 不通过时 |
+|---|---|---|---|
+| 直播源锁定 | video id、title、live status、source state | 链接属于目标周日同一篇证道，标题/讲员不是旧视频或错误场次 | 标记 source mismatch，重新抓取候选 |
+| 完整音频可用 | `source_audio.m4a`、duration、metadata | 归档已经稳定，不是直播中短快照，不是旧视频缓存 | 返回 `waiting_for_post_live` 或换名保留错误音频 |
+| 粗时间轴 | `timeline/report.json`、start/end candidates、non-sermon evidence | start 是讲员开讲/经文引入/sermon title，end 是祷告/回应诗歌/明确收束 | 保持 `requires_operator_review`，继续短抽检 |
+| 证道窗口确认 | local start/end timecode | 首尾各 2 分钟不含敬拜、主持、公告，结尾不截断半句话 | 不跑正式 pipeline，重新定位窗口 |
+| 英文听写校对 | `sermon_en_relative.srt`、QA report | 讲员名、经文、人名地名、主题句和首尾 cue 没有明显 ASR 错误 | 修英文或重跑对应 chunk |
+| 中文 reviewed | `sermon_zh_relative.srt`、PDF、SRT/VTT | 中文自然、经文术语正确、中英不错位、没有空译/半句/坏断行 | 生成 `.reviewed.*` 前继续修订 |
+| 正式发布批准 | reviewed SRT/VTT/PDF、publish report | 标题、讲员、日期、段数、artifact list 都匹配本周页面 | 不写 stable manifest |
+| 线上 smoke | Cloud Run API、admin/public 页面、playback-js | `/api/sundays/<date>`、`/api/sundays/current`、admin 下拉和会众页都读新内容 | 回滚到前一 stable manifest 或修 manifest |
+
+自动化可以并行、重试、缓存；但只能在这些关口之间推进。任何一个关口缺少证据时，状态应停在 `requires_operator_review` 或对应的 `failed_*`，不能默默继续。
+
 ## 2026-07-05 复盘
 
 源视频：
@@ -37,6 +54,28 @@ A Bronze Snake and God's Love - Steve Bang Lee | Mariners Church
 
 ```text
 artifacts/post-live-subtitles/2026-07-05/0D6yZW4_uEA/audit_1705_4440.json
+```
+
+## 5 个直播链接回放测试结论
+
+用同一套 timeline probe 对 5 个 Mariners 直播归档做回放测试后，当前流程可以作为稳定的半自动候选生成器使用，但还不应该无人值守发布。
+
+结果摘要：
+
+- 4/5 生成了可供人工确认的候选窗口。
+- 1/5 没有足够证据生成窗口，正确停在人工处理路径。
+- 已加入对主持、课程广告、Mother's Day、祷告、回应诗歌等非证道 evidence 的惩罚/识别，减少把 service 元素误当 sermon 的概率。
+- 仍需要 operator 确认 start/end，因为同一频道不同周的主持结构、回应诗歌、收束方式不完全一致。
+
+稳定性判断：
+
+```text
+live-link capture:        stable enough with scheduler windows
+post-live download:       stable enough after archive status check
+timeline probe:           stable as a review gate
+window auto-approval:     not stable enough
+subtitle generation:      stable after confirmed window
+stable page publication:  stable only after reviewed artifacts
 ```
 
 ## 推荐处理路径
@@ -178,6 +217,8 @@ full_video_zh_from_sermon.reviewed.vtt
 sermon_zh_mobile.reviewed.pdf
 ```
 
+`sermon_zh_mobile.reviewed.pdf` 使用手机阅读版发布样式，默认每段中文下方显示对应英文，并在每页页脚带 AI 辅助生成免责声明。
+
 不要覆盖原始模型输出。
 
 ### 5. 上传 reviewed post-live 产物
@@ -281,7 +322,7 @@ refreshAdminStatus()
 
 ## 固化自动化方案
 
-目标是把人工经验收敛成一条可重复、可续跑、可审计的路径。自动化可以加速模型调用和 artifact 生成，但正式发布前仍保留两个人工关口：时间窗确认和中文字幕 reviewed。
+目标是把人工经验收敛成一条可重复、可续跑、可审计的路径。自动化可以加速模型调用和 artifact 生成，但正式发布前至少保留两个阻断关口：时间窗确认和中文字幕 reviewed；源视频、英文 ASR、stable manifest 与线上 smoke 也必须有可追溯证据。
 
 ### 状态机
 

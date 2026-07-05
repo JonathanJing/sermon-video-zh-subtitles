@@ -221,12 +221,14 @@ python3 scripts/run_post_live_subtitle_generation.py \
 ```bash
 python3 scripts/render_mobile_pdf_from_srt.py \
   --input <pipeline_outdir>/sermon_zh_relative.srt \
+  --secondary-input <pipeline_outdir>/sermon_en_relative.srt \
   --out <pipeline_outdir>/sermon_zh_mobile.pdf \
   --title <slug> \
   --subtitle '<Sunday date> sermon Chinese subtitles'
 ```
 
-`sermon_zh_mobile.pdf` 使用手机竖屏阅读尺寸，适合作为会后分享或手机端离线阅读版。它从中文 relative SRT 生成，不使用完整视频绝对时间轴。
+`sermon_zh_mobile.pdf` 使用手机竖屏阅读尺寸，适合作为会后分享或手机端离线阅读版。它从中文 relative SRT 生成，不使用完整视频绝对时间轴；如果传入 `--secondary-input`，会按时间轴把英文字幕显示在每段中文下方。
+发布版 PDF 默认会在每页页脚加入 AI 辅助生成免责声明；如需临时关闭，可在人工调试时加 `--hide-disclaimer`。
 
 ## 人工抽查清单
 
@@ -252,4 +254,4 @@ qa_report.json
 summary.json
 ```
 
-如果要给会众页或 Cloud Run 使用，后续再把通过 QA 的字幕产物纳入 Sunday manifest / GCS 发布流程。生成文件不得包含 API key、Secret Manager resource name、cookie、headers 或私有媒体凭据。
+如果要给会众页或 Cloud Run 使用，后续必须按 [Post-live reviewed Sunday 发布路径](./post-live-reviewed-sunday-publication.zh.md) 把通过 QA 的字幕产物纳入 Sunday manifest / GCS 发布流程，并保留人工确认时间窗、reviewed 字幕和线上 smoke 证据。生成文件不得包含 API key、Secret Manager resource name、cookie、headers 或私有媒体凭据。
