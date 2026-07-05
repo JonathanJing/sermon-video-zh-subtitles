@@ -464,42 +464,6 @@ class LiveSourceMonitorTest(unittest.TestCase):
         self.assertEqual(report["selectedSource"]["url"], "https://www.youtube.com/watch?v=0D6yZW4_uEA")
         self.assertEqual(report["selectedSource"]["evidence"], "yt-dlp-channel-live-url")
 
-    def test_fetch_default_candidates_uses_channel_live_html_when_metadata_is_blocked(self):
-        def fake_fetcher(url):
-            if url == mod.DEFAULT_YOUTUBE_LIVE_URL:
-                return '<html><head><title>Mariners Live</title></head><body>{"videoId":"0D6yZW4_uEA"}</body></html>'
-            if url == mod.DEFAULT_MARINERS_ONLINE_URL:
-                return "<html><head><title>Mariners Irvine</title></head><body>Online service</body></html>"
-            return "<html><head><title>Mariners Church</title></head><body>old stream tab</body></html>"
-
-        original_fetcher = mod.default_fetcher
-        original_metadata = mod.youtube_video_metadata
-        original_extract_info = mod.youtube_extract_info
-        original_tab_urls = mod.youtube_stream_watch_urls_from_tab
-        try:
-            mod.default_fetcher = fake_fetcher
-            mod.youtube_video_metadata = lambda url: None
-            mod.youtube_extract_info = lambda url, *, flat=False: None
-            mod.youtube_stream_watch_urls_from_tab = lambda url: []
-            report = mod.run_monitor(
-                base_args(
-                    sunday="2026-07-05",
-                    service="830",
-                    expected_title=None,
-                    now="2026-07-05T08:38:00-07:00",
-                )
-            )
-        finally:
-            mod.default_fetcher = original_fetcher
-            mod.youtube_video_metadata = original_metadata
-            mod.youtube_extract_info = original_extract_info
-            mod.youtube_stream_watch_urls_from_tab = original_tab_urls
-
-        self.assertEqual(report["status"], "source_detected")
-        self.assertEqual(report["selectedSource"]["kind"], "youtube-live")
-        self.assertEqual(report["selectedSource"]["url"], "https://www.youtube.com/watch?v=0D6yZW4_uEA")
-        self.assertEqual(report["selectedSource"]["evidence"], "channel-live-html-watch-url")
-
     def test_fetch_youtube_streams_rejects_wrong_service_date(self):
         channel_html = '<html><body><a href="/watch?v=FsUijL9uB1I">old</a></body></html>'
         old_sunday_timestamp = 1782055264

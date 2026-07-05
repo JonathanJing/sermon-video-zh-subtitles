@@ -421,18 +421,6 @@ def youtube_live_candidate_from_url(
             same_sermon_confidence=score_same_sermon(title or page_title, expected_title),
             evidence="yt-dlp-channel-live-metadata",
         )
-    live_watch_url = youtube_live_watch_url_from_html(page_html)
-    if live_watch_url:
-        return SourceCandidate(
-            kind="youtube-live",
-            service=service,
-            url=live_watch_url,
-            state="live",
-            title=title or page_title,
-            same_sermon_confidence=score_same_sermon(title or page_title, expected_title),
-            actual_start_at=actual_start,
-            evidence="channel-live-html-watch-url",
-        )
     live_watch_url = youtube_live_watch_url_from_channel(url)
     if live_watch_url:
         return SourceCandidate(
@@ -456,13 +444,6 @@ def youtube_live_candidate_from_url(
         evidence="channel-live-validation-failed",
         error="channel live URL did not resolve to target live/upcoming/was_live stream",
     )
-
-
-def youtube_live_watch_url_from_html(html: str | None) -> str | None:
-    if not html:
-        return None
-    urls = extracted_youtube_watch_urls(html)
-    return urls[0] if urls else None
 
 
 def youtube_live_watch_url_from_channel(url: str) -> str | None:
