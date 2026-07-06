@@ -215,9 +215,11 @@ sermon_zh_relative.reviewed.vtt
 full_video_zh_from_sermon.reviewed.srt
 full_video_zh_from_sermon.reviewed.vtt
 sermon_zh_mobile.reviewed.pdf
+sermon_zh_en_reading.reviewed.pdf
 ```
 
-`sermon_zh_mobile.reviewed.pdf` 使用手机阅读版发布样式，默认每段中文下方显示对应英文，并在每页页脚带 AI 辅助生成免责声明。
+`sermon_zh_mobile.reviewed.pdf` 是逐句字幕 PDF，保留每条 cue 的时间码，默认每段中文下方显示对应英文，并在每页页脚带 AI 辅助生成免责声明。
+`sermon_zh_en_reading.reviewed.pdf` 是独立阅读版 PDF，会优先等到中英文形成完整句后再把相邻短 cue 合并成更完整的段落，用时间范围标注段落位置；它适合会后手机长读，不替代逐句字幕 PDF。
 
 不要覆盖原始模型输出。
 
@@ -232,6 +234,7 @@ gcloud storage cp \
   artifacts/post-live-subtitles/YYYY-MM-DD/<VIDEO_ID>/pipeline_HHMM_HHMM/full_video_zh_from_sermon.reviewed.srt \
   artifacts/post-live-subtitles/YYYY-MM-DD/<VIDEO_ID>/pipeline_HHMM_HHMM/full_video_zh_from_sermon.reviewed.vtt \
   artifacts/post-live-subtitles/YYYY-MM-DD/<VIDEO_ID>/pipeline_HHMM_HHMM/sermon_zh_mobile.reviewed.pdf \
+  artifacts/post-live-subtitles/YYYY-MM-DD/<VIDEO_ID>/pipeline_HHMM_HHMM/sermon_zh_en_reading.reviewed.pdf \
   gs://sermon-zh-artifacts-ai-for-god/sundays/YYYY-MM-DD/post-live-subtitles/<VIDEO_ID>/pipeline_HHMM_HHMM/
 ```
 

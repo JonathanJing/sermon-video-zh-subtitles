@@ -110,6 +110,7 @@ def run_post_live_generation(
     pipeline_outdir = run_root / "pipeline"
     pipeline_command = build_pipeline_command(args, run_root / "download", pipeline_outdir, live_url)
     mobile_pdf_command = build_mobile_pdf_command(args, pipeline_outdir, live_url, metadata=metadata, source=source)
+    reading_pdf_command = build_reading_pdf_command(args, pipeline_outdir, live_url, metadata=metadata, source=source)
     report = {
         **base_report,
         "status": "planned" if (args.plan_only or args.dry_run) else "running",
@@ -118,6 +119,7 @@ def run_post_live_generation(
         "pipelineOutdir": str(pipeline_outdir),
         "pipelineCommand": pipeline_command,
         "mobilePdfCommand": mobile_pdf_command,
+        "readingPdfCommand": reading_pdf_command,
         "outputs": expected_outputs(pipeline_outdir),
     }
     if args.plan_only or args.dry_run:
@@ -128,8 +130,10 @@ def run_post_live_generation(
     audio_path = download_archive_audio(live_url, audio_template, args.audio_format, args.yt_dlp, runner)
     pipeline_command = build_pipeline_command(args, audio_path.parent, pipeline_outdir, live_url, audio_path=audio_path)
     mobile_pdf_command = build_mobile_pdf_command(args, pipeline_outdir, live_url, metadata=metadata, source=source)
+    reading_pdf_command = build_reading_pdf_command(args, pipeline_outdir, live_url, metadata=metadata, source=source)
     run_command(pipeline_command, runner)
     run_command(mobile_pdf_command, runner)
+    run_command(reading_pdf_command, runner)
     uploaded = upload_outputs(args, pipeline_outdir)
     report.update(
         {
@@ -137,6 +141,7 @@ def run_post_live_generation(
             "downloadedAudio": str(audio_path),
             "pipelineCommand": pipeline_command,
             "mobilePdfCommand": mobile_pdf_command,
+            "readingPdfCommand": reading_pdf_command,
             "uploaded": uploaded,
             "completedAt": datetime.now(timezone.utc).isoformat(),
         }
@@ -274,6 +279,32 @@ def build_mobile_pdf_command(
     ]
 
 
+def build_reading_pdf_command(
+    args: argparse.Namespace,
+    pipeline_outdir: Path,
+    live_url: str,
+    *,
+    metadata: dict[str, Any] | None = None,
+    source: dict[str, Any] | None = None,
+) -> list[str]:
+    return [
+        sys.executable,
+        str(MOBILE_PDF_SCRIPT),
+        "--layout",
+        "reading",
+        "--input",
+        str(pipeline_outdir / "sermon_zh_relative.srt"),
+        "--secondary-input",
+        str(pipeline_outdir / "sermon_en_relative.srt"),
+        "--out",
+        str(pipeline_outdir / "sermon_zh_en_reading.pdf"),
+        "--title",
+        mobile_pdf_title(args, live_url, metadata=metadata, source=source),
+        "--subtitle",
+        f"{args.sunday} reading edition Chinese-English transcript",
+    ]
+
+
 def mobile_pdf_title(
     args: argparse.Namespace,
     live_url: str,
@@ -331,6 +362,7 @@ def expected_outputs(pipeline_outdir: Path) -> list[str]:
         str(pipeline_outdir / "sermon_zh_relative.srt"),
         str(pipeline_outdir / "sermon_zh_relative.vtt"),
         str(pipeline_outdir / "sermon_zh_mobile.pdf"),
+        str(pipeline_outdir / "sermon_zh_en_reading.pdf"),
         str(pipeline_outdir / "full_video_zh_from_sermon.srt"),
         str(pipeline_outdir / "full_video_zh_from_sermon.vtt"),
         str(pipeline_outdir / "qa_report.json"),

@@ -49,7 +49,7 @@ mariners_<youtube_video_id>
 6. gpt-5.4-mini 按 3-5 分钟窗口校正英文分段
 7. gpt-5.5 逐条生成中文字幕
 8. 写出 relative 和 full-video 两套 SRT/VTT
-9. 从 `sermon_zh_relative.srt` 生成手机阅读版 PDF
+9. 从 `sermon_zh_relative.srt` 生成手机逐句版 PDF 和独立阅读版 PDF
 10. 跑 QA，确认 hard failures 为 0
 11. 抽查术语、经文、人名、首尾边界后发布/归档
 ```
@@ -216,7 +216,7 @@ python3 scripts/run_post_live_subtitle_generation.py \
 
 该脚本会从周六 `discover-source` 保存的 state 读取直播 URL，确认 YouTube metadata 已经是 `post_live` / `was_live`，再下载归档音频并调用 `scripts/sermon_pipeline.py`。如果还在直播或归档未稳定，它会返回 `waiting_for_post_live`，供 Scheduler 下次重试。
 
-自动化会在 `scripts/sermon_pipeline.py` 完成后调用：
+自动化会在 `scripts/sermon_pipeline.py` 完成后调用，先生成逐句版手机 PDF：
 
 ```bash
 python3 scripts/render_mobile_pdf_from_srt.py \
@@ -227,8 +227,22 @@ python3 scripts/render_mobile_pdf_from_srt.py \
   --subtitle '<Sunday date> sermon Chinese subtitles'
 ```
 
-`sermon_zh_mobile.pdf` 使用手机竖屏阅读尺寸，适合作为会后分享或手机端离线阅读版。它从中文 relative SRT 生成，不使用完整视频绝对时间轴；如果传入 `--secondary-input`，会按时间轴把英文字幕显示在每段中文下方。
+`sermon_zh_mobile.pdf` 使用手机竖屏尺寸，保留每条字幕 cue 的时间码，适合精确对照原始字幕。它从中文 relative SRT 生成，不使用完整视频绝对时间轴；如果传入 `--secondary-input`，会按时间轴把英文字幕显示在每段中文下方。
 发布版 PDF 默认会在每页页脚加入 AI 辅助生成免责声明；如需临时关闭，可在人工调试时加 `--hide-disclaimer`。
+
+随后生成每周标准阅读版 PDF，不替代逐句字幕 PDF：
+
+```bash
+python3 scripts/render_mobile_pdf_from_srt.py \
+  --layout reading \
+  --input <pipeline_outdir>/sermon_zh_relative.srt \
+  --secondary-input <pipeline_outdir>/sermon_en_relative.srt \
+  --out <pipeline_outdir>/sermon_zh_en_reading.pdf \
+  --title <sermon title> \
+  --subtitle '<Sunday date> reading edition Chinese-English transcript'
+```
+
+`sermon_zh_en_reading.pdf` 会尽量等到中英文都形成完整句后再断段，把相邻短 cue 合并成更接近讲章段落的阅读块，并用段落时间范围代替每句时间码；中文正文更适合连续阅读，英文仍放在对应中文段落下方。
 
 ## 人工抽查清单
 
@@ -248,6 +262,7 @@ python3 scripts/render_mobile_pdf_from_srt.py \
 sermon_zh_relative.srt
 sermon_zh_relative.vtt
 sermon_zh_mobile.pdf
+sermon_zh_en_reading.pdf
 full_video_zh_from_sermon.srt
 full_video_zh_from_sermon.vtt
 qa_report.json

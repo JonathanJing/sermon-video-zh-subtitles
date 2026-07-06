@@ -64,6 +64,48 @@ class RenderMobilePdfFromSrtTest(unittest.TestCase):
         self.assertEqual(aligned[0], "First English line. Second English line.")
         self.assertEqual(aligned[1], "Next sentence.")
 
+    def test_builds_reading_blocks_from_short_adjacent_cues(self):
+        primary = [
+            mod.Cue(start="00:00:01,000", end="00:00:02,000", text="第一句，"),
+            mod.Cue(start="00:00:02,000", end="00:00:04,000", text="继续同一个意思。"),
+            mod.Cue(start="00:00:04,100", end="00:00:06,000", text="这是新的完整句。"),
+        ]
+        secondary = [
+            mod.Cue(start="00:00:01,000", end="00:00:02,000", text="First part,"),
+            mod.Cue(start="00:00:02,000", end="00:00:04,000", text="same thought."),
+            mod.Cue(start="00:00:04,100", end="00:00:06,000", text="A new sentence."),
+        ]
+
+        blocks = mod.build_reading_blocks(primary, secondary, max_primary_chars=15)
+
+        self.assertEqual(len(blocks), 2)
+        self.assertEqual(blocks[0].start, "00:00:01,000")
+        self.assertEqual(blocks[0].end, "00:00:04,000")
+        self.assertEqual(blocks[0].primary, "第一句，继续同一个意思。")
+        self.assertEqual(blocks[0].secondary, "First part, same thought.")
+        self.assertEqual(blocks[1].primary, "这是新的完整句。")
+
+    def test_reading_blocks_prefer_complete_sentences_before_breaking(self):
+        primary = [
+            mod.Cue(start="00:00:01,000", end="00:00:02,000", text="这是一个"),
+            mod.Cue(start="00:00:02,000", end="00:00:03,000", text="还没完成的"),
+            mod.Cue(start="00:00:03,000", end="00:00:05,000", text="完整句。"),
+            mod.Cue(start="00:00:05,100", end="00:00:07,000", text="下一段开始。"),
+        ]
+        secondary = [
+            mod.Cue(start="00:00:01,000", end="00:00:02,000", text="This is"),
+            mod.Cue(start="00:00:02,000", end="00:00:03,000", text="an unfinished"),
+            mod.Cue(start="00:00:03,000", end="00:00:05,000", text="complete sentence."),
+            mod.Cue(start="00:00:05,100", end="00:00:07,000", text="The next paragraph begins."),
+        ]
+
+        blocks = mod.build_reading_blocks(primary, secondary, preferred_primary_chars=1)
+
+        self.assertEqual(len(blocks), 2)
+        self.assertEqual(blocks[0].primary, "这是一个还没完成的完整句。")
+        self.assertEqual(blocks[0].secondary, "This is an unfinished complete sentence.")
+        self.assertEqual(blocks[1].primary, "下一段开始。")
+
     def test_default_footer_includes_disclaimer(self):
         wrapped = mod.wrap_text(
             mod.DEFAULT_DISCLAIMER,

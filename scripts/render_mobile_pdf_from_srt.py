@@ -47,6 +47,14 @@ class Cue:
     text: str
 
 
+@dataclass(frozen=True)
+class ReadingBlock:
+    start: str
+    end: str
+    primary: str
+    secondary: str = ""
+
+
 def main() -> int:
     args = parse_args()
     cues = parse_srt(args.input.read_text(encoding="utf-8-sig"))
@@ -54,22 +62,42 @@ def main() -> int:
         raise SystemExit("No SRT cues found.")
     secondary_cues = parse_srt(args.secondary_input.read_text(encoding="utf-8-sig")) if args.secondary_input else None
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    render_mobile_pdf(
-        cues,
-        secondary_cues=secondary_cues,
-        out=args.out,
-        title=args.title or args.input.stem,
-        subtitle=args.subtitle,
-        font_path=args.font_path,
-        include_timecodes=not args.hide_timecodes,
-        disclaimer=None if args.hide_disclaimer else args.disclaimer,
-    )
+    if args.layout == "reading":
+        render_reading_pdf(
+            cues,
+            secondary_cues=secondary_cues,
+            out=args.out,
+            title=args.title or args.input.stem,
+            subtitle=args.subtitle,
+            font_path=args.font_path,
+            include_timecodes=not args.hide_timecodes,
+            disclaimer=None if args.hide_disclaimer else args.disclaimer,
+            max_gap_seconds=args.reading_max_gap_seconds,
+            max_block_seconds=args.reading_max_block_seconds,
+            max_primary_chars=args.reading_max_primary_chars,
+            max_secondary_chars=args.reading_max_secondary_chars,
+            preferred_block_seconds=args.reading_preferred_block_seconds,
+            preferred_primary_chars=args.reading_preferred_primary_chars,
+            preferred_secondary_chars=args.reading_preferred_secondary_chars,
+        )
+    else:
+        render_mobile_pdf(
+            cues,
+            secondary_cues=secondary_cues,
+            out=args.out,
+            title=args.title or args.input.stem,
+            subtitle=args.subtitle,
+            font_path=args.font_path,
+            include_timecodes=not args.hide_timecodes,
+            disclaimer=None if args.hide_disclaimer else args.disclaimer,
+        )
     print(
         json.dumps(
             {
                 "status": "ok",
                 "cueCount": len(cues),
                 "secondaryCueCount": len(secondary_cues) if secondary_cues is not None else 0,
+                "layout": args.layout,
                 "out": str(args.out),
                 "pageSize": "mobile-390x844pt",
                 "source": str(args.input),
@@ -89,6 +117,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--out", type=Path, required=True, help="Output PDF path.")
     parser.add_argument("--title", help="PDF title.")
     parser.add_argument("--subtitle", help="Optional subtitle shown under the title.")
+    parser.add_argument(
+        "--layout",
+        choices=("cue", "reading"),
+        default="cue",
+        help="Use cue for subtitle-like output or reading for merged reading paragraphs.",
+    )
+    parser.add_argument("--reading-max-gap-seconds", type=float, default=2.0)
+    parser.add_argument("--reading-max-block-seconds", type=float, default=55.0)
+    parser.add_argument("--reading-max-primary-chars", type=int, default=320)
+    parser.add_argument("--reading-max-secondary-chars", type=int, default=1400)
+    parser.add_argument("--reading-preferred-block-seconds", type=float, default=32.0)
+    parser.add_argument("--reading-preferred-primary-chars", type=int, default=180)
+    parser.add_argument("--reading-preferred-secondary-chars", type=int, default=850)
     parser.add_argument("--font-path", type=Path, help="Optional CJK TTF/TTC/OTF font to embed.")
     parser.add_argument("--hide-timecodes", action="store_true", help="Hide cue timecodes in the PDF body.")
     parser.add_argument(
@@ -169,6 +210,132 @@ def join_unique_text(values) -> str:
             seen.add(text)
             parts.append(text)
     return " ".join(parts)
+
+
+def build_reading_blocks(
+    primary_cues: list[Cue],
+    secondary_cues: list[Cue] | None = None,
+    *,
+    max_gap_seconds: float = 2.0,
+    max_block_seconds: float = 55.0,
+    max_primary_chars: int = 320,
+    max_secondary_chars: int = 1400,
+    preferred_block_seconds: float = 32.0,
+    preferred_primary_chars: int = 180,
+    preferred_secondary_chars: int = 850,
+) -> list[ReadingBlock]:
+    secondary_by_index = align_secondary_cues(primary_cues, secondary_cues or [])
+    blocks: list[ReadingBlock] = []
+    current_primary: list[str] = []
+    current_secondary: list[str] = []
+    current_start = ""
+    current_end = ""
+    current_start_seconds = 0.0
+    current_end_seconds = 0.0
+
+    def flush() -> None:
+        nonlocal current_primary, current_secondary, current_start, current_end, current_start_seconds, current_end_seconds
+        if current_primary:
+            blocks.append(
+                ReadingBlock(
+                    start=current_start,
+                    end=current_end,
+                    primary=join_primary_text(current_primary),
+                    secondary=join_secondary_text(current_secondary),
+                )
+            )
+        current_primary = []
+        current_secondary = []
+        current_start = ""
+        current_end = ""
+        current_start_seconds = 0.0
+        current_end_seconds = 0.0
+
+    for index, cue in enumerate(primary_cues):
+        cue_start = timestamp_to_seconds(cue.start)
+        cue_end = timestamp_to_seconds(cue.end)
+        secondary_text = secondary_by_index[index]
+        if not current_primary:
+            current_primary = [cue.text]
+            current_secondary = [secondary_text] if secondary_text else []
+            current_start = cue.start
+            current_end = cue.end
+            current_start_seconds = cue_start
+            current_end_seconds = cue_end
+            continue
+
+        gap = cue_start - current_end_seconds
+        current_primary_text = join_primary_text(current_primary)
+        current_secondary_text = join_secondary_text(current_secondary)
+        merged_primary = join_primary_text([*current_primary, cue.text])
+        merged_secondary = join_secondary_text([*current_secondary, secondary_text] if secondary_text else current_secondary)
+        current_duration = current_end_seconds - current_start_seconds
+        next_duration = cue_end - current_start_seconds
+        current_sentence_complete = is_sentence_end(current_primary_text)
+        paragraph_ready = (
+            current_duration >= preferred_block_seconds
+            or len(current_primary_text) >= preferred_primary_chars
+            or len(current_secondary_text) >= preferred_secondary_chars
+        )
+        next_would_exceed_block = (
+            next_duration > max_block_seconds
+            or len(merged_primary) > max_primary_chars
+            or len(merged_secondary) > max_secondary_chars
+        )
+        hard_overflow = (
+            next_duration > max_block_seconds * 1.25
+            or len(merged_primary) > int(max_primary_chars * 1.25)
+            or len(merged_secondary) > int(max_secondary_chars * 1.25)
+        )
+        should_break = (
+            gap > max_gap_seconds
+            or (current_sentence_complete and (paragraph_ready or next_would_exceed_block))
+            or (not current_sentence_complete and hard_overflow)
+        )
+        if should_break:
+            flush()
+            current_primary = [cue.text]
+            current_secondary = [secondary_text] if secondary_text else []
+            current_start = cue.start
+            current_end = cue.end
+            current_start_seconds = cue_start
+            current_end_seconds = cue_end
+        else:
+            current_primary.append(cue.text)
+            if secondary_text:
+                current_secondary.append(secondary_text)
+            current_end = cue.end
+            current_end_seconds = cue_end
+    flush()
+    return blocks
+
+
+def join_primary_text(parts: list[str]) -> str:
+    text = ""
+    for part in parts:
+        clean = part.strip()
+        if not clean:
+            continue
+        if not text:
+            text = clean
+            continue
+        if needs_ascii_space(text[-1], clean[0]):
+            text += " " + clean
+        else:
+            text += clean
+    return text
+
+
+def join_secondary_text(parts: list[str]) -> str:
+    return re.sub(r"\s+", " ", " ".join(part.strip() for part in parts if part.strip())).strip()
+
+
+def needs_ascii_space(left: str, right: str) -> bool:
+    return left.isascii() and right.isascii() and (left.isalnum() or left in "'\"") and (right.isalnum() or right in "'\"")
+
+
+def is_sentence_end(text: str) -> bool:
+    return bool(re.search(r"[。！？.!?][\"'”’）)]?$", text.strip()))
 
 
 def render_mobile_pdf(
@@ -258,6 +425,118 @@ def render_mobile_pdf(
                 doc.drawString(margin_x + SECONDARY_INDENT, y, line)
                 y -= SECONDARY_FONT_SIZE + SECONDARY_LINE_GAP
         y -= CUE_GAP
+
+    draw_footer(
+        doc,
+        page_width=page_width,
+        page_number=page_number,
+        font_name=font_name,
+        margin_x=margin_x,
+        disclaimer=disclaimer,
+    )
+    doc.save()
+
+
+def render_reading_pdf(
+    cues: list[Cue],
+    *,
+    secondary_cues: list[Cue] | None = None,
+    out: Path,
+    title: str,
+    subtitle: str | None = None,
+    font_path: Path | None = None,
+    include_timecodes: bool = True,
+    disclaimer: str | None = DEFAULT_DISCLAIMER,
+    max_gap_seconds: float = 2.0,
+    max_block_seconds: float = 55.0,
+    max_primary_chars: int = 320,
+    max_secondary_chars: int = 1400,
+    preferred_block_seconds: float = 32.0,
+    preferred_primary_chars: int = 180,
+    preferred_secondary_chars: int = 850,
+) -> None:
+    blocks = build_reading_blocks(
+        cues,
+        secondary_cues,
+        max_gap_seconds=max_gap_seconds,
+        max_block_seconds=max_block_seconds,
+        max_primary_chars=max_primary_chars,
+        max_secondary_chars=max_secondary_chars,
+        preferred_block_seconds=preferred_block_seconds,
+        preferred_primary_chars=preferred_primary_chars,
+        preferred_secondary_chars=preferred_secondary_chars,
+    )
+    font_name = register_cjk_font(font_path)
+    page_width, page_height = MOBILE_PAGE_SIZE
+    margin_x = 22
+    margin_top = 30
+    margin_bottom = 54 if disclaimer else 30
+    body_width = page_width - margin_x * 2
+    secondary_width = body_width - SECONDARY_INDENT
+    doc = canvas.Canvas(str(out), pagesize=MOBILE_PAGE_SIZE)
+    doc.setTitle(title)
+    doc.setAuthor("sermon-video-zh-subtitles")
+
+    page_number = 1
+    y = draw_header(
+        doc,
+        title=title,
+        subtitle=subtitle,
+        page_width=page_width,
+        y=page_height - margin_top,
+        font_name=font_name,
+        first_page=True,
+    )
+    for block in blocks:
+        time_line = f"{display_time(block.start)} - {display_time(block.end)}"
+        primary_lines = wrap_text(block.primary, font_name, BODY_FONT_SIZE, body_width)
+        secondary_lines = wrap_text(block.secondary, font_name, SECONDARY_FONT_SIZE, secondary_width) if block.secondary else []
+        block_height = len(primary_lines) * (BODY_FONT_SIZE + LINE_GAP) + CUE_GAP + 4
+        if secondary_lines:
+            block_height += SECONDARY_GAP + len(secondary_lines) * (SECONDARY_FONT_SIZE + SECONDARY_LINE_GAP)
+        if include_timecodes:
+            block_height += TIME_LABEL_HEIGHT + TIME_LABEL_BOTTOM_GAP
+        if y - block_height < margin_bottom:
+            draw_footer(
+                doc,
+                page_width=page_width,
+                page_number=page_number,
+                font_name=font_name,
+                margin_x=margin_x,
+                disclaimer=disclaimer,
+            )
+            doc.showPage()
+            page_number += 1
+            y = draw_header(
+                doc,
+                title=title,
+                subtitle=subtitle,
+                page_width=page_width,
+                y=page_height - margin_top,
+                font_name=font_name,
+                first_page=False,
+            )
+        if include_timecodes:
+            draw_time_label(doc, x=margin_x, y=y, text=time_line, font_name=font_name)
+            y -= TIME_LABEL_HEIGHT + TIME_LABEL_BOTTOM_GAP
+        doc.setFillColor(colors.HexColor("#111827"))
+        doc.setFont(font_name, BODY_FONT_SIZE)
+        for line in primary_lines:
+            doc.drawString(margin_x, y, line)
+            y -= BODY_FONT_SIZE + LINE_GAP
+        if secondary_lines:
+            y -= SECONDARY_GAP
+            secondary_top = y + 2
+            secondary_bottom = y - len(secondary_lines) * (SECONDARY_FONT_SIZE + SECONDARY_LINE_GAP) + 2
+            doc.setStrokeColor(colors.HexColor("#d6dee9"))
+            doc.setLineWidth(0.6)
+            doc.line(margin_x + 1, secondary_top, margin_x + 1, secondary_bottom)
+            doc.setFillColor(colors.HexColor("#556070"))
+            doc.setFont(font_name, SECONDARY_FONT_SIZE)
+            for line in secondary_lines:
+                doc.drawString(margin_x + SECONDARY_INDENT, y, line)
+                y -= SECONDARY_FONT_SIZE + SECONDARY_LINE_GAP
+        y -= CUE_GAP + 4
 
     draw_footer(
         doc,

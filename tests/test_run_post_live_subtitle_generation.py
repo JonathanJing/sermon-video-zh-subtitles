@@ -120,13 +120,18 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
         self.assertEqual(command[command.index("--gpt4o-model") + 1], "gpt-4o-transcribe")
         self.assertEqual(command[command.index("--timing-model") + 1], "whisper-1")
         self.assertIn("render_mobile_pdf_from_srt.py", report["mobilePdfCommand"][1])
+        self.assertIn("render_mobile_pdf_from_srt.py", report["readingPdfCommand"][1])
         self.assertEqual(
             report["mobilePdfCommand"][report["mobilePdfCommand"].index("--title") + 1],
             "A Bronze Snake and God's Love - Steve Bang Lee | Mariners Church",
         )
+        self.assertIn("--layout", report["readingPdfCommand"])
+        self.assertEqual(report["readingPdfCommand"][report["readingPdfCommand"].index("--layout") + 1], "reading")
+        self.assertTrue(any("sermon_zh_en_reading.pdf" in item for item in report["readingPdfCommand"]))
         self.assertTrue(any("sermon_zh_relative.srt" in item for item in report["mobilePdfCommand"]))
         self.assertTrue(any("sermon_en_relative.srt" in item for item in report["mobilePdfCommand"]))
         self.assertTrue(any(path.endswith("sermon_zh_mobile.pdf") for path in report["outputs"]))
+        self.assertTrue(any(path.endswith("sermon_zh_en_reading.pdf") for path in report["outputs"]))
 
     def test_run_downloads_audio_and_invokes_pipeline(self):
         calls = []
@@ -173,7 +178,11 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
         self.assertEqual(calls[0][0], "yt-dlp")
         self.assertIn("sermon_pipeline.py", calls[1][1])
         self.assertIn("render_mobile_pdf_from_srt.py", calls[2][1])
+        self.assertIn("render_mobile_pdf_from_srt.py", calls[3][1])
+        self.assertIn("--layout", calls[3])
+        self.assertEqual(calls[3][calls[3].index("--layout") + 1], "reading")
         self.assertTrue(any("sermon_zh_mobile.pdf" in item for item in report["mobilePdfCommand"]))
+        self.assertTrue(any("sermon_zh_en_reading.pdf" in item for item in report["readingPdfCommand"]))
 
 
 if __name__ == "__main__":
