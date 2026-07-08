@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#f7fbff" />
     <title>管理端 | 11:30 会众中文字幕</title>
     <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="stylesheet" href="./styles.css?v=20260628-ipad-caption2" />
+    <link rel="stylesheet" href="./styles.css?v=20260707-admin-review-resize" />
   </head>
   <body>
     <div class="app-shell admin-shell" data-sidebar="open" data-view-mode="admin">
@@ -321,6 +321,11 @@
                 <span id="segmentCount">待加载</span>
                 <span id="segmentCountNote">片段来自字幕时间轴</span>
                 <span id="segmentCoverage">等待覆盖范围</span>
+                <div class="review-size-controls" data-operator-only aria-label="字幕列表高度">
+                  <button class="icon-button icon-button--small" type="button" data-action="review-list-compact" aria-label="缩小字幕列表" title="缩小字幕列表">小</button>
+                  <button class="icon-button icon-button--small" type="button" data-action="review-list-toggle" id="reviewListToggle" aria-label="收起字幕列表" title="收起字幕列表">收</button>
+                  <button class="icon-button icon-button--small" type="button" data-action="review-list-expand" aria-label="放大字幕列表" title="放大字幕列表">大</button>
+                </div>
                 <button class="text-button is-hidden" type="button" data-action="return-live" id="returnLiveButton">回到实时</button>
               </div>
             </div>
@@ -390,6 +395,6 @@
 
     <script src="./scripture-cmn-cu89s.generated.js?v=20260623-scripture2" defer></script>
     <script src="./playback-simulation.generated.js" defer></script>
-    <script src="./app.js?v=20260705-admin-current-sunday" defer></script>
+    <script src="./app.js?v=20260707-admin-review-resize" defer></script>
   </body>
 </html>

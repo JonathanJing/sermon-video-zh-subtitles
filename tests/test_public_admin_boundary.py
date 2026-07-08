@@ -82,6 +82,9 @@ class PublicAdminBoundaryTest(unittest.TestCase):
             "trigger-manual-ingest",
             "start-archive-latency-test",
             "start-mic-latency-test",
+            "review-list-compact",
+            "review-list-toggle",
+            "review-list-expand",
             "export-vtt",
             "export-srt",
         ]:
@@ -89,6 +92,24 @@ class PublicAdminBoundaryTest(unittest.TestCase):
         self.assertIn("control-panel", admin.classes)
         self.assertIn("admin-overview", admin.classes)
         self.assertGreater(admin.data_operator_only_count, 0)
+
+    def test_admin_review_strip_has_mobile_resize_contract(self):
+        public = parse_html("index.html")
+        admin = parse_html("admin.html")
+        app_js = (WEB_ROOT / "app.js").read_text(encoding="utf-8")
+        styles = (WEB_ROOT / "styles.css").read_text(encoding="utf-8")
+
+        self.assertNotIn("review-list-compact", public.actions)
+        self.assertIn("review-list-compact", admin.actions)
+        self.assertIn("review-list-toggle", admin.actions)
+        self.assertIn("review-list-expand", admin.actions)
+        self.assertIn("function setReviewListSize(size)", app_js)
+        self.assertIn("function toggleReviewList()", app_js)
+        self.assertIn("dataset.reviewSize", app_js)
+        self.assertIn("dataset.reviewCollapsed", app_js)
+        self.assertIn(".admin-shell[data-review-size=\"compact\"]", styles)
+        self.assertIn(".admin-shell[data-review-size=\"large\"]", styles)
+        self.assertIn(".admin-shell[data-review-collapsed=\"true\"] .segment-list", styles)
 
 
 if __name__ == "__main__":

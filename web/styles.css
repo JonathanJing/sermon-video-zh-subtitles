@@ -104,6 +104,19 @@ ul {
 
 .admin-shell {
   grid-template-rows: auto auto minmax(0, 1fr) auto;
+  --admin-review-height: clamp(300px, 42svh, 430px);
+}
+
+.admin-shell[data-review-size="compact"] {
+  --admin-review-height: clamp(190px, 30svh, 280px);
+}
+
+.admin-shell[data-review-size="large"] {
+  --admin-review-height: clamp(420px, 62svh, 620px);
+}
+
+.admin-shell[data-review-collapsed="true"] {
+  --admin-review-height: 58px;
 }
 
 .topbar {
@@ -783,6 +796,13 @@ ul {
   color: var(--blue-900);
 }
 
+.icon-button--small {
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  font-size: 0.78rem;
+}
+
 .text-button {
   min-width: var(--tap);
   min-height: var(--tap);
@@ -1218,6 +1238,12 @@ ul {
   flex-wrap: wrap;
 }
 
+.review-size-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .review-strip__head span {
   color: var(--muted);
   font-size: 0.8rem;
@@ -1281,6 +1307,20 @@ ul {
   border-color: #94bed5;
   background: var(--blue-050);
   color: var(--blue-900);
+}
+
+.admin-shell .review-strip {
+  max-height: var(--admin-review-height);
+}
+
+.admin-shell[data-review-collapsed="true"] .review-strip {
+  grid-template-rows: auto;
+  min-height: 0;
+  overflow: visible;
+}
+
+.admin-shell[data-review-collapsed="true"] .segment-list {
+  display: none;
 }
 
 .tab-panel {
@@ -1807,6 +1847,19 @@ ul {
     grid-template-rows: auto auto auto minmax(250px, 42svh) auto minmax(116px, auto);
   }
 
+  .admin-shell .subtitle-stage {
+    grid-template-rows: auto auto auto minmax(190px, 34svh) auto minmax(0, var(--admin-review-height));
+  }
+
+  .admin-shell .review-strip {
+    height: var(--admin-review-height);
+    max-height: none;
+  }
+
+  .admin-shell[data-review-collapsed="true"] .review-strip {
+    height: auto;
+  }
+
   .panel-heading,
   .stage-toolbar {
     align-items: flex-start;
@@ -1833,6 +1886,27 @@ ul {
     min-width: 0;
     padding-right: 6px;
     padding-left: 6px;
+  }
+
+  .review-strip__head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .review-strip__actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .review-size-controls {
+    order: 3;
+    width: 100%;
+  }
+
+  .review-size-controls .icon-button--small {
+    flex: 1 1 0;
+    width: auto;
+    min-height: 40px;
   }
 
   .panel-heading > .button--small,

@@ -167,6 +167,8 @@
     livePlayback: null,
     livePlaybackFetchedAt: null,
     livePlaybackAppliedMode: "",
+    reviewListSize: "normal",
+    reviewListCollapsed: false,
     testRun: null,
     micStream: null,
     recognition: null,
@@ -203,6 +205,7 @@
     segmentCount: document.getElementById("segmentCount"),
     segmentCountNote: document.getElementById("segmentCountNote"),
     segmentCoverage: document.getElementById("segmentCoverage"),
+    reviewListToggle: document.getElementById("reviewListToggle"),
     returnLiveButton: document.getElementById("returnLiveButton"),
     scriptureCandidates: document.getElementById("scriptureCandidates"),
     noteBlock: document.getElementById("noteBlock"),
@@ -251,6 +254,7 @@
 
   function init() {
     configureViewMode();
+    syncReviewListControls();
     document.addEventListener("click", onActionClick);
     if (el.adminSettings) {
       el.adminSettings.addEventListener("submit", (event) => event.preventDefault());
@@ -551,6 +555,9 @@
     if (action === "export-vtt") exportCaptions("vtt");
     if (action === "export-srt") exportCaptions("srt");
     if (action === "return-live") returnToLive();
+    if (action === "review-list-compact") setReviewListSize("compact");
+    if (action === "review-list-expand") setReviewListSize("large");
+    if (action === "review-list-toggle") toggleReviewList();
     if (action === "start-archive-latency-test") startArchiveLatencyTest();
     if (action === "start-mic-latency-test") startMicLatencyTest();
     if (action === "stop-mic-latency-test") stopMicLatencyTest("operator");
@@ -2091,6 +2098,42 @@
   function updateReturnLiveButton() {
     const show = state.segments.length > 0 && !state.segmentAutoFollow;
     el.returnLiveButton.classList.toggle("is-hidden", !show);
+  }
+
+  function setReviewListSize(size) {
+    if (!["compact", "normal", "large"].includes(size)) return;
+    state.reviewListSize = size;
+    state.reviewListCollapsed = false;
+    syncReviewListControls();
+    const label = size === "compact" ? "小号" : size === "large" ? "大号" : "标准";
+    log(`字幕复核列表已切到${label}高度。`);
+  }
+
+  function toggleReviewList() {
+    state.reviewListCollapsed = !state.reviewListCollapsed;
+    syncReviewListControls();
+    log(state.reviewListCollapsed ? "已收起字幕复核列表。" : "已展开字幕复核列表。");
+  }
+
+  function syncReviewListControls() {
+    if (!el.shell || state.viewMode !== "admin") return;
+    el.shell.dataset.reviewSize = state.reviewListSize;
+    el.shell.dataset.reviewCollapsed = String(state.reviewListCollapsed);
+    document.querySelectorAll("[data-action='review-list-compact']").forEach((button) => {
+      button.classList.toggle("is-active", state.reviewListSize === "compact" && !state.reviewListCollapsed);
+      button.setAttribute("aria-pressed", String(state.reviewListSize === "compact" && !state.reviewListCollapsed));
+    });
+    document.querySelectorAll("[data-action='review-list-expand']").forEach((button) => {
+      button.classList.toggle("is-active", state.reviewListSize === "large" && !state.reviewListCollapsed);
+      button.setAttribute("aria-pressed", String(state.reviewListSize === "large" && !state.reviewListCollapsed));
+    });
+    if (el.reviewListToggle) {
+      el.reviewListToggle.classList.toggle("is-active", state.reviewListCollapsed);
+      el.reviewListToggle.setAttribute("aria-pressed", String(state.reviewListCollapsed));
+      el.reviewListToggle.setAttribute("aria-label", state.reviewListCollapsed ? "展开字幕列表" : "收起字幕列表");
+      el.reviewListToggle.setAttribute("title", state.reviewListCollapsed ? "展开字幕列表" : "收起字幕列表");
+      el.reviewListToggle.textContent = state.reviewListCollapsed ? "展" : "收";
+    }
   }
 
   function resetScriptureCandidates() {
