@@ -16,6 +16,8 @@
 5. `09-admin-iphone-after-final.png` - admin page, iPhone after resize fix
 6. `10-admin-iphone-review-controls-after.png` - admin page, iPhone review controls in view
 7. `08-admin-desktop-after-versioned.png` - admin page, desktop after resize fix
+8. `11-public-iphone-final.png` - public page, iPhone after clear sidebar labels and compact disclaimer
+9. `12-admin-iphone-review-final.png` - admin page, iPhone final review controls check
 
 ## Public Page Audit
 
@@ -58,6 +60,8 @@ Changes made:
 - Added `data-review-size` and `data-review-collapsed` state on the admin shell.
 - Constrained the mobile admin review list to controlled heights with internal scrolling.
 - Bumped shared CSS/JS cache-buster query strings in both public and admin HTML.
+- Replaced public single-character scripture sidebar controls with clear labels.
+- Capped the mobile disclaimer block at 150px with internal scrolling so captions appear sooner.
 
 After-fix checks:
 
@@ -65,6 +69,7 @@ After-fix checks:
 - Large mode: review strip 523px, internal segment list 325px.
 - Collapsed mode: review strip 58px and list hidden.
 - Resize controls are visible, touch-sized, and do not introduce horizontal overflow.
+- Final public iPhone check: no horizontal overflow; disclaimer is 150px; top sidebar control reads "经文侧栏".
 
 Accessibility notes:
 

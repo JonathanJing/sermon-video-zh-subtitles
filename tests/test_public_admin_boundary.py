@@ -48,6 +48,7 @@ class PublicAdminBoundaryTest(unittest.TestCase):
 
     def test_public_page_has_no_operator_controls_in_dom(self):
         public = parse_html("index.html")
+        public_html = (WEB_ROOT / "index.html").read_text(encoding="utf-8")
         forbidden_actions = {
             "start-monitor",
             "start-caption",
@@ -74,6 +75,10 @@ class PublicAdminBoundaryTest(unittest.TestCase):
         self.assertNotIn("control-panel", public.classes)
         self.assertNotIn("admin-overview", public.classes)
         self.assertEqual(public.data_operator_only_count, 0)
+        self.assertIn(">经文侧栏</button>", public_html)
+        self.assertIn(">收起侧栏</button>", public_html)
+        self.assertNotIn(">章</button>", public_html)
+        self.assertNotIn(">收</button>", public_html)
 
     def test_admin_page_retains_operator_controls(self):
         admin = parse_html("admin.html")
