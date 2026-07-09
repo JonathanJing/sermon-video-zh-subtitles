@@ -249,7 +249,16 @@
     cloudRunTestResult: document.getElementById("cloudRunTestResult"),
     cloudRunPublicLink: document.getElementById("cloudRunPublicLink"),
     cloudRunAdminLink: document.getElementById("cloudRunAdminLink"),
-    livePlaybackStatus: document.getElementById("livePlaybackStatus")
+    livePlaybackStatus: document.getElementById("livePlaybackStatus"),
+    adminRunStatus: document.getElementById("adminRunStatus"),
+    adminCaptureStep: document.getElementById("adminCaptureStep"),
+    adminGenerateStep: document.getElementById("adminGenerateStep"),
+    adminArtifactsStep: document.getElementById("adminArtifactsStep"),
+    adminPlaybackStep: document.getElementById("adminPlaybackStep"),
+    livePlaybackStartButton: document.getElementById("livePlaybackStartButton"),
+    livePlaybackPauseButton: document.getElementById("livePlaybackPauseButton"),
+    livePlaybackResumeButton: document.getElementById("livePlaybackResumeButton"),
+    livePlaybackEndButton: document.getElementById("livePlaybackEndButton")
   };
 
   function init() {
@@ -286,6 +295,7 @@
     syncAdminSettings();
     updateSourceCards("idle");
     updateTimeline();
+    syncAdminMainFlow();
     loadPublicPublishedSnapshot();
     if (state.viewMode === "admin") {
       refreshAdminStatus()
@@ -310,6 +320,8 @@
       ? "admin"
       : "congregation";
     el.shell.dataset.viewMode = state.viewMode;
+    state.sidebarOpen = el.shell.dataset.sidebar !== "closed";
+    if (state.viewMode === "admin") state.reviewListCollapsed = true;
     document.title = state.viewMode === "admin"
       ? "管理端 | 11:30 会众中文字幕"
       : "11:30 会众中文字幕";
@@ -386,6 +398,7 @@
     state.segments.forEach(addScriptureCandidate);
     updateNotes();
     updateTimeline(100);
+    syncAdminMainFlow();
   }
 
   async function loadInitialCloudRunDatePlayback() {
@@ -802,7 +815,7 @@
       applyLivePlaybackState(playback);
     } catch (error) {
       if (!options.quiet) log(`现场同步状态读取失败：${error.message || error}`);
-      if (el.livePlaybackStatus) el.livePlaybackStatus.textContent = "现场同步状态未知";
+      if (el.livePlaybackStatus) el.livePlaybackStatus.textContent = "字幕状态未知";
     }
   }
 
@@ -814,6 +827,7 @@
       if (["live", "paused"].includes(previousMode) && state.playbackSegments.length) {
         loadPublicPublishedSnapshot();
       }
+      syncAdminMainFlow();
       return;
     }
     if (!["live", "paused"].includes(playback.mode) || !state.playbackSegments.length) return;
@@ -826,11 +840,15 @@
     state.currentSegmentId = segment.id;
     setCaptionWindow(segment);
     setEnglishSidecar(segment.en || "字幕源为中文，暂无英文原文。", segment.confidence);
-    setStatus(playback.mode === "paused" ? "现场同步已暂停" : "现场同步播放中", playback.mode === "paused" ? "warning" : "live");
-    setSla("跟随现场视频", playback.mode === "paused" ? "warning" : "live");
+    const paused = playback.mode === "paused";
+    setStatus(paused
+      ? (state.viewMode === "admin" ? "字幕已暂停" : "字幕暂时暂停")
+      : (state.viewMode === "admin" ? "字幕进行中" : "字幕正在更新"), paused ? "warning" : "live");
+    setSla(paused ? (state.viewMode === "admin" ? "可继续字幕" : "等待继续") : "跟随现场视频", paused ? "warning" : "live");
     setGenerationStatus(playback.mode === "paused" ? "已暂停" : "现场同步", playback.mode === "paused" ? "warning" : "live");
     updateTimeline(playbackProgressPercent(playheadMs));
     renderSegments();
+    syncAdminMainFlow();
   }
 
   function livePlaybackPlayheadMs(playback) {
@@ -951,12 +969,13 @@
     const playhead = ["live", "paused"].includes(playback.mode) ? ` · ${msToClock(livePlaybackPlayheadMs(playback))}` : "";
     const offset = Number(playback.offsetMs) || 0;
     const labels = {
-      idle: "现场同步未启动",
-      live: `现场同步中${playhead} · offset ${offset}ms`,
-      paused: `现场同步暂停${playhead} · offset ${offset}ms`,
-      ended: "现场同步已结束"
+      idle: "字幕尚未开始",
+      live: `字幕进行中${playhead} · 偏移 ${offset}ms`,
+      paused: `字幕已暂停${playhead} · 偏移 ${offset}ms`,
+      ended: "字幕已结束"
     };
-    el.livePlaybackStatus.textContent = labels[playback.mode] || "现场同步状态未知";
+    el.livePlaybackStatus.textContent = labels[playback.mode] || "字幕状态未知";
+    syncAdminMainFlow();
   }
 
   function livePlaybackActionLabel(action) {
@@ -2946,6 +2965,7 @@
     if (el.autoDiscoveryStatus) {
       el.autoDiscoveryStatus.textContent = manual ? "手动链接优先" : "08:20/09:50 PT";
     }
+    syncAdminMainFlow();
   }
 
   function updateSermonMeta({ title, meta, status, tone }) {
@@ -3011,6 +3031,7 @@
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       state.adminProgress = await response.json();
       updatePipelineFromAdminProgress(state.adminProgress);
+      syncAdminMainFlow();
       if (!options.quiet) log("已读取后端生成进度。");
     } catch (error) {
       if (!options.quiet) log(`生成进度读取失败：${error.message || error}。`);
@@ -3028,16 +3049,27 @@
     const realtime = status.realtime || {};
     const eventArchive = realtime.eventArchive || {};
     const sunday = status.sunday || state.adminSettings.sunday;
+    const localPreviewReady = state.playbackSegments.length > 0;
+    const manifestState = String(artifact.manifestStatus || "unchecked").toLowerCase();
+    const manifestUnavailable = ["unchecked", "unavailable", "missing"].includes(manifestState);
     setOptionalText(el.adminSunday, sunday || "--");
-    setOptionalText(el.adminManifestStatus, statusLabel(artifact.manifestStatus || "unchecked"));
-    setOptionalText(el.adminManifestDetail, artifact.manifestError
+    setOptionalText(el.adminManifestStatus, localPreviewReady && manifestUnavailable ? "本地预览" : statusLabel(manifestState));
+    setOptionalText(el.adminManifestDetail, localPreviewReady && manifestUnavailable
+      ? `已加载 ${state.playbackSegments.length} 条本地字幕；线上发布清单仍需确认`
+      : artifact.manifestError
       ? `读取失败：${artifact.manifestError}`
       : manifestDetailText(artifact));
     const readinessState = readiness.state || captionsStatus.translationStatus || "unknown";
-    setOptionalText(el.adminCaptionStatus, statusLabel(readinessState));
-    setOptionalText(el.adminCaptionDetail, captionCountText(captionsStatus));
-    setOptionalText(el.adminReadyTime, captionsStatus.publishedAt || captionsStatus.readyTime || readiness.publishedAt || readiness.readyTime || "待发布");
-    setOptionalText(el.adminUpdatedAt, `最后更新 ${captionsStatus.lastUpdated || formatClock()}`);
+    setOptionalText(el.adminCaptionStatus, localPreviewReady && ["unknown", "missing", "unavailable"].includes(String(readinessState).toLowerCase())
+      ? "已加载"
+      : statusLabel(readinessState));
+    setOptionalText(el.adminCaptionDetail, localPreviewReady && !Number.isFinite(captionsStatus.totalSegments)
+      ? `${state.playbackSegments.length} 条本地字幕可预览`
+      : captionCountText(captionsStatus));
+    const readyTimestamp = captionsStatus.publishedAt || captionsStatus.readyTime || readiness.publishedAt || readiness.readyTime;
+    const updatedTimestamp = captionsStatus.lastUpdated || readyTimestamp;
+    setOptionalText(el.adminReadyTime, readyTimestamp ? formatAdminTimestamp(readyTimestamp) : "待发布");
+    setOptionalText(el.adminUpdatedAt, updatedTimestamp ? `最后更新 ${formatAdminTimestamp(updatedTimestamp)}` : "最后更新 --");
     setOptionalText(el.adminBucket, artifact.bucket || "未配置");
     setOptionalText(el.adminPrefix, artifact.prefix || "sundays");
     setOptionalText(el.adminProvider, providerLabel(settings.provider || "openai"));
@@ -3054,6 +3086,152 @@
     if (eventArchive.enabled) {
       updateAdminEvidence("worker", `Realtime deltas 写入 ${eventArchive.directory || "backend JSONL archive"}`);
     }
+    syncAdminMainFlow();
+  }
+
+  function syncAdminMainFlow() {
+    if (state.viewMode !== "admin" || !el.adminRunStatus) return;
+    const status = state.adminStatus || {};
+    const artifact = status.artifact || {};
+    const captionsStatus = status.captions || {};
+    const readiness = status.readiness || {};
+    const progress = state.adminProgress || {};
+    const progressStatus = String(progress.status || "").toLowerCase();
+    const readinessState = String(readiness.state || captionsStatus.translationStatus || "").toLowerCase();
+    const publicReady = Boolean(readiness.publicArtifactsReady)
+      || ["ready", "published", "available"].includes(String(artifact.manifestStatus || "").toLowerCase())
+      || ["ready", "published"].includes(readinessState);
+    const loadedCaptions = adminPlaybackReady();
+    const pipelineReady = publicReady || loadedCaptions;
+    const startReady = loadedCaptions;
+
+    let captureLabel = state.adminSettings.captureMode === "manual" ? "手动链接优先" : "08:20 / 09:50 已排程";
+    let captureState = "waiting";
+    if (progressStatus === "failed") {
+      captureLabel = "抓取失败";
+      captureState = "failed";
+    } else if (progressStatus === "running") {
+      captureLabel = "正在处理直播源";
+      captureState = "active";
+    } else if (progressStatus === "planned") {
+      captureLabel = "任务已排程";
+      captureState = "active";
+    } else if (progressStatus === "completed" || pipelineReady) {
+      captureLabel = "直播链接已处理";
+      captureState = "done";
+    }
+    setAdminMainStep(el.adminCaptureStep, captureLabel, captureState);
+
+    const total = Number(captionsStatus.totalSegments);
+    const translated = Number(captionsStatus.translatedSegments);
+    let generateLabel = "等待直播归档";
+    let generateState = "waiting";
+    if (progressStatus === "failed") {
+      generateLabel = "生成失败";
+      generateState = "failed";
+    } else if (progressStatus === "running") {
+      generateLabel = "听写 / 翻译中";
+      generateState = "active";
+    } else if (Number.isFinite(total) && total > 0 && Number.isFinite(translated)) {
+      generateLabel = `${translated}/${total} 已翻译`;
+      generateState = translated >= total ? "done" : "active";
+    } else if (["ready", "published", "translated"].includes(readinessState)) {
+      generateLabel = "听写与翻译完成";
+      generateState = "done";
+    } else if (loadedCaptions) {
+      generateLabel = `${state.playbackSegments.length} 条字幕已加载`;
+      generateState = "done";
+    }
+    setAdminMainStep(el.adminGenerateStep, generateLabel, generateState);
+
+    let artifactLabel = "等待生成";
+    let artifactState = "waiting";
+    if (progressStatus === "failed") {
+      artifactLabel = "产物生成失败";
+      artifactState = "failed";
+    } else if (publicReady) {
+      artifactLabel = "字幕文件与页面可用";
+      artifactState = "done";
+    } else if (loadedCaptions) {
+      artifactLabel = "字幕页面已加载";
+      artifactState = "active";
+    } else if (progressStatus === "running" || progressStatus === "planned") {
+      artifactLabel = "正在生成产物";
+      artifactState = "active";
+    }
+    setAdminMainStep(el.adminArtifactsStep, artifactLabel, artifactState);
+
+    const playbackMode = String(state.livePlayback?.mode || "idle").toLowerCase();
+    const playbackLabels = {
+      idle: ["等待开始", "waiting"],
+      live: ["进行中", "active"],
+      paused: ["已暂停", "active"],
+      ended: ["已结束", "done"]
+    };
+    const [playbackLabel, playbackState] = playbackLabels[playbackMode] || ["状态未知", "waiting"];
+    setAdminMainStep(el.adminPlaybackStep, playbackLabel, playbackState);
+
+    let runLabel = "等待自动生成";
+    let runTone = "waiting";
+    if (progressStatus === "failed") {
+      runLabel = "需要处理失败任务";
+      runTone = "failed";
+    } else if (playbackMode === "live") {
+      runLabel = "字幕进行中";
+      runTone = "active";
+    } else if (playbackMode === "paused") {
+      runLabel = "字幕已暂停";
+      runTone = "active";
+    } else if (startReady) {
+      runLabel = "已准备，可开始字幕";
+      runTone = "done";
+    } else if (progressStatus === "running" || progressStatus === "planned") {
+      runLabel = progressStatus === "running" ? "字幕生成中" : "任务已排程";
+      runTone = "active";
+    }
+    el.adminRunStatus.textContent = runLabel;
+    el.adminRunStatus.dataset.tone = runTone;
+    syncLivePlaybackControls(playbackMode);
+  }
+
+  function setAdminMainStep(target, label, stateName) {
+    if (!target) return;
+    target.textContent = label;
+    const item = target.closest("li");
+    if (item) item.dataset.state = stateName;
+  }
+
+  function syncLivePlaybackControls(mode = String(state.livePlayback?.mode || "idle").toLowerCase()) {
+    if (!el.livePlaybackStartButton) return;
+    const hasPublishedCaptions = adminPlaybackReady();
+    const running = mode === "live";
+    const paused = mode === "paused";
+    el.livePlaybackStartButton.hidden = running || paused;
+    el.livePlaybackStartButton.disabled = !hasPublishedCaptions;
+    el.livePlaybackPauseButton.hidden = !running;
+    el.livePlaybackResumeButton.hidden = !paused;
+    el.livePlaybackEndButton.hidden = !running && !paused;
+  }
+
+  function adminPlaybackReady() {
+    if (state.viewMode !== "admin" || !state.playbackSegments.length) return false;
+    if (["localhost", "127.0.0.1", "::1"].includes(window.location.hostname)) return true;
+    return Boolean(state.publicPlaybackSunday && state.publicPlaybackSunday === state.adminSettings.sunday);
+  }
+
+  function formatAdminTimestamp(value) {
+    const parsed = new Date(value);
+    if (!Number.isFinite(parsed.getTime())) return String(value || "--");
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Los_Angeles",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false
+    });
+    const parts = Object.fromEntries(formatter.formatToParts(parsed).map((part) => [part.type, part.value]));
+    return `${parts.month}-${parts.day} ${parts.hour}:${parts.minute} PT`;
   }
 
   function ensureSundayOption(sunday, labelPrefix = "周日页面") {

@@ -6,10 +6,10 @@
     <meta name="theme-color" content="#f7fbff" />
     <title>管理端 | 11:30 会众中文字幕</title>
     <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="stylesheet" href="./styles.css?v=20260707-admin-review-resize" />
+    <link rel="stylesheet" href="./styles.css?v=20260709-iphone-admin-flow" />
   </head>
   <body>
-    <div class="app-shell admin-shell" data-sidebar="open" data-view-mode="admin">
+    <div class="app-shell admin-shell" data-sidebar="closed" data-view-mode="admin">
       <header class="topbar">
         <div class="brand-block">
           <div>
@@ -58,12 +58,73 @@
         </div>
       </section>
 
+      <section class="admin-run-panel" aria-labelledby="admin-run-title" data-operator-only>
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">本周主流程</p>
+            <h2 id="admin-run-title">准备完成后，开始字幕</h2>
+          </div>
+          <span class="settings-mode" id="adminRunStatus" aria-live="polite">等待读取状态</span>
+        </div>
+
+        <ol class="admin-main-flow" id="adminMainFlow" aria-label="本周字幕主流程">
+          <li data-state="waiting">
+            <span>1</span>
+            <div><strong>定时抓取直播链接</strong><p>周日自动检查 8:30 / 10:00 直播源</p></div>
+            <em id="adminCaptureStep">已排程</em>
+          </li>
+          <li data-state="waiting">
+            <span>2</span>
+            <div><strong>英文听写与中文翻译</strong><p>后台自动处理证道音频</p></div>
+            <em id="adminGenerateStep">等待</em>
+          </li>
+          <li data-state="waiting">
+            <span>3</span>
+            <div><strong>生成 PDF / SRT / 页面</strong><p>完成字幕文件和会众页面</p></div>
+            <em id="adminArtifactsStep">等待</em>
+          </li>
+          <li data-state="waiting">
+            <span>4</span>
+            <div><strong>开始字幕</strong><p>让会众页跟随现场视频</p></div>
+            <em id="adminPlaybackStep">未开始</em>
+          </li>
+        </ol>
+
+        <div class="admin-run-actions">
+          <div class="admin-run-state">
+            <span class="settings-mode" id="livePlaybackStatus">字幕尚未开始</span>
+            <span id="sessionLabel">11:30 字幕任务：尚未开始</span>
+            <span id="deadlineLabel">目标：11:30 PT 可用 · 最晚 11:50 PT</span>
+          </div>
+          <div class="timeline-track" aria-hidden="true">
+            <div class="timeline-fill" id="timelineFill"></div>
+            <div class="timeline-cursor" id="timelineCursor"></div>
+          </div>
+          <div class="admin-run-buttons">
+            <button class="button button--primary admin-run-start" id="livePlaybackStartButton" type="button" data-action="live-playback-start" disabled>开始字幕</button>
+            <button class="button" id="livePlaybackPauseButton" type="button" data-action="live-playback-pause" hidden>暂停</button>
+            <button class="button" id="livePlaybackResumeButton" type="button" data-action="live-playback-resume" hidden>继续</button>
+            <button class="button" id="livePlaybackEndButton" type="button" data-action="live-playback-end" hidden>结束</button>
+            <a class="button" href="./" target="_blank" rel="noreferrer">查看会众页</a>
+          </div>
+        </div>
+      </section>
+
       <main class="workspace">
-        <section class="control-panel" aria-labelledby="live-source-title" data-operator-only>
+        <section class="control-panel" aria-label="高级工具与手动处理" data-operator-only>
+          <details class="admin-advanced-disclosure" id="adminAdvancedTools">
+            <summary class="admin-advanced-summary">
+              <span>
+                <span class="eyebrow">高级工具</span>
+                <strong>手动抓取、测试与日志</strong>
+              </span>
+              <small>需要时展开</small>
+            </summary>
+            <div class="admin-advanced-body">
           <div class="panel-heading">
             <div>
-              <p class="eyebrow">11:30 前准备</p>
-              <h2 id="live-source-title">直播源与手动触发</h2>
+              <p class="eyebrow">手动处理</p>
+              <h2 id="live-source-title">直播源与测试工具</h2>
             </div>
             <span class="settings-mode" id="adminSecretStatus">密钥状态未检查</span>
           </div>
@@ -213,14 +274,14 @@
               <span class="source-state" id="pipelineSummary">等待</span>
             </div>
             <ol class="pipeline-list" id="pipelineList">
-              <li data-stage="source-discovery"><span>1</span><div><strong>发现直播源</strong><p>确认 8:30、10:00 或手动链接</p></div><em>等待</em></li>
-              <li data-stage="live-capture"><span>2</span><div><strong>采集直播/归档</strong><p>抓取直播或已发布回放</p></div><em>等待</em></li>
-              <li data-stage="sermon-start"><span>3</span><div><strong>判断证道开始</strong><p>定位证道起点，避开敬拜与公告</p></div><em>等待</em></li>
+              <li data-stage="source-discovery"><span>1</span><div><strong>抓取直播链接</strong><p>确认 8:30、10:00 或手动链接</p></div><em>等待</em></li>
+              <li data-stage="live-capture"><span>2</span><div><strong>采集直播 / 回放</strong><p>下载直播或已发布归档</p></div><em>等待</em></li>
+              <li data-stage="sermon-start"><span>3</span><div><strong>识别证道区间</strong><p>避开敬拜与公告</p></div><em>等待</em></li>
               <li data-stage="transcript"><span>4</span><div><strong>英文听写</strong><p>生成可复核的英文原文</p></div><em>等待</em></li>
-              <li data-stage="translation"><span>5</span><div><strong>生成中文翻译</strong><p>输出会众可读的中文字幕</p></div><em>等待</em></li>
-              <li data-stage="scripture"><span>6</span><div><strong>经文匹配</strong><p>连接经文库后补充经文和讲章线索</p></div><em>等待</em></li>
-              <li data-stage="promotion"><span>7</span><div><strong>发布清单</strong><p>更新本周日会众页面数据</p></div><em>等待</em></li>
-              <li data-stage="public-ready"><span>8</span><div><strong>会众页可用</strong><p>11:30 页面可以打开观看</p></div><em>等待</em></li>
+              <li data-stage="translation"><span>5</span><div><strong>中文翻译</strong><p>输出会众可读的中文字幕</p></div><em>等待</em></li>
+              <li data-stage="scripture"><span>6</span><div><strong>经文与笔记（可选）</strong><p>不阻塞字幕文件发布</p></div><em>等待</em></li>
+              <li data-stage="promotion"><span>7</span><div><strong>生成字幕文件与页面</strong><p>导出 SRT/VTT 并更新周日页面</p></div><em>等待</em></li>
+              <li data-stage="public-ready"><span>8</span><div><strong>会众页可用</strong><p>可以在上方点击开始字幕</p></div><em>等待</em></li>
             </ol>
           </div>
 
@@ -270,6 +331,8 @@
             </div>
             <ol id="eventLog"></ol>
           </div>
+            </div>
+          </details>
         </section>
 
         <section class="subtitle-stage" aria-labelledby="caption-title">
@@ -278,7 +341,7 @@
               <p class="eyebrow">会众字幕</p>
               <h2 id="caption-title">11:30 场可用中文字幕</h2>
             </div>
-            <div class="button-row button-row--compact" data-operator-only>
+            <div class="button-row button-row--compact admin-caption-tools" data-operator-only hidden>
               <button class="button button--small" type="button" data-action="mark-segment" aria-label="标记当前片段" title="标记当前片段">标记</button>
               <button class="button button--small" type="button" data-action="lock-segment" aria-label="锁定当前片段" title="锁定当前片段">锁定</button>
               <button class="button button--small" type="button" data-action="toggle-stream" aria-label="暂停或继续字幕流" title="暂停或继续字幕流">暂停</button>
@@ -294,7 +357,7 @@
             <span class="generation-badge" id="generationStatus">待开始</span>
           </div>
 
-          <aside class="viewer-disclaimer" aria-label="字幕免责声明">
+          <aside class="viewer-disclaimer admin-only-disclaimer" aria-label="字幕免责声明">
             <strong>字幕免责声明</strong>
             <p>本页面中文字幕由 AI 辅助生成，供现场听道理解参考，可能存在延迟、遗漏或翻译不准确。此工具是独立个人开源项目，并非 Mariners Church 官方项目或背书服务；仅基于公开可访问或已授权的直播、归档和视频内容进行英文听写与中文翻译处理，不绕过访问控制、DRM 或版权保护。请以讲员原文、教会正式发布内容和正式圣经译本为准。</p>
           </aside>
@@ -360,41 +423,37 @@
         </aside>
       </main>
 
-      <footer class="timeline-panel" aria-label="时间轴和导出" data-operator-only>
-        <div class="timeline-meta">
-          <span id="sessionLabel">11:30 字幕任务：尚未开始</span>
-          <span id="deadlineLabel">目标：11:30 PT 可用 · 最晚 11:50 PT</span>
-        </div>
-        <div class="timeline-track">
-          <div class="timeline-fill" id="timelineFill"></div>
-          <div class="timeline-cursor" id="timelineCursor"></div>
-        </div>
-        <div class="timeline-controls">
-          <span class="settings-mode" id="livePlaybackStatus">现场同步未启动</span>
-          <button class="button button--primary" type="button" data-action="live-playback-start">开始现场同步</button>
-          <button class="button" type="button" data-action="live-playback-pause">暂停同步</button>
-          <button class="button" type="button" data-action="live-playback-resume">继续同步</button>
-          <button class="button" type="button" data-action="live-playback-end">结束同步</button>
-          <button class="button" type="button" data-action="live-playback-adjust" data-delta-ms="-5000">-5s</button>
-          <button class="button" type="button" data-action="live-playback-adjust" data-delta-ms="-1000">-1s</button>
-          <button class="button" type="button" data-action="live-playback-adjust" data-delta-ms="1000">+1s</button>
-          <button class="button" type="button" data-action="live-playback-adjust" data-delta-ms="5000">+5s</button>
-          <button class="button" type="button" data-action="live-playback-jump">跳到此句</button>
-          <label class="offset-control">
-            <span>时间轴平移</span>
-            <input type="number" id="offsetInput" value="0" step="250" />
-            <span>ms</span>
-          </label>
-          <button class="button" type="button" data-action="apply-offset">应用时间平移</button>
-          <button class="button" type="button" data-action="freeze-review">冻结会众版本</button>
-          <button class="button button--primary" type="button" data-action="export-vtt">导出 VTT</button>
-          <button class="button button--primary" type="button" data-action="export-srt">导出 SRT</button>
-        </div>
+      <footer class="timeline-panel timeline-panel--advanced" aria-label="高级时间轴校准与导出" data-operator-only>
+        <details class="admin-advanced-disclosure admin-calibration-tools">
+          <summary class="admin-advanced-summary">
+            <span>
+              <span class="eyebrow">高级校准</span>
+              <strong>时间轴微调与导出</strong>
+            </span>
+            <small>需要时展开</small>
+          </summary>
+          <div class="timeline-controls admin-calibration-body">
+            <button class="button" type="button" data-action="live-playback-adjust" data-delta-ms="-5000">-5s</button>
+            <button class="button" type="button" data-action="live-playback-adjust" data-delta-ms="-1000">-1s</button>
+            <button class="button" type="button" data-action="live-playback-adjust" data-delta-ms="1000">+1s</button>
+            <button class="button" type="button" data-action="live-playback-adjust" data-delta-ms="5000">+5s</button>
+            <button class="button" type="button" data-action="live-playback-jump">跳到此句</button>
+            <label class="offset-control">
+              <span>时间轴平移</span>
+              <input type="number" id="offsetInput" value="0" step="250" />
+              <span>ms</span>
+            </label>
+            <button class="button" type="button" data-action="apply-offset">应用时间平移</button>
+            <button class="button" type="button" data-action="freeze-review">冻结会众版本</button>
+            <button class="button button--primary" type="button" data-action="export-vtt">导出 VTT</button>
+            <button class="button button--primary" type="button" data-action="export-srt">导出 SRT</button>
+          </div>
+        </details>
       </footer>
     </div>
 
     <script src="./scripture-cmn-cu89s.generated.js?v=20260623-scripture2" defer></script>
     <script src="./playback-simulation.generated.js" defer></script>
-    <script src="./app.js?v=20260707-admin-review-resize" defer></script>
+    <script src="./app.js?v=20260709-iphone-admin-flow" defer></script>
   </body>
 </html>

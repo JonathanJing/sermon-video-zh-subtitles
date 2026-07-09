@@ -87,6 +87,7 @@ class PublicAdminBoundaryTest(unittest.TestCase):
             "trigger-manual-ingest",
             "start-archive-latency-test",
             "start-mic-latency-test",
+            "live-playback-start",
             "review-list-compact",
             "review-list-toggle",
             "review-list-expand",
@@ -97,6 +98,28 @@ class PublicAdminBoundaryTest(unittest.TestCase):
         self.assertIn("control-panel", admin.classes)
         self.assertIn("admin-overview", admin.classes)
         self.assertGreater(admin.data_operator_only_count, 0)
+
+    def test_admin_primary_flow_is_iphone_first_and_advanced_tools_start_collapsed(self):
+        admin_html = (WEB_ROOT / "admin.html").read_text(encoding="utf-8")
+        app_js = (WEB_ROOT / "app.js").read_text(encoding="utf-8")
+        styles = (WEB_ROOT / "styles.css").read_text(encoding="utf-8")
+
+        self.assertIn('data-sidebar="closed"', admin_html)
+        self.assertIn('class="admin-run-panel"', admin_html)
+        self.assertIn('id="adminMainFlow"', admin_html)
+        self.assertIn('id="livePlaybackStartButton"', admin_html)
+        self.assertIn('>开始字幕</button>', admin_html)
+        self.assertIn('id="adminAdvancedTools"', admin_html)
+        self.assertNotIn('id="adminAdvancedTools" open', admin_html)
+        self.assertIn("admin-caption-tools", admin_html)
+        self.assertIn('state.reviewListCollapsed = true', app_js)
+        self.assertIn('function syncAdminMainFlow()', app_js)
+        self.assertIn('function syncLivePlaybackControls(', app_js)
+        self.assertIn('function adminPlaybackReady()', app_js)
+        self.assertIn('state.publicPlaybackSunday === state.adminSettings.sunday', app_js)
+        self.assertIn('.admin-run-panel', styles)
+        self.assertIn('.admin-main-flow', styles)
+        self.assertIn('grid-template-columns: repeat(2, minmax(0, 1fr));', styles)
 
     def test_admin_review_strip_has_mobile_resize_contract(self):
         public = parse_html("index.html")
