@@ -7,12 +7,15 @@ import argparse
 import json
 import os
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from reportlab.lib import colors
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.cidfonts import UnicodeCIDFont
+from reportlab.pdfbase.pdfdoc import PDFString
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
@@ -24,20 +27,27 @@ MOBILE_PAGE_SIZE = (390, 844)
 FONT_FALLBACK_CID = "STSong-Light"
 FONT_EMBEDDED = "MobileCJK"
 DEFAULT_DISCLAIMER = "AI 辅助生成的中文字幕，仅供个人学习和会后回顾；请以 Mariners Church 官方信息及原始英文讲道为准。"
-TITLE_FONT_SIZE = 15.5
-RUNNING_HEADER_FONT_SIZE = 8
-SUBTITLE_FONT_SIZE = 9
-BODY_FONT_SIZE = 13.5
-SECONDARY_FONT_SIZE = 8.6
-TIME_FONT_SIZE = 7.2
-FOOTER_FONT_SIZE = 6.2
-LINE_GAP = 3.5
-SECONDARY_LINE_GAP = 2.2
-SECONDARY_GAP = 4.2
-CUE_GAP = 11
-TIME_LABEL_HEIGHT = 11.5
-TIME_LABEL_BOTTOM_GAP = 11
+COMPACT_DISCLAIMER = "AI 辅助翻译 · 仅供学习回顾 · 以 Mariners Church 官方英文为准"
+TITLE_FONT_SIZE = 16.2
+RUNNING_HEADER_FONT_SIZE = 8.8
+SUBTITLE_FONT_SIZE = 9.8
+BODY_FONT_SIZE = 15.5
+SECONDARY_FONT_SIZE = 10.5
+TIME_FONT_SIZE = 8.0
+FOOTER_FONT_SIZE = 7.2
+LINE_GAP = 4.2
+SECONDARY_LINE_GAP = 3.0
+SECONDARY_GAP = 5.0
+CUE_GAP = 13
+TIME_LABEL_HEIGHT = 13
+TIME_LABEL_BOTTOM_GAP = 10
 SECONDARY_INDENT = 8
+MARGIN_X = 24
+MARGIN_TOP = 30
+MARGIN_BOTTOM_WITH_DISCLAIMER = 58
+MARGIN_BOTTOM_WITHOUT_DISCLAIMER = 32
+KINSOKU_NO_LINE_START = frozenset("，。！？；：、）》】〉』”’…—％‰℃")
+KINSOKU_NO_LINE_END = frozenset("（《【〈『“‘")
 
 
 @dataclass(frozen=True)
@@ -53,6 +63,17 @@ class ReadingBlock:
     end: str
     primary: str
     secondary: str = ""
+
+
+@dataclass(frozen=True)
+class RenderBlock:
+    start: str
+    end: str
+    primary_lines: tuple[str, ...]
+    secondary_lines: tuple[str, ...]
+    height: float
+    bottom_gap: float
+    continued: bool = False
 
 
 def main() -> int:
@@ -72,6 +93,7 @@ def main() -> int:
             font_path=args.font_path,
             include_timecodes=not args.hide_timecodes,
             disclaimer=None if args.hide_disclaimer else args.disclaimer,
+            source_url=args.source_url,
             max_gap_seconds=args.reading_max_gap_seconds,
             max_block_seconds=args.reading_max_block_seconds,
             max_primary_chars=args.reading_max_primary_chars,
@@ -90,6 +112,7 @@ def main() -> int:
             font_path=args.font_path,
             include_timecodes=not args.hide_timecodes,
             disclaimer=None if args.hide_disclaimer else args.disclaimer,
+            source_url=args.source_url,
         )
     print(
         json.dumps(
@@ -131,6 +154,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--reading-preferred-primary-chars", type=int, default=180)
     parser.add_argument("--reading-preferred-secondary-chars", type=int, default=850)
     parser.add_argument("--font-path", type=Path, help="Optional CJK TTF/TTC/OTF font to embed.")
+    parser.add_argument("--source-url", help="Optional video URL used to make time labels clickable.")
     parser.add_argument("--hide-timecodes", action="store_true", help="Hide cue timecodes in the PDF body.")
     parser.add_argument(
         "--disclaimer",
@@ -163,7 +187,17 @@ def parse_srt(text: str) -> list[Cue]:
 def clean_caption_text(text: str) -> str:
     text = re.sub(r"</?[^>]+>", "", text)
     text = re.sub(r"\{\\[^}]+\}", "", text)
-    return re.sub(r"\s+", " ", text).strip()
+    return normalize_cjk_punctuation_spacing(re.sub(r"\s+", " ", text).strip())
+
+
+def normalize_cjk_punctuation_spacing(text: str) -> str:
+    """Remove spacing artifacts around Chinese punctuation without changing English prose."""
+    text = re.sub(r"(?<=[\u3400-\u9fff\uf900-\ufaff])\s+(?=[\u3400-\u9fff\uf900-\ufaff])", "", text)
+    text = re.sub(r"\s+([，。！？；：、）》】〉』”’％‰℃])", r"\1", text)
+    text = re.sub(r"([（《【〈『“‘])\s+", r"\1", text)
+    text = re.sub(r"([，。！？；：、）》】〉』”’])\s+(?=[\u3400-\u9fff\uf900-\ufaff])", r"\1", text)
+    text = re.sub(r"(?<=[\u3400-\u9fff\uf900-\ufaff])\s+(?=[（《【〈『“‘])", "", text)
+    return text.strip()
 
 
 def align_secondary_cues(primary_cues: list[Cue], secondary_cues: list[Cue]) -> list[str]:
@@ -348,93 +382,34 @@ def render_mobile_pdf(
     font_path: Path | None = None,
     include_timecodes: bool = True,
     disclaimer: str | None = DEFAULT_DISCLAIMER,
+    source_url: str | None = None,
 ) -> None:
     font_name = register_cjk_font(font_path)
-    page_width, page_height = MOBILE_PAGE_SIZE
-    margin_x = 22
-    margin_top = 30
-    margin_bottom = 54 if disclaimer else 30
-    body_width = page_width - margin_x * 2
-    doc = canvas.Canvas(str(out), pagesize=MOBILE_PAGE_SIZE)
-    doc.setTitle(title)
-    doc.setAuthor("sermon-video-zh-subtitles")
+    body_width = MOBILE_PAGE_SIZE[0] - MARGIN_X * 2
     secondary_by_index = align_secondary_cues(cues, secondary_cues or [])
-
-    page_number = 1
-    y = draw_header(
-        doc,
+    blocks: list[RenderBlock] = []
+    for index, cue in enumerate(cues):
+        blocks.append(
+            make_render_block(
+                start=cue.start,
+                end=cue.end,
+                primary=cue.text,
+                secondary=secondary_by_index[index],
+                font_name=font_name,
+                body_width=body_width,
+                include_timecodes=include_timecodes,
+            )
+        )
+    render_paginated_pdf(
+        blocks,
+        out=out,
         title=title,
         subtitle=subtitle,
-        page_width=page_width,
-        y=page_height - margin_top,
         font_name=font_name,
-        first_page=True,
-    )
-    for index, cue in enumerate(cues):
-        time_line = f"{display_time(cue.start)} - {display_time(cue.end)}"
-        lines = wrap_text(cue.text, font_name, BODY_FONT_SIZE, body_width)
-        secondary_width = body_width - SECONDARY_INDENT
-        secondary_lines = (
-            wrap_text(secondary_by_index[index], font_name, SECONDARY_FONT_SIZE, secondary_width)
-            if secondary_by_index[index]
-            else []
-        )
-        block_height = len(lines) * (BODY_FONT_SIZE + LINE_GAP) + CUE_GAP
-        if secondary_lines:
-            block_height += SECONDARY_GAP + len(secondary_lines) * (SECONDARY_FONT_SIZE + SECONDARY_LINE_GAP)
-        if include_timecodes:
-            block_height += TIME_LABEL_HEIGHT + TIME_LABEL_BOTTOM_GAP
-        if y - block_height < margin_bottom:
-            draw_footer(
-                doc,
-                page_width=page_width,
-                page_number=page_number,
-                font_name=font_name,
-                margin_x=margin_x,
-                disclaimer=disclaimer,
-            )
-            doc.showPage()
-            page_number += 1
-            y = draw_header(
-                doc,
-                title=title,
-                subtitle=subtitle,
-                page_width=page_width,
-                y=page_height - margin_top,
-                font_name=font_name,
-                first_page=False,
-            )
-        if include_timecodes:
-            draw_time_label(doc, x=margin_x, y=y, text=time_line, font_name=font_name)
-            y -= TIME_LABEL_HEIGHT + TIME_LABEL_BOTTOM_GAP
-        doc.setFillColor(colors.HexColor("#111827"))
-        doc.setFont(font_name, BODY_FONT_SIZE)
-        for line in lines:
-            doc.drawString(margin_x, y, line)
-            y -= BODY_FONT_SIZE + LINE_GAP
-        if secondary_lines:
-            y -= SECONDARY_GAP
-            secondary_top = y + 2
-            secondary_bottom = y - len(secondary_lines) * (SECONDARY_FONT_SIZE + SECONDARY_LINE_GAP) + 2
-            doc.setStrokeColor(colors.HexColor("#d6dee9"))
-            doc.setLineWidth(0.6)
-            doc.line(margin_x + 1, secondary_top, margin_x + 1, secondary_bottom)
-            doc.setFillColor(colors.HexColor("#556070"))
-            doc.setFont(font_name, SECONDARY_FONT_SIZE)
-            for line in secondary_lines:
-                doc.drawString(margin_x + SECONDARY_INDENT, y, line)
-                y -= SECONDARY_FONT_SIZE + SECONDARY_LINE_GAP
-        y -= CUE_GAP
-
-    draw_footer(
-        doc,
-        page_width=page_width,
-        page_number=page_number,
-        font_name=font_name,
-        margin_x=margin_x,
+        include_timecodes=include_timecodes,
         disclaimer=disclaimer,
+        source_url=source_url,
     )
-    doc.save()
 
 
 def render_reading_pdf(
@@ -447,6 +422,7 @@ def render_reading_pdf(
     font_path: Path | None = None,
     include_timecodes: bool = True,
     disclaimer: str | None = DEFAULT_DISCLAIMER,
+    source_url: str | None = None,
     max_gap_seconds: float = 2.0,
     max_block_seconds: float = 55.0,
     max_primary_chars: int = 320,
@@ -467,86 +443,342 @@ def render_reading_pdf(
         preferred_secondary_chars=preferred_secondary_chars,
     )
     font_name = register_cjk_font(font_path)
-    page_width, page_height = MOBILE_PAGE_SIZE
-    margin_x = 22
-    margin_top = 30
-    margin_bottom = 54 if disclaimer else 30
-    body_width = page_width - margin_x * 2
+    body_width = MOBILE_PAGE_SIZE[0] - MARGIN_X * 2
     secondary_width = body_width - SECONDARY_INDENT
-    doc = canvas.Canvas(str(out), pagesize=MOBILE_PAGE_SIZE)
-    doc.setTitle(title)
-    doc.setAuthor("sermon-video-zh-subtitles")
+    render_blocks: list[RenderBlock] = []
+    for block in blocks:
+        render_blocks.append(
+            make_render_block(
+                start=block.start,
+                end=block.end,
+                primary=block.primary,
+                secondary=block.secondary,
+                font_name=font_name,
+                body_width=body_width,
+                secondary_width=secondary_width,
+                include_timecodes=include_timecodes,
+                extra_gap=4,
+            )
+        )
+    render_paginated_pdf(
+        render_blocks,
+        out=out,
+        title=title,
+        subtitle=subtitle,
+        font_name=font_name,
+        include_timecodes=include_timecodes,
+        disclaimer=disclaimer,
+        source_url=source_url,
+    )
 
-    page_number = 1
-    y = draw_header(
-        doc,
+
+def make_render_block(
+    *,
+    start: str,
+    end: str,
+    primary: str,
+    secondary: str,
+    font_name: str,
+    body_width: float,
+    include_timecodes: bool,
+    secondary_width: float | None = None,
+    extra_gap: float = 0,
+) -> RenderBlock:
+    primary_lines = tuple(wrap_text(primary, font_name, BODY_FONT_SIZE, body_width))
+    secondary_lines = tuple(
+        wrap_text(secondary, font_name, SECONDARY_FONT_SIZE, secondary_width or body_width - SECONDARY_INDENT)
+        if secondary
+        else []
+    )
+    height = len(primary_lines) * (BODY_FONT_SIZE + LINE_GAP) + CUE_GAP + extra_gap
+    if secondary_lines:
+        height += SECONDARY_GAP + len(secondary_lines) * (SECONDARY_FONT_SIZE + SECONDARY_LINE_GAP)
+    if include_timecodes:
+        height += TIME_LABEL_HEIGHT + TIME_LABEL_BOTTOM_GAP
+    return RenderBlock(
+        start=start,
+        end=end,
+        primary_lines=primary_lines,
+        secondary_lines=secondary_lines,
+        height=height,
+        bottom_gap=CUE_GAP + extra_gap,
+    )
+
+
+def render_paginated_pdf(
+    blocks: Sequence[RenderBlock],
+    *,
+    out: Path,
+    title: str,
+    subtitle: str | None,
+    font_name: str,
+    include_timecodes: bool,
+    disclaimer: str | None,
+    source_url: str | None,
+) -> None:
+    page_width, page_height = MOBILE_PAGE_SIZE
+    margin_bottom = MARGIN_BOTTOM_WITH_DISCLAIMER if disclaimer else MARGIN_BOTTOM_WITHOUT_DISCLAIMER
+    first_y = header_body_start_y(
         title=title,
         subtitle=subtitle,
         page_width=page_width,
-        y=page_height - margin_top,
+        y=page_height - MARGIN_TOP,
         font_name=font_name,
         first_page=True,
     )
-    for block in blocks:
-        time_line = f"{display_time(block.start)} - {display_time(block.end)}"
-        primary_lines = wrap_text(block.primary, font_name, BODY_FONT_SIZE, body_width)
-        secondary_lines = wrap_text(block.secondary, font_name, SECONDARY_FONT_SIZE, secondary_width) if block.secondary else []
-        block_height = len(primary_lines) * (BODY_FONT_SIZE + LINE_GAP) + CUE_GAP + 4
-        if secondary_lines:
-            block_height += SECONDARY_GAP + len(secondary_lines) * (SECONDARY_FONT_SIZE + SECONDARY_LINE_GAP)
-        if include_timecodes:
-            block_height += TIME_LABEL_HEIGHT + TIME_LABEL_BOTTOM_GAP
-        if y - block_height < margin_bottom:
-            draw_footer(
-                doc,
-                page_width=page_width,
-                page_number=page_number,
-                font_name=font_name,
-                margin_x=margin_x,
-                disclaimer=disclaimer,
-            )
-            doc.showPage()
-            page_number += 1
-            y = draw_header(
-                doc,
-                title=title,
-                subtitle=subtitle,
-                page_width=page_width,
-                y=page_height - margin_top,
-                font_name=font_name,
-                first_page=False,
-            )
-        if include_timecodes:
-            draw_time_label(doc, x=margin_x, y=y, text=time_line, font_name=font_name)
-            y -= TIME_LABEL_HEIGHT + TIME_LABEL_BOTTOM_GAP
-        doc.setFillColor(colors.HexColor("#111827"))
-        doc.setFont(font_name, BODY_FONT_SIZE)
-        for line in primary_lines:
-            doc.drawString(margin_x, y, line)
-            y -= BODY_FONT_SIZE + LINE_GAP
-        if secondary_lines:
-            y -= SECONDARY_GAP
-            secondary_top = y + 2
-            secondary_bottom = y - len(secondary_lines) * (SECONDARY_FONT_SIZE + SECONDARY_LINE_GAP) + 2
-            doc.setStrokeColor(colors.HexColor("#d6dee9"))
-            doc.setLineWidth(0.6)
-            doc.line(margin_x + 1, secondary_top, margin_x + 1, secondary_bottom)
-            doc.setFillColor(colors.HexColor("#556070"))
-            doc.setFont(font_name, SECONDARY_FONT_SIZE)
-            for line in secondary_lines:
-                doc.drawString(margin_x + SECONDARY_INDENT, y, line)
-                y -= SECONDARY_FONT_SIZE + SECONDARY_LINE_GAP
-        y -= CUE_GAP + 4
-
-    draw_footer(
-        doc,
+    regular_y = header_body_start_y(
+        title=title,
+        subtitle=subtitle,
         page_width=page_width,
-        page_number=page_number,
+        y=page_height - MARGIN_TOP,
         font_name=font_name,
-        margin_x=margin_x,
-        disclaimer=disclaimer,
+        first_page=False,
     )
+    first_capacity = first_y - margin_bottom
+    regular_capacity = regular_y - margin_bottom
+    fitted_blocks = fit_render_blocks_to_capacity(
+        blocks,
+        first_capacity=first_capacity,
+        regular_capacity=regular_capacity,
+        include_timecodes=include_timecodes,
+    )
+    pages = balance_render_pages(
+        fitted_blocks,
+        first_capacity=first_capacity,
+        regular_capacity=regular_capacity,
+    )
+    doc = canvas.Canvas(str(out), pagesize=MOBILE_PAGE_SIZE, pageCompression=1)
+    doc.setTitle(title)
+    doc.setAuthor("sermon-video-zh-subtitles")
+    doc.setCreator("sermon-video-zh-subtitles")
+    doc.setSubject("Mobile Chinese-English sermon reading edition")
+    doc._doc.Catalog.Lang = PDFString("zh-CN")
+
+    last_outline_bucket = -1
+    page_count = len(pages)
+    for page_index, page_blocks in enumerate(pages):
+        if page_index:
+            doc.showPage()
+        page_number = page_index + 1
+        first_page = page_number == 1
+        y = draw_header(
+            doc,
+            title=title,
+            subtitle=subtitle,
+            page_width=page_width,
+            y=page_height - MARGIN_TOP,
+            font_name=font_name,
+            first_page=first_page,
+        )
+        if first_page:
+            doc.bookmarkPage("sermon-start")
+            doc.addOutlineEntry("讲道开始", "sermon-start", level=0, closed=False)
+        for block in page_blocks:
+            start_seconds = timestamp_to_seconds(block.start)
+            outline_bucket = int(start_seconds // 300)
+            if outline_bucket > 0 and outline_bucket > last_outline_bucket:
+                key = f"minute-{outline_bucket * 5}"
+                doc.bookmarkPage(key)
+                doc.addOutlineEntry(f"{outline_bucket * 5:02d}:00", key, level=0, closed=False)
+                last_outline_bucket = outline_bucket
+            y = draw_render_block(
+                doc,
+                block=block,
+                y=y,
+                font_name=font_name,
+                include_timecodes=include_timecodes,
+                source_url=source_url,
+            )
+        footer_disclaimer = disclaimer
+        if disclaimer == DEFAULT_DISCLAIMER and page_number not in {1, page_count}:
+            footer_disclaimer = COMPACT_DISCLAIMER
+        draw_footer(
+            doc,
+            page_width=page_width,
+            page_number=page_number,
+            font_name=font_name,
+            margin_x=MARGIN_X,
+            disclaimer=footer_disclaimer,
+        )
     doc.save()
+
+
+def draw_render_block(
+    doc: canvas.Canvas,
+    *,
+    block: RenderBlock,
+    y: float,
+    font_name: str,
+    include_timecodes: bool,
+    source_url: str | None,
+) -> float:
+    if include_timecodes:
+        time_line = f"{display_time(block.start)} - {display_time(block.end)}"
+        if block.continued:
+            time_line += " · 续"
+        draw_time_label(
+            doc,
+            x=MARGIN_X,
+            y=y,
+            text=time_line,
+            font_name=font_name,
+            link_url=video_url_at_time(source_url, timestamp_to_seconds(block.start)) if source_url else None,
+        )
+        y -= TIME_LABEL_HEIGHT + TIME_LABEL_BOTTOM_GAP
+    doc.setFillColor(colors.HexColor("#111827"))
+    doc.setFont(font_name, BODY_FONT_SIZE)
+    for line in block.primary_lines:
+        doc.drawString(MARGIN_X, y, line)
+        y -= BODY_FONT_SIZE + LINE_GAP
+    if block.secondary_lines:
+        y -= SECONDARY_GAP
+        secondary_top = y + 2
+        secondary_bottom = y - len(block.secondary_lines) * (SECONDARY_FONT_SIZE + SECONDARY_LINE_GAP) + 2
+        doc.setStrokeColor(colors.HexColor("#cbd5e1"))
+        doc.setLineWidth(0.8)
+        doc.line(MARGIN_X + 1, secondary_top, MARGIN_X + 1, secondary_bottom)
+        doc.setFillColor(colors.HexColor("#475569"))
+        doc.setFont(font_name, SECONDARY_FONT_SIZE)
+        for line in block.secondary_lines:
+            doc.drawString(MARGIN_X + SECONDARY_INDENT, y, line)
+            y -= SECONDARY_FONT_SIZE + SECONDARY_LINE_GAP
+    y -= block.bottom_gap
+    return y
+
+
+def fit_render_blocks_to_capacity(
+    blocks: Sequence[RenderBlock],
+    *,
+    first_capacity: float,
+    regular_capacity: float,
+    include_timecodes: bool,
+) -> list[RenderBlock]:
+    fitted: list[RenderBlock] = []
+    for index, block in enumerate(blocks):
+        capacity = first_capacity if index == 0 else regular_capacity
+        fitted.extend(split_render_block(block, max_height=capacity, include_timecodes=include_timecodes))
+    return fitted
+
+
+def split_render_block(block: RenderBlock, *, max_height: float, include_timecodes: bool) -> list[RenderBlock]:
+    if block.height <= max_height + 0.01:
+        return [block]
+    primary = list(block.primary_lines)
+    secondary = list(block.secondary_lines)
+    chunks: list[RenderBlock] = []
+    first_chunk = True
+    time_height = TIME_LABEL_HEIGHT + TIME_LABEL_BOTTOM_GAP if include_timecodes else 0
+    while primary or secondary:
+        budget = max_height - time_height - block.bottom_gap
+        primary_chunk: list[str] = []
+        secondary_chunk: list[str] = []
+        while primary and budget >= BODY_FONT_SIZE + LINE_GAP:
+            primary_chunk.append(primary.pop(0))
+            budget -= BODY_FONT_SIZE + LINE_GAP
+        if not primary and secondary and budget >= SECONDARY_GAP + SECONDARY_FONT_SIZE + SECONDARY_LINE_GAP:
+            budget -= SECONDARY_GAP
+            while secondary and budget >= SECONDARY_FONT_SIZE + SECONDARY_LINE_GAP:
+                secondary_chunk.append(secondary.pop(0))
+                budget -= SECONDARY_FONT_SIZE + SECONDARY_LINE_GAP
+        if not primary_chunk and not secondary_chunk:
+            raise ValueError(f"A rendered line cannot fit within the PDF page capacity: {max_height:.1f}pt")
+        height = time_height + block.bottom_gap
+        height += len(primary_chunk) * (BODY_FONT_SIZE + LINE_GAP)
+        if secondary_chunk:
+            height += SECONDARY_GAP + len(secondary_chunk) * (SECONDARY_FONT_SIZE + SECONDARY_LINE_GAP)
+        chunks.append(
+            RenderBlock(
+                start=block.start,
+                end=block.end,
+                primary_lines=tuple(primary_chunk),
+                secondary_lines=tuple(secondary_chunk),
+                height=height,
+                bottom_gap=block.bottom_gap,
+                continued=block.continued or not first_chunk,
+            )
+        )
+        first_chunk = False
+    return chunks
+
+
+def balance_render_pages(
+    blocks: Sequence[RenderBlock],
+    *,
+    first_capacity: float,
+    regular_capacity: float,
+) -> list[list[RenderBlock]]:
+    """Partition consecutive blocks with look-ahead so the last pages stay balanced."""
+    if not blocks:
+        return [[]]
+    heights = [block.height for block in blocks]
+    page_count = greedy_page_count(heights, first_capacity=first_capacity, regular_capacity=regular_capacity)
+    capacities = [first_capacity, *([regular_capacity] * (page_count - 1))]
+    prefix = [0.0]
+    for height in heights:
+        prefix.append(prefix[-1] + height)
+
+    infinity = float("inf")
+    costs = [[infinity] * (len(blocks) + 1) for _ in range(page_count + 1)]
+    previous = [[-1] * (len(blocks) + 1) for _ in range(page_count + 1)]
+    costs[0][0] = 0.0
+    for page_number in range(1, page_count + 1):
+        capacity = capacities[page_number - 1]
+        min_end = page_number
+        max_end = len(blocks) - (page_count - page_number)
+        for end in range(min_end, max_end + 1):
+            for start in range(page_number - 1, end):
+                if costs[page_number - 1][start] == infinity:
+                    continue
+                used = prefix[end] - prefix[start]
+                if used > capacity + 0.01:
+                    continue
+                unused_ratio = (capacity - used) / capacity
+                cost = costs[page_number - 1][start] + unused_ratio * unused_ratio
+                if cost < costs[page_number][end]:
+                    costs[page_number][end] = cost
+                    previous[page_number][end] = start
+
+    if costs[page_count][len(blocks)] == infinity:
+        return greedy_render_pages(blocks, first_capacity=first_capacity, regular_capacity=regular_capacity)
+    boundaries = [len(blocks)]
+    end = len(blocks)
+    for page_number in range(page_count, 0, -1):
+        end = previous[page_number][end]
+        boundaries.append(end)
+    boundaries.reverse()
+    return [list(blocks[boundaries[index] : boundaries[index + 1]]) for index in range(page_count)]
+
+
+def greedy_page_count(heights: Sequence[float], *, first_capacity: float, regular_capacity: float) -> int:
+    page_count = 1
+    used = 0.0
+    capacity = first_capacity
+    for height in heights:
+        if used and used + height > capacity + 0.01:
+            page_count += 1
+            capacity = regular_capacity
+            used = 0.0
+        used += height
+    return page_count
+
+
+def greedy_render_pages(
+    blocks: Sequence[RenderBlock],
+    *,
+    first_capacity: float,
+    regular_capacity: float,
+) -> list[list[RenderBlock]]:
+    pages: list[list[RenderBlock]] = [[]]
+    used = 0.0
+    capacity = first_capacity
+    for block in blocks:
+        if pages[-1] and used + block.height > capacity + 0.01:
+            pages.append([])
+            capacity = regular_capacity
+            used = 0.0
+        pages[-1].append(block)
+        used += block.height
+    return pages
 
 
 def register_cjk_font(font_path: Path | None = None) -> str:
@@ -591,31 +823,73 @@ def draw_header(
     font_name: str,
     first_page: bool,
 ) -> float:
-    margin_x = 22
+    start_y = y
     if not first_page:
-        canvas_obj.setFillColor(colors.HexColor("#7c8798"))
+        canvas_obj.setFillColor(colors.HexColor("#667085"))
         canvas_obj.setFont(font_name, RUNNING_HEADER_FONT_SIZE)
-        for line in wrap_text(title, font_name, RUNNING_HEADER_FONT_SIZE, page_width - margin_x * 2)[:1]:
-            canvas_obj.drawString(margin_x, y, line)
-        canvas_obj.setStrokeColor(colors.HexColor("#eef1f4"))
-        canvas_obj.line(margin_x, y - 10, page_width - margin_x, y - 10)
-        return y - 26
+        running_title = short_running_title(title)
+        for line in wrap_text(running_title, font_name, RUNNING_HEADER_FONT_SIZE, page_width - MARGIN_X * 2)[:1]:
+            canvas_obj.drawString(MARGIN_X, y, line)
+        canvas_obj.setStrokeColor(colors.HexColor("#e2e8f0"))
+        canvas_obj.line(MARGIN_X, y - 10, page_width - MARGIN_X, y - 10)
+        return header_body_start_y(
+            title=title,
+            subtitle=subtitle,
+            page_width=page_width,
+            y=start_y,
+            font_name=font_name,
+            first_page=False,
+        )
 
     canvas_obj.setFillColor(colors.HexColor("#111827"))
     canvas_obj.setFont(font_name, TITLE_FONT_SIZE)
-    title_lines = wrap_text(title, font_name, TITLE_FONT_SIZE, page_width - margin_x * 2)
+    title_lines = wrap_text(title, font_name, TITLE_FONT_SIZE, page_width - MARGIN_X * 2)
     for line in title_lines[:2]:
-        canvas_obj.drawString(margin_x, y, line)
+        canvas_obj.drawString(MARGIN_X, y, line)
         y -= TITLE_FONT_SIZE + 5
     if subtitle:
         canvas_obj.setFillColor(colors.HexColor("#4b5563"))
         canvas_obj.setFont(font_name, SUBTITLE_FONT_SIZE)
-        for line in wrap_text(subtitle, font_name, SUBTITLE_FONT_SIZE, page_width - margin_x * 2)[:2]:
-            canvas_obj.drawString(margin_x, y, line)
-            y -= 13
-    canvas_obj.setStrokeColor(colors.HexColor("#e5e7eb"))
-    canvas_obj.line(margin_x, y - 4, page_width - margin_x, y - 4)
+        for line in wrap_text(subtitle, font_name, SUBTITLE_FONT_SIZE, page_width - MARGIN_X * 2)[:2]:
+            canvas_obj.drawString(MARGIN_X, y, line)
+            y -= SUBTITLE_FONT_SIZE + 4
+    canvas_obj.setStrokeColor(colors.HexColor("#dbe2ea"))
+    canvas_obj.line(MARGIN_X, y - 4, page_width - MARGIN_X, y - 4)
+    return header_body_start_y(
+        title=title,
+        subtitle=subtitle,
+        page_width=page_width,
+        y=start_y,
+        font_name=font_name,
+        first_page=True,
+    )
+
+
+def header_body_start_y(
+    *,
+    title: str,
+    subtitle: str | None,
+    page_width: float,
+    y: float,
+    font_name: str,
+    first_page: bool,
+) -> float:
+    if not first_page:
+        return y - 26
+    y -= len(wrap_text(title, font_name, TITLE_FONT_SIZE, page_width - MARGIN_X * 2)[:2]) * (TITLE_FONT_SIZE + 5)
+    if subtitle:
+        y -= len(wrap_text(subtitle, font_name, SUBTITLE_FONT_SIZE, page_width - MARGIN_X * 2)[:2]) * (
+            SUBTITLE_FONT_SIZE + 4
+        )
     return y - 18
+
+
+def short_running_title(title: str) -> str:
+    for separator in (" - ", " | "):
+        head, found, _ = title.partition(separator)
+        if found and head.strip():
+            return head.strip()
+    return title.strip()
 
 
 def draw_footer(
@@ -627,35 +901,52 @@ def draw_footer(
     margin_x: int,
     disclaimer: str | None,
 ) -> None:
-    canvas_obj.setFillColor(colors.HexColor("#9ca3af"))
-    canvas_obj.setFont(font_name, 8)
-    canvas_obj.drawRightString(page_width - margin_x, 12, f"{page_number}")
+    canvas_obj.setFillColor(colors.HexColor("#667085"))
+    canvas_obj.setFont(font_name, 8.5)
+    canvas_obj.drawRightString(page_width - margin_x, 13, f"{page_number}")
     if not disclaimer:
         return
-    canvas_obj.setFillColor(colors.HexColor("#8b95a3"))
+    canvas_obj.setFillColor(colors.HexColor("#667085"))
     canvas_obj.setFont(font_name, FOOTER_FONT_SIZE)
     footer_width = page_width - margin_x * 2
     footer_lines = wrap_text(disclaimer, font_name, FOOTER_FONT_SIZE, footer_width)[:2]
-    y = 31 if len(footer_lines) > 1 else 25
+    y = 33 if len(footer_lines) > 1 else 27
     for line in footer_lines:
         canvas_obj.drawString(margin_x, y, line)
-        y -= FOOTER_FONT_SIZE + 2
+        y -= FOOTER_FONT_SIZE + 2.5
 
 
-def draw_time_label(canvas_obj: canvas.Canvas, *, x: float, y: float, text: str, font_name: str) -> None:
-    label_width = pdfmetrics.stringWidth(text, font_name, TIME_FONT_SIZE) + 11
+def draw_time_label(
+    canvas_obj: canvas.Canvas,
+    *,
+    x: float,
+    y: float,
+    text: str,
+    font_name: str,
+    link_url: str | None = None,
+) -> None:
+    label_width = pdfmetrics.stringWidth(text, font_name, TIME_FONT_SIZE) + 12
     label_y = y - TIME_LABEL_HEIGHT + 2
-    canvas_obj.setFillColor(colors.HexColor("#eef4fb"))
+    canvas_obj.setFillColor(colors.HexColor("#eaf2fb"))
     canvas_obj.roundRect(x, label_y, label_width, TIME_LABEL_HEIGHT, 4, stroke=0, fill=1)
-    canvas_obj.setFillColor(colors.HexColor("#5f7188"))
+    canvas_obj.setFillColor(colors.HexColor("#52657d"))
     canvas_obj.setFont(font_name, TIME_FONT_SIZE)
-    canvas_obj.drawString(x + 5.5, label_y + 3.1, text)
+    canvas_obj.drawString(x + 6, label_y + 3.2, text)
+    if link_url:
+        canvas_obj.linkURL(link_url, (x, label_y, x + label_width, label_y + TIME_LABEL_HEIGHT), relative=0, thickness=0)
+
+
+def video_url_at_time(source_url: str, seconds: float) -> str:
+    parts = urlsplit(source_url)
+    query = dict(parse_qsl(parts.query, keep_blank_values=True))
+    query["t"] = f"{max(0, int(seconds))}s"
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment))
 
 
 def wrap_text(text: str, font_name: str, font_size: float, max_width: float) -> list[str]:
     lines: list[str] = []
     current = ""
-    for token in text_tokens(text):
+    for token in text_tokens(normalize_cjk_punctuation_spacing(text)):
         candidate = current + token if current else token.lstrip()
         if current and pdfmetrics.stringWidth(candidate, font_name, font_size) > max_width:
             lines.append(current.rstrip())
@@ -664,7 +955,25 @@ def wrap_text(text: str, font_name: str, font_size: float, max_width: float) -> 
             current = candidate
     if current.strip():
         lines.append(current.rstrip())
-    return lines or [""]
+    return enforce_kinsoku(lines) or [""]
+
+
+def enforce_kinsoku(lines: list[str]) -> list[str]:
+    """Prevent common Chinese closing punctuation from starting a rendered line."""
+    lines = [line.strip() for line in lines if line.strip()]
+    index = 1
+    while index < len(lines):
+        while lines[index] and lines[index][0] in KINSOKU_NO_LINE_START:
+            lines[index - 1] += lines[index][0]
+            lines[index] = lines[index][1:].lstrip()
+        while lines[index - 1] and lines[index - 1][-1] in KINSOKU_NO_LINE_END:
+            lines[index] = lines[index - 1][-1] + lines[index]
+            lines[index - 1] = lines[index - 1][:-1].rstrip()
+        if not lines[index]:
+            lines.pop(index)
+            continue
+        index += 1
+    return lines
 
 
 def text_tokens(text: str) -> list[str]:

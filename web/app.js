@@ -154,6 +154,7 @@
     segmentAutoFollow: true,
     segmentScrollProgrammatic: false,
     viewMode: "congregation",
+    captionReadingMode: "paragraph",
     adminSettings: {
       sunday: "2026-06-25",
       manualLiveUrl: "https://www.youtube.com/watch?v=A__MCqbAKYc",
@@ -192,6 +193,13 @@
     autoDiscoveryStatus: document.getElementById("autoDiscoveryStatus"),
     publicSliceLabel: document.getElementById("publicSliceLabel"),
     captionWindow: document.getElementById("captionWindow"),
+    captionModeToggle: document.getElementById("captionModeToggle"),
+    captionParagraph: document.getElementById("captionParagraph"),
+    captionParagraphAnnouncement: document.getElementById("captionParagraphAnnouncement"),
+    captionParagraphProgress: document.getElementById("captionParagraphProgress"),
+    captionParagraphTime: document.getElementById("captionParagraphTime"),
+    captionParagraphState: document.getElementById("captionParagraphState"),
+    captionReturnLiveButton: document.getElementById("captionReturnLiveButton"),
     draftCaption: document.getElementById("draftCaption"),
     stableCaption: document.getElementById("stableCaption"),
     nextCaption: document.getElementById("nextCaption"),
@@ -207,6 +215,7 @@
     segmentCoverage: document.getElementById("segmentCoverage"),
     reviewListToggle: document.getElementById("reviewListToggle"),
     returnLiveButton: document.getElementById("returnLiveButton"),
+    viewerDisclaimer: document.getElementById("viewerDisclaimer"),
     scriptureCandidates: document.getElementById("scriptureCandidates"),
     noteBlock: document.getElementById("noteBlock"),
     eventLog: document.getElementById("eventLog"),
@@ -263,6 +272,8 @@
 
   function init() {
     configureViewMode();
+    configureDisclaimerDisclosure();
+    syncCaptionReadingMode();
     syncReviewListControls();
     document.addEventListener("click", onActionClick);
     if (el.adminSettings) {
@@ -320,11 +331,19 @@
       ? "admin"
       : "congregation";
     el.shell.dataset.viewMode = state.viewMode;
+    state.captionReadingMode = state.viewMode === "admin" ? "focus" : "paragraph";
     state.sidebarOpen = el.shell.dataset.sidebar !== "closed";
     if (state.viewMode === "admin") state.reviewListCollapsed = true;
     document.title = state.viewMode === "admin"
       ? "管理端 | 11:30 会众中文字幕"
       : "11:30 会众中文字幕";
+  }
+
+  function configureDisclaimerDisclosure() {
+    if (!el.viewerDisclaimer || state.viewMode !== "congregation") return;
+    const compactViewport = typeof window.matchMedia === "function"
+      && window.matchMedia("(max-width: 760px)").matches;
+    el.viewerDisclaimer.open = !compactViewport;
   }
 
   function applyDateFromRoute() {
@@ -556,6 +575,7 @@
     if (action === "lock-segment") lockCurrentSegment();
     if (action === "toggle-stream") toggleStream(control);
     if (action === "toggle-sidebar") toggleSidebar();
+    if (action === "toggle-caption-mode") toggleCaptionReadingMode();
     if (action === "select-tab") selectTab(control.dataset.tab);
     if (action === "apply-offset") applyOffset();
     if (action === "live-playback-start") startLivePlayback();
@@ -1833,6 +1853,7 @@
   }
 
   function renderSegments() {
+    renderCaptionParagraph(currentCaptionSegment());
     if (!el.segmentList) return;
     const previousScrollTop = el.segmentList.scrollTop;
     const shouldFollow = state.segmentAutoFollow || segmentTrackNearBottom();
@@ -2060,6 +2081,7 @@
     setCaptionLine(el.stableCaption, context.current, "等待中文字幕...");
     setCaptionLine(el.currentEnglishCaption, segment?.en || "", "Waiting for English transcript...");
     setCaptionLine(el.nextCaption, mode === "offline" ? context.next : "", "等待下一句中文字幕...");
+    renderCaptionParagraph(segment);
   }
 
   function setCaptionEmptyState(message) {
@@ -2071,6 +2093,109 @@
     setCaptionLine(el.stableCaption, message, message);
     setCaptionLine(el.currentEnglishCaption, "", "");
     setCaptionLine(el.nextCaption, "", "");
+    renderCaptionParagraph(null, message);
+  }
+
+  function toggleCaptionReadingMode() {
+    if (state.viewMode !== "congregation") return;
+    state.captionReadingMode = state.captionReadingMode === "paragraph" ? "focus" : "paragraph";
+    syncCaptionReadingMode();
+  }
+
+  function syncCaptionReadingMode() {
+    if (el.captionWindow) el.captionWindow.dataset.readingMode = state.captionReadingMode;
+    if (!el.captionModeToggle) return;
+    const focusMode = state.captionReadingMode === "focus";
+    el.captionModeToggle.textContent = focusMode ? "段落模式" : "专注模式";
+    el.captionModeToggle.setAttribute("aria-pressed", String(focusMode));
+    el.captionModeToggle.setAttribute("aria-label", focusMode ? "切换到段落字幕" : "切换到大字专注字幕");
+  }
+
+  function currentCaptionSegment() {
+    return state.segments.find((segment) => segment.id === state.currentSegmentId)
+      || state.segments[state.segments.length - 1]
+      || null;
+  }
+
+  function renderCaptionParagraph(segment, fallback = "") {
+    if (!el.captionParagraph) return;
+    const context = captionParagraphContext(segment);
+    el.captionParagraph.textContent = "";
+
+    if (!context.groups.length) {
+      const empty = document.createElement("span");
+      empty.className = "caption-paragraph__sentence is-current";
+      empty.textContent = fallback || "等待中文字幕...";
+      el.captionParagraph.appendChild(empty);
+      if (el.captionParagraphAnnouncement) el.captionParagraphAnnouncement.textContent = empty.textContent;
+      updateCaptionParagraphMeta(segment, context);
+      return;
+    }
+
+    context.groups.forEach((group, index) => {
+      const sentence = document.createElement("span");
+      const isCurrent = context.startIndex + index === context.currentIndex;
+      sentence.className = `caption-paragraph__sentence ${isCurrent ? "is-current" : context.startIndex + index < context.currentIndex ? "is-before" : "is-after"}`;
+      if (isCurrent) {
+        const marker = document.createElement("span");
+        marker.className = "caption-paragraph__marker";
+        marker.textContent = "当前";
+        sentence.appendChild(marker);
+        sentence.setAttribute("aria-current", "true");
+      }
+      const text = document.createElement("span");
+      text.className = "caption-paragraph__text";
+      text.textContent = group.zh || "等待中文字幕...";
+      sentence.appendChild(text);
+      el.captionParagraph.appendChild(sentence);
+      if (isCurrent && el.captionParagraphAnnouncement && el.captionParagraphAnnouncement.textContent !== text.textContent) {
+        el.captionParagraphAnnouncement.textContent = text.textContent;
+      }
+    });
+    updateCaptionParagraphMeta(segment, context);
+  }
+
+  function captionParagraphContext(segment) {
+    const groups = reviewGroupsForRender();
+    if (!groups.length) return { groups: [], currentIndex: -1, startIndex: 0, progress: 0 };
+    let currentIndex = groups.findIndex((group) => paragraphGroupContainsSegment(group, segment?.id));
+    if (currentIndex < 0) currentIndex = groups.length - 1;
+
+    const completeReviewedTrack = state.playbackSegments.length > 0 && state.segments.length >= state.playbackSegments.length;
+    const targetCount = completeReviewedTrack ? 4 : 2;
+    let startIndex = Math.max(0, currentIndex - (completeReviewedTrack ? 2 : 1));
+    let endIndex = Math.min(groups.length, startIndex + targetCount);
+    startIndex = Math.max(0, endIndex - targetCount);
+    const progress = groups.length > 1 ? (currentIndex / (groups.length - 1)) * 100 : 100;
+    return {
+      groups: groups.slice(startIndex, endIndex),
+      currentIndex,
+      startIndex,
+      progress
+    };
+  }
+
+  function paragraphGroupContainsSegment(group, segmentId) {
+    if (!segmentId) return false;
+    return group.liveSegmentId === segmentId
+      || group.segmentIds?.includes(segmentId)
+      || group.sourceSegmentIds?.includes(segmentId);
+  }
+
+  function updateCaptionParagraphMeta(segment, context) {
+    if (el.captionParagraphTime) {
+      const currentGroup = context.currentIndex >= 0
+        ? reviewGroupsForRender()[context.currentIndex]
+        : null;
+      el.captionParagraphTime.textContent = msToClock(currentGroup?.startMs ?? segmentStart(segment || { startMs: 0, endMs: 300, offsetMs: 0 }));
+    }
+    if (el.captionParagraphState) {
+      const liveMode = state.livePlayback?.mode;
+      el.captionParagraphState.textContent = liveMode === "paused" ? "已暂停" : liveMode === "live" ? "现场" : "已发布";
+    }
+    if (el.captionParagraphProgress) {
+      el.captionParagraphProgress.style.width = `${Math.max(0, Math.min(100, context.progress || 0))}%`;
+    }
   }
 
   function captionContextFor(segment) {
@@ -2111,12 +2236,15 @@
     el.segmentList.scrollTop = el.segmentList.scrollHeight;
     window.setTimeout(() => {
       state.segmentScrollProgrammatic = false;
-    }, 0);
+      state.segmentAutoFollow = segmentTrackNearBottom();
+      updateReturnLiveButton();
+    }, 100);
   }
 
   function updateReturnLiveButton() {
     const show = state.segments.length > 0 && !state.segmentAutoFollow;
-    el.returnLiveButton.classList.toggle("is-hidden", !show);
+    el.returnLiveButton?.classList.toggle("is-hidden", !show);
+    el.captionReturnLiveButton?.classList.toggle("is-hidden", !show);
   }
 
   function setReviewListSize(size) {
@@ -2969,7 +3097,13 @@
   }
 
   function updateSermonMeta({ title, meta, status, tone }) {
-    if (el.sermonTitle) el.sermonTitle.textContent = title || "等待直播链接";
+    if (el.sermonTitle) {
+      const fullTitle = title || "等待直播链接";
+      el.sermonTitle.textContent = state.viewMode === "congregation"
+        ? fullTitle.replace(/\s*[|·]\s*Mariners Church.*$/i, "")
+        : fullTitle;
+      el.sermonTitle.title = fullTitle;
+    }
     if (el.sermonMeta) el.sermonMeta.textContent = meta || "准备直播链接后，会在这里显示证道标题和开始时间。";
     setGenerationStatus(status || "待开始", tone || "pending");
   }
@@ -3768,7 +3902,12 @@
     handleRealtimeDataChannelMessage,
     postRealtimeSessionEvent,
     normalizeRealtimeOpenAIEvent: realtimeCaptionEventFromOpenAI,
-    pushRealtimeEvent: handleRealtimeCaptionEvent
+    pushRealtimeEvent: handleRealtimeCaptionEvent,
+    setCaptionReadingMode(mode) {
+      if (!["paragraph", "focus"].includes(mode)) return;
+      state.captionReadingMode = mode;
+      syncCaptionReadingMode();
+    }
   };
 
   init();

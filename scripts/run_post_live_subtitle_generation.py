@@ -275,7 +275,9 @@ def build_mobile_pdf_command(
         "--title",
         mobile_pdf_title(args, live_url, metadata=metadata, source=source),
         "--subtitle",
-        f"{args.sunday} sermon Chinese subtitles",
+        f"{args.sunday} 逐句中英字幕版",
+        "--source-url",
+        live_url,
     ]
 
 
@@ -301,7 +303,9 @@ def build_reading_pdf_command(
         "--title",
         mobile_pdf_title(args, live_url, metadata=metadata, source=source),
         "--subtitle",
-        f"{args.sunday} reading edition Chinese-English transcript",
+        f"{args.sunday} 中英对照阅读版",
+        "--source-url",
+        live_url,
     ]
 
 

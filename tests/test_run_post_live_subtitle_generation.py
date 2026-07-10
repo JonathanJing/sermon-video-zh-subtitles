@@ -130,6 +130,14 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
         self.assertTrue(any("sermon_zh_en_reading.pdf" in item for item in report["readingPdfCommand"]))
         self.assertTrue(any("sermon_zh_relative.srt" in item for item in report["mobilePdfCommand"]))
         self.assertTrue(any("sermon_en_relative.srt" in item for item in report["mobilePdfCommand"]))
+        self.assertEqual(
+            report["mobilePdfCommand"][report["mobilePdfCommand"].index("--source-url") + 1],
+            "https://www.youtube.com/watch?v=MEZHufeQBjc",
+        )
+        self.assertEqual(
+            report["readingPdfCommand"][report["readingPdfCommand"].index("--source-url") + 1],
+            "https://www.youtube.com/watch?v=MEZHufeQBjc",
+        )
         self.assertTrue(any(path.endswith("sermon_zh_mobile.pdf") for path in report["outputs"]))
         self.assertTrue(any(path.endswith("sermon_zh_en_reading.pdf") for path in report["outputs"]))
 

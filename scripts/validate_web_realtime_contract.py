@@ -308,16 +308,28 @@ class Element {{
     this.textContent = "";
     this.value = "";
     this.dataset = {{}};
+    this.attributes = {{}};
     this.style = {{ setProperty() {{}} }};
     this.classList = new ClassList();
     this.children = [];
+    this.options = [];
     this.scrollTop = 0;
     this.scrollHeight = 0;
     this.clientHeight = 200;
   }}
   addEventListener() {{}}
-  appendChild(child) {{ this.children.push(child); return child; }}
-  prepend(child) {{ this.children.unshift(child); return child; }}
+  setAttribute(name, value) {{ this.attributes[name] = String(value); }}
+  getAttribute(name) {{ return this.attributes[name] ?? null; }}
+  appendChild(child) {{
+    this.children.push(child);
+    if (child.id === "option") this.options.push(child);
+    return child;
+  }}
+  prepend(child) {{
+    this.children.unshift(child);
+    if (child.id === "option") this.options.unshift(child);
+    return child;
+  }}
   querySelector() {{ return new Element(); }}
   querySelectorAll() {{ return []; }}
   closest() {{ return null; }}

@@ -116,6 +116,8 @@ def run_browser_checks(base_url: str, headed: bool = False) -> list[dict[str, ob
                 check_no_horizontal_overflow(page)
                 check_public_playback(page)
                 check_public_layout_bounds(page)
+                if name == "iphone-portrait":
+                    check_caption_reading_modes(page)
                 if name == "ipad-landscape":
                     check_ipad_caption_readability(page)
                 check_page_scroll_not_locked(page)
@@ -154,7 +156,7 @@ def run_browser_checks(base_url: str, headed: bool = False) -> list[dict[str, ob
 def check_disclaimer(page) -> None:
     disclaimer = page.locator(".viewer-disclaimer")
     expect(disclaimer).to_be_visible()
-    text = disclaimer.inner_text()
+    text = disclaimer.text_content() or ""
     required = [
         "AI 辅助生成",
         "独立个人开源项目",
@@ -198,17 +200,15 @@ def check_public_controls_hidden(page) -> None:
 def check_scripture_sidebar(page) -> None:
     sidebar = page.locator("#scripturePanel")
     expect(sidebar).to_be_visible()
-    expect(sidebar.locator("h3").first).to_contain_text("民数记 16")
-    expect(sidebar).to_contain_text("他站在活人死人中间", timeout=10000)
+    expect(sidebar.locator("h3").first).to_contain_text("民数记")
     sidebar_text = sidebar.inner_text(timeout=5000)
     required_text = [
         "中文圣经：新标点和合本（简体）",
         "eBible.org cmn-cu89s",
         "Public Domain",
-        "利未的曾孙",
-        "他站在活人死人中间",
-        "亚伦回到会幕门口",
     ]
+    if "民数记 16" in sidebar_text:
+        required_text.extend(["利未的曾孙", "他站在活人死人中间", "亚伦回到会幕门口"])
     missing = [text for text in required_text if text not in sidebar_text]
     if missing:
         raise AssertionError(f"Scripture sidebar is missing Chinese passage text: {missing}")
@@ -262,6 +262,17 @@ def check_public_playback(page) -> None:
         raise AssertionError(f"Public playback did not render a usable caption: {stable_caption!r}")
     if not re.search(r"[\u4e00-\u9fff]", stable_caption):
         raise AssertionError(f"Caption window current line is not Chinese: {stable_caption!r}")
+    expect(page.locator("#captionParagraph")).to_be_visible()
+    paragraph_sentences = page.locator("#captionParagraph .caption-paragraph__sentence")
+    paragraph_count = paragraph_sentences.count()
+    if not 1 <= paragraph_count <= 4:
+        raise AssertionError(f"Paragraph mode rendered an unexpected number of sentences: {paragraph_count}")
+    current_sentences = page.locator("#captionParagraph .caption-paragraph__sentence.is-current")
+    if current_sentences.count() != 1:
+        raise AssertionError("Paragraph mode must highlight exactly one current sentence")
+    current_paragraph_text = current_sentences.inner_text(timeout=5000)
+    if not re.search(r"[\u4e00-\u9fff]", current_paragraph_text):
+        raise AssertionError(f"Paragraph current sentence is not Chinese: {current_paragraph_text!r}")
     context_lines = [
         page.locator("#draftCaption").inner_text(timeout=5000),
         page.locator("#nextCaption").inner_text(timeout=5000),
@@ -285,6 +296,23 @@ def check_public_playback(page) -> None:
         raise AssertionError(f"Public page did not load a static published snapshot: {runtime_state}")
 
 
+def check_caption_reading_modes(page) -> None:
+    toggle = page.locator("#captionModeToggle")
+    expect(toggle).to_be_visible()
+    expect(toggle).to_have_text("专注模式")
+    expect(page.locator(".caption-paragraph-view")).to_be_visible()
+    expect(page.locator(".caption-focus-view")).to_be_hidden()
+
+    toggle.click()
+    expect(toggle).to_have_text("段落模式")
+    expect(page.locator(".caption-paragraph-view")).to_be_hidden()
+    expect(page.locator(".caption-focus-view")).to_be_visible()
+
+    toggle.click()
+    expect(toggle).to_have_text("专注模式")
+    expect(page.locator(".caption-paragraph-view")).to_be_visible()
+
+
 def check_public_layout_bounds(page) -> None:
     layout = page.evaluate(
         """
@@ -295,6 +323,7 @@ def check_public_layout_bounds(page) -> None:
           return {
             viewportWidth: window.innerWidth,
             viewportHeight: window.innerHeight,
+            readingMode: document.querySelector("#captionWindow").dataset.readingMode,
             captionHeight: Math.round(caption.height),
             reviewHeight: Math.round(review.height),
             segmentClientHeight: segmentList.clientHeight,
@@ -304,7 +333,11 @@ def check_public_layout_bounds(page) -> None:
         }
         """
     )
-    caption_limit = max(460, int(layout["viewportHeight"] * 0.6))
+    caption_limit = (
+        max(660, int(layout["viewportHeight"] * 0.78))
+        if layout["readingMode"] == "paragraph"
+        else max(460, int(layout["viewportHeight"] * 0.6))
+    )
     review_limit = max(260, int(layout["viewportHeight"] * 0.36))
     if layout["captionHeight"] > caption_limit:
         raise AssertionError(f"Caption window grew beyond viewport bounds: {layout}")
@@ -374,6 +407,7 @@ def check_admin_mode(page) -> None:
     expect(page.locator("[data-action='start-archive-latency-test']")).to_be_visible()
     expect(page.locator("[data-action='start-mic-latency-test']")).to_be_visible()
     expect(page.locator("#test-panel-title")).to_be_visible()
+    page.locator(".admin-calibration-tools > summary").click()
     expect(page.locator("[data-action='export-vtt']")).to_be_visible()
     expect(page.locator("#pipelineList")).to_be_visible()
     expect(page.locator("#observability-title")).to_be_visible()

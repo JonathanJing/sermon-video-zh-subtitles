@@ -31,6 +31,11 @@ class RenderMobilePdfFromSrtTest(unittest.TestCase):
         self.assertEqual(cues[0].text, "神爱世人。")
         self.assertEqual(cues[1].end, "00:00:05.000")
 
+    def test_normalizes_spacing_around_chinese_punctuation(self):
+        cleaned = mod.clean_caption_text("神 爱世人 。 这是 English text. 《 约翰福音 》 很清楚 。")
+
+        self.assertEqual(cleaned, "神爱世人。这是 English text. 《约翰福音》很清楚。")
+
     def test_renders_mobile_pdf(self):
         cues = [
             mod.Cue(start="00:00:01,000", end="00:00:02,500", text="神爱世人。"),
@@ -118,6 +123,49 @@ class RenderMobilePdfFromSrtTest(unittest.TestCase):
         self.assertLessEqual(len(wrapped[:2]), 2)
         self.assertIn("AI 辅助生成", mod.DEFAULT_DISCLAIMER)
         self.assertIn("原始英文讲道", mod.DEFAULT_DISCLAIMER)
+
+    def test_wrap_text_prevents_chinese_punctuation_at_line_start(self):
+        font_name = mod.register_cjk_font(None)
+
+        lines = mod.wrap_text("这是一句需要换行的中文？然后继续下一句。", font_name, 15.5, 78)
+
+        self.assertGreater(len(lines), 1)
+        self.assertTrue(all(line[0] not in mod.KINSOKU_NO_LINE_START for line in lines if line))
+
+    def test_balanced_pagination_avoids_a_sparse_last_page(self):
+        blocks = [
+            mod.RenderBlock(str(index), str(index), (), (), height, 0)
+            for index, height in enumerate([140, 100, 100, 100, 100])
+        ]
+
+        pages = mod.balance_render_pages(blocks, first_capacity=250, regular_capacity=250)
+
+        self.assertEqual([len(page) for page in pages], [1, 2, 2])
+
+    def test_oversized_block_is_split_without_overflow(self):
+        line_height = mod.BODY_FONT_SIZE + mod.LINE_GAP
+        block = mod.RenderBlock(
+            "00:00:00,000",
+            "00:00:45,000",
+            tuple(f"第{index}行" for index in range(30)),
+            (),
+            30 * line_height + mod.CUE_GAP + mod.TIME_LABEL_HEIGHT + mod.TIME_LABEL_BOTTOM_GAP,
+            mod.CUE_GAP,
+        )
+
+        chunks = mod.split_render_block(block, max_height=250, include_timecodes=True)
+
+        self.assertGreater(len(chunks), 1)
+        self.assertTrue(all(chunk.height <= 250.01 for chunk in chunks))
+        self.assertFalse(chunks[0].continued)
+        self.assertTrue(all(chunk.continued for chunk in chunks[1:]))
+
+    def test_video_url_at_time_preserves_existing_query(self):
+        url = mod.video_url_at_time("https://www.youtube.com/watch?v=abc123&feature=share", 305.9)
+
+        self.assertIn("v=abc123", url)
+        self.assertIn("feature=share", url)
+        self.assertIn("t=305s", url)
 
 
 if __name__ == "__main__":

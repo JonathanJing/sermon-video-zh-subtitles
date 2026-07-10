@@ -176,21 +176,27 @@ class Element {{
     this.textContent = "";
     this.value = "";
     this.dataset = {{}};
+    this.attributes = {{}};
     this.style = {{ setProperty() {{}} }};
     this.classList = new ClassList();
     this.children = [];
+    this.options = [];
     this.scrollTop = 0;
     this.scrollHeight = 0;
     this.clientHeight = 200;
   }}
   addEventListener() {{}}
+  setAttribute(name, value) {{ this.attributes[name] = String(value); }}
+  getAttribute(name) {{ return this.attributes[name] ?? null; }}
   appendChild(child) {{
     this.children.push(child);
+    if (child.id === "option") this.options.push(child);
     this.scrollHeight = this.children.length * 32;
     return child;
   }}
   prepend(child) {{
     this.children.unshift(child);
+    if (child.id === "option") this.options.unshift(child);
     this.scrollHeight = this.children.length * 32;
     return child;
   }}
