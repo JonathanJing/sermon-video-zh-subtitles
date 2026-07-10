@@ -47,11 +47,20 @@ class RenderMobilePdfFromSrtTest(unittest.TestCase):
         ]
         with tempfile.TemporaryDirectory() as tempdir:
             out = Path(tempdir) / "sermon_zh_mobile.pdf"
-            mod.render_mobile_pdf(cues, secondary_cues=secondary, out=out, title="Test Sermon", subtitle="2026-06-28")
+            mod.render_mobile_pdf(
+                cues,
+                secondary_cues=secondary,
+                out=out,
+                title="Test Sermon",
+                subtitle="2026-06-28",
+                source_url="https://www.youtube.com/watch?v=test123",
+                source_offset_seconds=90,
+            )
             data = out.read_bytes()
 
         self.assertTrue(data.startswith(b"%PDF"))
         self.assertGreater(len(data), 1000)
+        self.assertIn(b"t=91s", data)
 
     def test_aligns_secondary_cues_by_time_overlap(self):
         primary = [

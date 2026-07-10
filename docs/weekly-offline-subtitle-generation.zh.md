@@ -225,10 +225,11 @@ python3 scripts/render_mobile_pdf_from_srt.py \
   --out <pipeline_outdir>/sermon_zh_mobile.pdf \
   --title <slug> \
   --subtitle '<Sunday date> 逐句中英字幕版' \
-  --source-url '<YouTube watch URL>'
+  --source-url '<YouTube watch URL>' \
+  --source-offset-seconds <sermon start seconds in full video>
 ```
 
-`sermon_zh_mobile.pdf` 使用手机竖屏尺寸，保留每条字幕 cue 的时间码，适合精确对照原始字幕。它从中文 relative SRT 生成，不使用完整视频绝对时间轴；如果传入 `--secondary-input`，会按时间轴把英文字幕显示在每段中文下方。如果传入 `--source-url`，时间码会链接到对应的 YouTube 时间点。
+`sermon_zh_mobile.pdf` 使用手机竖屏尺寸，保留每条字幕 cue 的时间码，适合精确对照原始字幕。它从中文 relative SRT 生成，不使用完整视频绝对时间轴；如果传入 `--secondary-input`，会按时间轴把英文字幕显示在每段中文下方。如果传入 `--source-url`，时间码会链接到对应的 YouTube 时间点；relative SRT 还必须同时传入 `--source-offset-seconds`，其值是讲道在完整视频中的起点秒数。
 发布版 PDF 默认会在每页页脚加入 AI 辅助生成免责声明；如需临时关闭，可在人工调试时加 `--hide-disclaimer`。
 
 随后生成每周标准阅读版 PDF，不替代逐句字幕 PDF：
@@ -241,7 +242,8 @@ python3 scripts/render_mobile_pdf_from_srt.py \
   --out <pipeline_outdir>/sermon_zh_en_reading.pdf \
   --title <sermon title> \
   --subtitle '<Sunday date> 中英对照阅读版' \
-  --source-url '<YouTube watch URL>'
+  --source-url '<YouTube watch URL>' \
+  --source-offset-seconds <sermon start seconds in full video>
 ```
 
 `sermon_zh_en_reading.pdf` 会尽量等到中英文都形成完整句后再断段，把相邻短 cue 合并成更接近讲章段落的阅读块，并用段落时间范围代替每句时间码；中文正文使用中文标点禁则换行，英文仍放在对应中文段落下方。阅读版还会生成 5 分钟间隔的 PDF 书签，并在提供 `--source-url` 时让段落时间码可点击。

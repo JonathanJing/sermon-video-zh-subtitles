@@ -278,6 +278,8 @@ def build_mobile_pdf_command(
         f"{args.sunday} 逐句中英字幕版",
         "--source-url",
         live_url,
+        "--source-offset-seconds",
+        str(timecode_to_seconds(args.start_time or "00:00:00")),
     ]
 
 
@@ -306,6 +308,8 @@ def build_reading_pdf_command(
         f"{args.sunday} 中英对照阅读版",
         "--source-url",
         live_url,
+        "--source-offset-seconds",
+        str(timecode_to_seconds(args.start_time or "00:00:00")),
     ]
 
 
@@ -323,6 +327,18 @@ def mobile_pdf_title(
         if isinstance(candidate, str) and candidate.strip():
             return candidate.strip()
     return slug_for(args, live_url)
+
+
+def timecode_to_seconds(value: str) -> float:
+    parts = [float(part) for part in value.strip().split(":")]
+    if len(parts) == 3:
+        hours, minutes, seconds = parts
+    elif len(parts) == 2:
+        hours = 0.0
+        minutes, seconds = parts
+    else:
+        raise ValueError(f"Expected HH:MM:SS or MM:SS timecode, got {value!r}")
+    return hours * 3600 + minutes * 60 + seconds
 
 
 def download_archive_audio(

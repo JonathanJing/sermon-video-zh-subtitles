@@ -94,6 +94,7 @@ def main() -> int:
             include_timecodes=not args.hide_timecodes,
             disclaimer=None if args.hide_disclaimer else args.disclaimer,
             source_url=args.source_url,
+            source_offset_seconds=args.source_offset_seconds,
             max_gap_seconds=args.reading_max_gap_seconds,
             max_block_seconds=args.reading_max_block_seconds,
             max_primary_chars=args.reading_max_primary_chars,
@@ -113,6 +114,7 @@ def main() -> int:
             include_timecodes=not args.hide_timecodes,
             disclaimer=None if args.hide_disclaimer else args.disclaimer,
             source_url=args.source_url,
+            source_offset_seconds=args.source_offset_seconds,
         )
     print(
         json.dumps(
@@ -125,6 +127,7 @@ def main() -> int:
                 "pageSize": "mobile-390x844pt",
                 "source": str(args.input),
                 "secondarySource": str(args.secondary_input) if args.secondary_input else None,
+                "sourceOffsetSeconds": args.source_offset_seconds,
             },
             ensure_ascii=False,
             indent=2,
@@ -155,6 +158,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--reading-preferred-secondary-chars", type=int, default=850)
     parser.add_argument("--font-path", type=Path, help="Optional CJK TTF/TTC/OTF font to embed.")
     parser.add_argument("--source-url", help="Optional video URL used to make time labels clickable.")
+    parser.add_argument(
+        "--source-offset-seconds",
+        type=float,
+        default=0.0,
+        help="Seconds to add when PDF timecodes are relative to a clip inside the source video.",
+    )
     parser.add_argument("--hide-timecodes", action="store_true", help="Hide cue timecodes in the PDF body.")
     parser.add_argument(
         "--disclaimer",
@@ -383,6 +392,7 @@ def render_mobile_pdf(
     include_timecodes: bool = True,
     disclaimer: str | None = DEFAULT_DISCLAIMER,
     source_url: str | None = None,
+    source_offset_seconds: float = 0.0,
 ) -> None:
     font_name = register_cjk_font(font_path)
     body_width = MOBILE_PAGE_SIZE[0] - MARGIN_X * 2
@@ -409,6 +419,7 @@ def render_mobile_pdf(
         include_timecodes=include_timecodes,
         disclaimer=disclaimer,
         source_url=source_url,
+        source_offset_seconds=source_offset_seconds,
     )
 
 
@@ -423,6 +434,7 @@ def render_reading_pdf(
     include_timecodes: bool = True,
     disclaimer: str | None = DEFAULT_DISCLAIMER,
     source_url: str | None = None,
+    source_offset_seconds: float = 0.0,
     max_gap_seconds: float = 2.0,
     max_block_seconds: float = 55.0,
     max_primary_chars: int = 320,
@@ -469,6 +481,7 @@ def render_reading_pdf(
         include_timecodes=include_timecodes,
         disclaimer=disclaimer,
         source_url=source_url,
+        source_offset_seconds=source_offset_seconds,
     )
 
 
@@ -515,6 +528,7 @@ def render_paginated_pdf(
     include_timecodes: bool,
     disclaimer: str | None,
     source_url: str | None,
+    source_offset_seconds: float,
 ) -> None:
     page_width, page_height = MOBILE_PAGE_SIZE
     margin_bottom = MARGIN_BOTTOM_WITH_DISCLAIMER if disclaimer else MARGIN_BOTTOM_WITHOUT_DISCLAIMER
@@ -588,6 +602,7 @@ def render_paginated_pdf(
                 font_name=font_name,
                 include_timecodes=include_timecodes,
                 source_url=source_url,
+                source_offset_seconds=source_offset_seconds,
             )
         footer_disclaimer = disclaimer
         if disclaimer == DEFAULT_DISCLAIMER and page_number not in {1, page_count}:
@@ -611,6 +626,7 @@ def draw_render_block(
     font_name: str,
     include_timecodes: bool,
     source_url: str | None,
+    source_offset_seconds: float,
 ) -> float:
     if include_timecodes:
         time_line = f"{display_time(block.start)} - {display_time(block.end)}"
@@ -622,7 +638,11 @@ def draw_render_block(
             y=y,
             text=time_line,
             font_name=font_name,
-            link_url=video_url_at_time(source_url, timestamp_to_seconds(block.start)) if source_url else None,
+            link_url=(
+                video_url_at_time(source_url, timestamp_to_seconds(block.start) + source_offset_seconds)
+                if source_url
+                else None
+            ),
         )
         y -= TIME_LABEL_HEIGHT + TIME_LABEL_BOTTOM_GAP
     doc.setFillColor(colors.HexColor("#111827"))

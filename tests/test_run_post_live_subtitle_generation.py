@@ -138,6 +138,14 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
             report["readingPdfCommand"][report["readingPdfCommand"].index("--source-url") + 1],
             "https://www.youtube.com/watch?v=MEZHufeQBjc",
         )
+        self.assertEqual(
+            report["mobilePdfCommand"][report["mobilePdfCommand"].index("--source-offset-seconds") + 1],
+            "1330.0",
+        )
+        self.assertEqual(
+            report["readingPdfCommand"][report["readingPdfCommand"].index("--source-offset-seconds") + 1],
+            "1330.0",
+        )
         self.assertTrue(any(path.endswith("sermon_zh_mobile.pdf") for path in report["outputs"]))
         self.assertTrue(any(path.endswith("sermon_zh_en_reading.pdf") for path in report["outputs"]))
 
@@ -191,6 +199,10 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
         self.assertEqual(calls[3][calls[3].index("--layout") + 1], "reading")
         self.assertTrue(any("sermon_zh_mobile.pdf" in item for item in report["mobilePdfCommand"]))
         self.assertTrue(any("sermon_zh_en_reading.pdf" in item for item in report["readingPdfCommand"]))
+
+    def test_timecode_to_seconds_accepts_hms_and_ms(self):
+        self.assertEqual(mod.timecode_to_seconds("00:22:10"), 1330.0)
+        self.assertEqual(mod.timecode_to_seconds("22:10"), 1330.0)
 
 
 if __name__ == "__main__":
