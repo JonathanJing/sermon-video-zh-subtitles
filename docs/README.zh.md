@@ -12,6 +12,7 @@
 
 | 主题 | English | 中文 |
 |---|---|---|
+| 稳定主流程 | [stable-post-live-reading-pdf-workflow.md](./stable-post-live-reading-pdf-workflow.md) | [stable-post-live-reading-pdf-workflow.zh.md](./stable-post-live-reading-pdf-workflow.zh.md) |
 | System Design | [system-design.md](./system-design.md) | [system-design.zh.md](./system-design.zh.md) |
 | System Design 实现差距审计 | [system-design-gap-analysis.md](./system-design-gap-analysis.md) | [system-design-gap-analysis.zh.md](./system-design-gap-analysis.zh.md) |
 | Findings Report | [findings-report.md](./findings-report.md) | [findings-report.zh.md](./findings-report.zh.md) |
@@ -32,15 +33,16 @@
 
 ## 推荐阅读顺序
 
-1. 先读根目录 [中文版 README](../README.zh.md)，了解产品目标和 POC 命令。
-2. 再读 [system-design.zh.md](./system-design.zh.md)，理解 11:30 会众字幕架构。
-3. 读 [findings-report.zh.md](./findings-report.zh.md)，理解为什么公开视频 VOD 不满足现场目标。
-4. 评估离线直播链接路线和 11:30 前准备窗口时，读 [offline-live-archive-timing-feasibility.zh.md](./offline-live-archive-timing-feasibility.zh.md)。
-5. 每周生成可发布 SRT/VTT 文件时，先读 [weekly-offline-subtitle-generation.zh.md](./weekly-offline-subtitle-generation.zh.md)。
-6. 从 post-live 归档字幕发布正式 Sunday 页面前，读 [post-live-reviewed-sunday-publication.zh.md](./post-live-reviewed-sunday-publication.zh.md)，先确认 human-in-the-loop 关口，再校准时间轴、生成 reviewed artifacts、发布 stable manifest。
-7. 做模型、Cloud Run、Admin、live-test 或日志观测工作前，读 [model-provider-comparison.zh.md](./model-provider-comparison.zh.md)、[cloud-run-deployment-prep.zh.md](./cloud-run-deployment-prep.zh.md)、[admin-workflow.zh.md](./admin-workflow.zh.md)、[observability.zh.md](./observability.zh.md) 和 [sunday-live-test-runbook.zh.md](./sunday-live-test-runbook.zh.md)。
-8. repo 改 visibility 或邀请更广泛公开贡献前，先用 [open-source-readiness.zh.md](./open-source-readiness.zh.md) 检查。
-9. 用 [system-design-gap-analysis.zh.md](./system-design-gap-analysis.zh.md)、[backlog.md](./backlog.md) 和 [review-testing.md](./review-testing.md) 选择与验证下一步开发任务。
+1. 先读根目录 [中文版 README](../README.zh.md)，了解当前主流程。
+2. 再读 [stable-post-live-reading-pdf-workflow.zh.md](./stable-post-live-reading-pdf-workflow.zh.md)，这是当前 repo 最稳定的 operator 路径。
+3. 再读 [system-design.zh.md](./system-design.zh.md)，理解更广义的 11:30 会众字幕架构。
+4. 读 [findings-report.zh.md](./findings-report.zh.md)，理解为什么公开视频 VOD 不满足现场目标。
+5. 评估离线直播链接路线和 11:30 前准备窗口时，读 [offline-live-archive-timing-feasibility.zh.md](./offline-live-archive-timing-feasibility.zh.md)。
+6. 每周生成可发布 SRT/VTT 文件的更细节实现时，读 [weekly-offline-subtitle-generation.zh.md](./weekly-offline-subtitle-generation.zh.md)。
+7. 从 post-live 归档字幕发布正式 Sunday 页面前，读 [post-live-reviewed-sunday-publication.zh.md](./post-live-reviewed-sunday-publication.zh.md)，先确认 human-in-the-loop 关口，再校准时间轴、生成 reviewed artifacts、发布 stable manifest。
+8. 做模型、Cloud Run、Admin、live-test 或日志观测工作前，读 [model-provider-comparison.zh.md](./model-provider-comparison.zh.md)、[cloud-run-deployment-prep.zh.md](./cloud-run-deployment-prep.zh.md)、[admin-workflow.zh.md](./admin-workflow.zh.md)、[observability.zh.md](./observability.zh.md) 和 [sunday-live-test-runbook.zh.md](./sunday-live-test-runbook.zh.md)。
+9. repo 改 visibility 或邀请更广泛公开贡献前，先用 [open-source-readiness.zh.md](./open-source-readiness.zh.md) 检查。
+10. 用 [system-design-gap-analysis.zh.md](./system-design-gap-analysis.zh.md)、[backlog.md](./backlog.md) 和 [review-testing.md](./review-testing.md) 选择与验证下一步开发任务。
 
 ## 文档语言策略
 

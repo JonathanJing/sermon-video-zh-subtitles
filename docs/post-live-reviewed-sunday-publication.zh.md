@@ -2,6 +2,21 @@
 
 这份 runbook 固化 2026-07-05 `0D6yZW4_uEA` 的处理经验，目标是让下次从直播归档到正式周日页面时，不再因为时间轴、标题、manifest promotion 或浏览器缓存走弯路。
 
+这份 runbook 描述的是稳定主流程之后的 reviewed / publish 阶段，不是当前 repo 首页里定义的主流程本身。
+
+当前主要工作流是稳定的 post-live 阅读版 PDF 路径，见：
+
+- [../README.zh.md](../README.zh.md)
+- [stable-post-live-reading-pdf-workflow.zh.md](./stable-post-live-reading-pdf-workflow.zh.md)
+- [stable-post-live-reading-pdf-workflow.md](./stable-post-live-reading-pdf-workflow.md)
+
+可以把两者理解为：
+
+- 稳定主流程：保住 source、人工确认时间窗、生成并 QA 阅读版 PDF
+- 本 runbook：在已有稳定生成物基础上，继续做 reviewed artifacts、stable manifest promotion 和线上 smoke
+
+换句话说，这份文档处理的是“如何从 post-live 生成物走到正式页面发布”，而不是“今天 repo 最稳定、最基础的 operator 路径”。
+
 ## 核心原则
 
 1. **先校验时间轴，再跑全量模型。** 不要直接相信 YouTube 播放器显示时间等于 `yt-dlp` 下载音频时间。先做 1-2 个短音频抽检，确认讲员开讲点和结尾点。
@@ -77,6 +92,93 @@ window auto-approval:     not stable enough
 subtitle generation:      stable after confirmed window
 stable page publication:  stable only after reviewed artifacts
 ```
+
+## 多阶段时间窗自动化（2026-07-11 更新）
+
+Cloud Run post-live Job 现在使用同一条可缓存、可审计的多阶段流程：
+
+1. 完整音频按 120 秒转写，GPT-5.6 high 在粗时间轴上语义选择宽候选区间；关键词分数只保留为辅助证据，不能阻断语义搜索。
+2. 宽候选区间按 30 秒重新转写，定位进入证道与离开证道的 transition chunk。
+3. 起点和终点附近各取 150 秒区域，按 5 秒重新转写；GPT-5.6 high 选择精确起点和回应诗歌前的结束边界。
+4. 所有建议仍写成 `requires_operator_review`；不得自动启动 reviewed generation 或 promotion。
+
+本流程的证道起点定义包含“专属于本篇信息的 Bible/story recap”，但排除敬拜、广告、通用主持词和活动邀请；结束点定义为回应诗歌歌词开始前的干净边界。
+
+真实回放验证：
+
+| 视频 | 人工时间 | 自动时间 | 起点误差 | 终点误差 |
+| --- | --- | --- | ---: | ---: |
+| `5GuhLMPflds` | `29:25-58:44` | `29:25-58:45` | `0s` | `+1s` |
+| `0D6yZW4_uEA` | `17:05-44:40` | `17:10-44:55` | `+5s` | `+15s` |
+
+`FsUijL9uB1I` 另做语义审核，自动得到 `17:45-49:05`：开头是本篇 Numbers 回顾，结尾后立即进入回应诗歌。由于没有独立 operator 秒级标注，它不计入误差统计。完整机器可读报告保存在：
+
+```text
+artifacts/post-live-timeline-history/multistage-validation-report.json
+```
+
+验证过程中还修复了两个会造成假准确率的缓存问题：音频缩窗缓存现在绑定起止时间；GPT 分类缓存现在绑定 transcript 内容哈希。
+
+## YouTube Data API 状态检查（2026-07-11 更新）
+
+Cloud Run Job 不再优先使用 `yt-dlp` 抓网页来判断直播是否结束。配置以下参数后，Job 先调用 YouTube Data API v3 的 `videos.list`：
+
+```text
+--youtube-api-key-secret=projects/ai-for-god/secrets/youtube-data-api-key/versions/latest
+```
+
+API 返回的 `liveStreamingDetails.actualEndTime` 会归一化为现有 `live_status=was_live` 契约。若 Data API 不可用，Job 才回退到 `yt-dlp` metadata，并在 `metadataDiagnostics` 中记录 provider、fallback 和无密钥错误摘要。
+
+真实验证：
+
+| 视频 | `actualStartTime` | `actualEndTime` | 归一化状态 |
+| --- | --- | --- | --- |
+| `5GuhLMPflds` | `2026-07-12T00:21:05Z` | `2026-07-12T01:35:40Z` | `was_live` |
+| `0D6yZW4_uEA` | `2026-07-05T15:21:04Z` | `2026-07-05T16:31:02Z` | `was_live` |
+| `FsUijL9uB1I` | `2026-06-21T15:21:04Z` | `2026-06-21T16:35:23Z` | `was_live` |
+
+注意：Data API 只解决链接/metadata/直播状态，不提供媒体文件下载。若 `yt-dlp` 在 Cloud Run 被 YouTube bot-check 拦截，Job 会返回 `waiting_for_download_access`，而不是把它误报成 `waiting_for_post_live` 或让容器异常退出。下一步必须配置 `--youtube-cookies-secret`，或改用授权的源媒体 URL。
+
+## 本地下载优先、GCS 交接
+
+当前生产默认应使用本机下载完整音频和视频，再由 Cloud Run 继续时间轴与审核流程：
+
+```bash
+python3 scripts/run_local_post_live_download.py \
+  --sunday YYYY-MM-DD \
+  --live-url 'https://www.youtube.com/watch?v=<VIDEO_ID>' \
+  --youtube-api-key-secret projects/ai-for-god/secrets/youtube-data-api-key/versions/latest
+```
+
+本地入口执行以下步骤：
+
+1. 用 YouTube Data API 确认 `actualEndTime`。
+2. 本地用 `yt-dlp` 下载完整音频和最高 1080p 视频。
+3. 用 `ffprobe` 校验两个文件的时长，计算 size 和 SHA-256。
+4. 上传音频、视频和 `local-download-manifest.json` 到同一 Sunday/slug GCS 前缀。
+5. Cloud Run 优先读取 manifest，并从 GCS 下载音频进入多阶段时间轴；只有 manifest 不存在时才尝试云端 YouTube 下载。
+
+交接对象：
+
+```text
+gs://<bucket>/sundays/<SUNDAY>/post-live-subtitles/<SLUG>/download/source_audio.<ext>
+gs://<bucket>/sundays/<SUNDAY>/post-live-subtitles/<SLUG>/download/source_video.mp4
+gs://<bucket>/sundays/<SUNDAY>/post-live-subtitles/<SLUG>/download/local-download-manifest.json
+```
+
+manifest 不包含 API key、cookie、Secret resource name 或私有 headers。Cloud Run 成功消费后，job report 的 `downloadSource` 必须是 `local-gcs-handoff`。
+
+本机 OpenClaw command cron：
+
+```text
+name: sermon-sun-local-post-live-download
+id: 85ad1daa-22c2-4003-b289-1e26adf6421a
+schedule: */10 9-14 * * SUN
+timezone: America/Los_Angeles
+delivery: none
+```
+
+下载器优先读取 canonical state；若本地 command sandbox 无法读取私有 GCS state，则从官方 `@marinerschurch/streams` 自行发现同一主日的视频，并用 Data API 按本地日期和 `is_live/was_live` 状态筛选。完整 manifest 已存在时返回 `already_complete`，不得重复上传大文件。
 
 ## 推荐处理路径
 
@@ -383,6 +485,24 @@ upload-workers=4
 mode=timeline-probe     完整音频粗时间轴，只输出候选窗口，状态 requires_operator_review
 mode=generate-reviewed  使用已确认 local start/end 跑正式字幕生成
 ```
+
+### Cloud Run Job：完整音频与人工时间窗审核
+
+生产环境不要依赖 Cloud Run service 的 inline worker。`scripts/run_post_live_timeline_job.py`
+用于独立 Cloud Run Job，按以下顺序执行：
+
+1. 从 `LIVE_SOURCE_MONITOR_STATE_URI` 读取已捕获的 YouTube watch URL。
+2. 只有 metadata 变成 `post_live` / `was_live` 后才下载完整音频。
+3. 把完整音频上传到
+   `sundays/<date>/post-live-subtitles/<slug>/download/source_audio.<ext>`。
+4. 对完整音频运行粗时间轴，并上传 `timeline/report.json` 与
+   `timeline/timeline_chunks.json`。
+5. 写 `timeline/job-report.json` 作为幂等 marker；后续 Scheduler 重试不会重复下载和转录。
+6. 状态固定停在 `requires_operator_review`，并通过 Discord bot 通知 operator。
+
+Discord 通知只提供机器建议窗口和证据路径。Operator 必须独立观看完整录像，记录证道开始与
+结束时间，再与 `suggestedWindow` 比较。确认后的本地音频时间才可以提交给
+`mode=generate-reviewed`；机器人通知本身不是 approval，也不会自动 promotion stable manifest。
 
 Scheduler 应先配置 timeline probe job，不再在定时器里硬编码播放器时间作为正式 `startTime/endTime`：
 

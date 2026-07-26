@@ -9,7 +9,15 @@
   </a>
 </p>
 
-This project builds a pipeline for usable Chinese captions during the Mariners Church Sunday 11:30 PT sermon, so Chinese-speaking congregants can follow the message while it is being preached.
+This repository's current primary workflow is a stable post-live operator flow:
+
+1. save a sermon video URL into resumable state
+2. manually confirm the sermon start and end time
+3. run the subtitle pipeline
+4. generate a Chinese-English reading PDF
+5. treat the run as complete only after PDF QA passes
+
+The frontend and backend paths already work, but they are not the main workflow described in this root README today.
 
 ## Disclaimer
 
@@ -19,50 +27,98 @@ The project uses publicly accessible Mariners Church live streams, live archives
 
 The project does not bypass paywalls, access controls, DRM, platform restrictions, or copyright protections. Operators are responsible for using the tools only with public or otherwise authorized audio/video sources and for respecting Mariners Church, YouTube, and other applicable terms and rights.
 
-This repository is currently being prepared for broader open-source collaboration. Contributions are welcome when they improve the 11:30 congregation caption experience, especially around translation quality, latency, scripture terminology, mobile/tablet UX, deployment reliability, testing, and documentation.
+## Stable Workflow
 
-## Product North Star
+The current stable workflow is documented in detail here:
 
-The core product goal is not only to archive or translate sermons after the fact. The core goal is:
+- [Stable post-live reading PDF workflow](docs/stable-post-live-reading-pdf-workflow.md)
+- [稳定的 post-live 阅读版 PDF 工作流](docs/stable-post-live-reading-pdf-workflow.zh.md)
 
-```text
-By the time the 11:30 PT service begins, Chinese-speaking congregants should have a usable caption experience that helps them listen to the sermon in real time.
+### Flowchart
+
+```mermaid
+flowchart TD
+    A[Operator provides YouTube URL] --> B[Save source into live-source state]
+    B --> C[Wait until archive is post-live and downloadable]
+    C --> D[Operator confirms sermon start and end]
+    D --> E[Download archive audio]
+    E --> F[Clip sermon window]
+    F --> G[Transcribe and align English]
+    G --> H[Translate Chinese]
+    H --> I[Render reading PDF]
+    I --> J{PDF QA pass?}
+    J -- Yes --> K[Deliver reading PDF and reports]
+    J -- No --> L[Operator review and rerun]
 ```
 
-All realtime, offline, UI, storage, and export work should be evaluated by whether it improves that 11:30 listener experience.
+### Primary commands
 
-## Current Focus
+Save the manual source URL:
 
-- Prepare usable Chinese captions before the 11:30 PT service audience needs them.
-- Use the earliest verified pre-11:30 PT Mariners live service as the preparation source, with 10:00 PT as the conservative default.
-- Let an operator monitor readiness, review key terms/scripture, and publish captions for the 11:30 service.
-- Store generated content in GCS for durable Cloud Run workflows.
-- Keep API/model keys in Google Secret Manager; public browser files and generated artifacts must never include key material or Secret Manager resource names.
-- Keep offline processing, notes, and quote extraction as support features for quality, review, and follow-up.
+```bash
+python3 scripts/live_source_monitor.py \
+  --sunday 2026-07-26 \
+  --manual-url 'https://www.youtube.com/watch?v=VIDEO_ID' \
+  --out artifacts/live-source-monitor/report.json \
+  --state-file artifacts/live-source-monitor/state.json
+```
 
-## Key Finding
+Run the stable post-live generation path after the sermon window is manually confirmed:
 
-Based on the current public YouTube metadata analysis for Mariners Church, waiting for the public VOD to appear cannot meet a Sunday 11:50 PT completion deadline. Recent Sunday sermon videos typically become public around 12:28-12:43 PT, with a median around 12:31 PT.
+```bash
+python3 scripts/run_post_live_subtitle_generation.py \
+  --sunday 2026-07-26 \
+  --state-file artifacts/live-source-monitor/state.json \
+  --work-root artifacts/post-live-runs \
+  --out artifacts/post-live-subtitle-generation/report.json \
+  --slug mariners_VIDEO_ID \
+  --start-time 00:29:35 \
+  --end-time 01:00:55
+```
 
-The more promising input is the official live service. Mariners Online lists Sunday live services at 7:00, 8:30, 10:00, and 11:30 AM PT. The system design therefore prepares captions from the earliest verified same-sermon service, treats 10:00 PT as the conservative production default, and uses public VOD as a later offline-quality source.
+Before the second command, make sure `OPENAI_API_KEY` is already available in the shell, or use `--api-key-secret`.
 
-Current YouTube Streams metadata also supports the offline live-link route: among current visible Sunday live records, standard live links almost always start around 08:21 PT, leaving roughly three hours before the 11:30 PT congregation service for live/archive capture, English transcription, Chinese translation, and operator review. See [offline live-archive timing feasibility](docs/offline-live-archive-timing-feasibility.zh.md).
+### Completion rule
 
-## Post-Live Safety Model
+Do not call the run complete just because ASR or subtitle files exist. The stable completion condition is:
 
-The post-live workflow is intentionally semi-automated. Automation may find the live link, wait for the archive, download full audio, build a coarse English timeline, propose a sermon window, generate subtitles, render PDF/SRT/VTT files, upload artifacts, and validate Cloud Run reads.
+- source URL saved into state
+- sermon start and end manually confirmed
+- `sermon_zh_en_reading.pdf` generated
+- `sermon_zh_en_reading.qa.json` reports pass
+- run report and run status written
 
-Automation must stop before two human gates:
+## Main outputs
 
-- **Sermon window review:** the operator confirms the local-audio start/end points from timeline evidence before the full generation pipeline runs.
-- **Reviewed subtitle approval:** the operator checks English ASR, Chinese translation, scripture terms, title/speaker metadata, and first/last cues before stable Sunday publication.
+The primary operator outputs for this workflow are:
 
-Only reviewed artifacts should be promoted to `sundays/<date>/cloud-manifest.json`. The detailed runbook is [Post-live reviewed Sunday publication](docs/post-live-reviewed-sunday-publication.zh.md).
+- `sermon_zh_relative.srt`
+- `sermon_en_relative.srt`
+- `sermon_zh_mobile.pdf`
+- `sermon_zh_en_reading.pdf`
+- `sermon_zh_mobile.qa.json`
+- `sermon_zh_en_reading.qa.json`
+- `summary.json`
+- `run-status.json`
+
+## Working but Secondary
+
+These paths already work, but they are not the primary repo entrypoint:
+
+- [backend/README.md](backend/README.md): backend worker and Cloud Run orchestration
+- [web/README.md](web/README.md): frontend/admin and playback prototype
+
+They should be documented as supporting paths around the stable post-live reading-PDF workflow, not as the main workflow itself.
+
+## Background
+
+The longer-term product goal remains improving the 11:30 PT congregation listening experience for Chinese-speaking attendees. The current stable workflow is the most reliable operator path for preserving a source, confirming the sermon window, and producing a bilingual reading PDF after the service.
 
 ## Documentation
 
 | Area | English | Chinese |
 |---|---|---|
+| Stable workflow | [docs/stable-post-live-reading-pdf-workflow.md](docs/stable-post-live-reading-pdf-workflow.md) | [docs/stable-post-live-reading-pdf-workflow.zh.md](docs/stable-post-live-reading-pdf-workflow.zh.md) |
 | Documentation index | [docs/README.md](docs/README.md) | [docs/README.zh.md](docs/README.zh.md) |
 | System design | [docs/system-design.md](docs/system-design.md) | [docs/system-design.zh.md](docs/system-design.zh.md) |
 | System design gap analysis | [docs/system-design-gap-analysis.md](docs/system-design-gap-analysis.md) | [docs/system-design-gap-analysis.zh.md](docs/system-design-gap-analysis.zh.md) |
@@ -79,70 +135,20 @@ Only reviewed artifacts should be promoted to `sundays/<date>/cloud-manifest.jso
 | Offline live-archive timing feasibility | [Chinese report](docs/offline-live-archive-timing-feasibility.zh.md) | [same Chinese report](docs/offline-live-archive-timing-feasibility.zh.md) |
 | Backlog and review | [docs/backlog.md](docs/backlog.md), [docs/review-testing.md](docs/review-testing.md) | [docs/backlog.zh.md](docs/backlog.zh.md) |
 
-Other project files:
-
-- [Historical publish timing dataset](data/mariners_church_sunday_sermon_publish_times.csv)
-- [Live source findings dataset](data/mariners_church_live_source_findings.csv)
-- [Frontend operator prototype](web/)
-- [Development notes](docs/development-notes.md)
-
 ## Prerequisites
 
-For local POC runs:
+For the stable local workflow:
 
-- Python 3.10 or newer.
-- `yt-dlp` available on `PATH` for public YouTube metadata and subtitle extraction.
-- Network access to the public source URLs used in the POC.
+- Python 3.10 or newer
+- `yt-dlp` available on `PATH`
+- network access to the public source URLs used in the run
+- `OPENAI_API_KEY` in the shell, or a usable `--api-key-secret`
 
 For GCS / Cloud Run-style artifact publishing:
 
-- Google Cloud SDK `gcloud` installed and authenticated.
-- Access to the target GCS bucket.
-- Secret Manager resource names for model/API keys; do not pass raw key material.
-
-## Operations And Logs
-
-The Cloud Run API and worker write structured JSON logs to stdout for Cloud Logging. The current operational events cover live-capture triggers, worker stage timing, caption readiness, and anonymous congregation page views. See [Observability and logs](docs/observability.md) for event names, Cloud Logging queries, and the privacy boundary for device counts.
-
-## Live-Link POC
-
-Prepare the web playback simulation from a live archive link:
-
-```bash
-python3 scripts/prepare_live_link_playback.py \
-  --live-url 'https://www.youtube.com/watch?v=FsUijL9uB1I'
-```
-
-Then open `web/index.html` and click `模拟播放`. The page shows the sermon title, live-link status, and the caption line currently being generated for the 11:30 congregation view.
-
-When generated content should be persisted for Cloud Run or production-style testing, publish it to GCS and reference the model API key through Secret Manager:
-
-```bash
-python3 scripts/prepare_live_link_playback.py \
-  --live-url 'https://www.youtube.com/watch?v=FsUijL9uB1I' \
-  --gcs-bucket sermon-zh-artifacts \
-  --gcs-prefix runs/2026-06-22/FsUijL9uB1I \
-  --api-key-secret projects/PROJECT_ID/secrets/openai-api-key/versions/latest
-```
-
-The script uploads generated reports, VTT/SRT files, playback data, and `cloud-manifest.json` to GCS. The Secret Manager resource name is validated at runtime but is not written into public generated artifacts; they only record `apiKeyMaterialIncluded=false` and `secretResourceNamesIncluded=false`.
-
-For lower-level debugging, extract sermon subtitles from a live archive link:
-
-```bash
-python3 scripts/offline_live_sermon_subtitles.py \
-  --live-url 'https://www.youtube.com/watch?v=FsUijL9uB1I'
-```
-
-Build browser playback simulation data from the POC output:
-
-```bash
-python3 scripts/build_playback_simulation.py \
-  --report artifacts/offline-live-sermon-poc/report.json \
-  --out web/playback-simulation.generated.js
-```
-
-If the available source captions are English, the UI keeps the English sidecar and marks the Chinese line as `AI 中文待生成` until the translation model is connected.
+- Google Cloud SDK `gcloud` installed and authenticated
+- access to the target GCS bucket
+- Secret Manager resource names for model/API keys; do not pass raw key material
 
 ## Open-Source Hygiene
 
@@ -154,14 +160,8 @@ If the available source captions are English, the UI keeps the English sidecar a
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md), [CONTRIBUTING.zh.md](CONTRIBUTING.zh.md), [SECURITY.md](SECURITY.md), and [SECURITY.zh.md](SECURITY.zh.md). Good first areas include caption quality, provider benchmarking, mobile/tablet ergonomics, scripture matching, deployment automation, and observability.
+See [CONTRIBUTING.md](CONTRIBUTING.md), [CONTRIBUTING.zh.md](CONTRIBUTING.zh.md), [SECURITY.md](SECURITY.md), and [SECURITY.zh.md](SECURITY.zh.md).
 
 ## License
 
 MIT. See [LICENSE](LICENSE).
-
-## Source Video
-
-- Target video: [The Cure for Our Rebellion - Eric Geiger | Mariners Church](https://www.youtube.com/watch?v=V6OKiwbjDZE)
-- Live archive candidate: [The Cure for Our Rebellion - Eric Geiger | Mariners Church](https://www.youtube.com/watch?v=FsUijL9uB1I)
-- Channel: [Mariners Church](https://www.youtube.com/@marinerschurch)

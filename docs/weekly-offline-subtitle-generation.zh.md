@@ -2,7 +2,20 @@
 
 本文记录从 Codex thread `019f0bd5-622d-70f2-b0da-15060b7d85c9` 实跑提取出来的每周字幕文件生成流程。目标是把一场英文证道音频或视频生成可发布的中文字幕 SRT/VTT 和手机版 PDF，并保留英文底稿、完整视频时间轴、QA 报告和可复盘的中间产物。
 
-这个流程服务于离线高质量字幕文件和回看归档；它不替代 11:30 现场会众实时字幕链路。
+这份文档描述的是更细的离线实现路径，不是当前 repo 首页定义的主流程本身。
+
+当前主要工作流是稳定的 post-live 阅读版 PDF 路径，见：
+
+- [../README.zh.md](../README.zh.md)
+- [stable-post-live-reading-pdf-workflow.zh.md](./stable-post-live-reading-pdf-workflow.zh.md)
+- [stable-post-live-reading-pdf-workflow.md](./stable-post-live-reading-pdf-workflow.md)
+
+可以把两者理解为：
+
+- 稳定主流程：保住 source、人工确认时间窗、运行主脚本、生成并 QA 阅读版 PDF
+- 本文档：解释这条链路背后的更细颗粒度字幕生成步骤、模型分工、QA 规则和历史 CLI 形态
+
+这个流程服务于离线高质量字幕文件和回看归档；它不替代 11:30 现场会众实时字幕链路，也不替代当前稳定主流程文档。
 
 ## 模型选择
 

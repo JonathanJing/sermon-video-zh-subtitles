@@ -2,7 +2,29 @@
 
 Chinese version: [admin-workflow.zh.md](./admin-workflow.zh.md)
 
-The Admin page is the operator surface for Sunday caption readiness. It is separate from the public congregation page so regular users only see captions, scripture, and readiness status.
+This document describes a working support path, not the repository's main
+operator workflow.
+
+The current primary workflow is the stable post-live reading-PDF flow described
+in:
+
+- [../README.md](../README.md)
+- [stable-post-live-reading-pdf-workflow.md](./stable-post-live-reading-pdf-workflow.md)
+- [stable-post-live-reading-pdf-workflow.zh.md](./stable-post-live-reading-pdf-workflow.zh.md)
+
+The Admin page is the operator surface for Sunday caption readiness. It is
+separate from the public congregation page so regular users only see captions,
+scripture, and readiness status.
+
+## Relationship To The Primary Workflow
+
+Use the Admin page when you need browser-based monitoring, simulation, manual
+triggering, or readiness checks around the stable workflow.
+
+Do not treat Admin UI interaction by itself as workflow completion. The current
+stable completion bar is still the reading-PDF path: saved source, manually
+confirmed sermon window, generated `sermon_zh_en_reading.pdf`, passing PDF QA,
+and written run reports.
 
 ## Route
 

@@ -1,6 +1,49 @@
 # Web Prototype
 
-This is the browser prototype for preparing, publishing, and viewing Chinese captions for the Mariners Church 11:30 service congregation.
+This web path is already working, but it is currently a secondary path in the
+repository.
+
+The primary repository workflow today is the stable post-live operator flow
+documented in:
+
+- [../README.md](../README.md)
+- [../docs/stable-post-live-reading-pdf-workflow.md](../docs/stable-post-live-reading-pdf-workflow.md)
+- [../docs/stable-post-live-reading-pdf-workflow.zh.md](../docs/stable-post-live-reading-pdf-workflow.zh.md)
+
+That primary flow is:
+
+1. save a sermon video URL into resumable state
+2. manually confirm the sermon start and end time
+3. run the post-live subtitle pipeline
+4. generate the Chinese-English reading PDF
+5. treat the run as complete only after PDF QA passes
+
+This README describes the browser-facing support path around that workflow. It
+is not the main operator entrypoint described in the root README.
+
+## Relationship To The Primary Workflow
+
+Use this web path when you need one or more of these:
+
+- a congregation-facing caption page
+- an admin/operator browser UI
+- playback simulation and public-page QA
+- review and observability controls around generated artifacts
+
+The web path can help operators monitor, inspect, simulate, and publish. But
+the repository's current stable completion bar is still the reading-PDF path:
+saved source, manually confirmed sermon window, generated
+`sermon_zh_en_reading.pdf`, passing PDF QA, and written run reports.
+
+## Current Role
+
+Today this web prototype is best understood as:
+
+- a working congregation and admin UI layer
+- a useful browser surface around generation and review
+- a support path around the stable post-live reading-PDF workflow
+
+It should be documented as working, but not as the repository's main workflow.
 
 Open `index.html` directly in a browser, or serve the `web/` folder with any static server.
 
