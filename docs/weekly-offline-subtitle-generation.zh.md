@@ -243,13 +243,13 @@ python3 scripts/render_mobile_pdf_from_srt.py \
 .venv/bin/python scripts/build_sermon_reading_edition_with_openai.py \
   --source-pipeline <pipeline_outdir> \
   --outdir <pipeline_outdir>/reading-edition-v2 \
-  --provider codex \
+  --provider openai \
   --model gpt-5.6-sol \
   --reasoning-effort high \
   --passes 2
 ```
 
-脚本会按完整英文句子建立语义段落，执行阅读编辑和独立双语校对，并生成 `reading_quality_report.json`。只有该报告为 `pass` 时，才从 `sermon_zh_reading_revised.srt` 和 `sermon_en_reading_revised.srt` 生成最终阅读 PDF。
+从 2026-07-26 起，这一步已经固化进 `run_post_live_subtitle_generation.py` 主流程：默认 provider 为 `openai`，默认模型为 `gpt-5.6-sol`，默认 `reasoning effort=high`。脚本会按完整英文句子建立语义段落，执行阅读编辑和独立双语校对，并生成 `reading_quality_report.json`。只有该报告为 `pass` 时，主流程才会继续生成最终阅读 PDF。
 
 ```bash
 .venv/bin/python scripts/render_mobile_pdf_from_srt.py \
