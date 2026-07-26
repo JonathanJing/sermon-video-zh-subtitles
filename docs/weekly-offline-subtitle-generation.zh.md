@@ -10,10 +10,11 @@
 |---|---|---|---|
 | 高质量英文参考听写 | `gpt-4o-transcribe` | 生成更准确、更自然的英文 transcript reference | 适合带 sermon glossary prompt；不作为最终时间轴来源 |
 | 稳定字幕时间轴 | `whisper-1` with `verbose_json` | 生成 segment/word timestamps | 目前仍是更适合字幕时间轴的 OpenAI 路径 |
-| 英文分段校正 | `gpt-5.4-mini` | 用 GPT-4o 参考文本校正 Whisper 分段英文 | 必须保持 segment id、start、end 不变 |
-| 中文字幕生成 | `gpt-5.5` | 逐条生成最终中文字幕 | 当前实跑返回过 `gpt-5.5-2026-04-23` |
+| 英文分段校正 | `gpt-5.6` / high | 用 GPT-4o 参考文本校正 Whisper 分段英文 | 必须保持 segment id、start、end 不变 |
+| 中文字幕生成 | `gpt-5.6` / high | 逐条生成时间轴中文字幕 | 字幕阶段允许跨 cue 残句，不等同于最终阅读版 |
+| 中文阅读编辑与校对 | `gpt-5.6-sol` / high | 把字幕重组为完整语义段落，并进行第二轮中英对照校对 | 阅读版交付前必须通过独立文本门禁 |
 
-不要用 `gpt-5.5` 做 ASR。它用于最终中文生成，不是 Audio Transcriptions API 的听写模型。
+不要用 `gpt-5.6` 或 `gpt-5.6-sol` 做 ASR。它们用于英文校正、翻译和阅读编辑，不是 Audio Transcriptions API 的听写模型。
 
 ## 每周输入
 
@@ -46,12 +47,14 @@ mariners_<youtube_video_id>
 3. 裁剪并 loudness normalize 证道片段
 4. gpt-4o-transcribe 分块听写，得到高质量英文参考
 5. whisper-1 verbose_json 生成稳定时间轴
-6. gpt-5.4-mini 按 3-5 分钟窗口校正英文分段
-7. gpt-5.5 逐条生成中文字幕
+6. gpt-5.6 按 3-5 分钟窗口校正英文分段
+7. gpt-5.6 逐条生成时间轴中文字幕
 8. 写出 relative 和 full-video 两套 SRT/VTT
-9. 从 `sermon_zh_relative.srt` 生成手机逐句版 PDF 和独立阅读版 PDF
-10. 跑 QA，确认 hard failures 为 0
-11. 抽查术语、经文、人名、首尾边界后发布/归档
+9. 从 `sermon_zh_relative.srt` 生成手机逐句版 PDF
+10. 把字幕重组为完整语义段落，进行两轮中文阅读编辑和双语校对
+11. 从修订后的阅读段落生成独立中英对照阅读版 PDF
+12. 跑文本门禁和 PDF QA，确认 hard failures 为 0
+13. 通读全部中文并渲染检查全部 PDF 页面后发布/归档
 ```
 
 ## 推荐 CLI
@@ -65,7 +68,9 @@ python3 scripts/sermon_pipeline.py \
   --end-time 00:55:35.182 \
   --slug <slug> \
   --glossary artifacts/<slug>/glossary.json \
-  --zh-model gpt-5.5
+  --en-correction-model gpt-5.6 \
+  --zh-model gpt-5.6 \
+  --reasoning-effort high
 ```
 
 如果是从完整视频上挂字幕，`--start-time` 和 `--end-time` 必须使用完整视频的绝对时间。脚本会同时生成从证道片段 `00:00:00` 开始的字幕，以及偏移回完整视频时间轴的字幕。
@@ -232,21 +237,33 @@ python3 scripts/render_mobile_pdf_from_srt.py \
 `sermon_zh_mobile.pdf` 使用手机竖屏尺寸，保留每条字幕 cue 的时间码，适合精确对照原始字幕。它从中文 relative SRT 生成，不使用完整视频绝对时间轴；如果传入 `--secondary-input`，会按时间轴把英文字幕显示在每段中文下方。如果传入 `--source-url`，时间码会链接到对应的 YouTube 时间点；relative SRT 还必须同时传入 `--source-offset-seconds`，其值是讲道在完整视频中的起点秒数。
 发布版 PDF 默认会在每页页脚加入 AI 辅助生成免责声明；如需临时关闭，可在人工调试时加 `--hide-disclaimer`。
 
-随后生成每周标准阅读版 PDF，不替代逐句字幕 PDF：
+直接从逐句 SRT 生成的 PDF 只能作为布局预览，不应直接标记为最终阅读版。逐 cue 翻译会保留字幕残句，单纯合并 cue 仍可能产生省略号、语气词和断裂语序。
 
 ```bash
-python3 scripts/render_mobile_pdf_from_srt.py \
+.venv/bin/python scripts/build_sermon_reading_edition_with_openai.py \
+  --source-pipeline <pipeline_outdir> \
+  --outdir <pipeline_outdir>/reading-edition-v2 \
+  --provider codex \
+  --model gpt-5.6-sol \
+  --reasoning-effort high \
+  --passes 2
+```
+
+脚本会按完整英文句子建立语义段落，执行阅读编辑和独立双语校对，并生成 `reading_quality_report.json`。只有该报告为 `pass` 时，才从 `sermon_zh_reading_revised.srt` 和 `sermon_en_reading_revised.srt` 生成最终阅读 PDF。
+
+```bash
+.venv/bin/python scripts/render_mobile_pdf_from_srt.py \
   --layout reading \
-  --input <pipeline_outdir>/sermon_zh_relative.srt \
-  --secondary-input <pipeline_outdir>/sermon_en_relative.srt \
-  --out <pipeline_outdir>/sermon_zh_en_reading.pdf \
-  --title <sermon title> \
-  --subtitle '<Sunday date> 中英对照阅读版' \
+  --input <pipeline_outdir>/reading-edition-v2/sermon_zh_reading_revised.srt \
+  --secondary-input <pipeline_outdir>/reading-edition-v2/sermon_en_reading_revised.srt \
+  --out output/pdf/<date>-<video_id>-sermon-zh-en-reading-revised.pdf \
+  --title '<sermon title>' \
+  --subtitle '<Sunday date> 中英对照阅读版（连贯修订）' \
   --source-url '<YouTube watch URL>' \
   --source-offset-seconds <sermon start seconds in full video>
 ```
 
-`sermon_zh_en_reading.pdf` 会尽量等到中英文都形成完整句后再断段，把相邻短 cue 合并成更接近讲章段落的阅读块，并用段落时间范围代替每句时间码；中文正文使用中文标点禁则换行，英文仍放在对应中文段落下方。阅读版还会生成 5 分钟间隔的 PDF 书签，并在提供 `--source-url` 时让段落时间码可点击。
+完整提示词原则、门禁、案例数据和 PDF 验收方式见 [中文证道阅读版质量规范](./chinese-reading-edition-quality.zh.md)。
 
 ## 人工抽查清单
 
@@ -266,7 +283,9 @@ python3 scripts/render_mobile_pdf_from_srt.py \
 sermon_zh_relative.srt
 sermon_zh_relative.vtt
 sermon_zh_mobile.pdf
-sermon_zh_en_reading.pdf
+reading-edition-v2/reading_quality_report.json
+output/pdf/<date>-<video_id>-sermon-zh-en-reading-revised.pdf
+output/pdf/<date>-<video_id>-sermon-zh-en-reading-revised.qa.json
 full_video_zh_from_sermon.srt
 full_video_zh_from_sermon.vtt
 qa_report.json
