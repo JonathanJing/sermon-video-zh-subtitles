@@ -232,6 +232,42 @@ class BackendAppTest(unittest.TestCase):
         self.assertFalse(captured["payload"]["apiKeyMaterialIncluded"])
         self.assertTrue(captured["payload"]["secretResourceNamesIncluded"])
 
+    def test_post_live_subtitles_endpoint_passes_reading_edition_overrides(self):
+        class FakeService:
+            def _resolve_sunday(self, sunday):
+                return sunday
+
+        handler = object.__new__(ApiHandler)
+        handler.headers = {"X-Internal-Task-Token": "task-token"}
+        handler.config = AppConfig(
+            artifact_bucket="sermon-zh-artifacts-ai-for-god",
+            artifact_prefix="sundays",
+            current_manifest_uri=None,
+            sunday_manifest_uri_template=None,
+            timezone="America/Los_Angeles",
+            openai_api_key_secret="projects/ai-for-god/secrets/openai-api-key/versions/latest",
+            operator_admin_token=None,
+            internal_task_token="task-token",
+            enable_inline_worker=False,
+            live_source_monitor_state_uri="gs://sermon-zh-artifacts-ai-for-god/sundays/live-source-monitor/backend-state.json",
+        )
+        handler.service = FakeService()
+        handler.read_json_body = lambda: {
+            "slug": "mariners_MEZHufeQBjc",
+            "readingEditionProvider": "openai",
+            "readingEditionModel": "gpt-5.6-sol",
+            "readingEditionReasoningEffort": "high",
+        }
+        captured = {}
+        handler.write_json = lambda payload, status=200: captured.update({"payload": payload, "status": status})
+
+        ApiHandler.handle_post_live_subtitles(handler, "2026-07-26")
+
+        command = captured["payload"]["command"]
+        self.assertEqual(command[command.index("--reading-edition-provider") + 1], "openai")
+        self.assertEqual(command[command.index("--reading-edition-model") + 1], "gpt-5.6-sol")
+        self.assertEqual(command[command.index("--reading-edition-reasoning-effort") + 1], "high")
+
     def test_post_live_subtitles_endpoint_can_plan_timeline_probe(self):
         class FakeService:
             def _resolve_sunday(self, sunday):

@@ -8,6 +8,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
@@ -18,13 +19,15 @@ if str(REPO_ROOT) not in sys.path:
 
 from backend.cloud import access_secret, upload_file_to_gcs  # noqa: E402
 from backend.observability import log_event, url_summary  # noqa: E402
-from scripts import live_source_monitor  # noqa: E402
+from scripts import live_source_monitor, post_live_run_status  # noqa: E402
 
 
 SERMON_PIPELINE_SCRIPT = REPO_ROOT / "scripts" / "sermon_pipeline.py"
 MOBILE_PDF_SCRIPT = REPO_ROOT / "scripts" / "render_mobile_pdf_from_srt.py"
+READING_EDITION_SCRIPT = REPO_ROOT / "scripts" / "build_sermon_reading_edition_with_openai.py"
 DEFAULT_WORK_ROOT = Path("/tmp/sermon-post-live-subtitles")
 POST_LIVE_STATES = {"was_live"}
+READING_EDITION_DIRNAME = "reading-edition-v2"
 
 
 def main() -> int:
@@ -47,12 +50,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--start-time", help="Absolute sermon start in the full downloaded media.")
     parser.add_argument("--end-time", help="Absolute sermon end in the full downloaded media.")
     parser.add_argument("--glossary", type=Path)
-    parser.add_argument("--zh-model", default="gpt-5.5")
-    parser.add_argument("--en-correction-model", default="gpt-5.4-mini")
+    parser.add_argument("--zh-model", default="gpt-5.6")
+    parser.add_argument("--en-correction-model", default="gpt-5.6")
+    parser.add_argument("--reasoning-effort", choices=("low", "medium", "high"), default="high")
     parser.add_argument("--gpt4o-model", default="gpt-4o-transcribe")
     parser.add_argument("--timing-model", default="whisper-1")
+    parser.add_argument("--reading-edition-provider", choices=("openai", "codex"), default="openai")
+    parser.add_argument("--reading-edition-model", default="gpt-5.6-sol")
+    parser.add_argument("--reading-edition-reasoning-effort", choices=("low", "medium", "high"), default="high")
     parser.add_argument("--audio-format", default="bestaudio[ext=m4a]/bestaudio")
     parser.add_argument("--yt-dlp", default="yt-dlp")
+    parser.add_argument("--youtube-cookies", type=Path, help="Netscape cookies.txt used only for yt-dlp access.")
     parser.add_argument("--metadata-json", type=Path, help="Use saved yt-dlp metadata instead of probing live.")
     parser.add_argument("--api-key-secret", help="Secret Manager resource for OPENAI_API_KEY.")
     parser.add_argument("--gcs-bucket")
@@ -106,10 +114,17 @@ def run_post_live_generation(
         return report
 
     run_root = args.work_root / args.sunday / slug_for(args, live_url)
+    run_status_path = run_root / "run-status.json"
+    run_status = load_run_status(run_status_path, args.sunday, live_url)
+    run_status = post_live_run_status.update_stage(run_status, args.sunday, "source_saved", "complete")
+    run_status = post_live_run_status.update_stage(run_status, args.sunday, "archive_ready", "complete")
+    write_run_status(run_status_path, run_status)
     audio_template = run_root / "download" / "source_audio.%(ext)s"
     pipeline_outdir = run_root / "pipeline"
+    reading_outdir = pipeline_outdir / READING_EDITION_DIRNAME
     pipeline_command = build_pipeline_command(args, run_root / "download", pipeline_outdir, live_url)
     mobile_pdf_command = build_mobile_pdf_command(args, pipeline_outdir, live_url, metadata=metadata, source=source)
+    reading_edition_command = build_reading_edition_command(args, pipeline_outdir)
     reading_pdf_command = build_reading_pdf_command(args, pipeline_outdir, live_url, metadata=metadata, source=source)
     report = {
         **base_report,
@@ -117,8 +132,10 @@ def run_post_live_generation(
         "metadata": safe_metadata(metadata),
         "downloadTemplate": str(audio_template),
         "pipelineOutdir": str(pipeline_outdir),
+        "readingEditionOutdir": str(reading_outdir),
         "pipelineCommand": pipeline_command,
         "mobilePdfCommand": mobile_pdf_command,
+        "readingEditionCommand": reading_edition_command,
         "readingPdfCommand": reading_pdf_command,
         "outputs": expected_outputs(pipeline_outdir),
     }
@@ -127,13 +144,111 @@ def run_post_live_generation(
         return report
 
     set_openai_api_key(args)
-    audio_path = download_archive_audio(live_url, audio_template, args.audio_format, args.yt_dlp, runner)
+    stage_durations: dict[str, float] = {}
+    audio_path = newest_downloaded_audio(audio_template.parent)
+    if audio_path:
+        stage_durations["downloaded"] = 0.0
+    else:
+        started = time.monotonic()
+        run_status = post_live_run_status.update_stage(run_status, args.sunday, "downloaded", "running")
+        write_run_status(run_status_path, run_status)
+        audio_path = download_archive_audio(
+            live_url,
+            audio_template,
+            args.audio_format,
+            args.yt_dlp,
+            runner,
+            cookies_path=args.youtube_cookies,
+        )
+        stage_durations["downloaded"] = time.monotonic() - started
+    run_status = post_live_run_status.update_stage(
+        run_status, args.sunday, "downloaded", "complete", artifact=str(audio_path),
+        duration_seconds=stage_durations["downloaded"],
+    )
+    write_run_status(run_status_path, run_status)
     pipeline_command = build_pipeline_command(args, audio_path.parent, pipeline_outdir, live_url, audio_path=audio_path)
     mobile_pdf_command = build_mobile_pdf_command(args, pipeline_outdir, live_url, metadata=metadata, source=source)
+    reading_edition_command = build_reading_edition_command(args, pipeline_outdir)
     reading_pdf_command = build_reading_pdf_command(args, pipeline_outdir, live_url, metadata=metadata, source=source)
-    run_command(pipeline_command, runner)
+    core_ready = all(
+        (pipeline_outdir / name).exists()
+        for name in ("sermon_zh_relative.srt", "sermon_en_relative.srt", "summary.json")
+    )
+    if core_ready:
+        stage_durations["pipeline"] = 0.0
+    else:
+        started = time.monotonic()
+        run_command(pipeline_command, runner)
+        stage_durations["pipeline"] = time.monotonic() - started
+    for stage in ("clipped", "transcribed", "translated"):
+        run_status = post_live_run_status.update_stage(
+            run_status, args.sunday, stage, "complete", duration_seconds=stage_durations["pipeline"]
+        )
+    write_run_status(run_status_path, run_status)
+    started = time.monotonic()
     run_command(mobile_pdf_command, runner)
+    stage_durations["mobile_pdf"] = time.monotonic() - started
+    reading_report_path = reading_outdir / "reading_quality_report.json"
+    reading_ready = all(
+        path.exists()
+        for path in (
+            reading_outdir / "sermon_zh_reading_revised.srt",
+            reading_outdir / "sermon_en_reading_revised.srt",
+            reading_report_path,
+        )
+    )
+    if reading_ready:
+        stage_durations["reviewed"] = 0.0
+    else:
+        started = time.monotonic()
+        run_status = post_live_run_status.update_stage(run_status, args.sunday, "reviewed", "running")
+        write_run_status(run_status_path, run_status)
+        run_command(reading_edition_command, runner)
+        stage_durations["reviewed"] = time.monotonic() - started
+    reading_report = json.loads(reading_report_path.read_text(encoding="utf-8"))
+    if reading_report.get("status") != "pass":
+        run_status = post_live_run_status.update_stage(
+            run_status,
+            args.sunday,
+            "reviewed",
+            "blocked",
+            reason="reading_quality_needs_review",
+            artifact=str(reading_report_path),
+            duration_seconds=stage_durations["reviewed"],
+        )
+        write_run_status(run_status_path, run_status)
+        raise RuntimeError("Reading edition quality report did not pass; inspect reading_quality_report.json")
+    run_status = post_live_run_status.update_stage(
+        run_status,
+        args.sunday,
+        "reviewed",
+        "complete",
+        artifact=str(reading_report_path),
+        duration_seconds=stage_durations["reviewed"],
+    )
+    write_run_status(run_status_path, run_status)
+    started = time.monotonic()
     run_command(reading_pdf_command, runner)
+    stage_durations["reading_pdf"] = time.monotonic() - started
+    stage_durations["pdf_qa"] = stage_durations["mobile_pdf"] + stage_durations["reading_pdf"]
+    qa_paths = [
+        pipeline_outdir / "sermon_zh_mobile.qa.json",
+        pipeline_outdir / "sermon_zh_en_reading.qa.json",
+    ]
+    qa_reports = [json.loads(path.read_text(encoding="utf-8")) for path in qa_paths]
+    if any(report.get("status") != "pass" for report in qa_reports):
+        run_status = post_live_run_status.update_stage(
+            run_status, args.sunday, "pdf_qa", "blocked", reason="pdf_qa_needs_review",
+            duration_seconds=stage_durations["pdf_qa"],
+        )
+        write_run_status(run_status_path, run_status)
+        raise RuntimeError("PDF QA did not pass; inspect the generated *.qa.json reports")
+    run_status = post_live_run_status.update_stage(
+        run_status, args.sunday, "pdf_qa", "complete",
+        artifact=str(pipeline_outdir / "sermon_zh_en_reading.qa.json"),
+        duration_seconds=stage_durations["pdf_qa"],
+    )
+    write_run_status(run_status_path, run_status)
     uploaded = upload_outputs(args, pipeline_outdir)
     report.update(
         {
@@ -141,8 +256,16 @@ def run_post_live_generation(
             "downloadedAudio": str(audio_path),
             "pipelineCommand": pipeline_command,
             "mobilePdfCommand": mobile_pdf_command,
+            "readingEditionCommand": reading_edition_command,
             "readingPdfCommand": reading_pdf_command,
+            "readingQualityReport": str(reading_report_path),
             "uploaded": uploaded,
+            "runStatus": str(run_status_path),
+            "stageDurationsSeconds": {key: round(value, 3) for key, value in stage_durations.items()},
+            "retryCounts": {
+                stage: max(0, int(data.get("attempts") or 0) - 1)
+                for stage, data in run_status.get("stages", {}).items()
+            },
             "completedAt": datetime.now(timezone.utc).isoformat(),
         }
     )
@@ -208,6 +331,10 @@ def safe_metadata(metadata: dict[str, Any] | None) -> dict[str, Any] | None:
         "timestamp",
         "duration",
         "webpage_url",
+        "actual_start_time",
+        "actual_end_time",
+        "scheduled_start_time",
+        "metadata_provider",
     ]
     return {key: metadata.get(key) for key in keys if key in metadata}
 
@@ -247,6 +374,8 @@ def build_pipeline_command(
         args.en_correction_model,
         "--zh-model",
         args.zh_model,
+        "--reasoning-effort",
+        args.reasoning_effort,
     ]
     if args.end_time:
         command.extend(["--end-time", args.end_time])
@@ -283,6 +412,28 @@ def build_mobile_pdf_command(
     ]
 
 
+def build_reading_edition_command(
+    args: argparse.Namespace,
+    pipeline_outdir: Path,
+) -> list[str]:
+    return [
+        sys.executable,
+        str(READING_EDITION_SCRIPT),
+        "--source-pipeline",
+        str(pipeline_outdir),
+        "--outdir",
+        str(pipeline_outdir / READING_EDITION_DIRNAME),
+        "--provider",
+        args.reading_edition_provider,
+        "--model",
+        args.reading_edition_model,
+        "--reasoning-effort",
+        args.reading_edition_reasoning_effort,
+        "--passes",
+        "2",
+    ]
+
+
 def build_reading_pdf_command(
     args: argparse.Namespace,
     pipeline_outdir: Path,
@@ -297,9 +448,9 @@ def build_reading_pdf_command(
         "--layout",
         "reading",
         "--input",
-        str(pipeline_outdir / "sermon_zh_relative.srt"),
+        str(pipeline_outdir / READING_EDITION_DIRNAME / "sermon_zh_reading_revised.srt"),
         "--secondary-input",
-        str(pipeline_outdir / "sermon_en_relative.srt"),
+        str(pipeline_outdir / READING_EDITION_DIRNAME / "sermon_en_reading_revised.srt"),
         "--out",
         str(pipeline_outdir / "sermon_zh_en_reading.pdf"),
         "--title",
@@ -347,22 +498,56 @@ def download_archive_audio(
     audio_format: str,
     yt_dlp: str,
     runner: Callable[..., subprocess.CompletedProcess],
+    *,
+    cookies_path: Path | None = None,
 ) -> Path:
     output_template.parent.mkdir(parents=True, exist_ok=True)
     command = [
         yt_dlp,
         "--no-playlist",
+        "--js-runtimes",
+        "node",
         "-f",
         audio_format,
         "-o",
         str(output_template),
-        live_url,
     ]
+    if cookies_path:
+        command.extend(["--cookies", str(cookies_path)])
+    command.append(live_url)
     run_command(command, runner)
     files = sorted(output_template.parent.glob("source_audio.*"), key=lambda path: path.stat().st_mtime, reverse=True)
     if not files:
         raise RuntimeError("yt-dlp completed but no source_audio.* file was created")
     return files[0]
+
+
+def newest_downloaded_audio(download_dir: Path) -> Path | None:
+    files = sorted(
+        (
+            path
+            for path in download_dir.glob("source_audio.*")
+            if path.is_file() and path.suffix not in {".part", ".ytdl"}
+        ),
+        key=lambda path: path.stat().st_mtime,
+        reverse=True,
+    )
+    return files[0] if files else None
+
+
+def load_run_status(path: Path, sunday: str, live_url: str) -> dict[str, Any]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(payload, dict) and payload.get("sunday") == sunday:
+            return payload
+    except (FileNotFoundError, json.JSONDecodeError):
+        pass
+    return post_live_run_status.new_status(sunday, source_url=live_url)
+
+
+def write_run_status(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
 
 
 def run_command(command: list[str], runner: Callable[..., subprocess.CompletedProcess]) -> None:
@@ -383,6 +568,11 @@ def expected_outputs(pipeline_outdir: Path) -> list[str]:
         str(pipeline_outdir / "sermon_zh_relative.vtt"),
         str(pipeline_outdir / "sermon_zh_mobile.pdf"),
         str(pipeline_outdir / "sermon_zh_en_reading.pdf"),
+        str(pipeline_outdir / "sermon_zh_mobile.qa.json"),
+        str(pipeline_outdir / "sermon_zh_en_reading.qa.json"),
+        str(pipeline_outdir / READING_EDITION_DIRNAME / "reading_quality_report.json"),
+        str(pipeline_outdir / READING_EDITION_DIRNAME / "sermon_zh_reading_revised.srt"),
+        str(pipeline_outdir / READING_EDITION_DIRNAME / "sermon_en_reading_revised.srt"),
         str(pipeline_outdir / "full_video_zh_from_sermon.srt"),
         str(pipeline_outdir / "full_video_zh_from_sermon.vtt"),
         str(pipeline_outdir / "qa_report.json"),

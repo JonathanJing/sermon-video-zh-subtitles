@@ -26,12 +26,17 @@ def make_args(**overrides):
         "start_time": "00:22:10",
         "end_time": "00:55:36",
         "glossary": None,
-        "zh_model": "gpt-5.5",
-        "en_correction_model": "gpt-5.4-mini",
+        "zh_model": "gpt-5.6",
+        "en_correction_model": "gpt-5.6",
+        "reasoning_effort": "high",
         "gpt4o_model": "gpt-4o-transcribe",
         "timing_model": "whisper-1",
+        "reading_edition_provider": "openai",
+        "reading_edition_model": "gpt-5.6-sol",
+        "reading_edition_reasoning_effort": "high",
         "audio_format": "bestaudio[ext=m4a]/bestaudio",
         "yt_dlp": "yt-dlp",
+        "youtube_cookies": None,
         "metadata_json": None,
         "api_key_secret": None,
         "gcs_bucket": None,
@@ -115,10 +120,15 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
         command = report["pipelineCommand"]
         self.assertIn("scripts/sermon_pipeline.py", command[1])
         self.assertIn("--zh-model", command)
-        self.assertEqual(command[command.index("--zh-model") + 1], "gpt-5.5")
-        self.assertEqual(command[command.index("--en-correction-model") + 1], "gpt-5.4-mini")
+        self.assertEqual(command[command.index("--zh-model") + 1], "gpt-5.6")
+        self.assertEqual(command[command.index("--en-correction-model") + 1], "gpt-5.6")
+        self.assertEqual(command[command.index("--reasoning-effort") + 1], "high")
         self.assertEqual(command[command.index("--gpt4o-model") + 1], "gpt-4o-transcribe")
         self.assertEqual(command[command.index("--timing-model") + 1], "whisper-1")
+        self.assertEqual(report["readingEditionCommand"][report["readingEditionCommand"].index("--provider") + 1], "openai")
+        self.assertEqual(report["readingEditionCommand"][report["readingEditionCommand"].index("--model") + 1], "gpt-5.6-sol")
+        self.assertEqual(report["readingEditionCommand"][report["readingEditionCommand"].index("--reasoning-effort") + 1], "high")
+        self.assertTrue(any("reading-edition-v2" in item for item in report["readingEditionCommand"]))
         self.assertIn("render_mobile_pdf_from_srt.py", report["mobilePdfCommand"][1])
         self.assertIn("render_mobile_pdf_from_srt.py", report["readingPdfCommand"][1])
         self.assertEqual(
@@ -127,6 +137,8 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
         )
         self.assertIn("--layout", report["readingPdfCommand"])
         self.assertEqual(report["readingPdfCommand"][report["readingPdfCommand"].index("--layout") + 1], "reading")
+        self.assertTrue(any("sermon_zh_reading_revised.srt" in item for item in report["readingPdfCommand"]))
+        self.assertTrue(any("sermon_en_reading_revised.srt" in item for item in report["readingPdfCommand"]))
         self.assertTrue(any("sermon_zh_en_reading.pdf" in item for item in report["readingPdfCommand"]))
         self.assertTrue(any("sermon_zh_relative.srt" in item for item in report["mobilePdfCommand"]))
         self.assertTrue(any("sermon_en_relative.srt" in item for item in report["mobilePdfCommand"]))
@@ -146,6 +158,7 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
             report["readingPdfCommand"][report["readingPdfCommand"].index("--source-offset-seconds") + 1],
             "1330.0",
         )
+        self.assertTrue(any(path.endswith("reading-edition-v2/reading_quality_report.json") for path in report["outputs"]))
         self.assertTrue(any(path.endswith("sermon_zh_mobile.pdf") for path in report["outputs"]))
         self.assertTrue(any(path.endswith("sermon_zh_en_reading.pdf") for path in report["outputs"]))
 
@@ -169,10 +182,28 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
                     "1\n00:00:01,000 --> 00:00:02,500\nFor God so loved the world.\n",
                     encoding="utf-8",
                 )
+                (outdir / "summary.json").write_text(json.dumps({"status": "ok"}), encoding="utf-8")
+            elif "build_sermon_reading_edition_with_openai.py" in command[1]:
+                outdir = Path(command[command.index("--outdir") + 1])
+                outdir.mkdir(parents=True, exist_ok=True)
+                (outdir / "sermon_zh_reading_revised.srt").write_text(
+                    "1\n00:00:01,000 --> 00:00:02,500\n神爱世人。\n",
+                    encoding="utf-8",
+                )
+                (outdir / "sermon_en_reading_revised.srt").write_text(
+                    "1\n00:00:01,000 --> 00:00:02,500\nFor God so loved the world.\n",
+                    encoding="utf-8",
+                )
+                (outdir / "reading_quality_report.json").write_text(
+                    json.dumps({"status": "pass", "failures": []}), encoding="utf-8"
+                )
             elif "render_mobile_pdf_from_srt.py" in command[1]:
                 pdf_path = Path(command[command.index("--out") + 1])
                 pdf_path.parent.mkdir(parents=True, exist_ok=True)
                 pdf_path.write_bytes(b"%PDF-1.4\n")
+                pdf_path.with_suffix(".qa.json").write_text(
+                    json.dumps({"status": "pass", "allPagesChecked": True}), encoding="utf-8"
+                )
             return subprocess.CompletedProcess(command, 0)
 
         with tempfile.TemporaryDirectory() as tempdir:
@@ -194,11 +225,26 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
         self.assertEqual(calls[0][0], "yt-dlp")
         self.assertIn("sermon_pipeline.py", calls[1][1])
         self.assertIn("render_mobile_pdf_from_srt.py", calls[2][1])
-        self.assertIn("render_mobile_pdf_from_srt.py", calls[3][1])
-        self.assertIn("--layout", calls[3])
-        self.assertEqual(calls[3][calls[3].index("--layout") + 1], "reading")
+        self.assertIn("build_sermon_reading_edition_with_openai.py", calls[3][1])
+        self.assertIn("render_mobile_pdf_from_srt.py", calls[4][1])
+        self.assertIn("--layout", calls[4])
+        self.assertEqual(calls[4][calls[4].index("--layout") + 1], "reading")
+        self.assertTrue(any("reading-edition-v2" in item for item in report["readingEditionCommand"]))
         self.assertTrue(any("sermon_zh_mobile.pdf" in item for item in report["mobilePdfCommand"]))
         self.assertTrue(any("sermon_zh_en_reading.pdf" in item for item in report["readingPdfCommand"]))
+        self.assertTrue(str(report["readingQualityReport"]).endswith("reading-edition-v2/reading_quality_report.json"))
+
+    def test_newest_downloaded_audio_ignores_partial_and_ytdl_files(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            download_dir = Path(tempdir)
+            (download_dir / "source_audio.m4a.part").write_text("partial", encoding="utf-8")
+            (download_dir / "source_audio.m4a.ytdl").write_text("meta", encoding="utf-8")
+            expected = download_dir / "source_audio.m4a"
+            expected.write_text("audio", encoding="utf-8")
+
+            actual = mod.newest_downloaded_audio(download_dir)
+
+        self.assertEqual(actual, expected)
 
     def test_timecode_to_seconds_accepts_hms_and_ms(self):
         self.assertEqual(mod.timecode_to_seconds("00:22:10"), 1330.0)
