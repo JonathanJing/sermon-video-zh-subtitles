@@ -3,6 +3,7 @@ import io
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from backend.app import ApiHandler, WEB_ROOT
 from backend.config import AppConfig
@@ -367,6 +368,51 @@ class BackendAppTest(unittest.TestCase):
         self.assertEqual(captured["payload"]["mode"], "shadow")
         self.assertIn("run_sermon_production_supervisor_agent.py", captured["payload"]["command"][1])
         self.assertFalse(captured["payload"]["apiKeyMaterialIncluded"])
+
+    def test_inline_production_supervisor_preserves_expected_blocked_report(self):
+        class FakeService:
+            def _resolve_sunday(self, sunday):
+                return "2026-08-02" if sunday == "upcoming" else sunday
+
+        handler = object.__new__(ApiHandler)
+        handler.headers = {"X-Internal-Task-Token": "task-token"}
+        handler.config = AppConfig(
+            artifact_bucket="sermon-zh-artifacts-ai-for-god",
+            artifact_prefix="sundays",
+            current_manifest_uri=None,
+            sunday_manifest_uri_template=None,
+            timezone="America/Los_Angeles",
+            openai_api_key_secret=None,
+            operator_admin_token=None,
+            internal_task_token="task-token",
+            enable_inline_worker=True,
+        )
+        handler.service = FakeService()
+        handler.read_json_body = lambda: {"mode": "execute"}
+        captured = {}
+        handler.write_json = lambda payload, status=200: captured.update(
+            {"payload": payload, "status": status}
+        )
+        report = json.dumps(
+            {
+                "status": "blocked",
+                "decision": {"action": "request_window_approval"},
+            }
+        )
+
+        with patch("subprocess.run") as run:
+            run.return_value = type(
+                "Completed",
+                (),
+                {"returncode": 2, "stdout": report, "stderr": ""},
+            )()
+            ApiHandler.handle_production_supervisor(handler, "upcoming")
+
+        self.assertEqual(captured["status"], 202)
+        self.assertEqual(captured["payload"]["status"], "blocked")
+        self.assertEqual(json.loads(captured["payload"]["stdout"])["status"], "blocked")
+        run.assert_called_once()
+        self.assertFalse(run.call_args.kwargs["check"])
 
     def test_production_supervisor_endpoint_dispatches_configured_cloud_run_job(self):
         class FakeService:

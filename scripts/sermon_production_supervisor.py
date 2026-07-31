@@ -221,6 +221,13 @@ def recommend_action(
         reading_qa_pass = str((reading_qa or {}).get("status") or "") == "pass"
         reading_quality_pass = str((reading_quality or {}).get("status") or "") == "pass"
         if reading_qa_pass and reading_quality_pass:
+            if not approval_valid:
+                return action(
+                    "request_window_approval",
+                    approval_reason
+                    or "The completed reading PDF is not bound to a valid current window approval.",
+                    human=True,
+                )
             return action(
                 "complete",
                 "Reading PDF generation completed and both quality reports passed.",
@@ -599,7 +606,9 @@ def validate_window_approval(
         return False, "Window approval end time is not later than its start time."
     if not str(approval.get("approvedBy") or "").strip():
         return False, "Window approval does not identify the human approver."
-    if timeline_report is not None and approval.get("timelineReportSha256") != json_digest(timeline_report):
+    if not isinstance(timeline_report, dict):
+        return False, "The current timeline report is unavailable."
+    if approval.get("timelineReportSha256") != json_digest(timeline_report):
         return False, "Window approval does not match the current timeline report."
     return True, None
 

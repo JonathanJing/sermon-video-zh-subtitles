@@ -378,12 +378,75 @@ class SermonProductionSupervisorTest(unittest.TestCase):
             config = self.make_config(root, state)
             snapshot = mod.production_snapshot(config)
             locations = snapshot["locations"]
+            write_json(
+                Path(locations["timelineReportLocal"]),
+                {
+                    "status": "requires_operator_review",
+                    "suggestedWindow": {
+                        "startTimecode": "00:20:30",
+                        "endTimecode": "00:58:45",
+                    },
+                },
+            )
+            mod.approve_window(
+                config,
+                start_time="00:21:10",
+                end_time="00:57:36",
+                approved_by="Jony",
+            )
             write_json(Path(locations["generationReportLocal"]), {"status": "completed"})
             write_json(Path(locations["readingQaLocal"]), {"status": "pass"})
             write_json(Path(locations["readingQualityLocal"]), {"status": "pass"})
             completed = mod.production_snapshot(config)
 
         self.assertEqual(completed["recommendedAction"]["action"], "complete")
+
+    def test_completed_generation_does_not_bypass_invalidated_window_approval(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            state = root / "state.json"
+            write_state(state)
+            config = self.make_config(root, state)
+            snapshot = mod.production_snapshot(config)
+            locations = snapshot["locations"]
+            timeline_path = Path(locations["timelineReportLocal"])
+            write_json(
+                timeline_path,
+                {
+                    "status": "requires_operator_review",
+                    "suggestedWindow": {
+                        "startTimecode": "00:20:30",
+                        "endTimecode": "00:58:45",
+                    },
+                },
+            )
+            mod.approve_window(
+                config,
+                start_time="00:21:10",
+                end_time="00:57:36",
+                approved_by="Jony",
+            )
+            write_json(Path(locations["generationReportLocal"]), {"status": "completed"})
+            write_json(Path(locations["readingQaLocal"]), {"status": "pass"})
+            write_json(Path(locations["readingQualityLocal"]), {"status": "pass"})
+            write_json(
+                timeline_path,
+                {
+                    "status": "requires_operator_review",
+                    "suggestedWindow": {
+                        "startTimecode": "00:22:00",
+                        "endTimecode": "00:59:00",
+                    },
+                },
+            )
+            completed = mod.production_snapshot(config)
+
+        self.assertEqual(
+            completed["recommendedAction"]["action"],
+            "request_window_approval",
+        )
+        self.assertTrue(completed["recommendedAction"]["humanActionRequired"])
+        self.assertIn("current timeline report", completed["recommendedAction"]["reason"])
 
     def test_timecode_validation(self):
         self.assertEqual(mod.parse_timecode("01:02:03.500"), 3723.5)
