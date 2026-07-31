@@ -22,4 +22,6 @@ coverage/
 *.log
 data/raw/
 artifacts/
+output/pdf/
+tmp/pdfs/
 web/playback-simulation.generated.js

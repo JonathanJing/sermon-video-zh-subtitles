@@ -34,6 +34,12 @@ class AppConfig:
     operator_notify_sendgrid_secret: str | None = None
     operator_notify_recipients_secret: str | None = None
     operator_notify_sender_secret: str | None = None
+    supervisor_job_project: str | None = None
+    supervisor_job_location: str | None = None
+    supervisor_job_name: str | None = None
+    supervisor_job_container: str | None = None
+    supervisor_job_timeout_seconds: int = 14_400
+    supervisor_default_mode: str = "shadow"
 
     @classmethod
     def from_env(cls) -> "AppConfig":
@@ -67,6 +73,18 @@ class AppConfig:
             operator_notify_sendgrid_secret=empty_to_none(os.getenv("OPERATOR_NOTIFY_SENDGRID_SECRET")),
             operator_notify_recipients_secret=empty_to_none(os.getenv("OPERATOR_NOTIFY_RECIPIENTS_SECRET")),
             operator_notify_sender_secret=empty_to_none(os.getenv("OPERATOR_NOTIFY_SENDER_SECRET")),
+            supervisor_job_project=empty_to_none(
+                os.getenv("SERMON_SUPERVISOR_JOB_PROJECT") or os.getenv("GOOGLE_CLOUD_PROJECT")
+            ),
+            supervisor_job_location=empty_to_none(os.getenv("SERMON_SUPERVISOR_JOB_LOCATION")),
+            supervisor_job_name=empty_to_none(os.getenv("SERMON_SUPERVISOR_JOB_NAME")),
+            supervisor_job_container=empty_to_none(os.getenv("SERMON_SUPERVISOR_JOB_CONTAINER")),
+            supervisor_job_timeout_seconds=int(
+                os.getenv("SERMON_SUPERVISOR_JOB_TIMEOUT_SECONDS", "14400")
+            ),
+            supervisor_default_mode=supervisor_mode(
+                os.getenv("SERMON_SUPERVISOR_MODE", "shadow")
+            ),
         )
 
 
@@ -75,6 +93,13 @@ def empty_to_none(value: str | None) -> str | None:
         return None
     clean = value.strip()
     return clean or None
+
+
+def supervisor_mode(value: str) -> str:
+    mode = str(value or "").strip().lower()
+    if mode not in {"shadow", "execute"}:
+        raise ValueError("SERMON_SUPERVISOR_MODE must be shadow or execute")
+    return mode
 
 
 def current_sunday(today: date | None = None, timezone: str = DEFAULT_TIMEZONE) -> date:

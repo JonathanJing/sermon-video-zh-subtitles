@@ -131,7 +131,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--preferred-seconds",
         type=float,
-        default=22.0,
+        default=24.0,
         help="Preferred semantic-block duration; tuned for about two bilingual blocks per mobile PDF page.",
     )
     parser.add_argument(
@@ -141,7 +141,7 @@ def parse_args() -> argparse.Namespace:
         help="Preferred English characters per semantic block.",
     )
     parser.add_argument("--hard-seconds", type=float, default=55.0)
-    parser.add_argument("--hard-english-chars", type=int, default=950)
+    parser.add_argument("--hard-english-chars", type=int, default=840)
     return parser.parse_args()
 
 
@@ -219,6 +219,37 @@ def build_sentence_units(english: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return units
 
 
+def build_source_segment_units(english: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Keep source segment IDs indivisible so their Chinese translations cannot be duplicated."""
+    units: list[dict[str, Any]] = []
+    current: list[dict[str, Any]] = []
+    for segment in english:
+        text = join_english([str(segment.get("text") or "")])
+        if not text:
+            continue
+        current.append(segment)
+        if sentence_complete(text):
+            units.append(
+                {
+                    "start": float(current[0]["start"]),
+                    "end": float(current[-1]["end"]),
+                    "segmentIds": [item["id"] for item in current],
+                    "en": join_english([str(item.get("text") or "") for item in current]),
+                }
+            )
+            current = []
+    if current:
+        units.append(
+            {
+                "start": float(current[0]["start"]),
+                "end": float(current[-1]["end"]),
+                "segmentIds": [item["id"] for item in current],
+                "en": join_english([str(item.get("text") or "") for item in current]),
+            }
+        )
+    return units
+
+
 def build_semantic_blocks(
     english: list[dict[str, Any]],
     chinese: list[dict[str, Any]],
@@ -232,7 +263,7 @@ def build_semantic_blocks(
         raise ValueError("English and Chinese segment ids do not match")
 
     chinese_by_id = {item["id"]: item for item in chinese}
-    sentence_units = build_sentence_units(english)
+    sentence_units = build_source_segment_units(english)
     blocks: list[dict[str, Any]] = []
     current: list[dict[str, Any]] = []
 
@@ -329,11 +360,19 @@ def edit_batch(
     schema_path: Path,
 ) -> dict[str, Any]:
     prompt_version = QA_PROMPT_VERSION if qa_pass else PROMPT_VERSION
+    payload = request_payload(
+        all_blocks,
+        batch,
+        start_index,
+        model=model,
+        reasoning_effort=reasoning_effort,
+        qa_pass=qa_pass,
+    )
     input_hash = hashlib.sha256(
-        json.dumps(batch, ensure_ascii=False, sort_keys=True).encode("utf-8")
+        json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
     ).hexdigest()[:12]
     identity = hashlib.sha256(
-        f"{prompt_version}|{model}|{reasoning_effort}".encode("utf-8")
+        f"{prompt_version}|{provider}|{model}|{reasoning_effort}".encode("utf-8")
     ).hexdigest()[:12]
     cache = cache_dir / (
         f"{'qa' if qa_pass else 'edit'}_{batch[0]['id']:03d}_{batch[-1]['id']:03d}."
@@ -342,14 +381,6 @@ def edit_batch(
     if cache.exists():
         parsed = read_json(cache)
     else:
-        payload = request_payload(
-            all_blocks,
-            batch,
-            start_index,
-            model=model,
-            reasoning_effort=reasoning_effort,
-            qa_pass=qa_pass,
-        )
         if provider == "codex":
             parsed = codex_json(
                 payload,

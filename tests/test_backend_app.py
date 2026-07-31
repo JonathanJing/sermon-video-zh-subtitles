@@ -3,6 +3,7 @@ import io
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from backend.app import ApiHandler, WEB_ROOT
 from backend.config import AppConfig
@@ -302,6 +303,327 @@ class BackendAppTest(unittest.TestCase):
         self.assertEqual(captured["payload"]["status"], "planned")
         self.assertEqual(captured["payload"]["mode"], "timeline-probe")
         self.assertIn("build_post_live_timeline.py", captured["payload"]["command"][1])
+
+    def test_production_supervisor_command_uses_shared_state_and_bounded_mode(self):
+        handler = object.__new__(ApiHandler)
+        handler.config = AppConfig(
+            artifact_bucket="sermon-zh-artifacts-ai-for-god",
+            artifact_prefix="sundays",
+            current_manifest_uri=None,
+            sunday_manifest_uri_template=None,
+            timezone="America/Los_Angeles",
+            openai_api_key_secret="projects/ai-for-god/secrets/openai-api-key/versions/latest",
+            operator_admin_token=None,
+            internal_task_token="task-token",
+            enable_inline_worker=False,
+            live_source_monitor_state_uri="gs://sermon-zh-artifacts-ai-for-god/sundays/live-source-monitor/backend-state.json",
+            youtube_api_key_secret="projects/ai-for-god/secrets/youtube-api-key/versions/latest",
+        )
+
+        command = ApiHandler.production_supervisor_command(
+            handler,
+            {"mode": "execute", "agentModel": "gpt-5.6", "maxTurns": 6},
+            "2026-08-02",
+        )
+
+        self.assertIn("run_sermon_production_supervisor_agent.py", command[1])
+        self.assertEqual(command[command.index("--state-file") + 1], handler.config.live_source_monitor_state_uri)
+        self.assertEqual(command[command.index("--mode") + 1], "execute")
+        self.assertEqual(command[command.index("--max-turns") + 1], "6")
+        self.assertEqual(command[command.index("--api-key-secret") + 1], handler.config.openai_api_key_secret)
+        self.assertNotIn("--approve-window", command)
+        self.assertNotIn("--start-time", command)
+        self.assertNotIn("--end-time", command)
+
+    def test_production_supervisor_endpoint_plans_cloud_run_job_command(self):
+        class FakeService:
+            def _resolve_sunday(self, sunday):
+                return "2026-08-02" if sunday == "upcoming" else sunday
+
+        handler = object.__new__(ApiHandler)
+        handler.headers = {"X-Internal-Task-Token": "task-token"}
+        handler.config = AppConfig(
+            artifact_bucket="sermon-zh-artifacts-ai-for-god",
+            artifact_prefix="sundays",
+            current_manifest_uri=None,
+            sunday_manifest_uri_template=None,
+            timezone="America/Los_Angeles",
+            openai_api_key_secret="projects/ai-for-god/secrets/openai-api-key/versions/latest",
+            operator_admin_token=None,
+            internal_task_token="task-token",
+            enable_inline_worker=False,
+            live_source_monitor_state_uri="gs://sermon-zh-artifacts-ai-for-god/sundays/live-source-monitor/backend-state.json",
+        )
+        handler.service = FakeService()
+        handler.read_json_body = lambda: {"mode": "shadow"}
+        captured = {}
+        handler.write_json = lambda payload, status=200: captured.update(
+            {"payload": payload, "status": status}
+        )
+
+        ApiHandler.handle_production_supervisor(handler, "upcoming")
+
+        self.assertEqual(captured["status"], 202)
+        self.assertEqual(captured["payload"]["status"], "planned")
+        self.assertEqual(captured["payload"]["mode"], "shadow")
+        self.assertIn("run_sermon_production_supervisor_agent.py", captured["payload"]["command"][1])
+        self.assertFalse(captured["payload"]["apiKeyMaterialIncluded"])
+
+    def test_inline_production_supervisor_preserves_expected_blocked_report(self):
+        class FakeService:
+            def _resolve_sunday(self, sunday):
+                return "2026-08-02" if sunday == "upcoming" else sunday
+
+        handler = object.__new__(ApiHandler)
+        handler.headers = {"X-Internal-Task-Token": "task-token"}
+        handler.config = AppConfig(
+            artifact_bucket="sermon-zh-artifacts-ai-for-god",
+            artifact_prefix="sundays",
+            current_manifest_uri=None,
+            sunday_manifest_uri_template=None,
+            timezone="America/Los_Angeles",
+            openai_api_key_secret=None,
+            operator_admin_token=None,
+            internal_task_token="task-token",
+            enable_inline_worker=True,
+        )
+        handler.service = FakeService()
+        handler.read_json_body = lambda: {"mode": "execute"}
+        captured = {}
+        handler.write_json = lambda payload, status=200: captured.update(
+            {"payload": payload, "status": status}
+        )
+        report = json.dumps(
+            {
+                "status": "blocked",
+                "decision": {"action": "request_window_approval"},
+            }
+        )
+
+        with patch("subprocess.run") as run:
+            run.return_value = type(
+                "Completed",
+                (),
+                {"returncode": 2, "stdout": report, "stderr": ""},
+            )()
+            ApiHandler.handle_production_supervisor(handler, "upcoming")
+
+        self.assertEqual(captured["status"], 202)
+        self.assertEqual(captured["payload"]["status"], "blocked")
+        self.assertEqual(json.loads(captured["payload"]["stdout"])["status"], "blocked")
+        run.assert_called_once()
+        self.assertFalse(run.call_args.kwargs["check"])
+
+    def test_production_supervisor_endpoint_dispatches_configured_cloud_run_job(self):
+        class FakeService:
+            def _resolve_sunday(self, sunday):
+                return "2026-08-02" if sunday == "upcoming" else sunday
+
+        handler = object.__new__(ApiHandler)
+        handler.headers = {"X-Internal-Task-Token": "task-token"}
+        handler.config = AppConfig(
+            artifact_bucket="sermon-zh-artifacts-ai-for-god",
+            artifact_prefix="sundays",
+            current_manifest_uri=None,
+            sunday_manifest_uri_template=None,
+            timezone="America/Los_Angeles",
+            openai_api_key_secret="projects/p/secrets/openai-api-key/versions/latest",
+            operator_admin_token=None,
+            internal_task_token="task-token",
+            enable_inline_worker=False,
+            live_source_monitor_state_uri="gs://bucket/source-monitor/backend-state.json",
+            supervisor_job_project="ai-for-god",
+            supervisor_job_location="us-west1",
+            supervisor_job_name="sermon-production-supervisor",
+            supervisor_job_container="supervisor",
+        )
+        handler.service = FakeService()
+        handler.read_json_body = lambda: {
+            "mode": "execute",
+            "triggerSource": "cloud-scheduler",
+        }
+        handler.production_supervisor_source_status = lambda payload, sunday: {
+            "status": "ready",
+            "liveSource": {
+                "host": "www.youtube.com",
+                "path": "/watch",
+                "urlHash": "source-hash",
+            },
+        }
+        dispatched = {}
+        handler.dispatch_production_supervisor_job = lambda command: dispatched.update(
+            {"command": command}
+        ) or {
+            "status": "dispatched",
+            "operationName": "operations/run-1",
+            "job": "projects/ai-for-god/locations/us-west1/jobs/sermon-production-supervisor",
+            "argsCount": len(command) - 1,
+            "timeoutSeconds": 14400,
+        }
+        captured = {}
+        handler.write_json = lambda payload, status=200: captured.update(
+            {"payload": payload, "status": status}
+        )
+
+        ApiHandler.handle_production_supervisor(handler, "upcoming")
+
+        self.assertEqual(captured["status"], 202)
+        self.assertEqual(captured["payload"]["status"], "dispatched")
+        self.assertEqual(captured["payload"]["job"]["operationName"], "operations/run-1")
+        self.assertIn("run_sermon_production_supervisor_agent.py", dispatched["command"][1])
+        self.assertNotIn("command", captured["payload"])
+        self.assertFalse(captured["payload"]["secretResourceNamesIncluded"])
+
+    def test_scheduler_waits_without_dispatch_until_source_is_persisted(self):
+        class FakeService:
+            def _resolve_sunday(self, sunday):
+                return "2026-08-02"
+
+        handler = object.__new__(ApiHandler)
+        handler.headers = {"X-Internal-Task-Token": "task-token"}
+        handler.config = AppConfig(
+            artifact_bucket="sermon-zh-artifacts-ai-for-god",
+            artifact_prefix="sundays",
+            current_manifest_uri=None,
+            sunday_manifest_uri_template=None,
+            timezone="America/Los_Angeles",
+            openai_api_key_secret=None,
+            operator_admin_token=None,
+            internal_task_token="task-token",
+            enable_inline_worker=False,
+            supervisor_job_project="ai-for-god",
+            supervisor_job_location="us-west1",
+            supervisor_job_name="sermon-production-supervisor",
+        )
+        handler.service = FakeService()
+        handler.read_json_body = lambda: {
+            "mode": "shadow",
+            "triggerSource": "cloud-scheduler",
+        }
+        handler.production_supervisor_source_status = lambda payload, sunday: {
+            "status": "waiting_for_source",
+            "reason": "No persisted livestream URL is available yet.",
+        }
+        handler.dispatch_production_supervisor_job = lambda command: self.fail(
+            "job must not be dispatched before a source is persisted"
+        )
+        captured = {}
+        handler.write_json = lambda payload, status=200: captured.update(
+            {"payload": payload, "status": status}
+        )
+
+        ApiHandler.handle_production_supervisor(handler, "upcoming")
+
+        self.assertEqual(captured["status"], 202)
+        self.assertEqual(captured["payload"]["status"], "waiting_for_source")
+
+    def test_scheduler_trigger_fails_closed_without_supervisor_job(self):
+        class FakeService:
+            def _resolve_sunday(self, sunday):
+                return "2026-08-02"
+
+        handler = object.__new__(ApiHandler)
+        handler.headers = {"X-Internal-Task-Token": "task-token"}
+        handler.config = AppConfig(
+            artifact_bucket="sermon-zh-artifacts-ai-for-god",
+            artifact_prefix="sundays",
+            current_manifest_uri=None,
+            sunday_manifest_uri_template=None,
+            timezone="America/Los_Angeles",
+            openai_api_key_secret=None,
+            operator_admin_token=None,
+            internal_task_token="task-token",
+            enable_inline_worker=False,
+        )
+        handler.service = FakeService()
+        handler.read_json_body = lambda: {
+            "mode": "shadow",
+            "triggerSource": "cloud-scheduler",
+        }
+        captured = {}
+        handler.write_json = lambda payload, status=200: captured.update(
+            {"payload": payload, "status": status}
+        )
+
+        ApiHandler.handle_production_supervisor(handler, "upcoming")
+
+        self.assertEqual(captured["status"], 503)
+        self.assertEqual(captured["payload"]["status"], "blocked")
+        self.assertIn("SERMON_SUPERVISOR_JOB_PROJECT", captured["payload"]["reason"])
+
+    def test_scheduler_trigger_fails_closed_with_partial_supervisor_job_config(self):
+        class FakeService:
+            def _resolve_sunday(self, sunday):
+                return "2026-08-02"
+
+        handler = object.__new__(ApiHandler)
+        handler.headers = {"X-Internal-Task-Token": "task-token"}
+        handler.config = AppConfig(
+            artifact_bucket="sermon-zh-artifacts-ai-for-god",
+            artifact_prefix="sundays",
+            current_manifest_uri=None,
+            sunday_manifest_uri_template=None,
+            timezone="America/Los_Angeles",
+            openai_api_key_secret=None,
+            operator_admin_token=None,
+            internal_task_token="task-token",
+            enable_inline_worker=False,
+            supervisor_job_project="ai-for-god",
+        )
+        handler.service = FakeService()
+        handler.read_json_body = lambda: {
+            "mode": "shadow",
+            "triggerSource": "cloud-scheduler",
+        }
+        captured = {}
+        handler.write_json = lambda payload, status=200: captured.update(
+            {"payload": payload, "status": status}
+        )
+
+        ApiHandler.handle_production_supervisor(handler, "upcoming")
+
+        self.assertEqual(captured["status"], 503)
+        self.assertEqual(captured["payload"]["status"], "blocked")
+
+    def test_scheduler_returns_retryable_error_when_source_state_read_fails(self):
+        class FakeService:
+            def _resolve_sunday(self, sunday):
+                return "2026-08-02"
+
+        handler = object.__new__(ApiHandler)
+        handler.headers = {"X-Internal-Task-Token": "task-token"}
+        handler.config = AppConfig(
+            artifact_bucket="sermon-zh-artifacts-ai-for-god",
+            artifact_prefix="sundays",
+            current_manifest_uri=None,
+            sunday_manifest_uri_template=None,
+            timezone="America/Los_Angeles",
+            openai_api_key_secret=None,
+            operator_admin_token=None,
+            internal_task_token="task-token",
+            enable_inline_worker=False,
+            supervisor_job_project="ai-for-god",
+            supervisor_job_location="us-west1",
+            supervisor_job_name="sermon-production-supervisor",
+        )
+        handler.service = FakeService()
+        handler.read_json_body = lambda: {
+            "mode": "shadow",
+            "triggerSource": "cloud-scheduler",
+        }
+        handler.production_supervisor_source_status = lambda payload, sunday: (
+            _ for _ in ()
+        ).throw(ConnectionError("offline"))
+        captured = {}
+        handler.write_json = lambda payload, status=200: captured.update(
+            {"payload": payload, "status": status}
+        )
+
+        ApiHandler.handle_production_supervisor(handler, "upcoming")
+
+        self.assertEqual(captured["status"], 503)
+        self.assertEqual(captured["payload"]["errorClass"], "ConnectionError")
+        self.assertNotIn("offline", captured["payload"]["reason"])
 
     def test_live_playback_admin_write_requires_auth(self):
         class FakeService:

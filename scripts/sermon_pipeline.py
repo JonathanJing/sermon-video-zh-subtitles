@@ -69,7 +69,7 @@ DEFAULT_ZH_TERM_MAP = {
 GPT_TRANSCRIBE_MODELS = {"gpt-transcribe", "gpt-live-transcribe"}
 DEFAULT_TRANSCRIPTION_LANGUAGES = ["en"]
 MAX_SINGLE_TRANSCRIPTION_BYTES = 24 * 1024 * 1024
-READING_SEGMENT_TARGET_CHARS = 700
+READING_SEGMENT_TARGET_CHARS = 420
 
 
 def run(cmd):
@@ -366,6 +366,31 @@ def write_transcription_cache(result_path, metadata_path, result, identity):
     write_json(metadata_path, identity)
 
 
+def media_cache_metadata_path(path):
+    return path.with_suffix(path.suffix + ".cache.json")
+
+
+def source_file_identity(path, *, include_sha256=False):
+    stat = path.stat()
+    identity = {
+        "sizeBytes": stat.st_size,
+        "modifiedTimeNs": stat.st_mtime_ns,
+    }
+    if include_sha256:
+        identity["sha256"] = file_sha256(path)
+    return identity
+
+
+def cached_media_matches(path, identity):
+    metadata_path = media_cache_metadata_path(path)
+    if not path.exists() or not metadata_path.exists():
+        return False
+    try:
+        return read_json(metadata_path) == identity
+    except (OSError, json.JSONDecodeError):
+        return False
+
+
 def make_outdir(root, slug, explicit):
     if explicit:
         path = explicit
@@ -377,7 +402,19 @@ def make_outdir(root, slug, explicit):
 
 
 def clip_and_normalize(source, clip_path, start, end):
-    if clip_path.exists():
+    identity = {
+        "schemaVersion": 1,
+        "operation": "clip_and_normalize",
+        "source": source_file_identity(source, include_sha256=True),
+        "startSeconds": round(float(start), 3),
+        "endSeconds": round(float(end), 3) if end is not None else None,
+        "audioFilter": "loudnorm=I=-16:TP=-1.5:LRA=11",
+        "codec": "aac",
+        "sampleRate": 44100,
+        "channels": 1,
+        "bitrate": "64k",
+    }
+    if cached_media_matches(clip_path, identity):
         expected_duration = None if end is None else max(0.0, end - start)
         try:
             existing_duration = ffprobe_duration(clip_path)
@@ -415,10 +452,23 @@ def clip_and_normalize(source, clip_path, start, end):
             str(clip_path),
         ]
     )
+    if clip_path.exists():
+        write_json(media_cache_metadata_path(clip_path), identity)
 
 
 def cut_chunk(source, dest, start, duration):
-    if dest.exists():
+    identity = {
+        "schemaVersion": 1,
+        "operation": "cut_chunk",
+        "source": source_file_identity(source),
+        "startSeconds": round(float(start), 3),
+        "durationSeconds": round(float(duration), 3),
+        "codec": "aac",
+        "sampleRate": 44100,
+        "channels": 1,
+        "bitrate": "64k",
+    }
+    if cached_media_matches(dest, identity):
         return
     dest.parent.mkdir(parents=True, exist_ok=True)
     run(
@@ -447,6 +497,8 @@ def cut_chunk(source, dest, start, duration):
             str(dest),
         ]
     )
+    if dest.exists():
+        write_json(media_cache_metadata_path(dest), identity)
 
 
 def transcribe_openai_audio(
@@ -713,10 +765,10 @@ def split_reading_paragraphs(text, target_chars=READING_SEGMENT_TARGET_CHARS):
     return paragraphs
 
 
-def reference_chunks_to_reading_segments(chunks):
+def reference_chunks_to_reading_segments(chunks, target_chars=READING_SEGMENT_TARGET_CHARS):
     segments = []
     for chunk in chunks:
-        paragraphs = split_reading_paragraphs(chunk.get("text", ""))
+        paragraphs = split_reading_paragraphs(chunk.get("text", ""), target_chars=target_chars)
         total_chars = sum(max(1, len(item)) for item in paragraphs)
         cursor = float(chunk["start"])
         chunk_end = float(chunk["end"])
@@ -1228,6 +1280,12 @@ def main():
     )
     parser.add_argument("--chunk-seconds", type=float, default=45.0)
     parser.add_argument("--reading-chunk-seconds", type=float, default=1200.0)
+    parser.add_argument(
+        "--reading-segment-target-chars",
+        type=int,
+        default=READING_SEGMENT_TARGET_CHARS,
+        help="Target English characters per paired reading segment.",
+    )
     parser.add_argument("--correction-window-seconds", type=float, default=240.0)
     parser.add_argument("--compare", action="store_true")
     parser.add_argument("--candidate-a", type=Path)
@@ -1272,7 +1330,10 @@ def main():
         glossary,
     )
     if args.output_mode == "reading":
-        raw_segments = reference_chunks_to_reading_segments(reference_chunks)
+        raw_segments = reference_chunks_to_reading_segments(
+            reference_chunks,
+            target_chars=max(120, args.reading_segment_target_chars),
+        )
     else:
         whisper_raw = transcribe_whisper(api_key, clip_path, outdir, args.timing_model, glossary)
         raw_segments = normalize_whisper_segments(whisper_raw)
@@ -1343,6 +1404,9 @@ def main():
         },
         "outputMode": args.output_mode,
         "timingPrecision": "whisper_segments" if args.output_mode == "subtitles" else "synthetic_reading_layout_only",
+        "readingSegmentTargetCharacters": (
+            max(120, args.reading_segment_target_chars) if args.output_mode == "reading" else None
+        ),
         "segmentCount": len(shaped_zh),
         "qaHardFailures": qa["hardFailures"],
         "outputs": (

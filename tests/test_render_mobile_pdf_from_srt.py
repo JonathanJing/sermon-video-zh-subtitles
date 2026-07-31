@@ -121,17 +121,44 @@ class RenderMobilePdfFromSrtTest(unittest.TestCase):
         self.assertEqual(blocks[1].primary, "下一段开始。")
 
     def test_default_footer_includes_disclaimer(self):
+        font_name = mod.register_cjk_font(None)
         wrapped = mod.wrap_text(
             mod.DEFAULT_DISCLAIMER,
-            mod.register_cjk_font(None),
+            font_name,
+            mod.FOOTER_FONT_SIZE,
+            mod.MOBILE_PAGE_SIZE[0] - 44,
+        )
+        compact_wrapped = mod.wrap_text(
+            mod.COMPACT_DISCLAIMER,
+            font_name,
             mod.FOOTER_FONT_SIZE,
             mod.MOBILE_PAGE_SIZE[0] - 44,
         )
 
         self.assertGreaterEqual(len(wrapped), 1)
-        self.assertLessEqual(len(wrapped[:2]), 2)
-        self.assertIn("AI 辅助生成", mod.DEFAULT_DISCLAIMER)
+        self.assertLessEqual(len(wrapped), 3)
+        self.assertLessEqual(len(compact_wrapped), 2)
+        self.assertTrue(mod.COMPACT_DISCLAIMER.startswith("免责声明："))
+        self.assertIn("独立个人项目", mod.DEFAULT_DISCLAIMER)
+        self.assertIn("无隶属、授权或背书关系", mod.DEFAULT_DISCLAIMER)
+        self.assertIn("公开或经授权", mod.DEFAULT_DISCLAIMER)
+        self.assertIn("AI 辅助英文听写和中文翻译", mod.DEFAULT_DISCLAIMER)
         self.assertIn("原始英文讲道", mod.DEFAULT_DISCLAIMER)
+
+    def test_default_font_candidates_use_simplified_chinese_faces(self):
+        candidates = mod.candidate_fonts(None)
+
+        self.assertEqual(candidates[0].path.name, "NotoSansCJKsc-Regular.otf")
+        self.assertEqual(candidates[1].path.name, "NotoSansCJK-Regular.ttc")
+        self.assertEqual(candidates[1].subfont_index, 2)
+        self.assertEqual(candidates[-3].path.name, "STHeiti Light.ttc")
+        self.assertEqual(candidates[-3].subfont_index, 1)
+        self.assertEqual(candidates[-2].path.name, "Songti.ttc")
+        self.assertEqual(candidates[-2].subfont_index, 6)
+        self.assertEqual(candidates[-1].subfont_index, 1)
+
+    def test_chinese_body_font_is_one_point_larger(self):
+        self.assertEqual(mod.BODY_FONT_SIZE, 16.5)
 
     def test_header_metadata_includes_date_speaker_and_sermon_window(self):
         metadata = mod.format_header_metadata(
@@ -153,6 +180,14 @@ class RenderMobilePdfFromSrtTest(unittest.TestCase):
         )
 
         self.assertEqual(metadata, "2026-07-26")
+
+    def test_running_header_metadata_stays_compact(self):
+        metadata = mod.format_running_header_metadata(
+            sermon_date="2026-07-26",
+            speaker="Kenton Beshore",
+        )
+
+        self.assertEqual(metadata, "2026-07-26 · Kenton Beshore")
 
     def test_wrap_text_prevents_chinese_punctuation_at_line_start(self):
         font_name = mod.register_cjk_font(None)

@@ -6,6 +6,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "run_post_live_subtitle_generation.py"
@@ -37,10 +38,11 @@ def make_args(**overrides):
         "reading_edition_provider": "openai",
         "reading_edition_model": "gpt-5.6-sol",
         "reading_edition_reasoning_effort": "high",
-        "reading_preferred_seconds": 22.0,
+        "reading_segment_target_chars": 420,
+        "reading_preferred_seconds": 24.0,
         "reading_preferred_english_chars": 420,
         "reading_hard_seconds": 55.0,
-        "reading_hard_english_chars": 950,
+        "reading_hard_english_chars": 840,
         "audio_format": "bestaudio[ext=m4a]/bestaudio",
         "yt_dlp": "yt-dlp",
         "youtube_cookies": None,
@@ -132,6 +134,7 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
         self.assertEqual(command[command.index("--reasoning-effort") + 1], "high")
         self.assertEqual(command[command.index("--reference-model") + 1], "gpt-transcribe")
         self.assertEqual(command[command.index("--output-mode") + 1], "reading")
+        self.assertEqual(command[command.index("--reading-segment-target-chars") + 1], "420")
         self.assertNotIn("--timing-model", command)
         self.assertEqual(report["readingEditionCommand"][report["readingEditionCommand"].index("--provider") + 1], "openai")
         self.assertEqual(report["readingEditionCommand"][report["readingEditionCommand"].index("--model") + 1], "gpt-5.6-sol")
@@ -303,6 +306,165 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
 
         self.assertEqual(title, "耶稣是谁")
         self.assertEqual(speaker, "Eric Geiger")
+
+    def test_pipeline_resume_fingerprint_covers_window_audio_glossary_and_models(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            audio = root / "source_audio.m4a"
+            glossary = root / "glossary.json"
+            audio.write_bytes(b"audio-v1")
+            glossary.write_text('{"Steve Bang Lee":"Steve Bang Lee"}', encoding="utf-8")
+            base_args = make_args(glossary=glossary)
+
+            base = mod.stable_payload_hash(mod.build_pipeline_input_identity(base_args, audio))
+            changed_window = mod.stable_payload_hash(
+                mod.build_pipeline_input_identity(
+                    make_args(glossary=glossary, start_time="00:23:00"),
+                    audio,
+                )
+            )
+            changed_model = mod.stable_payload_hash(
+                mod.build_pipeline_input_identity(
+                    make_args(glossary=glossary, zh_model="gpt-5.6-new"),
+                    audio,
+                )
+            )
+            audio.write_bytes(b"audio-v2")
+            changed_audio = mod.stable_payload_hash(mod.build_pipeline_input_identity(base_args, audio))
+            audio.write_bytes(b"audio-v1")
+            glossary.write_text('{"Steve Bang Lee":"李牧师"}', encoding="utf-8")
+            changed_glossary = mod.stable_payload_hash(mod.build_pipeline_input_identity(base_args, audio))
+
+        self.assertEqual(len({base, changed_window, changed_model, changed_audio, changed_glossary}), 5)
+
+    def test_pipeline_summary_requires_expected_input_fingerprint(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            summary_path = Path(tempdir) / "summary.json"
+            summary_path.write_text(
+                json.dumps(
+                    {
+                        "outputMode": "reading",
+                        "models": {"referenceAsr": "gpt-transcribe"},
+                        "readingSegmentTargetCharacters": 420,
+                        "pipelineInputFingerprint": "fingerprint-v1",
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            self.assertTrue(
+                mod.pipeline_summary_matches(
+                    summary_path,
+                    output_mode="reading",
+                    reference_model="gpt-transcribe",
+                    expected_input_fingerprint="fingerprint-v1",
+                )
+            )
+            self.assertFalse(
+                mod.pipeline_summary_matches(
+                    summary_path,
+                    output_mode="reading",
+                    reference_model="gpt-transcribe",
+                    expected_input_fingerprint="fingerprint-v2",
+                )
+            )
+
+    def test_reading_resume_fingerprint_covers_upstream_text_and_editing_config(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            pipeline = Path(tempdir)
+            english = pipeline / "segments_timed_en_corrected.json"
+            chinese = pipeline / "segments_timed_zh.json"
+            english.write_text('[{"id":1,"text":"Grace"}]', encoding="utf-8")
+            chinese.write_text('[{"id":1,"zh":"恩典"}]', encoding="utf-8")
+
+            base_args = make_args()
+            base = mod.stable_payload_hash(
+                mod.build_reading_input_identity(
+                    base_args,
+                    pipeline,
+                    pipeline_input_fingerprint="pipeline-v1",
+                )
+            )
+            chinese.write_text('[{"id":1,"zh":"神的恩典"}]', encoding="utf-8")
+            changed_text = mod.stable_payload_hash(
+                mod.build_reading_input_identity(
+                    base_args,
+                    pipeline,
+                    pipeline_input_fingerprint="pipeline-v1",
+                )
+            )
+            changed_model = mod.stable_payload_hash(
+                mod.build_reading_input_identity(
+                    make_args(reading_edition_model="gpt-5.6-sol-new"),
+                    pipeline,
+                    pipeline_input_fingerprint="pipeline-v1",
+                )
+            )
+            changed_pipeline = mod.stable_payload_hash(
+                mod.build_reading_input_identity(
+                    base_args,
+                    pipeline,
+                    pipeline_input_fingerprint="pipeline-v2",
+                )
+            )
+
+        self.assertEqual(len({base, changed_text, changed_model, changed_pipeline}), 4)
+
+    def test_reading_report_requires_matching_input_fingerprint(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            report_path = Path(tempdir) / "reading_quality_report.json"
+            report_path.write_text(
+                json.dumps(
+                    {
+                        "status": "pass",
+                        "layoutTargets": mod.reading_layout_targets(make_args()),
+                        "readingInputFingerprint": "reading-v1",
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            self.assertTrue(
+                mod.reading_report_matches_inputs(
+                    report_path,
+                    make_args(),
+                    expected_input_fingerprint="reading-v1",
+                )
+            )
+            self.assertFalse(
+                mod.reading_report_matches_inputs(
+                    report_path,
+                    make_args(),
+                    expected_input_fingerprint="reading-v2",
+                )
+            )
+
+    def test_upload_outputs_preserves_pipeline_relative_paths(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            pipeline = Path(tempdir) / "pipeline"
+            reading = pipeline / "reading-edition-v2"
+            reading.mkdir(parents=True)
+            (pipeline / "sermon_zh_en_reading.qa.json").write_text('{"status":"pass"}', encoding="utf-8")
+            (reading / "reading_quality_report.json").write_text('{"status":"pass"}', encoding="utf-8")
+
+            with mock.patch.object(mod, "upload_file_to_gcs") as uploader:
+                uploaded = mod.upload_outputs(
+                    make_args(gcs_bucket="sermon-artifacts"),
+                    pipeline,
+                )
+
+        destinations = [call.args[1] for call in uploader.call_args_list]
+        self.assertIn(
+            "gs://sermon-artifacts/sundays/2026-06-28/post-live-subtitles/"
+            "mariners_MEZHufeQBjc/pipeline/sermon_zh_en_reading.qa.json",
+            destinations,
+        )
+        self.assertIn(
+            "gs://sermon-artifacts/sundays/2026-06-28/post-live-subtitles/"
+            "mariners_MEZHufeQBjc/pipeline/reading-edition-v2/reading_quality_report.json",
+            destinations,
+        )
+        self.assertEqual({item["gcsUri"] for item in uploaded}, set(destinations))
 
 
 if __name__ == "__main__":

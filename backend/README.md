@@ -81,6 +81,18 @@ SERMON_ARTIFACT_PREFIX=sundays
 APP_TIMEZONE=America/Los_Angeles
 ```
 
+Production Supervisor Cloud Run Job dispatch:
+
+```text
+SERMON_SUPERVISOR_JOB_PROJECT=ai-for-god
+SERMON_SUPERVISOR_JOB_LOCATION=us-west1
+SERMON_SUPERVISOR_JOB_NAME=sermon-production-supervisor
+SERMON_SUPERVISOR_JOB_TIMEOUT_SECONDS=14400
+SERMON_SUPERVISOR_MODE=shadow
+```
+
+`SERMON_SUPERVISOR_JOB_CONTAINER` is optional for named or multi-container jobs. The production-supervisor endpoint uses these values to start a Cloud Run Job asynchronously. Cloud Scheduler only calls the short-lived HTTP endpoint; the Job reads the canonical URL from `LIVE_SOURCE_MONITOR_STATE_URI`. The web service identity needs `roles/run.developer` on that Job, while the Job service account needs its own GCS and Secret Manager access. If Job configuration is absent, Scheduler calls fail with HTTP 503 instead of acknowledging a command that was not executed.
+
 Optional generation progress config:
 
 ```text

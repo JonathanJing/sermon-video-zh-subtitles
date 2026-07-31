@@ -53,7 +53,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--action",
         default="discover-source",
-        choices=["discover-source", "post-live-subtitles", "post-live-timeline"],
+        choices=[
+            "discover-source",
+            "post-live-subtitles",
+            "post-live-timeline",
+            "production-supervisor",
+        ],
     )
     parser.add_argument(
         "--sunday",
@@ -75,6 +80,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--start-time", help="Post-live subtitle sermon start time.")
     parser.add_argument("--end-time", help="Post-live subtitle sermon end time.")
     parser.add_argument("--plan-only", action="store_true", help="Ask post-live endpoint to plan without running.")
+    parser.add_argument("--supervisor-mode", choices=["shadow", "execute"], default="shadow")
+    parser.add_argument("--agent-model", default="gpt-5.6")
+    parser.add_argument("--max-turns", type=int, default=8)
     parser.add_argument("--attempt-deadline", default="180s")
     parser.add_argument("--internal-task-token-env", default=DEFAULT_TOKEN_ENV)
     parser.add_argument("--apply", action="store_true", help="Run gcloud. Default is a redacted dry run.")
@@ -131,6 +139,8 @@ def build_scheduler_plan(args: argparse.Namespace, *, internal_task_token: str) 
 
 
 def scheduler_payload(args: argparse.Namespace) -> dict[str, Any]:
+    if args.action == "production-supervisor":
+        return production_supervisor_payload(args)
     if args.action == "post-live-timeline":
         return post_live_timeline_payload(args)
     if args.action == "post-live-subtitles":
@@ -184,6 +194,15 @@ def post_live_timeline_payload(args: argparse.Namespace) -> dict[str, Any]:
     if args.timeline_model:
         payload["timelineModel"] = args.timeline_model
     return payload
+
+
+def production_supervisor_payload(args: argparse.Namespace) -> dict[str, Any]:
+    return {
+        "triggerSource": "cloud-scheduler",
+        "mode": args.supervisor_mode,
+        "model": args.agent_model,
+        "maxTurns": args.max_turns,
+    }
 
 
 def admin_endpoint(service_url: str, sunday: str, action: str) -> str:

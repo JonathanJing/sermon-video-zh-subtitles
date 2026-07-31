@@ -111,6 +111,60 @@ class SermonPipelineTest(unittest.TestCase):
 
         fake_run.assert_called_once()
 
+    def test_clip_rebuilds_when_window_changes_but_duration_is_equal(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            source = root / "source.m4a"
+            clip = root / "clip.m4a"
+            source.write_text("audio", encoding="utf-8")
+            clip.write_text("old clip", encoding="utf-8")
+            old_identity = {
+                "schemaVersion": 1,
+                "operation": "clip_and_normalize",
+                "source": mod.source_file_identity(source, include_sha256=True),
+                "startSeconds": 100.0,
+                "endSeconds": 160.0,
+                "audioFilter": "loudnorm=I=-16:TP=-1.5:LRA=11",
+                "codec": "aac",
+                "sampleRate": 44100,
+                "channels": 1,
+                "bitrate": "64k",
+            }
+            mod.write_json(mod.media_cache_metadata_path(clip), old_identity)
+
+            with mock.patch.object(mod, "ffprobe_duration", return_value=60.0), mock.patch.object(
+                mod, "run"
+            ) as fake_run:
+                mod.clip_and_normalize(source, clip, 200.0, 260.0)
+
+        fake_run.assert_called_once()
+
+    def test_chunk_rebuilds_when_source_clip_changes(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            source = root / "source_clip.m4a"
+            chunk = root / "chunk.m4a"
+            source.write_text("source-v1", encoding="utf-8")
+            chunk.write_text("chunk-v1", encoding="utf-8")
+            identity = {
+                "schemaVersion": 1,
+                "operation": "cut_chunk",
+                "source": mod.source_file_identity(source),
+                "startSeconds": 0.0,
+                "durationSeconds": 30.0,
+                "codec": "aac",
+                "sampleRate": 44100,
+                "channels": 1,
+                "bitrate": "64k",
+            }
+            mod.write_json(mod.media_cache_metadata_path(chunk), identity)
+            source.write_text("source-v2-is-different", encoding="utf-8")
+
+            with mock.patch.object(mod, "run") as fake_run:
+                mod.cut_chunk(source, chunk, 0.0, 30.0)
+
+        fake_run.assert_called_once()
+
     def test_reasoning_effort_is_sent_for_correction_and_translation(self):
         segments = [{"id": 0, "start": 0.0, "end": 2.0, "text": "God loves us."}]
         gpt4o_chunks = [{"start": 0.0, "end": 2.0, "text": "God loves us."}]
@@ -233,6 +287,20 @@ class SermonPipelineTest(unittest.TestCase):
         self.assertEqual(segments[0]["start"], 0.0)
         self.assertEqual(segments[-1]["end"], 60.0)
         self.assertTrue(all(item["timingQuality"] == "synthetic_not_for_subtitles" for item in segments))
+
+    def test_reading_segment_target_supports_compact_bilingual_pdf_blocks(self):
+        text = " ".join(
+            f"Sentence {index} carries a complete sermon thought for the reading edition."
+            for index in range(12)
+        )
+
+        segments = mod.reference_chunks_to_reading_segments(
+            [{"id": 0, "start": 0.0, "end": 120.0, "text": text}],
+            target_chars=420,
+        )
+
+        self.assertGreaterEqual(len(segments), 3)
+        self.assertTrue(all(len(item["text"]) <= 420 for item in segments))
 
 
 if __name__ == "__main__":

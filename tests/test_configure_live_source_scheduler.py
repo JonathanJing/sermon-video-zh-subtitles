@@ -38,6 +38,9 @@ class ConfigureLiveSourceSchedulerTest(unittest.TestCase):
             "start_time": None,
             "end_time": None,
             "plan_only": False,
+            "supervisor_mode": "shadow",
+            "agent_model": "gpt-5.6",
+            "max_turns": 8,
             "attempt_deadline": "180s",
             "internal_task_token_env": "INTERNAL_TASK_TOKEN",
             "apply": False,
@@ -166,6 +169,28 @@ class ConfigureLiveSourceSchedulerTest(unittest.TestCase):
         self.assertEqual(plan.payload["timelineModel"], "gpt-4o-transcribe")
         self.assertNotIn("startTime", plan.payload)
         self.assertNotIn("endTime", plan.payload)
+
+    def test_builds_production_supervisor_payload(self):
+        plan = mod.build_scheduler_plan(
+            self.make_args(
+                job_id="sermon-production-supervisor",
+                action="production-supervisor",
+                sunday="upcoming",
+                schedule="*/10 18-23 * * SAT",
+                supervisor_mode="execute",
+                agent_model="gpt-5.6",
+                max_turns=6,
+            ),
+            internal_task_token="task-token-value",
+        )
+
+        self.assertEqual(
+            plan.endpoint,
+            "https://caption.example.test/api/admin/sundays/upcoming/production-supervisor",
+        )
+        self.assertEqual(plan.payload["mode"], "execute")
+        self.assertEqual(plan.payload["model"], "gpt-5.6")
+        self.assertEqual(plan.payload["maxTurns"], 6)
 
     def test_ensure_scheduler_job_updates_when_job_exists(self):
         calls = []

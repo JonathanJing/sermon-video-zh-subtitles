@@ -1,11 +1,13 @@
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from scripts.build_sermon_reading_edition_with_openai import (
     build_sentence_units,
     build_semantic_blocks,
     draft_comparison_report,
+    edit_batch,
     parse_json_message,
     reading_quality_report,
     write_block_srt,
@@ -57,8 +59,8 @@ class ReadingEditionTest(unittest.TestCase):
         english = [
             {
                 "id": index,
-                "start": index * 8.0,
-                "end": (index + 1) * 8.0,
+                "start": index * 10.0,
+                "end": (index + 1) * 10.0,
                 "text": sentence.strip(),
             }
             for index in range(6)
@@ -68,14 +70,16 @@ class ReadingEditionTest(unittest.TestCase):
         blocks = build_semantic_blocks(
             english,
             chinese,
-            preferred_seconds=22,
+            preferred_seconds=24,
             preferred_english_chars=420,
             hard_seconds=55,
-            hard_english_chars=950,
+            hard_english_chars=840,
         )
 
         self.assertEqual(2, len(blocks))
         self.assertTrue(all(len(block["en"]) < 420 for block in blocks))
+        segment_ids = [segment_id for block in blocks for segment_id in block["segmentIds"]]
+        self.assertEqual(list(range(6)), segment_ids)
 
     def test_quality_report_rejects_ellipsis_fillers_and_fragments(self):
         report = reading_quality_report(
@@ -180,6 +184,62 @@ class ReadingEditionTest(unittest.TestCase):
     def test_parses_fenced_json_message(self):
         parsed = parse_json_message('```json\n{"blocks":[{"id":0,"zh":"完整。"}]}\n```')
         self.assertEqual("完整。", parsed["blocks"][0]["zh"])
+
+    def test_reading_edit_cache_is_scoped_to_provider(self):
+        blocks = [
+            {
+                "id": 0,
+                "start": 0.0,
+                "end": 5.0,
+                "en": "Grace meets us here.",
+                "draftZh": "恩典在这里与我们相遇。",
+            }
+        ]
+        openai_result = {
+            "model": "gpt-5.6-sol",
+            "choices": [{"message": {"content": '{"blocks":[{"id":0,"zh":"恩典在此与我们相遇。"}]}'}}],
+        }
+        codex_result = {"blocks": [{"id": 0, "zh": "恩典就在这里与我们相遇。"}]}
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            with mock.patch(
+                "scripts.build_sermon_reading_edition_with_openai.chat_json",
+                return_value=openai_result,
+            ) as openai_call:
+                edit_batch(
+                    "key",
+                    blocks,
+                    blocks,
+                    0,
+                    root,
+                    model="gpt-5.6-sol",
+                    reasoning_effort="high",
+                    qa_pass=False,
+                    provider="openai",
+                    codex_cli=root / "codex",
+                    schema_path=root / "schema.json",
+                )
+            with mock.patch(
+                "scripts.build_sermon_reading_edition_with_openai.codex_json",
+                return_value=codex_result,
+            ) as codex_call:
+                edit_batch(
+                    "key",
+                    blocks,
+                    blocks,
+                    0,
+                    root,
+                    model="gpt-5.6-sol",
+                    reasoning_effort="high",
+                    qa_pass=False,
+                    provider="codex",
+                    codex_cli=root / "codex",
+                    schema_path=root / "schema.json",
+                )
+
+        openai_call.assert_called_once()
+        codex_call.assert_called_once()
 
 
 if __name__ == "__main__":
