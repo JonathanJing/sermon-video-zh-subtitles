@@ -236,7 +236,7 @@ python3 scripts/build_post_live_timeline.py \
   --outdir artifacts/post-live-subtitles/YYYY-MM-DD/<VIDEO_ID>/timeline \
   --out artifacts/post-live-subtitles/YYYY-MM-DD/<VIDEO_ID>/timeline/report.json \
   --chunk-seconds 120 \
-  --model gpt-4o-transcribe
+  --model gpt-transcribe
 ```
 
 输出状态必须是：
@@ -263,7 +263,8 @@ python3 scripts/sermon_pipeline.py \
   --end-time HH:MM \
   --slug <VIDEO_ID> \
   --outdir artifacts/post-live-subtitles/YYYY-MM-DD/<VIDEO_ID>/pipeline_HHMM_HHMM \
-  --gpt4o-model gpt-4o-transcribe \
+  --reference-model gpt-transcribe \
+  --output-mode subtitles \
   --timing-model whisper-1 \
   --en-correction-model gpt-5.4-mini \
   --zh-model gpt-5.5

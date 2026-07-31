@@ -21,9 +21,9 @@
 
 | 阶段 | 默认模型 | 用途 | 备注 |
 |---|---|---|---|
-| 高质量英文参考听写 | `gpt-4o-transcribe` | 生成更准确、更自然的英文 transcript reference | 适合带 sermon glossary prompt；不作为最终时间轴来源 |
+| 高质量英文参考听写 | `gpt-transcribe` | 生成更准确、更自然的英文 transcript reference | 使用 `prompt`、`keywords`、`languages=["en"]`；不作为最终时间轴来源 |
 | 稳定字幕时间轴 | `whisper-1` with `verbose_json` | 生成 segment/word timestamps | 目前仍是更适合字幕时间轴的 OpenAI 路径 |
-| 英文分段校正 | `gpt-5.6` / high | 用 GPT-4o 参考文本校正 Whisper 分段英文 | 必须保持 segment id、start、end 不变 |
+| 英文分段校正 | `gpt-5.6` / high | 用 `gpt-transcribe` 参考文本校正 Whisper 分段英文 | 必须保持 segment id、start、end 不变 |
 | 中文字幕生成 | `gpt-5.6` / high | 逐条生成时间轴中文字幕 | 字幕阶段允许跨 cue 残句，不等同于最终阅读版 |
 | 中文阅读编辑与校对 | `gpt-5.6-sol` / high | 把字幕重组为完整语义段落，并进行第二轮中英对照校对 | 阅读版交付前必须通过独立文本门禁 |
 
@@ -58,7 +58,7 @@ mariners_<youtube_video_id>
 1. 获取完整可下载音频或视频
 2. 判断证道正文开始/结束时间
 3. 裁剪并 loudness normalize 证道片段
-4. gpt-4o-transcribe 分块听写，得到高质量英文参考
+4. gpt-transcribe 听写，得到高质量英文参考；超过单文件限制时自动分块
 5. whisper-1 verbose_json 生成稳定时间轴
 6. gpt-5.6 按 3-5 分钟窗口校正英文分段
 7. gpt-5.6 逐条生成时间轴中文字幕
@@ -205,7 +205,7 @@ systematic translation offset: none
 
 ## 故障处理
 
-### `gpt-4o-transcribe` 没有时间戳
+### `gpt-transcribe` 没有时间戳
 
 这是预期行为。它适合作为英文参考，不作为最终时间轴。最终时间轴仍使用 `whisper-1 verbose_json`。
 

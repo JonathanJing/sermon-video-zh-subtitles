@@ -85,6 +85,23 @@ class ReadingEditionTest(unittest.TestCase):
         self.assertEqual("pass", report["status"])
         self.assertEqual(0, report["metrics"]["ellipsisCount"])
 
+    def test_quality_report_allows_semantic_you_know_question(self):
+        report = reading_quality_report(
+            [
+                {
+                    "id": 0,
+                    "en": "Do you know what this says? It says I had a good night's sleep.",
+                    "zh": "你知道这说明什么吗？这说明我昨晚睡得很好。",
+                }
+            ]
+        )
+        self.assertEqual("pass", report["status"])
+        self.assertEqual([], report["oralFillers"])
+        self.assertEqual(
+            "sermon-reading-edition-quality-v2",
+            report["qualityRuleVersion"],
+        )
+
     def test_quality_report_checks_terms_english_leaks_and_punctuation(self):
         report = reading_quality_report(
             [

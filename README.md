@@ -13,7 +13,7 @@ This repository's current primary workflow is a stable post-live operator flow:
 
 1. save a sermon video URL into resumable state
 2. manually confirm the sermon start and end time
-3. run the subtitle pipeline
+3. build the English reference transcript with `gpt-transcribe`
 4. generate a Chinese-English reading PDF
 5. treat the run as complete only after PDF QA passes
 
@@ -43,8 +43,8 @@ flowchart TD
     C --> D[Operator confirms sermon start and end]
     D --> E[Download archive audio]
     E --> F[Clip sermon window]
-    F --> G[Transcribe and align English]
-    G --> H[Translate Chinese]
+    F --> G["gpt-transcribe: prompt + keywords + languages=en"]
+    G --> H[Generate and review Chinese reading text]
     H --> I[Render reading PDF]
     I --> J{PDF QA pass?}
     J -- Yes --> K[Deliver reading PDF and reports]
@@ -73,14 +73,16 @@ python3 scripts/run_post_live_subtitle_generation.py \
   --out artifacts/post-live-subtitle-generation/report.json \
   --slug mariners_VIDEO_ID \
   --start-time 00:29:35 \
-  --end-time 01:00:55
+  --end-time 01:00:55 \
+  --output-mode reading \
+  --reference-model gpt-transcribe
 ```
 
 Before the second command, make sure `OPENAI_API_KEY` is already available in the shell, or use `--api-key-secret`.
 
 ### Completion rule
 
-Do not call the run complete just because ASR or subtitle files exist. The stable completion condition is:
+Do not call the run complete just because partial ASR output exists. The stable completion condition is:
 
 - source URL saved into state
 - sermon start and end manually confirmed
@@ -92,14 +94,16 @@ Do not call the run complete just because ASR or subtitle files exist. The stabl
 
 The primary operator outputs for this workflow are:
 
-- `sermon_zh_relative.srt`
-- `sermon_en_relative.srt`
-- `sermon_zh_mobile.pdf`
+- `asr_reference.json` or `asr_reference_chunks.json`
+- `segments_timed_en_corrected.json`
+- `segments_timed_zh.json`
 - `sermon_zh_en_reading.pdf`
-- `sermon_zh_mobile.qa.json`
 - `sermon_zh_en_reading.qa.json`
+- `reading-edition-v2/reading_quality_report.json`
 - `summary.json`
 - `run-status.json`
+
+The default `reading` mode does not call `whisper-1`. Its internal timing values organize reading blocks and are not publishable subtitle timing. `whisper-1` is enabled only when the operator explicitly selects `--output-mode subtitles`.
 
 ## Working but Secondary
 

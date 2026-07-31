@@ -81,7 +81,7 @@
 | 门禁 | 合格标准 |
 |---|---|
 | `ellipsis` | 非原文必要停顿造成的省略号为 0 |
-| `oral_fillers` | 指定无意义语气词为 0 |
+| `oral_fillers` | 指定无意义语气词为 0；语义完整的提问（例如“你知道这说明什么吗？”）不得误报 |
 | `dangling_fragments` | 不以逗号、冒号、破折号等悬空结束 |
 | `unbalanced_quotes` | 中文引号成对 |
 | `missing_terminal_punctuation` | 每个阅读段落完整收尾 |

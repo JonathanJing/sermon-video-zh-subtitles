@@ -23,6 +23,7 @@ from scripts.sermon_pipeline import chat_json, clean_text, load_env, read_json, 
 
 PROMPT_VERSION = "sermon-reading-edition-gpt56sol-v1"
 QA_PROMPT_VERSION = "sermon-reading-edition-qa-gpt56sol-v1"
+QUALITY_RULE_VERSION = "sermon-reading-edition-quality-v2"
 
 TERM_MAP = {
     "God": "神",
@@ -82,7 +83,10 @@ Return one JSON object only:
 FILLER_PATTERNS = {
     "嗯": re.compile(r"嗯+"),
     "呃": re.compile(r"呃+"),
-    "你知道": re.compile(r"你知道(?:吗)?"),
+    # Only treat 你知道 / 你知道吗 as discourse fillers when the phrase
+    # ends there. Do not reject semantic questions such as
+    # “你知道这说明什么吗？”.
+    "你知道": re.compile(r"你知道(?:吗)?(?=$|[，,。！？!?；;：:\s])"),
     "我是说": re.compile(r"我是说"),
     "好吧": re.compile(r"好吧"),
     "这样说得通吧": re.compile(r"这样说得通吧"),
@@ -592,6 +596,7 @@ def reading_quality_report(blocks: list[dict[str, Any]]) -> dict[str, Any]:
         "status": "pass" if not failures else "needs_revision",
         "promptVersion": PROMPT_VERSION,
         "qaPromptVersion": QA_PROMPT_VERSION,
+        "qualityRuleVersion": QUALITY_RULE_VERSION,
         "blockCount": len(blocks),
         "ellipsis": ellipsis,
         "oralFillers": fillers,

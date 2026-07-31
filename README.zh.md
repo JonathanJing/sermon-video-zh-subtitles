@@ -13,7 +13,7 @@
 
 1. 把证道视频链接保存到可恢复 state
 2. 人工确认证道开始和结束时间
-3. 跑字幕生成流程
+3. 用 `gpt-transcribe` 生成英文参考转录
 4. 生成中英对照阅读版 PDF
 5. 只有 PDF QA 通过后，才算真正完成
 
@@ -43,8 +43,8 @@ flowchart TD
     C --> D[Operator 人工确认证道开始和结束]
     D --> E[下载归档音频]
     E --> F[裁剪证道时间窗]
-    F --> G[英文转写与时间轴对齐]
-    G --> H[生成中文字幕]
+    F --> G["gpt-transcribe: prompt + keywords + languages=en"]
+    G --> H[生成并校对中文阅读稿]
     H --> I[渲染阅读版 PDF]
     I --> J{PDF QA 是否通过}
     J -- 通过 --> K[交付阅读版 PDF 和报告]
@@ -73,14 +73,16 @@ python3 scripts/run_post_live_subtitle_generation.py \
   --out artifacts/post-live-subtitle-generation/report.json \
   --slug mariners_VIDEO_ID \
   --start-time 00:29:35 \
-  --end-time 01:00:55
+  --end-time 01:00:55 \
+  --output-mode reading \
+  --reference-model gpt-transcribe
 ```
 
 执行第二条命令前，要先保证 shell 环境里已经有 `OPENAI_API_KEY`，或者显式传入 `--api-key-secret`。
 
 ### 完成标准
 
-不能因为已经有 ASR 或 SRT，就把任务算作完成。当前稳定完成条件是：
+不能因为已经有部分 ASR，就把任务算作完成。当前稳定完成条件是：
 
 - source URL 已保存进 state
 - 证道开始和结束时间已人工确认
@@ -92,14 +94,16 @@ python3 scripts/run_post_live_subtitle_generation.py \
 
 这条主流程的主要 operator 输出包括：
 
-- `sermon_zh_relative.srt`
-- `sermon_en_relative.srt`
-- `sermon_zh_mobile.pdf`
+- `asr_reference.json` 或 `asr_reference_chunks.json`
+- `segments_timed_en_corrected.json`
+- `segments_timed_zh.json`
 - `sermon_zh_en_reading.pdf`
-- `sermon_zh_mobile.qa.json`
 - `sermon_zh_en_reading.qa.json`
+- `reading-edition-v2/reading_quality_report.json`
 - `summary.json`
 - `run-status.json`
+
+默认 `reading` 模式不调用 `whisper-1`，内部时间仅用于组织阅读段落，不是可发布的字幕时间轴。只有明确运行 `--output-mode subtitles` 时，才会启用 `whisper-1` 生成同步 SRT/VTT。
 
 ## 已 working 但属于次要路径
 

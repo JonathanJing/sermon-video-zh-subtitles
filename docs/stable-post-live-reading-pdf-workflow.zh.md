@@ -7,7 +7,7 @@
 1. 把证道视频链接保存到可恢复状态里
 2. 等公开视频归档进入 post-live / 可下载状态
 3. 人工确认证道开始和结束时间
-4. 跑 post-live 字幕生成流程
+4. 用 `gpt-transcribe` 生成英文参考转录
 5. 生成并校验中英对照阅读版 PDF
 
 这也是根 README 现在应该优先介绍的默认 operator 路径。
@@ -18,7 +18,7 @@
 
 - 从人工提供的 YouTube 链接提取可用证道源
 - 把这个源持久化保存，避免后续运行再次手工提供链接
-- 基于人工确认的证道时间窗生成双语字幕产物
+- 基于人工确认的证道时间窗生成中英阅读稿
 - 产出阅读版 PDF，作为当前最重要的交付物
 
 这条工作流不等同于前端 admin prototype，也不等同于 Cloud Run backend orchestration。后两条路径现在已经 working，但当前仍属于次要路径，不是 repo 首页的主要叙事。
@@ -32,9 +32,9 @@ flowchart TD
     C --> D[Operator 人工确认证道开始和结束]
     D --> E[下载归档音频]
     E --> F[裁剪证道时间窗]
-    F --> G[英文转写与时间轴对齐]
-    G --> H[生成中文字幕]
-    H --> I[用中英 SRT 渲染阅读版 PDF]
+    F --> G["gpt-transcribe: prompt + keywords + languages=en"]
+    G --> H[生成并校对中文阅读稿]
+    H --> I[用内部阅读段落渲染 PDF]
     I --> J{PDF QA 是否通过}
     J -- 通过 --> K[交付 sermon_zh_en_reading.pdf 和报告]
     J -- 不通过 --> L[人工复核并重跑]
@@ -88,23 +88,27 @@ python3 scripts/run_post_live_subtitle_generation.py \
   --out artifacts/post-live-subtitle-generation/report.json \
   --slug mariners_VIDEO_ID \
   --start-time 00:29:35 \
-  --end-time 01:00:55
+  --end-time 01:00:55 \
+  --output-mode reading \
+  --reference-model gpt-transcribe
 ```
 
 ## 主要产物
 
 在对应 run 目录下，至少应该看到这些输出：
 
-- `sermon_zh_relative.srt`
-- `sermon_en_relative.srt`
-- `sermon_zh_mobile.pdf`
+- `asr_reference.json` 或 `asr_reference_chunks.json`
+- `segments_timed_en_corrected.json`
+- `segments_timed_zh.json`
 - `sermon_zh_en_reading.pdf`
-- `sermon_zh_mobile.qa.json`
 - `sermon_zh_en_reading.qa.json`
+- `reading-edition-v2/reading_quality_report.json`
 - `summary.json`
 - `run-status.json`
 
 其中阅读版 PDF 是这条稳定工作流当前最主要的交付物。
+
+默认 `reading` 模式不调用 `whisper-1`。内部段落时间只服务于阅读版组织，不得作为同步字幕时间轴发布。需要 SRT/VTT 时必须显式使用 `--output-mode subtitles`，此时才启用 `whisper-1`。
 
 ## 完成标准
 

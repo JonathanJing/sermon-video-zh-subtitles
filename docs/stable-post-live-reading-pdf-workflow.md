@@ -7,7 +7,7 @@ The stable workflow is:
 1. save a sermon video URL into resumable project state
 2. wait for the public archive to become post-live / downloadable
 3. manually confirm the sermon start and end time
-4. run the post-live subtitle pipeline
+4. build the English reference transcript with `gpt-transcribe`
 5. generate and QA the Chinese-English reading PDF
 
 This is the workflow that should be documented first in the root README and used as the default operator path today.
@@ -18,7 +18,7 @@ This workflow is for:
 
 - extracting a usable sermon source from a manually provided YouTube URL
 - preserving that source so a later run does not need the URL again
-- generating bilingual subtitle artifacts from a manually confirmed sermon window
+- generating bilingual reading text from a manually confirmed sermon window
 - producing a reviewed reading PDF as the main deliverable
 
 This workflow is not the same thing as the frontend admin prototype or the Cloud Run backend orchestration. Those paths already work, but they are currently secondary to the stable operator workflow described here.
@@ -32,9 +32,9 @@ flowchart TD
     C --> D[Operator confirms sermon start and end]
     D --> E[Download archive audio]
     E --> F[Clip sermon window]
-    F --> G[Transcribe and align English]
-    G --> H[Translate Chinese]
-    H --> I[Render reading PDF from Chinese and English SRT]
+    F --> G["gpt-transcribe: prompt + keywords + languages=en"]
+    G --> H[Generate and review Chinese reading text]
+    H --> I[Render PDF from internal reading blocks]
     I --> J{PDF QA pass?}
     J -- Yes --> K[Deliver sermon_zh_en_reading.pdf and reports]
     J -- No --> L[Operator review and rerun]
@@ -88,23 +88,27 @@ python3 scripts/run_post_live_subtitle_generation.py \
   --out artifacts/post-live-subtitle-generation/report.json \
   --slug mariners_VIDEO_ID \
   --start-time 00:29:35 \
-  --end-time 01:00:55
+  --end-time 01:00:55 \
+  --output-mode reading \
+  --reference-model gpt-transcribe
 ```
 
 ## Main outputs
 
 Under the selected run directory, the operator should expect at least these outputs:
 
-- `sermon_zh_relative.srt`
-- `sermon_en_relative.srt`
-- `sermon_zh_mobile.pdf`
+- `asr_reference.json` or `asr_reference_chunks.json`
+- `segments_timed_en_corrected.json`
+- `segments_timed_zh.json`
 - `sermon_zh_en_reading.pdf`
-- `sermon_zh_mobile.qa.json`
 - `sermon_zh_en_reading.qa.json`
+- `reading-edition-v2/reading_quality_report.json`
 - `summary.json`
 - `run-status.json`
 
 The reading PDF is the main operator deliverable for this workflow.
+
+The default `reading` mode does not call `whisper-1`. Internal timing values are used only to organize reading blocks and must not be published as synchronized subtitle timing. Select `--output-mode subtitles` explicitly when SRT/VTT timing is required; only that mode enables `whisper-1`.
 
 ## Completion rule
 

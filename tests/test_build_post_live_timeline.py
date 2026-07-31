@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "build_post_live_timeline.py"
@@ -16,6 +17,58 @@ SPEC.loader.exec_module(mod)
 
 
 class BuildPostLiveTimelineTest(unittest.TestCase):
+    def test_timeline_transcription_uses_gpt_transcribe_context_and_provenance_cache(self):
+        calls = []
+
+        def fake_cut(_source, destination, _start, _duration):
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(b"audio")
+
+        def fake_transcribe(api_key, model, prompt, audio_path, **kwargs):
+            calls.append(
+                {
+                    "apiKey": api_key,
+                    "model": model,
+                    "prompt": prompt,
+                    "audio": audio_path,
+                    **kwargs,
+                }
+            )
+            return {"text": "Welcome to Mariners Online. My name is Steve.", "languages": ["en"]}
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            source = root / "source.m4a"
+            source.write_bytes(b"source")
+            outdir = root / "timeline"
+            with mock.patch.object(mod.sermon_pipeline, "ffprobe_duration", return_value=60.0), mock.patch.object(
+                mod.sermon_pipeline, "cut_chunk", side_effect=fake_cut
+            ), mock.patch.object(mod.sermon_pipeline, "transcribe_openai_audio", side_effect=fake_transcribe):
+                first = mod.transcribe_full_audio_chunks(
+                    api_key="key",
+                    source=source,
+                    outdir=outdir,
+                    chunk_seconds=60.0,
+                    model="gpt-transcribe",
+                )
+                second = mod.transcribe_full_audio_chunks(
+                    api_key="key",
+                    source=source,
+                    outdir=outdir,
+                    chunk_seconds=60.0,
+                    model="gpt-transcribe",
+                )
+                cache_metadata_exists = (
+                    outdir / "chunks" / "timeline_chunk_0000.request.json"
+                ).exists()
+
+        self.assertEqual(first, second)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(calls[0]["model"], "gpt-transcribe")
+        self.assertEqual(calls[0]["languages"], ["en"])
+        self.assertIn("Mariners Church", calls[0]["keywords"])
+        self.assertTrue(cache_metadata_exists)
+
     def test_analyze_timeline_suggests_reviewable_window(self):
         chunks = [
             {

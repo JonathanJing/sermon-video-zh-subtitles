@@ -144,6 +144,8 @@ class BackendAppTest(unittest.TestCase):
                 "slug": "mariners_MEZHufeQBjc",
                 "startTime": "00:22:10",
                 "endTime": "00:55:36",
+                "referenceModel": "gpt-transcribe",
+                "outputMode": "reading",
                 "planOnly": True,
             },
             "2026-06-28",
@@ -158,6 +160,8 @@ class BackendAppTest(unittest.TestCase):
         self.assertEqual(command[command.index("--slug") + 1], "mariners_MEZHufeQBjc")
         self.assertEqual(command[command.index("--start-time") + 1], "00:22:10")
         self.assertEqual(command[command.index("--end-time") + 1], "00:55:36")
+        self.assertEqual(command[command.index("--reference-model") + 1], "gpt-transcribe")
+        self.assertEqual(command[command.index("--output-mode") + 1], "reading")
         self.assertEqual(command[command.index("--api-key-secret") + 1], "projects/ai-for-god/secrets/openai-api-key/versions/latest")
         self.assertEqual(command[command.index("--gcs-bucket") + 1], "sermon-zh-artifacts-ai-for-god")
         self.assertIn("--plan-only", command)

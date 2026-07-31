@@ -53,8 +53,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--zh-model", default="gpt-5.6")
     parser.add_argument("--en-correction-model", default="gpt-5.6")
     parser.add_argument("--reasoning-effort", choices=("low", "medium", "high"), default="high")
-    parser.add_argument("--gpt4o-model", default="gpt-4o-transcribe")
+    parser.add_argument(
+        "--reference-model",
+        "--gpt4o-model",
+        dest="reference_model",
+        default="gpt-transcribe",
+    )
     parser.add_argument("--timing-model", default="whisper-1")
+    parser.add_argument(
+        "--output-mode",
+        choices=("reading", "subtitles"),
+        default="reading",
+        help="Reading mode skips Whisper and produces the reviewed reading PDF only.",
+    )
     parser.add_argument("--reading-edition-provider", choices=("openai", "codex"), default="openai")
     parser.add_argument("--reading-edition-model", default="gpt-5.6-sol")
     parser.add_argument("--reading-edition-reasoning-effort", choices=("low", "medium", "high"), default="high")
@@ -77,6 +88,10 @@ def run_post_live_generation(
     metadata_loader: Callable[[str], dict[str, Any] | None] | None = None,
     runner: Callable[..., subprocess.CompletedProcess] = subprocess.run,
 ) -> dict[str, Any]:
+    if not hasattr(args, "reference_model"):
+        args.reference_model = getattr(args, "gpt4o_model", "gpt-transcribe")
+    if not hasattr(args, "output_mode"):
+        args.output_mode = "reading"
     state = live_source_monitor.read_state(args.state_file)
     source = selected_source_from_state(state)
     live_url = live_url_from_state(state, source)
@@ -123,7 +138,11 @@ def run_post_live_generation(
     pipeline_outdir = run_root / "pipeline"
     reading_outdir = pipeline_outdir / READING_EDITION_DIRNAME
     pipeline_command = build_pipeline_command(args, run_root / "download", pipeline_outdir, live_url)
-    mobile_pdf_command = build_mobile_pdf_command(args, pipeline_outdir, live_url, metadata=metadata, source=source)
+    mobile_pdf_command = (
+        build_mobile_pdf_command(args, pipeline_outdir, live_url, metadata=metadata, source=source)
+        if args.output_mode == "subtitles"
+        else None
+    )
     reading_edition_command = build_reading_edition_command(args, pipeline_outdir)
     reading_pdf_command = build_reading_pdf_command(args, pipeline_outdir, live_url, metadata=metadata, source=source)
     report = {
@@ -137,7 +156,8 @@ def run_post_live_generation(
         "mobilePdfCommand": mobile_pdf_command,
         "readingEditionCommand": reading_edition_command,
         "readingPdfCommand": reading_pdf_command,
-        "outputs": expected_outputs(pipeline_outdir),
+        "outputMode": args.output_mode,
+        "outputs": expected_outputs(pipeline_outdir, args.output_mode),
     }
     if args.plan_only or args.dry_run:
         log_post_live_event(report)
@@ -167,12 +187,22 @@ def run_post_live_generation(
     )
     write_run_status(run_status_path, run_status)
     pipeline_command = build_pipeline_command(args, audio_path.parent, pipeline_outdir, live_url, audio_path=audio_path)
-    mobile_pdf_command = build_mobile_pdf_command(args, pipeline_outdir, live_url, metadata=metadata, source=source)
+    mobile_pdf_command = (
+        build_mobile_pdf_command(args, pipeline_outdir, live_url, metadata=metadata, source=source)
+        if args.output_mode == "subtitles"
+        else None
+    )
     reading_edition_command = build_reading_edition_command(args, pipeline_outdir)
     reading_pdf_command = build_reading_pdf_command(args, pipeline_outdir, live_url, metadata=metadata, source=source)
-    core_ready = all(
-        (pipeline_outdir / name).exists()
-        for name in ("sermon_zh_relative.srt", "sermon_en_relative.srt", "summary.json")
+    core_outputs = (
+        ("sermon_zh_relative.srt", "sermon_en_relative.srt", "summary.json")
+        if args.output_mode == "subtitles"
+        else ("segments_timed_en_corrected.json", "segments_timed_zh.json", "summary.json")
+    )
+    core_ready = all((pipeline_outdir / name).exists() for name in core_outputs) and pipeline_summary_matches(
+        pipeline_outdir / "summary.json",
+        output_mode=args.output_mode,
+        reference_model=args.reference_model,
     )
     if core_ready:
         stage_durations["pipeline"] = 0.0
@@ -185,9 +215,12 @@ def run_post_live_generation(
             run_status, args.sunday, stage, "complete", duration_seconds=stage_durations["pipeline"]
         )
     write_run_status(run_status_path, run_status)
-    started = time.monotonic()
-    run_command(mobile_pdf_command, runner)
-    stage_durations["mobile_pdf"] = time.monotonic() - started
+    if mobile_pdf_command:
+        started = time.monotonic()
+        run_command(mobile_pdf_command, runner)
+        stage_durations["mobile_pdf"] = time.monotonic() - started
+    else:
+        stage_durations["mobile_pdf"] = 0.0
     reading_report_path = reading_outdir / "reading_quality_report.json"
     reading_ready = all(
         path.exists()
@@ -231,10 +264,9 @@ def run_post_live_generation(
     run_command(reading_pdf_command, runner)
     stage_durations["reading_pdf"] = time.monotonic() - started
     stage_durations["pdf_qa"] = stage_durations["mobile_pdf"] + stage_durations["reading_pdf"]
-    qa_paths = [
-        pipeline_outdir / "sermon_zh_mobile.qa.json",
-        pipeline_outdir / "sermon_zh_en_reading.qa.json",
-    ]
+    qa_paths = [pipeline_outdir / "sermon_zh_en_reading.qa.json"]
+    if args.output_mode == "subtitles":
+        qa_paths.insert(0, pipeline_outdir / "sermon_zh_mobile.qa.json")
     qa_reports = [json.loads(path.read_text(encoding="utf-8")) for path in qa_paths]
     if any(report.get("status") != "pass" for report in qa_reports):
         run_status = post_live_run_status.update_stage(
@@ -249,7 +281,7 @@ def run_post_live_generation(
         duration_seconds=stage_durations["pdf_qa"],
     )
     write_run_status(run_status_path, run_status)
-    uploaded = upload_outputs(args, pipeline_outdir)
+    uploaded = upload_outputs(args, pipeline_outdir, args.output_mode)
     report.update(
         {
             "status": "completed",
@@ -366,10 +398,10 @@ def build_pipeline_command(
         slug_for(args, live_url),
         "--outdir",
         str(pipeline_outdir),
-        "--gpt4o-model",
-        args.gpt4o_model,
-        "--timing-model",
-        args.timing_model,
+        "--reference-model",
+        args.reference_model,
+        "--output-mode",
+        args.output_mode,
         "--en-correction-model",
         args.en_correction_model,
         "--zh-model",
@@ -377,6 +409,8 @@ def build_pipeline_command(
         "--reasoning-effort",
         args.reasoning_effort,
     ]
+    if args.output_mode == "subtitles":
+        command.extend(["--timing-model", args.timing_model])
     if args.end_time:
         command.extend(["--end-time", args.end_time])
     if args.glossary:
@@ -550,6 +584,19 @@ def write_run_status(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
 
 
+def pipeline_summary_matches(path: Path, *, output_mode: str, reference_model: str) -> bool:
+    try:
+        summary = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return False
+    models = summary.get("models") if isinstance(summary, dict) else None
+    return (
+        summary.get("outputMode") == output_mode
+        and isinstance(models, dict)
+        and models.get("referenceAsr") == reference_model
+    )
+
+
 def run_command(command: list[str], runner: Callable[..., subprocess.CompletedProcess]) -> None:
     runner(command, check=True)
 
@@ -562,31 +609,41 @@ def set_openai_api_key(args: argparse.Namespace) -> None:
     os.environ["OPENAI_API_KEY"] = access_secret(args.api_key_secret)
 
 
-def expected_outputs(pipeline_outdir: Path) -> list[str]:
-    return [
-        str(pipeline_outdir / "sermon_zh_relative.srt"),
-        str(pipeline_outdir / "sermon_zh_relative.vtt"),
-        str(pipeline_outdir / "sermon_zh_mobile.pdf"),
+def expected_outputs(pipeline_outdir: Path, output_mode: str = "reading") -> list[str]:
+    outputs = [
         str(pipeline_outdir / "sermon_zh_en_reading.pdf"),
-        str(pipeline_outdir / "sermon_zh_mobile.qa.json"),
         str(pipeline_outdir / "sermon_zh_en_reading.qa.json"),
         str(pipeline_outdir / READING_EDITION_DIRNAME / "reading_quality_report.json"),
         str(pipeline_outdir / READING_EDITION_DIRNAME / "sermon_zh_reading_revised.srt"),
         str(pipeline_outdir / READING_EDITION_DIRNAME / "sermon_en_reading_revised.srt"),
-        str(pipeline_outdir / "full_video_zh_from_sermon.srt"),
-        str(pipeline_outdir / "full_video_zh_from_sermon.vtt"),
+        str(pipeline_outdir / "asr_reference.json"),
+        str(pipeline_outdir / "asr_reference_chunks.json"),
+        str(pipeline_outdir / "segments_timed_en_corrected.json"),
+        str(pipeline_outdir / "segments_timed_zh.json"),
         str(pipeline_outdir / "qa_report.json"),
         str(pipeline_outdir / "summary.json"),
     ]
+    if output_mode == "subtitles":
+        outputs.extend(
+            [
+                str(pipeline_outdir / "sermon_zh_relative.srt"),
+                str(pipeline_outdir / "sermon_zh_relative.vtt"),
+                str(pipeline_outdir / "sermon_zh_mobile.pdf"),
+                str(pipeline_outdir / "sermon_zh_mobile.qa.json"),
+                str(pipeline_outdir / "full_video_zh_from_sermon.srt"),
+                str(pipeline_outdir / "full_video_zh_from_sermon.vtt"),
+            ]
+        )
+    return outputs
 
 
-def upload_outputs(args: argparse.Namespace, pipeline_outdir: Path) -> list[dict[str, str]]:
+def upload_outputs(args: argparse.Namespace, pipeline_outdir: Path, output_mode: str = "reading") -> list[dict[str, str]]:
     if not args.gcs_bucket:
         return []
     slug = args.slug or "sermon"
     prefix = "/".join(part.strip("/") for part in [args.gcs_prefix, args.sunday, "post-live-subtitles", slug] if part)
     uploaded = []
-    for path_text in expected_outputs(pipeline_outdir):
+    for path_text in expected_outputs(pipeline_outdir, output_mode):
         path = Path(path_text)
         if not path.exists():
             continue
