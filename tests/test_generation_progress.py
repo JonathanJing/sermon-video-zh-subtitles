@@ -1,3 +1,4 @@
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -153,12 +154,22 @@ class GenerationProgressTest(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as tmp:
             store = GenerationProgressStore(Path(tmp))
-            store.append(
-                event="live_capture_planned",
-                sunday="2026-06-28",
-                session_id="worker-old",
-                run_prefix="sundays/2026-06-28/runs/worker-old",
-                status="planned",
+            local_path = store.path_for("2026-06-28", "worker-old")
+            local_path.parent.mkdir(parents=True, exist_ok=True)
+            local_path.write_text(
+                json.dumps(
+                    {
+                        "schemaVersion": 1,
+                        "event": "live_capture_planned",
+                        "loggedAt": "2026-06-28T18:00:00+00:00",
+                        "sunday": "2026-06-28",
+                        "sessionId": "worker-old",
+                        "runPrefix": "sundays/2026-06-28/runs/worker-old",
+                        "status": "planned",
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
             )
             store.gcs_prefix = "gs://sermon-zh-artifacts-ai-for-god/sundays/generation-progress"
             with patch("backend.progress.read_gcs_text", return_value=gcs_status):

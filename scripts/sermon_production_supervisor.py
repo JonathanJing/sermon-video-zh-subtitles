@@ -18,6 +18,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from backend.cloud import read_gcs_text, write_gcs_text  # noqa: E402
+from backend.leases import LeaseHandle, acquire_lease, release_lease  # noqa: E402
 from backend.observability import stable_hash, url_summary  # noqa: E402
 from scripts import live_source_monitor, run_post_live_subtitle_generation  # noqa: E402
 
@@ -43,6 +44,7 @@ class SupervisorConfig:
     classifier_model: str = "gpt-5.6"
     reference_model: str = "gpt-transcribe"
     reading_model: str = "gpt-5.6-sol"
+    lease_ttl_seconds: int = 14_400
 
 
 def validate_config(config: SupervisorConfig) -> None:
@@ -59,7 +61,7 @@ def validate_config(config: SupervisorConfig) -> None:
 def production_snapshot(config: SupervisorConfig) -> dict[str, Any]:
     """Read durable workflow evidence and return a sanitized supervisor snapshot."""
     validate_config(config)
-    state = live_source_monitor.read_state(config.state_file)
+    state = read_supervisor_state(config.state_file)
     source = run_post_live_subtitle_generation.selected_source_from_state(state)
     live_url = run_post_live_subtitle_generation.live_url_from_state(state, source)
     slug = run_post_live_subtitle_generation.slug_for(_slug_args(), live_url) if live_url else None
@@ -69,38 +71,66 @@ def production_snapshot(config: SupervisorConfig) -> dict[str, Any]:
     timeline_report = read_artifact_json(
         "timelineReport",
         access_issues,
-        locations.get("timelineReportLocal"),
-        locations.get("timelineReportGcs"),
+        *artifact_read_locations(
+            locations.get("timelineReportLocal"),
+            locations.get("timelineReportGcs"),
+        ),
     )
     approval = read_artifact_json(
         "windowApproval",
         access_issues,
-        locations.get("windowApprovalLocal"),
-        locations.get("windowApprovalGcs"),
+        *artifact_read_locations(
+            locations.get("windowApprovalLocal"),
+            locations.get("windowApprovalGcs"),
+        ),
     )
     generation_report = read_artifact_json(
         "generationReport",
         access_issues,
-        locations.get("generationReportLocal"),
-        locations.get("generationReportGcs"),
+        *artifact_read_locations(
+            locations.get("generationReportLocal"),
+            locations.get("generationReportGcs"),
+        ),
     )
     run_status = read_artifact_json(
         "runStatus",
         access_issues,
-        locations.get("runStatusLocal"),
-        locations.get("runStatusGcs"),
+        *artifact_read_locations(
+            locations.get("runStatusLocal"),
+            locations.get("runStatusGcs"),
+        ),
     )
     reading_qa = read_artifact_json(
         "readingPdfQa",
         access_issues,
-        locations.get("readingQaLocal"),
-        locations.get("readingQaGcs"),
+        *artifact_read_locations(
+            locations.get("readingQaLocal"),
+            locations.get("readingQaGcs"),
+        ),
     )
     reading_quality = read_artifact_json(
         "readingEditionQuality",
         access_issues,
-        locations.get("readingQualityLocal"),
-        locations.get("readingQualityGcs"),
+        *artifact_read_locations(
+            locations.get("readingQualityLocal"),
+            locations.get("readingQualityGcs"),
+        ),
+    )
+    timeline_lease = read_artifact_json(
+        "timelineLease",
+        access_issues,
+        *artifact_read_locations(
+            locations.get("timelineLeaseLocal"),
+            locations.get("timelineLeaseGcs"),
+        ),
+    )
+    generation_lease = read_artifact_json(
+        "generationLease",
+        access_issues,
+        *artifact_read_locations(
+            locations.get("generationLeaseLocal"),
+            locations.get("generationLeaseGcs"),
+        ),
     )
 
     approval_valid, approval_reason = validate_window_approval(
@@ -110,6 +140,7 @@ def production_snapshot(config: SupervisorConfig) -> dict[str, Any]:
         timeline_report=timeline_report,
     )
     recommended = recommend_action(
+        sunday=config.sunday,
         live_url=live_url,
         state=state,
         timeline_report=timeline_report,
@@ -120,6 +151,8 @@ def production_snapshot(config: SupervisorConfig) -> dict[str, Any]:
         reading_qa=reading_qa,
         reading_quality=reading_quality,
         access_issues=access_issues,
+        timeline_lease=timeline_lease,
+        generation_lease=generation_lease,
     )
     return {
         "schemaVersion": 1,
@@ -137,6 +170,10 @@ def production_snapshot(config: SupervisorConfig) -> dict[str, Any]:
             "readingEdition": public_quality_report(reading_quality),
             "readingPdf": public_quality_report(reading_qa),
         },
+        "activeLeases": {
+            "timeline": public_lease(timeline_lease),
+            "generation": public_lease(generation_lease),
+        },
         "recommendedAction": recommended,
         "accessIssues": access_issues,
         "locations": locations,
@@ -147,6 +184,7 @@ def production_snapshot(config: SupervisorConfig) -> dict[str, Any]:
 
 def recommend_action(
     *,
+    sunday: str,
     live_url: str | None,
     state: dict[str, Any],
     timeline_report: dict[str, Any] | None,
@@ -157,11 +195,19 @@ def recommend_action(
     reading_qa: dict[str, Any] | None,
     reading_quality: dict[str, Any] | None,
     access_issues: list[dict[str, str]] | None = None,
+    timeline_lease: dict[str, Any] | None = None,
+    generation_lease: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if not live_url:
         return action("wait_for_source", "No persisted livestream URL is available.", human=True)
     if state.get("lastSunday") and not isinstance(state.get("lastSunday"), str):
         return action("inspect_state", "Persisted live-source state has an invalid Sunday value.", human=True)
+    if state.get("lastSunday") and state.get("lastSunday") != sunday:
+        return action(
+            "waiting_for_matching_sunday",
+            f"Persisted live-source state belongs to {state.get('lastSunday')}.",
+            human=False,
+        )
     if access_issues:
         labels = ", ".join(sorted({item["artifact"] for item in access_issues}))
         return action(
@@ -195,6 +241,27 @@ def recommend_action(
             "review_quality_failure",
             f"Workflow is blocked at {blocker.get('stage')}: {blocker.get('reason')}.",
             human=True,
+        )
+    if generation_status in {"failed", "error"}:
+        return action(
+            "inspect_generation_failure",
+            str(
+                (generation_report or {}).get("reason")
+                or "Reading-PDF generation failed and requires inspection."
+            ),
+            human=True,
+        )
+    if lease_active(generation_lease):
+        return action(
+            "wait_for_active_run",
+            "A reading-PDF generation execution already holds the production lease.",
+            human=False,
+        )
+    if lease_active(timeline_lease):
+        return action(
+            "wait_for_active_run",
+            "A timeline execution already holds the production lease.",
+            human=False,
         )
 
     timeline_status = str((timeline_report or {}).get("status") or "")
@@ -263,8 +330,10 @@ def approve_window(
     if not live_url:
         raise RuntimeError("Cannot approve a window before a livestream URL is persisted.")
     timeline = read_first_json(
-        snapshot["locations"].get("timelineReportLocal"),
-        snapshot["locations"].get("timelineReportGcs"),
+        *artifact_read_locations(
+            snapshot["locations"].get("timelineReportLocal"),
+            snapshot["locations"].get("timelineReportGcs"),
+        )
     )
     timeline_status = str((timeline or {}).get("status") or "")
     if timeline_status not in {"requires_operator_review", "already_requires_operator_review"}:
@@ -304,6 +373,8 @@ def run_timeline_probe(
     config: SupervisorConfig,
     *,
     runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
+    lease_acquirer: Callable[..., LeaseHandle | None] = acquire_lease,
+    lease_releaser: Callable[[LeaseHandle], None] = release_lease,
 ) -> dict[str, Any]:
     snapshot = production_snapshot(config)
     action_name = snapshot["recommendedAction"]["action"]
@@ -313,16 +384,35 @@ def run_timeline_probe(
             "reason": f"timeline probe is not valid while recommendedAction={action_name}",
             "snapshot": snapshot,
         }
-    command = build_timeline_command(config, snapshot)
-    completed = runner(command, check=False, capture_output=True, text=True)
-    report = read_first_json(snapshot["locations"].get("timelineReportLocal"))
-    return command_result(command, completed, report)
+    lease = lease_acquirer(
+        execution_lease_location(snapshot, "timeline"),
+        ttl_seconds=config.lease_ttl_seconds,
+    )
+    if lease is None:
+        return {
+            "status": "already_running",
+            "reason": "Another timeline execution holds the production lease.",
+        }
+    try:
+        command = build_timeline_command(config, snapshot)
+        completed = runner(command, check=False, capture_output=True, text=True)
+        report = read_first_json(
+            *artifact_read_locations(
+                snapshot["locations"].get("timelineReportLocal"),
+                snapshot["locations"].get("timelineReportGcs"),
+            )
+        )
+        return command_result(command, completed, report)
+    finally:
+        lease_releaser(lease)
 
 
 def run_reading_pdf_generation(
     config: SupervisorConfig,
     *,
     runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
+    lease_acquirer: Callable[..., LeaseHandle | None] = acquire_lease,
+    lease_releaser: Callable[[LeaseHandle], None] = release_lease,
 ) -> dict[str, Any]:
     snapshot = production_snapshot(config)
     if snapshot["recommendedAction"]["action"] != "run_reading_pdf_generation":
@@ -332,30 +422,54 @@ def run_reading_pdf_generation(
             "recommendedAction": snapshot["recommendedAction"],
         }
     approval = read_first_json(
-        snapshot["locations"].get("windowApprovalLocal"),
-        snapshot["locations"].get("windowApprovalGcs"),
+        *artifact_read_locations(
+            snapshot["locations"].get("windowApprovalLocal"),
+            snapshot["locations"].get("windowApprovalGcs"),
+        )
     )
     valid, reason = validate_window_approval(
         approval,
         sunday=config.sunday,
         live_url=live_url_from_snapshot(snapshot),
         timeline_report=read_first_json(
-            snapshot["locations"].get("timelineReportLocal"),
-            snapshot["locations"].get("timelineReportGcs"),
+            *artifact_read_locations(
+                snapshot["locations"].get("timelineReportLocal"),
+                snapshot["locations"].get("timelineReportGcs"),
+            )
         ),
     )
     if not valid:
         return {"status": "blocked", "reason": reason or "operator approval is invalid"}
-    command = build_generation_command(config, snapshot, approval or {})
-    completed = runner(command, check=False, capture_output=True, text=True)
-    report = read_first_json(snapshot["locations"].get("generationReportLocal"))
-    generation_report_gcs = snapshot["locations"].get("generationReportGcs")
-    if report and generation_report_gcs:
-        write_gcs_text(
-            generation_report_gcs,
-            json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True),
-        )
-    return command_result(command, completed, report)
+    lease = lease_acquirer(
+        execution_lease_location(snapshot, "generation"),
+        ttl_seconds=config.lease_ttl_seconds,
+    )
+    if lease is None:
+        return {
+            "status": "already_running",
+            "reason": "Another reading-PDF generation holds the production lease.",
+        }
+    try:
+        command = build_generation_command(config, snapshot, approval or {})
+        completed = runner(command, check=False, capture_output=True, text=True)
+        report = read_optional_json(snapshot["locations"]["generationReportLocal"])
+        if report is None:
+            report = {
+                "schemaVersion": 1,
+                "status": "failed",
+                "reason": (
+                    f"generation subprocess exited with code {completed.returncode}"
+                    if completed.returncode
+                    else "generation subprocess completed without writing its report"
+                ),
+                "returnCode": completed.returncode,
+                "completedAt": datetime.now(timezone.utc).isoformat(),
+            }
+            write_local_json(Path(snapshot["locations"]["generationReportLocal"]), report)
+        publish_generation_evidence(snapshot["locations"], report)
+        return command_result(command, completed, report)
+    finally:
+        lease_releaser(lease)
 
 
 def build_timeline_command(config: SupervisorConfig, snapshot: dict[str, Any]) -> list[str]:
@@ -446,6 +560,10 @@ def artifact_locations(config: SupervisorConfig, slug: str) -> dict[str, str]:
         "windowApprovalGcs": gcs("operator-window-approval.json"),
         "generationReportLocal": str(run_root / "agent-generation-report.json"),
         "generationReportGcs": gcs("agent-generation-report.json"),
+        "timelineLeaseLocal": str(run_root / "leases" / "timeline.json"),
+        "timelineLeaseGcs": gcs("leases/timeline.json"),
+        "generationLeaseLocal": str(run_root / "leases" / "generation.json"),
+        "generationLeaseGcs": gcs("leases/generation.json"),
         "runStatusLocal": str(run_root / "run-status.json"),
         "runStatusGcs": gcs("run-status.json"),
         "readingQaLocal": str(pipeline / "sermon_zh_en_reading.qa.json"),
@@ -515,6 +633,60 @@ def read_first_json(*locations: str | None) -> dict[str, Any] | None:
         if payload is not None:
             return payload
     return None
+
+
+def artifact_read_locations(local: str | None, gcs: str | None) -> tuple[str, ...]:
+    """Use GCS as production authority; use local evidence only without GCS."""
+    if gcs:
+        return (gcs,)
+    return (local,) if local else ()
+
+
+def publish_generation_evidence(
+    locations: dict[str, str],
+    generation_report: dict[str, Any],
+    *,
+    gcs_writer: Callable[[str, str], None] = write_gcs_text,
+) -> None:
+    """Publish supporting evidence first and the generation report as the commit marker."""
+    for local_key, gcs_key in (
+        ("runStatusLocal", "runStatusGcs"),
+        ("readingQualityLocal", "readingQualityGcs"),
+        ("readingQaLocal", "readingQaGcs"),
+    ):
+        local = locations.get(local_key)
+        gcs = locations.get(gcs_key)
+        if not local or not gcs:
+            continue
+        payload = read_optional_json(local)
+        if payload is not None:
+            gcs_writer(gcs, json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True))
+    generation_gcs = locations.get("generationReportGcs")
+    if generation_gcs:
+        gcs_writer(
+            generation_gcs,
+            json.dumps(generation_report, ensure_ascii=False, indent=2, sort_keys=True),
+        )
+
+
+def read_supervisor_state(location: str) -> dict[str, Any]:
+    try:
+        text = live_source_monitor.read_state_text(location)
+    except FileNotFoundError:
+        return {}
+    except Exception as exc:
+        if location.startswith("gs://") and (
+            exc.__class__.__name__ in {"NotFound", "NoSuchKey"} or "404" in str(exc)
+        ):
+            return {}
+        raise
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError("Persisted live-source state is not valid JSON.") from exc
+    if not isinstance(payload, dict):
+        raise RuntimeError("Persisted live-source state must be a JSON object.")
+    return payload
 
 
 def read_artifact_json(
@@ -690,8 +862,41 @@ def public_quality_report(report: dict[str, Any] | None) -> dict[str, Any] | Non
     }
 
 
+def public_lease(payload: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not lease_active(payload):
+        return None
+    return {
+        "status": payload.get("status"),
+        "acquiredAt": payload.get("acquiredAt"),
+        "expiresAt": payload.get("expiresAt"),
+    }
+
+
+def lease_active(payload: dict[str, Any] | None) -> bool:
+    if not isinstance(payload, dict) or payload.get("status") != "active":
+        return False
+    try:
+        expires_at = datetime.fromisoformat(str(payload.get("expiresAt") or ""))
+    except ValueError:
+        return False
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    return expires_at > datetime.now(timezone.utc)
+
+
+def execution_lease_location(snapshot: dict[str, Any], stage: str) -> str:
+    locations = snapshot["locations"]
+    gcs = locations.get(f"{stage}LeaseGcs")
+    local = locations.get(f"{stage}LeaseLocal")
+    if gcs:
+        return str(gcs)
+    if local:
+        return str(local)
+    raise RuntimeError(f"No lease location is configured for {stage}.")
+
+
 def live_url_from_snapshot(snapshot: dict[str, Any]) -> str | None:
-    state = live_source_monitor.read_state(snapshot["stateFile"])
+    state = read_supervisor_state(snapshot["stateFile"])
     source = run_post_live_subtitle_generation.selected_source_from_state(state)
     return run_post_live_subtitle_generation.live_url_from_state(state, source)
 

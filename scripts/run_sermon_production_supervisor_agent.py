@@ -89,7 +89,8 @@ Rules:
    quality and reading-PDF QA report pass.
 8. After calling a mutating tool, inspect production state again before returning.
 9. Keep evidence concise and include exact status/artifact fields from tools.
-10. Return SupervisorDecision only.
+10. If a mutation tool reports already_running, do not retry it in the same run.
+11. Return SupervisorDecision only.
 """.strip()
 
 
@@ -149,6 +150,8 @@ def make_config(args: argparse.Namespace) -> sermon_production_supervisor.Superv
 async def run_agent(args: argparse.Namespace) -> dict[str, Any]:
     config = make_config(args)
     if args.approve_window:
+        if args.mode != "execute":
+            raise SystemExit("--approve-window requires --mode execute")
         missing = [
             name
             for name, value in (
@@ -202,15 +205,58 @@ async def run_agent(args: argparse.Namespace) -> dict[str, Any]:
         decision = final
     else:
         decision = {"status": "blocked", "action": "inspect_agent_output", "summary_zh": str(final)}
+    final_snapshot = sermon_production_supervisor.production_snapshot(config)
+    verified = verify_decision(decision, final_snapshot, args.mode)
     return {
         "schemaVersion": 1,
-        "status": decision.get("status"),
+        "status": verified["status"],
         "sunday": args.sunday,
         "mode": args.mode,
         "model": args.model,
-        "decision": decision,
+        "decision": verified,
+        "modelDecision": decision,
+        "finalSnapshot": final_snapshot,
         "approvalWritten": approval,
         "traceSensitiveDataIncluded": False,
+    }
+
+
+def verify_decision(
+    model_decision: dict[str, Any],
+    snapshot: dict[str, Any],
+    mode: str,
+) -> dict[str, Any]:
+    recommended = snapshot.get("recommendedAction") or {}
+    action = str(recommended.get("action") or "inspect_unrecognized_state")
+    human_required = bool(recommended.get("humanActionRequired"))
+    if action == "complete":
+        status = "complete"
+    elif human_required:
+        status = "blocked"
+    else:
+        status = "observed"
+    model_action = str(model_decision.get("action") or "")
+    model_summary = str(model_decision.get("summary_zh") or "").strip()
+    summary = (
+        model_summary
+        if model_action == action and model_summary
+        else f"确定性状态检查：{recommended.get('reason') or action}"
+    )
+    evidence = model_decision.get("evidence")
+    if not isinstance(evidence, list):
+        evidence = []
+    evidence = [str(item) for item in evidence[:20]]
+    evidence.append(f"recommendedAction={action}")
+    evidence.append(f"mode={mode}")
+    return {
+        "status": status,
+        "action": action,
+        "summary_zh": summary,
+        "human_action_required": human_required,
+        "evidence": evidence,
+        "modelDecisionAccepted": (
+            model_action == action and str(model_decision.get("status") or "") == status
+        ),
     }
 
 

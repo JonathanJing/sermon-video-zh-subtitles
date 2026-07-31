@@ -8,6 +8,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from urllib.parse import parse_qs, unquote, urlparse
 
+from .cloud_run_jobs import dispatch_cloud_run_job
 from .config import AppConfig
 from .live_playback import LivePlaybackStore, default_live_playback_gcs_prefix
 from .manifest import SundaySliceService
@@ -37,6 +38,7 @@ from .worker import build_generation_plan, parse_generation_request
 from scripts import build_post_live_timeline
 from scripts import live_source_monitor
 from scripts import run_post_live_subtitle_generation
+from scripts import sermon_production_supervisor
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -436,7 +438,11 @@ class ApiHandler(BaseHTTPRequestHandler):
         sunday = self.resolve_admin_sunday(sunday)
         payload = self.read_json_body()
         command = self.production_supervisor_command(payload, sunday)
-        mode = str(payload.get("mode") or payload.get("supervisorMode") or "shadow").strip()
+        mode = str(
+            payload.get("mode")
+            or payload.get("supervisorMode")
+            or self.config.supervisor_default_mode
+        ).strip()
         source = trigger_source(self.headers, payload)
         log_event(
             "sermon_production_supervisor_triggered",
@@ -448,6 +454,98 @@ class ApiHandler(BaseHTTPRequestHandler):
             inlineWorker=self.config.enable_inline_worker,
         )
         if not self.config.enable_inline_worker:
+            if self.supervisor_job_configured():
+                if source == "cloud-scheduler":
+                    try:
+                        source_state = self.production_supervisor_source_status(payload, sunday)
+                    except Exception as exc:
+                        log_event(
+                            "sermon_production_supervisor_source_check_failed",
+                            component="api",
+                            severity="ERROR",
+                            sunday=sunday,
+                            mode=mode,
+                            triggerSource=source,
+                            errorClass=exc.__class__.__name__,
+                        )
+                        self.write_json(
+                            {
+                                "status": "blocked",
+                                "mode": mode,
+                                "reason": "Persisted livestream state could not be read.",
+                                "errorClass": exc.__class__.__name__,
+                                "apiKeyMaterialIncluded": False,
+                                "secretResourceNamesIncluded": False,
+                            },
+                            status=503,
+                        )
+                        return
+                    if source_state["status"] != "ready":
+                        self.write_json(
+                            {
+                                **source_state,
+                                "mode": mode,
+                                "apiKeyMaterialIncluded": False,
+                                "secretResourceNamesIncluded": False,
+                            },
+                            status=202,
+                        )
+                        return
+                try:
+                    dispatched = self.dispatch_production_supervisor_job(command)
+                except Exception as exc:
+                    log_event(
+                        "sermon_production_supervisor_dispatch_failed",
+                        component="api",
+                        severity="ERROR",
+                        sunday=sunday,
+                        mode=mode,
+                        triggerSource=source,
+                        errorClass=exc.__class__.__name__,
+                    )
+                    self.write_json(
+                        {
+                            "status": "blocked",
+                            "mode": mode,
+                            "reason": "Cloud Run supervisor job dispatch failed.",
+                            "errorClass": exc.__class__.__name__,
+                            "apiKeyMaterialIncluded": False,
+                            "secretResourceNamesIncluded": False,
+                        },
+                        status=503,
+                    )
+                    return
+                log_event(
+                    "sermon_production_supervisor_dispatched",
+                    component="api",
+                    sunday=sunday,
+                    mode=mode,
+                    triggerSource=source,
+                    operationName=dispatched.get("operationName"),
+                )
+                self.write_json(
+                    {
+                        "status": "dispatched",
+                        "mode": mode,
+                        "job": dispatched,
+                        "apiKeyMaterialIncluded": False,
+                        "secretResourceNamesIncluded": False,
+                    },
+                    status=202,
+                )
+                return
+            if source == "cloud-scheduler":
+                self.write_json(
+                    {
+                        "status": "blocked",
+                        "mode": mode,
+                        "reason": "SERMON_SUPERVISOR_JOB_PROJECT, LOCATION, and NAME are required.",
+                        "apiKeyMaterialIncluded": False,
+                        "secretResourceNamesIncluded": False,
+                    },
+                    status=503,
+                )
+                return
             self.write_json(
                 {
                     "status": "planned",
@@ -462,10 +560,17 @@ class ApiHandler(BaseHTTPRequestHandler):
             return
         import subprocess
 
-        completed = subprocess.run(command, check=True, capture_output=True, text=True)
+        completed = subprocess.run(command, check=False, capture_output=True, text=True)
+        result_status = (
+            "completed"
+            if completed.returncode == 0
+            else "blocked"
+            if completed.returncode == 2
+            else "failed"
+        )
         self.write_json(
             {
-                "status": "completed",
+                "status": result_status,
                 "mode": mode,
                 "command": command,
                 "stdout": completed.stdout,
@@ -473,7 +578,53 @@ class ApiHandler(BaseHTTPRequestHandler):
                 "apiKeyMaterialIncluded": False,
                 "secretResourceNamesIncluded": "--api-key-secret" in command,
             },
-            status=201,
+            status=201 if completed.returncode == 0 else 202 if completed.returncode == 2 else 500,
+        )
+
+    def supervisor_job_configured(self) -> bool:
+        configured = (
+            self.config.supervisor_job_project,
+            self.config.supervisor_job_location,
+            self.config.supervisor_job_name,
+        )
+        return all(configured)
+
+    def production_supervisor_source_status(self, payload: dict, sunday: str) -> dict:
+        state_file = (
+            payload.get("stateFile")
+            or payload.get("state_file")
+            or self.config.live_source_monitor_state_uri
+            or str(Path(self.config.live_source_monitor_state_dir) / "backend-state.json")
+        )
+        state = sermon_production_supervisor.read_supervisor_state(str(state_file))
+        captured_sunday = state.get("lastSunday")
+        if captured_sunday and captured_sunday != sunday:
+            return {
+                "status": "waiting_for_matching_sunday",
+                "reason": f"captured state is for {captured_sunday}",
+            }
+        source = run_post_live_subtitle_generation.selected_source_from_state(state)
+        live_url = run_post_live_subtitle_generation.live_url_from_state(state, source)
+        if not live_url:
+            return {
+                "status": "waiting_for_source",
+                "reason": "No persisted livestream URL is available yet.",
+            }
+        return {
+            "status": "ready",
+            "liveSource": url_summary(live_url),
+        }
+
+    def dispatch_production_supervisor_job(self, command: list[str]) -> dict:
+        if not self.supervisor_job_configured():
+            raise RuntimeError("Cloud Run supervisor job is not configured")
+        return dispatch_cloud_run_job(
+            project=str(self.config.supervisor_job_project),
+            location=str(self.config.supervisor_job_location),
+            job=str(self.config.supervisor_job_name),
+            container_name=self.config.supervisor_job_container,
+            args=command[1:],
+            timeout_seconds=self.config.supervisor_job_timeout_seconds,
         )
 
     def production_supervisor_command(self, payload: dict, sunday: str) -> list[str]:
@@ -488,7 +639,11 @@ class ApiHandler(BaseHTTPRequestHandler):
             payload.get("out")
             or f"/tmp/sermon-post-live-subtitles/{sunday}/production-supervisor-report.json"
         )
-        mode = str(payload.get("mode") or payload.get("supervisorMode") or "shadow").strip()
+        mode = str(
+            payload.get("mode")
+            or payload.get("supervisorMode")
+            or self.config.supervisor_default_mode
+        ).strip()
         if mode not in {"shadow", "execute"}:
             raise ValueError("production supervisor mode must be shadow or execute")
         command = [

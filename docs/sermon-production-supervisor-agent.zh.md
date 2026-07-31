@@ -31,6 +31,15 @@ flowchart TD
     K -- 是 --> M[complete]
 ```
 
+Cloud Scheduler 不会把一个 HTTP target 的返回结果自动传给另一个 target。自动交接通过持久状态完成：
+
+1. discovery Scheduler 把 canonical 直播链接写入 `LIVE_SOURCE_MONITOR_STATE_URI`
+2. 独立的 Supervisor Scheduler 定时调用 production-supervisor endpoint
+3. endpoint 通过 Cloud Run `jobs:run` API 启动配置好的 Cloud Run Job
+4. Agent 从 GCS 读取直播链接以及后续 timeline、审批和 QA 证据
+
+因此 Scheduler 不需要保存或解析 discovery HTTP response。交接最大延迟等于 Supervisor Scheduler 的运行间隔；post-live 流程使用五到十分钟间隔即可。
+
 ## 代码入口
 
 - Agent runner：`scripts/run_sermon_production_supervisor_agent.py`
@@ -180,7 +189,19 @@ POST /api/admin/sundays/upcoming/production-supervisor
 }
 ```
 
-当 `ENABLE_INLINE_WORKER` 关闭时，API 只返回经过验证的 Agent command；实际长任务由 Cloud Run Job 执行。
+当 `ENABLE_INLINE_WORKER` 关闭且配置以下环境变量后，API 会异步启动 Cloud Run Job：
+
+```text
+SERMON_SUPERVISOR_JOB_PROJECT=ai-for-god
+SERMON_SUPERVISOR_JOB_LOCATION=us-west1
+SERMON_SUPERVISOR_JOB_NAME=sermon-production-supervisor
+SERMON_SUPERVISOR_JOB_TIMEOUT_SECONDS=14400
+SERMON_SUPERVISOR_MODE=shadow
+```
+
+`SERMON_SUPERVISOR_JOB_CONTAINER` 是可选项，只有 Job 使用多个 container 或需要指定具名 container override 时才配置。Cloud Run Web Service 的 service identity 需要在目标 Job 上具有 `roles/run.developer`（使用 overrides 执行 Job）；Job 自己的 service account 仍需分别具备读取 GCS 与 Secret Manager 的权限。Job container 应把 `python` 配置为 command；每次执行所需的 Agent runner 和受限参数由 API 提供。
+
+如果 Scheduler 调用 endpoint 时 Job 未配置，且 inline worker 关闭，endpoint 返回 HTTP 503，使缺失配置能够进入 Scheduler retry/告警，而不是返回一个不会被执行的 command。
 
 ## 完成标准
 
@@ -200,4 +221,8 @@ Agent 只能在以下证据同时成立时返回 `complete`：
 - OpenAI trace 设置 `trace_include_sensitive_data=False`。
 - Mutation tools 在 shadow mode 完全不暴露。
 - GCS、网络或认证读取失败会 fail closed。
+- 顶层直播 state 的 GCS 认证或网络错误不会再伪装成“没有直播链接”。
+- 配置 GCS 后，只有 GCS 证据可以建立生产状态；本地文件只是当前 execution 的 cache。
+- Timeline 和 PDF generation 使用带 generation precondition 的 GCS lease，避免 Scheduler 重试或重叠调用重复启动昂贵任务。
+- Agent 返回后会重新读取确定性 snapshot；模型输出本身不能建立 `complete`。
 - 原有 QA 门禁、缓存和可恢复状态不因 Agent 接入而改变。

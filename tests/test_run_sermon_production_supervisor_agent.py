@@ -22,6 +22,51 @@ class RunSermonProductionSupervisorAgentTest(unittest.TestCase):
         )
         self.assertIn("Never accept a start or end time", mod.SUPERVISOR_INSTRUCTIONS)
 
+    def test_false_model_complete_is_clamped_by_durable_state(self):
+        decision = mod.verify_decision(
+            {
+                "status": "complete",
+                "action": "complete",
+                "summary_zh": "完成",
+                "human_action_required": False,
+                "evidence": [],
+            },
+            {
+                "recommendedAction": {
+                    "action": "request_window_approval",
+                    "reason": "Human approval is missing.",
+                    "humanActionRequired": True,
+                }
+            },
+            "execute",
+        )
+
+        self.assertEqual(decision["status"], "blocked")
+        self.assertEqual(decision["action"], "request_window_approval")
+        self.assertFalse(decision["modelDecisionAccepted"])
+
+    def test_durable_complete_overrides_model_wording(self):
+        decision = mod.verify_decision(
+            {
+                "status": "blocked",
+                "action": "inspect_quality_evidence",
+                "summary_zh": "仍需审核",
+                "human_action_required": True,
+                "evidence": [],
+            },
+            {
+                "recommendedAction": {
+                    "action": "complete",
+                    "reason": "All required reports passed.",
+                    "humanActionRequired": False,
+                }
+            },
+            "execute",
+        )
+
+        self.assertEqual(decision["status"], "complete")
+        self.assertEqual(decision["action"], "complete")
+
 
 if __name__ == "__main__":
     unittest.main()
