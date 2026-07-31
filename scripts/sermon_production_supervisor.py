@@ -64,25 +64,41 @@ def production_snapshot(config: SupervisorConfig) -> dict[str, Any]:
     live_url = run_post_live_subtitle_generation.live_url_from_state(state, source)
     slug = run_post_live_subtitle_generation.slug_for(_slug_args(), live_url) if live_url else None
     locations = artifact_locations(config, slug) if slug else {}
+    access_issues: list[dict[str, str]] = []
 
-    timeline_report = read_first_json(
+    timeline_report = read_artifact_json(
+        "timelineReport",
+        access_issues,
         locations.get("timelineReportLocal"),
         locations.get("timelineReportGcs"),
     )
-    approval = read_first_json(
+    approval = read_artifact_json(
+        "windowApproval",
+        access_issues,
         locations.get("windowApprovalLocal"),
         locations.get("windowApprovalGcs"),
     )
-    generation_report = read_first_json(
+    generation_report = read_artifact_json(
+        "generationReport",
+        access_issues,
         locations.get("generationReportLocal"),
         locations.get("generationReportGcs"),
     )
-    run_status = read_first_json(
+    run_status = read_artifact_json(
+        "runStatus",
+        access_issues,
         locations.get("runStatusLocal"),
         locations.get("runStatusGcs"),
     )
-    reading_qa = read_first_json(locations.get("readingQaLocal"), locations.get("readingQaGcs"))
-    reading_quality = read_first_json(
+    reading_qa = read_artifact_json(
+        "readingPdfQa",
+        access_issues,
+        locations.get("readingQaLocal"),
+        locations.get("readingQaGcs"),
+    )
+    reading_quality = read_artifact_json(
+        "readingEditionQuality",
+        access_issues,
         locations.get("readingQualityLocal"),
         locations.get("readingQualityGcs"),
     )
@@ -102,6 +118,7 @@ def production_snapshot(config: SupervisorConfig) -> dict[str, Any]:
         run_status=run_status,
         reading_qa=reading_qa,
         reading_quality=reading_quality,
+        access_issues=access_issues,
     )
     return {
         "schemaVersion": 1,
@@ -120,6 +137,7 @@ def production_snapshot(config: SupervisorConfig) -> dict[str, Any]:
             "readingPdf": public_quality_report(reading_qa),
         },
         "recommendedAction": recommended,
+        "accessIssues": access_issues,
         "locations": locations,
         "apiKeyMaterialIncluded": False,
         "secretResourceNamesIncluded": False,
@@ -137,11 +155,19 @@ def recommend_action(
     run_status: dict[str, Any] | None,
     reading_qa: dict[str, Any] | None,
     reading_quality: dict[str, Any] | None,
+    access_issues: list[dict[str, str]] | None = None,
 ) -> dict[str, Any]:
     if not live_url:
         return action("wait_for_source", "No persisted livestream URL is available.", human=True)
     if state.get("lastSunday") and not isinstance(state.get("lastSunday"), str):
         return action("inspect_state", "Persisted live-source state has an invalid Sunday value.", human=True)
+    if access_issues:
+        labels = ", ".join(sorted({item["artifact"] for item in access_issues}))
+        return action(
+            "restore_artifact_access",
+            f"Artifact evidence could not be read for: {labels}.",
+            human=True,
+        )
 
     generation_status = str((generation_report or {}).get("status") or "")
     if generation_status == "completed":
@@ -318,6 +344,12 @@ def run_reading_pdf_generation(
     command = build_generation_command(config, snapshot, approval or {})
     completed = runner(command, check=False, capture_output=True, text=True)
     report = read_first_json(snapshot["locations"].get("generationReportLocal"))
+    generation_report_gcs = snapshot["locations"].get("generationReportGcs")
+    if report and generation_report_gcs:
+        write_gcs_text(
+            generation_report_gcs,
+            json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True),
+        )
     return command_result(command, completed, report)
 
 
@@ -472,6 +504,31 @@ def read_first_json(*locations: str | None) -> dict[str, Any] | None:
         if not location:
             continue
         payload = read_optional_json(location)
+        if payload is not None:
+            return payload
+    return None
+
+
+def read_artifact_json(
+    artifact: str,
+    access_issues: list[dict[str, str]],
+    *locations: str | None,
+) -> dict[str, Any] | None:
+    for location in locations:
+        if not location:
+            continue
+        try:
+            payload = read_optional_json(location)
+        except Exception as exc:
+            access_issues.append(
+                {
+                    "artifact": artifact,
+                    "location": location,
+                    "errorClass": exc.__class__.__name__,
+                    "message": str(exc)[:300],
+                }
+            )
+            continue
         if payload is not None:
             return payload
     return None

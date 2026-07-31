@@ -74,21 +74,11 @@ class SermonProductionSupervisorTest(unittest.TestCase):
         self.assertTrue(snapshot["recommendedAction"]["humanActionRequired"])
 
     def test_approved_window_is_bound_to_sunday_and_source(self):
-        writes = {}
-
-        def writer(uri, text):
-            writes[uri] = json.loads(text)
-
         with tempfile.TemporaryDirectory() as tempdir:
             root = Path(tempdir)
             state = root / "state.json"
             write_state(state)
-            config = mod.SupervisorConfig(
-                sunday="2026-08-02",
-                state_file=str(state),
-                work_root=root,
-                gcs_bucket="test-bucket",
-            )
+            config = self.make_config(root, state)
             initial = mod.production_snapshot(config)
             write_json(
                 Path(initial["locations"]["timelineReportLocal"]),
@@ -100,22 +90,34 @@ class SermonProductionSupervisorTest(unittest.TestCase):
                 end_time="00:58:45.250",
                 approved_by="operator@example.test",
                 note="Verified against completed livestream.",
-                gcs_writer=writer,
             )
-            snapshot = mod.production_snapshot(
-                mod.SupervisorConfig(
-                    sunday=config.sunday,
-                    state_file=config.state_file,
-                    work_root=config.work_root,
-                    gcs_bucket=None,
-                )
-            )
+            snapshot = mod.production_snapshot(config)
 
         self.assertTrue(approval["humanApproval"])
         self.assertEqual(approval["startTime"], "00:20:30")
         self.assertEqual(approval["endTime"], "00:58:45.250")
         self.assertEqual(snapshot["recommendedAction"]["action"], "run_reading_pdf_generation")
-        self.assertEqual(len(writes), 1)
+
+    def test_unavailable_gcs_is_an_access_issue_not_missing_evidence(self):
+        original = mod.read_gcs_text
+        try:
+            mod.read_gcs_text = lambda _uri: (_ for _ in ()).throw(ConnectionError("offline"))
+            with tempfile.TemporaryDirectory() as tempdir:
+                root = Path(tempdir)
+                state = root / "state.json"
+                write_state(state)
+                config = mod.SupervisorConfig(
+                    sunday="2026-08-02",
+                    state_file=str(state),
+                    work_root=root,
+                    gcs_bucket="test-bucket",
+                )
+                snapshot = mod.production_snapshot(config)
+        finally:
+            mod.read_gcs_text = original
+
+        self.assertTrue(snapshot["accessIssues"])
+        self.assertEqual(snapshot["recommendedAction"]["action"], "restore_artifact_access")
 
     def test_generation_command_uses_approval_not_model_arguments(self):
         with tempfile.TemporaryDirectory() as tempdir:
