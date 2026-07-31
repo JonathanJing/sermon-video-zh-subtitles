@@ -8,9 +8,10 @@ import asyncio
 import json
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -32,6 +33,7 @@ DEFAULT_YOUTUBE_API_SECRET = (
 DEFAULT_SENDGRID_SECRET = "projects/ai-for-god/secrets/sendgrid-api-key/versions/latest"
 DEFAULT_RECIPIENTS_SECRET = "projects/ai-for-god/secrets/recipient-emails/versions/latest"
 DEFAULT_SENDER_SECRET = "projects/ai-for-god/secrets/sender-email/versions/latest"
+LOCAL_TIMEZONE = "America/Los_Angeles"
 
 
 def parse_args() -> argparse.Namespace:
@@ -65,7 +67,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--skip-source-refresh",
         action="store_true",
-        help="Skip the local sat-auto source refresh and only consume existing GCS state.",
+        help="Skip local source refresh and only consume existing GCS state.",
     )
     return parser.parse_args()
 
@@ -120,9 +122,20 @@ def refresh_source_state(args: argparse.Namespace) -> dict[str, Any]:
         / sunday
         / "local-refresh.json"
     )
+    previous_state = live_source_monitor.read_state(args.state_file)
+    if persisted_live_url(previous_state, sunday):
+        return {
+            "status": "existing_source_preserved",
+            "sunday": sunday,
+            "selectedSource": previous_state.get("lastSelectedSource"),
+            "operatorAlert": False,
+            "report": None,
+            "completedAt": datetime.now(timezone.utc).isoformat(),
+        }
+    service = discovery_service_for_run(sunday)
     monitor_args = argparse.Namespace(
         sunday=sunday,
-        service="sat-auto",
+        service=service,
         expected_title=None,
         manual_url=[],
         mariners_online_url=live_source_monitor.DEFAULT_MARINERS_ONLINE_URL,
@@ -136,7 +149,7 @@ def refresh_source_state(args: argparse.Namespace) -> dict[str, Any]:
         notify_recipients_secret=args.notify_recipients_secret,
         notify_sender_secret=args.notify_sender_secret,
         youtube_api_key_secret=args.youtube_api_key_secret,
-        timezone="America/Los_Angeles",
+        timezone=LOCAL_TIMEZONE,
         now=None,
         min_confidence=0.70,
         operator_alert_time="17:50",
@@ -145,7 +158,6 @@ def refresh_source_state(args: argparse.Namespace) -> dict[str, Any]:
         admin_token=None,
         internal_task_token=None,
     )
-    previous_state = live_source_monitor.read_state(monitor_args.state_file)
     report = live_source_monitor.run_monitor(monitor_args)
     notification = live_source_monitor.build_notification(report, previous_state)
     if notification["shouldNotify"] and monitor_args.notify_sendgrid_secret:
@@ -170,11 +182,34 @@ def refresh_source_state(args: argparse.Namespace) -> dict[str, Any]:
     return {
         "status": report.get("status"),
         "sunday": sunday,
+        "service": service,
         "selectedSource": report.get("selectedSource"),
         "operatorAlert": report.get("operatorAlert"),
         "report": str(out),
         "completedAt": datetime.now(timezone.utc).isoformat(),
     }
+
+
+def persisted_live_url(state: dict[str, Any], sunday: str) -> str | None:
+    if state.get("lastSunday") != sunday:
+        return None
+    generation_request = state.get("lastGenerationRequest")
+    if isinstance(generation_request, dict) and generation_request.get("liveUrl"):
+        return str(generation_request["liveUrl"])
+    selected_source = state.get("lastSelectedSource")
+    if isinstance(selected_source, dict) and selected_source.get("url"):
+        return str(selected_source["url"])
+    return None
+
+
+def discovery_service_for_run(
+    sunday: str,
+    *,
+    local_date: date | None = None,
+) -> str:
+    run_date = local_date or datetime.now(ZoneInfo(LOCAL_TIMEZONE)).date()
+    sunday_date = date.fromisoformat(sunday)
+    return "auto" if run_date >= sunday_date else "sat-auto"
 
 
 def main() -> int:

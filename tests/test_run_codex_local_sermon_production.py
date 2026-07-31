@@ -4,6 +4,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from datetime import date
 from pathlib import Path
 
 from scripts import run_codex_local_sermon_production as mod
@@ -88,28 +89,36 @@ class RunCodexLocalSermonProductionTest(unittest.TestCase):
 
     def test_local_source_refresh_writes_same_gcs_contract(self):
         writes = []
+        monitor_services = []
         original_run_monitor = mod.live_source_monitor.run_monitor
         original_read_state = mod.live_source_monitor.read_state
         original_write_state = mod.live_source_monitor.write_state
         original_build_notification = mod.live_source_monitor.build_notification
+        original_discovery_service = mod.discovery_service_for_run
         try:
             mod.live_source_monitor.read_state = lambda _path: {}
-            mod.live_source_monitor.run_monitor = lambda _args: {
-                "schemaVersion": 1,
-                "status": "source_detected",
-                "sunday": "2026-08-02",
-                "selectedSource": {
-                    "kind": "youtube-streams",
-                    "service": "sat530",
-                    "state": "upcoming",
-                    "url": "https://www.youtube.com/watch?v=agentTest123",
-                },
-                "generationRequest": {
+            mod.discovery_service_for_run = lambda _sunday: "sat-auto"
+
+            def run_monitor(monitor_args):
+                monitor_services.append(monitor_args.service)
+                return {
+                    "schemaVersion": 1,
+                    "status": "source_detected",
                     "sunday": "2026-08-02",
-                    "liveUrl": "https://www.youtube.com/watch?v=agentTest123",
-                },
-                "operatorAlert": False,
-            }
+                    "selectedSource": {
+                        "kind": "youtube-streams",
+                        "service": "sat530",
+                        "state": "upcoming",
+                        "url": "https://www.youtube.com/watch?v=agentTest123",
+                    },
+                    "generationRequest": {
+                        "sunday": "2026-08-02",
+                        "liveUrl": "https://www.youtube.com/watch?v=agentTest123",
+                    },
+                    "operatorAlert": False,
+                }
+
+            mod.live_source_monitor.run_monitor = run_monitor
             mod.live_source_monitor.build_notification = lambda _report, _previous: {
                 "shouldNotify": False
             }
@@ -147,10 +156,65 @@ class RunCodexLocalSermonProductionTest(unittest.TestCase):
             mod.live_source_monitor.read_state = original_read_state
             mod.live_source_monitor.write_state = original_write_state
             mod.live_source_monitor.build_notification = original_build_notification
+            mod.discovery_service_for_run = original_discovery_service
 
         self.assertEqual(result["status"], "source_detected")
+        self.assertEqual(monitor_services, ["sat-auto"])
         self.assertEqual(writes[0][0], "gs://bucket/state.json")
         self.assertEqual(saved["generationRequest"]["sunday"], "2026-08-02")
+
+    def test_discovery_service_switches_to_sunday_auto_on_run_day(self):
+        self.assertEqual(
+            mod.discovery_service_for_run(
+                "2026-08-02",
+                local_date=date(2026, 8, 1),
+            ),
+            "sat-auto",
+        )
+        self.assertEqual(
+            mod.discovery_service_for_run(
+                "2026-08-02",
+                local_date=date(2026, 8, 2),
+            ),
+            "auto",
+        )
+
+    def test_existing_same_sunday_source_is_preserved_without_discovery(self):
+        original_read_state = mod.live_source_monitor.read_state
+        original_run_monitor = mod.live_source_monitor.run_monitor
+        try:
+            mod.live_source_monitor.read_state = lambda _path: {
+                "lastSunday": "2026-08-02",
+                "lastSelectedSource": {
+                    "service": "sat530",
+                    "url": "https://www.youtube.com/watch?v=agentTest123",
+                },
+                "lastGenerationRequest": {
+                    "sunday": "2026-08-02",
+                    "liveUrl": "https://www.youtube.com/watch?v=agentTest123",
+                },
+            }
+
+            def unexpected_monitor(_args):
+                raise AssertionError("source discovery should not run")
+
+            mod.live_source_monitor.run_monitor = unexpected_monitor
+            args = argparse.Namespace(
+                sunday="2026-08-02",
+                state_file="gs://bucket/state.json",
+                youtube_api_key_secret=mod.DEFAULT_YOUTUBE_API_SECRET,
+                notify_sendgrid_secret=None,
+                notify_recipients_secret=None,
+                notify_sender_secret=None,
+            )
+
+            result = mod.refresh_source_state(args)
+        finally:
+            mod.live_source_monitor.read_state = original_read_state
+            mod.live_source_monitor.run_monitor = original_run_monitor
+
+        self.assertEqual(result["status"], "existing_source_preserved")
+        self.assertEqual(result["selectedSource"]["service"], "sat530")
 
 
 if __name__ == "__main__":

@@ -36,6 +36,12 @@
 5. 直播进入 `was_live/post_live` 后，本地 `yt-dlp` 下载音频并生成多阶段 timeline。
 6. timeline 和建议窗口上传 GCS，流程停止在 `requires_operator_review`。
 
+## 周日恢复
+
+- 如果同一 Sunday 已经保存了周六直播链接，本地任务直接复用，不再运行 discovery，也不会覆盖该 source。
+- 如果到周日仍没有已保存 source，本地 discovery 改用 `auto`，按 8:30、10:00 的顺序查找 Sunday service。
+- 若设置了 `SERMON_YOUTUBE_COOKIES_FILE`，timeline 与人工批准后的 reading-PDF generation 会使用同一个本地 cookies 文件；路径只进入子进程参数并在 supervisor report 中脱敏。
+
 ## 人工确认
 
 Operator 必须独立观看完整回放并确认绝对时间：

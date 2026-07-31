@@ -555,6 +555,8 @@ def build_generation_command(
     ]
     if config.gcs_bucket:
         command.extend(["--gcs-bucket", config.gcs_bucket, "--gcs-prefix", config.gcs_prefix])
+    if config.youtube_cookies_file:
+        command.extend(["--youtube-cookies", str(config.youtube_cookies_file)])
     append_secret_flag(command, "--api-key-secret", config.api_key_secret)
     return command
 
