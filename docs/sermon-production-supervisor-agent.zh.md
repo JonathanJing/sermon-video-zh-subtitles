@@ -4,8 +4,9 @@
 
 当前 post-live 阅读版 PDF 流程已经由一个单一的 OpenAI Agents SDK Agent 负责跨阶段监管：
 
-- Cloud Scheduler 仍负责准时唤醒
-- 现有 Python 脚本和 Cloud Run Job 仍负责确定性执行
+- Cloud Scheduler 只负责轻量直播找源
+- Codex 本地 cron 负责唤醒生产 Supervisor
+- 现有 Python 脚本在本地负责确定性执行
 - GCS state、run-status 和 QA JSON 仍是事实来源
 - `Sermon Production Supervisor` 负责读取状态、选择下一步和调用受限工具
 - operator 仍然必须人工确认证道开始和结束时间
@@ -16,29 +17,30 @@ Agent 不直接下载、裁剪、转录、翻译或渲染 PDF。它只能调用�
 
 ```mermaid
 flowchart TD
-    A[Cloud Scheduler] --> B[production-supervisor endpoint]
-    B --> C[Cloud Run Job: Supervisor Agent]
-    C --> D[读取 backend-state / timeline / approval / run-status / QA]
-    D --> E{recommendedAction}
-    E -- run_timeline_probe --> F[确定性 timeline job]
-    F --> G[requires_operator_review]
-    G --> H[Operator 独立确认绝对 start/end]
-    H --> I[写 operator-window-approval.json]
-    I --> C
-    E -- run_reading_pdf_generation --> J[确定性 reading-PDF pipeline]
-    J --> K{阅读质量与 PDF QA 都 pass?}
-    K -- 否 --> L[blocked / human review]
-    K -- 是 --> M[complete]
+    A[Cloud Scheduler 找源] --> B[GCS backend-state]
+    C[Codex 本地 cron] --> D[本地 Supervisor Agent]
+    B --> D
+    D --> E[读取 backend-state / timeline / approval / run-status / QA]
+    E --> F{recommendedAction}
+    F -- run_timeline_probe --> G[本地下载与 timeline job]
+    G --> H[requires_operator_review]
+    H --> I[Operator 独立确认绝对 start/end]
+    I --> J[写 operator-window-approval.json]
+    J --> D
+    F -- run_reading_pdf_generation --> K[本地 reading-PDF pipeline]
+    K --> L{阅读质量与 PDF QA 都 pass?}
+    L -- 否 --> M[blocked / human review]
+    L -- 是 --> N[complete]
 ```
 
 Cloud Scheduler 不会把一个 HTTP target 的返回结果自动传给另一个 target。自动交接通过持久状态完成：
 
 1. discovery Scheduler 把 canonical 直播链接写入 `LIVE_SOURCE_MONITOR_STATE_URI`
-2. 独立的 Supervisor Scheduler 定时调用 production-supervisor endpoint
-3. endpoint 通过 Cloud Run `jobs:run` API 启动配置好的 Cloud Run Job
-4. Agent 从 GCS 读取直播链接以及后续 timeline、审批和 QA 证据
+2. Codex 本地 cron 定时运行 `run_codex_local_sermon_production.py`
+3. 本地 Supervisor Agent 从 GCS 读取直播链接以及后续 timeline、审批和 QA 证据
+4. 本地确定性脚本完成下载、timeline、转写、阅读编辑、PDF 和 GCS 上传
 
-因此 Scheduler 不需要保存或解析 discovery HTTP response。交接最大延迟等于 Supervisor Scheduler 的运行间隔；post-live 流程使用五到十分钟间隔即可。
+因此 Scheduler 不需要保存或解析 discovery HTTP response。GCS state 是云端找源与本地生产之间唯一的交接契约。
 
 ## 代码入口
 
@@ -92,6 +94,21 @@ Execute 模式另外暴露两个受限工具：
 - `run_approved_reading_pdf_generation`
 
 这两个工具内部仍会验证当前状态。Agent 不能通过 prompt 强迫工具跳过状态门禁。
+
+本地生产入口会自动选择当前或下一个 Sunday，并把工作目录保存在仓库忽略的 `artifacts/` 下：
+
+```bash
+.venv/bin/python scripts/run_codex_local_sermon_production.py --mode execute
+```
+
+公开 YouTube 回放默认不使用 cookies。只有出现下载授权问题时，operator 才应显式提供授权导出的 Netscape `cookies.txt`：
+
+```bash
+SERMON_YOUTUBE_COOKIES_FILE=/absolute/path/youtube.cookies.txt \
+  .venv/bin/python scripts/run_codex_local_sermon_production.py --mode execute
+```
+
+脚本不会把 cookie 内容或本地 cookie 路径写入公开报告。
 
 生产示例：
 
@@ -155,7 +172,21 @@ operator 独立观看完整录像后，使用同一个 runner 写审批：
 
 `accessIssues` 与 “artifact missing” 分开记录。网络、凭据或 IAM 错误不会被误判为“尚未生成”。
 
-## Scheduler / API 接入
+## Codex 本地定时接入
+
+生产定时任务使用 Codex 项目 cron，工作目录固定为本仓库。每次运行只推进当前状态允许的一步：
+
+- 直播未结束：安全退出，等待下一次运行
+- 可以下载：取得 GCS lease 后运行 timeline
+- timeline 待确认：停止并通知 operator
+- 已存在有效人工审批：运行 reading-PDF pipeline
+- QA 通过：上传 GCS 并标记完成
+
+Cloud Run Job 和 post-live Cloud Scheduler 在本地生产验证后暂停，保留短期回滚，不再作为主执行路径。
+
+## 旧 Cloud Scheduler / API 接入
+
+下面的 Cloud Run Supervisor 方式保留为回滚参考，不是当前推荐的主生产路径。
 
 Scheduler 配置脚本支持 `production-supervisor`：
 

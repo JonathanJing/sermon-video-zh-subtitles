@@ -1,6 +1,8 @@
 import unittest
+from pathlib import Path
 
 from scripts import run_sermon_production_supervisor_agent as mod
+from scripts import sermon_production_supervisor
 
 
 class RunSermonProductionSupervisorAgentTest(unittest.TestCase):
@@ -21,6 +23,23 @@ class RunSermonProductionSupervisorAgentTest(unittest.TestCase):
             ],
         )
         self.assertIn("Never accept a start or end time", mod.SUPERVISOR_INSTRUCTIONS)
+        self.assertIn("more than once", mod.SUPERVISOR_INSTRUCTIONS)
+
+    def test_runtime_allows_each_mutation_stage_only_once(self):
+        runtime = mod.SupervisorRuntime(
+            config=sermon_production_supervisor.SupervisorConfig(
+                sunday="2026-08-02",
+                state_file="state.json",
+                work_root=Path("artifacts"),
+                gcs_bucket=None,
+            ),
+            execute=True,
+        )
+
+        self.assertTrue(mod.claim_stage_attempt(runtime, "timeline"))
+        self.assertFalse(mod.claim_stage_attempt(runtime, "timeline"))
+        self.assertTrue(mod.claim_stage_attempt(runtime, "generation"))
+        self.assertFalse(mod.claim_stage_attempt(runtime, "generation"))
 
     def test_false_model_complete_is_clamped_by_durable_state(self):
         decision = mod.verify_decision(

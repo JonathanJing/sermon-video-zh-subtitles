@@ -9,7 +9,7 @@
   </a>
 </p>
 
-This repository's production path is supervised by a single `Sermon Production Supervisor` Agent. Cloud Scheduler wakes the workflow, existing scripts remain the deterministic execution layer, and the agent reads durable state and advances the process safely. The workflow pauses for human sermon-boundary confirmation and ends with a reviewed Chinese-English reading PDF:
+This repository's production path is supervised by a single `Sermon Production Supervisor` Agent. GCP is limited to lightweight discovery, durable GCS state, and web delivery; a local Codex automation performs download, timeline analysis, transcription, reading editing, and PDF production. Existing scripts remain the deterministic execution layer, and the agent reads durable state and advances the process safely. The workflow pauses for human sermon-boundary confirmation and ends with a reviewed Chinese-English reading PDF:
 
 1. Cloud Scheduler polls public Mariners / YouTube sources during configured service windows
 2. the canonical YouTube watch URL is saved into resumable shared state
@@ -26,6 +26,7 @@ The production deliverable is currently the reading PDF. Default `reading` mode 
 Agent architecture, shadow/execute modes, durable human approval, and Scheduler integration:
 
 - [Sermon Reading-PDF Production Supervisor Agent](docs/sermon-production-supervisor-agent.md)
+- [Codex local weekend production runbook](docs/codex-local-production-runbook.zh.md)
 - [证道阅读版生产 Supervisor Agent](docs/sermon-production-supervisor-agent.zh.md)
 
 ## One-Page Workflow
