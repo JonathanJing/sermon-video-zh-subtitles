@@ -107,6 +107,7 @@ def production_snapshot(config: SupervisorConfig) -> dict[str, Any]:
         approval,
         sunday=config.sunday,
         live_url=live_url,
+        timeline_report=timeline_report,
     )
     recommended = recommend_action(
         live_url=live_url,
@@ -292,10 +293,10 @@ def approve_window(
         "humanApproval": True,
     }
     local_path = Path(locations["windowApprovalLocal"])
-    write_local_json(local_path, payload)
     gcs_uri = locations.get("windowApprovalGcs")
     if gcs_uri:
         gcs_writer(gcs_uri, json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True))
+    write_local_json(local_path, payload)
     return payload
 
 
@@ -338,6 +339,10 @@ def run_reading_pdf_generation(
         approval,
         sunday=config.sunday,
         live_url=live_url_from_snapshot(snapshot),
+        timeline_report=read_first_json(
+            snapshot["locations"].get("timelineReportLocal"),
+            snapshot["locations"].get("timelineReportGcs"),
+        ),
     )
     if not valid:
         return {"status": "blocked", "reason": reason or "operator approval is invalid"}
@@ -457,6 +462,7 @@ def validate_window_approval(
     *,
     sunday: str,
     live_url: str | None,
+    timeline_report: dict[str, Any] | None = None,
 ) -> tuple[bool, str | None]:
     if not isinstance(approval, dict):
         return False, "No operator window approval is available."
@@ -475,6 +481,8 @@ def validate_window_approval(
         return False, "Window approval end time is not later than its start time."
     if not str(approval.get("approvedBy") or "").strip():
         return False, "Window approval does not identify the human approver."
+    if timeline_report is not None and approval.get("timelineReportSha256") != json_digest(timeline_report):
+        return False, "Window approval does not match the current timeline report."
     return True, None
 
 

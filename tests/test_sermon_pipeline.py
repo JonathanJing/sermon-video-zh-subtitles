@@ -234,6 +234,20 @@ class SermonPipelineTest(unittest.TestCase):
         self.assertEqual(segments[-1]["end"], 60.0)
         self.assertTrue(all(item["timingQuality"] == "synthetic_not_for_subtitles" for item in segments))
 
+    def test_reading_segment_target_supports_compact_bilingual_pdf_blocks(self):
+        text = " ".join(
+            f"Sentence {index} carries a complete sermon thought for the reading edition."
+            for index in range(12)
+        )
+
+        segments = mod.reference_chunks_to_reading_segments(
+            [{"id": 0, "start": 0.0, "end": 120.0, "text": text}],
+            target_chars=420,
+        )
+
+        self.assertGreaterEqual(len(segments), 3)
+        self.assertTrue(all(len(item["text"]) <= 420 for item in segments))
+
 
 if __name__ == "__main__":
     unittest.main()

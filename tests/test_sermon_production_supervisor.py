@@ -169,6 +169,39 @@ class SermonProductionSupervisorTest(unittest.TestCase):
         self.assertEqual(result["status"], "blocked")
         self.assertEqual(calls, [])
 
+    def test_replacing_timeline_report_invalidates_old_approval(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            state = root / "state.json"
+            write_state(state)
+            config = self.make_config(root, state)
+            initial = mod.production_snapshot(config)
+            timeline_path = Path(initial["locations"]["timelineReportLocal"])
+            write_json(
+                timeline_path,
+                {
+                    "status": "requires_operator_review",
+                    "suggestedWindow": {"startTimecode": "00:20:30", "endTimecode": "00:58:45"},
+                },
+            )
+            mod.approve_window(
+                config,
+                start_time="00:21:10",
+                end_time="00:57:36",
+                approved_by="Jony",
+            )
+            write_json(
+                timeline_path,
+                {
+                    "status": "requires_operator_review",
+                    "suggestedWindow": {"startTimecode": "00:22:00", "endTimecode": "00:59:00"},
+                },
+            )
+            snapshot = mod.production_snapshot(config)
+
+        self.assertEqual(snapshot["recommendedAction"]["action"], "request_window_approval")
+        self.assertIn("current timeline report", snapshot["windowApproval"]["reason"])
+
     def test_completed_generation_requires_both_quality_reports(self):
         with tempfile.TemporaryDirectory() as tempdir:
             root = Path(tempdir)

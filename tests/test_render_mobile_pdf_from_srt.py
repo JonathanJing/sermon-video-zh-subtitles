@@ -154,6 +154,14 @@ class RenderMobilePdfFromSrtTest(unittest.TestCase):
 
         self.assertEqual(metadata, "2026-07-26")
 
+    def test_running_header_metadata_stays_compact(self):
+        metadata = mod.format_running_header_metadata(
+            sermon_date="2026-07-26",
+            speaker="Kenton Beshore",
+        )
+
+        self.assertEqual(metadata, "2026-07-26 · Kenton Beshore")
+
     def test_wrap_text_prevents_chinese_punctuation_at_line_start(self):
         font_name = mod.register_cjk_font(None)
 

@@ -227,6 +227,9 @@ class ApiHandler(BaseHTTPRequestHandler):
             if parts[:3] == ["api", "admin", "sundays"] and len(parts) == 5 and parts[4] == "post-live-subtitles":
                 self.handle_post_live_subtitles(parts[3])
                 return
+            if parts[:3] == ["api", "admin", "sundays"] and len(parts) == 5 and parts[4] == "production-supervisor":
+                self.handle_production_supervisor(parts[3])
+                return
             if parts[:3] == ["api", "admin", "sundays"] and len(parts) == 5 and parts[4] == "generate":
                 if not self.authorized():
                     self.write_json({"error": "unauthorized"}, status=401)
@@ -425,6 +428,106 @@ class ApiHandler(BaseHTTPRequestHandler):
             },
             status=201,
         )
+
+    def handle_production_supervisor(self, sunday: str) -> None:
+        if not self.authorized():
+            self.write_json({"error": "unauthorized"}, status=401)
+            return
+        sunday = self.resolve_admin_sunday(sunday)
+        payload = self.read_json_body()
+        command = self.production_supervisor_command(payload, sunday)
+        mode = str(payload.get("mode") or payload.get("supervisorMode") or "shadow").strip()
+        source = trigger_source(self.headers, payload)
+        log_event(
+            "sermon_production_supervisor_triggered",
+            component="api",
+            sunday=sunday,
+            mode=mode,
+            triggerSource=source,
+            schedulerJob=scheduler_job(self.headers),
+            inlineWorker=self.config.enable_inline_worker,
+        )
+        if not self.config.enable_inline_worker:
+            self.write_json(
+                {
+                    "status": "planned",
+                    "mode": mode,
+                    "message": "Inline worker disabled; run the returned command from a Cloud Run Job.",
+                    "command": command,
+                    "apiKeyMaterialIncluded": False,
+                    "secretResourceNamesIncluded": "--api-key-secret" in command,
+                },
+                status=202,
+            )
+            return
+        import subprocess
+
+        completed = subprocess.run(command, check=True, capture_output=True, text=True)
+        self.write_json(
+            {
+                "status": "completed",
+                "mode": mode,
+                "command": command,
+                "stdout": completed.stdout,
+                "stderr": completed.stderr,
+                "apiKeyMaterialIncluded": False,
+                "secretResourceNamesIncluded": "--api-key-secret" in command,
+            },
+            status=201,
+        )
+
+    def production_supervisor_command(self, payload: dict, sunday: str) -> list[str]:
+        state_file = (
+            payload.get("stateFile")
+            or payload.get("state_file")
+            or self.config.live_source_monitor_state_uri
+            or str(Path(self.config.live_source_monitor_state_dir) / "backend-state.json")
+        )
+        work_root = payload.get("workRoot") or payload.get("work_root") or "/tmp/sermon-post-live-subtitles"
+        out_path = (
+            payload.get("out")
+            or f"/tmp/sermon-post-live-subtitles/{sunday}/production-supervisor-report.json"
+        )
+        mode = str(payload.get("mode") or payload.get("supervisorMode") or "shadow").strip()
+        if mode not in {"shadow", "execute"}:
+            raise ValueError("production supervisor mode must be shadow or execute")
+        command = [
+            sys.executable,
+            str(REPO_ROOT / "scripts" / "run_sermon_production_supervisor_agent.py"),
+            "--sunday",
+            sunday,
+            "--state-file",
+            str(state_file),
+            "--work-root",
+            str(work_root),
+            "--out",
+            str(out_path),
+            "--mode",
+            mode,
+            "--model",
+            str(payload.get("model") or payload.get("agentModel") or "gpt-5.6"),
+            "--max-turns",
+            str(payload.get("maxTurns") or payload.get("max_turns") or 8),
+            "--gcs-prefix",
+            str(payload.get("gcsPrefix") or payload.get("gcs_prefix") or self.config.artifact_prefix),
+        ]
+        bucket = payload.get("gcsBucket") or payload.get("gcs_bucket") or self.config.artifact_bucket
+        if bucket:
+            command.extend(["--gcs-bucket", str(bucket)])
+        api_key_secret = payload.get("apiKeySecret") or payload.get("api_key_secret") or self.config.openai_api_key_secret
+        if api_key_secret:
+            command.extend(["--api-key-secret", str(api_key_secret)])
+        youtube_api_key_secret = (
+            payload.get("youtubeApiKeySecret")
+            or payload.get("youtube_api_key_secret")
+            or self.config.youtube_api_key_secret
+        )
+        if youtube_api_key_secret:
+            command.extend(["--youtube-api-key-secret", str(youtube_api_key_secret)])
+        youtube_cookies_secret = payload.get("youtubeCookiesSecret") or payload.get("youtube_cookies_secret")
+        if youtube_cookies_secret:
+            command.extend(["--youtube-cookies-secret", str(youtube_cookies_secret)])
+        return command
 
     def post_live_subtitle_mode(self, payload: dict) -> str:
         mode = str(payload.get("mode") or payload.get("postLiveMode") or payload.get("post_live_mode") or "").strip()

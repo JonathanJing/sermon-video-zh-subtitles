@@ -73,10 +73,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--reading-edition-provider", choices=("openai", "codex"), default="openai")
     parser.add_argument("--reading-edition-model", default="gpt-5.6-sol")
     parser.add_argument("--reading-edition-reasoning-effort", choices=("low", "medium", "high"), default="high")
-    parser.add_argument("--reading-preferred-seconds", type=float, default=22.0)
+    parser.add_argument("--reading-segment-target-chars", type=int, default=420)
+    parser.add_argument("--reading-preferred-seconds", type=float, default=24.0)
     parser.add_argument("--reading-preferred-english-chars", type=int, default=420)
     parser.add_argument("--reading-hard-seconds", type=float, default=55.0)
-    parser.add_argument("--reading-hard-english-chars", type=int, default=950)
+    parser.add_argument("--reading-hard-english-chars", type=int, default=840)
     parser.add_argument("--audio-format", default="bestaudio[ext=m4a]/bestaudio")
     parser.add_argument("--yt-dlp", default="yt-dlp")
     parser.add_argument("--youtube-cookies", type=Path, help="Netscape cookies.txt used only for yt-dlp access.")
@@ -214,6 +215,7 @@ def run_post_live_generation(
         pipeline_outdir / "summary.json",
         output_mode=args.output_mode,
         reference_model=args.reference_model,
+        reading_segment_target_chars=getattr(args, "reading_segment_target_chars", 420),
     )
     if core_ready:
         stage_durations["pipeline"] = 0.0
@@ -436,6 +438,13 @@ def build_pipeline_command(
     ]
     if args.output_mode == "subtitles":
         command.extend(["--timing-model", args.timing_model])
+    else:
+        command.extend(
+            [
+                "--reading-segment-target-chars",
+                str(getattr(args, "reading_segment_target_chars", 420)),
+            ]
+        )
     if args.end_time:
         command.extend(["--end-time", args.end_time])
     if args.glossary:
@@ -497,13 +506,13 @@ def build_reading_edition_command(
         "--passes",
         "2",
         "--preferred-seconds",
-        str(getattr(args, "reading_preferred_seconds", 22.0)),
+        str(getattr(args, "reading_preferred_seconds", 24.0)),
         "--preferred-english-chars",
         str(getattr(args, "reading_preferred_english_chars", 420)),
         "--hard-seconds",
         str(getattr(args, "reading_hard_seconds", 55.0)),
         "--hard-english-chars",
-        str(getattr(args, "reading_hard_english_chars", 950)),
+        str(getattr(args, "reading_hard_english_chars", 840)),
     ]
 
 
@@ -712,25 +721,36 @@ def write_run_status(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
 
 
-def pipeline_summary_matches(path: Path, *, output_mode: str, reference_model: str) -> bool:
+def pipeline_summary_matches(
+    path: Path,
+    *,
+    output_mode: str,
+    reference_model: str,
+    reading_segment_target_chars: int = 420,
+) -> bool:
     try:
         summary = json.loads(path.read_text(encoding="utf-8"))
     except (FileNotFoundError, json.JSONDecodeError, OSError):
         return False
     models = summary.get("models") if isinstance(summary, dict) else None
-    return (
+    matches = (
         summary.get("outputMode") == output_mode
         and isinstance(models, dict)
         and models.get("referenceAsr") == reference_model
     )
+    if output_mode == "reading":
+        matches = matches and summary.get("readingSegmentTargetCharacters") == max(
+            120, int(reading_segment_target_chars)
+        )
+    return matches
 
 
 def reading_layout_targets(args: argparse.Namespace) -> dict[str, float | int]:
     return {
-        "preferredSeconds": float(getattr(args, "reading_preferred_seconds", 22.0)),
+        "preferredSeconds": float(getattr(args, "reading_preferred_seconds", 24.0)),
         "preferredEnglishCharacters": int(getattr(args, "reading_preferred_english_chars", 420)),
         "hardSeconds": float(getattr(args, "reading_hard_seconds", 55.0)),
-        "hardEnglishCharacters": int(getattr(args, "reading_hard_english_chars", 950)),
+        "hardEnglishCharacters": int(getattr(args, "reading_hard_english_chars", 840)),
         "targetBilingualBlocksPerMobilePage": 2,
     }
 

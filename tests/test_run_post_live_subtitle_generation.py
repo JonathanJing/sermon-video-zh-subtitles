@@ -37,10 +37,11 @@ def make_args(**overrides):
         "reading_edition_provider": "openai",
         "reading_edition_model": "gpt-5.6-sol",
         "reading_edition_reasoning_effort": "high",
-        "reading_preferred_seconds": 22.0,
+        "reading_segment_target_chars": 420,
+        "reading_preferred_seconds": 24.0,
         "reading_preferred_english_chars": 420,
         "reading_hard_seconds": 55.0,
-        "reading_hard_english_chars": 950,
+        "reading_hard_english_chars": 840,
         "audio_format": "bestaudio[ext=m4a]/bestaudio",
         "yt_dlp": "yt-dlp",
         "youtube_cookies": None,
@@ -132,6 +133,7 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
         self.assertEqual(command[command.index("--reasoning-effort") + 1], "high")
         self.assertEqual(command[command.index("--reference-model") + 1], "gpt-transcribe")
         self.assertEqual(command[command.index("--output-mode") + 1], "reading")
+        self.assertEqual(command[command.index("--reading-segment-target-chars") + 1], "420")
         self.assertNotIn("--timing-model", command)
         self.assertEqual(report["readingEditionCommand"][report["readingEditionCommand"].index("--provider") + 1], "openai")
         self.assertEqual(report["readingEditionCommand"][report["readingEditionCommand"].index("--model") + 1], "gpt-5.6-sol")

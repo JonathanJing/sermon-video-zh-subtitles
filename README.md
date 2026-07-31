@@ -9,7 +9,7 @@
   </a>
 </p>
 
-This repository's production path starts with scheduled live-source discovery, pauses once for human sermon-boundary confirmation, and ends with a reviewed Chinese-English reading PDF:
+This repository's production path is supervised by a single `Sermon Production Supervisor` Agent. Cloud Scheduler wakes the workflow, existing scripts remain the deterministic execution layer, and the agent reads durable state and advances the process safely. The workflow pauses for human sermon-boundary confirmation and ends with a reviewed Chinese-English reading PDF:
 
 1. Cloud Scheduler polls public Mariners / YouTube sources during configured service windows
 2. the canonical YouTube watch URL is saved into resumable shared state
@@ -22,6 +22,11 @@ This repository's production path starts with scheduled live-source discovery, p
 9. the run becomes complete only after reading-text QA and PDF QA both pass
 
 The production deliverable is currently the reading PDF. Default `reading` mode does not depend on `whisper-1`; synchronized SRT/VTT output requires an explicit switch to subtitle mode.
+
+Agent architecture, shadow/execute modes, durable human approval, and Scheduler integration:
+
+- [Sermon Reading-PDF Production Supervisor Agent](docs/sermon-production-supervisor-agent.md)
+- [证道阅读版生产 Supervisor Agent](docs/sermon-production-supervisor-agent.zh.md)
 
 ## One-Page Workflow
 
@@ -43,6 +48,7 @@ The current stable workflow is documented in detail here:
 
 - [Stable post-live reading PDF workflow](docs/stable-post-live-reading-pdf-workflow.md)
 - [稳定的 post-live 阅读版 PDF 工作流](docs/stable-post-live-reading-pdf-workflow.zh.md)
+- [Sermon Reading-PDF Production Supervisor Agent](docs/sermon-production-supervisor-agent.md)
 - [Production `gpt-transcribe` and reading-PDF audit](docs/gpt-transcribe-reading-pdf-production-audit-2026-07-31.zh.md)
 
 ### Flowchart
@@ -231,6 +237,7 @@ The longer-term product goal remains improving the 11:30 PT congregation listeni
 | Area | English | Chinese |
 |---|---|---|
 | Stable workflow | [docs/stable-post-live-reading-pdf-workflow.md](docs/stable-post-live-reading-pdf-workflow.md) | [docs/stable-post-live-reading-pdf-workflow.zh.md](docs/stable-post-live-reading-pdf-workflow.zh.md) |
+| Production Supervisor Agent | [docs/sermon-production-supervisor-agent.md](docs/sermon-production-supervisor-agent.md) | [docs/sermon-production-supervisor-agent.zh.md](docs/sermon-production-supervisor-agent.zh.md) |
 | Documentation index | [docs/README.md](docs/README.md) | [docs/README.zh.md](docs/README.zh.md) |
 | System design | [docs/system-design.md](docs/system-design.md) | [docs/system-design.zh.md](docs/system-design.zh.md) |
 | System design gap analysis | [docs/system-design-gap-analysis.md](docs/system-design-gap-analysis.md) | [docs/system-design-gap-analysis.zh.md](docs/system-design-gap-analysis.zh.md) |

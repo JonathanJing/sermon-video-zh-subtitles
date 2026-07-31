@@ -57,8 +57,8 @@ class ReadingEditionTest(unittest.TestCase):
         english = [
             {
                 "id": index,
-                "start": index * 8.0,
-                "end": (index + 1) * 8.0,
+                "start": index * 10.0,
+                "end": (index + 1) * 10.0,
                 "text": sentence.strip(),
             }
             for index in range(6)
@@ -68,14 +68,16 @@ class ReadingEditionTest(unittest.TestCase):
         blocks = build_semantic_blocks(
             english,
             chinese,
-            preferred_seconds=22,
+            preferred_seconds=24,
             preferred_english_chars=420,
             hard_seconds=55,
-            hard_english_chars=950,
+            hard_english_chars=840,
         )
 
         self.assertEqual(2, len(blocks))
         self.assertTrue(all(len(block["en"]) < 420 for block in blocks))
+        segment_ids = [segment_id for block in blocks for segment_id in block["segmentIds"]]
+        self.assertEqual(list(range(6)), segment_ids)
 
     def test_quality_report_rejects_ellipsis_fillers_and_fragments(self):
         report = reading_quality_report(

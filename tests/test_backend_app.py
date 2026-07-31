@@ -303,6 +303,71 @@ class BackendAppTest(unittest.TestCase):
         self.assertEqual(captured["payload"]["mode"], "timeline-probe")
         self.assertIn("build_post_live_timeline.py", captured["payload"]["command"][1])
 
+    def test_production_supervisor_command_uses_shared_state_and_bounded_mode(self):
+        handler = object.__new__(ApiHandler)
+        handler.config = AppConfig(
+            artifact_bucket="sermon-zh-artifacts-ai-for-god",
+            artifact_prefix="sundays",
+            current_manifest_uri=None,
+            sunday_manifest_uri_template=None,
+            timezone="America/Los_Angeles",
+            openai_api_key_secret="projects/ai-for-god/secrets/openai-api-key/versions/latest",
+            operator_admin_token=None,
+            internal_task_token="task-token",
+            enable_inline_worker=False,
+            live_source_monitor_state_uri="gs://sermon-zh-artifacts-ai-for-god/sundays/live-source-monitor/backend-state.json",
+            youtube_api_key_secret="projects/ai-for-god/secrets/youtube-api-key/versions/latest",
+        )
+
+        command = ApiHandler.production_supervisor_command(
+            handler,
+            {"mode": "execute", "agentModel": "gpt-5.6", "maxTurns": 6},
+            "2026-08-02",
+        )
+
+        self.assertIn("run_sermon_production_supervisor_agent.py", command[1])
+        self.assertEqual(command[command.index("--state-file") + 1], handler.config.live_source_monitor_state_uri)
+        self.assertEqual(command[command.index("--mode") + 1], "execute")
+        self.assertEqual(command[command.index("--max-turns") + 1], "6")
+        self.assertEqual(command[command.index("--api-key-secret") + 1], handler.config.openai_api_key_secret)
+        self.assertNotIn("--approve-window", command)
+        self.assertNotIn("--start-time", command)
+        self.assertNotIn("--end-time", command)
+
+    def test_production_supervisor_endpoint_plans_cloud_run_job_command(self):
+        class FakeService:
+            def _resolve_sunday(self, sunday):
+                return "2026-08-02" if sunday == "upcoming" else sunday
+
+        handler = object.__new__(ApiHandler)
+        handler.headers = {"X-Internal-Task-Token": "task-token"}
+        handler.config = AppConfig(
+            artifact_bucket="sermon-zh-artifacts-ai-for-god",
+            artifact_prefix="sundays",
+            current_manifest_uri=None,
+            sunday_manifest_uri_template=None,
+            timezone="America/Los_Angeles",
+            openai_api_key_secret="projects/ai-for-god/secrets/openai-api-key/versions/latest",
+            operator_admin_token=None,
+            internal_task_token="task-token",
+            enable_inline_worker=False,
+            live_source_monitor_state_uri="gs://sermon-zh-artifacts-ai-for-god/sundays/live-source-monitor/backend-state.json",
+        )
+        handler.service = FakeService()
+        handler.read_json_body = lambda: {"mode": "shadow"}
+        captured = {}
+        handler.write_json = lambda payload, status=200: captured.update(
+            {"payload": payload, "status": status}
+        )
+
+        ApiHandler.handle_production_supervisor(handler, "upcoming")
+
+        self.assertEqual(captured["status"], 202)
+        self.assertEqual(captured["payload"]["status"], "planned")
+        self.assertEqual(captured["payload"]["mode"], "shadow")
+        self.assertIn("run_sermon_production_supervisor_agent.py", captured["payload"]["command"][1])
+        self.assertFalse(captured["payload"]["apiKeyMaterialIncluded"])
+
     def test_live_playback_admin_write_requires_auth(self):
         class FakeService:
             def _resolve_sunday(self, sunday):

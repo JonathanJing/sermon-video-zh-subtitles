@@ -1045,20 +1045,24 @@ def draw_header(
         sermon_window=sermon_window,
     )
     if not first_page:
+        running_meta = format_running_header_metadata(
+            sermon_date=sermon_date,
+            speaker=speaker,
+        )
         canvas_obj.setFillColor(colors.HexColor("#667085"))
         canvas_obj.setFont(font_name, RUNNING_HEADER_FONT_SIZE)
         running_title = short_running_title(title)
         meta_width = (
-            min(page_width * 0.44, pdfmetrics.stringWidth(header_meta, font_name, HEADER_META_FONT_SIZE))
-            if header_meta
+            pdfmetrics.stringWidth(running_meta, font_name, HEADER_META_FONT_SIZE)
+            if running_meta
             else 0
         )
-        title_width = page_width - MARGIN_X * 2 - meta_width - (12 if header_meta else 0)
+        title_width = page_width - MARGIN_X * 2 - meta_width - (12 if running_meta else 0)
         for line in wrap_text(running_title, font_name, RUNNING_HEADER_FONT_SIZE, title_width)[:1]:
             canvas_obj.drawString(MARGIN_X, y, line)
-        if header_meta:
+        if running_meta:
             canvas_obj.setFont(font_name, HEADER_META_FONT_SIZE)
-            canvas_obj.drawRightString(page_width - MARGIN_X, y, header_meta)
+            canvas_obj.drawRightString(page_width - MARGIN_X, y, running_meta)
         canvas_obj.setStrokeColor(colors.HexColor("#e2e8f0"))
         canvas_obj.line(MARGIN_X, y - 10, page_width - MARGIN_X, y - 10)
         return header_body_start_y(
@@ -1152,6 +1156,19 @@ def format_header_metadata(
         parts.append(f"讲员：{speaker.strip()}")
     if sermon_window and sermon_window.strip():
         parts.append(f"证道时段：{sermon_window.strip()}")
+    return " · ".join(parts)
+
+
+def format_running_header_metadata(
+    *,
+    sermon_date: str | None,
+    speaker: str | None,
+) -> str:
+    parts: list[str] = []
+    if sermon_date and sermon_date.strip():
+        parts.append(sermon_date.strip())
+    if speaker and speaker.strip():
+        parts.append(speaker.strip())
     return " · ".join(parts)
 
 

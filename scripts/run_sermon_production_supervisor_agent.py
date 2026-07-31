@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -18,6 +19,7 @@ if str(REPO_ROOT) not in sys.path:
 from agents import Agent, ModelSettings, RunConfig, RunContextWrapper, Runner, function_tool  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
 
+from backend.cloud import access_secret  # noqa: E402
 from scripts import sermon_production_supervisor  # noqa: E402
 
 
@@ -169,6 +171,8 @@ async def run_agent(args: argparse.Namespace) -> dict[str, Any]:
         approval = None
 
     execute = args.mode == "execute"
+    if config.api_key_secret and not os.getenv("OPENAI_API_KEY"):
+        os.environ["OPENAI_API_KEY"] = access_secret(config.api_key_secret)
     runtime = SupervisorRuntime(config=config, execute=execute)
     agent = build_agent(model=args.model, execute=execute)
     prompt = (

@@ -9,7 +9,7 @@
   </a>
 </p>
 
-这个仓库当前的生产主流程，是一条从 Cloud Scheduler 定时发现直播链接开始，在人工确认证道边界后，自动生成中英阅读版 PDF 的 post-live 流程：
+这个仓库当前的生产主流程，是一条由 `Sermon Production Supervisor` Agent 监管的 post-live 流程。Cloud Scheduler 负责唤醒，现有脚本负责确定性执行，Agent 读取持久状态并安全推进；在人工确认证道边界后，流程生成中英阅读版 PDF：
 
 1. 定时器在配置的直播窗口内轮询公开的 Mariners / YouTube 来源
 2. 找到 canonical YouTube watch URL 后，保存到可恢复的 shared state
@@ -22,6 +22,11 @@
 9. 阅读稿 QA 和 PDF QA 都通过后，才把运行标记为完成
 
 当前生产交付物以阅读版 PDF 为主。默认 `reading` 模式不依赖 `whisper-1`；只有需要同步 SRT/VTT 时，才显式切换到字幕模式。
+
+Agent 架构、shadow/execute 模式、人工审批文件和 Scheduler 接入见：
+
+- [证道阅读版生产 Supervisor Agent](docs/sermon-production-supervisor-agent.zh.md)
+- [Sermon Reading-PDF Production Supervisor Agent](docs/sermon-production-supervisor-agent.md)
 
 ## 一页流程总览
 
@@ -43,6 +48,7 @@
 
 - [稳定的 post-live 阅读版 PDF 工作流](docs/stable-post-live-reading-pdf-workflow.zh.md)
 - [Stable post-live reading PDF workflow](docs/stable-post-live-reading-pdf-workflow.md)
+- [证道阅读版生产 Supervisor Agent](docs/sermon-production-supervisor-agent.zh.md)
 - [生产环境 `gpt-transcribe` 与阅读版 PDF 审核](docs/gpt-transcribe-reading-pdf-production-audit-2026-07-31.zh.md)
 
 ### 流程图
@@ -231,6 +237,7 @@ python3 scripts/live_source_monitor.py \
 | 主题 | English | 中文 |
 |---|---|---|
 | 稳定主流程 | [docs/stable-post-live-reading-pdf-workflow.md](docs/stable-post-live-reading-pdf-workflow.md) | [docs/stable-post-live-reading-pdf-workflow.zh.md](docs/stable-post-live-reading-pdf-workflow.zh.md) |
+| Production Supervisor Agent | [docs/sermon-production-supervisor-agent.md](docs/sermon-production-supervisor-agent.md) | [docs/sermon-production-supervisor-agent.zh.md](docs/sermon-production-supervisor-agent.zh.md) |
 | 文档索引 | [docs/README.md](docs/README.md) | [docs/README.zh.md](docs/README.zh.md) |
 | System Design | [docs/system-design.md](docs/system-design.md) | [docs/system-design.zh.md](docs/system-design.zh.md) |
 | System Design 实现差距审计 | [docs/system-design-gap-analysis.md](docs/system-design-gap-analysis.md) | [docs/system-design-gap-analysis.zh.md](docs/system-design-gap-analysis.zh.md) |

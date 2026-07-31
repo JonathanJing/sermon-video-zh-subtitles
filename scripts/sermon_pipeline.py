@@ -69,7 +69,7 @@ DEFAULT_ZH_TERM_MAP = {
 GPT_TRANSCRIBE_MODELS = {"gpt-transcribe", "gpt-live-transcribe"}
 DEFAULT_TRANSCRIPTION_LANGUAGES = ["en"]
 MAX_SINGLE_TRANSCRIPTION_BYTES = 24 * 1024 * 1024
-READING_SEGMENT_TARGET_CHARS = 700
+READING_SEGMENT_TARGET_CHARS = 420
 
 
 def run(cmd):
@@ -713,10 +713,10 @@ def split_reading_paragraphs(text, target_chars=READING_SEGMENT_TARGET_CHARS):
     return paragraphs
 
 
-def reference_chunks_to_reading_segments(chunks):
+def reference_chunks_to_reading_segments(chunks, target_chars=READING_SEGMENT_TARGET_CHARS):
     segments = []
     for chunk in chunks:
-        paragraphs = split_reading_paragraphs(chunk.get("text", ""))
+        paragraphs = split_reading_paragraphs(chunk.get("text", ""), target_chars=target_chars)
         total_chars = sum(max(1, len(item)) for item in paragraphs)
         cursor = float(chunk["start"])
         chunk_end = float(chunk["end"])
@@ -1228,6 +1228,12 @@ def main():
     )
     parser.add_argument("--chunk-seconds", type=float, default=45.0)
     parser.add_argument("--reading-chunk-seconds", type=float, default=1200.0)
+    parser.add_argument(
+        "--reading-segment-target-chars",
+        type=int,
+        default=READING_SEGMENT_TARGET_CHARS,
+        help="Target English characters per paired reading segment.",
+    )
     parser.add_argument("--correction-window-seconds", type=float, default=240.0)
     parser.add_argument("--compare", action="store_true")
     parser.add_argument("--candidate-a", type=Path)
@@ -1272,7 +1278,10 @@ def main():
         glossary,
     )
     if args.output_mode == "reading":
-        raw_segments = reference_chunks_to_reading_segments(reference_chunks)
+        raw_segments = reference_chunks_to_reading_segments(
+            reference_chunks,
+            target_chars=max(120, args.reading_segment_target_chars),
+        )
     else:
         whisper_raw = transcribe_whisper(api_key, clip_path, outdir, args.timing_model, glossary)
         raw_segments = normalize_whisper_segments(whisper_raw)
@@ -1343,6 +1352,9 @@ def main():
         },
         "outputMode": args.output_mode,
         "timingPrecision": "whisper_segments" if args.output_mode == "subtitles" else "synthetic_reading_layout_only",
+        "readingSegmentTargetCharacters": (
+            max(120, args.reading_segment_target_chars) if args.output_mode == "reading" else None
+        ),
         "segmentCount": len(shaped_zh),
         "qaHardFailures": qa["hardFailures"],
         "outputs": (

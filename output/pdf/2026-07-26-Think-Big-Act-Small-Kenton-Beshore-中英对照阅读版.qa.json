@@ -1,0 +1,330 @@
+{
+  "allPagesChecked": true,
+  "contentChecks": {
+    "contextualNameErrors": [],
+    "missingScriptures": [],
+    "missingTerms": [],
+    "requiredScriptures": [],
+    "requiredTerms": []
+  },
+  "failures": [],
+  "font": "MobileCJK",
+  "longRenderedLines": [],
+  "missingGlyphMarkers": [],
+  "pageCount": 31,
+  "pages": [
+    {
+      "blank": false,
+      "blockCount": 2,
+      "capacityPoints": 689.1,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 1,
+      "sparseOrphanRisk": false,
+      "usedPoints": 447.2
+    },
+    {
+      "blank": false,
+      "blockCount": 2,
+      "capacityPoints": 730,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 2,
+      "sparseOrphanRisk": false,
+      "usedPoints": 441.0
+    },
+    {
+      "blank": false,
+      "blockCount": 3,
+      "capacityPoints": 730,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 3,
+      "sparseOrphanRisk": false,
+      "usedPoints": 720.6
+    },
+    {
+      "blank": false,
+      "blockCount": 3,
+      "capacityPoints": 730,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 4,
+      "sparseOrphanRisk": false,
+      "usedPoints": 681.2
+    },
+    {
+      "blank": false,
+      "blockCount": 2,
+      "capacityPoints": 730,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 5,
+      "sparseOrphanRisk": false,
+      "usedPoints": 500.1
+    },
+    {
+      "blank": false,
+      "blockCount": 2,
+      "capacityPoints": 730,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 6,
+      "sparseOrphanRisk": false,
+      "usedPoints": 474.2
+    },
+    {
+      "blank": false,
+      "blockCount": 3,
+      "capacityPoints": 730,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 7,
+      "sparseOrphanRisk": false,
+      "usedPoints": 700.9
+    },
+    {
+      "blank": false,
+      "blockCount": 3,
+      "capacityPoints": 730,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 8,
+      "sparseOrphanRisk": false,
+      "usedPoints": 700.9
+    },
+    {
+      "blank": false,
+      "blockCount": 3,
+      "capacityPoints": 730,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 9,
+      "sparseOrphanRisk": false,
+      "usedPoints": 634.5
+    },
+    {
+      "blank": false,
+      "blockCount": 2,
+      "capacityPoints": 730,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 10,
+      "sparseOrphanRisk": false,
+      "usedPoints": 519.8
+    },
+    {
+      "blank": false,
+      "blockCount": 2,
+      "capacityPoints": 730,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 11,
+      "sparseOrphanRisk": false,
+      "usedPoints": 534.4
+    },
+    {
+      "blank": false,
+      "blockCount": 2,
+      "capacityPoints": 730,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 12,
+      "sparseOrphanRisk": false,
+      "usedPoints": 493.9
+    },
+    {
+      "blank": false,
+      "blockCount": 3,
+      "capacityPoints": 730,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 13,
+      "sparseOrphanRisk": false,
+      "usedPoints": 700.9
+    },
+    {
+      "blank": false,
+      "blockCount": 2,
+      "capacityPoints": 730,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 14,
+      "sparseOrphanRisk": false,
+      "usedPoints": 487.7
+    },
+    {
+      "blank": false,
+      "blockCount": 2,
+      "capacityPoints": 730,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 15,
+      "sparseOrphanRisk": false,
+      "usedPoints": 460.7
+    },
+    {
+      "blank": false,
+      "blockCount": 2,
+      "capacityPoints": 730,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 16,
+      "sparseOrphanRisk": false,
+      "usedPoints": 527.1
+    },
+    {
+      "blank": false,
+      "blockCount": 3,
+      "capacityPoints": 730,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 17,
+      "sparseOrphanRisk": false,
+      "usedPoints": 667.7
+    },
+    {
+      "blank": false,
+      "blockCount": 2,
+      "capacityPoints": 730,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 18,
+      "sparseOrphanRisk": false,
+      "usedPoints": 474.2
+    },
+    {
+      "blank": false,
+      "blockCount": 2,
+      "capacityPoints": 730,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 19,
+      "sparseOrphanRisk": false,
+      "usedPoints": 507.4
+    },
+    {
+      "blank": false,
+      "blockCount": 3,
+      "capacityPoints": 730,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 20,
+      "sparseOrphanRisk": false,
+      "usedPoints": 700.9
+    },
+    {
+      "blank": false,
+      "blockCount": 2,
+      "capacityPoints": 730,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 21,
+      "sparseOrphanRisk": false,
+      "usedPoints": 513.6
+    },
+    {
+      "blank": false,
+      "blockCount": 3,
+      "capacityPoints": 730,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 22,
+      "sparseOrphanRisk": false,
+      "usedPoints": 693.6
+    },
+    {
+      "blank": false,
+      "blockCount": 2,
+      "capacityPoints": 730,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 23,
+      "sparseOrphanRisk": false,
+      "usedPoints": 501.2
+    },
+    {
+      "blank": false,
+      "blockCount": 3,
+      "capacityPoints": 730,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 24,
+      "sparseOrphanRisk": false,
+      "usedPoints": 675.0
+    },
+    {
+      "blank": false,
+      "blockCount": 3,
+      "capacityPoints": 730,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 25,
+      "sparseOrphanRisk": false,
+      "usedPoints": 681.2
+    },
+    {
+      "blank": false,
+      "blockCount": 3,
+      "capacityPoints": 730,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 26,
+      "sparseOrphanRisk": false,
+      "usedPoints": 708.2
+    },
+    {
+      "blank": false,
+      "blockCount": 2,
+      "capacityPoints": 730,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 27,
+      "sparseOrphanRisk": false,
+      "usedPoints": 493.9
+    },
+    {
+      "blank": false,
+      "blockCount": 3,
+      "capacityPoints": 730,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 28,
+      "sparseOrphanRisk": false,
+      "usedPoints": 700.9
+    },
+    {
+      "blank": false,
+      "blockCount": 3,
+      "capacityPoints": 730,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 29,
+      "sparseOrphanRisk": false,
+      "usedPoints": 694.7
+    },
+    {
+      "blank": false,
+      "blockCount": 3,
+      "capacityPoints": 730,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 30,
+      "sparseOrphanRisk": false,
+      "usedPoints": 648.0
+    },
+    {
+      "blank": false,
+      "blockCount": 2,
+      "capacityPoints": 730,
+      "continuedBlockCount": 0,
+      "overflow": false,
+      "page": 31,
+      "sparseOrphanRisk": false,
+      "usedPoints": 487.7
+    }
+  ],
+  "riskPages": [],
+  "schemaVersion": 1,
+  "status": "pass"
+}
