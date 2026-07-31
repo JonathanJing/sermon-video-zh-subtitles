@@ -1,7 +1,49 @@
 # Backend API / Worker Scaffold
 
-This is the smallest backend path for the Sunday caption product. It keeps the
-current static PWA untouched while adding a Cloud Run-compatible API surface.
+This backend path is already working, but it is currently a secondary path in
+the repository.
+
+The primary repository workflow today is the stable post-live operator flow
+documented in:
+
+- [../README.md](../README.md)
+- [../docs/stable-post-live-reading-pdf-workflow.md](../docs/stable-post-live-reading-pdf-workflow.md)
+- [../docs/stable-post-live-reading-pdf-workflow.zh.md](../docs/stable-post-live-reading-pdf-workflow.zh.md)
+
+That primary flow is:
+
+1. save a sermon video URL into resumable state
+2. manually confirm the sermon start and end time
+3. run the post-live subtitle pipeline
+4. generate the Chinese-English reading PDF
+5. treat the run as complete only after PDF QA passes
+
+This backend README describes the supporting API and worker path around that
+workflow. It is not the main operator entrypoint described in the root README.
+
+## Relationship To The Primary Workflow
+
+Use this backend path when you need one or more of these:
+
+- Cloud Run-compatible API endpoints
+- scheduler-driven source discovery or generation handoff
+- admin progress polling and shared run-state reads
+- public Sunday artifact serving from promoted manifests
+
+Do not treat backend job success alone as workflow success. The repository's
+current stable completion bar is still the reading-PDF path: saved source,
+manually confirmed sermon window, generated `sermon_zh_en_reading.pdf`, passing
+PDF QA, and written run reports.
+
+## Current Role
+
+Today this backend is best understood as:
+
+- a working orchestration and serving layer
+- a path for Cloud Run and scheduler integration
+- a support system around the stable post-live reading-PDF workflow
+
+It is not the repository's primary documentation narrative.
 
 ## Public Read Path
 
@@ -60,6 +102,10 @@ SERMON_CURRENT_MANIFEST_URI=gs://sermon-zh-artifacts-ai-for-god/runs/2026-06-23/
 ```
 
 ## Admin / Worker Path
+
+This section covers the backend-driven path for source discovery, generation
+handoff, and production-style artifact publishing. It already works, but it is
+secondary to the stable manual-source plus manual-sermon-window workflow.
 
 - `POST /api/admin/sundays/YYYY-MM-DD/discover-source`
 - `POST /api/admin/sundays/YYYY-MM-DD/generate`

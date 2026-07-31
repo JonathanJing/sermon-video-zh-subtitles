@@ -94,6 +94,23 @@ NON_SERMON_PATTERNS = [
     r"\bcampus\b",
 ]
 
+TIMELINE_TRANSCRIPTION_PROMPT_VERSION = "post-live-timeline-gpt-transcribe-v1"
+TIMELINE_TRANSCRIPTION_PROMPT = (
+    "English Mariners Church service audio. Produce a faithful rough transcript for locating the sermon. "
+    "Preserve speaker introductions, Bible references, sermon titles, prayer transitions, closing-response "
+    "language, and the first words of songs after the message."
+)
+TIMELINE_TRANSCRIPTION_KEYWORDS = [
+    "Mariners Church",
+    "Mariners Online",
+    "Bible",
+    "Jesus",
+    "Holy Spirit",
+    "let's pray",
+    "would you pray with me",
+    "let's respond",
+]
+
 
 def main() -> int:
     args = parse_args()
@@ -111,7 +128,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--out", type=Path, default=Path("artifacts/post-live-timeline/report.json"))
     parser.add_argument("--outdir", type=Path, default=Path("artifacts/post-live-timeline"))
     parser.add_argument("--chunk-seconds", type=float, default=120.0)
-    parser.add_argument("--model", default="gpt-4o-transcribe")
+    parser.add_argument("--model", default="gpt-transcribe")
     parser.add_argument("--api-key-secret", help="Secret Manager resource for OPENAI_API_KEY.")
     parser.add_argument(
         "--transcript-json",
@@ -154,6 +171,11 @@ def build_post_live_timeline(args: argparse.Namespace) -> dict[str, Any]:
         "chunkCount": len(chunks),
         "chunkSeconds": args.chunk_seconds,
         "model": args.model if not args.transcript_json else "provided-transcript-json",
+        "transcriptionContext": {
+            "promptVersion": TIMELINE_TRANSCRIPTION_PROMPT_VERSION,
+            "languages": ["en"],
+            "keywordCount": len(TIMELINE_TRANSCRIPTION_KEYWORDS),
+        },
         "analysis": analysis,
         "nextAction": "Review suggestedWindow and run sermon_pipeline.py only after confirming local start/end.",
         "createdAt": datetime.now(timezone.utc).isoformat(),
@@ -174,10 +196,9 @@ def transcribe_full_audio_chunks(
     chunks_dir = outdir / "chunks"
     chunks: list[dict[str, Any]] = []
     count = int((duration + chunk_seconds - 0.001) // chunk_seconds)
-    prompt = (
-        "English church service audio. Produce rough English transcript for timeline location. "
-        "Preserve speaker introductions, Bible references, and transition phrases such as let's pray or let's respond."
-    )
+    prompt = TIMELINE_TRANSCRIPTION_PROMPT
+    keywords = TIMELINE_TRANSCRIPTION_KEYWORDS
+    languages = ["en"]
     for index in range(count):
         start = index * chunk_seconds
         length = min(chunk_seconds, duration - start)
@@ -185,23 +206,58 @@ def transcribe_full_audio_chunks(
             continue
         audio_path = chunks_dir / f"timeline_chunk_{index:04d}.m4a"
         result_path = chunks_dir / f"timeline_chunk_{index:04d}.json"
+        metadata_path = chunks_dir / f"timeline_chunk_{index:04d}.request.json"
         sermon_pipeline.cut_chunk(source, audio_path, start, length)
-        if result_path.exists():
-            result = read_json(result_path)
-        else:
-            result = sermon_pipeline.multipart_request(
-                sermon_pipeline.TRANSCRIBE_URL,
-                api_key,
-                {
-                    "model": model,
-                    "response_format": "json",
-                    "language": "en",
-                    "prompt": prompt,
-                },
-                "file",
-                audio_path,
+        identity = sermon_pipeline.transcription_cache_identity(
+            model=model,
+            response_format="json",
+            prompt=prompt,
+            keywords=keywords,
+            languages=languages,
+            audio_path=audio_path,
+            start=round(start, 3),
+            end=round(start + length, 3),
+        )
+        result = sermon_pipeline.read_transcription_cache(result_path, metadata_path, identity)
+        if result is None:
+            try:
+                result = sermon_pipeline.transcribe_openai_audio(
+                    api_key,
+                    model,
+                    prompt,
+                    audio_path,
+                    keywords=keywords,
+                    languages=languages,
+                )
+            except RuntimeError as exc:
+                if "Audio file might be corrupted or unsupported" not in str(exc):
+                    raise
+                fallback_audio = audio_path.with_suffix(".wav")
+                sermon_pipeline.reencode_transcription_fallback(audio_path, fallback_audio)
+                identity = sermon_pipeline.transcription_cache_identity(
+                    model=model,
+                    response_format="json",
+                    prompt=prompt,
+                    keywords=keywords,
+                    languages=languages,
+                    audio_path=fallback_audio,
+                    start=round(start, 3),
+                    end=round(start + length, 3),
+                )
+                result = sermon_pipeline.transcribe_openai_audio(
+                    api_key,
+                    model,
+                    prompt,
+                    fallback_audio,
+                    keywords=keywords,
+                    languages=languages,
+                )
+            sermon_pipeline.write_transcription_cache(
+                result_path,
+                metadata_path,
+                result,
+                identity,
             )
-            write_json(result_path, result)
         chunks.append(
             {
                 "id": index,
@@ -209,6 +265,7 @@ def transcribe_full_audio_chunks(
                 "end": round(start + length, 3),
                 "duration": round(length, 3),
                 "text": sermon_pipeline.clean_text(result.get("text", "")),
+                "detectedLanguages": result.get("languages", []),
             }
         )
         print(f"timeline chunk {index + 1}/{count}", flush=True)

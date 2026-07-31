@@ -513,10 +513,20 @@ class ApiHandler(BaseHTTPRequestHandler):
             ("zh_model", "--zh-model"),
             ("enCorrectionModel", "--en-correction-model"),
             ("en_correction_model", "--en-correction-model"),
-            ("gpt4oModel", "--gpt4o-model"),
-            ("gpt4o_model", "--gpt4o-model"),
+            ("referenceModel", "--reference-model"),
+            ("reference_model", "--reference-model"),
+            ("gpt4oModel", "--reference-model"),
+            ("gpt4o_model", "--reference-model"),
             ("timingModel", "--timing-model"),
             ("timing_model", "--timing-model"),
+            ("outputMode", "--output-mode"),
+            ("output_mode", "--output-mode"),
+            ("readingEditionProvider", "--reading-edition-provider"),
+            ("reading_edition_provider", "--reading-edition-provider"),
+            ("readingEditionModel", "--reading-edition-model"),
+            ("reading_edition_model", "--reading-edition-model"),
+            ("readingEditionReasoningEffort", "--reading-edition-reasoning-effort"),
+            ("reading_edition_reasoning_effort", "--reading-edition-reasoning-effort"),
             ("audioFormat", "--audio-format"),
             ("audio_format", "--audio-format"),
             ("metadataJson", "--metadata-json"),
@@ -560,6 +570,13 @@ class ApiHandler(BaseHTTPRequestHandler):
         if notification["shouldNotify"] and monitor_args.notify_webhook_url:
             notification["delivery"] = live_source_monitor.send_webhook_notification(
                 monitor_args.notify_webhook_url,
+                notification,
+            )
+        elif notification["shouldNotify"] and monitor_args.notify_sendgrid_secret:
+            notification["delivery"] = live_source_monitor.send_sendgrid_notification(
+                monitor_args.notify_sendgrid_secret,
+                monitor_args.notify_recipients_secret,
+                monitor_args.notify_sender_secret,
                 notification,
             )
         report["notification"] = notification
@@ -648,6 +665,10 @@ class ApiHandler(BaseHTTPRequestHandler):
             state_file=self.config.live_source_monitor_state_uri
             or Path(self.config.live_source_monitor_state_dir) / "backend-state.json",
             notify_webhook_url=self.config.operator_notify_webhook_url,
+            youtube_api_key_secret=self.config.youtube_api_key_secret,
+            notify_sendgrid_secret=self.config.operator_notify_sendgrid_secret,
+            notify_recipients_secret=self.config.operator_notify_recipients_secret,
+            notify_sender_secret=self.config.operator_notify_sender_secret,
             timezone=str(payload.get("timezone") or self.config.timezone),
             now=payload.get("now"),
             min_confidence=float(payload.get("minConfidence", 0.70)),

@@ -58,6 +58,19 @@ def upload_file_to_gcs(local_path: str | Path, uri: str) -> None:
         subprocess.run(["gcloud", "storage", "cp", str(path), uri], check=True)
 
 
+def download_file_from_gcs(uri: str, local_path: str | Path) -> Path:
+    parsed = parse_gcs_uri(uri)
+    path = Path(local_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        from google.cloud import storage  # type: ignore
+
+        storage.Client().bucket(parsed.bucket).blob(parsed.object_name).download_to_filename(str(path))
+    except ImportError:
+        subprocess.run(["gcloud", "storage", "cp", uri, str(path)], check=True)
+    return path
+
+
 def write_gcs_text(uri: str, text: str, content_type: str = "application/json; charset=utf-8") -> None:
     parsed = parse_gcs_uri(uri)
     try:

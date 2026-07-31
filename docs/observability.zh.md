@@ -40,15 +40,19 @@ Cloud Scheduler 建议请求 payload 中显式带上：
 }
 ```
 
-周六直播链接捕获要从周六早上就开始轮询，因为 YouTube watch URL 可能在直播 / upcoming
-期间可见，结束后又变成 unlisted。建议用两个独立 Scheduler job，并把 endpoint 的
-`{sunday}` 写成 `upcoming`，而不是周六当天的 `current`。`upcoming` 会解析到下一个周日字幕
-slice；例如周六 2026-06-27 捕获的是 2026-06-28 周日字幕 slice：
+周六直播链接捕获使用两个明确且不重叠的服务窗口，并把 endpoint 的 `{sunday}` 写成
+`upcoming`，而不是周六当天的 `current`。`upcoming` 会解析到下一个周日字幕 slice；例如
+周六 2026-06-27 捕获的是 2026-06-28 周日字幕 slice：
 
 ```text
-sermon-sat-400-source-discovery  */5 8-16 * * SAT  service=sat400  operatorAlertTime=16:20
-sermon-sat-530-source-discovery  */5 8-17 * * SAT  service=sat530  operatorAlertTime=17:50
+sermon-sat-400-source-discovery  */5 16 * * SAT      service=sat400 operatorAlertTime=16:20
+sermon-sat-530-source-discovery  30-59/5 17 * * SAT service=sat530 operatorAlertTime=17:50
 ```
+
+4:00 窗口在 16:00–16:55 每 5 分钟检查一次；5:30 窗口在 17:30–17:55 每 5 分钟检查一次。
+两个窗口不重叠，避免并发写 shared live-source state，也让日志中的 `service` 能直接说明
+链接来自哪一场。旧 `sermon-sat-auto-source-discovery` 保留但应暂停，方便回滚而不参与写入。
+生产 state 还必须保留同一 Sunday 已确认 URL，避免后续 fallback 清空 post-live worker 所需的来源。
 
 如果周六窗口仍然错过 YouTube 链接，保留周日 8:30 和 10:00 两个兜底窗口。这些 job 使用
 `current`，因为周日早上 `current` 就是当天字幕 slice。monitor 会优先验证 YouTube
@@ -106,6 +110,14 @@ python3 scripts/run_post_live_subtitle_generation.py \
   --gcs-bucket sermon-zh-artifacts-ai-for-god \
   --gcs-prefix sundays
 ```
+
+## P0-P2 自动化保护
+
+- Web 服务用 `YOUTUBE_API_KEY_SECRET` 查询 `scheduledStartTime/actualStartTime`，按实际本地开播时间归类 `sat400` 或 `sat530`；不再信任触发它的 Scheduler 名称。
+- 直播链接捕获、16:20/17:50 仍未捕获、录像下载授权失败和时间轴待确认，均走去重通知。优先 webhook；生产环境可用 `OPERATOR_NOTIFY_SENDGRID_SECRET`、`OPERATOR_NOTIFY_RECIPIENTS_SECRET`、`OPERATOR_NOTIFY_SENDER_SECRET` 走邮件。
+- `run-status.json` 固定记录 `source_saved → archive_ready → downloaded → clipped → transcribed → translated → reviewed → pdf_qa → approval`。每阶段保留 attempts、durationSeconds、artifact 和 blocker；重跑会复用已有下载及核心 pipeline 产物。其中 `reviewed` 阶段现在固定执行阅读版修订：默认调用 `gpt-5.6-sol` + `high`，并把 `reading-edition-v2/reading_quality_report.json` 记为该阶段 artifact。
+- PDF renderer 每次自动生成同名 `.qa.json`，逐页检查 blank、overflow、sparse orphan、长行、缺字标记，并检查必需人名/经文及 `挪亚/挪阿` 语境。两个 PDF QA 都为 `pass` 后，post-live generation 才完成。
+- 云端直接下载仍失败时，状态进入 `waiting_for_download_access`，本机 `run_local_post_live_download.py` 上传交接 manifest 后，下一轮 Cloud Run Job 自动续跑。
 
 ## Cloud Logging 查询
 

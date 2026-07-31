@@ -9,7 +9,25 @@
   </a>
 </p>
 
-这个项目用于在 Mariners Church 周日 11:30 PT 场证道中，为正在听道的中文会众提供可使用的中文字幕，让中文会众可以在证道进行时跟上信息。
+这个仓库当前的生产主流程，是一条从 Cloud Scheduler 定时发现直播链接开始，在人工确认证道边界后，自动生成中英阅读版 PDF 的 post-live 流程：
+
+1. 定时器在配置的直播窗口内轮询公开的 Mariners / YouTube 来源
+2. 找到 canonical YouTube watch URL 后，保存到可恢复的 shared state
+3. 独立的 post-live 任务等待直播归档变成 `was_live`
+4. 下载完整音频并生成讲道开始/结束的机器建议
+5. operator 独立观看录像，确认完整媒体中的绝对开始和结束时间
+6. `gpt-transcribe` 使用 prompt、keywords 和 `languages=["en"]` 生成英文参考稿
+7. 生成中文初稿，再完成两遍阅读版编辑
+8. 渲染中英阅读版 PDF
+9. 阅读稿 QA 和 PDF QA 都通过后，才把运行标记为完成
+
+当前生产交付物以阅读版 PDF 为主。默认 `reading` 模式不依赖 `whisper-1`；只有需要同步 SRT/VTT 时，才显式切换到字幕模式。
+
+## 一页流程总览
+
+![从直播定时发现到中英阅读版 PDF 的生产流程](docs/assets/sermon-reading-pdf-production-flow.png)
+
+这张图概括了当前生产路径：定时找源、保存 shared state、人工确认证道时间窗、`gpt-transcribe` 与两遍阅读编辑、双重 QA，以及最终的中英阅读版 PDF。
 
 ## 免责声明
 
@@ -19,50 +37,200 @@
 
 本项目不绕过付费墙、访问控制、DRM、平台限制或版权保护。使用者应只在公开或已授权的音视频来源上运行这些工具，并自行遵守 Mariners Church、YouTube 以及其他适用的平台条款和权利边界。
 
-这个 repo 正在为更广泛的开源协作做准备。欢迎大家一起帮助完善，尤其是字幕质量、生成延迟、经文术语、手机/平板 UX、部署可靠性、测试和文档。
+## 端到端生产流程
 
-## 产品北星
+当前稳定主流程的详细文档：
 
-这个项目的核心目标不是只做事后归档，也不是单纯翻译视频。核心目标是：
+- [稳定的 post-live 阅读版 PDF 工作流](docs/stable-post-live-reading-pdf-workflow.zh.md)
+- [Stable post-live reading PDF workflow](docs/stable-post-live-reading-pdf-workflow.md)
+- [生产环境 `gpt-transcribe` 与阅读版 PDF 审核](docs/gpt-transcribe-reading-pdf-production-audit-2026-07-31.zh.md)
 
-```text
-到 11:30 PT 场证道开始时，中文会众应该已经有一个可用的字幕体验，帮助他们实时听懂正在被传讲的信息。
+### 流程图
+
+```mermaid
+flowchart TD
+    A[Cloud Scheduler 进入直播服务窗口] --> B[discover-source 轮询公开来源]
+    B --> C{找到可验证的 YouTube URL?}
+    C -- 否 --> D[保留已有已确认 source / 到点通知 operator]
+    C -- 是 --> E["写 shared state: lastSelectedSource + lastGenerationRequest.liveUrl"]
+    D --> B
+    E --> F[独立 post-live job 读取同一 state]
+    F --> G{归档是否为 was_live?}
+    G -- 否 --> H[waiting_for_post_live，下一轮重试]
+    H --> F
+    G -- 是 --> I[下载完整归档音频]
+    I --> J[gpt-transcribe 多阶段 timeline probe]
+    J --> K[requires_operator_review]
+    K --> L[Operator 独立确认绝对 start/end]
+    L --> M[裁剪讲道时间窗]
+    M --> N["gpt-transcribe: prompt + keywords + languages=en"]
+    N --> O["gpt-5.6: 英文校正与中文初稿"]
+    O --> P["gpt-5.6-sol: 两遍阅读版编辑"]
+    P --> Q{reading_quality_report 是否 pass?}
+    Q -- 否 --> R[阻断并人工复核]
+    Q -- 是 --> S[渲染 sermon_zh_en_reading.pdf]
+    S --> T{PDF QA 是否 pass?}
+    T -- 否 --> R
+    T -- 是 --> U[标记 completed，并可上传 GCS]
 ```
 
-所有实时链路、离线链路、UI、存储和导出工作，都应该用“是否改善 11:30 会众现场听道体验”来评估。
+### 1. 定时器发现并保存直播链接
 
-## 当前重点
+找源和生成是两个独立任务。`discover-source` 应保持轻量：只检查公开页面和 metadata、选择 source、写 state、发送去重通知，不在请求内执行长时间的转录或 PDF 生成。
 
-- 在 11:30 PT 会众需要字幕之前，准备可用的中文字幕。
-- 优先使用 11:30 PT 之前最早可验证的同篇 Mariners live service 作为准备源，10:00 PT 作为保守默认。
-- 让 operator 监控 readiness，复核关键术语/经文，并在 11:30 场前发布字幕。
-- 生成内容物进入 GCS，便于 Cloud Run 和生产式流程使用。
-- API/model key 存在 Google Secret Manager；public browser 文件和生成物不能包含 key 明文或 Secret Manager resource name。
-- 离线处理、笔记、金句提取作为质量复核、归档和后续改进功能。
+生产部署文档当前定义的轮询窗口是：
 
-## 关键发现
+| 窗口 | Scheduler cadence | Sunday route | 作用 |
+|---|---|---|---|
+| 周六 4:00 service | `*/5 16 * * SAT` | `upcoming` | 每 5 分钟寻找 `sat400` 直播 |
+| 周六 5:30 service | `30-59/5 17 * * SAT` | `upcoming` | 每 5 分钟寻找 `sat530` 直播 |
+| 周日 8:30 fallback | `*/2 7-9 * * SUN` | `current` | 周六未抓到时继续兜底 |
+| 周日 10:00 fallback | `*/2 9-10 * * SUN` | `current` | 独立保留第二场兜底 |
 
-根据当前 Mariners Church YouTube 公开视频 metadata 分析，等待公开视频 VOD 出现无法满足周日 11:50 PT 前完成字幕的目标。近期主证道视频通常在 12:28-12:43 PT 公开，中位数约 12:31 PT。
+Scheduler 调用：
 
-更可行的输入是官方 live service。Mariners Online 列出周日直播时间为 7:00、8:30、10:00、11:30 AM PT。系统设计因此选择从最早可验证的同篇早场直播准备字幕，将 10:00 PT 作为保守生产默认，并将公开视频 VOD 作为后续离线质量补齐源。
+```text
+POST /api/admin/sundays/{upcoming|current}/discover-source
+```
 
-当前 YouTube Streams metadata 也支持离线直播链接路线：在当前可见的周日直播记录中，标准直播链接几乎都在 08:21 PT 左右启动，距离 11:30 PT 会众场约 3 小时，可用于直播/归档抓取、英文听写、中文字幕生成和 operator 复核。详见 [离线直播链接字幕链路的时间可行性证据](docs/offline-live-archive-timing-feasibility.zh.md)。
+生产 shared state 由 `LIVE_SOURCE_MONITOR_STATE_URI` 指向持久化对象，通常是 GCS 上的 `backend-state.json`。后续任务主要读取：
 
-## Post-live 安全模型
+- `lastSelectedSource`：已经验证和选择的 source
+- `lastGenerationRequest.liveUrl`：后续下载使用的 canonical URL
+- `lastSunday`：防止把错误日期的 source 用到本周运行
 
-post-live 流程目前定位为半自动，而不是无人值守全自动。自动化可以完成直播链接发现、等待归档、完整音频下载、粗英文时间轴、证道窗口候选、字幕生成、PDF/SRT/VTT 产物生成、GCS 上传和 Cloud Run 读取验证。
+后续轮询即使只得到 fallback，也不能清空同一个 Sunday 已确认的 URL。找源失败或超过 operator alert 时间时，通知会去重，避免定时器每轮重复报警。
 
-自动化必须在两个关口停下来：
+本地开发时可以使用：
 
-- **证道时间窗审核：** operator 根据 timeline evidence 确认本地音频 start/end，再允许跑正式全量生成。
-- **reviewed 字幕批准：** operator 抽查英文听写、中文翻译、经文术语、标题/讲员 metadata 和首尾字幕，再允许发布正式 Sunday 页面。
+```text
+artifacts/live-source-monitor/state.json
+```
 
-只有 reviewed artifacts 可以 promotion 到 `sundays/<date>/cloud-manifest.json`。详细路径见 [Post-live reviewed Sunday 发布路径](docs/post-live-reviewed-sunday-publication.zh.md)。
+### 2. 等待直播结束并生成时间轴建议
+
+独立的 timeline-probe 定时任务读取同一个 state。生产 runbook 当前使用周六晚间每 10 分钟检查一次：
+
+```text
+sermon-post-live-timeline-probe  */10 18-23 * * SAT
+POST /api/admin/sundays/upcoming/post-live-subtitles
+payload.mode = timeline-probe
+```
+
+如果 archive 还不是 `was_live`，任务返回 `waiting_for_post_live`，下一轮继续检查，不启动模型。archive 可下载后，timeline job 会：
+
+1. 下载完整直播音频
+2. 先做 120 秒粗粒度扫描
+3. 再做 30 秒 transition 扫描
+4. 在开始和结束附近做 5 秒精查
+5. 写出 `suggestedWindow`
+6. 停在 `requires_operator_review`
+
+机器建议只用于缩小人工检查范围，不能直接成为最终剪裁边界。operator 必须独立观看完整录像，并确认 `start-time` / `end-time` 是完整媒体中的绝对偏移。
+
+云端下载授权失败时，状态进入 `waiting_for_download_access`。完成本地授权下载和 GCS handoff 后，云任务可以从已有阶段继续，不需要重新找源或重做时间轴。
+
+### 3. 生成阅读稿和最终 PDF
+
+operator 确认边界后，再触发 `mode=generate-reviewed`，或在本地运行同一条稳定的 reviewed generation：
+
+```bash
+python3 scripts/run_post_live_subtitle_generation.py \
+  --sunday 2026-07-26 \
+  --state-file artifacts/live-source-monitor/state.json \
+  --work-root artifacts/post-live-runs \
+  --out artifacts/post-live-subtitle-generation/report.json \
+  --slug mariners_VIDEO_ID \
+  --start-time 00:29:35 \
+  --end-time 01:00:55 \
+  --output-mode reading \
+  --reference-model gpt-transcribe
+```
+
+这一步会复用已经下载的音频和已完成的核心产物，并依次执行：
+
+1. 按人工确认的绝对时间裁剪讲道
+2. 用 `gpt-transcribe` 生成英文参考稿
+3. 把上下文 prompt、词汇表 keywords 和 `languages=["en"]` 写入可审核 metadata
+4. 用 `gpt-5.6` 做英文校正和中文初稿
+5. 用 `gpt-5.6-sol`、`high` reasoning 完成两遍阅读版编辑
+6. 检查 `reading-edition-v2/reading_quality_report.json`
+7. 渲染 `sermon_zh_en_reading.pdf`
+8. 逐页执行 blank、overflow、sparse orphan、长行、缺字、人名和经文检查
+9. QA 全部通过后更新 `run-status.json` 为完成，并按配置上传 GCS
+
+执行前，shell 环境必须已有 `OPENAI_API_KEY`，或者显式传入 Secret Manager resource name：`--api-key-secret`。不要把 raw key 写入命令、日志或仓库。
+
+### 人工 URL 兜底
+
+定时发现是主路径。只有定时器无法找到正确 source，或 operator 需要纠正错误选择时，才手工保存 canonical URL：
+
+```bash
+python3 scripts/live_source_monitor.py \
+  --sunday 2026-07-26 \
+  --manual-url 'https://www.youtube.com/watch?v=VIDEO_ID' \
+  --out artifacts/live-source-monitor/report.json \
+  --state-file artifacts/live-source-monitor/state.json
+```
+
+手工写入后，后续 post-live、timeline、阅读稿和 PDF 流程保持不变。
+
+### 完成标准
+
+不能因为定时器找到了链接、下载了音频或已经有部分 ASR，就把任务算作完成。当前稳定完成条件是：
+
+- source URL 已保存进 shared state，且 Sunday 匹配
+- archive 已确认进入 post-live
+- 证道开始和结束时间已人工确认
+- `reading-edition-v2/reading_quality_report.json` 报告为 pass
+- `sermon_zh_en_reading.pdf` 已生成
+- `sermon_zh_en_reading.qa.json` 报告为 pass
+- `summary.json`、run report 和 `run-status.json` 已写出
+- 运行最终状态是 `completed`
+
+### 自动化与人工边界
+
+| 阶段 | 自动执行 | 必须人工确认 |
+|---|---|---|
+| 找源 | 定时轮询、URL 验证、state 保存、去重通知 | 候选冲突或错误 source 时纠正 |
+| Post-live | 检查 `was_live`、下载、失败后重试/交接 | 下载权限无法自动恢复时处理授权 |
+| 时间轴 | 多阶段探测并给出 `suggestedWindow` | 独立确认证道绝对开始和结束 |
+| 内容生成 | ASR、英文校正、中文初稿、两遍阅读编辑 | QA 阻断或内容异常时复核 |
+| PDF | 渲染和逐页机器 QA | 最终交付/发布前抽查和批准 |
+
+## 主要产物
+
+这条主流程的主要 operator 输出包括：
+
+- `asr_reference.json` 或 `asr_reference_chunks.json`
+- `segments_timed_en_corrected.json`
+- `segments_timed_zh.json`
+- `sermon_zh_en_reading.pdf`
+- `sermon_zh_en_reading.qa.json`
+- `reading-edition-v2/reading_quality_report.json`
+- `summary.json`
+- `run-status.json`
+
+默认 `reading` 模式不调用 `whisper-1`，内部时间仅用于组织阅读段落，不是可发布的字幕时间轴。只有明确运行 `--output-mode subtitles` 时，才会启用 `whisper-1` 生成同步 SRT/VTT。
+
+## 已 working 但属于次要路径
+
+下面这些路径已经 working，但它们不是当前 repo 首页的主入口：
+
+- [backend/README.md](backend/README.md)：backend worker 和 Cloud Run orchestration
+- [web/README.md](web/README.md)：frontend/admin 和播放原型
+
+当前应把它们作为稳定 post-live 阅读版 PDF 工作流周边的支持路径来写，而不是作为主流程本身。
+
+## 背景
+
+更长期的产品目标，仍然是改善 11:30 PT 中文会众现场听道体验。只是就今天这个 repo 的可稳定交付路径来说，最可靠的主流程是：保住 source、人工确认时间窗、生成双语阅读版 PDF。
 
 ## 文档
 
 | 主题 | English | 中文 |
 |---|---|---|
+| 稳定主流程 | [docs/stable-post-live-reading-pdf-workflow.md](docs/stable-post-live-reading-pdf-workflow.md) | [docs/stable-post-live-reading-pdf-workflow.zh.md](docs/stable-post-live-reading-pdf-workflow.zh.md) |
 | 文档索引 | [docs/README.md](docs/README.md) | [docs/README.zh.md](docs/README.zh.md) |
 | System Design | [docs/system-design.md](docs/system-design.md) | [docs/system-design.zh.md](docs/system-design.zh.md) |
 | System Design 实现差距审计 | [docs/system-design-gap-analysis.md](docs/system-design-gap-analysis.md) | [docs/system-design-gap-analysis.zh.md](docs/system-design-gap-analysis.zh.md) |
@@ -79,70 +247,20 @@ post-live 流程目前定位为半自动，而不是无人值守全自动。自�
 | 离线直播链接时间可行性 | [中文报告](docs/offline-live-archive-timing-feasibility.zh.md) | [同一份中文报告](docs/offline-live-archive-timing-feasibility.zh.md) |
 | Backlog / Review | [docs/backlog.md](docs/backlog.md), [docs/review-testing.md](docs/review-testing.md) | [docs/backlog.zh.md](docs/backlog.zh.md) |
 
-其他项目文件：
-
-- [历史发布时间数据](data/mariners_church_sunday_sermon_publish_times.csv)
-- [Live source findings 数据](data/mariners_church_live_source_findings.csv)
-- [前端 operator 原型](web/)
-- [Development notes](docs/development-notes.md)
-
 ## 运行前提
 
-本地 POC 需要：
+对这条稳定本地主流程来说，需要：
 
-- Python 3.10 或更新版本。
-- `yt-dlp` 已安装并在 `PATH` 中，用于公开视频 metadata 和字幕提取。
-- 可以访问 POC 使用的公开源 URL。
+- Python 3.10 或更新版本
+- `yt-dlp` 已安装并可从 `PATH` 调用
+- 能访问本次运行所需的公开视频源 URL
+- shell 环境里已有 `OPENAI_API_KEY`，或者使用可用的 `--api-key-secret`
 
-如果要发布生成物到 GCS / 模拟 Cloud Run 流程，还需要：
+如果要做 GCS / Cloud Run 风格的 artifact 发布，还需要：
 
-- Google Cloud SDK `gcloud` 已安装并完成认证。
-- 对目标 GCS bucket 有访问权限。
-- 使用 Secret Manager resource name 配置模型/API key；不要传入 raw key。
-
-## 运维与日志
-
-Cloud Run API 和 worker 会把结构化 JSON 日志写到 stdout，并进入 Cloud Logging。当前日志覆盖直播采集触发、worker 阶段耗时、字幕可用时间、会众页面匿名设备访问。详见 [观测与日志](docs/observability.zh.md)，里面包含 event 名称、Cloud Logging 查询和设备数量统计的隐私边界。
-
-## Live-Link POC
-
-用直播归档链接准备网页播放模拟数据：
-
-```bash
-python3 scripts/prepare_live_link_playback.py \
-  --live-url 'https://www.youtube.com/watch?v=FsUijL9uB1I'
-```
-
-然后打开 `web/index.html`，点击 `模拟播放`。页面会显示证道标题、直播链接状态，以及正在为 11:30 会众视图生成的字幕片段。
-
-如果生成内容需要进入 Cloud Run / 生产式测试流程，可以上传到 GCS，并通过 Secret Manager 引用模型 API key：
-
-```bash
-python3 scripts/prepare_live_link_playback.py \
-  --live-url 'https://www.youtube.com/watch?v=FsUijL9uB1I' \
-  --gcs-bucket sermon-zh-artifacts \
-  --gcs-prefix runs/2026-06-22/FsUijL9uB1I \
-  --api-key-secret projects/PROJECT_ID/secrets/openai-api-key/versions/latest
-```
-
-脚本会把 report、VTT/SRT、playback data 和 `cloud-manifest.json` 上传到 GCS。Secret Manager resource name 只在运行时校验，不写入公开生成物；公开 artifact 只记录 `apiKeyMaterialIncluded=false` 和 `secretResourceNamesIncluded=false`。
-
-底层调试时，也可以直接从直播归档链接提取证道字幕：
-
-```bash
-python3 scripts/offline_live_sermon_subtitles.py \
-  --live-url 'https://www.youtube.com/watch?v=FsUijL9uB1I'
-```
-
-从 POC 输出生成浏览器播放模拟数据：
-
-```bash
-python3 scripts/build_playback_simulation.py \
-  --report artifacts/offline-live-sermon-poc/report.json \
-  --out web/playback-simulation.generated.js
-```
-
-如果当前只有英文字幕源，UI 会保留 English sidecar，并在中文行显示 `AI 中文待生成`，直到后续接入翻译模型。
+- Google Cloud SDK `gcloud` 已安装并完成认证
+- 对目标 GCS bucket 有访问权限
+- 使用 Secret Manager resource name 配置模型/API key，不传 raw key
 
 ## 开源安全边界
 
@@ -154,14 +272,8 @@ python3 scripts/build_playback_simulation.py \
 
 ## 贡献
 
-见 [CONTRIBUTING.zh.md](CONTRIBUTING.zh.md)、[CONTRIBUTING.md](CONTRIBUTING.md)、[SECURITY.zh.md](SECURITY.zh.md) 和 [SECURITY.md](SECURITY.md)。适合先参与的方向包括字幕质量、provider benchmark、手机/平板阅读体验、经文匹配、部署自动化和 observability。
+见 [CONTRIBUTING.zh.md](CONTRIBUTING.zh.md)、[CONTRIBUTING.md](CONTRIBUTING.md)、[SECURITY.zh.md](SECURITY.zh.md) 和 [SECURITY.md](SECURITY.md)。
 
 ## License
 
 MIT，见 [LICENSE](LICENSE)。
-
-## Source Video
-
-- 目标视频：[The Cure for Our Rebellion - Eric Geiger | Mariners Church](https://www.youtube.com/watch?v=V6OKiwbjDZE)
-- Live archive candidate：[The Cure for Our Rebellion - Eric Geiger | Mariners Church](https://www.youtube.com/watch?v=FsUijL9uB1I)
-- Channel：[Mariners Church](https://www.youtube.com/@marinerschurch)

@@ -2,7 +2,21 @@
 
 English version: [admin-workflow.md](./admin-workflow.md)
 
+这份文档描述的是一条已经 working 的支持路径，不是当前 repo 的主 operator 工作流。
+
+当前主要工作流是稳定的 post-live 阅读版 PDF 路径，见：
+
+- [../README.zh.md](../README.zh.md)
+- [stable-post-live-reading-pdf-workflow.zh.md](./stable-post-live-reading-pdf-workflow.zh.md)
+- [stable-post-live-reading-pdf-workflow.md](./stable-post-live-reading-pdf-workflow.md)
+
 Admin 页面是周日字幕 readiness 的 operator 界面。它和普通会众页面分开，避免会众看到直播源、GCS、触发按钮、导出按钮和日志细节。
+
+## 与主流程的关系
+
+当你需要浏览器内的监控、模拟、手动触发或 readiness 检查时，使用 Admin 页面。
+
+但不要把 Admin 页面上的一次触发或一次页面检查，当作整个工作流已经完成。当前稳定完成标准仍然是阅读版 PDF 路径：source 已保存、证道时间窗已人工确认、`sermon_zh_en_reading.pdf` 已生成、PDF QA 已通过、run report 已写出。
 
 ## Route
 

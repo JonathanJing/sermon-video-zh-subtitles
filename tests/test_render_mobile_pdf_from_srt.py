@@ -133,6 +133,27 @@ class RenderMobilePdfFromSrtTest(unittest.TestCase):
         self.assertIn("AI 辅助生成", mod.DEFAULT_DISCLAIMER)
         self.assertIn("原始英文讲道", mod.DEFAULT_DISCLAIMER)
 
+    def test_header_metadata_includes_date_speaker_and_sermon_window(self):
+        metadata = mod.format_header_metadata(
+            sermon_date="2026-07-26",
+            speaker="Eric Geiger",
+            sermon_window="00:29:35-01:00:55",
+        )
+
+        self.assertEqual(
+            metadata,
+            "2026-07-26 · 讲员：Eric Geiger · 证道时段：00:29:35-01:00:55",
+        )
+
+    def test_header_metadata_omits_unknown_speaker(self):
+        metadata = mod.format_header_metadata(
+            sermon_date="2026-07-26",
+            speaker=None,
+            sermon_window=None,
+        )
+
+        self.assertEqual(metadata, "2026-07-26")
+
     def test_wrap_text_prevents_chinese_punctuation_at_line_start(self):
         font_name = mod.register_cjk_font(None)
 
@@ -140,6 +161,20 @@ class RenderMobilePdfFromSrtTest(unittest.TestCase):
 
         self.assertGreater(len(lines), 1)
         self.assertTrue(all(line[0] not in mod.KINSOKU_NO_LINE_START for line in lines if line))
+
+    def test_wrap_text_keeps_reviewed_proper_names_together(self):
+        font_name = mod.register_cjk_font(None)
+
+        lines = mod.wrap_text(
+            "这部电影由澳大利亚巨星克里斯·海姆斯沃斯主演。",
+            font_name,
+            15.5,
+            155,
+        )
+
+        self.assertTrue(any("克里斯·海姆斯沃斯" in line for line in lines))
+        self.assertFalse(any(line.endswith("克里斯·海姆斯") for line in lines))
+        self.assertFalse(any(line.startswith("沃斯") for line in lines))
 
     def test_balanced_pagination_avoids_a_sparse_last_page(self):
         blocks = [
@@ -175,6 +210,22 @@ class RenderMobilePdfFromSrtTest(unittest.TestCase):
         self.assertIn("v=abc123", url)
         self.assertIn("feature=share", url)
         self.assertIn("t=305s", url)
+
+    def test_layout_qa_checks_every_page_and_flags_blank_page(self):
+        qa = mod.build_layout_qa(
+            [
+                [mod.RenderBlock("0", "1", ("正文",), (), 100, 10)],
+                [],
+            ],
+            first_capacity=500,
+            regular_capacity=500,
+            font_name="test-font",
+        )
+
+        self.assertTrue(qa["allPagesChecked"])
+        self.assertEqual(qa["pageCount"], 2)
+        self.assertEqual(qa["riskPages"], [2])
+        self.assertIn("blank_pages", qa["failures"])
 
 
 if __name__ == "__main__":

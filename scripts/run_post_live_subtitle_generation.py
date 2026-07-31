@@ -6,8 +6,11 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
+import shutil
 import subprocess
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
@@ -18,13 +21,15 @@ if str(REPO_ROOT) not in sys.path:
 
 from backend.cloud import access_secret, upload_file_to_gcs  # noqa: E402
 from backend.observability import log_event, url_summary  # noqa: E402
-from scripts import live_source_monitor  # noqa: E402
+from scripts import live_source_monitor, post_live_run_status  # noqa: E402
 
 
 SERMON_PIPELINE_SCRIPT = REPO_ROOT / "scripts" / "sermon_pipeline.py"
 MOBILE_PDF_SCRIPT = REPO_ROOT / "scripts" / "render_mobile_pdf_from_srt.py"
+READING_EDITION_SCRIPT = REPO_ROOT / "scripts" / "build_sermon_reading_edition_with_openai.py"
 DEFAULT_WORK_ROOT = Path("/tmp/sermon-post-live-subtitles")
 POST_LIVE_STATES = {"was_live"}
+READING_EDITION_DIRNAME = "reading-edition-v2"
 
 
 def main() -> int:
@@ -46,13 +51,35 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--slug")
     parser.add_argument("--start-time", help="Absolute sermon start in the full downloaded media.")
     parser.add_argument("--end-time", help="Absolute sermon end in the full downloaded media.")
+    parser.add_argument("--sermon-title", help="Operator-confirmed sermon title for the reading PDF.")
+    parser.add_argument("--speaker", help="Operator-confirmed sermon speaker for the reading PDF.")
     parser.add_argument("--glossary", type=Path)
-    parser.add_argument("--zh-model", default="gpt-5.5")
-    parser.add_argument("--en-correction-model", default="gpt-5.4-mini")
-    parser.add_argument("--gpt4o-model", default="gpt-4o-transcribe")
+    parser.add_argument("--zh-model", default="gpt-5.6")
+    parser.add_argument("--en-correction-model", default="gpt-5.6")
+    parser.add_argument("--reasoning-effort", choices=("low", "medium", "high"), default="high")
+    parser.add_argument(
+        "--reference-model",
+        "--gpt4o-model",
+        dest="reference_model",
+        default="gpt-transcribe",
+    )
     parser.add_argument("--timing-model", default="whisper-1")
+    parser.add_argument(
+        "--output-mode",
+        choices=("reading", "subtitles"),
+        default="reading",
+        help="Reading mode skips Whisper and produces the reviewed reading PDF only.",
+    )
+    parser.add_argument("--reading-edition-provider", choices=("openai", "codex"), default="openai")
+    parser.add_argument("--reading-edition-model", default="gpt-5.6-sol")
+    parser.add_argument("--reading-edition-reasoning-effort", choices=("low", "medium", "high"), default="high")
+    parser.add_argument("--reading-preferred-seconds", type=float, default=22.0)
+    parser.add_argument("--reading-preferred-english-chars", type=int, default=420)
+    parser.add_argument("--reading-hard-seconds", type=float, default=55.0)
+    parser.add_argument("--reading-hard-english-chars", type=int, default=950)
     parser.add_argument("--audio-format", default="bestaudio[ext=m4a]/bestaudio")
     parser.add_argument("--yt-dlp", default="yt-dlp")
+    parser.add_argument("--youtube-cookies", type=Path, help="Netscape cookies.txt used only for yt-dlp access.")
     parser.add_argument("--metadata-json", type=Path, help="Use saved yt-dlp metadata instead of probing live.")
     parser.add_argument("--api-key-secret", help="Secret Manager resource for OPENAI_API_KEY.")
     parser.add_argument("--gcs-bucket")
@@ -69,6 +96,10 @@ def run_post_live_generation(
     metadata_loader: Callable[[str], dict[str, Any] | None] | None = None,
     runner: Callable[..., subprocess.CompletedProcess] = subprocess.run,
 ) -> dict[str, Any]:
+    if not hasattr(args, "reference_model"):
+        args.reference_model = getattr(args, "gpt4o_model", "gpt-transcribe")
+    if not hasattr(args, "output_mode"):
+        args.output_mode = "reading"
     state = live_source_monitor.read_state(args.state_file)
     source = selected_source_from_state(state)
     live_url = live_url_from_state(state, source)
@@ -106,43 +137,184 @@ def run_post_live_generation(
         return report
 
     run_root = args.work_root / args.sunday / slug_for(args, live_url)
+    run_status_path = run_root / "run-status.json"
+    run_status = load_run_status(run_status_path, args.sunday, live_url)
+    run_status = post_live_run_status.update_stage(run_status, args.sunday, "source_saved", "complete")
+    run_status = post_live_run_status.update_stage(run_status, args.sunday, "archive_ready", "complete")
+    write_run_status(run_status_path, run_status)
     audio_template = run_root / "download" / "source_audio.%(ext)s"
     pipeline_outdir = run_root / "pipeline"
+    reading_outdir = pipeline_outdir / READING_EDITION_DIRNAME
     pipeline_command = build_pipeline_command(args, run_root / "download", pipeline_outdir, live_url)
-    mobile_pdf_command = build_mobile_pdf_command(args, pipeline_outdir, live_url, metadata=metadata, source=source)
+    mobile_pdf_command = (
+        build_mobile_pdf_command(args, pipeline_outdir, live_url, metadata=metadata, source=source)
+        if args.output_mode == "subtitles"
+        else None
+    )
+    reading_edition_command = build_reading_edition_command(args, pipeline_outdir)
     reading_pdf_command = build_reading_pdf_command(args, pipeline_outdir, live_url, metadata=metadata, source=source)
+    delivery_reading_pdf = pipeline_outdir / delivery_pdf_filename(args, metadata=metadata, source=source)
     report = {
         **base_report,
         "status": "planned" if (args.plan_only or args.dry_run) else "running",
         "metadata": safe_metadata(metadata),
         "downloadTemplate": str(audio_template),
         "pipelineOutdir": str(pipeline_outdir),
+        "readingEditionOutdir": str(reading_outdir),
         "pipelineCommand": pipeline_command,
         "mobilePdfCommand": mobile_pdf_command,
+        "readingEditionCommand": reading_edition_command,
         "readingPdfCommand": reading_pdf_command,
-        "outputs": expected_outputs(pipeline_outdir),
+        "deliveryReadingPdf": str(delivery_reading_pdf),
+        "outputMode": args.output_mode,
+        "outputs": expected_outputs(pipeline_outdir, args.output_mode),
     }
     if args.plan_only or args.dry_run:
         log_post_live_event(report)
         return report
 
     set_openai_api_key(args)
-    audio_path = download_archive_audio(live_url, audio_template, args.audio_format, args.yt_dlp, runner)
+    stage_durations: dict[str, float] = {}
+    audio_path = newest_downloaded_audio(audio_template.parent)
+    if audio_path:
+        stage_durations["downloaded"] = 0.0
+    else:
+        started = time.monotonic()
+        run_status = post_live_run_status.update_stage(run_status, args.sunday, "downloaded", "running")
+        write_run_status(run_status_path, run_status)
+        audio_path = download_archive_audio(
+            live_url,
+            audio_template,
+            args.audio_format,
+            args.yt_dlp,
+            runner,
+            cookies_path=args.youtube_cookies,
+        )
+        stage_durations["downloaded"] = time.monotonic() - started
+    run_status = post_live_run_status.update_stage(
+        run_status, args.sunday, "downloaded", "complete", artifact=str(audio_path),
+        duration_seconds=stage_durations["downloaded"],
+    )
+    write_run_status(run_status_path, run_status)
     pipeline_command = build_pipeline_command(args, audio_path.parent, pipeline_outdir, live_url, audio_path=audio_path)
-    mobile_pdf_command = build_mobile_pdf_command(args, pipeline_outdir, live_url, metadata=metadata, source=source)
+    mobile_pdf_command = (
+        build_mobile_pdf_command(args, pipeline_outdir, live_url, metadata=metadata, source=source)
+        if args.output_mode == "subtitles"
+        else None
+    )
+    reading_edition_command = build_reading_edition_command(args, pipeline_outdir)
     reading_pdf_command = build_reading_pdf_command(args, pipeline_outdir, live_url, metadata=metadata, source=source)
-    run_command(pipeline_command, runner)
-    run_command(mobile_pdf_command, runner)
+    delivery_reading_pdf = pipeline_outdir / delivery_pdf_filename(args, metadata=metadata, source=source)
+    core_outputs = (
+        ("sermon_zh_relative.srt", "sermon_en_relative.srt", "summary.json")
+        if args.output_mode == "subtitles"
+        else ("segments_timed_en_corrected.json", "segments_timed_zh.json", "summary.json")
+    )
+    core_ready = all((pipeline_outdir / name).exists() for name in core_outputs) and pipeline_summary_matches(
+        pipeline_outdir / "summary.json",
+        output_mode=args.output_mode,
+        reference_model=args.reference_model,
+    )
+    if core_ready:
+        stage_durations["pipeline"] = 0.0
+    else:
+        started = time.monotonic()
+        run_command(pipeline_command, runner)
+        stage_durations["pipeline"] = time.monotonic() - started
+    for stage in ("clipped", "transcribed", "translated"):
+        run_status = post_live_run_status.update_stage(
+            run_status, args.sunday, stage, "complete", duration_seconds=stage_durations["pipeline"]
+        )
+    write_run_status(run_status_path, run_status)
+    if mobile_pdf_command:
+        started = time.monotonic()
+        run_command(mobile_pdf_command, runner)
+        stage_durations["mobile_pdf"] = time.monotonic() - started
+    else:
+        stage_durations["mobile_pdf"] = 0.0
+    reading_report_path = reading_outdir / "reading_quality_report.json"
+    reading_ready = all(
+        path.exists()
+        for path in (
+            reading_outdir / "sermon_zh_reading_revised.srt",
+            reading_outdir / "sermon_en_reading_revised.srt",
+            reading_report_path,
+        )
+    ) and reading_report_matches_layout(reading_report_path, args)
+    if reading_ready:
+        stage_durations["reviewed"] = 0.0
+    else:
+        started = time.monotonic()
+        run_status = post_live_run_status.update_stage(run_status, args.sunday, "reviewed", "running")
+        write_run_status(run_status_path, run_status)
+        run_command(reading_edition_command, runner)
+        stage_durations["reviewed"] = time.monotonic() - started
+    reading_report = json.loads(reading_report_path.read_text(encoding="utf-8"))
+    if reading_report.get("status") != "pass":
+        run_status = post_live_run_status.update_stage(
+            run_status,
+            args.sunday,
+            "reviewed",
+            "blocked",
+            reason="reading_quality_needs_review",
+            artifact=str(reading_report_path),
+            duration_seconds=stage_durations["reviewed"],
+        )
+        write_run_status(run_status_path, run_status)
+        raise RuntimeError("Reading edition quality report did not pass; inspect reading_quality_report.json")
+    run_status = post_live_run_status.update_stage(
+        run_status,
+        args.sunday,
+        "reviewed",
+        "complete",
+        artifact=str(reading_report_path),
+        duration_seconds=stage_durations["reviewed"],
+    )
+    write_run_status(run_status_path, run_status)
+    started = time.monotonic()
     run_command(reading_pdf_command, runner)
-    uploaded = upload_outputs(args, pipeline_outdir)
+    stage_durations["reading_pdf"] = time.monotonic() - started
+    stage_durations["pdf_qa"] = stage_durations["mobile_pdf"] + stage_durations["reading_pdf"]
+    qa_paths = [pipeline_outdir / "sermon_zh_en_reading.qa.json"]
+    if args.output_mode == "subtitles":
+        qa_paths.insert(0, pipeline_outdir / "sermon_zh_mobile.qa.json")
+    qa_reports = [json.loads(path.read_text(encoding="utf-8")) for path in qa_paths]
+    if any(report.get("status") != "pass" for report in qa_reports):
+        run_status = post_live_run_status.update_stage(
+            run_status, args.sunday, "pdf_qa", "blocked", reason="pdf_qa_needs_review",
+            duration_seconds=stage_durations["pdf_qa"],
+        )
+        write_run_status(run_status_path, run_status)
+        raise RuntimeError("PDF QA did not pass; inspect the generated *.qa.json reports")
+    delivery_paths = create_delivery_pdf_copy(
+        pipeline_outdir / "sermon_zh_en_reading.pdf",
+        delivery_reading_pdf,
+    )
+    report["outputs"] = [*report["outputs"], *(str(path) for path in delivery_paths)]
+    run_status = post_live_run_status.update_stage(
+        run_status, args.sunday, "pdf_qa", "complete",
+        artifact=str(pipeline_outdir / "sermon_zh_en_reading.qa.json"),
+        duration_seconds=stage_durations["pdf_qa"],
+    )
+    write_run_status(run_status_path, run_status)
+    uploaded = upload_outputs(args, pipeline_outdir, args.output_mode, extra_paths=delivery_paths)
     report.update(
         {
             "status": "completed",
             "downloadedAudio": str(audio_path),
             "pipelineCommand": pipeline_command,
             "mobilePdfCommand": mobile_pdf_command,
+            "readingEditionCommand": reading_edition_command,
             "readingPdfCommand": reading_pdf_command,
+            "deliveryReadingPdf": str(delivery_reading_pdf),
+            "readingQualityReport": str(reading_report_path),
             "uploaded": uploaded,
+            "runStatus": str(run_status_path),
+            "stageDurationsSeconds": {key: round(value, 3) for key, value in stage_durations.items()},
+            "retryCounts": {
+                stage: max(0, int(data.get("attempts") or 0) - 1)
+                for stage, data in run_status.get("stages", {}).items()
+            },
             "completedAt": datetime.now(timezone.utc).isoformat(),
         }
     )
@@ -199,6 +371,14 @@ def safe_metadata(metadata: dict[str, Any] | None) -> dict[str, Any] | None:
     keys = [
         "id",
         "title",
+        "sermon_title",
+        "sermonTitle",
+        "message_title",
+        "messageTitle",
+        "speaker",
+        "preacher",
+        "sermon_speaker",
+        "sermonSpeaker",
         "live_status",
         "media_type",
         "availability",
@@ -208,6 +388,10 @@ def safe_metadata(metadata: dict[str, Any] | None) -> dict[str, Any] | None:
         "timestamp",
         "duration",
         "webpage_url",
+        "actual_start_time",
+        "actual_end_time",
+        "scheduled_start_time",
+        "metadata_provider",
     ]
     return {key: metadata.get(key) for key in keys if key in metadata}
 
@@ -239,15 +423,19 @@ def build_pipeline_command(
         slug_for(args, live_url),
         "--outdir",
         str(pipeline_outdir),
-        "--gpt4o-model",
-        args.gpt4o_model,
-        "--timing-model",
-        args.timing_model,
+        "--reference-model",
+        args.reference_model,
+        "--output-mode",
+        args.output_mode,
         "--en-correction-model",
         args.en_correction_model,
         "--zh-model",
         args.zh_model,
+        "--reasoning-effort",
+        args.reasoning_effort,
     ]
+    if args.output_mode == "subtitles":
+        command.extend(["--timing-model", args.timing_model])
     if args.end_time:
         command.extend(["--end-time", args.end_time])
     if args.glossary:
@@ -263,6 +451,7 @@ def build_mobile_pdf_command(
     metadata: dict[str, Any] | None = None,
     source: dict[str, Any] | None = None,
 ) -> list[str]:
+    sermon_title, speaker = reading_pdf_metadata(args, metadata=metadata, source=source)
     return [
         sys.executable,
         str(MOBILE_PDF_SCRIPT),
@@ -273,13 +462,48 @@ def build_mobile_pdf_command(
         "--out",
         str(pipeline_outdir / "sermon_zh_mobile.pdf"),
         "--title",
-        mobile_pdf_title(args, live_url, metadata=metadata, source=source),
+        sermon_title,
         "--subtitle",
-        f"{args.sunday} 逐句中英字幕版",
+        "逐句中英字幕版",
+        "--sermon-date",
+        args.sunday,
+        "--sermon-window",
+        sermon_window_label(args),
         "--source-url",
         live_url,
         "--source-offset-seconds",
         str(timecode_to_seconds(args.start_time or "00:00:00")),
+        *([] if not speaker else ["--speaker", speaker]),
+    ]
+
+
+def build_reading_edition_command(
+    args: argparse.Namespace,
+    pipeline_outdir: Path,
+) -> list[str]:
+    return [
+        sys.executable,
+        str(READING_EDITION_SCRIPT),
+        "--source-pipeline",
+        str(pipeline_outdir),
+        "--outdir",
+        str(pipeline_outdir / READING_EDITION_DIRNAME),
+        "--provider",
+        args.reading_edition_provider,
+        "--model",
+        args.reading_edition_model,
+        "--reasoning-effort",
+        args.reading_edition_reasoning_effort,
+        "--passes",
+        "2",
+        "--preferred-seconds",
+        str(getattr(args, "reading_preferred_seconds", 22.0)),
+        "--preferred-english-chars",
+        str(getattr(args, "reading_preferred_english_chars", 420)),
+        "--hard-seconds",
+        str(getattr(args, "reading_hard_seconds", 55.0)),
+        "--hard-english-chars",
+        str(getattr(args, "reading_hard_english_chars", 950)),
     ]
 
 
@@ -291,25 +515,31 @@ def build_reading_pdf_command(
     metadata: dict[str, Any] | None = None,
     source: dict[str, Any] | None = None,
 ) -> list[str]:
+    sermon_title, speaker = reading_pdf_metadata(args, metadata=metadata, source=source)
     return [
         sys.executable,
         str(MOBILE_PDF_SCRIPT),
         "--layout",
         "reading",
         "--input",
-        str(pipeline_outdir / "sermon_zh_relative.srt"),
+        str(pipeline_outdir / READING_EDITION_DIRNAME / "sermon_zh_reading_revised.srt"),
         "--secondary-input",
-        str(pipeline_outdir / "sermon_en_relative.srt"),
+        str(pipeline_outdir / READING_EDITION_DIRNAME / "sermon_en_reading_revised.srt"),
         "--out",
         str(pipeline_outdir / "sermon_zh_en_reading.pdf"),
         "--title",
-        mobile_pdf_title(args, live_url, metadata=metadata, source=source),
+        sermon_title,
         "--subtitle",
-        f"{args.sunday} 中英对照阅读版",
+        "中英对照阅读版",
+        "--sermon-date",
+        args.sunday,
+        "--sermon-window",
+        sermon_window_label(args),
         "--source-url",
         live_url,
         "--source-offset-seconds",
         str(timecode_to_seconds(args.start_time or "00:00:00")),
+        *([] if not speaker else ["--speaker", speaker]),
     ]
 
 
@@ -320,13 +550,96 @@ def mobile_pdf_title(
     metadata: dict[str, Any] | None = None,
     source: dict[str, Any] | None = None,
 ) -> str:
-    for candidate in [
-        metadata.get("title") if metadata else None,
-        source.get("title") if source else None,
-    ]:
-        if isinstance(candidate, str) and candidate.strip():
-            return candidate.strip()
-    return slug_for(args, live_url)
+    return reading_pdf_metadata(args, metadata=metadata, source=source)[0]
+
+
+def reading_pdf_metadata(
+    args: argparse.Namespace,
+    *,
+    metadata: dict[str, Any] | None = None,
+    source: dict[str, Any] | None = None,
+) -> tuple[str, str | None]:
+    explicit_title = str(getattr(args, "sermon_title", "") or "").strip()
+    explicit_speaker = str(getattr(args, "speaker", "") or "").strip()
+    structured_title = ""
+    structured_speaker = ""
+
+    for payload in (metadata or {}, source or {}):
+        for key in ("sermon_title", "sermonTitle", "message_title", "messageTitle"):
+            candidate = payload.get(key)
+            if isinstance(candidate, str) and candidate.strip():
+                structured_title = candidate.strip()
+                break
+        for key in ("speaker", "preacher", "sermon_speaker", "sermonSpeaker"):
+            candidate = payload.get(key)
+            if isinstance(candidate, str) and candidate.strip():
+                structured_speaker = candidate.strip()
+                break
+        if structured_title:
+            break
+
+    published_title = str((metadata or {}).get("title") or "").strip()
+    parsed_title, parsed_speaker = parse_published_sermon_title(published_title)
+    title = explicit_title or structured_title or parsed_title
+    speaker = explicit_speaker or structured_speaker or parsed_speaker or None
+    if not title:
+        title = "主日证道"
+    return title, speaker
+
+
+def parse_published_sermon_title(value: str) -> tuple[str, str]:
+    title = value.strip()
+    if not title or is_generic_service_title(title):
+        return "", ""
+    match = re.match(r"^(?P<title>.+?)\s+-\s+(?P<speaker>[^|]+?)\s*\|\s*Mariners Church\s*$", title, re.I)
+    if match:
+        return match.group("title").strip(), match.group("speaker").strip()
+    return title, ""
+
+
+def is_generic_service_title(value: str) -> bool:
+    normalized = value.lower()
+    generic_markers = (
+        "worship service",
+        "join us now",
+        "mariners online",
+        "live service",
+        "sunday service",
+        "saturday service",
+        "manual authorized source",
+        "已捕获直播链接",
+    )
+    return any(marker in normalized for marker in generic_markers)
+
+
+def sermon_window_label(args: argparse.Namespace) -> str:
+    start = str(getattr(args, "start_time", "") or "").strip()
+    end = str(getattr(args, "end_time", "") or "").strip()
+    if start and end:
+        return f"{start}-{end}"
+    return start or end
+
+
+def delivery_pdf_filename(
+    args: argparse.Namespace,
+    *,
+    metadata: dict[str, Any] | None = None,
+    source: dict[str, Any] | None = None,
+) -> str:
+    title, speaker = reading_pdf_metadata(args, metadata=metadata, source=source)
+    components = [
+        args.sunday,
+        filename_component(title),
+        filename_component(speaker) if speaker else "",
+        "中英对照阅读版",
+    ]
+    return "-".join(component for component in components if component) + ".pdf"
+
+
+def filename_component(value: str, *, max_length: int = 72) -> str:
+    cleaned = re.sub(r"[^\w\u3400-\u9fff]+", "-", value, flags=re.UNICODE).strip("-_")
+    cleaned = re.sub(r"-{2,}", "-", cleaned)
+    return cleaned[:max_length].rstrip("-") or "sermon"
 
 
 def timecode_to_seconds(value: str) -> float:
@@ -347,22 +660,87 @@ def download_archive_audio(
     audio_format: str,
     yt_dlp: str,
     runner: Callable[..., subprocess.CompletedProcess],
+    *,
+    cookies_path: Path | None = None,
 ) -> Path:
     output_template.parent.mkdir(parents=True, exist_ok=True)
     command = [
         yt_dlp,
         "--no-playlist",
+        "--js-runtimes",
+        "node",
         "-f",
         audio_format,
         "-o",
         str(output_template),
-        live_url,
     ]
+    if cookies_path:
+        command.extend(["--cookies", str(cookies_path)])
+    command.append(live_url)
     run_command(command, runner)
     files = sorted(output_template.parent.glob("source_audio.*"), key=lambda path: path.stat().st_mtime, reverse=True)
     if not files:
         raise RuntimeError("yt-dlp completed but no source_audio.* file was created")
     return files[0]
+
+
+def newest_downloaded_audio(download_dir: Path) -> Path | None:
+    files = sorted(
+        (
+            path
+            for path in download_dir.glob("source_audio.*")
+            if path.is_file() and path.suffix not in {".part", ".ytdl"}
+        ),
+        key=lambda path: path.stat().st_mtime,
+        reverse=True,
+    )
+    return files[0] if files else None
+
+
+def load_run_status(path: Path, sunday: str, live_url: str) -> dict[str, Any]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(payload, dict) and payload.get("sunday") == sunday:
+            return payload
+    except (FileNotFoundError, json.JSONDecodeError):
+        pass
+    return post_live_run_status.new_status(sunday, source_url=live_url)
+
+
+def write_run_status(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
+
+
+def pipeline_summary_matches(path: Path, *, output_mode: str, reference_model: str) -> bool:
+    try:
+        summary = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return False
+    models = summary.get("models") if isinstance(summary, dict) else None
+    return (
+        summary.get("outputMode") == output_mode
+        and isinstance(models, dict)
+        and models.get("referenceAsr") == reference_model
+    )
+
+
+def reading_layout_targets(args: argparse.Namespace) -> dict[str, float | int]:
+    return {
+        "preferredSeconds": float(getattr(args, "reading_preferred_seconds", 22.0)),
+        "preferredEnglishCharacters": int(getattr(args, "reading_preferred_english_chars", 420)),
+        "hardSeconds": float(getattr(args, "reading_hard_seconds", 55.0)),
+        "hardEnglishCharacters": int(getattr(args, "reading_hard_english_chars", 950)),
+        "targetBilingualBlocksPerMobilePage": 2,
+    }
+
+
+def reading_report_matches_layout(path: Path, args: argparse.Namespace) -> bool:
+    try:
+        report = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return False
+    return report.get("status") == "pass" and report.get("layoutTargets") == reading_layout_targets(args)
 
 
 def run_command(command: list[str], runner: Callable[..., subprocess.CompletedProcess]) -> None:
@@ -377,27 +755,63 @@ def set_openai_api_key(args: argparse.Namespace) -> None:
     os.environ["OPENAI_API_KEY"] = access_secret(args.api_key_secret)
 
 
-def expected_outputs(pipeline_outdir: Path) -> list[str]:
-    return [
-        str(pipeline_outdir / "sermon_zh_relative.srt"),
-        str(pipeline_outdir / "sermon_zh_relative.vtt"),
-        str(pipeline_outdir / "sermon_zh_mobile.pdf"),
+def expected_outputs(pipeline_outdir: Path, output_mode: str = "reading") -> list[str]:
+    outputs = [
         str(pipeline_outdir / "sermon_zh_en_reading.pdf"),
-        str(pipeline_outdir / "full_video_zh_from_sermon.srt"),
-        str(pipeline_outdir / "full_video_zh_from_sermon.vtt"),
+        str(pipeline_outdir / "sermon_zh_en_reading.qa.json"),
+        str(pipeline_outdir / READING_EDITION_DIRNAME / "reading_quality_report.json"),
+        str(pipeline_outdir / READING_EDITION_DIRNAME / "sermon_zh_reading_revised.srt"),
+        str(pipeline_outdir / READING_EDITION_DIRNAME / "sermon_en_reading_revised.srt"),
+        str(pipeline_outdir / "asr_reference.json"),
+        str(pipeline_outdir / "asr_reference_chunks.json"),
+        str(pipeline_outdir / "segments_timed_en_corrected.json"),
+        str(pipeline_outdir / "segments_timed_zh.json"),
         str(pipeline_outdir / "qa_report.json"),
         str(pipeline_outdir / "summary.json"),
     ]
+    if output_mode == "subtitles":
+        outputs.extend(
+            [
+                str(pipeline_outdir / "sermon_zh_relative.srt"),
+                str(pipeline_outdir / "sermon_zh_relative.vtt"),
+                str(pipeline_outdir / "sermon_zh_mobile.pdf"),
+                str(pipeline_outdir / "sermon_zh_mobile.qa.json"),
+                str(pipeline_outdir / "full_video_zh_from_sermon.srt"),
+                str(pipeline_outdir / "full_video_zh_from_sermon.vtt"),
+            ]
+        )
+    return outputs
 
 
-def upload_outputs(args: argparse.Namespace, pipeline_outdir: Path) -> list[dict[str, str]]:
+def create_delivery_pdf_copy(source_pdf: Path, delivery_pdf: Path) -> list[Path]:
+    delivery_pdf.parent.mkdir(parents=True, exist_ok=True)
+    paths = [delivery_pdf]
+    if source_pdf.resolve() != delivery_pdf.resolve():
+        shutil.copy2(source_pdf, delivery_pdf)
+    source_qa = source_pdf.with_suffix(".qa.json")
+    delivery_qa = delivery_pdf.with_suffix(".qa.json")
+    if source_qa.exists():
+        if source_qa.resolve() != delivery_qa.resolve():
+            shutil.copy2(source_qa, delivery_qa)
+        paths.append(delivery_qa)
+    return paths
+
+
+def upload_outputs(
+    args: argparse.Namespace,
+    pipeline_outdir: Path,
+    output_mode: str = "reading",
+    *,
+    extra_paths: list[Path] | None = None,
+) -> list[dict[str, str]]:
     if not args.gcs_bucket:
         return []
     slug = args.slug or "sermon"
     prefix = "/".join(part.strip("/") for part in [args.gcs_prefix, args.sunday, "post-live-subtitles", slug] if part)
     uploaded = []
-    for path_text in expected_outputs(pipeline_outdir):
-        path = Path(path_text)
+    paths = [Path(path_text) for path_text in expected_outputs(pipeline_outdir, output_mode)]
+    paths.extend(extra_paths or [])
+    for path in dict.fromkeys(paths):
         if not path.exists():
             continue
         destination = f"gs://{args.gcs_bucket}/{prefix}/{path.name}"

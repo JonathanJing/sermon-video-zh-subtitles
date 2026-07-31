@@ -9,7 +9,7 @@ import re
 import shutil
 import subprocess
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, datetime, timedelta, time
 from difflib import SequenceMatcher
 from pathlib import Path
@@ -25,7 +25,8 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from backend.observability import log_event, stable_hash, url_summary  # noqa: E402
-from backend.cloud import read_gcs_text, write_gcs_text  # noqa: E402
+from backend.cloud import access_secret, read_gcs_text, write_gcs_text  # noqa: E402
+from scripts import youtube_data_api  # noqa: E402
 
 
 DEFAULT_TIMEZONE = "America/Los_Angeles"
@@ -77,6 +78,13 @@ def main() -> int:
     notification = build_notification(report, previous_state)
     if notification["shouldNotify"] and args.notify_webhook_url:
         notification["delivery"] = send_webhook_notification(args.notify_webhook_url, notification)
+    elif notification["shouldNotify"] and getattr(args, "notify_sendgrid_secret", None):
+        notification["delivery"] = send_sendgrid_notification(
+            args.notify_sendgrid_secret,
+            getattr(args, "notify_recipients_secret", None),
+            getattr(args, "notify_sender_secret", None),
+            notification,
+        )
     report["notification"] = notification
     write_state(args.state_file, report, previous_state, notification)
     out = resolve_repo_path(args.out)
@@ -114,6 +122,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--out", type=Path, default=Path("artifacts/live-source-monitor/report.json"))
     parser.add_argument("--state-file", default="artifacts/live-source-monitor/state.json")
     parser.add_argument("--notify-webhook-url", help="Operator notification webhook URL. Use env or secrets in production.")
+    parser.add_argument("--notify-sendgrid-secret", help="Secret containing a SendGrid API key.")
+    parser.add_argument("--notify-recipients-secret", help="Secret containing comma-separated or JSON recipient emails.")
+    parser.add_argument("--notify-sender-secret", help="Secret containing the verified sender email.")
+    parser.add_argument("--youtube-api-key-secret", help="Secret Manager resource/name containing a YouTube Data API key.")
     parser.add_argument("--timezone", default=DEFAULT_TIMEZONE)
     parser.add_argument("--now", help="Override current time, ISO-8601.")
     parser.add_argument("--min-confidence", type=float, default=0.70)
@@ -256,7 +268,98 @@ def fetch_default_candidates(args: argparse.Namespace, checked_at: str | None = 
                     timezone=args.timezone,
                 )
             )
-    return candidates
+    secret_name = getattr(args, "youtube_api_key_secret", None)
+    if not secret_name:
+        return candidates
+    try:
+        api_key = access_secret(secret_name)
+    except Exception:
+        return candidates
+    cache: dict[str, dict[str, Any] | None] = {}
+    enriched = [enrich_candidate_with_data_api(item, api_key, args.timezone, cache) for item in candidates]
+    deduped: dict[tuple[str, str], SourceCandidate] = {}
+    for item in enriched:
+        key = (item.url, item.service)
+        current = deduped.get(key)
+        if current is None or "youtube-data-api-v3" in str(item.evidence):
+            deduped[key] = item
+    return list(deduped.values())
+
+
+def enrich_candidate_with_data_api(
+    candidate: SourceCandidate,
+    api_key: str,
+    timezone: str,
+    cache: dict[str, dict[str, Any] | None] | None = None,
+) -> SourceCandidate:
+    video_id = youtube_video_id_from_url(candidate.url)
+    if not video_id:
+        return candidate
+    metadata_cache = cache if cache is not None else {}
+    if video_id not in metadata_cache:
+        try:
+            metadata_cache[video_id] = youtube_data_api.video_metadata(video_id, api_key=api_key)
+        except Exception:
+            metadata_cache[video_id] = None
+    metadata = metadata_cache[video_id]
+    if not metadata:
+        return candidate
+    observed = metadata.get("actual_start_time") or metadata.get("scheduled_start_time")
+    service = classify_service_from_start_time(observed, timezone) or candidate.service
+    state = state_from_youtube_metadata(metadata)
+    evidence = "+".join(filter(None, [candidate.evidence, "youtube-data-api-v3-service-time"]))
+    return replace(
+        candidate,
+        service=service,
+        state=state,
+        title=string_or_none(metadata.get("title")) or candidate.title,
+        url=string_or_none(metadata.get("webpage_url")) or candidate.url,
+        scheduled_start_at=local_iso_from_api_time(metadata.get("scheduled_start_time"), timezone),
+        actual_start_at=local_iso_from_api_time(metadata.get("actual_start_time"), timezone),
+        evidence=evidence,
+    )
+
+
+def classify_service_from_start_time(value: Any, timezone: str) -> str | None:
+    observed = parse_api_datetime(value, timezone)
+    if observed is None:
+        return None
+    targets = (
+        ((16, 0), "sat400"),
+        ((17, 30), "sat530"),
+    ) if observed.weekday() == 5 else (
+        ((8, 30), "830"),
+        ((10, 0), "1000"),
+    ) if observed.weekday() == 6 else ()
+    if not targets:
+        return None
+    observed_minutes = observed.hour * 60 + observed.minute
+    (_, service), distance = min(
+        (
+            ((target, service), abs(observed_minutes - target[0] * 60 - target[1]))
+            for target, service in targets
+        ),
+        key=lambda item: item[1],
+    )
+    return service if distance <= 75 else None
+
+
+def parse_api_datetime(value: Any, timezone: str) -> datetime | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=ZoneInfo(timezone))
+    return parsed.astimezone(ZoneInfo(timezone))
+
+
+def local_iso_from_api_time(value: Any, timezone: str) -> str | None:
+    parsed = parse_api_datetime(value, timezone)
+    return parsed.isoformat() if parsed else None
 
 
 def fetch_candidate(
@@ -486,7 +589,12 @@ def youtube_extract_info(url: str, *, flat: bool = False) -> dict[str, Any] | No
     except ImportError:
         return youtube_extract_info_with_cli(url, flat=flat)
     try:
-        options: dict[str, Any] = {"quiet": True, "no_warnings": True, "skip_download": True}
+        options: dict[str, Any] = {
+            "quiet": True,
+            "no_warnings": True,
+            "skip_download": True,
+            "js_runtimes": {"node": {}},
+        }
         if flat:
             options.update({"extract_flat": True, "playlistend": 8})
         else:
@@ -502,7 +610,15 @@ def youtube_extract_info_with_cli(url: str, *, flat: bool = False) -> dict[str, 
     executable = shutil.which("yt-dlp")
     if not executable:
         return None
-    command = [executable, "--dump-single-json", "--skip-download", "--no-warnings", "--quiet"]
+    command = [
+        executable,
+        "--dump-single-json",
+        "--skip-download",
+        "--no-warnings",
+        "--quiet",
+        "--js-runtimes",
+        "node",
+    ]
     if flat:
         command.extend(["--flat-playlist", "--playlist-end", "8"])
     else:
@@ -877,20 +993,51 @@ def write_state(
         notifications = {}
     if notification_delivered(notification) and notification.get("dedupeKey"):
         notifications[str(notification["dedupeKey"])] = report.get("checkedAt")
+    selected_source, generation_request, preserved_source = persisted_source(report, previous_state)
     state = {
         "schemaVersion": 1,
         "updatedAt": report.get("checkedAt"),
-        "lastStatus": report.get("status"),
+        # A later fallback must not erase a confirmed URL for the same Sunday.
+        # The post-live worker depends on this state after the stream ends.
+        "lastStatus": "source_detected" if preserved_source else report.get("status"),
+        "lastMonitorStatus": report.get("status"),
+        "lastMonitorCheckedAt": report.get("checkedAt"),
         "lastSunday": report.get("sunday"),
-        "lastSelectedSource": report.get("selectedSource"),
-        "lastGenerationRequest": report.get("generationRequest"),
-        "lastSelectedUrlHash": (report.get("selectedSource") or {}).get("urlHash"),
+        "lastSelectedSource": selected_source,
+        "lastGenerationRequest": generation_request,
+        "lastSelectedUrlHash": selected_source.get("urlHash"),
+        "sourcePreservedAfterFallback": preserved_source,
         "lastOperatorAlert": report.get("operatorAlert"),
         "notifications": notifications,
         "apiKeyMaterialIncluded": False,
         "secretResourceNamesIncluded": False,
     }
     write_state_text(path, json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True))
+
+
+def persisted_source(
+    report: dict[str, Any],
+    previous_state: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any] | None, bool]:
+    """Keep a confirmed same-Sunday source if a later poll returns fallback."""
+    selected = report.get("selectedSource")
+    source = selected if isinstance(selected, dict) else {}
+    generation = report.get("generationRequest")
+    generation_request = generation if isinstance(generation, dict) else None
+    if source.get("url"):
+        return source, generation_request, False
+
+    previous_source = previous_state.get("lastSelectedSource")
+    previous_generation = previous_state.get("lastGenerationRequest")
+    if (
+        previous_state.get("lastSunday") == report.get("sunday")
+        and isinstance(previous_source, dict)
+        and previous_source.get("url")
+        and isinstance(previous_generation, dict)
+        and previous_generation.get("liveUrl")
+    ):
+        return previous_source, previous_generation, True
+    return source, generation_request, False
 
 
 def read_state_text(path: Any) -> str:
@@ -985,6 +1132,64 @@ def send_webhook_notification(webhook_url: str, notification: dict[str, Any]) ->
         return {"status": "failed", "statusCode": exc.code, "authMaterialIncluded": False}
     except Exception as exc:
         return {"status": "failed", "error": str(exc)[:160], "authMaterialIncluded": False}
+
+
+def send_sendgrid_notification(
+    api_key_secret: str | None,
+    recipients_secret: str | None,
+    sender_secret: str | None,
+    notification: dict[str, Any],
+) -> dict[str, Any]:
+    if not api_key_secret or not recipients_secret or not sender_secret:
+        return {"status": "not_configured"}
+    try:
+        api_key = access_secret(api_key_secret)
+        recipients_value = access_secret(recipients_secret)
+        sender = access_secret(sender_secret).strip()
+        recipients = parse_recipient_emails(recipients_value)
+        if not recipients or not sender:
+            return {"status": "failed", "reason": "empty_sender_or_recipients"}
+        payload = {
+            "personalizations": [{"to": [{"email": email} for email in recipients]}],
+            "from": {"email": sender},
+            "subject": f"[讲道流程] {notification.get('title') or '需要处理'}",
+            "content": [{"type": "text/plain", "value": str(notification.get("message") or "")}],
+        }
+        request = Request(
+            "https://api.sendgrid.com/v3/mail/send",
+            data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            method="POST",
+        )
+        with urlopen(request, timeout=20) as response:
+            response.read()
+            return {
+                "status": "posted" if 200 <= response.status <= 299 else "failed",
+                "statusCode": response.status,
+                "recipientCount": len(recipients),
+                "authMaterialIncluded": False,
+            }
+    except HTTPError as exc:
+        exc.read()
+        return {"status": "failed", "statusCode": exc.code, "authMaterialIncluded": False}
+    except Exception as exc:
+        return {"status": "failed", "error": str(exc)[:160], "authMaterialIncluded": False}
+
+
+def parse_recipient_emails(value: str) -> list[str]:
+    text = value.strip()
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError:
+        parsed = None
+    if isinstance(parsed, list):
+        values = [str(item) for item in parsed]
+    elif isinstance(parsed, dict):
+        raw = parsed.get("recipients") or parsed.get("emails") or []
+        values = [str(item) for item in raw] if isinstance(raw, list) else [str(raw)]
+    else:
+        values = re.split(r"[,;\n]", text)
+    return [item.strip() for item in values if re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", item.strip())]
 
 
 def clamp_confidence(value: Any) -> float:

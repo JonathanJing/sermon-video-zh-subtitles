@@ -30,6 +30,10 @@ class AppConfig:
     operator_notify_webhook_url: str | None = None
     live_source_monitor_state_dir: str = "/tmp/sermon-live-source-monitor"
     live_source_monitor_state_uri: str | None = None
+    youtube_api_key_secret: str | None = None
+    operator_notify_sendgrid_secret: str | None = None
+    operator_notify_recipients_secret: str | None = None
+    operator_notify_sender_secret: str | None = None
 
     @classmethod
     def from_env(cls) -> "AppConfig":
@@ -59,6 +63,10 @@ class AppConfig:
                 "/tmp/sermon-live-source-monitor",
             ),
             live_source_monitor_state_uri=empty_to_none(os.getenv("LIVE_SOURCE_MONITOR_STATE_URI")),
+            youtube_api_key_secret=empty_to_none(os.getenv("YOUTUBE_API_KEY_SECRET")),
+            operator_notify_sendgrid_secret=empty_to_none(os.getenv("OPERATOR_NOTIFY_SENDGRID_SECRET")),
+            operator_notify_recipients_secret=empty_to_none(os.getenv("OPERATOR_NOTIFY_RECIPIENTS_SECRET")),
+            operator_notify_sender_secret=empty_to_none(os.getenv("OPERATOR_NOTIFY_SENDER_SECRET")),
         )
 
 
