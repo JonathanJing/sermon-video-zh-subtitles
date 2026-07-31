@@ -366,6 +366,31 @@ def write_transcription_cache(result_path, metadata_path, result, identity):
     write_json(metadata_path, identity)
 
 
+def media_cache_metadata_path(path):
+    return path.with_suffix(path.suffix + ".cache.json")
+
+
+def source_file_identity(path, *, include_sha256=False):
+    stat = path.stat()
+    identity = {
+        "sizeBytes": stat.st_size,
+        "modifiedTimeNs": stat.st_mtime_ns,
+    }
+    if include_sha256:
+        identity["sha256"] = file_sha256(path)
+    return identity
+
+
+def cached_media_matches(path, identity):
+    metadata_path = media_cache_metadata_path(path)
+    if not path.exists() or not metadata_path.exists():
+        return False
+    try:
+        return read_json(metadata_path) == identity
+    except (OSError, json.JSONDecodeError):
+        return False
+
+
 def make_outdir(root, slug, explicit):
     if explicit:
         path = explicit
@@ -377,7 +402,19 @@ def make_outdir(root, slug, explicit):
 
 
 def clip_and_normalize(source, clip_path, start, end):
-    if clip_path.exists():
+    identity = {
+        "schemaVersion": 1,
+        "operation": "clip_and_normalize",
+        "source": source_file_identity(source, include_sha256=True),
+        "startSeconds": round(float(start), 3),
+        "endSeconds": round(float(end), 3) if end is not None else None,
+        "audioFilter": "loudnorm=I=-16:TP=-1.5:LRA=11",
+        "codec": "aac",
+        "sampleRate": 44100,
+        "channels": 1,
+        "bitrate": "64k",
+    }
+    if cached_media_matches(clip_path, identity):
         expected_duration = None if end is None else max(0.0, end - start)
         try:
             existing_duration = ffprobe_duration(clip_path)
@@ -415,10 +452,23 @@ def clip_and_normalize(source, clip_path, start, end):
             str(clip_path),
         ]
     )
+    if clip_path.exists():
+        write_json(media_cache_metadata_path(clip_path), identity)
 
 
 def cut_chunk(source, dest, start, duration):
-    if dest.exists():
+    identity = {
+        "schemaVersion": 1,
+        "operation": "cut_chunk",
+        "source": source_file_identity(source),
+        "startSeconds": round(float(start), 3),
+        "durationSeconds": round(float(duration), 3),
+        "codec": "aac",
+        "sampleRate": 44100,
+        "channels": 1,
+        "bitrate": "64k",
+    }
+    if cached_media_matches(dest, identity):
         return
     dest.parent.mkdir(parents=True, exist_ok=True)
     run(
@@ -447,6 +497,8 @@ def cut_chunk(source, dest, start, duration):
             str(dest),
         ]
     )
+    if dest.exists():
+        write_json(media_cache_metadata_path(dest), identity)
 
 
 def transcribe_openai_audio(

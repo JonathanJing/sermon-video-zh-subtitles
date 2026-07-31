@@ -26,17 +26,24 @@ SRT_TIMESTAMP_RE = re.compile(
 MOBILE_PAGE_SIZE = (390, 844)
 FONT_FALLBACK_CID = "STSong-Light"
 FONT_EMBEDDED = "MobileCJK"
-DEFAULT_DISCLAIMER = "AI 辅助生成的中文字幕，仅供个人学习和会后回顾；请以 Mariners Church 官方信息及原始英文讲道为准。"
-COMPACT_DISCLAIMER = "AI 辅助翻译 · 仅供学习回顾 · 以 Mariners Church 官方英文为准"
+DEFAULT_DISCLAIMER = (
+    "免责声明：本 PDF 为独立个人项目，基于公开或经授权的讲道内容进行 AI 辅助英文听写和中文翻译；"
+    "与 Mariners Church 无隶属、授权或背书关系，不代表教会官方立场。"
+    "仅供个人学习和会后回顾，请以 Mariners Church 官方资料及原始英文讲道为准。"
+)
+COMPACT_DISCLAIMER = (
+    "免责声明：独立个人非官方项目，与 Mariners Church 无隶属、授权或背书关系；"
+    "AI 辅助听写翻译，仅供学习回顾，以官方资料及原始英文讲道为准。"
+)
 TITLE_FONT_SIZE = 16.2
 RUNNING_HEADER_FONT_SIZE = 8.8
 HEADER_META_FONT_SIZE = 8.4
 SUBTITLE_FONT_SIZE = 9.8
-BODY_FONT_SIZE = 15.5
-SECONDARY_FONT_SIZE = 10.5
+BODY_FONT_SIZE = 16.5
+SECONDARY_FONT_SIZE = 11.0
 TIME_FONT_SIZE = 8.0
-FOOTER_FONT_SIZE = 7.2
-LINE_GAP = 4.2
+FOOTER_FONT_SIZE = 7.6
+LINE_GAP = 4.4
 SECONDARY_LINE_GAP = 3.0
 SECONDARY_GAP = 5.0
 CUE_GAP = 13
@@ -45,7 +52,7 @@ TIME_LABEL_BOTTOM_GAP = 10
 SECONDARY_INDENT = 8
 MARGIN_X = 24
 MARGIN_TOP = 30
-MARGIN_BOTTOM_WITH_DISCLAIMER = 58
+MARGIN_BOTTOM_WITH_DISCLAIMER = 76
 MARGIN_BOTTOM_WITHOUT_DISCLAIMER = 32
 KINSOKU_NO_LINE_START = frozenset("，。！？；：、）》】〉』”’…—％‰℃")
 KINSOKU_NO_LINE_END = frozenset("（《【〈『“‘")
@@ -105,6 +112,12 @@ class RenderBlock:
     height: float
     bottom_gap: float
     continued: bool = False
+
+
+@dataclass(frozen=True)
+class FontCandidate:
+    path: Path
+    subfont_index: int = 0
 
 
 def main() -> int:
@@ -994,11 +1007,17 @@ def greedy_render_pages(
 
 
 def register_cjk_font(font_path: Path | None = None) -> str:
-    for path in candidate_font_paths(font_path):
-        if not path.is_file():
+    for candidate in candidate_fonts(font_path):
+        if not candidate.path.is_file():
             continue
         try:
-            pdfmetrics.registerFont(TTFont(FONT_EMBEDDED, str(path), subfontIndex=0))
+            pdfmetrics.registerFont(
+                TTFont(
+                    FONT_EMBEDDED,
+                    str(candidate.path),
+                    subfontIndex=candidate.subfont_index,
+                )
+            )
             return FONT_EMBEDDED
         except Exception:
             continue
@@ -1006,20 +1025,21 @@ def register_cjk_font(font_path: Path | None = None) -> str:
     return FONT_FALLBACK_CID
 
 
-def candidate_font_paths(font_path: Path | None) -> list[Path]:
-    candidates: list[Path] = []
+def candidate_fonts(font_path: Path | None) -> list[FontCandidate]:
+    candidates: list[FontCandidate] = []
     if font_path:
-        candidates.append(font_path)
+        candidates.append(FontCandidate(font_path))
     env_path = os.environ.get("SERMON_MOBILE_PDF_FONT")
     if env_path:
-        candidates.append(Path(env_path))
+        candidates.append(FontCandidate(Path(env_path)))
     candidates.extend(
         [
-            Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"),
-            Path("/usr/share/fonts/opentype/noto/NotoSansCJKsc-Regular.otf"),
-            Path("/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc"),
-            Path("/System/Library/Fonts/PingFang.ttc"),
-            Path("/System/Library/Fonts/STHeiti Medium.ttc"),
+            FontCandidate(Path("/usr/share/fonts/opentype/noto/NotoSansCJKsc-Regular.otf")),
+            FontCandidate(Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"), subfont_index=2),
+            FontCandidate(Path("/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc"), subfont_index=2),
+            FontCandidate(Path("/System/Library/Fonts/STHeiti Light.ttc"), subfont_index=1),
+            FontCandidate(Path("/System/Library/Fonts/Supplemental/Songti.ttc"), subfont_index=6),
+            FontCandidate(Path("/System/Library/Fonts/STHeiti Medium.ttc"), subfont_index=1),
         ]
     )
     return candidates
@@ -1194,11 +1214,14 @@ def draw_footer(
     canvas_obj.drawRightString(page_width - margin_x, 13, f"{page_number}")
     if not disclaimer:
         return
-    canvas_obj.setFillColor(colors.HexColor("#667085"))
+    canvas_obj.setStrokeColor(colors.HexColor("#d9e0e8"))
+    canvas_obj.line(margin_x, 60, page_width - margin_x, 60)
+    canvas_obj.setFillColor(colors.HexColor("#526172"))
     canvas_obj.setFont(font_name, FOOTER_FONT_SIZE)
     footer_width = page_width - margin_x * 2
-    footer_lines = wrap_text(disclaimer, font_name, FOOTER_FONT_SIZE, footer_width)[:2]
-    y = 33 if len(footer_lines) > 1 else 27
+    max_lines = 3 if disclaimer == DEFAULT_DISCLAIMER else 2
+    footer_lines = wrap_text(disclaimer, font_name, FOOTER_FONT_SIZE, footer_width)[:max_lines]
+    y = 48 if len(footer_lines) == 3 else 40 if len(footer_lines) == 2 else 31
     for line in footer_lines:
         canvas_obj.drawString(margin_x, y, line)
         y -= FOOTER_FONT_SIZE + 2.5

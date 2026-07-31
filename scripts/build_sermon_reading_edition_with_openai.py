@@ -360,11 +360,19 @@ def edit_batch(
     schema_path: Path,
 ) -> dict[str, Any]:
     prompt_version = QA_PROMPT_VERSION if qa_pass else PROMPT_VERSION
+    payload = request_payload(
+        all_blocks,
+        batch,
+        start_index,
+        model=model,
+        reasoning_effort=reasoning_effort,
+        qa_pass=qa_pass,
+    )
     input_hash = hashlib.sha256(
-        json.dumps(batch, ensure_ascii=False, sort_keys=True).encode("utf-8")
+        json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
     ).hexdigest()[:12]
     identity = hashlib.sha256(
-        f"{prompt_version}|{model}|{reasoning_effort}".encode("utf-8")
+        f"{prompt_version}|{provider}|{model}|{reasoning_effort}".encode("utf-8")
     ).hexdigest()[:12]
     cache = cache_dir / (
         f"{'qa' if qa_pass else 'edit'}_{batch[0]['id']:03d}_{batch[-1]['id']:03d}."
@@ -373,14 +381,6 @@ def edit_batch(
     if cache.exists():
         parsed = read_json(cache)
     else:
-        payload = request_payload(
-            all_blocks,
-            batch,
-            start_index,
-            model=model,
-            reasoning_effort=reasoning_effort,
-            qa_pass=qa_pass,
-        )
         if provider == "codex":
             parsed = codex_json(
                 payload,
