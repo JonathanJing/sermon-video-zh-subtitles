@@ -52,6 +52,31 @@ class ReadingEditionTest(unittest.TestCase):
         self.assertEqual([0, 1], blocks[0]["segmentIds"])
         self.assertTrue(blocks[0]["en"].endswith("."))
 
+    def test_compact_semantic_blocks_support_two_pairs_per_mobile_page(self):
+        sentence = "This sentence carries one complete sermon thought for bilingual reading. "
+        english = [
+            {
+                "id": index,
+                "start": index * 8.0,
+                "end": (index + 1) * 8.0,
+                "text": sentence.strip(),
+            }
+            for index in range(6)
+        ]
+        chinese = [{"id": index, "zh": "这是一个完整的证道意思。"} for index in range(6)]
+
+        blocks = build_semantic_blocks(
+            english,
+            chinese,
+            preferred_seconds=22,
+            preferred_english_chars=420,
+            hard_seconds=55,
+            hard_english_chars=950,
+        )
+
+        self.assertEqual(2, len(blocks))
+        self.assertTrue(all(len(block["en"]) < 420 for block in blocks))
+
     def test_quality_report_rejects_ellipsis_fillers_and_fragments(self):
         report = reading_quality_report(
             [

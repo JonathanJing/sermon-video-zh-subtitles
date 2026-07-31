@@ -128,10 +128,20 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=3)
     parser.add_argument("--workers", type=int, default=2)
     parser.add_argument("--passes", type=int, choices=(1, 2), default=2)
-    parser.add_argument("--preferred-seconds", type=float, default=45.0)
-    parser.add_argument("--preferred-english-chars", type=int, default=900)
-    parser.add_argument("--hard-seconds", type=float, default=120.0)
-    parser.add_argument("--hard-english-chars", type=int, default=1900)
+    parser.add_argument(
+        "--preferred-seconds",
+        type=float,
+        default=22.0,
+        help="Preferred semantic-block duration; tuned for about two bilingual blocks per mobile PDF page.",
+    )
+    parser.add_argument(
+        "--preferred-english-chars",
+        type=int,
+        default=420,
+        help="Preferred English characters per semantic block.",
+    )
+    parser.add_argument("--hard-seconds", type=float, default=55.0)
+    parser.add_argument("--hard-english-chars", type=int, default=950)
     return parser.parse_args()
 
 
@@ -747,6 +757,13 @@ def main() -> int:
             "passes": args.passes,
             "provider": args.provider,
             "sourcePipeline": str(args.source_pipeline),
+            "layoutTargets": {
+                "preferredSeconds": args.preferred_seconds,
+                "preferredEnglishCharacters": args.preferred_english_chars,
+                "hardSeconds": args.hard_seconds,
+                "hardEnglishCharacters": args.hard_english_chars,
+                "targetBilingualBlocksPerMobilePage": 2,
+            },
             "comparisonToSubtitleDraft": draft_comparison_report(
                 chinese,
                 final,

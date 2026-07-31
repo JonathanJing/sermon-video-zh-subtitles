@@ -20,6 +20,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from backend.cloud import access_secret as cloud_access_secret
 from backend.cloud import upload_file_to_gcs
+from scripts import review_prompts
 
 JS_PREFIX = "window.SERMON_PLAYBACK_SIMULATION = "
 SECRET_RESOURCE_RE = re.compile(
@@ -28,8 +29,8 @@ SECRET_RESOURCE_RE = re.compile(
 NOTE_SLICE_TARGET_MS = 5 * 60 * 1000
 NOTE_SLICE_MAX_CHARS = 900
 NOTE_SLICE_MIN_CHARS = 120
-DEFAULT_MODEL = "gpt-5.4-mini"
-DEFAULT_REASONING_EFFORT = "medium"
+DEFAULT_MODEL = "gpt-5.6"
+DEFAULT_REASONING_EFFORT = "high"
 SRT_TIMESTAMP_RE = re.compile(
     r"^\s*(?P<start>\d{1,2}:\d{2}:\d{2}[,.]\d{3})\s*-->\s*(?P<end>\d{1,2}:\d{2}:\d{2}[,.]\d{3})"
 )
@@ -95,6 +96,7 @@ def main() -> int:
         "status": "ok",
         "model": args.model,
         "reasoningEffort": args.reasoning_effort,
+        "promptVersion": review_prompts.NOTES_PROMPT_VERSION,
         "sliceCount": len(slices),
         "out": str(insights_path),
         "modelOutputJsonl": str(model_output_path),
@@ -421,11 +423,7 @@ def build_openai_request(
                 "content": [
                     {
                         "type": "input_text",
-                        "text": (
-                            "You create traceable Simplified Chinese sermon notes for church review. "
-                            "Use only the supplied caption slices. Do not invent quotes, Bible references, or facts. "
-                            "Every quote must cite a sourceSliceIndex and sourceSegmentId."
-                        ),
+                        "text": review_prompts.NOTES_SYSTEM_PROMPT,
                     }
                 ],
             },
@@ -440,9 +438,11 @@ def build_openai_request(
                             "\"scriptureRefs\":[\"...\"],\"applicationQuestionsZh\":[\"...\"],"
                             "\"quotes\":[{\"textZh\":\"...\",\"sourceSliceIndex\":1,\"sourceSegmentId\":\"...\","
                             "\"sourceTextZh\":\"...\",\"startMs\":0,\"endMs\":0}]}.\n"
-                            "Generate 3-6 outline sections, 3-5 application questions, and 5-8 quote candidates when sourceable.\n"
-                            f"Sermon title: {simulation.get('sermonTitle') or simulation.get('title') or ''}\n"
-                            f"Slices:\n{json.dumps(slices, ensure_ascii=False)}"
+                            "Generate 3-6 outline sections and 3-5 application questions when supported. "
+                            "Generate up to 8 quote candidates; fewer or zero is correct when they cannot be cited exactly.\n"
+                            "Required fields must be present. Use empty arrays, not invented filler, when evidence is absent.\n"
+                            f"<sermon_title>{simulation.get('sermonTitle') or simulation.get('title') or ''}</sermon_title>\n"
+                            f"<caption_slices>{json.dumps(slices, ensure_ascii=False)}</caption_slices>"
                         ),
                     }
                 ],
@@ -523,6 +523,7 @@ def normalize_insights(
         "provider": "openai",
         "model": model,
         "reasoningEffort": reasoning_effort,
+        "promptVersion": review_prompts.NOTES_PROMPT_VERSION,
         "apiKeyMaterialIncluded": False,
         "secretResourceNamesIncluded": False,
         "serverSideSecretConfigured": bool(api_key_secret),

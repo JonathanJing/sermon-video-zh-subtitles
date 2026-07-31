@@ -25,6 +25,8 @@ def make_args(**overrides):
         "slug": "mariners_MEZHufeQBjc",
         "start_time": "00:22:10",
         "end_time": "00:55:36",
+        "sermon_title": None,
+        "speaker": None,
         "glossary": None,
         "zh_model": "gpt-5.6",
         "en_correction_model": "gpt-5.6",
@@ -35,6 +37,10 @@ def make_args(**overrides):
         "reading_edition_provider": "openai",
         "reading_edition_model": "gpt-5.6-sol",
         "reading_edition_reasoning_effort": "high",
+        "reading_preferred_seconds": 22.0,
+        "reading_preferred_english_chars": 420,
+        "reading_hard_seconds": 55.0,
+        "reading_hard_english_chars": 950,
         "audio_format": "bestaudio[ext=m4a]/bestaudio",
         "yt_dlp": "yt-dlp",
         "youtube_cookies": None,
@@ -135,7 +141,19 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
         self.assertIn("render_mobile_pdf_from_srt.py", report["readingPdfCommand"][1])
         self.assertEqual(
             report["readingPdfCommand"][report["readingPdfCommand"].index("--title") + 1],
-            "A Bronze Snake and God's Love - Steve Bang Lee | Mariners Church",
+            "A Bronze Snake and God's Love",
+        )
+        self.assertEqual(
+            report["readingPdfCommand"][report["readingPdfCommand"].index("--speaker") + 1],
+            "Steve Bang Lee",
+        )
+        self.assertEqual(
+            report["readingPdfCommand"][report["readingPdfCommand"].index("--sermon-date") + 1],
+            "2026-06-28",
+        )
+        self.assertEqual(
+            report["readingPdfCommand"][report["readingPdfCommand"].index("--sermon-window") + 1],
+            "00:22:10-00:55:36",
         )
         self.assertIn("--layout", report["readingPdfCommand"])
         self.assertEqual(report["readingPdfCommand"][report["readingPdfCommand"].index("--layout") + 1], "reading")
@@ -153,6 +171,15 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
         self.assertTrue(any(path.endswith("reading-edition-v2/reading_quality_report.json") for path in report["outputs"]))
         self.assertFalse(any(path.endswith("sermon_zh_mobile.pdf") for path in report["outputs"]))
         self.assertTrue(any(path.endswith("sermon_zh_en_reading.pdf") for path in report["outputs"]))
+        self.assertTrue(str(report["deliveryReadingPdf"]).endswith(
+            "2026-06-28-A-Bronze-Snake-and-God-s-Love-Steve-Bang-Lee-中英对照阅读版.pdf"
+        ))
+        self.assertEqual(
+            report["readingEditionCommand"][
+                report["readingEditionCommand"].index("--preferred-english-chars") + 1
+            ],
+            "420",
+        )
 
     def test_run_downloads_audio_and_invokes_pipeline(self):
         calls = []
@@ -224,6 +251,7 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
         self.assertIsNone(report["mobilePdfCommand"])
         self.assertTrue(any("sermon_zh_en_reading.pdf" in item for item in report["readingPdfCommand"]))
         self.assertTrue(str(report["readingQualityReport"]).endswith("reading-edition-v2/reading_quality_report.json"))
+        self.assertTrue(any(path.endswith("中英对照阅读版.pdf") for path in report["outputs"]))
 
     def test_subtitle_mode_keeps_whisper_as_explicit_opt_in(self):
         args = make_args(output_mode="subtitles")
@@ -252,6 +280,29 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
     def test_timecode_to_seconds_accepts_hms_and_ms(self):
         self.assertEqual(mod.timecode_to_seconds("00:22:10"), 1330.0)
         self.assertEqual(mod.timecode_to_seconds("22:10"), 1330.0)
+
+    def test_generic_live_title_is_not_used_as_sermon_title(self):
+        args = make_args(sermon_title=None, speaker=None)
+
+        title, speaker = mod.reading_pdf_metadata(
+            args,
+            metadata={"title": "Mariners Online Worship Service | Worship & Message! | Join Us Now!"},
+            source={"title": "Manual authorized source 1"},
+        )
+
+        self.assertEqual(title, "主日证道")
+        self.assertIsNone(speaker)
+
+    def test_operator_confirmed_pdf_metadata_wins(self):
+        args = make_args(sermon_title="耶稣是谁", speaker="Eric Geiger")
+
+        title, speaker = mod.reading_pdf_metadata(
+            args,
+            metadata={"title": "Generic Live Service"},
+        )
+
+        self.assertEqual(title, "耶稣是谁")
+        self.assertEqual(speaker, "Eric Geiger")
 
 
 if __name__ == "__main__":

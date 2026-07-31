@@ -30,6 +30,7 @@ def base_args(**overrides):
         "out": Path("artifacts/live-source-monitor/report.json"),
         "state_file": Path("artifacts/live-source-monitor/state.json"),
         "notify_webhook_url": None,
+        "youtube_api_key_secret": None,
         "timezone": "America/Los_Angeles",
         "now": "2026-06-28T08:24:00-07:00",
         "min_confidence": 0.70,
@@ -50,6 +51,37 @@ def write_fixture(root, sources):
 
 
 class LiveSourceMonitorTest(unittest.TestCase):
+    def test_actual_start_time_classifies_520_stream_as_sat530(self):
+        candidate = mod.SourceCandidate(
+            kind="youtube-live",
+            service="sat400",
+            url="https://www.youtube.com/watch?v=real530test",
+            state="live",
+            same_sermon_confidence=0.9,
+        )
+        original = mod.youtube_data_api.video_metadata
+        try:
+            mod.youtube_data_api.video_metadata = lambda *_args, **_kwargs: {
+                "webpage_url": candidate.url,
+                "title": "Saturday service",
+                "live_status": "is_live",
+                "actual_start_time": "2026-06-28T00:20:00Z",
+            }
+            enriched = mod.enrich_candidate_with_data_api(
+                candidate, "test-key", "America/Los_Angeles"
+            )
+        finally:
+            mod.youtube_data_api.video_metadata = original
+
+        self.assertEqual(enriched.service, "sat530")
+        self.assertEqual(enriched.actual_start_at, "2026-06-27T17:20:00-07:00")
+        self.assertIn("youtube-data-api-v3-service-time", enriched.evidence)
+
+    def test_parses_email_recipient_secret_without_exposing_values(self):
+        self.assertEqual(
+            mod.parse_recipient_emails('["operator@example.com", "bad-value"]'),
+            ["operator@example.com"],
+        )
     def test_selects_830_source_when_same_sermon_is_confirmed(self):
         with tempfile.TemporaryDirectory() as tmp:
             fixture = write_fixture(
@@ -650,6 +682,77 @@ class LiveSourceMonitorTest(unittest.TestCase):
         self.assertEqual(state["lastGenerationRequest"]["liveUrl"], "https://www.youtube.com/watch?v=MEZHufeQBjc")
         self.assertFalse(state["apiKeyMaterialIncluded"])
         self.assertFalse(state["secretResourceNamesIncluded"])
+
+    def test_fallback_poll_does_not_erase_confirmed_same_sunday_source(self):
+        confirmed = {
+            "status": "source_detected",
+            "sunday": "2026-06-28",
+            "checkedAt": "2026-06-27T16:01:00-07:00",
+            "operatorAlert": False,
+            "selectedSource": {
+                "kind": "youtube-streams",
+                "service": "sat400",
+                "state": "upcoming",
+                "url": "https://www.youtube.com/watch?v=confirmed01",
+                "urlHash": "confirmed-hash",
+            },
+            "generationRequest": {
+                "triggerSource": "live-source-monitor",
+                "sunday": "2026-06-28",
+                "liveUrl": "https://www.youtube.com/watch?v=confirmed01",
+            },
+        }
+        fallback = {
+            "status": "fallback",
+            "sunday": "2026-06-28",
+            "checkedAt": "2026-06-27T16:05:00-07:00",
+            "operatorAlert": False,
+            "selectedSource": {
+                "kind": "operator-audio",
+                "service": "manual",
+                "state": "fallback",
+                "url": "",
+                "urlHash": None,
+            },
+            "generationRequest": None,
+        }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            state_path = Path(tmp) / "state.json"
+            mod.write_state(state_path, confirmed, {}, {"shouldNotify": False})
+            mod.write_state(state_path, fallback, mod.read_state(state_path), {"shouldNotify": False})
+            state = mod.read_state(state_path)
+
+        self.assertEqual(state["lastStatus"], "source_detected")
+        self.assertEqual(state["lastMonitorStatus"], "fallback")
+        self.assertTrue(state["sourcePreservedAfterFallback"])
+        self.assertEqual(state["lastSelectedSource"]["url"], "https://www.youtube.com/watch?v=confirmed01")
+        self.assertEqual(state["lastGenerationRequest"]["liveUrl"], "https://www.youtube.com/watch?v=confirmed01")
+
+    def test_fallback_poll_does_not_preserve_a_previous_sunday_source(self):
+        previous_state = {
+            "lastSunday": "2026-06-21",
+            "lastSelectedSource": {"url": "https://www.youtube.com/watch?v=oldsource01"},
+            "lastGenerationRequest": {"liveUrl": "https://www.youtube.com/watch?v=oldsource01"},
+        }
+        fallback = {
+            "status": "fallback",
+            "sunday": "2026-06-28",
+            "checkedAt": "2026-06-27T16:05:00-07:00",
+            "operatorAlert": False,
+            "selectedSource": {"kind": "operator-audio", "url": "", "urlHash": None},
+            "generationRequest": None,
+        }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            state_path = Path(tmp) / "state.json"
+            mod.write_state(state_path, fallback, previous_state, {"shouldNotify": False})
+            state = mod.read_state(state_path)
+
+        self.assertEqual(state["lastStatus"], "fallback")
+        self.assertFalse(state["sourcePreservedAfterFallback"])
+        self.assertEqual(state["lastSelectedSource"]["kind"], "operator-audio")
+        self.assertIsNone(state["lastGenerationRequest"])
 
     def test_failed_notification_delivery_does_not_dedupe(self):
         report = {

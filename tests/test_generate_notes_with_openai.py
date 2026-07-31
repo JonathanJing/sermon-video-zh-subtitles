@@ -88,6 +88,8 @@ Jesus is our mediator.
         self.assertEqual(payload["model"], "gpt-5.4-mini")
         self.assertEqual(payload["reasoning"], {"effort": "medium"})
         self.assertEqual(payload["text"]["format"]["type"], "json_object")
+        self.assertIn("human church review", payload["input"][0]["content"][0]["text"])
+        self.assertIn("empty arrays", payload["input"][1]["content"][0]["text"])
 
     def test_normalizes_insights_without_secret_material(self):
         insights = mod.normalize_insights(

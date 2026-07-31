@@ -30,6 +30,7 @@ DEFAULT_DISCLAIMER = "AI 辅助生成的中文字幕，仅供个人学习和会�
 COMPACT_DISCLAIMER = "AI 辅助翻译 · 仅供学习回顾 · 以 Mariners Church 官方英文为准"
 TITLE_FONT_SIZE = 16.2
 RUNNING_HEADER_FONT_SIZE = 8.8
+HEADER_META_FONT_SIZE = 8.4
 SUBTITLE_FONT_SIZE = 9.8
 BODY_FONT_SIZE = 15.5
 SECONDARY_FONT_SIZE = 10.5
@@ -48,6 +49,36 @@ MARGIN_BOTTOM_WITH_DISCLAIMER = 58
 MARGIN_BOTTOM_WITHOUT_DISCLAIMER = 32
 KINSOKU_NO_LINE_START = frozenset("，。！？；：、）》】〉』”’…—％‰℃")
 KINSOKU_NO_LINE_END = frozenset("（《【〈『“‘")
+NO_BREAK_TERMS = tuple(
+    sorted(
+        {
+            "Mariners Church",
+            "Christine Caine",
+            "Chris Hemsworth",
+            "Jane Foster",
+            "Natalie Portman",
+            "Elizabeth Cady Stanton",
+            "克里斯·海姆斯沃斯",
+            "简·福斯特",
+            "娜塔莉·波特曼",
+            "伊丽莎白·凯迪·斯坦顿",
+            "西罗非哈",
+            "以利亚撒",
+            "哥林多后书",
+            "希伯来书",
+            "民数记",
+            "玛拿西",
+            "玛吉",
+            "玛拉",
+            "挪阿",
+            "曷拉",
+            "密迦",
+            "得撒",
+        },
+        key=len,
+        reverse=True,
+    )
+)
 
 
 @dataclass(frozen=True)
@@ -84,12 +115,15 @@ def main() -> int:
     secondary_cues = parse_srt(args.secondary_input.read_text(encoding="utf-8-sig")) if args.secondary_input else None
     args.out.parent.mkdir(parents=True, exist_ok=True)
     if args.layout == "reading":
-        render_reading_pdf(
+        qa = render_reading_pdf(
             cues,
             secondary_cues=secondary_cues,
             out=args.out,
             title=args.title or args.input.stem,
             subtitle=args.subtitle,
+            sermon_date=args.sermon_date,
+            speaker=args.speaker,
+            sermon_window=args.sermon_window,
             font_path=args.font_path,
             include_timecodes=not args.hide_timecodes,
             disclaimer=None if args.hide_disclaimer else args.disclaimer,
@@ -104,18 +138,30 @@ def main() -> int:
             preferred_secondary_chars=args.reading_preferred_secondary_chars,
         )
     else:
-        render_mobile_pdf(
+        qa = render_mobile_pdf(
             cues,
             secondary_cues=secondary_cues,
             out=args.out,
             title=args.title or args.input.stem,
             subtitle=args.subtitle,
+            sermon_date=args.sermon_date,
+            speaker=args.speaker,
+            sermon_window=args.sermon_window,
             font_path=args.font_path,
             include_timecodes=not args.hide_timecodes,
             disclaimer=None if args.hide_disclaimer else args.disclaimer,
             source_url=args.source_url,
             source_offset_seconds=args.source_offset_seconds,
         )
+    qa = add_content_qa(
+        qa,
+        cues,
+        secondary_cues or [],
+        required_terms=args.required_term,
+        required_scriptures=args.required_scripture,
+    )
+    qa_path = args.out.with_suffix(".qa.json")
+    qa_path.write_text(json.dumps(qa, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
     print(
         json.dumps(
             {
@@ -128,12 +174,58 @@ def main() -> int:
                 "source": str(args.input),
                 "secondarySource": str(args.secondary_input) if args.secondary_input else None,
                 "sourceOffsetSeconds": args.source_offset_seconds,
+                "qa": str(qa_path),
+                "qaStatus": qa["status"],
             },
             ensure_ascii=False,
             indent=2,
         )
     )
     return 0
+
+
+def add_content_qa(
+    qa: dict,
+    primary_cues: Sequence[Cue],
+    secondary_cues: Sequence[Cue],
+    *,
+    required_terms: Sequence[str],
+    required_scriptures: Sequence[str],
+) -> dict:
+    primary = " ".join(cue.text for cue in primary_cues)
+    secondary = " ".join(cue.text for cue in secondary_cues)
+    all_text = f"{primary} {secondary}"
+    missing_terms = [term for term in required_terms if term not in all_text]
+    missing_scriptures = [term for term in required_scriptures if term not in all_text]
+    contextual_name_errors = []
+    aligned_secondary = align_secondary_cues(list(primary_cues), list(secondary_cues))
+    for index, cue in enumerate(primary_cues):
+        start = max(0, index - 2)
+        end = min(len(primary_cues), index + 3)
+        context = " ".join(aligned_secondary[start:end]).lower()
+        daughters_context = any(term in context for term in ("zelophehad", "daughters", "mahlah", "hoglah"))
+        faith_context = any(term in context for term in ("hebrews 11", "ark", "flood", "abraham", "moses"))
+        if faith_context and not daughters_context and "挪阿" in cue.text:
+            contextual_name_errors.append(f"cue {index + 1}: Noah in Hebrews/Genesis context must be 挪亚")
+        if daughters_context and not faith_context and "挪亚" in cue.text:
+            contextual_name_errors.append(f"cue {index + 1}: Noah, daughter of Zelophehad, must be 挪阿")
+    content_failures = []
+    if missing_terms:
+        content_failures.append("missing_required_terms")
+    if missing_scriptures:
+        content_failures.append("missing_required_scriptures")
+    if contextual_name_errors:
+        content_failures.append("contextual_name_errors")
+    qa["contentChecks"] = {
+        "requiredTerms": list(required_terms),
+        "requiredScriptures": list(required_scriptures),
+        "missingTerms": missing_terms,
+        "missingScriptures": missing_scriptures,
+        "contextualNameErrors": contextual_name_errors,
+    }
+    qa["failures"] = [*qa.get("failures", []), *content_failures]
+    qa["status"] = "pass" if not qa["failures"] else "needs_review"
+    return qa
 
 
 def parse_args() -> argparse.Namespace:
@@ -143,6 +235,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--out", type=Path, required=True, help="Output PDF path.")
     parser.add_argument("--title", help="PDF title.")
     parser.add_argument("--subtitle", help="Optional subtitle shown under the title.")
+    parser.add_argument("--sermon-date", help="Service or sermon date shown in the page header.")
+    parser.add_argument("--speaker", help="Confirmed sermon speaker shown when available.")
+    parser.add_argument("--sermon-window", help="Optional confirmed sermon time range in the source video.")
     parser.add_argument(
         "--layout",
         choices=("cue", "reading"),
@@ -171,6 +266,8 @@ def parse_args() -> argparse.Namespace:
         help="Footer disclaimer shown on every page.",
     )
     parser.add_argument("--hide-disclaimer", action="store_true", help="Hide the footer disclaimer.")
+    parser.add_argument("--required-term", action="append", default=[], help="Name or term that must appear in the PDF source text.")
+    parser.add_argument("--required-scripture", action="append", default=[], help="Scripture reference that must appear in the PDF source text.")
     return parser.parse_args()
 
 
@@ -388,12 +485,15 @@ def render_mobile_pdf(
     out: Path,
     title: str,
     subtitle: str | None = None,
+    sermon_date: str | None = None,
+    speaker: str | None = None,
+    sermon_window: str | None = None,
     font_path: Path | None = None,
     include_timecodes: bool = True,
     disclaimer: str | None = DEFAULT_DISCLAIMER,
     source_url: str | None = None,
     source_offset_seconds: float = 0.0,
-) -> None:
+) -> dict:
     font_name = register_cjk_font(font_path)
     body_width = MOBILE_PAGE_SIZE[0] - MARGIN_X * 2
     secondary_by_index = align_secondary_cues(cues, secondary_cues or [])
@@ -410,11 +510,14 @@ def render_mobile_pdf(
                 include_timecodes=include_timecodes,
             )
         )
-    render_paginated_pdf(
+    return render_paginated_pdf(
         blocks,
         out=out,
         title=title,
         subtitle=subtitle,
+        sermon_date=sermon_date,
+        speaker=speaker,
+        sermon_window=sermon_window,
         font_name=font_name,
         include_timecodes=include_timecodes,
         disclaimer=disclaimer,
@@ -430,6 +533,9 @@ def render_reading_pdf(
     out: Path,
     title: str,
     subtitle: str | None = None,
+    sermon_date: str | None = None,
+    speaker: str | None = None,
+    sermon_window: str | None = None,
     font_path: Path | None = None,
     include_timecodes: bool = True,
     disclaimer: str | None = DEFAULT_DISCLAIMER,
@@ -442,7 +548,7 @@ def render_reading_pdf(
     preferred_block_seconds: float = 32.0,
     preferred_primary_chars: int = 180,
     preferred_secondary_chars: int = 850,
-) -> None:
+) -> dict:
     blocks = build_reading_blocks(
         cues,
         secondary_cues,
@@ -472,11 +578,14 @@ def render_reading_pdf(
                 extra_gap=4,
             )
         )
-    render_paginated_pdf(
+    return render_paginated_pdf(
         render_blocks,
         out=out,
         title=title,
         subtitle=subtitle,
+        sermon_date=sermon_date,
+        speaker=speaker,
+        sermon_window=sermon_window,
         font_name=font_name,
         include_timecodes=include_timecodes,
         disclaimer=disclaimer,
@@ -524,17 +633,23 @@ def render_paginated_pdf(
     out: Path,
     title: str,
     subtitle: str | None,
+    sermon_date: str | None,
+    speaker: str | None,
+    sermon_window: str | None,
     font_name: str,
     include_timecodes: bool,
     disclaimer: str | None,
     source_url: str | None,
     source_offset_seconds: float,
-) -> None:
+) -> dict:
     page_width, page_height = MOBILE_PAGE_SIZE
     margin_bottom = MARGIN_BOTTOM_WITH_DISCLAIMER if disclaimer else MARGIN_BOTTOM_WITHOUT_DISCLAIMER
     first_y = header_body_start_y(
         title=title,
         subtitle=subtitle,
+        sermon_date=sermon_date,
+        speaker=speaker,
+        sermon_window=sermon_window,
         page_width=page_width,
         y=page_height - MARGIN_TOP,
         font_name=font_name,
@@ -543,6 +658,9 @@ def render_paginated_pdf(
     regular_y = header_body_start_y(
         title=title,
         subtitle=subtitle,
+        sermon_date=sermon_date,
+        speaker=speaker,
+        sermon_window=sermon_window,
         page_width=page_width,
         y=page_height - MARGIN_TOP,
         font_name=font_name,
@@ -563,7 +681,7 @@ def render_paginated_pdf(
     )
     doc = canvas.Canvas(str(out), pagesize=MOBILE_PAGE_SIZE, pageCompression=1)
     doc.setTitle(title)
-    doc.setAuthor("sermon-video-zh-subtitles")
+    doc.setAuthor(speaker or "sermon-video-zh-subtitles")
     doc.setCreator("sermon-video-zh-subtitles")
     doc.setSubject("Mobile Chinese-English sermon reading edition")
     doc._doc.Catalog.Lang = PDFString("zh-CN")
@@ -579,6 +697,9 @@ def render_paginated_pdf(
             doc,
             title=title,
             subtitle=subtitle,
+            sermon_date=sermon_date,
+            speaker=speaker,
+            sermon_window=sermon_window,
             page_width=page_width,
             y=page_height - MARGIN_TOP,
             font_name=font_name,
@@ -616,6 +737,77 @@ def render_paginated_pdf(
             disclaimer=footer_disclaimer,
         )
     doc.save()
+    return build_layout_qa(
+        pages,
+        first_capacity=first_capacity,
+        regular_capacity=regular_capacity,
+        font_name=font_name,
+    )
+
+
+def build_layout_qa(
+    pages: Sequence[Sequence[RenderBlock]],
+    *,
+    first_capacity: float,
+    regular_capacity: float,
+    font_name: str,
+) -> dict:
+    """Record deterministic checks for every rendered page."""
+    page_checks = []
+    risk_pages: set[int] = set()
+    missing_markers = []
+    long_lines = []
+    for page_index, blocks in enumerate(pages):
+        page_number = page_index + 1
+        capacity = first_capacity if page_index == 0 else regular_capacity
+        used = sum(block.height for block in blocks)
+        blank = not blocks
+        overflow = used > capacity + 0.01
+        sparse_orphan = page_index > 0 and len(blocks) == 1 and used < capacity * 0.25
+        continued_count = sum(1 for block in blocks if block.continued)
+        for block in blocks:
+            for line in (*block.primary_lines, *block.secondary_lines):
+                if "\ufffd" in line or "□" in line:
+                    missing_markers.append({"page": page_number, "text": line[:120]})
+                cjk_count = len(re.findall(r"[\u3400-\u9fff\uf900-\ufaff]", line))
+                if cjk_count > 32 or (cjk_count == 0 and len(line) > 100):
+                    long_lines.append({"page": page_number, "text": line[:120]})
+        if blank or overflow or sparse_orphan or missing_markers and missing_markers[-1]["page"] == page_number:
+            risk_pages.add(page_number)
+        page_checks.append(
+            {
+                "page": page_number,
+                "blockCount": len(blocks),
+                "usedPoints": round(used, 2),
+                "capacityPoints": round(capacity, 2),
+                "blank": blank,
+                "overflow": overflow,
+                "sparseOrphanRisk": sparse_orphan,
+                "continuedBlockCount": continued_count,
+            }
+        )
+    failures = [
+        issue
+        for issue, present in (
+            ("blank_pages", any(page["blank"] for page in page_checks)),
+            ("layout_overflow", any(page["overflow"] for page in page_checks)),
+            ("missing_glyph_markers", bool(missing_markers)),
+            ("overlong_rendered_lines", bool(long_lines)),
+        )
+        if present
+    ]
+    return {
+        "schemaVersion": 1,
+        "status": "pass" if not failures else "needs_review",
+        "allPagesChecked": True,
+        "pageCount": len(pages),
+        "font": font_name,
+        "failures": failures,
+        "riskPages": sorted(risk_pages),
+        "missingGlyphMarkers": missing_markers,
+        "longRenderedLines": long_lines,
+        "pages": page_checks,
+    }
 
 
 def draw_render_block(
@@ -838,29 +1030,56 @@ def draw_header(
     *,
     title: str,
     subtitle: str | None,
+    sermon_date: str | None,
+    speaker: str | None,
+    sermon_window: str | None,
     page_width: int,
     y: int,
     font_name: str,
     first_page: bool,
 ) -> float:
     start_y = y
+    header_meta = format_header_metadata(
+        sermon_date=sermon_date,
+        speaker=speaker,
+        sermon_window=sermon_window,
+    )
     if not first_page:
         canvas_obj.setFillColor(colors.HexColor("#667085"))
         canvas_obj.setFont(font_name, RUNNING_HEADER_FONT_SIZE)
         running_title = short_running_title(title)
-        for line in wrap_text(running_title, font_name, RUNNING_HEADER_FONT_SIZE, page_width - MARGIN_X * 2)[:1]:
+        meta_width = (
+            min(page_width * 0.44, pdfmetrics.stringWidth(header_meta, font_name, HEADER_META_FONT_SIZE))
+            if header_meta
+            else 0
+        )
+        title_width = page_width - MARGIN_X * 2 - meta_width - (12 if header_meta else 0)
+        for line in wrap_text(running_title, font_name, RUNNING_HEADER_FONT_SIZE, title_width)[:1]:
             canvas_obj.drawString(MARGIN_X, y, line)
+        if header_meta:
+            canvas_obj.setFont(font_name, HEADER_META_FONT_SIZE)
+            canvas_obj.drawRightString(page_width - MARGIN_X, y, header_meta)
         canvas_obj.setStrokeColor(colors.HexColor("#e2e8f0"))
         canvas_obj.line(MARGIN_X, y - 10, page_width - MARGIN_X, y - 10)
         return header_body_start_y(
             title=title,
             subtitle=subtitle,
+            sermon_date=sermon_date,
+            speaker=speaker,
+            sermon_window=sermon_window,
             page_width=page_width,
             y=start_y,
             font_name=font_name,
             first_page=False,
         )
 
+    if header_meta:
+        canvas_obj.setFillColor(colors.HexColor("#64748b"))
+        canvas_obj.setFont(font_name, HEADER_META_FONT_SIZE)
+        for line in wrap_text(header_meta, font_name, HEADER_META_FONT_SIZE, page_width - MARGIN_X * 2)[:2]:
+            canvas_obj.drawString(MARGIN_X, y, line)
+            y -= HEADER_META_FONT_SIZE + 3.5
+        y -= 2
     canvas_obj.setFillColor(colors.HexColor("#111827"))
     canvas_obj.setFont(font_name, TITLE_FONT_SIZE)
     title_lines = wrap_text(title, font_name, TITLE_FONT_SIZE, page_width - MARGIN_X * 2)
@@ -878,6 +1097,9 @@ def draw_header(
     return header_body_start_y(
         title=title,
         subtitle=subtitle,
+        sermon_date=sermon_date,
+        speaker=speaker,
+        sermon_window=sermon_window,
         page_width=page_width,
         y=start_y,
         font_name=font_name,
@@ -889,6 +1111,9 @@ def header_body_start_y(
     *,
     title: str,
     subtitle: str | None,
+    sermon_date: str | None,
+    speaker: str | None,
+    sermon_window: str | None,
     page_width: float,
     y: float,
     font_name: str,
@@ -896,12 +1121,38 @@ def header_body_start_y(
 ) -> float:
     if not first_page:
         return y - 26
+    header_meta = format_header_metadata(
+        sermon_date=sermon_date,
+        speaker=speaker,
+        sermon_window=sermon_window,
+    )
+    if header_meta:
+        y -= len(wrap_text(header_meta, font_name, HEADER_META_FONT_SIZE, page_width - MARGIN_X * 2)[:2]) * (
+            HEADER_META_FONT_SIZE + 3.5
+        )
+        y -= 2
     y -= len(wrap_text(title, font_name, TITLE_FONT_SIZE, page_width - MARGIN_X * 2)[:2]) * (TITLE_FONT_SIZE + 5)
     if subtitle:
         y -= len(wrap_text(subtitle, font_name, SUBTITLE_FONT_SIZE, page_width - MARGIN_X * 2)[:2]) * (
             SUBTITLE_FONT_SIZE + 4
         )
     return y - 18
+
+
+def format_header_metadata(
+    *,
+    sermon_date: str | None,
+    speaker: str | None,
+    sermon_window: str | None,
+) -> str:
+    parts: list[str] = []
+    if sermon_date and sermon_date.strip():
+        parts.append(sermon_date.strip())
+    if speaker and speaker.strip():
+        parts.append(f"讲员：{speaker.strip()}")
+    if sermon_window and sermon_window.strip():
+        parts.append(f"证道时段：{sermon_window.strip()}")
+    return " · ".join(parts)
 
 
 def short_running_title(title: str) -> str:
@@ -999,7 +1250,17 @@ def enforce_kinsoku(lines: list[str]) -> list[str]:
 def text_tokens(text: str) -> list[str]:
     tokens: list[str] = []
     buffer = ""
-    for char in text:
+    index = 0
+    while index < len(text):
+        protected = next((term for term in NO_BREAK_TERMS if text.startswith(term, index)), None)
+        if protected:
+            if buffer:
+                tokens.append(buffer)
+                buffer = ""
+            tokens.append(protected)
+            index += len(protected)
+            continue
+        char = text[index]
         if char.isspace():
             if buffer:
                 tokens.append(buffer)
@@ -1012,6 +1273,7 @@ def text_tokens(text: str) -> list[str]:
             tokens.append(char)
         else:
             buffer += char
+        index += 1
     if buffer:
         tokens.append(buffer)
     return tokens

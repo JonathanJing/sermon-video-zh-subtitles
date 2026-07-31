@@ -42,16 +42,23 @@ Cloud Scheduler should send an explicit payload:
 }
 ```
 
-For Saturday live-link capture, start polling early on Saturday because YouTube
-watch URLs can be visible while the service is live/upcoming and later become
-unlisted. Use two Scheduler jobs and set the route `{sunday}` to `upcoming`,
-not Saturday's `current` value. `upcoming` resolves to the next Sunday caption
-slice, so a Saturday 2026-06-27 capture targets the 2026-06-28 slice:
+For Saturday live-link capture, use two explicit, non-overlapping service
+windows and set the route `{sunday}` to `upcoming`, not Saturday's `current`
+value. `upcoming` resolves to the next Sunday caption slice, so a Saturday
+2026-06-27 capture targets the 2026-06-28 slice:
 
 ```text
-sermon-sat-400-source-discovery  */5 8-16 * * SAT  service=sat400  operatorAlertTime=16:20
-sermon-sat-530-source-discovery  */5 8-17 * * SAT  service=sat530  operatorAlertTime=17:50
+sermon-sat-400-source-discovery  */5 16 * * SAT      service=sat400 operatorAlertTime=16:20
+sermon-sat-530-source-discovery  30-59/5 17 * * SAT service=sat530 operatorAlertTime=17:50
 ```
+
+The 4:00 window polls every five minutes from 16:00 through 16:55; the 5:30
+window polls every five minutes from 17:30 through 17:55. The windows do not
+overlap, which avoids concurrent writes to shared live-source state and makes
+the logged `service` identify the intended service directly. Keep the former
+`sermon-sat-auto-source-discovery` definition paused for rollback. Production
+state must also preserve a confirmed same-Sunday URL when a later poll returns
+fallback, because the post-live worker depends on that source.
 
 If the Saturday capture misses the YouTube link, keep Sunday 8:30 and 10:00
 fallback windows. These jobs target `current`, because on Sunday morning
@@ -112,6 +119,13 @@ python3 scripts/run_post_live_subtitle_generation.py \
   --gcs-bucket sermon-zh-artifacts-ai-for-god \
   --gcs-prefix sundays
 ```
+
+## P0-P2 Automation Guards
+
+- The web service uses `YOUTUBE_API_KEY_SECRET` and YouTube scheduled/actual start timestamps to classify `sat400` versus `sat530`; the Scheduler label is not treated as source truth.
+- Source capture, 16:20/17:50 misses, download authorization failures, and timeline review gates emit deduplicated operator notifications. Production can use SendGrid secret references when no webhook is configured.
+- `run-status.json` tracks the fixed post-live lifecycle, per-stage attempts/durations/artifacts/blockers, and resumes from existing downloads and core pipeline outputs.
+- Every PDF render emits a sibling `.qa.json` that checks every page plus content/name/scripture risks. Post-live generation completes only when both PDF QA reports pass.
 
 ## Cloud Logging Queries
 

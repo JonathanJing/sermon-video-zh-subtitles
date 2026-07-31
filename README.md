@@ -9,15 +9,25 @@
   </a>
 </p>
 
-This repository's current primary workflow is a stable post-live operator flow:
+This repository's production path starts with scheduled live-source discovery, pauses once for human sermon-boundary confirmation, and ends with a reviewed Chinese-English reading PDF:
 
-1. save a sermon video URL into resumable state
-2. manually confirm the sermon start and end time
-3. build the English reference transcript with `gpt-transcribe`
-4. generate a Chinese-English reading PDF
-5. treat the run as complete only after PDF QA passes
+1. Cloud Scheduler polls public Mariners / YouTube sources during configured service windows
+2. the canonical YouTube watch URL is saved into resumable shared state
+3. a separate post-live task waits until the archive becomes `was_live`
+4. the full audio is downloaded and a machine-suggested sermon window is generated
+5. an operator independently confirms absolute start and end offsets in the full media
+6. `gpt-transcribe` builds the English reference using a prompt, keywords, and `languages=["en"]`
+7. the pipeline creates the Chinese draft and performs two reading-edition passes
+8. it renders the bilingual reading PDF
+9. the run becomes complete only after reading-text QA and PDF QA both pass
 
-The frontend and backend paths already work, but they are not the main workflow described in this root README today.
+The production deliverable is currently the reading PDF. Default `reading` mode does not depend on `whisper-1`; synchronized SRT/VTT output requires an explicit switch to subtitle mode.
+
+## One-Page Workflow
+
+![Production workflow from scheduled livestream discovery to the bilingual reading PDF](docs/assets/sermon-reading-pdf-production-flow.png)
+
+The slide summarizes the current production path: scheduled discovery, shared-state preservation, human-confirmed sermon boundaries, `gpt-transcribe` plus two reading-editing passes, dual QA gates, and the final Chinese-English reading PDF.
 
 ## Disclaimer
 
@@ -27,43 +37,102 @@ The project uses publicly accessible Mariners Church live streams, live archives
 
 The project does not bypass paywalls, access controls, DRM, platform restrictions, or copyright protections. Operators are responsible for using the tools only with public or otherwise authorized audio/video sources and for respecting Mariners Church, YouTube, and other applicable terms and rights.
 
-## Stable Workflow
+## End-to-End Production Workflow
 
 The current stable workflow is documented in detail here:
 
 - [Stable post-live reading PDF workflow](docs/stable-post-live-reading-pdf-workflow.md)
 - [稳定的 post-live 阅读版 PDF 工作流](docs/stable-post-live-reading-pdf-workflow.zh.md)
+- [Production `gpt-transcribe` and reading-PDF audit](docs/gpt-transcribe-reading-pdf-production-audit-2026-07-31.zh.md)
 
 ### Flowchart
 
 ```mermaid
 flowchart TD
-    A[Operator provides YouTube URL] --> B[Save source into live-source state]
-    B --> C[Wait until archive is post-live and downloadable]
-    C --> D[Operator confirms sermon start and end]
-    D --> E[Download archive audio]
-    E --> F[Clip sermon window]
-    F --> G["gpt-transcribe: prompt + keywords + languages=en"]
-    G --> H[Generate and review Chinese reading text]
-    H --> I[Render reading PDF]
-    I --> J{PDF QA pass?}
-    J -- Yes --> K[Deliver reading PDF and reports]
-    J -- No --> L[Operator review and rerun]
+    A[Cloud Scheduler enters a service window] --> B[discover-source polls public sources]
+    B --> C{Validated YouTube URL found?}
+    C -- No --> D[Preserve confirmed source / notify operator at deadline]
+    C -- Yes --> E["Write shared state: lastSelectedSource + lastGenerationRequest.liveUrl"]
+    D --> B
+    E --> F[Separate post-live job reads the same state]
+    F --> G{Archive state is was_live?}
+    G -- No --> H[waiting_for_post_live; retry next run]
+    H --> F
+    G -- Yes --> I[Download full archive audio]
+    I --> J[gpt-transcribe multi-stage timeline probe]
+    J --> K[requires_operator_review]
+    K --> L[Operator confirms absolute start/end]
+    L --> M[Clip the sermon window]
+    M --> N["gpt-transcribe: prompt + keywords + languages=en"]
+    N --> O["gpt-5.6: English correction and Chinese draft"]
+    O --> P["gpt-5.6-sol: two reading-edition passes"]
+    P --> Q{reading_quality_report pass?}
+    Q -- No --> R[Block for operator review]
+    Q -- Yes --> S[Render sermon_zh_en_reading.pdf]
+    S --> T{PDF QA pass?}
+    T -- No --> R
+    T -- Yes --> U[Mark completed and optionally upload to GCS]
 ```
 
-### Primary commands
+### 1. Scheduled live-link discovery and state capture
 
-Save the manual source URL:
+Source discovery and content generation are separate jobs. `discover-source` stays lightweight: it checks public pages and metadata, selects a source, writes state, and emits deduplicated notifications. It does not run the long transcription/PDF workflow inside the request.
 
-```bash
-python3 scripts/live_source_monitor.py \
-  --sunday 2026-07-26 \
-  --manual-url 'https://www.youtube.com/watch?v=VIDEO_ID' \
-  --out artifacts/live-source-monitor/report.json \
-  --state-file artifacts/live-source-monitor/state.json
+The production deployment documentation currently defines these polling windows:
+
+| Window | Scheduler cadence | Sunday route | Purpose |
+|---|---|---|---|
+| Saturday 4:00 service | `*/5 16 * * SAT` | `upcoming` | Poll for the `sat400` stream every five minutes |
+| Saturday 5:30 service | `30-59/5 17 * * SAT` | `upcoming` | Poll for the `sat530` stream every five minutes |
+| Sunday 8:30 fallback | `*/2 7-9 * * SUN` | `current` | Continue discovery if Saturday missed the source |
+| Sunday 10:00 fallback | `*/2 9-10 * * SUN` | `current` | Keep a separate fallback for the later service |
+
+The Scheduler calls:
+
+```text
+POST /api/admin/sundays/{upcoming|current}/discover-source
 ```
 
-Run the stable post-live generation path after the sermon window is manually confirmed:
+In production, `LIVE_SOURCE_MONITOR_STATE_URI` points at a durable shared object, normally a GCS `backend-state.json`. Downstream jobs primarily read:
+
+- `lastSelectedSource`: the validated selected source
+- `lastGenerationRequest.liveUrl`: the canonical URL used for later download
+- `lastSunday`: a guard against using a source from the wrong Sunday
+
+A later fallback result must not erase a confirmed URL for the same Sunday. Missing-source and operator-deadline notifications are deduplicated so every Scheduler tick does not send the same alert.
+
+Local development can use:
+
+```text
+artifacts/live-source-monitor/state.json
+```
+
+### 2. Wait for post-live and propose the sermon window
+
+A separate timeline-probe scheduled task reads the same state. The production runbook currently checks every ten minutes on Saturday evening:
+
+```text
+sermon-post-live-timeline-probe  */10 18-23 * * SAT
+POST /api/admin/sundays/upcoming/post-live-subtitles
+payload.mode = timeline-probe
+```
+
+If the archive is not yet `was_live`, the task returns `waiting_for_post_live` and retries on the next run without starting model work. Once the archive is downloadable, the timeline job:
+
+1. downloads the complete livestream audio
+2. performs a 120-second coarse scan
+3. performs a 30-second transition scan
+4. performs 5-second fine scans around the likely start and end
+5. writes `suggestedWindow`
+6. stops at `requires_operator_review`
+
+The suggestion narrows the review range; it is not an approved clip boundary. The operator must independently watch the archive and confirm that `start-time` and `end-time` are absolute offsets in the full media.
+
+If cloud download authorization fails, the state becomes `waiting_for_download_access`. After a local authorized download and GCS handoff, the cloud task resumes from existing stages instead of repeating discovery or timeline work.
+
+### 3. Generate the reading edition and final PDF
+
+After the operator confirms the sermon boundaries, trigger `mode=generate-reviewed`, or run the same reviewed generation path locally:
 
 ```bash
 python3 scripts/run_post_live_subtitle_generation.py \
@@ -78,17 +147,56 @@ python3 scripts/run_post_live_subtitle_generation.py \
   --reference-model gpt-transcribe
 ```
 
-Before the second command, make sure `OPENAI_API_KEY` is already available in the shell, or use `--api-key-secret`.
+This step reuses downloaded audio and completed core artifacts, then:
+
+1. clips the sermon using the human-confirmed absolute offsets
+2. creates the English reference with `gpt-transcribe`
+3. records the context prompt, glossary keywords, and `languages=["en"]` in auditable metadata
+4. uses `gpt-5.6` for English correction and the Chinese draft
+5. uses `gpt-5.6-sol` with `high` reasoning for two reading-edition passes
+6. checks `reading-edition-v2/reading_quality_report.json`
+7. renders `sermon_zh_en_reading.pdf`
+8. checks every page for blank pages, overflow, sparse orphans, long lines, missing glyphs, names, and scripture risks
+9. updates `run-status.json` and optionally uploads artifacts to GCS only after all gates pass
+
+Before running, the shell must already contain `OPENAI_API_KEY`, or the command must receive a Secret Manager resource name through `--api-key-secret`. Never put a raw key in a command, log, or repository file.
+
+### Manual URL fallback
+
+Scheduled discovery is the primary path. Use manual capture only when discovery cannot find the correct source or an operator must replace an incorrect selection:
+
+```bash
+python3 scripts/live_source_monitor.py \
+  --sunday 2026-07-26 \
+  --manual-url 'https://www.youtube.com/watch?v=VIDEO_ID' \
+  --out artifacts/live-source-monitor/report.json \
+  --state-file artifacts/live-source-monitor/state.json
+```
+
+After this state correction, the post-live, timeline, reading-edition, and PDF stages remain unchanged.
 
 ### Completion rule
 
-Do not call the run complete just because partial ASR output exists. The stable completion condition is:
+Do not call the run complete because the Scheduler found a URL, audio was downloaded, or partial ASR exists. The stable completion condition is:
 
-- source URL saved into state
+- source URL saved into shared state with a matching Sunday
+- archive confirmed post-live
 - sermon start and end manually confirmed
+- `reading-edition-v2/reading_quality_report.json` reports pass
 - `sermon_zh_en_reading.pdf` generated
 - `sermon_zh_en_reading.qa.json` reports pass
-- run report and run status written
+- `summary.json`, the run report, and `run-status.json` written
+- final run status is `completed`
+
+### Automation and human boundaries
+
+| Stage | Automated | Human confirmation |
+|---|---|---|
+| Discovery | Scheduled polling, URL validation, state persistence, deduplicated notifications | Correct conflicting candidates or a wrong source |
+| Post-live | Check `was_live`, download, retry or hand off failures | Resolve download authorization when automation cannot |
+| Timeline | Multi-stage probe and `suggestedWindow` | Independently confirm absolute sermon start and end |
+| Content | ASR, English correction, Chinese draft, two reading-edition passes | Review QA blocks or content anomalies |
+| PDF | Rendering and page-level machine QA | Spot-check and approve final delivery/publication |
 
 ## Main outputs
 

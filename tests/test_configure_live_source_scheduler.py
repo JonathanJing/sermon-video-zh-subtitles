@@ -85,6 +85,24 @@ class ConfigureLiveSourceSchedulerTest(unittest.TestCase):
         self.assertFalse(plan.payload["autoGenerate"])
         self.assertIn("*/2 17 * * SAT", plan.create_command)
 
+    def test_builds_single_saturday_auto_discovery_job_payload(self):
+        plan = mod.build_scheduler_plan(
+            self.make_args(
+                job_id="sermon-sat-auto-source-discovery",
+                sunday="upcoming",
+                schedule="*/5 8-17 * * SAT",
+                service="sat-auto",
+                operator_alert_time="17:50",
+                no_auto_generate=True,
+            ),
+            internal_task_token="task-token-value",
+        )
+
+        self.assertEqual(plan.payload["service"], "sat-auto")
+        self.assertEqual(plan.payload["operatorAlertTime"], "17:50")
+        self.assertFalse(plan.payload["autoGenerate"])
+        self.assertIn("*/5 8-17 * * SAT", plan.create_command)
+
     def test_sanitized_report_redacts_internal_task_token(self):
         plan = mod.build_scheduler_plan(self.make_args(), internal_task_token="test-redaction-value")
         report = mod.sanitized_report(plan, {"status": "dry-run"})

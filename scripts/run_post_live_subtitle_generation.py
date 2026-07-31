@@ -6,6 +6,8 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
+import shutil
 import subprocess
 import sys
 import time
@@ -49,6 +51,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--slug")
     parser.add_argument("--start-time", help="Absolute sermon start in the full downloaded media.")
     parser.add_argument("--end-time", help="Absolute sermon end in the full downloaded media.")
+    parser.add_argument("--sermon-title", help="Operator-confirmed sermon title for the reading PDF.")
+    parser.add_argument("--speaker", help="Operator-confirmed sermon speaker for the reading PDF.")
     parser.add_argument("--glossary", type=Path)
     parser.add_argument("--zh-model", default="gpt-5.6")
     parser.add_argument("--en-correction-model", default="gpt-5.6")
@@ -69,6 +73,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--reading-edition-provider", choices=("openai", "codex"), default="openai")
     parser.add_argument("--reading-edition-model", default="gpt-5.6-sol")
     parser.add_argument("--reading-edition-reasoning-effort", choices=("low", "medium", "high"), default="high")
+    parser.add_argument("--reading-preferred-seconds", type=float, default=22.0)
+    parser.add_argument("--reading-preferred-english-chars", type=int, default=420)
+    parser.add_argument("--reading-hard-seconds", type=float, default=55.0)
+    parser.add_argument("--reading-hard-english-chars", type=int, default=950)
     parser.add_argument("--audio-format", default="bestaudio[ext=m4a]/bestaudio")
     parser.add_argument("--yt-dlp", default="yt-dlp")
     parser.add_argument("--youtube-cookies", type=Path, help="Netscape cookies.txt used only for yt-dlp access.")
@@ -145,6 +153,7 @@ def run_post_live_generation(
     )
     reading_edition_command = build_reading_edition_command(args, pipeline_outdir)
     reading_pdf_command = build_reading_pdf_command(args, pipeline_outdir, live_url, metadata=metadata, source=source)
+    delivery_reading_pdf = pipeline_outdir / delivery_pdf_filename(args, metadata=metadata, source=source)
     report = {
         **base_report,
         "status": "planned" if (args.plan_only or args.dry_run) else "running",
@@ -156,6 +165,7 @@ def run_post_live_generation(
         "mobilePdfCommand": mobile_pdf_command,
         "readingEditionCommand": reading_edition_command,
         "readingPdfCommand": reading_pdf_command,
+        "deliveryReadingPdf": str(delivery_reading_pdf),
         "outputMode": args.output_mode,
         "outputs": expected_outputs(pipeline_outdir, args.output_mode),
     }
@@ -194,6 +204,7 @@ def run_post_live_generation(
     )
     reading_edition_command = build_reading_edition_command(args, pipeline_outdir)
     reading_pdf_command = build_reading_pdf_command(args, pipeline_outdir, live_url, metadata=metadata, source=source)
+    delivery_reading_pdf = pipeline_outdir / delivery_pdf_filename(args, metadata=metadata, source=source)
     core_outputs = (
         ("sermon_zh_relative.srt", "sermon_en_relative.srt", "summary.json")
         if args.output_mode == "subtitles"
@@ -229,7 +240,7 @@ def run_post_live_generation(
             reading_outdir / "sermon_en_reading_revised.srt",
             reading_report_path,
         )
-    )
+    ) and reading_report_matches_layout(reading_report_path, args)
     if reading_ready:
         stage_durations["reviewed"] = 0.0
     else:
@@ -275,13 +286,18 @@ def run_post_live_generation(
         )
         write_run_status(run_status_path, run_status)
         raise RuntimeError("PDF QA did not pass; inspect the generated *.qa.json reports")
+    delivery_paths = create_delivery_pdf_copy(
+        pipeline_outdir / "sermon_zh_en_reading.pdf",
+        delivery_reading_pdf,
+    )
+    report["outputs"] = [*report["outputs"], *(str(path) for path in delivery_paths)]
     run_status = post_live_run_status.update_stage(
         run_status, args.sunday, "pdf_qa", "complete",
         artifact=str(pipeline_outdir / "sermon_zh_en_reading.qa.json"),
         duration_seconds=stage_durations["pdf_qa"],
     )
     write_run_status(run_status_path, run_status)
-    uploaded = upload_outputs(args, pipeline_outdir, args.output_mode)
+    uploaded = upload_outputs(args, pipeline_outdir, args.output_mode, extra_paths=delivery_paths)
     report.update(
         {
             "status": "completed",
@@ -290,6 +306,7 @@ def run_post_live_generation(
             "mobilePdfCommand": mobile_pdf_command,
             "readingEditionCommand": reading_edition_command,
             "readingPdfCommand": reading_pdf_command,
+            "deliveryReadingPdf": str(delivery_reading_pdf),
             "readingQualityReport": str(reading_report_path),
             "uploaded": uploaded,
             "runStatus": str(run_status_path),
@@ -354,6 +371,14 @@ def safe_metadata(metadata: dict[str, Any] | None) -> dict[str, Any] | None:
     keys = [
         "id",
         "title",
+        "sermon_title",
+        "sermonTitle",
+        "message_title",
+        "messageTitle",
+        "speaker",
+        "preacher",
+        "sermon_speaker",
+        "sermonSpeaker",
         "live_status",
         "media_type",
         "availability",
@@ -426,6 +451,7 @@ def build_mobile_pdf_command(
     metadata: dict[str, Any] | None = None,
     source: dict[str, Any] | None = None,
 ) -> list[str]:
+    sermon_title, speaker = reading_pdf_metadata(args, metadata=metadata, source=source)
     return [
         sys.executable,
         str(MOBILE_PDF_SCRIPT),
@@ -436,13 +462,18 @@ def build_mobile_pdf_command(
         "--out",
         str(pipeline_outdir / "sermon_zh_mobile.pdf"),
         "--title",
-        mobile_pdf_title(args, live_url, metadata=metadata, source=source),
+        sermon_title,
         "--subtitle",
-        f"{args.sunday} 逐句中英字幕版",
+        "逐句中英字幕版",
+        "--sermon-date",
+        args.sunday,
+        "--sermon-window",
+        sermon_window_label(args),
         "--source-url",
         live_url,
         "--source-offset-seconds",
         str(timecode_to_seconds(args.start_time or "00:00:00")),
+        *([] if not speaker else ["--speaker", speaker]),
     ]
 
 
@@ -465,6 +496,14 @@ def build_reading_edition_command(
         args.reading_edition_reasoning_effort,
         "--passes",
         "2",
+        "--preferred-seconds",
+        str(getattr(args, "reading_preferred_seconds", 22.0)),
+        "--preferred-english-chars",
+        str(getattr(args, "reading_preferred_english_chars", 420)),
+        "--hard-seconds",
+        str(getattr(args, "reading_hard_seconds", 55.0)),
+        "--hard-english-chars",
+        str(getattr(args, "reading_hard_english_chars", 950)),
     ]
 
 
@@ -476,6 +515,7 @@ def build_reading_pdf_command(
     metadata: dict[str, Any] | None = None,
     source: dict[str, Any] | None = None,
 ) -> list[str]:
+    sermon_title, speaker = reading_pdf_metadata(args, metadata=metadata, source=source)
     return [
         sys.executable,
         str(MOBILE_PDF_SCRIPT),
@@ -488,13 +528,18 @@ def build_reading_pdf_command(
         "--out",
         str(pipeline_outdir / "sermon_zh_en_reading.pdf"),
         "--title",
-        mobile_pdf_title(args, live_url, metadata=metadata, source=source),
+        sermon_title,
         "--subtitle",
-        f"{args.sunday} 中英对照阅读版",
+        "中英对照阅读版",
+        "--sermon-date",
+        args.sunday,
+        "--sermon-window",
+        sermon_window_label(args),
         "--source-url",
         live_url,
         "--source-offset-seconds",
         str(timecode_to_seconds(args.start_time or "00:00:00")),
+        *([] if not speaker else ["--speaker", speaker]),
     ]
 
 
@@ -505,13 +550,96 @@ def mobile_pdf_title(
     metadata: dict[str, Any] | None = None,
     source: dict[str, Any] | None = None,
 ) -> str:
-    for candidate in [
-        metadata.get("title") if metadata else None,
-        source.get("title") if source else None,
-    ]:
-        if isinstance(candidate, str) and candidate.strip():
-            return candidate.strip()
-    return slug_for(args, live_url)
+    return reading_pdf_metadata(args, metadata=metadata, source=source)[0]
+
+
+def reading_pdf_metadata(
+    args: argparse.Namespace,
+    *,
+    metadata: dict[str, Any] | None = None,
+    source: dict[str, Any] | None = None,
+) -> tuple[str, str | None]:
+    explicit_title = str(getattr(args, "sermon_title", "") or "").strip()
+    explicit_speaker = str(getattr(args, "speaker", "") or "").strip()
+    structured_title = ""
+    structured_speaker = ""
+
+    for payload in (metadata or {}, source or {}):
+        for key in ("sermon_title", "sermonTitle", "message_title", "messageTitle"):
+            candidate = payload.get(key)
+            if isinstance(candidate, str) and candidate.strip():
+                structured_title = candidate.strip()
+                break
+        for key in ("speaker", "preacher", "sermon_speaker", "sermonSpeaker"):
+            candidate = payload.get(key)
+            if isinstance(candidate, str) and candidate.strip():
+                structured_speaker = candidate.strip()
+                break
+        if structured_title:
+            break
+
+    published_title = str((metadata or {}).get("title") or "").strip()
+    parsed_title, parsed_speaker = parse_published_sermon_title(published_title)
+    title = explicit_title or structured_title or parsed_title
+    speaker = explicit_speaker or structured_speaker or parsed_speaker or None
+    if not title:
+        title = "主日证道"
+    return title, speaker
+
+
+def parse_published_sermon_title(value: str) -> tuple[str, str]:
+    title = value.strip()
+    if not title or is_generic_service_title(title):
+        return "", ""
+    match = re.match(r"^(?P<title>.+?)\s+-\s+(?P<speaker>[^|]+?)\s*\|\s*Mariners Church\s*$", title, re.I)
+    if match:
+        return match.group("title").strip(), match.group("speaker").strip()
+    return title, ""
+
+
+def is_generic_service_title(value: str) -> bool:
+    normalized = value.lower()
+    generic_markers = (
+        "worship service",
+        "join us now",
+        "mariners online",
+        "live service",
+        "sunday service",
+        "saturday service",
+        "manual authorized source",
+        "已捕获直播链接",
+    )
+    return any(marker in normalized for marker in generic_markers)
+
+
+def sermon_window_label(args: argparse.Namespace) -> str:
+    start = str(getattr(args, "start_time", "") or "").strip()
+    end = str(getattr(args, "end_time", "") or "").strip()
+    if start and end:
+        return f"{start}-{end}"
+    return start or end
+
+
+def delivery_pdf_filename(
+    args: argparse.Namespace,
+    *,
+    metadata: dict[str, Any] | None = None,
+    source: dict[str, Any] | None = None,
+) -> str:
+    title, speaker = reading_pdf_metadata(args, metadata=metadata, source=source)
+    components = [
+        args.sunday,
+        filename_component(title),
+        filename_component(speaker) if speaker else "",
+        "中英对照阅读版",
+    ]
+    return "-".join(component for component in components if component) + ".pdf"
+
+
+def filename_component(value: str, *, max_length: int = 72) -> str:
+    cleaned = re.sub(r"[^\w\u3400-\u9fff]+", "-", value, flags=re.UNICODE).strip("-_")
+    cleaned = re.sub(r"-{2,}", "-", cleaned)
+    return cleaned[:max_length].rstrip("-") or "sermon"
 
 
 def timecode_to_seconds(value: str) -> float:
@@ -597,6 +725,24 @@ def pipeline_summary_matches(path: Path, *, output_mode: str, reference_model: s
     )
 
 
+def reading_layout_targets(args: argparse.Namespace) -> dict[str, float | int]:
+    return {
+        "preferredSeconds": float(getattr(args, "reading_preferred_seconds", 22.0)),
+        "preferredEnglishCharacters": int(getattr(args, "reading_preferred_english_chars", 420)),
+        "hardSeconds": float(getattr(args, "reading_hard_seconds", 55.0)),
+        "hardEnglishCharacters": int(getattr(args, "reading_hard_english_chars", 950)),
+        "targetBilingualBlocksPerMobilePage": 2,
+    }
+
+
+def reading_report_matches_layout(path: Path, args: argparse.Namespace) -> bool:
+    try:
+        report = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return False
+    return report.get("status") == "pass" and report.get("layoutTargets") == reading_layout_targets(args)
+
+
 def run_command(command: list[str], runner: Callable[..., subprocess.CompletedProcess]) -> None:
     runner(command, check=True)
 
@@ -637,14 +783,35 @@ def expected_outputs(pipeline_outdir: Path, output_mode: str = "reading") -> lis
     return outputs
 
 
-def upload_outputs(args: argparse.Namespace, pipeline_outdir: Path, output_mode: str = "reading") -> list[dict[str, str]]:
+def create_delivery_pdf_copy(source_pdf: Path, delivery_pdf: Path) -> list[Path]:
+    delivery_pdf.parent.mkdir(parents=True, exist_ok=True)
+    paths = [delivery_pdf]
+    if source_pdf.resolve() != delivery_pdf.resolve():
+        shutil.copy2(source_pdf, delivery_pdf)
+    source_qa = source_pdf.with_suffix(".qa.json")
+    delivery_qa = delivery_pdf.with_suffix(".qa.json")
+    if source_qa.exists():
+        if source_qa.resolve() != delivery_qa.resolve():
+            shutil.copy2(source_qa, delivery_qa)
+        paths.append(delivery_qa)
+    return paths
+
+
+def upload_outputs(
+    args: argparse.Namespace,
+    pipeline_outdir: Path,
+    output_mode: str = "reading",
+    *,
+    extra_paths: list[Path] | None = None,
+) -> list[dict[str, str]]:
     if not args.gcs_bucket:
         return []
     slug = args.slug or "sermon"
     prefix = "/".join(part.strip("/") for part in [args.gcs_prefix, args.sunday, "post-live-subtitles", slug] if part)
     uploaded = []
-    for path_text in expected_outputs(pipeline_outdir, output_mode):
-        path = Path(path_text)
+    paths = [Path(path_text) for path_text in expected_outputs(pipeline_outdir, output_mode)]
+    paths.extend(extra_paths or [])
+    for path in dict.fromkeys(paths):
         if not path.exists():
             continue
         destination = f"gs://{args.gcs_bucket}/{prefix}/{path.name}"

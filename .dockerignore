@@ -1,5 +1,6 @@
 .DS_Store
 .git
+.venv/
 __pycache__/
 *.pyc
 .env
@@ -21,6 +22,8 @@ coverage/
 .pytest_cache/
 *.log
 artifacts/
+output/
+tmp/
 data/raw/
 tests/
 docs/
