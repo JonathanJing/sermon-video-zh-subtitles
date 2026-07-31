@@ -84,6 +84,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--audio-format", default="bestaudio[ext=m4a]/bestaudio")
     parser.add_argument("--yt-dlp", default="yt-dlp")
     parser.add_argument("--youtube-cookies-secret")
+    parser.add_argument("--youtube-cookies", type=Path)
     parser.add_argument("--youtube-api-key-secret")
     parser.add_argument("--allow-non-post-live", action="store_true")
     parser.set_defaults(persist_run_status=True)
@@ -136,7 +137,11 @@ def run_job(
     run_status = post_live_run_status.update_stage(run_status, sunday, "source_saved", "complete", source_url=live_url)
     persist_status(run_status, run_status_path, run_status_uri, args, marker_writer)
 
-    cookies_path = materialize_youtube_cookies(args.youtube_cookies_secret, args.work_root)
+    cookies_path = resolve_youtube_cookies(
+        args.youtube_cookies_secret,
+        getattr(args, "youtube_cookies", None),
+        args.work_root,
+    )
     if metadata_loader:
         metadata = metadata_loader(live_url)
         metadata_diagnostics = {"selectedProvider": "injected-metadata-loader", "fallbackUsed": False}
@@ -222,6 +227,7 @@ def run_job(
                 "runStatusGcsUri": run_status_uri,
             }
             blocked_report["notification"] = (notifier or send_discord_notification)(args, blocked_report)
+            marker_writer(marker_uri, json.dumps(blocked_report, ensure_ascii=False, indent=2, sort_keys=True))
             return finish(blocked_report)
         audio_uri = f"gs://{args.gcs_bucket}/{prefix}/download/{audio_path.name}"
         uploader(audio_path, audio_uri)
@@ -310,7 +316,18 @@ def read_optional_gcs_json(uri: str) -> dict[str, Any] | None:
         raise
 
 
-def materialize_youtube_cookies(secret_name: str | None, work_root: Path) -> Path | None:
+def resolve_youtube_cookies(
+    secret_name: str | None,
+    local_path: Path | None,
+    work_root: Path,
+) -> Path | None:
+    if secret_name and local_path:
+        raise ValueError("Configure only one of --youtube-cookies-secret or --youtube-cookies.")
+    if local_path:
+        path = local_path.expanduser().resolve()
+        if not path.is_file():
+            raise FileNotFoundError(f"YouTube cookies file does not exist: {path}")
+        return path
     if not secret_name:
         return None
     value = access_secret(secret_name)

@@ -39,6 +39,12 @@ class SupervisorConfig:
     api_key_secret: str | None = None
     youtube_api_key_secret: str | None = None
     youtube_cookies_secret: str | None = None
+    youtube_cookies_file: Path | None = None
+    discord_bot_token_secret: str | None = None
+    discord_channel_id: str | None = None
+    notify_sendgrid_secret: str | None = None
+    notify_recipients_secret: str | None = None
+    notify_sender_secret: str | None = None
     python_executable: str = sys.executable
     timeline_model: str = "gpt-transcribe"
     classifier_model: str = "gpt-5.6"
@@ -503,6 +509,14 @@ def build_timeline_command(config: SupervisorConfig, snapshot: dict[str, Any]) -
     append_secret_flag(command, "--api-key-secret", config.api_key_secret)
     append_secret_flag(command, "--youtube-api-key-secret", config.youtube_api_key_secret)
     append_secret_flag(command, "--youtube-cookies-secret", config.youtube_cookies_secret)
+    if config.youtube_cookies_file:
+        command.extend(["--youtube-cookies", str(config.youtube_cookies_file)])
+    append_secret_flag(command, "--discord-bot-token-secret", config.discord_bot_token_secret)
+    if config.discord_channel_id:
+        command.extend(["--discord-channel-id", config.discord_channel_id])
+    append_secret_flag(command, "--notify-sendgrid-secret", config.notify_sendgrid_secret)
+    append_secret_flag(command, "--notify-recipients-secret", config.notify_recipients_secret)
+    append_secret_flag(command, "--notify-sender-secret", config.notify_sender_secret)
     return command
 
 
@@ -541,6 +555,8 @@ def build_generation_command(
     ]
     if config.gcs_bucket:
         command.extend(["--gcs-bucket", config.gcs_bucket, "--gcs-prefix", config.gcs_prefix])
+    if config.youtube_cookies_file:
+        command.extend(["--youtube-cookies", str(config.youtube_cookies_file)])
     append_secret_flag(command, "--api-key-secret", config.api_key_secret)
     return command
 
@@ -761,7 +777,17 @@ def command_result(
 def redact_command(command: list[str]) -> list[str]:
     redacted: list[str] = []
     redact_next = False
-    secret_flags = {"--api-key-secret", "--youtube-api-key-secret", "--youtube-cookies-secret"}
+    secret_flags = {
+        "--api-key-secret",
+        "--youtube-api-key-secret",
+        "--youtube-cookies-secret",
+        "--youtube-cookies",
+        "--discord-bot-token-secret",
+        "--discord-channel-id",
+        "--notify-sendgrid-secret",
+        "--notify-recipients-secret",
+        "--notify-sender-secret",
+    }
     for part in command:
         if redact_next:
             redacted.append("REDACTED_SECRET_RESOURCE")

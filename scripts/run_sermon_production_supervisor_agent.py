@@ -35,6 +35,16 @@ class SupervisorDecision(BaseModel):
 class SupervisorRuntime:
     config: sermon_production_supervisor.SupervisorConfig
     execute: bool
+    timeline_attempted: bool = False
+    generation_attempted: bool = False
+
+
+def claim_stage_attempt(runtime: SupervisorRuntime, stage: Literal["timeline", "generation"]) -> bool:
+    attribute = f"{stage}_attempted"
+    if getattr(runtime, attribute):
+        return False
+    setattr(runtime, attribute, True)
+    return True
 
 
 @function_tool
@@ -52,6 +62,14 @@ def run_timeline_probe(wrapper: RunContextWrapper[SupervisorRuntime]) -> str:
             {"status": "blocked", "reason": "Supervisor is running in shadow mode."},
             ensure_ascii=False,
         )
+    if not claim_stage_attempt(wrapper.context, "timeline"):
+        return json.dumps(
+            {
+                "status": "skipped",
+                "reason": "Timeline probe was already attempted in this supervisor run.",
+            },
+            ensure_ascii=False,
+        )
     result = sermon_production_supervisor.run_timeline_probe(wrapper.context.config)
     return json.dumps(result, ensure_ascii=False, sort_keys=True)
 
@@ -62,6 +80,14 @@ def run_approved_reading_pdf_generation(wrapper: RunContextWrapper[SupervisorRun
     if not wrapper.context.execute:
         return json.dumps(
             {"status": "blocked", "reason": "Supervisor is running in shadow mode."},
+            ensure_ascii=False,
+        )
+    if not claim_stage_attempt(wrapper.context, "generation"):
+        return json.dumps(
+            {
+                "status": "skipped",
+                "reason": "Reading-PDF generation was already attempted in this supervisor run.",
+            },
             ensure_ascii=False,
         )
     result = sermon_production_supervisor.run_reading_pdf_generation(wrapper.context.config)
@@ -90,7 +116,8 @@ Rules:
 8. After calling a mutating tool, inspect production state again before returning.
 9. Keep evidence concise and include exact status/artifact fields from tools.
 10. If a mutation tool reports already_running, do not retry it in the same run.
-11. Return SupervisorDecision only.
+11. Never call the same mutation tool more than once in one supervisor run.
+12. Return SupervisorDecision only.
 """.strip()
 
 
@@ -123,6 +150,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--api-key-secret")
     parser.add_argument("--youtube-api-key-secret")
     parser.add_argument("--youtube-cookies-secret")
+    parser.add_argument("--youtube-cookies", type=Path)
+    parser.add_argument("--discord-bot-token-secret")
+    parser.add_argument("--discord-channel-id")
+    parser.add_argument("--notify-sendgrid-secret")
+    parser.add_argument("--notify-recipients-secret")
+    parser.add_argument("--notify-sender-secret")
     parser.add_argument("--model", default="gpt-5.6")
     parser.add_argument("--mode", choices=("shadow", "execute"), default="shadow")
     parser.add_argument("--max-turns", type=int, default=8)
@@ -144,6 +177,12 @@ def make_config(args: argparse.Namespace) -> sermon_production_supervisor.Superv
         api_key_secret=args.api_key_secret,
         youtube_api_key_secret=args.youtube_api_key_secret,
         youtube_cookies_secret=args.youtube_cookies_secret,
+        youtube_cookies_file=args.youtube_cookies,
+        discord_bot_token_secret=args.discord_bot_token_secret,
+        discord_channel_id=args.discord_channel_id,
+        notify_sendgrid_secret=args.notify_sendgrid_secret,
+        notify_recipients_secret=args.notify_recipients_secret,
+        notify_sender_secret=args.notify_sender_secret,
     )
 
 

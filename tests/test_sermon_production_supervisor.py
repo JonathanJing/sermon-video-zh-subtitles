@@ -31,13 +31,17 @@ def write_state(path: Path, sunday: str = "2026-08-02"):
 
 
 class SermonProductionSupervisorTest(unittest.TestCase):
-    def make_config(self, root: Path, state: Path):
+    def make_config(self, root: Path, state: Path, **overrides):
+        values = {
+            "sunday": "2026-08-02",
+            "state_file": str(state),
+            "work_root": root,
+            "gcs_bucket": None,
+            "python_executable": "/test/python",
+        }
+        values.update(overrides)
         return mod.SupervisorConfig(
-            sunday="2026-08-02",
-            state_file=str(state),
-            work_root=root,
-            gcs_bucket=None,
-            python_executable="/test/python",
+            **values,
         )
 
     def test_snapshot_recommends_timeline_probe_after_source_is_saved(self):
@@ -291,8 +295,10 @@ class SermonProductionSupervisorTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tempdir:
             root = Path(tempdir)
             state = root / "state.json"
+            cookies = root / "youtube.cookies.txt"
+            cookies.write_text("# Netscape HTTP Cookie File\n", encoding="utf-8")
             write_state(state)
-            config = self.make_config(root, state)
+            config = self.make_config(root, state, youtube_cookies_file=cookies)
             initial = mod.production_snapshot(config)
             write_json(
                 Path(initial["locations"]["timelineReportLocal"]),
@@ -314,6 +320,42 @@ class SermonProductionSupervisorTest(unittest.TestCase):
         self.assertEqual(command[command.index("--end-time") + 1], "00:57:36")
         self.assertIn("--output-mode", command)
         self.assertEqual(command[command.index("--output-mode") + 1], "reading")
+        self.assertEqual(command[command.index("--youtube-cookies") + 1], str(cookies))
+        redacted = mod.redact_command(command)
+        self.assertEqual(
+            redacted[redacted.index("--youtube-cookies") + 1],
+            "REDACTED_SECRET_RESOURCE",
+        )
+
+    def test_timeline_command_passes_local_access_and_notification_configuration(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            state = root / "state.json"
+            cookies = root / "youtube.cookies.txt"
+            cookies.write_text("# Netscape HTTP Cookie File\n", encoding="utf-8")
+            write_state(state)
+            config = mod.SupervisorConfig(
+                sunday="2026-08-02",
+                state_file=str(state),
+                work_root=root,
+                gcs_bucket=None,
+                youtube_cookies_file=cookies,
+                notify_sendgrid_secret="projects/p/secrets/sendgrid",
+                notify_recipients_secret="projects/p/secrets/recipients",
+                notify_sender_secret="projects/p/secrets/sender",
+            )
+            snapshot = mod.production_snapshot(config)
+            command = mod.build_timeline_command(config, snapshot)
+
+        self.assertEqual(command[command.index("--youtube-cookies") + 1], str(cookies))
+        self.assertIn("--notify-sendgrid-secret", command)
+        self.assertIn("--notify-recipients-secret", command)
+        self.assertIn("--notify-sender-secret", command)
+        redacted = mod.redact_command(command)
+        self.assertEqual(
+            redacted[redacted.index("--youtube-cookies") + 1],
+            "REDACTED_SECRET_RESOURCE",
+        )
 
     def test_generation_tool_blocks_without_approval(self):
         calls = []

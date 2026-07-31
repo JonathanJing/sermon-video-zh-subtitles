@@ -9,7 +9,7 @@
   </a>
 </p>
 
-这个仓库当前的生产主流程，是一条由 `Sermon Production Supervisor` Agent 监管的 post-live 流程。Cloud Scheduler 负责唤醒，现有脚本负责确定性执行，Agent 读取持久状态并安全推进；在人工确认证道边界后，流程生成中英阅读版 PDF：
+这个仓库当前的生产主流程，是一条由 `Sermon Production Supervisor` Agent 监管的 post-live 流程。GCP 只负责轻量找源、GCS 持久状态和网页发布；Codex 本地定时任务负责下载、时间轴、转写、阅读编辑和 PDF 生产。Agent 读取持久状态并安全推进；在人工确认证道边界后，流程生成中英阅读版 PDF：
 
 1. 定时器在配置的直播窗口内轮询公开的 Mariners / YouTube 来源
 2. 找到 canonical YouTube watch URL 后，保存到可恢复的 shared state
@@ -27,6 +27,7 @@ Agent 架构、shadow/execute 模式、人工审批文件和 Scheduler 接入见
 
 - [证道阅读版生产 Supervisor Agent](docs/sermon-production-supervisor-agent.zh.md)
 - [Sermon Reading-PDF Production Supervisor Agent](docs/sermon-production-supervisor-agent.md)
+- [Codex 本地周末生产 runbook](docs/codex-local-production-runbook.zh.md)
 
 ## 一页流程总览
 

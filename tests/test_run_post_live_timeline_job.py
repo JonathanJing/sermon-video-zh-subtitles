@@ -38,6 +38,7 @@ def make_args(root: Path, state_file: str, **overrides):
         "audio_format": "bestaudio[ext=m4a]/bestaudio",
         "yt_dlp": "yt-dlp",
         "youtube_cookies_secret": None,
+        "youtube_cookies": None,
         "youtube_api_key_secret": None,
         "allow_non_post_live": False,
     }
@@ -125,6 +126,8 @@ class PostLiveTimelineJobTest(unittest.TestCase):
         self.assertEqual(report["status"], "waiting_for_post_live")
 
     def test_reports_download_access_separately_after_metadata_is_ready(self):
+        marker_writes = []
+
         def failing_runner(command, check):
             raise subprocess.CalledProcessError(1, command)
 
@@ -142,12 +145,31 @@ class PostLiveTimelineJobTest(unittest.TestCase):
                 runner=failing_runner,
                 marker_reader=lambda _: None,
                 handoff_reader=lambda _: None,
+                marker_writer=lambda uri, text: marker_writes.append((uri, json.loads(text))),
             )
 
         self.assertEqual(report["status"], "waiting_for_download_access")
         self.assertEqual(report["reason"], "youtube_metadata_ready_but_archive_download_failed")
         self.assertFalse(report["downloadDiagnostics"]["cookiesConfigured"])
         self.assertEqual(report["downloadDiagnostics"]["errorClass"], "CalledProcessError")
+        self.assertEqual(marker_writes[-1][1]["status"], "waiting_for_download_access")
+
+    def test_resolves_explicit_local_cookie_file(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            path = Path(tempdir) / "youtube.cookies.txt"
+            path.write_text("# Netscape HTTP Cookie File\n", encoding="utf-8")
+
+            resolved = mod.resolve_youtube_cookies(None, path, Path(tempdir) / "work")
+
+        self.assertEqual(resolved, path.resolve())
+
+    def test_rejects_cookie_secret_and_local_file_together(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            path = Path(tempdir) / "youtube.cookies.txt"
+            path.write_text("# Netscape HTTP Cookie File\n", encoding="utf-8")
+
+            with self.assertRaises(ValueError):
+                mod.resolve_youtube_cookies("projects/p/secrets/cookies", path, Path(tempdir))
 
     def test_downloads_uploads_probes_and_stops_for_review(self):
         uploads = []
