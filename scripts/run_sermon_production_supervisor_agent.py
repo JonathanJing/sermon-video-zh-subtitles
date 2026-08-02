@@ -151,6 +151,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--youtube-api-key-secret")
     parser.add_argument("--youtube-cookies-secret")
     parser.add_argument("--youtube-cookies", type=Path)
+    parser.add_argument("--glossary", type=Path)
     parser.add_argument("--discord-bot-token-secret")
     parser.add_argument("--discord-channel-id")
     parser.add_argument("--notify-sendgrid-secret")
@@ -164,6 +165,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--end-time")
     parser.add_argument("--approved-by")
     parser.add_argument("--approval-note")
+    parser.add_argument(
+        "--content-scope",
+        choices=("sermon_only", "sermon_plus_response"),
+    )
     return parser.parse_args()
 
 
@@ -178,6 +183,7 @@ def make_config(args: argparse.Namespace) -> sermon_production_supervisor.Superv
         youtube_api_key_secret=args.youtube_api_key_secret,
         youtube_cookies_secret=args.youtube_cookies_secret,
         youtube_cookies_file=args.youtube_cookies,
+        glossary=getattr(args, "glossary", None),
         discord_bot_token_secret=args.discord_bot_token_secret,
         discord_channel_id=args.discord_channel_id,
         notify_sendgrid_secret=args.notify_sendgrid_secret,
@@ -197,6 +203,7 @@ async def run_agent(args: argparse.Namespace) -> dict[str, Any]:
                 ("--start-time", args.start_time),
                 ("--end-time", args.end_time),
                 ("--approved-by", args.approved_by),
+                ("--content-scope", args.content_scope),
             )
             if not value
         ]
@@ -207,6 +214,7 @@ async def run_agent(args: argparse.Namespace) -> dict[str, Any]:
             start_time=args.start_time,
             end_time=args.end_time,
             approved_by=args.approved_by,
+            content_scope=args.content_scope,
             note=args.approval_note,
         )
     else:

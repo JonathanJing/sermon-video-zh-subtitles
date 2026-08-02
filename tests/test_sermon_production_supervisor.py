@@ -67,6 +67,35 @@ class SermonProductionSupervisorTest(unittest.TestCase):
             "waiting_for_matching_sunday",
         )
 
+    def test_source_lock_prevents_later_discovery_from_changing_video(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            state = root / "state.json"
+            write_state(state)
+            config = self.make_config(root, state)
+            initial = mod.production_snapshot(config)
+            lock = mod.ensure_source_lock(config, initial)
+            write_json(
+                state,
+                {
+                    "lastSunday": "2026-08-02",
+                    "lastSelectedSource": {
+                        "kind": "youtube-streams",
+                        "service": "sat530",
+                        "state": "was_live",
+                        "url": "https://www.youtube.com/watch?v=laterSource999",
+                    },
+                    "lastGenerationRequest": {
+                        "liveUrl": "https://www.youtube.com/watch?v=laterSource999",
+                    },
+                },
+            )
+            locked = mod.production_snapshot(config)
+
+        self.assertEqual(lock["sourceUrlHash"], mod.stable_hash("https://www.youtube.com/watch?v=agentTest123"))
+        self.assertEqual(locked["slug"], "sermon_agentTest123")
+        self.assertEqual(locked["sourceLock"]["status"], "locked")
+
     def test_timeline_review_requires_durable_human_approval(self):
         with tempfile.TemporaryDirectory() as tempdir:
             root = Path(tempdir)
@@ -105,11 +134,13 @@ class SermonProductionSupervisorTest(unittest.TestCase):
                 start_time="00:20:30",
                 end_time="00:58:45.250",
                 approved_by="operator@example.test",
+                content_scope="sermon_only",
                 note="Verified against completed livestream.",
             )
             snapshot = mod.production_snapshot(config)
 
         self.assertTrue(approval["humanApproval"])
+        self.assertEqual(approval["contentScope"], "sermon_only")
         self.assertEqual(approval["startTime"], "00:20:30")
         self.assertEqual(approval["endTime"], "00:58:45.250")
         self.assertEqual(snapshot["recommendedAction"]["action"], "run_reading_pdf_generation")
@@ -282,14 +313,42 @@ class SermonProductionSupervisorTest(unittest.TestCase):
             root = Path(tempdir)
             state = root / "state.json"
             write_state(state)
+            config = self.make_config(root, state)
             result = mod.run_timeline_probe(
-                self.make_config(root, state),
+                config,
                 runner=runner,
                 lease_acquirer=lambda *args, **kwargs: None,
             )
+            source_lock_local, _ = mod.source_lock_locations(config)
+            source_lock_exists = Path(source_lock_local).exists()
 
         self.assertEqual(result["status"], "already_running")
         self.assertEqual(calls, [])
+        self.assertFalse(source_lock_exists)
+
+    def test_source_lock_fails_closed_if_state_changes_after_snapshot(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            state = root / "state.json"
+            write_state(state)
+            config = self.make_config(root, state)
+            snapshot = mod.production_snapshot(config)
+            write_state_payload = {
+                "lastSunday": "2026-08-02",
+                "lastSelectedSource": {
+                    "kind": "manual-url",
+                    "service": "manual",
+                    "state": "manual_available",
+                    "url": "https://www.youtube.com/watch?v=laterSource999",
+                },
+                "lastGenerationRequest": {
+                    "liveUrl": "https://www.youtube.com/watch?v=laterSource999",
+                },
+            }
+            write_json(state, write_state_payload)
+
+            with self.assertRaisesRegex(RuntimeError, "source changed"):
+                mod.ensure_source_lock(config, snapshot)
 
     def test_generation_command_uses_approval_not_model_arguments(self):
         with tempfile.TemporaryDirectory() as tempdir:
@@ -309,6 +368,7 @@ class SermonProductionSupervisorTest(unittest.TestCase):
                 start_time="00:21:10",
                 end_time="00:57:36",
                 approved_by="Jony",
+                content_scope="sermon_only",
             )
             snapshot = mod.production_snapshot(config)
             approval = json.loads(
@@ -318,6 +378,10 @@ class SermonProductionSupervisorTest(unittest.TestCase):
 
         self.assertEqual(command[command.index("--start-time") + 1], "00:21:10")
         self.assertEqual(command[command.index("--end-time") + 1], "00:57:36")
+        self.assertEqual(
+            command[command.index("--content-scope") + 1],
+            "sermon_only",
+        )
         self.assertIn("--output-mode", command)
         self.assertEqual(command[command.index("--output-mode") + 1], "reading")
         self.assertEqual(command[command.index("--youtube-cookies") + 1], str(cookies))
@@ -399,6 +463,7 @@ class SermonProductionSupervisorTest(unittest.TestCase):
                 start_time="00:21:10",
                 end_time="00:57:36",
                 approved_by="Jony",
+                content_scope="sermon_only",
             )
             write_json(
                 timeline_path,
@@ -435,6 +500,7 @@ class SermonProductionSupervisorTest(unittest.TestCase):
                 start_time="00:21:10",
                 end_time="00:57:36",
                 approved_by="Jony",
+                content_scope="sermon_only",
             )
             write_json(Path(locations["generationReportLocal"]), {"status": "completed"})
             write_json(Path(locations["readingQaLocal"]), {"status": "pass"})
@@ -467,6 +533,7 @@ class SermonProductionSupervisorTest(unittest.TestCase):
                 start_time="00:21:10",
                 end_time="00:57:36",
                 approved_by="Jony",
+                content_scope="sermon_only",
             )
             write_json(Path(locations["generationReportLocal"]), {"status": "completed"})
             write_json(Path(locations["readingQaLocal"]), {"status": "pass"})

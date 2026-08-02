@@ -87,5 +87,32 @@ def update_stage(
     return result
 
 
+def mark_terminal(
+    payload: dict[str, Any] | None,
+    sunday: str,
+    status: str,
+    *,
+    stage: str | None = None,
+    reason: str | None = None,
+) -> dict[str, Any]:
+    if status not in {"complete", "failed", "blocked"}:
+        raise ValueError(f"Unsupported terminal status: {status}")
+    result = payload if isinstance(payload, dict) else new_status(sunday)
+    if stage and stage not in STAGES:
+        raise ValueError(f"Unknown post-live stage: {stage}")
+    if stage:
+        result["currentStage"] = stage
+    now = utc_now()
+    result["status"] = status
+    result["updatedAt"] = now
+    result["completedAt"] = now
+    result["blocker"] = (
+        {"stage": result.get("currentStage"), "reason": reason}
+        if status in {"failed", "blocked"} and reason
+        else None
+    )
+    return result
+
+
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()

@@ -7,8 +7,8 @@ from typing import Any
 
 
 BOUNDARY_PROMPT_VERSION = "boundary-gpt56sol-v2"
-ENGLISH_CORRECTION_PROMPT_VERSION = "english-correction-gpt56sol-v2"
-CHINESE_TRANSLATION_PROMPT_VERSION = "chinese-translation-gpt56sol-v2"
+ENGLISH_CORRECTION_PROMPT_VERSION = "english-correction-gpt56sol-v3"
+CHINESE_TRANSLATION_PROMPT_VERSION = "chinese-translation-gpt56sol-v3"
 NOTES_PROMPT_VERSION = "notes-gpt56sol-v2"
 
 
@@ -54,6 +54,8 @@ Rules:
 - Do not merge, split, omit, add, reorder, translate, paraphrase, summarize, or improve preaching style.
 - Correct only evidence-supported recognition, spelling, punctuation, capitalization, Bible names, and proper nouns.
 - Prefer the glossary for listed terms. Use the reference only for the matching time window.
+- Treat glossary spellings as authoritative for matching named people, organizations,
+  acronyms, and action keywords.
 - If audio wording remains uncertain, preserve the timed segment text instead of guessing or filling inaudible content.
 
 Return one JSON object only with exactly this schema and no additional keys:
@@ -69,6 +71,10 @@ Rules:
 - Prefer the supplied Chinese term map for Bible books, people, places, and theology terms.
 - Keep subtitle wording concise and speakable while preserving meaning, emphasis, negation, and uncertainty.
 - Preserve a source fragment as a natural Chinese fragment; do not invent missing clauses.
+- Preserve exact numbers and Bible chapter references from current_english, even when the
+  speaker may have misspoken; never silently make Chinese contradict the English.
+- Preserve acronyms and actionable keywords listed in the glossary in Latin letters, with
+  a concise Chinese explanation when useful.
 - If wording is ambiguous, choose the most literal context-supported reading.
 
 Return one JSON object only with exactly this schema and no additional keys:

@@ -23,7 +23,7 @@ from scripts.sermon_pipeline import chat_json, clean_text, load_env, read_json, 
 
 PROMPT_VERSION = "sermon-reading-edition-gpt56sol-v1"
 QA_PROMPT_VERSION = "sermon-reading-edition-qa-gpt56sol-v1"
-QUALITY_RULE_VERSION = "sermon-reading-edition-quality-v2"
+QUALITY_RULE_VERSION = "sermon-reading-edition-quality-v3"
 
 TERM_MAP = {
     "God": "神",
@@ -55,6 +55,11 @@ Rules:
 - Convert useful spoken transitions into concise written Chinese instead of reproducing oral clutter.
 - Use 神 for God, 主 for Lord, and 祂 for divine pronouns. Use the supplied term map consistently.
 - Keep names and retrievable proper nouns accurate. Keep Mariners Church in English.
+- Preserve source acronyms and action keywords such as PANDAS and PRAYER in Latin letters,
+  adding a concise Chinese explanation when useful. Never replace an actionable keyword
+  with a vague reference to words shown on the video screen.
+- Preserve exact numbers and Bible references from the English source. Do not silently
+  fact-correct the Chinese so that it contradicts the adjacent English.
 - Use balanced Chinese quotation marks and normal Chinese punctuation.
 - Do not output markdown or newline characters inside zh.
 
@@ -74,6 +79,8 @@ Required checks:
 - no "……", "...", or "…";
 - no non-semantic fillers such as "嗯", "呃", "你知道", "我是说", "好吧", or filler uses of "你看";
 - accurate quotations, Bible references, names, pronouns, and theology terms;
+- exact agreement with the adjacent English for numbers and Bible chapter references;
+- source acronyms and actionable keywords such as PANDAS and PRAYER remain visible;
 - balanced Chinese punctuation and quotation marks.
 
 Do not summarize or add commentary. Return every requested id exactly once in order.
@@ -101,7 +108,10 @@ ALLOWED_ENGLISH_TOKENS = {
     "Church",
     "Oura",
     "SERVE",
+    "PANDAS",
+    "PRAYER",
 }
+REQUIRED_SOURCE_TOKENS = {"PANDAS", "PRAYER"}
 SOURCE_TERM_CHECKS = {
     "Holy Spirit": "圣灵",
     "Trinity": "三位一体",
@@ -142,6 +152,16 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--hard-seconds", type=float, default=55.0)
     parser.add_argument("--hard-english-chars", type=int, default=840)
+    parser.add_argument(
+        "--review-manifest",
+        type=Path,
+        help="Operator-reviewed exact replacements applied after model editing.",
+    )
+    parser.add_argument(
+        "--repair-existing",
+        action="store_true",
+        help="Apply --review-manifest to existing reading_blocks.final.json without model calls.",
+    )
     return parser.parse_args()
 
 
@@ -553,6 +573,70 @@ def write_block_srt(path: Path, blocks: list[dict[str, Any]], field: str) -> Non
     path.write_text("\n".join(lines), encoding="utf-8")
 
 
+def apply_review_manifest(
+    blocks: list[dict[str, Any]],
+    manifest: dict[str, Any],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    if manifest.get("schemaVersion") != 1:
+        raise ValueError("review manifest schemaVersion must be 1")
+    corrections = manifest.get("corrections")
+    if not isinstance(corrections, list) or not corrections:
+        raise ValueError("review manifest corrections must be a non-empty array")
+    by_id = {int(block["id"]): {**block} for block in blocks}
+    if len(by_id) != len(blocks):
+        raise ValueError("reading blocks must have unique integer ids")
+    applied: list[dict[str, Any]] = []
+    for index, correction in enumerate(corrections):
+        if not isinstance(correction, dict):
+            raise ValueError(f"review correction {index} must be an object")
+        try:
+            block_id = int(correction["blockId"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(
+                f"review correction {index} requires an integer blockId"
+            ) from exc
+        field = str(correction.get("field") or "")
+        find = str(correction.get("find") or "")
+        replace = str(correction.get("replace") or "")
+        reason = str(correction.get("reason") or "").strip()
+        if field not in {"en", "zh"}:
+            raise ValueError(f"review correction {index} field must be en or zh")
+        if not find or not replace or not reason:
+            raise ValueError(f"review correction {index} requires find, replace, and reason")
+        block = by_id.get(block_id)
+        if block is None:
+            raise ValueError(f"review correction {index} references missing block {block_id}")
+        text = str(block.get(field) or "")
+        occurrences = text.count(find)
+        if occurrences == 1:
+            block[field] = text.replace(find, replace, 1)
+            disposition = "applied"
+        elif occurrences == 0 and replace in text:
+            disposition = "already_applied"
+        else:
+            raise ValueError(
+                f"review correction {index} expected exactly one match in block "
+                f"{block_id}.{field}, found {occurrences}"
+            )
+        applied.append(
+            {
+                "blockId": block_id,
+                "field": field,
+                "reason": reason,
+                "disposition": disposition,
+            }
+        )
+    return [by_id[int(block["id"])] for block in blocks], applied
+
+
+def review_manifest_identity(path: Path) -> dict[str, Any]:
+    raw = path.read_bytes()
+    return {
+        "path": str(path),
+        "sha256": hashlib.sha256(raw).hexdigest(),
+    }
+
+
 def reading_quality_report(blocks: list[dict[str, Any]]) -> dict[str, Any]:
     ellipsis: list[dict[str, Any]] = []
     fillers: list[dict[str, Any]] = []
@@ -563,6 +647,8 @@ def reading_quality_report(blocks: list[dict[str, Any]]) -> dict[str, Any]:
     repeated_punctuation: list[dict[str, Any]] = []
     source_term_coverage_errors: list[dict[str, Any]] = []
     unexpected_english_tokens: list[dict[str, Any]] = []
+    missing_required_english_tokens: list[dict[str, Any]] = []
+    bilingual_reference_mismatches: list[dict[str, Any]] = []
     total_zh_chars = 0
     total_en_chars = 0
     for block in blocks:
@@ -610,6 +696,38 @@ def reading_quality_report(blocks: list[dict[str, Any]]) -> dict[str, Any]:
             unexpected_english_tokens.append(
                 {"id": block["id"], "tokens": english_tokens}
             )
+        required_tokens = sorted(
+            token
+            for token in REQUIRED_SOURCE_TOKENS
+            if re.search(rf"\b{re.escape(token)}\b", en)
+            and not re.search(rf"\b{re.escape(token)}\b", zh)
+        )
+        if required_tokens:
+            missing_required_english_tokens.append(
+                {"id": block["id"], "tokens": required_tokens}
+            )
+        english_first_samuel = re.search(
+            r"\bFirst Samuel\s+(\d+)\b",
+            en,
+            flags=re.IGNORECASE,
+        )
+        chinese_first_samuel = re.search(
+            r"撒母耳记上[^。；，]{0,18}?第?\s*(\d+)\s*章",
+            zh,
+        )
+        if (
+            english_first_samuel
+            and chinese_first_samuel
+            and english_first_samuel.group(1) != chinese_first_samuel.group(1)
+        ):
+            bilingual_reference_mismatches.append(
+                {
+                    "id": block["id"],
+                    "reference": "First Samuel",
+                    "englishChapter": int(english_first_samuel.group(1)),
+                    "chineseChapter": int(chinese_first_samuel.group(1)),
+                }
+            )
         ratio = len(zh) / max(1, len(en))
         if ratio < 0.18 or ratio > 0.65:
             length_ratio_outliers.append({"id": block["id"], "ratio": round(ratio, 3)})
@@ -631,6 +749,10 @@ def reading_quality_report(blocks: list[dict[str, Any]]) -> dict[str, Any]:
         failures.append("source_term_coverage")
     if unexpected_english_tokens:
         failures.append("unexpected_english_tokens")
+    if missing_required_english_tokens:
+        failures.append("missing_required_english_tokens")
+    if bilingual_reference_mismatches:
+        failures.append("bilingual_reference_mismatches")
     if length_ratio_outliers:
         failures.append("length_ratio_outliers")
     return {
@@ -647,6 +769,8 @@ def reading_quality_report(blocks: list[dict[str, Any]]) -> dict[str, Any]:
         "repeatedPunctuation": repeated_punctuation,
         "sourceTermCoverageErrors": source_term_coverage_errors,
         "unexpectedEnglishTokens": unexpected_english_tokens,
+        "missingRequiredEnglishTokens": missing_required_english_tokens,
+        "bilingualReferenceMismatches": bilingual_reference_mismatches,
         "lengthRatioOutliers": length_ratio_outliers,
         "metrics": {
             "englishCharacters": total_en_chars,
@@ -701,14 +825,63 @@ def draft_comparison_report(
 
 def main() -> int:
     args = parse_args()
+    if args.repair_existing and not args.review_manifest:
+        raise SystemExit("--repair-existing requires --review-manifest")
     api_key = ""
-    if args.provider == "openai":
+    if args.provider == "openai" and not args.repair_existing:
         load_env(REPO_ROOT / ".env")
         api_key = os.environ.get("OPENAI_API_KEY", "")
-    if args.provider == "openai" and not api_key:
+    if args.provider == "openai" and not args.repair_existing and not api_key:
         raise SystemExit("OPENAI_API_KEY is not set")
-    if args.provider == "codex" and not args.codex_cli.exists():
+    if args.provider == "codex" and not args.repair_existing and not args.codex_cli.exists():
         raise SystemExit(f"Codex CLI not found: {args.codex_cli}")
+
+    args.outdir.mkdir(parents=True, exist_ok=True)
+    if args.repair_existing:
+        final_path = args.outdir / "reading_blocks.final.json"
+        final = read_json(final_path)
+        manifest = read_json(args.review_manifest)
+        final, applied_corrections = apply_review_manifest(final, manifest)
+        report = reading_quality_report(final)
+        previous_report_path = args.outdir / "reading_quality_report.json"
+        previous_report = (
+            read_json(previous_report_path)
+            if previous_report_path.exists()
+            else {}
+        )
+        report.update(
+            {
+                key: previous_report[key]
+                for key in (
+                    "model",
+                    "reasoningEffort",
+                    "passes",
+                    "provider",
+                    "sourcePipeline",
+                    "layoutTargets",
+                    "comparisonToSubtitleDraft",
+                    "readingInputFingerprint",
+                    "readingInputIdentity",
+                )
+                if key in previous_report
+            }
+        )
+        report.update(
+            {
+                "status": "pass" if not report["failures"] else "needs_revision",
+                "qualityRuleVersion": QUALITY_RULE_VERSION,
+                "reviewManifest": review_manifest_identity(args.review_manifest),
+                "appliedReviewCorrections": applied_corrections,
+                "repairedExisting": True,
+            }
+        )
+        if report["status"] == "pass":
+            write_json(final_path, final)
+            write_block_srt(args.outdir / "sermon_zh_reading_revised.srt", final, "zh")
+            write_block_srt(args.outdir / "sermon_en_reading_revised.srt", final, "en")
+            write_json(previous_report_path, report)
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+        return 0 if report["status"] == "pass" else 2
 
     english = read_json(args.source_pipeline / "segments_timed_en_corrected.json")
     chinese = read_json(args.source_pipeline / "segments_timed_zh.json")
@@ -720,7 +893,6 @@ def main() -> int:
         hard_seconds=args.hard_seconds,
         hard_english_chars=args.hard_english_chars,
     )
-    args.outdir.mkdir(parents=True, exist_ok=True)
     write_json(args.outdir / "reading_blocks.draft.json", blocks)
     cache_dir = args.outdir / "reading_edit_cache"
     cache_dir.mkdir(parents=True, exist_ok=True)
@@ -777,6 +949,12 @@ def main() -> int:
             codex_cli=args.codex_cli,
             schema_path=schema_path,
         )
+    applied_corrections: list[dict[str, Any]] = []
+    if args.review_manifest:
+        final, applied_corrections = apply_review_manifest(
+            final,
+            read_json(args.review_manifest),
+        )
     write_json(args.outdir / "reading_blocks.final.json", final)
     write_block_srt(args.outdir / "sermon_zh_reading_revised.srt", final, "zh")
     write_block_srt(args.outdir / "sermon_en_reading_revised.srt", final, "en")
@@ -799,6 +977,12 @@ def main() -> int:
                 chinese,
                 final,
             ),
+            "reviewManifest": (
+                review_manifest_identity(args.review_manifest)
+                if args.review_manifest
+                else None
+            ),
+            "appliedReviewCorrections": applied_corrections,
         }
     )
     write_json(args.outdir / "reading_quality_report.json", report)

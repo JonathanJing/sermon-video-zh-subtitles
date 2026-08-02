@@ -37,12 +37,42 @@ INPUT_IDENTITY_SCHEMA_VERSION = 1
 
 def main() -> int:
     args = parse_args()
-    report = run_post_live_generation(args)
+    try:
+        report = run_post_live_generation(args)
+    except Exception as exc:
+        reconcile_failed_run_status(args, exc)
+        raise
     out = resolve_path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
     print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
     return 0 if report["status"] in {"completed", "planned", "waiting_for_post_live"} else 2
+
+
+def reconcile_failed_run_status(args: argparse.Namespace, exc: Exception) -> None:
+    try:
+        state = live_source_monitor.read_state(args.state_file)
+        source = selected_source_from_state(state)
+        live_url = live_url_from_state(state, source)
+        if not live_url:
+            return
+        run_root = args.work_root / args.sunday / slug_for(args, live_url)
+        path = run_root / "run-status.json"
+        payload = load_run_status(path, args.sunday, live_url)
+        if payload.get("status") == "blocked":
+            return
+        stage = str(payload.get("currentStage") or "source_saved")
+        payload = post_live_run_status.mark_terminal(
+            payload,
+            args.sunday,
+            "failed",
+            stage=stage,
+            reason=f"{exc.__class__.__name__}: {str(exc)[:400]}",
+        )
+        write_run_status(path, payload)
+    except Exception:
+        # Never mask the original production failure with reconciliation work.
+        return
 
 
 def parse_args() -> argparse.Namespace:
@@ -56,6 +86,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--end-time", help="Absolute sermon end in the full downloaded media.")
     parser.add_argument("--sermon-title", help="Operator-confirmed sermon title for the reading PDF.")
     parser.add_argument("--speaker", help="Operator-confirmed sermon speaker for the reading PDF.")
+    parser.add_argument(
+        "--content-scope",
+        choices=("sermon_only", "sermon_plus_response"),
+        default=None,
+        help="Operator-approved publication scope for the selected time window.",
+    )
     parser.add_argument("--glossary", type=Path)
     parser.add_argument("--zh-model", default="gpt-5.6")
     parser.add_argument("--en-correction-model", default="gpt-5.6")
@@ -104,6 +140,8 @@ def run_post_live_generation(
         args.reference_model = getattr(args, "gpt4o_model", "gpt-transcribe")
     if not hasattr(args, "output_mode"):
         args.output_mode = "reading"
+    if not hasattr(args, "content_scope"):
+        args.content_scope = None
     state = live_source_monitor.read_state(args.state_file)
     source = selected_source_from_state(state)
     live_url = live_url_from_state(state, source)
@@ -171,6 +209,7 @@ def run_post_live_generation(
         "readingPdfCommand": reading_pdf_command,
         "deliveryReadingPdf": str(delivery_reading_pdf),
         "outputMode": args.output_mode,
+        "contentScope": args.content_scope or "legacy_unspecified",
         "outputs": expected_outputs(pipeline_outdir, args.output_mode),
     }
     if args.plan_only or args.dry_run:
@@ -328,6 +367,13 @@ def run_post_live_generation(
     )
     write_run_status(run_status_path, run_status)
     uploaded = upload_outputs(args, pipeline_outdir, args.output_mode, extra_paths=delivery_paths)
+    run_status = post_live_run_status.mark_terminal(
+        run_status,
+        args.sunday,
+        "complete",
+        stage="pdf_qa",
+    )
+    write_run_status(run_status_path, run_status)
     report.update(
         {
             "status": "completed",

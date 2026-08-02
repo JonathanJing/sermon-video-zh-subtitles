@@ -86,6 +86,35 @@ def write_state(path: Path, *, sunday: str = "2026-06-28", url: str = "https://w
 
 
 class PostLiveSubtitleGenerationTest(unittest.TestCase):
+    def test_unexpected_failure_reconciles_run_status_to_failed(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            state_path = root / "state.json"
+            write_state(state_path)
+            args = make_args(
+                state_file=str(state_path),
+                work_root=root,
+                plan_only=False,
+            )
+            run_root = root / args.sunday / args.slug
+            run_root.mkdir(parents=True, exist_ok=True)
+            mod.write_run_status(
+                run_root / "run-status.json",
+                mod.post_live_run_status.update_stage(
+                    None,
+                    args.sunday,
+                    "downloaded",
+                    "running",
+                ),
+            )
+
+            mod.reconcile_failed_run_status(args, RuntimeError("network unavailable"))
+            status = json.loads((run_root / "run-status.json").read_text(encoding="utf-8"))
+
+        self.assertEqual("failed", status["status"])
+        self.assertEqual("downloaded", status["currentStage"])
+        self.assertIn("network unavailable", status["blocker"]["reason"])
+
     def test_plan_waits_when_capture_state_has_no_url(self):
         with tempfile.TemporaryDirectory() as tempdir:
             state_path = Path(tempdir) / "state.json"

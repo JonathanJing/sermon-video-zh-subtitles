@@ -19,7 +19,11 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from backend.config import upcoming_sunday
-from scripts import live_source_monitor, run_sermon_production_supervisor_agent
+from scripts import (
+    live_source_monitor,
+    run_sermon_production_supervisor_agent,
+    sermon_production_supervisor,
+)
 
 
 DEFAULT_STATE_URI = (
@@ -52,6 +56,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--api-key-secret", default=DEFAULT_OPENAI_SECRET)
     parser.add_argument("--youtube-api-key-secret", default=DEFAULT_YOUTUBE_API_SECRET)
     parser.add_argument("--youtube-cookies-secret")
+    parser.add_argument("--glossary", type=Path)
     parser.add_argument(
         "--youtube-cookies",
         type=Path,
@@ -68,6 +73,11 @@ def parse_args() -> argparse.Namespace:
         "--skip-source-refresh",
         action="store_true",
         help="Skip local source refresh and only consume existing GCS state.",
+    )
+    parser.add_argument(
+        "--force-after-complete",
+        action="store_true",
+        help="Bypass this Sunday's verified completion latch for an explicit repair run.",
     )
     return parser.parse_args()
 
@@ -96,6 +106,7 @@ def make_agent_args(args: argparse.Namespace) -> argparse.Namespace:
         youtube_api_key_secret=args.youtube_api_key_secret,
         youtube_cookies_secret=args.youtube_cookies_secret,
         youtube_cookies=args.youtube_cookies,
+        glossary=getattr(args, "glossary", None),
         discord_bot_token_secret=None,
         discord_channel_id=None,
         notify_sendgrid_secret=args.notify_sendgrid_secret,
@@ -105,11 +116,13 @@ def make_agent_args(args: argparse.Namespace) -> argparse.Namespace:
         mode=args.mode,
         max_turns=args.max_turns,
         skip_source_refresh=args.skip_source_refresh,
+        force_after_complete=getattr(args, "force_after_complete", False),
         approve_window=False,
         start_time=None,
         end_time=None,
         approved_by=None,
         approval_note=None,
+        content_scope=None,
     )
 
 
@@ -212,8 +225,141 @@ def discovery_service_for_run(
     return "auto" if run_date >= sunday_date else "sat-auto"
 
 
+def completed_production_report(args: argparse.Namespace) -> dict[str, Any] | None:
+    """Return a terminal report before refresh/secrets/agent work when this Sunday is done."""
+    if getattr(args, "force_after_complete", False):
+        return None
+    snapshot = local_completed_snapshot(args.out, args.sunday)
+    latch_source = "local_previous_terminal_report"
+    if snapshot is None:
+        latch_source = "authoritative_production_snapshot"
+        try:
+            snapshot = sermon_production_supervisor.production_snapshot(
+                run_sermon_production_supervisor_agent.make_config(args)
+            )
+        except Exception:
+            return None
+    return completed_report_from_snapshot(args, snapshot, latch_source=latch_source)
+
+
+def local_completed_snapshot(path: Path, sunday: str) -> dict[str, Any] | None:
+    try:
+        report = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return None
+    if not isinstance(report, dict) or report.get("sunday") != sunday:
+        return None
+    snapshot = report.get("finalSnapshot")
+    if not isinstance(snapshot, dict):
+        return None
+    run_status = local_completion_artifacts(snapshot)
+    if run_status is None:
+        return None
+    return {**snapshot, "runStatus": run_status}
+
+
+def local_completion_artifacts(snapshot: dict[str, Any]) -> dict[str, Any] | None:
+    locations = snapshot.get("locations") or {}
+    try:
+        reading_pdf = Path(str(locations["readingPdfLocal"]))
+        reading_quality = json.loads(
+            Path(str(locations["readingQualityLocal"])).read_text(encoding="utf-8")
+        )
+        reading_qa = json.loads(
+            Path(str(locations["readingQaLocal"])).read_text(encoding="utf-8")
+        )
+        run_status = json.loads(
+            Path(str(locations["runStatusLocal"])).read_text(encoding="utf-8")
+        )
+    except (KeyError, FileNotFoundError, json.JSONDecodeError, OSError):
+        return None
+    valid = bool(
+        reading_pdf.is_file()
+        and reading_pdf.stat().st_size > 0
+        and isinstance(reading_quality, dict)
+        and reading_quality.get("status") == "pass"
+        and isinstance(reading_qa, dict)
+        and reading_qa.get("status") == "pass"
+        and isinstance(run_status, dict)
+        and run_status.get("status") == "complete"
+    )
+    return run_status if valid else None
+
+
+def completed_report_from_snapshot(
+    args: argparse.Namespace,
+    snapshot: dict[str, Any],
+    *,
+    latch_source: str,
+) -> dict[str, Any] | None:
+    generation = snapshot.get("generation") or {}
+    quality = snapshot.get("quality") or {}
+    reading_quality = quality.get("readingEdition") or {}
+    pdf_quality = quality.get("readingPdf") or {}
+    recommended = snapshot.get("recommendedAction") or {}
+    if not (
+        generation.get("status") == "completed"
+        and reading_quality.get("status") == "pass"
+        and pdf_quality.get("status") == "pass"
+        and recommended.get("action") == "complete"
+    ):
+        return None
+    evidence = [
+        "generation.status=completed",
+        "quality.readingEdition.status=pass",
+        "quality.readingPdf.status=pass",
+        "recommendedAction.action=complete",
+    ]
+    reading_pdf_gcs = (snapshot.get("locations") or {}).get("readingPdfGcs")
+    if reading_pdf_gcs:
+        evidence.append(f"locations.readingPdfGcs={reading_pdf_gcs}")
+    return {
+        "schemaVersion": 1,
+        "status": "complete",
+        "sunday": args.sunday,
+        "mode": args.mode,
+        "model": args.model,
+        "approvalWritten": False,
+        "traceSensitiveDataIncluded": False,
+        "completionLatch": {
+            "status": "already_complete",
+            "source": latch_source,
+            "checkedAt": datetime.now(timezone.utc).isoformat(),
+            "skippedSourceRefresh": True,
+            "skippedSecretAccess": True,
+            "skippedAgentRun": True,
+        },
+        "decision": {
+            "status": "complete",
+            "action": "already_complete",
+            "summary_zh": "本周阅读版 PDF 已完成且两项质量检查通过；本次触发已在入口结束。",
+            "human_action_required": False,
+            "modelDecisionAccepted": False,
+            "evidence": evidence,
+        },
+        "sourceRefresh": {
+            "status": "skipped",
+            "reason": "completed_production_latch",
+        },
+        "finalSnapshot": snapshot,
+    }
+
+
+def write_report(path: Path, report: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+    print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
+
+
 def main() -> int:
     args = make_agent_args(parse_args())
+    completed = completed_production_report(args)
+    if completed is not None:
+        write_report(args.out, completed)
+        return 0
     if args.skip_source_refresh:
         source_refresh = {"status": "skipped"}
     else:
@@ -227,12 +373,7 @@ def main() -> int:
             }
     report = asyncio.run(run_sermon_production_supervisor_agent.run_agent(args))
     report["sourceRefresh"] = source_refresh
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(
-        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True),
-        encoding="utf-8",
-    )
-    print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
+    write_report(args.out, report)
     return 0 if report.get("status") in {"observed", "advanced", "complete"} else 2
 
 
