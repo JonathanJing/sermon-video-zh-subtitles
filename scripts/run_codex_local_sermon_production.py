@@ -5,12 +5,13 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
 import json
 import os
 import sys
 from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 from zoneinfo import ZoneInfo
 
 
@@ -19,7 +20,12 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from backend.config import upcoming_sunday
-from scripts import live_source_monitor, run_sermon_production_supervisor_agent
+from backend.cloud import read_gcs_bytes
+from scripts import (
+    live_source_monitor,
+    run_sermon_production_supervisor_agent,
+    sermon_production_supervisor,
+)
 
 
 DEFAULT_STATE_URI = (
@@ -52,6 +58,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--api-key-secret", default=DEFAULT_OPENAI_SECRET)
     parser.add_argument("--youtube-api-key-secret", default=DEFAULT_YOUTUBE_API_SECRET)
     parser.add_argument("--youtube-cookies-secret")
+    parser.add_argument("--glossary", type=Path)
     parser.add_argument(
         "--youtube-cookies",
         type=Path,
@@ -68,6 +75,16 @@ def parse_args() -> argparse.Namespace:
         "--skip-source-refresh",
         action="store_true",
         help="Skip local source refresh and only consume existing GCS state.",
+    )
+    parser.add_argument(
+        "--force-after-complete",
+        action="store_true",
+        help="Bypass this Sunday's verified completion latch for an explicit repair run.",
+    )
+    parser.add_argument(
+        "--resume-failed-generation",
+        action="store_true",
+        help="Explicitly archive failed generation evidence and resume under the generation lease.",
     )
     return parser.parse_args()
 
@@ -96,6 +113,7 @@ def make_agent_args(args: argparse.Namespace) -> argparse.Namespace:
         youtube_api_key_secret=args.youtube_api_key_secret,
         youtube_cookies_secret=args.youtube_cookies_secret,
         youtube_cookies=args.youtube_cookies,
+        glossary=getattr(args, "glossary", None),
         discord_bot_token_secret=None,
         discord_channel_id=None,
         notify_sendgrid_secret=args.notify_sendgrid_secret,
@@ -105,11 +123,14 @@ def make_agent_args(args: argparse.Namespace) -> argparse.Namespace:
         mode=args.mode,
         max_turns=args.max_turns,
         skip_source_refresh=args.skip_source_refresh,
+        force_after_complete=getattr(args, "force_after_complete", False),
+        resume_failed_generation=getattr(args, "resume_failed_generation", False),
         approve_window=False,
         start_time=None,
         end_time=None,
         approved_by=None,
         approval_note=None,
+        content_scope=None,
     )
 
 
@@ -212,8 +233,244 @@ def discovery_service_for_run(
     return "auto" if run_date >= sunday_date else "sat-auto"
 
 
+def completed_production_report(
+    args: argparse.Namespace,
+    *,
+    gcs_reader: Callable[[str], bytes] = read_gcs_bytes,
+) -> dict[str, Any] | None:
+    """Return a terminal report before refresh/secrets/agent work when this Sunday is done."""
+    if getattr(args, "force_after_complete", False):
+        return None
+    snapshot = local_completed_snapshot(
+        args.out,
+        args.sunday,
+        gcs_reader=gcs_reader,
+    )
+    latch_source = "local_previous_terminal_report"
+    if snapshot is None:
+        latch_source = "authoritative_production_snapshot"
+        try:
+            snapshot = sermon_production_supervisor.production_snapshot(
+                run_sermon_production_supervisor_agent.make_config(args)
+            )
+        except Exception:
+            return None
+    return completed_report_from_snapshot(args, snapshot, latch_source=latch_source)
+
+
+def local_completed_snapshot(
+    path: Path,
+    sunday: str,
+    *,
+    gcs_reader: Callable[[str], bytes] = read_gcs_bytes,
+) -> dict[str, Any] | None:
+    try:
+        report = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return None
+    if not isinstance(report, dict) or report.get("sunday") != sunday:
+        return None
+    snapshot = report.get("finalSnapshot")
+    if not isinstance(snapshot, dict):
+        return None
+    artifacts = local_completion_artifacts(snapshot, gcs_reader=gcs_reader)
+    if artifacts is None:
+        return None
+    return {
+        **snapshot,
+        "generation": artifacts["generation"],
+        "runStatus": artifacts["runStatus"],
+    }
+
+
+def local_completion_artifacts(
+    snapshot: dict[str, Any],
+    *,
+    gcs_reader: Callable[[str], bytes] = read_gcs_bytes,
+) -> dict[str, Any] | None:
+    locations = snapshot.get("locations") or {}
+    try:
+        reading_pdf = Path(str(locations["readingPdfLocal"]))
+        generation_report = json.loads(
+            Path(str(locations["generationReportLocal"])).read_text(encoding="utf-8")
+        )
+        reading_quality = json.loads(
+            Path(str(locations["readingQualityLocal"])).read_text(encoding="utf-8")
+        )
+        reading_qa = json.loads(
+            Path(str(locations["readingQaLocal"])).read_text(encoding="utf-8")
+        )
+        run_status = json.loads(
+            Path(str(locations["runStatusLocal"])).read_text(encoding="utf-8")
+        )
+    except (KeyError, FileNotFoundError, json.JSONDecodeError, OSError):
+        return None
+    publication_valid = True
+    reading_pdf_gcs = locations.get("readingPdfGcs")
+    if reading_pdf_gcs:
+        publication = (
+            generation_report.get("publication")
+            if isinstance(generation_report, dict)
+            else {}
+        )
+        if not isinstance(publication, dict):
+            publication = {}
+        publication_artifacts = (
+            publication.get("artifacts")
+        )
+        published_pdf = next(
+            (
+                artifact
+                for artifact in publication_artifacts or []
+                if isinstance(artifact, dict)
+                and artifact.get("gcsUri") == reading_pdf_gcs
+            ),
+            None,
+        )
+        local_pdf_sha256 = (
+            hashlib.sha256(reading_pdf.read_bytes()).hexdigest()
+            if reading_pdf.is_file()
+            else None
+        )
+        try:
+            current_gcs_bytes = gcs_reader(str(reading_pdf_gcs))
+        except Exception:
+            return None
+        current_gcs_sha256 = hashlib.sha256(current_gcs_bytes).hexdigest()
+        publication_valid = bool(
+            publication.get("status") == "pass"
+            and published_pdf
+            and published_pdf.get("localSha256") == local_pdf_sha256
+            and published_pdf.get("gcsSha256") == current_gcs_sha256
+            and current_gcs_sha256 == local_pdf_sha256
+            and published_pdf.get("localSize") == reading_pdf.stat().st_size
+            and published_pdf.get("gcsSize") == len(current_gcs_bytes)
+            and len(current_gcs_bytes) == reading_pdf.stat().st_size
+        )
+    valid = bool(
+        reading_pdf.is_file()
+        and reading_pdf.stat().st_size > 0
+        and isinstance(generation_report, dict)
+        and generation_report.get("status") == "completed"
+        and publication_valid
+        and isinstance(reading_quality, dict)
+        and reading_quality.get("status") == "pass"
+        and isinstance(reading_qa, dict)
+        and reading_qa.get("status") == "pass"
+        and isinstance(run_status, dict)
+        and run_status.get("status") == "complete"
+    )
+    if not valid:
+        return None
+    return {
+        "generation": sermon_production_supervisor.public_generation_report(
+            generation_report
+        ),
+        "runStatus": run_status,
+    }
+
+
+def completed_report_from_snapshot(
+    args: argparse.Namespace,
+    snapshot: dict[str, Any],
+    *,
+    latch_source: str,
+) -> dict[str, Any] | None:
+    generation = snapshot.get("generation") or {}
+    quality = snapshot.get("quality") or {}
+    reading_quality = quality.get("readingEdition") or {}
+    pdf_quality = quality.get("readingPdf") or {}
+    recommended = snapshot.get("recommendedAction") or {}
+    reading_pdf_gcs = (snapshot.get("locations") or {}).get("readingPdfGcs")
+    publication = generation.get("publication") or {}
+    if not (
+        generation.get("status") == "completed"
+        and reading_quality.get("status") == "pass"
+        and pdf_quality.get("status") == "pass"
+        and recommended.get("action") == "complete"
+        and (not reading_pdf_gcs or publication.get("status") == "pass")
+    ):
+        return None
+    evidence = [
+        "generation.status=completed",
+        "quality.readingEdition.status=pass",
+        "quality.readingPdf.status=pass",
+        "recommendedAction.action=complete",
+    ]
+    if reading_pdf_gcs:
+        evidence.append("generation.publication.status=pass")
+        evidence.append(f"locations.readingPdfGcs={reading_pdf_gcs}")
+    return {
+        "schemaVersion": 1,
+        "status": "complete",
+        "sunday": args.sunday,
+        "mode": args.mode,
+        "model": args.model,
+        "approvalWritten": False,
+        "traceSensitiveDataIncluded": False,
+        "completionLatch": {
+            "status": "already_complete",
+            "source": latch_source,
+            "checkedAt": datetime.now(timezone.utc).isoformat(),
+            "skippedSourceRefresh": True,
+            "skippedSecretAccess": True,
+            "skippedAgentRun": True,
+        },
+        "decision": {
+            "status": "complete",
+            "action": "already_complete",
+            "summary_zh": "本周阅读版 PDF 已完成且两项质量检查通过；本次触发已在入口结束。",
+            "human_action_required": False,
+            "modelDecisionAccepted": False,
+            "evidence": evidence,
+        },
+        "sourceRefresh": {
+            "status": "skipped",
+            "reason": "completed_production_latch",
+        },
+        "finalSnapshot": snapshot,
+    }
+
+
+def write_report(path: Path, report: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+    print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
+
+
 def main() -> int:
     args = make_agent_args(parse_args())
+    if args.resume_failed_generation:
+        result = sermon_production_supervisor.resume_failed_reading_pdf_generation(
+            run_sermon_production_supervisor_agent.make_config(args)
+        )
+        final_snapshot = sermon_production_supervisor.production_snapshot(
+            run_sermon_production_supervisor_agent.make_config(args)
+        )
+        report = {
+            "schemaVersion": 1,
+            "status": "complete" if result.get("status") == "completed" else "blocked",
+            "sunday": args.sunday,
+            "mode": args.mode,
+            "model": args.model,
+            "approvalWritten": False,
+            "traceSensitiveDataIncluded": False,
+            "sourceRefresh": {
+                "status": "skipped",
+                "reason": "explicit_failed_generation_resume",
+            },
+            "resumeResult": result,
+            "finalSnapshot": final_snapshot,
+        }
+        write_report(args.out, report)
+        return 0 if result.get("status") == "completed" else 2
+    completed = completed_production_report(args)
+    if completed is not None:
+        write_report(args.out, completed)
+        return 0
     if args.skip_source_refresh:
         source_refresh = {"status": "skipped"}
     else:
@@ -227,12 +484,7 @@ def main() -> int:
             }
     report = asyncio.run(run_sermon_production_supervisor_agent.run_agent(args))
     report["sourceRefresh"] = source_refresh
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(
-        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True),
-        encoding="utf-8",
-    )
-    print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
+    write_report(args.out, report)
     return 0 if report.get("status") in {"observed", "advanced", "complete"} else 2
 
 

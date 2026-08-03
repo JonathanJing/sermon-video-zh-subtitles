@@ -67,6 +67,35 @@ class SermonProductionSupervisorTest(unittest.TestCase):
             "waiting_for_matching_sunday",
         )
 
+    def test_source_lock_prevents_later_discovery_from_changing_video(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            state = root / "state.json"
+            write_state(state)
+            config = self.make_config(root, state)
+            initial = mod.production_snapshot(config)
+            lock = mod.ensure_source_lock(config, initial)
+            write_json(
+                state,
+                {
+                    "lastSunday": "2026-08-02",
+                    "lastSelectedSource": {
+                        "kind": "youtube-streams",
+                        "service": "sat530",
+                        "state": "was_live",
+                        "url": "https://www.youtube.com/watch?v=laterSource999",
+                    },
+                    "lastGenerationRequest": {
+                        "liveUrl": "https://www.youtube.com/watch?v=laterSource999",
+                    },
+                },
+            )
+            locked = mod.production_snapshot(config)
+
+        self.assertEqual(lock["sourceUrlHash"], mod.stable_hash("https://www.youtube.com/watch?v=agentTest123"))
+        self.assertEqual(locked["slug"], "sermon_agentTest123")
+        self.assertEqual(locked["sourceLock"]["status"], "locked")
+
     def test_timeline_review_requires_durable_human_approval(self):
         with tempfile.TemporaryDirectory() as tempdir:
             root = Path(tempdir)
@@ -105,11 +134,13 @@ class SermonProductionSupervisorTest(unittest.TestCase):
                 start_time="00:20:30",
                 end_time="00:58:45.250",
                 approved_by="operator@example.test",
+                content_scope="sermon_only",
                 note="Verified against completed livestream.",
             )
             snapshot = mod.production_snapshot(config)
 
         self.assertTrue(approval["humanApproval"])
+        self.assertEqual(approval["contentScope"], "sermon_only")
         self.assertEqual(approval["startTime"], "00:20:30")
         self.assertEqual(approval["endTime"], "00:58:45.250")
         self.assertEqual(snapshot["recommendedAction"]["action"], "run_reading_pdf_generation")
@@ -271,6 +302,62 @@ class SermonProductionSupervisorTest(unittest.TestCase):
         self.assertEqual(result["action"], "inspect_generation_failure")
         self.assertTrue(result["humanActionRequired"])
 
+    def test_completed_generation_requires_publication_parity_when_gcs_is_configured(self):
+        result = mod.recommend_action(
+            sunday="2026-08-02",
+            live_url="https://www.youtube.com/watch?v=agentTest123",
+            state={"lastSunday": "2026-08-02"},
+            timeline_report={"status": "requires_operator_review"},
+            approval_valid=True,
+            approval_reason=None,
+            generation_report={"status": "completed"},
+            run_status={"status": "complete"},
+            reading_qa={"status": "pass"},
+            reading_quality={"status": "pass"},
+            publication_required=True,
+        )
+
+        self.assertEqual(result["action"], "inspect_publication_evidence")
+        self.assertTrue(result["humanActionRequired"])
+
+    def test_structured_generation_failure_uses_run_status_and_quality_evidence(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            locations = {
+                "runStatusLocal": str(root / "run-status.json"),
+                "readingQualityLocal": str(root / "reading-quality.json"),
+            }
+            write_json(
+                Path(locations["runStatusLocal"]),
+                {
+                    "currentStage": "reviewed",
+                    "blocker": {
+                        "stage": "reviewed",
+                        "reason": "reading_quality_needs_review",
+                    },
+                },
+            )
+            write_json(
+                Path(locations["readingQualityLocal"]),
+                {
+                    "status": "needs_revision",
+                    "failures": ["unexpected_english_tokens"],
+                },
+            )
+
+            report = mod.build_generation_failure_report(
+                subprocess.CompletedProcess(["generation"], 1, stdout="", stderr=""),
+                locations,
+            )
+
+        self.assertEqual(2, report["schemaVersion"])
+        self.assertEqual("reviewed", report["failure"]["stage"])
+        self.assertEqual(
+            ["unexpected_english_tokens"],
+            report["failure"]["qualityFailures"],
+        )
+        self.assertTrue(report["failure"]["resumeEligible"])
+
     def test_timeline_lease_blocks_duplicate_subprocess(self):
         calls = []
 
@@ -282,14 +369,42 @@ class SermonProductionSupervisorTest(unittest.TestCase):
             root = Path(tempdir)
             state = root / "state.json"
             write_state(state)
+            config = self.make_config(root, state)
             result = mod.run_timeline_probe(
-                self.make_config(root, state),
+                config,
                 runner=runner,
                 lease_acquirer=lambda *args, **kwargs: None,
             )
+            source_lock_local, _ = mod.source_lock_locations(config)
+            source_lock_exists = Path(source_lock_local).exists()
 
         self.assertEqual(result["status"], "already_running")
         self.assertEqual(calls, [])
+        self.assertFalse(source_lock_exists)
+
+    def test_source_lock_fails_closed_if_state_changes_after_snapshot(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            state = root / "state.json"
+            write_state(state)
+            config = self.make_config(root, state)
+            snapshot = mod.production_snapshot(config)
+            write_state_payload = {
+                "lastSunday": "2026-08-02",
+                "lastSelectedSource": {
+                    "kind": "manual-url",
+                    "service": "manual",
+                    "state": "manual_available",
+                    "url": "https://www.youtube.com/watch?v=laterSource999",
+                },
+                "lastGenerationRequest": {
+                    "liveUrl": "https://www.youtube.com/watch?v=laterSource999",
+                },
+            }
+            write_json(state, write_state_payload)
+
+            with self.assertRaisesRegex(RuntimeError, "source changed"):
+                mod.ensure_source_lock(config, snapshot)
 
     def test_generation_command_uses_approval_not_model_arguments(self):
         with tempfile.TemporaryDirectory() as tempdir:
@@ -309,6 +424,7 @@ class SermonProductionSupervisorTest(unittest.TestCase):
                 start_time="00:21:10",
                 end_time="00:57:36",
                 approved_by="Jony",
+                content_scope="sermon_only",
             )
             snapshot = mod.production_snapshot(config)
             approval = json.loads(
@@ -318,14 +434,126 @@ class SermonProductionSupervisorTest(unittest.TestCase):
 
         self.assertEqual(command[command.index("--start-time") + 1], "00:21:10")
         self.assertEqual(command[command.index("--end-time") + 1], "00:57:36")
+        self.assertEqual(
+            command[command.index("--content-scope") + 1],
+            "sermon_only",
+        )
+        self.assertEqual(
+            command[command.index("--approval-evidence") + 1],
+            snapshot["locations"]["windowApprovalLocal"],
+        )
+        self.assertEqual(
+            command[command.index("--live-url") + 1],
+            "https://www.youtube.com/watch?v=agentTest123",
+        )
         self.assertIn("--output-mode", command)
         self.assertEqual(command[command.index("--output-mode") + 1], "reading")
         self.assertEqual(command[command.index("--youtube-cookies") + 1], str(cookies))
         redacted = mod.redact_command(command)
         self.assertEqual(
+            redacted[redacted.index("--live-url") + 1],
+            "REDACTED_LIVE_SOURCE",
+        )
+        self.assertEqual(
             redacted[redacted.index("--youtube-cookies") + 1],
             "REDACTED_SECRET_RESOURCE",
         )
+
+    def test_explicit_resume_archives_failed_report_and_reuses_valid_approval(self):
+        class Lease:
+            pass
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            state = root / "state.json"
+            write_state(state)
+            config = self.make_config(root, state)
+            initial = mod.production_snapshot(config)
+            write_json(
+                Path(initial["locations"]["timelineReportLocal"]),
+                {"status": "requires_operator_review"},
+            )
+            mod.approve_window(
+                config,
+                start_time="00:21:10",
+                end_time="00:57:36",
+                approved_by="Jony",
+                content_scope="sermon_only",
+            )
+            failed_snapshot = mod.production_snapshot(config)
+            write_json(
+                Path(failed_snapshot["locations"]["generationReportLocal"]),
+                {"schemaVersion": 2, "status": "failed", "reason": "quality gate"},
+            )
+
+            def runner(command, **_kwargs):
+                report_path = Path(command[command.index("--out") + 1])
+                write_json(
+                    report_path,
+                    {
+                        "schemaVersion": 2,
+                        "status": "completed",
+                        "publication": {"status": "not_configured"},
+                    },
+                )
+                return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+
+            result = mod.resume_failed_reading_pdf_generation(
+                config,
+                runner=runner,
+                lease_acquirer=lambda *_args, **_kwargs: Lease(),
+                lease_releaser=lambda _lease: None,
+            )
+
+            archived = Path(result["archivedFailure"]["local"])
+
+        self.assertEqual("completed", result["status"])
+        self.assertTrue(archived.name.startswith("agent-generation-report.failed-"))
+
+    def test_execute_generation_materializes_authoritative_approval_locally(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            state = root / "state.json"
+            write_state(state)
+            config = self.make_config(root, state)
+            initial = mod.production_snapshot(config)
+            write_json(
+                Path(initial["locations"]["timelineReportLocal"]),
+                {"status": "requires_operator_review"},
+            )
+            approval = mod.approve_window(
+                config,
+                start_time="00:21:10",
+                end_time="00:57:36",
+                approved_by="Jony",
+                content_scope="sermon_only",
+            )
+            snapshot = mod.production_snapshot(config)
+            approval_path = Path(snapshot["locations"]["windowApprovalLocal"])
+            approval_path.unlink()
+
+            def runner(command, **_kwargs):
+                materialized = json.loads(approval_path.read_text(encoding="utf-8"))
+                self.assertEqual(materialized, approval)
+                report_path = Path(command[command.index("--out") + 1])
+                write_json(
+                    report_path,
+                    {
+                        "schemaVersion": 2,
+                        "status": "completed",
+                        "publication": {"status": "not_configured"},
+                    },
+                )
+                return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+
+            result = mod.execute_reading_pdf_generation(
+                config,
+                snapshot,
+                approval,
+                runner=runner,
+            )
+
+        self.assertEqual(result["status"], "completed")
 
     def test_timeline_command_passes_local_access_and_notification_configuration(self):
         with tempfile.TemporaryDirectory() as tempdir:
@@ -399,6 +627,7 @@ class SermonProductionSupervisorTest(unittest.TestCase):
                 start_time="00:21:10",
                 end_time="00:57:36",
                 approved_by="Jony",
+                content_scope="sermon_only",
             )
             write_json(
                 timeline_path,
@@ -435,6 +664,7 @@ class SermonProductionSupervisorTest(unittest.TestCase):
                 start_time="00:21:10",
                 end_time="00:57:36",
                 approved_by="Jony",
+                content_scope="sermon_only",
             )
             write_json(Path(locations["generationReportLocal"]), {"status": "completed"})
             write_json(Path(locations["readingQaLocal"]), {"status": "pass"})
@@ -467,6 +697,7 @@ class SermonProductionSupervisorTest(unittest.TestCase):
                 start_time="00:21:10",
                 end_time="00:57:36",
                 approved_by="Jony",
+                content_scope="sermon_only",
             )
             write_json(Path(locations["generationReportLocal"]), {"status": "completed"})
             write_json(Path(locations["readingQaLocal"]), {"status": "pass"})

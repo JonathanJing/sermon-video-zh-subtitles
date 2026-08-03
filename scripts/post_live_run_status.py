@@ -9,6 +9,7 @@ from typing import Any
 
 STAGES = (
     "source_saved",
+    "approval",
     "archive_ready",
     "downloaded",
     "clipped",
@@ -16,7 +17,7 @@ STAGES = (
     "translated",
     "reviewed",
     "pdf_qa",
-    "approval",
+    "publication",
 )
 
 
@@ -78,12 +79,37 @@ def update_stage(
     if source_url:
         result["sourceUrl"] = source_url
     result["blocker"] = {"stage": stage, "reason": reason} if status == "blocked" else None
-    if stage == "approval" and status == "complete":
-        result["status"] = "complete"
-    elif status == "blocked":
+    if status == "blocked":
         result["status"] = "blocked"
     else:
         result["status"] = "running"
+    return result
+
+
+def mark_terminal(
+    payload: dict[str, Any] | None,
+    sunday: str,
+    status: str,
+    *,
+    stage: str | None = None,
+    reason: str | None = None,
+) -> dict[str, Any]:
+    if status not in {"complete", "failed", "blocked"}:
+        raise ValueError(f"Unsupported terminal status: {status}")
+    result = payload if isinstance(payload, dict) else new_status(sunday)
+    if stage and stage not in STAGES:
+        raise ValueError(f"Unknown post-live stage: {stage}")
+    if stage:
+        result["currentStage"] = stage
+    now = utc_now()
+    result["status"] = status
+    result["updatedAt"] = now
+    result["completedAt"] = now
+    result["blocker"] = (
+        {"stage": result.get("currentStage"), "reason": reason}
+        if status in {"failed", "blocked"} and reason
+        else None
+    )
     return result
 
 

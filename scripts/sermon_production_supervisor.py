@@ -50,6 +50,7 @@ class SupervisorConfig:
     classifier_model: str = "gpt-5.6"
     reference_model: str = "gpt-transcribe"
     reading_model: str = "gpt-5.6-sol"
+    glossary: Path | None = None
     lease_ttl_seconds: int = 14_400
 
 
@@ -70,9 +71,18 @@ def production_snapshot(config: SupervisorConfig) -> dict[str, Any]:
     state = read_supervisor_state(config.state_file)
     source = run_post_live_subtitle_generation.selected_source_from_state(state)
     live_url = run_post_live_subtitle_generation.live_url_from_state(state, source)
+    access_issues: list[dict[str, str]] = []
+    source_lock = read_artifact_json(
+        "sourceLock",
+        access_issues,
+        *artifact_read_locations(*source_lock_locations(config))
+    )
+    if valid_source_lock(source_lock, config.sunday):
+        source = dict(source_lock.get("source") or {})
+        live_url = str(source_lock["liveUrl"])
+        source["url"] = live_url
     slug = run_post_live_subtitle_generation.slug_for(_slug_args(), live_url) if live_url else None
     locations = artifact_locations(config, slug) if slug else {}
-    access_issues: list[dict[str, str]] = []
 
     timeline_report = read_artifact_json(
         "timelineReport",
@@ -159,6 +169,7 @@ def production_snapshot(config: SupervisorConfig) -> dict[str, Any]:
         access_issues=access_issues,
         timeline_lease=timeline_lease,
         generation_lease=generation_lease,
+        publication_required=bool(config.gcs_bucket),
     )
     return {
         "schemaVersion": 1,
@@ -183,6 +194,7 @@ def production_snapshot(config: SupervisorConfig) -> dict[str, Any]:
         "recommendedAction": recommended,
         "accessIssues": access_issues,
         "locations": locations,
+        "sourceLock": public_source_lock(source_lock),
         "apiKeyMaterialIncluded": False,
         "secretResourceNamesIncluded": False,
     }
@@ -203,6 +215,7 @@ def recommend_action(
     access_issues: list[dict[str, str]] | None = None,
     timeline_lease: dict[str, Any] | None = None,
     generation_lease: dict[str, Any] | None = None,
+    publication_required: bool = False,
 ) -> dict[str, Any]:
     if not live_url:
         return action("wait_for_source", "No persisted livestream URL is available.", human=True)
@@ -232,6 +245,16 @@ def recommend_action(
                     "request_window_approval",
                     approval_reason
                     or "The completed reading PDF is not bound to a valid current window approval.",
+                    human=True,
+                )
+            publication_status = str(
+                ((generation_report or {}).get("publication") or {}).get("status")
+                or ""
+            )
+            if publication_required and publication_status != "pass":
+                return action(
+                    "inspect_publication_evidence",
+                    "Generation and QA passed, but verified local/GCS artifact parity is missing.",
                     human=True,
                 )
             return action(
@@ -334,12 +357,13 @@ def approve_window(
     start_time: str,
     end_time: str,
     approved_by: str,
+    content_scope: str,
     note: str | None = None,
     gcs_writer: Callable[[str, str], None] = write_gcs_text,
 ) -> dict[str, Any]:
     """Persist a human-approved sermon window locally and, when configured, in GCS."""
     snapshot = production_snapshot(config)
-    live_url = live_url_from_snapshot(snapshot)
+    live_url = live_url_from_snapshot(snapshot, config=config)
     if not live_url:
         raise RuntimeError("Cannot approve a window before a livestream URL is persisted.")
     timeline = read_first_json(
@@ -358,17 +382,20 @@ def approve_window(
     approver = str(approved_by or "").strip()
     if not approver:
         raise ValueError("approved_by is required")
+    if content_scope not in {"sermon_only", "sermon_plus_response"}:
+        raise ValueError("content_scope must be sermon_only or sermon_plus_response")
 
     locations = snapshot["locations"]
     timeline_digest = json_digest(timeline)
     payload = {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "status": "approved",
         "sunday": config.sunday,
         "sourceUrlHash": stable_hash(live_url),
         "startTime": canonical_timecode(start_seconds),
         "endTime": canonical_timecode(end_seconds),
         "approvedBy": approver[:160],
+        "contentScope": content_scope,
         "approvedAt": datetime.now(timezone.utc).isoformat(),
         "timelineReportSha256": timeline_digest,
         "note": str(note or "").strip()[:1000] or None,
@@ -407,6 +434,7 @@ def run_timeline_probe(
             "reason": "Another timeline execution holds the production lease.",
         }
     try:
+        ensure_source_lock(config, snapshot)
         command = build_timeline_command(config, snapshot)
         completed = runner(command, check=False, capture_output=True, text=True)
         report = read_first_json(
@@ -443,7 +471,7 @@ def run_reading_pdf_generation(
     valid, reason = validate_window_approval(
         approval,
         sunday=config.sunday,
-        live_url=live_url_from_snapshot(snapshot),
+        live_url=live_url_from_snapshot(snapshot, config=config),
         timeline_report=read_first_json(
             *artifact_read_locations(
                 snapshot["locations"].get("timelineReportLocal"),
@@ -463,26 +491,94 @@ def run_reading_pdf_generation(
             "reason": "Another reading-PDF generation holds the production lease.",
         }
     try:
-        command = build_generation_command(config, snapshot, approval or {})
-        completed = runner(command, check=False, capture_output=True, text=True)
-        report = read_optional_json(snapshot["locations"]["generationReportLocal"])
-        if report is None:
-            report = {
-                "schemaVersion": 1,
-                "status": "failed",
-                "reason": (
-                    f"generation subprocess exited with code {completed.returncode}"
-                    if completed.returncode
-                    else "generation subprocess completed without writing its report"
-                ),
-                "returnCode": completed.returncode,
-                "completedAt": datetime.now(timezone.utc).isoformat(),
-            }
-            write_local_json(Path(snapshot["locations"]["generationReportLocal"]), report)
-        publish_generation_evidence(snapshot["locations"], report)
-        return command_result(command, completed, report)
+        return execute_reading_pdf_generation(
+            config,
+            snapshot,
+            approval or {},
+            runner=runner,
+        )
     finally:
         lease_releaser(lease)
+
+
+def resume_failed_reading_pdf_generation(
+    config: SupervisorConfig,
+    *,
+    runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
+    lease_acquirer: Callable[..., LeaseHandle | None] = acquire_lease,
+    lease_releaser: Callable[[LeaseHandle], None] = release_lease,
+    gcs_writer: Callable[[str, str], None] = write_gcs_text,
+) -> dict[str, Any]:
+    """Explicitly resume a failed generation after preserving its terminal evidence."""
+    snapshot = production_snapshot(config)
+    action_name = str(snapshot["recommendedAction"]["action"])
+    if action_name not in {"inspect_generation_failure", "review_quality_failure"}:
+        return {
+            "status": "blocked",
+            "reason": f"failed-generation resume is not valid while recommendedAction={action_name}",
+            "recommendedAction": snapshot["recommendedAction"],
+        }
+    approval = read_first_json(
+        *artifact_read_locations(
+            snapshot["locations"].get("windowApprovalLocal"),
+            snapshot["locations"].get("windowApprovalGcs"),
+        )
+    )
+    valid, reason = validate_window_approval(
+        approval,
+        sunday=config.sunday,
+        live_url=live_url_from_snapshot(snapshot, config=config),
+        timeline_report=read_first_json(
+            *artifact_read_locations(
+                snapshot["locations"].get("timelineReportLocal"),
+                snapshot["locations"].get("timelineReportGcs"),
+            )
+        ),
+    )
+    if not valid:
+        return {"status": "blocked", "reason": reason or "operator approval is invalid"}
+    lease = lease_acquirer(
+        execution_lease_location(snapshot, "generation"),
+        ttl_seconds=config.lease_ttl_seconds,
+    )
+    if lease is None:
+        return {
+            "status": "already_running",
+            "reason": "Another reading-PDF generation holds the production lease.",
+        }
+    try:
+        archived = archive_failed_generation_report(
+            snapshot["locations"],
+            gcs_writer=gcs_writer,
+        )
+        result = execute_reading_pdf_generation(
+            config,
+            snapshot,
+            approval or {},
+            runner=runner,
+        )
+        result["archivedFailure"] = archived
+        return result
+    finally:
+        lease_releaser(lease)
+
+
+def execute_reading_pdf_generation(
+    config: SupervisorConfig,
+    snapshot: dict[str, Any],
+    approval: dict[str, Any],
+    *,
+    runner: Callable[..., subprocess.CompletedProcess[str]],
+) -> dict[str, Any]:
+    materialize_approval_evidence(snapshot["locations"], approval)
+    command = build_generation_command(config, snapshot, approval)
+    completed = runner(command, check=False, capture_output=True, text=True)
+    report = read_optional_json(snapshot["locations"]["generationReportLocal"])
+    if report is None:
+        report = build_generation_failure_report(completed, snapshot["locations"])
+        write_local_json(Path(snapshot["locations"]["generationReportLocal"]), report)
+    publish_generation_evidence(snapshot["locations"], report)
+    return command_result(command, completed, report)
 
 
 def build_timeline_command(config: SupervisorConfig, snapshot: dict[str, Any]) -> list[str]:
@@ -520,6 +616,18 @@ def build_timeline_command(config: SupervisorConfig, snapshot: dict[str, Any]) -
     return command
 
 
+def materialize_approval_evidence(
+    locations: dict[str, str],
+    approval: dict[str, Any],
+) -> Path:
+    """Make authoritative approval evidence available to the local child process."""
+    if not isinstance(approval, dict) or approval.get("humanApproval") is not True:
+        raise RuntimeError("Validated human approval is unavailable for generation.")
+    local_path = Path(locations["windowApprovalLocal"])
+    write_local_json(local_path, approval)
+    return local_path
+
+
 def build_generation_command(
     config: SupervisorConfig,
     snapshot: dict[str, Any],
@@ -532,6 +640,8 @@ def build_generation_command(
         config.sunday,
         "--state-file",
         config.state_file,
+        "--live-url",
+        str(live_url_from_snapshot(snapshot, config=config)),
         "--work-root",
         str(config.work_root),
         "--out",
@@ -542,6 +652,8 @@ def build_generation_command(
         str(approval["startTime"]),
         "--end-time",
         str(approval["endTime"]),
+        "--approval-evidence",
+        snapshot["locations"]["windowApprovalLocal"],
         "--output-mode",
         "reading",
         "--reference-model",
@@ -553,10 +665,14 @@ def build_generation_command(
         "--reading-edition-reasoning-effort",
         "high",
     ]
+    if approval.get("contentScope"):
+        command.extend(["--content-scope", str(approval["contentScope"])])
     if config.gcs_bucket:
         command.extend(["--gcs-bucket", config.gcs_bucket, "--gcs-prefix", config.gcs_prefix])
     if config.youtube_cookies_file:
         command.extend(["--youtube-cookies", str(config.youtube_cookies_file)])
+    if config.glossary:
+        command.extend(["--glossary", str(config.glossary)])
     append_secret_flag(command, "--api-key-secret", config.api_key_secret)
     return command
 
@@ -598,6 +714,68 @@ def artifact_locations(config: SupervisorConfig, slug: str) -> dict[str, str]:
     }
 
 
+def source_lock_locations(config: SupervisorConfig) -> tuple[str, str | None]:
+    local = config.work_root / config.sunday / "source-identity-lock.json"
+    gcs = None
+    if config.gcs_bucket:
+        prefix = "/".join(
+            part.strip("/")
+            for part in (
+                config.gcs_prefix,
+                config.sunday,
+                "post-live-subtitles",
+                "source-identity-lock.json",
+            )
+            if part
+        )
+        gcs = f"gs://{config.gcs_bucket}/{prefix}"
+    return str(local), gcs
+
+
+def valid_source_lock(payload: dict[str, Any] | None, sunday: str) -> bool:
+    return bool(
+        isinstance(payload, dict)
+        and payload.get("status") == "locked"
+        and payload.get("sunday") == sunday
+        and str(payload.get("liveUrl") or "").strip()
+    )
+
+
+def ensure_source_lock(
+    config: SupervisorConfig,
+    snapshot: dict[str, Any],
+    *,
+    gcs_writer: Callable[[str, str], None] = write_gcs_text,
+) -> dict[str, Any]:
+    local_location, gcs_location = source_lock_locations(config)
+    existing = read_first_json(
+        *artifact_read_locations(local_location, gcs_location)
+    )
+    if valid_source_lock(existing, config.sunday):
+        return existing
+    live_url = live_url_from_snapshot(snapshot, config=config)
+    if not live_url:
+        raise RuntimeError("Cannot lock source identity without a persisted livestream URL.")
+    payload = {
+        "schemaVersion": 1,
+        "status": "locked",
+        "sunday": config.sunday,
+        "liveUrl": live_url,
+        "sourceUrlHash": stable_hash(live_url),
+        "source": {
+            key: value
+            for key, value in (snapshot.get("source") or {}).items()
+            if key != "url"
+        },
+        "lockedAt": datetime.now(timezone.utc).isoformat(),
+    }
+    text = json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True)
+    if gcs_location:
+        gcs_writer(gcs_location, text)
+    write_local_json(Path(local_location), payload)
+    return payload
+
+
 def validate_window_approval(
     approval: dict[str, Any] | None,
     *,
@@ -622,6 +800,12 @@ def validate_window_approval(
         return False, "Window approval end time is not later than its start time."
     if not str(approval.get("approvedBy") or "").strip():
         return False, "Window approval does not identify the human approver."
+    content_scope = approval.get("contentScope")
+    if content_scope is not None and content_scope not in {
+        "sermon_only",
+        "sermon_plus_response",
+    }:
+        return False, "Window approval contains an invalid content scope."
     if not isinstance(timeline_report, dict):
         return False, "The current timeline report is unavailable."
     if approval.get("timelineReportSha256") != json_digest(timeline_report):
@@ -692,6 +876,82 @@ def publish_generation_evidence(
             generation_gcs,
             json.dumps(generation_report, ensure_ascii=False, indent=2, sort_keys=True),
         )
+
+
+def build_generation_failure_report(
+    completed: subprocess.CompletedProcess[str],
+    locations: dict[str, str],
+) -> dict[str, Any]:
+    run_status = read_optional_json(locations.get("runStatusLocal"))
+    reading_quality = read_optional_json(locations.get("readingQualityLocal"))
+    blocker = (run_status or {}).get("blocker")
+    stage = (
+        str(blocker.get("stage") or "")
+        if isinstance(blocker, dict)
+        else str((run_status or {}).get("currentStage") or "")
+    )
+    detail = (
+        str(blocker.get("reason") or "")
+        if isinstance(blocker, dict)
+        else ""
+    )
+    reason = detail or (
+        f"generation subprocess exited with code {completed.returncode}"
+        if completed.returncode
+        else "generation subprocess completed without writing its report"
+    )
+    quality_failures = (
+        list(reading_quality.get("failures") or [])
+        if isinstance(reading_quality, dict)
+        else []
+    )
+    return {
+        "schemaVersion": 2,
+        "status": "failed",
+        "reason": reason,
+        "returnCode": completed.returncode,
+        "failure": {
+            "stage": stage or None,
+            "reason": reason,
+            "qualityFailures": quality_failures,
+            "resumeEligible": bool(stage),
+        },
+        "completedAt": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+def archive_failed_generation_report(
+    locations: dict[str, str],
+    *,
+    gcs_writer: Callable[[str, str], None] = write_gcs_text,
+) -> dict[str, Any]:
+    local = Path(locations["generationReportLocal"])
+    report = read_first_json(
+        *artifact_read_locations(
+            str(local),
+            locations.get("generationReportGcs"),
+        )
+    )
+    if not isinstance(report, dict) or report.get("status") not in {"failed", "error"}:
+        raise RuntimeError("No failed generation report is available to archive.")
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    archived_local = local.with_name(f"agent-generation-report.failed-{stamp}.json")
+    write_local_json(archived_local, report)
+    archived_gcs = None
+    current_gcs = locations.get("generationReportGcs")
+    if current_gcs:
+        archived_gcs = current_gcs.rsplit("/", 1)[0] + f"/agent-generation-report.failed-{stamp}.json"
+        gcs_writer(
+            archived_gcs,
+            json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True),
+        )
+    if local.exists():
+        local.unlink()
+    return {
+        "local": str(archived_local),
+        "gcs": archived_gcs,
+        "status": report.get("status"),
+    }
 
 
 def read_supervisor_state(location: str) -> dict[str, Any]:
@@ -776,7 +1036,7 @@ def command_result(
 
 def redact_command(command: list[str]) -> list[str]:
     redacted: list[str] = []
-    redact_next = False
+    replacement: str | None = None
     secret_flags = {
         "--api-key-secret",
         "--youtube-api-key-secret",
@@ -789,13 +1049,15 @@ def redact_command(command: list[str]) -> list[str]:
         "--notify-sender-secret",
     }
     for part in command:
-        if redact_next:
-            redacted.append("REDACTED_SECRET_RESOURCE")
-            redact_next = False
+        if replacement is not None:
+            redacted.append(replacement)
+            replacement = None
             continue
         redacted.append(part)
         if part in secret_flags:
-            redact_next = True
+            replacement = "REDACTED_SECRET_RESOURCE"
+        elif part == "--live-url":
+            replacement = "REDACTED_LIVE_SOURCE"
     return redacted
 
 
@@ -813,6 +1075,17 @@ def public_source(source: dict[str, Any] | None) -> dict[str, Any] | None:
         "state": source.get("state"),
         "title": source.get("title"),
         "url": url_summary(str(source.get("url") or "")) if source.get("url") else None,
+    }
+
+
+def public_source_lock(payload: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not isinstance(payload, dict):
+        return None
+    return {
+        "status": payload.get("status"),
+        "sunday": payload.get("sunday"),
+        "sourceUrlHash": payload.get("sourceUrlHash"),
+        "lockedAt": payload.get("lockedAt"),
     }
 
 
@@ -846,6 +1119,7 @@ def public_approval(
         "approvedBy": approval.get("approvedBy"),
         "approvedAt": approval.get("approvedAt"),
         "humanApproval": approval.get("humanApproval") is True,
+        "contentScope": approval.get("contentScope") or "legacy_unspecified",
     }
 
 
@@ -860,6 +1134,8 @@ def public_generation_report(report: dict[str, Any] | None) -> dict[str, Any] | 
         "readingQualityReport": report.get("readingQualityReport"),
         "runStatus": report.get("runStatus"),
         "outputs": report.get("outputs"),
+        "publication": report.get("publication"),
+        "failure": report.get("failure"),
     }
 
 
@@ -930,10 +1206,26 @@ def execution_lease_location(snapshot: dict[str, Any], stage: str) -> str:
     raise RuntimeError(f"No lease location is configured for {stage}.")
 
 
-def live_url_from_snapshot(snapshot: dict[str, Any]) -> str | None:
+def live_url_from_snapshot(
+    snapshot: dict[str, Any],
+    *,
+    config: SupervisorConfig | None = None,
+) -> str | None:
+    if config is not None:
+        locked = read_first_json(
+            *artifact_read_locations(*source_lock_locations(config))
+        )
+        if valid_source_lock(locked, config.sunday):
+            return str(locked["liveUrl"])
     state = read_supervisor_state(snapshot["stateFile"])
     source = run_post_live_subtitle_generation.selected_source_from_state(state)
-    return run_post_live_subtitle_generation.live_url_from_state(state, source)
+    live_url = run_post_live_subtitle_generation.live_url_from_state(state, source)
+    expected_hash = str((snapshot.get("liveSource") or {}).get("urlHash") or "")
+    if live_url and expected_hash and stable_hash(live_url) != expected_hash:
+        raise RuntimeError(
+            "Persisted livestream source changed before the durable source lock was created."
+        )
+    return live_url
 
 
 def json_digest(payload: dict[str, Any] | None) -> str | None:

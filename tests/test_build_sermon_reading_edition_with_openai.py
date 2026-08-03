@@ -1,9 +1,13 @@
+import argparse
+import json
 import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
 
+from scripts import build_sermon_reading_edition_with_openai as mod
 from scripts.build_sermon_reading_edition_with_openai import (
+    apply_review_manifest,
     build_sentence_units,
     build_semantic_blocks,
     draft_comparison_report,
@@ -127,7 +131,7 @@ class ReadingEditionTest(unittest.TestCase):
         self.assertEqual("pass", report["status"])
         self.assertEqual([], report["oralFillers"])
         self.assertEqual(
-            "sermon-reading-edition-quality-v2",
+            "sermon-reading-edition-quality-v3",
             report["qualityRuleVersion"],
         )
 
@@ -157,6 +161,175 @@ class ReadingEditionTest(unittest.TestCase):
             ]
         )
         self.assertEqual("pass", report["status"])
+
+    def test_quality_report_requires_source_acronym_and_action_keyword(self):
+        report = reading_quality_report(
+            [
+                {
+                    "id": 0,
+                    "en": (
+                        "She was diagnosed with PANDAS when she was a child. "
+                        "You can text PRAYER to the number shown on the screen "
+                        "and our prayer team would love to pray with you."
+                    ),
+                    "zh": "她被诊断患有儿童神经系统疾病。请把祷告关键词发送到屏幕上的号码。",
+                }
+            ]
+        )
+
+        self.assertEqual("needs_revision", report["status"])
+        self.assertIn("missing_required_english_tokens", report["failures"])
+        self.assertEqual(
+            ["PANDAS", "PRAYER"],
+            report["missingRequiredEnglishTokens"][0]["tokens"],
+        )
+
+    def test_quality_report_accepts_preserved_source_acronym_and_keyword(self):
+        report = reading_quality_report(
+            [
+                {
+                    "id": 0,
+                    "en": (
+                        "She was diagnosed with PANDAS when she was a child. "
+                        "You can text PRAYER to the number shown on the screen "
+                        "and our prayer team would love to pray with you."
+                    ),
+                    "zh": "她被诊断患有儿童链球菌感染相关疾病（PANDAS）。请把“PRAYER”发送到屏幕上的号码。",
+                }
+            ]
+        )
+
+        self.assertEqual("pass", report["status"])
+
+    def test_required_token_accepts_adjacency_to_chinese_characters(self):
+        report = reading_quality_report(
+            [
+                {
+                    "id": 0,
+                    "en": "PANDAS requires careful treatment.",
+                    "zh": "PANDAS相关疾病需要谨慎治疗。",
+                }
+            ]
+        )
+
+        self.assertNotIn("missing_required_english_tokens", report["failures"])
+
+    def test_quality_report_rejects_bilingual_bible_chapter_mismatch(self):
+        report = reading_quality_report(
+            [
+                {
+                    "id": 0,
+                    "en": "You get to First Samuel 18, just two chapters later.",
+                    "zh": "继续读圣经，来到下一章《撒母耳记上》第17章。",
+                }
+            ]
+        )
+
+        self.assertEqual("needs_revision", report["status"])
+        self.assertIn("bilingual_reference_mismatches", report["failures"])
+        self.assertEqual(18, report["bilingualReferenceMismatches"][0]["englishChapter"])
+        self.assertEqual(17, report["bilingualReferenceMismatches"][0]["chineseChapter"])
+
+    def test_review_manifest_applies_exact_auditable_replacement(self):
+        blocks, applied = apply_review_manifest(
+            [{"id": 45, "en": "Brian Johnson is a tech entrepreneur.", "zh": "布莱恩。"}],
+            {
+                "schemaVersion": 1,
+                "corrections": [
+                    {
+                        "blockId": 45,
+                        "field": "en",
+                        "find": "Brian Johnson",
+                        "replace": "Bryan Johnson",
+                        "reason": "Operator verified the proper-name spelling.",
+                    }
+                ],
+            },
+        )
+
+        self.assertEqual("Bryan Johnson is a tech entrepreneur.", blocks[0]["en"])
+        self.assertEqual("applied", applied[0]["disposition"])
+
+        blocks, applied = apply_review_manifest(
+            blocks,
+            {
+                "schemaVersion": 1,
+                "corrections": [
+                    {
+                        "blockId": 45,
+                        "field": "en",
+                        "find": "Brian Johnson",
+                        "replace": "Bryan Johnson",
+                        "reason": "Operator verified the proper-name spelling.",
+                    }
+                ],
+            },
+        )
+        self.assertEqual("already_applied", applied[0]["disposition"])
+
+    def test_failed_repair_preserves_existing_reading_artifacts(self):
+        with tempfile.TemporaryDirectory() as directory:
+            outdir = Path(directory)
+            final_path = outdir / "reading_blocks.final.json"
+            quality_path = outdir / "reading_quality_report.json"
+            manifest_path = outdir / "review-manifest.json"
+            original_blocks = [
+                {
+                    "id": 45,
+                    "start": 0.0,
+                    "end": 1.0,
+                    "en": "Brian Johnson.",
+                    "zh": "布莱恩。",
+                }
+            ]
+            final_path.write_text(json.dumps(original_blocks), encoding="utf-8")
+            quality_path.write_text(
+                json.dumps({"status": "pass", "provider": "codex"}),
+                encoding="utf-8",
+            )
+            manifest_path.write_text(
+                json.dumps(
+                    {
+                        "schemaVersion": 1,
+                        "corrections": [
+                            {
+                                "blockId": 45,
+                                "field": "en",
+                                "find": "Brian Johnson",
+                                "replace": "Bryan Johnson",
+                                "reason": "Verified spelling.",
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            args = argparse.Namespace(
+                repair_existing=True,
+                review_manifest=manifest_path,
+                provider="codex",
+                codex_cli=Path("/unused"),
+                outdir=outdir,
+            )
+            with (
+                mock.patch.object(mod, "parse_args", return_value=args),
+                mock.patch.object(
+                    mod,
+                    "reading_quality_report",
+                    return_value={"failures": ["forced_failure"]},
+                ),
+            ):
+                result = mod.main()
+
+            self.assertEqual(2, result)
+            self.assertEqual(
+                original_blocks,
+                json.loads(final_path.read_text(encoding="utf-8")),
+            )
+            self.assertEqual(
+                {"status": "pass", "provider": "codex"},
+                json.loads(quality_path.read_text(encoding="utf-8")),
+            )
 
     def test_writes_reading_block_srt(self):
         with tempfile.TemporaryDirectory() as directory:

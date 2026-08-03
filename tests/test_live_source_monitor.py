@@ -7,6 +7,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from unittest import mock
 
 
 SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "live_source_monitor.py"
@@ -265,13 +266,18 @@ class LiveSourceMonitorTest(unittest.TestCase):
         <body>Upcoming live service</body></html>
         """
 
-        candidate = mod.fetch_candidate(
-            kind="youtube-streams",
-            service="830",
-            url="https://www.youtube.com/@marinerschurch/streams",
-            expected_title="The Cure for Our Rebellion - Eric Geiger | Mariners Church",
-            fetcher=lambda url: html,
-        )
+        with mock.patch.object(
+            mod,
+            "youtube_stream_watch_urls_from_tab",
+            return_value=[],
+        ):
+            candidate = mod.fetch_candidate(
+                kind="youtube-streams",
+                service="830",
+                url="https://www.youtube.com/@marinerschurch/streams",
+                expected_title="The Cure for Our Rebellion - Eric Geiger | Mariners Church",
+                fetcher=lambda url: html,
+            )
 
         self.assertEqual(candidate.state, "upcoming")
         self.assertEqual(candidate.title, "The Cure for Our Rebellion - Eric Geiger | Mariners Church")

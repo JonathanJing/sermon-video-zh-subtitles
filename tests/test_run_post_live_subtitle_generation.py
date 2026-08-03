@@ -28,6 +28,8 @@ def make_args(**overrides):
         "end_time": "00:55:36",
         "sermon_title": None,
         "speaker": None,
+        "content_scope": None,
+        "approval_evidence": None,
         "glossary": None,
         "zh_model": "gpt-5.6",
         "en_correction_model": "gpt-5.6",
@@ -86,6 +88,63 @@ def write_state(path: Path, *, sunday: str = "2026-06-28", url: str = "https://w
 
 
 class PostLiveSubtitleGenerationTest(unittest.TestCase):
+    def test_unexpected_failure_reconciles_run_status_to_failed(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            state_path = root / "state.json"
+            write_state(state_path)
+            args = make_args(
+                state_file=str(state_path),
+                work_root=root,
+                plan_only=False,
+            )
+            run_root = root / args.sunday / args.slug
+            run_root.mkdir(parents=True, exist_ok=True)
+            mod.write_run_status(
+                run_root / "run-status.json",
+                mod.post_live_run_status.update_stage(
+                    None,
+                    args.sunday,
+                    "downloaded",
+                    "running",
+                ),
+            )
+
+            mod.reconcile_failed_run_status(args, RuntimeError("network unavailable"))
+            status = json.loads((run_root / "run-status.json").read_text(encoding="utf-8"))
+
+        self.assertEqual("failed", status["status"])
+        self.assertEqual("downloaded", status["currentStage"])
+        self.assertIn("network unavailable", status["blocker"]["reason"])
+
+    def test_unexpected_failure_does_not_downgrade_terminal_run_status(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            state_path = root / "state.json"
+            write_state(state_path)
+            args = make_args(
+                state_file=str(state_path),
+                work_root=root,
+                plan_only=False,
+            )
+            run_root = root / args.sunday / args.slug
+            run_root.mkdir(parents=True, exist_ok=True)
+            mod.write_run_status(
+                run_root / "run-status.json",
+                mod.post_live_run_status.mark_terminal(
+                    None,
+                    args.sunday,
+                    "complete",
+                    stage="publication",
+                ),
+            )
+
+            mod.reconcile_failed_run_status(args, RuntimeError("late logging failure"))
+            status = json.loads((run_root / "run-status.json").read_text(encoding="utf-8"))
+
+        self.assertEqual("complete", status["status"])
+        self.assertIsNone(status["blocker"])
+
     def test_plan_waits_when_capture_state_has_no_url(self):
         with tempfile.TemporaryDirectory() as tempdir:
             state_path = Path(tempdir) / "state.json"
@@ -140,6 +199,7 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
         self.assertEqual(report["readingEditionCommand"][report["readingEditionCommand"].index("--model") + 1], "gpt-5.6-sol")
         self.assertEqual(report["readingEditionCommand"][report["readingEditionCommand"].index("--reasoning-effort") + 1], "high")
         self.assertTrue(any("reading-edition-v2" in item for item in report["readingEditionCommand"]))
+        self.assertEqual(report["readingEditionCommand"].count("--hard-english-chars"), 1)
         self.assertIsNone(report["mobilePdfCommand"])
         self.assertIn("render_mobile_pdf_from_srt.py", report["readingPdfCommand"][1])
         self.assertEqual(
@@ -447,13 +507,19 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
             (pipeline / "sermon_zh_en_reading.qa.json").write_text('{"status":"pass"}', encoding="utf-8")
             (reading / "reading_quality_report.json").write_text('{"status":"pass"}', encoding="utf-8")
 
-            with mock.patch.object(mod, "upload_file_to_gcs") as uploader:
-                uploaded = mod.upload_outputs(
-                    make_args(gcs_bucket="sermon-artifacts"),
-                    pipeline,
-                )
+            remote: dict[str, bytes] = {}
 
-        destinations = [call.args[1] for call in uploader.call_args_list]
+            def uploader(path, uri):
+                remote[uri] = Path(path).read_bytes()
+
+            uploaded = mod.upload_outputs(
+                make_args(gcs_bucket="sermon-artifacts"),
+                pipeline,
+                uploader=uploader,
+                gcs_reader=lambda uri: remote[uri],
+            )
+
+        destinations = list(remote)
         self.assertIn(
             "gs://sermon-artifacts/sundays/2026-06-28/post-live-subtitles/"
             "mariners_MEZHufeQBjc/pipeline/sermon_zh_en_reading.qa.json",
@@ -465,6 +531,95 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
             destinations,
         )
         self.assertEqual({item["gcsUri"] for item in uploaded}, set(destinations))
+        self.assertTrue(all(item["localSha256"] == item["gcsSha256"] for item in uploaded))
+
+    def test_upload_outputs_fails_when_gcs_bytes_do_not_match(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            pipeline = Path(tempdir) / "pipeline"
+            pipeline.mkdir(parents=True)
+            (pipeline / "sermon_zh_en_reading.pdf").write_bytes(b"local-pdf")
+
+            with self.assertRaisesRegex(RuntimeError, "upload verification failed"):
+                mod.upload_outputs(
+                    make_args(gcs_bucket="sermon-artifacts"),
+                    pipeline,
+                    uploader=lambda _path, _uri: None,
+                    gcs_reader=lambda _uri: b"different-pdf",
+                )
+
+    def test_validated_approval_evidence_completes_approval_stage(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            approval_path = root / "operator-window-approval.json"
+            live_url = "https://www.youtube.com/watch?v=MEZHufeQBjc"
+            approval_path.write_text(
+                json.dumps(
+                    {
+                        "status": "approved",
+                        "humanApproval": True,
+                        "sunday": "2026-06-28",
+                        "sourceUrlHash": mod.stable_hash(live_url),
+                        "contentScope": "sermon_only",
+                        "startTime": "00:22:10",
+                        "endTime": "00:55:36",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            args = make_args(
+                approval_evidence=approval_path,
+                content_scope="sermon_only",
+            )
+
+            status = mod.record_approval_stage(
+                mod.post_live_run_status.new_status(args.sunday),
+                args,
+                live_url=live_url,
+            )
+
+        self.assertEqual("complete", status["stages"]["approval"]["status"])
+        self.assertIn(str(approval_path), status["stages"]["approval"]["artifacts"])
+
+    def test_locked_live_url_overrides_mutable_discovery_state(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            state_path = root / "state.json"
+            locked_url = "https://www.youtube.com/watch?v=lockedSource123"
+            write_state(
+                state_path,
+                sunday="2026-08-09",
+                url="https://www.youtube.com/watch?v=laterSource999",
+            )
+            approval_path = root / "operator-window-approval.json"
+            approval_path.write_text(
+                json.dumps(
+                    {
+                        "status": "approved",
+                        "humanApproval": True,
+                        "sunday": "2026-06-28",
+                        "sourceUrlHash": mod.stable_hash(locked_url),
+                        "contentScope": "sermon_only",
+                        "startTime": "00:22:10",
+                        "endTime": "00:55:36",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            args = make_args(
+                state_file=str(state_path),
+                work_root=root / "runs",
+                live_url=locked_url,
+                approval_evidence=approval_path,
+                content_scope="sermon_only",
+            )
+
+            report = mod.run_post_live_generation(
+                args,
+                metadata_loader=lambda _url: {"live_status": "was_live"},
+            )
+
+        self.assertEqual(report["status"], "planned")
+        self.assertEqual(report["liveSource"]["urlHash"], mod.stable_hash(locked_url))
 
 
 if __name__ == "__main__":

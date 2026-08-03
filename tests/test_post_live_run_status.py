@@ -15,6 +15,13 @@ class PostLiveRunStatusTest(unittest.TestCase):
         self.assertEqual(status["stages"]["downloaded"]["durationSeconds"], 12.5)
         self.assertIsNone(status["blocker"])
 
+    def test_approval_completion_does_not_mark_entire_run_complete(self):
+        status = mod.new_status("2026-08-02")
+        status = mod.update_stage(status, "2026-08-02", "approval", "complete")
+
+        self.assertEqual("running", status["status"])
+        self.assertEqual("complete", status["stages"]["approval"]["status"])
+
 
 if __name__ == "__main__":
     unittest.main()
