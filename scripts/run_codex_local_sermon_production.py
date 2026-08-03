@@ -11,7 +11,7 @@ import os
 import sys
 from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 from zoneinfo import ZoneInfo
 
 
@@ -20,6 +20,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from backend.config import upcoming_sunday
+from backend.cloud import read_gcs_bytes
 from scripts import (
     live_source_monitor,
     run_sermon_production_supervisor_agent,
@@ -232,11 +233,19 @@ def discovery_service_for_run(
     return "auto" if run_date >= sunday_date else "sat-auto"
 
 
-def completed_production_report(args: argparse.Namespace) -> dict[str, Any] | None:
+def completed_production_report(
+    args: argparse.Namespace,
+    *,
+    gcs_reader: Callable[[str], bytes] = read_gcs_bytes,
+) -> dict[str, Any] | None:
     """Return a terminal report before refresh/secrets/agent work when this Sunday is done."""
     if getattr(args, "force_after_complete", False):
         return None
-    snapshot = local_completed_snapshot(args.out, args.sunday)
+    snapshot = local_completed_snapshot(
+        args.out,
+        args.sunday,
+        gcs_reader=gcs_reader,
+    )
     latch_source = "local_previous_terminal_report"
     if snapshot is None:
         latch_source = "authoritative_production_snapshot"
@@ -249,7 +258,12 @@ def completed_production_report(args: argparse.Namespace) -> dict[str, Any] | No
     return completed_report_from_snapshot(args, snapshot, latch_source=latch_source)
 
 
-def local_completed_snapshot(path: Path, sunday: str) -> dict[str, Any] | None:
+def local_completed_snapshot(
+    path: Path,
+    sunday: str,
+    *,
+    gcs_reader: Callable[[str], bytes] = read_gcs_bytes,
+) -> dict[str, Any] | None:
     try:
         report = json.loads(path.read_text(encoding="utf-8"))
     except (FileNotFoundError, json.JSONDecodeError, OSError):
@@ -259,7 +273,7 @@ def local_completed_snapshot(path: Path, sunday: str) -> dict[str, Any] | None:
     snapshot = report.get("finalSnapshot")
     if not isinstance(snapshot, dict):
         return None
-    artifacts = local_completion_artifacts(snapshot)
+    artifacts = local_completion_artifacts(snapshot, gcs_reader=gcs_reader)
     if artifacts is None:
         return None
     return {
@@ -269,7 +283,11 @@ def local_completed_snapshot(path: Path, sunday: str) -> dict[str, Any] | None:
     }
 
 
-def local_completion_artifacts(snapshot: dict[str, Any]) -> dict[str, Any] | None:
+def local_completion_artifacts(
+    snapshot: dict[str, Any],
+    *,
+    gcs_reader: Callable[[str], bytes] = read_gcs_bytes,
+) -> dict[str, Any] | None:
     locations = snapshot.get("locations") or {}
     try:
         reading_pdf = Path(str(locations["readingPdfLocal"]))
@@ -314,13 +332,20 @@ def local_completion_artifacts(snapshot: dict[str, Any]) -> dict[str, Any] | Non
             if reading_pdf.is_file()
             else None
         )
+        try:
+            current_gcs_bytes = gcs_reader(str(reading_pdf_gcs))
+        except Exception:
+            return None
+        current_gcs_sha256 = hashlib.sha256(current_gcs_bytes).hexdigest()
         publication_valid = bool(
             publication.get("status") == "pass"
             and published_pdf
             and published_pdf.get("localSha256") == local_pdf_sha256
-            and published_pdf.get("gcsSha256") == local_pdf_sha256
+            and published_pdf.get("gcsSha256") == current_gcs_sha256
+            and current_gcs_sha256 == local_pdf_sha256
             and published_pdf.get("localSize") == reading_pdf.stat().st_size
-            and published_pdf.get("gcsSize") == reading_pdf.stat().st_size
+            and published_pdf.get("gcsSize") == len(current_gcs_bytes)
+            and len(current_gcs_bytes) == reading_pdf.stat().st_size
         )
     valid = bool(
         reading_pdf.is_file()

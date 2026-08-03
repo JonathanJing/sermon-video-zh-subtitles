@@ -580,6 +580,47 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
         self.assertEqual("complete", status["stages"]["approval"]["status"])
         self.assertIn(str(approval_path), status["stages"]["approval"]["artifacts"])
 
+    def test_locked_live_url_overrides_mutable_discovery_state(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            state_path = root / "state.json"
+            locked_url = "https://www.youtube.com/watch?v=lockedSource123"
+            write_state(
+                state_path,
+                sunday="2026-08-09",
+                url="https://www.youtube.com/watch?v=laterSource999",
+            )
+            approval_path = root / "operator-window-approval.json"
+            approval_path.write_text(
+                json.dumps(
+                    {
+                        "status": "approved",
+                        "humanApproval": True,
+                        "sunday": "2026-06-28",
+                        "sourceUrlHash": mod.stable_hash(locked_url),
+                        "contentScope": "sermon_only",
+                        "startTime": "00:22:10",
+                        "endTime": "00:55:36",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            args = make_args(
+                state_file=str(state_path),
+                work_root=root / "runs",
+                live_url=locked_url,
+                approval_evidence=approval_path,
+                content_scope="sermon_only",
+            )
+
+            report = mod.run_post_live_generation(
+                args,
+                metadata_loader=lambda _url: {"live_status": "was_live"},
+            )
+
+        self.assertEqual(report["status"], "planned")
+        self.assertEqual(report["liveSource"]["urlHash"], mod.stable_hash(locked_url))
+
 
 if __name__ == "__main__":
     unittest.main()

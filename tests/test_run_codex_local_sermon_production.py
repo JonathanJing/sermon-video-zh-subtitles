@@ -257,7 +257,7 @@ class RunCodexLocalSermonProductionTest(unittest.TestCase):
         refresh.assert_not_called()
         agent.assert_not_called()
 
-    def test_local_terminal_report_short_circuits_without_gcs_read(self):
+    def test_local_terminal_report_short_circuits_after_current_gcs_readback(self):
         with tempfile.TemporaryDirectory() as tempdir:
             args = mod.make_agent_args(self.automation_args(Path(tempdir)))
             artifact_root = Path(tempdir) / "completed"
@@ -332,7 +332,10 @@ class RunCodexLocalSermonProductionTest(unittest.TestCase):
                 mod.sermon_production_supervisor,
                 "production_snapshot",
             ) as production_snapshot:
-                report = mod.completed_production_report(args)
+                report = mod.completed_production_report(
+                    args,
+                    gcs_reader=lambda _uri: reading_pdf.read_bytes(),
+                )
 
         self.assertEqual(
             "local_previous_terminal_report",
@@ -416,7 +419,93 @@ class RunCodexLocalSermonProductionTest(unittest.TestCase):
                     "locations": locations,
                 },
             ) as production_snapshot:
-                report = mod.completed_production_report(args)
+                report = mod.completed_production_report(
+                    args,
+                    gcs_reader=lambda _uri: b"%PDF-1.4\noriginal",
+                )
+
+        self.assertIsNone(report)
+        production_snapshot.assert_called_once()
+
+    def test_local_terminal_report_rejects_current_gcs_pdf_drift(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            args = mod.make_agent_args(self.automation_args(Path(tempdir)))
+            artifact_root = Path(tempdir) / "completed"
+            artifact_root.mkdir(parents=True)
+            reading_pdf = artifact_root / "reading.pdf"
+            reading_pdf.write_bytes(b"%PDF-1.4\nverified")
+            verified_sha256 = hashlib.sha256(reading_pdf.read_bytes()).hexdigest()
+            locations = {
+                "readingPdfLocal": str(reading_pdf),
+                "readingPdfGcs": "gs://bucket/final.pdf",
+                "generationReportLocal": str(artifact_root / "generation-report.json"),
+                "readingQualityLocal": str(artifact_root / "reading-quality.json"),
+                "readingQaLocal": str(artifact_root / "reading-qa.json"),
+                "runStatusLocal": str(artifact_root / "run-status.json"),
+            }
+            Path(locations["generationReportLocal"]).write_text(
+                json.dumps(
+                    {
+                        "status": "completed",
+                        "publication": {
+                            "status": "pass",
+                            "artifacts": [
+                                {
+                                    "gcsUri": locations["readingPdfGcs"],
+                                    "localSha256": verified_sha256,
+                                    "gcsSha256": verified_sha256,
+                                    "localSize": reading_pdf.stat().st_size,
+                                    "gcsSize": reading_pdf.stat().st_size,
+                                }
+                            ],
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            for key in ("readingQualityLocal", "readingQaLocal"):
+                Path(locations[key]).write_text(
+                    json.dumps({"status": "pass"}),
+                    encoding="utf-8",
+                )
+            Path(locations["runStatusLocal"]).write_text(
+                json.dumps({"status": "complete"}),
+                encoding="utf-8",
+            )
+            snapshot = {
+                "generation": {"status": "completed"},
+                "quality": {
+                    "readingEdition": {"status": "pass"},
+                    "readingPdf": {"status": "pass"},
+                },
+                "recommendedAction": {"action": "complete"},
+                "locations": locations,
+            }
+            args.out.parent.mkdir(parents=True, exist_ok=True)
+            args.out.write_text(
+                json.dumps(
+                    {
+                        "sunday": args.sunday,
+                        "status": "complete",
+                        "finalSnapshot": snapshot,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with mock.patch.object(
+                mod.sermon_production_supervisor,
+                "production_snapshot",
+                return_value={
+                    "generation": {"status": "failed"},
+                    "quality": {},
+                    "recommendedAction": {"action": "inspect_publication_evidence"},
+                    "locations": locations,
+                },
+            ) as production_snapshot:
+                report = mod.completed_production_report(
+                    args,
+                    gcs_reader=lambda _uri: b"%PDF-1.4\nchanged!",
+                )
 
         self.assertIsNone(report)
         production_snapshot.assert_called_once()

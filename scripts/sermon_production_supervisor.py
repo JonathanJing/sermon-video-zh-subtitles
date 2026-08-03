@@ -570,6 +570,7 @@ def execute_reading_pdf_generation(
     *,
     runner: Callable[..., subprocess.CompletedProcess[str]],
 ) -> dict[str, Any]:
+    materialize_approval_evidence(snapshot["locations"], approval)
     command = build_generation_command(config, snapshot, approval)
     completed = runner(command, check=False, capture_output=True, text=True)
     report = read_optional_json(snapshot["locations"]["generationReportLocal"])
@@ -615,6 +616,18 @@ def build_timeline_command(config: SupervisorConfig, snapshot: dict[str, Any]) -
     return command
 
 
+def materialize_approval_evidence(
+    locations: dict[str, str],
+    approval: dict[str, Any],
+) -> Path:
+    """Make authoritative approval evidence available to the local child process."""
+    if not isinstance(approval, dict) or approval.get("humanApproval") is not True:
+        raise RuntimeError("Validated human approval is unavailable for generation.")
+    local_path = Path(locations["windowApprovalLocal"])
+    write_local_json(local_path, approval)
+    return local_path
+
+
 def build_generation_command(
     config: SupervisorConfig,
     snapshot: dict[str, Any],
@@ -627,6 +640,8 @@ def build_generation_command(
         config.sunday,
         "--state-file",
         config.state_file,
+        "--live-url",
+        str(live_url_from_snapshot(snapshot, config=config)),
         "--work-root",
         str(config.work_root),
         "--out",
@@ -1021,7 +1036,7 @@ def command_result(
 
 def redact_command(command: list[str]) -> list[str]:
     redacted: list[str] = []
-    redact_next = False
+    replacement: str | None = None
     secret_flags = {
         "--api-key-secret",
         "--youtube-api-key-secret",
@@ -1034,13 +1049,15 @@ def redact_command(command: list[str]) -> list[str]:
         "--notify-sender-secret",
     }
     for part in command:
-        if redact_next:
-            redacted.append("REDACTED_SECRET_RESOURCE")
-            redact_next = False
+        if replacement is not None:
+            redacted.append(replacement)
+            replacement = None
             continue
         redacted.append(part)
         if part in secret_flags:
-            redact_next = True
+            replacement = "REDACTED_SECRET_RESOURCE"
+        elif part == "--live-url":
+            replacement = "REDACTED_LIVE_SOURCE"
     return redacted
 
 

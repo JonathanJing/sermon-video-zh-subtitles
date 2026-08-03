@@ -79,6 +79,10 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--sunday", required=True, help="Sunday slice date, YYYY-MM-DD.")
     parser.add_argument("--state-file", required=True, help="live_source_monitor state path or gs:// URI.")
+    parser.add_argument(
+        "--live-url",
+        help="Supervisor-locked livestream URL; when present, it overrides mutable discovery state.",
+    )
     parser.add_argument("--out", type=Path, default=Path("artifacts/post-live-subtitle-generation/report.json"))
     parser.add_argument("--work-root", type=Path, default=DEFAULT_WORK_ROOT)
     parser.add_argument("--slug")
@@ -149,7 +153,14 @@ def run_post_live_generation(
         args.content_scope = None
     state = live_source_monitor.read_state(args.state_file)
     source = selected_source_from_state(state)
-    live_url = live_url_from_state(state, source)
+    locked_live_url = str(getattr(args, "live_url", "") or "").strip()
+    live_url = locked_live_url or live_url_from_state(state, source)
+    if locked_live_url:
+        source = {
+            **source,
+            "url": locked_live_url,
+            "urlHash": stable_hash(locked_live_url),
+        }
     checked_at = datetime.now(timezone.utc).isoformat()
     base_report = {
         "schemaVersion": 1,
@@ -164,7 +175,11 @@ def run_post_live_generation(
     }
     if not live_url:
         return {**base_report, "reason": "captured_state_has_no_live_url"}
-    if state.get("lastSunday") and state.get("lastSunday") != args.sunday:
+    if (
+        not locked_live_url
+        and state.get("lastSunday")
+        and state.get("lastSunday") != args.sunday
+    ):
         return {
             **base_report,
             "status": "waiting_for_matching_sunday",

@@ -442,10 +442,18 @@ class SermonProductionSupervisorTest(unittest.TestCase):
             command[command.index("--approval-evidence") + 1],
             snapshot["locations"]["windowApprovalLocal"],
         )
+        self.assertEqual(
+            command[command.index("--live-url") + 1],
+            "https://www.youtube.com/watch?v=agentTest123",
+        )
         self.assertIn("--output-mode", command)
         self.assertEqual(command[command.index("--output-mode") + 1], "reading")
         self.assertEqual(command[command.index("--youtube-cookies") + 1], str(cookies))
         redacted = mod.redact_command(command)
+        self.assertEqual(
+            redacted[redacted.index("--live-url") + 1],
+            "REDACTED_LIVE_SOURCE",
+        )
         self.assertEqual(
             redacted[redacted.index("--youtube-cookies") + 1],
             "REDACTED_SECRET_RESOURCE",
@@ -501,6 +509,51 @@ class SermonProductionSupervisorTest(unittest.TestCase):
 
         self.assertEqual("completed", result["status"])
         self.assertTrue(archived.name.startswith("agent-generation-report.failed-"))
+
+    def test_execute_generation_materializes_authoritative_approval_locally(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            state = root / "state.json"
+            write_state(state)
+            config = self.make_config(root, state)
+            initial = mod.production_snapshot(config)
+            write_json(
+                Path(initial["locations"]["timelineReportLocal"]),
+                {"status": "requires_operator_review"},
+            )
+            approval = mod.approve_window(
+                config,
+                start_time="00:21:10",
+                end_time="00:57:36",
+                approved_by="Jony",
+                content_scope="sermon_only",
+            )
+            snapshot = mod.production_snapshot(config)
+            approval_path = Path(snapshot["locations"]["windowApprovalLocal"])
+            approval_path.unlink()
+
+            def runner(command, **_kwargs):
+                materialized = json.loads(approval_path.read_text(encoding="utf-8"))
+                self.assertEqual(materialized, approval)
+                report_path = Path(command[command.index("--out") + 1])
+                write_json(
+                    report_path,
+                    {
+                        "schemaVersion": 2,
+                        "status": "completed",
+                        "publication": {"status": "not_configured"},
+                    },
+                )
+                return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+
+            result = mod.execute_reading_pdf_generation(
+                config,
+                snapshot,
+                approval,
+                runner=runner,
+            )
+
+        self.assertEqual(result["status"], "completed")
 
     def test_timeline_command_passes_local_access_and_notification_configuration(self):
         with tempfile.TemporaryDirectory() as tempdir:
