@@ -201,6 +201,19 @@ class ReadingEditionTest(unittest.TestCase):
 
         self.assertEqual("pass", report["status"])
 
+    def test_required_token_accepts_adjacency_to_chinese_characters(self):
+        report = reading_quality_report(
+            [
+                {
+                    "id": 0,
+                    "en": "PANDAS requires careful treatment.",
+                    "zh": "PANDAS相关疾病需要谨慎治疗。",
+                }
+            ]
+        )
+
+        self.assertNotIn("missing_required_english_tokens", report["failures"])
+
     def test_quality_report_rejects_bilingual_bible_chapter_mismatch(self):
         report = reading_quality_report(
             [

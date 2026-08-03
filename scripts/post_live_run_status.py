@@ -9,6 +9,7 @@ from typing import Any
 
 STAGES = (
     "source_saved",
+    "approval",
     "archive_ready",
     "downloaded",
     "clipped",
@@ -16,7 +17,7 @@ STAGES = (
     "translated",
     "reviewed",
     "pdf_qa",
-    "approval",
+    "publication",
 )
 
 
@@ -78,9 +79,7 @@ def update_stage(
     if source_url:
         result["sourceUrl"] = source_url
     result["blocker"] = {"stage": stage, "reason": reason} if status == "blocked" else None
-    if stage == "approval" and status == "complete":
-        result["status"] = "complete"
-    elif status == "blocked":
+    if status == "blocked":
         result["status"] = "blocked"
     else:
         result["status"] = "running"

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
 import json
 import os
 import sys
@@ -79,6 +80,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Bypass this Sunday's verified completion latch for an explicit repair run.",
     )
+    parser.add_argument(
+        "--resume-failed-generation",
+        action="store_true",
+        help="Explicitly archive failed generation evidence and resume under the generation lease.",
+    )
     return parser.parse_args()
 
 
@@ -117,6 +123,7 @@ def make_agent_args(args: argparse.Namespace) -> argparse.Namespace:
         max_turns=args.max_turns,
         skip_source_refresh=args.skip_source_refresh,
         force_after_complete=getattr(args, "force_after_complete", False),
+        resume_failed_generation=getattr(args, "resume_failed_generation", False),
         approve_window=False,
         start_time=None,
         end_time=None,
@@ -252,16 +259,23 @@ def local_completed_snapshot(path: Path, sunday: str) -> dict[str, Any] | None:
     snapshot = report.get("finalSnapshot")
     if not isinstance(snapshot, dict):
         return None
-    run_status = local_completion_artifacts(snapshot)
-    if run_status is None:
+    artifacts = local_completion_artifacts(snapshot)
+    if artifacts is None:
         return None
-    return {**snapshot, "runStatus": run_status}
+    return {
+        **snapshot,
+        "generation": artifacts["generation"],
+        "runStatus": artifacts["runStatus"],
+    }
 
 
 def local_completion_artifacts(snapshot: dict[str, Any]) -> dict[str, Any] | None:
     locations = snapshot.get("locations") or {}
     try:
         reading_pdf = Path(str(locations["readingPdfLocal"]))
+        generation_report = json.loads(
+            Path(str(locations["generationReportLocal"])).read_text(encoding="utf-8")
+        )
         reading_quality = json.loads(
             Path(str(locations["readingQualityLocal"])).read_text(encoding="utf-8")
         )
@@ -273,9 +287,47 @@ def local_completion_artifacts(snapshot: dict[str, Any]) -> dict[str, Any] | Non
         )
     except (KeyError, FileNotFoundError, json.JSONDecodeError, OSError):
         return None
+    publication_valid = True
+    reading_pdf_gcs = locations.get("readingPdfGcs")
+    if reading_pdf_gcs:
+        publication = (
+            generation_report.get("publication")
+            if isinstance(generation_report, dict)
+            else {}
+        )
+        if not isinstance(publication, dict):
+            publication = {}
+        publication_artifacts = (
+            publication.get("artifacts")
+        )
+        published_pdf = next(
+            (
+                artifact
+                for artifact in publication_artifacts or []
+                if isinstance(artifact, dict)
+                and artifact.get("gcsUri") == reading_pdf_gcs
+            ),
+            None,
+        )
+        local_pdf_sha256 = (
+            hashlib.sha256(reading_pdf.read_bytes()).hexdigest()
+            if reading_pdf.is_file()
+            else None
+        )
+        publication_valid = bool(
+            publication.get("status") == "pass"
+            and published_pdf
+            and published_pdf.get("localSha256") == local_pdf_sha256
+            and published_pdf.get("gcsSha256") == local_pdf_sha256
+            and published_pdf.get("localSize") == reading_pdf.stat().st_size
+            and published_pdf.get("gcsSize") == reading_pdf.stat().st_size
+        )
     valid = bool(
         reading_pdf.is_file()
         and reading_pdf.stat().st_size > 0
+        and isinstance(generation_report, dict)
+        and generation_report.get("status") == "completed"
+        and publication_valid
         and isinstance(reading_quality, dict)
         and reading_quality.get("status") == "pass"
         and isinstance(reading_qa, dict)
@@ -283,7 +335,14 @@ def local_completion_artifacts(snapshot: dict[str, Any]) -> dict[str, Any] | Non
         and isinstance(run_status, dict)
         and run_status.get("status") == "complete"
     )
-    return run_status if valid else None
+    if not valid:
+        return None
+    return {
+        "generation": sermon_production_supervisor.public_generation_report(
+            generation_report
+        ),
+        "runStatus": run_status,
+    }
 
 
 def completed_report_from_snapshot(
@@ -297,11 +356,14 @@ def completed_report_from_snapshot(
     reading_quality = quality.get("readingEdition") or {}
     pdf_quality = quality.get("readingPdf") or {}
     recommended = snapshot.get("recommendedAction") or {}
+    reading_pdf_gcs = (snapshot.get("locations") or {}).get("readingPdfGcs")
+    publication = generation.get("publication") or {}
     if not (
         generation.get("status") == "completed"
         and reading_quality.get("status") == "pass"
         and pdf_quality.get("status") == "pass"
         and recommended.get("action") == "complete"
+        and (not reading_pdf_gcs or publication.get("status") == "pass")
     ):
         return None
     evidence = [
@@ -310,8 +372,8 @@ def completed_report_from_snapshot(
         "quality.readingPdf.status=pass",
         "recommendedAction.action=complete",
     ]
-    reading_pdf_gcs = (snapshot.get("locations") or {}).get("readingPdfGcs")
     if reading_pdf_gcs:
+        evidence.append("generation.publication.status=pass")
         evidence.append(f"locations.readingPdfGcs={reading_pdf_gcs}")
     return {
         "schemaVersion": 1,
@@ -356,6 +418,30 @@ def write_report(path: Path, report: dict[str, Any]) -> None:
 
 def main() -> int:
     args = make_agent_args(parse_args())
+    if args.resume_failed_generation:
+        result = sermon_production_supervisor.resume_failed_reading_pdf_generation(
+            run_sermon_production_supervisor_agent.make_config(args)
+        )
+        final_snapshot = sermon_production_supervisor.production_snapshot(
+            run_sermon_production_supervisor_agent.make_config(args)
+        )
+        report = {
+            "schemaVersion": 1,
+            "status": "complete" if result.get("status") == "completed" else "blocked",
+            "sunday": args.sunday,
+            "mode": args.mode,
+            "model": args.model,
+            "approvalWritten": False,
+            "traceSensitiveDataIncluded": False,
+            "sourceRefresh": {
+                "status": "skipped",
+                "reason": "explicit_failed_generation_resume",
+            },
+            "resumeResult": result,
+            "finalSnapshot": final_snapshot,
+        }
+        write_report(args.out, report)
+        return 0 if result.get("status") == "completed" else 2
     completed = completed_production_report(args)
     if completed is not None:
         write_report(args.out, completed)

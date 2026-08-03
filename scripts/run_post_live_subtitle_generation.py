@@ -20,8 +20,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from backend.cloud import access_secret, upload_file_to_gcs  # noqa: E402
-from backend.observability import log_event, url_summary  # noqa: E402
+from backend.cloud import access_secret, read_gcs_bytes, upload_file_to_gcs  # noqa: E402
+from backend.observability import log_event, stable_hash, url_summary  # noqa: E402
 from scripts import live_source_monitor, post_live_run_status  # noqa: E402
 
 
@@ -59,7 +59,7 @@ def reconcile_failed_run_status(args: argparse.Namespace, exc: Exception) -> Non
         run_root = args.work_root / args.sunday / slug_for(args, live_url)
         path = run_root / "run-status.json"
         payload = load_run_status(path, args.sunday, live_url)
-        if payload.get("status") == "blocked":
+        if payload.get("status") != "running":
             return
         stage = str(payload.get("currentStage") or "source_saved")
         payload = post_live_run_status.mark_terminal(
@@ -91,6 +91,11 @@ def parse_args() -> argparse.Namespace:
         choices=("sermon_only", "sermon_plus_response"),
         default=None,
         help="Operator-approved publication scope for the selected time window.",
+    )
+    parser.add_argument(
+        "--approval-evidence",
+        type=Path,
+        help="Durable operator-window-approval.json already validated by the supervisor.",
     )
     parser.add_argument("--glossary", type=Path)
     parser.add_argument("--zh-model", default="gpt-5.6")
@@ -182,6 +187,7 @@ def run_post_live_generation(
     run_status_path = run_root / "run-status.json"
     run_status = load_run_status(run_status_path, args.sunday, live_url)
     run_status = post_live_run_status.update_stage(run_status, args.sunday, "source_saved", "complete")
+    run_status = record_approval_stage(run_status, args, live_url=live_url)
     run_status = post_live_run_status.update_stage(run_status, args.sunday, "archive_ready", "complete")
     write_run_status(run_status_path, run_status)
     audio_template = run_root / "download" / "source_audio.%(ext)s"
@@ -366,12 +372,28 @@ def run_post_live_generation(
         duration_seconds=stage_durations["pdf_qa"],
     )
     write_run_status(run_status_path, run_status)
+    run_status = post_live_run_status.update_stage(
+        run_status,
+        args.sunday,
+        "publication",
+        "running",
+    )
+    write_run_status(run_status_path, run_status)
     uploaded = upload_outputs(args, pipeline_outdir, args.output_mode, extra_paths=delivery_paths)
+    publication = publication_report(uploaded, gcs_configured=bool(args.gcs_bucket))
+    if publication["status"] not in {"pass", "not_configured"}:
+        raise RuntimeError("Published artifact hashes did not match local outputs")
+    run_status = post_live_run_status.update_stage(
+        run_status,
+        args.sunday,
+        "publication",
+        "complete",
+    )
     run_status = post_live_run_status.mark_terminal(
         run_status,
         args.sunday,
         "complete",
-        stage="pdf_qa",
+        stage="publication",
     )
     write_run_status(run_status_path, run_status)
     report.update(
@@ -387,6 +409,7 @@ def run_post_live_generation(
             "pipelineInputFingerprint": pipeline_input_fingerprint,
             "readingInputFingerprint": reading_input_fingerprint,
             "uploaded": uploaded,
+            "publication": publication,
             "runStatus": str(run_status_path),
             "stageDurationsSeconds": {key: round(value, 3) for key, value in stage_durations.items()},
             "retryCounts": {
@@ -792,6 +815,41 @@ def load_run_status(path: Path, sunday: str, live_url: str) -> dict[str, Any]:
     return post_live_run_status.new_status(sunday, source_url=live_url)
 
 
+def record_approval_stage(
+    run_status: dict[str, Any],
+    args: argparse.Namespace,
+    *,
+    live_url: str,
+) -> dict[str, Any]:
+    evidence_path = getattr(args, "approval_evidence", None)
+    if evidence_path is None:
+        return run_status
+    path = resolve_path(evidence_path)
+    try:
+        approval = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, OSError) as exc:
+        raise RuntimeError(f"Cannot read validated approval evidence: {exc}") from exc
+    valid = bool(
+        isinstance(approval, dict)
+        and approval.get("status") == "approved"
+        and approval.get("humanApproval") is True
+        and approval.get("sunday") == args.sunday
+        and approval.get("sourceUrlHash") == stable_hash(live_url)
+        and approval.get("contentScope") == getattr(args, "content_scope", None)
+        and approval.get("startTime") == getattr(args, "start_time", None)
+        and approval.get("endTime") == getattr(args, "end_time", None)
+    )
+    if not valid:
+        raise RuntimeError("Validated approval evidence does not match generation arguments")
+    return post_live_run_status.update_stage(
+        run_status,
+        args.sunday,
+        "approval",
+        "complete",
+        artifact=str(path),
+    )
+
+
 def write_run_status(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
@@ -1009,9 +1067,13 @@ def upload_outputs(
     output_mode: str = "reading",
     *,
     extra_paths: list[Path] | None = None,
-) -> list[dict[str, str]]:
+    uploader: Callable[[str | Path, str], None] | None = None,
+    gcs_reader: Callable[[str], bytes] | None = None,
+) -> list[dict[str, Any]]:
     if not args.gcs_bucket:
         return []
+    uploader = uploader or upload_file_to_gcs
+    gcs_reader = gcs_reader or read_gcs_bytes
     slug = args.slug or "sermon"
     prefix = "/".join(part.strip("/") for part in [args.gcs_prefix, args.sunday, "post-live-subtitles", slug] if part)
     uploaded = []
@@ -1025,9 +1087,42 @@ def upload_outputs(
         except ValueError:
             relative = Path(path.name)
         destination = f"gs://{args.gcs_bucket}/{prefix}/pipeline/{relative.as_posix()}"
-        upload_file_to_gcs(path, destination)
-        uploaded.append({"localPath": str(path), "gcsUri": destination})
+        local_bytes = path.read_bytes()
+        local_sha256 = hashlib.sha256(local_bytes).hexdigest()
+        uploader(path, destination)
+        remote_bytes = gcs_reader(destination)
+        remote_sha256 = hashlib.sha256(remote_bytes).hexdigest()
+        if len(local_bytes) != len(remote_bytes) or local_sha256 != remote_sha256:
+            raise RuntimeError(f"GCS upload verification failed for {destination}")
+        uploaded.append(
+            {
+                "localPath": str(path),
+                "gcsUri": destination,
+                "sizeBytes": len(local_bytes),
+                "localSize": len(local_bytes),
+                "gcsSize": len(remote_bytes),
+                "localSha256": local_sha256,
+                "gcsSha256": remote_sha256,
+                "status": "pass",
+            }
+        )
     return uploaded
+
+
+def publication_report(
+    uploaded: list[dict[str, Any]],
+    *,
+    gcs_configured: bool,
+) -> dict[str, Any]:
+    if not gcs_configured:
+        return {"status": "not_configured", "artifactCount": 0}
+    passed = bool(uploaded) and all(item.get("status") == "pass" for item in uploaded)
+    return {
+        "status": "pass" if passed else "failed",
+        "artifactCount": len(uploaded),
+        "verifiedAt": datetime.now(timezone.utc).isoformat(),
+        "artifacts": uploaded,
+    }
 
 
 def log_post_live_event(report: dict[str, Any]) -> None:

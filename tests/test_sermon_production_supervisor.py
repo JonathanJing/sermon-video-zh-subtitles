@@ -302,6 +302,62 @@ class SermonProductionSupervisorTest(unittest.TestCase):
         self.assertEqual(result["action"], "inspect_generation_failure")
         self.assertTrue(result["humanActionRequired"])
 
+    def test_completed_generation_requires_publication_parity_when_gcs_is_configured(self):
+        result = mod.recommend_action(
+            sunday="2026-08-02",
+            live_url="https://www.youtube.com/watch?v=agentTest123",
+            state={"lastSunday": "2026-08-02"},
+            timeline_report={"status": "requires_operator_review"},
+            approval_valid=True,
+            approval_reason=None,
+            generation_report={"status": "completed"},
+            run_status={"status": "complete"},
+            reading_qa={"status": "pass"},
+            reading_quality={"status": "pass"},
+            publication_required=True,
+        )
+
+        self.assertEqual(result["action"], "inspect_publication_evidence")
+        self.assertTrue(result["humanActionRequired"])
+
+    def test_structured_generation_failure_uses_run_status_and_quality_evidence(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            locations = {
+                "runStatusLocal": str(root / "run-status.json"),
+                "readingQualityLocal": str(root / "reading-quality.json"),
+            }
+            write_json(
+                Path(locations["runStatusLocal"]),
+                {
+                    "currentStage": "reviewed",
+                    "blocker": {
+                        "stage": "reviewed",
+                        "reason": "reading_quality_needs_review",
+                    },
+                },
+            )
+            write_json(
+                Path(locations["readingQualityLocal"]),
+                {
+                    "status": "needs_revision",
+                    "failures": ["unexpected_english_tokens"],
+                },
+            )
+
+            report = mod.build_generation_failure_report(
+                subprocess.CompletedProcess(["generation"], 1, stdout="", stderr=""),
+                locations,
+            )
+
+        self.assertEqual(2, report["schemaVersion"])
+        self.assertEqual("reviewed", report["failure"]["stage"])
+        self.assertEqual(
+            ["unexpected_english_tokens"],
+            report["failure"]["qualityFailures"],
+        )
+        self.assertTrue(report["failure"]["resumeEligible"])
+
     def test_timeline_lease_blocks_duplicate_subprocess(self):
         calls = []
 
@@ -382,6 +438,10 @@ class SermonProductionSupervisorTest(unittest.TestCase):
             command[command.index("--content-scope") + 1],
             "sermon_only",
         )
+        self.assertEqual(
+            command[command.index("--approval-evidence") + 1],
+            snapshot["locations"]["windowApprovalLocal"],
+        )
         self.assertIn("--output-mode", command)
         self.assertEqual(command[command.index("--output-mode") + 1], "reading")
         self.assertEqual(command[command.index("--youtube-cookies") + 1], str(cookies))
@@ -390,6 +450,57 @@ class SermonProductionSupervisorTest(unittest.TestCase):
             redacted[redacted.index("--youtube-cookies") + 1],
             "REDACTED_SECRET_RESOURCE",
         )
+
+    def test_explicit_resume_archives_failed_report_and_reuses_valid_approval(self):
+        class Lease:
+            pass
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            state = root / "state.json"
+            write_state(state)
+            config = self.make_config(root, state)
+            initial = mod.production_snapshot(config)
+            write_json(
+                Path(initial["locations"]["timelineReportLocal"]),
+                {"status": "requires_operator_review"},
+            )
+            mod.approve_window(
+                config,
+                start_time="00:21:10",
+                end_time="00:57:36",
+                approved_by="Jony",
+                content_scope="sermon_only",
+            )
+            failed_snapshot = mod.production_snapshot(config)
+            write_json(
+                Path(failed_snapshot["locations"]["generationReportLocal"]),
+                {"schemaVersion": 2, "status": "failed", "reason": "quality gate"},
+            )
+
+            def runner(command, **_kwargs):
+                report_path = Path(command[command.index("--out") + 1])
+                write_json(
+                    report_path,
+                    {
+                        "schemaVersion": 2,
+                        "status": "completed",
+                        "publication": {"status": "not_configured"},
+                    },
+                )
+                return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+
+            result = mod.resume_failed_reading_pdf_generation(
+                config,
+                runner=runner,
+                lease_acquirer=lambda *_args, **_kwargs: Lease(),
+                lease_releaser=lambda _lease: None,
+            )
+
+            archived = Path(result["archivedFailure"]["local"])
+
+        self.assertEqual("completed", result["status"])
+        self.assertTrue(archived.name.startswith("agent-generation-report.failed-"))
 
     def test_timeline_command_passes_local_access_and_notification_configuration(self):
         with tempfile.TemporaryDirectory() as tempdir:

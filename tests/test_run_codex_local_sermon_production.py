@@ -1,4 +1,5 @@
 import argparse
+import hashlib
 import json
 import subprocess
 import sys
@@ -73,6 +74,7 @@ class RunCodexLocalSermonProductionTest(unittest.TestCase):
 
         self.assertEqual(built.mode, "execute")
         self.assertFalse(built.skip_source_refresh)
+        self.assertFalse(built.resume_failed_generation)
         self.assertEqual(built.sunday, "2026-08-02")
         self.assertEqual(
             built.out,
@@ -207,7 +209,10 @@ class RunCodexLocalSermonProductionTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tempdir:
             args = mod.make_agent_args(self.automation_args(Path(tempdir)))
             snapshot = {
-                "generation": {"status": "completed"},
+                "generation": {
+                    "status": "completed",
+                    "publication": {"status": "pass"},
+                },
                 "quality": {
                     "readingEdition": {"status": "pass"},
                     "readingPdf": {"status": "pass"},
@@ -260,8 +265,30 @@ class RunCodexLocalSermonProductionTest(unittest.TestCase):
             reading_quality = artifact_root / "reading-quality.json"
             reading_qa = artifact_root / "reading-qa.json"
             run_status = artifact_root / "run-status.json"
+            generation_report = artifact_root / "generation-report.json"
             artifact_root.mkdir(parents=True)
             reading_pdf.write_bytes(b"%PDF-1.4\n")
+            reading_pdf_sha256 = hashlib.sha256(reading_pdf.read_bytes()).hexdigest()
+            generation_report.write_text(
+                json.dumps(
+                    {
+                        "status": "completed",
+                        "publication": {
+                            "status": "pass",
+                            "artifacts": [
+                                {
+                                    "gcsUri": "gs://bucket/final.pdf",
+                                    "localSha256": reading_pdf_sha256,
+                                    "gcsSha256": reading_pdf_sha256,
+                                    "localSize": reading_pdf.stat().st_size,
+                                    "gcsSize": reading_pdf.stat().st_size,
+                                }
+                            ],
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
             reading_quality.write_text(
                 json.dumps({"status": "pass"}),
                 encoding="utf-8",
@@ -283,6 +310,8 @@ class RunCodexLocalSermonProductionTest(unittest.TestCase):
                 "recommendedAction": {"action": "complete"},
                 "locations": {
                     "readingPdfLocal": str(reading_pdf),
+                    "readingPdfGcs": "gs://bucket/final.pdf",
+                    "generationReportLocal": str(generation_report),
                     "readingQualityLocal": str(reading_quality),
                     "readingQaLocal": str(reading_qa),
                     "runStatusLocal": str(run_status),
@@ -310,6 +339,87 @@ class RunCodexLocalSermonProductionTest(unittest.TestCase):
             report["completionLatch"]["source"],
         )
         production_snapshot.assert_not_called()
+
+    def test_local_terminal_report_rejects_pdf_changed_after_verified_upload(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            args = mod.make_agent_args(self.automation_args(Path(tempdir)))
+            artifact_root = Path(tempdir) / "completed"
+            artifact_root.mkdir(parents=True)
+            reading_pdf = artifact_root / "reading.pdf"
+            reading_pdf.write_bytes(b"%PDF-1.4\noriginal")
+            original_sha256 = hashlib.sha256(reading_pdf.read_bytes()).hexdigest()
+            locations = {
+                "readingPdfLocal": str(reading_pdf),
+                "readingPdfGcs": "gs://bucket/final.pdf",
+                "generationReportLocal": str(artifact_root / "generation-report.json"),
+                "readingQualityLocal": str(artifact_root / "reading-quality.json"),
+                "readingQaLocal": str(artifact_root / "reading-qa.json"),
+                "runStatusLocal": str(artifact_root / "run-status.json"),
+            }
+            Path(locations["generationReportLocal"]).write_text(
+                json.dumps(
+                    {
+                        "status": "completed",
+                        "publication": {
+                            "status": "pass",
+                            "artifacts": [
+                                {
+                                    "gcsUri": locations["readingPdfGcs"],
+                                    "localSha256": original_sha256,
+                                    "gcsSha256": original_sha256,
+                                    "localSize": reading_pdf.stat().st_size,
+                                    "gcsSize": reading_pdf.stat().st_size,
+                                }
+                            ],
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            for key in ("readingQualityLocal", "readingQaLocal"):
+                Path(locations[key]).write_text(
+                    json.dumps({"status": "pass"}),
+                    encoding="utf-8",
+                )
+            Path(locations["runStatusLocal"]).write_text(
+                json.dumps({"status": "complete"}),
+                encoding="utf-8",
+            )
+            snapshot = {
+                "generation": {"status": "completed"},
+                "quality": {
+                    "readingEdition": {"status": "pass"},
+                    "readingPdf": {"status": "pass"},
+                },
+                "recommendedAction": {"action": "complete"},
+                "locations": locations,
+            }
+            args.out.parent.mkdir(parents=True, exist_ok=True)
+            args.out.write_text(
+                json.dumps(
+                    {
+                        "sunday": args.sunday,
+                        "status": "complete",
+                        "finalSnapshot": snapshot,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            reading_pdf.write_bytes(b"%PDF-1.4\nlocally repaired")
+            with mock.patch.object(
+                mod.sermon_production_supervisor,
+                "production_snapshot",
+                return_value={
+                    "generation": {"status": "failed"},
+                    "quality": {},
+                    "recommendedAction": {"action": "inspect_publication_evidence"},
+                    "locations": locations,
+                },
+            ) as production_snapshot:
+                report = mod.completed_production_report(args)
+
+        self.assertIsNone(report)
+        production_snapshot.assert_called_once()
 
     def test_force_after_complete_bypasses_latch(self):
         with tempfile.TemporaryDirectory() as tempdir:

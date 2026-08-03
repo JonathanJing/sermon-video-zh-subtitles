@@ -169,6 +169,7 @@ def production_snapshot(config: SupervisorConfig) -> dict[str, Any]:
         access_issues=access_issues,
         timeline_lease=timeline_lease,
         generation_lease=generation_lease,
+        publication_required=bool(config.gcs_bucket),
     )
     return {
         "schemaVersion": 1,
@@ -214,6 +215,7 @@ def recommend_action(
     access_issues: list[dict[str, str]] | None = None,
     timeline_lease: dict[str, Any] | None = None,
     generation_lease: dict[str, Any] | None = None,
+    publication_required: bool = False,
 ) -> dict[str, Any]:
     if not live_url:
         return action("wait_for_source", "No persisted livestream URL is available.", human=True)
@@ -243,6 +245,16 @@ def recommend_action(
                     "request_window_approval",
                     approval_reason
                     or "The completed reading PDF is not bound to a valid current window approval.",
+                    human=True,
+                )
+            publication_status = str(
+                ((generation_report or {}).get("publication") or {}).get("status")
+                or ""
+            )
+            if publication_required and publication_status != "pass":
+                return action(
+                    "inspect_publication_evidence",
+                    "Generation and QA passed, but verified local/GCS artifact parity is missing.",
                     human=True,
                 )
             return action(
@@ -479,26 +491,93 @@ def run_reading_pdf_generation(
             "reason": "Another reading-PDF generation holds the production lease.",
         }
     try:
-        command = build_generation_command(config, snapshot, approval or {})
-        completed = runner(command, check=False, capture_output=True, text=True)
-        report = read_optional_json(snapshot["locations"]["generationReportLocal"])
-        if report is None:
-            report = {
-                "schemaVersion": 1,
-                "status": "failed",
-                "reason": (
-                    f"generation subprocess exited with code {completed.returncode}"
-                    if completed.returncode
-                    else "generation subprocess completed without writing its report"
-                ),
-                "returnCode": completed.returncode,
-                "completedAt": datetime.now(timezone.utc).isoformat(),
-            }
-            write_local_json(Path(snapshot["locations"]["generationReportLocal"]), report)
-        publish_generation_evidence(snapshot["locations"], report)
-        return command_result(command, completed, report)
+        return execute_reading_pdf_generation(
+            config,
+            snapshot,
+            approval or {},
+            runner=runner,
+        )
     finally:
         lease_releaser(lease)
+
+
+def resume_failed_reading_pdf_generation(
+    config: SupervisorConfig,
+    *,
+    runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
+    lease_acquirer: Callable[..., LeaseHandle | None] = acquire_lease,
+    lease_releaser: Callable[[LeaseHandle], None] = release_lease,
+    gcs_writer: Callable[[str, str], None] = write_gcs_text,
+) -> dict[str, Any]:
+    """Explicitly resume a failed generation after preserving its terminal evidence."""
+    snapshot = production_snapshot(config)
+    action_name = str(snapshot["recommendedAction"]["action"])
+    if action_name not in {"inspect_generation_failure", "review_quality_failure"}:
+        return {
+            "status": "blocked",
+            "reason": f"failed-generation resume is not valid while recommendedAction={action_name}",
+            "recommendedAction": snapshot["recommendedAction"],
+        }
+    approval = read_first_json(
+        *artifact_read_locations(
+            snapshot["locations"].get("windowApprovalLocal"),
+            snapshot["locations"].get("windowApprovalGcs"),
+        )
+    )
+    valid, reason = validate_window_approval(
+        approval,
+        sunday=config.sunday,
+        live_url=live_url_from_snapshot(snapshot, config=config),
+        timeline_report=read_first_json(
+            *artifact_read_locations(
+                snapshot["locations"].get("timelineReportLocal"),
+                snapshot["locations"].get("timelineReportGcs"),
+            )
+        ),
+    )
+    if not valid:
+        return {"status": "blocked", "reason": reason or "operator approval is invalid"}
+    lease = lease_acquirer(
+        execution_lease_location(snapshot, "generation"),
+        ttl_seconds=config.lease_ttl_seconds,
+    )
+    if lease is None:
+        return {
+            "status": "already_running",
+            "reason": "Another reading-PDF generation holds the production lease.",
+        }
+    try:
+        archived = archive_failed_generation_report(
+            snapshot["locations"],
+            gcs_writer=gcs_writer,
+        )
+        result = execute_reading_pdf_generation(
+            config,
+            snapshot,
+            approval or {},
+            runner=runner,
+        )
+        result["archivedFailure"] = archived
+        return result
+    finally:
+        lease_releaser(lease)
+
+
+def execute_reading_pdf_generation(
+    config: SupervisorConfig,
+    snapshot: dict[str, Any],
+    approval: dict[str, Any],
+    *,
+    runner: Callable[..., subprocess.CompletedProcess[str]],
+) -> dict[str, Any]:
+    command = build_generation_command(config, snapshot, approval)
+    completed = runner(command, check=False, capture_output=True, text=True)
+    report = read_optional_json(snapshot["locations"]["generationReportLocal"])
+    if report is None:
+        report = build_generation_failure_report(completed, snapshot["locations"])
+        write_local_json(Path(snapshot["locations"]["generationReportLocal"]), report)
+    publish_generation_evidence(snapshot["locations"], report)
+    return command_result(command, completed, report)
 
 
 def build_timeline_command(config: SupervisorConfig, snapshot: dict[str, Any]) -> list[str]:
@@ -558,6 +637,8 @@ def build_generation_command(
         str(approval["startTime"]),
         "--end-time",
         str(approval["endTime"]),
+        "--approval-evidence",
+        snapshot["locations"]["windowApprovalLocal"],
         "--output-mode",
         "reading",
         "--reference-model",
@@ -782,6 +863,82 @@ def publish_generation_evidence(
         )
 
 
+def build_generation_failure_report(
+    completed: subprocess.CompletedProcess[str],
+    locations: dict[str, str],
+) -> dict[str, Any]:
+    run_status = read_optional_json(locations.get("runStatusLocal"))
+    reading_quality = read_optional_json(locations.get("readingQualityLocal"))
+    blocker = (run_status or {}).get("blocker")
+    stage = (
+        str(blocker.get("stage") or "")
+        if isinstance(blocker, dict)
+        else str((run_status or {}).get("currentStage") or "")
+    )
+    detail = (
+        str(blocker.get("reason") or "")
+        if isinstance(blocker, dict)
+        else ""
+    )
+    reason = detail or (
+        f"generation subprocess exited with code {completed.returncode}"
+        if completed.returncode
+        else "generation subprocess completed without writing its report"
+    )
+    quality_failures = (
+        list(reading_quality.get("failures") or [])
+        if isinstance(reading_quality, dict)
+        else []
+    )
+    return {
+        "schemaVersion": 2,
+        "status": "failed",
+        "reason": reason,
+        "returnCode": completed.returncode,
+        "failure": {
+            "stage": stage or None,
+            "reason": reason,
+            "qualityFailures": quality_failures,
+            "resumeEligible": bool(stage),
+        },
+        "completedAt": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+def archive_failed_generation_report(
+    locations: dict[str, str],
+    *,
+    gcs_writer: Callable[[str, str], None] = write_gcs_text,
+) -> dict[str, Any]:
+    local = Path(locations["generationReportLocal"])
+    report = read_first_json(
+        *artifact_read_locations(
+            str(local),
+            locations.get("generationReportGcs"),
+        )
+    )
+    if not isinstance(report, dict) or report.get("status") not in {"failed", "error"}:
+        raise RuntimeError("No failed generation report is available to archive.")
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    archived_local = local.with_name(f"agent-generation-report.failed-{stamp}.json")
+    write_local_json(archived_local, report)
+    archived_gcs = None
+    current_gcs = locations.get("generationReportGcs")
+    if current_gcs:
+        archived_gcs = current_gcs.rsplit("/", 1)[0] + f"/agent-generation-report.failed-{stamp}.json"
+        gcs_writer(
+            archived_gcs,
+            json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True),
+        )
+    if local.exists():
+        local.unlink()
+    return {
+        "local": str(archived_local),
+        "gcs": archived_gcs,
+        "status": report.get("status"),
+    }
+
+
 def read_supervisor_state(location: str) -> dict[str, Any]:
     try:
         text = live_source_monitor.read_state_text(location)
@@ -960,6 +1117,8 @@ def public_generation_report(report: dict[str, Any] | None) -> dict[str, Any] | 
         "readingQualityReport": report.get("readingQualityReport"),
         "runStatus": report.get("runStatus"),
         "outputs": report.get("outputs"),
+        "publication": report.get("publication"),
+        "failure": report.get("failure"),
     }
 
 

@@ -700,7 +700,10 @@ def reading_quality_report(blocks: list[dict[str, Any]]) -> dict[str, Any]:
             token
             for token in REQUIRED_SOURCE_TOKENS
             if re.search(rf"\b{re.escape(token)}\b", en)
-            and not re.search(rf"\b{re.escape(token)}\b", zh)
+            and not re.search(
+                rf"(?<![A-Za-z0-9_]){re.escape(token)}(?![A-Za-z0-9_])",
+                zh,
+            )
         )
         if required_tokens:
             missing_required_english_tokens.append(
