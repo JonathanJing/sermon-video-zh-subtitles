@@ -90,6 +90,9 @@ Jesus is our mediator.
         self.assertEqual(payload["text"]["format"]["type"], "json_object")
         self.assertIn("human church review", payload["input"][0]["content"][0]["text"])
         self.assertIn("empty arrays", payload["input"][1]["content"][0]["text"])
+        rendered = json.dumps(payload, ensure_ascii=False)
+        self.assertNotIn("applicationQuestionsZh", rendered)
+        self.assertIn("Do not generate discussion questions", rendered)
 
     def test_normalizes_insights_without_secret_material(self):
         insights = mod.normalize_insights(
@@ -102,6 +105,7 @@ Jesus is our mediator.
                     {
                         "textZh": "我们需要一位站在死亡和生命之间的中保。",
                         "sourceSliceIndex": 1,
+                        "sourceSegmentId": "seg_1",
                     }
                 ],
             },
@@ -113,6 +117,15 @@ Jesus is our mediator.
                     "text": "我们需要一位站在死亡和生命之间的中保。",
                     "charCount": 20,
                     "segmentIds": ["seg_1"],
+                    "segmentEvidence": [
+                        {
+                            "id": "seg_1",
+                            "startMs": 0,
+                            "endMs": 10_000,
+                            "textZh": "我们需要一位站在死亡和生命之间的中保。",
+                            "textEn": "We need a mediator who stands between death and life.",
+                        }
+                    ],
                     "refs": [],
                 }
             ],
@@ -126,11 +139,57 @@ Jesus is our mediator.
         self.assertEqual(insights["model"], "gpt-5.4-mini")
         self.assertEqual(insights["reasoningEffort"], "medium")
         self.assertTrue(insights["traceability"]["allQuotesHaveSource"])
+        self.assertTrue(insights["traceability"]["allQuotesAreExactExcerpts"])
         self.assertEqual(insights["quotes"][0]["sourceSegmentId"], "seg_1")
+        self.assertEqual(insights["quotes"][0]["sourceTextEn"], "We need a mediator who stands between death and life.")
+        self.assertNotIn("applicationQuestionsZh", insights)
         self.assertNotIn("apiKeySecret", rendered)
         self.assertNotIn("projects/p/secrets", rendered)
         self.assertFalse(insights["apiKeyMaterialIncluded"])
         self.assertFalse(insights["secretResourceNamesIncluded"])
+
+    def test_drops_paraphrased_or_misattributed_quote(self):
+        slices = [
+            {
+                "index": 1,
+                "startMs": 0,
+                "endMs": 10_000,
+                "text": "神爱世人。",
+                "charCount": 5,
+                "segmentIds": ["seg_1"],
+                "segmentEvidence": [
+                    {
+                        "id": "seg_1",
+                        "startMs": 0,
+                        "endMs": 10_000,
+                        "textZh": "神爱世人。",
+                        "textEn": "God loved the world.",
+                    }
+                ],
+                "refs": [],
+            }
+        ]
+
+        quotes = mod.normalize_quotes(
+            [
+                {"textZh": "神非常爱全世界。", "sourceSliceIndex": 1, "sourceSegmentId": "seg_1"},
+                {"textZh": "神爱世人。", "sourceSliceIndex": 1, "sourceSegmentId": "wrong"},
+            ],
+            slices,
+        )
+
+        self.assertEqual(quotes, [])
+
+    def test_merges_aligned_bilingual_srt_segments(self):
+        primary = [{"id": "srt-0001", "startMs": 1000, "endMs": 3000, "zh": "神爱世人。"}]
+        secondary = [{"id": "srt-0001", "startMs": 1000, "endMs": 3000, "en": "God loved the world."}]
+
+        merged = mod.merge_aligned_segments(primary, secondary)
+        slices = mod.build_note_slices(merged)
+
+        self.assertEqual(merged[0]["zh"], "神爱世人。")
+        self.assertEqual(merged[0]["en"], "God loved the world.")
+        self.assertEqual(slices[0]["segmentEvidence"][0]["textEn"], "God loved the world.")
 
     def test_updates_manifest_with_insight_outputs(self):
         with tempfile.TemporaryDirectory() as tmp:

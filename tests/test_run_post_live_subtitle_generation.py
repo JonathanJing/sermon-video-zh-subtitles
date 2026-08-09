@@ -45,6 +45,8 @@ def make_args(**overrides):
         "reading_preferred_english_chars": 420,
         "reading_hard_seconds": 55.0,
         "reading_hard_english_chars": 840,
+        "companion_model": "gpt-5.6",
+        "companion_reasoning_effort": "high",
         "audio_format": "bestaudio[ext=m4a]/bestaudio",
         "yt_dlp": "yt-dlp",
         "youtube_cookies": None,
@@ -223,6 +225,10 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
         self.assertTrue(any("sermon_zh_reading_revised.srt" in item for item in report["readingPdfCommand"]))
         self.assertTrue(any("sermon_en_reading_revised.srt" in item for item in report["readingPdfCommand"]))
         self.assertTrue(any("sermon_zh_en_reading.pdf" in item for item in report["readingPdfCommand"]))
+        self.assertIn("generate_notes_with_openai.py", report["sermonCompanionCommand"][1])
+        self.assertTrue(any("sermon_companion_zh.pdf" in item for item in report["sermonCompanionCommand"]))
+        self.assertNotIn("--api-key-secret", report["sermonCompanionCommand"])
+        self.assertNotIn("applicationQuestionsZh", " ".join(report["sermonCompanionCommand"]))
         self.assertEqual(
             report["readingPdfCommand"][report["readingPdfCommand"].index("--source-url") + 1],
             "https://www.youtube.com/watch?v=MEZHufeQBjc",
@@ -234,8 +240,12 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
         self.assertTrue(any(path.endswith("reading-edition-v2/reading_quality_report.json") for path in report["outputs"]))
         self.assertFalse(any(path.endswith("sermon_zh_mobile.pdf") for path in report["outputs"]))
         self.assertTrue(any(path.endswith("sermon_zh_en_reading.pdf") for path in report["outputs"]))
+        self.assertTrue(any(path.endswith("sermon_companion_zh.pdf") for path in report["outputs"]))
         self.assertTrue(str(report["deliveryReadingPdf"]).endswith(
             "2026-06-28-A-Bronze-Snake-and-God-s-Love-Steve-Bang-Lee-中英对照阅读版.pdf"
+        ))
+        self.assertTrue(str(report["deliverySermonCompanionPdf"]).endswith(
+            "2026-06-28-A-Bronze-Snake-and-God-s-Love-Steve-Bang-Lee-证道同行.pdf"
         ))
         self.assertEqual(
             report["readingEditionCommand"][
@@ -286,6 +296,20 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
                 pdf_path.with_suffix(".qa.json").write_text(
                     json.dumps({"status": "pass", "allPagesChecked": True}), encoding="utf-8"
                 )
+            elif "generate_notes_with_openai.py" in command[1]:
+                outdir = Path(command[command.index("--out-dir") + 1])
+                model_outdir = Path(command[command.index("--model-output-dir") + 1])
+                pdf_path = Path(command[command.index("--pdf-out") + 1])
+                qa_path = Path(command[command.index("--pdf-qa-out") + 1])
+                outdir.mkdir(parents=True, exist_ok=True)
+                model_outdir.mkdir(parents=True, exist_ok=True)
+                pdf_path.write_bytes(b"%PDF-1.4\n")
+                qa_path.write_text(json.dumps({"status": "pass"}), encoding="utf-8")
+                (outdir / "openai-notes.json").write_text(
+                    json.dumps({"status": "ready", "summaryZh": "神爱世人。", "outlineZh": []}),
+                    encoding="utf-8",
+                )
+                (model_outdir / "openai-notes-output.jsonl").write_text("{}\n", encoding="utf-8")
             return subprocess.CompletedProcess(command, 0)
 
         with tempfile.TemporaryDirectory() as tempdir:
@@ -310,11 +334,14 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
         self.assertIn("render_mobile_pdf_from_srt.py", calls[3][1])
         self.assertIn("--layout", calls[3])
         self.assertEqual(calls[3][calls[3].index("--layout") + 1], "reading")
+        self.assertIn("generate_notes_with_openai.py", calls[4][1])
         self.assertTrue(any("reading-edition-v2" in item for item in report["readingEditionCommand"]))
         self.assertIsNone(report["mobilePdfCommand"])
         self.assertTrue(any("sermon_zh_en_reading.pdf" in item for item in report["readingPdfCommand"]))
+        self.assertTrue(any("sermon_companion_zh.pdf" in item for item in report["sermonCompanionCommand"]))
         self.assertTrue(str(report["readingQualityReport"]).endswith("reading-edition-v2/reading_quality_report.json"))
         self.assertTrue(any(path.endswith("中英对照阅读版.pdf") for path in report["outputs"]))
+        self.assertTrue(any(path.endswith("证道同行.pdf") for path in report["outputs"]))
 
     def test_subtitle_mode_keeps_whisper_as_explicit_opt_in(self):
         args = make_args(output_mode="subtitles")

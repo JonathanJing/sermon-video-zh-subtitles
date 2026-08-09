@@ -83,7 +83,8 @@ export SERMON_YOUTUBE_COOKIES_FILE=/absolute/path/youtube.cookies.txt
 - generation report `status=completed`
 - `reading-edition-v2/reading_quality_report.json` 为 `pass`
 - `sermon_zh_en_reading.qa.json` 为 `pass`
-- 最终 PDF 已上传 GCS
+- `sermon_companion_zh.qa.json` 为 `pass`
+- 阅读版 PDF 和证道同行 PDF 都已上传 GCS
 - 当前人工审批仍与 source URL 和 timeline SHA-256 匹配
 
 ## 回滚

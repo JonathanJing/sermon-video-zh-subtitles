@@ -216,9 +216,13 @@ class RunCodexLocalSermonProductionTest(unittest.TestCase):
                 "quality": {
                     "readingEdition": {"status": "pass"},
                     "readingPdf": {"status": "pass"},
+                    "sermonCompanionPdf": {"status": "pass"},
                 },
                 "recommendedAction": {"action": "complete"},
-                "locations": {"readingPdfGcs": "gs://bucket/final.pdf"},
+                "locations": {
+                    "readingPdfGcs": "gs://bucket/final.pdf",
+                    "companionPdfGcs": "gs://bucket/companion.pdf",
+                },
             }
             with mock.patch.object(
                 mod.sermon_production_supervisor,
@@ -262,12 +266,15 @@ class RunCodexLocalSermonProductionTest(unittest.TestCase):
             args = mod.make_agent_args(self.automation_args(Path(tempdir)))
             artifact_root = Path(tempdir) / "completed"
             reading_pdf = artifact_root / "reading.pdf"
+            companion_pdf = artifact_root / "companion.pdf"
             reading_quality = artifact_root / "reading-quality.json"
             reading_qa = artifact_root / "reading-qa.json"
+            companion_qa = artifact_root / "companion-qa.json"
             run_status = artifact_root / "run-status.json"
             generation_report = artifact_root / "generation-report.json"
             artifact_root.mkdir(parents=True)
             reading_pdf.write_bytes(b"%PDF-1.4\n")
+            companion_pdf.write_bytes(b"%PDF-1.4\n")
             reading_pdf_sha256 = hashlib.sha256(reading_pdf.read_bytes()).hexdigest()
             generation_report.write_text(
                 json.dumps(
@@ -282,6 +289,13 @@ class RunCodexLocalSermonProductionTest(unittest.TestCase):
                                     "gcsSha256": reading_pdf_sha256,
                                     "localSize": reading_pdf.stat().st_size,
                                     "gcsSize": reading_pdf.stat().st_size,
+                                },
+                                {
+                                    "gcsUri": "gs://bucket/companion.pdf",
+                                    "localSha256": reading_pdf_sha256,
+                                    "gcsSha256": reading_pdf_sha256,
+                                    "localSize": companion_pdf.stat().st_size,
+                                    "gcsSize": companion_pdf.stat().st_size,
                                 }
                             ],
                         },
@@ -297,6 +311,10 @@ class RunCodexLocalSermonProductionTest(unittest.TestCase):
                 json.dumps({"status": "pass"}),
                 encoding="utf-8",
             )
+            companion_qa.write_text(
+                json.dumps({"status": "pass"}),
+                encoding="utf-8",
+            )
             run_status.write_text(
                 json.dumps({"status": "complete"}),
                 encoding="utf-8",
@@ -306,14 +324,18 @@ class RunCodexLocalSermonProductionTest(unittest.TestCase):
                 "quality": {
                     "readingEdition": {"status": "pass"},
                     "readingPdf": {"status": "pass"},
+                    "sermonCompanionPdf": {"status": "pass"},
                 },
                 "recommendedAction": {"action": "complete"},
                 "locations": {
                     "readingPdfLocal": str(reading_pdf),
                     "readingPdfGcs": "gs://bucket/final.pdf",
+                    "companionPdfLocal": str(companion_pdf),
+                    "companionPdfGcs": "gs://bucket/companion.pdf",
                     "generationReportLocal": str(generation_report),
                     "readingQualityLocal": str(reading_quality),
                     "readingQaLocal": str(reading_qa),
+                    "companionQaLocal": str(companion_qa),
                     "runStatusLocal": str(run_status),
                 },
             }

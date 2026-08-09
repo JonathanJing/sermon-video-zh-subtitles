@@ -168,7 +168,7 @@ operator 独立观看完整录像后，使用同一个 runner 写审批：
 | 有有效审批 | `run_reading_pdf_generation` |
 | 阅读质量或 PDF QA 失败 | `review_quality_failure` |
 | GCS artifact 无法读取 | `restore_artifact_access` |
-| Generation completed 且两个 QA 都 pass | `complete` |
+| Generation completed，阅读质量和两个 PDF QA 都 pass | `complete` |
 
 `accessIssues` 与 “artifact missing” 分开记录。网络、凭据或 IAM 错误不会被误判为“尚未生成”。
 
@@ -179,7 +179,7 @@ operator 独立观看完整录像后，使用同一个 runner 写审批：
 - 直播未结束：安全退出，等待下一次运行
 - 可以下载：取得 GCS lease 后运行 timeline
 - timeline 待确认：停止并通知 operator
-- 已存在有效人工审批：运行 reading-PDF pipeline
+- 已存在有效人工审批：运行双 PDF pipeline
 - QA 通过：上传 GCS 并标记完成
 
 Cloud Run Job 和 post-live Cloud Scheduler 在本地生产验证后暂停，保留短期回滚，不再作为主执行路径。
@@ -241,6 +241,7 @@ Agent 只能在以下证据同时成立时返回 `complete`：
 - generation report 的 `status = completed`
 - `reading-edition-v2/reading_quality_report.json` 为 `pass`
 - `sermon_zh_en_reading.qa.json` 为 `pass`
+- `sermon_companion_zh.qa.json` 为 `pass`
 
 部分转录、PDF 文件单独存在或模型口头判断都不能代表生产完成。
 
