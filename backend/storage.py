@@ -7,6 +7,8 @@ from urllib.error import URLError
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
+from google.api_core.exceptions import NotFound
+
 from .cloud import read_gcs_bytes
 
 
@@ -72,7 +74,10 @@ class GcsArtifactReader(ArtifactReader):
         client = self.storage_client or self._default_client()
         if client is not None:
             bucket = client.bucket(parsed.bucket)
-            return bucket.blob(parsed.object_name).download_as_bytes()
+            try:
+                return bucket.blob(parsed.object_name).download_as_bytes()
+            except NotFound as exc:
+                raise FileNotFoundError(parsed.uri) from exc
         try:
             return read_gcs_bytes(parsed.uri)
         except (ImportError, OSError, subprocess.CalledProcessError):
