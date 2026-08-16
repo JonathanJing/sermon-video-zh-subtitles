@@ -384,7 +384,7 @@ Glossary 数据：
 - 经文列表
 - 最多 6 条逐段可追溯的讲道摘录（中文译文）
 
-这些内容渲染为 `sermon_companion_zh.pdf`，与 `sermon_zh_en_reading.pdf` 共同构成两个核心 PDF。证道同行不包含讨论题、反思题、祷告或应用任务。
+这些内容渲染为 `sermon_interpretation_zh.pdf`，与 `sermon_zh_en_reading.pdf` 共同构成两个核心 PDF。证道解读包含证道结构、神学与牧养辨析、反思题、小组指南和回应祷告；所有生成项必须回指转录切片，AI 辅助内容必须明确标注。
 
 金句必须满足：
 

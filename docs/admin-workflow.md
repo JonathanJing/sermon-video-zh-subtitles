@@ -24,7 +24,7 @@ triggering, or readiness checks around the stable workflow.
 Do not treat Admin UI interaction by itself as workflow completion. The current
 stable completion bar is the dual-PDF path: saved source, manually confirmed
 sermon window, generated `sermon_zh_en_reading.pdf` and
-`sermon_companion_zh.pdf`, passing QA for both PDFs, and written run reports.
+`sermon_interpretation_zh.pdf`, passing QA for both PDFs, and written run reports.
 
 ## Route
 

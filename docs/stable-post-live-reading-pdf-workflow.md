@@ -8,7 +8,7 @@ The stable workflow is:
 2. wait for the public archive to become post-live / downloadable
 3. manually confirm the sermon start and end time
 4. build the English reference transcript with `gpt-transcribe`
-5. generate and QA the Chinese-English reading PDF and Chinese sermon companion PDF
+5. generate and QA the Chinese-English reading PDF and Chinese sermon interpretation PDF
 
 This is the workflow that should be documented first in the root README and used as the default operator path today.
 
@@ -19,7 +19,7 @@ This workflow is for:
 - extracting a usable sermon source from a manually provided YouTube URL
 - preserving that source so a later run does not need the URL again
 - generating bilingual reading text from a manually confirmed sermon window
-- producing two reviewed core deliverables: the reading PDF and sermon companion PDF
+- producing two reviewed core deliverables: the reading PDF and sermon interpretation PDF
 
 This workflow is not the same thing as the frontend admin prototype or the Cloud Run backend orchestration. Those paths already work, but they are currently secondary to the stable operator workflow described here.
 
@@ -34,7 +34,7 @@ flowchart TD
     E --> F[Clip sermon window]
     F --> G["gpt-transcribe: prompt + keywords + languages=en"]
     G --> H[Generate and review Chinese reading text]
-    H --> I[Render reading PDF and sermon companion PDF]
+    H --> I[Render reading PDF and sermon interpretation PDF]
     I --> J{Both PDF QA reports pass?}
     J -- Yes --> K[Deliver the two core PDFs and reports]
     J -- No --> L[Operator review and rerun]
@@ -102,14 +102,14 @@ Under the selected run directory, the operator should expect at least these outp
 - `segments_timed_zh.json`
 - `sermon_zh_en_reading.pdf`
 - `sermon_zh_en_reading.qa.json`
-- `sermon_companion_zh.pdf`
-- `sermon_companion_zh.qa.json`
+- `sermon_interpretation_zh.pdf`
+- `sermon_interpretation_zh.qa.json`
 - `sermon-companion/insights/openai-notes.json`
 - `reading-edition-v2/reading_quality_report.json`
 - `summary.json`
 - `run-status.json`
 
-The reading PDF and sermon companion PDF are the two core operator deliverables. The companion contains only sermon summary, outline, explicit Scripture references, and traceable Chinese-translated excerpts. It excludes discussion questions, reflection prompts, prayers, and application tasks.
+The reading PDF and sermon interpretation PDF are the two core operator deliverables. The interpretation includes the central message, outline, Scripture context, theological insights, illustrations, pastoral distinctions, reflection questions, a small-group guide, and a response prayer. Every generated item must cite transcript slices, and AI-assisted reflection or prayer content is visibly distinguished from speaker quotations.
 
 The default `reading` mode does not call `whisper-1`. Internal timing values are used only to organize reading blocks and must not be published as synchronized subtitle timing. Select `--output-mode subtitles` explicitly when SRT/VTT timing is required; only that mode enables `whisper-1`.
 
@@ -121,8 +121,8 @@ Treat the workflow as complete only when all of the following are true:
 - the sermon window was manually confirmed
 - `sermon_zh_en_reading.pdf` exists
 - `sermon_zh_en_reading.qa.json` reports pass
-- `sermon_companion_zh.pdf` exists
-- `sermon_companion_zh.qa.json` reports pass
+- `sermon_interpretation_zh.pdf` exists
+- `sermon_interpretation_zh.qa.json` reports pass
 - the run report and run status are written
 
 Partial ASR output alone is not success.
@@ -136,7 +136,7 @@ The stable workflow is implemented mainly by these scripts:
 - [../scripts/sermon_pipeline.py](../scripts/sermon_pipeline.py)
 - [../scripts/render_mobile_pdf_from_srt.py](../scripts/render_mobile_pdf_from_srt.py)
 - [../scripts/generate_notes_with_openai.py](../scripts/generate_notes_with_openai.py)
-- [../scripts/render_sermon_companion_pdf.py](../scripts/render_sermon_companion_pdf.py)
+- [../scripts/render_sermon_interpretation_pdf.py](../scripts/render_sermon_interpretation_pdf.py)
 
 ## Secondary but working paths
 

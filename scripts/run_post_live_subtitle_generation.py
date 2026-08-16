@@ -28,12 +28,12 @@ from scripts import live_source_monitor, post_live_run_status  # noqa: E402
 SERMON_PIPELINE_SCRIPT = REPO_ROOT / "scripts" / "sermon_pipeline.py"
 MOBILE_PDF_SCRIPT = REPO_ROOT / "scripts" / "render_mobile_pdf_from_srt.py"
 READING_EDITION_SCRIPT = REPO_ROOT / "scripts" / "build_sermon_reading_edition_with_openai.py"
-SERMON_COMPANION_SCRIPT = REPO_ROOT / "scripts" / "generate_notes_with_openai.py"
+SERMON_INTERPRETATION_SCRIPT = REPO_ROOT / "scripts" / "generate_notes_with_openai.py"
 REVIEW_PROMPTS_SCRIPT = REPO_ROOT / "scripts" / "review_prompts.py"
 DEFAULT_WORK_ROOT = Path("/tmp/sermon-post-live-subtitles")
 POST_LIVE_STATES = {"was_live"}
 READING_EDITION_DIRNAME = "reading-edition-v2"
-SERMON_COMPANION_DIRNAME = "sermon-companion"
+SERMON_INTERPRETATION_DIRNAME = "sermon-interpretation"
 INPUT_IDENTITY_SCHEMA_VERSION = 1
 
 
@@ -128,8 +128,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--reading-preferred-english-chars", type=int, default=420)
     parser.add_argument("--reading-hard-seconds", type=float, default=55.0)
     parser.add_argument("--reading-hard-english-chars", type=int, default=840)
-    parser.add_argument("--companion-model", default="gpt-5.6")
-    parser.add_argument("--companion-reasoning-effort", choices=("low", "medium", "high"), default="high")
+    parser.add_argument(
+        "--interpretation-model",
+        "--companion-model",
+        dest="interpretation_model",
+        default="gpt-5.6",
+    )
+    parser.add_argument(
+        "--interpretation-reasoning-effort",
+        "--companion-reasoning-effort",
+        dest="interpretation_reasoning_effort",
+        choices=("low", "medium", "high"),
+        default="high",
+    )
     parser.add_argument("--audio-format", default="bestaudio[ext=m4a]/bestaudio")
     parser.add_argument("--yt-dlp", default="yt-dlp")
     parser.add_argument("--youtube-cookies", type=Path, help="Netscape cookies.txt used only for yt-dlp access.")
@@ -220,14 +231,14 @@ def run_post_live_generation(
     )
     reading_edition_command = build_reading_edition_command(args, pipeline_outdir)
     reading_pdf_command = build_reading_pdf_command(args, pipeline_outdir, live_url, metadata=metadata, source=source)
-    companion_command = build_sermon_companion_command(
+    interpretation_command = build_sermon_interpretation_command(
         args,
         pipeline_outdir,
         metadata=metadata,
         source=source,
     )
     delivery_reading_pdf = pipeline_outdir / delivery_pdf_filename(args, metadata=metadata, source=source)
-    delivery_companion_pdf = pipeline_outdir / companion_delivery_pdf_filename(
+    delivery_interpretation_pdf = pipeline_outdir / interpretation_delivery_pdf_filename(
         args,
         metadata=metadata,
         source=source,
@@ -243,9 +254,9 @@ def run_post_live_generation(
         "mobilePdfCommand": mobile_pdf_command,
         "readingEditionCommand": reading_edition_command,
         "readingPdfCommand": reading_pdf_command,
-        "sermonCompanionCommand": companion_command,
+        "sermonInterpretationCommand": interpretation_command,
         "deliveryReadingPdf": str(delivery_reading_pdf),
-        "deliverySermonCompanionPdf": str(delivery_companion_pdf),
+        "deliverySermonInterpretationPdf": str(delivery_interpretation_pdf),
         "outputMode": args.output_mode,
         "contentScope": args.content_scope or "legacy_unspecified",
         "outputs": expected_outputs(pipeline_outdir, args.output_mode),
@@ -287,14 +298,14 @@ def run_post_live_generation(
     )
     reading_edition_command = build_reading_edition_command(args, pipeline_outdir)
     reading_pdf_command = build_reading_pdf_command(args, pipeline_outdir, live_url, metadata=metadata, source=source)
-    companion_command = build_sermon_companion_command(
+    interpretation_command = build_sermon_interpretation_command(
         args,
         pipeline_outdir,
         metadata=metadata,
         source=source,
     )
     delivery_reading_pdf = pipeline_outdir / delivery_pdf_filename(args, metadata=metadata, source=source)
-    delivery_companion_pdf = pipeline_outdir / companion_delivery_pdf_filename(
+    delivery_interpretation_pdf = pipeline_outdir / interpretation_delivery_pdf_filename(
         args,
         metadata=metadata,
         source=source,
@@ -393,16 +404,16 @@ def run_post_live_generation(
     run_command(reading_pdf_command, runner)
     stage_durations["reading_pdf"] = time.monotonic() - started
     started = time.monotonic()
-    run_command(companion_command, runner)
-    stage_durations["sermon_companion_pdf"] = time.monotonic() - started
+    run_command(interpretation_command, runner)
+    stage_durations["sermon_interpretation_pdf"] = time.monotonic() - started
     stage_durations["pdf_qa"] = (
         stage_durations["mobile_pdf"]
         + stage_durations["reading_pdf"]
-        + stage_durations["sermon_companion_pdf"]
+        + stage_durations["sermon_interpretation_pdf"]
     )
     qa_paths = [
         pipeline_outdir / "sermon_zh_en_reading.qa.json",
-        pipeline_outdir / "sermon_companion_zh.qa.json",
+        pipeline_outdir / "sermon_interpretation_zh.qa.json",
     ]
     if args.output_mode == "subtitles":
         qa_paths.insert(0, pipeline_outdir / "sermon_zh_mobile.qa.json")
@@ -420,8 +431,8 @@ def run_post_live_generation(
             delivery_reading_pdf,
         ),
         *create_delivery_pdf_copy(
-            pipeline_outdir / "sermon_companion_zh.pdf",
-            delivery_companion_pdf,
+            pipeline_outdir / "sermon_interpretation_zh.pdf",
+            delivery_interpretation_pdf,
         ),
     ]
     report["outputs"] = [*report["outputs"], *(str(path) for path in delivery_paths)]
@@ -463,11 +474,11 @@ def run_post_live_generation(
             "mobilePdfCommand": mobile_pdf_command,
             "readingEditionCommand": reading_edition_command,
             "readingPdfCommand": reading_pdf_command,
-            "sermonCompanionCommand": companion_command,
+            "sermonInterpretationCommand": interpretation_command,
             "deliveryReadingPdf": str(delivery_reading_pdf),
-            "deliverySermonCompanionPdf": str(delivery_companion_pdf),
-            "sermonCompanionInsights": str(
-                pipeline_outdir / SERMON_COMPANION_DIRNAME / "insights" / "openai-notes.json"
+            "deliverySermonInterpretationPdf": str(delivery_interpretation_pdf),
+            "sermonInterpretationInsights": str(
+                pipeline_outdir / SERMON_INTERPRETATION_DIRNAME / "insights" / "openai-notes.json"
             ),
             "readingQualityReport": str(reading_report_path),
             "pipelineInputFingerprint": pipeline_input_fingerprint,
@@ -715,7 +726,7 @@ def build_reading_pdf_command(
     ]
 
 
-def build_sermon_companion_command(
+def build_sermon_interpretation_command(
     args: argparse.Namespace,
     pipeline_outdir: Path,
     *,
@@ -723,10 +734,10 @@ def build_sermon_companion_command(
     source: dict[str, Any] | None = None,
 ) -> list[str]:
     sermon_title, speaker = reading_pdf_metadata(args, metadata=metadata, source=source)
-    companion_dir = pipeline_outdir / SERMON_COMPANION_DIRNAME
+    interpretation_dir = pipeline_outdir / SERMON_INTERPRETATION_DIRNAME
     command = [
         sys.executable,
-        str(SERMON_COMPANION_SCRIPT),
+        str(SERMON_INTERPRETATION_SCRIPT),
         "--srt-input",
         str(pipeline_outdir / READING_EDITION_DIRNAME / "sermon_zh_reading_revised.srt"),
         "--secondary-srt-input",
@@ -734,17 +745,17 @@ def build_sermon_companion_command(
         "--srt-lang",
         "zh",
         "--out-dir",
-        str(companion_dir / "insights"),
+        str(interpretation_dir / "insights"),
         "--model-output-dir",
-        str(companion_dir / "model-output"),
+        str(interpretation_dir / "model-output"),
         "--pdf-out",
-        str(pipeline_outdir / "sermon_companion_zh.pdf"),
+        str(pipeline_outdir / "sermon_interpretation_zh.pdf"),
         "--pdf-qa-out",
-        str(pipeline_outdir / "sermon_companion_zh.qa.json"),
+        str(pipeline_outdir / "sermon_interpretation_zh.qa.json"),
         "--model",
-        str(getattr(args, "companion_model", "gpt-5.6")),
+        str(getattr(args, "interpretation_model", "gpt-5.6")),
         "--reasoning-effort",
-        str(getattr(args, "companion_reasoning_effort", "high")),
+        str(getattr(args, "interpretation_reasoning_effort", "high")),
         "--sermon-title",
         sermon_title,
         "--sermon-date",
@@ -850,7 +861,7 @@ def delivery_pdf_filename(
     return "-".join(component for component in components if component) + ".pdf"
 
 
-def companion_delivery_pdf_filename(
+def interpretation_delivery_pdf_filename(
     args: argparse.Namespace,
     *,
     metadata: dict[str, Any] | None = None,
@@ -861,7 +872,7 @@ def companion_delivery_pdf_filename(
         args.sunday,
         filename_component(title),
         filename_component(speaker) if speaker else "",
-        "证道同行",
+        "证道解读",
     ]
     return "-".join(component for component in components if component) + ".pdf"
 
@@ -1145,10 +1156,10 @@ def expected_outputs(pipeline_outdir: Path, output_mode: str = "reading") -> lis
     outputs = [
         str(pipeline_outdir / "sermon_zh_en_reading.pdf"),
         str(pipeline_outdir / "sermon_zh_en_reading.qa.json"),
-        str(pipeline_outdir / "sermon_companion_zh.pdf"),
-        str(pipeline_outdir / "sermon_companion_zh.qa.json"),
-        str(pipeline_outdir / SERMON_COMPANION_DIRNAME / "insights" / "openai-notes.json"),
-        str(pipeline_outdir / SERMON_COMPANION_DIRNAME / "model-output" / "openai-notes-output.jsonl"),
+        str(pipeline_outdir / "sermon_interpretation_zh.pdf"),
+        str(pipeline_outdir / "sermon_interpretation_zh.qa.json"),
+        str(pipeline_outdir / SERMON_INTERPRETATION_DIRNAME / "insights" / "openai-notes.json"),
+        str(pipeline_outdir / SERMON_INTERPRETATION_DIRNAME / "model-output" / "openai-notes-output.jsonl"),
         str(pipeline_outdir / READING_EDITION_DIRNAME / "reading_quality_report.json"),
         str(pipeline_outdir / READING_EDITION_DIRNAME / "sermon_zh_reading_revised.srt"),
         str(pipeline_outdir / READING_EDITION_DIRNAME / "sermon_en_reading_revised.srt"),

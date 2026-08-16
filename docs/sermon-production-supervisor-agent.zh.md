@@ -241,7 +241,7 @@ Agent 只能在以下证据同时成立时返回 `complete`：
 - generation report 的 `status = completed`
 - `reading-edition-v2/reading_quality_report.json` 为 `pass`
 - `sermon_zh_en_reading.qa.json` 为 `pass`
-- `sermon_companion_zh.qa.json` 为 `pass`
+- `sermon_interpretation_zh.qa.json` 为 `pass`
 
 部分转录、PDF 文件单独存在或模型口头判断都不能代表生产完成。
 

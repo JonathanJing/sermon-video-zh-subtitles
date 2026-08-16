@@ -45,8 +45,8 @@ def make_args(**overrides):
         "reading_preferred_english_chars": 420,
         "reading_hard_seconds": 55.0,
         "reading_hard_english_chars": 840,
-        "companion_model": "gpt-5.6",
-        "companion_reasoning_effort": "high",
+        "interpretation_model": "gpt-5.6",
+        "interpretation_reasoning_effort": "high",
         "audio_format": "bestaudio[ext=m4a]/bestaudio",
         "yt_dlp": "yt-dlp",
         "youtube_cookies": None,
@@ -225,10 +225,11 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
         self.assertTrue(any("sermon_zh_reading_revised.srt" in item for item in report["readingPdfCommand"]))
         self.assertTrue(any("sermon_en_reading_revised.srt" in item for item in report["readingPdfCommand"]))
         self.assertTrue(any("sermon_zh_en_reading.pdf" in item for item in report["readingPdfCommand"]))
-        self.assertIn("generate_notes_with_openai.py", report["sermonCompanionCommand"][1])
-        self.assertTrue(any("sermon_companion_zh.pdf" in item for item in report["sermonCompanionCommand"]))
-        self.assertNotIn("--api-key-secret", report["sermonCompanionCommand"])
-        self.assertNotIn("applicationQuestionsZh", " ".join(report["sermonCompanionCommand"]))
+        self.assertIn("generate_notes_with_openai.py", report["sermonInterpretationCommand"][1])
+        self.assertTrue(
+            any("sermon_interpretation_zh.pdf" in item for item in report["sermonInterpretationCommand"])
+        )
+        self.assertNotIn("--api-key-secret", report["sermonInterpretationCommand"])
         self.assertEqual(
             report["readingPdfCommand"][report["readingPdfCommand"].index("--source-url") + 1],
             "https://www.youtube.com/watch?v=MEZHufeQBjc",
@@ -240,12 +241,12 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
         self.assertTrue(any(path.endswith("reading-edition-v2/reading_quality_report.json") for path in report["outputs"]))
         self.assertFalse(any(path.endswith("sermon_zh_mobile.pdf") for path in report["outputs"]))
         self.assertTrue(any(path.endswith("sermon_zh_en_reading.pdf") for path in report["outputs"]))
-        self.assertTrue(any(path.endswith("sermon_companion_zh.pdf") for path in report["outputs"]))
+        self.assertTrue(any(path.endswith("sermon_interpretation_zh.pdf") for path in report["outputs"]))
         self.assertTrue(str(report["deliveryReadingPdf"]).endswith(
             "2026-06-28-A-Bronze-Snake-and-God-s-Love-Steve-Bang-Lee-中英对照阅读版.pdf"
         ))
-        self.assertTrue(str(report["deliverySermonCompanionPdf"]).endswith(
-            "2026-06-28-A-Bronze-Snake-and-God-s-Love-Steve-Bang-Lee-证道同行.pdf"
+        self.assertTrue(str(report["deliverySermonInterpretationPdf"]).endswith(
+            "2026-06-28-A-Bronze-Snake-and-God-s-Love-Steve-Bang-Lee-证道解读.pdf"
         ))
         self.assertEqual(
             report["readingEditionCommand"][
@@ -338,10 +339,15 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
         self.assertTrue(any("reading-edition-v2" in item for item in report["readingEditionCommand"]))
         self.assertIsNone(report["mobilePdfCommand"])
         self.assertTrue(any("sermon_zh_en_reading.pdf" in item for item in report["readingPdfCommand"]))
-        self.assertTrue(any("sermon_companion_zh.pdf" in item for item in report["sermonCompanionCommand"]))
+        self.assertTrue(
+            any(
+                "sermon_interpretation_zh.pdf" in item
+                for item in report["sermonInterpretationCommand"]
+            )
+        )
         self.assertTrue(str(report["readingQualityReport"]).endswith("reading-edition-v2/reading_quality_report.json"))
         self.assertTrue(any(path.endswith("中英对照阅读版.pdf") for path in report["outputs"]))
-        self.assertTrue(any(path.endswith("证道同行.pdf") for path in report["outputs"]))
+        self.assertTrue(any(path.endswith("证道解读.pdf") for path in report["outputs"]))
 
     def test_subtitle_mode_keeps_whisper_as_explicit_opt_in(self):
         args = make_args(output_mode="subtitles")

@@ -291,7 +291,7 @@ def local_completion_artifacts(
     locations = snapshot.get("locations") or {}
     try:
         reading_pdf = Path(str(locations["readingPdfLocal"]))
-        companion_pdf = Path(str(locations["companionPdfLocal"]))
+        interpretation_pdf = Path(str(locations["interpretationPdfLocal"]))
         generation_report = json.loads(
             Path(str(locations["generationReportLocal"])).read_text(encoding="utf-8")
         )
@@ -301,8 +301,8 @@ def local_completion_artifacts(
         reading_qa = json.loads(
             Path(str(locations["readingQaLocal"])).read_text(encoding="utf-8")
         )
-        companion_qa = json.loads(
-            Path(str(locations["companionQaLocal"])).read_text(encoding="utf-8")
+        interpretation_qa = json.loads(
+            Path(str(locations["interpretationQaLocal"])).read_text(encoding="utf-8")
         )
         run_status = json.loads(
             Path(str(locations["runStatusLocal"])).read_text(encoding="utf-8")
@@ -312,7 +312,7 @@ def local_completion_artifacts(
     publication_valid = True
     pdf_publication_pairs = [
         (reading_pdf, locations.get("readingPdfGcs")),
-        (companion_pdf, locations.get("companionPdfGcs")),
+        (interpretation_pdf, locations.get("interpretationPdfGcs")),
     ]
     if any(gcs_uri for _, gcs_uri in pdf_publication_pairs):
         publication = (
@@ -359,8 +359,8 @@ def local_completion_artifacts(
     valid = bool(
         reading_pdf.is_file()
         and reading_pdf.stat().st_size > 0
-        and companion_pdf.is_file()
-        and companion_pdf.stat().st_size > 0
+        and interpretation_pdf.is_file()
+        and interpretation_pdf.stat().st_size > 0
         and isinstance(generation_report, dict)
         and generation_report.get("status") == "completed"
         and publication_valid
@@ -368,8 +368,8 @@ def local_completion_artifacts(
         and reading_quality.get("status") == "pass"
         and isinstance(reading_qa, dict)
         and reading_qa.get("status") == "pass"
-        and isinstance(companion_qa, dict)
-        and companion_qa.get("status") == "pass"
+        and isinstance(interpretation_qa, dict)
+        and interpretation_qa.get("status") == "pass"
         and isinstance(run_status, dict)
         and run_status.get("status") == "complete"
     )
@@ -393,34 +393,34 @@ def completed_report_from_snapshot(
     quality = snapshot.get("quality") or {}
     reading_quality = quality.get("readingEdition") or {}
     pdf_quality = quality.get("readingPdf") or {}
-    companion_pdf_quality = quality.get("sermonCompanionPdf") or {}
+    interpretation_pdf_quality = quality.get("sermonInterpretationPdf") or {}
     recommended = snapshot.get("recommendedAction") or {}
     reading_pdf_gcs = (snapshot.get("locations") or {}).get("readingPdfGcs")
-    companion_pdf_gcs = (snapshot.get("locations") or {}).get("companionPdfGcs")
+    interpretation_pdf_gcs = (snapshot.get("locations") or {}).get("interpretationPdfGcs")
     publication = generation.get("publication") or {}
     if not (
         generation.get("status") == "completed"
         and reading_quality.get("status") == "pass"
         and pdf_quality.get("status") == "pass"
-        and companion_pdf_quality.get("status") == "pass"
+        and interpretation_pdf_quality.get("status") == "pass"
         and recommended.get("action") == "complete"
-        and (not reading_pdf_gcs and not companion_pdf_gcs or publication.get("status") == "pass")
+        and (not reading_pdf_gcs and not interpretation_pdf_gcs or publication.get("status") == "pass")
     ):
         return None
     evidence = [
         "generation.status=completed",
         "quality.readingEdition.status=pass",
         "quality.readingPdf.status=pass",
-        "quality.sermonCompanionPdf.status=pass",
+        "quality.sermonInterpretationPdf.status=pass",
         "recommendedAction.action=complete",
     ]
     if reading_pdf_gcs:
         evidence.append("generation.publication.status=pass")
         evidence.append(f"locations.readingPdfGcs={reading_pdf_gcs}")
-    if companion_pdf_gcs:
+    if interpretation_pdf_gcs:
         if "generation.publication.status=pass" not in evidence:
             evidence.append("generation.publication.status=pass")
-        evidence.append(f"locations.companionPdfGcs={companion_pdf_gcs}")
+        evidence.append(f"locations.interpretationPdfGcs={interpretation_pdf_gcs}")
     return {
         "schemaVersion": 1,
         "status": "complete",
@@ -440,7 +440,7 @@ def completed_report_from_snapshot(
         "decision": {
             "status": "complete",
             "action": "already_complete",
-            "summary_zh": "本周阅读版 PDF 和证道同行 PDF 已完成且质量检查通过；本次触发已在入口结束。",
+            "summary_zh": "本周阅读版 PDF 和证道解读 PDF 已完成且质量检查通过；本次触发已在入口结束。",
             "human_action_required": False,
             "modelDecisionAccepted": False,
             "evidence": evidence,

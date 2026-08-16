@@ -9,7 +9,7 @@
   </a>
 </p>
 
-This repository's production path is supervised by a single `Sermon Production Supervisor` Agent. GCP is limited to lightweight discovery, durable GCS state, and web delivery; a local Codex automation performs download, timeline analysis, transcription, reading editing, and PDF production. Existing scripts remain the deterministic execution layer, and the agent reads durable state and advances the process safely. The workflow pauses for human sermon-boundary confirmation and ends with two reviewed core PDFs: the Chinese-English reading edition and the Chinese sermon companion:
+This repository's production path is supervised by a single `Sermon Production Supervisor` Agent. GCP is limited to lightweight discovery, durable GCS state, and web delivery; a local Codex automation performs download, timeline analysis, transcription, reading editing, and PDF production. Existing scripts remain the deterministic execution layer, and the agent reads durable state and advances the process safely. The workflow pauses for human sermon-boundary confirmation and ends with two reviewed core PDFs: the Chinese-English reading edition and the Chinese sermon interpretation:
 
 1. Cloud Scheduler polls public Mariners / YouTube sources during configured service windows
 2. the canonical YouTube watch URL is saved into resumable shared state
@@ -18,10 +18,10 @@ This repository's production path is supervised by a single `Sermon Production S
 5. an operator independently confirms absolute start and end offsets in the full media
 6. `gpt-transcribe` builds the English reference using a prompt, keywords, and `languages=["en"]`
 7. the pipeline creates the Chinese draft and performs two reading-edition passes
-8. it renders the bilingual reading PDF and a sermon companion containing only sermon summary, outline, explicit Scripture references, and traceable Chinese-translated excerpts
+8. it renders the bilingual reading PDF and a traceable sermon interpretation with the central message, outline, Scripture context, theological insights, illustrations, pastoral distinctions, reflection questions, a small-group guide, and a labeled response prayer
 9. the run becomes complete only after reading-text QA and both PDF QA reports pass
 
-The two production deliverables are `sermon_zh_en_reading.pdf` and `sermon_companion_zh.pdf`. The companion intentionally excludes discussion questions, reflection prompts, prayers, and application tasks. Default `reading` mode does not depend on `whisper-1`; synchronized SRT/VTT output requires an explicit switch to subtitle mode.
+The two production deliverables are `sermon_zh_en_reading.pdf` and `sermon_interpretation_zh.pdf`. Every interpretation item cites transcript slices; AI-assisted reflection, group-guide, and prayer sections are visibly distinguished from speaker quotations. Default `reading` mode does not depend on `whisper-1`; synchronized SRT/VTT output requires an explicit switch to subtitle mode.
 
 Agent architecture, shadow/execute modes, durable human approval, and Scheduler integration:
 
@@ -75,7 +75,7 @@ flowchart TD
     O --> P["gpt-5.6-sol: two reading-edition passes"]
     P --> Q{reading_quality_report pass?}
     Q -- No --> R[Block for operator review]
-    Q -- Yes --> S[Render reading PDF and sermon companion PDF]
+    Q -- Yes --> S[Render reading PDF and sermon interpretation PDF]
     S --> T{Both PDF QA reports pass?}
     T -- No --> R
     T -- Yes --> U[Mark completed and optionally upload to GCS]
@@ -163,8 +163,8 @@ This step reuses downloaded audio and completed core artifacts, then:
 5. uses `gpt-5.6-sol` with `high` reasoning for two reading-edition passes
 6. checks `reading-edition-v2/reading_quality_report.json`
 7. renders `sermon_zh_en_reading.pdf`
-8. generates `sermon_companion_zh.pdf` from sermon-only summary, outline, explicit Scripture references, and traceable Chinese-translated excerpts
-9. checks both PDFs and blocks any companion payload that contains discussion/application fields
+8. generates `sermon_interpretation_zh.pdf` with source-backed interpretation and clearly labeled AI-assisted reflection sections
+9. checks both PDFs and blocks interpretation content with missing transcript-slice evidence
 10. updates `run-status.json` and optionally uploads artifacts to GCS only after all gates pass
 
 Before running, the shell must already contain `OPENAI_API_KEY`, or the command must receive a Secret Manager resource name through `--api-key-secret`. Never put a raw key in a command, log, or repository file.
@@ -193,8 +193,8 @@ Do not call the run complete because the Scheduler found a URL, audio was downlo
 - `reading-edition-v2/reading_quality_report.json` reports pass
 - `sermon_zh_en_reading.pdf` generated
 - `sermon_zh_en_reading.qa.json` reports pass
-- `sermon_companion_zh.pdf` generated
-- `sermon_companion_zh.qa.json` reports pass
+- `sermon_interpretation_zh.pdf` generated
+- `sermon_interpretation_zh.qa.json` reports pass
 - `summary.json`, the run report, and `run-status.json` written
 - final run status is `completed`
 
@@ -217,9 +217,9 @@ The primary operator outputs for this workflow are:
 - `segments_timed_zh.json`
 - `sermon_zh_en_reading.pdf`
 - `sermon_zh_en_reading.qa.json`
-- `sermon_companion_zh.pdf`
-- `sermon_companion_zh.qa.json`
-- `sermon-companion/insights/openai-notes.json`
+- `sermon_interpretation_zh.pdf`
+- `sermon_interpretation_zh.qa.json`
+- `sermon-interpretation/insights/openai-notes.json`
 - `reading-edition-v2/reading_quality_report.json`
 - `summary.json`
 - `run-status.json`

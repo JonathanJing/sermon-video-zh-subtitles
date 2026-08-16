@@ -314,7 +314,7 @@ class SermonProductionSupervisorTest(unittest.TestCase):
             run_status={"status": "complete"},
             reading_qa={"status": "pass"},
             reading_quality={"status": "pass"},
-            companion_qa={"status": "pass"},
+            interpretation_qa={"status": "pass"},
             publication_required=True,
         )
 
@@ -670,12 +670,12 @@ class SermonProductionSupervisorTest(unittest.TestCase):
             write_json(Path(locations["generationReportLocal"]), {"status": "completed"})
             write_json(Path(locations["readingQaLocal"]), {"status": "pass"})
             write_json(Path(locations["readingQualityLocal"]), {"status": "pass"})
-            write_json(Path(locations["companionQaLocal"]), {"status": "pass"})
+            write_json(Path(locations["interpretationQaLocal"]), {"status": "pass"})
             completed = mod.production_snapshot(config)
 
         self.assertEqual(completed["recommendedAction"]["action"], "complete")
 
-    def test_completed_generation_blocks_when_companion_qa_is_missing(self):
+    def test_completed_generation_blocks_when_interpretation_qa_is_missing(self):
         result = mod.recommend_action(
             sunday="2026-08-02",
             live_url="https://www.youtube.com/watch?v=agentTest123",
@@ -687,7 +687,7 @@ class SermonProductionSupervisorTest(unittest.TestCase):
             run_status={"status": "complete"},
             reading_qa={"status": "pass"},
             reading_quality={"status": "pass"},
-            companion_qa=None,
+            interpretation_qa=None,
         )
 
         self.assertEqual(result["action"], "inspect_quality_evidence")
@@ -722,7 +722,7 @@ class SermonProductionSupervisorTest(unittest.TestCase):
             write_json(Path(locations["generationReportLocal"]), {"status": "completed"})
             write_json(Path(locations["readingQaLocal"]), {"status": "pass"})
             write_json(Path(locations["readingQualityLocal"]), {"status": "pass"})
-            write_json(Path(locations["companionQaLocal"]), {"status": "pass"})
+            write_json(Path(locations["interpretationQaLocal"]), {"status": "pass"})
             write_json(
                 timeline_path,
                 {

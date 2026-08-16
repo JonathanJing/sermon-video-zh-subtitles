@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate traceable sermon-companion content and an optional companion PDF."""
+"""Generate traceable sermon-interpretation content and an optional PDF."""
 
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ if str(REPO_ROOT) not in sys.path:
 from backend.cloud import access_secret as cloud_access_secret
 from backend.cloud import upload_file_to_gcs
 from scripts import review_prompts
-from scripts.render_sermon_companion_pdf import render_companion_pdf
+from scripts.render_sermon_interpretation_pdf import render_interpretation_pdf
 
 JS_PREFIX = "window.SERMON_PLAYBACK_SIMULATION = "
 SECRET_RESOURCE_RE = re.compile(
@@ -76,11 +76,11 @@ def main() -> int:
     if args.pdf_out:
         companion_pdf = args.pdf_out
         companion_qa = args.pdf_qa_out or companion_pdf.with_suffix(".qa.json")
-        qa = render_companion_pdf(insights, companion_pdf, font_path=args.font_path)
+        qa = render_interpretation_pdf(insights, companion_pdf, font_path=args.font_path)
         companion_qa.parent.mkdir(parents=True, exist_ok=True)
         companion_qa.write_text(json.dumps(qa, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
         if qa.get("status") != "pass":
-            raise SystemExit(f"Sermon companion PDF QA did not pass; inspect {companion_qa}")
+            raise SystemExit(f"Sermon interpretation PDF QA did not pass; inspect {companion_qa}")
 
     uploads: list[dict[str, str]] = []
     if args.gcs_bucket:
@@ -90,8 +90,8 @@ def main() -> int:
                 ("model-output/openai-notes-output.jsonl", model_output_path),
                 *(
                     [
-                        ("artifacts/sermon_companion_zh.pdf", companion_pdf),
-                        ("artifacts/sermon_companion_zh.qa.json", companion_qa),
+                        ("artifacts/sermon_interpretation_zh.pdf", companion_pdf),
+                        ("artifacts/sermon_interpretation_zh.qa.json", companion_qa),
                     ]
                     if companion_pdf and companion_qa
                     else []
@@ -121,8 +121,8 @@ def main() -> int:
         "promptVersion": review_prompts.NOTES_PROMPT_VERSION,
         "sliceCount": len(slices),
         "out": str(insights_path),
-        "companionPdf": str(companion_pdf) if companion_pdf else None,
-        "companionQa": str(companion_qa) if companion_qa else None,
+        "interpretationPdf": str(companion_pdf) if companion_pdf else None,
+        "interpretationQa": str(companion_qa) if companion_qa else None,
         "modelOutputJsonl": str(model_output_path),
         "apiKeyMaterialIncluded": False,
         "secretResourceNamesIncluded": False,
@@ -176,16 +176,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--gcs-bucket", help="Optional GCS bucket for generated insight artifacts.")
     parser.add_argument("--gcs-prefix", default="poc/openai-notes", help="GCS object prefix for generated artifacts.")
     parser.add_argument("--gcs-dry-run", action="store_true")
-    parser.add_argument("--pdf-out", type=Path, help="Optional sermon companion PDF output path.")
-    parser.add_argument("--pdf-qa-out", type=Path, help="Optional companion PDF QA JSON output path.")
-    parser.add_argument("--font-path", type=Path, help="Optional CJK font for the companion PDF.")
+    parser.add_argument("--pdf-out", type=Path, help="Optional sermon interpretation PDF output path.")
+    parser.add_argument("--pdf-qa-out", type=Path, help="Optional interpretation PDF QA JSON output path.")
+    parser.add_argument("--font-path", type=Path, help="Optional CJK font for the interpretation PDF.")
     parser.add_argument("--sermon-title", help="Operator-confirmed sermon title.")
     parser.add_argument("--speaker", help="Operator-confirmed speaker name.")
     parser.add_argument("--sermon-date", help="Sunday slice date, YYYY-MM-DD.")
     parser.add_argument(
         "--source-label",
         default="本材料基于所选直播或归档版本整理；其他场次的具体措辞可能不同。",
-        help="Visible source-scope statement printed in the companion PDF.",
+        help="Visible source-scope statement printed in the interpretation PDF.",
     )
     args = parser.parse_args()
     args.input = resolve_repo_path(args.input)
@@ -268,7 +268,7 @@ def read_srt_simulation(path: Path, *, lang: str) -> dict[str, Any]:
     segments = segments_from_srt(text, lang=lang)
     return {
         "schemaVersion": 2,
-        "artifactType": "sermon_companion",
+        "artifactType": "sermon_interpretation",
         "sermonTitle": path.stem,
         "translationStatus": "ready" if lang == "zh" else "source",
         "sourceCaptionFormat": "srt",
@@ -529,12 +529,29 @@ def build_openai_request(
                         "type": "input_text",
                         "text": (
                             "Return strict JSON with this shape: "
-                            "{\"summaryZh\":\"...\",\"outlineZh\":[{\"title\":\"...\",\"points\":[\"...\"]}],"
+                            "{\"centralMessageZh\":\"...\",\"centralMessageSourceSliceIndexes\":[1],"
+                            "\"summaryZh\":\"...\",\"summarySourceSliceIndexes\":[1,2],"
+                            "\"outlineZh\":[{\"title\":\"...\",\"points\":[\"...\"],\"sourceSliceIndexes\":[1]}],"
                             "\"scriptureRefs\":[\"...\"],"
+                            "\"scriptureContextZh\":[{\"reference\":\"...\",\"explanation\":\"...\","
+                            "\"sourceSliceIndexes\":[1]}],"
+                            "\"theologicalInsightsZh\":[{\"title\":\"...\",\"explanation\":\"...\","
+                            "\"sourceSliceIndexes\":[1]}],"
+                            "\"illustrationsZh\":[{\"title\":\"...\",\"function\":\"...\","
+                            "\"sourceSliceIndexes\":[1]}],"
+                            "\"pastoralDistinctionsZh\":[{\"title\":\"...\",\"explanation\":\"...\","
+                            "\"sourceSliceIndexes\":[1]}],"
+                            "\"reflectionQuestionsZh\":[{\"question\":\"...\",\"sourceSliceIndexes\":[1]}],"
+                            "\"smallGroupGuideZh\":[{\"section\":\"...\",\"guidance\":\"...\","
+                            "\"sourceSliceIndexes\":[1]}],"
+                            "\"responsePrayerZh\":\"...\",\"responsePrayerSourceSliceIndexes\":[1],"
                             "\"quotes\":[{\"textZh\":\"...\",\"sourceSliceIndex\":1,\"sourceSegmentId\":\"...\","
                             "\"sourceTextZh\":\"...\",\"sourceTextEn\":\"...\",\"startMs\":0,\"endMs\":0}]}.\n"
-                            "Generate a concise sermon summary and 3-6 outline sections using only sermon content. "
-                            "Do not generate discussion questions, reflection questions, devotional prompts, prayers, or application tasks. "
+                            "Generate one central message, a concise summary, 3-8 outline sections, explicit Scripture context, "
+                            "3-8 theological insights, sermon-illustration analysis when present, 2-6 pastoral distinctions, "
+                            "5-8 reflection questions, a 3-6 item small-group guide, and a concise response prayer. "
+                            "Every non-quote item must cite valid sourceSliceIndexes and remain directly grounded in those slices. "
+                            "Reflection questions, group guidance, and prayer are AI-assisted responses, not speaker quotations. "
                             "Generate up to 6 exact quote excerpts copied contiguously from one cited segmentEvidence.textZh; "
                             "fewer or zero is correct when exact citation is unavailable.\n"
                             "Required fields must be present. Use empty arrays, not invented filler, when evidence is absent.\n"
@@ -612,11 +629,80 @@ def normalize_insights(
     reasoning_effort: str,
     api_key_secret: str,
 ) -> dict[str, Any]:
+    valid_slice_indexes = {
+        int(item.get("index") or 0)
+        for item in slices
+        if int(item.get("index") or 0) > 0
+    }
     quotes = normalize_quotes(data.get("quotes"), slices)
+    central_message = compact_text(
+        data.get("centralMessageZh")
+        or data.get("central_message_zh")
+        or data.get("centralMessage")
+        or ""
+    )
+    central_message_sources = normalize_source_indexes(
+        data.get("centralMessageSourceSliceIndexes"),
+        valid_slice_indexes,
+    )
+    summary = compact_text(data.get("summaryZh") or data.get("summary_zh") or data.get("summary") or "")
+    summary_sources = normalize_source_indexes(
+        data.get("summarySourceSliceIndexes"),
+        valid_slice_indexes,
+    )
+    outline = normalize_outline(
+        data.get("outlineZh") or data.get("outline_zh") or data.get("outline"),
+        valid_slice_indexes=valid_slice_indexes,
+    )
+    scripture_context = normalize_scripture_context(
+        data.get("scriptureContextZh"),
+        valid_slice_indexes,
+    )
+    theological_insights = normalize_explanation_items(
+        data.get("theologicalInsightsZh"),
+        valid_slice_indexes,
+    )
+    illustrations = normalize_illustrations(
+        data.get("illustrationsZh"),
+        valid_slice_indexes,
+    )
+    pastoral_distinctions = normalize_explanation_items(
+        data.get("pastoralDistinctionsZh"),
+        valid_slice_indexes,
+    )
+    reflection_questions = normalize_reflection_questions(
+        data.get("reflectionQuestionsZh"),
+        valid_slice_indexes,
+    )
+    small_group_guide = normalize_small_group_guide(
+        data.get("smallGroupGuideZh"),
+        valid_slice_indexes,
+    )
+    response_prayer = compact_text(data.get("responsePrayerZh") or "")
+    response_prayer_sources = normalize_source_indexes(
+        data.get("responsePrayerSourceSliceIndexes"),
+        valid_slice_indexes,
+    )
+    missing_sources = missing_interpretation_source_paths(
+        central_message=central_message,
+        central_message_sources=central_message_sources,
+        summary=summary,
+        summary_sources=summary_sources,
+        outline=outline,
+        scripture_context=scripture_context,
+        theological_insights=theological_insights,
+        illustrations=illustrations,
+        pastoral_distinctions=pastoral_distinctions,
+        reflection_questions=reflection_questions,
+        small_group_guide=small_group_guide,
+        response_prayer=response_prayer,
+        response_prayer_sources=response_prayer_sources,
+    )
     return {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "status": "ready",
         "generatedFrom": "openai-notes",
+        "artifactType": "sermon_interpretation",
         "provider": "openai",
         "model": model,
         "reasoningEffort": reasoning_effort,
@@ -632,11 +718,24 @@ def normalize_insights(
         "sourceSegmentCount": len(simulation.get("segments") or []),
         "sliceCount": len(slices),
         "slices": summarize_slices(slices),
-        "summaryZh": compact_text(data.get("summaryZh") or data.get("summary_zh") or data.get("summary") or ""),
-        "outlineZh": normalize_outline(data.get("outlineZh") or data.get("outline_zh") or data.get("outline")),
+        "centralMessageZh": central_message,
+        "centralMessageSourceSliceIndexes": central_message_sources,
+        "summaryZh": summary,
+        "summarySourceSliceIndexes": summary_sources,
+        "outlineZh": outline,
         "scriptureRefs": normalize_string_list(data.get("scriptureRefs") or data.get("scripture_refs")),
+        "scriptureContextZh": scripture_context,
+        "theologicalInsightsZh": theological_insights,
+        "illustrationsZh": illustrations,
+        "pastoralDistinctionsZh": pastoral_distinctions,
+        "reflectionQuestionsZh": reflection_questions,
+        "smallGroupGuideZh": small_group_guide,
+        "responsePrayerZh": response_prayer,
+        "responsePrayerSourceSliceIndexes": response_prayer_sources,
         "quotes": quotes,
         "traceability": {
+            "allInterpretationItemsHaveSource": not missing_sources,
+            "missingSourcePaths": missing_sources,
             "allQuotesHaveSource": all(bool(item.get("sourceSegmentId")) for item in quotes),
             "allQuotesAreExactExcerpts": all(bool(item.get("exactSourceMatch")) for item in quotes),
             "quoteCount": len(quotes),
@@ -659,7 +758,11 @@ def summarize_slices(slices: list[dict[str, Any]]) -> list[dict[str, Any]]:
     ]
 
 
-def normalize_outline(value: Any) -> list[dict[str, Any]]:
+def normalize_outline(
+    value: Any,
+    *,
+    valid_slice_indexes: set[int] | None = None,
+) -> list[dict[str, Any]]:
     if not isinstance(value, list):
         return []
     outline = []
@@ -667,12 +770,208 @@ def normalize_outline(value: Any) -> list[dict[str, Any]]:
         if isinstance(item, dict):
             title = compact_text(item.get("title") or item.get("heading") or "")
             points = normalize_string_list(item.get("points") or item.get("children"))
+            source_indexes = normalize_source_indexes(
+                item.get("sourceSliceIndexes"),
+                valid_slice_indexes,
+            )
         else:
             title = compact_text(item)
             points = []
+            source_indexes = []
         if title or points:
-            outline.append({"title": title, "points": points})
+            outline.append(
+                {
+                    "title": title,
+                    "points": points,
+                    "sourceSliceIndexes": source_indexes,
+                }
+            )
     return outline
+
+
+def normalize_source_indexes(
+    value: Any,
+    valid_slice_indexes: set[int] | None,
+) -> list[int]:
+    if not isinstance(value, list):
+        return []
+    result: list[int] = []
+    for item in value:
+        try:
+            index = int(item)
+        except (TypeError, ValueError):
+            continue
+        if index <= 0:
+            continue
+        if valid_slice_indexes is not None and index not in valid_slice_indexes:
+            continue
+        if index not in result:
+            result.append(index)
+    return result
+
+
+def normalize_scripture_context(
+    value: Any,
+    valid_slice_indexes: set[int],
+) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        return []
+    result: list[dict[str, Any]] = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        reference = compact_text(item.get("reference") or item.get("ref") or "")
+        explanation = compact_text(item.get("explanation") or item.get("context") or "")
+        if reference or explanation:
+            result.append(
+                {
+                    "reference": reference,
+                    "explanation": explanation,
+                    "sourceSliceIndexes": normalize_source_indexes(
+                        item.get("sourceSliceIndexes"),
+                        valid_slice_indexes,
+                    ),
+                }
+            )
+    return result
+
+
+def normalize_explanation_items(
+    value: Any,
+    valid_slice_indexes: set[int],
+) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        return []
+    result: list[dict[str, Any]] = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        title = compact_text(item.get("title") or item.get("heading") or "")
+        explanation = compact_text(item.get("explanation") or item.get("body") or "")
+        if title or explanation:
+            result.append(
+                {
+                    "title": title,
+                    "explanation": explanation,
+                    "sourceSliceIndexes": normalize_source_indexes(
+                        item.get("sourceSliceIndexes"),
+                        valid_slice_indexes,
+                    ),
+                }
+            )
+    return result
+
+
+def normalize_illustrations(
+    value: Any,
+    valid_slice_indexes: set[int],
+) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        return []
+    result: list[dict[str, Any]] = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        title = compact_text(item.get("title") or item.get("illustration") or "")
+        function = compact_text(item.get("function") or item.get("explanation") or "")
+        if title or function:
+            result.append(
+                {
+                    "title": title,
+                    "function": function,
+                    "sourceSliceIndexes": normalize_source_indexes(
+                        item.get("sourceSliceIndexes"),
+                        valid_slice_indexes,
+                    ),
+                }
+            )
+    return result
+
+
+def normalize_reflection_questions(
+    value: Any,
+    valid_slice_indexes: set[int],
+) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        return []
+    result: list[dict[str, Any]] = []
+    for item in value:
+        if isinstance(item, dict):
+            question = compact_text(item.get("question") or item.get("text") or "")
+            sources = normalize_source_indexes(
+                item.get("sourceSliceIndexes"),
+                valid_slice_indexes,
+            )
+        else:
+            question = compact_text(item)
+            sources = []
+        if question:
+            result.append({"question": question, "sourceSliceIndexes": sources})
+    return result
+
+
+def normalize_small_group_guide(
+    value: Any,
+    valid_slice_indexes: set[int],
+) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        return []
+    result: list[dict[str, Any]] = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        section = compact_text(item.get("section") or item.get("title") or "")
+        guidance = compact_text(item.get("guidance") or item.get("body") or "")
+        if section or guidance:
+            result.append(
+                {
+                    "section": section,
+                    "guidance": guidance,
+                    "sourceSliceIndexes": normalize_source_indexes(
+                        item.get("sourceSliceIndexes"),
+                        valid_slice_indexes,
+                    ),
+                }
+            )
+    return result
+
+
+def missing_interpretation_source_paths(
+    *,
+    central_message: str,
+    central_message_sources: list[int],
+    summary: str,
+    summary_sources: list[int],
+    outline: list[dict[str, Any]],
+    scripture_context: list[dict[str, Any]],
+    theological_insights: list[dict[str, Any]],
+    illustrations: list[dict[str, Any]],
+    pastoral_distinctions: list[dict[str, Any]],
+    reflection_questions: list[dict[str, Any]],
+    small_group_guide: list[dict[str, Any]],
+    response_prayer: str,
+    response_prayer_sources: list[int],
+) -> list[str]:
+    missing: list[str] = []
+    if central_message and not central_message_sources:
+        missing.append("centralMessageSourceSliceIndexes")
+    if summary and not summary_sources:
+        missing.append("summarySourceSliceIndexes")
+    for field, items in (
+        ("outlineZh", outline),
+        ("scriptureContextZh", scripture_context),
+        ("theologicalInsightsZh", theological_insights),
+        ("illustrationsZh", illustrations),
+        ("pastoralDistinctionsZh", pastoral_distinctions),
+        ("reflectionQuestionsZh", reflection_questions),
+        ("smallGroupGuideZh", small_group_guide),
+    ):
+        for index, item in enumerate(items):
+            if not item.get("sourceSliceIndexes"):
+                missing.append(f"{field}[{index}].sourceSliceIndexes")
+    if response_prayer and not response_prayer_sources:
+        missing.append("responsePrayerSourceSliceIndexes")
+    return missing
 
 
 def normalize_string_list(value: Any) -> list[str]:

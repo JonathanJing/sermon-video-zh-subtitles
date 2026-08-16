@@ -91,16 +91,63 @@ Jesus is our mediator.
         self.assertIn("human church review", payload["input"][0]["content"][0]["text"])
         self.assertIn("empty arrays", payload["input"][1]["content"][0]["text"])
         rendered = json.dumps(payload, ensure_ascii=False)
-        self.assertNotIn("applicationQuestionsZh", rendered)
-        self.assertIn("Do not generate discussion questions", rendered)
+        self.assertIn("reflectionQuestionsZh", rendered)
+        self.assertIn("smallGroupGuideZh", rendered)
+        self.assertIn("responsePrayerZh", rendered)
+        self.assertIn("sourceSliceIndexes", rendered)
 
     def test_normalizes_insights_without_secret_material(self):
         insights = mod.normalize_insights(
             {
+                "centralMessageZh": "基督担当我们的罪，使相信的人得赦免。",
+                "centralMessageSourceSliceIndexes": [1],
                 "summaryZh": "证道强调基督的怜悯。",
-                "outlineZh": [{"title": "中保", "points": ["亚伦代求", "基督成全"]}],
+                "summarySourceSliceIndexes": [1],
+                "outlineZh": [
+                    {
+                        "title": "中保",
+                        "points": ["亚伦代求", "基督成全"],
+                        "sourceSliceIndexes": [1],
+                    }
+                ],
                 "scriptureRefs": ["民数记 16"],
-                "applicationQuestionsZh": ["我如何回应神的怜悯？"],
+                "scriptureContextZh": [
+                    {
+                        "reference": "民数记 16",
+                        "explanation": "中保站在死亡与生命之间。",
+                        "sourceSliceIndexes": [1],
+                    }
+                ],
+                "theologicalInsightsZh": [
+                    {
+                        "title": "基督是中保",
+                        "explanation": "基督成全人无法完成的救赎。",
+                        "sourceSliceIndexes": [1],
+                    }
+                ],
+                "illustrationsZh": [],
+                "pastoralDistinctionsZh": [
+                    {
+                        "title": "赦免与责任",
+                        "explanation": "领受恩典不等于否认责任。",
+                        "sourceSliceIndexes": [1],
+                    }
+                ],
+                "reflectionQuestionsZh": [
+                    {
+                        "question": "我是否仍在靠自己的表现换取接纳？",
+                        "sourceSliceIndexes": [1],
+                    }
+                ],
+                "smallGroupGuideZh": [
+                    {
+                        "section": "读经",
+                        "guidance": "阅读本段经文并观察中保的角色。",
+                        "sourceSliceIndexes": [1],
+                    }
+                ],
+                "responsePrayerZh": "神啊，求你帮助我信靠基督已经完成的工作。",
+                "responsePrayerSourceSliceIndexes": [1],
                 "quotes": [
                     {
                         "textZh": "我们需要一位站在死亡和生命之间的中保。",
@@ -140,13 +187,68 @@ Jesus is our mediator.
         self.assertEqual(insights["reasoningEffort"], "medium")
         self.assertTrue(insights["traceability"]["allQuotesHaveSource"])
         self.assertTrue(insights["traceability"]["allQuotesAreExactExcerpts"])
+        self.assertTrue(insights["traceability"]["allInterpretationItemsHaveSource"])
+        self.assertEqual([], insights["traceability"]["missingSourcePaths"])
         self.assertEqual(insights["quotes"][0]["sourceSegmentId"], "seg_1")
         self.assertEqual(insights["quotes"][0]["sourceTextEn"], "We need a mediator who stands between death and life.")
-        self.assertNotIn("applicationQuestionsZh", insights)
+        self.assertEqual(
+            "我是否仍在靠自己的表现换取接纳？",
+            insights["reflectionQuestionsZh"][0]["question"],
+        )
+        self.assertEqual([1], insights["responsePrayerSourceSliceIndexes"])
         self.assertNotIn("apiKeySecret", rendered)
         self.assertNotIn("projects/p/secrets", rendered)
         self.assertFalse(insights["apiKeyMaterialIncluded"])
         self.assertFalse(insights["secretResourceNamesIncluded"])
+
+    def test_normalization_flags_interpretation_items_without_valid_sources(self):
+        insights = mod.normalize_insights(
+            {
+                "centralMessageZh": "核心信息。",
+                "centralMessageSourceSliceIndexes": [999],
+                "summaryZh": "摘要。",
+                "summarySourceSliceIndexes": [1],
+                "outlineZh": [
+                    {
+                        "title": "要点",
+                        "points": ["内容"],
+                        "sourceSliceIndexes": [],
+                    }
+                ],
+                "responsePrayerZh": "回应祷告。",
+                "responsePrayerSourceSliceIndexes": [],
+            },
+            slices=[
+                {
+                    "index": 1,
+                    "startMs": 0,
+                    "endMs": 10_000,
+                    "text": "证道内容。",
+                    "charCount": 5,
+                    "segmentIds": ["seg_1"],
+                    "segmentEvidence": [],
+                    "refs": [],
+                }
+            ],
+            simulation={"segments": [{"id": "seg_1"}]},
+            model="gpt-5.6",
+            reasoning_effort="high",
+            api_key_secret="",
+        )
+
+        self.assertFalse(insights["traceability"]["allInterpretationItemsHaveSource"])
+        self.assertIn(
+            "centralMessageSourceSliceIndexes",
+            insights["traceability"]["missingSourcePaths"],
+        )
+        self.assertIn(
+            "outlineZh[0].sourceSliceIndexes",
+            insights["traceability"]["missingSourcePaths"],
+        )
+        self.assertIn(
+            "responsePrayerSourceSliceIndexes",
+            insights["traceability"]["missingSourcePaths"],
+        )
 
     def test_drops_paraphrased_or_misattributed_quote(self):
         slices = [
