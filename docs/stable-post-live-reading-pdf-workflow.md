@@ -104,7 +104,7 @@ Under the selected run directory, the operator should expect at least these outp
 - `sermon_zh_en_reading.qa.json`
 - `sermon_interpretation_zh.pdf`
 - `sermon_interpretation_zh.qa.json`
-- `sermon-companion/insights/openai-notes.json`
+- `sermon-interpretation/insights/openai-notes.json`
 - `reading-edition-v2/reading_quality_report.json`
 - `summary.json`
 - `run-status.json`

@@ -282,6 +282,32 @@ Jesus is our mediator.
 
         self.assertEqual(quotes, [])
 
+    def test_drops_quote_with_malformed_source_slice_index(self):
+        quotes = mod.normalize_quotes(
+            [
+                {
+                    "textZh": "神爱世人。",
+                    "sourceSliceIndex": "slice-one",
+                    "sourceSegmentId": "seg_1",
+                }
+            ],
+            [
+                {
+                    "index": 1,
+                    "segmentEvidence": [
+                        {
+                            "id": "seg_1",
+                            "startMs": 0,
+                            "endMs": 10_000,
+                            "textZh": "神爱世人。",
+                        }
+                    ],
+                }
+            ],
+        )
+
+        self.assertEqual(quotes, [])
+
     def test_merges_aligned_bilingual_srt_segments(self):
         primary = [{"id": "srt-0001", "startMs": 1000, "endMs": 3000, "zh": "神爱世人。"}]
         secondary = [{"id": "srt-0001", "startMs": 1000, "endMs": 3000, "en": "God loved the world."}]

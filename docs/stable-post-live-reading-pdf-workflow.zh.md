@@ -104,7 +104,7 @@ python3 scripts/run_post_live_subtitle_generation.py \
 - `sermon_zh_en_reading.qa.json`
 - `sermon_interpretation_zh.pdf`
 - `sermon_interpretation_zh.qa.json`
-- `sermon-companion/insights/openai-notes.json`
+- `sermon-interpretation/insights/openai-notes.json`
 - `reading-edition-v2/reading_quality_report.json`
 - `summary.json`
 - `run-status.json`

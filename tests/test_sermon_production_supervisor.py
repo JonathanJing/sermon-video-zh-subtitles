@@ -273,6 +273,10 @@ class SermonProductionSupervisorTest(unittest.TestCase):
             locations = mod.artifact_locations(config, "agentTest123")
             write_json(Path(locations["runStatusLocal"]), {"status": "blocked"})
             write_json(Path(locations["readingQualityLocal"]), {"status": "fail"})
+            write_json(
+                Path(locations["interpretationQaLocal"]),
+                {"status": "needs_review", "failures": ["missing_summary"]},
+            )
             writes = []
 
             mod.publish_generation_evidence(
@@ -284,6 +288,10 @@ class SermonProductionSupervisorTest(unittest.TestCase):
         self.assertEqual(writes[-1][0], locations["generationReportGcs"])
         self.assertEqual(writes[-1][1]["status"], "failed")
         self.assertEqual(writes[0][0], locations["runStatusGcs"])
+        self.assertIn(
+            locations["interpretationQaGcs"],
+            [uri for uri, _payload in writes[:-1]],
+        )
 
     def test_failed_generation_is_a_human_inspection_gate(self):
         result = mod.recommend_action(
@@ -327,6 +335,8 @@ class SermonProductionSupervisorTest(unittest.TestCase):
             locations = {
                 "runStatusLocal": str(root / "run-status.json"),
                 "readingQualityLocal": str(root / "reading-quality.json"),
+                "readingQaLocal": str(root / "reading-qa.json"),
+                "interpretationQaLocal": str(root / "interpretation-qa.json"),
             }
             write_json(
                 Path(locations["runStatusLocal"]),
@@ -345,6 +355,13 @@ class SermonProductionSupervisorTest(unittest.TestCase):
                     "failures": ["unexpected_english_tokens"],
                 },
             )
+            write_json(
+                Path(locations["interpretationQaLocal"]),
+                {
+                    "status": "needs_review",
+                    "failures": ["interpretation_traceability_incomplete"],
+                },
+            )
 
             report = mod.build_generation_failure_report(
                 subprocess.CompletedProcess(["generation"], 1, stdout="", stderr=""),
@@ -354,7 +371,10 @@ class SermonProductionSupervisorTest(unittest.TestCase):
         self.assertEqual(2, report["schemaVersion"])
         self.assertEqual("reviewed", report["failure"]["stage"])
         self.assertEqual(
-            ["unexpected_english_tokens"],
+            [
+                "unexpected_english_tokens",
+                "interpretation_traceability_incomplete",
+            ],
             report["failure"]["qualityFailures"],
         )
         self.assertTrue(report["failure"]["resumeEligible"])

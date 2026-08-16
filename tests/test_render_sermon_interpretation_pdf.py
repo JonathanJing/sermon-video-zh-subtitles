@@ -17,7 +17,19 @@ SPEC.loader.exec_module(mod)
 class RenderSermonInterpretationPdfTest(unittest.TestCase):
     def complete_insights(self):
         slices = [
-            {"index": 1, "startMs": 0, "endMs": 300_000},
+            {
+                "index": 1,
+                "startMs": 0,
+                "endMs": 300_000,
+                "segmentEvidence": [
+                    {
+                        "id": "srt-0007",
+                        "startMs": 133_000,
+                        "endMs": 140_000,
+                        "textZh": "环境改变时，我们最容易感到焦虑。",
+                    }
+                ],
+            },
             {"index": 2, "startMs": 300_000, "endMs": 600_000},
             {"index": 3, "startMs": 600_000, "endMs": 900_000},
         ]
@@ -99,6 +111,7 @@ class RenderSermonInterpretationPdfTest(unittest.TestCase):
             "quotes": [
                 {
                     "textZh": "环境改变时，我们最容易感到焦虑。",
+                    "sourceSliceIndex": 1,
                     "sourceSegmentId": "srt-0007",
                     "sourceTextZh": "环境改变时，我们最容易感到焦虑。",
                     "sourceTextEn": "We are most anxious when our context changes.",
@@ -147,6 +160,38 @@ class RenderSermonInterpretationPdfTest(unittest.TestCase):
             "reflectionQuestionsZh[0].sourceSliceIndexes",
             qa["missingSourcePaths"],
         )
+
+    def test_qa_recomputes_traceability_instead_of_trusting_declared_flags(self):
+        insights = self.complete_insights()
+        insights["reflectionQuestionsZh"][0]["sourceSliceIndexes"] = [999]
+        insights["traceability"] = {
+            "allInterpretationItemsHaveSource": True,
+            "missingSourcePaths": [],
+            "allQuotesHaveSource": True,
+            "allQuotesAreExactExcerpts": True,
+        }
+        with tempfile.TemporaryDirectory() as tempdir:
+            qa = mod.render_interpretation_pdf(insights, Path(tempdir) / "interpretation.pdf")
+
+        self.assertEqual(qa["status"], "needs_review")
+        self.assertFalse(qa["interpretationTraceabilityComplete"])
+        self.assertIn("interpretation_traceability_incomplete", qa["failures"])
+        self.assertIn(
+            "reflectionQuestionsZh[0].sourceSliceIndexes",
+            qa["missingSourcePaths"],
+        )
+
+    def test_qa_rejects_quote_without_exact_valid_source(self):
+        insights = self.complete_insights()
+        insights["quotes"][0]["sourceSliceIndex"] = 999
+        insights["traceability"]["allQuotesHaveSource"] = True
+        insights["traceability"]["allQuotesAreExactExcerpts"] = True
+        with tempfile.TemporaryDirectory() as tempdir:
+            qa = mod.render_interpretation_pdf(insights, Path(tempdir) / "interpretation.pdf")
+
+        self.assertEqual(qa["status"], "needs_review")
+        self.assertFalse(qa["quoteTraceabilityComplete"])
+        self.assertIn("quote_traceability_incomplete", qa["failures"])
 
     def test_cli_writes_pdf_and_qa(self):
         insights = self.complete_insights()

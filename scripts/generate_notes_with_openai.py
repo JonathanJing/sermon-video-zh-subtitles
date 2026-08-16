@@ -989,7 +989,11 @@ def normalize_quotes(value: Any, slices: list[dict[str, Any]]) -> list[dict[str,
         if not isinstance(item, dict):
             continue
         text = compact_text(item.get("textZh") or item.get("text_zh") or item.get("quote") or item.get("text"))
-        source_slice_index = int(item.get("sourceSliceIndex") or item.get("source_slice_index") or 0)
+        source_slice_index = positive_int(
+            item.get("sourceSliceIndex") or item.get("source_slice_index")
+        )
+        if source_slice_index is None:
+            continue
         source_slice = by_index.get(source_slice_index)
         source_segment_id = compact_text(item.get("sourceSegmentId") or item.get("source_segment_id"))
         evidence_by_id = {
@@ -1005,7 +1009,7 @@ def normalize_quotes(value: Any, slices: list[dict[str, Any]]) -> list[dict[str,
         quotes.append(
             {
                 "textZh": text,
-                "sourceSliceIndex": source_slice_index or None,
+                "sourceSliceIndex": source_slice_index,
                 "sourceSegmentId": source_segment_id,
                 "sourceTextZh": source_text_zh,
                 "sourceTextEn": compact_text((evidence or {}).get("textEn")),
@@ -1015,6 +1019,14 @@ def normalize_quotes(value: Any, slices: list[dict[str, Any]]) -> list[dict[str,
             }
         )
     return quotes
+
+
+def positive_int(value: Any) -> int | None:
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return None
+    return parsed if parsed > 0 else None
 
 
 def strip_quote_wrappers(value: str) -> str:

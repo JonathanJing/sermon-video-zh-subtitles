@@ -878,6 +878,7 @@ def publish_generation_evidence(
         ("runStatusLocal", "runStatusGcs"),
         ("readingQualityLocal", "readingQualityGcs"),
         ("readingQaLocal", "readingQaGcs"),
+        ("interpretationQaLocal", "interpretationQaGcs"),
     ):
         local = locations.get(local_key)
         gcs = locations.get(gcs_key)
@@ -900,6 +901,8 @@ def build_generation_failure_report(
 ) -> dict[str, Any]:
     run_status = read_optional_json(locations.get("runStatusLocal"))
     reading_quality = read_optional_json(locations.get("readingQualityLocal"))
+    reading_qa = read_optional_json(locations.get("readingQaLocal"))
+    interpretation_qa = read_optional_json(locations.get("interpretationQaLocal"))
     blocker = (run_status or {}).get("blocker")
     stage = (
         str(blocker.get("stage") or "")
@@ -916,11 +919,14 @@ def build_generation_failure_report(
         if completed.returncode
         else "generation subprocess completed without writing its report"
     )
-    quality_failures = (
-        list(reading_quality.get("failures") or [])
-        if isinstance(reading_quality, dict)
-        else []
-    )
+    quality_failures: list[str] = []
+    for report in (reading_quality, reading_qa, interpretation_qa):
+        if not isinstance(report, dict):
+            continue
+        for failure in report.get("failures") or []:
+            label = str(failure or "").strip()
+            if label and label not in quality_failures:
+                quality_failures.append(label)
     return {
         "schemaVersion": 2,
         "status": "failed",

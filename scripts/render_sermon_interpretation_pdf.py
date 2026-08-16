@@ -387,7 +387,33 @@ def render_interpretation_pdf(
     ]
     failures: list[str] = []
     traceability = insights.get("traceability") if isinstance(insights.get("traceability"), dict) else {}
-    missing_source_paths = clean_string_list(traceability.get("missingSourcePaths"))
+    declared_missing_source_paths = clean_string_list(traceability.get("missingSourcePaths"))
+    derived_missing_source_paths = find_missing_or_invalid_source_paths(
+        central_message=central_message,
+        central_message_sources=central_message_sources,
+        summary=summary,
+        summary_sources=summary_sources,
+        outline=outline,
+        scripture_context=scripture_context,
+        theological_insights=theological_insights,
+        illustrations=illustrations,
+        pastoral_distinctions=pastoral_distinctions,
+        reflection_questions=reflection_questions,
+        small_group_guide=small_group_guide,
+        response_prayer=response_prayer,
+        response_prayer_sources=response_prayer_sources,
+        valid_slice_indexes=set(slices_by_index),
+    )
+    missing_source_paths = list(
+        dict.fromkeys([*declared_missing_source_paths, *derived_missing_source_paths])
+    )
+    interpretation_traceability_complete = bool(
+        traceability.get("allInterpretationItemsHaveSource")
+    ) and not missing_source_paths
+    quote_traceability_complete = all(
+        quote_has_exact_source(quote, slices_by_index=slices_by_index)
+        for quote in quotes
+    )
     page_count = int(getattr(doc, "page", 0) or 0)
     blank_pages = [
         page
@@ -414,7 +440,7 @@ def render_interpretation_pdf(
         failures.append("insufficient_small_group_guide")
     if not response_prayer:
         failures.append("missing_response_prayer")
-    if missing_source_paths or not traceability.get("allInterpretationItemsHaveSource"):
+    if not interpretation_traceability_complete:
         failures.append("interpretation_traceability_incomplete")
     if not out.exists() or out.stat().st_size < 500:
         failures.append("pdf_missing_or_too_small")
@@ -424,7 +450,7 @@ def render_interpretation_pdf(
         failures.append("sparse_continuation_page")
     if page_count > 20:
         failures.append("page_count_exceeds_limit")
-    if quotes and not all(quote.get("sourceSegmentId") and quote.get("sourceTextZh") for quote in quotes):
+    if quotes and not quote_traceability_complete:
         failures.append("quote_traceability_incomplete")
     missing_glyph_markers = [
         marker
@@ -458,8 +484,8 @@ def render_interpretation_pdf(
         "responsePrayerPresent": bool(response_prayer),
         "quoteCount": len(quotes),
         "aiAssistedSectionsLabeled": True,
-        "interpretationTraceabilityComplete": not missing_source_paths
-        and bool(traceability.get("allInterpretationItemsHaveSource")),
+        "interpretationTraceabilityComplete": interpretation_traceability_complete,
+        "quoteTraceabilityComplete": quote_traceability_complete,
         "missingSourcePaths": missing_source_paths,
         "missingGlyphMarkers": missing_glyph_markers,
         "failures": failures,
@@ -687,6 +713,49 @@ def normalize_source_indexes(value: Any) -> list[int]:
     return result
 
 
+def find_missing_or_invalid_source_paths(
+    *,
+    central_message: str,
+    central_message_sources: list[int],
+    summary: str,
+    summary_sources: list[int],
+    outline: list[dict[str, Any]],
+    scripture_context: list[dict[str, Any]],
+    theological_insights: list[dict[str, Any]],
+    illustrations: list[dict[str, Any]],
+    pastoral_distinctions: list[dict[str, Any]],
+    reflection_questions: list[dict[str, Any]],
+    small_group_guide: list[dict[str, Any]],
+    response_prayer: str,
+    response_prayer_sources: list[int],
+    valid_slice_indexes: set[int],
+) -> list[str]:
+    missing: list[str] = []
+
+    def source_is_invalid(indexes: list[int]) -> bool:
+        return not indexes or any(index not in valid_slice_indexes for index in indexes)
+
+    if central_message and source_is_invalid(central_message_sources):
+        missing.append("centralMessageSourceSliceIndexes")
+    if summary and source_is_invalid(summary_sources):
+        missing.append("summarySourceSliceIndexes")
+    for field, items in (
+        ("outlineZh", outline),
+        ("scriptureContextZh", scripture_context),
+        ("theologicalInsightsZh", theological_insights),
+        ("illustrationsZh", illustrations),
+        ("pastoralDistinctionsZh", pastoral_distinctions),
+        ("reflectionQuestionsZh", reflection_questions),
+        ("smallGroupGuideZh", small_group_guide),
+    ):
+        for index, item in enumerate(items):
+            if source_is_invalid(item.get("sourceSliceIndexes") or []):
+                missing.append(f"{field}[{index}].sourceSliceIndexes")
+    if response_prayer and source_is_invalid(response_prayer_sources):
+        missing.append("responsePrayerSourceSliceIndexes")
+    return missing
+
+
 def normalize_sourced_items(
     value: Any,
     *,
@@ -778,6 +847,35 @@ def normalize_quotes(value: Any) -> list[dict[str, Any]]:
     if not isinstance(value, list):
         return []
     return [item for item in value if isinstance(item, dict) and clean_text(item.get("textZh"))]
+
+
+def quote_has_exact_source(
+    quote: dict[str, Any],
+    *,
+    slices_by_index: dict[int, dict[str, Any]],
+) -> bool:
+    text = clean_text(quote.get("textZh"))
+    source_segment_id = clean_text(quote.get("sourceSegmentId"))
+    try:
+        source_slice_index = int(quote.get("sourceSliceIndex") or 0)
+    except (TypeError, ValueError):
+        return False
+    source_slice = slices_by_index.get(source_slice_index)
+    evidence_by_id = {
+        clean_text(item.get("id")): item
+        for item in (source_slice or {}).get("segmentEvidence") or []
+        if isinstance(item, dict)
+    }
+    evidence = evidence_by_id.get(source_segment_id)
+    evidence_text = clean_text((evidence or {}).get("textZh"))
+    return bool(
+        text
+        and evidence_text
+        and text in evidence_text
+        and clean_text(quote.get("sourceTextZh")) == evidence_text
+        and source_segment_id
+        and quote.get("exactSourceMatch") is True
+    )
 
 
 def quote_evidence_label(quote: dict[str, Any]) -> str:
