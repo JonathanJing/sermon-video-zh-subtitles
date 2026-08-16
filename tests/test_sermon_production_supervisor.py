@@ -273,6 +273,10 @@ class SermonProductionSupervisorTest(unittest.TestCase):
             locations = mod.artifact_locations(config, "agentTest123")
             write_json(Path(locations["runStatusLocal"]), {"status": "blocked"})
             write_json(Path(locations["readingQualityLocal"]), {"status": "fail"})
+            write_json(
+                Path(locations["interpretationQaLocal"]),
+                {"status": "needs_review", "failures": ["missing_summary"]},
+            )
             writes = []
 
             mod.publish_generation_evidence(
@@ -284,6 +288,10 @@ class SermonProductionSupervisorTest(unittest.TestCase):
         self.assertEqual(writes[-1][0], locations["generationReportGcs"])
         self.assertEqual(writes[-1][1]["status"], "failed")
         self.assertEqual(writes[0][0], locations["runStatusGcs"])
+        self.assertIn(
+            locations["interpretationQaGcs"],
+            [uri for uri, _payload in writes[:-1]],
+        )
 
     def test_failed_generation_is_a_human_inspection_gate(self):
         result = mod.recommend_action(
@@ -314,6 +322,7 @@ class SermonProductionSupervisorTest(unittest.TestCase):
             run_status={"status": "complete"},
             reading_qa={"status": "pass"},
             reading_quality={"status": "pass"},
+            interpretation_qa={"status": "pass"},
             publication_required=True,
         )
 
@@ -326,6 +335,8 @@ class SermonProductionSupervisorTest(unittest.TestCase):
             locations = {
                 "runStatusLocal": str(root / "run-status.json"),
                 "readingQualityLocal": str(root / "reading-quality.json"),
+                "readingQaLocal": str(root / "reading-qa.json"),
+                "interpretationQaLocal": str(root / "interpretation-qa.json"),
             }
             write_json(
                 Path(locations["runStatusLocal"]),
@@ -344,6 +355,13 @@ class SermonProductionSupervisorTest(unittest.TestCase):
                     "failures": ["unexpected_english_tokens"],
                 },
             )
+            write_json(
+                Path(locations["interpretationQaLocal"]),
+                {
+                    "status": "needs_review",
+                    "failures": ["interpretation_traceability_incomplete"],
+                },
+            )
 
             report = mod.build_generation_failure_report(
                 subprocess.CompletedProcess(["generation"], 1, stdout="", stderr=""),
@@ -353,7 +371,10 @@ class SermonProductionSupervisorTest(unittest.TestCase):
         self.assertEqual(2, report["schemaVersion"])
         self.assertEqual("reviewed", report["failure"]["stage"])
         self.assertEqual(
-            ["unexpected_english_tokens"],
+            [
+                "unexpected_english_tokens",
+                "interpretation_traceability_incomplete",
+            ],
             report["failure"]["qualityFailures"],
         )
         self.assertTrue(report["failure"]["resumeEligible"])
@@ -641,7 +662,7 @@ class SermonProductionSupervisorTest(unittest.TestCase):
         self.assertEqual(snapshot["recommendedAction"]["action"], "request_window_approval")
         self.assertIn("current timeline report", snapshot["windowApproval"]["reason"])
 
-    def test_completed_generation_requires_both_quality_reports(self):
+    def test_completed_generation_requires_all_quality_reports(self):
         with tempfile.TemporaryDirectory() as tempdir:
             root = Path(tempdir)
             state = root / "state.json"
@@ -669,9 +690,28 @@ class SermonProductionSupervisorTest(unittest.TestCase):
             write_json(Path(locations["generationReportLocal"]), {"status": "completed"})
             write_json(Path(locations["readingQaLocal"]), {"status": "pass"})
             write_json(Path(locations["readingQualityLocal"]), {"status": "pass"})
+            write_json(Path(locations["interpretationQaLocal"]), {"status": "pass"})
             completed = mod.production_snapshot(config)
 
         self.assertEqual(completed["recommendedAction"]["action"], "complete")
+
+    def test_completed_generation_blocks_when_interpretation_qa_is_missing(self):
+        result = mod.recommend_action(
+            sunday="2026-08-02",
+            live_url="https://www.youtube.com/watch?v=agentTest123",
+            state={"lastSunday": "2026-08-02"},
+            timeline_report={"status": "requires_operator_review"},
+            approval_valid=True,
+            approval_reason=None,
+            generation_report={"status": "completed"},
+            run_status={"status": "complete"},
+            reading_qa={"status": "pass"},
+            reading_quality={"status": "pass"},
+            interpretation_qa=None,
+        )
+
+        self.assertEqual(result["action"], "inspect_quality_evidence")
+        self.assertTrue(result["humanActionRequired"])
 
     def test_completed_generation_does_not_bypass_invalidated_window_approval(self):
         with tempfile.TemporaryDirectory() as tempdir:
@@ -702,6 +742,7 @@ class SermonProductionSupervisorTest(unittest.TestCase):
             write_json(Path(locations["generationReportLocal"]), {"status": "completed"})
             write_json(Path(locations["readingQaLocal"]), {"status": "pass"})
             write_json(Path(locations["readingQualityLocal"]), {"status": "pass"})
+            write_json(Path(locations["interpretationQaLocal"]), {"status": "pass"})
             write_json(
                 timeline_path,
                 {

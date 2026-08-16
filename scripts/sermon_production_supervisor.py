@@ -132,6 +132,14 @@ def production_snapshot(config: SupervisorConfig) -> dict[str, Any]:
             locations.get("readingQualityGcs"),
         ),
     )
+    interpretation_qa = read_artifact_json(
+        "sermonInterpretationPdfQa",
+        access_issues,
+        *artifact_read_locations(
+            locations.get("interpretationQaLocal"),
+            locations.get("interpretationQaGcs"),
+        ),
+    )
     timeline_lease = read_artifact_json(
         "timelineLease",
         access_issues,
@@ -166,6 +174,7 @@ def production_snapshot(config: SupervisorConfig) -> dict[str, Any]:
         run_status=run_status,
         reading_qa=reading_qa,
         reading_quality=reading_quality,
+        interpretation_qa=interpretation_qa,
         access_issues=access_issues,
         timeline_lease=timeline_lease,
         generation_lease=generation_lease,
@@ -186,6 +195,7 @@ def production_snapshot(config: SupervisorConfig) -> dict[str, Any]:
         "quality": {
             "readingEdition": public_quality_report(reading_quality),
             "readingPdf": public_quality_report(reading_qa),
+            "sermonInterpretationPdf": public_quality_report(interpretation_qa),
         },
         "activeLeases": {
             "timeline": public_lease(timeline_lease),
@@ -212,6 +222,7 @@ def recommend_action(
     run_status: dict[str, Any] | None,
     reading_qa: dict[str, Any] | None,
     reading_quality: dict[str, Any] | None,
+    interpretation_qa: dict[str, Any] | None = None,
     access_issues: list[dict[str, str]] | None = None,
     timeline_lease: dict[str, Any] | None = None,
     generation_lease: dict[str, Any] | None = None,
@@ -239,7 +250,8 @@ def recommend_action(
     if generation_status == "completed":
         reading_qa_pass = str((reading_qa or {}).get("status") or "") == "pass"
         reading_quality_pass = str((reading_quality or {}).get("status") or "") == "pass"
-        if reading_qa_pass and reading_quality_pass:
+        interpretation_qa_pass = str((interpretation_qa or {}).get("status") or "") == "pass"
+        if reading_qa_pass and reading_quality_pass and interpretation_qa_pass:
             if not approval_valid:
                 return action(
                     "request_window_approval",
@@ -259,7 +271,7 @@ def recommend_action(
                 )
             return action(
                 "complete",
-                "Reading PDF generation completed and both quality reports passed.",
+                "Reading and sermon-interpretation PDFs completed and all required quality reports passed.",
                 human=False,
             )
         return action(
@@ -711,6 +723,10 @@ def artifact_locations(config: SupervisorConfig, slug: str) -> dict[str, str]:
         "readingQualityGcs": gcs("pipeline/reading-edition-v2/reading_quality_report.json"),
         "readingPdfLocal": str(pipeline / "sermon_zh_en_reading.pdf"),
         "readingPdfGcs": gcs("pipeline/sermon_zh_en_reading.pdf"),
+        "interpretationQaLocal": str(pipeline / "sermon_interpretation_zh.qa.json"),
+        "interpretationQaGcs": gcs("pipeline/sermon_interpretation_zh.qa.json"),
+        "interpretationPdfLocal": str(pipeline / "sermon_interpretation_zh.pdf"),
+        "interpretationPdfGcs": gcs("pipeline/sermon_interpretation_zh.pdf"),
     }
 
 
@@ -862,6 +878,7 @@ def publish_generation_evidence(
         ("runStatusLocal", "runStatusGcs"),
         ("readingQualityLocal", "readingQualityGcs"),
         ("readingQaLocal", "readingQaGcs"),
+        ("interpretationQaLocal", "interpretationQaGcs"),
     ):
         local = locations.get(local_key)
         gcs = locations.get(gcs_key)
@@ -884,6 +901,8 @@ def build_generation_failure_report(
 ) -> dict[str, Any]:
     run_status = read_optional_json(locations.get("runStatusLocal"))
     reading_quality = read_optional_json(locations.get("readingQualityLocal"))
+    reading_qa = read_optional_json(locations.get("readingQaLocal"))
+    interpretation_qa = read_optional_json(locations.get("interpretationQaLocal"))
     blocker = (run_status or {}).get("blocker")
     stage = (
         str(blocker.get("stage") or "")
@@ -900,11 +919,14 @@ def build_generation_failure_report(
         if completed.returncode
         else "generation subprocess completed without writing its report"
     )
-    quality_failures = (
-        list(reading_quality.get("failures") or [])
-        if isinstance(reading_quality, dict)
-        else []
-    )
+    quality_failures: list[str] = []
+    for report in (reading_quality, reading_qa, interpretation_qa):
+        if not isinstance(report, dict):
+            continue
+        for failure in report.get("failures") or []:
+            label = str(failure or "").strip()
+            if label and label not in quality_failures:
+                quality_failures.append(label)
     return {
         "schemaVersion": 2,
         "status": "failed",
@@ -1168,6 +1190,17 @@ def public_quality_report(report: dict[str, Any] | None) -> dict[str, Any] | Non
         "status": report.get("status"),
         "qualityRuleVersion": report.get("qualityRuleVersion"),
         "pageCount": report.get("pageCount"),
+        "failures": report.get("failures"),
+        "allPagesChecked": report.get("allPagesChecked"),
+        "blankPages": report.get("blankPages"),
+        "sparsePages": report.get("sparsePages"),
+        "interpretationTraceabilityComplete": report.get(
+            "interpretationTraceabilityComplete"
+        ),
+        "missingSourcePaths": report.get("missingSourcePaths"),
+        "reflectionQuestionCount": report.get("reflectionQuestionCount"),
+        "smallGroupGuideCount": report.get("smallGroupGuideCount"),
+        "responsePrayerPresent": report.get("responsePrayerPresent"),
         "issues": report.get("issues"),
         "checks": report.get("checks"),
     }

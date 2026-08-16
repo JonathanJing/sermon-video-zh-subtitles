@@ -291,6 +291,7 @@ def local_completion_artifacts(
     locations = snapshot.get("locations") or {}
     try:
         reading_pdf = Path(str(locations["readingPdfLocal"]))
+        interpretation_pdf = Path(str(locations["interpretationPdfLocal"]))
         generation_report = json.loads(
             Path(str(locations["generationReportLocal"])).read_text(encoding="utf-8")
         )
@@ -300,14 +301,20 @@ def local_completion_artifacts(
         reading_qa = json.loads(
             Path(str(locations["readingQaLocal"])).read_text(encoding="utf-8")
         )
+        interpretation_qa = json.loads(
+            Path(str(locations["interpretationQaLocal"])).read_text(encoding="utf-8")
+        )
         run_status = json.loads(
             Path(str(locations["runStatusLocal"])).read_text(encoding="utf-8")
         )
     except (KeyError, FileNotFoundError, json.JSONDecodeError, OSError):
         return None
     publication_valid = True
-    reading_pdf_gcs = locations.get("readingPdfGcs")
-    if reading_pdf_gcs:
+    pdf_publication_pairs = [
+        (reading_pdf, locations.get("readingPdfGcs")),
+        (interpretation_pdf, locations.get("interpretationPdfGcs")),
+    ]
+    if any(gcs_uri for _, gcs_uri in pdf_publication_pairs):
         publication = (
             generation_report.get("publication")
             if isinstance(generation_report, dict)
@@ -318,38 +325,42 @@ def local_completion_artifacts(
         publication_artifacts = (
             publication.get("artifacts")
         )
-        published_pdf = next(
-            (
-                artifact
-                for artifact in publication_artifacts or []
-                if isinstance(artifact, dict)
-                and artifact.get("gcsUri") == reading_pdf_gcs
-            ),
-            None,
-        )
-        local_pdf_sha256 = (
-            hashlib.sha256(reading_pdf.read_bytes()).hexdigest()
-            if reading_pdf.is_file()
-            else None
-        )
-        try:
-            current_gcs_bytes = gcs_reader(str(reading_pdf_gcs))
-        except Exception:
-            return None
-        current_gcs_sha256 = hashlib.sha256(current_gcs_bytes).hexdigest()
-        publication_valid = bool(
-            publication.get("status") == "pass"
-            and published_pdf
-            and published_pdf.get("localSha256") == local_pdf_sha256
-            and published_pdf.get("gcsSha256") == current_gcs_sha256
-            and current_gcs_sha256 == local_pdf_sha256
-            and published_pdf.get("localSize") == reading_pdf.stat().st_size
-            and published_pdf.get("gcsSize") == len(current_gcs_bytes)
-            and len(current_gcs_bytes) == reading_pdf.stat().st_size
-        )
+        for local_pdf, pdf_gcs_uri in pdf_publication_pairs:
+            if not pdf_gcs_uri:
+                continue
+            published_pdf = next(
+                (
+                    artifact
+                    for artifact in publication_artifacts or []
+                    if isinstance(artifact, dict) and artifact.get("gcsUri") == pdf_gcs_uri
+                ),
+                None,
+            )
+            local_pdf_sha256 = (
+                hashlib.sha256(local_pdf.read_bytes()).hexdigest()
+                if local_pdf.is_file()
+                else None
+            )
+            try:
+                current_gcs_bytes = gcs_reader(str(pdf_gcs_uri))
+            except Exception:
+                return None
+            current_gcs_sha256 = hashlib.sha256(current_gcs_bytes).hexdigest()
+            publication_valid = publication_valid and bool(
+                publication.get("status") == "pass"
+                and published_pdf
+                and published_pdf.get("localSha256") == local_pdf_sha256
+                and published_pdf.get("gcsSha256") == current_gcs_sha256
+                and current_gcs_sha256 == local_pdf_sha256
+                and published_pdf.get("localSize") == local_pdf.stat().st_size
+                and published_pdf.get("gcsSize") == len(current_gcs_bytes)
+                and len(current_gcs_bytes) == local_pdf.stat().st_size
+            )
     valid = bool(
         reading_pdf.is_file()
         and reading_pdf.stat().st_size > 0
+        and interpretation_pdf.is_file()
+        and interpretation_pdf.stat().st_size > 0
         and isinstance(generation_report, dict)
         and generation_report.get("status") == "completed"
         and publication_valid
@@ -357,6 +368,8 @@ def local_completion_artifacts(
         and reading_quality.get("status") == "pass"
         and isinstance(reading_qa, dict)
         and reading_qa.get("status") == "pass"
+        and isinstance(interpretation_qa, dict)
+        and interpretation_qa.get("status") == "pass"
         and isinstance(run_status, dict)
         and run_status.get("status") == "complete"
     )
@@ -380,26 +393,34 @@ def completed_report_from_snapshot(
     quality = snapshot.get("quality") or {}
     reading_quality = quality.get("readingEdition") or {}
     pdf_quality = quality.get("readingPdf") or {}
+    interpretation_pdf_quality = quality.get("sermonInterpretationPdf") or {}
     recommended = snapshot.get("recommendedAction") or {}
     reading_pdf_gcs = (snapshot.get("locations") or {}).get("readingPdfGcs")
+    interpretation_pdf_gcs = (snapshot.get("locations") or {}).get("interpretationPdfGcs")
     publication = generation.get("publication") or {}
     if not (
         generation.get("status") == "completed"
         and reading_quality.get("status") == "pass"
         and pdf_quality.get("status") == "pass"
+        and interpretation_pdf_quality.get("status") == "pass"
         and recommended.get("action") == "complete"
-        and (not reading_pdf_gcs or publication.get("status") == "pass")
+        and (not reading_pdf_gcs and not interpretation_pdf_gcs or publication.get("status") == "pass")
     ):
         return None
     evidence = [
         "generation.status=completed",
         "quality.readingEdition.status=pass",
         "quality.readingPdf.status=pass",
+        "quality.sermonInterpretationPdf.status=pass",
         "recommendedAction.action=complete",
     ]
     if reading_pdf_gcs:
         evidence.append("generation.publication.status=pass")
         evidence.append(f"locations.readingPdfGcs={reading_pdf_gcs}")
+    if interpretation_pdf_gcs:
+        if "generation.publication.status=pass" not in evidence:
+            evidence.append("generation.publication.status=pass")
+        evidence.append(f"locations.interpretationPdfGcs={interpretation_pdf_gcs}")
     return {
         "schemaVersion": 1,
         "status": "complete",
@@ -419,7 +440,7 @@ def completed_report_from_snapshot(
         "decision": {
             "status": "complete",
             "action": "already_complete",
-            "summary_zh": "本周阅读版 PDF 已完成且两项质量检查通过；本次触发已在入口结束。",
+            "summary_zh": "本周阅读版 PDF 和证道解读 PDF 已完成且质量检查通过；本次触发已在入口结束。",
             "human_action_required": False,
             "modelDecisionAccepted": False,
             "evidence": evidence,

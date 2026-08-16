@@ -135,6 +135,7 @@ The agent may return `complete` only when:
 - the generation report is `completed`
 - `reading-edition-v2/reading_quality_report.json` is `pass`
 - `sermon_zh_en_reading.qa.json` is `pass`
+- `sermon_interpretation_zh.qa.json` is `pass`
 
 Partial ASR, a standalone PDF file, or model judgment is not completion.
 

@@ -1,4 +1,4 @@
-# 稳定的 post-live 阅读版 PDF 工作流
+# 稳定的 post-live 双 PDF 工作流
 
 这份文档描述当前这个 repo 最主要、最稳定、最应该先写清楚的工作流。
 
@@ -8,7 +8,7 @@
 2. 等公开视频归档进入 post-live / 可下载状态
 3. 人工确认证道开始和结束时间
 4. 用 `gpt-transcribe` 生成英文参考转录
-5. 生成并校验中英对照阅读版 PDF
+5. 生成并校验中英对照阅读版 PDF 和中文证道解读 PDF
 
 这也是根 README 现在应该优先介绍的默认 operator 路径。
 
@@ -19,7 +19,7 @@
 - 从人工提供的 YouTube 链接提取可用证道源
 - 把这个源持久化保存，避免后续运行再次手工提供链接
 - 基于人工确认的证道时间窗生成中英阅读稿
-- 产出阅读版 PDF，作为当前最重要的交付物
+- 产出阅读版 PDF 和证道解读 PDF，作为两个统一的核心交付物
 
 这条工作流不等同于前端 admin prototype，也不等同于 Cloud Run backend orchestration。后两条路径现在已经 working，但当前仍属于次要路径，不是 repo 首页的主要叙事。
 
@@ -34,9 +34,9 @@ flowchart TD
     E --> F[裁剪证道时间窗]
     F --> G["gpt-transcribe: prompt + keywords + languages=en"]
     G --> H[生成并校对中文阅读稿]
-    H --> I[用内部阅读段落渲染 PDF]
-    I --> J{PDF QA 是否通过}
-    J -- 通过 --> K[交付 sermon_zh_en_reading.pdf 和报告]
+    H --> I[渲染阅读版 PDF 和证道解读 PDF]
+    I --> J{两个 PDF QA 是否都通过}
+    J -- 通过 --> K[交付两个核心 PDF 和报告]
     J -- 不通过 --> L[人工复核并重跑]
 ```
 
@@ -47,7 +47,7 @@ flowchart TD
 1. operator 保存或确认正确的视频源链接
 2. operator 在正式全量运行前，确认证道开始和结束时间
 
-只有阅读版 PDF 和 QA 都通过，才算这次运行真正完成。
+只有两个核心 PDF 和各自 QA 都通过，才算这次运行真正完成。
 
 ## 推荐命令
 
@@ -102,11 +102,14 @@ python3 scripts/run_post_live_subtitle_generation.py \
 - `segments_timed_zh.json`
 - `sermon_zh_en_reading.pdf`
 - `sermon_zh_en_reading.qa.json`
+- `sermon_interpretation_zh.pdf`
+- `sermon_interpretation_zh.qa.json`
+- `sermon-interpretation/insights/openai-notes.json`
 - `reading-edition-v2/reading_quality_report.json`
 - `summary.json`
 - `run-status.json`
 
-其中阅读版 PDF 是这条稳定工作流当前最主要的交付物。
+阅读版 PDF 和证道解读 PDF 是这条稳定工作流统一的两个核心交付物。解读 PDF 包含核心信息、证道脉络、经文背景、神学重点、例证、牧养辨析、反思题、小组指南和回应祷告。每一项必须回指转录切片；AI 辅助的反思与祷告会明确区别于讲员原话。
 
 默认 `reading` 模式不调用 `whisper-1`。内部段落时间只服务于阅读版组织，不得作为同步字幕时间轴发布。需要 SRT/VTT 时必须显式使用 `--output-mode subtitles`，此时才启用 `whisper-1`。
 
@@ -118,6 +121,8 @@ python3 scripts/run_post_live_subtitle_generation.py \
 - 证道时间窗已人工确认
 - `sermon_zh_en_reading.pdf` 已生成
 - `sermon_zh_en_reading.qa.json` 报告为 pass
+- `sermon_interpretation_zh.pdf` 已生成
+- `sermon_interpretation_zh.qa.json` 报告为 pass
 - run report 和 run status 已写出
 
 只有部分 ASR 结果，不能算成功。
@@ -130,6 +135,8 @@ python3 scripts/run_post_live_subtitle_generation.py \
 - [../scripts/run_post_live_subtitle_generation.py](../scripts/run_post_live_subtitle_generation.py)
 - [../scripts/sermon_pipeline.py](../scripts/sermon_pipeline.py)
 - [../scripts/render_mobile_pdf_from_srt.py](../scripts/render_mobile_pdf_from_srt.py)
+- [../scripts/generate_notes_with_openai.py](../scripts/generate_notes_with_openai.py)
+- [../scripts/render_sermon_interpretation_pdf.py](../scripts/render_sermon_interpretation_pdf.py)
 
 ## 已 working 但非主流程的路径
 

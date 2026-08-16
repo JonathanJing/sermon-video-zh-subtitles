@@ -9,7 +9,7 @@
   </a>
 </p>
 
-这个仓库当前的生产主流程，是一条由 `Sermon Production Supervisor` Agent 监管的 post-live 流程。GCP 只负责轻量找源、GCS 持久状态和网页发布；Codex 本地定时任务负责下载、时间轴、转写、阅读编辑和 PDF 生产。Agent 读取持久状态并安全推进；在人工确认证道边界后，流程生成中英阅读版 PDF：
+这个仓库当前的生产主流程，是一条由 `Sermon Production Supervisor` Agent 监管的 post-live 流程。GCP 只负责轻量找源、GCS 持久状态和网页发布；Codex 本地定时任务负责下载、时间轴、转写、阅读编辑和 PDF 生产。Agent 读取持久状态并安全推进；在人工确认证道边界后，流程统一生成两个核心 PDF：中英阅读版 PDF 和中文证道解读 PDF：
 
 1. 定时器在配置的直播窗口内轮询公开的 Mariners / YouTube 来源
 2. 找到 canonical YouTube watch URL 后，保存到可恢复的 shared state
@@ -18,10 +18,10 @@
 5. operator 独立观看录像，确认完整媒体中的绝对开始和结束时间
 6. `gpt-transcribe` 使用 prompt、keywords 和 `languages=["en"]` 生成英文参考稿
 7. 生成中文初稿，再完成两遍阅读版编辑
-8. 渲染中英阅读版 PDF
-9. 阅读稿 QA 和 PDF QA 都通过后，才把运行标记为完成
+8. 渲染中英阅读版 PDF，并生成包含核心信息、证道脉络、经文背景、神学重点、例证、牧养辨析、反思题、小组指南和回应祷告的可追溯证道解读 PDF
+9. 阅读稿 QA 和两个 PDF 的 QA 都通过后，才把运行标记为完成
 
-当前生产交付物以阅读版 PDF 为主。默认 `reading` 模式不依赖 `whisper-1`；只有需要同步 SRT/VTT 时，才显式切换到字幕模式。
+当前生产核心交付物统一为 `sermon_zh_en_reading.pdf` 和 `sermon_interpretation_zh.pdf`。解读中的每一项都必须回指转录切片；反思、小组指南和祷告会明确标注为 AI 辅助整理，不会冒充讲员原话。默认 `reading` 模式不依赖 `whisper-1`；只有需要同步 SRT/VTT 时，才显式切换到字幕模式。
 
 Agent 架构、shadow/execute 模式、人工审批文件和 Scheduler 接入见：
 
@@ -75,8 +75,8 @@ flowchart TD
     O --> P["gpt-5.6-sol: 两遍阅读版编辑"]
     P --> Q{reading_quality_report 是否 pass?}
     Q -- 否 --> R[阻断并人工复核]
-    Q -- 是 --> S[渲染 sermon_zh_en_reading.pdf]
-    S --> T{PDF QA 是否 pass?}
+    Q -- 是 --> S[渲染阅读版 PDF 和证道解读 PDF]
+    S --> T{两个 PDF QA 是否都 pass?}
     T -- 否 --> R
     T -- 是 --> U[标记 completed，并可上传 GCS]
 ```
@@ -137,7 +137,7 @@ payload.mode = timeline-probe
 
 云端下载授权失败时，状态进入 `waiting_for_download_access`。完成本地授权下载和 GCS handoff 后，云任务可以从已有阶段继续，不需要重新找源或重做时间轴。
 
-### 3. 生成阅读稿和最终 PDF
+### 3. 生成两个核心 PDF
 
 operator 确认边界后，再触发 `mode=generate-reviewed`，或在本地运行同一条稳定的 reviewed generation：
 
@@ -163,8 +163,9 @@ python3 scripts/run_post_live_subtitle_generation.py \
 5. 用 `gpt-5.6-sol`、`high` reasoning 完成两遍阅读版编辑
 6. 检查 `reading-edition-v2/reading_quality_report.json`
 7. 渲染 `sermon_zh_en_reading.pdf`
-8. 逐页执行 blank、overflow、sparse orphan、长行、缺字、人名和经文检查
-9. QA 全部通过后更新 `run-status.json` 为完成，并按配置上传 GCS
+8. 生成具有转录证据回指、并明确标注 AI 辅助内容的 `sermon_interpretation_zh.pdf`
+9. 校验两个 PDF，并在解读内容缺少转录切片证据时阻断
+10. QA 全部通过后更新 `run-status.json` 为完成，并按配置上传 GCS
 
 执行前，shell 环境必须已有 `OPENAI_API_KEY`，或者显式传入 Secret Manager resource name：`--api-key-secret`。不要把 raw key 写入命令、日志或仓库。
 
@@ -192,6 +193,8 @@ python3 scripts/live_source_monitor.py \
 - `reading-edition-v2/reading_quality_report.json` 报告为 pass
 - `sermon_zh_en_reading.pdf` 已生成
 - `sermon_zh_en_reading.qa.json` 报告为 pass
+- `sermon_interpretation_zh.pdf` 已生成
+- `sermon_interpretation_zh.qa.json` 报告为 pass
 - `summary.json`、run report 和 `run-status.json` 已写出
 - 运行最终状态是 `completed`
 
@@ -214,6 +217,9 @@ python3 scripts/live_source_monitor.py \
 - `segments_timed_zh.json`
 - `sermon_zh_en_reading.pdf`
 - `sermon_zh_en_reading.qa.json`
+- `sermon_interpretation_zh.pdf`
+- `sermon_interpretation_zh.qa.json`
+- `sermon-interpretation/insights/openai-notes.json`
 - `reading-edition-v2/reading_quality_report.json`
 - `summary.json`
 - `run-status.json`
