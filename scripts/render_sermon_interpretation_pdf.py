@@ -94,6 +94,7 @@ def render_interpretation_pdf(
     out: Path,
     *,
     font_path: Path | None = None,
+    _allow_outline_split: bool = True,
 ) -> dict[str, Any]:
     out.parent.mkdir(parents=True, exist_ok=True)
     font_name = register_cjk_font(font_path)
@@ -216,17 +217,42 @@ def render_interpretation_pdf(
             item_flowables: list[Any] = [
                 Paragraph(f"{index}. {escape(item['title'])}", styles["outline_title"])
             ]
-            if item["points"]:
-                bullet_lines = "<br/>".join(f"• {escape(point)}" for point in item["points"])
-                item_flowables.append(Paragraph(bullet_lines, styles["bullet"]))
-            item_flowables.append(
-                Paragraph(
-                    escape(source_indexes_label(item["sourceSliceIndexes"], slices_by_index)),
-                    styles["evidence"],
+            if _allow_outline_split:
+                if item["points"]:
+                    item_flowables.extend(
+                        Paragraph(f"• {escape(point)}", styles["bullet"])
+                        for point in item["points"][:-1]
+                    )
+                item_tail: list[Any] = []
+                if item["points"]:
+                    item_tail.append(
+                        Paragraph(f"• {escape(item['points'][-1])}", styles["bullet"])
+                    )
+                item_tail.append(
+                    Paragraph(
+                        escape(source_indexes_label(item["sourceSliceIndexes"], slices_by_index)),
+                        styles["evidence"],
+                    )
                 )
-            )
-            item_flowables.append(Spacer(1, 5))
-            outline_flowables.append(KeepTogether(item_flowables))
+                item_tail.append(Spacer(1, 5))
+                # Let long outline entries cross a page boundary while keeping
+                # the final point attached to its traceability evidence.
+                item_flowables.append(KeepTogether(item_tail))
+                outline_flowables.extend(item_flowables)
+            else:
+                if item["points"]:
+                    bullet_lines = "<br/>".join(
+                        f"• {escape(point)}" for point in item["points"]
+                    )
+                    item_flowables.append(Paragraph(bullet_lines, styles["bullet"]))
+                item_flowables.append(
+                    Paragraph(
+                        escape(source_indexes_label(item["sourceSliceIndexes"], slices_by_index)),
+                        styles["evidence"],
+                    )
+                )
+                item_flowables.append(Spacer(1, 5))
+                outline_flowables.append(KeepTogether(item_flowables))
         story.extend(section("证道脉络", outline_flowables, styles))
 
     if scripture_refs or scripture_context:
@@ -385,6 +411,15 @@ def render_interpretation_pdf(
         for page, used_height in sorted(doc.page_used_heights.items())
         if page > 1 and used_height < SPARSE_PAGE_USED_HEIGHT
     ]
+    if _allow_outline_split and sparse_pages:
+        fallback_qa = render_interpretation_pdf(
+            insights,
+            out,
+            font_path=font_path,
+            _allow_outline_split=False,
+        )
+        fallback_qa["outlineSplitFallbackApplied"] = True
+        return fallback_qa
     failures: list[str] = []
     traceability = insights.get("traceability") if isinstance(insights.get("traceability"), dict) else {}
     declared_missing_source_paths = clean_string_list(traceability.get("missingSourcePaths"))
@@ -470,6 +505,7 @@ def render_interpretation_pdf(
         "allPagesChecked": True,
         "blankPages": blank_pages,
         "sparsePages": sparse_pages,
+        "outlineSplitFallbackApplied": False,
         "font": font_name,
         "centralMessagePresent": bool(central_message),
         "summaryPresent": bool(summary),
