@@ -193,6 +193,39 @@ class RenderSermonInterpretationPdfTest(unittest.TestCase):
         self.assertFalse(qa["quoteTraceabilityComplete"])
         self.assertIn("quote_traceability_incomplete", qa["failures"])
 
+    def test_long_outline_can_cross_pages_without_wasting_a_page(self):
+        insights = self.complete_insights()
+        insights["outlineZh"][0]["points"] = [
+            f"第{index}点：" + "这是用于验证跨页排版与证据同行关系的完整中文说明。" * 3
+            for index in range(8)
+        ]
+        with tempfile.TemporaryDirectory() as tempdir:
+            qa = mod.render_interpretation_pdf(
+                insights,
+                Path(tempdir) / "interpretation.pdf",
+            )
+
+        self.assertEqual(qa["status"], "pass")
+        self.assertEqual(qa["pageCount"], 3)
+        self.assertEqual(qa["sparsePages"], [])
+        self.assertFalse(qa["outlineSplitFallbackApplied"])
+
+    def test_long_outline_falls_back_when_split_layout_would_be_sparse(self):
+        insights = self.complete_insights()
+        insights["outlineZh"][0]["points"] = [
+            f"第{index}点：" + "这是用于验证跨页排版与证据同行关系的完整中文说明。" * 3
+            for index in range(10)
+        ]
+        with tempfile.TemporaryDirectory() as tempdir:
+            qa = mod.render_interpretation_pdf(
+                insights,
+                Path(tempdir) / "interpretation.pdf",
+            )
+
+        self.assertEqual(qa["status"], "pass")
+        self.assertEqual(qa["sparsePages"], [])
+        self.assertTrue(qa["outlineSplitFallbackApplied"])
+
     def test_cli_writes_pdf_and_qa(self):
         insights = self.complete_insights()
         with tempfile.TemporaryDirectory() as tempdir:
