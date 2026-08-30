@@ -6,9 +6,11 @@
 
 分支：`design/sermon-live-translation-ios`
 
+方案：**C — 固定教会列表，中心采集，统一分发**
+
 ## 1. 结论
 
-第一版应做成一个 **双角色 iOS App**，与现有 Web 保持相同的产品边界：默认是无需登录的会众字幕观看；通过鉴权后进入 Admin 操作，负责周日现场检查、启动/停止实时翻译和查看周六大纲。
+本文件正式定义 **方案 C：固定教会列表，中心采集，统一分发**。第一版是一个双角色 iOS App，与现有 Web 保持相同的产品边界：会众从受控教会列表选择教会并观看统一字幕；通过鉴权后进入该教会的 Admin 操作，负责周日现场检查、启动/停止实时翻译和查看周六大纲。
 
 推荐的 MVP：
 
@@ -19,6 +21,7 @@
 - 运行中显示录音、连接、模型、字幕稳定器和公开 SSE 的真实状态，并允许随时查看周六大纲。
 - 点击“结束实时翻译”后立即停止音频输入，关闭 session，并留下可验证的结束状态。
 - iOS 会众端和现有 Web/PWA 都接收后端广播的同一份 SSE 字幕；Admin 页面也订阅这条公开流，用它验证真实分发结果。
+- 一个教会一场证道只建立一个 active translation session；不同教会可以并行运行，所有 session、Context Pack、权限和观测数据都必须按 `churchId` 隔离。
 
 两个角色共享字幕模型与组件，但权限和任务必须分离：会众端不能看到 token、麦克风或生产控制；Admin 端不能另外生成一份只在本机可见的字幕。周日开始操作必须简单、可观察、可停止，周六准备成果必须能被利用但不能覆盖现场事实。无论两个版本多么接近，**周日实时英文始终是字幕事实来源**。
 
@@ -75,18 +78,111 @@ MVP 不做：
 - 会后 PDF 生成或取代现有两份 canonical PDF 流程。
 - 把 draft 字幕当成正式讲员原文或正式圣经译文。
 
+### 2.4 方案 B 与方案 C
+
+#### 方案 B：用户侧麦克风，用户侧生成字幕
+
+每位会众在自己的 iPhone 上明确点击“个人实时翻译”，授权麦克风后，由本机把现场音频发送到 Realtime Translation，并只在本机显示生成的字幕。
+
+```mermaid
+flowchart LR
+    A[User iPhone microphone] --> B[OpenAI Realtime Translation]
+    B --> C[Captions on the same iPhone]
+```
+
+方案 B 的特点：
+
+- 优点：不需要教会 Admin 预先启动；从模型 delta 到本机渲染少一次 backend/SSE 中继。
+- 缺点：每位用户的座位、距离、回声和谈话噪声不同，字幕质量与内容可能不一致。
+- 每位用户都建立独立 realtime session，成本与并发量随用户数近似线性增长。
+- 每台设备都需要麦克风许可；原始现场音频分别从每位用户设备上传。
+- 周六 Context Pack 可以按所选教会加载为提示/校正资料，但无法保证所有用户采用同一版本或同时收到同一修正。
+- 字幕默认只保留在本机，不写入教会公共 SSE，也不能作为统一直播事实来源。
+
+方案 B 适合作为没有 Admin、没有中心音源时的个人能力。它不能在方案 C 断线时自动开启；必须由用户主动进入、理解隐私提示并授权麦克风。标准 API key 仍只在服务端，用户设备只能取得短期 client secret。OpenAI 提供专用 Translation client-secret endpoint，并建议 mobile client 通过 WebRTC 连接。参考 [Create translation client secret](https://developers.openai.com/api/reference/resources/realtime/subresources/translations/subresources/client_secrets/methods/create) 和 [Realtime WebRTC](https://developers.openai.com/api/docs/guides/realtime-webrtc)。
+
+#### 方案 C：固定教会列表，中心采集，统一分发
+
+每间已接入教会由一台持有 operator lease 的 Admin 设备采集一次、翻译一次；后端将同一组 `draft -> stable -> final` 字幕发布给该教会的全部 iOS/Web 会众。
+
+```mermaid
+flowchart LR
+    A[Church Admin microphone] --> B[OpenAI Realtime Translation]
+    B --> C[Church-scoped backend session]
+    C --> D[Public SSE]
+    D --> E[iOS audience]
+    D --> F[Web/PWA audience]
+```
+
+| 维度 | 方案 B：每位用户独立 | 方案 C：每间教会统一 |
+|---|---|---|
+| 启动者 | 每位会众 | 该教会 Admin |
+| 麦克风 | 每台会众设备 | 一台受控设备/专业音源 |
+| 公开字幕 | 没有统一版本 | iOS/Web 同一 event stream |
+| draft 延时预估 | 良好网络约 1.5–3.5 秒 | 良好网络约 2–4 秒 |
+| 音质 | 随座位和设备变化 | 可固定摆位并现场检查 |
+| 周六资料 | 每设备独立使用 | 后端统一检索、校正和审计 |
+| 成本与并发 | 近似随会众数增长 | 近似随 active church session 数增长 |
+| 隐私 | 每位用户都上传现场音频 | 只有明确的中心采集设备上传 |
+| 故障影响 | 单个用户 | 当前教会全部会众，因此需要监控/备机 |
+
+本项目推荐方案 C 作为固定教会的正式服务；方案 B 可以作为后续明确标注的个人模式，但不与方案 C 的公共字幕混合。
+
 ## 3. 核心体验
 
 ### 3.1 信息架构
 
 MVP 有两个角色空间：
 
-1. **会众观看**（默认）：当前字幕、最近字幕、经文和显示设置。
-2. **Admin**（鉴权后）：周日准备、实时运行和周六大纲。
+1. **教会列表**：由服务端集中维护的固定目录，显示教会、城市/时区和 `直播中 / 即将开始 / 未直播`。
+2. **会众观看**（默认）：所选教会的当前字幕、最近字幕、经文和显示设置。
+3. **Admin**（鉴权后）：被授权教会的周日准备、实时运行和周六大纲。
 
-会众端使用单一观看页，不暴露 Admin 控件。Admin 通过设置页或受保护的入口进入，使用独立 `NavigationStack`；周六大纲从准备页或 Live 页以 sheet 打开。不能只靠隐藏按钮保护 Admin。
+“固定列表”表示只有平台审核并启用的教会能出现在目录中，不允许用户输入任意 backend URL 或自行创建教会。列表由 backend 返回并带 `churchListVersion`/ETag，App 保存 last-known-good 缓存；不要硬编码在 app bundle，否则每次增加或停用教会都必须重新发版。App 记住 `lastChurchId`，但启动时仍刷新该教会是否 active。
+
+最小公开目录 schema：
+
+```json
+{
+  "churchListVersion": "2026-08-30T18:00:00Z",
+  "churches": [
+    {
+      "id": "irvine-community",
+      "displayName": "Irvine Community Church",
+      "city": "Irvine",
+      "timeZone": "America/Los_Angeles",
+      "sortOrder": 10,
+      "status": "live",
+      "nextServiceAt": "2026-08-30T11:30:00-07:00"
+    }
+  ]
+}
+```
+
+目录不返回 API origin、Admin identity、token、Context Pack 路径或内部诊断；所有教会继续使用同一受控 API origin，通过 `churchId` 路径隔离。
+
+会众端进入教会后使用单一观看页，不暴露 Admin 控件。Admin 通过设置页或受保护的入口进入，使用独立 `NavigationStack`；周六大纲从准备页或 Live 页以 sheet 打开。不能只靠隐藏按钮保护 Admin。
 
 ### 3.2 主界面线框
+
+固定教会列表：
+
+```text
+┌──────────────────────────────┐
+│  选择教会                     │
+├──────────────────────────────┤
+│  ● Irvine Community Church   │
+│    Irvine · 直播中          > │
+├──────────────────────────────┤
+│  ○ Grace Church              │
+│    Los Angeles · 11:30     > │
+├──────────────────────────────┤
+│  ○ 示例华人教会               │
+│    San Diego · 本周未开始   > │
+└──────────────────────────────┘
+```
+
+使用 SwiftUI `List` + `NavigationStack`，状态文字与图形同时表达；“直播中”教会排在最前，其余保持后台配置顺序。教会可提供二维码/deep link 直接打开固定 `churchId`，但 App 仍要验证它存在于当前目录。
 
 会众观看页：
 
@@ -214,6 +310,9 @@ Apple 的 `URLSession` 支持以 `AsyncSequence` 方式在传输过程中读取 
 
 ```mermaid
 flowchart LR
+    Q[Curated Church Directory] --> A[SwiftUI Admin]
+    Q --> O[iOS Audience View]
+    Q --> P[Existing congregation Web/PWA]
     A[SwiftUI Admin] --> B[LiveSessionCoordinator]
     B --> C[Preflight + Session API]
     B --> D[AudioCapture + WebRTC]
@@ -222,7 +321,7 @@ flowchart LR
     G --> H[Approved Context Pack + Outline]
     H --> A
     H --> I[Live Alignment and Retrieval]
-    C --> J[RealtimeSessionStore + Operator Lease]
+    C --> J[Church-scoped SessionStore + Operator Lease]
     D --> K[OpenAI Realtime Translation]
     K --> L[Translation Event Relay]
     L --> J
@@ -240,6 +339,7 @@ flowchart LR
 ```text
 ios/SermonLive/
   App/
+  Features/ChurchDirectory/
   Features/AudienceLiveCaption/
   Features/SundayReady/
   Features/LiveOperator/
@@ -269,6 +369,8 @@ ios/SermonLive/
 
 因此 App 不需要发明第二套协议：Admin 端镜像现有 Web operator 的 session/event contract，使用后台签发的短期 client secret 连接 Realtime Translation，再把 translation deltas 写回后端；会众端镜像现有 Web public SSE contract。OpenAI 标准 API key 始终只存在服务端。iOS 与 Web 的公开字幕都只来自后端 sanitize 后的唯一 SSE 流。
 
+但当前 API 使用全局 `current Sunday/current session`，只能表达单教会。方案 C 必须把现有 contract 扩展为 church-scoped；旧路径可暂时映射到默认教会以保持 Web 向后兼容，但新 iOS App 不应依赖全局 current。
+
 ### 4.4 开始与结束时序
 
 ```mermaid
@@ -278,11 +380,11 @@ sequenceDiagram
     participant B as Backend
     participant R as Realtime Translation
     participant W as Congregation Web/PWA
-    O->>A: 打开本周场次
-    A->>B: 获取 Sunday、approved Context Pack、preflight
+    O->>A: 打开被授权 churchId 的本周场次
+    A->>B: 获取 church-scoped Sunday、Context Pack、preflight
     B-->>A: readiness + outline + current session
     O->>A: 点击开始实时翻译
-    A->>B: POST session (idempotencyKey, contextPackId, audioSourceKind)
+    A->>B: POST church session (idempotencyKey, contextPackId, audioSourceKind)
     B-->>A: sessionId + lease + short-lived client secret
     A->>R: 建立 WebRTC 并发送麦克风音频
     R-->>A: translation transcript deltas
@@ -296,11 +398,11 @@ sequenceDiagram
     B-->>W: SSE session_ended
 ```
 
-开始请求必须带 idempotency key；后台只允许一个 active operator lease。重复点击、网络重试或第二台设备不能意外创建第二个付费 session。停止采用“本地优先”：即使后台暂时不可达，也要先停止麦克风和 realtime 发送，再重试远端结束并显示未确认状态。
+开始请求必须带 idempotency key；后台对每个 `(churchId, sunday)` 只允许一个 active operator lease。重复点击、网络重试或第二台设备不能意外创建第二个付费 session；不同 church 可以并行。停止采用“本地优先”：即使后台暂时不可达，也要先停止麦克风和 realtime 发送，再重试远端结束并显示未确认状态。
 
 ### 4.5 监控字幕 reducer 规则
 
-对每个 `(sessionId, segmentId)`：
+对每个 `(churchId, sessionId, segmentId)`：
 
 1. 丢弃 `id <= lastAppliedEventId` 的重复事件。
 2. `caption_delta` 只更新 draft buffer，不写历史。
@@ -313,24 +415,30 @@ sequenceDiagram
 
 ### 4.6 后端契约需要补齐的缺口
 
-现有 session 创建、event ingest 和 SSE 足够做原型，但 production operator App 前必须补齐一个向后兼容的 contract v1：
+现有 session 创建、event ingest 和 SSE 足够做单教会原型，但方案 C production 前必须补齐一个向后兼容的 church-scoped contract v1：
 
-1. `GET /api/admin/sundays/{date}/realtime-preflight`
+1. `GET /api/churches`
+   - 返回受控公开目录、`churchListVersion`、显示顺序、时区和 live summary；不返回 Admin 信息。
+2. `GET /api/churches/{churchId}/sundays/current`
+   - 返回该教会当前 Sunday、场次、标题和 public session 状态。
+3. `GET /api/admin/churches/{churchId}/sundays/{date}/realtime-preflight`
    - 返回 backend/model、Context Pack、公开 SSE、active session、operator lease 和推荐音源状态。
-2. `POST /api/admin/realtime/sessions`
-   - 接受 `idempotencyKey`、`contextPackId`、`audioSourceKind` 和 `operatorDeviceId`；返回有限期 lease。
-3. `POST /api/admin/realtime/sessions/{id}:end`
+4. `POST /api/admin/churches/{churchId}/realtime/sessions`
+   - 接受 `sunday`、`idempotencyKey`、`contextPackId`、`audioSourceKind` 和 `operatorDeviceId`；返回有限期 lease。
+5. `POST /api/admin/churches/{churchId}/realtime/sessions/{id}:end`
    - 幂等结束 session，并返回 `endedAt`、最后 event id、event archive 和公开流结束回执。
-4. `POST /api/admin/realtime/sessions/{id}:heartbeat`
+6. `POST /api/admin/churches/{churchId}/realtime/sessions/{id}:heartbeat`
    - 续租并上报匿名音频/连接新鲜度；lease 失效后禁止新的 event ingest。
-5. `GET /api/realtime/sessions/current/snapshot`
+7. `POST /api/churches/{churchId}/realtime/sessions/{id}/events`
+   - 接收该 session 的 translation events；event token 必须同时绑定 `churchId` 和 `sessionId`。
+8. `GET /api/churches/{churchId}/realtime/sessions/current/snapshot`
    - 返回当前 `sessionId`、`streamEpoch`、最新 event id、最近 20 条 stable/final 字幕和 session 状态。
    - App 首屏先 snapshot，随后从 `cursor=latestEventId` 接 SSE，避免启动空白和竞态。
-6. SSE 同时支持 `Last-Event-ID` header 和现有 `cursor` query。
-7. 增加 `session_ended`、`heartbeat` 和 `stream_reset` 事件。
-8. 当 cursor 已超出 500-event 内存窗口或服务重启时返回显式 `stream_reset`，让 App 重新拉 snapshot，不能静默漏字幕。
+9. `GET /api/churches/{churchId}/realtime/sessions/current/events`
+   - church-scoped public SSE，同时支持 `Last-Event-ID` header 和 `cursor` query。
+10. 增加 `session_ended`、`heartbeat` 和 `stream_reset` 事件；cursor 超出内存窗口或服务重启时显式 reset。
 
-`streamEpoch + sessionId + eventId` 才是完整 cursor。只保存 event id 会在 session 切换或服务重启后误判。
+`churchId + streamEpoch + sessionId + eventId` 才是完整 cursor。只保存 event id 会在教会/session 切换或服务重启后误判。
 
 ## 5. 用周六内容增强周日实时翻译
 
@@ -362,6 +470,7 @@ sequenceDiagram
 ```json
 {
   "contextPackId": "ctx_2026-08-30_sha256prefix",
+  "churchId": "irvine-community",
   "sourceVersion": "saturday-video",
   "sourceSha256": "...",
   "intendedSunday": "2026-08-30",
@@ -575,15 +684,16 @@ App 本地可以预下载大纲、经文卡和术语表以便现场查看，但�
 
 | Method | Path | 用途 |
 |---|---|---|
-| `POST` | `/api/admin/sundays/{date}/context-pack:build` | 从已验证周六 artifacts 构建 pack |
-| `GET` | `/api/admin/sundays/{date}/context-pack` | 查看 hash、review 和覆盖状态 |
-| `POST` | `/api/admin/sundays/{date}/context-pack:approve` | 人工确认经文、术语和使用范围 |
-| `GET` | `/api/admin/sundays/{date}/operator-brief` | 返回已审核大纲、经文和 Context Pack 摘要 |
-| `POST` | `/api/admin/realtime/sessions` | 增加可选 `contextPackId` |
-| `GET` | `/api/admin/realtime/sessions/{id}/context-status` | 查看匹配、偏离和辅助覆盖 |
+| `POST` | `/api/admin/churches/{churchId}/sundays/{date}/context-pack:build` | 从该教会已验证周六 artifacts 构建 pack |
+| `GET` | `/api/admin/churches/{churchId}/sundays/{date}/context-pack` | 查看 hash、review 和覆盖状态 |
+| `POST` | `/api/admin/churches/{churchId}/sundays/{date}/context-pack:approve` | 人工确认经文、术语和使用范围 |
+| `GET` | `/api/admin/churches/{churchId}/sundays/{date}/operator-brief` | 返回已审核大纲、经文和 Context Pack 摘要 |
+| `POST` | `/api/admin/churches/{churchId}/realtime/sessions` | 增加可选 `contextPackId` |
+| `GET` | `/api/admin/churches/{churchId}/realtime/sessions/{id}/context-status` | 查看匹配、偏离和辅助覆盖 |
 
 Context Pack 必须绑定：
 
+- churchId；不得跨教会复用未审核术语、讲员或周六片段。
 - intended Sunday。
 - 周六 source URL 与 SHA-256。
 - transcript/translation artifact hashes。
@@ -614,7 +724,7 @@ Context Pack 必须绑定：
 - 低置信和 diverged 窗口必须与 baseline 等价。
 - 所有 prior-assisted final caption 必须保留 live English evidence 和 pack provenance。
 
-## 6. 现场音频与 OpenAI 边界
+## 6. 方案 C 现场音频与 OpenAI 边界
 
 ### 6.1 MVP 音源假设
 
@@ -701,8 +811,10 @@ OpenAI 官方说明 `gpt-realtime-translate` 会在源音频仍在进入时返�
 
 ## 7. 安全、隐私与数据
 
+- 教会目录可公开读取，但只能由平台后台审核、启用、排序和停用；客户端不能写入目录。
 - 会众观看不需要 Admin token，且只能访问 public Sunday/snapshot/SSE contract。
-- Admin 路由、视图和网络 client 与会众端分层；界面隐藏不是授权，所有控制操作必须由服务端验证身份和 operator lease。
+- Admin token 必须包含允许的 `churchIds`/role；后端不能因为 URL 中存在某个 `churchId` 就授权跨教会操作。
+- Admin 路由、视图和网络 client 与会众端分层；界面隐藏不是授权，所有控制操作必须由服务端验证身份、church scope 和 operator lease。
 - 只有已鉴权 operator 的“开始实时翻译”流程申请麦克风权限；大纲浏览不触发权限请求。
 - 不在 App bundle、Keychain、日志或 crash report 中放 OpenAI API key。
 - 短期 client secret 只在内存中存活；结束、过期、登出或 App 重启时清除。
@@ -717,6 +829,9 @@ OpenAI 官方说明 `gpt-realtime-translate` 会在源音频仍在进入时返�
 
 | 故障 | App 降级行为 |
 |---|---|
+| 教会目录暂时不可用 | 使用带版本号的 last-known-good 列表并标注离线；从未成功加载过则不给出虚构教会 |
+| 所选教会已停用 | 停止连接该教会的 current session，返回目录并显示说明 |
+| event 的 churchId/session 不匹配 | 拒绝事件并记录安全告警，绝不串到另一教会会众流 |
 | 会众端没有 active session | 显示等待页，不请求麦克风、不循环弹错误 |
 | 会众端 SSE 断开 | 保留最后 stable 字幕并标注断线时间，自动从 cursor 恢复 |
 | 没有 approved Context Pack | 明确提示；经 operator 确认后允许 baseline 模式开始，不使用周六先验 |
@@ -738,6 +853,7 @@ OpenAI 官方说明 `gpt-realtime-translate` 会在源音频仍在进入时返�
 ### 9.1 自动化
 
 - session 状态机：重复开始、取消启动、停止失败、第二设备冲突和 crash recovery。
+- church isolation：两个教会同时直播、相同 event id、切换教会、停用教会和跨教会 token 拒绝。
 - role boundary：会众无 token 可正常观看，但无法调用任何 Admin endpoint；登出立即撤销 Admin UI/state。
 - preflight：权限、音频 route/level、Context Pack、backend/model、active lease 和 public SSE。
 - audio：第一帧确认、interruption、route change、前后台切换和本地优先停止。
@@ -778,8 +894,9 @@ Cloud Run health、SSE smoke 和 simulator 测试都不能替代这次物理设�
 - 用 SwiftUI 做会众观看、Admin 准备、启动、Live、中断、停止和大纲 sheet 的本地 fixture 原型。
 - 用真机完成麦克风 -> Realtime -> event ingest -> public SSE 的最小技术 spike。
 
-### Phase 1：operator MVP
+### Phase 1：方案 C MVP
 
+- 接入固定教会目录、last-known-good 缓存、`lastChurchId` 和 church-scoped public routes。
 - 接入 operator 登录、Sunday bootstrap、preflight、session lease、开始/结束和 SSE loopback monitor。
 - 完成 iOS 会众观看页，并与 Web 共用 public snapshot/SSE contract 和 fixture tests。
 - 默认支持单一 iPhone 麦克风音源，处理录音许可、音频 route、电平、中断和前台约束。
@@ -799,30 +916,40 @@ Cloud Run health、SSE smoke 和 simulator 测试都不能替代这次物理设�
 - 评估专用备机、只读观察员和故障切换，不允许隐式双重采集。
 - 只有完成隐私、功耗和系统行为验收后才评估 background recording。
 
+### Phase 4：可选方案 B 个人模式
+
+- 用户主动进入“个人实时翻译”后才请求麦克风权限并创建个人短期 session。
+- 个人字幕只在本机显示，UI 明确标注“个人模式；不等于教会统一字幕”。
+- 加入每用户/session 限额、成本防护、隐私说明和本地停止/清除。
+- 不把方案 B 自动作为方案 C 的后台 fallback，也不把个人结果写入 church public SSE。
+
 ## 11. 实施前需要确认的决策
 
 这些问题不阻碍设计分支，但会影响开始写 App：
 
 1. 部署最低版本暂定 **iOS 17+**；实施前用 operator 实际设备验证。
 2. 会众端需要怎样分发：首轮 TestFlight、公开 App Store，或教会内设备；Admin 权限与分发方式不能绑定。
-3. 是否使用现有 Cloud Run 公网域名作为唯一 production API origin。
+3. 首批固定教会的 `churchId`、显示名称、时区、排序和负责 Admin；由谁有权增删目录。
 4. POC 先使用 Admin iPhone 麦克风；长期 production 是否能取得调音台或授权直播音轨。
 5. 哪一组周六/周日视频可以作为首个 paired replay golden set。
 6. Context Pack 中哪些字段必须人工确认：建议至少确认标题、主经文、大纲、人名和首选术语。
 7. Context Pack 缺失时是否允许 operator 明确确认后以 baseline 模式开始；本设计建议允许，但必须留下 receipt。
 8. 第一版是否只允许前台运行；本设计建议是，避免尚未验证的隐蔽后台录音。
+9. 方案 B 是否进入首版；本设计建议首版只交付方案 C，B 在 church-scoped 分发稳定后单独评估。
 
 ## 12. 建议的下一步
 
-先建立 operator 闭环，不直接铺开完整 App。最小、可验证的下一步是：
+先建立方案 C 的单教会闭环，再验证多教会隔离；不直接同时实现方案 B。最小、可验证的下一步是：
 
-1. 选定一组真实周六/周日成对材料，建立 live-English 对齐的 golden set。
-2. 定义 Context Pack/outline schema，先包含经文、术语、anchors、大纲和短片段。
-3. 补齐 session preflight、idempotent create/end、operator lease 和 `session_ended` contract。
-4. 新建 SwiftUI fixture prototype，完成会众观看页、Admin 准备页、周六大纲、Live 状态机和结束确认。
-5. 做一个真机音频 spike：iPhone 麦克风 -> Realtime Translation -> event ingest -> public SSE -> 现有 Web/PWA。
-6. 同时扩展 stabilizer，完成 baseline、glossary、contextual retrieval 三路离线回放。
-7. 以真实网络测量 draft、boundary stable、context corrected 三组 p50/p95；只有 `prior-induced addition = 0`、开始/停止/中断门禁通过，且 iOS/Web 会众端 loopback 有证据后，才进入完整 Sunday rehearsal。
+1. 定义首批固定教会 fixture 和 `GET /api/churches` contract。
+2. 选定其中一间教会的一组真实周六/周日成对材料，建立 live-English 对齐的 golden set。
+3. 给 Sunday、Context Pack、session、event archive、SSE 和 Admin auth 全部加入 `churchId` scope。
+4. 补齐 session preflight、idempotent create/end、operator lease 和 `session_ended` contract。
+5. 新建 SwiftUI fixture prototype，完成教会列表、会众观看页、Admin 准备页、周六大纲、Live 状态机和结束确认。
+6. 做一个方案 C 真机音频 spike：Admin iPhone 麦克风 -> Realtime Translation -> church event ingest -> public SSE -> iOS/Web 会众端。
+7. 加入第二间模拟教会并发 session，证明 event、cursor、Context Pack 和 Admin token 不串教会。
+8. 扩展 stabilizer，完成 baseline、glossary、contextual retrieval 三路离线回放。
+9. 以真实网络测量 draft、boundary stable、context corrected 三组 p50/p95；只有 `prior-induced addition = 0`、开始/停止/中断门禁通过，且 iOS/Web 会众端 loopback 有证据后，才进入完整 Sunday rehearsal。
 
 相关现有文档：
 
