@@ -16,6 +16,7 @@
 | Production Supervisor Agent | [sermon-production-supervisor-agent.md](./sermon-production-supervisor-agent.md) | [sermon-production-supervisor-agent.zh.md](./sermon-production-supervisor-agent.zh.md) |
 | `gpt-transcribe` 阅读版生产审核（2026-07-31） | [gpt-transcribe-reading-pdf-production-audit-2026-07-31.zh.md](./gpt-transcribe-reading-pdf-production-audit-2026-07-31.zh.md) | 同一份中文文档 |
 | System Design | [system-design.md](./system-design.md) | [system-design.zh.md](./system-design.zh.md) |
+| 证道实时翻译 iOS App 设计 | — | [ios-live-sermon-translation-app.zh.md](./ios-live-sermon-translation-app.zh.md) |
 | System Design 实现差距审计 | [system-design-gap-analysis.md](./system-design-gap-analysis.md) | [system-design-gap-analysis.zh.md](./system-design-gap-analysis.zh.md) |
 | Findings Report | [findings-report.md](./findings-report.md) | [findings-report.zh.md](./findings-report.zh.md) |
 | 模型/Provider 比较 | [model-provider-comparison.md](./model-provider-comparison.md) | [model-provider-comparison.zh.md](./model-provider-comparison.zh.md) |
@@ -40,13 +41,14 @@
 3. 读 [sermon-production-supervisor-agent.zh.md](./sermon-production-supervisor-agent.zh.md)，了解 Agent 控制层、人工审批契约和 Scheduler 接入。
 4. 查看 [gpt-transcribe-reading-pdf-production-audit-2026-07-31.zh.md](./gpt-transcribe-reading-pdf-production-audit-2026-07-31.zh.md)，确认当前模型、质量门禁与完整 PDF 审核证据。
 5. 再读 [system-design.zh.md](./system-design.zh.md)，理解更广义的 11:30 会众字幕架构。
-6. 读 [findings-report.zh.md](./findings-report.zh.md)，理解为什么公开视频 VOD 不满足现场目标。
-7. 评估离线直播链接路线和 11:30 前准备窗口时，读 [offline-live-archive-timing-feasibility.zh.md](./offline-live-archive-timing-feasibility.zh.md)。
-8. 每周生成可发布 SRT/VTT 文件的更细节实现时，读 [weekly-offline-subtitle-generation.zh.md](./weekly-offline-subtitle-generation.zh.md)。
-9. 从 post-live 归档字幕发布正式 Sunday 页面前，读 [post-live-reviewed-sunday-publication.zh.md](./post-live-reviewed-sunday-publication.zh.md)，先确认 human-in-the-loop 关口，再校准时间轴、生成 reviewed artifacts、发布 stable manifest。
-10. 做模型、Cloud Run、Admin、live-test 或日志观测工作前，读 [model-provider-comparison.zh.md](./model-provider-comparison.zh.md)、[cloud-run-deployment-prep.zh.md](./cloud-run-deployment-prep.zh.md)、[admin-workflow.zh.md](./admin-workflow.zh.md)、[observability.zh.md](./observability.zh.md) 和 [sunday-live-test-runbook.zh.md](./sunday-live-test-runbook.zh.md)。
-11. repo 改 visibility 或邀请更广泛公开贡献前，先用 [open-source-readiness.zh.md](./open-source-readiness.zh.md) 检查。
-12. 用 [system-design-gap-analysis.zh.md](./system-design-gap-analysis.zh.md)、[backlog.md](./backlog.md) 和 [review-testing.md](./review-testing.md) 选择与验证下一步开发任务。
+6. 设计原生会众端时，读 [ios-live-sermon-translation-app.zh.md](./ios-live-sermon-translation-app.zh.md)，确认 App 与 operator 音频采集的边界。
+7. 读 [findings-report.zh.md](./findings-report.zh.md)，理解为什么公开视频 VOD 不满足现场目标。
+8. 评估离线直播链接路线和 11:30 前准备窗口时，读 [offline-live-archive-timing-feasibility.zh.md](./offline-live-archive-timing-feasibility.zh.md)。
+9. 每周生成可发布 SRT/VTT 文件的更细节实现时，读 [weekly-offline-subtitle-generation.zh.md](./weekly-offline-subtitle-generation.zh.md)。
+10. 从 post-live 归档字幕发布正式 Sunday 页面前，读 [post-live-reviewed-sunday-publication.zh.md](./post-live-reviewed-sunday-publication.zh.md)，先确认 human-in-the-loop 关口，再校准时间轴、生成 reviewed artifacts、发布 stable manifest。
+11. 做模型、Cloud Run、Admin、live-test 或日志观测工作前，读 [model-provider-comparison.zh.md](./model-provider-comparison.zh.md)、[cloud-run-deployment-prep.zh.md](./cloud-run-deployment-prep.zh.md)、[admin-workflow.zh.md](./admin-workflow.zh.md)、[observability.zh.md](./observability.zh.md) 和 [sunday-live-test-runbook.zh.md](./sunday-live-test-runbook.zh.md)。
+12. repo 改 visibility 或邀请更广泛公开贡献前，先用 [open-source-readiness.zh.md](./open-source-readiness.zh.md) 检查。
+13. 用 [system-design-gap-analysis.zh.md](./system-design-gap-analysis.zh.md)、[backlog.md](./backlog.md) 和 [review-testing.md](./review-testing.md) 选择与验证下一步开发任务。
 
 ## 文档语言策略
 
