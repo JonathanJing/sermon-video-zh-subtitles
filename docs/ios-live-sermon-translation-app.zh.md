@@ -8,7 +8,7 @@
 
 ## 1. 结论
 
-第一版应做成一个 **周日现场 operator 控制台**。它的首要任务不是让会众在 App 里读字幕，而是让同工在聚会开始前完成检查，并用一个清楚、可撤销的动作启动和停止实时翻译。
+第一版应做成一个 **双角色 iOS App**，与现有 Web 保持相同的产品边界：默认是无需登录的会众字幕观看；通过鉴权后进入 Admin 操作，负责周日现场检查、启动/停止实时翻译和查看周六大纲。
 
 推荐的 MVP：
 
@@ -18,15 +18,22 @@
 - POC 默认使用 operator iPhone 麦克风作为受控音源；若以后接入调音台或授权直播音轨，同一入口切换为后端音源。
 - 运行中显示录音、连接、模型、字幕稳定器和公开 SSE 的真实状态，并允许随时查看周六大纲。
 - 点击“结束实时翻译”后立即停止音频输入，关闭 session，并留下可验证的结束状态。
-- 会众继续使用现有 Web/PWA 接收后端广播的统一字幕；operator App 只显示监控字幕，不成为第二套公开字幕系统。
+- iOS 会众端和现有 Web/PWA 都接收后端广播的同一份 SSE 字幕；Admin 页面也订阅这条公开流，用它验证真实分发结果。
 
-这让 App 聚焦于现场真正的问题：周日开始操作必须简单、可观察、可停止，周六准备成果必须能被利用但不能覆盖现场事实。无论两个版本多么接近，**周日实时英文始终是字幕事实来源**；周六内容只帮助识别、检索和校正，不能提前填充讲员尚未说出的内容。
+两个角色共享字幕模型与组件，但权限和任务必须分离：会众端不能看到 token、麦克风或生产控制；Admin 端不能另外生成一份只在本机可见的字幕。周日开始操作必须简单、可观察、可停止，周六准备成果必须能被利用但不能覆盖现场事实。无论两个版本多么接近，**周日实时英文始终是字幕事实来源**。
 
 ## 2. 产品边界
 
 ### 2.1 目标用户
 
-主要用户是负责周日实时翻译的现场 operator。operator 通常：
+第一类用户是中文会众：
+
+- 打开 App 后无需登录即可进入当前场次。
+- 主要查看大字号简体中文字幕，可选择中英双语和回看最近字幕。
+- 需要明确区分正在直播、重连、字幕停滞和本场结束。
+- 与 Web/PWA 接收完全相同的 `draft -> stable -> final` 事件，不能出现两个公开版本。
+
+第二类用户是负责周日实时翻译的现场 operator。operator 通常：
 
 - 在证道开始前几分钟打开 App，需要快速知道“现在能不能安全开始”。
 - 可能不是开发人员，不能依靠终端、Cloud Run 控制台或隐藏日志判断状态。
@@ -34,11 +41,11 @@
 - 需要随时查看周六大纲确认方向，但不能误把大纲当作讲员已经说过的话。
 - 结束时必须明确停止录音和翻译，不能依赖杀掉 App 或等待超时。
 
-次要用户是只读观察员，例如另一位同工检查字幕是否正在对外发布。中文会众仍使用现有 Web/PWA，不是这个原生 App MVP 的用户。
+同一个安装包内，会众入口默认公开；Admin 入口必须鉴权，并支持只读观察员与 active operator 两种后台权限。只有持有 active operator lease 的设备可以采集麦克风或控制 session。
 
 ### 2.2 MVP 成功定义
 
-operator 打开 App 后能够加载本周周六资料、完成 preflight，并通过一次明确点击启动周日实时翻译。运行中不需要离开主页面即可判断音频是否进入、翻译是否产出、稳定字幕是否生成、会众端 SSE 是否有新鲜事件；周六大纲最多一次点击即可查看。
+会众打开 App 后最多一次操作即可看到当前字幕。operator 登录后能够加载本周周六资料、完成 preflight，并通过一次明确点击启动周日实时翻译。运行中不需要离开主页面即可判断音频是否进入、翻译是否产出、稳定字幕是否生成、会众端 SSE 是否有新鲜事件；周六大纲最多一次点击即可查看。
 
 建议产品指标：
 
@@ -46,8 +53,9 @@ operator 打开 App 后能够加载本周周六资料、完成 preflight，并�
 |---|---:|
 | 点击开始到 `session_started` | 正常网络 p95 <= 5 秒 |
 | session 建立到首个音频帧被接收 | p95 <= 3 秒 |
-| 首个中文 draft | 沿用后端目标 p50 <= 2.5 秒 |
-| stable caption | 沿用后端目标 p95 <= 6 秒 |
+| 对应语义单元结束到会众端首个中文 draft | 目标 p50 <= 2 秒，p95 <= 3.5 秒 |
+| 边界 stable（未经过第二模型校正） | 目标 p95 <= 5 秒 |
+| Context Pack + 第二模型修正版 | 优化后目标 p50 <= 6 秒，p95 <= 8 秒 |
 | 断线恢复或明确进入故障态 | <= 10 秒 |
 | 音频或字幕停滞告警 | 15 秒内出现 |
 | 点击结束到本地音频停止 | p95 <= 1 秒 |
@@ -59,7 +67,7 @@ operator 打开 App 后能够加载本周周六资料、完成 preflight，并�
 
 MVP 不做：
 
-- 取代会众现有 Web/PWA。
+- 让 iOS 会众端产生不同于 Web/PWA 的字幕版本。
 - 多个 iPhone 同时成为同一场证道的 active audio source。
 - App 内直播视频播放。
 - AI 朗读中文字幕或同声传译音频。
@@ -71,15 +79,36 @@ MVP 不做：
 
 ### 3.1 信息架构
 
-MVP 只有三个主要状态/界面：
+MVP 有两个角色空间：
 
-1. **周日准备**：本周资料、preflight 和“开始实时翻译”，是默认入口。
-2. **实时运行**：音频、连接、字幕和公开输出健康状态，以及“结束实时翻译”。
-3. **周六大纲**：从准备页或运行页以 sheet 打开，只读显示周六提取的大纲、经文和 anchors。
+1. **会众观看**（默认）：当前字幕、最近字幕、经文和显示设置。
+2. **Admin**（鉴权后）：周日准备、实时运行和周六大纲。
 
-不使用底部 Tab Bar。使用 `NavigationStack` 和大纲 sheet，确保开始、查看和结束都在单一任务流内。
+会众端使用单一观看页，不暴露 Admin 控件。Admin 通过设置页或受保护的入口进入，使用独立 `NavigationStack`；周六大纲从准备页或 Live 页以 sheet 打开。不能只靠隐藏按钮保护 Admin。
 
 ### 3.2 主界面线框
+
+会众观看页：
+
+```text
+┌──────────────────────────────┐
+│  11:30 现场           ● 已连接 │
+│  Misplaced Fear               │
+├──────────────────────────────┤
+│                              │
+│     神的百姓正站在应许之      │
+│     地的边缘，那片土地就      │
+│     在他们眼前。              │
+│                              │
+│  正在翻译…                    │
+├──────────────────────────────┤
+│  民数记 13–14        查看经文  │
+├──────────────────────────────┤
+│      回看上一段    Aa          │
+└──────────────────────────────┘
+```
+
+Admin 准备页：
 
 ```text
 ┌──────────────────────────────┐
@@ -120,9 +149,10 @@ MVP 只有三个主要状态/界面：
 └──────────────────────────────┘
 ```
 
-视觉与操作原则：
+共同视觉与操作原则：
 
 - 使用 SwiftUI 系统语义色、Dynamic Type、SF Symbols 和标准 safe area。
+- 会众端以字幕为唯一主任务；Admin 健康信息不能混入会众页面。
 - “开始”是准备页唯一 primary action；preflight 有硬失败时禁用，并明确说明修复方法。
 - 运行页始终显示系统录音指示、音频电平、session 时长和字幕新鲜度。
 - “结束”使用破坏性样式并二次确认；确认后先停本地音频，再关闭远端 session。
@@ -132,6 +162,19 @@ MVP 只有三个主要状态/界面：
 - 周六大纲顶部持续显示“预备资料；周日现场可能调整”。
 
 ### 3.3 状态设计
+
+会众端：
+
+| 状态 | 会众看到什么 | App 行为 |
+|---|---|---|
+| 等待直播 | “字幕尚未开始”与本周场次 | 低频检查 current session |
+| 连接中 | skeleton 或最近 snapshot | snapshot 后以 cursor 连接 SSE |
+| 实时 draft | 较弱颜色字幕与“正在翻译” | 原位增量更新，可被 stable/final 替换 |
+| stable/final | 高对比主字幕 | 加入最近字幕历史 |
+| 重连中 | 保留最后字幕并显示断线时间 | 自动重连，但不把旧字幕伪装成现场 |
+| 已结束 | “本场已结束” | 停止高频重试，允许只读回看 |
+
+Admin 端：
 
 | 状态 | operator 看到什么 | App 行为 |
 |---|---|---|
@@ -171,7 +214,7 @@ Apple 的 `URLSession` 支持以 `AsyncSequence` 方式在传输过程中读取 
 
 ```mermaid
 flowchart LR
-    A[SwiftUI Operator App] --> B[LiveSessionCoordinator]
+    A[SwiftUI Admin] --> B[LiveSessionCoordinator]
     B --> C[Preflight + Session API]
     B --> D[AudioCapture + WebRTC]
     B --> E[Public SSE Monitor]
@@ -188,7 +231,8 @@ flowchart LR
     M --> J
     J --> N[Public SSE]
     N --> E
-    N --> O[Existing congregation Web/PWA]
+    N --> O[iOS Audience View]
+    N --> P[Existing congregation Web/PWA]
 ```
 
 建议的 Xcode 模块边界：
@@ -196,6 +240,7 @@ flowchart LR
 ```text
 ios/SermonLive/
   App/
+  Features/AudienceLiveCaption/
   Features/SundayReady/
   Features/LiveOperator/
   Features/SaturdayOutline/
@@ -222,7 +267,7 @@ ios/SermonLive/
 - `session_started`、`caption_delta`、`caption_stable`、`caption_final`、英文 sidecar 事件。
 - query string `cursor` 重连入口。
 
-因此 App 不需要发明第二套协议：原生端镜像现有 Web operator 的 session/event contract，使用后台签发的短期 client secret 连接 Realtime Translation，再把 translation deltas 写回后端。OpenAI 标准 API key 始终只存在服务端。公开字幕继续只来自后端 sanitize 后的唯一 SSE 流。
+因此 App 不需要发明第二套协议：Admin 端镜像现有 Web operator 的 session/event contract，使用后台签发的短期 client secret 连接 Realtime Translation，再把 translation deltas 写回后端；会众端镜像现有 Web public SSE contract。OpenAI 标准 API key 始终只存在服务端。iOS 与 Web 的公开字幕都只来自后端 sanitize 后的唯一 SSE 流。
 
 ### 4.4 开始与结束时序
 
@@ -307,7 +352,7 @@ sequenceDiagram
 3. **片段级匹配**：不能因为整篇主题相同就宣布“版本一致”；每个 rolling window 独立判断，同时利用段落顺序。
 4. **匹配随时可撤销**：讲员一旦偏离周六结构，当前片段立即退回无先验翻译。
 5. **快慢通道分离**：周六检索不能阻塞第一条 draft；它主要提高 stable caption 的速度与质量。
-6. **一个公开输出**：匹配、检索和校正在后端完成，operator App 与会众 Web/PWA 检查同一份字幕。
+6. **一个公开输出**：匹配、检索和校正在后端完成，Admin 监控、iOS 会众端与 Web/PWA 检查同一份字幕。
 7. **保留来源证据**：每次先验辅助都记录 pack、候选片段和分数，便于回放和审计。
 
 ### 5.3 周六 Sermon Context Pack
@@ -602,8 +647,62 @@ OpenAI 标准 API key 只存在服务端，绝不能嵌入 App。官方专用 Tr
 
 Apple 的默认 audio session 不允许录音，因此 App 必须先获得录音许可并配置录音类别；还要观察 interruption 和 route-change 通知。参考 [AVAudioApplication](https://developer.apple.com/documentation/avfaudio/avaudioapplication)、[AVAudioSession](https://developer.apple.com/documentation/avfaudio/avaudiosession)、[audio interruption](https://developer.apple.com/documentation/avfaudio/avaudiosession/interruptionnotification) 和 [route change](https://developer.apple.com/documentation/avfaudio/avaudiosession/routechangenotification)。
 
+### 6.4 Admin 麦克风到会众屏幕的延时预算
+
+先固定测量口径：以讲员说完“对应中文语义单元”的最后一个音节为 `t0`，以 iOS/Web 会众端把该中文 delta 绘制出来为 `t1`。`t1 - t0` 是 trailing latency。若从一句话开头计时，还必须加上讲员说完这句话本身的时间，不适合比较系统性能。
+
+当前方案有两次网络中继：Admin iPhone 把音频发给 OpenAI；收到中文 delta 后，再 POST 到项目后端，由后端通过 SSE 发给所有会众。
+
+| 阶段 | 良好 Wi-Fi 工程预算 | 说明 |
+|---|---:|---|
+| iPhone 采音、系统 buffer、WebRTC packetize | 30–120 ms | 与 audio buffer、route 和设备负载有关 |
+| Admin iPhone -> OpenAI | 50–250 ms | WebRTC 网络传输；抖动时明显上升 |
+| Realtime 模型积累语义并产出首个中文 delta | 800–2,000 ms | 最大变量；官方没有固定毫秒 SLA |
+| Admin App -> backend event ingest | 80–300 ms | 当前设计中的第二次上行 |
+| backend sanitize/store -> SSE flush | 20–200 ms | 不应等待 GCS mirror 或 stable correction |
+| SSE -> iOS/Web 会众端渲染 | 50–300 ms | 包括下行、事件解析和主线程更新 |
+| **合计：首个可读 draft** | **约 1.0–3.2 秒** | 再考虑语义分段和现场抖动，产品预期写成 **2–4 秒** 更诚实 |
+
+OpenAI 官方说明 `gpt-realtime-translate` 会在源音频仍在进入时返回 transcript deltas，因此不必等整句或整个 turn 结束；官方也建议 mobile client 使用 WebRTC 以获得更一致的性能。但官方没有承诺固定端到端延时，实际值必须用现场麦克风、教会网络和真实讲员语速测量。参考 [GPT-Realtime-Translate](https://developers.openai.com/api/docs/models/gpt-realtime-translate) 和 [Realtime WebRTC](https://developers.openai.com/api/docs/guides/realtime-webrtc)。
+
+建议对会众明确呈现三个层级，而不是都叫“实时字幕”：
+
+| 层级 | 会众预计落后讲员 | 含义 |
+|---|---:|---|
+| `draft` | 良好网络通常 2–4 秒；较差网络可能 5–10 秒 | Realtime 流式结果，可原位修改 |
+| `boundary stable` | 通常 3–5 秒 | Realtime 文本到达标点/完成边界后的提交；不是第二模型校正 |
+| `context corrected` | 按当前默认 loop 约 9–18 秒 | 周六 Context Pack + 第二模型的高质量修正版 |
+
+当前代码的 `RealtimeCaptionStabilizer` 在检测到标点或 final 时立即产生 `caption_stable`；`stable_delay_ms = 1200` 目前只是写入 latency metadata，并没有真的等待 1.2 秒。因此它只能表示“适合稳定显示的边界”，不能证明文本已经经过额外模型校正。
+
+真正的 AI 修正 loop 当前默认 `min-age-seconds = 4`、`interval-seconds = 6`：候选仅排队就会等待约 4–10 秒，再叠加第二模型请求、event POST 和 SSE 分发。以首个 draft 已落后 2–4 秒计算，**当前实现的高质量修正版合理预估是 9–18 秒，而不是 3–6 秒**。仓库文档中的 stable p95 3–6 秒只能作为未来目标，不能视为现有链路已经达到的事实。
+
+若希望修正版也接近现场，建议改为事件驱动：
+
+1. Realtime 完整语义边界到达时立即触发，不再等 6 秒轮询。
+2. 周六 anchor/术语检索与 Realtime 输出并行进行，不占用 critical path。
+3. 只把当前 1 个短窗口送给第二模型，避免批量等待。
+4. correction 超过 8 秒直接放弃该窗口，保留 draft/boundary stable，防止旧字幕追赶现场。
+
+这样可以把 `context corrected` 的设计目标设为 **p50 5–6 秒、p95 <= 8 秒**。这是待验证目标，不是供应商 SLA。
+
+### 6.5 延时观测点
+
+每个 segment 至少记录以下单调时钟时间戳，才能知道慢在哪里：
+
+- `audioCapturedAt`：Admin 端采到对应 audio frame。
+- `firstRealtimeDeltaAt`：Admin 收到首个中文 delta。
+- `backendAcceptedAt`：后端接受该 event。
+- `sseEmittedAt`：后端写入公开 SSE。
+- `viewerRenderedAt`：iOS/Web 会众端完成渲染。
+- `correctedAt`：Context Pack 修正版发布。
+
+跨设备绝对时钟可能漂移，因此 Admin、backend、viewer 分别记录 monotonic duration，并用 server receive time 做关联；不要只依靠 `Date()` 相减宣称毫秒级端到端结果。Dashboard 分开报告 `capture-to-draft`、`relay-to-viewer` 和 `draft-to-corrected` 的 p50/p95。
+
 ## 7. 安全、隐私与数据
 
+- 会众观看不需要 Admin token，且只能访问 public Sunday/snapshot/SSE contract。
+- Admin 路由、视图和网络 client 与会众端分层；界面隐藏不是授权，所有控制操作必须由服务端验证身份和 operator lease。
 - 只有已鉴权 operator 的“开始实时翻译”流程申请麦克风权限；大纲浏览不触发权限请求。
 - 不在 App bundle、Keychain、日志或 crash report 中放 OpenAI API key。
 - 短期 client secret 只在内存中存活；结束、过期、登出或 App 重启时清除。
@@ -618,6 +717,8 @@ Apple 的默认 audio session 不允许录音，因此 App 必须先获得录音
 
 | 故障 | App 降级行为 |
 |---|---|
+| 会众端没有 active session | 显示等待页，不请求麦克风、不循环弹错误 |
+| 会众端 SSE 断开 | 保留最后 stable 字幕并标注断线时间，自动从 cursor 恢复 |
 | 没有 approved Context Pack | 明确提示；经 operator 确认后允许 baseline 模式开始，不使用周六先验 |
 | 麦克风权限被拒绝 | 禁止 `operator_audio` 开始并给出设置入口；若已配置授权后端音源，可切换音源 |
 | 检测到已有 active session | 显示设备/开始时间；禁止另建 session，只允许只读监控或经授权 handoff |
@@ -637,6 +738,7 @@ Apple 的默认 audio session 不允许录音，因此 App 必须先获得录音
 ### 9.1 自动化
 
 - session 状态机：重复开始、取消启动、停止失败、第二设备冲突和 crash recovery。
+- role boundary：会众无 token 可正常观看，但无法调用任何 Admin endpoint；登出立即撤销 Admin UI/state。
 - preflight：权限、音频 route/level、Context Pack、backend/model、active lease 和 public SSE。
 - audio：第一帧确认、interruption、route change、前后台切换和本地优先停止。
 - secret：不持久化、不记录，过期/结束后不可复用。
@@ -657,7 +759,8 @@ Apple 的默认 audio session 不允许录音，因此 App 必须先获得录音
 - 来电、Siri、锁屏、切后台、拔掉外接麦克风和低电量模式。
 - 重复点击开始、第二台设备尝试开始、App 强制退出和重新打开。
 - 点击结束后 1 秒内本地 audio level 归零，并收到 session_ended/public SSE 回执。
-- 会众 Web/PWA 实际收到与 operator 监控相同 session 的 draft/stable/final。
+- iOS 会众端与 Web/PWA 实际收到相同 session、event id 和 draft/stable/final。
+- 用音频水印或人工 marker 测量 `audioCapturedAt -> viewerRenderedAt`，分别报告 iOS 与 Web 的 p50/p95。
 - 周六/周日版本一致片段的术语质量提升，以及偏离片段的自动降级。
 - 周六大纲可在 Live 中打开；低置信/偏离时不错误高亮。
 - 后端进程重启或 session 切换后不会显示假实时旧字幕或假健康。
@@ -672,16 +775,17 @@ Cloud Run health、SSE smoke 和 simulator 测试都不能替代这次物理设�
 - 固化 session create/end/lease/preflight contract v1 和 fixture JSONL。
 - 固化 Context Pack schema，并从一组已验证周六 artifacts 生成 fixture。
 - 使用真实的周六/周日成对录音完成 baseline、glossary、contextual retrieval 三路回放。
-- 用 SwiftUI 做准备、启动、Live、中断、停止和大纲 sheet 的本地 fixture 原型。
+- 用 SwiftUI 做会众观看、Admin 准备、启动、Live、中断、停止和大纲 sheet 的本地 fixture 原型。
 - 用真机完成麦克风 -> Realtime -> event ingest -> public SSE 的最小技术 spike。
 
 ### Phase 1：operator MVP
 
 - 接入 operator 登录、Sunday bootstrap、preflight、session lease、开始/结束和 SSE loopback monitor。
+- 完成 iOS 会众观看页，并与 Web 共用 public snapshot/SSE contract 和 fixture tests。
 - 默认支持单一 iPhone 麦克风音源，处理录音许可、音频 route、电平、中断和前台约束。
 - 展示只读周六大纲；Live 中只在高置信时高亮当前 anchor。
 - 后端接入 approved Context Pack、sequence-aware retrieval 和有 provenance 的 stable correction。
-- TestFlight 小范围 operator rehearsal；会众继续用 Web/PWA。
+- TestFlight 小范围 operator 与会众 rehearsal；Web/PWA 继续作为并行公开入口和对照组。
 
 ### Phase 2：可靠性与发布
 
@@ -700,9 +804,9 @@ Cloud Run health、SSE smoke 和 simulator 测试都不能替代这次物理设�
 这些问题不阻碍设计分支，但会影响开始写 App：
 
 1. 部署最低版本暂定 **iOS 17+**；实施前用 operator 实际设备验证。
-2. App 是 TestFlight 邀请还是教会内部分发；当前不需要面向会众公开上架。
+2. 会众端需要怎样分发：首轮 TestFlight、公开 App Store，或教会内设备；Admin 权限与分发方式不能绑定。
 3. 是否使用现有 Cloud Run 公网域名作为唯一 production API origin。
-4. POC 先使用 iPhone 麦克风；长期 production 是否能取得调音台或授权直播音轨。
+4. POC 先使用 Admin iPhone 麦克风；长期 production 是否能取得调音台或授权直播音轨。
 5. 哪一组周六/周日视频可以作为首个 paired replay golden set。
 6. Context Pack 中哪些字段必须人工确认：建议至少确认标题、主经文、大纲、人名和首选术语。
 7. Context Pack 缺失时是否允许 operator 明确确认后以 baseline 模式开始；本设计建议允许，但必须留下 receipt。
@@ -715,10 +819,10 @@ Cloud Run health、SSE smoke 和 simulator 测试都不能替代这次物理设�
 1. 选定一组真实周六/周日成对材料，建立 live-English 对齐的 golden set。
 2. 定义 Context Pack/outline schema，先包含经文、术语、anchors、大纲和短片段。
 3. 补齐 session preflight、idempotent create/end、operator lease 和 `session_ended` contract。
-4. 新建 SwiftUI fixture prototype，先完成准备页、周六大纲、Live 状态机和结束确认。
+4. 新建 SwiftUI fixture prototype，完成会众观看页、Admin 准备页、周六大纲、Live 状态机和结束确认。
 5. 做一个真机音频 spike：iPhone 麦克风 -> Realtime Translation -> event ingest -> public SSE -> 现有 Web/PWA。
 6. 同时扩展 stabilizer，完成 baseline、glossary、contextual retrieval 三路离线回放。
-7. 只有 `prior-induced addition = 0`、开始/停止/中断门禁通过，且会众端 loopback 有证据后，才进入完整 Sunday rehearsal。
+7. 以真实网络测量 draft、boundary stable、context corrected 三组 p50/p95；只有 `prior-induced addition = 0`、开始/停止/中断门禁通过，且 iOS/Web 会众端 loopback 有证据后，才进入完整 Sunday rehearsal。
 
 相关现有文档：
 
