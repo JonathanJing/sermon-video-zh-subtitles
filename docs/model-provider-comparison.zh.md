@@ -4,6 +4,8 @@ English version: [model-provider-comparison.md](./model-provider-comparison.md)
 
 更新日期：2026-06-22
 
+> 2026-08-30 设计更新：本文保留为云端 provider 基线与 fallback 比较。方案 C 的目标主路径已调整为“现场流式 ASR + 后训练 Qwen3.5 4B/9B 学生 + church-scoped SSE”；云端 realtime 仍用于方案 B、对照实验和 operator 显式故障回退。模型、训练、数据、DGX Spark 与许可的当前专题基线见[实时翻译后训练文档集](./live-translation-post-training/README.zh.md)。本文中的价格、preview 状态和 provider 型号在实际采购或实验前必须重新核验。
+
 本文比较 OpenAI、Gemini 和 OpenRouter 上适合本项目的翻译模型，并给出 50 分钟 11:30 PT 证道场景的成本、延迟和质量判断。核心目标仍然是：在 11:30 PT 场证道进行时，让中文会众获得可使用的中文字幕，而不是只在事后生成高质量归档字幕。
 
 ## 1. 结论
