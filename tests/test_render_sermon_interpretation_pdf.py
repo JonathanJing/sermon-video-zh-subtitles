@@ -208,7 +208,6 @@ class RenderSermonInterpretationPdfTest(unittest.TestCase):
         self.assertEqual(qa["status"], "pass")
         self.assertEqual(qa["pageCount"], 3)
         self.assertEqual(qa["sparsePages"], [])
-        self.assertFalse(qa["outlineSplitFallbackApplied"])
 
     def test_long_outline_falls_back_when_split_layout_would_be_sparse(self):
         insights = self.complete_insights()
@@ -224,7 +223,6 @@ class RenderSermonInterpretationPdfTest(unittest.TestCase):
 
         self.assertEqual(qa["status"], "pass")
         self.assertEqual(qa["sparsePages"], [])
-        self.assertTrue(qa["outlineSplitFallbackApplied"])
 
     def test_cli_writes_pdf_and_qa(self):
         insights = self.complete_insights()

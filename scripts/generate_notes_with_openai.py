@@ -54,7 +54,11 @@ def main() -> int:
         model=args.model,
         reasoning_effort=args.reasoning_effort,
     )
-    raw_response = request_openai_notes(request_payload, api_key=api_key)
+    raw_response = request_openai_notes(
+        request_payload,
+        api_key=api_key,
+        timeout_seconds=args.request_timeout_seconds,
+    )
     insights = normalize_insights(
         parse_json_object(extract_response_text(raw_response)),
         slices=slices,
@@ -172,6 +176,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--api-key-secret", help="Optional Google Secret Manager resource name for the OpenAI key.")
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("--reasoning-effort", default=DEFAULT_REASONING_EFFORT, choices=["minimal", "low", "medium", "high"])
+    parser.add_argument(
+        "--request-timeout-seconds",
+        type=int,
+        default=120,
+        help="Read timeout for the OpenAI notes request.",
+    )
     parser.add_argument("--max-slices", type=int, default=0, help="Maximum note slices to send. Use 0 for all.")
     parser.add_argument("--gcs-bucket", help="Optional GCS bucket for generated insight artifacts.")
     parser.add_argument("--gcs-prefix", default="poc/openai-notes", help="GCS object prefix for generated artifacts.")
@@ -198,6 +208,8 @@ def parse_args() -> argparse.Namespace:
     args.pdf_qa_out = resolve_repo_path(args.pdf_qa_out) if args.pdf_qa_out else None
     args.font_path = resolve_repo_path(args.font_path) if args.font_path else None
     args.max_slices = None if args.max_slices == 0 else args.max_slices
+    if args.request_timeout_seconds <= 0:
+        raise SystemExit("--request-timeout-seconds must be positive")
     return args
 
 
@@ -566,7 +578,11 @@ def build_openai_request(
     }
 
 
-def request_openai_notes(payload: dict[str, Any], api_key: str) -> dict[str, Any]:
+def request_openai_notes(
+    payload: dict[str, Any],
+    api_key: str,
+    timeout_seconds: int = 120,
+) -> dict[str, Any]:
     response = requests.post(
         "https://api.openai.com/v1/responses",
         headers={
@@ -574,7 +590,7 @@ def request_openai_notes(payload: dict[str, Any], api_key: str) -> dict[str, Any
             "Content-Type": "application/json",
         },
         json=payload,
-        timeout=120,
+        timeout=timeout_seconds,
     )
     if response.status_code >= 400:
         raise SystemExit(f"OpenAI notes request failed with HTTP {response.status_code}: {safe_error_message(response)}")
