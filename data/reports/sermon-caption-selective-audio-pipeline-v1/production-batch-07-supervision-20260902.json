@@ -1,0 +1,118 @@
+{
+  "schemaVersion": "sermon-caption-selective-audio-batch-supervision-v1",
+  "generatedAt": "2026-09-02T07:52:40Z",
+  "status": "completed_recovered_and_verified",
+  "batch": {
+    "number": 7,
+    "splitCounts": {
+      "train": 10
+    },
+    "videoCount": 10,
+    "segmentCount": 507
+  },
+  "teacherPipeline": {
+    "translator": "gpt-5.6-terra",
+    "reviewer": "gpt-5.6-sol",
+    "reasoningEffort": "high",
+    "elapsedSecondsFromSuccessfulConversationReceipts": 8447.833,
+    "successfulFreshConversationCount": 175,
+    "failedFreshConversationCountWithUsageReceipt": 1,
+    "totalFreshConversationCountConsumed": 176,
+    "cachedResultCount": 5,
+    "usageReceiptCoverageIncludingFailures": 181,
+    "usage": {
+      "inputTokens": 3337935,
+      "cachedInputTokens": 1513984,
+      "outputTokens": 323139,
+      "reasoningOutputTokens": 98926
+    },
+    "failedConversationUsage": {
+      "inputTokens": 17026,
+      "cachedInputTokens": 15104,
+      "outputTokens": 402,
+      "reasoningOutputTokens": 140
+    },
+    "reviewDispositionCounts": {
+      "solHighTextReviewPassed": 341,
+      "solHighTextReviewCorrected": 124,
+      "excludedRequiresAudioEvidence": 42
+    }
+  },
+  "recovery": {
+    "initialFailedVideoCount": 2,
+    "recoveredVideoCount": 2,
+    "finalFailedVideoCount": 0,
+    "failures": [
+      {
+        "videoId": "-eabDU8ciVI",
+        "failure": "teacher_child_argparse_rejected_hyphen_leading_video_id",
+        "recovery": "changed_child_argument_to_equals_form_then_completed_full_terra_and_sol_pipeline"
+      },
+      {
+        "videoId": "5sa6nh58EYM",
+        "failure": "terra_incomplete_id_set_batch_0031_0036_returned_only_segment_0031",
+        "recovery": "preserved_failure_usage_receipt_reused_five_valid_translation_batches_reran_only_failed_and_trailing_translation_batches_then_review"
+      }
+    ],
+    "invalidFreshOutputFailureReceiptCount": 1,
+    "semanticValidationBeforeSuccessCache": true
+  },
+  "selectiveAudioAudit": {
+    "model": "gpt-transcribe",
+    "selectedSegmentCount": 170,
+    "selectedSegmentShare": 0.3353,
+    "clipSeconds": 7344.159,
+    "billedSecondsFromUsageReceipts": 7419,
+    "asrUsageReceiptCoverage": 170,
+    "estimatedCostUsdAt0.0045PerMinute": 0.5564,
+    "decisionCounts": {
+      "audioEvidenceSupportsCaption": 166,
+      "excludedCaptionAsrDisagreement": 3,
+      "excludedAudioTranscriptionInvalid": 1
+    }
+  },
+  "audioRecovery": {
+    "initialFailedVideoCount": 1,
+    "recoveredVideoCount": 1,
+    "finalFailedVideoCount": 0,
+    "failures": [
+      {
+        "videoId": "5sa6nh58EYM",
+        "failure": "youtube_audio_download_http_403_and_format_unavailable",
+        "recovery": "single_video_retry_downloaded_media_then_transcribed_only_selected_segments"
+      }
+    ],
+    "billableAsrConsumedOnFailedDownload": false
+  },
+  "finalDataset": {
+    "candidateSegmentCount": 503,
+    "excludedSegmentCount": 4,
+    "candidateShare": 0.9921,
+    "englishCaptionFrozenAndOrderPreserved": true,
+    "emptyChineseSegmentCount": 0,
+    "silentCaptionOverwriteCount": 0,
+    "humanApprovalClaimed": false
+  },
+  "artifactVerification": {
+    "sourceMediaFilesDecoded": 10,
+    "sourceMediaDecodeFailures": 0,
+    "audioClipCount": 170,
+    "audioClipDecodeFailures": 0,
+    "transcriptJsonCount": 170,
+    "transcriptTextCount": 170,
+    "audioAuditRowCount": 170,
+    "mergedRowCount": 507,
+    "countAndIdentityChecksPassed": true
+  },
+  "sourceReports": {
+    "initialTeacherBatch": "data/reports/sermon-caption-selective-audio-pipeline-v1/batch-20260902T071340Z.json",
+    "teacherRecoveryBatch": "data/reports/sermon-caption-selective-audio-pipeline-v1/batch-20260902T074453Z.json",
+    "initialSelectiveAudioAuditBatch": "data/reports/sermon-caption-selective-audio-pipeline-v1/batch-20260902T074950Z.json",
+    "selectiveAudioAuditRecoveryBatch": "data/reports/sermon-caption-selective-audio-pipeline-v1/batch-20260902T075106Z.json"
+  },
+  "trainingEligibility": "blocked",
+  "trainingBlockers": [
+    "source_training_rights_unconfirmed",
+    "gpt_external_student_distillation_not_authorized"
+  ]
+}

@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.schemas.example/sermon-parallel-corpus-v1/review-item.schema.json",
+  "title": "Sermon parallel corpus human review item",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "reviewItemId",
+    "reviewPayloadSha256",
+    "sermonId",
+    "segmentId",
+    "split",
+    "priority",
+    "issues",
+    "source",
+    "candidate",
+    "boundary",
+    "reviewStatus",
+    "trainingEligibility"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "sermon-parallel-review-v1"},
+    "reviewItemId": {"type": "string", "minLength": 1},
+    "reviewPayloadSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "sermonId": {"type": "string", "minLength": 1},
+    "segmentId": {"type": "string", "minLength": 1},
+    "split": {"enum": ["poc", "train", "dev", "test"]},
+    "priority": {"enum": ["normal", "high"]},
+    "issues": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "captionKind",
+        "reviewStatus",
+        "manifestSha256",
+        "cuesSha256",
+        "textSha256",
+        "cueIds",
+        "startMs",
+        "endMs",
+        "english"
+      ],
+      "properties": {
+        "captionKind": {"const": "youtube_automatic"},
+        "reviewStatus": {"const": "unreviewed_raw"},
+        "manifestSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "cuesSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "textSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "cueIds": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+        "startMs": {"type": "integer", "minimum": 0},
+        "endMs": {"type": "integer", "minimum": 1},
+        "english": {"type": "string", "minLength": 1}
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "chinese",
+        "chineseSha256",
+        "contentType",
+        "scriptureRefs",
+        "scriptureAlignments",
+        "properNouns",
+        "modelFlags",
+        "modelNotes",
+        "teacher",
+        "modelReviewStatus"
+      ],
+      "properties": {
+        "chinese": {"type": "string", "minLength": 1},
+        "chineseSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "contentType": {
+          "enum": ["sermon", "scripture_quote", "prayer", "illustration", "announcement", "other"]
+        },
+        "scriptureRefs": {"type": "array", "items": {"type": "string"}},
+        "scriptureAlignments": {"type": "array", "items": {"type": "object"}},
+        "properNouns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["source", "zh"],
+            "properties": {
+              "source": {"type": "string"},
+              "zh": {"type": "string"}
+            }
+          }
+        },
+        "modelFlags": {"type": "array", "items": {"type": "string"}},
+        "modelNotes": {"type": "array", "items": {"type": "string"}},
+        "teacher": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["provider", "model", "promptVersions", "provenance"],
+          "properties": {
+            "provider": {"type": "string"},
+            "model": {"type": "string"},
+            "promptVersions": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+            "provenance": {"type": "string"}
+          }
+        },
+        "modelReviewStatus": {"const": "model_reviewed_requires_human"}
+      }
+    },
+    "boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "contentScope",
+        "approvedByHuman",
+        "startCueId",
+        "endCueId",
+        "boundarySha256"
+      ],
+      "properties": {
+        "status": {"type": "string"},
+        "contentScope": {"const": "sermon_only"},
+        "approvedByHuman": {"type": "boolean"},
+        "startCueId": {"type": "string"},
+        "endCueId": {"type": "string"},
+        "boundarySha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "reviewStatus": {"const": "pending_human"},
+    "trainingEligibility": {"const": "blocked"}
+  }
+}

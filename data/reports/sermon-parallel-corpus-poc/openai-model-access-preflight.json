@@ -1,0 +1,31 @@
+{
+  "apiKeyMaterialIncluded": false,
+  "checks": [
+    {
+      "name": "api_key_secret_access",
+      "observed": "secret value read from Secret Manager",
+      "state": "pass"
+    },
+    {
+      "name": "responses_model:gpt-5.6-sol",
+      "observed": {
+        "endpoint": "responses",
+        "httpStatus": 200,
+        "model": "gpt-5.6-sol",
+        "responseJson": {
+          "ok": true
+        },
+        "status": "ok"
+      },
+      "state": "pass"
+    }
+  ],
+  "failedChecks": [],
+  "generatedAt": "2026-08-31T05:10:27.977380+00:00",
+  "models": [
+    "gpt-5.6-sol"
+  ],
+  "schemaVersion": 1,
+  "secretResourceNamesIncluded": false,
+  "status": "ok"
+}

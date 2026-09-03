@@ -1,0 +1,94 @@
+{
+  "apiKeyMaterialIncluded": false,
+  "generatedAt": "2026-08-31T07:03:00.114405+00:00",
+  "schemaVersion": "sermon-whole-split-v1",
+  "secretResourceNamesIncluded": false,
+  "status": "provisional_split_frozen_training_blocked",
+  "strategy": {
+    "derivativesMustInheritParentSplit": true,
+    "devTarget": 18,
+    "metadataOverridesSha256": "7315a6f2b67a6c1da24bb97ce378cefd28645c9c1201e2fe626831d6a3e54f70",
+    "pocReservedFromUntouchedTest": true,
+    "seed": "mariners-sermon-whole-split-v1-20260830",
+    "testTarget": 18,
+    "unit": "whole_sermon",
+    "unseenTestSpeaker": "Ed Stetzer"
+  },
+  "summary": {
+    "countsBySpeakerAndSplit": {
+      "Christine Caine": {
+        "dev": 1,
+        "poc": 1,
+        "test": 1,
+        "train": 7
+      },
+      "Doug Fields": {
+        "dev": 3,
+        "poc": 1,
+        "test": 1,
+        "train": 6
+      },
+      "Ed Stetzer": {
+        "test": 6
+      },
+      "Eric Geiger": {
+        "dev": 11,
+        "poc": 1,
+        "test": 7,
+        "train": 102
+      },
+      "Jared Kirkwood": {
+        "dev": 1,
+        "test": 1,
+        "train": 10
+      },
+      "Kenton Beshore": {
+        "dev": 1,
+        "test": 1,
+        "train": 8
+      },
+      "Steve Bang Lee": {
+        "dev": 1,
+        "test": 1,
+        "train": 8
+      }
+    },
+    "countsBySplit": {
+      "dev": 18,
+      "poc": 3,
+      "test": 18,
+      "train": 141
+    },
+    "countsByYearAndSplit": {
+      "2023": {
+        "dev": 4,
+        "poc": 1,
+        "test": 4,
+        "train": 38
+      },
+      "2024": {
+        "dev": 7,
+        "test": 5,
+        "train": 40
+      },
+      "2025": {
+        "dev": 4,
+        "test": 5,
+        "train": 40
+      },
+      "2026": {
+        "dev": 3,
+        "poc": 2,
+        "test": 4,
+        "train": 23
+      }
+    },
+    "durationHoursBySplit": {
+      "dev": 11.563,
+      "poc": 1.938,
+      "test": 10.914,
+      "train": 88.423
+    }
+  },
+  "trainingEligibility": "blocked"
+}

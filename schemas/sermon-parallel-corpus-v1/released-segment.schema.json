@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.schemas.example/sermon-parallel-corpus-v1/released-segment.schema.json",
+  "title": "Versioned sermon parallel corpus segment",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "id",
+    "sermonId",
+    "split",
+    "startMs",
+    "endMs",
+    "cueIds",
+    "en",
+    "zh",
+    "sourceEnglishSha256",
+    "releasedEnglishSha256",
+    "releasedChineseSha256",
+    "reviewPayloadSha256",
+    "qualityTier",
+    "reviewStatus",
+    "trainingEligibility",
+    "trainingBlockers",
+    "provenance"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "sermon-parallel-released-v1"},
+    "id": {"type": "string", "minLength": 1},
+    "sermonId": {"type": "string", "minLength": 1},
+    "split": {"enum": ["poc", "train", "dev", "test"]},
+    "startMs": {"type": "integer", "minimum": 0},
+    "endMs": {"type": "integer", "minimum": 1},
+    "cueIds": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+    "en": {"type": "string", "minLength": 1},
+    "zh": {"type": "string", "minLength": 1},
+    "sourceEnglishSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "releasedEnglishSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "releasedChineseSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "reviewPayloadSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "qualityTier": {
+      "enum": [
+        "isolated_reference",
+        "silver_automatic_candidate",
+        "human_reviewed_boundary_blocked",
+        "gold_human_reviewed"
+      ]
+    },
+    "reviewStatus": {
+      "enum": ["pending_human", "human_approved", "changes_required", "rejected"]
+    },
+    "trainingEligibility": {"enum": ["blocked", "eligible"]},
+    "trainingBlockers": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceManifestSha256", "sourceCuesSha256", "boundarySha256", "teacher", "humanDecisionSha256"],
+      "properties": {
+        "sourceManifestSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "sourceCuesSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "boundarySha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "teacher": {"type": "object"},
+        "humanDecisionSha256": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"}
+      }
+    }
+  }
+}

@@ -1,0 +1,987 @@
+{
+  "apiKeyMaterialIncluded": false,
+  "asrModel": "gpt-transcribe",
+  "asrPricePerMinuteUsdAssumption": 0.0045,
+  "captionSegmentCount": 348,
+  "captionSegmentDurationHours": 5.329,
+  "captionSourceQuality": {
+    "dispositionCounts": {
+      "teacher_ready": 10
+    },
+    "maxSparseSegmentShare": 0.1,
+    "sourceReconciliationVideoIds": [],
+    "sparseWordsPerSecondThreshold": 0.6
+  },
+  "completedVideoCount": 8,
+  "credentialSource": "not_used",
+  "durationHours": 5.346,
+  "failedVideoCount": 2,
+  "finishedAt": "2026-09-02T01:03:19.434017+00:00",
+  "fullAudioUpperBoundCostUsd": 1.44,
+  "fullAudioUpperBoundMinutes": 320.77,
+  "generatedAt": "2026-09-01T23:40:34.528892+00:00",
+  "humanApprovalClaimed": false,
+  "results": [
+    {
+      "split": "train",
+      "status": "completed",
+      "teacher": {
+        "apiKeyUsed": false,
+        "artifactPurpose": "dataset_preparation_only",
+        "audioEvidenceRequiredFor": "needs_audio_review",
+        "authMode": "chatgpt_managed_verified",
+        "batchSize": 6,
+        "cachedConversationResults": 0,
+        "cachedOrImportedResults": 0,
+        "elapsedSeconds": 609.901,
+        "freshConversations": 12,
+        "freshEphemeralConversations": 12,
+        "generatedAt": "2026-09-01T23:50:44.545662+00:00",
+        "humanApprovalClaimed": false,
+        "postTrainingStudent": {
+          "class": "lightweight_open_weight_candidate",
+          "status": "unselected"
+        },
+        "reviewDispositionCounts": {
+          "excluded_requires_audio_evidence": 3,
+          "sol_high_text_review_corrected": 18,
+          "sol_high_text_review_passed": 12
+        },
+        "reviewReasoningEffort": "high",
+        "reviewerModel": "gpt-5.6-sol",
+        "routineHumanTextReviewRequired": false,
+        "schemaVersion": "sermon-codex-conversation-v3",
+        "segmentCount": 33,
+        "selectedSegmentIds": [
+          "OLQ3CcqGYOY_seg_0001",
+          "OLQ3CcqGYOY_seg_0002",
+          "OLQ3CcqGYOY_seg_0003",
+          "OLQ3CcqGYOY_seg_0004",
+          "OLQ3CcqGYOY_seg_0005",
+          "OLQ3CcqGYOY_seg_0006",
+          "OLQ3CcqGYOY_seg_0007",
+          "OLQ3CcqGYOY_seg_0008",
+          "OLQ3CcqGYOY_seg_0009",
+          "OLQ3CcqGYOY_seg_0010",
+          "OLQ3CcqGYOY_seg_0011",
+          "OLQ3CcqGYOY_seg_0012",
+          "OLQ3CcqGYOY_seg_0013",
+          "OLQ3CcqGYOY_seg_0014",
+          "OLQ3CcqGYOY_seg_0015",
+          "OLQ3CcqGYOY_seg_0016",
+          "OLQ3CcqGYOY_seg_0017",
+          "OLQ3CcqGYOY_seg_0018",
+          "OLQ3CcqGYOY_seg_0019",
+          "OLQ3CcqGYOY_seg_0020",
+          "OLQ3CcqGYOY_seg_0021",
+          "OLQ3CcqGYOY_seg_0022",
+          "OLQ3CcqGYOY_seg_0023",
+          "OLQ3CcqGYOY_seg_0024",
+          "OLQ3CcqGYOY_seg_0025",
+          "OLQ3CcqGYOY_seg_0026",
+          "OLQ3CcqGYOY_seg_0027",
+          "OLQ3CcqGYOY_seg_0028",
+          "OLQ3CcqGYOY_seg_0029",
+          "OLQ3CcqGYOY_seg_0030",
+          "OLQ3CcqGYOY_seg_0031",
+          "OLQ3CcqGYOY_seg_0032",
+          "OLQ3CcqGYOY_seg_0033"
+        ],
+        "selectedSourceSha256": "94ce4aa5bb2ea442022e8704e502b22ede9d1edcb8387ca1ac8d0b79736b1be7",
+        "sharedCodexUsageConsumed": true,
+        "sourceSha256": "e11443aac56dfbcca3031f9dca5a8882268ae2b22b952e7998b93cdc4ca769cb",
+        "stages": {
+          "review": {
+            "cachedOrImportedResults": 0,
+            "elapsedSeconds": 394.757,
+            "freshConversations": 6,
+            "usage": {
+              "cache_write_input_tokens": 0,
+              "cached_input_tokens": 22016,
+              "input_tokens": 121407,
+              "output_tokens": 20834,
+              "reasoning_output_tokens": 11466
+            },
+            "usageReceiptCoverage": 6
+          },
+          "translation": {
+            "cachedOrImportedResults": 0,
+            "elapsedSeconds": 215.144,
+            "freshConversations": 6,
+            "usage": {
+              "cache_write_input_tokens": 0,
+              "cached_input_tokens": 69120,
+              "input_tokens": 115439,
+              "output_tokens": 10731,
+              "reasoning_output_tokens": 1569
+            },
+            "usageReceiptCoverage": 6
+          }
+        },
+        "status": "hybrid_teacher_pipeline_completed_sol_high_text_review_training_blocked",
+        "trainingEligibility": "blocked",
+        "translateReasoningEffort": "high",
+        "translatorModel": "gpt-5.6-terra",
+        "usage": {
+          "cache_write_input_tokens": 0,
+          "cached_input_tokens": 91136,
+          "input_tokens": 236846,
+          "output_tokens": 31565,
+          "reasoning_output_tokens": 13035
+        },
+        "usageReceiptCoverage": 12,
+        "videoId": "OLQ3CcqGYOY"
+      },
+      "videoId": "OLQ3CcqGYOY"
+    },
+    {
+      "split": "train",
+      "status": "completed",
+      "teacher": {
+        "apiKeyUsed": false,
+        "artifactPurpose": "dataset_preparation_only",
+        "audioEvidenceRequiredFor": "needs_audio_review",
+        "authMode": "chatgpt_managed_verified",
+        "batchSize": 6,
+        "cachedConversationResults": 0,
+        "cachedOrImportedResults": 0,
+        "elapsedSeconds": 644.958,
+        "freshConversations": 12,
+        "freshEphemeralConversations": 12,
+        "generatedAt": "2026-09-02T00:01:29.657541+00:00",
+        "humanApprovalClaimed": false,
+        "postTrainingStudent": {
+          "class": "lightweight_open_weight_candidate",
+          "status": "unselected"
+        },
+        "reviewDispositionCounts": {
+          "excluded_requires_audio_evidence": 2,
+          "sol_high_text_review_corrected": 23,
+          "sol_high_text_review_passed": 11
+        },
+        "reviewReasoningEffort": "high",
+        "reviewerModel": "gpt-5.6-sol",
+        "routineHumanTextReviewRequired": false,
+        "schemaVersion": "sermon-codex-conversation-v3",
+        "segmentCount": 36,
+        "selectedSegmentIds": [
+          "RNvDXx3K0JM_seg_0001",
+          "RNvDXx3K0JM_seg_0002",
+          "RNvDXx3K0JM_seg_0003",
+          "RNvDXx3K0JM_seg_0004",
+          "RNvDXx3K0JM_seg_0005",
+          "RNvDXx3K0JM_seg_0006",
+          "RNvDXx3K0JM_seg_0007",
+          "RNvDXx3K0JM_seg_0008",
+          "RNvDXx3K0JM_seg_0009",
+          "RNvDXx3K0JM_seg_0010",
+          "RNvDXx3K0JM_seg_0011",
+          "RNvDXx3K0JM_seg_0012",
+          "RNvDXx3K0JM_seg_0013",
+          "RNvDXx3K0JM_seg_0014",
+          "RNvDXx3K0JM_seg_0015",
+          "RNvDXx3K0JM_seg_0016",
+          "RNvDXx3K0JM_seg_0017",
+          "RNvDXx3K0JM_seg_0018",
+          "RNvDXx3K0JM_seg_0019",
+          "RNvDXx3K0JM_seg_0020",
+          "RNvDXx3K0JM_seg_0021",
+          "RNvDXx3K0JM_seg_0022",
+          "RNvDXx3K0JM_seg_0023",
+          "RNvDXx3K0JM_seg_0024",
+          "RNvDXx3K0JM_seg_0025",
+          "RNvDXx3K0JM_seg_0026",
+          "RNvDXx3K0JM_seg_0027",
+          "RNvDXx3K0JM_seg_0028",
+          "RNvDXx3K0JM_seg_0029",
+          "RNvDXx3K0JM_seg_0030",
+          "RNvDXx3K0JM_seg_0031",
+          "RNvDXx3K0JM_seg_0032",
+          "RNvDXx3K0JM_seg_0033",
+          "RNvDXx3K0JM_seg_0034",
+          "RNvDXx3K0JM_seg_0035",
+          "RNvDXx3K0JM_seg_0036"
+        ],
+        "selectedSourceSha256": "e71c688cb51d875228f6fdf5b650d53615a0402dad1efff5153ca86d2475722d",
+        "sharedCodexUsageConsumed": true,
+        "sourceSha256": "2ee0fa0eed5148ff2a4150f313aad8d813f2aada8525faaa092f15cd70a7a11c",
+        "stages": {
+          "review": {
+            "cachedOrImportedResults": 0,
+            "elapsedSeconds": 442.94,
+            "freshConversations": 6,
+            "usage": {
+              "cache_write_input_tokens": 0,
+              "cached_input_tokens": 32000,
+              "input_tokens": 122117,
+              "output_tokens": 23284,
+              "reasoning_output_tokens": 13315
+            },
+            "usageReceiptCoverage": 6
+          },
+          "translation": {
+            "cachedOrImportedResults": 0,
+            "elapsedSeconds": 202.018,
+            "freshConversations": 6,
+            "usage": {
+              "cache_write_input_tokens": 0,
+              "cached_input_tokens": 75264,
+              "input_tokens": 103524,
+              "output_tokens": 10196,
+              "reasoning_output_tokens": 974
+            },
+            "usageReceiptCoverage": 6
+          }
+        },
+        "status": "hybrid_teacher_pipeline_completed_sol_high_text_review_training_blocked",
+        "trainingEligibility": "blocked",
+        "translateReasoningEffort": "high",
+        "translatorModel": "gpt-5.6-terra",
+        "usage": {
+          "cache_write_input_tokens": 0,
+          "cached_input_tokens": 107264,
+          "input_tokens": 225641,
+          "output_tokens": 33480,
+          "reasoning_output_tokens": 14289
+        },
+        "usageReceiptCoverage": 12,
+        "videoId": "RNvDXx3K0JM"
+      },
+      "videoId": "RNvDXx3K0JM"
+    },
+    {
+      "split": "train",
+      "status": "completed",
+      "teacher": {
+        "apiKeyUsed": false,
+        "artifactPurpose": "dataset_preparation_only",
+        "audioEvidenceRequiredFor": "needs_audio_review",
+        "authMode": "chatgpt_managed_verified",
+        "batchSize": 6,
+        "cachedConversationResults": 0,
+        "cachedOrImportedResults": 0,
+        "elapsedSeconds": 538.844,
+        "freshConversations": 12,
+        "freshEphemeralConversations": 12,
+        "generatedAt": "2026-09-02T00:10:28.651814+00:00",
+        "humanApprovalClaimed": false,
+        "postTrainingStudent": {
+          "class": "lightweight_open_weight_candidate",
+          "status": "unselected"
+        },
+        "reviewDispositionCounts": {
+          "excluded_requires_audio_evidence": 4,
+          "sol_high_text_review_corrected": 11,
+          "sol_high_text_review_passed": 21
+        },
+        "reviewReasoningEffort": "high",
+        "reviewerModel": "gpt-5.6-sol",
+        "routineHumanTextReviewRequired": false,
+        "schemaVersion": "sermon-codex-conversation-v3",
+        "segmentCount": 36,
+        "selectedSegmentIds": [
+          "KAiT97qj0D8_seg_0001",
+          "KAiT97qj0D8_seg_0002",
+          "KAiT97qj0D8_seg_0003",
+          "KAiT97qj0D8_seg_0004",
+          "KAiT97qj0D8_seg_0005",
+          "KAiT97qj0D8_seg_0006",
+          "KAiT97qj0D8_seg_0007",
+          "KAiT97qj0D8_seg_0008",
+          "KAiT97qj0D8_seg_0009",
+          "KAiT97qj0D8_seg_0010",
+          "KAiT97qj0D8_seg_0011",
+          "KAiT97qj0D8_seg_0012",
+          "KAiT97qj0D8_seg_0013",
+          "KAiT97qj0D8_seg_0014",
+          "KAiT97qj0D8_seg_0015",
+          "KAiT97qj0D8_seg_0016",
+          "KAiT97qj0D8_seg_0017",
+          "KAiT97qj0D8_seg_0018",
+          "KAiT97qj0D8_seg_0019",
+          "KAiT97qj0D8_seg_0020",
+          "KAiT97qj0D8_seg_0021",
+          "KAiT97qj0D8_seg_0022",
+          "KAiT97qj0D8_seg_0023",
+          "KAiT97qj0D8_seg_0024",
+          "KAiT97qj0D8_seg_0025",
+          "KAiT97qj0D8_seg_0026",
+          "KAiT97qj0D8_seg_0027",
+          "KAiT97qj0D8_seg_0028",
+          "KAiT97qj0D8_seg_0029",
+          "KAiT97qj0D8_seg_0030",
+          "KAiT97qj0D8_seg_0031",
+          "KAiT97qj0D8_seg_0032",
+          "KAiT97qj0D8_seg_0033",
+          "KAiT97qj0D8_seg_0034",
+          "KAiT97qj0D8_seg_0035",
+          "KAiT97qj0D8_seg_0036"
+        ],
+        "selectedSourceSha256": "6ddea043f0a3c85c9d7c646173666ced11cef35b30528ad82c1e5ce20ec64a40",
+        "sharedCodexUsageConsumed": true,
+        "sourceSha256": "0e7717b37c0793f504c9c5e21ba88005b9c8e4f6277ee8cc39a9dabf4a18d910",
+        "stages": {
+          "review": {
+            "cachedOrImportedResults": 0,
+            "elapsedSeconds": 315.716,
+            "freshConversations": 6,
+            "usage": {
+              "cache_write_input_tokens": 0,
+              "cached_input_tokens": 36096,
+              "input_tokens": 117257,
+              "output_tokens": 16381,
+              "reasoning_output_tokens": 6586
+            },
+            "usageReceiptCoverage": 6
+          },
+          "translation": {
+            "cachedOrImportedResults": 0,
+            "elapsedSeconds": 223.128,
+            "freshConversations": 6,
+            "usage": {
+              "cache_write_input_tokens": 0,
+              "cached_input_tokens": 73216,
+              "input_tokens": 106938,
+              "output_tokens": 11118,
+              "reasoning_output_tokens": 1554
+            },
+            "usageReceiptCoverage": 6
+          }
+        },
+        "status": "hybrid_teacher_pipeline_completed_sol_high_text_review_training_blocked",
+        "trainingEligibility": "blocked",
+        "translateReasoningEffort": "high",
+        "translatorModel": "gpt-5.6-terra",
+        "usage": {
+          "cache_write_input_tokens": 0,
+          "cached_input_tokens": 109312,
+          "input_tokens": 224195,
+          "output_tokens": 27499,
+          "reasoning_output_tokens": 8140
+        },
+        "usageReceiptCoverage": 12,
+        "videoId": "KAiT97qj0D8"
+      },
+      "videoId": "KAiT97qj0D8"
+    },
+    {
+      "split": "train",
+      "status": "completed",
+      "teacher": {
+        "apiKeyUsed": false,
+        "artifactPurpose": "dataset_preparation_only",
+        "audioEvidenceRequiredFor": "needs_audio_review",
+        "authMode": "chatgpt_managed_verified",
+        "batchSize": 6,
+        "cachedConversationResults": 0,
+        "cachedOrImportedResults": 0,
+        "elapsedSeconds": 564.59,
+        "freshConversations": 14,
+        "freshEphemeralConversations": 14,
+        "generatedAt": "2026-09-02T00:19:53.395922+00:00",
+        "humanApprovalClaimed": false,
+        "postTrainingStudent": {
+          "class": "lightweight_open_weight_candidate",
+          "status": "unselected"
+        },
+        "reviewDispositionCounts": {
+          "excluded_requires_audio_evidence": 2,
+          "sol_high_text_review_corrected": 20,
+          "sol_high_text_review_passed": 15
+        },
+        "reviewReasoningEffort": "high",
+        "reviewerModel": "gpt-5.6-sol",
+        "routineHumanTextReviewRequired": false,
+        "schemaVersion": "sermon-codex-conversation-v3",
+        "segmentCount": 37,
+        "selectedSegmentIds": [
+          "IkMlrZWr3AE_seg_0001",
+          "IkMlrZWr3AE_seg_0002",
+          "IkMlrZWr3AE_seg_0003",
+          "IkMlrZWr3AE_seg_0004",
+          "IkMlrZWr3AE_seg_0005",
+          "IkMlrZWr3AE_seg_0006",
+          "IkMlrZWr3AE_seg_0007",
+          "IkMlrZWr3AE_seg_0008",
+          "IkMlrZWr3AE_seg_0009",
+          "IkMlrZWr3AE_seg_0010",
+          "IkMlrZWr3AE_seg_0011",
+          "IkMlrZWr3AE_seg_0012",
+          "IkMlrZWr3AE_seg_0013",
+          "IkMlrZWr3AE_seg_0014",
+          "IkMlrZWr3AE_seg_0015",
+          "IkMlrZWr3AE_seg_0016",
+          "IkMlrZWr3AE_seg_0017",
+          "IkMlrZWr3AE_seg_0018",
+          "IkMlrZWr3AE_seg_0019",
+          "IkMlrZWr3AE_seg_0020",
+          "IkMlrZWr3AE_seg_0021",
+          "IkMlrZWr3AE_seg_0022",
+          "IkMlrZWr3AE_seg_0023",
+          "IkMlrZWr3AE_seg_0024",
+          "IkMlrZWr3AE_seg_0025",
+          "IkMlrZWr3AE_seg_0026",
+          "IkMlrZWr3AE_seg_0027",
+          "IkMlrZWr3AE_seg_0028",
+          "IkMlrZWr3AE_seg_0029",
+          "IkMlrZWr3AE_seg_0030",
+          "IkMlrZWr3AE_seg_0031",
+          "IkMlrZWr3AE_seg_0032",
+          "IkMlrZWr3AE_seg_0033",
+          "IkMlrZWr3AE_seg_0034",
+          "IkMlrZWr3AE_seg_0035",
+          "IkMlrZWr3AE_seg_0036",
+          "IkMlrZWr3AE_seg_0037"
+        ],
+        "selectedSourceSha256": "4b2652c73b15d495ac517eb5e891d8d921a6c57f9c1f608bcdf45a83a20371d3",
+        "sharedCodexUsageConsumed": true,
+        "sourceSha256": "d0bee317cd2e00436d64373d29f61f6e75242852c3414fdb07043926c04aef3f",
+        "stages": {
+          "review": {
+            "cachedOrImportedResults": 0,
+            "elapsedSeconds": 328.801,
+            "freshConversations": 7,
+            "usage": {
+              "cache_write_input_tokens": 0,
+              "cached_input_tokens": 34048,
+              "input_tokens": 135271,
+              "output_tokens": 16418,
+              "reasoning_output_tokens": 6180
+            },
+            "usageReceiptCoverage": 7
+          },
+          "translation": {
+            "cachedOrImportedResults": 0,
+            "elapsedSeconds": 235.789,
+            "freshConversations": 7,
+            "usage": {
+              "cache_write_input_tokens": 0,
+              "cached_input_tokens": 79360,
+              "input_tokens": 123637,
+              "output_tokens": 11840,
+              "reasoning_output_tokens": 1673
+            },
+            "usageReceiptCoverage": 7
+          }
+        },
+        "status": "hybrid_teacher_pipeline_completed_sol_high_text_review_training_blocked",
+        "trainingEligibility": "blocked",
+        "translateReasoningEffort": "high",
+        "translatorModel": "gpt-5.6-terra",
+        "usage": {
+          "cache_write_input_tokens": 0,
+          "cached_input_tokens": 113408,
+          "input_tokens": 258908,
+          "output_tokens": 28258,
+          "reasoning_output_tokens": 7853
+        },
+        "usageReceiptCoverage": 14,
+        "videoId": "IkMlrZWr3AE"
+      },
+      "videoId": "IkMlrZWr3AE"
+    },
+    {
+      "split": "train",
+      "status": "completed",
+      "teacher": {
+        "apiKeyUsed": false,
+        "artifactPurpose": "dataset_preparation_only",
+        "audioEvidenceRequiredFor": "needs_audio_review",
+        "authMode": "chatgpt_managed_verified",
+        "batchSize": 6,
+        "cachedConversationResults": 0,
+        "cachedOrImportedResults": 0,
+        "elapsedSeconds": 497.963,
+        "freshConversations": 10,
+        "freshEphemeralConversations": 10,
+        "generatedAt": "2026-09-02T00:28:11.516093+00:00",
+        "humanApprovalClaimed": false,
+        "postTrainingStudent": {
+          "class": "lightweight_open_weight_candidate",
+          "status": "unselected"
+        },
+        "reviewDispositionCounts": {
+          "excluded_requires_audio_evidence": 6,
+          "sol_high_text_review_corrected": 10,
+          "sol_high_text_review_passed": 12
+        },
+        "reviewReasoningEffort": "high",
+        "reviewerModel": "gpt-5.6-sol",
+        "routineHumanTextReviewRequired": false,
+        "schemaVersion": "sermon-codex-conversation-v3",
+        "segmentCount": 28,
+        "selectedSegmentIds": [
+          "_zzJSMwrPcw_seg_0001",
+          "_zzJSMwrPcw_seg_0002",
+          "_zzJSMwrPcw_seg_0003",
+          "_zzJSMwrPcw_seg_0004",
+          "_zzJSMwrPcw_seg_0005",
+          "_zzJSMwrPcw_seg_0006",
+          "_zzJSMwrPcw_seg_0007",
+          "_zzJSMwrPcw_seg_0008",
+          "_zzJSMwrPcw_seg_0009",
+          "_zzJSMwrPcw_seg_0010",
+          "_zzJSMwrPcw_seg_0011",
+          "_zzJSMwrPcw_seg_0012",
+          "_zzJSMwrPcw_seg_0013",
+          "_zzJSMwrPcw_seg_0014",
+          "_zzJSMwrPcw_seg_0015",
+          "_zzJSMwrPcw_seg_0016",
+          "_zzJSMwrPcw_seg_0017",
+          "_zzJSMwrPcw_seg_0018",
+          "_zzJSMwrPcw_seg_0019",
+          "_zzJSMwrPcw_seg_0020",
+          "_zzJSMwrPcw_seg_0021",
+          "_zzJSMwrPcw_seg_0022",
+          "_zzJSMwrPcw_seg_0023",
+          "_zzJSMwrPcw_seg_0024",
+          "_zzJSMwrPcw_seg_0025",
+          "_zzJSMwrPcw_seg_0026",
+          "_zzJSMwrPcw_seg_0027",
+          "_zzJSMwrPcw_seg_0028"
+        ],
+        "selectedSourceSha256": "ca51a393edcbe31955623b8315e275f2b8d84413a80de630818792435deaf0d5",
+        "sharedCodexUsageConsumed": true,
+        "sourceSha256": "6a47ba3554c4c0b95f06a7d61ab49649947ab03b7f89c541e8f94da956ab000b",
+        "stages": {
+          "review": {
+            "cachedOrImportedResults": 0,
+            "elapsedSeconds": 300.194,
+            "freshConversations": 5,
+            "usage": {
+              "cache_write_input_tokens": 0,
+              "cached_input_tokens": 36096,
+              "input_tokens": 98681,
+              "output_tokens": 15601,
+              "reasoning_output_tokens": 7300
+            },
+            "usageReceiptCoverage": 5
+          },
+          "translation": {
+            "cachedOrImportedResults": 0,
+            "elapsedSeconds": 197.769,
+            "freshConversations": 5,
+            "usage": {
+              "cache_write_input_tokens": 0,
+              "cached_input_tokens": 64256,
+              "input_tokens": 89851,
+              "output_tokens": 9622,
+              "reasoning_output_tokens": 1681
+            },
+            "usageReceiptCoverage": 5
+          }
+        },
+        "status": "hybrid_teacher_pipeline_completed_sol_high_text_review_training_blocked",
+        "trainingEligibility": "blocked",
+        "translateReasoningEffort": "high",
+        "translatorModel": "gpt-5.6-terra",
+        "usage": {
+          "cache_write_input_tokens": 0,
+          "cached_input_tokens": 100352,
+          "input_tokens": 188532,
+          "output_tokens": 25223,
+          "reasoning_output_tokens": 8981
+        },
+        "usageReceiptCoverage": 10,
+        "videoId": "_zzJSMwrPcw"
+      },
+      "videoId": "_zzJSMwrPcw"
+    },
+    {
+      "split": "train",
+      "status": "completed",
+      "teacher": {
+        "apiKeyUsed": false,
+        "artifactPurpose": "dataset_preparation_only",
+        "audioEvidenceRequiredFor": "needs_audio_review",
+        "authMode": "chatgpt_managed_verified",
+        "batchSize": 6,
+        "cachedConversationResults": 0,
+        "cachedOrImportedResults": 0,
+        "elapsedSeconds": 484.273,
+        "freshConversations": 10,
+        "freshEphemeralConversations": 10,
+        "generatedAt": "2026-09-02T00:36:15.940094+00:00",
+        "humanApprovalClaimed": false,
+        "postTrainingStudent": {
+          "class": "lightweight_open_weight_candidate",
+          "status": "unselected"
+        },
+        "reviewDispositionCounts": {
+          "excluded_requires_audio_evidence": 1,
+          "sol_high_text_review_corrected": 16,
+          "sol_high_text_review_passed": 10
+        },
+        "reviewReasoningEffort": "high",
+        "reviewerModel": "gpt-5.6-sol",
+        "routineHumanTextReviewRequired": false,
+        "schemaVersion": "sermon-codex-conversation-v3",
+        "segmentCount": 27,
+        "selectedSegmentIds": [
+          "IkmaNTDHRYU_seg_0001",
+          "IkmaNTDHRYU_seg_0002",
+          "IkmaNTDHRYU_seg_0003",
+          "IkmaNTDHRYU_seg_0004",
+          "IkmaNTDHRYU_seg_0005",
+          "IkmaNTDHRYU_seg_0006",
+          "IkmaNTDHRYU_seg_0007",
+          "IkmaNTDHRYU_seg_0008",
+          "IkmaNTDHRYU_seg_0009",
+          "IkmaNTDHRYU_seg_0010",
+          "IkmaNTDHRYU_seg_0011",
+          "IkmaNTDHRYU_seg_0012",
+          "IkmaNTDHRYU_seg_0013",
+          "IkmaNTDHRYU_seg_0014",
+          "IkmaNTDHRYU_seg_0015",
+          "IkmaNTDHRYU_seg_0016",
+          "IkmaNTDHRYU_seg_0017",
+          "IkmaNTDHRYU_seg_0018",
+          "IkmaNTDHRYU_seg_0019",
+          "IkmaNTDHRYU_seg_0020",
+          "IkmaNTDHRYU_seg_0021",
+          "IkmaNTDHRYU_seg_0022",
+          "IkmaNTDHRYU_seg_0023",
+          "IkmaNTDHRYU_seg_0024",
+          "IkmaNTDHRYU_seg_0025",
+          "IkmaNTDHRYU_seg_0026",
+          "IkmaNTDHRYU_seg_0027"
+        ],
+        "selectedSourceSha256": "bd51425faac3e660c8960a9bc98487cf67adcddbc73371fd3aa76c819115f1e0",
+        "sharedCodexUsageConsumed": true,
+        "sourceSha256": "fbf0585bbfc3d37e6af701975b2afc13926b6f0b5dd72f1f6345dcc12bc5c03a",
+        "stages": {
+          "review": {
+            "cachedOrImportedResults": 0,
+            "elapsedSeconds": 321.365,
+            "freshConversations": 5,
+            "usage": {
+              "cache_write_input_tokens": 0,
+              "cached_input_tokens": 28160,
+              "input_tokens": 100866,
+              "output_tokens": 16969,
+              "reasoning_output_tokens": 9728
+            },
+            "usageReceiptCoverage": 5
+          },
+          "translation": {
+            "cachedOrImportedResults": 0,
+            "elapsedSeconds": 162.908,
+            "freshConversations": 5,
+            "usage": {
+              "cache_write_input_tokens": 0,
+              "cached_input_tokens": 64256,
+              "input_tokens": 88690,
+              "output_tokens": 8114,
+              "reasoning_output_tokens": 1005
+            },
+            "usageReceiptCoverage": 5
+          }
+        },
+        "status": "hybrid_teacher_pipeline_completed_sol_high_text_review_training_blocked",
+        "trainingEligibility": "blocked",
+        "translateReasoningEffort": "high",
+        "translatorModel": "gpt-5.6-terra",
+        "usage": {
+          "cache_write_input_tokens": 0,
+          "cached_input_tokens": 92416,
+          "input_tokens": 189556,
+          "output_tokens": 25083,
+          "reasoning_output_tokens": 10733
+        },
+        "usageReceiptCoverage": 10,
+        "videoId": "IkmaNTDHRYU"
+      },
+      "videoId": "IkmaNTDHRYU"
+    },
+    {
+      "error": "Terra/Sol teacher pipeline failed: Traceback (most recent call last):\n  File \"/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles-ios-design/scripts/run_codex_conversation_sermon_translation.py\", line 482, in <module>\n    print(json.dumps(run(parse_args()), ensure_ascii=False, indent=2, sort_keys=True))\n                     ~~~^^^^^^^^^^^^^^\n  File \"/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles-ios-design/scripts/run_codex_conversation_sermon_translation.py\", line 369, in run\n    rows, receipt = invoke_codex_cached(\n                    ~~~~~~~~~~~~~~~~~~~^\n        out_dir=out_dir, stage=\"translate\", prompt_version=TRANSLATE_PROMPT_VERSION,\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<2 lines>...\n        timeout_seconds=args.timeout_seconds,\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles-ios-design/scripts/run_codex_conversation_sermon_translation.py\", line 296, in invoke_codex_cached\n    validate(rows)\n    ~~~~~~~~^^^^^^\n  File \"/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles-ios-design/scripts/run_codex_conversation_sermon_translation.py\", line 225, in validate\n    exact_ids(expected, rows, stage)\n    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles-ios-design/scripts/run_codex_conversation_sermon_translation.py\", line 168, in exact_ids\n    raise RuntimeError(f\"{stage} id mismatch: expected {expected_ids}, got {returned_ids}\")\nRuntimeError: translate id mismatch: expected ['ArgSmQwhWp0_seg_0031', 'ArgSmQwhWp0_seg_0032', 'ArgSmQwhWp0_seg_0033', 'ArgSmQwhWp0_seg_0034', 'ArgSmQwhWp0_seg_0035', 'ArgSmQwhWp0_seg_0036'], got ['ArgSmQwhWp0_seg_0031', 'ArgSmQwhWp0_seg_0032', 'ArgSmQwhWp0_seg_0033', 'ArgSmQwhWp0_seg_0034', 'ArgSmQwhWp0_seg_0035']\n",
+      "split": "train",
+      "status": "failed",
+      "videoId": "ArgSmQwhWp0"
+    },
+    {
+      "split": "train",
+      "status": "completed",
+      "teacher": {
+        "apiKeyUsed": false,
+        "artifactPurpose": "dataset_preparation_only",
+        "audioEvidenceRequiredFor": "needs_audio_review",
+        "authMode": "chatgpt_managed_verified",
+        "batchSize": 6,
+        "cachedConversationResults": 0,
+        "cachedOrImportedResults": 0,
+        "elapsedSeconds": 641.851,
+        "freshConversations": 14,
+        "freshEphemeralConversations": 14,
+        "generatedAt": "2026-09-02T00:50:33.599993+00:00",
+        "humanApprovalClaimed": false,
+        "postTrainingStudent": {
+          "class": "lightweight_open_weight_candidate",
+          "status": "unselected"
+        },
+        "reviewDispositionCounts": {
+          "excluded_requires_audio_evidence": 2,
+          "sol_high_text_review_corrected": 16,
+          "sol_high_text_review_passed": 21
+        },
+        "reviewReasoningEffort": "high",
+        "reviewerModel": "gpt-5.6-sol",
+        "routineHumanTextReviewRequired": false,
+        "schemaVersion": "sermon-codex-conversation-v3",
+        "segmentCount": 39,
+        "selectedSegmentIds": [
+          "JlnrHEYXGKY_seg_0001",
+          "JlnrHEYXGKY_seg_0002",
+          "JlnrHEYXGKY_seg_0003",
+          "JlnrHEYXGKY_seg_0004",
+          "JlnrHEYXGKY_seg_0005",
+          "JlnrHEYXGKY_seg_0006",
+          "JlnrHEYXGKY_seg_0007",
+          "JlnrHEYXGKY_seg_0008",
+          "JlnrHEYXGKY_seg_0009",
+          "JlnrHEYXGKY_seg_0010",
+          "JlnrHEYXGKY_seg_0011",
+          "JlnrHEYXGKY_seg_0012",
+          "JlnrHEYXGKY_seg_0013",
+          "JlnrHEYXGKY_seg_0014",
+          "JlnrHEYXGKY_seg_0015",
+          "JlnrHEYXGKY_seg_0016",
+          "JlnrHEYXGKY_seg_0017",
+          "JlnrHEYXGKY_seg_0018",
+          "JlnrHEYXGKY_seg_0019",
+          "JlnrHEYXGKY_seg_0020",
+          "JlnrHEYXGKY_seg_0021",
+          "JlnrHEYXGKY_seg_0022",
+          "JlnrHEYXGKY_seg_0023",
+          "JlnrHEYXGKY_seg_0024",
+          "JlnrHEYXGKY_seg_0025",
+          "JlnrHEYXGKY_seg_0026",
+          "JlnrHEYXGKY_seg_0027",
+          "JlnrHEYXGKY_seg_0028",
+          "JlnrHEYXGKY_seg_0029",
+          "JlnrHEYXGKY_seg_0030",
+          "JlnrHEYXGKY_seg_0031",
+          "JlnrHEYXGKY_seg_0032",
+          "JlnrHEYXGKY_seg_0033",
+          "JlnrHEYXGKY_seg_0034",
+          "JlnrHEYXGKY_seg_0035",
+          "JlnrHEYXGKY_seg_0036",
+          "JlnrHEYXGKY_seg_0037",
+          "JlnrHEYXGKY_seg_0038",
+          "JlnrHEYXGKY_seg_0039"
+        ],
+        "selectedSourceSha256": "3052bc1bbc6a60eecb3973c93a07fb49d759714ccb97ce01f4f6403e51abe17c",
+        "sharedCodexUsageConsumed": true,
+        "sourceSha256": "d516260ba871691b88af50ad21de9cef899709e0ceda12d5b709e87e220e9c65",
+        "stages": {
+          "review": {
+            "cachedOrImportedResults": 0,
+            "elapsedSeconds": 417.66,
+            "freshConversations": 7,
+            "usage": {
+              "cache_write_input_tokens": 0,
+              "cached_input_tokens": 50176,
+              "input_tokens": 137049,
+              "output_tokens": 21648,
+              "reasoning_output_tokens": 11691
+            },
+            "usageReceiptCoverage": 7
+          },
+          "translation": {
+            "cachedOrImportedResults": 0,
+            "elapsedSeconds": 224.191,
+            "freshConversations": 7,
+            "usage": {
+              "cache_write_input_tokens": 0,
+              "cached_input_tokens": 93440,
+              "input_tokens": 118373,
+              "output_tokens": 11201,
+              "reasoning_output_tokens": 1857
+            },
+            "usageReceiptCoverage": 7
+          }
+        },
+        "status": "hybrid_teacher_pipeline_completed_sol_high_text_review_training_blocked",
+        "trainingEligibility": "blocked",
+        "translateReasoningEffort": "high",
+        "translatorModel": "gpt-5.6-terra",
+        "usage": {
+          "cache_write_input_tokens": 0,
+          "cached_input_tokens": 143616,
+          "input_tokens": 255422,
+          "output_tokens": 32849,
+          "reasoning_output_tokens": 13548
+        },
+        "usageReceiptCoverage": 14,
+        "videoId": "JlnrHEYXGKY"
+      },
+      "videoId": "JlnrHEYXGKY"
+    },
+    {
+      "split": "train",
+      "status": "completed",
+      "teacher": {
+        "apiKeyUsed": false,
+        "artifactPurpose": "dataset_preparation_only",
+        "audioEvidenceRequiredFor": "needs_audio_review",
+        "authMode": "chatgpt_managed_verified",
+        "batchSize": 6,
+        "cachedConversationResults": 0,
+        "cachedOrImportedResults": 0,
+        "elapsedSeconds": 652.945,
+        "freshConversations": 14,
+        "freshEphemeralConversations": 14,
+        "generatedAt": "2026-09-02T01:01:26.698547+00:00",
+        "humanApprovalClaimed": false,
+        "postTrainingStudent": {
+          "class": "lightweight_open_weight_candidate",
+          "status": "unselected"
+        },
+        "reviewDispositionCounts": {
+          "excluded_requires_audio_evidence": 4,
+          "sol_high_text_review_corrected": 13,
+          "sol_high_text_review_passed": 20
+        },
+        "reviewReasoningEffort": "high",
+        "reviewerModel": "gpt-5.6-sol",
+        "routineHumanTextReviewRequired": false,
+        "schemaVersion": "sermon-codex-conversation-v3",
+        "segmentCount": 37,
+        "selectedSegmentIds": [
+          "oA31Tv2r-mg_seg_0001",
+          "oA31Tv2r-mg_seg_0002",
+          "oA31Tv2r-mg_seg_0003",
+          "oA31Tv2r-mg_seg_0004",
+          "oA31Tv2r-mg_seg_0005",
+          "oA31Tv2r-mg_seg_0006",
+          "oA31Tv2r-mg_seg_0007",
+          "oA31Tv2r-mg_seg_0008",
+          "oA31Tv2r-mg_seg_0009",
+          "oA31Tv2r-mg_seg_0010",
+          "oA31Tv2r-mg_seg_0011",
+          "oA31Tv2r-mg_seg_0012",
+          "oA31Tv2r-mg_seg_0013",
+          "oA31Tv2r-mg_seg_0014",
+          "oA31Tv2r-mg_seg_0015",
+          "oA31Tv2r-mg_seg_0016",
+          "oA31Tv2r-mg_seg_0017",
+          "oA31Tv2r-mg_seg_0018",
+          "oA31Tv2r-mg_seg_0019",
+          "oA31Tv2r-mg_seg_0020",
+          "oA31Tv2r-mg_seg_0021",
+          "oA31Tv2r-mg_seg_0022",
+          "oA31Tv2r-mg_seg_0023",
+          "oA31Tv2r-mg_seg_0024",
+          "oA31Tv2r-mg_seg_0025",
+          "oA31Tv2r-mg_seg_0026",
+          "oA31Tv2r-mg_seg_0027",
+          "oA31Tv2r-mg_seg_0028",
+          "oA31Tv2r-mg_seg_0029",
+          "oA31Tv2r-mg_seg_0030",
+          "oA31Tv2r-mg_seg_0031",
+          "oA31Tv2r-mg_seg_0032",
+          "oA31Tv2r-mg_seg_0033",
+          "oA31Tv2r-mg_seg_0034",
+          "oA31Tv2r-mg_seg_0035",
+          "oA31Tv2r-mg_seg_0036",
+          "oA31Tv2r-mg_seg_0037"
+        ],
+        "selectedSourceSha256": "f61552d406820d938e1b92e5d0b82363a0919f1e51e5371e1b3e400335ef768e",
+        "sharedCodexUsageConsumed": true,
+        "sourceSha256": "52fd560863cee896feb7432af29f9a9d1eb3008e67ca4333add117b9322aa80f",
+        "stages": {
+          "review": {
+            "cachedOrImportedResults": 0,
+            "elapsedSeconds": 382.664,
+            "freshConversations": 7,
+            "usage": {
+              "cache_write_input_tokens": 0,
+              "cached_input_tokens": 48128,
+              "input_tokens": 136403,
+              "output_tokens": 19976,
+              "reasoning_output_tokens": 9036
+            },
+            "usageReceiptCoverage": 7
+          },
+          "translation": {
+            "cachedOrImportedResults": 0,
+            "elapsedSeconds": 270.281,
+            "freshConversations": 7,
+            "usage": {
+              "cache_write_input_tokens": 0,
+              "cached_input_tokens": 83200,
+              "input_tokens": 128362,
+              "output_tokens": 13673,
+              "reasoning_output_tokens": 2772
+            },
+            "usageReceiptCoverage": 7
+          }
+        },
+        "status": "hybrid_teacher_pipeline_completed_sol_high_text_review_training_blocked",
+        "trainingEligibility": "blocked",
+        "translateReasoningEffort": "high",
+        "translatorModel": "gpt-5.6-terra",
+        "usage": {
+          "cache_write_input_tokens": 0,
+          "cached_input_tokens": 131328,
+          "input_tokens": 264765,
+          "output_tokens": 33649,
+          "reasoning_output_tokens": 11808
+        },
+        "usageReceiptCoverage": 14,
+        "videoId": "oA31Tv2r-mg"
+      },
+      "videoId": "oA31Tv2r-mg"
+    },
+    {
+      "error": "Terra/Sol teacher pipeline failed: Traceback (most recent call last):\n  File \"/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles-ios-design/scripts/run_codex_conversation_sermon_translation.py\", line 482, in <module>\n    print(json.dumps(run(parse_args()), ensure_ascii=False, indent=2, sort_keys=True))\n                     ~~~^^^^^^^^^^^^^^\n  File \"/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles-ios-design/scripts/run_codex_conversation_sermon_translation.py\", line 369, in run\n    rows, receipt = invoke_codex_cached(\n                    ~~~~~~~~~~~~~~~~~~~^\n        out_dir=out_dir, stage=\"translate\", prompt_version=TRANSLATE_PROMPT_VERSION,\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<2 lines>...\n        timeout_seconds=args.timeout_seconds,\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles-ios-design/scripts/run_codex_conversation_sermon_translation.py\", line 296, in invoke_codex_cached\n    validate(rows)\n    ~~~~~~~~^^^^^^\n  File \"/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles-ios-design/scripts/run_codex_conversation_sermon_translation.py\", line 225, in validate\n    exact_ids(expected, rows, stage)\n    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles-ios-design/scripts/run_codex_conversation_sermon_translation.py\", line 168, in exact_ids\n    raise RuntimeError(f\"{stage} id mismatch: expected {expected_ids}, got {returned_ids}\")\nRuntimeError: translate id mismatch: expected ['DhDCgaESpiA_seg_0013', 'DhDCgaESpiA_seg_0014', 'DhDCgaESpiA_seg_0015', 'DhDCgaESpiA_seg_0016', 'DhDCgaESpiA_seg_0017', 'DhDCgaESpiA_seg_0018'], got ['DhDCgaESpiA_seg_0013', 'DhDCgaESpiA_seg_0014', 'DhDCgaESpiA_seg_0015', 'DhDCgaESpiA_seg_0016']\n",
+      "split": "train",
+      "status": "failed",
+      "videoId": "DhDCgaESpiA"
+    }
+  ],
+  "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+  "selectedVideoCount": 10,
+  "selectiveAudioAudit": {
+    "calibrationSegmentCount": 265,
+    "calibrationSeverityCounts": {
+      "needs_audio_review": 44,
+      "pass": 221
+    },
+    "observedNeedsAudioReviewRate": 0.166,
+    "passSampleRate": 0.05,
+    "postTeacherExactCountPending": true,
+    "preTeacherSelectedDurationShare": 0.0755,
+    "preTeacherSelectedMinutes": 24.13,
+    "preTeacherSelectedSegmentCount": 26,
+    "preTeacherSelectedSegmentShare": 0.0747,
+    "projectedAsrCostUsd": 0.33,
+    "projectedAuditMinutes": 73.22,
+    "projectedAuditShare": 0.229,
+    "projectedUpperAsrCostUsd": 0.35,
+    "projectedUpperAuditMinutes": 77.23,
+    "projectedUpperAuditShare": 0.2415
+  },
+  "sourceSplitManifest": "/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles-ios-design/data/reports/sermon-parallel-corpus-splits-v1/split-manifest.json",
+  "sourceSplitManifestSha256": "5f3be7263f309d1b2b62be59a3026f61389d8a8d0252825310b583681d657a4f",
+  "splitCounts": {
+    "train": 10
+  },
+  "stage": "translate-review",
+  "status": "completed_with_failures",
+  "teacherModels": {
+    "reviewer": {
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "high"
+    },
+    "translator": {
+      "model": "gpt-5.6-terra",
+      "reasoningEffort": "high"
+    }
+  },
+  "trainingBlockers": [
+    "source_training_rights_unconfirmed",
+    "gpt_external_student_distillation_not_authorized"
+  ],
+  "trainingEligibility": "blocked"
+}

@@ -14,7 +14,7 @@
 - 模型：Qwen3.5 4B/9B post-trained 与 Base 对照。
 - 方法：优先 BF16 LoRA；QLoRA 是 LoRA 实测出现内存或吞吐问题后的备选。
 - 模态：只训练文本路径，冻结 vision tower 和无关多模态模块；实际冻结清单写入 receipt。
-- 教师：Qwen3.8-27B 先独立离线制数，释放模型后再训练学生。
+- 教师：Terra/Sol 在 Spark 外完成候选数据准备；Spark 默认只读取已发布 Gold 训练轻量学生。Qwen3.8-27B 仅保留为隔离备用教师实验臂。
 - 数据：只读、不可变 dataset version；训练输出写入独立 candidate 目录。
 - 生产隔离：不得覆盖现有模型、symlink、服务、端口或 benchmark 结果；promotion 是另一个需要明确授权的阶段。
 
@@ -235,18 +235,16 @@ QLoRA 不是默认“更省就更好”；如果 LoRA 已稳定，先完成基�
 
 选择 checkpoint 依据 dev/faithfulness，而不是自动取最后一步。
 
-## 9. Teacher job 与 student job 分离
+## 9. 数据准备 job 与 student job 分离
 
-Qwen3.8-27B teacher 制数流程：
+当前流程：
 
-1. 只读加载固定 teacher revision。
-2. 运行 calibration 和批量 candidate generation。
-3. 写入 dataset staging，加 teacher/job receipt。
-4. validator + human review 后发布新 dataset version。
-5. 停止 teacher，确认显存和进程释放。
-6. 学生训练只读取已发布 dataset，不在 training step 内同步查询 teacher。
+1. 在 Spark 外运行 Terra 初译、Sol 独立复审，写入隔离 dataset staging。
+2. validator、授权门禁与 human review 通过后发布不可变 Gold dataset version。
+3. Spark 只读挂载已发布 dataset；训练 step 不同步查询 Terra、Sol 或其他教师。
+4. 如果启用 Qwen3.8-27B 备用实验臂，必须先独立制数并停止教师，再启动学生训练。
 
-这样训练可重放，也避免一台 Spark 同时承载 27B teacher 与 9B optimizer 状态。
+这样训练可重放，也避免教师调用状态与 4B/9B optimizer 状态耦合。
 
 ## 10. Artifact 导出
 

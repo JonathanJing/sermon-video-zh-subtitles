@@ -1,0 +1,113 @@
+{
+  "apiKeyMaterialIncluded": false,
+  "blockerMeaning": "Split integrity passed; rights, boundary, English, and Chinese gates remain unresolved.",
+  "checks": [
+    {
+      "name": "exact_raw_asset_coverage",
+      "observed": {
+        "assignments": 180,
+        "rawAssets": 180,
+        "unique": 180
+      },
+      "state": "pass"
+    },
+    {
+      "name": "expected_split_counts",
+      "observed": {
+        "dev": 18,
+        "poc": 3,
+        "test": 18,
+        "train": 141
+      },
+      "state": "pass"
+    },
+    {
+      "name": "frozen_poc_exact",
+      "observed": [
+        "cFLQLjzbnVg",
+        "mIyioBLQmJ0",
+        "wxcIGSolCvc"
+      ],
+      "state": "pass"
+    },
+    {
+      "name": "pending_asr_excluded",
+      "observed": [],
+      "state": "pass"
+    },
+    {
+      "name": "verified_speaker_metadata_overrides",
+      "observed": {
+        "count": 3,
+        "mismatches": []
+      },
+      "state": "pass"
+    },
+    {
+      "name": "no_unknown_speakers",
+      "observed": [],
+      "state": "pass"
+    },
+    {
+      "name": "immutable_source_hashes",
+      "observed": [],
+      "state": "pass"
+    },
+    {
+      "name": "no_transcript_hash_cross_split",
+      "observed": [],
+      "state": "pass"
+    },
+    {
+      "name": "no_cue_hash_cross_split",
+      "observed": [],
+      "state": "pass"
+    },
+    {
+      "name": "unseen_speaker_is_test_only",
+      "observed": {
+        "count": 6,
+        "speaker": "Ed Stetzer"
+      },
+      "state": "pass"
+    },
+    {
+      "name": "whole_sermon_derivative_rule",
+      "observed": {
+        "derivativesMustInheritParentSplit": true,
+        "devTarget": 18,
+        "metadataOverridesSha256": "7315a6f2b67a6c1da24bb97ce378cefd28645c9c1201e2fe626831d6a3e54f70",
+        "pocReservedFromUntouchedTest": true,
+        "seed": "mariners-sermon-whole-split-v1-20260830",
+        "testTarget": 18,
+        "unit": "whole_sermon",
+        "unseenTestSpeaker": "Ed Stetzer"
+      },
+      "state": "pass"
+    },
+    {
+      "name": "split_does_not_grant_training_rights",
+      "observed": {
+        "items": 180
+      },
+      "state": "pass"
+    },
+    {
+      "name": "no_secret_material",
+      "observed": [],
+      "state": "pass"
+    }
+  ],
+  "countsBySplit": {
+    "dev": 18,
+    "poc": 3,
+    "test": 18,
+    "train": 141
+  },
+  "failedChecks": [],
+  "schemaVersion": "sermon-whole-split-v1",
+  "secretResourceNamesIncluded": false,
+  "status": "pass_training_blocked",
+  "trainingEligibility": "blocked",
+  "verifiedAt": "2026-08-31T07:23:46.514250+00:00"
+}

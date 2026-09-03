@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.schemas.example/sermon-parallel-corpus-v1/human-review-decision.schema.json",
+  "title": "Sermon parallel corpus human review decision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "reviewItemId",
+    "reviewPayloadSha256",
+    "status",
+    "reviewer",
+    "reviewerRole",
+    "reviewedAt",
+    "audioChecked",
+    "englishDecision",
+    "approvedEnglish",
+    "chineseDecision",
+    "approvedChinese",
+    "scriptureChecked",
+    "properNounsChecked",
+    "numbersChecked",
+    "materialErrorTypes",
+    "adjudicationComplete",
+    "notes"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "sermon-parallel-human-decision-v1"},
+    "reviewItemId": {"type": "string", "minLength": 1},
+    "reviewPayloadSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "status": {"enum": ["pending_human_input", "approved", "changes_required", "rejected"]},
+    "reviewer": {"type": "string"},
+    "reviewerRole": {"type": "string"},
+    "reviewedAt": {"type": "string"},
+    "audioChecked": {"type": "boolean"},
+    "englishDecision": {"enum": ["pending", "keep", "corrected", "reject"]},
+    "approvedEnglish": {"type": "string"},
+    "chineseDecision": {"enum": ["pending", "keep", "corrected", "reject"]},
+    "approvedChinese": {"type": "string"},
+    "scriptureChecked": {"type": "boolean"},
+    "properNounsChecked": {"type": "boolean"},
+    "numbersChecked": {"type": "boolean"},
+    "materialErrorTypes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "source_asr",
+          "boundary",
+          "omission",
+          "unsupported_addition",
+          "meaning",
+          "negation",
+          "number",
+          "scripture",
+          "proper_noun",
+          "theology_term",
+          "readability",
+          "other"
+        ]
+      }
+    },
+    "adjudicationComplete": {"type": "boolean"},
+    "notes": {"type": "string"}
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "artifacts": {
+    "finalVerification": "data/reports/mariners-caption-extraction-v1/final-verification.json",
+    "humanSummary": "data/reports/mariners-caption-extraction-v1/README.zh.md",
+    "pendingAsr": "data/reports/mariners-caption-extraction-v1/pending-asr.jsonl"
+  },
+  "batchAudit": {
+    "duplicateCompletionIds": [],
+    "failureCount": 0,
+    "noOpCount": 1,
+    "reportCount": 9,
+    "successfulCompletionEvents": 180,
+    "uniqueCompletedIds": 180
+  },
+  "corpusCounts": {
+    "assetDirectories": 180,
+    "mediaArtifacts": 0,
+    "missingEligible": 0,
+    "unexpectedAssets": 0,
+    "verifiedComplete": 180
+  },
+  "corpusRoot": "data/raw/mariners-sermon-captions-v1",
+  "deduplication": {
+    "duplicateInventoryIds": [],
+    "duplicateNormalizedTranscriptGroups": [],
+    "duplicateSourceVttGroups": []
+  },
+  "errors": [],
+  "inventory": "data/reports/mariners-channel-audit-20260830/sermon-vods.jsonl",
+  "inventoryCounts": {
+    "duplicateIds": 0,
+    "eligibleAutomaticEnglish": 180,
+    "pendingAuthorizedAsr": 10,
+    "uniqueSermonVods": 190,
+    "unpartitioned": 0
+  },
+  "limitations": [
+    "YouTube automatic captions are unreviewed source material, not Gold labels.",
+    "The complete VOD timeline is preserved; announcements and other non-sermon segments may remain.",
+    "The 10 pending items have metadata only; media download and ASR require separate authorization."
+  ],
+  "lowCoverageBelow0_95": [],
+  "pendingAsrIds": [
+    "1bleOc_9pWk",
+    "2Y68TW_TrAU",
+    "zBGfJIH0KVg",
+    "BR8IYepkaO8",
+    "RqKJWFPFnEk",
+    "nOw4XFYaQ6k",
+    "wI4Lg2MMdxk",
+    "laQzODWaiz8",
+    "XrBx83o0bNs",
+    "1NeMcmhbvP4"
+  ],
+  "schemaVersion": "mariners-caption-corpus-verification-v1",
+  "scope": {
+    "audioOrVideoRequestedByExtractor": false,
+    "authenticatedSessionUsed": false,
+    "captionKind": "youtube_automatic",
+    "captionLanguage": "en-orig",
+    "reviewState": "unreviewed_raw",
+    "sermonBoundaryApplied": false,
+    "source": "Mariners Church public standalone main sermon VOD inventory",
+    "translationApplied": false
+  },
+  "status": "pass",
+  "timelineCoverage": {
+    "count": 180,
+    "maximum": 1.0015,
+    "median": 1.0007,
+    "minimum": 0.966,
+    "p05": 0.9999,
+    "p95": 1.001
+  },
+  "totals": {
+    "corpusBytes": 164941682,
+    "durationHours": 112.84,
+    "durationSeconds": 406219,
+    "manifestFileReceipts": 720,
+    "normalizedCueCount": 149570,
+    "rawCueCount": 295544,
+    "sourceVttBytes": 51899425,
+    "transcriptBytes": 5411811,
+    "transcriptCharacters": 5411630
+  },
+  "verifiedAt": "2026-09-03T02:46:44.427996Z",
+  "warnings": []
+}

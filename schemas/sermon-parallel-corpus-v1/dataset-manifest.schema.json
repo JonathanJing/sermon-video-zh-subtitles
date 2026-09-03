@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.schemas.example/sermon-parallel-corpus-v1/dataset-manifest.schema.json",
+  "title": "Sermon parallel corpus version manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "datasetVersion",
+    "status",
+    "sourceBundleSha256",
+    "releasedSegmentsSha256",
+    "counts",
+    "splitManifestSha256",
+    "trainingEligibility",
+    "blockingReasons",
+    "generatedAt"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "sermon-parallel-dataset-manifest-v1"},
+    "datasetVersion": {"type": "string", "minLength": 1},
+    "status": {"enum": ["quality_catalog_training_blocked", "released_for_training"]},
+    "sourceBundleSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "releasedSegmentsSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "isolatedReference", "silverCandidate", "humanBoundaryBlocked", "gold", "pending", "rejected"],
+      "properties": {
+        "total": {"type": "integer", "minimum": 0},
+        "isolatedReference": {"type": "integer", "minimum": 0},
+        "silverCandidate": {"type": "integer", "minimum": 0},
+        "humanBoundaryBlocked": {"type": "integer", "minimum": 0},
+        "gold": {"type": "integer", "minimum": 0},
+        "pending": {"type": "integer", "minimum": 0},
+        "rejected": {"type": "integer", "minimum": 0}
+      }
+    },
+    "splitManifestSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "trainingEligibility": {"enum": ["blocked", "eligible"]},
+    "blockingReasons": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "generatedAt": {"type": "string", "minLength": 1}
+  }
+}

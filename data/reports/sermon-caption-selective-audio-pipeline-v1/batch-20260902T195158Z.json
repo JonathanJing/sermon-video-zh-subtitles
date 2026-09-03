@@ -1,0 +1,293 @@
+{
+  "apiKeyMaterialIncluded": false,
+  "asrModel": "gpt-transcribe",
+  "asrPricePerMinuteUsdAssumption": 0.0045,
+  "captionSegmentCount": 382,
+  "captionSegmentDurationHours": 5.536,
+  "captionSourceQuality": {
+    "dispositionCounts": {
+      "teacher_ready": 10
+    },
+    "maxSparseSegmentShare": 0.1,
+    "sourceReconciliationVideoIds": [],
+    "sparseWordsPerSecondThreshold": 0.6
+  },
+  "completedVideoCount": 10,
+  "credentialSource": "existing_env_file",
+  "durationHours": 5.55,
+  "failedVideoCount": 0,
+  "finishedAt": "2026-09-02T19:51:58.297115+00:00",
+  "fullAudioUpperBoundCostUsd": 1.5,
+  "fullAudioUpperBoundMinutes": 332.98,
+  "generatedAt": "2026-09-02T19:46:27.803657+00:00",
+  "humanApprovalClaimed": false,
+  "results": [
+    {
+      "selectiveAudioAudit": {
+        "apiKeyMaterialIncluded": false,
+        "asrModel": "gpt-transcribe",
+        "credentialSource": "existing_env_file",
+        "decisionCounts": {
+          "audio_evidence_supports_caption": 8
+        },
+        "generatedAt": "2026-09-02T19:46:53.392594+00:00",
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "c5eabf6b232a341707e8b588d8ed585ff9d48e3795e8a2454ceec5bcbc751595",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "selectedSegmentCount": 8,
+        "status": "selective_audio_audit_completed",
+        "totalSegmentCount": 25,
+        "trainingEligibility": "blocked",
+        "videoId": "j6MqiNUlwik"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "j6MqiNUlwik"
+    },
+    {
+      "selectiveAudioAudit": {
+        "apiKeyMaterialIncluded": false,
+        "asrModel": "gpt-transcribe",
+        "credentialSource": "existing_env_file",
+        "decisionCounts": {
+          "audio_evidence_supports_caption": 12
+        },
+        "generatedAt": "2026-09-02T19:47:24.337959+00:00",
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "69ff081b43336cc463344006963b7df461d7caec4763d108eee77d204f3fca83",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "selectedSegmentCount": 12,
+        "status": "selective_audio_audit_completed",
+        "totalSegmentCount": 34,
+        "trainingEligibility": "blocked",
+        "videoId": "UC9DWT8QBnY"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "UC9DWT8QBnY"
+    },
+    {
+      "selectiveAudioAudit": {
+        "apiKeyMaterialIncluded": false,
+        "asrModel": "gpt-transcribe",
+        "credentialSource": "existing_env_file",
+        "decisionCounts": {
+          "audio_evidence_supports_caption": 19
+        },
+        "generatedAt": "2026-09-02T19:47:49.867720+00:00",
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "81219327f10c47860dfd2a72d18ca72c418d2c3e90b5efd07713c5fc777944cc",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "selectedSegmentCount": 19,
+        "status": "selective_audio_audit_completed",
+        "totalSegmentCount": 35,
+        "trainingEligibility": "blocked",
+        "videoId": "jYzHdxumnik"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "jYzHdxumnik"
+    },
+    {
+      "selectiveAudioAudit": {
+        "apiKeyMaterialIncluded": false,
+        "asrModel": "gpt-transcribe",
+        "credentialSource": "existing_env_file",
+        "decisionCounts": {
+          "audio_evidence_supports_caption": 23,
+          "excluded_caption_asr_disagreement": 1
+        },
+        "generatedAt": "2026-09-02T19:48:19.749591+00:00",
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "e27fe66b5658864cfa0c6a0d905cfb5354b8baf3b5513759606b3323c38741d8",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "selectedSegmentCount": 24,
+        "status": "selective_audio_audit_completed",
+        "totalSegmentCount": 45,
+        "trainingEligibility": "blocked",
+        "videoId": "cCt-8fbwq1E"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "cCt-8fbwq1E"
+    },
+    {
+      "selectiveAudioAudit": {
+        "apiKeyMaterialIncluded": false,
+        "asrModel": "gpt-transcribe",
+        "credentialSource": "existing_env_file",
+        "decisionCounts": {
+          "audio_evidence_supports_caption": 33,
+          "excluded_caption_asr_disagreement": 3
+        },
+        "generatedAt": "2026-09-02T19:49:08.333549+00:00",
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "723f7b682ad5f10c91cfe9584581cc0ccfbb200d1faa9d11b5bd81aee8b3b298",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "selectedSegmentCount": 36,
+        "status": "selective_audio_audit_completed",
+        "totalSegmentCount": 41,
+        "trainingEligibility": "blocked",
+        "videoId": "flHsNP5J8lM"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "flHsNP5J8lM"
+    },
+    {
+      "selectiveAudioAudit": {
+        "apiKeyMaterialIncluded": false,
+        "asrModel": "gpt-transcribe",
+        "credentialSource": "existing_env_file",
+        "decisionCounts": {
+          "audio_evidence_supports_caption": 19
+        },
+        "generatedAt": "2026-09-02T19:49:45.409856+00:00",
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "857e3edfb362639581c85b55b5952c496f2eb591cfcd217eaf56c0a332b99c95",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "selectedSegmentCount": 19,
+        "status": "selective_audio_audit_completed",
+        "totalSegmentCount": 37,
+        "trainingEligibility": "blocked",
+        "videoId": "SiQ0X8zVxTk"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "SiQ0X8zVxTk"
+    },
+    {
+      "selectiveAudioAudit": {
+        "apiKeyMaterialIncluded": false,
+        "asrModel": "gpt-transcribe",
+        "credentialSource": "existing_env_file",
+        "decisionCounts": {
+          "audio_evidence_supports_caption": 23
+        },
+        "generatedAt": "2026-09-02T19:50:13.348353+00:00",
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "e6c1302e19543a3a2a0329980081a56a58c3632d18284841c6a859586c99676b",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "selectedSegmentCount": 23,
+        "status": "selective_audio_audit_completed",
+        "totalSegmentCount": 38,
+        "trainingEligibility": "blocked",
+        "videoId": "ztRav3rf7xg"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "ztRav3rf7xg"
+    },
+    {
+      "selectiveAudioAudit": {
+        "apiKeyMaterialIncluded": false,
+        "asrModel": "gpt-transcribe",
+        "credentialSource": "existing_env_file",
+        "decisionCounts": {
+          "audio_evidence_supports_caption": 27,
+          "excluded_caption_asr_disagreement": 2
+        },
+        "generatedAt": "2026-09-02T19:51:04.140002+00:00",
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "20e23ff7fd7b94097f5a0d3a9635aed67478d29df34fb608c9844b1f14b66ca4",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "selectedSegmentCount": 29,
+        "status": "selective_audio_audit_completed",
+        "totalSegmentCount": 42,
+        "trainingEligibility": "blocked",
+        "videoId": "hFsv29fW9e0"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "hFsv29fW9e0"
+    },
+    {
+      "selectiveAudioAudit": {
+        "apiKeyMaterialIncluded": false,
+        "asrModel": "gpt-transcribe",
+        "credentialSource": "existing_env_file",
+        "decisionCounts": {
+          "audio_evidence_supports_caption": 23
+        },
+        "generatedAt": "2026-09-02T19:51:30.196466+00:00",
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "4c410dbb9dd6c2779e059ca9a5bcdbc3d200ff136eaab148fc211c20ccd5a9c4",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "selectedSegmentCount": 23,
+        "status": "selective_audio_audit_completed",
+        "totalSegmentCount": 45,
+        "trainingEligibility": "blocked",
+        "videoId": "pa7ttgJkMo0"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "pa7ttgJkMo0"
+    },
+    {
+      "selectiveAudioAudit": {
+        "apiKeyMaterialIncluded": false,
+        "asrModel": "gpt-transcribe",
+        "credentialSource": "existing_env_file",
+        "decisionCounts": {
+          "audio_evidence_supports_caption": 20
+        },
+        "generatedAt": "2026-09-02T19:51:58.296715+00:00",
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "740ee75a4a49b4d1c8c7949a43bffc3e0d17b8d953c7fd2dbd0c645481755d6b",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "selectedSegmentCount": 20,
+        "status": "selective_audio_audit_completed",
+        "totalSegmentCount": 40,
+        "trainingEligibility": "blocked",
+        "videoId": "_p7O1TSv5P8"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "_p7O1TSv5P8"
+    }
+  ],
+  "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+  "selectedVideoCount": 10,
+  "selectiveAudioAudit": {
+    "calibrationSegmentCount": 265,
+    "calibrationSeverityCounts": {
+      "needs_audio_review": 44,
+      "pass": 221
+    },
+    "observedNeedsAudioReviewRate": 0.166,
+    "passSampleRate": 0.05,
+    "postTeacherExactCountPending": true,
+    "preTeacherSelectedDurationShare": 0.0588,
+    "preTeacherSelectedMinutes": 19.52,
+    "preTeacherSelectedSegmentCount": 22,
+    "preTeacherSelectedSegmentShare": 0.0576,
+    "projectedAsrCostUsd": 0.32,
+    "projectedAuditMinutes": 71.43,
+    "projectedAuditShare": 0.2151,
+    "projectedUpperAsrCostUsd": 0.34,
+    "projectedUpperAuditMinutes": 74.67,
+    "projectedUpperAuditShare": 0.2248
+  },
+  "sourceSplitManifest": "/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles-ios-design/data/reports/sermon-parallel-corpus-splits-v1/split-manifest.json",
+  "sourceSplitManifestSha256": "5f3be7263f309d1b2b62be59a3026f61389d8a8d0252825310b583681d657a4f",
+  "splitCounts": {
+    "train": 10
+  },
+  "stage": "audio-audit",
+  "status": "completed",
+  "teacherModels": {
+    "reviewer": {
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "high"
+    },
+    "translator": {
+      "model": "gpt-5.6-terra",
+      "reasoningEffort": "high"
+    }
+  },
+  "trainingBlockers": [
+    "source_training_rights_unconfirmed",
+    "gpt_external_student_distillation_not_authorized"
+  ],
+  "trainingEligibility": "blocked"
+}

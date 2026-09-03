@@ -1,0 +1,50 @@
+{
+  "apiKeyMaterialIncluded": false,
+  "completedAfter": 5,
+  "completedBefore": 3,
+  "eligibleTrainDev": 159,
+  "finishedAt": "2026-09-01T07:29:02.543422+00:00",
+  "items": [
+    {
+      "auditCounts": {
+        "mustFix": 0,
+        "needsAudioReview": 6,
+        "pass": 43,
+        "total": 49
+      },
+      "auditUsage": {
+        "elapsedSeconds": 251.261,
+        "inputTokens": 21784,
+        "outputTokens": 9306,
+        "reasoningTokens": 5415,
+        "requests": 5
+      },
+      "generationUsage": {
+        "elapsedSeconds": 1248.656,
+        "inputTokens": 75254,
+        "outputTokens": 82430,
+        "reasoningTokens": 50895,
+        "requests": 21
+      },
+      "segments": 49,
+      "split": "train",
+      "status": "completed_model_only_training_blocked",
+      "videoId": "Lskg54LVBy4"
+    }
+  ],
+  "model": "gpt-5.6-sol",
+  "promptVersions": {
+    "independentAudit": "parallel-independent-audit-gpt56sol-v1"
+  },
+  "remaining": 154,
+  "schemaVersion": "sermon-parallel-corpus-expansion-v1",
+  "secretResourceNamesIncluded": false,
+  "splitManifest": {
+    "path": "data/reports/sermon-parallel-corpus-splits-v1/split-manifest.json",
+    "sha256": "5f3be7263f309d1b2b62be59a3026f61389d8a8d0252825310b583681d657a4f"
+  },
+  "startedAt": "2026-09-01T07:04:02.373607+00:00",
+  "status": "canary_batch_completed",
+  "testPreservedUntouched": 18,
+  "trainingEligibility": "blocked"
+}

@@ -1,0 +1,380 @@
+{
+  "apiKeyMaterialIncluded": false,
+  "blockerMeaning": "Verification passed for POC integrity, not for Silver/Gold or student training.",
+  "checks": [
+    {
+      "name": "three_unique_pilots",
+      "observed": [
+        "cFLQLjzbnVg",
+        "mIyioBLQmJ0",
+        "wxcIGSolCvc"
+      ],
+      "state": "pass"
+    },
+    {
+      "name": "poc_split_not_test",
+      "observed": {
+        "reservedFromFutureTest": true,
+        "split": "poc"
+      },
+      "state": "pass"
+    },
+    {
+      "name": "no_secret_material",
+      "observed": [],
+      "state": "pass"
+    },
+    {
+      "name": "cross_sermon_unique_ids",
+      "observed": 117,
+      "state": "pass"
+    }
+  ],
+  "failedChecks": [],
+  "failedSermons": [],
+  "schemaVersion": 1,
+  "secretResourceNamesIncluded": false,
+  "selection": {
+    "boundarySource": "gpt_model_candidate_requires_human_review",
+    "createdAt": "2026-08-31T06:54:02.950240+00:00",
+    "reservedFromFutureTest": true,
+    "schemaVersion": 1,
+    "selectionRationale": [
+      "latest primary speaker",
+      "different speaker and accent",
+      "older long-form boundary stress case"
+    ],
+    "split": "poc",
+    "status": "frozen_poc_selection",
+    "videoIds": [
+      "cFLQLjzbnVg",
+      "mIyioBLQmJ0",
+      "wxcIGSolCvc"
+    ]
+  },
+  "sermons": [
+    {
+      "checks": [
+        {
+          "name": "required_artifacts",
+          "observed": {
+            "missing": []
+          },
+          "state": "pass"
+        },
+        {
+          "name": "immutable_source_hashes",
+          "observed": {
+            "match": true
+          },
+          "state": "pass"
+        },
+        {
+          "name": "stage_coverage",
+          "observed": [
+            46,
+            46,
+            46,
+            46,
+            46
+          ],
+          "state": "pass"
+        },
+        {
+          "name": "exact_id_coverage",
+          "observed": [
+            46,
+            46,
+            46,
+            46,
+            46
+          ],
+          "state": "pass"
+        },
+        {
+          "name": "unique_segment_ids",
+          "observed": 46,
+          "state": "pass"
+        },
+        {
+          "name": "monotonic_timeline",
+          "observed": {
+            "segments": 46
+          },
+          "state": "pass"
+        },
+        {
+          "name": "boundary_status_honest",
+          "observed": "model_candidate_requires_human_review",
+          "state": "pass"
+        },
+        {
+          "name": "boundary_approval_binding",
+          "observed": "not_applicable",
+          "state": "pass"
+        },
+        {
+          "name": "nonempty_chinese",
+          "observed": {
+            "segments": 46
+          },
+          "state": "pass"
+        },
+        {
+          "name": "no_markdown_in_chinese",
+          "observed": [],
+          "state": "pass"
+        },
+        {
+          "name": "nontrainable_provenance",
+          "observed": {
+            "segments": 46
+          },
+          "state": "pass"
+        },
+        {
+          "name": "boundary_training_blocker_consistent",
+          "observed": {
+            "humanApproved": false
+          },
+          "state": "pass"
+        },
+        {
+          "name": "human_review_queue_complete",
+          "observed": {
+            "queued": 46
+          },
+          "state": "pass"
+        },
+        {
+          "name": "run_report_consistent",
+          "observed": "poc_generated_blocked_from_training",
+          "state": "pass"
+        }
+      ],
+      "failedChecks": [],
+      "highPriorityReviewCount": 24,
+      "segmentCount": 46,
+      "status": "pass",
+      "videoId": "cFLQLjzbnVg"
+    },
+    {
+      "checks": [
+        {
+          "name": "required_artifacts",
+          "observed": {
+            "missing": []
+          },
+          "state": "pass"
+        },
+        {
+          "name": "immutable_source_hashes",
+          "observed": {
+            "match": true
+          },
+          "state": "pass"
+        },
+        {
+          "name": "stage_coverage",
+          "observed": [
+            38,
+            38,
+            38,
+            38,
+            38
+          ],
+          "state": "pass"
+        },
+        {
+          "name": "exact_id_coverage",
+          "observed": [
+            38,
+            38,
+            38,
+            38,
+            38
+          ],
+          "state": "pass"
+        },
+        {
+          "name": "unique_segment_ids",
+          "observed": 38,
+          "state": "pass"
+        },
+        {
+          "name": "monotonic_timeline",
+          "observed": {
+            "segments": 38
+          },
+          "state": "pass"
+        },
+        {
+          "name": "boundary_status_honest",
+          "observed": "model_candidate_requires_human_review",
+          "state": "pass"
+        },
+        {
+          "name": "boundary_approval_binding",
+          "observed": "not_applicable",
+          "state": "pass"
+        },
+        {
+          "name": "nonempty_chinese",
+          "observed": {
+            "segments": 38
+          },
+          "state": "pass"
+        },
+        {
+          "name": "no_markdown_in_chinese",
+          "observed": [],
+          "state": "pass"
+        },
+        {
+          "name": "nontrainable_provenance",
+          "observed": {
+            "segments": 38
+          },
+          "state": "pass"
+        },
+        {
+          "name": "boundary_training_blocker_consistent",
+          "observed": {
+            "humanApproved": false
+          },
+          "state": "pass"
+        },
+        {
+          "name": "human_review_queue_complete",
+          "observed": {
+            "queued": 38
+          },
+          "state": "pass"
+        },
+        {
+          "name": "run_report_consistent",
+          "observed": "poc_generated_blocked_from_training",
+          "state": "pass"
+        }
+      ],
+      "failedChecks": [],
+      "highPriorityReviewCount": 34,
+      "segmentCount": 38,
+      "status": "pass",
+      "videoId": "mIyioBLQmJ0"
+    },
+    {
+      "checks": [
+        {
+          "name": "required_artifacts",
+          "observed": {
+            "missing": []
+          },
+          "state": "pass"
+        },
+        {
+          "name": "immutable_source_hashes",
+          "observed": {
+            "match": true
+          },
+          "state": "pass"
+        },
+        {
+          "name": "stage_coverage",
+          "observed": [
+            33,
+            33,
+            33,
+            33,
+            33
+          ],
+          "state": "pass"
+        },
+        {
+          "name": "exact_id_coverage",
+          "observed": [
+            33,
+            33,
+            33,
+            33,
+            33
+          ],
+          "state": "pass"
+        },
+        {
+          "name": "unique_segment_ids",
+          "observed": 33,
+          "state": "pass"
+        },
+        {
+          "name": "monotonic_timeline",
+          "observed": {
+            "segments": 33
+          },
+          "state": "pass"
+        },
+        {
+          "name": "boundary_status_honest",
+          "observed": "model_candidate_requires_human_review",
+          "state": "pass"
+        },
+        {
+          "name": "boundary_approval_binding",
+          "observed": "not_applicable",
+          "state": "pass"
+        },
+        {
+          "name": "nonempty_chinese",
+          "observed": {
+            "segments": 33
+          },
+          "state": "pass"
+        },
+        {
+          "name": "no_markdown_in_chinese",
+          "observed": [],
+          "state": "pass"
+        },
+        {
+          "name": "nontrainable_provenance",
+          "observed": {
+            "segments": 33
+          },
+          "state": "pass"
+        },
+        {
+          "name": "boundary_training_blocker_consistent",
+          "observed": {
+            "humanApproved": false
+          },
+          "state": "pass"
+        },
+        {
+          "name": "human_review_queue_complete",
+          "observed": {
+            "queued": 33
+          },
+          "state": "pass"
+        },
+        {
+          "name": "run_report_consistent",
+          "observed": "poc_generated_blocked_from_training",
+          "state": "pass"
+        }
+      ],
+      "failedChecks": [],
+      "highPriorityReviewCount": 25,
+      "segmentCount": 33,
+      "status": "pass",
+      "videoId": "wxcIGSolCvc"
+    }
+  ],
+  "status": "pass_with_training_blockers",
+  "totals": {
+    "highPriorityReview": 83,
+    "segments": 117,
+    "sermons": 3
+  },
+  "trainingEligibility": "blocked",
+  "verifiedAt": "2026-08-31T07:23:46.413564+00:00"
+}

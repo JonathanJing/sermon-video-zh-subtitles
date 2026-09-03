@@ -1,0 +1,21 @@
+{
+  "alreadyCompleteBeforeBatchCount": 180,
+  "authenticatedSessionUsed": false,
+  "batchSize": 6,
+  "captionKind": "youtube_automatic",
+  "captionLanguage": "en-orig",
+  "completedIds": [],
+  "eligibleInventoryCount": 180,
+  "failed": [],
+  "finishedAt": "2026-08-31T04:44:44.638666Z",
+  "inventory": "data/reports/mariners-channel-audit-20260830/sermon-vods.jsonl",
+  "mediaDownloaded": false,
+  "outputRoot": "data/raw/mariners-sermon-captions-v1",
+  "remainingEligibleEstimate": 0,
+  "results": [],
+  "reusedIds": [],
+  "schemaVersion": "mariners-caption-extraction-v1",
+  "selectedIds": [],
+  "startedAt": "2026-08-31T04:44:44.638301Z",
+  "status": "no_op"
+}

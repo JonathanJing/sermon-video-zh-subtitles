@@ -4,6 +4,8 @@
 
 状态：数据设计，尚未发布 dataset
 
+> 2026-09-01 执行口径：已有 YouTube 英文字幕先形成候选英文语义段，再由 Terra High 初译、Sol High 模型审定。Sol `needs_audio_review`、确定性异常和稳定 5% `pass` 抽样才调用 `gpt-transcribe` 做音频核对；转写不自动覆盖字幕，冲突项排除并回到英文来源核对。Sol High 不产生人工 approval；论文所需 Human Gold 仍是独立、可选的评估真值层。全量命令见[字幕优先、选择性音频审核](./full-audio-dataset-pipeline.zh.md)。
+
 ## 1. 数据目标
 
 训练数据不是普通的“英文整段 -> 中文整段”平行语料。它必须重建周日现场状态：英文从 ASR 一点点到达，学生在每个时刻决定等待还是追加中文，同时不能被周六相似稿诱导补写。
@@ -211,11 +213,11 @@ flowchart TD
 
 默认流程：
 
-1. 固定 Qwen3.8-27B revision、chat template、decoding config 和 prompt version。
-2. 先为 full segment 生成参考候选与 evidence span。
-3. 再为每个 prefix 生成 `WAIT/WRITE/delta`。
+1. 固定 Terra 初译与 Sol 复审的模型 ID、reasoning、prompt version、schema 和输入 hash。
+2. 先由 Terra 为 full segment 生成参考候选，再由 Sol 在独立上下文中直接对照英文修正。
+3. 人工审核成为 Gold 后，再为每个 prefix 生成并审核 `WAIT/WRITE/delta`。
 4. 每个输出保存 input hash、teacher receipt 和 raw/normalized 结果。
-5. GPT-5.6 Sol 未获外部蒸馏书面许可前，不得出现在训练 manifest 的 `teacherModel` 字段。
+5. OpenAI 未书面确认外部蒸馏用途前，Terra/Sol 只能出现在隔离候选 provenance，不能出现在 trainable manifest。
 
 教师输出只是候选。人工 gold、确定性 validator 和拒绝统计必须保留。
 
@@ -271,9 +273,11 @@ validator 不判断所有语义正确性；它只阻断可确定的坏样本。
   "contextPackId": "ctx_sha256prefix",
   "saturdayCandidateIds": ["sat_0071"],
   "saturdayPriorUsed": true,
-  "teacherModel": "Qwen/Qwen3.8-27B",
-  "teacherRevision": "pinned-revision",
-  "teacherPromptVersion": "sermon-simul-teacher-v1",
+  "teacherPipeline": {
+    "translator": "gpt-5.6-terra",
+    "reviewer": "gpt-5.6-sol",
+    "promptVersions": ["sermon-translate-v1", "sermon-review-v2"]
+  },
   "validatorStatus": "pass",
   "reviewStatus": "human_approved",
   "sourceSha256": "...",

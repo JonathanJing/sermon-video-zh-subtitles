@@ -1,0 +1,20 @@
+{
+  "apiKeyMaterialIncluded": false,
+  "byDecisionStatus": {},
+  "byPriority": {
+    "high": 83,
+    "normal": 34
+  },
+  "completed": 0,
+  "decisionsPath": "data/derived/sermon-parallel-review-poc-v1/human-decisions.jsonl",
+  "generatedAt": "2026-09-01T04:21:00.408676+00:00",
+  "remaining": 117,
+  "schemaVersion": "sermon-parallel-review-ui-summary-v1",
+  "secretResourceNamesIncluded": false,
+  "status": "boundary_approval_required",
+  "toolStatus": "review_tool_ready",
+  "total": 117,
+  "trainingEligibility": "blocked",
+  "unapprovedBoundaryItems": 117,
+  "writeReady": false
+}

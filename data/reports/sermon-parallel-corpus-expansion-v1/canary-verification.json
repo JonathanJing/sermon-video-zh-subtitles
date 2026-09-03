@@ -1,0 +1,118 @@
+{
+  "apiKeyMaterialIncluded": false,
+  "completed": [
+    {
+      "auditCounts": {
+        "mustFix": 0,
+        "needsAudioReview": 5,
+        "pass": 31,
+        "total": 36
+      },
+      "duplicateSuccessfulStageSegmentBindings": 72,
+      "observableReceiptCount": 51,
+      "segments": 36,
+      "sermonDurationSeconds": 1961.99,
+      "split": "train",
+      "videoId": "ArgSmQwhWp0"
+    },
+    {
+      "auditCounts": {
+        "mustFix": 0,
+        "needsAudioReview": 6,
+        "pass": 43,
+        "total": 49
+      },
+      "duplicateSuccessfulStageSegmentBindings": 0,
+      "observableReceiptCount": 26,
+      "segments": 49,
+      "sermonDurationSeconds": 1670.75,
+      "split": "train",
+      "videoId": "Lskg54LVBy4"
+    },
+    {
+      "auditCounts": {
+        "mustFix": 0,
+        "needsAudioReview": 14,
+        "pass": 32,
+        "total": 46
+      },
+      "duplicateSuccessfulStageSegmentBindings": 6,
+      "observableReceiptCount": 27,
+      "segments": 46,
+      "sermonDurationSeconds": 1964.469,
+      "split": "dev",
+      "videoId": "XFbturPLU7o"
+    },
+    {
+      "auditCounts": {
+        "mustFix": 0,
+        "needsAudioReview": 8,
+        "pass": 42,
+        "total": 50
+      },
+      "duplicateSuccessfulStageSegmentBindings": 0,
+      "observableReceiptCount": 38,
+      "segments": 50,
+      "sermonDurationSeconds": 1889.671,
+      "split": "dev",
+      "videoId": "nre_3kR0PHk"
+    },
+    {
+      "auditCounts": {
+        "mustFix": 0,
+        "needsAudioReview": 5,
+        "pass": 43,
+        "total": 48
+      },
+      "duplicateSuccessfulStageSegmentBindings": 0,
+      "observableReceiptCount": 18,
+      "segments": 48,
+      "sermonDurationSeconds": 1941.91,
+      "split": "dev",
+      "videoId": "oDIIjVpJzFA"
+    },
+    {
+      "auditCounts": {
+        "mustFix": 0,
+        "needsAudioReview": 6,
+        "pass": 30,
+        "total": 36
+      },
+      "duplicateSuccessfulStageSegmentBindings": 0,
+      "observableReceiptCount": 14,
+      "segments": 36,
+      "sermonDurationSeconds": 1976.82,
+      "split": "train",
+      "videoId": "vR9xKMOElQg"
+    }
+  ],
+  "counts": {
+    "completedSermons": 6,
+    "eligibleTrainDev": 159,
+    "mustFix": 0,
+    "needsAudioReview": 44,
+    "pass": 221,
+    "remainingTrainDev": 153,
+    "segments": 265,
+    "testPreservedUntouched": 18
+  },
+  "failures": [],
+  "generatedAt": "2026-09-01T08:26:59.979096+00:00",
+  "observableUsage": {
+    "apiElapsedToContentRatio": 1.015,
+    "duplicateSuccessfulStageSegmentBindings": 78,
+    "elapsedSeconds": 11574.21,
+    "inputTokens": 676779,
+    "limitation": "Interrupted in-flight requests without returned receipts are not observable here and may still appear in provider billing.",
+    "outputTokens": 747195,
+    "reasoningTokens": 494806,
+    "requests": 174,
+    "sermonContentSeconds": 11405.61
+  },
+  "schemaVersion": "sermon-parallel-corpus-expansion-verification-v1",
+  "secretFindings": [],
+  "secretResourceNamesIncluded": false,
+  "status": "pass_canary_needs_pipeline_revision",
+  "testOutputDirectories": [],
+  "trainingEligibility": "blocked"
+}

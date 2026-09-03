@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "status": "verified_metadata_overrides",
+  "items": [
+    {
+      "videoId": "JlnrHEYXGKY",
+      "speaker": "Eric Geiger",
+      "sourceManifestSha256": "ef5471fe0aa6a643ef51a16497c9b8cbec9f0a0c17e60b41f71f510c944ec76a",
+      "sourceCuesSha256": "3203ae9749f9f8620c0b7e2c0603d428c88029c0c20b3931348546b7417dd366",
+      "evidence": {
+        "type": "official_mariners_series_page",
+        "url": "https://www.marinerschurch.org/series/on-the-table-2024/",
+        "observedAt": "2026-08-31",
+        "claim": "What is the Unforgivable Sin, January 14 2024, By Eric Geiger"
+      }
+    },
+    {
+      "videoId": "b1Ggr2ww8Sc",
+      "speaker": "Eric Geiger",
+      "sourceManifestSha256": "fd28eca5e8da80c7c213a4648258cac4512efff7e33e8f2395433f62134d8401",
+      "sourceCuesSha256": "2e129f3624aa13403fc6f68a9214727911228fb09f6c4a0c2a0d4502b97f8d3e",
+      "evidence": {
+        "type": "source_caption_self_identification",
+        "cueIds": [
+          "cue_00133",
+          "cue_00135",
+          "cue_00136",
+          "cue_00137"
+        ],
+        "evidenceText": "let's join Eric; if we haven't met my name is Eric"
+      }
+    },
+    {
+      "videoId": "z_UoOx-6mz4",
+      "speaker": "Christine Caine",
+      "sourceManifestSha256": "017d5de2b81494f570d67efe7fad8d3b943fed902b385490f0889ead673fcc2d",
+      "sourceCuesSha256": "96b1c01c121ea49c58d602d35ce48c59f7079926cefc98669d1c31d2b14c88f3",
+      "evidence": {
+        "type": "source_caption_self_identification",
+        "cueIds": [
+          "cue_00001",
+          "cue_00002",
+          "cue_00003",
+          "cue_00004"
+        ],
+        "evidenceText": "my name is Christine Kaine and I'm part of the teaching team"
+      }
+    }
+  ]
+}

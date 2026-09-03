@@ -1,0 +1,86 @@
+{
+  "schemaVersion": "sermon-caption-selective-audio-batch-supervision-v1",
+  "generatedAt": "2026-09-02T05:22:00Z",
+  "status": "completed_and_verified",
+  "batch": {
+    "number": 6,
+    "splitCounts": {
+      "train": 10
+    },
+    "videoCount": 10,
+    "segmentCount": 417
+  },
+  "teacherPipeline": {
+    "translator": "gpt-5.6-terra",
+    "reviewer": "gpt-5.6-sol",
+    "reasoningEffort": "high",
+    "elapsedSeconds": 6256.564,
+    "successfulFreshConversationCount": 148,
+    "failedFreshConversationCountWithUsageReceipt": 0,
+    "totalFreshConversationCountConsumed": 148,
+    "cachedResultCount": 0,
+    "usageReceiptCoverageIncludingFailures": 148,
+    "usage": {
+      "inputTokens": 2808815,
+      "cachedInputTokens": 1343232,
+      "outputTokens": 306300,
+      "reasoningOutputTokens": 101151
+    },
+    "reviewDispositionCounts": {
+      "solHighTextReviewPassed": 244,
+      "solHighTextReviewCorrected": 133,
+      "excludedRequiresAudioEvidence": 40
+    }
+  },
+  "recovery": {
+    "initialFailedVideoCount": 0,
+    "recoveredVideoCount": 0,
+    "finalFailedVideoCount": 0,
+    "failures": [],
+    "invalidFreshOutputFailureReceiptCount": 0,
+    "semanticValidationBeforeSuccessCache": true
+  },
+  "selectiveAudioAudit": {
+    "model": "gpt-transcribe",
+    "selectedSegmentCount": 184,
+    "selectedSegmentShare": 0.4412,
+    "clipSeconds": 9781.782,
+    "billedSecondsFromUsageReceipts": 9869,
+    "asrUsageReceiptCoverage": 184,
+    "estimatedCostUsdAt0.0045PerMinute": 0.7402,
+    "decisionCounts": {
+      "audioEvidenceSupportsCaption": 183,
+      "excludedCaptionAsrDisagreement": 1,
+      "excludedAudioTranscriptionInvalid": 0
+    }
+  },
+  "finalDataset": {
+    "candidateSegmentCount": 416,
+    "excludedSegmentCount": 1,
+    "candidateShare": 0.9976,
+    "englishCaptionFrozenAndOrderPreserved": true,
+    "emptyChineseSegmentCount": 0,
+    "silentCaptionOverwriteCount": 0,
+    "humanApprovalClaimed": false
+  },
+  "artifactVerification": {
+    "sourceMediaFilesDecoded": 10,
+    "sourceMediaDecodeFailures": 0,
+    "audioClipCount": 184,
+    "audioClipDecodeFailures": 0,
+    "transcriptJsonCount": 184,
+    "transcriptTextCount": 184,
+    "audioAuditRowCount": 184,
+    "mergedRowCount": 417,
+    "countAndIdentityChecksPassed": true
+  },
+  "sourceReports": {
+    "teacherBatch": "data/reports/sermon-caption-selective-audio-pipeline-v1/batch-20260902T051429Z.json",
+    "selectiveAudioAuditBatch": "data/reports/sermon-caption-selective-audio-pipeline-v1/batch-20260902T052005Z.json"
+  },
+  "trainingEligibility": "blocked",
+  "trainingBlockers": [
+    "source_training_rights_unconfirmed",
+    "gpt_external_student_distillation_not_authorized"
+  ]
+}

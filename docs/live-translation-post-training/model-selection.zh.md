@@ -6,20 +6,20 @@
 
 ## 1. 选型结论
 
-首轮不是选一个“最大、最新”的模型，而是固定四个学生对照和一个开放权重教师：
+首轮不是选一个“最大、最新”的模型，而是固定四个学生对照和一条离线候选数据生产线：
 
 | 角色 | 首选 | 对照 | 结论用途 |
 |---|---|---|---|
 | Mac 低延时学生 | `Qwen/Qwen3.5-4B` | `Qwen/Qwen3.5-4B-Base` | 比较已有 post-training 能力与从 Base 适配的上限 |
 | DGX 质量学生 | `Qwen/Qwen3.5-9B` | `Qwen/Qwen3.5-9B-Base` | 比较质量、延时和训练稳定性 |
-| 外部学生数据教师 | `Qwen/Qwen3.8-27B` 固定 revision | 人工翻译/审核 | 生成 sequence-level 候选，不参与周日运行 |
-| 商业参考 | `gpt-5.6-sol` | 云端 realtime translation | 未获外部蒸馏授权前只做隔离参考，不进入训练集 |
+| 候选数据初译 | `gpt-5.6-terra` | Qwen3.8-27B 备用臂 | 批量生成 sequence-level 候选，不参与周日运行 |
+| 候选数据复审 | `gpt-5.6-sol` | 人工翻译/审核 | 独立对照英文修正；未获外部蒸馏授权前不进入训练 Gold |
 
 生产候选暂定为：
 
 - M1 Max 64GB：4B post-trained 或 4B Base+LoRA 中门禁最好的一个。
 - DGX Spark：9B post-trained 或 9B Base+LoRA 中门禁最好的一个。
-- 27B 只用于离线制数、困难样本复核和质量上限，不预设为低延时现场模型。
+- 27B 只保留为备用离线教师实验臂和质量对照，不预设为低延时现场模型。
 
 ## 2. 为什么学生优先开放权重
 
@@ -107,7 +107,11 @@ NeMo AutoModel 的当前发布说明包含 Qwen3.5 9B-to-4B VLM knowledge-distil
 
 ## 6. 教师选型
 
-### 6.1 默认教师：Qwen3.8-27B
+### 6.1 当前生产线：Terra 初译、Sol 复审
+
+Terra 承担高容量、结构明确的批量初译；Sol 在全新上下文中直接对照冻结英文，修正忠实度问题并标记音频不确定。六段组合试跑已验证该链路可执行。教师模型不在 DGX Spark 学生训练进程中同步调用，也不参与周日现场。
+
+### 6.2 备用教师：Qwen3.8-27B
 
 选择理由：
 
@@ -122,7 +126,7 @@ NeMo AutoModel 的当前发布说明包含 Qwen3.5 9B-to-4B VLM knowledge-distil
 - 它自身是否优于学生必须先在人工 calibration set 上证明。
 - 教师 inference 与学生 training 不应同时占用 DGX Spark；先制数并固化 dataset，再释放教师。
 
-### 6.2 GPT-5.6 Sol
+### 6.3 GPT 输出训练授权边界
 
 GPT-5.6 Sol 官方模型页显示它支持文本、Structured Outputs、Batch 和 streaming，但不支持音频输入，也不支持该模型本身 fine-tuning。[官方模型页](https://developers.openai.com/api/docs/models/gpt-5.6-sol)
 

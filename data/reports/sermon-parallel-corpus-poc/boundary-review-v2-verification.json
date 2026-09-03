@@ -1,0 +1,161 @@
+{
+  "apiKeyMaterialIncluded": false,
+  "approvedByHuman": false,
+  "blockerMeaning": "Review packet integrity passed; source-audio operator approval is still required.",
+  "contentScope": "sermon_only",
+  "failedVideoIds": [],
+  "reviews": [
+    {
+      "checks": [
+        {
+          "name": "required_review_artifacts",
+          "observed": [],
+          "state": "pass"
+        },
+        {
+          "name": "review_payload_hash",
+          "observed": "match",
+          "state": "pass"
+        },
+        {
+          "name": "immutable_source_binding",
+          "observed": {
+            "match": true
+          },
+          "state": "pass"
+        },
+        {
+          "name": "template_is_not_approval",
+          "observed": "pending_operator_input",
+          "state": "pass"
+        },
+        {
+          "name": "v2_candidate_in_reviewed_context",
+          "observed": {
+            "endCueId": "cue_00773",
+            "startCueId": "cue_00067"
+          },
+          "state": "pass"
+        },
+        {
+          "name": "no_unverified_human_approval",
+          "observed": {
+            "decisionFilePresent": false
+          },
+          "state": "pass"
+        }
+      ],
+      "failedChecks": [],
+      "status": "pass_requires_operator_review",
+      "v1StartCueId": "cue_00068",
+      "v2EndCueId": "cue_00773",
+      "v2StartCueId": "cue_00067",
+      "videoId": "cFLQLjzbnVg"
+    },
+    {
+      "checks": [
+        {
+          "name": "required_review_artifacts",
+          "observed": [],
+          "state": "pass"
+        },
+        {
+          "name": "review_payload_hash",
+          "observed": "match",
+          "state": "pass"
+        },
+        {
+          "name": "immutable_source_binding",
+          "observed": {
+            "match": true
+          },
+          "state": "pass"
+        },
+        {
+          "name": "template_is_not_approval",
+          "observed": "pending_operator_input",
+          "state": "pass"
+        },
+        {
+          "name": "v2_candidate_in_reviewed_context",
+          "observed": {
+            "endCueId": "cue_00710",
+            "startCueId": "cue_00001"
+          },
+          "state": "pass"
+        },
+        {
+          "name": "no_unverified_human_approval",
+          "observed": {
+            "decisionFilePresent": false
+          },
+          "state": "pass"
+        }
+      ],
+      "failedChecks": [],
+      "status": "pass_requires_operator_review",
+      "v1StartCueId": "cue_00005",
+      "v2EndCueId": "cue_00710",
+      "v2StartCueId": "cue_00001",
+      "videoId": "mIyioBLQmJ0"
+    },
+    {
+      "checks": [
+        {
+          "name": "required_review_artifacts",
+          "observed": [],
+          "state": "pass"
+        },
+        {
+          "name": "review_payload_hash",
+          "observed": "match",
+          "state": "pass"
+        },
+        {
+          "name": "immutable_source_binding",
+          "observed": {
+            "match": true
+          },
+          "state": "pass"
+        },
+        {
+          "name": "template_is_not_approval",
+          "observed": "pending_operator_input",
+          "state": "pass"
+        },
+        {
+          "name": "v2_candidate_in_reviewed_context",
+          "observed": {
+            "endCueId": "cue_00886",
+            "startCueId": "cue_00186"
+          },
+          "state": "pass"
+        },
+        {
+          "name": "no_unverified_human_approval",
+          "observed": {
+            "decisionFilePresent": false
+          },
+          "state": "pass"
+        }
+      ],
+      "failedChecks": [],
+      "status": "pass_requires_operator_review",
+      "v1StartCueId": "cue_00188",
+      "v2EndCueId": "cue_00886",
+      "v2StartCueId": "cue_00186",
+      "videoId": "wxcIGSolCvc"
+    }
+  ],
+  "schemaVersion": 1,
+  "secretFindings": [],
+  "secretResourceNamesIncluded": false,
+  "status": "pass_requires_operator_review",
+  "trainingEligibility": "blocked",
+  "verifiedAt": "2026-08-31T07:23:46.344388+00:00",
+  "videoIds": [
+    "cFLQLjzbnVg",
+    "mIyioBLQmJ0",
+    "wxcIGSolCvc"
+  ]
+}

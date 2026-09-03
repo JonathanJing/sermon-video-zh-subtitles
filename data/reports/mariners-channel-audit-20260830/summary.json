@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "mariners-channel-audit-v1",
+  "observedAt": "2026-08-30T21:14:21-07:00",
+  "channel": {
+    "name": "Mariners Church",
+    "handle": "@marinerschurch",
+    "channelId": "UCH7wCaw6J-xNOEoDeu9pzew",
+    "videosUrl": "https://www.youtube.com/@marinerschurch/videos",
+    "shortsUrl": "https://www.youtube.com/@marinerschurch/shorts",
+    "streamsUrl": "https://www.youtube.com/@marinerschurch/streams"
+  },
+  "discovery": {
+    "videosTab": 450,
+    "shortsTab": 162,
+    "streamsTab": 158,
+    "uniquePublicAssets": 770,
+    "crossTabDuplicateIds": 0
+  },
+  "standaloneMainSermonVods": {
+    "count": 190,
+    "classificationEvidence": {
+      "speakerTitlePattern": 184,
+      "anchorPassageDescription": 5,
+      "exactOfficialStreamTitleAndSermonDescription": 1
+    },
+    "manualEnglishCaptions": 0,
+    "automaticEnglishCaptions": 180,
+    "noEnglishCaptions": 10
+  },
+  "mainMessageStreamArchives": {
+    "count": 155,
+    "manualEnglishCaptions": 0,
+    "automaticEnglishCaptions": 123,
+    "noEnglishCaptions": 32
+  },
+  "specialServiceOrUnresolvedStreams": {
+    "count": 3,
+    "ids": [
+      "Hy7RvHJqgKw",
+      "AYyZZn9cxhQ",
+      "mQ-FzZnfnCc"
+    ]
+  },
+  "captionDefinition": {
+    "manualEnglish": "An English key such as en or en-orig exists under yt-dlp subtitles.",
+    "automaticEnglish": "An English key such as en or en-orig exists under yt-dlp automatic_captions.",
+    "captionFilesDownloaded": false
+  },
+  "scopeNotes": [
+    "Counts are a public channel snapshot and will change as the channel publishes, removes, or reclassifies assets.",
+    "Standalone VODs and stream archives often represent the same sermon and must be grouped before train/dev/test splitting.",
+    "Automatic captions are raw source material, not human-reviewed gold transcripts.",
+    "Public availability and caption availability do not establish model-training or redistribution rights."
+  ],
+  "tooling": {
+    "ytDlpVersion": "2026.07.04",
+    "mediaDownloaded": false,
+    "authenticatedSessionUsed": false
+  }
+}

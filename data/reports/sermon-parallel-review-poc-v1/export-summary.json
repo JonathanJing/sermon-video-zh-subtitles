@@ -1,0 +1,64 @@
+{
+  "apiKeyMaterialIncluded": false,
+  "approvedHumanDecisions": 0,
+  "decisionTemplateAllSha256": "7e36b245c02624b8ba657ebf83ba6a5b80992f7d630bc6fc65ed6cf1cd0b27d4",
+  "generatedAt": "2026-08-31T07:22:11.613679+00:00",
+  "reviewItemsAllSha256": "f67c717958744ba4203a82511228a4d6c9b2739a5c527b12863be9fdfef69615",
+  "schemaVersion": "sermon-parallel-review-v1",
+  "secretResourceNamesIncluded": false,
+  "sermons": [
+    {
+      "decisionTemplateSha256": "dacbbd851d82cdec26e3ab9ee4a40ef75b9fb2b668cc10f5d6fec73edaeaac4f",
+      "high": 24,
+      "items": 46,
+      "normal": 22,
+      "reviewItemsSha256": "481ddeda41145ef1935750a10065c66b8942a9bf486889ad845f60e17ebfca62",
+      "videoId": "cFLQLjzbnVg"
+    },
+    {
+      "decisionTemplateSha256": "5823b53a115e3e8cd00931ec9f142695797181331ddbe929e48ca55eeb250e43",
+      "high": 34,
+      "items": 38,
+      "normal": 4,
+      "reviewItemsSha256": "2ac445ac619da11eab244b1af0b0af82fa70bfa235101fb6da1ffd134b674c68",
+      "videoId": "mIyioBLQmJ0"
+    },
+    {
+      "decisionTemplateSha256": "79dcdc007f1262e102ef8753f60808f8c6f5e1a82d624671f619810eef56edca",
+      "high": 25,
+      "items": 33,
+      "normal": 8,
+      "reviewItemsSha256": "07fc994ed6907c6c17d8cf124fa05e53d8ee1abb9bf0d6ccb0882d8e07109e53",
+      "videoId": "wxcIGSolCvc"
+    }
+  ],
+  "sourcePocRoot": "data/derived/sermon-parallel-corpus-poc-v1",
+  "status": "review_bundle_exported_requires_human",
+  "totals": {
+    "high": 83,
+    "issueCounts": {
+      "additionRisk": 2,
+      "human_approval_required_for_all_poc_segments": 34,
+      "needsHumanReview": 26,
+      "numberMismatch": 1,
+      "omissionRisk": 1,
+      "possible_number_omission:00,1": 1,
+      "possible_number_omission:000,2": 1,
+      "possible_number_omission:1": 1,
+      "possible_number_omission:12": 4,
+      "possible_number_omission:14,140": 1,
+      "possible_number_omission:1440": 2,
+      "possible_number_omission:2": 3,
+      "possible_number_omission:20": 2,
+      "possible_number_omission:40": 1,
+      "possible_number_omission:6": 1,
+      "properNounRisk": 35,
+      "scriptureMismatch": 3,
+      "sourceAsrRisk": 74
+    },
+    "items": 117,
+    "normal": 34,
+    "sermons": 3
+  },
+  "trainingEligibility": "blocked"
+}

@@ -1,0 +1,174 @@
+{
+  "apiKeyMaterialIncluded": false,
+  "asrModel": "gpt-transcribe",
+  "asrPricePerMinuteUsdAssumption": 0.0045,
+  "captionSegmentCount": 33,
+  "captionSegmentDurationHours": 0.518,
+  "completedVideoCount": 1,
+  "credentialSource": "not_used",
+  "durationHours": 0.519,
+  "failedVideoCount": 0,
+  "finishedAt": "2026-09-01T18:05:03.547981+00:00",
+  "fullAudioUpperBoundCostUsd": 0.14,
+  "fullAudioUpperBoundMinutes": 31.17,
+  "generatedAt": "2026-09-01T17:54:55.432219+00:00",
+  "humanApprovalClaimed": false,
+  "results": [
+    {
+      "split": "train",
+      "status": "completed",
+      "teacher": {
+        "apiKeyUsed": false,
+        "artifactPurpose": "dataset_preparation_only",
+        "audioEvidenceRequiredFor": "needs_audio_review",
+        "authMode": "chatgpt_managed_verified",
+        "batchSize": 6,
+        "cachedConversationResults": 0,
+        "cachedOrImportedResults": 0,
+        "elapsedSeconds": 607.997,
+        "freshConversations": 12,
+        "freshEphemeralConversations": 12,
+        "generatedAt": "2026-09-01T18:05:03.540987+00:00",
+        "humanApprovalClaimed": false,
+        "postTrainingStudent": {
+          "class": "lightweight_open_weight_candidate",
+          "status": "unselected"
+        },
+        "reviewDispositionCounts": {
+          "excluded_requires_audio_evidence": 7,
+          "sol_high_text_review_corrected": 4,
+          "sol_high_text_review_passed": 22
+        },
+        "reviewReasoningEffort": "high",
+        "reviewerModel": "gpt-5.6-sol",
+        "routineHumanTextReviewRequired": false,
+        "schemaVersion": "sermon-codex-conversation-v3",
+        "segmentCount": 33,
+        "selectedSegmentIds": [
+          "n8HTOPZg7cM_seg_0001",
+          "n8HTOPZg7cM_seg_0002",
+          "n8HTOPZg7cM_seg_0003",
+          "n8HTOPZg7cM_seg_0004",
+          "n8HTOPZg7cM_seg_0005",
+          "n8HTOPZg7cM_seg_0006",
+          "n8HTOPZg7cM_seg_0007",
+          "n8HTOPZg7cM_seg_0008",
+          "n8HTOPZg7cM_seg_0009",
+          "n8HTOPZg7cM_seg_0010",
+          "n8HTOPZg7cM_seg_0011",
+          "n8HTOPZg7cM_seg_0012",
+          "n8HTOPZg7cM_seg_0013",
+          "n8HTOPZg7cM_seg_0014",
+          "n8HTOPZg7cM_seg_0015",
+          "n8HTOPZg7cM_seg_0016",
+          "n8HTOPZg7cM_seg_0017",
+          "n8HTOPZg7cM_seg_0018",
+          "n8HTOPZg7cM_seg_0019",
+          "n8HTOPZg7cM_seg_0020",
+          "n8HTOPZg7cM_seg_0021",
+          "n8HTOPZg7cM_seg_0022",
+          "n8HTOPZg7cM_seg_0023",
+          "n8HTOPZg7cM_seg_0024",
+          "n8HTOPZg7cM_seg_0025",
+          "n8HTOPZg7cM_seg_0026",
+          "n8HTOPZg7cM_seg_0027",
+          "n8HTOPZg7cM_seg_0028",
+          "n8HTOPZg7cM_seg_0029",
+          "n8HTOPZg7cM_seg_0030",
+          "n8HTOPZg7cM_seg_0031",
+          "n8HTOPZg7cM_seg_0032",
+          "n8HTOPZg7cM_seg_0033"
+        ],
+        "selectedSourceSha256": "c0662fd0360a2c8359464c5daa77a1bf96e613c2ecbd53b27256d4f40b6b3e49",
+        "sharedCodexUsageConsumed": true,
+        "sourceSha256": "37ac08ea2a8cdc8966327f2ede94713abd9e99af504a9e2591123a2379f81ca9",
+        "stages": {
+          "review": {
+            "cachedOrImportedResults": 0,
+            "elapsedSeconds": 400.479,
+            "freshConversations": 6,
+            "usage": {
+              "cache_write_input_tokens": 0,
+              "cached_input_tokens": 19968,
+              "input_tokens": 128127,
+              "output_tokens": 20944,
+              "reasoning_output_tokens": 12219
+            },
+            "usageReceiptCoverage": 6
+          },
+          "translation": {
+            "cachedOrImportedResults": 0,
+            "elapsedSeconds": 207.518,
+            "freshConversations": 6,
+            "usage": {
+              "cache_write_input_tokens": 0,
+              "cached_input_tokens": 64256,
+              "input_tokens": 105956,
+              "output_tokens": 10276,
+              "reasoning_output_tokens": 1611
+            },
+            "usageReceiptCoverage": 6
+          }
+        },
+        "status": "hybrid_teacher_pipeline_completed_sol_high_text_review_training_blocked",
+        "trainingEligibility": "blocked",
+        "translateReasoningEffort": "high",
+        "translatorModel": "gpt-5.6-terra",
+        "usage": {
+          "cache_write_input_tokens": 0,
+          "cached_input_tokens": 84224,
+          "input_tokens": 234083,
+          "output_tokens": 31220,
+          "reasoning_output_tokens": 13830
+        },
+        "usageReceiptCoverage": 12,
+        "videoId": "n8HTOPZg7cM"
+      },
+      "videoId": "n8HTOPZg7cM"
+    }
+  ],
+  "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+  "selectedVideoCount": 1,
+  "selectiveAudioAudit": {
+    "calibrationSegmentCount": 265,
+    "calibrationSeverityCounts": {
+      "needs_audio_review": 44,
+      "pass": 221
+    },
+    "observedNeedsAudioReviewRate": 0.166,
+    "passSampleRate": 0.05,
+    "postTeacherExactCountPending": true,
+    "preTeacherSelectedDurationShare": 0.2127,
+    "preTeacherSelectedMinutes": 6.61,
+    "preTeacherSelectedSegmentCount": 6,
+    "preTeacherSelectedSegmentShare": 0.1818,
+    "projectedAsrCostUsd": 0.05,
+    "projectedAuditMinutes": 10.67,
+    "projectedAuditShare": 0.3434,
+    "projectedUpperAsrCostUsd": 0.05,
+    "projectedUpperAuditMinutes": 11.77,
+    "projectedUpperAuditShare": 0.3787
+  },
+  "sourceSplitManifest": "/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles-ios-design/data/reports/sermon-parallel-corpus-splits-v1/split-manifest.json",
+  "sourceSplitManifestSha256": "5f3be7263f309d1b2b62be59a3026f61389d8a8d0252825310b583681d657a4f",
+  "splitCounts": {
+    "train": 1
+  },
+  "stage": "translate-review",
+  "status": "completed",
+  "teacherModels": {
+    "reviewer": {
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "high"
+    },
+    "translator": {
+      "model": "gpt-5.6-terra",
+      "reasoningEffort": "high"
+    }
+  },
+  "trainingBlockers": [
+    "source_training_rights_unconfirmed",
+    "gpt_external_student_distillation_not_authorized"
+  ],
+  "trainingEligibility": "blocked"
+}

@@ -28,7 +28,7 @@
 
 两个角色共享字幕模型与组件，但权限和任务必须分离：会众端不能看到 token、麦克风或生产控制；Admin 端不能另外生成一份只在本机可见的字幕。周日开始操作必须简单、可观察、可停止，周六准备成果必须能被利用但不能覆盖现场事实。无论两个版本多么接近，**周日实时英文始终是字幕事实来源**。
 
-后训练的目标不是让 4B/9B 学生模型复制教师的全部通用能力，而是把任务收窄为“英文证道流式前缀 -> 忠实、稳定、低延时的简体中文字幕”。教师只在离线制数、评审和回归分析中使用；默认数据教师是固定 revision 的 `Qwen/Qwen3.8-27B`。`gpt-5.6-sol` 在取得 OpenAI 对外部 Qwen 学生制数的书面授权前，不得进入训练集。两者都不在周日关键路径上。
+后训练的目标不是让 4B/9B 学生模型复制教师的全部通用能力，而是把任务收窄为“英文证道流式前缀 -> 忠实、稳定、低延时的简体中文字幕”。教师只在离线制数、评审和回归分析中使用；当前候选数据生产线是 `gpt-5.6-terra` 初译、`gpt-5.6-sol` 独立复审。取得外部学生训练授权并通过人工审核前，这些输出保持隔离 Silver Candidate。固定 revision 的 `Qwen/Qwen3.8-27B` 只保留为备用实验臂。所有教师都不在周日关键路径上。
 
 ## 2. 产品边界
 
@@ -749,15 +749,16 @@ Context Pack 必须绑定：
 
 | 角色 | 建议模型 | 用途 | 不用于 |
 |---|---|---|---|
-| 默认数据教师 | `Qwen/Qwen3.8-27B` 的固定 revision | 离线翻译候选、prefix `WAIT/WRITE` 标签、困难样本解释 | 用移动的 `Qwen3.8` 家族名制数、与其他来源无 provenance 混合 |
-| 受限商业参考 | `gpt-5.6-sol` | 不进入训练集的少量质量参考 | 未获书面授权时为外部 Qwen 学生批量制数或自动打分训练 |
+| 候选初译教师 | `gpt-5.6-terra` | 离线批量翻译候选 | 未获书面授权时写入外部学生训练 Gold |
+| 候选复审教师 | `gpt-5.6-sol` | 独立对照英文修正、风险路由 | 用同一上下文自审，或用模型审核替代人工 Gold 门禁 |
+| 备用教师实验臂 | `Qwen/Qwen3.8-27B` 固定 revision | 授权清晰的离线对照、困难样本研究 | 与 Terra/Sol provenance 静默混合 |
 | Mac 学生候选 | Qwen3.5 4B 级 text model | M1 Max 64GB 的低延时主模型 | 未经 benchmark 直接承诺生产延时 |
 | DGX 学生候选 | Qwen3.5 9B 级 text model | DGX Spark 的质量主模型和 4B 对照 | 把 27B 教师直接当低延时主模型 |
 | iPhone 学生 | 1B–3B 量级，后续研究 | 方案 B 或断网实验 | 方案 C 首版生产主路径 |
 
 OpenAI 官方模型页显示 GPT‑5.6 Sol 支持文本输入/输出、Structured Outputs、Responses 和 Batch，但不支持音频输入，也不支持 fine-tuning。技术上它可生成 sequence-level 标签；合同上，OpenAI 当前 Services Agreement 对使用 Output 开发外部 AI 模型设有限制。因此未取得针对本用途的书面授权前，GPT‑5.6 Sol 只作为与训练集隔离的参考，不作为外部学生数据教师。参考 [GPT‑5.6 Sol 官方模型页](https://developers.openai.com/api/docs/models/gpt-5.6-sol)、[OpenAI Services Agreement](https://openai.com/en-GB/policies/services-agreement/) 和[许可专题](./live-translation-post-training/licensing-and-data-governance.zh.md)。
 
-默认教师固定为官方 [Qwen/Qwen3.8-27B](https://huggingface.co/Qwen/Qwen3.8-27B)，而不是参数更大的 Flash-Next；27B 更适合在单台 DGX Spark 上做可重复的离线补制。每次数据发布仍须记录精确 model revision/commit、权重格式、量化方式、chat template 和 decoding 参数，并在训练前重新确认该 revision 的许可证。模型卡当前标示 Apache-2.0，但不能把今天的页面状态当成未来所有 revision 的永久授权结论。
+官方 [Qwen/Qwen3.8-27B](https://huggingface.co/Qwen/Qwen3.8-27B) 保留为备用教师实验臂；启用时必须记录精确 revision/commit、权重格式、量化方式、chat template 和 decoding 参数，并在训练前重新确认该 revision 的许可证。它不改变当前 Terra/Sol 候选生产决策。
 
 ### 6.2 把任务训练成“等待或追加”，而不是整句重译
 
@@ -832,14 +833,14 @@ flowchart LR
 3. **先切分再扩增**：按完整 sermon/date/speaker 划分 train/dev/test，再生成 prefix 和教师标签，防止同一篇讲章片段泄漏到测试集。
 4. **语义切段**：以自然短语、标点、停顿和经文引用为边界；同时保留原始连续时间轴，不能把小段随机打乱。
 5. **生成 prefix**：从真实 ASR 增量重放，而不是只截人工完美 transcript；保存 unstable -> stable 的变化。
-6. **教师制数**：固定 revision 的 Qwen3.8-27B 先给 full-segment reference，再按 prefix 给 `WAIT/WRITE/delta`、经文模式、术语使用和 evidence span；GPT 输出未获外部蒸馏书面授权前不得进入 dataset。
+6. **教师制数**：Terra 先给 full-segment reference，Sol 在独立上下文中对照英文修正；人工批准成为 Gold 后，再制作并审核 prefix `WAIT/WRITE/delta`。未获外部蒸馏书面授权前，Terra/Sol 输出不得进入 trainable dataset。
 7. **确定性验证**：检查 JSON schema、语言、append-only、长度、经文映射、Saturday-only addition、source coverage 和重复输出。
 8. **分歧处理**：validator 失败或困难样本进入双语人工审核；如未来引入另一个已批准的开放权重教师，必须保存独立 provenance，不能用多数投票掩盖问题。
 9. **不可变发布**：输出 train/dev/test manifest、数据版本、教师 receipt、过滤统计和可删除索引；后续修正发布新版本，不原地覆写。
 
 ### 6.5 教师合同与可复现性
 
-Qwen3.8-27B 的固定 system rubric 至少包含：忠实翻译、简体中文、经文版本、`WAIT/WRITE` 定义、append-only 规则、周六先验限制和 JSON schema。使用固定 chat template 与 decoding 参数做离线批量制数；模型升级必须重跑 calibration set。
+Terra/Sol 的固定 rubric 至少包含：忠实翻译、简体中文、经文版本、`WAIT/WRITE` 定义、append-only 规则、周六先验限制和 JSON schema。初译与复审使用独立上下文，并记录各自模型、reasoning 和 prompt version；任一模型升级必须重跑 calibration set。
 
 每个教师输出必须附带：
 
@@ -873,8 +874,8 @@ Qwen3.8-27B 的固定 system rubric 至少包含：忠实翻译、简体中文�
   "quoteMode": "exact_quote",
   "contextPackId": "ctx_sha256prefix",
   "saturdayPriorUsed": true,
-  "teacherModel": "Qwen/Qwen3.8-27B",
-  "teacherPromptVersion": "sermon-simul-v1",
+  "teacherPipeline": {"translator": "gpt-5.6-terra", "reviewer": "gpt-5.6-sol"},
+  "teacherPromptVersion": "sermon-terra-sol-v1",
   "reviewStatus": "human_approved",
   "sourceSha256": "...",
   "licenseReceiptId": "rights_..."
@@ -940,7 +941,7 @@ Qwen3.8-27B 的固定 system rubric 至少包含：忠实翻译、简体中文�
 |---|---|---|---|
 | `sermon-live-4b` | MacBook M1 Max 64GB | 4B 级、量化后常驻 | 便携低延时主路径 |
 | `sermon-live-9b` | DGX Spark | 9B 级、量化/半精度择优 | 质量主路径与 4B 对照 |
-| `sermon-teacher-qwen38` | DGX Spark | Qwen3.8-27B 固定 revision | 周六/离线补制，不参与现场关键路径 |
+| `sermon-teacher-qwen38-fallback` | DGX Spark | Qwen3.8-27B 固定 revision | 仅备用离线实验，不参与现场关键路径 |
 
 Apple 公布的 M1 Max 可配置至 64GB unified memory；DGX Spark 官方硬件文档列出 128GB coherent unified memory。它们说明模型有装载空间，不证明实时性能；最终 profile 由实际 runtime、量化和 p95 端到端测量决定。参考 [Apple M1 Max](https://www.apple.com/au/newsroom/2021/10/introducing-m1-pro-and-m1-max-the-most-powerful-chips-apple-has-ever-built/) 和 [NVIDIA DGX Spark hardware](https://docs.nvidia.com/dgx/dgx-spark/hardware.html)。
 
@@ -1138,7 +1139,7 @@ Cloud Run health、SSE smoke 和 simulator 测试都不能替代这次物理设�
 
 - 选定有明确授权的周六/周日 paired corpus 和圣经版本，建立 rights receipt、hash 与 sermon-level split。
 - 固化数据 schema、Context Pack schema、`WAIT/WRITE` teacher contract、validator 和人工审核 rubric。
-- 在小型 calibration set 上校准固定 revision Qwen3.8-27B 与人工 gold，锁定 prompt/model receipt；GPT 只在取得外部制数书面授权后另立隔离实验。
+- 在小型 calibration set 上校准 Terra 初译、Sol 复审与人工 gold，锁定两阶段 prompt/model receipt；未取得外部制数书面授权前只生成隔离 Silver Candidate。
 - 用现有 pipeline、云端 realtime 和未训练 4B/9B 建立质量/延时基线。
 
 ### Phase 1：学生模型 POC 与端到端音频 spike
@@ -1189,7 +1190,7 @@ Cloud Run health、SSE smoke 和 simulator 测试都不能替代这次物理设�
 5. 哪一组周六/周日视频可以作为首个 paired replay golden set。
 6. 哪些历史音频/字幕有训练授权、保留期和删除流程；指定哪一套中英文圣经版本及其训练/分发权利。
 7. 学生 base model 的最终 4B/9B checkpoint、许可证与 runtime；本设计先 bake-off，不把候选名写成已决定。
-8. Qwen3.8-27B 默认教师的精确 revision、权重格式和量化；是否取得 GPT‑5.6 Sol 外部制数的书面授权。
+8. 是否取得 Terra/Sol 输出用于外部轻量学生训练的书面授权；如启用 Qwen3.8-27B 备用臂，其精确 revision、权重格式和量化是什么。
 9. Context Pack 中哪些字段必须人工确认：建议至少确认标题、主经文、大纲、人名和首选术语。
 10. Context Pack 缺失时是否允许 operator 明确确认后以 local live-only 模式开始；本设计建议允许，但必须留下 receipt。
 11. 现场主机首版选 MacBook M1 Max、DGX Spark 还是两者；本设计建议同时 benchmark，先 promotion 达标 profile。
@@ -1201,7 +1202,7 @@ Cloud Run health、SSE smoke 和 simulator 测试都不能替代这次物理设�
 先建立方案 C 的单教会闭环，再验证多教会隔离；不直接同时实现方案 B。最小、可验证的下一步是：
 
 1. 选定一组有授权的真实周六/周日材料和圣经版本，建立 live-English 对齐的 golden set、rights receipts 与完整 sermon split。
-2. 固化 `WAIT/WRITE` schema、教师 prompt、validator 和人工 rubric；用 200–500 个样本校准固定 revision Qwen3.8-27B 与人工 gold。
+2. 固化 `WAIT/WRITE` schema、Terra 初译 prompt、Sol 复审 prompt、validator 和人工 rubric；用 200–500 个样本校准两阶段流水线与人工 gold。
 3. 先训练 4B/9B 小规模 LoRA candidate，跑五路离线 replay；没有质量收益就先修数据，不直接扩大 synthetic 规模。
 4. 在 M1 Max 与 DGX Spark 上测相同 artifact 的首 token、端到端 p50/p95/p99 和 75 分钟漂移，选出 promotion profile。
 5. 定义首批固定教会 fixture、`GET /api/churches`、producer receipt 和 church-scoped session contract。

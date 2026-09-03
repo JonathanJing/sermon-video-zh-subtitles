@@ -1,0 +1,49 @@
+{
+  "apiKeyMaterialIncluded": false,
+  "automaticSilverCalibration": {
+    "normalApproved": 0,
+    "normalExpected": 34,
+    "normalNonApproved": 0,
+    "normalReviewed": 0,
+    "normalWithMaterialError": 0,
+    "status": "pending"
+  },
+  "blockingReasons": [
+    "source_training_rights_unconfirmed",
+    "gpt_external_student_distillation_not_authorized",
+    "human_quality_review_incomplete"
+  ],
+  "counts": {
+    "gold": 0,
+    "humanBoundaryBlocked": 0,
+    "isolatedReference": 117,
+    "pending": 117,
+    "rejected": 0,
+    "silverCandidate": 0,
+    "total": 117
+  },
+  "datasetVersion": "sermon-parallel-poc-quality-catalog-v1",
+  "decisionCoverage": {
+    "expected": 117,
+    "materialErrorCounts": {},
+    "observed": 0,
+    "statusCounts": {}
+  },
+  "generatedAt": "2026-08-31T07:29:09.070394+00:00",
+  "releasedSegmentsSha256": "dbb34a1c2accb88f413ee2b5d341c6bfe72a66f53995e581677e414f5792bccd",
+  "riskRuleCalibration": {
+    "highPriorityRecall": null,
+    "materialErrorSegments": 0,
+    "materialErrorSegmentsHigh": 0,
+    "materialErrorSegmentsNormal": 0,
+    "segmentsExpected": 117,
+    "segmentsReviewed": 0,
+    "status": "pending"
+  },
+  "schemaVersion": "sermon-parallel-dataset-manifest-v1",
+  "secretResourceNamesIncluded": false,
+  "sourceBundleSha256": "f67c717958744ba4203a82511228a4d6c9b2739a5c527b12863be9fdfef69615",
+  "splitManifestSha256": "5f3be7263f309d1b2b62be59a3026f61389d8a8d0252825310b583681d657a4f",
+  "status": "quality_catalog_training_blocked",
+  "trainingEligibility": "blocked"
+}

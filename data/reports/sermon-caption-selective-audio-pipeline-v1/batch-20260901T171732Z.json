@@ -1,0 +1,4356 @@
+{
+  "apiKeyMaterialIncluded": false,
+  "asrModel": "gpt-transcribe",
+  "asrPricePerMinuteUsdAssumption": 0.0045,
+  "captionSegmentCount": 7334,
+  "captionSegmentDurationHours": 98.546,
+  "completedVideoCount": 159,
+  "credentialSource": "not_used",
+  "durationHours": 99.987,
+  "failedVideoCount": 0,
+  "finishedAt": "2026-09-01T17:17:32.182524+00:00",
+  "fullAudioUpperBoundCostUsd": 27.0,
+  "fullAudioUpperBoundMinutes": 5999.2,
+  "generatedAt": "2026-09-01T17:17:29.468227+00:00",
+  "humanApprovalClaimed": false,
+  "results": [
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 59,
+        "generatedAt": "2026-09-01T17:17:29.490956+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "dd2b5481ad41d1e31bba85e9259421c0fe2d0867ff993b2d0e06e221cff23a6e",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 3521,
+        "sourceSegmentsSha256": "7bfef1eb69129a01bef3335e1a1874a951eee1dc84fa01ff0a1f11665db8b7ff",
+        "speaker": "Eric Geiger",
+        "split": "dev",
+        "status": "caption_source_prepared",
+        "title": "Is There Only One Way to God? - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "_Lfp2-dtgRE"
+      },
+      "split": "dev",
+      "status": "completed",
+      "videoId": "_Lfp2-dtgRE"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 57,
+        "generatedAt": "2026-09-01T17:17:29.509593+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "582935ba601fdc0481c4d5325d255e93b8c27d29e5963f3b546f01147ed1da03",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 3435,
+        "sourceSegmentsSha256": "2f7825c00eee7544f26054b8cee2f3660f335e872d66d498b50ee3483123eb78",
+        "speaker": "Eric Geiger",
+        "split": "dev",
+        "status": "caption_source_prepared",
+        "title": "How to have joy like Jesus - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "LIrzotgoigE"
+      },
+      "split": "dev",
+      "status": "completed",
+      "videoId": "LIrzotgoigE"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 55,
+        "generatedAt": "2026-09-01T17:17:29.531524+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "2df728d6e630ed89a53f675131bf9eb38c77dae51fff7f6bba5e8d1608c0016e",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 3402,
+        "sourceSegmentsSha256": "db4bbac5ac30f081a35e3e398e2f589ff52c49fd357cd9db83107d43e829d14d",
+        "speaker": "Kenton Beshore",
+        "split": "dev",
+        "status": "caption_source_prepared",
+        "title": "Winning the Fight for Joy in Your Mind - Kenton Beshore | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "5OdkEK3iNsM"
+      },
+      "split": "dev",
+      "status": "completed",
+      "videoId": "5OdkEK3iNsM"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 38,
+        "generatedAt": "2026-09-01T17:17:29.548647+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "2adad32461208ee7199c63d0459865294fcd89c11d15a92edef94f9bc4ee7795",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2098,
+        "sourceSegmentsSha256": "67522a86eed35824dd5e856526055a6f239a1415d8e3875398846944d039ce4b",
+        "speaker": "Steve Bang Lee",
+        "split": "dev",
+        "status": "caption_source_prepared",
+        "title": "Look to the Future with Hope - Steve Bang Lee | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "U7iRezkejNw"
+      },
+      "split": "dev",
+      "status": "completed",
+      "videoId": "U7iRezkejNw"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 42,
+        "generatedAt": "2026-09-01T17:17:29.567145+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "b12f024a30d7437f193a2263aea6e5d7415f65f6ab49327aa3283ca63e16b5b8",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2299,
+        "sourceSegmentsSha256": "18c074c12514f74782a019e63f595ddeada0393c35ef924239246f1529505810",
+        "speaker": "Eric Geiger",
+        "split": "dev",
+        "status": "caption_source_prepared",
+        "title": "Technology: God's Blessing or Man's Downfall? - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "xSGiyhXV7iQ"
+      },
+      "split": "dev",
+      "status": "completed",
+      "videoId": "xSGiyhXV7iQ"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 41,
+        "generatedAt": "2026-09-01T17:17:29.583613+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "196bcfd9d7dd9e954ff437bf0c77fabdd28ae3495794bf9570d02984bc335135",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2292,
+        "sourceSegmentsSha256": "4d0bd285e95d3a79e43d4aa9b11b30a639ad8a77ac56825ae342f01e188ee63e",
+        "speaker": "Eric Geiger",
+        "split": "dev",
+        "status": "caption_source_prepared",
+        "title": "Woke and Social Justice: What does the Scripture Teach? - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "qjf5V3TUzVo"
+      },
+      "split": "dev",
+      "status": "completed",
+      "videoId": "qjf5V3TUzVo"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 50,
+        "generatedAt": "2026-09-01T17:17:29.587674+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "2b7d464c5d73ca30d18a258095c79460428aec30026dac7cbeb8d275ce6b1c29",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "existing_semantic_segments",
+        "sourceDurationSeconds": 2158,
+        "sourceSegmentsSha256": "8198b9b9740f360faf3f755de0b3fd58c3389683b4d031fbcac69ed499bf1d08",
+        "speaker": "Eric Geiger",
+        "split": "dev",
+        "status": "caption_source_prepared",
+        "title": "What Did Jesus Say to His Mother? - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "nre_3kR0PHk"
+      },
+      "split": "dev",
+      "status": "completed",
+      "videoId": "nre_3kR0PHk"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 45,
+        "generatedAt": "2026-09-01T17:17:29.607524+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "7d38414336b8033b41410d6ecbd6b7a6669d1f581d7474290a646c490bdefeca",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2459,
+        "sourceSegmentsSha256": "b978e247f7cc32222b77e099f4578256300389ac2c9f5350c0f2636c8d8a97ba",
+        "speaker": "Eric Geiger",
+        "split": "dev",
+        "status": "caption_source_prepared",
+        "title": "Let No One Condemn You - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "RREQgwou-ns"
+      },
+      "split": "dev",
+      "status": "completed",
+      "videoId": "RREQgwou-ns"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 32,
+        "generatedAt": "2026-09-01T17:17:29.622172+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "06d3a0afac04172946cec10a4677967554d5193ddfac53f00a04372936715b5b",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1754,
+        "sourceSegmentsSha256": "d5ce37540a15300a892aa0d18e63d0e0737907ae50874554dfaac25a13203d40",
+        "speaker": "Doug Fields",
+        "split": "dev",
+        "status": "caption_source_prepared",
+        "title": "Church Verse 2024-2025 - Doug Fields | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "1OAWYv5lqZ4"
+      },
+      "split": "dev",
+      "status": "completed",
+      "videoId": "1OAWYv5lqZ4"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 39,
+        "generatedAt": "2026-09-01T17:17:29.641237+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "63939751bfb17ed39331f3495c20f9632e9aa190ecf7d94e41e5d43582f3a6e1",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2048,
+        "sourceSegmentsSha256": "493fec2d833a8cf4fb377e6556f590bd7db6808e1bda64df01f84a41fd569c9e",
+        "speaker": "Eric Geiger",
+        "split": "dev",
+        "status": "caption_source_prepared",
+        "title": "When the World is Overwhelming - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "S8HTG-uG1dg"
+      },
+      "split": "dev",
+      "status": "completed",
+      "videoId": "S8HTG-uG1dg"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 36,
+        "generatedAt": "2026-09-01T17:17:29.657235+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "100c01d4f4d8b13aa3cfe0ea16901dae014adfef3e16e4a57e27c9d8af58e0fa",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2002,
+        "sourceSegmentsSha256": "cfaffb7444d3ae75f6d7ce3aa59e05a604e5313fcec9fd56a5fb4310a3a913f4",
+        "speaker": "Doug Fields",
+        "split": "dev",
+        "status": "caption_source_prepared",
+        "title": "When Expectations are Overwhelming - Doug Fields | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "uGBlsewT5jM"
+      },
+      "split": "dev",
+      "status": "completed",
+      "videoId": "uGBlsewT5jM"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 34,
+        "generatedAt": "2026-09-01T17:17:29.673363+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "dd5e16b2bb51ffba7c44fd20be656d2fb965a91d204b757bdae85043b7a77c9e",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1806,
+        "sourceSegmentsSha256": "0bf1d28c93884837a44745250f7e5e5bf80f4d968b30535826c4a6a11adbf09f",
+        "speaker": "Eric Geiger",
+        "split": "dev",
+        "status": "caption_source_prepared",
+        "title": "A Story About Christ Returning - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "1G1ltK5T_OQ"
+      },
+      "split": "dev",
+      "status": "completed",
+      "videoId": "1G1ltK5T_OQ"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 44,
+        "generatedAt": "2026-09-01T17:17:29.687937+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "97eeb246b3f24a3b4720dbbfe8dfe77755375b4a90f0b8f9afc645a1e595fc94",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1800,
+        "sourceSegmentsSha256": "2627d3a8f9707583fafb9e5f638253a32a563f5b4f880d464b0540cdc113aeea",
+        "speaker": "Eric Geiger",
+        "split": "dev",
+        "status": "caption_source_prepared",
+        "title": "The Beginning of Our Blessing - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "MGsPp-9ixPM"
+      },
+      "split": "dev",
+      "status": "completed",
+      "videoId": "MGsPp-9ixPM"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 45,
+        "generatedAt": "2026-09-01T17:17:29.703300+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "88ab2fe5e64edb24f722cdafe3cf22e05315df367e03b50d815098095e284da0",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2179,
+        "sourceSegmentsSha256": "5d857cc470c957edf5efe9b5c8edc67b8832b83fc0c9c7aa2132bc4d392a8631",
+        "speaker": "Christine Caine",
+        "split": "dev",
+        "status": "caption_source_prepared",
+        "title": "The Beginning of Our Faith - Christine Caine | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "q6Hm-TXBr6g"
+      },
+      "split": "dev",
+      "status": "completed",
+      "videoId": "q6Hm-TXBr6g"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 62,
+        "generatedAt": "2026-09-01T17:17:29.718151+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "eca4106d5c34c6618231ef30077dc91c2f86d00dbdc9c292cf96fd01f5270fc0",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2153,
+        "sourceSegmentsSha256": "bf6276f69516a4464a40791e890bc49af6676116d62c423583af2455cf5440d3",
+        "speaker": "Doug Fields",
+        "split": "dev",
+        "status": "caption_source_prepared",
+        "title": "Let Love Cover Conflict NOT \"Cut Discomfort Out of Your Life\" - Doug Fields | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "LsLdyteoG1A"
+      },
+      "split": "dev",
+      "status": "completed",
+      "videoId": "LsLdyteoG1A"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 48,
+        "generatedAt": "2026-09-01T17:17:29.722134+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "c1fa96aa383f0172caa797bbdb083fdf25a84c7882957747ed1316ed92e142ce",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "existing_semantic_segments",
+        "sourceDurationSeconds": 1969,
+        "sourceSegmentsSha256": "c5d19b922d609677717a308d39e8ba03386274dee9f6b8617742fbe428c0bc7a",
+        "speaker": "Eric Geiger",
+        "split": "dev",
+        "status": "caption_source_prepared",
+        "title": "Tables Overturned: The King with Righteous Anger - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "oDIIjVpJzFA"
+      },
+      "split": "dev",
+      "status": "completed",
+      "videoId": "oDIIjVpJzFA"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 46,
+        "generatedAt": "2026-09-01T17:17:29.726219+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "5a1d0e16f521fdbf075cc749acc916b2f43134228574daa8b68c4cc05301b0ae",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "existing_semantic_segments",
+        "sourceDurationSeconds": 1991,
+        "sourceSegmentsSha256": "e34b1655c3d18e373e468c9385b7a873c8c3eab43f8ee8ca3caf503e2e3729f7",
+        "speaker": "Jared Kirkwood",
+        "split": "dev",
+        "status": "caption_source_prepared",
+        "title": "Promised Comforter: The King who won't abandon us - Jared Kirkwood | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "XFbturPLU7o"
+      },
+      "split": "dev",
+      "status": "completed",
+      "videoId": "XFbturPLU7o"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 55,
+        "generatedAt": "2026-09-01T17:17:29.743141+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "f1235b5d3b9c14f7301a4c690d8c5e4ceb05e14bc638ec94a992ee4190cdbc5f",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2262,
+        "sourceSegmentsSha256": "86362dc9aae242fedb62d00b198957b3292fbbdde651cd1596a27d119a7ba428",
+        "speaker": "Eric Geiger",
+        "split": "dev",
+        "status": "caption_source_prepared",
+        "title": "When my shame haunts me - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "A_WNHtupo3Q"
+      },
+      "split": "dev",
+      "status": "completed",
+      "videoId": "A_WNHtupo3Q"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 58,
+        "generatedAt": "2026-09-01T17:17:29.766135+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "7d7cc343439d59284967fb739ea869209a4d34a7d9d45e17250a367ec0afc5b6",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 3638,
+        "sourceSegmentsSha256": "3d99f842f8cdd2e512525d356e7b02d4b16732c9cbe34841032612d116e34f8a",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Does Christianity Oppress Minorities, Women, and Others? - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "ehQ0yWVeM6Y"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "ehQ0yWVeM6Y"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 58,
+        "generatedAt": "2026-09-01T17:17:29.786914+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "c1191484fa31985bf9f67e20b1e26f4a06fafb4b71501ef9a9e88ecc17b5ef82",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 3490,
+        "sourceSegmentsSha256": "09f57703d805a7687e7587354fad22238dbe19651bfd63eeb5bb5b3cef4dab27",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "What Does God Say About Gender Dysphoria and the Transgender Movement?",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "b1Ggr2ww8Sc"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "b1Ggr2ww8Sc"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 57,
+        "generatedAt": "2026-09-01T17:17:29.807082+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "bc3f1c99a65555fb31d9dc9b35b9e5f0a8bc1c601e2becac39e449ba2e42ebbe",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 3559,
+        "sourceSegmentsSha256": "5482bcf32f84c1303ab862cc313cbbf456179a05ffde10cca172d02e9a43421f",
+        "speaker": "Steve Bang Lee",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "How does Hell Exist if God is Love? - Steve Bang Lee | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "6isKEvhRX-g"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "6isKEvhRX-g"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 62,
+        "generatedAt": "2026-09-01T17:17:29.829503+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "02ee0c76db49fafa4f49c8e7848828903bfc8a009cb2e20537b6040b16873a4f",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 3572,
+        "sourceSegmentsSha256": "15800846a767931e2b895b2ceaeb53126c23127985e8b7194f840a601939fb2a",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Called, Loved, and Kept - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "MAEC7wuVcoo"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "MAEC7wuVcoo"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 61,
+        "generatedAt": "2026-09-01T17:17:29.852142+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "1c3ae520334d442ce5b77ba2f4dfcc9f69f9611ceccfeff20e65b37842453b0c",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 3624,
+        "sourceSegmentsSha256": "477f193159a0eb45f7cd0ad22cdcc60b557cfffcbb71e201ba7681be39f0cbda",
+        "speaker": "Kenton Beshore",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Contend for the Once and For All Faith - Kenton Beshore | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "hKW1izlI7EE"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "hKW1izlI7EE"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 57,
+        "generatedAt": "2026-09-01T17:17:29.871474+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "5af3e3d3e1e4aabfac012692e070cf73f5085accaf8530babee3b43921411ade",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 3418,
+        "sourceSegmentsSha256": "5ac3143e5dd447379300eba50e92a0b513dcaba10200b48d7ed9fcfae60cdfc5",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "The One Thing About Everyone Who Walks Away From God - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "zy6BTF5rvtw"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "zy6BTF5rvtw"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 61,
+        "generatedAt": "2026-09-01T17:17:29.892972+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "58b279873e1610926b20604a7811dd0e4d4ac64528ee4c27d5a2172cb585f400",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 3626,
+        "sourceSegmentsSha256": "e1d3c8726a8719821e881cbe24d238539583a3704ac5eba8a1447806e327549c",
+        "speaker": "Jared Kirkwood",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Keeping in the Love of God - Jared Kirkwood | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "GCHmkQ9-cmw"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "GCHmkQ9-cmw"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 58,
+        "generatedAt": "2026-09-01T17:17:29.912439+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "def1bda345454c44a99154167ddc56a5a3c1ba62c9c61ac107a05b5cf1e55d65",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 3435,
+        "sourceSegmentsSha256": "ae3d4d155d69c97363366684d0f8526ba84f490814cb316c44b0750bf5191d03",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "God Has You - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "q8AVkawOzqE"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "q8AVkawOzqE"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 63,
+        "generatedAt": "2026-09-01T17:17:29.932387+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "b388965d1996c2c59e18a9cc5c6ac235227b03d3671e9cf1c01928383b63a441",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 3788,
+        "sourceSegmentsSha256": "9f6ebcefda0288e66bbb62cc3b0647d174449df807fa43e4acb9d78d08f693ad",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "The Miracle of the Miracles - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "cXf4olVIy_U"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "cXf4olVIy_U"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 57,
+        "generatedAt": "2026-09-01T17:17:29.952051+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "de64a1b3d3ee48308cf5f769974e6782172b229e79af0f6bcd97e6e4baeb805d",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 3492,
+        "sourceSegmentsSha256": "3f2c8c0fedb6435d1bf9ba0be82ad8969b45a7419d87732f06579b16509deffd",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Jesus Heals and Reverses - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "8uaDYOCjY3k"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "8uaDYOCjY3k"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 50,
+        "generatedAt": "2026-09-01T17:17:29.969324+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "33edfb6d0d244ba284d8e6d4c54c62cd8cc81e1a571ebbf2dc2a68198bd38333",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 3245,
+        "sourceSegmentsSha256": "bf9b0d44f7163a035a75400987bec1cf6add95785819717a7b5e9282ba873c51",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Jesus Miraculously Provides - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "VV5vO3WFodg"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "VV5vO3WFodg"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 60,
+        "generatedAt": "2026-09-01T17:17:29.988984+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "c2e81934c18f8a241003d4ba9bd75e02819fbc7fe0190d737b2863bd0b540b2b",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 3574,
+        "sourceSegmentsSha256": "54644c6d14e45c54c487f46683cd537a17dc5c1c5e44f07d13f09b69ecd597f7",
+        "speaker": "Christine Caine",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Jesus Walks on Water and Calms Storms - Christine Caine | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "mJis49jSW1E"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "mJis49jSW1E"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 58,
+        "generatedAt": "2026-09-01T17:17:30.007744+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "f20b6654e7a7dab33bef59ae584577f34a412d05d606567de7e96c84820d1bec",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 3443,
+        "sourceSegmentsSha256": "9d66a44e2ae9c9c32cd4971fa138d8ff9c87a985c516da061977883409948b80",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Jesus Pursues and Overcomes Sin from All Nations - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "OZO8UfcthIM"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "OZO8UfcthIM"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 104,
+        "generatedAt": "2026-09-01T17:17:30.027000+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "48a527d1157340d32423cd984ab58da23cb1b78208b8e9b67816be08ba2ed036",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 3628,
+        "sourceSegmentsSha256": "79b38f48767d3deaef6a2b6aca363296a93085b2d27fb8a832453f3def6db73a",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Jesus Restores - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "hnstvhOVag0"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "hnstvhOVag0"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 59,
+        "generatedAt": "2026-09-01T17:17:30.046472+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "a238dfb8917d80dc8a42b0ac44be09e3cc0e915bb7c102c4047148693124fa64",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 3493,
+        "sourceSegmentsSha256": "b010fbdbbb65995568864ec252f76bd537bec0f04ba0d553d2489680833abf15",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "The Greatest Foundation for Your Joy - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "D8kaG2jM740"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "D8kaG2jM740"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 64,
+        "generatedAt": "2026-09-01T17:17:30.069914+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "7508ed0182035f2f7f78250ccd23a388304992e29aafcf1b39055b141f845ee7",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 3769,
+        "sourceSegmentsSha256": "d543180b4fb65e8ec0adee86d09fd7dd985cbb8ef534aaad2ae46b94ff14931b",
+        "speaker": "Kenton Beshore",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Joy in Challenges - Kenton Beshore | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "OhxJZhzR3tE"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "OhxJZhzR3tE"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 57,
+        "generatedAt": "2026-09-01T17:17:30.089213+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "605d6c214b88a5d5073edeb7e0bcf31d260c419b262b2ee21a66eab4360718cf",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 3421,
+        "sourceSegmentsSha256": "08a03d152888ea0811e20abd49a979e5017b7d3410214ddc63e928c3e0e9ddcb",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Joy in Life (and Death) - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "2KwPiLt_HI4"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "2KwPiLt_HI4"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 60,
+        "generatedAt": "2026-09-01T17:17:30.109375+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "4c8de7b935152e20d46a2b69abfc8e6f8262b0f71913d7fe47b0472a25b2e2ed",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 3522,
+        "sourceSegmentsSha256": "693205dec91b9c3d481d1343ba87faac86cea1170b3efe0eeeb10dfcc35cdd18",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Becoming Who God Called You to Be - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "s80U9v-7koQ"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "s80U9v-7koQ"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 57,
+        "generatedAt": "2026-09-01T17:17:30.152103+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "5fea449d8d7ad1beb656b6f8c9eb58d8545e6976a12aa13a598f23ff62d07e95",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 3553,
+        "sourceSegmentsSha256": "b193276fbb06f4b1febbac1e16a8282fb5c13caebd2e2ec0a9957e5a9747a6f8",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "A Better Life - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "Qxov8-jfD54"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "Qxov8-jfD54"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 56,
+        "generatedAt": "2026-09-01T17:17:30.171972+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "922c7bcc63b6f223b99eac1ae25007f194749af4efb3e3af61676ec88e217b8d",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 3420,
+        "sourceSegmentsSha256": "b35be6753905a63c3445ee8fce457c668f5548e0750dfd7d41440b890de0a0f8",
+        "speaker": "Steve Bang Lee",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Joy Not of This World - Steve Bang Lee | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "KeE5yoRZLQY"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "KeE5yoRZLQY"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 53,
+        "generatedAt": "2026-09-01T17:17:30.190460+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "d62a060ae77cc76c21e0b95096d647a982d61debcf8bc8d4bcc50aee19543150",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 3133,
+        "sourceSegmentsSha256": "ef20bcf92fe61f75809ecfcd58c3a889fb5b758a5722e636c5afe6279f9feb15",
+        "speaker": "Doug Fields",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "The Right Way to Disagree - Doug Fields | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "IclwYW9cBAs"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "IclwYW9cBAs"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 36,
+        "generatedAt": "2026-09-01T17:17:30.194491+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "1098305973b5e8684f1e922aa8e3232b08c197dfaaf9b2724fe8fae75aefa79d",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "existing_semantic_segments",
+        "sourceDurationSeconds": 3503,
+        "sourceSegmentsSha256": "230cc6956a934dff64e9db16c6deeac14ba0d199ed10df8f288db631c948c6b1",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Making the Most of Your Time - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "vR9xKMOElQg"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "vR9xKMOElQg"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 59,
+        "generatedAt": "2026-09-01T17:17:30.222479+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "f635a0d6b78b0ed326cc62f4981850afa5fba677c4efe6f0974f614f878d2d1d",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 3527,
+        "sourceSegmentsSha256": "bf69ddb7e4fef192a44aa26640c8e7ca29acc9e3fa328fd813aba6604515a0ad",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Making the Most of Your Gifts - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "0vzShBPwzKQ"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "0vzShBPwzKQ"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 61,
+        "generatedAt": "2026-09-01T17:17:30.241543+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "d9d38dc19c20a363799fbaa3846fc2df8b007b94738ccc3b5fa5037f3ce4c6b2",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 3691,
+        "sourceSegmentsSha256": "fbb3f43b81fb39dabbbe4a0d8bde4725f821f1225bb977cf67ffcbdfc08cdf4f",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Making the Most of Your Money - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "AIzUulNlVOA"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "AIzUulNlVOA"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 46,
+        "generatedAt": "2026-09-01T17:17:30.258744+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "66cbda212e8834fea372a5115285a282d43c92ffbadd63f5cccf5bce34105e30",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2580,
+        "sourceSegmentsSha256": "a85e9ff211e69dd2bfd2052e4ddf082aa8c8bcd7a13754ca6aabda293f31ab1c",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "A Loving and Holy Anger - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "5K8uslJvPZ8"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "5K8uslJvPZ8"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 33,
+        "generatedAt": "2026-09-01T17:17:30.273289+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "8ae69480382cd96862a05d4b1e96608c83bc4ebc101aba6193570a8fafa3ee85",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1861,
+        "sourceSegmentsSha256": "0a93ca5a265e38685f66bbbd2b46c3aa9e750e4ddb2df37125d975094d54e415",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Get Angry at Man's Anger - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "0dKtcSISp0k"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "0dKtcSISp0k"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 40,
+        "generatedAt": "2026-09-01T17:17:30.290242+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "9ef9dc5cf96fea316d0e625f6c6b80ce072a7eb2fcee37577263f5dd9d23ecdf",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2164,
+        "sourceSegmentsSha256": "b67034c4e866d5d8d3650f7504f55e727051ee1f46ece4213d6a73c0728cb146",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Addressing Anger - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "jsbsrUKZcDI"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "jsbsrUKZcDI"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 55,
+        "generatedAt": "2026-09-01T17:17:30.305503+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "8a200c66594b930cad7dee8c56acc6ea5ce820d037067b8dfa41fbed79768db1",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1882,
+        "sourceSegmentsSha256": "cfa81ddcff36aaae36997ec4d615d0de790ccd468335f4e64cccbe294a15f14e",
+        "speaker": "Jared Kirkwood",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Practical Ways to Overcome Anger - Jared Kirkwood | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "tCwcfTAKxbQ"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "tCwcfTAKxbQ"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 44,
+        "generatedAt": "2026-09-01T17:17:30.323212+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "50bafb0df18613ae9247e1d951af13e3ce27f35c2fa195bd4afe7592ea24d9fb",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2472,
+        "sourceSegmentsSha256": "0b189a3917f5aeed3662a6f77e5bb3aae376d595bc2f4600d10d7133bbb72a69",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Angry and Loving Our Cities - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "haoJAWrQgMg"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "haoJAWrQgMg"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 33,
+        "generatedAt": "2026-09-01T17:17:30.337835+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "a6647ab3d3309763f3176f001985a97d0babc5f59e96883b396180d268554c08",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1844,
+        "sourceSegmentsSha256": "514e8d7360d3a4f17ed2769441086637eea541d568564db90b8f92539f6f8729",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Hold Conviction with Compassion - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "swzNazrOzco"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "swzNazrOzco"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 35,
+        "generatedAt": "2026-09-01T17:17:30.353601+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "9d1a26ea7858d234eae51a4881a7a30605f0c8ea740d0229d726aa0ea9993d76",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1950,
+        "sourceSegmentsSha256": "d45d437ed31f05e1eddcb419232084f56e74ab10160efcef0c68e3bd77e2cccf",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Be Confident and Humble - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "1FZZS5kWf4o"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "1FZZS5kWf4o"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 33,
+        "generatedAt": "2026-09-01T17:17:30.368506+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "297a2ace5aa6db151ff2c9464af8e7840ed32769633cb2ac9c157960370f8751",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1844,
+        "sourceSegmentsSha256": "3e42161a2134fde2a769d260c5b89ec50cf3a962f5f87cdabc31d90b1d76771f",
+        "speaker": "Christine Caine",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Know What to Never Compromise - Christine Caine | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "OLQ3CcqGYOY"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "OLQ3CcqGYOY"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 36,
+        "generatedAt": "2026-09-01T17:17:30.383251+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "d65a40421deb74ed287f27a3ae93bba9624fa79011c6da9ffbcd7e50d7bcc7e9",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2026,
+        "sourceSegmentsSha256": "5d577a69127775dd029abb565250c937ab4dfb58e8d06e8a8568f8a4758bf683",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Place Your Hope in the True King - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "0e4RTsnxa9A"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "0e4RTsnxa9A"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 36,
+        "generatedAt": "2026-09-01T17:17:30.400399+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "534a9a838a1a411992dc24dd414e9b036a5b4f787deff4e69ed49fc20ef1173f",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1936,
+        "sourceSegmentsSha256": "dbe1067ec444c27f244fc886ebc3f22b3885568702b0f39faef738e95d631079",
+        "speaker": "Jared Kirkwood",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Be Thankful for the Great Salvation - Jared Kirkwood | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "RNvDXx3K0JM"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "RNvDXx3K0JM"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 36,
+        "generatedAt": "2026-09-01T17:17:30.415331+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "3fd58e8ecd8b97c9582f99ef510db3ec1a0143b0a3f341ef46460f906ff8e7f6",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1998,
+        "sourceSegmentsSha256": "1d7f42bd384a8c7894a505ea952cf424002380590e5e16dc3f2c14ed9dc74542",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "God is Before Us - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "KAiT97qj0D8"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "KAiT97qj0D8"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 37,
+        "generatedAt": "2026-09-01T17:17:30.431162+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "2f79da86c9cd8b4af0d96084c8078586986e7916ce376ef1b5dcde17069afaee",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2071,
+        "sourceSegmentsSha256": "b683d7412db3589038f525f1352d3e9b80a83b7096bda669631b302f4e29be9d",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "God is For Us - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "IkMlrZWr3AE"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "IkMlrZWr3AE"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 28,
+        "generatedAt": "2026-09-01T17:17:30.444609+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "ee057f4fe6d9864ebf366556c8e2c8c599b32c1c6fa0d1f977fa69d9b5510bb2",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1536,
+        "sourceSegmentsSha256": "da6663ac0d4134e4aeafde3bd1f56fec207379c64227f50cd7b0f32fcb9ad222",
+        "speaker": "Doug Fields",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "God is Within Us - Doug Fields | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "_zzJSMwrPcw"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "_zzJSMwrPcw"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 27,
+        "generatedAt": "2026-09-01T17:17:30.454909+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "22606e7e0aa7a1ad747e415720259d4dbb98963d2122ad8ac29251a61abc42c3",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1523,
+        "sourceSegmentsSha256": "b61d04797649317a6ff8ee2ebff5ae36f2d4899a1ec30a46aec2f7fcb85958f4",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "God With Us - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "IkmaNTDHRYU"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "IkmaNTDHRYU"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 36,
+        "generatedAt": "2026-09-01T17:17:30.458323+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "283423b6b28b16e268a1d38f79c08b9605701207d2f569e98ab97c127cb42bc4",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "existing_semantic_segments",
+        "sourceDurationSeconds": 1992,
+        "sourceSegmentsSha256": "0dbf8c528d7fe4c3197a9c7b5c73f332da500c3664aaccdab0c48d21f047dfca",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Isn't the Church Full of Hypocrites? - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "ArgSmQwhWp0"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "ArgSmQwhWp0"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 39,
+        "generatedAt": "2026-09-01T17:17:30.472529+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "246683d6ee6bf2feb7561622a4ec0d83386331e0e0c063e2a04f96cd833abe94",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2210,
+        "sourceSegmentsSha256": "9264a1ad53737ca94f42b13f8518edd94069d316960f4c82a95ed5ac9632387c",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "What is the unforgivable sin?",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "JlnrHEYXGKY"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "JlnrHEYXGKY"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 37,
+        "generatedAt": "2026-09-01T17:17:30.490584+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "52eb6e68df456cd9383f8d75962f68a10d44223d319fc9cf28d9660410d1088c",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2000,
+        "sourceSegmentsSha256": "6d728ea928108c5463ad0faff2bd514f82fd5d2cf4962cdfee0b2a97b87cbd65",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "The Path of Deconstruction: What do I do with my doubts? - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "oA31Tv2r-mg"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "oA31Tv2r-mg"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 39,
+        "generatedAt": "2026-09-01T17:17:30.509143+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "70a3b96c1a76ef77fd3e85c59310664f5f6254eee35b4f361cd93200c1f2c9e0",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2136,
+        "sourceSegmentsSha256": "01485c5a881751aebb9b371707b7d1cdd7e491e4e26e7ac9cc6d895c8ef5f3a1",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "The Gift of Attraction - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "DhDCgaESpiA"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "DhDCgaESpiA"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 40,
+        "generatedAt": "2026-09-01T17:17:30.530710+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "da4021c0cfa92a69cb3da1157501ec8344f5a51383c7168118be7cb866286e77",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2219,
+        "sourceSegmentsSha256": "7e771446ca64feeb72914de73387f40747ec6451e83f2fd632558e2a8a6567f3",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "An Ancient Tale of Pursuit for Modern Times - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "srxB1O9kyWw"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "srxB1O9kyWw"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 36,
+        "generatedAt": "2026-09-01T17:17:30.551572+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "4e08f165909cfdbecc6d1eef0a78261ff03c8a20a214b9da3c7c321e50b384f2",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1933,
+        "sourceSegmentsSha256": "6e00d9e466e635f8d3a20acf960e52438e54756ae7449f43b7b3a2976bc914ef",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Dating and Deciding - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "Y4_XTnLVcj0"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "Y4_XTnLVcj0"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 40,
+        "generatedAt": "2026-09-01T17:17:30.569973+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "4d75a46add9ca5cdd29ad65b4cb9b6bff5e1944bd827aa1a8a48337279ee40df",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2176,
+        "sourceSegmentsSha256": "d258cf0158beaf226c3e185fe3418d0abb46dbed85d6cafdcc2e7af9653ae10c",
+        "speaker": "Jared Kirkwood",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Sex in Marriage : Jared Kirkwood | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "fAL5xaemiI0"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "fAL5xaemiI0"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 42,
+        "generatedAt": "2026-09-01T17:17:30.591870+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "b4b936d6508346f76c72f29b1ad58183512edd5cf6312e1bcaeaa4867a47c6c1",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2220,
+        "sourceSegmentsSha256": "2f5fa67c7136b4954da6fe4d369a2f8ed3fa4a7f78a9e845b04096d453f9b958",
+        "speaker": "Kenton Beshore",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Fighting for Good - Kenton Beshore | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "VdAHZX7eg8Y"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "VdAHZX7eg8Y"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 41,
+        "generatedAt": "2026-09-01T17:17:30.610942+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "c38c44bf612f6d05e96dd4012084ea7532f1fc6d75e7c08c81603933d70487ce",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2284,
+        "sourceSegmentsSha256": "9b4796e95b627feabe5a64afaa8a5af1373f00748c77fbc9d0417a94d7d5b669",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "A Vision of Love : Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "mIoy9ygDxk0"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "mIoy9ygDxk0"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 33,
+        "generatedAt": "2026-09-01T17:17:30.623553+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "cde9ba2472b455436726b8eb3aa86f9ddee458d9b97c0a7adc0513e13bc69900",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1870,
+        "sourceSegmentsSha256": "37ac08ea2a8cdc8966327f2ede94713abd9e99af504a9e2591123a2379f81ca9",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "The Lion has Conquered (Easter) - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "n8HTOPZg7cM"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "n8HTOPZg7cM"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 39,
+        "generatedAt": "2026-09-01T17:17:30.639941+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "9c8140d048099dd251eec62e75135d1ed097206c7b0e0d695b1281f1486f4a8d",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2145,
+        "sourceSegmentsSha256": "7b8d4d34b587da3d7d85f355e64a712a3ce222279b417cebf4e0c7c1eb387509",
+        "speaker": "Christine Caine",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "To a Person Suffering - Christine Caine | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "DT1yokn_0Ic"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "DT1yokn_0Ic"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 40,
+        "generatedAt": "2026-09-01T17:17:30.656522+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "7eaedae313980ce8d0a8eef4842a1d11f8ea01470c55938dcb367c90e5e00060",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2192,
+        "sourceSegmentsSha256": "fba2bdd38ad23e1e6547294594a6620d296b3f9db0a4e0956f9f97542559d30b",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "To an Unbelieving Skeptic - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "L_MyOxm3RHQ"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "L_MyOxm3RHQ"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 36,
+        "generatedAt": "2026-09-01T17:17:30.671848+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "b433ecec89e6e4f1991512ef4dc6e89d0d6443452ed55505e4da5c9228498961",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1979,
+        "sourceSegmentsSha256": "db453e0bc55a9d7fa7fa61095e36138efd041bb576b1ab29c35a9638033a60c4",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "What Would Jesus Say to a Greedy Business Leader? - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "FPUQPWE-NIk"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "FPUQPWE-NIk"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 34,
+        "generatedAt": "2026-09-01T17:17:30.687828+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "1ff02b89266b7c6d1e12d6f3225ae8fe112691e12b5aaab604d9a2852046c8ec",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1873,
+        "sourceSegmentsSha256": "99ebb1cc3c52a780417c90a22ad688d3ae0cb0746f13360c7a155034258beed5",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "What Would Jesus Say to a Prostitute? - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "EzSiufyQDO0"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "EzSiufyQDO0"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 35,
+        "generatedAt": "2026-09-01T17:17:30.703130+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "70ddc7d55a9b463bc9678bcca373c70186c2095bf1a159ebbfee6191cdab16fc",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1895,
+        "sourceSegmentsSha256": "137c07b8f0e0767b2e5db3a3cd75108d9ae465abddf79f8ade6737f760f06ef1",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "What Would Jesus Say to a Christian Today? - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "jNt-Zyj9Ozw"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "jNt-Zyj9Ozw"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 41,
+        "generatedAt": "2026-09-01T17:17:30.723430+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "ee58e67dbe6d7b3d9b5afde0589787d4c99230e1e60d899e7f94e7b834721d18",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2175,
+        "sourceSegmentsSha256": "f5fa5f98bc8626558c40825b699c682da2ab5746e85efde9b37f5a6043e2e099",
+        "speaker": "Kenton Beshore",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "What Would Jesus Say to a Doubting Follower? - Kenton Beshore | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "mUK8sVRIZlE"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "mUK8sVRIZlE"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 37,
+        "generatedAt": "2026-09-01T17:17:30.739960+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "5b633ac1eb99376fcf2ba30709aa414fecf3530931095b43777142d3d10712c5",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2025,
+        "sourceSegmentsSha256": "a2204fe27d7a2cc447ee80472f2f422b4d1e2d8a225d6842c35061d91099a316",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Remember Your Redemption - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "gqaj_bJSnsY"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "gqaj_bJSnsY"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 55,
+        "generatedAt": "2026-09-01T17:17:30.754358+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "733fcdb07e48be74501bc7904a7acd0f9e40764877dd6e69e812004ac25c8d2d",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1957,
+        "sourceSegmentsSha256": "7c2d0334c52cdc8ac47dfc211ff66f134ee70c26ed90adaf5a33e14161d0c0d4",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Surrender First Place to Christ - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "v4ZJ2LSfY5g"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "v4ZJ2LSfY5g"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 35,
+        "generatedAt": "2026-09-01T17:17:30.770187+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "a3371216dcd1fd9ecf7c288f0d93e8a0b999109fd79ba4ef23dabbbd84d2f9c1",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1884,
+        "sourceSegmentsSha256": "dee363df8f343600c23c432b54e7b802b0a3db9ee4799348b11365468c4bdafd",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Depend on Christ's Strength, Not Your Own - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "bHEbC6WVe8o"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "bHEbC6WVe8o"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 29,
+        "generatedAt": "2026-09-01T17:17:30.782750+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "9805bbc31b000c7012f78151364810963b8bbf45c0f88a507c528d0fff9aacb6",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1601,
+        "sourceSegmentsSha256": "150efc93dd20f71e9fae10a376bfa073f56afd67d2310349891b37375cfb4a77",
+        "speaker": "Christine Caine",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Set Your Mind Above - Christine Caine | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "vzqh4QO_-SI"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "vzqh4QO_-SI"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 35,
+        "generatedAt": "2026-09-01T17:17:30.798059+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "e29adf245da8f3432304ce0d71819cb754d8a657aff72f93e897a9d0d9c7268c",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1951,
+        "sourceSegmentsSha256": "bf9ce81bb602a8e637f44c436a580d77629ecf22963256eb9300fad4a52b3e4d",
+        "speaker": "Steve Bang Lee",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Let Christ's Peace Rule Your Heart - Steve Bang Lee | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "0dUgIbcYXOo"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "0dUgIbcYXOo"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 50,
+        "generatedAt": "2026-09-01T17:17:30.812618+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "98063c532ce0d5727208e32e3ba3d5f9b5f10a9bb4b3ae9b80689e7139a11282",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1784,
+        "sourceSegmentsSha256": "daefd71750933b2485bac9bd29c929d6f09550b8a8b8eef5db6b97919f1c5183",
+        "speaker": "Jared Kirkwood",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Serve Others from the Heart, for Him - Jared Kirkwood | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "4molQr3864Y"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "4molQr3864Y"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 60,
+        "generatedAt": "2026-09-01T17:17:30.828521+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "4252c77d4cc261b845fc9a2624a211947bb2eff7b4fbbf23e53d87bdd03cb9a0",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2019,
+        "sourceSegmentsSha256": "f1c973a97addedeaa35db4a38fa1f95fe3c82158cad2f101901afbcc7e483841",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Get Away to Pray - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "b9WiEJZur6U"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "b9WiEJZur6U"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 37,
+        "generatedAt": "2026-09-01T17:17:30.844987+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "046031d7f013b403db3ba9154269194f2b192107f86c93b96cba9dcd8c1d2fe1",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2031,
+        "sourceSegmentsSha256": "cc10ea017d9cd2465ef219204798e47d50dae1a56336d215afecb3812755c328",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Pray This Way - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "vWho2i3Si9Q"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "vWho2i3Si9Q"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 40,
+        "generatedAt": "2026-09-01T17:17:30.861763+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "6bca2f941fe34e656ca30dba7e5693205baec1b4178d2d03e425848c6a821778",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2229,
+        "sourceSegmentsSha256": "dcefcc10f9fbe1cbbbaa542cd2b36882da2ec36b92cd483e4f1018579f58c497",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Talk with Your Father - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "u4KTCBgMI64"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "u4KTCBgMI64"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 39,
+        "generatedAt": "2026-09-01T17:17:30.880424+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "083da2beb7c7eb4f2c05e0cf99226e68604f3513346811cf17b84bfa2f04325f",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2074,
+        "sourceSegmentsSha256": "68be63d3f92714d897013135a7fb5335abf8875899b867174cb6c9456474c5d2",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Walking Houses of Prayer - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "8eU4FPiIdO8"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "8eU4FPiIdO8"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 35,
+        "generatedAt": "2026-09-01T17:17:30.897290+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "43c609852577ba34003a005f4c122f7234e9c20dcf171e713764419a3bb65851",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1921,
+        "sourceSegmentsSha256": "21b293c8534935c5a2fea3d5c59e799e125f2a53860f528bc1de55755c466a2a",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "When Decisions are Overwhelming - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "lnQC75Befco"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "lnQC75Befco"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 45,
+        "generatedAt": "2026-09-01T17:17:30.919435+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "4c73a5910a854c2e97c3253abc75a37a3c8e76c953daddc823337851fd7756f2",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2444,
+        "sourceSegmentsSha256": "12936af645f7e2b8f4d59d0fb33b29bd74798873c811856cba1bdfbe32cf3822",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "When Regret is Overwhelming - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "Rs-qWa_dmQw"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "Rs-qWa_dmQw"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 37,
+        "generatedAt": "2026-09-01T17:17:30.934623+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "92e654b16557ce4dd62e1ea4170704013184e19bb9ed572876beab9218b8c54e",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2026,
+        "sourceSegmentsSha256": "9986433c96134b92c8037a1dc512e607128a5c3d1f776c20bb9f4e80e1f9c991",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "When Sadness is Overwhelming - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "qUbGU6uFOEE"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "qUbGU6uFOEE"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 37,
+        "generatedAt": "2026-09-01T17:17:30.952171+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "1d3091ff23452bdc33a34736a21f7ad86fb5d4c01b75b41d28273d6d4b3acbf8",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1965,
+        "sourceSegmentsSha256": "9919fcf6ac445767a752d836d3a89cdddd1b262456a5b2ada5498b52df7204c2",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "More than Hearers - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "BVLeIYfq8aA"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "BVLeIYfq8aA"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 34,
+        "generatedAt": "2026-09-01T17:17:30.967704+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "932db77d4f5af935e4d8ae924dc4241cbd7e0db86e0b6c95ef347e3dca9fa776",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1799,
+        "sourceSegmentsSha256": "203165158e7d7d0ca20407a00e300591eb66b52e2ea2e8fe3839ab36ef1406f5",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Mercy for Others - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "yvUALIwX9aU"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "yvUALIwX9aU"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 35,
+        "generatedAt": "2026-09-01T17:17:30.983033+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "ec6ecdc4b4bd22f7af543092186fe3e093471e41164e8120f44bbbdeb23e641e",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1896,
+        "sourceSegmentsSha256": "0cb27e006947d141fd3e92be35a62e32e290d7a9d35fd738ae65af4644ac589d",
+        "speaker": "Christine Caine",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "The Relationship Between Fruit and Faith - Christine Caine | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "Iaw8oFVI-jM"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "Iaw8oFVI-jM"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 43,
+        "generatedAt": "2026-09-01T17:17:31.000989+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "ff472b89cc332f747826fba6bdbe47b12e4213f7f844afb64d007faa4da2bfb8",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2318,
+        "sourceSegmentsSha256": "bbdda876650db92668815c57d7f742f3b0653983f172b289e0431b446137164d",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Taming the Tongue with Wisdom - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "gvptKJCHiwY"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "gvptKJCHiwY"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 37,
+        "generatedAt": "2026-09-01T17:17:31.018938+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "b3ef03b109a98cf3ea8f4ab676ffcb75db37955ec466aab7b664c1a8e728a61d",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1992,
+        "sourceSegmentsSha256": "30e99cb1eab17e71ba484ea875c952848c578c82076ed21a36b8531f38c6997a",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Friendship with God or the World - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "NzbZzuwCo2o"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "NzbZzuwCo2o"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 36,
+        "generatedAt": "2026-09-01T17:17:31.035539+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "02afa616e822806f6172acf802bad4ff814eb320605ae4dae1270ba23fe31627",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1882,
+        "sourceSegmentsSha256": "62ebd035e349bedb37a382dfaea24e7a6bef3b90c0050afd607112755282e321",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Grateful for God's Will - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "T3qNz7wiY_o"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "T3qNz7wiY_o"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 43,
+        "generatedAt": "2026-09-01T17:17:31.053632+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "faf6b312fa434eff409ade315683d2f654b3221d650aaa8945e51f2d4e2d8847",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2349,
+        "sourceSegmentsSha256": "d106049682f94bfd812af64e487ffcb19b74c4ed3bb8368aa4ac7b98df8ac8c1",
+        "speaker": "Steve Bang Lee",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "A Life Well-Lived - Steve Bang Lee | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "rEiH_dqoZ2M"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "rEiH_dqoZ2M"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 35,
+        "generatedAt": "2026-09-01T17:17:31.070287+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "cfc761995de2a9a7535a5609dfcb3b965145d7e9aa275fa99b9de0c9a45ad664",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1836,
+        "sourceSegmentsSha256": "f89ef8e17c8b03725674869f4ec627a433dcc816302b9b01bc52f1298cc33677",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "The Promised Priest - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "B4NnjZTdSdg"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "B4NnjZTdSdg"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 31,
+        "generatedAt": "2026-09-01T17:17:31.084391+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "2784f872510eb7d62e4907990592359f57ddf124115a40b49860caf7e1182c76",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1685,
+        "sourceSegmentsSha256": "036dff3f909b06ec79eb872724c66a46cefc02f1496b799cac9b2bf3148a8904",
+        "speaker": "Doug Fields",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "The Promised Prophet - Doug Fields | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "lU-UWhkLX2I"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "lU-UWhkLX2I"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 25,
+        "generatedAt": "2026-09-01T17:17:31.096344+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "74f58efd0022498ce4a95b6bbaf58a1e12e18c9560112d136e7b4c0e4f33fed1",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1386,
+        "sourceSegmentsSha256": "57698dae04671fdbe1425901964c63905c0378f9efa0a20f5a15ab285b1d7629",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "The Promised King - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "j6MqiNUlwik"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "j6MqiNUlwik"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 34,
+        "generatedAt": "2026-09-01T17:17:31.113436+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "06041e5b684ba8e3ce7bcedc3dc06a959f5c5bb0608a088b0c5f0c0eb55b9b46",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1804,
+        "sourceSegmentsSha256": "963ca14822ebe169d22d81990dacf2dcbe97fb2300794d5b89939ae11dae234c",
+        "speaker": "Jared Kirkwood",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Hope for the New Year - Jared Kirkwood | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "UC9DWT8QBnY"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "UC9DWT8QBnY"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 35,
+        "generatedAt": "2026-09-01T17:17:31.130149+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "bb1a2b6ede4d228737d8e561c4074b7e9c9d3c680527a077f25492a4359fdc95",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1926,
+        "sourceSegmentsSha256": "191fbcd8d37ee1b33bff73ce7e6473c6e9c6fce8f2c58634ce460f746a6bc5ef",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "What Happened to Masculinity? - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "jYzHdxumnik"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "jYzHdxumnik"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 45,
+        "generatedAt": "2026-09-01T17:17:31.149385+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "5ba55489f175d877bebca31f04df3918b7868b2da7583953970a6ead82e966d0",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2410,
+        "sourceSegmentsSha256": "1f8645cce2fb28003f2e6043c7b9f39c7adde078593c2d5c7aa209cc31956cac",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Aren't All Religions the Same? - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "cCt-8fbwq1E"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "cCt-8fbwq1E"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 41,
+        "generatedAt": "2026-09-01T17:17:31.170643+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "92f1664873ab3a5cb4c4638807f659ba3d3aa87cb516a4fc1355ab0ed7ace0d8",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2204,
+        "sourceSegmentsSha256": "28f2cf176d7648d5a8b36749cea3a664f468605c0d6b9e735750d4a1ce18dd17",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "How Do I Know the Difference Between Good Therapy and Bad Therapy? - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "flHsNP5J8lM"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "flHsNP5J8lM"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 37,
+        "generatedAt": "2026-09-01T17:17:31.193025+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "95e19cde416eb89f5cec235eeb893d93c53b7526fef7104679c7d794b7f10900",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2023,
+        "sourceSegmentsSha256": "fcd510f430094dbf3bcef457e831378d9f021c97df98215703383561884aace0",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Why Does God Care Who I Sleep With? - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "SiQ0X8zVxTk"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "SiQ0X8zVxTk"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 38,
+        "generatedAt": "2026-09-01T17:17:31.212600+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "e91c8827fcc740740904f1cfaf7bf8c13f1e0b688a3853d8bf8c405999a4e77f",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2100,
+        "sourceSegmentsSha256": "e234519babd9e74fc7ed41664a2199fdda7fcb324f398138cd9dfe211656da63",
+        "speaker": "Steve Bang Lee",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Can a Christian Lose Their Salvation? - Steve Bang Lee | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "ztRav3rf7xg"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "ztRav3rf7xg"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 37,
+        "generatedAt": "2026-09-01T17:17:31.232301+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "bae9402163d75140255afbe1d41823884d204e208c85c3a58419ac99c1503fb1",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1995,
+        "sourceSegmentsSha256": "a56ff93a5028c9d15cc399a500c4f064ca7351ef6eda57faca75b2fed34826b6",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "What Should Christians Do with Things Like Halloween, Yoga and Alcohol? - Eric Geiger",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "1iuy3EILnFo"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "1iuy3EILnFo"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 42,
+        "generatedAt": "2026-09-01T17:17:31.249852+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "64f6fd5b0e73d42cb6a42e95456a37a4d83c80edd2e39fb7493bd1a816f06597",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2332,
+        "sourceSegmentsSha256": "f12aa5e061ed17cf1c49f10d42736e60696541b85513770fbae4f8718a1e0dc0",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "A Story About God - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "hFsv29fW9e0"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "hFsv29fW9e0"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 38,
+        "generatedAt": "2026-09-01T17:17:31.268958+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "9fb6c30d9f89881ea0371aba0dd23a8bac4a2fcdf96170aa923aa6b309ce77ad",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2037,
+        "sourceSegmentsSha256": "8f990d160105506b24c08ed0d3ef7bdc10e620c6edf5b0695fc78d2d7614ad78",
+        "speaker": "Kenton Beshore",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "A Story About Forgiveness and Forgiving - Kenton Beshore | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "78wolPBcwOE"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "78wolPBcwOE"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 34,
+        "generatedAt": "2026-09-01T17:17:31.284932+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "32b691413414ee7136c11b26f4377384baf0571c96c656b43f3571c515bbd338",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1877,
+        "sourceSegmentsSha256": "06281cb875aeb5d0198a171c869b16230dc28dc89d060c39e1d6ec592ec1f7f2",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "A Story About Your Heart and Hearing From God - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "7iMGdft4cfQ"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "7iMGdft4cfQ"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 39,
+        "generatedAt": "2026-09-01T17:17:31.303592+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "065a612633999343fb30f8f0a738fccee9baad49af7463bdf9c6359d4ab5d22f",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2084,
+        "sourceSegmentsSha256": "17f4a36da7cb727f577f4346690e5d751097f1735d86e863db12f7c98f7646ac",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "A Story About the End and What Matters Now - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "9XRd1wUzP_c"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "9XRd1wUzP_c"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 45,
+        "generatedAt": "2026-09-01T17:17:31.322909+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "74dac1c48c5f28f85318c529c875f05ba80d5f243da2396c7bb956ff23d980eb",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2057,
+        "sourceSegmentsSha256": "54172b7dbee7c3ecbc62aa054792eedd9b4129e05a344ae066b1f3b418bfef22",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "A Story About the Kingdom We Belong To - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "pa7ttgJkMo0"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "pa7ttgJkMo0"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 40,
+        "generatedAt": "2026-09-01T17:17:31.338088+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "956d795274e19096a8ff5ab9610bc562cef29a9095356b15c56cbb8183e13f8d",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1737,
+        "sourceSegmentsSha256": "5b37578164bdbaae6ea9c6edc01df6860a682eb4651b5b9536991c24165e1900",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Easter at Mariners Church - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "_p7O1TSv5P8"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "_p7O1TSv5P8"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 50,
+        "generatedAt": "2026-09-01T17:17:31.354865+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "4f7046c276e2f395a83814ae39e1dfe24aa5711ab313c53f829cf4e420bcef6d",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2114,
+        "sourceSegmentsSha256": "6b01b984f498ec20badd01c1b26d1bcb6db830a7ea5adfa758c456d2b0b6eae4",
+        "speaker": "Jared Kirkwood",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "The Beginning of Us - Jared Kirkwood | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "rvL1gzQYGeI"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "rvL1gzQYGeI"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 67,
+        "generatedAt": "2026-09-01T17:17:31.371062+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "6abfc90c62eda86b11432c4e188c739b740b84acecd43827051cf0a0b78bfcb6",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2303,
+        "sourceSegmentsSha256": "fdb6390935e9b94acaa0fe22ba4cd17f41d2487f96e56202357bb42fb1682cda",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "The Beginning of Ruin and Good News - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "sakm-YOC0RQ"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "sakm-YOC0RQ"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 45,
+        "generatedAt": "2026-09-01T17:17:31.386844+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "e1c99b93375ba9b4ee2369a9546770de2cfd2fcebb626a0a5b5503cc20a856b9",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1915,
+        "sourceSegmentsSha256": "cd7f9ae7cd5237f5e107ee88fd15b3fb25eaa8de27f71987c09de2917a7c663d",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "The Beginning of New Beginnings - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "0OKRYzJOpAk"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "0OKRYzJOpAk"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 38,
+        "generatedAt": "2026-09-01T17:17:31.399885+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "b9b0bc47d3bd9686a46a16b28c464a47a577d0986c209876340863f9e8ee6abe",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1653,
+        "sourceSegmentsSha256": "6f6226b1fd2d9271d86b425b6597534f61aa6cee443ee606ebe0d4f8caea81fd",
+        "speaker": "Doug Fields",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "The Beginning of Faithfulness - Doug Fields | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "Kme8mAjLrbk"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "Kme8mAjLrbk"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 41,
+        "generatedAt": "2026-09-01T17:17:31.414412+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "87827f56e459efc6f58e1142a2995e5ac134720cab943b598d7caf8a2ac2173b",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1856,
+        "sourceSegmentsSha256": "20f895581561038f4003d45a6c3225f44bca684a835384a3f11387fe485fcf29",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "The Beginning of Our People - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "XnGd6Od-JwE"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "XnGd6Od-JwE"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 47,
+        "generatedAt": "2026-09-01T17:17:31.430951+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "c1d992b64e33154595670673d0e0a945d61347abcbc1328d5274c6904ae473e8",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1998,
+        "sourceSegmentsSha256": "4f20d3197f79fcc72ae1384e5bfd0136adbd7616f59d53be01a1031c3247dae0",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "The Beginning of Sacred Reversals - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "X1YCsihyc5A"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "X1YCsihyc5A"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 57,
+        "generatedAt": "2026-09-01T17:17:31.446346+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "eead572d42312aa6d515fe9e9dfa27452e8fa9a826c174fc835de4941cc915ae",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2235,
+        "sourceSegmentsSha256": "26bc6e15f4db963ea1cfb4b2a459d436b5053c9e6d20bceda31970b8b459b4d4",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Captivity and I AM - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "eTwq54MJgNc"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "eTwq54MJgNc"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 51,
+        "generatedAt": "2026-09-01T17:17:31.460115+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "162391248f4648c9277e8dc96dcab318e6b9bd45bcac4afff5b2a2ba35f486be",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1967,
+        "sourceSegmentsSha256": "02d9155ad36a13dd6ecfa9cb5a141ff1c0c81c5710d31a98a142cbdaf65f59d4",
+        "speaker": "Steve Bang Lee",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Plagues and Passover - Steve Bang Lee | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "OV2hrIPCe38"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "OV2hrIPCe38"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 48,
+        "generatedAt": "2026-09-01T17:17:31.476463+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "199291c5141c22d5c8d9025cac3cc8dbfc4033beae1274abe1044a6e2a9011f3",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1957,
+        "sourceSegmentsSha256": "666b814e8800a716c6d04bac122ed637b865c0025b291db36711d5e9ece8a913",
+        "speaker": "Jared Kirkwood",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "How the Rescued Live - Jared Kirkwood | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "4Q-5KuOG9Xk"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "4Q-5KuOG9Xk"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 47,
+        "generatedAt": "2026-09-01T17:17:31.492617+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "f06332a87cce33ac7b1bf11435bfa730b39daad45b9342b4bf36b8e505f16921",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1862,
+        "sourceSegmentsSha256": "0121d1205f4379a62e828090597749269f6ff02c2c1b33637a63d0f20645f6ca",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Read with Defiance and Delight - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "VRRqjFQ2-vU"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "VRRqjFQ2-vU"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 62,
+        "generatedAt": "2026-09-01T17:17:31.509225+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "7fd7412e64fa61f6cf462c0831b7d5839e7ba890a386bd1da9fdf47186c62151",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2035,
+        "sourceSegmentsSha256": "c51e9a5922f37ded998bf9e3e5ad5b94bfcdaec2f233f86ad8458bbef7720b43",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Seeing the Story, not just stories - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "-eabDU8ciVI"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "-eabDU8ciVI"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 53,
+        "generatedAt": "2026-09-01T17:17:31.527159+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "aef99ffe528c0f63f004888a0a1983240c2ecd7ed8cf0fbcbe71c4ffad339ef3",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2108,
+        "sourceSegmentsSha256": "7fe53f403c8e1993465fc78c6790ca6835761bfdac9226a30208935dcce66767",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "For Transformation, not Information or Behavioral Modification - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "Ay-trn5qq60"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "Ay-trn5qq60"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 49,
+        "generatedAt": "2026-09-01T17:17:31.542957+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "9ba76ebdeea1e67d55470b29cefc0465615a8e5746565f69f98d52cba791f4ee",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1921,
+        "sourceSegmentsSha256": "4f94fa41666801f9e1f44864450180a11654fb6335135ddbcbec2f789e904dd7",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "With the Word as Your Treasure and Teacher - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "0ukVuw8CZpI"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "0ukVuw8CZpI"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 33,
+        "generatedAt": "2026-09-01T17:17:31.556519+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "0f03424b89f5bb33c7cb1445b8a0ba4b7921fab00ebcdf058414d1bc8fa43394",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1592,
+        "sourceSegmentsSha256": "e5bb7d5a6578a34934550f547d716ff28634aa228a2f5a67c7722904e93cafc8",
+        "speaker": "Christine Caine",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Knowing Others Will Read You - Christine Caine | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "cJ3QUC-JE2w"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "cJ3QUC-JE2w"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 56,
+        "generatedAt": "2026-09-01T17:17:31.573493+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "87f855d6b52584bca85e71474db5b5e48d6647356fafbed3fc05755f676e0250",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2322,
+        "sourceSegmentsSha256": "f220df27301d4618628dea5a12213963171ab4b6af5f0d2652f32131c690870f",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "You are United With God NOT \"Find Your Soulmate\" - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "L1AUP3ySswQ"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "L1AUP3ySswQ"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 46,
+        "generatedAt": "2026-09-01T17:17:31.589313+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "e3099a7db471572fef2929e91c957c3675e737c96b901eb93b502a719b42a289",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1858,
+        "sourceSegmentsSha256": "45ddcc2b08b33a6c7c7ff0737526be8c6392676fce7a0b10d6e99f0edf8a0510",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Looks Are Fleeting NOT \"Love At First Sight\" - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "M2RF5ImhzCk"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "M2RF5ImhzCk"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 50,
+        "generatedAt": "2026-09-01T17:17:31.605749+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "eb9c47cb6995c686441a418abb5f4765230ad65d47443d3b11ccdd003dbf3084",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2108,
+        "sourceSegmentsSha256": "a5b5edf8351103672d5ada6e98c95fb5404a6fa9311ad1e2fcf6504cc3d4066a",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Find a Wife NOT \"Let Love Find You\" - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "IqIr8I6jiDQ"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "IqIr8I6jiDQ"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 43,
+        "generatedAt": "2026-09-01T17:17:31.620921+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "9e9a4462f762d1e86ae91e202054c2b88456840e3121a77373d137aaa0a1c15d",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1856,
+        "sourceSegmentsSha256": "c09da7a0e58dabe01a36af63f13519ae843448111dcf9a9bfcca2564ba3ef333",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Commit in Community NOT “It’s just between us\" - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "n3Fa1v_m77Q"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "n3Fa1v_m77Q"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 51,
+        "generatedAt": "2026-09-01T17:17:31.636877+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "116998d75bba248a14a89017c06120a98d83c9b6f29e75e9ec74681fbf4d4df8",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2086,
+        "sourceSegmentsSha256": "86dd3ced844a72b0bd960da1acebe9c8772f097501a4032eae8cce9145c09625",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Rejoice in Your Spouse NOT \"Variety is the Spice of Life\" - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "FJatN_HO3OI"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "FJatN_HO3OI"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 45,
+        "generatedAt": "2026-09-01T17:17:31.652656+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "fb3353215d62ac76c4232607a322d22e8cf28cedff8b70cd3c3f25b0c939f2c4",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1881,
+        "sourceSegmentsSha256": "92c35249eb2452c339660eda2bacf81e7329e1b94029e131409e4aae4c4c260f",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Vision: Being Shaped by Burden and Belief - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "Ab2zQbGwmY8"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "Ab2zQbGwmY8"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 53,
+        "generatedAt": "2026-09-01T17:17:31.674178+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "5376300bc06df2bfc7ebf2e66e417e624c1803921ac4df2d46ef2d55a964d4a7",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2183,
+        "sourceSegmentsSha256": "4a332d57e69ade2a9a73ac0fe03c7aa94ce265658da36573ae2f1ec4fd320f85",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Conviction: Displaying Clarity and Courage - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "a7LujHj2bqY"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "a7LujHj2bqY"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 50,
+        "generatedAt": "2026-09-01T17:17:31.694560+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "8f9e5632112ababbd02f998244ca0f769fd8b182dafdb817a5b662b9fc224684",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2271,
+        "sourceSegmentsSha256": "e49edbaaa1593cba98425b61a6f87feba5fee6490a97ed027376fac9377d4b4a",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Servanthood: Thinking Big and Acting Small - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "ylPnAI9ebck"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "ylPnAI9ebck"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 44,
+        "generatedAt": "2026-09-01T17:17:31.710149+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "e7a6b07503e04c82c76476163d8b8b69e74f605f7a481dae31428b6cb62b1ca8",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1819,
+        "sourceSegmentsSha256": "b175df2f7530d7336a92bfce63a4779c163bff525eecf5453055c2570b18f6ce",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Perseverance: Fighting and Trusting He is Fighting - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "qyC1ewCii5Q"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "qyC1ewCii5Q"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 45,
+        "generatedAt": "2026-09-01T17:17:31.727175+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "a71f381be222aee38c6a70dfb13f118921faaf181c9893312c836b0b9e89267b",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1892,
+        "sourceSegmentsSha256": "bec9311eb41362386b003f92b8866a74f055b893b479bbe833ec68fa3858260e",
+        "speaker": "Jared Kirkwood",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Credibility: Character and Competence and Commitment and... - Jared Kirkwood | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "Launxm1wnxY"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "Launxm1wnxY"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 49,
+        "generatedAt": "2026-09-01T17:17:31.743236+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "2dc630320c06a1e6919d0c149bd6b9599e9ecdb0a55432a7737aee45a8a67784",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2011,
+        "sourceSegmentsSha256": "326fcb8c8ee2c812faa990ee309e59d5c98a29a10faac5f60dacb0e7653192f2",
+        "speaker": "Steve Bang Lee",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Transformation: Changing Beliefs and Behaviors - Steve Bang Lee | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "GNTHmg2a8TM"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "GNTHmg2a8TM"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 40,
+        "generatedAt": "2026-09-01T17:17:31.780698+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "bba5b3701dca48dd12ba18f2a618ef91ed822fe6f5991fa1399e4963aa2c5e28",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1802,
+        "sourceSegmentsSha256": "df5d3f004d0ebab3ffd6bdb6271fbcc27ca8901d0a495f624f85c1db3cfc08bf",
+        "speaker": "Christine Caine",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Waiting with Hope - Christine Caine | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "e5JrMb-kTis"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "e5JrMb-kTis"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 37,
+        "generatedAt": "2026-09-01T17:17:31.794343+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "263bb9be2cc10cbecdede251a9ddfd22f2a967d4cef6a67d2dffb9998ee2208b",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1652,
+        "sourceSegmentsSha256": "9d35467f599eaeecc0eb7bacc6de59a9ee9c8ae589daad4424efdd60d9212a69",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Two Miracles of Christmas - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "D2V9ll6-HX0"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "D2V9ll6-HX0"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 47,
+        "generatedAt": "2026-09-01T17:17:31.814253+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "91be1a88d0902c849d43518bb372ec8cf466fa5194ffd3d5c16e1e30ccb8222c",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1981,
+        "sourceSegmentsSha256": "7281ed3d8dec5e096cecb028eb5d56e525828e969492ee11bf097c784505a1ea",
+        "speaker": "Kenton Beshore",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "New Year Blessing - Kenton Beshore | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "wyjiS_jFYUs"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "wyjiS_jFYUs"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 52,
+        "generatedAt": "2026-09-01T17:17:31.833048+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "ad226b5409073be92b461f66881388a7d402a368380cb7af32bd63cbce5f90af",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2343,
+        "sourceSegmentsSha256": "dec8c636b9a70a9e8a06a14e0fd3ebb996731eb43518dfc91e73ab29e991400a",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "A Loving God–yet Conquests and Genocides in the Bible? - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "G89NLIzaKcA"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "G89NLIzaKcA"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 53,
+        "generatedAt": "2026-09-01T17:17:31.859914+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "2e21f5b96bb36aa148e050eae1d40351bed31d5c5f4b071ebac9a7134cfe7edc",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2197,
+        "sourceSegmentsSha256": "bbc74b6a02fb7ea06dbcce5649545d198661e144e583c7b73e7a4adab42651fc",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "What Happens 60 Seconds After You Die? - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "IijeVM19L6s"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "IijeVM19L6s"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 49,
+        "generatedAt": "2026-09-01T17:17:31.876226+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "b364d010595e8c0e7fdd900c5b89260d3da093a46015ca011de9648b891a8438",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1940,
+        "sourceSegmentsSha256": "36db5c227c9c1ee45394c1ed8ddd9d427a1d0c1ecfe0406c430e110bd667b5c2",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "When Should Christians Disobey the Government? - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "3nCjC894qHs"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "3nCjC894qHs"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 47,
+        "generatedAt": "2026-09-01T17:17:31.893597+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "7210de7f832e27f2c7745ebe5b1b3baaa61bd0b133929fc5dd70d0e0b00b8838",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1943,
+        "sourceSegmentsSha256": "0606fa6b9d3c062d9545027ebf86320fb473bcf849b2fbb81b5202e6518ea987",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "What about those crazy spiritual gifts? - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "pBoMuA_H18g"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "pBoMuA_H18g"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 59,
+        "generatedAt": "2026-09-01T17:17:31.910792+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "89403bd95a7c845e6801f2110a4ea18b2193c8b54506eceed81a347e4d6fd47f",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2170,
+        "sourceSegmentsSha256": "77a084903e7a208cef7a8eabdb13a60baadecd13874994d2fdfcd33c8cd85d52",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Borders and Immigration: Why do some Christians have different views? - Eric Geiger",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "W8EmovdmstE"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "W8EmovdmstE"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 52,
+        "generatedAt": "2026-09-01T17:17:31.925828+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "5b9bc16b6a6218d0eb18ab0880cdcadba4c660cad1691f6e6acddd9d7bf94329",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2162,
+        "sourceSegmentsSha256": "1b00b6e31826ec41c78c0d2692f19fa6545029e5f0c7d43bf266d8d00944b81a",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "The Promised King Arrives - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "JpCq2Aq3Fj0"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "JpCq2Aq3Fj0"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 49,
+        "generatedAt": "2026-09-01T17:17:31.929136+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "7984f6d66d90608ae228f1b6a453793b651834caa317b8dfd04f8ccd2f8d086d",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "existing_semantic_segments",
+        "sourceDurationSeconds": 1703,
+        "sourceSegmentsSha256": "9adf513975600c52c2c1469563e500dae780996fc5e961d844c3df4d438f9480",
+        "speaker": "Doug Fields",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Humility in Action: The King Who Washes Feet - Doug Fields | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "Lskg54LVBy4"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "Lskg54LVBy4"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 63,
+        "generatedAt": "2026-09-01T17:17:31.944548+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "086cf4796e89605dc1ba6af26ac69934dd2126c036e2c345c121ab3d846065fd",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2251,
+        "sourceSegmentsSha256": "a373f0a763160e2c07eabff3d2a90f96a4d7f6f724991d9a4062ef09eaeb5faf",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Agony in a Garden: The King Who Sweats Blood - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "6fGamCFsjyw"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "6fGamCFsjyw"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 48,
+        "generatedAt": "2026-09-01T17:17:31.957649+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "f2eba16b715fa26b6c0f261de37b9c61eacee253999aad93eddbf43c2f0518eb",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1719,
+        "sourceSegmentsSha256": "3488c760fae6e7a402f36536c647a3ca84d8e80c5e21858b81c8184301330f58",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Easter at Mariners | The Thrill of Victory and the Thrill of Defeat - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "kTZbXjZdJRc"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "kTZbXjZdJRc"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 61,
+        "generatedAt": "2026-09-01T17:17:31.974049+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "74b92ea68c4fa2308889c2e3230f3a431789c4ad0c029e627fbbac288a9c501e",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2105,
+        "sourceSegmentsSha256": "27e6536d99b7c205605285e1389dbf326f12d45f84475c432ca58deef5dc0c6e",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Meaning in the Meaningless - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "jlisTmohSlY"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "jlisTmohSlY"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 49,
+        "generatedAt": "2026-09-01T17:17:31.988850+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "2e65b60294aceb67e8f7c3b0fd97fbcddfa4e8ae7d5c92930e52b80227e0c53f",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1793,
+        "sourceSegmentsSha256": "27446c338bb8638095b7ca5e16c5044a4950c124e6350eef6a949b2db5f20676",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Making the Most of a Time for Everything - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "H2PAN4J8nn4"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "H2PAN4J8nn4"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 56,
+        "generatedAt": "2026-09-01T17:17:32.006916+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "66bb99f39780178d2138143ca1ac8f3185b1b034bb881816f627acd3119409f4",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2175,
+        "sourceSegmentsSha256": "a6f733c8c994d4f24cfdcbe3c49e7e9524390cc18ea52199b43bf2c576b7eb52",
+        "speaker": "Kenton Beshore",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "The Gifts of Work and Rest - Kenton Beshore | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "qzpxdENv6a4"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "qzpxdENv6a4"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 64,
+        "generatedAt": "2026-09-01T17:17:32.024717+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "b0bfe520dc9890f085b0101b6d77d30e67af9ac2a38277b5a3c04076aba73a90",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2153,
+        "sourceSegmentsSha256": "8bf3c136fef11e28c342c413a43a3e9cf55913fd02e08213d0eb4518bdbd31e9",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Wisdom on Money and Contentment - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "VH30ZBlz2AA"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "VH30ZBlz2AA"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 51,
+        "generatedAt": "2026-09-01T17:17:32.040203+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "74c439fd0d74acc92870ffeaeaabc460ce21e8773341317739be471eb6314301",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1789,
+        "sourceSegmentsSha256": "fbc4ffd9d6e38ce4f9e1842a067068ffb250fbfb6035f329465cf2a4114eed09",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Wisdom When Life is Complex - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "v0Nkyn6Tm2A"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "v0Nkyn6Tm2A"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 57,
+        "generatedAt": "2026-09-01T17:17:32.057948+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "dca56c245dc188cdf9f81926d5b802afe7cb832411f4cf944b4105c722504169",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2142,
+        "sourceSegmentsSha256": "ccec9f5d2271f145fb3de0632b45d4cf74b5cf0bef8c9ac289c9627d17076b35",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Not Alone - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "HqCobXjNbnI"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "HqCobXjNbnI"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 58,
+        "generatedAt": "2026-09-01T17:17:32.074982+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "6ea4ff53f9ab590482c0f253fd5842a9af784e260874c8f8e2d6060cb81031f2",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2022,
+        "sourceSegmentsSha256": "7a5d9bd1e838504f4b5e572d90e4ba8eb234c9ffdd25d4f3e2980791fda3d249",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "The Not-Little Sin of Complaining - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "2YIcu7033uw"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "2YIcu7033uw"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 56,
+        "generatedAt": "2026-09-01T17:17:32.091134+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "e3dc87f3b6203fad96f15fb8cc333e5b3d6707439f2552e6ff231d6399ab50f5",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1947,
+        "sourceSegmentsSha256": "9b2319a37401265bdc70bbfa92476e3ab220892f748e34ee08c5f96eb96c2280",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Misplaced Fear - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "KgBFtTCCS9s"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "KgBFtTCCS9s"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 50,
+        "generatedAt": "2026-09-01T17:17:32.107983+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "613177b81f5c624db5f437adec3909f0c31fd07aa39b1b2404db1331339bbf63",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1858,
+        "sourceSegmentsSha256": "ba488accf5f64b77588705f9db90063856324fc365aa998339908ea22969d2c3",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "The Cure for Our Rebellion - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "V6OKiwbjDZE"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "V6OKiwbjDZE"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 55,
+        "generatedAt": "2026-09-01T17:17:32.123839+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "f6dfccd2e7f1bf3b1b83216940efebe6ef750ede971ed95fcb38d90ac6ae01fa",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2015,
+        "sourceSegmentsSha256": "7af261ccafa72841f11ae21f930119aa328de90abe8ecb94415c08bff1135354",
+        "speaker": "Jared Kirkwood",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Water from a Rock - Jared Kirkwood | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "M20vokXIblw"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "M20vokXIblw"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 44,
+        "generatedAt": "2026-09-01T17:17:32.135780+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "a2cd6b6a6abd99b92ac2552eeec81f3489b5f51d15989bab4b261aab8b448709",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1628,
+        "sourceSegmentsSha256": "76591cff5afc13b2f316356e944855950c357844d4286ad0004e067211331dd9",
+        "speaker": "Steve Bang Lee",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "A Bronze Snake and God's Love - Steve Bang Lee | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "gNjQsQwLzgY"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "gNjQsQwLzgY"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 40,
+        "generatedAt": "2026-09-01T17:17:32.149904+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "7154ef27f0e26302519fb5b0f4e370ad9fb0a04438bfa25ba350092fcb154eee",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1736,
+        "sourceSegmentsSha256": "0280ad8cc7de7a959bbb31f47f92df3f2e268604965a716a8fa7aa7c74c232ad",
+        "speaker": "Doug Fields",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "A Talking Donkey - Doug Fields | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "UTWrr1il0eY"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "UTWrr1il0eY"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 43,
+        "generatedAt": "2026-09-01T17:17:32.165729+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "e401420f1510441ca8be87517ce1200d114da571a19d223ac1d009862e00aba4",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1900,
+        "sourceSegmentsSha256": "a03248cf374b7728489bd4b8ebe8c2f657e1b039f6bbe53cff75fb4133876d7d",
+        "speaker": "Kenton Beshore",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "Think Big, Act Small - Kenton Beshore | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "8n1-2EtKMLc"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "8n1-2EtKMLc"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 58,
+        "generatedAt": "2026-09-01T17:17:32.182257+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "2a209967d2dba145b9614cf9857b32b50dd1534cead195dcfdb19efe9dbdf597",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2205,
+        "sourceSegmentsSha256": "1f0c10071d3d705d85394a7d206b145ca29b6bf201832d9c544149d6dd33793d",
+        "speaker": "Eric Geiger",
+        "split": "train",
+        "status": "caption_source_prepared",
+        "title": "When I've been betrayed - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "5sa6nh58EYM"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "5sa6nh58EYM"
+    }
+  ],
+  "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+  "selectedVideoCount": 159,
+  "selectiveAudioAudit": {
+    "calibrationSegmentCount": 265,
+    "calibrationSeverityCounts": {
+      "needs_audio_review": 44,
+      "pass": 221
+    },
+    "observedNeedsAudioReviewRate": 0.166,
+    "passSampleRate": 0.05,
+    "postTeacherExactCountPending": true,
+    "preTeacherSelectedDurationShare": 0.153,
+    "preTeacherSelectedMinutes": 904.6,
+    "preTeacherSelectedSegmentCount": 994,
+    "preTeacherSelectedSegmentShare": 0.1355,
+    "projectedAsrCostUsd": 7.81,
+    "projectedAuditMinutes": 1736.15,
+    "projectedAuditShare": 0.2936,
+    "projectedUpperAsrCostUsd": 8.49,
+    "projectedUpperAuditMinutes": 1886.35,
+    "projectedUpperAuditShare": 0.319
+  },
+  "sourceSplitManifest": "/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles-ios-design/data/reports/sermon-parallel-corpus-splits-v1/split-manifest.json",
+  "sourceSplitManifestSha256": "5f3be7263f309d1b2b62be59a3026f61389d8a8d0252825310b583681d657a4f",
+  "splitCounts": {
+    "dev": 18,
+    "train": 141
+  },
+  "stage": "prepare-caption",
+  "status": "completed",
+  "teacherModels": {
+    "reviewer": {
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "high"
+    },
+    "translator": {
+      "model": "gpt-5.6-terra",
+      "reasoningEffort": "high"
+    }
+  },
+  "trainingBlockers": [
+    "source_training_rights_unconfirmed",
+    "gpt_external_student_distillation_not_authorized"
+  ],
+  "trainingEligibility": "blocked"
+}

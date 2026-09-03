@@ -1,0 +1,61 @@
+{
+  "asrModel": "gpt-transcribe",
+  "asrPricePerMinuteUsdAssumption": 0.0045,
+  "captionSegmentCount": 190,
+  "captionSegmentDurationHours": 1.988,
+  "captionSourceQuality": {
+    "dispositionCounts": {
+      "teacher_ready": 4
+    },
+    "maxSparseSegmentShare": 0.1,
+    "sourceReconciliationVideoIds": [],
+    "sparseWordsPerSecondThreshold": 0.6
+  },
+  "durationHours": 1.991,
+  "fullAudioUpperBoundCostUsd": 0.54,
+  "fullAudioUpperBoundMinutes": 119.48,
+  "generatedAt": "2026-09-03T02:36:48.529731+00:00",
+  "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+  "selectedVideoCount": 4,
+  "selectiveAudioAudit": {
+    "calibrationSegmentCount": 265,
+    "calibrationSeverityCounts": {
+      "needs_audio_review": 44,
+      "pass": 221
+    },
+    "observedNeedsAudioReviewRate": 0.166,
+    "passSampleRate": 0.05,
+    "postTeacherExactCountPending": true,
+    "preTeacherSelectedDurationShare": 0.0681,
+    "preTeacherSelectedMinutes": 8.13,
+    "preTeacherSelectedSegmentCount": 13,
+    "preTeacherSelectedSegmentShare": 0.0684,
+    "projectedAsrCostUsd": 0.12,
+    "projectedAuditMinutes": 26.58,
+    "projectedAuditShare": 0.2228,
+    "projectedUpperAsrCostUsd": 0.13,
+    "projectedUpperAuditMinutes": 27.93,
+    "projectedUpperAuditShare": 0.2342
+  },
+  "sourceSplitManifest": "/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles-ios-design/data/reports/sermon-parallel-corpus-splits-v1/split-manifest.json",
+  "sourceSplitManifestSha256": "5f3be7263f309d1b2b62be59a3026f61389d8a8d0252825310b583681d657a4f",
+  "splitCounts": {
+    "train": 4
+  },
+  "status": "dry_run_only",
+  "teacherModels": {
+    "reviewer": {
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "high"
+    },
+    "translator": {
+      "model": "gpt-5.6-terra",
+      "reasoningEffort": "high"
+    }
+  },
+  "trainingBlockers": [
+    "source_training_rights_unconfirmed",
+    "gpt_external_student_distillation_not_authorized"
+  ],
+  "trainingEligibility": "blocked"
+}

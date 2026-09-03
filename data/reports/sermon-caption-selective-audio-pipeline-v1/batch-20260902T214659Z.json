@@ -1,0 +1,199 @@
+{
+  "apiKeyMaterialIncluded": false,
+  "asrModel": "gpt-transcribe",
+  "asrPricePerMinuteUsdAssumption": 0.0045,
+  "captionSegmentCount": 50,
+  "captionSegmentDurationHours": 0.586,
+  "captionSourceQuality": {
+    "dispositionCounts": {
+      "teacher_ready": 1
+    },
+    "maxSparseSegmentShare": 0.1,
+    "sourceReconciliationVideoIds": [],
+    "sparseWordsPerSecondThreshold": 0.6
+  },
+  "completedVideoCount": 1,
+  "credentialSource": "not_used",
+  "durationHours": 0.587,
+  "failedVideoCount": 0,
+  "finishedAt": "2026-09-02T21:46:59.923704+00:00",
+  "fullAudioUpperBoundCostUsd": 0.16,
+  "fullAudioUpperBoundMinutes": 35.23,
+  "generatedAt": "2026-09-02T21:36:04.408959+00:00",
+  "humanApprovalClaimed": false,
+  "results": [
+    {
+      "split": "train",
+      "status": "completed",
+      "teacher": {
+        "apiKeyUsed": false,
+        "artifactPurpose": "dataset_preparation_only",
+        "audioEvidenceRequiredFor": "needs_audio_review",
+        "authMode": "chatgpt_managed_verified",
+        "batchSize": 6,
+        "cachedConversationResults": 0,
+        "cachedOrImportedResults": 0,
+        "elapsedSeconds": 655.381,
+        "freshConversations": 18,
+        "freshEphemeralConversations": 18,
+        "generatedAt": "2026-09-02T21:46:59.916867+00:00",
+        "humanApprovalClaimed": false,
+        "postTrainingStudent": {
+          "class": "lightweight_open_weight_candidate",
+          "status": "unselected"
+        },
+        "reviewDispositionCounts": {
+          "excluded_requires_audio_evidence": 4,
+          "sol_high_text_review_corrected": 8,
+          "sol_high_text_review_passed": 38
+        },
+        "reviewReasoningEffort": "high",
+        "reviewerModel": "gpt-5.6-sol",
+        "routineHumanTextReviewRequired": false,
+        "schemaVersion": "sermon-codex-conversation-v3",
+        "segmentCount": 50,
+        "selectedSegmentIds": [
+          "rvL1gzQYGeI_seg_0001",
+          "rvL1gzQYGeI_seg_0002",
+          "rvL1gzQYGeI_seg_0003",
+          "rvL1gzQYGeI_seg_0004",
+          "rvL1gzQYGeI_seg_0005",
+          "rvL1gzQYGeI_seg_0006",
+          "rvL1gzQYGeI_seg_0007",
+          "rvL1gzQYGeI_seg_0008",
+          "rvL1gzQYGeI_seg_0009",
+          "rvL1gzQYGeI_seg_0010",
+          "rvL1gzQYGeI_seg_0011",
+          "rvL1gzQYGeI_seg_0012",
+          "rvL1gzQYGeI_seg_0013",
+          "rvL1gzQYGeI_seg_0014",
+          "rvL1gzQYGeI_seg_0015",
+          "rvL1gzQYGeI_seg_0016",
+          "rvL1gzQYGeI_seg_0017",
+          "rvL1gzQYGeI_seg_0018",
+          "rvL1gzQYGeI_seg_0019",
+          "rvL1gzQYGeI_seg_0020",
+          "rvL1gzQYGeI_seg_0021",
+          "rvL1gzQYGeI_seg_0022",
+          "rvL1gzQYGeI_seg_0023",
+          "rvL1gzQYGeI_seg_0024",
+          "rvL1gzQYGeI_seg_0025",
+          "rvL1gzQYGeI_seg_0026",
+          "rvL1gzQYGeI_seg_0027",
+          "rvL1gzQYGeI_seg_0028",
+          "rvL1gzQYGeI_seg_0029",
+          "rvL1gzQYGeI_seg_0030",
+          "rvL1gzQYGeI_seg_0031",
+          "rvL1gzQYGeI_seg_0032",
+          "rvL1gzQYGeI_seg_0033",
+          "rvL1gzQYGeI_seg_0034",
+          "rvL1gzQYGeI_seg_0035",
+          "rvL1gzQYGeI_seg_0036",
+          "rvL1gzQYGeI_seg_0037",
+          "rvL1gzQYGeI_seg_0038",
+          "rvL1gzQYGeI_seg_0039",
+          "rvL1gzQYGeI_seg_0040",
+          "rvL1gzQYGeI_seg_0041",
+          "rvL1gzQYGeI_seg_0042",
+          "rvL1gzQYGeI_seg_0043",
+          "rvL1gzQYGeI_seg_0044",
+          "rvL1gzQYGeI_seg_0045",
+          "rvL1gzQYGeI_seg_0046",
+          "rvL1gzQYGeI_seg_0047",
+          "rvL1gzQYGeI_seg_0048",
+          "rvL1gzQYGeI_seg_0049",
+          "rvL1gzQYGeI_seg_0050"
+        ],
+        "selectedSourceSha256": "74d6dd04c8b24b7fd0a7c7d5ae5af2301cd4097f09ccb2ddebe285f9f7e67e5c",
+        "sharedCodexUsageConsumed": true,
+        "sourceSha256": "79d191580735e0cd9c3729df73d645297ebe02a2b26e78a668f721753a49a956",
+        "stages": {
+          "review": {
+            "cachedOrImportedResults": 0,
+            "elapsedSeconds": 400.676,
+            "freshConversations": 9,
+            "usage": {
+              "cache_write_input_tokens": 0,
+              "cached_input_tokens": 86784,
+              "input_tokens": 172208,
+              "output_tokens": 19804,
+              "reasoning_output_tokens": 8247
+            },
+            "usageReceiptCoverage": 9
+          },
+          "translation": {
+            "cachedOrImportedResults": 0,
+            "elapsedSeconds": 254.705,
+            "freshConversations": 9,
+            "usage": {
+              "cache_write_input_tokens": 0,
+              "cached_input_tokens": 128768,
+              "input_tokens": 161037,
+              "output_tokens": 12356,
+              "reasoning_output_tokens": 1867
+            },
+            "usageReceiptCoverage": 9
+          }
+        },
+        "status": "hybrid_teacher_pipeline_completed_sol_high_text_review_training_blocked",
+        "trainingEligibility": "blocked",
+        "translateReasoningEffort": "high",
+        "translatorModel": "gpt-5.6-terra",
+        "usage": {
+          "cache_write_input_tokens": 0,
+          "cached_input_tokens": 215552,
+          "input_tokens": 333245,
+          "output_tokens": 32160,
+          "reasoning_output_tokens": 10114
+        },
+        "usageReceiptCoverage": 18,
+        "videoId": "rvL1gzQYGeI"
+      },
+      "videoId": "rvL1gzQYGeI"
+    }
+  ],
+  "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+  "selectedVideoCount": 1,
+  "selectiveAudioAudit": {
+    "calibrationSegmentCount": 265,
+    "calibrationSeverityCounts": {
+      "needs_audio_review": 44,
+      "pass": 221
+    },
+    "observedNeedsAudioReviewRate": 0.166,
+    "passSampleRate": 0.05,
+    "postTeacherExactCountPending": true,
+    "preTeacherSelectedDurationShare": 0.0638,
+    "preTeacherSelectedMinutes": 2.24,
+    "preTeacherSelectedSegmentCount": 3,
+    "preTeacherSelectedSegmentShare": 0.06,
+    "projectedAsrCostUsd": 0.03,
+    "projectedAuditMinutes": 7.71,
+    "projectedAuditShare": 0.2192,
+    "projectedUpperAsrCostUsd": 0.04,
+    "projectedUpperAuditMinutes": 8.08,
+    "projectedUpperAuditShare": 0.2298
+  },
+  "sourceSplitManifest": "/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles-ios-design/data/reports/sermon-parallel-corpus-splits-v1/split-manifest.json",
+  "sourceSplitManifestSha256": "5f3be7263f309d1b2b62be59a3026f61389d8a8d0252825310b583681d657a4f",
+  "splitCounts": {
+    "train": 1
+  },
+  "stage": "translate-review",
+  "status": "completed",
+  "teacherModels": {
+    "reviewer": {
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "high"
+    },
+    "translator": {
+      "model": "gpt-5.6-terra",
+      "reasoningEffort": "high"
+    }
+  },
+  "trainingBlockers": [
+    "source_training_rights_unconfirmed",
+    "gpt_external_student_distillation_not_authorized"
+  ],
+  "trainingEligibility": "blocked"
+}

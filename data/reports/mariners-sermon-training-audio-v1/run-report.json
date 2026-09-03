@@ -1,0 +1,23 @@
+{
+  "audioReencodedCount": 0,
+  "durationHours": 74.956,
+  "durationSeconds": 269840.574,
+  "generatedAt": "2026-09-03T02:51:45.650704+00:00",
+  "manifestRowCount": 133,
+  "outputBytes": 4017171753,
+  "outputWithVideoStreamCount": 0,
+  "schemaVersion": "mariners-sermon-training-audio-report-v1",
+  "sourceReconciliationIncluded": false,
+  "splitCounts": {
+    "dev": 15,
+    "train": 118
+  },
+  "status": "completed_and_verified",
+  "testPocIncluded": false,
+  "trainingBlockers": [
+    "source_training_rights_unconfirmed",
+    "gpt_external_student_distillation_not_authorized"
+  ],
+  "trainingEligibility": "blocked",
+  "videoCount": 133
+}

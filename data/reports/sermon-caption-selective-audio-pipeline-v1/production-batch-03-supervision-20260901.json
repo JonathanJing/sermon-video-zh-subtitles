@@ -1,0 +1,87 @@
+{
+  "schemaVersion": "sermon-caption-selective-audio-batch-supervision-v1",
+  "generatedAt": "2026-09-01T23:38:39.675721+00:00",
+  "status": "completed_recovered_and_verified",
+  "batch": {
+    "number": 3,
+    "splitCounts": {"dev": 1, "train": 9},
+    "videoCount": 10,
+    "segmentCount": 481
+  },
+  "teacherPipeline": {
+    "translator": "gpt-5.6-terra",
+    "reviewer": "gpt-5.6-sol",
+    "reasoningEffort": "high",
+    "elapsedSeconds": 6605.327,
+    "freshConversationCount": 157,
+    "cachedResultCount": 13,
+    "usageReceiptCoverage": 170,
+    "usage": {
+      "inputTokens": 3139931,
+      "cachedInputTokens": 1436928,
+      "outputTokens": 332483,
+      "reasoningOutputTokens": 117344
+    },
+    "reviewDispositionCounts": {
+      "solHighTextReviewPassed": 304,
+      "solHighTextReviewCorrected": 134,
+      "excludedRequiresAudioEvidence": 43
+    }
+  },
+  "recovery": {
+    "initialFailedVideoCount": 2,
+    "recoveredVideoCount": 2,
+    "finalFailedVideoCount": 0,
+    "failures": [
+      {
+        "videoId": "A_WNHtupo3Q",
+        "failure": "terra_incomplete_id_set",
+        "recovery": "reused_three_valid_translation_batches_and_reran_from_missing_batch"
+      },
+      {
+        "videoId": "haoJAWrQgMg",
+        "failure": "sol_must_fix_without_changed_chinese",
+        "recovery": "preserved_invalid_cache_as_failure_receipt_and_reran_only_invalid_review_batch"
+      }
+    ],
+    "invalidCacheFailureReceiptCount": 1,
+    "pipelineChange": "semantic_validation_before_success_cache_with_failure_usage_receipts"
+  },
+  "selectiveAudioAudit": {
+    "model": "gpt-transcribe",
+    "selectedSegmentCount": 194,
+    "selectedSegmentShare": 0.4033,
+    "clipSeconds": 9640.563,
+    "billedSecondsFromUsageReceipts": 9723,
+    "estimatedCostUsdAt0.0045PerMinute": 0.7292,
+    "decisionCounts": {
+      "audioEvidenceSupportsCaption": 182,
+      "excludedCaptionAsrDisagreement": 9,
+      "excludedAudioTranscriptionInvalid": 3
+    }
+  },
+  "finalDataset": {
+    "candidateSegmentCount": 469,
+    "excludedSegmentCount": 12,
+    "candidateShare": 0.9751,
+    "englishCaptionFrozenAndOrderPreserved": true,
+    "emptyChineseSegmentCount": 0,
+    "silentCaptionOverwriteCount": 0,
+    "humanApprovalClaimed": false
+  },
+  "artifactVerification": {
+    "sourceMediaFilesDecoded": 10,
+    "sourceMediaDecodeFailures": 0,
+    "audioClipCount": 194,
+    "transcriptJsonCount": 194,
+    "transcriptTextCount": 194,
+    "audioAuditRowCount": 194,
+    "mergedRowCount": 481,
+    "countAndIdentityChecksPassed": true
+  },
+  "trainingEligibility": "blocked",
+  "trainingBlockers": [
+    "source_training_rights_unconfirmed",
+    "gpt_external_student_distillation_not_authorized"
+  ]
+}

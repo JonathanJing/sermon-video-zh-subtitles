@@ -1,0 +1,90 @@
+{
+  "alreadyCompleteBeforeBatchCount": 0,
+  "authenticatedSessionUsed": false,
+  "batchSize": 6,
+  "captionKind": "youtube_automatic",
+  "captionLanguage": "en-orig",
+  "completedIds": [
+    "cFLQLjzbnVg",
+    "5sa6nh58EYM",
+    "A_WNHtupo3Q",
+    "hoeJTwl-EJg",
+    "8n1-2EtKMLc",
+    "mIyioBLQmJ0"
+  ],
+  "eligibleInventoryCount": 180,
+  "failed": [],
+  "finishedAt": "2026-08-31T04:30:44.105809Z",
+  "inventory": "data/reports/mariners-channel-audit-20260830/sermon-vods.jsonl",
+  "mediaDownloaded": false,
+  "outputRoot": "data/raw/mariners-sermon-captions-v1",
+  "remainingEligibleEstimate": 174,
+  "results": [
+    {
+      "assetId": "cFLQLjzbnVg",
+      "normalizedCueCount": 787,
+      "rawCueCount": 1570,
+      "sourceVttReused": true,
+      "status": "ok",
+      "timelineCoverage": 1.0006,
+      "transcriptCharacters": 27834
+    },
+    {
+      "assetId": "5sa6nh58EYM",
+      "normalizedCueCount": 926,
+      "rawCueCount": 1828,
+      "sourceVttReused": false,
+      "status": "ok",
+      "timelineCoverage": 1.0003,
+      "transcriptCharacters": 31970
+    },
+    {
+      "assetId": "A_WNHtupo3Q",
+      "normalizedCueCount": 885,
+      "rawCueCount": 1740,
+      "sourceVttReused": false,
+      "status": "ok",
+      "timelineCoverage": 1.0005,
+      "transcriptCharacters": 32329
+    },
+    {
+      "assetId": "hoeJTwl-EJg",
+      "normalizedCueCount": 898,
+      "rawCueCount": 1790,
+      "sourceVttReused": false,
+      "status": "ok",
+      "timelineCoverage": 1.0007,
+      "transcriptCharacters": 31856
+    },
+    {
+      "assetId": "8n1-2EtKMLc",
+      "normalizedCueCount": 780,
+      "rawCueCount": 1556,
+      "sourceVttReused": false,
+      "status": "ok",
+      "timelineCoverage": 1.0007,
+      "transcriptCharacters": 29124
+    },
+    {
+      "assetId": "mIyioBLQmJ0",
+      "normalizedCueCount": 720,
+      "rawCueCount": 1432,
+      "sourceVttReused": false,
+      "status": "ok",
+      "timelineCoverage": 1.0006,
+      "transcriptCharacters": 27375
+    }
+  ],
+  "reusedIds": [],
+  "schemaVersion": "mariners-caption-extraction-v1",
+  "selectedIds": [
+    "cFLQLjzbnVg",
+    "5sa6nh58EYM",
+    "A_WNHtupo3Q",
+    "hoeJTwl-EJg",
+    "8n1-2EtKMLc",
+    "mIyioBLQmJ0"
+  ],
+  "startedAt": "2026-08-31T04:30:18.122121Z",
+  "status": "ok"
+}

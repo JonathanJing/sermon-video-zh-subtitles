@@ -1,0 +1,180 @@
+{
+  "apiKeyMaterialIncluded": false,
+  "generatedAt": "2026-08-31T06:54:03.147581+00:00",
+  "qualityTier": "isolated_reference",
+  "schemaVersion": 1,
+  "secretResourceNamesIncluded": false,
+  "selection": {
+    "boundarySource": "gpt_model_candidate_requires_human_review",
+    "createdAt": "2026-08-31T06:54:02.950240+00:00",
+    "reservedFromFutureTest": true,
+    "schemaVersion": 1,
+    "selectionRationale": [
+      "latest primary speaker",
+      "different speaker and accent",
+      "older long-form boundary stress case"
+    ],
+    "split": "poc",
+    "status": "frozen_poc_selection",
+    "videoIds": [
+      "cFLQLjzbnVg",
+      "mIyioBLQmJ0",
+      "wxcIGSolCvc"
+    ]
+  },
+  "sermons": [
+    {
+      "apiKeyMaterialIncluded": false,
+      "generatedAt": "2026-08-31T06:54:03.015161+00:00",
+      "highPriorityReviewCount": 24,
+      "humanReviewQueueCount": 46,
+      "model": "gpt-5.6-sol",
+      "promptVersions": {
+        "boundary": "caption-boundary-gpt56sol-v1",
+        "edit1": "parallel-chinese-edit-gpt56sol-v1",
+        "firstTranslation": "parallel-first-translation-gpt56sol-v1",
+        "qa2": "parallel-bilingual-qa-gpt56sol-v1"
+      },
+      "qualityTier": "isolated_reference",
+      "reasoningEffort": "high",
+      "resolvedScriptureRefCount": 9,
+      "reviewStatus": "model_reviewed_requires_human",
+      "schemaVersion": 1,
+      "secretResourceNamesIncluded": false,
+      "segmentCount": 46,
+      "sermonWindow": {
+        "approvedByHuman": false,
+        "durationSeconds": 1631.63,
+        "endMs": 1769630,
+        "startMs": 138000
+      },
+      "sourceDurationSeconds": 1794,
+      "speaker": "Eric Geiger",
+      "status": "poc_generated_blocked_from_training",
+      "title": "When I am angered - Eric Geiger | Mariners Church",
+      "trainingBlockers": [
+        "source_training_rights_unconfirmed",
+        "gpt_external_student_distillation_not_authorized",
+        "sermon_boundary_not_human_approved",
+        "source_english_not_human_reviewed",
+        "chinese_not_human_approved"
+      ],
+      "trainingEligibility": "blocked",
+      "unresolvedScriptureRefCount": 2,
+      "usage": {
+        "elapsedSeconds": 1099.853,
+        "inputTokens": 93813,
+        "outputTokens": 90314,
+        "reasoningTokens": 58037,
+        "requests": 26
+      },
+      "videoId": "cFLQLjzbnVg"
+    },
+    {
+      "apiKeyMaterialIncluded": false,
+      "generatedAt": "2026-08-31T06:54:03.082554+00:00",
+      "highPriorityReviewCount": 34,
+      "humanReviewQueueCount": 38,
+      "model": "gpt-5.6-sol",
+      "promptVersions": {
+        "boundary": "caption-boundary-gpt56sol-v1",
+        "edit1": "parallel-chinese-edit-gpt56sol-v1",
+        "firstTranslation": "parallel-first-translation-gpt56sol-v1",
+        "qa2": "parallel-bilingual-qa-gpt56sol-v1"
+      },
+      "qualityTier": "isolated_reference",
+      "reasoningEffort": "high",
+      "resolvedScriptureRefCount": 27,
+      "reviewStatus": "model_reviewed_requires_human",
+      "schemaVersion": 1,
+      "secretResourceNamesIncluded": false,
+      "segmentCount": 38,
+      "sermonWindow": {
+        "approvedByHuman": false,
+        "durationSeconds": 1843.911,
+        "endMs": 1852470,
+        "startMs": 8559
+      },
+      "sourceDurationSeconds": 1874,
+      "speaker": "Christine Caine",
+      "status": "poc_generated_blocked_from_training",
+      "title": "An Inheritance by Faith - Christine Caine | Mariners Church",
+      "trainingBlockers": [
+        "source_training_rights_unconfirmed",
+        "gpt_external_student_distillation_not_authorized",
+        "sermon_boundary_not_human_approved",
+        "source_english_not_human_reviewed",
+        "chinese_not_human_approved"
+      ],
+      "trainingEligibility": "blocked",
+      "unresolvedScriptureRefCount": 1,
+      "usage": {
+        "elapsedSeconds": 1394.724,
+        "inputTokens": 99220,
+        "outputTokens": 119931,
+        "reasoningTokens": 83884,
+        "requests": 23
+      },
+      "videoId": "mIyioBLQmJ0"
+    },
+    {
+      "apiKeyMaterialIncluded": false,
+      "generatedAt": "2026-08-31T06:54:03.147063+00:00",
+      "highPriorityReviewCount": 25,
+      "humanReviewQueueCount": 33,
+      "model": "gpt-5.6-sol",
+      "promptVersions": {
+        "boundary": "caption-boundary-gpt56sol-v1",
+        "edit1": "parallel-chinese-edit-gpt56sol-v1",
+        "firstTranslation": "parallel-first-translation-gpt56sol-v1",
+        "qa2": "parallel-bilingual-qa-gpt56sol-v1"
+      },
+      "qualityTier": "isolated_reference",
+      "reasoningEffort": "high",
+      "resolvedScriptureRefCount": 10,
+      "reviewStatus": "model_reviewed_requires_human",
+      "schemaVersion": 1,
+      "secretResourceNamesIncluded": false,
+      "segmentCount": 33,
+      "sermonWindow": {
+        "approvedByHuman": false,
+        "durationSeconds": 1817.36,
+        "endMs": 2946020,
+        "startMs": 1128660
+      },
+      "sourceDurationSeconds": 3308,
+      "speaker": "Doug Fields",
+      "status": "poc_generated_blocked_from_training",
+      "title": "Making the Most of Your Relationships - Doug Fields | Mariners Church",
+      "trainingBlockers": [
+        "source_training_rights_unconfirmed",
+        "gpt_external_student_distillation_not_authorized",
+        "sermon_boundary_not_human_approved",
+        "source_english_not_human_reviewed",
+        "chinese_not_human_approved"
+      ],
+      "trainingEligibility": "blocked",
+      "unresolvedScriptureRefCount": 0,
+      "usage": {
+        "elapsedSeconds": 1532.61,
+        "inputTokens": 80817,
+        "outputTokens": 103726,
+        "reasoningTokens": 73009,
+        "requests": 20
+      },
+      "videoId": "wxcIGSolCvc"
+    }
+  ],
+  "status": "poc_generated_blocked_from_training",
+  "totals": {
+    "apiElapsedSeconds": 4027.187,
+    "highPriorityReview": 83,
+    "inputTokens": 273850,
+    "outputTokens": 313971,
+    "reasoningTokens": 214930,
+    "requests": 69,
+    "segments": 117,
+    "sermons": 3
+  },
+  "trainingEligibility": "blocked"
+}

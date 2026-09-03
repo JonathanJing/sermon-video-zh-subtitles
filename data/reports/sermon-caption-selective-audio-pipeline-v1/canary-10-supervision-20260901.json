@@ -1,0 +1,90 @@
+{
+  "schemaVersion": "sermon-caption-selective-audio-canary-supervision-v1",
+  "generatedAt": "2026-09-01T19:43:21.593296+00:00",
+  "status": "canary_gate_passed_with_training_blockers",
+  "scope": {
+    "videoCount": 10,
+    "segmentCount": 426,
+    "teacherReadyVideoCount": 9,
+    "diagnosticSparseCaptionVideoCount": 1,
+    "remainingTeacherReadyVideoCount": 124
+  },
+  "teacherPipeline": {
+    "translator": "gpt-5.6-terra",
+    "reviewer": "gpt-5.6-sol",
+    "reasoningEffort": "high",
+    "elapsedSeconds": 7647.266,
+    "freshConversationCount": 150,
+    "usage": {
+      "inputTokens": 2810214,
+      "cachedInputTokens": 1102592,
+      "outputTokens": 340829,
+      "reasoningOutputTokens": 127313
+    },
+    "reviewDispositionCounts": {
+      "solHighTextReviewPassed": 243,
+      "solHighTextReviewCorrected": 120,
+      "excludedRequiresAudioEvidence": 63
+    }
+  },
+  "selectiveAudioAudit": {
+    "model": "gpt-transcribe",
+    "selectedSegmentCount": 193,
+    "selectedSegmentShare": 0.4531,
+    "clipSeconds": 10732.256,
+    "billedSecondsFromUsageReceipts": 10826,
+    "estimatedCostUsdAt0.0045PerMinute": 0.8119,
+    "decisionCounts": {
+      "audioEvidenceSupportsCaption": 179,
+      "excludedAudioTranscriptionInvalid": 10,
+      "excludedCaptionAsrDisagreement": 4
+    }
+  },
+  "finalDataset": {
+    "candidateSegmentCount": 412,
+    "excludedSegmentCount": 14,
+    "candidateShare": 0.9671,
+    "englishCaptionFrozenAndOrderPreserved": true,
+    "emptyChineseSegmentCount": 0,
+    "silentCaptionOverwriteCount": 0,
+    "humanApprovalClaimed": false
+  },
+  "artifactVerification": {
+    "sourceMediaFilesDecoded": 10,
+    "sourceMediaDecodeFailures": 0,
+    "audioClipCount": 193,
+    "transcriptJsonCount": 193,
+    "transcriptTextCount": 193,
+    "audioAuditRowCount": 193,
+    "mergedRowCount": 426,
+    "countAndIdentityChecksPassed": true
+  },
+  "expansionGate": {
+    "decision": "pass_for_remaining_teacher_ready_train_dev_sources",
+    "reasons": [
+      "all_10_teacher_runs_completed",
+      "all_selected_audio_segments_transcribed",
+      "caption_text_remained_authoritative",
+      "conflicts_were_excluded_fail_closed",
+      "artifacts_and_usage_receipts_were_complete"
+    ],
+    "excludedFromExpansion": "requires_source_reconciliation"
+  },
+  "trainingEligibility": "blocked",
+  "trainingBlockers": [
+    "source_training_rights_unconfirmed",
+    "gpt_external_student_distillation_not_authorized"
+  ],
+  "videos": [
+    {"videoId":"_Lfp2-dtgRE","segments":59,"audioSelected":30,"candidate":46,"excluded":13},
+    {"videoId":"n8HTOPZg7cM","segments":33,"audioSelected":20,"candidate":32,"excluded":1},
+    {"videoId":"qjf5V3TUzVo","segments":41,"audioSelected":21,"candidate":41,"excluded":0},
+    {"videoId":"uGBlsewT5jM","segments":36,"audioSelected":20,"candidate":36,"excluded":0},
+    {"videoId":"U7iRezkejNw","segments":38,"audioSelected":20,"candidate":38,"excluded":0},
+    {"videoId":"XFbturPLU7o","segments":46,"audioSelected":19,"candidate":46,"excluded":0},
+    {"videoId":"DT1yokn_0Ic","segments":39,"audioSelected":27,"candidate":39,"excluded":0},
+    {"videoId":"8n1-2EtKMLc","segments":43,"audioSelected":14,"candidate":43,"excluded":0},
+    {"videoId":"0e4RTsnxa9A","segments":36,"audioSelected":12,"candidate":36,"excluded":0},
+    {"videoId":"M20vokXIblw","segments":55,"audioSelected":10,"candidate":55,"excluded":0}
+  ]
+}

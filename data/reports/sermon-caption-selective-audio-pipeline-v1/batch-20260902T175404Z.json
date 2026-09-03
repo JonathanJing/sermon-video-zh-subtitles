@@ -1,0 +1,229 @@
+{
+  "apiKeyMaterialIncluded": false,
+  "asrModel": "gpt-transcribe",
+  "asrPricePerMinuteUsdAssumption": 0.0045,
+  "captionSegmentCount": 376,
+  "captionSegmentDurationHours": 5.628,
+  "captionSourceQuality": {
+    "dispositionCounts": {
+      "teacher_ready": 10
+    },
+    "maxSparseSegmentShare": 0.1,
+    "sourceReconciliationVideoIds": [],
+    "sparseWordsPerSecondThreshold": 0.6
+  },
+  "completedVideoCount": 6,
+  "credentialSource": "existing_env_file",
+  "durationHours": 5.642,
+  "failedVideoCount": 4,
+  "finishedAt": "2026-09-02T17:54:04.690476+00:00",
+  "fullAudioUpperBoundCostUsd": 1.52,
+  "fullAudioUpperBoundMinutes": 338.53,
+  "generatedAt": "2026-09-02T17:50:26.587377+00:00",
+  "humanApprovalClaimed": false,
+  "results": [
+    {
+      "selectiveAudioAudit": {
+        "apiKeyMaterialIncluded": false,
+        "asrModel": "gpt-transcribe",
+        "credentialSource": "existing_env_file",
+        "decisionCounts": {
+          "audio_evidence_supports_caption": 18
+        },
+        "generatedAt": "2026-09-02T17:50:59.793241+00:00",
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "1351c44bf642f11f90109092765e44e2e5e4b4cd20048879b9205e11a6ee0a80",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "selectedSegmentCount": 18,
+        "status": "selective_audio_audit_completed",
+        "totalSegmentCount": 35,
+        "trainingEligibility": "blocked",
+        "videoId": "lnQC75Befco"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "lnQC75Befco"
+    },
+    {
+      "selectiveAudioAudit": {
+        "apiKeyMaterialIncluded": false,
+        "asrModel": "gpt-transcribe",
+        "credentialSource": "existing_env_file",
+        "decisionCounts": {
+          "audio_evidence_supports_caption": 22,
+          "excluded_caption_asr_disagreement": 2
+        },
+        "generatedAt": "2026-09-02T17:51:34.553702+00:00",
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "b5a107d70df2df7fa70c17196296e0423a71c89ed3d728c0057d503db4243b88",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "selectedSegmentCount": 24,
+        "status": "selective_audio_audit_completed",
+        "totalSegmentCount": 45,
+        "trainingEligibility": "blocked",
+        "videoId": "Rs-qWa_dmQw"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "Rs-qWa_dmQw"
+    },
+    {
+      "error": "ba/bestaudio: ERROR: unable to download video data: HTTP Error 403: Forbidden; 18: ERROR: unable to download video data: HTTP Error 403: Forbidden; 140/251/ba/bestaudio (youtube:player_client=web_embedded): ERROR: [youtube] qUbGU6uFOEE: Requested format is not available. Use --list-formats for a list of available formats",
+      "split": "train",
+      "status": "failed",
+      "videoId": "qUbGU6uFOEE"
+    },
+    {
+      "selectiveAudioAudit": {
+        "apiKeyMaterialIncluded": false,
+        "asrModel": "gpt-transcribe",
+        "credentialSource": "existing_env_file",
+        "decisionCounts": {
+          "audio_evidence_supports_caption": 19
+        },
+        "generatedAt": "2026-09-02T17:52:09.658375+00:00",
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "1706eedbeb968a41e5543f74b44ac76893c78733d9e97a3c2949aa932cd23d02",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "selectedSegmentCount": 19,
+        "status": "selective_audio_audit_completed",
+        "totalSegmentCount": 34,
+        "trainingEligibility": "blocked",
+        "videoId": "yvUALIwX9aU"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "yvUALIwX9aU"
+    },
+    {
+      "error": "ba/bestaudio: ERROR: unable to download video data: HTTP Error 403: Forbidden; 18: ERROR: unable to download video data: HTTP Error 403: Forbidden; 140/251/ba/bestaudio (youtube:player_client=web_embedded): ERROR: [youtube] Iaw8oFVI-jM: Requested format is not available. Use --list-formats for a list of available formats",
+      "split": "train",
+      "status": "failed",
+      "videoId": "Iaw8oFVI-jM"
+    },
+    {
+      "selectiveAudioAudit": {
+        "apiKeyMaterialIncluded": false,
+        "asrModel": "gpt-transcribe",
+        "credentialSource": "existing_env_file",
+        "decisionCounts": {
+          "audio_evidence_supports_caption": 29,
+          "excluded_caption_asr_disagreement": 1
+        },
+        "generatedAt": "2026-09-02T17:52:53.463594+00:00",
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "d60e3e2a7bd5aa029899eaffd8573d0b111bce4d32645c10be6b35912e0245fa",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "selectedSegmentCount": 30,
+        "status": "selective_audio_audit_completed",
+        "totalSegmentCount": 43,
+        "trainingEligibility": "blocked",
+        "videoId": "gvptKJCHiwY"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "gvptKJCHiwY"
+    },
+    {
+      "error": "ba/bestaudio: ERROR: unable to download video data: HTTP Error 403: Forbidden; 18: ERROR: unable to download video data: HTTP Error 403: Forbidden; 140/251/ba/bestaudio (youtube:player_client=web_embedded): ERROR: [youtube] NzbZzuwCo2o: Requested format is not available. Use --list-formats for a list of available formats",
+      "split": "train",
+      "status": "failed",
+      "videoId": "NzbZzuwCo2o"
+    },
+    {
+      "error": "ba/bestaudio: ERROR: unable to download video data: HTTP Error 403: Forbidden; 18: ERROR: unable to download video data: HTTP Error 403: Forbidden; 140/251/ba/bestaudio (youtube:player_client=web_embedded): ERROR: [youtube] T3qNz7wiY_o: Requested format is not available. Use --list-formats for a list of available formats",
+      "split": "train",
+      "status": "failed",
+      "videoId": "T3qNz7wiY_o"
+    },
+    {
+      "selectiveAudioAudit": {
+        "apiKeyMaterialIncluded": false,
+        "asrModel": "gpt-transcribe",
+        "credentialSource": "existing_env_file",
+        "decisionCounts": {
+          "audio_evidence_supports_caption": 21,
+          "excluded_caption_asr_disagreement": 1
+        },
+        "generatedAt": "2026-09-02T17:53:39.763853+00:00",
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "3045c3656c371075aaed61900f7de16359959b9f674e539f4dc1301bac95647d",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "selectedSegmentCount": 22,
+        "status": "selective_audio_audit_completed",
+        "totalSegmentCount": 43,
+        "trainingEligibility": "blocked",
+        "videoId": "rEiH_dqoZ2M"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "rEiH_dqoZ2M"
+    },
+    {
+      "selectiveAudioAudit": {
+        "apiKeyMaterialIncluded": false,
+        "asrModel": "gpt-transcribe",
+        "credentialSource": "existing_env_file",
+        "decisionCounts": {
+          "audio_evidence_supports_caption": 14
+        },
+        "generatedAt": "2026-09-02T17:54:04.690181+00:00",
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "a2dfd1e0a6f666f179bd6c27a1e5da1d956aaf60db1e486629d7c45c5dd0a229",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "selectedSegmentCount": 14,
+        "status": "selective_audio_audit_completed",
+        "totalSegmentCount": 31,
+        "trainingEligibility": "blocked",
+        "videoId": "lU-UWhkLX2I"
+      },
+      "split": "train",
+      "status": "completed",
+      "videoId": "lU-UWhkLX2I"
+    }
+  ],
+  "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+  "selectedVideoCount": 10,
+  "selectiveAudioAudit": {
+    "calibrationSegmentCount": 265,
+    "calibrationSeverityCounts": {
+      "needs_audio_review": 44,
+      "pass": 221
+    },
+    "observedNeedsAudioReviewRate": 0.166,
+    "passSampleRate": 0.05,
+    "postTeacherExactCountPending": true,
+    "preTeacherSelectedDurationShare": 0.0999,
+    "preTeacherSelectedMinutes": 33.73,
+    "preTeacherSelectedSegmentCount": 38,
+    "preTeacherSelectedSegmentShare": 0.1011,
+    "projectedAsrCostUsd": 0.38,
+    "projectedAuditMinutes": 84.2,
+    "projectedAuditShare": 0.2493,
+    "projectedUpperAsrCostUsd": 0.4,
+    "projectedUpperAuditMinutes": 89.8,
+    "projectedUpperAuditShare": 0.2659
+  },
+  "sourceSplitManifest": "/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles-ios-design/data/reports/sermon-parallel-corpus-splits-v1/split-manifest.json",
+  "sourceSplitManifestSha256": "5f3be7263f309d1b2b62be59a3026f61389d8a8d0252825310b583681d657a4f",
+  "splitCounts": {
+    "train": 10
+  },
+  "stage": "audio-audit",
+  "status": "completed_with_failures",
+  "teacherModels": {
+    "reviewer": {
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "high"
+    },
+    "translator": {
+      "model": "gpt-5.6-terra",
+      "reasoningEffort": "high"
+    }
+  },
+  "trainingBlockers": [
+    "source_training_rights_unconfirmed",
+    "gpt_external_student_distillation_not_authorized"
+  ],
+  "trainingEligibility": "blocked"
+}

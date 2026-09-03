@@ -1,0 +1,222 @@
+{
+  "alreadyCompleteBeforeBatchCount": 6,
+  "authenticatedSessionUsed": false,
+  "batchSize": 18,
+  "captionKind": "youtube_automatic",
+  "captionLanguage": "en-orig",
+  "completedIds": [
+    "UTWrr1il0eY",
+    "gNjQsQwLzgY",
+    "M20vokXIblw",
+    "V6OKiwbjDZE",
+    "KgBFtTCCS9s",
+    "2YIcu7033uw",
+    "HqCobXjNbnI",
+    "hAWaaBVaMzY",
+    "v0Nkyn6Tm2A",
+    "VH30ZBlz2AA",
+    "qzpxdENv6a4",
+    "H2PAN4J8nn4",
+    "jlisTmohSlY",
+    "kTZbXjZdJRc",
+    "6fGamCFsjyw",
+    "XFbturPLU7o",
+    "Lskg54LVBy4",
+    "oDIIjVpJzFA"
+  ],
+  "eligibleInventoryCount": 180,
+  "failed": [],
+  "finishedAt": "2026-08-31T04:32:46.667239Z",
+  "inventory": "data/reports/mariners-channel-audit-20260830/sermon-vods.jsonl",
+  "mediaDownloaded": false,
+  "outputRoot": "data/raw/mariners-sermon-captions-v1",
+  "remainingEligibleEstimate": 156,
+  "results": [
+    {
+      "assetId": "UTWrr1il0eY",
+      "normalizedCueCount": 673,
+      "rawCueCount": 1342,
+      "sourceVttReused": false,
+      "status": "ok",
+      "timelineCoverage": 1.0011,
+      "transcriptCharacters": 25356
+    },
+    {
+      "assetId": "gNjQsQwLzgY",
+      "normalizedCueCount": 631,
+      "rawCueCount": 1256,
+      "sourceVttReused": false,
+      "status": "ok",
+      "timelineCoverage": 1.001,
+      "transcriptCharacters": 23367
+    },
+    {
+      "assetId": "M20vokXIblw",
+      "normalizedCueCount": 836,
+      "rawCueCount": 1668,
+      "sourceVttReused": false,
+      "status": "ok",
+      "timelineCoverage": 1.0004,
+      "transcriptCharacters": 29996
+    },
+    {
+      "assetId": "V6OKiwbjDZE",
+      "normalizedCueCount": 838,
+      "rawCueCount": 1672,
+      "sourceVttReused": false,
+      "status": "ok",
+      "timelineCoverage": 1.0006,
+      "transcriptCharacters": 30867
+    },
+    {
+      "assetId": "KgBFtTCCS9s",
+      "normalizedCueCount": 850,
+      "rawCueCount": 1698,
+      "sourceVttReused": false,
+      "status": "ok",
+      "timelineCoverage": 1.0005,
+      "transcriptCharacters": 30632
+    },
+    {
+      "assetId": "2YIcu7033uw",
+      "normalizedCueCount": 913,
+      "rawCueCount": 1818,
+      "sourceVttReused": false,
+      "status": "ok",
+      "timelineCoverage": 1.0006,
+      "transcriptCharacters": 32768
+    },
+    {
+      "assetId": "HqCobXjNbnI",
+      "normalizedCueCount": 923,
+      "rawCueCount": 1840,
+      "sourceVttReused": false,
+      "status": "ok",
+      "timelineCoverage": 1.0003,
+      "transcriptCharacters": 33698
+    },
+    {
+      "assetId": "hAWaaBVaMzY",
+      "normalizedCueCount": 832,
+      "rawCueCount": 1656,
+      "sourceVttReused": false,
+      "status": "ok",
+      "timelineCoverage": 1.0003,
+      "transcriptCharacters": 29702
+    },
+    {
+      "assetId": "v0Nkyn6Tm2A",
+      "normalizedCueCount": 787,
+      "rawCueCount": 1570,
+      "sourceVttReused": false,
+      "status": "ok",
+      "timelineCoverage": 1.0003,
+      "transcriptCharacters": 28471
+    },
+    {
+      "assetId": "VH30ZBlz2AA",
+      "normalizedCueCount": 946,
+      "rawCueCount": 1886,
+      "sourceVttReused": false,
+      "status": "ok",
+      "timelineCoverage": 1.0005,
+      "transcriptCharacters": 33873
+    },
+    {
+      "assetId": "qzpxdENv6a4",
+      "normalizedCueCount": 936,
+      "rawCueCount": 1864,
+      "sourceVttReused": false,
+      "status": "ok",
+      "timelineCoverage": 1.0003,
+      "transcriptCharacters": 34336
+    },
+    {
+      "assetId": "H2PAN4J8nn4",
+      "normalizedCueCount": 771,
+      "rawCueCount": 1524,
+      "sourceVttReused": false,
+      "status": "ok",
+      "timelineCoverage": 1.0007,
+      "transcriptCharacters": 27300
+    },
+    {
+      "assetId": "jlisTmohSlY",
+      "normalizedCueCount": 900,
+      "rawCueCount": 1796,
+      "sourceVttReused": false,
+      "status": "ok",
+      "timelineCoverage": 1.0005,
+      "transcriptCharacters": 31934
+    },
+    {
+      "assetId": "kTZbXjZdJRc",
+      "normalizedCueCount": 721,
+      "rawCueCount": 1436,
+      "sourceVttReused": false,
+      "status": "ok",
+      "timelineCoverage": 1.0004,
+      "transcriptCharacters": 26131
+    },
+    {
+      "assetId": "6fGamCFsjyw",
+      "normalizedCueCount": 913,
+      "rawCueCount": 1786,
+      "sourceVttReused": false,
+      "status": "ok",
+      "timelineCoverage": 1.0005,
+      "transcriptCharacters": 29951
+    },
+    {
+      "assetId": "XFbturPLU7o",
+      "normalizedCueCount": 791,
+      "rawCueCount": 1576,
+      "sourceVttReused": false,
+      "status": "ok",
+      "timelineCoverage": 1.0005,
+      "transcriptCharacters": 30147
+    },
+    {
+      "assetId": "Lskg54LVBy4",
+      "normalizedCueCount": 737,
+      "rawCueCount": 1470,
+      "sourceVttReused": false,
+      "status": "ok",
+      "timelineCoverage": 1.0005,
+      "transcriptCharacters": 25774
+    },
+    {
+      "assetId": "oDIIjVpJzFA",
+      "normalizedCueCount": 778,
+      "rawCueCount": 1554,
+      "sourceVttReused": false,
+      "status": "ok",
+      "timelineCoverage": 1.0005,
+      "transcriptCharacters": 29570
+    }
+  ],
+  "reusedIds": [],
+  "schemaVersion": "mariners-caption-extraction-v1",
+  "selectedIds": [
+    "UTWrr1il0eY",
+    "gNjQsQwLzgY",
+    "M20vokXIblw",
+    "V6OKiwbjDZE",
+    "KgBFtTCCS9s",
+    "2YIcu7033uw",
+    "HqCobXjNbnI",
+    "hAWaaBVaMzY",
+    "v0Nkyn6Tm2A",
+    "VH30ZBlz2AA",
+    "qzpxdENv6a4",
+    "H2PAN4J8nn4",
+    "jlisTmohSlY",
+    "kTZbXjZdJRc",
+    "6fGamCFsjyw",
+    "XFbturPLU7o",
+    "Lskg54LVBy4",
+    "oDIIjVpJzFA"
+  ],
+  "startedAt": "2026-08-31T04:31:40.131678Z",
+  "status": "ok"
+}

@@ -1,0 +1,139 @@
+{
+  "apiKeyMaterialIncluded": false,
+  "blockerMeaning": "Catalog integrity passed; quality tiers do not grant source rights or authorization to distill OpenAI outputs into an external student model.",
+  "checks": [
+    {
+      "name": "exact_unique_review_and_release_coverage",
+      "observed": {
+        "releasedRows": 117,
+        "reviewRows": 117,
+        "uniqueReleasedIds": 117,
+        "uniqueReviewIds": 117
+      },
+      "state": "pass"
+    },
+    {
+      "name": "unique_known_human_decisions",
+      "observed": {
+        "rows": 0,
+        "unique": 0,
+        "unknown": []
+      },
+      "state": "pass"
+    },
+    {
+      "name": "human_decisions_are_final_and_hash_bound",
+      "observed": [],
+      "state": "pass"
+    },
+    {
+      "name": "released_lineage_exact",
+      "observed": [],
+      "state": "pass"
+    },
+    {
+      "name": "quality_tiers_exact",
+      "observed": [],
+      "state": "pass"
+    },
+    {
+      "name": "rights_and_distillation_blockers_preserved",
+      "observed": [],
+      "state": "pass"
+    },
+    {
+      "name": "whole_sermon_poc_split_binding",
+      "observed": {
+        "mismatches": [],
+        "sermons": [
+          "cFLQLjzbnVg",
+          "mIyioBLQmJ0",
+          "wxcIGSolCvc"
+        ]
+      },
+      "state": "pass"
+    },
+    {
+      "name": "dataset_manifest_exact",
+      "observed": {
+        "blockingReasons": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized",
+          "human_quality_review_incomplete"
+        ],
+        "counts": {
+          "gold": 0,
+          "humanBoundaryBlocked": 0,
+          "isolatedReference": 117,
+          "pending": 117,
+          "rejected": 0,
+          "silverCandidate": 0,
+          "total": 117
+        },
+        "expectedCounts": {
+          "gold": 0,
+          "humanBoundaryBlocked": 0,
+          "isolatedReference": 117,
+          "pending": 117,
+          "rejected": 0,
+          "silverCandidate": 0,
+          "total": 117
+        }
+      },
+      "state": "pass"
+    },
+    {
+      "name": "summary_matches_manifest_and_decision_coverage",
+      "observed": {
+        "expectedDecisions": 117,
+        "observedDecisions": 0,
+        "riskCalibration": {
+          "highPriorityRecall": null,
+          "materialErrorSegments": 0,
+          "materialErrorSegmentsHigh": 0,
+          "materialErrorSegmentsNormal": 0,
+          "segmentsExpected": 117,
+          "segmentsReviewed": 0,
+          "status": "pending"
+        },
+        "silverCalibration": {
+          "normalApproved": 0,
+          "normalExpected": 34,
+          "normalNonApproved": 0,
+          "normalReviewed": 0,
+          "normalWithMaterialError": 0,
+          "status": "pending"
+        }
+      },
+      "state": "pass"
+    },
+    {
+      "name": "formal_release_schemas",
+      "observed": [],
+      "state": "pass"
+    },
+    {
+      "name": "no_secret_material",
+      "observed": [],
+      "state": "pass"
+    }
+  ],
+  "failedChecks": [],
+  "schemaVersion": "sermon-parallel-quality-catalog-verification-v1",
+  "secretResourceNamesIncluded": false,
+  "status": "pass_training_blocked",
+  "totals": {
+    "gold": 0,
+    "humanBoundaryBlocked": 0,
+    "humanDecisions": 0,
+    "isolatedReference": 117,
+    "pending": 117,
+    "rejected": 0,
+    "segments": 117,
+    "sermons": 3,
+    "silverCandidate": 0,
+    "total": 117
+  },
+  "trainingEligibility": "blocked",
+  "verifiedAt": "2026-08-31T07:31:21.771024+00:00"
+}

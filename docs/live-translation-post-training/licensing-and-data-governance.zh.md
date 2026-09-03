@@ -77,11 +77,12 @@ GPT-5.6 Sol 官方模型页还显示该模型不支持 audio input，也不支�
 
 不能用客服口头回答、论坛帖子、旧博客或“其他人也这样做”替代。
 
-## 5. 默认教师治理
+## 5. 教师流水线治理
 
-在 GPT 路线阻塞期间：
+当前候选数据治理：
 
-- 主数据教师使用固定 revision 的 Qwen3.8-27B。
+- Terra 初译、Sol 复审产物保持隔离 Silver Candidate，直到外部学生训练授权解除。
+- 固定 revision 的 Qwen3.8-27B 仅作为授权更清晰的备用教师实验臂，不与 Terra/Sol provenance 静默混合。
 - calibration/test 由双语人工审核，不让教师自己证明教师正确。
 - 每个 label 保存 model revision、template、prompt、decoding、input/output hash。
 - 教师输出经过 schema、append-only、source coverage、经文和 Saturday-only validator。

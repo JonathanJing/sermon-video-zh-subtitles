@@ -1,0 +1,100 @@
+{
+  "apiKeyMaterialIncluded": false,
+  "approvedByHuman": false,
+  "contentScope": "sermon_only",
+  "generatedAt": "2026-08-31T06:48:33.725460+00:00",
+  "model": "gpt-5.6-sol",
+  "promptVersion": "sermon-boundary-operator-review-gpt56sol-v2",
+  "reviews": [
+    {
+      "candidateChanged": {
+        "end": false,
+        "start": true
+      },
+      "elapsedSeconds": 7.751,
+      "reviewPayloadSha256": "bacbc73fbfb3052bd1ea1f879ca6f6a6ca1914bf768f7cc7fec8308826e083c4",
+      "status": "requires_operator_review",
+      "usage": {
+        "input_tokens": 9829,
+        "input_tokens_details": {
+          "cache_write_tokens": 9826,
+          "cached_tokens": 0
+        },
+        "output_tokens": 404,
+        "output_tokens_details": {
+          "reasoning_tokens": 290
+        },
+        "total_tokens": 10233
+      },
+      "v1EndCueId": "cue_00773",
+      "v1StartCueId": "cue_00068",
+      "v2EndCueId": "cue_00773",
+      "v2StartCueId": "cue_00067",
+      "videoId": "cFLQLjzbnVg"
+    },
+    {
+      "candidateChanged": {
+        "end": false,
+        "start": true
+      },
+      "elapsedSeconds": 3.625,
+      "reviewPayloadSha256": "7d22b46c8e802f2afb404187d90cc0d54cab97bb41ae5ff06d13b6760c69069a",
+      "status": "requires_operator_review",
+      "usage": {
+        "input_tokens": 6668,
+        "input_tokens_details": {
+          "cache_write_tokens": 6665,
+          "cached_tokens": 0
+        },
+        "output_tokens": 205,
+        "output_tokens_details": {
+          "reasoning_tokens": 91
+        },
+        "total_tokens": 6873
+      },
+      "v1EndCueId": "cue_00710",
+      "v1StartCueId": "cue_00005",
+      "v2EndCueId": "cue_00710",
+      "v2StartCueId": "cue_00001",
+      "videoId": "mIyioBLQmJ0"
+    },
+    {
+      "candidateChanged": {
+        "end": false,
+        "start": true
+      },
+      "elapsedSeconds": 4.573,
+      "reviewPayloadSha256": "a717b7bafb43e3e221adb7ddff2496e30f59c217bfcc135a0b7be39315cbd010",
+      "status": "requires_operator_review",
+      "usage": {
+        "input_tokens": 9383,
+        "input_tokens_details": {
+          "cache_write_tokens": 9380,
+          "cached_tokens": 0
+        },
+        "output_tokens": 260,
+        "output_tokens_details": {
+          "reasoning_tokens": 145
+        },
+        "total_tokens": 9643
+      },
+      "v1EndCueId": "cue_00886",
+      "v1StartCueId": "cue_00188",
+      "v2EndCueId": "cue_00886",
+      "v2StartCueId": "cue_00186",
+      "videoId": "wxcIGSolCvc"
+    }
+  ],
+  "schemaVersion": 1,
+  "secretResourceNamesIncluded": false,
+  "status": "requires_operator_review",
+  "totals": {
+    "elapsedSeconds": 15.949,
+    "endCandidatesChanged": 0,
+    "inputTokens": 25880,
+    "outputTokens": 869,
+    "sermons": 3,
+    "startCandidatesChanged": 3
+  },
+  "trainingEligibility": "blocked"
+}

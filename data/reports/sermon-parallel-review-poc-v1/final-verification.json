@@ -1,0 +1,67 @@
+{
+  "apiKeyMaterialIncluded": false,
+  "blockerMeaning": "Review bundle integrity passed; no human content or boundary decisions were observed.",
+  "checks": [
+    {
+      "name": "review_item_count_and_unique_ids",
+      "observed": {
+        "items": 117,
+        "unique": 117
+      },
+      "state": "pass"
+    },
+    {
+      "name": "review_payload_hashes",
+      "observed": [],
+      "state": "pass"
+    },
+    {
+      "name": "exact_poc_segment_coverage",
+      "observed": {
+        "expected": 117,
+        "observed": 117
+      },
+      "state": "pass"
+    },
+    {
+      "name": "candidate_lineage_exact",
+      "observed": [],
+      "state": "pass"
+    },
+    {
+      "name": "decision_templates_are_not_approvals",
+      "observed": [],
+      "state": "pass"
+    },
+    {
+      "name": "formal_schema_files",
+      "observed": [],
+      "state": "pass"
+    },
+    {
+      "name": "no_secret_material",
+      "observed": [],
+      "state": "pass"
+    },
+    {
+      "name": "no_unobserved_human_decisions",
+      "observed": {
+        "present": false
+      },
+      "state": "pass"
+    }
+  ],
+  "failedChecks": [],
+  "schemaVersion": "sermon-parallel-review-v1",
+  "secretResourceNamesIncluded": false,
+  "status": "pass_requires_human_review",
+  "totals": {
+    "approvedHumanDecisions": 0,
+    "high": 83,
+    "items": 117,
+    "normal": 34,
+    "sermons": 3
+  },
+  "trainingEligibility": "blocked",
+  "verifiedAt": "2026-08-31T07:23:46.419405+00:00"
+}

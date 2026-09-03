@@ -60,7 +60,7 @@ flowchart LR
 
 本项目做的是 **sequence-level distillation + SFT**：教师生成离散文本标签，学生学习这些输入输出。不会宣称使用 GPT 的完整 token 概率，因为普通 API 不提供完整 logits。
 
-默认数据教师是固定 revision 的 `Qwen/Qwen3.8-27B`。`gpt-5.6-sol` 只有在 OpenAI 书面确认可将其输出用于外部 Qwen 学生训练后，才可成为制数教师；未确认前，其输出不能进入训练集。详细边界见[许可与数据治理](./licensing-and-data-governance.zh.md)。
+当前候选数据生产线固定为 `gpt-5.6-terra` 初译、`gpt-5.6-sol` 独立复审。两者产物先停留在 Silver Candidate；只有在 OpenAI 书面确认可将输出用于外部轻量学生训练、且人工审核通过后，才可成为 trainable Gold。固定 revision 的 `Qwen/Qwen3.8-27B` 保留为开放权重备用教师实验臂，不再是默认生产线。详细边界见[Terra/Sol 数据集准备方案](./terra-sol-dataset-preparation-plan.zh.md)与[许可与数据治理](./licensing-and-data-governance.zh.md)。
 
 ## 5. 学生输入与输出合同
 
