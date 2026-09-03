@@ -65,16 +65,60 @@ class GatewayTest(unittest.TestCase):
         self.assertEqual(payload["promptContext"]["approvedTerms"][0]["preferredZh"], "应许之地")
         self.assertIsNone(payload["hits"][0]["targetTextZh"])
 
+    def test_retrieve_returns_alignment_cursor_for_replay(self) -> None:
+        status, payload = self.request("/api/context/retrieve", {
+            "sourceTextEn": "They are approaching the promised land.",
+            "cursorSequence": 1,
+            "contextPolicy": "saturday_alignment_v1",
+        })
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["alignment"]["strategy"], "local_window")
+        self.assertEqual(payload["alignment"]["previousCursor"], 1)
+        self.assertEqual(payload["alignment"]["suggestedCursor"], 1)
+
+    def test_none_policy_skips_pack(self) -> None:
+        status, payload = self.request("/api/context/retrieve", {
+            "sourceTextEn": "They are approaching the promised land.",
+            "contextPolicy": "none",
+        })
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["hits"], [])
+        self.assertEqual(payload["promptContext"]["approvedTerms"], [])
+        self.assertEqual(payload["alignment"]["strategy"], "no_match")
+
     def test_translation_without_model_fails_open_for_recording(self) -> None:
-        status, payload = self.request("/api/translate", {"sourceTextEn": "Grace is enough."})
+        status, payload = self.request("/api/translate", {
+            "sourceTextEn": "The promised land is before them.",
+            "cursorSequence": 1,
+            "contextPolicy": "saturday_alignment_v1",
+        })
         self.assertEqual(status, 503)
         self.assertTrue(payload["recordingShouldContinue"])
         self.assertEqual(payload["fallback"], "show_english_only")
+        self.assertEqual(payload["requestedContextPolicy"], "saturday_alignment_v1")
+        self.assertEqual(payload["alignment"]["suggestedCursor"], 1)
+        self.assertEqual(len(payload["contextHitIds"]), 1)
 
     def test_invalid_retrieval_limit_is_rejected(self) -> None:
         status, payload = self.request("/api/context/retrieve", {
             "sourceTextEn": "promised land",
             "limit": 99,
+        })
+        self.assertEqual(status, 400)
+        self.assertEqual(payload["error"], "invalid_request")
+
+    def test_invalid_cursor_is_rejected(self) -> None:
+        status, payload = self.request("/api/context/retrieve", {
+            "sourceTextEn": "promised land",
+            "cursorSequence": 0,
+        })
+        self.assertEqual(status, 400)
+        self.assertEqual(payload["error"], "invalid_request")
+
+    def test_invalid_context_policy_is_rejected(self) -> None:
+        status, payload = self.request("/api/context/retrieve", {
+            "sourceTextEn": "promised land",
+            "contextPolicy": "vector_magic",
         })
         self.assertEqual(status, 400)
         self.assertEqual(payload["error"], "invalid_request")

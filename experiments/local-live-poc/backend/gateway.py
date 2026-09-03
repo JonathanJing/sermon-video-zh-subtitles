@@ -8,7 +8,14 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
-from .content_pack import PackValidationError, load_pack, prompt_context, retrieve
+from .content_pack import (
+    CONTEXT_POLICIES,
+    PackValidationError,
+    alignment_summary,
+    load_pack,
+    prompt_context,
+    retrieve,
+)
 from .ollama_client import OllamaClient, OllamaError
 
 
@@ -105,13 +112,20 @@ class Handler(BaseHTTPRequestHandler):
             raise PackValidationError("limit must be an integer from 1 to 8") from error
         if not 1 <= limit <= 8:
             raise PackValidationError("limit must be an integer from 1 to 8")
+        cursor_sequence = self._cursor_sequence(payload)
+        context_policy = self._context_policy(payload)
         pack = self.server.state.pack
-        hits = retrieve(pack, source_text, limit=limit) if pack else []
+        hits = (
+            retrieve(pack, source_text, limit=limit, cursor_sequence=cursor_sequence)
+            if pack and context_policy != "none" else []
+        )
         self._send(HTTPStatus.OK, {
             "sourceTextEn": source_text,
             "packVersion": pack.get("packVersion") if pack else None,
+            "contextPolicy": context_policy,
             "hits": hits,
-            "promptContext": prompt_context(hits),
+            "promptContext": prompt_context(hits, policy=context_policy),
+            "alignment": alignment_summary(hits, cursor_sequence),
             "fallback": "no_context" if not hits else None,
         })
 
@@ -120,9 +134,16 @@ class Handler(BaseHTTPRequestHandler):
         if not source_text:
             raise PackValidationError("sourceTextEn is required")
         pack = self.server.state.pack
-        use_context = bool(payload.get("useContext", True))
-        hits = retrieve(pack, source_text, limit=5) if pack and use_context else []
-        context = prompt_context(hits)
+        cursor_sequence = self._cursor_sequence(payload)
+        context_policy = self._context_policy(payload)
+        if payload.get("useContext") is False:
+            context_policy = "none"
+        hits = (
+            retrieve(pack, source_text, limit=5, cursor_sequence=cursor_sequence)
+            if pack and context_policy != "none" else []
+        )
+        context = prompt_context(hits, policy=context_policy)
+        alignment = alignment_summary(hits, cursor_sequence)
         try:
             result = self.server.state.ollama.translate(source_text, context)
         except OllamaError as error:
@@ -131,14 +152,42 @@ class Handler(BaseHTTPRequestHandler):
                 "message": str(error),
                 "recordingShouldContinue": True,
                 "fallback": "show_english_only",
+                "requestedContextPolicy": context_policy,
+                "contextPolicy": context_policy if hits else "none",
+                "contextHitIds": [hit["entryId"] for hit in hits],
+                "alignment": alignment,
             })
             return
         self._send(HTTPStatus.OK, {
             "sourceTextEn": source_text,
             **result,
-            "contextPolicy": "weekly_retrieval_v1" if hits else "none",
+            "requestedContextPolicy": context_policy,
+            "contextPolicy": context_policy if hits else "none",
             "contextHitIds": [hit["entryId"] for hit in hits],
+            "alignment": alignment,
         })
+
+    @staticmethod
+    def _cursor_sequence(payload: dict[str, Any]) -> int | None:
+        value = payload.get("cursorSequence")
+        if value is None:
+            return None
+        try:
+            cursor_sequence = int(value)
+        except (TypeError, ValueError) as error:
+            raise PackValidationError("cursorSequence must be a positive integer") from error
+        if cursor_sequence < 1:
+            raise PackValidationError("cursorSequence must be a positive integer")
+        return cursor_sequence
+
+    @staticmethod
+    def _context_policy(payload: dict[str, Any]) -> str:
+        value = str(payload.get("contextPolicy") or "saturday_alignment_v1")
+        if value not in CONTEXT_POLICIES:
+            raise PackValidationError(
+                "contextPolicy must be none, weekly_terms_v1, or saturday_alignment_v1"
+            )
+        return value
 
 
 def create_server(host: str, port: int, state: GatewayState) -> GatewayServer:

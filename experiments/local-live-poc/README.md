@@ -30,7 +30,7 @@ Open the local page in a browser and allow microphone access when starting a rec
 Prepare one JSON object per caption segment:
 
 ```json
-{"segmentId":"seg_000001","startMs":0,"endMs":4200,"sourceTextEn":"God's people are approaching the promised land.","targetTextZh":"神的百姓正在接近应许之地。","translationStatus":"machine_generated","scriptureRefs":["Numbers 13-14"],"terms":[{"source":"promised land","preferredZh":"应许之地","status":"approved"}]}
+{"segmentId":"seg_000001","sectionId":"opening","sectionTitle":"At the border","startMs":0,"endMs":4200,"sourceTextEn":"God's people are approaching the promised land.","targetTextZh":"神的百姓正在接近应许之地。","translationStatus":"machine_generated","scriptureRefs":["Numbers 13-14"],"terms":[{"source":"promised land","preferredZh":"应许之地","status":"approved"}]}
 ```
 
 Build the short-lived pack using the real Saturday recording as provenance:
@@ -47,6 +47,7 @@ python3 -m backend.build_weekly_pack \
 
 Machine-generated Chinese is retained as a candidate but cannot be inserted into a live translation prompt. Only `reviewed`, `corrected`, or `approved` translations and terms are injectable.
 String-only scripture references are also candidates; use `{"reference":"Numbers 13-14","status":"approved"}` only after review if the reference may be injected.
+The builder assigns every segment a one-based `sequence`, creating an ordered Saturday sermon map. Optional section fields are useful for logs but are not required.
 
 ## Local gateway
 
@@ -60,6 +61,14 @@ Endpoints:
 - `GET /api/health`
 - `POST /api/context/retrieve`
 - `POST /api/translate`
+
+Both POST endpoints accept `cursorSequence` and `contextPolicy`. The live page should persist the returned `alignment.suggestedCursor` and send it with the next stable English segment:
+
+```json
+{"sourceTextEn":"Grace leads us today.","cursorSequence":14,"contextPolicy":"saturday_alignment_v1"}
+```
+
+Available policies are `none`, `weekly_terms_v1`, and `saturday_alignment_v1`. The last policy can expose a reviewed Saturday translation as a reference version, but only an exact English match can be used as a directly reusable reviewed example.
 
 If Ollama or the configured model is unavailable, translation returns `503` with `recordingShouldContinue=true`; recording must not depend on translation availability.
 

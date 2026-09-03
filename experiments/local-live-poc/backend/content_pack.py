@@ -10,6 +10,7 @@ from typing import Any, Iterable
 
 SCHEMA_VERSION = 1
 INJECTABLE_STATUSES = {"approved", "corrected", "reviewed"}
+CONTEXT_POLICIES = {"none", "weekly_terms_v1", "saturday_alignment_v1"}
 STOPWORDS = {
     "a", "an", "and", "are", "as", "at", "be", "but", "by", "for", "from",
     "has", "he", "in", "is", "it", "of", "on", "or", "our", "that", "the",
@@ -164,6 +165,9 @@ def build_weekly_pack(
         entries.append({
             "entryId": hashlib.sha256(entry_seed).hexdigest()[:20],
             "segmentId": segment_id,
+            "sequence": index,
+            "sectionId": _clean_text(segment.get("sectionId")) or None,
+            "sectionTitle": _clean_text(segment.get("sectionTitle")) or None,
             "audioStartMs": start_ms,
             "audioEndMs": end_ms,
             "sourceTextEn": source_en,
@@ -175,6 +179,24 @@ def build_weekly_pack(
             "injectableScriptureRefs": injectable_scripture_refs,
             "terms": terms,
             "injectableTerms": injectable_terms,
+        })
+
+    sections: list[dict[str, Any]] = []
+    for entry in entries:
+        section_id = entry.get("sectionId")
+        section_title = entry.get("sectionTitle")
+        if not section_id and not section_title:
+            continue
+        section_key = section_id or section_title
+        if sections and sections[-1]["key"] == section_key:
+            sections[-1]["endSequence"] = entry["sequence"]
+            continue
+        sections.append({
+            "key": section_key,
+            "sectionId": section_id,
+            "sectionTitle": section_title,
+            "startSequence": entry["sequence"],
+            "endSequence": entry["sequence"],
         })
 
     canonical = json.dumps(entries, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
@@ -196,6 +218,11 @@ def build_weekly_pack(
             "machineTranslationInjectable": False,
             "currentLiveEnglishIsSourceOfTruth": True,
             "maxRuntimeHits": 8,
+            "defaultAlignmentWindow": 8,
+        },
+        "sermonMap": {
+            "segmentCount": len(entries),
+            "sections": sections,
         },
         "entries": entries,
     }
@@ -247,6 +274,8 @@ def retrieve(
     source_text_en: str,
     *,
     limit: int = 5,
+    cursor_sequence: int | None = None,
+    window_radius: int = 8,
     now: datetime | None = None,
 ) -> list[dict[str, Any]]:
     source_text_en = _clean_text(source_text_en)
@@ -289,9 +318,14 @@ def retrieve(
             continue
         translation_reviewed = bool(entry.get("canInjectTranslation"))
         can_inject_this_hit = bool(translation_reviewed and exact_match)
+        sequence = int(entry.get("sequence") or 0)
+        cursor_distance = abs(sequence - cursor_sequence) if cursor_sequence is not None else None
         ranked.append((score, {
             "entryId": entry["entryId"],
             "segmentId": entry["segmentId"],
+            "sequence": sequence,
+            "sectionId": entry.get("sectionId"),
+            "sectionTitle": entry.get("sectionTitle"),
             "score": round(score, 4),
             "exactMatch": exact_match,
             "phraseMatch": phrase_match,
@@ -299,6 +333,9 @@ def retrieve(
             "targetTextZh": entry.get("candidateTargetTextZh") if can_inject_this_hit else None,
             "hasCandidateMachineTranslation": bool(entry.get("candidateTargetTextZh") and not translation_reviewed),
             "hasReviewedTranslation": bool(entry.get("candidateTargetTextZh") and translation_reviewed),
+            "reviewedReferenceTargetTextZh": (
+                entry.get("candidateTargetTextZh") if translation_reviewed and not exact_match else None
+            ),
             "translationStatus": entry.get("translationStatus"),
             "canInjectTranslation": can_inject_this_hit,
             "scriptureRefs": [reference["reference"] for reference in entry.get("scriptureRefs", [])],
@@ -306,6 +343,7 @@ def retrieve(
             "injectableTerms": entry.get("injectableTerms", []),
             "audioStartMs": entry.get("audioStartMs"),
             "audioEndMs": entry.get("audioEndMs"),
+            "cursorDistance": cursor_distance,
             "provenance": {
                 "packVersion": pack["packVersion"],
                 "sourceId": pack["provenance"]["sourceId"],
@@ -314,12 +352,47 @@ def retrieve(
             },
         }))
     ranked.sort(key=lambda item: (-item[0], item[1]["audioStartMs"], item[1]["entryId"]))
-    return [hit for _, hit in ranked[:limit]]
+    if cursor_sequence is None or not ranked:
+        strategy = "global_search"
+        selected = ranked
+    else:
+        local = [item for item in ranked if item[1]["cursorDistance"] <= window_radius]
+        global_best = ranked[0]
+        local.sort(key=lambda item: (
+            -(item[0] + max(0.0, 1.0 - item[1]["cursorDistance"] / (window_radius + 1)) * 0.6
+              + (0.15 if item[1]["sequence"] >= cursor_sequence else 0.0)),
+            item[1]["audioStartMs"],
+            item[1]["entryId"],
+        ))
+        local_best = local[0] if local else None
+        should_jump_to_exact = bool(
+            local_best
+            and global_best[1]["exactMatch"]
+            and not local_best[1]["exactMatch"]
+            and global_best[0] - local_best[0] >= 2.0
+        )
+        if local_best and not should_jump_to_exact:
+            strategy = "local_window"
+            selected = local
+        else:
+            strategy = "global_fallback"
+            selected = ranked
+    hits = [hit for _, hit in selected[:limit]]
+    for hit in hits:
+        hit["alignmentStrategy"] = strategy
+    return hits
 
 
-def prompt_context(hits: Iterable[dict[str, Any]]) -> dict[str, Any]:
+def prompt_context(
+    hits: Iterable[dict[str, Any]],
+    *,
+    policy: str = "weekly_terms_v1",
+) -> dict[str, Any]:
+    if policy not in CONTEXT_POLICIES:
+        raise PackValidationError(f"unsupported contextPolicy: {policy}")
     terms: dict[str, str] = {}
     exact_examples: list[dict[str, str]] = []
+    aligned_references: list[dict[str, Any]] = []
     scripture_refs: set[str] = set()
     for hit in hits:
         for term in hit.get("injectableTerms", []):
@@ -330,8 +403,45 @@ def prompt_context(hits: Iterable[dict[str, Any]]) -> dict[str, Any]:
                 "sourceTextEn": hit["sourceTextEn"],
                 "targetTextZh": hit["targetTextZh"],
             })
+        elif (
+            policy == "saturday_alignment_v1"
+            and hit.get("hasReviewedTranslation")
+            and hit.get("reviewedReferenceTargetTextZh")
+            and float(hit.get("score") or 0) >= 1.5
+        ):
+            aligned_references.append({
+                "segmentId": hit["segmentId"],
+                "sequence": hit.get("sequence"),
+                "sourceTextEn": hit["sourceTextEn"],
+                "targetTextZh": hit["reviewedReferenceTargetTextZh"],
+            })
     return {
         "approvedTerms": [{"source": source, "preferredZh": target} for source, target in sorted(terms.items())],
         "verifiedScriptureRefs": sorted(scripture_refs),
         "reviewedExactExamples": exact_examples[:2],
+        "reviewedAlignedReferences": aligned_references[:2],
+    }
+
+
+def alignment_summary(hits: Iterable[dict[str, Any]], cursor_sequence: int | None) -> dict[str, Any]:
+    hit_list = list(hits)
+    best = hit_list[0] if hit_list else None
+    if best is None:
+        confidence = "none"
+    elif best.get("exactMatch"):
+        confidence = "exact"
+    elif best.get("phraseMatch") or float(best.get("score") or 0) >= 2.0:
+        confidence = "high"
+    else:
+        confidence = "low"
+    suggested_cursor = (
+        best.get("sequence") if best and confidence in {"exact", "high"} else cursor_sequence
+    )
+    return {
+        "strategy": best.get("alignmentStrategy") if best else "no_match",
+        "previousCursor": cursor_sequence,
+        "suggestedCursor": suggested_cursor,
+        "cursorAdvanced": suggested_cursor is not None and suggested_cursor != cursor_sequence,
+        "confidence": confidence,
+        "matchedSegmentId": best.get("segmentId") if best else None,
     }

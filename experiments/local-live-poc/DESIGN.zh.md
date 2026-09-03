@@ -84,7 +84,7 @@ TranslationProvider: ollama | mlx_lm
 
 ## Context Pack
 
-Context pack 是候选知识库，不是整篇讲章 prompt。分三层：
+Context pack 是候选知识库，不是整篇讲章 prompt。周六与周日视为同一篇讲章的两个 delivery version：大纲和经文方向高度重合，但具体措辞、增删和现场发挥可能不同。分三层：
 
 | 层 | 来源 | 内容 |
 |---|---|---|
@@ -121,6 +121,29 @@ Saturday audio (SHA-256, immutable)
 - 相似但非完全相同的整句译文不注入；只返回命中证据和审核术语。
 - Weekly Pack 有明确 `validUntil`，周日结束后自动失效，不能长期污染 Core Pack。
 
+### 把周六内容用作顺序讲章地图
+
+Weekly Pack 中每个周六片段都有递增的 `sequence`，可选带 `sectionId` 和 `sectionTitle`。周日 gateway 不保存隐式会话状态；页面在每次请求中传回上次的 `cursorSequence`，因此现场和会后 replay 使用完全相同的输入，也能复现同一个检索结果。
+
+```text
+Sunday stable English + previous cursor
+  -> search Saturday segments near cursor (default +/- 8)
+  -> confident local match: suggest next cursor
+  -> no local match: global lexical fallback
+  -> terms / scripture / reviewed reference version
+  -> translate CURRENT SOURCE only
+```
+
+首版只做确定性的词汇重叠、短语命中和邻近加权，不引入 embeddings 或 vector DB。三种 replay policy 为：
+
+- `none`：不使用周六 pack，作为 A0。
+- `weekly_terms_v1`：只使用审核术语、审核经文和完全相同的审核译例，作为 A1。
+- `saturday_alignment_v1`：在 A1 基础上，把高置信、已审核的相邻周六双语片段作为“另一演讲版本参考”，作为 A2。
+
+只有英文完全相同的审核译文可成为 exact example。位置相邻或语义相近的审核译文不得直接输出，只能放入明确标注的 reference block；prompt 同时声明周六版本可能有增删，任何周日当前英文没有支持的内容都不得复制。机器译文在所有 policy 下都不进入 prompt。
+
+每个字幕事件额外记录 `previousCursor`、`suggestedCursor`、`alignmentStrategy`、`confidence`、`matchedSegmentId` 和 `contextPolicy`。这既能观察现场是否跑偏，也使回家后的 A0/A1/A2 比较无需重新猜测现场位置。
+
 会后晋级采用单向门槛：经过人工审核、来源授权且多场稳定的术语可以进入 Core Pack；整段音频、未经审核的字幕与单周预测不能自动晋级。每条记录保留周六音频 SHA-256、source id、segment id、时间范围、pack version 和审核状态。
 
 ## 会后 A/B
@@ -128,7 +151,7 @@ Saturday audio (SHA-256, immutable)
 现场只运行一条预先选定的链路。会后从同一份录音做两类 replay：
 
 - 端到端 replay：比较 ASR、切句或完整模型链路。
-- 冻结英文 replay：固定 `segmentId`、英文输入和分段，只比较 `contextPolicy=none` 与 `contextPolicy=retrieval_v1`。
+- 冻结英文 replay：固定 `segmentId`、英文输入、分段和 cursor 序列，比较 `none`、`weekly_terms_v1` 与 `saturday_alignment_v1`。
 
 A/B 必须固定模型、量化、解码参数、硬件和输入顺序。人工标签先只保留：A 更好、B 更好、相同、都不好，以及 `meaning_error`、`term_error`、`scripture_error`、`unsupported_addition`。
 
