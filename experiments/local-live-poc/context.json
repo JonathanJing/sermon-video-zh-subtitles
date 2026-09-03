@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "core": [],
+  "sunday": [],
+  "note": "Exact-match context entries will be added after the local model gateway is connected."
+}
