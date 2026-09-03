@@ -47,7 +47,7 @@ Browser microphone
 
 ### 当前 MacBook 与运行时选择
 
-2026-09-03 只读盘点：这台机器是 M1 Max、64 GB 内存；Ollama 本地 API `0.32.15` 正常响应，但当前没有已安装或驻留的模型；`ffmpeg 9.0.1` 已安装；MLX、MLX-LM、MLX Whisper 和 whisper.cpp 尚未安装。
+2026-09-03 最新只读盘点：这台机器是 M1 Max、64 GB 内存；Ollama 本地 API `0.33.3` 正常响应，已存在 `sermon-qwen35-4b-base-bf16:benchmark` 和 `sermon-hymt2-1.8b-q8:benchmark`；检查时 Qwen benchmark 正在驻留，因此本轮没有启动第二个模型干扰它。`ffmpeg 9.0.1` 已安装；MLX、MLX-LM、MLX Whisper 和 whisper.cpp 尚未安装。
 
 建议按两步推进，避免一次引入两个不确定运行时：
 
@@ -99,6 +99,29 @@ Context pack 是候选知识库，不是整篇讲章 prompt。分三层：
 - 当前英文始终是唯一 source of truth。
 - exact scripture/term/alias 优先；模糊命中只记录，不自动注入。
 - 每次记录 pack version、命中来源、分数和是否实际使用。
+
+### 周六直播如何进入 Weekly Pack
+
+可以进入，但需要把“证据”和“可注入内容”分开：
+
+```text
+Saturday audio (SHA-256, immutable)
+  -> English ASR segments
+  -> machine Chinese candidates
+  -> scripture / term annotations
+  -> weekly-pack.json
+  -> Sunday live English retrieval
+  -> approved context only
+```
+
+- 周六原始音频不进入 prompt；它作为 provenance、时间定位和会后 replay 母本。
+- 周六英文字幕用于检索相似片段，即使仍是机器稿也必须保留 `transcriptStatus`。
+- 周六机器中文只保存为 `candidateTargetTextZh`，默认 `canInjectTranslation=false`，避免把周六错误在周日放大。
+- 人工审核过的短语、经文引用和完全相同的双语片段可以进入 prompt。
+- 相似但非完全相同的整句译文不注入；只返回命中证据和审核术语。
+- Weekly Pack 有明确 `validUntil`，周日结束后自动失效，不能长期污染 Core Pack。
+
+会后晋级采用单向门槛：经过人工审核、来源授权且多场稳定的术语可以进入 Core Pack；整段音频、未经审核的字幕与单周预测不能自动晋级。每条记录保留周六音频 SHA-256、source id、segment id、时间范围、pack version 和审核状态。
 
 ## 会后 A/B
 

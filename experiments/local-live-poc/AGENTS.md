@@ -17,3 +17,5 @@ Build app UI in `src/`. Keep `.openai/hosting.json`, `worker/index.js`, `scripts
 - Do not add camera, pause, A/B controls, scripture sidebar, timeline review, cloud publishing, PDF/VTT/SRT export, authentication, or dashboards.
 - UI prototype recording may use browser `MediaRecorder`; the later local gateway is the source of truth for production PCM capture and model events.
 - Simulated captions must be visibly labeled as interface demo data and never presented as real local-model output.
+- Saturday livestream audio is immutable provenance and replay input. Its transcript and translation may build a short-lived Weekly Pack, but machine-generated Chinese is never prompt-injectable until reviewed.
+- Runtime retrieval may use Saturday English for matching. Translation prompts may inject only approved terms, verified scripture references, and reviewed exact bilingual examples; current live English remains the source of truth.
