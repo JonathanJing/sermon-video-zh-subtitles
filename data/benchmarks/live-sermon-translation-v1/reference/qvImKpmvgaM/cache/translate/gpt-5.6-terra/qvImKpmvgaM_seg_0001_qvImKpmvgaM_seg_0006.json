@@ -1,0 +1,172 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T03:18:40.154368+00:00",
+  "elapsedSeconds": 30.75,
+  "inputSha256": "67733723707c529ec1594a115edddc74127c51fde56b94a1228b0dd2972e61d4",
+  "modelRequested": "gpt-5.6-terra",
+  "promptVersion": "codex-conversation-sermon-translate-v1",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "contentType": "sermon",
+        "id": "qvImKpmvgaM_seg_0001",
+        "potentialAsrIssues": [
+          "“217 a.m.” likely means “2:17 a.m.”"
+        ],
+        "properNouns": [
+          {
+            "source": "Mariners",
+            "zh": "马林尔斯"
+          },
+          {
+            "source": "God",
+            "zh": "神"
+          },
+          {
+            "source": "Atlanta",
+            "zh": "亚特兰大"
+          },
+          {
+            "source": "Satan",
+            "zh": "撒但"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "嗨，马林尔斯线上会众。今天能和大家在一起，我非常兴奋。无论你在世界哪个角落观看，我祷告你此刻能感受到神在你生命中的恩宠和爱。几年前，我有一次我喜欢称为“濒死体验”的经历——严格说是夸张，但情感上很真实。那是在亚特兰大一家酒店的凌晨2点17分。我正熟睡着，梦见脆皮塔可和一头浓密的头发，突然，火警警报响了。它，它，它实在太响了。你知道，显然是撒但设计的火警警报。我是说，警笛大作，灯光闪烁。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "qvImKpmvgaM_seg_0002",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Bible",
+            "zh": "圣经"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "就像一支配着频闪灯的行进乐队。我立刻慌了，猛地从床上跳起来，胳膊肘撞到床头柜，小腿又磕在脚凳上。我喊出了些圣经里没有的话。我抓起背包，里面有手机、钱包和笔记本电脑，然后冲进走廊。这时我才发现忘了带房卡，而且只穿着运动短裤。所以你可以想象一下：我只穿短裤，背着一个背包。走廊里的其他人都穿戴整齐。我的意思是，有个人甚至还端着一个金鱼缸。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "qvImKpmvgaM_seg_0003",
+        "potentialAsrIssues": [],
+        "properNouns": [],
+        "scriptureRefs": [],
+        "zh": "不评判，完全尊重。接着我们像一群晕头转向的山羊一样挪到外面，在寒风中站了30分钟，终于有个消防员慢悠悠地走出来，像是刚做完按摩，他说：“一切安全。”我心想：“真的？就这样？就一句‘一切安全’？”连条热毛巾都没有？没有。没有一句“感谢你没死”，甚至连张心理治疗优惠券都不给我。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "qvImKpmvgaM_seg_0004",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Florida",
+            "zh": "佛罗里达"
+          },
+          {
+            "source": "Israelites",
+            "zh": "以色列人"
+          },
+          {
+            "source": "Egyptian",
+            "zh": "埃及"
+          },
+          {
+            "source": "Egypt",
+            "zh": "埃及"
+          },
+          {
+            "source": "God",
+            "zh": "神"
+          },
+          {
+            "source": "Moses",
+            "zh": "摩西"
+          },
+          {
+            "source": "I am",
+            "zh": "我是"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "他只是说：“你知道，你获救了。”从技术上说，没错，我获救了；但情绪上，我一点也不好。然后我还得赤着上身、背着背包站在前台，一个夜班职员盯着我，好像我是个来自佛罗里达的疯子。你知道，获救了，没错，彻底获救；但尊严完全毁了。我讲这个，是因为“安全了，却并不好受”这个概念，正描述了以色列人从埃及奴役中获救后的感受。他们安全了，却并不好受。今天是我们《出埃及记》系列的第四讲。第一周，Eric牧师很好地讲解了被囚在埃及的以色列人，以及神如何呼召摩西并启示祂的名字。祂是“我是”。第二周，Steve Bangley精彩地讲了"
+      },
+      {
+        "contentType": "sermon",
+        "id": "qvImKpmvgaM_seg_0005",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Egypt",
+            "zh": "埃及"
+          },
+          {
+            "source": "Kenton",
+            "zh": "肯顿"
+          },
+          {
+            "source": "Pharaoh",
+            "zh": "法老"
+          },
+          {
+            "source": "Israelites",
+            "zh": "以色列人"
+          },
+          {
+            "source": "God",
+            "zh": "神"
+          },
+          {
+            "source": "Red Sea",
+            "zh": "红海"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "瘟疫，以及埃及如何——你知道——本质上变成了一个谁也逃不出去的密室逃脱。然后上周，Kenton讲的是故事中好玩的部分：法老放了以色列人，随后又改变主意，追赶他们。正当以色列人看似走投无路时，神像拉拉链一样分开红海，带领他们穿过去，结果他们赞美神，还唱了很多歌。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "qvImKpmvgaM_seg_0006",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Israelites",
+            "zh": "以色列人"
+          },
+          {
+            "source": "God",
+            "zh": "神"
+          },
+          {
+            "source": "Exodus",
+            "zh": "出埃及记"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "但在今天的经文中，我们会看到事情开始有点转折。你看，以色列人自由了。他们获救后安全了，却并不好受。这对你今天很重要，因为我们整个系列一直在说：《出埃及记》的故事其实很像我们的故事。如果你是基督徒，你也经历过一次拯救。这是属灵的拯救：神因着祂的恩典赦免了你，并且赐给了你救恩。"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "qvImKpmvgaM_seg_0001",
+    "qvImKpmvgaM_seg_0002",
+    "qvImKpmvgaM_seg_0003",
+    "qvImKpmvgaM_seg_0004",
+    "qvImKpmvgaM_seg_0005",
+    "qvImKpmvgaM_seg_0006"
+  ],
+  "stage": "translate",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 12032,
+    "input_tokens": 16810,
+    "output_tokens": 1521,
+    "reasoning_output_tokens": 203
+  }
+}

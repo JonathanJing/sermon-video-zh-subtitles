@@ -1,0 +1,107 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T02:50:38.339385+00:00",
+  "elapsedSeconds": 19.781,
+  "inputSha256": "444b866ae81f2c613a315b93a874e9941703d971d05ddf56319c9b9d854a90bd",
+  "modelRequested": "gpt-5.6-terra",
+  "promptVersion": "codex-conversation-sermon-translate-v1",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "contentType": "sermon",
+        "id": "hAWaaBVaMzY_seg_0049",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Jesus",
+            "zh": "耶稣"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "所以，我想请你此刻无论身在何处，都开始感谢耶稣，因为祂能为你的生命赋予意义。为你的友谊、工作、家庭，甚至未来赋予意义。只要感谢祂。这两个字为我们与祂的关系开启了许多可能。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hAWaaBVaMzY_seg_0050",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "God",
+            "zh": "上帝"
+          },
+          {
+            "source": "Holy Spirit",
+            "zh": "圣灵"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "然后，我想请你想想：上帝是否只是你生命的一部分？只在你需要祂时才临在，还是上帝是你经历整个人生的世界观？敬畏上帝，遵守祂的命令。提醒是：因着住在你里面的圣灵，祂与你同在。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hAWaaBVaMzY_seg_0051",
+        "potentialAsrIssues": [],
+        "properNouns": [],
+        "scriptureRefs": [],
+        "zh": "接下来，我想请你想想，也许你生命中那个隐藏的事。那件你从未说出口的事，也许是你曾经想过或经历过的事。也许是那件你想得到一些认可的秘密善行。你希望有人看见你，好让你体验到因行大善举而被发现的美妙感觉。那一刻的认可，是一种强烈的经历。其实，那是一种强烈的情绪。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hAWaaBVaMzY_seg_0052",
+        "potentialAsrIssues": [
+          "“allow him allow him” appears to contain a repeated phrase."
+        ],
+        "properNouns": [
+          {
+            "source": "Jesus",
+            "zh": "耶稣"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "把它带到耶稣面前，让祂为你所做的感到无比喜悦。把它交托、献上，作为对祂敬拜的行动。又或者，是你里面那破碎而隐藏的部分，那件你知道无法独自得医治的事。此刻，把它带到你心思的前面会是什么样子？要知道耶稣在这里，你现在就在祂的同在中。把它带给祂。祂可能想为你做什么？"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hAWaaBVaMzY_seg_0053",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "God",
+            "zh": "上帝"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "临近结束、在我们有机会唱歌之前，我想带你做一个很简单的操练，叫作呼吸祷告。这是一种我们在人生任何时刻都可以运用的操练，提醒我们上帝在生命中持续同在。我生命中曾在这些时候这样做过：感到害怕时、感到不堪重负时、感到焦虑时，甚至感到孤单时。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hAWaaBVaMzY_seg_0054",
+        "potentialAsrIssues": [],
+        "properNouns": [],
+        "scriptureRefs": [],
+        "zh": "我就停下来祷告：“我的上帝，我的一切。”现在，吸气时念“我的上帝”，呼气时念“我的一切”。你愿意此刻试试吗？再试一次。就念：“我的上帝，我的一切。”"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "hAWaaBVaMzY_seg_0049",
+    "hAWaaBVaMzY_seg_0050",
+    "hAWaaBVaMzY_seg_0051",
+    "hAWaaBVaMzY_seg_0052",
+    "hAWaaBVaMzY_seg_0053",
+    "hAWaaBVaMzY_seg_0054"
+  ],
+  "stage": "translate",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 12032,
+    "input_tokens": 16623,
+    "output_tokens": 920,
+    "reasoning_output_tokens": 86
+  }
+}

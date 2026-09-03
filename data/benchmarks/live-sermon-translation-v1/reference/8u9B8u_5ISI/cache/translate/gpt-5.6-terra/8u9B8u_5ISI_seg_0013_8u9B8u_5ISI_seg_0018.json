@@ -1,0 +1,115 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T02:58:40.984732+00:00",
+  "elapsedSeconds": 29.052,
+  "inputSha256": "dab934dd7a1e466421fa6a5bd1a4d794c8321d7e918036f790bf724c9295af4e",
+  "modelRequested": "gpt-5.6-terra",
+  "promptVersion": "codex-conversation-sermon-translate-v1",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "contentType": "sermon",
+        "id": "8u9B8u_5ISI_seg_0013",
+        "potentialAsrIssues": [],
+        "properNouns": [],
+        "scriptureRefs": [
+          "John 17",
+          "约翰福音17章",
+          "Ephesians 4",
+          "以弗所书4章"
+        ],
+        "zh": "与他们合一。我们把他们看作在基督里的弟兄姐妹。我们同属基督的身体，但我们不是宗派教会，而他们属于一个宗派。所以，我们与他们没有可见的合一，却同属基督的身体。所以，如果这是真的，为什么世上有这么多宗派？当耶稣在约翰福音17章祷告时，他祈求的不是可有可无的事。"
+      },
+      {
+        "contentType": "scripture_quote",
+        "id": "8u9B8u_5ISI_seg_0014",
+        "potentialAsrIssues": [],
+        "properNouns": [],
+        "scriptureRefs": [
+          "John 17",
+          "约翰福音17章",
+          "John 17:20",
+          "约翰福音17:20"
+        ],
+        "zh": "他祈求的是一件至关重要的事：我们的合一。后来保罗在以弗所书4章劝勉我们，要竭力保守合一和基督的联结。我们会看这两段经文。那么，在这史上最长的引言之后，我们就进入这两段经文。第一，我们来看约翰福音17章。请翻开或打开圣经，跟我一起看。屏幕上也会显示，不过你可能想读完整段约翰福音17章。在约翰福音17章，耶稣实际上是在为将来的信徒祷告，包括我们。他在两千年前的约翰福音17章为我们祷告——我是说，也仍在今天为我们祷告。但约翰福音17章20节说：“我不但为这些人祈求，也为那些因他们的话信我的人祈求。”他在为门徒祷告，也为那些因他们的话而相信的人祷告。这一点非常关键。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "8u9B8u_5ISI_seg_0015",
+        "potentialAsrIssues": [],
+        "properNouns": [],
+        "scriptureRefs": [
+          "John 17:21",
+          "约翰福音17:21"
+        ],
+        "zh": "别错过。所以，耶稣为两千年后的所有信徒祷告。这意味着包括所有不同宗派的信徒。耶稣为不同教会、不同传统中的我们所有人祷告，而且他现在仍然如此。这很重要，因为这里所说的是一种合一：不是一致，而是在基督里共享生命。我们在约翰福音17章21节确实看到了这一点。经文这样说：愿他们——就是我们，所有这些基督徒和不同宗派——都合而为一，正如父你在我里面，我在你里面；愿他们也在我们里面，使世人可以信你差了我来。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "8u9B8u_5ISI_seg_0016",
+        "potentialAsrIssues": [],
+        "properNouns": [],
+        "scriptureRefs": [],
+        "zh": "要达到这一点，我们就得承认：合一并不意味着我们都会用同样的方式敬拜，或以同样的方式组织教会。合一不是整齐划一。从圣经的角度看，合一是在基督里共享生命。但既然如此，为什么有这么多宗派？或许有几个重要原因。一个是分歧。你知道，我们看得并不完全，有时彼此会有分歧。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "8u9B8u_5ISI_seg_0017",
+        "potentialAsrIssues": [
+          "“disunityity”疑似“disunity”的口误或识别错误。"
+        ],
+        "properNouns": [],
+        "scriptureRefs": [],
+        "zh": "有时是不合一，因为不完美的人带领不完美的教会。现在，我想谈谈人们如何进入不同宗派，因为这是我们正在讨论的问题。通常有四类原因使人们进入不同宗派。稍后我们会更深入探讨神学这一类，但大致上有四类差异。为回答为什么会有这么多宗派这个问题，我们来看看人们进入不同宗派的原因。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "8u9B8u_5ISI_seg_0018",
+        "potentialAsrIssues": [
+          "“We threw that chart”疑似“we went through that chart”。"
+        ],
+        "properNouns": [
+          {
+            "source": "Protestants",
+            "zh": "新教徒"
+          },
+          {
+            "source": "Catholics",
+            "zh": "天主教徒"
+          },
+          {
+            "source": "evangelical",
+            "zh": "福音派"
+          },
+          {
+            "source": "mainline Protestant",
+            "zh": "主流新教"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "第一类是神学问题。确实有一些神学问题使我们处于不同宗派，对吧？新教徒因根本性的神学问题而与天主教徒分开，例如：救恩是否唯独恩典、唯独信心？圣经是否是我们唯一的权威？新教徒——我们刚才看过那张图——也因洗礼的方式和意义等问题而分开。有意思的是，在现代，神学上的分歧越来越出现在福音派教会、福音派宗派与主流新教宗派之间，因为主流新教宗派已经偏离了一些福音派基督徒仍然持守的教导。"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "8u9B8u_5ISI_seg_0013",
+    "8u9B8u_5ISI_seg_0014",
+    "8u9B8u_5ISI_seg_0015",
+    "8u9B8u_5ISI_seg_0016",
+    "8u9B8u_5ISI_seg_0017",
+    "8u9B8u_5ISI_seg_0018"
+  ],
+  "stage": "translate",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 12032,
+    "input_tokens": 17135,
+    "output_tokens": 1394,
+    "reasoning_output_tokens": 147
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "schemaVersion": "live-sermon-hymt2-baseline-config-v1",
+  "goalId": "BENCH-LIVE-ST-V1",
+  "systemId": "B4-HyMT2-1.8B",
+  "configurationStatus": "frozen",
+  "frozenAt": "2026-09-03T10:38:15-07:00",
+  "referenceUsedForGeneration": false,
+  "requestedModel": {
+    "modelId": "tencent/Hy-MT2-1.8B",
+    "observedRevisionAtTestTime": "9a341cd1b679d3efd23b46e847b01745a71ed792",
+    "license": "apache-2.0",
+    "modelCard": "https://huggingface.co/tencent/Hy-MT2-1.8B"
+  },
+  "runtimeModel": {
+    "repository": "tencent/Hy-MT2-1.8B-GGUF",
+    "revision": "1cd5208700acedef4ef93019b6cfc148b8522d45",
+    "artifact": "Hy-MT2-1.8B-Q8_0.gguf",
+    "artifactBytes": 1908528192,
+    "artifactSha256": "5c3fe0b1408a5ceb0143184ef247b11b579c525f4b02b060e6c851bb76fef1a4",
+    "quantization": "Q8_0",
+    "declaredBaseModel": "tencent/Hy-MT2-1.8B",
+    "exactBaseRevisionDeclaredByRuntimeRepository": false
+  },
+  "runtime": {
+    "hostClass": "DGX Spark GB10",
+    "engine": "llama.cpp",
+    "engineCommit": "5ecbe1ac17ec0484c5b44af0bd580cdc9c428ed4",
+    "bindAddress": "127.0.0.1",
+    "testPort": 8002,
+    "productionPortExcluded": 8000,
+    "contextTokens": 32768,
+    "parallel": 1,
+    "flashAttention": true,
+    "keyCacheType": "f16",
+    "valueCacheType": "f16",
+    "jinjaChatTemplate": true,
+    "warmup": false,
+    "serverTimeoutSeconds": 1800
+  },
+  "generation": {
+    "requestMode": "openai_compatible_chat_completions",
+    "promptVersion": "hymt2-official-default-translation-en-chinese-v1",
+    "promptSha256": "670e3a0f3c62e0db54a76e3495d36c31d5ad5fda9ad1449e4e898f4011cd0a26",
+    "systemPrompt": null,
+    "temperature": 0.7,
+    "topP": 0.6,
+    "topK": 20,
+    "repeatPenalty": 1.05,
+    "seed": 42,
+    "maxTokens": 1024,
+    "vendorRecommendedMaxTokens": 4096,
+    "maxTokensPolicy": "benchmark_cap_to_match_A0_and_capture_runaway_outputs",
+    "retryCount": 2
+  },
+  "inputs": {
+    "source": "a0-config.json#inputs",
+    "segmentCount": 239,
+    "sourceAndFrozenEnglishReferenceIdTextEqualityVerified": true
+  },
+  "comparisonPolicy": {
+    "classification": "external_specialized_text_translation_baseline",
+    "a0Membership": false,
+    "sameInputSegmentsAsA0": true,
+    "sameHardwareAndEngineAsA0": true,
+    "modelNativePromptAndSampling": true,
+    "directQualityComparisonCaveat": "A0 uses BF16 and deterministic base-model prompting; Hy-MT2 uses official Q8_0, native chat template, and vendor-recommended sampling with a fixed seed."
+  }
+}

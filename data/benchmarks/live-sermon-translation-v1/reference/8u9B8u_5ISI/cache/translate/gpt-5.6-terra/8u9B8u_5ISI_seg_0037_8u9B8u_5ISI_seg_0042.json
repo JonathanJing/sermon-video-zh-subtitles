@@ -1,0 +1,122 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T03:00:57.669595+00:00",
+  "elapsedSeconds": 35.553,
+  "inputSha256": "d62928659841d6c92455c21ea4988eea0319e94d4b2bbc176e7b9018d38be9cc",
+  "modelRequested": "gpt-5.6-terra",
+  "promptVersion": "codex-conversation-sermon-translate-v1",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "contentType": "sermon",
+        "id": "8u9B8u_5ISI_seg_0037",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Paul",
+            "zh": "保罗"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "但你可以留下来，可以成为其中一员。但这大概需要你有些耐心，说：“我要承认，别人可能有不同的看法，而我可以彼此忍耐。”这甚至有个说法：彼此包容。有些译本实际上译作彼此容忍。字面意思就是彼此容忍。我很喜欢“彼此容忍”是在圣经里的，因为有时我们就是这么做的。也许保罗最先说了这个词，但我也听过很多次。所以，我们的共同点远比使我们分开的事更多。我并不乐见有这么多宗派。但我在看更大的图景，我希望我们带着一种紧迫感来行动。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "8u9B8u_5ISI_seg_0038",
+        "potentialAsrIssues": [
+          "“Ephesians 4:es 4-6” is likely a disfluent reference to Ephesians 4:4-6."
+        ],
+        "properNouns": [
+          {
+            "source": "Ephesians",
+            "zh": "以弗所书"
+          }
+        ],
+        "scriptureRefs": [
+          "Ephesians 4:3",
+          "Ephesians 4:4-6"
+        ],
+        "zh": "这紧迫感就是要竭尽全力。竭尽全力。这正是经文《以弗所书》4章3节所说的：“竭力用和平彼此联络，保守圣灵所赐合而为一的心。”《以弗所书》4章3节。这就是我们蒙召要做的。合一需要一些属灵的汗水；它是主动的，不是被动的。现在，我很喜欢《以弗所书》第4章的一点，就是它用七个“独一”的宣认来讲我们合一的根基。我知道这听起来有点奇怪，但请跟着我。根基就是这七个“独一”的宣认。让我们看《以弗所书》4章4至6节：身体只有一个，圣灵只有一个，正如你们蒙召，同有一个盼望；一"
+      },
+      {
+        "contentType": "sermon",
+        "id": "8u9B8u_5ISI_seg_0039",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Jesus",
+            "zh": "耶稣"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "主，一个信仰，一个洗礼，一位神，就是众人的父，超乎众人之上，贯乎众人之中，也住在众人之内。我很喜欢这个。你确实能从这些“独一”中清楚看见，对吧？一个身体，对吧？这就是我到目前为止所说的：一个身体。我们都在这身体里。一个圣灵，一个盼望。我很喜欢我们有这共同的盼望。一位主，耶稣是主。一个信仰，这是共同的信仰。有时人们把信仰说成复数，好像我的宗派是另一种信仰吗？不，不是。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "8u9B8u_5ISI_seg_0040",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Jesus",
+            "zh": "耶稣"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "我们同属一个信仰，同有一个洗礼，一位神，就是众人的父。正如兄弟姐妹有共同的父母，我们这些跟随耶稣的人也是如此。这并不会消除我们在教会结构、敬拜方式或神学差异上的分歧。就像我女儿们的争吵不会抹去她们的姐妹关系一样；她们仍然是姐妹。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "8u9B8u_5ISI_seg_0041",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Jesus",
+            "zh": "耶稣"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "所以，合一建立在共同的身份上——我们是谁。我们是这身体里一同跟随耶稣的人；也建立在共同的宣认上——我们相信什么。因此，现在我们蒙召要活出已经拥有的合一。我们已经在这身体里了，所以蒙召要活出已经拥有的合一。但这并不总是那么容易。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "8u9B8u_5ISI_seg_0042",
+        "potentialAsrIssues": [
+          "“Marriage Church” may be an ASR rendering of a church name."
+        ],
+        "properNouns": [
+          {
+            "source": "Marriage Church",
+            "zh": "Marriage 教会"
+          },
+          {
+            "source": "Jesus",
+            "zh": "耶稣"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "所以，我不知道你的背景。我不知道你是否经历过某个宗派传统。我不知道你是否来到教会，来到这里的 Marriage 教会，而你仍认为自己属于某个宗派传统。我们很高兴你在这里，欢迎你来到这个家、这个群体。但使我们合一的是这共同的宣认、这共同的群体：我们是在一起的。这是共同的身份——我们是谁；也是我们在基督里共同相信什么的宣认。其实，作为跟随耶稣的人，我们拥有一件美好的事：我们有机会看见这种可见的合一，借着一起领受主的晚餐表达出来。所以，这里有饼和杯。我们可以在饼和杯中参与、领受一件两千年来基督徒一直共同领受的事。"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "8u9B8u_5ISI_seg_0037",
+    "8u9B8u_5ISI_seg_0038",
+    "8u9B8u_5ISI_seg_0039",
+    "8u9B8u_5ISI_seg_0040",
+    "8u9B8u_5ISI_seg_0041",
+    "8u9B8u_5ISI_seg_0042"
+  ],
+  "stage": "translate",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 12032,
+    "input_tokens": 17028,
+    "output_tokens": 1724,
+    "reasoning_output_tokens": 458
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "apiKeyMaterialIncluded": false,
+  "asrModel": "gpt-transcribe",
+  "audioAuditSha256": "2f06616f80af2aec74f910d9d80edc794678d9a84298e377119d8572af4c4558",
+  "audioDownloadStatus": "downloaded_public_mweb_format_18_fallback",
+  "credentialSource": "existing_env_file",
+  "decisionCounts": {
+    "audio_evidence_supports_caption": 1
+  },
+  "eligibleForTraining": false,
+  "englishReferenceDraftSha256": "6b8eed85f3fc9e53f32e9334e10b3d81109c0173aa6a2cf856381cfbca182467",
+  "generatedAt": "2026-09-02T23:09:13.270732+00:00",
+  "humanApprovalClaimed": false,
+  "schemaVersion": "live-sermon-benchmark-source-audio-audit-v1",
+  "selectedSegmentCount": 1,
+  "sourceAudioSha256": "12f9223c9481146b63f71191da42c0e7335426bd96c92c85951d657cc3486d03",
+  "sourceSegmentsSha256": "b800e37f09e2e760200528fb2bfdd67840040023b9489f84fcad38a57d6590c1",
+  "status": "source_audio_audit_completed",
+  "totalSegmentCount": 49,
+  "videoId": "8u9B8u_5ISI"
+}

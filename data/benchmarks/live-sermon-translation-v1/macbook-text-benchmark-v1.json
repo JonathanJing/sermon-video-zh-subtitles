@@ -1,0 +1,153 @@
+{
+  "schemaVersion": "live-sermon-macbook-text-benchmark-v1",
+  "goalId": "BENCH-LIVE-ST-V1",
+  "benchmarkId": "BENCH-LIVE-ST-MACBOOK-TEXT-V1",
+  "status": "four_translation_only_runs_completed_replay_pending",
+  "createdAt": "2026-09-03T12:11:23-07:00",
+  "hardwareProfile": {
+    "path": "macbook-m1-max-64gb-profile.json",
+    "sha256": "b1c26e1ba99cf625ed69ab930b1278e4a9d28643c68247a9f18e0afd4d658f35"
+  },
+  "datasetReuse": {
+    "reused": true,
+    "sourceBenchmarkId": "BENCH-LIVE-ST-V1",
+    "split": "test",
+    "untouchedTestRequired": true,
+    "segmentCount": 239,
+    "sermonCount": 5,
+    "generationInput": "frozen_english_reference_only",
+    "referenceUsedForGeneration": false,
+    "chineseReferenceUse": "post_generation_scoring_only",
+    "trainingOrPromptTuningAllowed": false,
+    "inputFiles": [
+      {
+        "sermonId": "8u9B8u_5ISI",
+        "path": "reference/8u9B8u_5ISI/segments.en.reference.jsonl",
+        "sha256": "b800e37f09e2e760200528fb2bfdd67840040023b9489f84fcad38a57d6590c1",
+        "segmentCount": 49
+      },
+      {
+        "sermonId": "hAWaaBVaMzY",
+        "path": "reference/hAWaaBVaMzY/segments.en.reference.jsonl",
+        "sha256": "a45da5b536b549021a33c85d7bcf525bcb04549a831d208c30699ffcf2154f0c",
+        "segmentCount": 56
+      },
+      {
+        "sermonId": "hoeJTwl-EJg",
+        "path": "reference/hoeJTwl-EJg/segments.en.reference.jsonl",
+        "sha256": "46fcd8a1a0868d4f7069c174264939b239b8634897716d13dd5a706131a07104",
+        "segmentCount": 57
+      },
+      {
+        "sermonId": "qvImKpmvgaM",
+        "path": "reference/qvImKpmvgaM/segments.en.reference.jsonl",
+        "sha256": "aeec58d6e74d124511f427ef1290b4885a01693f1147faed8f32b817c2247ee2",
+        "segmentCount": 39
+      },
+      {
+        "sermonId": "z_UoOx-6mz4",
+        "path": "reference/z_UoOx-6mz4/segments.en.reference.jsonl",
+        "sha256": "5ccbb6643fda88fabed7431028034b895e58d811a1e00e6edee8443b30ec7e0e",
+        "segmentCount": 38
+      }
+    ]
+  },
+  "supportedBackends": {
+    "ollama": {
+      "protocol": "ollama_api_chat_or_raw_generate",
+      "defaultBaseUrl": "http://127.0.0.1:11434",
+      "observedServerVersion": "0.33.3",
+      "observedHomebrewCliVersion": "0.33.2",
+      "observedRunning": true,
+      "observedModelCount": 4,
+      "readyForModelRun": true
+    },
+    "mlx": {
+      "protocol": "openai_compatible_chat_completions",
+      "defaultBaseUrl": "http://127.0.0.1:8080/v1",
+      "installation": "isolated_uv_tool",
+      "mlxInstalled": true,
+      "mlxVersion": "0.32.2",
+      "mlxLmInstalled": true,
+      "mlxLmVersion": "0.31.3",
+      "gpuComputeSmokePassed": true,
+      "serverCliSmokePassed": true,
+      "readyForModelRun": false
+    }
+  },
+  "eligibility": {
+    "backendRule": "a_model_must_complete_the_primary_gates_on_ollama_or_mlx",
+    "crossBackendPerformanceComparable": false,
+    "sameModelCrossBackendRuns": "separate_run_ids_and_separate_performance_rows",
+    "requiredStages": [
+      "10_segment_smoke",
+      "239_segment_translation_only",
+      "co_resident_asr_translation_replay",
+      "full_sermon_1x_replay",
+      "50_to_60_minute_soak"
+    ]
+  },
+  "candidateOrder": [
+    {
+      "priority": 1,
+      "modelId": "tencent/Hy-MT2-1.8B",
+      "preferredArtifact": "official_Q8_0_GGUF",
+      "preferredBackend": "ollama",
+      "status": "translation_only_completed_replay_pending",
+      "runDirectory": "runs/macbook-text-baselines/hymt2-1.8b-q8-ollama-full-20260903"
+    },
+    {
+      "priority": 2,
+      "modelId": "xiaomi-research/MiLMMT-46-4B-v1.0",
+      "preferredArtifact": "pinned_community_Q8_0_GGUF",
+      "preferredBackend": "ollama",
+      "status": "translation_only_completed_replay_pending",
+      "runDirectory": "runs/macbook-text-baselines/milmmt-46-4b-v1-q8-ollama-full-20260903"
+    },
+    {
+      "priority": 3,
+      "modelId": "Qwen/Qwen3.5-4B-Base",
+      "preferredArtifact": "frozen_BF16_GGUF_for_A0_comparability",
+      "preferredBackend": "ollama",
+      "status": "translation_only_completed_replay_pending",
+      "runDirectory": "runs/macbook-text-baselines/qwen35-4b-base-bf16-ollama-full-20260903"
+    },
+    {
+      "priority": 4,
+      "modelId": "Qwen/Qwen3.5-9B-Base",
+      "preferredArtifact": "frozen_BF16_GGUF_for_A0_comparability",
+      "preferredBackend": "ollama",
+      "status": "translation_only_completed_replay_pending",
+      "runDirectory": "runs/macbook-text-baselines/qwen35-9b-base-bf16-ollama-full-20260903"
+    }
+  ],
+  "tools": {
+    "runner": {
+      "path": "../../../scripts/run_macbook_sermon_text_benchmark.py",
+      "sha256": "d5c018d09954d92b36e0cad20223685370a28d8c668c696dc01c3f6ce9991aab"
+    },
+    "scorer": {
+      "path": "../../../scripts/score_sermon_text_benchmark.py",
+      "sha256": "7374cfbed7af4b199a590df2c18d7674172fe32542cde5206dbc5a0938af4a13"
+    },
+    "resourceSampler": {
+      "path": "../../../scripts/sample_macbook_resources.py",
+      "sha256": "6b612e00f40289d73bc703b25465d76abe0750bb6a5295659d48f5bcd08dea57"
+    }
+  },
+  "resultRoot": "runs/macbook-text-baselines",
+  "primaryLeaderboardRunCount": 4,
+  "latestCompletedRun": {
+    "systemId": "MB-B4-MiLMMT-46-4B-v1-Q8-Ollama",
+    "directory": "runs/macbook-text-baselines/milmmt-46-4b-v1-q8-ollama-full-20260903",
+    "predictionCount": 239,
+    "errorCount": 0,
+    "bleuZh": 35.3638,
+    "chrf2": 33.468,
+    "decodeTokensPerSecond": 54.753,
+    "peakProcessTreeRssGiB": 13.1274,
+    "swapGrowthGiB": 0.0,
+    "translationOnlyResourceGatePassed": true,
+    "productionResourceGatePassed": false
+  }
+}

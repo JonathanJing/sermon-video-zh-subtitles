@@ -1,0 +1,104 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T02:49:27.935908+00:00",
+  "elapsedSeconds": 27.108,
+  "inputSha256": "1f2f84b4928fa53995b9a8922bd50e0630bdb46429646e1574678ba46f6156b4",
+  "modelRequested": "gpt-5.6-terra",
+  "promptVersion": "codex-conversation-sermon-translate-v1",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "contentType": "sermon",
+        "id": "hAWaaBVaMzY_seg_0031",
+        "potentialAsrIssues": [
+          "“The one God who intervened in this moment, who wrote this” wording is semantically unclear and may be mistranscribed."
+        ],
+        "properNouns": [
+          {
+            "source": "Ecclesiastes",
+            "zh": "传道书"
+          },
+          {
+            "source": "Holy Spirit",
+            "zh": "圣灵"
+          }
+        ],
+        "scriptureRefs": [
+          "Ecclesiastes 12:14"
+        ],
+        "zh": "现在，第14节的结尾很有意思。这是整卷书的最后一节。让我提醒你它说了什么：它说：“因为人所做的事，连一切隐藏的事，无论是善是恶，神都必审问。”这听起来可能有点可怕，也有些令人畏惧；事实上，对《传道书》最初的听众来说确实如此。你看，经文说，在圣灵面前，没有什么是遮掩、覆盖或秘密的。那位在此刻介入、写下这些话的独一真神，就是住在你里面的同一位圣灵。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hAWaaBVaMzY_seg_0032",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Jesus",
+            "zh": "耶稣"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "这意味着，你生命中没有任何事是隐藏的。没有什么会让他意外；而对我们这些与耶稣有关系的人来说，美妙之处在于，尽管没有什么意外，恩典仍赐给我们。所以，这卷书在最后的副歌中，已经从“虚空”——那幅如同雾气和徒劳的图画——转而指向敬畏神；现在牧者要告诉我们原因。因为神必审问一切行为，所以你我应当遵守他的命令，应当爱他、敬畏他。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hAWaaBVaMzY_seg_0033",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Instagram",
+            "zh": "Instagram"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "因此，智慧是必要的。要敬畏他，遵守他的命令，因为神要把一切都显明出来。现在，我们有些人习惯把自己所想的一切都公开分享；另一些人则把某些事留给私下交谈。接下来我举几个例子时，你可以想想自己属于哪一种。比如，很多人喜欢在Instagram上发度假或一家新咖啡店。这些都是很公开的想法，很多人也很感激看到这些——除非你在度假而我们没有。那对其余的我们来说，真是伤心的一刻。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hAWaaBVaMzY_seg_0034",
+        "potentialAsrIssues": [],
+        "properNouns": [],
+        "scriptureRefs": [],
+        "zh": "但你生命中也有些事，不想四处分享，却绝对会告诉亲密的朋友。比如你在生命中所盼望、所梦想的事，也许还有一些恐惧。还有些事，你甚至不确定该不该说出口。所以，对我们这些已婚的人来说，我们会和配偶谈这些，对吧？这些事你会说：“我有时会对我妻子说，我偷偷希望那些计划会被取消，对吧？”我不会告诉所有人，但我确实希望日程表上有些事情能取消，对吧？或者最近有一次，我到了这个年纪，就跟妻子说：“我是不是本来就该看得到自己的眉毛？”"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hAWaaBVaMzY_seg_0035",
+        "potentialAsrIssues": [],
+        "properNouns": [],
+        "scriptureRefs": [],
+        "zh": "它们好像在我脸上投下阴影。这原本是私下的谈话，现在我却公开说出来了。但最后，还有一些事是你我选择祷告的。所以，有公开的事，也有我们在亲密关系中分享的个人事情，然后我们会发现一些想带到神面前的事。这是大多数人属灵生命的轨迹：有些事，我是留给神的。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hAWaaBVaMzY_seg_0036",
+        "potentialAsrIssues": [],
+        "properNouns": [],
+        "scriptureRefs": [],
+        "zh": "但这恰恰与真实的情况、与这段经文一直在教导的相反。在他面前没有什么隐藏的；事实上，就连你以为藏起来的事，他也看得见。然而，对我们这些相信的人来说，这一切都是恩典。如果我们的门徒训练、我们与神的关系受到限制，是因为我们以为神只知道我们带到他面前的事呢？"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "hAWaaBVaMzY_seg_0031",
+    "hAWaaBVaMzY_seg_0032",
+    "hAWaaBVaMzY_seg_0033",
+    "hAWaaBVaMzY_seg_0034",
+    "hAWaaBVaMzY_seg_0035",
+    "hAWaaBVaMzY_seg_0036"
+  ],
+  "stage": "translate",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 15104,
+    "input_tokens": 16922,
+    "output_tokens": 1294,
+    "reasoning_output_tokens": 216
+  }
+}

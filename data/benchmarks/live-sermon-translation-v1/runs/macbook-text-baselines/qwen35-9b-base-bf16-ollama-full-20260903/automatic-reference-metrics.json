@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "live-sermon-text-automatic-metrics-v1",
+  "generatedAt": "2026-09-03T21:19:35.354164+00:00",
+  "systemId": "MB-A0-Qwen3.5-9B-Base-Ollama-BF16",
+  "referenceUsedForGeneration": false,
+  "referenceUsedForScoring": true,
+  "referenceStatus": "sol_reviewed_audio_audited_not_human_gold",
+  "predictionSha256": "bb9166588bf813513422f19850f657e3dfa8e2de97e646a74e57964f57580899",
+  "tool": {
+    "name": "sacrebleu",
+    "version": "2.5.1"
+  },
+  "metrics": {
+    "bleuSignature": "nrefs:1|case:mixed|eff:yes|tok:zh|smooth:exp|version:2.5.1",
+    "chrfSignature": "nrefs:1|case:mixed|eff:yes|nc:6|nw:0|space:no|version:2.5.1",
+    "bleuZh": 43.254,
+    "chrf2": 37.4552,
+    "strictAnnotatedTermRecall": {
+      "definition": "Count of properNouns[].zh exact substrings present in the candidate divided by all annotated occurrences. Valid variants are not credited.",
+      "hitCount": 354,
+      "annotationCount": 480,
+      "percent": 73.75
+    }
+  },
+  "perSermon": [
+    {
+      "sermonId": "8u9B8u_5ISI",
+      "segmentCount": 49,
+      "bleuZh": 44.9948,
+      "chrf2": 38.7349,
+      "strictAnnotatedTermHitCount": 66,
+      "strictAnnotatedTermCount": 105,
+      "strictAnnotatedTermRecallPercent": 62.8571
+    },
+    {
+      "sermonId": "hAWaaBVaMzY",
+      "segmentCount": 56,
+      "bleuZh": 42.0362,
+      "chrf2": 36.2679,
+      "strictAnnotatedTermHitCount": 57,
+      "strictAnnotatedTermCount": 71,
+      "strictAnnotatedTermRecallPercent": 80.2817
+    },
+    {
+      "sermonId": "hoeJTwl-EJg",
+      "segmentCount": 57,
+      "bleuZh": 41.2808,
+      "chrf2": 35.8491,
+      "strictAnnotatedTermHitCount": 77,
+      "strictAnnotatedTermCount": 106,
+      "strictAnnotatedTermRecallPercent": 72.6415
+    },
+    {
+      "sermonId": "qvImKpmvgaM",
+      "segmentCount": 39,
+      "bleuZh": 44.7005,
+      "chrf2": 38.8169,
+      "strictAnnotatedTermHitCount": 81,
+      "strictAnnotatedTermCount": 104,
+      "strictAnnotatedTermRecallPercent": 77.8846
+    },
+    {
+      "sermonId": "z_UoOx-6mz4",
+      "segmentCount": 38,
+      "bleuZh": 43.3863,
+      "chrf2": 37.8031,
+      "strictAnnotatedTermHitCount": 73,
+      "strictAnnotatedTermCount": 94,
+      "strictAnnotatedTermRecallPercent": 77.6596
+    }
+  ]
+}

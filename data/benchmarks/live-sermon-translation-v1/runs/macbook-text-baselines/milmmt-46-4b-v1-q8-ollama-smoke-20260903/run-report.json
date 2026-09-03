@@ -1,0 +1,84 @@
+{
+  "artifactSha256": "92796e263e22461c273c9f964ba4c1454d8dc764a482af60bc1ad9c269d9e7d0",
+  "backend": "ollama-generate",
+  "baseUrl": "http://127.0.0.1:11434",
+  "completedAt": "2026-09-03T21:27:58.436436+00:00",
+  "containsCjkCount": 10,
+  "errorCount": 0,
+  "hardwareProfileId": "macbook-pro-m1-max-64gb-v1",
+  "latencySeconds": {
+    "max": 3.756,
+    "mean": 2.815,
+    "p50": 2.587,
+    "p90": 3.644,
+    "p95": 3.756,
+    "total": 28.154
+  },
+  "maxTokens": 1024,
+  "model": "sermon-milmmt-46-4b-v1-q8:benchmark",
+  "modelId": "xiaomi-research/MiLMMT-46-4B-v1.0",
+  "nonemptyCount": 10,
+  "predictionCount": 10,
+  "predictionPath": "data/benchmarks/live-sermon-translation-v1/runs/macbook-text-baselines/milmmt-46-4b-v1-q8-ollama-smoke-20260903/predictions.jsonl",
+  "predictionSha256": "e88ec5abed9b994af68ea8fc39f25d0e237b0aeb351c230ea9570396ec88239f",
+  "promptProfile": "milmmt",
+  "promptSha256": "9e20c09988a1da2c1f595e66a9a70af5d7aea3e5731606b399a82c6c47a2c4b2",
+  "promptVersion": "milmmt-46-official-english-to-chinese-simplified-v1",
+  "referenceUsedForGeneration": false,
+  "repeatPenalty": 1.0,
+  "resourceEvidenceStatus": "requires_external_macbook_sampler",
+  "revision": "aa3262750cf493cc638fc9b82fcd26de8b0068fb",
+  "runtimeFingerprint": "ollama-0.33.3-q8_0-ctx8192-p1",
+  "schemaVersion": "live-sermon-macbook-text-run-report-v1",
+  "seed": 42,
+  "selectedSegmentIds": [
+    "8u9B8u_5ISI_seg_0001",
+    "8u9B8u_5ISI_seg_0002",
+    "8u9B8u_5ISI_seg_0003",
+    "8u9B8u_5ISI_seg_0004",
+    "8u9B8u_5ISI_seg_0005",
+    "8u9B8u_5ISI_seg_0006",
+    "8u9B8u_5ISI_seg_0007",
+    "8u9B8u_5ISI_seg_0008",
+    "8u9B8u_5ISI_seg_0009",
+    "8u9B8u_5ISI_seg_0010"
+  ],
+  "sources": [
+    {
+      "path": "data/benchmarks/live-sermon-translation-v1/reference/8u9B8u_5ISI/segments.en.reference.jsonl",
+      "segmentCount": 49,
+      "sha256": "b800e37f09e2e760200528fb2bfdd67840040023b9489f84fcad38a57d6590c1"
+    },
+    {
+      "path": "data/benchmarks/live-sermon-translation-v1/reference/hAWaaBVaMzY/segments.en.reference.jsonl",
+      "segmentCount": 56,
+      "sha256": "a45da5b536b549021a33c85d7bcf525bcb04549a831d208c30699ffcf2154f0c"
+    },
+    {
+      "path": "data/benchmarks/live-sermon-translation-v1/reference/hoeJTwl-EJg/segments.en.reference.jsonl",
+      "segmentCount": 57,
+      "sha256": "46fcd8a1a0868d4f7069c174264939b239b8634897716d13dd5a706131a07104"
+    },
+    {
+      "path": "data/benchmarks/live-sermon-translation-v1/reference/qvImKpmvgaM/segments.en.reference.jsonl",
+      "segmentCount": 39,
+      "sha256": "aeec58d6e74d124511f427ef1290b4885a01693f1147faed8f32b817c2247ee2"
+    },
+    {
+      "path": "data/benchmarks/live-sermon-translation-v1/reference/z_UoOx-6mz4/segments.en.reference.jsonl",
+      "segmentCount": 38,
+      "sha256": "5ccbb6643fda88fabed7431028034b895e58d811a1e00e6edee8443b30ec7e0e"
+    }
+  ],
+  "status": "completed",
+  "stop": null,
+  "temperature": 0.0,
+  "throughput": {
+    "completionNanoseconds": 24552607000,
+    "completionTokens": 1458,
+    "decodeRateSource": "ollama_eval_duration",
+    "decodeTokensPerSecond": 59.383
+  },
+  "topK": 1,
+  "topP": 1.0
+}

@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "macbook-resource-metrics-v1",
+  "systemId": "MB-B4-HyMT2-1.8B-Ollama-Q8",
+  "hardwareProfileId": "macbook-pro-m1-max-64gb-v1",
+  "sampleSource": "resource-samples.jsonl",
+  "sampleCount": 277,
+  "sampleIntervalSeconds": 1,
+  "observedDurationSeconds": 303.46,
+  "trackedRootProcess": {
+    "pidAtRunTime": 61206,
+    "command": "/Applications/Ollama.app/Contents/Resources/ollama serve",
+    "descendantsIncluded": true
+  },
+  "ollamaLoadedState": {
+    "model": "sermon-hymt2-1.8b-q8:benchmark",
+    "digest": "ec07251f681d16f5bd7796ebf40966b53d7acb9e2afc01e143ba1ad9f75f83e1",
+    "reportedSizeBytes": 2549381856,
+    "reportedSizeGiB": 2.3743,
+    "reportedUnifiedGpuBytes": 2549381856,
+    "contextLength": 8192
+  },
+  "processTreeResidentMemory": {
+    "unloadedBaselineMinGiB": 0.0534,
+    "unloadedBaselineMaxGiB": 0.0542,
+    "loadedMeanGiB": 4.497,
+    "peakGiB": 6.4409,
+    "incrementalPeakVersusMinBaselineGiB": 6.3875,
+    "postUnloadGiB": 0.0542,
+    "peakInterpretation": "Ollama service plus llama-server descendant RSS; includes resident model mappings, Metal working allocations, and runtime caches. Use this value for conservative system capacity planning."
+  },
+  "systemMemoryPressure": {
+    "freeMemoryPercentMax": 87,
+    "freeMemoryPercentMin": 81,
+    "freeMemoryPercentPostUnload": 87,
+    "categoricalPressureStatus": "not_captured_by_sampler_v1",
+    "redPressureObserved": null
+  },
+  "swap": {
+    "usedGiBMin": 0.0,
+    "usedGiBMax": 0.0,
+    "growthGiB": 0.0
+  },
+  "thermal": {
+    "nonemptySampleCount": 0,
+    "status": "pmset_therm_returned_no_numeric_counters",
+    "thermalThrottlingConclusionAvailable": false
+  },
+  "modelUnloadVerified": true,
+  "resourceGateAssessment": {
+    "translationProcessPeakTargetGiB": 40,
+    "peakWithinTarget": true,
+    "swapGrowthTargetGiB": 1,
+    "swapWithinTarget": true,
+    "translationOnlyResourceGatePassed": true,
+    "coResidentAsrReplayPassed": false,
+    "fullSermonSoakPassed": false,
+    "productionResourceGatePassed": false
+  }
+}

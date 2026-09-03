@@ -1,0 +1,124 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T03:01:32.349342+00:00",
+  "elapsedSeconds": 34.677,
+  "inputSha256": "93bafd32ed361752c07ab9bbad35ada739be242363e17cf8583e598c932d7c08",
+  "modelRequested": "gpt-5.6-terra",
+  "promptVersion": "codex-conversation-sermon-translate-v1",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "contentType": "sermon",
+        "id": "8u9B8u_5ISI_seg_0043",
+        "potentialAsrIssues": [
+          "“you you've already have”语法不完整，疑似口误",
+          "“by by by”重复",
+          "“uh”填充词"
+        ],
+        "properNouns": [],
+        "scriptureRefs": [
+          "哥林多前书第11章"
+        ],
+        "zh": "两千年来，基督徒一直都在一同领受。你们已经拿到了这些饼和杯。你可以从这些圣礼元素中看见——我会带领大家来进行。我会借着带大家读一段最谈及主餐的经文来进行，就是哥林多前书第11章。这段经文不会出现在屏幕上；我只希望你用心和我一同聆听。哥林多前书第11章告诉我们该如何预备并领受主餐。这里有一个颇具讽刺意味的地方：哥林多前书第11章其实是写给一间正经历分裂、需要合一的教会。"
+      },
+      {
+        "contentType": "scripture_quote",
+        "id": "8u9B8u_5ISI_seg_0044",
+        "potentialAsrIssues": [
+          "经文出处口述为“哥林多前书11:33”，但引文内容可能与该节不完全对应",
+          "“he he he”重复",
+          "“our call here are the beauty”语法不完整，疑似口误"
+        ],
+        "properNouns": [
+          {
+            "source": "Paul",
+            "zh": "保罗"
+          }
+        ],
+        "scriptureRefs": [
+          "哥林多前书第11章",
+          "哥林多前书11:33"
+        ],
+        "zh": "所以，在哥林多前书第11章的教导中，保罗写信给这间分裂的教会，说：“你们每逢吃这饼、喝这杯，是宣告主的死，直等到他来。”这就是我们今天要借着圣餐宣告的合一。但他也提醒基督徒、警告他们：这不是可以随随便便仓促领受的事。哥林多前书11:33说：“所以，无论何时吃主的饼、喝主的杯，若不按理，就是干犯主的身、主的血了。人应当这样省察自己，然后吃这饼、喝这杯。”对吗？所以，确实应当吃。这一刻的呼召，也是这一刻的美好，就是省察自己。"
+      },
+      {
+        "contentType": "prayer",
+        "id": "8u9B8u_5ISI_seg_0045",
+        "potentialAsrIssues": [],
+        "properNouns": [],
+        "scriptureRefs": [],
+        "zh": "现在，我想邀请你这样做。我想邀请你和我一起花一点时间，预备自己来领受主餐。我会带领大家祷告；请你和我一同祷告，然后花一点时间预备你的心来领受。天父，我们感谢你：我们确实能够领受我们救主的身体和宝血；他为我们的罪，并且代替我们，死在十字架上。主啊，我们看见这段经文吩咐我们要预备自己，好按理领受。不是凭着我们自己的价值或配得，而是凭着在你里面的价值，凭着你在十字架上为我们的罪、代替我们受死所带来的赦免。天父，求你预备我们的心。帮助我们思想需要承认的罪；帮助我们思想该如何将关系中的破碎、我们生命中的破碎，以及更多的事带到你面前。"
+      },
+      {
+        "contentType": "scripture_quote",
+        "id": "8u9B8u_5ISI_seg_0046",
+        "potentialAsrIssues": [
+          "“On the night in which betrayed”缺少主语，疑似漏词",
+          "“when he given thanks”语法不完整，疑似漏词"
+        ],
+        "properNouns": [
+          {
+            "source": "Paul",
+            "zh": "保罗"
+          },
+          {
+            "source": "Lord Jesus",
+            "zh": "主耶稣"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "这样我们就能预备自己的心来领受主餐。所以现在，我要请你花一点时间，预备你的心，好预备领受这饼和杯。保罗写道：“我当日传给你们的，原是从主领受的：主耶稣在被出卖的那一夜，拿起饼来；祝谢了，就擘开，说：‘这是我的身体，为你们舍的；你们应当如此行，为的是记念我。’”经上说，他拿起饼时献上感谢。让我们也这样做。天父，我们感谢你差遣耶稣。耶稣，我们感谢你为我们的罪、代替我们死在十字架上。我们为那为我们擘开的身体献上感谢。现在，让我们花一点时间；请你和我一同领受这饼——为你擘开的他的身体。"
+      },
+      {
+        "contentType": "scripture_quote",
+        "id": "8u9B8u_5ISI_seg_0047",
+        "potentialAsrIssues": [
+          "“let's again take just a moment and thank for”可能遗漏“God/Jesus”等受词",
+          "“there be no forgiveness”语法不完整，疑似漏词"
+        ],
+        "properNouns": [
+          {
+            "source": "Jesus",
+            "zh": "耶稣"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "圣经接着说，饭后，他也照样拿起杯来，说：“这杯是用我的血所立的新约；你们每逢喝的时候，要如此行，为的是记念我。”既然说“照样”，让我们再次花一点时间，感谢耶稣为我们的罪所流的血。主啊，我们承认，这杯、这血代表你在十字架上为我们的罪、代替我们受死。我们知道，经文教导我们：若不流血，罪就不得赦免。你的献祭是一次永远的终极献祭，使我们能够领受并活在这新生命中。现在，我们与两千年来的基督徒一同领受这杯。耶稣说：“这杯是用我的血所立的新约；你们每逢喝的时候，要如此行，为的是记念我。”"
+      },
+      {
+        "contentType": "prayer",
+        "id": "8u9B8u_5ISI_seg_0048",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Jesus",
+            "zh": "耶稣"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "天父，我们感谢你，让我们今天能与两千年来众圣徒的团契一同领受。今天，世界各地有弟兄姊妹因着逼迫而隐秘躲藏，却仍在领受这饼和杯。我们感谢你，为两千年来一无所有、却仍聚集在一起的基督徒感谢你。我们也感谢你，为今天世界各地与我们一同参与这一刻的人感谢你。主啊，我们感谢你。我们感谢你，感谢耶稣为我们的罪、代替我们死在十字架上。我们奉耶稣的名，并为他的缘故祷告。阿们，阿们。"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "8u9B8u_5ISI_seg_0043",
+    "8u9B8u_5ISI_seg_0044",
+    "8u9B8u_5ISI_seg_0045",
+    "8u9B8u_5ISI_seg_0046",
+    "8u9B8u_5ISI_seg_0047",
+    "8u9B8u_5ISI_seg_0048"
+  ],
+  "stage": "translate",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 12032,
+    "input_tokens": 17277,
+    "output_tokens": 1731,
+    "reasoning_output_tokens": 132
+  }
+}

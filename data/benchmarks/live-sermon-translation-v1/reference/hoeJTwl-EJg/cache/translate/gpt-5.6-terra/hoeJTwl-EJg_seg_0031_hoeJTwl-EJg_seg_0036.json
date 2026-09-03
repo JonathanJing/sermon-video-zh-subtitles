@@ -1,0 +1,130 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T00:01:31.630313+00:00",
+  "elapsedSeconds": 35.069,
+  "inputSha256": "754999023ceb87976063707e6cf7fffb47c803924afb953fad48408b3b61cc9f",
+  "modelRequested": "gpt-5.6-terra",
+  "promptVersion": "codex-conversation-sermon-translate-v1",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0031",
+        "potentialAsrIssues": [
+          "“what he calls He's Lord”疑似应为“what he calls Him: Lord”"
+        ],
+        "properNouns": [],
+        "scriptureRefs": [],
+        "zh": "应允我，主啊。请注意，他称祂为：“主，我的神。”你是主，你也是我的主。你是万有之上的主，也是我的神。顾念我，应允我，使我眼中重现光彩。因此，有些学者认为他其实在与抑郁挣扎；他意识到自己处于如此黑暗的状态。也许他从某个倒影中看见自己，知道自己连外貌都变了。神啊，我需要你使我眼中重现光彩。所以，他正向他的神坦白自己的想法。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0032",
+        "potentialAsrIssues": [],
+        "properNouns": [],
+        "scriptureRefs": [],
+        "zh": "要把自己的想法带到神面前，这需要极大的勇气和信心。但他所做的不止这些。第二，要向你的想法讲述关于你神的真理。第一，向神坦白你的想法；第二，向你的想法讲述关于你神的真理。请注意诗篇其余的话。他说：“我倚靠你的慈爱。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0033",
+        "potentialAsrIssues": [
+          "“David is not Nothing's changed”疑似为语音识别或口误，意为大卫祷告后处境并未改变。"
+        ],
+        "properNouns": [
+          {
+            "source": "David",
+            "zh": "大卫"
+          },
+          {
+            "source": "Saul",
+            "zh": "扫罗"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "我的心必因你的救恩欢喜。我要向主歌唱；祂厚厚地恩待了我。祂信实，又慷慨。我必倚靠主。”请注意，大卫在诗篇结尾这样祷告时，他的处境并没有改变。并不是扫罗死了，他才说：“现在我信靠神的慈爱了。现在我知道你是慷慨的神。”处境根本没有任何改变。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0034",
+        "potentialAsrIssues": [
+          "“I'm I'm”有重复。"
+        ],
+        "properNouns": [],
+        "scriptureRefs": [],
+        "zh": "他说，在我的处境当中，我要记念你的慈爱。在这个艰难的处境当中，我要记念你是我的神。在这痛苦当中，我要歌唱。我不会等到熬过痛苦之后才歌唱；我要一路唱着穿越痛苦。我要一路敬拜着度过这场试炼。他说：“我要把我所有的想法都带到你面前，也要向我的想法讲述关于你的真理。”"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0035",
+        "potentialAsrIssues": [
+          "“it's it's”“the the”“a casual It's not a casual”有重复或断句不完整。"
+        ],
+        "properNouns": [
+          {
+            "source": "David",
+            "zh": "大卫"
+          },
+          {
+            "source": "hesed",
+            "zh": "hesed"
+          },
+          {
+            "source": "Hebrew",
+            "zh": "希伯来语"
+          },
+          {
+            "source": "Old Testament",
+            "zh": "旧约"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "所以，要向你的想法讲述关于你神的真理。这就是大卫向他的想法所说的：神对我有这种hesed之爱。hesed这个词，就是这里所说的“慈爱”。这是圣经中一个非常重要的词。“慈爱”在原文中是希伯来词hesed。它在旧约圣经中出现超过两百次，被译作许多不同的词，因为我们没有一个词能承载hesed、这份慈爱的恢宏。想想看，在我们的语言里，“爱”这个词用得很随便：我爱我的狗，我爱披萨，我爱我的妻子，我爱大学橄榄球赛季。我们什么都可以说爱。但hesed不是那样。它不是随意使用“爱”这个词的方式，也不是肤浅版本的爱。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0036",
+        "potentialAsrIssues": [
+          "“loyal and love”疑似应为“loyal love”。"
+        ],
+        "properNouns": [
+          {
+            "source": "Hesed",
+            "zh": "hesed"
+          },
+          {
+            "source": "Old Testament",
+            "zh": "旧约"
+          },
+          {
+            "source": "David",
+            "zh": "大卫"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "Hesed是这种信实的爱，是怜悯和无尽的同情。事实上，译者在翻译旧约中的hesed一词时，使用了许多不同的词：爱、怜悯、仁慈、慈爱、良善、忠贞的爱、不止息的爱、爱的盟约、不止息的恩慈、委身、坚定不移的爱。而我们现在所读的译本则是：慈爱、盟约的忠诚、恩慈的盟约、盟约的友谊、奇妙的爱、忠贞的怜悯、恩惠。大卫向他的想法讲述关于他神的真理。他告诉自己的想法：这就是我神的真理。我的神就是hesed，祂厚厚地恩待我。"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "hoeJTwl-EJg_seg_0031",
+    "hoeJTwl-EJg_seg_0032",
+    "hoeJTwl-EJg_seg_0033",
+    "hoeJTwl-EJg_seg_0034",
+    "hoeJTwl-EJg_seg_0035",
+    "hoeJTwl-EJg_seg_0036"
+  ],
+  "stage": "translate",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 15104,
+    "input_tokens": 16857,
+    "output_tokens": 1722,
+    "reasoning_output_tokens": 490
+  }
+}

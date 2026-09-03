@@ -1,0 +1,132 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T03:11:10.209831+00:00",
+  "elapsedSeconds": 34.745,
+  "inputSha256": "c2baf5b7cc63b95a76f72991fb401257b89a4c0be3a99900f5bb4f39f863d6cd",
+  "modelRequested": "gpt-5.6-terra",
+  "promptVersion": "codex-conversation-sermon-translate-v1",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "contentType": "sermon",
+        "id": "z_UoOx-6mz4_seg_0019",
+        "potentialAsrIssues": [
+          "开头仅有“39:6”，经卷名称可能在相邻字幕中，但不应从上下文补入。",
+          "“But what is inside our hearts that's not the issue”语义可能有转写缺失或错误。"
+        ],
+        "properNouns": [
+          {
+            "source": "Joseph",
+            "zh": "约瑟"
+          },
+          {
+            "source": "God",
+            "zh": "上帝"
+          },
+          {
+            "source": "Peter",
+            "zh": "彼得"
+          },
+          {
+            "source": "Pilates",
+            "zh": "普拉提"
+          }
+        ],
+        "scriptureRefs": [
+          "39:6"
+        ],
+        "zh": "39:6说：“他把自己所有的一切都交在约瑟手下；除了自己所吃的食物以外，别的事一概不操心。约瑟身材健美，容貌俊秀。”我特意提到这些经文，是要让你看到，上帝自己也承认美貌和身体条件。但不同的是，不像这个看脸的世界，上帝并不看外表。无论外在多么出众，上帝都知道我们心里真正发生了什么。而持久、光彩照人的美，正是从那里流出来的。正如彼得告诉我们的，这一切外在的躯壳都在渐渐衰残。无论我们做多少俯卧撑、上多少普拉提课、打多少场匹克球、跑多少英里、举多少重量，或做了什么美容强化，"
+      },
+      {
+        "contentType": "sermon",
+        "id": "z_UoOx-6mz4_seg_0020",
+        "potentialAsrIssues": [],
+        "properNouns": [],
+        "scriptureRefs": [],
+        "zh": "这身体都在衰残。但我们心里的东西，那不是问题所在。问题是，在我们的世界里，外在形象常常比内心的光景更受推崇。现实是，我们活在一个规模达6000亿美元的全球美容产业中。一天24小时，我们不断被美丽、健康与活力的画面轰炸。人们不断告诉我们：若想更快乐、更有价值、更有分量、更有吸引力、更切合时代，或更被接纳，那么我们就必须以某种方式来打扮、穿着和呈现自己。我能告诉你吗？作为女人——我知道男人也是如此——要跟上所有最新、最潮的风尚，实在太累了。我们看见什么？我们看见由这种叙事引发的焦虑和压力。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "z_UoOx-6mz4_seg_0021",
+        "potentialAsrIssues": [],
+        "properNouns": [],
+        "scriptureRefs": [],
+        "zh": "这种叙事正使越来越多人出现饮食失调或身体畸形恐惧症。在这个被社交媒体充斥的世界里，我们把太多时间、金钱和注意力放在外貌与形象上，以至于可能几乎没有时间专注于上帝为我们生命所定的旨意。我们太习惯给每则帖文加滤镜、裁剪、修图，以至于也会把这种方式转移到对待自己身体的方式上。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "z_UoOx-6mz4_seg_0022",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Christ",
+            "zh": "基督"
+          },
+          {
+            "source": "King of Kings",
+            "zh": "万王之王"
+          },
+          {
+            "source": "God",
+            "zh": "上帝"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "不知不觉间，我们试图从外表获得意义感、安全感和价值，而不是从我们在基督里是谁来获得。事实上，我们终极的价值只来自认识自己在基督里是谁；知道宇宙的创造主深深爱我们，也完全认识我们；知道我们是万王之王的儿女。我们的终极价值与终极安全感就在这里。与一则社交媒体帖文不同，你不必在来到上帝面前前加滤镜、修图或裁剪。你可以本来的样子来到祂面前，而你被完全地爱、完全地看见、完全地认识，也完全地接纳。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "z_UoOx-6mz4_seg_0023",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "God",
+            "zh": "上帝"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "重点是，我们不该忽视自己的身体，却应优先追求属灵成长。我们也该省察自己的动机：我们究竟为何做这些事？例如，我们锻炼是因为迷恋自己的身体，或想追回年轻时的身材；还是想尽可能保持健康强壮，好完成上帝为我们生命所定的旨意？我们有没有考量自己投入健身计划、身体艺术、整形手术和其他美容强化上的时间与金钱？这些事是否比应有的程度更占据我们，使我们远离家人和其他责任？我们得问自己：为了做这些事，我们是否没有优先安排其他必要的购买或投资？我们是否在服事他人"
+      },
+      {
+        "contentType": "sermon",
+        "id": "z_UoOx-6mz4_seg_0024",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "God",
+            "zh": "上帝"
+          },
+          {
+            "source": "Lord",
+            "zh": "主"
+          }
+        ],
+        "scriptureRefs": [
+          "1 Timothy 4:8"
+        ],
+        "zh": "尽到该尽的本分？如果我们调整一下时间，是否能更慷慨？我们是否更从外表而不是从上帝那里寻求自己的价值？我们是否接受一个事实：无论做什么来延长寿命——我得告诉各位——我们终有一天都会死？所以，敬虔应当是我们的优先次序。当我们评估哪些事可以做、哪些事不该做时，常常在上帝面前省察自己的心，是一件好事。归根结底，除了圣经对如何使用身体有明确教导的事以外，其他一切都是我们在主面前凭良心作出的判断。真正关键的，是我们在上帝面前的心态。因此，譬如谈到健身时，我们需要记得《提摩太前书》4:8节，其中说"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "z_UoOx-6mz4_seg_0019",
+    "z_UoOx-6mz4_seg_0020",
+    "z_UoOx-6mz4_seg_0021",
+    "z_UoOx-6mz4_seg_0022",
+    "z_UoOx-6mz4_seg_0023",
+    "z_UoOx-6mz4_seg_0024"
+  ],
+  "stage": "translate",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 15104,
+    "input_tokens": 17237,
+    "output_tokens": 1763,
+    "reasoning_output_tokens": 360
+  }
+}

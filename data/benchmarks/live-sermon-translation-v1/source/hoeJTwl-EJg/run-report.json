@@ -1,0 +1,32 @@
+{
+  "audioDownloaded": false,
+  "captionSegmentCount": 57,
+  "generatedAt": "2026-09-02T22:26:49.088912+00:00",
+  "gptTranscribeCalled": false,
+  "humanApprovalClaimed": false,
+  "inputProfileSha256": "b2a8f81c4060501e6c070589305520f06166a6b90abeb2153a58a2a91b2afd3d",
+  "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+  "segmentOrigin": "full_video_caption_timeline",
+  "sourceDurationSeconds": 2011,
+  "sourceQuality": {
+    "disposition": "teacher_ready",
+    "maxSparseSegmentShare": 0.1,
+    "overallWordsPerSecond": 3.0086,
+    "sparseSegmentCount": 0,
+    "sparseSegmentShare": 0.0,
+    "sparseWordsPerSecondThreshold": 0.6
+  },
+  "sourceQualityDisposition": "teacher_ready",
+  "sourceSegmentsSha256": "46fcd8a1a0868d4f7069c174264939b239b8634897716d13dd5a706131a07104",
+  "speaker": "Eric Geiger",
+  "split": "test",
+  "status": "caption_source_prepared",
+  "teacherPipelineEligibility": "eligible",
+  "title": "When I am anxious - Eric Geiger | Mariners Church",
+  "trainingBlockers": [
+    "source_training_rights_unconfirmed",
+    "gpt_external_student_distillation_not_authorized"
+  ],
+  "trainingEligibility": "blocked",
+  "videoId": "hoeJTwl-EJg"
+}

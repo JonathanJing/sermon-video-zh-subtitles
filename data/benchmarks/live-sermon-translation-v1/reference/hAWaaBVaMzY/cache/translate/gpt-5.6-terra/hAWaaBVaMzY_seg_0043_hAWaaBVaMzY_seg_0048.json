@@ -1,0 +1,136 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T02:50:18.556314+00:00",
+  "elapsedSeconds": 23.254,
+  "inputSha256": "cd0e9c645173e97eb748fe7175f075f10c683f8a14914fd7c8da0d2e05603207",
+  "modelRequested": "gpt-5.6-terra",
+  "promptVersion": "codex-conversation-sermon-translate-v1",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "contentType": "sermon",
+        "id": "hAWaaBVaMzY_seg_0043",
+        "potentialAsrIssues": [],
+        "properNouns": [],
+        "scriptureRefs": [],
+        "zh": "那台推土机把这个人一生所有属世的东西都铲了起来，铲起后从前门运出去，倒进了一个垃圾箱。没有一个家人出现。没有人来整理这人的个人遗物。这所房子的所有物品都沦为运往填埋场的杂物，这像是一幅毫无意义的人生画面。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hAWaaBVaMzY_seg_0044",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Ecclesiastes",
+            "zh": "《传道书》"
+          },
+          {
+            "source": "God",
+            "zh": "神"
+          }
+        ],
+        "scriptureRefs": [
+          "Ecclesiastes"
+        ],
+        "zh": "所以，我们的问题是：我们死后，生命中的一切是否只会被送往填埋场？还是因着丰盛的人际关系，信仰的传承会延续下去？《传道书》整卷书都在说，没有什么重要。没有什么重要吗？不，为神而活时，一切都重要。透过神的眼光看一切，你就会在生命的每个方面找到意义。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hAWaaBVaMzY_seg_0045",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "God",
+            "zh": "神"
+          },
+          {
+            "source": "Jesus",
+            "zh": "耶稣"
+          },
+          {
+            "source": "Matthew",
+            "zh": "《马太福音》"
+          }
+        ],
+        "scriptureRefs": [
+          "Matthew 7"
+        ],
+        "zh": "你会继续在这世界寻找意义吗？还是会拥抱从神而来的意义？你的人生可以丰富得多。我们快要结束时，我想读给你听耶稣在《马太福音》第7章所说的话。请听我们这位好牧人所说的话，与我们生命根基之间的呼应。"
+      },
+      {
+        "contentType": "scripture_quote",
+        "id": "hAWaaBVaMzY_seg_0046",
+        "potentialAsrIssues": [
+          "“rivers rose” may be an ASR variant; the parallel passage is commonly rendered “floods came.”",
+          "“great clash” may be an ASR variant; the parallel passage is commonly rendered “great crash.”"
+        ],
+        "properNouns": [],
+        "scriptureRefs": [
+          "Matthew 7:24-27"
+        ],
+        "zh": "从第24节开始：所以，凡听见我这些话就去行的，好比一个聪明人，把房子盖在磐石上。雨降下，江河涨起，风吹着撞击那房子，房子却没有倒塌，因为根基立在磐石上。凡听见我这些话却不去行的，好比一个无知的人，把房子盖在沙土上。雨降下，江河涨起，风吹着撞击那房子，房子就倒塌了；倒塌得很厉害。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hAWaaBVaMzY_seg_0047",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "God",
+            "zh": "神"
+          },
+          {
+            "source": "Jesus",
+            "zh": "耶稣"
+          },
+          {
+            "source": "Ecclesiastes",
+            "zh": "《传道书》"
+          }
+        ],
+        "scriptureRefs": [
+          "Ecclesiastes"
+        ],
+        "zh": "你看，从神那里学习却不去实践，就等于听见耶稣的话却什么也不做。他说：“智慧。”《传道书》是一本智慧书，它说：“要听从那位独一真牧者的话，把根基建立在祂身上。”决定人生是否有意义的因素，是你生命所立的根基；祂的名就是耶稣。祂是你的救恩，祂是你的根基。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hAWaaBVaMzY_seg_0048",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "God",
+            "zh": "神"
+          },
+          {
+            "source": "Bible",
+            "zh": "圣经"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "所以，我想带领你作出回应。我想陪你走过这几个片刻；如果你愿意，这些片刻会让你感到神圣而庄严。你看，这本书充满极大的智慧。它是圣经中的一卷书，神想借着它进入我们的心，开始软化并改变我们，使我们能够经历从祂而来的更新。"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "hAWaaBVaMzY_seg_0043",
+    "hAWaaBVaMzY_seg_0044",
+    "hAWaaBVaMzY_seg_0045",
+    "hAWaaBVaMzY_seg_0046",
+    "hAWaaBVaMzY_seg_0047",
+    "hAWaaBVaMzY_seg_0048"
+  ],
+  "stage": "translate",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 12032,
+    "input_tokens": 16678,
+    "output_tokens": 1114,
+    "reasoning_output_tokens": 107
+  }
+}

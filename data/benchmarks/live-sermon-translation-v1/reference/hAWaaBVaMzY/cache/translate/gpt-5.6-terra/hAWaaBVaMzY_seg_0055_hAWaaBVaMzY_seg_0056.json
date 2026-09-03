@@ -1,0 +1,54 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T02:50:48.864543+00:00",
+  "elapsedSeconds": 10.523,
+  "inputSha256": "ffb6035668e5451fd3c2c9515a762c6b70fc017f8b53c0dec9dfcc383d09faa4",
+  "modelRequested": "gpt-5.6-terra",
+  "promptVersion": "codex-conversation-sermon-translate-v1",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "contentType": "sermon",
+        "id": "hAWaaBVaMzY_seg_0055",
+        "potentialAsrIssues": [],
+        "properNouns": [],
+        "scriptureRefs": [],
+        "zh": "祂与你同在。祂爱你。如果你愿意让祂进入，祂就是你生命的一切。这一生不必毫无意义。生命中的一切都能有意义，因为我们与神同在，而祂对你有一个旨意。让我们敬拜如今与我们同在的那一位。>> 嘿，很高兴你今天参加我们的聚会。我盼望也祈求，神借着这信息，在你所在之处鼓励了你。"
+      },
+      {
+        "contentType": "announcement",
+        "id": "hAWaaBVaMzY_seg_0056",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "YouTube",
+            "zh": "YouTube"
+          },
+          {
+            "source": "Mariners",
+            "zh": "马里纳斯"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "如果你点击订阅按钮，我会很开心。这样无论我们有聚会，还是在 YouTube 上发布内容，你都能收到通知。所以，请订阅，并加入马里纳斯线上聚会。"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "hAWaaBVaMzY_seg_0055",
+    "hAWaaBVaMzY_seg_0056"
+  ],
+  "stage": "translate",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 9984,
+    "input_tokens": 20336,
+    "output_tokens": 387,
+    "reasoning_output_tokens": 116
+  }
+}

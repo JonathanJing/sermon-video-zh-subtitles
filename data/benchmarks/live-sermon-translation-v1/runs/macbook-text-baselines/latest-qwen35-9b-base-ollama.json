@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "live-sermon-macbook-baseline-index-v1",
+  "systemId": "MB-A0-Qwen3.5-9B-Base-Ollama-BF16",
+  "status": "translation_only_completed_replay_and_sol_scoring_pending",
+  "completedAt": "2026-09-03T21:19:13.854082+00:00",
+  "referenceUsedForGeneration": false,
+  "hardwareProfileId": "macbook-pro-m1-max-64gb-v1",
+  "backend": "ollama_raw_generate",
+  "backendVersion": "0.33.3",
+  "configuration": {
+    "path": "../../macbook-text-benchmark-v1.json",
+    "sha256": "63e87257751abadcd11f63fbfba9d0837b95ae0c080677349e75da4dd689dfff"
+  },
+  "tools": {
+    "runner": {
+      "path": "../../../../../scripts/run_macbook_sermon_text_benchmark.py",
+      "sha256": "9a0137400d2f2e99e32cd35a806321ca52cec5c623c07140e3e78bf366d448ca"
+    },
+    "scorer": {
+      "path": "../../../../../scripts/score_sermon_text_benchmark.py",
+      "sha256": "7374cfbed7af4b199a590df2c18d7674172fe32542cde5206dbc5a0938af4a13"
+    },
+    "resourceSampler": {
+      "path": "../../../../../scripts/sample_macbook_resources.py",
+      "sha256": "6b612e00f40289d73bc703b25465d76abe0750bb6a5295659d48f5bcd08dea57"
+    }
+  },
+  "model": {
+    "modelId": "Qwen/Qwen3.5-9B-Base",
+    "upstreamRevision": "68c46c4b3498877f3ef123c856ecfde50c39f404",
+    "artifact": "Qwen3.5-9B-Base-BF16.gguf",
+    "artifactBytes": 18407321184,
+    "artifactSha256": "230ea242d7e82ba2a291b177b02397b6a9497f92fbbcedb52555366acf6fd2d2",
+    "ollamaModel": "sermon-qwen35-9b-base-bf16:benchmark",
+    "ollamaDigest": "c95a608cb431a5da00075eeb04c625d839dc323dc1639e9804ef44a94008fbce"
+  },
+  "run": {
+    "directory": "qwen35-9b-base-bf16-ollama-full-20260903",
+    "predictionCount": 239,
+    "errorCount": 0,
+    "predictionSha256": "bb9166588bf813513422f19850f657e3dfa8e2de97e646a74e57964f57580899",
+    "runReportSha256": "474bd75b05faa8d3b6e7f0eef4ac1dbe4a6836c374104739e58fca9e86b5ea7c"
+  },
+  "automaticReferenceMetrics": {
+    "path": "qwen35-9b-base-bf16-ollama-full-20260903/automatic-reference-metrics.json",
+    "sha256": "d307505af14882a1fff420935bbbb6b13c918546924cc0bd08b199fea014d5de"
+  },
+  "resourceMetrics": {
+    "path": "qwen35-9b-base-bf16-ollama-full-20260903/resource-metrics.json",
+    "sha256": "e421a609c4a8e80aa65da07b7a7b5d36bc8b25e7aea4d3b2c4759a413f7f7406",
+    "peakProcessTreeRssGiB": 25.3444,
+    "swapGrowthGiB": 0.0
+  },
+  "report": {
+    "path": "qwen35-9b-base-bf16-ollama-full-20260903/report.md",
+    "sha256": "cf81b2095fe371c10785bca4f1158db615b1bd2e8efb1197c312781bb057b270"
+  },
+  "translationOnlyResourceGatePassed": true,
+  "coResidentAsrReplayPassed": false,
+  "fullSermonSoakPassed": false,
+  "solHighScoringCompleted": false,
+  "productionResourceGatePassed": false
+}

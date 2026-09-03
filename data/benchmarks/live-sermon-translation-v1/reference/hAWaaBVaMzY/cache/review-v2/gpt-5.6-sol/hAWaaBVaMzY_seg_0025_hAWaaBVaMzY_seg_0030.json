@@ -1,0 +1,99 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T02:54:08.172787+00:00",
+  "elapsedSeconds": 44.895,
+  "inputSha256": "ad53015f26eefccdab5e97a723fc2efa8ac1640a68172c01af37354849cc497f",
+  "modelRequested": "gpt-5.6-sol",
+  "promptVersion": "codex-conversation-sermon-review-v2",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "categories": [
+          "准确性",
+          "术语"
+        ],
+        "findingZh": "译文完整传达了“敬畏加顺服”、门徒生命、自律生活及救恩先于顺服的逻辑，未见实质性错译或遗漏。",
+        "id": "hAWaaBVaMzY_seg_0025",
+        "recommendationZh": "无需修改。",
+        "severity": "pass",
+        "zh": "所以，今天我和你有一个简单的公式：敬畏加顺服，等于门徒生命和自律的生活。这是个很简单的等式，也是我们实践智慧生活的方式：我们敬畏神，然后顺服祂的话语。现在，在我多解释一点之前，次序确实很重要。你不会希望反过来。想象一下，如果神说：“你顺服我，然后我就救你。你顺服我，然后我就爱你。”不，我们顺服，是因为祂先爱了我们；我们跟随祂，是因为祂救了我们。"
+      },
+      {
+        "categories": [
+          "准确性",
+          "术语"
+        ],
+        "findingZh": "译文准确区分了门徒生命与自律生活，并正确表达了门徒是学习者、这种关系适合在群体中塑造等内容。",
+        "id": "hAWaaBVaMzY_seg_0026",
+        "recommendationZh": "无需修改。",
+        "severity": "pass",
+        "zh": "神来到我们这里，使我们得救；因此，我们便可以过一种自律的生活。现在，说到门徒生命，让我解释两个词：门徒生命，以及自律的生活。我希望你们认真听，好明白我的意思。门徒生命就是你与神的关系，是一种垂直的关系；我们每个人都是耶稣的门徒。门徒生命和自律带着相同的词根，它们确实有关联。门徒生命的词根是学习者，所以门徒就是学习者。你我与神的关系，是一种学习的关系。我相信，这种关系最好是在群体中塑造的，在那里有导师能把你指回神。"
+      },
+      {
+        "categories": [
+          "准确性",
+          "术语"
+        ],
+        "findingZh": "译文准确表达了自律生活是实践耶稣生活方式的途径，也保留了训练、教导和课程的词义说明。",
+        "id": "hAWaaBVaMzY_seg_0027",
+        "recommendationZh": "无需修改。",
+        "severity": "pass",
+        "zh": "那么第二部分，就是自律的生活。如果门徒生命是与耶稣的关系，那么自律的生活，就是我们实践耶稣生活方式的途径。门徒生命的词根是学习者；自律的词根则是我们实践的训练、教导或课程。你看见这两者是如何连在一起的吗？"
+      },
+      {
+        "categories": [
+          "准确性",
+          "术语"
+        ],
+        "findingZh": "译文完整保留了门徒生命与自律相互配合的论述，以及TikTok潮流、研究和群体生活等信息。",
+        "id": "hAWaaBVaMzY_seg_0028",
+        "recommendationZh": "无需修改。",
+        "severity": "pass",
+        "zh": "没有自律的门徒生命，只会是无止境的学习。而没有智慧教导的自律生活，可能会变成一种失去锚定的生活，随着最新的TikTok潮流、研究，或任何最影响你的事而改变。我们必须在群体中作耶稣的门徒，并在生活中自律，好让我们实践耶稣的生活方式。"
+      },
+      {
+        "categories": [
+          "准确性",
+          "专名"
+        ],
+        "findingZh": "译文准确传达了对基督徒言行不一的批评，并正确保留Mariners Church、神和耶稣等名称。",
+        "id": "hAWaaBVaMzY_seg_0029",
+        "recommendationZh": "无需修改。",
+        "severity": "pass",
+        "zh": "现在，教会，我想你们知道这一点：对教会最大的批评之一——我不是指Mariners Church，而是泛指基督徒——就是人们声称认识神，却不实践耶稣的生活方式。他们认识祂，这就是门徒生命；但他们却不顺服祂的命令。他们的生命没有与神建立关系所结出的果子。我们不想成为这样的人。"
+      },
+      {
+        "categories": [
+          "ASR不确定性",
+          "不明增补"
+        ],
+        "findingZh": "英文“I love and I've heard...”句法明显残缺，可能是ASR漏词；候选译文将其确定为“我爱你们，也听到……”，其中“你们”这一宾语无法仅凭当前英文确认，也可能原意是“I love that I've heard...”。",
+        "id": "hAWaaBVaMzY_seg_0030",
+        "recommendationZh": "请核对音频，确认原话是“I love you, and I've heard...”还是“I love that I've heard...”，再相应译为“我爱你们，也听到……”或“我很高兴听到……”。",
+        "severity": "needs_audio_review",
+        "zh": "你不能只作门徒；你也必须过自律的生活。你所学的，总有一天必须转化为行动。我会这样说：门徒生命是你和耶稣之间的关系，最好是在教会群体中实践；自律的生活则是付诸行动的智慧，最好是作为敬拜来实践。Mariners线上会众，我真为你们感到骄傲。我爱你们，也听到许多关于你们参加Rooted和生命小组的故事。你们投入群体，因为你们想认识神，也想置身于一个能帮助你们更像祂的群体中；然后，你们因此出去，活出不一样的生命。这正是我们作为教会应有的美好写照。我真为你们感到骄傲。"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "hAWaaBVaMzY_seg_0025",
+    "hAWaaBVaMzY_seg_0026",
+    "hAWaaBVaMzY_seg_0027",
+    "hAWaaBVaMzY_seg_0028",
+    "hAWaaBVaMzY_seg_0029",
+    "hAWaaBVaMzY_seg_0030"
+  ],
+  "stage": "review-v2",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 0,
+    "input_tokens": 18033,
+    "output_tokens": 2320,
+    "reasoning_output_tokens": 1026
+  }
+}

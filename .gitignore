@@ -21,6 +21,7 @@ coverage/
 .pytest_cache/
 *.log
 data/raw/
+data/benchmarks/**/work/
 artifacts/
 output/pdf/
 tmp/pdfs/

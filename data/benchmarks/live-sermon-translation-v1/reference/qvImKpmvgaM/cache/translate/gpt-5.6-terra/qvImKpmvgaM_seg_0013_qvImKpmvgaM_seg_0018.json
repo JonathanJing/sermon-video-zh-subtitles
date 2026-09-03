@@ -1,0 +1,168 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T03:19:54.820818+00:00",
+  "elapsedSeconds": 33.001,
+  "inputSha256": "841fab92ada1f849e46786580b78d5689972cd2ffa83e0f96d1ab017c378475e",
+  "modelRequested": "gpt-5.6-terra",
+  "promptVersion": "codex-conversation-sermon-translate-v1",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "contentType": "sermon",
+        "id": "qvImKpmvgaM_seg_0013",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Moses",
+            "zh": "摩西"
+          },
+          {
+            "source": "Marra",
+            "zh": "玛拉"
+          }
+        ],
+        "scriptureRefs": [
+          "出埃及记 15:23"
+        ],
+        "zh": "随后，摩西带他们来到水边，他们却抱怨水是苦的。第23节说，他们不能喝玛拉的水，因为水是苦的。这简直像个残酷的玩笑，对吧？“我们渴了。哦，大家有水了！太好了，我们不会死了。”结果水难喝得要命，根本不能喝。这就是我想到这节经文时脑海里的画面。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "qvImKpmvgaM_seg_0014",
+        "potentialAsrIssues": [],
+        "properNouns": [],
+        "scriptureRefs": [],
+        "zh": "你觉得呢？我喜欢这个，因为其中有一个属灵真理：得救并不意味着挣扎结束，其中也会有苦涩的时刻。我记得自己成为基督徒后，对这个事实感到意外。当我向家人和朋友公开自己的新信仰时，也经历过苦涩的时刻。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "qvImKpmvgaM_seg_0015",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Doug",
+            "zh": "道格"
+          },
+          {
+            "source": "Jesus",
+            "zh": "耶稣"
+          },
+          {
+            "source": "God",
+            "zh": "神"
+          },
+          {
+            "source": "Israelites",
+            "zh": "以色列人"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "我想做点什么，他们就会说：“这看起来不太像基督徒会做的事吧，道格。”我心想：你怎么知道？你又不是基督徒。或者他们会说：“不知道圣经对此怎么说。”那时我还不懂圣经，就说：“圣经大概说你是个白痴。”好吧？这不是什么激烈的旷野时刻，但确实有苦涩的时刻。作为基督徒，跟随耶稣的道路并不保证我们的人生没有痛苦，却保证我们不会独自走过痛苦。拯救我们的神实际上住在我们里面，安慰并引导我们；几周后我们会进一步了解。对以色列人来说，神不只解决了他们缺水的问题，也以新的方式向他们显明自己，让他们确信祂会帮助他们解决"
+      },
+      {
+        "contentType": "sermon",
+        "id": "qvImKpmvgaM_seg_0016",
+        "potentialAsrIssues": [
+          "“he doesn't just part seize”疑为识别错误；上下文可能是“part seas”。"
+        ],
+        "properNouns": [
+          {
+            "source": "God",
+            "zh": "神"
+          },
+          {
+            "source": "Yahweh",
+            "zh": "雅威"
+          },
+          {
+            "source": "Jehovah Rafa",
+            "zh": "耶和华拉法"
+          },
+          {
+            "source": "Hebrew",
+            "zh": "希伯来语"
+          },
+          {
+            "source": "Israelites",
+            "zh": "以色列人"
+          }
+        ],
+        "scriptureRefs": [
+          "出埃及记 15:26"
+        ],
+        "zh": "他们更深层的问题。第26节，祂说：“我是医治你的耶和华。”你看，第一周神已经以“我是雅威”向他们介绍自己：我是那位能改变你是谁的神。如今，祂又显明自己性情的另一面，就是耶和华拉法。希伯来语“拉法”的意思是医治、恢复或使完整。以色列人需要这位耶和华拉法。他们经历过——想想看——创伤、压迫、恐惧、失去，以及多年的奴役。神要他们知道，祂不只分开海水，也看见他们生命中需要医治的部分。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "qvImKpmvgaM_seg_0017",
+        "potentialAsrIssues": [
+          "“feel the fill”疑为口误或识别错误；按语境译为“满足”。"
+        ],
+        "properNouns": [
+          {
+            "source": "God",
+            "zh": "神"
+          },
+          {
+            "source": "Jehovah Rafa",
+            "zh": "耶和华拉法"
+          },
+          {
+            "source": "Israelites",
+            "zh": "以色列人"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "今天，祂也同样为你这样做。也许你正在观看，而你今天只需要听见神对你说：“我是医治你的主。我是医治你的主。”有些人迫切需要医治。但朋友们，你们在错误的地方寻找。你想靠金钱医治你，靠一段关系医治你，或靠权力地位医治你；但这些最终都无法满足你想要被医治、得完整的渴望。最终能医治你最深渴望的，唯有耶和华拉法。以色列人听见这个新名字，但他们的抱怨不只更大声，也更荒谬。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "qvImKpmvgaM_seg_0018",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Israelites",
+            "zh": "以色列人"
+          },
+          {
+            "source": "Lord",
+            "zh": "耶和华"
+          },
+          {
+            "source": "Egypt",
+            "zh": "埃及"
+          },
+          {
+            "source": "Yelp",
+            "zh": "Yelp"
+          }
+        ],
+        "scriptureRefs": [
+          "出埃及记 16:3"
+        ],
+        "zh": "你注意到第16章第3节了吗？经文说：“以色列人对他们说：‘我们若在埃及地坐在肉锅旁、吃得饱足的时候，被耶和华的手杀死，那倒好。你们却把我们领到这旷野，要叫这全会众都饿死啊！’”这听起来简直像个不理性的七年级学生，对吧？“哦，对，埃及那些美好的旧日子，一个肉和饼充足之地。”因为人人都记得那则著名的Yelp评论，对吧？“为奴役而来，为浓汤而留。”我是说，你会得到苦难和肉。我们人就是这么容易忘记。"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "qvImKpmvgaM_seg_0013",
+    "qvImKpmvgaM_seg_0014",
+    "qvImKpmvgaM_seg_0015",
+    "qvImKpmvgaM_seg_0016",
+    "qvImKpmvgaM_seg_0017",
+    "qvImKpmvgaM_seg_0018"
+  ],
+  "stage": "translate",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 12032,
+    "input_tokens": 17022,
+    "output_tokens": 1657,
+    "reasoning_output_tokens": 290
+  }
+}

@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/milmmt-sft-record-v1.schema.json",
+  "title": "MiLMMT sermon translation SFT record v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "id",
+    "sermonId",
+    "split",
+    "trainingEligibility",
+    "source",
+    "target",
+    "metadata"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "milmmt-sermon-sft-record-v1"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sermonId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "split": {
+      "enum": ["train", "dev"]
+    },
+    "trainingEligibility": {
+      "const": "eligible"
+    },
+    "source": {
+      "$ref": "#/$defs/sourceText"
+    },
+    "target": {
+      "$ref": "#/$defs/targetText"
+    },
+    "metadata": {
+      "$ref": "#/$defs/metadata"
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "sourceText": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["language", "contentText", "sha256", "provenance", "reviewStatus"],
+      "properties": {
+        "language": {
+          "const": "en"
+        },
+        "contentText": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "provenance": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reviewStatus": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "targetText": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["language", "contentText", "sha256", "provenance", "reviewStatus"],
+      "properties": {
+        "language": {
+          "const": "zh-Hans"
+        },
+        "contentText": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "provenance": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reviewStatus": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contentType", "startMs", "endMs", "sourceRightsBasis", "groupSplitKey"],
+      "properties": {
+        "contentType": {
+          "type": "string",
+          "minLength": 1
+        },
+        "startMs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "endMs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sourceRightsBasis": {
+          "type": "string",
+          "minLength": 1
+        },
+        "groupSplitKey": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scriptureRefs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "properNouns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["source", "target"],
+            "properties": {
+              "source": {
+                "type": "string"
+              },
+              "target": {
+                "type": "string"
+              }
+            }
+          },
+          "default": []
+        },
+        "qualityFlags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        }
+      }
+    }
+  }
+}

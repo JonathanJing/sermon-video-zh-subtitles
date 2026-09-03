@@ -1,0 +1,104 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T03:21:45.089448+00:00",
+  "elapsedSeconds": 19.878,
+  "inputSha256": "d6defa4d255e2050f6eb6d798738018a12c6622c1eae9c46e070fce64cffd82a",
+  "modelRequested": "gpt-5.6-terra",
+  "promptVersion": "codex-conversation-sermon-translate-v1",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "contentType": "sermon",
+        "id": "qvImKpmvgaM_seg_0037",
+        "potentialAsrIssues": [
+          "“but to reminded”应为“but to be reminded”",
+          "“on on”重复"
+        ],
+        "properNouns": [
+          {
+            "source": "God",
+            "zh": "神"
+          },
+          {
+            "source": "Jesus",
+            "zh": "耶稣"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "坚韧、分辨力、平安、感恩、谦卑、喜乐、勇气、知足、慷慨、多结果子。我的意思是，那些每天得到充满的人这样做，不是为了赢得神的爱，而是为了被提醒：你已经拥有祂的爱，并获得祂的智慧，知道下一步该在哪里迈出顺服的一步。如果你属于那80%，却不知道从哪里开始，我想鼓励你：与其整天在手机上不停地刷那些令人焦虑的内容，何不试着翻阅圣经呢？"
+      },
+      {
+        "contentType": "sermon",
+        "id": "qvImKpmvgaM_seg_0038",
+        "potentialAsrIssues": [
+          "“on on”重复",
+          "“step step”重复",
+          "末句在“he rescued”处被截断"
+        ],
+        "properNouns": [
+          {
+            "source": "God",
+            "zh": "神"
+          },
+          {
+            "source": "Jesus",
+            "zh": "耶稣"
+          },
+          {
+            "source": "Israelites",
+            "zh": "以色列人"
+          },
+          {
+            "source": "Egypt",
+            "zh": "埃及"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "何不让神的话充满你？如果你不知道从哪里开始，就开始读耶稣的话，然后开始朝着祂所指引的方向行。再次说，你得到充满不是为了赢得神的眷爱；你与祂相会，不是为了讨神欢心。你与祂相会，是为了贴近祂的心，并进入祂对你生命的旨意。因为被拯救的以色列人的故事，也是我们的故事。所以今天，这是给你的邀请：分手吧。放下埃及，放下过去，朝顺服的方向迈出一步，然后得到充满。我的意思是，这个每日挑战是要提醒你：你的属灵拯救不只是罪的奴役的终结，也是你开始像耶稣一样、朝着祂要你生命所走的方向前行的起点。因为神救你，不只是要你脱离什么，祂救你也是为了——"
+      },
+      {
+        "contentType": "announcement",
+        "id": "qvImKpmvgaM_seg_0039",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "God",
+            "zh": "神"
+          },
+          {
+            "source": "Jesus",
+            "zh": "耶稣"
+          },
+          {
+            "source": "YouTube",
+            "zh": "YouTube"
+          },
+          {
+            "source": "Mariners",
+            "zh": "马里纳斯"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "为了某件事。就我而言，我不想只是被拯救；我想活得像一个已经被拯救的人，确信神正带领我走向有意义的人生。我也盼望你如此。嘿，我很高兴你今天参加我们的聚会。我盼望并祷告，神借着这篇信息，在你所在之处鼓励了你。若你点击订阅按钮，我会很高兴，因为这样无论我们有聚会，或是在YouTube上发布内容时，你都能收到提醒。所以请订阅，加入我们的马里纳斯线上聚会。"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "qvImKpmvgaM_seg_0037",
+    "qvImKpmvgaM_seg_0038",
+    "qvImKpmvgaM_seg_0039"
+  ],
+  "stage": "translate",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 9984,
+    "input_tokens": 16340,
+    "output_tokens": 896,
+    "reasoning_output_tokens": 136
+  }
+}

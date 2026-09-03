@@ -1,0 +1,116 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T00:01:58.962999+00:00",
+  "elapsedSeconds": 27.33,
+  "inputSha256": "4702501499dc029dcb123effd3abc651e4ec2cc49cd8ade36262d9e9ca334942",
+  "modelRequested": "gpt-5.6-terra",
+  "promptVersion": "codex-conversation-sermon-translate-v1",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0037",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Michael Card",
+            "zh": "迈克尔·卡德"
+          },
+          {
+            "source": "Old Testament",
+            "zh": "旧约"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "迈克尔·卡德是一位音乐家，也是一位作家。他专门写了一本书来讲这个词“hesed”。他说，这个词极难翻译，充满了庄严的意味。在研究了旧约中“hesed”一词出现的每一处之后，他得出了这样的结论。这是迈克尔·卡德给出的定义：当那个我本无权期待得到任何东西的人，把一切都给了我。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0038",
+        "potentialAsrIssues": [
+          "The opening sentence repeats the preceding definition, likely for emphasis or due to ASR duplication."
+        ],
+        "properNouns": [],
+        "scriptureRefs": [],
+        "zh": "当那个我本无权期待得到任何东西的人，把一切都给了我。神对你有hesed——信实的爱。大卫明白这一点，他把神hesed的爱的真理告诉自己的意念。他告诉自己的意念：神就是信实的爱，神也以信实的爱待你。我们本无权期待从神那里得到任何东西，因为我们都曾远离祂。我们都曾把神以外的某样事物当作生命中最重要的。我们都曾废掉神在我们生命中君王的地位，把王位给了别的东西。在我们自己的生命里，我们把冠冕从神头上取下了。祂始终戴着冠冕，但在我们的生命里，我们把永恒的万王之王、万主之主的冠冕取下，给了别的东西。我们追逐了神以外的事物。我们所有人都"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0039",
+        "potentialAsrIssues": [],
+        "properNouns": [],
+        "scriptureRefs": [],
+        "zh": "照着圣经所说，亏缺了神的尊荣和荣耀。我们所有人都犯了罪。我们悖逆了这位圣洁、恩慈的神；祂一直以爱和良善待我们。因此，我们本无权期待从祂那里得到任何东西，因为我们都曾背弃祂。然而，那位我们本无权期待从祂那里得到任何东西的，却把一切都给了我们。祂对你有hesed的爱。祂赐给你恩典、怜悯和赦免。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0040",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "David",
+            "zh": "大卫"
+          },
+          {
+            "source": "God the Son",
+            "zh": "圣子上帝"
+          },
+          {
+            "source": "Jesus the Christ",
+            "zh": "基督耶稣"
+          },
+          {
+            "source": "Father",
+            "zh": "天父"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "祂赐给你永生。祂把一切都赐给你。在这篇诗篇中，大卫经历了这种迷失方向的感受：神啊，感觉祢背弃了我。他说：“祢要向我掩面到几时呢？”神对你有如此深厚的hesed之爱，以至于圣子上帝——基督耶稣——为你进入这个世界。祂走进你的痛苦、你的挣扎。祂进入这个世界，穿上人的肉身。祂代表我们活出了完全的一生。祂上十字架，为我们受死。在一个星期五，祂被钉十字架的六个小时里，祂经历了大卫在这篇诗篇中所祷告的事。祂向天父祷告：“祢为什么离弃我？”因为在那一刻，我们所有的罪和羞耻都归在祂身上，使祂能在肉身中承受本该归给我们的刑罚，好将我们不配得的赐给我们，赐给我们祂所有的"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0041",
+        "potentialAsrIssues": [
+          "The phrase \"about it his thoughts\" is likely an ASR error; interpreted as \"about his thoughts.\""
+        ],
+        "properNouns": [],
+        "scriptureRefs": [],
+        "zh": "赦免、所有的怜悯和所有的恩典。那位我们本无权从祂期待任何东西的，因为我们曾向祂脸上吐唾沫，走自己的路；这位恩慈的主却把一切都赐给了我们。祂对你有hesed的爱。所以，此刻大卫向神倾心吐意时，确实是的，他把自己意念中的真实告诉神：“神啊，我有这样的感受；我正把自己意念中的真实告诉祢。”"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0042",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "David",
+            "zh": "大卫"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "但随后，他也转而把关于神的真理告诉自己的意念：“我的神充满hesed，充满信实的爱；我的神慷慨地待我。”大卫在这一刻知道，他的感受虽然真实，却不是终极的；它们不是终极的现实。因此，他把终极现实的真理告诉自己的感受——那终极现实就是他的神。"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "hoeJTwl-EJg_seg_0037",
+    "hoeJTwl-EJg_seg_0038",
+    "hoeJTwl-EJg_seg_0039",
+    "hoeJTwl-EJg_seg_0040",
+    "hoeJTwl-EJg_seg_0041",
+    "hoeJTwl-EJg_seg_0042"
+  ],
+  "stage": "translate",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 12032,
+    "input_tokens": 16791,
+    "output_tokens": 1348,
+    "reasoning_output_tokens": 86
+  }
+}

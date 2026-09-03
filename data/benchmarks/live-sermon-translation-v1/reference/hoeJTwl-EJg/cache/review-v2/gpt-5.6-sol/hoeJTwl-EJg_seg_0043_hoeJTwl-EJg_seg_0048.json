@@ -1,0 +1,87 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T00:08:05.635243+00:00",
+  "elapsedSeconds": 43.848,
+  "inputSha256": "bd6120c5fc1fc473c5c83f9afc2e87874acfa95bf8faf832dc4f465379b78184",
+  "modelRequested": "gpt-5.6-sol",
+  "promptVersion": "codex-conversation-sermon-review-v2",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "categories": [],
+        "findingZh": "译文与当前英文一致，人物、书名及引语含义均准确。",
+        "id": "hoeJTwl-EJg_seg_0043",
+        "recommendationZh": "无需修改。",
+        "severity": "pass",
+        "zh": "他有理由焦虑。你在生活中也常常有许多理由充满焦虑。大卫把这些理由列在神面前，但他没有停留在这些理由上。他接着对自己的思想、对自己的心说：“不，我的神恩待我。我的神满有信实的慈爱。”他不让自己的心思一味地陷入恶性循环。他把神对他信实的慈爱这一真理告诉自己的思想。马丁·劳埃德-琼斯是一位曾与抑郁挣扎的牧师。他确实写过一本书，叫《属灵的抑郁》。他对人在焦虑或抑郁压得喘不过气时该怎么做，给出了一些见解。他写道：“你是否意识到，人生中大多数的不快乐，是因为你在听自己说话，而不是对自己说话？"
+      },
+      {
+        "categories": [],
+        "findingZh": "译文完整传达了引语以及诗篇13篇对讲员家庭的重要意义。",
+        "id": "hoeJTwl-EJg_seg_0044",
+        "recommendationZh": "无需修改。",
+        "severity": "pass",
+        "zh": "属灵生活中最重要的艺术，就是知道如何对待自己。你必须管住自己，必须对自己说话，向自己传道。”马丁·劳埃德-琼斯说的和大卫所说的是同一件事：“我要把关于我神的真理告诉我的思想。”诗篇13篇对我们家很重要，因为当我妻子因失去父亲而深陷悲伤时，神就借着这段经文在她生命中作工。"
+      },
+      {
+        "categories": [
+          "ASR不确定性",
+          "经文表述"
+        ],
+        "findingZh": "译文忠实对应当前英文，但“诗篇13篇应许使我们眼中恢复喜乐”的措辞或归属存在已标注的转写不确定性，无法仅凭文本安全判定。",
+        "id": "hoeJTwl-EJg_seg_0045",
+        "recommendationZh": "请核听音频，确认末句的经文表述及“he”的指代。",
+        "severity": "needs_audio_review",
+        "zh": "她父亲去世后，有一段时间她不再读圣经。她仍然信耶稣，仍是耶稣的跟随者；但她认为，如果读经，自己就会充满喜乐，而她觉得若自己充满喜乐，就是对父亲不敬。因为她相信，在这个时候，既然正为父亲的离世悲伤，就不该充满喜乐。所以她停止读经。后来有一天，她看着镜中的自己，或许就像大卫那样，看见自己脸上的阴霾；她想起诗篇13篇，说神应许使我们眼中恢复喜乐。"
+      },
+      {
+        "categories": [],
+        "findingZh": "译文准确传达了永在的父、赐儿女喜乐以及hesed所指的信实慈爱。",
+        "id": "hoeJTwl-EJg_seg_0046",
+        "recommendationZh": "无需修改。",
+        "severity": "pass",
+        "zh": "于是，她面对自己的思想——“我充满悲伤”——并把神的真理带给自己的思想。这个真理就是：祂是永在的父，祂把喜乐带给祂的儿女。大卫在焦虑当中，抓住神的真理，祂那赫塞德——信实的慈爱。"
+      },
+      {
+        "categories": [
+          "语法",
+          "表达不完整"
+        ],
+        "findingZh": "“你在焦虑当中，也必须告诉自己的思想”语法不完整且搭配错误；英文含义是要对自己的思想说话。",
+        "id": "hoeJTwl-EJg_seg_0047",
+        "recommendationZh": "改为“必须对自己的思想说话”，并调整相关语序，使劝勉内容完整自然。",
+        "severity": "must_fix",
+        "zh": "这是真的，他把神的真理应用在自己的思想上。当你身处焦虑之中时，必须对自己的思想说话；你必须向自己的思想传讲神是谁这一真理。现在，我是不是说，这意味着你不该寻求治疗、辅导、帮助、友谊，或在生活中建立更好、更健康的节奏？不，这些你也都要做；但同时，也要把神的真理应用在自己的思想上。让我举个例子，说明该怎么做。"
+      },
+      {
+        "categories": [],
+        "findingZh": "译文完整保留了大卫的例子、焦虑是人类共同经历的论述，以及句末尚未结束的引语。",
+        "id": "hoeJTwl-EJg_seg_0048",
+        "recommendationZh": "无需修改。",
+        "severity": "pass",
+        "zh": "因为你们有些人现在正有一些想法，就像大卫一样。大卫是合神心意的人，但他也在挣扎。所以，如果你正在挣扎，你并不孤单。圣经称他为神所拣选的人，因为他是合神心意的人；他也会挣扎。因此，我们许多人都会挣扎。有些人比其他人挣扎得更多，但与焦虑挣扎是人类共同的经历。你要把神的真理、祂信实慈爱的真理带给你的思想。你们有些人有这样的想法：“我将无法维持生计。"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "hoeJTwl-EJg_seg_0043",
+    "hoeJTwl-EJg_seg_0044",
+    "hoeJTwl-EJg_seg_0045",
+    "hoeJTwl-EJg_seg_0046",
+    "hoeJTwl-EJg_seg_0047",
+    "hoeJTwl-EJg_seg_0048"
+  ],
+  "stage": "review-v2",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 0,
+    "input_tokens": 18282,
+    "output_tokens": 2281,
+    "reasoning_output_tokens": 1034
+  }
+}

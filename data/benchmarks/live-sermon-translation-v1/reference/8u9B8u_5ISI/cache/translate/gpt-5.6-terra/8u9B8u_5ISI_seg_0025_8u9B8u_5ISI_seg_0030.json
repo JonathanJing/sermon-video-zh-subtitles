@@ -1,0 +1,142 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T02:59:50.279063+00:00",
+  "elapsedSeconds": 33.739,
+  "inputSha256": "a8856e21249fe5e8932ed61f3d605dde508eace27353519bb96d2e1838a23da1",
+  "modelRequested": "gpt-5.6-terra",
+  "promptVersion": "codex-conversation-sermon-translate-v1",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "contentType": "sermon",
+        "id": "8u9B8u_5ISI_seg_0025",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Mariners",
+            "zh": "马林纳斯教会"
+          },
+          {
+            "source": "St. Andrews",
+            "zh": "圣安德鲁教会"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "对于那些在核心信仰上一致、却在某些信念上不同的人，我仍然与他们在基督里合一。我想这样对待他们；他们是我的家人。但有时我们大概会属于不同的宗派或不同的教会。比如，在马林纳斯教会，我们不给婴儿施洗，只给信徒施洗；但我们仍与给婴儿施洗的圣安德鲁教会在基督里合一。再往下还有一个层级，有时人们确实会据此选择教会：那就是偏好。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "8u9B8u_5ISI_seg_0026",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Mariners",
+            "zh": "马林纳斯教会"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "这是偏好性的信念。当然，它们仍然重要，但在同一会众中，甚至在领袖之间，对差异有更多空间。比如，我们多久举行一次圣餐；我提过，也可能是音乐音量有多大。这些都是人们不同的偏好。请你稍微想一想，因为我盼望——我的意思是，我从不希望你离开马林纳斯教会——但万一有一天你搬到别处，要找一间新教会，我希望你有一个评估的框架。再说一次，不要离开马林纳斯。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "8u9B8u_5ISI_seg_0027",
+        "potentialAsrIssues": [
+          "“Mariners's church”可能是“Mariners Church”的转写错误。"
+        ],
+        "properNouns": [
+          {
+            "source": "Mariners Church",
+            "zh": "马林纳斯教会"
+          },
+          {
+            "source": "Caitlyn",
+            "zh": "凯特琳"
+          },
+          {
+            "source": "Anglican",
+            "zh": "圣公会"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "马林纳斯教会才是唯一真正的教会。不过，让我举个例子。嗯，我最小的女儿最近把我和她妈妈叫来，让我们坐下。那是一种严肃谈话的阵势，于是我们坐了下来。她说：“爸爸妈妈，我想让你们知道，我爱你们，也爱我们曾经参与过的教会；我并不不开心，也看见神在那里作工。”你可以看得出来，她在铺垫什么。她说：“但其实，我一直在去一间圣公会教会，我想改宗成为圣公会信徒。我想成为圣公会教会的一员。”她有点担心我们会把这当作对我们的否定。我往后一靠，说：“凯特琳，如果这就是我们一直等着你反叛父母的方式，我们实在太高兴了。”"
+      },
+      {
+        "contentType": "sermon",
+        "id": "8u9B8u_5ISI_seg_0028",
+        "potentialAsrIssues": [
+          "“bibleelving”可能是“Bible-believing”的转写错误。"
+        ],
+        "properNouns": [
+          {
+            "source": "John 17",
+            "zh": "约翰福音第17章"
+          }
+        ],
+        "scriptureRefs": [
+          "John 17"
+        ],
+        "zh": "这实在是件很棒、很棒的事。”我爱这间教会，因为它在核心信仰上是一致的。我们或许会在某些信念上不同，但感谢神，你在一间很好的、信奉圣经的教会里。那么，不认同核心信仰的宗派呢？它们确实存在。也许是因为它们把行为加进福音，或是偏离了圣经的权威。若那个宗派或教会否认核心信仰，它们就不是真正的福音伙伴。然而，在许多这类宗派，甚至教会里，常常仍有人属于基督的身体，是我们家中的人，尽管他们的宗派或许没有在福音上保持一致。好，让我们回到约翰福音第17章，因为我要看耶稣祷告的内容和目的。合一彰显耶稣，分裂则遮蔽祂。事实上，在约翰福音17章23节，祂说——"
+      },
+      {
+        "contentType": "sermon",
+        "id": "8u9B8u_5ISI_seg_0029",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "John 17",
+            "zh": "约翰福音第17章"
+          },
+          {
+            "source": "Jesus",
+            "zh": "耶稣"
+          }
+        ],
+        "scriptureRefs": [
+          "John 17:23"
+        ],
+        "zh": "这话我再说一遍：“使世人知道你差了我来，也知道你爱他们如同爱我一样。”我盼望，如果你今天在这里，或正在观看，你还不是耶稣的跟随者，你会想：“我真喜欢他们正面地谈论城里的另一间教会。”嘿，愿这能把你指向耶稣。我们与那些耶稣的跟随者同属一个家；我们与其他持守同一福音的基督徒和教会合一，即使他们属于其他教会和宗派。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "8u9B8u_5ISI_seg_0030",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "John 17",
+            "zh": "约翰福音第17章"
+          },
+          {
+            "source": "Ephesians chapter 4",
+            "zh": "以弗所书第4章"
+          }
+        ],
+        "scriptureRefs": [
+          "John 17",
+          "Ephesians 4:1-6"
+        ],
+        "zh": "好，这就是约翰福音第17章。现在我们转到以弗所书第4章。以弗所书第4章。你可以翻开圣经，跟着一起看；让我们看看事实，以及我们的回应。好，我不会读完第1至6节，但我要再讲讲我的家人。刚才我提到一点我女儿的事。我有三个女儿，她们现在都二十多岁了，所以请为我祷告。这是个很有意思的时期。我很爱做这些女孩的爸爸。不过，这张照片是她们都还在十几岁时拍的。她们各自的性格都好像在这张照片里表现出来。我喜欢这张照片，因为照片里的她们，作为青少年，看起来好像相处得很好。"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "8u9B8u_5ISI_seg_0025",
+    "8u9B8u_5ISI_seg_0026",
+    "8u9B8u_5ISI_seg_0027",
+    "8u9B8u_5ISI_seg_0028",
+    "8u9B8u_5ISI_seg_0029",
+    "8u9B8u_5ISI_seg_0030"
+  ],
+  "stage": "translate",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 12032,
+    "input_tokens": 17009,
+    "output_tokens": 1628,
+    "reasoning_output_tokens": 143
+  }
+}

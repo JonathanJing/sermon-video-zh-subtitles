@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "live-sermon-a0-baseline-index-v1",
+  "status": "generation_and_automatic_scoring_completed_sol_scoring_pending",
+  "completedAt": "2026-09-03T17:26:17.801396+00:00",
+  "referenceUsedForGeneration": false,
+  "configuration": {
+    "path": "../../a0-config.json",
+    "sha256": "b38ec3b005de23b42dc5f0d86b525b044cb0be70bfecccf2986a0b67e12628a4"
+  },
+  "runner": {
+    "path": "../../../../../scripts/run_dgx_sermon_a0_baseline.py",
+    "sha256": "1a111a093792d4b7e4f146ee0b6858c52b82514a608310ba27b818cc19495efa"
+  },
+  "runs": [
+    {
+      "a0Variant": "A0-4B",
+      "model": "Qwen/Qwen3.5-4B-Base",
+      "revision": "1001bb4d826a52d1f399e183466143f4da7b741b",
+      "runReport": "a0-qwen35-4b-base-bf16-full-20260903/run-report.json",
+      "runReportSha256": "b71e34a14b1eb58f169743358486d6b94f4ed5a1ccf24362d47657c50e7989cd",
+      "predictionCount": 239,
+      "predictionSha256": "c96614c2dc91285d423d12187913d2215bddfd4223648180037fd4f88d32ecd7",
+      "errorCount": 0
+    },
+    {
+      "a0Variant": "A0-9B",
+      "model": "Qwen/Qwen3.5-9B-Base",
+      "revision": "68c46c4b3498877f3ef123c856ecfde50c39f404",
+      "runReport": "a0-qwen35-9b-base-bf16-full-20260903/run-report.json",
+      "runReportSha256": "c543b8ab485d98724b004954486595460531fcdd7605742ea27c01d6db8be48c",
+      "predictionCount": 239,
+      "predictionSha256": "418e4c71d8e8d67bead558ef43fd07231013baeb316eab0cc813df6cff2105ab",
+      "errorCount": 0
+    }
+  ],
+  "automaticReferenceMetrics": {
+    "path": "automatic-reference-metrics.json",
+    "sha256": "39bf28590f98b90c5118e34f01d2e50e5e8ae0ea1e504d0a5fc47cf39eeb0557"
+  },
+  "report": {
+    "path": "baseline-report.md",
+    "sha256": "2d8fd8c4fb9e3a5891f1d6b4a9f1e1ea693668e8dc3c1703ca882bae2aa31fd8"
+  },
+  "solHighScoringCompleted": false,
+  "realTimeReplayCompleted": false
+}

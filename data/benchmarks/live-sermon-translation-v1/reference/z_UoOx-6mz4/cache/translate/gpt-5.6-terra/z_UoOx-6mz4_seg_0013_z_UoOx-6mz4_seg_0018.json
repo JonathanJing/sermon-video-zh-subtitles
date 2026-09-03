@@ -1,0 +1,201 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T03:10:35.462621+00:00",
+  "elapsedSeconds": 37.414,
+  "inputSha256": "1c7a89a10dd399e7d7d29a6a0c62ccf867f33df043b9f4520850880aff3abe56",
+  "modelRequested": "gpt-5.6-terra",
+  "promptVersion": "codex-conversation-sermon-translate-v1",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "contentType": "sermon",
+        "id": "z_UoOx-6mz4_seg_0013",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "First Peter",
+            "zh": "彼得前书"
+          },
+          {
+            "source": "Peter",
+            "zh": "彼得"
+          }
+        ],
+        "scriptureRefs": [
+          "彼得前书 3章"
+        ],
+        "zh": "专注于让你知道真正的美来自内在——这确实如此——以至于他们几乎教导说：你外表越糟，就一定越圣洁。其实，在[清嗓子]彼得前书第3章，彼得是在对比外在的装饰和持久的内在品格。他说，真正的美源自内心。因此，我们在培养里面基督般的品格上，应当比在外表上投入更多心力。对此我们说：是的，阿们！但我也想请你留意彼得没有说什么。他没有说不要化妆，不要打理或染头发，不要用保湿霜，也不要去晒黑机房；不要去打耳洞，也不要纹身；不要办健身房会员，不要穿好看或"
+      },
+      {
+        "contentType": "sermon",
+        "id": "z_UoOx-6mz4_seg_0014",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Christine",
+            "zh": "克莉丝汀"
+          },
+          {
+            "source": "God",
+            "zh": "神"
+          },
+          {
+            "source": "Leviticus",
+            "zh": "利未记"
+          }
+        ],
+        "scriptureRefs": [
+          "利未记 19:28"
+        ],
+        "zh": "时尚的衣服；不要做美甲，不要去正畸医生那里戴牙套；不要戴珠宝，不要用抗衰老面霜，也不要做整形手术。事实上，你在新约中找不到任何明确说这些事被禁止的经文。我知道，你们有些人已经在想：『可是，克莉丝汀，既然我们是神以奇妙可畏的方式所造的，我们怎么能做任何事来提升自己的美呢？我的意思是，神已经造好的，你还能改进吗？』另一些人可能在想：『克莉丝汀，你难道没读过利未记19:28吗？那里明明告诉我们绝不可纹身。』"
+      },
+      {
+        "contentType": "sermon",
+        "id": "z_UoOx-6mz4_seg_0015",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Southern California",
+            "zh": "南加州"
+          },
+          {
+            "source": "SoCal",
+            "zh": "南加州"
+          },
+          {
+            "source": "Bible",
+            "zh": "圣经"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "还有些人可能在想：用保湿霜没什么问题，但往身体里注射任何东西——这在我看来就是不对。还有一些人会想：我们到底为什么要聊这个？为什么要把这摆上台面？有什么大不了的，克莉丝？这里是南加州，我们以注重外表、照顾身体、享受各种提升而闻名。这就是我们南加州人会做的事。其实，关于身体的讨论，比我们任何人所想的都更复杂、更有细微差别。我们带着许多自己的成见和假设来谈这件事，于是会以为圣经说了某些其实没说的话，关于我们可以或不可以如何对待自己的身体；我们就这样推断出圣经里根本没有的东西。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "z_UoOx-6mz4_seg_0016",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Romans",
+            "zh": "罗马书"
+          },
+          {
+            "source": "Paul",
+            "zh": "保罗"
+          }
+        ],
+        "scriptureRefs": [
+          "罗马书 14:22"
+        ],
+        "zh": "但与此同时，我们也可能忽略圣经实际所说之事的严肃性；那些话或许会挑战我们对外表的过度重视。我发现，无论你认为对自己的身体做什么、如何对待身体是可以还是不可以的，都要始终把罗马书14:22放在这场讨论最前面。保罗在那节经文说：『你所持守的信念，要在神面前为自己持守。人能不因自己所认可的事定自己的罪，这人就有福了。』"
+      },
+      {
+        "contentType": "sermon",
+        "id": "z_UoOx-6mz4_seg_0017",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Samuel",
+            "zh": "撒母耳"
+          },
+          {
+            "source": "Lord",
+            "zh": "主"
+          },
+          {
+            "source": "Israel",
+            "zh": "以色列"
+          },
+          {
+            "source": "David",
+            "zh": "大卫"
+          },
+          {
+            "source": "God",
+            "zh": "神"
+          },
+          {
+            "source": "Jesse",
+            "zh": "耶西"
+          }
+        ],
+        "scriptureRefs": [
+          "撒母耳记上 16:7"
+        ],
+        "zh": "你知道，在撒母耳记上16:7我们读到：『主对撒母耳说：不要看他的外貌和身材，因为我已经弃绝他了。人所看见的是外貌，主所看见的是内心。』当然，这是神向撒母耳启示以色列下一任王将会是大卫的经文。他要说明的是，神不像人，祂不只看一个人的外在特征或是否具备某个职位的资格；神会看他们内心的光景，判断他们是否适合祂的旨意。神优先看重大卫内心的光景，并不是在任何方面否定、忽视或贬低他的身体。事实上，仅仅五节之后我们就读到：『耶西就派人去叫他来。他有一双美丽的眼睛，且"
+      },
+      {
+        "contentType": "sermon",
+        "id": "z_UoOx-6mz4_seg_0018",
+        "potentialAsrIssues": [
+          "“Abselum”可能是“Absalom”（押沙龙）的转写误差。"
+        ],
+        "properNouns": [
+          {
+            "source": "Genesis",
+            "zh": "创世记"
+          },
+          {
+            "source": "Leah",
+            "zh": "利亚"
+          },
+          {
+            "source": "Rachel",
+            "zh": "拉结"
+          },
+          {
+            "source": "Samuel",
+            "zh": "撒母耳"
+          },
+          {
+            "source": "Israel",
+            "zh": "以色列"
+          },
+          {
+            "source": "Abselum",
+            "zh": "押沙龙"
+          },
+          {
+            "source": "Nabal",
+            "zh": "拿八"
+          },
+          {
+            "source": "Abigail",
+            "zh": "亚比该"
+          },
+          {
+            "source": "Calebite",
+            "zh": "迦勒族人"
+          }
+        ],
+        "scriptureRefs": [
+          "创世记 29:17",
+          "撒母耳记下 14:2",
+          "撒母耳记上 25:3"
+        ],
+        "zh": "外表健康英俊。』好，圣经里就是这样写的。让我再给你几个经文中明确提到身体和美貌的例子。创世记29:17说：『利亚的眼睛柔弱，拉结却身材匀称、容貌美丽。』撒母耳记下14:2说：『在全以色列，没有人像押沙龙那样俊美，广受称赞；从脚掌到头顶，他没有一处瑕疵。』想象一下，别人这样写你。撒母耳记上25:3说：那人名叫拿八，他的妻子名叫亚比该；那妇人聪明美丽，但那人是个迦勒族人，行事凶恶粗暴。我对此真能好好发挥一番，但我还是继续读下去。创世记……"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "z_UoOx-6mz4_seg_0013",
+    "z_UoOx-6mz4_seg_0014",
+    "z_UoOx-6mz4_seg_0015",
+    "z_UoOx-6mz4_seg_0016",
+    "z_UoOx-6mz4_seg_0017",
+    "z_UoOx-6mz4_seg_0018"
+  ],
+  "stage": "translate",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 12032,
+    "input_tokens": 17297,
+    "output_tokens": 1916,
+    "reasoning_output_tokens": 276
+  }
+}

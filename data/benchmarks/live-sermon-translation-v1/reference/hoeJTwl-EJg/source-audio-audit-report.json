@@ -1,0 +1,21 @@
+{
+  "apiKeyMaterialIncluded": false,
+  "asrModel": "gpt-transcribe",
+  "audioAuditSha256": "9bf57c3dbcb5fa0fb4ff66d3d6801ece846c9b45ff880e72c4f4b5d3ea122897",
+  "audioDownloadStatus": "downloaded_public_mweb_format_18_fallback",
+  "credentialSource": "existing_env_file",
+  "decisionCounts": {
+    "audio_evidence_supports_caption": 3
+  },
+  "eligibleForTraining": false,
+  "englishReferenceDraftSha256": "a0effbb2b89110887286ded6ad8729d2a0d49be271339e6baa97c2d9feb71edf",
+  "generatedAt": "2026-09-02T23:08:43.863850+00:00",
+  "humanApprovalClaimed": false,
+  "schemaVersion": "live-sermon-benchmark-source-audio-audit-v1",
+  "selectedSegmentCount": 3,
+  "sourceAudioSha256": "101994d712e65e2db8058129cf5a0f702d315e7569f16450301c1c7cb8149b3f",
+  "sourceSegmentsSha256": "46fcd8a1a0868d4f7069c174264939b239b8634897716d13dd5a706131a07104",
+  "status": "source_audio_audit_completed",
+  "totalSegmentCount": 57,
+  "videoId": "hoeJTwl-EJg"
+}

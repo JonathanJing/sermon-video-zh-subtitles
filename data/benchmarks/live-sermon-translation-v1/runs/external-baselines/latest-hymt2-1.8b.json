@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "live-sermon-external-baseline-index-v1",
+  "systemId": "B4-HyMT2-1.8B",
+  "status": "generation_and_automatic_scoring_completed_sol_scoring_pending",
+  "completedAt": "2026-09-03T17:49:11.837093+00:00",
+  "referenceUsedForGeneration": false,
+  "configuration": {
+    "path": "../../hymt2-1.8b-config.json",
+    "sha256": "28ca2a57f2bfb76b8d496b6acca01c834fb0e7c784a4663394ac22d477dc1b0b"
+  },
+  "runner": {
+    "path": "../../../../../scripts/run_dgx_sermon_hymt2_baseline.py",
+    "sha256": "f4b3d712a718751e65c596e2b5373f06c1faa39995c6c5159d85d2cfd4b22f91"
+  },
+  "run": {
+    "directory": "hymt2-1.8b-q8-chinese-full-20260903",
+    "runReport": "hymt2-1.8b-q8-chinese-full-20260903/run-report.json",
+    "runReportSha256": "d0e57c0c383b8b18d876f94ea8f0c02d254444396578f04495adfebfe8a530d1",
+    "predictionCount": 239,
+    "predictionSha256": "d9edcb250293908aa0e7b62b032942f290863cbfaa26b1010d8dbd269a57cb42",
+    "errorCount": 0
+  },
+  "automaticReferenceMetrics": {
+    "path": "hymt2-1.8b-q8-chinese-full-20260903/automatic-reference-metrics.json",
+    "sha256": "4a50fa750cd3cf066381805683209be4d3505112db52ad2c3b84e0fdaa39933f"
+  },
+  "promptValidation": {
+    "path": "hymt2-1.8b-q8-chinese-full-20260903/prompt-validation.json",
+    "sha256": "f3a1f891ff43582d87a65d9761a19d9fba9748d510311b93078f5bcbd8f6a397"
+  },
+  "report": {
+    "path": "hymt2-1.8b-q8-chinese-full-20260903/report.md",
+    "sha256": "163bdb58407e4a565ce5d761689f221982af7011dce3935e4bff2ccbfca4ecb1"
+  },
+  "solHighScoringCompleted": false,
+  "realTimeReplayCompleted": false
+}

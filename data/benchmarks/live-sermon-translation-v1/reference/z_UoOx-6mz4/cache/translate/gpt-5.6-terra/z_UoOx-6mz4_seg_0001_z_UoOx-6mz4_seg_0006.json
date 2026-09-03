@@ -1,0 +1,114 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T03:09:16.833284+00:00",
+  "elapsedSeconds": 30.043,
+  "inputSha256": "e29b376f21ff992d7dd2b7b0bbd94da878c299edff91345e49d57adef2bb8823",
+  "modelRequested": "gpt-5.6-terra",
+  "promptVersion": "codex-conversation-sermon-translate-v1",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "contentType": "sermon",
+        "id": "z_UoOx-6mz4_seg_0001",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Mariners",
+            "zh": "马里纳斯"
+          },
+          {
+            "source": "Christine Kaine",
+            "zh": "克莉丝汀·凯恩"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "欢迎来到我们的马里纳斯线上社群。若我们还未见过面，我叫克莉丝汀·凯恩，是马里纳斯这里教导团队的一员。你知道，当我们继续这个关于餐桌的精彩系列时，我非常感恩你今天加入我们。今年对我个人来说非常、非常特别，因为9月23日我就满60岁了。你猜怎么着？我决定，活到这个年纪的人，都有资格用整个2026年来庆祝。我不等到9月了。我决定今年要做60件自己从未做过的事。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "z_UoOx-6mz4_seg_0002",
+        "potentialAsrIssues": [
+          "“water burger” may refer to the restaurant chain Whataburger."
+        ],
+        "properNouns": [
+          {
+            "source": "Texas",
+            "zh": "得克萨斯州"
+          },
+          {
+            "source": "America",
+            "zh": "美国"
+          },
+          {
+            "source": "In-N-Out",
+            "zh": "In-N-Out"
+          },
+          {
+            "source": "Alaska",
+            "zh": "阿拉斯加"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "这可以包括从吃一些我从未吃过的东西开始。比如最近我在得克萨斯州，住在美国15年来第一次吃了个“水汉堡”。我只想说，余生我还是坚持吃In-N-Out吧。那种事一次就够了。我还要做些从未做过的事，比如玩从未玩过的游戏，走从未走过的徒步路线，认识从未见过的人，到从未讲道的国家去传福音。我还去阿拉斯加看了北极光，睡在冰屋里。那也是一次就够了。我还骑了雪地摩托、玩了狗拉雪橇。所以，那真的是我经历过最奇妙的体验之一。我得说，几年前我在科罗拉多州发生了一场严重的滑雪事故，摔断了"
+      },
+      {
+        "contentType": "sermon",
+        "id": "z_UoOx-6mz4_seg_0003",
+        "potentialAsrIssues": [],
+        "properNouns": [],
+        "scriptureRefs": [],
+        "zh": "前十字韧带，撕裂了内侧副韧带和半月板，还膝盖骨折。但我很感恩，做了腘绳肌移植并经过大量复健后，我能够重返雪地、享受滑雪。有些人到了60岁的门槛，会更多想着过去，而不是未来。但我个人认为，这些年更多是重新点燃，而不是退休。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "z_UoOx-6mz4_seg_0004",
+        "potentialAsrIssues": [],
+        "properNouns": [],
+        "scriptureRefs": [],
+        "zh": "你知道，我很喜欢随着年龄增长而来的自信、清晰、满足和智慧。我非常感恩，在我服事旅程很早的时候，一位年长得多、也智慧得多的导师对我说，若我想在服事中长久，想在年老时仍持续结果子，就该养成保持健康与强壮的习惯；因为随着年龄增长，身体会改变，我在二三十岁年轻时视为理所当然的一些事，到了60多岁会困难得多。她说得对。她还告诉我，她80岁时最大的遗憾，就是没有在更年轻时开始锻炼，尤其是拉伸。如今，我有一项全球性的事工，每年飞行超过20万英里。我花很多时间"
+      },
+      {
+        "contentType": "sermon",
+        "id": "z_UoOx-6mz4_seg_0005",
+        "potentialAsrIssues": [],
+        "properNouns": [],
+        "scriptureRefs": [],
+        "zh": "坐在会议中、转换时区、参加Zoom通话、学习、写作，并带领世界各地的团队。我得说，等你到了我这个年纪，你也会知道我导师是对的。如果不拉伸、不活动、不坚持健康和健身，一切都会变得有点僵硬。如今，往后的人生中，关乎成就神的旨意、奔跑我的赛程、跑完我的路程，我的身体能力与我的恩膏，甚至我的神学知识，同样重要。福音能被我带多远，只在于这身体能带我多远。今天我以此作为引言，是因为我想让你知道，本周的话题对我个人有多重要；我相信它会对你们很多人都很"
+      },
+      {
+        "contentType": "sermon",
+        "id": "z_UoOx-6mz4_seg_0006",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Southern Californian",
+            "zh": "南加州"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "有帮助。本周摆在桌上的问题是：神在乎我怎样对待自己的身体吗？我们将会发现，关心身体不只是南加州的现象；按着圣经，这对神自己而言极其重要。今天在线收看这场聚会的每个人，你都有一个身体。我们每个人长相不同，身体机能、健康和体能也各不相同；但我们共同的一点，就是都有身体。我正从一个物质身体里对你说话。我是在一个实体录音棚里录制，而你在另一个实体地点，住在你的实体身体里，收看这场聚会。我们之所以有身体，是因为神创造人类时，使我们成为由身体、魂和灵构成的整合存在。"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "z_UoOx-6mz4_seg_0001",
+    "z_UoOx-6mz4_seg_0002",
+    "z_UoOx-6mz4_seg_0003",
+    "z_UoOx-6mz4_seg_0004",
+    "z_UoOx-6mz4_seg_0005",
+    "z_UoOx-6mz4_seg_0006"
+  ],
+  "stage": "translate",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 12032,
+    "input_tokens": 17152,
+    "output_tokens": 1478,
+    "reasoning_output_tokens": 201
+  }
+}

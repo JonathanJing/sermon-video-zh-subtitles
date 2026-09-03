@@ -1,0 +1,121 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T00:00:30.610696+00:00",
+  "elapsedSeconds": 31.309,
+  "inputSha256": "6c81d62996b9ea7ffc502658310403cd3e87d9e8802f5d0244ea9cd21e42d1ac",
+  "modelRequested": "gpt-5.6-terra",
+  "promptVersion": "codex-conversation-sermon-translate-v1",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0019",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "David",
+            "zh": "大卫"
+          },
+          {
+            "source": "Psalm 13",
+            "zh": "诗篇第13篇"
+          }
+        ],
+        "scriptureRefs": [
+          "诗篇 13篇"
+        ],
+        "zh": "大卫在挣扎。他有理由充满焦虑。因此学者们相信，在那段旅程中的某处，他祷告了诗篇第13篇，就在那张地图上的某个地方。我并不指望你们记住所有那些地点；我连自己都很难记住，也不确定是否都念对了。但我想让我们知道：哇，大卫明白被焦虑充满是什么意思。所以，在那段旅程中的某处，他祷告了这篇祷告——诗篇第13篇。这是神的话。"
+      },
+      {
+        "contentType": "scripture_quote",
+        "id": "hoeJTwl-EJg_seg_0020",
+        "potentialAsrIssues": [],
+        "properNouns": [],
+        "scriptureRefs": [
+          "诗篇 13:1-3"
+        ],
+        "zh": "耶和华啊，你忘记我要到几时呢？要到永远吗？你掩面不顾我要到几时呢？我内心积存焦虑，天天心中痛苦，要到几时呢？我的仇敌压制我要到几时呢？耶和华我的神啊，求你顾念我，应允我；求你使我眼目光明，免得我沉睡至死。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0021",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "David",
+            "zh": "大卫"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "我的仇敌必说：“我胜过他了。”我的敌人必因我动摇而欢喜。但我倚靠你的信实慈爱；我的心必因你的拯救欢喜。我要歌颂耶和华，因为他厚待了我。这是神的话。当人生毫无道理、你被焦虑压得喘不过气时，你该怎么做？我想从这段经文分享两点。我们能学习大卫在焦虑的季节里所做的事——他说自己整天都有痛苦的思想，内心深处满是焦虑。你会看见两点，我相信这段经文很清楚地告诉我们。第一，把你思想的真相告诉你的神。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0022",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "David",
+            "zh": "大卫"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "把你所有焦虑的思想，以及那些思想的真相，都带到神面前。把你思想的真相告诉你的神。我想让你看看大卫是怎么做的。注意，他四次说：“要到几时？要到几时？要到几时？要到几时？神啊，这要持续到几时？”"
+      },
+      {
+        "contentType": "illustration",
+        "id": "hoeJTwl-EJg_seg_0023",
+        "potentialAsrIssues": [],
+        "properNouns": [],
+        "scriptureRefs": [],
+        "zh": "这场试炼要持续到几时？我还要应对这挣扎到几时？我还要充满这种焦虑到几时？他把这挣扎带到神面前；而这挣扎的一部分，就是他不知道会持续多久。坐飞机时，飞行员说要遇上些乱流，因此请空乘人员坐下。如果飞行员这样说，我觉得非常体贴：“我在看地图和雷达，也正在和空管沟通。接下来12到15分钟，我们会经过一段颠簸区域。所以请空乘人员坐下。接下来12到15分钟，我们预计会有些乱流。”"
+      },
+      {
+        "contentType": "illustration",
+        "id": "hoeJTwl-EJg_seg_0024",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Southern California",
+            "zh": "南加州"
+          },
+          {
+            "source": "Laguna Canyon",
+            "zh": "拉古纳峡谷"
+          },
+          {
+            "source": "Laguna Beach",
+            "zh": "拉古纳海滩"
+          },
+          {
+            "source": "Three B's",
+            "zh": "三个B"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "我很感激这样。我知道具体有多久。我看着电脑，就可以说：“好吧，就忍这段时间，因为15分钟后我们应该就会通过了。”飞行员这样说时，我特别感恩。知道会持续多久，会让人更能忍受。你们知道，我已经爱上了在南加州骑山地车。拉古纳峡谷、就在拉古纳海滩旁边，有一条叫“三个B”的山道，很难骑。我第一次和几个朋友去时，我问：“它叫‘三个B’，这代表什么？三个坏家伙？”"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "hoeJTwl-EJg_seg_0019",
+    "hoeJTwl-EJg_seg_0020",
+    "hoeJTwl-EJg_seg_0021",
+    "hoeJTwl-EJg_seg_0022",
+    "hoeJTwl-EJg_seg_0023",
+    "hoeJTwl-EJg_seg_0024"
+  ],
+  "stage": "translate",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 12032,
+    "input_tokens": 16919,
+    "output_tokens": 1583,
+    "reasoning_output_tokens": 495
+  }
+}

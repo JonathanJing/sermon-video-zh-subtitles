@@ -1,0 +1,192 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-02T23:59:29.180307+00:00",
+  "elapsedSeconds": 35.01,
+  "inputSha256": "b518b2759296a9648414c0abfcb67e54eeafff5597429796b0f23f1093be17f5",
+  "modelRequested": "gpt-5.6-terra",
+  "promptVersion": "codex-conversation-sermon-translate-v1",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0007",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "David",
+            "zh": "大卫"
+          }
+        ],
+        "scriptureRefs": [
+          "诗篇 13篇",
+          "撒母耳记上 18—28章"
+        ],
+        "zh": "我们正在进行一个名为“当人生毫无道理”的信息系列。我们会看一些著名的诗篇，以及诗篇背后的故事。许多人都曾与焦虑挣扎；即使没有，你也有正在与焦虑挣扎的朋友。我很喜欢圣经，它很美地给我们有益的洞见，告诉我们当自己充满焦虑时该怎么办。我们看见大卫在诗篇13篇所作的这个不可思议的祷告。这是一位合神心意的人，却正在挣扎；他把自己的挣扎带到神面前。这个系列中，我们既看诗篇，也看诗篇背后的记载。这时的大卫二十多岁，而诗篇13篇的背景，其实就在撒母耳记上18章到28章这11章经文里。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0008",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Saul",
+            "zh": "扫罗"
+          },
+          {
+            "source": "David",
+            "zh": "大卫"
+          }
+        ],
+        "scriptureRefs": [
+          "撒母耳记上 18—28章"
+        ],
+        "zh": "就是撒母耳记上18章一直到28章。我上周末开始讲这个背景故事，这周会继续。所以，我要很快地为大家概括这11章。现在，如果你打开圣经的撒母耳记上18章到28章，又有一张地图，大概会是这样：扫罗两次试图杀大卫。扫罗是现任的王；大卫已经得着应许，他将成为下一任王。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0009",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Saul",
+            "zh": "扫罗"
+          },
+          {
+            "source": "David",
+            "zh": "大卫"
+          },
+          {
+            "source": "Ramah",
+            "zh": "拉玛"
+          },
+          {
+            "source": "Nob",
+            "zh": "挪伯"
+          },
+          {
+            "source": "Gath",
+            "zh": "迦特"
+          },
+          {
+            "source": "Adullam",
+            "zh": "亚杜兰"
+          }
+        ],
+        "scriptureRefs": [
+          "诗篇 142篇"
+        ],
+        "zh": "扫罗对大卫充满嫉妒。因为扫罗两次想杀他，大卫就逃到拉玛；又从拉玛到挪伯。我上周分享过，他从挪伯到迦特，在那里假装疯了；迦特王就把他赶走。接着他去了亚杜兰，住在一个洞穴里。他在亚杜兰的洞穴中祷告了诗篇142篇，就是我们上周查考的那首诗篇。现在，并不是一切都好了；并不是他祷告完诗篇142篇、作了那样一个精彩的祷告后，人生就一片美好了。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0010",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "David",
+            "zh": "大卫"
+          },
+          {
+            "source": "Adullam",
+            "zh": "亚杜兰"
+          },
+          {
+            "source": "Moab",
+            "zh": "摩押"
+          }
+        ],
+        "scriptureRefs": [
+          "诗篇 142篇"
+        ],
+        "zh": "我很喜欢圣经如此诚实：你会经历一些时期，感到被这世界压碎、压得喘不过气；你把祷告带到神面前，那些祷告很美，充满信心，就像我们上周一起祷告的诗篇142篇；然而你仍在处境之中，仍在试炼和挣扎之中。大卫经历的挣扎持续了许多年。这让我们看见，即使是神的子民，即使是我们这些全心爱祂的人，这个世界仍是扭曲、变形的，人生常常毫无道理。于是他离开亚杜兰，去了摩押。这让其中一位先知很震惊。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0011",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "David",
+            "zh": "大卫"
+          },
+          {
+            "source": "Israel",
+            "zh": "以色列"
+          },
+          {
+            "source": "Moab",
+            "zh": "摩押"
+          },
+          {
+            "source": "Hereth",
+            "zh": "哈列"
+          },
+          {
+            "source": "Keilah",
+            "zh": "基伊拉"
+          },
+          {
+            "source": "Philistines",
+            "zh": "非利士人"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "就好像说：“不，不，不，大卫，你越过边界，从以色列到了摩押。你不该在摩押；你将成为以色列的王，必须回到以色列去。”于是大卫离开摩押，住在哈列的树林里；然后他听说了基伊拉的人。基伊拉是一座将要遭到非利士人攻击的城。大卫是合神心意的人，他怜悯基伊拉的人，于是求问神：“我该不该保护这些我根本不认识的人？我该不该保护基伊拉人抵挡非利士人？”神说：“你应该。”"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0012",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "David",
+            "zh": "大卫"
+          },
+          {
+            "source": "Saul",
+            "zh": "扫罗"
+          },
+          {
+            "source": "Keilah",
+            "zh": "基伊拉"
+          },
+          {
+            "source": "Ziph",
+            "zh": "西弗"
+          },
+          {
+            "source": "Maon",
+            "zh": "玛云"
+          },
+          {
+            "source": "En Gedi",
+            "zh": "隐基底"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "于是大卫为这些人争战，在战场上冒着生命危险，为他们救下整座城。然后他感觉到，自己所救的这些人将会背叛他。于是他问神：“神啊，他们会把我交出去吗？会把我交给扫罗吗？”扫罗是这整整十年里一路追杀大卫的王，他一路追踪大卫到这些地方。“他们会把我交给扫罗吗？”神说：“会，他们会把你交出去。”唉，大卫再次经历背叛。他从基伊拉到西弗，又从西弗到玛云。我的意思是，他每隔几年就换一次住处。从玛云，他又到了隐基底的另一个洞穴。现在，隐基底是他住过的第二个洞穴。我的意思是，有人会问大卫：你真的只是横向搬家，从"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "hoeJTwl-EJg_seg_0007",
+    "hoeJTwl-EJg_seg_0008",
+    "hoeJTwl-EJg_seg_0009",
+    "hoeJTwl-EJg_seg_0010",
+    "hoeJTwl-EJg_seg_0011",
+    "hoeJTwl-EJg_seg_0012"
+  ],
+  "stage": "translate",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 12032,
+    "input_tokens": 17111,
+    "output_tokens": 1712,
+    "reasoning_output_tokens": 237
+  }
+}

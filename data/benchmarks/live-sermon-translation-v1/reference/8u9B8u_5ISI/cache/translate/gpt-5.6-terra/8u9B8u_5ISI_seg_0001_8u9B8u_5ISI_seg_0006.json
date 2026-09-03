@@ -1,0 +1,198 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T02:57:37.335272+00:00",
+  "elapsedSeconds": 43.787,
+  "inputSha256": "d49a4e3191e627ba5e35afb163d78b408350dbcd3bc8e64f0553f976cbc8daaa",
+  "modelRequested": "gpt-5.6-terra",
+  "promptVersion": "codex-conversation-sermon-translate-v1",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "contentType": "sermon",
+        "id": "8u9B8u_5ISI_seg_0001",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "John",
+            "zh": "约翰"
+          },
+          {
+            "source": "Ephesians",
+            "zh": "以弗所"
+          }
+        ],
+        "scriptureRefs": [
+          "John 17",
+          "Ephesians 4"
+        ],
+        "zh": "那么，今天要讨论的是：为什么世界上会有这么多宗派？我们马上会看《约翰福音》17章和《以弗所书》4章，很快就会讲到。但宗派确实很多。你们知道它们的名字：卫理公会、长老会、路德宗。不过我们得先讲一点历史。所以，我要在这个屏幕上画图——顺带说一句，这大概是每位教授的梦想。让我们从历史开始，看一看教会的图景，以及这些年来宗派的发展。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "8u9B8u_5ISI_seg_0002",
+        "potentialAsrIssues": [
+          "“Cphus”可能是“Cephas”（矶法）的语音识别错误。"
+        ],
+        "properNouns": [
+          {
+            "source": "Paul",
+            "zh": "保罗"
+          },
+          {
+            "source": "Apollos",
+            "zh": "亚波罗"
+          },
+          {
+            "source": "Cphus",
+            "zh": "矶法"
+          },
+          {
+            "source": "Christ",
+            "zh": "基督"
+          }
+        ],
+        "scriptureRefs": [
+          "1 Corinthians"
+        ],
+        "zh": "首先，当然是耶稣为我们的罪、代替我们死在十字架上；神在第三天使他从死里复活。于是早期教会形成了，早期教会就在这样的背景中开始出现。这里，早期教会朝这个方向发展。其实，很多人有时把这看作一个黄金时代，认为大家都很合一，没有分裂。但我真希望是这样，实际上却不是。《哥林多前书》有一段说：你们中间有人说“我是属保罗的”，有人说“我是属亚波罗的”，或“我是属矶法的”，或“我是属基督的”。所以很早就已经有分歧了。虽然很难看出来，我也不喜欢这样，但我们必须诚实，对吧？接下来是教会最初的几个世纪，所以我们大致要这样画，这就是——"
+      },
+      {
+        "contentType": "sermon",
+        "id": "8u9B8u_5ISI_seg_0003",
+        "potentialAsrIssues": [
+          "“Kaser El Dara”可能是埃及教会名称的语音识别或拼写错误。",
+          "“mariners's partners”可能是“Mariners' partners”的语音识别错误。"
+        ],
+        "properNouns": [
+          {
+            "source": "Augustine",
+            "zh": "奥古斯丁"
+          },
+          {
+            "source": "Egypt",
+            "zh": "埃及"
+          },
+          {
+            "source": "Mariners",
+            "zh": "马里纳斯"
+          },
+          {
+            "source": "Kaser El Dara Evangelical Church",
+            "zh": "卡塞尔·达拉福音教会"
+          },
+          {
+            "source": "Coptic Orthodox Church",
+            "zh": "科普特正教会"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "我们可以称之为早期教会，也许一直到一位名叫奥古斯丁的人所处的时代。这里都是早期教会，跨越了几个世纪。有人可能会说，这又是大家比较合一的黄金时期；但即便那时，组织上也并不统一。比如，我十二月刚去过埃及，探访我们马里纳斯的合作伙伴——卡塞尔·达拉福音教会。但在埃及你会知道，最大的宗派其实是科普特正教会。他们有不同的体制，包括自己的一脉教皇，可以说一直追溯到起初。因此，各地边缘地带等处都有不同群体。所以，并没有一个存在某种可见合一的黄金时代。不过，也许有人会说——"
+      },
+      {
+        "contentType": "sermon",
+        "id": "8u9B8u_5ISI_seg_0004",
+        "potentialAsrIssues": [
+          "“medieval area”可能是“medieval era”（中世纪时期）的语音识别错误。"
+        ],
+        "properNouns": [
+          {
+            "source": "Augustine",
+            "zh": "奥古斯丁"
+          },
+          {
+            "source": "Roman Catholics",
+            "zh": "罗马天主教徒"
+          },
+          {
+            "source": "Great Schism",
+            "zh": "大分裂"
+          },
+          {
+            "source": "Eastern Orthodox Church",
+            "zh": "东正教会"
+          },
+          {
+            "source": "Roman Catholic Church",
+            "zh": "罗马天主教会"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "那中世纪时期呢？也就是说，奥古斯丁之后，也许这里又过了几个世纪。在这段时间里，按这条时间线来看，也许教会是统一的，对吗？罗马天主教徒常常谈到这一时期，说那时全都统一，他们相信自己是唯一真正的教会。但你们大概在历史课上听过一件事，叫作大分裂。大分裂发生在1054年，是东正教会从罗马天主教会分离出来的时候。现在我要说，东正教徒并不说自己是从罗马天主教会分离出来的。他们说自己才是唯一真正的教会，而那真正的教会一直延续下来。我对此很有切身体会，因为实际上我的——"
+      },
+      {
+        "contentType": "sermon",
+        "id": "8u9B8u_5ISI_seg_0005",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Eastern Orthodox",
+            "zh": "东正教"
+          },
+          {
+            "source": "Catholic",
+            "zh": "天主教"
+          },
+          {
+            "source": "Anglican Charismatic movement",
+            "zh": "圣公会灵恩运动"
+          },
+          {
+            "source": "Baptist",
+            "zh": "浸信会"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "继父是一位东正教司祭。说到这里，我的宗派履历是这样的：我从小名义上是天主教徒，后来在圣公会灵恩运动中成为基督徒。上周我们谈过一点。后来我成了浸信会牧师，现在他在一所跨宗派神学院服事。不过，我继父是东正教司祭，这你们可能觉得有点奇怪；但东正教徒说：“不，我们才是唯一真正的教会，不是天主教徒；我们才是唯一真正的教会。”二十年前，我父母试图说服我加入这个唯一真正的教会。但如果你对“Catholic”这个词稍有了解，就知道它实际意思是“普世的”。所以天主教徒会说：“不，不，我们仍然沿着这个方向，做我们自己的事。我们是唯一的普世教会，呃，我们是唯一真正的教会。”"
+      },
+      {
+        "contentType": "sermon",
+        "id": "8u9B8u_5ISI_seg_0006",
+        "potentialAsrIssues": [
+          "“playmobile”可能是“Playmobil”（玩具品牌）的语音识别或拼写错误。",
+          "“95 thesis”通常作“95 theses”（《九十五条论纲》）。"
+        ],
+        "properNouns": [
+          {
+            "source": "Protestantism",
+            "zh": "新教"
+          },
+          {
+            "source": "Martin Luther",
+            "zh": "马丁·路德"
+          },
+          {
+            "source": "Playmobil",
+            "zh": "Playmobil"
+          },
+          {
+            "source": "Germany",
+            "zh": "德国"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "但接着，我们来到所谓的新教。你几乎肯定听过这个词，你可能会想：好吧，现在事情也许平静下来了；东正教走他们的路，但真正的教会或许在那里是合一的。可不是，不是，不是。接着又有一颗重磅炸弹闯进了这个村子。这是马丁·路德。我知道你没想到会看到一个马丁·路德的Playmobil玩偶，但500年前，马丁·路德把95条论纲钉在德国的一扇门上。"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "8u9B8u_5ISI_seg_0001",
+    "8u9B8u_5ISI_seg_0002",
+    "8u9B8u_5ISI_seg_0003",
+    "8u9B8u_5ISI_seg_0004",
+    "8u9B8u_5ISI_seg_0005",
+    "8u9B8u_5ISI_seg_0006"
+  ],
+  "stage": "translate",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 9984,
+    "input_tokens": 17037,
+    "output_tokens": 1928,
+    "reasoning_output_tokens": 207
+  }
+}

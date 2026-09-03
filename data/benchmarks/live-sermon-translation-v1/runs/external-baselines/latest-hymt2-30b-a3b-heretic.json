@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "live-sermon-external-baseline-index-v1",
+  "systemId": "B5-HyMT2-30B-A3B-Heretic",
+  "status": "generation_and_automatic_scoring_completed_sol_scoring_pending",
+  "completedAt": "2026-09-03T18:41:57.854481+00:00",
+  "referenceUsedForGeneration": false,
+  "configuration": {
+    "path": "../../hymt2-30b-a3b-heretic-config.json",
+    "sha256": "2b252d603f98854fb9d7e1ec625d552260fa20b6fbe2cfbaf86c1f1628f5598c"
+  },
+  "runner": {
+    "path": "../../../../../scripts/run_dgx_sermon_hymt2_baseline.py",
+    "sha256": "f4b3d712a718751e65c596e2b5373f06c1faa39995c6c5159d85d2cfd4b22f91"
+  },
+  "run": {
+    "directory": "hymt2-30b-a3b-heretic-q8-full-20260903",
+    "runReport": "hymt2-30b-a3b-heretic-q8-full-20260903/run-report.json",
+    "runReportSha256": "a1f09681d4b9444c73a56dc3d460c4faba45242308c2206dbbac60c37caf715c",
+    "predictionCount": 239,
+    "predictionSha256": "776a55d4d4c58438f94fd5f727f5085af14396c045714ccdf3e6e424907eaeb5",
+    "errorCount": 0
+  },
+  "automaticReferenceMetrics": {
+    "path": "hymt2-30b-a3b-heretic-q8-full-20260903/automatic-reference-metrics.json",
+    "sha256": "a2e89c3b06aeb9d1b5e1ec8bdd917ec71dd021b5796b2563b278e09cef964156"
+  },
+  "report": {
+    "path": "hymt2-30b-a3b-heretic-q8-full-20260903/report.md",
+    "sha256": "1d0a39f2a031abad09dcf4f90e6fa9fc9ad81b59f65dcc469030a24aceebf000"
+  },
+  "solHighScoringCompleted": false,
+  "realTimeReplayCompleted": false,
+  "deploymentEligible": false
+}
