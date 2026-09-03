@@ -13,6 +13,7 @@ Build app UI in `src/`. Keep `.openai/hosting.json`, `worker/index.js`, `scripts
 - This is an independent greenfield POC. Do not import or extend the repository's existing `web/admin.html`, `web/app.js`, or cloud publishing workflow.
 - Keep one desktop page for a 15.6-inch MacBook. The only primary actions are microphone selection, start, and stop.
 - The main surface is a large Simplified Chinese caption with a smaller English source line below it.
+- Make the Chinese caption as large as the available viewport permits for distance reading on both MacBook Pro and iPhone; keep the English caption at its current secondary size.
 - Do not add camera, pause, A/B controls, scripture sidebar, timeline review, cloud publishing, PDF/VTT/SRT export, authentication, or dashboards.
 - UI prototype recording may use browser `MediaRecorder`; the later local gateway is the source of truth for production PCM capture and model events.
 - Simulated captions must be visibly labeled as interface demo data and never presented as real local-model output.

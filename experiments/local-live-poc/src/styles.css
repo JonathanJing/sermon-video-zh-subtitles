@@ -200,16 +200,16 @@ a:focus-visible {
   justify-content: center;
   align-items: center;
   text-align: center;
-  padding: 4vh 4vw 7vh;
+  padding: 2vh 2vw 5vh;
 }
 
 .zh-caption {
-  max-width: 18em;
+  max-width: min(94vw, 18em);
   margin: 0;
   color: #ffffff;
-  font-size: clamp(48px, 5.1vw, 78px);
-  font-weight: 750;
-  line-height: 1.34;
+  font-size: clamp(72px, min(7vw, 12vh), 118px);
+  font-weight: 800;
+  line-height: 1.18;
   letter-spacing: 0.008em;
   text-wrap: balance;
 }
@@ -310,9 +310,25 @@ a:focus-visible {
 
 @media (max-width: 620px) {
   .control-bar {
-    grid-template-columns: 1fr;
-    gap: 14px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px 16px;
     padding: 16px;
+  }
+
+  .identity {
+    grid-column: 1 / -1;
+  }
+
+  .device-field {
+    grid-column: 1 / -1;
+  }
+
+  .session-state {
+    text-align: right;
+  }
+
+  .actions {
+    grid-column: 1 / -1;
   }
 
   .actions,
@@ -322,8 +338,8 @@ a:focus-visible {
   }
 
   .caption-stage {
-    min-height: 58vh;
-    padding: 20px 16px;
+    min-height: 0;
+    padding: 16px;
   }
 
   .stage-meta {
@@ -333,7 +349,9 @@ a:focus-visible {
   }
 
   .zh-caption {
-    font-size: clamp(38px, 11vw, 58px);
+    max-width: 100%;
+    font-size: clamp(46px, 13.2vw, 64px);
+    line-height: 1.2;
   }
 
   .health-bar {

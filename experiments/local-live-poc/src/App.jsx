@@ -304,7 +304,7 @@ export function App() {
         </div>
 
         <div className="caption-copy" aria-live="polite" aria-atomic="true">
-          <p className="zh-caption">
+          <p className="zh-caption" lang="zh-CN">
             {phase === "idle" || phase === "error"
               ? "选择麦克风，然后开始录音。"
               : phase === "requesting"
@@ -313,7 +313,7 @@ export function App() {
                   ? "本次录音已经安全停止。"
                   : currentCaption.zh}
           </p>
-          <p className="en-caption">
+          <p className="en-caption" lang="en">
             {isRunning ? currentCaption.en : "English transcript will appear here."}
           </p>
         </div>

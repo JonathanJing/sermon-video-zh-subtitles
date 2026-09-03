@@ -45,6 +45,43 @@ Browser microphone
 
 首版 gateway 只允许一条现场翻译链路。没有 context 命中、检索超时或 context pack 不可用时，直接使用普通翻译，并写入 fallback 事件。
 
+### 当前 MacBook 与运行时选择
+
+2026-09-03 只读盘点：这台机器是 M1 Max、64 GB 内存；Ollama 本地 API `0.32.15` 正常响应，但当前没有已安装或驻留的模型；`ffmpeg 9.0.1` 已安装；MLX、MLX-LM、MLX Whisper 和 whisper.cpp 尚未安装。
+
+建议按两步推进，避免一次引入两个不确定运行时：
+
+1. **第一条 working backend：whisper.cpp + Ollama。** whisper.cpp 负责英文 ASR，Ollama 只负责英译中。Ollama 已经运行，并提供本地 HTTP、流式输出和性能字段，是最短的翻译接入路径。翻译模型先 benchmark `translategemma:4b`；如果它不能稳定处理证道术语，再测专用翻译模型，而不是马上扩大 UI 或 gateway。
+2. **第二条可替换实验：MLX Whisper / MLX-LM。** MLX 在 Apple Silicon 上原生运行；`mlx_lm.server` 提供近似 OpenAI Chat Completions 的本地接口。它适合作为同一个 adapter 后面的实验实现，但官方说明该 server 只适合基本本地服务，不应直接暴露到网络。
+
+不要让浏览器直接调用 `11434` 或 `8080`。所有模型调用都经过 localhost gateway，这样 UI 不需要知道模型名称、prompt、context pack 或运行时：
+
+```text
+ASRProvider: whisper_cpp | mlx_whisper
+TranslationProvider: ollama | mlx_lm
+```
+
+首轮推荐组合：
+
+| 用途 | 首选 | 原因 |
+|---|---|---|
+| 现场英文 ASR | whisper.cpp + Metal | Apple Silicon 支持成熟，并有实时 microphone/stream 示例 |
+| 现场中文翻译 | Ollama + TranslateGemma 4B | 当前机器已有服务，模型体积较小，HTTP 接入最简单 |
+| 专用翻译候选 | Hy-MT2 1.8B | 专门面向翻译、支持英中；需要先验证 GGUF 或 MLX 转换与提示格式 |
+| Apple 原生实验 | MLX Whisper + MLX-LM | 便于测 Apple Silicon 原生性能，但当前机器尚未安装 |
+
+模型下载和安装不属于本次前端提交。下一阶段先建立 20–50 条冻结英文片段的 translation benchmark，再决定现场默认模型；不要根据模型名称直接决定生产链路。
+
+参考：
+
+- [Ollama local API](https://docs.ollama.com/api/introduction)
+- [Ollama streaming](https://docs.ollama.com/api/streaming)
+- [TranslateGemma in Ollama](https://ollama.com/library/translategemma)
+- [MLX-LM HTTP server](https://github.com/ml-explore/mlx-lm/blob/main/mlx_lm/SERVER.md)
+- [MLX Whisper](https://github.com/ml-explore/mlx-examples/tree/main/whisper)
+- [whisper.cpp](https://github.com/ggml-org/whisper.cpp)
+- [Tencent Hy-MT2 1.8B](https://huggingface.co/tencent/Hy-MT2-1.8B)
+
 ## Context Pack
 
 Context pack 是候选知识库，不是整篇讲章 prompt。分三层：
