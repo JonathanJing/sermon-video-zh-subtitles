@@ -168,7 +168,7 @@ A/B 必须固定模型、量化、解码参数、硬件和输入顺序。人工�
 - 每次 fallback 和错误原因；
 - 录音 SHA-256，作为会后 replay 的不可变输入标识。
 
-当前浏览器版录音与单个 JSON 日志只是 UI POC。接入 gateway 后，录音应按小块增量落盘，不能等整场结束才生成唯一 Blob。
+当前 gateway 已在每次开始时自动创建 `artifacts/sessions/<session-id>/`，每个 MediaRecorder chunk 增量追加到录音文件，事件逐条追加到 `events.jsonl`；停止时完成 `manifest.json` 并计算录音 SHA-256。浏览器 Blob 下载继续作为恢复副本。规范化 PCM 与 ASR 音频帧仍是下一阶段，不把当前 WebM 录音描述为 canonical PCM。
 
 ## 明确不做
 

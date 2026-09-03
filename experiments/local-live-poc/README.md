@@ -9,9 +9,21 @@ Independent greenfield interface for a MacBook-based live sermon caption feasibi
 - Start/stop audio recording in the browser.
 - Large Simplified Chinese caption area with a smaller English source line.
 - Downloadable audio and JSON event log after stopping.
+- Automatic per-recording local session folder with incremental audio and JSONL writes.
 - Clearly labeled stable-English replay through the real local translation backend.
 
 The Chinese captions now come from the real localhost gateway and MiLMMT A0 model. The English input is still a clearly labeled replay fixture until local ASR is connected. Browser microphone recording remains real and continues if translation fails. The canonical PCM writer and offline replay runner are not implemented yet.
+
+Each start automatically creates:
+
+```text
+artifacts/sessions/<timestamp>-<random-id>/
+  recording.webm   # appended once per MediaRecorder chunk
+  events.jsonl     # append-only UI/model/status events
+  manifest.json    # status, counts, paths, duration, and final audio SHA-256
+```
+
+The gateway syncs every chunk and event to disk. On stop it marks the manifest completed and calculates the recording SHA-256. Browser download links remain available as a recovery copy. Override the storage root with `LOCAL_LIVE_SESSION_ROOT=/absolute/path` when the recordings should live outside the project.
 
 The backend includes a dependency-free Weekly Pack builder, guarded context retriever, localhost gateway, and Ollama translation adapter. It selects the already-installed MiLMMT A0 by default but never downloads a model automatically.
 
@@ -62,6 +74,10 @@ The gateway defaults to the selected A0 model, `sermon-milmmt-46-4b-v1-q8:benchm
 Endpoints:
 
 - `GET /api/health`
+- `POST /api/sessions/start`
+- `POST /api/sessions/{sessionId}/audio?sequence=N`
+- `POST /api/sessions/{sessionId}/events`
+- `POST /api/sessions/{sessionId}/finalize`
 - `POST /api/context/retrieve`
 - `POST /api/translate`
 

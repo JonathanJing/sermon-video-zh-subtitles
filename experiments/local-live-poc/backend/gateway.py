@@ -3,10 +3,12 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
+from urllib.parse import parse_qs, urlparse
 
 from .content_pack import (
     CONTEXT_POLICIES,
@@ -17,16 +19,24 @@ from .content_pack import (
     retrieve,
 )
 from .ollama_client import OllamaClient, OllamaError
+from .session_store import SessionStore, SessionStoreError
 
 
 DEFAULT_OLLAMA_MODEL = "sermon-milmmt-46-4b-v1-q8:benchmark"
 
 
 class GatewayState:
-    def __init__(self, pack_path: str = "", ollama_model: str = "", ollama_url: str = "http://127.0.0.1:11434") -> None:
+    def __init__(
+        self,
+        pack_path: str = "",
+        ollama_model: str = "",
+        ollama_url: str = "http://127.0.0.1:11434",
+        session_root: str = "artifacts/sessions",
+    ) -> None:
         self.pack_path = pack_path
         self.pack = load_pack(pack_path) if pack_path else None
         self.ollama = OllamaClient(ollama_model, ollama_url)
+        self.sessions = SessionStore(session_root)
 
 
 class GatewayServer(ThreadingHTTPServer):
@@ -67,6 +77,15 @@ class Handler(BaseHTTPRequestHandler):
             raise PackValidationError("request body must be a JSON object")
         return payload
 
+    def _raw_body(self, max_bytes: int = 10 * 1024 * 1024) -> bytes:
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+        except ValueError as error:
+            raise PackValidationError("invalid Content-Length") from error
+        if length < 1 or length > max_bytes:
+            raise PackValidationError(f"body must be between 1 and {max_bytes} bytes")
+        return self.rfile.read(length)
+
     def do_OPTIONS(self) -> None:
         self.send_response(HTTPStatus.NO_CONTENT)
         self.send_header("Access-Control-Allow-Origin", self._origin())
@@ -76,7 +95,7 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self) -> None:
-        if self.path != "/api/health":
+        if urlparse(self.path).path != "/api/health":
             self._send(HTTPStatus.NOT_FOUND, {"error": "not_found"})
             return
         ollama = self.server.state.ollama.status()
@@ -91,19 +110,58 @@ class Handler(BaseHTTPRequestHandler):
                 "entryCount": len(pack["entries"]),
             },
             "ollama": ollama,
+            "sessionStorage": {
+                "available": True,
+                "directory": str(self.server.state.sessions.root),
+            },
         })
 
     def do_POST(self) -> None:
         try:
+            parsed = urlparse(self.path)
+            audio_match = re.fullmatch(r"/api/sessions/([^/]+)/audio", parsed.path)
+            session_match = re.fullmatch(r"/api/sessions/([^/]+)/(events|finalize)", parsed.path)
+            if audio_match:
+                values = parse_qs(parsed.query).get("sequence", [])
+                if len(values) != 1:
+                    raise PackValidationError("audio sequence query parameter is required")
+                try:
+                    sequence = int(values[0])
+                except ValueError as error:
+                    raise PackValidationError("audio sequence must be an integer") from error
+                result = self.server.state.sessions.append_audio(
+                    audio_match.group(1), sequence, self._raw_body()
+                )
+                self._send(HTTPStatus.OK, result)
+                return
+
             payload = self._body()
-            if self.path == "/api/context/retrieve":
+            if parsed.path == "/api/sessions/start":
+                self._send(HTTPStatus.CREATED, self.server.state.sessions.create(payload))
+            elif session_match and session_match.group(2) == "events":
+                self._send(
+                    HTTPStatus.OK,
+                    self.server.state.sessions.append_event(session_match.group(1), payload),
+                )
+            elif session_match and session_match.group(2) == "finalize":
+                self._send(
+                    HTTPStatus.OK,
+                    self.server.state.sessions.finalize(session_match.group(1), payload),
+                )
+            elif parsed.path == "/api/context/retrieve":
                 self._retrieve(payload)
-            elif self.path == "/api/translate":
+            elif parsed.path == "/api/translate":
                 self._translate(payload)
             else:
                 self._send(HTTPStatus.NOT_FOUND, {"error": "not_found"})
-        except PackValidationError as error:
+        except (PackValidationError, SessionStoreError) as error:
             self._send(HTTPStatus.BAD_REQUEST, {"error": "invalid_request", "message": str(error)})
+        except OSError as error:
+            self._send(HTTPStatus.INTERNAL_SERVER_ERROR, {
+                "error": "session_storage_failed",
+                "message": str(error),
+                "recordingShouldContinue": True,
+            })
 
     def _retrieve(self, payload: dict[str, Any]) -> None:
         source_text = str(payload.get("sourceTextEn") or "").strip()
@@ -209,6 +267,10 @@ def parser() -> argparse.ArgumentParser:
         default=os.environ.get("LOCAL_LIVE_OLLAMA_MODEL", DEFAULT_OLLAMA_MODEL),
     )
     command.add_argument("--ollama-url", default=os.environ.get("LOCAL_LIVE_OLLAMA_URL", "http://127.0.0.1:11434"))
+    command.add_argument(
+        "--session-root",
+        default=os.environ.get("LOCAL_LIVE_SESSION_ROOT", "artifacts/sessions"),
+    )
     return command
 
 
@@ -216,12 +278,18 @@ def main() -> None:
     arguments = parser().parse_args()
     if arguments.pack and not Path(arguments.pack).is_file():
         raise SystemExit(f"weekly pack not found: {arguments.pack}")
-    state = GatewayState(arguments.pack, arguments.ollama_model, arguments.ollama_url)
+    state = GatewayState(
+        arguments.pack,
+        arguments.ollama_model,
+        arguments.ollama_url,
+        arguments.session_root,
+    )
     server = create_server(arguments.host, arguments.port, state)
     print(json.dumps({
         "gateway": f"http://{arguments.host}:{arguments.port}",
         "packVersion": state.pack.get("packVersion") if state.pack else None,
         "ollamaModel": arguments.ollama_model or None,
+        "sessionRoot": str(state.sessions.root),
     }, ensure_ascii=False), flush=True)
     try:
         server.serve_forever()

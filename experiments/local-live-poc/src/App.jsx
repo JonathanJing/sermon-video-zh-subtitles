@@ -74,6 +74,8 @@ export function App() {
   const [recordingBytes, setRecordingBytes] = useState(0);
   const [logUrl, setLogUrl] = useState("");
   const [eventCount, setEventCount] = useState(0);
+  const [localSession, setLocalSession] = useState(null);
+  const [localSaveState, setLocalSaveState] = useState("idle");
 
   const streamRef = useRef(null);
   const recorderRef = useRef(null);
@@ -86,6 +88,10 @@ export function App() {
   const meterFrameRef = useRef(null);
   const sessionTokenRef = useRef(0);
   const cursorSequenceRef = useRef(null);
+  const localSessionRef = useRef(null);
+  const serverWriteQueueRef = useRef(Promise.resolve());
+  const audioChunkSequenceRef = useRef(0);
+  const localWriteFailureRef = useRef(false);
 
   const isRunning = phase === "running";
   const isBusy = phase === "requesting";
@@ -98,16 +104,49 @@ export function App() {
     return "准备开始";
   }, [phase]);
 
-  function appendEvent(type, detail = {}) {
-    eventsRef.current.push({
+  function appendEvent(type, detail = {}, persist = true) {
+    const event = {
       schemaVersion: 1,
       sequence: eventsRef.current.length + 1,
       at: nowIso(),
       elapsedMs: startTimeRef.current ? Date.now() - startTimeRef.current : 0,
       type,
       ...detail,
-    });
+    };
+    eventsRef.current.push(event);
     setEventCount(eventsRef.current.length);
+    if (persist && localSessionRef.current && !localWriteFailureRef.current) {
+      const sessionId = localSessionRef.current.sessionId;
+      enqueueServerWrite(async () => {
+        const response = await fetch(`${GATEWAY_URL}/api/sessions/${sessionId}/events`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(event),
+        });
+        if (!response.ok) {
+          const result = await response.json().catch(() => ({}));
+          throw new Error(result.message || `Event storage HTTP ${response.status}`);
+        }
+      });
+    }
+    return event;
+  }
+
+  function recordLocalStorageFailure(caught) {
+    if (localWriteFailureRef.current) return;
+    localWriteFailureRef.current = true;
+    setLocalSaveState("error");
+    appendEvent("local_storage_failed", {
+      message: caught?.message || "Local session storage failed",
+      browserDownloadFallbackAvailable: true,
+    }, false);
+  }
+
+  function enqueueServerWrite(task) {
+    serverWriteQueueRef.current = serverWriteQueueRef.current
+      .then(task)
+      .catch(recordLocalStorageFailure);
+    return serverWriteQueueRef.current;
   }
 
   async function refreshDevices() {
@@ -267,13 +306,23 @@ export function App() {
     setCaption({ en: "", zh: "正在连接麦克风…" });
     setTranslationState("idle");
     cursorSequenceRef.current = null;
+    setLocalSession(null);
+    setLocalSaveState("creating");
+    localSessionRef.current = null;
+    audioChunkSequenceRef.current = 0;
+    localWriteFailureRef.current = false;
     setPhase("requesting");
     eventsRef.current = [];
     setEventCount(0);
 
     try {
+      await serverWriteQueueRef.current;
+      serverWriteQueueRef.current = Promise.resolve();
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error("当前浏览器不支持麦克风采集。请使用最新版 Safari 或 Chrome。");
+      }
+      if (!window.MediaRecorder) {
+        throw new Error("当前浏览器不支持录音文件生成。请使用最新版 Safari 或 Chrome。");
       }
       const audio = selectedDeviceId
         ? { deviceId: { exact: selectedDeviceId }, echoCancellation: true, noiseSuppression: true }
@@ -284,22 +333,86 @@ export function App() {
       startMeter(stream);
 
       chunksRef.current = [];
-      if (window.MediaRecorder) {
-        const recorder = new MediaRecorder(stream);
-        recorderRef.current = recorder;
-        recorder.addEventListener("dataavailable", (event) => {
-          if (event.data.size > 0) chunksRef.current.push(event.data);
+      const recorder = new MediaRecorder(stream);
+      recorderRef.current = recorder;
+      const audioTrack = stream.getAudioTracks()[0];
+      const audioMimeType = recorder.mimeType || "audio/webm";
+      startTimeRef.current = Date.now();
+
+      let serverSession = null;
+      try {
+        const response = await fetch(`${GATEWAY_URL}/api/sessions/start`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            mode: "local_translation_demo",
+            audioMimeType,
+            audioDeviceId: audioTrack?.getSettings().deviceId || "default",
+            audioDeviceLabel: audioTrack?.label || "default",
+            contextPolicy: "none",
+          }),
         });
-        recorder.addEventListener("stop", () => {
-          const mimeType = recorder.mimeType || "audio/webm";
-          const blob = new Blob(chunksRef.current, { type: mimeType });
-          setRecordingBytes(blob.size);
-          setRecordingUrl(URL.createObjectURL(blob));
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || `Session storage HTTP ${response.status}`);
+        serverSession = result;
+        localSessionRef.current = result;
+        setLocalSession(result);
+        setLocalSaveState("saving");
+        appendEvent("local_session_created", {
+          localSessionId: result.sessionId,
+          localDirectory: result.directory,
         });
-        recorder.start(1000);
+      } catch (caught) {
+        recordLocalStorageFailure(caught);
       }
 
-      startTimeRef.current = Date.now();
+      recorder.addEventListener("dataavailable", (event) => {
+        if (event.data.size < 1) return;
+        chunksRef.current.push(event.data);
+        if (!serverSession || localWriteFailureRef.current) return;
+        const sequence = audioChunkSequenceRef.current + 1;
+        audioChunkSequenceRef.current = sequence;
+        enqueueServerWrite(async () => {
+          const response = await fetch(
+            `${GATEWAY_URL}/api/sessions/${serverSession.sessionId}/audio?sequence=${sequence}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": audioMimeType },
+              body: event.data,
+            },
+          );
+          if (!response.ok) {
+            const result = await response.json().catch(() => ({}));
+            throw new Error(result.message || `Audio storage HTTP ${response.status}`);
+          }
+        });
+      });
+      recorder.addEventListener("stop", () => {
+        const blob = new Blob(chunksRef.current, { type: audioMimeType });
+        setRecordingBytes(blob.size);
+        setRecordingUrl(URL.createObjectURL(blob));
+        if (!serverSession || localWriteFailureRef.current) return;
+        enqueueServerWrite(async () => {
+          const response = await fetch(
+            `${GATEWAY_URL}/api/sessions/${serverSession.sessionId}/finalize`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                durationMs: Date.now() - startTimeRef.current,
+                stoppedAt: nowIso(),
+              }),
+            },
+          );
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.message || `Session finalize HTTP ${response.status}`);
+          localSessionRef.current = result;
+          setLocalSession(result);
+          setLocalSaveState("saved");
+        });
+      });
+      recorder.start(1000);
+
       const sessionToken = sessionTokenRef.current + 1;
       sessionTokenRef.current = sessionToken;
       appendEvent("session_started", {
@@ -307,7 +420,8 @@ export function App() {
         asrSource: "demo_replay",
         translationGateway: GATEWAY_URL,
         contextPolicy: "none",
-        audioDeviceId: stream.getAudioTracks()[0]?.getSettings().deviceId || "default",
+        localSessionId: serverSession?.sessionId || null,
+        audioDeviceId: audioTrack?.getSettings().deviceId || "default",
       });
       const health = await refreshGatewayHealth();
       appendEvent("gateway_health", { health });
@@ -329,6 +443,9 @@ export function App() {
 
   function stopSession() {
     appendEvent("session_stopped", { durationMs: Date.now() - startTimeRef.current });
+    if (localSessionRef.current && !localWriteFailureRef.current) {
+      setLocalSaveState("finalizing");
+    }
     const manifest = {
       schemaVersion: 1,
       mode: "local_translation_demo",
@@ -337,6 +454,7 @@ export function App() {
       stoppedAt: nowIso(),
       durationMs: Date.now() - startTimeRef.current,
       eventCount: eventsRef.current.length,
+      localSession: localSessionRef.current,
       events: eventsRef.current,
     };
     setLogUrl(downloadUrl(`${JSON.stringify(manifest, null, 2)}\n`, "application/json"));
@@ -427,10 +545,14 @@ export function App() {
           <span data-state={gatewayHealth?.status === "ready" ? "active" : "pending"}>
             Gateway {gatewayHealth?.status === "ready" ? "就绪" : gatewayHealth?.status === "offline" ? "离线" : "未就绪"}
           </span>
+          <span data-state={localSaveState === "saved" || localSaveState === "saving" ? "active" : localSaveState === "error" ? "pending" : "idle"}>
+            本地保存 {localSaveState === "creating" ? "建目录" : localSaveState === "saving" ? "增量写入" : localSaveState === "finalizing" ? "完成中" : localSaveState === "saved" ? "已完成" : localSaveState === "error" ? "浏览器备份" : "待机"}
+          </span>
           <span>Context A0 / none</span>
         </div>
         <div className="evidence">
           <span>事件 {eventCount}</span>
+          {localSession && <span title={localSession.directory}>文件夹 {localSession.sessionId}</span>}
           {recordingUrl && (
             <a href={recordingUrl} download={`local-live-${Date.now()}.webm`}>
               下载录音 {recordingBytes > 0 ? `${Math.max(1, Math.round(recordingBytes / 1024))} KB` : ""}

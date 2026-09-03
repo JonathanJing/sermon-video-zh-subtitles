@@ -24,7 +24,11 @@ class GatewayTest(unittest.TestCase):
             "terms": [{"source": "promised land", "preferredZh": "应许之地", "status": "approved"}],
         }], service_date="2099-09-05", source_id="saturday-service", audio_sha256="b" * 64, valid_until="2099-09-07")
         write_pack(pack, pack_path)
-        state = GatewayState(str(pack_path), "")
+        state = GatewayState(
+            str(pack_path),
+            "",
+            session_root=str(Path(self.temporary.name) / "sessions"),
+        )
         state.ollama.status = lambda: {"available": True, "configuredModel": None, "installedModels": []}
         self.server = create_server("127.0.0.1", 0, state)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
@@ -51,11 +55,74 @@ class GatewayTest(unittest.TestCase):
         except HTTPError as error:
             return error.code, json.loads(error.read())
 
+    def raw_request(self, path: str, data: bytes) -> tuple[int, dict]:
+        request = Request(
+            self.base_url + path,
+            data=data,
+            headers={"Content-Type": "application/octet-stream"},
+            method="POST",
+        )
+        try:
+            with urlopen(request, timeout=2) as response:
+                return response.status, json.loads(response.read())
+        except HTTPError as error:
+            return error.code, json.loads(error.read())
+
     def test_health_reports_pack_and_degraded_model(self) -> None:
         status, payload = self.request("/api/health")
         self.assertEqual(status, 200)
         self.assertEqual(payload["status"], "degraded")
         self.assertEqual(payload["contentPack"]["entryCount"], 1)
+        self.assertTrue(payload["sessionStorage"]["available"])
+
+    def test_session_folder_persists_audio_events_and_manifest(self) -> None:
+        status, created = self.request("/api/sessions/start", {
+            "audioMimeType": "audio/webm;codecs=opus",
+            "audioDeviceLabel": "Test microphone",
+        })
+        self.assertEqual(status, 201)
+        session_id = created["sessionId"]
+        directory = Path(created["directory"])
+        self.assertTrue(directory.is_dir())
+
+        status, event_result = self.request(f"/api/sessions/{session_id}/events", {
+            "schemaVersion": 1,
+            "sequence": 1,
+            "at": "2099-09-05T12:00:00Z",
+            "type": "session_started",
+        })
+        self.assertEqual(status, 200)
+        self.assertEqual(event_result["eventCount"], 1)
+
+        status, audio_result = self.raw_request(
+            f"/api/sessions/{session_id}/audio?sequence=1",
+            b"test-audio-chunk",
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(audio_result["audioChunkCount"], 1)
+
+        status, finalized = self.request(f"/api/sessions/{session_id}/finalize", {
+            "durationMs": 1234,
+            "stoppedAt": "2099-09-05T12:00:01Z",
+        })
+        self.assertEqual(status, 200)
+        self.assertEqual(finalized["status"], "completed")
+        self.assertEqual(finalized["audioBytes"], len(b"test-audio-chunk"))
+        self.assertEqual((directory / "recording.webm").read_bytes(), b"test-audio-chunk")
+        event = json.loads((directory / "events.jsonl").read_text().strip())
+        self.assertEqual(event["type"], "session_started")
+        manifest = json.loads((directory / "manifest.json").read_text())
+        self.assertEqual(manifest["eventCount"], 1)
+        self.assertEqual(len(manifest["audioSha256"]), 64)
+
+    def test_session_rejects_out_of_order_audio(self) -> None:
+        _, created = self.request("/api/sessions/start", {"audioMimeType": "audio/webm"})
+        status, payload = self.raw_request(
+            f"/api/sessions/{created['sessionId']}/audio?sequence=2",
+            b"out-of-order",
+        )
+        self.assertEqual(status, 400)
+        self.assertIn("sequence must be 1", payload["message"])
 
     def test_retrieve_returns_approved_term_but_not_machine_translation(self) -> None:
         status, payload = self.request("/api/context/retrieve", {
