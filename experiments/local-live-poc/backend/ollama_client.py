@@ -10,6 +10,10 @@ class OllamaError(RuntimeError):
     pass
 
 
+MILMMT_A0_PROMPT_VERSION = "milmmt-46-official-english-to-chinese-simplified-v1"
+CONTEXT_PROMPT_VERSION = "local-live-sermon-context-v1"
+
+
 class OllamaClient:
     def __init__(self, model: str = "", base_url: str = "http://127.0.0.1:11434") -> None:
         self.model = model.strip()
@@ -52,6 +56,22 @@ class OllamaClient:
 
     @staticmethod
     def build_prompt(source_text_en: str, context: dict[str, Any]) -> str:
+        has_context = any(
+            context.get(key)
+            for key in (
+                "approvedTerms",
+                "verifiedScriptureRefs",
+                "reviewedExactExamples",
+                "reviewedAlignedReferences",
+            )
+        )
+        if not has_context:
+            return (
+                "Translate this from English to Chinese (Simplified):\n"
+                f"English: {source_text_en}\n"
+                "Chinese (Simplified):"
+            )
+
         context_lines: list[str] = []
         for term in context.get("approvedTerms", []):
             context_lines.append(f"- Approved term: {term['source']} => {term['preferredZh']}")
@@ -81,16 +101,27 @@ class OllamaClient:
     def translate(self, source_text_en: str, context: dict[str, Any]) -> dict[str, Any]:
         if not self.model:
             raise OllamaError("no Ollama model is configured")
+        has_context = any(context.get(key) for key in context)
+        prompt_version = CONTEXT_PROMPT_VERSION if has_context else MILMMT_A0_PROMPT_VERSION
         response = self._json("/api/generate", {
             "model": self.model,
             "prompt": self.build_prompt(source_text_en, context),
+            "raw": True,
             "stream": False,
             "keep_alive": "15m",
-            "options": {"temperature": 0},
+            "options": {
+                "temperature": 0,
+                "top_p": 1,
+                "top_k": 1,
+                "repeat_penalty": 1,
+                "seed": 42,
+                "num_predict": 256,
+            },
         }, timeout=60.0)
         return {
             "targetTextZh": str(response.get("response") or "").strip(),
             "model": self.model,
+            "promptVersion": prompt_version,
             "metrics": {
                 "totalDurationNs": response.get("total_duration"),
                 "loadDurationNs": response.get("load_duration"),

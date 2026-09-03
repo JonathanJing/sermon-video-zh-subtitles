@@ -3,8 +3,14 @@ from __future__ import annotations
 import unittest
 from datetime import datetime, timezone
 
-from backend.content_pack import alignment_summary, build_weekly_pack, prompt_context, retrieve
-from backend.ollama_client import OllamaClient
+from backend.content_pack import (
+    PackValidationError,
+    alignment_summary,
+    build_weekly_pack,
+    prompt_context,
+    retrieve,
+)
+from backend.ollama_client import MILMMT_A0_PROMPT_VERSION, OllamaClient
 
 
 class ContentPackTest(unittest.TestCase):
@@ -38,6 +44,14 @@ class ContentPackTest(unittest.TestCase):
         self.assertEqual([entry["sequence"] for entry in self.pack["entries"]], [1, 2])
         self.assertEqual(self.pack["sermonMap"]["segmentCount"], 2)
         self.assertEqual(self.pack["sermonMap"]["sections"][1]["sectionTitle"], "Grace and truth")
+
+    def test_rejects_unknown_saturday_segment_schema(self) -> None:
+        with self.assertRaises(PackValidationError):
+            build_weekly_pack([{
+                "schemaVersion": "future-v9",
+                "segmentId": "seg_001",
+                "sourceTextEn": "Grace is enough.",
+            }], service_date="2026-09-05", source_id="saturday-service", audio_sha256="a" * 64, valid_until="2026-09-07")
 
     def test_machine_translation_is_not_injectable(self) -> None:
         hits = retrieve(
@@ -139,6 +153,35 @@ class ContentPackTest(unittest.TestCase):
         self.assertIn("grace => 恩典", prompt)
         self.assertIn("another delivery of the sermon", prompt)
         self.assertIn("Never copy wording", prompt)
+
+    def test_a0_uses_frozen_milmmt_completion_prompt_and_options(self) -> None:
+        empty_context = {
+            "approvedTerms": [],
+            "verifiedScriptureRefs": [],
+            "reviewedExactExamples": [],
+            "reviewedAlignedReferences": [],
+        }
+        self.assertEqual(
+            OllamaClient.build_prompt("Grace is enough.", empty_context),
+            "Translate this from English to Chinese (Simplified):\n"
+            "English: Grace is enough.\n"
+            "Chinese (Simplified):",
+        )
+
+        captured = {}
+
+        class RecordingClient(OllamaClient):
+            def _json(self, path, payload=None, timeout=5.0):
+                captured.update({"path": path, "payload": payload, "timeout": timeout})
+                return {"response": "恩典够用。", "eval_count": 5}
+
+        result = RecordingClient("sermon-milmmt-46-4b-v1-q8:benchmark").translate(
+            "Grace is enough.", empty_context
+        )
+        self.assertEqual(captured["path"], "/api/generate")
+        self.assertTrue(captured["payload"]["raw"])
+        self.assertEqual(captured["payload"]["options"]["top_k"], 1)
+        self.assertEqual(result["promptVersion"], MILMMT_A0_PROMPT_VERSION)
 
 
 if __name__ == "__main__":

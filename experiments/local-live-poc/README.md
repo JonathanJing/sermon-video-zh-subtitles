@@ -9,11 +9,11 @@ Independent greenfield interface for a MacBook-based live sermon caption feasibi
 - Start/stop audio recording in the browser.
 - Large Simplified Chinese caption area with a smaller English source line.
 - Downloadable audio and JSON event log after stopping.
-- Clearly labeled simulated captions for UI verification.
+- Clearly labeled stable-English replay through the real local translation backend.
 
-The local ASR, canonical PCM writer, and offline replay runner are intentionally not implemented yet. The UI never presents simulated captions as real model output.
+The Chinese captions now come from the real localhost gateway and MiLMMT A0 model. The English input is still a clearly labeled replay fixture until local ASR is connected. Browser microphone recording remains real and continues if translation fails. The canonical PCM writer and offline replay runner are not implemented yet.
 
-The backend now includes a dependency-free Weekly Pack builder, guarded context retriever, localhost gateway, and Ollama translation adapter. It does not download or select a model automatically.
+The backend includes a dependency-free Weekly Pack builder, guarded context retriever, localhost gateway, and Ollama translation adapter. It selects the already-installed MiLMMT A0 by default but never downloads a model automatically.
 
 The intentionally small system and context-pack plan is in [DESIGN.zh.md](./DESIGN.zh.md). The verified desktop design review is in [design-qa.md](./design-qa.md).
 
@@ -27,10 +27,10 @@ Open the local page in a browser and allow microphone access when starting a rec
 
 ## Saturday Weekly Pack
 
-Prepare one JSON object per caption segment:
+Prepare one JSON object per stable caption segment. The interchange format is JSONL: one complete `saturday-sermon-segment-v1` object per line, ordered by time.
 
 ```json
-{"segmentId":"seg_000001","sectionId":"opening","sectionTitle":"At the border","startMs":0,"endMs":4200,"sourceTextEn":"God's people are approaching the promised land.","targetTextZh":"神的百姓正在接近应许之地。","translationStatus":"machine_generated","scriptureRefs":["Numbers 13-14"],"terms":[{"source":"promised land","preferredZh":"应许之地","status":"approved"}]}
+{"schemaVersion":"saturday-sermon-segment-v1","segmentId":"seg_000001","sectionId":"opening","sectionTitle":"At the border","startMs":0,"endMs":4200,"sourceTextEn":"God's people are approaching the promised land.","targetTextZh":"神的百姓正在接近应许之地。","transcriptStatus":"machine_generated","translationStatus":"machine_generated","scriptureRefs":[{"reference":"Numbers 13-14","status":"candidate"}],"terms":[{"source":"promised land","preferredZh":"应许之地","status":"approved"}]}
 ```
 
 Build the short-lived pack using the real Saturday recording as provenance:
@@ -49,12 +49,15 @@ Machine-generated Chinese is retained as a candidate but cannot be inserted into
 String-only scripture references are also candidates; use `{"reference":"Numbers 13-14","status":"approved"}` only after review if the reference may be injected.
 The builder assigns every segment a one-based `sequence`, creating an ordered Saturday sermon map. Optional section fields are useful for logs but are not required.
 
+Keep the original audio, `saturday-segments.jsonl`, and generated `weekly-pack.json` together. The builder records the source ID, service date, and audio SHA-256. The normative field definition is [backend/schemas/saturday-sermon-segment-v1.schema.json](./backend/schemas/saturday-sermon-segment-v1.schema.json); a copy-ready file is in [backend/examples/saturday-segments.example.jsonl](./backend/examples/saturday-segments.example.jsonl).
+
 ## Local gateway
 
 ```bash
-LOCAL_LIVE_OLLAMA_MODEL=translategemma:4b \
 python3 -m backend.gateway --pack artifacts/weekly-pack.json
 ```
+
+The gateway defaults to the selected A0 model, `sermon-milmmt-46-4b-v1-q8:benchmark`. `contextPolicy=none` preserves the frozen official MiLMMT prompt and benchmark decoding settings. A future model or post-trained artifact can replace it with `LOCAL_LIVE_OLLAMA_MODEL` without changing the browser contract.
 
 Endpoints:
 

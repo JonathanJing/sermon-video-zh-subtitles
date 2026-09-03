@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/saturday-sermon-segment-v1.schema.json",
+  "title": "Saturday sermon segment v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "segmentId",
+    "startMs",
+    "endMs",
+    "sourceTextEn",
+    "transcriptStatus",
+    "translationStatus"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "saturday-sermon-segment-v1" },
+    "segmentId": { "type": "string", "minLength": 1 },
+    "sectionId": { "type": "string", "minLength": 1 },
+    "sectionTitle": { "type": "string", "minLength": 1 },
+    "startMs": { "type": "integer", "minimum": 0 },
+    "endMs": { "type": "integer", "minimum": 0 },
+    "sourceTextEn": { "type": "string", "minLength": 1 },
+    "targetTextZh": { "type": "string" },
+    "transcriptStatus": {
+      "enum": ["machine_generated", "reviewed", "corrected", "approved"]
+    },
+    "translationStatus": {
+      "enum": ["missing", "machine_generated", "reviewed", "corrected", "approved"]
+    },
+    "scriptureRefs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["reference", "status"],
+        "properties": {
+          "reference": { "type": "string", "minLength": 1 },
+          "status": {
+            "enum": ["candidate", "machine_generated", "reviewed", "corrected", "approved"]
+          }
+        }
+      }
+    },
+    "terms": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "preferredZh", "status"],
+        "properties": {
+          "source": { "type": "string", "minLength": 1 },
+          "preferredZh": { "type": "string" },
+          "status": {
+            "enum": ["candidate", "machine_generated", "reviewed", "corrected", "approved"]
+          }
+        }
+      }
+    }
+  }
+}

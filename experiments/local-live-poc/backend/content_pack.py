@@ -137,6 +137,11 @@ def build_weekly_pack(
 
     entries: list[dict[str, Any]] = []
     for index, segment in enumerate(segments, 1):
+        segment_schema = _clean_text(segment.get("schemaVersion"))
+        if segment_schema and segment_schema != "saturday-sermon-segment-v1":
+            raise PackValidationError(
+                f"segment {index} has unsupported schemaVersion: {segment_schema}"
+            )
         segment_id = _clean_text(segment.get("segmentId") or f"seg_{index:06d}")
         source_en = _clean_text(segment.get("sourceTextEn"))
         if not source_en:

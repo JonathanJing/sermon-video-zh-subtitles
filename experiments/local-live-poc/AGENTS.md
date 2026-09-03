@@ -19,3 +19,6 @@ Build app UI in `src/`. Keep `.openai/hosting.json`, `worker/index.js`, `scripts
 - Simulated captions must be visibly labeled as interface demo data and never presented as real local-model output.
 - Saturday livestream audio is immutable provenance and replay input. Its transcript and translation may build a short-lived Weekly Pack, but machine-generated Chinese is never prompt-injectable until reviewed.
 - Runtime retrieval may use Saturday English for matching. Translation prompts may inject only approved terms, verified scripture references, and reviewed exact bilingual examples; current live English remains the source of truth.
+- The translation A0 is `sermon-milmmt-46-4b-v1-q8:benchmark` through Ollama. For `contextPolicy=none`, preserve the frozen official MiLMMT completion prompt and benchmark decoding settings (`raw=true`, temperature 0, top-k 1).
+- Until local ASR is connected, frontend/backend integration may replay clearly labeled demo English through the real gateway and model. Never label that English as microphone transcription; microphone recording remains real and independent.
+- Saturday workflow interchange is JSONL with one `saturday-sermon-segment-v1` object per stable English segment; keep the source audio separately and pass its SHA-256 to the pack builder.

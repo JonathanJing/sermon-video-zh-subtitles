@@ -19,6 +19,9 @@ from .content_pack import (
 from .ollama_client import OllamaClient, OllamaError
 
 
+DEFAULT_OLLAMA_MODEL = "sermon-milmmt-46-4b-v1-q8:benchmark"
+
+
 class GatewayState:
     def __init__(self, pack_path: str = "", ollama_model: str = "", ollama_url: str = "http://127.0.0.1:11434") -> None:
         self.pack_path = pack_path
@@ -201,7 +204,10 @@ def parser() -> argparse.ArgumentParser:
     command.add_argument("--host", default="127.0.0.1")
     command.add_argument("--port", type=int, default=8766)
     command.add_argument("--pack", default=os.environ.get("LOCAL_LIVE_WEEKLY_PACK", ""))
-    command.add_argument("--ollama-model", default=os.environ.get("LOCAL_LIVE_OLLAMA_MODEL", ""))
+    command.add_argument(
+        "--ollama-model",
+        default=os.environ.get("LOCAL_LIVE_OLLAMA_MODEL", DEFAULT_OLLAMA_MODEL),
+    )
     command.add_argument("--ollama-url", default=os.environ.get("LOCAL_LIVE_OLLAMA_URL", "http://127.0.0.1:11434"))
     return command
 

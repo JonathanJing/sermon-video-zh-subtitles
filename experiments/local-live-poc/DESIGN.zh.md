@@ -21,7 +21,7 @@ MacBook 麦克风
       └── UI session ─────> 会后下载的 JSON 事件日志
 ```
 
-当前页面已经可以选择麦克风、开始/停止录音、显示电平和计时，并在停止后提供音频与 JSON 日志。页面中的中英文句子只是有明确标识的界面演示数据；尚未连接真实 ASR 和翻译模型。
+当前页面已经可以选择麦克风、开始/停止录音、显示电平和计时，并在停止后提供音频与 JSON 日志。中文已通过 localhost gateway 连接真实 MiLMMT A0；英文暂时使用明确标识的稳定片段 replay，尚未连接麦克风 ASR。
 
 ## 下一步最小链路
 
@@ -47,12 +47,13 @@ Browser microphone
 
 ### 当前 MacBook 与运行时选择
 
-2026-09-03 最新只读盘点：这台机器是 M1 Max、64 GB 内存；Ollama 本地 API `0.33.3` 正常响应，已存在 `sermon-qwen35-4b-base-bf16:benchmark` 和 `sermon-hymt2-1.8b-q8:benchmark`；检查时 Qwen benchmark 正在驻留，因此本轮没有启动第二个模型干扰它。`ffmpeg 9.0.1` 已安装；MLX、MLX-LM、MLX Whisper 和 whisper.cpp 尚未安装。
+2026-09-03 最新只读盘点：这台机器是 M1 Max、64 GB 内存；Ollama 本地 API `0.33.3` 正常响应，已安装 `sermon-milmmt-46-4b-v1-q8:benchmark`；检查时没有 Ollama 模型驻留。`whisper-cli` 与 `whisper-stream` 尚不可用，因此本轮先完成真实翻译集成，不把测试英文描述为麦克风 ASR。
 
-建议按两步推进，避免一次引入两个不确定运行时：
+当前按三步推进：
 
-1. **第一条 working backend：whisper.cpp + Ollama。** whisper.cpp 负责英文 ASR，Ollama 只负责英译中。Ollama 已经运行，并提供本地 HTTP、流式输出和性能字段，是最短的翻译接入路径。翻译模型先 benchmark `translategemma:4b`；如果它不能稳定处理证道术语，再测专用翻译模型，而不是马上扩大 UI 或 gateway。
-2. **第二条可替换实验：MLX Whisper / MLX-LM。** MLX 在 Apple Silicon 上原生运行；`mlx_lm.server` 提供近似 OpenAI Chat Completions 的本地接口。它适合作为同一个 adapter 后面的实验实现，但官方说明该 server 只适合基本本地服务，不应直接暴露到网络。
+1. **Working translation backend：MiLMMT-46-4B Q8_0 + Ollama。** A0 固定为 `sermon-milmmt-46-4b-v1-q8:benchmark`，使用 benchmark 已验证的官方 completion prompt、`raw=true`、temperature 0 和 top-k 1。浏览器只访问 gateway，不直接访问 Ollama。
+2. **下一项缺口：本地英文 ASR。** 接入后只需把 ASR 的稳定英文事件替换当前 demo replay；`POST /api/translate`、字幕渲染和日志合同保持不变。
+3. **可替换实验：MLX Whisper / MLX-LM。** 模型和运行时都位于 adapter 后面，后训练产物只替换 provider 配置，不改变 UI、日志或 Weekly Pack。
 
 不要让浏览器直接调用 `11434` 或 `8080`。所有模型调用都经过 localhost gateway，这样 UI 不需要知道模型名称、prompt、context pack 或运行时：
 
@@ -66,7 +67,7 @@ TranslationProvider: ollama | mlx_lm
 | 用途 | 首选 | 原因 |
 |---|---|---|
 | 现场英文 ASR | whisper.cpp + Metal | Apple Silicon 支持成熟，并有实时 microphone/stream 示例 |
-| 现场中文翻译 | Ollama + TranslateGemma 4B | 当前机器已有服务，模型体积较小，HTTP 接入最简单 |
+| 现场中文翻译 | Ollama + MiLMMT-46-4B Q8_0 | 已完成 239 段本机 A0 benchmark，并固定 prompt 与解码参数 |
 | 专用翻译候选 | Hy-MT2 1.8B | 专门面向翻译、支持英中；需要先验证 GGUF 或 MLX 转换与提示格式 |
 | Apple 原生实验 | MLX Whisper + MLX-LM | 便于测 Apple Silicon 原生性能，但当前机器尚未安装 |
 

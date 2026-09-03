@@ -1,17 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-const DEMO_CAPTIONS = [
+const GATEWAY_URL = import.meta.env.VITE_GATEWAY_URL || "http://127.0.0.1:8766";
+
+const DEMO_TRANSCRIPTS = [
   {
+    segmentId: "demo_0001",
     en: "God's people are standing at the edge of the promised land.",
-    zh: "神的百姓正站在应许之地的边缘。",
   },
   {
+    segmentId: "demo_0002",
     en: "The question is not only where we are going, but who we are becoming.",
-    zh: "问题不只是我们要去哪里，更是我们正在成为怎样的人。",
   },
   {
+    segmentId: "demo_0003",
     en: "Grace does not ignore the truth; grace leads us through it.",
-    zh: "恩典并不回避真理，而是带领我们经过真理。",
   },
 ];
 
@@ -64,7 +66,9 @@ export function App() {
   const [selectedDeviceId, setSelectedDeviceId] = useState("");
   const [elapsed, setElapsed] = useState(0);
   const [level, setLevel] = useState(0);
-  const [captionIndex, setCaptionIndex] = useState(0);
+  const [caption, setCaption] = useState({ en: "", zh: "选择麦克风，然后开始录音。" });
+  const [translationState, setTranslationState] = useState("idle");
+  const [gatewayHealth, setGatewayHealth] = useState(null);
   const [error, setError] = useState("");
   const [recordingUrl, setRecordingUrl] = useState("");
   const [recordingBytes, setRecordingBytes] = useState(0);
@@ -80,13 +84,14 @@ export function App() {
   const startTimeRef = useRef(0);
   const audioContextRef = useRef(null);
   const meterFrameRef = useRef(null);
+  const sessionTokenRef = useRef(0);
+  const cursorSequenceRef = useRef(null);
 
-  const currentCaption = DEMO_CAPTIONS[captionIndex];
   const isRunning = phase === "running";
   const isBusy = phase === "requesting";
 
   const status = useMemo(() => {
-    if (phase === "running") return "正在录音 · 界面演示";
+    if (phase === "running") return "正在录音 · A0 本地翻译";
     if (phase === "requesting") return "正在连接麦克风";
     if (phase === "stopped") return "本次录音已停止";
     if (phase === "error") return "需要处理麦克风问题";
@@ -113,14 +118,28 @@ export function App() {
     setSelectedDeviceId((current) => current || inputs[0]?.deviceId || "");
   }
 
+  async function refreshGatewayHealth() {
+    try {
+      const response = await fetch(`${GATEWAY_URL}/api/health`);
+      if (!response.ok) throw new Error(`Gateway HTTP ${response.status}`);
+      const health = await response.json();
+      setGatewayHealth(health);
+      return health;
+    } catch (caught) {
+      setGatewayHealth({ status: "offline", message: caught?.message || "Gateway unavailable" });
+      return null;
+    }
+  }
+
   useEffect(() => {
     refreshDevices().catch(() => {});
+    refreshGatewayHealth();
     return () => stopResources(false);
   }, []);
 
   function stopResources(updatePhase = true) {
     window.clearInterval(timerRef.current);
-    window.clearInterval(captionTimerRef.current);
+    window.clearTimeout(captionTimerRef.current);
     window.cancelAnimationFrame(meterFrameRef.current);
     timerRef.current = null;
     captionTimerRef.current = null;
@@ -131,8 +150,81 @@ export function App() {
     streamRef.current = null;
     audioContextRef.current?.close().catch(() => {});
     audioContextRef.current = null;
+    sessionTokenRef.current += 1;
     setLevel(0);
+    setTranslationState("idle");
     if (updatePhase) setPhase("stopped");
+  }
+
+  async function translateStableTranscript(transcript, sessionToken) {
+    if (sessionToken !== sessionTokenRef.current) return;
+    const requestStartedAt = performance.now();
+    setCaption({ en: transcript.en, zh: "正在生成中文字幕…" });
+    setTranslationState("requesting");
+    appendEvent("stable_transcript_final", {
+      segmentId: transcript.segmentId,
+      source: "demo_replay",
+      sourceTextEn: transcript.en,
+    });
+    appendEvent("translation_requested", {
+      segmentId: transcript.segmentId,
+      contextPolicy: "none",
+      cursorSequence: cursorSequenceRef.current,
+    });
+
+    try {
+      const response = await fetch(`${GATEWAY_URL}/api/translate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sourceTextEn: transcript.en,
+          cursorSequence: cursorSequenceRef.current,
+          contextPolicy: "none",
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || `Translation HTTP ${response.status}`);
+      if (sessionToken !== sessionTokenRef.current) return;
+      const latencyMs = Math.round(performance.now() - requestStartedAt);
+      setCaption({ en: transcript.en, zh: result.targetTextZh || "翻译结果为空。" });
+      setTranslationState("ready");
+      if (result.alignment?.confidence === "high" || result.alignment?.confidence === "exact") {
+        cursorSequenceRef.current = result.alignment.suggestedCursor;
+      }
+      appendEvent("translation_completed", {
+        segmentId: transcript.segmentId,
+        sourceTextEn: transcript.en,
+        targetTextZh: result.targetTextZh,
+        latencyMs,
+        model: result.model,
+        promptVersion: result.promptVersion,
+        requestedContextPolicy: result.requestedContextPolicy,
+        contextPolicy: result.contextPolicy,
+        contextHitIds: result.contextHitIds,
+        alignment: result.alignment,
+        modelMetrics: result.metrics,
+      });
+    } catch (caught) {
+      if (sessionToken !== sessionTokenRef.current) return;
+      const latencyMs = Math.round(performance.now() - requestStartedAt);
+      const message = caught?.message || "本地翻译不可用";
+      setCaption({ en: transcript.en, zh: "翻译暂时不可用，请查看英文原文。" });
+      setTranslationState("error");
+      appendEvent("translation_failed", {
+        segmentId: transcript.segmentId,
+        latencyMs,
+        message,
+        recordingShouldContinue: true,
+      });
+    }
+  }
+
+  async function runDemoTranscriptLoop(sessionToken, index = 0) {
+    await translateStableTranscript(DEMO_TRANSCRIPTS[index], sessionToken);
+    if (sessionToken !== sessionTokenRef.current) return;
+    captionTimerRef.current = window.setTimeout(() => {
+      runDemoTranscriptLoop(sessionToken, (index + 1) % DEMO_TRANSCRIPTS.length);
+    }, 1800);
   }
 
   function startMeter(stream) {
@@ -172,7 +264,9 @@ export function App() {
     });
     setRecordingBytes(0);
     setElapsed(0);
-    setCaptionIndex(0);
+    setCaption({ en: "", zh: "正在连接麦克风…" });
+    setTranslationState("idle");
+    cursorSequenceRef.current = null;
     setPhase("requesting");
     eventsRef.current = [];
     setEventCount(0);
@@ -206,22 +300,22 @@ export function App() {
       }
 
       startTimeRef.current = Date.now();
+      const sessionToken = sessionTokenRef.current + 1;
+      sessionTokenRef.current = sessionToken;
       appendEvent("session_started", {
-        mode: "ui_demo",
+        mode: "local_translation_demo",
+        asrSource: "demo_replay",
+        translationGateway: GATEWAY_URL,
+        contextPolicy: "none",
         audioDeviceId: stream.getAudioTracks()[0]?.getSettings().deviceId || "default",
       });
+      const health = await refreshGatewayHealth();
+      appendEvent("gateway_health", { health });
       setPhase("running");
       timerRef.current = window.setInterval(() => {
         setElapsed(Date.now() - startTimeRef.current);
       }, 250);
-      captionTimerRef.current = window.setInterval(() => {
-        setCaptionIndex((current) => {
-          const next = (current + 1) % DEMO_CAPTIONS.length;
-          appendEvent("demo_caption_final", DEMO_CAPTIONS[next]);
-          return next;
-        });
-      }, 3200);
-      appendEvent("demo_caption_final", DEMO_CAPTIONS[0]);
+      runDemoTranscriptLoop(sessionToken);
     } catch (caught) {
       stopResources(false);
       const message = caught?.name === "NotAllowedError"
@@ -237,8 +331,8 @@ export function App() {
     appendEvent("session_stopped", { durationMs: Date.now() - startTimeRef.current });
     const manifest = {
       schemaVersion: 1,
-      mode: "ui_demo",
-      warning: "Captions are interface demo data, not local model output.",
+      mode: "local_translation_demo",
+      warning: "Chinese is local-model output; English is demo replay until local ASR is connected.",
       startedAt: eventsRef.current[0]?.at || nowIso(),
       stoppedAt: nowIso(),
       durationMs: Date.now() - startTimeRef.current,
@@ -300,7 +394,9 @@ export function App() {
       <section className="caption-stage" aria-labelledby="caption-title">
         <div className="stage-meta">
           <span id="caption-title">实时字幕</span>
-          <span className="demo-notice">界面演示数据 · 尚未连接本地模型</span>
+          <span className="demo-notice">
+            {isRunning ? "测试英文回放 · MiLMMT A0 本地翻译" : "麦克风录音 + 本地模型集成 POC"}
+          </span>
         </div>
 
         <div className="caption-copy" aria-live="polite" aria-atomic="true">
@@ -311,10 +407,10 @@ export function App() {
                 ? "正在连接麦克风…"
                 : phase === "stopped"
                   ? "本次录音已经安全停止。"
-                  : currentCaption.zh}
+                  : caption.zh}
           </p>
           <p className="en-caption" lang="en">
-            {isRunning ? currentCaption.en : "English transcript will appear here."}
+            {isRunning ? caption.en : "English transcript will appear here."}
           </p>
         </div>
 
@@ -324,9 +420,14 @@ export function App() {
       <footer className="health-bar" aria-label="运行状态">
         <div className="health-items">
           <span data-state={isRunning ? "active" : "idle"}>录音 {isRunning ? "进行中" : phase === "stopped" ? "已停止" : "待机"}</span>
-          <span data-state="pending">ASR 待接本地服务</span>
-          <span data-state="pending">翻译 待接本地服务</span>
-          <span>Context 未配置</span>
+          <span data-state="pending">ASR 测试英文回放</span>
+          <span data-state={translationState === "ready" ? "active" : translationState === "error" ? "pending" : "idle"}>
+            翻译 {translationState === "ready" ? "MiLMMT A0" : translationState === "requesting" ? "生成中" : translationState === "error" ? "已降级" : "待机"}
+          </span>
+          <span data-state={gatewayHealth?.status === "ready" ? "active" : "pending"}>
+            Gateway {gatewayHealth?.status === "ready" ? "就绪" : gatewayHealth?.status === "offline" ? "离线" : "未就绪"}
+          </span>
+          <span>Context A0 / none</span>
         </div>
         <div className="evidence">
           <span>事件 {eventCount}</span>
