@@ -12,6 +12,7 @@ This folder contains product, system design, research, backlog, and testing note
 
 | Topic | English | Chinese |
 |---|---|---|
+| Two working workflows and local latency budget | [Chinese source of truth](./workflows/README.zh.md) | [workflows/README.zh.md](./workflows/README.zh.md) |
 | Stable workflow | [stable-post-live-reading-pdf-workflow.md](./stable-post-live-reading-pdf-workflow.md) | [stable-post-live-reading-pdf-workflow.zh.md](./stable-post-live-reading-pdf-workflow.zh.md) |
 | Production Supervisor Agent | [sermon-production-supervisor-agent.md](./sermon-production-supervisor-agent.md) | [sermon-production-supervisor-agent.zh.md](./sermon-production-supervisor-agent.zh.md) |
 | System design | [system-design.md](./system-design.md) | [system-design.zh.md](./system-design.zh.md) |
@@ -34,17 +35,11 @@ This folder contains product, system design, research, backlog, and testing note
 
 ## Reading Order
 
-1. Start with the root [README](../README.md) for the current primary workflow.
-2. Read [stable-post-live-reading-pdf-workflow.md](./stable-post-live-reading-pdf-workflow.md) for the repository's current stable operator path.
-3. Read [sermon-production-supervisor-agent.md](./sermon-production-supervisor-agent.md) for the Agent control plane, human approval contract, and Scheduler integration.
-4. Read [system-design.md](./system-design.md) for the broader 11:30 congregation caption architecture.
-5. Read [findings-report.md](./findings-report.md) to understand why public VOD is not enough.
-6. Use [offline-live-archive-timing-feasibility.zh.md](./offline-live-archive-timing-feasibility.zh.md) when evaluating the offline live-link route and the pre-11:30 preparation window.
-7. Use [weekly-offline-subtitle-generation.zh.md](./weekly-offline-subtitle-generation.zh.md) for deeper weekly SRT/VTT generation details behind the stable workflow.
-8. Use [post-live-reviewed-sunday-publication.zh.md](./post-live-reviewed-sunday-publication.zh.md) before turning a post-live archive into the official Sunday page; it defines the human review gates and stable manifest promotion path.
-9. Use [model-provider-comparison.md](./model-provider-comparison.md), [cloud-run-deployment-prep.md](./cloud-run-deployment-prep.md), [admin-workflow.md](./admin-workflow.md), [observability.md](./observability.md), and [sunday-live-test-runbook.md](./sunday-live-test-runbook.md) before provider, Cloud Run, admin, live-test, or logging work.
-10. Use [open-source-readiness.md](./open-source-readiness.md) before changing repository visibility or inviting broader public contribution.
-11. Use [system-design-gap-analysis.md](./system-design-gap-analysis.md), [backlog.md](./backlog.md), and [review-testing.md](./review-testing.md) to pick and verify implementation work.
+1. Start with the root [README](../README.md) for the two working workflows and the Discovery boundary.
+2. Read [workflows/README.zh.md](./workflows/README.zh.md) for the complete diagrams, local latency budget, and test gates.
+3. Read [stable-post-live-reading-pdf-workflow.md](./stable-post-live-reading-pdf-workflow.md) for the repository's current stable operator path.
+4. Read [sermon-production-supervisor-agent.md](./sermon-production-supervisor-agent.md) for the Agent control plane, human approval contract, and Scheduler integration.
+5. Enter the remaining System Design, Discovery, deployment, and historical experiment documents only when that work is in scope.
 
 ## Current Documentation Language
 
