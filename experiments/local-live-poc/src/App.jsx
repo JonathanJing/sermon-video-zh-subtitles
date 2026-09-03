@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-
-const GATEWAY_URL = import.meta.env.VITE_GATEWAY_URL || "http://127.0.0.1:8766";
+import {
+  GATEWAY_URL,
+  appendAudioChunk,
+  appendSessionEvent,
+  finalizeLocalSession,
+  getGatewayHealth,
+  startLocalSession,
+  translateCaption,
+} from "./gatewayClient.js";
 
 const DEMO_TRANSCRIPTS = [
   {
@@ -118,15 +125,7 @@ export function App() {
     if (persist && localSessionRef.current && !localWriteFailureRef.current) {
       const sessionId = localSessionRef.current.sessionId;
       enqueueServerWrite(async () => {
-        const response = await fetch(`${GATEWAY_URL}/api/sessions/${sessionId}/events`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(event),
-        });
-        if (!response.ok) {
-          const result = await response.json().catch(() => ({}));
-          throw new Error(result.message || `Event storage HTTP ${response.status}`);
-        }
+        await appendSessionEvent(sessionId, event);
       });
     }
     return event;
@@ -159,9 +158,7 @@ export function App() {
 
   async function refreshGatewayHealth() {
     try {
-      const response = await fetch(`${GATEWAY_URL}/api/health`);
-      if (!response.ok) throw new Error(`Gateway HTTP ${response.status}`);
-      const health = await response.json();
+      const health = await getGatewayHealth();
       setGatewayHealth(health);
       return health;
     } catch (caught) {
@@ -212,17 +209,11 @@ export function App() {
     });
 
     try {
-      const response = await fetch(`${GATEWAY_URL}/api/translate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sourceTextEn: transcript.en,
-          cursorSequence: cursorSequenceRef.current,
-          contextPolicy: "none",
-        }),
+      const result = await translateCaption({
+        sourceTextEn: transcript.en,
+        cursorSequence: cursorSequenceRef.current,
+        contextPolicy: "none",
       });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.message || `Translation HTTP ${response.status}`);
       if (sessionToken !== sessionTokenRef.current) return;
       const latencyMs = Math.round(performance.now() - requestStartedAt);
       setCaption({ en: transcript.en, zh: result.targetTextZh || "翻译结果为空。" });
@@ -341,19 +332,13 @@ export function App() {
 
       let serverSession = null;
       try {
-        const response = await fetch(`${GATEWAY_URL}/api/sessions/start`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            mode: "local_translation_demo",
-            audioMimeType,
-            audioDeviceId: audioTrack?.getSettings().deviceId || "default",
-            audioDeviceLabel: audioTrack?.label || "default",
-            contextPolicy: "none",
-          }),
+        const result = await startLocalSession({
+          mode: "local_translation_demo",
+          audioMimeType,
+          audioDeviceId: audioTrack?.getSettings().deviceId || "default",
+          audioDeviceLabel: audioTrack?.label || "default",
+          contextPolicy: "none",
         });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.message || `Session storage HTTP ${response.status}`);
         serverSession = result;
         localSessionRef.current = result;
         setLocalSession(result);
@@ -373,18 +358,12 @@ export function App() {
         const sequence = audioChunkSequenceRef.current + 1;
         audioChunkSequenceRef.current = sequence;
         enqueueServerWrite(async () => {
-          const response = await fetch(
-            `${GATEWAY_URL}/api/sessions/${serverSession.sessionId}/audio?sequence=${sequence}`,
-            {
-              method: "POST",
-              headers: { "Content-Type": audioMimeType },
-              body: event.data,
-            },
+          await appendAudioChunk(
+            serverSession.sessionId,
+            sequence,
+            event.data,
+            audioMimeType,
           );
-          if (!response.ok) {
-            const result = await response.json().catch(() => ({}));
-            throw new Error(result.message || `Audio storage HTTP ${response.status}`);
-          }
         });
       });
       recorder.addEventListener("stop", () => {
@@ -393,19 +372,10 @@ export function App() {
         setRecordingUrl(URL.createObjectURL(blob));
         if (!serverSession || localWriteFailureRef.current) return;
         enqueueServerWrite(async () => {
-          const response = await fetch(
-            `${GATEWAY_URL}/api/sessions/${serverSession.sessionId}/finalize`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                durationMs: Date.now() - startTimeRef.current,
-                stoppedAt: nowIso(),
-              }),
-            },
-          );
-          const result = await response.json();
-          if (!response.ok) throw new Error(result.message || `Session finalize HTTP ${response.status}`);
+          const result = await finalizeLocalSession(serverSession.sessionId, {
+            durationMs: Date.now() - startTimeRef.current,
+            stoppedAt: nowIso(),
+          });
           localSessionRef.current = result;
           setLocalSession(result);
           setLocalSaveState("saved");
@@ -552,7 +522,7 @@ export function App() {
         </div>
         <div className="evidence">
           <span>事件 {eventCount}</span>
-          {localSession && <span title={localSession.directory}>文件夹 {localSession.sessionId}</span>}
+          {localSession && <span title={localSession.directory}>会话 {localSession.sessionId.slice(-8)}</span>}
           {recordingUrl && (
             <a href={recordingUrl} download={`local-live-${Date.now()}.webm`}>
               下载录音 {recordingBytes > 0 ? `${Math.max(1, Math.round(recordingBytes / 1024))} KB` : ""}

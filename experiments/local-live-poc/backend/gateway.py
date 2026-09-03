@@ -102,7 +102,7 @@ class Handler(BaseHTTPRequestHandler):
         pack = self.server.state.pack
         self._send(HTTPStatus.OK, {
             "service": "local-live-caption-gateway",
-            "status": "ready" if pack and ollama.get("configuredModelInstalled") else "degraded",
+            "status": "ready" if ollama.get("configuredModelInstalled") else "degraded",
             "contentPack": None if not pack else {
                 "packVersion": pack["packVersion"],
                 "serviceDate": pack["serviceDate"],

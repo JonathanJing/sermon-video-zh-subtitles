@@ -207,9 +207,9 @@ a:focus-visible {
   max-width: min(94vw, 18em);
   margin: 0;
   color: #ffffff;
-  font-size: clamp(72px, min(7vw, 12vh), 118px);
+  font-size: clamp(84px, min(8.5vw, 15vh), 144px);
   font-weight: 800;
-  line-height: 1.18;
+  line-height: 1.14;
   letter-spacing: 0.008em;
   text-wrap: balance;
 }
@@ -350,8 +350,8 @@ a:focus-visible {
 
   .zh-caption {
     max-width: 100%;
-    font-size: clamp(46px, 13.2vw, 64px);
-    line-height: 1.2;
+    font-size: clamp(54px, 15.5vw, 80px);
+    line-height: 1.16;
   }
 
   .health-bar {

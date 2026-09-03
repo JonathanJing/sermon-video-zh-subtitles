@@ -91,8 +91,24 @@ Available policies are `none`, `weekly_terms_v1`, and `saturday_alignment_v1`. T
 
 If Ollama or the configured model is unavailable, translation returns `503` with `recordingShouldContinue=true`; recording must not depend on translation availability.
 
-Run backend tests with:
+## Test strategy
+
+Keep the test stack small and use the standard runners already available:
+
+- **Unit:** content-pack rules, the local session store, and the browser-to-gateway request contract. No server, microphone, Ollama, or network is required.
+- **Integration:** a real localhost gateway and temporary session directory with a fake model response. This verifies HTTP, ordered audio/event writes, finalization, and translation fallback without changing real recordings.
+- **Browser E2E:** use the actual microphone and actual local Ollama model. Record at least ten seconds, stop, then verify that the visible Chinese/English pair changed, `manifest.json` is completed, `events.jsonl` contains the translation events, and the saved recording decodes. This remains a deliberate manual test because browser microphone permission and the physical audio route are the behavior under test.
+
+Run the complete automated gate with:
 
 ```bash
+npm test
+```
+
+Run an individual layer with:
+
+```bash
+npm run test:unit
+npm run test:integration
 npm run test:backend
 ```

@@ -30,6 +30,7 @@ class GatewayTest(unittest.TestCase):
             session_root=str(Path(self.temporary.name) / "sessions"),
         )
         state.ollama.status = lambda: {"available": True, "configuredModel": None, "installedModels": []}
+        self.state = state
         self.server = create_server("127.0.0.1", 0, state)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
@@ -74,6 +75,19 @@ class GatewayTest(unittest.TestCase):
         self.assertEqual(payload["status"], "degraded")
         self.assertEqual(payload["contentPack"]["entryCount"], 1)
         self.assertTrue(payload["sessionStorage"]["available"])
+
+    def test_health_does_not_require_an_optional_content_pack(self) -> None:
+        self.state.pack = None
+        self.state.ollama.status = lambda: {
+            "available": True,
+            "configuredModel": "test-model",
+            "configuredModelInstalled": True,
+            "installedModels": ["test-model"],
+        }
+        status, payload = self.request("/api/health")
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["status"], "ready")
+        self.assertIsNone(payload["contentPack"])
 
     def test_session_folder_persists_audio_events_and_manifest(self) -> None:
         status, created = self.request("/api/sessions/start", {
@@ -165,6 +179,22 @@ class GatewayTest(unittest.TestCase):
         self.assertEqual(payload["requestedContextPolicy"], "saturday_alignment_v1")
         self.assertEqual(payload["alignment"]["suggestedCursor"], 1)
         self.assertEqual(len(payload["contextHitIds"]), 1)
+
+    def test_translation_success_returns_the_frontend_contract(self) -> None:
+        self.state.ollama.translate = lambda source_text, context: {
+            "targetTextZh": "应许之地就在他们面前。",
+            "model": "test-model",
+            "promptVersion": "milmmt-a0-v1",
+            "metrics": {"totalDurationMs": 12},
+        }
+        status, payload = self.request("/api/translate", {
+            "sourceTextEn": "The promised land is before them.",
+            "contextPolicy": "none",
+        })
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["targetTextZh"], "应许之地就在他们面前。")
+        self.assertEqual(payload["contextPolicy"], "none")
+        self.assertEqual(payload["contextHitIds"], [])
 
     def test_invalid_retrieval_limit_is_rejected(self) -> None:
         status, payload = self.request("/api/context/retrieve", {
