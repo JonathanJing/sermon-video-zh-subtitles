@@ -1,5 +1,7 @@
 # 翻译模型与 Provider 比较
 
+> **历史 / Discovery 对比。** Provider 可用性、价格和当前架构可能变化；现有 operator 路径以本地为主，使用前必须重新核实 provider 事实。
+
 English version: [model-provider-comparison.md](./model-provider-comparison.md)
 
 更新日期：2026-06-22

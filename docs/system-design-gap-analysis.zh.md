@@ -1,5 +1,7 @@
 # System Design 实现差距审计
 
+> **历史差距快照。** 这里的结论相对于旧 Cloud 设计，部分可能已被后续实现取代；当前事实以[工作流 source of truth](./workflows/README.zh.md)为准。
+
 更新：2026-06-23
 
 English version: [system-design-gap-analysis.md](./system-design-gap-analysis.md)

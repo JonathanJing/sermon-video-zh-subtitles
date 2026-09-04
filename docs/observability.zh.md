@@ -1,5 +1,7 @@
 # 观测与日志
 
+> **历史 Cloud 观测设计。** 当前本地 session 证据和指标以[本地 live POC](../experiments/local-live-poc/README.md)为准。
+
 目标：周日 11:30 场前后，可以从 GCP 日志知道三件事：
 
 1. 直播采集什么时候被 Cloud Scheduler / Cloud Tasks / operator 触发。

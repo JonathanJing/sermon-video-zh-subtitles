@@ -1,5 +1,7 @@
 # 证道视频中文字幕 Pipeline 发现报告
 
+> **历史研究快照。** 保留带日期的发现作为证据，不把它们当作当前 runtime 或 operator 状态；状态分类见[文档索引](./README.zh.md)。
+
 English version: [findings-report.md](./findings-report.md)
 
 报告日期：2026-06-22  

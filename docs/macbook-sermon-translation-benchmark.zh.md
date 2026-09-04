@@ -1,7 +1,7 @@
 # MacBook Pro M1 Max 本地翻译 Benchmark V1
 
-更新日期：2026-09-03  
-状态：`four_translation_only_runs_completed_replay_pending`
+更新日期：2026-09-04
+状态：`four_translation_only_runs_and_qwen_milmmt_live_soak_completed_other_candidates_pending`
 
 ## 目标
 
@@ -24,10 +24,10 @@
 
 - Ollama App 服务已升级并运行官方 `0.33.3`；Homebrew CLI 为 `0.33.2`；当前已安装 `sermon-hymt2-1.8b-q8:benchmark`；
 - MLX 已通过隔离的 `uv tool` 环境安装：`mlx 0.32.2`、`mlx-lm 0.31.3`；GPU 运算和 `mlx_lm.server` CLI smoke 均已通过；
-- `Hy-MT2-1.8B Q8_0`、`MiLMMT-46-4B-v1.0 Q8_0`、`Qwen3.5-4B-Base BF16` 和 `Qwen3.5-9B-Base BF16` 均已完成 239/239 Ollama translation-only run；四者的 ASR 共存 replay 和 soak 仍待执行。
-- 本地 ASR 已完成 60 段、29.811 分钟七模型质量 bakeoff，并对其中 13 段、6.5 分钟执行独立 GPT-Transcribe 重听校准，见 [MacBook 本地英文 ASR Benchmark V1](./local-asr-benchmark.zh.md)。`Qwen3-ASR-0.6B MLX 8-bit` 以 MRQS 96.893 暂列第一，`small.en` 以 96.244 排第二且速度、内存更优；两者通过当前离线门禁。Distil-Whisper 与 MLX Turbo 均因静音口语幻觉失败。4 段参考文本差异仍需人工确认，流式 replay 与 MiLMMT 共存仍待执行。
+- `Hy-MT2-1.8B Q8_0`、`MiLMMT-46-4B-v1.0 Q8_0`、`Qwen3.5-4B-Base BF16` 和 `Qwen3.5-9B-Base BF16` 均已完成 239/239 Ollama translation-only run。只有当前 POC 组合 MiLMMT Q8 + Qwen3-ASR 已进一步完成 10 分钟共存和修复后的 60 分钟浏览器长测；其余三个翻译候选的同协议 ASR 共存 replay/soak 仍待执行。
+- 本地 ASR 已完成 60 段、29.811 分钟七模型质量 bakeoff，并对其中 13 段、6.5 分钟执行独立 GPT-Transcribe 重听校准，见 [MacBook 本地英文 ASR Benchmark V1](./local-asr-benchmark.zh.md)。`Qwen3-ASR-0.6B MLX 8-bit` 以 MRQS 96.893 暂列第一，`small.en` 以 96.244 排第二且速度、内存更优；两者已完成连续 10 分钟 replay，Qwen 还完成 MiLMMT 共存与 60 分钟 POC 长测。Distil-Whisper 与 MLX Turbo 均因静音口语幻觉失败；正式晋级仍等待人工 Gold 和现场彩排。
 
-这份状态只描述 2026-09-03 的本机检查；正式 run 必须重新记录运行时版本、模型 digest/revision 和 artifact SHA-256。
+这些环境版本描述来自 2026-09-03 的本机检查，运行证据更新到 2026-09-04；任何新 run 仍必须重新记录运行时版本、模型 digest/revision 和 artifact SHA-256。
 
 ## 执行顺序
 

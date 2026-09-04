@@ -1,5 +1,7 @@
 # 11:30 会众中文字幕 Backlog
 
+> **历史 backlog 快照。** 条目不自动代表当前或已批准工作；实现前先与[工作流 source of truth](./workflows/README.zh.md)校准。
+
 English version: [backlog.md](./backlog.md)
 
 日期：2026-06-22

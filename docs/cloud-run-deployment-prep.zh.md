@@ -1,5 +1,7 @@
 # Cloud Run 部署准备与 Secret Manager 清单
 
+> **Discovery 部署笔记。** Cloud Run 不是当前周日 operator 路径；只有任务明确包含 Cloud 部署时才使用本文件。
+
 English version: [cloud-run-deployment-prep.md](./cloud-run-deployment-prep.md)
 
 更新日期：2026-06-23

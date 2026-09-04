@@ -2,7 +2,7 @@
 
 这份文档固定周日现场 POC 的下一阶段连接方式。目标是降低感知延迟，同时保留简单、可恢复、可回放的录音与日志链路。
 
-当前状态：Phase 1 和 Phase 2 已实现并通过合成音频、真实浏览器麦克风、自动化 WebSocket integration test。Phase 3 的 token streaming、`small.en` 比较和完整 sermon soak 尚未完成。
+当前状态（2026-09-04）：Phase 1–3 的工程链路已实现。REST 控制面、WebSocket PCM/字幕数据面、Qwen/Whisper provider、MiLMMT NDJSON token streaming、局域网 SSE 只读页、自动化测试和修复后的固定 60 分钟浏览器/扬声器/麦克风长测均有 tracked 证据。教会现场彩排、人工 ASR Gold 和多场连续资源上限仍未完成。
 
 ## 决策
 
@@ -23,7 +23,7 @@ Browser
 
 - 当前每秒一个 MediaRecorder HTTP chunk 的链路继续作为恢复录音，不作为 ASR 输入。
 - ASR 输入使用独立的规范化 PCM 流。Gateway 是所有模型和日志的唯一协调者。
-- 第一版只把稳定英文送给 MiLMMT，并等待完整中文；不把翻译 token 直接显示为主字幕。
+- 只把稳定英文送给 MiLMMT；Gateway 将增量中文作为 `translation.partial` 显示，并以 `translation.final` 提交稳定大字幕和永久日志。
 - 不采用 WebRTC、WebTransport、Kafka/Redis 或浏览器直连模型。它们不能为当前单机 POC 提供足以抵消复杂度的收益。
 
 ## 为什么这样选
@@ -36,7 +36,7 @@ Browser
 
 ASR 的 partial 可能反复修订；final 才是该音频区间的不可变结果。主字幕只翻译 final 英文，避免重复推理、中文闪烁和错序。partial 英文可以显示在较小的英文行，但必须有明显的 draft 状态。
 
-Ollama `/api/generate` 原生支持 NDJSON 流式响应。MiLMMT 当前短句 warm latency 已较低，先保留 `stream=false` 能保持解析和日志最简单；只有 benchmark 显示翻译成为主要瓶颈时，才增加 `translation.delta`，最终仍以 `translation.final` 提交大号中文字幕。
+Ollama `/api/generate` 的 NDJSON 流式响应已经接入。Gateway 发出 `translation.partial` 供页面逐步显示，完成后发出并持久化 `translation.final`；partial 不替代 final，也不被当作会后 canonical 译文。
 
 ## 音频合同
 
@@ -64,6 +64,7 @@ WebSocket 建立后的第一条消息是 JSON 配置；之后音频使用二进�
 ```json
 {"schemaVersion":1,"type":"asr.partial","sessionId":"...","segmentId":"seg-42","sequence":87,"audioStartMs":8200,"audioEndMs":10500,"sourceTextEn":"For God so...","stability":0.72}
 {"schemaVersion":1,"type":"asr.final","sessionId":"...","segmentId":"seg-42","sequence":88,"audioStartMs":8200,"audioEndMs":11200,"sourceTextEn":"For God so loved the world."}
+{"schemaVersion":1,"type":"translation.partial","sessionId":"...","segmentId":"seg-42","targetTextZh":"神爱","contextPolicy":"none"}
 {"schemaVersion":1,"type":"translation.final","sessionId":"...","segmentId":"seg-42","sourceTextEn":"For God so loved the world.","targetTextZh":"神爱世人。","contextPolicy":"none","latencyMs":410}
 ```
 
@@ -88,22 +89,22 @@ WebSocket 建立后的第一条消息是 JSON 配置；之后音频使用二进�
 
 ## 分阶段实现
 
-### Phase 1：固定基线
+### Phase 1：固定基线（已完成）
 
 - 保留现有 REST 录音、session、日志和非流式 MiLMMT。
 - 用冻结音频 benchmark `base.en` 与 `small.en`，确定 production ASR 模型和 VAD 参数。
 - 测量 100 ms PCM 生成、发送和丢帧，不接真实字幕 UI。
 
-### Phase 2：真正实时 ASR
+### Phase 2：真正实时 ASR（已完成）
 
 - 增加 AudioWorklet、一个标准 WebSocket endpoint 和 ASR worker。当前能量 VAD 默认 RMS 阈值为 `150`，可用 `LOCAL_LIVE_VAD_THRESHOLD_RMS` 针对现场噪声调整。
 - 实现 `asr.partial`、`asr.final`、去重、背压和 gap 日志。
 - 只有 `asr.final` 调用现有 `/api/translate` 内部逻辑；中文完整返回后提交 UI。
 
-### Phase 3：按证据优化
+### Phase 3：按证据优化（POC 已完成）
 
-- 完整 sermon soak 后，如果翻译 TTFT 明显影响体验，再启用 Ollama NDJSON streaming。
-- 如果需要 iPhone 作为远端客户端，再增加局域网 HTTPS/WSS；`getUserMedia` 在非 localhost 页面要求 secure context。
+- 已根据实测启用 Ollama NDJSON streaming，并保留 final-only 的持久化契约。
+- 已增加带随机 token 的局域网 SSE 只读页；麦克风采集仍只在 MacBook localhost operator 页面进行，因此远端手机不需要 `getUserMedia`。
 
 ## 完成门槛
 
@@ -111,7 +112,7 @@ WebSocket 建立后的第一条消息是 JSON 配置；之后音频使用二进�
 - 30 分钟网络/模型故障测试中，断开 ASR 或 Ollama不会停止录音。
 - 同一冻结音频 replay 产生相同 final segment 顺序，所有事件能按 `segmentId` 关联。
 - 记录 capture、ASR partial/final、translation start/end、render 的独立时间戳。
-- 完整 sermon soak 后再决定是否启用翻译 token streaming；不能只凭首 token 更快就升级。
+- 修复后的固定 60 分钟 POC 长测已完成；该结果只证明当次房间、扬声器和麦克风路径，不替代教会现场彩排或人工质量验收。
 
 ## 参考依据
 

@@ -1,5 +1,7 @@
 # System Design Gap Analysis
 
+> **Historical gap snapshot.** Findings are relative to the older cloud design and may already be superseded. Use the [workflow source of truth](./workflows/README.zh.md) for current claims.
+
 Last updated: 2026-06-23
 
 Chinese version: [system-design-gap-analysis.zh.md](./system-design-gap-analysis.zh.md)

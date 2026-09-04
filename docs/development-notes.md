@@ -1,5 +1,7 @@
 # Development Notes
 
+> **Historical development log.** Preserve entries as dated implementation history; use current READMEs and tests for present behavior.
+
 ## Scope
 
 This repository started with feasibility analysis. The current product goal is to help Chinese-speaking congregants understand the sermon while they are attending the 11:30 PT service. The design direction is to use the earliest verified pre-11:30 PT Mariners live service as the preparation source, keep 10:00 PT as the conservative production default, publish usable captions before the 11:30 service begins, then use public VOD/live archive sources for offline quality passes.

@@ -1,5 +1,7 @@
 # Development Backlog
 
+> **Historical backlog snapshot.** Items are not automatically current or approved. Reconcile them with the [workflow source of truth](./workflows/README.zh.md) before implementation.
+
 Last updated: 2026-06-22
 
 Chinese version: [backlog.zh.md](./backlog.zh.md)

@@ -1,5 +1,7 @@
 # System Design
 
+> **Historical/Discovery snapshot.** This cloud-oriented design is retained for research context; it is not the current operator architecture. See the [workflow source of truth](./workflows/README.zh.md) and [local live POC](../experiments/local-live-poc/README.md).
+
 Last updated: 2026-06-23
 
 Chinese version: [system-design.zh.md](./system-design.zh.md)

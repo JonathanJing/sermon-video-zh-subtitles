@@ -1,13 +1,13 @@
 # 证道实时翻译 Benchmark 与 A/B Test 设计
 
-更新日期：2026-09-03
-状态：Benchmark Sol-reviewed Reference 与选择性音频后审计已完成并验证，A/B 基础设施测试已开始
+更新日期：2026-09-04
+状态：Reference、四模型 translation-only 与 Qwen + MiLMMT POC 长测已完成；人工校准和完整 A/B 仍待执行
 
 ## 0. Goal：`BENCH-LIVE-ST-V1`
 
 **目标**：使用 5 篇从未进入训练集的 Mariners Church 完整公开证道，建立第一版冻结 Benchmark；以 **MacBook Pro M1 Max、64 GB 统一内存**为主要部署与性能目标，以 `gpt-5.6-sol`、`reasoning.effort=high` 为主要裁判，衡量“流式 ASR + 后训练翻译模型”相对于基础模型和直接 AST 的证道翻译质量与端到端速度。
 
-**当前状态**：`macbook_first_translation_only_run_completed_replay_pending`。已经完成 5 篇、239 个语义段的 Terra High 中文初稿与 Sol High 全量审核，共保存 86 份调用 receipt，0 篇失败。教师前音频预审覆盖 11 段、6.119 分钟；教师后按 Sol/Terra 风险与稳定抽样覆盖 80 段、58.329 分钟，80 段音频证据均支持当前英文字幕。5 份完整音频均通过 `ffprobe` 解码/时长核验。Reference 仍称为 `sol_reviewed`，没有声称人工 Gold；5%–10% 人工校准尚未完成。MacBook Ollama/MLX 文本 Benchmark 的数据复用协议、运行 harness、独立评分器和资源采样器已经建立；`Hy-MT2-1.8B Q8_0` 已通过 Ollama 0.33.3 完成首个 239/239 MacBook translation-only run，进程树峰值 RSS 6.441 GiB、swap 增量 0、106.252 tok/s。ASR 共存、1.0× replay、50–60 分钟 soak、Sol High 语义/严重错误评分和 A1–A3 尚未执行。
+**当前状态**：`four_translation_only_runs_and_qwen_milmmt_poc_soak_completed`。已经完成 5 篇、239 个语义段的 Terra High 中文初稿与 Sol High 全量审核，共保存 86 份调用 receipt，0 篇失败。教师前音频预审覆盖 11 段、6.119 分钟；教师后按风险与稳定抽样覆盖 80 段、58.329 分钟，80 段音频证据均支持当前英文字幕。5 份完整音频均通过 `ffprobe` 解码/时长核验。Reference 仍是 `sol_reviewed`，不是人工 Gold；5%–10% 人工校准尚未完成。Hy-MT2 1.8B Q8、MiLMMT Q8、Qwen3.5 4B BF16 和 Qwen3.5 9B BF16 均完成 239/239 MacBook translation-only run。当前 POC 组合 Qwen3-ASR + MiLMMT Q8 另已完成连续 replay、10 分钟共存和修复后的 60 分钟浏览器长测；这项结果不能外推到另外三个翻译候选。完整 A1–A3、人工语义/严重错误校准和教会现场彩排仍未执行。
 
 ### 0.1 主部署目标与结果层级
 
@@ -614,7 +614,7 @@ artifacts/benchmarks/live-translation/<run_id>/
 - [x] 按“小模型优先”执行冷加载与 10 段 smoke，失败模型不进入昂贵的全量评分；
 - [x] 对通过 smoke 的四个模型完成 239 段 translation-only run；
 - [x] 记录峰值 resident memory、memory pressure、swap、冷启动、tokens/s 和延迟分位数；
-- [ ] 与本地 ASR、字幕客户端共存执行 1.0× replay 和 50–60 分钟 soak；
+- [ ] 与本地 ASR、字幕客户端共存执行 1.0× replay 和 50–60 分钟 soak（MiLMMT Q8 + Qwen 已完成；其余三个翻译候选仍待同协议执行）；
 - [ ] 生成独立 MacBook 主榜，不复用 DGX 性能数字；
 - [ ] 只把通过资源、实时和安全门禁的模型送入 A1–A3 后训练及生产候选比较。
 
@@ -644,8 +644,8 @@ artifacts/benchmarks/live-translation/<run_id>/
 - [x] 在同一参考集完成 Distil-Whisper large-v3 GGML F16 与 Qwen3-ASR-0.6B MLX 8-bit；七模型统一榜中 Qwen MRQS 96.893 暂列第一，Qwen 与 `small.en` 通过离线门禁；
 - [ ] 建立约 30 分钟人工校正 ASR dev Gold，现有自动字幕或模型转写不得称为 Gold；
 - [ ] 人工确认 GPT 重听后仍有差异的 4 段，将确认后的子集升级为 human Gold；
-- [ ] 胜出模型完成 10 分钟 1.0× streaming replay；
-- [ ] 与 MiLMMT、浏览器和录音完成 50–60 分钟共存 soak。
+- [x] 当前胜出模型 Qwen 与低资源 fallback `small.en` 完成 10 分钟 1.0× streaming replay；
+- [x] Qwen + MiLMMT Q8 与浏览器、录音完成修复后的 60 分钟 POC 共存 soak；人工 Gold 和现场彩排仍未完成。
 
 协议与当前结果见 [MacBook 本地英文 ASR Benchmark V1](./local-asr-benchmark.zh.md)。
 

@@ -1,5 +1,7 @@
 # Sunday Live Test Runbook
 
+> **Historical cloud runbook.** This is not the current local Sunday launch procedure. Use the [local live POC runbook](../experiments/local-live-poc/README.md) and the workflow source of truth.
+
 Chinese version: [sunday-live-test-runbook.zh.md](./sunday-live-test-runbook.zh.md)
 
 Last updated: 2026-06-23

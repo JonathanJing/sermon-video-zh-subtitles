@@ -13,6 +13,8 @@
 
 完整流程图、产物契约、本地延迟预算与测试门槛见：[两条工作流完整说明](docs/workflows/README.zh.md)。
 
+> **现状校准日期：2026-09-04。** 下文的“当前能力”只依据 `main` 上可复核的代码、测试或已纳入版本控制的报告，不代表本机服务此刻在线，也不代表现场已经验收。每次运行的录音、转写和 PDF 按策略不进入 Git；经过审核且保留 provenance 的 benchmark 衍生数据可以版本化。文中的输出文件名是产物契约，不是仓库内附带的交付文件。
+
 > 这是一个独立的个人开源项目，不属于 Mariners Church 官方项目，也没有获得其隶属、背书、赞助、批准或运营支持。只应处理公开或已获授权的媒体，不得绕过访问控制、DRM 或平台限制。
 
 ## 1. Working workflows
@@ -71,7 +73,7 @@ flowchart LR
 
 | 方向 | 当前证据 |
 |---|---|
-| 周六 PDF 生产 | 两个 canonical PDF、阅读稿 QA、PDF QA、人工确认证道时间窗、可恢复状态 |
+| 周六 PDF 生产 | 工作流代码、测试、带日期的 QA 证据、人工确认证道时间窗和可恢复状态；生成 PDF 保持本地且被忽略 |
 | 周日 live POC | 真实麦克风、Qwen3-ASR、MiLMMT token stream、60 分钟长测、大字号 UI、只读手机页 |
 | 周六到周日 context | 有序 weekly pack、受控 runtime policy、基于 provenance 的安全自动启用 |
 | Replay 与 A/B | 冻结 ASR final、确定性 context-policy 重放、盲评 CSV、source/model hash |
@@ -84,7 +86,7 @@ flowchart LR
 - **Content-pack 质量决策：** 工具链已经完成；每周仍要用真实周六 pack，并由人工完成盲评结果。机器中文不会静默注入。
 - **本地 runtime 选择：** 当前 A0 使用 Ollama；直接 MLX serving 继续作为 Discovery 备选，只有在相同 frozen 输入和延迟/质量门槛下通过后才考虑替换。
 - **现场边界：** 一小时本机 soak 与 MLX 受控故障恢复已通过；剩余 production gate 是正式教会现场彩排。手机只读页还依赖现场 Wi-Fi 允许设备互访。
-- **资源上限：** 一小时内 Ollama 内存增长，但没有 swap 或延迟崩溃；在多场连续测试完成前，每场从干净的一键启动进入。
+- **资源上限：** 一小时内 Ollama 内存增长，但没有发生延迟崩溃，run 结束后的 swap 为 0 MB。主采样器的逐点 swap 字段无效，因此不能据此声称全程零 swap；在多场连续测试完成前，每场从干净的一键启动进入。
 
 ### 后训练方案
 

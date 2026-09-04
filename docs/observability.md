@@ -1,5 +1,7 @@
 # Observability And Logs
 
+> **Historical cloud observability design.** Current local-session evidence and metrics are defined by the [local live POC](../experiments/local-live-poc/README.md).
+
 Chinese version: [observability.zh.md](./observability.zh.md)
 
 The Sunday operation needs enough telemetry to answer three practical questions before and during the 11:30 PT service:

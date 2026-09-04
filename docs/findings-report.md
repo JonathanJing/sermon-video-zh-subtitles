@@ -1,5 +1,7 @@
 # Findings Report
 
+> **Historical research snapshot.** Preserve the dated findings as evidence; do not treat them as current runtime or operator status. See the [documentation index](./README.md).
+
 Report date: 2026-06-22
 
 Chinese version: [findings-report.zh.md](./findings-report.zh.md)

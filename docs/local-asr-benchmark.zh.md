@@ -1,7 +1,7 @@
 # MacBook 本地英文 ASR Benchmark V1
 
-更新日期：2026-09-03  
-状态：`qwen_and_small_streaming_replay_completed_human_listening_confirmation_pending`
+更新日期：2026-09-04
+状态：`qwen_milmmt_browser_60min_soak_completed_human_gold_and_venue_pending`
 
 ## 模型选择
 
@@ -153,7 +153,7 @@ Qwen 在连续音频上比 `small.en` 低 1.47 个 WER 百分点，并且 partia
 
 两套 latency 契约不同，不能把表中延迟当成严格同构排名：Qwen 记录 final 相对最新 PCM 块可用的返回时间；`small.en` 记录完整 5 秒窗口可用后 HTTP final 请求的响应时间，其 partial 是 runner 在 1.5 秒重新转写同一窗口得到。完整对比位于 `data/benchmarks/live-sermon-translation-v1/runs/local-asr-streaming/qwen-vs-small-10min-1x-20260903.json`。
 
-该 replay 的参考仍是 GPT-Transcribe 模型审核文本而非人工 Gold，且本轮没有同时运行 MiLMMT、浏览器或录音。下一门禁是 Qwen3-ASR + MiLMMT Q8 的 50–60 分钟共存 soak，然后再对剩余五个候选执行同一 replay。
+该 replay 的参考仍是 GPT-Transcribe 模型审核文本而非人工 Gold，且本轮本身没有同时运行 MiLMMT、浏览器或录音。其后 Qwen3-ASR + MiLMMT Q8 的共存和 60 分钟浏览器长测已经完成；剩余五个候选的同协议 replay 仍未执行。
 
 ## 2026-09-03 Qwen3-ASR + MiLMMT Q8 共存 Smoke
 
@@ -163,7 +163,7 @@ Qwen 在连续音频上比 `small.en` 低 1.47 个 WER 百分点，并且 partia
 
 本轮 Qwen WER 为 5.55%，相同音频的 ASR-only 运行是 5.09%。final 数也从 123 变为 120；由于 MLX Audio 使用实时 VAD/端点，先把它视为端点非确定性复测项，不能凭单次差异认定资源竞争导致质量下降。
 
-该 run 仍不是完整浏览器门禁：前端只是 HTTP 健康探针，录音由 runner 写入，不是麦克风/MediaRecorder。完整报告位于 `data/benchmarks/live-sermon-translation-v1/runs/local-asr-streaming/qwen-milmmt-coexist-10min-1x-20260903/report.md`。当时尚未完成的 Qwen Gateway 接入和真实短 session 已在下一节完成；50–60 分钟 soak 仍是后续门禁。
+该 run 本身不是完整浏览器门禁：前端只是 HTTP 健康探针，录音由 runner 写入，不是麦克风/MediaRecorder。完整报告位于 `data/benchmarks/live-sermon-translation-v1/runs/local-asr-streaming/qwen-milmmt-coexist-10min-1x-20260903/report.md`。当时尚未完成的 Qwen Gateway、真实短 session 和 60 分钟长测已由后续证据补齐。
 
 ## 2026-09-03 Qwen Gateway 与真实浏览器短链路
 
@@ -171,8 +171,14 @@ Qwen3-ASR 0.6B MLX 8-bit 已接入独立 Local Live Gateway，前端仍使用原
 
 首轮声学回放暴露出低音量环境段被 Qwen 识别成 `The.`。同一份真实麦克风 PCM 的播放前 RMS P50/P95 为 149/299，证道播放区间为 1203/3616；因此 Qwen 的本地启动配置把默认 VAD RMS 门槛从 150 调高到 450。按 1.0× 重放同源 PCM 后，播放前后不再产生 `The.`，12 个真实语音段全部完成，worker 与存储均正常。
 
-修正后说话结束到 ASR final 的 P50/P95 为 454/520 ms，说话结束到中文完整字幕为 720/918 ms，翻译排队 P95 为 0 ms；采样时 MLX Audio/Qwen RSS 约 1.15 GiB、Ollama/MiLMMT RSS 约 4.90 GiB，系统 swap 为 0。该声学短链路用于验证集成与门控，不替代冻结直接音频上的 WER；50–60 分钟浏览器、录音、ASR 与翻译共存 soak 仍未完成。
+修正后说话结束到 ASR final 的 P50/P95 为 454/520 ms，说话结束到中文完整字幕为 720/918 ms，翻译排队 P95 为 0 ms；采样时 MLX Audio/Qwen RSS 约 1.15 GiB、Ollama/MiLMMT RSS 约 4.90 GiB，系统 swap 为 0。该声学短链路用于验证集成与门控，不替代冻结直接音频上的 WER；随后已完成修复后的 60 分钟浏览器、录音、ASR 与翻译共存长测。
 
 后续工程修复移除了为强制 final 而插入的最高能量语音 marker 和数秒补零，改用短静音 VAD 帧满足 `mlx-audio 0.3.1` 的服务端静音门槛。1.5 秒与 3 秒真实 PCM 均返回唯一 final；Gateway 端到端 smoke `20260904T051008.754Z-99597635` 的 ASR final 为 1267 ms、中文首字为 1467 ms、中文完整为 1734 ms，worker 与存储均正常。因此上一段延迟只代表历史 session，新机制仍须重新完成多段浏览器延迟和长时门禁。
 
 详细证据位于独立 POC 的 `benchmarks/QWEN_MLX_BROWSER_E2E_20260903.zh.md`，关键 session 为 `20260904T044540.899Z-39ca5d76` 与 `20260904T045112.575Z-a3ded51f`。
+
+## 2026-09-04 修复后的 60 分钟浏览器长测
+
+固定扬声器/房间/内置麦克风路径完成 60 分钟端到端运行：1,247 次 ASR processing 产生 1,246 个 final、1 个 empty、0 failed，ASR final availability 为 99.92%；1,246 个 ASR final 全部产生 translation final。音频结束到浏览器中文首字 P50/P95 为 1.419/1.486 秒，到完整中文为 1.530/1.720 秒。
+
+该结果补齐 Qwen + MiLMMT 当前 POC 的单次长时工程门禁，但不构成人工 WER Gold、教会现场声学验收或其他 ASR 候选的长测结果。完整报告见 [SOAK_E2E_20260904.zh.md](../experiments/local-live-poc/benchmarks/SOAK_E2E_20260904.zh.md)。

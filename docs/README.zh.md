@@ -8,6 +8,14 @@
 
 这里收集证道中文字幕 pipeline 的产品目标、系统设计、研究报告、backlog 和测试审查文档。
 
+## 如何理解文档状态
+
+- **当前 source of truth：** 根 README、[两条工作流](./workflows/README.zh.md)、稳定 post-live 工作流、Supervisor Agent，以及[本地实时字幕 POC](../experiments/local-live-poc/README.md)。
+- **带日期的证据：** benchmark、audit 和 report 只描述指定日期和指定 run。后续证据可以补齐当时的 “next gate”，但不会改写原始测量值。
+- **Discovery / 历史快照：** Cloud 架构、provider 对比、部署笔记、旧 live runbook、backlog 和 gap analysis 为研究背景，不是当前 operator 架构，除非 source of truth 明确引用。
+
+文档现状已在 **2026-09-04** 按 `main` 校准；文档本身不证明本地服务当前在线，也不证明现场已经验收。
+
 ## 核心文档
 
 | 主题 | English | 中文 |
@@ -15,6 +23,7 @@
 | 两条主工作流与本地延迟预算 | [中文 source of truth](./workflows/README.zh.md) | [workflows/README.zh.md](./workflows/README.zh.md) |
 | 稳定主流程 | [stable-post-live-reading-pdf-workflow.md](./stable-post-live-reading-pdf-workflow.md) | [stable-post-live-reading-pdf-workflow.zh.md](./stable-post-live-reading-pdf-workflow.zh.md) |
 | Production Supervisor Agent | [sermon-production-supervisor-agent.md](./sermon-production-supervisor-agent.md) | [sermon-production-supervisor-agent.zh.md](./sermon-production-supervisor-agent.zh.md) |
+| 本地实时字幕 POC | [README.md](../experiments/local-live-poc/README.md) | [DESIGN.zh.md](../experiments/local-live-poc/DESIGN.zh.md) |
 | `gpt-transcribe` 阅读版生产审核（2026-07-31） | [gpt-transcribe-reading-pdf-production-audit-2026-07-31.zh.md](./gpt-transcribe-reading-pdf-production-audit-2026-07-31.zh.md) | 同一份中文文档 |
 | System Design | [system-design.md](./system-design.md) | [system-design.zh.md](./system-design.zh.md) |
 | System Design 实现差距审计 | [system-design-gap-analysis.md](./system-design-gap-analysis.md) | [system-design-gap-analysis.zh.md](./system-design-gap-analysis.zh.md) |
@@ -54,7 +63,8 @@
 3. 阅读 [stable-post-live-reading-pdf-workflow.zh.md](./stable-post-live-reading-pdf-workflow.zh.md)，这是当前 repo 最稳定的 operator 路径。
 4. 读 [sermon-production-supervisor-agent.zh.md](./sermon-production-supervisor-agent.zh.md)，了解 Agent 控制层、人工审批契约和 Scheduler 接入。
 5. 查看 [gpt-transcribe-reading-pdf-production-audit-2026-07-31.zh.md](./gpt-transcribe-reading-pdf-production-audit-2026-07-31.zh.md)，确认当前模型、质量门禁与完整 PDF 审核证据。
-6. 再按需要进入其余 System Design、Discovery、部署与历史实验文档。
+6. 阅读[本地实时字幕 POC](../experiments/local-live-poc/README.md)，查看周日当前实现及其带日期的 benchmark 证据。
+7. 再按需要进入其余 System Design、Discovery、部署与历史实验文档。
 
 ## 文档语言策略
 

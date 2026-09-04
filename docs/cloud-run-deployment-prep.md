@@ -1,5 +1,7 @@
 # Cloud Run Deployment Prep
 
+> **Discovery deployment notes.** Cloud Run is not the current Sunday operator path. Use this only when cloud deployment work is explicitly in scope.
+
 Last updated: 2026-06-23
 
 Chinese version: [cloud-run-deployment-prep.zh.md](./cloud-run-deployment-prep.zh.md)

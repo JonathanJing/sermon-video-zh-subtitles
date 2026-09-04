@@ -1,5 +1,7 @@
 # 周日 Live Test Runbook
 
+> **历史 Cloud runbook。** 这不是当前周日本地启动流程；请使用[本地 live POC](../experiments/local-live-poc/README.md)和 workflow source of truth。
+
 English version: [sunday-live-test-runbook.md](./sunday-live-test-runbook.md)
 
 更新日期：2026-06-23

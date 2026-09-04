@@ -2,7 +2,7 @@
 
 English version: [open-source-readiness.md](./open-source-readiness.md)
 
-这个 repo 计划未来公开，让更多人一起帮助完善英文证道中文字幕支持。在把 GitHub repo 改成 public 之前，先跑完这份 checklist。
+这份 checklist 用于持续维护公开仓库卫生，也用于任何 release 或可见性变更之前。仓库是否 public 必须到 GitHub 实际核验，不能只凭 remote URL 推断。
 
 ## 公开定位
 
@@ -22,20 +22,19 @@ Open-source pipeline and PWA for usable Chinese captions during Sunday English s
 建议 topics：
 
 ```text
-sermon, subtitles, captions, chinese, translation, accessibility, pwa, cloud-run, gcs, openai, gemini
+sermon, subtitles, captions, chinese, translation, accessibility, local-first, apple-silicon, mlx, ollama
 ```
-
-在下面检查通过前，repo 先保持 private。
 
 ## 安全检查
 
 - 公开前 `git status --short` 是干净的。
 - 没有 tracked `.env`、cookies、service-account JSON、provider API key、OAuth secret、bearer token、webhook URL 或私有媒体。
-- 生成的转写、字幕、模型 JSONL 和证道媒体没有被 tracked。
+- 每次运行的录音、私有或未审核的转写/字幕、session artifacts 和证道媒体不被 tracked。只有授权清楚、保留 provenance 并显式标注 review 状态的 benchmark/reference 衍生数据可以进入版本控制。
 - Public browser 文件不包含 raw secret value 或 Secret Manager resource name。
 - 文档不发布 raw secret value。Secret Manager reference 使用 `projects/PROJECT_NUMBER/secrets/openai-api-key/versions/latest` 这类占位符。
-- 已检查 GCS artifacts 和 Cloud Run logs，没有误暴露 secret 或不应公开的生成内容。
+- 如果启用 Cloud 路径，已经检查其 artifacts 和 logs，没有误暴露 secret 或不应公开的生成内容。
 - `LICENSE`、`CONTRIBUTING.md`、`SECURITY.md` 及中文对应文件都存在。
+- `AGENTS.md` 提供 contributor-agent 指引，但不包含凭据、私有路径或与 workflow source of truth 冲突的声明。
 
 ## 本地命令
 
@@ -66,6 +65,6 @@ rg -n 'sk-[A-Za-z0-9]|AIza[0-9A-Za-z_-]|OPENAI_API_KEY=|GEMINI_API_KEY=|OPENROUT
 - 改进证道词汇的中文术语一致性。
 - 增加经文和专有名词翻译 test fixtures。
 - 改进手机和平板上的字幕阅读体验。
-- 增加 Cloud Scheduler 和 Cloud Run Job 部署示例。
-- 增加 OpenAI、Gemini、OpenRouter 的 provider benchmark fixtures。
-- 改进触发时间、字幕可用时间、匿名设备数量的 observability dashboard。
+- 增加媒体授权允许进入仓库的人工 ASR Gold fixtures。
+- 改进冻结 replay 和 context-pack 消融 fixtures。
+- 改进本地 runtime 对字幕延迟、丢帧、队列深度和资源压力的观测。

@@ -1,5 +1,7 @@
 # Translation Model And Provider Comparison
 
+> **Historical/Discovery comparison.** Provider availability, pricing, and the active architecture can change. The current operator path is local-first; verify any provider facts again before use.
+
 Last updated: 2026-06-22
 
 Chinese version: [model-provider-comparison.zh.md](./model-provider-comparison.zh.md)

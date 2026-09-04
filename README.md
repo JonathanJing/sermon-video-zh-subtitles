@@ -13,6 +13,8 @@ This repository has one product goal: help Chinese-speaking attendees follow an 
 
 The complete diagrams, artifact contracts, local latency budget, and test gates are in the [two-workflow README](docs/workflows/README.zh.md).
 
+> **State calibrated on 2026-09-04.** Current claims below are backed by code, tests, or versioned reports on `main`; they are not a live health check of local services or venue readiness. Per-run recordings, transcripts, and PDFs are intentionally kept out of Git; reviewed benchmark derivatives may be versioned with provenance. Output filenames describe the artifact contract rather than bundled deliverables.
+
 > This is an independent personal open-source project. It is not affiliated with, endorsed by, sponsored by, approved by, or operated by Mariners Church. Use only public or otherwise authorized media, and do not bypass access controls, DRM, or platform restrictions.
 
 ## 1. Working workflows
@@ -71,7 +73,7 @@ Key references:
 
 | Area | Current evidence |
 |---|---|
-| Saturday PDF production | Two canonical PDFs, reading-text QA, PDF QA, human sermon-window gate, resumable state |
+| Saturday PDF production | Workflow code, tests, dated QA evidence, human sermon-window gate, resumable state; generated PDFs remain local/ignored |
 | Sunday live POC | Real microphone, Qwen3-ASR, MiLMMT token stream, 60-minute soak, large UI, read-only phone viewer |
 | Saturday-to-Sunday context | Ordered weekly-pack builder, guarded runtime policy, provenance-safe automatic activation |
 | Replay and A/B | Frozen ASR finals, deterministic context-policy replay, blind review CSV, source/model hashes |
@@ -84,7 +86,7 @@ Key references:
 - **Content-pack quality decision:** tooling is complete, but a real Saturday pack and human review of blind A/B output are still needed each week; machine Chinese is not silently injected.
 - **Local runtime options:** Ollama is the current A0 path; direct MLX serving remains a Discovery alternative and must use the same frozen inputs and latency/quality gate before replacement.
 - **Operational boundary:** one-hour local soak and controlled MLX recovery passed. The remaining production gate is the formal church-site rehearsal; LAN viewer access also depends on the venue Wi-Fi allowing client-to-client traffic.
-- **Resource ceiling:** Ollama memory grew during the one-hour soak without swap or latency collapse; clean startup before each service remains the rule until multi-service testing establishes a higher bound.
+- **Resource ceiling:** Ollama memory grew during the one-hour soak without latency collapse, and post-run swap was 0 MB. The main sampler's point-in-time swap field was invalid, so it is not evidence of zero swap throughout; clean startup before each service remains the rule until multi-service testing establishes a higher bound.
 
 ### Post-training track
 

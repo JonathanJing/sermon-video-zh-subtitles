@@ -21,7 +21,7 @@ MacBook 麦克风
       └── UI session ─────> 会后下载的 JSON 事件日志
 ```
 
-当前页面已经可以选择麦克风、开始/停止录音、显示电平和计时。麦克风 PCM 通过 WebSocket 进入 Gateway，使用能量 VAD、`whisper.cpp base.en` 和 MiLMMT A0 生成稳定字幕；停止后保留 WebM 恢复录音、规范化 ASR WAV、JSONL 事件和 manifest。
+当前页面已经可以选择麦克风、开始/停止录音、显示电平和计时。麦克风 PCM 通过 WebSocket 进入 Gateway，使用能量 VAD、本地 ASR 和 MiLMMT A0 生成稳定字幕；停止后保留 WebM 恢复录音、规范化 ASR WAV、JSONL 事件和 manifest。`sunday-live.sh` 在 MLX runtime 与模型 cache 可用时默认选择 `Qwen3-ASR-0.6B MLX 8-bit`，否则回退到 `whisper.cpp`。
 
 ## 当前最小链路
 
@@ -49,18 +49,18 @@ Browser microphone
 
 ### 当前 MacBook 与运行时选择
 
-2026-09-03/04 实测：这台机器是 M1 Max、64 GB 内存；Ollama 本地 API `0.33.3` 正常响应，已安装 `sermon-milmmt-46-4b-v1-q8:benchmark`。Homebrew `whisper-cli` 已安装，固定的 `ggml-base.en` 模型已下载并通过 SHA-256 校验。真实浏览器麦克风已经完成英文 ASR、中文翻译、UI 显示和落盘验证。
+2026-09-03/04 的 tracked 测试记录使用 M1 Max、64 GB 内存；当次 Ollama `0.33.3`、MiLMMT Q8、Qwen3-ASR MLX 和 Whisper fallback 均有运行证据。这是带日期的环境快照，不保证当前本机仍保持相同服务、cache 或版本。真实浏览器麦克风链路已完成英文 ASR、中文 token streaming、UI 显示和落盘验证；修复后的固定 60 分钟长测也已完成，但教会现场彩排和人工 ASR Gold 仍未完成。
 
 当前实现边界：
 
 1. **Working translation backend：MiLMMT-46-4B Q8_0 + Ollama。** A0 固定为 `sermon-milmmt-46-4b-v1-q8:benchmark`，使用 benchmark 已验证的官方 completion prompt、`raw=true`、temperature 0 和 top-k 1。浏览器只访问 gateway，不直接访问 Ollama。
-2. **Working ASR：whisper.cpp base.en。** AudioWorklet 生成 100 ms PCM 帧，Gateway 用 VAD 形成稳定英文片段；只翻译 `asr.final`。
-3. **可替换实验：MLX Whisper / MLX-LM。** 模型和运行时都位于 adapter 后面，后训练产物只替换 provider 配置，不改变 UI、日志或 Weekly Pack。
+2. **Working ASR：Qwen3-ASR MLX，Whisper fallback。** AudioWorklet 生成 100 ms PCM 帧；Gateway 用 VAD 形成稳定英文片段，只翻译 `asr.final`。一键启动器优先 Qwen3-ASR 0.6B MLX 8-bit，运行时或 cache 不可用时回退到 `whisper.cpp`。
+3. **可替换实验：其他 MLX / llama.cpp provider。** 模型和运行时都位于 adapter 后面；直接 MLX 翻译 serving 与后训练产物仍属于 Discovery，只能替换 provider 配置，不能改变 UI、日志或 Weekly Pack 契约。
 
 不要让浏览器直接调用 `11434` 或 `8080`。所有模型调用都经过 localhost gateway，这样 UI 不需要知道模型名称、prompt、context pack 或运行时：
 
 ```text
-ASRProvider: whisper_cpp | mlx_whisper
+ASRProvider: qwen-mlx-websocket | whisper-cli
 TranslationProvider: ollama | mlx_lm
 ```
 
@@ -68,12 +68,12 @@ TranslationProvider: ollama | mlx_lm
 
 | 用途 | 首选 | 原因 |
 |---|---|---|
-| 现场英文 ASR | whisper.cpp + Metal | Apple Silicon 支持成熟，并有实时 microphone/stream 示例 |
+| 现场英文 ASR | Qwen3-ASR 0.6B MLX 8-bit | 当前一键启动默认；离线与连续 replay 的 provisional winner，Whisper 保留为低资源 fallback |
 | 现场中文翻译 | Ollama + MiLMMT-46-4B Q8_0 | 已完成 239 段本机 A0 benchmark，并固定 prompt 与解码参数 |
 | 专用翻译候选 | Hy-MT2 1.8B | 专门面向翻译、支持英中；需要先验证 GGUF 或 MLX 转换与提示格式 |
-| Apple 原生实验 | MLX Whisper + MLX-LM | 便于测 Apple Silicon 原生性能，但当前机器尚未安装 |
+| Apple 原生实验 | 其他 MLX ASR + MLX-LM | 便于比较 Apple Silicon 原生性能；直接 MLX 翻译 serving 尚未晋级当前 A0 |
 
-`base.en` 是当前可运行基线，不等于最终 ASR 选择。下一阶段仍需用 20–50 条真实冻结片段比较 `base.en` 与 `small.en`；不要根据模型名称直接决定生产链路。
+Qwen3-ASR 是当前 POC 默认，不等于已经通过生产 promotion。七模型离线 bakeoff、Qwen 与 `small.en` 连续 replay、Qwen + MiLMMT 共存和 60 分钟浏览器长测已经完成；正式选择仍被六条人工逐词 Gold 校正和教会现场声学门槛阻塞。不要把单一房间的 VAD 参数推广到现场。
 
 参考：
 

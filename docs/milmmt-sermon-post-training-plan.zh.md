@@ -1,11 +1,11 @@
 # MiLMMT-46-4B MacBook 运行时选择与证道后训练方案
 
-更新日期：2026-09-03  
-状态：`runtime_bakeoff_ready_training_manifest_pending`
+更新日期：2026-09-04
+状态：`ollama_q8_poc_baseline_verified_runtime_bakeoff_and_training_manifest_pending`
 
 ## 结论
 
-第一阶段优胜模型固定为 `xiaomi-research/MiLMMT-46-4B-v1.0`。下一步不是立即训练，而是先在目标机器 `MacBook Pro / M1 Max / 64 GB` 上冻结运行时和量化：
+第一阶段优胜模型固定为 `xiaomi-research/MiLMMT-46-4B-v1.0`。当前 POC 的已验证 A0 是 Ollama 上的 Q8_0：它已完成 239 段 translation-only、Qwen 共存和修复后的 60 分钟浏览器长测。下面的 MLX/GGUF 选择仍是后续赛马计划，不是已经部署的事实。下一步不是立即训练，而是先在目标机器 `MacBook Pro / M1 Max / 64 GB` 上冻结候选运行时和量化：
 
 - 暂定主候选：MLX 5-bit；
 - 兼容性候选：llama.cpp GGUF `Q5_K_M`；

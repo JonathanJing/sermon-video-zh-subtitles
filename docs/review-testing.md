@@ -1,5 +1,7 @@
 # Review/Test Notes
 
+> **Historical review snapshot.** Failures and gaps reflect the review date and may be superseded. Current acceptance gates live in [workflows/README.zh.md](./workflows/README.zh.md).
+
 Scope: current POC for live-link input, sermon title display, "正在生成" caption state, GCS artifact publishing, and Secret Manager key reference.
 
 ## Findings
