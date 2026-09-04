@@ -8,6 +8,7 @@ These SVG files are the repository's maintained visual summaries. They use bilin
 | `solution-journey.svg` | Observed bottlenecks, rejected assumption, current hybrid, and gated future enhancement | root READMEs |
 | `saturday-post-live-workflow.svg` | Detailed Saturday dual-PDF gates and retry branches | workflow and stable post-live docs |
 | `sunday-live-workflow.svg` | Detailed Sunday live path and visible degradation branches | workflow and POC docs |
+| `saturday-to-sunday-context-pack-flow.svg` | Guarded Saturday evidence handoff, readiness selection, and Sunday runtime fallback | Context Pack plan and POC docs |
 | `local-live-architecture.svg` | Current localhost components, protocols, providers, and evidence | POC design and streaming docs |
 | `live-runtime-sequence.svg` | Runtime event sequence from capture through finalize | workflow and streaming docs |
 | `supervisor-control-plane.svg` | Bounded Agent, deterministic tools, human approval, and completion gate | Supervisor docs |

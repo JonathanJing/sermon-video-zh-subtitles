@@ -43,10 +43,12 @@
 
 周六英文字幕、候选中文、术语、经文引用和段落顺序可以转换成短期 `weekly-pack.json`：
 
+完整的方案审核、数据契约、fallback 决策和开发步骤见[周六产物到周日实时字幕 Context Pack 计划](../saturday-to-sunday-context-pack-plan.zh.md)。当前已经实现 builder、retriever、受控 prompt policy 和 replay；Saturday production run 到真实 Pack 的自动 exporter、capability-based readiness 和 ASR phrase bias 尚未完成。
+
 1. 以稳定 caption segment 为一条 JSONL，保留 `segmentId`、时间、英文、中文状态、术语和经文引用。
 2. 按周六演讲顺序生成一张 ordered sermon map。
 3. 机器中文只能作为 candidate；只有 reviewed/corrected/approved 内容可以进入 live prompt。
-4. 周日先运行 `A0 / none`，再用相同录音回放 `weekly_terms_v1` 或 `saturday_alignment_v1`。
+4. 周日先运行 `A0 / none`，再用相同录音回放 `english_alignment_v1`、`weekly_terms_v1` 或 `saturday_alignment_v1`。
 5. 每次翻译记录命中的 context ID、policy、cursor、模型和延迟，保证 A/B 可复现。
 
 ## B. 周日：MacBook 麦克风到实时中文字幕
@@ -69,7 +71,7 @@
 | 大号中文、英文 sidecar、手机只读页 | Working POC | 单页 operator UI；随机 token + SSE，只暴露字幕 GET，不暴露控制接口 |
 | 蜂窝网络扫码公网分享 | Design only | Firebase Hosting + Realtime Database；MacBook 只出站发布，不暴露本机端口 |
 | 本地英文 ASR | Working POC | Qwen3-ASR 0.6B/MLX 一键默认；Whisper 回退；60 分钟长测通过 |
-| 周六 content pack | Working POC | builder/retriever、受控 runtime policy、冻结英文 replay/A-B 已接通 |
+| 周六 content pack | POC | builder/retriever、受控 runtime policy、冻结英文 replay/A-B 已有；真实 Saturday exporter 与 capability readiness 尚未完成 |
 | 会后 replay/A-B | Working | 同一组 `asr.final` 按 policy 重放；生成盲评 CSV 和 hash provenance |
 | ASR Gold gate | Working gate | 六 case 队列已生成；真人未审核前正式 WER fail-closed |
 | Session 保留 | Working | 默认只预览；30 天、保留最近 10 个；只有显式 `--apply` 删除 |
@@ -138,6 +140,7 @@
 - [POC 设计](../../experiments/local-live-poc/DESIGN.zh.md)
 - [实时音频与字幕传输决策](../../experiments/local-live-poc/STREAMING.zh.md)
 - [公网手机字幕分享方案](../../experiments/local-live-poc/PUBLIC_SHARING.zh.md)
+- [周六产物到周日 Runtime Pack 方案与开发步骤](../saturday-to-sunday-context-pack-plan.zh.md)
 - [稳定 post-live PDF 工作流](../stable-post-live-reading-pdf-workflow.zh.md)
 - [本地周末生产 runbook](../codex-local-production-runbook.zh.md)
 - [完整文档索引](../README.zh.md)

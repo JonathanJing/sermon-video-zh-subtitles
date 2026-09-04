@@ -101,37 +101,63 @@ else
 fi
 
 weekly_pack="${LOCAL_LIVE_WEEKLY_PACK:-$poc_dir/artifacts/weekly-pack.json}"
-context_policy="${LOCAL_LIVE_CONTEXT_POLICY:-}"
-if [ -z "$context_policy" ]; then
-  context_policy="none"
-  if [ -f "$weekly_pack" ] && .venv/bin/python - "$weekly_pack" <<'PY'
-import json, sys
-from datetime import datetime, timezone
-pack = json.load(open(sys.argv[1], encoding="utf-8"))
-source_id = str(pack.get("provenance", {}).get("sourceId", "")).lower()
-audio_hash = str(pack.get("provenance", {}).get("audioSha256", ""))
-empty_hash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-try:
-    valid_until = datetime.fromisoformat(str(pack.get("validUntil", "")).replace("Z", "+00:00"))
-except ValueError:
-    valid_until = datetime.min.replace(tzinfo=timezone.utc)
-raise SystemExit(not (
-    pack.get("status") == "active"
-    and pack.get("sourceType") == "saturday_livestream"
-    and "example" not in source_id
-    and len(audio_hash) == 64
-    and audio_hash != empty_hash
-    and valid_until >= datetime.now(timezone.utc)
-))
-PY
-  then
-    context_policy="saturday_alignment_v1"
-  fi
-fi
-case "$context_policy" in
-  none|weekly_terms_v1|saturday_alignment_v1) ;;
-  *) echo "Unsupported LOCAL_LIVE_CONTEXT_POLICY: $context_policy" >&2; exit 1 ;;
+requested_context_policy="${LOCAL_LIVE_CONTEXT_POLICY:-}"
+case "$requested_context_policy" in
+  ""|none|english_alignment_v1|weekly_terms_v1|saturday_alignment_v1) ;;
+  *) echo "Unsupported LOCAL_LIVE_CONTEXT_POLICY: $requested_context_policy" >&2; exit 1 ;;
 esac
+
+context_policy="none"
+runtime_weekly_pack=""
+pack_dir="$(dirname "$weekly_pack")"
+pack_manifest="${LOCAL_LIVE_PACK_MANIFEST:-$pack_dir/manifest.json}"
+pack_segments="${LOCAL_LIVE_PACK_SEGMENTS:-$pack_dir/saturday-segments.jsonl}"
+pack_phrases="${LOCAL_LIVE_PACK_PHRASES:-$pack_dir/asr-phrases.candidate.txt}"
+pack_message_approval="${LOCAL_LIVE_PACK_MESSAGE_APPROVAL:-$pack_dir/message-identity-approval.json}"
+target_sunday="${LOCAL_LIVE_TARGET_SUNDAY:-$(.venv/bin/python - <<'PY'
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
+today = datetime.now(ZoneInfo("America/Los_Angeles")).date()
+print((today + timedelta(days=(6 - today.weekday()) % 7)).isoformat())
+PY
+)}"
+
+if [ -f "$weekly_pack" ] && [ -f "$pack_manifest" ] && \
+   [ -f "$pack_segments" ] && [ -f "$pack_phrases" ] && \
+   [ -f "$pack_message_approval" ]; then
+  readiness_report="$(mktemp "${TMPDIR:-/tmp}/sunday-pack-readiness.XXXXXX")"
+  readiness_exit=0
+  .venv/bin/python -m backend.pack_readiness \
+    --manifest "$pack_manifest" \
+    --pack "$weekly_pack" \
+    --segments "$pack_segments" \
+    --phrases "$pack_phrases" \
+    --message-approval "$pack_message_approval" \
+    --expected-target-sunday "$target_sunday" \
+    --output "$readiness_report" >/dev/null || readiness_exit=$?
+  if [ -s "$readiness_report" ]; then
+    readiness_status="$(.venv/bin/python -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["status"])' "$readiness_report")"
+    recommended_context_policy="$(.venv/bin/python -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["contextPolicy"])' "$readiness_report")"
+    readiness_mode="$(.venv/bin/python -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["runtimeMode"])' "$readiness_report")"
+    readiness_blockers="$(.venv/bin/python -c 'import json,sys; print(",".join(json.load(open(sys.argv[1], encoding="utf-8"))["blockers"]))' "$readiness_report")"
+    if [ "$readiness_status" = "ready" ] || [ "$readiness_status" = "degraded" ]; then
+      runtime_weekly_pack="$weekly_pack"
+      context_policy="$(.venv/bin/python -c 'import json,sys; from backend.pack_readiness import select_context_policy; print(select_context_policy(json.load(open(sys.argv[1], encoding="utf-8")), sys.argv[2]))' "$readiness_report" "$requested_context_policy")"
+      if [ -n "$requested_context_policy" ] && [ "$context_policy" != "$requested_context_policy" ]; then
+        echo "Requested context policy exceeds verified pack capability; using $recommended_context_policy." >&2
+      fi
+      echo "Verified Sunday context pack: $readiness_mode ($readiness_status)."
+    else
+      echo "Sunday context pack is invalid; using no context. Blockers: ${readiness_blockers:-unknown}" >&2
+    fi
+  else
+    echo "Sunday context pack validation failed (exit $readiness_exit); using no context." >&2
+  fi
+  rm -f "$readiness_report"
+elif [ -f "$weekly_pack" ]; then
+  echo "Sunday context pack companions are incomplete; using no context." >&2
+fi
 
 if [ "$asr_provider" != "qwen-mlx-websocket" ]; then
   case "$asr_model" in
@@ -189,7 +215,7 @@ fi
 echo "Sunday preflight passed."
 echo "ASR: $asr_provider ($asr_model_file)"
 echo "Translation: $translation_model"
-echo "Context: $context_policy${weekly_pack:+ ($weekly_pack)}"
+echo "Context: $context_policy${runtime_weekly_pack:+ ($runtime_weekly_pack)}"
 echo "Sessions: $session_root"
 echo "Public viewer: $firebase_public_mode"
 echo "Free disk: $((available_kb / 1024 / 1024)) GiB"
@@ -249,7 +275,7 @@ LOCAL_LIVE_QWEN_ASR_MODEL="${qwen_model:-}" \
 LOCAL_LIVE_MLX_AUDIO_URL="${LOCAL_LIVE_MLX_AUDIO_URL:-ws://127.0.0.1:18766/v1/audio/transcriptions/realtime}" \
 LOCAL_LIVE_OLLAMA_MODEL="$translation_model" \
 LOCAL_LIVE_SESSION_ROOT="$session_root" \
-LOCAL_LIVE_WEEKLY_PACK="$weekly_pack" \
+LOCAL_LIVE_WEEKLY_PACK="$runtime_weekly_pack" \
 LOCAL_LIVE_CONTEXT_POLICY="$context_policy" \
   ./scripts/run-local.sh &
 runtime_pid=$!

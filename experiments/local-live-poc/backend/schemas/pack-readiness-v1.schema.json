@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/pack-readiness-v1.schema.json",
+  "title": "Sunday Runtime Pack readiness v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "status",
+    "evaluatedAt",
+    "targetSunday",
+    "packVersion",
+    "runtimeMode",
+    "contextPolicy",
+    "alignmentEnabled",
+    "capabilities",
+    "counts",
+    "blockers",
+    "warnings"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "pack-readiness-v1" },
+    "status": { "enum": ["ready", "degraded", "invalid"] },
+    "evaluatedAt": { "type": "string", "format": "date-time" },
+    "targetSunday": { "type": ["string", "null"] },
+    "packVersion": { "type": ["string", "null"] },
+    "runtimeMode": {
+      "enum": ["full_alignment", "terms_only", "english_map_only", "core_only", "none"]
+    },
+    "contextPolicy": {
+      "enum": ["none", "english_alignment_v1", "weekly_terms_v1", "saturday_alignment_v1"]
+    },
+    "alignmentEnabled": { "type": "boolean" },
+    "capabilities": { "type": "object" },
+    "counts": { "type": "object" },
+    "blockers": { "type": "array", "items": { "type": "string" } },
+    "warnings": { "type": "array", "items": { "type": "string" } }
+  }
+}

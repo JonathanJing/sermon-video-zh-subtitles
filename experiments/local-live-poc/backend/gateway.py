@@ -15,11 +15,13 @@ from urllib.parse import parse_qs, urlparse
 from .asr_client import AsrError, MlxAudioWebSocketClient, WhisperCliClient
 from .content_pack import (
     CONTEXT_POLICIES,
+    CONTEXT_POLICY_LEVELS,
     PackValidationError,
     alignment_summary,
     load_pack,
     prompt_context,
     retrieve,
+    sha256_file,
 )
 from .firebase_publisher import FirebaseCaptionPublisher, FirebasePublisherConfig
 from .ollama_client import OllamaClient, OllamaError
@@ -52,6 +54,7 @@ class GatewayState:
     ) -> None:
         self.pack_path = pack_path
         self.pack = load_pack(pack_path) if pack_path else None
+        self.pack_sha256 = sha256_file(pack_path) if pack_path else None
         self.ollama = OllamaClient(ollama_model, ollama_url)
         self.sessions = SessionStore(session_root)
         if asr_provider == "qwen-mlx-websocket":
@@ -79,12 +82,40 @@ class GatewayState:
         self.ollama_warmup: dict[str, Any] | None = None
         self.runtime_restart: Callable[[], None] = lambda: os._exit(RUNTIME_RESTART_EXIT_CODE)
 
+    def resolve_context_policy(self, requested_policy: str | None) -> str:
+        requested = str(requested_policy or self.default_context_policy)
+        if requested not in CONTEXT_POLICIES:
+            raise PackValidationError(
+                "contextPolicy must be none, english_alignment_v1, "
+                "weekly_terms_v1, or saturday_alignment_v1"
+            )
+        if CONTEXT_POLICY_LEVELS[requested] > CONTEXT_POLICY_LEVELS[self.default_context_policy]:
+            raise PackValidationError(
+                f"contextPolicy {requested} exceeds configured capability "
+                f"{self.default_context_policy}"
+            )
+        return requested
+
+    def create_session(self, metadata: dict[str, Any]) -> dict[str, Any]:
+        safe_metadata = dict(metadata)
+        safe_metadata["contextPolicy"] = self.resolve_context_policy(
+            safe_metadata.get("contextPolicy")
+        )
+        safe_metadata["contentPack"] = None if not self.pack else {
+            "packVersion": self.pack.get("packVersion"),
+            "packSha256": self.pack_sha256,
+            "serviceDate": self.pack.get("serviceDate"),
+            "validUntil": self.pack.get("validUntil"),
+        }
+        return self.sessions.create(safe_metadata)
+
     def translate(
         self,
         source_text: str,
         cursor_sequence: int | None,
         context_policy: str,
     ) -> dict[str, Any]:
+        context_policy = self.resolve_context_policy(context_policy)
         pack = self.pack
         hits = (
             retrieve(pack, source_text, limit=5, cursor_sequence=cursor_sequence)
@@ -108,6 +139,7 @@ class GatewayState:
         context_policy: str,
         on_partial: Callable[[str, str], None],
     ) -> dict[str, Any]:
+        context_policy = self.resolve_context_policy(context_policy)
         pack = self.pack
         hits = (
             retrieve(pack, source_text, limit=5, cursor_sequence=cursor_sequence)
@@ -257,7 +289,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(HTTPStatus.ACCEPTED, {"status": "restarting"})
                 threading.Timer(0.1, self.server.state.runtime_restart).start()
             elif parsed.path == "/api/sessions/start":
-                self._send(HTTPStatus.CREATED, self.server.state.sessions.create(payload))
+                self._send(HTTPStatus.CREATED, self.server.state.create_session(payload))
             elif session_match and session_match.group(2) == "events":
                 self._send(
                     HTTPStatus.OK,
@@ -357,14 +389,8 @@ class Handler(BaseHTTPRequestHandler):
             raise PackValidationError("cursorSequence must be a positive integer")
         return cursor_sequence
 
-    @staticmethod
-    def _context_policy(payload: dict[str, Any]) -> str:
-        value = str(payload.get("contextPolicy") or "saturday_alignment_v1")
-        if value not in CONTEXT_POLICIES:
-            raise PackValidationError(
-                "contextPolicy must be none, weekly_terms_v1, or saturday_alignment_v1"
-            )
-        return value
+    def _context_policy(self, payload: dict[str, Any]) -> str:
+        return self.server.state.resolve_context_policy(payload.get("contextPolicy"))
 
 
 def create_server(host: str, port: int, state: GatewayState) -> GatewayServer:

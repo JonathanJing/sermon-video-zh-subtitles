@@ -28,6 +28,7 @@ class GatewayTest(unittest.TestCase):
             str(pack_path),
             "",
             session_root=str(Path(self.temporary.name) / "sessions"),
+            default_context_policy="saturday_alignment_v1",
         )
         state.ollama.status = lambda: {"available": True, "configuredModel": None, "installedModels": []}
         state.asr.status = lambda: {"available": True, "provider": "test-asr"}
@@ -142,6 +143,15 @@ class GatewayTest(unittest.TestCase):
         manifest = json.loads((directory / "manifest.json").read_text())
         self.assertEqual(manifest["eventCount"], 1)
         self.assertEqual(len(manifest["audioSha256"]), 64)
+        self.assertEqual(
+            manifest["metadata"]["contentPack"]["packVersion"],
+            self.state.pack["packVersion"],
+        )
+        self.assertEqual(len(manifest["metadata"]["contentPack"]["packSha256"]), 64)
+        self.assertEqual(
+            manifest["metadata"]["contextPolicy"],
+            "saturday_alignment_v1",
+        )
 
     def test_session_rejects_out_of_order_audio(self) -> None:
         _, created = self.request("/api/sessions/start", {"audioMimeType": "audio/webm"})
@@ -189,6 +199,17 @@ class GatewayTest(unittest.TestCase):
         self.assertEqual(payload["hits"], [])
         self.assertEqual(payload["promptContext"]["approvedTerms"], [])
         self.assertEqual(payload["alignment"]["strategy"], "no_match")
+
+    def test_request_cannot_exceed_configured_pack_capability(self) -> None:
+        self.state.default_context_policy = "english_alignment_v1"
+
+        status, payload = self.request("/api/context/retrieve", {
+            "sourceTextEn": "They are approaching the promised land.",
+            "contextPolicy": "saturday_alignment_v1",
+        })
+
+        self.assertEqual(400, status)
+        self.assertIn("exceeds configured capability", payload["message"])
 
     def test_translation_without_model_fails_open_for_recording(self) -> None:
         status, payload = self.request("/api/translate", {

@@ -1,0 +1,173 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="960" viewBox="0 0 1400 960" role="img" aria-labelledby="title desc">
+  <title id="title">Saturday evidence to Sunday live-caption context flow</title>
+  <desc id="desc">A guarded workflow from authorized Saturday media through audio extraction, English transcription, candidate Chinese translation, two independent human approvals, atomic Runtime Pack export, Sunday readiness checks, capability-based fallback, local ASR finals, translation, captions, and independent evidence storage.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0 0L0 6L9 3z" fill="#475569"/>
+    </marker>
+    <marker id="arrowSafe" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0 0L0 6L9 3z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrowFallback" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0 0L0 6L9 3z" fill="#ea580c"/>
+    </marker>
+    <style>
+      text{font-family:Arial,"PingFang SC","Microsoft YaHei",sans-serif}
+      .bg{fill:#f8fafc}
+      .lane{fill:#eef2ff;stroke:#c7d2fe;stroke-width:1.5}
+      .laneSunday{fill:#f0fdf4;stroke:#bbf7d0;stroke-width:1.5}
+      .title{font-size:29px;font-weight:700;fill:#0f172a}
+      .laneTitle{font-size:18px;font-weight:700;fill:#0f172a}
+      .h{font-size:16px;font-weight:700;fill:#0f172a}
+      .t{font-size:14px;fill:#334155}
+      .sub{font-size:13px;fill:#64748b}
+      .source{fill:#fff;stroke:#3b82f6;stroke-width:2}
+      .machine{fill:#f5f3ff;stroke:#8b5cf6;stroke-width:2}
+      .human{fill:#fff7ed;stroke:#f97316;stroke-width:2}
+      .pack{fill:#eff6ff;stroke:#2563eb;stroke-width:2.4}
+      .gate{fill:#fefce8;stroke:#ca8a04;stroke-width:2}
+      .full{fill:#ecfdf5;stroke:#10b981;stroke-width:2}
+      .terms{fill:#f0fdf4;stroke:#22c55e;stroke-width:2}
+      .english{fill:#eff6ff;stroke:#3b82f6;stroke-width:2}
+      .none{fill:#fff7ed;stroke:#f97316;stroke-width:2}
+      .runtime{fill:#fff;stroke:#10b981;stroke-width:2.2}
+      .store{fill:#f8fafc;stroke:#64748b;stroke-width:2}
+      .line{fill:none;stroke:#475569;stroke-width:2.2;marker-end:url(#arrow)}
+      .safe{fill:none;stroke:#2563eb;stroke-width:2.2;marker-end:url(#arrowSafe)}
+      .fallback{fill:none;stroke:#ea580c;stroke-width:2;stroke-dasharray:7 6;marker-end:url(#arrowFallback)}
+      .candidate{fill:none;stroke:#7c3aed;stroke-width:2;stroke-dasharray:5 5;marker-end:url(#arrow)}
+    </style>
+  </defs>
+
+  <rect class="bg" width="1400" height="960" rx="24"/>
+  <text class="title" x="48" y="52">Saturday → Sunday Context Pack · 周六产物如何帮助周日实时字幕</text>
+  <text class="sub" x="48" y="78">Live ASR final is always the source of truth · 机器中文永不自动进入实时翻译 prompt</text>
+
+  <rect class="lane" x="32" y="100" width="1336" height="260" rx="18"/>
+  <text class="laneTitle" x="54" y="130">Saturday Evidence &amp; Export · 周六证据与导出</text>
+
+  <path class="line" d="M214 220H244"/>
+  <path class="line" d="M408 220H438"/>
+  <path class="line" d="M632 220H662"/>
+  <path class="line" d="M872 220H902"/>
+  <path class="line" d="M1074 220H1104"/>
+
+  <rect class="source" x="54" y="166" width="160" height="108" rx="14"/>
+  <text class="h" x="134" y="198" text-anchor="middle">Authorized video</text>
+  <text class="t" x="134" y="222" text-anchor="middle">授权网络视频</text>
+  <text class="sub" x="134" y="247" text-anchor="middle">URL · source ID</text>
+
+  <rect class="source" x="248" y="166" width="160" height="108" rx="14"/>
+  <text class="h" x="328" y="198" text-anchor="middle">Audio + clip</text>
+  <text class="t" x="328" y="222" text-anchor="middle">下载音频与证道片段</text>
+  <text class="sub" x="328" y="247" text-anchor="middle">ffprobe · SHA-256</text>
+
+  <rect class="machine" x="442" y="150" width="190" height="140" rx="14"/>
+  <text class="h" x="537" y="180" text-anchor="middle">GPT English</text>
+  <text class="t" x="537" y="204" text-anchor="middle">英文 transcript / map</text>
+  <text class="h" x="537" y="233" text-anchor="middle">Chinese candidate</text>
+  <text class="t" x="537" y="257" text-anchor="middle">机器中文候选</text>
+  <text class="sub" x="537" y="278" text-anchor="middle">phrases · timing quality</text>
+
+  <rect class="human" x="666" y="144" width="206" height="152" rx="14"/>
+  <text class="h" x="769" y="176" text-anchor="middle">Two human gates</text>
+  <text class="t" x="769" y="202" text-anchor="middle">① sermon window</text>
+  <text class="t" x="769" y="226" text-anchor="middle">② same-message identity</text>
+  <text class="sub" x="769" y="254" text-anchor="middle">独立审批文件</text>
+  <text class="sub" x="769" y="276" text-anchor="middle">reviewer · time · hash</text>
+
+  <rect class="source" x="906" y="166" width="168" height="108" rx="14"/>
+  <text class="h" x="990" y="198" text-anchor="middle">Atomic exporter</text>
+  <text class="t" x="990" y="222" text-anchor="middle">校验后整体替换</text>
+  <text class="sub" x="990" y="247" text-anchor="middle">failure keeps old pack</text>
+
+  <rect class="pack" x="1108" y="138" width="232" height="164" rx="14"/>
+  <text class="h" x="1224" y="169" text-anchor="middle">Sunday Runtime Pack</text>
+  <text class="t" x="1224" y="195" text-anchor="middle">manifest + weekly-pack</text>
+  <text class="t" x="1224" y="219" text-anchor="middle">segments + ASR phrases</text>
+  <text class="t" x="1224" y="243" text-anchor="middle">message approval</text>
+  <text class="sub" x="1224" y="273" text-anchor="middle">short-lived · hashed · local</text>
+
+  <rect fill="#ede9fe" x="442" y="314" width="430" height="30" rx="8"/>
+  <text class="sub" x="657" y="334" text-anchor="middle">Machine Chinese remains candidate-only until explicit human review</text>
+
+  <rect class="laneSunday" x="32" y="382" width="1336" height="538" rx="18"/>
+  <text class="laneTitle" x="54" y="414">Sunday Preflight &amp; Live Runtime · 周日预检与实时运行</text>
+
+  <path class="safe" d="M1224 302V372C1224 402 1138 402 1138 434"/>
+  <polygon class="gate" points="1138,430 1242,480 1138,530 1034,480"/>
+  <text class="h" x="1138" y="470" text-anchor="middle">Readiness</text>
+  <text class="t" x="1138" y="492" text-anchor="middle">schema · Sunday · hash</text>
+  <text class="sub" x="1138" y="512" text-anchor="middle">identity · expiry · review</text>
+
+  <text class="sub" x="578" y="432">Capability selector · 只可降级，不可越级</text>
+  <path class="line" d="M1032 480H960V446H637V462"/>
+  <path class="line" d="M1032 480H960C934 480 934 500 908 500"/>
+  <path class="line" d="M1032 480H960C934 480 934 570 908 570"/>
+  <path class="line" d="M1244 480H1294V500"/>
+  <path class="fallback" d="M1244 480H1320V570H1294"/>
+
+  <rect class="full" x="550" y="466" width="174" height="68" rx="12"/>
+  <text class="h" x="637" y="493" text-anchor="middle">Full alignment</text>
+  <text class="sub" x="637" y="516" text-anchor="middle">saturday_alignment_v1</text>
+  <rect class="terms" x="734" y="466" width="174" height="68" rx="12"/>
+  <text class="h" x="821" y="493" text-anchor="middle">Terms only</text>
+  <text class="sub" x="821" y="516" text-anchor="middle">weekly_terms_v1</text>
+  <rect class="english" x="734" y="536" width="174" height="68" rx="12"/>
+  <text class="h" x="821" y="563" text-anchor="middle">English map only</text>
+  <text class="sub" x="821" y="586" text-anchor="middle">english_alignment_v1</text>
+  <rect class="none" x="1208" y="536" width="166" height="68" rx="12"/>
+  <text class="h" x="1291" y="563" text-anchor="middle">None / fallback</text>
+  <text class="sub" x="1291" y="586" text-anchor="middle">none · invalid / expired</text>
+
+  <path class="safe" d="M637 534V626H624"/>
+  <path class="safe" d="M821 534V626H624"/>
+  <path class="safe" d="M821 604V626H624"/>
+  <path class="fallback" d="M1291 604V626H624"/>
+
+  <path class="line" d="M214 700H244"/>
+  <path class="line" d="M408 700H438"/>
+  <path class="line" d="M624 700H654"/>
+  <path class="line" d="M846 700H876"/>
+  <path class="line" d="M1068 700H1098"/>
+
+  <rect class="runtime" x="54" y="650" width="160" height="100" rx="14"/>
+  <text class="h" x="134" y="682" text-anchor="middle">Live microphone</text>
+  <text class="t" x="134" y="706" text-anchor="middle">周日现场声音</text>
+  <text class="sub" x="134" y="730" text-anchor="middle">browser capture</text>
+
+  <rect class="runtime" x="248" y="650" width="160" height="100" rx="14"/>
+  <text class="h" x="328" y="682" text-anchor="middle">Local ASR final</text>
+  <text class="t" x="328" y="706" text-anchor="middle">稳定英文</text>
+  <text class="sub" x="328" y="730" text-anchor="middle">only source of truth</text>
+
+  <rect class="pack" x="442" y="626" width="182" height="148" rx="14"/>
+  <text class="h" x="533" y="658" text-anchor="middle">Gateway context</text>
+  <text class="t" x="533" y="684" text-anchor="middle">cursor alignment</text>
+  <text class="t" x="533" y="708" text-anchor="middle">approved prompt fields</text>
+  <text class="sub" x="533" y="737" text-anchor="middle">policy is a hard ceiling</text>
+  <text class="sub" x="533" y="758" text-anchor="middle">机器中文禁止注入</text>
+
+  <rect class="runtime" x="658" y="650" width="188" height="100" rx="14"/>
+  <text class="h" x="752" y="682" text-anchor="middle">MiLMMT translation</text>
+  <text class="t" x="752" y="706" text-anchor="middle">翻译当前 live English</text>
+  <text class="sub" x="752" y="730" text-anchor="middle">partial → final</text>
+
+  <rect class="runtime" x="880" y="650" width="188" height="100" rx="14"/>
+  <text class="h" x="974" y="682" text-anchor="middle">Readable captions</text>
+  <text class="t" x="974" y="706" text-anchor="middle">大字中文 + 小字英文</text>
+  <text class="sub" x="974" y="730" text-anchor="middle">local / LAN viewer</text>
+
+  <rect class="store" x="1102" y="640" width="238" height="120" rx="14"/>
+  <text class="h" x="1221" y="672" text-anchor="middle">Independent evidence</text>
+  <text class="t" x="1221" y="697" text-anchor="middle">recording · events · manifest</text>
+  <text class="t" x="1221" y="721" text-anchor="middle">Pack version + SHA-256</text>
+  <text class="sub" x="1221" y="744" text-anchor="middle">continues if models fail</text>
+
+  <path class="safe" d="M134 750V826H1102"/>
+  <path class="safe" d="M533 774V826H1221V764"/>
+  <path class="safe" d="M974 750V796H1221V764"/>
+  <rect fill="#dbeafe" x="54" y="842" width="1286" height="52" rx="12"/>
+  <text class="t" x="697" y="865" text-anchor="middle">Fail-closed contract: no Pack still means live ASR + A0 translation + durable recording</text>
+  <text class="sub" x="697" y="884" text-anchor="middle">ASR or translation failure never substitutes Saturday transcript for what is being spoken live</text>
+</svg>

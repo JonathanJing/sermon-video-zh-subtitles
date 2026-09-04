@@ -83,12 +83,13 @@ Key references:
 |---|---|
 | Saturday PDF production | Workflow code, tests, dated QA evidence, human sermon-window gate, resumable state; generated PDFs remain local/ignored |
 | Sunday live POC | Real microphone, Qwen3-ASR, MiLMMT token stream, 60-minute soak, large UI, read-only phone viewer |
-| Saturday-to-Sunday context | Ordered weekly-pack builder, guarded runtime policy, provenance-safe automatic activation |
+| Saturday-to-Sunday context | Builder/retriever, guarded runtime policy, and replay are demonstrated; the automatic Saturday exporter and capability readiness are not yet implemented |
 | Replay and A/B | Frozen ASR finals, deterministic context-policy replay, blind review CSV, source/model hashes |
 | Operations | One-click start/stop, supervisor/recovery, session retention preview/apply, fail-closed ASR Gold gate |
 
 ### Active discovery and missing gates
 
+- **Saturday-to-Sunday production bridge:** Weekly Pack runtime components and replay exist, but a Saturday production run cannot yet export a real Pack automatically. See the [Context Pack design and build plan](docs/saturday-to-sunday-context-pack-plan.zh.md).
 - **Formal ASR accuracy:** five speakers and edge cases have provisional machine-reference evidence; the six-case human word-level Gold queue still requires an actual reviewer before its WER can be used for model promotion.
 - **Verified live latency:** in the repaired 60-minute Qwen + MiLMMT run, audio-end-to-browser-first-Chinese was p50 1.419s / p95 1.486s; complete Chinese was p50 1.530s / p95 1.720s. Venue acoustics can differ.
 - **Content-pack quality decision:** tooling is complete, but a real Saturday pack and human review of blind A/B output are still needed each week; machine Chinese is not silently injected.

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/saturday-message-identity-approval-v1.schema.json",
+  "title": "Saturday to Sunday message identity approval v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "status",
+    "humanApproval",
+    "matchStatus",
+    "messageKey",
+    "targetSunday",
+    "sourceServiceDate"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "saturday-message-identity-approval-v1" },
+    "status": { "enum": ["pending", "approved", "rejected"] },
+    "humanApproval": { "type": "boolean" },
+    "matchStatus": { "enum": ["unknown", "inferred", "human_confirmed", "rejected"] },
+    "messageKey": { "type": "string", "minLength": 1 },
+    "targetSunday": { "type": "string", "format": "date" },
+    "sourceServiceDate": { "type": "string", "format": "date" },
+    "approvedBy": { "type": "string", "minLength": 1 },
+    "approvedAt": { "type": "string", "format": "date-time" },
+    "recordedAt": { "type": "string", "format": "date-time" }
+  }
+}

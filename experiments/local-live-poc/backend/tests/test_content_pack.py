@@ -65,6 +65,28 @@ class ContentPackTest(unittest.TestCase):
         self.assertEqual(prompt_context(hits)["approvedTerms"][0]["preferredZh"], "应许之地")
         self.assertEqual(prompt_context(hits)["verifiedScriptureRefs"], [])
 
+    def test_english_alignment_policy_retrieves_without_prompt_injection(self) -> None:
+        hits = retrieve(
+            self.pack,
+            "God's people are standing at the edge of the promised land.",
+            now=datetime(2026, 9, 6, tzinfo=timezone.utc),
+        )
+        context = prompt_context(hits, policy="english_alignment_v1")
+
+        self.assertEqual(1, len(hits))
+        self.assertEqual({
+            "approvedTerms": [],
+            "verifiedScriptureRefs": [],
+            "reviewedExactExamples": [],
+            "reviewedAlignedReferences": [],
+        }, context)
+        self.assertEqual(
+            OllamaClient.build_prompt("Grace is enough.", context),
+            "Translate this from English to Chinese (Simplified):\n"
+            "English: Grace is enough.\n"
+            "Chinese (Simplified):",
+        )
+
     def test_reviewed_exact_translation_can_be_injected(self) -> None:
         hits = retrieve(
             self.pack,

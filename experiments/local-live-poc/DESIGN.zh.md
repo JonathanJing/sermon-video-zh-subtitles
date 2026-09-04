@@ -139,13 +139,16 @@ Sunday stable English + previous cursor
   -> translate CURRENT SOURCE only
 ```
 
-首版只做确定性的词汇重叠、短语命中和邻近加权，不引入 embeddings 或 vector DB。三种 replay policy 为：
+首版只做确定性的词汇重叠、短语命中和邻近加权，不引入 embeddings 或 vector DB。四种 replay policy 为：
 
 - `none`：不使用周六 pack，作为 A0。
+- `english_alignment_v1`：只检索周六英文地图来维护 cursor；不向翻译 prompt 注入任何周六内容，继续使用冻结 A0 prompt。
 - `weekly_terms_v1`：只使用审核术语、审核经文和完全相同的审核译例，作为 A1。
 - `saturday_alignment_v1`：在 A1 基础上，把高置信、已审核的相邻周六双语片段作为“另一演讲版本参考”，作为 A2。
 
 只有英文完全相同的审核译文可成为 exact example。位置相邻或语义相近的审核译文不得直接输出，只能放入明确标注的 reference block；prompt 同时声明周六版本可能有增删，任何周日当前英文没有支持的内容都不得复制。机器译文在所有 policy 下都不进入 prompt。
+
+启动器基于 readiness 选择的 policy 同时是 gateway 的能力上限。REST 或 WebSocket 客户端只能选择同级或更低级 policy，不能绕过启动器把 English-only Pack 提升为术语或双语对齐。创建 session 时，gateway 在 manifest metadata 中冻结实际 policy、Pack version、Pack SHA-256、来源日期和有效期。
 
 每个字幕事件额外记录 `previousCursor`、`suggestedCursor`、`alignmentStrategy`、`confidence`、`matchedSegmentId` 和 `contextPolicy`。这既能观察现场是否跑偏，也使回家后的 A0/A1/A2 比较无需重新猜测现场位置。
 
@@ -156,7 +159,7 @@ Sunday stable English + previous cursor
 现场只运行一条预先选定的链路。会后从同一份录音做两类 replay：
 
 - 端到端 replay：比较 ASR、切句或完整模型链路。
-- 冻结英文 replay：固定 `segmentId`、英文输入、分段和 cursor 序列，比较 `none`、`weekly_terms_v1` 与 `saturday_alignment_v1`。
+- 冻结英文 replay：固定 `segmentId`、英文输入、分段和 cursor 序列，比较 `none`、`english_alignment_v1`、`weekly_terms_v1` 与 `saturday_alignment_v1`。
 
 A/B 必须固定模型、量化、解码参数、硬件和输入顺序。人工标签先只保留：A 更好、B 更好、相同、都不好，以及 `meaning_error`、`term_error`、`scripture_error`、`unsupported_addition`。
 

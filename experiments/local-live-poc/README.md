@@ -76,7 +76,7 @@ With Qwen MLX enabled, the launcher supervises `mlx_audio.server`. If it exits, 
 
 The final cadence can be tuned without code changes using `LOCAL_LIVE_VAD_SILENCE_MS` and `LOCAL_LIVE_VAD_MAX_SEGMENT_MS`; both values must be multiples of 100 ms. The defaults are `500` and `3000`.
 
-If `artifacts/weekly-pack.json` is a genuine active Saturday pack with non-example source/audio provenance, the launcher automatically selects `saturday_alignment_v1`; otherwise it fails safely to `none`. Override with `LOCAL_LIVE_CONTEXT_POLICY=none|weekly_terms_v1|saturday_alignment_v1`.
+The launcher only enables Saturday context when `weekly-pack.json`, `manifest.json`, `saturday-segments.jsonl`, `asr-phrases.candidate.txt`, and `message-identity-approval.json` are present together and pass the versioned readiness check for the upcoming Sunday. It selects `english_alignment_v1`, `weekly_terms_v1`, or `saturday_alignment_v1` from the verified capabilities; an invalid, expired, wrong-message, or incomplete pack fails safely to `none`. `english_alignment_v1` uses the Saturday English map only for cursor alignment and preserves the frozen A0 translation prompt. A `LOCAL_LIVE_CONTEXT_POLICY` override may select a less capable verified mode, but cannot promote a pack beyond its verified capability.
 
 Keep the Terminal window open. In the page, choose the microphone, start recording, and use **Stop and save** before pressing Control-C in Terminal. Run a non-starting preflight on Saturday night or Sunday morning with:
 
@@ -91,6 +91,24 @@ For development, the lower-level command remains `./scripts/run-local.sh`; it do
 If the live WebSocket, microphone, browser audio context, or incremental storage fails, the page now shows a visible degraded state while the independent browser recording continues. On stop, the gateway marks a session `completed` only after both ASR and translation workers confirm they drained; otherwise it writes an `incomplete` but recoverable manifest. Gateway startup also recovers stale `recording` sessions as `incomplete` instead of silently leaving them open.
 
 ## Saturday Weekly Pack
+
+For the Saturday production workflow, use the repository exporter instead of copying pipeline files by hand. A `human_confirmed` message match requires a separate `message-identity-approval.json` review record; the existing sermon-window approval is not reused as proof that Saturday and Sunday have the same message.
+
+```bash
+python3 ../../scripts/export_saturday_live_context.py \
+  --run-root /absolute/path/to/post-live-run \
+  --output-dir artifacts/sunday-runtime-pack \
+  --target-sunday 2026-09-06 \
+  --source-service-date 2026-09-05 \
+  --message-key series-week-title \
+  --message-match-status human_confirmed \
+  --message-approval /absolute/path/to/message-identity-approval.json
+
+LOCAL_LIVE_WEEKLY_PACK="$PWD/artifacts/sunday-runtime-pack/weekly-pack.json" \
+  ./scripts/sunday-live.sh --check
+```
+
+The exporter stages and validates the complete artifact set before replacing an existing pack. A failed refresh therefore leaves the previous pack untouched. Without the separate human message approval, it can still export an auditable candidate, but readiness remains `invalid` and Sunday uses `none`. The selected policy is also a gateway-enforced capability ceiling: browser or WebSocket requests cannot promote an English-only pack to terms or bilingual alignment. Each session manifest freezes the selected policy plus the pack version and SHA-256.
 
 Prepare one JSON object per stable caption segment. The interchange format is JSONL: one complete `saturday-sermon-segment-v1` object per line, ordered by time.
 
@@ -169,7 +187,7 @@ Both POST endpoints accept `cursorSequence` and `contextPolicy`. The live page s
 {"sourceTextEn":"Grace leads us today.","cursorSequence":14,"contextPolicy":"saturday_alignment_v1"}
 ```
 
-Available policies are `none`, `weekly_terms_v1`, and `saturday_alignment_v1`. The last policy can expose a reviewed Saturday translation as a reference version, but only an exact English match can be used as a directly reusable reviewed example.
+Available policies are `none`, `english_alignment_v1`, `weekly_terms_v1`, and `saturday_alignment_v1`. The English-alignment policy retrieves only to maintain the sermon cursor and injects no Saturday content into the translation prompt. The last policy can expose a reviewed Saturday translation as a reference version, but only an exact English match can be used as a directly reusable reviewed example.
 
 If Ollama or the configured model is unavailable, translation returns `503` with `recordingShouldContinue=true`; recording must not depend on translation availability.
 

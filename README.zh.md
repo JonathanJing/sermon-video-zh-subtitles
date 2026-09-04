@@ -83,12 +83,13 @@ _图片来自 2026-08-30 真实运行的第一页；两份 PDF 各自的 QA 都�
 |---|---|
 | 周六 PDF 生产 | 工作流代码、测试、带日期的 QA 证据、人工确认证道时间窗和可恢复状态；生成 PDF 保持本地且被忽略 |
 | 周日 live POC | 真实麦克风、Qwen3-ASR、MiLMMT token stream、60 分钟长测、大字号 UI、只读手机页 |
-| 周六到周日 context | 有序 weekly pack、受控 runtime policy、基于 provenance 的安全自动启用 |
+| 周六到周日 context | builder/retriever、受控 runtime policy 和 replay 已证明；自动 Saturday exporter 与 capability readiness 尚未完成 |
 | Replay 与 A/B | 冻结 ASR final、确定性 context-policy 重放、盲评 CSV、source/model hash |
 | 运行维护 | 一键启动/停止、监督恢复、session 保留策略、fail-closed ASR Gold 门 |
 
 ### 正在探索和仍需补齐的门槛
 
+- **周六到周日生产桥接：** 现有 Weekly Pack 运行组件和 replay 已存在，但 Saturday production run 尚不能自动导出真实 Pack；详细审核和开发步骤见[Context Pack 计划](docs/saturday-to-sunday-context-pack-plan.zh.md)。
 - **正式 ASR 准确率：** 五位讲员和 edge case 已有机器参考的临时证据；六个 case 的人工逐词 Gold 队列仍必须由真人校正签名，之后 WER 才能用于模型 promotion。
 - **已验证延迟：** 修复后的 60 分钟 Qwen + MiLMMT 长测中，音频结束到浏览器中文首字 p50 1.419 秒 / p95 1.486 秒；到完整中文 p50 1.530 秒 / p95 1.720 秒。现场声学可能不同。
 - **Content-pack 质量决策：** 工具链已经完成；每周仍要用真实周六 pack，并由人工完成盲评结果。机器中文不会静默注入。

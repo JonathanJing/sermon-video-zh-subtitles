@@ -8,7 +8,7 @@ from typing import Any
 from websockets.exceptions import ConnectionClosed
 from websockets.sync.server import ServerConnection, serve
 
-from .content_pack import CONTEXT_POLICIES
+from .content_pack import PackValidationError
 from .live_pipeline import LivePipeline, PCM_BYTES_PER_FRAME
 from .session_store import SessionStoreError
 from .viewer_server import viewer_urls
@@ -97,9 +97,10 @@ class LiveSocketService:
             ):
                 send({"type": "stream.error", "message": "unsupported PCM stream format"})
                 return
-            context_policy = str(start.get("contextPolicy") or "none")
-            if context_policy not in CONTEXT_POLICIES:
-                send({"type": "stream.error", "message": "unsupported context policy"})
+            try:
+                context_policy = self.state.resolve_context_policy(start.get("contextPolicy"))
+            except PackValidationError as error:
+                send({"type": "stream.error", "message": str(error)})
                 return
             pipeline = LivePipeline(
                 session_id=session_id,

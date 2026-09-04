@@ -16,6 +16,11 @@ def parser() -> argparse.ArgumentParser:
     audio.add_argument("--audio", help="Source audio file; SHA-256 is calculated")
     audio.add_argument("--audio-sha256", help="Already-calculated source audio SHA-256")
     command.add_argument("--valid-until", required=True, help="Last eligible date as YYYY-MM-DD")
+    command.add_argument(
+        "--timezone",
+        default="UTC",
+        help="IANA timezone used to interpret the end of --valid-until (default: UTC)",
+    )
     command.add_argument("--output", required=True, help="Destination weekly-pack.json")
     return command
 
@@ -30,6 +35,7 @@ def main() -> None:
         source_id=arguments.source_id,
         audio_sha256=audio_sha256,
         valid_until=arguments.valid_until,
+        valid_until_timezone=arguments.timezone,
     )
     write_pack(pack, arguments.output)
     print(json.dumps({

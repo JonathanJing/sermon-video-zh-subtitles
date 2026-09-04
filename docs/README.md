@@ -21,6 +21,7 @@ Status was calibrated against `main` on **2026-09-04**. Documentation does not p
 | Topic | English | Chinese |
 |---|---|---|
 | Two working workflows and local latency budget | [Chinese source of truth](./workflows/README.zh.md) | [workflows/README.zh.md](./workflows/README.zh.md) |
+| Saturday-to-Sunday Runtime Pack design and build plan | [Chinese design source](./saturday-to-sunday-context-pack-plan.zh.md) | [saturday-to-sunday-context-pack-plan.zh.md](./saturday-to-sunday-context-pack-plan.zh.md) |
 | Stable workflow | [stable-post-live-reading-pdf-workflow.md](./stable-post-live-reading-pdf-workflow.md) | [stable-post-live-reading-pdf-workflow.zh.md](./stable-post-live-reading-pdf-workflow.zh.md) |
 | Production Supervisor Agent | [sermon-production-supervisor-agent.md](./sermon-production-supervisor-agent.md) | [sermon-production-supervisor-agent.zh.md](./sermon-production-supervisor-agent.zh.md) |
 | Local live-caption POC | [README.md](../experiments/local-live-poc/README.md) | [DESIGN.zh.md](../experiments/local-live-poc/DESIGN.zh.md) |

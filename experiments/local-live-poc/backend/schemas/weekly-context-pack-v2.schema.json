@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/weekly-context-pack-v2.schema.json",
+  "title": "Weekly context pack manifest v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "packId",
+    "createdAt",
+    "targetSunday",
+    "messageIdentity",
+    "provenance",
+    "capabilities",
+    "timing",
+    "validity",
+    "review",
+    "policy",
+    "artifacts"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "weekly-context-pack-v2" },
+    "packId": { "type": "string", "minLength": 1 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "targetSunday": { "type": "string", "format": "date" },
+    "messageIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["messageKey", "matchStatus", "sourceServiceDate", "approval"],
+      "properties": {
+        "messageKey": { "type": "string", "minLength": 1 },
+        "matchStatus": {
+          "enum": ["unknown", "inferred", "human_confirmed", "rejected"]
+        },
+        "sourceServiceDate": { "type": "string", "format": "date" },
+        "approval": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sha256", "approvedBy", "approvedAt"],
+          "properties": {
+            "sha256": { "$ref": "#/$defs/sha256" },
+            "approvedBy": { "type": ["string", "null"] },
+            "approvedAt": { "type": ["string", "null"], "format": "date-time" }
+          }
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourceId",
+        "sourceUrlHash",
+        "sourceAudioSha256",
+        "sermonClipSha256",
+        "segmentSourceSha256"
+      ],
+      "properties": {
+        "sourceId": { "type": "string", "minLength": 1 },
+        "sourceUrlHash": { "type": "string", "minLength": 1 },
+        "sourceAudioSha256": { "$ref": "#/$defs/sha256" },
+        "sermonClipSha256": { "$ref": "#/$defs/sha256" },
+        "segmentSourceSha256": { "$ref": "#/$defs/sha256" },
+        "pipelineInputFingerprint": { "type": ["string", "null"] }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "englishMapReady",
+        "asrPhraseCandidatesReady",
+        "approvedTermsReady",
+        "verifiedScriptureReady",
+        "reviewedExamplesReady"
+      ],
+      "properties": {
+        "englishMapReady": { "type": "boolean" },
+        "asrPhraseCandidatesReady": { "type": "boolean" },
+        "approvedTermsReady": { "type": "boolean" },
+        "verifiedScriptureReady": { "type": "boolean" },
+        "reviewedExamplesReady": { "type": "boolean" }
+      }
+    },
+    "timing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["quality", "source"],
+      "properties": {
+        "quality": {
+          "enum": [
+            "source_captions",
+            "model_segment_timestamps",
+            "aligned_timestamps",
+            "synthetic_sequence_only"
+          ]
+        },
+        "source": { "type": "string", "minLength": 1 }
+      }
+    },
+    "validity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["notBefore", "validUntil", "timezone"],
+      "properties": {
+        "notBefore": { "type": "string", "format": "date-time" },
+        "validUntil": { "type": "string", "format": "date-time" },
+        "timezone": { "type": "string", "minLength": 1 }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "machineChineseInjectable",
+        "asrPhraseCandidateCount",
+        "reviewedTermCount",
+        "verifiedScriptureCount",
+        "reviewedExampleCount"
+      ],
+      "properties": {
+        "machineChineseInjectable": { "const": false },
+        "asrPhraseCandidateCount": { "type": "integer", "minimum": 0 },
+        "reviewedTermCount": { "type": "integer", "minimum": 0 },
+        "verifiedScriptureCount": { "type": "integer", "minimum": 0 },
+        "reviewedExampleCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["currentLiveEnglishIsSourceOfTruth", "machineTranslationInjectable"],
+      "properties": {
+        "currentLiveEnglishIsSourceOfTruth": { "const": true },
+        "machineTranslationInjectable": { "const": false }
+      }
+    },
+    "pipeline": { "type": "object" },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceAudio", "sermonClip", "saturdaySegments", "weeklyPack", "asrPhraseCandidates", "messageIdentityApproval"],
+      "properties": {
+        "sourceAudio": { "$ref": "#/$defs/artifact" },
+        "sermonClip": { "$ref": "#/$defs/artifact" },
+        "saturdaySegments": { "$ref": "#/$defs/artifact" },
+        "weeklyPack": { "$ref": "#/$defs/artifact" },
+        "asrPhraseCandidates": { "$ref": "#/$defs/artifact" },
+        "messageIdentityApproval": { "$ref": "#/$defs/artifact" }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}

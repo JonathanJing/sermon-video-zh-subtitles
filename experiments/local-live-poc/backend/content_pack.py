@@ -6,11 +6,23 @@ import re
 from datetime import date, datetime, time, timezone
 from pathlib import Path
 from typing import Any, Iterable
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 
 SCHEMA_VERSION = 1
 INJECTABLE_STATUSES = {"approved", "corrected", "reviewed"}
-CONTEXT_POLICIES = {"none", "weekly_terms_v1", "saturday_alignment_v1"}
+CONTEXT_POLICIES = {
+    "none",
+    "english_alignment_v1",
+    "weekly_terms_v1",
+    "saturday_alignment_v1",
+}
+CONTEXT_POLICY_LEVELS = {
+    "none": 0,
+    "english_alignment_v1": 1,
+    "weekly_terms_v1": 2,
+    "saturday_alignment_v1": 3,
+}
 STOPWORDS = {
     "a", "an", "and", "are", "as", "at", "be", "but", "by", "for", "from",
     "has", "he", "in", "is", "it", "of", "on", "or", "our", "that", "the",
@@ -109,12 +121,17 @@ def _as_nonnegative_int(value: Any, field: str) -> int:
     return number
 
 
-def _iso_end_of_day(value: str) -> str:
+def _iso_end_of_day(value: str, timezone_name: str = "UTC") -> str:
     try:
         parsed = date.fromisoformat(value)
     except ValueError as error:
         raise PackValidationError("validUntil must be YYYY-MM-DD") from error
-    return datetime.combine(parsed, time(23, 59, 59), timezone.utc).isoformat().replace("+00:00", "Z")
+    try:
+        local_timezone = ZoneInfo(timezone_name)
+    except ZoneInfoNotFoundError as error:
+        raise PackValidationError(f"unknown valid-until timezone: {timezone_name}") from error
+    local_end = datetime.combine(parsed, time(23, 59, 59), local_timezone)
+    return local_end.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def build_weekly_pack(
@@ -124,6 +141,7 @@ def build_weekly_pack(
     source_id: str,
     audio_sha256: str,
     valid_until: str,
+    valid_until_timezone: str = "UTC",
 ) -> dict[str, Any]:
     try:
         date.fromisoformat(service_date)
@@ -213,7 +231,8 @@ def build_weekly_pack(
         "status": "active",
         "sourceType": "saturday_livestream",
         "serviceDate": service_date,
-        "validUntil": _iso_end_of_day(valid_until),
+        "validUntil": _iso_end_of_day(valid_until, valid_until_timezone),
+        "validUntilTimezone": valid_until_timezone,
         "provenance": {
             "sourceId": source_id,
             "audioSha256": audio_sha256.lower(),
@@ -395,6 +414,13 @@ def prompt_context(
 ) -> dict[str, Any]:
     if policy not in CONTEXT_POLICIES:
         raise PackValidationError(f"unsupported contextPolicy: {policy}")
+    if policy in {"none", "english_alignment_v1"}:
+        return {
+            "approvedTerms": [],
+            "verifiedScriptureRefs": [],
+            "reviewedExactExamples": [],
+            "reviewedAlignedReferences": [],
+        }
     terms: dict[str, str] = {}
     exact_examples: list[dict[str, str]] = []
     aligned_references: list[dict[str, Any]] = []
