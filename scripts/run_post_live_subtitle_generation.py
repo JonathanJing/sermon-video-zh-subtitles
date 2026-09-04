@@ -12,9 +12,10 @@ import shutil
 import subprocess
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
+from zoneinfo import ZoneInfo
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -104,9 +105,11 @@ def parse_args() -> argparse.Namespace:
         help="Durable operator-window-approval.json already validated by the supervisor.",
     )
     parser.add_argument("--glossary", type=Path)
-    parser.add_argument("--zh-model", default="gpt-5.6")
-    parser.add_argument("--en-correction-model", default="gpt-5.6")
-    parser.add_argument("--reasoning-effort", choices=("low", "medium", "high"), default="high")
+    parser.add_argument("--export-sunday-context", action="store_true")
+    parser.add_argument("--source-service-date", help="Verified source date (YYYY-MM-DD); otherwise use archive release timestamp.")
+    parser.add_argument("--zh-model", default="gpt-6-astra")
+    parser.add_argument("--en-correction-model", default="gpt-6-astra")
+    parser.add_argument("--reasoning-effort", choices=("low", "medium", "high"), default="medium")
     parser.add_argument(
         "--reference-model",
         "--gpt4o-model",
@@ -121,8 +124,8 @@ def parse_args() -> argparse.Namespace:
         help="Reading mode skips Whisper and produces the reviewed reading PDF only.",
     )
     parser.add_argument("--reading-edition-provider", choices=("openai", "codex"), default="openai")
-    parser.add_argument("--reading-edition-model", default="gpt-5.6-sol")
-    parser.add_argument("--reading-edition-reasoning-effort", choices=("low", "medium", "high"), default="high")
+    parser.add_argument("--reading-edition-model", default="gpt-6-astra")
+    parser.add_argument("--reading-edition-reasoning-effort", choices=("low", "medium", "high"), default="medium")
     parser.add_argument("--reading-segment-target-chars", type=int, default=420)
     parser.add_argument("--reading-preferred-seconds", type=float, default=24.0)
     parser.add_argument("--reading-preferred-english-chars", type=int, default=420)
@@ -132,14 +135,14 @@ def parse_args() -> argparse.Namespace:
         "--interpretation-model",
         "--companion-model",
         dest="interpretation_model",
-        default="gpt-5.6",
+        default="gpt-6-astra",
     )
     parser.add_argument(
         "--interpretation-reasoning-effort",
         "--companion-reasoning-effort",
         dest="interpretation_reasoning_effort",
         choices=("low", "medium", "high"),
-        default="high",
+        default="medium",
     )
     parser.add_argument("--audio-format", default="bestaudio[ext=m4a]/bestaudio")
     parser.add_argument("--yt-dlp", default="yt-dlp")
@@ -435,6 +438,10 @@ def run_post_live_generation(
             delivery_interpretation_pdf,
         ),
     ]
+    if getattr(args, "export_sunday_context", False):
+        context = export_sunday_context(args, run_root, metadata, live_url)
+        report["sundayContext"] = context
+        delivery_paths.extend(Path(path) for path in context["paths"].values())
     report["outputs"] = [*report["outputs"], *(str(path) for path in delivery_paths)]
     run_status = post_live_run_status.update_stage(
         run_status, args.sunday, "pdf_qa", "complete",
@@ -577,6 +584,30 @@ def slug_for(args: argparse.Namespace, live_url: str) -> str:
         return args.slug
     video_id = live_url.rstrip("/").split("v=")[-1].split("&")[0]
     return f"sermon_{video_id}" if video_id else "sermon"
+
+
+def export_sunday_context(
+    args: argparse.Namespace, run_root: Path, metadata: dict[str, Any], live_url: str,
+) -> dict[str, Any]:
+    from scripts.export_saturday_live_context import export_context
+
+    source_date = getattr(args, "source_service_date", None)
+    if source_date:
+        source_date = date.fromisoformat(source_date).isoformat()
+    else:
+        timestamp = metadata.get("release_timestamp")
+        if not isinstance(timestamp, (int, float)) or isinstance(timestamp, bool) or timestamp <= 0:
+            raise RuntimeError("Sunday context requires archive release_timestamp or --source-service-date")
+        source_date = datetime.fromtimestamp(timestamp, ZoneInfo("America/Los_Angeles")).date().isoformat()
+    return export_context(
+        run_root=run_root,
+        output_dir=run_root / "pipeline" / "sunday-context",
+        target_sunday=args.sunday,
+        source_service_date=source_date,
+        message_key=live_url,
+        message_match_status="unknown",
+        source_id=slug_for(args, live_url),
+    )
 
 
 def build_pipeline_command(
@@ -753,9 +784,9 @@ def build_sermon_interpretation_command(
         "--pdf-qa-out",
         str(pipeline_outdir / "sermon_interpretation_zh.qa.json"),
         "--model",
-        str(getattr(args, "interpretation_model", "gpt-5.6")),
+        str(getattr(args, "interpretation_model", "gpt-6-astra")),
         "--reasoning-effort",
-        str(getattr(args, "interpretation_reasoning_effort", "high")),
+        str(getattr(args, "interpretation_reasoning_effort", "medium")),
         "--sermon-title",
         sermon_title,
         "--sermon-date",

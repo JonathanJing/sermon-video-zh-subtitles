@@ -27,6 +27,25 @@
 - OpenAI 与 YouTube Data API：通过 Secret Manager resource reference 读取
 - operator 通知：通过 SendGrid Secret Manager resource reference 发送
 
+## 每周模型与交付策略（2026-09-06 起）
+
+未来每周使用 `gpt-6-astra`、`medium`：中文初译、阅读稿两轮编辑/审核及中文证道同行生成。现有 OpenAI provider 与 Secret Manager 配置继续使用；ASR 保持 `gpt-transcribe`。模型审核只标记机器审核，不等于人工 Gold 或周日双语提示词批准。
+
+Supervisor 的 generation 命令固定传入上述参数及 `--export-sunday-context`。手动调用 `run_post_live_subtitle_generation.py` 时，翻译/阅读审核/证道同行也默认 Astra Medium；需要周日产物时显式加 `--export-sunday-context`。
+
+双 PDF QA 通过后，在同一 run 的 `pipeline/sunday-context/` 导出：
+
+- `saturday-segments.jsonl`：稳定英文及机器中文候选。
+- `weekly-pack.json`、`manifest.json`：内容、目标周日、来源 hash、模型与有效期。
+- `pack-readiness.json`：当前可用能力及降级原因。
+- `message-identity-approval.json`、`asr-phrases.candidate.txt`：同篇确认状态与英文短语候选。
+
+归档 `release_timestamp` 按洛杉矶时区确定来源日期；缺失时停止导出，要求通过 `--source-service-date` 提供核实过的日期，不用目标周日倒推来源日期。导出失败不能报告整次生产完成；这些结构化文件随两个 PDF 上传并验证远端 hash。旧周次不自动重做。
+
+自动导出初始 `matchStatus=unknown`，不会把讲道窗口批准当成周六/周日同篇确认，也不会自动激活本地现场 pack。操作员确认同篇信息后，可按 exporter 的 `--message-approval` 与 `--message-match-status human_confirmed` 重新导出并检查 readiness；现场启动时仍要重新检查有效期与能力上限。
+
+本机已创建定时跟进任务「每周周六双 PDF 与周日 Context Pack」：洛杉矶时间周六 18:00、20:00、22:00 执行检查/续跑，周日 08:00 补查。调度器同时唤醒的其他周末时段由任务提示词跳过；无变化时保持安静，需要人工窗口确认、失败或完成时才通知当前任务。此跟进通过命令行禁用 SendGrid 通知，仅在 Codex 内汇报。
+
 ## 周六运行
 
 1. Cloud Scheduler 在直播窗口内尝试把 canonical YouTube URL 写入 GCS state。

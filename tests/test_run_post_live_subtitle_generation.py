@@ -275,7 +275,11 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
                     json.dumps([{"id": 0, "start": 0, "end": 2.5, "text": "For God so loved the world.", "zh": "神爱世人。"}]),
                     encoding="utf-8",
                 )
-                (outdir / "summary.json").write_text(json.dumps({"status": "ok"}), encoding="utf-8")
+                (outdir / "summary.json").write_text(json.dumps({"status": "ok", "outputMode": "reading", "timingPrecision": "synthetic_reading_layout_only"}), encoding="utf-8")
+                (outdir / "source_clip.m4a").write_bytes(b"test clip")
+                (outdir.parent / "operator-window-approval.json").write_text(json.dumps({
+                    "status": "approved", "humanApproval": True, "sourceUrlHash": "fixture-hash",
+                }), encoding="utf-8")
             elif "build_sermon_reading_edition_with_openai.py" in command[1]:
                 outdir = Path(command[command.index("--outdir") + 1])
                 outdir.mkdir(parents=True, exist_ok=True)
@@ -318,7 +322,8 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
             write_state(state_path)
 
             report = mod.run_post_live_generation(
-                make_args(state_file=str(state_path), work_root=Path(tempdir), plan_only=False),
+                make_args(state_file=str(state_path), work_root=Path(tempdir), plan_only=False,
+                          export_sunday_context=True, source_service_date="2026-06-27"),
                 metadata_loader=lambda _: {
                     "id": "MEZHufeQBjc",
                     "live_status": "post_live",
@@ -329,6 +334,8 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
             )
 
         self.assertEqual(report["status"], "completed")
+        self.assertEqual(len(report["sundayContext"]["paths"]), 6)
+        self.assertTrue(any(path.endswith("sunday-context/pack-readiness.json") for path in report["outputs"]))
         self.assertEqual(calls[0][0], "yt-dlp")
         self.assertIn("sermon_pipeline.py", calls[1][1])
         self.assertIn("build_sermon_reading_edition_with_openai.py", calls[2][1])
@@ -657,3 +664,24 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class WeeklyContextHandoffTests(unittest.TestCase):
+    def test_missing_source_date_fails_closed(self):
+        with self.assertRaisesRegex(RuntimeError, "release_timestamp"):
+            mod.export_sunday_context(make_args(), Path("/unused"), {}, "https://example.com/source")
+
+    def test_archive_date_uses_los_angeles_not_utc(self):
+        from tests.test_export_saturday_live_context import prepare_run
+        with tempfile.TemporaryDirectory() as temporary:
+            root = prepare_run(Path(temporary))
+            report = mod.export_sunday_context(
+                make_args(sunday="2026-09-06"), root,
+                {"release_timestamp": 1788654600}, "https://example.com/source",
+            )
+            self.assertEqual(set(report["paths"]), {"segments", "pack", "manifest", "readiness", "asrPhraseCandidates", "messageApproval"})
+            manifest = json.loads(Path(report["paths"]["manifest"]).read_text())
+            self.assertEqual(manifest["messageIdentity"]["sourceServiceDate"], "2026-09-05")
+            self.assertEqual(manifest["messageIdentity"]["matchStatus"], "unknown")
+            self.assertFalse(manifest["policy"]["machineTranslationInjectable"])
+            self.assertNotEqual(report["runtimeMode"], "Full/A2")

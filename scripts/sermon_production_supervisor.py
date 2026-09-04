@@ -49,7 +49,7 @@ class SupervisorConfig:
     timeline_model: str = "gpt-transcribe"
     classifier_model: str = "gpt-5.6"
     reference_model: str = "gpt-transcribe"
-    reading_model: str = "gpt-5.6-sol"
+    reading_model: str = "gpt-6-astra"
     glossary: Path | None = None
     lease_ttl_seconds: int = 14_400
 
@@ -670,12 +670,23 @@ def build_generation_command(
         "reading",
         "--reference-model",
         config.reference_model,
+        "--export-sunday-context",
+        "--zh-model",
+        config.reading_model,
+        "--en-correction-model",
+        config.reading_model,
+        "--reasoning-effort",
+        "medium",
+        "--interpretation-model",
+        config.reading_model,
+        "--interpretation-reasoning-effort",
+        "medium",
         "--reading-edition-provider",
         "openai",
         "--reading-edition-model",
         config.reading_model,
         "--reading-edition-reasoning-effort",
-        "high",
+        "medium",
     ]
     if approval.get("contentScope"):
         command.extend(["--content-scope", str(approval["contentScope"])])

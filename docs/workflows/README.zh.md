@@ -27,6 +27,8 @@
 
 ![周六 post-live 双 PDF 完整流程](../diagrams/saturday-post-live-workflow.svg)
 
+未来每周的翻译、两轮阅读稿审核和证道同行生成统一使用 **Astra Medium**。双 PDF QA 通过后，Supervisor 自动导出周日 Context Pack 与 readiness；操作细节见[每周生产配置](../codex-local-production-runbook.zh.md)。这项配置不重做历史周次，模型审核也不替代人工确认。
+
 ### Canonical 输入与产物
 
 | 阶段 | 必须保留的证据 |

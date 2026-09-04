@@ -469,6 +469,11 @@ class SermonProductionSupervisorTest(unittest.TestCase):
         )
         self.assertIn("--output-mode", command)
         self.assertEqual(command[command.index("--output-mode") + 1], "reading")
+        for flag in ("--zh-model", "--en-correction-model", "--reading-edition-model", "--interpretation-model"):
+            self.assertEqual(command[command.index(flag) + 1], "gpt-6-astra")
+        for flag in ("--reasoning-effort", "--reading-edition-reasoning-effort", "--interpretation-reasoning-effort"):
+            self.assertEqual(command[command.index(flag) + 1], "medium")
+        self.assertIn("--export-sunday-context", command)
         self.assertEqual(command[command.index("--youtube-cookies") + 1], str(cookies))
         redacted = mod.redact_command(command)
         self.assertEqual(
