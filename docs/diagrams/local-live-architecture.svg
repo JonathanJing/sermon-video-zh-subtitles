@@ -1,24 +1,84 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
-  <title id="title">Local live-caption runtime architecture</title>
-  <desc id="desc">A browser operator UI communicates with a localhost gateway using REST and WebSocket. The gateway coordinates session storage, local ASR, MiLMMT through Ollama, content packs, and a tokenized read-only SSE viewer.</desc>
-  <defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0 0L0 6L9 3z" fill="#475569"/></marker><style>text{font-family:Arial,"PingFang SC","Microsoft YaHei",sans-serif}.bg{fill:#f8fafc}.title{font-size:29px;font-weight:700;fill:#0f172a}.sub{font-size:14px;fill:#64748b}.h{font-size:17px;font-weight:700;fill:#0f172a}.t{font-size:14px;fill:#334155}.lane{fill:#fff;stroke:#cbd5e1;stroke-width:2}.ui{fill:#ecfdf5;stroke:#10b981;stroke-width:2}.gw{fill:#eff6ff;stroke:#2563eb;stroke-width:2}.model{fill:#f5f3ff;stroke:#7c3aed;stroke-width:2}.data{fill:#fff7ed;stroke:#f97316;stroke-width:2}.line{fill:none;stroke:#475569;stroke-width:2.2;marker-end:url(#a)}.bi{fill:none;stroke:#2563eb;stroke-width:2.2;marker-start:url(#a);marker-end:url(#a)}.dash{fill:none;stroke:#64748b;stroke-width:2;stroke-dasharray:7 6;marker-end:url(#a)}</style></defs>
-  <rect class="bg" width="1200" height="720" rx="24"/><text class="title" x="48" y="56">Local runtime architecture · 本地实时字幕架构</text><text class="sub" x="48" y="84">Control, live data, durable evidence, and read-only distribution have separate contracts.</text>
-  <rect class="lane" x="44" y="112" width="236" height="540" rx="20"/><text class="h" x="162" y="145" text-anchor="middle">User surfaces</text>
-  <rect class="ui" x="74" y="184" width="176" height="106" rx="15"/><text class="h" x="162" y="217" text-anchor="middle">Operator browser</text><text class="sub" x="162" y="242" text-anchor="middle">mic · controls · captions</text><text class="sub" x="162" y="264" text-anchor="middle">localhost only</text>
-  <rect class="ui" x="74" y="420" width="176" height="106" rx="15"/><text class="h" x="162" y="453" text-anchor="middle">Phone viewer</text><text class="sub" x="162" y="478" text-anchor="middle">random token · SSE</text><text class="sub" x="162" y="500" text-anchor="middle">read-only on LAN</text>
-
-  <rect class="lane" x="324" y="112" width="300" height="540" rx="20"/><text class="h" x="474" y="145" text-anchor="middle">Local Gateway</text>
-  <rect class="gw" x="354" y="176" width="240" height="88" rx="15"/><text class="h" x="474" y="207" text-anchor="middle">REST control plane</text><text class="sub" x="474" y="232" text-anchor="middle">start · recovery chunks · stop</text>
-  <rect class="gw" x="354" y="300" width="240" height="88" rx="15"/><text class="h" x="474" y="331" text-anchor="middle">WebSocket data plane</text><text class="sub" x="474" y="356" text-anchor="middle">PCM ↔ caption/status events</text>
-  <rect class="gw" x="354" y="424" width="240" height="112" rx="15"/><text class="h" x="474" y="455" text-anchor="middle">Pipeline coordinator</text><text class="sub" x="474" y="480" text-anchor="middle">VAD · queues · dedupe</text><text class="sub" x="474" y="502" text-anchor="middle">context policy · fallbacks</text>
-  <path class="bi" d="M250 220H350"/><text class="sub" x="300" y="207" text-anchor="middle">REST</text><path class="bi" d="M250 237H300V344H350"/><text class="sub" x="315" y="331" text-anchor="middle">WS</text><path class="line" d="M354 473H254"/><text class="sub" x="304" y="461" text-anchor="middle">SSE</text>
-
-  <rect class="lane" x="668" y="112" width="488" height="540" rx="20"/><text class="h" x="912" y="145" text-anchor="middle">Providers and evidence</text>
-  <rect class="model" x="704" y="184" width="188" height="94" rx="15"/><text class="h" x="798" y="214" text-anchor="middle">Local ASR</text><text class="sub" x="798" y="239" text-anchor="middle">Qwen3-ASR MLX</text><text class="sub" x="798" y="260" text-anchor="middle">Whisper fallback</text>
-  <rect class="model" x="932" y="184" width="188" height="94" rx="15"/><text class="h" x="1026" y="214" text-anchor="middle">Translation</text><text class="sub" x="1026" y="239" text-anchor="middle">Ollama + MiLMMT Q8</text><text class="sub" x="1026" y="260" text-anchor="middle">NDJSON tokens</text>
-  <rect class="data" x="704" y="342" width="188" height="94" rx="15"/><text class="h" x="798" y="372" text-anchor="middle">Weekly pack</text><text class="sub" x="798" y="397" text-anchor="middle">approved terms only</text><text class="sub" x="798" y="418" text-anchor="middle">A0 none remains</text>
-  <rect class="data" x="932" y="342" width="188" height="94" rx="15"/><text class="h" x="1026" y="372" text-anchor="middle">Session storage</text><text class="sub" x="1026" y="397" text-anchor="middle">audio · events · manifest</text><text class="sub" x="1026" y="418" text-anchor="middle">SHA-256 + recovery</text>
-  <rect class="data" x="818" y="500" width="188" height="94" rx="15"/><text class="h" x="912" y="530" text-anchor="middle">Replay / A-B</text><text class="sub" x="912" y="555" text-anchor="middle">frozen ASR finals</text><text class="sub" x="912" y="576" text-anchor="middle">blind review + hashes</text>
-  <path class="bi" d="M594 344C642 344 642 231 700 231"/><path class="bi" d="M892 231H928"/><path class="dash" d="M704 389H640V450H598"/><path class="line" d="M594 480H660V460H1026V440"/><path class="line" d="M1026 436C1026 470 912 466 912 496"/>
-  <text class="sub" x="658" y="245">audio / final</text><text class="sub" x="910" y="218" text-anchor="middle">English</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1030" viewBox="0 0 1400 1030" role="img" aria-labelledby="title desc">
+<title id="title">Local runtime · 本地架构与分发</title><desc id="desc">Gateway owns inference, storage and publishing · 模型与控制接口不暴露到公网</desc>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#526580"/></marker><style>text{font-family:Arial,"PingFang SC","Microsoft YaHei",sans-serif;fill:#18304b}.title{font-size:30px;font-weight:700}.subtitle{font-size:16px;fill:#536782}.head{font-size:20px;font-weight:700}.body{font-size:17px}.note{font-size:15px;fill:#536782}.edge{fill:none;stroke:#526580;stroke-width:2;marker-end:url(#arrow)}.dash{stroke-dasharray:7 5}</style></defs>
+<rect width="1400" height="1030" rx="20" fill="#f5f8fc"/>
+<text x="44" y="55" class="title" text-anchor="start">Local runtime · 本地架构与分发</text>
+<text x="44" y="86" class="subtitle" text-anchor="start">Gateway owns inference, storage and publishing · 模型与控制接口不暴露到公网</text>
+<rect x="44" y="128" width="340" height="220" rx="14" fill="#eaf8f1" stroke="#70b897" stroke-width="1.5"/>
+<text x="64" y="161" class="head" text-anchor="start">Operator browser · 操作页</text>
+<text x="64" y="191" class="body" text-anchor="start">Microphone → two audio paths</text>
+<text x="64" y="217" class="body" text-anchor="start">MediaRecorder → recovery chunks</text>
+<text x="64" y="243" class="body" text-anchor="start">AudioWorklet → 16 kHz PCM</text>
+<text x="64" y="269" class="body" text-anchor="start">Current + previous bilingual pair</text>
+<text x="64" y="295" class="body" text-anchor="start">Actual readable-render observations</text>
+<rect x="474" y="128" width="435" height="220" rx="14" fill="#edf4ff" stroke="#86abe6" stroke-width="1.5"/>
+<text x="494" y="161" class="head" text-anchor="start">Local Gateway · 控制与数据</text>
+<text x="494" y="191" class="body" text-anchor="start">REST :8766 / WebSocket :8767</text>
+<text x="494" y="217" class="body" text-anchor="start">100 ms PCM → VAD (500 ms / 3 s)</text>
+<text x="494" y="243" class="body" text-anchor="start">ASR queue 2 / translation queue 1</text>
+<text x="494" y="269" class="body" text-anchor="start">Immutable final → lexical guard</text>
+<text x="494" y="295" class="body" text-anchor="start">legacy translation / readable_chunks</text>
+<path d="M384 196H474" class="edge"/>
+<text x="429" y="180" class="note" text-anchor="middle">REST / WS</text>
+<path d="M474 280H384" class="edge"/>
+<text x="429" y="264" class="note" text-anchor="middle">caption / status</text>
+<rect x="999" y="128" width="357" height="100" rx="14" fill="#f3efff" stroke="#aa98dc" stroke-width="1.5"/>
+<text x="1019" y="161" class="head" text-anchor="start">Qwen3-ASR / MLX</text>
+<text x="1019" y="191" class="body" text-anchor="start">English finals → Gateway</text>
+<rect x="999" y="278" width="357" height="120" rx="14" fill="#f3efff" stroke="#aa98dc" stroke-width="1.5"/>
+<text x="1019" y="311" class="head" text-anchor="start">MiLMMT Q8 / Ollama</text>
+<text x="1019" y="341" class="body" text-anchor="start">Frozen A0 prompt · context none</text>
+<text x="1019" y="367" class="body" text-anchor="start">NDJSON → Gateway presenter</text>
+<path d="M909 163H999" class="edge"/>
+<text x="954" y="149" class="note" text-anchor="middle">audio</text>
+<path d="M999 206H909" class="edge"/>
+<text x="954" y="193" class="note" text-anchor="middle">final</text>
+<path d="M909 313H999" class="edge"/>
+<text x="954" y="299" class="note" text-anchor="middle">English</text>
+<path d="M999 372H955V340H909" class="edge"/>
+<rect x="44" y="465" width="340" height="170" rx="14" fill="#fff5e9" stroke="#e1aa68" stroke-width="1.5"/>
+<text x="64" y="498" class="head" text-anchor="start">Independent recovery · 录音</text>
+<text x="64" y="528" class="body" text-anchor="start">Chunks + PCM + events on disk</text>
+<text x="64" y="554" class="body" text-anchor="start">Browser Blob fallback retained</text>
+<text x="64" y="580" class="body" text-anchor="start">Finalize: latest connection drain</text>
+<text x="64" y="606" class="body" text-anchor="start">Hash + WAV + atomic manifest</text>
+<path d="M520 348V435H214V465" class="edge"/>
+<text x="393" y="424" class="note" text-anchor="middle">Gateway writes; browser does not write server disk</text>
+<rect x="474" y="465" width="435" height="170" rx="14" fill="#edf4ff" stroke="#86abe6" stroke-width="1.5"/>
+<text x="494" y="498" class="head" text-anchor="start">Recovery + identity · 恢复与版本</text>
+<text x="494" y="528" class="body" text-anchor="start">Same session / durable seq / viewer token</text>
+<text x="494" y="554" class="body" text-anchor="start">Explicit PCM gaps and caption interruption</text>
+<text x="494" y="580" class="body" text-anchor="start">Git + model + prompt + config hashes</text>
+<text x="494" y="606" class="body" text-anchor="start">No automatic in-flight ASR reconstruction</text>
+<path d="M690 348V465" class="edge"/>
+<rect x="999" y="465" width="357" height="170" rx="14" fill="#fff5e9" stroke="#e1aa68" stroke-width="1.5"/>
+<text x="1019" y="498" class="head" text-anchor="start">Optional Context Pack</text>
+<text x="1019" y="528" class="body" text-anchor="start">Export + readiness implemented</text>
+<text x="1019" y="554" class="body" text-anchor="start">Human identity / review gates</text>
+<text x="1019" y="580" class="body" text-anchor="start">Capability ceiling; fail down</text>
+<text x="1019" y="606" class="body" text-anchor="start">No machine Chinese injection</text>
+<path d="M1177 465V435H984V250H909" class="edge dash"/>
+<rect x="44" y="733" width="340" height="140" rx="14" fill="#eaf8f1" stroke="#70b897" stroke-width="1.5"/>
+<text x="64" y="766" class="head" text-anchor="start">LAN viewer · 同网退路</text>
+<text x="64" y="796" class="body" text-anchor="start">Read-only :8780 / SSE</text>
+<text x="64" y="822" class="body" text-anchor="start">Random session token</text>
+<text x="64" y="848" class="body" text-anchor="start">Portrait + landscape fitting</text>
+<rect x="474" y="733" width="435" height="140" rx="14" fill="#edf4ff" stroke="#86abe6" stroke-width="1.5"/>
+<text x="494" y="766" class="head" text-anchor="start">Outbound publisher · 出站发布</text>
+<text x="494" y="796" class="body" text-anchor="start">Bounded latest-snapshot queue (32)</text>
+<text x="494" y="822" class="body" text-anchor="start">Nonblocking local caption path</text>
+<text x="494" y="848" class="body" text-anchor="start">Best effort; no durable outbox</text>
+<rect x="999" y="733" width="357" height="140" rx="14" fill="#eaf8f1" stroke="#70b897" stroke-width="1.5"/>
+<text x="1019" y="766" class="head" text-anchor="start">Firebase public viewer</text>
+<text x="1019" y="796" class="body" text-anchor="start">HTTPS Hosting + Realtime DB</text>
+<text x="1019" y="822" class="body" text-anchor="start">Read-only captions / reconnect</text>
+<text x="1019" y="848" class="body" text-anchor="start">No audio or control endpoint</text>
+<path d="M474 599H424V695H214V733" class="edge"/>
+<text x="322" y="685" class="note" text-anchor="middle">LAN projection</text>
+<path d="M690 635V733" class="edge"/>
+<text x="778" y="693" class="note" text-anchor="middle">caption snapshots</text>
+<path d="M909 801H999" class="edge"/>
+<text x="954" y="784" class="note" text-anchor="middle">HTTPS</text>
+<text x="44" y="981" class="note" text-anchor="start">Whisper is a startup-selected alternative, not live automatic failover. Public publishing never replaces the local audio path.</text>
+<text x="44" y="1006" class="note" text-anchor="start">Code baseline: main beeda82 · browser replay is verified; venue audio, physical phones, human quality and memory bounds remain gates.</text>
 </svg>

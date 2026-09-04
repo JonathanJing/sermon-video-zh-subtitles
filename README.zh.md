@@ -13,7 +13,7 @@
 
 完整流程图、产物契约、本地延迟预算与测试门槛见：[两条工作流完整说明](docs/workflows/README.zh.md)。
 
-> **现状校准日期：2026-09-04。** 下文的“当前能力”只依据 `main` 上可复核的代码、测试或已纳入版本控制的报告，不代表本机服务此刻在线，也不代表现场已经验收。每次运行的录音、转写和 PDF 按策略不进入 Git；经过审核且保留 provenance 的 benchmark 衍生数据可以版本化。文中的输出文件名是产物契约，不是仓库内附带的交付文件。
+> **现状校准日期：2026-09-04，代码基线 main `beeda82`。** 下文的“当前能力”只依据 `main` 上可复核的代码、测试或已纳入版本控制的报告，不代表本机服务此刻在线，也不代表现场已经验收。每次运行的录音、转写和 PDF 按策略不进入 Git；经过审核且保留 provenance 的 benchmark 衍生数据可以版本化。文中的输出文件名是产物契约，不是仓库内附带的交付文件。
 
 > 这是一个独立的个人开源项目，不属于 Mariners Church 官方项目，也没有获得其隶属、背书、赞助、批准或运营支持。只应处理公开或已获授权的媒体，不得绕过访问控制、DRM 或平台限制。
 
@@ -25,7 +25,7 @@
 
 最初的设想，是提取并翻译周六公开直播中的证道，再把内容用于周日。实测发现了一个关键边界：周六和周日可能共享同一篇信息的框架，但不能假定两次讲述逐字一致；措辞、顺序、例子和现场新增内容都可能变化。因此，周六转写适合做准备资料，却不能成为周日字幕的事实来源。
 
-当前方案因此转为混合架构：周日现场音频及由它识别出的当下英文始终具有最高优先级；公开或已获授权的周六材料，只提供受控的结构、术语、经文出处和经过审核的例句。领域后训练属于独立的后续增强方向，首要目标是提高术语和翻译质量；是否能够降低延迟，必须在相同 frozen 输入和相同硬件上实测，不能预先承诺。
+当前架构支持可选的受控混合方案，已测周日默认仍为 `contextPolicy=none`：周日现场音频及由它识别出的当下英文始终具有最高优先级；公开或已获授权的周六材料，只提供受控的结构、术语、经文出处和经过审核的例句。领域后训练属于独立的后续增强方向，首要目标是提高术语和翻译质量；是否能够降低延迟，必须在相同 frozen 输入和相同硬件上实测，不能预先承诺。
 
 ![从周日字幕缺口演进到受控混合方案](docs/diagrams/solution-journey.svg)
 
@@ -53,6 +53,8 @@ _图片来自 2026-08-30 真实运行的第一页；两份 PDF 各自的 QA 都�
 
 ![周六 post-live 双 PDF 流程](docs/diagrams/saturday-post-live-workflow.svg)
 
+每周 Supervisor 使用 Astra Medium 完成翻译、两轮阅读稿审核和证道同行，并在 PDF QA 后启用 Context Pack 导出。同篇身份初始为 `unknown`；自动导出不等于人工批准。
+
 这是当前更成熟的 post-live 路径。只有 source、人工批准的时间窗、阅读稿 QA、两个 PDF 以及两个 PDF QA 都存在并通过，才算完成。
 
 关键文档：
@@ -67,7 +69,11 @@ _图片来自 2026-08-30 真实运行的第一页；两份 PDF 各自的 QA 都�
 
 ![周日本地实时字幕流程](docs/diagrams/sunday-live-workflow.svg)
 
-当前 POC 已实现麦克风选择、持久录音、Qwen3-ASR 0.6B/MLX、MiLMMT 4B Q8 token streaming、大字号字幕、带随机 token 的只读手机页、冻结英文的 replay/A-B，以及完整 session 指标证据。修复后的真实浏览器/扬声器/麦克风 60 分钟长测达到 ASR final 99.92%、翻译 final 100%。在明确排除的教会现场彩排完成前，它仍是 POC，而不是 production-ready。
+当前实现采用独立 MediaRecorder 恢复录音、16 kHz PCM WebSocket、Qwen3-ASR/MLX 与 Ollama 上的 MiLMMT Q8。不可变英文 final 先经过孤立虚词门控，再即时翻译；`readable_chunks` 保留前一句完整双语字幕。Firebase Hosting/Realtime Database 提供公网只读观看，LAN/SSE 作为独立退路。Gateway 重启可恢复同一 session、录音及观看身份，但字幕缺口会明确记录。
+
+合并版本完成了 **60 分钟浏览器 WAV 回放**（20 分钟唯一音频循环三轮）：**1,287 个 ASR final → 1,287 次翻译 → 1,287 条操作页可读显示**。可读首显 P95 从音频段结束计算为 **1.776 秒**，从段开始计算为 **4.763 秒**。这是链路交付证据，不是翻译准确率、物理麦克风/手机或现场验收。详见[当前验收报告](experiments/local-live-poc/benchmarks/SUNDAY_READINESS_20260904.zh.md)。
+
+![本地运行、恢复存储与公网/LAN 观看架构](docs/diagrams/local-live-architecture.svg)
 
 关键文档：
 
@@ -82,20 +88,20 @@ _图片来自 2026-08-30 真实运行的第一页；两份 PDF 各自的 QA 都�
 | 方向 | 当前证据 |
 |---|---|
 | 周六 PDF 生产 | 工作流代码、测试、带日期的 QA 证据、人工确认证道时间窗和可恢复状态；生成 PDF 保持本地且被忽略 |
-| 周日 live POC | 真实麦克风、Qwen3-ASR、MiLMMT token stream、60 分钟长测、大字号 UI、只读手机页 |
-| 周六到周日 context | builder/retriever、受控 runtime policy 和 replay 已证明；自动 Saturday exporter 与 capability readiness 尚未完成 |
-| Replay 与 A/B | 冻结 ASR final、确定性 context-policy 重放、盲评 CSV、source/model hash |
-| 运行维护 | 一键启动/停止、监督恢复、session 保留策略、fail-closed ASR Gold 门 |
+| 周日 live POC | 真实模型浏览器 WAV 回放、可读显示回执、恢复录音校验、手机视口与重连检查；现场门槛未闭合 |
+| 周六到周日 context | exporter、builder/retriever、readiness、Gateway capability 上限已实现；Supervisor 在 PDF QA 后导出，同篇身份初始为 `unknown` |
+| Replay 与 A/B | 冻结输入和 hash；真实 3 秒/6 秒 ASR 与有界翻译单位比较；候选均未升级默认 |
+| 运行维护 | 一键启动/停止、运行身份、当前连接 drain、同会话恢复、有界公网发布器与 LAN 退路 |
 
 ### 正在探索和仍需补齐的门槛
 
-- **周六到周日生产桥接：** 现有 Weekly Pack 运行组件和 replay 已存在，但 Saturday production run 尚不能自动导出真实 Pack；详细审核和开发步骤见[Context Pack 计划](docs/saturday-to-sunday-context-pack-plan.zh.md)。
-- **正式 ASR 准确率：** 五位讲员和 edge case 已有机器参考的临时证据；六个 case 的人工逐词 Gold 队列仍必须由真人校正签名，之后 WER 才能用于模型 promotion。
-- **已验证延迟：** 修复后的 60 分钟 Qwen + MiLMMT 长测中，音频结束到浏览器中文首字 p50 1.419 秒 / p95 1.486 秒；到完整中文 p50 1.530 秒 / p95 1.720 秒。现场声学可能不同。
-- **Content-pack 质量决策：** 工具链已经完成；每周仍要用真实周六 pack，并由人工完成盲评结果。机器中文不会静默注入。
-- **本地 runtime 选择：** 当前 A0 使用 Ollama；直接 MLX serving 继续作为 Discovery 备选，只有在相同 frozen 输入和延迟/质量门槛下通过后才考虑替换。
-- **现场边界：** 一小时本机 soak 与 MLX 受控故障恢复已通过；剩余 production gate 是正式教会现场彩排。手机只读页还依赖现场 Wi-Fi 允许设备互访。
-- **资源上限：** 一小时内 Ollama 内存增长，但没有发生延迟崩溃，run 结束后的 swap 为 0 MB。主采样器的逐点 swap 字段无效，因此不能据此声称全程零 swap；在多场连续测试完成前，每场从干净的一键启动进入。
+- **周六生产桥接：** Supervisor 在双 PDF QA 后启用 `--export-sunday-context`。导出不代表允许现场注入；同篇确认、hash、有效期和审核状态共同决定 readiness。English-only 仅用于对齐，不改变冻结 A0 prompt。详见[Context Pack 契约](docs/saturday-to-sunday-context-pack-plan.zh.md)。
+- **语义忠实度：** 专名、断句、否定、因果和经文关系仍需听音及人工双语校对。ASR Gold 门保持 fail-closed；本机已准备八组诊断听审材料，机器审核不等于 human Gold。
+- **分段选择：** 保留 3 秒窗口、`translationUnitPolicy=legacy`、`content_words` 孤立虚词门控和 `contextPolicy=none`。加长窗口及有界语义合并都有改善与退化；后者只作为显式启用的评估代码。
+- **故障恢复：** 实际 Gateway 重启测试保住独立录音，但有 1.6 秒 PCM gap、一个未结算在途 ASR 任务，以及 7.234 秒的新字幕更新间隔。恢复不等于字幕无损。
+- **现场验收：** 实际麦克风/调音台、非讲话声音、实体手机 Wi-Fi/蜂窝网络和手机真实显示延迟仍需验证。公网标签页重连、横竖屏浏览器检查不能代替这些门槛。
+- **资源上限：** 最新回放的 357 个录音窗口样本中 swap 为 0，起始和末尾缺测区间已单列。翻译进程 RSS 从 5,863.719 增至 9,664.609 MiB，最后十分钟仍增长；尚未证明平台或连续多场运行上限。
+- **可选增强：** 真实每周 Pack 收益、其他本地 serving 和领域后训练继续独立评估；无 Pack 的 A0 主路径必须保持可用。
 
 ### 后训练方案
 

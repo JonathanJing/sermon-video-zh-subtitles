@@ -13,7 +13,7 @@ This repository has one product goal: help Chinese-speaking attendees follow an 
 
 The complete diagrams, artifact contracts, local latency budget, and test gates are in the [two-workflow README](docs/workflows/README.zh.md).
 
-> **State calibrated on 2026-09-04.** Current claims below are backed by code, tests, or versioned reports on `main`; they are not a live health check of local services or venue readiness. Per-run recordings, transcripts, and PDFs are intentionally kept out of Git; reviewed benchmark derivatives may be versioned with provenance. Output filenames describe the artifact contract rather than bundled deliverables.
+> **State calibrated on 2026-09-04, code baseline main `beeda82`.** Current claims below are backed by code, tests, or versioned reports on `main`; they are not a live health check of local services or venue readiness. Per-run recordings, transcripts, and PDFs are intentionally kept out of Git; reviewed benchmark derivatives may be versioned with provenance. Output filenames describe the artifact contract rather than bundled deliverables.
 
 > This is an independent personal open-source project. It is not affiliated with, endorsed by, sponsored by, approved by, or operated by Mariners Church. Use only public or otherwise authorized media, and do not bypass access controls, DRM, or platform restrictions.
 
@@ -25,7 +25,7 @@ Sunday services currently do not have dependable Chinese captions. Generic live 
 
 The first hypothesis was to extract and translate the Saturday public livestream, then reuse that content on Sunday. Testing exposed an important boundary: the Saturday and Sunday sermons may follow the same message framework, but they cannot be assumed to be the same delivery word for word. Wording, order, examples, and live additions may differ. A Saturday transcript is therefore useful preparation, but it cannot be the source of truth for Sunday captions.
 
-The current design is a hybrid: Sunday live audio and the English recognized from it remain authoritative, while authorized Saturday material supplies guarded structure, terminology, Scripture references, and reviewed examples. Domain post-training is a separate future enhancement. Its first goal is better terminology and translation quality; any latency improvement must be demonstrated on frozen inputs and the same hardware rather than assumed.
+The current architecture supports an optional guarded hybrid; the tested Sunday default remains `contextPolicy=none`: Sunday live audio and the English recognized from it remain authoritative, while authorized Saturday material supplies guarded structure, terminology, Scripture references, and reviewed examples. Domain post-training is a separate future enhancement. Its first goal is better terminology and translation quality; any latency improvement must be demonstrated on frozen inputs and the same hardware rather than assumed.
 
 ![Solution journey from the Sunday caption gap to a guarded hybrid workflow](docs/diagrams/solution-journey.svg)
 
@@ -53,6 +53,8 @@ _Real page-1 renders from the 2026-08-30 run. Both individual PDF QA reports pas
 
 ![Saturday post-live dual-PDF workflow](docs/diagrams/saturday-post-live-workflow.svg)
 
+The weekly Supervisor uses Astra Medium for translation, two reading reviews and the companion text, and enables Context Pack export after PDF QA. Exported message identity starts as `unknown`; automatic export is not human approval.
+
 This is the repository's mature post-live path. A run is not complete until the source, approved window, reading-text QA, both PDFs, and both PDF QA reports are present and passing.
 
 Key references:
@@ -67,7 +69,11 @@ The Sunday workflow runs locally on a MacBook: browser microphone capture, durab
 
 ![Sunday local live-caption workflow](docs/diagrams/sunday-live-workflow.svg)
 
-The current POC implements microphone selection, durable recording, Qwen3-ASR 0.6B through MLX, MiLMMT 4B Q8 token streaming, large captions, a tokenized read-only phone viewer, frozen-English replay/A-B, and per-session performance evidence. A repaired 60-minute real browser/speaker/microphone soak completed with 99.92% ASR final availability and 100% translation final availability. It remains a POC until the explicitly excluded church-site rehearsal is completed.
+The current implementation uses independent MediaRecorder recovery audio, 16 kHz PCM over WebSocket, Qwen3-ASR/MLX, and MiLMMT Q8 through Ollama. Immutable English finals pass a lexical fragment guard before immediate translation. The `readable_chunks` display retains the previous complete bilingual pair; Firebase Hosting/Realtime Database provides public read-only viewing, with a separate LAN/SSE fallback. Gateway recovery resumes the same session, preserves recording and viewer identity, and records caption gaps explicitly.
+
+The merged runtime completed a **60-minute browser WAV replay** (20 minutes of unique audio repeated three times): **1,287 ASR finals → 1,287 translations → 1,287 readable operator-page displays**. P95 was **1.776 seconds from audio-segment end**, or **4.763 seconds from segment start**, to the first readable caption. This is delivery evidence, not translation accuracy, physical microphone/phone proof, or venue acceptance. See the [current readiness report](experiments/local-live-poc/benchmarks/SUNDAY_READINESS_20260904.zh.md).
+
+![Local runtime, recovery storage and public/LAN viewing](docs/diagrams/local-live-architecture.svg)
 
 Key references:
 
@@ -82,20 +88,20 @@ Key references:
 | Area | Current evidence |
 |---|---|
 | Saturday PDF production | Workflow code, tests, dated QA evidence, human sermon-window gate, resumable state; generated PDFs remain local/ignored |
-| Sunday live POC | Real microphone, Qwen3-ASR, MiLMMT token stream, 60-minute soak, large UI, read-only phone viewer |
-| Saturday-to-Sunday context | Builder/retriever, guarded runtime policy, and replay are demonstrated; the automatic Saturday exporter and capability readiness are not yet implemented |
-| Replay and A/B | Frozen ASR finals, deterministic context-policy replay, blind review CSV, source/model hashes |
-| Operations | One-click start/stop, supervisor/recovery, session retention preview/apply, fail-closed ASR Gold gate |
+| Sunday live POC | Real-model browser WAV replay, readable display acknowledgements, verified recovery recording, phone viewport and reconnect checks; field gates remain |
+| Saturday-to-Sunday context | Exporter, builder/retriever, readiness and Gateway capability ceiling implemented; Supervisor exports after PDF QA with message identity initially `unknown` |
+| Replay and A/B | Frozen inputs and hashes; actual 3s/6s ASR and bounded translation-unit comparisons; neither candidate promoted |
+| Operations | One-click start/stop, runtime identity, current-connection drain, same-session recovery, bounded public publisher and LAN fallback |
 
 ### Active discovery and missing gates
 
-- **Saturday-to-Sunday production bridge:** Weekly Pack runtime components and replay exist, but a Saturday production run cannot yet export a real Pack automatically. See the [Context Pack design and build plan](docs/saturday-to-sunday-context-pack-plan.zh.md).
-- **Formal ASR accuracy:** five speakers and edge cases have provisional machine-reference evidence; the six-case human word-level Gold queue still requires an actual reviewer before its WER can be used for model promotion.
-- **Verified live latency:** in the repaired 60-minute Qwen + MiLMMT run, audio-end-to-browser-first-Chinese was p50 1.419s / p95 1.486s; complete Chinese was p50 1.530s / p95 1.720s. Venue acoustics can differ.
-- **Content-pack quality decision:** tooling is complete, but a real Saturday pack and human review of blind A/B output are still needed each week; machine Chinese is not silently injected.
-- **Local runtime options:** Ollama is the current A0 path; direct MLX serving remains a Discovery alternative and must use the same frozen inputs and latency/quality gate before replacement.
-- **Operational boundary:** one-hour local soak and controlled MLX recovery passed. The remaining production gate is the formal church-site rehearsal; LAN viewer access also depends on the venue Wi-Fi allowing client-to-client traffic.
-- **Resource ceiling:** Ollama memory grew during the one-hour soak without latency collapse, and post-run swap was 0 MB. The main sampler's point-in-time swap field was invalid, so it is not evidence of zero swap throughout; clean startup before each service remains the rule until multi-service testing establishes a higher bound.
+- **Saturday production bridge:** the Supervisor enables `--export-sunday-context` after dual-PDF QA. Export does not grant live usage: same-message approval, hashes, expiry and review status determine readiness. English-only alignment does not change the frozen A0 prompt. See the [Context Pack contract](docs/saturday-to-sunday-context-pack-plan.zh.md).
+- **Semantic fidelity:** proper names, incomplete sentences, negation, causality and Scripture relations still need listening and bilingual human review. ASR Gold remains fail-closed; eight diagnostic listening groups are prepared locally. Machine-reviewed references are not human Gold.
+- **Segmentation:** keep the 3-second window, `translationUnitPolicy=legacy`, `content_words` fragment guard and `contextPolicy=none` defaults. Longer windows and bounded semantic assembly produced both improvements and regressions; the latter remains opt-in evaluation code.
+- **Recovery:** the actual Gateway restart replay preserved the independent recording, but had a 1.6-second PCM gap, one unresolved in-flight ASR task and a 7.234-second interval between new captions. Recovery is not lossless captioning.
+- **Field acceptance:** venue microphone/mixer input, non-speech, physical phones on Wi-Fi/cellular and actual phone render latency still require validation. Public-viewer tab reconnect and portrait/landscape browser tests do not close these gates.
+- **Resource ceiling:** 357 in-recording samples in the latest replay had zero swap, with initial/tail sampling gaps explicitly reported. Translation-process RSS rose from 5,863.719 to 9,664.609 MiB and still grew in the last ten minutes; no plateau or consecutive-service bound has been demonstrated.
+- **Optional enhancements:** real weekly Pack benefit, alternate local serving and domain post-training remain separate evaluations. The no-Pack A0 path must continue working.
 
 ### Post-training track
 

@@ -24,15 +24,15 @@
   <text class="h" x="678" y="172">B · Sunday local live captions</text>
   <text class="sub" x="678" y="197">周日：麦克风 → 本地英文 ASR → 中文字幕</text>
   <rect fill="#fff" stroke="#6ee7b7" x="678" y="224" width="128" height="74" rx="12"/><text class="t" x="742" y="254" text-anchor="middle">Microphone</text><text class="small" x="742" y="277" text-anchor="middle">durable audio</text>
-  <rect fill="#fff" stroke="#6ee7b7" x="835" y="224" width="128" height="74" rx="12"/><text class="t" x="899" y="254" text-anchor="middle">Qwen / Whisper</text><text class="small" x="899" y="277" text-anchor="middle">ASR final</text>
+  <rect fill="#fff" stroke="#6ee7b7" x="835" y="224" width="128" height="74" rx="12"/><text class="t" x="899" y="254" text-anchor="middle">Qwen / MLX</text><text class="small" x="899" y="277" text-anchor="middle">ASR final</text>
   <rect fill="#fff" stroke="#6ee7b7" x="992" y="224" width="126" height="74" rx="12"/><text class="t" x="1055" y="254" text-anchor="middle">MiLMMT</text><text class="small" x="1055" y="277" text-anchor="middle">live Chinese</text>
   <path class="line" d="M806 261 H831"/><path class="line" d="M963 261 H988"/>
-  <text class="small" x="678" y="334">POC · one-hour evidence passed; venue rehearsal and human Gold remain.</text>
+  <text class="small" x="678" y="334">POC · browser WAV soak verified; field and human review remain.</text>
 
   <rect class="shared" x="282" y="416" width="636" height="112" rx="18"/>
   <text class="h" x="600" y="454" text-anchor="middle">Shared evidence layer · 共同证据层</text>
-  <text class="t" x="600" y="483" text-anchor="middle">weekly pack · approved terminology · frozen replay · hashes · QA reports</text>
-  <text class="small" x="600" y="507" text-anchor="middle">Machine Chinese never becomes approved context silently.</text>
+  <text class="t" x="600" y="483" text-anchor="middle">Pack export + readiness · guarded terms · frozen replay · hashes · QA</text>
+  <text class="small" x="600" y="507" text-anchor="middle">Default A0 none · local captions + Firebase public / LAN fallback.</text>
   <path class="line" d="M302 370 V412"/><path class="line" d="M898 370 V412"/>
 
   <rect class="disc" x="354" y="558" width="492" height="44" rx="14"/>
