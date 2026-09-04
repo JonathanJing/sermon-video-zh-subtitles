@@ -113,6 +113,7 @@ class LiveSocketService:
                 vad_threshold_rms=self.state.vad_threshold_rms,
                 vad_silence_ms=self.state.vad_silence_ms,
                 vad_max_segment_ms=self.state.vad_max_segment_ms,
+                caption_presentation_policy=self.state.caption_presentation_policy,
             )
             pipeline.start()
             for message in connection:

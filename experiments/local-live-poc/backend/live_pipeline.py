@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from typing import Any, Callable
 
 from .asr_client import AsrError, WhisperCliClient
+from .caption_presenter import CaptionPresenter
 from .ollama_client import OllamaError
 from .session_store import SessionStore, SessionStoreError
 
@@ -148,6 +149,7 @@ class LivePipeline:
         vad_threshold_rms: int = 150,
         vad_silence_ms: int = 500,
         vad_max_segment_ms: int = 3000,
+        caption_presentation_policy: str = "readable_chunks",
     ) -> None:
         self.session_id = session_id
         self.sessions = sessions
@@ -156,6 +158,7 @@ class LivePipeline:
         self.translate_stream = translate_stream
         self.send = send
         self.context_policy = context_policy
+        self.caption_presenter = CaptionPresenter(caption_presentation_policy)
         self.cursor_sequence: int | None = None
         if vad_silence_ms % FRAME_DURATION_MS or vad_max_segment_ms % FRAME_DURATION_MS:
             raise ValueError("VAD timing must be a multiple of 100 ms")
@@ -189,6 +192,10 @@ class LivePipeline:
             "sampleRateHz": SAMPLE_RATE_HZ,
             "channels": 1,
             "frameDurationMs": FRAME_DURATION_MS,
+            "captionPresentation": {
+                "policy": self.caption_presenter.policy,
+                "rawEventsVisible": self.caption_presenter.raw_events_are_visible,
+            },
             "asr": self.asr.status(),
         })
 
@@ -363,6 +370,7 @@ class LivePipeline:
         self._emit({
             **common,
             "type": "asr.final",
+            "displayEligible": self.caption_presenter.raw_events_are_visible,
             "sourceTextEn": source_text,
             "asrMetrics": result,
             "uxMetrics": {
@@ -381,23 +389,27 @@ class LivePipeline:
             enqueued_at=time.perf_counter(),
         )
         if self.aborting:
-            self._emit({
+            skipped_event = self._emit({
                 **common,
                 "type": "translation.skipped",
+                "displayEligible": self.caption_presenter.raw_events_are_visible,
                 "sourceTextEn": source_text,
                 "reason": "pipeline_stopping_after_timeout",
             })
+            self._emit_terminal_display(skipped_event, "翻译积压，暂时显示英文原文。")
             return
         try:
             self.translation_work.put_nowait(task)
         except queue.Full:
-            self._emit({
+            skipped_event = self._emit({
                 **common,
                 "type": "translation.skipped",
+                "displayEligible": self.caption_presenter.raw_events_are_visible,
                 "sourceTextEn": source_text,
                 "reason": "queue_full",
                 "recordingShouldContinue": True,
             })
+            self._emit_terminal_display(skipped_event, "翻译积压，暂时显示英文原文。")
 
     def _note_short_asr_result(self, source_text: str) -> int:
         normalized = " ".join(source_text.casefold().split())
@@ -459,9 +471,10 @@ class LivePipeline:
                 return
             partial_sequence += 1
             last_partial_emit = now
-            self._emit({
+            partial_event = self._emit({
                 **common,
                 "type": "translation.partial",
+                "displayEligible": self.caption_presenter.raw_events_are_visible,
                 "sourceTextEn": source_text,
                 "targetTextZh": target_text,
                 "partialSequence": partial_sequence,
@@ -474,6 +487,9 @@ class LivePipeline:
                     "audioEndToChineseFirstTokenMs": self._audio_end_latency_ms(task.audio_end_ms, first_token_at),
                 },
             })
+            display_event = self.caption_presenter.partial(partial_event)
+            if display_event:
+                self._emit(display_event)
         try:
             if self.translate_stream:
                 translated = self.translate_stream(
@@ -482,13 +498,15 @@ class LivePipeline:
             else:
                 translated = self.translate(source_text, self.cursor_sequence, self.context_policy)
         except OllamaError as error:
-            self._emit({
+            failed_event = self._emit({
                 **common,
                 "type": "translation.failed",
+                "displayEligible": self.caption_presenter.raw_events_are_visible,
                 "sourceTextEn": source_text,
                 "message": str(error),
                 "recordingShouldContinue": True,
             })
+            self._emit_terminal_display(failed_event, "翻译暂时不可用，请查看英文原文。")
             return
         alignment = translated.get("alignment") or {}
         if alignment.get("confidence") in {"high", "exact"}:
@@ -513,9 +531,10 @@ class LivePipeline:
             "audioEndToChineseFinalMs": self._audio_end_latency_ms(task.audio_end_ms, translation_final_at),
         }
         self.ux_samples.append(sample)
-        self._emit({
+        final_event = self._emit({
             **common,
             "type": "translation.final",
+            "displayEligible": self.caption_presenter.raw_events_are_visible,
             "sourceTextEn": source_text,
             "targetTextZh": translated.get("targetTextZh"),
             "latencyMs": round((translation_final_at - translation_started) * 1000),
@@ -527,6 +546,14 @@ class LivePipeline:
             "uxMetrics": sample,
             **{key: value for key, value in translated.items() if key != "targetTextZh"},
         })
+        display_event = self.caption_presenter.final(final_event)
+        if display_event:
+            self._emit(display_event)
+
+    def _emit_terminal_display(self, event: dict[str, Any], target_text: str) -> None:
+        display_event = self.caption_presenter.terminal(event, target_text)
+        if display_event:
+            self._emit(display_event)
 
     def _audio_end_latency_ms(self, audio_end_ms: int, now: float) -> int | None:
         if self.audio_clock_started_at is None:

@@ -13,6 +13,7 @@ from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 from .asr_client import AsrError, MlxAudioWebSocketClient, WhisperCliClient
+from .caption_presenter import CAPTION_PRESENTATION_POLICIES
 from .content_pack import (
     CONTEXT_POLICIES,
     CONTEXT_POLICY_LEVELS,
@@ -51,6 +52,7 @@ class GatewayState:
         mlx_audio_model: str = "",
         viewer_port: int = 8780,
         default_context_policy: str = "none",
+        caption_presentation_policy: str = "readable_chunks",
     ) -> None:
         self.pack_path = pack_path
         self.pack = load_pack(pack_path) if pack_path else None
@@ -73,6 +75,11 @@ class GatewayState:
         self.default_context_policy = (
             default_context_policy if self.pack and default_context_policy != "none" else "none"
         )
+        if caption_presentation_policy not in CAPTION_PRESENTATION_POLICIES:
+            raise ValueError(
+                f"unsupported caption presentation policy: {caption_presentation_policy}"
+            )
+        self.caption_presentation_policy = caption_presentation_policy
         self.caption_hub = CaptionHub()
         firebase_config = FirebasePublisherConfig.from_environment()
         self.public_caption_publisher = (
@@ -247,6 +254,10 @@ class Handler(BaseHTTPRequestHandler):
                     "maxSegmentMs": self.server.state.vad_max_segment_ms,
                 },
                 "translationStreaming": True,
+                "captionPresentation": {
+                    "policy": self.server.state.caption_presentation_policy,
+                    "rollbackPolicy": "legacy",
+                },
             },
             "viewer": {
                 "available": True,
@@ -453,6 +464,14 @@ def parser() -> argparse.ArgumentParser:
         default=os.environ.get("LOCAL_LIVE_CONTEXT_POLICY", "none"),
     )
     command.add_argument(
+        "--caption-presentation-policy",
+        choices=tuple(sorted(CAPTION_PRESENTATION_POLICIES)),
+        default=os.environ.get(
+            "LOCAL_LIVE_CAPTION_PRESENTATION_POLICY",
+            "readable_chunks",
+        ),
+    )
+    command.add_argument(
         "--vad-threshold-rms",
         type=int,
         default=int(os.environ.get("LOCAL_LIVE_VAD_THRESHOLD_RMS", "150")),
@@ -475,21 +494,22 @@ def main() -> None:
     if arguments.pack and not Path(arguments.pack).is_file():
         raise SystemExit(f"weekly pack not found: {arguments.pack}")
     state = GatewayState(
-        arguments.pack,
-        arguments.ollama_model,
-        arguments.ollama_url,
-        arguments.session_root,
-        arguments.asr_model,
-        arguments.whisper_binary,
-        arguments.vad_threshold_rms,
-        arguments.vad_silence_ms,
-        arguments.vad_max_segment_ms,
-        arguments.ws_port,
-        arguments.asr_provider,
-        arguments.mlx_audio_url,
-        arguments.mlx_audio_model,
-        arguments.viewer_port,
-        arguments.context_policy,
+        pack_path=arguments.pack,
+        ollama_model=arguments.ollama_model,
+        ollama_url=arguments.ollama_url,
+        session_root=arguments.session_root,
+        asr_model=arguments.asr_model,
+        whisper_binary=arguments.whisper_binary,
+        vad_threshold_rms=arguments.vad_threshold_rms,
+        vad_silence_ms=arguments.vad_silence_ms,
+        vad_max_segment_ms=arguments.vad_max_segment_ms,
+        ws_port=arguments.ws_port,
+        asr_provider=arguments.asr_provider,
+        mlx_audio_url=arguments.mlx_audio_url,
+        mlx_audio_model=arguments.mlx_audio_model,
+        viewer_port=arguments.viewer_port,
+        default_context_policy=arguments.context_policy,
+        caption_presentation_policy=arguments.caption_presentation_policy,
     )
     server = create_server(arguments.host, arguments.port, state)
     try:
@@ -517,6 +537,7 @@ def main() -> None:
         "packVersion": state.pack.get("packVersion") if state.pack else None,
         "ollamaModel": arguments.ollama_model or None,
         "asr": state.asr.status(),
+        "captionPresentationPolicy": state.caption_presentation_policy,
         "sessionRoot": str(state.sessions.root),
         "sessionStorage": storage_health,
         "recoveredIncompleteSessions": [session["sessionId"] for session in recovered_sessions],

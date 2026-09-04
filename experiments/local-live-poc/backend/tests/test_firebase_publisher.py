@@ -81,6 +81,33 @@ class CaptionProjectorTest(unittest.TestCase):
             "targetTextZh": "旧句。",
         }, 200))
 
+    def test_readable_display_ignores_raw_events_and_swaps_as_one_block(self) -> None:
+        projector = CaptionProjector(expires_at_ms=999_999)
+        first = projector.apply({
+            "type": "caption.display",
+            "segmentId": "seg-1",
+            "sourceTextEn": "We walk by faith.",
+            "targetTextZh": "我们凭信心而行。",
+            "displayKind": "final",
+        }, 100)
+        self.assertIsNone(projector.apply({
+            "type": "asr.final",
+            "segmentId": "seg-2",
+            "sourceTextEn": "That changes tomorrow.",
+            "displayEligible": False,
+        }, 200))
+        self.assertEqual(projector.active, first["active"])
+
+        snapshot = projector.apply({
+            "type": "caption.display",
+            "segmentId": "seg-2",
+            "sourceTextEn": "That changes tomorrow.",
+            "targetTextZh": "这改变了我们面对明天的方式。",
+            "displayKind": "partial",
+        }, 300)
+        self.assertEqual(snapshot["previousFinal"]["segmentId"], "seg-1")
+        self.assertEqual(snapshot["active"]["segmentId"], "seg-2")
+
 
 class FirebaseCaptionPublisherTest(unittest.TestCase):
     def test_publisher_is_best_effort_and_throttles_partials(self) -> None:

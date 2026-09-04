@@ -21,6 +21,7 @@ SAFE_EVENT_TYPES = {
     "translation.final",
     "translation.failed",
     "translation.skipped",
+    "caption.display",
     "stream.closed",
 }
 SAFE_FIELDS = {
@@ -30,6 +31,8 @@ SAFE_FIELDS = {
     "segmentId",
     "sourceTextEn",
     "targetTextZh",
+    "displayKind",
+    "phase",
 }
 
 
@@ -126,6 +129,8 @@ class CaptionHub:
 
     @staticmethod
     def _project(payload: dict[str, Any]) -> dict[str, Any] | None:
+        if payload.get("displayEligible") is False:
+            return None
         if payload.get("type") not in SAFE_EVENT_TYPES:
             return None
         return {key: payload[key] for key in SAFE_FIELDS if key in payload}
@@ -165,6 +170,30 @@ class CaptionHub:
                 "sourceTextEn": event.get("sourceTextEn", ""),
                 "targetTextZh": "",
                 "phase": "requesting",
+            }
+        elif event_type == "caption.display":
+            is_new_segment = bool(
+                event.get("segmentId")
+                and active.get("segmentId")
+                and event["segmentId"] != active["segmentId"]
+            )
+            if (
+                is_new_segment
+                and active.get("phase") == "final"
+                and active.get("sourceTextEn")
+                and active.get("targetTextZh")
+            ):
+                previous = {
+                    "segmentId": active.get("segmentId", ""),
+                    "sourceTextEn": active["sourceTextEn"],
+                    "targetTextZh": active["targetTextZh"],
+                }
+            active = {
+                "segmentId": event.get("segmentId", active.get("segmentId", "")),
+                "sourceTextEn": event.get("sourceTextEn", active.get("sourceTextEn", "")),
+                "targetTextZh": event.get("targetTextZh", active.get("targetTextZh", "")),
+                "phase": event.get("phase")
+                or ("final" if event.get("displayKind") == "final" else "streaming"),
             }
         elif event_type in {"translation.partial", "translation.final", "translation.failed", "translation.skipped"}:
             if event.get("segmentId") and active.get("segmentId") and event["segmentId"] != active["segmentId"]:
@@ -243,7 +272,7 @@ footer{display:flex;justify-content:space-between;align-items:center;border-top:
 <script>
 const token=__TOKEN__,zh=document.querySelector('#zh'),en=document.querySelector('#en'),previous=document.querySelector('#previous'),previousZh=document.querySelector('#previous-zh'),previousEn=document.querySelector('#previous-en'),divider=document.querySelector('#divider'),current=document.querySelector('#current'),status=document.querySelector('#status');let scale=1,state={previousFinal:null,active:{segmentId:'',sourceTextEn:'',targetTextZh:'等待现场字幕…',phase:'listening'},sessionActive:true};
 function draw(){const old=state.previousFinal;previous.hidden=!old;divider.hidden=!old;if(old){previousZh.textContent=old.targetTextZh||'';previousEn.textContent=old.sourceTextEn||''}zh.textContent=state.active.targetTextZh||'正在翻译…';en.textContent=state.active.sourceTextEn||'';if(state.sessionActive===false){status.textContent='本场已结束';status.className='waiting'}}
-function render(event){if(event.type==='caption.snapshot'){state=event;draw();return}if(event.type==='asr.final'){const active=state.active;if(active.phase==='final'&&active.sourceTextEn&&active.targetTextZh)state.previousFinal={segmentId:active.segmentId,sourceTextEn:active.sourceTextEn,targetTextZh:active.targetTextZh};state.active={segmentId:event.segmentId||'',sourceTextEn:event.sourceTextEn||'',targetTextZh:'',phase:'requesting'}}else if(['translation.partial','translation.final','translation.failed','translation.skipped'].includes(event.type)){if(event.segmentId&&state.active.segmentId&&event.segmentId!==state.active.segmentId)return;state.active={segmentId:event.segmentId||state.active.segmentId,sourceTextEn:event.sourceTextEn??state.active.sourceTextEn,targetTextZh:event.targetTextZh||state.active.targetTextZh,phase:event.type==='translation.partial'?'streaming':event.type==='translation.final'?'final':'error'}}else if(event.type==='stream.closed')state.sessionActive=false;draw()}
+function render(event){if(event.displayEligible===false)return;if(event.type==='caption.snapshot'){state=event;draw();return}if(event.type==='asr.final'){const active=state.active;if(active.phase==='final'&&active.sourceTextEn&&active.targetTextZh)state.previousFinal={segmentId:active.segmentId,sourceTextEn:active.sourceTextEn,targetTextZh:active.targetTextZh};state.active={segmentId:event.segmentId||'',sourceTextEn:event.sourceTextEn||'',targetTextZh:'',phase:'requesting'}}else if(event.type==='caption.display'){const active=state.active,isNew=event.segmentId&&active.segmentId&&event.segmentId!==active.segmentId;if(isNew&&active.phase==='final'&&active.sourceTextEn&&active.targetTextZh)state.previousFinal={segmentId:active.segmentId,sourceTextEn:active.sourceTextEn,targetTextZh:active.targetTextZh};state.active={segmentId:event.segmentId||active.segmentId,sourceTextEn:event.sourceTextEn??active.sourceTextEn,targetTextZh:event.targetTextZh||active.targetTextZh,phase:event.phase||(event.displayKind==='final'?'final':'streaming')}}else if(['translation.partial','translation.final','translation.failed','translation.skipped'].includes(event.type)){if(event.segmentId&&state.active.segmentId&&event.segmentId!==state.active.segmentId)return;state.active={segmentId:event.segmentId||state.active.segmentId,sourceTextEn:event.sourceTextEn??state.active.sourceTextEn,targetTextZh:event.targetTextZh||state.active.targetTextZh,phase:event.type==='translation.partial'?'streaming':event.type==='translation.final'?'final':'error'}}else if(event.type==='stream.closed')state.sessionActive=false;draw()}
 const source=new EventSource('/api/view/'+encodeURIComponent(token)+'/events');source.onopen=()=>{status.textContent='字幕连接正常';status.className='ok'};source.onmessage=e=>render(JSON.parse(e.data));source.onerror=()=>{status.textContent='正在重新连接…';status.className='waiting'};
 function resize(delta){scale=Math.min(1.35,Math.max(.75,scale+delta));current.style.transform='scale('+scale+')'}document.querySelector('#minus').onclick=()=>resize(-.1);document.querySelector('#plus').onclick=()=>resize(.1);
 </script></body></html>"""
