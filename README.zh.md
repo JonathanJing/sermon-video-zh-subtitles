@@ -28,6 +28,19 @@
 1. `sermon_zh_en_reading.pdf`：中英翻译稿 / 阅读版。
 2. `sermon_interpretation_zh.pdf`：中文“证道同行”/证道大纲，只保留与证道直接相关的辅助信息。
 
+<table>
+  <tr>
+    <th>中英对照阅读版</th>
+    <th>中文证道同行</th>
+  </tr>
+  <tr>
+    <td><img src="docs/assets/pdf-examples/sermon-zh-en-reading-real-page-1.png" alt="真实中英对照阅读版 PDF 第一页" /></td>
+    <td><img src="docs/assets/pdf-examples/sermon-interpretation-zh-real-page-1.png" alt="真实中文证道同行 PDF 第一页" /></td>
+  </tr>
+</table>
+
+_图片来自 2026-08-30 真实运行的第一页；两份 PDF 各自的 QA 都为 `pass`，完整运行产物仍保持在 Git 之外。来源和校验信息见[示例 provenance](docs/assets/pdf-examples/README.md)。_
+
 ![周六 post-live 双 PDF 流程](docs/diagrams/saturday-post-live-workflow.svg)
 
 这是当前更成熟的 post-live 路径。只有 source、人工批准的时间窗、阅读稿 QA、两个 PDF 以及两个 PDF QA 都存在并通过，才算完成。

@@ -28,6 +28,19 @@ The Saturday workflow discovers or receives the public livestream URL, preserves
 1. `sermon_zh_en_reading.pdf` — the bilingual translation/reading edition.
 2. `sermon_interpretation_zh.pdf` — the Chinese sermon companion/outline, limited to sermon-related supporting information.
 
+<table>
+  <tr>
+    <th>Bilingual reading edition</th>
+    <th>Chinese sermon companion</th>
+  </tr>
+  <tr>
+    <td><img src="docs/assets/pdf-examples/sermon-zh-en-reading-real-page-1.png" alt="Real page 1 from the bilingual sermon reading PDF" /></td>
+    <td><img src="docs/assets/pdf-examples/sermon-interpretation-zh-real-page-1.png" alt="Real page 1 from the Chinese sermon companion PDF" /></td>
+  </tr>
+</table>
+
+_Real page-1 renders from the 2026-08-30 run. Both individual PDF QA reports pass; complete per-run PDFs remain outside Git. See the [example provenance](docs/assets/pdf-examples/README.md)._
+
 ![Saturday post-live dual-PDF workflow](docs/diagrams/saturday-post-live-workflow.svg)
 
 This is the repository's mature post-live path. A run is not complete until the source, approved window, reading-text QA, both PDFs, and both PDF QA reports are present and passing.
