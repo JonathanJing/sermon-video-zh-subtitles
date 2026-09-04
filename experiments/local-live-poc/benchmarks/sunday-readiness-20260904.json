@@ -1,0 +1,471 @@
+{
+  "schemaVersion": "sunday-readiness-evidence-v1",
+  "date": "2026-09-04",
+  "decision": "controlled_field_candidate_with_remaining_acceptance_gates",
+  "venueReady": false,
+  "humanGold": false,
+  "productMerge": {
+    "revision": "edaa9d1ec34a5437351a6a97c65fd094eb5dbdc1",
+    "pr": "https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/10",
+    "pocTree": "7b7b1fcfec22057fdb05a501c832a87dec4199b9"
+  },
+  "runtime": {
+    "git": {
+      "available": true,
+      "dirty": false,
+      "revision": "edaa9d1ec34a5437351a6a97c65fd094eb5dbdc1"
+    },
+    "fingerprintSha256": "7f641ca7545372d97c1c0cb23267bea9fd0994fc1685ff49000c8d1829609ec1",
+    "configuration": {
+      "asrFinalizationMode": "vad_silence_frames",
+      "asrModelSha256": "b5bfe4abc1b4c6e58b633096682ec2b6297298add1527119936107d211adf0e8",
+      "asrProvider": "qwen-mlx-websocket",
+      "asrQueueLimit": 2,
+      "asrSilenceFrameCount": 12,
+      "captionPresentationPolicy": "readable_chunks",
+      "contentPackSha256": null,
+      "contentPackVersion": null,
+      "contextPolicy": "none",
+      "frameDurationMs": 100,
+      "sampleRateHz": 16000,
+      "sourceFragmentPolicy": "content_words",
+      "translationModel": "sermon-milmmt-46-4b-v1-q8:benchmark",
+      "translationModelDigest": "e607c5905ff664410afc93961c9a44e19b0429602b2897ac17e362cbb0895b96",
+      "translationPromptFamily": "frozen_a0",
+      "translationPromptHashScope": "template_with_source_placeholder",
+      "translationPromptSha256": "b8320f22389c59cf876e96d5dba19aa33eafbc2c2e1a67bc0559c8873b53da45",
+      "translationPromptVersion": "milmmt-46-official-english-to-chinese-simplified-v1",
+      "translationQueueLimit": 1,
+      "translationStreaming": true,
+      "translationTemperature": 0,
+      "translationTopK": 1,
+      "translationUnitMaxAudioDurationMs": 6500,
+      "translationUnitMaxAudioGapMs": 800,
+      "translationUnitMaxSegments": 2,
+      "translationUnitMaxWaitMs": 3200,
+      "translationUnitPolicy": "legacy",
+      "vadMaxSegmentMs": 3000,
+      "vadSilenceMs": 500,
+      "vadThresholdRms": 450
+    },
+    "versions": {
+      "gatewayPython": "3.13.15",
+      "websockets": "16.1.1",
+      "ollama": "0.33.3",
+      "externalMlxAudio": "0.3.1",
+      "externalMlx": "0.32.2"
+    },
+    "configurationScope": "Allowlisted snapshot; local frontend origins omitted. fingerprintSha256 identifies the full original snapshot in local evidence."
+  },
+  "continuousBrowserReplay": {
+    "sessionId": "20260904T213011.036Z-284aa182",
+    "status": "completed",
+    "captureSource": "browser_audio_file_replay",
+    "durationMs": 3620818,
+    "uniqueSourceSeconds": 1200,
+    "playbackRate": 1,
+    "observedCompletedLoops": [
+      1,
+      2,
+      3
+    ],
+    "physicalMicrophone": false,
+    "physicalCellularDevice": false,
+    "sourceSha256": "78c0a7f6958b51906049542a577ba6b1b2117834a4898696556de6eff35f5c48",
+    "fixtureSha256": "835f89af255551772713a4859317ff821467f61f2a51bf61696bea54969103a9",
+    "pcmFrameCount": 36207,
+    "audioChunkCount": 3550,
+    "eventCounts": {
+      "local_session_created": 1,
+      "stream.ready": 1,
+      "session_started": 1,
+      "gateway_health": 1,
+      "asr.processing": 1287,
+      "asr.final": 1287,
+      "translation.started": 1287,
+      "translation.partial": 3477,
+      "translation.final": 1287,
+      "caption.display": 1300,
+      "caption_rendered": 1300,
+      "session_stopped": 1,
+      "stream.closed": 1
+    },
+    "asrAccounting": {
+      "unresolvedProcessing": [],
+      "multipleOutcomesForOneId": {},
+      "emptyOrSuppressed": []
+    },
+    "integrityChecks": {
+      "eventFileEndsWithNewline": true,
+      "eventCountMatches": true,
+      "eventSequencesContiguous": true,
+      "audioBytesMatch": true,
+      "pcmBytesMatch": true,
+      "allArtifactHashesMatch": true,
+      "wavPayloadMatchesPcm": true,
+      "latestEpochClosed": true,
+      "lastFrameMatchesDurable": true,
+      "workersAndStorageDrained": true,
+      "noResumeOrGap": true
+    },
+    "artifacts": {
+      "recording": {
+        "file": "recording.webm",
+        "bytes": 58291202,
+        "sha256": "f4a445f6ff3c76681a5e7503c9be837e9990ccd40fe2d1569d1d7e9f3b8db04f",
+        "sha256Matches": true
+      },
+      "pcm": {
+        "file": "asr-audio.pcm",
+        "bytes": 115862400,
+        "sha256": "c4b8c3ed160777f2c0f877f64f12a8bf777b4376a54c93daa066afc4996a9a4b",
+        "sha256Matches": true
+      },
+      "wav": {
+        "file": "asr-audio.wav",
+        "bytes": 115862444,
+        "sha256": "1d2901d1b987f70661d6b9668bf3e2178f8ddb6ace11f149dcf69ec52c2f84ff",
+        "sha256Matches": true
+      }
+    },
+    "manifestSha256": "b75d83101dbe4fd942dd34130c991fe96d17597f285fc26dbb6907dd753828bf",
+    "eventLogSha256": "17c54dc360155ecc62d283ace992c8c2b9780f4441703905ba8bd526eba36992",
+    "decode": [
+      {
+        "file": "recording.webm",
+        "ffmpegExitCode": 0,
+        "decodeCompleted": true,
+        "decodedDurationMs": 3620759.0
+      },
+      {
+        "file": "asr-audio.wav",
+        "ffmpegExitCode": 0,
+        "decodeCompleted": true,
+        "decodedDurationMs": 3620700.0
+      }
+    ],
+    "browserRetainedRecordingCopy": {
+      "observedAt": "2026-09-04T22:41:18.783179+00:00",
+      "method": "Browser CDP Runtime.evaluate: read retained download Blob, byteLength and Web Crypto SHA-256",
+      "bytes": 58291202,
+      "sha256": "f4a445f6ff3c76681a5e7503c9be837e9990ccd40fe2d1569d1d7e9f3b8db04f",
+      "matchesGatewayRecording": true,
+      "fixturePresent": false,
+      "boundary": "Stopped operator page download Blob; no independently exported per-chunk browser list."
+    },
+    "captionDelivery": {
+      "definition": "Coverage of emitted raw ASR final IDs through sourceSegmentIds (legacy: segmentId). Latency distributions are per visible translation unit, not speech recall, WER or translation accuracy.",
+      "asrFinalSegmentCount": 1287,
+      "translationFinalUnitCount": 1287,
+      "firstVisibleUnitCount": 1287,
+      "finalVisibleUnitCount": 1287,
+      "translationFinalSegmentCount": 1287,
+      "firstVisibleSegmentCount": 1287,
+      "finalVisibleSegmentCount": 1287,
+      "firstVisibleCoverageRate": 1.0,
+      "finalVisibleCoverageRate": 1.0,
+      "missingFirstVisibleSegmentIds": [],
+      "missingFinalVisibleSegmentIds": [],
+      "unknownSourceSegmentIds": [],
+      "firstVisibleLatencySampleCount": 1287,
+      "finalVisibleLatencySampleCount": 1287,
+      "speechStartLatencySampleCount": 1287,
+      "firstSourceEndLatencySampleCount": 1287,
+      "renderKindCounts": {
+        "readable_final_first": 1274,
+        "readable_partial_first": 13,
+        "readable_final": 13
+      },
+      "audioEndToBrowserFirstVisibleMs": {
+        "p50": 1634,
+        "p95": 1776,
+        "max": 2027
+      },
+      "audioEndToBrowserFinalVisibleMs": {
+        "p50": 1634,
+        "p95": 1777,
+        "max": 2027
+      },
+      "audioStartToBrowserFirstVisibleMs": {
+        "p50": 4627,
+        "p95": 4763,
+        "max": 4977
+      },
+      "firstSourceAudioEndToBrowserFirstVisibleMs": {
+        "p50": 1634,
+        "p95": 1776,
+        "max": 2027
+      },
+      "cadence": {
+        "definition": "Intervals with no recorded new browser caption, including silence and retained captions; not blank-screen duration.",
+        "completeTimeline": true,
+        "timedRenderEventCount": 1300,
+        "firstCaptionAfterSessionStartMs": 8474,
+        "longestBetweenCaptionUpdatesMs": 4769,
+        "trailingNoNewCaptionMs": 0,
+        "longestNoNewCaptionIntervalMs": 8474
+      }
+    },
+    "audioStartToBrowserFinalVisibleMs": {
+      "count": 1287,
+      "p50": 4627,
+      "p95": 4763,
+      "max": 4989
+    },
+    "renderAcknowledgements": 1300,
+    "renderUnobserved": 0,
+    "percentileMethod": "P50 median; P95 sorted index round((n-1)*0.95).",
+    "scope": "Real browser MediaRecorder/Worklet/WS, Qwen ASR, MiLMMT and operator readable render. Coverage denominator is emitted ASR final IDs, not spoken words or correct translations. Not physical microphone/venue/phone delivery proof."
+  },
+  "resources": {
+    "totalRows": 365,
+    "recordingWindowRows": 357,
+    "excludedPostStopRows": 8,
+    "initialUnobservedSeconds": 40.439352,
+    "trailingUnobservedSeconds": 6.588447,
+    "maxSampleIntervalSeconds": 10.153813,
+    "healthErrorSamples": 0,
+    "unreadySamples": 0,
+    "processRss": {
+      "gateway": {
+        "unit": "MiB process RSS",
+        "first": 46.125,
+        "last": 50.984375,
+        "max": 51.21875
+      },
+      "mlx": {
+        "unit": "MiB process RSS",
+        "first": 1162.90625,
+        "last": 1166.1875,
+        "max": 1167.03125
+      },
+      "ollama": {
+        "unit": "MiB process RSS",
+        "first": 5863.71875,
+        "last": 9664.609375,
+        "max": 9664.609375
+      }
+    },
+    "swapUsedMiBMinMax": [
+      0,
+      0
+    ],
+    "systemFreePercentMinMax": [
+      66,
+      76
+    ],
+    "trailingRecordingWindows": [
+      {
+        "windowLengthMinutes": 5,
+        "recordingWindowStartMinutes": 55.34696666666667,
+        "recordingWindowEndMinutes": 60.34696666666667,
+        "resources": {
+          "gateway_rss_kb": {
+            "sampleCount": 30,
+            "elapsedStartMinutes": 55.38426101666666,
+            "elapsedEndMinutes": 60.23715921666667,
+            "firstMiB": 50.984375,
+            "lastMiB": 50.984375,
+            "minMiB": 50.828125,
+            "medianMiB": 51.015625,
+            "maxMiB": 51.21875,
+            "netChangeMiB": 0.0,
+            "olsSlopeMiBPerMinute": 0.02309945935693541
+          },
+          "mlx_rss_kb": {
+            "sampleCount": 30,
+            "elapsedStartMinutes": 55.38426101666666,
+            "elapsedEndMinutes": 60.23715921666667,
+            "firstMiB": 1166.15625,
+            "lastMiB": 1166.1875,
+            "minMiB": 1165.953125,
+            "medianMiB": 1166.1640625,
+            "maxMiB": 1167.03125,
+            "netChangeMiB": 0.03125,
+            "olsSlopeMiBPerMinute": 0.01981950533680181
+          },
+          "ollama_rss_kb": {
+            "sampleCount": 30,
+            "elapsedStartMinutes": 55.38426101666666,
+            "elapsedEndMinutes": 60.23715921666667,
+            "firstMiB": 9508.578125,
+            "lastMiB": 9664.609375,
+            "minMiB": 9508.578125,
+            "medianMiB": 9561.21875,
+            "maxMiB": 9664.609375,
+            "netChangeMiB": 156.03125,
+            "olsSlopeMiBPerMinute": 34.34736056751519
+          }
+        }
+      },
+      {
+        "windowLengthMinutes": 10,
+        "recordingWindowStartMinutes": 50.34696666666667,
+        "recordingWindowEndMinutes": 60.34696666666667,
+        "resources": {
+          "gateway_rss_kb": {
+            "sampleCount": 60,
+            "elapsedStartMinutes": 50.36499163333334,
+            "elapsedEndMinutes": 60.23715921666667,
+            "firstMiB": 50.734375,
+            "lastMiB": 50.984375,
+            "minMiB": 50.421875,
+            "medianMiB": 50.9765625,
+            "maxMiB": 51.21875,
+            "netChangeMiB": 0.25,
+            "olsSlopeMiBPerMinute": 0.04140772751041769
+          },
+          "mlx_rss_kb": {
+            "sampleCount": 60,
+            "elapsedStartMinutes": 50.36499163333334,
+            "elapsedEndMinutes": 60.23715921666667,
+            "firstMiB": 1166.046875,
+            "lastMiB": 1166.1875,
+            "minMiB": 1165.90625,
+            "medianMiB": 1166.109375,
+            "maxMiB": 1167.03125,
+            "netChangeMiB": 0.140625,
+            "olsSlopeMiBPerMinute": 0.016885656914001086
+          },
+          "ollama_rss_kb": {
+            "sampleCount": 60,
+            "elapsedStartMinutes": 50.36499163333334,
+            "elapsedEndMinutes": 60.23715921666667,
+            "firstMiB": 9368.59375,
+            "lastMiB": 9664.609375,
+            "minMiB": 9368.59375,
+            "medianMiB": 9505.265625,
+            "maxMiB": 9664.609375,
+            "netChangeMiB": 296.015625,
+            "olsSlopeMiBPerMinute": 28.286871986092393
+          }
+        }
+      }
+    ],
+    "conclusion": "Translation process RSS still grew in every 5-minute window; growth slowed, plateau and long-term cap not demonstrated. Point samples cannot prove unsampled availability; RSS alone does not establish leak or cause."
+  },
+  "gatewayRestartReplay": {
+    "revision": "063f5f849ebf9de865badde10a69f5f45afca1ec",
+    "sessionId": "20260904T211643.374Z-2599f3a8",
+    "durationMs": 409329,
+    "captureSource": "browser_audio_file_replay",
+    "completed": true,
+    "recordingAndPrefixHashesVerified": true,
+    "fullDecodeExitCodes": [
+      0,
+      0
+    ],
+    "sameSessionAndViewerToken": true,
+    "currentEpochDrainConfirmed": true,
+    "asrProcessing": 141,
+    "asrFinals": 139,
+    "asrEmptyAtStop": 1,
+    "inFlightUnresolvedAtRestart": 1,
+    "inFlightAudioIntervalMs": [
+      135000,
+      138000
+    ],
+    "pcmGapMs": 1600,
+    "pcmGapIntervalMs": [
+      138000,
+      139600
+    ],
+    "recoveryWebmIndependent": true,
+    "newCaptionIntervalAcrossRestartMs": 7234,
+    "translatedAndVisibleFinals": 139,
+    "captionContinuity": "interrupted",
+    "continuousScorerPassed": false,
+    "scope": "Recovery recording and post-restart flow verified. Does not recover in-flight ASR job or missing PCM; no lossless-caption claim."
+  },
+  "viewers": {
+    "viewportCssPixels": [
+      [
+        390,
+        844
+      ],
+      [
+        844,
+        390
+      ]
+    ],
+    "longAndShortBilingualFitVerified": true,
+    "publicViewerOfflineRecoveryObserved": true,
+    "lanFallbackObserved": true,
+    "physicalPhone": false,
+    "physicalCellularNetwork": false,
+    "publicRenderedLatencyMeasured": false,
+    "publisherFinal": {
+      "configured": true,
+      "queueDepth": 0,
+      "publishedCount": 1302,
+      "droppedPartialCount": 0,
+      "droppedFinalCount": 0,
+      "droppedTerminalCount": 0,
+      "coalescedSnapshotCount": 0,
+      "supersededSnapshotCount": 0,
+      "expiredSnapshotCount": 0,
+      "publishFailureCount": 0,
+      "lastWriteLatencyMs": 155,
+      "lastError": null
+    },
+    "hostingFilesSha256": {
+      "styles.css": "0497d5b4e8128f1314a336d684dd6fd5bac66f6627e58734bc142bb8d6c6f725",
+      "viewer.js": "04f45e6aa83c5e9c4e2d80ca35296dd39e4e33d52da4f890b758cf99c2a0312d"
+    }
+  },
+  "semanticEvaluation": {
+    "reviewStatus": "machine_triage_only",
+    "boundedUnitChangedCases": 42,
+    "realTranslationRequests": 126,
+    "defaultTranslationUnitPolicy": "legacy",
+    "defaultVadMaxSegmentMs": 3000,
+    "humanReviewCandidateGroups": 8,
+    "humanReviewAudioSeconds": 106.9,
+    "remaining": "ASR proper names, sentence boundary/negation/causality, scripture relationships, additions and omissions require listening and bilingual human review."
+  },
+  "remainingGates": [
+    "Human listening and bilingual semantic acceptance on independent sermon audio",
+    "Venue microphone/mixer audio path including quiet voice and non-speech",
+    "Physical phone on venue Wi-Fi and cellular, QR join/reconnect and actual display latency",
+    "Translation-process RSS plateau or bounded operation across multiple consecutive sessions",
+    "No claim of gap-free captions across Gateway restart"
+  ],
+  "localEvidenceDigests": {
+    "audit-summary.json": "0589e0c194b776f35c7da752b17337c33a888855f785c0361bb4534d5a2f079f",
+    "memory-review.json": "0e73ae75508fa5a5d5f96d7a5baa322b933f095f53899d249bdb54289b89f523",
+    "health.tsv": "eaae9f1fdbd3d97d6965c83614ccc1b8290520748b923f31011a71d96b7f0c3b",
+    "browser-20m.json": "128415a0b872828f4b88494cf721a5f6dd1d409bdd0b4cda73279c6a541f9d7e",
+    "browser-40m.json": "5ee913d3a392019a3db9f8ed77fcb8128945f8643aee4aac29701bf76a4c4051",
+    "browser-60m.json": "9c1078d78bc0282daa23a8de245e9e0f09eaf1fcf079fa4a44b5894704a09991",
+    "browser-recording-copy.json": "4611bbe9d22aeda752d3276bb2541169487bd7f5ea2e767ea22de956f77a5d84",
+    "final-publisher-health.json": "43fddb2a377132680a9c71b15b33f318dd005ff12e1efb20051224e21953b246",
+    "viewer-reconnect.json": "fcda08b4b2a564c8ae794e9740bbc226fcefb979a48b4d8973b077eb9e24bfbe",
+    "human-review-candidates.json": "5458a89191a9548f45434cc34003cd211fb65b8764a9f5d1ab3d43d6cf4abd87",
+    "review-audio-manifest.json": "ea33484033d10ec84088ee6f6fddc83cf481ae26f808c4da517eb3edce5262d0"
+  },
+  "evidencePolicy": "Compact sanitized evidence only. Raw audio, full session logs, browser fixtures, viewer links/tokens and private deployment configuration remain ignored local artifacts.",
+  "verification": {
+    "phase": "PR #10 product delivery, before merged-version continuous replay",
+    "poc": {
+      "command": "npm test",
+      "completedAt": "2026-09-04T21:24:42.641Z",
+      "exitCode": 0,
+      "counts": {
+        "frontend": 30,
+        "backendUnit": 120,
+        "integration": 23,
+        "firebaseRules": 5,
+        "total": 178
+      },
+      "productionBuildPassed": true,
+      "receiptStdoutSha256": "695feba114e6ab86f4569dff11898d6cc134e072dc57567fcb6ff197d7940b01"
+    },
+    "root": {
+      "command": "python -m unittest discover -s tests -p \"test_*.py\"",
+      "tests": 730,
+      "passed": true,
+      "scope": "Product delivery stage; later Saturday change modifies root tests."
+    },
+    "pr10Ci": "success"
+  }
+}
