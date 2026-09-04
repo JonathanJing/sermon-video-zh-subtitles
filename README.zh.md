@@ -57,7 +57,7 @@ flowchart LR
     F --> G[录音、事件、指标与可回放证据]
 ```
 
-当前 POC 已实现麦克风选择、真实录音、每次启动自动创建 session 文件夹、事件日志、MiLMMT A0 本地翻译、响应式大字幕和可复现测试证据。由于本地 ASR 尚未接入并完成 benchmark，页面仍使用明确标注的英文回放 fixture，不能把它描述成麦克风转写。
+当前 POC 已实现麦克风选择、持久录音、Qwen3-ASR 0.6B/MLX、MiLMMT 4B Q8 token streaming、大字号字幕、带随机 token 的只读手机页、冻结英文的 replay/A-B，以及完整 session 指标证据。修复后的真实浏览器/扬声器/麦克风 60 分钟长测达到 ASR final 99.92%、翻译 final 100%。在明确排除的教会现场彩排完成前，它仍是 POC，而不是 production-ready。
 
 关键文档：
 
@@ -72,18 +72,19 @@ flowchart LR
 | 方向 | 当前证据 |
 |---|---|
 | 周六 PDF 生产 | 两个 canonical PDF、阅读稿 QA、PDF QA、人工确认证道时间窗、可恢复状态 |
-| 周日 live POC | 真实麦克风录音、本地 session 产物、MiLMMT A0 翻译、大字号响应式 UI |
-| 周六到周日 context | 有序 weekly pack、受控术语/经文检索、A0 无 context 基线 |
-| Replay 与 A/B 基础 | 原始录音、append-only events、模型/prompt/延迟 metadata、确定性回放输入 |
+| 周日 live POC | 真实麦克风、Qwen3-ASR、MiLMMT token stream、60 分钟长测、大字号 UI、只读手机页 |
+| 周六到周日 context | 有序 weekly pack、受控 runtime policy、基于 provenance 的安全自动启用 |
+| Replay 与 A/B | 冻结 ASR final、确定性 context-policy 重放、盲评 CSV、source/model hash |
+| 运行维护 | 一键启动/停止、监督恢复、session 保留策略、fail-closed ASR Gold 门 |
 
 ### 正在探索和仍需补齐的门槛
 
-- **本地英文 ASR：** 在真实证道音频上选择并 benchmark `whisper.cpp` 模型，再把稳定英文片段接入现有 gateway。在此之前，live English 仍是 fixture。
-- **端到端延迟：** 小样本中 MiLMMT warm translation 约为 0.29–0.48 秒；ASR 尚未实测。目前规划值为 ASR+翻译计算 0.6–1.5 秒，加入 VAD 和 UI 后，从一句话结束到稳定中文约 1.2–2.8 秒。这是预算，不是 SLO。
-- **Content-pack A/B：** 从周六字幕生成已审核术语、经文引用与可选对齐例句；用同一段周日录音比较 `A0 / none` 与受控 context。
+- **正式 ASR 准确率：** 五位讲员和 edge case 已有机器参考的临时证据；六个 case 的人工逐词 Gold 队列仍必须由真人校正签名，之后 WER 才能用于模型 promotion。
+- **已验证延迟：** 修复后的 60 分钟 Qwen + MiLMMT 长测中，音频结束到浏览器中文首字 p50 1.419 秒 / p95 1.486 秒；到完整中文 p50 1.530 秒 / p95 1.720 秒。现场声学可能不同。
+- **Content-pack 质量决策：** 工具链已经完成；每周仍要用真实周六 pack，并由人工完成盲评结果。机器中文不会静默注入。
 - **本地 runtime 选择：** 当前 A0 使用 Ollama；直接 MLX serving 继续作为 Discovery 备选，只有在相同 frozen 输入和延迟/质量门槛下通过后才考虑替换。
-- **现场可运行性：** 增加真实 ASR fixture、长时间麦克风 soak、音频路由检查、存储保留策略和周日 operator runbook，之后才能称为 production-ready。
-- **手机使用：** UI 已验证 iPhone 宽度，但手机第二屏同步与 LAN HTTPS 仍是独立探索项。
+- **现场边界：** 一小时本机 soak 与 MLX 受控故障恢复已通过；剩余 production gate 是正式教会现场彩排。手机只读页还依赖现场 Wi-Fi 允许设备互访。
+- **资源上限：** 一小时内 Ollama 内存增长，但没有 swap 或延迟崩溃；在多场连续测试完成前，每场从干净的一键启动进入。
 
 ### 后训练方案
 

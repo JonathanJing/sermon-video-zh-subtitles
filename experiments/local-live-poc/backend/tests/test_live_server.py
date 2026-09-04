@@ -54,6 +54,8 @@ class LiveServerTest(unittest.TestCase):
                         "frameDurationMs": 100,
                     }))
                     events.append(json.loads(socket.recv(timeout=2)))
+                    self.assertTrue(events[0]["viewer"]["readOnly"])
+                    self.assertTrue(events[0]["viewer"]["token"])
                     speech = struct.pack("<1600h", *([1000] * 1600))
                     silence = bytes(3200)
                     for sequence in range(1, 5):

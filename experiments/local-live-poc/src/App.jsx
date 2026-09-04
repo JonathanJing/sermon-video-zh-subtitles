@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import QRCode from "qrcode";
 import {
   GATEWAY_URL,
   appendAudioChunk,
@@ -87,6 +88,8 @@ export function App() {
   const [localSaveState, setLocalSaveState] = useState("idle");
   const [liveMetrics, setLiveMetrics] = useState({});
   const [runtimeRestartState, setRuntimeRestartState] = useState("idle");
+  const [viewerShare, setViewerShare] = useState(null);
+  const [viewerQr, setViewerQr] = useState("");
 
   const streamRef = useRef(null);
   const recorderRef = useRef(null);
@@ -107,6 +110,7 @@ export function App() {
   const activeTranslationSegmentRef = useRef("");
   const partialTranslationRef = useRef({ segmentId: "", text: "" });
   const renderedTranslationSegmentsRef = useRef(new Set());
+  const renderQueueRef = useRef(Promise.resolve());
   const pcmClockStartedAtRef = useRef(0);
   const recoverableAsrErrorRef = useRef(false);
 
@@ -120,6 +124,18 @@ export function App() {
     gatewayHealth?.ollama?.configuredModel,
     "MiLMMT",
   );
+  const contextPolicy = gatewayHealth?.defaultContextPolicy || "none";
+
+  useEffect(() => {
+    const url = viewerShare?.urls?.[0];
+    if (!url) {
+      setViewerQr("");
+      return;
+    }
+    QRCode.toDataURL(url, { width: 220, margin: 1, errorCorrectionLevel: "M" })
+      .then(setViewerQr)
+      .catch(() => setViewerQr(""));
+  }, [viewerShare]);
 
   const status = useMemo(() => {
     if (phase === "running") return "正在录音 · 本地 ASR 与翻译";
@@ -259,22 +275,25 @@ export function App() {
 
   function recordCaptionRender(event, renderKind) {
     const receivedAtMs = Date.now();
-    window.requestAnimationFrame(() => {
-      const renderedAtMs = Date.now();
-      appendEvent("caption_rendered", {
-        segmentId: event.segmentId,
-        renderKind,
-        gatewayEventSequence: event.sequence,
-        gatewayEventAt: event.at,
-        browserReceivedAt: new Date(receivedAtMs).toISOString(),
-        browserRenderedAt: new Date(renderedAtMs).toISOString(),
-        gatewayToBrowserReceiveMs: event.at ? Math.max(0, receivedAtMs - Date.parse(event.at)) : null,
-        browserReceiveToRenderMs: renderedAtMs - receivedAtMs,
-        audioEndToBrowserRenderMs: pcmClockStartedAtRef.current && Number.isFinite(event.audioEndMs)
-          ? renderedAtMs - pcmClockStartedAtRef.current - event.audioEndMs
-          : null,
+    renderQueueRef.current = renderQueueRef.current.then(() => new Promise((resolve) => {
+      window.requestAnimationFrame(() => {
+        const renderedAtMs = Date.now();
+        appendEvent("caption_rendered", {
+          segmentId: event.segmentId,
+          renderKind,
+          gatewayEventSequence: event.sequence,
+          gatewayEventAt: event.at,
+          browserReceivedAt: new Date(receivedAtMs).toISOString(),
+          browserRenderedAt: new Date(renderedAtMs).toISOString(),
+          gatewayToBrowserReceiveMs: event.at ? Math.max(0, receivedAtMs - Date.parse(event.at)) : null,
+          browserReceiveToRenderMs: renderedAtMs - receivedAtMs,
+          audioEndToBrowserRenderMs: pcmClockStartedAtRef.current && Number.isFinite(event.audioEndMs)
+            ? renderedAtMs - pcmClockStartedAtRef.current - event.audioEndMs
+            : null,
+        });
+        resolve();
       });
-    });
+    }));
   }
 
   function handleLiveEvent(event) {
@@ -285,6 +304,7 @@ export function App() {
       setError("本地增量保存失败；浏览器录音仍在继续，请勿刷新页面。");
     }
     if (event.type === "stream.ready") {
+      setViewerShare(event.viewer || null);
       setCaption({ en: "Listening for English speech…", zh: "请开始讲话。" });
       setTranslationState("listening");
     } else if (event.type === "asr.processing") {
@@ -445,12 +465,14 @@ export function App() {
     setCaption({ en: "", zh: "正在连接麦克风…" });
     setTranslationState("idle");
     setLiveMetrics({});
+    setViewerShare(null);
     setLocalSession(null);
     setLocalSaveState("creating");
     localSessionRef.current = null;
     audioChunkSequenceRef.current = 0;
     localWriteFailureRef.current = false;
     renderedTranslationSegmentsRef.current = new Set();
+    renderQueueRef.current = Promise.resolve();
     pcmClockStartedAtRef.current = 0;
     setPhase("requesting");
     eventsRef.current = [];
@@ -459,6 +481,8 @@ export function App() {
     try {
       await serverWriteQueueRef.current;
       serverWriteQueueRef.current = Promise.resolve();
+      const health = await refreshGatewayHealth();
+      const effectiveContextPolicy = health?.defaultContextPolicy || "none";
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error("当前浏览器不支持麦克风采集。请使用最新版 Safari 或 Chrome。");
       }
@@ -513,7 +537,7 @@ export function App() {
           audioDeviceId: audioTrack?.getSettings().deviceId || "default",
           audioDeviceLabel: audioTrack?.label || "default",
           audioCaptureSettings,
-          contextPolicy: "none",
+          contextPolicy: effectiveContextPolicy,
         });
         serverSession = result;
         localSessionRef.current = result;
@@ -553,12 +577,11 @@ export function App() {
         mode: "local_live_asr_translation",
         asrSource: "microphone_pcm_stream",
         translationGateway: GATEWAY_URL,
-        contextPolicy: "none",
+        contextPolicy: effectiveContextPolicy,
         localSessionId: serverSession?.sessionId || null,
         audioDeviceId: audioTrack?.getSettings().deviceId || "default",
         audioCaptureSettings,
       });
-      const health = await refreshGatewayHealth();
       appendEvent("gateway_health", { health });
       if (serverSession && health?.liveStream?.webSocketUrl) {
         try {
@@ -566,7 +589,7 @@ export function App() {
             onEvent: handleLiveEvent,
             onLocalEvent: handleLocalLiveEvent,
           });
-          await liveSocket.connect(serverSession.sessionId, "none");
+          await liveSocket.connect(serverSession.sessionId, effectiveContextPolicy);
           liveSocketRef.current = liveSocket;
         } catch (caught) {
           recoverableAsrErrorRef.current = false;
@@ -635,6 +658,7 @@ export function App() {
     }
     liveSocketRef.current = null;
     await recorderStopped;
+    await renderQueueRef.current;
     await serverWriteQueueRef.current;
     if (localSessionRef.current && !localWriteFailureRef.current) {
       try {
@@ -653,7 +677,7 @@ export function App() {
     const manifest = {
       schemaVersion: 1,
       mode: "local_live_asr_translation",
-      warning: "English is local Whisper ASR and Chinese is local MiLMMT output; neither is human reviewed.",
+      warning: "English is local ASR and Chinese is local MiLMMT output; neither is human reviewed.",
       startedAt: eventsRef.current[0]?.at || nowIso(),
       stoppedAt: nowIso(),
       durationMs: Date.now() - startTimeRef.current,
@@ -740,6 +764,16 @@ export function App() {
         </div>
 
         {error && <p className="error-banner" role="alert">{error}</p>}
+        {isRunning && viewerShare?.urls?.[0] && (
+          <aside className="viewer-share" aria-label="手机字幕分享">
+            {viewerQr && <img src={viewerQr} alt="手机字幕二维码" />}
+            <div>
+              <strong>手机看字幕</strong>
+              <span>连接同一 Wi-Fi 后扫码；这是只读页面，无法控制后台。</span>
+              <a href={viewerShare.urls[0]} target="_blank" rel="noreferrer">{viewerShare.urls[0]}</a>
+            </div>
+          </aside>
+        )}
       </section>
 
       <footer className="health-bar" aria-label="运行状态">
@@ -766,7 +800,7 @@ export function App() {
             本地保存 {localSaveState === "creating" ? "建目录" : localSaveState === "saving" ? "增量写入" : localSaveState === "finalizing" ? "完成中" : localSaveState === "saved" ? "已完成" : localSaveState === "incomplete" ? "可恢复/不完整" : localSaveState === "error" ? "浏览器备份" : "待机"}
           </span>
           <span>
-            Context none{gatewayHealth?.contentPack ? ` · Pack ${gatewayHealth.contentPack.packVersion} 可用` : ""}
+            Context {contextPolicy}{gatewayHealth?.contentPack ? ` · Pack ${gatewayHealth.contentPack.packVersion}` : ""}
           </span>
         </div>
         <div className="evidence">

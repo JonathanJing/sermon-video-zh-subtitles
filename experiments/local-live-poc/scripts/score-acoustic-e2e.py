@@ -6,8 +6,13 @@ import hashlib
 import json
 import re
 import statistics
+import sys
 from pathlib import Path
 from typing import Any
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from backend.asr_gold import read_jsonl, validate_human_gold
 
 
 WORD_RE = re.compile(r"[a-z0-9]+(?:'[a-z0-9]+)?")
@@ -63,12 +68,22 @@ def load_events(path: Path) -> list[dict[str, Any]]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
-def score_case(case: dict[str, Any], config: dict[str, Any], poc_root: Path) -> dict[str, Any]:
+def score_case(
+    case: dict[str, Any],
+    config: dict[str, Any],
+    poc_root: Path,
+    human_gold: dict[str, str] | None = None,
+) -> dict[str, Any]:
     source_root = Path(config["sourceRepository"])
     session_dir = poc_root / "artifacts" / "sessions" / case["sessionId"]
     events = load_events(session_dir / "events.jsonl")
     manifest = json.loads((session_dir / "manifest.json").read_text(encoding="utf-8"))
-    reference, provenance = load_reference(source_root / case["referenceAudit"], case["referenceSegmentId"])
+    if human_gold is not None:
+        if case["caseId"] not in human_gold:
+            raise ValueError(f"approved human Gold is missing case: {case['caseId']}")
+        reference, provenance = human_gold[case["caseId"]], "approved_human_gold"
+    else:
+        reference, provenance = load_reference(source_root / case["referenceAudit"], case["referenceSegmentId"])
     asr_events = [event for event in events if event.get("type") == "asr.final"]
     suppressed_events = [event for event in events if event.get("type") == "asr.suppressed"]
     translation_events = [event for event in events if event.get("type") == "translation.final"]
@@ -139,10 +154,12 @@ def main() -> None:
     parser.add_argument("config", type=Path)
     parser.add_argument("--poc-root", type=Path)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--gold", type=Path, help="approved asr-human-gold-review-v1 JSONL")
     args = parser.parse_args()
     config = json.loads(args.config.read_text(encoding="utf-8"))
     poc_root = args.poc_root.resolve() if args.poc_root else args.config.resolve().parent.parent
-    cases = [score_case(case, config, poc_root) for case in config["cases"]]
+    human_gold = validate_human_gold(read_jsonl(args.gold)) if args.gold else None
+    cases = [score_case(case, config, poc_root, human_gold) for case in config["cases"]]
     reference_words = sum(case["referenceWordCount"] for case in cases)
     speech_edits = sum(case["speechOnlyWordErrorCount"] for case in cases)
     critical_total = sum(len(case["criticalPhraseHits"]) for case in cases)
@@ -158,7 +175,8 @@ def main() -> None:
             "caseCount": len(cases),
             "speakerCount": len({case["speaker"] for case in cases}),
             "referenceWordCount": reference_words,
-            "provisionalSpeechOnlyWer": round(speech_edits / max(1, reference_words), 4),
+            ("speechOnlyWer" if human_gold is not None else "provisionalSpeechOnlyWer"):
+                round(speech_edits / max(1, reference_words), 4),
             "criticalPhraseRecall": round(critical_hits / max(1, critical_total), 4),
             "nonSpeechOutputCount": sum(case["nonSpeechOutputCount"] for case in cases),
             "suppressedAsrCount": sum(case["suppressedAsrCount"] for case in cases),

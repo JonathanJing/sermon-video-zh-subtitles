@@ -10,9 +10,10 @@ Independent greenfield interface for a MacBook-based live sermon caption feasibi
 - Large Simplified Chinese caption area with a smaller English source line.
 - Downloadable audio and JSON event log after stopping.
 - Automatic per-recording local session folder with incremental audio and JSONL writes.
-- Real microphone PCM streaming through local Whisper ASR and the MiLMMT translation backend.
+- Real microphone PCM streaming through Qwen3-ASR/MLX (with Whisper fallback) and MiLMMT.
+- A tokenized, read-only phone viewer on the same Wi-Fi; control and recording APIs stay localhost-only.
 
-The live path is now microphone → AudioWorklet PCM → WebSocket gateway → energy VAD → configured local English ASR (`whisper.cpp` or Qwen3-ASR through MLX Audio) → MiLMMT A0 token stream → Chinese caption. Browser recording remains independent and continues if ASR or translation fails. Offline replay/A-B orchestration remains a later step. The default final cadence is 500 ms of silence or a 3-second maximum speech window; only immutable ASR finals start translation. Chinese token updates are append-only and rate-limited, so ASR partial revisions cannot make the large caption flicker.
+The live path is microphone → AudioWorklet PCM → WebSocket gateway → energy VAD → configured local English ASR (`Qwen3-ASR` through MLX Audio or `whisper.cpp`) → MiLMMT token stream → Chinese caption. Browser recording remains independent and continues if ASR or translation fails. The default final cadence is 500 ms of silence or a 3-second maximum speech window; only immutable ASR finals start translation. Chinese token updates are append-only and rate-limited, so ASR revisions cannot make the large caption flicker. Frozen-English replay/A-B is now executable and does not rerun ASR.
 
 Each start automatically creates:
 
@@ -45,13 +46,13 @@ The setup script creates the local Python environment, installs the single WebSo
 
 The model SHA-256 is pinned by the script. Model files and recordings remain local and are not committed.
 
-Qwen3-ASR is an optional provider with a separate, pinned runtime because MLX Audio is substantially heavier than the default POC dependency set:
+Qwen3-ASR uses a separate, pinned MLX Audio runtime:
 
 ```bash
 .venv/bin/python -m pip install -r requirements-qwen-asr.txt
 ```
 
-Then set `LOCAL_LIVE_ASR_PROVIDER=qwen-mlx-websocket` and `LOCAL_LIVE_QWEN_ASR_MODEL` to the installed MLX model directory. The launcher accepts either `.venv/bin/mlx_audio.server` or an existing `mlx_audio.server` on `PATH`. Gateway readiness remains degraded until the provider completes a real WebSocket model handshake.
+When both the MLX runtime and the cached Qwen model are present, the Sunday launcher selects Qwen automatically. Otherwise it falls back to the installed `whisper.cpp` model. `LOCAL_LIVE_ASR_PROVIDER` remains an explicit override. Gateway readiness remains degraded until the selected provider completes a real model handshake.
 
 ## Sunday one-command run
 
@@ -63,11 +64,15 @@ The equivalent Terminal command is:
 ./scripts/sunday-live.sh
 ```
 
-This command checks the local dependencies, model, writable session directory, and at least 10 GiB of free disk; starts Ollama when needed; prevents display and idle system sleep; starts the REST gateway, WebSocket live audio endpoint, Whisper ASR, MiLMMT adapter, and Vite UI; then opens `http://127.0.0.1:4173/` automatically. It uses `small.en` when that benchmarked model is already installed and otherwise uses the pinned `base.en` installed by setup. Override it explicitly with `LOCAL_LIVE_ASR_MODEL=/absolute/path/to/model.bin`.
+This command checks the local dependencies, selected ASR, writable session directory, and at least 10 GiB of free disk; starts Ollama when needed; prevents display and idle system sleep; starts the localhost control gateway, live audio WebSocket, read-only LAN viewer, MiLMMT adapter, and Vite UI; then opens `http://127.0.0.1:4173/`. Qwen is preferred when installed; Whisper `small.en`/`base.en` is the fallback.
+
+After recording starts, the operator page shows a QR code. Phones on the same Wi-Fi can scan it to open large Chinese captions over SSE. The token expires after the session ends; the viewer exposes no microphone, restart, session-write, log, or model-control endpoint. This LAN POC does not add an Internet tunnel or authentication service.
 
 With Qwen MLX enabled, the launcher supervises `mlx_audio.server`. If it exits, the launcher records stdout/stderr in `${TMPDIR}/sermon-live-caption-poc/mlx-audio.log` and attempts up to three automatic restarts while the independent browser recording continues. A short MLX finalization timeout is logged as `asr.empty`, not translated, and does not become a persistent page error. A third consecutive identical short ASR result is logged as `asr.suppressed/repeated_short_result` and held out of translation; any different or longer result immediately resets the guard. This generic guard avoids streaming hundreds of music-induced one-word hallucinations without blacklisting a specific word.
 
 The final cadence can be tuned without code changes using `LOCAL_LIVE_VAD_SILENCE_MS` and `LOCAL_LIVE_VAD_MAX_SEGMENT_MS`; both values must be multiples of 100 ms. The defaults are `500` and `3000`.
+
+If `artifacts/weekly-pack.json` is a genuine active Saturday pack with non-example source/audio provenance, the launcher automatically selects `saturday_alignment_v1`; otherwise it fails safely to `none`. Override with `LOCAL_LIVE_CONTEXT_POLICY=none|weekly_terms_v1|saturday_alignment_v1`.
 
 Keep the Terminal window open. In the page, choose the microphone, start recording, and use **Stop and save** before pressing Control-C in Terminal. Run a non-starting preflight on Saturday night or Sunday morning with:
 
@@ -107,6 +112,33 @@ The builder assigns every segment a one-based `sequence`, creating an ordered Sa
 
 Keep the original audio, `saturday-segments.jsonl`, and generated `weekly-pack.json` together. The builder records the source ID, service date, and audio SHA-256. The normative field definition is [backend/schemas/saturday-sermon-segment-v1.schema.json](./backend/schemas/saturday-sermon-segment-v1.schema.json); a copy-ready file is in [backend/examples/saturday-segments.example.jsonl](./backend/examples/saturday-segments.example.jsonl).
 
+## Replay A/B and ASR Gold gate
+
+Replay the immutable English finals from any completed session. This produces `run.json`, `results.jsonl`, and a blind `review.csv`:
+
+```bash
+./scripts/replay-ab.py artifacts/sessions/<session-id> --policies none,saturday_alignment_v1
+```
+
+Prepare the six existing acoustic cases for human word-level review and validate them fail-closed:
+
+```bash
+./scripts/prepare-asr-gold-review.py artifacts/benchmarks/acoustic-e2e-20260903/small-en-report.json \
+  --output benchmarks/asr-gold-review-queue-20260904.jsonl
+./scripts/validate-asr-gold.py benchmarks/asr-gold-review-queue-20260904.jsonl
+```
+
+The checked-in queue is intentionally `pending_human_review`; provisional GPT-transcribe references are not called human Gold. After every row is corrected and approved, pass it to `scripts/score-acoustic-e2e.py --gold ...` to emit formal rather than provisional WER.
+
+## Recording retention
+
+Sessions are never deleted at startup. Preview the default 30-day policy (always preserving the newest ten and every active/unknown session), then opt in explicitly if the plan is correct:
+
+```bash
+./scripts/manage-sessions.py
+./scripts/manage-sessions.py --apply
+```
+
 ## Local gateway
 
 ```bash
@@ -125,6 +157,7 @@ Endpoints:
 - `POST /api/context/retrieve`
 - `POST /api/translate`
 - `WS /api/live` on `127.0.0.1:8767`
+- read-only phone viewer `GET /view/{token}` and `GET /api/view/{token}/events` on LAN port `8780`
 
 Both POST endpoints accept `cursorSequence` and `contextPolicy`. The live page should persist the returned `alignment.suggestedCursor` and send it with the next stable English segment:
 
@@ -140,8 +173,8 @@ If Ollama or the configured model is unavailable, translation returns `503` with
 
 Keep the test stack small and use the standard runners already available:
 
-- **Unit:** content-pack rules, the local session store, and the browser-to-gateway request contract. No server, microphone, Ollama, or network is required.
-- **Integration:** a real localhost gateway and temporary session directory with a fake model response. This verifies HTTP, ordered audio/event writes, finalization, and translation fallback without changing real recordings.
+- **Unit:** content-pack rules, session storage, replay, Gold gate, retention planning, viewer projection, and the browser-to-gateway contract.
+- **Integration:** real localhost HTTP/WebSocket/SSE servers with temporary storage and fake models; verifies ordered writes, finalization, translation fallback, viewer isolation, and caption fan-out.
 - **Browser E2E:** use the actual microphone and actual local Ollama model. Record at least ten seconds, stop, then verify that the visible Chinese/English pair changed, `manifest.json` is completed, `events.jsonl` contains the translation events, and the saved recording decodes. This remains a deliberate manual test because browser microphone permission and the physical audio route are the behavior under test.
 - **Long soak:** replay a fixed source through the actual speaker/microphone path for 50–60 minutes, then score latency, availability, repeated short outputs, language drift, process RSS/Swap, failures, and artifact hashes with `scripts/score-soak-e2e.py`. The scorer accepts an independent health sampler with `--health-telemetry`. The 2026-09-04 baseline, targeted recovery regression, and completed fixed 60-minute run are documented in [benchmarks/SOAK_E2E_20260904.zh.md](./benchmarks/SOAK_E2E_20260904.zh.md).
 

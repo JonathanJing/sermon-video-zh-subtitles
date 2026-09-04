@@ -173,10 +173,56 @@ a:focus-visible {
 }
 
 .caption-stage {
+  position: relative;
   min-height: 0;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   padding: 26px 5vw 20px;
+}
+
+.viewer-share {
+  position: absolute;
+  right: 24px;
+  bottom: 18px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: min(430px, 42vw);
+  padding: 10px 12px;
+  border: 1px solid rgba(154, 203, 232, 0.36);
+  border-radius: 12px;
+  background: rgba(10, 34, 52, 0.96);
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.28);
+}
+
+.viewer-share img {
+  width: 82px;
+  height: 82px;
+  border-radius: 5px;
+}
+
+.viewer-share div {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.viewer-share strong {
+  color: #fff;
+}
+
+.viewer-share span,
+.viewer-share a {
+  overflow: hidden;
+  color: var(--ink-300);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.viewer-share a {
+  color: #d9effc;
 }
 
 .stage-meta {
@@ -372,6 +418,12 @@ a:focus-visible {
 
   .health-bar {
     padding: 14px 16px;
+  }
+
+  .viewer-share {
+    position: static;
+    max-width: 100%;
+    margin-top: 12px;
   }
 }
 

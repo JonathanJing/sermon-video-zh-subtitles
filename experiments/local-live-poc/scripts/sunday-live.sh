@@ -13,7 +13,15 @@ elif [ "$#" -gt 0 ]; then
   exit 2
 fi
 
-asr_provider="${LOCAL_LIVE_ASR_PROVIDER:-whisper-cli}"
+default_qwen_model="${HOME}/Library/Caches/sermon-video-zh-subtitles/models/qwen3-asr-0.6b-8bit-89e96d92"
+qwen_model="${LOCAL_LIVE_QWEN_ASR_MODEL:-$default_qwen_model}"
+if [ -n "${LOCAL_LIVE_ASR_PROVIDER:-}" ]; then
+  asr_provider="$LOCAL_LIVE_ASR_PROVIDER"
+elif { [ -x .venv/bin/mlx_audio.server ] || command -v mlx_audio.server >/dev/null; } && [ -d "$qwen_model" ]; then
+  asr_provider="qwen-mlx-websocket"
+else
+  asr_provider="whisper-cli"
+fi
 
 for command_name in curl npm ollama caffeinate open; do
   if ! command -v "$command_name" >/dev/null; then
@@ -24,7 +32,6 @@ for command_name in curl npm ollama caffeinate open; do
 done
 
 asr_model=""
-qwen_model=""
 if [ "$asr_provider" = "qwen-mlx-websocket" ]; then
   if [ ! -x .venv/bin/mlx_audio.server ] && ! command -v mlx_audio.server >/dev/null; then
     echo "Missing required command: mlx_audio.server" >&2
@@ -43,7 +50,6 @@ if [ ! -x .venv/bin/python ] || [ ! -d node_modules ]; then
 fi
 
 if [ "$asr_provider" = "qwen-mlx-websocket" ]; then
-  qwen_model="${LOCAL_LIVE_QWEN_ASR_MODEL:-}"
   if [ -z "$qwen_model" ] || [ ! -d "$qwen_model" ]; then
     echo "LOCAL_LIVE_QWEN_ASR_MODEL must name an installed MLX Qwen model directory." >&2
     exit 1
@@ -56,6 +62,39 @@ elif [ -f artifacts/models/ggml-small.en.bin ]; then
 else
   asr_model="artifacts/models/ggml-base.en.bin"
 fi
+
+weekly_pack="${LOCAL_LIVE_WEEKLY_PACK:-$poc_dir/artifacts/weekly-pack.json}"
+context_policy="${LOCAL_LIVE_CONTEXT_POLICY:-}"
+if [ -z "$context_policy" ]; then
+  context_policy="none"
+  if [ -f "$weekly_pack" ] && .venv/bin/python - "$weekly_pack" <<'PY'
+import json, sys
+from datetime import datetime, timezone
+pack = json.load(open(sys.argv[1], encoding="utf-8"))
+source_id = str(pack.get("provenance", {}).get("sourceId", "")).lower()
+audio_hash = str(pack.get("provenance", {}).get("audioSha256", ""))
+empty_hash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+try:
+    valid_until = datetime.fromisoformat(str(pack.get("validUntil", "")).replace("Z", "+00:00"))
+except ValueError:
+    valid_until = datetime.min.replace(tzinfo=timezone.utc)
+raise SystemExit(not (
+    pack.get("status") == "active"
+    and pack.get("sourceType") == "saturday_livestream"
+    and "example" not in source_id
+    and len(audio_hash) == 64
+    and audio_hash != empty_hash
+    and valid_until >= datetime.now(timezone.utc)
+))
+PY
+  then
+    context_policy="saturday_alignment_v1"
+  fi
+fi
+case "$context_policy" in
+  none|weekly_terms_v1|saturday_alignment_v1) ;;
+  *) echo "Unsupported LOCAL_LIVE_CONTEXT_POLICY: $context_policy" >&2; exit 1 ;;
+esac
 
 if [ "$asr_provider" != "qwen-mlx-websocket" ]; then
   case "$asr_model" in
@@ -113,6 +152,7 @@ fi
 echo "Sunday preflight passed."
 echo "ASR: $asr_provider ($asr_model_file)"
 echo "Translation: $translation_model"
+echo "Context: $context_policy${weekly_pack:+ ($weekly_pack)}"
 echo "Sessions: $session_root"
 echo "Free disk: $((available_kb / 1024 / 1024)) GiB"
 
@@ -171,6 +211,8 @@ LOCAL_LIVE_QWEN_ASR_MODEL="${qwen_model:-}" \
 LOCAL_LIVE_MLX_AUDIO_URL="${LOCAL_LIVE_MLX_AUDIO_URL:-ws://127.0.0.1:18766/v1/audio/transcriptions/realtime}" \
 LOCAL_LIVE_OLLAMA_MODEL="$translation_model" \
 LOCAL_LIVE_SESSION_ROOT="$session_root" \
+LOCAL_LIVE_WEEKLY_PACK="$weekly_pack" \
+LOCAL_LIVE_CONTEXT_POLICY="$context_policy" \
   ./scripts/run-local.sh &
 runtime_pid=$!
 

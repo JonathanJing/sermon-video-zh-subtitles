@@ -23,6 +23,7 @@ from .content_pack import (
 )
 from .ollama_client import OllamaClient, OllamaError
 from .session_store import SessionStore, SessionStoreError
+from .viewer_server import CaptionHub, ViewerService, viewer_urls
 
 
 DEFAULT_OLLAMA_MODEL = "sermon-milmmt-46-4b-v1-q8:benchmark"
@@ -45,6 +46,8 @@ class GatewayState:
         asr_provider: str = "whisper-cli",
         mlx_audio_url: str = "ws://127.0.0.1:18766/v1/audio/transcriptions/realtime",
         mlx_audio_model: str = "",
+        viewer_port: int = 8780,
+        default_context_policy: str = "none",
     ) -> None:
         self.pack_path = pack_path
         self.pack = load_pack(pack_path) if pack_path else None
@@ -60,6 +63,13 @@ class GatewayState:
         self.vad_silence_ms = vad_silence_ms
         self.vad_max_segment_ms = vad_max_segment_ms
         self.ws_port = ws_port
+        self.viewer_port = viewer_port
+        if default_context_policy not in CONTEXT_POLICIES:
+            raise ValueError(f"unsupported default context policy: {default_context_policy}")
+        self.default_context_policy = (
+            default_context_policy if self.pack and default_context_policy != "none" else "none"
+        )
+        self.caption_hub = CaptionHub()
         self.asr_warmup: dict[str, Any] | None = None
         self.ollama_warmup: dict[str, Any] | None = None
         self.runtime_restart: Callable[[], None] = lambda: os._exit(RUNTIME_RESTART_EXIT_CODE)
@@ -186,6 +196,7 @@ class Handler(BaseHTTPRequestHandler):
                 "validUntil": pack["validUntil"],
                 "entryCount": len(pack["entries"]),
             },
+            "defaultContextPolicy": self.server.state.default_context_policy,
             "ollama": ollama,
             "ollamaWarmup": self.server.state.ollama_warmup,
             "asr": asr,
@@ -199,6 +210,12 @@ class Handler(BaseHTTPRequestHandler):
                     "maxSegmentMs": self.server.state.vad_max_segment_ms,
                 },
                 "translationStreaming": True,
+            },
+            "viewer": {
+                "available": True,
+                "port": self.server.state.viewer_port,
+                "networkAddresses": viewer_urls("{session-token}", self.server.state.viewer_port),
+                "readOnly": True,
             },
             "sessionStorage": storage,
         })
@@ -390,6 +407,16 @@ def parser() -> argparse.ArgumentParser:
         default=int(os.environ.get("LOCAL_LIVE_WS_PORT", "8767")),
     )
     command.add_argument(
+        "--viewer-port",
+        type=int,
+        default=int(os.environ.get("LOCAL_LIVE_VIEWER_PORT", "8780")),
+    )
+    command.add_argument(
+        "--context-policy",
+        choices=tuple(sorted(CONTEXT_POLICIES)),
+        default=os.environ.get("LOCAL_LIVE_CONTEXT_POLICY", "none"),
+    )
+    command.add_argument(
         "--vad-threshold-rms",
         type=int,
         default=int(os.environ.get("LOCAL_LIVE_VAD_THRESHOLD_RMS", "150")),
@@ -425,6 +452,8 @@ def main() -> None:
         arguments.asr_provider,
         arguments.mlx_audio_url,
         arguments.mlx_audio_model,
+        arguments.viewer_port,
+        arguments.context_policy,
     )
     server = create_server(arguments.host, arguments.port, state)
     try:
@@ -432,6 +461,7 @@ def main() -> None:
     except ImportError as error:
         raise SystemExit("WebSocket dependency missing; run pip install -r requirements.txt") from error
     live_socket = LiveSocketService(state, arguments.host, arguments.ws_port)
+    viewer = ViewerService(state.caption_hub, "0.0.0.0", arguments.viewer_port)
     storage_health = state.sessions.health(probe_write=True)
     recovered_sessions = state.sessions.recover_incomplete() if storage_health.get("available") else []
     try:
@@ -443,9 +473,11 @@ def main() -> None:
     except AsrError as error:
         state.asr_warmup = {"ready": False, "error": str(error)}
     live_socket.start()
+    viewer.start()
     print(json.dumps({
         "gateway": f"http://{arguments.host}:{arguments.port}",
         "liveWebSocket": f"ws://{arguments.host}:{arguments.ws_port}/api/live",
+        "viewer": viewer_urls("{session-token}", viewer.port),
         "packVersion": state.pack.get("packVersion") if state.pack else None,
         "ollamaModel": arguments.ollama_model or None,
         "asr": state.asr.status(),
@@ -459,6 +491,7 @@ def main() -> None:
         pass
     finally:
         live_socket.stop()
+        viewer.stop()
         server.server_close()
 
 

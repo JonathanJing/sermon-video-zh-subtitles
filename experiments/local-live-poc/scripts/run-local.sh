@@ -80,9 +80,11 @@ else
   fi
   gateway_args+=(--asr-model "$asr_model")
 fi
-if [ -f artifacts/weekly-pack.json ]; then
-  gateway_args+=(--pack artifacts/weekly-pack.json)
+weekly_pack="${LOCAL_LIVE_WEEKLY_PACK:-artifacts/weekly-pack.json}"
+if [ -f "$weekly_pack" ]; then
+  gateway_args+=(--pack "$weekly_pack")
 fi
+gateway_args+=(--context-policy "${LOCAL_LIVE_CONTEXT_POLICY:-none}")
 
 restart_exit_code=75
 gateway_pid=""
@@ -92,7 +94,7 @@ start_gateway() {
 }
 
 start_gateway
-npm run dev -- --host 0.0.0.0 --port 4173 --strictPort &
+npm run dev -- --host 127.0.0.1 --port 4173 --strictPort &
 vite_pid=$!
 
 cleanup() {
