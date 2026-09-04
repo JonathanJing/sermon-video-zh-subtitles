@@ -1,0 +1,76 @@
+Process:         llama-server [80990]
+Path:            /Applications/Ollama.app/Contents/Resources/llama-server
+Load Address:    0x10429c000
+Identifier:      llama-server
+Version:         0
+Code Type:       ARM64
+Platform:        macOS
+Parent Process:  ollama [61206]
+Target Type:     live task
+
+Date/Time:       2026-09-04 00:59:12.606 -0700
+Launch Time:     2026-09-03 23:19:18.234 -0700
+OS Version:      macOS 27.0 (26A5425a)
+Report Version:  7
+Analysis Tool:   /usr/bin/vmmap
+
+Physical footprint:         4.6G
+Physical footprint (peak):  4.6G
+Idle exit:                  untracked
+----
+
+ReadOnly portion of Libraries: Total=1.9G resident=335.5M(17%) swapped_out_or_unallocated=1.6G(83%)
+Writable regions: Total=5.2G written=1.9G(37%) resident=4.6G(88%) swapped_out=0K(0%) unallocated=634.9M(12%)
+
+                                VIRTUAL RESIDENT    DIRTY  SWAPPED VOLATILE   NONVOL    EMPTY   REGION
+REGION TYPE                        SIZE     SIZE     SIZE     SIZE     SIZE     SIZE     SIZE    COUNT (non-coalesced)
+===========                     ======= ========    =====  ======= ========   ======    =====  =======
+Activity Tracing                   256K      32K      32K       0K       0K      32K       0K        1
+Deferred Reclaim                  64.0M      16K      16K       0K       0K       0K       0K        1
+Dispatch Continuations            80.0M     224K     192K       0K       0K       0K       0K        1
+Guard                            385.0G       0K       0K       0K       0K       0K       0K        1
+IOAccelerator                       64K      64K      64K       0K       0K       0K       0K        2
+IOAccelerator (graphics)          7376K     768K     768K       0K       0K     768K    2720K      203
+IOKit                               64K      64K      64K       0K       0K      16K       0K        4
+IOSurface                           16K       0K       0K       0K       0K       0K       0K        1
+Malloc Guard Page                 3808K       0K       0K       0K       0K       0K       0K        4         see MALLOC ZONE table below
+Malloc Large                       4.3G     4.1G     4.1G       0K       0K       0K       0K      976         see MALLOC ZONE table below
+Malloc Large (empty)              8544K    8304K    8304K       0K       0K       0K       0K        3         see MALLOC ZONE table below
+Malloc Metadata                    176K     176K     176K       0K       0K       0K       0K        3         see MALLOC ZONE table below
+Malloc Metadata metadata          16.7M    16.2M    16.2M       0K       0K       0K       0K       33         see MALLOC ZONE table below
+Malloc Small                     160.0M   127.3M   127.3M       0K       0K       0K       0K       42         see MALLOC ZONE table below
+Malloc Small (empty)              12.0M    4944K    4944K       0K       0K       0K       0K        3         see MALLOC ZONE table below
+Malloc Tiny                       4096K     256K     256K       0K       0K       0K       0K        1         see MALLOC ZONE table below
+OS Alloc Once                       32K      16K      16K       0K       0K       0K       0K        1
+Stack                             20.2M     784K     784K       0K       0K       0K       0K       24
+Stack (reserved)                   544K       0K       0K       0K       0K       0K       0K        1         reserved VM address space (unallocated)
+Stack Guard                       56.4M       0K       0K       0K       0K       0K       0K       25
+Untagged                          41.6M    1808K    1808K       0K       0K       0K       0K        6
+__AUTH                            1992K    1389K      70K       0K       0K       0K       0K      221
+__AUTH_CONST                      34.0M    17.7M       0K       0K       0K       0K       0K      399
+__CTF                               824      824       0K       0K       0K       0K       0K        1
+__DATA                            9397K    6335K     865K       0K       0K       0K       0K      407
+__DATA_CONST                      23.8M    12.9M      24K       0K       0K       0K       0K      397
+__DATA_DIRTY                      2141K    1686K     554K       0K       0K       0K       0K      351
+__FONT_DATA                        2352     2352       0K       0K       0K       0K       0K        1
+__LINKEDIT                         1.6G    72.3M       0K       0K       0K       0K       0K        2
+__OBJC_RO                        117.7M    70.9M       0K       0K       0K       0K       0K        1
+__OBJC_RW                         2732K    2380K      44K       0K       0K       0K       0K        1
+__TEXT                           392.9M   263.2M       0K       0K       0K       0K       0K      470
+__TPRO_CONST                       132K      68K      48K       0K       0K       0K       0K        4
+mapped file                        3.9G     3.9G       0K       0K       0K       0K       0K        8
+owned unmapped (graphics)           16K      16K      16K       0K       0K       0K       0K        1
+page table in kernel              5816K    5816K    5816K       0K       0K       0K       0K        1
+shared memory                    586.5M   392.7M   392.7M       0K       0K       0K       0K       20
+unused but dirty shlib __DATA      318K     254K     220K       0K       0K       0K       0K      107
+===========                     ======= ========    =====  ======= ========   ======    =====  =======
+TOTAL                            396.4G     8.9G     4.6G       0K       0K     816K    2720K     3728
+TOTAL, minus reserved VM space   396.4G     8.9G     4.6G       0K       0K     816K    2720K     3728
+
+                                 VIRTUAL   RESIDENT      DIRTY    SWAPPED ALLOCATION      BYTES DIRTY+SWAP          REGION
+MALLOC ZONE                         SIZE       SIZE       SIZE       SIZE      COUNT  ALLOCATED  FRAG SIZE  % FRAG   COUNT
+===========                      =======  =========  =========  =========  =========  =========  =========  ======  ======
+DefaultMallocZone_0x105514000       4.5G       4.2G       4.2G         0K     294771       4.3G         0K      0%    1053
+objc-class_rw_t_0x1055c4000          32K        32K        32K         0K        702        16K        16K     49%       2
+===========                      =======  =========  =========  =========  =========  =========  =========  ======  ======
+TOTAL                               4.5G       4.2G       4.2G         0K     295473       4.3G         0K      0%    1055

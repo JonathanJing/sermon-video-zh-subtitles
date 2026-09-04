@@ -1,0 +1,286 @@
+{
+  "schemaVersion": "local-live-soak-e2e-report-v1",
+  "sessionId": "20260904T061847.708Z-edb3cc13",
+  "sessionStatus": "completed",
+  "durationMs": 3758203,
+  "eventCounts": {
+    "asr.failed": 44,
+    "asr.final": 1241,
+    "asr.processing": 1285,
+    "caption_rendered": 2482,
+    "gateway_health": 1,
+    "local_session_created": 1,
+    "session_started": 1,
+    "session_stopped": 1,
+    "stream.closed": 1,
+    "stream.ready": 1,
+    "translation.final": 1241,
+    "translation.partial": 2960,
+    "translation.started": 1241
+  },
+  "failureEventCount": 44,
+  "failureEventTypes": {
+    "asr.failed": 44
+  },
+  "failureReasonCounts": {
+    "MLX Audio endpoint or configured Qwen ASR model is unavailable": 41,
+    "MLX Audio returned no final transcription": 3
+  },
+  "failureDetails": [
+    {
+      "type": "asr.failed",
+      "segmentId": "seg-000408",
+      "reason": null,
+      "message": "MLX Audio returned no final transcription"
+    },
+    {
+      "type": "asr.failed",
+      "segmentId": "seg-000493",
+      "reason": null,
+      "message": "MLX Audio returned no final transcription"
+    },
+    {
+      "type": "asr.failed",
+      "segmentId": "seg-000515",
+      "reason": null,
+      "message": "MLX Audio returned no final transcription"
+    },
+    {
+      "type": "asr.failed",
+      "segmentId": "seg-001245",
+      "reason": null,
+      "message": "MLX Audio endpoint or configured Qwen ASR model is unavailable"
+    },
+    {
+      "type": "asr.failed",
+      "segmentId": "seg-001246",
+      "reason": null,
+      "message": "MLX Audio endpoint or configured Qwen ASR model is unavailable"
+    },
+    {
+      "type": "asr.failed",
+      "segmentId": "seg-001247",
+      "reason": null,
+      "message": "MLX Audio endpoint or configured Qwen ASR model is unavailable"
+    },
+    {
+      "type": "asr.failed",
+      "segmentId": "seg-001248",
+      "reason": null,
+      "message": "MLX Audio endpoint or configured Qwen ASR model is unavailable"
+    },
+    {
+      "type": "asr.failed",
+      "segmentId": "seg-001249",
+      "reason": null,
+      "message": "MLX Audio endpoint or configured Qwen ASR model is unavailable"
+    },
+    {
+      "type": "asr.failed",
+      "segmentId": "seg-001250",
+      "reason": null,
+      "message": "MLX Audio endpoint or configured Qwen ASR model is unavailable"
+    },
+    {
+      "type": "asr.failed",
+      "segmentId": "seg-001251",
+      "reason": null,
+      "message": "MLX Audio endpoint or configured Qwen ASR model is unavailable"
+    },
+    {
+      "type": "asr.failed",
+      "segmentId": "seg-001252",
+      "reason": null,
+      "message": "MLX Audio endpoint or configured Qwen ASR model is unavailable"
+    },
+    {
+      "type": "asr.failed",
+      "segmentId": "seg-001253",
+      "reason": null,
+      "message": "MLX Audio endpoint or configured Qwen ASR model is unavailable"
+    },
+    {
+      "type": "asr.failed",
+      "segmentId": "seg-001254",
+      "reason": null,
+      "message": "MLX Audio endpoint or configured Qwen ASR model is unavailable"
+    },
+    {
+      "type": "asr.failed",
+      "segmentId": "seg-001255",
+      "reason": null,
+      "message": "MLX Audio endpoint or configured Qwen ASR model is unavailable"
+    },
+    {
+      "type": "asr.failed",
+      "segmentId": "seg-001256",
+      "reason": null,
+      "message": "MLX Audio endpoint or configured Qwen ASR model is unavailable"
+    },
+    {
+      "type": "asr.failed",
+      "segmentId": "seg-001257",
+      "reason": null,
+      "message": "MLX Audio endpoint or configured Qwen ASR model is unavailable"
+    },
+    {
+      "type": "asr.failed",
+      "segmentId": "seg-001258",
+      "reason": null,
+      "message": "MLX Audio endpoint or configured Qwen ASR model is unavailable"
+    },
+    {
+      "type": "asr.failed",
+      "segmentId": "seg-001259",
+      "reason": null,
+      "message": "MLX Audio endpoint or configured Qwen ASR model is unavailable"
+    },
+    {
+      "type": "asr.failed",
+      "segmentId": "seg-001260",
+      "reason": null,
+      "message": "MLX Audio endpoint or configured Qwen ASR model is unavailable"
+    },
+    {
+      "type": "asr.failed",
+      "segmentId": "seg-001261",
+      "reason": null,
+      "message": "MLX Audio endpoint or configured Qwen ASR model is unavailable"
+    }
+  ],
+  "availability": {
+    "gatewayHttp200Rate": 1.0,
+    "asrFinalRate": 0.9658,
+    "translationFinalRate": 1.0
+  },
+  "sequenceNonIncreasingCount": 0,
+  "asr": {
+    "finalCount": 1241,
+    "nonEmptyFinalCount": 1241,
+    "translationFinalCount": 1241,
+    "shortRepeatedOutputCandidates": [
+      {
+        "text": "the.",
+        "count": 220,
+        "shareOfNonEmptyAsrFinals": 0.1773
+      },
+      {
+        "text": "oh.",
+        "count": 12,
+        "shareOfNonEmptyAsrFinals": 0.0097
+      },
+      {
+        "text": "you.",
+        "count": 6,
+        "shareOfNonEmptyAsrFinals": 0.0048
+      },
+      {
+        "text": "i'm.",
+        "count": 5,
+        "shareOfNonEmptyAsrFinals": 0.004
+      },
+      {
+        "text": "yeah.",
+        "count": 4,
+        "shareOfNonEmptyAsrFinals": 0.0032
+      },
+      {
+        "text": "baby.",
+        "count": 3,
+        "shareOfNonEmptyAsrFinals": 0.0024
+      },
+      {
+        "text": "i.",
+        "count": 3,
+        "shareOfNonEmptyAsrFinals": 0.0024
+      },
+      {
+        "text": "upon him.",
+        "count": 3,
+        "shareOfNonEmptyAsrFinals": 0.0024
+      }
+    ],
+    "unexpectedCjkOutputCount": 1,
+    "unexpectedCjkOutputs": [
+      "迷惘。"
+    ]
+  },
+  "latency": {
+    "asrQueueWaitMs": {
+      "p50": 0,
+      "p95": 6,
+      "max": 5327
+    },
+    "audioEndToAsrFinalMs": {
+      "p50": 1279,
+      "p95": 1323,
+      "max": 7656
+    },
+    "translationTtftMs": {
+      "p50": 132,
+      "p95": 151,
+      "max": 1366
+    },
+    "audioEndToChineseFirstTokenMs": {
+      "p50": 1405,
+      "p95": 1469,
+      "max": 7783
+    },
+    "audioEndToChineseFinalMs": {
+      "p50": 1554,
+      "p95": 1767,
+      "max": 7867
+    },
+    "audioEndToBrowserFirstTokenMs": {
+      "p50": 1428,
+      "p95": 1496,
+      "max": 7804
+    }
+  },
+  "telemetry": {
+    "sampleCount": 360,
+    "elapsedSeconds": 3699,
+    "gatewayHttp200Samples": 360,
+    "gatewayNon200Samples": 0,
+    "gatewayRss": {
+      "firstKb": 40704,
+      "lastKb": 48320,
+      "growthKb": 7616,
+      "maxKb": 48384
+    },
+    "mlxRss": {
+      "firstKb": 1210000,
+      "lastKb": 1216272,
+      "growthKb": 6272,
+      "maxKb": 1217424
+    },
+    "mlxProcessMissingSamples": 11,
+    "ollamaRss": {
+      "firstKb": 4851248,
+      "lastKb": 8402768,
+      "growthKb": 3551520,
+      "maxKb": 8402768
+    },
+    "swapUsedMb": {
+      "first": 0.0,
+      "last": 0.0,
+      "max": 0.0
+    }
+  },
+  "artifactIntegrity": {
+    "recording": {
+      "exists": true,
+      "sha256Matches": true
+    },
+    "pcm": {
+      "exists": true,
+      "sha256Matches": true
+    },
+    "wav": {
+      "exists": true,
+      "sha256Matches": true
+    }
+  },
+  "allFinalizedArtifactHashesMatch": true,
+  "sessionDirectory": "/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles-local-live-poc/experiments/local-live-poc/artifacts/sessions/20260904T061847.708Z-edb3cc13"
+}

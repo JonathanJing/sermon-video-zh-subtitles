@@ -183,6 +183,31 @@ class ContentPackTest(unittest.TestCase):
         self.assertEqual(captured["payload"]["options"]["top_k"], 1)
         self.assertEqual(result["promptVersion"], MILMMT_A0_PROMPT_VERSION)
 
+    def test_streaming_translation_is_append_only_and_keeps_final_metrics(self) -> None:
+        empty_context = {
+            "approvedTerms": [],
+            "verifiedScriptureRefs": [],
+            "reviewedExactExamples": [],
+            "reviewedAlignedReferences": [],
+        }
+
+        class StreamingClient(OllamaClient):
+            def _json_stream(self, path, payload, timeout=15.0):
+                self.captured = {"path": path, "payload": payload}
+                yield {"response": "恩典"}
+                yield {"response": "够用。"}
+                yield {"done": True, "eval_count": 4, "eval_duration": 8}
+
+        partials = []
+        client = StreamingClient("sermon-milmmt-46-4b-v1-q8:benchmark")
+        result = client.translate(
+            "Grace is enough.", empty_context, on_partial=lambda delta, text: partials.append((delta, text))
+        )
+        self.assertTrue(client.captured["payload"]["stream"])
+        self.assertEqual(partials, [("恩典", "恩典"), ("够用。", "恩典够用。")])
+        self.assertEqual(result["targetTextZh"], "恩典够用。")
+        self.assertEqual(result["metrics"]["evalCount"], 4)
+
 
 if __name__ == "__main__":
     unittest.main()

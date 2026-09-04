@@ -4,13 +4,15 @@ import argparse
 import json
 import os
 import re
+import threading
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from collections.abc import Callable
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
-from .asr_client import WhisperCliClient
+from .asr_client import AsrError, MlxAudioWebSocketClient, WhisperCliClient
 from .content_pack import (
     CONTEXT_POLICIES,
     PackValidationError,
@@ -21,9 +23,11 @@ from .content_pack import (
 )
 from .ollama_client import OllamaClient, OllamaError
 from .session_store import SessionStore, SessionStoreError
+from .viewer_server import CaptionHub, ViewerService, viewer_urls
 
 
 DEFAULT_OLLAMA_MODEL = "sermon-milmmt-46-4b-v1-q8:benchmark"
+RUNTIME_RESTART_EXIT_CODE = 75
 
 
 class GatewayState:
@@ -36,16 +40,39 @@ class GatewayState:
         asr_model: str = "",
         whisper_binary: str = "whisper-cli",
         vad_threshold_rms: int = 150,
+        vad_silence_ms: int = 500,
+        vad_max_segment_ms: int = 3000,
         ws_port: int = 8767,
+        asr_provider: str = "whisper-cli",
+        mlx_audio_url: str = "ws://127.0.0.1:18766/v1/audio/transcriptions/realtime",
+        mlx_audio_model: str = "",
+        viewer_port: int = 8780,
+        default_context_policy: str = "none",
     ) -> None:
         self.pack_path = pack_path
         self.pack = load_pack(pack_path) if pack_path else None
         self.ollama = OllamaClient(ollama_model, ollama_url)
         self.sessions = SessionStore(session_root)
-        self.asr = WhisperCliClient(asr_model, whisper_binary)
+        if asr_provider == "qwen-mlx-websocket":
+            self.asr = MlxAudioWebSocketClient(mlx_audio_model, mlx_audio_url)
+        elif asr_provider == "whisper-cli":
+            self.asr = WhisperCliClient(asr_model, whisper_binary)
+        else:
+            raise ValueError(f"unsupported ASR provider: {asr_provider}")
         self.vad_threshold_rms = vad_threshold_rms
+        self.vad_silence_ms = vad_silence_ms
+        self.vad_max_segment_ms = vad_max_segment_ms
         self.ws_port = ws_port
+        self.viewer_port = viewer_port
+        if default_context_policy not in CONTEXT_POLICIES:
+            raise ValueError(f"unsupported default context policy: {default_context_policy}")
+        self.default_context_policy = (
+            default_context_policy if self.pack and default_context_policy != "none" else "none"
+        )
+        self.caption_hub = CaptionHub()
+        self.asr_warmup: dict[str, Any] | None = None
         self.ollama_warmup: dict[str, Any] | None = None
+        self.runtime_restart: Callable[[], None] = lambda: os._exit(RUNTIME_RESTART_EXIT_CODE)
 
     def translate(
         self,
@@ -60,6 +87,29 @@ class GatewayState:
         )
         context = prompt_context(hits, policy=context_policy)
         result = self.ollama.translate(source_text, context)
+        return {
+            "sourceTextEn": source_text,
+            **result,
+            "requestedContextPolicy": context_policy,
+            "contextPolicy": context_policy if hits else "none",
+            "contextHitIds": [hit["entryId"] for hit in hits],
+            "alignment": alignment_summary(hits, cursor_sequence),
+        }
+
+    def translate_stream(
+        self,
+        source_text: str,
+        cursor_sequence: int | None,
+        context_policy: str,
+        on_partial: Callable[[str, str], None],
+    ) -> dict[str, Any]:
+        pack = self.pack
+        hits = (
+            retrieve(pack, source_text, limit=5, cursor_sequence=cursor_sequence)
+            if pack and context_policy != "none" else []
+        )
+        context = prompt_context(hits, policy=context_policy)
+        result = self.ollama.translate(source_text, context, on_partial=on_partial)
         return {
             "sourceTextEn": source_text,
             **result,
@@ -146,13 +196,26 @@ class Handler(BaseHTTPRequestHandler):
                 "validUntil": pack["validUntil"],
                 "entryCount": len(pack["entries"]),
             },
+            "defaultContextPolicy": self.server.state.default_context_policy,
             "ollama": ollama,
             "ollamaWarmup": self.server.state.ollama_warmup,
             "asr": asr,
+            "asrWarmup": self.server.state.asr_warmup,
             "liveStream": {
                 "available": asr.get("available", False),
                 "webSocketUrl": f"ws://127.0.0.1:{self.server.state.ws_port}/api/live",
                 "format": "pcm_s16le/16000/mono/100ms",
+                "asrFinalPolicy": {
+                    "silenceMs": self.server.state.vad_silence_ms,
+                    "maxSegmentMs": self.server.state.vad_max_segment_ms,
+                },
+                "translationStreaming": True,
+            },
+            "viewer": {
+                "available": True,
+                "port": self.server.state.viewer_port,
+                "networkAddresses": viewer_urls("{session-token}", self.server.state.viewer_port),
+                "readOnly": True,
             },
             "sessionStorage": storage,
         })
@@ -177,7 +240,13 @@ class Handler(BaseHTTPRequestHandler):
                 return
 
             payload = self._body()
-            if parsed.path == "/api/sessions/start":
+            if parsed.path == "/api/runtime/restart":
+                if self.client_address[0] not in {"127.0.0.1", "::1"}:
+                    self._send(HTTPStatus.FORBIDDEN, {"error": "local_only"})
+                    return
+                self._send(HTTPStatus.ACCEPTED, {"status": "restarting"})
+                threading.Timer(0.1, self.server.state.runtime_restart).start()
+            elif parsed.path == "/api/sessions/start":
                 self._send(HTTPStatus.CREATED, self.server.state.sessions.create(payload))
             elif session_match and session_match.group(2) == "events":
                 self._send(
@@ -317,14 +386,50 @@ def parser() -> argparse.ArgumentParser:
         default=os.environ.get("LOCAL_LIVE_WHISPER_BINARY", "whisper-cli"),
     )
     command.add_argument(
+        "--asr-provider",
+        choices=("whisper-cli", "qwen-mlx-websocket"),
+        default=os.environ.get("LOCAL_LIVE_ASR_PROVIDER", "whisper-cli"),
+    )
+    command.add_argument(
+        "--mlx-audio-url",
+        default=os.environ.get(
+            "LOCAL_LIVE_MLX_AUDIO_URL",
+            "ws://127.0.0.1:18766/v1/audio/transcriptions/realtime",
+        ),
+    )
+    command.add_argument(
+        "--mlx-audio-model",
+        default=os.environ.get("LOCAL_LIVE_QWEN_ASR_MODEL", ""),
+    )
+    command.add_argument(
         "--ws-port",
         type=int,
         default=int(os.environ.get("LOCAL_LIVE_WS_PORT", "8767")),
     )
     command.add_argument(
+        "--viewer-port",
+        type=int,
+        default=int(os.environ.get("LOCAL_LIVE_VIEWER_PORT", "8780")),
+    )
+    command.add_argument(
+        "--context-policy",
+        choices=tuple(sorted(CONTEXT_POLICIES)),
+        default=os.environ.get("LOCAL_LIVE_CONTEXT_POLICY", "none"),
+    )
+    command.add_argument(
         "--vad-threshold-rms",
         type=int,
         default=int(os.environ.get("LOCAL_LIVE_VAD_THRESHOLD_RMS", "150")),
+    )
+    command.add_argument(
+        "--vad-silence-ms",
+        type=int,
+        default=int(os.environ.get("LOCAL_LIVE_VAD_SILENCE_MS", "500")),
+    )
+    command.add_argument(
+        "--vad-max-segment-ms",
+        type=int,
+        default=int(os.environ.get("LOCAL_LIVE_VAD_MAX_SEGMENT_MS", "3000")),
     )
     return command
 
@@ -341,7 +446,14 @@ def main() -> None:
         arguments.asr_model,
         arguments.whisper_binary,
         arguments.vad_threshold_rms,
+        arguments.vad_silence_ms,
+        arguments.vad_max_segment_ms,
         arguments.ws_port,
+        arguments.asr_provider,
+        arguments.mlx_audio_url,
+        arguments.mlx_audio_model,
+        arguments.viewer_port,
+        arguments.context_policy,
     )
     server = create_server(arguments.host, arguments.port, state)
     try:
@@ -349,16 +461,23 @@ def main() -> None:
     except ImportError as error:
         raise SystemExit("WebSocket dependency missing; run pip install -r requirements.txt") from error
     live_socket = LiveSocketService(state, arguments.host, arguments.ws_port)
+    viewer = ViewerService(state.caption_hub, "0.0.0.0", arguments.viewer_port)
     storage_health = state.sessions.health(probe_write=True)
     recovered_sessions = state.sessions.recover_incomplete() if storage_health.get("available") else []
     try:
         state.ollama_warmup = state.ollama.warmup()
     except OllamaError as error:
         state.ollama_warmup = {"ready": False, "error": str(error)}
+    try:
+        state.asr_warmup = state.asr.warmup()
+    except AsrError as error:
+        state.asr_warmup = {"ready": False, "error": str(error)}
     live_socket.start()
+    viewer.start()
     print(json.dumps({
         "gateway": f"http://{arguments.host}:{arguments.port}",
         "liveWebSocket": f"ws://{arguments.host}:{arguments.ws_port}/api/live",
+        "viewer": viewer_urls("{session-token}", viewer.port),
         "packVersion": state.pack.get("packVersion") if state.pack else None,
         "ollamaModel": arguments.ollama_model or None,
         "asr": state.asr.status(),
@@ -372,6 +491,7 @@ def main() -> None:
         pass
     finally:
         live_socket.stop()
+        viewer.stop()
         server.server_close()
 
 

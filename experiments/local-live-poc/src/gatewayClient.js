@@ -21,6 +21,10 @@ export function getGatewayHealth(fetchImpl) {
   return requestJson("/api/health", {}, fetchImpl);
 }
 
+export function restartGateway(fetchImpl) {
+  return requestJson("/api/runtime/restart", jsonOptions("POST", {}), fetchImpl);
+}
+
 export function startLocalSession(metadata, fetchImpl) {
   return requestJson("/api/sessions/start", jsonOptions("POST", metadata), fetchImpl);
 }

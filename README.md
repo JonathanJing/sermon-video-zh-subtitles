@@ -57,7 +57,7 @@ flowchart LR
     F --> G[Audio, events, metrics, and replayable evidence]
 ```
 
-The current POC already implements microphone selection, recording, per-session folders, event logs, local MiLMMT A0 translation, responsive captions, and replayable test evidence. The browser still uses labeled English replay fixtures until local ASR is integrated and benchmarked.
+The current POC implements microphone selection, durable recording, Qwen3-ASR 0.6B through MLX, MiLMMT 4B Q8 token streaming, large captions, a tokenized read-only phone viewer, frozen-English replay/A-B, and per-session performance evidence. A repaired 60-minute real browser/speaker/microphone soak completed with 99.92% ASR final availability and 100% translation final availability. It remains a POC until the explicitly excluded church-site rehearsal is completed.
 
 Key references:
 
@@ -72,18 +72,19 @@ Key references:
 | Area | Current evidence |
 |---|---|
 | Saturday PDF production | Two canonical PDFs, reading-text QA, PDF QA, human sermon-window gate, resumable state |
-| Sunday live POC | Real microphone recording, local session artifacts, MiLMMT A0 translation, large responsive UI |
-| Saturday-to-Sunday context | Ordered weekly-pack builder, guarded terminology/reference retrieval, no-context A0 baseline |
-| Replay and A/B foundation | Original recording, append-only events, model/prompt/latency metadata, deterministic replay inputs |
+| Sunday live POC | Real microphone, Qwen3-ASR, MiLMMT token stream, 60-minute soak, large UI, read-only phone viewer |
+| Saturday-to-Sunday context | Ordered weekly-pack builder, guarded runtime policy, provenance-safe automatic activation |
+| Replay and A/B | Frozen ASR finals, deterministic context-policy replay, blind review CSV, source/model hashes |
+| Operations | One-click start/stop, supervisor/recovery, session retention preview/apply, fail-closed ASR Gold gate |
 
 ### Active discovery and missing gates
 
-- **Local English ASR:** select and benchmark a real `whisper.cpp` model on sermon audio, then connect stable English segments to the existing gateway. Until this passes, live English remains a fixture rather than microphone transcription.
-- **End-to-end latency:** current MiLMMT warm translation is roughly 0.29–0.48 seconds in a small local sample; ASR is not yet measured. The current planning estimate is 0.6–1.5 seconds for ASR plus translation compute, and 1.2–2.8 seconds from end-of-utterance to stable Chinese after VAD/UI overhead. These are targets, not an SLO.
-- **Content-pack A/B:** use Saturday captions to prepare approved terms, Scripture references, and optional aligned examples; compare `A0 / none` against guarded context using the same Sunday recording.
+- **Formal ASR accuracy:** five speakers and edge cases have provisional machine-reference evidence; the six-case human word-level Gold queue still requires an actual reviewer before its WER can be used for model promotion.
+- **Verified live latency:** in the repaired 60-minute Qwen + MiLMMT run, audio-end-to-browser-first-Chinese was p50 1.419s / p95 1.486s; complete Chinese was p50 1.530s / p95 1.720s. Venue acoustics can differ.
+- **Content-pack quality decision:** tooling is complete, but a real Saturday pack and human review of blind A/B output are still needed each week; machine Chinese is not silently injected.
 - **Local runtime options:** Ollama is the current A0 path; direct MLX serving remains a Discovery alternative and must use the same frozen inputs and latency/quality gate before replacement.
-- **Operational readiness:** add a real ASR fixture suite, long-running microphone soak, audio-route checks, storage-retention rules, and a Sunday operator runbook before calling the live path production-ready.
-- **Phone use:** the UI is responsive at iPhone width, but phone-as-second-screen synchronization and LAN HTTPS are separate discovery items.
+- **Operational boundary:** one-hour local soak and controlled MLX recovery passed. The remaining production gate is the formal church-site rehearsal; LAN viewer access also depends on the venue Wi-Fi allowing client-to-client traffic.
+- **Resource ceiling:** Ollama memory grew during the one-hour soak without swap or latency collapse; clean startup before each service remains the rule until multi-service testing establishes a higher bound.
 
 ### Post-training track
 

@@ -11,6 +11,7 @@ from websockets.sync.server import ServerConnection, serve
 from .content_pack import CONTEXT_POLICIES
 from .live_pipeline import LivePipeline, PCM_BYTES_PER_FRAME
 from .session_store import SessionStoreError
+from .viewer_server import viewer_urls
 
 
 class LiveSocketService:
@@ -38,11 +39,25 @@ class LiveSocketService:
 
     def _handle(self, connection: ServerConnection) -> None:
         pipeline: LivePipeline | None = None
+        session_id = ""
         send_lock = threading.Lock()
 
         def send(payload: dict[str, Any]) -> None:
+            outgoing = payload
+            if payload.get("type") == "stream.ready" and session_id:
+                token = self.state.caption_hub.start_session(session_id)
+                outgoing = {
+                    **payload,
+                    "viewer": {
+                        "token": token,
+                        "urls": viewer_urls(token, self.state.viewer_port),
+                        "readOnly": True,
+                    },
+                }
+            if session_id:
+                self.state.caption_hub.publish(session_id, outgoing)
             with send_lock:
-                connection.send(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+                connection.send(json.dumps(outgoing, ensure_ascii=False, separators=(",", ":")))
 
         try:
             request_path = connection.request.path.split("?", 1)[0]
@@ -84,9 +99,12 @@ class LiveSocketService:
                 sessions=self.state.sessions,
                 asr=self.state.asr,
                 translate=self.state.translate,
+                translate_stream=self.state.translate_stream,
                 send=send,
                 context_policy=context_policy,
                 vad_threshold_rms=self.state.vad_threshold_rms,
+                vad_silence_ms=self.state.vad_silence_ms,
+                vad_max_segment_ms=self.state.vad_max_segment_ms,
             )
             pipeline.start()
             for message in connection:
@@ -109,3 +127,5 @@ class LiveSocketService:
         finally:
             if pipeline:
                 pipeline.stop()
+            if session_id:
+                self.state.caption_hub.end_session(session_id)

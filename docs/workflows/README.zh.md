@@ -28,8 +28,9 @@ flowchart LR
         R1 --> R3[VAD 与本地英文 ASR]
         R3 --> R4[稳定英文片段]
         R4 --> R5[MiLMMT 本地翻译]
-        R5 --> R6[大号中文字幕]
-        R6 --> R7[事件日志与 replay/A-B]
+    R5 --> R6[大号中文字幕]
+    R6 --> R8[同 Wi-Fi 手机只读字幕]
+    R6 --> R7[事件日志与 replay/A-B]
     end
 
     S4 -. "字幕、术语、经文、段落顺序" .-> C[周六 weekly content pack]
@@ -108,10 +109,8 @@ flowchart TD
     C --> D[每秒 audio chunk 增量写入]
     C --> E[音频转换为 ASR 所需 PCM stream]
     E --> F[VAD/endpointing]
-    F --> G[本地英文 ASR partial]
-    G --> H{英文片段稳定?}
-    H -- 否 --> G
-    H -- 是 --> I[写 stable_transcript_final event]
+    F --> G[本地英文 ASR final]
+    G --> I[写 asr.final event]
     I --> J{Context policy}
     J -- A0/none --> K[MiLMMT frozen A0 prompt]
     J -- guarded weekly pack --> L[只注入已批准 context]
@@ -119,6 +118,7 @@ flowchart TD
     K --> M{翻译成功?}
     M -- 是 --> N[显示大号中文和较小英文]
     M -- 否 --> O[显示英文/降级状态，录音继续]
+    N --> U[同 Wi-Fi 手机 SSE 只读显示]
     N --> P[写 translation result、latency、model、context IDs]
     O --> P
     D --> Q[recording + events + manifest]
@@ -146,13 +146,13 @@ sequenceDiagram
         UI->>GW: REST MediaRecorder recovery chunk
         GW->>Disk: append recovery recording
         GW->>ASR: PCM/VAD window
-        ASR-->>GW: partial/final English
-        GW-->>UI: asr.partial/asr.final
+        ASR-->>GW: final English
+        GW-->>UI: asr.final
     end
     GW->>GW: final English + guarded context
     GW->>MT: frozen A0 prompt or guarded context
     MT-->>GW: Chinese + metrics
-    GW-->>UI: translation.final
+    GW-->>UI: translation.partial/final
     GW->>Disk: append events.jsonl
     UI->>GW: finalize
     GW->>Disk: completed manifest + audio SHA-256
@@ -165,9 +165,12 @@ sequenceDiagram
 | 麦克风选择、音量、开始/停止 | Working | 已用真实浏览器麦克风验证 |
 | 增量录音、events、manifest、SHA | Working | 每次启动建立独立 session 文件夹 |
 | MiLMMT A0/Ollama translation | Working | 冻结 prompt，`contextPolicy=none` 基线 |
-| 大号中文、英文 sidecar、手机宽度 | Working | 单页 UI；手机第二屏同步尚未实现 |
-| 本地英文 ASR | POC/Working baseline | `whisper.cpp base.en` 已完成真实麦克风端到端验证；仍需 sermon benchmark 和 soak |
-| 周六 content pack | POC | builder/retriever 已有；尚未做现场 A/B |
+| 大号中文、英文 sidecar、手机只读页 | Working POC | 单页 operator UI；随机 token + SSE，只暴露字幕 GET，不暴露控制接口 |
+| 本地英文 ASR | Working POC | Qwen3-ASR 0.6B/MLX 一键默认；Whisper 回退；60 分钟长测通过 |
+| 周六 content pack | Working POC | builder/retriever、受控 runtime policy、冻结英文 replay/A-B 已接通 |
+| 会后 replay/A-B | Working | 同一组 `asr.final` 按 policy 重放；生成盲评 CSV 和 hash provenance |
+| ASR Gold gate | Working gate | 六 case 队列已生成；真人未审核前正式 WER fail-closed |
+| Session 保留 | Working | 默认只预览；30 天、保留最近 10 个；只有显式 `--apply` 删除 |
 
 ## ASR + 翻译总延迟预算
 
@@ -175,31 +178,26 @@ sequenceDiagram
 
 - 测试机器：MacBook Pro，Apple M1 Max，64 GB unified memory。
 - MiLMMT A0：`sermon-milmmt-46-4b-v1-q8:benchmark`，Ollama 本地运行。
-- 2026-09-03 的 14 个成功本地翻译事件中，warm translation 约为 p50 `0.39s`、p95 `0.48s`；首次冷请求观测为 `1.45s`。
-- 这组 translation 数据使用固定英文 fixture，不包含麦克风、VAD 或 ASR 时间，样本量也不足以成为 production SLO。
-- `whisper.cpp base.en` 已锁定为当前 POC artifact。一次合成英文链路观测 ASR `323ms`；一次真实麦克风链路观测 ASR `628ms`。两者只是端到端 smoke evidence，不是 production benchmark。
-- 同两次链路中，MiLMMT 首次冷加载翻译为 `2.78s`，模型驻留后的真实麦克风翻译为 `294ms`；Gateway 启动现在会主动预热 MiLMMT。
+- 修复后的 2026-09-04 真实 Chrome → 内置麦克风 → Qwen3-ASR/MLX → MiLMMT 60 分钟长测有 1,247 次 ASR processing、1,246 次 final、1 次 empty、0 次 failed。
+- 音频结束到 ASR final：p50 `1.279s`、p95 `1.318s`；MiLMMT TTFT：p50 `0.126s`、p95 `0.146s`。
+- 音频结束到浏览器第一个中文字幕：p50 `1.419s`、p95 `1.486s`；到完整中文：p50 `1.530s`、p95 `1.720s`。
+- 以上是固定房间和播放源的 POC 证据，不是教会现场 SLO；最大值受队列/模型恢复影响，现场声学仍必须另行验证。
 
 ### 预算拆分
 
 | 阶段 | Warm 预算 | 证据状态 |
 |---|---:|---|
-| VAD/等待一句话稳定 | 0.6–1.2s | 设计值，取决于 silence threshold |
-| 2–4 秒英文片段的本地 ASR | 0.3–1.0s | 待 benchmark 的目标区间 |
-| MiLMMT A0 翻译 | 0.29–0.48s | 小样本本地实测；cold 约 1.45s |
-| Gateway、日志和 UI 更新 | 0.05–0.15s | 工程预算 |
+| VAD/等待 final window | 最多 0.5s silence 或 3s 强制窗口 | 运行配置；不计入 audio-end 指标 |
+| Qwen3-ASR final | p50 1.279s / p95 1.318s | 修复后 60 分钟真实链路 |
+| MiLMMT 首字 | p50 0.126s / p95 0.146s | 同一长测 |
+| 浏览器中文首字（端到端） | p50 1.419s / p95 1.486s | audio end → render |
+| 浏览器完整中文（端到端） | p50 1.530s / p95 1.720s | audio end → render |
 
-因此需要区分三个数字：
-
-1. **ASR + 翻译纯计算：约 0.6–1.5 秒（warm）。**
-2. **从一句话结束到稳定中文字幕：约 1.2–2.8 秒（warm）。**
-3. **从一句话第一个词开始计算：约 2.7–5.8 秒**，因为还包含 1.5–3 秒的语音积累/分段时间。
-
-冷启动时，模型加载可能把一次结果推到约 2.4–3.8 秒（从句末算）。现场开始前应预热 ASR 和 MiLMMT；目标门槛建议定为句末到稳定中文 `p50 <= 2.5s`、`p95 <= 4.0s`，再由真实 benchmark 校准。
+必须区分“讲话时间/分段等待”和“句末后的模型延迟”。当前 UI 展示的是后者；从第一个词到字幕还要加上该段本身的 1–3 秒。启动器会预热两个模型，正式使用前仍应先讲一句测试句确认首字和完整字幕都出现。
 
 ### ASR benchmark 必须回答的问题
 
-保持简单，只比较两个第一阶段候选：`whisper.cpp base.en` 与 `small.en`。使用同一批真实周六/周日录音片段，记录：
+现有 acoustic benchmark 已覆盖五位讲员、正常/低音量、口音、经文、音乐、双人切换等 case，并比较过 Whisper；当前 runtime 基线改为 Qwen3-ASR。正式模型选择仍要记录：
 
 - WER，以及 Scripture/人名/地名/教会术语的 entity accuracy。
 - 2 秒、4 秒、8 秒片段的 RTF、p50/p95 inference latency。
@@ -207,7 +205,7 @@ sequenceDiagram
 - 噪音、音乐、远场麦克风和讲员停顿时的删除/重复/幻觉。
 - 与 MiLMMT 串联后的句末到中文 p50/p95，以及是否丢 chunk。
 
-选择标准不是单独追求最低 WER，而是在术语准确度、稳定性和句末延迟之间取平衡。结果应写入 `artifacts/asr-benchmark/<run-id>/`，并保留模型 hash、参数、音频 hash 和逐片段 JSONL。
+选择标准不是单独追求最低 WER，而是在术语准确度、稳定性和句末延迟之间取平衡。GPT-transcribe 参考只能算 provisional；`benchmarks/asr-gold-review-queue-20260904.jsonl` 必须由真人逐词校正、签名、记录时间后，正式 WER gate 才会通过。
 
 ## 测试与完成标准
 
@@ -225,12 +223,12 @@ sequenceDiagram
 
 ### 真实 E2E
 
-- 真实麦克风至少运行 10 分钟，再进行一次完整 sermon soak。
+- 本机 60 分钟完整 sermon soak 已通过；正式教会现场彩排仍是独立且未完成的 production gate。
 - 音频可解码、chunk/event sequence 连续、manifest completed、SHA 匹配。
 - English final 和 Chinese result 均可见，p50/p95 达标，无静默丢段。
 - 录音可以在家中 replay，并复现相同 ASR/翻译版本的结果。
 
-周日 live path 只有在本地 ASR 实测通过、端到端延迟达标、完整 sermon soak 无丢段、operator runbook 完成后，才可以从 POC 升级为 Working/production-ready。
+除正式教会现场彩排和单独的翻译模型后训练项目外，当前工程闭环已经具备；人工 Gold 校正和每周盲评属于真实人工审批，不由程序伪造。周日路径只有在现场音频路由、Wi-Fi 手机访问和端到端字幕都通过后，才可以称为 production-ready。
 
 ## 相关实现
 
