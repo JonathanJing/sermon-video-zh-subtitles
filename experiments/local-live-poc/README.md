@@ -34,7 +34,7 @@ For the intended room/PA capture path, the page requests browser echo cancellati
 
 The backend includes a dependency-free Weekly Pack builder, guarded context retriever, localhost REST/WebSocket gateway, Whisper CLI adapter, and Ollama translation adapter. It selects the already-installed MiLMMT A0 by default; the setup script downloads only the pinned local ASR model.
 
-The intentionally small system and context-pack plan is in [DESIGN.zh.md](./DESIGN.zh.md). The researched live transport decision and protocol contract are in [STREAMING.zh.md](./STREAMING.zh.md). The planned cellular/public phone-sharing path is in [PUBLIC_SHARING.zh.md](./PUBLIC_SHARING.zh.md). The verified desktop design review is in [design-qa.md](./design-qa.md).
+The intentionally small system and context-pack plan is in [DESIGN.zh.md](./DESIGN.zh.md). The researched live transport decision and protocol contract are in [STREAMING.zh.md](./STREAMING.zh.md). The planned cellular/public phone-sharing path is in [PUBLIC_SHARING.zh.md](./PUBLIC_SHARING.zh.md). The saved current-caption baseline and recommended current-plus-previous display are in [CAPTION_DISPLAY.zh.md](./CAPTION_DISPLAY.zh.md). The verified desktop design review is in [design-qa.md](./design-qa.md).
 
 ## First-time setup
 
