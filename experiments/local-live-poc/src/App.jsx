@@ -5,6 +5,7 @@ import {
   appendSessionEvent,
   finalizeLocalSession,
   getGatewayHealth,
+  restartGateway,
   startLocalSession,
 } from "./gatewayClient.js";
 import { LiveCaptionSocket } from "./liveSocket.js";
@@ -85,6 +86,7 @@ export function App() {
   const [localSession, setLocalSession] = useState(null);
   const [localSaveState, setLocalSaveState] = useState("idle");
   const [liveMetrics, setLiveMetrics] = useState({});
+  const [runtimeRestartState, setRuntimeRestartState] = useState("idle");
 
   const streamRef = useRef(null);
   const recorderRef = useRef(null);
@@ -180,6 +182,37 @@ export function App() {
     } catch (caught) {
       setGatewayHealth({ status: "offline", message: caught?.message || "Gateway unavailable" });
       return null;
+    }
+  }
+
+  async function restartBackend() {
+    if (runtimeRestartState === "restarting") return;
+    if (recordingActiveRef.current && !window.confirm(
+      "浏览器录音会继续，但当前后台会话可能不完整。建议重启成功后停止并保存，再开始新录音。仍要重启后台吗？",
+    )) return;
+
+    setRuntimeRestartState("restarting");
+    setError("");
+    appendEvent("runtime_restart_requested", { recordingActive: recordingActiveRef.current }, false);
+    try {
+      await restartGateway();
+      let health = null;
+      for (let attempt = 0; attempt < 60; attempt += 1) {
+        await new Promise((resolve) => window.setTimeout(resolve, 500));
+        health = await refreshGatewayHealth();
+        if (health?.status === "ready") break;
+      }
+      if (health?.status !== "ready") throw new Error("后台未能在 30 秒内恢复");
+      setRuntimeRestartState("ready");
+      appendEvent("runtime_restart_completed", { recordingActive: recordingActiveRef.current }, false);
+      if (recordingActiveRef.current) {
+        setLocalSaveState("incomplete");
+        setError("后台已重启，浏览器录音仍在继续；请停止并保存，然后开始新录音。");
+      }
+    } catch (caught) {
+      setRuntimeRestartState("error");
+      setError(`后台重启失败：${caught?.message || "无法连接 Gateway"}。请使用一键停止后重新启动。`);
+      appendEvent("runtime_restart_failed", { message: caught?.message || "Gateway unavailable" }, false);
     }
   }
 
@@ -676,17 +709,17 @@ export function App() {
         <div className="health-items">
           <span data-state={isRunning ? "active" : "idle"}>录音 {isRunning ? "进行中" : phase === "stopped" ? "已停止" : "待机"}</span>
           <span data-state={gatewayHealth?.asr?.available ? "active" : "pending"}>
-            ASR {gatewayHealth?.asr?.available ? asrModelName : "未就绪"}
-            {Number.isFinite(liveMetrics.asrFinalMs) ? ` · final ${liveMetrics.asrFinalMs}ms` : ""}
+            语音识别模型（ASR） {gatewayHealth?.asr?.available ? asrModelName : "未就绪"}
+            {Number.isFinite(liveMetrics.asrFinalMs) ? ` · 识别完成 ${liveMetrics.asrFinalMs}ms` : ""}
           </span>
           <span data-state={translationState === "ready" || translationState === "streaming" ? "active" : translationState === "error" ? "pending" : "idle"}>
-            翻译 {translationModelName}
-            {Number.isFinite(liveMetrics.ttftMs) ? ` · TTFT ${liveMetrics.ttftMs}ms` : translationState === "requesting" ? " · 等待首字" : ""}
-            {Number.isFinite(liveMetrics.tokensPerSecond) ? ` · ${liveMetrics.tokensPerSecond} tok/s` : ""}
+            翻译模型 {translationModelName}
+            {Number.isFinite(liveMetrics.ttftMs) ? ` · 首字 ${liveMetrics.ttftMs}ms` : translationState === "requesting" ? " · 等待首字" : ""}
+            {Number.isFinite(liveMetrics.tokensPerSecond) ? ` · ${liveMetrics.tokensPerSecond} token/秒` : ""}
             {Number.isFinite(liveMetrics.translationFinalMs) ? ` · 完整 ${liveMetrics.translationFinalMs}ms` : ""}
           </span>
           <span data-state={Number.isFinite(liveMetrics.endToFirstTokenMs) ? "active" : "idle"}>
-            端到端 {Number.isFinite(liveMetrics.endToFirstTokenMs) ? `首字 ${liveMetrics.endToFirstTokenMs}ms` : "等待样本"}
+            字幕延迟：{Number.isFinite(liveMetrics.endToFirstTokenMs) ? `首字 ${liveMetrics.endToFirstTokenMs}ms` : "开始讲话后显示"}
             {Number.isFinite(liveMetrics.endToChineseFinalMs) ? ` · 完整 ${liveMetrics.endToChineseFinalMs}ms` : ""}
           </span>
           <span data-state={gatewayHealth?.status === "ready" ? "active" : "pending"}>
@@ -708,6 +741,14 @@ export function App() {
             </a>
           )}
           {logUrl && <a href={logUrl} download={`local-live-${Date.now()}.json`}>下载日志</a>}
+          <button
+            className="restart-backend"
+            type="button"
+            onClick={restartBackend}
+            disabled={runtimeRestartState === "restarting"}
+          >
+            {runtimeRestartState === "restarting" ? "后台重启中…" : "重启后台"}
+          </button>
         </div>
       </footer>
     </main>

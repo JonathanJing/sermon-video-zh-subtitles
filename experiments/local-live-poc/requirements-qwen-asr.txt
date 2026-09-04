@@ -1,0 +1,2 @@
+# Optional Qwen ASR provider. Kept separate from the lightweight POC runtime.
+mlx-audio==0.3.1

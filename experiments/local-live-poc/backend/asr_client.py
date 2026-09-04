@@ -4,7 +4,6 @@ import hashlib
 import json
 import socket
 import shutil
-import struct
 import subprocess
 import tempfile
 import time
@@ -43,6 +42,14 @@ class WhisperCliClient:
             "modelPath": str(self.model_path) if self.model_path else None,
             "modelInstalled": model_ready,
             "modelSha256": self.model_sha256() if model_ready else None,
+        }
+
+    def warmup(self) -> dict[str, Any]:
+        status = self.status()
+        return {
+            "ready": status["available"],
+            "provider": status["provider"],
+            "mode": "binary_and_model_check",
         }
 
     def transcribe(self, pcm_s16le: bytes, sample_rate_hz: int = 16000) -> dict[str, Any]:
@@ -108,10 +115,23 @@ class WhisperCliClient:
 class MlxAudioWebSocketClient:
     """Synchronous segment client for the MLX Audio realtime STT endpoint."""
 
-    def __init__(self, model_path: str, url: str) -> None:
+    def __init__(
+        self,
+        model_path: str,
+        url: str,
+        finalize_silence_frames: int = 12,
+        finalize_frame_interval_seconds: float = 0.1,
+    ) -> None:
         self.model_path = Path(model_path).expanduser().resolve() if model_path else None
         self.url = url.strip()
+        self.finalize_silence_frames = max(1, finalize_silence_frames)
+        self.finalize_frame_interval_seconds = max(0.0, finalize_frame_interval_seconds)
         self._model_sha256: str | None = None
+        self._warmup: dict[str, Any] = {
+            "ready": False,
+            "mode": "websocket_model_handshake",
+            "reason": "not_run",
+        }
 
     def status(self) -> dict[str, Any]:
         parsed = urlparse(self.url)
@@ -124,18 +144,76 @@ class MlxAudioWebSocketClient:
             except OSError:
                 pass
         return {
-            "available": model_ready and endpoint_ready,
+            "available": model_ready and endpoint_ready and self._warmup.get("ready") is True,
             "provider": "mlx-audio-qwen-websocket",
             "url": self.url,
             "modelPath": str(self.model_path) if self.model_path else None,
             "modelInstalled": model_ready,
             "modelSha256": self.model_sha256() if model_ready else None,
             "endpointAvailable": endpoint_ready,
+            "warmup": self._warmup,
+            "finalization": {
+                "mode": "vad_silence_frames",
+                "silenceFrameCount": self.finalize_silence_frames,
+                "frameIntervalMs": round(self.finalize_frame_interval_seconds * 1000),
+            },
         }
+
+    def warmup(self) -> dict[str, Any]:
+        parsed = urlparse(self.url)
+        if not self.model_path or not self.model_path.is_dir():
+            self._warmup = {
+                "ready": False,
+                "mode": "websocket_model_handshake",
+                "reason": "model_missing",
+            }
+            raise AsrError("configured Qwen ASR model directory is unavailable")
+        if not parsed.hostname or not parsed.port:
+            self._warmup = {
+                "ready": False,
+                "mode": "websocket_model_handshake",
+                "reason": "invalid_endpoint",
+            }
+            raise AsrError("configured MLX Audio endpoint is invalid")
+
+        started = time.perf_counter()
+        try:
+            with connect(self.url, max_size=None, open_timeout=5, close_timeout=2) as websocket:
+                websocket.send(json.dumps({
+                    "model": str(self.model_path),
+                    "language": "English",
+                    "sample_rate": 16000,
+                }))
+                response = json.loads(websocket.recv(timeout=120))
+                if response.get("status") != "ready":
+                    raise AsrError(f"MLX Audio endpoint did not become ready: {response}")
+        except AsrError as error:
+            self._warmup = {
+                "ready": False,
+                "mode": "websocket_model_handshake",
+                "reason": str(error),
+            }
+            raise
+        except Exception as error:
+            self._warmup = {
+                "ready": False,
+                "mode": "websocket_model_handshake",
+                "reason": str(error),
+            }
+            raise AsrError(f"MLX Audio warmup failed: {error}") from error
+
+        self._warmup = {
+            "ready": True,
+            "mode": "websocket_model_handshake",
+            "latencyMs": round((time.perf_counter() - started) * 1000),
+        }
+        return self._warmup
 
     def transcribe(self, pcm_s16le: bytes, sample_rate_hz: int = 16000) -> dict[str, Any]:
         if not pcm_s16le or len(pcm_s16le) % 2:
             raise AsrError("ASR PCM must contain complete signed 16-bit samples")
+        if self._warmup.get("ready") is not True:
+            self.warmup()
         status = self.status()
         if not status["available"]:
             raise AsrError("MLX Audio endpoint or configured Qwen ASR model is unavailable")
@@ -152,17 +230,16 @@ class MlxAudioWebSocketClient:
                 if ready.get("status") != "ready":
                     raise AsrError(f"MLX Audio endpoint did not become ready: {ready}")
                 websocket.send(pcm_s16le)
-                marker = self._highest_energy_frame(pcm_s16le, sample_rate_hz)
-                max_buffer_bytes = sample_rate_hz * 2 * 5
-                padding_bytes = max(0, max_buffer_bytes - len(pcm_s16le))
-                if padding_bytes:
-                    padding = (marker + bytes(padding_bytes))[:padding_bytes]
-                    websocket.send(padding)
-                # With sub-1.5-second input, the padded message emits the
-                # endpoint's initial partial first. One extra speech marker
-                # then deterministically triggers its max-buffer final.
-                if len(pcm_s16le) < round(sample_rate_hz * 2 * 1.5):
-                    websocket.send(marker)
+                # mlx-audio 0.3.1 uses WebRTC VAD plus wall-clock silence to
+                # finalize an utterance; its stop action closes without
+                # flushing. Send short silent frames long enough to clear the
+                # VAD hangover and cross its 0.5-second silence interval. This
+                # keeps synthetic speech and multi-second padding out of the
+                # audio passed to the ASR model.
+                silence_frame = bytes(round(sample_rate_hz * 0.03) * 2)
+                for _ in range(self.finalize_silence_frames):
+                    time.sleep(self.finalize_frame_interval_seconds)
+                    websocket.send(silence_frame)
                 while True:
                     try:
                         payload = json.loads(websocket.recv(timeout=5.0))
@@ -192,6 +269,9 @@ class MlxAudioWebSocketClient:
             "latencyMs": round((time.perf_counter() - started) * 1000),
             "audioDurationMs": round(len(pcm_s16le) / 2 / sample_rate_hz * 1000),
             "finalEventCount": len(final_texts),
+            "finalizationMode": "vad_silence_frames",
+            "finalizationSilenceFrameCount": self.finalize_silence_frames,
+            "finalizationFrameIntervalMs": round(self.finalize_frame_interval_seconds * 1000),
         }
 
     def model_sha256(self) -> str | None:
@@ -208,19 +288,3 @@ class MlxAudioWebSocketClient:
                 digest.update(chunk)
         self._model_sha256 = digest.hexdigest()
         return self._model_sha256
-
-    @staticmethod
-    def _highest_energy_frame(pcm_s16le: bytes, sample_rate_hz: int) -> bytes:
-        frame_bytes = round(sample_rate_hz * 0.03) * 2
-        frames = [
-            pcm_s16le[offset : offset + frame_bytes]
-            for offset in range(0, len(pcm_s16le) - frame_bytes + 1, frame_bytes)
-        ]
-        if not frames:
-            return pcm_s16le + bytes(max(0, frame_bytes - len(pcm_s16le)))
-
-        def energy(frame: bytes) -> int:
-            samples = struct.unpack(f"<{len(frame) // 2}h", frame)
-            return sum(sample * sample for sample in samples)
-
-        return max(frames, key=energy)

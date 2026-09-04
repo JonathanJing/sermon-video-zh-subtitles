@@ -280,6 +280,22 @@ a:focus-visible {
   text-underline-offset: 3px;
 }
 
+.restart-backend {
+  border: 1px solid #70839a;
+  border-radius: 999px;
+  background: transparent;
+  color: #d9effc;
+  padding: 5px 10px;
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.restart-backend:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
 @media (max-width: 980px) {
   .control-bar {
     grid-template-columns: 1fr 1fr;

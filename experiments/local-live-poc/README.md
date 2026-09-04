@@ -12,7 +12,7 @@ Independent greenfield interface for a MacBook-based live sermon caption feasibi
 - Automatic per-recording local session folder with incremental audio and JSONL writes.
 - Real microphone PCM streaming through local Whisper ASR and the MiLMMT translation backend.
 
-The live path is now microphone → AudioWorklet PCM → WebSocket gateway → energy VAD → configured `whisper.cpp` English ASR → MiLMMT A0 token stream → Chinese caption. Browser recording remains independent and continues if ASR or translation fails. Offline replay/A-B orchestration remains a later step. The default final cadence is 500 ms of silence or a 3-second maximum speech window; only immutable ASR finals start translation. Chinese token updates are append-only and rate-limited, so ASR partial revisions cannot make the large caption flicker.
+The live path is now microphone → AudioWorklet PCM → WebSocket gateway → energy VAD → configured local English ASR (`whisper.cpp` or Qwen3-ASR through MLX Audio) → MiLMMT A0 token stream → Chinese caption. Browser recording remains independent and continues if ASR or translation fails. Offline replay/A-B orchestration remains a later step. The default final cadence is 500 ms of silence or a 3-second maximum speech window; only immutable ASR finals start translation. Chinese token updates are append-only and rate-limited, so ASR partial revisions cannot make the large caption flicker.
 
 Each start automatically creates:
 
@@ -42,6 +42,14 @@ The setup script creates the local Python environment, installs the single WebSo
 ```
 
 The model SHA-256 is pinned by the script. Model files and recordings remain local and are not committed.
+
+Qwen3-ASR is an optional provider with a separate, pinned runtime because MLX Audio is substantially heavier than the default POC dependency set:
+
+```bash
+.venv/bin/python -m pip install -r requirements-qwen-asr.txt
+```
+
+Then set `LOCAL_LIVE_ASR_PROVIDER=qwen-mlx-websocket` and `LOCAL_LIVE_QWEN_ASR_MODEL` to the installed MLX model directory. The launcher accepts either `.venv/bin/mlx_audio.server` or an existing `mlx_audio.server` on `PATH`. Gateway readiness remains degraded until the provider completes a real WebSocket model handshake.
 
 ## Sunday one-command run
 

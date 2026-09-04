@@ -80,6 +80,7 @@ class GatewayTest(unittest.TestCase):
         self.assertEqual(payload["liveStream"]["asrFinalPolicy"]["silenceMs"], 500)
         self.assertEqual(payload["liveStream"]["asrFinalPolicy"]["maxSegmentMs"], 3000)
         self.assertTrue(payload["liveStream"]["translationStreaming"])
+        self.assertIsNone(payload["asrWarmup"])
 
     def test_health_does_not_require_an_optional_content_pack(self) -> None:
         self.state.pack = None
@@ -93,6 +94,14 @@ class GatewayTest(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertEqual(payload["status"], "ready")
         self.assertIsNone(payload["contentPack"])
+
+    def test_runtime_restart_is_acknowledged_before_callback(self) -> None:
+        restarted = threading.Event()
+        self.state.runtime_restart = restarted.set
+        status, payload = self.request("/api/runtime/restart", {})
+        self.assertEqual(status, 202)
+        self.assertEqual(payload["status"], "restarting")
+        self.assertTrue(restarted.wait(timeout=1))
 
     def test_session_folder_persists_audio_events_and_manifest(self) -> None:
         status, created = self.request("/api/sessions/start", {

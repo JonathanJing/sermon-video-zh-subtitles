@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import re
+import threading
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -11,7 +12,7 @@ from collections.abc import Callable
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
-from .asr_client import MlxAudioWebSocketClient, WhisperCliClient
+from .asr_client import AsrError, MlxAudioWebSocketClient, WhisperCliClient
 from .content_pack import (
     CONTEXT_POLICIES,
     PackValidationError,
@@ -25,6 +26,7 @@ from .session_store import SessionStore, SessionStoreError
 
 
 DEFAULT_OLLAMA_MODEL = "sermon-milmmt-46-4b-v1-q8:benchmark"
+RUNTIME_RESTART_EXIT_CODE = 75
 
 
 class GatewayState:
@@ -58,7 +60,9 @@ class GatewayState:
         self.vad_silence_ms = vad_silence_ms
         self.vad_max_segment_ms = vad_max_segment_ms
         self.ws_port = ws_port
+        self.asr_warmup: dict[str, Any] | None = None
         self.ollama_warmup: dict[str, Any] | None = None
+        self.runtime_restart: Callable[[], None] = lambda: os._exit(RUNTIME_RESTART_EXIT_CODE)
 
     def translate(
         self,
@@ -185,6 +189,7 @@ class Handler(BaseHTTPRequestHandler):
             "ollama": ollama,
             "ollamaWarmup": self.server.state.ollama_warmup,
             "asr": asr,
+            "asrWarmup": self.server.state.asr_warmup,
             "liveStream": {
                 "available": asr.get("available", False),
                 "webSocketUrl": f"ws://127.0.0.1:{self.server.state.ws_port}/api/live",
@@ -218,7 +223,13 @@ class Handler(BaseHTTPRequestHandler):
                 return
 
             payload = self._body()
-            if parsed.path == "/api/sessions/start":
+            if parsed.path == "/api/runtime/restart":
+                if self.client_address[0] not in {"127.0.0.1", "::1"}:
+                    self._send(HTTPStatus.FORBIDDEN, {"error": "local_only"})
+                    return
+                self._send(HTTPStatus.ACCEPTED, {"status": "restarting"})
+                threading.Timer(0.1, self.server.state.runtime_restart).start()
+            elif parsed.path == "/api/sessions/start":
                 self._send(HTTPStatus.CREATED, self.server.state.sessions.create(payload))
             elif session_match and session_match.group(2) == "events":
                 self._send(
@@ -427,6 +438,10 @@ def main() -> None:
         state.ollama_warmup = state.ollama.warmup()
     except OllamaError as error:
         state.ollama_warmup = {"ready": False, "error": str(error)}
+    try:
+        state.asr_warmup = state.asr.warmup()
+    except AsrError as error:
+        state.asr_warmup = {"ready": False, "error": str(error)}
     live_socket.start()
     print(json.dumps({
         "gateway": f"http://{arguments.host}:{arguments.port}",

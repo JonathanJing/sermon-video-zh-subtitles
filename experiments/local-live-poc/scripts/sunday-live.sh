@@ -25,9 +25,8 @@ done
 
 asr_model=""
 qwen_model=""
-asr_model=""
 if [ "$asr_provider" = "qwen-mlx-websocket" ]; then
-  if ! command -v mlx_audio.server >/dev/null; then
+  if [ ! -x .venv/bin/mlx_audio.server ] && ! command -v mlx_audio.server >/dev/null; then
     echo "Missing required command: mlx_audio.server" >&2
     exit 1
   fi
@@ -59,7 +58,6 @@ else
 fi
 
 if [ "$asr_provider" != "qwen-mlx-websocket" ]; then
-if [ "$asr_provider" != "qwen-mlx-websocket" ]; then
   case "$asr_model" in
     /*) asr_model_file="$asr_model" ;;
     *) asr_model_file="$poc_dir/$asr_model" ;;
@@ -69,7 +67,6 @@ if [ "$asr_provider" != "qwen-mlx-websocket" ]; then
     echo "Run ./scripts/setup-local.sh first or set LOCAL_LIVE_ASR_MODEL." >&2
     exit 1
   fi
-fi
 fi
 
 translation_model="${LOCAL_LIVE_OLLAMA_MODEL:-sermon-milmmt-46-4b-v1-q8:benchmark}"

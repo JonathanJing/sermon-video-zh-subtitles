@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   appendAudioChunk,
+  restartGateway,
   startLocalSession,
   translateCaption,
 } from "../../src/gatewayClient.js";
@@ -30,6 +31,19 @@ test("startLocalSession sends one JSON request", async () => {
   assert.match(observed.url, /\/api\/sessions\/start$/);
   assert.equal(observed.options.method, "POST");
   assert.deepEqual(JSON.parse(observed.options.body), { audioMimeType: "audio/webm" });
+});
+
+test("restartGateway requests a supervised local restart", async () => {
+  let observed;
+  const result = await restartGateway(async (url, options) => {
+    observed = { url, options };
+    return response({ status: "restarting" }, { status: 202 });
+  });
+
+  assert.equal(result.status, "restarting");
+  assert.match(observed.url, /\/api\/runtime\/restart$/);
+  assert.equal(observed.options.method, "POST");
+  assert.deepEqual(JSON.parse(observed.options.body), {});
 });
 
 test("appendAudioChunk preserves sequence, content type, and body", async () => {
