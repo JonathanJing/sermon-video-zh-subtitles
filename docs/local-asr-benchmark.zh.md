@@ -163,4 +163,16 @@ Qwen 在连续音频上比 `small.en` 低 1.47 个 WER 百分点，并且 partia
 
 本轮 Qwen WER 为 5.55%，相同音频的 ASR-only 运行是 5.09%。final 数也从 123 变为 120；由于 MLX Audio 使用实时 VAD/端点，先把它视为端点非确定性复测项，不能凭单次差异认定资源竞争导致质量下降。
 
-该 run 仍不是完整浏览器门禁：前端只是 HTTP 健康探针，录音由 runner 写入，不是麦克风/MediaRecorder。完整报告位于 `data/benchmarks/live-sermon-translation-v1/runs/local-asr-streaming/qwen-milmmt-coexist-10min-1x-20260903/report.md`。下一步是在不改变前端协议的前提下给 Gateway 增加 Qwen provider，然后执行真实 session + 浏览器录音的 50–60 分钟 soak。
+该 run 仍不是完整浏览器门禁：前端只是 HTTP 健康探针，录音由 runner 写入，不是麦克风/MediaRecorder。完整报告位于 `data/benchmarks/live-sermon-translation-v1/runs/local-asr-streaming/qwen-milmmt-coexist-10min-1x-20260903/report.md`。当时尚未完成的 Qwen Gateway 接入和真实短 session 已在下一节完成；50–60 分钟 soak 仍是后续门禁。
+
+## 2026-09-03 Qwen Gateway 与真实浏览器短链路
+
+Qwen3-ASR 0.6B MLX 8-bit 已接入独立 Local Live Gateway，前端仍使用原有 PCM WebSocket、MiLMMT 翻译和 session 协议。真实浏览器使用 MacBook Pro 内置麦克风完成 47.561 秒录音：MediaRecorder WebM、16 kHz PCM、139 个 Gateway 事件和最终 manifest 均已落盘，16 个 ASR final 与 16 个中文 final 全部完成。
+
+首轮声学回放暴露出低音量环境段被 Qwen 识别成 `The.`。同一份真实麦克风 PCM 的播放前 RMS P50/P95 为 149/299，证道播放区间为 1203/3616；因此 Qwen 的本地启动配置把默认 VAD RMS 门槛从 150 调高到 450。按 1.0× 重放同源 PCM 后，播放前后不再产生 `The.`，12 个真实语音段全部完成，worker 与存储均正常。
+
+修正后说话结束到 ASR final 的 P50/P95 为 454/520 ms，说话结束到中文完整字幕为 720/918 ms，翻译排队 P95 为 0 ms；采样时 MLX Audio/Qwen RSS 约 1.15 GiB、Ollama/MiLMMT RSS 约 4.90 GiB，系统 swap 为 0。该声学短链路用于验证集成与门控，不替代冻结直接音频上的 WER；50–60 分钟浏览器、录音、ASR 与翻译共存 soak 仍未完成。
+
+后续工程修复移除了为强制 final 而插入的最高能量语音 marker 和数秒补零，改用短静音 VAD 帧满足 `mlx-audio 0.3.1` 的服务端静音门槛。1.5 秒与 3 秒真实 PCM 均返回唯一 final；Gateway 端到端 smoke `20260904T051008.754Z-99597635` 的 ASR final 为 1267 ms、中文首字为 1467 ms、中文完整为 1734 ms，worker 与存储均正常。因此上一段延迟只代表历史 session，新机制仍须重新完成多段浏览器延迟和长时门禁。
+
+详细证据位于独立 POC 的 `benchmarks/QWEN_MLX_BROWSER_E2E_20260903.zh.md`，关键 session 为 `20260904T044540.899Z-39ca5d76` 与 `20260904T045112.575Z-a3ded51f`。
