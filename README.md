@@ -17,6 +17,8 @@ The complete diagrams, artifact contracts, local latency budget, and test gates 
 
 > This is an independent personal open-source project. It is not affiliated with, endorsed by, sponsored by, approved by, or operated by Mariners Church. Use only public or otherwise authorized media, and do not bypass access controls, DRM, or platform restrictions.
 
+![Project workflow map](docs/diagrams/project-map.svg)
+
 ## 1. Working workflows
 
 ### A. Saturday: livestream/archive to two reviewed PDFs
@@ -26,16 +28,7 @@ The Saturday workflow discovers or receives the public livestream URL, preserves
 1. `sermon_zh_en_reading.pdf` — the bilingual translation/reading edition.
 2. `sermon_interpretation_zh.pdf` — the Chinese sermon companion/outline, limited to sermon-related supporting information.
 
-```mermaid
-flowchart LR
-    A[Saturday public livestream] --> B[Post-live archive and complete-media validation]
-    B --> C[Human-confirmed sermon window]
-    C --> D[English ASR]
-    D --> E[Chinese translation and reading edits]
-    E --> F[Reading-text QA]
-    F --> G[Two PDFs]
-    G --> H[PDF QA and reviewed delivery]
-```
+![Saturday post-live dual-PDF workflow](docs/diagrams/saturday-post-live-workflow.svg)
 
 This is the repository's mature post-live path. A run is not complete until the source, approved window, reading-text QA, both PDFs, and both PDF QA reports are present and passing.
 
@@ -49,15 +42,7 @@ Key references:
 
 The Sunday workflow runs locally on a MacBook: browser microphone capture, durable audio/event logging, local English ASR, MiLMMT English-to-Chinese translation, and a one-page large-type caption display.
 
-```mermaid
-flowchart LR
-    A[MacBook microphone] --> B[Local recording and session folder]
-    A --> C[Streaming VAD and English ASR]
-    C --> D[Stable English segment]
-    D --> E[MiLMMT A0 local translation]
-    E --> F[Large Chinese caption and smaller English source]
-    F --> G[Audio, events, metrics, and replayable evidence]
-```
+![Sunday local live-caption workflow](docs/diagrams/sunday-live-workflow.svg)
 
 The current POC implements microphone selection, durable recording, Qwen3-ASR 0.6B through MLX, MiLMMT 4B Q8 token streaming, large captions, a tokenized read-only phone viewer, frozen-English replay/A-B, and per-session performance evidence. A repaired 60-minute real browser/speaker/microphone soak completed with 99.92% ASR final availability and 100% translation final availability. It remains a POC until the explicitly excluded church-site rehearsal is completed.
 

@@ -3,6 +3,8 @@
 更新日期：2026-09-04
 状态：`qwen_milmmt_browser_60min_soak_completed_human_gold_and_venue_pending`
 
+![从工程测试到 production promotion 的证据门槛](./diagrams/evidence-promotion-gates.svg)
+
 ## 模型选择
 
 当前正式比较：

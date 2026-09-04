@@ -57,26 +57,7 @@ The Sunday slice is the primary read model for the web UI. Realtime sessions and
 
 ## Architecture
 
-```mermaid
-flowchart TD
-  Z["Cloud Scheduler Sunday triggers"] --> A["Live source monitor"]
-  Y["Admin manual trigger"] --> B["Source evidence"]
-  A --> B
-  B --> C{"Usable pre-11:30 source?"}
-  C -->|yes| D["Realtime or pre-generation pipeline"]
-  C -->|no| E["Operator audio fallback"]
-  D --> F["Streaming ASR sidecar"]
-  D --> G["Realtime Chinese translation"]
-  F --> H["Stable correction translation"]
-  G --> I["Caption segments"]
-  H --> I
-  I --> J["Firestore session state"]
-  I --> K["GCS Sunday artifacts"]
-  J --> L["Cloud Run API"]
-  K --> L
-  L --> M["Operator PWA"]
-  L --> N["Read-only congregation view"]
-```
+![Historical Cloud and public-view architecture](./diagrams/historical-cloud-architecture.svg)
 
 ## Services
 

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">Live caption runtime sequence</title>
+  <desc id="desc">Sequence from microphone capture to durable recording, ASR final, translation partial and final, browser render, and session finalization.</desc>
+  <defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0 0L0 6L9 3z" fill="#475569"/></marker><style>text{font-family:Arial,"PingFang SC","Microsoft YaHei",sans-serif}.bg{fill:#f8fafc}.title{font-size:29px;font-weight:700;fill:#0f172a}.sub{font-size:14px;fill:#64748b}.h{font-size:15px;font-weight:700;fill:#0f172a}.t{font-size:14px;fill:#334155}.head{fill:#fff;stroke:#3b82f6;stroke-width:2}.life{stroke:#94a3b8;stroke-width:1.5;stroke-dasharray:6 6}.msg{stroke:#475569;stroke-width:2;marker-end:url(#a)}.ret{stroke:#7c3aed;stroke-width:2;stroke-dasharray:7 5;marker-end:url(#a)}.save{stroke:#ea580c;stroke-width:2;marker-end:url(#a)}.band{fill:#ecfdf5;stroke:#a7f3d0}</style></defs>
+  <rect class="bg" width="1200" height="720" rx="24"/><text class="title" x="48" y="56">Live runtime sequence · 实时链路时序</text><text class="sub" x="48" y="84">Final English starts translation; partial Chinese improves perception, while final events remain canonical.</text>
+  <g><rect class="head" x="58" y="112" width="150" height="54" rx="12"/><text class="h" x="133" y="145" text-anchor="middle">Microphone</text><rect class="head" x="258" y="112" width="150" height="54" rx="12"/><text class="h" x="333" y="145" text-anchor="middle">Browser UI</text><rect class="head" x="458" y="112" width="150" height="54" rx="12"/><text class="h" x="533" y="145" text-anchor="middle">Gateway</text><rect class="head" x="658" y="112" width="150" height="54" rx="12"/><text class="h" x="733" y="145" text-anchor="middle">Local ASR</text><rect class="head" x="858" y="112" width="150" height="54" rx="12"/><text class="h" x="933" y="145" text-anchor="middle">MiLMMT</text><rect class="head" x="1042" y="112" width="112" height="54" rx="12"/><text class="h" x="1098" y="145" text-anchor="middle">Disk</text></g>
+  <g class="life"><line x1="133" y1="166" x2="133" y2="660"/><line x1="333" y1="166" x2="333" y2="660"/><line x1="533" y1="166" x2="533" y2="660"/><line x1="733" y1="166" x2="733" y2="660"/><line x1="933" y1="166" x2="933" y2="660"/><line x1="1098" y1="166" x2="1098" y2="660"/></g>
+  <rect class="band" x="42" y="197" width="1112" height="332" rx="14"/><text class="sub" x="58" y="220">repeat while session is live</text>
+  <line class="msg" x1="133" y1="250" x2="329" y2="250"/><text class="t" x="231" y="239" text-anchor="middle">audio samples</text>
+  <line class="msg" x1="333" y1="292" x2="529" y2="292"/><text class="t" x="431" y="281" text-anchor="middle">ordered PCM frame</text>
+  <line class="save" x1="333" y1="334" x2="1094" y2="334"/><text class="t" x="714" y="323" text-anchor="middle">independent recovery audio chunk</text>
+  <line class="msg" x1="533" y1="376" x2="729" y2="376"/><text class="t" x="631" y="365" text-anchor="middle">VAD segment</text>
+  <line class="ret" x1="733" y1="418" x2="537" y2="418"/><text class="t" x="635" y="407" text-anchor="middle">asr.final</text>
+  <line class="msg" x1="533" y1="460" x2="929" y2="460"/><text class="t" x="731" y="449" text-anchor="middle">English + guarded context</text>
+  <line class="ret" x1="933" y1="492" x2="337" y2="492"/><text class="t" x="635" y="481" text-anchor="middle">translation.partial → translation.final</text>
+  <line class="save" x1="533" y1="518" x2="1094" y2="518"/><text class="t" x="814" y="507" text-anchor="middle">append model events + timing</text>
+  <line class="msg" x1="333" y1="574" x2="529" y2="574"/><text class="t" x="431" y="563" text-anchor="middle">stop / finalize</text>
+  <line class="save" x1="533" y1="616" x2="1094" y2="616"/><text class="t" x="814" y="605" text-anchor="middle">manifest completed + SHA-256</text>
+  <line class="ret" x1="533" y1="650" x2="337" y2="650"/><text class="t" x="435" y="639" text-anchor="middle">drain confirmation</text>
+</svg>

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="title desc">
+  <title id="title">Project workflow map</title>
+  <desc id="desc">The project has a Saturday post-live PDF workflow, a Sunday local live-caption POC, shared evidence, and a separate Discovery track.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#475569"/></marker>
+    <style>
+      text{font-family:Arial,"PingFang SC","Microsoft YaHei",sans-serif}.bg{fill:#f8fafc}.title{font-size:30px;font-weight:700;fill:#0f172a}.sub{font-size:15px;fill:#475569}.h{font-size:20px;font-weight:700;fill:#0f172a}.t{font-size:15px;fill:#334155}.small{font-size:13px;fill:#64748b}.sat{fill:#eff6ff;stroke:#2563eb;stroke-width:2}.sun{fill:#ecfdf5;stroke:#059669;stroke-width:2}.shared{fill:#fff7ed;stroke:#ea580c;stroke-width:2}.disc{fill:#f8fafc;stroke:#94a3b8;stroke-width:2;stroke-dasharray:8 7}.line{fill:none;stroke:#475569;stroke-width:2.2;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect class="bg" width="1200" height="620" rx="24"/>
+  <text class="title" x="52" y="62">Sermon Chinese Support · 项目全景</text>
+  <text class="sub" x="52" y="91">Two operator workflows share evidence, while experiments remain outside production claims.</text>
+
+  <rect class="sat" x="52" y="132" width="500" height="238" rx="20"/>
+  <text class="h" x="82" y="172">A · Saturday post-live PDFs</text>
+  <text class="sub" x="82" y="197">周六：直播归档 → 两份审核 PDF</text>
+  <rect fill="#fff" stroke="#93c5fd" x="82" y="224" width="128" height="74" rx="12"/><text class="t" x="146" y="254" text-anchor="middle">Public archive</text><text class="small" x="146" y="277" text-anchor="middle">完整媒体</text>
+  <rect fill="#fff" stroke="#93c5fd" x="239" y="224" width="128" height="74" rx="12"/><text class="t" x="303" y="254" text-anchor="middle">Human window</text><text class="small" x="303" y="277" text-anchor="middle">人工边界</text>
+  <rect fill="#fff" stroke="#93c5fd" x="396" y="224" width="126" height="74" rx="12"/><text class="t" x="459" y="254" text-anchor="middle">Dual PDFs</text><text class="small" x="459" y="277" text-anchor="middle">QA 后交付</text>
+  <path class="line" d="M210 261 H235"/><path class="line" d="M367 261 H392"/>
+  <text class="small" x="82" y="334">Working path · completion requires reading QA and both PDF QA reports.</text>
+
+  <rect class="sun" x="648" y="132" width="500" height="238" rx="20"/>
+  <text class="h" x="678" y="172">B · Sunday local live captions</text>
+  <text class="sub" x="678" y="197">周日：麦克风 → 本地英文 ASR → 中文字幕</text>
+  <rect fill="#fff" stroke="#6ee7b7" x="678" y="224" width="128" height="74" rx="12"/><text class="t" x="742" y="254" text-anchor="middle">Microphone</text><text class="small" x="742" y="277" text-anchor="middle">durable audio</text>
+  <rect fill="#fff" stroke="#6ee7b7" x="835" y="224" width="128" height="74" rx="12"/><text class="t" x="899" y="254" text-anchor="middle">Qwen / Whisper</text><text class="small" x="899" y="277" text-anchor="middle">ASR final</text>
+  <rect fill="#fff" stroke="#6ee7b7" x="992" y="224" width="126" height="74" rx="12"/><text class="t" x="1055" y="254" text-anchor="middle">MiLMMT</text><text class="small" x="1055" y="277" text-anchor="middle">live Chinese</text>
+  <path class="line" d="M806 261 H831"/><path class="line" d="M963 261 H988"/>
+  <text class="small" x="678" y="334">POC · one-hour evidence passed; venue rehearsal and human Gold remain.</text>
+
+  <rect class="shared" x="282" y="416" width="636" height="112" rx="18"/>
+  <text class="h" x="600" y="454" text-anchor="middle">Shared evidence layer · 共同证据层</text>
+  <text class="t" x="600" y="483" text-anchor="middle">weekly pack · approved terminology · frozen replay · hashes · QA reports</text>
+  <text class="small" x="600" y="507" text-anchor="middle">Machine Chinese never becomes approved context silently.</text>
+  <path class="line" d="M302 370 V412"/><path class="line" d="M898 370 V412"/>
+
+  <rect class="disc" x="354" y="558" width="492" height="44" rx="14"/>
+  <text class="t" x="600" y="586" text-anchor="middle">Discovery: cloud designs · alternate models · post-training</text>
+  <path class="line" d="M600 528 V554"/>
+</svg>

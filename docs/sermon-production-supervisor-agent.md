@@ -14,22 +14,7 @@ The agent does not implement downloading, clipping, transcription, translation, 
 
 ## Architecture
 
-```mermaid
-flowchart TD
-    A[Cloud Scheduler] --> B[production-supervisor endpoint]
-    B --> C[Cloud Run Job: Supervisor Agent]
-    C --> D[Read backend state, timeline, approval, run status, and QA]
-    D --> E{recommendedAction}
-    E -- run_timeline_probe --> F[Deterministic timeline job]
-    F --> G[requires_operator_review]
-    G --> H[Operator confirms absolute start/end]
-    H --> I[Write operator-window-approval.json]
-    I --> C
-    E -- run_reading_pdf_generation --> J[Deterministic reading-PDF pipeline]
-    J --> K{Reading quality and PDF QA pass?}
-    K -- No --> L[Blocked for human review]
-    K -- Yes --> M[Complete]
-```
+![Production Supervisor control plane](./diagrams/supervisor-control-plane.svg)
 
 Cloud Scheduler does not pass one HTTP target's response into another target. The automatic handoff uses durable state instead:
 

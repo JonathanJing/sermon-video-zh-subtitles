@@ -6,6 +6,8 @@
 
 ## 决策
 
+![本地控制面、数据面与证据层](../../docs/diagrams/local-live-architecture.svg)
+
 采用“REST 控制面 + 一条 WebSocket 实时数据面”，不让浏览器直接连接 ASR 或 Ollama：
 
 ```text
@@ -58,6 +60,8 @@ WebSocket 建立后的第一条消息是 JSON 配置；之后音频使用二进�
 ```
 
 ## 字幕事件合同
+
+![实时字幕事件时序](../../docs/diagrams/live-runtime-sequence.svg)
 
 所有事件至少包含 `schemaVersion`、`type`、`sessionId`、`segmentId`、`sequence` 和相对音频时间：
 

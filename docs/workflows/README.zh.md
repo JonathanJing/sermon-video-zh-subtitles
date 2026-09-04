@@ -12,33 +12,7 @@
 
 ## 总体关系
 
-```mermaid
-flowchart LR
-    subgraph SAT["A. 周六 post-live PDF 生产"]
-        S1[公开直播/归档] --> S2[完整媒体与 source lock]
-        S2 --> S3[人工确认证道时间窗]
-        S3 --> S4[英文 ASR 与中文阅读编辑]
-        S4 --> S5[阅读稿 QA]
-        S5 --> S6[翻译稿 PDF]
-        S5 --> S7[证道同行/大纲 PDF]
-        S6 --> S8[PDF QA]
-        S7 --> S8
-    end
-
-    subgraph SUN["B. 周日 MacBook 实时字幕"]
-        R1[麦克风] --> R2[录音与增量落盘]
-        R1 --> R3[VAD 与本地英文 ASR]
-        R3 --> R4[稳定英文片段]
-        R4 --> R5[MiLMMT 本地翻译]
-    R5 --> R6[大号中文字幕]
-    R6 --> R8[同 Wi-Fi 手机只读字幕]
-    R6 --> R7[事件日志与 replay/A-B]
-    end
-
-    S4 -. "字幕、术语、经文、段落顺序" .-> C[周六 weekly content pack]
-    C -. "可选受控 context" .-> R5
-    R2 --> R7
-```
+![周六、周日与 Discovery 的总体关系](../diagrams/project-map.svg)
 
 核心边界：
 
@@ -51,32 +25,7 @@ flowchart LR
 
 ### 完整流程图
 
-```mermaid
-flowchart TD
-    A[进入周六 service window] --> B[发现或人工提供 canonical 公开 URL]
-    B --> C[写入 resumable shared state]
-    C --> D{Archive 已 post-live?}
-    D -- 否 --> E[保留 state，下一轮重试]
-    E --> D
-    D -- 是 --> F[下载完整媒体]
-    F --> G{ffprobe/时长/可解码验证通过?}
-    G -- 否 --> H[失败关闭，保留证据并处理 source/access]
-    G -- 是 --> I[机器建议 sermon window]
-    I --> J[requires_operator_review]
-    J --> K[Operator 独立确认绝对 start/end]
-    K --> L[裁剪 sermon-only 音频]
-    L --> M[英文 ASR reference]
-    M --> N[中文初译与两遍阅读编辑]
-    N --> O{reading quality pass?}
-    O -- 否 --> P[人工复核/修订]
-    P --> N
-    O -- 是 --> Q[渲染中英翻译稿 PDF]
-    O -- 是 --> R[生成证道同行/大纲 PDF]
-    Q --> S{两个 PDF QA 都 pass?}
-    R --> S
-    S -- 否 --> P
-    S -- 是 --> T[标记 completed，准备周日使用]
-```
+![周六 post-live 双 PDF 完整流程](../diagrams/saturday-post-live-workflow.svg)
 
 ### Canonical 输入与产物
 
@@ -104,61 +53,11 @@ flowchart TD
 
 ### 完整流程图
 
-```mermaid
-flowchart TD
-    A[Operator 选择麦克风并点击开始] --> B[创建本地 session 文件夹]
-    B --> C[MediaRecorder 开始录音]
-    C --> D[每秒 audio chunk 增量写入]
-    C --> E[音频转换为 ASR 所需 PCM stream]
-    E --> F[VAD/endpointing]
-    F --> G[本地英文 ASR final]
-    G --> I[写 asr.final event]
-    I --> J{Context policy}
-    J -- A0/none --> K[MiLMMT frozen A0 prompt]
-    J -- guarded weekly pack --> L[只注入已批准 context]
-    L --> K
-    K --> M{翻译成功?}
-    M -- 是 --> N[显示大号中文和较小英文]
-    M -- 否 --> O[显示英文/降级状态，录音继续]
-    N --> U[同 Wi-Fi 手机 SSE 只读显示]
-    N --> P[写 translation result、latency、model、context IDs]
-    O --> P
-    D --> Q[recording + events + manifest]
-    P --> Q
-    Q --> R[停止后 finalize、SHA-256、浏览器恢复下载]
-    R --> S[家庭 replay、A/B、ASR/翻译 benchmark]
-```
+![周日本地实时字幕完整流程](../diagrams/sunday-live-workflow.svg)
 
 ### 运行时 sequence
 
-```mermaid
-sequenceDiagram
-    participant Mic as 麦克风
-    participant UI as Browser UI
-    participant GW as Local Gateway
-    participant ASR as Local ASR
-    participant MT as MiLMMT
-    participant Disk as Session Folder
-
-    UI->>GW: POST /api/sessions/start
-    GW->>Disk: create manifest/audio/events
-    loop 现场录音
-        Mic->>UI: audio
-        UI->>GW: WebSocket ordered PCM frame
-        UI->>GW: REST MediaRecorder recovery chunk
-        GW->>Disk: append recovery recording
-        GW->>ASR: PCM/VAD window
-        ASR-->>GW: final English
-        GW-->>UI: asr.final
-    end
-    GW->>GW: final English + guarded context
-    GW->>MT: frozen A0 prompt or guarded context
-    MT-->>GW: Chinese + metrics
-    GW-->>UI: translation.partial/final
-    GW->>Disk: append events.jsonl
-    UI->>GW: finalize
-    GW->>Disk: completed manifest + audio SHA-256
-```
+![实时字幕运行时序](../diagrams/live-runtime-sequence.svg)
 
 ### 当前实现状态
 

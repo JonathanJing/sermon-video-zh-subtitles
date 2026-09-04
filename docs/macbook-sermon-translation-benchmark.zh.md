@@ -3,6 +3,8 @@
 更新日期：2026-09-04
 状态：`four_translation_only_runs_and_qwen_milmmt_live_soak_completed_other_candidates_pending`
 
+![本地模型与工作流晋级门槛](./diagrams/evidence-promotion-gates.svg)
+
 ## 目标
 
 这版 Benchmark 专门筛选能够在 `MacBook Pro / Apple M1 Max / 64 GB unified memory` 上通过 Ollama 或 MLX 运行的证道英译中模型。MacBook 是主部署与性能目标；DGX Spark 结果只作为研究参考。

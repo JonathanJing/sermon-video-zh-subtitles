@@ -92,37 +92,7 @@ session id:  sunday-20260621-1000
 
 ## 3. Architecture
 
-```mermaid
-flowchart TD
-  A["Scheduler / Cloud Scheduler"] --> B["live_source_monitor"]
-  AA["Admin manual trigger"] --> BB["manual live URL + optional start hint"]
-  B --> C{"Live source found?"}
-  BB --> C
-  C -->|yes| D["realtime_session_api"]
-  C -->|no| E["operator_audio_fallback"]
-  E --> D
-
-  D --> F["audio_ingest"]
-  F --> G["RealtimeTranslateProvider"]
-  F --> H["StreamingASRProvider"]
-  G --> I["draft Chinese captions"]
-  H --> J["English transcript sidecar"]
-  I --> K["stable caption assembler"]
-  J --> K
-  K --> L["Firestore caption_segments"]
-  K --> W["GCS Sunday artifacts"]
-  L --> M["PWA caption UI"]
-  W --> M
-  K --> N["async scripture resolver"]
-  N --> O["sidebar scripture cards"]
-  L --> P["VTT/SRT exporter"]
-
-  Q["Public VOD / live archive"] --> R["offline_job_worker"]
-  R --> S["offline ASR / translation / alignment"]
-  S --> T["review timeline editor"]
-  T --> P
-  T --> U["notes and quotes generator"]
-```
+![历史 Cloud 与会众视图架构](./diagrams/historical-cloud-architecture.svg)
 
 ### 3.1 Services
 

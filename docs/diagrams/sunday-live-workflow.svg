@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img" aria-labelledby="title desc">
+  <title id="title">Sunday local live-caption workflow</title>
+  <desc id="desc">Browser microphone audio is recorded independently and sent as PCM to a local gateway for VAD, ASR, guarded context, MiLMMT translation, captions, and replayable evidence, with explicit fallback branches.</desc>
+  <defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0 0L0 6L9 3z" fill="#475569"/></marker><style>text{font-family:Arial,"PingFang SC","Microsoft YaHei",sans-serif}.bg{fill:#f8fafc}.title{font-size:29px;font-weight:700;fill:#0f172a}.sub{font-size:14px;fill:#64748b}.h{font-size:16px;font-weight:700;fill:#0f172a}.t{font-size:14px;fill:#334155}.cap{fill:#ecfdf5;stroke:#10b981;stroke-width:2}.proc{fill:#fff;stroke:#34d399;stroke-width:2}.store{fill:#eff6ff;stroke:#3b82f6;stroke-width:2}.gate{fill:#fefce8;stroke:#ca8a04;stroke-width:2}.fallback{fill:#fff7ed;stroke:#f97316;stroke-width:2}.line{fill:none;stroke:#475569;stroke-width:2.2;marker-end:url(#a)}.safe{fill:none;stroke:#2563eb;stroke-width:2.2;marker-end:url(#a)}.dash{fill:none;stroke:#f97316;stroke-width:2;stroke-dasharray:7 6;marker-end:url(#a)}</style></defs>
+  <rect class="bg" width="1200" height="700" rx="24"/><text class="title" x="64" y="62">Sunday local live captions · 周日本地实时字幕</text><text class="sub" x="64" y="90">Recording is independent from inference: model failure must not stop evidence capture.</text>
+
+  <rect class="cap" x="48" y="132" width="174" height="84" rx="15"/><text class="h" x="135" y="164" text-anchor="middle">Browser microphone</text><text class="sub" x="135" y="188" text-anchor="middle">operator selects input</text>
+  <rect class="store" x="48" y="310" width="174" height="86" rx="15"/><text class="h" x="135" y="342" text-anchor="middle">Durable recording</text><text class="sub" x="135" y="366" text-anchor="middle">WebM + PCM/WAV</text>
+  <path class="safe" d="M135 216V306"/>
+
+  <rect class="proc" x="270" y="132" width="160" height="84" rx="15"/><text class="h" x="350" y="164" text-anchor="middle">PCM WebSocket</text><text class="sub" x="350" y="188" text-anchor="middle">100 ms frames</text>
+  <rect class="proc" x="478" y="132" width="160" height="84" rx="15"/><text class="h" x="558" y="164" text-anchor="middle">VAD + endpoint</text><text class="sub" x="558" y="188" text-anchor="middle">bounded queues</text>
+  <rect class="proc" x="686" y="132" width="174" height="84" rx="15"/><text class="h" x="773" y="160" text-anchor="middle">Local ASR</text><text class="sub" x="773" y="183" text-anchor="middle">Qwen default</text><text class="sub" x="773" y="202" text-anchor="middle">Whisper fallback</text>
+  <path class="line" d="M222 174H266"/><path class="line" d="M430 174H474"/><path class="line" d="M638 174H682"/>
+
+  <polygon class="gate" points="963,124 1054,174 963,224 872,174"/><text class="h" x="963" y="167" text-anchor="middle">ASR final?</text><text class="sub" x="963" y="190" text-anchor="middle">stable English</text>
+  <path class="line" d="M860 174H868"/>
+  <rect class="proc" x="930" y="310" width="222" height="86" rx="15"/><text class="h" x="1041" y="340" text-anchor="middle">MiLMMT translation</text><text class="sub" x="1041" y="364" text-anchor="middle">approved context only</text><text class="sub" x="1041" y="383" text-anchor="middle">partial → final</text>
+  <path class="line" d="M963 228V274H1041V306"/><text class="sub" x="974" y="252">yes</text>
+
+  <rect class="fallback" x="676" y="310" width="202" height="86" rx="15"/><text class="h" x="777" y="340" text-anchor="middle">Visible degradation</text><text class="sub" x="777" y="364" text-anchor="middle">English / error status</text><text class="sub" x="777" y="383" text-anchor="middle">recording continues</text>
+  <path class="dash" d="M963 224C963 274 777 258 777 306"/><text class="sub" x="899" y="264">no / timeout</text>
+
+  <rect class="cap" x="930" y="492" width="222" height="86" rx="15"/><text class="h" x="1041" y="522" text-anchor="middle">Readable captions</text><text class="sub" x="1041" y="546" text-anchor="middle">large Chinese + English</text><text class="sub" x="1041" y="565" text-anchor="middle">LAN read-only viewer</text>
+  <path class="line" d="M1041 396V488"/>
+  <rect class="store" x="392" y="492" width="432" height="86" rx="15"/><text class="h" x="608" y="522" text-anchor="middle">Append-only evidence</text><text class="sub" x="608" y="546" text-anchor="middle">events · manifest · hashes · timing · model/context IDs</text><text class="sub" x="608" y="565" text-anchor="middle">frozen replay and blind A/B after the service</text>
+  <path class="safe" d="M222 353H300V535H388"/><path class="safe" d="M777 396V488"/><path class="safe" d="M930 535H828"/>
+  <rect fill="#e2e8f0" x="48" y="628" width="1104" height="44" rx="12"/><text class="t" x="600" y="656" text-anchor="middle">POC boundary: one-hour local soak passed · human Gold + church-site rehearsal still required</text>
+</svg>

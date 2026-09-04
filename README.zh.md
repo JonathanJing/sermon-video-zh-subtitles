@@ -17,6 +17,8 @@
 
 > 这是一个独立的个人开源项目，不属于 Mariners Church 官方项目，也没有获得其隶属、背书、赞助、批准或运营支持。只应处理公开或已获授权的媒体，不得绕过访问控制、DRM 或平台限制。
 
+![项目工作流全景](docs/diagrams/project-map.svg)
+
 ## 1. Working workflows
 
 ### A. 周六：从直播/归档生成两个经过审核的 PDF
@@ -26,16 +28,7 @@
 1. `sermon_zh_en_reading.pdf`：中英翻译稿 / 阅读版。
 2. `sermon_interpretation_zh.pdf`：中文“证道同行”/证道大纲，只保留与证道直接相关的辅助信息。
 
-```mermaid
-flowchart LR
-    A[周六公开直播] --> B[Post-live 归档与完整媒体验证]
-    B --> C[人工确认证道时间窗]
-    C --> D[英文 ASR]
-    D --> E[中文翻译与阅读编辑]
-    E --> F[阅读稿 QA]
-    F --> G[两个 PDF]
-    G --> H[PDF QA 与审核后交付]
-```
+![周六 post-live 双 PDF 流程](docs/diagrams/saturday-post-live-workflow.svg)
 
 这是当前更成熟的 post-live 路径。只有 source、人工批准的时间窗、阅读稿 QA、两个 PDF 以及两个 PDF QA 都存在并通过，才算完成。
 
@@ -49,15 +42,7 @@ flowchart LR
 
 周日工作流在 MacBook 本地运行：浏览器麦克风采集、录音和事件持久化、本地英文 ASR、MiLMMT 英译中，以及单页大字号中文字幕。
 
-```mermaid
-flowchart LR
-    A[MacBook 麦克风] --> B[本地录音与 session 文件夹]
-    A --> C[Streaming VAD 与英文 ASR]
-    C --> D[稳定英文片段]
-    D --> E[MiLMMT A0 本地翻译]
-    E --> F[大号中文与较小英文原文]
-    F --> G[录音、事件、指标与可回放证据]
-```
+![周日本地实时字幕流程](docs/diagrams/sunday-live-workflow.svg)
 
 当前 POC 已实现麦克风选择、持久录音、Qwen3-ASR 0.6B/MLX、MiLMMT 4B Q8 token streaming、大字号字幕、带随机 token 的只读手机页、冻结英文的 replay/A-B，以及完整 session 指标证据。修复后的真实浏览器/扬声器/麦克风 60 分钟长测达到 ASR final 99.92%、翻译 final 100%。在明确排除的教会现场彩排完成前，它仍是 POC，而不是 production-ready。
 

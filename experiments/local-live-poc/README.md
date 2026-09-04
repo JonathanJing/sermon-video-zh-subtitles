@@ -4,6 +4,8 @@ Independent greenfield interface for a MacBook-based live sermon caption feasibi
 
 ## Current scope
 
+![Local live-caption runtime architecture](../../docs/diagrams/local-live-architecture.svg)
+
 - One desktop page.
 - Microphone selection and live input meter.
 - Start/stop audio recording in the browser.

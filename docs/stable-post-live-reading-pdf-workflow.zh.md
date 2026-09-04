@@ -25,20 +25,7 @@
 
 ## 流程图
 
-```mermaid
-flowchart TD
-    A[Operator 提供 YouTube 链接] --> B[把 source 保存到 live-source state]
-    B --> C[等待 archive 进入 post-live 并可下载]
-    C --> D[Operator 人工确认证道开始和结束]
-    D --> E[下载归档音频]
-    E --> F[裁剪证道时间窗]
-    F --> G["gpt-transcribe: prompt + keywords + languages=en"]
-    G --> H[生成并校对中文阅读稿]
-    H --> I[渲染阅读版 PDF 和证道解读 PDF]
-    I --> J{两个 PDF QA 是否都通过}
-    J -- 通过 --> K[交付两个核心 PDF 和报告]
-    J -- 不通过 --> L[人工复核并重跑]
-```
+![稳定 post-live 双 PDF 流程](./diagrams/saturday-post-live-workflow.svg)
 
 ## 人工关口
 

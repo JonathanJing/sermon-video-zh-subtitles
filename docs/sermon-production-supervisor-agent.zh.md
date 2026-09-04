@@ -15,23 +15,7 @@ Agent 不直接下载、裁剪、转录、翻译或渲染 PDF。它只能调用�
 
 ## 架构
 
-```mermaid
-flowchart TD
-    A[Cloud Scheduler 找源] --> B[GCS backend-state]
-    C[Codex 本地 cron] --> D[本地 Supervisor Agent]
-    B --> D
-    D --> E[读取 backend-state / timeline / approval / run-status / QA]
-    E --> F{recommendedAction}
-    F -- run_timeline_probe --> G[本地下载与 timeline job]
-    G --> H[requires_operator_review]
-    H --> I[Operator 独立确认绝对 start/end]
-    I --> J[写 operator-window-approval.json]
-    J --> D
-    F -- run_reading_pdf_generation --> K[本地 reading-PDF pipeline]
-    K --> L{阅读质量与 PDF QA 都 pass?}
-    L -- 否 --> M[blocked / human review]
-    L -- 是 --> N[complete]
-```
+![Production Supervisor Agent 控制层](./diagrams/supervisor-control-plane.svg)
 
 Cloud Scheduler 不会把一个 HTTP target 的返回结果自动传给另一个 target。自动交接通过持久状态完成：
 

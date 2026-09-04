@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img" aria-labelledby="title desc">
+  <title id="title">Production Supervisor control plane</title>
+  <desc id="desc">A scheduler or operator wakes a bounded supervisor that reads durable evidence and can invoke timeline or PDF jobs, but cannot create human approval or declare completion without deterministic QA.</desc>
+  <defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0 0L0 6L9 3z" fill="#475569"/></marker><style>text{font-family:Arial,"PingFang SC","Microsoft YaHei",sans-serif}.bg{fill:#f8fafc}.title{font-size:29px;font-weight:700;fill:#0f172a}.sub{font-size:14px;fill:#64748b}.h{font-size:16px;font-weight:700;fill:#0f172a}.t{font-size:14px;fill:#334155}.trigger{fill:#eff6ff;stroke:#3b82f6;stroke-width:2}.agent{fill:#f5f3ff;stroke:#7c3aed;stroke-width:2}.evidence{fill:#fff7ed;stroke:#f97316;stroke-width:2}.human{fill:#fefce8;stroke:#ca8a04;stroke-width:2}.job{fill:#fff;stroke:#94a3b8;stroke-width:2}.ok{fill:#ecfdf5;stroke:#10b981;stroke-width:2}.blocked{fill:#fff1f2;stroke:#e11d48;stroke-width:2}.line{fill:none;stroke:#475569;stroke-width:2.2;marker-end:url(#a)}.dash{fill:none;stroke:#7c3aed;stroke-width:2;stroke-dasharray:7 6;marker-end:url(#a)}</style></defs>
+  <rect class="bg" width="1200" height="700" rx="24"/><text class="title" x="48" y="56">Production Supervisor · 有边界的 Agent 控制层</text><text class="sub" x="48" y="84">The Agent selects a safe next action; deterministic tools and human approval retain authority.</text>
+  <rect class="trigger" x="48" y="132" width="194" height="82" rx="15"/><text class="h" x="145" y="164" text-anchor="middle">Scheduler / operator</text><text class="sub" x="145" y="188" text-anchor="middle">wake only</text>
+  <rect class="agent" x="298" y="132" width="234" height="82" rx="15"/><text class="h" x="415" y="164" text-anchor="middle">Supervisor Agent</text><text class="sub" x="415" y="188" text-anchor="middle">inspect → recommend action</text>
+  <rect class="evidence" x="588" y="120" width="288" height="106" rx="15"/><text class="h" x="732" y="151" text-anchor="middle">Durable source of truth</text><text class="sub" x="732" y="176" text-anchor="middle">state · timeline · approval</text><text class="sub" x="732" y="198" text-anchor="middle">run status · QA · leases</text>
+  <path class="line" d="M242 173H294"/><path class="line" d="M532 173H584"/><path class="dash" d="M588 201H536"/>
+
+  <rect class="job" x="142" y="314" width="230" height="86" rx="15"/><text class="h" x="257" y="346" text-anchor="middle">Timeline probe job</text><text class="sub" x="257" y="371" text-anchor="middle">deterministic evidence</text>
+  <rect class="human" x="452" y="314" width="250" height="86" rx="15"/><text class="h" x="577" y="346" text-anchor="middle">Operator approval</text><text class="sub" x="577" y="371" text-anchor="middle">absolute start / end</text>
+  <rect class="job" x="782" y="314" width="270" height="86" rx="15"/><text class="h" x="917" y="346" text-anchor="middle">Dual-PDF production job</text><text class="sub" x="917" y="371" text-anchor="middle">tested, resumable scripts</text>
+  <path class="line" d="M415 214C415 264 257 260 257 310"/><path class="line" d="M372 357H448"/><path class="line" d="M702 357H778"/><path class="line" d="M917 314C917 260 732 270 732 230"/>
+
+  <polygon class="evidence" points="732,476 840,530 732,584 624,530"/><text class="h" x="732" y="522" text-anchor="middle">All deterministic</text><text class="sub" x="732" y="545" text-anchor="middle">completion gates pass?</text>
+  <path class="line" d="M917 400V446H732V472"/>
+  <rect class="ok" x="924" y="490" width="180" height="80" rx="15"/><text class="h" x="1014" y="523" text-anchor="middle">Complete</text><text class="sub" x="1014" y="547" text-anchor="middle">fresh snapshot agrees</text>
+  <rect class="blocked" x="340" y="490" width="190" height="80" rx="15"/><text class="h" x="435" y="523" text-anchor="middle">Blocked / review</text><text class="sub" x="435" y="547" text-anchor="middle">evidence preserved</text>
+  <path class="line" d="M840 530H920"/><text class="sub" x="877" y="517">yes</text><path class="line" d="M620 530H534"/><text class="sub" x="575" y="517">no</text>
+  <rect fill="#e2e8f0" x="96" y="628" width="1008" height="44" rx="12"/><text class="t" x="600" y="656" text-anchor="middle">Agent cannot write human approval, choose start/end, bypass QA, or establish completion by model judgment</text>
+</svg>

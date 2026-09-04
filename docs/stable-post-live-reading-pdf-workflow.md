@@ -25,20 +25,7 @@ This workflow is not the same thing as the frontend admin prototype or the Cloud
 
 ## Flowchart
 
-```mermaid
-flowchart TD
-    A[Operator provides YouTube URL] --> B[Save source into live-source state]
-    B --> C[Wait until archive is post-live and downloadable]
-    C --> D[Operator confirms sermon start and end]
-    D --> E[Download archive audio]
-    E --> F[Clip sermon window]
-    F --> G["gpt-transcribe: prompt + keywords + languages=en"]
-    G --> H[Generate and review Chinese reading text]
-    H --> I[Render reading PDF and sermon interpretation PDF]
-    I --> J{Both PDF QA reports pass?}
-    J -- Yes --> K[Deliver the two core PDFs and reports]
-    J -- No --> L[Operator review and rerun]
-```
+![Stable post-live dual-PDF workflow](./diagrams/saturday-post-live-workflow.svg)
 
 ## Human checkpoints
 

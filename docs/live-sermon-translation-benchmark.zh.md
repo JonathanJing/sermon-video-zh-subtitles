@@ -3,6 +3,8 @@
 更新日期：2026-09-04
 状态：Reference、四模型 translation-only 与 Qwen + MiLMMT POC 长测已完成；人工校准和完整 A/B 仍待执行
 
+![Benchmark、Gold、长测与现场验收的晋级关系](./diagrams/evidence-promotion-gates.svg)
+
 ## 0. Goal：`BENCH-LIVE-ST-V1`
 
 **目标**：使用 5 篇从未进入训练集的 Mariners Church 完整公开证道，建立第一版冻结 Benchmark；以 **MacBook Pro M1 Max、64 GB 统一内存**为主要部署与性能目标，以 `gpt-5.6-sol`、`reasoning.effort=high` 为主要裁判，衡量“流式 ASR + 后训练翻译模型”相对于基础模型和直接 AST 的证道翻译质量与端到端速度。

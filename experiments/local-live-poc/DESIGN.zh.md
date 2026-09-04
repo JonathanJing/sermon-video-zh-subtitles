@@ -25,6 +25,8 @@ MacBook 麦克风
 
 ## 当前最小链路
 
+![本地实时字幕运行架构](../../docs/diagrams/local-live-architecture.svg)
+
 只新增一个本地 gateway，不扩展现有页面：
 
 ```text
