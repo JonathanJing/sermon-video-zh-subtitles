@@ -1,0 +1,83 @@
+{
+  "audioDurationSeconds": 600.0,
+  "audioSha256": "e54b28baac11f465188c442f8b85d5d97dcf154fb6d3a792e5167100882ad22f",
+  "completedAt": "2026-09-04T04:28:15.617813+00:00",
+  "emptyFinalEventCount": 0,
+  "eventsSha256": "cde2b969f136fefdd1450c41eb63c96b6cc445a8207e5b6e79a2a73b169cf7b5",
+  "finalDeliveryLagAfterLatestPcmBlockAvailableSeconds": {
+    "max": 0.6573,
+    "p50": 0.308,
+    "p95": 0.3907
+  },
+  "finalDeliveryLagAgainstLatestAudioSeconds": {
+    "max": 0.1573,
+    "p50": -0.192,
+    "p95": -0.1093
+  },
+  "finalEventCount": 120,
+  "formalFullDuration": true,
+  "frontend": {
+    "healthyCount": 594,
+    "probeCount": 594,
+    "url": "http://127.0.0.1:4173"
+  },
+  "limitations": [
+    "Final delivery lag is measured against the latest audio sent when the provider event arrives.",
+    "The latest-PCM-block lag adds one replay step because the first PCM block is available at wall time zero.",
+    "Reference is exact-chunk GPT-Transcribe text, not human Gold.",
+    "This run includes MiLMMT co-residency through the frozen Gateway A0 endpoint.",
+    "Frontend availability is an HTTP health probe; this run does not claim active browser microphone or MediaRecorder capture."
+  ],
+  "manifest": "data/benchmarks/live-sermon-translation-v1/local-asr-streaming-replay-v1.json",
+  "manifestSha256": "b2200815abf6fb7de60b8c83ffebdab97638a0ad4b6a40762ec5df5ab8b41774",
+  "modelId": "qwen3-asr-0.6b-mlx-8bit",
+  "pacingDelaySeconds": {
+    "max": 0.020635,
+    "mean": 0.00137,
+    "p95": 0.0027
+  },
+  "partialEventCount": 120,
+  "partialWordEditChurn": 565,
+  "provider": "mlx-audio-realtime-websocket",
+  "providerModel": "/Users/jonathan_jing/Library/Caches/sermon-video-zh-subtitles/models/qwen3-asr-0.6b-8bit-89e96d92",
+  "quality": {
+    "hypothesisWordCount": 1776,
+    "referenceStatus": "model_reviewed_reference_not_human_gold",
+    "referenceWordCount": 1767,
+    "wer": 0.055461
+  },
+  "recordingCopy": {
+    "matchesReplayAudioPcm": true,
+    "path": "/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/data/benchmarks/live-sermon-translation-v1/runs/local-asr-streaming/qwen-milmmt-coexist-10min-1x-20260903/recording.wav",
+    "sha256": "243ae6e8c5bd0a4807871a7a0456d4c3f7346a9cf9023ff72194bf37807271d8"
+  },
+  "resources": {
+    "combinedProviderPeakRssGiB": 6.5916,
+    "providerPeakRssGiB": 1.1446,
+    "sampleCount": 594,
+    "swapGrowthGiB": 0.0,
+    "swapUsedGiBEnd": 0.0,
+    "swapUsedGiBStart": 0.0,
+    "translationProviderPeakRssGiB": 5.4477
+  },
+  "resourcesSha256": "6d933c1925fdc3fe684cb4361f5a8f01843a26a33a77533b5b8c4f177f358a55",
+  "schemaVersion": "local-asr-streaming-replay-run-v1",
+  "sourceAudioDurationSeconds": 600.0,
+  "stepMs": 500,
+  "translation": {
+    "completedCount": 120,
+    "enabled": true,
+    "failedCount": 0,
+    "latencySeconds": {
+      "max": 0.6709,
+      "p50": 0.4435,
+      "p95": 0.599
+    },
+    "modelId": "sermon-milmmt-46-4b-v1-q8:benchmark",
+    "queueFullSkipCount": 0,
+    "requestCount": 120
+  },
+  "translationsSha256": "0aea75b27a561780f344ac517f2b2debf0f300faf123b121d310347bc05a9809",
+  "wallDurationSeconds": 606.1516,
+  "wallToAudioRatio": 1.010253
+}
