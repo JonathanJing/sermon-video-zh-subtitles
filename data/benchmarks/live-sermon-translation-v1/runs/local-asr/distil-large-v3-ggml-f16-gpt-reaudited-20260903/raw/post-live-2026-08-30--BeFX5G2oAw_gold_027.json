@@ -1,0 +1,1526 @@
+{
+	"systeminfo": "WHISPER : COREML = 0 | OPENVINO = 0 | MTL : EMBED_LIBRARY = 1 | CPU : NEON = 1 | ARM_FMA = 1 | DOTPROD = 1 | ACCELERATE = 1 | OPENMP = 1 | REPACK = 1 | ",
+	"model": {
+		"type": "large",
+		"multilingual": true,
+		"vocab": 51866,
+		"audio": {
+			"ctx": 1500,
+			"state": 1280,
+			"head": 20,
+			"layer": 32
+		},
+		"text": {
+			"ctx": 448,
+			"state": 1280,
+			"head": 20,
+			"layer": 2
+		},
+		"mels": 128,
+		"ftype": 1
+	},
+	"params": {
+		"model": "/Users/jonathan_jing/Library/Caches/sermon-video-zh-subtitles/models/distil-whisper-large-v3-ggml-0d78dd96/ggml-distil-large-v3.bin",
+		"language": "en",
+		"translate": false
+	},
+	"result": {
+		"language": "en"
+	},
+	"transcription": [
+		{
+			"timestamps": {
+				"from": "00:00:00,000",
+				"to": "00:00:08,540"
+			},
+			"offsets": {
+				"from": 0,
+				"to": 8540
+			},
+			"text": " I'm not saying this softens the intensity of this verse, but it would be right if the people who did this to us,",
+			"tokens": [
+				{
+					"text": "[_BEG_]",
+					"timestamps": {
+						"from": "00:00:00,000",
+						"to": "00:00:00,000"
+					},
+					"offsets": {
+						"from": 0,
+						"to": 0
+					},
+					"id": 50365,
+					"p": 0.961137,
+					"t_dtw": -1
+				},
+				{
+					"text": " I",
+					"timestamps": {
+						"from": "00:00:00,010",
+						"to": "00:00:00,020"
+					},
+					"offsets": {
+						"from": 10,
+						"to": 20
+					},
+					"id": 286,
+					"p": 0.996573,
+					"t_dtw": -1
+				},
+				{
+					"text": "'m",
+					"timestamps": {
+						"from": "00:00:00,220",
+						"to": "00:00:00,240"
+					},
+					"offsets": {
+						"from": 220,
+						"to": 240
+					},
+					"id": 478,
+					"p": 0.999619,
+					"t_dtw": -1
+				},
+				{
+					"text": " not",
+					"timestamps": {
+						"from": "00:00:00,240",
+						"to": "00:00:00,480"
+					},
+					"offsets": {
+						"from": 240,
+						"to": 480
+					},
+					"id": 406,
+					"p": 0.999958,
+					"t_dtw": -1
+				},
+				{
+					"text": " saying",
+					"timestamps": {
+						"from": "00:00:00,480",
+						"to": "00:00:00,970"
+					},
+					"offsets": {
+						"from": 480,
+						"to": 970
+					},
+					"id": 1566,
+					"p": 0.999794,
+					"t_dtw": -1
+				},
+				{
+					"text": " this",
+					"timestamps": {
+						"from": "00:00:00,970",
+						"to": "00:00:01,300"
+					},
+					"offsets": {
+						"from": 970,
+						"to": 1300
+					},
+					"id": 341,
+					"p": 0.996333,
+					"t_dtw": -1
+				},
+				{
+					"text": " soft",
+					"timestamps": {
+						"from": "00:00:01,300",
+						"to": "00:00:01,580"
+					},
+					"offsets": {
+						"from": 1300,
+						"to": 1580
+					},
+					"id": 2787,
+					"p": 0.992907,
+					"t_dtw": -1
+				},
+				{
+					"text": "ens",
+					"timestamps": {
+						"from": "00:00:01,640",
+						"to": "00:00:01,870"
+					},
+					"offsets": {
+						"from": 1640,
+						"to": 1870
+					},
+					"id": 694,
+					"p": 0.999954,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:01,870",
+						"to": "00:00:02,110"
+					},
+					"offsets": {
+						"from": 1870,
+						"to": 2110
+					},
+					"id": 264,
+					"p": 0.990826,
+					"t_dtw": -1
+				},
+				{
+					"text": " intensity",
+					"timestamps": {
+						"from": "00:00:02,110",
+						"to": "00:00:02,850"
+					},
+					"offsets": {
+						"from": 2110,
+						"to": 2850
+					},
+					"id": 13749,
+					"p": 0.999348,
+					"t_dtw": -1
+				},
+				{
+					"text": " of",
+					"timestamps": {
+						"from": "00:00:02,970",
+						"to": "00:00:03,010"
+					},
+					"offsets": {
+						"from": 2970,
+						"to": 3010
+					},
+					"id": 295,
+					"p": 0.992138,
+					"t_dtw": -1
+				},
+				{
+					"text": " this",
+					"timestamps": {
+						"from": "00:00:03,010",
+						"to": "00:00:03,340"
+					},
+					"offsets": {
+						"from": 3010,
+						"to": 3340
+					},
+					"id": 341,
+					"p": 0.999283,
+					"t_dtw": -1
+				},
+				{
+					"text": " verse",
+					"timestamps": {
+						"from": "00:00:03,340",
+						"to": "00:00:03,750"
+					},
+					"offsets": {
+						"from": 3340,
+						"to": 3750
+					},
+					"id": 7996,
+					"p": 0.999424,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:03,750",
+						"to": "00:00:03,960"
+					},
+					"offsets": {
+						"from": 3750,
+						"to": 3960
+					},
+					"id": 11,
+					"p": 0.890529,
+					"t_dtw": -1
+				},
+				{
+					"text": " but",
+					"timestamps": {
+						"from": "00:00:03,960",
+						"to": "00:00:04,020"
+					},
+					"offsets": {
+						"from": 3960,
+						"to": 4020
+					},
+					"id": 457,
+					"p": 0.519365,
+					"t_dtw": -1
+				},
+				{
+					"text": " it",
+					"timestamps": {
+						"from": "00:00:04,570",
+						"to": "00:00:04,620"
+					},
+					"offsets": {
+						"from": 4570,
+						"to": 4620
+					},
+					"id": 309,
+					"p": 0.998114,
+					"t_dtw": -1
+				},
+				{
+					"text": " would",
+					"timestamps": {
+						"from": "00:00:04,620",
+						"to": "00:00:05,280"
+					},
+					"offsets": {
+						"from": 4620,
+						"to": 5280
+					},
+					"id": 576,
+					"p": 0.999382,
+					"t_dtw": -1
+				},
+				{
+					"text": " be",
+					"timestamps": {
+						"from": "00:00:05,280",
+						"to": "00:00:05,540"
+					},
+					"offsets": {
+						"from": 5280,
+						"to": 5540
+					},
+					"id": 312,
+					"p": 0.999302,
+					"t_dtw": -1
+				},
+				{
+					"text": " right",
+					"timestamps": {
+						"from": "00:00:05,540",
+						"to": "00:00:06,230"
+					},
+					"offsets": {
+						"from": 5540,
+						"to": 6230
+					},
+					"id": 558,
+					"p": 0.998814,
+					"t_dtw": -1
+				},
+				{
+					"text": " if",
+					"timestamps": {
+						"from": "00:00:06,230",
+						"to": "00:00:06,430"
+					},
+					"offsets": {
+						"from": 6230,
+						"to": 6430
+					},
+					"id": 498,
+					"p": 0.943662,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:06,430",
+						"to": "00:00:06,690"
+					},
+					"offsets": {
+						"from": 6430,
+						"to": 6690
+					},
+					"id": 264,
+					"p": 0.995008,
+					"t_dtw": -1
+				},
+				{
+					"text": " people",
+					"timestamps": {
+						"from": "00:00:06,770",
+						"to": "00:00:07,120"
+					},
+					"offsets": {
+						"from": 6770,
+						"to": 7120
+					},
+					"id": 561,
+					"p": 0.983761,
+					"t_dtw": -1
+				},
+				{
+					"text": " who",
+					"timestamps": {
+						"from": "00:00:07,120",
+						"to": "00:00:07,400"
+					},
+					"offsets": {
+						"from": 7120,
+						"to": 7400
+					},
+					"id": 567,
+					"p": 0.703996,
+					"t_dtw": -1
+				},
+				{
+					"text": " did",
+					"timestamps": {
+						"from": "00:00:07,400",
+						"to": "00:00:07,660"
+					},
+					"offsets": {
+						"from": 7400,
+						"to": 7660
+					},
+					"id": 630,
+					"p": 0.748845,
+					"t_dtw": -1
+				},
+				{
+					"text": " this",
+					"timestamps": {
+						"from": "00:00:07,660",
+						"to": "00:00:07,860"
+					},
+					"offsets": {
+						"from": 7660,
+						"to": 7860
+					},
+					"id": 341,
+					"p": 0.630827,
+					"t_dtw": -1
+				},
+				{
+					"text": " to",
+					"timestamps": {
+						"from": "00:00:07,980",
+						"to": "00:00:08,120"
+					},
+					"offsets": {
+						"from": 7980,
+						"to": 8120
+					},
+					"id": 281,
+					"p": 0.900837,
+					"t_dtw": -1
+				},
+				{
+					"text": " us",
+					"timestamps": {
+						"from": "00:00:08,120",
+						"to": "00:00:08,320"
+					},
+					"offsets": {
+						"from": 8120,
+						"to": 8320
+					},
+					"id": 505,
+					"p": 0.9926,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:08,320",
+						"to": "00:00:08,540"
+					},
+					"offsets": {
+						"from": 8320,
+						"to": 8540
+					},
+					"id": 11,
+					"p": 0.988738,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_427]",
+					"timestamps": {
+						"from": "00:00:08,540",
+						"to": "00:00:08,540"
+					},
+					"offsets": {
+						"from": 8540,
+						"to": 8540
+					},
+					"id": 50792,
+					"p": 0.708811,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:09,100",
+				"to": "00:00:16,880"
+			},
+			"offsets": {
+				"from": 9100,
+				"to": 16880
+			},
+			"text": " if they had the same level of judgment and justice and wrath poured out on them is what he's saying.",
+			"tokens": [
+				{
+					"text": " if",
+					"timestamps": {
+						"from": "00:00:09,100",
+						"to": "00:00:09,100"
+					},
+					"offsets": {
+						"from": 9100,
+						"to": 9100
+					},
+					"id": 498,
+					"p": 0.999973,
+					"t_dtw": -1
+				},
+				{
+					"text": " they",
+					"timestamps": {
+						"from": "00:00:09,100",
+						"to": "00:00:09,130"
+					},
+					"offsets": {
+						"from": 9100,
+						"to": 9130
+					},
+					"id": 436,
+					"p": 0.999996,
+					"t_dtw": -1
+				},
+				{
+					"text": " had",
+					"timestamps": {
+						"from": "00:00:09,320",
+						"to": "00:00:09,440"
+					},
+					"offsets": {
+						"from": 9320,
+						"to": 9440
+					},
+					"id": 632,
+					"p": 0.999996,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:09,440",
+						"to": "00:00:09,610"
+					},
+					"offsets": {
+						"from": 9440,
+						"to": 9610
+					},
+					"id": 264,
+					"p": 0.999996,
+					"t_dtw": -1
+				},
+				{
+					"text": " same",
+					"timestamps": {
+						"from": "00:00:09,810",
+						"to": "00:00:10,140"
+					},
+					"offsets": {
+						"from": 9810,
+						"to": 10140
+					},
+					"id": 912,
+					"p": 1,
+					"t_dtw": -1
+				},
+				{
+					"text": " level",
+					"timestamps": {
+						"from": "00:00:10,140",
+						"to": "00:00:10,640"
+					},
+					"offsets": {
+						"from": 10140,
+						"to": 10640
+					},
+					"id": 1496,
+					"p": 0.999996,
+					"t_dtw": -1
+				},
+				{
+					"text": " of",
+					"timestamps": {
+						"from": "00:00:10,640",
+						"to": "00:00:10,840"
+					},
+					"offsets": {
+						"from": 10640,
+						"to": 10840
+					},
+					"id": 295,
+					"p": 1,
+					"t_dtw": -1
+				},
+				{
+					"text": " judgment",
+					"timestamps": {
+						"from": "00:00:10,840",
+						"to": "00:00:11,640"
+					},
+					"offsets": {
+						"from": 10840,
+						"to": 11640
+					},
+					"id": 12216,
+					"p": 0.99979,
+					"t_dtw": -1
+				},
+				{
+					"text": " and",
+					"timestamps": {
+						"from": "00:00:11,640",
+						"to": "00:00:11,940"
+					},
+					"offsets": {
+						"from": 11640,
+						"to": 11940
+					},
+					"id": 293,
+					"p": 0.999691,
+					"t_dtw": -1
+				},
+				{
+					"text": " justice",
+					"timestamps": {
+						"from": "00:00:11,940",
+						"to": "00:00:12,600"
+					},
+					"offsets": {
+						"from": 11940,
+						"to": 12600
+					},
+					"id": 6118,
+					"p": 0.99992,
+					"t_dtw": -1
+				},
+				{
+					"text": " and",
+					"timestamps": {
+						"from": "00:00:12,660",
+						"to": "00:00:12,930"
+					},
+					"offsets": {
+						"from": 12660,
+						"to": 12930
+					},
+					"id": 293,
+					"p": 0.999981,
+					"t_dtw": -1
+				},
+				{
+					"text": " wrath",
+					"timestamps": {
+						"from": "00:00:12,930",
+						"to": "00:00:13,110"
+					},
+					"offsets": {
+						"from": 12930,
+						"to": 13110
+					},
+					"id": 35496,
+					"p": 0.999989,
+					"t_dtw": -1
+				},
+				{
+					"text": " poured",
+					"timestamps": {
+						"from": "00:00:13,670",
+						"to": "00:00:13,930"
+					},
+					"offsets": {
+						"from": 13670,
+						"to": 13930
+					},
+					"id": 23270,
+					"p": 0.987984,
+					"t_dtw": -1
+				},
+				{
+					"text": " out",
+					"timestamps": {
+						"from": "00:00:14,330",
+						"to": "00:00:14,340"
+					},
+					"offsets": {
+						"from": 14330,
+						"to": 14340
+					},
+					"id": 484,
+					"p": 0.999996,
+					"t_dtw": -1
+				},
+				{
+					"text": " on",
+					"timestamps": {
+						"from": "00:00:14,340",
+						"to": "00:00:14,540"
+					},
+					"offsets": {
+						"from": 14340,
+						"to": 14540
+					},
+					"id": 322,
+					"p": 0.999989,
+					"t_dtw": -1
+				},
+				{
+					"text": " them",
+					"timestamps": {
+						"from": "00:00:14,540",
+						"to": "00:00:14,940"
+					},
+					"offsets": {
+						"from": 14540,
+						"to": 14940
+					},
+					"id": 552,
+					"p": 0.999973,
+					"t_dtw": -1
+				},
+				{
+					"text": " is",
+					"timestamps": {
+						"from": "00:00:14,940",
+						"to": "00:00:15,140"
+					},
+					"offsets": {
+						"from": 14940,
+						"to": 15140
+					},
+					"id": 307,
+					"p": 0.85352,
+					"t_dtw": -1
+				},
+				{
+					"text": " what",
+					"timestamps": {
+						"from": "00:00:15,140",
+						"to": "00:00:15,540"
+					},
+					"offsets": {
+						"from": 15140,
+						"to": 15540
+					},
+					"id": 437,
+					"p": 0.999813,
+					"t_dtw": -1
+				},
+				{
+					"text": " he",
+					"timestamps": {
+						"from": "00:00:15,540",
+						"to": "00:00:15,740"
+					},
+					"offsets": {
+						"from": 15540,
+						"to": 15740
+					},
+					"id": 415,
+					"p": 0.964755,
+					"t_dtw": -1
+				},
+				{
+					"text": "'s",
+					"timestamps": {
+						"from": "00:00:15,740",
+						"to": "00:00:15,900"
+					},
+					"offsets": {
+						"from": 15740,
+						"to": 15900
+					},
+					"id": 311,
+					"p": 0.999798,
+					"t_dtw": -1
+				},
+				{
+					"text": " saying",
+					"timestamps": {
+						"from": "00:00:15,950",
+						"to": "00:00:16,540"
+					},
+					"offsets": {
+						"from": 15950,
+						"to": 16540
+					},
+					"id": 1566,
+					"p": 0.990361,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:16,540",
+						"to": "00:00:16,880"
+					},
+					"offsets": {
+						"from": 16540,
+						"to": 16880
+					},
+					"id": 13,
+					"p": 0.99992,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_844]",
+					"timestamps": {
+						"from": "00:00:16,880",
+						"to": "00:00:16,880"
+					},
+					"offsets": {
+						"from": 16880,
+						"to": 16880
+					},
+					"id": 51209,
+					"p": 0.680325,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:18,340",
+				"to": "00:00:24,260"
+			},
+			"offsets": {
+				"from": 18340,
+				"to": 24260
+			},
+			"text": " Now, what he's not saying, the reason this is actually, I believe, a helpful passage in the scripture,",
+			"tokens": [
+				{
+					"text": " Now",
+					"timestamps": {
+						"from": "00:00:18,340",
+						"to": "00:00:18,340"
+					},
+					"offsets": {
+						"from": 18340,
+						"to": 18340
+					},
+					"id": 823,
+					"p": 0.999901,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:18,340",
+						"to": "00:00:18,340"
+					},
+					"offsets": {
+						"from": 18340,
+						"to": 18340
+					},
+					"id": 11,
+					"p": 0.985947,
+					"t_dtw": -1
+				},
+				{
+					"text": " what",
+					"timestamps": {
+						"from": "00:00:18,340",
+						"to": "00:00:18,340"
+					},
+					"offsets": {
+						"from": 18340,
+						"to": 18340
+					},
+					"id": 437,
+					"p": 0.999969,
+					"t_dtw": -1
+				},
+				{
+					"text": " he",
+					"timestamps": {
+						"from": "00:00:18,340",
+						"to": "00:00:18,340"
+					},
+					"offsets": {
+						"from": 18340,
+						"to": 18340
+					},
+					"id": 415,
+					"p": 0.999649,
+					"t_dtw": -1
+				},
+				{
+					"text": "'s",
+					"timestamps": {
+						"from": "00:00:18,340",
+						"to": "00:00:18,340"
+					},
+					"offsets": {
+						"from": 18340,
+						"to": 18340
+					},
+					"id": 311,
+					"p": 0.999817,
+					"t_dtw": -1
+				},
+				{
+					"text": " not",
+					"timestamps": {
+						"from": "00:00:18,340",
+						"to": "00:00:18,340"
+					},
+					"offsets": {
+						"from": 18340,
+						"to": 18340
+					},
+					"id": 406,
+					"p": 0.999996,
+					"t_dtw": -1
+				},
+				{
+					"text": " saying",
+					"timestamps": {
+						"from": "00:00:18,560",
+						"to": "00:00:18,790"
+					},
+					"offsets": {
+						"from": 18560,
+						"to": 18790
+					},
+					"id": 1566,
+					"p": 0.999908,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:18,790",
+						"to": "00:00:18,850"
+					},
+					"offsets": {
+						"from": 18790,
+						"to": 18850
+					},
+					"id": 11,
+					"p": 0.99636,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:19,050",
+						"to": "00:00:19,220"
+					},
+					"offsets": {
+						"from": 19050,
+						"to": 19220
+					},
+					"id": 264,
+					"p": 0.998727,
+					"t_dtw": -1
+				},
+				{
+					"text": " reason",
+					"timestamps": {
+						"from": "00:00:19,220",
+						"to": "00:00:19,680"
+					},
+					"offsets": {
+						"from": 19220,
+						"to": 19680
+					},
+					"id": 1778,
+					"p": 0.999996,
+					"t_dtw": -1
+				},
+				{
+					"text": " this",
+					"timestamps": {
+						"from": "00:00:19,750",
+						"to": "00:00:20,090"
+					},
+					"offsets": {
+						"from": 19750,
+						"to": 20090
+					},
+					"id": 341,
+					"p": 0.999943,
+					"t_dtw": -1
+				},
+				{
+					"text": " is",
+					"timestamps": {
+						"from": "00:00:20,120",
+						"to": "00:00:20,270"
+					},
+					"offsets": {
+						"from": 20120,
+						"to": 20270
+					},
+					"id": 307,
+					"p": 1,
+					"t_dtw": -1
+				},
+				{
+					"text": " actually",
+					"timestamps": {
+						"from": "00:00:20,270",
+						"to": "00:00:20,960"
+					},
+					"offsets": {
+						"from": 20270,
+						"to": 20960
+					},
+					"id": 767,
+					"p": 0.999992,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:21,020",
+						"to": "00:00:21,150"
+					},
+					"offsets": {
+						"from": 21020,
+						"to": 21150
+					},
+					"id": 11,
+					"p": 0.884135,
+					"t_dtw": -1
+				},
+				{
+					"text": " I",
+					"timestamps": {
+						"from": "00:00:21,150",
+						"to": "00:00:21,220"
+					},
+					"offsets": {
+						"from": 21150,
+						"to": 21220
+					},
+					"id": 286,
+					"p": 0.999371,
+					"t_dtw": -1
+				},
+				{
+					"text": " believe",
+					"timestamps": {
+						"from": "00:00:21,250",
+						"to": "00:00:21,840"
+					},
+					"offsets": {
+						"from": 21250,
+						"to": 21840
+					},
+					"id": 1697,
+					"p": 0.999996,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:21,910",
+						"to": "00:00:22,030"
+					},
+					"offsets": {
+						"from": 21910,
+						"to": 22030
+					},
+					"id": 11,
+					"p": 0.994461,
+					"t_dtw": -1
+				},
+				{
+					"text": " a",
+					"timestamps": {
+						"from": "00:00:22,030",
+						"to": "00:00:22,120"
+					},
+					"offsets": {
+						"from": 22030,
+						"to": 22120
+					},
+					"id": 257,
+					"p": 0.998772,
+					"t_dtw": -1
+				},
+				{
+					"text": " helpful",
+					"timestamps": {
+						"from": "00:00:22,120",
+						"to": "00:00:22,350"
+					},
+					"offsets": {
+						"from": 22120,
+						"to": 22350
+					},
+					"id": 4961,
+					"p": 0.999855,
+					"t_dtw": -1
+				},
+				{
+					"text": " passage",
+					"timestamps": {
+						"from": "00:00:22,910",
+						"to": "00:00:23,170"
+					},
+					"offsets": {
+						"from": 22910,
+						"to": 23170
+					},
+					"id": 11497,
+					"p": 0.99995,
+					"t_dtw": -1
+				},
+				{
+					"text": " in",
+					"timestamps": {
+						"from": "00:00:23,530",
+						"to": "00:00:23,530"
+					},
+					"offsets": {
+						"from": 23530,
+						"to": 23530
+					},
+					"id": 294,
+					"p": 0.999931,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:23,570",
+						"to": "00:00:23,940"
+					},
+					"offsets": {
+						"from": 23570,
+						"to": 23940
+					},
+					"id": 264,
+					"p": 0.999973,
+					"t_dtw": -1
+				},
+				{
+					"text": " scripture",
+					"timestamps": {
+						"from": "00:00:23,940",
+						"to": "00:00:24,200"
+					},
+					"offsets": {
+						"from": 23940,
+						"to": 24200
+					},
+					"id": 24783,
+					"p": 0.896521,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:24,200",
+						"to": "00:00:24,260"
+					},
+					"offsets": {
+						"from": 24200,
+						"to": 24260
+					},
+					"id": 11,
+					"p": 0.98518,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_1213]",
+					"timestamps": {
+						"from": "00:00:24,260",
+						"to": "00:00:24,260"
+					},
+					"offsets": {
+						"from": 24260,
+						"to": 24260
+					},
+					"id": 51578,
+					"p": 0.364413,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:24,800",
+				"to": "00:00:29,980"
+			},
+			"offsets": {
+				"from": 24800,
+				"to": 29980
+			},
+			"text": " the psalmist is not saying, I'm going to go to eat them and I'm going to bring the strength.",
+			"tokens": [
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:24,800",
+						"to": "00:00:24,800"
+					},
+					"offsets": {
+						"from": 24800,
+						"to": 24800
+					},
+					"id": 264,
+					"p": 0.92493,
+					"t_dtw": -1
+				},
+				{
+					"text": " p",
+					"timestamps": {
+						"from": "00:00:24,800",
+						"to": "00:00:24,800"
+					},
+					"offsets": {
+						"from": 24800,
+						"to": 24800
+					},
+					"id": 280,
+					"p": 0.89738,
+					"t_dtw": -1
+				},
+				{
+					"text": "sal",
+					"timestamps": {
+						"from": "00:00:24,810",
+						"to": "00:00:24,830"
+					},
+					"offsets": {
+						"from": 24810,
+						"to": 24830
+					},
+					"id": 15142,
+					"p": 0.999985,
+					"t_dtw": -1
+				},
+				{
+					"text": "mist",
+					"timestamps": {
+						"from": "00:00:25,020",
+						"to": "00:00:25,190"
+					},
+					"offsets": {
+						"from": 25020,
+						"to": 25190
+					},
+					"id": 48709,
+					"p": 0.955106,
+					"t_dtw": -1
+				},
+				{
+					"text": " is",
+					"timestamps": {
+						"from": "00:00:25,190",
+						"to": "00:00:25,310"
+					},
+					"offsets": {
+						"from": 25190,
+						"to": 25310
+					},
+					"id": 307,
+					"p": 0.999996,
+					"t_dtw": -1
+				},
+				{
+					"text": " not",
+					"timestamps": {
+						"from": "00:00:25,510",
+						"to": "00:00:25,620"
+					},
+					"offsets": {
+						"from": 25510,
+						"to": 25620
+					},
+					"id": 406,
+					"p": 1,
+					"t_dtw": -1
+				},
+				{
+					"text": " saying",
+					"timestamps": {
+						"from": "00:00:25,620",
+						"to": "00:00:26,130"
+					},
+					"offsets": {
+						"from": 25620,
+						"to": 26130
+					},
+					"id": 1566,
+					"p": 0.999939,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:26,130",
+						"to": "00:00:26,300"
+					},
+					"offsets": {
+						"from": 26130,
+						"to": 26300
+					},
+					"id": 11,
+					"p": 0.988176,
+					"t_dtw": -1
+				},
+				{
+					"text": " I",
+					"timestamps": {
+						"from": "00:00:26,300",
+						"to": "00:00:26,380"
+					},
+					"offsets": {
+						"from": 26300,
+						"to": 26380
+					},
+					"id": 286,
+					"p": 0.999775,
+					"t_dtw": -1
+				},
+				{
+					"text": "'m",
+					"timestamps": {
+						"from": "00:00:26,380",
+						"to": "00:00:26,540"
+					},
+					"offsets": {
+						"from": 26380,
+						"to": 26540
+					},
+					"id": 478,
+					"p": 0.999981,
+					"t_dtw": -1
+				},
+				{
+					"text": " going",
+					"timestamps": {
+						"from": "00:00:26,550",
+						"to": "00:00:26,980"
+					},
+					"offsets": {
+						"from": 26550,
+						"to": 26980
+					},
+					"id": 516,
+					"p": 0.997234,
+					"t_dtw": -1
+				},
+				{
+					"text": " to",
+					"timestamps": {
+						"from": "00:00:26,980",
+						"to": "00:00:27,030"
+					},
+					"offsets": {
+						"from": 26980,
+						"to": 27030
+					},
+					"id": 281,
+					"p": 1,
+					"t_dtw": -1
+				},
+				{
+					"text": " go",
+					"timestamps": {
+						"from": "00:00:27,280",
+						"to": "00:00:27,320"
+					},
+					"offsets": {
+						"from": 27280,
+						"to": 27320
+					},
+					"id": 352,
+					"p": 0.999996,
+					"t_dtw": -1
+				},
+				{
+					"text": " to",
+					"timestamps": {
+						"from": "00:00:27,320",
+						"to": "00:00:27,490"
+					},
+					"offsets": {
+						"from": 27320,
+						"to": 27490
+					},
+					"id": 281,
+					"p": 0.999992,
+					"t_dtw": -1
+				},
+				{
+					"text": " eat",
+					"timestamps": {
+						"from": "00:00:27,490",
+						"to": "00:00:27,740"
+					},
+					"offsets": {
+						"from": 27490,
+						"to": 27740
+					},
+					"id": 1862,
+					"p": 0.880536,
+					"t_dtw": -1
+				},
+				{
+					"text": " them",
+					"timestamps": {
+						"from": "00:00:27,760",
+						"to": "00:00:28,090"
+					},
+					"offsets": {
+						"from": 27760,
+						"to": 28090
+					},
+					"id": 552,
+					"p": 0.938339,
+					"t_dtw": -1
+				},
+				{
+					"text": " and",
+					"timestamps": {
+						"from": "00:00:28,090",
+						"to": "00:00:28,300"
+					},
+					"offsets": {
+						"from": 28090,
+						"to": 28300
+					},
+					"id": 293,
+					"p": 0.867497,
+					"t_dtw": -1
+				},
+				{
+					"text": " I",
+					"timestamps": {
+						"from": "00:00:28,370",
+						"to": "00:00:28,430"
+					},
+					"offsets": {
+						"from": 28370,
+						"to": 28430
+					},
+					"id": 286,
+					"p": 1,
+					"t_dtw": -1
+				},
+				{
+					"text": "'m",
+					"timestamps": {
+						"from": "00:00:28,430",
+						"to": "00:00:28,600"
+					},
+					"offsets": {
+						"from": 28430,
+						"to": 28600
+					},
+					"id": 478,
+					"p": 0.999996,
+					"t_dtw": -1
+				},
+				{
+					"text": " going",
+					"timestamps": {
+						"from": "00:00:28,600",
+						"to": "00:00:28,800"
+					},
+					"offsets": {
+						"from": 28600,
+						"to": 28800
+					},
+					"id": 516,
+					"p": 0.999832,
+					"t_dtw": -1
+				},
+				{
+					"text": " to",
+					"timestamps": {
+						"from": "00:00:28,880",
+						"to": "00:00:29,190"
+					},
+					"offsets": {
+						"from": 28880,
+						"to": 29190
+					},
+					"id": 281,
+					"p": 1,
+					"t_dtw": -1
+				},
+				{
+					"text": " bring",
+					"timestamps": {
+						"from": "00:00:29,370",
+						"to": "00:00:29,630"
+					},
+					"offsets": {
+						"from": 29370,
+						"to": 29630
+					},
+					"id": 1565,
+					"p": 0.999992,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:29,630",
+						"to": "00:00:29,630"
+					},
+					"offsets": {
+						"from": 29630,
+						"to": 29630
+					},
+					"id": 264,
+					"p": 0.965727,
+					"t_dtw": -1
+				},
+				{
+					"text": " strength",
+					"timestamps": {
+						"from": "00:00:29,980",
+						"to": "00:00:29,980"
+					},
+					"offsets": {
+						"from": 29980,
+						"to": 29980
+					},
+					"id": 3800,
+					"p": 0.171463,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:29,980",
+						"to": "00:00:29,980"
+					},
+					"offsets": {
+						"from": 29980,
+						"to": 29980
+					},
+					"id": 13,
+					"p": 0.757753,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_1499]",
+					"timestamps": {
+						"from": "00:00:29,980",
+						"to": "00:00:29,980"
+					},
+					"offsets": {
+						"from": 29980,
+						"to": 29980
+					},
+					"id": 51864,
+					"p": 0.729614,
+					"t_dtw": -1
+				}
+			]
+		}
+	]
+}

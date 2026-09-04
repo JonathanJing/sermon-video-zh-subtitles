@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "live-sermon-macbook-baseline-index-v1",
+  "systemId": "MB-B4-HyMT2-1.8B-Ollama-Q8",
+  "status": "translation_only_completed_replay_and_sol_scoring_pending",
+  "completedAt": "2026-09-03T19:41:54.613641+00:00",
+  "referenceUsedForGeneration": false,
+  "hardwareProfileId": "macbook-pro-m1-max-64gb-v1",
+  "backend": "ollama",
+  "backendVersion": "0.33.3",
+  "configuration": {
+    "path": "../../macbook-text-benchmark-v1.json",
+    "sha256": "4cd3a971c0f444ffeea6a2174719d7785acd384395fce539a33bca44efccaee8"
+  },
+  "tools": {
+    "runner": {
+      "path": "../../../../../scripts/run_macbook_sermon_text_benchmark.py",
+      "sha256": "cb86c360324a34c2a83882472364dae3a165c5c07cec56d7c24c9910117f528d"
+    },
+    "scorer": {
+      "path": "../../../../../scripts/score_sermon_text_benchmark.py",
+      "sha256": "7374cfbed7af4b199a590df2c18d7674172fe32542cde5206dbc5a0938af4a13"
+    },
+    "resourceSampler": {
+      "path": "../../../../../scripts/sample_macbook_resources.py",
+      "sha256": "50fed8c4c9d3221a594f1d5f244148dae626367f0b7ad2e3beca433d40a3441e"
+    }
+  },
+  "model": {
+    "modelId": "tencent/Hy-MT2-1.8B",
+    "runtimeRepository": "tencent/Hy-MT2-1.8B-GGUF",
+    "runtimeRevision": "1cd5208700acedef4ef93019b6cfc148b8522d45",
+    "artifact": "Hy-MT2-1.8B-Q8_0.gguf",
+    "artifactSha256": "5c3fe0b1408a5ceb0143184ef247b11b579c525f4b02b060e6c851bb76fef1a4",
+    "ollamaModel": "sermon-hymt2-1.8b-q8:benchmark",
+    "ollamaDigest": "ec07251f681d16f5bd7796ebf40966b53d7acb9e2afc01e143ba1ad9f75f83e1"
+  },
+  "run": {
+    "directory": "hymt2-1.8b-q8-ollama-full-20260903",
+    "predictionCount": 239,
+    "errorCount": 0,
+    "predictionSha256": "91028e42914ea801019cb6a590e93455e58cd11cb6b430f90f7a6f1a3b0f99a5",
+    "runReportSha256": "8ca78b10f53bb61f165b7708841d7056097ca8f03bc12ea1e665bfecdc157dd6"
+  },
+  "automaticReferenceMetrics": {
+    "path": "hymt2-1.8b-q8-ollama-full-20260903/automatic-reference-metrics.json",
+    "sha256": "e627a7a76c1c0a9f0a17ba897764251bfec8c1581d30be34bc29a8a31a0968aa"
+  },
+  "resourceMetrics": {
+    "path": "hymt2-1.8b-q8-ollama-full-20260903/resource-metrics.json",
+    "sha256": "53b568bcde204393ce113141fcb748c52a8a4d6010cd857eeb19024a93b3bbd5",
+    "peakProcessTreeRssGiB": 6.4409,
+    "swapGrowthGiB": 0.0
+  },
+  "report": {
+    "path": "hymt2-1.8b-q8-ollama-full-20260903/report.md",
+    "sha256": "243f052ca422e535f48bb9d4d1354d00f2913833c367cbd2508847c333e3f3e4"
+  },
+  "translationOnlyResourceGatePassed": true,
+  "coResidentAsrReplayPassed": false,
+  "fullSermonSoakPassed": false,
+  "solHighScoringCompleted": false,
+  "productionResourceGatePassed": false
+}

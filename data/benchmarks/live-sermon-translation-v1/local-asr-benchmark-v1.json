@@ -1,0 +1,436 @@
+{
+  "schemaVersion": "local-asr-benchmark-v1",
+  "benchmarkId": "BENCH-LIVE-ST-MACBOOK-ASR-V1",
+  "status": "seven_model_offline_bakeoff_completed_human_listening_confirmation_pending",
+  "hardwareProfile": "macbook-m1-max-64gb-profile.json",
+  "primaryRuntime": {
+    "name": "whisper.cpp",
+    "version": "1.9.2",
+    "installation": "homebrew",
+    "metalEnabled": true
+  },
+  "additionalRuntimes": [
+    {
+      "name": "NeMo-Speech.cpp",
+      "version": "0.1.0",
+      "installation": "official_binary_release",
+      "metalEnabled": true
+    },
+    {
+      "name": "mlx-whisper",
+      "version": "0.4.3",
+      "installation": "isolated_uv_tool",
+      "mlxVersion": "0.32.2"
+    },
+    {
+      "name": "mlx-audio",
+      "version": "0.3.1",
+      "installation": "isolated_uv_tool",
+      "mlxVersion": "0.32.2"
+    }
+  ],
+  "candidates": [
+    {
+      "priority": 1,
+      "systemId": "ASR-WCPP-SMALL-EN-F16",
+      "model": "OpenAI Whisper small.en",
+      "backend": "whisper.cpp",
+      "artifact": "ggml-small.en.bin",
+      "artifactRevision": "ggerganov/whisper.cpp@5359861c739e955e79d9a303bcbc70fb988958b1",
+      "artifactSha256": "c6138d6d58ecc8322097e0f987c32f1be8bb0a18532a3f88f734d1bbf9c41e5d",
+      "role": "primary_live_candidate",
+      "status": "gpt_reaudited_offline_quality_gates_passed",
+      "runDirectory": "runs/local-asr/small-en-f16-gpt-reaudited-rescore-20260903"
+    },
+    {
+      "priority": 2,
+      "systemId": "ASR-WCPP-MEDIUM-EN-F16",
+      "model": "OpenAI Whisper medium.en",
+      "backend": "whisper.cpp",
+      "artifact": "ggml-medium.en.bin",
+      "artifactRevision": "ggerganov/whisper.cpp@5359861c739e955e79d9a303bcbc70fb988958b1",
+      "artifactSha256": "cc37e93478338ec7700281a7ac30a10128929eb8f427dda2e865faa8f6da4356",
+      "role": "quality_ceiling_control",
+      "status": "gpt_reaudited_offline_quality_gates_failed",
+      "runDirectory": "runs/local-asr/medium-en-f16-gpt-reaudited-rescore-20260903"
+    },
+    {
+      "priority": 3,
+      "systemId": "ASR-NEMO-PARAKEET-TDT-0.6B-V3-Q8",
+      "model": "nvidia/parakeet-tdt-0.6b-v3",
+      "backend": "NeMo-Speech.cpp",
+      "artifact": "parakeet-tdt-0.6b-v3.q8_0.gguf",
+      "artifactRevision": "541d1f99c6b0c3cd0b11a95167540bb8edefd82b",
+      "artifactSha256": "e3880d0aaaaf2c308ea2c35016b2b895c423eb3fda924c1b463d1c19b7f4d32e",
+      "role": "compact_speed_quality_challenger",
+      "status": "gpt_reaudited_offline_quality_gates_failed",
+      "runDirectory": "runs/local-asr/parakeet-tdt-0.6b-v3-q8-gpt-reaudited-20260903"
+    },
+    {
+      "priority": 4,
+      "systemId": "ASR-NEMO-NEMOTRON-STREAMING-EN-0.6B-Q8",
+      "model": "nvidia/nemotron-speech-streaming-en-0.6b",
+      "backend": "NeMo-Speech.cpp",
+      "artifact": "nemotron-speech-streaming-en-0.6b.q8_0.gguf",
+      "artifactRevision": "ebe59e5a817142986528bbbee5dba8db7b38ed50",
+      "artifactSha256": "d9a01898d2a611c8764e23a1c2f45e70bbd5a425dc4de93692ac951dd603812d",
+      "role": "native_streaming_challenger",
+      "status": "gpt_reaudited_offline_quality_gates_failed",
+      "runDirectory": "runs/local-asr/nemotron-speech-streaming-en-0.6b-q8-gpt-reaudited-20260903"
+    },
+    {
+      "priority": 5,
+      "systemId": "ASR-MLX-LARGE-V3-TURBO",
+      "model": "OpenAI Whisper large-v3-turbo",
+      "backend": "mlx-whisper",
+      "artifact": "weights.safetensors",
+      "artifactRevision": "mlx-community/whisper-large-v3-turbo@a4aaeec0636e6fef84abdcbe3544cb2bf7e9f6fb",
+      "artifactSha256": "951ed3fc1203e6a62467abb2144a96ce7eafca8fa77e3704fdb8635ff3e7f8a6",
+      "role": "apple_native_quality_challenger",
+      "status": "gpt_reaudited_offline_quality_gates_failed_silence_hallucination",
+      "runDirectory": "runs/local-asr/whisper-large-v3-turbo-mlx-gpt-reaudited-20260903"
+    },
+    {
+      "priority": 6,
+      "systemId": "ASR-WCPP-DISTIL-LARGE-V3-F16",
+      "model": "distil-whisper/distil-large-v3",
+      "backend": "whisper.cpp",
+      "artifact": "ggml-distil-large-v3.bin",
+      "artifactRevision": "distil-whisper/distil-large-v3-ggml@0d78dd96ed9fc152325f63b53788fec3b43de031",
+      "artifactSha256": "2883a11b90fb10ed592d826edeaee7d2929bf1ab985109fe9e1e7b4d2b69a298",
+      "role": "english_distilled_quality_challenger",
+      "status": "gpt_reaudited_offline_quality_gates_failed_silence_hallucination",
+      "runDirectory": "runs/local-asr/distil-large-v3-ggml-f16-gpt-reaudited-20260903"
+    },
+    {
+      "priority": 7,
+      "systemId": "ASR-MLX-QWEN3-ASR-0.6B-8BIT",
+      "model": "Qwen/Qwen3-ASR-0.6B",
+      "backend": "mlx-audio",
+      "artifact": "model.safetensors",
+      "artifactRevision": "mlx-community/Qwen3-ASR-0.6B-8bit@89e96d92ba34aca20b3e29fb10cc284097d1219f",
+      "artifactSha256": "b5bfe4abc1b4c6e58b633096682ec2b6297298add1527119936107d211adf0e8",
+      "role": "provisional_offline_winner",
+      "status": "gpt_reaudited_offline_quality_gates_passed",
+      "runDirectory": "runs/local-asr/qwen3-asr-0.6b-8bit-mlx-gpt-reaudited-nonspeech-normalized-20260903"
+    }
+  ],
+  "decodingProfiles": {
+    "offlineSmoke": {
+      "language": "en",
+      "temperature": 0,
+      "temperatureFallback": false,
+      "beamSize": 1,
+      "bestOf": 1,
+      "vad": false,
+      "initialPrompt": null
+    },
+    "streamingReplay": {
+      "stepMs": 500,
+      "windowMs": 5000,
+      "vadRequired": true,
+      "partialAndFinalEventsRequired": true
+    }
+  },
+  "stages": [
+    "frozen_20_clip_engineering_smoke",
+    "model_reviewed_reference_30_minute_offline_quality",
+    "human_gold_30_minute_offline_quality",
+    "continuous_10_minute_1x_streaming_replay",
+    "50_to_60_minute_asr_milmmt_browser_recorder_co_residency"
+  ],
+  "qualityPolicy": {
+    "nonGoldMayBeUsedForWer": false,
+    "modelReviewedReferenceMayBeUsedForProvisionalComparison": true,
+    "modelReviewedReferenceMayAuthorizeProductionSelection": false,
+    "humanGoldRequiredForModelSelection": true,
+    "werIsSufficientAlone": false,
+    "criticalTermErrorsFailClosed": true
+  },
+  "provisionalGates": {
+    "silenceHallucinationCount": 0,
+    "criticalScriptureNameTermRecallMinimum": 0.95,
+    "coResidentRtfMaximum": 0.7,
+    "endToEndP95SecondsTarget": 4.0,
+    "sustainedSwapGrowthAllowed": false
+  },
+  "smokeManifest": "local-asr-smoke-v1.json",
+  "controlledSmokeSummary": "runs/local-asr/smoke-leaderboard-20260903.md",
+  "controlledSmokeResults": [
+    {
+      "systemId": "ASR-WCPP-SMALL-EN-F16",
+      "itemCount": 20,
+      "errorCount": 0,
+      "totalAudioMinutes": 16.803,
+      "meanLatencySeconds": 1.5668,
+      "p95LatencySeconds": 1.8197,
+      "meanRtf": 0.0312,
+      "p95Rtf": 0.0348,
+      "peakPerInvocationRssGiB": 0.7446,
+      "qualityScored": false
+    },
+    {
+      "systemId": "ASR-WCPP-MEDIUM-EN-F16",
+      "itemCount": 20,
+      "errorCount": 0,
+      "totalAudioMinutes": 16.803,
+      "meanLatencySeconds": 3.343,
+      "p95LatencySeconds": 3.7054,
+      "meanRtf": 0.0669,
+      "p95Rtf": 0.0753,
+      "peakPerInvocationRssGiB": 1.8241,
+      "qualityScored": false
+    }
+  ],
+  "modelReviewedQualityResults": [
+    {
+      "systemId": "ASR-WCPP-SMALL-EN-F16",
+      "modelReviewedQualityScore": 96.536,
+      "wer": 0.043233,
+      "criticalTermRecall": 0.971014,
+      "successCount": 60,
+      "itemCount": 60,
+      "silenceHallucinationCount": 0,
+      "meanRtf": 0.0368,
+      "peakPerInvocationRssGiB": 0.7188,
+      "allCurrentOfflineQualityGatesPassed": true
+    },
+    {
+      "systemId": "ASR-WCPP-MEDIUM-EN-F16",
+      "modelReviewedQualityScore": 93.62,
+      "wer": 0.058688,
+      "criticalTermRecall": 0.913043,
+      "successCount": 57,
+      "itemCount": 60,
+      "silenceHallucinationCount": 0,
+      "meanRtf": 0.0777,
+      "peakPerInvocationRssGiB": 1.8215,
+      "allCurrentOfflineQualityGatesPassed": false,
+      "failureReason": "three lyric clips emitted only music symbols"
+    }
+  ],
+  "gptReauditedQualityResults": [
+    {
+      "systemId": "ASR-WCPP-SMALL-EN-F16",
+      "modelReviewedQualityScore": 96.244,
+      "wer": 0.040855,
+      "criticalTermRecall": 0.956522,
+      "successCount": 60,
+      "itemCount": 60,
+      "silenceHallucinationCount": 0,
+      "meanRtf": 0.0368,
+      "peakPerInvocationRssGiB": 0.7188,
+      "allCurrentOfflineQualityGatesPassed": true
+    },
+    {
+      "systemId": "ASR-NEMO-PARAKEET-TDT-0.6B-V3-Q8",
+      "modelReviewedQualityScore": 95.045,
+      "wer": 0.043578,
+      "criticalTermRecall": 0.927536,
+      "successCount": 58,
+      "itemCount": 60,
+      "silenceHallucinationCount": 0,
+      "meanRtf": 0.0362,
+      "peakPerInvocationRssGiB": 0.8007,
+      "allCurrentOfflineQualityGatesPassed": false,
+      "failureReason": "two lyric clips emitted empty transcripts and critical-term recall was below 95 percent"
+    },
+    {
+      "systemId": "ASR-NEMO-NEMOTRON-STREAMING-EN-0.6B-Q8",
+      "modelReviewedQualityScore": 93.931,
+      "wer": 0.054892,
+      "criticalTermRecall": 0.913043,
+      "successCount": 58,
+      "itemCount": 60,
+      "silenceHallucinationCount": 0,
+      "meanRtf": 0.0531,
+      "peakPerInvocationRssGiB": 1.6688,
+      "allCurrentOfflineQualityGatesPassed": false,
+      "failureReason": "two lyric clips emitted empty transcripts and critical-term recall was below 95 percent"
+    },
+    {
+      "systemId": "ASR-WCPP-MEDIUM-EN-F16",
+      "modelReviewedQualityScore": 93.772,
+      "wer": 0.056149,
+      "criticalTermRecall": 0.913043,
+      "successCount": 57,
+      "itemCount": 60,
+      "silenceHallucinationCount": 0,
+      "meanRtf": 0.0777,
+      "peakPerInvocationRssGiB": 1.8215,
+      "allCurrentOfflineQualityGatesPassed": false,
+      "failureReason": "three lyric clips emitted only music symbols"
+    },
+    {
+      "systemId": "ASR-MLX-LARGE-V3-TURBO",
+      "modelReviewedQualityScore": 91.823,
+      "wer": 0.031217,
+      "criticalTermRecall": 0.956522,
+      "successCount": 60,
+      "itemCount": 60,
+      "silenceHallucinationCount": 1,
+      "meanRtf": 0.0729,
+      "peakPerInvocationRssGiB": 1.7174,
+      "allCurrentOfflineQualityGatesPassed": false,
+      "failureReason": "the sole silence clip hallucinated Thank you"
+    },
+    {
+      "systemId": "ASR-WCPP-DISTIL-LARGE-V3-F16",
+      "modelReviewedQualityScore": 92.453,
+      "wer": 0.035198,
+      "criticalTermRecall": 0.985507,
+      "successCount": 60,
+      "itemCount": 60,
+      "silenceHallucinationCount": 1,
+      "meanRtf": 0.0531,
+      "peakPerInvocationRssGiB": 1.6866,
+      "allCurrentOfflineQualityGatesPassed": false,
+      "failureReason": "the sole silence clip emitted repeated Thank you and fragmented words"
+    },
+    {
+      "systemId": "ASR-MLX-QWEN3-ASR-0.6B-8BIT",
+      "modelReviewedQualityScore": 96.893,
+      "wer": 0.037293,
+      "criticalTermRecall": 0.971014,
+      "successCount": 60,
+      "itemCount": 60,
+      "silenceHallucinationCount": 0,
+      "meanRtf": 0.0653,
+      "peakPerInvocationRssGiB": 1.1519,
+      "allCurrentOfflineQualityGatesPassed": true,
+      "nonSpeechNormalization": "standalone Music event label normalized as non-speech"
+    }
+  ],
+  "fiveModelGptReauditedLeaderboard": {
+    "path": "runs/local-asr/gpt-reaudited-quality-leaderboard-5-model-20260903.json",
+    "sha256": "b4417b4f5e8a32731374bd728387ce2769427aebd1b3f33262e6280d99343310",
+    "provisionalOfflineWinner": "ASR-WCPP-SMALL-EN-F16",
+    "onlyOfflineGatePassingModel": "ASR-WCPP-SMALL-EN-F16"
+  },
+  "sevenModelGptReauditedLeaderboard": {
+    "path": "runs/local-asr/gpt-reaudited-quality-leaderboard-7-model-20260903.json",
+    "sha256": "ef1bdd7bc363857d42d567e316dae2191620c48731dd2bc1b1af900821384629",
+    "provisionalOfflineWinner": "ASR-MLX-QWEN3-ASR-0.6B-8BIT",
+    "offlineGatePassingModels": [
+      "ASR-MLX-QWEN3-ASR-0.6B-8BIT",
+      "ASR-WCPP-SMALL-EN-F16"
+    ]
+  },
+  "runner": {
+    "path": "../../../scripts/run_local_asr_benchmark.py",
+    "sha256": "9b1e4356c06b78480c80eef9eccaaf9bb91f9589babf86f5a7ed65b059d8b6b5"
+  },
+  "modelReviewedReferenceBuilder": {
+    "path": "../../../scripts/build_local_asr_model_reviewed_reference.py",
+    "sha256": "fc350ea4bfa6aeea666814f936c345aff8bc21acf2786e0aee26ee4e33c1c2d2"
+  },
+  "qualityComparisonRunner": {
+    "path": "../../../scripts/compare_local_asr_quality_runs.py",
+    "sha256": "e306bd51412d84b745e1f8135a60edae1f68b2ad6689c235e2f2a62761977d4d"
+  },
+  "gptReauditRunner": {
+    "path": "../../../scripts/run_local_asr_gpt_reaudit.py",
+    "sha256": "98a26a7f7ef346d75705a762039ac399f957605c00f39c08b413c1f36f98093c"
+  },
+  "predictionRescorer": {
+    "path": "../../../scripts/rescore_local_asr_predictions.py",
+    "sha256": "fbae4d99e0df688337a85e5d63a9fd5acd2a7d07c402590d9715239d12e740fb"
+  },
+  "gptReauditSummarizer": {
+    "path": "../../../scripts/summarize_local_asr_gpt_reaudit.py",
+    "sha256": "547b3c26cf55ed5756d52569378023a57e8fe9f1c29309691b676ab41ecb3ea8"
+  },
+  "humanCalibrationQueueBuilder": {
+    "path": "../../../scripts/prepare_local_asr_human_calibration.py",
+    "sha256": "797dd5dd92af8bbc54a06314d42ce320a3d599bd7f2497fc519626980ff641e5"
+  },
+  "goldQueueBuilder": {
+    "path": "../../../scripts/prepare_local_asr_gold_queue.py",
+    "sha256": "57df1c2127d7648abb36c05530ecf2b952ae2e19d9997aa0b149790f9ead0ad8"
+  },
+  "goldDataset": {
+    "status": "annotation_queue_ready_human_gold_pending",
+    "targetDurationMinutes": 30,
+    "targetClipCountRange": [50, 100],
+    "groupSplitUnit": "sermon_or_recording_session",
+    "humanCorrectedRequired": true,
+    "queueCreatedAt": "2026-09-03T22:49:15.361720+00:00",
+    "annotationQueue": "local-asr-gold-annotation-queue-v1.json",
+    "annotationQueueSha256": "7cecc3c2aba09d8945ce40095dc9d0010db3737d6f7f67d7d7b460e6bb97ba44",
+    "annotationQueueItemCount": 60,
+    "annotationQueueDurationMinutes": 29.811,
+    "modelReviewedReference": {
+      "status": "provisional_quality_reference_completed",
+      "referenceTier": "model_reviewed_reference_not_human_gold",
+      "manifest": "local-asr-model-reviewed-reference-v1.json",
+      "manifestSha256": "6a56de9206e6959d38a80a95908b3226e74639bbdd3bbb34297a467eb2ae702f",
+      "itemCount": 60,
+      "durationMinutes": 29.811,
+      "criticalTermAnnotationCount": 69,
+      "leaderboard": "runs/local-asr/model-reviewed-quality-leaderboard-20260903.json",
+      "leaderboardSha256": "5a39fc4acf073301e88f79e8fe4335d6d81ce19a5170f0a14a20856089552b40",
+      "provisionalWinner": "ASR-WCPP-SMALL-EN-F16",
+      "productionSelectionAllowed": false
+    },
+    "humanConfirmationQueue": {
+      "status": "needs_human_listening_confirmation",
+      "path": "local-asr-human-confirmation-queue-v1.json",
+      "sha256": "11ec364990320fd12c4540de90226e788ac3c394e0a8a58c3a39ad5e04058611",
+      "itemCount": 4,
+      "durationMinutes": 2.0
+    },
+    "humanCalibrationQueue": {
+      "status": "gpt_reaudit_completed_human_listening_confirmation_pending",
+      "path": "local-asr-human-calibration-queue-v1.json",
+      "sha256": "49ea828de7ebd8d4baa7faefbd59d3b238689799048df3e0bec377258a6d9f3a",
+      "itemCount": 13,
+      "durationMinutes": 6.5,
+      "selection": "all_silence_invalid_and_critical_misses_plus_three_deterministic_random_per_source"
+    },
+    "gptReauditedReference": {
+      "status": "completed_human_listening_confirmation_pending",
+      "manifest": "local-asr-gpt-reaudited-reference-v1.json",
+      "manifestSha256": "35af38c496e9a5bb0e679f9755b94857b123b5b40403ee063cf1918aae666de7",
+      "reauditedItemCount": 13,
+      "durationMinutes": 6.5,
+      "apiUsageDurationSeconds": 403,
+      "apiErrorCount": 0,
+      "humanGoldClaimed": false,
+      "runReport": "runs/local-asr/gpt-transcribe-reaudit-20260903/run-report.json",
+      "runReportSha256": "0bc44c2ec8eebfce133780421e6a1ca86901e06bb28e4cbb0ad67d46e5f0ed9e",
+      "calibrationSummary": "runs/local-asr/gpt-transcribe-reaudit-20260903/calibration-summary.json",
+      "calibrationSummarySha256": "c4fc651bb37a6942f672c1936ba75512ec53896bfd0f7e15c1cf543ec513c8fe",
+      "dispositionCounts": {
+        "exactRepeatSupported": 9,
+        "minorDeltaRequiresHumanConfirmation": 3,
+        "majorDeltaRequiresHumanConfirmation": 1
+      },
+      "leaderboard": "runs/local-asr/gpt-reaudited-quality-leaderboard-20260903.json",
+      "leaderboardSha256": "4a9732faec7feedaf3e2465a7e8f23ccfa875c383f780df87535931e6214e8aa",
+      "provisionalWinner": "ASR-WCPP-SMALL-EN-F16",
+      "productionSelectionAllowed": false
+    },
+    "candidateSources": [
+      {
+        "sourceGroupId": "post-live-2026-08-23-ZDQwL3K-A44",
+        "operatorApprovalPath": "artifacts/post-live-runs/2026-08-23/sermon_ZDQwL3K-A44/operator-window-approval.json",
+        "chunkDirectory": "artifacts/post-live-runs/2026-08-23/sermon_ZDQwL3K-A44/timeline/transition_30s/candidate_1620000_2058658/chunks",
+        "timelineChunksPath": "artifacts/post-live-runs/2026-08-23/sermon_ZDQwL3K-A44/timeline/transition_30s/timeline_chunks.json",
+        "timelineReportPath": "artifacts/post-live-runs/2026-08-23/sermon_ZDQwL3K-A44/timeline/report.json",
+        "availableClipCount": 15,
+        "selectedClipCount": 15,
+        "translationUntouchedTest": false
+      },
+      {
+        "sourceGroupId": "post-live-2026-08-30--BeFX5G2oAw",
+        "operatorApprovalPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/operator-window-approval.json",
+        "chunkDirectory": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks",
+        "timelineChunksPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/timeline_chunks.json",
+        "timelineReportPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/report.json",
+        "availableClipCount": 72,
+        "selectedClipCount": 45,
+        "translationUntouchedTest": false
+      }
+    ]
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "live-sermon-hymt2-prompt-validation-v1",
+  "status": "corrected_and_frozen",
+  "invalidDiagnosticRun": {
+    "targetLanguageLabel": "Simplified Chinese",
+    "predictionCount": 239,
+    "containsCjkCount": 212,
+    "nonChineseOutputCount": 27,
+    "predictionSha256": "ebcbaea50f39437609a7407dde38025f1db6300212c6c87fc02bad35480fe9f3",
+    "disposition": "excluded_from_quality_and_speed_comparison"
+  },
+  "correction": {
+    "evidence": "The official supported-language list and prompt examples name the target language Chinese. Cross-probes on prior failing segments produced Chinese when the exact label Chinese was used.",
+    "frozenTargetLanguageLabel": "Chinese"
+  },
+  "formalRun": {
+    "predictionCount": 239,
+    "containsCjkCount": 239,
+    "nonChineseOutputCount": 0,
+    "predictionSha256": "d9edcb250293908aa0e7b62b032942f290863cbfaa26b1010d8dbd269a57cb42",
+    "includedInComparison": true
+  }
+}

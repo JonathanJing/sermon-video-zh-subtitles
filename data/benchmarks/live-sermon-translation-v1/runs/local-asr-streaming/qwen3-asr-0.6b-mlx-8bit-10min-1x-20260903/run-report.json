@@ -1,0 +1,56 @@
+{
+  "audioDurationSeconds": 600.0,
+  "audioSha256": "e54b28baac11f465188c442f8b85d5d97dcf154fb6d3a792e5167100882ad22f",
+  "completedAt": "2026-09-04T03:56:31.324102+00:00",
+  "emptyFinalEventCount": 0,
+  "eventsSha256": "d0b29f155d83d553db22d24dbbb00c06a1b536abad076ebf642c6b8f2db0f6c3",
+  "finalDeliveryLagAgainstLatestAudioSeconds": {
+    "max": 0.2723,
+    "p50": -0.1923,
+    "p95": -0.1366
+  },
+  "finalDeliveryLagAfterLatestPcmBlockAvailableSeconds": {
+    "max": 0.7723,
+    "p50": 0.3077,
+    "p95": 0.3634
+  },
+  "finalEventCount": 123,
+  "formalFullDuration": true,
+  "limitations": [
+    "Final delivery lag is measured against the latest audio sent when the provider event arrives.",
+    "The latest-PCM-block lag adds one replay step because the first PCM block is available at wall time zero.",
+    "Reference is exact-chunk GPT-Transcribe text, not human Gold.",
+    "This run measures ASR alone, not MiLMMT co-residency."
+  ],
+  "manifest": "data/benchmarks/live-sermon-translation-v1/local-asr-streaming-replay-v1.json",
+  "manifestSha256": "b2200815abf6fb7de60b8c83ffebdab97638a0ad4b6a40762ec5df5ab8b41774",
+  "modelId": "qwen3-asr-0.6b-mlx-8bit",
+  "pacingDelaySeconds": {
+    "max": 0.041334,
+    "mean": 0.001992,
+    "p95": 0.0063
+  },
+  "partialEventCount": 120,
+  "partialWordEditChurn": 559,
+  "provider": "mlx-audio-realtime-websocket",
+  "providerModel": "/Users/jonathan_jing/Library/Caches/sermon-video-zh-subtitles/models/qwen3-asr-0.6b-8bit-89e96d92",
+  "quality": {
+    "hypothesisWordCount": 1783,
+    "referenceStatus": "model_reviewed_reference_not_human_gold",
+    "referenceWordCount": 1767,
+    "wer": 0.050934
+  },
+  "resources": {
+    "providerPeakRssGiB": 1.1532,
+    "sampleCount": 599,
+    "swapGrowthGiB": 0.0,
+    "swapUsedGiBEnd": 0.0,
+    "swapUsedGiBStart": 0.0
+  },
+  "resourcesSha256": "69acda6f6163e85c55555dc1767c49f19c898a5d53f9c5048af62d35f04e4f6e",
+  "schemaVersion": "local-asr-streaming-replay-run-v1",
+  "sourceAudioDurationSeconds": 600.0,
+  "stepMs": 500,
+  "wallDurationSeconds": 605.8458,
+  "wallToAudioRatio": 1.009743
+}

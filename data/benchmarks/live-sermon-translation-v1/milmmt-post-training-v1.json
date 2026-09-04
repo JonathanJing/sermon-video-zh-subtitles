@@ -1,0 +1,143 @@
+{
+  "schemaVersion": "milmmt-sermon-post-training-plan-v1",
+  "goalId": "BENCH-LIVE-ST-MILMMT-PT-V1",
+  "parentGoalId": "BENCH-LIVE-ST-V1",
+  "status": "runtime_bakeoff_ready_training_manifest_pending",
+  "createdAt": "2026-09-03T00:00:00-07:00",
+  "primaryModel": {
+    "modelId": "xiaomi-research/MiLMMT-46-4B-v1.0",
+    "revision": "aa3262750cf493cc638fc9b82fcd26de8b0068fb",
+    "architecture": "gemma3_4b_multimodal_wrapper_text_only_for_this_task",
+    "modelStage": "translation_post_trained_sft_rl_and_merged",
+    "trainingSource": "official_unquantized_weights",
+    "inferenceBaseline": {
+      "systemId": "MB-B4-MiLMMT-46-4B-v1-Q8-Ollama",
+      "artifact": "MiLMMT-46-4B-v1.0.Q8_0.gguf",
+      "artifactSha256": "92796e263e22461c273c9f964ba4c1454d8dc764a482af60bc1ad9c269d9e7d0",
+      "runDirectory": "runs/macbook-text-baselines/milmmt-46-4b-v1-q8-ollama-full-20260903",
+      "bleuZh": 35.3638,
+      "chrf2": 33.468,
+      "strictAnnotatedTermRecallPercent": 68.125,
+      "decodeTokensPerSecond": 54.753,
+      "peakProcessTreeRssGiB": 13.1274,
+      "swapGrowthGiB": 0.0
+    }
+  },
+  "dataPolicy": {
+    "trainingSplit": "train",
+    "developmentSplit": "dev",
+    "requiredTrainingEligibility": "eligible",
+    "missingEligibilityDisposition": "blocked",
+    "groupSplitKey": "sermonId",
+    "testUse": "final_acceptance_only",
+    "testMaySelectPromptOrQuantization": false,
+    "testMayTrainOrEarlyStop": false,
+    "datasetClassification": "ordinary_supervised_parallel_data_not_knowledge_distillation",
+    "userConfirmedTrainingUseAllowed": true,
+    "authorizationReceiptReconciliationRequired": true,
+    "currentTrainingBlockers": ["per_record_authorization_and_eligibility_manifest_not_reconciled"],
+    "forbiddenSermonIds": [
+      "hoeJTwl-EJg",
+      "hAWaaBVaMzY",
+      "8u9B8u_5ISI",
+      "z_UoOx-6mz4",
+      "qvImKpmvgaM"
+    ],
+    "recordSchema": "templates/milmmt-sft-record-v1.schema.json"
+  },
+  "contentTextProfile": {
+    "profileId": "milmmt-sermon-content-text-v1",
+    "unicodeNormalization": "NFC",
+    "collapseWhitespace": true,
+    "preservePunctuation": true,
+    "preserveNegation": true,
+    "preserveSpokenRepetitionAndSelfCorrection": true,
+    "removeSubtitleControlMarkers": true,
+    "removeTimestampsHtmlJsonAndSpeakerLabels": true,
+    "injectAdjacentSegments": false,
+    "injectGlossaryOrPreparedContext": false
+  },
+  "serialization": {
+    "profileId": "milmmt-official-en-zh-hans-sft-v1",
+    "template": "Translate this from English to Chinese (Simplified):\nEnglish: {source.contentText}\nChinese (Simplified): {target.contentText}<eos>",
+    "lossMask": "target_and_eos_only",
+    "inferencePrompt": "Translate this from English to Chinese (Simplified):\nEnglish: {source.contentText}\nChinese (Simplified):",
+    "applyChatTemplate": false,
+    "addSpecialTokens": false,
+    "appendEosToTrainingTarget": true,
+    "temperature": 0.0,
+    "topK": 1
+  },
+  "postTraining": {
+    "method": "lora_sft_first",
+    "trainOnQuantizedGguf": false,
+    "baseArtifact": "official_bf16_v1.0",
+    "excludeVisionTowerAndMultimodalProjector": true,
+    "fullSegmentStageBeforeRealtimePrefixStage": true,
+    "realtimePrefixExamplesPerSegment": [3, 8],
+    "rlOrDistillationInInitialPlan": false,
+    "initialSearchSpace": {
+      "loraRank": [16, 32],
+      "loraAlpha": [32, 64],
+      "loraDropout": [0.05],
+      "learningRate": [0.00001, 0.00002, 0.00005],
+      "epochs": [1, 2, 3]
+    },
+    "selectionSplit": "dev",
+    "testVisibilityDuringSelection": "prohibited"
+  },
+  "runtimeMatrix": {
+    "selectionBeforePostTraining": true,
+    "provisionalPrimary": "mlx_5bit_group64",
+    "provisionalFallback": "llama_cpp_gguf_Q5_K_M",
+    "qualityReference": "mlx_bf16_text_only",
+    "communityBakeoffArtifacts": {
+      "mlx5bit": {
+        "modelId": "translate-studio/MiLMMT-46-4B-v1.0-5bit-MLX",
+        "revision": "8227b351ad0580e35ff3f92f5f8c623da1788c48"
+      },
+      "gguf": {
+        "modelId": "mradermacher/MiLMMT-46-4B-v1.0-GGUF",
+        "revision": "765aa350dc9aa28c41e2a9e34e1b25d56c0d3911",
+        "downloadWholeRepository": false
+      }
+    },
+    "llamaCppGguf": ["Q4_K_M", "Q5_K_M", "Q6_K"],
+    "mlx": ["4bit_group64", "5bit_group64", "6bit_group64"],
+    "contextLengths": [2048, 4096],
+    "rawCompletionRequired": true,
+    "chatTemplateAllowed": false,
+    "stopTokenIdsToVerify": [1, 106],
+    "streamingTtftRequired": true,
+    "crossBackendRunsMustRemainSeparate": true,
+    "requiredStages": [
+      "dev_smoke",
+      "dev_full_quality_and_performance",
+      "co_resident_asr_translation_replay",
+      "75_minute_soak",
+      "locked_candidate_untouched_test"
+    ]
+  },
+  "provisionalRuntimeGates": {
+    "developmentSegmentCount": [300, 500],
+    "inputTokensForTtftGateMaximum": 80,
+    "warmModelOnlyTtftP95MillisecondsMaximum": 350,
+    "decodeTokensPerSecondMinimum": 25,
+    "translationOnlyPeakRssGiBMaximum": 6,
+    "swapGrowthGiBMaximum": 0,
+    "chrfPlusPlusDropFromBf16Maximum": 0.2,
+    "criticalScriptureNumberNegationErrorsMaximum": 0,
+    "soakDurationMinutes": 75,
+    "soakP95LatencyDriftPercentMaximum": 20
+  },
+  "provisionalQualityGates": {
+    "criticalErrorRegressionAllowed": false,
+    "strictAnnotatedTermRecallPercentMinimum": 72.0,
+    "solHighScoreImprovementMinimum": 0.25,
+    "orCriticalErrorRelativeReductionPercentMinimum": 25.0,
+    "automaticMetricMaterialRegressionAllowed": false,
+    "freezeBeforePilot": true
+  },
+  "selectionPolicy": "quality_gate_then_pareto_latency_memory",
+  "documentation": "../../../docs/milmmt-sermon-post-training-plan.zh.md"
+}

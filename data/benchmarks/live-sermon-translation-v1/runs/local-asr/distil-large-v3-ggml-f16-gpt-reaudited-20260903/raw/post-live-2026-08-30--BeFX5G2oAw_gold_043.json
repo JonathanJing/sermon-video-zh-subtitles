@@ -1,0 +1,807 @@
+{
+	"systeminfo": "WHISPER : COREML = 0 | OPENVINO = 0 | MTL : EMBED_LIBRARY = 1 | CPU : NEON = 1 | ARM_FMA = 1 | DOTPROD = 1 | ACCELERATE = 1 | OPENMP = 1 | REPACK = 1 | ",
+	"model": {
+		"type": "large",
+		"multilingual": true,
+		"vocab": 51866,
+		"audio": {
+			"ctx": 1500,
+			"state": 1280,
+			"head": 20,
+			"layer": 32
+		},
+		"text": {
+			"ctx": 448,
+			"state": 1280,
+			"head": 20,
+			"layer": 2
+		},
+		"mels": 128,
+		"ftype": 1
+	},
+	"params": {
+		"model": "/Users/jonathan_jing/Library/Caches/sermon-video-zh-subtitles/models/distil-whisper-large-v3-ggml-0d78dd96/ggml-distil-large-v3.bin",
+		"language": "en",
+		"translate": false
+	},
+	"result": {
+		"language": "en"
+	},
+	"transcription": [
+		{
+			"timestamps": {
+				"from": "00:00:00,000",
+				"to": "00:00:03,120"
+			},
+			"offsets": {
+				"from": 0,
+				"to": 3120
+			},
+			"text": " Raise the king.",
+			"tokens": [
+				{
+					"text": "[_BEG_]",
+					"timestamps": {
+						"from": "00:00:00,000",
+						"to": "00:00:00,000"
+					},
+					"offsets": {
+						"from": 0,
+						"to": 0
+					},
+					"id": 50365,
+					"p": 0.82828,
+					"t_dtw": -1
+				},
+				{
+					"text": " Raise",
+					"timestamps": {
+						"from": "00:00:00,010",
+						"to": "00:00:01,040"
+					},
+					"offsets": {
+						"from": 10,
+						"to": 1040
+					},
+					"id": 30062,
+					"p": 0.854282,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:01,040",
+						"to": "00:00:01,660"
+					},
+					"offsets": {
+						"from": 1040,
+						"to": 1660
+					},
+					"id": 264,
+					"p": 0.991344,
+					"t_dtw": -1
+				},
+				{
+					"text": " king",
+					"timestamps": {
+						"from": "00:00:01,660",
+						"to": "00:00:02,490"
+					},
+					"offsets": {
+						"from": 1660,
+						"to": 2490
+					},
+					"id": 4867,
+					"p": 0.949715,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:02,490",
+						"to": "00:00:03,120"
+					},
+					"offsets": {
+						"from": 2490,
+						"to": 3120
+					},
+					"id": 13,
+					"p": 0.513883,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_156]",
+					"timestamps": {
+						"from": "00:00:03,120",
+						"to": "00:00:03,120"
+					},
+					"offsets": {
+						"from": 3120,
+						"to": 3120
+					},
+					"id": 50521,
+					"p": 0.164155,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:04,080",
+				"to": "00:00:06,320"
+			},
+			"offsets": {
+				"from": 4080,
+				"to": 6320
+			},
+			"text": " Raise the king.",
+			"tokens": [
+				{
+					"text": " Raise",
+					"timestamps": {
+						"from": "00:00:04,090",
+						"to": "00:00:04,440"
+					},
+					"offsets": {
+						"from": 4090,
+						"to": 4440
+					},
+					"id": 30062,
+					"p": 0.877863,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:04,440",
+						"to": "00:00:05,230"
+					},
+					"offsets": {
+						"from": 4440,
+						"to": 5230
+					},
+					"id": 264,
+					"p": 0.999939,
+					"t_dtw": -1
+				},
+				{
+					"text": " king",
+					"timestamps": {
+						"from": "00:00:05,230",
+						"to": "00:00:06,300"
+					},
+					"offsets": {
+						"from": 5230,
+						"to": 6300
+					},
+					"id": 4867,
+					"p": 0.997638,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:06,300",
+						"to": "00:00:06,320"
+					},
+					"offsets": {
+						"from": 6300,
+						"to": 6320
+					},
+					"id": 13,
+					"p": 0.947908,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_316]",
+					"timestamps": {
+						"from": "00:00:06,320",
+						"to": "00:00:06,320"
+					},
+					"offsets": {
+						"from": 6320,
+						"to": 6320
+					},
+					"id": 50681,
+					"p": 0.319767,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:06,760",
+				"to": "00:00:09,580"
+			},
+			"offsets": {
+				"from": 6760,
+				"to": 9580
+			},
+			"text": " Will the name upon our lives.",
+			"tokens": [
+				{
+					"text": " Will",
+					"timestamps": {
+						"from": "00:00:06,770",
+						"to": "00:00:06,820"
+					},
+					"offsets": {
+						"from": 6770,
+						"to": 6820
+					},
+					"id": 3099,
+					"p": 0.59127,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:06,820",
+						"to": "00:00:07,180"
+					},
+					"offsets": {
+						"from": 6820,
+						"to": 7180
+					},
+					"id": 264,
+					"p": 0.550555,
+					"t_dtw": -1
+				},
+				{
+					"text": " name",
+					"timestamps": {
+						"from": "00:00:07,180",
+						"to": "00:00:07,690"
+					},
+					"offsets": {
+						"from": 7180,
+						"to": 7690
+					},
+					"id": 1315,
+					"p": 0.985511,
+					"t_dtw": -1
+				},
+				{
+					"text": " upon",
+					"timestamps": {
+						"from": "00:00:07,690",
+						"to": "00:00:08,190"
+					},
+					"offsets": {
+						"from": 7690,
+						"to": 8190
+					},
+					"id": 3564,
+					"p": 0.991117,
+					"t_dtw": -1
+				},
+				{
+					"text": " our",
+					"timestamps": {
+						"from": "00:00:08,190",
+						"to": "00:00:08,560"
+					},
+					"offsets": {
+						"from": 8190,
+						"to": 8560
+					},
+					"id": 527,
+					"p": 0.994105,
+					"t_dtw": -1
+				},
+				{
+					"text": " lives",
+					"timestamps": {
+						"from": "00:00:08,560",
+						"to": "00:00:09,180"
+					},
+					"offsets": {
+						"from": 8560,
+						"to": 9180
+					},
+					"id": 2909,
+					"p": 0.446108,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:09,180",
+						"to": "00:00:09,580"
+					},
+					"offsets": {
+						"from": 9180,
+						"to": 9580
+					},
+					"id": 13,
+					"p": 0.998506,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_479]",
+					"timestamps": {
+						"from": "00:00:09,580",
+						"to": "00:00:09,580"
+					},
+					"offsets": {
+						"from": 9580,
+						"to": 9580
+					},
+					"id": 50844,
+					"p": 0.606813,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:10,140",
+				"to": "00:00:11,380"
+			},
+			"offsets": {
+				"from": 10140,
+				"to": 11380
+			},
+			"text": " Jesus.",
+			"tokens": [
+				{
+					"text": " Jesus",
+					"timestamps": {
+						"from": "00:00:10,150",
+						"to": "00:00:10,700"
+					},
+					"offsets": {
+						"from": 10150,
+						"to": 10700
+					},
+					"id": 2705,
+					"p": 0.999882,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:10,700",
+						"to": "00:00:11,380"
+					},
+					"offsets": {
+						"from": 10700,
+						"to": 11380
+					},
+					"id": 13,
+					"p": 0.766481,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_569]",
+					"timestamps": {
+						"from": "00:00:11,380",
+						"to": "00:00:11,380"
+					},
+					"offsets": {
+						"from": 11380,
+						"to": 11380
+					},
+					"id": 50934,
+					"p": 0.33383,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:12,680",
+				"to": "00:00:15,420"
+			},
+			"offsets": {
+				"from": 12680,
+				"to": 15420
+			},
+			"text": " No greater name than this.",
+			"tokens": [
+				{
+					"text": " No",
+					"timestamps": {
+						"from": "00:00:12,680",
+						"to": "00:00:12,680"
+					},
+					"offsets": {
+						"from": 12680,
+						"to": 12680
+					},
+					"id": 883,
+					"p": 0.999886,
+					"t_dtw": -1
+				},
+				{
+					"text": " greater",
+					"timestamps": {
+						"from": "00:00:12,690",
+						"to": "00:00:12,880"
+					},
+					"offsets": {
+						"from": 12690,
+						"to": 12880
+					},
+					"id": 5044,
+					"p": 0.932764,
+					"t_dtw": -1
+				},
+				{
+					"text": " name",
+					"timestamps": {
+						"from": "00:00:12,880",
+						"to": "00:00:13,550"
+					},
+					"offsets": {
+						"from": 12880,
+						"to": 13550
+					},
+					"id": 1315,
+					"p": 0.992184,
+					"t_dtw": -1
+				},
+				{
+					"text": " than",
+					"timestamps": {
+						"from": "00:00:13,550",
+						"to": "00:00:14,220"
+					},
+					"offsets": {
+						"from": 13550,
+						"to": 14220
+					},
+					"id": 813,
+					"p": 0.99923,
+					"t_dtw": -1
+				},
+				{
+					"text": " this",
+					"timestamps": {
+						"from": "00:00:14,220",
+						"to": "00:00:14,890"
+					},
+					"offsets": {
+						"from": 14220,
+						"to": 14890
+					},
+					"id": 341,
+					"p": 0.995118,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:14,890",
+						"to": "00:00:15,420"
+					},
+					"offsets": {
+						"from": 14890,
+						"to": 15420
+					},
+					"id": 13,
+					"p": 0.999805,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_771]",
+					"timestamps": {
+						"from": "00:00:15,420",
+						"to": "00:00:15,420"
+					},
+					"offsets": {
+						"from": 15420,
+						"to": 15420
+					},
+					"id": 51136,
+					"p": 0.514269,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:16,200",
+				"to": "00:00:17,460"
+			},
+			"offsets": {
+				"from": 16200,
+				"to": 17460
+			},
+			"text": " Jesus.",
+			"tokens": [
+				{
+					"text": " Jesus",
+					"timestamps": {
+						"from": "00:00:16,210",
+						"to": "00:00:16,690"
+					},
+					"offsets": {
+						"from": 16210,
+						"to": 16690
+					},
+					"id": 2705,
+					"p": 0.999931,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:16,690",
+						"to": "00:00:17,460"
+					},
+					"offsets": {
+						"from": 16690,
+						"to": 17460
+					},
+					"id": 13,
+					"p": 0.960503,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_873]",
+					"timestamps": {
+						"from": "00:00:17,460",
+						"to": "00:00:17,460"
+					},
+					"offsets": {
+						"from": 17460,
+						"to": 17460
+					},
+					"id": 51238,
+					"p": 0.258676,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:18,900",
+				"to": "00:00:21,540"
+			},
+			"offsets": {
+				"from": 18900,
+				"to": 21540
+			},
+			"text": " Hey, everything will die.",
+			"tokens": [
+				{
+					"text": " Hey",
+					"timestamps": {
+						"from": "00:00:18,900",
+						"to": "00:00:18,900"
+					},
+					"offsets": {
+						"from": 18900,
+						"to": 18900
+					},
+					"id": 1911,
+					"p": 0.511356,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:18,910",
+						"to": "00:00:19,320"
+					},
+					"offsets": {
+						"from": 18910,
+						"to": 19320
+					},
+					"id": 11,
+					"p": 0.997603,
+					"t_dtw": -1
+				},
+				{
+					"text": " everything",
+					"timestamps": {
+						"from": "00:00:19,320",
+						"to": "00:00:20,420"
+					},
+					"offsets": {
+						"from": 19320,
+						"to": 20420
+					},
+					"id": 1203,
+					"p": 0.903687,
+					"t_dtw": -1
+				},
+				{
+					"text": " will",
+					"timestamps": {
+						"from": "00:00:20,420",
+						"to": "00:00:20,860"
+					},
+					"offsets": {
+						"from": 20420,
+						"to": 20860
+					},
+					"id": 486,
+					"p": 0.993062,
+					"t_dtw": -1
+				},
+				{
+					"text": " die",
+					"timestamps": {
+						"from": "00:00:20,860",
+						"to": "00:00:21,190"
+					},
+					"offsets": {
+						"from": 20860,
+						"to": 21190
+					},
+					"id": 978,
+					"p": 0.574311,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:21,190",
+						"to": "00:00:21,540"
+					},
+					"offsets": {
+						"from": 21190,
+						"to": 21540
+					},
+					"id": 13,
+					"p": 0.927042,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_1077]",
+					"timestamps": {
+						"from": "00:00:21,540",
+						"to": "00:00:21,540"
+					},
+					"offsets": {
+						"from": 21540,
+						"to": 21540
+					},
+					"id": 51442,
+					"p": 0.276013,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:22,280",
+				"to": "00:00:23,900"
+			},
+			"offsets": {
+				"from": 22280,
+				"to": 23900
+			},
+			"text": " Every heart confessed.",
+			"tokens": [
+				{
+					"text": " Every",
+					"timestamps": {
+						"from": "00:00:22,280",
+						"to": "00:00:22,280"
+					},
+					"offsets": {
+						"from": 22280,
+						"to": 22280
+					},
+					"id": 2048,
+					"p": 0.997333,
+					"t_dtw": -1
+				},
+				{
+					"text": " heart",
+					"timestamps": {
+						"from": "00:00:22,290",
+						"to": "00:00:22,600"
+					},
+					"offsets": {
+						"from": 22290,
+						"to": 22600
+					},
+					"id": 1917,
+					"p": 0.996729,
+					"t_dtw": -1
+				},
+				{
+					"text": " confessed",
+					"timestamps": {
+						"from": "00:00:22,600",
+						"to": "00:00:23,560"
+					},
+					"offsets": {
+						"from": 22600,
+						"to": 23560
+					},
+					"id": 41428,
+					"p": 0.635268,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:23,560",
+						"to": "00:00:23,900"
+					},
+					"offsets": {
+						"from": 23560,
+						"to": 23900
+					},
+					"id": 13,
+					"p": 0.999798,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_1195]",
+					"timestamps": {
+						"from": "00:00:23,900",
+						"to": "00:00:23,900"
+					},
+					"offsets": {
+						"from": 23900,
+						"to": 23900
+					},
+					"id": 51560,
+					"p": 0.168907,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:25,200",
+				"to": "00:00:26,560"
+			},
+			"offsets": {
+				"from": 25200,
+				"to": 26560
+			},
+			"text": " Jesus.",
+			"tokens": [
+				{
+					"text": " Jesus",
+					"timestamps": {
+						"from": "00:00:25,210",
+						"to": "00:00:25,560"
+					},
+					"offsets": {
+						"from": 25210,
+						"to": 25560
+					},
+					"id": 2705,
+					"p": 0.987502,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:25,560",
+						"to": "00:00:26,560"
+					},
+					"offsets": {
+						"from": 25560,
+						"to": 26560
+					},
+					"id": 13,
+					"p": 0.834827,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_1328]",
+					"timestamps": {
+						"from": "00:00:26,560",
+						"to": "00:00:26,560"
+					},
+					"offsets": {
+						"from": 26560,
+						"to": 26560
+					},
+					"id": 51693,
+					"p": 0.236783,
+					"t_dtw": -1
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,17 @@
+{
+  "apiKeyMaterialIncluded": false,
+  "asrModel": "gpt-transcribe",
+  "credentialSource": "existing_env_file",
+  "decisionCounts": {
+    "audio_evidence_supports_caption": 17
+  },
+  "generatedAt": "2026-09-03T03:43:38.336536+00:00",
+  "humanApprovalClaimed": false,
+  "inputProfileSha256": "e3e090867433fedbe739bb7ac8957d540a18529603ed58cd2f87a04158000e77",
+  "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+  "selectedSegmentCount": 17,
+  "status": "selective_audio_audit_completed",
+  "totalSegmentCount": 39,
+  "trainingEligibility": "blocked",
+  "videoId": "qvImKpmvgaM"
+}

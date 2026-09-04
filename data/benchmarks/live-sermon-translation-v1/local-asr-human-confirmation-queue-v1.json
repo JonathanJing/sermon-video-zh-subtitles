@@ -1,0 +1,86 @@
+{
+  "durationMinutes": 2.0,
+  "itemCount": 4,
+  "items": [
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-23/sermon_ZDQwL3K-A44/timeline/transition_30s/candidate_1620000_2058658/chunks/timeline_chunk_0002.m4a",
+      "audioSha256": "1301b093e02558fd4e0a4413822ea4af34cb3ee4e897613514833b2562aac5a1",
+      "candidateModelTranscripts": {
+        "ASR-WCPP-MEDIUM-EN-F16": "in the name of the Father, the Son, and the Spirit. Amen. Now in three weeks, we will begin a new series through the last book of the Bible, Revelation. Before we join Eric for today's message, here's a first look. The last book of the Bible describes the end of evil and the end of the world as we know it. It has fascinated people for centuries, driving fear in some and confusion in others. But the first hearers didn't receive...",
+        "ASR-WCPP-SMALL-EN-F16": "in the name of the Father, the Son, and the Spirit. Amen. Now in three weeks, we will begin a new series through the last book of the Bible, Revelation. Before we join Eric for today's message, here's a first look. The last book of the Bible describes the end of evil and the end of the world as we know it. It has fascinated people for centuries, driving fear in some and confusion in others. But the first hearers didn't receive"
+      },
+      "disposition": "gpt_reaudited_minor_delta_requires_human_confirmation",
+      "durationSeconds": 30.0,
+      "gptReauditText": "them in the name of the Father, the Son, and the Spirit. Amen. Now, in three weeks, we will begin a new series through the last book of the Bible, Revelation. Before we join Eric for today's message, here's a first look. The last book of the Bible describes the end of evil and the end of the world as we know it. It has fascinated people for centuries, driving fear in some and confusion in others. But the first hearers didn't receive",
+      "humanAudioClass": null,
+      "humanReferenceText": null,
+      "id": "post-live-2026-08-23-ZDQwL3K-A44_gold_003",
+      "originalModelReviewedReferenceText": "In the name of the Father, the Son, and the Spirit. Amen. Now, in three weeks, we will begin a new series through the last book of the Bible, Revelation. Before we join Eric for today's message, here's a first look. The last book of the Bible describes the end of evil and the end of the world as we know it. It has fascinated people for centuries, driving fear in some and confusion in others. But the first hearers didn't receive",
+      "referenceDeltaRate": 0.012195,
+      "reviewStatus": "needs_human_listening_confirmation",
+      "reviewer": null,
+      "sermonId": "post-live-2026-08-23-ZDQwL3K-A44"
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0000.m4a",
+      "audioSha256": "7bd08e2e2099d9b030799ec3053a2cdd074d812011c12e0094e0b38a79333769",
+      "candidateModelTranscripts": {
+        "ASR-WCPP-MEDIUM-EN-F16": "Seeing from tear down to set up and serving in the youth ministry I've got to build relationships find a community and ultimately strengthen my relationship with Christ Yeah, a man or sanctimony I got connected with rooted It was really a blessing to be a part of a communion and a fellowship of men who wanting to grow in their faith And then their walk with God mariner sanctimony is where I got baptized. It had been something that I was creating and meeting for a long time and",
+        "ASR-WCPP-SMALL-EN-F16": "Seeing from tear down to set up and serving in the youth ministry, I've got to build relationships, find a community, and ultimately strengthen my relationship with Christ. Yeah, at Mariner St. Fomini, I got connected with Rooted. It was really a blessing to be a part of a communion and a fellowship of men who are wanting to grow in their faith and they walk with God. Mariner St. Fomini is where I got baptized. It had been something that I was craving and needing for a long term."
+      },
+      "disposition": "gpt_reaudited_minor_delta_requires_human_confirmation",
+      "durationSeconds": 30.0,
+      "gptReauditText": "From tear down to set up and serving in the youth ministry, I've got to build relationships, find a community, and ultimately strengthen my relationship with Christ. Yeah, at Mariners Saint Communion, I got connected with Rooted. It was really a blessing to be a part of a communion and a fellowship of men who are wanting to grow in their faith and their walk with God. Mariners Saint Communion is where I got baptized. It had been something that I was craving and needing for a long time.",
+      "humanAudioClass": null,
+      "humanReferenceText": null,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_001",
+      "originalModelReviewedReferenceText": "From tear down to set up and serving in the youth ministry, I've got to build relationships, find a community, and ultimately strengthen my relationship with Christ. Yeah, at Mariners San Clemente, I got connected with Rooted. It was really a blessing to be a part of a communion and a fellowship of men who are wanting to grow in their faith and their walk with God. Mariners San Clemente is where I got baptized. It had been something that I was craving and needing for a long time.",
+      "referenceDeltaRate": 0.044944,
+      "reviewStatus": "needs_human_listening_confirmation",
+      "reviewer": null,
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw"
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0068.m4a",
+      "audioSha256": "478fb6072bb438067ca645e4ee3425e4fe0178a46c3c4ef15b90244f0906c104",
+      "candidateModelTranscripts": {
+        "ASR-WCPP-MEDIUM-EN-F16": "♪♪♪",
+        "ASR-WCPP-SMALL-EN-F16": "♪ Praise the King ♪ ♪ Praise the King ♪ ♪ We'll name upon our land ♪ ♪ Jesus ♪ ♪ No greater name than this ♪ ♪ Jesus ♪ ♪ Everything will come ♪ ♪ Every heart can face ♪ ♪ Jesus ♪ Jesus"
+      },
+      "disposition": "gpt_reaudited_minor_delta_requires_human_confirmation",
+      "durationSeconds": 30.0,
+      "gptReauditText": "Praise the King, praise the King, one name upon all names, Jesus. No greater name than this, Jesus. Every knee will bow, every heart confess, Jesus, Jesus.",
+      "humanAudioClass": null,
+      "humanReferenceText": null,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_043",
+      "originalModelReviewedReferenceText": "Praise the King, praise the King, one name upon our lips, Jesus. No greater name than this, Jesus. Every knee will bow, every heart confess, Jesus, Jesus.",
+      "referenceDeltaRate": 0.074074,
+      "reviewStatus": "needs_human_listening_confirmation",
+      "reviewer": null,
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw"
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0069.m4a",
+      "audioSha256": "8b663e6fbb3781fc0a8c3969f08d0385f4ecade212e368f93d2c178bab43df3f",
+      "candidateModelTranscripts": {
+        "ASR-WCPP-MEDIUM-EN-F16": "♪ You're the Name upon my name ♪ ♪ You're the Name upon my name ♪ ♪ You're in every new world now ♪ ♪ Every heart can face ♪ ♪ Jesus ♪ ♪ Jesus ♪ Crime's had its back",
+        "ASR-WCPP-SMALL-EN-F16": "♪ Jesus ♪ ♪ Jesus ♪ ♪ You're the name of God ♪ ♪ Jesus ♪ ♪ You're the name of God ♪ ♪ Everyone confess ♪ ♪ Jesus ♪ ♪ Jesus ♪ ♪ Crime's high, it's not fair ♪"
+      },
+      "disposition": "gpt_reaudited_major_delta_requires_human_confirmation",
+      "durationSeconds": 30.0,
+      "gptReauditText": "What name above all names? Jesus. You’re the name above all names. Every heart confesses, Jesus, Jesus. Christ has done.",
+      "humanAudioClass": null,
+      "humanReferenceText": null,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_044",
+      "originalModelReviewedReferenceText": "One name upon all names, Jesus. You have no rival. You have no equal. Now and forever, God, You reign. Yours is the kingdom, Yours is the glory. Yours is the name above all names, Jesus, Jesus.",
+      "referenceDeltaRate": 0.837838,
+      "reviewStatus": "needs_human_listening_confirmation",
+      "reviewer": null,
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw"
+    }
+  ],
+  "schemaVersion": "local-asr-human-confirmation-queue-v1",
+  "sourceSummary": "data/benchmarks/live-sermon-translation-v1/runs/local-asr/gpt-transcribe-reaudit-20260903/calibration-summary.json",
+  "sourceSummarySha256": "c4fc651bb37a6942f672c1936ba75512ec53896bfd0f7e15c1cf543ec513c8fe",
+  "status": "needs_human_listening_confirmation"
+}

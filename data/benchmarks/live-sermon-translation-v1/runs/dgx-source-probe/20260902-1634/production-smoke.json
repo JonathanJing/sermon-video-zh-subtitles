@@ -1,0 +1,292 @@
+{
+  "run_id": "20260902-163322-smoke",
+  "timestamp": "2026-09-02T16:33:28",
+  "base_url": "http://127.0.0.1:8000/v1",
+  "model": "Qwen3.8-27B-UD-Q4_K_XL-Unsloth",
+  "model_label": "sermon-a0-qwen38-27b-q4kxl-dflash2-c262144-p1",
+  "suite": "smoke",
+  "cache_mode": "cold",
+  "model_info": {
+    "models": [
+      {
+        "name": "Qwen3.8-27B-UD-Q4_K_XL-Unsloth",
+        "model": "Qwen3.8-27B-UD-Q4_K_XL-Unsloth",
+        "modified_at": "",
+        "size": "",
+        "digest": "",
+        "type": "model",
+        "description": "",
+        "tags": [
+          ""
+        ],
+        "capabilities": [
+          "completion"
+        ],
+        "parameters": "",
+        "details": {
+          "parent_model": "",
+          "format": "gguf",
+          "family": "",
+          "families": [
+            ""
+          ],
+          "parameter_size": "",
+          "quantization_level": ""
+        }
+      }
+    ],
+    "object": "list",
+    "data": [
+      {
+        "id": "Qwen3.8-27B-UD-Q4_K_XL-Unsloth",
+        "aliases": [
+          "Qwen3.8-27B-UD-Q4_K_XL-Unsloth"
+        ],
+        "tags": [],
+        "object": "model",
+        "created": 1788392002,
+        "owned_by": "llamacpp",
+        "meta": {
+          "vocab_type": 2,
+          "n_vocab": 248320,
+          "n_ctx": 262144,
+          "n_ctx_train": 262144,
+          "n_embd": 5120,
+          "n_params": 27320697856,
+          "size": 17548181504,
+          "ftype": "Q4_K - Medium"
+        }
+      }
+    ]
+  },
+  "results": [
+    {
+      "scenario": {
+        "name": "stream_smoke_nothink",
+        "category": "runtime",
+        "description": "Streaming TTFT smoke test with thinking disabled.",
+        "messages": [
+          {
+            "role": "user",
+            "content": "[benchmark_run_id: 20260902-163322-smoke]\n只回答 OK"
+          }
+        ],
+        "max_tokens": 16,
+        "temperature": 0.0,
+        "enable_thinking": false,
+        "stream": true,
+        "validator": "ok",
+        "required_terms": [],
+        "forbidden_terms": [],
+        "expected_json_keys": []
+      },
+      "ok": true,
+      "elapsed_s": 0.737,
+      "ttft_s": 0.61,
+      "chunks": 1,
+      "preview": "OK",
+      "full_text": "OK",
+      "pass": true,
+      "eval_notes": [],
+      "forbidden_hits": [],
+      "missing_terms": [],
+      "parsed": null,
+      "parse_method": null
+    },
+    {
+      "scenario": {
+        "name": "short_latency_nothink",
+        "category": "latency",
+        "description": "Short direct response latency and decode speed.",
+        "messages": [
+          {
+            "role": "user",
+            "content": "[benchmark_run_id: 20260902-163322-smoke]\n用一句中文说明本地模型 benchmark 为什么要固定提示词。"
+          }
+        ],
+        "max_tokens": 96,
+        "temperature": 0.2,
+        "enable_thinking": false,
+        "stream": false,
+        "validator": "ok",
+        "required_terms": [],
+        "forbidden_terms": [],
+        "expected_json_keys": []
+      },
+      "ok": true,
+      "elapsed_s": 2.409,
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 31,
+        "prompt_tokens": 50,
+        "total_tokens": 81,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 50,
+        "prompt_ms": 295.837,
+        "prompt_per_token_ms": 5.91674,
+        "prompt_per_second": 169.01198971055007,
+        "predicted_n": 31,
+        "predicted_ms": 2110.018,
+        "predicted_per_token_ms": 70.33393333333333,
+        "predicted_per_second": 14.217888188631566,
+        "draft_n": 119,
+        "draft_n_accepted": 14
+      },
+      "content_chars": 56,
+      "reasoning_chars": 0,
+      "preview": "固定提示词是为了消除输入变量，确保不同模型或版本在完全相同的测试条件下进行公平对比，从而准确评估其核心能力差异。",
+      "full_text": "固定提示词是为了消除输入变量，确保不同模型或版本在完全相同的测试条件下进行公平对比，从而准确评估其核心能力差异。",
+      "valid_json": null,
+      "pass": true,
+      "eval_notes": [],
+      "forbidden_hits": [],
+      "missing_terms": [],
+      "parsed": null,
+      "parse_method": null
+    },
+    {
+      "scenario": {
+        "name": "json_tool_nothink",
+        "category": "agent",
+        "description": "Structured JSON stability for agent/tool routing.",
+        "messages": [
+          {
+            "role": "user",
+            "content": "[benchmark_run_id: 20260902-163322-smoke]\n你是任务路由器。只输出 JSON，不要 Markdown。字段必须是 action, target_model, reason。任务：总结 12 条 X 推文并提取 3 个技术趋势。"
+          }
+        ],
+        "max_tokens": 160,
+        "temperature": 0.0,
+        "enable_thinking": false,
+        "stream": false,
+        "validator": "json_keys",
+        "required_terms": [],
+        "forbidden_terms": [],
+        "expected_json_keys": [
+          "action",
+          "target_model",
+          "reason"
+        ]
+      },
+      "ok": true,
+      "elapsed_s": 2.862,
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 66,
+        "prompt_tokens": 77,
+        "total_tokens": 143,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 77,
+        "prompt_ms": 302.642,
+        "prompt_per_token_ms": 3.9304155844155844,
+        "prompt_per_second": 254.42602150395516,
+        "predicted_n": 66,
+        "predicted_ms": 2472.294,
+        "predicted_per_token_ms": 38.03529230769231,
+        "predicted_per_second": 26.291371495461302,
+        "draft_n": 140,
+        "draft_n_accepted": 45
+      },
+      "content_chars": 138,
+      "reasoning_chars": 0,
+      "preview": "{\n  \"action\": \"route\",\n  \"target_model\": \"general-purpose-llm\",\n  \"reason\": \"任务涉及多源文本摘要与趋势提取，属于通用自然语言处理任务，无需特定领域模型或工具调用，适合由通用大语言模型直接处理。\"\n}",
+      "full_text": "{\n  \"action\": \"route\",\n  \"target_model\": \"general-purpose-llm\",\n  \"reason\": \"任务涉及多源文本摘要与趋势提取，属于通用自然语言处理任务，无需特定领域模型或工具调用，适合由通用大语言模型直接处理。\"\n}",
+      "valid_json": true,
+      "pass": true,
+      "eval_notes": [
+        "json=True"
+      ],
+      "forbidden_hits": [],
+      "missing_terms": [],
+      "parsed": {
+        "action": "route",
+        "target_model": "general-purpose-llm",
+        "reason": "任务涉及多源文本摘要与趋势提取，属于通用自然语言处理任务，无需特定领域模型或工具调用，适合由通用大语言模型直接处理。"
+      },
+      "parse_method": "direct"
+    }
+  ],
+  "concurrency": {
+    "workers": 1,
+    "ok": true,
+    "elapsed_s": 1.134,
+    "per_request_elapsed_s": [
+      1.132
+    ],
+    "median_request_s": 1.132,
+    "results": [
+      {
+        "scenario": {
+          "name": "parallel_short_nothink",
+          "category": "concurrency",
+          "description": "1 concurrent short requests.",
+          "messages": [
+            {
+              "role": "user",
+              "content": "[benchmark_run_id: 20260902-163322-smoke]\n输出一个不同的 8 字中文短句。"
+            }
+          ],
+          "max_tokens": 48,
+          "temperature": 0.7,
+          "enable_thinking": false,
+          "stream": false,
+          "validator": "ok",
+          "required_terms": [],
+          "forbidden_terms": [],
+          "expected_json_keys": []
+        },
+        "ok": true,
+        "elapsed_s": 1.132,
+        "finish_reason": "stop",
+        "usage": {
+          "completion_tokens": 7,
+          "prompt_tokens": 47,
+          "total_tokens": 54,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 47,
+          "prompt_ms": 287.462,
+          "prompt_per_token_ms": 6.116212765957447,
+          "prompt_per_second": 163.49987128733537,
+          "predicted_n": 7,
+          "predicted_ms": 747.936,
+          "predicted_per_token_ms": 124.656,
+          "predicted_per_second": 8.022076755230394,
+          "draft_n": 42,
+          "draft_n_accepted": 1
+        },
+        "content_chars": 8,
+        "reasoning_chars": 0,
+        "preview": "岁月静好现世安稳",
+        "full_text": "岁月静好现世安稳",
+        "valid_json": null
+      }
+    ]
+  },
+  "summary": {
+    "scenarios": 3,
+    "ok": 3,
+    "pass": 3,
+    "json_valid": 1,
+    "json_checked": 1,
+    "elapsed_s_sum": 6.008,
+    "prompt_tokens": 127,
+    "completion_tokens": 97,
+    "prompt_tps_median": 211.719,
+    "decode_tps_median": 20.255
+  }
+}

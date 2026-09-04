@@ -1,0 +1,837 @@
+{
+  "endpoints": [
+    {
+      "baseUrl": "http://127.0.0.1:8000/v1",
+      "elapsedSeconds": 85.022,
+      "label": "production",
+      "model": "Qwen3.8-27B-UD-Q4_K_XL-Unsloth",
+      "predictionCount": 10,
+      "predictions": [
+        {
+          "elapsedSeconds": 6.276,
+          "english": "That's him holding a Bible saying that scripture alone, not tradition, was the authority for the church. And what's fun about that Playmobil, that little thing right there became the most selling, the bestselling Playmobil in history. A million of them that were sold on the 500th anniversary of the Reformation. Now, I just wanted to tell you that cuz so you had a little break from the history lesson. You're you're welcome.",
+          "prediction": {
+            "terms": [
+              "Bible",
+              "scripture",
+              "tradition",
+              "church",
+              "Playmobil",
+              "500th anniversary of the Reformation"
+            ],
+            "translation": "那就是他手持圣经，宣称唯独圣经，而非传统，才是教会的权威。有趣的是，那个小小的Playmobil人偶成了历史上最畅销的Playmobil。在宗教改革500周年之际，共售出了一百万个。我之所以提这个，是想让大家从历史课中稍作休息。不客气。",
+            "warnings": []
+          },
+          "segmentId": "8u9B8u_5ISI_seg_0007",
+          "timings": {
+            "cache_n": 0,
+            "draft_n": 308,
+            "draft_n_accepted": 90,
+            "predicted_ms": 5481.793,
+            "predicted_n": 134,
+            "predicted_per_second": 24.262134670170873,
+            "predicted_per_token_ms": 41.21648872180451,
+            "prompt_ms": 534.46,
+            "prompt_n": 191,
+            "prompt_per_second": 357.37005575721287,
+            "prompt_per_token_ms": 2.7982198952879584
+          },
+          "usage": {
+            "completion_tokens": 134,
+            "prompt_tokens": 191,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            },
+            "total_tokens": 325
+          }
+        },
+        {
+          "elapsedSeconds": 5.488,
+          "english": "We're of one faith. We're of one baptism. One God and father overall. So just just like siblings share a father and a mother, so do we as followers of Jesus. It doesn't it doesn't erase our disagreements about church structure or or you know worship approaches or theological differences. you know, it doesn't erase those any more than my daughter's disagreements erased their sisterhood. They were still sisters.",
+          "prediction": {
+            "terms": [
+              "one faith",
+              "one baptism",
+              "One God and father",
+              "siblings",
+              "church structure",
+              "worship approaches",
+              "theological differences",
+              "sisterhood"
+            ],
+            "translation": "我们同信一主，同受一洗，同有一位上帝和父。正如兄弟姐妹共享父母，我们作为耶稣的跟随者也是如此。这并不会抹去我们在教会体制、敬拜方式或神学观点上的分歧。正如我女儿与她姐妹之间的分歧并未抹去她们的姐妹关系，她们依然是姐妹。",
+            "warnings": []
+          },
+          "segmentId": "8u9B8u_5ISI_seg_0040",
+          "timings": {
+            "cache_n": 59,
+            "draft_n": 280,
+            "draft_n_accepted": 103,
+            "predicted_ms": 4967.786,
+            "predicted_n": 144,
+            "predicted_per_second": 28.785458954954986,
+            "predicted_per_token_ms": 34.739762237762235,
+            "prompt_ms": 378.469,
+            "prompt_n": 123,
+            "prompt_per_second": 324.9935926059994,
+            "prompt_per_token_ms": 3.0769837398373983
+          },
+          "usage": {
+            "completion_tokens": 144,
+            "prompt_tokens": 182,
+            "prompt_tokens_details": {
+              "cached_tokens": 59
+            },
+            "total_tokens": 326
+          }
+        },
+        {
+          "elapsedSeconds": 10.298,
+          "english": "But then when we get to right here in verse nine, all of a sudden it switches to third person. It says, \"He weighed, explored, and arranged the lessons for the reader.\" So suddenly, there's a narrator in this book. Somebody has intervened and interjected at the very end of this book, and they're speaking about the teacher or Solomon in third person. It's like a director that would step out at the end of the film and essentially tell you what you have just watched, or like uh seeing a behind-the-scenes version of something that you know so well. That's exactly what is happening right here at the end of Ecclesiastes 12. A voice has shown up to explain what is happening. Now, they go through a couple. We see a couple of images that are used. The first is a cattle prod. Now, I want to show you an image of a cattle prod because I didn't",
+          "prediction": {
+            "terms": [
+              "verse nine",
+              "third person",
+              "Solomon",
+              "Ecclesiastes 12",
+              "cattle prod"
+            ],
+            "translation": "但到了第九节，突然切换到了第三人称。经文说：“他衡量、探索并安排了给读者的教训。”于是，书中突然出现了一位叙述者。有人在本书的结尾处介入并插话，以第三人称谈论那位教师，也就是所罗门。这就像导演在电影结束时走出来，告诉你刚才看到了什么；或者像是看到了你非常熟悉的事物的幕后花絮。传道书第十二章结尾正在发生的正是这样的事。一个声音出现来解释正在发生的事。他们列举了几个意象。我们看到几个被使用的意象。第一个是驱牛棒。我想给你们看一张驱牛棒的图片，因为我没有……",
+            "warnings": []
+          },
+          "segmentId": "hAWaaBVaMzY_seg_0004",
+          "timings": {
+            "cache_n": 59,
+            "draft_n": 532,
+            "draft_n_accepted": 112,
+            "predicted_ms": 9436.789,
+            "predicted_n": 188,
+            "predicted_per_second": 19.816062433948666,
+            "predicted_per_token_ms": 50.46411229946524,
+            "prompt_ms": 535.602,
+            "prompt_n": 228,
+            "prompt_per_second": 425.6892244614471,
+            "prompt_per_token_ms": 2.349131578947368
+          },
+          "usage": {
+            "completion_tokens": 188,
+            "prompt_tokens": 287,
+            "prompt_tokens_details": {
+              "cached_tokens": 59
+            },
+            "total_tokens": 475
+          }
+        },
+        {
+          "elapsedSeconds": 7.604,
+          "english": "And I hadn't really thought about that before and I got a little nervous, and I just sort of said like, \"I don't know you.\" Like, I guess I want to look I want to look like you. And he He gave me this look like, \"Buckle up, buddy.\" And so, he took me for about 45 minutes through a workout routine where we worked on various compound lifts. We did uh things with like extreme precision so that I could get the technique exactly right. And things were feeling pretty good until about 3/4 of the way through.",
+          "prediction": {
+            "terms": [
+              "compound lifts: 复合动作",
+              "Buckle up, buddy: 坐稳了，伙计",
+              "extreme precision: 极高精准度"
+            ],
+            "translation": "我之前其实没怎么想过这件事，所以有点紧张，我就随口说了句：“我不认识你。” 大概意思是，我想看起来像你一样。他看了我一眼，那眼神仿佛在说：“坐稳了，伙计。” 然后，他带我进行了大约45分钟的训练，我们练习了各种复合动作。我们做了一些需要极高精准度的动作，以便我能完全掌握正确的技术。感觉还不错，直到大约完成了四分之三的时候。",
+            "warnings": []
+          },
+          "segmentId": "hAWaaBVaMzY_seg_0008",
+          "timings": {
+            "cache_n": 59,
+            "draft_n": 378,
+            "draft_n_accepted": 103,
+            "predicted_ms": 6743.665,
+            "predicted_n": 157,
+            "predicted_per_second": 23.132821692655256,
+            "predicted_per_token_ms": 43.22862179487179,
+            "prompt_ms": 482.755,
+            "prompt_n": 158,
+            "prompt_per_second": 327.28816894698144,
+            "prompt_per_token_ms": 3.0554113924050634
+          },
+          "usage": {
+            "completion_tokens": 157,
+            "prompt_tokens": 217,
+            "prompt_tokens_details": {
+              "cached_tokens": 59
+            },
+            "total_tokens": 374
+          }
+        },
+        {
+          "elapsedSeconds": 5.482,
+          "english": "So, he shares his struggle. He's bringing his thoughts to God. He's telling his God about the truth of his thoughts, but notice what he prays. He actually prays three things. You can see it. Consider me, answer, and restore. God, would you consider me? Would you please remember your son, remember your daughter?",
+          "prediction": {
+            "terms": [
+              "consider me: 顾念我",
+              "answer: 回应",
+              "restore: 恢复",
+              "your son: 你的儿子",
+              "your daughter: 你的女儿"
+            ],
+            "translation": "因此，他分享自己的挣扎。他将心思带到神面前，向神坦露自己心思的真实状况。但请注意他的祷告内容，他实际上祈求了三件事，你可以看到：顾念、回应、恢复。神啊，求你顾念我；求你记念你的儿子，记念你的女儿。",
+            "warnings": []
+          },
+          "segmentId": "hoeJTwl-EJg_seg_0030",
+          "timings": {
+            "cache_n": 59,
+            "draft_n": 273,
+            "draft_n_accepted": 99,
+            "predicted_ms": 4872.351,
+            "predicted_n": 138,
+            "predicted_per_second": 28.11784290581693,
+            "predicted_per_token_ms": 35.56460583941605,
+            "prompt_ms": 402.131,
+            "prompt_n": 108,
+            "prompt_per_second": 268.5691975997872,
+            "prompt_per_token_ms": 3.723435185185185
+          },
+          "usage": {
+            "completion_tokens": 138,
+            "prompt_tokens": 167,
+            "prompt_tokens_details": {
+              "cached_tokens": 59
+            },
+            "total_tokens": 305
+          }
+        },
+        {
+          "elapsedSeconds": 9.429,
+          "english": "I am struggling right now in this world. I won't be able to make ends meet. That's your thought. You take God's truth and you tell your thoughts the truth of your God. The truth is God will supply all of my needs according to his riches and glory. Some of you have this thought. I'm alone. I've been abandoned. It feels like no one is with me. David prayed that. Remember we saw in Psalm 142 last week he said, \"No one cares for me. No one stands up for me.\" Perhaps you have the thought right now that I'm alone. You need to tell your thoughts the truth of your God. The truth of your God because he has faithful love for you is that he will never leave you or abandon you. You may think you're alone, but the truth is you're never alone because he will never leave you. You need to take the truth and preach the truth to your thoughts.",
+          "prediction": {
+            "terms": [
+              "make ends meet: 入不敷出",
+              "Psalm 142: 诗篇142篇",
+              "faithful love: 信实的爱",
+              "abandon: 遗弃"
+            ],
+            "translation": "我现在正在这世上挣扎，我入不敷出。这就是你的想法。你要拿着神的真理，告诉你的思想你神的真理。真理是：神必照他丰富的荣耀，供应我一切的需要。你们中有些人有这样的想法：我是孤独的，我被遗弃了，感觉没有人和我在一起。大卫曾为此祷告。记得上周我们在诗篇142篇中看到，他说：“没有人关心我，没有人支持我。”也许你现在正有这样的想法：我是孤独的。你需要告诉你的思想你神的真理。你神的真理，因为他对你有信实的爱，就是他永不离开你，也不遗弃你。你可能觉得自己是孤独的，但真理是你永不孤独，因为他永不离开你。你需要拿着真理，向你的思想宣讲真理。",
+            "warnings": []
+          },
+          "segmentId": "hoeJTwl-EJg_seg_0049",
+          "timings": {
+            "cache_n": 59,
+            "draft_n": 483,
+            "draft_n_accepted": 157,
+            "predicted_ms": 8614.515,
+            "predicted_n": 226,
+            "predicted_per_second": 26.11870778563854,
+            "predicted_per_token_ms": 38.28673333333333,
+            "prompt_ms": 537.234,
+            "prompt_n": 233,
+            "prompt_per_second": 433.70300464974287,
+            "prompt_per_token_ms": 2.305725321888412
+          },
+          "usage": {
+            "completion_tokens": 226,
+            "prompt_tokens": 292,
+            "prompt_tokens_details": {
+              "cached_tokens": 59
+            },
+            "total_tokens": 518
+          }
+        },
+        {
+          "elapsedSeconds": 9.349,
+          "english": "Okay. And it's a good thing for you that I'm not God, but God provided because that's his character. Like his food provision was uh less of a food drop and more of a trustwalk because he gave them just enough mana for each day. most likely because God's provision God's provision isn't meant to stock your refrigerator. It's meant to refresh and and build your faith. That's why he said in verse four, \"This way I will test them to see whether or not they will follow my instructions.\" See, the the blessing of mana from heaven came with the responsibility of obedience.",
+          "prediction": {
+            "terms": [
+              "mana: 吗哪",
+              "trustwalk: 信心之旅",
+              "verse four: 第四节",
+              "instructions: 律例"
+            ],
+            "translation": "好的。对我来说，我不是神，这对你来说是件好事，但神供应了，因为这是他的本性。他的食物供应更像是一场信心之旅，而不是直接空投食物，因为他每天只赐下刚好够吃的吗哪。这很可能是为了表明，神的供应不是为了填满你的冰箱，而是为了更新你并建立你的信心。这就是为什么他在第四节说：“这样我就可以试验他们，看他们是否遵行我的律例。”你看，从天上降下的吗哪这祝福，伴随着顺服的责任。",
+            "warnings": []
+          },
+          "segmentId": "qvImKpmvgaM_seg_0021",
+          "timings": {
+            "cache_n": 59,
+            "draft_n": 483,
+            "draft_n_accepted": 99,
+            "predicted_ms": 8634.027,
+            "predicted_n": 169,
+            "predicted_per_second": 19.457896066343086,
+            "predicted_per_token_ms": 51.39301785714286,
+            "prompt_ms": 467.834,
+            "prompt_n": 160,
+            "prompt_per_second": 342.001650157962,
+            "prompt_per_token_ms": 2.9239625
+          },
+          "usage": {
+            "completion_tokens": 169,
+            "prompt_tokens": 219,
+            "prompt_tokens_details": {
+              "cached_tokens": 59
+            },
+            "total_tokens": 388
+          }
+        },
+        {
+          "elapsedSeconds": 10.12,
+          "english": "And if you want to live life to its fullest and fulfill God's plan for your life, then you've got to live like you've been rescued. So, if you'll allow me to just just to pastor you for a couple minutes, here's what I I'd love for you to think about doing every day. Every day to live like you've been rescued. Here's what I think you need to do. First, you got to let go of Egypt. You just got to let go of Egypt. Like the Israelites looked back at Egypt and they finally thought, you know, that wasn't that wasn't so bad. But at least we had meat. They were acting like Egypt was a a luxury resort with a killer buffet. Yeah. But here's the deal. You can't step into God's new future for you if you're still flirting with your old life.",
+          "prediction": {
+            "terms": [
+              "live life to its fullest",
+              "fulfill God's plan",
+              "rescued",
+              "pastor you",
+              "let go of Egypt",
+              "Israelites",
+              "luxury resort",
+              "killer buffet",
+              "flirting with your old life",
+              "God's new future"
+            ],
+            "translation": "如果你想充实地生活，并成就神对你生命的计划，你就必须像得蒙拯救的人那样生活。所以，请允许我牧养你们几分钟。以下是我希望你们每天思考并去做的，每天像得蒙拯救的人那样生活。我认为你们需要这样做。首先，你必须放下埃及。你必须放下埃及。就像以色列人回头看埃及，最终觉得，嗯，那里其实没那么糟，至少我们还有肉吃。他们表现得好像埃及是一个拥有顶级自助餐的豪华度假村。是的。但关键在于，如果你还在与旧生活调情，你就无法踏入神为你预备的新未来。",
+            "warnings": []
+          },
+          "segmentId": "qvImKpmvgaM_seg_0024",
+          "timings": {
+            "cache_n": 59,
+            "draft_n": 525,
+            "draft_n_accepted": 149,
+            "predicted_ms": 9362.919,
+            "predicted_n": 224,
+            "predicted_per_second": 23.817358667740265,
+            "predicted_per_token_ms": 41.986183856502244,
+            "prompt_ms": 504.681,
+            "prompt_n": 216,
+            "prompt_per_second": 427.9931283325507,
+            "prompt_per_token_ms": 2.336486111111111
+          },
+          "usage": {
+            "completion_tokens": 224,
+            "prompt_tokens": 275,
+            "prompt_tokens_details": {
+              "cached_tokens": 59
+            },
+            "total_tokens": 499
+          }
+        },
+        {
+          "elapsedSeconds": 12.73,
+          "english": "our bodies are not incidental to our human identity, but they are an important part of God's actual original design for us. In fact, in Psalm 139 13 and 14, David wrote, \"For it was you [snorts] who created my inward parts. You knit me together in my mother's womb. I will praise you because I have been remarkably and wondrously made. Your works are wondrous and I know this very well. Bodies are so important that when God came to earth in Jesus, he actually came in a body. He lived in a body. He died in a body and he was resurrected in a body. Now this shows us that embodiment is actually spiritually significant. And not only did Jesus himself come to earth in a physical body, but it is in our actual physical bodies that the life of Christ continues to be made visible on this earth. In 1",
+          "prediction": {
+            "terms": [
+              "Psalm 139 13 and 14",
+              "David",
+              "Jesus",
+              "embodiment",
+              "Christ"
+            ],
+            "translation": "我们的身体并非我们人类身份的偶然附属，而是神为我们所定的原始设计中至关重要的一部分。事实上，诗篇139篇13至14节中，大卫写道：“因为你造了我的骨髓，你在我母腹中造我。我要称谢你，因为我受造奇妙可畏。你的作为奇妙，我也深知。”身体如此重要，以至于神藉着耶稣降临时，他实际上是带着身体来的。他住在身体里，死在身体里，并且复活时也是带着身体的。这表明，拥有身体在属灵上具有重大意义。不仅耶稣自己是以肉身来到世上，基督的生命也是透过我们实际的肉身，在这世上继续彰显出来。在1",
+            "warnings": [
+              "The English text ends abruptly with 'In 1', which is translated literally as '在1' to preserve the incomplete state of the source segment."
+            ]
+          },
+          "segmentId": "z_UoOx-6mz4_seg_0007",
+          "timings": {
+            "cache_n": 59,
+            "draft_n": 665,
+            "draft_n_accepted": 145,
+            "predicted_ms": 11874.383,
+            "predicted_n": 240,
+            "predicted_per_second": 20.1273615648072,
+            "predicted_per_token_ms": 49.683610878661085,
+            "prompt_ms": 508.924,
+            "prompt_n": 226,
+            "prompt_per_second": 444.07416431530055,
+            "prompt_per_token_ms": 2.25187610619469
+          },
+          "usage": {
+            "completion_tokens": 240,
+            "prompt_tokens": 285,
+            "prompt_tokens_details": {
+              "cached_tokens": 59
+            },
+            "total_tokens": 525
+          }
+        },
+        {
+          "elapsedSeconds": 8.246,
+          "english": "our bodies on earth is important both for our witness and for the glory of God. In Romans 8:11, Paul wrote that our physical bodies have been purchased by Christ and they're included in his redemption. He writes, \"And if the spirit of him who raised Jesus from the dead lives in you, then he who raised Christ from the dead will also bring your mortal bodies to life through his spirit who lives in you.\" So when we die and our bodies return to dust and decay, that's not the end. We will one day be raised to life with glorified bodies.",
+          "prediction": {
+            "terms": [
+              "Romans 8:11",
+              "Christ",
+              "redemption",
+              "glorified bodies"
+            ],
+            "translation": "我们在世上的身体对我们的见证和神的荣耀都很重要。在罗马书八章十一节，保罗写道，我们的身体已被基督买赎，并包含在他的救赎之中。他写道：“然而，叫耶稣从死里复活者的灵若住在你们心里，那叫基督耶稣从死里复活的，也必借着住在你们心里的圣灵，使你们必死的身体又活过来。”所以，当我们死去，身体归于尘土和朽坏时，那并不是终点。我们终有一天将带着荣耀的身体复活。",
+            "warnings": []
+          },
+          "segmentId": "z_UoOx-6mz4_seg_0009",
+          "timings": {
+            "cache_n": 59,
+            "draft_n": 420,
+            "draft_n_accepted": 103,
+            "predicted_ms": 7509.789,
+            "predicted_n": 163,
+            "predicted_per_second": 21.571844428651723,
+            "predicted_per_token_ms": 46.356722222222224,
+            "prompt_ms": 483.555,
+            "prompt_n": 159,
+            "prompt_per_second": 328.8147160095543,
+            "prompt_per_token_ms": 3.0412264150943398
+          },
+          "usage": {
+            "completion_tokens": 163,
+            "prompt_tokens": 218,
+            "prompt_tokens_details": {
+              "cached_tokens": 59
+            },
+            "total_tokens": 381
+          }
+        }
+      ]
+    },
+    {
+      "baseUrl": "http://127.0.0.1:8002/v1",
+      "elapsedSeconds": 39.557,
+      "label": "candidate",
+      "model": "Qwen3.6-35B-A3B-UD-Q4_K_M",
+      "predictionCount": 10,
+      "predictions": [
+        {
+          "elapsedSeconds": 3.665,
+          "english": "That's him holding a Bible saying that scripture alone, not tradition, was the authority for the church. And what's fun about that Playmobil, that little thing right there became the most selling, the bestselling Playmobil in history. A million of them that were sold on the 500th anniversary of the Reformation. Now, I just wanted to tell you that cuz so you had a little break from the history lesson. You're you're welcome.",
+          "prediction": {
+            "terms": {
+              "500th anniversary": "500周年",
+              "Playmobil": "Playmobil（拼奇乐积木人偶）",
+              "Reformation": "宗教改革",
+              "authority for the church": "教会的权威",
+              "scripture alone": "唯独圣经",
+              "tradition": "传统"
+            },
+            "translation": "就是他，手持圣经，宣称唯独圣经、而非传统，才是教会的权威。有趣的是，这个小小的Playmobil人偶竟成为历史上最畅销的Playmobil产品。在宗教改革500周年之际，售出了一百万个。我之所以提这个，是想让大家从历史课中稍作休息。不客气。",
+            "warnings": [
+              "原文语气轻松幽默（如“You're welcome”），译文保留其轻松口吻，未添加额外神学解释。",
+              "未补充Playmobil品牌背景或宗教改革具体日期等原文未提及信息。"
+            ]
+          },
+          "segmentId": "8u9B8u_5ISI_seg_0007",
+          "timings": {
+            "cache_n": 0,
+            "predicted_ms": 3400.759,
+            "predicted_n": 222,
+            "predicted_per_second": 64.98549294436918,
+            "predicted_per_token_ms": 15.388049773755656,
+            "prompt_ms": 228.537,
+            "prompt_n": 191,
+            "prompt_per_second": 835.7508849770496,
+            "prompt_per_token_ms": 1.1965287958115183
+          },
+          "usage": {
+            "completion_tokens": 222,
+            "prompt_tokens": 191,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            },
+            "total_tokens": 413
+          }
+        },
+        {
+          "elapsedSeconds": 4.182,
+          "english": "We're of one faith. We're of one baptism. One God and father overall. So just just like siblings share a father and a mother, so do we as followers of Jesus. It doesn't it doesn't erase our disagreements about church structure or or you know worship approaches or theological differences. you know, it doesn't erase those any more than my daughter's disagreements erased their sisterhood. They were still sisters.",
+          "prediction": {
+            "terms": [
+              "one faith",
+              "one baptism",
+              "one God and father",
+              "church structure",
+              "worship approaches",
+              "theological differences",
+              "sisterhood"
+            ],
+            "translation": "我们同信一主，同受一洗，同有一位神和父。正如兄弟姐妹共享一位父亲和母亲，我们作为耶稣的跟随者也是如此。这并不抹去我们在教会体制、敬拜方式或神学观点上的分歧；正如我女儿们之间的分歧并未抹去她们的姐妹情谊一样，她们依然是姐妹。",
+            "warnings": [
+              "原文中 'my daughter's disagreements erased their sisterhood' 存在代词不一致（daughter 单数 vs their 复数），根据上下文推断为 'daughters'（女儿们）之误，译文已按复数逻辑处理为 '我女儿们之间的分歧'。",
+              "原文 'overall' 在此语境中意为 '至高/统管'，译为 '同有一位神和父' 以符合基督教神学表述。",
+              "原文 'It doesn't it doesn't' 为口语重复，译文已简化为一次否定。"
+            ]
+          },
+          "segmentId": "8u9B8u_5ISI_seg_0040",
+          "timings": {
+            "cache_n": 59,
+            "predicted_ms": 3965.743,
+            "predicted_n": 269,
+            "predicted_per_second": 67.57876140738318,
+            "predicted_per_token_ms": 14.797548507462686,
+            "prompt_ms": 160.339,
+            "prompt_n": 123,
+            "prompt_per_second": 767.1246546379857,
+            "prompt_per_token_ms": 1.303569105691057
+          },
+          "usage": {
+            "completion_tokens": 269,
+            "prompt_tokens": 182,
+            "prompt_tokens_details": {
+              "cached_tokens": 59
+            },
+            "total_tokens": 451
+          }
+        },
+        {
+          "elapsedSeconds": 4.132,
+          "english": "But then when we get to right here in verse nine, all of a sudden it switches to third person. It says, \"He weighed, explored, and arranged the lessons for the reader.\" So suddenly, there's a narrator in this book. Somebody has intervened and interjected at the very end of this book, and they're speaking about the teacher or Solomon in third person. It's like a director that would step out at the end of the film and essentially tell you what you have just watched, or like uh seeing a behind-the-scenes version of something that you know so well. That's exactly what is happening right here at the end of Ecclesiastes 12. A voice has shown up to explain what is happening. Now, they go through a couple. We see a couple of images that are used. The first is a cattle prod. Now, I want to show you an image of a cattle prod because I didn't",
+          "prediction": {
+            "terms": {
+              "Ecclesiastes 12": "《传道书》12章",
+              "Solomon": "所罗门",
+              "cattle prod": "牛鞭",
+              "narrator": "叙述者",
+              "third person": "第三人称",
+              "verse nine": "第9节"
+            },
+            "translation": "然而，当我们来到第9节时，突然转为第三人称。经文说：‘他称量、探究，并为读者安排这些教训。’于是，书中出现了一位叙述者。有人在书的结尾介入并插话，以第三人称谈论这位教师或所罗门。这就像电影导演在片尾走出来说明你刚刚看到的内容，或者像观看你熟悉事物的幕后版本。这正是《传道书》12章结尾正在发生的事：一个声音出现来解释所发生的事。接着，他们列举了几种意象。第一个是牛鞭。现在，我想展示一张牛鞭的图片，因为我之前没有……",
+            "warnings": [
+              "原文在末尾处截断（'because I didn't'），译文相应保留未完成语气，未补充缺失内容。"
+            ]
+          },
+          "segmentId": "hAWaaBVaMzY_seg_0004",
+          "timings": {
+            "cache_n": 59,
+            "predicted_ms": 3862.26,
+            "predicted_n": 262,
+            "predicted_per_second": 67.57701449410447,
+            "predicted_per_token_ms": 14.79793103448276,
+            "prompt_ms": 198.967,
+            "prompt_n": 228,
+            "prompt_per_second": 1145.9186699301893,
+            "prompt_per_token_ms": 0.8726622807017544
+          },
+          "usage": {
+            "completion_tokens": 262,
+            "prompt_tokens": 287,
+            "prompt_tokens_details": {
+              "cached_tokens": 59
+            },
+            "total_tokens": 549
+          }
+        },
+        {
+          "elapsedSeconds": 2.756,
+          "english": "And I hadn't really thought about that before and I got a little nervous, and I just sort of said like, \"I don't know you.\" Like, I guess I want to look I want to look like you. And he He gave me this look like, \"Buckle up, buddy.\" And so, he took me for about 45 minutes through a workout routine where we worked on various compound lifts. We did uh things with like extreme precision so that I could get the technique exactly right. And things were feeling pretty good until about 3/4 of the way through.",
+          "prediction": {
+            "terms": [
+              {
+                "en": "compound lifts",
+                "zh": "复合动作"
+              },
+              {
+                "en": "Buckle up, buddy",
+                "zh": "坐稳了，伙计"
+              }
+            ],
+            "translation": "我以前真没想过这一点，心里有点紧张，就随口说：“我不认识你。”我想，我大概是想让自己看起来像你。他给了我一个眼神，仿佛在说：“坐稳了，伙计。”接着，他带我做了大约45分钟的训练，我们练习了各种复合动作。我们做一些需要极高精准度的练习，好让我把技术动作做得完全正确。整个过程感觉还不错，直到训练进行到四分之三左右。",
+            "warnings": []
+          },
+          "segmentId": "hAWaaBVaMzY_seg_0008",
+          "timings": {
+            "cache_n": 59,
+            "predicted_ms": 2519.241,
+            "predicted_n": 171,
+            "predicted_per_second": 67.48064198701117,
+            "predicted_per_token_ms": 14.819064705882353,
+            "prompt_ms": 169.416,
+            "prompt_n": 158,
+            "prompt_per_second": 932.6155734995514,
+            "prompt_per_token_ms": 1.072253164556962
+          },
+          "usage": {
+            "completion_tokens": 171,
+            "prompt_tokens": 217,
+            "prompt_tokens_details": {
+              "cached_tokens": 59
+            },
+            "total_tokens": 388
+          }
+        },
+        {
+          "elapsedSeconds": 3.86,
+          "english": "So, he shares his struggle. He's bringing his thoughts to God. He's telling his God about the truth of his thoughts, but notice what he prays. He actually prays three things. You can see it. Consider me, answer, and restore. God, would you consider me? Would you please remember your son, remember your daughter?",
+          "prediction": {
+            "terms": [
+              "consider me",
+              "answer",
+              "restore",
+              "remember your son",
+              "remember your daughter"
+            ],
+            "translation": "于是，他分享自己的挣扎。他将自己的思想带到神面前，向神坦诚自己思想中的真实光景。但请注意他所祷告的内容：他实际上祷告了三件事——求神顾念、求神应允、求神恢复。你可以看到：神啊，求你顾念我？求你记念你的儿子，记念你的女儿吗？",
+            "warnings": [
+              "原文中 'Consider me, answer, and restore' 为三个并列的祷告请求，中文以‘求神顾念、求神应允、求神恢复’对应，保持逻辑并列关系。",
+              "原文 'Would you please remember your son, remember your daughter?' 为反问/恳求语气，中文保留‘求你记念’的祈使/恳求结构，未添加额外解释。",
+              "未添加任何原文未出现的圣经引用、神学阐释或背景信息。"
+            ]
+          },
+          "segmentId": "hoeJTwl-EJg_seg_0030",
+          "timings": {
+            "cache_n": 59,
+            "predicted_ms": 3643.55,
+            "predicted_n": 247,
+            "predicted_per_second": 67.51657037779088,
+            "predicted_per_token_ms": 14.811178861788619,
+            "prompt_ms": 150.448,
+            "prompt_n": 108,
+            "prompt_per_second": 717.8560034031692,
+            "prompt_per_token_ms": 1.393037037037037
+          },
+          "usage": {
+            "completion_tokens": 247,
+            "prompt_tokens": 167,
+            "prompt_tokens_details": {
+              "cached_tokens": 59
+            },
+            "total_tokens": 414
+          }
+        },
+        {
+          "elapsedSeconds": 5.313,
+          "english": "I am struggling right now in this world. I won't be able to make ends meet. That's your thought. You take God's truth and you tell your thoughts the truth of your God. The truth is God will supply all of my needs according to his riches and glory. Some of you have this thought. I'm alone. I've been abandoned. It feels like no one is with me. David prayed that. Remember we saw in Psalm 142 last week he said, \"No one cares for me. No one stands up for me.\" Perhaps you have the thought right now that I'm alone. You need to tell your thoughts the truth of your God. The truth of your God because he has faithful love for you is that he will never leave you or abandon you. You may think you're alone, but the truth is you're never alone because he will never leave you. You need to take the truth and preach the truth to your thoughts.",
+          "prediction": {
+            "terms": [
+              {
+                "term": "Psalm 142",
+                "translation": "诗篇142篇"
+              },
+              {
+                "term": "God's truth",
+                "translation": "神的真理"
+              },
+              {
+                "term": "faithful love",
+                "translation": "信实的爱"
+              }
+            ],
+            "translation": "我此刻在这世上挣扎，觉得无法维持生计。这是你的想法。你要用神的真理来纠正你的思想。真理是：神必按他荣耀的丰富，满足我的一切需用。你们中有些人有这样的念头：我孤身一人，被遗弃了，仿佛无人陪伴。大卫也曾这样祷告。记得上周我们在诗篇142篇中看到，他说：“无人顾念我，无人扶持我。”也许你此刻正想着自己孤身一人。你需要用神的真理来纠正你的思想。因为神对你有信实的爱，他的真理是：他绝不会离弃你，也绝不会抛弃你。你可能觉得自己孤单，但真理是：你从不孤单，因为他绝不会离弃你。你需要把真理拿去，向你的思想宣告真理。",
+            "warnings": [
+              "原文中 'according to his riches and glory' 通常译为 '按他荣耀的丰富'，此处保留神学含义，未添加额外解释。",
+              "原文 'preach the truth to your thoughts' 译为 '向你的思想宣告真理'，以准确传达 'preach' 在此语境下的主动宣告意味。"
+            ]
+          },
+          "segmentId": "hoeJTwl-EJg_seg_0049",
+          "timings": {
+            "cache_n": 59,
+            "predicted_ms": 5036.295,
+            "predicted_n": 342,
+            "predicted_per_second": 67.70850396968406,
+            "predicted_per_token_ms": 14.769193548387097,
+            "prompt_ms": 198.461,
+            "prompt_n": 233,
+            "prompt_per_second": 1174.0341931160278,
+            "prompt_per_token_ms": 0.8517639484978541
+          },
+          "usage": {
+            "completion_tokens": 342,
+            "prompt_tokens": 292,
+            "prompt_tokens_details": {
+              "cached_tokens": 59
+            },
+            "total_tokens": 634
+          }
+        },
+        {
+          "elapsedSeconds": 4.648,
+          "english": "Okay. And it's a good thing for you that I'm not God, but God provided because that's his character. Like his food provision was uh less of a food drop and more of a trustwalk because he gave them just enough mana for each day. most likely because God's provision God's provision isn't meant to stock your refrigerator. It's meant to refresh and and build your faith. That's why he said in verse four, \"This way I will test them to see whether or not they will follow my instructions.\" See, the the blessing of mana from heaven came with the responsibility of obedience.",
+          "prediction": {
+            "terms": {
+              "food drop": "空投食物",
+              "mana": "吗哪",
+              "trustwalk": "信心的行走",
+              "verse four": "第四节"
+            },
+            "translation": "好吧。你庆幸我不是神，但神却提供了供应，因为这是祂的性情。祂的供应与其说是“空投食物”，不如说是“信心的行走”，因为他每天只给他们足够的吗哪。很可能，神的供应不是为了填满你的冰箱，而是为了更新并建立你的信心。这就是为什么他在第四节说：“我要借此试验他们，遵不遵行我的律法。”你看，从天上降下的吗哪之福，伴随着顺服的责任。",
+            "warnings": [
+              "原文中 'instructions' 在出埃及记16:4的语境中通常译为 '律法' 或 '诫命'，此处采用 '律法' 以符合中文圣经常见译法。",
+              "原文 'mana' 为 'manna' 的拼写变体，已统一译为 '吗哪'。",
+              "原文 'refresh and and build' 存在重复，翻译时已合并为 '更新并建立'。",
+              "原文 'less of a food drop and more of a trustwalk' 为比喻性表达，翻译时保留了其对比含义。"
+            ]
+          },
+          "segmentId": "qvImKpmvgaM_seg_0021",
+          "timings": {
+            "cache_n": 59,
+            "predicted_ms": 4402.725,
+            "predicted_n": 298,
+            "predicted_per_second": 67.45822189666626,
+            "predicted_per_token_ms": 14.8239898989899,
+            "prompt_ms": 172.556,
+            "prompt_n": 160,
+            "prompt_per_second": 927.2352163935186,
+            "prompt_per_token_ms": 1.078475
+          },
+          "usage": {
+            "completion_tokens": 298,
+            "prompt_tokens": 219,
+            "prompt_tokens_details": {
+              "cached_tokens": 59
+            },
+            "total_tokens": 517
+          }
+        },
+        {
+          "elapsedSeconds": 4.5,
+          "english": "And if you want to live life to its fullest and fulfill God's plan for your life, then you've got to live like you've been rescued. So, if you'll allow me to just just to pastor you for a couple minutes, here's what I I'd love for you to think about doing every day. Every day to live like you've been rescued. Here's what I think you need to do. First, you got to let go of Egypt. You just got to let go of Egypt. Like the Israelites looked back at Egypt and they finally thought, you know, that wasn't that wasn't so bad. But at least we had meat. They were acting like Egypt was a a luxury resort with a killer buffet. Yeah. But here's the deal. You can't step into God's new future for you if you're still flirting with your old life.",
+          "prediction": {
+            "terms": {
+              "Egypt": "埃及",
+              "God's new future": "神的新未来",
+              "God's plan": "神的计划",
+              "Israelites": "以色列人",
+              "rescued": "已被拯救"
+            },
+            "translation": "如果你想要活出丰盛的生命，并成就神在你生命中的计划，你就必须活出“已被拯救”的生命样式。容我简短地牧养你几分钟：我希望你每天都能这样思想并践行——每一天都活出“已被拯救”的生命样式。以下是我认为你需要做的：首先，你必须放下埃及。你真的必须放下埃及。就像以色列人回望埃及时，竟开始想：“其实埃及也没那么糟，至少那里有肉吃。”他们把埃及当作一个拥有顶级自助餐的豪华度假村。是的。但关键在于：如果你仍在与你旧有的生活调情，你就无法踏入神为你预备的新未来。",
+            "warnings": [
+              "原文中 'I I'd' 为口误，已修正为 'I'd' 的语义处理。",
+              "原文中 'a a luxury resort' 为口误，已修正为 'a luxury resort' 的语义处理。",
+              "未添加原文中不存在的圣经引用或神学解释，仅忠实翻译现有内容。"
+            ]
+          },
+          "segmentId": "qvImKpmvgaM_seg_0024",
+          "timings": {
+            "cache_n": 59,
+            "predicted_ms": 4235.607,
+            "predicted_n": 288,
+            "predicted_per_second": 67.75888320139238,
+            "predicted_per_token_ms": 14.758212543554007,
+            "prompt_ms": 191.249,
+            "prompt_n": 216,
+            "prompt_per_second": 1129.4176701577526,
+            "prompt_per_token_ms": 0.885412037037037
+          },
+          "usage": {
+            "completion_tokens": 288,
+            "prompt_tokens": 275,
+            "prompt_tokens_details": {
+              "cached_tokens": 59
+            },
+            "total_tokens": 563
+          }
+        },
+        {
+          "elapsedSeconds": 3.757,
+          "english": "our bodies are not incidental to our human identity, but they are an important part of God's actual original design for us. In fact, in Psalm 139 13 and 14, David wrote, \"For it was you [snorts] who created my inward parts. You knit me together in my mother's womb. I will praise you because I have been remarkably and wondrously made. Your works are wondrous and I know this very well. Bodies are so important that when God came to earth in Jesus, he actually came in a body. He lived in a body. He died in a body and he was resurrected in a body. Now this shows us that embodiment is actually spiritually significant. And not only did Jesus himself come to earth in a physical body, but it is in our actual physical bodies that the life of Christ continues to be made visible on this earth. In 1",
+          "prediction": {
+            "terms": [
+              "Psalm 139 13 and 14",
+              "Jesus",
+              "embodiment",
+              "resurrected"
+            ],
+            "translation": "我们的身体并非人类身份的边缘因素，而是上帝为我们设定的原始计划中的重要部分。事实上，在诗篇139篇13-14节，大卫写道：“你曾造我的内脏，我在母胎中，你已编织我。我要称谢你，因我受造奇妙可畏；你的作为奇妙，这是我心深知的。”身体如此重要，以至于当上帝以耶稣的身份来到地上时，他确实带着身体而来，以身体生活，以身体死去，并以身体复活。这表明，具身性在灵性上具有重要意义。不仅耶稣本人以肉身来到地上，而且基督的生命正是在我们真实的肉身中继续在这地上显明出来。在1",
+            "warnings": [
+              "The English text is truncated at the end ('In 1'). The translation reflects this truncation. Please provide the complete segment for a full translation."
+            ]
+          },
+          "segmentId": "z_UoOx-6mz4_seg_0007",
+          "timings": {
+            "cache_n": 59,
+            "predicted_ms": 3498.445,
+            "predicted_n": 238,
+            "predicted_per_second": 67.74438357613167,
+            "predicted_per_token_ms": 14.761371308016878,
+            "prompt_ms": 195.724,
+            "prompt_n": 226,
+            "prompt_per_second": 1154.6872126055057,
+            "prompt_per_token_ms": 0.8660353982300885
+          },
+          "usage": {
+            "completion_tokens": 238,
+            "prompt_tokens": 285,
+            "prompt_tokens_details": {
+              "cached_tokens": 59
+            },
+            "total_tokens": 523
+          }
+        },
+        {
+          "elapsedSeconds": 2.744,
+          "english": "our bodies on earth is important both for our witness and for the glory of God. In Romans 8:11, Paul wrote that our physical bodies have been purchased by Christ and they're included in his redemption. He writes, \"And if the spirit of him who raised Jesus from the dead lives in you, then he who raised Christ from the dead will also bring your mortal bodies to life through his spirit who lives in you.\" So when we die and our bodies return to dust and decay, that's not the end. We will one day be raised to life with glorified bodies.",
+          "prediction": {
+            "terms": [
+              "Romans 8:11",
+              "Paul",
+              "Christ",
+              "redemption",
+              "glorified bodies"
+            ],
+            "translation": "我们在世上的身体，对我们的见证和神的荣耀都很重要。在罗马书8章11节，保罗写道，我们的肉身已被基督买赎，并包含在他的救赎之中。他说：“若使耶稣从死里复活者的灵住在你们心里，那叫基督耶稣从死里复活的，也必藉着住在你们心里的圣灵，使你们必死的身体又活过来。”因此，当我们死去、身体归于尘土与朽坏时，这并不是终结。我们终有一天将复活，拥有荣耀的身体。",
+            "warnings": []
+          },
+          "segmentId": "z_UoOx-6mz4_seg_0009",
+          "timings": {
+            "cache_n": 59,
+            "predicted_ms": 2492.24,
+            "predicted_n": 168,
+            "predicted_per_second": 67.00799280968126,
+            "predicted_per_token_ms": 14.923592814371256,
+            "prompt_ms": 177.008,
+            "prompt_n": 159,
+            "prompt_per_second": 898.2644852210068,
+            "prompt_per_token_ms": 1.1132578616352202
+          },
+          "usage": {
+            "completion_tokens": 168,
+            "prompt_tokens": 218,
+            "prompt_tokens_details": {
+              "cached_tokens": 59
+            },
+            "total_tokens": 386
+          }
+        }
+      ]
+    }
+  ],
+  "generatedAt": "2026-09-02T23:37:48.105980+00:00",
+  "referenceUsed": false,
+  "schemaVersion": "live-sermon-reference-blind-dgx-source-probe-v1",
+  "seed": 42,
+  "selectedSegmentIds": [
+    "8u9B8u_5ISI_seg_0007",
+    "8u9B8u_5ISI_seg_0040",
+    "hAWaaBVaMzY_seg_0004",
+    "hAWaaBVaMzY_seg_0008",
+    "hoeJTwl-EJg_seg_0030",
+    "hoeJTwl-EJg_seg_0049",
+    "qvImKpmvgaM_seg_0021",
+    "qvImKpmvgaM_seg_0024",
+    "z_UoOx-6mz4_seg_0007",
+    "z_UoOx-6mz4_seg_0009"
+  ],
+  "sources": [
+    {
+      "path": "/home/achillesjing/dgx-spark-benchmark/results/live-sermon-source-probe-20260902/input/8u9B8u_5ISI.segments.en.jsonl",
+      "segmentCount": 49,
+      "selectedCount": 2,
+      "sha256": "b800e37f09e2e760200528fb2bfdd67840040023b9489f84fcad38a57d6590c1"
+    },
+    {
+      "path": "/home/achillesjing/dgx-spark-benchmark/results/live-sermon-source-probe-20260902/input/hAWaaBVaMzY.segments.en.jsonl",
+      "segmentCount": 56,
+      "selectedCount": 2,
+      "sha256": "a45da5b536b549021a33c85d7bcf525bcb04549a831d208c30699ffcf2154f0c"
+    },
+    {
+      "path": "/home/achillesjing/dgx-spark-benchmark/results/live-sermon-source-probe-20260902/input/hoeJTwl-EJg.segments.en.jsonl",
+      "segmentCount": 57,
+      "selectedCount": 2,
+      "sha256": "46fcd8a1a0868d4f7069c174264939b239b8634897716d13dd5a706131a07104"
+    },
+    {
+      "path": "/home/achillesjing/dgx-spark-benchmark/results/live-sermon-source-probe-20260902/input/qvImKpmvgaM.segments.en.jsonl",
+      "segmentCount": 39,
+      "selectedCount": 2,
+      "sha256": "aeec58d6e74d124511f427ef1290b4885a01693f1147faed8f32b817c2247ee2"
+    },
+    {
+      "path": "/home/achillesjing/dgx-spark-benchmark/results/live-sermon-source-probe-20260902/input/z_UoOx-6mz4.segments.en.jsonl",
+      "segmentCount": 38,
+      "selectedCount": 2,
+      "sha256": "5ccbb6643fda88fabed7431028034b895e58d811a1e00e6edee8443b30ec7e0e"
+    }
+  ],
+  "status": "completed_requires_reference_scoring",
+  "temperature": 0
+}

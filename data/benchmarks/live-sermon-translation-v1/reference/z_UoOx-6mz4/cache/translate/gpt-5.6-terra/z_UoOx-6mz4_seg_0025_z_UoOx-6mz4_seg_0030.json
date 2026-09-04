@@ -1,0 +1,132 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T03:11:41.482052+00:00",
+  "elapsedSeconds": 31.27,
+  "inputSha256": "13d1bd18d998fb44ca609deacc417282104f31bc565e5856935924884989908f",
+  "modelRequested": "gpt-5.6-terra",
+  "promptVersion": "codex-conversation-sermon-translate-v1",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "contentType": "sermon",
+        "id": "z_UoOx-6mz4_seg_0025",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Paul",
+            "zh": "保罗"
+          }
+        ],
+        "scriptureRefs": [
+          "提摩太前书 4:8"
+        ],
+        "zh": "保罗告诉我们，操练身体益处还少，惟独敬虔，凡事都有益处，因有今生和来生的应许。你会注意到，保罗从未叫我们忽略身体；但他提醒我们，照顾身体的益处是暂时的，不是永恒的。因此，我们必须按此来排定优先次序。我已告诉过你们，为了能继续做我的工作、完成主在地上给我的使命，锻炼对我很重要。我也喜欢打匹克球和徒步，因为这带给我很多喜乐。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "z_UoOx-6mz4_seg_0026",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Holy Spirit",
+            "zh": "圣灵"
+          },
+          {
+            "source": "Jesus",
+            "zh": "耶稣"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "你也可能喜欢参加俱乐部、健身房或球队。我们应当重视身体健康，这是管理身体的基本一环；但不要过度痴迷身体，以致忽略属灵成长和属灵操练。要记得，我们的身体是神的圣灵的殿；但我们不该把殿当作偶像。我们要用身体敬拜耶稣。当然，卫生、[笑声]整洁和仪容都非常重要，但不是最重要的。该化多少妆、戴多少首饰、买多少新衣服？该有多时尚？该做多少仪容整理？该做哪些改善，又做多少？要不要纹身或穿孔，要做多少？早上该花多久准备一天？还是——"
+      },
+      {
+        "contentType": "sermon",
+        "id": "z_UoOx-6mz4_seg_0027",
+        "potentialAsrIssues": [
+          "“pallet repair”应为“palate repair”（腭裂修复）",
+          "“masectomy”应为“mastectomy”（乳房切除术）"
+        ],
+        "properNouns": [
+          {
+            "source": "God",
+            "zh": "神"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "每周该锻炼几次？饮食该多干净？该只吃有机食品吗？该办健身房会员吗？归根结底，这是你和神之间的事。我们在基督里有选择的自由。谈到整形手术时，我想指出，区分重建手术与美容手术至关重要。当然，今天我完全不是在谈重建手术，例如唇裂或腭裂修复、烧伤植皮，或乳房切除术后的乳房重建。这些手术着重恢复正常外观和基本功能。我感谢神，我们都感谢整形外科医生，以及这个领域所有正在带来生命和盼望的进步。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "z_UoOx-6mz4_seg_0028",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "scripture",
+            "zh": "圣经"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "我今天具体谈的是美容改善。我希望你已经听见，按着圣经，改善自己的美貌并没有错。但某个行动本身未必不道德，也未被圣经禁止，并不表示它在每一种情况下、对每一个人都有益。我们追求美容手术的动机确实很重要。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "z_UoOx-6mz4_seg_0029",
+        "potentialAsrIssues": [
+          "“Jacabelly's verse Ohio”应为“Jacobellis v. Ohio”"
+        ],
+        "properNouns": [
+          {
+            "source": "God",
+            "zh": "神"
+          },
+          {
+            "source": "US Supreme Court Justice Potter Stewart",
+            "zh": "美国最高法院大法官波特·斯图尔特"
+          },
+          {
+            "source": "Jacobellis v. Ohio",
+            "zh": "《雅各贝利斯诉俄亥俄州案》"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "我们必须记得，作为人，我们因照着神的形象被造而有内在价值。改变身体外貌或提升外在美，绝不会让你在神面前更有价值、更配得，或更被接纳。此时此刻，祂已经不能再更爱你了。既然圣经没有明确禁止改变身体外貌，那么，你怎么知道自己是否已经痴迷，或已经落入把身体当偶像、或做得太过头呢？我想，我们可以从美国最高法院大法官波特·斯图尔特身上学一点。他在1964年《雅各贝利斯诉俄亥俄州案》的协同意见中承认，他无法定义硬核色情作品，但他能认得出来。他说：“今天我不打算进一步——"
+      },
+      {
+        "contentType": "sermon",
+        "id": "z_UoOx-6mz4_seg_0030",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Paul",
+            "zh": "保罗"
+          }
+        ],
+        "scriptureRefs": [
+          "罗马书 14:22"
+        ],
+        "zh": "定义我所理解涵盖的这类材料，但我一看见就知道。”我想我们都会同意：多远才算太远？我们能看到某个人，然后说：“你知道吗？我一看见就知道。”谈到纹身或穿孔，这件事两边确实都有强烈意见。我们应当再次记得保罗在罗马书14:22所写的话。"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "z_UoOx-6mz4_seg_0025",
+    "z_UoOx-6mz4_seg_0026",
+    "z_UoOx-6mz4_seg_0027",
+    "z_UoOx-6mz4_seg_0028",
+    "z_UoOx-6mz4_seg_0029",
+    "z_UoOx-6mz4_seg_0030"
+  ],
+  "stage": "translate",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 19200,
+    "input_tokens": 21413,
+    "output_tokens": 1537,
+    "reasoning_output_tokens": 286
+  }
+}

@@ -1,0 +1,838 @@
+{
+	"systeminfo": "WHISPER : COREML = 0 | OPENVINO = 0 | MTL : EMBED_LIBRARY = 1 | CPU : NEON = 1 | ARM_FMA = 1 | DOTPROD = 1 | ACCELERATE = 1 | OPENMP = 1 | REPACK = 1 | ",
+	"model": {
+		"type": "small",
+		"multilingual": false,
+		"vocab": 51864,
+		"audio": {
+			"ctx": 1500,
+			"state": 768,
+			"head": 12,
+			"layer": 12
+		},
+		"text": {
+			"ctx": 448,
+			"state": 768,
+			"head": 12,
+			"layer": 12
+		},
+		"mels": 80,
+		"ftype": 1
+	},
+	"params": {
+		"model": "/Users/jonathan_jing/Library/Caches/sermon-asr-benchmark/models/ggml-small.en.bin",
+		"language": "en",
+		"translate": false
+	},
+	"result": {
+		"language": "en"
+	},
+	"transcription": [
+		{
+			"timestamps": {
+				"from": "00:00:00,000",
+				"to": "00:00:04,600"
+			},
+			"offsets": {
+				"from": 0,
+				"to": 4600
+			},
+			"text": " ♪ Christ has died ♪",
+			"tokens": [
+				{
+					"text": "[_BEG_]",
+					"timestamps": {
+						"from": "00:00:00,000",
+						"to": "00:00:00,000"
+					},
+					"offsets": {
+						"from": 0,
+						"to": 0
+					},
+					"id": 50363,
+					"p": 0.780268,
+					"t_dtw": -1
+				},
+				{
+					"text": " ♪",
+					"timestamps": {
+						"from": "00:00:00,010",
+						"to": "00:00:00,720"
+					},
+					"offsets": {
+						"from": 10,
+						"to": 720
+					},
+					"id": 20724,
+					"p": 0.5006,
+					"t_dtw": -1
+				},
+				{
+					"text": " Christ",
+					"timestamps": {
+						"from": "00:00:01,070",
+						"to": "00:00:02,170"
+					},
+					"offsets": {
+						"from": 1070,
+						"to": 2170
+					},
+					"id": 1951,
+					"p": 0.940066,
+					"t_dtw": -1
+				},
+				{
+					"text": " has",
+					"timestamps": {
+						"from": "00:00:02,170",
+						"to": "00:00:02,890"
+					},
+					"offsets": {
+						"from": 2170,
+						"to": 2890
+					},
+					"id": 468,
+					"p": 0.984682,
+					"t_dtw": -1
+				},
+				{
+					"text": " died",
+					"timestamps": {
+						"from": "00:00:02,890",
+						"to": "00:00:03,850"
+					},
+					"offsets": {
+						"from": 2890,
+						"to": 3850
+					},
+					"id": 3724,
+					"p": 0.992222,
+					"t_dtw": -1
+				},
+				{
+					"text": " ♪",
+					"timestamps": {
+						"from": "00:00:03,850",
+						"to": "00:00:04,600"
+					},
+					"offsets": {
+						"from": 3850,
+						"to": 4600
+					},
+					"id": 20724,
+					"p": 0.90954,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_230]",
+					"timestamps": {
+						"from": "00:00:04,600",
+						"to": "00:00:04,600"
+					},
+					"offsets": {
+						"from": 4600,
+						"to": 4600
+					},
+					"id": 50593,
+					"p": 0.023197,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:04,600",
+				"to": "00:00:09,600"
+			},
+			"offsets": {
+				"from": 4600,
+				"to": 9600
+			},
+			"text": " ♪ We are forgiven in Christ alive ♪",
+			"tokens": [
+				{
+					"text": " ♪",
+					"timestamps": {
+						"from": "00:00:04,610",
+						"to": "00:00:05,060"
+					},
+					"offsets": {
+						"from": 4610,
+						"to": 5060
+					},
+					"id": 20724,
+					"p": 0.998586,
+					"t_dtw": -1
+				},
+				{
+					"text": " We",
+					"timestamps": {
+						"from": "00:00:05,060",
+						"to": "00:00:05,370"
+					},
+					"offsets": {
+						"from": 5060,
+						"to": 5370
+					},
+					"id": 775,
+					"p": 0.985755,
+					"t_dtw": -1
+				},
+				{
+					"text": " are",
+					"timestamps": {
+						"from": "00:00:05,370",
+						"to": "00:00:05,830"
+					},
+					"offsets": {
+						"from": 5370,
+						"to": 5830
+					},
+					"id": 389,
+					"p": 0.987319,
+					"t_dtw": -1
+				},
+				{
+					"text": " forgiven",
+					"timestamps": {
+						"from": "00:00:05,830",
+						"to": "00:00:07,070"
+					},
+					"offsets": {
+						"from": 5830,
+						"to": 7070
+					},
+					"id": 32350,
+					"p": 0.992773,
+					"t_dtw": -1
+				},
+				{
+					"text": " in",
+					"timestamps": {
+						"from": "00:00:07,070",
+						"to": "00:00:07,380"
+					},
+					"offsets": {
+						"from": 7070,
+						"to": 7380
+					},
+					"id": 287,
+					"p": 0.558121,
+					"t_dtw": -1
+				},
+				{
+					"text": " Christ",
+					"timestamps": {
+						"from": "00:00:07,380",
+						"to": "00:00:08,310"
+					},
+					"offsets": {
+						"from": 7380,
+						"to": 8310
+					},
+					"id": 1951,
+					"p": 0.987202,
+					"t_dtw": -1
+				},
+				{
+					"text": " alive",
+					"timestamps": {
+						"from": "00:00:08,310",
+						"to": "00:00:09,090"
+					},
+					"offsets": {
+						"from": 8310,
+						"to": 9090
+					},
+					"id": 6776,
+					"p": 0.445468,
+					"t_dtw": -1
+				},
+				{
+					"text": " ♪",
+					"timestamps": {
+						"from": "00:00:09,090",
+						"to": "00:00:09,600"
+					},
+					"offsets": {
+						"from": 9090,
+						"to": 9600
+					},
+					"id": 20724,
+					"p": 0.983192,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_480]",
+					"timestamps": {
+						"from": "00:00:09,600",
+						"to": "00:00:09,600"
+					},
+					"offsets": {
+						"from": 9600,
+						"to": 9600
+					},
+					"id": 50843,
+					"p": 0.72206,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:10,760",
+				"to": "00:00:15,760"
+			},
+			"offsets": {
+				"from": 10760,
+				"to": 15760
+			},
+			"text": " ♪ We are the risen and He shall come again ♪",
+			"tokens": [
+				{
+					"text": " ♪",
+					"timestamps": {
+						"from": "00:00:10,760",
+						"to": "00:00:10,760"
+					},
+					"offsets": {
+						"from": 10760,
+						"to": 10760
+					},
+					"id": 20724,
+					"p": 0.999119,
+					"t_dtw": -1
+				},
+				{
+					"text": " We",
+					"timestamps": {
+						"from": "00:00:10,760",
+						"to": "00:00:10,760"
+					},
+					"offsets": {
+						"from": 10760,
+						"to": 10760
+					},
+					"id": 775,
+					"p": 0.99771,
+					"t_dtw": -1
+				},
+				{
+					"text": " are",
+					"timestamps": {
+						"from": "00:00:10,770",
+						"to": "00:00:10,880"
+					},
+					"offsets": {
+						"from": 10770,
+						"to": 10880
+					},
+					"id": 389,
+					"p": 0.995845,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:10,880",
+						"to": "00:00:11,360"
+					},
+					"offsets": {
+						"from": 10880,
+						"to": 11360
+					},
+					"id": 262,
+					"p": 0.986954,
+					"t_dtw": -1
+				},
+				{
+					"text": " risen",
+					"timestamps": {
+						"from": "00:00:11,360",
+						"to": "00:00:12,160"
+					},
+					"offsets": {
+						"from": 11360,
+						"to": 12160
+					},
+					"id": 17450,
+					"p": 0.782956,
+					"t_dtw": -1
+				},
+				{
+					"text": " and",
+					"timestamps": {
+						"from": "00:00:12,160",
+						"to": "00:00:12,640"
+					},
+					"offsets": {
+						"from": 12160,
+						"to": 12640
+					},
+					"id": 290,
+					"p": 0.648863,
+					"t_dtw": -1
+				},
+				{
+					"text": " He",
+					"timestamps": {
+						"from": "00:00:12,640",
+						"to": "00:00:12,960"
+					},
+					"offsets": {
+						"from": 12640,
+						"to": 12960
+					},
+					"id": 679,
+					"p": 0.771482,
+					"t_dtw": -1
+				},
+				{
+					"text": " shall",
+					"timestamps": {
+						"from": "00:00:12,960",
+						"to": "00:00:13,760"
+					},
+					"offsets": {
+						"from": 12960,
+						"to": 13760
+					},
+					"id": 2236,
+					"p": 0.996051,
+					"t_dtw": -1
+				},
+				{
+					"text": " come",
+					"timestamps": {
+						"from": "00:00:13,760",
+						"to": "00:00:14,400"
+					},
+					"offsets": {
+						"from": 13760,
+						"to": 14400
+					},
+					"id": 1282,
+					"p": 0.996713,
+					"t_dtw": -1
+				},
+				{
+					"text": " again",
+					"timestamps": {
+						"from": "00:00:14,400",
+						"to": "00:00:15,200"
+					},
+					"offsets": {
+						"from": 14400,
+						"to": 15200
+					},
+					"id": 757,
+					"p": 0.999026,
+					"t_dtw": -1
+				},
+				{
+					"text": " ♪",
+					"timestamps": {
+						"from": "00:00:15,200",
+						"to": "00:00:15,760"
+					},
+					"offsets": {
+						"from": 15200,
+						"to": 15760
+					},
+					"id": 20724,
+					"p": 0.988827,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_788]",
+					"timestamps": {
+						"from": "00:00:15,760",
+						"to": "00:00:15,760"
+					},
+					"offsets": {
+						"from": 15760,
+						"to": 15760
+					},
+					"id": 51151,
+					"p": 0.870769,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:17,920",
+				"to": "00:00:21,000"
+			},
+			"offsets": {
+				"from": 17920,
+				"to": 21000
+			},
+			"text": " ♪ Praise the King ♪",
+			"tokens": [
+				{
+					"text": " ♪",
+					"timestamps": {
+						"from": "00:00:17,920",
+						"to": "00:00:17,920"
+					},
+					"offsets": {
+						"from": 17920,
+						"to": 17920
+					},
+					"id": 20724,
+					"p": 0.994254,
+					"t_dtw": -1
+				},
+				{
+					"text": " Pra",
+					"timestamps": {
+						"from": "00:00:17,920",
+						"to": "00:00:17,920"
+					},
+					"offsets": {
+						"from": 17920,
+						"to": 17920
+					},
+					"id": 21127,
+					"p": 0.992772,
+					"t_dtw": -1
+				},
+				{
+					"text": "ise",
+					"timestamps": {
+						"from": "00:00:17,930",
+						"to": "00:00:18,220"
+					},
+					"offsets": {
+						"from": 17930,
+						"to": 18220
+					},
+					"id": 786,
+					"p": 0.99869,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:18,220",
+						"to": "00:00:19,040"
+					},
+					"offsets": {
+						"from": 18220,
+						"to": 19040
+					},
+					"id": 262,
+					"p": 0.980683,
+					"t_dtw": -1
+				},
+				{
+					"text": " King",
+					"timestamps": {
+						"from": "00:00:19,040",
+						"to": "00:00:20,140"
+					},
+					"offsets": {
+						"from": 19040,
+						"to": 20140
+					},
+					"id": 2677,
+					"p": 0.933134,
+					"t_dtw": -1
+				},
+				{
+					"text": " ♪",
+					"timestamps": {
+						"from": "00:00:20,140",
+						"to": "00:00:21,000"
+					},
+					"offsets": {
+						"from": 20140,
+						"to": 21000
+					},
+					"id": 20724,
+					"p": 0.590452,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_1050]",
+					"timestamps": {
+						"from": "00:00:21,000",
+						"to": "00:00:21,000"
+					},
+					"offsets": {
+						"from": 21000,
+						"to": 21000
+					},
+					"id": 51413,
+					"p": 0.134011,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:21,000",
+				"to": "00:00:24,880"
+			},
+			"offsets": {
+				"from": 21000,
+				"to": 24880
+			},
+			"text": " ♪ Praise the King ♪",
+			"tokens": [
+				{
+					"text": " ♪",
+					"timestamps": {
+						"from": "00:00:21,010",
+						"to": "00:00:21,600"
+					},
+					"offsets": {
+						"from": 21010,
+						"to": 21600
+					},
+					"id": 20724,
+					"p": 0.986308,
+					"t_dtw": -1
+				},
+				{
+					"text": " Pra",
+					"timestamps": {
+						"from": "00:00:21,600",
+						"to": "00:00:22,210"
+					},
+					"offsets": {
+						"from": 21600,
+						"to": 22210
+					},
+					"id": 21127,
+					"p": 0.998055,
+					"t_dtw": -1
+				},
+				{
+					"text": "ise",
+					"timestamps": {
+						"from": "00:00:22,220",
+						"to": "00:00:22,820"
+					},
+					"offsets": {
+						"from": 22220,
+						"to": 22820
+					},
+					"id": 786,
+					"p": 0.999601,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:22,820",
+						"to": "00:00:23,430"
+					},
+					"offsets": {
+						"from": 22820,
+						"to": 23430
+					},
+					"id": 262,
+					"p": 0.996592,
+					"t_dtw": -1
+				},
+				{
+					"text": " King",
+					"timestamps": {
+						"from": "00:00:23,430",
+						"to": "00:00:24,240"
+					},
+					"offsets": {
+						"from": 23430,
+						"to": 24240
+					},
+					"id": 2677,
+					"p": 0.995892,
+					"t_dtw": -1
+				},
+				{
+					"text": " ♪",
+					"timestamps": {
+						"from": "00:00:24,240",
+						"to": "00:00:24,880"
+					},
+					"offsets": {
+						"from": 24240,
+						"to": 24880
+					},
+					"id": 20724,
+					"p": 0.983263,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_1244]",
+					"timestamps": {
+						"from": "00:00:24,880",
+						"to": "00:00:24,880"
+					},
+					"offsets": {
+						"from": 24880,
+						"to": 24880
+					},
+					"id": 51607,
+					"p": 0.133009,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:24,880",
+				"to": "00:00:29,880"
+			},
+			"offsets": {
+				"from": 24880,
+				"to": 29880
+			},
+			"text": " ♪ On our hearts His name is written ♪",
+			"tokens": [
+				{
+					"text": " ♪",
+					"timestamps": {
+						"from": "00:00:24,890",
+						"to": "00:00:25,330"
+					},
+					"offsets": {
+						"from": 24890,
+						"to": 25330
+					},
+					"id": 20724,
+					"p": 0.940776,
+					"t_dtw": -1
+				},
+				{
+					"text": " On",
+					"timestamps": {
+						"from": "00:00:25,330",
+						"to": "00:00:25,630"
+					},
+					"offsets": {
+						"from": 25330,
+						"to": 25630
+					},
+					"id": 1550,
+					"p": 0.76128,
+					"t_dtw": -1
+				},
+				{
+					"text": " our",
+					"timestamps": {
+						"from": "00:00:25,630",
+						"to": "00:00:26,080"
+					},
+					"offsets": {
+						"from": 25630,
+						"to": 26080
+					},
+					"id": 674,
+					"p": 0.992004,
+					"t_dtw": -1
+				},
+				{
+					"text": " hearts",
+					"timestamps": {
+						"from": "00:00:26,080",
+						"to": "00:00:26,980"
+					},
+					"offsets": {
+						"from": 26080,
+						"to": 26980
+					},
+					"id": 11954,
+					"p": 0.995583,
+					"t_dtw": -1
+				},
+				{
+					"text": " His",
+					"timestamps": {
+						"from": "00:00:26,980",
+						"to": "00:00:27,430"
+					},
+					"offsets": {
+						"from": 26980,
+						"to": 27430
+					},
+					"id": 2399,
+					"p": 0.419991,
+					"t_dtw": -1
+				},
+				{
+					"text": " name",
+					"timestamps": {
+						"from": "00:00:27,430",
+						"to": "00:00:28,030"
+					},
+					"offsets": {
+						"from": 27430,
+						"to": 28030
+					},
+					"id": 1438,
+					"p": 0.980354,
+					"t_dtw": -1
+				},
+				{
+					"text": " is",
+					"timestamps": {
+						"from": "00:00:28,030",
+						"to": "00:00:28,330"
+					},
+					"offsets": {
+						"from": 28030,
+						"to": 28330
+					},
+					"id": 318,
+					"p": 0.993841,
+					"t_dtw": -1
+				},
+				{
+					"text": " written",
+					"timestamps": {
+						"from": "00:00:28,330",
+						"to": "00:00:29,380"
+					},
+					"offsets": {
+						"from": 28330,
+						"to": 29380
+					},
+					"id": 3194,
+					"p": 0.972582,
+					"t_dtw": -1
+				},
+				{
+					"text": " ♪",
+					"timestamps": {
+						"from": "00:00:29,380",
+						"to": "00:00:29,880"
+					},
+					"offsets": {
+						"from": 29380,
+						"to": 29880
+					},
+					"id": 20724,
+					"p": 0.984788,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_1494]",
+					"timestamps": {
+						"from": "00:00:29,880",
+						"to": "00:00:29,880"
+					},
+					"offsets": {
+						"from": 29880,
+						"to": 29880
+					},
+					"id": 51857,
+					"p": 0.842233,
+					"t_dtw": -1
+				}
+			]
+		}
+	]
+}

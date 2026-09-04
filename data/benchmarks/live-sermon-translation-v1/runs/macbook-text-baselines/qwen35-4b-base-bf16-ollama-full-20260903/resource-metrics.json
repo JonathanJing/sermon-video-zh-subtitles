@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "macbook-resource-metrics-v1",
+  "systemId": "MB-A0-Qwen3.5-4B-Base-Ollama-BF16",
+  "hardwareProfileId": "macbook-pro-m1-max-64gb-v1",
+  "sampleSource": "resource-samples.jsonl",
+  "sampleCount": 1207,
+  "sampleIntervalSeconds": 1,
+  "observedDurationSeconds": 1353.559,
+  "trackedRootProcess": {
+    "pidAtRunTime": 61206,
+    "command": "/Applications/Ollama.app/Contents/Resources/ollama serve",
+    "descendantsIncluded": true
+  },
+  "ollamaLoadedState": {
+    "model": "sermon-qwen35-4b-base-bf16:benchmark",
+    "digest": "64b169caaf02c16d9177f8eee455dfafa286fa0a476c756e96d68b71390ea595",
+    "reportedSizeBytes": 9855838452,
+    "reportedSizeGiB": 9.179,
+    "reportedUnifiedGpuBytes": 9855838452,
+    "contextLength": 32768
+  },
+  "processTreeResidentMemory": {
+    "unloadedBaselineMinGiB": 0.0743,
+    "loadedMeanGiB": 15.7309,
+    "peakGiB": 17.7141,
+    "incrementalPeakVersusMinBaselineGiB": 17.6398,
+    "postUnloadGiB": 0.0321,
+    "peakInterpretation": "Ollama service plus llama-server descendant RSS; includes resident model mappings, Metal working allocations, KV cache, and runtime caches. Use this value for conservative system capacity planning."
+  },
+  "systemMemoryPressure": {
+    "freeMemoryPercentMax": 83,
+    "freeMemoryPercentMin": 62,
+    "freeMemoryPercentPostUnload": 67,
+    "categoricalPressureStatus": "not_captured_by_sampler_v1",
+    "redPressureObserved": null
+  },
+  "swap": {
+    "usedGiBMin": 0.0,
+    "usedGiBMax": 0.0,
+    "growthGiB": 0.0
+  },
+  "thermal": {
+    "nonemptySampleCount": 0,
+    "status": "pmset_therm_returned_no_numeric_counters",
+    "thermalThrottlingConclusionAvailable": false
+  },
+  "modelUnloadVerified": true,
+  "resourceGateAssessment": {
+    "translationProcessPeakTargetGiB": 40,
+    "peakWithinTarget": true,
+    "swapGrowthTargetGiB": 1,
+    "swapWithinTarget": true,
+    "translationOnlyResourceGatePassed": true,
+    "coResidentAsrReplayPassed": false,
+    "fullSermonSoakPassed": false,
+    "productionResourceGatePassed": false
+  }
+}

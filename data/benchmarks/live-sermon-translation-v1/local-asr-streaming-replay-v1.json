@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "local-asr-streaming-replay-v1",
+  "replayId": "ASR-REPLAY-POST-LIVE-20260830-1890-2490",
+  "status": "frozen_ready",
+  "sourceAudioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/download/source_audio.m4a",
+  "sourceAudioSha256": "a003ec5afad8604fb1e5d4f4516f73d35fe8c04514fe9848d81c2ceccb3d5571",
+  "cropStartSeconds": 1890,
+  "cropEndSeconds": 2490,
+  "durationSeconds": 600,
+  "replayWavCachePath": "~/Library/Caches/sermon-video-zh-subtitles/asr-replay/post-live-2026-08-30--BeFX5G2oAw-1890s-2490s-16k-mono.wav",
+  "replayWavSha256": "e54b28baac11f465188c442f8b85d5d97dcf154fb6d3a792e5167100882ad22f",
+  "audioFormat": {
+    "codec": "pcm_s16le",
+    "sampleRateHz": 16000,
+    "channels": 1
+  },
+  "pacing": {
+    "rate": 1.0,
+    "stepMs": 500,
+    "providerMaxWindowSeconds": 5,
+    "partialAndFinalEventsRequired": true
+  },
+  "referenceChunks": {
+    "path": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/timeline_chunks.json",
+    "ids": [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28],
+    "status": "model_reviewed_reference_not_human_gold",
+    "referenceTextSha256": "b011ff76becdc287a189291b9ec2f82c59893681ea9e109229b4f52a8a78edca"
+  },
+  "translationUntouchedTest": false
+}

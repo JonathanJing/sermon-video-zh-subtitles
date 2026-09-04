@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "live-sermon-macbook-baseline-index-v1",
+  "systemId": "MB-B4-MiLMMT-46-4B-v1-Q8-Ollama",
+  "status": "translation_only_completed_replay_and_sol_scoring_pending",
+  "completedAt": "2026-09-03T21:39:17.957687+00:00",
+  "referenceUsedForGeneration": false,
+  "hardwareProfileId": "macbook-pro-m1-max-64gb-v1",
+  "backend": "ollama_raw_generate",
+  "backendVersion": "0.33.3",
+  "configuration": {
+    "path": "../../macbook-text-benchmark-v1.json",
+    "sha256": "803d9c25a64f305adcb1c4e2b343ea81b97c182aede27d98dbec4d22db036de7"
+  },
+  "tools": {
+    "runner": {
+      "path": "../../../../../scripts/run_macbook_sermon_text_benchmark.py",
+      "sha256": "d5c018d09954d92b36e0cad20223685370a28d8c668c696dc01c3f6ce9991aab"
+    },
+    "scorer": {
+      "path": "../../../../../scripts/score_sermon_text_benchmark.py",
+      "sha256": "7374cfbed7af4b199a590df2c18d7674172fe32542cde5206dbc5a0938af4a13"
+    },
+    "resourceSampler": {
+      "path": "../../../../../scripts/sample_macbook_resources.py",
+      "sha256": "6b612e00f40289d73bc703b25465d76abe0750bb6a5295659d48f5bcd08dea57"
+    }
+  },
+  "model": {
+    "modelId": "xiaomi-research/MiLMMT-46-4B-v1.0",
+    "upstreamRevision": "aa3262750cf493cc638fc9b82fcd26de8b0068fb",
+    "runtimeRepository": "mradermacher/MiLMMT-46-4B-v1.0-GGUF",
+    "runtimeRevision": "765aa350dc9aa28c41e2a9e34e1b25d56c0d3911",
+    "artifact": "MiLMMT-46-4B-v1.0.Q8_0.gguf",
+    "artifactBytes": 4130401312,
+    "artifactSha256": "92796e263e22461c273c9f964ba4c1454d8dc764a482af60bc1ad9c269d9e7d0",
+    "ollamaModel": "sermon-milmmt-46-4b-v1-q8:benchmark",
+    "ollamaDigest": "e607c5905ff664410afc93961c9a44e19b0429602b2897ac17e362cbb0895b96"
+  },
+  "run": {
+    "directory": "milmmt-46-4b-v1-q8-ollama-full-20260903",
+    "predictionCount": 239,
+    "errorCount": 0,
+    "predictionSha256": "f2876e2f7e0f30f1fba6d0e0fde46f87632035b16da4a4c50a6e1ae91b0b3f0a",
+    "runReportSha256": "96daa6034b0354e6276fc4e3ded280dac86a88836be4c49219cc8de700cb3a05"
+  },
+  "automaticReferenceMetrics": {
+    "path": "milmmt-46-4b-v1-q8-ollama-full-20260903/automatic-reference-metrics.json",
+    "sha256": "f476007f10aa57c70ad7b0a867902a9a7913ee9c17f9842ec2e13b88877782c3"
+  },
+  "resourceMetrics": {
+    "path": "milmmt-46-4b-v1-q8-ollama-full-20260903/resource-metrics.json",
+    "sha256": "74e0fdee32ef15d0971ead70edace2474c14d19316ac4571459ffa9be8ac9933",
+    "peakProcessTreeRssGiB": 13.1274,
+    "swapGrowthGiB": 0.0
+  },
+  "report": {
+    "path": "milmmt-46-4b-v1-q8-ollama-full-20260903/report.md",
+    "sha256": "bcff3e93f065e4053e95d7f9a2e3255c593f413cea6296ddbb869dad3eb3214c"
+  },
+  "translationOnlyResourceGatePassed": true,
+  "coResidentAsrReplayPassed": false,
+  "fullSermonSoakPassed": false,
+  "solHighScoringCompleted": false,
+  "licenseReviewCompleted": false,
+  "productionResourceGatePassed": false
+}

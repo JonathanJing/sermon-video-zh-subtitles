@@ -1,0 +1,113 @@
+{
+  "apiKeyUsed": false,
+  "artifactPurpose": "dataset_preparation_only",
+  "audioEvidenceRequiredFor": "needs_audio_review",
+  "authMode": "chatgpt_managed_verified",
+  "batchSize": 6,
+  "cachedConversationResults": 0,
+  "cachedOrImportedResults": 0,
+  "elapsedSeconds": 495.812,
+  "freshConversations": 14,
+  "freshEphemeralConversations": 14,
+  "generatedAt": "2026-09-03T03:26:25.259335+00:00",
+  "humanApprovalClaimed": false,
+  "postTrainingStudent": {
+    "class": "lightweight_open_weight_candidate",
+    "status": "unselected"
+  },
+  "reviewDispositionCounts": {
+    "excluded_requires_audio_evidence": 1,
+    "sol_high_text_review_corrected": 8,
+    "sol_high_text_review_passed": 30
+  },
+  "reviewReasoningEffort": "high",
+  "reviewerModel": "gpt-5.6-sol",
+  "routineHumanTextReviewRequired": false,
+  "schemaVersion": "sermon-codex-conversation-v3",
+  "segmentCount": 39,
+  "selectedSegmentIds": [
+    "qvImKpmvgaM_seg_0001",
+    "qvImKpmvgaM_seg_0002",
+    "qvImKpmvgaM_seg_0003",
+    "qvImKpmvgaM_seg_0004",
+    "qvImKpmvgaM_seg_0005",
+    "qvImKpmvgaM_seg_0006",
+    "qvImKpmvgaM_seg_0007",
+    "qvImKpmvgaM_seg_0008",
+    "qvImKpmvgaM_seg_0009",
+    "qvImKpmvgaM_seg_0010",
+    "qvImKpmvgaM_seg_0011",
+    "qvImKpmvgaM_seg_0012",
+    "qvImKpmvgaM_seg_0013",
+    "qvImKpmvgaM_seg_0014",
+    "qvImKpmvgaM_seg_0015",
+    "qvImKpmvgaM_seg_0016",
+    "qvImKpmvgaM_seg_0017",
+    "qvImKpmvgaM_seg_0018",
+    "qvImKpmvgaM_seg_0019",
+    "qvImKpmvgaM_seg_0020",
+    "qvImKpmvgaM_seg_0021",
+    "qvImKpmvgaM_seg_0022",
+    "qvImKpmvgaM_seg_0023",
+    "qvImKpmvgaM_seg_0024",
+    "qvImKpmvgaM_seg_0025",
+    "qvImKpmvgaM_seg_0026",
+    "qvImKpmvgaM_seg_0027",
+    "qvImKpmvgaM_seg_0028",
+    "qvImKpmvgaM_seg_0029",
+    "qvImKpmvgaM_seg_0030",
+    "qvImKpmvgaM_seg_0031",
+    "qvImKpmvgaM_seg_0032",
+    "qvImKpmvgaM_seg_0033",
+    "qvImKpmvgaM_seg_0034",
+    "qvImKpmvgaM_seg_0035",
+    "qvImKpmvgaM_seg_0036",
+    "qvImKpmvgaM_seg_0037",
+    "qvImKpmvgaM_seg_0038",
+    "qvImKpmvgaM_seg_0039"
+  ],
+  "selectedSourceSha256": "b78c546bad2a5cab9225e86d7a918565435f7414bda4701969eef4a302e586eb",
+  "sharedCodexUsageConsumed": true,
+  "sourceSha256": "aeec58d6e74d124511f427ef1290b4885a01693f1147faed8f32b817c2247ee2",
+  "stages": {
+    "review": {
+      "cachedOrImportedResults": 0,
+      "elapsedSeconds": 280.143,
+      "freshConversations": 7,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 36352,
+        "input_tokens": 132585,
+        "output_tokens": 14070,
+        "reasoning_output_tokens": 5255
+      },
+      "usageReceiptCoverage": 7
+    },
+    "translation": {
+      "cachedOrImportedResults": 0,
+      "elapsedSeconds": 215.669,
+      "freshConversations": 7,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 70144,
+        "input_tokens": 118537,
+        "output_tokens": 10711,
+        "reasoning_output_tokens": 1711
+      },
+      "usageReceiptCoverage": 7
+    }
+  },
+  "status": "hybrid_teacher_pipeline_completed_sol_high_text_review_training_blocked",
+  "trainingEligibility": "blocked",
+  "translateReasoningEffort": "high",
+  "translatorModel": "gpt-5.6-terra",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 106496,
+    "input_tokens": 251122,
+    "output_tokens": 24781,
+    "reasoning_output_tokens": 6966
+  },
+  "usageReceiptCoverage": 14,
+  "videoId": "qvImKpmvgaM"
+}

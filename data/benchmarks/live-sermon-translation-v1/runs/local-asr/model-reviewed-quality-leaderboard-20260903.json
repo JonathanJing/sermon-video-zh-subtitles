@@ -1,0 +1,137 @@
+{
+  "createdAt": "2026-09-03T23:20:00.430776+00:00",
+  "decision": {
+    "productionSelectionAllowed": false,
+    "provisionalOfflineWinner": "ASR-WCPP-SMALL-EN-F16",
+    "reason": "Human calibration, streaming replay, and MiLMMT co-residency remain pending."
+  },
+  "itemCount": 60,
+  "manifest": "data/benchmarks/live-sermon-translation-v1/local-asr-model-reviewed-reference-v1.json",
+  "manifestSha256": "6a56de9206e6959d38a80a95908b3226e74639bbdd3bbb34297a467eb2ae702f",
+  "pairedLowerWordErrorWins": {
+    "ASR-WCPP-MEDIUM-EN-F16": 21,
+    "ASR-WCPP-SMALL-EN-F16": 23,
+    "ties": 16
+  },
+  "referenceTier": "model_reviewed_reference_not_human_gold",
+  "results": [
+    {
+      "allCurrentOfflineQualityGatesPassed": true,
+      "criticalTermRecall": 0.971014,
+      "gateResults": {
+        "completeOutput": true,
+        "criticalTermRecallAtLeast95Percent": true,
+        "zeroSilenceHallucinations": true
+      },
+      "invalidItems": [],
+      "itemCount": 60,
+      "meanRtf": 0.0368,
+      "missingCriticalTerms": [
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_001",
+          "term": "Mariners"
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_004",
+          "term": "Mariners"
+        }
+      ],
+      "modelId": "ASR-WCPP-SMALL-EN-F16",
+      "modelReviewedQualityScore": 96.536,
+      "p95Rtf": 0.0432,
+      "peakPerInvocationRssGiB": 0.7188,
+      "predictionsSha256": "c1e0303664f7973898ca60ae7e865ff6c5a8e234915236137d569448778d2284",
+      "runDirectory": "data/benchmarks/live-sermon-translation-v1/runs/local-asr/small-en-f16-model-reviewed-v1-normalized-20260903",
+      "runReportSha256": "9c03474f74863e5f68ebf3f5f9461aba1b7f37bc13874efb4e33c6366bd8e9cc",
+      "scoreComponents": {
+        "completeOutputPoints": 5.0,
+        "criticalTermPoints": 29.13,
+        "silenceDisciplinePoints": 5.0,
+        "werFidelityPoints": 57.406
+      },
+      "silenceHallucinationCount": 0,
+      "successCount": 60,
+      "wer": 0.043233
+    },
+    {
+      "allCurrentOfflineQualityGatesPassed": false,
+      "criticalTermRecall": 0.913043,
+      "gateResults": {
+        "completeOutput": false,
+        "criticalTermRecallAtLeast95Percent": false,
+        "zeroSilenceHallucinations": true
+      },
+      "invalidItems": [
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_041",
+          "referenceText": "Christ has died, we are forgiven, and Christ alive. We are the risen, and He shall come again. Praise the King, praise the King. On our hearts, His name is written.",
+          "transcript": "♪♪♪"
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_042",
+          "referenceText": "The King of kings and Lord of lords, we're pouring out a song of praise together upon Him, upon Him. Christ has died, Christ has died. We are forgiven and now alive. We...",
+          "transcript": "♪♪♪"
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_043",
+          "referenceText": "Praise the King, praise the King, one name upon our lips, Jesus. No greater name than this, Jesus. Every knee will bow, every heart confess, Jesus, Jesus.",
+          "transcript": "♪♪♪"
+        }
+      ],
+      "itemCount": 60,
+      "meanRtf": 0.0777,
+      "missingCriticalTerms": [
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_001",
+          "term": "Mariners"
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_004",
+          "term": "Mariners"
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_041",
+          "term": "Christ"
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_042",
+          "term": "Christ"
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_043",
+          "term": "Jesus"
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_044",
+          "term": "God"
+        }
+      ],
+      "modelId": "ASR-WCPP-MEDIUM-EN-F16",
+      "modelReviewedQualityScore": 93.62,
+      "p95Rtf": 0.0904,
+      "peakPerInvocationRssGiB": 1.8215,
+      "predictionsSha256": "376bf348d718ac87a62b07c6d2334a4abe7b6bbce482e5c5cfbc5ce5ef76b90a",
+      "runDirectory": "data/benchmarks/live-sermon-translation-v1/runs/local-asr/medium-en-f16-model-reviewed-v1-normalized-20260903",
+      "runReportSha256": "a4921861177d0b3063b6b5ff12b691a15036b7caa53302df88be45b1984f248e",
+      "scoreComponents": {
+        "completeOutputPoints": 4.75,
+        "criticalTermPoints": 27.391,
+        "silenceDisciplinePoints": 5.0,
+        "werFidelityPoints": 56.479
+      },
+      "silenceHallucinationCount": 0,
+      "successCount": 57,
+      "wer": 0.058688
+    }
+  ],
+  "schemaVersion": "local-asr-model-reviewed-quality-leaderboard-v1",
+  "scoreDefinition": {
+    "completeOutputWeight": 0.05,
+    "criticalTermRecallWeight": 0.3,
+    "hardGatesRemainAuthoritative": true,
+    "range": "0_to_100_higher_is_better",
+    "silenceDisciplineWeight": 0.05,
+    "werFidelityWeight": 0.6
+  },
+  "totalAudioMinutes": 29.811
+}

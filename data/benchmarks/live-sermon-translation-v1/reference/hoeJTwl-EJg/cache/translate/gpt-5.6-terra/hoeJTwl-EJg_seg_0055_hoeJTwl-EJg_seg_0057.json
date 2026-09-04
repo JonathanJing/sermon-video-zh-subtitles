@@ -1,0 +1,81 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T00:03:06.788467+00:00",
+  "elapsedSeconds": 15.738,
+  "inputSha256": "8058586fd8f764b32bc6b630c9eb578da9d1b77d9be120160d8a10b61f18b9d7",
+  "modelRequested": "gpt-5.6-terra",
+  "promptVersion": "codex-conversation-sermon-translate-v1",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "contentType": "announcement",
+        "id": "hoeJTwl-EJg_seg_0055",
+        "potentialAsrIssues": [
+          "“less than one of our heroes in scripture David” likely lacks punctuation before “David”"
+        ],
+        "properNouns": [
+          {
+            "source": "David",
+            "zh": "大卫"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "我们团队里有人很愿意与你祷告。你们当中有些人正处在焦虑的时期。我们不会因为这样就觉得你不如圣经中的英雄大卫；大卫也曾与焦虑挣扎。我们很愿意为你祷告。你可以把“prayer”短信发送到屏幕上的号码，我们团队的人会围绕着你，为你祷告。"
+      },
+      {
+        "contentType": "prayer",
+        "id": "hoeJTwl-EJg_seg_0056",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Lord Jesus",
+            "zh": "主耶稣"
+          },
+          {
+            "source": "God",
+            "zh": "神"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "主耶稣，我祈求当我们进入你的同在并敬拜时，你使用这段时间鼓励我们仰望你，提醒我们你对我们信实的爱。奉你的名祷告，阿们。嘿，很高兴你今天参加我们的聚会。我盼望并祈求神使用这篇信息，在你所在之处鼓励你。"
+      },
+      {
+        "contentType": "announcement",
+        "id": "hoeJTwl-EJg_seg_0057",
+        "potentialAsrIssues": [
+          "“when that we ever offer content” is likely intended as “whenever we offer content”"
+        ],
+        "properNouns": [
+          {
+            "source": "YouTube",
+            "zh": "YouTube"
+          },
+          {
+            "source": "Mariners",
+            "zh": "Mariners"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "如果你点击订阅按钮，我会很高兴，因为这样每当我们举行聚会或在 YouTube 发布内容时，你都能收到下一次提醒。所以请订阅，并加入我们的 Mariners 在线聚会。"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "hoeJTwl-EJg_seg_0055",
+    "hoeJTwl-EJg_seg_0056",
+    "hoeJTwl-EJg_seg_0057"
+  ],
+  "stage": "translate",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 15104,
+    "input_tokens": 16245,
+    "output_tokens": 567,
+    "reasoning_output_tokens": 126
+  }
+}

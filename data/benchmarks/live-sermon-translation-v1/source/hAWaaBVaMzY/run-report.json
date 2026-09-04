@@ -1,0 +1,32 @@
+{
+  "audioDownloaded": false,
+  "captionSegmentCount": 56,
+  "generatedAt": "2026-09-02T22:26:49.104418+00:00",
+  "gptTranscribeCalled": false,
+  "humanApprovalClaimed": false,
+  "inputProfileSha256": "c2bc5fe4d4f671df8bbaad2926cf59b500ef2a66453ffc9132ed30257b0a1b7d",
+  "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+  "segmentOrigin": "full_video_caption_timeline",
+  "sourceDurationSeconds": 1989,
+  "sourceQuality": {
+    "disposition": "teacher_ready",
+    "maxSparseSegmentShare": 0.1,
+    "overallWordsPerSecond": 2.8364,
+    "sparseSegmentCount": 0,
+    "sparseSegmentShare": 0.0,
+    "sparseWordsPerSecondThreshold": 0.6
+  },
+  "sourceQualityDisposition": "teacher_ready",
+  "sourceSegmentsSha256": "a45da5b536b549021a33c85d7bcf525bcb04549a831d208c30699ffcf2154f0c",
+  "speaker": "Jared Kirkwood",
+  "split": "test",
+  "status": "caption_source_prepared",
+  "teacherPipelineEligibility": "eligible",
+  "title": "What Matters Most - Jared Kirkwood | Mariners Church",
+  "trainingBlockers": [
+    "source_training_rights_unconfirmed",
+    "gpt_external_student_distillation_not_authorized"
+  ],
+  "trainingEligibility": "blocked",
+  "videoId": "hAWaaBVaMzY"
+}

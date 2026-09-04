@@ -1,0 +1,2924 @@
+{
+	"systeminfo": "WHISPER : COREML = 0 | OPENVINO = 0 | MTL : EMBED_LIBRARY = 1 | CPU : NEON = 1 | ARM_FMA = 1 | DOTPROD = 1 | ACCELERATE = 1 | OPENMP = 1 | REPACK = 1 | ",
+	"model": {
+		"type": "medium",
+		"multilingual": false,
+		"vocab": 51864,
+		"audio": {
+			"ctx": 1500,
+			"state": 1024,
+			"head": 16,
+			"layer": 24
+		},
+		"text": {
+			"ctx": 448,
+			"state": 1024,
+			"head": 16,
+			"layer": 24
+		},
+		"mels": 80,
+		"ftype": 1
+	},
+	"params": {
+		"model": "/Users/jonathan_jing/Library/Caches/sermon-asr-benchmark/models/ggml-medium.en.bin",
+		"language": "en",
+		"translate": false
+	},
+	"result": {
+		"language": "en"
+	},
+	"transcription": [
+		{
+			"timestamps": {
+				"from": "00:00:00,000",
+				"to": "00:00:04,000"
+			},
+			"offsets": {
+				"from": 0,
+				"to": 4000
+			},
+			"text": " And they concluded that it is when context changes,",
+			"tokens": [
+				{
+					"text": "[_BEG_]",
+					"timestamps": {
+						"from": "00:00:00,000",
+						"to": "00:00:00,000"
+					},
+					"offsets": {
+						"from": 0,
+						"to": 0
+					},
+					"id": 50363,
+					"p": 0.945947,
+					"t_dtw": -1
+				},
+				{
+					"text": " And",
+					"timestamps": {
+						"from": "00:00:00,000",
+						"to": "00:00:00,220"
+					},
+					"offsets": {
+						"from": 0,
+						"to": 220
+					},
+					"id": 843,
+					"p": 0.524369,
+					"t_dtw": -1
+				},
+				{
+					"text": " they",
+					"timestamps": {
+						"from": "00:00:00,500",
+						"to": "00:00:00,520"
+					},
+					"offsets": {
+						"from": 500,
+						"to": 520
+					},
+					"id": 484,
+					"p": 0.965219,
+					"t_dtw": -1
+				},
+				{
+					"text": " concluded",
+					"timestamps": {
+						"from": "00:00:00,520",
+						"to": "00:00:01,200"
+					},
+					"offsets": {
+						"from": 520,
+						"to": 1200
+					},
+					"id": 8391,
+					"p": 0.997805,
+					"t_dtw": -1
+				},
+				{
+					"text": " that",
+					"timestamps": {
+						"from": "00:00:01,200",
+						"to": "00:00:01,500"
+					},
+					"offsets": {
+						"from": 1200,
+						"to": 1500
+					},
+					"id": 326,
+					"p": 0.960921,
+					"t_dtw": -1
+				},
+				{
+					"text": " it",
+					"timestamps": {
+						"from": "00:00:01,500",
+						"to": "00:00:01,640"
+					},
+					"offsets": {
+						"from": 1500,
+						"to": 1640
+					},
+					"id": 340,
+					"p": 0.766102,
+					"t_dtw": -1
+				},
+				{
+					"text": " is",
+					"timestamps": {
+						"from": "00:00:01,640",
+						"to": "00:00:01,800"
+					},
+					"offsets": {
+						"from": 1640,
+						"to": 1800
+					},
+					"id": 318,
+					"p": 0.664821,
+					"t_dtw": -1
+				},
+				{
+					"text": " when",
+					"timestamps": {
+						"from": "00:00:01,800",
+						"to": "00:00:02,120"
+					},
+					"offsets": {
+						"from": 1800,
+						"to": 2120
+					},
+					"id": 618,
+					"p": 0.984037,
+					"t_dtw": -1
+				},
+				{
+					"text": " context",
+					"timestamps": {
+						"from": "00:00:02,120",
+						"to": "00:00:02,990"
+					},
+					"offsets": {
+						"from": 2120,
+						"to": 2990
+					},
+					"id": 4732,
+					"p": 0.942416,
+					"t_dtw": -1
+				},
+				{
+					"text": " changes",
+					"timestamps": {
+						"from": "00:00:03,060",
+						"to": "00:00:04,000"
+					},
+					"offsets": {
+						"from": 3060,
+						"to": 4000
+					},
+					"id": 2458,
+					"p": 0.990091,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:04,000",
+						"to": "00:00:04,000"
+					},
+					"offsets": {
+						"from": 4000,
+						"to": 4000
+					},
+					"id": 11,
+					"p": 0.678024,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_200]",
+					"timestamps": {
+						"from": "00:00:04,000",
+						"to": "00:00:04,000"
+					},
+					"offsets": {
+						"from": 4000,
+						"to": 4000
+					},
+					"id": 50563,
+					"p": 0.0522177,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:04,000",
+				"to": "00:00:06,720"
+			},
+			"offsets": {
+				"from": 4000,
+				"to": 6720
+			},
+			"text": " it's when a job changes or someone moves",
+			"tokens": [
+				{
+					"text": " it",
+					"timestamps": {
+						"from": "00:00:04,000",
+						"to": "00:00:04,180"
+					},
+					"offsets": {
+						"from": 4000,
+						"to": 4180
+					},
+					"id": 340,
+					"p": 0.985628,
+					"t_dtw": -1
+				},
+				{
+					"text": "'s",
+					"timestamps": {
+						"from": "00:00:04,180",
+						"to": "00:00:04,350"
+					},
+					"offsets": {
+						"from": 4180,
+						"to": 4350
+					},
+					"id": 338,
+					"p": 0.990577,
+					"t_dtw": -1
+				},
+				{
+					"text": " when",
+					"timestamps": {
+						"from": "00:00:04,500",
+						"to": "00:00:04,720"
+					},
+					"offsets": {
+						"from": 4500,
+						"to": 4720
+					},
+					"id": 618,
+					"p": 0.999226,
+					"t_dtw": -1
+				},
+				{
+					"text": " a",
+					"timestamps": {
+						"from": "00:00:04,720",
+						"to": "00:00:04,800"
+					},
+					"offsets": {
+						"from": 4720,
+						"to": 4800
+					},
+					"id": 257,
+					"p": 0.997642,
+					"t_dtw": -1
+				},
+				{
+					"text": " job",
+					"timestamps": {
+						"from": "00:00:04,860",
+						"to": "00:00:04,990"
+					},
+					"offsets": {
+						"from": 4860,
+						"to": 4990
+					},
+					"id": 1693,
+					"p": 0.999298,
+					"t_dtw": -1
+				},
+				{
+					"text": " changes",
+					"timestamps": {
+						"from": "00:00:05,080",
+						"to": "00:00:05,650"
+					},
+					"offsets": {
+						"from": 5080,
+						"to": 5650
+					},
+					"id": 2458,
+					"p": 0.998677,
+					"t_dtw": -1
+				},
+				{
+					"text": " or",
+					"timestamps": {
+						"from": "00:00:05,750",
+						"to": "00:00:05,880"
+					},
+					"offsets": {
+						"from": 5750,
+						"to": 5880
+					},
+					"id": 393,
+					"p": 0.637064,
+					"t_dtw": -1
+				},
+				{
+					"text": " someone",
+					"timestamps": {
+						"from": "00:00:05,880",
+						"to": "00:00:06,200"
+					},
+					"offsets": {
+						"from": 5880,
+						"to": 6200
+					},
+					"id": 2130,
+					"p": 0.994829,
+					"t_dtw": -1
+				},
+				{
+					"text": " moves",
+					"timestamps": {
+						"from": "00:00:06,410",
+						"to": "00:00:06,720"
+					},
+					"offsets": {
+						"from": 6410,
+						"to": 6720
+					},
+					"id": 6100,
+					"p": 0.997082,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_336]",
+					"timestamps": {
+						"from": "00:00:06,720",
+						"to": "00:00:06,720"
+					},
+					"offsets": {
+						"from": 6720,
+						"to": 6720
+					},
+					"id": 50699,
+					"p": 0.0826985,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:06,720",
+				"to": "00:00:08,600"
+			},
+			"offsets": {
+				"from": 6720,
+				"to": 8600
+			},
+			"text": " or the family dynamics change,",
+			"tokens": [
+				{
+					"text": " or",
+					"timestamps": {
+						"from": "00:00:06,720",
+						"to": "00:00:06,870"
+					},
+					"offsets": {
+						"from": 6720,
+						"to": 6870
+					},
+					"id": 393,
+					"p": 0.999657,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:06,870",
+						"to": "00:00:07,090"
+					},
+					"offsets": {
+						"from": 6870,
+						"to": 7090
+					},
+					"id": 262,
+					"p": 0.991053,
+					"t_dtw": -1
+				},
+				{
+					"text": " family",
+					"timestamps": {
+						"from": "00:00:07,220",
+						"to": "00:00:07,530"
+					},
+					"offsets": {
+						"from": 7220,
+						"to": 7530
+					},
+					"id": 1641,
+					"p": 0.997482,
+					"t_dtw": -1
+				},
+				{
+					"text": " dynamics",
+					"timestamps": {
+						"from": "00:00:07,590",
+						"to": "00:00:08,140"
+					},
+					"offsets": {
+						"from": 7590,
+						"to": 8140
+					},
+					"id": 17262,
+					"p": 0.982381,
+					"t_dtw": -1
+				},
+				{
+					"text": " change",
+					"timestamps": {
+						"from": "00:00:08,140",
+						"to": "00:00:08,590"
+					},
+					"offsets": {
+						"from": 8140,
+						"to": 8590
+					},
+					"id": 1487,
+					"p": 0.992801,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:08,600",
+						"to": "00:00:08,600"
+					},
+					"offsets": {
+						"from": 8600,
+						"to": 8600
+					},
+					"id": 11,
+					"p": 0.628672,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_430]",
+					"timestamps": {
+						"from": "00:00:08,600",
+						"to": "00:00:08,600"
+					},
+					"offsets": {
+						"from": 8600,
+						"to": 8600
+					},
+					"id": 50793,
+					"p": 0.266185,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:08,600",
+				"to": "00:00:11,960"
+			},
+			"offsets": {
+				"from": 8600,
+				"to": 11960
+			},
+			"text": " that those stressors can really make one susceptible",
+			"tokens": [
+				{
+					"text": " that",
+					"timestamps": {
+						"from": "00:00:08,600",
+						"to": "00:00:08,900"
+					},
+					"offsets": {
+						"from": 8600,
+						"to": 8900
+					},
+					"id": 326,
+					"p": 0.999668,
+					"t_dtw": -1
+				},
+				{
+					"text": " those",
+					"timestamps": {
+						"from": "00:00:09,100",
+						"to": "00:00:09,270"
+					},
+					"offsets": {
+						"from": 9100,
+						"to": 9270
+					},
+					"id": 883,
+					"p": 0.999375,
+					"t_dtw": -1
+				},
+				{
+					"text": " stress",
+					"timestamps": {
+						"from": "00:00:09,270",
+						"to": "00:00:09,720"
+					},
+					"offsets": {
+						"from": 9270,
+						"to": 9720
+					},
+					"id": 5503,
+					"p": 0.998649,
+					"t_dtw": -1
+				},
+				{
+					"text": "ors",
+					"timestamps": {
+						"from": "00:00:09,720",
+						"to": "00:00:09,930"
+					},
+					"offsets": {
+						"from": 9720,
+						"to": 9930
+					},
+					"id": 669,
+					"p": 0.996599,
+					"t_dtw": -1
+				},
+				{
+					"text": " can",
+					"timestamps": {
+						"from": "00:00:09,940",
+						"to": "00:00:10,160"
+					},
+					"offsets": {
+						"from": 9940,
+						"to": 10160
+					},
+					"id": 460,
+					"p": 0.996531,
+					"t_dtw": -1
+				},
+				{
+					"text": " really",
+					"timestamps": {
+						"from": "00:00:10,160",
+						"to": "00:00:10,640"
+					},
+					"offsets": {
+						"from": 10160,
+						"to": 10640
+					},
+					"id": 1107,
+					"p": 0.997113,
+					"t_dtw": -1
+				},
+				{
+					"text": " make",
+					"timestamps": {
+						"from": "00:00:10,640",
+						"to": "00:00:10,800"
+					},
+					"offsets": {
+						"from": 10640,
+						"to": 10800
+					},
+					"id": 787,
+					"p": 0.978864,
+					"t_dtw": -1
+				},
+				{
+					"text": " one",
+					"timestamps": {
+						"from": "00:00:11,010",
+						"to": "00:00:11,240"
+					},
+					"offsets": {
+						"from": 11010,
+						"to": 11240
+					},
+					"id": 530,
+					"p": 0.94206,
+					"t_dtw": -1
+				},
+				{
+					"text": " susceptible",
+					"timestamps": {
+						"from": "00:00:11,240",
+						"to": "00:00:11,780"
+					},
+					"offsets": {
+						"from": 11240,
+						"to": 11780
+					},
+					"id": 22084,
+					"p": 0.976897,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_598]",
+					"timestamps": {
+						"from": "00:00:11,960",
+						"to": "00:00:11,960"
+					},
+					"offsets": {
+						"from": 11960,
+						"to": 11960
+					},
+					"id": 50961,
+					"p": 0.693133,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:11,960",
+				"to": "00:00:14,000"
+			},
+			"offsets": {
+				"from": 11960,
+				"to": 14000
+			},
+			"text": " to just seasons of being overwhelmed",
+			"tokens": [
+				{
+					"text": " to",
+					"timestamps": {
+						"from": "00:00:11,960",
+						"to": "00:00:12,090"
+					},
+					"offsets": {
+						"from": 11960,
+						"to": 12090
+					},
+					"id": 284,
+					"p": 0.999657,
+					"t_dtw": -1
+				},
+				{
+					"text": " just",
+					"timestamps": {
+						"from": "00:00:12,090",
+						"to": "00:00:12,290"
+					},
+					"offsets": {
+						"from": 12090,
+						"to": 12290
+					},
+					"id": 655,
+					"p": 0.996508,
+					"t_dtw": -1
+				},
+				{
+					"text": " seasons",
+					"timestamps": {
+						"from": "00:00:12,460",
+						"to": "00:00:12,770"
+					},
+					"offsets": {
+						"from": 12460,
+						"to": 12770
+					},
+					"id": 7028,
+					"p": 0.987931,
+					"t_dtw": -1
+				},
+				{
+					"text": " of",
+					"timestamps": {
+						"from": "00:00:12,810",
+						"to": "00:00:12,940"
+					},
+					"offsets": {
+						"from": 12810,
+						"to": 12940
+					},
+					"id": 286,
+					"p": 0.998662,
+					"t_dtw": -1
+				},
+				{
+					"text": " being",
+					"timestamps": {
+						"from": "00:00:12,940",
+						"to": "00:00:13,260"
+					},
+					"offsets": {
+						"from": 12940,
+						"to": 13260
+					},
+					"id": 852,
+					"p": 0.996394,
+					"t_dtw": -1
+				},
+				{
+					"text": " overwhelmed",
+					"timestamps": {
+						"from": "00:00:13,260",
+						"to": "00:00:14,000"
+					},
+					"offsets": {
+						"from": 13260,
+						"to": 14000
+					},
+					"id": 20974,
+					"p": 0.996698,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_700]",
+					"timestamps": {
+						"from": "00:00:14,000",
+						"to": "00:00:14,000"
+					},
+					"offsets": {
+						"from": 14000,
+						"to": 14000
+					},
+					"id": 51063,
+					"p": 0.719335,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:14,000",
+				"to": "00:00:16,640"
+			},
+			"offsets": {
+				"from": 14000,
+				"to": 16640
+			},
+			"text": " or seasons of anxiousness.",
+			"tokens": [
+				{
+					"text": " or",
+					"timestamps": {
+						"from": "00:00:14,000",
+						"to": "00:00:14,230"
+					},
+					"offsets": {
+						"from": 14000,
+						"to": 14230
+					},
+					"id": 393,
+					"p": 0.999615,
+					"t_dtw": -1
+				},
+				{
+					"text": " seasons",
+					"timestamps": {
+						"from": "00:00:14,500",
+						"to": "00:00:15,040"
+					},
+					"offsets": {
+						"from": 14500,
+						"to": 15040
+					},
+					"id": 7028,
+					"p": 0.997581,
+					"t_dtw": -1
+				},
+				{
+					"text": " of",
+					"timestamps": {
+						"from": "00:00:15,080",
+						"to": "00:00:15,290"
+					},
+					"offsets": {
+						"from": 15080,
+						"to": 15290
+					},
+					"id": 286,
+					"p": 0.999375,
+					"t_dtw": -1
+				},
+				{
+					"text": " anxious",
+					"timestamps": {
+						"from": "00:00:15,290",
+						"to": "00:00:16,120"
+					},
+					"offsets": {
+						"from": 15290,
+						"to": 16120
+					},
+					"id": 18116,
+					"p": 0.997954,
+					"t_dtw": -1
+				},
+				{
+					"text": "ness",
+					"timestamps": {
+						"from": "00:00:16,120",
+						"to": "00:00:16,620"
+					},
+					"offsets": {
+						"from": 16120,
+						"to": 16620
+					},
+					"id": 1108,
+					"p": 0.998422,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:16,620",
+						"to": "00:00:16,640"
+					},
+					"offsets": {
+						"from": 16620,
+						"to": 16640
+					},
+					"id": 13,
+					"p": 0.875345,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_832]",
+					"timestamps": {
+						"from": "00:00:16,640",
+						"to": "00:00:16,640"
+					},
+					"offsets": {
+						"from": 16640,
+						"to": 16640
+					},
+					"id": 51195,
+					"p": 0.259988,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:16,640",
+				"to": "00:00:20,720"
+			},
+			"offsets": {
+				"from": 16640,
+				"to": 20720
+			},
+			"text": " And I know I'm not the only one who has wrestled with this.",
+			"tokens": [
+				{
+					"text": " And",
+					"timestamps": {
+						"from": "00:00:16,640",
+						"to": "00:00:16,820"
+					},
+					"offsets": {
+						"from": 16640,
+						"to": 16820
+					},
+					"id": 843,
+					"p": 0.991446,
+					"t_dtw": -1
+				},
+				{
+					"text": " I",
+					"timestamps": {
+						"from": "00:00:16,820",
+						"to": "00:00:16,880"
+					},
+					"offsets": {
+						"from": 16820,
+						"to": 16880
+					},
+					"id": 314,
+					"p": 0.997931,
+					"t_dtw": -1
+				},
+				{
+					"text": " know",
+					"timestamps": {
+						"from": "00:00:17,130",
+						"to": "00:00:17,130"
+					},
+					"offsets": {
+						"from": 17130,
+						"to": 17130
+					},
+					"id": 760,
+					"p": 0.998136,
+					"t_dtw": -1
+				},
+				{
+					"text": " I",
+					"timestamps": {
+						"from": "00:00:17,140",
+						"to": "00:00:17,190"
+					},
+					"offsets": {
+						"from": 17140,
+						"to": 17190
+					},
+					"id": 314,
+					"p": 0.993517,
+					"t_dtw": -1
+				},
+				{
+					"text": "'m",
+					"timestamps": {
+						"from": "00:00:17,190",
+						"to": "00:00:17,310"
+					},
+					"offsets": {
+						"from": 17190,
+						"to": 17310
+					},
+					"id": 1101,
+					"p": 0.999093,
+					"t_dtw": -1
+				},
+				{
+					"text": " not",
+					"timestamps": {
+						"from": "00:00:17,310",
+						"to": "00:00:17,440"
+					},
+					"offsets": {
+						"from": 17310,
+						"to": 17440
+					},
+					"id": 407,
+					"p": 0.999207,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:17,500",
+						"to": "00:00:17,630"
+					},
+					"offsets": {
+						"from": 17500,
+						"to": 17630
+					},
+					"id": 262,
+					"p": 0.999256,
+					"t_dtw": -1
+				},
+				{
+					"text": " only",
+					"timestamps": {
+						"from": "00:00:17,720",
+						"to": "00:00:17,920"
+					},
+					"offsets": {
+						"from": 17720,
+						"to": 17920
+					},
+					"id": 691,
+					"p": 0.99854,
+					"t_dtw": -1
+				},
+				{
+					"text": " one",
+					"timestamps": {
+						"from": "00:00:17,920",
+						"to": "00:00:18,160"
+					},
+					"offsets": {
+						"from": 17920,
+						"to": 18160
+					},
+					"id": 530,
+					"p": 0.982306,
+					"t_dtw": -1
+				},
+				{
+					"text": " who",
+					"timestamps": {
+						"from": "00:00:18,160",
+						"to": "00:00:18,490"
+					},
+					"offsets": {
+						"from": 18160,
+						"to": 18490
+					},
+					"id": 508,
+					"p": 0.900246,
+					"t_dtw": -1
+				},
+				{
+					"text": " has",
+					"timestamps": {
+						"from": "00:00:18,490",
+						"to": "00:00:18,820"
+					},
+					"offsets": {
+						"from": 18490,
+						"to": 18820
+					},
+					"id": 468,
+					"p": 0.997501,
+					"t_dtw": -1
+				},
+				{
+					"text": " wrest",
+					"timestamps": {
+						"from": "00:00:18,820",
+						"to": "00:00:19,370"
+					},
+					"offsets": {
+						"from": 18820,
+						"to": 19370
+					},
+					"id": 10419,
+					"p": 0.996932,
+					"t_dtw": -1
+				},
+				{
+					"text": "led",
+					"timestamps": {
+						"from": "00:00:19,370",
+						"to": "00:00:19,720"
+					},
+					"offsets": {
+						"from": 19370,
+						"to": 19720
+					},
+					"id": 992,
+					"p": 0.999569,
+					"t_dtw": -1
+				},
+				{
+					"text": " with",
+					"timestamps": {
+						"from": "00:00:19,720",
+						"to": "00:00:20,080"
+					},
+					"offsets": {
+						"from": 19720,
+						"to": 20080
+					},
+					"id": 351,
+					"p": 0.989034,
+					"t_dtw": -1
+				},
+				{
+					"text": " this",
+					"timestamps": {
+						"from": "00:00:20,080",
+						"to": "00:00:20,440"
+					},
+					"offsets": {
+						"from": 20080,
+						"to": 20440
+					},
+					"id": 428,
+					"p": 0.999508,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:20,440",
+						"to": "00:00:20,720"
+					},
+					"offsets": {
+						"from": 20440,
+						"to": 20720
+					},
+					"id": 13,
+					"p": 0.99106,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_1036]",
+					"timestamps": {
+						"from": "00:00:20,720",
+						"to": "00:00:20,720"
+					},
+					"offsets": {
+						"from": 20720,
+						"to": 20720
+					},
+					"id": 51399,
+					"p": 0.8898,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:20,720",
+				"to": "00:00:23,680"
+			},
+			"offsets": {
+				"from": 20720,
+				"to": 23680
+			},
+			"text": " Mason Curry is an author, and he wrote a book",
+			"tokens": [
+				{
+					"text": " Mason",
+					"timestamps": {
+						"from": "00:00:21,220",
+						"to": "00:00:21,270"
+					},
+					"offsets": {
+						"from": 21220,
+						"to": 21270
+					},
+					"id": 14737,
+					"p": 0.996423,
+					"t_dtw": -1
+				},
+				{
+					"text": " Curry",
+					"timestamps": {
+						"from": "00:00:21,270",
+						"to": "00:00:21,820"
+					},
+					"offsets": {
+						"from": 21270,
+						"to": 21820
+					},
+					"id": 20920,
+					"p": 0.506426,
+					"t_dtw": -1
+				},
+				{
+					"text": " is",
+					"timestamps": {
+						"from": "00:00:21,820",
+						"to": "00:00:22,040"
+					},
+					"offsets": {
+						"from": 21820,
+						"to": 22040
+					},
+					"id": 318,
+					"p": 0.990596,
+					"t_dtw": -1
+				},
+				{
+					"text": " an",
+					"timestamps": {
+						"from": "00:00:22,040",
+						"to": "00:00:22,260"
+					},
+					"offsets": {
+						"from": 22040,
+						"to": 22260
+					},
+					"id": 281,
+					"p": 0.998304,
+					"t_dtw": -1
+				},
+				{
+					"text": " author",
+					"timestamps": {
+						"from": "00:00:22,260",
+						"to": "00:00:22,910"
+					},
+					"offsets": {
+						"from": 22260,
+						"to": 22910
+					},
+					"id": 1772,
+					"p": 0.999691,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:23,040",
+						"to": "00:00:23,040"
+					},
+					"offsets": {
+						"from": 23040,
+						"to": 23040
+					},
+					"id": 11,
+					"p": 0.443614,
+					"t_dtw": -1
+				},
+				{
+					"text": " and",
+					"timestamps": {
+						"from": "00:00:23,130",
+						"to": "00:00:23,160"
+					},
+					"offsets": {
+						"from": 23130,
+						"to": 23160
+					},
+					"id": 290,
+					"p": 0.539945,
+					"t_dtw": -1
+				},
+				{
+					"text": " he",
+					"timestamps": {
+						"from": "00:00:23,160",
+						"to": "00:00:23,240"
+					},
+					"offsets": {
+						"from": 23160,
+						"to": 23240
+					},
+					"id": 339,
+					"p": 0.999329,
+					"t_dtw": -1
+				},
+				{
+					"text": " wrote",
+					"timestamps": {
+						"from": "00:00:23,240",
+						"to": "00:00:23,450"
+					},
+					"offsets": {
+						"from": 23240,
+						"to": 23450
+					},
+					"id": 2630,
+					"p": 0.998856,
+					"t_dtw": -1
+				},
+				{
+					"text": " a",
+					"timestamps": {
+						"from": "00:00:23,450",
+						"to": "00:00:23,480"
+					},
+					"offsets": {
+						"from": 23450,
+						"to": 23480
+					},
+					"id": 257,
+					"p": 0.993699,
+					"t_dtw": -1
+				},
+				{
+					"text": " book",
+					"timestamps": {
+						"from": "00:00:23,500",
+						"to": "00:00:23,680"
+					},
+					"offsets": {
+						"from": 23500,
+						"to": 23680
+					},
+					"id": 1492,
+					"p": 0.999748,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_1184]",
+					"timestamps": {
+						"from": "00:00:23,680",
+						"to": "00:00:23,680"
+					},
+					"offsets": {
+						"from": 23680,
+						"to": 23680
+					},
+					"id": 51547,
+					"p": 0.875466,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:23,680",
+				"to": "00:00:27,040"
+			},
+			"offsets": {
+				"from": 23680,
+				"to": 27040
+			},
+			"text": " about famous authors and composers and thinkers",
+			"tokens": [
+				{
+					"text": " about",
+					"timestamps": {
+						"from": "00:00:24,140",
+						"to": "00:00:24,140"
+					},
+					"offsets": {
+						"from": 24140,
+						"to": 24140
+					},
+					"id": 546,
+					"p": 0.999798,
+					"t_dtw": -1
+				},
+				{
+					"text": " famous",
+					"timestamps": {
+						"from": "00:00:24,180",
+						"to": "00:00:24,670"
+					},
+					"offsets": {
+						"from": 24180,
+						"to": 24670
+					},
+					"id": 5863,
+					"p": 0.999348,
+					"t_dtw": -1
+				},
+				{
+					"text": " authors",
+					"timestamps": {
+						"from": "00:00:24,760",
+						"to": "00:00:25,320"
+					},
+					"offsets": {
+						"from": 24760,
+						"to": 25320
+					},
+					"id": 7035,
+					"p": 0.999005,
+					"t_dtw": -1
+				},
+				{
+					"text": " and",
+					"timestamps": {
+						"from": "00:00:25,320",
+						"to": "00:00:25,560"
+					},
+					"offsets": {
+						"from": 25320,
+						"to": 25560
+					},
+					"id": 290,
+					"p": 0.923382,
+					"t_dtw": -1
+				},
+				{
+					"text": " compos",
+					"timestamps": {
+						"from": "00:00:25,650",
+						"to": "00:00:26,150"
+					},
+					"offsets": {
+						"from": 25650,
+						"to": 26150
+					},
+					"id": 18882,
+					"p": 0.997843,
+					"t_dtw": -1
+				},
+				{
+					"text": "ers",
+					"timestamps": {
+						"from": "00:00:26,150",
+						"to": "00:00:26,440"
+					},
+					"offsets": {
+						"from": 26150,
+						"to": 26440
+					},
+					"id": 364,
+					"p": 0.999916,
+					"t_dtw": -1
+				},
+				{
+					"text": " and",
+					"timestamps": {
+						"from": "00:00:26,440",
+						"to": "00:00:26,600"
+					},
+					"offsets": {
+						"from": 26440,
+						"to": 26600
+					},
+					"id": 290,
+					"p": 0.575334,
+					"t_dtw": -1
+				},
+				{
+					"text": " thinkers",
+					"timestamps": {
+						"from": "00:00:26,600",
+						"to": "00:00:26,860"
+					},
+					"offsets": {
+						"from": 26600,
+						"to": 26860
+					},
+					"id": 30504,
+					"p": 0.996953,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_1352]",
+					"timestamps": {
+						"from": "00:00:27,040",
+						"to": "00:00:27,040"
+					},
+					"offsets": {
+						"from": 27040,
+						"to": 27040
+					},
+					"id": 51715,
+					"p": 0.462597,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:27,040",
+				"to": "00:00:28,920"
+			},
+			"offsets": {
+				"from": 27040,
+				"to": 28920
+			},
+			"text": " and writers and artists.",
+			"tokens": [
+				{
+					"text": " and",
+					"timestamps": {
+						"from": "00:00:27,040",
+						"to": "00:00:27,280"
+					},
+					"offsets": {
+						"from": 27040,
+						"to": 27280
+					},
+					"id": 290,
+					"p": 0.817036,
+					"t_dtw": -1
+				},
+				{
+					"text": " writers",
+					"timestamps": {
+						"from": "00:00:27,540",
+						"to": "00:00:27,850"
+					},
+					"offsets": {
+						"from": 27540,
+						"to": 27850
+					},
+					"id": 8786,
+					"p": 0.999222,
+					"t_dtw": -1
+				},
+				{
+					"text": " and",
+					"timestamps": {
+						"from": "00:00:27,900",
+						"to": "00:00:28,030"
+					},
+					"offsets": {
+						"from": 27900,
+						"to": 28030
+					},
+					"id": 290,
+					"p": 0.995927,
+					"t_dtw": -1
+				},
+				{
+					"text": " artists",
+					"timestamps": {
+						"from": "00:00:28,120",
+						"to": "00:00:28,660"
+					},
+					"offsets": {
+						"from": 28120,
+						"to": 28660
+					},
+					"id": 7912,
+					"p": 0.99655,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:28,660",
+						"to": "00:00:28,910"
+					},
+					"offsets": {
+						"from": 28660,
+						"to": 28910
+					},
+					"id": 13,
+					"p": 0.84734,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_1446]",
+					"timestamps": {
+						"from": "00:00:28,920",
+						"to": "00:00:28,920"
+					},
+					"offsets": {
+						"from": 28920,
+						"to": 28920
+					},
+					"id": 51809,
+					"p": 0.651389,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:28,920",
+				"to": "00:00:31,040"
+			},
+			"offsets": {
+				"from": 28920,
+				"to": 31040
+			},
+			"text": " And these were ones he wrote about",
+			"tokens": [
+				{
+					"text": "[_BEG_]",
+					"timestamps": {
+						"from": "00:00:28,920",
+						"to": "00:00:28,920"
+					},
+					"offsets": {
+						"from": 28920,
+						"to": 28920
+					},
+					"id": 50363,
+					"p": 0.999989,
+					"t_dtw": -1
+				},
+				{
+					"text": " And",
+					"timestamps": {
+						"from": "00:00:28,920",
+						"to": "00:00:29,120"
+					},
+					"offsets": {
+						"from": 28920,
+						"to": 29120
+					},
+					"id": 843,
+					"p": 0.992142,
+					"t_dtw": -1
+				},
+				{
+					"text": " these",
+					"timestamps": {
+						"from": "00:00:29,420",
+						"to": "00:00:29,460"
+					},
+					"offsets": {
+						"from": 29420,
+						"to": 29460
+					},
+					"id": 777,
+					"p": 0.994776,
+					"t_dtw": -1
+				},
+				{
+					"text": " were",
+					"timestamps": {
+						"from": "00:00:29,460",
+						"to": "00:00:29,720"
+					},
+					"offsets": {
+						"from": 29460,
+						"to": 29720
+					},
+					"id": 547,
+					"p": 0.989991,
+					"t_dtw": -1
+				},
+				{
+					"text": " ones",
+					"timestamps": {
+						"from": "00:00:29,780",
+						"to": "00:00:29,910"
+					},
+					"offsets": {
+						"from": 29780,
+						"to": 29910
+					},
+					"id": 3392,
+					"p": 0.971999,
+					"t_dtw": -1
+				},
+				{
+					"text": " he",
+					"timestamps": {
+						"from": "00:00:30,000",
+						"to": "00:00:30,130"
+					},
+					"offsets": {
+						"from": 30000,
+						"to": 30130
+					},
+					"id": 339,
+					"p": 0.969629,
+					"t_dtw": -1
+				},
+				{
+					"text": " wrote",
+					"timestamps": {
+						"from": "00:00:30,130",
+						"to": "00:00:30,520"
+					},
+					"offsets": {
+						"from": 30130,
+						"to": 30520
+					},
+					"id": 2630,
+					"p": 0.999756,
+					"t_dtw": -1
+				},
+				{
+					"text": " about",
+					"timestamps": {
+						"from": "00:00:30,520",
+						"to": "00:00:31,040"
+					},
+					"offsets": {
+						"from": 30520,
+						"to": 31040
+					},
+					"id": 546,
+					"p": 0.987628,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_106]",
+					"timestamps": {
+						"from": "00:00:31,040",
+						"to": "00:00:31,040"
+					},
+					"offsets": {
+						"from": 31040,
+						"to": 31040
+					},
+					"id": 50469,
+					"p": 0.193895,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:31,040",
+				"to": "00:00:34,640"
+			},
+			"offsets": {
+				"from": 31040,
+				"to": 34640
+			},
+			"text": " who wrestle with anxiousness, even with depression,",
+			"tokens": [
+				{
+					"text": " who",
+					"timestamps": {
+						"from": "00:00:31,040",
+						"to": "00:00:31,240"
+					},
+					"offsets": {
+						"from": 31040,
+						"to": 31240
+					},
+					"id": 508,
+					"p": 0.999683,
+					"t_dtw": -1
+				},
+				{
+					"text": " wrestle",
+					"timestamps": {
+						"from": "00:00:31,540",
+						"to": "00:00:31,700"
+					},
+					"offsets": {
+						"from": 31540,
+						"to": 31700
+					},
+					"id": 46825,
+					"p": 0.947672,
+					"t_dtw": -1
+				},
+				{
+					"text": " with",
+					"timestamps": {
+						"from": "00:00:31,700",
+						"to": "00:00:31,960"
+					},
+					"offsets": {
+						"from": 31700,
+						"to": 31960
+					},
+					"id": 351,
+					"p": 0.999683,
+					"t_dtw": -1
+				},
+				{
+					"text": " anxious",
+					"timestamps": {
+						"from": "00:00:31,960",
+						"to": "00:00:32,420"
+					},
+					"offsets": {
+						"from": 31960,
+						"to": 32420
+					},
+					"id": 18116,
+					"p": 0.9995,
+					"t_dtw": -1
+				},
+				{
+					"text": "ness",
+					"timestamps": {
+						"from": "00:00:32,420",
+						"to": "00:00:32,680"
+					},
+					"offsets": {
+						"from": 32420,
+						"to": 32680
+					},
+					"id": 1108,
+					"p": 0.999321,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:32,680",
+						"to": "00:00:32,840"
+					},
+					"offsets": {
+						"from": 32680,
+						"to": 32840
+					},
+					"id": 11,
+					"p": 0.845833,
+					"t_dtw": -1
+				},
+				{
+					"text": " even",
+					"timestamps": {
+						"from": "00:00:32,840",
+						"to": "00:00:33,230"
+					},
+					"offsets": {
+						"from": 32840,
+						"to": 33230
+					},
+					"id": 772,
+					"p": 0.482077,
+					"t_dtw": -1
+				},
+				{
+					"text": " with",
+					"timestamps": {
+						"from": "00:00:33,450",
+						"to": "00:00:33,640"
+					},
+					"offsets": {
+						"from": 33450,
+						"to": 33640
+					},
+					"id": 351,
+					"p": 0.998365,
+					"t_dtw": -1
+				},
+				{
+					"text": " depression",
+					"timestamps": {
+						"from": "00:00:33,640",
+						"to": "00:00:34,640"
+					},
+					"offsets": {
+						"from": 33640,
+						"to": 34640
+					},
+					"id": 8862,
+					"p": 0.998548,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:34,640",
+						"to": "00:00:34,640"
+					},
+					"offsets": {
+						"from": 34640,
+						"to": 34640
+					},
+					"id": 11,
+					"p": 0.49893,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_286]",
+					"timestamps": {
+						"from": "00:00:34,640",
+						"to": "00:00:34,640"
+					},
+					"offsets": {
+						"from": 34640,
+						"to": 34640
+					},
+					"id": 50649,
+					"p": 0.462995,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:34,640",
+				"to": "00:00:37,720"
+			},
+			"offsets": {
+				"from": 34640,
+				"to": 37720
+			},
+			"text": " and they developed daily rituals",
+			"tokens": [
+				{
+					"text": " and",
+					"timestamps": {
+						"from": "00:00:34,640",
+						"to": "00:00:34,970"
+					},
+					"offsets": {
+						"from": 34640,
+						"to": 34970
+					},
+					"id": 290,
+					"p": 0.999344,
+					"t_dtw": -1
+				},
+				{
+					"text": " they",
+					"timestamps": {
+						"from": "00:00:35,140",
+						"to": "00:00:35,410"
+					},
+					"offsets": {
+						"from": 35140,
+						"to": 35410
+					},
+					"id": 484,
+					"p": 0.999226,
+					"t_dtw": -1
+				},
+				{
+					"text": " developed",
+					"timestamps": {
+						"from": "00:00:35,410",
+						"to": "00:00:36,290"
+					},
+					"offsets": {
+						"from": 35410,
+						"to": 36290
+					},
+					"id": 4166,
+					"p": 0.946084,
+					"t_dtw": -1
+				},
+				{
+					"text": " daily",
+					"timestamps": {
+						"from": "00:00:36,390",
+						"to": "00:00:36,840"
+					},
+					"offsets": {
+						"from": 36390,
+						"to": 36840
+					},
+					"id": 4445,
+					"p": 0.993513,
+					"t_dtw": -1
+				},
+				{
+					"text": " rituals",
+					"timestamps": {
+						"from": "00:00:37,050",
+						"to": "00:00:37,720"
+					},
+					"offsets": {
+						"from": 37050,
+						"to": 37720
+					},
+					"id": 25797,
+					"p": 0.999573,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_440]",
+					"timestamps": {
+						"from": "00:00:37,720",
+						"to": "00:00:37,720"
+					},
+					"offsets": {
+						"from": 37720,
+						"to": 37720
+					},
+					"id": 50803,
+					"p": 0.466072,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:37,720",
+				"to": "00:00:40,660"
+			},
+			"offsets": {
+				"from": 37720,
+				"to": 40660
+			},
+			"text": " that would help them moderate their own feelings",
+			"tokens": [
+				{
+					"text": " that",
+					"timestamps": {
+						"from": "00:00:37,720",
+						"to": "00:00:38,000"
+					},
+					"offsets": {
+						"from": 37720,
+						"to": 38000
+					},
+					"id": 326,
+					"p": 0.999947,
+					"t_dtw": -1
+				},
+				{
+					"text": " would",
+					"timestamps": {
+						"from": "00:00:38,220",
+						"to": "00:00:38,350"
+					},
+					"offsets": {
+						"from": 38220,
+						"to": 38350
+					},
+					"id": 561,
+					"p": 0.999081,
+					"t_dtw": -1
+				},
+				{
+					"text": " help",
+					"timestamps": {
+						"from": "00:00:38,350",
+						"to": "00:00:38,630"
+					},
+					"offsets": {
+						"from": 38350,
+						"to": 38630
+					},
+					"id": 1037,
+					"p": 0.999348,
+					"t_dtw": -1
+				},
+				{
+					"text": " them",
+					"timestamps": {
+						"from": "00:00:38,630",
+						"to": "00:00:38,910"
+					},
+					"offsets": {
+						"from": 38630,
+						"to": 38910
+					},
+					"id": 606,
+					"p": 0.999531,
+					"t_dtw": -1
+				},
+				{
+					"text": " moderate",
+					"timestamps": {
+						"from": "00:00:38,910",
+						"to": "00:00:39,480"
+					},
+					"offsets": {
+						"from": 38910,
+						"to": 39480
+					},
+					"id": 10768,
+					"p": 0.991866,
+					"t_dtw": -1
+				},
+				{
+					"text": " their",
+					"timestamps": {
+						"from": "00:00:39,480",
+						"to": "00:00:39,830"
+					},
+					"offsets": {
+						"from": 39480,
+						"to": 39830
+					},
+					"id": 511,
+					"p": 0.999195,
+					"t_dtw": -1
+				},
+				{
+					"text": " own",
+					"timestamps": {
+						"from": "00:00:39,830",
+						"to": "00:00:39,920"
+					},
+					"offsets": {
+						"from": 39830,
+						"to": 39920
+					},
+					"id": 898,
+					"p": 0.999729,
+					"t_dtw": -1
+				},
+				{
+					"text": " feelings",
+					"timestamps": {
+						"from": "00:00:40,130",
+						"to": "00:00:40,660"
+					},
+					"offsets": {
+						"from": 40130,
+						"to": 40660
+					},
+					"id": 7666,
+					"p": 0.999352,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_587]",
+					"timestamps": {
+						"from": "00:00:40,660",
+						"to": "00:00:40,660"
+					},
+					"offsets": {
+						"from": 40660,
+						"to": 40660
+					},
+					"id": 50950,
+					"p": 0.261035,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:40,660",
+				"to": "00:00:44,160"
+			},
+			"offsets": {
+				"from": 40660,
+				"to": 44160
+			},
+			"text": " but also allow them to do really productive work.",
+			"tokens": [
+				{
+					"text": " but",
+					"timestamps": {
+						"from": "00:00:40,660",
+						"to": "00:00:40,900"
+					},
+					"offsets": {
+						"from": 40660,
+						"to": 40900
+					},
+					"id": 475,
+					"p": 0.999832,
+					"t_dtw": -1
+				},
+				{
+					"text": " also",
+					"timestamps": {
+						"from": "00:00:41,160",
+						"to": "00:00:41,220"
+					},
+					"offsets": {
+						"from": 41160,
+						"to": 41220
+					},
+					"id": 635,
+					"p": 0.999458,
+					"t_dtw": -1
+				},
+				{
+					"text": " allow",
+					"timestamps": {
+						"from": "00:00:41,220",
+						"to": "00:00:41,620"
+					},
+					"offsets": {
+						"from": 41220,
+						"to": 41620
+					},
+					"id": 1249,
+					"p": 0.988131,
+					"t_dtw": -1
+				},
+				{
+					"text": " them",
+					"timestamps": {
+						"from": "00:00:41,620",
+						"to": "00:00:41,940"
+					},
+					"offsets": {
+						"from": 41620,
+						"to": 41940
+					},
+					"id": 606,
+					"p": 0.999691,
+					"t_dtw": -1
+				},
+				{
+					"text": " to",
+					"timestamps": {
+						"from": "00:00:41,940",
+						"to": "00:00:42,100"
+					},
+					"offsets": {
+						"from": 41940,
+						"to": 42100
+					},
+					"id": 284,
+					"p": 0.998536,
+					"t_dtw": -1
+				},
+				{
+					"text": " do",
+					"timestamps": {
+						"from": "00:00:42,100",
+						"to": "00:00:42,260"
+					},
+					"offsets": {
+						"from": 42100,
+						"to": 42260
+					},
+					"id": 466,
+					"p": 0.995137,
+					"t_dtw": -1
+				},
+				{
+					"text": " really",
+					"timestamps": {
+						"from": "00:00:42,260",
+						"to": "00:00:42,740"
+					},
+					"offsets": {
+						"from": 42260,
+						"to": 42740
+					},
+					"id": 1107,
+					"p": 0.999142,
+					"t_dtw": -1
+				},
+				{
+					"text": " productive",
+					"timestamps": {
+						"from": "00:00:42,740",
+						"to": "00:00:43,550"
+					},
+					"offsets": {
+						"from": 42740,
+						"to": 43550
+					},
+					"id": 12973,
+					"p": 0.999336,
+					"t_dtw": -1
+				},
+				{
+					"text": " work",
+					"timestamps": {
+						"from": "00:00:43,550",
+						"to": "00:00:43,840"
+					},
+					"offsets": {
+						"from": 43550,
+						"to": 43840
+					},
+					"id": 670,
+					"p": 0.999912,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:44,050",
+						"to": "00:00:44,160"
+					},
+					"offsets": {
+						"from": 44050,
+						"to": 44160
+					},
+					"id": 13,
+					"p": 0.999523,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_762]",
+					"timestamps": {
+						"from": "00:00:44,160",
+						"to": "00:00:44,160"
+					},
+					"offsets": {
+						"from": 44160,
+						"to": 44160
+					},
+					"id": 51125,
+					"p": 0.56802,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:44,160",
+				"to": "00:00:47,800"
+			},
+			"offsets": {
+				"from": 44160,
+				"to": 47800
+			},
+			"text": " See, research has shown us that artists",
+			"tokens": [
+				{
+					"text": " See",
+					"timestamps": {
+						"from": "00:00:44,160",
+						"to": "00:00:44,440"
+					},
+					"offsets": {
+						"from": 44160,
+						"to": 44440
+					},
+					"id": 4091,
+					"p": 0.985797,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:44,630",
+						"to": "00:00:44,630"
+					},
+					"offsets": {
+						"from": 44630,
+						"to": 44630
+					},
+					"id": 11,
+					"p": 0.868858,
+					"t_dtw": -1
+				},
+				{
+					"text": " research",
+					"timestamps": {
+						"from": "00:00:44,660",
+						"to": "00:00:45,390"
+					},
+					"offsets": {
+						"from": 44660,
+						"to": 45390
+					},
+					"id": 2267,
+					"p": 0.998007,
+					"t_dtw": -1
+				},
+				{
+					"text": " has",
+					"timestamps": {
+						"from": "00:00:45,390",
+						"to": "00:00:45,660"
+					},
+					"offsets": {
+						"from": 45390,
+						"to": 45660
+					},
+					"id": 468,
+					"p": 0.998296,
+					"t_dtw": -1
+				},
+				{
+					"text": " shown",
+					"timestamps": {
+						"from": "00:00:45,660",
+						"to": "00:00:46,140"
+					},
+					"offsets": {
+						"from": 45660,
+						"to": 46140
+					},
+					"id": 3402,
+					"p": 0.99666,
+					"t_dtw": -1
+				},
+				{
+					"text": " us",
+					"timestamps": {
+						"from": "00:00:46,140",
+						"to": "00:00:46,350"
+					},
+					"offsets": {
+						"from": 46140,
+						"to": 46350
+					},
+					"id": 514,
+					"p": 0.999062,
+					"t_dtw": -1
+				},
+				{
+					"text": " that",
+					"timestamps": {
+						"from": "00:00:46,570",
+						"to": "00:00:47,040"
+					},
+					"offsets": {
+						"from": 46570,
+						"to": 47040
+					},
+					"id": 326,
+					"p": 0.721219,
+					"t_dtw": -1
+				},
+				{
+					"text": " artists",
+					"timestamps": {
+						"from": "00:00:47,040",
+						"to": "00:00:47,800"
+					},
+					"offsets": {
+						"from": 47040,
+						"to": 47800
+					},
+					"id": 7912,
+					"p": 0.920848,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_944]",
+					"timestamps": {
+						"from": "00:00:47,800",
+						"to": "00:00:47,800"
+					},
+					"offsets": {
+						"from": 47800,
+						"to": 47800
+					},
+					"id": 51307,
+					"p": 0.481742,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:47,800",
+				"to": "00:00:51,240"
+			},
+			"offsets": {
+				"from": 47800,
+				"to": 51240
+			},
+			"text": " are particularly susceptible to anxiety and depression.",
+			"tokens": [
+				{
+					"text": " are",
+					"timestamps": {
+						"from": "00:00:47,800",
+						"to": "00:00:48,020"
+					},
+					"offsets": {
+						"from": 47800,
+						"to": 48020
+					},
+					"id": 389,
+					"p": 0.999931,
+					"t_dtw": -1
+				},
+				{
+					"text": " particularly",
+					"timestamps": {
+						"from": "00:00:48,300",
+						"to": "00:00:48,920"
+					},
+					"offsets": {
+						"from": 48300,
+						"to": 48920
+					},
+					"id": 3573,
+					"p": 0.998273,
+					"t_dtw": -1
+				},
+				{
+					"text": " susceptible",
+					"timestamps": {
+						"from": "00:00:48,920",
+						"to": "00:00:49,670"
+					},
+					"offsets": {
+						"from": 48920,
+						"to": 49670
+					},
+					"id": 22084,
+					"p": 0.999405,
+					"t_dtw": -1
+				},
+				{
+					"text": " to",
+					"timestamps": {
+						"from": "00:00:49,770",
+						"to": "00:00:49,980"
+					},
+					"offsets": {
+						"from": 49770,
+						"to": 49980
+					},
+					"id": 284,
+					"p": 0.98746,
+					"t_dtw": -1
+				},
+				{
+					"text": " anxiety",
+					"timestamps": {
+						"from": "00:00:49,980",
+						"to": "00:00:50,760"
+					},
+					"offsets": {
+						"from": 49980,
+						"to": 50760
+					},
+					"id": 9751,
+					"p": 0.995957,
+					"t_dtw": -1
+				},
+				{
+					"text": " and",
+					"timestamps": {
+						"from": "00:00:50,760",
+						"to": "00:00:50,780"
+					},
+					"offsets": {
+						"from": 50760,
+						"to": 50780
+					},
+					"id": 290,
+					"p": 0.987596,
+					"t_dtw": -1
+				},
+				{
+					"text": " depression",
+					"timestamps": {
+						"from": "00:00:50,840",
+						"to": "00:00:50,990"
+					},
+					"offsets": {
+						"from": 50840,
+						"to": 50990
+					},
+					"id": 8862,
+					"p": 0.999683,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:51,190",
+						"to": "00:00:51,240"
+					},
+					"offsets": {
+						"from": 51190,
+						"to": 51240
+					},
+					"id": 13,
+					"p": 0.756402,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_1116]",
+					"timestamps": {
+						"from": "00:00:51,240",
+						"to": "00:00:51,240"
+					},
+					"offsets": {
+						"from": 51240,
+						"to": 51240
+					},
+					"id": 51479,
+					"p": 0.435979,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:51,240",
+				"to": "00:00:53,760"
+			},
+			"offsets": {
+				"from": 51240,
+				"to": 53760
+			},
+			"text": " Not every single artist, but artists as a whole,",
+			"tokens": [
+				{
+					"text": " Not",
+					"timestamps": {
+						"from": "00:00:51,240",
+						"to": "00:00:51,380"
+					},
+					"offsets": {
+						"from": 51240,
+						"to": 51380
+					},
+					"id": 1892,
+					"p": 0.801845,
+					"t_dtw": -1
+				},
+				{
+					"text": " every",
+					"timestamps": {
+						"from": "00:00:51,380",
+						"to": "00:00:51,610"
+					},
+					"offsets": {
+						"from": 51380,
+						"to": 51610
+					},
+					"id": 790,
+					"p": 0.88893,
+					"t_dtw": -1
+				},
+				{
+					"text": " single",
+					"timestamps": {
+						"from": "00:00:51,740",
+						"to": "00:00:51,890"
+					},
+					"offsets": {
+						"from": 51740,
+						"to": 51890
+					},
+					"id": 2060,
+					"p": 0.999169,
+					"t_dtw": -1
+				},
+				{
+					"text": " artist",
+					"timestamps": {
+						"from": "00:00:51,890",
+						"to": "00:00:52,170"
+					},
+					"offsets": {
+						"from": 51890,
+						"to": 52170
+					},
+					"id": 6802,
+					"p": 0.994852,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:52,170",
+						"to": "00:00:52,230"
+					},
+					"offsets": {
+						"from": 52170,
+						"to": 52230
+					},
+					"id": 11,
+					"p": 0.710593,
+					"t_dtw": -1
+				},
+				{
+					"text": " but",
+					"timestamps": {
+						"from": "00:00:52,320",
+						"to": "00:00:52,520"
+					},
+					"offsets": {
+						"from": 52320,
+						"to": 52520
+					},
+					"id": 475,
+					"p": 0.931619,
+					"t_dtw": -1
+				},
+				{
+					"text": " artists",
+					"timestamps": {
+						"from": "00:00:52,520",
+						"to": "00:00:53,090"
+					},
+					"offsets": {
+						"from": 52520,
+						"to": 53090
+					},
+					"id": 7912,
+					"p": 0.957061,
+					"t_dtw": -1
+				},
+				{
+					"text": " as",
+					"timestamps": {
+						"from": "00:00:53,090",
+						"to": "00:00:53,250"
+					},
+					"offsets": {
+						"from": 53090,
+						"to": 53250
+					},
+					"id": 355,
+					"p": 0.967929,
+					"t_dtw": -1
+				},
+				{
+					"text": " a",
+					"timestamps": {
+						"from": "00:00:53,250",
+						"to": "00:00:53,330"
+					},
+					"offsets": {
+						"from": 53250,
+						"to": 53330
+					},
+					"id": 257,
+					"p": 0.996136,
+					"t_dtw": -1
+				},
+				{
+					"text": " whole",
+					"timestamps": {
+						"from": "00:00:53,330",
+						"to": "00:00:53,760"
+					},
+					"offsets": {
+						"from": 53330,
+						"to": 53760
+					},
+					"id": 2187,
+					"p": 0.999908,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:53,760",
+						"to": "00:00:53,760"
+					},
+					"offsets": {
+						"from": 53760,
+						"to": 53760
+					},
+					"id": 11,
+					"p": 0.654806,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_1242]",
+					"timestamps": {
+						"from": "00:00:53,760",
+						"to": "00:00:53,760"
+					},
+					"offsets": {
+						"from": 53760,
+						"to": 53760
+					},
+					"id": 51605,
+					"p": 0.655611,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:53,760",
+				"to": "00:00:56,180"
+			},
+			"offsets": {
+				"from": 53760,
+				"to": 56180
+			},
+			"text": " compared to the entire population,",
+			"tokens": [
+				{
+					"text": " compared",
+					"timestamps": {
+						"from": "00:00:54,260",
+						"to": "00:00:54,420"
+					},
+					"offsets": {
+						"from": 54260,
+						"to": 54420
+					},
+					"id": 3688,
+					"p": 0.999439,
+					"t_dtw": -1
+				},
+				{
+					"text": " to",
+					"timestamps": {
+						"from": "00:00:54,420",
+						"to": "00:00:54,560"
+					},
+					"offsets": {
+						"from": 54420,
+						"to": 54560
+					},
+					"id": 284,
+					"p": 0.998746,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:54,620",
+						"to": "00:00:54,750"
+					},
+					"offsets": {
+						"from": 54620,
+						"to": 54750
+					},
+					"id": 262,
+					"p": 0.99865,
+					"t_dtw": -1
+				},
+				{
+					"text": " entire",
+					"timestamps": {
+						"from": "00:00:54,840",
+						"to": "00:00:55,310"
+					},
+					"offsets": {
+						"from": 54840,
+						"to": 55310
+					},
+					"id": 2104,
+					"p": 0.999874,
+					"t_dtw": -1
+				},
+				{
+					"text": " population",
+					"timestamps": {
+						"from": "00:00:55,310",
+						"to": "00:00:55,950"
+					},
+					"offsets": {
+						"from": 55310,
+						"to": 55950
+					},
+					"id": 3265,
+					"p": 0.999847,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:56,170",
+						"to": "00:00:56,180"
+					},
+					"offsets": {
+						"from": 56170,
+						"to": 56180
+					},
+					"id": 11,
+					"p": 0.85017,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_1363]",
+					"timestamps": {
+						"from": "00:00:56,180",
+						"to": "00:00:56,180"
+					},
+					"offsets": {
+						"from": 56180,
+						"to": 56180
+					},
+					"id": 51726,
+					"p": 0.295211,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:56,180",
+				"to": "00:00:57,600"
+			},
+			"offsets": {
+				"from": 56180,
+				"to": 57600
+			},
+			"text": " are a group of people that--",
+			"tokens": [
+				{
+					"text": " are",
+					"timestamps": {
+						"from": "00:00:56,180",
+						"to": "00:00:56,370"
+					},
+					"offsets": {
+						"from": 56180,
+						"to": 56370
+					},
+					"id": 389,
+					"p": 0.531546,
+					"t_dtw": -1
+				},
+				{
+					"text": " a",
+					"timestamps": {
+						"from": "00:00:56,370",
+						"to": "00:00:56,430"
+					},
+					"offsets": {
+						"from": 56370,
+						"to": 56430
+					},
+					"id": 257,
+					"p": 0.999355,
+					"t_dtw": -1
+				},
+				{
+					"text": " group",
+					"timestamps": {
+						"from": "00:00:56,680",
+						"to": "00:00:56,750"
+					},
+					"offsets": {
+						"from": 56680,
+						"to": 56750
+					},
+					"id": 1448,
+					"p": 0.999661,
+					"t_dtw": -1
+				},
+				{
+					"text": " of",
+					"timestamps": {
+						"from": "00:00:56,750",
+						"to": "00:00:56,870"
+					},
+					"offsets": {
+						"from": 56750,
+						"to": 56870
+					},
+					"id": 286,
+					"p": 0.999763,
+					"t_dtw": -1
+				},
+				{
+					"text": " people",
+					"timestamps": {
+						"from": "00:00:56,870",
+						"to": "00:00:57,280"
+					},
+					"offsets": {
+						"from": 56870,
+						"to": 57280
+					},
+					"id": 661,
+					"p": 0.999886,
+					"t_dtw": -1
+				},
+				{
+					"text": " that",
+					"timestamps": {
+						"from": "00:00:57,280",
+						"to": "00:00:57,560"
+					},
+					"offsets": {
+						"from": 57280,
+						"to": 57560
+					},
+					"id": 326,
+					"p": 0.868949,
+					"t_dtw": -1
+				},
+				{
+					"text": "--",
+					"timestamps": {
+						"from": "00:00:57,560",
+						"to": "00:00:57,600"
+					},
+					"offsets": {
+						"from": 57560,
+						"to": 57600
+					},
+					"id": 438,
+					"p": 0.255425,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_1434]",
+					"timestamps": {
+						"from": "00:00:57,600",
+						"to": "00:00:57,600"
+					},
+					"offsets": {
+						"from": 57600,
+						"to": 57600
+					},
+					"id": 51797,
+					"p": 0.13945,
+					"t_dtw": -1
+				}
+			]
+		}
+	]
+}

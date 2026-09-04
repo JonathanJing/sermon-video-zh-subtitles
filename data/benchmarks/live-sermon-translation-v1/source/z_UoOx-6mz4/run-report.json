@@ -1,0 +1,32 @@
+{
+  "audioDownloaded": false,
+  "captionSegmentCount": 38,
+  "generatedAt": "2026-09-02T22:26:49.139471+00:00",
+  "gptTranscribeCalled": false,
+  "humanApprovalClaimed": false,
+  "inputProfileSha256": "27731c6f3554cfedf84aebcd95f3ab31093801f3062af88af5adaff8d4aee1a0",
+  "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+  "segmentOrigin": "full_video_caption_timeline",
+  "sourceDurationSeconds": 1843,
+  "sourceQuality": {
+    "disposition": "teacher_ready",
+    "maxSparseSegmentShare": 0.1,
+    "overallWordsPerSecond": 2.8166,
+    "sparseSegmentCount": 0,
+    "sparseSegmentShare": 0.0,
+    "sparseWordsPerSecondThreshold": 0.6
+  },
+  "sourceQualityDisposition": "teacher_ready",
+  "sourceSegmentsSha256": "5ccbb6643fda88fabed7431028034b895e58d811a1e00e6edee8443b30ec7e0e",
+  "speaker": "Christine Caine",
+  "split": "test",
+  "status": "caption_source_prepared",
+  "teacherPipelineEligibility": "eligible",
+  "title": "Does God care what I do with my body? Fitness, tattoos, plastic surgery—all the things",
+  "trainingBlockers": [
+    "source_training_rights_unconfirmed",
+    "gpt_external_student_distillation_not_authorized"
+  ],
+  "trainingEligibility": "blocked",
+  "videoId": "z_UoOx-6mz4"
+}

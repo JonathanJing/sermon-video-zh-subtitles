@@ -1,0 +1,115 @@
+{
+  "asrModel": "gpt-transcribe",
+  "generatedAt": "2026-09-02T23:08:26.685149+00:00",
+  "goalId": "BENCH-LIVE-ST-V1",
+  "items": [
+    {
+      "segmentCount": 57,
+      "selected": [
+        {
+          "reasons": [
+            "deterministic_pass_sample"
+          ],
+          "segmentId": "hoeJTwl-EJg_seg_0030"
+        },
+        {
+          "reasons": [
+            "caption_non_speech_or_speaker_marker"
+          ],
+          "segmentId": "hoeJTwl-EJg_seg_0056"
+        },
+        {
+          "reasons": [
+            "caption_non_speech_or_speaker_marker"
+          ],
+          "segmentId": "hoeJTwl-EJg_seg_0057"
+        }
+      ],
+      "selectedMinutes": 1.132,
+      "videoId": "hoeJTwl-EJg"
+    },
+    {
+      "segmentCount": 56,
+      "selected": [
+        {
+          "reasons": [
+            "deterministic_pass_sample"
+          ],
+          "segmentId": "hAWaaBVaMzY_seg_0004"
+        },
+        {
+          "reasons": [
+            "deterministic_pass_sample"
+          ],
+          "segmentId": "hAWaaBVaMzY_seg_0008"
+        },
+        {
+          "reasons": [
+            "caption_non_speech_or_speaker_marker"
+          ],
+          "segmentId": "hAWaaBVaMzY_seg_0055"
+        }
+      ],
+      "selectedMinutes": 1.798,
+      "videoId": "hAWaaBVaMzY"
+    },
+    {
+      "segmentCount": 49,
+      "selected": [
+        {
+          "reasons": [
+            "deterministic_per_sermon_floor_sample"
+          ],
+          "segmentId": "8u9B8u_5ISI_seg_0040"
+        }
+      ],
+      "selectedMinutes": 0.455,
+      "videoId": "8u9B8u_5ISI"
+    },
+    {
+      "segmentCount": 38,
+      "selected": [
+        {
+          "reasons": [
+            "caption_non_speech_or_speaker_marker"
+          ],
+          "segmentId": "z_UoOx-6mz4_seg_0026"
+        },
+        {
+          "reasons": [
+            "caption_non_speech_or_speaker_marker"
+          ],
+          "segmentId": "z_UoOx-6mz4_seg_0038"
+        }
+      ],
+      "selectedMinutes": 1.51,
+      "videoId": "z_UoOx-6mz4"
+    },
+    {
+      "segmentCount": 39,
+      "selected": [
+        {
+          "reasons": [
+            "caption_non_speech_or_speaker_marker"
+          ],
+          "segmentId": "qvImKpmvgaM_seg_0014"
+        },
+        {
+          "reasons": [
+            "deterministic_pass_sample"
+          ],
+          "segmentId": "qvImKpmvgaM_seg_0024"
+        }
+      ],
+      "selectedMinutes": 1.224,
+      "videoId": "qvImKpmvgaM"
+    }
+  ],
+  "paddingMs": 750,
+  "projectedAsrCostUsdAt0_0045PerMinute": 0.03,
+  "sampleRate": 0.05,
+  "schemaVersion": "live-sermon-benchmark-source-audio-audit-v1",
+  "selectedMinutesWithoutPadding": 6.119,
+  "selectedSegmentCount": 11,
+  "status": "dry_run_only"
+}

@@ -1,0 +1,377 @@
+{
+  "createdAt": "2026-09-04T03:21:53.679067+00:00",
+  "decision": {
+    "productionSelectionAllowed": false,
+    "provisionalOfflineWinner": "mlx-community/Qwen3-ASR-0.6B-8bit",
+    "reason": "Human listening confirmation, streaming replay, and MiLMMT co-residency remain pending."
+  },
+  "itemCount": 60,
+  "manifest": "data/benchmarks/live-sermon-translation-v1/local-asr-gpt-reaudited-reference-v1.json",
+  "manifestSha256": "35af38c496e9a5bb0e679f9755b94857b123b5b40403ee063cf1918aae666de7",
+  "pairedLowerWordErrorWins": null,
+  "referenceTier": "mixed_model_reviewed_and_gpt_reaudited_reference_not_human_gold",
+  "results": [
+    {
+      "allCurrentOfflineQualityGatesPassed": true,
+      "criticalTermRecall": 0.971014,
+      "gateResults": {
+        "completeOutput": true,
+        "criticalTermRecallAtLeast95Percent": true,
+        "zeroSilenceHallucinations": true
+      },
+      "invalidItems": [],
+      "itemCount": 60,
+      "meanRtf": 0.0653,
+      "missingCriticalTerms": [
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_001",
+          "term": "Mariners"
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_044",
+          "term": "Christ"
+        }
+      ],
+      "modelId": "mlx-community/Qwen3-ASR-0.6B-8bit",
+      "modelReviewedQualityScore": 96.893,
+      "p95Rtf": 0.0718,
+      "peakPerInvocationRssGiB": 1.1519,
+      "predictionsSha256": "bc815f8a5bd2574155f6a6eb40eccb4aaadc813eb3d046c05a7d22aa852ada90",
+      "runDirectory": "data/benchmarks/live-sermon-translation-v1/runs/local-asr/qwen3-asr-0.6b-8bit-mlx-gpt-reaudited-nonspeech-normalized-20260903",
+      "runReportSha256": "9e2e1d8516cf63f828509b911041ba67c0bf47e805cd6078c415a3c40690d521",
+      "scoreComponents": {
+        "completeOutputPoints": 5.0,
+        "criticalTermPoints": 29.13,
+        "silenceDisciplinePoints": 5.0,
+        "werFidelityPoints": 57.762
+      },
+      "silenceHallucinationCount": 0,
+      "successCount": 60,
+      "wer": 0.037293
+    },
+    {
+      "allCurrentOfflineQualityGatesPassed": true,
+      "criticalTermRecall": 0.956522,
+      "gateResults": {
+        "completeOutput": true,
+        "criticalTermRecallAtLeast95Percent": true,
+        "zeroSilenceHallucinations": true
+      },
+      "invalidItems": [],
+      "itemCount": 60,
+      "meanRtf": 0.0368,
+      "missingCriticalTerms": [
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_001",
+          "term": "Mariners"
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_004",
+          "term": "Mariners"
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_044",
+          "term": "Christ"
+        }
+      ],
+      "modelId": "ASR-WCPP-SMALL-EN-F16",
+      "modelReviewedQualityScore": 96.244,
+      "p95Rtf": 0.0432,
+      "peakPerInvocationRssGiB": 0.7188,
+      "predictionsSha256": "5b0ee72c71d737a0e3663ab2cfd33f2709cbce6450b9ed6250caa868c8a7dcde",
+      "runDirectory": "data/benchmarks/live-sermon-translation-v1/runs/local-asr/small-en-f16-gpt-reaudited-rescore-20260903",
+      "runReportSha256": "5ea3160605736780fac31fa0d3139a68d679409dba0c5a4d137cb635be547561",
+      "scoreComponents": {
+        "completeOutputPoints": 5.0,
+        "criticalTermPoints": 28.696,
+        "silenceDisciplinePoints": 5.0,
+        "werFidelityPoints": 57.549
+      },
+      "silenceHallucinationCount": 0,
+      "successCount": 60,
+      "wer": 0.040855
+    },
+    {
+      "allCurrentOfflineQualityGatesPassed": false,
+      "criticalTermRecall": 0.927536,
+      "gateResults": {
+        "completeOutput": false,
+        "criticalTermRecallAtLeast95Percent": false,
+        "zeroSilenceHallucinations": true
+      },
+      "invalidItems": [
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_043",
+          "referenceText": "Praise the King, praise the King, one name upon all names, Jesus. No greater name than this, Jesus. Every knee will bow, every heart confess, Jesus, Jesus.",
+          "transcript": ""
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_044",
+          "referenceText": "What name above all names? Jesus. You’re the name above all names. Every heart confesses, Jesus, Jesus. Christ has done.",
+          "transcript": ""
+        }
+      ],
+      "itemCount": 60,
+      "meanRtf": 0.0362,
+      "missingCriticalTerms": [
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_001",
+          "term": "Mariners"
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_004",
+          "term": "Mariners"
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_043",
+          "term": "Jesus"
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_044",
+          "term": "Christ"
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_044",
+          "term": "Jesus"
+        }
+      ],
+      "modelId": "nvidia/parakeet-tdt-0.6b-v3-q8_0",
+      "modelReviewedQualityScore": 95.045,
+      "p95Rtf": 0.0366,
+      "peakPerInvocationRssGiB": 0.8007,
+      "predictionsSha256": "d22888c7636574182ecbb14770efd56f36ff1a7117bafb91177bb7cfc79e33c0",
+      "runDirectory": "data/benchmarks/live-sermon-translation-v1/runs/local-asr/parakeet-tdt-0.6b-v3-q8-gpt-reaudited-20260903",
+      "runReportSha256": "ddcd4d5f7510a56f6fce1bfb6d46f4a7c300515179014ad14e1fcaa89e4bb59c",
+      "scoreComponents": {
+        "completeOutputPoints": 4.833,
+        "criticalTermPoints": 27.826,
+        "silenceDisciplinePoints": 5.0,
+        "werFidelityPoints": 57.385
+      },
+      "silenceHallucinationCount": 0,
+      "successCount": 58,
+      "wer": 0.043578
+    },
+    {
+      "allCurrentOfflineQualityGatesPassed": false,
+      "criticalTermRecall": 0.913043,
+      "gateResults": {
+        "completeOutput": false,
+        "criticalTermRecallAtLeast95Percent": false,
+        "zeroSilenceHallucinations": true
+      },
+      "invalidItems": [
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_043",
+          "referenceText": "Praise the King, praise the King, one name upon all names, Jesus. No greater name than this, Jesus. Every knee will bow, every heart confess, Jesus, Jesus.",
+          "transcript": ""
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_044",
+          "referenceText": "What name above all names? Jesus. You’re the name above all names. Every heart confesses, Jesus, Jesus. Christ has done.",
+          "transcript": ""
+        }
+      ],
+      "itemCount": 60,
+      "meanRtf": 0.0531,
+      "missingCriticalTerms": [
+        {
+          "id": "post-live-2026-08-23-ZDQwL3K-A44_gold_001",
+          "term": "Mariners"
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_001",
+          "term": "Mariners"
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_004",
+          "term": "Mariners"
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_043",
+          "term": "Jesus"
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_044",
+          "term": "Christ"
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_044",
+          "term": "Jesus"
+        }
+      ],
+      "modelId": "nvidia/nemotron-speech-streaming-en-0.6b-q8_0",
+      "modelReviewedQualityScore": 93.931,
+      "p95Rtf": 0.0538,
+      "peakPerInvocationRssGiB": 1.6688,
+      "predictionsSha256": "738c82467e5121f5b9c6d2482b082e61097b3c128cfdc099b444fb1e519a3e07",
+      "runDirectory": "data/benchmarks/live-sermon-translation-v1/runs/local-asr/nemotron-speech-streaming-en-0.6b-q8-gpt-reaudited-20260903",
+      "runReportSha256": "b6f7e0fea259cb617a536b488de08ea0107cc0bc9eaa9dd7974184206ed753af",
+      "scoreComponents": {
+        "completeOutputPoints": 4.833,
+        "criticalTermPoints": 27.391,
+        "silenceDisciplinePoints": 5.0,
+        "werFidelityPoints": 56.706
+      },
+      "silenceHallucinationCount": 0,
+      "successCount": 58,
+      "wer": 0.054892
+    },
+    {
+      "allCurrentOfflineQualityGatesPassed": false,
+      "criticalTermRecall": 0.913043,
+      "gateResults": {
+        "completeOutput": false,
+        "criticalTermRecallAtLeast95Percent": false,
+        "zeroSilenceHallucinations": true
+      },
+      "invalidItems": [
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_041",
+          "referenceText": "Christ has died, we are forgiven, and Christ alive. We are the risen, and He shall come again. Praise the King, praise the King. On our hearts, His name is written.",
+          "transcript": "♪♪♪"
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_042",
+          "referenceText": "The King of kings and Lord of lords, we're pouring out a song of praise together upon Him, upon Him. Christ has died, Christ has died. We are forgiven and now alive. We...",
+          "transcript": "♪♪♪"
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_043",
+          "referenceText": "Praise the King, praise the King, one name upon all names, Jesus. No greater name than this, Jesus. Every knee will bow, every heart confess, Jesus, Jesus.",
+          "transcript": "♪♪♪"
+        }
+      ],
+      "itemCount": 60,
+      "meanRtf": 0.0777,
+      "missingCriticalTerms": [
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_001",
+          "term": "Mariners"
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_004",
+          "term": "Mariners"
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_041",
+          "term": "Christ"
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_042",
+          "term": "Christ"
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_043",
+          "term": "Jesus"
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_044",
+          "term": "Christ"
+        }
+      ],
+      "modelId": "ASR-WCPP-MEDIUM-EN-F16",
+      "modelReviewedQualityScore": 93.772,
+      "p95Rtf": 0.0904,
+      "peakPerInvocationRssGiB": 1.8215,
+      "predictionsSha256": "51be125f93546cf0581bcf7d39bf5fde55802cc196749be549414a621e1ade98",
+      "runDirectory": "data/benchmarks/live-sermon-translation-v1/runs/local-asr/medium-en-f16-gpt-reaudited-rescore-20260903",
+      "runReportSha256": "8603f649e65d913a676d1b181906e02346ec1f5c37327804ba361fd033a410f9",
+      "scoreComponents": {
+        "completeOutputPoints": 4.75,
+        "criticalTermPoints": 27.391,
+        "silenceDisciplinePoints": 5.0,
+        "werFidelityPoints": 56.631
+      },
+      "silenceHallucinationCount": 0,
+      "successCount": 57,
+      "wer": 0.056149
+    },
+    {
+      "allCurrentOfflineQualityGatesPassed": false,
+      "criticalTermRecall": 0.985507,
+      "gateResults": {
+        "completeOutput": true,
+        "criticalTermRecallAtLeast95Percent": true,
+        "zeroSilenceHallucinations": false
+      },
+      "invalidItems": [],
+      "itemCount": 60,
+      "meanRtf": 0.0531,
+      "missingCriticalTerms": [
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_001",
+          "term": "Rooted"
+        }
+      ],
+      "modelId": "distil-whisper/distil-large-v3-ggml-f16",
+      "modelReviewedQualityScore": 92.453,
+      "p95Rtf": 0.0673,
+      "peakPerInvocationRssGiB": 1.6866,
+      "predictionsSha256": "2d1e859b938a65643bb7b96114180e13097388c572fcbdea9e086c41cd188a15",
+      "runDirectory": "data/benchmarks/live-sermon-translation-v1/runs/local-asr/distil-large-v3-ggml-f16-gpt-reaudited-20260903",
+      "runReportSha256": "d75c0f42b190ebfbe1c77615581c143d737c8a029b76861129adccd91b07a866",
+      "scoreComponents": {
+        "completeOutputPoints": 5.0,
+        "criticalTermPoints": 29.565,
+        "silenceDisciplinePoints": 0.0,
+        "werFidelityPoints": 57.888
+      },
+      "silenceHallucinationCount": 1,
+      "successCount": 60,
+      "wer": 0.035198
+    },
+    {
+      "allCurrentOfflineQualityGatesPassed": false,
+      "criticalTermRecall": 0.956522,
+      "gateResults": {
+        "completeOutput": true,
+        "criticalTermRecallAtLeast95Percent": true,
+        "zeroSilenceHallucinations": false
+      },
+      "invalidItems": [],
+      "itemCount": 60,
+      "meanRtf": 0.0729,
+      "missingCriticalTerms": [
+        {
+          "id": "post-live-2026-08-23-ZDQwL3K-A44_gold_005",
+          "term": "Mariners"
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_001",
+          "term": "Mariners"
+        },
+        {
+          "id": "post-live-2026-08-30--BeFX5G2oAw_gold_004",
+          "term": "Mariners"
+        }
+      ],
+      "modelId": "mlx-community/whisper-large-v3-turbo",
+      "modelReviewedQualityScore": 91.823,
+      "p95Rtf": 0.0785,
+      "peakPerInvocationRssGiB": 1.7174,
+      "predictionsSha256": "80ee47f7c5cfa979743636fc550ecc96942ad2e2969afb0d2ed4d936158eac60",
+      "runDirectory": "data/benchmarks/live-sermon-translation-v1/runs/local-asr/whisper-large-v3-turbo-mlx-gpt-reaudited-20260903",
+      "runReportSha256": "d016ae5ec732e7ab354c0e5c8ab435ffa5680d41255c2b1350057ce5674f1f54",
+      "scoreComponents": {
+        "completeOutputPoints": 5.0,
+        "criticalTermPoints": 28.696,
+        "silenceDisciplinePoints": 0.0,
+        "werFidelityPoints": 58.127
+      },
+      "silenceHallucinationCount": 1,
+      "successCount": 60,
+      "wer": 0.031217
+    }
+  ],
+  "schemaVersion": "local-asr-model-reviewed-quality-leaderboard-v1",
+  "scoreDefinition": {
+    "completeOutputWeight": 0.05,
+    "criticalTermRecallWeight": 0.3,
+    "hardGatesRemainAuthoritative": true,
+    "range": "0_to_100_higher_is_better",
+    "silenceDisciplineWeight": 0.05,
+    "werFidelityWeight": 0.6
+  },
+  "totalAudioMinutes": 29.811
+}

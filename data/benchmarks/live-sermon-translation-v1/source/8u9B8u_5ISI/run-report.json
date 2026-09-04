@@ -1,0 +1,32 @@
+{
+  "audioDownloaded": false,
+  "captionSegmentCount": 49,
+  "generatedAt": "2026-09-02T22:26:49.123194+00:00",
+  "gptTranscribeCalled": false,
+  "humanApprovalClaimed": false,
+  "inputProfileSha256": "1b00cbd47426e407b5db2bae97a52376e82e650823c5563e814df708a10b7954",
+  "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+  "segmentOrigin": "full_video_caption_timeline",
+  "sourceDurationSeconds": 2009,
+  "sourceQuality": {
+    "disposition": "teacher_ready",
+    "maxSparseSegmentShare": 0.1,
+    "overallWordsPerSecond": 3.0098,
+    "sparseSegmentCount": 0,
+    "sparseSegmentShare": 0.0,
+    "sparseWordsPerSecondThreshold": 0.6
+  },
+  "sourceQualityDisposition": "teacher_ready",
+  "sourceSegmentsSha256": "b800e37f09e2e760200528fb2bfdd67840040023b9489f84fcad38a57d6590c1",
+  "speaker": "Ed Stetzer",
+  "split": "test",
+  "status": "caption_source_prepared",
+  "teacherPipelineEligibility": "eligible",
+  "title": "If Christians are to be one, why are there so many denominations? - Ed Stetzer | Mariners Church",
+  "trainingBlockers": [
+    "source_training_rights_unconfirmed",
+    "gpt_external_student_distillation_not_authorized"
+  ],
+  "trainingEligibility": "blocked",
+  "videoId": "8u9B8u_5ISI"
+}

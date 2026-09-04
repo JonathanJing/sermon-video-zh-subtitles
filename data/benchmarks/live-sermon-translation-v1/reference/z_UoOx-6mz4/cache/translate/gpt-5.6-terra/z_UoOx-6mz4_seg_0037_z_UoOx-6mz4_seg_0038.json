@@ -1,0 +1,73 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T03:12:40.827944+00:00",
+  "elapsedSeconds": 15.361,
+  "inputSha256": "7305d132d52e71d28903c1a7998a99e639f979f0332dbe5ee8502e5a692b59ad",
+  "modelRequested": "gpt-5.6-terra",
+  "promptVersion": "codex-conversation-sermon-translate-v1",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "contentType": "sermon",
+        "id": "z_UoOx-6mz4_seg_0037",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Christ",
+            "zh": "基督"
+          },
+          {
+            "source": "God",
+            "zh": "上帝"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "个人偏好和属灵原则并不是一回事。如果一个人真的是重生的基督徒，我需要你听清这一点：纹身或身体穿孔不会改变这一点。我们的救恩不在于我们做了什么，而在于基督已经在十字架上为我们所成就的。所以归根结底，当圣经没有清楚指示我们，在健身、整形手术、纹身、穿孔或美容改善方面该如何对待身体时，这就是你和上帝之间的个人决定。我们必须始终记得：别人可以做的事，未必适合我，因为不同的事会给不同的人带来不同的诱惑，也会阻碍不同人的属灵成长。最终，我们的身体属于上帝。记住，我们要用身体荣耀上帝。并且"
+      },
+      {
+        "contentType": "sermon",
+        "id": "z_UoOx-6mz4_seg_0038",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Paul",
+            "zh": "保罗"
+          },
+          {
+            "source": "God",
+            "zh": "上帝"
+          },
+          {
+            "source": "Mariners",
+            "zh": "Mariners"
+          },
+          {
+            "source": "YouTube",
+            "zh": "YouTube"
+          }
+        ],
+        "scriptureRefs": [
+          "1 Corinthians 10:31"
+        ],
+        "zh": "正如保罗在哥林多前书10章31节所写的：“所以，你们或吃或喝，无论做什么，都要为荣耀上帝而做。”嘿，我很高兴你今天参加我们的聚会。[音乐] 我盼望并祷告，上帝使用这篇信息，在你所在之处鼓励你。[音乐] 我很希望你点击订阅按钮，这样无论我们举行聚会，还是在YouTube发布内容，你都能收到下一次提醒。[音乐] 所以请订阅，并加入我们的Mariners线上聚会。"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "z_UoOx-6mz4_seg_0037",
+    "z_UoOx-6mz4_seg_0038"
+  ],
+  "stage": "translate",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 9984,
+    "input_tokens": 20643,
+    "output_tokens": 615,
+    "reasoning_output_tokens": 150
+  }
+}

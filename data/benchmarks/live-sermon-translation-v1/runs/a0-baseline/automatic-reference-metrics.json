@@ -1,0 +1,106 @@
+{
+  "schemaVersion": "live-sermon-a0-automatic-reference-metrics-v1",
+  "generatedAt": "2026-09-03T17:31:46Z",
+  "referenceUsedForGeneration": false,
+  "referenceUsedForScoring": true,
+  "referenceStatus": "sol_reviewed_audio_audited_not_human_gold",
+  "tool": {
+    "name": "sacrebleu",
+    "version": "2.5.1"
+  },
+  "metrics": {
+    "bleuSignature": "nrefs:1|case:mixed|eff:yes|tok:zh|smooth:exp|version:2.5.1",
+    "chrfSignature": "nrefs:1|case:mixed|eff:yes|nc:6|nw:0|space:no|version:2.5.1",
+    "strictAnnotatedTermRecallDefinition": "Count of properNouns[].zh exact substrings present in the candidate divided by all annotated occurrences. Valid variants are not credited."
+  },
+  "models": [
+    {
+      "a0Variant": "A0-4B",
+      "predictionSha256": "c96614c2dc91285d423d12187913d2215bddfd4223648180037fd4f88d32ecd7",
+      "segmentCount": 239,
+      "bleuZh": 35.3632,
+      "chrf2": 34.6465,
+      "strictAnnotatedTermRecall": {
+        "hitCount": 347,
+        "annotationCount": 480,
+        "percent": 72.2917
+      },
+      "perSermon": [
+        {
+          "sermonId": "8u9B8u_5ISI",
+          "segmentCount": 49,
+          "bleuZh": 38.0256,
+          "chrf2": 36.2272
+        },
+        {
+          "sermonId": "hAWaaBVaMzY",
+          "segmentCount": 56,
+          "bleuZh": 32.5728,
+          "chrf2": 33.6607
+        },
+        {
+          "sermonId": "hoeJTwl-EJg",
+          "segmentCount": 57,
+          "bleuZh": 39.246,
+          "chrf2": 34.4056
+        },
+        {
+          "sermonId": "qvImKpmvgaM",
+          "segmentCount": 39,
+          "bleuZh": 36.6083,
+          "chrf2": 34.1742
+        },
+        {
+          "sermonId": "z_UoOx-6mz4",
+          "segmentCount": 38,
+          "bleuZh": 31.0445,
+          "chrf2": 34.5265
+        }
+      ]
+    },
+    {
+      "a0Variant": "A0-9B",
+      "predictionSha256": "418e4c71d8e8d67bead558ef43fd07231013baeb316eab0cc813df6cff2105ab",
+      "segmentCount": 239,
+      "bleuZh": 43.1438,
+      "chrf2": 37.3864,
+      "strictAnnotatedTermRecall": {
+        "hitCount": 355,
+        "annotationCount": 480,
+        "percent": 73.9583
+      },
+      "perSermon": [
+        {
+          "sermonId": "8u9B8u_5ISI",
+          "segmentCount": 49,
+          "bleuZh": 44.8554,
+          "chrf2": 38.6227
+        },
+        {
+          "sermonId": "hAWaaBVaMzY",
+          "segmentCount": 56,
+          "bleuZh": 41.9322,
+          "chrf2": 36.2516
+        },
+        {
+          "sermonId": "hoeJTwl-EJg",
+          "segmentCount": 57,
+          "bleuZh": 41.294,
+          "chrf2": 35.8815
+        },
+        {
+          "sermonId": "qvImKpmvgaM",
+          "segmentCount": 39,
+          "bleuZh": 44.4627,
+          "chrf2": 38.6126
+        },
+        {
+          "sermonId": "z_UoOx-6mz4",
+          "segmentCount": 38,
+          "bleuZh": 43.2792,
+          "chrf2": 37.737
+        }
+      ]
+    }
+  ]
+}

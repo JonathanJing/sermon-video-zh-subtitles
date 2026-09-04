@@ -1,0 +1,50 @@
+{
+  "audioDurationSeconds": 30.0,
+  "audioSha256": "e54b28baac11f465188c442f8b85d5d97dcf154fb6d3a792e5167100882ad22f",
+  "completedAt": "2026-09-04T03:46:12.744292+00:00",
+  "emptyFinalEventCount": 0,
+  "eventsSha256": "a25f2bf7f433cb4f7884c3848420982985c9a92b5c81ee6f2e34a1cdbd4802d9",
+  "finalDeliveryLagAgainstLatestAudioSeconds": {
+    "max": 0.6502,
+    "p50": -0.1816,
+    "p95": 0.6502
+  },
+  "finalEventCount": 7,
+  "formalFullDuration": false,
+  "limitations": [
+    "Final delivery lag is measured against the latest audio sent when the provider event arrives.",
+    "Reference is exact-chunk GPT-Transcribe text, not human Gold.",
+    "This run measures ASR alone, not MiLMMT co-residency."
+  ],
+  "manifest": "data/benchmarks/live-sermon-translation-v1/local-asr-streaming-replay-v1.json",
+  "manifestSha256": "b2200815abf6fb7de60b8c83ffebdab97638a0ad4b6a40762ec5df5ab8b41774",
+  "modelId": "qwen3-asr-0.6b-mlx-8bit",
+  "pacingDelaySeconds": {
+    "max": 0.013673,
+    "mean": 0.003201,
+    "p95": 0.0067
+  },
+  "partialEventCount": 6,
+  "partialWordEditChurn": 36,
+  "provider": "mlx-audio-realtime-websocket",
+  "providerModel": "/Users/jonathan_jing/Library/Caches/sermon-video-zh-subtitles/models/qwen3-asr-0.6b-8bit-89e96d92",
+  "quality": {
+    "hypothesisWordCount": 105,
+    "referenceStatus": "model_reviewed_reference_not_human_gold",
+    "referenceWordCount": 101,
+    "wer": 0.108911
+  },
+  "resources": {
+    "providerPeakRssGiB": 1.1501,
+    "sampleCount": 36,
+    "swapGrowthGiB": 0.0,
+    "swapUsedGiBEnd": 0.0,
+    "swapUsedGiBStart": 0.0
+  },
+  "resourcesSha256": "6072e9078a4d1c3a778167bd4630b6b4f760b2a8cc8cb110250c793644b5b0bc",
+  "schemaVersion": "local-asr-streaming-replay-run-v1",
+  "sourceAudioDurationSeconds": 600.0,
+  "stepMs": 500,
+  "wallDurationSeconds": 36.4358,
+  "wallToAudioRatio": 1.214527
+}

@@ -1,0 +1,19 @@
+{
+  "apiKeyMaterialIncluded": false,
+  "cacheHitCount": 0,
+  "calibratedManifest": "data/benchmarks/live-sermon-translation-v1/local-asr-gpt-reaudited-reference-v1.json",
+  "calibratedManifestSha256": "35af38c496e9a5bb0e679f9755b94857b123b5b40403ee063cf1918aae666de7",
+  "completedAt": "2026-09-03T23:39:13.889612+00:00",
+  "credentialSource": "gcp-secret-manager:ai-for-god/openai-api-key",
+  "durationMinutes": 6.5,
+  "errorCount": 0,
+  "errors": [],
+  "model": "gpt-transcribe",
+  "queue": "data/benchmarks/live-sermon-translation-v1/local-asr-human-calibration-queue-v1.json",
+  "queueSha256": "49ea828de7ebd8d4baa7faefbd59d3b238689799048df3e0bec377258a6d9f3a",
+  "requestedItemCount": 13,
+  "resultsSha256": "1abdc0cb72e871829ea181cb9acad3d2db74762a9c58850b215b651e7cef3b5e",
+  "schemaVersion": "local-asr-gpt-reaudit-run-v1",
+  "status": "completed",
+  "successfulItemCount": 13
+}

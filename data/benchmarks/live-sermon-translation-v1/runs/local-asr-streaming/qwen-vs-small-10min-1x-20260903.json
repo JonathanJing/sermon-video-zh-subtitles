@@ -1,0 +1,55 @@
+{
+  "schemaVersion": "local-asr-streaming-comparison-v1",
+  "completedAt": "2026-09-04T04:09:27.496211+00:00",
+  "replayManifest": "data/benchmarks/live-sermon-translation-v1/local-asr-streaming-replay-v1.json",
+  "referenceStatus": "model_reviewed_reference_not_human_gold",
+  "audioDurationSeconds": 600.0,
+  "pacingRate": 1.0,
+  "results": [
+    {
+      "rank": 1,
+      "modelId": "qwen3-asr-0.6b-mlx-8bit",
+      "protocol": "native_mlx_audio_websocket_partial_final",
+      "wer": 0.050934,
+      "partialEventCount": 120,
+      "finalEventCount": 123,
+      "emptyFinalEventCount": 0,
+      "partialWordEditChurn": 559,
+      "wallToAudioRatio": 1.009743,
+      "finalDeliveryLagAfterLatestPcmBlockAvailableP50Seconds": 0.3077,
+      "finalDeliveryLagAfterLatestPcmBlockAvailableP95Seconds": 0.3634,
+      "providerPeakRssGiB": 1.1532,
+      "swapGrowthGiB": 0.0,
+      "runDirectory": "data/benchmarks/live-sermon-translation-v1/runs/local-asr-streaming/qwen3-asr-0.6b-mlx-8bit-10min-1x-20260903"
+    },
+    {
+      "rank": 2,
+      "modelId": "whisper.cpp-small.en-f16",
+      "protocol": "persistent_http_5s_window_with_harness_partial_probe",
+      "wer": 0.065648,
+      "partialEventCount": 120,
+      "finalEventCount": 120,
+      "emptyFinalEventCount": 0,
+      "partialToFinalWordEditChurn": 1342,
+      "wallToAudioRatio": 1.000298,
+      "finalDeliveryLagAfterAudioAvailableP50Seconds": 0.2137,
+      "finalDeliveryLagAfterAudioAvailableP95Seconds": 0.2766,
+      "providerPeakRssGiB": 0.7586,
+      "swapGrowthGiB": 0.0,
+      "runDirectory": "data/benchmarks/live-sermon-translation-v1/runs/local-asr-streaming/small-en-f16-10min-1x-20260903"
+    }
+  ],
+  "decision": {
+    "provisionalStreamingWinner": "qwen3-asr-0.6b-mlx-8bit",
+    "reason": "Lower model-reviewed-reference WER with native partial/final streaming; small.en remains the lower-memory fallback.",
+    "werAbsoluteAdvantage": 0.014714,
+    "smallEnMemoryAdvantageGiB": 0.3946,
+    "nextGate": "50-60 minute Qwen3-ASR plus MiLMMT Q8 browser and recording coexistence soak"
+  },
+  "comparabilityNotes": [
+    "Both models used the same frozen 600-second PCM and 1.0x wall-clock pacing.",
+    "Qwen partial/final events are provider-native; small.en partials are harness-emulated by retranscribing each 5-second window at 1.5 and 5.0 seconds.",
+    "Latency fields describe different provider contracts and must not be ranked as if identical.",
+    "The reference is GPT-Transcribe model-reviewed text, not human Gold."
+  ]
+}

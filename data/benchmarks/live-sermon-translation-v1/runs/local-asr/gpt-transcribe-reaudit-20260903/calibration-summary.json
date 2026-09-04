@@ -1,0 +1,132 @@
+{
+  "dispositionCounts": {
+    "exact_repeat_supported": 9,
+    "gpt_reaudited_major_delta_requires_human_confirmation": 1,
+    "gpt_reaudited_minor_delta_requires_human_confirmation": 3
+  },
+  "humanGoldClaimed": false,
+  "itemCount": 13,
+  "items": [
+    {
+      "disposition": "exact_repeat_supported",
+      "humanListeningCompleted": false,
+      "id": "post-live-2026-08-23-ZDQwL3K-A44_gold_001",
+      "reauditWordCount": 97,
+      "referenceDeltaRate": 0.0,
+      "referenceWordCount": 97,
+      "wordEditCount": 0
+    },
+    {
+      "disposition": "exact_repeat_supported",
+      "humanListeningCompleted": false,
+      "id": "post-live-2026-08-23-ZDQwL3K-A44_gold_002",
+      "reauditWordCount": 86,
+      "referenceDeltaRate": 0.0,
+      "referenceWordCount": 86,
+      "wordEditCount": 0
+    },
+    {
+      "disposition": "gpt_reaudited_minor_delta_requires_human_confirmation",
+      "humanListeningCompleted": false,
+      "id": "post-live-2026-08-23-ZDQwL3K-A44_gold_003",
+      "reauditWordCount": 83,
+      "referenceDeltaRate": 0.012195,
+      "referenceWordCount": 82,
+      "wordEditCount": 1
+    },
+    {
+      "disposition": "gpt_reaudited_minor_delta_requires_human_confirmation",
+      "humanListeningCompleted": false,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_001",
+      "reauditWordCount": 89,
+      "referenceDeltaRate": 0.044944,
+      "referenceWordCount": 89,
+      "wordEditCount": 4
+    },
+    {
+      "disposition": "exact_repeat_supported",
+      "humanListeningCompleted": false,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_002",
+      "reauditWordCount": 0,
+      "referenceDeltaRate": 0.0,
+      "referenceWordCount": 0,
+      "wordEditCount": 0
+    },
+    {
+      "disposition": "exact_repeat_supported",
+      "humanListeningCompleted": false,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_004",
+      "reauditWordCount": 86,
+      "referenceDeltaRate": 0.0,
+      "referenceWordCount": 86,
+      "wordEditCount": 0
+    },
+    {
+      "disposition": "exact_repeat_supported",
+      "humanListeningCompleted": false,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_029",
+      "reauditWordCount": 82,
+      "referenceDeltaRate": 0.0,
+      "referenceWordCount": 82,
+      "wordEditCount": 0
+    },
+    {
+      "disposition": "exact_repeat_supported",
+      "humanListeningCompleted": false,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_036",
+      "reauditWordCount": 68,
+      "referenceDeltaRate": 0.0,
+      "referenceWordCount": 68,
+      "wordEditCount": 0
+    },
+    {
+      "disposition": "exact_repeat_supported",
+      "humanListeningCompleted": false,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_040",
+      "reauditWordCount": 20,
+      "referenceDeltaRate": 0.0,
+      "referenceWordCount": 20,
+      "wordEditCount": 0
+    },
+    {
+      "disposition": "exact_repeat_supported",
+      "humanListeningCompleted": false,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_041",
+      "reauditWordCount": 31,
+      "referenceDeltaRate": 0.0,
+      "referenceWordCount": 31,
+      "wordEditCount": 0
+    },
+    {
+      "disposition": "exact_repeat_supported",
+      "humanListeningCompleted": false,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_042",
+      "reauditWordCount": 33,
+      "referenceDeltaRate": 0.0,
+      "referenceWordCount": 33,
+      "wordEditCount": 0
+    },
+    {
+      "disposition": "gpt_reaudited_minor_delta_requires_human_confirmation",
+      "humanListeningCompleted": false,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_043",
+      "reauditWordCount": 27,
+      "referenceDeltaRate": 0.074074,
+      "referenceWordCount": 27,
+      "wordEditCount": 2
+    },
+    {
+      "disposition": "gpt_reaudited_major_delta_requires_human_confirmation",
+      "humanListeningCompleted": false,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_044",
+      "reauditWordCount": 21,
+      "referenceDeltaRate": 0.837838,
+      "referenceWordCount": 37,
+      "wordEditCount": 31
+    }
+  ],
+  "results": "data/benchmarks/live-sermon-translation-v1/runs/local-asr/gpt-transcribe-reaudit-20260903/reaudit-results.jsonl",
+  "resultsSha256": "1abdc0cb72e871829ea181cb9acad3d2db74762a9c58850b215b651e7cef3b5e",
+  "schemaVersion": "local-asr-gpt-reaudit-summary-v1",
+  "status": "gpt_reaudit_completed_human_confirmation_pending"
+}

@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "live-sermon-hymt2-baseline-config-v1",
+  "goalId": "BENCH-LIVE-ST-V1",
+  "systemId": "B5-HyMT2-30B-A3B-Heretic",
+  "configurationStatus": "frozen",
+  "frozenAt": "2026-09-03T11:41:57-07:00",
+  "referenceUsedForGeneration": false,
+  "requestedModel": {
+    "modelId": "0xSojalSec/Tencent-Hy-30B-A3B-uncensored-heretic",
+    "revision": "abe0aae382c7abce58b4be4eda48953af034025b",
+    "license": "apache-2.0",
+    "modelCard": "https://huggingface.co/0xSojalSec/Tencent-Hy-30B-A3B-uncensored-heretic",
+    "declaredBaseModel": "tencent/Hy-MT2-30B-A3B",
+    "derivativeMethod": "Heretic v1.4.0+custom ARA LoRA with row-norm preservation",
+    "safetyAlignmentReduced": true,
+    "intendedUseFromModelCard": "research_and_experimentation_only"
+  },
+  "runtimeModel": {
+    "repository": "OS-Software/Hy-MT2-30B-A3B-uncensored-heretic-GGUF",
+    "revision": "318ff847ccf1cc9b2934f0e5a0695ed7852ad31b",
+    "artifact": "Hy-MT2-30B-A3B-uncensored-heretic-Q8_0.gguf",
+    "artifactBytes": 31985728928,
+    "artifactSha256": "cd22383289978f115182fb3ddfe74ab9aae6703c4eadb30c3c7eb09a38be8938",
+    "quantization": "Q8_0",
+    "thirdPartyQuantization": true,
+    "exactSourceRevisionDeclaredByRuntimeRepository": false
+  },
+  "runtime": {
+    "hostClass": "DGX Spark GB10",
+    "engine": "llama.cpp",
+    "engineCommit": "5ecbe1ac17ec0484c5b44af0bd580cdc9c428ed4",
+    "bindAddress": "127.0.0.1",
+    "testPort": 8002,
+    "productionPortExcluded": 8000,
+    "contextTokens": 8192,
+    "parallel": 1,
+    "flashAttention": true,
+    "thinkingEnabled": false,
+    "warmup": false,
+    "serverTimeoutSeconds": 600
+  },
+  "generation": {
+    "requestMode": "openai_compatible_chat_completions",
+    "promptVersion": "hymt2-official-default-translation-en-chinese-v1",
+    "promptSha256": "670e3a0f3c62e0db54a76e3495d36c31d5ad5fda9ad1449e4e898f4011cd0a26",
+    "systemPrompt": null,
+    "temperature": 0.7,
+    "topP": 0.6,
+    "topK": 20,
+    "repeatPenalty": 1.05,
+    "seed": 42,
+    "maxTokens": 1024,
+    "vendorRecommended30B": {
+      "temperature": 0.7,
+      "topP": 1.0,
+      "topK": -1,
+      "repeatPenalty": 1.0,
+      "maxTokens": 4096
+    },
+    "samplingPolicy": "normalized_to_B4_HyMT2_1.8B_for_controlled_cross_size_comparison",
+    "retryCount": 2
+  },
+  "inputs": {
+    "source": "a0-config.json#inputs",
+    "segmentCount": 239,
+    "sourceAndFrozenEnglishReferenceIdTextEqualityVerified": true
+  },
+  "comparisonPolicy": {
+    "classification": "external_community_safety_modified_text_translation_baseline",
+    "a0Membership": false,
+    "sameInputSegmentsAsA0": true,
+    "sameHardwareAndEngineAsA0": true,
+    "samePromptAndSamplingAsB4": true,
+    "notEquivalentToOfficialBaseModel": true,
+    "deploymentEligible": false,
+    "directQualityComparisonCaveat": "This run measures a third-party Q8_0 quantization of a community safety-modified derivative. It does not measure the official Tencent BF16 model, and it uses B4-normalized sampling rather than Tencent's 30B recommendation."
+  }
+}

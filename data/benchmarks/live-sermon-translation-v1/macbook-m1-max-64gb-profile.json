@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "live-sermon-primary-hardware-profile-v1",
+  "goalId": "BENCH-LIVE-ST-V1",
+  "profileId": "macbook-pro-m1-max-64gb-v1",
+  "status": "frozen_for_primary_screening",
+  "frozenAt": "2026-09-03T12:08:23-07:00",
+  "role": "primary_deployment_and_performance_target",
+  "hardware": {
+    "product": "MacBook Pro",
+    "chip": "Apple M1 Max",
+    "cpuCores": 10,
+    "unifiedMemoryGiB": 64,
+    "gpuCoreCount": 32,
+    "powerSource": "AC",
+    "serialNumberRecorded": false,
+    "hardwareUuidRecorded": false
+  },
+  "runtimePolicy": {
+    "operatingSystemVersion": "record_at_run_time",
+    "primaryEngine": "llama.cpp_with_Metal",
+    "allowedAlternateEngine": "MLX",
+    "crossEnginePerformanceComparable": false,
+    "nativeAppleSiliconRequired": true,
+    "modelAndRuntimeRevisionPinningRequired": true
+  },
+  "screeningOrder": [
+    "artifact_and_license_preflight",
+    "cold_load_smoke",
+    "translation_only_239_segment_run",
+    "co_resident_asr_translation_replay",
+    "full_sermon_1x_replay",
+    "50_to_60_minute_soak",
+    "quality_and_sol_high_review"
+  ],
+  "resourceGates": {
+    "translationProcessPeakResidentGiBTargetMax": 40,
+    "systemAvailableMemoryGiBTargetMin": 8,
+    "swapGrowthGiBTargetMax": 1,
+    "memoryPressureAtSteadyState": "green",
+    "memoryPressureRedAllowed": false,
+    "outOfMemoryOrProcessKillAllowed": false,
+    "resourceThresholdStatus": "provisional_until_first_full_replay"
+  },
+  "performanceGates": {
+    "realTimeFactorMax": 1.0,
+    "fullSermonBacklogAtEndSecondsMax": 0,
+    "translationFinalizationP95SecondsTargetMax": 4.0,
+    "continuousRunMinutesMin": 50,
+    "thermalOrMemoryFailureAllowed": false,
+    "performanceThresholdStatus": "provisional_until_first_full_replay"
+  },
+  "eligibilityPolicy": {
+    "macbookRunRequiredForPrimaryLeaderboard": true,
+    "dgxOnlyRunClassification": "research_reference_only",
+    "qualityCanBePreScreenedOnOtherHardware": true,
+    "speedAndMemoryTransferAcrossHardwareProhibited": true,
+    "mustCoexistWithAsrAndCaptionClient": true,
+    "productionEligibilityRequiresSafetyAndLicenseGate": true
+  },
+  "requiredRunEvidence": [
+    "model_artifact_sha256",
+    "runtime_version_or_commit",
+    "cold_and_warm_load_seconds",
+    "tokens_per_second",
+    "segment_latency_p50_p90_p95_max",
+    "peak_process_resident_memory",
+    "system_memory_pressure_samples",
+    "swap_delta",
+    "power_and_thermal_samples",
+    "rtf_and_backlog",
+    "errors_and_recovery_events"
+  ]
+}

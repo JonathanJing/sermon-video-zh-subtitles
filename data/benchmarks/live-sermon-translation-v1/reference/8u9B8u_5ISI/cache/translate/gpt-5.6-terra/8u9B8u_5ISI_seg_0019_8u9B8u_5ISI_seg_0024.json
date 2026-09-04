@@ -1,0 +1,157 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T02:59:16.537022+00:00",
+  "elapsedSeconds": 35.549,
+  "inputSha256": "9a778778f7eb2f193c35d85b9b8276b9ebbfc620f35ed4a1249d01df39080785",
+  "modelRequested": "gpt-5.6-terra",
+  "promptVersion": "codex-conversation-sermon-translate-v1",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "contentType": "sermon",
+        "id": "8u9B8u_5ISI_seg_0019",
+        "potentialAsrIssues": [
+          "Wickliff Hall 可能是 Wycliffe Hall。",
+          "AfricanAmerican 缺少连字符或空格。"
+        ],
+        "properNouns": [
+          {
+            "source": "Anglicans",
+            "zh": "圣公会信徒"
+          },
+          {
+            "source": "Wickliff Hall",
+            "zh": "威克里夫学院"
+          },
+          {
+            "source": "Oxford",
+            "zh": "牛津"
+          },
+          {
+            "source": "Assemblies of God",
+            "zh": "神召会"
+          },
+          {
+            "source": "Church of God in Christ",
+            "zh": "基督里的上帝教会"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "呃，有时是体制结构上的。这方面的专业术语是“教会治理”，也就是教会的治理结构。但有时，两者之间确实存在结构差异，对吧？嗯，我们教会没有主教，但圣公会有主教。我在牛津的威克里夫学院授课时，会和他们的一些主教交流。实际上，这是我在牛津与圣公会信徒一起教了一周后离开时的照片。这是我和他们一起走出去。好吧，那其实不是我，那是电影剧照。呃，不过有一点：主教的服装确实更酷，我喜欢。呃，有时这个类别是文化和地区差异，对吧？嗯，其中一些有着非常糟糕、黑暗的历史。比如，神召会从基督里的上帝教会分出来，是因为他们不想处在一个以非裔美国人为主的宗派中。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "8u9B8u_5ISI_seg_0020",
+        "potentialAsrIssues": [
+          "slaveolding 可能是 slaveholding。",
+          "Missouri Cinned 可能是 Missouri Synod。"
+        ],
+        "properNouns": [
+          {
+            "source": "Assemblies of God",
+            "zh": "神召会"
+          },
+          {
+            "source": "Southern Baptists",
+            "zh": "南方浸信会"
+          },
+          {
+            "source": "Lutheran Church, Missouri Cinned",
+            "zh": "密苏里路德会"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "顺便说一句，如今神召会在和好与多元方面做得很好。南方浸信会的成立，是为了让他们能够派遣蓄奴的宣教士，对吧？嗯，有时也有地区差异。我的意思是，确实有宗派名为“密苏里路德会”。地区因素也会带来影响。还有一些实践上的差异，对吧？敬拜风格，对吧？某些传统所强调的仪式的重要性。比如，有些教会每周举行圣餐；这其实也是宗派特色。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "8u9B8u_5ISI_seg_0021",
+        "potentialAsrIssues": [
+          "levels of waiting 可能是 levels of weighting。"
+        ],
+        "properNouns": [
+          {
+            "source": "Jesus Christ",
+            "zh": "耶稣基督"
+          },
+          {
+            "source": "communion of the saints",
+            "zh": "圣徒相通"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "但现实是，这些类别各自都有不同的权重层级，对吧？有不同的权重层级；有时更偏向神学，有时更偏向地区。现在，这也取决于各宗派形成时，怎么说呢，哪些类别占得最多。所以，这些是我们走到这一步的一些原因。有时主要是神学因素，有时主要是地区因素。但我希望你们听见：宗派的存在并没有否定耶稣所祈求、也是我们应当努力追求的合一。我们——我不希望你们错过这一点——我们与每一位真正信靠耶稣基督的人都是合一的。我们称之为“圣徒相通”。所以，教会在基督里实际上是合一的，即使它看起来并不与自身合一。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "8u9B8u_5ISI_seg_0022",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Jesus",
+            "zh": "耶稣"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "因为合一不是一致；而是共同效忠耶稣。但现在并非本该有的样子。耶稣对合一的祷告尚未实现。我们可以承认这并非本该有的样子，因为我也会说，我的基督徒生命并不总是本该有的样子，但它仍反映耶稣；他的教会也是如此。那么，我们如何判断与另一间教会或另一个宗派能够或应当有多少合一呢？我为此使用了三个类别。让我们更深入看神学这个类别，因为有时这些类别使我们分属不同宗派；它也能帮助我们思考如何彼此相处。所以，我使用的这三个类别是：核心、确信和偏好。认识神学信念的这三个层级很有帮助：有些是核心，有些是确信，"
+      },
+      {
+        "contentType": "sermon",
+        "id": "8u9B8u_5ISI_seg_0023",
+        "potentialAsrIssues": [
+          "This is the verse 可能是 This is the first。"
+        ],
+        "properNouns": [
+          {
+            "source": "God",
+            "zh": "上帝"
+          },
+          {
+            "source": "Holy Spirit",
+            "zh": "圣灵"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "有些是偏好。因此，核心信念是所有合乎圣经的基督徒都会持守的教义，无论其宗派和处境如何。这是第一、也是最重要的层面。它包括上帝作为圣父、圣子和圣灵的本质，也包括上帝话语的权威。我没有时间逐一展开，但有一些核心的事、核心的信念；如果你不认同这些，你就不是合乎圣经的基督徒。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "8u9B8u_5ISI_seg_0024",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Jesus",
+            "zh": "耶稣"
+          },
+          {
+            "source": "God",
+            "zh": "上帝"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "你或许会用“基督徒”来形容自己，但那不符合圣经所描述的基督徒定义。再说一次，我们所有跟随耶稣的人都应当持守这些核心信念。但关键是，有些基督徒持守核心信念，却在某些确信上有所不同。因此，核心信念是最高、最重要的层面。确信层面的信念仍然重要。事实上，我们有时正是因为确信不同，而分属不同的教会或宗派。所以，第二个层面，也就是确信层面，可以包括像我们具体如何实行洗礼这样的事，对吧？我们是在人成为基督徒之后，为信徒施洗，对吧？它也可能涉及他们如何看待上帝的主权、人的自由意志与救恩。"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "8u9B8u_5ISI_seg_0019",
+    "8u9B8u_5ISI_seg_0020",
+    "8u9B8u_5ISI_seg_0021",
+    "8u9B8u_5ISI_seg_0022",
+    "8u9B8u_5ISI_seg_0023",
+    "8u9B8u_5ISI_seg_0024"
+  ],
+  "stage": "translate",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 12032,
+    "input_tokens": 17128,
+    "output_tokens": 1820,
+    "reasoning_output_tokens": 280
+  }
+}

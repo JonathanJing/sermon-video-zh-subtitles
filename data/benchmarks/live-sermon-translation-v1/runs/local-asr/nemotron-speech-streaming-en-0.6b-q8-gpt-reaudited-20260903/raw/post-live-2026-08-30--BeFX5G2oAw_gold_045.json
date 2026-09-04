@@ -1,0 +1,27 @@
+{
+  "file": "/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/data/benchmarks/live-sermon-translation-v1/runs/local-asr/nemotron-speech-streaming-en-0.6b-q8-gpt-reaudited-20260903/prepared-audio/post-live-2026-08-30--BeFX5G2oAw_gold_045.wav",
+  "text": "Christ has died we are forgiven in Christ a lie. We are the reason and he shall come.",
+  "confidence": 1,
+  "duration": 30,
+  "languages": [],
+  "words": [
+    {"word": "Christ", "start": 17.2, "end": 17.28, "confidence": 1},
+    {"word": "has", "start": 17.68, "end": 17.76, "confidence": 1},
+    {"word": "died", "start": 18.48, "end": 18.56, "confidence": 1},
+    {"word": "we", "start": 19.6, "end": 19.68, "confidence": 1},
+    {"word": "are", "start": 20.24, "end": 20.32, "confidence": 1},
+    {"word": "forgiven", "start": 20.56, "end": 21.44, "confidence": 1},
+    {"word": "in", "start": 21.84, "end": 21.92, "confidence": 1},
+    {"word": "Christ", "start": 22.24, "end": 22.32, "confidence": 1},
+    {"word": "a", "start": 23.52, "end": 23.6, "confidence": 1},
+    {"word": "lie.", "start": 23.92, "end": 25.84, "confidence": 1},
+    {"word": "We", "start": 25.76, "end": 25.84, "confidence": 1},
+    {"word": "are", "start": 25.84, "end": 25.92, "confidence": 1},
+    {"word": "the", "start": 26, "end": 26.08, "confidence": 1},
+    {"word": "reason", "start": 28, "end": 28.08, "confidence": 1},
+    {"word": "and", "start": 28.48, "end": 28.56, "confidence": 1},
+    {"word": "he", "start": 29.12, "end": 29.2, "confidence": 1},
+    {"word": "shall", "start": 29.2, "end": 29.28, "confidence": 1},
+    {"word": "come.", "start": 29.52, "end": 30.08, "confidence": 1}
+  ]
+}

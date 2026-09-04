@@ -1,0 +1,1092 @@
+{
+	"systeminfo": "WHISPER : COREML = 0 | OPENVINO = 0 | MTL : EMBED_LIBRARY = 1 | CPU : NEON = 1 | ARM_FMA = 1 | DOTPROD = 1 | ACCELERATE = 1 | OPENMP = 1 | REPACK = 1 | ",
+	"model": {
+		"type": "medium",
+		"multilingual": false,
+		"vocab": 51864,
+		"audio": {
+			"ctx": 1500,
+			"state": 1024,
+			"head": 16,
+			"layer": 24
+		},
+		"text": {
+			"ctx": 448,
+			"state": 1024,
+			"head": 16,
+			"layer": 24
+		},
+		"mels": 80,
+		"ftype": 1
+	},
+	"params": {
+		"model": "/Users/jonathan_jing/Library/Caches/sermon-asr-benchmark/models/ggml-medium.en.bin",
+		"language": "en",
+		"translate": false
+	},
+	"result": {
+		"language": "en"
+	},
+	"transcription": [
+		{
+			"timestamps": {
+				"from": "00:00:00,000",
+				"to": "00:00:06,280"
+			},
+			"offsets": {
+				"from": 0,
+				"to": 6280
+			},
+			"text": " this message with fear. They received it with comfort, with hope, because at the",
+			"tokens": [
+				{
+					"text": "[_BEG_]",
+					"timestamps": {
+						"from": "00:00:00,000",
+						"to": "00:00:00,000"
+					},
+					"offsets": {
+						"from": 0,
+						"to": 0
+					},
+					"id": 50363,
+					"p": 0.97681,
+					"t_dtw": -1
+				},
+				{
+					"text": " this",
+					"timestamps": {
+						"from": "00:00:00,000",
+						"to": "00:00:00,330"
+					},
+					"offsets": {
+						"from": 0,
+						"to": 330
+					},
+					"id": 428,
+					"p": 0.721051,
+					"t_dtw": -1
+				},
+				{
+					"text": " message",
+					"timestamps": {
+						"from": "00:00:00,330",
+						"to": "00:00:00,910"
+					},
+					"offsets": {
+						"from": 330,
+						"to": 910
+					},
+					"id": 3275,
+					"p": 0.995488,
+					"t_dtw": -1
+				},
+				{
+					"text": " with",
+					"timestamps": {
+						"from": "00:00:00,910",
+						"to": "00:00:01,230"
+					},
+					"offsets": {
+						"from": 910,
+						"to": 1230
+					},
+					"id": 351,
+					"p": 0.953588,
+					"t_dtw": -1
+				},
+				{
+					"text": " fear",
+					"timestamps": {
+						"from": "00:00:01,230",
+						"to": "00:00:01,570"
+					},
+					"offsets": {
+						"from": 1230,
+						"to": 1570
+					},
+					"id": 3252,
+					"p": 0.997721,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:01,570",
+						"to": "00:00:01,840"
+					},
+					"offsets": {
+						"from": 1570,
+						"to": 1840
+					},
+					"id": 13,
+					"p": 0.668979,
+					"t_dtw": -1
+				},
+				{
+					"text": " They",
+					"timestamps": {
+						"from": "00:00:01,840",
+						"to": "00:00:02,110"
+					},
+					"offsets": {
+						"from": 1840,
+						"to": 2110
+					},
+					"id": 1119,
+					"p": 0.921602,
+					"t_dtw": -1
+				},
+				{
+					"text": " received",
+					"timestamps": {
+						"from": "00:00:02,110",
+						"to": "00:00:02,640"
+					},
+					"offsets": {
+						"from": 2110,
+						"to": 2640
+					},
+					"id": 2722,
+					"p": 0.984309,
+					"t_dtw": -1
+				},
+				{
+					"text": " it",
+					"timestamps": {
+						"from": "00:00:02,640",
+						"to": "00:00:02,800"
+					},
+					"offsets": {
+						"from": 2640,
+						"to": 2800
+					},
+					"id": 340,
+					"p": 0.996396,
+					"t_dtw": -1
+				},
+				{
+					"text": " with",
+					"timestamps": {
+						"from": "00:00:02,800",
+						"to": "00:00:03,200"
+					},
+					"offsets": {
+						"from": 2800,
+						"to": 3200
+					},
+					"id": 351,
+					"p": 0.970495,
+					"t_dtw": -1
+				},
+				{
+					"text": " comfort",
+					"timestamps": {
+						"from": "00:00:03,240",
+						"to": "00:00:03,970"
+					},
+					"offsets": {
+						"from": 3240,
+						"to": 3970
+					},
+					"id": 4467,
+					"p": 0.995775,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:04,010",
+						"to": "00:00:04,240"
+					},
+					"offsets": {
+						"from": 4010,
+						"to": 4240
+					},
+					"id": 11,
+					"p": 0.737282,
+					"t_dtw": -1
+				},
+				{
+					"text": " with",
+					"timestamps": {
+						"from": "00:00:04,240",
+						"to": "00:00:04,560"
+					},
+					"offsets": {
+						"from": 4240,
+						"to": 4560
+					},
+					"id": 351,
+					"p": 0.96419,
+					"t_dtw": -1
+				},
+				{
+					"text": " hope",
+					"timestamps": {
+						"from": "00:00:04,560",
+						"to": "00:00:04,740"
+					},
+					"offsets": {
+						"from": 4560,
+						"to": 4740
+					},
+					"id": 2911,
+					"p": 0.97257,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:04,740",
+						"to": "00:00:04,770"
+					},
+					"offsets": {
+						"from": 4740,
+						"to": 4770
+					},
+					"id": 11,
+					"p": 0.452752,
+					"t_dtw": -1
+				},
+				{
+					"text": " because",
+					"timestamps": {
+						"from": "00:00:04,830",
+						"to": "00:00:05,910"
+					},
+					"offsets": {
+						"from": 4830,
+						"to": 5910
+					},
+					"id": 780,
+					"p": 0.939209,
+					"t_dtw": -1
+				},
+				{
+					"text": " at",
+					"timestamps": {
+						"from": "00:00:05,920",
+						"to": "00:00:05,940"
+					},
+					"offsets": {
+						"from": 5920,
+						"to": 5940
+					},
+					"id": 379,
+					"p": 0.973539,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:05,940",
+						"to": "00:00:06,280"
+					},
+					"offsets": {
+						"from": 5940,
+						"to": 6280
+					},
+					"id": 262,
+					"p": 0.987724,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_314]",
+					"timestamps": {
+						"from": "00:00:06,280",
+						"to": "00:00:06,280"
+					},
+					"offsets": {
+						"from": 6280,
+						"to": 6280
+					},
+					"id": 50677,
+					"p": 0.133301,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:06,280",
+				"to": "00:00:13,260"
+			},
+			"offsets": {
+				"from": 6280,
+				"to": 13260
+			},
+			"text": " center of Revelation is Jesus. The one who is with us, the one who keeps his",
+			"tokens": [
+				{
+					"text": " center",
+					"timestamps": {
+						"from": "00:00:06,280",
+						"to": "00:00:07,010"
+					},
+					"offsets": {
+						"from": 6280,
+						"to": 7010
+					},
+					"id": 3641,
+					"p": 0.989047,
+					"t_dtw": -1
+				},
+				{
+					"text": " of",
+					"timestamps": {
+						"from": "00:00:07,010",
+						"to": "00:00:07,250"
+					},
+					"offsets": {
+						"from": 7010,
+						"to": 7250
+					},
+					"id": 286,
+					"p": 0.999752,
+					"t_dtw": -1
+				},
+				{
+					"text": " Revelation",
+					"timestamps": {
+						"from": "00:00:07,250",
+						"to": "00:00:08,470"
+					},
+					"offsets": {
+						"from": 7250,
+						"to": 8470
+					},
+					"id": 33722,
+					"p": 0.620913,
+					"t_dtw": -1
+				},
+				{
+					"text": " is",
+					"timestamps": {
+						"from": "00:00:08,470",
+						"to": "00:00:08,700"
+					},
+					"offsets": {
+						"from": 8470,
+						"to": 8700
+					},
+					"id": 318,
+					"p": 0.961636,
+					"t_dtw": -1
+				},
+				{
+					"text": " Jesus",
+					"timestamps": {
+						"from": "00:00:08,700",
+						"to": "00:00:09,300"
+					},
+					"offsets": {
+						"from": 8700,
+						"to": 9300
+					},
+					"id": 5803,
+					"p": 0.997052,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:09,310",
+						"to": "00:00:09,720"
+					},
+					"offsets": {
+						"from": 9310,
+						"to": 9720
+					},
+					"id": 13,
+					"p": 0.440598,
+					"t_dtw": -1
+				},
+				{
+					"text": " The",
+					"timestamps": {
+						"from": "00:00:09,720",
+						"to": "00:00:09,970"
+					},
+					"offsets": {
+						"from": 9720,
+						"to": 9970
+					},
+					"id": 383,
+					"p": 0.910404,
+					"t_dtw": -1
+				},
+				{
+					"text": " one",
+					"timestamps": {
+						"from": "00:00:09,980",
+						"to": "00:00:10,250"
+					},
+					"offsets": {
+						"from": 9980,
+						"to": 10250
+					},
+					"id": 530,
+					"p": 0.735444,
+					"t_dtw": -1
+				},
+				{
+					"text": " who",
+					"timestamps": {
+						"from": "00:00:10,260",
+						"to": "00:00:10,530"
+					},
+					"offsets": {
+						"from": 10260,
+						"to": 10530
+					},
+					"id": 508,
+					"p": 0.995125,
+					"t_dtw": -1
+				},
+				{
+					"text": " is",
+					"timestamps": {
+						"from": "00:00:10,530",
+						"to": "00:00:10,710"
+					},
+					"offsets": {
+						"from": 10530,
+						"to": 10710
+					},
+					"id": 318,
+					"p": 0.99448,
+					"t_dtw": -1
+				},
+				{
+					"text": " with",
+					"timestamps": {
+						"from": "00:00:10,710",
+						"to": "00:00:11,050"
+					},
+					"offsets": {
+						"from": 10710,
+						"to": 11050
+					},
+					"id": 351,
+					"p": 0.994765,
+					"t_dtw": -1
+				},
+				{
+					"text": " us",
+					"timestamps": {
+						"from": "00:00:11,090",
+						"to": "00:00:11,240"
+					},
+					"offsets": {
+						"from": 11090,
+						"to": 11240
+					},
+					"id": 514,
+					"p": 0.996386,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:11,260",
+						"to": "00:00:11,480"
+					},
+					"offsets": {
+						"from": 11260,
+						"to": 11480
+					},
+					"id": 11,
+					"p": 0.573538,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:11,480",
+						"to": "00:00:11,820"
+					},
+					"offsets": {
+						"from": 11480,
+						"to": 11820
+					},
+					"id": 262,
+					"p": 0.938373,
+					"t_dtw": -1
+				},
+				{
+					"text": " one",
+					"timestamps": {
+						"from": "00:00:11,820",
+						"to": "00:00:12,090"
+					},
+					"offsets": {
+						"from": 11820,
+						"to": 12090
+					},
+					"id": 530,
+					"p": 0.985518,
+					"t_dtw": -1
+				},
+				{
+					"text": " who",
+					"timestamps": {
+						"from": "00:00:12,160",
+						"to": "00:00:12,520"
+					},
+					"offsets": {
+						"from": 12160,
+						"to": 12520
+					},
+					"id": 508,
+					"p": 0.995987,
+					"t_dtw": -1
+				},
+				{
+					"text": " keeps",
+					"timestamps": {
+						"from": "00:00:12,520",
+						"to": "00:00:12,880"
+					},
+					"offsets": {
+						"from": 12520,
+						"to": 12880
+					},
+					"id": 7622,
+					"p": 0.980359,
+					"t_dtw": -1
+				},
+				{
+					"text": " his",
+					"timestamps": {
+						"from": "00:00:12,880",
+						"to": "00:00:13,260"
+					},
+					"offsets": {
+						"from": 12880,
+						"to": 13260
+					},
+					"id": 465,
+					"p": 0.574396,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_663]",
+					"timestamps": {
+						"from": "00:00:13,260",
+						"to": "00:00:13,260"
+					},
+					"offsets": {
+						"from": 13260,
+						"to": 13260
+					},
+					"id": 51026,
+					"p": 0.372811,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:13,260",
+				"to": "00:00:19,560"
+			},
+			"offsets": {
+				"from": 13260,
+				"to": 19560
+			},
+			"text": " promises, the one who conquers, and the one who will make everything new. Join us",
+			"tokens": [
+				{
+					"text": " promises",
+					"timestamps": {
+						"from": "00:00:13,260",
+						"to": "00:00:13,980"
+					},
+					"offsets": {
+						"from": 13260,
+						"to": 13980
+					},
+					"id": 10497,
+					"p": 0.996253,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:13,980",
+						"to": "00:00:14,160"
+					},
+					"offsets": {
+						"from": 13980,
+						"to": 14160
+					},
+					"id": 11,
+					"p": 0.935408,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:14,160",
+						"to": "00:00:14,430"
+					},
+					"offsets": {
+						"from": 14160,
+						"to": 14430
+					},
+					"id": 262,
+					"p": 0.998727,
+					"t_dtw": -1
+				},
+				{
+					"text": " one",
+					"timestamps": {
+						"from": "00:00:14,430",
+						"to": "00:00:14,700"
+					},
+					"offsets": {
+						"from": 14430,
+						"to": 14700
+					},
+					"id": 530,
+					"p": 0.999173,
+					"t_dtw": -1
+				},
+				{
+					"text": " who",
+					"timestamps": {
+						"from": "00:00:14,700",
+						"to": "00:00:14,970"
+					},
+					"offsets": {
+						"from": 14700,
+						"to": 14970
+					},
+					"id": 508,
+					"p": 0.999596,
+					"t_dtw": -1
+				},
+				{
+					"text": " conqu",
+					"timestamps": {
+						"from": "00:00:14,970",
+						"to": "00:00:15,420"
+					},
+					"offsets": {
+						"from": 14970,
+						"to": 15420
+					},
+					"id": 20277,
+					"p": 0.99481,
+					"t_dtw": -1
+				},
+				{
+					"text": "ers",
+					"timestamps": {
+						"from": "00:00:15,420",
+						"to": "00:00:15,680"
+					},
+					"offsets": {
+						"from": 15420,
+						"to": 15680
+					},
+					"id": 364,
+					"p": 0.999846,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:15,680",
+						"to": "00:00:15,870"
+					},
+					"offsets": {
+						"from": 15680,
+						"to": 15870
+					},
+					"id": 11,
+					"p": 0.777355,
+					"t_dtw": -1
+				},
+				{
+					"text": " and",
+					"timestamps": {
+						"from": "00:00:15,870",
+						"to": "00:00:16,120"
+					},
+					"offsets": {
+						"from": 15870,
+						"to": 16120
+					},
+					"id": 290,
+					"p": 0.997082,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:16,140",
+						"to": "00:00:16,410"
+					},
+					"offsets": {
+						"from": 16140,
+						"to": 16410
+					},
+					"id": 262,
+					"p": 0.999455,
+					"t_dtw": -1
+				},
+				{
+					"text": " one",
+					"timestamps": {
+						"from": "00:00:16,410",
+						"to": "00:00:16,680"
+					},
+					"offsets": {
+						"from": 16410,
+						"to": 16680
+					},
+					"id": 530,
+					"p": 0.998913,
+					"t_dtw": -1
+				},
+				{
+					"text": " who",
+					"timestamps": {
+						"from": "00:00:16,680",
+						"to": "00:00:16,950"
+					},
+					"offsets": {
+						"from": 16680,
+						"to": 16950
+					},
+					"id": 508,
+					"p": 0.997855,
+					"t_dtw": -1
+				},
+				{
+					"text": " will",
+					"timestamps": {
+						"from": "00:00:16,950",
+						"to": "00:00:17,340"
+					},
+					"offsets": {
+						"from": 16950,
+						"to": 17340
+					},
+					"id": 481,
+					"p": 0.985492,
+					"t_dtw": -1
+				},
+				{
+					"text": " make",
+					"timestamps": {
+						"from": "00:00:17,340",
+						"to": "00:00:17,720"
+					},
+					"offsets": {
+						"from": 17340,
+						"to": 17720
+					},
+					"id": 787,
+					"p": 0.994192,
+					"t_dtw": -1
+				},
+				{
+					"text": " everything",
+					"timestamps": {
+						"from": "00:00:17,720",
+						"to": "00:00:18,660"
+					},
+					"offsets": {
+						"from": 17720,
+						"to": 18660
+					},
+					"id": 2279,
+					"p": 0.99503,
+					"t_dtw": -1
+				},
+				{
+					"text": " new",
+					"timestamps": {
+						"from": "00:00:18,660",
+						"to": "00:00:18,940"
+					},
+					"offsets": {
+						"from": 18660,
+						"to": 18940
+					},
+					"id": 649,
+					"p": 0.989927,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:18,940",
+						"to": "00:00:19,240"
+					},
+					"offsets": {
+						"from": 18940,
+						"to": 19240
+					},
+					"id": 13,
+					"p": 0.966142,
+					"t_dtw": -1
+				},
+				{
+					"text": " Join",
+					"timestamps": {
+						"from": "00:00:19,240",
+						"to": "00:00:19,320"
+					},
+					"offsets": {
+						"from": 19240,
+						"to": 19320
+					},
+					"id": 15251,
+					"p": 0.660029,
+					"t_dtw": -1
+				},
+				{
+					"text": " us",
+					"timestamps": {
+						"from": "00:00:19,400",
+						"to": "00:00:19,560"
+					},
+					"offsets": {
+						"from": 19400,
+						"to": 19560
+					},
+					"id": 514,
+					"p": 0.977116,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_978]",
+					"timestamps": {
+						"from": "00:00:19,560",
+						"to": "00:00:19,560"
+					},
+					"offsets": {
+						"from": 19560,
+						"to": 19560
+					},
+					"id": 51341,
+					"p": 0.622371,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:19,560",
+				"to": "00:00:26,160"
+			},
+			"offsets": {
+				"from": 19560,
+				"to": 26160
+			},
+			"text": " for our new teaching series as we study the book of Revelation.",
+			"tokens": [
+				{
+					"text": " for",
+					"timestamps": {
+						"from": "00:00:19,560",
+						"to": "00:00:19,840"
+					},
+					"offsets": {
+						"from": 19560,
+						"to": 19840
+					},
+					"id": 329,
+					"p": 0.914688,
+					"t_dtw": -1
+				},
+				{
+					"text": " our",
+					"timestamps": {
+						"from": "00:00:19,840",
+						"to": "00:00:20,120"
+					},
+					"offsets": {
+						"from": 19840,
+						"to": 20120
+					},
+					"id": 674,
+					"p": 0.998034,
+					"t_dtw": -1
+				},
+				{
+					"text": " new",
+					"timestamps": {
+						"from": "00:00:20,120",
+						"to": "00:00:20,400"
+					},
+					"offsets": {
+						"from": 20120,
+						"to": 20400
+					},
+					"id": 649,
+					"p": 0.985206,
+					"t_dtw": -1
+				},
+				{
+					"text": " teaching",
+					"timestamps": {
+						"from": "00:00:20,400",
+						"to": "00:00:21,140"
+					},
+					"offsets": {
+						"from": 20400,
+						"to": 21140
+					},
+					"id": 7743,
+					"p": 0.996272,
+					"t_dtw": -1
+				},
+				{
+					"text": " series",
+					"timestamps": {
+						"from": "00:00:21,140",
+						"to": "00:00:21,690"
+					},
+					"offsets": {
+						"from": 21140,
+						"to": 21690
+					},
+					"id": 2168,
+					"p": 0.998662,
+					"t_dtw": -1
+				},
+				{
+					"text": " as",
+					"timestamps": {
+						"from": "00:00:21,690",
+						"to": "00:00:21,870"
+					},
+					"offsets": {
+						"from": 21690,
+						"to": 21870
+					},
+					"id": 355,
+					"p": 0.899378,
+					"t_dtw": -1
+				},
+				{
+					"text": " we",
+					"timestamps": {
+						"from": "00:00:21,870",
+						"to": "00:00:22,050"
+					},
+					"offsets": {
+						"from": 21870,
+						"to": 22050
+					},
+					"id": 356,
+					"p": 0.999226,
+					"t_dtw": -1
+				},
+				{
+					"text": " study",
+					"timestamps": {
+						"from": "00:00:22,050",
+						"to": "00:00:22,490"
+					},
+					"offsets": {
+						"from": 22050,
+						"to": 22490
+					},
+					"id": 2050,
+					"p": 0.992572,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:22,500",
+						"to": "00:00:22,760"
+					},
+					"offsets": {
+						"from": 22500,
+						"to": 22760
+					},
+					"id": 262,
+					"p": 0.899877,
+					"t_dtw": -1
+				},
+				{
+					"text": " book",
+					"timestamps": {
+						"from": "00:00:22,820",
+						"to": "00:00:23,190"
+					},
+					"offsets": {
+						"from": 22820,
+						"to": 23190
+					},
+					"id": 1492,
+					"p": 0.741165,
+					"t_dtw": -1
+				},
+				{
+					"text": " of",
+					"timestamps": {
+						"from": "00:00:23,190",
+						"to": "00:00:23,680"
+					},
+					"offsets": {
+						"from": 23190,
+						"to": 23680
+					},
+					"id": 286,
+					"p": 0.970836,
+					"t_dtw": -1
+				},
+				{
+					"text": " Revelation",
+					"timestamps": {
+						"from": "00:00:23,680",
+						"to": "00:00:26,120"
+					},
+					"offsets": {
+						"from": 23680,
+						"to": 26120
+					},
+					"id": 33722,
+					"p": 0.975879,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:26,120",
+						"to": "00:00:26,160"
+					},
+					"offsets": {
+						"from": 26120,
+						"to": 26160
+					},
+					"id": 13,
+					"p": 0.902476,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_1308]",
+					"timestamps": {
+						"from": "00:00:26,160",
+						"to": "00:00:26,160"
+					},
+					"offsets": {
+						"from": 26160,
+						"to": 26160
+					},
+					"id": 51671,
+					"p": 0.0595585,
+					"t_dtw": -1
+				}
+			]
+		}
+	]
+}

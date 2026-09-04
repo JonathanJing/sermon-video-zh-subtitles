@@ -1,0 +1,336 @@
+{
+	"systeminfo": "WHISPER : COREML = 0 | OPENVINO = 0 | MTL : EMBED_LIBRARY = 1 | CPU : NEON = 1 | ARM_FMA = 1 | DOTPROD = 1 | ACCELERATE = 1 | OPENMP = 1 | REPACK = 1 | ",
+	"model": {
+		"type": "medium",
+		"multilingual": false,
+		"vocab": 51864,
+		"audio": {
+			"ctx": 1500,
+			"state": 1024,
+			"head": 16,
+			"layer": 24
+		},
+		"text": {
+			"ctx": 448,
+			"state": 1024,
+			"head": 16,
+			"layer": 24
+		},
+		"mels": 80,
+		"ftype": 1
+	},
+	"params": {
+		"model": "/Users/jonathan_jing/Library/Caches/sermon-asr-benchmark/models/ggml-medium.en.bin",
+		"language": "en",
+		"translate": false
+	},
+	"result": {
+		"language": "en"
+	},
+	"transcription": [
+		{
+			"timestamps": {
+				"from": "00:00:00,000",
+				"to": "00:00:07,000"
+			},
+			"offsets": {
+				"from": 0,
+				"to": 7000
+			},
+			"text": " [Music]",
+			"tokens": [
+				{
+					"text": "[_BEG_]",
+					"timestamps": {
+						"from": "00:00:00,000",
+						"to": "00:00:00,000"
+					},
+					"offsets": {
+						"from": 0,
+						"to": 0
+					},
+					"id": 50363,
+					"p": 0.684257,
+					"t_dtw": -1
+				},
+				{
+					"text": " [",
+					"timestamps": {
+						"from": "00:00:00,000",
+						"to": "00:00:01,000"
+					},
+					"offsets": {
+						"from": 0,
+						"to": 1000
+					},
+					"id": 685,
+					"p": 0.205641,
+					"t_dtw": -1
+				},
+				{
+					"text": "Music",
+					"timestamps": {
+						"from": "00:00:01,000",
+						"to": "00:00:05,990"
+					},
+					"offsets": {
+						"from": 1000,
+						"to": 5990
+					},
+					"id": 22648,
+					"p": 0.48134,
+					"t_dtw": -1
+				},
+				{
+					"text": "]",
+					"timestamps": {
+						"from": "00:00:05,990",
+						"to": "00:00:07,000"
+					},
+					"offsets": {
+						"from": 5990,
+						"to": 7000
+					},
+					"id": 60,
+					"p": 0.881693,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_350]",
+					"timestamps": {
+						"from": "00:00:07,000",
+						"to": "00:00:07,000"
+					},
+					"offsets": {
+						"from": 7000,
+						"to": 7000
+					},
+					"id": 50713,
+					"p": 0.0108681,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:07,000",
+				"to": "00:00:14,000"
+			},
+			"offsets": {
+				"from": 7000,
+				"to": 14000
+			},
+			"text": " [Music]",
+			"tokens": [
+				{
+					"text": " [",
+					"timestamps": {
+						"from": "00:00:07,000",
+						"to": "00:00:08,000"
+					},
+					"offsets": {
+						"from": 7000,
+						"to": 8000
+					},
+					"id": 685,
+					"p": 0.804651,
+					"t_dtw": -1
+				},
+				{
+					"text": "Music",
+					"timestamps": {
+						"from": "00:00:08,000",
+						"to": "00:00:12,990"
+					},
+					"offsets": {
+						"from": 8000,
+						"to": 12990
+					},
+					"id": 22648,
+					"p": 0.963983,
+					"t_dtw": -1
+				},
+				{
+					"text": "]",
+					"timestamps": {
+						"from": "00:00:12,990",
+						"to": "00:00:14,000"
+					},
+					"offsets": {
+						"from": 12990,
+						"to": 14000
+					},
+					"id": 60,
+					"p": 0.998262,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_700]",
+					"timestamps": {
+						"from": "00:00:14,000",
+						"to": "00:00:14,000"
+					},
+					"offsets": {
+						"from": 14000,
+						"to": 14000
+					},
+					"id": 51063,
+					"p": 0.077948,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:14,000",
+				"to": "00:00:21,000"
+			},
+			"offsets": {
+				"from": 14000,
+				"to": 21000
+			},
+			"text": " [Music]",
+			"tokens": [
+				{
+					"text": " [",
+					"timestamps": {
+						"from": "00:00:14,000",
+						"to": "00:00:15,000"
+					},
+					"offsets": {
+						"from": 14000,
+						"to": 15000
+					},
+					"id": 685,
+					"p": 0.845816,
+					"t_dtw": -1
+				},
+				{
+					"text": "Music",
+					"timestamps": {
+						"from": "00:00:15,000",
+						"to": "00:00:19,990"
+					},
+					"offsets": {
+						"from": 15000,
+						"to": 19990
+					},
+					"id": 22648,
+					"p": 0.98644,
+					"t_dtw": -1
+				},
+				{
+					"text": "]",
+					"timestamps": {
+						"from": "00:00:19,990",
+						"to": "00:00:21,000"
+					},
+					"offsets": {
+						"from": 19990,
+						"to": 21000
+					},
+					"id": 60,
+					"p": 0.999695,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_1050]",
+					"timestamps": {
+						"from": "00:00:21,000",
+						"to": "00:00:21,000"
+					},
+					"offsets": {
+						"from": 21000,
+						"to": 21000
+					},
+					"id": 51413,
+					"p": 0.198858,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:21,000",
+				"to": "00:00:30,000"
+			},
+			"offsets": {
+				"from": 21000,
+				"to": 30000
+			},
+			"text": " [Music]",
+			"tokens": [
+				{
+					"text": "[_BEG_]",
+					"timestamps": {
+						"from": "00:00:21,000",
+						"to": "00:00:21,000"
+					},
+					"offsets": {
+						"from": 21000,
+						"to": 21000
+					},
+					"id": 50363,
+					"p": 0.999641,
+					"t_dtw": -1
+				},
+				{
+					"text": " [",
+					"timestamps": {
+						"from": "00:00:21,000",
+						"to": "00:00:22,290"
+					},
+					"offsets": {
+						"from": 21000,
+						"to": 22290
+					},
+					"id": 685,
+					"p": 0.998976,
+					"t_dtw": -1
+				},
+				{
+					"text": "Music",
+					"timestamps": {
+						"from": "00:00:22,290",
+						"to": "00:00:28,700"
+					},
+					"offsets": {
+						"from": 22290,
+						"to": 28700
+					},
+					"id": 22648,
+					"p": 0.998156,
+					"t_dtw": -1
+				},
+				{
+					"text": "]",
+					"timestamps": {
+						"from": "00:00:28,700",
+						"to": "00:00:30,000"
+					},
+					"offsets": {
+						"from": 28700,
+						"to": 30000
+					},
+					"id": 60,
+					"p": 0.999851,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_450]",
+					"timestamps": {
+						"from": "00:00:30,000",
+						"to": "00:00:30,000"
+					},
+					"offsets": {
+						"from": 30000,
+						"to": 30000
+					},
+					"id": 50813,
+					"p": 0.609295,
+					"t_dtw": -1
+				}
+			]
+		}
+	]
+}

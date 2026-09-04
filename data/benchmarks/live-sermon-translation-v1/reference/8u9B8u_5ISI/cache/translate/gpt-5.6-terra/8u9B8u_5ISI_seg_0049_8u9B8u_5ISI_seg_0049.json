@@ -1,0 +1,49 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T03:01:43.451886+00:00",
+  "elapsedSeconds": 11.101,
+  "inputSha256": "fa9272cc428f5ecb1cfb5deced4c860a3b17ed5079b27c0245fdbcd46b073487",
+  "modelRequested": "gpt-5.6-terra",
+  "promptVersion": "codex-conversation-sermon-translate-v1",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "contentType": "announcement",
+        "id": "8u9B8u_5ISI_seg_0049",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "God",
+            "zh": "上帝"
+          },
+          {
+            "source": "YouTube",
+            "zh": "YouTube"
+          },
+          {
+            "source": "Mariners",
+            "zh": "Mariners"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "嗨，很高兴你今天参加我们的聚会。我盼望并祈求，上帝借着这篇信息，在你所在之处鼓励了你。希望你点击订阅按钮，这样每当我们举行聚会或在 YouTube 上发布内容时，你都能收到提醒。所以请订阅，并加入我们的 Mariners 在线聚会。"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "8u9B8u_5ISI_seg_0049"
+  ],
+  "stage": "translate",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 12032,
+    "input_tokens": 16092,
+    "output_tokens": 447,
+    "reasoning_output_tokens": 285
+  }
+}

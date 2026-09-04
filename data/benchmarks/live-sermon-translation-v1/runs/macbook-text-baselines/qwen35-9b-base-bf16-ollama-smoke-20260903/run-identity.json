@@ -1,0 +1,63 @@
+{
+  "artifactSha256": "230ea242d7e82ba2a291b177b02397b6a9497f92fbbcedb52555366acf6fd2d2",
+  "backend": "ollama-generate",
+  "baseUrl": "http://127.0.0.1:11434",
+  "hardwareProfileId": "macbook-pro-m1-max-64gb-v1",
+  "maxTokens": 1024,
+  "model": "sermon-qwen35-9b-base-bf16:benchmark",
+  "modelId": "Qwen/Qwen3.5-9B-Base",
+  "promptProfile": "sermon-a0-completion",
+  "promptSha256": "0412248df80404e63f22d8111d4d130bcf5714ea49150756fd6c520c53801729",
+  "promptVersion": "sermon-a0-base-completion-v1",
+  "referenceUsedForGeneration": false,
+  "repeatPenalty": 1.0,
+  "revision": "68c46c4b3498877f3ef123c856ecfde50c39f404",
+  "runtimeFingerprint": "ollama-0.33.3-bf16-ctx32768-p1",
+  "schemaVersion": "live-sermon-macbook-text-run-identity-v1",
+  "seed": 42,
+  "selectedSegmentIds": [
+    "8u9B8u_5ISI_seg_0001",
+    "8u9B8u_5ISI_seg_0002",
+    "8u9B8u_5ISI_seg_0003",
+    "8u9B8u_5ISI_seg_0004",
+    "8u9B8u_5ISI_seg_0005",
+    "8u9B8u_5ISI_seg_0006",
+    "8u9B8u_5ISI_seg_0007",
+    "8u9B8u_5ISI_seg_0008",
+    "8u9B8u_5ISI_seg_0009",
+    "8u9B8u_5ISI_seg_0010"
+  ],
+  "sources": [
+    {
+      "path": "data/benchmarks/live-sermon-translation-v1/reference/8u9B8u_5ISI/segments.en.reference.jsonl",
+      "segmentCount": 49,
+      "sha256": "b800e37f09e2e760200528fb2bfdd67840040023b9489f84fcad38a57d6590c1"
+    },
+    {
+      "path": "data/benchmarks/live-sermon-translation-v1/reference/hAWaaBVaMzY/segments.en.reference.jsonl",
+      "segmentCount": 56,
+      "sha256": "a45da5b536b549021a33c85d7bcf525bcb04549a831d208c30699ffcf2154f0c"
+    },
+    {
+      "path": "data/benchmarks/live-sermon-translation-v1/reference/hoeJTwl-EJg/segments.en.reference.jsonl",
+      "segmentCount": 57,
+      "sha256": "46fcd8a1a0868d4f7069c174264939b239b8634897716d13dd5a706131a07104"
+    },
+    {
+      "path": "data/benchmarks/live-sermon-translation-v1/reference/qvImKpmvgaM/segments.en.reference.jsonl",
+      "segmentCount": 39,
+      "sha256": "aeec58d6e74d124511f427ef1290b4885a01693f1147faed8f32b817c2247ee2"
+    },
+    {
+      "path": "data/benchmarks/live-sermon-translation-v1/reference/z_UoOx-6mz4/segments.en.reference.jsonl",
+      "segmentCount": 38,
+      "sha256": "5ccbb6643fda88fabed7431028034b895e58d811a1e00e6edee8443b30ec7e0e"
+    }
+  ],
+  "stop": [
+    "\n\nEnglish:"
+  ],
+  "temperature": 0.0,
+  "topK": 40,
+  "topP": 1.0
+}

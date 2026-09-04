@@ -1,0 +1,142 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T03:20:23.685222+00:00",
+  "elapsedSeconds": 28.862,
+  "inputSha256": "eef091439256514dd0e56e661c283f03bf5ae14ab28a4e97369d5499387367a6",
+  "modelRequested": "gpt-5.6-terra",
+  "promptVersion": "codex-conversation-sermon-translate-v1",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "contentType": "sermon",
+        "id": "qvImKpmvgaM_seg_0019",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Israelites",
+            "zh": "以色列人"
+          },
+          {
+            "source": "God",
+            "zh": "上帝"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "我有个朋友最近对我说：“呃，哥们儿，我真怀念单身的日子。那时候太美好了。”我说：“不，不是那样。你忘了我在你结婚前就认识你。你刷交友软件刷到得了腕管综合征。你的拇指都练出六块腹肌了。你忘了自己当时有多惨。你知道，我们这些人的短期记忆特别好。以色列人也是这样。不过你想想，上帝还是不断供应他们。”"
+      },
+      {
+        "contentType": "sermon",
+        "id": "qvImKpmvgaM_seg_0020",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "God",
+            "zh": "上帝"
+          },
+          {
+            "source": "Karen",
+            "zh": "Karen"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "比如说，你被奴役了。好，我救你。你渴了。好，我明白，我给你水。你饿了。这很合理。第4节说：“我要从天上降粮给你们。百姓要每天出去，收每天所需的分。”要是我是上帝，我会说：你们的抱怨快把我逼疯了。你们这些爱发牢骚的人。想吃东西？行。那我就让牛从天而降。给你们食物，外加一场牛群踩踏。Karen，这样的供应怎么样？”"
+      },
+      {
+        "contentType": "sermon",
+        "id": "qvImKpmvgaM_seg_0021",
+        "potentialAsrIssues": [
+          "mana（应为 manna，吗哪）",
+          "trustwalk（可能为 trust walk）"
+        ],
+        "properNouns": [
+          {
+            "source": "God",
+            "zh": "上帝"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "好在我不是上帝，但上帝还是供应了，因为这就是祂的性情。祂供应食物，与其说是空投食物，不如说是一段信靠之路，因为祂每天只给他们刚够的吗哪。很可能是因为上帝的供应，不是为了塞满你的冰箱，而是为了更新、建立你的信心。所以祂在第4节说：“我要用这方法试验他们，看他们是否遵行我的指示。”你看，从天而降的吗哪这份祝福，也带着顺服的责任。”"
+      },
+      {
+        "contentType": "sermon",
+        "id": "qvImKpmvgaM_seg_0022",
+        "potentialAsrIssues": [
+          "mana（应为 manna，吗哪）"
+        ],
+        "properNouns": [
+          {
+            "source": "Israelites",
+            "zh": "以色列人"
+          },
+          {
+            "source": "Christians",
+            "zh": "基督徒"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "我再说一遍：吗哪的祝福，带着顺服的责任。我先剧透一下第16章后面的内容，希望你们自己去读。以色列人没有通过顺服的考验。为什么？嗯，我想原因很多。我的观察是，基督徒抱怨、自私的时候，通常并没有走在顺服的路上。我知道，这在我身上绝对是真的。”"
+      },
+      {
+        "contentType": "sermon",
+        "id": "qvImKpmvgaM_seg_0023",
+        "potentialAsrIssues": [
+          "\"sh move\"（疑似 speech disfluency，意为“从头脑进入内心”）"
+        ],
+        "properNouns": [
+          {
+            "source": "Bible",
+            "zh": "圣经"
+          },
+          {
+            "source": "God",
+            "zh": "上帝"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "还有一点在我身上也是真的：读圣经，甚至研读圣经，对我来说很容易。但让上帝的话语从我的头脑进入内心，并塑造我的心，这才是难的部分。作为教师，我的目标不只是给你更多关于这段经文的圣经知识。我希望你经历内心的改变。为什么？因为上帝从某件事中救了你出来，是为了某件事。无论你在哪里观看，甚至可以说出来：上帝从某件事中救了我出来，是为了某件事。因为如果你明白这个观念，它会永远改变你。上帝救你，不只是让你等死后上天堂，同时过着漫无目的、舒适，或没有意义和目标的人生。不，祂救了你，如今正在使你成圣，让你过有目标、有意义、有影响力的人生。救恩是立刻发生的。”"
+      },
+      {
+        "contentType": "sermon",
+        "id": "qvImKpmvgaM_seg_0024",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "God",
+            "zh": "上帝"
+          },
+          {
+            "source": "Egypt",
+            "zh": "埃及"
+          },
+          {
+            "source": "Israelites",
+            "zh": "以色列人"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "如果你想活出最丰盛的人生，并成就上帝为你生命所定的计划，你就必须活得像一个蒙拯救的人。所以，如果你愿意让我花几分钟牧养你，以下是我希望你每天都去想、去做的事。每天活得像一个蒙拯救的人。这是我认为你需要做的：第一，你要放下埃及。你就是要放下埃及。以色列人回头看埃及，竟开始觉得：那也没那么糟，至少我们有肉吃。他们把埃及当成了有豪华自助餐的度假村。但关键在于：如果你还在和旧生活暧昧，就无法走进上帝为你预备的新未来。”"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "qvImKpmvgaM_seg_0019",
+    "qvImKpmvgaM_seg_0020",
+    "qvImKpmvgaM_seg_0021",
+    "qvImKpmvgaM_seg_0022",
+    "qvImKpmvgaM_seg_0023",
+    "qvImKpmvgaM_seg_0024"
+  ],
+  "stage": "translate",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 12032,
+    "input_tokens": 17089,
+    "output_tokens": 1425,
+    "reasoning_output_tokens": 149
+  }
+}

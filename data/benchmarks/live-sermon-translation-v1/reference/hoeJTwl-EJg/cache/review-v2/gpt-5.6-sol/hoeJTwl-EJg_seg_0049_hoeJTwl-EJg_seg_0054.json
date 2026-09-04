@@ -1,0 +1,83 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T00:08:40.417018+00:00",
+  "elapsedSeconds": 34.78,
+  "inputSha256": "979ded40056aa918d4c09e1cd5ff3f844828310023343497f8bb84d25e6fa74d",
+  "modelRequested": "gpt-5.6-sol",
+  "promptVersion": "codex-conversation-sermon-review-v2",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "categories": [],
+        "findingZh": "译文完整准确，语义、经文意象和“大卫”“诗篇142篇”等信息均与英文一致。",
+        "id": "hoeJTwl-EJg_seg_0049",
+        "recommendationZh": "无需修改。",
+        "severity": "pass",
+        "zh": "我现在在这世上挣扎。我将无法维持生计——这是你的想法。你要用神的真理，向你的想法宣讲你神的真理。真理是：神必照着他荣耀的丰富，供应我一切所需。你们有些人会想：我很孤单，我被抛弃了，感觉没有人陪伴我。大卫也这样祷告过。记得我们上周在诗篇142篇看到的吗？他说：“没有人关心我，没有人为我挺身而出。”也许你现在正觉得自己孤单。你需要向自己的想法宣讲你神的真理。因着他对你坚定的爱，你神的真理是：他绝不会离开你，也不会抛弃你。你可能觉得孤单，但真相是你从不孤单，因为他绝不会离开你。你需要把真理传讲给自己的想法。"
+      },
+      {
+        "categories": [],
+        "findingZh": "译文准确传达了软弱、恩典够用及神在软弱中彰显能力的内容。",
+        "id": "hoeJTwl-EJg_seg_0050",
+        "recommendationZh": "无需修改。",
+        "severity": "pass",
+        "zh": "你们有些人会想：我太软弱了，无法承受。我无法想象再过一天。真理是——这是主的话——他说：“我的恩典够你用的；我的能力在软弱上显得完全。”就在此刻、在你软弱之处，神会显现并显出刚强。所以，要向你的想法传讲神坚定之爱的真理。"
+      },
+      {
+        "categories": [],
+        "findingZh": "译文完整准确；“cast your cares on him”译为“把忧虑卸给他／交给他”，与原意一致。",
+        "id": "hoeJTwl-EJg_seg_0051",
+        "recommendationZh": "无需修改。",
+        "severity": "pass",
+        "zh": "你要告诉自己的想法：你的神是怎样的。你的想法说你太软弱；你要提醒自己：“不，神在我的软弱中与我同在。他的恩典够我用。”你们有些人会想：我扛不动了，不能再扛下去了。真理是，神邀请你把忧虑卸给他，因为他顾念你；你现在不必独自抓住、独自承担。把你的忧虑交给他。你们有些人会想：这痛苦永远不会消退。有些人在身体上疼痛；有些人像大卫在诗篇中那样，心灵痛苦。"
+      },
+      {
+        "categories": [
+          "grammar"
+        ],
+        "findingZh": "末句“他要使神的儿女一切都完全”语序不自然，也可能被理解为“使神儿女的一切都完全”；英文表达的是基督要为神的儿女使一切恢复完全。",
+        "id": "hoeJTwl-EJg_seg_0052",
+        "recommendationZh": "改为“他要为神的儿女使一切都完全”，消除语法歧义。",
+        "severity": "must_fix",
+        "zh": "真理是：如今的苦难，若与将要向我们显明的荣耀相比，就不足介意。真理是：你不会永远承受这痛苦。即使你此生一直带着这痛苦，直到生命终结、直到你最后的日子，你也不会在永恒中一直带着它；因为有一天，基督要使一切都归正、更新，你将不再痛苦。他要为神的儿女使一切都完全。这痛苦会消退。"
+      },
+      {
+        "categories": [],
+        "findingZh": "译文准确保留了悲伤、焦虑、将来的喜乐及经文所列死亡、悲哀、哭号和疼痛等内容。",
+        "id": "hoeJTwl-EJg_seg_0053",
+        "recommendationZh": "无需修改。",
+        "severity": "pass",
+        "zh": "你们有些人觉得：我再也不会经历喜乐了。我现在被悲伤压得喘不过气，也被焦虑压得喘不过气。真理是：不，你会经历喜乐。经上说，他要擦去他们一切的眼泪；不再有死亡，也不再有悲哀、哭号和疼痛。神的儿女有一个时刻将要来到，届时我们只有喜乐。你们有些人会想：因为我所做的事，神不可能爱我。"
+      },
+      {
+        "categories": [],
+        "findingZh": "译文准确传达了“hesed”之爱以及没有任何受造之物能使信徒与神在基督耶稣里的爱隔绝的经文内容。",
+        "id": "hoeJTwl-EJg_seg_0054",
+        "recommendationZh": "无需修改。",
+        "severity": "pass",
+        "zh": "罪疚或懊悔令你喘不过气，但那不是真理。真理是：你必须将神那坚定的希塞德之爱应用在你心里。因为我深信，无论是死，是生，是天使，是鬼魔，是现在的事，是将来的事，是有能的，是高处的，是低处的，是别的任何受造之物，都不能使我们与神的爱隔绝；这爱是在我们的主基督耶稣里的。你要拿起神话语的真理，把神的真理带给你的想法。"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "hoeJTwl-EJg_seg_0049",
+    "hoeJTwl-EJg_seg_0050",
+    "hoeJTwl-EJg_seg_0051",
+    "hoeJTwl-EJg_seg_0052",
+    "hoeJTwl-EJg_seg_0053",
+    "hoeJTwl-EJg_seg_0054"
+  ],
+  "stage": "review-v2",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 12800,
+    "input_tokens": 18110,
+    "output_tokens": 1782,
+    "reasoning_output_tokens": 509
+  }
+}

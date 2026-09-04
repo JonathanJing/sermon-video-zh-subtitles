@@ -1,0 +1,286 @@
+{
+  "run_id": "20260902-163421-smoke",
+  "timestamp": "2026-09-02T16:34:23",
+  "base_url": "http://127.0.0.1:8002/v1",
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M",
+  "model_label": "sermon-candidate-qwen36-35b-a3b-q4km-c32768-p1",
+  "suite": "smoke",
+  "cache_mode": "cold",
+  "model_info": {
+    "models": [
+      {
+        "name": "Qwen3.6-35B-A3B-UD-Q4_K_M",
+        "model": "Qwen3.6-35B-A3B-UD-Q4_K_M",
+        "modified_at": "",
+        "size": "",
+        "digest": "",
+        "type": "model",
+        "description": "",
+        "tags": [
+          ""
+        ],
+        "capabilities": [
+          "completion"
+        ],
+        "parameters": "",
+        "details": {
+          "parent_model": "",
+          "format": "gguf",
+          "family": "",
+          "families": [
+            ""
+          ],
+          "parameter_size": "",
+          "quantization_level": ""
+        }
+      }
+    ],
+    "object": "list",
+    "data": [
+      {
+        "id": "Qwen3.6-35B-A3B-UD-Q4_K_M",
+        "aliases": [
+          "Qwen3.6-35B-A3B-UD-Q4_K_M"
+        ],
+        "tags": [],
+        "object": "model",
+        "created": 1788392061,
+        "owned_by": "llamacpp",
+        "meta": {
+          "vocab_type": 2,
+          "n_vocab": 248320,
+          "n_ctx": 32768,
+          "n_ctx_train": 262144,
+          "n_embd": 2048,
+          "n_params": 34660610688,
+          "size": 22123538944,
+          "ftype": "Q4_K - Medium"
+        }
+      }
+    ]
+  },
+  "results": [
+    {
+      "scenario": {
+        "name": "stream_smoke_nothink",
+        "category": "runtime",
+        "description": "Streaming TTFT smoke test with thinking disabled.",
+        "messages": [
+          {
+            "role": "user",
+            "content": "[benchmark_run_id: 20260902-163421-smoke]\n只回答 OK"
+          }
+        ],
+        "max_tokens": 16,
+        "temperature": 0.0,
+        "enable_thinking": false,
+        "stream": true,
+        "validator": "ok",
+        "required_terms": [],
+        "forbidden_terms": [],
+        "expected_json_keys": []
+      },
+      "ok": true,
+      "elapsed_s": 0.21,
+      "ttft_s": 0.189,
+      "chunks": 1,
+      "preview": "OK",
+      "full_text": "OK",
+      "pass": true,
+      "eval_notes": [],
+      "forbidden_hits": [],
+      "missing_terms": [],
+      "parsed": null,
+      "parse_method": null
+    },
+    {
+      "scenario": {
+        "name": "short_latency_nothink",
+        "category": "latency",
+        "description": "Short direct response latency and decode speed.",
+        "messages": [
+          {
+            "role": "user",
+            "content": "[benchmark_run_id: 20260902-163421-smoke]\n用一句中文说明本地模型 benchmark 为什么要固定提示词。"
+          }
+        ],
+        "max_tokens": 96,
+        "temperature": 0.2,
+        "enable_thinking": false,
+        "stream": false,
+        "validator": "ok",
+        "required_terms": [],
+        "forbidden_terms": [],
+        "expected_json_keys": []
+      },
+      "ok": true,
+      "elapsed_s": 0.487,
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 26,
+        "prompt_tokens": 50,
+        "total_tokens": 76,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 50,
+        "prompt_ms": 102.515,
+        "prompt_per_token_ms": 2.0503,
+        "prompt_per_second": 487.7335024142808,
+        "predicted_n": 26,
+        "predicted_ms": 382.585,
+        "predicted_per_token_ms": 15.3034,
+        "predicted_per_second": 65.3449560228446
+      },
+      "content_chars": 43,
+      "reasoning_chars": 0,
+      "preview": "固定提示词是为了控制变量，确保不同模型或不同版本间的性能对比结果具有公平性和可复现性。",
+      "full_text": "固定提示词是为了控制变量，确保不同模型或不同版本间的性能对比结果具有公平性和可复现性。",
+      "valid_json": null,
+      "pass": true,
+      "eval_notes": [],
+      "forbidden_hits": [],
+      "missing_terms": [],
+      "parsed": null,
+      "parse_method": null
+    },
+    {
+      "scenario": {
+        "name": "json_tool_nothink",
+        "category": "agent",
+        "description": "Structured JSON stability for agent/tool routing.",
+        "messages": [
+          {
+            "role": "user",
+            "content": "[benchmark_run_id: 20260902-163421-smoke]\n你是任务路由器。只输出 JSON，不要 Markdown。字段必须是 action, target_model, reason。任务：总结 12 条 X 推文并提取 3 个技术趋势。"
+          }
+        ],
+        "max_tokens": 160,
+        "temperature": 0.0,
+        "enable_thinking": false,
+        "stream": false,
+        "validator": "json_keys",
+        "required_terms": [],
+        "forbidden_terms": [],
+        "expected_json_keys": [
+          "action",
+          "target_model",
+          "reason"
+        ]
+      },
+      "ok": true,
+      "elapsed_s": 1.074,
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 64,
+        "prompt_tokens": 77,
+        "total_tokens": 141,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 77,
+        "prompt_ms": 114.42,
+        "prompt_per_token_ms": 1.485974025974026,
+        "prompt_per_second": 672.9592728543961,
+        "predicted_n": 64,
+        "predicted_ms": 929.534,
+        "predicted_per_token_ms": 14.754507936507936,
+        "predicted_per_second": 67.7758963093335
+      },
+      "content_chars": 137,
+      "reasoning_chars": 0,
+      "preview": "{\n  \"action\": \"summarize_and_extract\",\n  \"target_model\": \"llm\",\n  \"reason\": \"任务要求对非结构化文本（X 推文）进行语义总结并识别抽象模式（技术趋势），这需要大型语言模型的语义理解和归纳能力。\"\n}",
+      "full_text": "{\n  \"action\": \"summarize_and_extract\",\n  \"target_model\": \"llm\",\n  \"reason\": \"任务要求对非结构化文本（X 推文）进行语义总结并识别抽象模式（技术趋势），这需要大型语言模型的语义理解和归纳能力。\"\n}",
+      "valid_json": true,
+      "pass": true,
+      "eval_notes": [
+        "json=True"
+      ],
+      "forbidden_hits": [],
+      "missing_terms": [],
+      "parsed": {
+        "action": "summarize_and_extract",
+        "target_model": "llm",
+        "reason": "任务要求对非结构化文本（X 推文）进行语义总结并识别抽象模式（技术趋势），这需要大型语言模型的语义理解和归纳能力。"
+      },
+      "parse_method": "direct"
+    }
+  ],
+  "concurrency": {
+    "workers": 1,
+    "ok": true,
+    "elapsed_s": 0.243,
+    "per_request_elapsed_s": [
+      0.23
+    ],
+    "median_request_s": 0.23,
+    "results": [
+      {
+        "scenario": {
+          "name": "parallel_short_nothink",
+          "category": "concurrency",
+          "description": "1 concurrent short requests.",
+          "messages": [
+            {
+              "role": "user",
+              "content": "[benchmark_run_id: 20260902-163421-smoke]\n输出一个不同的 8 字中文短句。"
+            }
+          ],
+          "max_tokens": 48,
+          "temperature": 0.7,
+          "enable_thinking": false,
+          "stream": false,
+          "validator": "ok",
+          "required_terms": [],
+          "forbidden_terms": [],
+          "expected_json_keys": []
+        },
+        "ok": true,
+        "elapsed_s": 0.23,
+        "finish_reason": "stop",
+        "usage": {
+          "completion_tokens": 7,
+          "prompt_tokens": 47,
+          "total_tokens": 54,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 47,
+          "prompt_ms": 97.921,
+          "prompt_per_token_ms": 2.0834255319148935,
+          "prompt_per_second": 479.97875838686286,
+          "predicted_n": 7,
+          "predicted_ms": 96.344,
+          "predicted_per_token_ms": 16.057333333333332,
+          "predicted_per_second": 62.27684131860833
+        },
+        "content_chars": 8,
+        "reasoning_chars": 0,
+        "preview": "岁月静好现世安稳",
+        "full_text": "岁月静好现世安稳",
+        "valid_json": null
+      }
+    ]
+  },
+  "summary": {
+    "scenarios": 3,
+    "ok": 3,
+    "pass": 3,
+    "json_valid": 1,
+    "json_checked": 1,
+    "elapsed_s_sum": 1.771,
+    "prompt_tokens": 127,
+    "completion_tokens": 90,
+    "prompt_tps_median": 580.346,
+    "decode_tps_median": 66.56
+  }
+}

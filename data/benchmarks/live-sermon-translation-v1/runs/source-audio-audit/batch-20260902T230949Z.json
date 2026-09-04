@@ -1,0 +1,248 @@
+{
+  "apiKeyMaterialIncluded": false,
+  "asrModel": "gpt-transcribe",
+  "credentialSource": "existing_env_file",
+  "finishedAt": "2026-09-02T23:09:49.710083+00:00",
+  "generatedAt": "2026-09-02T23:08:26.685149+00:00",
+  "goalId": "BENCH-LIVE-ST-V1",
+  "items": [
+    {
+      "segmentCount": 57,
+      "selected": [
+        {
+          "reasons": [
+            "deterministic_pass_sample"
+          ],
+          "segmentId": "hoeJTwl-EJg_seg_0030"
+        },
+        {
+          "reasons": [
+            "caption_non_speech_or_speaker_marker"
+          ],
+          "segmentId": "hoeJTwl-EJg_seg_0056"
+        },
+        {
+          "reasons": [
+            "caption_non_speech_or_speaker_marker"
+          ],
+          "segmentId": "hoeJTwl-EJg_seg_0057"
+        }
+      ],
+      "selectedMinutes": 1.132,
+      "videoId": "hoeJTwl-EJg"
+    },
+    {
+      "segmentCount": 56,
+      "selected": [
+        {
+          "reasons": [
+            "deterministic_pass_sample"
+          ],
+          "segmentId": "hAWaaBVaMzY_seg_0004"
+        },
+        {
+          "reasons": [
+            "deterministic_pass_sample"
+          ],
+          "segmentId": "hAWaaBVaMzY_seg_0008"
+        },
+        {
+          "reasons": [
+            "caption_non_speech_or_speaker_marker"
+          ],
+          "segmentId": "hAWaaBVaMzY_seg_0055"
+        }
+      ],
+      "selectedMinutes": 1.798,
+      "videoId": "hAWaaBVaMzY"
+    },
+    {
+      "segmentCount": 49,
+      "selected": [
+        {
+          "reasons": [
+            "deterministic_per_sermon_floor_sample"
+          ],
+          "segmentId": "8u9B8u_5ISI_seg_0040"
+        }
+      ],
+      "selectedMinutes": 0.455,
+      "videoId": "8u9B8u_5ISI"
+    },
+    {
+      "segmentCount": 38,
+      "selected": [
+        {
+          "reasons": [
+            "caption_non_speech_or_speaker_marker"
+          ],
+          "segmentId": "z_UoOx-6mz4_seg_0026"
+        },
+        {
+          "reasons": [
+            "caption_non_speech_or_speaker_marker"
+          ],
+          "segmentId": "z_UoOx-6mz4_seg_0038"
+        }
+      ],
+      "selectedMinutes": 1.51,
+      "videoId": "z_UoOx-6mz4"
+    },
+    {
+      "segmentCount": 39,
+      "selected": [
+        {
+          "reasons": [
+            "caption_non_speech_or_speaker_marker"
+          ],
+          "segmentId": "qvImKpmvgaM_seg_0014"
+        },
+        {
+          "reasons": [
+            "deterministic_pass_sample"
+          ],
+          "segmentId": "qvImKpmvgaM_seg_0024"
+        }
+      ],
+      "selectedMinutes": 1.224,
+      "videoId": "qvImKpmvgaM"
+    }
+  ],
+  "paddingMs": 750,
+  "projectedAsrCostUsdAt0_0045PerMinute": 0.03,
+  "results": [
+    {
+      "report": {
+        "apiKeyMaterialIncluded": false,
+        "asrModel": "gpt-transcribe",
+        "audioAuditSha256": "9bf57c3dbcb5fa0fb4ff66d3d6801ece846c9b45ff880e72c4f4b5d3ea122897",
+        "audioDownloadStatus": "downloaded_public_mweb_format_18_fallback",
+        "credentialSource": "existing_env_file",
+        "decisionCounts": {
+          "audio_evidence_supports_caption": 3
+        },
+        "eligibleForTraining": false,
+        "englishReferenceDraftSha256": "a0effbb2b89110887286ded6ad8729d2a0d49be271339e6baa97c2d9feb71edf",
+        "generatedAt": "2026-09-02T23:08:43.863850+00:00",
+        "humanApprovalClaimed": false,
+        "schemaVersion": "live-sermon-benchmark-source-audio-audit-v1",
+        "selectedSegmentCount": 3,
+        "sourceAudioSha256": "101994d712e65e2db8058129cf5a0f702d315e7569f16450301c1c7cb8149b3f",
+        "sourceSegmentsSha256": "46fcd8a1a0868d4f7069c174264939b239b8634897716d13dd5a706131a07104",
+        "status": "source_audio_audit_completed",
+        "totalSegmentCount": 57,
+        "videoId": "hoeJTwl-EJg"
+      },
+      "status": "completed",
+      "videoId": "hoeJTwl-EJg"
+    },
+    {
+      "report": {
+        "apiKeyMaterialIncluded": false,
+        "asrModel": "gpt-transcribe",
+        "audioAuditSha256": "c69f84b22b5ed7dad171c9ae6510de35e661e1344071bac2509d307c855c7c4d",
+        "audioDownloadStatus": "downloaded_public_mweb_format_18_fallback",
+        "credentialSource": "existing_env_file",
+        "decisionCounts": {
+          "audio_evidence_supports_caption": 3
+        },
+        "eligibleForTraining": false,
+        "englishReferenceDraftSha256": "7813e2332915c68a1a3c7c907f741caf9160c5edb6a056468d824958e404d0f3",
+        "generatedAt": "2026-09-02T23:08:58.424210+00:00",
+        "humanApprovalClaimed": false,
+        "schemaVersion": "live-sermon-benchmark-source-audio-audit-v1",
+        "selectedSegmentCount": 3,
+        "sourceAudioSha256": "9586a0866612ab36283939f295cbf555fed06f6abfab0e5783a4d62e08410485",
+        "sourceSegmentsSha256": "a45da5b536b549021a33c85d7bcf525bcb04549a831d208c30699ffcf2154f0c",
+        "status": "source_audio_audit_completed",
+        "totalSegmentCount": 56,
+        "videoId": "hAWaaBVaMzY"
+      },
+      "status": "completed",
+      "videoId": "hAWaaBVaMzY"
+    },
+    {
+      "report": {
+        "apiKeyMaterialIncluded": false,
+        "asrModel": "gpt-transcribe",
+        "audioAuditSha256": "2f06616f80af2aec74f910d9d80edc794678d9a84298e377119d8572af4c4558",
+        "audioDownloadStatus": "downloaded_public_mweb_format_18_fallback",
+        "credentialSource": "existing_env_file",
+        "decisionCounts": {
+          "audio_evidence_supports_caption": 1
+        },
+        "eligibleForTraining": false,
+        "englishReferenceDraftSha256": "6b8eed85f3fc9e53f32e9334e10b3d81109c0173aa6a2cf856381cfbca182467",
+        "generatedAt": "2026-09-02T23:09:13.270732+00:00",
+        "humanApprovalClaimed": false,
+        "schemaVersion": "live-sermon-benchmark-source-audio-audit-v1",
+        "selectedSegmentCount": 1,
+        "sourceAudioSha256": "12f9223c9481146b63f71191da42c0e7335426bd96c92c85951d657cc3486d03",
+        "sourceSegmentsSha256": "b800e37f09e2e760200528fb2bfdd67840040023b9489f84fcad38a57d6590c1",
+        "status": "source_audio_audit_completed",
+        "totalSegmentCount": 49,
+        "videoId": "8u9B8u_5ISI"
+      },
+      "status": "completed",
+      "videoId": "8u9B8u_5ISI"
+    },
+    {
+      "report": {
+        "apiKeyMaterialIncluded": false,
+        "asrModel": "gpt-transcribe",
+        "audioAuditSha256": "0bfa9347b44fc1f1b5eba6eeb09e4b3f7f764647b2c0bfb9d31ec2a8bba462b7",
+        "audioDownloadStatus": "downloaded_public_mweb_format_18_fallback",
+        "credentialSource": "existing_env_file",
+        "decisionCounts": {
+          "audio_evidence_supports_caption": 2
+        },
+        "eligibleForTraining": false,
+        "englishReferenceDraftSha256": "de21e4e0062265aaf0ed1ef763e5e4f6ad8b6a2fcc99a275b4675410ac2d2bf2",
+        "generatedAt": "2026-09-02T23:09:33.319764+00:00",
+        "humanApprovalClaimed": false,
+        "schemaVersion": "live-sermon-benchmark-source-audio-audit-v1",
+        "selectedSegmentCount": 2,
+        "sourceAudioSha256": "3dcb8cfabf1f3bcc9db115dede6e025fc505ef0b1483fdf288709e49a5f41e56",
+        "sourceSegmentsSha256": "5ccbb6643fda88fabed7431028034b895e58d811a1e00e6edee8443b30ec7e0e",
+        "status": "source_audio_audit_completed",
+        "totalSegmentCount": 38,
+        "videoId": "z_UoOx-6mz4"
+      },
+      "status": "completed",
+      "videoId": "z_UoOx-6mz4"
+    },
+    {
+      "report": {
+        "apiKeyMaterialIncluded": false,
+        "asrModel": "gpt-transcribe",
+        "audioAuditSha256": "dac71df8c61ca9387669c5c98c3b35c38e37fde91b5909488dd263d425bbeb9a",
+        "audioDownloadStatus": "downloaded_public_mweb_format_18_fallback",
+        "credentialSource": "existing_env_file",
+        "decisionCounts": {
+          "audio_evidence_supports_caption": 2
+        },
+        "eligibleForTraining": false,
+        "englishReferenceDraftSha256": "5220d46f1d919c042b93157b92645f28d7039b984d396141c33b87427671fd8a",
+        "generatedAt": "2026-09-02T23:09:49.709766+00:00",
+        "humanApprovalClaimed": false,
+        "schemaVersion": "live-sermon-benchmark-source-audio-audit-v1",
+        "selectedSegmentCount": 2,
+        "sourceAudioSha256": "b50bb592d72179552ccbe75b3566f4180c889c5d9f36b633978f08dd27bb03e6",
+        "sourceSegmentsSha256": "aeec58d6e74d124511f427ef1290b4885a01693f1147faed8f32b817c2247ee2",
+        "status": "source_audio_audit_completed",
+        "totalSegmentCount": 39,
+        "videoId": "qvImKpmvgaM"
+      },
+      "status": "completed",
+      "videoId": "qvImKpmvgaM"
+    }
+  ],
+  "sampleRate": 0.05,
+  "schemaVersion": "live-sermon-benchmark-source-audio-audit-v1",
+  "selectedMinutesWithoutPadding": 6.119,
+  "selectedSegmentCount": 11,
+  "status": "completed",
+  "statusCounts": {
+    "completed": 5
+  }
+}

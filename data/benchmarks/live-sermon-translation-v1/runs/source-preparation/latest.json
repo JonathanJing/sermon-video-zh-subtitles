@@ -1,0 +1,255 @@
+{
+  "apiKeyMaterialIncluded": false,
+  "asrModel": "gpt-transcribe",
+  "asrPricePerMinuteUsdAssumption": 0.0045,
+  "captionSegmentCount": 239,
+  "captionSegmentDurationHours": 2.631,
+  "captionSourceQuality": {
+    "dispositionCounts": {
+      "teacher_ready": 5
+    },
+    "maxSparseSegmentShare": 0.1,
+    "sourceReconciliationVideoIds": [],
+    "sparseWordsPerSecondThreshold": 0.6
+  },
+  "completedVideoCount": 5,
+  "credentialSource": "not_used",
+  "durationHours": 2.637,
+  "failedVideoCount": 0,
+  "finishedAt": "2026-09-02T22:26:49.153169+00:00",
+  "fullAudioUpperBoundCostUsd": 0.71,
+  "fullAudioUpperBoundMinutes": 158.2,
+  "generatedAt": "2026-09-02T22:26:49.070530+00:00",
+  "humanApprovalClaimed": false,
+  "results": [
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 57,
+        "generatedAt": "2026-09-02T22:26:49.088912+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "b2a8f81c4060501e6c070589305520f06166a6b90abeb2153a58a2a91b2afd3d",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2011,
+        "sourceQuality": {
+          "disposition": "teacher_ready",
+          "maxSparseSegmentShare": 0.1,
+          "overallWordsPerSecond": 3.0086,
+          "sparseSegmentCount": 0,
+          "sparseSegmentShare": 0.0,
+          "sparseWordsPerSecondThreshold": 0.6
+        },
+        "sourceQualityDisposition": "teacher_ready",
+        "sourceSegmentsSha256": "46fcd8a1a0868d4f7069c174264939b239b8634897716d13dd5a706131a07104",
+        "speaker": "Eric Geiger",
+        "split": "test",
+        "status": "caption_source_prepared",
+        "teacherPipelineEligibility": "eligible",
+        "title": "When I am anxious - Eric Geiger | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "hoeJTwl-EJg"
+      },
+      "split": "test",
+      "status": "completed",
+      "videoId": "hoeJTwl-EJg"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 56,
+        "generatedAt": "2026-09-02T22:26:49.104418+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "c2bc5fe4d4f671df8bbaad2926cf59b500ef2a66453ffc9132ed30257b0a1b7d",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1989,
+        "sourceQuality": {
+          "disposition": "teacher_ready",
+          "maxSparseSegmentShare": 0.1,
+          "overallWordsPerSecond": 2.8364,
+          "sparseSegmentCount": 0,
+          "sparseSegmentShare": 0.0,
+          "sparseWordsPerSecondThreshold": 0.6
+        },
+        "sourceQualityDisposition": "teacher_ready",
+        "sourceSegmentsSha256": "a45da5b536b549021a33c85d7bcf525bcb04549a831d208c30699ffcf2154f0c",
+        "speaker": "Jared Kirkwood",
+        "split": "test",
+        "status": "caption_source_prepared",
+        "teacherPipelineEligibility": "eligible",
+        "title": "What Matters Most - Jared Kirkwood | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "hAWaaBVaMzY"
+      },
+      "split": "test",
+      "status": "completed",
+      "videoId": "hAWaaBVaMzY"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 49,
+        "generatedAt": "2026-09-02T22:26:49.123194+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "1b00cbd47426e407b5db2bae97a52376e82e650823c5563e814df708a10b7954",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 2009,
+        "sourceQuality": {
+          "disposition": "teacher_ready",
+          "maxSparseSegmentShare": 0.1,
+          "overallWordsPerSecond": 3.0098,
+          "sparseSegmentCount": 0,
+          "sparseSegmentShare": 0.0,
+          "sparseWordsPerSecondThreshold": 0.6
+        },
+        "sourceQualityDisposition": "teacher_ready",
+        "sourceSegmentsSha256": "b800e37f09e2e760200528fb2bfdd67840040023b9489f84fcad38a57d6590c1",
+        "speaker": "Ed Stetzer",
+        "split": "test",
+        "status": "caption_source_prepared",
+        "teacherPipelineEligibility": "eligible",
+        "title": "If Christians are to be one, why are there so many denominations? - Ed Stetzer | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "8u9B8u_5ISI"
+      },
+      "split": "test",
+      "status": "completed",
+      "videoId": "8u9B8u_5ISI"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 38,
+        "generatedAt": "2026-09-02T22:26:49.139471+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "27731c6f3554cfedf84aebcd95f3ab31093801f3062af88af5adaff8d4aee1a0",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1843,
+        "sourceQuality": {
+          "disposition": "teacher_ready",
+          "maxSparseSegmentShare": 0.1,
+          "overallWordsPerSecond": 2.8166,
+          "sparseSegmentCount": 0,
+          "sparseSegmentShare": 0.0,
+          "sparseWordsPerSecondThreshold": 0.6
+        },
+        "sourceQualityDisposition": "teacher_ready",
+        "sourceSegmentsSha256": "5ccbb6643fda88fabed7431028034b895e58d811a1e00e6edee8443b30ec7e0e",
+        "speaker": "Christine Caine",
+        "split": "test",
+        "status": "caption_source_prepared",
+        "teacherPipelineEligibility": "eligible",
+        "title": "Does God care what I do with my body? Fitness, tattoos, plastic surgery—all the things",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "z_UoOx-6mz4"
+      },
+      "split": "test",
+      "status": "completed",
+      "videoId": "z_UoOx-6mz4"
+    },
+    {
+      "captionSource": {
+        "audioDownloaded": false,
+        "captionSegmentCount": 39,
+        "generatedAt": "2026-09-02T22:26:49.152980+00:00",
+        "gptTranscribeCalled": false,
+        "humanApprovalClaimed": false,
+        "inputProfileSha256": "793faa6cafa511fe5bd36c4fb0b81d0312ff13b26c981b94be1d735856ad1bd5",
+        "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+        "segmentOrigin": "full_video_caption_timeline",
+        "sourceDurationSeconds": 1640,
+        "sourceQuality": {
+          "disposition": "teacher_ready",
+          "maxSparseSegmentShare": 0.1,
+          "overallWordsPerSecond": 2.7952,
+          "sparseSegmentCount": 0,
+          "sparseSegmentShare": 0.0,
+          "sparseWordsPerSecondThreshold": 0.6
+        },
+        "sourceQualityDisposition": "teacher_ready",
+        "sourceSegmentsSha256": "aeec58d6e74d124511f427ef1290b4885a01693f1147faed8f32b817c2247ee2",
+        "speaker": "Doug Fields",
+        "split": "test",
+        "status": "caption_source_prepared",
+        "teacherPipelineEligibility": "eligible",
+        "title": "Life After Rescue - Doug Fields | Mariners Church",
+        "trainingBlockers": [
+          "source_training_rights_unconfirmed",
+          "gpt_external_student_distillation_not_authorized"
+        ],
+        "trainingEligibility": "blocked",
+        "videoId": "qvImKpmvgaM"
+      },
+      "split": "test",
+      "status": "completed",
+      "videoId": "qvImKpmvgaM"
+    }
+  ],
+  "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+  "selectedVideoCount": 5,
+  "selectiveAudioAudit": {
+    "calibrationSegmentCount": 265,
+    "calibrationSeverityCounts": {
+      "needs_audio_review": 44,
+      "pass": 221
+    },
+    "observedNeedsAudioReviewRate": 0.166,
+    "passSampleRate": 0.05,
+    "postTeacherExactCountPending": true,
+    "preTeacherSelectedDurationShare": 0.0359,
+    "preTeacherSelectedMinutes": 5.66,
+    "preTeacherSelectedSegmentCount": 10,
+    "preTeacherSelectedSegmentShare": 0.0418,
+    "projectedAsrCostUsd": 0.14,
+    "projectedAuditMinutes": 30.94,
+    "projectedAuditShare": 0.196,
+    "projectedUpperAsrCostUsd": 0.14,
+    "projectedUpperAuditMinutes": 31.88,
+    "projectedUpperAuditShare": 0.2019
+  },
+  "sourceSplitManifest": "/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles-ios-design/data/reports/sermon-parallel-corpus-splits-v1/split-manifest.json",
+  "sourceSplitManifestSha256": "5f3be7263f309d1b2b62be59a3026f61389d8a8d0252825310b583681d657a4f",
+  "splitCounts": {
+    "test": 5
+  },
+  "stage": "prepare-caption",
+  "status": "completed",
+  "teacherModels": {
+    "reviewer": {
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "high"
+    },
+    "translator": {
+      "model": "gpt-5.6-terra",
+      "reasoningEffort": "high"
+    }
+  },
+  "trainingBlockers": [
+    "source_training_rights_unconfirmed",
+    "gpt_external_student_distillation_not_authorized"
+  ],
+  "trainingEligibility": "blocked"
+}

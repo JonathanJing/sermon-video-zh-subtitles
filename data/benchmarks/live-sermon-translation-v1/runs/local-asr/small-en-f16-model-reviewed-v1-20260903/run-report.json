@@ -1,0 +1,49 @@
+{
+  "completedAt": "2026-09-03T23:10:50.747951+00:00",
+  "decoding": {
+    "beamSize": 1,
+    "bestOf": 1,
+    "language": "en",
+    "temperature": 0,
+    "temperatureFallback": false,
+    "threads": 8,
+    "vad": false
+  },
+  "emptyExpectedSpeechCount": 0,
+  "errorCount": 0,
+  "itemCount": 60,
+  "latencySeconds": {
+    "max": 1.8143,
+    "mean": 1.1207,
+    "p50": 1.1406,
+    "p95": 1.2994
+  },
+  "manifest": "data/benchmarks/live-sermon-translation-v1/local-asr-model-reviewed-reference-v1.json",
+  "manifestSha256": "87032f4c4d9dd22c8c17366e11dc435b3c3f3bac2a7d2f9b352b8faca425d1b5",
+  "modelId": "ASR-WCPP-SMALL-EN-F16",
+  "modelSha256": "c6138d6d58ecc8322097e0f987c32f1be8bb0a18532a3f88f734d1bbf9c41e5d",
+  "nonemptyCount": 60,
+  "peakPerInvocationRssGiB": 0.7193,
+  "performanceInterpretation": "Per-clip CLI cold-load offline run; not a persistent-provider or streaming latency result. Audio conversion, when required, is excluded from ASR latency.",
+  "predictionsSha256": "d77b3db0744ea1066dd3693299cea4e9ec3b966f3beb2c04e91f9d9e50ea6115",
+  "quality": {
+    "criticalTermRecall": 0.974359,
+    "humanGoldItemCount": 0,
+    "modelReviewedReferenceItemCount": 60,
+    "scoredItemCount": 60,
+    "silenceHallucinationCount": 1,
+    "silenceItemCount": 1,
+    "status": "scored_model_reviewed_reference",
+    "wer": 0.044486
+  },
+  "rtf": {
+    "max": 0.0605,
+    "mean": 0.0376,
+    "p50": 0.0384,
+    "p95": 0.0438
+  },
+  "runtime": "whisper.cpp version: 1.9.2\nload_backend: loaded BLAS backend from /opt/homebrew/Cellar/ggml/0.22.0/libexec/libggml-blas.so\nggml_metal_device_init: tensor API disabled for pre-M5 and pre-A19 devices\nggml_metal_library_init: using embedded metal library\nggml_metal_library_compile_all: compiled 'fa' library in 0.013 sec\nggml_metal_library_compile_all: compiled 'mul_mv' library in 0.003 sec\nggml_metal_library_compile_all: compiled 'mul_mm' library in 0.005 sec\nggml_metal_library_compile_all: compiled 'quantize' library in 0.002 sec\nggml_metal_library_compile_all: compiled 'softmax' library in 0.001 sec\nggml_metal_library_compile_all: compiled 'norm' library in 0.001 sec\nggml_metal_library_compile_all: compiled 'unary' library in 0.001 sec\nggml_metal_library_compile_all: compiled 'binbcast' library in 0.002 sec\nggml_metal_library_compile_all: compiled 'reduce' library in 0.002 sec\nggml_metal_library_compile_all: compiled 'tri' library in 0.002 sec\nggml_metal_library_compile_all: compiled 'ssm' library in 0.003 sec\nggml_metal_library_compile_all: compiled 'wkv' library in 0.002 sec\nggml_metal_library_compile_all: compiled 'gated_delta_net' library in 0.002 sec\nggml_metal_library_compile_all: compiled 'solve_tri' library in 0.003 sec\nggml_metal_library_compile_all: compiled 'rope' library in 0.003 sec\nggml_metal_library_compile_all: compiled 'conv' library in 0.003 sec\nggml_metal_library_compile_all: compiled 'upscale' library in 0.002 sec\nggml_metal_library_compile_all: compiled 'argsort' library in 0.001 sec\nggml_metal_library_compile_all: compiled 'pool' library in 0.002 sec\nggml_metal_library_compile_all: compiled 'misc' library in 0.001 sec\nggml_metal_library_compile_all: loaded 20 libraries from embedded data in 0.013 sec (max single = 0.013 sec)\nggml_metal_rsets_init: creating a residency set collection (keep_alive = 180 s)\nggml_metal_device_init: GPU name:   MTL0 (Apple M1 Max)\nggml_metal_device_init: GPU family: MTLGPUFamilyApple7  (1007)\nggml_metal_device_init: GPU family: MTLGPUFamilyCommon3 (3003)\nggml_metal_device_init: GPU family: MTLGPUFamilyMetal4  (5002)\nggml_metal_device_init: simdgroup reduction   = true\nggml_metal_device_init: simdgroup matrix mul. = true\nggml_metal_device_init: has unified memory    = true\nggml_metal_device_init: has bfloat            = true\nggml_metal_device_init: has tensor            = false\nggml_metal_device_init: use residency sets    = true\nggml_metal_device_init: use shared buffers    = true\nggml_metal_device_init: recommendedMaxWorkingSetSize  = 55662.79 MB\nload_backend: loaded MTL backend from /opt/homebrew/Cellar/ggml/0.22.0/libexec/libggml-metal.so\nload_backend: loaded CPU backend from /opt/homebrew/Cellar/ggml/0.22.0/libexec/libggml-cpu-apple_m1.so",
+  "schemaVersion": "local-asr-run-report-v1",
+  "successCount": 60,
+  "totalAudioMinutes": 29.811
+}

@@ -1,0 +1,85 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T03:25:52.881277+00:00",
+  "elapsedSeconds": 42.688,
+  "inputSha256": "855af3f3f15eef992e3fafb72373c8481db48383169bff46b75ff8c3d529a7c6",
+  "modelRequested": "gpt-5.6-sol",
+  "promptVersion": "codex-conversation-sermon-review-v2",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "categories": [
+          "unsupported_addition"
+        ],
+        "findingZh": "“water damage”仅指水造成的损坏，译为“水灾损坏”擅自确定为水灾。",
+        "id": "qvImKpmvgaM_seg_0031",
+        "recommendationZh": "改为“屋外因水造成的损坏”，其余内容忠实保留。",
+        "severity": "must_fix",
+        "zh": "你看不到我在旷野中的时刻，好吗？你看不到我家屋外因水造成的损坏——修理花了我3,500美元，烘干屋内的墙壁又花了3,000美元。好吗？我不会让你看到我凌乱的办公桌——它反映出我的压力和低效率。我不会让你看到被好友背叛的心碎。所以我想说什么？我是说，别再把你的旅程与别人的旅程比较，而要开始朝着顺服的方向前行。"
+      },
+      {
+        "categories": [
+          "asr_uncertainty"
+        ],
+        "findingZh": "英文为“keep me moving forward”，但上下文更可能是“keep moving forward”；是否含有“me”需核对音频。",
+        "id": "qvImKpmvgaM_seg_0032",
+        "recommendationZh": "核对音频确认是劝听众“继续前行”，还是说“让我继续前行”。当前译文按较符合上下文的读法保留。",
+        "severity": "needs_audio_review",
+        "zh": "你的故事就是你的故事。人生现在也许不容易，但神仍然是良善的。神没有忘记你。祂正在旷野中与你同在，塑造你、雕琢你，使你越来越有耶稣的样式。所以，继续向前走。为什么？因为看看耶稣说了什么：“在这世上，你们会有苦难。”我很喜欢祂如此坦诚。"
+      },
+      {
+        "categories": [],
+        "findingZh": "译文完整准确，数字、人物和论述方向均与英文一致；结尾也保留了原文未完句。",
+        "id": "qvImKpmvgaM_seg_0033",
+        "recommendationZh": "无需修改。",
+        "severity": "pass",
+        "zh": "祂不是说你可能会受苦，或有可能会有苦难。不，祂说：“你们会有苦难，但这不是终点。”看看这节经文接下来怎么说：“但你们要有勇气，因为我已经胜过世界。”你想知道你的未来是什么吗？就在这里：神得胜。我读到这本书的结尾，祂得胜。所以你要信靠祂，继续朝着顺服的方向前行，因为神还没有写完你的故事，而你是为更多而被造的。所以，如果你现在对信仰感到灰心，我告诉你，那不是你的最终目的地。想想摩西被埃及军队追赶，前方是一大片水域时，他会有什么感受。你注意到摩西没有在离水一百码的地方停下来，等水分开；相反，他继续朝着顺服的方向前行，而神的"
+      },
+      {
+        "categories": [],
+        "findingZh": "译文忠实完整；已将英文ASR误写的“mana”按明确语境正确译为“吗哪”。",
+        "id": "qvImKpmvgaM_seg_0034",
+        "recommendationZh": "无需修改。",
+        "severity": "pass",
+        "zh": "大能就在他凭信心迈出的脚步中临到他。朋友们，想想看：你已经从某件事中被拯救出来，神正带领你进入某件事。所以要继续朝着顺服神话语的方向前行。我们与埃及——我们的过去——断绝关系。我们向前走，每天迈出那顺服的下一步。第三件我希望你每天做的事，就是以每日的灵粮充满自己。你看，神赐给祂子民吗哪时，所赐的是每日的吗哪。祂没有一次降下够吃四十年的食物。祂说：“今天需要多少，就拿多少。”为什么？"
+      },
+      {
+        "categories": [],
+        "findingZh": "译文准确传达每日倚靠、生命之粮及《约翰福音》第6章的内容，没有实质性错译。",
+        "id": "qvImKpmvgaM_seg_0035",
+        "recommendationZh": "无需修改。",
+        "severity": "pass",
+        "zh": "因为神不只是给他们食物，祂也在教导他们信靠祂。祂在他们里面建立一种每日倚靠祂的节奏。如果你是基督徒，你的灵魂需要每天的营养。我很喜欢你在线看教会聚会，或每周去教会获得每周的激励；但你的灵魂渴望从耶稣而来的每日营养。看看这个：耶稣称自己为生命的粮。祂在《约翰福音》第6章说：“我是生命的粮。”耶稣对他们说：“到我这里来的，永远不会饿；信我的，永远不会再渴。”多么美好的应许。我相信，大多数基督徒都渴望这份从与耶稣亲密关系而来的每日滋养。但是——"
+      },
+      {
+        "categories": [],
+        "findingZh": "译文完整保留了80%与20%的对比，以及属灵成熟度、深度、智慧、热情、习惯和顺服等结果。",
+        "id": "qvImKpmvgaM_seg_0036",
+        "recommendationZh": "无需修改。",
+        "severity": "pass",
+        "zh": "渴望并不是问题。我们大多数人偏离轨道，是因为“每日”这部分，而不是因为“渴望”这部分。我无法证明这一点，但根据我与许多跟随耶稣的人交谈的经验，我认为大约80%的人在每日属灵喂养所需的操练上有困难。你们当中有20%的人没有这种困难。如果你属于这20%，不要骄傲，只要为那有困难的80%祷告。你可能会想，80%和20%之间有什么差别？就每天得到充满所带来的结果而言，差别在于属灵成熟度、深度、智慧、热情、习惯和顺服。我还可以继续说下去。"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "qvImKpmvgaM_seg_0031",
+    "qvImKpmvgaM_seg_0032",
+    "qvImKpmvgaM_seg_0033",
+    "qvImKpmvgaM_seg_0034",
+    "qvImKpmvgaM_seg_0035",
+    "qvImKpmvgaM_seg_0036"
+  ],
+  "stage": "review-v2",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 0,
+    "input_tokens": 18405,
+    "output_tokens": 2203,
+    "reasoning_output_tokens": 779
+  }
+}

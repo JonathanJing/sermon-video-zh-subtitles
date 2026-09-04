@@ -1,0 +1,96 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T00:00:56.558463+00:00",
+  "elapsedSeconds": 25.946,
+  "inputSha256": "0c38611446e96ef5d13e5f986adba76bc9318d26d39db9df3d4e343ac738bd1e",
+  "modelRequested": "gpt-5.6-terra",
+  "promptVersion": "codex-conversation-sermon-translate-v1",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0025",
+        "potentialAsrIssues": [],
+        "properNouns": [],
+        "scriptureRefs": [],
+        "zh": "他们没有回答我。显然，它代表别的意思，不过算了。我第一次骑那条山道时，不知道还有多长，实在太痛苦了，因为：什么时候才会结束？现在我常骑这条路，就容易忍受多了，因为我知道这条山道——或者说这场试炼——究竟有多长。你们当中有些人现在如此痛苦的一个原因，就是这场试炼，或者这份焦虑，感觉永无止境。大卫完全明白你正在挣扎什么。他说：“这要到几时？"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0026",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "David",
+            "zh": "大卫"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "各位，真的还会一直持续下去吗？我看不到尽头。”我想让你们看见他痛苦的全部。“耶和华啊，要到几时？”于是他对神说：“你要永远忘记我吗？神啊，感觉你好像忘了我，甚至向我掩面。我知道你是真实的，神啊；我知道你是真的；但在这一刻，我似乎无法在这场试炼中找到你。此刻似乎你在我的焦虑中向我隐藏了自己。”所以，他向主倾诉。他挣扎的一部分是：我不知道在这挑战之中，神在哪里。但你注意到，他也谈到自己。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0027",
+        "potentialAsrIssues": [],
+        "properNouns": [],
+        "scriptureRefs": [],
+        "zh": "他挣扎的一部分在于自己。“我心里筹算，终日愁苦，要到几时呢？”我的心思里充满煎熬。我的意思是，这正是焦虑的描述；有人甚至说是抑郁，因为他要祈求神再次使他的眼睛明亮，他灵魂的黑暗如此压倒性。所以，他既在挣扎：为什么主向我掩面？也在挣扎：为什么我内心深处有这些忧虑？"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0028",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "David",
+            "zh": "大卫"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "但注意，他也谈到他的仇敌。所以，我在挣扎：神似乎离我很远。我知道你在那里，我知道你是真实的，但似乎你忘了我。我在与自己挣扎，也在与我的仇敌挣扎。“我的仇敌升高压制我，要到几时呢？”于是，大卫诚实地面对自己的想法。他把真实的想法带到他的神面前。他把自己的想法告诉神。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0029",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "David",
+            "zh": "大卫"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "有人会说：“哇，这是不是大卫缺乏信心？”不，实际上，这是大卫显出极大的信心。如果你正在挣扎，把你的挣扎带到神面前，就是显出极大的信心。你把挣扎带到神面前，就是在说：“神啊，我正在与这件事挣扎，我需要你帮助我。”但我希望你注意，这不是祷告的结尾；也不该是你我祷告的结尾。在挣扎中，我们祷告的结尾不该只是哀叹：“要到几时？要到几时？要到几时？”注意大卫继续祷告，我想让你们看见他祈求什么。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0030",
+        "potentialAsrIssues": [],
+        "properNouns": [],
+        "scriptureRefs": [],
+        "zh": "所以，他分享自己的挣扎。他把自己的想法带到神面前，向神诉说自己真实的想法；但注意他祈求什么。他实际上祈求三件事。你们可以看到：眷顾我、应允我、使我复明。神啊，你愿意眷顾我吗？请记念你的儿子，记念你的女儿。"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "hoeJTwl-EJg_seg_0025",
+    "hoeJTwl-EJg_seg_0026",
+    "hoeJTwl-EJg_seg_0027",
+    "hoeJTwl-EJg_seg_0028",
+    "hoeJTwl-EJg_seg_0029",
+    "hoeJTwl-EJg_seg_0030"
+  ],
+  "stage": "translate",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 15104,
+    "input_tokens": 16923,
+    "output_tokens": 1213,
+    "reasoning_output_tokens": 201
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "macbook-resource-metrics-v1",
+  "systemId": "MB-A0-Qwen3.5-9B-Base-Ollama-BF16",
+  "hardwareProfileId": "macbook-pro-m1-max-64gb-v1",
+  "sampleSource": "resource-samples.jsonl",
+  "sampleCount": 1427,
+  "sampleIntervalSeconds": 1,
+  "observedDurationSeconds": 1605.231,
+  "trackedRootProcess": {
+    "pidAtRunTime": 61206,
+    "command": "/Applications/Ollama.app/Contents/Resources/ollama serve",
+    "descendantsIncluded": true
+  },
+  "ollamaLoadedState": {
+    "model": "sermon-qwen35-9b-base-bf16:benchmark",
+    "digest": "c95a608cb431a5da00075eeb04c625d839dc323dc1639e9804ef44a94008fbce",
+    "reportedSizeBytes": 19339558255,
+    "reportedSizeGiB": 18.0114,
+    "reportedUnifiedGpuBytes": 19339558255,
+    "contextLength": 32768
+  },
+  "processTreeResidentMemory": {
+    "unloadedBaselineMinGiB": 0.0673,
+    "loadedMeanGiB": 22.1378,
+    "peakGiB": 25.3444,
+    "incrementalPeakVersusMinBaselineGiB": 25.2771,
+    "postUnloadGiB": 0.0321,
+    "peakInterpretation": "Ollama service plus llama-server descendant RSS; includes resident model mappings, Metal working allocations, KV cache, and runtime caches. Use this value for conservative system capacity planning."
+  },
+  "systemMemoryPressure": {
+    "freeMemoryPercentMax": 69,
+    "freeMemoryPercentMin": 28,
+    "freeMemoryPercentPostUnload": 67,
+    "categoricalPressureStatus": "not_captured_by_sampler_v1",
+    "redPressureObserved": null
+  },
+  "swap": {
+    "usedGiBMin": 0.0,
+    "usedGiBMax": 0.0,
+    "growthGiB": 0.0
+  },
+  "thermal": {
+    "nonemptySampleCount": 0,
+    "status": "pmset_therm_returned_no_numeric_counters",
+    "thermalThrottlingConclusionAvailable": false
+  },
+  "modelUnloadVerified": true,
+  "resourceGateAssessment": {
+    "translationProcessPeakTargetGiB": 40,
+    "peakWithinTarget": true,
+    "swapGrowthTargetGiB": 1,
+    "swapWithinTarget": true,
+    "translationOnlyResourceGatePassed": true,
+    "coResidentAsrReplayPassed": false,
+    "fullSermonSoakPassed": false,
+    "productionResourceGatePassed": false
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "file": "/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/data/benchmarks/live-sermon-translation-v1/runs/local-asr/nemotron-speech-streaming-en-0.6b-q8-gpt-reaudited-20260903/prepared-audio/post-live-2026-08-30--BeFX5G2oAw_gold_041.wav",
+  "text": "Christ has died. We are forgiven in Christ alive. We are the reason. Praise the King. Praise the King. His name is written.",
+  "confidence": 1,
+  "duration": 30,
+  "languages": [],
+  "words": [
+    {"word": "Christ", "start": 2.32, "end": 2.4, "confidence": 1},
+    {"word": "has", "start": 3.36, "end": 3.44, "confidence": 1},
+    {"word": "died.", "start": 4.24, "end": 5.68, "confidence": 1},
+    {"word": "We", "start": 5.6, "end": 5.68, "confidence": 1},
+    {"word": "are", "start": 6.24, "end": 6.32, "confidence": 1},
+    {"word": "forgiven", "start": 6.72, "end": 7.2, "confidence": 1},
+    {"word": "in", "start": 7.84, "end": 7.92, "confidence": 1},
+    {"word": "Christ", "start": 8.08, "end": 8.16, "confidence": 1},
+    {"word": "alive.", "start": 10.08, "end": 11.28, "confidence": 1},
+    {"word": "We", "start": 11.2, "end": 11.28, "confidence": 1},
+    {"word": "are", "start": 11.36, "end": 11.44, "confidence": 1},
+    {"word": "the", "start": 12.32, "end": 12.4, "confidence": 1},
+    {"word": "reason.", "start": 13.44, "end": 19.12, "confidence": 1},
+    {"word": "Praise", "start": 19.2, "end": 19.28, "confidence": 1},
+    {"word": "the", "start": 19.44, "end": 19.52, "confidence": 1},
+    {"word": "King.", "start": 20, "end": 20.16, "confidence": 1},
+    {"word": "Praise", "start": 21.68, "end": 21.76, "confidence": 1},
+    {"word": "the", "start": 22.4, "end": 22.48, "confidence": 1},
+    {"word": "King.", "start": 22.56, "end": 22.8, "confidence": 1},
+    {"word": "His", "start": 28.56, "end": 28.64, "confidence": 1},
+    {"word": "name", "start": 28.8, "end": 28.88, "confidence": 1},
+    {"word": "is", "start": 29.2, "end": 29.28, "confidence": 1},
+    {"word": "written.", "start": 29.6, "end": 30.08, "confidence": 1}
+  ]
+}

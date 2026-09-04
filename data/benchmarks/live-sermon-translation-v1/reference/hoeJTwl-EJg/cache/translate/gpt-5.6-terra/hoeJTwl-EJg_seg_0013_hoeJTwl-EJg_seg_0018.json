@@ -1,0 +1,185 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-02T23:59:59.299238+00:00",
+  "elapsedSeconds": 30.116,
+  "inputSha256": "7816a4e455872546d38b1358ad7303ca309358bb82347d58015026c989752bad",
+  "modelRequested": "gpt-5.6-terra",
+  "promptVersion": "codex-conversation-sermon-translate-v1",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0013",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "David",
+            "zh": "大卫"
+          },
+          {
+            "source": "Adullam",
+            "zh": "亚杜兰"
+          },
+          {
+            "source": "Psalm 142",
+            "zh": "诗篇142篇"
+          },
+          {
+            "source": "En Gedi",
+            "zh": "隐基底"
+          }
+        ],
+        "scriptureRefs": [
+          "Psalm 142"
+        ],
+        "zh": "从一个洞穴搬到另一个洞穴？到底怎么回事？你就这样住遍一个又一个洞穴？所以，我们上周所讲的洞穴是亚杜兰洞，大卫在那里祷告了诗篇142篇。现在他在另一个洞穴，就是隐基底。我去过隐基底，那里美得惊人。四周都是沙漠，但这些洞穴之间有溪流和森林，简直太棒了，实在很美；但再美，也比不上王宫。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0014",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "David",
+            "zh": "大卫"
+          },
+          {
+            "source": "En Gedi",
+            "zh": "隐基底"
+          },
+          {
+            "source": "Psalms",
+            "zh": "诗篇"
+          },
+          {
+            "source": "1 Samuel 24",
+            "zh": "撒母耳记上24章"
+          }
+        ],
+        "scriptureRefs": [
+          "1 Samuel 24"
+        ],
+        "zh": "也比不上大卫本该所在的地方。我在隐基底时，读到我现在正讲给你们听的这段记载，再看到这座巨山上的洞穴，真是令人惊叹。那里有各种各样的洞穴。我当时就在想：大卫就住在其中一个洞穴里；大卫在这些洞穴中祷告了一些诗篇。事实上，读到撒母耳记上24章，你会看到大卫在隐基底，并且发生了这件不可思议的事。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0015",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Saul",
+            "zh": "扫罗"
+          },
+          {
+            "source": "David",
+            "zh": "大卫"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "想毁掉大卫人生、一直追赶他的扫罗，走进了大卫所在的那个洞穴，但扫罗不知道大卫在里面。照经文所说，扫罗进洞去方便。他在大卫所在的洞穴里上厕所。现在，他这次上厕所不是一般那种短暂的方便，因为他脱了衣服。如果你觉得圣经很无聊，那是因为你还没读过圣经。这段记载太疯狂了。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0016",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Saul",
+            "zh": "扫罗"
+          },
+          {
+            "source": "David",
+            "zh": "大卫"
+          },
+          {
+            "source": "Lord",
+            "zh": "主"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "于是扫罗脱了衣服，正在方便；大卫从他背后靠近，割下他袍子的一角。大卫的手下说：“这太疯狂了！大卫，你现在就能解决他，你现在就能杀了他，然后我们就能狠狠嘲讽他。扫罗在上厕所时这样落幕，多史诗啊！”但大卫不愿那么做，因为他信靠神的主权：至少在这个时候，扫罗本该是王，尽管扫罗正试图毁掉大卫。扫罗方便完，完全不知道大卫割下了他袍子的一部分。扫罗离开洞穴。经文说，大卫随后出去呼叫他，说：“扫罗，你看，你看，我割下了你袍子的一部分。你为什么要追杀我？我不会伤害你，因为主把你放在你的位置上；但你为什么要毁掉我？”"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0017",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Saul",
+            "zh": "扫罗"
+          },
+          {
+            "source": "David",
+            "zh": "大卫"
+          },
+          {
+            "source": "1 Samuel 24",
+            "zh": "撒母耳记上24章"
+          },
+          {
+            "source": "Ziph",
+            "zh": "西弗"
+          },
+          {
+            "source": "Gath",
+            "zh": "迦特"
+          }
+        ],
+        "scriptureRefs": [
+          "1 Samuel 24"
+        ],
+        "zh": "扫罗在那一刻哭了。他知道大卫有一天会成为王。这记载在撒母耳记上24章。大卫从那个洞穴回到西弗，接着又从西弗去迦特；他一直在逃亡。在西弗，他相信：“我必须离开这里，因为扫罗不杀死我绝不会罢休。”于是他去了迦特，迦特王所在的地方，就是多年前他曾假装疯癫、让王把他赶走的那个地方。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0018",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Gath",
+            "zh": "迦特"
+          },
+          {
+            "source": "David",
+            "zh": "大卫"
+          },
+          {
+            "source": "Ziklag",
+            "zh": "洗革拉"
+          },
+          {
+            "source": "God",
+            "zh": "神"
+          },
+          {
+            "source": "Israel",
+            "zh": "以色列"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "这一次他回到迦特，王给了大卫和他的手下一座城居住。这城名叫洗革拉，听起来像祛痘霜。但这就是迦特王给大卫和他手下居住的城。此刻，他感觉自己离神给他的应许太远了——神应许他要在以色列地作全体神子民的王，实在太远了。如果你过的是这样的生活，你觉得自己会不会与焦虑挣扎？"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "hoeJTwl-EJg_seg_0013",
+    "hoeJTwl-EJg_seg_0014",
+    "hoeJTwl-EJg_seg_0015",
+    "hoeJTwl-EJg_seg_0016",
+    "hoeJTwl-EJg_seg_0017",
+    "hoeJTwl-EJg_seg_0018"
+  ],
+  "stage": "translate",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 9984,
+    "input_tokens": 21297,
+    "output_tokens": 1508,
+    "reasoning_output_tokens": 223
+  }
+}

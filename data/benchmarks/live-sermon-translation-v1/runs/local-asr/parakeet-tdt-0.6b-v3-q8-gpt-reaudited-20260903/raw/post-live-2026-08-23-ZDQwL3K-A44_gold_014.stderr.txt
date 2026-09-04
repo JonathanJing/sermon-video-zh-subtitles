@@ -1,0 +1,25 @@
+[nemo-speech] transcribe session started
+[asr] model=parakeet-tdt-0.6b-v3.oss-align.q8_0 head=tdt backend=MTL0
+[asr] mode=offline head=tdt attention=full-context
+/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/data/benchmarks/live-sermon-translation-v1/runs/local-asr/parakeet-tdt-0.6b-v3-q8-gpt-reaudited-20260903/prepared-audio/post-live-2026-08-23-ZDQwL3K-A44_gold_014.wav -> /Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/data/benchmarks/live-sermon-translation-v1/runs/local-asr/parakeet-tdt-0.6b-v3-q8-gpt-reaudited-20260903/raw/post-live-2026-08-23-ZDQwL3K-A44_gold_014.json
+[nemo-speech] transcribe session finished
+real 1.09
+user 0.09
+sys 0.22
+           858849280  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+               53796  page reclaims
+                  10  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                   0  voluntary context switches
+                2432  involuntary context switches
+          2035505844  instructions retired
+           968152129  cycles elapsed
+           837846624  peak memory footprint

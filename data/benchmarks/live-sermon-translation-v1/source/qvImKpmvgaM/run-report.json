@@ -1,0 +1,32 @@
+{
+  "audioDownloaded": false,
+  "captionSegmentCount": 39,
+  "generatedAt": "2026-09-02T22:26:49.152980+00:00",
+  "gptTranscribeCalled": false,
+  "humanApprovalClaimed": false,
+  "inputProfileSha256": "793faa6cafa511fe5bd36c4fb0b81d0312ff13b26c981b94be1d735856ad1bd5",
+  "schemaVersion": "sermon-caption-selective-audio-pipeline-v1",
+  "segmentOrigin": "full_video_caption_timeline",
+  "sourceDurationSeconds": 1640,
+  "sourceQuality": {
+    "disposition": "teacher_ready",
+    "maxSparseSegmentShare": 0.1,
+    "overallWordsPerSecond": 2.7952,
+    "sparseSegmentCount": 0,
+    "sparseSegmentShare": 0.0,
+    "sparseWordsPerSecondThreshold": 0.6
+  },
+  "sourceQualityDisposition": "teacher_ready",
+  "sourceSegmentsSha256": "aeec58d6e74d124511f427ef1290b4885a01693f1147faed8f32b817c2247ee2",
+  "speaker": "Doug Fields",
+  "split": "test",
+  "status": "caption_source_prepared",
+  "teacherPipelineEligibility": "eligible",
+  "title": "Life After Rescue - Doug Fields | Mariners Church",
+  "trainingBlockers": [
+    "source_training_rights_unconfirmed",
+    "gpt_external_student_distillation_not_authorized"
+  ],
+  "trainingEligibility": "blocked",
+  "videoId": "qvImKpmvgaM"
+}

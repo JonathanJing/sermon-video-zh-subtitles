@@ -1,0 +1,123 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T02:48:30.852225+00:00",
+  "elapsedSeconds": 26.384,
+  "inputSha256": "1ddec577ec8676cbc51ad13eb7ad7d1d62f79118be2dc0c14800b5a3a6cd9b99",
+  "modelRequested": "gpt-5.6-terra",
+  "promptVersion": "codex-conversation-sermon-translate-v1",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "contentType": "sermon",
+        "id": "hAWaaBVaMzY_seg_0019",
+        "potentialAsrIssues": [
+          "“We've got to be people who study with uh studying...” contains a disfluent, possibly garbled phrase."
+        ],
+        "properNouns": [],
+        "scriptureRefs": [],
+        "zh": "虚拟建造若没有实际应用，就是只学习、不行动。我们必须成为学习的人；呃，若所学不应用于真实生活，就毫无意义。我们不想过毫无意义的人生，这意味着当我们学习时，终有一天需要去应用。如今我们活在一个无尽刷屏的时代。由于你我以数字化方式消费内容、参与这个世界，这正是我们今天面对的问题之一。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hAWaaBVaMzY_seg_0020",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Instagram",
+            "zh": "Instagram"
+          },
+          {
+            "source": "TikTok",
+            "zh": "TikTok"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "也许你有过这样的时刻：坐到沙发上，打开 Instagram、TikTok 或你喜欢的新闻平台，十分钟后才发现已经过了两小时。数字平台就是被设计来让你不断往下刷的。但我喜爱神的话语的一点是，它会有意地结束，以表达一个重点：认识神的心意和祂对你的心愿，不需要再知道别的了。你每天打开神的话语、花时间在祂的话语里时，它有结尾；它有开头，也有结尾。这就是神的话语。你看，牧人已经说话了；当我们读祂的话语时，就能听见祂的声音。我们想回到这里多少次都可以。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hAWaaBVaMzY_seg_0021",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Ecclesiastes",
+            "zh": "传道书"
+          }
+        ],
+        "scriptureRefs": [
+          "Ecclesiastes 12:13–14"
+        ],
+        "zh": "无尽的学习毫无意义。花时间在神的话语中，并真正把其中的智慧应用在生活里，这才是重点。智慧已经传下来了。这卷书即将结束，《传道书》也发出最后的邀请。请让我读第13至14节：一切都已听见，事情的结论就是这样。"
+      },
+      {
+        "contentType": "scripture_quote",
+        "id": "hAWaaBVaMzY_seg_0022",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Psalms",
+            "zh": "诗篇"
+          },
+          {
+            "source": "Proverbs",
+            "zh": "箴言"
+          },
+          {
+            "source": "Job",
+            "zh": "约伯记"
+          },
+          {
+            "source": "Ecclesiastes",
+            "zh": "传道书"
+          }
+        ],
+        "scriptureRefs": [
+          "Ecclesiastes 12:13–14"
+        ],
+        "zh": "敬畏神，谨守祂的诫命，因为这是全人类当尽的本分。神必审判一切作为，连一切隐藏的事，无论善恶。好，我想从中带出几个要点。第一个是“敬畏神”这句话。这项命令其实出现在所有智慧文学中。你可以在《诗篇》《箴言》《约伯记》和《传道书》中找到“敬畏神”这句话。这不是恐惧，不是你我害怕神，而更像是敬畏或尊崇：以恰当的敬畏面对恰当的神。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hAWaaBVaMzY_seg_0023",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Alistair Begg",
+            "zh": "阿利斯泰尔·贝格"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "我很喜欢聆听和阅读的一位牧师阿利斯泰尔·贝格这样说：“敬畏神，是灵魂对神伟大的敬拜。当世界试图使你弯曲时，它使你的脊梁坚如铁。”我非常喜欢这句话，因为这不只是对神有敬畏或惊叹，然后让我们在道路上停滞不前；相反，它是导向行动的。这种敬畏推动我们行动，不是使我们退缩的恐惧，而是对与我们同在的宇宙创造主——神的敬畏与惊叹。这种敬畏使我们刚强，使我们坚固。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hAWaaBVaMzY_seg_0024",
+        "potentialAsrIssues": [],
+        "properNouns": [],
+        "scriptureRefs": [],
+        "zh": "它使我们在面对任何临到我们的事时都能昂首站立。所以，要敬畏神，然后谨守祂的诫命。这里“守”这个动词的意思是守护、看守、殷勤遵行。这是一个主动的词。神的诫命，是你借着顺服所保护的。"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "hAWaaBVaMzY_seg_0019",
+    "hAWaaBVaMzY_seg_0020",
+    "hAWaaBVaMzY_seg_0021",
+    "hAWaaBVaMzY_seg_0022",
+    "hAWaaBVaMzY_seg_0023",
+    "hAWaaBVaMzY_seg_0024"
+  ],
+  "stage": "translate",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 9984,
+    "input_tokens": 16847,
+    "output_tokens": 1273,
+    "reasoning_output_tokens": 173
+  }
+}

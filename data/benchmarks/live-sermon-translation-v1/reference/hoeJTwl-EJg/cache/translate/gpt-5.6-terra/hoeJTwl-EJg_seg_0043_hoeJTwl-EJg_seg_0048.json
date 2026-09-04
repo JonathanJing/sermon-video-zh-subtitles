@@ -1,0 +1,124 @@
+{
+  "apiKeyUsed": false,
+  "authMode": "chatgpt_managed_verified",
+  "cacheHit": false,
+  "createdAt": "2026-09-03T00:02:25.082093+00:00",
+  "elapsedSeconds": 26.117,
+  "inputSha256": "d2ec907df650e0c5666dee5f0b12216c7ac999860ae70aace761eed640c8713d",
+  "modelRequested": "gpt-5.6-terra",
+  "promptVersion": "codex-conversation-sermon-translate-v1",
+  "reasoningEffort": "high",
+  "result": {
+    "segments": [
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0043",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "David",
+            "zh": "大卫"
+          },
+          {
+            "source": "Martin Lloyd Jones",
+            "zh": "马丁·劳埃德-琼斯"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "他有理由焦虑。你在生活中也常常有许多理由充满焦虑。大卫把这些理由列在神面前，但他没有停留在这些理由上。他接着对自己的思想、对自己的心说：“不，我的神恩待我。我的神满有信实的慈爱。”他不让自己的心思一味地陷入恶性循环。他把神对他信实的慈爱这一真理告诉自己的思想。马丁·劳埃德-琼斯是一位曾与抑郁挣扎的牧师。他确实写过一本书，叫《属灵的抑郁》。他对人在焦虑或抑郁压得喘不过气时该怎么做，给出了一些见解。他写道：“你是否意识到，人生中大多数的不快乐，是因为你在听自己说话，而不是对自己说话？"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0044",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "Martin Lloyd Jones",
+            "zh": "马丁·劳埃德-琼斯"
+          },
+          {
+            "source": "David",
+            "zh": "大卫"
+          }
+        ],
+        "scriptureRefs": [
+          "诗篇 13篇"
+        ],
+        "zh": "属灵生活中最重要的艺术，就是知道如何对待自己。你必须管住自己，必须对自己说话，向自己传道。”马丁·劳埃德-琼斯说的和大卫所说的是同一件事：“我要把关于我神的真理告诉我的思想。”诗篇13篇对我们家很重要，因为当我妻子因失去父亲而深陷悲伤时，神就借着这段经文在她生命中作工。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0045",
+        "potentialAsrIssues": [
+          "“他应许使我们眼中恢复喜乐”这一表述及其归于诗篇13篇，可能存在转写或引述不准确。"
+        ],
+        "properNouns": [
+          {
+            "source": "Jesus",
+            "zh": "耶稣"
+          },
+          {
+            "source": "David",
+            "zh": "大卫"
+          }
+        ],
+        "scriptureRefs": [
+          "诗篇 13篇"
+        ],
+        "zh": "她父亲去世后，有一段时间她不再读圣经。她仍然信耶稣，仍是耶稣的跟随者；但她认为，如果读经，自己就会充满喜乐，而她觉得若自己充满喜乐，就是对父亲不敬。因为她相信，在这个时候，既然正为父亲的离世悲伤，就不该充满喜乐。所以她停止读经。后来有一天，她看着镜中的自己，或许就像大卫那样，看见自己脸上的阴霾；她想起诗篇13篇，说神应许使我们眼中恢复喜乐。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0046",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "David",
+            "zh": "大卫"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "于是，她面对自己的思想——“我充满悲伤”——并把神的真理带给自己的思想。这个真理就是：祂是永在的父，祂把喜乐带给祂的儿女。大卫在焦虑当中，抓住神的真理，祂那赫塞德——信实的慈爱。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0047",
+        "potentialAsrIssues": [],
+        "properNouns": [],
+        "scriptureRefs": [],
+        "zh": "这是真实的，他把神的真理应用在自己的思想上。你在焦虑当中，也必须告诉自己的思想；你必须向自己的思想传讲神是谁的真理。现在，我是不是说这意味着你不该寻求治疗、辅导、帮助、友谊，或在生活中建立更好的、更健康的节奏？不，你也要做这一切；但同时，也要把神的真理应用在你的思想上。让我举个例子，说明该怎么做。"
+      },
+      {
+        "contentType": "sermon",
+        "id": "hoeJTwl-EJg_seg_0048",
+        "potentialAsrIssues": [],
+        "properNouns": [
+          {
+            "source": "David",
+            "zh": "大卫"
+          }
+        ],
+        "scriptureRefs": [],
+        "zh": "因为你们有些人现在正有一些想法，就像大卫一样。大卫是合神心意的人，但他也在挣扎。所以，如果你正在挣扎，你并不孤单。圣经称他为神所拣选的人，因为他是合神心意的人；他也会挣扎。因此，我们许多人都会挣扎。有些人比其他人挣扎得更多，但与焦虑挣扎是人类共同的经历。你要把神的真理、祂信实慈爱的真理带给你的思想。你们有些人有这样的想法：“我将无法维持生计。"
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "sharedCodexUsageConsumed": true,
+  "sourceIds": [
+    "hoeJTwl-EJg_seg_0043",
+    "hoeJTwl-EJg_seg_0044",
+    "hoeJTwl-EJg_seg_0045",
+    "hoeJTwl-EJg_seg_0046",
+    "hoeJTwl-EJg_seg_0047",
+    "hoeJTwl-EJg_seg_0048"
+  ],
+  "stage": "translate",
+  "usage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 15104,
+    "input_tokens": 16948,
+    "output_tokens": 1269,
+    "reasoning_output_tokens": 100
+  }
+}
