@@ -25,6 +25,7 @@ Status was calibrated against `main` on **2026-09-04**. Documentation does not p
 | Stable workflow | [stable-post-live-reading-pdf-workflow.md](./stable-post-live-reading-pdf-workflow.md) | [stable-post-live-reading-pdf-workflow.zh.md](./stable-post-live-reading-pdf-workflow.zh.md) |
 | Production Supervisor Agent | [sermon-production-supervisor-agent.md](./sermon-production-supervisor-agent.md) | [sermon-production-supervisor-agent.zh.md](./sermon-production-supervisor-agent.zh.md) |
 | Local live-caption POC | [README.md](../experiments/local-live-poc/README.md) | [DESIGN.zh.md](../experiments/local-live-poc/DESIGN.zh.md) |
+| Sunday readiness / 周日验收证据 | [60-minute replay, recovery and field gates](../experiments/local-live-poc/benchmarks/SUNDAY_READINESS_20260904.zh.md) | [脱敏指标 JSON](../experiments/local-live-poc/benchmarks/sunday-readiness-20260904.json) |
 | Maintained SVG diagrams | [diagrams/README.md](./diagrams/README.md) | bilingual assets |
 | System design | [system-design.md](./system-design.md) | [system-design.zh.md](./system-design.zh.md) |
 | System design gap analysis | [system-design-gap-analysis.md](./system-design-gap-analysis.md) | [system-design-gap-analysis.zh.md](./system-design-gap-analysis.zh.md) |

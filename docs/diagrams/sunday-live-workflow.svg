@@ -1,29 +1,65 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img" aria-labelledby="title desc">
-  <title id="title">Sunday local live-caption workflow</title>
-  <desc id="desc">Browser microphone audio is recorded independently and sent as PCM to a local gateway for VAD, ASR, guarded context, MiLMMT translation, captions, and replayable evidence, with explicit fallback branches.</desc>
-  <defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0 0L0 6L9 3z" fill="#475569"/></marker><style>text{font-family:Arial,"PingFang SC","Microsoft YaHei",sans-serif}.bg{fill:#f8fafc}.title{font-size:29px;font-weight:700;fill:#0f172a}.sub{font-size:14px;fill:#64748b}.h{font-size:16px;font-weight:700;fill:#0f172a}.t{font-size:14px;fill:#334155}.cap{fill:#ecfdf5;stroke:#10b981;stroke-width:2}.proc{fill:#fff;stroke:#34d399;stroke-width:2}.store{fill:#eff6ff;stroke:#3b82f6;stroke-width:2}.gate{fill:#fefce8;stroke:#ca8a04;stroke-width:2}.fallback{fill:#fff7ed;stroke:#f97316;stroke-width:2}.line{fill:none;stroke:#475569;stroke-width:2.2;marker-end:url(#a)}.safe{fill:none;stroke:#2563eb;stroke-width:2.2;marker-end:url(#a)}.dash{fill:none;stroke:#f97316;stroke-width:2;stroke-dasharray:7 6;marker-end:url(#a)}</style></defs>
-  <rect class="bg" width="1200" height="700" rx="24"/><text class="title" x="64" y="62">Sunday local live captions · 周日本地实时字幕</text><text class="sub" x="64" y="90">Recording is independent from inference: model failure must not stop evidence capture.</text>
-
-  <rect class="cap" x="48" y="132" width="174" height="84" rx="15"/><text class="h" x="135" y="164" text-anchor="middle">Browser microphone</text><text class="sub" x="135" y="188" text-anchor="middle">operator selects input</text>
-  <rect class="store" x="48" y="310" width="174" height="86" rx="15"/><text class="h" x="135" y="342" text-anchor="middle">Durable recording</text><text class="sub" x="135" y="366" text-anchor="middle">WebM + PCM/WAV</text>
-  <path class="safe" d="M135 216V306"/>
-
-  <rect class="proc" x="270" y="132" width="160" height="84" rx="15"/><text class="h" x="350" y="164" text-anchor="middle">PCM WebSocket</text><text class="sub" x="350" y="188" text-anchor="middle">100 ms frames</text>
-  <rect class="proc" x="478" y="132" width="160" height="84" rx="15"/><text class="h" x="558" y="164" text-anchor="middle">VAD + endpoint</text><text class="sub" x="558" y="188" text-anchor="middle">bounded queues</text>
-  <rect class="proc" x="686" y="132" width="174" height="84" rx="15"/><text class="h" x="773" y="160" text-anchor="middle">Local ASR</text><text class="sub" x="773" y="183" text-anchor="middle">Qwen default</text><text class="sub" x="773" y="202" text-anchor="middle">Whisper fallback</text>
-  <path class="line" d="M222 174H266"/><path class="line" d="M430 174H474"/><path class="line" d="M638 174H682"/>
-
-  <polygon class="gate" points="963,124 1054,174 963,224 872,174"/><text class="h" x="963" y="167" text-anchor="middle">ASR final?</text><text class="sub" x="963" y="190" text-anchor="middle">stable English</text>
-  <path class="line" d="M860 174H868"/>
-  <rect class="proc" x="930" y="310" width="222" height="86" rx="15"/><text class="h" x="1041" y="340" text-anchor="middle">MiLMMT translation</text><text class="sub" x="1041" y="364" text-anchor="middle">approved context only</text><text class="sub" x="1041" y="383" text-anchor="middle">partial → final</text>
-  <path class="line" d="M963 228V274H1041V306"/><text class="sub" x="974" y="252">yes</text>
-
-  <rect class="fallback" x="676" y="310" width="202" height="86" rx="15"/><text class="h" x="777" y="340" text-anchor="middle">Visible degradation</text><text class="sub" x="777" y="364" text-anchor="middle">English / error status</text><text class="sub" x="777" y="383" text-anchor="middle">recording continues</text>
-  <path class="dash" d="M963 224C963 274 777 258 777 306"/><text class="sub" x="899" y="264">no / timeout</text>
-
-  <rect class="cap" x="930" y="492" width="222" height="86" rx="15"/><text class="h" x="1041" y="522" text-anchor="middle">Readable captions</text><text class="sub" x="1041" y="546" text-anchor="middle">large Chinese + English</text><text class="sub" x="1041" y="565" text-anchor="middle">LAN read-only viewer</text>
-  <path class="line" d="M1041 396V488"/>
-  <rect class="store" x="392" y="492" width="432" height="86" rx="15"/><text class="h" x="608" y="522" text-anchor="middle">Append-only evidence</text><text class="sub" x="608" y="546" text-anchor="middle">events · manifest · hashes · timing · model/context IDs</text><text class="sub" x="608" y="565" text-anchor="middle">frozen replay and blind A/B after the service</text>
-  <path class="safe" d="M222 353H300V535H388"/><path class="safe" d="M777 396V488"/><path class="safe" d="M930 535H828"/>
-  <rect fill="#e2e8f0" x="48" y="628" width="1104" height="44" rx="12"/><text class="t" x="600" y="656" text-anchor="middle">POC boundary: one-hour local soak passed · human Gold + church-site rehearsal still required</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="960" viewBox="0 0 1400 960" role="img" aria-labelledby="title desc">
+<title id="title">Sunday workflow · 周日操作与故障流程</title><desc id="desc">Independent recording continues through model failure · 有缺口就记录，不把恢复写成无损</desc>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#526580"/></marker><style>text{font-family:Arial,"PingFang SC","Microsoft YaHei",sans-serif;fill:#18304b}.title{font-size:30px;font-weight:700}.subtitle{font-size:16px;fill:#536782}.head{font-size:20px;font-weight:700}.body{font-size:17px}.note{font-size:15px;fill:#536782}.edge{fill:none;stroke:#526580;stroke-width:2;marker-end:url(#arrow)}.dash{stroke-dasharray:7 5}</style></defs>
+<rect width="1400" height="960" rx="20" fill="#f5f8fc"/>
+<text x="44" y="55" class="title" text-anchor="start">Sunday workflow · 周日操作与故障流程</text>
+<text x="44" y="86" class="subtitle" text-anchor="start">Independent recording continues through model failure · 有缺口就记录，不把恢复写成无损</text>
+<rect x="44" y="126" width="390" height="150" rx="14" fill="#edf4ff" stroke="#86abe6" stroke-width="1.5"/>
+<text x="64" y="159" class="head" text-anchor="start">1 · Preflight / 预检</text>
+<text x="64" y="189" class="body" text-anchor="start">Start launcher; verify runtime identity</text>
+<text x="64" y="215" class="body" text-anchor="start">Select actual microphone / check level</text>
+<text x="64" y="241" class="body" text-anchor="start">Optional Pack readiness; default none</text>
+<rect x="504" y="126" width="390" height="150" rx="14" fill="#eaf8f1" stroke="#70b897" stroke-width="1.5"/>
+<text x="524" y="159" class="head" text-anchor="start">2 · Capture / 双路径采集</text>
+<text x="524" y="189" class="body" text-anchor="start">MediaRecorder chunks → Gateway disk</text>
+<text x="524" y="215" class="body" text-anchor="start">Worklet PCM → WS → VAD → ASR</text>
+<text x="524" y="241" class="body" text-anchor="start">Record audio even if models fail</text>
+<rect x="964" y="126" width="392" height="150" rx="14" fill="#f3efff" stroke="#aa98dc" stroke-width="1.5"/>
+<text x="984" y="159" class="head" text-anchor="start">3 · Translate / 翻译</text>
+<text x="984" y="189" class="body" text-anchor="start">Immutable English final only</text>
+<text x="984" y="215" class="body" text-anchor="start">Lexical guard → immediate MiLMMT</text>
+<text x="984" y="241" class="body" text-anchor="start">No Saturday transcript substitution</text>
+<path d="M434 201H504" class="edge"/>
+<path d="M894 201H964" class="edge"/>
+<rect x="964" y="366" width="392" height="150" rx="14" fill="#eaf8f1" stroke="#70b897" stroke-width="1.5"/>
+<text x="984" y="399" class="head" text-anchor="start">4 · Read + share / 呈现</text>
+<text x="984" y="429" class="body" text-anchor="start">Readable current + previous bilingual</text>
+<text x="984" y="455" class="body" text-anchor="start">Local UI / LAN SSE / Firebase HTTPS</text>
+<text x="984" y="481" class="body" text-anchor="start">Phone fitting; render timing on operator</text>
+<path d="M1160 276V366" class="edge"/>
+<rect x="504" y="366" width="390" height="150" rx="14" fill="#edf4ff" stroke="#86abe6" stroke-width="1.5"/>
+<text x="524" y="399" class="head" text-anchor="start">5 · Stop + drain / 停止</text>
+<text x="524" y="429" class="body" text-anchor="start">Stop input; finish audio uploads</text>
+<text x="524" y="455" class="body" text-anchor="start">Latest WS epoch closes workers/storage</text>
+<text x="524" y="481" class="body" text-anchor="start">Then finalize manifest, WAV and hashes</text>
+<rect x="44" y="366" width="390" height="150" rx="14" fill="#fff5e9" stroke="#e1aa68" stroke-width="1.5"/>
+<text x="64" y="399" class="head" text-anchor="start">6 · Verify + retain / 保存验证</text>
+<text x="64" y="429" class="body" text-anchor="start">Download recovery copy / event log</text>
+<text x="64" y="455" class="body" text-anchor="start">Decode + sequence + hash + status</text>
+<text x="64" y="481" class="body" text-anchor="start">Saved ≠ uninterrupted or human reviewed</text>
+<path d="M964 441H894" class="edge"/>
+<path d="M504 441H434" class="edge"/>
+<rect x="44" y="640" width="390" height="170" rx="14" fill="#fff5e9" stroke="#e1aa68" stroke-width="1.5"/>
+<text x="64" y="673" class="head" text-anchor="start">Failure: model / 模型故障</text>
+<text x="64" y="703" class="body" text-anchor="start">Continue independent recording</text>
+<text x="64" y="729" class="body" text-anchor="start">ASR failure → explicit fault state</text>
+<text x="64" y="755" class="body" text-anchor="start">Translation failure → English / error</text>
+<text x="64" y="781" class="body" text-anchor="start">No silent replacement with prepared text</text>
+<rect x="504" y="640" width="390" height="170" rx="14" fill="#fff5e9" stroke="#e1aa68" stroke-width="1.5"/>
+<text x="524" y="673" class="head" text-anchor="start">Failure: connection / 连接故障</text>
+<text x="524" y="703" class="body" text-anchor="start">Resume same session and viewer identity</text>
+<text x="524" y="729" class="body" text-anchor="start">Backfill recording by durable sequence</text>
+<text x="524" y="755" class="body" text-anchor="start">Record PCM gaps / missing ASR outcomes</text>
+<text x="524" y="781" class="body" text-anchor="start">Stop safely if recovery cannot finish</text>
+<rect x="964" y="640" width="392" height="170" rx="14" fill="#fff5e9" stroke="#e1aa68" stroke-width="1.5"/>
+<text x="984" y="673" class="head" text-anchor="start">Failure: public network / 公网</text>
+<text x="984" y="703" class="body" text-anchor="start">Bounded publisher does not block locally</text>
+<text x="984" y="729" class="body" text-anchor="start">Viewer reconnects; retain prior caption</text>
+<text x="984" y="755" class="body" text-anchor="start">Use LAN if venue allows device access</text>
+<text x="984" y="781" class="body" text-anchor="start">Physical mobile path still needs testing</text>
+<path d="M1110 276V320H24V610H239V640" class="edge dash"/>
+<path d="M699 276V336H464V590H699V640" class="edge dash"/>
+<path d="M1160 516V640" class="edge dash"/>
+<text x="44" y="911" class="note" text-anchor="start">Default: Qwen3-ASR + MiLMMT Q8 · 3 s max / 500 ms silence · content_words · legacy units · readable_chunks · no Pack.</text>
+<text x="44" y="936" class="note" text-anchor="start">Acceptance: 60-minute browser WAV replay is delivery evidence, not venue input, phone latency, or semantic accuracy.</text>
 </svg>

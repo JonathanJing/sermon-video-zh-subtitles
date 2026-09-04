@@ -12,8 +12,10 @@ Independent greenfield interface for a MacBook-based live sermon caption feasibi
 - Large Simplified Chinese caption area with a smaller English source line.
 - Downloadable audio and JSON event log after stopping.
 - Automatic per-recording local session folder with incremental audio and JSONL writes.
-- Real microphone PCM streaming through Qwen3-ASR/MLX (with Whisper fallback) and MiLMMT.
-- A tokenized, read-only phone viewer on the same Wi-Fi; control and recording APIs stay localhost-only.
+- Real microphone PCM streaming through the selected Qwen3-ASR/MLX or Whisper provider and MiLMMT; provider selection happens at startup, not automatic failover during a session.
+- Firebase HTTPS public viewing through an outbound-only publisher, plus tokenized LAN/SSE fallback; control and recording APIs stay localhost-only.
+- Same-session Gateway recovery, explicit caption gaps, bounded queues and latest-connection drain before successful save.
+- Current evidence and field limits: [merged-version readiness report](benchmarks/SUNDAY_READINESS_20260904.zh.md).
 
 The live path is microphone → AudioWorklet PCM → WebSocket gateway → energy VAD → configured local English ASR (`Qwen3-ASR` through MLX Audio or `whisper.cpp`) → MiLMMT token stream → caption presenter → Chinese caption. Browser recording remains independent and continues if ASR or translation fails. The default final cadence is 500 ms of silence or a 3-second maximum speech window; only immutable ASR finals start translation. Raw model events remain append-only in the log, while the default `readable_chunks` presenter withholds 1–2-character flashes and keeps the previous complete bilingual block visible until the next readable block is ready. Frozen-English replay/A-B is executable and does not rerun ASR.
 
@@ -28,9 +30,9 @@ artifacts/sessions/<timestamp>-<random-id>/
   manifest.json    # status, counts, paths, duration, and audio/PCM SHA-256
 ```
 
-`events.jsonl` is also the performance log. Every stable segment records ASR queue/processing time, audio-end-to-English-final, translation queue time, MiLMMT TTFT, English-final-to-Chinese-first/final, and audio-end-to-Chinese-first/final. The browser adds `caption_rendered` for the first Chinese token and final Chinese caption, including gateway-to-browser and browser-render timing. Rejected stale or non-append partials are logged as `caption_partial_rejected`. `stream.closed.uxMetrics` contains per-session P50/P95/max aggregates without requiring a separate database.
+`events.jsonl` is also the performance log. Every stable segment records ASR queue/processing time, audio-end-to-English-final, translation queue time, MiLMMT TTFT, English-final-to-Chinese-first/final, and audio-end-to-Chinese-first/final. The browser adds `caption_rendered` for actual readable first/final captions under `readable_chunks`, mapped back to immutable ASR finals. Hidden/unobservable rendering is recorded separately, not counted as zero latency. The scorer distinguishes audio-start/end-to-visible latency from model TTFT; phone delivery has no per-caption render acknowledgement. Rejected stale or non-append partials are logged as `caption_partial_rejected`. `stream.closed.uxMetrics` contains per-session P50/P95/max aggregates without requiring a separate database.
 
-The gateway syncs recovery recording chunks, batched PCM frames, and events to disk. On stop it wraps PCM as a replayable WAV, marks the manifest completed, and calculates recording/PCM hashes. Browser download links remain available as a recovery copy. Override the storage root with `LOCAL_LIVE_SESSION_ROOT=/absolute/path` when the recordings should live outside the project.
+The gateway syncs recovery recording chunks, batched PCM frames, and events to disk. On stop, successful completion requires worker/storage drain from the latest live connection, a replayable PCM WAV and recording/PCM hashes. A saved session may still report interrupted caption continuity. Recovery preserves durable audio/chunk positions and viewer identity, but does not promise lossless captions across a restart. Browser download links remain available as a recovery copy. Override the storage root with `LOCAL_LIVE_SESSION_ROOT=/absolute/path` when the recordings should live outside the project.
 
 For the intended room/PA capture path, the page requests browser echo cancellation, noise suppression, and automatic gain control **off**. The requested and applied track settings are written into each session manifest so a replay can distinguish capture changes from model changes. The saved browser recording is never rewritten by ASR-side processing.
 

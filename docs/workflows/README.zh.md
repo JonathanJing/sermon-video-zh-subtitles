@@ -27,7 +27,7 @@
 
 ![周六 post-live 双 PDF 完整流程](../diagrams/saturday-post-live-workflow.svg)
 
-未来每周的翻译、两轮阅读稿审核和证道同行生成统一使用 **Astra Medium**。双 PDF QA 通过后，Supervisor 自动导出周日 Context Pack 与 readiness；操作细节见[每周生产配置](../codex-local-production-runbook.zh.md)。这项配置不重做历史周次，模型审核也不替代人工确认。
+当前每周配置的翻译、两轮阅读稿审核和证道同行生成统一使用 **Astra Medium**。双 PDF QA 通过后，Supervisor 自动导出周日 Context Pack 与 readiness；导出的同篇身份初始为 `unknown`，不能自动获得 live 注入资格；操作细节见[每周生产配置](../codex-local-production-runbook.zh.md)。这项配置不重做历史周次，模型审核也不替代人工确认。
 
 ### Canonical 输入与产物
 
@@ -70,36 +70,42 @@
 | 麦克风选择、音量、开始/停止 | Working | 已用真实浏览器麦克风验证 |
 | 增量录音、events、manifest、SHA | Working | 每次启动建立独立 session 文件夹 |
 | MiLMMT A0/Ollama translation | Working | 冻结 prompt，`contextPolicy=none` 基线 |
-| 大号中文、英文 sidecar、手机只读页 | Working POC | 单页 operator UI；随机 token + SSE，只暴露字幕 GET，不暴露控制接口 |
+| 大号中文、英文 sidecar、手机只读页 | Working POC | 前一句完整双语 + 当前可读字幕；LAN 用随机 token + SSE；手机横竖屏适配 |
 | 蜂窝网络扫码公网分享 | Working POC | Firebase Hosting + Realtime Database 已实现并有开发部署；MacBook 只出站发布。本地 Wi-Fi 与实际蜂窝设备需分别验收 |
-| 本地英文 ASR | Working POC | Qwen3-ASR 0.6B/MLX 一键默认；Whisper 回退；60 分钟长测通过 |
-| 周六 content pack | POC | exporter、capability readiness、受控 runtime policy 已实现；须独立确认同篇信息，真实周日收益尚未通过盲评 |
+| 本地英文 ASR | Working POC | Qwen3-ASR 0.6B/MLX 优先；Whisper 为启动时备选，不是运行中自动切换；见下方真实模型回放证据 |
+| 周六 content pack | POC | exporter、capability readiness、受控 runtime policy 已实现；须独立确认同篇信息，自动导出初始为 `unknown`，真实周日收益尚未通过盲评 |
 | 会后 replay/A-B | Working | 同一组 `asr.final` 按 policy 重放；生成盲评 CSV 和 hash provenance |
 | ASR Gold gate | Working gate | 六 case 队列已生成；真人未审核前正式 WER fail-closed |
 | Session 保留 | Working | 默认只预览；30 天、保留最近 10 个；只有显式 `--apply` 删除 |
 
 ## ASR + 翻译总延迟预算
 
-### 已观测证据与假设
+### 当前可读字幕证据
 
-- 测试机器：MacBook Pro，Apple M1 Max，64 GB unified memory。
-- MiLMMT A0：`sermon-milmmt-46-4b-v1-q8:benchmark`，Ollama 本地运行。
-- 修复后的 2026-09-04 真实 Chrome → 内置麦克风 → Qwen3-ASR/MLX → MiLMMT 60 分钟长测有 1,247 次 ASR processing、1,246 次 final、1 次 empty、0 次 failed。
-- 音频结束到 ASR final：p50 `1.279s`、p95 `1.318s`；MiLMMT TTFT：p50 `0.126s`、p95 `0.146s`。
-- 音频结束到浏览器第一个中文字幕：p50 `1.419s`、p95 `1.486s`；到完整中文：p50 `1.530s`、p95 `1.720s`。
-- 以上是历史版本、固定房间和播放源的 POC 证据；该 60 分钟包含敬拜/音乐，不能称为 60 分钟纯讲道验收。旧记录仍包含 227 次 `The.`，流水线完成率不等于译文可用率。可读字幕策略和后续版本须用实际 `readable_*` render 重新计分，不能沿用旧延迟值作为新版本通过证据。
+代码基线为 main `beeda82`；真实长测运行在 clean `edaa9d1`，之后的 POC 变更只有文档。完整 provenance、指标与限制见[2026-09-04 验收报告](../../experiments/local-live-poc/benchmarks/SUNDAY_READINESS_20260904.zh.md)。
 
-### 预算拆分
+- MacBook Pro M1 Max 64 GB，Qwen3-ASR 0.6B 8-bit + MiLMMT 4B Q8，冻结 A0、无 Pack、3 秒窗口、即时翻译。
+- 3620.818 秒浏览器 WAV 回放，20 分钟唯一音频循环三轮；真实 MediaRecorder/Worklet、ASR、翻译和操作页显示，不经过物理麦克风。
+- 1,287 processing/final/translation/可读首显全部结算；独立浏览器录音副本与 Gateway hash 相同，WebM/WAV 完整解码通过。
+- 357 个录音窗口健康样本全部 ready、swap 0；初始缺测 40.439 秒、末尾 6.588 秒。翻译 RSS 仍增长，未证明连续多场上限。
 
-| 阶段 | Warm 预算 | 证据状态 |
-|---|---:|---|
-| VAD/等待 final window | 最多 0.5s silence 或 3s 强制窗口 | 运行配置；不计入 audio-end 指标 |
-| Qwen3-ASR final | p50 1.279s / p95 1.318s | 修复后 60 分钟真实链路 |
-| MiLMMT 首字 | p50 0.126s / p95 0.146s | 同一长测 |
-| 浏览器中文首字（端到端） | p50 1.419s / p95 1.486s | audio end → render |
-| 浏览器完整中文（端到端） | p50 1.530s / p95 1.720s | audio end → render |
+### 延迟拆分：不是承诺的 SLO
 
-必须区分“讲话时间/分段等待”和“句末后的模型延迟”。当前 UI 展示的是后者；从第一个词到字幕还要加上该段本身的 1–3 秒。启动器会预热两个模型，正式使用前仍应先讲一句测试句确认首字和完整字幕都出现。
+| 阶段 / 口径 | P50 | P95 |
+|---|---:|---:|
+| 音频段结束 → ASR final | 1.259 s | 1.315 s |
+| MiLMMT TTFT | 0.129 s | 0.150 s |
+| 音频段结束 → 操作页可读首显 | 1.634 s | 1.776 s |
+| 音频段结束 → 操作页可读终显 | 1.634 s | 1.777 s |
+| 音频段开始 → 操作页可读首显 | 4.627 s | 4.763 s |
+
+可读字幕各 N=1,287；P95 使用排序后的 `round((n-1)*0.95)` 索引。TTFT、完整模型输出、可读首显和手机显示是不同终点，不能互换。VAD 配置为 500 ms silence / 最长 3 秒；段结束指标不包含形成该段的等待。操作页运行状态仍展示模型首字/完整耗时，实际可读显示须查看 `caption_rendered` 与 scorer。这里的覆盖率以已发出的 ASR final 为分母，不是语音召回率或翻译准确率。
+
+### 恢复与默认策略
+
+独立重启回放恢复了同一 session 与观看 token，录音可完整解码；同时留下 1.6 秒 PCM gap、一个未结算在途 ASR 任务，以及 7.234 秒的新字幕更新间隔。`completed` 的保存状态不等于 `captionContinuity=uninterrupted`。停止必须核验最新连接的 worker/storage drain，再完成 manifest 和 hash；失败保留恢复副本并显示故障。
+
+保留 `translationUnitPolicy=legacy` 和 `sourceFragmentPolicy=content_words`。真实 3/6 秒窗口和有界合并比较均出现新语义错误，`bounded_semantic_v1` 不升级默认；孤立虚词门控也不是语音/音乐分类器。Firebase 有界发布器不阻塞本地链路，公网失败可选 LAN；发布确认不等于手机呈现确认。
 
 ### ASR benchmark 必须回答的问题
 
@@ -129,12 +135,12 @@
 
 ### 真实 E2E
 
-- 历史本机 60 分钟混合内容 soak 已完成；它不替代当前代码、实际字幕策略与真实音频输入的验收，正式教会现场彩排仍是独立且未完成的 production gate。
+- 当前合并代码已有 60 分钟真实模型浏览器 WAV 回放证据；历史麦克风 soak 保留在原报告中。两者均不替代实际场地输入、实体手机与人工语义验收。
 - 音频可解码、chunk/event sequence 连续、manifest completed、SHA 匹配。
-- English final 和 Chinese result 均可见，p50/p95 达标，无静默丢段。
+- English final 和 Chinese result 均可见，按明确口径测量 p50/p95，单列缺段、策略 skip 和故障；没有事先批准的阈值时不称“达标”。
 - 录音可以在家中 replay，并复现相同 ASR/翻译版本的结果。
 
-当前工程路径已经具备，但 production acceptance 尚未闭环：正式教会现场彩排、人工 Gold 校正、真实周六 pack 的每周盲评，以及多服务连续运行的资源上限仍需验证。翻译模型后训练是独立 Discovery 项目，不是周日 POC 的上线前置条件。周日路径只有在现场音频路由、Wi-Fi 手机访问和端到端字幕都通过后，才可以称为 production-ready。
+当前工程路径已经具备，但 production acceptance 尚未闭环：正式教会现场彩排、人工 Gold 校正、真实周六 pack 的每周盲评，以及连续多场运行的资源上限仍需验证。翻译模型后训练是独立 Discovery 项目，不是周日 POC 的上线前置条件。周日路径只有在现场音频路由、Wi-Fi 手机访问和端到端字幕都通过后，才可以称为 production-ready。
 
 ## 相关实现
 
