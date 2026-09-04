@@ -22,7 +22,8 @@ coverage/
 *.log
 data/raw/
 data/benchmarks/**/work/
+data/benchmarks/**/recording.wav
 artifacts/
 output/pdf/
-tmp/pdfs/
+tmp/
 web/playback-simulation.generated.js
