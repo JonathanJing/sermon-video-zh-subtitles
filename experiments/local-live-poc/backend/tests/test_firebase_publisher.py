@@ -2,12 +2,44 @@ from __future__ import annotations
 
 import threading
 import unittest
+from unittest.mock import patch
 
 from backend.firebase_publisher import (
+    AccessTokenProvider,
     CaptionProjector,
     FirebaseCaptionPublisher,
     FirebasePublisherConfig,
 )
+
+
+class AccessTokenProviderTest(unittest.TestCase):
+    @patch("backend.firebase_publisher.subprocess.run")
+    def test_uses_keyless_service_account_impersonation_when_configured(self, run) -> None:
+        run.return_value.stdout = "short-lived-token\n"
+        with patch.dict("os.environ", {
+            "LOCAL_LIVE_FIREBASE_IMPERSONATE_SERVICE_ACCOUNT":
+                "caption-publisher@example.iam.gserviceaccount.com",
+        }, clear=True):
+            provider = AccessTokenProvider()
+            self.assertEqual(provider(), "short-lived-token")
+
+        run.assert_called_once()
+        self.assertEqual(run.call_args.args[0], (
+            "gcloud",
+            "auth",
+            "print-access-token",
+            "--impersonate-service-account=caption-publisher@example.iam.gserviceaccount.com",
+        ))
+
+    @patch("backend.firebase_publisher.subprocess.run")
+    def test_static_token_takes_precedence_without_invoking_gcloud(self, run) -> None:
+        with patch.dict("os.environ", {
+            "LOCAL_LIVE_FIREBASE_ACCESS_TOKEN": "injected-token",
+            "LOCAL_LIVE_FIREBASE_IMPERSONATE_SERVICE_ACCOUNT":
+                "caption-publisher@example.iam.gserviceaccount.com",
+        }, clear=True):
+            self.assertEqual(AccessTokenProvider()(), "injected-token")
+        run.assert_not_called()
 
 
 class CaptionProjectorTest(unittest.TestCase):

@@ -4,15 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#071827" />
-    <title>现场中文字幕</title>
+    <title>主日证道 · 中文字幕</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
     <main class="viewer-shell" id="viewer-shell">
       <header class="viewer-header">
         <div>
-          <p class="eyebrow">SUNDAY LIVE CAPTIONS</p>
-          <h1>现场中文字幕</h1>
+          <p class="eyebrow">SUNDAY SERMON CAPTIONS</p>
+          <h1>主日证道 · 中文字幕</h1>
         </div>
         <div class="connection" aria-live="polite">
           <span class="connection-dot" id="connection-dot"></span>
@@ -36,10 +36,10 @@
       </section>
 
       <footer class="viewer-footer">
-        <div class="privacy-note">
-          <strong>只读字幕</strong>
-          <span>不上传音频，不提供后台控制</span>
-        </div>
+        <p class="caption-disclaimer">
+          <strong>AI 实时生成，仅供辅助理解。</strong>
+          <span>字幕可能存在遗漏或误译，请以现场讲员及正式资料为准。</span>
+        </p>
         <div class="layout-controls" aria-label="显示设置">
           <button type="button" data-layout="auto" aria-pressed="true">自动</button>
           <button type="button" data-layout="portrait" aria-pressed="false">竖屏</button>
@@ -51,7 +51,11 @@
 
     <script src="/__/firebase/8.10.1/firebase-app.js"></script>
     <script src="/__/firebase/8.10.1/firebase-database.js"></script>
-    <script src="/__/firebase/init.js"></script>
+    <script>
+      firebase.initializeApp({
+        databaseURL: "https://ai-for-god-caption-dev.firebaseio.com"
+      });
+    </script>
     <script src="/viewer.js"></script>
   </body>
 </html>

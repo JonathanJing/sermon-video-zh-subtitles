@@ -1,7 +1,7 @@
 .DS_Store
 __pycache__/
 *.pyc
-.venv/
+.venv
 .env
 .env.*
 *.env
@@ -15,6 +15,7 @@ secrets/
 service-account*.json
 *.credentials.json
 experiments/local-live-poc/firebase/.firebaserc
+experiments/local-live-poc/firebase/.firebase/
 node_modules/
 dist/
 build/

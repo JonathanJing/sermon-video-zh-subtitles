@@ -52,7 +52,15 @@ class FirebasePublisherConfig:
 class AccessTokenProvider:
     """Returns a short-lived Google OAuth token without ever logging it."""
 
-    def __init__(self, command: tuple[str, ...] = ("gcloud", "auth", "application-default", "print-access-token")) -> None:
+    def __init__(self, command: tuple[str, ...] | None = None) -> None:
+        if command is None:
+            service_account = os.environ.get(
+                "LOCAL_LIVE_FIREBASE_IMPERSONATE_SERVICE_ACCOUNT", ""
+            ).strip()
+            command_parts = ["gcloud", "auth", "print-access-token"]
+            if service_account:
+                command_parts.append(f"--impersonate-service-account={service_account}")
+            command = tuple(command_parts)
         self.command = command
         self.cached = ""
         self.refresh_at = 0.0

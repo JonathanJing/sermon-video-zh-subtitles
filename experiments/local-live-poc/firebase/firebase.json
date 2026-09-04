@@ -26,7 +26,7 @@
   },
   "emulators": {
     "database": { "host": "127.0.0.1", "port": 9000 },
-    "hosting": { "host": "127.0.0.1", "port": 5000 },
+    "hosting": { "host": "127.0.0.1", "port": 5500 },
     "ui": { "enabled": true, "host": "127.0.0.1", "port": 4000 },
     "singleProjectMode": true
   }

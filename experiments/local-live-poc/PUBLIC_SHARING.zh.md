@@ -8,7 +8,7 @@ POC 首选：
 
 - **Firebase Hosting**：托管手机字幕页和稳定的公网 URL。
 - **Firebase Realtime Database**：把当前字幕实时推送给手机浏览器。
-- **Firebase Authentication + Security Rules**：只允许指定 operator 写入；扫码观众只读。
+- **Keyless service account + Security Rules**：MacBook 用短期 OAuth token 写入；扫码观众只读。
 
 当前同 Wi-Fi SSE viewer 保留为局域网兜底。第一版不把 MacBook 端口暴露到公网，也不使用路由器端口转发或公网 tunnel。
 
@@ -40,7 +40,7 @@ Google Cloud 的几个候选组件边界如下：
 |---|---|---|
 | Firebase Hosting | 公网手机前端、HTTPS、可选自定义域名 | 使用 |
 | Firebase Realtime Database | 当前字幕与少量最近 final 的实时 fan-out | 使用 |
-| Firebase Authentication / Rules | operator 写权限、viewer 只读与字段校验 | 使用 |
+| Keyless service account / Rules | 本地 publisher 短期身份、viewer 只读与字段校验 | 使用 |
 | Cloud Run | 后续增加受控 ingest API、审计或更强身份验证 | 暂不需要 |
 | Memorystore for Redis | 多个 Cloud Run WebSocket instance 之间同步 | 不使用 |
 | Pub/Sub | 后端异步消息，不是浏览器字幕接口 | 不使用 |
@@ -73,7 +73,8 @@ Realtime Database 只保存公网显示所需字段：
 
 ## 权限与过期策略
 
-- Operator 首次配置时通过 Firebase Authentication 登录；Rules 只允许 allowlist 中的 operator UID 写入。
+- 本机用户登录 `gcloud` 后 impersonate 专用 publisher service account，运行时只生成短期 OAuth token，不保存 JSON key。
+- OAuth publisher 会绕过数据 Rules，因此 dev project 使用独立身份和 Firebase RTDB 专用预定义角色；观众读取和数据结构仍由 Rules 限制。
 - Viewer 不需要账户，只能读取随机 token 对应的 session；URL 本身是临时 bearer link，适用于公开聚会字幕，不适合敏感内容。
 - Rules 校验允许字段、类型、最大字符串长度、单调 sequence 和 `expiresAt`；默认拒绝其他路径。
 - Session 结束后立即标记 `ended`，默认 4 小时后不可读，24 小时内清除云端字幕数据。
@@ -99,8 +100,8 @@ Firebase 默认可以拒绝所有访问；如果为了调试临时打开 public 
 ## 更新频率与延迟
 
 - `final` 立即发布。
-- 流式中文 partial 最多每秒发布 5 次，并沿用本地“只追加、不回写”的稳定规则。
-- 只更新 `current` 节点；最近 final 历史最多保留 10 条，避免每次把整场数据发送给手机。
+- 流式中文 partial 最多每秒发布 2 次，并沿用本地“只追加、不回写”的稳定规则。
+- 每个 token 只覆盖一个小 snapshot，其中包含当前句和前一句 final；不累计整场历史。
 - 公网发布使用独立有界队列；满载时丢弃旧 partial、保留最新 partial 和所有 final。
 - 增加 `localFinalAt`、`cloudPublishedAt`、`viewerRenderedAt` 三个时间点，测量云分发延迟，但不放入模型关键路径。
 
@@ -129,7 +130,7 @@ Cloud Run 本身支持 WebSocket，但每条连接仍受 request timeout 约束�
 
 ### P0：公网只读字幕
 
-1. 新建独立 Firebase project 的 dev 环境，启用 Hosting、Realtime Database 和 Authentication。
+1. 新建独立 Firebase project 的 dev 环境，启用 Hosting、Realtime Database 和 IAM Credentials API。
 2. 实现手机单页、响应式方向和手动布局按钮。
 3. Operator 页面生成公网 URL 和 QR，只异步发布最小字幕 projection。
 4. 编写并用 Emulator 验证 Rules、TTL、旧 sequence 和超长字段拒绝测试。
@@ -160,4 +161,4 @@ Cloud Run 本身支持 WebSocket，但每条连接仍受 request timeout 约束�
 
 Firebase publisher、Hosting 手机页、RTDB Rules 和本地测试骨架已经在 `codex/caption-display-design` 分支建立；详细审核、竞品比较、成本修正与部署步骤见 [Firebase 公网字幕：实现与审核](./FIREBASE_PUBLIC_VIEWER.zh.md)。
 
-尚未创建或修改任何 Firebase/GCP 云资源，也没有产生云费用。当前 working POC 默认仍使用同 Wi-Fi 的随机 token + SSE viewer；只有配置 `LOCAL_LIVE_FIREBASE_DATABASE_URL` 和 `LOCAL_LIVE_FIREBASE_VIEWER_URL` 后，二维码才优先切换到公网 Firebase viewer。
+独立 Firebase dev project `ai-for-god-caption-dev`、`us-central1` RTDB、锁定 Rules 和 Hosting 已部署；本地 `runtime.env` 已配置，开始录音后二维码会优先使用公网 viewer，LAN URL 仍作为 fallback。真实公网 E2E 已验证，正式现场前仍需完成蜂窝网络和长时间测试。

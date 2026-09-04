@@ -31,7 +31,9 @@ flowchart LR
 - `firebase/database.rules.json`：默认拒绝、过期读取、publisher claim、字段白名单、长度和 sequence 校验。
 - `firebase/firebase.json`：Hosting rewrite、安全响应头和 Emulator 配置。
 
-生产发布器使用 `gcloud auth application-default print-access-token` 获取短期 Google OAuth access token，并缓存 45 分钟；token 只进入 `Authorization` header，不写日志。Firebase 官方支持用 OAuth2 bearer token 调用 RTDB REST，并明确警告 service-account 凭据不能提交到仓库或暴露给客户端。[Firebase RTDB REST authentication](https://firebase.google.com/docs/database/rest/auth)
+生产发布器使用 `gcloud auth print-access-token --impersonate-service-account=...` 获取短期 Google OAuth access token，并缓存 45 分钟；token 只进入 `Authorization` header，不写日志。开发项目已建立专用 `caption-publisher` service account，并只授予 Firebase RTDB 的预定义角色；本机用户只有对该账号生成短期 token 的权限，不下载 JSON key。Google Cloud 官方推荐本地开发使用 service-account impersonation，以降低长期 key 泄露风险。[Google Cloud service-account impersonation](https://cloud.google.com/iam/docs/service-account-impersonation) · [Firebase RTDB REST authentication](https://firebase.google.com/docs/database/rest/auth)
+
+注意：OAuth service-account token 会以管理员身份绕过 RTDB Security Rules；当前最小的 Firebase 预定义写角色 `roles/firebasedatabase.admin` 仍包含实例管理权限。因此它比个人 Owner 明显收敛，但不是路径级 IAM。路径级边界依靠发布器只写 `/sessions/<random-token>`、独立 dev project 与自动清理测试；正式生产若要求强路径隔离，应改用 Firebase ID token/custom claim 或独立签发后端。
 
 ## 数据协议
 
@@ -70,14 +72,15 @@ RTDB 每个 viewer token 只保存一个可覆盖的最新状态：
 - Rules 限制 schema、phase、最大文本长度、过期时间不超过 24 小时，并拒绝未知字段。
 - Hosting 设置 `no-store`、`no-referrer`、`nosniff` 和 `DENY` frame header。
 - Firebase web config 是公开配置，不包含写权限；OAuth token 和 service-account 文件不得进入前端或 Git。
+- 当前 RTDB 是显式创建的 USER_DATABASE，Hosting 自动 init 不会填入它的 URL；手机页因此显式初始化公开的 `https://ai-for-god-caption-dev.firebaseio.com`，权限仍完全由 Rules 决定。
 
 Security Rules 是服务端执行的声明式访问控制，验证结构应使用 `.validate`；Firebase 官方建议通过 Emulator Suite 对 allow/deny case 做完整测试。[Rules core syntax](https://firebase.google.com/docs/database/security/core-syntax) · [Rules validation](https://firebase.google.com/docs/database/security/rules-conditions) · [Rules unit testing](https://firebase.google.com/docs/rules/unit-tests)
 
-### 部署前仍需完成
+### 上线前仍需完成
 
-- 当前 Mac 没有 Java runtime，因此本轮无法实际启动 RTDB Emulator；Rules 文件已建立，但不能宣称 emulator 验证通过。
-- 创建独立 Firebase dev project 后，必须安装 Java，再运行 Rules allow/deny 测试。
-- 为发布用 service account 只授予目标 RTDB 所需的最小 IAM 权限；不要使用个人 Owner 凭据作为周日常态。
+- 独立 Firebase dev project、RTDB Rules 和 Hosting 已部署；正式现场前仍需完成以下 gate。
+- OpenJDK 21 和可重复运行的 RTDB Emulator Rules 测试已安装；仍需在 Rules 变更后持续运行该测试。
+- 正式 production project 需要重新建立独立 publisher service account；不要复制 dev 权限或使用个人 Owner 凭据。
 - GCP/Firebase Console 中设置预算告警、dev/prod 分离、数据库区域和 24 小时清理任务。
 - 随机 URL 是适合公开聚会的临时 bearer link，不适合敏感或会员内容；需要敏感访问时改为观众身份验证。
 
@@ -125,25 +128,33 @@ RTDB 的实际公网延迟必须用 `localFinalAt → cloudPublishedAt → viewe
 
 ## 部署步骤
 
-1. 在 GCP 中创建独立 Firebase dev project，启用 Hosting 和 RTDB；选择离加州观众最近、组织允许的数据库区域。
+1. 使用独立 dev project `ai-for-god-caption-dev`、`us-central1` RTDB `ai-for-god-caption-dev` 和默认 Hosting site。
 2. 复制 `firebase/.firebaserc.example` 为未提交的 `firebase/.firebaserc` 并填写 project ID。
-3. 安装 Java 与 Firebase CLI，先用 `demo-*` project 运行 Emulator 和 Rules 测试；Firebase 官方推荐 demo project 防止误触生产资源。[Connect to RTDB Emulator](https://firebase.google.com/docs/emulator-suite/connect_rtdb)
-4. 部署前设置预算告警；Hosting 默认提供 SSL、CDN 和 `web.app` / `firebaseapp.com` 域名。[Firebase Hosting quickstart](https://firebase.google.com/docs/hosting/quickstart)
-5. 配置本地环境变量：
+3. 运行 `npm run test:firebase-rules`，在 `demo-*` project 中验证 Rules 的允许与拒绝路径；Firebase 官方推荐 demo project 防止误触生产资源。[Connect to RTDB Emulator](https://firebase.google.com/docs/emulator-suite/connect_rtdb)
+   Hosting Emulator 使用 `127.0.0.1:5500`，避开 macOS AirPlay 常占用的 `5000`。
+4. 在 GCP Billing 设置 project-scoped 预算告警；预算告警只提醒，不会自动停服。
+5. 运行 `./scripts/deploy-firebase-dev.sh` 部署 Rules 与 Hosting。当前 USER_DATABASE 会让 Firebase CLI `15.29.0` 的 combined deploy 误判缺少默认实例，因此脚本通过 RTDB 官方管理端点更新 Rules，再单独调用 Hosting deploy。
+6. 复制 `firebase/runtime.env.example` 为被 Git 忽略的 `firebase/runtime.env`，填写两个 URL。周日双击启动器会自动读取它；不创建该文件时仍保持本地/LAN 模式。也可以在当前 shell 临时配置：
 
 ```bash
-export LOCAL_LIVE_FIREBASE_DATABASE_URL="https://PROJECT-default-rtdb.firebaseio.com"
+export LOCAL_LIVE_FIREBASE_DATABASE_URL="https://DATABASE_INSTANCE.firebaseio.com"
 export LOCAL_LIVE_FIREBASE_VIEWER_URL="https://PROJECT.web.app"
-gcloud auth application-default login
+export LOCAL_LIVE_FIREBASE_IMPERSONATE_SERVICE_ACCOUNT="caption-publisher@PROJECT.iam.gserviceaccount.com"
 ```
 
-6. 启动周日 POC。Gateway 健康响应中的 `publicViewer.configured` 应为 `true`；开始录音后二维码优先使用公网 URL，LAN URL 仍保留为 fallback。
-7. 用 iPhone 关闭 Wi-Fi，只开蜂窝网络完成 60 分钟测试；验证重连、横竖屏、final 不丢、云断线不影响本地录音。
+7. 启动周日 POC。Gateway 健康响应中的 `publicViewer.configured` 应为 `true`；开始录音后二维码优先使用公网 URL，LAN URL 仍保留为 fallback。
+   启动器会在模型启动前检查两个 Firebase URL 是否成对配置，并验证短期凭据可生成；配置错误会立即停止，而纯本地模式不会要求安装或登录 `gcloud`。该检查只在启动时运行，不进入音频或字幕热路径。
+8. 用 iPhone 关闭 Wi-Fi，只开蜂窝网络完成 60 分钟测试；验证重连、横竖屏、final 不丢、云断线不影响本地录音。
+
+部署后可运行 `npm run test:firebase-cloud`。该 smoke test 会通过真实发布器写入三次 snapshot，检查匿名 token 读取、根路径拒绝与 Hosting route，然后在 `finally` 中删除随机测试节点；它不会把 viewer token 或 OAuth token 打到终端。
 
 ## 当前验证边界
 
 - 已完成 Python projection、节流、后台失败隔离测试。
 - 已完成手机页 demo 视觉实现，可在本地浏览器审核。
-- 未创建或修改任何 Firebase/GCP 云资源，未产生云费用。
-- 未运行 Emulator Rules 测试：当前 Mac 缺少 Java runtime。
+- 已创建并启用 Firebase dev project `ai-for-god-caption-dev`；`us-central1` RTDB 和 `https://ai-for-god-caption-dev.web.app` 已部署。
+- Hosting 页面已用 Firebase CLI `15.29.0` 在 `127.0.0.1:5500` 启动并验证 rewrite 与安全响应头；当前 Node `26` 超出该 CLI 依赖声明的受支持版本范围，部署时应使用 Node `24` LTS。
+- 真实公网 E2E 已验证本地 publisher 写入、匿名 token 节点读取、Chrome 实时渲染和根路径拒绝读取；测试 snapshot 最后一次 write ack 为 `137 ms`，测试节点已删除。单次样本不是延迟分位数。
+- OpenJDK `21.0.12.1` 已安装；RTDB Emulator Rules 测试 `5/5` 通过，覆盖有效 token 读取、根/过期读取拒绝、匿名写入拒绝、publisher claim 写入、未知字段和 sequence 回退拒绝。
+- 已建立 keyless `caption-publisher` 身份；本地通过 impersonation 获取短期凭据，不保存 service-account key。
 - 未做真实蜂窝网络和 RTDB 延迟测试；这两项仍是上线前 P0 gate。
