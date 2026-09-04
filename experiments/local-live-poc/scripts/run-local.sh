@@ -83,6 +83,10 @@ fi
 weekly_pack="${LOCAL_LIVE_WEEKLY_PACK:-artifacts/weekly-pack.json}"
 if [ -f "$weekly_pack" ]; then
   gateway_args+=(--pack "$weekly_pack")
+else
+  # Override gateway.py's environment-backed default when a direct caller leaves
+  # LOCAL_LIVE_WEEKLY_PACK pointing at a missing optional pack.
+  gateway_args+=(--pack "")
 fi
 gateway_args+=(--context-policy "${LOCAL_LIVE_CONTEXT_POLICY:-none}")
 
