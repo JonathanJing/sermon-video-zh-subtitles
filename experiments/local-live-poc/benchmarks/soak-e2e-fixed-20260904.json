@@ -1,0 +1,164 @@
+{
+  "schemaVersion": "local-live-soak-e2e-report-v1",
+  "sessionId": "20260904T073749.972Z-5fecd895",
+  "sessionStatus": "completed",
+  "durationMs": 3697777,
+  "eventCounts": {
+    "asr.empty": 1,
+    "asr.final": 1246,
+    "asr.processing": 1247,
+    "caption_rendered": 2492,
+    "gateway_health": 1,
+    "local_session_created": 1,
+    "session_started": 1,
+    "session_stopped": 1,
+    "stream.closed": 1,
+    "stream.ready": 1,
+    "translation.final": 1246,
+    "translation.partial": 2967,
+    "translation.started": 1246
+  },
+  "failureEventCount": 0,
+  "failureEventTypes": {},
+  "failureReasonCounts": {},
+  "failureDetails": [],
+  "availability": {
+    "gatewayHttp200Rate": 1.0,
+    "asrFinalRate": 0.9992,
+    "translationFinalRate": 1.0
+  },
+  "sequenceNonIncreasingCount": 0,
+  "asr": {
+    "finalCount": 1246,
+    "emptyCount": 1,
+    "suppressedCount": 0,
+    "suppressedReasonCounts": {},
+    "nonEmptyFinalCount": 1246,
+    "translationFinalCount": 1246,
+    "shortRepeatedOutputCandidates": [
+      {
+        "text": "the.",
+        "count": 227,
+        "shareOfNonEmptyAsrFinals": 0.1822
+      },
+      {
+        "text": "oh.",
+        "count": 10,
+        "shareOfNonEmptyAsrFinals": 0.008
+      },
+      {
+        "text": "yeah.",
+        "count": 7,
+        "shareOfNonEmptyAsrFinals": 0.0056
+      },
+      {
+        "text": "you.",
+        "count": 5,
+        "shareOfNonEmptyAsrFinals": 0.004
+      },
+      {
+        "text": "now.",
+        "count": 4,
+        "shareOfNonEmptyAsrFinals": 0.0032
+      },
+      {
+        "text": "i'm.",
+        "count": 3,
+        "shareOfNonEmptyAsrFinals": 0.0024
+      }
+    ],
+    "unexpectedCjkOutputCount": 0,
+    "unexpectedCjkOutputs": []
+  },
+  "latency": {
+    "asrQueueWaitMs": {
+      "p50": 0,
+      "p95": 3,
+      "max": 2836
+    },
+    "audioEndToAsrFinalMs": {
+      "p50": 1279,
+      "p95": 1318,
+      "max": 5836
+    },
+    "translationTtftMs": {
+      "p50": 126,
+      "p95": 146,
+      "max": 994
+    },
+    "audioEndToChineseFirstTokenMs": {
+      "p50": 1396,
+      "p95": 1456,
+      "max": 5993
+    },
+    "audioEndToChineseFinalMs": {
+      "p50": 1530,
+      "p95": 1720,
+      "max": 6067
+    },
+    "audioEndToBrowserFirstTokenMs": {
+      "p50": 1419,
+      "p95": 1486,
+      "max": 6005
+    }
+  },
+  "telemetry": {
+    "sampleCount": 349,
+    "elapsedSeconds": 3593,
+    "gatewayHealthSampleCount": 348,
+    "gatewayHttp200Samples": 348,
+    "gatewayNon200Samples": 0,
+    "supplementalHealth": {
+      "sampleCount": 348,
+      "http200Samples": 348,
+      "readySamples": 348,
+      "asrAvailableSamples": 348,
+      "liveAvailableSamples": 348
+    },
+    "gatewayRss": {
+      "firstKb": 41520,
+      "lastKb": 48352,
+      "growthKb": 6832,
+      "maxKb": 48352
+    },
+    "mlxRss": {
+      "firstKb": 1170736,
+      "lastKb": 1196992,
+      "growthKb": 26256,
+      "maxKb": 1197808
+    },
+    "mlxProcessMissingSamples": 0,
+    "ollamaRss": {
+      "firstKb": 8508128,
+      "lastKb": 10496864,
+      "growthKb": 1988736,
+      "maxKb": 10694768
+    },
+    "swapUsedMb": {
+      "first": null,
+      "last": null,
+      "max": null
+    },
+    "memoryFreePercent": {
+      "first": 84,
+      "last": 61,
+      "min": 58
+    }
+  },
+  "artifactIntegrity": {
+    "recording": {
+      "exists": true,
+      "sha256Matches": true
+    },
+    "pcm": {
+      "exists": true,
+      "sha256Matches": true
+    },
+    "wav": {
+      "exists": true,
+      "sha256Matches": true
+    }
+  },
+  "allFinalizedArtifactHashesMatch": true,
+  "sessionDirectory": "/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles-local-live-poc/experiments/local-live-poc/artifacts/sessions/20260904T073749.972Z-5fecd895"
+}

@@ -1,0 +1,99 @@
+{
+  "schemaVersion": "local-live-soak-e2e-report-v1",
+  "sessionId": "20260904T084619.073Z-59d01096",
+  "sessionStatus": "completed",
+  "durationMs": 69963,
+  "eventCounts": {
+    "asr.final": 2,
+    "asr.processing": 15,
+    "asr.suppressed": 13,
+    "caption_rendered": 4,
+    "gateway_health": 1,
+    "local_session_created": 1,
+    "session_started": 1,
+    "session_stopped": 1,
+    "stream.closed": 1,
+    "stream.ready": 1,
+    "translation.final": 2,
+    "translation.partial": 4,
+    "translation.started": 2
+  },
+  "failureEventCount": 0,
+  "failureEventTypes": {},
+  "failureReasonCounts": {},
+  "failureDetails": [],
+  "availability": {
+    "gatewayHttp200Rate": null,
+    "asrFinalRate": 0.1333,
+    "translationFinalRate": 1.0
+  },
+  "sequenceNonIncreasingCount": 0,
+  "asr": {
+    "finalCount": 2,
+    "emptyCount": 0,
+    "suppressedCount": 13,
+    "suppressedReasonCounts": {
+      "repeated_short_result": 13
+    },
+    "nonEmptyFinalCount": 2,
+    "translationFinalCount": 2,
+    "shortRepeatedOutputCandidates": [
+      {
+        "text": "the.",
+        "count": 2,
+        "shareOfNonEmptyAsrFinals": 1.0
+      }
+    ],
+    "unexpectedCjkOutputCount": 0,
+    "unexpectedCjkOutputs": []
+  },
+  "latency": {
+    "asrQueueWaitMs": {
+      "p50": 0,
+      "p95": 1,
+      "max": 1
+    },
+    "audioEndToAsrFinalMs": {
+      "p50": 1266,
+      "p95": 1267,
+      "max": 1267
+    },
+    "translationTtftMs": {
+      "p50": 152,
+      "p95": 207,
+      "max": 207
+    },
+    "audioEndToChineseFirstTokenMs": {
+      "p50": 1420,
+      "p95": 1474,
+      "max": 1474
+    },
+    "audioEndToChineseFinalMs": {
+      "p50": 1458,
+      "p95": 1513,
+      "max": 1513
+    },
+    "audioEndToBrowserFirstTokenMs": {
+      "p50": 1430,
+      "p95": 1485,
+      "max": 1485
+    }
+  },
+  "telemetry": null,
+  "artifactIntegrity": {
+    "recording": {
+      "exists": true,
+      "sha256Matches": true
+    },
+    "pcm": {
+      "exists": true,
+      "sha256Matches": true
+    },
+    "wav": {
+      "exists": true,
+      "sha256Matches": true
+    }
+  },
+  "allFinalizedArtifactHashesMatch": true,
+  "sessionDirectory": "/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles-local-live-poc/experiments/local-live-poc/artifacts/sessions/20260904T084619.073Z-59d01096"
+}

@@ -29,6 +29,8 @@ artifacts/sessions/<timestamp>-<random-id>/
 
 The gateway syncs recovery recording chunks, batched PCM frames, and events to disk. On stop it wraps PCM as a replayable WAV, marks the manifest completed, and calculates recording/PCM hashes. Browser download links remain available as a recovery copy. Override the storage root with `LOCAL_LIVE_SESSION_ROOT=/absolute/path` when the recordings should live outside the project.
 
+For the intended room/PA capture path, the page requests browser echo cancellation, noise suppression, and automatic gain control **off**. The requested and applied track settings are written into each session manifest so a replay can distinguish capture changes from model changes. The saved browser recording is never rewritten by ASR-side processing.
+
 The backend includes a dependency-free Weekly Pack builder, guarded context retriever, localhost REST/WebSocket gateway, Whisper CLI adapter, and Ollama translation adapter. It selects the already-installed MiLMMT A0 by default; the setup script downloads only the pinned local ASR model.
 
 The intentionally small system and context-pack plan is in [DESIGN.zh.md](./DESIGN.zh.md). The researched live transport decision and protocol contract are in [STREAMING.zh.md](./STREAMING.zh.md). The verified desktop design review is in [design-qa.md](./design-qa.md).
@@ -62,6 +64,8 @@ The equivalent Terminal command is:
 ```
 
 This command checks the local dependencies, model, writable session directory, and at least 10 GiB of free disk; starts Ollama when needed; prevents display and idle system sleep; starts the REST gateway, WebSocket live audio endpoint, Whisper ASR, MiLMMT adapter, and Vite UI; then opens `http://127.0.0.1:4173/` automatically. It uses `small.en` when that benchmarked model is already installed and otherwise uses the pinned `base.en` installed by setup. Override it explicitly with `LOCAL_LIVE_ASR_MODEL=/absolute/path/to/model.bin`.
+
+With Qwen MLX enabled, the launcher supervises `mlx_audio.server`. If it exits, the launcher records stdout/stderr in `${TMPDIR}/sermon-live-caption-poc/mlx-audio.log` and attempts up to three automatic restarts while the independent browser recording continues. A short MLX finalization timeout is logged as `asr.empty`, not translated, and does not become a persistent page error. A third consecutive identical short ASR result is logged as `asr.suppressed/repeated_short_result` and held out of translation; any different or longer result immediately resets the guard. This generic guard avoids streaming hundreds of music-induced one-word hallucinations without blacklisting a specific word.
 
 The final cadence can be tuned without code changes using `LOCAL_LIVE_VAD_SILENCE_MS` and `LOCAL_LIVE_VAD_MAX_SEGMENT_MS`; both values must be multiples of 100 ms. The defaults are `500` and `3000`.
 
@@ -139,6 +143,7 @@ Keep the test stack small and use the standard runners already available:
 - **Unit:** content-pack rules, the local session store, and the browser-to-gateway request contract. No server, microphone, Ollama, or network is required.
 - **Integration:** a real localhost gateway and temporary session directory with a fake model response. This verifies HTTP, ordered audio/event writes, finalization, and translation fallback without changing real recordings.
 - **Browser E2E:** use the actual microphone and actual local Ollama model. Record at least ten seconds, stop, then verify that the visible Chinese/English pair changed, `manifest.json` is completed, `events.jsonl` contains the translation events, and the saved recording decodes. This remains a deliberate manual test because browser microphone permission and the physical audio route are the behavior under test.
+- **Long soak:** replay a fixed source through the actual speaker/microphone path for 50–60 minutes, then score latency, availability, repeated short outputs, language drift, process RSS/Swap, failures, and artifact hashes with `scripts/score-soak-e2e.py`. The scorer accepts an independent health sampler with `--health-telemetry`. The 2026-09-04 baseline, targeted recovery regression, and completed fixed 60-minute run are documented in [benchmarks/SOAK_E2E_20260904.zh.md](./benchmarks/SOAK_E2E_20260904.zh.md).
 
 Run the complete automated gate with:
 

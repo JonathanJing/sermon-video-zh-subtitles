@@ -121,11 +121,13 @@ class MlxAudioWebSocketClient:
         url: str,
         finalize_silence_frames: int = 12,
         finalize_frame_interval_seconds: float = 0.1,
+        final_response_timeout_seconds: float = 1.5,
     ) -> None:
         self.model_path = Path(model_path).expanduser().resolve() if model_path else None
         self.url = url.strip()
         self.finalize_silence_frames = max(1, finalize_silence_frames)
         self.finalize_frame_interval_seconds = max(0.0, finalize_frame_interval_seconds)
+        self.final_response_timeout_seconds = max(0.1, final_response_timeout_seconds)
         self._model_sha256: str | None = None
         self._warmup: dict[str, Any] = {
             "ready": False,
@@ -242,11 +244,17 @@ class MlxAudioWebSocketClient:
                     websocket.send(silence_frame)
                 while True:
                     try:
-                        payload = json.loads(websocket.recv(timeout=5.0))
+                        payload = json.loads(websocket.recv(timeout=self.final_response_timeout_seconds))
                     except TimeoutError:
                         if final_texts:
                             break
-                        raise AsrError("MLX Audio returned no final transcription")
+                        return self._result(
+                            "",
+                            pcm_s16le,
+                            sample_rate_hz,
+                            started,
+                            no_final_reason="timeout",
+                        )
                     except ConnectionClosed:
                         if final_texts:
                             break
@@ -260,7 +268,23 @@ class MlxAudioWebSocketClient:
             raise
         except Exception as error:
             raise AsrError(f"MLX Audio transcription failed: {error}") from error
-        text = " ".join(final_texts).strip()
+        return self._result(
+            " ".join(final_texts).strip(),
+            pcm_s16le,
+            sample_rate_hz,
+            started,
+            final_event_count=len(final_texts),
+        )
+
+    def _result(
+        self,
+        text: str,
+        pcm_s16le: bytes,
+        sample_rate_hz: int,
+        started: float,
+        final_event_count: int = 0,
+        no_final_reason: str | None = None,
+    ) -> dict[str, Any]:
         return {
             "sourceTextEn": text,
             "provider": "mlx-audio-qwen-websocket",
@@ -268,7 +292,8 @@ class MlxAudioWebSocketClient:
             "modelSha256": self.model_sha256(),
             "latencyMs": round((time.perf_counter() - started) * 1000),
             "audioDurationMs": round(len(pcm_s16le) / 2 / sample_rate_hz * 1000),
-            "finalEventCount": len(final_texts),
+            "finalEventCount": final_event_count,
+            "noFinalReason": no_final_reason,
             "finalizationMode": "vad_silence_frames",
             "finalizationSilenceFrameCount": self.finalize_silence_frames,
             "finalizationFrameIntervalMs": round(self.finalize_frame_interval_seconds * 1000),

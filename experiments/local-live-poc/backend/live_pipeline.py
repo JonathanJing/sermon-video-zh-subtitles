@@ -19,6 +19,7 @@ from .session_store import SessionStore, SessionStoreError
 SAMPLE_RATE_HZ = 16000
 FRAME_DURATION_MS = 100
 TRANSLATION_PARTIAL_INTERVAL_MS = 200
+REPEATED_SHORT_RESULT_LIMIT = 3
 PCM_BYTES_PER_FRAME = 3200
 SILENCE_FRAME = bytes(PCM_BYTES_PER_FRAME)
 NON_SPEECH_LABEL_RE = re.compile(
@@ -167,6 +168,8 @@ class LivePipeline:
         self.audio_clock_started_at: float | None = None
         self.asr_enqueued_at: dict[str, float] = {}
         self.ux_samples: list[dict[str, int | None]] = []
+        self.last_short_asr_result = ""
+        self.short_asr_repeat_count = 0
         self.pcm_batch: list[bytes] = []
         self.pcm_batch_start = 1
         self.asr_work: queue.Queue[SpeechSegment | None] = queue.Queue(maxsize=2)
@@ -344,6 +347,17 @@ class LivePipeline:
                 "asrMetrics": result,
             })
             return
+        short_repeat_count = self._note_short_asr_result(source_text)
+        if short_repeat_count >= REPEATED_SHORT_RESULT_LIMIT:
+            self._emit({
+                **common,
+                "type": "asr.suppressed",
+                "reason": "repeated_short_result",
+                "sourceTextEn": source_text,
+                "repeatCount": short_repeat_count,
+                "asrMetrics": result,
+            })
+            return
         asr_final_at = time.perf_counter()
         audio_end_to_asr_final_ms = self._audio_end_latency_ms(segment.audio_end_ms, asr_final_at)
         self._emit({
@@ -384,6 +398,20 @@ class LivePipeline:
                 "reason": "queue_full",
                 "recordingShouldContinue": True,
             })
+
+    def _note_short_asr_result(self, source_text: str) -> int:
+        normalized = " ".join(source_text.casefold().split())
+        word_count = len(re.findall(r"[\w']+", normalized))
+        if not normalized or word_count > 3 or len(normalized) > 24:
+            self.last_short_asr_result = ""
+            self.short_asr_repeat_count = 0
+            return 0
+        if normalized == self.last_short_asr_result:
+            self.short_asr_repeat_count += 1
+        else:
+            self.last_short_asr_result = normalized
+            self.short_asr_repeat_count = 1
+        return self.short_asr_repeat_count
 
     def _run_translation_worker(self) -> None:
         while True:

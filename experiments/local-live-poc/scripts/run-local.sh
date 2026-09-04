@@ -5,6 +5,10 @@ script_dir="$(cd "$(dirname "$0")" && pwd)"
 poc_dir="$(cd "$script_dir/.." && pwd)"
 cd "$poc_dir"
 
+runtime_dir="${TMPDIR:-/tmp}/sermon-live-caption-poc"
+mlx_audio_log="$runtime_dir/mlx-audio.log"
+mkdir -p "$runtime_dir"
+
 asr_model="${LOCAL_LIVE_ASR_MODEL:-artifacts/models/ggml-base.en.bin}"
 asr_provider="${LOCAL_LIVE_ASR_PROVIDER:-whisper-cli}"
 
@@ -15,6 +19,7 @@ fi
 
 gateway_args=(--asr-provider "$asr_provider")
 mlx_audio_pid=""
+mlx_audio_server=""
 if [ "$asr_provider" = "qwen-mlx-websocket" ]; then
   qwen_model="${LOCAL_LIVE_QWEN_ASR_MODEL:-}"
   if [ -z "$qwen_model" ] || [ ! -d "$qwen_model" ]; then
@@ -33,30 +38,38 @@ if [ "$asr_provider" = "qwen-mlx-websocket" ]; then
     .venv/bin/python -c 'import socket; s=socket.create_connection(("127.0.0.1", 18766), .5); s.close()' \
       >/dev/null 2>&1
   }
-  if ! mlx_audio_ready; then
-    if [ -x .venv/bin/mlx_audio.server ]; then
-      mlx_audio_server=".venv/bin/mlx_audio.server"
-    elif command -v mlx_audio.server >/dev/null; then
-      mlx_audio_server="$(command -v mlx_audio.server)"
-    else
-      echo "mlx_audio.server is required for the Qwen ASR provider." >&2
-      exit 1
-    fi
-    "$mlx_audio_server" --host 127.0.0.1 --port 18766 --workers 1 &
+  if [ -x .venv/bin/mlx_audio.server ]; then
+    mlx_audio_server=".venv/bin/mlx_audio.server"
+  elif command -v mlx_audio.server >/dev/null; then
+    mlx_audio_server="$(command -v mlx_audio.server)"
+  else
+    echo "mlx_audio.server is required for the Qwen ASR provider." >&2
+    exit 1
+  fi
+  start_mlx_audio() {
+    printf '%s starting MLX Audio\n' "$(date -u +%FT%TZ)" >> "$mlx_audio_log"
+    "$mlx_audio_server" --host 127.0.0.1 --port 18766 --workers 1 \
+      >> "$mlx_audio_log" 2>&1 &
     mlx_audio_pid=$!
+  }
+  wait_mlx_audio_ready() {
     for _ in $(seq 1 120); do
       if mlx_audio_ready; then
-        break
+        return 0
       fi
-      if ! kill -0 "$mlx_audio_pid" 2>/dev/null; then
-        echo "MLX Audio exited before becoming ready." >&2
-        wait "$mlx_audio_pid"
-        exit $?
+      if [ -n "$mlx_audio_pid" ] && ! kill -0 "$mlx_audio_pid" 2>/dev/null; then
+        return 1
       fi
       sleep 1
     done
-    if ! mlx_audio_ready; then
+    return 1
+  }
+  : > "$mlx_audio_log"
+  if ! mlx_audio_ready; then
+    start_mlx_audio
+    if ! wait_mlx_audio_ready; then
       echo "MLX Audio did not become ready within 120 seconds." >&2
+      wait "$mlx_audio_pid" 2>/dev/null || true
       exit 1
     fi
   fi
@@ -83,19 +96,49 @@ npm run dev -- --host 0.0.0.0 --port 4173 --strictPort &
 vite_pid=$!
 
 cleanup() {
+  trap - EXIT INT TERM
   kill "$gateway_pid" "$vite_pid" 2>/dev/null || true
   if [ -n "$mlx_audio_pid" ]; then
     kill "$mlx_audio_pid" 2>/dev/null || true
   fi
 }
-trap cleanup EXIT INT TERM
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 echo "Local live captions: http://127.0.0.1:4173/"
 unexpected_restarts=0
+mlx_audio_restarts=0
 while kill -0 "$vite_pid" 2>/dev/null; do
-  while kill -0 "$gateway_pid" 2>/dev/null && kill -0 "$vite_pid" 2>/dev/null; do
+  if [ "$asr_provider" = "qwen-mlx-websocket" ] && ! mlx_audio_ready; then
+    previous_status="external_or_unknown"
+    if [ -n "$mlx_audio_pid" ]; then
+      set +e
+      wait "$mlx_audio_pid" 2>/dev/null
+      previous_status=$?
+      set -e
+    fi
+    mlx_audio_restarts=$((mlx_audio_restarts + 1))
+    if [ "$mlx_audio_restarts" -gt 3 ]; then
+      echo "MLX Audio exited repeatedly; stop and start the POC again. Log: $mlx_audio_log" >&2
+      exit 1
+    fi
+    echo "MLX Audio unavailable (status $previous_status); restarting ($mlx_audio_restarts/3). Log: $mlx_audio_log" >&2
+    start_mlx_audio
+    if ! wait_mlx_audio_ready; then
+      echo "MLX Audio restart did not become ready. Log: $mlx_audio_log" >&2
+      kill "$mlx_audio_pid" 2>/dev/null || true
+      wait "$mlx_audio_pid" 2>/dev/null || true
+      sleep 1
+      continue
+    fi
+    echo "MLX Audio recovered."
+  fi
+
+  if kill -0 "$gateway_pid" 2>/dev/null; then
     sleep 1
-  done
+    continue
+  fi
   if ! kill -0 "$vite_pid" 2>/dev/null; then
     break
   fi

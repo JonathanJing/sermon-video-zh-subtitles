@@ -177,6 +177,62 @@ class LivePipelineTest(unittest.TestCase):
             self.assertNotIn("translation.final", types)
             self.assertEqual(translated, [])
 
+    def test_empty_asr_result_is_logged_but_not_translated(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            sessions = SessionStore(temporary)
+            created = sessions.create({"audioMimeType": "audio/webm"})
+            sent = []
+            translated = []
+
+            pipeline = LivePipeline(
+                created["sessionId"],
+                sessions,
+                FakeAsr(""),
+                lambda source_text, *_: translated.append(source_text),
+                sent.append,
+                vad_threshold_rms=450,
+            )
+            for sequence in range(1, 5):
+                pipeline.process_frame(sequence, frame(1000))
+            for sequence in range(5, 12):
+                pipeline.process_frame(sequence, frame(0))
+            pipeline.stop()
+
+            self.assertIn("asr.empty", [event["type"] for event in sent])
+            self.assertNotIn("translation.final", [event["type"] for event in sent])
+            self.assertEqual(translated, [])
+
+    def test_third_consecutive_short_asr_result_is_suppressed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            sessions = SessionStore(temporary)
+            created = sessions.create({"audioMimeType": "audio/webm"})
+            sent = []
+            translated = []
+
+            pipeline = LivePipeline(
+                created["sessionId"],
+                sessions,
+                FakeAsr("The."),
+                lambda source_text, *_: translated.append(source_text) or {"targetTextZh": "这。"},
+                sent.append,
+                vad_threshold_rms=450,
+            )
+            sequence = 1
+            for _ in range(3):
+                for _ in range(4):
+                    pipeline.process_frame(sequence, frame(1000))
+                    sequence += 1
+                for _ in range(7):
+                    pipeline.process_frame(sequence, frame(0))
+                    sequence += 1
+            pipeline.stop()
+
+            suppressed = [event for event in sent if event["type"] == "asr.suppressed"]
+            self.assertEqual(translated, ["The.", "The."])
+            self.assertEqual(len(suppressed), 1)
+            self.assertEqual(suppressed[0]["reason"], "repeated_short_result")
+            self.assertEqual(suppressed[0]["repeatCount"], 3)
+
     def test_slow_translation_does_not_block_following_asr(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             sessions = SessionStore(temporary)

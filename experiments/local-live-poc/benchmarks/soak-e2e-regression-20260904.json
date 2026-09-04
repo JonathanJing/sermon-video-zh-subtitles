@@ -1,0 +1,121 @@
+{
+  "schemaVersion": "local-live-soak-e2e-report-v1",
+  "sessionId": "20260904T072924.993Z-007d2349",
+  "sessionStatus": "completed",
+  "durationMs": 235171,
+  "eventCounts": {
+    "asr.empty": 1,
+    "asr.failed": 1,
+    "asr.final": 49,
+    "asr.processing": 51,
+    "caption_rendered": 98,
+    "gateway_health": 1,
+    "local_session_created": 1,
+    "session_started": 1,
+    "session_stopped": 1,
+    "stream.closed": 1,
+    "stream.ready": 1,
+    "translation.final": 49,
+    "translation.partial": 102,
+    "translation.started": 49
+  },
+  "failureEventCount": 1,
+  "failureEventTypes": {
+    "asr.failed": 1
+  },
+  "failureReasonCounts": {
+    "MLX Audio endpoint or configured Qwen ASR model is unavailable": 1
+  },
+  "failureDetails": [
+    {
+      "type": "asr.failed",
+      "segmentId": "seg-000032",
+      "reason": null,
+      "message": "MLX Audio endpoint or configured Qwen ASR model is unavailable"
+    }
+  ],
+  "availability": {
+    "gatewayHttp200Rate": null,
+    "asrFinalRate": 0.9608,
+    "translationFinalRate": 1.0
+  },
+  "sequenceNonIncreasingCount": 0,
+  "asr": {
+    "finalCount": 49,
+    "nonEmptyFinalCount": 49,
+    "translationFinalCount": 49,
+    "shortRepeatedOutputCandidates": [
+      {
+        "text": "the.",
+        "count": 4,
+        "shareOfNonEmptyAsrFinals": 0.0816
+      },
+      {
+        "text": "yeah.",
+        "count": 4,
+        "shareOfNonEmptyAsrFinals": 0.0816
+      },
+      {
+        "text": "you.",
+        "count": 2,
+        "shareOfNonEmptyAsrFinals": 0.0408
+      },
+      {
+        "text": "but he came.",
+        "count": 2,
+        "shareOfNonEmptyAsrFinals": 0.0408
+      }
+    ],
+    "unexpectedCjkOutputCount": 0,
+    "unexpectedCjkOutputs": []
+  },
+  "latency": {
+    "asrQueueWaitMs": {
+      "p50": 0,
+      "p95": 1,
+      "max": 2
+    },
+    "audioEndToAsrFinalMs": {
+      "p50": 1258,
+      "p95": 1295,
+      "max": 2450
+    },
+    "translationTtftMs": {
+      "p50": 129,
+      "p95": 145,
+      "max": 208
+    },
+    "audioEndToChineseFirstTokenMs": {
+      "p50": 1387,
+      "p95": 1429,
+      "max": 2579
+    },
+    "audioEndToChineseFinalMs": {
+      "p50": 1482,
+      "p95": 1643,
+      "max": 2731
+    },
+    "audioEndToBrowserFirstTokenMs": {
+      "p50": 1394,
+      "p95": 1435,
+      "max": 2586
+    }
+  },
+  "telemetry": null,
+  "artifactIntegrity": {
+    "recording": {
+      "exists": true,
+      "sha256Matches": true
+    },
+    "pcm": {
+      "exists": true,
+      "sha256Matches": true
+    },
+    "wav": {
+      "exists": true,
+      "sha256Matches": true
+    }
+  },
+  "allFinalizedArtifactHashesMatch": true,
+  "sessionDirectory": "/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles-local-live-poc/experiments/local-live-poc/artifacts/sessions/20260904T072924.993Z-007d2349"
+}

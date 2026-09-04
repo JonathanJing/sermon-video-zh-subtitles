@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import tempfile
 import threading
+import time
 import unittest
 from pathlib import Path
 
@@ -82,6 +83,44 @@ class MlxAudioWebSocketClientTest(unittest.TestCase):
                 status = client.status()
                 self.assertFalse(status["available"])
                 self.assertFalse(status["warmup"]["ready"])
+        finally:
+            server.shutdown()
+            thread.join(timeout=2)
+
+    def test_no_final_times_out_as_empty_result_without_raising(self) -> None:
+        def handler(connection) -> None:
+            connection.recv(timeout=2)
+            connection.send(json.dumps({"status": "ready"}))
+            try:
+                connection.recv(timeout=2)
+                connection.recv(timeout=2)
+            except ConnectionClosed:
+                return
+            time.sleep(0.2)
+
+        server = serve(handler, "127.0.0.1", 0)
+        port = server.socket.getsockname()[1]
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            with tempfile.TemporaryDirectory() as temporary:
+                model = Path(temporary) / "qwen"
+                model.mkdir()
+                (model / "model.safetensors").write_bytes(b"test-weights")
+                client = MlxAudioWebSocketClient(
+                    str(model),
+                    f"ws://127.0.0.1:{port}/v1/audio/transcriptions/realtime",
+                    finalize_silence_frames=1,
+                    finalize_frame_interval_seconds=0,
+                    final_response_timeout_seconds=0.05,
+                )
+                client.warmup()
+
+                result = client.transcribe(bytes(32000))
+
+                self.assertEqual(result["sourceTextEn"], "")
+                self.assertEqual(result["finalEventCount"], 0)
+                self.assertEqual(result["noFinalReason"], "timeout")
         finally:
             server.shutdown()
             thread.join(timeout=2)

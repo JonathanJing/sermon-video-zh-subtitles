@@ -108,6 +108,7 @@ export function App() {
   const partialTranslationRef = useRef({ segmentId: "", text: "" });
   const renderedTranslationSegmentsRef = useRef(new Set());
   const pcmClockStartedAtRef = useRef(0);
+  const recoverableAsrErrorRef = useRef(false);
 
   const isRunning = phase === "running";
   const isBusy = phase === "requesting" || phase === "stopping";
@@ -152,6 +153,7 @@ export function App() {
   function recordLocalStorageFailure(caught) {
     if (localWriteFailureRef.current) return;
     localWriteFailureRef.current = true;
+    recoverableAsrErrorRef.current = false;
     setLocalSaveState("error");
     appendEvent("local_storage_failed", {
       message: caught?.message || "Local session storage failed",
@@ -192,6 +194,7 @@ export function App() {
     )) return;
 
     setRuntimeRestartState("restarting");
+    recoverableAsrErrorRef.current = false;
     setError("");
     appendEvent("runtime_restart_requested", { recordingActive: recordingActiveRef.current }, false);
     try {
@@ -277,6 +280,7 @@ export function App() {
   function handleLiveEvent(event) {
     recordGatewayEvent(event);
     if (event.persistenceFailed || event.type === "storage.failed") {
+      recoverableAsrErrorRef.current = false;
       setLocalSaveState("error");
       setError("本地增量保存失败；浏览器录音仍在继续，请勿刷新页面。");
     }
@@ -285,7 +289,13 @@ export function App() {
       setTranslationState("listening");
     } else if (event.type === "asr.processing") {
       setTranslationState("recognizing");
+    } else if (event.type === "asr.empty" || event.type === "asr.suppressed") {
+      setTranslationState("listening");
     } else if (event.type === "asr.final") {
+      if (recoverableAsrErrorRef.current) {
+        recoverableAsrErrorRef.current = false;
+        setError("");
+      }
       activeTranslationSegmentRef.current = event.segmentId || "";
       partialTranslationRef.current = { segmentId: event.segmentId || "", text: "" };
       setCaption((current) => ({ en: event.sourceTextEn || "", zh: current.zh }));
@@ -344,11 +354,12 @@ export function App() {
     } else if (event.type === "translation.skipped") {
       setCaption({ en: event.sourceTextEn || "", zh: "翻译积压，暂时显示英文原文。" });
       setTranslationState("error");
-    } else if (
-      event.type === "asr.failed"
-      || event.type === "stream.error"
-      || event.type === "pipeline.failed"
-    ) {
+    } else if (event.type === "asr.failed") {
+      recoverableAsrErrorRef.current = true;
+      setError(event.message || "本地英文识别暂时不可用；录音仍在继续。");
+      setTranslationState("error");
+    } else if (event.type === "stream.error" || event.type === "pipeline.failed") {
+      recoverableAsrErrorRef.current = false;
       setError(event.message || "本地英文识别暂时不可用；录音仍在继续。");
       setTranslationState("error");
     }
@@ -357,9 +368,11 @@ export function App() {
   function handleLocalLiveEvent(event) {
     appendEvent(event.type, event);
     if (event.type === "stream.disconnected") {
+      recoverableAsrErrorRef.current = false;
       setError("实时字幕连接已中断；浏览器录音仍在继续。请停止并保存后重新开始。");
       setTranslationState("error");
     } else if (event.type === "audio.stream_overrun") {
+      recoverableAsrErrorRef.current = false;
       setError("实时音频传输出现积压；录音仍在继续，日志已记录丢帧。");
     }
   }
@@ -396,6 +409,7 @@ export function App() {
     workletNodeRef.current = worklet;
     context.addEventListener("statechange", () => {
       if (recordingActiveRef.current && context.state !== "running") {
+        recoverableAsrErrorRef.current = false;
         appendEvent("audio.context_interrupted", { state: context.state });
         setError("浏览器音频处理已暂停；录音仍在继续，请检查系统音频状态。");
         setTranslationState("error");
@@ -417,6 +431,7 @@ export function App() {
 
   async function startSession() {
     setError("");
+    recoverableAsrErrorRef.current = false;
     setRecordingUrl((current) => {
       if (current) URL.revokeObjectURL(current);
       return "";
@@ -450,9 +465,14 @@ export function App() {
       if (!window.MediaRecorder) {
         throw new Error("当前浏览器不支持录音文件生成。请使用最新版 Safari 或 Chrome。");
       }
+      const requestedAudioProcessing = {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+      };
       const audio = selectedDeviceId
-        ? { deviceId: { exact: selectedDeviceId }, echoCancellation: true, noiseSuppression: true }
-        : { echoCancellation: true, noiseSuppression: true };
+        ? { deviceId: { exact: selectedDeviceId }, ...requestedAudioProcessing }
+        : requestedAudioProcessing;
       const stream = await requestAudioStream({ audio, video: false });
       streamRef.current = stream;
       await refreshDevices();
@@ -461,11 +481,23 @@ export function App() {
       const recorder = new MediaRecorder(stream);
       recorderRef.current = recorder;
       const audioTrack = stream.getAudioTracks()[0];
+      const trackSettings = audioTrack?.getSettings() || {};
+      const audioCaptureSettings = {
+        requested: requestedAudioProcessing,
+        applied: {
+          echoCancellation: trackSettings.echoCancellation ?? null,
+          noiseSuppression: trackSettings.noiseSuppression ?? null,
+          autoGainControl: trackSettings.autoGainControl ?? null,
+          channelCount: trackSettings.channelCount ?? null,
+          sampleRate: trackSettings.sampleRate ?? null,
+        },
+      };
       const audioMimeType = recorder.mimeType || "audio/webm";
       startTimeRef.current = Date.now();
       recordingActiveRef.current = true;
       audioTrack?.addEventListener("ended", () => {
         if (!recordingActiveRef.current) return;
+        recoverableAsrErrorRef.current = false;
         appendEvent("audio.track_ended", {
           audioDeviceId: audioTrack.getSettings().deviceId || "default",
         });
@@ -480,6 +512,7 @@ export function App() {
           audioMimeType,
           audioDeviceId: audioTrack?.getSettings().deviceId || "default",
           audioDeviceLabel: audioTrack?.label || "default",
+          audioCaptureSettings,
           contextPolicy: "none",
         });
         serverSession = result;
@@ -523,6 +556,7 @@ export function App() {
         contextPolicy: "none",
         localSessionId: serverSession?.sessionId || null,
         audioDeviceId: audioTrack?.getSettings().deviceId || "default",
+        audioCaptureSettings,
       });
       const health = await refreshGatewayHealth();
       appendEvent("gateway_health", { health });
@@ -535,9 +569,11 @@ export function App() {
           await liveSocket.connect(serverSession.sessionId, "none");
           liveSocketRef.current = liveSocket;
         } catch (caught) {
+          recoverableAsrErrorRef.current = false;
           setError(`${caught?.message || "实时 ASR 连接失败"}；本次仍会保存录音。`);
         }
       } else {
+        recoverableAsrErrorRef.current = false;
         setError("实时 ASR Gateway 未就绪；本次仍会保存录音。");
       }
       await startAudioPipeline(stream);
@@ -546,6 +582,7 @@ export function App() {
         setElapsed(Date.now() - startTimeRef.current);
       }, 250);
     } catch (caught) {
+      recoverableAsrErrorRef.current = false;
       stopResources(false);
       const message = caught?.name === "NotAllowedError"
         ? "麦克风权限被拒绝。请在浏览器地址栏或系统设置中允许此页面使用麦克风。"
