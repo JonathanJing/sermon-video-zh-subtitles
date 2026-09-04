@@ -19,6 +19,16 @@ The complete diagrams, artifact contracts, local latency budget, and test gates 
 
 ![Project workflow map](docs/diagrams/project-map.svg)
 
+## Why this architecture exists
+
+Sunday services currently do not have dependable Chinese captions. Generic live speech translation can produce a useful draft, but it does not reliably preserve Scripture references, biblical names, quoted verses, or church-specific terminology. Unstable segmentation and end-to-end delay can also make otherwise correct text difficult to follow in the room.
+
+The first hypothesis was to extract and translate the Saturday public livestream, then reuse that content on Sunday. Testing exposed an important boundary: the Saturday and Sunday sermons may follow the same message framework, but they cannot be assumed to be the same delivery word for word. Wording, order, examples, and live additions may differ. A Saturday transcript is therefore useful preparation, but it cannot be the source of truth for Sunday captions.
+
+The current design is a hybrid: Sunday live audio and the English recognized from it remain authoritative, while authorized Saturday material supplies guarded structure, terminology, Scripture references, and reviewed examples. Domain post-training is a separate future enhancement. Its first goal is better terminology and translation quality; any latency improvement must be demonstrated on frozen inputs and the same hardware rather than assumed.
+
+![Solution journey from the Sunday caption gap to a guarded hybrid workflow](docs/diagrams/solution-journey.svg)
+
 ## 1. Working workflows
 
 ### A. Saturday: livestream/archive to two reviewed PDFs

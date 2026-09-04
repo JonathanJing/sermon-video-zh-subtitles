@@ -5,6 +5,7 @@ These SVG files are the repository's maintained visual summaries. They use bilin
 | Asset | Purpose | Primary documents |
 |---|---|---|
 | `project-map.svg` | Two operator workflows, shared evidence, and Discovery boundary | root READMEs |
+| `solution-journey.svg` | Observed bottlenecks, rejected assumption, current hybrid, and gated future enhancement | root READMEs |
 | `saturday-post-live-workflow.svg` | Detailed Saturday dual-PDF gates and retry branches | workflow and stable post-live docs |
 | `sunday-live-workflow.svg` | Detailed Sunday live path and visible degradation branches | workflow and POC docs |
 | `local-live-architecture.svg` | Current localhost components, protocols, providers, and evidence | POC design and streaming docs |
