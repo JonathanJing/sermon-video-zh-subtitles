@@ -138,6 +138,7 @@ class CaptionPresenter:
             if state.first_partial_at is not None else 0
         )
         return {
+            **{key: value for key, value in event.items() if key.startswith("translationUnit") or key in {"sourceSegmentIds", "sourceFinals"}},
             "type": "caption.display",
             "segmentId": event.get("segmentId"),
             "audioStartMs": event.get("audioStartMs"),

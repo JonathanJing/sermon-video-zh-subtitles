@@ -228,7 +228,7 @@ class MlxAudioWebSocketClient:
                     "language": "English",
                     "sample_rate": sample_rate_hz,
                 }))
-                ready = json.loads(websocket.recv(timeout=120))
+                ready = json.loads(websocket.recv(timeout=10))
                 if ready.get("status") != "ready":
                     raise AsrError(f"MLX Audio endpoint did not become ready: {ready}")
                 websocket.send(pcm_s16le)

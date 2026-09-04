@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import queue
+import re
 import secrets
 import socket
 import sys
@@ -66,13 +67,18 @@ class CaptionHub:
         self._by_token: dict[str, ViewerSession] = {}
         self._token_by_session: dict[str, str] = {}
 
-    def start_session(self, session_id: str) -> str:
+    def start_session(self, session_id: str, token: str | None = None) -> str:
         with self._lock:
             self._purge_locked()
             existing = self._token_by_session.get(session_id)
             if existing and existing in self._by_token:
+                self._by_token[existing].active = True
+                self._by_token[existing].ended_at = None
+                self._by_token[existing].snapshot["sessionActive"] = True
                 return existing
-            token = secrets.token_urlsafe(18)
+            token = token or secrets.token_urlsafe(18)
+            if not re.fullmatch(r"[A-Za-z0-9_-]{24}", token) or token in self._by_token:
+                raise ValueError("invalid or conflicting viewer token")
             self._by_token[token] = ViewerSession(session_id, token, time.time())
             self._token_by_session[session_id] = token
             return token
@@ -260,21 +266,51 @@ VIEWER_HTML = """<!doctype html>
 <meta name="color-scheme" content="dark"><title>现场中文字幕</title>
 <style>
 :root{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;color:#fff;background:#071827}
-*{box-sizing:border-box}body{margin:0;min-height:100dvh;display:grid;grid-template-rows:auto 1fr auto;background:#071827}
+*{box-sizing:border-box}body{margin:0;height:100dvh;display:grid;grid-template-rows:auto minmax(0,1fr) auto;overflow:hidden;background:#071827}
 header,footer{padding:14px 18px;color:#a9c0cf;font-size:13px}header{display:flex;justify-content:space-between;border-bottom:1px solid #294456}
-main{min-height:0;display:grid;grid-template-rows:minmax(96px,.3fr) 1px minmax(0,1fr);text-align:center;padding:2vh 5vw}.previous{align-self:end;padding:1vh 0 3vh}.previous[hidden],.divider[hidden]{display:none}.previous-zh,.previous-en,.zh,.en{margin:0 auto;text-wrap:balance}.previous-zh{max-width:28em;color:#71849e;font-size:clamp(25px,7.4vw,48px);font-weight:700;line-height:1.18}.previous-en{max-width:58ch;margin-top:8px;color:#6f8198;font-size:clamp(14px,4vw,22px);line-height:1.4}.divider{width:min(82%,940px);height:1px;margin:auto;background:#294456}.current{min-height:0;display:flex;flex-direction:column;justify-content:center;padding:3vh 0 5vh}.zh{font-size:clamp(48px,13vw,104px);font-weight:800;line-height:1.15}.en{margin-top:24px;max-width:55ch;color:#a9c0cf;font-size:clamp(17px,4vw,25px);line-height:1.45}
+main{min-height:0;display:grid;grid-template-rows:0 0 minmax(0,1fr);text-align:center;padding:2vh 5vw}main.has-previous{grid-template-rows:minmax(0,.45fr) 1px minmax(0,1fr)}.previous{grid-row:1;min-height:0;display:flex;flex-direction:column;justify-content:center;padding:1vh 0 3vh;overflow:auto}.previous[hidden],.divider[hidden]{display:none}.previous-zh,.previous-en,.zh,.en{flex:0 0 auto;width:100%;max-width:100%;margin:0 auto;text-wrap:balance;overflow-wrap:anywhere}.previous-zh{max-width:28em;color:#71849e;font-size:clamp(25px,7.4vw,48px);font-weight:700;line-height:1.18}.previous-en{max-width:58ch;margin-top:8px;color:#6f8198;font-size:clamp(14px,4vw,22px);line-height:1.4}.divider{grid-row:2;width:min(82%,940px);height:1px;margin:auto;background:#294456}.current{grid-row:3;min-height:0;display:flex;flex-direction:column;justify-content:center;padding:3vh 0 5vh;overflow:auto}.zh{font-size:clamp(48px,13vw,104px);font-weight:800;line-height:1.15}.en{margin-top:24px;max-width:55ch;color:#a9c0cf;font-size:clamp(17px,4vw,25px);line-height:1.45}
 .ok{color:#8dd6ba}.waiting{color:#f0cc83}button{min-width:44px;min-height:44px;border:1px solid #70839a;border-radius:999px;background:transparent;color:#fff;font-size:20px}
 footer{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #294456}.controls{display:flex;gap:10px}
-@media(orientation:landscape) and (max-height:560px){header,footer{padding-block:8px}main{grid-template-rows:minmax(58px,.24fr) 1px minmax(0,1fr);padding-block:1vh}.previous{padding-bottom:8px}.previous-zh{font-size:clamp(20px,4vw,32px)}.previous-en{font-size:14px}.current{padding:8px 0}.zh{font-size:clamp(40px,8.5vw,76px)}.en{margin-top:10px}}
+@media(orientation:landscape) and (max-height:560px){header,footer{padding-block:8px}main{padding-block:1vh}main.has-previous{grid-template-rows:minmax(0,.42fr) 1px minmax(0,1fr)}.previous{padding-bottom:8px}.previous-zh{font-size:clamp(20px,4vw,32px)}.previous-en{font-size:14px}.current{padding:8px 0}.zh{font-size:clamp(40px,8.5vw,76px)}.en{margin-top:10px}}
 </style></head><body><header><strong>现场中文字幕</strong><span id="status" class="waiting">正在连接…</span></header>
 <main><section id="previous" class="previous" hidden><p id="previous-zh" class="previous-zh"></p><p id="previous-en" class="previous-en"></p></section><div id="divider" class="divider" hidden></div><section id="current" class="current"><p id="zh" class="zh">等待现场字幕…</p><p id="en" class="en"></p></section></main>
 <footer><span>只读 · 同一 Wi-Fi</span><span class="controls"><button id="minus" aria-label="缩小字号">−</button><button id="plus" aria-label="放大字号">＋</button></span></footer>
 <script>
-const token=__TOKEN__,zh=document.querySelector('#zh'),en=document.querySelector('#en'),previous=document.querySelector('#previous'),previousZh=document.querySelector('#previous-zh'),previousEn=document.querySelector('#previous-en'),divider=document.querySelector('#divider'),current=document.querySelector('#current'),status=document.querySelector('#status');let scale=1,state={previousFinal:null,active:{segmentId:'',sourceTextEn:'',targetTextZh:'等待现场字幕…',phase:'listening'},sessionActive:true};
-function draw(){const old=state.previousFinal;previous.hidden=!old;divider.hidden=!old;if(old){previousZh.textContent=old.targetTextZh||'';previousEn.textContent=old.sourceTextEn||''}zh.textContent=state.active.targetTextZh||'正在翻译…';en.textContent=state.active.sourceTextEn||'';if(state.sessionActive===false){status.textContent='本场已结束';status.className='waiting'}}
-function render(event){if(event.displayEligible===false)return;if(event.type==='caption.snapshot'){state=event;draw();return}if(event.type==='asr.final'){const active=state.active;if(active.phase==='final'&&active.sourceTextEn&&active.targetTextZh)state.previousFinal={segmentId:active.segmentId,sourceTextEn:active.sourceTextEn,targetTextZh:active.targetTextZh};state.active={segmentId:event.segmentId||'',sourceTextEn:event.sourceTextEn||'',targetTextZh:'',phase:'requesting'}}else if(event.type==='caption.display'){const active=state.active,isNew=event.segmentId&&active.segmentId&&event.segmentId!==active.segmentId;if(isNew&&active.phase==='final'&&active.sourceTextEn&&active.targetTextZh)state.previousFinal={segmentId:active.segmentId,sourceTextEn:active.sourceTextEn,targetTextZh:active.targetTextZh};state.active={segmentId:event.segmentId||active.segmentId,sourceTextEn:event.sourceTextEn??active.sourceTextEn,targetTextZh:event.targetTextZh||active.targetTextZh,phase:event.phase||(event.displayKind==='final'?'final':'streaming')}}else if(['translation.partial','translation.final','translation.failed','translation.skipped'].includes(event.type)){if(event.segmentId&&state.active.segmentId&&event.segmentId!==state.active.segmentId)return;state.active={segmentId:event.segmentId||state.active.segmentId,sourceTextEn:event.sourceTextEn??state.active.sourceTextEn,targetTextZh:event.targetTextZh||state.active.targetTextZh,phase:event.type==='translation.partial'?'streaming':event.type==='translation.final'?'final':'error'}}else if(event.type==='stream.closed')state.sessionActive=false;draw()}
+const token=__TOKEN__,zh=document.querySelector('#zh'),en=document.querySelector('#en'),previous=document.querySelector('#previous'),previousZh=document.querySelector('#previous-zh'),previousEn=document.querySelector('#previous-en'),divider=document.querySelector('#divider'),current=document.querySelector('#current'),stage=document.querySelector('main'),status=document.querySelector('#status');let scale=1,fitFrame=0,state={previousFinal:null,active:{segmentId:'',sourceTextEn:'',targetTextZh:'等待现场字幕…',phase:'listening'},sessionActive:true};
+function fitCaptionPair(container, chinese, english, maximumScale = 1) {
+  if (container.hidden || !container.clientHeight) return;
+  chinese.style.fontSize = english.style.fontSize = english.style.marginTop = "";
+  const box = getComputedStyle(container);
+  const height = container.clientHeight - parseFloat(box.paddingTop) - parseFloat(box.paddingBottom) - 2;
+  const width = container.clientWidth - parseFloat(box.paddingLeft) - parseFloat(box.paddingRight);
+  const zhSize = parseFloat(getComputedStyle(chinese).fontSize) * maximumScale;
+  const enStyle = getComputedStyle(english);
+  const enSize = parseFloat(enStyle.fontSize) * maximumScale;
+  const gap = english.textContent ? parseFloat(enStyle.marginTop) * maximumScale : 0;
+  const apply = (ratio) => {
+    chinese.style.fontSize = `${zhSize * ratio}px`;
+    english.style.fontSize = `${enSize * ratio}px`;
+    english.style.marginTop = `${gap * ratio}px`;
+  };
+  const fits = () => chinese.scrollHeight + english.scrollHeight + parseFloat(english.style.marginTop) <= height
+    && chinese.scrollWidth <= width + 1 && english.scrollWidth <= width + 1;
+  apply(1);
+  if (fits()) return;
+  let low = 0.05, high = 1;
+  for (let step = 0; step < 12; step += 1) {
+    const middle = (low + high) / 2;
+    apply(middle);
+    if (fits()) low = middle;
+    else high = middle;
+  }
+  apply(low);
+}
+function scheduleFit(){if(fitFrame)return;fitFrame=requestAnimationFrame(()=>{fitFrame=0;fitCaptionPair(previous,previousZh,previousEn);fitCaptionPair(current,zh,en,scale)})}
+function draw(){const old=state.previousFinal;stage.classList.toggle('has-previous',Boolean(old));previous.hidden=!old;divider.hidden=!old;if(old){previousZh.textContent=old.targetTextZh||'';previousEn.textContent=old.sourceTextEn||''}zh.textContent=state.active.targetTextZh||'正在翻译…';en.textContent=state.active.sourceTextEn||'';if(state.sessionActive===false){status.textContent='本场已结束';status.className='waiting'}else{status.textContent='字幕连接正常';status.className='ok'}scheduleFit()}
+function render(event){if(event.displayEligible===false)return;if(event.type==='caption.snapshot'){state=event;draw();return}if(event.type==='stream.ready'){state.sessionActive=true;draw();return}if(event.type==='asr.final'){const active=state.active;if(active.phase==='final'&&active.sourceTextEn&&active.targetTextZh)state.previousFinal={segmentId:active.segmentId,sourceTextEn:active.sourceTextEn,targetTextZh:active.targetTextZh};state.active={segmentId:event.segmentId||'',sourceTextEn:event.sourceTextEn||'',targetTextZh:'',phase:'requesting'}}else if(event.type==='caption.display'){const active=state.active,isNew=event.segmentId&&active.segmentId&&event.segmentId!==active.segmentId;if(isNew&&active.phase==='final'&&active.sourceTextEn&&active.targetTextZh)state.previousFinal={segmentId:active.segmentId,sourceTextEn:active.sourceTextEn,targetTextZh:active.targetTextZh};state.active={segmentId:event.segmentId||active.segmentId,sourceTextEn:event.sourceTextEn??active.sourceTextEn,targetTextZh:event.targetTextZh||active.targetTextZh,phase:event.phase||(event.displayKind==='final'?'final':'streaming')}}else if(['translation.partial','translation.final','translation.failed','translation.skipped'].includes(event.type)){if(event.segmentId&&state.active.segmentId&&event.segmentId!==state.active.segmentId)return;state.active={segmentId:event.segmentId||state.active.segmentId,sourceTextEn:event.sourceTextEn??state.active.sourceTextEn,targetTextZh:event.targetTextZh||state.active.targetTextZh,phase:event.type==='translation.partial'?'streaming':event.type==='translation.final'?'final':'error'}}else if(event.type==='stream.closed')state.sessionActive=false;draw()}
 const source=new EventSource('/api/view/'+encodeURIComponent(token)+'/events');source.onopen=()=>{status.textContent='字幕连接正常';status.className='ok'};source.onmessage=e=>render(JSON.parse(e.data));source.onerror=()=>{status.textContent='正在重新连接…';status.className='waiting'};
-function resize(delta){scale=Math.min(1.35,Math.max(.75,scale+delta));current.style.transform='scale('+scale+')'}document.querySelector('#minus').onclick=()=>resize(-.1);document.querySelector('#plus').onclick=()=>resize(.1);
+function resize(delta){scale=Math.min(1.35,Math.max(.75,scale+delta));scheduleFit()}document.querySelector('#minus').onclick=()=>resize(-.1);document.querySelector('#plus').onclick=()=>resize(.1);
+window.addEventListener('resize',scheduleFit);window.addEventListener('orientationchange',scheduleFit);window.visualViewport?.addEventListener('resize',scheduleFit);if(window.ResizeObserver)new ResizeObserver(scheduleFit).observe(stage);document.fonts?.ready.then(scheduleFit);scheduleFit();
 </script></body></html>"""
 
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -25,8 +26,10 @@ from .content_pack import (
     sha256_file,
 )
 from .firebase_publisher import FirebaseCaptionPublisher, FirebasePublisherConfig
-from .ollama_client import OllamaClient, OllamaError
+from .ollama_client import CONTEXT_PROMPT_VERSION, MILMMT_A0_PROMPT_VERSION, OllamaClient, OllamaError
+from .runtime_identity import collect_runtime_identity, validate_frontend_origin
 from .session_store import SessionStore, SessionStoreError
+from .translation_units import TRANSLATION_UNIT_POLICIES
 from .viewer_server import CaptionHub, ViewerService, viewer_urls
 
 
@@ -53,6 +56,9 @@ class GatewayState:
         viewer_port: int = 8780,
         default_context_policy: str = "none",
         caption_presentation_policy: str = "readable_chunks",
+        translation_unit_policy: str = "legacy",
+        source_fragment_policy: str = "content_words",
+        frontend_origin: str = "http://127.0.0.1:4173",
     ) -> None:
         self.pack_path = pack_path
         self.pack = load_pack(pack_path) if pack_path else None
@@ -80,6 +86,19 @@ class GatewayState:
                 f"unsupported caption presentation policy: {caption_presentation_policy}"
             )
         self.caption_presentation_policy = caption_presentation_policy
+        if translation_unit_policy not in TRANSLATION_UNIT_POLICIES:
+            raise ValueError(f"unsupported translation unit policy: {translation_unit_policy}")
+        if source_fragment_policy not in {"content_words", "off"}:
+            raise ValueError(f"unsupported source fragment policy: {source_fragment_policy}")
+        self.translation_unit_policy = translation_unit_policy
+        self.source_fragment_policy = source_fragment_policy
+        self.frontend_origin = validate_frontend_origin(frontend_origin)
+        self.frontend_origins = (
+            (self.frontend_origin, "http://localhost:4173")
+            if self.frontend_origin == "http://127.0.0.1:4173" else (self.frontend_origin,)
+        )
+        self._runtime_identity_json: str | None = None
+        self._runtime_identity_lock = threading.Lock()
         self.caption_hub = CaptionHub()
         firebase_config = FirebasePublisherConfig.from_environment()
         self.public_caption_publisher = (
@@ -88,6 +107,103 @@ class GatewayState:
         self.asr_warmup: dict[str, Any] | None = None
         self.ollama_warmup: dict[str, Any] | None = None
         self.runtime_restart: Callable[[], None] = lambda: os._exit(RUNTIME_RESTART_EXIT_CODE)
+        self.live_pipelines: dict[str, Any] = {}
+        self.live_lock = threading.Lock()
+
+    def capture_runtime_identity(
+        self, *, provider_versions: dict[str, Any] | None = None,
+        translation_model_digest: str | None = None,
+        asr_status: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Freeze once before serving; return copies so callers cannot rewrite it."""
+        with self._runtime_identity_lock:
+            if self._runtime_identity_json is None:
+                model_sha256 = (asr_status or {}).get("modelSha256")
+                if model_sha256 is None:
+                    model_sha256 = getattr(self.asr, "_model_sha256", None)
+                qwen = isinstance(self.asr, MlxAudioWebSocketClient)
+                context_enabled = self.default_context_policy not in {"none", "english_alignment_v1"}
+                template_context = {
+                    "approvedTerms": [{"source": "{{term.source}}", "preferredZh": "{{term.preferredZh}}"}],
+                    "verifiedScriptureRefs": ["{{scripture_reference}}"],
+                    "reviewedExactExamples": [{"sourceTextEn": "{{example.source}}", "targetTextZh": "{{example.target}}"}],
+                    "reviewedAlignedReferences": [{"sourceTextEn": "{{reference.source}}", "targetTextZh": "{{reference.target}}"}],
+                } if context_enabled else {}
+                prompt_template = OllamaClient.build_prompt("{{source_text_en}}", template_context)
+                configuration = {
+                    "asrProvider": "qwen-mlx-websocket" if qwen else "whisper-cli",
+                    "asrModelSha256": model_sha256,
+                    "asrFinalizationMode": "vad_silence_frames" if qwen else "whisper_cli_segment",
+                    "asrSilenceFrameCount": self.asr.finalize_silence_frames if qwen else None,
+                    "vadThresholdRms": self.vad_threshold_rms,
+                    "vadSilenceMs": self.vad_silence_ms,
+                    "vadMaxSegmentMs": self.vad_max_segment_ms,
+                    "asrQueueLimit": 2, "translationQueueLimit": 1,
+                    "translationModel": self.ollama.model,
+                    "translationModelDigest": translation_model_digest,
+                    "translationPromptVersion": CONTEXT_PROMPT_VERSION if context_enabled else MILMMT_A0_PROMPT_VERSION,
+                    "translationPromptFamily": "context_with_a0_no_hit_fallback" if context_enabled else "frozen_a0",
+                    "translationPromptSha256": hashlib.sha256(prompt_template.encode("utf-8")).hexdigest(),
+                    "translationPromptHashScope": "template_with_source_and_context_placeholders" if context_enabled else "template_with_source_placeholder",
+                    "translationStreaming": True, "translationTemperature": 0,
+                    "translationTopK": 1, "sampleRateHz": 16000, "frameDurationMs": 100,
+                    "contextPolicy": self.default_context_policy,
+                    "contentPackVersion": self.pack.get("packVersion") if self.pack else None,
+                    "contentPackSha256": self.pack_sha256,
+                    "captionPresentationPolicy": self.caption_presentation_policy,
+                    "translationUnitPolicy": self.translation_unit_policy,
+                    "translationUnitMaxWaitMs": 3200, "translationUnitMaxSegments": 2,
+                    "translationUnitMaxAudioDurationMs": 6500, "translationUnitMaxAudioGapMs": 800,
+                    "sourceFragmentPolicy": self.source_fragment_policy,
+                    "frontendOrigin": self.frontend_origin,
+                    "frontendOrigins": ",".join(self.frontend_origins),
+                }
+                identity = collect_runtime_identity(configuration, versions=provider_versions)
+                self._runtime_identity_json = json.dumps(identity, ensure_ascii=False)
+            return json.loads(self._runtime_identity_json)
+
+    def resume_session(self, session_id: str, metadata: dict[str, Any]) -> dict[str, Any]:
+        with self.live_lock:
+            if session_id in self.live_pipelines:
+                raise SessionStoreError("previous live stream is still draining; retry shortly")
+            count = metadata.get("availableAudioChunks")
+            if not isinstance(count, int) or isinstance(count, bool) or count < 0:
+                raise SessionStoreError("availableAudioChunks must be a nonnegative integer")
+            frame_sequence = metadata.get("pcmFrameSequence")
+            if frame_sequence is not None:
+                if type(frame_sequence) is not int or frame_sequence < 0:
+                    raise SessionStoreError("pcmFrameSequence must be a nonnegative integer")
+                # Inspect the durable position without reopening the session.
+                with self.sessions._lock:
+                    _, manifest = self.sessions._load(session_id)
+                if frame_sequence < manifest["pcmFrameCount"]:
+                    raise SessionStoreError("pcmFrameSequence cannot precede the durable PCM position")
+                if frame_sequence - manifest["pcmFrameCount"] > 3000:
+                    raise SessionStoreError("字幕中断超过五分钟，请停止保存录音并开始新会话")
+            resumed = self.sessions.resume(session_id, count)
+            runtime_identity = self.capture_runtime_identity()
+            original_fingerprint = (resumed.get("metadata", {}).get("runtimeIdentity") or {}).get("fingerprintSha256")
+            self.sessions.append_event(session_id, {
+                "type": "stream.resume_requested", "resumeCount": resumed["resumeCount"],
+                "runtimeIdentity": runtime_identity,
+                "runtimeChanged": runtime_identity["fingerprintSha256"] != original_fingerprint if original_fingerprint else None,
+            }, assign_sequence=True)
+            return self.sessions.get_recording(session_id)
+
+    def finalize_session(self, session_id: str, details: dict[str, Any]) -> dict[str, Any]:
+        with self.live_lock:
+            pipeline = self.live_pipelines.get(session_id)
+            if session_id in self.live_pipelines and (
+                pipeline is None or not pipeline.stopped
+                or pipeline.asr_worker.is_alive() or pipeline.translation_worker.is_alive()
+            ):
+                raise SessionStoreError("live workers must stop before finalizing the recording")
+            return self.sessions.finalize(session_id, details)
+
+    def live_health(self) -> dict[str, Any]:
+        with self.live_lock:
+            snapshots = [pipeline.health() for pipeline in self.live_pipelines.values() if pipeline]
+        return {"activeStreamCount": len(snapshots), "degraded": any(s["degraded"] for s in snapshots), "streams": snapshots}
 
     def resolve_context_policy(self, requested_policy: str | None) -> str:
         requested = str(requested_policy or self.default_context_policy)
@@ -114,6 +230,7 @@ class GatewayState:
             "serviceDate": self.pack.get("serviceDate"),
             "validUntil": self.pack.get("validUntil"),
         }
+        safe_metadata["runtimeIdentity"] = self.capture_runtime_identity()
         return self.sessions.create(safe_metadata)
 
     def translate(
@@ -176,11 +293,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def _origin(self) -> str:
         requested = self.headers.get("Origin", "")
-        allowed = {
-            "http://127.0.0.1:4173",
-            "http://localhost:4173",
-        }
-        return requested if requested in allowed else "http://127.0.0.1:4173"
+        allowed = self.server.state.frontend_origins
+        return requested if requested in allowed else allowed[0]
 
     def _send(self, status: HTTPStatus, payload: dict[str, Any]) -> None:
         body = (json.dumps(payload, ensure_ascii=False) + "\n").encode("utf-8")
@@ -227,12 +341,15 @@ class Handler(BaseHTTPRequestHandler):
         asr = self.server.state.asr.status()
         storage = self.server.state.sessions.health()
         pack = self.server.state.pack
+        live_health = self.server.state.live_health()
         self._send(HTTPStatus.OK, {
             "service": "local-live-caption-gateway",
+            "runtimeIdentity": self.server.state.capture_runtime_identity(),
             "status": "ready" if (
                 ollama.get("configuredModelInstalled")
                 and asr.get("available")
                 and storage.get("available")
+                and not live_health["degraded"]
             ) else "degraded",
             "contentPack": None if not pack else {
                 "packVersion": pack["packVersion"],
@@ -254,6 +371,8 @@ class Handler(BaseHTTPRequestHandler):
                     "maxSegmentMs": self.server.state.vad_max_segment_ms,
                 },
                 "translationStreaming": True,
+                "translationUnitPolicy": self.server.state.translation_unit_policy,
+                "sourceFragmentPolicy": self.server.state.source_fragment_policy,
                 "captionPresentation": {
                     "policy": self.server.state.caption_presentation_policy,
                     "rollbackPolicy": "legacy",
@@ -271,13 +390,14 @@ class Handler(BaseHTTPRequestHandler):
                 else {"configured": False, "mode": "disabled"}
             ),
             "sessionStorage": storage,
+            "liveProgress": live_health,
         })
 
     def do_POST(self) -> None:
         try:
             parsed = urlparse(self.path)
             audio_match = re.fullmatch(r"/api/sessions/([^/]+)/audio", parsed.path)
-            session_match = re.fullmatch(r"/api/sessions/([^/]+)/(events|finalize)", parsed.path)
+            session_match = re.fullmatch(r"/api/sessions/([^/]+)/(events|finalize|resume)", parsed.path)
             if audio_match:
                 values = parse_qs(parsed.query).get("sequence", [])
                 if len(values) != 1:
@@ -301,6 +421,8 @@ class Handler(BaseHTTPRequestHandler):
                 threading.Timer(0.1, self.server.state.runtime_restart).start()
             elif parsed.path == "/api/sessions/start":
                 self._send(HTTPStatus.CREATED, self.server.state.create_session(payload))
+            elif session_match and session_match.group(2) == "resume":
+                self._send(HTTPStatus.OK, self.server.state.resume_session(session_match.group(1), payload))
             elif session_match and session_match.group(2) == "events":
                 self._send(
                     HTTPStatus.OK,
@@ -311,7 +433,7 @@ class Handler(BaseHTTPRequestHandler):
             elif session_match and session_match.group(2) == "finalize":
                 self._send(
                     HTTPStatus.OK,
-                    self.server.state.sessions.finalize(session_match.group(1), payload),
+                    self.server.state.finalize_session(session_match.group(1), payload),
                 )
             elif parsed.path == "/api/context/retrieve":
                 self._retrieve(payload)
@@ -477,6 +599,18 @@ def parser() -> argparse.ArgumentParser:
         default=int(os.environ.get("LOCAL_LIVE_VAD_THRESHOLD_RMS", "150")),
     )
     command.add_argument(
+        "--translation-unit-policy", choices=TRANSLATION_UNIT_POLICIES,
+        default=os.environ.get("LOCAL_LIVE_TRANSLATION_UNIT_POLICY", "legacy"),
+    )
+    command.add_argument(
+        "--source-fragment-policy", choices=("content_words", "off"),
+        default=os.environ.get("LOCAL_LIVE_SOURCE_FRAGMENT_POLICY", "content_words"),
+    )
+    command.add_argument(
+        "--frontend-origin", type=validate_frontend_origin,
+        default=os.environ.get("LOCAL_LIVE_FRONTEND_ORIGIN", "http://127.0.0.1:4173"),
+    )
+    command.add_argument(
         "--vad-silence-ms",
         type=int,
         default=int(os.environ.get("LOCAL_LIVE_VAD_SILENCE_MS", "500")),
@@ -510,6 +644,9 @@ def main() -> None:
         viewer_port=arguments.viewer_port,
         default_context_policy=arguments.context_policy,
         caption_presentation_policy=arguments.caption_presentation_policy,
+        translation_unit_policy=arguments.translation_unit_policy,
+        source_fragment_policy=arguments.source_fragment_policy,
+        frontend_origin=arguments.frontend_origin,
     )
     server = create_server(arguments.host, arguments.port, state)
     try:
@@ -528,6 +665,19 @@ def main() -> None:
         state.asr_warmup = state.asr.warmup()
     except AsrError as error:
         state.asr_warmup = {"ready": False, "error": str(error)}
+    ollama_version = None
+    model_digest = None
+    try:
+        ollama_version = state.ollama._json("/api/version", timeout=1.5).get("version")
+        tags = state.ollama._json("/api/tags", timeout=1.5).get("models", [])
+        model_digest = next((model.get("digest") for model in tags if model.get("name") == state.ollama.model), None)
+    except OllamaError:
+        pass
+    startup_asr_status = state.asr.status()
+    state.capture_runtime_identity(
+        provider_versions={"ollama": ollama_version}, translation_model_digest=model_digest,
+        asr_status=startup_asr_status,
+    )
     live_socket.start()
     viewer.start()
     print(json.dumps({
@@ -536,7 +686,7 @@ def main() -> None:
         "viewer": viewer_urls("{session-token}", viewer.port),
         "packVersion": state.pack.get("packVersion") if state.pack else None,
         "ollamaModel": arguments.ollama_model or None,
-        "asr": state.asr.status(),
+        "asr": startup_asr_status,
         "captionPresentationPolicy": state.caption_presentation_policy,
         "sessionRoot": str(state.sessions.root),
         "sessionStorage": storage_health,

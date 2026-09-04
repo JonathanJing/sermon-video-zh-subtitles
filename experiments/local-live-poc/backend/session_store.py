@@ -50,6 +50,7 @@ class SessionStore:
         manifest = {
             "schemaVersion": 1,
             "sessionId": session_id,
+            "viewerToken": secrets.token_urlsafe(18),
             "status": "recording",
             "startedAt": _now_iso(),
             "stoppedAt": None,
@@ -143,6 +144,68 @@ class SessionStore:
             directory, manifest = self._load(session_id)
             self._require_recording(manifest)
             return self._public(manifest, directory)
+
+    def resume(self, session_id: str, available_audio_chunks: int) -> dict[str, Any]:
+        """Reopen only a recoverable recording; never rewrite its saved audio.
+
+        The browser retains the original MediaRecorder chunks and resends only
+        those after the durable count. A torn append fails closed for manual
+        recovery instead of duplicating bytes in a seemingly valid recording.
+        """
+        with self._lock:
+            directory, manifest = self._load(session_id)
+            if manifest.get("status") not in {"recording", "incomplete"}:
+                raise SessionStoreError("a completed session cannot be resumed")
+            if manifest.get("status") == "incomplete" and manifest.get("recoveryReason") != "gateway_restart_before_finalize":
+                raise SessionStoreError("only a gateway-interrupted session can be resumed")
+            if available_audio_chunks < int(manifest["audioChunkCount"]):
+                raise SessionStoreError("browser does not retain the original recording chunks")
+            for filename, count_key in (("audioFile", "audioBytes"), ("asrPcmFile", "pcmBytes")):
+                if (directory / manifest[filename]).stat().st_size != int(manifest[count_key]):
+                    raise SessionStoreError("recording size differs from durable manifest; preserve browser recovery copy")
+            try:
+                events = [json.loads(line) for line in (directory / "events.jsonl").read_text(encoding="utf-8").splitlines()]
+            except (OSError, json.JSONDecodeError) as error:
+                raise SessionStoreError("event log is incomplete; preserve browser recovery copy") from error
+            if len(events) != int(manifest["eventCount"]):
+                raise SessionStoreError("event log differs from durable manifest")
+            resume_count = int(manifest.get("resumeCount") or 0) + 1
+            snapshot = directory / f"recovery-{resume_count:04d}.manifest.json"
+            reusable_snapshot = False
+            if snapshot.exists():
+                try:
+                    reusable_snapshot = json.loads(snapshot.read_text(encoding="utf-8")) == manifest
+                except (OSError, json.JSONDecodeError):
+                    pass
+                if not reusable_snapshot:
+                    # Preserve a prior or interrupted snapshot; never overwrite
+                    # evidence merely because a manifest update was interrupted.
+                    snapshot = directory / f"recovery-{resume_count:04d}-{secrets.token_hex(4)}.manifest.json"
+            if not reusable_snapshot:
+                with snapshot.open("x", encoding="utf-8") as output:
+                    json.dump(manifest, output, ensure_ascii=False, indent=2)
+            manifest.update({
+                "status": "recording", "stoppedAt": None, "durationMs": None,
+                "audioSha256": None, "pcmSha256": None, "pcmWavSha256": None,
+                "resumeCount": resume_count, "lastResumedAt": _now_iso(),
+                "recoverySnapshotFile": snapshot.name,
+                "resumeEventBaseline": len(events),
+                "captionContinuity": "interrupted",
+            })
+            self._write_manifest(directory, manifest)
+            return self._public(manifest, directory)
+
+    def stream_position(self, session_id: str) -> dict[str, int]:
+        with self._lock:
+            directory, manifest = self._load(session_id)
+            self._require_recording(manifest)
+            maximum = 0
+            for line in (directory / "events.jsonl").read_text(encoding="utf-8").splitlines():
+                event = json.loads(line)
+                match = re.fullmatch(r"seg-(\d+)", str(event.get("segmentId") or ""))
+                if match:
+                    maximum = max(maximum, int(match.group(1)))
+            return {"pcmFrameCount": int(manifest["pcmFrameCount"]), "segmentCount": maximum}
 
     def append_audio(self, session_id: str, sequence: int, data: bytes) -> dict[str, Any]:
         if sequence < 1:
@@ -248,6 +311,34 @@ class SessionStore:
         status = str(details.get("status") or "completed")
         if status not in {"completed", "incomplete"}:
             raise SessionStoreError("status must be completed or incomplete")
+        if manifest.get("metadata", {}).get("mode") == "local_live_asr_translation":
+            events = []
+            try:
+                events = [json.loads(line) for line in (directory / "events.jsonl").read_text(encoding="utf-8").splitlines()]
+            except (OSError, json.JSONDecodeError):
+                status = "incomplete"
+            closed = next((event for event in reversed(events) if event.get("type") == "stream.closed"), {})
+            latest_ready = max((index for index, event in enumerate(events) if event.get("type") in {"stream.ready", "stream.resume_requested"}), default=-1)
+            latest_closed = max((index for index, event in enumerate(events) if event.get("type") == "stream.closed"), default=-1)
+            stream_confirmed = bool(
+                manifest.get("pcmFrameCount") and closed.get("workerDrained") is True
+                and closed.get("storageHealthy") is True
+                and closed.get("lastFrameSequence") == manifest.get("pcmFrameCount")
+                and latest_closed > latest_ready >= 0
+                and latest_ready >= int(manifest.get("resumeEventBaseline") or 0)
+            )
+            if not stream_confirmed:
+                status = "incomplete"
+            # These are delivery outcomes, never accuracy or human review.
+            counts = {kind: sum(e.get("type") == kind for e in events) for kind in (
+                "asr.final", "asr.empty", "asr.failed", "translation.final",
+                "translation.failed", "translation.skipped", "audio.stream_gap",
+            )}
+            manifest["liveOutcome"] = {
+                "drainConfirmed": stream_confirmed, "eventCounts": counts,
+                "captionContinuity": "interrupted" if manifest.get("resumeCount") or counts["audio.stream_gap"] else "uninterrupted",
+                "qualityReviewStatus": "not_human_reviewed",
+            }
         try:
             duration_ms = max(0, int(details.get("durationMs") or 0))
         except (TypeError, ValueError) as error:

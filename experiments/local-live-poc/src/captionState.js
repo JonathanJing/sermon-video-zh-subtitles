@@ -50,7 +50,7 @@ export function applyCaptionEvent(state, event) {
         segmentId: event.segmentId || active.segmentId,
         en: event.sourceTextEn ?? active.en,
         zh: event.targetTextZh || active.zh,
-        phase: event.displayKind === "final" ? "final" : "streaming",
+        phase: event.phase || (event.displayKind === "final" ? "final" : "streaming"),
       },
     };
   }
