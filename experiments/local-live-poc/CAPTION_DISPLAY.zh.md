@@ -21,7 +21,7 @@
 - 手机 viewer 同样只显示一组中英文，并提供字号加减。
 - `translation.partial` 已经让当前中文逐步增长；非 append 更新会被拒绝，因此已有稳定流式显示的基础。
 
-当前基线保持不变，本文只保存下一版方案，没有修改 working UI。
+当前基线仍可从本分支的父提交复现；本分支已经把用户选定的 B 方案实现为 working UI。
 
 ## 当前实现中的一个配对风险
 
@@ -143,4 +143,12 @@ Google Research 的 CHI 2023 研究发现，live caption 中反复改写 interim
 
 ## 当前状态
 
-本方案已经记录，尚未修改 operator 或手机 viewer。下一步应先用固定 replay 制作 A/B 页面状态，再决定是否替换 working UI。
+2026-09-04，用户选定 B 方案并已在 `codex/caption-display-design` 分支实现：
+
+- operator 页面显示“前一句 final 双语 + 当前句流式双语”；
+- 手机 viewer 使用同一状态模型，并适配竖屏和低高度横屏；
+- snapshot 同时保留 `previousFinal` 与 `active`，断线重连不会丢失前一句；
+- 新 ASR final 到来时，只有已完成的双语 final 才会移入前一句；
+- 开发环境可用 `?captionDemo=1` 固定显示视觉验收数据，页面会明确标注“非模型输出”。
+
+视觉 A 仍是父提交中的单句界面；B 是当前分支。后续真实 A/B 使用同一份 event replay，不重复运行模型。

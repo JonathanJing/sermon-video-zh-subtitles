@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#071827" />
+    <title>现场中文字幕</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="viewer-shell" id="viewer-shell">
+      <header class="viewer-header">
+        <div>
+          <p class="eyebrow">SUNDAY LIVE CAPTIONS</p>
+          <h1>现场中文字幕</h1>
+        </div>
+        <div class="connection" aria-live="polite">
+          <span class="connection-dot" id="connection-dot"></span>
+          <strong id="connection-label">正在连接</strong>
+          <span id="last-update">等待字幕</span>
+        </div>
+      </header>
+
+      <section class="caption-stage" aria-labelledby="caption-heading">
+        <h2 id="caption-heading" class="visually-hidden">实时字幕</h2>
+        <p class="demo-label" id="demo-label" hidden>界面演示数据 · 非现场输出</p>
+        <section class="previous" id="previous" aria-label="前一句字幕" hidden>
+          <p class="previous-zh" id="previous-zh" lang="zh-CN"></p>
+          <p class="previous-en" id="previous-en" lang="en"></p>
+        </section>
+        <div class="divider" id="divider" hidden></div>
+        <section class="active" aria-live="polite" aria-atomic="true">
+          <p class="active-zh" id="active-zh" lang="zh-CN">等待现场字幕…</p>
+          <p class="active-en" id="active-en" lang="en"></p>
+        </section>
+      </section>
+
+      <footer class="viewer-footer">
+        <div class="privacy-note">
+          <strong>只读字幕</strong>
+          <span>不上传音频，不提供后台控制</span>
+        </div>
+        <div class="layout-controls" aria-label="显示设置">
+          <button type="button" data-layout="auto" aria-pressed="true">自动</button>
+          <button type="button" data-layout="portrait" aria-pressed="false">竖屏</button>
+          <button type="button" data-layout="landscape" aria-pressed="false">横屏</button>
+          <button type="button" id="fullscreen">全屏</button>
+        </div>
+      </footer>
+    </main>
+
+    <script src="/__/firebase/8.10.1/firebase-app.js"></script>
+    <script src="/__/firebase/8.10.1/firebase-database.js"></script>
+    <script src="/__/firebase/init.js"></script>
+    <script src="/viewer.js"></script>
+  </body>
+</html>

@@ -46,16 +46,23 @@ class LiveSocketService:
             outgoing = payload
             if payload.get("type") == "stream.ready" and session_id:
                 token = self.state.caption_hub.start_session(session_id)
+                local_urls = viewer_urls(token, self.state.viewer_port)
+                public_url = None
+                if self.state.public_caption_publisher:
+                    public_url = self.state.public_caption_publisher.start_session(session_id, token)
                 outgoing = {
                     **payload,
                     "viewer": {
                         "token": token,
-                        "urls": viewer_urls(token, self.state.viewer_port),
+                        "urls": ([public_url] if public_url else []) + local_urls,
+                        "publicUrl": public_url,
                         "readOnly": True,
                     },
                 }
             if session_id:
                 self.state.caption_hub.publish(session_id, outgoing)
+                if self.state.public_caption_publisher:
+                    self.state.public_caption_publisher.publish(session_id, outgoing)
             with send_lock:
                 connection.send(json.dumps(outgoing, ensure_ascii=False, separators=(",", ":")))
 
@@ -129,3 +136,5 @@ class LiveSocketService:
                 pipeline.stop()
             if session_id:
                 self.state.caption_hub.end_session(session_id)
+                if self.state.public_caption_publisher:
+                    self.state.public_caption_publisher.end_session(session_id)

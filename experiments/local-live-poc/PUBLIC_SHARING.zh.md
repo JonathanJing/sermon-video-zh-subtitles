@@ -158,4 +158,6 @@ Cloud Run 本身支持 WebSocket，但每条连接仍受 request timeout 约束�
 
 ## 当前状态
 
-这是已记录、尚未部署的公网分享设计。当前 working POC 仍是同 Wi-Fi 的随机 token + SSE viewer。创建 Google Cloud/Firebase 资源、绑定域名和产生费用前，需要单独确认项目与预算。
+Firebase publisher、Hosting 手机页、RTDB Rules 和本地测试骨架已经在 `codex/caption-display-design` 分支建立；详细审核、竞品比较、成本修正与部署步骤见 [Firebase 公网字幕：实现与审核](./FIREBASE_PUBLIC_VIEWER.zh.md)。
+
+尚未创建或修改任何 Firebase/GCP 云资源，也没有产生云费用。当前 working POC 默认仍使用同 Wi-Fi 的随机 token + SSE viewer；只有配置 `LOCAL_LIVE_FIREBASE_DATABASE_URL` 和 `LOCAL_LIVE_FIREBASE_VIEWER_URL` 后，二维码才优先切换到公网 Firebase viewer。

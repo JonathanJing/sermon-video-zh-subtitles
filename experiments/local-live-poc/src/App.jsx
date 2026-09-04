@@ -10,6 +10,7 @@ import {
   startLocalSession,
 } from "./gatewayClient.js";
 import { LiveCaptionSocket } from "./liveSocket.js";
+import { applyCaptionEvent, createCaptionState } from "./captionState.js";
 
 function nowIso() {
   return new Date().toISOString();
@@ -76,7 +77,9 @@ export function App() {
   const [selectedDeviceId, setSelectedDeviceId] = useState("");
   const [elapsed, setElapsed] = useState(0);
   const [level, setLevel] = useState(0);
-  const [caption, setCaption] = useState({ en: "", zh: "选择麦克风，然后开始录音。" });
+  const [captions, setCaptions] = useState(() => createCaptionState({
+    zh: "选择麦克风，然后开始录音。",
+  }));
   const [translationState, setTranslationState] = useState("idle");
   const [gatewayHealth, setGatewayHealth] = useState(null);
   const [error, setError] = useState("");
@@ -125,6 +128,21 @@ export function App() {
     "MiLMMT",
   );
   const contextPolicy = gatewayHealth?.defaultContextPolicy || "none";
+  const captionDemo = import.meta.env.DEV
+    && new URLSearchParams(window.location.search).get("captionDemo") === "1";
+  const visibleCaptions = captionDemo ? {
+    previousFinal: {
+      segmentId: "demo-previous",
+      en: "We walk by faith, not by sight.",
+      zh: "我们凭信心而行，不凭眼见。",
+    },
+    active: {
+      segmentId: "demo-active",
+      en: "That changes how we face tomorrow.",
+      zh: "这改变了我们面对明天的方式。",
+      phase: "streaming",
+    },
+  } : captions;
 
   useEffect(() => {
     const url = viewerShare?.urls?.[0];
@@ -305,7 +323,7 @@ export function App() {
     }
     if (event.type === "stream.ready") {
       setViewerShare(event.viewer || null);
-      setCaption({ en: "Listening for English speech…", zh: "请开始讲话。" });
+      setCaptions((current) => applyCaptionEvent(current, event));
       setTranslationState("listening");
     } else if (event.type === "asr.processing") {
       setTranslationState("recognizing");
@@ -318,7 +336,7 @@ export function App() {
       }
       activeTranslationSegmentRef.current = event.segmentId || "";
       partialTranslationRef.current = { segmentId: event.segmentId || "", text: "" };
-      setCaption((current) => ({ en: event.sourceTextEn || "", zh: current.zh }));
+      setCaptions((current) => applyCaptionEvent(current, event));
       setTranslationState("requesting");
       setLiveMetrics((current) => ({
         ...current,
@@ -344,7 +362,7 @@ export function App() {
         return;
       }
       partialTranslationRef.current = { segmentId: event.segmentId, text: nextText };
-      setCaption({ en: event.sourceTextEn || "", zh: nextText });
+      setCaptions((current) => applyCaptionEvent(current, event));
       setTranslationState("streaming");
       setLiveMetrics((current) => ({
         ...current,
@@ -357,7 +375,7 @@ export function App() {
       }
     } else if (event.type === "translation.final") {
       if (event.segmentId !== activeTranslationSegmentRef.current) return;
-      setCaption({ en: event.sourceTextEn || "", zh: event.targetTextZh || "翻译结果为空。" });
+      setCaptions((current) => applyCaptionEvent(current, event));
       setTranslationState("ready");
       setLiveMetrics({
         asrFinalMs: event.uxMetrics?.audioEndToAsrFinalMs,
@@ -369,10 +387,10 @@ export function App() {
       });
       recordCaptionRender(event, "chinese_final");
     } else if (event.type === "translation.failed") {
-      setCaption({ en: event.sourceTextEn || "", zh: "翻译暂时不可用，请查看英文原文。" });
+      setCaptions((current) => applyCaptionEvent(current, event));
       setTranslationState("error");
     } else if (event.type === "translation.skipped") {
-      setCaption({ en: event.sourceTextEn || "", zh: "翻译积压，暂时显示英文原文。" });
+      setCaptions((current) => applyCaptionEvent(current, event));
       setTranslationState("error");
     } else if (event.type === "asr.failed") {
       recoverableAsrErrorRef.current = true;
@@ -462,7 +480,7 @@ export function App() {
     });
     setRecordingBytes(0);
     setElapsed(0);
-    setCaption({ en: "", zh: "正在连接麦克风…" });
+    setCaptions(createCaptionState({ zh: "正在连接麦克风…", phase: "requesting" }));
     setTranslationState("idle");
     setLiveMetrics({});
     setViewerShare(null);
@@ -742,25 +760,42 @@ export function App() {
         <div className="stage-meta">
           <span id="caption-title">实时字幕</span>
           <span className="demo-notice">
-            {isRunning ? `麦克风 · ${asrModelName} · ${translationModelName}` : "麦克风录音 + 本地模型集成 POC"}
+            {captionDemo
+              ? "界面演示数据 · 非模型输出"
+              : isRunning
+                ? `麦克风 · ${asrModelName} · ${translationModelName}`
+                : "麦克风录音 + 本地模型集成 POC"}
           </span>
         </div>
 
-        <div className="caption-copy" aria-live="polite" aria-atomic="true">
-          <p className="zh-caption" lang="zh-CN">
-            {phase === "idle" || phase === "error"
-              ? "选择麦克风，然后开始录音。"
-              : phase === "requesting"
-                ? "正在连接麦克风…"
-                : phase === "stopped"
-                  ? localSaveState === "incomplete"
-                    ? "录音已保存，但最后一段字幕不完整。"
-                    : "本次录音已经安全停止。"
-                  : caption.zh}
-          </p>
-          <p className="en-caption" lang="en">
-            {isRunning ? caption.en : "English transcript will appear here."}
-          </p>
+        <div className={`caption-copy ${visibleCaptions.previousFinal ? "has-previous" : ""}`}>
+          {visibleCaptions.previousFinal && (
+            <div className="previous-caption" aria-label="前一句字幕">
+              <p className="previous-zh" lang="zh-CN">{visibleCaptions.previousFinal.zh}</p>
+              <p className="previous-en" lang="en">{visibleCaptions.previousFinal.en}</p>
+            </div>
+          )}
+          {visibleCaptions.previousFinal && <div className="caption-divider" aria-hidden="true" />}
+          <div className="active-caption" aria-live="polite" aria-atomic="true">
+            <p className="zh-caption" lang="zh-CN">
+              {captionDemo
+                ? visibleCaptions.active.zh
+                : phase === "idle" || phase === "error"
+                  ? "选择麦克风，然后开始录音。"
+                  : phase === "requesting"
+                    ? "正在连接麦克风…"
+                    : phase === "stopped"
+                      ? localSaveState === "incomplete"
+                        ? "录音已保存，但最后一段字幕不完整。"
+                        : "本次录音已经安全停止。"
+                      : visibleCaptions.active.zh || "正在翻译…"}
+            </p>
+            <p className="en-caption" lang="en">
+              {captionDemo || isRunning
+                ? visibleCaptions.active.en
+                : "English transcript will appear here."}
+            </p>
+          </div>
         </div>
 
         {error && <p className="error-banner" role="alert">{error}</p>}
@@ -768,8 +803,12 @@ export function App() {
           <aside className="viewer-share" aria-label="手机字幕分享">
             {viewerQr && <img src={viewerQr} alt="手机字幕二维码" />}
             <div>
-              <strong>手机看字幕</strong>
-              <span>连接同一 Wi-Fi 后扫码；这是只读页面，无法控制后台。</span>
+              <strong>{viewerShare.publicUrl ? "手机公网字幕" : "手机看字幕"}</strong>
+              <span>
+                {viewerShare.publicUrl
+                  ? "可直接使用蜂窝网络扫码；这是只读页面，无法控制后台。"
+                  : "连接同一 Wi-Fi 后扫码；这是只读页面，无法控制后台。"}
+              </span>
               <a href={viewerShare.urls[0]} target="_blank" rel="noreferrer">{viewerShare.urls[0]}</a>
             </div>
           </aside>
@@ -795,6 +834,19 @@ export function App() {
           </span>
           <span data-state={gatewayHealth?.status === "ready" ? "active" : "pending"}>
             Gateway {gatewayHealth?.status === "ready" ? "就绪" : gatewayHealth?.status === "offline" ? "离线" : "未就绪"}
+          </span>
+          <span
+            data-state={gatewayHealth?.publicViewer?.configured && !gatewayHealth.publicViewer.lastError ? "active" : "idle"}
+            title={gatewayHealth?.publicViewer?.lastError || ""}
+          >
+            公网分享 {gatewayHealth?.publicViewer?.configured
+              ? gatewayHealth.publicViewer.lastError
+                ? "降级"
+                : "就绪"
+              : "未配置"}
+            {gatewayHealth?.publicViewer?.configured
+              ? ` · 队列 ${gatewayHealth.publicViewer.queueDepth || 0}`
+              : ""}
           </span>
           <span data-state={localSaveState === "saved" || localSaveState === "saving" ? "active" : localSaveState === "error" || localSaveState === "incomplete" ? "pending" : "idle"}>
             本地保存 {localSaveState === "creating" ? "建目录" : localSaveState === "saving" ? "增量写入" : localSaveState === "finalizing" ? "完成中" : localSaveState === "saved" ? "已完成" : localSaveState === "incomplete" ? "可恢复/不完整" : localSaveState === "error" ? "浏览器备份" : "待机"}

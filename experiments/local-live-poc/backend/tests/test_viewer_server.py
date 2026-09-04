@@ -26,7 +26,33 @@ class CaptionHubTest(unittest.TestCase):
         self.assertEqual(projected["targetTextZh"], "恩典引领我们。")
         self.assertNotIn("contextHitIds", projected)
         self.assertNotIn("metrics", projected)
-        self.assertEqual(hub.snapshot(token)["sourceTextEn"], "Grace leads us.")
+        snapshot = hub.snapshot(token)
+        self.assertEqual(snapshot["active"]["sourceTextEn"], "Grace leads us.")
+        self.assertEqual(snapshot["active"]["phase"], "final")
+
+    def test_snapshot_keeps_previous_final_when_next_asr_segment_starts(self) -> None:
+        hub = CaptionHub()
+        token = hub.start_session("session-1")
+        hub.publish("session-1", {
+            "type": "asr.final",
+            "segmentId": "seg-1",
+            "sourceTextEn": "We walk by faith.",
+        })
+        hub.publish("session-1", {
+            "type": "translation.final",
+            "segmentId": "seg-1",
+            "sourceTextEn": "We walk by faith.",
+            "targetTextZh": "我们凭信心而行。",
+        })
+        hub.publish("session-1", {
+            "type": "asr.final",
+            "segmentId": "seg-2",
+            "sourceTextEn": "That changes tomorrow.",
+        })
+        snapshot = hub.snapshot(token)
+        self.assertEqual(snapshot["previousFinal"]["segmentId"], "seg-1")
+        self.assertEqual(snapshot["active"]["segmentId"], "seg-2")
+        self.assertEqual(snapshot["active"]["targetTextZh"], "")
 
     def test_control_and_storage_events_are_not_shared(self) -> None:
         hub = CaptionHub()
@@ -54,7 +80,7 @@ class ViewerHttpTest(unittest.TestCase):
             self.assertIn("现场中文字幕", html)
             self.assertEqual(response.headers["Cache-Control"], "no-store")
         with urlopen(f"{self.base}/api/view/{self.token}/snapshot", timeout=2) as response:
-            self.assertEqual(json.loads(response.read())["active"], True)
+            self.assertEqual(json.loads(response.read())["sessionActive"], True)
         request = Request(f"{self.base}/api/view/{self.token}/snapshot", data=b"{}", method="POST")
         with self.assertRaises(HTTPError) as caught:
             urlopen(request, timeout=2)

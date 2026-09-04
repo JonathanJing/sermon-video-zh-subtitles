@@ -21,6 +21,7 @@ from .content_pack import (
     prompt_context,
     retrieve,
 )
+from .firebase_publisher import FirebaseCaptionPublisher, FirebasePublisherConfig
 from .ollama_client import OllamaClient, OllamaError
 from .session_store import SessionStore, SessionStoreError
 from .viewer_server import CaptionHub, ViewerService, viewer_urls
@@ -70,6 +71,10 @@ class GatewayState:
             default_context_policy if self.pack and default_context_policy != "none" else "none"
         )
         self.caption_hub = CaptionHub()
+        firebase_config = FirebasePublisherConfig.from_environment()
+        self.public_caption_publisher = (
+            FirebaseCaptionPublisher(firebase_config) if firebase_config else None
+        )
         self.asr_warmup: dict[str, Any] | None = None
         self.ollama_warmup: dict[str, Any] | None = None
         self.runtime_restart: Callable[[], None] = lambda: os._exit(RUNTIME_RESTART_EXIT_CODE)
@@ -217,6 +222,11 @@ class Handler(BaseHTTPRequestHandler):
                 "networkAddresses": viewer_urls("{session-token}", self.server.state.viewer_port),
                 "readOnly": True,
             },
+            "publicViewer": (
+                self.server.state.public_caption_publisher.status()
+                if self.server.state.public_caption_publisher
+                else {"configured": False, "mode": "disabled"}
+            ),
             "sessionStorage": storage,
         })
 
@@ -492,6 +502,8 @@ def main() -> None:
     finally:
         live_socket.stop()
         viewer.stop()
+        if state.public_caption_publisher:
+            state.public_caption_publisher.stop()
         server.server_close()
 
 
