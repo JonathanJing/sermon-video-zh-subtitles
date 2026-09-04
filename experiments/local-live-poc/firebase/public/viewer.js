@@ -10,14 +10,55 @@
   const previousEn = document.querySelector("#previous-en");
   const activeZh = document.querySelector("#active-zh");
   const activeEn = document.querySelector("#active-en");
+  const activePair = document.querySelector(".active");
   const demoLabel = document.querySelector("#demo-label");
   let latestSequence = -1;
   let latestPublishedAt = 0;
+  let fitFrame = 0;
+
+  function fitCaptionPair(container, chinese, english, maximumScale = 1) {
+    if (container.hidden || !container.clientHeight) return;
+    chinese.style.fontSize = english.style.fontSize = english.style.marginTop = "";
+    const box = getComputedStyle(container);
+    const height = container.clientHeight - parseFloat(box.paddingTop) - parseFloat(box.paddingBottom) - 2;
+    const width = container.clientWidth - parseFloat(box.paddingLeft) - parseFloat(box.paddingRight);
+    const zhSize = parseFloat(getComputedStyle(chinese).fontSize) * maximumScale;
+    const enStyle = getComputedStyle(english);
+    const enSize = parseFloat(enStyle.fontSize) * maximumScale;
+    const gap = english.textContent ? parseFloat(enStyle.marginTop) * maximumScale : 0;
+    const apply = (ratio) => {
+      chinese.style.fontSize = `${zhSize * ratio}px`;
+      english.style.fontSize = `${enSize * ratio}px`;
+      english.style.marginTop = `${gap * ratio}px`;
+    };
+    const fits = () => chinese.scrollHeight + english.scrollHeight + parseFloat(english.style.marginTop) <= height
+      && chinese.scrollWidth <= width + 1 && english.scrollWidth <= width + 1;
+    apply(1);
+    if (fits()) return;
+    let low = 0.05, high = 1;
+    for (let step = 0; step < 12; step += 1) {
+      const middle = (low + high) / 2;
+      apply(middle);
+      if (fits()) low = middle;
+      else high = middle;
+    }
+    apply(low);
+  }
+
+  function scheduleFit() {
+    if (fitFrame) return;
+    fitFrame = requestAnimationFrame(() => {
+      fitFrame = 0;
+      fitCaptionPair(previous, previousZh, previousEn);
+      fitCaptionPair(activePair, activeZh, activeEn);
+    });
+  }
 
   function setConnection(state, label, detail) {
     connection.dataset.state = state;
     connectionLabel.textContent = label;
     lastUpdate.textContent = detail;
+    scheduleFit();
   }
 
   function render(snapshot) {
@@ -100,6 +141,7 @@
       document.querySelectorAll("[data-layout]").forEach((candidate) => {
         candidate.setAttribute("aria-pressed", String(candidate === button));
       });
+      scheduleFit();
     });
   });
   const savedLayout = sessionStorage.getItem("caption-layout");
@@ -121,6 +163,13 @@
     }
   }, 2000);
 
+  window.addEventListener("resize", scheduleFit);
+  window.addEventListener("orientationchange", scheduleFit);
+  window.visualViewport?.addEventListener("resize", scheduleFit);
+  if (window.ResizeObserver) new ResizeObserver(scheduleFit).observe(captionStage);
+  document.fonts?.ready.then(scheduleFit);
+
   if (new URLSearchParams(location.search).get("demo") === "1") startDemo();
   else startFirebase();
+  scheduleFit();
 })();

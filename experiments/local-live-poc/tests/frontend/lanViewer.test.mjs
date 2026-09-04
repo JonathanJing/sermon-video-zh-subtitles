@@ -12,13 +12,15 @@ async function viewer() {
   const sandbox = {
     document: {
       querySelector(selector) {
-        if (!elements.has(selector)) elements.set(selector, { style: {} });
+        if (!elements.has(selector)) elements.set(selector, { style: {}, classList: { toggle() {} } });
         return elements.get(selector);
       },
     },
     EventSource: class {
       constructor() { source = this; }
     },
+    requestAnimationFrame() { return 1; },
+    window: { addEventListener() {} },
   };
   vm.runInNewContext(script, sandbox);
   return { elements, deliver: (event) => source.onmessage({ data: JSON.stringify(event) }) };
