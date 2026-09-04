@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
+from .asr_client import WhisperCliClient
 from .content_pack import (
     CONTEXT_POLICIES,
     PackValidationError,
@@ -32,11 +33,41 @@ class GatewayState:
         ollama_model: str = "",
         ollama_url: str = "http://127.0.0.1:11434",
         session_root: str = "artifacts/sessions",
+        asr_model: str = "",
+        whisper_binary: str = "whisper-cli",
+        vad_threshold_rms: int = 150,
+        ws_port: int = 8767,
     ) -> None:
         self.pack_path = pack_path
         self.pack = load_pack(pack_path) if pack_path else None
         self.ollama = OllamaClient(ollama_model, ollama_url)
         self.sessions = SessionStore(session_root)
+        self.asr = WhisperCliClient(asr_model, whisper_binary)
+        self.vad_threshold_rms = vad_threshold_rms
+        self.ws_port = ws_port
+        self.ollama_warmup: dict[str, Any] | None = None
+
+    def translate(
+        self,
+        source_text: str,
+        cursor_sequence: int | None,
+        context_policy: str,
+    ) -> dict[str, Any]:
+        pack = self.pack
+        hits = (
+            retrieve(pack, source_text, limit=5, cursor_sequence=cursor_sequence)
+            if pack and context_policy != "none" else []
+        )
+        context = prompt_context(hits, policy=context_policy)
+        result = self.ollama.translate(source_text, context)
+        return {
+            "sourceTextEn": source_text,
+            **result,
+            "requestedContextPolicy": context_policy,
+            "contextPolicy": context_policy if hits else "none",
+            "contextHitIds": [hit["entryId"] for hit in hits],
+            "alignment": alignment_summary(hits, cursor_sequence),
+        }
 
 
 class GatewayServer(ThreadingHTTPServer):
@@ -99,10 +130,16 @@ class Handler(BaseHTTPRequestHandler):
             self._send(HTTPStatus.NOT_FOUND, {"error": "not_found"})
             return
         ollama = self.server.state.ollama.status()
+        asr = self.server.state.asr.status()
+        storage = self.server.state.sessions.health()
         pack = self.server.state.pack
         self._send(HTTPStatus.OK, {
             "service": "local-live-caption-gateway",
-            "status": "ready" if ollama.get("configuredModelInstalled") else "degraded",
+            "status": "ready" if (
+                ollama.get("configuredModelInstalled")
+                and asr.get("available")
+                and storage.get("available")
+            ) else "degraded",
             "contentPack": None if not pack else {
                 "packVersion": pack["packVersion"],
                 "serviceDate": pack["serviceDate"],
@@ -110,10 +147,14 @@ class Handler(BaseHTTPRequestHandler):
                 "entryCount": len(pack["entries"]),
             },
             "ollama": ollama,
-            "sessionStorage": {
-                "available": True,
-                "directory": str(self.server.state.sessions.root),
+            "ollamaWarmup": self.server.state.ollama_warmup,
+            "asr": asr,
+            "liveStream": {
+                "available": asr.get("available", False),
+                "webSocketUrl": f"ws://127.0.0.1:{self.server.state.ws_port}/api/live",
+                "format": "pcm_s16le/16000/mono/100ms",
             },
+            "sessionStorage": storage,
         })
 
     def do_POST(self) -> None:
@@ -141,7 +182,9 @@ class Handler(BaseHTTPRequestHandler):
             elif session_match and session_match.group(2) == "events":
                 self._send(
                     HTTPStatus.OK,
-                    self.server.state.sessions.append_event(session_match.group(1), payload),
+                    self.server.state.sessions.append_event(
+                        session_match.group(1), payload, assign_sequence=True
+                    ),
                 )
             elif session_match and session_match.group(2) == "finalize":
                 self._send(
@@ -194,20 +237,19 @@ class Handler(BaseHTTPRequestHandler):
         source_text = str(payload.get("sourceTextEn") or "").strip()
         if not source_text:
             raise PackValidationError("sourceTextEn is required")
-        pack = self.server.state.pack
         cursor_sequence = self._cursor_sequence(payload)
         context_policy = self._context_policy(payload)
         if payload.get("useContext") is False:
             context_policy = "none"
-        hits = (
-            retrieve(pack, source_text, limit=5, cursor_sequence=cursor_sequence)
-            if pack and context_policy != "none" else []
-        )
-        context = prompt_context(hits, policy=context_policy)
-        alignment = alignment_summary(hits, cursor_sequence)
         try:
-            result = self.server.state.ollama.translate(source_text, context)
+            result = self.server.state.translate(source_text, cursor_sequence, context_policy)
         except OllamaError as error:
+            pack = self.server.state.pack
+            hits = (
+                retrieve(pack, source_text, limit=5, cursor_sequence=cursor_sequence)
+                if pack and context_policy != "none" else []
+            )
+            alignment = alignment_summary(hits, cursor_sequence)
             self._send(HTTPStatus.SERVICE_UNAVAILABLE, {
                 "error": "translation_unavailable",
                 "message": str(error),
@@ -220,12 +262,7 @@ class Handler(BaseHTTPRequestHandler):
             })
             return
         self._send(HTTPStatus.OK, {
-            "sourceTextEn": source_text,
             **result,
-            "requestedContextPolicy": context_policy,
-            "contextPolicy": context_policy if hits else "none",
-            "contextHitIds": [hit["entryId"] for hit in hits],
-            "alignment": alignment,
         })
 
     @staticmethod
@@ -271,6 +308,24 @@ def parser() -> argparse.ArgumentParser:
         "--session-root",
         default=os.environ.get("LOCAL_LIVE_SESSION_ROOT", "artifacts/sessions"),
     )
+    command.add_argument(
+        "--asr-model",
+        default=os.environ.get("LOCAL_LIVE_ASR_MODEL", "artifacts/models/ggml-base.en.bin"),
+    )
+    command.add_argument(
+        "--whisper-binary",
+        default=os.environ.get("LOCAL_LIVE_WHISPER_BINARY", "whisper-cli"),
+    )
+    command.add_argument(
+        "--ws-port",
+        type=int,
+        default=int(os.environ.get("LOCAL_LIVE_WS_PORT", "8767")),
+    )
+    command.add_argument(
+        "--vad-threshold-rms",
+        type=int,
+        default=int(os.environ.get("LOCAL_LIVE_VAD_THRESHOLD_RMS", "150")),
+    )
     return command
 
 
@@ -283,19 +338,40 @@ def main() -> None:
         arguments.ollama_model,
         arguments.ollama_url,
         arguments.session_root,
+        arguments.asr_model,
+        arguments.whisper_binary,
+        arguments.vad_threshold_rms,
+        arguments.ws_port,
     )
     server = create_server(arguments.host, arguments.port, state)
+    try:
+        from .live_server import LiveSocketService
+    except ImportError as error:
+        raise SystemExit("WebSocket dependency missing; run pip install -r requirements.txt") from error
+    live_socket = LiveSocketService(state, arguments.host, arguments.ws_port)
+    storage_health = state.sessions.health(probe_write=True)
+    recovered_sessions = state.sessions.recover_incomplete() if storage_health.get("available") else []
+    try:
+        state.ollama_warmup = state.ollama.warmup()
+    except OllamaError as error:
+        state.ollama_warmup = {"ready": False, "error": str(error)}
+    live_socket.start()
     print(json.dumps({
         "gateway": f"http://{arguments.host}:{arguments.port}",
+        "liveWebSocket": f"ws://{arguments.host}:{arguments.ws_port}/api/live",
         "packVersion": state.pack.get("packVersion") if state.pack else None,
         "ollamaModel": arguments.ollama_model or None,
+        "asr": state.asr.status(),
         "sessionRoot": str(state.sessions.root),
+        "sessionStorage": storage_health,
+        "recoveredIncompleteSessions": [session["sessionId"] for session in recovered_sessions],
     }, ensure_ascii=False), flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         pass
     finally:
+        live_socket.stop()
         server.server_close()
 
 

@@ -6,23 +6,8 @@ import {
   finalizeLocalSession,
   getGatewayHealth,
   startLocalSession,
-  translateCaption,
 } from "./gatewayClient.js";
-
-const DEMO_TRANSCRIPTS = [
-  {
-    segmentId: "demo_0001",
-    en: "God's people are standing at the edge of the promised land.",
-  },
-  {
-    segmentId: "demo_0002",
-    en: "The question is not only where we are going, but who we are becoming.",
-  },
-  {
-    segmentId: "demo_0003",
-    en: "Grace does not ignore the truth; grace leads us through it.",
-  },
-];
+import { LiveCaptionSocket } from "./liveSocket.js";
 
 function nowIso() {
   return new Date().toISOString();
@@ -89,23 +74,25 @@ export function App() {
   const chunksRef = useRef([]);
   const eventsRef = useRef([]);
   const timerRef = useRef(null);
-  const captionTimerRef = useRef(null);
   const startTimeRef = useRef(0);
   const audioContextRef = useRef(null);
   const meterFrameRef = useRef(null);
-  const sessionTokenRef = useRef(0);
-  const cursorSequenceRef = useRef(null);
+  const workletNodeRef = useRef(null);
+  const liveSocketRef = useRef(null);
   const localSessionRef = useRef(null);
   const serverWriteQueueRef = useRef(Promise.resolve());
   const audioChunkSequenceRef = useRef(0);
   const localWriteFailureRef = useRef(false);
+  const recordingActiveRef = useRef(false);
+  const healthTimerRef = useRef(null);
 
   const isRunning = phase === "running";
-  const isBusy = phase === "requesting";
+  const isBusy = phase === "requesting" || phase === "stopping";
 
   const status = useMemo(() => {
-    if (phase === "running") return "正在录音 · A0 本地翻译";
+    if (phase === "running") return "正在录音 · 本地 ASR 与翻译";
     if (phase === "requesting") return "正在连接麦克风";
+    if (phase === "stopping") return "正在完成最后一句并保存";
     if (phase === "stopped") return "本次录音已停止";
     if (phase === "error") return "需要处理麦克风问题";
     return "准备开始";
@@ -170,104 +157,118 @@ export function App() {
   useEffect(() => {
     refreshDevices().catch(() => {});
     refreshGatewayHealth();
-    return () => stopResources(false);
+    healthTimerRef.current = window.setInterval(async () => {
+      const health = await refreshGatewayHealth();
+      if (recordingActiveRef.current && health?.status !== "ready") {
+        setError((current) => current || "本地字幕服务已降级；录音仍在继续，请查看底部状态。");
+      }
+    }, 5000);
+    return () => {
+      window.clearInterval(healthTimerRef.current);
+      stopResources(false);
+    };
   }, []);
 
   function stopResources(updatePhase = true) {
+    recordingActiveRef.current = false;
     window.clearInterval(timerRef.current);
-    window.clearTimeout(captionTimerRef.current);
     window.cancelAnimationFrame(meterFrameRef.current);
     timerRef.current = null;
-    captionTimerRef.current = null;
     meterFrameRef.current = null;
 
+    workletNodeRef.current?.disconnect();
+    workletNodeRef.current = null;
     if (recorderRef.current?.state === "recording") recorderRef.current.stop();
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
     audioContextRef.current?.close().catch(() => {});
     audioContextRef.current = null;
-    sessionTokenRef.current += 1;
     setLevel(0);
-    setTranslationState("idle");
     if (updatePhase) setPhase("stopped");
   }
 
-  async function translateStableTranscript(transcript, sessionToken) {
-    if (sessionToken !== sessionTokenRef.current) return;
-    const requestStartedAt = performance.now();
-    setCaption({ en: transcript.en, zh: "正在生成中文字幕…" });
-    setTranslationState("requesting");
-    appendEvent("stable_transcript_final", {
-      segmentId: transcript.segmentId,
-      source: "demo_replay",
-      sourceTextEn: transcript.en,
-    });
-    appendEvent("translation_requested", {
-      segmentId: transcript.segmentId,
-      contextPolicy: "none",
-      cursorSequence: cursorSequenceRef.current,
-    });
+  function recordGatewayEvent(event) {
+    eventsRef.current.push({ ...event, receivedAt: nowIso(), source: "gateway" });
+    setEventCount(eventsRef.current.length);
+  }
 
-    try {
-      const result = await translateCaption({
-        sourceTextEn: transcript.en,
-        cursorSequence: cursorSequenceRef.current,
-        contextPolicy: "none",
-      });
-      if (sessionToken !== sessionTokenRef.current) return;
-      const latencyMs = Math.round(performance.now() - requestStartedAt);
-      setCaption({ en: transcript.en, zh: result.targetTextZh || "翻译结果为空。" });
+  function handleLiveEvent(event) {
+    recordGatewayEvent(event);
+    if (event.persistenceFailed || event.type === "storage.failed") {
+      setLocalSaveState("error");
+      setError("本地增量保存失败；浏览器录音仍在继续，请勿刷新页面。");
+    }
+    if (event.type === "stream.ready") {
+      setCaption({ en: "Listening for English speech…", zh: "请开始讲话。" });
+      setTranslationState("listening");
+    } else if (event.type === "asr.processing") {
+      setTranslationState("recognizing");
+    } else if (event.type === "asr.final") {
+      setCaption({ en: event.sourceTextEn || "", zh: "正在生成中文字幕…" });
+      setTranslationState("requesting");
+    } else if (event.type === "translation.final") {
+      setCaption({ en: event.sourceTextEn || "", zh: event.targetTextZh || "翻译结果为空。" });
       setTranslationState("ready");
-      if (result.alignment?.confidence === "high" || result.alignment?.confidence === "exact") {
-        cursorSequenceRef.current = result.alignment.suggestedCursor;
-      }
-      appendEvent("translation_completed", {
-        segmentId: transcript.segmentId,
-        sourceTextEn: transcript.en,
-        targetTextZh: result.targetTextZh,
-        latencyMs,
-        model: result.model,
-        promptVersion: result.promptVersion,
-        requestedContextPolicy: result.requestedContextPolicy,
-        contextPolicy: result.contextPolicy,
-        contextHitIds: result.contextHitIds,
-        alignment: result.alignment,
-        modelMetrics: result.metrics,
-      });
-    } catch (caught) {
-      if (sessionToken !== sessionTokenRef.current) return;
-      const latencyMs = Math.round(performance.now() - requestStartedAt);
-      const message = caught?.message || "本地翻译不可用";
-      setCaption({ en: transcript.en, zh: "翻译暂时不可用，请查看英文原文。" });
+    } else if (event.type === "translation.failed") {
+      setCaption({ en: event.sourceTextEn || "", zh: "翻译暂时不可用，请查看英文原文。" });
       setTranslationState("error");
-      appendEvent("translation_failed", {
-        segmentId: transcript.segmentId,
-        latencyMs,
-        message,
-        recordingShouldContinue: true,
-      });
+    } else if (event.type === "translation.skipped") {
+      setCaption({ en: event.sourceTextEn || "", zh: "翻译积压，暂时显示英文原文。" });
+      setTranslationState("error");
+    } else if (
+      event.type === "asr.failed"
+      || event.type === "stream.error"
+      || event.type === "pipeline.failed"
+    ) {
+      setError(event.message || "本地英文识别暂时不可用；录音仍在继续。");
+      setTranslationState("error");
     }
   }
 
-  async function runDemoTranscriptLoop(sessionToken, index = 0) {
-    await translateStableTranscript(DEMO_TRANSCRIPTS[index], sessionToken);
-    if (sessionToken !== sessionTokenRef.current) return;
-    captionTimerRef.current = window.setTimeout(() => {
-      runDemoTranscriptLoop(sessionToken, (index + 1) % DEMO_TRANSCRIPTS.length);
-    }, 1800);
+  function handleLocalLiveEvent(event) {
+    appendEvent(event.type, event);
+    if (event.type === "stream.disconnected") {
+      setError("实时字幕连接已中断；浏览器录音仍在继续。请停止并保存后重新开始。");
+      setTranslationState("error");
+    } else if (event.type === "audio.stream_overrun") {
+      setError("实时音频传输出现积压；录音仍在继续，日志已记录丢帧。");
+    }
   }
 
-  function startMeter(stream) {
+  async function startAudioPipeline(stream) {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextClass) return;
+    if (!AudioContextClass) throw new Error("当前浏览器不支持实时 PCM 音频处理。");
     const context = new AudioContextClass();
+    await context.resume();
+    await context.audioWorklet.addModule("/pcm-capture-worklet.js");
     const source = context.createMediaStreamSource(stream);
     const analyser = context.createAnalyser();
+    const worklet = new AudioWorkletNode(context, "pcm-capture-processor", {
+      channelCount: 1,
+      channelCountMode: "explicit",
+    });
+    const mute = context.createGain();
+    mute.gain.value = 0;
     analyser.fftSize = 512;
     analyser.smoothingTimeConstant = 0.78;
     source.connect(analyser);
+    source.connect(worklet);
+    worklet.connect(mute);
+    mute.connect(context.destination);
+    worklet.port.addEventListener("message", (message) => {
+      if (message.data instanceof ArrayBuffer) liveSocketRef.current?.sendPcm(message.data);
+    });
+    worklet.port.start();
     const samples = new Uint8Array(analyser.fftSize);
     audioContextRef.current = context;
+    workletNodeRef.current = worklet;
+    context.addEventListener("statechange", () => {
+      if (recordingActiveRef.current && context.state !== "running") {
+        appendEvent("audio.context_interrupted", { state: context.state });
+        setError("浏览器音频处理已暂停；录音仍在继续，请检查系统音频状态。");
+        setTranslationState("error");
+      }
+    });
 
     const draw = () => {
       analyser.getByteTimeDomainData(samples);
@@ -296,7 +297,6 @@ export function App() {
     setElapsed(0);
     setCaption({ en: "", zh: "正在连接麦克风…" });
     setTranslationState("idle");
-    cursorSequenceRef.current = null;
     setLocalSession(null);
     setLocalSaveState("creating");
     localSessionRef.current = null;
@@ -321,7 +321,6 @@ export function App() {
       const stream = await requestAudioStream({ audio, video: false });
       streamRef.current = stream;
       await refreshDevices();
-      startMeter(stream);
 
       chunksRef.current = [];
       const recorder = new MediaRecorder(stream);
@@ -329,11 +328,20 @@ export function App() {
       const audioTrack = stream.getAudioTracks()[0];
       const audioMimeType = recorder.mimeType || "audio/webm";
       startTimeRef.current = Date.now();
+      recordingActiveRef.current = true;
+      audioTrack?.addEventListener("ended", () => {
+        if (!recordingActiveRef.current) return;
+        appendEvent("audio.track_ended", {
+          audioDeviceId: audioTrack.getSettings().deviceId || "default",
+        });
+        setError("麦克风连接已中断；请停止并保存本次录音，然后重新选择麦克风。");
+        setTranslationState("error");
+      });
 
       let serverSession = null;
       try {
         const result = await startLocalSession({
-          mode: "local_translation_demo",
+          mode: "local_live_asr_translation",
           audioMimeType,
           audioDeviceId: audioTrack?.getSettings().deviceId || "default",
           audioDeviceLabel: audioTrack?.label || "default",
@@ -370,24 +378,12 @@ export function App() {
         const blob = new Blob(chunksRef.current, { type: audioMimeType });
         setRecordingBytes(blob.size);
         setRecordingUrl(URL.createObjectURL(blob));
-        if (!serverSession || localWriteFailureRef.current) return;
-        enqueueServerWrite(async () => {
-          const result = await finalizeLocalSession(serverSession.sessionId, {
-            durationMs: Date.now() - startTimeRef.current,
-            stoppedAt: nowIso(),
-          });
-          localSessionRef.current = result;
-          setLocalSession(result);
-          setLocalSaveState("saved");
-        });
       });
       recorder.start(1000);
 
-      const sessionToken = sessionTokenRef.current + 1;
-      sessionTokenRef.current = sessionToken;
       appendEvent("session_started", {
-        mode: "local_translation_demo",
-        asrSource: "demo_replay",
+        mode: "local_live_asr_translation",
+        asrSource: "microphone_pcm_stream",
         translationGateway: GATEWAY_URL,
         contextPolicy: "none",
         localSessionId: serverSession?.sessionId || null,
@@ -395,11 +391,25 @@ export function App() {
       });
       const health = await refreshGatewayHealth();
       appendEvent("gateway_health", { health });
+      if (serverSession && health?.liveStream?.webSocketUrl) {
+        try {
+          const liveSocket = new LiveCaptionSocket(health.liveStream.webSocketUrl, {
+            onEvent: handleLiveEvent,
+            onLocalEvent: handleLocalLiveEvent,
+          });
+          await liveSocket.connect(serverSession.sessionId, "none");
+          liveSocketRef.current = liveSocket;
+        } catch (caught) {
+          setError(`${caught?.message || "实时 ASR 连接失败"}；本次仍会保存录音。`);
+        }
+      } else {
+        setError("实时 ASR Gateway 未就绪；本次仍会保存录音。");
+      }
+      await startAudioPipeline(stream);
       setPhase("running");
       timerRef.current = window.setInterval(() => {
         setElapsed(Date.now() - startTimeRef.current);
       }, 250);
-      runDemoTranscriptLoop(sessionToken);
     } catch (caught) {
       stopResources(false);
       const message = caught?.name === "NotAllowedError"
@@ -411,15 +421,67 @@ export function App() {
     }
   }
 
-  function stopSession() {
-    appendEvent("session_stopped", { durationMs: Date.now() - startTimeRef.current });
+  async function stopSession() {
+    if (phase !== "running") return;
+    setPhase("stopping");
+    recordingActiveRef.current = false;
+    const durationMs = Date.now() - startTimeRef.current;
+    appendEvent("session_stopped", { durationMs });
     if (localSessionRef.current && !localWriteFailureRef.current) {
       setLocalSaveState("finalizing");
     }
+    window.clearInterval(timerRef.current);
+    window.cancelAnimationFrame(meterFrameRef.current);
+    workletNodeRef.current?.disconnect();
+    workletNodeRef.current = null;
+    const recorder = recorderRef.current;
+    const recorderStopped = recorder?.state === "recording"
+      ? new Promise((resolve) => recorder.addEventListener("stop", resolve, { once: true }))
+      : Promise.resolve();
+    if (recorder?.state === "recording") recorder.stop();
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+    audioContextRef.current?.close().catch(() => {});
+    audioContextRef.current = null;
+    setLevel(0);
+
+    const liveSocket = liveSocketRef.current;
+    let livePipelineDrained = !liveSocket;
+    let streamStopResult = null;
+    try {
+      streamStopResult = await liveSocket?.stop();
+      if (liveSocket) {
+        livePipelineDrained = streamStopResult?.workerDrained === true
+          && streamStopResult?.storageHealthy !== false;
+      }
+    } catch (caught) {
+      appendEvent("stream_stop_failed", { message: caught?.message || "stream stop failed" });
+    }
+    if (!livePipelineDrained) {
+      appendEvent("stream_drain_incomplete", { streamStopResult });
+      setError("最后一段字幕未能安全完成；录音将保存为可恢复但不完整的 session。");
+    }
+    liveSocketRef.current = null;
+    await recorderStopped;
+    await serverWriteQueueRef.current;
+    if (localSessionRef.current && !localWriteFailureRef.current) {
+      try {
+        const result = await finalizeLocalSession(localSessionRef.current.sessionId, {
+          durationMs,
+          stoppedAt: nowIso(),
+          status: livePipelineDrained ? "completed" : "incomplete",
+        });
+        localSessionRef.current = result;
+        setLocalSession(result);
+        setLocalSaveState(result.status === "completed" ? "saved" : "incomplete");
+      } catch (caught) {
+        recordLocalStorageFailure(caught);
+      }
+    }
     const manifest = {
       schemaVersion: 1,
-      mode: "local_translation_demo",
-      warning: "Chinese is local-model output; English is demo replay until local ASR is connected.",
+      mode: "local_live_asr_translation",
+      warning: "English is local Whisper ASR and Chinese is local MiLMMT output; neither is human reviewed.",
       startedAt: eventsRef.current[0]?.at || nowIso(),
       stoppedAt: nowIso(),
       durationMs: Date.now() - startTimeRef.current,
@@ -428,7 +490,8 @@ export function App() {
       events: eventsRef.current,
     };
     setLogUrl(downloadUrl(`${JSON.stringify(manifest, null, 2)}\n`, "application/json"));
-    stopResources(true);
+    setTranslationState("idle");
+    setPhase("stopped");
   }
 
   return (
@@ -483,7 +546,7 @@ export function App() {
         <div className="stage-meta">
           <span id="caption-title">实时字幕</span>
           <span className="demo-notice">
-            {isRunning ? "测试英文回放 · MiLMMT A0 本地翻译" : "麦克风录音 + 本地模型集成 POC"}
+            {isRunning ? "麦克风 · Whisper ASR · MiLMMT A0" : "麦克风录音 + 本地模型集成 POC"}
           </span>
         </div>
 
@@ -494,7 +557,9 @@ export function App() {
               : phase === "requesting"
                 ? "正在连接麦克风…"
                 : phase === "stopped"
-                  ? "本次录音已经安全停止。"
+                  ? localSaveState === "incomplete"
+                    ? "录音已保存，但最后一段字幕不完整。"
+                    : "本次录音已经安全停止。"
                   : caption.zh}
           </p>
           <p className="en-caption" lang="en">
@@ -508,15 +573,17 @@ export function App() {
       <footer className="health-bar" aria-label="运行状态">
         <div className="health-items">
           <span data-state={isRunning ? "active" : "idle"}>录音 {isRunning ? "进行中" : phase === "stopped" ? "已停止" : "待机"}</span>
-          <span data-state="pending">ASR 测试英文回放</span>
+          <span data-state={gatewayHealth?.asr?.available ? "active" : "pending"}>
+            ASR {translationState === "recognizing" ? "识别中" : gatewayHealth?.asr?.available ? "Whisper 就绪" : "未就绪"}
+          </span>
           <span data-state={translationState === "ready" ? "active" : translationState === "error" ? "pending" : "idle"}>
             翻译 {translationState === "ready" ? "MiLMMT A0" : translationState === "requesting" ? "生成中" : translationState === "error" ? "已降级" : "待机"}
           </span>
           <span data-state={gatewayHealth?.status === "ready" ? "active" : "pending"}>
             Gateway {gatewayHealth?.status === "ready" ? "就绪" : gatewayHealth?.status === "offline" ? "离线" : "未就绪"}
           </span>
-          <span data-state={localSaveState === "saved" || localSaveState === "saving" ? "active" : localSaveState === "error" ? "pending" : "idle"}>
-            本地保存 {localSaveState === "creating" ? "建目录" : localSaveState === "saving" ? "增量写入" : localSaveState === "finalizing" ? "完成中" : localSaveState === "saved" ? "已完成" : localSaveState === "error" ? "浏览器备份" : "待机"}
+          <span data-state={localSaveState === "saved" || localSaveState === "saving" ? "active" : localSaveState === "error" || localSaveState === "incomplete" ? "pending" : "idle"}>
+            本地保存 {localSaveState === "creating" ? "建目录" : localSaveState === "saving" ? "增量写入" : localSaveState === "finalizing" ? "完成中" : localSaveState === "saved" ? "已完成" : localSaveState === "incomplete" ? "可恢复/不完整" : localSaveState === "error" ? "浏览器备份" : "待机"}
           </span>
           <span>Context A0 / none</span>
         </div>

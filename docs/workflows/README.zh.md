@@ -140,18 +140,19 @@ sequenceDiagram
 
     UI->>GW: POST /api/sessions/start
     GW->>Disk: create manifest/audio/events
-    loop 每个 audio chunk
+    loop 现场录音
         Mic->>UI: audio
-        UI->>GW: append ordered chunk
-        GW->>Disk: fsync recording
-        UI->>ASR: PCM/VAD window
-        ASR-->>UI: partial/final English
+        UI->>GW: WebSocket ordered PCM frame
+        UI->>GW: REST MediaRecorder recovery chunk
+        GW->>Disk: append recovery recording
+        GW->>ASR: PCM/VAD window
+        ASR-->>GW: partial/final English
+        GW-->>UI: asr.partial/asr.final
     end
-    UI->>GW: stable English + context policy
+    GW->>GW: final English + guarded context
     GW->>MT: frozen A0 prompt or guarded context
     MT-->>GW: Chinese + metrics
-    GW-->>UI: translation result
-    UI->>GW: transcript/translation event
+    GW-->>UI: translation.final
     GW->>Disk: append events.jsonl
     UI->>GW: finalize
     GW->>Disk: completed manifest + audio SHA-256
@@ -165,7 +166,7 @@ sequenceDiagram
 | 增量录音、events、manifest、SHA | Working | 每次启动建立独立 session 文件夹 |
 | MiLMMT A0/Ollama translation | Working | 冻结 prompt，`contextPolicy=none` 基线 |
 | 大号中文、英文 sidecar、手机宽度 | Working | 单页 UI；手机第二屏同步尚未实现 |
-| 本地英文 ASR | Discovery | `whisper-cli` runtime 已安装；production model 尚未选择和 benchmark |
+| 本地英文 ASR | POC/Working baseline | `whisper.cpp base.en` 已完成真实麦克风端到端验证；仍需 sermon benchmark 和 soak |
 | 周六 content pack | POC | builder/retriever 已有；尚未做现场 A/B |
 
 ## ASR + 翻译总延迟预算
@@ -176,7 +177,8 @@ sequenceDiagram
 - MiLMMT A0：`sermon-milmmt-46-4b-v1-q8:benchmark`，Ollama 本地运行。
 - 2026-09-03 的 14 个成功本地翻译事件中，warm translation 约为 p50 `0.39s`、p95 `0.48s`；首次冷请求观测为 `1.45s`。
 - 这组 translation 数据使用固定英文 fixture，不包含麦克风、VAD 或 ASR 时间，样本量也不足以成为 production SLO。
-- `whisper.cpp` runtime 当前可用，但 production English model artifact 尚未锁定，因此 ASR 数字是工程预算，不是实测 benchmark。
+- `whisper.cpp base.en` 已锁定为当前 POC artifact。一次合成英文链路观测 ASR `323ms`；一次真实麦克风链路观测 ASR `628ms`。两者只是端到端 smoke evidence，不是 production benchmark。
+- 同两次链路中，MiLMMT 首次冷加载翻译为 `2.78s`，模型驻留后的真实麦克风翻译为 `294ms`；Gateway 启动现在会主动预热 MiLMMT。
 
 ### 预算拆分
 
@@ -234,6 +236,7 @@ sequenceDiagram
 
 - [本地 live POC](../../experiments/local-live-poc/README.md)
 - [POC 设计](../../experiments/local-live-poc/DESIGN.zh.md)
+- [实时音频与字幕传输决策](../../experiments/local-live-poc/STREAMING.zh.md)
 - [稳定 post-live PDF 工作流](../stable-post-live-reading-pdf-workflow.zh.md)
 - [本地周末生产 runbook](../codex-local-production-runbook.zh.md)
 - [完整文档索引](../README.zh.md)

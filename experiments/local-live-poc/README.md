@@ -10,32 +10,60 @@ Independent greenfield interface for a MacBook-based live sermon caption feasibi
 - Large Simplified Chinese caption area with a smaller English source line.
 - Downloadable audio and JSON event log after stopping.
 - Automatic per-recording local session folder with incremental audio and JSONL writes.
-- Clearly labeled stable-English replay through the real local translation backend.
+- Real microphone PCM streaming through local Whisper ASR and the MiLMMT translation backend.
 
-The Chinese captions now come from the real localhost gateway and MiLMMT A0 model. The English input is still a clearly labeled replay fixture until local ASR is connected. Browser microphone recording remains real and continues if translation fails. The canonical PCM writer and offline replay runner are not implemented yet.
+The live path is now microphone → AudioWorklet PCM → WebSocket gateway → energy VAD → configured `whisper.cpp` English ASR → MiLMMT A0 → Chinese caption. Browser recording remains independent and continues if ASR or translation fails. Offline replay/A-B orchestration remains a later step.
 
 Each start automatically creates:
 
 ```text
 artifacts/sessions/<timestamp>-<random-id>/
   recording.webm   # appended once per MediaRecorder chunk
+  asr-audio.pcm    # ordered 16 kHz signed-16 mono PCM
+  asr-audio.wav    # finalized replayable ASR input
   events.jsonl     # append-only UI/model/status events
-  manifest.json    # status, counts, paths, duration, and final audio SHA-256
+  manifest.json    # status, counts, paths, duration, and audio/PCM SHA-256
 ```
 
-The gateway syncs every chunk and event to disk. On stop it marks the manifest completed and calculates the recording SHA-256. Browser download links remain available as a recovery copy. Override the storage root with `LOCAL_LIVE_SESSION_ROOT=/absolute/path` when the recordings should live outside the project.
+The gateway syncs recovery recording chunks, batched PCM frames, and events to disk. On stop it wraps PCM as a replayable WAV, marks the manifest completed, and calculates recording/PCM hashes. Browser download links remain available as a recovery copy. Override the storage root with `LOCAL_LIVE_SESSION_ROOT=/absolute/path` when the recordings should live outside the project.
 
-The backend includes a dependency-free Weekly Pack builder, guarded context retriever, localhost gateway, and Ollama translation adapter. It selects the already-installed MiLMMT A0 by default but never downloads a model automatically.
+The backend includes a dependency-free Weekly Pack builder, guarded context retriever, localhost REST/WebSocket gateway, Whisper CLI adapter, and Ollama translation adapter. It selects the already-installed MiLMMT A0 by default; the setup script downloads only the pinned local ASR model.
 
-The intentionally small system and context-pack plan is in [DESIGN.zh.md](./DESIGN.zh.md). The verified desktop design review is in [design-qa.md](./design-qa.md).
+The intentionally small system and context-pack plan is in [DESIGN.zh.md](./DESIGN.zh.md). The researched live transport decision and protocol contract are in [STREAMING.zh.md](./STREAMING.zh.md). The verified desktop design review is in [design-qa.md](./design-qa.md).
 
-## Run
+## First-time setup
+
+The setup script creates the local Python environment, installs the single WebSocket dependency, verifies `whisper-cli`/Ollama, and downloads the pinned `ggml-base.en` model into the ignored `artifacts/models/` directory:
 
 ```bash
-npm run dev -- --host 0.0.0.0 --port 4173 --strictPort
+./scripts/setup-local.sh
 ```
 
-Open the local page in a browser and allow microphone access when starting a recording.
+The model SHA-256 is pinned by the script. Model files and recordings remain local and are not committed.
+
+## Sunday one-command run
+
+On macOS, double-click `Sunday Live Captions.command` in Finder. It launches the same checked runtime and opens the caption page. A plain web shortcut is not sufficient because browsers cannot start the local Python, Node, Whisper, and Ollama processes.
+
+The equivalent Terminal command is:
+
+```bash
+./scripts/sunday-live.sh
+```
+
+This command checks the local dependencies, model, writable session directory, and at least 10 GiB of free disk; starts Ollama when needed; prevents display and idle system sleep; starts the REST gateway, WebSocket live audio endpoint, Whisper ASR, MiLMMT adapter, and Vite UI; then opens `http://127.0.0.1:4173/` automatically. It uses `small.en` when that benchmarked model is already installed and otherwise uses the pinned `base.en` installed by setup. Override it explicitly with `LOCAL_LIVE_ASR_MODEL=/absolute/path/to/model.bin`.
+
+Keep the Terminal window open. In the page, choose the microphone, start recording, and use **Stop and save** before pressing Control-C in Terminal. Run a non-starting preflight on Saturday night or Sunday morning with:
+
+```bash
+./scripts/sunday-live.sh --check
+```
+
+To stop everything with one double-click, first use **Stop and save** in the page, then open `Stop Sunday Live Captions.command` in Finder. It stops only the launcher recorded by this project; it does not kill arbitrary processes by port. Closing the browser page alone stops browser recording but does not stop the local backend.
+
+For development, the lower-level command remains `./scripts/run-local.sh`; it does not start Ollama, run the full preflight, prevent sleep, or open the page.
+
+If the live WebSocket, microphone, browser audio context, or incremental storage fails, the page now shows a visible degraded state while the independent browser recording continues. On stop, the gateway marks a session `completed` only after both ASR and translation workers confirm they drained; otherwise it writes an `incomplete` but recoverable manifest. Gateway startup also recovers stale `recording` sessions as `incomplete` instead of silently leaving them open.
 
 ## Saturday Weekly Pack
 
@@ -80,6 +108,7 @@ Endpoints:
 - `POST /api/sessions/{sessionId}/finalize`
 - `POST /api/context/retrieve`
 - `POST /api/translate`
+- `WS /api/live` on `127.0.0.1:8767`
 
 Both POST endpoints accept `cursorSequence` and `contextPolicy`. The live page should persist the returned `alignment.suggestedCursor` and send it with the next stable English segment:
 

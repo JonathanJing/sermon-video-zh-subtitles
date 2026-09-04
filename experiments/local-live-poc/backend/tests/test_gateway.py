@@ -30,6 +30,7 @@ class GatewayTest(unittest.TestCase):
             session_root=str(Path(self.temporary.name) / "sessions"),
         )
         state.ollama.status = lambda: {"available": True, "configuredModel": None, "installedModels": []}
+        state.asr.status = lambda: {"available": True, "provider": "test-asr"}
         self.state = state
         self.server = create_server("127.0.0.1", 0, state)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
@@ -75,6 +76,7 @@ class GatewayTest(unittest.TestCase):
         self.assertEqual(payload["status"], "degraded")
         self.assertEqual(payload["contentPack"]["entryCount"], 1)
         self.assertTrue(payload["sessionStorage"]["available"])
+        self.assertGreater(payload["sessionStorage"]["freeBytes"], 0)
 
     def test_health_does_not_require_an_optional_content_pack(self) -> None:
         self.state.pack = None
@@ -137,6 +139,15 @@ class GatewayTest(unittest.TestCase):
         )
         self.assertEqual(status, 400)
         self.assertIn("sequence must be 1", payload["message"])
+
+    def test_session_can_finalize_as_recoverable_incomplete(self) -> None:
+        _, created = self.request("/api/sessions/start", {"audioMimeType": "audio/webm"})
+        status, finalized = self.request(f"/api/sessions/{created['sessionId']}/finalize", {
+            "durationMs": 100,
+            "status": "incomplete",
+        })
+        self.assertEqual(status, 200)
+        self.assertEqual(finalized["status"], "incomplete")
 
     def test_retrieve_returns_approved_term_but_not_machine_translation(self) -> None:
         status, payload = self.request("/api/context/retrieve", {

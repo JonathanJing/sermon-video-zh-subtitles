@@ -5,7 +5,9 @@ import json
 import os
 import re
 import secrets
+import shutil
 import threading
+import wave
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -58,13 +60,89 @@ class SessionStore:
             "audioChunkCount": 0,
             "audioBytes": 0,
             "audioSha256": None,
+            "asrPcmFile": "asr-audio.pcm",
+            "asrWavFile": "asr-audio.wav",
+            "pcmFrameCount": 0,
+            "pcmBytes": 0,
+            "pcmSha256": None,
+            "pcmWavSha256": None,
             "eventCount": 0,
             "metadata": metadata,
         }
         (directory / audio_name).touch(mode=0o600)
+        (directory / manifest["asrPcmFile"]).touch(mode=0o600)
         (directory / "events.jsonl").touch(mode=0o600)
         self._write_manifest(directory, manifest)
         return self._public(manifest, directory)
+
+    def health(
+        self,
+        minimum_free_bytes: int = 10 * 1024 * 1024 * 1024,
+        probe_write: bool = False,
+    ) -> dict[str, Any]:
+        probe_path: Path | None = None
+        try:
+            usage = shutil.disk_usage(self.root)
+            if probe_write:
+                probe_path = self.root / f".storage-probe-{secrets.token_hex(4)}"
+                with probe_path.open("xb") as output:
+                    output.write(b"local-live-storage-probe\n")
+                    output.flush()
+                    os.fsync(output.fileno())
+            available = os.access(self.root, os.W_OK) and usage.free >= minimum_free_bytes
+            return {
+                "available": available,
+                "directory": str(self.root),
+                "freeBytes": usage.free,
+                "minimumFreeBytes": minimum_free_bytes,
+                "reason": None if available else "insufficient_space_or_not_writable",
+            }
+        except OSError as error:
+            return {
+                "available": False,
+                "directory": str(self.root),
+                "freeBytes": None,
+                "minimumFreeBytes": minimum_free_bytes,
+                "reason": str(error),
+            }
+        finally:
+            if probe_path is not None:
+                try:
+                    probe_path.unlink(missing_ok=True)
+                except OSError:
+                    pass
+
+    def recover_incomplete(self) -> list[dict[str, Any]]:
+        recovered: list[dict[str, Any]] = []
+        with self._lock:
+            for directory in sorted(self.root.iterdir()):
+                if not directory.is_dir() or not SESSION_ID_PATTERN.fullmatch(directory.name):
+                    continue
+                manifest_path = directory / "manifest.json"
+                try:
+                    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+                except (OSError, json.JSONDecodeError):
+                    continue
+                if manifest.get("status") != "recording":
+                    continue
+                manifest["recoveryReason"] = "gateway_restart_before_finalize"
+                inferred_duration_ms = max(
+                    int(manifest.get("pcmFrameCount") or 0) * 100,
+                    int(manifest.get("audioChunkCount") or 0) * 1000,
+                )
+                self._finalize_manifest(directory, manifest, {
+                    "status": "incomplete",
+                    "stoppedAt": _now_iso(),
+                    "durationMs": manifest.get("durationMs") or inferred_duration_ms,
+                })
+                recovered.append(self._public(manifest, directory))
+        return recovered
+
+    def get_recording(self, session_id: str) -> dict[str, Any]:
+        with self._lock:
+            directory, manifest = self._load(session_id)
+            self._require_recording(manifest)
+            return self._public(manifest, directory)
 
     def append_audio(self, session_id: str, sequence: int, data: bytes) -> dict[str, Any]:
         if sequence < 1:
@@ -90,44 +168,110 @@ class SessionStore:
                 "audioBytes": manifest["audioBytes"],
             }
 
-    def append_event(self, session_id: str, event: dict[str, Any]) -> dict[str, Any]:
+    def append_pcm_frames(
+        self,
+        session_id: str,
+        first_sequence: int,
+        frame_count: int,
+        data: bytes,
+        frame_bytes: int = 3200,
+    ) -> dict[str, Any]:
+        if first_sequence < 1 or frame_count < 1:
+            raise SessionStoreError("PCM frame sequence and count must be positive")
+        if len(data) != frame_count * frame_bytes:
+            raise SessionStoreError("PCM payload does not match frame count")
+        with self._lock:
+            directory, manifest = self._load(session_id)
+            self._require_recording(manifest)
+            expected = int(manifest["pcmFrameCount"]) + 1
+            if first_sequence != expected:
+                raise SessionStoreError(f"PCM frame sequence must be {expected}")
+            with (directory / manifest["asrPcmFile"]).open("ab") as output:
+                output.write(data)
+                output.flush()
+                os.fsync(output.fileno())
+            manifest["pcmFrameCount"] = first_sequence + frame_count - 1
+            manifest["pcmBytes"] = int(manifest["pcmBytes"]) + len(data)
+            self._write_manifest(directory, manifest)
+            return {
+                "sessionId": session_id,
+                "pcmFrameCount": manifest["pcmFrameCount"],
+                "pcmBytes": manifest["pcmBytes"],
+            }
+
+    def append_event(
+        self,
+        session_id: str,
+        event: dict[str, Any],
+        assign_sequence: bool = False,
+    ) -> dict[str, Any]:
         sequence = event.get("sequence")
-        if not isinstance(sequence, int) or sequence < 1:
+        if not assign_sequence and (not isinstance(sequence, int) or sequence < 1):
             raise SessionStoreError("event sequence must be a positive integer")
         with self._lock:
             directory, manifest = self._load(session_id)
             self._require_recording(manifest)
             expected = int(manifest["eventCount"]) + 1
-            if sequence != expected:
+            stored_event = dict(event)
+            if assign_sequence:
+                if isinstance(sequence, int) and sequence != expected:
+                    stored_event["clientSequence"] = sequence
+                sequence = expected
+                stored_event["sequence"] = sequence
+            elif sequence != expected:
                 raise SessionStoreError(f"event sequence must be {expected}")
-            line = json.dumps(event, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n"
+            stored_event.setdefault("at", _now_iso())
+            line = json.dumps(stored_event, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n"
             with (directory / manifest["eventFile"]).open("a", encoding="utf-8") as output:
                 output.write(line)
                 output.flush()
                 os.fsync(output.fileno())
             manifest["eventCount"] = sequence
             self._write_manifest(directory, manifest)
-            return {"sessionId": session_id, "eventCount": sequence}
+            return {"sessionId": session_id, "eventCount": sequence, "event": stored_event}
 
     def finalize(self, session_id: str, details: dict[str, Any]) -> dict[str, Any]:
         with self._lock:
             directory, manifest = self._load(session_id)
-            if manifest.get("status") == "completed":
+            if manifest.get("status") in {"completed", "incomplete"}:
                 return self._public(manifest, directory)
             self._require_recording(manifest)
-            try:
-                duration_ms = max(0, int(details.get("durationMs") or 0))
-            except (TypeError, ValueError) as error:
-                raise SessionStoreError("durationMs must be an integer") from error
-            audio_path = directory / manifest["audioFile"]
-            manifest.update({
-                "status": "completed",
-                "stoppedAt": str(details.get("stoppedAt") or _now_iso()),
-                "durationMs": duration_ms,
-                "audioSha256": self._sha256(audio_path),
-            })
-            self._write_manifest(directory, manifest)
+            self._finalize_manifest(directory, manifest, details)
             return self._public(manifest, directory)
+
+    def _finalize_manifest(
+        self,
+        directory: Path,
+        manifest: dict[str, Any],
+        details: dict[str, Any],
+    ) -> None:
+        status = str(details.get("status") or "completed")
+        if status not in {"completed", "incomplete"}:
+            raise SessionStoreError("status must be completed or incomplete")
+        try:
+            duration_ms = max(0, int(details.get("durationMs") or 0))
+        except (TypeError, ValueError) as error:
+            raise SessionStoreError("durationMs must be an integer") from error
+        audio_path = directory / manifest["audioFile"]
+        pcm_path = directory / manifest["asrPcmFile"]
+        wav_path = directory / manifest["asrWavFile"]
+        if pcm_path.stat().st_size:
+            with wave.open(str(wav_path), "wb") as output:
+                output.setnchannels(1)
+                output.setsampwidth(2)
+                output.setframerate(16000)
+                with pcm_path.open("rb") as source:
+                    for chunk in iter(lambda: source.read(1024 * 1024), b""):
+                        output.writeframesraw(chunk)
+        manifest.update({
+            "status": status,
+            "stoppedAt": str(details.get("stoppedAt") or _now_iso()),
+            "durationMs": duration_ms,
+            "audioSha256": self._sha256(audio_path),
+            "pcmSha256": self._sha256(pcm_path) if pcm_path.stat().st_size else None,
+            "pcmWavSha256": self._sha256(wav_path) if wav_path.is_file() else None,
+        })
+        self._write_manifest(directory, manifest)
 
     def _load(self, session_id: str) -> tuple[Path, dict[str, Any]]:
         if not SESSION_ID_PATTERN.fullmatch(session_id):
@@ -168,5 +312,7 @@ class SessionStore:
             "directory": str(directory),
             "manifestPath": str(directory / "manifest.json"),
             "audioPath": str(directory / manifest["audioFile"]),
+            "asrPcmPath": str(directory / manifest["asrPcmFile"]),
+            "asrWavPath": str(directory / manifest["asrWavFile"]),
             "eventPath": str(directory / manifest["eventFile"]),
         }

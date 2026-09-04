@@ -54,6 +54,21 @@ class OllamaClient:
                 "error": str(error),
             }
 
+    def warmup(self) -> dict[str, Any]:
+        if not self.model:
+            raise OllamaError("no Ollama model is configured")
+        response = self._json("/api/generate", {
+            "model": self.model,
+            "prompt": "",
+            "stream": False,
+            "keep_alive": "15m",
+        }, timeout=60.0)
+        return {
+            "ready": response.get("done") is True,
+            "doneReason": response.get("done_reason"),
+            "loadDurationNs": response.get("load_duration"),
+        }
+
     @staticmethod
     def build_prompt(source_text_en: str, context: dict[str, Any]) -> str:
         has_context = any(
@@ -117,7 +132,7 @@ class OllamaClient:
                 "seed": 42,
                 "num_predict": 256,
             },
-        }, timeout=60.0)
+        }, timeout=15.0)
         return {
             "targetTextZh": str(response.get("response") or "").strip(),
             "model": self.model,

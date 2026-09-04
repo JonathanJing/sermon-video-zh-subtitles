@@ -21,9 +21,9 @@ MacBook 麦克风
       └── UI session ─────> 会后下载的 JSON 事件日志
 ```
 
-当前页面已经可以选择麦克风、开始/停止录音、显示电平和计时，并在停止后提供音频与 JSON 日志。中文已通过 localhost gateway 连接真实 MiLMMT A0；英文暂时使用明确标识的稳定片段 replay，尚未连接麦克风 ASR。
+当前页面已经可以选择麦克风、开始/停止录音、显示电平和计时。麦克风 PCM 通过 WebSocket 进入 Gateway，使用能量 VAD、`whisper.cpp base.en` 和 MiLMMT A0 生成稳定字幕；停止后保留 WebM 恢复录音、规范化 ASR WAV、JSONL 事件和 manifest。
 
-## 下一步最小链路
+## 当前最小链路
 
 只新增一个本地 gateway，不扩展现有页面：
 
@@ -43,16 +43,18 @@ Browser microphone
 - `caption_event(segmentId, en, zh, state, timing)`：gateway 返回草稿或稳定字幕。
 - `session_event(type, detail)`：所有状态、降级和错误追加到日志。
 
+传输边界已经固定：session 控制继续使用 REST；接入 ASR 时新增一条双向 WebSocket 传输 PCM 帧和字幕事件。浏览器保留独立的 MediaRecorder 恢复录音，Gateway 统一管理 VAD、ASR、context 和翻译。具体格式、背压和分阶段落地见 [STREAMING.zh.md](./STREAMING.zh.md)。
+
 首版 gateway 只允许一条现场翻译链路。没有 context 命中、检索超时或 context pack 不可用时，直接使用普通翻译，并写入 fallback 事件。
 
 ### 当前 MacBook 与运行时选择
 
-2026-09-03 最新只读盘点：这台机器是 M1 Max、64 GB 内存；Ollama 本地 API `0.33.3` 正常响应，已安装 `sermon-milmmt-46-4b-v1-q8:benchmark`；检查时没有 Ollama 模型驻留。`whisper-cli` 与 `whisper-stream` 尚不可用，因此本轮先完成真实翻译集成，不把测试英文描述为麦克风 ASR。
+2026-09-03/04 实测：这台机器是 M1 Max、64 GB 内存；Ollama 本地 API `0.33.3` 正常响应，已安装 `sermon-milmmt-46-4b-v1-q8:benchmark`。Homebrew `whisper-cli` 已安装，固定的 `ggml-base.en` 模型已下载并通过 SHA-256 校验。真实浏览器麦克风已经完成英文 ASR、中文翻译、UI 显示和落盘验证。
 
-当前按三步推进：
+当前实现边界：
 
 1. **Working translation backend：MiLMMT-46-4B Q8_0 + Ollama。** A0 固定为 `sermon-milmmt-46-4b-v1-q8:benchmark`，使用 benchmark 已验证的官方 completion prompt、`raw=true`、temperature 0 和 top-k 1。浏览器只访问 gateway，不直接访问 Ollama。
-2. **下一项缺口：本地英文 ASR。** 接入后只需把 ASR 的稳定英文事件替换当前 demo replay；`POST /api/translate`、字幕渲染和日志合同保持不变。
+2. **Working ASR：whisper.cpp base.en。** AudioWorklet 生成 100 ms PCM 帧，Gateway 用 VAD 形成稳定英文片段；只翻译 `asr.final`。
 3. **可替换实验：MLX Whisper / MLX-LM。** 模型和运行时都位于 adapter 后面，后训练产物只替换 provider 配置，不改变 UI、日志或 Weekly Pack。
 
 不要让浏览器直接调用 `11434` 或 `8080`。所有模型调用都经过 localhost gateway，这样 UI 不需要知道模型名称、prompt、context pack 或运行时：
@@ -71,7 +73,7 @@ TranslationProvider: ollama | mlx_lm
 | 专用翻译候选 | Hy-MT2 1.8B | 专门面向翻译、支持英中；需要先验证 GGUF 或 MLX 转换与提示格式 |
 | Apple 原生实验 | MLX Whisper + MLX-LM | 便于测 Apple Silicon 原生性能，但当前机器尚未安装 |
 
-模型下载和安装不属于本次前端提交。下一阶段先建立 20–50 条冻结英文片段的 translation benchmark，再决定现场默认模型；不要根据模型名称直接决定生产链路。
+`base.en` 是当前可运行基线，不等于最终 ASR 选择。下一阶段仍需用 20–50 条真实冻结片段比较 `base.en` 与 `small.en`；不要根据模型名称直接决定生产链路。
 
 参考：
 
@@ -168,7 +170,7 @@ A/B 必须固定模型、量化、解码参数、硬件和输入顺序。人工�
 - 每次 fallback 和错误原因；
 - 录音 SHA-256，作为会后 replay 的不可变输入标识。
 
-当前 gateway 已在每次开始时自动创建 `artifacts/sessions/<session-id>/`，每个 MediaRecorder chunk 增量追加到录音文件，事件逐条追加到 `events.jsonl`；停止时完成 `manifest.json` 并计算录音 SHA-256。浏览器 Blob 下载继续作为恢复副本。规范化 PCM 与 ASR 音频帧仍是下一阶段，不把当前 WebM 录音描述为 canonical PCM。
+当前 gateway 已在每次开始时自动创建 `artifacts/sessions/<session-id>/`。MediaRecorder chunk 增量写入恢复录音；100 ms PCM 帧按秒批量写入 `asr-audio.pcm`；事件逐条追加到 `events.jsonl`。停止时生成 `asr-audio.wav`、完成 `manifest.json` 并计算录音与 PCM SHA-256。浏览器 Blob 下载继续作为恢复副本。
 
 ## 明确不做
 
