@@ -42,9 +42,14 @@ class ViewerSession:
     ended_at: float | None = None
     snapshot: dict[str, Any] = field(default_factory=lambda: {
         "type": "caption.snapshot",
-        "sourceTextEn": "",
-        "targetTextZh": "等待现场字幕…",
-        "active": True,
+        "previousFinal": None,
+        "active": {
+            "segmentId": "",
+            "sourceTextEn": "",
+            "targetTextZh": "等待现场字幕…",
+            "phase": "listening",
+        },
+        "sessionActive": True,
     })
     subscribers: set[queue.Queue[dict[str, Any]]] = field(default_factory=set)
 
@@ -78,13 +83,7 @@ class CaptionHub:
             session = self._by_token.get(token or "")
             if not session:
                 return
-            if safe["type"] in {"asr.final", "translation.partial", "translation.final"}:
-                session.snapshot = {
-                    "type": "caption.snapshot",
-                    "sourceTextEn": safe.get("sourceTextEn", session.snapshot.get("sourceTextEn", "")),
-                    "targetTextZh": safe.get("targetTextZh", session.snapshot.get("targetTextZh", "")),
-                    "active": session.active,
-                }
+            session.snapshot = self._update_snapshot(session.snapshot, safe, session.active)
             subscribers = tuple(session.subscribers)
         for subscriber in subscribers:
             self._offer(subscriber, safe)
@@ -97,7 +96,7 @@ class CaptionHub:
                 return
             session.active = False
             session.ended_at = time.time()
-            session.snapshot = {**session.snapshot, "active": False}
+            session.snapshot = {**session.snapshot, "sessionActive": False}
             subscribers = tuple(session.subscribers)
         for subscriber in subscribers:
             self._offer(subscriber, {"type": "stream.closed"})
@@ -145,6 +144,50 @@ class CaptionHub:
             except queue.Full:
                 pass
 
+    @staticmethod
+    def _update_snapshot(
+        snapshot: dict[str, Any],
+        event: dict[str, Any],
+        session_active: bool,
+    ) -> dict[str, Any]:
+        previous = snapshot.get("previousFinal")
+        active = dict(snapshot.get("active") or {})
+        event_type = event["type"]
+        if event_type == "asr.final":
+            if active.get("phase") == "final" and active.get("sourceTextEn") and active.get("targetTextZh"):
+                previous = {
+                    "segmentId": active.get("segmentId", ""),
+                    "sourceTextEn": active["sourceTextEn"],
+                    "targetTextZh": active["targetTextZh"],
+                }
+            active = {
+                "segmentId": event.get("segmentId", ""),
+                "sourceTextEn": event.get("sourceTextEn", ""),
+                "targetTextZh": "",
+                "phase": "requesting",
+            }
+        elif event_type in {"translation.partial", "translation.final", "translation.failed", "translation.skipped"}:
+            if event.get("segmentId") and active.get("segmentId") and event["segmentId"] != active["segmentId"]:
+                return snapshot
+            fallback = {
+                "translation.failed": "翻译暂时不可用，请查看英文原文。",
+                "translation.skipped": "翻译积压，暂时显示英文原文。",
+                "translation.final": "翻译结果为空。",
+            }.get(event_type, active.get("targetTextZh", ""))
+            active.update({
+                "segmentId": event.get("segmentId", active.get("segmentId", "")),
+                "sourceTextEn": event.get("sourceTextEn", active.get("sourceTextEn", "")),
+                "targetTextZh": event.get("targetTextZh") or fallback,
+                "phase": "streaming" if event_type == "translation.partial"
+                else "final" if event_type == "translation.final" else "error",
+            })
+        return {
+            "type": "caption.snapshot",
+            "previousFinal": previous,
+            "active": active,
+            "sessionActive": session_active,
+        }
+
     def _purge_locked(self) -> None:
         now = time.time()
         expired = [
@@ -190,17 +233,19 @@ VIEWER_HTML = """<!doctype html>
 :root{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;color:#fff;background:#071827}
 *{box-sizing:border-box}body{margin:0;min-height:100dvh;display:grid;grid-template-rows:auto 1fr auto;background:#071827}
 header,footer{padding:14px 18px;color:#a9c0cf;font-size:13px}header{display:flex;justify-content:space-between;border-bottom:1px solid #294456}
-main{display:flex;flex-direction:column;justify-content:center;text-align:center;padding:6vh 5vw}.zh{margin:0;font-size:clamp(48px,13vw,104px);font-weight:800;line-height:1.15;text-wrap:balance}.en{margin:28px auto 0;max-width:55ch;color:#a9c0cf;font-size:clamp(17px,4vw,25px);line-height:1.45}
+main{min-height:0;display:grid;grid-template-rows:minmax(96px,.3fr) 1px minmax(0,1fr);text-align:center;padding:2vh 5vw}.previous{align-self:end;padding:1vh 0 3vh}.previous[hidden],.divider[hidden]{display:none}.previous-zh,.previous-en,.zh,.en{margin:0 auto;text-wrap:balance}.previous-zh{max-width:28em;color:#71849e;font-size:clamp(25px,7.4vw,48px);font-weight:700;line-height:1.18}.previous-en{max-width:58ch;margin-top:8px;color:#6f8198;font-size:clamp(14px,4vw,22px);line-height:1.4}.divider{width:min(82%,940px);height:1px;margin:auto;background:#294456}.current{min-height:0;display:flex;flex-direction:column;justify-content:center;padding:3vh 0 5vh}.zh{font-size:clamp(48px,13vw,104px);font-weight:800;line-height:1.15}.en{margin-top:24px;max-width:55ch;color:#a9c0cf;font-size:clamp(17px,4vw,25px);line-height:1.45}
 .ok{color:#8dd6ba}.waiting{color:#f0cc83}button{min-width:44px;min-height:44px;border:1px solid #70839a;border-radius:999px;background:transparent;color:#fff;font-size:20px}
 footer{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #294456}.controls{display:flex;gap:10px}
+@media(orientation:landscape) and (max-height:560px){header,footer{padding-block:8px}main{grid-template-rows:minmax(58px,.24fr) 1px minmax(0,1fr);padding-block:1vh}.previous{padding-bottom:8px}.previous-zh{font-size:clamp(20px,4vw,32px)}.previous-en{font-size:14px}.current{padding:8px 0}.zh{font-size:clamp(40px,8.5vw,76px)}.en{margin-top:10px}}
 </style></head><body><header><strong>现场中文字幕</strong><span id="status" class="waiting">正在连接…</span></header>
-<main><p id="zh" class="zh">等待现场字幕…</p><p id="en" class="en"></p></main>
+<main><section id="previous" class="previous" hidden><p id="previous-zh" class="previous-zh"></p><p id="previous-en" class="previous-en"></p></section><div id="divider" class="divider" hidden></div><section id="current" class="current"><p id="zh" class="zh">等待现场字幕…</p><p id="en" class="en"></p></section></main>
 <footer><span>只读 · 同一 Wi-Fi</span><span class="controls"><button id="minus" aria-label="缩小字号">−</button><button id="plus" aria-label="放大字号">＋</button></span></footer>
 <script>
-const token=__TOKEN__,zh=document.querySelector('#zh'),en=document.querySelector('#en'),status=document.querySelector('#status');let scale=1;
-function render(event){if(event.sourceTextEn!==undefined)en.textContent=event.sourceTextEn;if(event.targetTextZh)zh.textContent=event.targetTextZh;if(event.type==='stream.closed'||event.active===false){status.textContent='本场已结束';status.className='waiting'}}
+const token=__TOKEN__,zh=document.querySelector('#zh'),en=document.querySelector('#en'),previous=document.querySelector('#previous'),previousZh=document.querySelector('#previous-zh'),previousEn=document.querySelector('#previous-en'),divider=document.querySelector('#divider'),current=document.querySelector('#current'),status=document.querySelector('#status');let scale=1,state={previousFinal:null,active:{segmentId:'',sourceTextEn:'',targetTextZh:'等待现场字幕…',phase:'listening'},sessionActive:true};
+function draw(){const old=state.previousFinal;previous.hidden=!old;divider.hidden=!old;if(old){previousZh.textContent=old.targetTextZh||'';previousEn.textContent=old.sourceTextEn||''}zh.textContent=state.active.targetTextZh||'正在翻译…';en.textContent=state.active.sourceTextEn||'';if(state.sessionActive===false){status.textContent='本场已结束';status.className='waiting'}}
+function render(event){if(event.type==='caption.snapshot'){state=event;draw();return}if(event.type==='asr.final'){const active=state.active;if(active.phase==='final'&&active.sourceTextEn&&active.targetTextZh)state.previousFinal={segmentId:active.segmentId,sourceTextEn:active.sourceTextEn,targetTextZh:active.targetTextZh};state.active={segmentId:event.segmentId||'',sourceTextEn:event.sourceTextEn||'',targetTextZh:'',phase:'requesting'}}else if(['translation.partial','translation.final','translation.failed','translation.skipped'].includes(event.type)){if(event.segmentId&&state.active.segmentId&&event.segmentId!==state.active.segmentId)return;state.active={segmentId:event.segmentId||state.active.segmentId,sourceTextEn:event.sourceTextEn??state.active.sourceTextEn,targetTextZh:event.targetTextZh||state.active.targetTextZh,phase:event.type==='translation.partial'?'streaming':event.type==='translation.final'?'final':'error'}}else if(event.type==='stream.closed')state.sessionActive=false;draw()}
 const source=new EventSource('/api/view/'+encodeURIComponent(token)+'/events');source.onopen=()=>{status.textContent='字幕连接正常';status.className='ok'};source.onmessage=e=>render(JSON.parse(e.data));source.onerror=()=>{status.textContent='正在重新连接…';status.className='waiting'};
-function resize(delta){scale=Math.min(1.5,Math.max(.7,scale+delta));zh.style.transform='scale('+scale+')'}document.querySelector('#minus').onclick=()=>resize(-.1);document.querySelector('#plus').onclick=()=>resize(.1);
+function resize(delta){scale=Math.min(1.35,Math.max(.75,scale+delta));current.style.transform='scale('+scale+')'}document.querySelector('#minus').onclick=()=>resize(-.1);document.querySelector('#plus').onclick=()=>resize(.1);
 </script></body></html>"""
 
 

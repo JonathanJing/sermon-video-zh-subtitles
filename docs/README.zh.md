@@ -21,6 +21,8 @@
 | 主题 | English | 中文 |
 |---|---|---|
 | 两条主工作流与本地延迟预算 | [中文 source of truth](./workflows/README.zh.md) | [workflows/README.zh.md](./workflows/README.zh.md) |
+| 周日公网手机字幕分享方案 | 暂无独立英文版 | [PUBLIC_SHARING.zh.md](../experiments/local-live-poc/PUBLIC_SHARING.zh.md) |
+| 实时字幕显示：当前句流式 + 前一句保留 | 暂无独立英文版 | [CAPTION_DISPLAY.zh.md](../experiments/local-live-poc/CAPTION_DISPLAY.zh.md) |
 | 稳定主流程 | [stable-post-live-reading-pdf-workflow.md](./stable-post-live-reading-pdf-workflow.md) | [stable-post-live-reading-pdf-workflow.zh.md](./stable-post-live-reading-pdf-workflow.zh.md) |
 | Production Supervisor Agent | [sermon-production-supervisor-agent.md](./sermon-production-supervisor-agent.md) | [sermon-production-supervisor-agent.zh.md](./sermon-production-supervisor-agent.zh.md) |
 | 本地实时字幕 POC | [README.md](../experiments/local-live-poc/README.md) | [DESIGN.zh.md](../experiments/local-live-poc/DESIGN.zh.md) |

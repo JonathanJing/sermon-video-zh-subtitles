@@ -36,7 +36,7 @@ For the intended room/PA capture path, the page requests browser echo cancellati
 
 The backend includes a dependency-free Weekly Pack builder, guarded context retriever, localhost REST/WebSocket gateway, Whisper CLI adapter, and Ollama translation adapter. It selects the already-installed MiLMMT A0 by default; the setup script downloads only the pinned local ASR model.
 
-The intentionally small system and context-pack plan is in [DESIGN.zh.md](./DESIGN.zh.md). The researched live transport decision and protocol contract are in [STREAMING.zh.md](./STREAMING.zh.md).
+The intentionally small system and context-pack plan is in [DESIGN.zh.md](./DESIGN.zh.md). The researched live transport decision and protocol contract are in [STREAMING.zh.md](./STREAMING.zh.md). The cellular/public phone-sharing path is in [PUBLIC_SHARING.zh.md](./PUBLIC_SHARING.zh.md), with the Firebase implementation, security audit, market comparison, and deployment gates in [FIREBASE_PUBLIC_VIEWER.zh.md](./FIREBASE_PUBLIC_VIEWER.zh.md). The saved current-caption baseline and recommended current-plus-previous display are in [CAPTION_DISPLAY.zh.md](./CAPTION_DISPLAY.zh.md).
 
 ## First-time setup
 
@@ -69,6 +69,8 @@ The equivalent Terminal command is:
 This command checks the local dependencies, selected ASR, writable session directory, and at least 10 GiB of free disk; starts Ollama when needed; prevents display and idle system sleep; starts the localhost control gateway, live audio WebSocket, read-only LAN viewer, MiLMMT adapter, and Vite UI; then opens `http://127.0.0.1:4173/`. Qwen is preferred when installed; Whisper `small.en`/`base.en` is the fallback.
 
 After recording starts, the operator page shows a QR code. Phones on the same Wi-Fi can scan it to open large Chinese captions over SSE. The token expires after the session ends; the viewer exposes no microphone, restart, session-write, log, or model-control endpoint. This LAN POC does not add an Internet tunnel or authentication service.
+
+For viewers using cellular data instead of the venue Wi-Fi, the Firebase Hosting + Realtime Database viewer and outbound-only MacBook publisher are implemented but not deployed. See [FIREBASE_PUBLIC_VIEWER.zh.md](./FIREBASE_PUBLIC_VIEWER.zh.md).
 
 With Qwen MLX enabled, the launcher supervises `mlx_audio.server`. If it exits, the launcher records stdout/stderr in `${TMPDIR}/sermon-live-caption-poc/mlx-audio.log` and attempts up to three automatic restarts while the independent browser recording continues. A short MLX finalization timeout is logged as `asr.empty`, not translated, and does not become a persistent page error. A third consecutive identical short ASR result is logged as `asr.suppressed/repeated_short_result` and held out of translation; any different or longer result immediately resets the guard. This generic guard avoids streaming hundreds of music-induced one-word hallucinations without blacklisting a specific word.
 

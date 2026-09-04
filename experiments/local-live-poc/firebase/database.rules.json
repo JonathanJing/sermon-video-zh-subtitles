@@ -1,0 +1,34 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "sessions": {
+      "$token": {
+        ".read": "data.exists() && data.child('expiresAt').isNumber() && data.child('expiresAt').val() > now && data.child('status').val() != 'revoked'",
+        ".write": "auth != null && auth.token.captionPublisher == true",
+        ".validate": "newData.hasChildren(['schemaVersion', 'status', 'sequence', 'active', 'publishedAt', 'expiresAt']) && newData.child('schemaVersion').val() == 1 && (!data.exists() || newData.child('sequence').val() >= data.child('sequence').val())",
+        "schemaVersion": { ".validate": "newData.isNumber() && newData.val() == 1" },
+        "status": { ".validate": "newData.isString() && (newData.val() == 'live' || newData.val() == 'ended' || newData.val() == 'revoked')" },
+        "sequence": { ".validate": "newData.isNumber() && newData.val() >= 0" },
+        "publishedAt": { ".validate": "newData.isNumber() && newData.val() <= now + 60000" },
+        "expiresAt": { ".validate": "newData.isNumber() && newData.val() > now && newData.val() <= now + 86400000" },
+        "previousFinal": {
+          ".validate": "!newData.exists() || newData.hasChildren(['segmentId', 'sourceTextEn', 'targetTextZh'])",
+          "segmentId": { ".validate": "newData.isString() && newData.val().length <= 120" },
+          "sourceTextEn": { ".validate": "newData.isString() && newData.val().length <= 1200" },
+          "targetTextZh": { ".validate": "newData.isString() && newData.val().length <= 1200" },
+          "$other": { ".validate": false }
+        },
+        "active": {
+          ".validate": "newData.hasChildren(['segmentId', 'sourceTextEn', 'targetTextZh', 'phase'])",
+          "segmentId": { ".validate": "newData.isString() && newData.val().length <= 120" },
+          "sourceTextEn": { ".validate": "newData.isString() && newData.val().length <= 1200" },
+          "targetTextZh": { ".validate": "newData.isString() && newData.val().length <= 1200" },
+          "phase": { ".validate": "newData.isString() && (newData.val() == 'listening' || newData.val() == 'requesting' || newData.val() == 'streaming' || newData.val() == 'final' || newData.val() == 'error')" },
+          "$other": { ".validate": false }
+        },
+        "$other": { ".validate": false }
+      }
+    }
+  }
+}

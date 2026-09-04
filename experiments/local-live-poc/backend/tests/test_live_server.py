@@ -19,11 +19,28 @@ class FakeAsr:
         return {"sourceTextEn": "Grace leads us.", "latencyMs": 1}
 
 
+class FakePublicPublisher:
+    def __init__(self):
+        self.events = []
+        self.ended = []
+
+    def start_session(self, session_id, token):
+        self.events.append((session_id, {"type": "public.started", "token": token}))
+        return f"https://captions.example.org/s/{token}"
+
+    def publish(self, session_id, event):
+        self.events.append((session_id, event))
+
+    def end_session(self, session_id):
+        self.ended.append(session_id)
+
+
 class LiveServerTest(unittest.TestCase):
     def test_websocket_pcm_reaches_caption_pipeline(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             state = GatewayState(session_root=temporary)
             state.asr = FakeAsr()
+            state.public_caption_publisher = FakePublicPublisher()
             state.translate = lambda source, cursor, policy: {
                 "targetTextZh": "恩典引领我们。",
                 "model": "fake-model",
@@ -56,6 +73,10 @@ class LiveServerTest(unittest.TestCase):
                     events.append(json.loads(socket.recv(timeout=2)))
                     self.assertTrue(events[0]["viewer"]["readOnly"])
                     self.assertTrue(events[0]["viewer"]["token"])
+                    self.assertTrue(events[0]["viewer"]["publicUrl"].startswith(
+                        "https://captions.example.org/s/"
+                    ))
+                    self.assertEqual(events[0]["viewer"]["urls"][0], events[0]["viewer"]["publicUrl"])
                     speech = struct.pack("<1600h", *([1000] * 1600))
                     silence = bytes(3200)
                     for sequence in range(1, 5):
@@ -71,6 +92,10 @@ class LiveServerTest(unittest.TestCase):
                 self.assertIn("translation.final", types)
                 translated = next(event for event in events if event["type"] == "translation.final")
                 self.assertEqual(translated["targetTextZh"], "恩典引领我们。")
+                self.assertIn("translation.final", {
+                    event["type"] for _, event in state.public_caption_publisher.events
+                })
+                self.assertEqual(state.public_caption_publisher.ended, [session["sessionId"]])
             finally:
                 service.stop()
 

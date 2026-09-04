@@ -5,6 +5,15 @@ script_dir="$(cd "$(dirname "$0")" && pwd)"
 poc_dir="$(cd "$script_dir/.." && pwd)"
 cd "$poc_dir"
 
+firebase_runtime_env="$poc_dir/firebase/runtime.env"
+if [ -f "$firebase_runtime_env" ]; then
+  set -a
+  # Local, git-ignored deployment values used by the double-click launcher.
+  # shellcheck disable=SC1090
+  . "$firebase_runtime_env"
+  set +a
+fi
+
 mode="run"
 if [ "${1:-}" = "--check" ]; then
   mode="check"
@@ -30,6 +39,34 @@ for command_name in curl npm ollama caffeinate open; do
     exit 1
   fi
 done
+
+firebase_database_url="${LOCAL_LIVE_FIREBASE_DATABASE_URL:-}"
+firebase_viewer_url="${LOCAL_LIVE_FIREBASE_VIEWER_URL:-}"
+firebase_public_mode="disabled"
+if { [ -n "$firebase_database_url" ] && [ -z "$firebase_viewer_url" ]; } || \
+   { [ -z "$firebase_database_url" ] && [ -n "$firebase_viewer_url" ]; }; then
+  echo "Firebase public captions require both database and viewer URLs." >&2
+  exit 1
+fi
+if [ -n "$firebase_database_url" ]; then
+  if [ -z "${LOCAL_LIVE_FIREBASE_ACCESS_TOKEN:-}" ]; then
+    if ! command -v gcloud >/dev/null; then
+      echo "Firebase public captions require gcloud for short-lived credentials." >&2
+      exit 1
+    fi
+    firebase_auth_command=(gcloud auth print-access-token)
+    if [ -n "${LOCAL_LIVE_FIREBASE_IMPERSONATE_SERVICE_ACCOUNT:-}" ]; then
+      firebase_auth_command+=(
+        "--impersonate-service-account=${LOCAL_LIVE_FIREBASE_IMPERSONATE_SERVICE_ACCOUNT}"
+      )
+    fi
+    if ! "${firebase_auth_command[@]}" >/dev/null 2>&1; then
+      echo "Firebase credentials are unavailable; run gcloud auth login and retry." >&2
+      exit 1
+    fi
+  fi
+  firebase_public_mode="$firebase_viewer_url"
+fi
 
 asr_model=""
 if [ "$asr_provider" = "qwen-mlx-websocket" ]; then
@@ -154,6 +191,7 @@ echo "ASR: $asr_provider ($asr_model_file)"
 echo "Translation: $translation_model"
 echo "Context: $context_policy${weekly_pack:+ ($weekly_pack)}"
 echo "Sessions: $session_root"
+echo "Public viewer: $firebase_public_mode"
 echo "Free disk: $((available_kb / 1024 / 1024)) GiB"
 
 if [ "$mode" = "check" ]; then
