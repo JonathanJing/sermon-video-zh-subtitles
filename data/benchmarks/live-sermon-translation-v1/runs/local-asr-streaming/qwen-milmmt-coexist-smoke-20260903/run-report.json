@@ -1,0 +1,82 @@
+{
+  "audioDurationSeconds": 30.0,
+  "audioSha256": "e54b28baac11f465188c442f8b85d5d97dcf154fb6d3a792e5167100882ad22f",
+  "completedAt": "2026-09-04T04:17:57.029800+00:00",
+  "emptyFinalEventCount": 0,
+  "eventsSha256": "d333fdc944046e4efd12728fdb457cf94f8cdfda09a45af29582ac2ba95e9c42",
+  "finalDeliveryLagAfterLatestPcmBlockAvailableSeconds": {
+    "max": 1.1469,
+    "p50": 0.3376,
+    "p95": 1.1469
+  },
+  "finalDeliveryLagAgainstLatestAudioSeconds": {
+    "max": 0.6469,
+    "p50": -0.1624,
+    "p95": 0.6469
+  },
+  "finalEventCount": 7,
+  "formalFullDuration": false,
+  "frontend": {
+    "healthyCount": 35,
+    "probeCount": 35,
+    "url": "http://127.0.0.1:4173"
+  },
+  "limitations": [
+    "Final delivery lag is measured against the latest audio sent when the provider event arrives.",
+    "The latest-PCM-block lag adds one replay step because the first PCM block is available at wall time zero.",
+    "Reference is exact-chunk GPT-Transcribe text, not human Gold.",
+    "This run includes MiLMMT co-residency through the frozen Gateway A0 endpoint."
+  ],
+  "manifest": "data/benchmarks/live-sermon-translation-v1/local-asr-streaming-replay-v1.json",
+  "manifestSha256": "b2200815abf6fb7de60b8c83ffebdab97638a0ad4b6a40762ec5df5ab8b41774",
+  "modelId": "qwen3-asr-0.6b-mlx-8bit",
+  "pacingDelaySeconds": {
+    "max": 0.039905,
+    "mean": 0.00243,
+    "p95": 0.0061
+  },
+  "partialEventCount": 6,
+  "partialWordEditChurn": 36,
+  "provider": "mlx-audio-realtime-websocket",
+  "providerModel": "/Users/jonathan_jing/Library/Caches/sermon-video-zh-subtitles/models/qwen3-asr-0.6b-8bit-89e96d92",
+  "quality": {
+    "hypothesisWordCount": 105,
+    "referenceStatus": "model_reviewed_reference_not_human_gold",
+    "referenceWordCount": 101,
+    "wer": 0.108911
+  },
+  "recordingCopy": {
+    "matchesReplayAudioPcm": true,
+    "path": "/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/data/benchmarks/live-sermon-translation-v1/runs/local-asr-streaming/qwen-milmmt-coexist-smoke-20260903/recording.wav",
+    "sha256": "e47e404ae0b5fffe1e7c5516b1f17fb9bc960ef517118b8dc925a72fb53155df"
+  },
+  "resources": {
+    "combinedProviderPeakRssGiB": 5.5498,
+    "providerPeakRssGiB": 1.1404,
+    "sampleCount": 35,
+    "swapGrowthGiB": 0.0,
+    "swapUsedGiBEnd": 0.0,
+    "swapUsedGiBStart": 0.0,
+    "translationProviderPeakRssGiB": 4.4102
+  },
+  "resourcesSha256": "76eec1fdee400b80b5ac24acf36f8e2794426570de280901f2d4f3bac0ec48d7",
+  "schemaVersion": "local-asr-streaming-replay-run-v1",
+  "sourceAudioDurationSeconds": 600.0,
+  "stepMs": 500,
+  "translation": {
+    "completedCount": 7,
+    "enabled": true,
+    "failedCount": 0,
+    "latencySeconds": {
+      "max": 0.6073,
+      "p50": 0.4991,
+      "p95": 0.6073
+    },
+    "modelId": "sermon-milmmt-46-4b-v1-q8:benchmark",
+    "queueFullSkipCount": 0,
+    "requestCount": 7
+  },
+  "translationsSha256": "dc005f9a4a66b8101264cc091c531617efce25b7f1e819b511d2f7ce365eff7f",
+  "wallDurationSeconds": 35.7127,
+  "wallToAudioRatio": 1.190422
+}

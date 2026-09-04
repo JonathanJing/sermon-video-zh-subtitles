@@ -12,6 +12,7 @@ import statistics
 import subprocess
 import sys
 import time
+import urllib.request
 import wave
 from datetime import datetime, timezone
 from pathlib import Path
@@ -57,6 +58,25 @@ def swap_used_gib() -> float | None:
     return value if match.group(2) == "G" else value / 1024
 
 
+def post_json(url: str, payload: dict) -> dict:
+    request = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(request, timeout=30) as response:
+        return json.loads(response.read())
+
+
+def probe_url(url: str) -> bool:
+    try:
+        with urllib.request.urlopen(url, timeout=2) as response:
+            return 200 <= response.status < 400
+    except Exception:
+        return False
+
+
 def reference_text(manifest: dict, replay_duration: float) -> str:
     spec = manifest["referenceChunks"]
     payload = json.loads((REPO_ROOT / spec["path"]).read_text())
@@ -88,6 +108,11 @@ def parse_args() -> argparse.Namespace:
         type=float,
         help="Replay only the opening duration for a non-formal smoke run",
     )
+    parser.add_argument("--translate-url")
+    parser.add_argument("--translation-model-id")
+    parser.add_argument("--translation-provider-pid", type=int)
+    parser.add_argument("--frontend-url")
+    parser.add_argument("--recording-copy", type=Path)
     return parser.parse_args()
 
 
@@ -123,11 +148,21 @@ async def main_async(args: argparse.Namespace) -> int:
     bytes_per_step = frames_per_step * sample_width
 
     events: list[dict] = []
+    translation_events: list[dict] = []
     resource_samples: list[dict] = []
     pacing_delays: list[float] = []
     sent_audio_seconds = 0.0
     replay_started = time.monotonic()
     receiver_done = asyncio.Event()
+    translation_queue: asyncio.Queue[dict | None] = asyncio.Queue(maxsize=4)
+    recording_handle = None
+    if args.recording_copy:
+        recording_path = args.recording_copy.resolve()
+        recording_path.parent.mkdir(parents=True, exist_ok=True)
+        recording_handle = wave.open(str(recording_path), "wb")
+        recording_handle.setnchannels(1)
+        recording_handle.setsampwidth(2)
+        recording_handle.setframerate(sample_rate)
 
     async with websockets.connect(args.url, max_size=None) as socket:
         await socket.send(
@@ -151,8 +186,7 @@ async def main_async(args: argparse.Namespace) -> int:
                     raw = await socket.recv()
                     received = time.monotonic()
                     payload = json.loads(raw)
-                    events.append(
-                        {
+                    event = {
                             "eventIndex": len(events),
                             "receivedWallSeconds": round(received - replay_started, 4),
                             "audioSentSeconds": round(sent_audio_seconds, 3),
@@ -164,9 +198,53 @@ async def main_async(args: argparse.Namespace) -> int:
                             "text": str(payload.get("text", "")).strip(),
                             "providerPayload": payload,
                         }
-                    )
+                    events.append(event)
+                    if args.translate_url and event["isFinal"] and event["text"]:
+                        try:
+                            translation_queue.put_nowait(event)
+                        except asyncio.QueueFull:
+                            translation_events.append({
+                                "asrEventIndex": event["eventIndex"],
+                                "status": "skipped_queue_full",
+                                "sourceTextEn": event["text"],
+                            })
             except websockets.ConnectionClosed:
                 receiver_done.set()
+
+        async def translate_events() -> None:
+            while True:
+                event = await translation_queue.get()
+                if event is None:
+                    translation_queue.task_done()
+                    return
+                started = time.monotonic()
+                row = {
+                    "asrEventIndex": event["eventIndex"],
+                    "sourceTextEn": event["text"],
+                    "startedWallSeconds": round(started - replay_started, 4),
+                }
+                try:
+                    response = await asyncio.to_thread(
+                        post_json,
+                        args.translate_url,
+                        {"sourceTextEn": event["text"], "contextPolicy": "none"},
+                    )
+                    finished = time.monotonic()
+                    row.update({
+                        "status": "completed",
+                        "targetTextZh": str(response.get("targetTextZh", "")).strip(),
+                        "model": response.get("model"),
+                        "promptVersion": response.get("promptVersion"),
+                        "latencySeconds": round(finished - started, 4),
+                        "asrFinalToTranslationFinalSeconds": round(
+                            finished - replay_started - event["receivedWallSeconds"], 4
+                        ),
+                        "completedWallSeconds": round(finished - replay_started, 4),
+                    })
+                except Exception as error:
+                    row.update({"status": "failed", "message": str(error)})
+                translation_events.append(row)
+                translation_queue.task_done()
 
         async def sample_resources() -> None:
             while not receiver_done.is_set():
@@ -174,12 +252,21 @@ async def main_async(args: argparse.Namespace) -> int:
                     {
                         "wallSeconds": round(time.monotonic() - replay_started, 4),
                         "providerRssGiB": process_rss_gib(args.provider_pid),
+                        "translationProviderRssGiB": (
+                            process_rss_gib(args.translation_provider_pid)
+                            if args.translation_provider_pid else None
+                        ),
                         "swapUsedGiB": swap_used_gib(),
+                        "frontendHealthy": (
+                            await asyncio.to_thread(probe_url, args.frontend_url)
+                            if args.frontend_url else None
+                        ),
                     }
                 )
                 await asyncio.sleep(1)
 
         receiver_task = asyncio.create_task(receive_events())
+        translation_task = asyncio.create_task(translate_events())
         resource_task = asyncio.create_task(sample_resources())
         for index, offset in enumerate(range(0, len(pcm), bytes_per_step)):
             scheduled = replay_started + index * args.step_ms / 1000
@@ -188,6 +275,8 @@ async def main_async(args: argparse.Namespace) -> int:
             pacing_delays.append(max(0.0, send_started - scheduled))
             chunk = pcm[offset : offset + bytes_per_step]
             await socket.send(chunk)
+            if recording_handle:
+                recording_handle.writeframesraw(chunk)
             sent_audio_seconds += len(chunk) / sample_width / sample_rate
             progress_interval = max(1, round(30_000 / args.step_ms))
             if (index + 1) % progress_interval == 0:
@@ -209,10 +298,15 @@ async def main_async(args: argparse.Namespace) -> int:
             await asyncio.sleep(args.step_ms / 1000)
             await socket.send(silence)
         await asyncio.sleep(args.drain_seconds)
+        await translation_queue.join()
+        await translation_queue.put(None)
+        await translation_task
         await socket.close()
         await receiver_task
         receiver_done.set()
         await resource_task
+    if recording_handle:
+        recording_handle.close()
 
     completed = time.monotonic()
     final_events = [event for event in events if event["isFinal"]]
@@ -240,6 +334,11 @@ async def main_async(args: argparse.Namespace) -> int:
     swap_values = [
         row["swapUsedGiB"] for row in resource_samples if row["swapUsedGiB"] is not None
     ]
+    translation_rss_values = [
+        row["translationProviderRssGiB"]
+        for row in resource_samples
+        if row.get("translationProviderRssGiB") is not None
+    ]
     events_path = output_dir / "events.jsonl"
     events_path.write_text(
         "".join(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n" for row in events)
@@ -251,6 +350,21 @@ async def main_async(args: argparse.Namespace) -> int:
             for row in resource_samples
         )
     )
+    translations_path = output_dir / "translations.jsonl"
+    translations_path.write_text(
+        "".join(
+            json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n"
+            for row in translation_events
+        )
+    )
+    completed_translations = [
+        row for row in translation_events if row.get("status") == "completed"
+    ]
+    translation_latencies = [row["latencySeconds"] for row in completed_translations]
+    recording_matches_pcm = None
+    if args.recording_copy:
+        with wave.open(str(recording_path), "rb") as recorded:
+            recording_matches_pcm = recorded.readframes(recorded.getnframes()) == pcm
     report = {
         "schemaVersion": "local-asr-streaming-replay-run-v1",
         "completedAt": datetime.now(timezone.utc).isoformat(),
@@ -294,19 +408,71 @@ async def main_async(args: argparse.Namespace) -> int:
         "resources": {
             "sampleCount": len(resource_samples),
             "providerPeakRssGiB": round(max(rss_values), 4) if rss_values else None,
+            "translationProviderPeakRssGiB": (
+                round(max(translation_rss_values), 4) if translation_rss_values else None
+            ),
+            "combinedProviderPeakRssGiB": (
+                round(
+                    max(
+                        (row.get("providerRssGiB") or 0)
+                        + (row.get("translationProviderRssGiB") or 0)
+                        for row in resource_samples
+                    ),
+                    4,
+                )
+                if resource_samples else None
+            ),
             "swapUsedGiBStart": round(swap_values[0], 4) if swap_values else None,
             "swapUsedGiBEnd": round(swap_values[-1], 4) if swap_values else None,
             "swapGrowthGiB": (
                 round(swap_values[-1] - swap_values[0], 4) if swap_values else None
             ),
         },
+        "translation": {
+            "enabled": bool(args.translate_url),
+            "modelId": args.translation_model_id,
+            "requestCount": len(translation_events),
+            "completedCount": len(completed_translations),
+            "failedCount": sum(row.get("status") == "failed" for row in translation_events),
+            "queueFullSkipCount": sum(
+                row.get("status") == "skipped_queue_full" for row in translation_events
+            ),
+            "latencySeconds": {
+                "p50": percentile(translation_latencies, 0.50),
+                "p95": percentile(translation_latencies, 0.95),
+                "max": round(max(translation_latencies), 4) if translation_latencies else None,
+            },
+        },
+        "frontend": {
+            "url": args.frontend_url,
+            "probeCount": sum(row.get("frontendHealthy") is not None for row in resource_samples),
+            "healthyCount": sum(row.get("frontendHealthy") is True for row in resource_samples),
+        },
+        "recordingCopy": (
+            {
+                "path": str(recording_path),
+                "sha256": sha256_file(recording_path),
+                "matchesReplayAudioPcm": recording_matches_pcm,
+            }
+            if args.recording_copy else None
+        ),
         "eventsSha256": sha256_file(events_path),
         "resourcesSha256": sha256_file(resources_path),
+        "translationsSha256": sha256_file(translations_path),
         "limitations": [
             "Final delivery lag is measured against the latest audio sent when the provider event arrives.",
             "The latest-PCM-block lag adds one replay step because the first PCM block is available at wall time zero.",
             "Reference is exact-chunk GPT-Transcribe text, not human Gold.",
-            "This run measures ASR alone, not MiLMMT co-residency.",
+            (
+                "This run includes MiLMMT co-residency through the frozen Gateway A0 endpoint."
+                if args.translate_url
+                else "This run measures ASR alone, not MiLMMT co-residency."
+            ),
+            (
+                "Frontend availability is an HTTP health probe; this run does not claim active browser microphone or MediaRecorder capture."
+                if args.frontend_url
+                else "No frontend availability probe was requested."
+            ),
         ],
     }
     (output_dir / "run-report.json").write_text(

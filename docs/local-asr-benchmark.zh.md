@@ -154,3 +154,13 @@ Qwen 在连续音频上比 `small.en` 低 1.47 个 WER 百分点，并且 partia
 两套 latency 契约不同，不能把表中延迟当成严格同构排名：Qwen 记录 final 相对最新 PCM 块可用的返回时间；`small.en` 记录完整 5 秒窗口可用后 HTTP final 请求的响应时间，其 partial 是 runner 在 1.5 秒重新转写同一窗口得到。完整对比位于 `data/benchmarks/live-sermon-translation-v1/runs/local-asr-streaming/qwen-vs-small-10min-1x-20260903.json`。
 
 该 replay 的参考仍是 GPT-Transcribe 模型审核文本而非人工 Gold，且本轮没有同时运行 MiLMMT、浏览器或录音。下一门禁是 Qwen3-ASR + MiLMMT Q8 的 50–60 分钟共存 soak，然后再对剩余五个候选执行同一 replay。
+
+## 2026-09-03 Qwen3-ASR + MiLMMT Q8 共存 Smoke
+
+在连续 ASR replay 之后，同一份 600 秒 PCM 又以 1.0× 运行一次 Qwen + MiLMMT 自动化共存 smoke。每个 Qwen final 通过 Local Live Gateway 的 `contextPolicy=none` 接口调用 MiLMMT Q8，继续使用冻结 A0 prompt 和 decoding contract；runner 同时增量写录音 WAV、轮询前端 HTTP 并采样两个 provider 的 RSS 与系统 swap。
+
+结果为 120/120 条翻译成功、0 failed、0 queue full；MiLMMT P50/P95 为 444/599 ms。Qwen 峰值 RSS 1.1446 GiB、Ollama MiLMMT 峰值 RSS 5.4477 GiB，同采样合计峰值 6.5916 GiB；594/594 次前端健康探针通过，swap 增长为 0，录音 PCM 与输入逐字节一致。
+
+本轮 Qwen WER 为 5.55%，相同音频的 ASR-only 运行是 5.09%。final 数也从 123 变为 120；由于 MLX Audio 使用实时 VAD/端点，先把它视为端点非确定性复测项，不能凭单次差异认定资源竞争导致质量下降。
+
+该 run 仍不是完整浏览器门禁：前端只是 HTTP 健康探针，录音由 runner 写入，不是麦克风/MediaRecorder。完整报告位于 `data/benchmarks/live-sermon-translation-v1/runs/local-asr-streaming/qwen-milmmt-coexist-10min-1x-20260903/report.md`。下一步是在不改变前端协议的前提下给 Gateway 增加 Qwen provider，然后执行真实 session + 浏览器录音的 50–60 分钟 soak。
