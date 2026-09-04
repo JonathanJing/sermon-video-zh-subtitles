@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "local-live-acoustic-e2e-v1",
+  "benchmarkId": "LOCAL-LIVE-ACOUSTIC-E2E-NONSPEECH-REGRESSION-20260903",
+  "referencePolicy": "model_reviewed_not_human_gold_provisional_only",
+  "capturePath": "MacBook speakers -> MacBook Pro built-in microphone -> browser AudioWorklet -> local gateway",
+  "asrModel": "whisper.cpp base.en",
+  "translationModel": "sermon-milmmt-46-4b-v1-q8:benchmark",
+  "sourceRepository": "sermon-video-zh-subtitles",
+  "cases": [
+    {
+      "caseId": "doug-fields-nonspeech-filter-regression",
+      "speaker": "Doug Fields",
+      "sermonId": "qvImKpmvgaM",
+      "sessionId": "20260904T032724.688Z-5b13834b",
+      "sourceVideo": "data/benchmarks/live-sermon-translation-v1/work/audio/qvImKpmvgaM.mp4",
+      "startMs": 534080,
+      "endMs": 562470,
+      "playbackVolumePercent": 100,
+      "referenceAudit": "data/benchmarks/live-sermon-translation-v1/reference/qvImKpmvgaM/source-audio-audit.jsonl",
+      "referenceSegmentId": "qvImKpmvgaM_seg_0014",
+      "criticalPhrases": ["spiritual truth", "rescue", "struggle", "Christian", "family and friends", "bitter moments"],
+      "edgeTags": ["two_speakers", "sound_effect_transition", "non_speech_filter_regression"]
+    }
+  ]
+}
