@@ -129,9 +129,17 @@ class LivePipelineTest(unittest.TestCase):
 
             partials = [event for event in sent if event["type"] == "translation.partial"]
             final = next(event for event in sent if event["type"] == "translation.final")
-            self.assertEqual([event["targetTextZh"] for event in partials], ["神", "神爱世人。"])
+            displays = [event for event in sent if event["type"] == "caption.display"]
+            self.assertEqual(
+                [event["targetTextZh"] for event in partials],
+                ["神", "神爱世人。"],
+            )
             self.assertTrue(all(event["appendOnly"] for event in partials))
+            self.assertTrue(all(event["displayEligible"] is False for event in partials))
             self.assertEqual(final["targetTextZh"], "神爱世人。")
+            self.assertEqual(len(displays), 1)
+            self.assertEqual(displays[0]["displayKind"], "final")
+            self.assertEqual(displays[0]["targetTextZh"], "神爱世人。")
             self.assertIsNotNone(final["firstTokenLatencyMs"])
             self.assertIn("audioEndToChineseFinalMs", final["uxMetrics"])
             closed = next(event for event in sent if event["type"] == "stream.closed")

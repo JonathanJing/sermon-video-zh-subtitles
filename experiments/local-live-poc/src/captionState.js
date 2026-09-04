@@ -18,6 +18,8 @@ export function applyCaptionEvent(state, event) {
   const current = state || createCaptionState();
   const active = current.active || createCaptionState().active;
 
+  if (event.displayEligible === false) return current;
+
   if (event.type === "stream.ready") {
     return createCaptionState({
       en: "Listening for English speech…",
@@ -34,6 +36,21 @@ export function applyCaptionEvent(state, event) {
         en: event.sourceTextEn || "",
         zh: "",
         phase: "requesting",
+      },
+    };
+  }
+
+  if (event.type === "caption.display") {
+    const isNewSegment = Boolean(
+      event.segmentId && active.segmentId && event.segmentId !== active.segmentId
+    );
+    return {
+      previousFinal: isNewSegment ? completedCaption(active) || current.previousFinal : current.previousFinal,
+      active: {
+        segmentId: event.segmentId || active.segmentId,
+        en: event.sourceTextEn ?? active.en,
+        zh: event.targetTextZh || active.zh,
+        phase: event.displayKind === "final" ? "final" : "streaming",
       },
     };
   }

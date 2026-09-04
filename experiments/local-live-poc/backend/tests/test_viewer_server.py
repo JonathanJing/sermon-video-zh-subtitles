@@ -62,6 +62,34 @@ class CaptionHubTest(unittest.TestCase):
         hub.publish("session-1", {"type": "runtime_restart_requested", "secret": "no"})
         self.assertTrue(subscriber.empty())
 
+    def test_readable_display_holds_previous_until_complete_block_arrives(self) -> None:
+        hub = CaptionHub()
+        token = hub.start_session("session-1")
+        hub.publish("session-1", {
+            "type": "caption.display",
+            "segmentId": "seg-1",
+            "sourceTextEn": "We walk by faith.",
+            "targetTextZh": "我们凭信心而行。",
+            "displayKind": "final",
+        })
+        hub.publish("session-1", {
+            "type": "asr.final",
+            "segmentId": "seg-2",
+            "sourceTextEn": "That changes tomorrow.",
+            "displayEligible": False,
+        })
+        self.assertEqual(hub.snapshot(token)["active"]["segmentId"], "seg-1")
+        hub.publish("session-1", {
+            "type": "caption.display",
+            "segmentId": "seg-2",
+            "sourceTextEn": "That changes tomorrow.",
+            "targetTextZh": "这改变了我们面对明天的方式。",
+            "displayKind": "partial",
+        })
+        snapshot = hub.snapshot(token)
+        self.assertEqual(snapshot["previousFinal"]["segmentId"], "seg-1")
+        self.assertEqual(snapshot["active"]["segmentId"], "seg-2")
+
 
 class ViewerHttpTest(unittest.TestCase):
     def setUp(self) -> None:

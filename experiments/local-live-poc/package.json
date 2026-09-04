@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "npm run test:unit && npm run test:integration && npm run test:firebase-rules && npm run build",
-    "test:unit": "node --test tests/frontend/*.test.mjs && .venv/bin/python -m unittest backend.tests.test_asr_client backend.tests.test_content_pack backend.tests.test_session_store backend.tests.test_live_pipeline backend.tests.test_score_soak_e2e backend.tests.test_viewer_server backend.tests.test_firebase_publisher backend.tests.test_replay_ab backend.tests.test_asr_gold backend.tests.test_retention -v",
+    "test:unit": "node --test tests/frontend/*.test.mjs && .venv/bin/python -m unittest backend.tests.test_asr_client backend.tests.test_caption_presenter backend.tests.test_content_pack backend.tests.test_session_store backend.tests.test_live_pipeline backend.tests.test_score_soak_e2e backend.tests.test_viewer_server backend.tests.test_firebase_publisher backend.tests.test_replay_ab backend.tests.test_asr_gold backend.tests.test_retention -v",
     "test:integration": ".venv/bin/python -m unittest backend.tests.test_gateway backend.tests.test_live_server -v",
     "test:backend": ".venv/bin/python -m unittest discover -s backend/tests -v",
     "test:firebase-rules": "./scripts/test-firebase-rules.sh",

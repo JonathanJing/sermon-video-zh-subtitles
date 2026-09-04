@@ -17,6 +17,7 @@ PUBLIC_EVENT_TYPES = {
     "translation.final",
     "translation.failed",
     "translation.skipped",
+    "caption.display",
 }
 
 
@@ -102,6 +103,8 @@ class CaptionProjector:
         self.expires_at_ms = expires_at_ms
 
     def apply(self, event: dict[str, Any], published_at_ms: int) -> dict[str, Any] | None:
+        if event.get("displayEligible") is False:
+            return None
         event_type = event.get("type")
         if event_type not in PUBLIC_EVENT_TYPES:
             return None
@@ -121,6 +124,37 @@ class CaptionProjector:
                 "sourceTextEn": str(event.get("sourceTextEn") or "")[:1200],
                 "targetTextZh": "",
                 "phase": "requesting",
+            }
+        elif event_type == "caption.display":
+            segment_id = str(event.get("segmentId") or "")
+            is_new_segment = bool(
+                segment_id
+                and self.active.get("segmentId")
+                and segment_id != self.active["segmentId"]
+            )
+            if (
+                is_new_segment
+                and self.active.get("phase") == "final"
+                and self.active.get("sourceTextEn")
+                and self.active.get("targetTextZh")
+            ):
+                self.previous_final = {
+                    "segmentId": str(self.active.get("segmentId") or ""),
+                    "sourceTextEn": str(self.active["sourceTextEn"]),
+                    "targetTextZh": str(self.active["targetTextZh"]),
+                }
+            self.active = {
+                "segmentId": segment_id or str(self.active.get("segmentId") or ""),
+                "sourceTextEn": str(
+                    event.get("sourceTextEn", self.active.get("sourceTextEn", ""))
+                )[:1200],
+                "targetTextZh": str(
+                    event.get("targetTextZh", self.active.get("targetTextZh", ""))
+                )[:1200],
+                "phase": str(
+                    event.get("phase")
+                    or ("final" if event.get("displayKind") == "final" else "streaming")
+                ),
             }
         else:
             segment_id = str(event.get("segmentId") or "")
@@ -206,7 +240,10 @@ class FirebaseCaptionPublisher:
             snapshot = projector.apply(event, round(now * 1000))
             if snapshot is None:
                 return
-            is_partial = event.get("type") == "translation.partial"
+            is_partial = event.get("type") == "translation.partial" or (
+                event.get("type") == "caption.display"
+                and event.get("displayKind") == "partial"
+            )
             if is_partial:
                 last = self.last_partial_at.get(session_id, 0.0)
                 if (now - last) * 1000 < self.config.partial_interval_ms:

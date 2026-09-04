@@ -15,7 +15,7 @@ Independent greenfield interface for a MacBook-based live sermon caption feasibi
 - Real microphone PCM streaming through Qwen3-ASR/MLX (with Whisper fallback) and MiLMMT.
 - A tokenized, read-only phone viewer on the same Wi-Fi; control and recording APIs stay localhost-only.
 
-The live path is microphone → AudioWorklet PCM → WebSocket gateway → energy VAD → configured local English ASR (`Qwen3-ASR` through MLX Audio or `whisper.cpp`) → MiLMMT token stream → Chinese caption. Browser recording remains independent and continues if ASR or translation fails. The default final cadence is 500 ms of silence or a 3-second maximum speech window; only immutable ASR finals start translation. Chinese token updates are append-only and rate-limited, so ASR revisions cannot make the large caption flicker. Frozen-English replay/A-B is now executable and does not rerun ASR.
+The live path is microphone → AudioWorklet PCM → WebSocket gateway → energy VAD → configured local English ASR (`Qwen3-ASR` through MLX Audio or `whisper.cpp`) → MiLMMT token stream → caption presenter → Chinese caption. Browser recording remains independent and continues if ASR or translation fails. The default final cadence is 500 ms of silence or a 3-second maximum speech window; only immutable ASR finals start translation. Raw model events remain append-only in the log, while the default `readable_chunks` presenter withholds 1–2-character flashes and keeps the previous complete bilingual block visible until the next readable block is ready. Frozen-English replay/A-B is executable and does not rerun ASR.
 
 Each start automatically creates:
 
@@ -75,6 +75,8 @@ For viewers using cellular data instead of the venue Wi-Fi, the Firebase Hosting
 With Qwen MLX enabled, the launcher supervises `mlx_audio.server`. If it exits, the launcher records stdout/stderr in `${TMPDIR}/sermon-live-caption-poc/mlx-audio.log` and attempts up to three automatic restarts while the independent browser recording continues. A short MLX finalization timeout is logged as `asr.empty`, not translated, and does not become a persistent page error. A third consecutive identical short ASR result is logged as `asr.suppressed/repeated_short_result` and held out of translation; any different or longer result immediately resets the guard. This generic guard avoids streaming hundreds of music-induced one-word hallucinations without blacklisting a specific word.
 
 The final cadence can be tuned without code changes using `LOCAL_LIVE_VAD_SILENCE_MS` and `LOCAL_LIVE_VAD_MAX_SEGMENT_MS`; both values must be multiples of 100 ms. The defaults are `500` and `3000`.
+
+The display stabilization layer is independently reversible and does not alter audio, ASR, translation, or raw event logs. To return immediately to the original token-by-token UI, set `LOCAL_LIVE_CAPTION_PRESENTATION_POLICY=legacy` in `firebase/runtime.env` (or export it before launching) and restart the POC. Remove the override or set it to `readable_chunks` to restore the stable display.
 
 If `artifacts/weekly-pack.json` is a genuine active Saturday pack with non-example source/audio provenance, the launcher automatically selects `saturday_alignment_v1`; otherwise it fails safely to `none`. Override with `LOCAL_LIVE_CONTEXT_POLICY=none|weekly_terms_v1|saturday_alignment_v1`.
 
@@ -181,6 +183,7 @@ Keep the test stack small and use the standard runners already available:
 - **Integration:** real localhost HTTP/WebSocket/SSE servers with temporary storage and fake models; verifies ordered writes, finalization, translation fallback, viewer isolation, and caption fan-out.
 - **Browser E2E:** use the actual microphone and actual local Ollama model. Record at least ten seconds, stop, then verify that the visible Chinese/English pair changed, `manifest.json` is completed, `events.jsonl` contains the translation events, and the saved recording decodes. This remains a deliberate manual test because browser microphone permission and the physical audio route are the behavior under test.
 - **Long soak:** replay a fixed source through the actual speaker/microphone path for 50–60 minutes, then score latency, availability, repeated short outputs, language drift, process RSS/Swap, failures, and artifact hashes with `scripts/score-soak-e2e.py`. The scorer accepts an independent health sampler with `--health-telemetry`. The 2026-09-04 baseline, targeted recovery regression, and completed fixed 60-minute run are documented in [benchmarks/SOAK_E2E_20260904.zh.md](./benchmarks/SOAK_E2E_20260904.zh.md).
+- **Offline caption replay:** run the same timestamped ASR/MiLMMT events through both presentation policies without replaying audio or models. The first 50-segment comparison is documented in [benchmarks/CAPTION_PRESENTATION_REPLAY_20260904.zh.md](./benchmarks/CAPTION_PRESENTATION_REPLAY_20260904.zh.md).
 
 Run the complete automated gate with:
 

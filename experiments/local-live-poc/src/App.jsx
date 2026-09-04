@@ -308,6 +308,8 @@ export function App() {
           audioEndToBrowserRenderMs: pcmClockStartedAtRef.current && Number.isFinite(event.audioEndMs)
             ? renderedAtMs - pcmClockStartedAtRef.current - event.audioEndMs
             : null,
+          presentationPolicy: event.presentationPolicy || null,
+          presentationMetrics: event.presentationMetrics || null,
         });
         resolve();
       });
@@ -323,7 +325,9 @@ export function App() {
     }
     if (event.type === "stream.ready") {
       setViewerShare(event.viewer || null);
-      setCaptions((current) => applyCaptionEvent(current, event));
+      if (event.displayEligible !== false) {
+        setCaptions((current) => applyCaptionEvent(current, event));
+      }
       setTranslationState("listening");
     } else if (event.type === "asr.processing") {
       setTranslationState("recognizing");
@@ -336,7 +340,9 @@ export function App() {
       }
       activeTranslationSegmentRef.current = event.segmentId || "";
       partialTranslationRef.current = { segmentId: event.segmentId || "", text: "" };
-      setCaptions((current) => applyCaptionEvent(current, event));
+      if (event.displayEligible !== false) {
+        setCaptions((current) => applyCaptionEvent(current, event));
+      }
       setTranslationState("requesting");
       setLiveMetrics((current) => ({
         ...current,
@@ -362,20 +368,24 @@ export function App() {
         return;
       }
       partialTranslationRef.current = { segmentId: event.segmentId, text: nextText };
-      setCaptions((current) => applyCaptionEvent(current, event));
+      if (event.displayEligible !== false) {
+        setCaptions((current) => applyCaptionEvent(current, event));
+      }
       setTranslationState("streaming");
       setLiveMetrics((current) => ({
         ...current,
         ttftMs: event.uxMetrics?.translationTtftMs ?? event.firstTokenLatencyMs,
         endToFirstTokenMs: event.uxMetrics?.audioEndToChineseFirstTokenMs,
       }));
-      if (!renderedTranslationSegmentsRef.current.has(event.segmentId)) {
+      if (event.displayEligible !== false && !renderedTranslationSegmentsRef.current.has(event.segmentId)) {
         renderedTranslationSegmentsRef.current.add(event.segmentId);
         recordCaptionRender(event, "chinese_first_token");
       }
     } else if (event.type === "translation.final") {
       if (event.segmentId !== activeTranslationSegmentRef.current) return;
-      setCaptions((current) => applyCaptionEvent(current, event));
+      if (event.displayEligible !== false) {
+        setCaptions((current) => applyCaptionEvent(current, event));
+      }
       setTranslationState("ready");
       setLiveMetrics({
         asrFinalMs: event.uxMetrics?.audioEndToAsrFinalMs,
@@ -385,12 +395,29 @@ export function App() {
         endToChineseFinalMs: event.uxMetrics?.audioEndToChineseFinalMs,
         tokensPerSecond: tokenRate(event.metrics),
       });
-      recordCaptionRender(event, "chinese_final");
-    } else if (event.type === "translation.failed") {
+      if (event.displayEligible !== false) {
+        recordCaptionRender(event, "chinese_final");
+      }
+    } else if (event.type === "caption.display") {
       setCaptions((current) => applyCaptionEvent(current, event));
+      setTranslationState(event.displayKind === "final" ? "ready" : "streaming");
+      const firstVisible = !renderedTranslationSegmentsRef.current.has(event.segmentId);
+      if (firstVisible) renderedTranslationSegmentsRef.current.add(event.segmentId);
+      recordCaptionRender(
+        event,
+        firstVisible
+          ? `readable_${event.displayKind}_first`
+          : `readable_${event.displayKind}`,
+      );
+    } else if (event.type === "translation.failed") {
+      if (event.displayEligible !== false) {
+        setCaptions((current) => applyCaptionEvent(current, event));
+      }
       setTranslationState("error");
     } else if (event.type === "translation.skipped") {
-      setCaptions((current) => applyCaptionEvent(current, event));
+      if (event.displayEligible !== false) {
+        setCaptions((current) => applyCaptionEvent(current, event));
+      }
       setTranslationState("error");
     } else if (event.type === "asr.failed") {
       recoverableAsrErrorRef.current = true;

@@ -80,6 +80,10 @@ class GatewayTest(unittest.TestCase):
         self.assertEqual(payload["liveStream"]["asrFinalPolicy"]["silenceMs"], 500)
         self.assertEqual(payload["liveStream"]["asrFinalPolicy"]["maxSegmentMs"], 3000)
         self.assertTrue(payload["liveStream"]["translationStreaming"])
+        self.assertEqual(
+            payload["liveStream"]["captionPresentation"],
+            {"policy": "readable_chunks", "rollbackPolicy": "legacy"},
+        )
         self.assertIsNone(payload["asrWarmup"])
 
     def test_health_does_not_require_an_optional_content_pack(self) -> None:
