@@ -132,6 +132,16 @@ case "$context_policy" in
   none|weekly_terms_v1|saturday_alignment_v1) ;;
   *) echo "Unsupported LOCAL_LIVE_CONTEXT_POLICY: $context_policy" >&2; exit 1 ;;
 esac
+if [ ! -f "$weekly_pack" ]; then
+  if [ "$context_policy" = "none" ]; then
+    # Do not export a nonexistent default path: backend.gateway also reads the
+    # environment variable as its --pack default and would otherwise fail.
+    weekly_pack=""
+  else
+    echo "Weekly pack is required for context policy $context_policy: $weekly_pack" >&2
+    exit 1
+  fi
+fi
 
 if [ "$asr_provider" != "qwen-mlx-websocket" ]; then
   case "$asr_model" in
