@@ -1,0 +1,29 @@
+{
+  "file": "/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/data/benchmarks/live-sermon-translation-v1/runs/local-asr/parakeet-tdt-0.6b-v3-q8-gpt-reaudited-20260903/prepared-audio/post-live-2026-08-30--BeFX5G2oAw_gold_040.wav",
+  "text": "Upon a hill, the perfect Savior, upon that day, the greatest love, the punishment that should have fallen on us.",
+  "confidence": 1,
+  "duration": 30,
+  "languages": [],
+  "words": [
+    {"word": "Upon", "start": 11.84, "end": 12.48, "confidence": 1},
+    {"word": "a", "start": 12.72, "end": 13.04, "confidence": 1},
+    {"word": "hill,", "start": 13.04, "end": 14.88, "confidence": 1},
+    {"word": "the", "start": 14.88, "end": 15.2, "confidence": 1},
+    {"word": "perfect", "start": 15.2, "end": 16.16, "confidence": 1},
+    {"word": "Savior,", "start": 16.16, "end": 18, "confidence": 1},
+    {"word": "upon", "start": 18, "end": 18.64, "confidence": 1},
+    {"word": "that", "start": 18.64, "end": 18.96, "confidence": 1},
+    {"word": "day,", "start": 19.28, "end": 20.96, "confidence": 1},
+    {"word": "the", "start": 20.96, "end": 21.28, "confidence": 1},
+    {"word": "greatest", "start": 21.28, "end": 22.16, "confidence": 1},
+    {"word": "love,", "start": 22.48, "end": 24, "confidence": 1},
+    {"word": "the", "start": 24, "end": 24.32, "confidence": 1},
+    {"word": "punishment", "start": 24.32, "end": 25.6, "confidence": 1},
+    {"word": "that", "start": 26.16, "end": 26.48, "confidence": 1},
+    {"word": "should", "start": 26.48, "end": 26.88, "confidence": 1},
+    {"word": "have", "start": 26.88, "end": 27.04, "confidence": 1},
+    {"word": "fallen", "start": 27.28, "end": 27.76, "confidence": 1},
+    {"word": "on", "start": 28.08, "end": 28.4, "confidence": 1},
+    {"word": "us.", "start": 28.4, "end": 29.84, "confidence": 1}
+  ]
+}

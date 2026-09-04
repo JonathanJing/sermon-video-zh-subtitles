@@ -1,0 +1,53 @@
+{
+  "completedAt": "2026-09-04T03:05:07.172489+00:00",
+  "decoding": {
+    "backend": "nemo-speech",
+    "beamSize": 1,
+    "bestOf": 1,
+    "device": "metal",
+    "language": "en",
+    "temperature": 0,
+    "temperatureFallback": false,
+    "threads": 8,
+    "vad": false
+  },
+  "emptyExpectedSpeechCount": 2,
+  "errorCount": 2,
+  "itemCount": 60,
+  "latencySeconds": {
+    "max": 1.6196,
+    "mean": 1.5777,
+    "p50": 1.6036,
+    "p95": 1.6128
+  },
+  "manifest": "data/benchmarks/live-sermon-translation-v1/local-asr-gpt-reaudited-reference-v1.json",
+  "manifestSha256": "35af38c496e9a5bb0e679f9755b94857b123b5b40403ee063cf1918aae666de7",
+  "modelArtifact": "/Users/jonathan_jing/Library/Caches/NeMoSpeech/models/nvidia/nemotron-speech-streaming-en-0.6b/ebe59e5a817142986528bbbee5dba8db7b38ed50/nemotron-speech-streaming-en-0.6b.q8_0.gguf",
+  "modelId": "nvidia/nemotron-speech-streaming-en-0.6b-q8_0",
+  "modelSha256": "d9a01898d2a611c8764e23a1c2f45e70bbd5a425dc4de93692ac951dd603812d",
+  "nonemptyCount": 57,
+  "peakPerInvocationRssGiB": 1.6688,
+  "performanceInterpretation": "Per-clip CLI cold-load offline run; not a persistent-provider or streaming latency result. Audio conversion, when required, is excluded from ASR latency.",
+  "predictionsSha256": "738c82467e5121f5b9c6d2482b082e61097b3c128cfdc099b444fb1e519a3e07",
+  "quality": {
+    "criticalTermRecall": 0.913043,
+    "gptReauditedReferenceItemCount": 13,
+    "humanGoldItemCount": 0,
+    "modelReviewedReferenceItemCount": 47,
+    "scoredItemCount": 60,
+    "silenceHallucinationCount": 0,
+    "silenceItemCount": 1,
+    "status": "scored_model_reviewed_reference",
+    "wer": 0.054892
+  },
+  "rtf": {
+    "max": 0.0854,
+    "mean": 0.0531,
+    "p50": 0.0535,
+    "p95": 0.0538
+  },
+  "runtime": "nemo-speech 0.1.0",
+  "schemaVersion": "local-asr-run-report-v1",
+  "successCount": 58,
+  "totalAudioMinutes": 29.811
+}

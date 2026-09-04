@@ -1,0 +1,24 @@
+
+  0%|          | 0/3000 [00:00<?, ?frames/s]
+100%|██████████| 3000/3000 [00:00<00:00, 3860.60frames/s]
+100%|██████████| 3000/3000 [00:00<00:00, 3859.70frames/s]
+real 1.95
+user 1.17
+sys 0.76
+          1841414144  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+              133714  page reclaims
+                  77  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                   6  voluntary context switches
+                6200  involuntary context switches
+         13743884050  instructions retired
+          5597450840  cycles elapsed
+          2792966544  peak memory footprint

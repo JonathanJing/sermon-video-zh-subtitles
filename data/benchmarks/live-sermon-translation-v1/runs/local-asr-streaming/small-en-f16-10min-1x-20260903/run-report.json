@@ -1,0 +1,48 @@
+{
+  "audioDurationSeconds": 600.0,
+  "audioSha256": "e54b28baac11f465188c442f8b85d5d97dcf154fb6d3a792e5167100882ad22f",
+  "completedAt": "2026-09-04T04:09:27.496211+00:00",
+  "emptyFinalEventCount": 0,
+  "eventsSha256": "58cfa5d45e8d9109c4a02eb7025ef7f14c027ba1528b3c7e1f321016c919dc1b",
+  "finalDeliveryLagAfterAudioAvailableSeconds": {
+    "max": 0.3005,
+    "p50": 0.2137,
+    "p95": 0.2766
+  },
+  "finalEventCount": 120,
+  "formalFullDuration": true,
+  "limitations": [
+    "whisper.cpp HTTP has no file-stream partial protocol; partials are harness-emulated probes.",
+    "Reference is exact-chunk GPT-Transcribe text, not human Gold.",
+    "This run measures ASR alone, not MiLMMT co-residency."
+  ],
+  "manifest": "data/benchmarks/live-sermon-translation-v1/local-asr-streaming-replay-v1.json",
+  "manifestSha256": "b2200815abf6fb7de60b8c83ffebdab97638a0ad4b6a40762ec5df5ab8b41774",
+  "modelId": "whisper.cpp-small.en-f16",
+  "partialEventCount": 120,
+  "partialToFinalWordEditChurn": 1342,
+  "protocol": {
+    "partialFinalStatus": "harness_emulated_by_retranscribing_same_window",
+    "partialProbeSeconds": 1.5,
+    "windowSeconds": 5.0
+  },
+  "provider": "whisper.cpp-persistent-http-window-replay",
+  "quality": {
+    "hypothesisWordCount": 1813,
+    "referenceStatus": "model_reviewed_reference_not_human_gold",
+    "referenceWordCount": 1767,
+    "wer": 0.065648
+  },
+  "resources": {
+    "providerPeakRssGiB": 0.7586,
+    "sampleCount": 591,
+    "swapGrowthGiB": 0.0,
+    "swapUsedGiBEnd": 0.0,
+    "swapUsedGiBStart": 0.0
+  },
+  "resourcesSha256": "4452467ba612fa63ab8e5326cb5ef3428951e90001157f0c1988048b440d98a0",
+  "schemaVersion": "local-asr-streaming-replay-run-v1",
+  "sourceAudioDurationSeconds": 600.0,
+  "wallDurationSeconds": 600.1786,
+  "wallToAudioRatio": 1.000298
+}

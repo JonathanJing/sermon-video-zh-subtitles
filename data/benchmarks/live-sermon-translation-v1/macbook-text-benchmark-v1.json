@@ -63,7 +63,7 @@
       "readyForModelRun": true
     },
     "mlx": {
-      "protocol": "openai_compatible_chat_completions",
+      "protocol": "openai_compatible_raw_completions_for_milmmt",
       "defaultBaseUrl": "http://127.0.0.1:8080/v1",
       "installation": "isolated_uv_tool",
       "mlxInstalled": true,
@@ -124,7 +124,7 @@
   "tools": {
     "runner": {
       "path": "../../../scripts/run_macbook_sermon_text_benchmark.py",
-      "sha256": "d5c018d09954d92b36e0cad20223685370a28d8c668c696dc01c3f6ce9991aab"
+      "sha256": "1a2de4d1af211e191e9540964b3f120f10cbb4914e7acf1514bfde90a0b64e8b"
     },
     "scorer": {
       "path": "../../../scripts/score_sermon_text_benchmark.py",

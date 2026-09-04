@@ -1,0 +1,319 @@
+{
+  "durationMinutes": 6.5,
+  "itemCount": 13,
+  "items": [
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-23/sermon_ZDQwL3K-A44/timeline/transition_30s/candidate_1620000_2058658/chunks/timeline_chunk_0000.m4a",
+      "audioSha256": "3c8a01c0ee35229d906e11145f7055723ee4b454c5d4c6dea67cd98b57c508de",
+      "criticalTerms": [
+        "Christian",
+        "God",
+        "Mariners",
+        "Rooted"
+      ],
+      "durationSeconds": 30.0,
+      "humanAudioClass": null,
+      "humanReferenceText": null,
+      "id": "post-live-2026-08-23-ZDQwL3K-A44_gold_001",
+      "modelReviewedReferenceText": "Women and couples, you can sign up for Rooted Online by time zone or at any one of our congregations through the link below. We're also excited to share that Eric's new book, The Rooted Leader, will be released this week. Whether you lead within the marketplace, at home, or in ministry, the need for strong leadership has never been clearer. We look forward to seeing how God will use this book to encourage and help Christian leaders wherever they serve. You can pick up a copy at the Mariners Bookstore or online. Many of you remember.",
+      "modelTranscripts": {
+        "ASR-WCPP-MEDIUM-EN-F16": "women and couples, you can sign up for Rooted online by time zone or at any one of our congregations through the link below. We are also excited to share that Eric's new book, The Rooted Leader, will be released this week. Whether you lead within the marketplace, at home or in ministry, the need for strong leadership has never been clearer. We look forward to seeing how God will use this book to encourage and help Christian leaders wherever they serve. You can pick up a copy at the Mariners bookstore or online. Many of you remember.",
+        "ASR-WCPP-SMALL-EN-F16": "women and couples, you can sign up for Rooted Online by Time Zone or at any one of our congregations through the link below. We're also excited to share that Eric's new book, The Rooted Leader, will be released this week. Whether you lead within the marketplace, at home, or in ministry, the need for strong leadership has never been clearer. We look forward to seeing how God will use this book to encourage and help Christian leaders wherever they serve. You can pick up a copy at the Mariners Bookstore or online. you rema-"
+      },
+      "reviewStatus": "needs_human_listening",
+      "reviewer": null,
+      "selectionReasons": [
+        "deterministic_stratified_random"
+      ],
+      "sermonId": "post-live-2026-08-23-ZDQwL3K-A44"
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-23/sermon_ZDQwL3K-A44/timeline/transition_30s/candidate_1620000_2058658/chunks/timeline_chunk_0001.m4a",
+      "audioSha256": "98dcf71ddaea02014a95d47c15b13bc3cc38badd15593f309566f09462f69b55",
+      "criticalTerms": [
+        "Nehemiah"
+      ],
+      "durationSeconds": 30.0,
+      "humanAudioClass": null,
+      "humanReferenceText": null,
+      "id": "post-live-2026-08-23-ZDQwL3K-A44_gold_002",
+      "modelReviewedReferenceText": "Remember our study of Nehemiah, where Eric shared a lot of the insights from this book. And now we get to see people around the world be blessed and encouraged by this incredible resource. Please join me in praying for everyone who will receive a copy. Heavenly Father, we pray for every single person that receives the copy of this book, that they would be impacted, that they would be inspired and encouraged to lead the way in which you led Nehemiah to do so. Bless.",
+      "modelTranscripts": {
+        "ASR-WCPP-MEDIUM-EN-F16": "our study of Nehemiah where Eric shared a lot of the insights from this book and now we get to see people around the world be blessed and encouraged by this incredible resource. Please join me in praying for everyone who will receive a copy. Heavenly Father we pray for every single person that receives the copy of this book that they would be impacted that they would be inspired and encouraged to lead the way in which you led Nehemiah to do so. Bless the",
+        "ASR-WCPP-SMALL-EN-F16": "our study of Nehemiah where Eric shared a lot of the insights from this book and now we get to see people around the world be blessed and encouraged by this incredible resource. Please join me in praying for everyone who will receive a copy. Heavenly Father, we pray for every single person that receives the copy of this book that they would be impacted, that they would be inspired and encouraged to lead the way in which you led Nehemiah to do so. Bless."
+      },
+      "reviewStatus": "needs_human_listening",
+      "reviewer": null,
+      "selectionReasons": [
+        "deterministic_stratified_random"
+      ],
+      "sermonId": "post-live-2026-08-23-ZDQwL3K-A44"
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-23/sermon_ZDQwL3K-A44/timeline/transition_30s/candidate_1620000_2058658/chunks/timeline_chunk_0002.m4a",
+      "audioSha256": "1301b093e02558fd4e0a4413822ea4af34cb3ee4e897613514833b2562aac5a1",
+      "criticalTerms": [
+        "Bible",
+        "Revelation"
+      ],
+      "durationSeconds": 30.0,
+      "humanAudioClass": null,
+      "humanReferenceText": null,
+      "id": "post-live-2026-08-23-ZDQwL3K-A44_gold_003",
+      "modelReviewedReferenceText": "In the name of the Father, the Son, and the Spirit. Amen. Now, in three weeks, we will begin a new series through the last book of the Bible, Revelation. Before we join Eric for today's message, here's a first look. The last book of the Bible describes the end of evil and the end of the world as we know it. It has fascinated people for centuries, driving fear in some and confusion in others. But the first hearers didn't receive",
+      "modelTranscripts": {
+        "ASR-WCPP-MEDIUM-EN-F16": "in the name of the Father, the Son, and the Spirit. Amen. Now in three weeks, we will begin a new series through the last book of the Bible, Revelation. Before we join Eric for today's message, here's a first look. The last book of the Bible describes the end of evil and the end of the world as we know it. It has fascinated people for centuries, driving fear in some and confusion in others. But the first hearers didn't receive...",
+        "ASR-WCPP-SMALL-EN-F16": "in the name of the Father, the Son, and the Spirit. Amen. Now in three weeks, we will begin a new series through the last book of the Bible, Revelation. Before we join Eric for today's message, here's a first look. The last book of the Bible describes the end of evil and the end of the world as we know it. It has fascinated people for centuries, driving fear in some and confusion in others. But the first hearers didn't receive"
+      },
+      "reviewStatus": "needs_human_listening",
+      "reviewer": null,
+      "selectionReasons": [
+        "deterministic_stratified_random"
+      ],
+      "sermonId": "post-live-2026-08-23-ZDQwL3K-A44"
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0000.m4a",
+      "audioSha256": "7bd08e2e2099d9b030799ec3053a2cdd074d812011c12e0094e0b38a79333769",
+      "criticalTerms": [
+        "Christ",
+        "God",
+        "Mariners",
+        "Rooted",
+        "communion",
+        "faith"
+      ],
+      "durationSeconds": 30.0,
+      "humanAudioClass": null,
+      "humanReferenceText": null,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_001",
+      "modelReviewedReferenceText": "From tear down to set up and serving in the youth ministry, I've got to build relationships, find a community, and ultimately strengthen my relationship with Christ. Yeah, at Mariners San Clemente, I got connected with Rooted. It was really a blessing to be a part of a communion and a fellowship of men who are wanting to grow in their faith and their walk with God. Mariners San Clemente is where I got baptized. It had been something that I was craving and needing for a long time.",
+      "modelTranscripts": {
+        "ASR-WCPP-MEDIUM-EN-F16": "Seeing from tear down to set up and serving in the youth ministry I've got to build relationships find a community and ultimately strengthen my relationship with Christ Yeah, a man or sanctimony I got connected with rooted It was really a blessing to be a part of a communion and a fellowship of men who wanting to grow in their faith And then their walk with God mariner sanctimony is where I got baptized. It had been something that I was creating and meeting for a long time and",
+        "ASR-WCPP-SMALL-EN-F16": "Seeing from tear down to set up and serving in the youth ministry, I've got to build relationships, find a community, and ultimately strengthen my relationship with Christ. Yeah, at Mariner St. Fomini, I got connected with Rooted. It was really a blessing to be a part of a communion and a fellowship of men who are wanting to grow in their faith and they walk with God. Mariner St. Fomini is where I got baptized. It had been something that I was craving and needing for a long term."
+      },
+      "reviewStatus": "needs_human_listening",
+      "reviewer": null,
+      "selectionReasons": [
+        "critical_term_miss:ASR-WCPP-MEDIUM-EN-F16:Mariners",
+        "critical_term_miss:ASR-WCPP-SMALL-EN-F16:Mariners"
+      ],
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw"
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0002.m4a",
+      "audioSha256": "f4c452ad963052b4ffc293af37d800082b268f090062cbcd5e11bdc8f14d1a32",
+      "criticalTerms": [],
+      "durationSeconds": 30.0,
+      "humanAudioClass": null,
+      "humanReferenceText": null,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_002",
+      "modelReviewedReferenceText": "",
+      "modelTranscripts": {
+        "ASR-WCPP-MEDIUM-EN-F16": "[Music] [Music] [Music] [Music]",
+        "ASR-WCPP-SMALL-EN-F16": "(upbeat music)"
+      },
+      "reviewStatus": "needs_human_listening",
+      "reviewer": null,
+      "selectionReasons": [
+        "silence_or_non_speech_reference"
+      ],
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw"
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0005.m4a",
+      "audioSha256": "6553563e94df3f4d0660e4a828942a7144ff72a2fc5810a9e74cc7eefabc5071",
+      "criticalTerms": [
+        "Church",
+        "Mariners"
+      ],
+      "durationSeconds": 30.0,
+      "humanAudioClass": null,
+      "humanReferenceText": null,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_004",
+      "modelReviewedReferenceText": "Where we're launching, and we want to have church with you in your community. We know you love your city. We love your city. We're excited about launching a Mariners congregation right where you are. And so our next two, which we'll have Christmas services, and then in January we'll officially launch as a congregation, Tustin and Fullerton slash La Mirada. So Tustin and then the Fullerton-La Mirada area. We're so excited. We're building a team right now that's going to launch these congregations right...",
+      "modelTranscripts": {
+        "ASR-WCPP-MEDIUM-EN-F16": "where we're launching and we want to have church with you in your community. We know you love your city, we love your city. We're excited about launching America's congregation right where you are. And so our next two, which will have Christmas services, and then in January we'll officially launch as a congregation, Tustin and Fullerton/La Marada. So Tustin and then the Fullerton La Marada area. We're so excited, we're building a team right now that's going to launch these congregations right.",
+        "ASR-WCPP-SMALL-EN-F16": "where we're launching and we want to, we want to have church with you in your community. We know you love your city. We love your city. We're excited about launching a Marist congregation right where you are. And so our next two, which will have Christmas services and then in January, we'll officially launch as a congregation, Tustin and Fullerton/Lamorata. So Tustin and then the Fullerton/Lamorata area. We're so excited. We're building a team right now that's gonna launch these congregations right."
+      },
+      "reviewStatus": "needs_human_listening",
+      "reviewer": null,
+      "selectionReasons": [
+        "critical_term_miss:ASR-WCPP-MEDIUM-EN-F16:Mariners",
+        "critical_term_miss:ASR-WCPP-SMALL-EN-F16:Mariners"
+      ],
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw"
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0045.m4a",
+      "audioSha256": "37190b58a0195fd0db216fb9ce857be4e64d5a27981427c588da0ce526abe24c",
+      "criticalTerms": [
+        "God"
+      ],
+      "durationSeconds": 30.0,
+      "humanAudioClass": null,
+      "humanReferenceText": null,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_029",
+      "modelReviewedReferenceText": "Wrath and judgment because of the evil, the injustice that they've done. Will you please remember your people, God, is what he's praying. We, the modern reader, struggle with divine vengeance. We struggle with a prayer like this: God, bring vengeance. I'm not taking vengeance into my hands. I'm not the one who's doing this, but I'm asking you to bring vengeance. The modern reader struggles with this. Miroslav Volf is a professor at Yale, and he says that if you struggle",
+      "modelTranscripts": {
+        "ASR-WCPP-MEDIUM-EN-F16": "path in judgment because of the evil, the injustice that they've done. Will you please remember your people, God, is what he's praying. We, the modern reader, struggle with divine vengeance. We struggle with a prayer like this. God, bring vengeance. I'm not taking vengeance into my hands. I'm not the one who's doing this, but I'm asking you to bring vengeance. The modern reader struggles with this. Mirasol Voff is a professor at Yale, And he says that if you struggle.",
+        "ASR-WCPP-SMALL-EN-F16": "path and judgment because of the evil, the injustice that they've done. Will you please remember your people, God, is what he's praying. We, the modern reader, struggle with divine vengeance. We struggle with a prayer like this. God, bring vengeance. I'm not taking vengeance into my hands. I'm not the one who's doing this, but I'm asking you to bring vengeance. The modern reader struggles with this. Mira Solvov is a professor at Yale, And he says that if you struggle--"
+      },
+      "reviewStatus": "needs_human_listening",
+      "reviewer": null,
+      "selectionReasons": [
+        "deterministic_stratified_random"
+      ],
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw"
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0056.m4a",
+      "audioSha256": "6203829b93eb3a79337aa71b79ef796ab2bd1bc8a6eb1e02b7365234c48621e2",
+      "criticalTerms": [
+        "Christ",
+        "God",
+        "Jesus"
+      ],
+      "durationSeconds": 30.0,
+      "humanAudioClass": null,
+      "humanReferenceText": null,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_036",
+      "modelReviewedReferenceText": "How God the Father sent God the Son, Jesus the Christ, here for you. It's the best example. See, God, because he's holy, has righteous anger against sin. Because sin dishonors him and evil hurts people, image bearers, people he created in his image. He's angered at sin. He's angered at injustices. God hates sin, but he loves people. So what did God do to address his anger?",
+      "modelTranscripts": {
+        "ASR-WCPP-MEDIUM-EN-F16": "but how God the Father sent God the Son, Jesus the Christ here for you, it's the best example. See God, because He's holy, has righteous anger against sin because sin dishonors Him and evil hurts people, image bearers, people He created in His image. He's angered at sin, He's angered at injustices. God hates sin but He loves people. So what did God do to address His anger?",
+        "ASR-WCPP-SMALL-EN-F16": "But God, how God the Father sent God the Son, Jesus the Christ here for you, it's the best example. See God, because he's holy, has righteous anger against sin. Because sin dishonors him and evil hurts people, image bearers, people he created in his image. He's angered at sin, he's angered at injustices. God hates sin, but he loves people. So what did God do to address his anger?"
+      },
+      "reviewStatus": "needs_human_listening",
+      "reviewer": null,
+      "selectionReasons": [
+        "deterministic_stratified_random"
+      ],
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw"
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0063.m4a",
+      "audioSha256": "052b50d5f92087acb7d11c7f5267f0407838aab03aedb1596080bb50e583fe34",
+      "criticalTerms": [],
+      "durationSeconds": 30.0,
+      "humanAudioClass": null,
+      "humanReferenceText": null,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_040",
+      "modelReviewedReferenceText": "Upon a hill, a perfect Savior. Upon that day, the greatest love, the punishment that should have fallen on us.",
+      "modelTranscripts": {
+        "ASR-WCPP-MEDIUM-EN-F16": "(gentle music) ♪ Upon a hill ♪ ♪ A perfect savior ♪ ♪ Upon that day ♪ ♪ The greatest love ♪ ♪ The punishment ♪ Should've fallen on us",
+        "ASR-WCPP-SMALL-EN-F16": "(gentle music) ♪ Upon a hill ♪ ♪ A perfect Savior ♪ ♪ Upon that day ♪ ♪ The greatest love ♪ ♪ The punishment ♪ Should have fallen on us"
+      },
+      "reviewStatus": "needs_human_listening",
+      "reviewer": null,
+      "selectionReasons": [
+        "deterministic_stratified_random"
+      ],
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw"
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0065.m4a",
+      "audioSha256": "e39712bd60285a0315ed1da873ef3ce765586a88c577e4f40d0c4d78bbf74ab9",
+      "criticalTerms": [
+        "Christ"
+      ],
+      "durationSeconds": 30.0,
+      "humanAudioClass": null,
+      "humanReferenceText": null,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_041",
+      "modelReviewedReferenceText": "Christ has died, we are forgiven, and Christ alive. We are the risen, and He shall come again. Praise the King, praise the King. On our hearts, His name is written.",
+      "modelTranscripts": {
+        "ASR-WCPP-MEDIUM-EN-F16": "♪♪♪",
+        "ASR-WCPP-SMALL-EN-F16": "♪ Christ has died ♪ ♪ We are forgiven in Christ alive ♪ ♪ We are the risen and He shall come again ♪ ♪ Praise the King ♪ ♪ Praise the King ♪ ♪ On our hearts His name is written ♪"
+      },
+      "reviewStatus": "needs_human_listening",
+      "reviewer": null,
+      "selectionReasons": [
+        "critical_term_miss:ASR-WCPP-MEDIUM-EN-F16:Christ",
+        "invalid_output:ASR-WCPP-MEDIUM-EN-F16"
+      ],
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw"
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0066.m4a",
+      "audioSha256": "d022c8b4465ee4073de91c2b65313dcbddf0daf545441f224ea29c3e4a0f9af2",
+      "criticalTerms": [
+        "Christ"
+      ],
+      "durationSeconds": 30.0,
+      "humanAudioClass": null,
+      "humanReferenceText": null,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_042",
+      "modelReviewedReferenceText": "The King of kings and Lord of lords, we're pouring out a song of praise together upon Him, upon Him. Christ has died, Christ has died. We are forgiven and now alive. We...",
+      "modelTranscripts": {
+        "ASR-WCPP-MEDIUM-EN-F16": "♪♪♪",
+        "ASR-WCPP-SMALL-EN-F16": "♪ The King of kings and Lord of lords ♪ ♪ We're pouring out His own good praise together ♪ ♪ Upon Him, upon Him ♪ ♪ Christ has died, Christ has died ♪ ♪ We are forgiven in life alive ♪"
+      },
+      "reviewStatus": "needs_human_listening",
+      "reviewer": null,
+      "selectionReasons": [
+        "critical_term_miss:ASR-WCPP-MEDIUM-EN-F16:Christ",
+        "invalid_output:ASR-WCPP-MEDIUM-EN-F16"
+      ],
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw"
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0068.m4a",
+      "audioSha256": "478fb6072bb438067ca645e4ee3425e4fe0178a46c3c4ef15b90244f0906c104",
+      "criticalTerms": [
+        "Jesus"
+      ],
+      "durationSeconds": 30.0,
+      "humanAudioClass": null,
+      "humanReferenceText": null,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_043",
+      "modelReviewedReferenceText": "Praise the King, praise the King, one name upon our lips, Jesus. No greater name than this, Jesus. Every knee will bow, every heart confess, Jesus, Jesus.",
+      "modelTranscripts": {
+        "ASR-WCPP-MEDIUM-EN-F16": "♪♪♪",
+        "ASR-WCPP-SMALL-EN-F16": "♪ Praise the King ♪ ♪ Praise the King ♪ ♪ We'll name upon our land ♪ ♪ Jesus ♪ ♪ No greater name than this ♪ ♪ Jesus ♪ ♪ Everything will come ♪ ♪ Every heart can face ♪ ♪ Jesus ♪ Jesus"
+      },
+      "reviewStatus": "needs_human_listening",
+      "reviewer": null,
+      "selectionReasons": [
+        "critical_term_miss:ASR-WCPP-MEDIUM-EN-F16:Jesus",
+        "invalid_output:ASR-WCPP-MEDIUM-EN-F16"
+      ],
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw"
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0069.m4a",
+      "audioSha256": "8b663e6fbb3781fc0a8c3969f08d0385f4ecade212e368f93d2c178bab43df3f",
+      "criticalTerms": [
+        "God",
+        "Jesus"
+      ],
+      "durationSeconds": 30.0,
+      "humanAudioClass": null,
+      "humanReferenceText": null,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_044",
+      "modelReviewedReferenceText": "One name upon all names, Jesus. You have no rival. You have no equal. Now and forever, God, You reign. Yours is the kingdom, Yours is the glory. Yours is the name above all names, Jesus, Jesus.",
+      "modelTranscripts": {
+        "ASR-WCPP-MEDIUM-EN-F16": "♪ You're the Name upon my name ♪ ♪ You're the Name upon my name ♪ ♪ You're in every new world now ♪ ♪ Every heart can face ♪ ♪ Jesus ♪ ♪ Jesus ♪ Crime's had its back",
+        "ASR-WCPP-SMALL-EN-F16": "♪ Jesus ♪ ♪ Jesus ♪ ♪ You're the name of God ♪ ♪ Jesus ♪ ♪ You're the name of God ♪ ♪ Everyone confess ♪ ♪ Jesus ♪ ♪ Jesus ♪ ♪ Crime's high, it's not fair ♪"
+      },
+      "reviewStatus": "needs_human_listening",
+      "reviewer": null,
+      "selectionReasons": [
+        "critical_term_miss:ASR-WCPP-MEDIUM-EN-F16:God"
+      ],
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw"
+    }
+  ],
+  "leaderboard": "data/benchmarks/live-sermon-translation-v1/runs/local-asr/model-reviewed-quality-leaderboard-20260903.json",
+  "leaderboardSha256": "5a39fc4acf073301e88f79e8fe4335d6d81ce19a5170f0a14a20856089552b40",
+  "manifest": "data/benchmarks/live-sermon-translation-v1/local-asr-model-reviewed-reference-v1.json",
+  "manifestSha256": "6a56de9206e6959d38a80a95908b3226e74639bbdd3bbb34297a467eb2ae702f",
+  "purpose": "calibrate_model_reviewed_reference_before_production_selection",
+  "schemaVersion": "local-asr-human-calibration-queue-v1",
+  "selectionPolicy": {
+    "deterministicRandomPerSource": 3,
+    "includeAllCriticalTermMisses": true,
+    "includeAllInvalidOutputs": true,
+    "includeAllSilenceOrNonSpeechReferences": true
+  },
+  "status": "needs_human_listening"
+}

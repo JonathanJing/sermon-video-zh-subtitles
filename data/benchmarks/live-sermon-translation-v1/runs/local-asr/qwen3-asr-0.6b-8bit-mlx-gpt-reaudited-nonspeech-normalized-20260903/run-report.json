@@ -1,0 +1,56 @@
+{
+  "completedAt": "2026-09-04T03:21:53.679067+00:00",
+  "decoding": {
+    "backend": "mlx-audio-qwen3",
+    "beamSize": 1,
+    "bestOf": 1,
+    "device": null,
+    "language": "English",
+    "temperature": 0,
+    "temperatureFallback": false,
+    "threads": 8,
+    "vad": false
+  },
+  "emptyExpectedSpeechCount": 0,
+  "errorCount": 0,
+  "itemCount": 60,
+  "latencySeconds": {
+    "max": 3.0391,
+    "mean": 1.9405,
+    "p50": 1.9385,
+    "p95": 2.142
+  },
+  "manifest": "data/benchmarks/live-sermon-translation-v1/local-asr-gpt-reaudited-reference-v1.json",
+  "manifestSha256": "35af38c496e9a5bb0e679f9755b94857b123b5b40403ee063cf1918aae666de7",
+  "modelArtifact": "/Users/jonathan_jing/Library/Caches/sermon-video-zh-subtitles/models/qwen3-asr-0.6b-8bit-89e96d92/model.safetensors",
+  "modelId": "mlx-community/Qwen3-ASR-0.6B-8bit",
+  "modelSha256": "b5bfe4abc1b4c6e58b633096682ec2b6297298add1527119936107d211adf0e8",
+  "nonemptyCount": 59,
+  "peakPerInvocationRssGiB": 1.1519,
+  "performanceInterpretation": "Per-clip CLI cold-load offline run; not a persistent-provider or streaming latency result. Audio conversion, when required, is excluded from ASR latency. Predictions were rescored without rerunning inference.",
+  "predictionsSha256": "bc815f8a5bd2574155f6a6eb40eccb4aaadc813eb3d046c05a7d22aa852ada90",
+  "quality": {
+    "criticalTermRecall": 0.971014,
+    "gptReauditedReferenceItemCount": 13,
+    "humanGoldItemCount": 0,
+    "modelReviewedReferenceItemCount": 47,
+    "scoredItemCount": 60,
+    "silenceHallucinationCount": 0,
+    "silenceItemCount": 1,
+    "status": "scored_mixed_reference_tiers",
+    "wer": 0.037293
+  },
+  "rescoreOnly": true,
+  "rtf": {
+    "max": 0.1013,
+    "mean": 0.0653,
+    "p50": 0.0647,
+    "p95": 0.0718
+  },
+  "runtime": "mlx-audio v0.3.1\n- mlx_audio.stt.generate",
+  "schemaVersion": "local-asr-run-report-v1",
+  "sourceRun": "data/benchmarks/live-sermon-translation-v1/runs/local-asr/qwen3-asr-0.6b-8bit-mlx-gpt-reaudited-20260903",
+  "sourceRunReportSha256": "abafa8ec08242ba774359a0d16c4d4f731ae768c4d642fdfd9b184b58d035020",
+  "successCount": 60,
+  "totalAudioMinutes": 29.811
+}

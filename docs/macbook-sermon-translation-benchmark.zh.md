@@ -25,6 +25,7 @@
 - Ollama App 服务已升级并运行官方 `0.33.3`；Homebrew CLI 为 `0.33.2`；当前已安装 `sermon-hymt2-1.8b-q8:benchmark`；
 - MLX 已通过隔离的 `uv tool` 环境安装：`mlx 0.32.2`、`mlx-lm 0.31.3`；GPU 运算和 `mlx_lm.server` CLI smoke 均已通过；
 - `Hy-MT2-1.8B Q8_0`、`MiLMMT-46-4B-v1.0 Q8_0`、`Qwen3.5-4B-Base BF16` 和 `Qwen3.5-9B-Base BF16` 均已完成 239/239 Ollama translation-only run；四者的 ASR 共存 replay 和 soak 仍待执行。
+- 本地 ASR 已完成 60 段、29.811 分钟七模型质量 bakeoff，并对其中 13 段、6.5 分钟执行独立 GPT-Transcribe 重听校准，见 [MacBook 本地英文 ASR Benchmark V1](./local-asr-benchmark.zh.md)。`Qwen3-ASR-0.6B MLX 8-bit` 以 MRQS 96.893 暂列第一，`small.en` 以 96.244 排第二且速度、内存更优；两者通过当前离线门禁。Distil-Whisper 与 MLX Turbo 均因静音口语幻觉失败。4 段参考文本差异仍需人工确认，流式 replay 与 MiLMMT 共存仍待执行。
 
 这份状态只描述 2026-09-03 的本机检查；正式 run 必须重新记录运行时版本、模型 digest/revision 和 artifact SHA-256。
 
@@ -65,28 +66,40 @@ python3 scripts/run_macbook_sermon_text_benchmark.py \
 
 ## MLX 运行入口
 
-MLX 使用本地 OpenAI-compatible chat server。MLX 与 MLX-LM 已安装，`mlx_lm.server` CLI 已验证；选择并固定 MLX 模型 artifact 后，可按当前 CLI 契约启动仅监听 loopback 的 server：
+MLX 使用本地 OpenAI-compatible server。MiLMMT 是纯 completion 翻译模型，不套 chat template；因此 MiLMMT 的正式 MLX run 必须调用 `/v1/completions`，不得调用 `/v1/chat/completions`。MLX 与 MLX-LM 已安装，`mlx_lm.server` CLI 已验证；选择并固定 MLX 模型 artifact 后，可按当前 CLI 契约启动仅监听 loopback 的 server：
 
 ```bash
-mlx_lm.server --model <mlx-model-path-or-id> --host 127.0.0.1 --port 8080
+mlx_lm.server \
+  --model <mlx-model-path-or-id> \
+  --host 127.0.0.1 \
+  --port 8080 \
+  --temp 0 \
+  --top-k 1
 ```
 
 随后运行：
 
 ```bash
 python3 scripts/run_macbook_sermon_text_benchmark.py \
-  --backend openai-chat \
+  --backend openai-completion \
   --base-url http://127.0.0.1:8080/v1 \
   --model <mlx-server-model-name> \
   --model-id <canonical-upstream-model-id> \
   --revision <pinned-upstream-revision> \
   --artifact-sha256 <artifact-sha256> \
   --runtime-fingerprint <mlx-and-mlx-lm-versions> \
-  --prompt-profile <sermon-a0-or-hymt2> \
-  --input <the-same-five-frozen-English-files> \
+  --prompt-profile milmmt \
+  --temperature 0 \
+  --top-k 1 \
+  --repeat-penalty 1 \
+  --input <non-test-dev-English-files> \
   --output-dir data/benchmarks/live-sermon-translation-v1/runs/macbook-text-baselines/<run-id> \
   --limit 10
 ```
+
+启动后先用单句 probe 核对输出、EOS 和请求契约。MiLMMT 的 generation config 应同时接受 EOS token `1` 与 `<end_of_turn>` token `106`；如当前 MLX server 没有读取该配置，则停下修正运行时，不能靠放大 `max_tokens` 掩盖 runaway output。
+
+MLX/GGUF 量化和后端选择阶段只能传入非 test 的 dev 文件；五篇 239 段冻结文件只在主/备运行时和量化已经锁定后做一次最终验收。
 
 ## 评分与资源记录
 

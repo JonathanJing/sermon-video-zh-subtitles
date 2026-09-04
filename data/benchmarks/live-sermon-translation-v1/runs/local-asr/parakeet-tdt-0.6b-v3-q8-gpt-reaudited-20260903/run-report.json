@@ -1,0 +1,53 @@
+{
+  "completedAt": "2026-09-04T03:06:26.966330+00:00",
+  "decoding": {
+    "backend": "nemo-speech",
+    "beamSize": 1,
+    "bestOf": 1,
+    "device": "metal",
+    "language": "en",
+    "temperature": 0,
+    "temperatureFallback": false,
+    "threads": 8,
+    "vad": false
+  },
+  "emptyExpectedSpeechCount": 2,
+  "errorCount": 2,
+  "itemCount": 60,
+  "latencySeconds": {
+    "max": 1.1029,
+    "mean": 1.0794,
+    "p50": 1.0874,
+    "p95": 1.0976
+  },
+  "manifest": "data/benchmarks/live-sermon-translation-v1/local-asr-gpt-reaudited-reference-v1.json",
+  "manifestSha256": "35af38c496e9a5bb0e679f9755b94857b123b5b40403ee063cf1918aae666de7",
+  "modelArtifact": "/Users/jonathan_jing/Library/Caches/NeMoSpeech/models/nvidia/parakeet-tdt-0.6b-v3/541d1f99c6b0c3cd0b11a95167540bb8edefd82b/parakeet-tdt-0.6b-v3.q8_0.gguf",
+  "modelId": "nvidia/parakeet-tdt-0.6b-v3-q8_0",
+  "modelSha256": "e3880d0aaaaf2c308ea2c35016b2b895c423eb3fda924c1b463d1c19b7f4d32e",
+  "nonemptyCount": 57,
+  "peakPerInvocationRssGiB": 0.8007,
+  "performanceInterpretation": "Per-clip CLI cold-load offline run; not a persistent-provider or streaming latency result. Audio conversion, when required, is excluded from ASR latency.",
+  "predictionsSha256": "d22888c7636574182ecbb14770efd56f36ff1a7117bafb91177bb7cfc79e33c0",
+  "quality": {
+    "criticalTermRecall": 0.927536,
+    "gptReauditedReferenceItemCount": 13,
+    "humanGoldItemCount": 0,
+    "modelReviewedReferenceItemCount": 47,
+    "scoredItemCount": 60,
+    "silenceHallucinationCount": 0,
+    "silenceItemCount": 1,
+    "status": "scored_model_reviewed_reference",
+    "wer": 0.043578
+  },
+  "rtf": {
+    "max": 0.0368,
+    "mean": 0.0362,
+    "p50": 0.0362,
+    "p95": 0.0366
+  },
+  "runtime": "nemo-speech 0.1.0",
+  "schemaVersion": "local-asr-run-report-v1",
+  "successCount": 58,
+  "totalAudioMinutes": 29.811
+}

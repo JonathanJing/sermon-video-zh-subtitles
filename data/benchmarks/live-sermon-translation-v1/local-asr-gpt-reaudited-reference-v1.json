@@ -1,0 +1,1295 @@
+{
+  "baseManifest": "data/benchmarks/live-sermon-translation-v1/local-asr-model-reviewed-reference-v1.json",
+  "baseManifestSha256": "6a56de9206e6959d38a80a95908b3226e74639bbdd3bbb34297a467eb2ae702f",
+  "createdAt": "2026-09-03T22:49:15.361720+00:00",
+  "datasetId": "BENCH-LIVE-ST-ASR-GPT-REAUDITED-REFERENCE-V1",
+  "gptReauditRun": "data/benchmarks/live-sermon-translation-v1/runs/local-asr/gpt-transcribe-reaudit-20260903",
+  "gptReauditedItemCount": 13,
+  "items": [
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-23/sermon_ZDQwL3K-A44/timeline/transition_30s/candidate_1620000_2058658/chunks/timeline_chunk_0000.m4a",
+      "audioSha256": "3c8a01c0ee35229d906e11145f7055723ee4b454c5d4c6dea67cd98b57c508de",
+      "criticalTerms": [
+        "Christian",
+        "God",
+        "Mariners",
+        "Rooted"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-23-ZDQwL3K-A44_gold_001",
+      "referenceProvenance": {
+        "gptReaudit": {
+          "humanListeningCompleted": false,
+          "model": "gpt-transcribe",
+          "requestReceiptSha256": "da022b9f4b26c995500eada8d299ec61528f127bd5a39b2bf37fbfbf2ff27a90",
+          "responseSha256": "e5bc7a82320136e17b898e017639e01e5ca8db3c0c898b9c204a5aebfd31094b"
+        },
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 0,
+        "timelineEndSeconds": 1650.0,
+        "timelineStartSeconds": 1620.0
+      },
+      "referenceStatus": "gpt_reaudited_reference",
+      "referenceText": "Women and couples, you can sign up for Rooted online by time zone or at any one of our congregations through the link below. We're also excited to share that Eric's new book, The Rooted Leader, will be released this week. Whether you lead within the marketplace, at home, or in ministry, the need for strong leadership has never been clearer. We look forward to seeing how God will use this book to encourage and help Christian leaders wherever they serve. You can pick up a copy at the Mariners Bookstore or online. Many of you remember.",
+      "sermonId": "post-live-2026-08-23-ZDQwL3K-A44",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-23/sermon_ZDQwL3K-A44/timeline/transition_30s/candidate_1620000_2058658/chunks/timeline_chunk_0001.m4a",
+      "audioSha256": "98dcf71ddaea02014a95d47c15b13bc3cc38badd15593f309566f09462f69b55",
+      "criticalTerms": [
+        "Nehemiah"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-23-ZDQwL3K-A44_gold_002",
+      "referenceProvenance": {
+        "gptReaudit": {
+          "humanListeningCompleted": false,
+          "model": "gpt-transcribe",
+          "requestReceiptSha256": "3c99724029046a45a07ce22593ef61758fe6dcb0f8ccf629a066e0ff21dd27b7",
+          "responseSha256": "d69fdb1814df6cb6a0e54f9935973cd5be1d5785627b23bab5c328ce8f6f37a5"
+        },
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 1,
+        "timelineEndSeconds": 1680.0,
+        "timelineStartSeconds": 1650.0
+      },
+      "referenceStatus": "gpt_reaudited_reference",
+      "referenceText": "Remember our study of Nehemiah, where Eric shared a lot of the insights from this book. And now we get to see people around the world be blessed and encouraged by this incredible resource. Please join me in praying for everyone who will receive a copy. Heavenly Father, we pray for every single person that receives the copy of this book, that they would be impacted, that they would be inspired and encouraged to lead the way in which you led Nehemiah to do so. Bless.",
+      "sermonId": "post-live-2026-08-23-ZDQwL3K-A44",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-23/sermon_ZDQwL3K-A44/timeline/transition_30s/candidate_1620000_2058658/chunks/timeline_chunk_0002.m4a",
+      "audioSha256": "1301b093e02558fd4e0a4413822ea4af34cb3ee4e897613514833b2562aac5a1",
+      "criticalTerms": [
+        "Bible",
+        "Revelation"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-23-ZDQwL3K-A44_gold_003",
+      "referenceProvenance": {
+        "gptReaudit": {
+          "humanListeningCompleted": false,
+          "model": "gpt-transcribe",
+          "requestReceiptSha256": "3c888ef050aa956e8f1670016a09ff6d094f36370c1b70e804e3ec20c6897723",
+          "responseSha256": "f8cf6f9d0321060c4571953fcd2e4db5341b62ea9b00d2b0e127821fea15d805"
+        },
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 2,
+        "timelineEndSeconds": 1710.0,
+        "timelineStartSeconds": 1680.0
+      },
+      "referenceStatus": "gpt_reaudited_reference",
+      "referenceText": "them in the name of the Father, the Son, and the Spirit. Amen. Now, in three weeks, we will begin a new series through the last book of the Bible, Revelation. Before we join Eric for today's message, here's a first look. The last book of the Bible describes the end of evil and the end of the world as we know it. It has fascinated people for centuries, driving fear in some and confusion in others. But the first hearers didn't receive",
+      "sermonId": "post-live-2026-08-23-ZDQwL3K-A44",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-23/sermon_ZDQwL3K-A44/timeline/transition_30s/candidate_1620000_2058658/chunks/timeline_chunk_0003.m4a",
+      "audioSha256": "b9a62b1fed997f66695c2d4b2a7ac9eb671bb91bad57001e6f68330c993e1a0f",
+      "criticalTerms": [
+        "Jesus",
+        "Revelation"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-23-ZDQwL3K-A44_gold_004",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 3,
+        "timelineEndSeconds": 1740.0,
+        "timelineStartSeconds": 1710.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "Receive this message with fear. They received it with comfort, with hope, because at the center of Revelation is Jesus, the one who is with us, the one who keeps his promises, the one who conquers, and the one who will make everything new. Join us for our new teaching series as we study the book of Revelation.",
+      "sermonId": "post-live-2026-08-23-ZDQwL3K-A44",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-23/sermon_ZDQwL3K-A44/timeline/transition_30s/candidate_1620000_2058658/chunks/timeline_chunk_0004.m4a",
+      "audioSha256": "802140a11b1acdcc0053a253e1a356e852fc9e453af0a8bbd59a474f77262701",
+      "criticalTerms": [
+        "Bible",
+        "Church",
+        "Jesus",
+        "Mariners",
+        "Revelation"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-23-ZDQwL3K-A44_gold_005",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 4,
+        "timelineEndSeconds": 1770.0,
+        "timelineStartSeconds": 1740.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "Hey, welcome to Mariners Church. I'm so glad you're with us today. If we haven't met, my name is Eric. I'm the senior pastor here. You just saw the trailer for a teaching series that we launch in three weeks. We're going to study the book of Revelation. This book has fascinated people for centuries. For some people, it's scary, like the sci-fi section of the Bible. For others, it's confusing. But really, it shouldn't be either one of those. The book of Revelation is about comfort and hope because we see that Jesus is in charge of every—",
+      "sermonId": "post-live-2026-08-23-ZDQwL3K-A44",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-23/sermon_ZDQwL3K-A44/timeline/transition_30s/candidate_1620000_2058658/chunks/timeline_chunk_0005.m4a",
+      "audioSha256": "18da45df71e3d9e3dae9481cc338bd739386872558672bf4ca4a22b2d71fd307",
+      "criticalTerms": [
+        "God",
+        "Mariners"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-23-ZDQwL3K-A44_gold_006",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 5,
+        "timelineEndSeconds": 1800.0,
+        "timelineStartSeconds": 1770.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "Everything, and he's controlling how everything is going to end. It's really good news for the people of God. I hope you'll join us for this teaching series that we begin in three weeks. Now, some of you are in Southern California and you join us online, and you've thought about attending one of our congregations. This would be a great weekend to come. I'm inviting you to come to one of our congregations at the beginning of the series, which is the second weekend in September. And for you who are on Mariners Online and our hosted here community, we love you so much, and I know",
+      "sermonId": "post-live-2026-08-23-ZDQwL3K-A44",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-23/sermon_ZDQwL3K-A44/timeline/transition_30s/candidate_1620000_2058658/chunks/timeline_chunk_0006.m4a",
+      "audioSha256": "2e617e3591c1136c04456e594392f105e1161d23f512dee1042c7f3f1e26dfe9",
+      "criticalTerms": [
+        "Revelation"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-23-ZDQwL3K-A44_gold_007",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 6,
+        "timelineEndSeconds": 1830.0,
+        "timelineStartSeconds": 1800.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "That you're going to be encouraged as we study the book of Revelation together. But today, I'm going to continue in our teaching series, When Life Doesn't Make Sense, and we're going to talk about relational pain and strife and betrayal, which is a common reality that we face in this world. When I first moved my family to Nashville, I was the senior vice president at a publishing company, and I'd been there only a couple of months. And there was this guy that I worked alongside who told me, Man, we're in this.",
+      "sermonId": "post-live-2026-08-23-ZDQwL3K-A44",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-23/sermon_ZDQwL3K-A44/timeline/transition_30s/candidate_1620000_2058658/chunks/timeline_chunk_0007.m4a",
+      "audioSha256": "9b0baf0b675f31909667e310f48159d6744fa53c129b07f270bd4c39b7d25c8c",
+      "criticalTerms": [],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-23-ZDQwL3K-A44_gold_008",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 7,
+        "timelineEndSeconds": 1860.0,
+        "timelineStartSeconds": 1830.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "The season you're about to go through, Eric, is going to be challenging with some of the leadership decisions that you have to make. But I got your back. We're in this. I was out at dinner one night with Kay, my wife, and another guy that I had just hired, and I had just moved him to Nashville. So him and his wife were at dinner with Kay and me. My phone rings. I pick it up, and it's because the dinner was ending, and I checked, and it was the guy who told me, I've got your back no matter what. So I step aside from the table, and I say, Hello? Hello?",
+      "sermonId": "post-live-2026-08-23-ZDQwL3K-A44",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-23/sermon_ZDQwL3K-A44/timeline/transition_30s/candidate_1620000_2058658/chunks/timeline_chunk_0008.m4a",
+      "audioSha256": "57ffbbcc431cc7990181d4ad65bec5d15cc4ad57a134ef3ffb1b270ff150eae2",
+      "criticalTerms": [],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-23-ZDQwL3K-A44_gold_009",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 8,
+        "timelineEndSeconds": 1890.0,
+        "timelineStartSeconds": 1860.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "And I can hear talk in the background. I say, Yo, yo, what's up? Ready for the person to start talking, and I realized, I don't even know how this happened, if he said my name and it just dialed me, but he was in a conversation with someone else about me, not talking to me. They didn't even realize that they had called me, and it was so painful. This guy who told me he has my back no matter what, I was hearing him talk poorly about me to someone else, and I was so—",
+      "sermonId": "post-live-2026-08-23-ZDQwL3K-A44",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-23/sermon_ZDQwL3K-A44/timeline/transition_30s/candidate_1620000_2058658/chunks/timeline_chunk_0009.m4a",
+      "audioSha256": "4774fd575a2dadd44306d81b2330848f7eb592802bb423925a3cc581da90e8c8",
+      "criticalTerms": [],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-23-ZDQwL3K-A44_gold_010",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 9,
+        "timelineEndSeconds": 1920.0,
+        "timelineStartSeconds": 1890.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "Just conflicted with, what do I do? Do I yell to try to shake up the convo? Do I keep listening so I know everything? And I just hung up because it got too painful. Some of you know the pain of that kind of betrayal. I've had people tell me that they've had screenshots of texts they've sent sent back to them on accident. Essentially, they can tell that that screenshot was meant to be for some group text or some other one, and they realize that people are talking about me.",
+      "sermonId": "post-live-2026-08-23-ZDQwL3K-A44",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-23/sermon_ZDQwL3K-A44/timeline/transition_30s/candidate_1620000_2058658/chunks/timeline_chunk_0010.m4a",
+      "audioSha256": "ee0e96d97c58fa81738c7d97075255662e912d6b5de32dd59b5721aea7355d9b",
+      "criticalTerms": [],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-23-ZDQwL3K-A44_gold_011",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 10,
+        "timelineEndSeconds": 1950.0,
+        "timelineStartSeconds": 1920.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "And not to me, betrayal. Now, for some of you, you have had far worse kinds of betrayal and relational pain than that. But it's one of the reasons there's so many songs in our culture about the pain of relationships. Taylor Swift and Bad Blood. Did you think we'd be fine? Still got scars on my back from your knife. So don't think it's in the past. These kinds of wounds, they last and they last. The wound of betrayal, she says, it lasts and it lasts. Traitor, Olivia Rodrigo.",
+      "sermonId": "post-live-2026-08-23-ZDQwL3K-A44",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-23/sermon_ZDQwL3K-A44/timeline/transition_30s/candidate_1620000_2058658/chunks/timeline_chunk_0011.m4a",
+      "audioSha256": "977c17dfdef8ed03ac41024eec9f143ae8137a9cb3f782334f8ce0ae15f17acc",
+      "criticalTerms": [],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-23-ZDQwL3K-A44_gold_012",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 11,
+        "timelineEndSeconds": 1980.0,
+        "timelineStartSeconds": 1950.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "Shoot writes or sayings, It took you two weeks to go off and date her. Guess you didn't cheat, but you're still, you're still a traitor, referring to the pain of being betrayed. Kendrick Lamar, in his whacked out Murals, he talks about the pain of even fans turning their back on him and friends. Yesterday somebody whacked out my mural. That energy will make you want to move to Europe, but it's regular for me. Yeah, that's for sure. The love and hate is definitely without a cure. And then he says, I've done lost plenty of friends, and he actually knows the number.",
+      "sermonId": "post-live-2026-08-23-ZDQwL3K-A44",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-23/sermon_ZDQwL3K-A44/timeline/transition_30s/candidate_1620000_2058658/chunks/timeline_chunk_0012.m4a",
+      "audioSha256": "6ce7bc0f03e283e7ef103e7aa23cace234f98081abce5f8fa5ccb99387f59e88",
+      "criticalTerms": [],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-23-ZDQwL3K-A44_gold_013",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 12,
+        "timelineEndSeconds": 2010.0,
+        "timelineStartSeconds": 1980.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "Verse 16, to be specific. There's so many songs about the relational pain that people wrestle with in this life. We're in a teaching series, When Life Doesn't Make Sense, and oftentimes the pain doesn't make sense. What we've been doing, and we're going to do today, is we've been looking at a psalm that addresses a moment when life doesn't make sense, and we've also been looking at the context or the story beneath the psalm. And today we're going to be in Psalm 55 in a couple of moments. It's a psalm that David prays when he",
+      "sermonId": "post-live-2026-08-23-ZDQwL3K-A44",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-23/sermon_ZDQwL3K-A44/timeline/transition_30s/candidate_1620000_2058658/chunks/timeline_chunk_0013.m4a",
+      "audioSha256": "8ea2af203e2f0a670f323e7872ac8bf749e84c13af6c933f43cc7bd096782dff",
+      "criticalTerms": [
+        "God",
+        "grace"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-23-ZDQwL3K-A44_gold_014",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 13,
+        "timelineEndSeconds": 2040.0,
+        "timelineStartSeconds": 2010.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "He's in an intense season of being betrayed. It's really a heartbreaking psalm. This is David. We've been tracking with him over four weeks now. We saw him in his twenties when he was at his best, hiding in caves, and yet people were trying to kill him, and he was praying to God. Then we saw last week, after he became king at age 30, makes an absolute mess of his life, and he then asks God for forgiveness, and God shows up with his mercy and his grace. Now, this is later in David's life, and there's two people.",
+      "sermonId": "post-live-2026-08-23-ZDQwL3K-A44",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-23/sermon_ZDQwL3K-A44/timeline/transition_30s/candidate_1620000_2058658/chunks/timeline_chunk_0014.m4a",
+      "audioSha256": "1acd84cbd1796536041128aa2047a3cc43dc61b039786e6cacefffe322f854af",
+      "criticalTerms": [],
+      "durationSeconds": 18.658,
+      "id": "post-live-2026-08-23-ZDQwL3K-A44_gold_015",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 14,
+        "timelineEndSeconds": 2058.658,
+        "timelineStartSeconds": 2040.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "who have been close to him who are going to betray him. Let me give you the context. It's found in 2 Samuel chapter 15 all the way through 18, and the two people are Ahithophel and Absalom. Now let me explain who these people are. Ahithophel was someone that",
+      "sermonId": "post-live-2026-08-23-ZDQwL3K-A44",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0000.m4a",
+      "audioSha256": "7bd08e2e2099d9b030799ec3053a2cdd074d812011c12e0094e0b38a79333769",
+      "criticalTerms": [
+        "Christ",
+        "God",
+        "Mariners",
+        "Rooted",
+        "communion",
+        "faith"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_001",
+      "referenceProvenance": {
+        "gptReaudit": {
+          "humanListeningCompleted": false,
+          "model": "gpt-transcribe",
+          "requestReceiptSha256": "bb803670b11a320778258bb88db7aa371b39600386c12d19a65aa901111af024",
+          "responseSha256": "ba1db1d2ea4ea12da93757f617fd61fc72ce79ee03d6f72ba3b4a357e16845da"
+        },
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 0,
+        "timelineEndSeconds": 1650.0,
+        "timelineStartSeconds": 1620.0
+      },
+      "referenceStatus": "gpt_reaudited_reference",
+      "referenceText": "From tear down to set up and serving in the youth ministry, I've got to build relationships, find a community, and ultimately strengthen my relationship with Christ. Yeah, at Mariners Saint Communion, I got connected with Rooted. It was really a blessing to be a part of a communion and a fellowship of men who are wanting to grow in their faith and their walk with God. Mariners Saint Communion is where I got baptized. It had been something that I was craving and needing for a long time.",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0002.m4a",
+      "audioSha256": "f4c452ad963052b4ffc293af37d800082b268f090062cbcd5e11bdc8f14d1a32",
+      "criticalTerms": [],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_002",
+      "referenceProvenance": {
+        "gptReaudit": {
+          "humanListeningCompleted": false,
+          "model": "gpt-transcribe",
+          "requestReceiptSha256": "dc5e6acdf7051125f0ce74cf9033ee98182173fd06f898e4b823dda8b0688cde",
+          "responseSha256": "1957c2f9fcbece2790b2bc9bed52b5cc2a05f1bbbea6866c7a4f7ef2b91614e2"
+        },
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 2,
+        "timelineEndSeconds": 1710.0,
+        "timelineStartSeconds": 1680.0
+      },
+      "referenceStatus": "gpt_reaudited_reference",
+      "referenceText": "",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": false
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0003.m4a",
+      "audioSha256": "4c20e7af4d78016daaba194ef143f6001f0cce019c499d132bf7c15b77157b08",
+      "criticalTerms": [
+        "Church",
+        "God",
+        "Jesus",
+        "gospel"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_003",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 3,
+        "timelineEndSeconds": 1740.0,
+        "timelineStartSeconds": 1710.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "When we launch congregations, people thrive and cities thrive. God draws new sons and daughters to Himself. Communities are transformed by His love. The gospel advances. This is our mission as disciples of Jesus, and this is our calling as a church.",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0005.m4a",
+      "audioSha256": "6553563e94df3f4d0660e4a828942a7144ff72a2fc5810a9e74cc7eefabc5071",
+      "criticalTerms": [
+        "Church",
+        "Mariners"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_004",
+      "referenceProvenance": {
+        "gptReaudit": {
+          "humanListeningCompleted": false,
+          "model": "gpt-transcribe",
+          "requestReceiptSha256": "3d220610a3ba5dd0fc66eba0faa35ce6c70dfff9d93c13688cb1ecd27b4ada67",
+          "responseSha256": "c0e7eab7fb29d12405a5153056467f8625dda43922912b164ec6d7b0ad7927ae"
+        },
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 5,
+        "timelineEndSeconds": 1800.0,
+        "timelineStartSeconds": 1770.0
+      },
+      "referenceStatus": "gpt_reaudited_reference",
+      "referenceText": "Where we're launching, and we want to have church with you in your community. We know you love your city. We love your city. We're excited about launching a Mariners congregation right where you are. And so our next two, which we'll have Christmas services, and then in January we'll officially launch as a congregation, Tustin and Fullerton slash La Mirada. So Tustin and then the Fullerton-La Mirada area. We're so excited. We're building a team right now that's going to launch these congregations right...",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0006.m4a",
+      "audioSha256": "e2593a68ac9c8b144115bfb5345afbdab7f876898dfd0f867d2d7e4ebc0ad2a9",
+      "criticalTerms": [
+        "Church",
+        "God",
+        "Mariners"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_005",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 6,
+        "timelineEndSeconds": 1830.0,
+        "timelineStartSeconds": 1800.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "where you are. I want to introduce the lead pastors and their wives to you. This is Aaron Opog and his wife, Krista. They are going to lead Mariners Tustin. And this is Kevin Naylor and his wife, Allie, and they're going to lead Mariners La Mirada slash Fullerton. And so these leaders are amazing. We're so excited. Our church is behind them, and we can't wait to see what God does in these areas. If you live in one of these cities or close to one of these cities, we would love for you to be a part. And so if you'll go to the website that we have.",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0008.m4a",
+      "audioSha256": "026ab9ff25874577e82a4bffc1e488662083e6f0825a2aa8229a850288a8b2dc",
+      "criticalTerms": [],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_006",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 8,
+        "timelineEndSeconds": 1890.0,
+        "timelineStartSeconds": 1860.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "That you'll fill them with wisdom and passion for these cities. I pray that you'll provide just the right leaders that come alongside them for the launch of these new congregations. We can't wait to see what you're going to do. In your name I pray. Amen. Super exciting. I'm so glad that you are a part. Well, we are continuing in our teaching series, When Life Doesn't Make Sense. The Oxford Word of the Year in 2025 was 6-7. No, actually it was—",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0010.m4a",
+      "audioSha256": "3496f2b90f643c167cbe3ccc5094f5b670c0cababe1cd48c37192b68cd5759d9",
+      "criticalTerms": [],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_007",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 10,
+        "timelineEndSeconds": 1950.0,
+        "timelineStartSeconds": 1920.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "Now I want to remind you that you are not the customer of the platform. You are the product, because your eyeballs are then sold to advertisers. And so these platforms know that if they can get you to stay on the platform longer, that makes you a more valuable sell to the real customer. This should make you angry that your eyeballs are exploited with anger and rage bait and rage bait. You perhaps have seen this happen before. You wake up in the morning and you see a video on social media, and it pulls anger to the surface.",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0011.m4a",
+      "audioSha256": "18921b27697dd73865fef36de407529a2467d51a5f112cd9b990a6a8f4437ed1",
+      "criticalTerms": [],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_008",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 11,
+        "timelineEndSeconds": 1980.0,
+        "timelineStartSeconds": 1950.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "Which that then serves you up another video of someone telling you that if you weren't angry enough at the last video, then something's wrong with you. You scroll down to the comments and you see Big Mike 784, Mom's Basement, debating with Fat Joe 77, and they're fighting in the comments about the video, and you go into your breakfast filled with rage and anger. This is rage bait. Now, the problem with rage bait is it causes people to be filled with anger.",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0013.m4a",
+      "audioSha256": "8408c7921f0e038252ab8a4a4382a6f19cebaccf4383362e83c20caa77d25c9f",
+      "criticalTerms": [],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_009",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 13,
+        "timelineEndSeconds": 2040.0,
+        "timelineStartSeconds": 2010.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "There are some things that should anger us. Injustices in the world, when people are mistreated, you can be angered when you have been mistreated. Or perhaps sometimes you are angered just by the brokenness of this world. Sometimes when we are angry, the source is really clear. We know it's this person who's wronged us or wronged someone else. But sometimes the source of our anger isn't really clear because it's just the reality of living in a",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0015.m4a",
+      "audioSha256": "46e88c1b05d4c8745e193d06aed3c7854b64ec492d07d7b09d0e6ec52c0c1580",
+      "criticalTerms": [],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_010",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 15,
+        "timelineEndSeconds": 2100.0,
+        "timelineStartSeconds": 2070.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "the other way, but now it's really impacting you and you're filled with anger. I remember when my dad, several years ago before he passed away, was diagnosed with ALS, I at first was in denial. My dad was the strongest person I knew, and I thought surely he's going to find a way to beat this or to at least delay this. I was in denial a bit. And then when my parents would come out to visit and I saw my father's body deteriorating and he had to be pushed around.",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0016.m4a",
+      "audioSha256": "f59af83704db45eb5c0fd27dd1406521658b5446b7d6b8cd38e2059e5ce28601",
+      "criticalTerms": [],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_011",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 16,
+        "timelineEndSeconds": 2130.0,
+        "timelineStartSeconds": 2100.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "In a wheelchair, and he would spend his visits, and he loved when I would take him to different places in Southern California and push him around. And I'm really thankful for that time. When I look at these pictures, I'm thankful for the great time with my father and the great conversations we had. But I'm also filled with anger of the cruelty of a disease like ALS, the cruelty of that disease that just brings havoc into this world. So there is an anger that's unlike rage bait. There is an anger that is righteous. But how do we",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0018.m4a",
+      "audioSha256": "d7bba2216c68983f298385d0f41371ebc74dd6433151c55661bc9a09e30fc71c",
+      "criticalTerms": [
+        "Christian"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_012",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 18,
+        "timelineEndSeconds": 2190.0,
+        "timelineStartSeconds": 2160.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "If you don't let your anger out, if you just push it down and try to get rid of your anger, because you don't want to lose your temper, because if you lose your temper, you'll lose your credibility at work or you'll lose your credibility with other people. So just push it down. But the articles, the scholarly articles say that suppression of anger actually can bring about cardiovascular damage, can damage relationships and your emotional health. That burying your anger isn't really best. David Powlison was a Christian counselor, and he said that.",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0019.m4a",
+      "audioSha256": "7be1f8375949997dd09ceff8e9a3b22dde38bd5daf2fa5162432a4449ab70841",
+      "criticalTerms": [],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_013",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 19,
+        "timelineEndSeconds": 2220.0,
+        "timelineStartSeconds": 2190.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "Buried anger is rarely dead anger. So what do we do with our anger? Suppressing it doesn't work. It's not helpful. And so some then perhaps thought, well, let me express anger. Let me just get it out. I grew up being told that if you want, don't suppress it. That's bad for you. You'll implode. And so express it. Maybe you had that advice. You know, be Mike Tyson against some pillows and just let it out. But actually, recent research says that the more we express our anger, we actually become more",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0021.m4a",
+      "audioSha256": "0ee78a8a98f2988f649e8559d5250561dfecb270eeaa87e79e0ed5069d851fcb",
+      "criticalTerms": [],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_014",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 21,
+        "timelineEndSeconds": 2280.0,
+        "timelineStartSeconds": 2250.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "First group, they were told as they punched a bag to think of the person who critiqued them. The second group was told to punch a bag, but they were not given the prompt to think of the person who critiqued them. And the third group, they were not given any prompts or any punching bags. Of the three groups, which of these three groups do you think reported escalated anger? You already know the answer. It was the group that was thinking about",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0023.m4a",
+      "audioSha256": "79a1491a9d1907c7021bd9cb7a7dd19ee210feffb6ed3ab878be3345ea3f3ff1",
+      "criticalTerms": [],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_015",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 23,
+        "timelineEndSeconds": 2340.0,
+        "timelineStartSeconds": 2310.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "Friend was validating my feelings, like, Yeah. Oh yeah. And, Oh yeah? Well, what about this? And I would just—the more I shared, it felt cathartic for a little bit. But at the end of the evening, my anger was actually greater. Every part of the conversation was throwing more wood on the fire of my own anger. So suppression of your anger isn't healthy or helpful, but expression of your anger isn't either. What do we do with our anger?",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0024.m4a",
+      "audioSha256": "40869e24271585ccd0843952a5fc82fe95a3ec8e14be18b7d926e44a93a253e1",
+      "criticalTerms": [],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_016",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 24,
+        "timelineEndSeconds": 2370.0,
+        "timelineStartSeconds": 2340.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "We're going to look at a psalm today that is really instructive, a psalm that is mixed anger and grief together, and there's a lot to learn in this psalm. It's actually a psalm that is rarely taught because the end of the psalm presents a theological question. So some people wrestle with this psalm, and so perhaps you've never heard this psalm taught, but there's actually some great wisdom for us to look at in this psalm. So Psalm 137, this is God's word.",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0026.m4a",
+      "audioSha256": "125f2bd351b1efca689aad3fa69af74cdee49c3cf12c3b9d3c0d18ca3a0365a3",
+      "criticalTerms": [
+        "God"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_017",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 26,
+        "timelineEndSeconds": 2430.0,
+        "timelineStartSeconds": 2400.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "When God's people remembered Zion, Zion is Jerusalem. And so we know from the context of the psalm exactly what has taken place. God's people have been dragged away into Babylonian captivity, so they sit by the rivers of Babylon. The reason they're dragged away into Babylonian captivity is God had told his people when he brought them into the promised land after he had rescued them from Egyptian slavery, that if you worship me, you'll enjoy this land. But if you worship other little g gods, I'm going to remove you from",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0027.m4a",
+      "audioSha256": "da5314af07630f9229961d7e0e855720a23f8bd69960cd3be468593c1c5e052c",
+      "criticalTerms": [
+        "God"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_018",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 27,
+        "timelineEndSeconds": 2460.0,
+        "timelineStartSeconds": 2430.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "This land. And they continually worshipped things other than God. So God removed them from the land. This is what he did. The twelve tribes of Israel were divided into two kingdoms: the northern kingdom. The Assyrians came in and attacked them and dragged them away. The southern kingdom, which included Zion and Jerusalem, the Babylonians went in and attacked them. And the Babylonians were ruthless. They burned down homes. They destroyed the temple. They grabbed the leaders of Jerusalem and they executed them publicly.",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0029.m4a",
+      "audioSha256": "0e9d8c18a44ffcc9b4963e36aaadc4a77daaee8da097ab152dcf00a830eb38ec",
+      "criticalTerms": [
+        "God"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_019",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 29,
+        "timelineEndSeconds": 2520.0,
+        "timelineStartSeconds": 2490.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "And so the writer of this psalm is one of the people who's dragged away. He's by the rivers of Babylon, and he sat down and he wept. He wept. And the weeping surely had some internal disappointment, frustration with himself and his people that we had abandoned God. God kept his promise. And so the weeping was some self-reflection of, I have fallen, we've fallen.",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0031.m4a",
+      "audioSha256": "7193da246d83d866143bde88b7c850f0e388653650b4cbd0666c7c950e881c81",
+      "criticalTerms": [
+        "Mariners"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_020",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 31,
+        "timelineEndSeconds": 2580.0,
+        "timelineStartSeconds": 2550.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "Now, I don't want to sing. I'm filled with grief and anger. There's a song that we sometimes sing here at Mariners that the chorus goes, You're never gonna let me down, you're never gonna let me down. And there's times where I have struggled to sing that chorus because I've been in a moment that's really painful, and it feels as if God's letting me down. Now, I've tried to sing, and I've sung in a way of—",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0032.m4a",
+      "audioSha256": "c89bb66202f462ec78164c6f3a2ef6ec3fbab747ac1edb8a30de085426bec2b3",
+      "criticalTerms": [
+        "God"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_021",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 32,
+        "timelineEndSeconds": 2610.0,
+        "timelineStartSeconds": 2580.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "God, help me to remember this is true. That even though it feels like in this moment, things are not what they should be, that in the big whole picture, you've got me. That in the big whole picture, you're doing a beautiful work. But it feels like right now, God, I'm struggling to sing, You're never gonna let me down, because I feel right now let down. That's this moment. Angered with everything that's happening, filled with grief, we're hanging up our liars. We're not playing an instrument right now.",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0034.m4a",
+      "audioSha256": "41e2062ac86ba99d5473cef5a99fb48e8975b7d74d4c627e236d17a1804a596f",
+      "criticalTerms": [],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_022",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 34,
+        "timelineEndSeconds": 2670.0,
+        "timelineStartSeconds": 2640.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "It's as if evil is winning. There is anger here. Let's keep reading in the psalm. How can we sing the Lord's song on foreign soil? So they're now in Babylon. I sat down by the waters of Babylon. How can I sing what I used to sing in the temple? How can I sing it here? If I forget you, Jerusalem, may my right hand forget its skill. May my tongue stick to the roof of my mouth if I do not remember you, if I do not exalt Jerusalem as my greatest joy. This is God's word. He's...",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0036.m4a",
+      "audioSha256": "f05cd743586f075594b3dd6272ab28d492005f1ccba8aa1df784f891980ac348",
+      "criticalTerms": [],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_023",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 36,
+        "timelineEndSeconds": 2730.0,
+        "timelineStartSeconds": 2700.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "They are in Babylon, and they're saying, I am struggling so much. I pledge my loyalty to Jerusalem even though I'm in Babylon. And he says, If I forget you, Jerusalem, may my right hand forget its skill, meaning I shouldn't be able to even play my instrument and my tongue stick to the roof of my mouth, that I won't be able to sing. If I don't praise you, I don't want to sing at all, is what he's saying. Okay, now, the end of the psalm is a—",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0037.m4a",
+      "audioSha256": "fa0756c689fbf47bdf398d1e7a44e5c9905fc479b8a17ad76561f5cea61234f5",
+      "criticalTerms": [
+        "God",
+        "Scripture"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_024",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 37,
+        "timelineEndSeconds": 2760.0,
+        "timelineStartSeconds": 2730.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "A challenging read. In fact, some atheists will use these texts to say to Christians, What is this? What is this that you believe about your God? But I have committed to not shield you from the challenging passages of Scripture, but to help you see them, to explain them to you. So let's see the end of the psalm. Remember, Lord, what the Edomites said that day. So he's referring to the day when they were dragged away into captivity. Remember, Lord, what the Edomites said that day at Jerusalem.",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0039.m4a",
+      "audioSha256": "0366ee4984bd1f83e41d517561d7e61d84ed15a5d3a5dd99206ef57c132d3f20",
+      "criticalTerms": [],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_025",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 39,
+        "timelineEndSeconds": 2820.0,
+        "timelineStartSeconds": 2790.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "The Edomites, they should have defended Jerusalem, Israel, as Israel was being attacked. Let me show you on an ancient map. Edom is just south of Israel. Edom came from Esau. Israel came from Jacob. If you remember way back in the Old Testament, Jacob had 12 sons. That became the 12 tribes of Israel. But Jacob had a brother named Esau, and so they're kind of, they're related. These people groups are related, and Israel thought—",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0040.m4a",
+      "audioSha256": "bdf19306bba686a372b429260efa9d353566ecd9f3142f8d25532ad2326c53a9",
+      "criticalTerms": [],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_026",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 40,
+        "timelineEndSeconds": 2850.0,
+        "timelineStartSeconds": 2820.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "That when Babylon comes and attacks, that Edom will perhaps defend Babylon, but defend Israel against Babylon. But that's not what Edom does. Look at the text. Edom actually says, Destroy it down to its foundations. And then there is Babylon. And I've already shared what Babylon did when Babylon moved into Israel and dragged people away, that they tried to destroy an entire generation. It was ancient warfare, and it was disgusting.",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0042.m4a",
+      "audioSha256": "f5b30159862eb8d36a66ac5e24da5515f3daef7564bd5edb11fa385c3feb2f17",
+      "criticalTerms": [
+        "Scripture"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_027",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 42,
+        "timelineEndSeconds": 2910.0,
+        "timelineStartSeconds": 2880.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "I'm not saying this softens the intensity of this verse, but it would be right if the people who did this to us, if they had the same level of judgment and justice and wrath poured out on them, is what he's saying. Now, what he's not saying, the reason this is actually, I believe, a helpful passage in the Scripture, the psalmist is not saying, I'm going to go to Edom and I'm going to bring this.",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0044.m4a",
+      "audioSha256": "f26fbfd7edc1fc1f98f20e29432d5adf277ccb2167c3914ef354254792ad2854",
+      "criticalTerms": [
+        "God"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_028",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 44,
+        "timelineEndSeconds": 2970.0,
+        "timelineStartSeconds": 2940.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "In Babylon, just expressing his anger to everyone. No, he's addressing his anger by remembering God and trusting that God's going to be the one who brings vengeance. I trust God that some kind of way you're going to make things right. He's not saying he's going to make things right. He's saying, God, will you remember and will you make things right? That's the intensity of the prayer. Will you cause these people to have wrath?",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0045.m4a",
+      "audioSha256": "37190b58a0195fd0db216fb9ce857be4e64d5a27981427c588da0ce526abe24c",
+      "criticalTerms": [
+        "God"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_029",
+      "referenceProvenance": {
+        "gptReaudit": {
+          "humanListeningCompleted": false,
+          "model": "gpt-transcribe",
+          "requestReceiptSha256": "915e53556d2fd37f0b3c38c68eb0937efdb74631c15f9f6cd3291360271d8157",
+          "responseSha256": "be829c45e2170203fbd7bff024ff7bc98380af239bb5c6ce0dbea2216cbc9c73"
+        },
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 45,
+        "timelineEndSeconds": 3000.0,
+        "timelineStartSeconds": 2970.0
+      },
+      "referenceStatus": "gpt_reaudited_reference",
+      "referenceText": "Wrath and judgment because of the evil, the injustice that they've done. Will you please remember your people, God, is what he's praying. We, the modern reader, struggle with divine vengeance. We struggle with a prayer like this: God, bring vengeance. I'm not taking vengeance into my hands. I'm not the one who's doing this, but I'm asking you to bring vengeance. The modern reader struggles with this. Miroslav Volf is a professor at Yale, and he says that if you struggle",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0047.m4a",
+      "audioSha256": "cdb2e6d0dd645083b656c3da0f2d561f48e698bdaaa3bcd059725e391e0db7b1",
+      "criticalTerms": [
+        "God"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_030",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 47,
+        "timelineEndSeconds": 3060.0,
+        "timelineStartSeconds": 3030.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "Horrific injustices. Miroslav Volf says, You need to know, you need, you long for God to be a God of justice, because if he's not, then you're tempted to take the sword up yourself. The only way that you won't express anger in an unrighteous way is if you believe that God one day is going to settle the score, that God one day is going to make everything right and new. So how do you address your anger?",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0048.m4a",
+      "audioSha256": "d49048deb8c152c3d775d502d8eb14ed243db1fe536e57e2d4ec62a46ec77dd6",
+      "criticalTerms": [],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_031",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 48,
+        "timelineEndSeconds": 3090.0,
+        "timelineStartSeconds": 3060.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "What do you do with your anger? You don't suppress it. You don't express it. What do we learn from this psalm? This psalm is intense, but realize that the psalmist is saying, I'm not the one who's making it right. I'm not the one who's settling the score. Here's what you learn. Because you're going to have anger at being mistreated, you're going to have anger just with a broken and fallen world. Don't suppress or express your anger. Address your anger. Don't suppress it. Just don't express it.",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0050.m4a",
+      "audioSha256": "3b8e981dbd620e222983ad6d6188080df21b208ce26a8136ced739838224ac62",
+      "criticalTerms": [
+        "God"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_032",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 50,
+        "timelineEndSeconds": 3150.0,
+        "timelineStartSeconds": 3120.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "Call the police. I'm not saying that doesn't mean to put safe boundaries around yourself. You should be wise when it comes to boundaries, and we should be people who allow the system that God has placed in our country to do the work of justice when it can. But it does mean that you are not carrying around with you the burden and the pressure that you have to watch over everything to be sure that that person pays. No, no. You release to God. Remember.",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0052.m4a",
+      "audioSha256": "cbacfafe3f9eaa7cc5afb4fd9c1b4ba871a4368dcf0a623d590ee813fdd3902a",
+      "criticalTerms": [
+        "Bible",
+        "Revelation",
+        "Scripture"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_033",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 52,
+        "timelineEndSeconds": 3210.0,
+        "timelineStartSeconds": 3180.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "Babylon fell. Babylon fell. Babylon didn't last. Babylon is gone. It fell. But here's what's interesting when you study the whole scripture. We're actually going to see this in coming weeks as we study the book of Revelation. Babylon in the Bible is a place, but it's also a pattern. It's a place. It's a real place. It's a real place right here where God's people were dragged away into Babylonian captivity. But it's also a pattern. It's a pattern in Scripture of the evil of this world.",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0053.m4a",
+      "audioSha256": "fad5443a776ea1e760456e842fc93c3624ca4987efefca524523186f72b57f61",
+      "criticalTerms": [
+        "God",
+        "Revelation"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_034",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 53,
+        "timelineEndSeconds": 3240.0,
+        "timelineStartSeconds": 3210.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "That is a rebellion against God, and the evil of this world brings pain to us and can cause us to have anger. And oftentimes that anger is a righteous anger. And we ask, like people in Revelation ask, How long, O Lord, will this last? How long will it seem that Babylon is victorious? The psalmist right here in Psalm 137 is asking, How long? The psalmist in the Psalms multiple times, How long, O Lord? How long is this world going to be crooked and bent out of shape? How long is it going to seem like evil wins?",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0055.m4a",
+      "audioSha256": "50d665dd7a82e2953cbba9c37dccb0b517a6f5eb9d9ca36ca1d803b4cfab2a42",
+      "criticalTerms": [
+        "Jesus",
+        "Revelation"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_035",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 55,
+        "timelineEndSeconds": 3300.0,
+        "timelineStartSeconds": 3270.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "Coming for you. One day, Babylon, the pattern is fully gone as Jesus, the resurrected Savior, the conquering King, is going to make everything right and new. I'm so excited to study the book of Revelation with you. We begin studying together in two weeks. But the best example you can look to of how do I not suppress my anger and just chaotically express it, but how do I address it? The best example for you to look at is what",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0056.m4a",
+      "audioSha256": "6203829b93eb3a79337aa71b79ef796ab2bd1bc8a6eb1e02b7365234c48621e2",
+      "criticalTerms": [
+        "Christ",
+        "God",
+        "Jesus"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_036",
+      "referenceProvenance": {
+        "gptReaudit": {
+          "humanListeningCompleted": false,
+          "model": "gpt-transcribe",
+          "requestReceiptSha256": "ec40b4514d8618075479b1ba8de626833fe33913252735d6d24d89b52da2e980",
+          "responseSha256": "a9c2bea2978e329a1f72a70da6fc7f848b2cddff28c208e3d68e287d247b0336"
+        },
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 56,
+        "timelineEndSeconds": 3330.0,
+        "timelineStartSeconds": 3300.0
+      },
+      "referenceStatus": "gpt_reaudited_reference",
+      "referenceText": "How God the Father sent God the Son, Jesus the Christ, here for you. It's the best example. See, God, because he's holy, has righteous anger against sin. Because sin dishonors him and evil hurts people, image bearers, people he created in his image. He's angered at sin. He's angered at injustices. God hates sin, but he loves people. So what did God do to address his anger?",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0058.m4a",
+      "audioSha256": "9964d09bf4679006ed0a78add1af37468639fe6c83eb983cd0d21271c1614e84",
+      "criticalTerms": [
+        "Church",
+        "God",
+        "Jesus"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_037",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 58,
+        "timelineEndSeconds": 3390.0,
+        "timelineStartSeconds": 3360.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "There would be no more holy anger to be poured out on us. Jesus suffered the full price for our sin, so we don't suffer at all. Jesus paid for our sin in full. He absorbed in his flesh the holy anger, the righteous anger of God, so there's no more anger left for you. This is God addressing anger in a way that blesses you, because you then become his son and his daughter. Augustine, the early church.",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0060.m4a",
+      "audioSha256": "380eeda9c8770d16600075285dd41cc504e6a613ec8a470f5c082e784ae21ad9",
+      "criticalTerms": [
+        "Jesus"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_038",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 60,
+        "timelineEndSeconds": 3450.0,
+        "timelineStartSeconds": 3420.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "Addressing, not suppressing or just expressing, but addressing the heart of anger. And because Jesus has made you his, you don't have to live with the pressure of settling the score. You can know that he says, Vengeance is mine, that it's not on you to settle the score and make everything right. That the same one who entered this world to die on the cross to remove all your sin and your shame is the same one who one day is going to return and make everything right and new.",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0061.m4a",
+      "audioSha256": "983ba1c14aa047baeaedb7fed08127afbe5637d6447317f6751983bdbe815b1f",
+      "criticalTerms": [
+        "God",
+        "Jesus"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_039",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 61,
+        "timelineEndSeconds": 3480.0,
+        "timelineStartSeconds": 3450.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "So don't suppress, don't chaotically express, but address by constantly releasing ownership of vengeance to Him, by constantly entrusting to Him that you know He's the one who's going to make everything right, that you ask Him to remember you. So you have anger, bring your anger to Him. God, remember me, and God, I release to You that You're the one who's going to make everything right and new. Lord Jesus.",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0063.m4a",
+      "audioSha256": "052b50d5f92087acb7d11c7f5267f0407838aab03aedb1596080bb50e583fe34",
+      "criticalTerms": [],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_040",
+      "referenceProvenance": {
+        "gptReaudit": {
+          "humanListeningCompleted": false,
+          "model": "gpt-transcribe",
+          "requestReceiptSha256": "b9e93937325e05aa0bd88f9f3630eac1ec1679c115416b5295c466bde4caf124",
+          "responseSha256": "9c544d3397239ad2bb94347bd500e7308520b7891448a01dc4aea2beb844361e"
+        },
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 63,
+        "timelineEndSeconds": 3540.0,
+        "timelineStartSeconds": 3510.0
+      },
+      "referenceStatus": "gpt_reaudited_reference",
+      "referenceText": "Upon a hill, a perfect Savior. Upon that day, the greatest love. The punishment that should have fallen on us.",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0065.m4a",
+      "audioSha256": "e39712bd60285a0315ed1da873ef3ce765586a88c577e4f40d0c4d78bbf74ab9",
+      "criticalTerms": [
+        "Christ"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_041",
+      "referenceProvenance": {
+        "gptReaudit": {
+          "humanListeningCompleted": false,
+          "model": "gpt-transcribe",
+          "requestReceiptSha256": "738613d9c9ac4083b23edddbe5c038ae9ab51a3b4a014d42e991a418838f045f",
+          "responseSha256": "31a985ab04da50d396d1e29fe98e4f611354d42651bbf04c0df8a92a8c0be0e9"
+        },
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 65,
+        "timelineEndSeconds": 3600.0,
+        "timelineStartSeconds": 3570.0
+      },
+      "referenceStatus": "gpt_reaudited_reference",
+      "referenceText": "Christ has died, we are forgiven, and Christ alive. We are the risen, and He shall come again. Praise the King, praise the King. On our hearts, His name is written.",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0066.m4a",
+      "audioSha256": "d022c8b4465ee4073de91c2b65313dcbddf0daf545441f224ea29c3e4a0f9af2",
+      "criticalTerms": [
+        "Christ"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_042",
+      "referenceProvenance": {
+        "gptReaudit": {
+          "humanListeningCompleted": false,
+          "model": "gpt-transcribe",
+          "requestReceiptSha256": "c471afdf7e3ee5b6788bb007d664f4ad9fd8f38b49f916ba7bbb6b6f2bab16ed",
+          "responseSha256": "97c9508ddde1eaf883e796626782df3a5c718a3c36288c97c9f844be4f3b28d1"
+        },
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 66,
+        "timelineEndSeconds": 3630.0,
+        "timelineStartSeconds": 3600.0
+      },
+      "referenceStatus": "gpt_reaudited_reference",
+      "referenceText": "The King of kings and Lord of lords, we're pouring out a song of praise together upon Him, upon Him. Christ has died, Christ has died. We are forgiven and now alive. We...",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0068.m4a",
+      "audioSha256": "478fb6072bb438067ca645e4ee3425e4fe0178a46c3c4ef15b90244f0906c104",
+      "criticalTerms": [
+        "Jesus"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_043",
+      "referenceProvenance": {
+        "gptReaudit": {
+          "humanListeningCompleted": false,
+          "model": "gpt-transcribe",
+          "requestReceiptSha256": "80a8181bb53fd6da050c7ce42bd753e53a42eb4d317a1e274b15892e4f0ed1dd",
+          "responseSha256": "4d97da79a2e5ae4018af8908ce4997fe24e86bba28a025f018c3e0ba21c1242b"
+        },
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 68,
+        "timelineEndSeconds": 3690.0,
+        "timelineStartSeconds": 3660.0
+      },
+      "referenceStatus": "gpt_reaudited_reference",
+      "referenceText": "Praise the King, praise the King, one name upon all names, Jesus. No greater name than this, Jesus. Every knee will bow, every heart confess, Jesus, Jesus.",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0069.m4a",
+      "audioSha256": "8b663e6fbb3781fc0a8c3969f08d0385f4ecade212e368f93d2c178bab43df3f",
+      "criticalTerms": [
+        "Christ",
+        "Jesus"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_044",
+      "referenceProvenance": {
+        "gptReaudit": {
+          "humanListeningCompleted": false,
+          "model": "gpt-transcribe",
+          "requestReceiptSha256": "304533143074950d4834680c44b257aea6fe7c583f563550850c034aff3605ec",
+          "responseSha256": "823883d93ae3c6dbda0eb18909c3e8b882b2fedfbf815faebc1a33f281e14083"
+        },
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 69,
+        "timelineEndSeconds": 3720.0,
+        "timelineStartSeconds": 3690.0
+      },
+      "referenceStatus": "gpt_reaudited_reference",
+      "referenceText": "What name above all names? Jesus. You’re the name above all names. Every heart confesses, Jesus, Jesus. Christ has done.",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    },
+    {
+      "audioPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/candidate_1620000_3780000/chunks/timeline_chunk_0071.m4a",
+      "audioSha256": "72a1eeb7e5cc61e6aa98ef645c1477dcae861afc33c07df552a801fed480f93d",
+      "criticalTerms": [
+        "Christ"
+      ],
+      "durationSeconds": 30.0,
+      "id": "post-live-2026-08-30--BeFX5G2oAw_gold_045",
+      "referenceProvenance": {
+        "humanGoldClaimed": false,
+        "model": "gpt-transcribe",
+        "timelineChunkId": 71,
+        "timelineEndSeconds": 3780.0,
+        "timelineStartSeconds": 3750.0
+      },
+      "referenceStatus": "model_reviewed_reference",
+      "referenceText": "We are the risen, and He shall come again. Praise the King, praise the King. Christ has died. We are forgiven, and Christ alive. We are the risen, and He shall come.",
+      "sermonId": "post-live-2026-08-30--BeFX5G2oAw",
+      "speechExpected": true
+    }
+  ],
+  "purpose": "quality_scoring_after_targeted_independent_gpt_transcribe_reaudit",
+  "referencePolicy": "mixed_model_reviewed_and_gpt_reaudited_reference_not_human_gold",
+  "schemaVersion": "local-asr-audio-manifest-v1",
+  "sourceReceipts": [
+    {
+      "sourceGroupId": "post-live-2026-08-23-ZDQwL3K-A44",
+      "timelineChunksPath": "artifacts/post-live-runs/2026-08-23/sermon_ZDQwL3K-A44/timeline/transition_30s/timeline_chunks.json",
+      "timelineChunksSha256": "6961c33855432954ea368f0cf1e0b4d8047b75a28ca52516203bd33e749d6777",
+      "timelineReportPath": "artifacts/post-live-runs/2026-08-23/sermon_ZDQwL3K-A44/timeline/report.json",
+      "timelineReportSha256": "17dd1516c04071ad50655d62564bbc65c4de9c06ec0565e4f9ae24cdd67552b7",
+      "transcriptionModel": "gpt-transcribe"
+    },
+    {
+      "sourceGroupId": "post-live-2026-08-30--BeFX5G2oAw",
+      "timelineChunksPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/transition_30s/timeline_chunks.json",
+      "timelineChunksSha256": "ff3f923fa1958acf8cb7c5b485f8c186cc62c335bfe941a093dd18ae4bd880e7",
+      "timelineReportPath": "artifacts/post-live-runs/2026-08-30/sermon_-BeFX5G2oAw/timeline/report.json",
+      "timelineReportSha256": "dc70fe23f6705416c85bd2820e6fceaa7d254503f4661ea8126dda264cde963b",
+      "transcriptionModel": "gpt-transcribe"
+    }
+  ],
+  "translationUntouchedTestIncluded": false
+}

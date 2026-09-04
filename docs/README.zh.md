@@ -22,10 +22,11 @@
 | 证道实时翻译 Benchmark / A-B Test | 暂无独立英文版 | [live-sermon-translation-benchmark.zh.md](./live-sermon-translation-benchmark.zh.md) |
 | MacBook Pro M1 Max 64 GB 主硬件 Profile | 暂无独立英文版 | [macbook-m1-max-64gb-profile.json](../data/benchmarks/live-sermon-translation-v1/macbook-m1-max-64gb-profile.json) |
 | MacBook Ollama / MLX 翻译 Benchmark V1 | 暂无独立英文版 | [macbook-sermon-translation-benchmark.zh.md](./macbook-sermon-translation-benchmark.zh.md) |
+| MacBook 本地英文 ASR Benchmark V1 | 暂无独立英文版 | [local-asr-benchmark.zh.md](./local-asr-benchmark.zh.md) |
 | MacBook Translation-only 主榜（2026-09-03） | 暂无独立英文版 | [translation-only-leaderboard-20260903.md](../data/benchmarks/live-sermon-translation-v1/runs/macbook-text-baselines/translation-only-leaderboard-20260903.md) |
 | Hy-MT2-1.8B MacBook Ollama Benchmark | 暂无独立英文版 | [report.md](../data/benchmarks/live-sermon-translation-v1/runs/macbook-text-baselines/hymt2-1.8b-q8-ollama-full-20260903/report.md) |
 | MiLMMT-46-4B-v1.0 MacBook Ollama Benchmark | 暂无独立英文版 | [report.md](../data/benchmarks/live-sermon-translation-v1/runs/macbook-text-baselines/milmmt-46-4b-v1-q8-ollama-full-20260903/report.md) |
-| MiLMMT-46-4B 后训练、数据模板与 MLX/量化优化计划 | 暂无独立英文版 | [milmmt-sermon-post-training-plan.zh.md](./milmmt-sermon-post-training-plan.zh.md) |
+| MiLMMT-46-4B MacBook 运行时选择与后训练计划 | 暂无独立英文版 | [milmmt-sermon-post-training-plan.zh.md](./milmmt-sermon-post-training-plan.zh.md) |
 | Qwen3.5-4B-Base BF16 MacBook Ollama Benchmark | 暂无独立英文版 | [report.md](../data/benchmarks/live-sermon-translation-v1/runs/macbook-text-baselines/qwen35-4b-base-bf16-ollama-full-20260903/report.md) |
 | Qwen3.5-9B-Base BF16 MacBook Ollama Benchmark | 暂无独立英文版 | [report.md](../data/benchmarks/live-sermon-translation-v1/runs/macbook-text-baselines/qwen35-9b-base-bf16-ollama-full-20260903/report.md) |
 | A0 Base 模型 Baseline（生成与速度） | 暂无独立英文版 | [baseline-report.md](../data/benchmarks/live-sermon-translation-v1/runs/a0-baseline/baseline-report.md) |

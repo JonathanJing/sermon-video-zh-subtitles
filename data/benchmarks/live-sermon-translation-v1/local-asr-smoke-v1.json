@@ -1,0 +1,188 @@
+{
+  "schemaVersion": "local-asr-audio-manifest-v1",
+  "datasetId": "BENCH-LIVE-ST-ASR-SMOKE-V1",
+  "purpose": "engineering_smoke_only_not_quality_selection",
+  "referencePolicy": "non_human_caption_reference_excluded",
+  "items": [
+    {
+      "id": "8u9B8u_5ISI_seg_0002",
+      "sermonId": "8u9B8u_5ISI",
+      "audioPath": "data/benchmarks/live-sermon-translation-v1/work/8u9B8u_5ISI/profiles/ea33dcbccaea7a4e5f58b30f8f7c2c8398216e48d10fd30f23047d9ac56a7f98/clips/8u9B8u_5ISI_seg_0002.mp3",
+      "audioSha256": "99f24dfe5b3bb7ebdc0e852d1e5572ccb3c97246a4f390d3adcdb30d3f8674ad",
+      "durationSeconds": 53.651,
+      "referenceStatus": "not_human_gold",
+      "speechExpected": true
+    },
+    {
+      "id": "8u9B8u_5ISI_seg_0003",
+      "sermonId": "8u9B8u_5ISI",
+      "audioPath": "data/benchmarks/live-sermon-translation-v1/work/8u9B8u_5ISI/profiles/ea33dcbccaea7a4e5f58b30f8f7c2c8398216e48d10fd30f23047d9ac56a7f98/clips/8u9B8u_5ISI_seg_0003.mp3",
+      "audioSha256": "5b4667da34ab8dec577b587ced8066eb000564d7c0f1e6e97fd073a2438fb212",
+      "durationSeconds": 51.890,
+      "referenceStatus": "not_human_gold",
+      "speechExpected": true
+    },
+    {
+      "id": "8u9B8u_5ISI_seg_0004",
+      "sermonId": "8u9B8u_5ISI",
+      "audioPath": "data/benchmarks/live-sermon-translation-v1/work/8u9B8u_5ISI/profiles/ea33dcbccaea7a4e5f58b30f8f7c2c8398216e48d10fd30f23047d9ac56a7f98/clips/8u9B8u_5ISI_seg_0004.mp3",
+      "audioSha256": "2351c7436ccc30e48bbb08ecc99e41779583f5a77a43ad1cef0995a4cde6fb1a",
+      "durationSeconds": 50.369,
+      "referenceStatus": "not_human_gold",
+      "speechExpected": true
+    },
+    {
+      "id": "8u9B8u_5ISI_seg_0005",
+      "sermonId": "8u9B8u_5ISI",
+      "audioPath": "data/benchmarks/live-sermon-translation-v1/work/8u9B8u_5ISI/profiles/ea33dcbccaea7a4e5f58b30f8f7c2c8398216e48d10fd30f23047d9ac56a7f98/clips/8u9B8u_5ISI_seg_0005.mp3",
+      "audioSha256": "43ca82ec54407744705f85207b42104c6c921ae7830bde1aeab9e58cbfa7eb95",
+      "durationSeconds": 46.051,
+      "referenceStatus": "not_human_gold",
+      "speechExpected": true
+    },
+    {
+      "id": "hAWaaBVaMzY_seg_0005",
+      "sermonId": "hAWaaBVaMzY",
+      "audioPath": "data/benchmarks/live-sermon-translation-v1/work/hAWaaBVaMzY/profiles/3eb2db2e7b9bcfb17c55ef947c5749056cdd60189b19f9712a0f686c27ac4014/clips/hAWaaBVaMzY_seg_0005.mp3",
+      "audioSha256": "19f421549b12988fd556c55e806c502a72047ae8e892ab1f5c1b464b9e60caaf",
+      "durationSeconds": 55.329,
+      "referenceStatus": "not_human_gold",
+      "speechExpected": true
+    },
+    {
+      "id": "hAWaaBVaMzY_seg_0015",
+      "sermonId": "hAWaaBVaMzY",
+      "audioPath": "data/benchmarks/live-sermon-translation-v1/work/hAWaaBVaMzY/profiles/3eb2db2e7b9bcfb17c55ef947c5749056cdd60189b19f9712a0f686c27ac4014/clips/hAWaaBVaMzY_seg_0015.mp3",
+      "audioSha256": "f95541d66678b4248bfe7d0eb83d4c97927128ec17d91a1083effc6185f4f8cc",
+      "durationSeconds": 36.370,
+      "referenceStatus": "not_human_gold",
+      "speechExpected": true
+    },
+    {
+      "id": "hAWaaBVaMzY_seg_0016",
+      "sermonId": "hAWaaBVaMzY",
+      "audioPath": "data/benchmarks/live-sermon-translation-v1/work/hAWaaBVaMzY/profiles/3eb2db2e7b9bcfb17c55ef947c5749056cdd60189b19f9712a0f686c27ac4014/clips/hAWaaBVaMzY_seg_0016.mp3",
+      "audioSha256": "23f2580f488f53f86e2eeed5327e3541c205760ebfb4628d981586d75e68457d",
+      "durationSeconds": 48.930,
+      "referenceStatus": "not_human_gold",
+      "speechExpected": true
+    },
+    {
+      "id": "hAWaaBVaMzY_seg_0017",
+      "sermonId": "hAWaaBVaMzY",
+      "audioPath": "data/benchmarks/live-sermon-translation-v1/work/hAWaaBVaMzY/profiles/3eb2db2e7b9bcfb17c55ef947c5749056cdd60189b19f9712a0f686c27ac4014/clips/hAWaaBVaMzY_seg_0017.mp3",
+      "audioSha256": "f10cb05d22c786fed538641df72fbced806e222e0c43343b1710a6c45a1bdbbb",
+      "durationSeconds": 51.450,
+      "referenceStatus": "not_human_gold",
+      "speechExpected": true
+    },
+    {
+      "id": "hoeJTwl-EJg_seg_0002",
+      "sermonId": "hoeJTwl-EJg",
+      "audioPath": "data/benchmarks/live-sermon-translation-v1/work/hoeJTwl-EJg/profiles/4589d560fe6860da1c674ecfe85a5800bfab82a09d3d0878ae3fe2a8694afe8a/clips/hoeJTwl-EJg_seg_0002.mp3",
+      "audioSha256": "d7bd47f4e3e188acf5b21531322a64bfa0b9befe8c33028e16f54109a3e98f38",
+      "durationSeconds": 46.490,
+      "referenceStatus": "not_human_gold",
+      "speechExpected": true
+    },
+    {
+      "id": "hoeJTwl-EJg_seg_0004",
+      "sermonId": "hoeJTwl-EJg",
+      "audioPath": "data/benchmarks/live-sermon-translation-v1/work/hoeJTwl-EJg/profiles/4589d560fe6860da1c674ecfe85a5800bfab82a09d3d0878ae3fe2a8694afe8a/clips/hoeJTwl-EJg_seg_0004.mp3",
+      "audioSha256": "f483124ae7c7c2889ecb46a53cb47e9cfbeb939ccbdd295044e867f9d731987c",
+      "durationSeconds": 57.450,
+      "referenceStatus": "not_human_gold",
+      "speechExpected": true
+    },
+    {
+      "id": "hoeJTwl-EJg_seg_0005",
+      "sermonId": "hoeJTwl-EJg",
+      "audioPath": "data/benchmarks/live-sermon-translation-v1/work/hoeJTwl-EJg/profiles/4589d560fe6860da1c674ecfe85a5800bfab82a09d3d0878ae3fe2a8694afe8a/clips/hoeJTwl-EJg_seg_0005.mp3",
+      "audioSha256": "bad9ad5219ce1fd3e4f8832aac29f9559ee2cc3715e0c1bf29dbca23f5bf54c1",
+      "durationSeconds": 47.650,
+      "referenceStatus": "not_human_gold",
+      "speechExpected": true
+    },
+    {
+      "id": "hoeJTwl-EJg_seg_0006",
+      "sermonId": "hoeJTwl-EJg",
+      "audioPath": "data/benchmarks/live-sermon-translation-v1/work/hoeJTwl-EJg/profiles/4589d560fe6860da1c674ecfe85a5800bfab82a09d3d0878ae3fe2a8694afe8a/clips/hoeJTwl-EJg_seg_0006.mp3",
+      "audioSha256": "f9b4dac993ca2ef6a74a6469a1eeaae7800797cb0827952a3c4183083842dfe3",
+      "durationSeconds": 31.650,
+      "referenceStatus": "not_human_gold",
+      "speechExpected": true
+    },
+    {
+      "id": "qvImKpmvgaM_seg_0001",
+      "sermonId": "qvImKpmvgaM",
+      "audioPath": "data/benchmarks/live-sermon-translation-v1/work/qvImKpmvgaM/profiles/e3e090867433fedbe739bb7ac8957d540a18529603ed58cd2f87a04158000e77/clips/qvImKpmvgaM_seg_0001.mp3",
+      "audioSha256": "9896c8e4a45bae85fb7236b659270d44975668f062b627901cf1a2c80c853276",
+      "durationSeconds": 43.980,
+      "referenceStatus": "not_human_gold",
+      "speechExpected": true
+    },
+    {
+      "id": "qvImKpmvgaM_seg_0009",
+      "sermonId": "qvImKpmvgaM",
+      "audioPath": "data/benchmarks/live-sermon-translation-v1/work/qvImKpmvgaM/profiles/e3e090867433fedbe739bb7ac8957d540a18529603ed58cd2f87a04158000e77/clips/qvImKpmvgaM_seg_0009.mp3",
+      "audioSha256": "abe861530cd5bd74c941617b4efe70a5433970b8d6317e5050eaff2466a77abd",
+      "durationSeconds": 57.891,
+      "referenceStatus": "not_human_gold",
+      "speechExpected": true
+    },
+    {
+      "id": "qvImKpmvgaM_seg_0010",
+      "sermonId": "qvImKpmvgaM",
+      "audioPath": "data/benchmarks/live-sermon-translation-v1/work/qvImKpmvgaM/profiles/e3e090867433fedbe739bb7ac8957d540a18529603ed58cd2f87a04158000e77/clips/qvImKpmvgaM_seg_0010.mp3",
+      "audioSha256": "7924e9a6950940307a597b97b61521e77bcb76ab8a2a61875401a236e525d7fb",
+      "durationSeconds": 56.930,
+      "referenceStatus": "not_human_gold",
+      "speechExpected": true
+    },
+    {
+      "id": "qvImKpmvgaM_seg_0012",
+      "sermonId": "qvImKpmvgaM",
+      "audioPath": "data/benchmarks/live-sermon-translation-v1/work/qvImKpmvgaM/profiles/e3e090867433fedbe739bb7ac8957d540a18529603ed58cd2f87a04158000e77/clips/qvImKpmvgaM_seg_0012.mp3",
+      "audioSha256": "cac773788d566007484074a84c636ef621e1eb18caabf8a306767a1ddb84f8cb",
+      "durationSeconds": 46.131,
+      "referenceStatus": "not_human_gold",
+      "speechExpected": true
+    },
+    {
+      "id": "z_UoOx-6mz4_seg_0002",
+      "sermonId": "z_UoOx-6mz4",
+      "audioPath": "data/benchmarks/live-sermon-translation-v1/work/z_UoOx-6mz4/profiles/05ea07a32bf82a448fb217e4d41ecd248e337c598c118965d9e2918d0f46f70d/clips/z_UoOx-6mz4_seg_0002.mp3",
+      "audioSha256": "ae86c338347d828856ab4eedb884ab3fa0edba70bf1e7409ec3834664521a8b5",
+      "durationSeconds": 49.251,
+      "referenceStatus": "not_human_gold",
+      "speechExpected": true
+    },
+    {
+      "id": "z_UoOx-6mz4_seg_0008",
+      "sermonId": "z_UoOx-6mz4",
+      "audioPath": "data/benchmarks/live-sermon-translation-v1/work/z_UoOx-6mz4/profiles/05ea07a32bf82a448fb217e4d41ecd248e337c598c118965d9e2918d0f46f70d/clips/z_UoOx-6mz4_seg_0008.mp3",
+      "audioSha256": "9696b3293ba7db9f6eb42cc4c8d393a5f91bff20910e492721cc36b26d4a0d1b",
+      "durationSeconds": 59.571,
+      "referenceStatus": "not_human_gold",
+      "speechExpected": true
+    },
+    {
+      "id": "z_UoOx-6mz4_seg_0011",
+      "sermonId": "z_UoOx-6mz4",
+      "audioPath": "data/benchmarks/live-sermon-translation-v1/work/z_UoOx-6mz4/profiles/05ea07a32bf82a448fb217e4d41ecd248e337c598c118965d9e2918d0f46f70d/clips/z_UoOx-6mz4_seg_0011.mp3",
+      "audioSha256": "30a97e7c3ae1db65549b338899ab5e83851a456de9d85021f84b0fc8ead95186",
+      "durationSeconds": 58.531,
+      "referenceStatus": "not_human_gold",
+      "speechExpected": true
+    },
+    {
+      "id": "z_UoOx-6mz4_seg_0018",
+      "sermonId": "z_UoOx-6mz4",
+      "audioPath": "data/benchmarks/live-sermon-translation-v1/work/z_UoOx-6mz4/profiles/05ea07a32bf82a448fb217e4d41ecd248e337c598c118965d9e2918d0f46f70d/clips/z_UoOx-6mz4_seg_0018.mp3",
+      "audioSha256": "b1b7d1da22f63ac388becae4991cd21f4e60e1422c8665d098dc829c09962a93",
+      "durationSeconds": 58.611,
+      "referenceStatus": "not_human_gold",
+      "speechExpected": true
+    }
+  ]
+}

@@ -1,0 +1,477 @@
+{
+	"systeminfo": "WHISPER : COREML = 0 | OPENVINO = 0 | MTL : EMBED_LIBRARY = 1 | CPU : NEON = 1 | ARM_FMA = 1 | DOTPROD = 1 | ACCELERATE = 1 | OPENMP = 1 | REPACK = 1 | ",
+	"model": {
+		"type": "large",
+		"multilingual": true,
+		"vocab": 51866,
+		"audio": {
+			"ctx": 1500,
+			"state": 1280,
+			"head": 20,
+			"layer": 32
+		},
+		"text": {
+			"ctx": 448,
+			"state": 1280,
+			"head": 20,
+			"layer": 2
+		},
+		"mels": 128,
+		"ftype": 1
+	},
+	"params": {
+		"model": "/Users/jonathan_jing/Library/Caches/sermon-video-zh-subtitles/models/distil-whisper-large-v3-ggml-0d78dd96/ggml-distil-large-v3.bin",
+		"language": "en",
+		"translate": false
+	},
+	"result": {
+		"language": "en"
+	},
+	"transcription": [
+		{
+			"timestamps": {
+				"from": "00:00:00,000",
+				"to": "00:00:16,740"
+			},
+			"offsets": {
+				"from": 0,
+				"to": 16740
+			},
+			"text": " Upon a hill, a perfect savior.",
+			"tokens": [
+				{
+					"text": "[_BEG_]",
+					"timestamps": {
+						"from": "00:00:00,000",
+						"to": "00:00:00,000"
+					},
+					"offsets": {
+						"from": 0,
+						"to": 0
+					},
+					"id": 50365,
+					"p": 0.950381,
+					"t_dtw": -1
+				},
+				{
+					"text": " Upon",
+					"timestamps": {
+						"from": "00:00:00,060",
+						"to": "00:00:06,020"
+					},
+					"offsets": {
+						"from": 60,
+						"to": 6020
+					},
+					"id": 25184,
+					"p": 0.931491,
+					"t_dtw": -1
+				},
+				{
+					"text": " a",
+					"timestamps": {
+						"from": "00:00:06,020",
+						"to": "00:00:07,530"
+					},
+					"offsets": {
+						"from": 6020,
+						"to": 7530
+					},
+					"id": 257,
+					"p": 0.997368,
+					"t_dtw": -1
+				},
+				{
+					"text": " hill",
+					"timestamps": {
+						"from": "00:00:07,530",
+						"to": "00:00:13,560"
+					},
+					"offsets": {
+						"from": 7530,
+						"to": 13560
+					},
+					"id": 10997,
+					"p": 0.984339,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:13,560",
+						"to": "00:00:13,950"
+					},
+					"offsets": {
+						"from": 13560,
+						"to": 13950
+					},
+					"id": 11,
+					"p": 0.9439,
+					"t_dtw": -1
+				},
+				{
+					"text": " a",
+					"timestamps": {
+						"from": "00:00:13,950",
+						"to": "00:00:14,150"
+					},
+					"offsets": {
+						"from": 13950,
+						"to": 14150
+					},
+					"id": 257,
+					"p": 0.951495,
+					"t_dtw": -1
+				},
+				{
+					"text": " perfect",
+					"timestamps": {
+						"from": "00:00:14,150",
+						"to": "00:00:15,540"
+					},
+					"offsets": {
+						"from": 14150,
+						"to": 15540
+					},
+					"id": 2176,
+					"p": 0.999439,
+					"t_dtw": -1
+				},
+				{
+					"text": " savior",
+					"timestamps": {
+						"from": "00:00:15,540",
+						"to": "00:00:16,740"
+					},
+					"offsets": {
+						"from": 15540,
+						"to": 16740
+					},
+					"id": 41327,
+					"p": 0.750292,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:16,740",
+						"to": "00:00:16,740"
+					},
+					"offsets": {
+						"from": 16740,
+						"to": 16740
+					},
+					"id": 13,
+					"p": 0.57142,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_837]",
+					"timestamps": {
+						"from": "00:00:16,740",
+						"to": "00:00:16,740"
+					},
+					"offsets": {
+						"from": 16740,
+						"to": 16740
+					},
+					"id": 51202,
+					"p": 0.459418,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:17,940",
+				"to": "00:00:23,100"
+			},
+			"offsets": {
+				"from": 17940,
+				"to": 23100
+			},
+			"text": " Upon that day, the greatest love.",
+			"tokens": [
+				{
+					"text": " Upon",
+					"timestamps": {
+						"from": "00:00:17,940",
+						"to": "00:00:17,940"
+					},
+					"offsets": {
+						"from": 17940,
+						"to": 17940
+					},
+					"id": 25184,
+					"p": 0.996945,
+					"t_dtw": -1
+				},
+				{
+					"text": " that",
+					"timestamps": {
+						"from": "00:00:17,950",
+						"to": "00:00:18,560"
+					},
+					"offsets": {
+						"from": 17950,
+						"to": 18560
+					},
+					"id": 300,
+					"p": 0.999802,
+					"t_dtw": -1
+				},
+				{
+					"text": " day",
+					"timestamps": {
+						"from": "00:00:18,560",
+						"to": "00:00:19,240"
+					},
+					"offsets": {
+						"from": 18560,
+						"to": 19240
+					},
+					"id": 786,
+					"p": 0.999699,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:19,240",
+						"to": "00:00:19,720"
+					},
+					"offsets": {
+						"from": 19240,
+						"to": 19720
+					},
+					"id": 11,
+					"p": 0.980153,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:19,720",
+						"to": "00:00:20,280"
+					},
+					"offsets": {
+						"from": 19720,
+						"to": 20280
+					},
+					"id": 264,
+					"p": 0.985981,
+					"t_dtw": -1
+				},
+				{
+					"text": " greatest",
+					"timestamps": {
+						"from": "00:00:20,280",
+						"to": "00:00:21,780"
+					},
+					"offsets": {
+						"from": 20280,
+						"to": 21780
+					},
+					"id": 6636,
+					"p": 0.999287,
+					"t_dtw": -1
+				},
+				{
+					"text": " love",
+					"timestamps": {
+						"from": "00:00:21,780",
+						"to": "00:00:22,530"
+					},
+					"offsets": {
+						"from": 21780,
+						"to": 22530
+					},
+					"id": 959,
+					"p": 0.999348,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:22,530",
+						"to": "00:00:23,100"
+					},
+					"offsets": {
+						"from": 22530,
+						"to": 23100
+					},
+					"id": 13,
+					"p": 0.537662,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_1155]",
+					"timestamps": {
+						"from": "00:00:23,100",
+						"to": "00:00:23,100"
+					},
+					"offsets": {
+						"from": 23100,
+						"to": 23100
+					},
+					"id": 51520,
+					"p": 0.452494,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:23,980",
+				"to": "00:00:28,920"
+			},
+			"offsets": {
+				"from": 23980,
+				"to": 28920
+			},
+			"text": " The punishment that should have fallen on us.",
+			"tokens": [
+				{
+					"text": " The",
+					"timestamps": {
+						"from": "00:00:23,980",
+						"to": "00:00:23,980"
+					},
+					"offsets": {
+						"from": 23980,
+						"to": 23980
+					},
+					"id": 440,
+					"p": 0.999214,
+					"t_dtw": -1
+				},
+				{
+					"text": " punishment",
+					"timestamps": {
+						"from": "00:00:24,020",
+						"to": "00:00:25,120"
+					},
+					"offsets": {
+						"from": 24020,
+						"to": 25120
+					},
+					"id": 14133,
+					"p": 0.999783,
+					"t_dtw": -1
+				},
+				{
+					"text": " that",
+					"timestamps": {
+						"from": "00:00:25,120",
+						"to": "00:00:25,680"
+					},
+					"offsets": {
+						"from": 25120,
+						"to": 25680
+					},
+					"id": 300,
+					"p": 0.554905,
+					"t_dtw": -1
+				},
+				{
+					"text": " should",
+					"timestamps": {
+						"from": "00:00:25,680",
+						"to": "00:00:26,520"
+					},
+					"offsets": {
+						"from": 25680,
+						"to": 26520
+					},
+					"id": 820,
+					"p": 0.99931,
+					"t_dtw": -1
+				},
+				{
+					"text": " have",
+					"timestamps": {
+						"from": "00:00:26,520",
+						"to": "00:00:27,080"
+					},
+					"offsets": {
+						"from": 26520,
+						"to": 27080
+					},
+					"id": 362,
+					"p": 0.999188,
+					"t_dtw": -1
+				},
+				{
+					"text": " fallen",
+					"timestamps": {
+						"from": "00:00:27,080",
+						"to": "00:00:27,920"
+					},
+					"offsets": {
+						"from": 27080,
+						"to": 27920
+					},
+					"id": 11547,
+					"p": 0.989368,
+					"t_dtw": -1
+				},
+				{
+					"text": " on",
+					"timestamps": {
+						"from": "00:00:27,920",
+						"to": "00:00:28,200"
+					},
+					"offsets": {
+						"from": 27920,
+						"to": 28200
+					},
+					"id": 322,
+					"p": 0.999657,
+					"t_dtw": -1
+				},
+				{
+					"text": " us",
+					"timestamps": {
+						"from": "00:00:28,200",
+						"to": "00:00:28,480"
+					},
+					"offsets": {
+						"from": 28200,
+						"to": 28480
+					},
+					"id": 505,
+					"p": 0.999664,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:28,480",
+						"to": "00:00:28,920"
+					},
+					"offsets": {
+						"from": 28480,
+						"to": 28920
+					},
+					"id": 13,
+					"p": 0.917561,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_1446]",
+					"timestamps": {
+						"from": "00:00:28,920",
+						"to": "00:00:28,920"
+					},
+					"offsets": {
+						"from": 28920,
+						"to": 28920
+					},
+					"id": 51811,
+					"p": 0.402985,
+					"t_dtw": -1
+				}
+			]
+		}
+	]
+}

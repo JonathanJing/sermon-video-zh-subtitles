@@ -1,0 +1,1701 @@
+{
+	"systeminfo": "WHISPER : COREML = 0 | OPENVINO = 0 | MTL : EMBED_LIBRARY = 1 | CPU : NEON = 1 | ARM_FMA = 1 | DOTPROD = 1 | ACCELERATE = 1 | OPENMP = 1 | REPACK = 1 | ",
+	"model": {
+		"type": "large",
+		"multilingual": true,
+		"vocab": 51866,
+		"audio": {
+			"ctx": 1500,
+			"state": 1280,
+			"head": 20,
+			"layer": 32
+		},
+		"text": {
+			"ctx": 448,
+			"state": 1280,
+			"head": 20,
+			"layer": 2
+		},
+		"mels": 128,
+		"ftype": 1
+	},
+	"params": {
+		"model": "/Users/jonathan_jing/Library/Caches/sermon-video-zh-subtitles/models/distil-whisper-large-v3-ggml-0d78dd96/ggml-distil-large-v3.bin",
+		"language": "en",
+		"translate": false
+	},
+	"result": {
+		"language": "en"
+	},
+	"transcription": [
+		{
+			"timestamps": {
+				"from": "00:00:00,000",
+				"to": "00:00:07,560"
+			},
+			"offsets": {
+				"from": 0,
+				"to": 7560
+			},
+			"text": " The Edomites, they should have defended Jerusalem, Israel, as Israel was being attacked.",
+			"tokens": [
+				{
+					"text": "[_BEG_]",
+					"timestamps": {
+						"from": "00:00:00,000",
+						"to": "00:00:00,000"
+					},
+					"offsets": {
+						"from": 0,
+						"to": 0
+					},
+					"id": 50365,
+					"p": 0.961001,
+					"t_dtw": -1
+				},
+				{
+					"text": " The",
+					"timestamps": {
+						"from": "00:00:00,270",
+						"to": "00:00:00,270"
+					},
+					"offsets": {
+						"from": 270,
+						"to": 270
+					},
+					"id": 440,
+					"p": 0.797534,
+					"t_dtw": -1
+				},
+				{
+					"text": " Ed",
+					"timestamps": {
+						"from": "00:00:00,280",
+						"to": "00:00:00,450"
+					},
+					"offsets": {
+						"from": 280,
+						"to": 450
+					},
+					"id": 3977,
+					"p": 0.810962,
+					"t_dtw": -1
+				},
+				{
+					"text": "om",
+					"timestamps": {
+						"from": "00:00:00,450",
+						"to": "00:00:00,630"
+					},
+					"offsets": {
+						"from": 450,
+						"to": 630
+					},
+					"id": 298,
+					"p": 0.682125,
+					"t_dtw": -1
+				},
+				{
+					"text": "ites",
+					"timestamps": {
+						"from": "00:00:00,630",
+						"to": "00:00:00,990"
+					},
+					"offsets": {
+						"from": 630,
+						"to": 990
+					},
+					"id": 3324,
+					"p": 0.999928,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:00,990",
+						"to": "00:00:01,190"
+					},
+					"offsets": {
+						"from": 990,
+						"to": 1190
+					},
+					"id": 11,
+					"p": 0.994237,
+					"t_dtw": -1
+				},
+				{
+					"text": " they",
+					"timestamps": {
+						"from": "00:00:01,190",
+						"to": "00:00:01,720"
+					},
+					"offsets": {
+						"from": 1190,
+						"to": 1720
+					},
+					"id": 436,
+					"p": 0.985094,
+					"t_dtw": -1
+				},
+				{
+					"text": " should",
+					"timestamps": {
+						"from": "00:00:01,720",
+						"to": "00:00:02,140"
+					},
+					"offsets": {
+						"from": 1720,
+						"to": 2140
+					},
+					"id": 820,
+					"p": 0.996649,
+					"t_dtw": -1
+				},
+				{
+					"text": " have",
+					"timestamps": {
+						"from": "00:00:02,670",
+						"to": "00:00:03,030"
+					},
+					"offsets": {
+						"from": 2670,
+						"to": 3030
+					},
+					"id": 362,
+					"p": 0.999512,
+					"t_dtw": -1
+				},
+				{
+					"text": " defended",
+					"timestamps": {
+						"from": "00:00:03,030",
+						"to": "00:00:04,080"
+					},
+					"offsets": {
+						"from": 3030,
+						"to": 4080
+					},
+					"id": 34135,
+					"p": 0.999207,
+					"t_dtw": -1
+				},
+				{
+					"text": " Jerusalem",
+					"timestamps": {
+						"from": "00:00:04,080",
+						"to": "00:00:05,260"
+					},
+					"offsets": {
+						"from": 4080,
+						"to": 5260
+					},
+					"id": 15393,
+					"p": 0.997664,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:05,260",
+						"to": "00:00:05,560"
+					},
+					"offsets": {
+						"from": 5260,
+						"to": 5560
+					},
+					"id": 11,
+					"p": 0.936276,
+					"t_dtw": -1
+				},
+				{
+					"text": " Israel",
+					"timestamps": {
+						"from": "00:00:05,560",
+						"to": "00:00:05,990"
+					},
+					"offsets": {
+						"from": 5560,
+						"to": 5990
+					},
+					"id": 5674,
+					"p": 0.96666,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:06,030",
+						"to": "00:00:06,140"
+					},
+					"offsets": {
+						"from": 6030,
+						"to": 6140
+					},
+					"id": 11,
+					"p": 0.814671,
+					"t_dtw": -1
+				},
+				{
+					"text": " as",
+					"timestamps": {
+						"from": "00:00:06,140",
+						"to": "00:00:06,240"
+					},
+					"offsets": {
+						"from": 6140,
+						"to": 6240
+					},
+					"id": 382,
+					"p": 0.953432,
+					"t_dtw": -1
+				},
+				{
+					"text": " Israel",
+					"timestamps": {
+						"from": "00:00:06,240",
+						"to": "00:00:06,550"
+					},
+					"offsets": {
+						"from": 6240,
+						"to": 6550
+					},
+					"id": 5674,
+					"p": 0.999893,
+					"t_dtw": -1
+				},
+				{
+					"text": " was",
+					"timestamps": {
+						"from": "00:00:06,550",
+						"to": "00:00:06,700"
+					},
+					"offsets": {
+						"from": 6550,
+						"to": 6700
+					},
+					"id": 390,
+					"p": 0.997504,
+					"t_dtw": -1
+				},
+				{
+					"text": " being",
+					"timestamps": {
+						"from": "00:00:06,700",
+						"to": "00:00:06,930"
+					},
+					"offsets": {
+						"from": 6700,
+						"to": 6930
+					},
+					"id": 885,
+					"p": 0.999455,
+					"t_dtw": -1
+				},
+				{
+					"text": " attacked",
+					"timestamps": {
+						"from": "00:00:06,970",
+						"to": "00:00:07,380"
+					},
+					"offsets": {
+						"from": 6970,
+						"to": 7380
+					},
+					"id": 12692,
+					"p": 0.99533,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:07,380",
+						"to": "00:00:07,510"
+					},
+					"offsets": {
+						"from": 7380,
+						"to": 7510
+					},
+					"id": 13,
+					"p": 0.999844,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_378]",
+					"timestamps": {
+						"from": "00:00:07,560",
+						"to": "00:00:07,560"
+					},
+					"offsets": {
+						"from": 7560,
+						"to": 7560
+					},
+					"id": 50743,
+					"p": 0.484882,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:07,660",
+				"to": "00:00:09,420"
+			},
+			"offsets": {
+				"from": 7660,
+				"to": 9420
+			},
+			"text": " Let me show you on an ancient map.",
+			"tokens": [
+				{
+					"text": " Let",
+					"timestamps": {
+						"from": "00:00:07,660",
+						"to": "00:00:07,750"
+					},
+					"offsets": {
+						"from": 7660,
+						"to": 7750
+					},
+					"id": 961,
+					"p": 0.999878,
+					"t_dtw": -1
+				},
+				{
+					"text": " me",
+					"timestamps": {
+						"from": "00:00:07,870",
+						"to": "00:00:07,870"
+					},
+					"offsets": {
+						"from": 7870,
+						"to": 7870
+					},
+					"id": 385,
+					"p": 0.999996,
+					"t_dtw": -1
+				},
+				{
+					"text": " show",
+					"timestamps": {
+						"from": "00:00:07,940",
+						"to": "00:00:08,120"
+					},
+					"offsets": {
+						"from": 7940,
+						"to": 8120
+					},
+					"id": 855,
+					"p": 0.999996,
+					"t_dtw": -1
+				},
+				{
+					"text": " you",
+					"timestamps": {
+						"from": "00:00:08,120",
+						"to": "00:00:08,310"
+					},
+					"offsets": {
+						"from": 8120,
+						"to": 8310
+					},
+					"id": 291,
+					"p": 1,
+					"t_dtw": -1
+				},
+				{
+					"text": " on",
+					"timestamps": {
+						"from": "00:00:08,310",
+						"to": "00:00:08,430"
+					},
+					"offsets": {
+						"from": 8310,
+						"to": 8430
+					},
+					"id": 322,
+					"p": 0.999969,
+					"t_dtw": -1
+				},
+				{
+					"text": " an",
+					"timestamps": {
+						"from": "00:00:08,430",
+						"to": "00:00:08,550"
+					},
+					"offsets": {
+						"from": 8430,
+						"to": 8550
+					},
+					"id": 364,
+					"p": 0.999947,
+					"t_dtw": -1
+				},
+				{
+					"text": " ancient",
+					"timestamps": {
+						"from": "00:00:08,550",
+						"to": "00:00:08,980"
+					},
+					"offsets": {
+						"from": 8550,
+						"to": 8980
+					},
+					"id": 7832,
+					"p": 0.999928,
+					"t_dtw": -1
+				},
+				{
+					"text": " map",
+					"timestamps": {
+						"from": "00:00:08,980",
+						"to": "00:00:09,050"
+					},
+					"offsets": {
+						"from": 8980,
+						"to": 9050
+					},
+					"id": 4471,
+					"p": 0.999882,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:09,240",
+						"to": "00:00:09,420"
+					},
+					"offsets": {
+						"from": 9240,
+						"to": 9420
+					},
+					"id": 13,
+					"p": 0.999828,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_471]",
+					"timestamps": {
+						"from": "00:00:09,420",
+						"to": "00:00:09,420"
+					},
+					"offsets": {
+						"from": 9420,
+						"to": 9420
+					},
+					"id": 50836,
+					"p": 0.728736,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:10,120",
+				"to": "00:00:12,540"
+			},
+			"offsets": {
+				"from": 10120,
+				"to": 12540
+			},
+			"text": " Edom is just south of Israel.",
+			"tokens": [
+				{
+					"text": " Ed",
+					"timestamps": {
+						"from": "00:00:10,120",
+						"to": "00:00:10,120"
+					},
+					"offsets": {
+						"from": 10120,
+						"to": 10120
+					},
+					"id": 3977,
+					"p": 0.79355,
+					"t_dtw": -1
+				},
+				{
+					"text": "om",
+					"timestamps": {
+						"from": "00:00:10,120",
+						"to": "00:00:10,120"
+					},
+					"offsets": {
+						"from": 10120,
+						"to": 10120
+					},
+					"id": 298,
+					"p": 0.996839,
+					"t_dtw": -1
+				},
+				{
+					"text": " is",
+					"timestamps": {
+						"from": "00:00:10,120",
+						"to": "00:00:10,130"
+					},
+					"offsets": {
+						"from": 10120,
+						"to": 10130
+					},
+					"id": 307,
+					"p": 0.999996,
+					"t_dtw": -1
+				},
+				{
+					"text": " just",
+					"timestamps": {
+						"from": "00:00:10,400",
+						"to": "00:00:10,610"
+					},
+					"offsets": {
+						"from": 10400,
+						"to": 10610
+					},
+					"id": 445,
+					"p": 1,
+					"t_dtw": -1
+				},
+				{
+					"text": " south",
+					"timestamps": {
+						"from": "00:00:10,610",
+						"to": "00:00:11,190"
+					},
+					"offsets": {
+						"from": 10610,
+						"to": 11190
+					},
+					"id": 7377,
+					"p": 0.997063,
+					"t_dtw": -1
+				},
+				{
+					"text": " of",
+					"timestamps": {
+						"from": "00:00:11,190",
+						"to": "00:00:11,440"
+					},
+					"offsets": {
+						"from": 11190,
+						"to": 11440
+					},
+					"id": 295,
+					"p": 1,
+					"t_dtw": -1
+				},
+				{
+					"text": " Israel",
+					"timestamps": {
+						"from": "00:00:11,700",
+						"to": "00:00:12,150"
+					},
+					"offsets": {
+						"from": 11700,
+						"to": 12150
+					},
+					"id": 5674,
+					"p": 0.999973,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:12,150",
+						"to": "00:00:12,260"
+					},
+					"offsets": {
+						"from": 12150,
+						"to": 12260
+					},
+					"id": 13,
+					"p": 0.999969,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_627]",
+					"timestamps": {
+						"from": "00:00:12,540",
+						"to": "00:00:12,540"
+					},
+					"offsets": {
+						"from": 12540,
+						"to": 12540
+					},
+					"id": 50992,
+					"p": 0.671658,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:13,200",
+				"to": "00:00:14,600"
+			},
+			"offsets": {
+				"from": 13200,
+				"to": 14600
+			},
+			"text": " Edom came from Esau.",
+			"tokens": [
+				{
+					"text": " Ed",
+					"timestamps": {
+						"from": "00:00:13,200",
+						"to": "00:00:13,200"
+					},
+					"offsets": {
+						"from": 13200,
+						"to": 13200
+					},
+					"id": 3977,
+					"p": 0.961955,
+					"t_dtw": -1
+				},
+				{
+					"text": "om",
+					"timestamps": {
+						"from": "00:00:13,200",
+						"to": "00:00:13,200"
+					},
+					"offsets": {
+						"from": 13200,
+						"to": 13200
+					},
+					"id": 298,
+					"p": 0.999539,
+					"t_dtw": -1
+				},
+				{
+					"text": " came",
+					"timestamps": {
+						"from": "00:00:13,390",
+						"to": "00:00:13,390"
+					},
+					"offsets": {
+						"from": 13390,
+						"to": 13390
+					},
+					"id": 1361,
+					"p": 0.999989,
+					"t_dtw": -1
+				},
+				{
+					"text": " from",
+					"timestamps": {
+						"from": "00:00:13,490",
+						"to": "00:00:13,820"
+					},
+					"offsets": {
+						"from": 13490,
+						"to": 13820
+					},
+					"id": 490,
+					"p": 1,
+					"t_dtw": -1
+				},
+				{
+					"text": " Es",
+					"timestamps": {
+						"from": "00:00:13,820",
+						"to": "00:00:14,030"
+					},
+					"offsets": {
+						"from": 13820,
+						"to": 14030
+					},
+					"id": 2313,
+					"p": 0.887317,
+					"t_dtw": -1
+				},
+				{
+					"text": "au",
+					"timestamps": {
+						"from": "00:00:14,030",
+						"to": "00:00:14,240"
+					},
+					"offsets": {
+						"from": 14030,
+						"to": 14240
+					},
+					"id": 1459,
+					"p": 0.999828,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:14,240",
+						"to": "00:00:14,570"
+					},
+					"offsets": {
+						"from": 14240,
+						"to": 14570
+					},
+					"id": 13,
+					"p": 0.993365,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_730]",
+					"timestamps": {
+						"from": "00:00:14,600",
+						"to": "00:00:14,600"
+					},
+					"offsets": {
+						"from": 14600,
+						"to": 14600
+					},
+					"id": 51095,
+					"p": 0.42112,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:15,020",
+				"to": "00:00:16,180"
+			},
+			"offsets": {
+				"from": 15020,
+				"to": 16180
+			},
+			"text": " Israel came from Jacob.",
+			"tokens": [
+				{
+					"text": " Israel",
+					"timestamps": {
+						"from": "00:00:15,020",
+						"to": "00:00:15,030"
+					},
+					"offsets": {
+						"from": 15020,
+						"to": 15030
+					},
+					"id": 5674,
+					"p": 0.999966,
+					"t_dtw": -1
+				},
+				{
+					"text": " came",
+					"timestamps": {
+						"from": "00:00:15,300",
+						"to": "00:00:15,310"
+					},
+					"offsets": {
+						"from": 15300,
+						"to": 15310
+					},
+					"id": 1361,
+					"p": 0.999996,
+					"t_dtw": -1
+				},
+				{
+					"text": " from",
+					"timestamps": {
+						"from": "00:00:15,310",
+						"to": "00:00:15,590"
+					},
+					"offsets": {
+						"from": 15310,
+						"to": 15590
+					},
+					"id": 490,
+					"p": 1,
+					"t_dtw": -1
+				},
+				{
+					"text": " Jacob",
+					"timestamps": {
+						"from": "00:00:15,590",
+						"to": "00:00:15,940"
+					},
+					"offsets": {
+						"from": 15590,
+						"to": 15940
+					},
+					"id": 14117,
+					"p": 0.999683,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:15,940",
+						"to": "00:00:16,180"
+					},
+					"offsets": {
+						"from": 15940,
+						"to": 16180
+					},
+					"id": 13,
+					"p": 0.999928,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_809]",
+					"timestamps": {
+						"from": "00:00:16,180",
+						"to": "00:00:16,180"
+					},
+					"offsets": {
+						"from": 16180,
+						"to": 16180
+					},
+					"id": 51174,
+					"p": 0.790124,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:16,660",
+				"to": "00:00:19,900"
+			},
+			"offsets": {
+				"from": 16660,
+				"to": 19900
+			},
+			"text": " If you remember way back in the Old Testament, Jacob had 12 sons.",
+			"tokens": [
+				{
+					"text": " If",
+					"timestamps": {
+						"from": "00:00:16,660",
+						"to": "00:00:16,660"
+					},
+					"offsets": {
+						"from": 16660,
+						"to": 16660
+					},
+					"id": 759,
+					"p": 0.999985,
+					"t_dtw": -1
+				},
+				{
+					"text": " you",
+					"timestamps": {
+						"from": "00:00:16,660",
+						"to": "00:00:16,660"
+					},
+					"offsets": {
+						"from": 16660,
+						"to": 16660
+					},
+					"id": 291,
+					"p": 1,
+					"t_dtw": -1
+				},
+				{
+					"text": " remember",
+					"timestamps": {
+						"from": "00:00:16,940",
+						"to": "00:00:16,970"
+					},
+					"offsets": {
+						"from": 16940,
+						"to": 16970
+					},
+					"id": 1604,
+					"p": 0.999996,
+					"t_dtw": -1
+				},
+				{
+					"text": " way",
+					"timestamps": {
+						"from": "00:00:16,970",
+						"to": "00:00:17,140"
+					},
+					"offsets": {
+						"from": 16970,
+						"to": 17140
+					},
+					"id": 636,
+					"p": 0.932067,
+					"t_dtw": -1
+				},
+				{
+					"text": " back",
+					"timestamps": {
+						"from": "00:00:17,160",
+						"to": "00:00:17,390"
+					},
+					"offsets": {
+						"from": 17160,
+						"to": 17390
+					},
+					"id": 646,
+					"p": 1,
+					"t_dtw": -1
+				},
+				{
+					"text": " in",
+					"timestamps": {
+						"from": "00:00:17,390",
+						"to": "00:00:17,510"
+					},
+					"offsets": {
+						"from": 17390,
+						"to": 17510
+					},
+					"id": 294,
+					"p": 1,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:17,510",
+						"to": "00:00:17,690"
+					},
+					"offsets": {
+						"from": 17510,
+						"to": 17690
+					},
+					"id": 264,
+					"p": 0.999992,
+					"t_dtw": -1
+				},
+				{
+					"text": " Old",
+					"timestamps": {
+						"from": "00:00:17,690",
+						"to": "00:00:17,870"
+					},
+					"offsets": {
+						"from": 17690,
+						"to": 17870
+					},
+					"id": 8633,
+					"p": 0.997059,
+					"t_dtw": -1
+				},
+				{
+					"text": " Testament",
+					"timestamps": {
+						"from": "00:00:17,870",
+						"to": "00:00:18,420"
+					},
+					"offsets": {
+						"from": 17870,
+						"to": 18420
+					},
+					"id": 15473,
+					"p": 0.999977,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:18,420",
+						"to": "00:00:18,540"
+					},
+					"offsets": {
+						"from": 18420,
+						"to": 18540
+					},
+					"id": 11,
+					"p": 0.999748,
+					"t_dtw": -1
+				},
+				{
+					"text": " Jacob",
+					"timestamps": {
+						"from": "00:00:18,540",
+						"to": "00:00:18,780"
+					},
+					"offsets": {
+						"from": 18540,
+						"to": 18780
+					},
+					"id": 14117,
+					"p": 0.999321,
+					"t_dtw": -1
+				},
+				{
+					"text": " had",
+					"timestamps": {
+						"from": "00:00:18,830",
+						"to": "00:00:18,840"
+					},
+					"offsets": {
+						"from": 18830,
+						"to": 18840
+					},
+					"id": 632,
+					"p": 0.999977,
+					"t_dtw": -1
+				},
+				{
+					"text": " 12",
+					"timestamps": {
+						"from": "00:00:19,180",
+						"to": "00:00:19,390"
+					},
+					"offsets": {
+						"from": 19180,
+						"to": 19390
+					},
+					"id": 2272,
+					"p": 0.996166,
+					"t_dtw": -1
+				},
+				{
+					"text": " sons",
+					"timestamps": {
+						"from": "00:00:19,390",
+						"to": "00:00:19,630"
+					},
+					"offsets": {
+						"from": 19390,
+						"to": 19630
+					},
+					"id": 13476,
+					"p": 0.999783,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:19,630",
+						"to": "00:00:19,900"
+					},
+					"offsets": {
+						"from": 19630,
+						"to": 19900
+					},
+					"id": 13,
+					"p": 0.886586,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_995]",
+					"timestamps": {
+						"from": "00:00:19,900",
+						"to": "00:00:19,900"
+					},
+					"offsets": {
+						"from": 19900,
+						"to": 19900
+					},
+					"id": 51360,
+					"p": 0.949446,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:20,000",
+				"to": "00:00:21,400"
+			},
+			"offsets": {
+				"from": 20000,
+				"to": 21400
+			},
+			"text": " That became the 12 tribes of Israel.",
+			"tokens": [
+				{
+					"text": " That",
+					"timestamps": {
+						"from": "00:00:20,000",
+						"to": "00:00:20,060"
+					},
+					"offsets": {
+						"from": 20000,
+						"to": 20060
+					},
+					"id": 663,
+					"p": 0.999989,
+					"t_dtw": -1
+				},
+				{
+					"text": " became",
+					"timestamps": {
+						"from": "00:00:20,280",
+						"to": "00:00:20,300"
+					},
+					"offsets": {
+						"from": 20280,
+						"to": 20300
+					},
+					"id": 3062,
+					"p": 0.999977,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:20,300",
+						"to": "00:00:20,420"
+					},
+					"offsets": {
+						"from": 20300,
+						"to": 20420
+					},
+					"id": 264,
+					"p": 0.999992,
+					"t_dtw": -1
+				},
+				{
+					"text": " 12",
+					"timestamps": {
+						"from": "00:00:20,420",
+						"to": "00:00:20,660"
+					},
+					"offsets": {
+						"from": 20420,
+						"to": 20660
+					},
+					"id": 2272,
+					"p": 0.999447,
+					"t_dtw": -1
+				},
+				{
+					"text": " tribes",
+					"timestamps": {
+						"from": "00:00:20,660",
+						"to": "00:00:20,900"
+					},
+					"offsets": {
+						"from": 20660,
+						"to": 20900
+					},
+					"id": 19035,
+					"p": 0.999466,
+					"t_dtw": -1
+				},
+				{
+					"text": " of",
+					"timestamps": {
+						"from": "00:00:20,900",
+						"to": "00:00:20,980"
+					},
+					"offsets": {
+						"from": 20900,
+						"to": 20980
+					},
+					"id": 295,
+					"p": 1,
+					"t_dtw": -1
+				},
+				{
+					"text": " Israel",
+					"timestamps": {
+						"from": "00:00:20,980",
+						"to": "00:00:21,210"
+					},
+					"offsets": {
+						"from": 20980,
+						"to": 21210
+					},
+					"id": 5674,
+					"p": 0.999992,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:21,210",
+						"to": "00:00:21,390"
+					},
+					"offsets": {
+						"from": 21210,
+						"to": 21390
+					},
+					"id": 13,
+					"p": 0.950642,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_1070]",
+					"timestamps": {
+						"from": "00:00:21,400",
+						"to": "00:00:21,400"
+					},
+					"offsets": {
+						"from": 21400,
+						"to": 21400
+					},
+					"id": 51435,
+					"p": 0.845042,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:21,400",
+				"to": "00:00:23,360"
+			},
+			"offsets": {
+				"from": 21400,
+				"to": 23360
+			},
+			"text": " But Jacob had a brother named Esau.",
+			"tokens": [
+				{
+					"text": " But",
+					"timestamps": {
+						"from": "00:00:21,580",
+						"to": "00:00:21,580"
+					},
+					"offsets": {
+						"from": 21580,
+						"to": 21580
+					},
+					"id": 583,
+					"p": 0.999394,
+					"t_dtw": -1
+				},
+				{
+					"text": " Jacob",
+					"timestamps": {
+						"from": "00:00:21,680",
+						"to": "00:00:21,890"
+					},
+					"offsets": {
+						"from": 21680,
+						"to": 21890
+					},
+					"id": 14117,
+					"p": 0.999889,
+					"t_dtw": -1
+				},
+				{
+					"text": " had",
+					"timestamps": {
+						"from": "00:00:21,900",
+						"to": "00:00:22,070"
+					},
+					"offsets": {
+						"from": 21900,
+						"to": 22070
+					},
+					"id": 632,
+					"p": 0.999985,
+					"t_dtw": -1
+				},
+				{
+					"text": " a",
+					"timestamps": {
+						"from": "00:00:22,070",
+						"to": "00:00:22,130"
+					},
+					"offsets": {
+						"from": 22070,
+						"to": 22130
+					},
+					"id": 257,
+					"p": 0.999996,
+					"t_dtw": -1
+				},
+				{
+					"text": " brother",
+					"timestamps": {
+						"from": "00:00:22,130",
+						"to": "00:00:22,480"
+					},
+					"offsets": {
+						"from": 22130,
+						"to": 22480
+					},
+					"id": 3708,
+					"p": 0.999878,
+					"t_dtw": -1
+				},
+				{
+					"text": " named",
+					"timestamps": {
+						"from": "00:00:22,520",
+						"to": "00:00:22,790"
+					},
+					"offsets": {
+						"from": 22520,
+						"to": 22790
+					},
+					"id": 4926,
+					"p": 0.992335,
+					"t_dtw": -1
+				},
+				{
+					"text": " Es",
+					"timestamps": {
+						"from": "00:00:22,960",
+						"to": "00:00:23,000"
+					},
+					"offsets": {
+						"from": 22960,
+						"to": 23000
+					},
+					"id": 2313,
+					"p": 0.941903,
+					"t_dtw": -1
+				},
+				{
+					"text": "au",
+					"timestamps": {
+						"from": "00:00:23,000",
+						"to": "00:00:23,120"
+					},
+					"offsets": {
+						"from": 23000,
+						"to": 23120
+					},
+					"id": 1459,
+					"p": 0.998936,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:23,120",
+						"to": "00:00:23,360"
+					},
+					"offsets": {
+						"from": 23120,
+						"to": 23360
+					},
+					"id": 13,
+					"p": 0.994427,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_1168]",
+					"timestamps": {
+						"from": "00:00:23,360",
+						"to": "00:00:23,360"
+					},
+					"offsets": {
+						"from": 23360,
+						"to": 23360
+					},
+					"id": 51533,
+					"p": 0.631147,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:23,840",
+				"to": "00:00:26,660"
+			},
+			"offsets": {
+				"from": 23840,
+				"to": 26660
+			},
+			"text": " And so they're related.",
+			"tokens": [
+				{
+					"text": " And",
+					"timestamps": {
+						"from": "00:00:23,840",
+						"to": "00:00:23,840"
+					},
+					"offsets": {
+						"from": 23840,
+						"to": 23840
+					},
+					"id": 400,
+					"p": 0.995402,
+					"t_dtw": -1
+				},
+				{
+					"text": " so",
+					"timestamps": {
+						"from": "00:00:24,110",
+						"to": "00:00:24,110"
+					},
+					"offsets": {
+						"from": 24110,
+						"to": 24110
+					},
+					"id": 370,
+					"p": 0.999931,
+					"t_dtw": -1
+				},
+				{
+					"text": " they",
+					"timestamps": {
+						"from": "00:00:24,130",
+						"to": "00:00:24,710"
+					},
+					"offsets": {
+						"from": 24130,
+						"to": 24710
+					},
+					"id": 436,
+					"p": 0.980266,
+					"t_dtw": -1
+				},
+				{
+					"text": "'re",
+					"timestamps": {
+						"from": "00:00:24,710",
+						"to": "00:00:25,130"
+					},
+					"offsets": {
+						"from": 24710,
+						"to": 25130
+					},
+					"id": 434,
+					"p": 0.999058,
+					"t_dtw": -1
+				},
+				{
+					"text": " related",
+					"timestamps": {
+						"from": "00:00:25,150",
+						"to": "00:00:25,980"
+					},
+					"offsets": {
+						"from": 25150,
+						"to": 25980
+					},
+					"id": 4077,
+					"p": 0.987645,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:26,360",
+						"to": "00:00:26,660"
+					},
+					"offsets": {
+						"from": 26360,
+						"to": 26660
+					},
+					"id": 13,
+					"p": 0.999123,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_1333]",
+					"timestamps": {
+						"from": "00:00:26,660",
+						"to": "00:00:26,660"
+					},
+					"offsets": {
+						"from": 26660,
+						"to": 26660
+					},
+					"id": 51698,
+					"p": 0.66236,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:26,940",
+				"to": "00:00:28,380"
+			},
+			"offsets": {
+				"from": 26940,
+				"to": 28380
+			},
+			"text": " These people groups are related.",
+			"tokens": [
+				{
+					"text": " These",
+					"timestamps": {
+						"from": "00:00:26,940",
+						"to": "00:00:26,940"
+					},
+					"offsets": {
+						"from": 26940,
+						"to": 26940
+					},
+					"id": 1981,
+					"p": 0.998232,
+					"t_dtw": -1
+				},
+				{
+					"text": " people",
+					"timestamps": {
+						"from": "00:00:27,220",
+						"to": "00:00:27,280"
+					},
+					"offsets": {
+						"from": 27220,
+						"to": 27280
+					},
+					"id": 561,
+					"p": 0.999966,
+					"t_dtw": -1
+				},
+				{
+					"text": " groups",
+					"timestamps": {
+						"from": "00:00:27,280",
+						"to": "00:00:27,620"
+					},
+					"offsets": {
+						"from": 27280,
+						"to": 27620
+					},
+					"id": 3935,
+					"p": 0.999928,
+					"t_dtw": -1
+				},
+				{
+					"text": " are",
+					"timestamps": {
+						"from": "00:00:27,620",
+						"to": "00:00:27,790"
+					},
+					"offsets": {
+						"from": 27620,
+						"to": 27790
+					},
+					"id": 366,
+					"p": 1,
+					"t_dtw": -1
+				},
+				{
+					"text": " related",
+					"timestamps": {
+						"from": "00:00:27,790",
+						"to": "00:00:28,120"
+					},
+					"offsets": {
+						"from": 27790,
+						"to": 28120
+					},
+					"id": 4077,
+					"p": 0.999989,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:28,120",
+						"to": "00:00:28,330"
+					},
+					"offsets": {
+						"from": 28120,
+						"to": 28330
+					},
+					"id": 13,
+					"p": 0.9979,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_1419]",
+					"timestamps": {
+						"from": "00:00:28,380",
+						"to": "00:00:28,380"
+					},
+					"offsets": {
+						"from": 28380,
+						"to": 28380
+					},
+					"id": 51784,
+					"p": 0.823231,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:28,840",
+				"to": "00:00:30,000"
+			},
+			"offsets": {
+				"from": 28840,
+				"to": 30000
+			},
+			"text": " And Israel thought,",
+			"tokens": [
+				{
+					"text": "[_BEG_]",
+					"timestamps": {
+						"from": "00:00:28,840",
+						"to": "00:00:28,840"
+					},
+					"offsets": {
+						"from": 28840,
+						"to": 28840
+					},
+					"id": 50365,
+					"p": 0.958563,
+					"t_dtw": -1
+				},
+				{
+					"text": " And",
+					"timestamps": {
+						"from": "00:00:29,020",
+						"to": "00:00:29,020"
+					},
+					"offsets": {
+						"from": 29020,
+						"to": 29020
+					},
+					"id": 400,
+					"p": 0.843248,
+					"t_dtw": -1
+				},
+				{
+					"text": " Israel",
+					"timestamps": {
+						"from": "00:00:29,120",
+						"to": "00:00:29,400"
+					},
+					"offsets": {
+						"from": 29120,
+						"to": 29400
+					},
+					"id": 5674,
+					"p": 0.998407,
+					"t_dtw": -1
+				},
+				{
+					"text": " thought",
+					"timestamps": {
+						"from": "00:00:29,400",
+						"to": "00:00:29,920"
+					},
+					"offsets": {
+						"from": 29400,
+						"to": 29920
+					},
+					"id": 1194,
+					"p": 0.982898,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:29,970",
+						"to": "00:00:30,000"
+					},
+					"offsets": {
+						"from": 29970,
+						"to": 30000
+					},
+					"id": 11,
+					"p": 0.509446,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_58]",
+					"timestamps": {
+						"from": "00:00:30,000",
+						"to": "00:00:30,000"
+					},
+					"offsets": {
+						"from": 30000,
+						"to": 30000
+					},
+					"id": 50423,
+					"p": 0.996603,
+					"t_dtw": -1
+				}
+			]
+		}
+	]
+}

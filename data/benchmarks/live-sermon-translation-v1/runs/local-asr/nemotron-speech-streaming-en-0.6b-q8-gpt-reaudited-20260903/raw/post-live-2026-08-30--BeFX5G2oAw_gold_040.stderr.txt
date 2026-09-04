@@ -1,0 +1,25 @@
+[nemo-speech] transcribe session started
+[asr] model=.nemotron-speech-streaming-en-0.6b.q8_0.gguf head=rnnt backend=MTL0
+[asr] mode=offline head=rnnt attention-left=70 attention-right=13 encoder-frames
+/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/data/benchmarks/live-sermon-translation-v1/runs/local-asr/nemotron-speech-streaming-en-0.6b-q8-gpt-reaudited-20260903/prepared-audio/post-live-2026-08-30--BeFX5G2oAw_gold_040.wav -> /Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/data/benchmarks/live-sermon-translation-v1/runs/local-asr/nemotron-speech-streaming-en-0.6b-q8-gpt-reaudited-20260903/raw/post-live-2026-08-30--BeFX5G2oAw_gold_040.json
+[nemo-speech] transcribe session finished
+real 1.60
+user 0.14
+sys 0.34
+          1779662848  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+              110974  page reclaims
+                  10  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                   0  voluntary context switches
+                1813  involuntary context switches
+          3254882187  instructions retired
+          1507383093  cycles elapsed
+          1758661032  peak memory footprint

@@ -1,0 +1,143 @@
+{
+	"systeminfo": "WHISPER : COREML = 0 | OPENVINO = 0 | MTL : EMBED_LIBRARY = 1 | CPU : NEON = 1 | ARM_FMA = 1 | DOTPROD = 1 | ACCELERATE = 1 | OPENMP = 1 | REPACK = 1 | ",
+	"model": {
+		"type": "small",
+		"multilingual": false,
+		"vocab": 51864,
+		"audio": {
+			"ctx": 1500,
+			"state": 768,
+			"head": 12,
+			"layer": 12
+		},
+		"text": {
+			"ctx": 448,
+			"state": 768,
+			"head": 12,
+			"layer": 12
+		},
+		"mels": 80,
+		"ftype": 1
+	},
+	"params": {
+		"model": "/Users/jonathan_jing/Library/Caches/sermon-asr-benchmark/models/ggml-small.en.bin",
+		"language": "en",
+		"translate": false
+	},
+	"result": {
+		"language": "en"
+	},
+	"transcription": [
+		{
+			"timestamps": {
+				"from": "00:00:00,000",
+				"to": "00:00:02,580"
+			},
+			"offsets": {
+				"from": 0,
+				"to": 2580
+			},
+			"text": " (upbeat music)",
+			"tokens": [
+				{
+					"text": "[_BEG_]",
+					"timestamps": {
+						"from": "00:00:00,000",
+						"to": "00:00:00,000"
+					},
+					"offsets": {
+						"from": 0,
+						"to": 0
+					},
+					"id": 50363,
+					"p": 0.636974,
+					"t_dtw": -1
+				},
+				{
+					"text": " (",
+					"timestamps": {
+						"from": "00:00:00,000",
+						"to": "00:00:00,200"
+					},
+					"offsets": {
+						"from": 0,
+						"to": 200
+					},
+					"id": 357,
+					"p": 0.244775,
+					"t_dtw": -1
+				},
+				{
+					"text": "up",
+					"timestamps": {
+						"from": "00:00:00,200",
+						"to": "00:00:00,590"
+					},
+					"offsets": {
+						"from": 200,
+						"to": 590
+					},
+					"id": 929,
+					"p": 0.307266,
+					"t_dtw": -1
+				},
+				{
+					"text": "beat",
+					"timestamps": {
+						"from": "00:00:00,590",
+						"to": "00:00:01,380"
+					},
+					"offsets": {
+						"from": 590,
+						"to": 1380
+					},
+					"id": 12945,
+					"p": 0.998633,
+					"t_dtw": -1
+				},
+				{
+					"text": " music",
+					"timestamps": {
+						"from": "00:00:01,380",
+						"to": "00:00:02,370"
+					},
+					"offsets": {
+						"from": 1380,
+						"to": 2370
+					},
+					"id": 2647,
+					"p": 0.846554,
+					"t_dtw": -1
+				},
+				{
+					"text": ")",
+					"timestamps": {
+						"from": "00:00:02,370",
+						"to": "00:00:02,580"
+					},
+					"offsets": {
+						"from": 2370,
+						"to": 2580
+					},
+					"id": 8,
+					"p": 0.919795,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_129]",
+					"timestamps": {
+						"from": "00:00:02,580",
+						"to": "00:00:02,580"
+					},
+					"offsets": {
+						"from": 2580,
+						"to": 2580
+					},
+					"id": 50492,
+					"p": 0.688098,
+					"t_dtw": -1
+				}
+			]
+		}
+	]
+}

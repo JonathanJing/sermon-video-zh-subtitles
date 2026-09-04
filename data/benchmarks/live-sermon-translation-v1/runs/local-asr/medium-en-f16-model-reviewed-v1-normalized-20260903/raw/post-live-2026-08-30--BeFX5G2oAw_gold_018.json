@@ -1,0 +1,1650 @@
+{
+	"systeminfo": "WHISPER : COREML = 0 | OPENVINO = 0 | MTL : EMBED_LIBRARY = 1 | CPU : NEON = 1 | ARM_FMA = 1 | DOTPROD = 1 | ACCELERATE = 1 | OPENMP = 1 | REPACK = 1 | ",
+	"model": {
+		"type": "medium",
+		"multilingual": false,
+		"vocab": 51864,
+		"audio": {
+			"ctx": 1500,
+			"state": 1024,
+			"head": 16,
+			"layer": 24
+		},
+		"text": {
+			"ctx": 448,
+			"state": 1024,
+			"head": 16,
+			"layer": 24
+		},
+		"mels": 80,
+		"ftype": 1
+	},
+	"params": {
+		"model": "/Users/jonathan_jing/Library/Caches/sermon-asr-benchmark/models/ggml-medium.en.bin",
+		"language": "en",
+		"translate": false
+	},
+	"result": {
+		"language": "en"
+	},
+	"transcription": [
+		{
+			"timestamps": {
+				"from": "00:00:00,000",
+				"to": "00:00:06,260"
+			},
+			"offsets": {
+				"from": 0,
+				"to": 6260
+			},
+			"text": " this land. And they continually worshipped things other than God. So God removed them",
+			"tokens": [
+				{
+					"text": "[_BEG_]",
+					"timestamps": {
+						"from": "00:00:00,000",
+						"to": "00:00:00,000"
+					},
+					"offsets": {
+						"from": 0,
+						"to": 0
+					},
+					"id": 50363,
+					"p": 0.992842,
+					"t_dtw": -1
+				},
+				{
+					"text": " this",
+					"timestamps": {
+						"from": "00:00:00,030",
+						"to": "00:00:00,450"
+					},
+					"offsets": {
+						"from": 30,
+						"to": 450
+					},
+					"id": 428,
+					"p": 0.916017,
+					"t_dtw": -1
+				},
+				{
+					"text": " land",
+					"timestamps": {
+						"from": "00:00:00,450",
+						"to": "00:00:00,600"
+					},
+					"offsets": {
+						"from": 450,
+						"to": 600
+					},
+					"id": 1956,
+					"p": 0.983881,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:01,240",
+						"to": "00:00:01,240"
+					},
+					"offsets": {
+						"from": 1240,
+						"to": 1240
+					},
+					"id": 13,
+					"p": 0.363827,
+					"t_dtw": -1
+				},
+				{
+					"text": " And",
+					"timestamps": {
+						"from": "00:00:01,270",
+						"to": "00:00:01,450"
+					},
+					"offsets": {
+						"from": 1270,
+						"to": 1450
+					},
+					"id": 843,
+					"p": 0.469864,
+					"t_dtw": -1
+				},
+				{
+					"text": " they",
+					"timestamps": {
+						"from": "00:00:01,450",
+						"to": "00:00:01,730"
+					},
+					"offsets": {
+						"from": 1450,
+						"to": 1730
+					},
+					"id": 484,
+					"p": 0.988101,
+					"t_dtw": -1
+				},
+				{
+					"text": " continually",
+					"timestamps": {
+						"from": "00:00:01,730",
+						"to": "00:00:02,490"
+					},
+					"offsets": {
+						"from": 1730,
+						"to": 2490
+					},
+					"id": 17451,
+					"p": 0.990429,
+					"t_dtw": -1
+				},
+				{
+					"text": " worshipped",
+					"timestamps": {
+						"from": "00:00:02,490",
+						"to": "00:00:03,060"
+					},
+					"offsets": {
+						"from": 2490,
+						"to": 3060
+					},
+					"id": 46204,
+					"p": 0.613358,
+					"t_dtw": -1
+				},
+				{
+					"text": " things",
+					"timestamps": {
+						"from": "00:00:03,290",
+						"to": "00:00:03,570"
+					},
+					"offsets": {
+						"from": 3290,
+						"to": 3570
+					},
+					"id": 1243,
+					"p": 0.978271,
+					"t_dtw": -1
+				},
+				{
+					"text": " other",
+					"timestamps": {
+						"from": "00:00:03,650",
+						"to": "00:00:03,880"
+					},
+					"offsets": {
+						"from": 3650,
+						"to": 3880
+					},
+					"id": 584,
+					"p": 0.968638,
+					"t_dtw": -1
+				},
+				{
+					"text": " than",
+					"timestamps": {
+						"from": "00:00:03,880",
+						"to": "00:00:04,200"
+					},
+					"offsets": {
+						"from": 3880,
+						"to": 4200
+					},
+					"id": 621,
+					"p": 0.957455,
+					"t_dtw": -1
+				},
+				{
+					"text": " God",
+					"timestamps": {
+						"from": "00:00:04,200",
+						"to": "00:00:04,520"
+					},
+					"offsets": {
+						"from": 4200,
+						"to": 4520
+					},
+					"id": 1793,
+					"p": 0.937991,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:04,810",
+						"to": "00:00:04,920"
+					},
+					"offsets": {
+						"from": 4810,
+						"to": 4920
+					},
+					"id": 13,
+					"p": 0.581128,
+					"t_dtw": -1
+				},
+				{
+					"text": " So",
+					"timestamps": {
+						"from": "00:00:04,920",
+						"to": "00:00:05,080"
+					},
+					"offsets": {
+						"from": 4920,
+						"to": 5080
+					},
+					"id": 1406,
+					"p": 0.879575,
+					"t_dtw": -1
+				},
+				{
+					"text": " God",
+					"timestamps": {
+						"from": "00:00:05,080",
+						"to": "00:00:05,320"
+					},
+					"offsets": {
+						"from": 5080,
+						"to": 5320
+					},
+					"id": 1793,
+					"p": 0.818538,
+					"t_dtw": -1
+				},
+				{
+					"text": " removed",
+					"timestamps": {
+						"from": "00:00:05,330",
+						"to": "00:00:05,910"
+					},
+					"offsets": {
+						"from": 5330,
+						"to": 5910
+					},
+					"id": 4615,
+					"p": 0.983164,
+					"t_dtw": -1
+				},
+				{
+					"text": " them",
+					"timestamps": {
+						"from": "00:00:05,910",
+						"to": "00:00:06,260"
+					},
+					"offsets": {
+						"from": 5910,
+						"to": 6260
+					},
+					"id": 606,
+					"p": 0.98749,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_313]",
+					"timestamps": {
+						"from": "00:00:06,260",
+						"to": "00:00:06,260"
+					},
+					"offsets": {
+						"from": 6260,
+						"to": 6260
+					},
+					"id": 50676,
+					"p": 0.326359,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:06,260",
+				"to": "00:00:10,740"
+			},
+			"offsets": {
+				"from": 6260,
+				"to": 10740
+			},
+			"text": " from the land. This is what he did. The 12 tribes of Israel were divided into two kingdoms,",
+			"tokens": [
+				{
+					"text": " from",
+					"timestamps": {
+						"from": "00:00:06,290",
+						"to": "00:00:06,540"
+					},
+					"offsets": {
+						"from": 6290,
+						"to": 6540
+					},
+					"id": 422,
+					"p": 0.998955,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:06,540",
+						"to": "00:00:06,750"
+					},
+					"offsets": {
+						"from": 6540,
+						"to": 6750
+					},
+					"id": 262,
+					"p": 0.997166,
+					"t_dtw": -1
+				},
+				{
+					"text": " land",
+					"timestamps": {
+						"from": "00:00:06,750",
+						"to": "00:00:06,860"
+					},
+					"offsets": {
+						"from": 6750,
+						"to": 6860
+					},
+					"id": 1956,
+					"p": 0.993593,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:07,070",
+						"to": "00:00:07,260"
+					},
+					"offsets": {
+						"from": 7070,
+						"to": 7260
+					},
+					"id": 13,
+					"p": 0.896432,
+					"t_dtw": -1
+				},
+				{
+					"text": " This",
+					"timestamps": {
+						"from": "00:00:07,260",
+						"to": "00:00:07,260"
+					},
+					"offsets": {
+						"from": 7260,
+						"to": 7260
+					},
+					"id": 770,
+					"p": 0.936683,
+					"t_dtw": -1
+				},
+				{
+					"text": " is",
+					"timestamps": {
+						"from": "00:00:07,500",
+						"to": "00:00:07,500"
+					},
+					"offsets": {
+						"from": 7500,
+						"to": 7500
+					},
+					"id": 318,
+					"p": 0.991692,
+					"t_dtw": -1
+				},
+				{
+					"text": " what",
+					"timestamps": {
+						"from": "00:00:07,530",
+						"to": "00:00:07,660"
+					},
+					"offsets": {
+						"from": 7530,
+						"to": 7660
+					},
+					"id": 644,
+					"p": 0.997896,
+					"t_dtw": -1
+				},
+				{
+					"text": " he",
+					"timestamps": {
+						"from": "00:00:07,660",
+						"to": "00:00:07,740"
+					},
+					"offsets": {
+						"from": 7660,
+						"to": 7740
+					},
+					"id": 339,
+					"p": 0.579741,
+					"t_dtw": -1
+				},
+				{
+					"text": " did",
+					"timestamps": {
+						"from": "00:00:07,740",
+						"to": "00:00:07,860"
+					},
+					"offsets": {
+						"from": 7740,
+						"to": 7860
+					},
+					"id": 750,
+					"p": 0.999462,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:07,860",
+						"to": "00:00:08,020"
+					},
+					"offsets": {
+						"from": 7860,
+						"to": 8020
+					},
+					"id": 13,
+					"p": 0.833863,
+					"t_dtw": -1
+				},
+				{
+					"text": " The",
+					"timestamps": {
+						"from": "00:00:08,020",
+						"to": "00:00:08,160"
+					},
+					"offsets": {
+						"from": 8020,
+						"to": 8160
+					},
+					"id": 383,
+					"p": 0.879442,
+					"t_dtw": -1
+				},
+				{
+					"text": " 12",
+					"timestamps": {
+						"from": "00:00:08,160",
+						"to": "00:00:08,450"
+					},
+					"offsets": {
+						"from": 8160,
+						"to": 8450
+					},
+					"id": 1105,
+					"p": 0.548413,
+					"t_dtw": -1
+				},
+				{
+					"text": " tribes",
+					"timestamps": {
+						"from": "00:00:08,450",
+						"to": "00:00:08,740"
+					},
+					"offsets": {
+						"from": 8450,
+						"to": 8740
+					},
+					"id": 15663,
+					"p": 0.953244,
+					"t_dtw": -1
+				},
+				{
+					"text": " of",
+					"timestamps": {
+						"from": "00:00:08,740",
+						"to": "00:00:08,830"
+					},
+					"offsets": {
+						"from": 8740,
+						"to": 8830
+					},
+					"id": 286,
+					"p": 0.994791,
+					"t_dtw": -1
+				},
+				{
+					"text": " Israel",
+					"timestamps": {
+						"from": "00:00:08,830",
+						"to": "00:00:09,140"
+					},
+					"offsets": {
+						"from": 8830,
+						"to": 9140
+					},
+					"id": 2692,
+					"p": 0.996656,
+					"t_dtw": -1
+				},
+				{
+					"text": " were",
+					"timestamps": {
+						"from": "00:00:09,150",
+						"to": "00:00:09,340"
+					},
+					"offsets": {
+						"from": 9150,
+						"to": 9340
+					},
+					"id": 547,
+					"p": 0.912082,
+					"t_dtw": -1
+				},
+				{
+					"text": " divided",
+					"timestamps": {
+						"from": "00:00:09,390",
+						"to": "00:00:09,780"
+					},
+					"offsets": {
+						"from": 9390,
+						"to": 9780
+					},
+					"id": 9086,
+					"p": 0.994651,
+					"t_dtw": -1
+				},
+				{
+					"text": " into",
+					"timestamps": {
+						"from": "00:00:09,780",
+						"to": "00:00:10,020"
+					},
+					"offsets": {
+						"from": 9780,
+						"to": 10020
+					},
+					"id": 656,
+					"p": 0.988059,
+					"t_dtw": -1
+				},
+				{
+					"text": " two",
+					"timestamps": {
+						"from": "00:00:10,020",
+						"to": "00:00:10,180"
+					},
+					"offsets": {
+						"from": 10020,
+						"to": 10180
+					},
+					"id": 734,
+					"p": 0.890957,
+					"t_dtw": -1
+				},
+				{
+					"text": " kingdoms",
+					"timestamps": {
+						"from": "00:00:10,180",
+						"to": "00:00:10,620"
+					},
+					"offsets": {
+						"from": 10180,
+						"to": 10620
+					},
+					"id": 41901,
+					"p": 0.962746,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:10,620",
+						"to": "00:00:10,740"
+					},
+					"offsets": {
+						"from": 10620,
+						"to": 10740
+					},
+					"id": 11,
+					"p": 0.466245,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_537]",
+					"timestamps": {
+						"from": "00:00:10,740",
+						"to": "00:00:10,740"
+					},
+					"offsets": {
+						"from": 10740,
+						"to": 10740
+					},
+					"id": 50900,
+					"p": 0.437207,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:10,740",
+				"to": "00:00:14,780"
+			},
+			"offsets": {
+				"from": 10740,
+				"to": 14780
+			},
+			"text": " the northern kingdom. The Assyrians came in and attacked them and dragged them away. The",
+			"tokens": [
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:10,770",
+						"to": "00:00:10,900"
+					},
+					"offsets": {
+						"from": 10770,
+						"to": 10900
+					},
+					"id": 262,
+					"p": 0.983866,
+					"t_dtw": -1
+				},
+				{
+					"text": " northern",
+					"timestamps": {
+						"from": "00:00:10,900",
+						"to": "00:00:11,310"
+					},
+					"offsets": {
+						"from": 10900,
+						"to": 11310
+					},
+					"id": 7840,
+					"p": 0.593269,
+					"t_dtw": -1
+				},
+				{
+					"text": " kingdom",
+					"timestamps": {
+						"from": "00:00:11,310",
+						"to": "00:00:11,360"
+					},
+					"offsets": {
+						"from": 11310,
+						"to": 11360
+					},
+					"id": 13239,
+					"p": 0.958446,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:11,570",
+						"to": "00:00:11,770"
+					},
+					"offsets": {
+						"from": 11570,
+						"to": 11770
+					},
+					"id": 13,
+					"p": 0.652918,
+					"t_dtw": -1
+				},
+				{
+					"text": " The",
+					"timestamps": {
+						"from": "00:00:11,990",
+						"to": "00:00:12,000"
+					},
+					"offsets": {
+						"from": 11990,
+						"to": 12000
+					},
+					"id": 383,
+					"p": 0.979824,
+					"t_dtw": -1
+				},
+				{
+					"text": " Assy",
+					"timestamps": {
+						"from": "00:00:12,010",
+						"to": "00:00:12,220"
+					},
+					"offsets": {
+						"from": 12010,
+						"to": 12220
+					},
+					"id": 39881,
+					"p": 0.998563,
+					"t_dtw": -1
+				},
+				{
+					"text": "rians",
+					"timestamps": {
+						"from": "00:00:12,220",
+						"to": "00:00:12,470"
+					},
+					"offsets": {
+						"from": 12220,
+						"to": 12470
+					},
+					"id": 19151,
+					"p": 0.996432,
+					"t_dtw": -1
+				},
+				{
+					"text": " came",
+					"timestamps": {
+						"from": "00:00:12,470",
+						"to": "00:00:12,690"
+					},
+					"offsets": {
+						"from": 12470,
+						"to": 12690
+					},
+					"id": 1625,
+					"p": 0.997314,
+					"t_dtw": -1
+				},
+				{
+					"text": " in",
+					"timestamps": {
+						"from": "00:00:12,690",
+						"to": "00:00:12,740"
+					},
+					"offsets": {
+						"from": 12690,
+						"to": 12740
+					},
+					"id": 287,
+					"p": 0.993339,
+					"t_dtw": -1
+				},
+				{
+					"text": " and",
+					"timestamps": {
+						"from": "00:00:12,900",
+						"to": "00:00:12,950"
+					},
+					"offsets": {
+						"from": 12900,
+						"to": 12950
+					},
+					"id": 290,
+					"p": 0.969141,
+					"t_dtw": -1
+				},
+				{
+					"text": " attacked",
+					"timestamps": {
+						"from": "00:00:12,950",
+						"to": "00:00:13,370"
+					},
+					"offsets": {
+						"from": 12950,
+						"to": 13370
+					},
+					"id": 7384,
+					"p": 0.987988,
+					"t_dtw": -1
+				},
+				{
+					"text": " them",
+					"timestamps": {
+						"from": "00:00:13,370",
+						"to": "00:00:13,580"
+					},
+					"offsets": {
+						"from": 13370,
+						"to": 13580
+					},
+					"id": 606,
+					"p": 0.993771,
+					"t_dtw": -1
+				},
+				{
+					"text": " and",
+					"timestamps": {
+						"from": "00:00:13,580",
+						"to": "00:00:13,740"
+					},
+					"offsets": {
+						"from": 13580,
+						"to": 13740
+					},
+					"id": 290,
+					"p": 0.972945,
+					"t_dtw": -1
+				},
+				{
+					"text": " dragged",
+					"timestamps": {
+						"from": "00:00:13,740",
+						"to": "00:00:14,110"
+					},
+					"offsets": {
+						"from": 13740,
+						"to": 14110
+					},
+					"id": 17901,
+					"p": 0.985718,
+					"t_dtw": -1
+				},
+				{
+					"text": " them",
+					"timestamps": {
+						"from": "00:00:14,110",
+						"to": "00:00:14,310"
+					},
+					"offsets": {
+						"from": 14110,
+						"to": 14310
+					},
+					"id": 606,
+					"p": 0.998262,
+					"t_dtw": -1
+				},
+				{
+					"text": " away",
+					"timestamps": {
+						"from": "00:00:14,390",
+						"to": "00:00:14,530"
+					},
+					"offsets": {
+						"from": 14390,
+						"to": 14530
+					},
+					"id": 1497,
+					"p": 0.997645,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:14,530",
+						"to": "00:00:14,760"
+					},
+					"offsets": {
+						"from": 14530,
+						"to": 14760
+					},
+					"id": 13,
+					"p": 0.924577,
+					"t_dtw": -1
+				},
+				{
+					"text": " The",
+					"timestamps": {
+						"from": "00:00:14,760",
+						"to": "00:00:14,770"
+					},
+					"offsets": {
+						"from": 14760,
+						"to": 14770
+					},
+					"id": 383,
+					"p": 0.955638,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_739]",
+					"timestamps": {
+						"from": "00:00:14,780",
+						"to": "00:00:14,780"
+					},
+					"offsets": {
+						"from": 14780,
+						"to": 14780
+					},
+					"id": 51102,
+					"p": 0.106094,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:14,780",
+				"to": "00:00:21,060"
+			},
+			"offsets": {
+				"from": 14780,
+				"to": 21060
+			},
+			"text": " southern kingdom, which included Zion and Jerusalem, the Babylonians went in and attacked",
+			"tokens": [
+				{
+					"text": " southern",
+					"timestamps": {
+						"from": "00:00:14,810",
+						"to": "00:00:15,350"
+					},
+					"offsets": {
+						"from": 14810,
+						"to": 15350
+					},
+					"id": 8372,
+					"p": 0.991507,
+					"t_dtw": -1
+				},
+				{
+					"text": " kingdom",
+					"timestamps": {
+						"from": "00:00:15,410",
+						"to": "00:00:15,410"
+					},
+					"offsets": {
+						"from": 15410,
+						"to": 15410
+					},
+					"id": 13239,
+					"p": 0.983254,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:16,040",
+						"to": "00:00:16,110"
+					},
+					"offsets": {
+						"from": 16040,
+						"to": 16110
+					},
+					"id": 11,
+					"p": 0.820782,
+					"t_dtw": -1
+				},
+				{
+					"text": " which",
+					"timestamps": {
+						"from": "00:00:16,110",
+						"to": "00:00:16,500"
+					},
+					"offsets": {
+						"from": 16110,
+						"to": 16500
+					},
+					"id": 543,
+					"p": 0.998327,
+					"t_dtw": -1
+				},
+				{
+					"text": " included",
+					"timestamps": {
+						"from": "00:00:16,500",
+						"to": "00:00:17,130"
+					},
+					"offsets": {
+						"from": 16500,
+						"to": 17130
+					},
+					"id": 3017,
+					"p": 0.902212,
+					"t_dtw": -1
+				},
+				{
+					"text": " Zion",
+					"timestamps": {
+						"from": "00:00:17,130",
+						"to": "00:00:17,440"
+					},
+					"offsets": {
+						"from": 17130,
+						"to": 17440
+					},
+					"id": 16899,
+					"p": 0.984545,
+					"t_dtw": -1
+				},
+				{
+					"text": " and",
+					"timestamps": {
+						"from": "00:00:17,440",
+						"to": "00:00:17,660"
+					},
+					"offsets": {
+						"from": 17440,
+						"to": 17660
+					},
+					"id": 290,
+					"p": 0.928816,
+					"t_dtw": -1
+				},
+				{
+					"text": " Jerusalem",
+					"timestamps": {
+						"from": "00:00:17,660",
+						"to": "00:00:18,350"
+					},
+					"offsets": {
+						"from": 17660,
+						"to": 18350
+					},
+					"id": 10843,
+					"p": 0.9991,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:18,430",
+						"to": "00:00:18,530"
+					},
+					"offsets": {
+						"from": 18430,
+						"to": 18530
+					},
+					"id": 11,
+					"p": 0.565027,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:18,530",
+						"to": "00:00:18,760"
+					},
+					"offsets": {
+						"from": 18530,
+						"to": 18760
+					},
+					"id": 262,
+					"p": 0.990955,
+					"t_dtw": -1
+				},
+				{
+					"text": " Babylon",
+					"timestamps": {
+						"from": "00:00:18,760",
+						"to": "00:00:19,300"
+					},
+					"offsets": {
+						"from": 18760,
+						"to": 19300
+					},
+					"id": 28028,
+					"p": 0.994797,
+					"t_dtw": -1
+				},
+				{
+					"text": "ians",
+					"timestamps": {
+						"from": "00:00:19,590",
+						"to": "00:00:19,620"
+					},
+					"offsets": {
+						"from": 19590,
+						"to": 19620
+					},
+					"id": 1547,
+					"p": 0.994188,
+					"t_dtw": -1
+				},
+				{
+					"text": " went",
+					"timestamps": {
+						"from": "00:00:19,620",
+						"to": "00:00:19,930"
+					},
+					"offsets": {
+						"from": 19620,
+						"to": 19930
+					},
+					"id": 1816,
+					"p": 0.991507,
+					"t_dtw": -1
+				},
+				{
+					"text": " in",
+					"timestamps": {
+						"from": "00:00:19,930",
+						"to": "00:00:20,080"
+					},
+					"offsets": {
+						"from": 19930,
+						"to": 20080
+					},
+					"id": 287,
+					"p": 0.996664,
+					"t_dtw": -1
+				},
+				{
+					"text": " and",
+					"timestamps": {
+						"from": "00:00:20,080",
+						"to": "00:00:20,180"
+					},
+					"offsets": {
+						"from": 20080,
+						"to": 20180
+					},
+					"id": 290,
+					"p": 0.993998,
+					"t_dtw": -1
+				},
+				{
+					"text": " attacked",
+					"timestamps": {
+						"from": "00:00:20,420",
+						"to": "00:00:21,060"
+					},
+					"offsets": {
+						"from": 20420,
+						"to": 21060
+					},
+					"id": 7384,
+					"p": 0.995046,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_1053]",
+					"timestamps": {
+						"from": "00:00:21,060",
+						"to": "00:00:21,060"
+					},
+					"offsets": {
+						"from": 21060,
+						"to": 21060
+					},
+					"id": 51416,
+					"p": 0.226575,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:21,060",
+				"to": "00:00:26,080"
+			},
+			"offsets": {
+				"from": 21060,
+				"to": 26080
+			},
+			"text": " them. And the Babylonians were ruthless. They burned down homes. They destroyed the temple.",
+			"tokens": [
+				{
+					"text": " them",
+					"timestamps": {
+						"from": "00:00:21,090",
+						"to": "00:00:21,620"
+					},
+					"offsets": {
+						"from": 21090,
+						"to": 21620
+					},
+					"id": 606,
+					"p": 0.9969,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:21,620",
+						"to": "00:00:21,680"
+					},
+					"offsets": {
+						"from": 21620,
+						"to": 21680
+					},
+					"id": 13,
+					"p": 0.797117,
+					"t_dtw": -1
+				},
+				{
+					"text": " And",
+					"timestamps": {
+						"from": "00:00:21,890",
+						"to": "00:00:22,090"
+					},
+					"offsets": {
+						"from": 21890,
+						"to": 22090
+					},
+					"id": 843,
+					"p": 0.950862,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:22,280",
+						"to": "00:00:22,280"
+					},
+					"offsets": {
+						"from": 22280,
+						"to": 22280
+					},
+					"id": 262,
+					"p": 0.997447,
+					"t_dtw": -1
+				},
+				{
+					"text": " Babylon",
+					"timestamps": {
+						"from": "00:00:22,330",
+						"to": "00:00:22,550"
+					},
+					"offsets": {
+						"from": 22330,
+						"to": 22550
+					},
+					"id": 28028,
+					"p": 0.998982,
+					"t_dtw": -1
+				},
+				{
+					"text": "ians",
+					"timestamps": {
+						"from": "00:00:22,550",
+						"to": "00:00:22,700"
+					},
+					"offsets": {
+						"from": 22550,
+						"to": 22700
+					},
+					"id": 1547,
+					"p": 0.9991,
+					"t_dtw": -1
+				},
+				{
+					"text": " were",
+					"timestamps": {
+						"from": "00:00:22,700",
+						"to": "00:00:22,820"
+					},
+					"offsets": {
+						"from": 22700,
+						"to": 22820
+					},
+					"id": 547,
+					"p": 0.997935,
+					"t_dtw": -1
+				},
+				{
+					"text": " ruthless",
+					"timestamps": {
+						"from": "00:00:22,900",
+						"to": "00:00:23,060"
+					},
+					"offsets": {
+						"from": 22900,
+						"to": 23060
+					},
+					"id": 29541,
+					"p": 0.998791,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:23,220",
+						"to": "00:00:23,320"
+					},
+					"offsets": {
+						"from": 23220,
+						"to": 23320
+					},
+					"id": 13,
+					"p": 0.970036,
+					"t_dtw": -1
+				},
+				{
+					"text": " They",
+					"timestamps": {
+						"from": "00:00:23,320",
+						"to": "00:00:23,540"
+					},
+					"offsets": {
+						"from": 23320,
+						"to": 23540
+					},
+					"id": 1119,
+					"p": 0.985725,
+					"t_dtw": -1
+				},
+				{
+					"text": " burned",
+					"timestamps": {
+						"from": "00:00:23,540",
+						"to": "00:00:23,900"
+					},
+					"offsets": {
+						"from": 23540,
+						"to": 23900
+					},
+					"id": 11544,
+					"p": 0.996322,
+					"t_dtw": -1
+				},
+				{
+					"text": " down",
+					"timestamps": {
+						"from": "00:00:23,900",
+						"to": "00:00:24,120"
+					},
+					"offsets": {
+						"from": 23900,
+						"to": 24120
+					},
+					"id": 866,
+					"p": 0.986423,
+					"t_dtw": -1
+				},
+				{
+					"text": " homes",
+					"timestamps": {
+						"from": "00:00:24,190",
+						"to": "00:00:24,420"
+					},
+					"offsets": {
+						"from": 24190,
+						"to": 24420
+					},
+					"id": 5682,
+					"p": 0.994226,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:24,420",
+						"to": "00:00:24,590"
+					},
+					"offsets": {
+						"from": 24420,
+						"to": 24590
+					},
+					"id": 13,
+					"p": 0.511471,
+					"t_dtw": -1
+				},
+				{
+					"text": " They",
+					"timestamps": {
+						"from": "00:00:24,610",
+						"to": "00:00:24,820"
+					},
+					"offsets": {
+						"from": 24610,
+						"to": 24820
+					},
+					"id": 1119,
+					"p": 0.993415,
+					"t_dtw": -1
+				},
+				{
+					"text": " destroyed",
+					"timestamps": {
+						"from": "00:00:24,820",
+						"to": "00:00:25,340"
+					},
+					"offsets": {
+						"from": 24820,
+						"to": 25340
+					},
+					"id": 6572,
+					"p": 0.999131,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:25,340",
+						"to": "00:00:25,510"
+					},
+					"offsets": {
+						"from": 25340,
+						"to": 25510
+					},
+					"id": 262,
+					"p": 0.999005,
+					"t_dtw": -1
+				},
+				{
+					"text": " temple",
+					"timestamps": {
+						"from": "00:00:25,510",
+						"to": "00:00:25,580"
+					},
+					"offsets": {
+						"from": 25510,
+						"to": 25580
+					},
+					"id": 12505,
+					"p": 0.882637,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:25,890",
+						"to": "00:00:26,070"
+					},
+					"offsets": {
+						"from": 25890,
+						"to": 26070
+					},
+					"id": 13,
+					"p": 0.981669,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_1304]",
+					"timestamps": {
+						"from": "00:00:26,080",
+						"to": "00:00:26,080"
+					},
+					"offsets": {
+						"from": 26080,
+						"to": 26080
+					},
+					"id": 51667,
+					"p": 0.531754,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:26,080",
+				"to": "00:00:29,960"
+			},
+			"offsets": {
+				"from": 26080,
+				"to": 29960
+			},
+			"text": " They grabbed the leaders of Jerusalem and they executed them publicly.",
+			"tokens": [
+				{
+					"text": "[_BEG_]",
+					"timestamps": {
+						"from": "00:00:26,080",
+						"to": "00:00:26,080"
+					},
+					"offsets": {
+						"from": 26080,
+						"to": 26080
+					},
+					"id": 50363,
+					"p": 0.996804,
+					"t_dtw": -1
+				},
+				{
+					"text": " They",
+					"timestamps": {
+						"from": "00:00:26,110",
+						"to": "00:00:26,350"
+					},
+					"offsets": {
+						"from": 26110,
+						"to": 26350
+					},
+					"id": 1119,
+					"p": 0.671665,
+					"t_dtw": -1
+				},
+				{
+					"text": " grabbed",
+					"timestamps": {
+						"from": "00:00:26,350",
+						"to": "00:00:26,670"
+					},
+					"offsets": {
+						"from": 26350,
+						"to": 26670
+					},
+					"id": 13176,
+					"p": 0.990696,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:26,890",
+						"to": "00:00:27,030"
+					},
+					"offsets": {
+						"from": 26890,
+						"to": 27030
+					},
+					"id": 262,
+					"p": 0.997067,
+					"t_dtw": -1
+				},
+				{
+					"text": " leaders",
+					"timestamps": {
+						"from": "00:00:27,340",
+						"to": "00:00:27,510"
+					},
+					"offsets": {
+						"from": 27340,
+						"to": 27510
+					},
+					"id": 2766,
+					"p": 0.998761,
+					"t_dtw": -1
+				},
+				{
+					"text": " of",
+					"timestamps": {
+						"from": "00:00:27,510",
+						"to": "00:00:27,640"
+					},
+					"offsets": {
+						"from": 27510,
+						"to": 27640
+					},
+					"id": 286,
+					"p": 0.996964,
+					"t_dtw": -1
+				},
+				{
+					"text": " Jerusalem",
+					"timestamps": {
+						"from": "00:00:27,640",
+						"to": "00:00:28,280"
+					},
+					"offsets": {
+						"from": 27640,
+						"to": 28280
+					},
+					"id": 10843,
+					"p": 0.99169,
+					"t_dtw": -1
+				},
+				{
+					"text": " and",
+					"timestamps": {
+						"from": "00:00:28,280",
+						"to": "00:00:28,460"
+					},
+					"offsets": {
+						"from": 28280,
+						"to": 28460
+					},
+					"id": 290,
+					"p": 0.78217,
+					"t_dtw": -1
+				},
+				{
+					"text": " they",
+					"timestamps": {
+						"from": "00:00:28,460",
+						"to": "00:00:28,700"
+					},
+					"offsets": {
+						"from": 28460,
+						"to": 28700
+					},
+					"id": 484,
+					"p": 0.868129,
+					"t_dtw": -1
+				},
+				{
+					"text": " executed",
+					"timestamps": {
+						"from": "00:00:28,700",
+						"to": "00:00:29,140"
+					},
+					"offsets": {
+						"from": 28700,
+						"to": 29140
+					},
+					"id": 10945,
+					"p": 0.997613,
+					"t_dtw": -1
+				},
+				{
+					"text": " them",
+					"timestamps": {
+						"from": "00:00:29,210",
+						"to": "00:00:29,430"
+					},
+					"offsets": {
+						"from": 29210,
+						"to": 29430
+					},
+					"id": 606,
+					"p": 0.993131,
+					"t_dtw": -1
+				},
+				{
+					"text": " publicly",
+					"timestamps": {
+						"from": "00:00:29,430",
+						"to": "00:00:29,960"
+					},
+					"offsets": {
+						"from": 29430,
+						"to": 29960
+					},
+					"id": 7271,
+					"p": 0.982844,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:29,960",
+						"to": "00:00:29,960"
+					},
+					"offsets": {
+						"from": 29960,
+						"to": 29960
+					},
+					"id": 13,
+					"p": 0.861088,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_194]",
+					"timestamps": {
+						"from": "00:00:29,960",
+						"to": "00:00:29,960"
+					},
+					"offsets": {
+						"from": 29960,
+						"to": 29960
+					},
+					"id": 50557,
+					"p": 0.171572,
+					"t_dtw": -1
+				}
+			]
+		}
+	]
+}

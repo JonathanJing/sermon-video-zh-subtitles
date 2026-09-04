@@ -630,6 +630,25 @@ artifacts/benchmarks/live-translation/<run_id>/
 
 完整计划见 [MiLMMT-46-4B 证道翻译后训练与 MacBook 优化计划](./milmmt-sermon-post-training-plan.zh.md)，机器可读配置见 `data/benchmarks/live-sermon-translation-v1/milmmt-post-training-v1.json`。
 
+#### Step 4D：本地英文 ASR 主榜
+
+- [x] 固定 `whisper.cpp small.en`、`medium.en`、NeMo Parakeet/Nemotron Q8、MLX `large-v3-turbo`、Distil-Whisper large-v3 与 Qwen3-ASR-0.6B 七个本地候选；
+- [x] 安装 whisper.cpp 1.9.2，固定两份 F16 模型 revision 与 SHA-256；
+- [x] 两模型完成同一 20 段、16.803 分钟受控工程 smoke，均为 20/20、0 error；
+- [x] 从两篇非 translation test 的 post-live 音频建立 60 段、29.811 分钟 `model_reviewed_reference`，并用 exact-chunk GPT-Transcribe 文本完成两模型 provisional 质量评分；
+- [x] 固定 MRQS 公式、完整词关键术语匹配和非语音标签归一化；
+- [x] 生成 13 段、6.5 分钟人工校准队列，覆盖全部静音/非语音参考、无效输出、关键术语漏识别及每来源 3 段确定性随机样本；
+- [x] 使用 GPT-Transcribe 独立重听全部 13 段，13/13 成功、0 error；9 段完全复现、3 段小差异、1 段重大差异；
+- [x] 用 GPT 校准版 reference 重新评分冻结预测：`small.en` 96.244 分并通过离线门禁，`medium.en` 93.772 分且仍因三段歌词漏转失败；
+- [x] 在 M1 Max 上完成 Parakeet TDT 0.6B v3 Q8、Nemotron Streaming EN 0.6B Q8 与 MLX Whisper large-v3-turbo 的同集全量运行；当时五模型榜中仅 `small.en` 通过全部离线门禁；
+- [x] 在同一参考集完成 Distil-Whisper large-v3 GGML F16 与 Qwen3-ASR-0.6B MLX 8-bit；七模型统一榜中 Qwen MRQS 96.893 暂列第一，Qwen 与 `small.en` 通过离线门禁；
+- [ ] 建立约 30 分钟人工校正 ASR dev Gold，现有自动字幕或模型转写不得称为 Gold；
+- [ ] 人工确认 GPT 重听后仍有差异的 4 段，将确认后的子集升级为 human Gold；
+- [ ] 胜出模型完成 10 分钟 1.0× streaming replay；
+- [ ] 与 MiLMMT、浏览器和录音完成 50–60 分钟共存 soak。
+
+协议与当前结果见 [MacBook 本地英文 ASR Benchmark V1](./local-asr-benchmark.zh.md)。
+
 #### Step 5：运行文本 A/B 与消融
 
 - [ ] A0：基础学生模型；

@@ -2,11 +2,13 @@
   "schemaVersion": "milmmt-sermon-post-training-plan-v1",
   "goalId": "BENCH-LIVE-ST-MILMMT-PT-V1",
   "parentGoalId": "BENCH-LIVE-ST-V1",
-  "status": "plan_frozen_training_data_blocked",
+  "status": "runtime_bakeoff_ready_training_manifest_pending",
   "createdAt": "2026-09-03T00:00:00-07:00",
   "primaryModel": {
     "modelId": "xiaomi-research/MiLMMT-46-4B-v1.0",
     "revision": "aa3262750cf493cc638fc9b82fcd26de8b0068fb",
+    "architecture": "gemma3_4b_multimodal_wrapper_text_only_for_this_task",
+    "modelStage": "translation_post_trained_sft_rl_and_merged",
     "trainingSource": "official_unquantized_weights",
     "inferenceBaseline": {
       "systemId": "MB-B4-MiLMMT-46-4B-v1-Q8-Ollama",
@@ -30,11 +32,10 @@
     "testUse": "final_acceptance_only",
     "testMaySelectPromptOrQuantization": false,
     "testMayTrainOrEarlyStop": false,
-    "teacherOutputRequiresExplicitDistillationAuthorization": true,
-    "currentTrainingBlockers": [
-      "source_training_rights_unconfirmed",
-      "gpt_external_student_distillation_not_authorized"
-    ],
+    "datasetClassification": "ordinary_supervised_parallel_data_not_knowledge_distillation",
+    "userConfirmedTrainingUseAllowed": true,
+    "authorizationReceiptReconciliationRequired": true,
+    "currentTrainingBlockers": ["per_record_authorization_and_eligibility_manifest_not_reconciled"],
     "forbiddenSermonIds": [
       "hoeJTwl-EJg",
       "hAWaaBVaMzY",
@@ -70,6 +71,11 @@
   "postTraining": {
     "method": "lora_sft_first",
     "trainOnQuantizedGguf": false,
+    "baseArtifact": "official_bf16_v1.0",
+    "excludeVisionTowerAndMultimodalProjector": true,
+    "fullSegmentStageBeforeRealtimePrefixStage": true,
+    "realtimePrefixExamplesPerSegment": [3, 8],
+    "rlOrDistillationInInitialPlan": false,
     "initialSearchSpace": {
       "loraRank": [16, 32],
       "loraAlpha": [32, 64],
@@ -81,17 +87,48 @@
     "testVisibilityDuringSelection": "prohibited"
   },
   "runtimeMatrix": {
-    "ollamaGguf": ["Q4_K_M", "Q5_K_M", "Q6_K", "Q8_0"],
-    "mlx": ["4bit", "5bit", "6bit", "8bit"],
-    "contextLengths": [4096, 8192],
+    "selectionBeforePostTraining": true,
+    "provisionalPrimary": "mlx_5bit_group64",
+    "provisionalFallback": "llama_cpp_gguf_Q5_K_M",
+    "qualityReference": "mlx_bf16_text_only",
+    "communityBakeoffArtifacts": {
+      "mlx5bit": {
+        "modelId": "translate-studio/MiLMMT-46-4B-v1.0-5bit-MLX",
+        "revision": "8227b351ad0580e35ff3f92f5f8c623da1788c48"
+      },
+      "gguf": {
+        "modelId": "mradermacher/MiLMMT-46-4B-v1.0-GGUF",
+        "revision": "765aa350dc9aa28c41e2a9e34e1b25d56c0d3911",
+        "downloadWholeRepository": false
+      }
+    },
+    "llamaCppGguf": ["Q4_K_M", "Q5_K_M", "Q6_K"],
+    "mlx": ["4bit_group64", "5bit_group64", "6bit_group64"],
+    "contextLengths": [2048, 4096],
+    "rawCompletionRequired": true,
+    "chatTemplateAllowed": false,
+    "stopTokenIdsToVerify": [1, 106],
+    "streamingTtftRequired": true,
     "crossBackendRunsMustRemainSeparate": true,
     "requiredStages": [
       "dev_smoke",
       "dev_full_quality_and_performance",
       "co_resident_asr_translation_replay",
-      "50_to_60_minute_soak",
+      "75_minute_soak",
       "locked_candidate_untouched_test"
     ]
+  },
+  "provisionalRuntimeGates": {
+    "developmentSegmentCount": [300, 500],
+    "inputTokensForTtftGateMaximum": 80,
+    "warmModelOnlyTtftP95MillisecondsMaximum": 350,
+    "decodeTokensPerSecondMinimum": 25,
+    "translationOnlyPeakRssGiBMaximum": 6,
+    "swapGrowthGiBMaximum": 0,
+    "chrfPlusPlusDropFromBf16Maximum": 0.2,
+    "criticalScriptureNumberNegationErrorsMaximum": 0,
+    "soakDurationMinutes": 75,
+    "soakP95LatencyDriftPercentMaximum": 20
   },
   "provisionalQualityGates": {
     "criticalErrorRegressionAllowed": false,

@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "model": "gpt-transcribe",
+  "responseFormat": "json",
+  "promptSha256": "867afb1d76bc2a64e7dbfa355456be135d24b2dd4ebd9aae88eca79ab8ac9500",
+  "keywordsSha256": "3ed53983859df05b76b88313ae7e3de563abe630a869fcc8d76f0ee34a6cd2ce",
+  "languages": [
+    "en"
+  ],
+  "audioSha256": "7bd08e2e2099d9b030799ec3053a2cdd074d812011c12e0094e0b38a79333769",
+  "startSeconds": 0,
+  "endSeconds": 30.0
+}

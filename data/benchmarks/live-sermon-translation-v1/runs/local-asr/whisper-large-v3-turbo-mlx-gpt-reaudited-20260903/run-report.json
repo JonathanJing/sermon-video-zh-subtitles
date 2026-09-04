@@ -1,0 +1,53 @@
+{
+  "completedAt": "2026-09-04T03:08:59.526818+00:00",
+  "decoding": {
+    "backend": "mlx-whisper",
+    "beamSize": 1,
+    "bestOf": 1,
+    "device": null,
+    "language": "en",
+    "temperature": 0,
+    "temperatureFallback": false,
+    "threads": 8,
+    "vad": false
+  },
+  "emptyExpectedSpeechCount": 0,
+  "errorCount": 0,
+  "itemCount": 60,
+  "latencySeconds": {
+    "max": 2.3601,
+    "mean": 2.1682,
+    "p50": 2.2413,
+    "p95": 2.3481
+  },
+  "manifest": "data/benchmarks/live-sermon-translation-v1/local-asr-gpt-reaudited-reference-v1.json",
+  "manifestSha256": "35af38c496e9a5bb0e679f9755b94857b123b5b40403ee063cf1918aae666de7",
+  "modelArtifact": "/Users/jonathan_jing/.cache/huggingface/hub/models--mlx-community--whisper-large-v3-turbo/blobs/951ed3fc1203e6a62467abb2144a96ce7eafca8fa77e3704fdb8635ff3e7f8a6",
+  "modelId": "mlx-community/whisper-large-v3-turbo",
+  "modelSha256": "951ed3fc1203e6a62467abb2144a96ce7eafca8fa77e3704fdb8635ff3e7f8a6",
+  "nonemptyCount": 60,
+  "peakPerInvocationRssGiB": 1.7174,
+  "performanceInterpretation": "Per-clip CLI cold-load offline run; not a persistent-provider or streaming latency result. Audio conversion, when required, is excluded from ASR latency.",
+  "predictionsSha256": "80ee47f7c5cfa979743636fc550ecc96942ad2e2969afb0d2ed4d936158eac60",
+  "quality": {
+    "criticalTermRecall": 0.956522,
+    "gptReauditedReferenceItemCount": 13,
+    "humanGoldItemCount": 0,
+    "modelReviewedReferenceItemCount": 47,
+    "scoredItemCount": 60,
+    "silenceHallucinationCount": 1,
+    "silenceItemCount": 1,
+    "status": "scored_model_reviewed_reference",
+    "wer": 0.031217
+  },
+  "rtf": {
+    "max": 0.0968,
+    "mean": 0.0729,
+    "p50": 0.075,
+    "p95": 0.0785
+  },
+  "runtime": "mlx-whisper v0.4.3\n- mlx_whisper",
+  "schemaVersion": "local-asr-run-report-v1",
+  "successCount": 60,
+  "totalAudioMinutes": 29.811
+}

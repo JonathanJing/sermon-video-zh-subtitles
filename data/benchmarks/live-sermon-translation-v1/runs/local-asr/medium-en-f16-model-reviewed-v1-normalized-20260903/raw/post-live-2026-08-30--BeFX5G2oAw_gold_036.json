@@ -1,0 +1,1494 @@
+{
+	"systeminfo": "WHISPER : COREML = 0 | OPENVINO = 0 | MTL : EMBED_LIBRARY = 1 | CPU : NEON = 1 | ARM_FMA = 1 | DOTPROD = 1 | ACCELERATE = 1 | OPENMP = 1 | REPACK = 1 | ",
+	"model": {
+		"type": "medium",
+		"multilingual": false,
+		"vocab": 51864,
+		"audio": {
+			"ctx": 1500,
+			"state": 1024,
+			"head": 16,
+			"layer": 24
+		},
+		"text": {
+			"ctx": 448,
+			"state": 1024,
+			"head": 16,
+			"layer": 24
+		},
+		"mels": 80,
+		"ftype": 1
+	},
+	"params": {
+		"model": "/Users/jonathan_jing/Library/Caches/sermon-asr-benchmark/models/ggml-medium.en.bin",
+		"language": "en",
+		"translate": false
+	},
+	"result": {
+		"language": "en"
+	},
+	"transcription": [
+		{
+			"timestamps": {
+				"from": "00:00:00,000",
+				"to": "00:00:03,040"
+			},
+			"offsets": {
+				"from": 0,
+				"to": 3040
+			},
+			"text": " but how God the Father sent God the Son,",
+			"tokens": [
+				{
+					"text": "[_BEG_]",
+					"timestamps": {
+						"from": "00:00:00,000",
+						"to": "00:00:00,000"
+					},
+					"offsets": {
+						"from": 0,
+						"to": 0
+					},
+					"id": 50363,
+					"p": 0.991165,
+					"t_dtw": -1
+				},
+				{
+					"text": " but",
+					"timestamps": {
+						"from": "00:00:00,000",
+						"to": "00:00:00,320"
+					},
+					"offsets": {
+						"from": 0,
+						"to": 320
+					},
+					"id": 475,
+					"p": 0.448165,
+					"t_dtw": -1
+				},
+				{
+					"text": " how",
+					"timestamps": {
+						"from": "00:00:00,320",
+						"to": "00:00:00,640"
+					},
+					"offsets": {
+						"from": 320,
+						"to": 640
+					},
+					"id": 703,
+					"p": 0.575041,
+					"t_dtw": -1
+				},
+				{
+					"text": " God",
+					"timestamps": {
+						"from": "00:00:00,640",
+						"to": "00:00:00,850"
+					},
+					"offsets": {
+						"from": 640,
+						"to": 850
+					},
+					"id": 1793,
+					"p": 0.995418,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:01,080",
+						"to": "00:00:01,280"
+					},
+					"offsets": {
+						"from": 1080,
+						"to": 1280
+					},
+					"id": 262,
+					"p": 0.960092,
+					"t_dtw": -1
+				},
+				{
+					"text": " Father",
+					"timestamps": {
+						"from": "00:00:01,280",
+						"to": "00:00:01,930"
+					},
+					"offsets": {
+						"from": 1280,
+						"to": 1930
+					},
+					"id": 9190,
+					"p": 0.909891,
+					"t_dtw": -1
+				},
+				{
+					"text": " sent",
+					"timestamps": {
+						"from": "00:00:01,930",
+						"to": "00:00:02,390"
+					},
+					"offsets": {
+						"from": 1930,
+						"to": 2390
+					},
+					"id": 1908,
+					"p": 0.497063,
+					"t_dtw": -1
+				},
+				{
+					"text": " God",
+					"timestamps": {
+						"from": "00:00:02,430",
+						"to": "00:00:02,630"
+					},
+					"offsets": {
+						"from": 2430,
+						"to": 2630
+					},
+					"id": 1793,
+					"p": 0.746823,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:02,640",
+						"to": "00:00:02,840"
+					},
+					"offsets": {
+						"from": 2640,
+						"to": 2840
+					},
+					"id": 262,
+					"p": 0.919344,
+					"t_dtw": -1
+				},
+				{
+					"text": " Son",
+					"timestamps": {
+						"from": "00:00:02,840",
+						"to": "00:00:03,040"
+					},
+					"offsets": {
+						"from": 2840,
+						"to": 3040
+					},
+					"id": 6295,
+					"p": 0.975042,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:03,040",
+						"to": "00:00:03,040"
+					},
+					"offsets": {
+						"from": 3040,
+						"to": 3040
+					},
+					"id": 11,
+					"p": 0.770289,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_152]",
+					"timestamps": {
+						"from": "00:00:03,040",
+						"to": "00:00:03,040"
+					},
+					"offsets": {
+						"from": 3040,
+						"to": 3040
+					},
+					"id": 50515,
+					"p": 0.289757,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:03,040",
+				"to": "00:00:06,840"
+			},
+			"offsets": {
+				"from": 3040,
+				"to": 6840
+			},
+			"text": " Jesus the Christ here for you, it's the best example.",
+			"tokens": [
+				{
+					"text": " Jesus",
+					"timestamps": {
+						"from": "00:00:03,040",
+						"to": "00:00:03,440"
+					},
+					"offsets": {
+						"from": 3040,
+						"to": 3440
+					},
+					"id": 5803,
+					"p": 0.995866,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:03,440",
+						"to": "00:00:03,680"
+					},
+					"offsets": {
+						"from": 3440,
+						"to": 3680
+					},
+					"id": 262,
+					"p": 0.983228,
+					"t_dtw": -1
+				},
+				{
+					"text": " Christ",
+					"timestamps": {
+						"from": "00:00:03,680",
+						"to": "00:00:04,160"
+					},
+					"offsets": {
+						"from": 3680,
+						"to": 4160
+					},
+					"id": 1951,
+					"p": 0.999348,
+					"t_dtw": -1
+				},
+				{
+					"text": " here",
+					"timestamps": {
+						"from": "00:00:04,160",
+						"to": "00:00:04,480"
+					},
+					"offsets": {
+						"from": 4160,
+						"to": 4480
+					},
+					"id": 994,
+					"p": 0.677099,
+					"t_dtw": -1
+				},
+				{
+					"text": " for",
+					"timestamps": {
+						"from": "00:00:04,480",
+						"to": "00:00:04,650"
+					},
+					"offsets": {
+						"from": 4480,
+						"to": 4650
+					},
+					"id": 329,
+					"p": 0.969196,
+					"t_dtw": -1
+				},
+				{
+					"text": " you",
+					"timestamps": {
+						"from": "00:00:04,730",
+						"to": "00:00:04,960"
+					},
+					"offsets": {
+						"from": 4730,
+						"to": 4960
+					},
+					"id": 345,
+					"p": 0.997151,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:04,960",
+						"to": "00:00:05,160"
+					},
+					"offsets": {
+						"from": 4960,
+						"to": 5160
+					},
+					"id": 11,
+					"p": 0.433812,
+					"t_dtw": -1
+				},
+				{
+					"text": " it",
+					"timestamps": {
+						"from": "00:00:05,160",
+						"to": "00:00:05,320"
+					},
+					"offsets": {
+						"from": 5160,
+						"to": 5320
+					},
+					"id": 340,
+					"p": 0.829693,
+					"t_dtw": -1
+				},
+				{
+					"text": "'s",
+					"timestamps": {
+						"from": "00:00:05,320",
+						"to": "00:00:05,430"
+					},
+					"offsets": {
+						"from": 5320,
+						"to": 5430
+					},
+					"id": 338,
+					"p": 0.999108,
+					"t_dtw": -1
+				},
+				{
+					"text": " the",
+					"timestamps": {
+						"from": "00:00:05,470",
+						"to": "00:00:05,710"
+					},
+					"offsets": {
+						"from": 5470,
+						"to": 5710
+					},
+					"id": 262,
+					"p": 0.999207,
+					"t_dtw": -1
+				},
+				{
+					"text": " best",
+					"timestamps": {
+						"from": "00:00:05,710",
+						"to": "00:00:06,030"
+					},
+					"offsets": {
+						"from": 5710,
+						"to": 6030
+					},
+					"id": 1266,
+					"p": 0.999748,
+					"t_dtw": -1
+				},
+				{
+					"text": " example",
+					"timestamps": {
+						"from": "00:00:06,030",
+						"to": "00:00:06,580"
+					},
+					"offsets": {
+						"from": 6030,
+						"to": 6580
+					},
+					"id": 1672,
+					"p": 0.999645,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:06,580",
+						"to": "00:00:06,810"
+					},
+					"offsets": {
+						"from": 6580,
+						"to": 6810
+					},
+					"id": 13,
+					"p": 0.986286,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_342]",
+					"timestamps": {
+						"from": "00:00:06,840",
+						"to": "00:00:06,840"
+					},
+					"offsets": {
+						"from": 6840,
+						"to": 6840
+					},
+					"id": 50705,
+					"p": 0.680597,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:06,840",
+				"to": "00:00:11,600"
+			},
+			"offsets": {
+				"from": 6840,
+				"to": 11600
+			},
+			"text": " See God, because He's holy, has righteous anger against sin",
+			"tokens": [
+				{
+					"text": " See",
+					"timestamps": {
+						"from": "00:00:06,840",
+						"to": "00:00:07,050"
+					},
+					"offsets": {
+						"from": 6840,
+						"to": 7050
+					},
+					"id": 4091,
+					"p": 0.988297,
+					"t_dtw": -1
+				},
+				{
+					"text": " God",
+					"timestamps": {
+						"from": "00:00:07,050",
+						"to": "00:00:07,260"
+					},
+					"offsets": {
+						"from": 7050,
+						"to": 7260
+					},
+					"id": 1793,
+					"p": 0.525105,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:07,260",
+						"to": "00:00:07,390"
+					},
+					"offsets": {
+						"from": 7260,
+						"to": 7390
+					},
+					"id": 11,
+					"p": 0.684216,
+					"t_dtw": -1
+				},
+				{
+					"text": " because",
+					"timestamps": {
+						"from": "00:00:07,390",
+						"to": "00:00:07,680"
+					},
+					"offsets": {
+						"from": 7390,
+						"to": 7680
+					},
+					"id": 780,
+					"p": 0.998106,
+					"t_dtw": -1
+				},
+				{
+					"text": " He",
+					"timestamps": {
+						"from": "00:00:07,920",
+						"to": "00:00:08,050"
+					},
+					"offsets": {
+						"from": 7920,
+						"to": 8050
+					},
+					"id": 679,
+					"p": 0.532272,
+					"t_dtw": -1
+				},
+				{
+					"text": "'s",
+					"timestamps": {
+						"from": "00:00:08,050",
+						"to": "00:00:08,190"
+					},
+					"offsets": {
+						"from": 8050,
+						"to": 8190
+					},
+					"id": 338,
+					"p": 0.961441,
+					"t_dtw": -1
+				},
+				{
+					"text": " holy",
+					"timestamps": {
+						"from": "00:00:08,190",
+						"to": "00:00:08,450"
+					},
+					"offsets": {
+						"from": 8190,
+						"to": 8450
+					},
+					"id": 11386,
+					"p": 0.965495,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:08,530",
+						"to": "00:00:08,690"
+					},
+					"offsets": {
+						"from": 8530,
+						"to": 8690
+					},
+					"id": 11,
+					"p": 0.77676,
+					"t_dtw": -1
+				},
+				{
+					"text": " has",
+					"timestamps": {
+						"from": "00:00:08,690",
+						"to": "00:00:08,950"
+					},
+					"offsets": {
+						"from": 8690,
+						"to": 8950
+					},
+					"id": 468,
+					"p": 0.759617,
+					"t_dtw": -1
+				},
+				{
+					"text": " righteous",
+					"timestamps": {
+						"from": "00:00:08,950",
+						"to": "00:00:09,740"
+					},
+					"offsets": {
+						"from": 8950,
+						"to": 9740
+					},
+					"id": 19539,
+					"p": 0.995353,
+					"t_dtw": -1
+				},
+				{
+					"text": " anger",
+					"timestamps": {
+						"from": "00:00:09,740",
+						"to": "00:00:10,150"
+					},
+					"offsets": {
+						"from": 9740,
+						"to": 10150
+					},
+					"id": 8993,
+					"p": 0.992159,
+					"t_dtw": -1
+				},
+				{
+					"text": " against",
+					"timestamps": {
+						"from": "00:00:10,210",
+						"to": "00:00:10,990"
+					},
+					"offsets": {
+						"from": 10210,
+						"to": 10990
+					},
+					"id": 1028,
+					"p": 0.930921,
+					"t_dtw": -1
+				},
+				{
+					"text": " sin",
+					"timestamps": {
+						"from": "00:00:11,400",
+						"to": "00:00:11,600"
+					},
+					"offsets": {
+						"from": 11400,
+						"to": 11600
+					},
+					"id": 7813,
+					"p": 0.999022,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_580]",
+					"timestamps": {
+						"from": "00:00:11,600",
+						"to": "00:00:11,600"
+					},
+					"offsets": {
+						"from": 11600,
+						"to": 11600
+					},
+					"id": 50943,
+					"p": 0.223371,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:11,600",
+				"to": "00:00:15,340"
+			},
+			"offsets": {
+				"from": 11600,
+				"to": 15340
+			},
+			"text": " because sin dishonors Him and evil hurts people,",
+			"tokens": [
+				{
+					"text": " because",
+					"timestamps": {
+						"from": "00:00:11,600",
+						"to": "00:00:12,250"
+					},
+					"offsets": {
+						"from": 11600,
+						"to": 12250
+					},
+					"id": 780,
+					"p": 0.998711,
+					"t_dtw": -1
+				},
+				{
+					"text": " sin",
+					"timestamps": {
+						"from": "00:00:12,250",
+						"to": "00:00:12,450"
+					},
+					"offsets": {
+						"from": 12250,
+						"to": 12450
+					},
+					"id": 7813,
+					"p": 0.998769,
+					"t_dtw": -1
+				},
+				{
+					"text": " dishon",
+					"timestamps": {
+						"from": "00:00:12,680",
+						"to": "00:00:13,100"
+					},
+					"offsets": {
+						"from": 12680,
+						"to": 13100
+					},
+					"id": 32045,
+					"p": 0.987167,
+					"t_dtw": -1
+				},
+				{
+					"text": "ors",
+					"timestamps": {
+						"from": "00:00:13,100",
+						"to": "00:00:13,380"
+					},
+					"offsets": {
+						"from": 13100,
+						"to": 13380
+					},
+					"id": 669,
+					"p": 0.984037,
+					"t_dtw": -1
+				},
+				{
+					"text": " Him",
+					"timestamps": {
+						"from": "00:00:13,380",
+						"to": "00:00:13,680"
+					},
+					"offsets": {
+						"from": 13380,
+						"to": 13680
+					},
+					"id": 10978,
+					"p": 0.901641,
+					"t_dtw": -1
+				},
+				{
+					"text": " and",
+					"timestamps": {
+						"from": "00:00:13,680",
+						"to": "00:00:13,910"
+					},
+					"offsets": {
+						"from": 13680,
+						"to": 13910
+					},
+					"id": 290,
+					"p": 0.5714,
+					"t_dtw": -1
+				},
+				{
+					"text": " evil",
+					"timestamps": {
+						"from": "00:00:13,920",
+						"to": "00:00:14,240"
+					},
+					"offsets": {
+						"from": 13920,
+						"to": 14240
+					},
+					"id": 6181,
+					"p": 0.997858,
+					"t_dtw": -1
+				},
+				{
+					"text": " hurts",
+					"timestamps": {
+						"from": "00:00:14,250",
+						"to": "00:00:14,660"
+					},
+					"offsets": {
+						"from": 14250,
+						"to": 14660
+					},
+					"id": 20406,
+					"p": 0.991813,
+					"t_dtw": -1
+				},
+				{
+					"text": " people",
+					"timestamps": {
+						"from": "00:00:14,660",
+						"to": "00:00:15,150"
+					},
+					"offsets": {
+						"from": 14660,
+						"to": 15150
+					},
+					"id": 661,
+					"p": 0.997813,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:15,150",
+						"to": "00:00:15,340"
+					},
+					"offsets": {
+						"from": 15150,
+						"to": 15340
+					},
+					"id": 11,
+					"p": 0.822496,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_767]",
+					"timestamps": {
+						"from": "00:00:15,340",
+						"to": "00:00:15,340"
+					},
+					"offsets": {
+						"from": 15340,
+						"to": 15340
+					},
+					"id": 51130,
+					"p": 0.400118,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:15,340",
+				"to": "00:00:17,920"
+			},
+			"offsets": {
+				"from": 15340,
+				"to": 17920
+			},
+			"text": " image bearers, people He created in His image.",
+			"tokens": [
+				{
+					"text": " image",
+					"timestamps": {
+						"from": "00:00:15,340",
+						"to": "00:00:15,640"
+					},
+					"offsets": {
+						"from": 15340,
+						"to": 15640
+					},
+					"id": 2939,
+					"p": 0.998891,
+					"t_dtw": -1
+				},
+				{
+					"text": " be",
+					"timestamps": {
+						"from": "00:00:15,640",
+						"to": "00:00:15,760"
+					},
+					"offsets": {
+						"from": 15640,
+						"to": 15760
+					},
+					"id": 307,
+					"p": 0.585548,
+					"t_dtw": -1
+				},
+				{
+					"text": "arers",
+					"timestamps": {
+						"from": "00:00:15,760",
+						"to": "00:00:16,010"
+					},
+					"offsets": {
+						"from": 15760,
+						"to": 16010
+					},
+					"id": 34231,
+					"p": 0.99975,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:16,050",
+						"to": "00:00:16,180"
+					},
+					"offsets": {
+						"from": 16050,
+						"to": 16180
+					},
+					"id": 11,
+					"p": 0.98775,
+					"t_dtw": -1
+				},
+				{
+					"text": " people",
+					"timestamps": {
+						"from": "00:00:16,180",
+						"to": "00:00:16,540"
+					},
+					"offsets": {
+						"from": 16180,
+						"to": 16540
+					},
+					"id": 661,
+					"p": 0.996797,
+					"t_dtw": -1
+				},
+				{
+					"text": " He",
+					"timestamps": {
+						"from": "00:00:16,540",
+						"to": "00:00:16,640"
+					},
+					"offsets": {
+						"from": 16540,
+						"to": 16640
+					},
+					"id": 679,
+					"p": 0.953948,
+					"t_dtw": -1
+				},
+				{
+					"text": " created",
+					"timestamps": {
+						"from": "00:00:16,680",
+						"to": "00:00:17,080"
+					},
+					"offsets": {
+						"from": 16680,
+						"to": 17080
+					},
+					"id": 2727,
+					"p": 0.997546,
+					"t_dtw": -1
+				},
+				{
+					"text": " in",
+					"timestamps": {
+						"from": "00:00:17,080",
+						"to": "00:00:17,200"
+					},
+					"offsets": {
+						"from": 17080,
+						"to": 17200
+					},
+					"id": 287,
+					"p": 0.997402,
+					"t_dtw": -1
+				},
+				{
+					"text": " His",
+					"timestamps": {
+						"from": "00:00:17,200",
+						"to": "00:00:17,380"
+					},
+					"offsets": {
+						"from": 17200,
+						"to": 17380
+					},
+					"id": 2399,
+					"p": 0.973197,
+					"t_dtw": -1
+				},
+				{
+					"text": " image",
+					"timestamps": {
+						"from": "00:00:17,380",
+						"to": "00:00:17,680"
+					},
+					"offsets": {
+						"from": 17380,
+						"to": 17680
+					},
+					"id": 2939,
+					"p": 0.99955,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:17,680",
+						"to": "00:00:17,920"
+					},
+					"offsets": {
+						"from": 17680,
+						"to": 17920
+					},
+					"id": 13,
+					"p": 0.613287,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_896]",
+					"timestamps": {
+						"from": "00:00:17,920",
+						"to": "00:00:17,920"
+					},
+					"offsets": {
+						"from": 17920,
+						"to": 17920
+					},
+					"id": 51259,
+					"p": 0.494368,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:17,920",
+				"to": "00:00:22,080"
+			},
+			"offsets": {
+				"from": 17920,
+				"to": 22080
+			},
+			"text": " He's angered at sin, He's angered at injustices.",
+			"tokens": [
+				{
+					"text": " He",
+					"timestamps": {
+						"from": "00:00:17,920",
+						"to": "00:00:18,140"
+					},
+					"offsets": {
+						"from": 17920,
+						"to": 18140
+					},
+					"id": 679,
+					"p": 0.999676,
+					"t_dtw": -1
+				},
+				{
+					"text": "'s",
+					"timestamps": {
+						"from": "00:00:18,140",
+						"to": "00:00:18,360"
+					},
+					"offsets": {
+						"from": 18140,
+						"to": 18360
+					},
+					"id": 338,
+					"p": 0.995551,
+					"t_dtw": -1
+				},
+				{
+					"text": " angered",
+					"timestamps": {
+						"from": "00:00:18,360",
+						"to": "00:00:19,130"
+					},
+					"offsets": {
+						"from": 18360,
+						"to": 19130
+					},
+					"id": 31997,
+					"p": 0.997459,
+					"t_dtw": -1
+				},
+				{
+					"text": " at",
+					"timestamps": {
+						"from": "00:00:19,130",
+						"to": "00:00:19,350"
+					},
+					"offsets": {
+						"from": 19130,
+						"to": 19350
+					},
+					"id": 379,
+					"p": 0.999424,
+					"t_dtw": -1
+				},
+				{
+					"text": " sin",
+					"timestamps": {
+						"from": "00:00:19,350",
+						"to": "00:00:19,680"
+					},
+					"offsets": {
+						"from": 19350,
+						"to": 19680
+					},
+					"id": 7813,
+					"p": 0.998959,
+					"t_dtw": -1
+				},
+				{
+					"text": ",",
+					"timestamps": {
+						"from": "00:00:19,680",
+						"to": "00:00:19,920"
+					},
+					"offsets": {
+						"from": 19680,
+						"to": 19920
+					},
+					"id": 11,
+					"p": 0.688391,
+					"t_dtw": -1
+				},
+				{
+					"text": " He",
+					"timestamps": {
+						"from": "00:00:19,920",
+						"to": "00:00:20,080"
+					},
+					"offsets": {
+						"from": 19920,
+						"to": 20080
+					},
+					"id": 679,
+					"p": 0.946427,
+					"t_dtw": -1
+				},
+				{
+					"text": "'s",
+					"timestamps": {
+						"from": "00:00:20,080",
+						"to": "00:00:20,230"
+					},
+					"offsets": {
+						"from": 20080,
+						"to": 20230
+					},
+					"id": 338,
+					"p": 0.998414,
+					"t_dtw": -1
+				},
+				{
+					"text": " angered",
+					"timestamps": {
+						"from": "00:00:20,240",
+						"to": "00:00:20,820"
+					},
+					"offsets": {
+						"from": 20240,
+						"to": 20820
+					},
+					"id": 31997,
+					"p": 0.998441,
+					"t_dtw": -1
+				},
+				{
+					"text": " at",
+					"timestamps": {
+						"from": "00:00:20,820",
+						"to": "00:00:20,980"
+					},
+					"offsets": {
+						"from": 20820,
+						"to": 20980
+					},
+					"id": 379,
+					"p": 0.987183,
+					"t_dtw": -1
+				},
+				{
+					"text": " injust",
+					"timestamps": {
+						"from": "00:00:20,980",
+						"to": "00:00:21,470"
+					},
+					"offsets": {
+						"from": 20980,
+						"to": 21470
+					},
+					"id": 19019,
+					"p": 0.997006,
+					"t_dtw": -1
+				},
+				{
+					"text": "ices",
+					"timestamps": {
+						"from": "00:00:21,470",
+						"to": "00:00:21,690"
+					},
+					"offsets": {
+						"from": 21470,
+						"to": 21690
+					},
+					"id": 1063,
+					"p": 0.999895,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:21,850",
+						"to": "00:00:22,070"
+					},
+					"offsets": {
+						"from": 21850,
+						"to": 22070
+					},
+					"id": 13,
+					"p": 0.830438,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_1104]",
+					"timestamps": {
+						"from": "00:00:22,080",
+						"to": "00:00:22,080"
+					},
+					"offsets": {
+						"from": 22080,
+						"to": 22080
+					},
+					"id": 51467,
+					"p": 0.877781,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:22,080",
+				"to": "00:00:25,080"
+			},
+			"offsets": {
+				"from": 22080,
+				"to": 25080
+			},
+			"text": " God hates sin but He loves people.",
+			"tokens": [
+				{
+					"text": " God",
+					"timestamps": {
+						"from": "00:00:22,080",
+						"to": "00:00:22,400"
+					},
+					"offsets": {
+						"from": 22080,
+						"to": 22400
+					},
+					"id": 1793,
+					"p": 0.999641,
+					"t_dtw": -1
+				},
+				{
+					"text": " hates",
+					"timestamps": {
+						"from": "00:00:22,400",
+						"to": "00:00:22,910"
+					},
+					"offsets": {
+						"from": 22400,
+						"to": 22910
+					},
+					"id": 24702,
+					"p": 0.998635,
+					"t_dtw": -1
+				},
+				{
+					"text": " sin",
+					"timestamps": {
+						"from": "00:00:23,150",
+						"to": "00:00:23,260"
+					},
+					"offsets": {
+						"from": 23150,
+						"to": 23260
+					},
+					"id": 7813,
+					"p": 0.998963,
+					"t_dtw": -1
+				},
+				{
+					"text": " but",
+					"timestamps": {
+						"from": "00:00:23,260",
+						"to": "00:00:23,580"
+					},
+					"offsets": {
+						"from": 23260,
+						"to": 23580
+					},
+					"id": 475,
+					"p": 0.521016,
+					"t_dtw": -1
+				},
+				{
+					"text": " He",
+					"timestamps": {
+						"from": "00:00:23,580",
+						"to": "00:00:23,790"
+					},
+					"offsets": {
+						"from": 23580,
+						"to": 23790
+					},
+					"id": 679,
+					"p": 0.965543,
+					"t_dtw": -1
+				},
+				{
+					"text": " loves",
+					"timestamps": {
+						"from": "00:00:23,790",
+						"to": "00:00:24,330"
+					},
+					"offsets": {
+						"from": 23790,
+						"to": 24330
+					},
+					"id": 10408,
+					"p": 0.99907,
+					"t_dtw": -1
+				},
+				{
+					"text": " people",
+					"timestamps": {
+						"from": "00:00:24,330",
+						"to": "00:00:25,000"
+					},
+					"offsets": {
+						"from": 24330,
+						"to": 25000
+					},
+					"id": 661,
+					"p": 0.999859,
+					"t_dtw": -1
+				},
+				{
+					"text": ".",
+					"timestamps": {
+						"from": "00:00:25,000",
+						"to": "00:00:25,080"
+					},
+					"offsets": {
+						"from": 25000,
+						"to": 25080
+					},
+					"id": 13,
+					"p": 0.895714,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_1254]",
+					"timestamps": {
+						"from": "00:00:25,080",
+						"to": "00:00:25,080"
+					},
+					"offsets": {
+						"from": 25080,
+						"to": 25080
+					},
+					"id": 51617,
+					"p": 0.627448,
+					"t_dtw": -1
+				}
+			]
+		},
+		{
+			"timestamps": {
+				"from": "00:00:25,960",
+				"to": "00:00:29,680"
+			},
+			"offsets": {
+				"from": 25960,
+				"to": 29680
+			},
+			"text": " So what did God do to address His anger?",
+			"tokens": [
+				{
+					"text": " So",
+					"timestamps": {
+						"from": "00:00:25,960",
+						"to": "00:00:25,960"
+					},
+					"offsets": {
+						"from": 25960,
+						"to": 25960
+					},
+					"id": 1406,
+					"p": 0.76264,
+					"t_dtw": -1
+				},
+				{
+					"text": " what",
+					"timestamps": {
+						"from": "00:00:25,960",
+						"to": "00:00:25,960"
+					},
+					"offsets": {
+						"from": 25960,
+						"to": 25960
+					},
+					"id": 644,
+					"p": 0.953701,
+					"t_dtw": -1
+				},
+				{
+					"text": " did",
+					"timestamps": {
+						"from": "00:00:25,960",
+						"to": "00:00:26,290"
+					},
+					"offsets": {
+						"from": 25960,
+						"to": 26290
+					},
+					"id": 750,
+					"p": 0.999375,
+					"t_dtw": -1
+				},
+				{
+					"text": " God",
+					"timestamps": {
+						"from": "00:00:26,290",
+						"to": "00:00:26,680"
+					},
+					"offsets": {
+						"from": 26290,
+						"to": 26680
+					},
+					"id": 1793,
+					"p": 0.999478,
+					"t_dtw": -1
+				},
+				{
+					"text": " do",
+					"timestamps": {
+						"from": "00:00:26,690",
+						"to": "00:00:26,820"
+					},
+					"offsets": {
+						"from": 26690,
+						"to": 26820
+					},
+					"id": 466,
+					"p": 0.998209,
+					"t_dtw": -1
+				},
+				{
+					"text": " to",
+					"timestamps": {
+						"from": "00:00:27,040",
+						"to": "00:00:27,230"
+					},
+					"offsets": {
+						"from": 27040,
+						"to": 27230
+					},
+					"id": 284,
+					"p": 0.99907,
+					"t_dtw": -1
+				},
+				{
+					"text": " address",
+					"timestamps": {
+						"from": "00:00:27,230",
+						"to": "00:00:28,170"
+					},
+					"offsets": {
+						"from": 27230,
+						"to": 28170
+					},
+					"id": 2209,
+					"p": 0.99968,
+					"t_dtw": -1
+				},
+				{
+					"text": " His",
+					"timestamps": {
+						"from": "00:00:28,170",
+						"to": "00:00:28,570"
+					},
+					"offsets": {
+						"from": 28170,
+						"to": 28570
+					},
+					"id": 2399,
+					"p": 0.926873,
+					"t_dtw": -1
+				},
+				{
+					"text": " anger",
+					"timestamps": {
+						"from": "00:00:28,570",
+						"to": "00:00:29,240"
+					},
+					"offsets": {
+						"from": 28570,
+						"to": 29240
+					},
+					"id": 8993,
+					"p": 0.999912,
+					"t_dtw": -1
+				},
+				{
+					"text": "?",
+					"timestamps": {
+						"from": "00:00:29,240",
+						"to": "00:00:29,680"
+					},
+					"offsets": {
+						"from": 29240,
+						"to": 29680
+					},
+					"id": 30,
+					"p": 0.976846,
+					"t_dtw": -1
+				},
+				{
+					"text": "[_TT_1484]",
+					"timestamps": {
+						"from": "00:00:29,680",
+						"to": "00:00:29,680"
+					},
+					"offsets": {
+						"from": 29680,
+						"to": 29680
+					},
+					"id": 51847,
+					"p": 0.482104,
+					"t_dtw": -1
+				}
+			]
+		}
+	]
+}

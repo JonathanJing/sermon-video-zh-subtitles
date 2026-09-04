@@ -1,0 +1,53 @@
+{
+  "completedAt": "2026-09-04T03:19:39.056490+00:00",
+  "decoding": {
+    "backend": "whisper-cpp",
+    "beamSize": 1,
+    "bestOf": 1,
+    "device": null,
+    "language": "en",
+    "temperature": 0,
+    "temperatureFallback": false,
+    "threads": 8,
+    "vad": false
+  },
+  "emptyExpectedSpeechCount": 0,
+  "errorCount": 0,
+  "itemCount": 60,
+  "latencySeconds": {
+    "max": 2.1317,
+    "mean": 1.5795,
+    "p50": 1.695,
+    "p95": 1.9208
+  },
+  "manifest": "data/benchmarks/live-sermon-translation-v1/local-asr-gpt-reaudited-reference-v1.json",
+  "manifestSha256": "35af38c496e9a5bb0e679f9755b94857b123b5b40403ee063cf1918aae666de7",
+  "modelArtifact": "/Users/jonathan_jing/Library/Caches/sermon-video-zh-subtitles/models/distil-whisper-large-v3-ggml-0d78dd96/ggml-distil-large-v3.bin",
+  "modelId": "distil-whisper/distil-large-v3-ggml-f16",
+  "modelSha256": "2883a11b90fb10ed592d826edeaee7d2929bf1ab985109fe9e1e7b4d2b69a298",
+  "nonemptyCount": 60,
+  "peakPerInvocationRssGiB": 1.6866,
+  "performanceInterpretation": "Per-clip CLI cold-load offline run; not a persistent-provider or streaming latency result. Audio conversion, when required, is excluded from ASR latency.",
+  "predictionsSha256": "2d1e859b938a65643bb7b96114180e13097388c572fcbdea9e086c41cd188a15",
+  "quality": {
+    "criticalTermRecall": 0.985507,
+    "gptReauditedReferenceItemCount": 13,
+    "humanGoldItemCount": 0,
+    "modelReviewedReferenceItemCount": 47,
+    "scoredItemCount": 60,
+    "silenceHallucinationCount": 1,
+    "silenceItemCount": 1,
+    "status": "scored_model_reviewed_reference",
+    "wer": 0.035198
+  },
+  "rtf": {
+    "max": 0.0711,
+    "mean": 0.0531,
+    "p50": 0.0566,
+    "p95": 0.0673
+  },
+  "runtime": "whisper.cpp version: 1.9.2\nload_backend: loaded BLAS backend from /opt/homebrew/Cellar/ggml/0.22.0/libexec/libggml-blas.so\nggml_metal_device_init: tensor API disabled for pre-M5 and pre-A19 devices\nggml_metal_library_init: using embedded metal library\nggml_metal_library_compile_all: compiled 'fa' library in 0.011 sec\nggml_metal_library_compile_all: compiled 'mul_mv' library in 0.012 sec\nggml_metal_library_compile_all: compiled 'mul_mm' library in 0.002 sec\nggml_metal_library_compile_all: compiled 'quantize' library in 0.012 sec\nggml_metal_library_compile_all: compiled 'softmax' library in 0.001 sec\nggml_metal_library_compile_all: compiled 'norm' library in 0.001 sec\nggml_metal_library_compile_all: compiled 'unary' library in 0.011 sec\nggml_metal_library_compile_all: compiled 'binbcast' library in 0.011 sec\nggml_metal_library_compile_all: compiled 'reduce' library in 0.013 sec\nggml_metal_library_compile_all: compiled 'tri' library in 0.012 sec\nggml_metal_library_compile_all: compiled 'ssm' library in 0.013 sec\nggml_metal_library_compile_all: compiled 'wkv' library in 0.012 sec\nggml_metal_library_compile_all: compiled 'gated_delta_net' library in 0.012 sec\nggml_metal_library_compile_all: compiled 'solve_tri' library in 0.012 sec\nggml_metal_library_compile_all: compiled 'rope' library in 0.012 sec\nggml_metal_library_compile_all: compiled 'conv' library in 0.012 sec\nggml_metal_library_compile_all: compiled 'upscale' library in 0.012 sec\nggml_metal_library_compile_all: compiled 'argsort' library in 0.012 sec\nggml_metal_library_compile_all: compiled 'pool' library in 0.011 sec\nggml_metal_library_compile_all: compiled 'misc' library in 0.011 sec\nggml_metal_library_compile_all: loaded 20 libraries from embedded data in 0.013 sec (max single = 0.013 sec)\nggml_metal_rsets_init: creating a residency set collection (keep_alive = 180 s)\nggml_metal_device_init: GPU name:   MTL0 (Apple M1 Max)\nggml_metal_device_init: GPU family: MTLGPUFamilyApple7  (1007)\nggml_metal_device_init: GPU family: MTLGPUFamilyCommon3 (3003)\nggml_metal_device_init: GPU family: MTLGPUFamilyMetal4  (5002)\nggml_metal_device_init: simdgroup reduction   = true\nggml_metal_device_init: simdgroup matrix mul. = true\nggml_metal_device_init: has unified memory    = true\nggml_metal_device_init: has bfloat            = true\nggml_metal_device_init: has tensor            = false\nggml_metal_device_init: use residency sets    = true\nggml_metal_device_init: use shared buffers    = true\nggml_metal_device_init: recommendedMaxWorkingSetSize  = 55662.79 MB\nload_backend: loaded MTL backend from /opt/homebrew/Cellar/ggml/0.22.0/libexec/libggml-metal.so\nload_backend: loaded CPU backend from /opt/homebrew/Cellar/ggml/0.22.0/libexec/libggml-cpu-apple_m1.so",
+  "schemaVersion": "local-asr-run-report-v1",
+  "successCount": 60,
+  "totalAudioMinutes": 29.811
+}

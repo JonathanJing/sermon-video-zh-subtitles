@@ -48,7 +48,11 @@ PROMPT_STOPS = {
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--backend", choices=("ollama", "ollama-generate", "openai-chat"), required=True)
+    parser.add_argument(
+        "--backend",
+        choices=("ollama", "ollama-generate", "openai-chat", "openai-completion"),
+        required=True,
+    )
     parser.add_argument("--input", type=Path, action="append", required=True)
     parser.add_argument("--base-url", required=True)
     parser.add_argument("--model", required=True, help="Model name exposed by the local server")
@@ -209,22 +213,44 @@ def request_translation(args: argparse.Namespace, english: str) -> dict[str, Any
             },
         }
 
-    payload = post_json(
-        args.base_url.rstrip("/") + "/chat/completions",
-        {
-            "model": args.model,
-            "messages": [{"role": "user", "content": message}],
-            "temperature": args.temperature,
-            "top_p": args.top_p,
-            "seed": args.seed,
-            "max_tokens": args.max_tokens,
-        },
-        args.timeout_seconds,
-    )
+    if args.backend == "openai-completion":
+        payload = post_json(
+            args.base_url.rstrip("/") + "/completions",
+            {
+                "model": args.model,
+                "prompt": message,
+                "temperature": args.temperature,
+                "top_p": args.top_p,
+                "top_k": args.top_k,
+                "repetition_penalty": args.repeat_penalty,
+                "seed": args.seed,
+                "max_tokens": args.max_tokens,
+            },
+            args.timeout_seconds,
+        )
+    else:
+        payload = post_json(
+            args.base_url.rstrip("/") + "/chat/completions",
+            {
+                "model": args.model,
+                "messages": [{"role": "user", "content": message}],
+                "temperature": args.temperature,
+                "top_p": args.top_p,
+                "top_k": args.top_k,
+                "repetition_penalty": args.repeat_penalty,
+                "seed": args.seed,
+                "max_tokens": args.max_tokens,
+            },
+            args.timeout_seconds,
+        )
     elapsed = time.monotonic() - started
     choice = payload["choices"][0]
     return {
-        "rawText": str((choice.get("message") or {}).get("content") or ""),
+        "rawText": (
+            str(choice.get("text") or "")
+            if args.backend == "openai-completion"
+            else str((choice.get("message") or {}).get("content") or "")
+        ),
         "finishReason": choice.get("finish_reason"),
         "elapsedSeconds": elapsed,
         "usage": payload.get("usage") or {},
@@ -262,8 +288,8 @@ def main() -> int:
         "promptSha256": hashlib.sha256(prompt_template.encode("utf-8")).hexdigest(),
         "temperature": args.temperature,
         "topP": args.top_p,
-        "topK": args.top_k if args.backend.startswith("ollama") else None,
-        "repeatPenalty": args.repeat_penalty if args.backend.startswith("ollama") else None,
+        "topK": args.top_k,
+        "repeatPenalty": args.repeat_penalty,
         "stop": PROMPT_STOPS.get(args.prompt_profile) if args.backend == "ollama-generate" else None,
         "seed": args.seed,
         "maxTokens": args.max_tokens,
