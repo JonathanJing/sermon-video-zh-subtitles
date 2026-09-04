@@ -119,6 +119,7 @@ flowchart TD
     M -- 是 --> N[显示大号中文和较小英文]
     M -- 否 --> O[显示英文/降级状态，录音继续]
     N --> U[同 Wi-Fi 手机 SSE 只读显示]
+    N -. 规划中 .-> V[Firebase 公网手机只读显示]
     N --> P[写 translation result、latency、model、context IDs]
     O --> P
     D --> Q[recording + events + manifest]
@@ -166,6 +167,7 @@ sequenceDiagram
 | 增量录音、events、manifest、SHA | Working | 每次启动建立独立 session 文件夹 |
 | MiLMMT A0/Ollama translation | Working | 冻结 prompt，`contextPolicy=none` 基线 |
 | 大号中文、英文 sidecar、手机只读页 | Working POC | 单页 operator UI；随机 token + SSE，只暴露字幕 GET，不暴露控制接口 |
+| 蜂窝网络扫码公网分享 | Design only | Firebase Hosting + Realtime Database；MacBook 只出站发布，不暴露本机端口 |
 | 本地英文 ASR | Working POC | Qwen3-ASR 0.6B/MLX 一键默认；Whisper 回退；60 分钟长测通过 |
 | 周六 content pack | Working POC | builder/retriever、受控 runtime policy、冻结英文 replay/A-B 已接通 |
 | 会后 replay/A-B | Working | 同一组 `asr.final` 按 policy 重放；生成盲评 CSV 和 hash provenance |
@@ -235,6 +237,7 @@ sequenceDiagram
 - [本地 live POC](../../experiments/local-live-poc/README.md)
 - [POC 设计](../../experiments/local-live-poc/DESIGN.zh.md)
 - [实时音频与字幕传输决策](../../experiments/local-live-poc/STREAMING.zh.md)
+- [公网手机字幕分享方案](../../experiments/local-live-poc/PUBLIC_SHARING.zh.md)
 - [稳定 post-live PDF 工作流](../stable-post-live-reading-pdf-workflow.zh.md)
 - [本地周末生产 runbook](../codex-local-production-runbook.zh.md)
 - [完整文档索引](../README.zh.md)
