@@ -77,6 +77,9 @@ class GatewayTest(unittest.TestCase):
         self.assertEqual(payload["contentPack"]["entryCount"], 1)
         self.assertTrue(payload["sessionStorage"]["available"])
         self.assertGreater(payload["sessionStorage"]["freeBytes"], 0)
+        self.assertEqual(payload["liveStream"]["asrFinalPolicy"]["silenceMs"], 500)
+        self.assertEqual(payload["liveStream"]["asrFinalPolicy"]["maxSegmentMs"], 3000)
+        self.assertTrue(payload["liveStream"]["translationStreaming"])
 
     def test_health_does_not_require_an_optional_content_pack(self) -> None:
         self.state.pack = None

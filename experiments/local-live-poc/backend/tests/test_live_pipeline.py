@@ -40,7 +40,7 @@ class FakeAsr:
 
 class LivePipelineTest(unittest.TestCase):
     def test_non_speech_labels_are_detected_without_matching_normal_speech(self) -> None:
-        for text in ("[BLANK_AUDIO]", "(birds chirping)", "(chimes)", "[music]"):
+        for text in ("[BLANK_AUDIO]", "(birds chirping)", "(chimes)", "[music]", "Music."):
             self.assertTrue(is_non_speech_label(text))
         self.assertFalse(is_non_speech_label("The birds are chirping outside."))
 
@@ -96,6 +96,55 @@ class LivePipelineTest(unittest.TestCase):
             self.assertEqual(manifest["pcmFrameCount"], 11)
             persisted = [json.loads(line)["type"] for line in (Path(created["directory"]) / "events.jsonl").read_text().splitlines()]
             self.assertEqual(persisted, types)
+
+    def test_streaming_translation_emits_append_only_partial_before_final(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            sessions = SessionStore(temporary)
+            created = sessions.create({"audioMimeType": "audio/webm"})
+            sent = []
+
+            def translate_stream(source_text, cursor_sequence, context_policy, on_partial):
+                on_partial("神", "神")
+                on_partial("爱世人。", "神爱世人。")
+                return {
+                    "targetTextZh": "神爱世人。",
+                    "alignment": {"confidence": "none"},
+                    "metrics": {"evalCount": 4},
+                }
+
+            pipeline = LivePipeline(
+                created["sessionId"],
+                sessions,
+                FakeAsr(),
+                lambda *args: {"targetTextZh": "不应调用"},
+                sent.append,
+                translate_stream=translate_stream,
+                vad_threshold_rms=450,
+            )
+            for sequence in range(1, 5):
+                pipeline.process_frame(sequence, frame(1000))
+            for sequence in range(5, 10):
+                pipeline.process_frame(sequence, frame(0))
+            pipeline.stop()
+
+            partials = [event for event in sent if event["type"] == "translation.partial"]
+            final = next(event for event in sent if event["type"] == "translation.final")
+            self.assertEqual([event["targetTextZh"] for event in partials], ["神", "神爱世人。"])
+            self.assertTrue(all(event["appendOnly"] for event in partials))
+            self.assertEqual(final["targetTextZh"], "神爱世人。")
+            self.assertIsNotNone(final["firstTokenLatencyMs"])
+            self.assertIn("audioEndToChineseFinalMs", final["uxMetrics"])
+            closed = next(event for event in sent if event["type"] == "stream.closed")
+            self.assertEqual(closed["uxMetrics"]["completedSegmentCount"], 1)
+            self.assertIn("p50", closed["uxMetrics"]["asrFinalToChineseFinalMs"])
+
+    def test_default_vad_forces_a_final_at_three_seconds(self) -> None:
+        vad = EnergyVad(threshold_rms=450, silence_frames=5, max_segment_frames=30)
+        segment = None
+        for sequence in range(1, 31):
+            segment = vad.feed(sequence, frame(1000))
+        self.assertIsNotNone(segment)
+        self.assertEqual(segment.audio_end_ms, 3000)
 
     def test_non_speech_asr_result_is_logged_but_not_translated(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

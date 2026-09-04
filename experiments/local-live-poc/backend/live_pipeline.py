@@ -4,6 +4,7 @@ import math
 import queue
 import re
 import struct
+import statistics
 import threading
 import time
 from collections import deque
@@ -17,13 +18,14 @@ from .session_store import SessionStore, SessionStoreError
 
 SAMPLE_RATE_HZ = 16000
 FRAME_DURATION_MS = 100
+TRANSLATION_PARTIAL_INTERVAL_MS = 200
 PCM_BYTES_PER_FRAME = 3200
 SILENCE_FRAME = bytes(PCM_BYTES_PER_FRAME)
 NON_SPEECH_LABEL_RE = re.compile(
     r"^(?:"
     r"\[(?:blank[_ ]audio|music|silence|chimes|applause|laughter|inaudible)\]"
     r"|\((?:blank[_ ]audio|music|silence|chimes|applause|laughter|inaudible|birds? chirping|crickets? chirping)\)"
-    r")$",
+    r"|(?:blank[_ ]audio|music|silence|chimes|applause|laughter|inaudible)\.?)$",
     re.IGNORECASE,
 )
 
@@ -54,6 +56,8 @@ class TranslationTask:
     audio_start_ms: int
     audio_end_ms: int
     source_text: str
+    asr_final_at: float
+    enqueued_at: float
 
 
 class EnergyVad:
@@ -138,18 +142,31 @@ class LivePipeline:
         asr: WhisperCliClient,
         translate: Callable[[str, int | None, str], dict[str, Any]],
         send: Callable[[dict[str, Any]], None],
+        translate_stream: Callable[[str, int | None, str, Callable[[str, str], None]], dict[str, Any]] | None = None,
         context_policy: str = "none",
         vad_threshold_rms: int = 150,
+        vad_silence_ms: int = 500,
+        vad_max_segment_ms: int = 3000,
     ) -> None:
         self.session_id = session_id
         self.sessions = sessions
         self.asr = asr
         self.translate = translate
+        self.translate_stream = translate_stream
         self.send = send
         self.context_policy = context_policy
         self.cursor_sequence: int | None = None
-        self.vad = EnergyVad(threshold_rms=vad_threshold_rms)
+        if vad_silence_ms % FRAME_DURATION_MS or vad_max_segment_ms % FRAME_DURATION_MS:
+            raise ValueError("VAD timing must be a multiple of 100 ms")
+        self.vad = EnergyVad(
+            threshold_rms=vad_threshold_rms,
+            silence_frames=max(1, vad_silence_ms // FRAME_DURATION_MS),
+            max_segment_frames=max(1, vad_max_segment_ms // FRAME_DURATION_MS),
+        )
         self.last_frame_sequence = 0
+        self.audio_clock_started_at: float | None = None
+        self.asr_enqueued_at: dict[str, float] = {}
+        self.ux_samples: list[dict[str, int | None]] = []
         self.pcm_batch: list[bytes] = []
         self.pcm_batch_start = 1
         self.asr_work: queue.Queue[SpeechSegment | None] = queue.Queue(maxsize=2)
@@ -229,10 +246,13 @@ class LivePipeline:
             "asrWorkerDrained": asr_drained,
             "translationWorkerDrained": translation_drained,
             "storageHealthy": not self.storage_failed,
+            "uxMetrics": self._ux_summary(),
         }
         return self._emit(closed)
 
     def _accept_frame(self, sequence: int, pcm: bytes) -> None:
+        if self.audio_clock_started_at is None:
+            self.audio_clock_started_at = time.perf_counter() - sequence * FRAME_DURATION_MS / 1000
         if not self.storage_failed:
             if not self.pcm_batch:
                 self.pcm_batch_start = sequence
@@ -273,6 +293,7 @@ class LivePipeline:
             "audioEndMs": segment.audio_end_ms,
         }
         try:
+            self.asr_enqueued_at[segment.segment_id] = time.perf_counter()
             self.asr_work.put_nowait(segment)
             self._emit(event)
         except queue.Full:
@@ -301,6 +322,10 @@ class LivePipeline:
             "audioStartMs": segment.audio_start_ms,
             "audioEndMs": segment.audio_end_ms,
         }
+        asr_started = time.perf_counter()
+        asr_queue_wait_ms = round(
+            (asr_started - self.asr_enqueued_at.pop(segment.segment_id, asr_started)) * 1000
+        )
         try:
             result = self.asr.transcribe(segment.pcm, SAMPLE_RATE_HZ)
         except AsrError as error:
@@ -319,17 +344,27 @@ class LivePipeline:
                 "asrMetrics": result,
             })
             return
+        asr_final_at = time.perf_counter()
+        audio_end_to_asr_final_ms = self._audio_end_latency_ms(segment.audio_end_ms, asr_final_at)
         self._emit({
             **common,
             "type": "asr.final",
             "sourceTextEn": source_text,
             "asrMetrics": result,
+            "uxMetrics": {
+                "segmentDurationMs": segment.audio_end_ms - segment.audio_start_ms,
+                "asrQueueWaitMs": asr_queue_wait_ms,
+                "asrProcessingMs": round((asr_final_at - asr_started) * 1000),
+                "audioEndToAsrFinalMs": audio_end_to_asr_final_ms,
+            },
         })
         task = TranslationTask(
             segment_id=segment.segment_id,
             audio_start_ms=segment.audio_start_ms,
             audio_end_ms=segment.audio_end_ms,
             source_text=source_text,
+            asr_final_at=asr_final_at,
+            enqueued_at=time.perf_counter(),
         )
         if self.aborting:
             self._emit({
@@ -376,9 +411,48 @@ class LivePipeline:
         }
         source_text = task.source_text
         translation_started = time.perf_counter()
+        translation_queue_wait_ms = round((translation_started - task.enqueued_at) * 1000)
+        first_token_at: float | None = None
+        last_partial_emit = 0.0
+        partial_sequence = 0
         self._emit({**common, "type": "translation.started", "sourceTextEn": source_text})
+
+        def on_partial(delta: str, target_text: str) -> None:
+            nonlocal first_token_at, last_partial_emit, partial_sequence
+            now = time.perf_counter()
+            if first_token_at is None:
+                first_token_at = now
+            should_emit = (
+                last_partial_emit == 0
+                or (now - last_partial_emit) * 1000 >= TRANSLATION_PARTIAL_INTERVAL_MS
+                or target_text.endswith(("。", "！", "？", "；", "，", "\n"))
+            )
+            if not should_emit:
+                return
+            partial_sequence += 1
+            last_partial_emit = now
+            self._emit({
+                **common,
+                "type": "translation.partial",
+                "sourceTextEn": source_text,
+                "targetTextZh": target_text,
+                "partialSequence": partial_sequence,
+                "appendOnly": True,
+                "firstTokenLatencyMs": round((first_token_at - translation_started) * 1000),
+                "uxMetrics": {
+                    "translationQueueWaitMs": translation_queue_wait_ms,
+                    "translationTtftMs": round((first_token_at - translation_started) * 1000),
+                    "asrFinalToChineseFirstTokenMs": round((first_token_at - task.asr_final_at) * 1000),
+                    "audioEndToChineseFirstTokenMs": self._audio_end_latency_ms(task.audio_end_ms, first_token_at),
+                },
+            })
         try:
-            translated = self.translate(source_text, self.cursor_sequence, self.context_policy)
+            if self.translate_stream:
+                translated = self.translate_stream(
+                    source_text, self.cursor_sequence, self.context_policy, on_partial
+                )
+            else:
+                translated = self.translate(source_text, self.cursor_sequence, self.context_policy)
         except OllamaError as error:
             self._emit({
                 **common,
@@ -391,14 +465,76 @@ class LivePipeline:
         alignment = translated.get("alignment") or {}
         if alignment.get("confidence") in {"high", "exact"}:
             self.cursor_sequence = alignment.get("suggestedCursor")
+        translation_final_at = time.perf_counter()
+        sample = {
+            "audioEndToAsrFinalMs": self._audio_end_latency_ms(task.audio_end_ms, task.asr_final_at),
+            "translationQueueWaitMs": translation_queue_wait_ms,
+            "translationTtftMs": (
+                round((first_token_at - translation_started) * 1000)
+                if first_token_at is not None else None
+            ),
+            "asrFinalToChineseFirstTokenMs": (
+                round((first_token_at - task.asr_final_at) * 1000)
+                if first_token_at is not None else None
+            ),
+            "asrFinalToChineseFinalMs": round((translation_final_at - task.asr_final_at) * 1000),
+            "audioEndToChineseFirstTokenMs": (
+                self._audio_end_latency_ms(task.audio_end_ms, first_token_at)
+                if first_token_at is not None else None
+            ),
+            "audioEndToChineseFinalMs": self._audio_end_latency_ms(task.audio_end_ms, translation_final_at),
+        }
+        self.ux_samples.append(sample)
         self._emit({
             **common,
             "type": "translation.final",
             "sourceTextEn": source_text,
             "targetTextZh": translated.get("targetTextZh"),
-            "latencyMs": round((time.perf_counter() - translation_started) * 1000),
+            "latencyMs": round((translation_final_at - translation_started) * 1000),
+            "firstTokenLatencyMs": (
+                round((first_token_at - translation_started) * 1000)
+                if first_token_at is not None else None
+            ),
+            "partialEventCount": partial_sequence,
+            "uxMetrics": sample,
             **{key: value for key, value in translated.items() if key != "targetTextZh"},
         })
+
+    def _audio_end_latency_ms(self, audio_end_ms: int, now: float) -> int | None:
+        if self.audio_clock_started_at is None:
+            return None
+        return round((now - self.audio_clock_started_at) * 1000 - audio_end_ms)
+
+    def _ux_summary(self) -> dict[str, Any]:
+        keys = (
+            "audioEndToAsrFinalMs",
+            "translationQueueWaitMs",
+            "translationTtftMs",
+            "asrFinalToChineseFirstTokenMs",
+            "asrFinalToChineseFinalMs",
+            "audioEndToChineseFirstTokenMs",
+            "audioEndToChineseFinalMs",
+        )
+        summary: dict[str, Any] = {"completedSegmentCount": len(self.ux_samples)}
+        for key in keys:
+            values = sorted(
+                int(sample[key]) for sample in self.ux_samples if sample.get(key) is not None
+            )
+            if not values:
+                continue
+            summary[key] = {
+                "p50": round(statistics.median(values)),
+                "p95": self._percentile(values, 0.95),
+                "max": values[-1],
+            }
+        return summary
+
+    @staticmethod
+    def _percentile(values: list[int], quantile: float) -> int:
+        index = (len(values) - 1) * quantile
+        lower = int(index)
+        upper = min(lower + 1, len(values) - 1)
+        return round(values[lower] + (values[upper] - values[lower]) * (index - lower))
 
     def _emit(self, event: dict[str, Any]) -> dict[str, Any]:
         payload = {"schemaVersion": 1, "sessionId": self.session_id, **event}

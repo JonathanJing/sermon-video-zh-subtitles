@@ -25,6 +25,22 @@ function downloadUrl(value, type) {
   return URL.createObjectURL(new Blob([value], { type }));
 }
 
+function compactModelName(value, fallback) {
+  if (!value) return fallback;
+  const name = String(value).split("/").filter(Boolean).pop() || fallback;
+  return name
+    .replace(":benchmark", "")
+    .replace("qwen3-asr-0.6b-8bit-89e96d92", "Qwen3-ASR 0.6B 8-bit")
+    .replace("sermon-milmmt-46-4b-v1-q8", "MiLMMT 4B Q8");
+}
+
+function tokenRate(metrics) {
+  const tokens = Number(metrics?.evalCount);
+  const durationNs = Number(metrics?.evalDurationNs);
+  if (!Number.isFinite(tokens) || !Number.isFinite(durationNs) || durationNs <= 0) return null;
+  return Math.round(tokens / (durationNs / 1_000_000_000));
+}
+
 function requestAudioStream(constraints, timeoutMs = 8000) {
   return new Promise((resolve, reject) => {
     let settled = false;
@@ -68,6 +84,7 @@ export function App() {
   const [eventCount, setEventCount] = useState(0);
   const [localSession, setLocalSession] = useState(null);
   const [localSaveState, setLocalSaveState] = useState("idle");
+  const [liveMetrics, setLiveMetrics] = useState({});
 
   const streamRef = useRef(null);
   const recorderRef = useRef(null);
@@ -85,9 +102,21 @@ export function App() {
   const localWriteFailureRef = useRef(false);
   const recordingActiveRef = useRef(false);
   const healthTimerRef = useRef(null);
+  const activeTranslationSegmentRef = useRef("");
+  const partialTranslationRef = useRef({ segmentId: "", text: "" });
+  const renderedTranslationSegmentsRef = useRef(new Set());
+  const pcmClockStartedAtRef = useRef(0);
 
   const isRunning = phase === "running";
   const isBusy = phase === "requesting" || phase === "stopping";
+  const asrModelName = compactModelName(
+    gatewayHealth?.asr?.modelPath || gatewayHealth?.asr?.provider,
+    "ASR",
+  );
+  const translationModelName = compactModelName(
+    gatewayHealth?.ollama?.configuredModel,
+    "MiLMMT",
+  );
 
   const status = useMemo(() => {
     if (phase === "running") return "正在录音 · 本地 ASR 与翻译";
@@ -192,6 +221,26 @@ export function App() {
     setEventCount(eventsRef.current.length);
   }
 
+  function recordCaptionRender(event, renderKind) {
+    const receivedAtMs = Date.now();
+    window.requestAnimationFrame(() => {
+      const renderedAtMs = Date.now();
+      appendEvent("caption_rendered", {
+        segmentId: event.segmentId,
+        renderKind,
+        gatewayEventSequence: event.sequence,
+        gatewayEventAt: event.at,
+        browserReceivedAt: new Date(receivedAtMs).toISOString(),
+        browserRenderedAt: new Date(renderedAtMs).toISOString(),
+        gatewayToBrowserReceiveMs: event.at ? Math.max(0, receivedAtMs - Date.parse(event.at)) : null,
+        browserReceiveToRenderMs: renderedAtMs - receivedAtMs,
+        audioEndToBrowserRenderMs: pcmClockStartedAtRef.current && Number.isFinite(event.audioEndMs)
+          ? renderedAtMs - pcmClockStartedAtRef.current - event.audioEndMs
+          : null,
+      });
+    });
+  }
+
   function handleLiveEvent(event) {
     recordGatewayEvent(event);
     if (event.persistenceFailed || event.type === "storage.failed") {
@@ -204,11 +253,58 @@ export function App() {
     } else if (event.type === "asr.processing") {
       setTranslationState("recognizing");
     } else if (event.type === "asr.final") {
-      setCaption({ en: event.sourceTextEn || "", zh: "正在生成中文字幕…" });
+      activeTranslationSegmentRef.current = event.segmentId || "";
+      partialTranslationRef.current = { segmentId: event.segmentId || "", text: "" };
+      setCaption((current) => ({ en: event.sourceTextEn || "", zh: current.zh }));
       setTranslationState("requesting");
+      setLiveMetrics((current) => ({
+        ...current,
+        asrFinalMs: event.uxMetrics?.audioEndToAsrFinalMs,
+      }));
+    } else if (event.type === "translation.partial") {
+      if (event.segmentId !== activeTranslationSegmentRef.current) {
+        appendEvent("caption_partial_rejected", {
+          segmentId: event.segmentId,
+          reason: "stale_segment",
+          gatewayEventSequence: event.sequence,
+        });
+        return;
+      }
+      const previous = partialTranslationRef.current;
+      const nextText = event.targetTextZh || "";
+      if (previous.segmentId === event.segmentId && !nextText.startsWith(previous.text)) {
+        appendEvent("caption_partial_rejected", {
+          segmentId: event.segmentId,
+          reason: "non_append_update",
+          gatewayEventSequence: event.sequence,
+        });
+        return;
+      }
+      partialTranslationRef.current = { segmentId: event.segmentId, text: nextText };
+      setCaption({ en: event.sourceTextEn || "", zh: nextText });
+      setTranslationState("streaming");
+      setLiveMetrics((current) => ({
+        ...current,
+        ttftMs: event.uxMetrics?.translationTtftMs ?? event.firstTokenLatencyMs,
+        endToFirstTokenMs: event.uxMetrics?.audioEndToChineseFirstTokenMs,
+      }));
+      if (!renderedTranslationSegmentsRef.current.has(event.segmentId)) {
+        renderedTranslationSegmentsRef.current.add(event.segmentId);
+        recordCaptionRender(event, "chinese_first_token");
+      }
     } else if (event.type === "translation.final") {
+      if (event.segmentId !== activeTranslationSegmentRef.current) return;
       setCaption({ en: event.sourceTextEn || "", zh: event.targetTextZh || "翻译结果为空。" });
       setTranslationState("ready");
+      setLiveMetrics({
+        asrFinalMs: event.uxMetrics?.audioEndToAsrFinalMs,
+        ttftMs: event.uxMetrics?.translationTtftMs ?? event.firstTokenLatencyMs,
+        translationFinalMs: event.latencyMs,
+        endToFirstTokenMs: event.uxMetrics?.audioEndToChineseFirstTokenMs,
+        endToChineseFinalMs: event.uxMetrics?.audioEndToChineseFinalMs,
+        tokensPerSecond: tokenRate(event.metrics),
+      });
+      recordCaptionRender(event, "chinese_final");
     } else if (event.type === "translation.failed") {
       setCaption({ en: event.sourceTextEn || "", zh: "翻译暂时不可用，请查看英文原文。" });
       setTranslationState("error");
@@ -256,7 +352,10 @@ export function App() {
     worklet.connect(mute);
     mute.connect(context.destination);
     worklet.port.addEventListener("message", (message) => {
-      if (message.data instanceof ArrayBuffer) liveSocketRef.current?.sendPcm(message.data);
+      if (message.data instanceof ArrayBuffer) {
+        if (!pcmClockStartedAtRef.current) pcmClockStartedAtRef.current = Date.now() - 100;
+        liveSocketRef.current?.sendPcm(message.data);
+      }
     });
     worklet.port.start();
     const samples = new Uint8Array(analyser.fftSize);
@@ -297,11 +396,14 @@ export function App() {
     setElapsed(0);
     setCaption({ en: "", zh: "正在连接麦克风…" });
     setTranslationState("idle");
+    setLiveMetrics({});
     setLocalSession(null);
     setLocalSaveState("creating");
     localSessionRef.current = null;
     audioChunkSequenceRef.current = 0;
     localWriteFailureRef.current = false;
+    renderedTranslationSegmentsRef.current = new Set();
+    pcmClockStartedAtRef.current = 0;
     setPhase("requesting");
     eventsRef.current = [];
     setEventCount(0);
@@ -546,7 +648,7 @@ export function App() {
         <div className="stage-meta">
           <span id="caption-title">实时字幕</span>
           <span className="demo-notice">
-            {isRunning ? "麦克风 · Whisper ASR · MiLMMT A0" : "麦克风录音 + 本地模型集成 POC"}
+            {isRunning ? `麦克风 · ${asrModelName} · ${translationModelName}` : "麦克风录音 + 本地模型集成 POC"}
           </span>
         </div>
 
@@ -574,10 +676,18 @@ export function App() {
         <div className="health-items">
           <span data-state={isRunning ? "active" : "idle"}>录音 {isRunning ? "进行中" : phase === "stopped" ? "已停止" : "待机"}</span>
           <span data-state={gatewayHealth?.asr?.available ? "active" : "pending"}>
-            ASR {translationState === "recognizing" ? "识别中" : gatewayHealth?.asr?.available ? "Whisper 就绪" : "未就绪"}
+            ASR {gatewayHealth?.asr?.available ? asrModelName : "未就绪"}
+            {Number.isFinite(liveMetrics.asrFinalMs) ? ` · final ${liveMetrics.asrFinalMs}ms` : ""}
           </span>
-          <span data-state={translationState === "ready" ? "active" : translationState === "error" ? "pending" : "idle"}>
-            翻译 {translationState === "ready" ? "MiLMMT A0" : translationState === "requesting" ? "生成中" : translationState === "error" ? "已降级" : "待机"}
+          <span data-state={translationState === "ready" || translationState === "streaming" ? "active" : translationState === "error" ? "pending" : "idle"}>
+            翻译 {translationModelName}
+            {Number.isFinite(liveMetrics.ttftMs) ? ` · TTFT ${liveMetrics.ttftMs}ms` : translationState === "requesting" ? " · 等待首字" : ""}
+            {Number.isFinite(liveMetrics.tokensPerSecond) ? ` · ${liveMetrics.tokensPerSecond} tok/s` : ""}
+            {Number.isFinite(liveMetrics.translationFinalMs) ? ` · 完整 ${liveMetrics.translationFinalMs}ms` : ""}
+          </span>
+          <span data-state={Number.isFinite(liveMetrics.endToFirstTokenMs) ? "active" : "idle"}>
+            端到端 {Number.isFinite(liveMetrics.endToFirstTokenMs) ? `首字 ${liveMetrics.endToFirstTokenMs}ms` : "等待样本"}
+            {Number.isFinite(liveMetrics.endToChineseFinalMs) ? ` · 完整 ${liveMetrics.endToChineseFinalMs}ms` : ""}
           </span>
           <span data-state={gatewayHealth?.status === "ready" ? "active" : "pending"}>
             Gateway {gatewayHealth?.status === "ready" ? "就绪" : gatewayHealth?.status === "offline" ? "离线" : "未就绪"}
@@ -585,7 +695,9 @@ export function App() {
           <span data-state={localSaveState === "saved" || localSaveState === "saving" ? "active" : localSaveState === "error" || localSaveState === "incomplete" ? "pending" : "idle"}>
             本地保存 {localSaveState === "creating" ? "建目录" : localSaveState === "saving" ? "增量写入" : localSaveState === "finalizing" ? "完成中" : localSaveState === "saved" ? "已完成" : localSaveState === "incomplete" ? "可恢复/不完整" : localSaveState === "error" ? "浏览器备份" : "待机"}
           </span>
-          <span>Context A0 / none</span>
+          <span>
+            Context none{gatewayHealth?.contentPack ? ` · Pack ${gatewayHealth.contentPack.packVersion} 可用` : ""}
+          </span>
         </div>
         <div className="evidence">
           <span>事件 {eventCount}</span>

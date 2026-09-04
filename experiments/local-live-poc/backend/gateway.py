@@ -7,10 +7,11 @@ import re
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from collections.abc import Callable
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
-from .asr_client import WhisperCliClient
+from .asr_client import MlxAudioWebSocketClient, WhisperCliClient
 from .content_pack import (
     CONTEXT_POLICIES,
     PackValidationError,
@@ -36,14 +37,26 @@ class GatewayState:
         asr_model: str = "",
         whisper_binary: str = "whisper-cli",
         vad_threshold_rms: int = 150,
+        vad_silence_ms: int = 500,
+        vad_max_segment_ms: int = 3000,
         ws_port: int = 8767,
+        asr_provider: str = "whisper-cli",
+        mlx_audio_url: str = "ws://127.0.0.1:18766/v1/audio/transcriptions/realtime",
+        mlx_audio_model: str = "",
     ) -> None:
         self.pack_path = pack_path
         self.pack = load_pack(pack_path) if pack_path else None
         self.ollama = OllamaClient(ollama_model, ollama_url)
         self.sessions = SessionStore(session_root)
-        self.asr = WhisperCliClient(asr_model, whisper_binary)
+        if asr_provider == "qwen-mlx-websocket":
+            self.asr = MlxAudioWebSocketClient(mlx_audio_model, mlx_audio_url)
+        elif asr_provider == "whisper-cli":
+            self.asr = WhisperCliClient(asr_model, whisper_binary)
+        else:
+            raise ValueError(f"unsupported ASR provider: {asr_provider}")
         self.vad_threshold_rms = vad_threshold_rms
+        self.vad_silence_ms = vad_silence_ms
+        self.vad_max_segment_ms = vad_max_segment_ms
         self.ws_port = ws_port
         self.ollama_warmup: dict[str, Any] | None = None
 
@@ -60,6 +73,29 @@ class GatewayState:
         )
         context = prompt_context(hits, policy=context_policy)
         result = self.ollama.translate(source_text, context)
+        return {
+            "sourceTextEn": source_text,
+            **result,
+            "requestedContextPolicy": context_policy,
+            "contextPolicy": context_policy if hits else "none",
+            "contextHitIds": [hit["entryId"] for hit in hits],
+            "alignment": alignment_summary(hits, cursor_sequence),
+        }
+
+    def translate_stream(
+        self,
+        source_text: str,
+        cursor_sequence: int | None,
+        context_policy: str,
+        on_partial: Callable[[str, str], None],
+    ) -> dict[str, Any]:
+        pack = self.pack
+        hits = (
+            retrieve(pack, source_text, limit=5, cursor_sequence=cursor_sequence)
+            if pack and context_policy != "none" else []
+        )
+        context = prompt_context(hits, policy=context_policy)
+        result = self.ollama.translate(source_text, context, on_partial=on_partial)
         return {
             "sourceTextEn": source_text,
             **result,
@@ -153,6 +189,11 @@ class Handler(BaseHTTPRequestHandler):
                 "available": asr.get("available", False),
                 "webSocketUrl": f"ws://127.0.0.1:{self.server.state.ws_port}/api/live",
                 "format": "pcm_s16le/16000/mono/100ms",
+                "asrFinalPolicy": {
+                    "silenceMs": self.server.state.vad_silence_ms,
+                    "maxSegmentMs": self.server.state.vad_max_segment_ms,
+                },
+                "translationStreaming": True,
             },
             "sessionStorage": storage,
         })
@@ -317,6 +358,22 @@ def parser() -> argparse.ArgumentParser:
         default=os.environ.get("LOCAL_LIVE_WHISPER_BINARY", "whisper-cli"),
     )
     command.add_argument(
+        "--asr-provider",
+        choices=("whisper-cli", "qwen-mlx-websocket"),
+        default=os.environ.get("LOCAL_LIVE_ASR_PROVIDER", "whisper-cli"),
+    )
+    command.add_argument(
+        "--mlx-audio-url",
+        default=os.environ.get(
+            "LOCAL_LIVE_MLX_AUDIO_URL",
+            "ws://127.0.0.1:18766/v1/audio/transcriptions/realtime",
+        ),
+    )
+    command.add_argument(
+        "--mlx-audio-model",
+        default=os.environ.get("LOCAL_LIVE_QWEN_ASR_MODEL", ""),
+    )
+    command.add_argument(
         "--ws-port",
         type=int,
         default=int(os.environ.get("LOCAL_LIVE_WS_PORT", "8767")),
@@ -325,6 +382,16 @@ def parser() -> argparse.ArgumentParser:
         "--vad-threshold-rms",
         type=int,
         default=int(os.environ.get("LOCAL_LIVE_VAD_THRESHOLD_RMS", "150")),
+    )
+    command.add_argument(
+        "--vad-silence-ms",
+        type=int,
+        default=int(os.environ.get("LOCAL_LIVE_VAD_SILENCE_MS", "500")),
+    )
+    command.add_argument(
+        "--vad-max-segment-ms",
+        type=int,
+        default=int(os.environ.get("LOCAL_LIVE_VAD_MAX_SEGMENT_MS", "3000")),
     )
     return command
 
@@ -341,7 +408,12 @@ def main() -> None:
         arguments.asr_model,
         arguments.whisper_binary,
         arguments.vad_threshold_rms,
+        arguments.vad_silence_ms,
+        arguments.vad_max_segment_ms,
         arguments.ws_port,
+        arguments.asr_provider,
+        arguments.mlx_audio_url,
+        arguments.mlx_audio_model,
     )
     server = create_server(arguments.host, arguments.port, state)
     try:

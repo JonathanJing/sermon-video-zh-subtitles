@@ -29,6 +29,11 @@ class LiveServerTest(unittest.TestCase):
                 "model": "fake-model",
                 "alignment": {"confidence": "none"},
             }
+            def translate_stream(source, cursor, policy, on_partial):
+                on_partial("恩典", "恩典")
+                on_partial("引领我们。", "恩典引领我们。")
+                return state.translate(source, cursor, policy)
+            state.translate_stream = translate_stream
             session = state.sessions.create({"audioMimeType": "audio/webm"})
             service = LiveSocketService(state, "127.0.0.1", 0)
             port = service.server.socket.getsockname()[1]
@@ -60,6 +65,7 @@ class LiveServerTest(unittest.TestCase):
                         events.append(json.loads(socket.recv(timeout=5)))
                 types = [event["type"] for event in events]
                 self.assertIn("asr.final", types)
+                self.assertIn("translation.partial", types)
                 self.assertIn("translation.final", types)
                 translated = next(event for event in events if event["type"] == "translation.final")
                 self.assertEqual(translated["targetTextZh"], "恩典引领我们。")

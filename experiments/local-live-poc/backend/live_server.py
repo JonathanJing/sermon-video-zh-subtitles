@@ -84,9 +84,12 @@ class LiveSocketService:
                 sessions=self.state.sessions,
                 asr=self.state.asr,
                 translate=self.state.translate,
+                translate_stream=self.state.translate_stream,
                 send=send,
                 context_policy=context_policy,
                 vad_threshold_rms=self.state.vad_threshold_rms,
+                vad_silence_ms=self.state.vad_silence_ms,
+                vad_max_segment_ms=self.state.vad_max_segment_ms,
             )
             pipeline.start()
             for message in connection:

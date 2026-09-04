@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Callable, Iterator
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -35,6 +36,26 @@ class OllamaClient:
             raise OllamaError(f"Ollama returned HTTP {error.code}: {detail}") from error
         except (URLError, TimeoutError, json.JSONDecodeError) as error:
             raise OllamaError(f"Ollama request failed: {error}") from error
+
+    def _json_stream(
+        self, path: str, payload: dict[str, Any], timeout: float = 15.0
+    ) -> Iterator[dict[str, Any]]:
+        request = Request(
+            self.base_url + path,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urlopen(request, timeout=timeout) as response:
+                for raw_line in response:
+                    if raw_line.strip():
+                        yield json.loads(raw_line.decode("utf-8"))
+        except HTTPError as error:
+            detail = error.read().decode("utf-8", errors="replace")
+            raise OllamaError(f"Ollama returned HTTP {error.code}: {detail}") from error
+        except (URLError, TimeoutError, json.JSONDecodeError) as error:
+            raise OllamaError(f"Ollama stream failed: {error}") from error
 
     def status(self) -> dict[str, Any]:
         try:
@@ -113,16 +134,14 @@ class OllamaClient:
             f"CURRENT SOURCE\n{source_text_en}"
         )
 
-    def translate(self, source_text_en: str, context: dict[str, Any]) -> dict[str, Any]:
-        if not self.model:
-            raise OllamaError("no Ollama model is configured")
-        has_context = any(context.get(key) for key in context)
-        prompt_version = CONTEXT_PROMPT_VERSION if has_context else MILMMT_A0_PROMPT_VERSION
-        response = self._json("/api/generate", {
+    def _translation_payload(
+        self, source_text_en: str, context: dict[str, Any], stream: bool
+    ) -> dict[str, Any]:
+        return {
             "model": self.model,
             "prompt": self.build_prompt(source_text_en, context),
             "raw": True,
-            "stream": False,
+            "stream": stream,
             "keep_alive": "15m",
             "options": {
                 "temperature": 0,
@@ -132,10 +151,15 @@ class OllamaClient:
                 "seed": 42,
                 "num_predict": 256,
             },
-        }, timeout=15.0)
+        }
+
+    @staticmethod
+    def _translation_result(
+        target_text: str, model: str, prompt_version: str, response: dict[str, Any]
+    ) -> dict[str, Any]:
         return {
-            "targetTextZh": str(response.get("response") or "").strip(),
-            "model": self.model,
+            "targetTextZh": target_text.strip(),
+            "model": model,
             "promptVersion": prompt_version,
             "metrics": {
                 "totalDurationNs": response.get("total_duration"),
@@ -146,3 +170,40 @@ class OllamaClient:
                 "evalDurationNs": response.get("eval_duration"),
             },
         }
+
+    def translate(
+        self,
+        source_text_en: str,
+        context: dict[str, Any],
+        on_partial: Callable[[str, str], None] | None = None,
+    ) -> dict[str, Any]:
+        if not self.model:
+            raise OllamaError("no Ollama model is configured")
+        has_context = any(context.get(key) for key in context)
+        prompt_version = CONTEXT_PROMPT_VERSION if has_context else MILMMT_A0_PROMPT_VERSION
+        if on_partial is None:
+            response = self._json(
+                "/api/generate",
+                self._translation_payload(source_text_en, context, stream=False),
+                timeout=15.0,
+            )
+            return self._translation_result(
+                str(response.get("response") or ""), self.model, prompt_version, response
+            )
+
+        target_text = ""
+        final_response: dict[str, Any] = {}
+        for response in self._json_stream(
+            "/api/generate", self._translation_payload(source_text_en, context, stream=True)
+        ):
+            delta = str(response.get("response") or "")
+            if delta:
+                target_text += delta
+                on_partial(delta, target_text)
+            if response.get("done") is True:
+                final_response = response
+        if not final_response:
+            raise OllamaError("Ollama stream ended without a final response")
+        return self._translation_result(
+            target_text, self.model, prompt_version, final_response
+        )

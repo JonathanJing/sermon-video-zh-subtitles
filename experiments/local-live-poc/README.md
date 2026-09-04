@@ -12,7 +12,7 @@ Independent greenfield interface for a MacBook-based live sermon caption feasibi
 - Automatic per-recording local session folder with incremental audio and JSONL writes.
 - Real microphone PCM streaming through local Whisper ASR and the MiLMMT translation backend.
 
-The live path is now microphone → AudioWorklet PCM → WebSocket gateway → energy VAD → configured `whisper.cpp` English ASR → MiLMMT A0 → Chinese caption. Browser recording remains independent and continues if ASR or translation fails. Offline replay/A-B orchestration remains a later step.
+The live path is now microphone → AudioWorklet PCM → WebSocket gateway → energy VAD → configured `whisper.cpp` English ASR → MiLMMT A0 token stream → Chinese caption. Browser recording remains independent and continues if ASR or translation fails. Offline replay/A-B orchestration remains a later step. The default final cadence is 500 ms of silence or a 3-second maximum speech window; only immutable ASR finals start translation. Chinese token updates are append-only and rate-limited, so ASR partial revisions cannot make the large caption flicker.
 
 Each start automatically creates:
 
@@ -24,6 +24,8 @@ artifacts/sessions/<timestamp>-<random-id>/
   events.jsonl     # append-only UI/model/status events
   manifest.json    # status, counts, paths, duration, and audio/PCM SHA-256
 ```
+
+`events.jsonl` is also the performance log. Every stable segment records ASR queue/processing time, audio-end-to-English-final, translation queue time, MiLMMT TTFT, English-final-to-Chinese-first/final, and audio-end-to-Chinese-first/final. The browser adds `caption_rendered` for the first Chinese token and final Chinese caption, including gateway-to-browser and browser-render timing. Rejected stale or non-append partials are logged as `caption_partial_rejected`. `stream.closed.uxMetrics` contains per-session P50/P95/max aggregates without requiring a separate database.
 
 The gateway syncs recovery recording chunks, batched PCM frames, and events to disk. On stop it wraps PCM as a replayable WAV, marks the manifest completed, and calculates recording/PCM hashes. Browser download links remain available as a recovery copy. Override the storage root with `LOCAL_LIVE_SESSION_ROOT=/absolute/path` when the recordings should live outside the project.
 
@@ -52,6 +54,8 @@ The equivalent Terminal command is:
 ```
 
 This command checks the local dependencies, model, writable session directory, and at least 10 GiB of free disk; starts Ollama when needed; prevents display and idle system sleep; starts the REST gateway, WebSocket live audio endpoint, Whisper ASR, MiLMMT adapter, and Vite UI; then opens `http://127.0.0.1:4173/` automatically. It uses `small.en` when that benchmarked model is already installed and otherwise uses the pinned `base.en` installed by setup. Override it explicitly with `LOCAL_LIVE_ASR_MODEL=/absolute/path/to/model.bin`.
+
+The final cadence can be tuned without code changes using `LOCAL_LIVE_VAD_SILENCE_MS` and `LOCAL_LIVE_VAD_MAX_SEGMENT_MS`; both values must be multiples of 100 ms. The defaults are `500` and `3000`.
 
 Keep the Terminal window open. In the page, choose the microphone, start recording, and use **Stop and save** before pressing Control-C in Terminal. Run a non-starting preflight on Saturday night or Sunday morning with:
 
