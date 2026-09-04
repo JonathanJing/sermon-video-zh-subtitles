@@ -98,3 +98,20 @@ test("a readable display event swaps the complete bilingual block", () => {
   assert.equal(next.active.zh, "这是一个完整的新字幕块。");
   assert.equal(next.active.phase, "streaming");
 });
+
+test("translation failure remains error and never replaces previous bilingual final", () => {
+  let state = createCaptionState({ segmentId: "seg-1", en: "Faith.", zh: "信心。", phase: "final" });
+  state = applyCaptionEvent(state, {
+    type: "caption.display", segmentId: "seg-2", sourceTextEn: "Grace.",
+    targetTextZh: "翻译暂时不可用，请查看英文原文。", displayKind: "final", phase: "error",
+  });
+  assert.equal(state.active.phase, "error");
+  assert.equal(state.previousFinal.segmentId, "seg-1");
+
+  state = applyCaptionEvent(state, {
+    type: "caption.display", segmentId: "seg-3", sourceTextEn: "Hope.",
+    targetTextZh: "盼望。", displayKind: "final", phase: "final",
+  });
+  assert.equal(state.active.phase, "final");
+  assert.deepEqual(state.previousFinal, { segmentId: "seg-1", en: "Faith.", zh: "信心。" });
+});

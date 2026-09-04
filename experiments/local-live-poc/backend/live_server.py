@@ -23,7 +23,7 @@ class LiveSocketService:
             self._handle,
             host,
             port,
-            origins=["http://127.0.0.1:4173", "http://localhost:4173", None],
+            origins=[*state.frontend_origins, None],
             compression=None,
             max_size=PCM_BYTES_PER_FRAME + 4,
             max_queue=32,
@@ -40,16 +40,20 @@ class LiveSocketService:
     def _handle(self, connection: ServerConnection) -> None:
         pipeline: LivePipeline | None = None
         session_id = ""
+        claimed = False
+        session: dict[str, Any] = {}
         send_lock = threading.Lock()
 
         def send(payload: dict[str, Any]) -> None:
             outgoing = payload
-            if payload.get("type") == "stream.ready" and session_id:
-                token = self.state.caption_hub.start_session(session_id)
+            if payload.get("type") == "stream.ready" and session_id and claimed:
+                token = self.state.caption_hub.start_session(session_id, token=session.get("viewerToken"))
                 local_urls = viewer_urls(token, self.state.viewer_port)
                 public_url = None
                 if self.state.public_caption_publisher:
-                    public_url = self.state.public_caption_publisher.start_session(session_id, token)
+                    public_url = self.state.public_caption_publisher.start_session(
+                        session_id, token, sequence_base=int(session.get("eventCount") or 0)
+                    )
                 outgoing = {
                     **payload,
                     "viewer": {
@@ -59,7 +63,7 @@ class LiveSocketService:
                         "readOnly": True,
                     },
                 }
-            if session_id:
+            if session_id and claimed:
                 self.state.caption_hub.publish(session_id, outgoing)
                 if self.state.public_caption_publisher:
                     self.state.public_caption_publisher.publish(session_id, outgoing)
@@ -85,7 +89,7 @@ class LiveSocketService:
                 return
             session_id = str(start.get("sessionId") or "")
             try:
-                self.state.sessions.get_recording(session_id)
+                session = self.state.sessions.get_recording(session_id)
             except SessionStoreError as error:
                 send({"type": "stream.error", "message": str(error)})
                 return
@@ -102,6 +106,13 @@ class LiveSocketService:
             except PackValidationError as error:
                 send({"type": "stream.error", "message": str(error)})
                 return
+            with self.state.live_lock:
+                if session_id in self.state.live_pipelines:
+                    send({"type": "stream.error", "message": "session already has an active live stream"})
+                    return
+                self.state.live_pipelines[session_id] = None
+                claimed = True
+            position = self.state.sessions.stream_position(session_id)
             pipeline = LivePipeline(
                 session_id=session_id,
                 sessions=self.state.sessions,
@@ -114,7 +125,13 @@ class LiveSocketService:
                 vad_silence_ms=self.state.vad_silence_ms,
                 vad_max_segment_ms=self.state.vad_max_segment_ms,
                 caption_presentation_policy=self.state.caption_presentation_policy,
+                initial_frame_sequence=position["pcmFrameCount"],
+                initial_segment_count=position["segmentCount"],
+                translation_unit_policy=self.state.translation_unit_policy,
+                source_fragment_policy=self.state.source_fragment_policy,
             )
+            with self.state.live_lock:
+                self.state.live_pipelines[session_id] = pipeline
             pipeline.start()
             for message in connection:
                 if isinstance(message, bytes):
@@ -122,6 +139,9 @@ class LiveSocketService:
                         send({"type": "audio.frame_rejected", "reason": "invalid_wire_size"})
                         continue
                     sequence = struct.unpack(">I", message[:4])[0]
+                    if sequence - pipeline.last_frame_sequence > 3001:
+                        send({"type": "stream.error", "message": "字幕中断超过五分钟，请保存后开始新会话"})
+                        break
                     pipeline.process_frame(sequence, message[4:])
                     continue
                 try:
@@ -134,9 +154,13 @@ class LiveSocketService:
         except (ConnectionClosed, TimeoutError):
             pass
         finally:
+            drained = True
             if pipeline:
-                pipeline.stop()
-            if session_id:
+                drained = pipeline.stop().get("workerDrained") is True
+            if claimed:
                 self.state.caption_hub.end_session(session_id)
                 if self.state.public_caption_publisher:
                     self.state.public_caption_publisher.end_session(session_id)
+                if drained:
+                    with self.state.live_lock:
+                        self.state.live_pipelines.pop(session_id, None)

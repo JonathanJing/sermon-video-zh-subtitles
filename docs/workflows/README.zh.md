@@ -43,7 +43,7 @@
 
 周六英文字幕、候选中文、术语、经文引用和段落顺序可以转换成短期 `weekly-pack.json`：
 
-完整的方案审核、数据契约、fallback 决策和开发步骤见[周六产物到周日实时字幕 Context Pack 计划](../saturday-to-sunday-context-pack-plan.zh.md)。当前已经实现 builder、retriever、受控 prompt policy 和 replay；Saturday production run 到真实 Pack 的自动 exporter、capability-based readiness 和 ASR phrase bias 尚未完成。
+完整的方案审核、数据契约、fallback 决策和开发步骤见[周六产物到周日实时字幕 Context Pack 计划](../saturday-to-sunday-context-pack-plan.zh.md)。当前已实现 exporter、builder、retriever、capability readiness、Gateway policy 上限和 replay。真实每周内容的质量收益及 ASR phrase bias 仍待验证；English-only 仅辅助对齐，不改变 A0 翻译 prompt。
 
 1. 以稳定 caption segment 为一条 JSONL，保留 `segmentId`、时间、英文、中文状态、术语和经文引用。
 2. 按周六演讲顺序生成一张 ordered sermon map。
@@ -69,9 +69,9 @@
 | 增量录音、events、manifest、SHA | Working | 每次启动建立独立 session 文件夹 |
 | MiLMMT A0/Ollama translation | Working | 冻结 prompt，`contextPolicy=none` 基线 |
 | 大号中文、英文 sidecar、手机只读页 | Working POC | 单页 operator UI；随机 token + SSE，只暴露字幕 GET，不暴露控制接口 |
-| 蜂窝网络扫码公网分享 | Design only | Firebase Hosting + Realtime Database；MacBook 只出站发布，不暴露本机端口 |
+| 蜂窝网络扫码公网分享 | Working POC | Firebase Hosting + Realtime Database 已实现并有开发部署；MacBook 只出站发布。本地 Wi-Fi 与实际蜂窝设备需分别验收 |
 | 本地英文 ASR | Working POC | Qwen3-ASR 0.6B/MLX 一键默认；Whisper 回退；60 分钟长测通过 |
-| 周六 content pack | POC | builder/retriever、受控 runtime policy、冻结英文 replay/A-B 已有；真实 Saturday exporter 与 capability readiness 尚未完成 |
+| 周六 content pack | POC | exporter、capability readiness、受控 runtime policy 已实现；须独立确认同篇信息，真实周日收益尚未通过盲评 |
 | 会后 replay/A-B | Working | 同一组 `asr.final` 按 policy 重放；生成盲评 CSV 和 hash provenance |
 | ASR Gold gate | Working gate | 六 case 队列已生成；真人未审核前正式 WER fail-closed |
 | Session 保留 | Working | 默认只预览；30 天、保留最近 10 个；只有显式 `--apply` 删除 |
@@ -85,7 +85,7 @@
 - 修复后的 2026-09-04 真实 Chrome → 内置麦克风 → Qwen3-ASR/MLX → MiLMMT 60 分钟长测有 1,247 次 ASR processing、1,246 次 final、1 次 empty、0 次 failed。
 - 音频结束到 ASR final：p50 `1.279s`、p95 `1.318s`；MiLMMT TTFT：p50 `0.126s`、p95 `0.146s`。
 - 音频结束到浏览器第一个中文字幕：p50 `1.419s`、p95 `1.486s`；到完整中文：p50 `1.530s`、p95 `1.720s`。
-- 以上是固定房间和播放源的 POC 证据，不是教会现场 SLO；最大值受队列/模型恢复影响，现场声学仍必须另行验证。
+- 以上是历史版本、固定房间和播放源的 POC 证据；该 60 分钟包含敬拜/音乐，不能称为 60 分钟纯讲道验收。旧记录仍包含 227 次 `The.`，流水线完成率不等于译文可用率。可读字幕策略和后续版本须用实际 `readable_*` render 重新计分，不能沿用旧延迟值作为新版本通过证据。
 
 ### 预算拆分
 
@@ -127,7 +127,7 @@
 
 ### 真实 E2E
 
-- 本机 60 分钟完整 sermon soak 已通过；正式教会现场彩排仍是独立且未完成的 production gate。
+- 历史本机 60 分钟混合内容 soak 已完成；它不替代当前代码、实际字幕策略与真实音频输入的验收，正式教会现场彩排仍是独立且未完成的 production gate。
 - 音频可解码、chunk/event sequence 连续、manifest completed、SHA 匹配。
 - English final 和 Chinese result 均可见，p50/p95 达标，无静默丢段。
 - 录音可以在家中 replay，并复现相同 ASR/翻译版本的结果。

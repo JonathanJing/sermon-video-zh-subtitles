@@ -24,7 +24,7 @@ class FakePublicPublisher:
         self.events = []
         self.ended = []
 
-    def start_session(self, session_id, token):
+    def start_session(self, session_id, token, sequence_base=0):
         self.events.append((session_id, {"type": "public.started", "token": token}))
         return f"https://captions.example.org/s/{token}"
 

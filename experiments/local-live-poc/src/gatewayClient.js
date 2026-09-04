@@ -1,12 +1,16 @@
 export const GATEWAY_URL = import.meta.env?.VITE_GATEWAY_URL || "http://127.0.0.1:8766";
 
 async function requestJson(path, options = {}, fetchImpl = globalThis.fetch) {
-  const response = await fetchImpl(`${GATEWAY_URL}${path}`, options);
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(payload.message || `Gateway HTTP ${response.status}`);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  try {
+    const response = await fetchImpl(`${GATEWAY_URL}${path}`, { ...options, signal: controller.signal });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.message || `Gateway HTTP ${response.status}`);
+    return payload;
+  } finally {
+    clearTimeout(timeout);
   }
-  return payload;
 }
 
 function jsonOptions(method, payload) {
@@ -27,6 +31,11 @@ export function restartGateway(fetchImpl) {
 
 export function startLocalSession(metadata, fetchImpl) {
   return requestJson("/api/sessions/start", jsonOptions("POST", metadata), fetchImpl);
+}
+
+export function resumeLocalSession(sessionId, availableAudioChunks, pcmFrameSequence, fetchImpl) {
+  return requestJson(`/api/sessions/${sessionId}/resume`,
+    jsonOptions("POST", { availableAudioChunks, ...(pcmFrameSequence == null ? {} : { pcmFrameSequence }) }), fetchImpl);
 }
 
 export function appendSessionEvent(sessionId, event, fetchImpl) {

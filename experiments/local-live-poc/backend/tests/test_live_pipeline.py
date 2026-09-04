@@ -224,6 +224,7 @@ class LivePipelineTest(unittest.TestCase):
                 lambda source_text, *_: translated.append(source_text) or {"targetTextZh": "这。"},
                 sent.append,
                 vad_threshold_rms=450,
+                source_fragment_policy="off",
             )
             sequence = 1
             for _ in range(3):
@@ -241,7 +242,35 @@ class LivePipelineTest(unittest.TestCase):
             self.assertEqual(suppressed[0]["reason"], "repeated_short_result")
             self.assertEqual(suppressed[0]["repeatCount"], 3)
 
-    def test_slow_translation_does_not_block_following_asr(self) -> None:
+    def test_lexical_guard_retains_final_and_recording_without_displaying_article(self) -> None:
+        for text, admitted in (("The.", False), ("Amen.", True), ("No.", True)):
+            with self.subTest(text=text), tempfile.TemporaryDirectory() as temporary:
+                sessions = SessionStore(temporary)
+                created = sessions.create({"audioMimeType": "audio/webm"})
+                sent, translated = [], []
+                pipeline = LivePipeline(
+                    created["sessionId"], sessions, FakeAsr(text),
+                    lambda source_text, *_: translated.append(source_text) or {"targetTextZh": "测试"},
+                    sent.append, vad_threshold_rms=450,
+                )
+                pipeline.start()
+                for sequence in range(1, 12):
+                    pipeline.process_frame(sequence, frame(1000 if sequence < 5 else 0))
+                result = pipeline.stop()
+                self.assertTrue(result["workerDrained"])
+                self.assertTrue(result["storageHealthy"])
+                finals = [event for event in sent if event["type"] == "asr.final"]
+                self.assertEqual([event["sourceTextEn"] for event in finals], [text])
+                self.assertEqual(translated, [text] if admitted else [])
+                if not admitted:
+                    skipped = next(event for event in sent if event["type"] == "translation.skipped")
+                    self.assertEqual(skipped["reason"], "insufficient_lexical_content")
+                    self.assertFalse(skipped["displayEligible"])
+                    self.assertFalse(any(event["type"] == "caption.display" for event in sent))
+                manifest = json.loads(Path(created["manifestPath"]).read_text())
+                self.assertEqual(manifest["pcmFrameCount"], 11)
+
+    def test_slow_translation_does_not_block_asr_or_mislabel_queue_wait_as_hold(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             sessions = SessionStore(temporary)
             created = sessions.create({"audioMimeType": "audio/webm"})
@@ -271,9 +300,29 @@ class LivePipelineTest(unittest.TestCase):
                 event["type"] == "asr.final" and event["segmentId"] == "seg-000002"
                 for event in sent
             ))
+            # The second immutable final is waiting behind the first model
+            # call, although legacy has no semantic aggregation delay.
+            time.sleep(0.12)
             release_translation.set()
             closed = pipeline.stop()
             self.assertTrue(closed["workerDrained"])
+            second = next(
+                event for event in sent
+                if event["type"] == "translation.final" and event["segmentId"] == "seg-000002"
+            )
+            self.assertEqual(second["translationUnitPolicy"], "legacy")
+            self.assertEqual(second["translationUnitHoldMs"], 0)
+            self.assertGreaterEqual(second["translationUnitQueueWaitMs"], 100)
+            self.assertEqual(
+                second["translationUnitSourceFinalToReadyMs"], second["translationUnitQueueWaitMs"],
+            )
+            self.assertGreaterEqual(
+                second["uxMetrics"]["translationQueueWaitMs"], second["translationUnitQueueWaitMs"],
+            )
+            self.assertGreaterEqual(
+                second["uxMetrics"]["asrFinalToChineseFinalMs"] + 1,
+                second["uxMetrics"]["translationQueueWaitMs"],
+            )
 
     def test_pcm_storage_failure_is_visible_but_does_not_crash_pipeline(self) -> None:
         class FailingPcmStore(SessionStore):

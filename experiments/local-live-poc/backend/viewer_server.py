@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import queue
+import re
 import secrets
 import socket
 import sys
@@ -66,13 +67,18 @@ class CaptionHub:
         self._by_token: dict[str, ViewerSession] = {}
         self._token_by_session: dict[str, str] = {}
 
-    def start_session(self, session_id: str) -> str:
+    def start_session(self, session_id: str, token: str | None = None) -> str:
         with self._lock:
             self._purge_locked()
             existing = self._token_by_session.get(session_id)
             if existing and existing in self._by_token:
+                self._by_token[existing].active = True
+                self._by_token[existing].ended_at = None
+                self._by_token[existing].snapshot["sessionActive"] = True
                 return existing
-            token = secrets.token_urlsafe(18)
+            token = token or secrets.token_urlsafe(18)
+            if not re.fullmatch(r"[A-Za-z0-9_-]{24}", token) or token in self._by_token:
+                raise ValueError("invalid or conflicting viewer token")
             self._by_token[token] = ViewerSession(session_id, token, time.time())
             self._token_by_session[session_id] = token
             return token
@@ -271,8 +277,8 @@ footer{display:flex;justify-content:space-between;align-items:center;border-top:
 <footer><span>只读 · 同一 Wi-Fi</span><span class="controls"><button id="minus" aria-label="缩小字号">−</button><button id="plus" aria-label="放大字号">＋</button></span></footer>
 <script>
 const token=__TOKEN__,zh=document.querySelector('#zh'),en=document.querySelector('#en'),previous=document.querySelector('#previous'),previousZh=document.querySelector('#previous-zh'),previousEn=document.querySelector('#previous-en'),divider=document.querySelector('#divider'),current=document.querySelector('#current'),status=document.querySelector('#status');let scale=1,state={previousFinal:null,active:{segmentId:'',sourceTextEn:'',targetTextZh:'等待现场字幕…',phase:'listening'},sessionActive:true};
-function draw(){const old=state.previousFinal;previous.hidden=!old;divider.hidden=!old;if(old){previousZh.textContent=old.targetTextZh||'';previousEn.textContent=old.sourceTextEn||''}zh.textContent=state.active.targetTextZh||'正在翻译…';en.textContent=state.active.sourceTextEn||'';if(state.sessionActive===false){status.textContent='本场已结束';status.className='waiting'}}
-function render(event){if(event.displayEligible===false)return;if(event.type==='caption.snapshot'){state=event;draw();return}if(event.type==='asr.final'){const active=state.active;if(active.phase==='final'&&active.sourceTextEn&&active.targetTextZh)state.previousFinal={segmentId:active.segmentId,sourceTextEn:active.sourceTextEn,targetTextZh:active.targetTextZh};state.active={segmentId:event.segmentId||'',sourceTextEn:event.sourceTextEn||'',targetTextZh:'',phase:'requesting'}}else if(event.type==='caption.display'){const active=state.active,isNew=event.segmentId&&active.segmentId&&event.segmentId!==active.segmentId;if(isNew&&active.phase==='final'&&active.sourceTextEn&&active.targetTextZh)state.previousFinal={segmentId:active.segmentId,sourceTextEn:active.sourceTextEn,targetTextZh:active.targetTextZh};state.active={segmentId:event.segmentId||active.segmentId,sourceTextEn:event.sourceTextEn??active.sourceTextEn,targetTextZh:event.targetTextZh||active.targetTextZh,phase:event.phase||(event.displayKind==='final'?'final':'streaming')}}else if(['translation.partial','translation.final','translation.failed','translation.skipped'].includes(event.type)){if(event.segmentId&&state.active.segmentId&&event.segmentId!==state.active.segmentId)return;state.active={segmentId:event.segmentId||state.active.segmentId,sourceTextEn:event.sourceTextEn??state.active.sourceTextEn,targetTextZh:event.targetTextZh||state.active.targetTextZh,phase:event.type==='translation.partial'?'streaming':event.type==='translation.final'?'final':'error'}}else if(event.type==='stream.closed')state.sessionActive=false;draw()}
+function draw(){const old=state.previousFinal;previous.hidden=!old;divider.hidden=!old;if(old){previousZh.textContent=old.targetTextZh||'';previousEn.textContent=old.sourceTextEn||''}zh.textContent=state.active.targetTextZh||'正在翻译…';en.textContent=state.active.sourceTextEn||'';if(state.sessionActive===false){status.textContent='本场已结束';status.className='waiting'}else{status.textContent='字幕连接正常';status.className='ok'}}
+function render(event){if(event.displayEligible===false)return;if(event.type==='caption.snapshot'){state=event;draw();return}if(event.type==='stream.ready'){state.sessionActive=true;draw();return}if(event.type==='asr.final'){const active=state.active;if(active.phase==='final'&&active.sourceTextEn&&active.targetTextZh)state.previousFinal={segmentId:active.segmentId,sourceTextEn:active.sourceTextEn,targetTextZh:active.targetTextZh};state.active={segmentId:event.segmentId||'',sourceTextEn:event.sourceTextEn||'',targetTextZh:'',phase:'requesting'}}else if(event.type==='caption.display'){const active=state.active,isNew=event.segmentId&&active.segmentId&&event.segmentId!==active.segmentId;if(isNew&&active.phase==='final'&&active.sourceTextEn&&active.targetTextZh)state.previousFinal={segmentId:active.segmentId,sourceTextEn:active.sourceTextEn,targetTextZh:active.targetTextZh};state.active={segmentId:event.segmentId||active.segmentId,sourceTextEn:event.sourceTextEn??active.sourceTextEn,targetTextZh:event.targetTextZh||active.targetTextZh,phase:event.phase||(event.displayKind==='final'?'final':'streaming')}}else if(['translation.partial','translation.final','translation.failed','translation.skipped'].includes(event.type)){if(event.segmentId&&state.active.segmentId&&event.segmentId!==state.active.segmentId)return;state.active={segmentId:event.segmentId||state.active.segmentId,sourceTextEn:event.sourceTextEn??state.active.sourceTextEn,targetTextZh:event.targetTextZh||state.active.targetTextZh,phase:event.type==='translation.partial'?'streaming':event.type==='translation.final'?'final':'error'}}else if(event.type==='stream.closed')state.sessionActive=false;draw()}
 const source=new EventSource('/api/view/'+encodeURIComponent(token)+'/events');source.onopen=()=>{status.textContent='字幕连接正常';status.className='ok'};source.onmessage=e=>render(JSON.parse(e.data));source.onerror=()=>{status.textContent='正在重新连接…';status.className='waiting'};
 function resize(delta){scale=Math.min(1.35,Math.max(.75,scale+delta));current.style.transform='scale('+scale+')'}document.querySelector('#minus').onclick=()=>resize(-.1);document.querySelector('#plus').onclick=()=>resize(.1);
 </script></body></html>"""

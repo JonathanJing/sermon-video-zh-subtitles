@@ -9,6 +9,21 @@ from backend.viewer_server import CaptionHub, ViewerService
 
 
 class CaptionHubTest(unittest.TestCase):
+    def test_same_token_restart_restores_active_snapshot_and_publishes_ready(self) -> None:
+        hub = CaptionHub()
+        token = hub.start_session("session-1")
+        hub.end_session("session-1")
+        subscriber = hub.subscribe(token)
+        self.assertFalse(subscriber.get(timeout=1)["sessionActive"])
+        self.assertEqual(hub.start_session("session-1", token=token), token)
+        hub.publish("session-1", {"type": "stream.ready"})
+        self.assertEqual(subscriber.get(timeout=1)["type"], "stream.ready")
+        self.assertTrue(hub.snapshot(token)["sessionActive"])
+        # A new gateway can also restore the persisted token after process restart.
+        restarted = CaptionHub()
+        self.assertEqual(restarted.start_session("session-1", token=token), token)
+        self.assertTrue(restarted.snapshot(token)["sessionActive"])
+
     def test_projects_only_caption_fields_and_keeps_latest_snapshot(self) -> None:
         hub = CaptionHub()
         token = hub.start_session("session-1")

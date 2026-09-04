@@ -51,8 +51,6 @@ export class LiveCaptionSocket {
       }, timeoutMs);
       socket.addEventListener("open", () => {
         if (settled) return;
-        settled = true;
-        window.clearTimeout(timeout);
         socket.send(JSON.stringify({
           type: "stream.start",
           schemaVersion: 1,
@@ -63,12 +61,24 @@ export class LiveCaptionSocket {
           channels: 1,
           frameDurationMs: 100,
         }));
-        resolve();
       }, { once: true });
       socket.addEventListener("message", (message) => {
         if (typeof message.data !== "string") return;
         try {
           const event = JSON.parse(message.data);
+          if (!settled && ["stream.error", "stream.closed"].includes(event.type)) {
+            settled = true;
+            window.clearTimeout(timeout);
+            reject(new Error(event.message || (event.type === "stream.closed"
+              ? "实时字幕连接在就绪前关闭" : "实时字幕会话未就绪")));
+            socket.close();
+            return;
+          }
+          if (!settled && event.type === "stream.ready") {
+            settled = true;
+            window.clearTimeout(timeout);
+            resolve();
+          }
           this.onEvent(event);
           if (event.type === "stream.closed") this.resolveClosed(event);
         } catch {
@@ -86,6 +96,11 @@ export class LiveCaptionSocket {
         }
       });
       socket.addEventListener("close", (event) => {
+        if (!settled) {
+          settled = true;
+          window.clearTimeout(timeout);
+          reject(new Error("实时字幕连接在就绪前关闭"));
+        }
         if (!this.stopping && !this.disconnectReported) {
           this.disconnectReported = true;
           this.onLocalEvent({
@@ -103,8 +118,8 @@ export class LiveCaptionSocket {
     });
   }
 
-  sendPcm(pcmBuffer) {
-    this.sequence += 1;
+  sendPcm(pcmBuffer, sequence = this.sequence + 1) {
+    this.sequence = sequence;
     if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return false;
     if (this.socket.bufferedAmount > MAX_BUFFERED_PCM_BYTES) {
       this.onLocalEvent({

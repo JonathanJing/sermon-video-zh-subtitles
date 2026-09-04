@@ -8,13 +8,14 @@ import statistics
 import threading
 import time
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Callable
 
 from .asr_client import AsrError, WhisperCliClient
 from .caption_presenter import CaptionPresenter
 from .ollama_client import OllamaError
 from .session_store import SessionStore, SessionStoreError
+from .translation_units import TranslationUnitAssembler, is_contentless_fragment
 
 
 SAMPLE_RATE_HZ = 16000
@@ -60,6 +61,8 @@ class TranslationTask:
     source_text: str
     asr_final_at: float
     enqueued_at: float
+    source_event: dict[str, Any] = field(default_factory=dict)
+    unit_metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class EnergyVad:
@@ -150,6 +153,10 @@ class LivePipeline:
         vad_silence_ms: int = 500,
         vad_max_segment_ms: int = 3000,
         caption_presentation_policy: str = "readable_chunks",
+        initial_frame_sequence: int = 0,
+        initial_segment_count: int = 0,
+        translation_unit_policy: str = "legacy",
+        source_fragment_policy: str = "content_words",
     ) -> None:
         self.session_id = session_id
         self.sessions = sessions
@@ -158,6 +165,8 @@ class LivePipeline:
         self.translate_stream = translate_stream
         self.send = send
         self.context_policy = context_policy
+        self.translation_units = TranslationUnitAssembler(policy=translation_unit_policy)
+        self.source_fragment_policy = source_fragment_policy
         self.caption_presenter = CaptionPresenter(caption_presentation_policy)
         self.cursor_sequence: int | None = None
         if vad_silence_ms % FRAME_DURATION_MS or vad_max_segment_ms % FRAME_DURATION_MS:
@@ -167,7 +176,13 @@ class LivePipeline:
             silence_frames=max(1, vad_silence_ms // FRAME_DURATION_MS),
             max_segment_frames=max(1, vad_max_segment_ms // FRAME_DURATION_MS),
         )
-        self.last_frame_sequence = 0
+        self.vad.segment_counter = initial_segment_count
+        self.last_frame_sequence = initial_frame_sequence
+        self.last_voice_at: float | None = None
+        self.last_final_at = time.perf_counter()
+        self.consecutive_no_final = 0
+        self.asr_degraded = False
+        self.drain_failed = False
         self.audio_clock_started_at: float | None = None
         self.asr_enqueued_at: dict[str, float] = {}
         self.ux_samples: list[dict[str, int | None]] = []
@@ -199,6 +214,18 @@ class LivePipeline:
             "asr": self.asr.status(),
         })
 
+    def health(self) -> dict[str, Any]:
+        now = time.perf_counter()
+        stalled = bool(self.last_voice_at and now - self.last_voice_at < 5 and now - self.last_final_at > 12)
+        return {
+            "sessionId": self.session_id,
+            "degraded": self.asr_degraded or stalled or self.drain_failed,
+            "reason": "worker_drain_failed" if self.drain_failed else "speech_without_final" if stalled else "consecutive_no_final" if self.asr_degraded else None,
+            "consecutiveNoFinal": self.consecutive_no_final,
+            "asrQueueDepth": self.asr_work.qsize(),
+            "translationQueueDepth": self.translation_work.qsize(),
+        }
+
     def process_frame(self, sequence: int, pcm: bytes) -> None:
         if self.stopped:
             return
@@ -209,6 +236,11 @@ class LivePipeline:
             self._emit({"type": "audio.frame_rejected", "frameSequence": sequence, "reason": "out_of_order"})
             return
         missing = sequence - self.last_frame_sequence - 1
+        if missing > 3000:
+            self._emit({"type": "pipeline.failed", "reason": "resume_gap_exceeds_five_minutes", "message": "字幕中断超过五分钟，请保存录音并开始新会话。"})
+            return
+        if self.audio_clock_started_at is None:
+            self.audio_clock_started_at = time.perf_counter() - sequence * FRAME_DURATION_MS / 1000
         if missing:
             self._emit({
                 "type": "audio.stream_gap",
@@ -247,6 +279,7 @@ class LivePipeline:
             self._emit({"type": "pipeline.failed", "reason": "translation_queue_did_not_drain"})
         self.translation_worker.join(timeout=35)
         translation_drained = not self.translation_worker.is_alive()
+        self.drain_failed = not (asr_drained and translation_drained)
         if not translation_drained:
             self._emit({"type": "pipeline.failed", "reason": "translation_worker_stop_timeout"})
         closed = {
@@ -268,6 +301,13 @@ class LivePipeline:
                 self.pcm_batch_start = sequence
             self.pcm_batch.append(pcm)
         self.last_frame_sequence = sequence
+        if self.vad.rms(pcm) >= self.vad.threshold_rms:
+            if self.last_voice_at is None or time.perf_counter() - self.last_voice_at > 5:
+                self.last_final_at = time.perf_counter()
+            self.last_voice_at = time.perf_counter()
+        if self.health()["degraded"] and not self.asr_degraded:
+            self.asr_degraded = True
+            self._emit({"type": "asr.degraded", "reason": "speech_without_final", "message": "持续检测到声音，但识别未产生新字幕；录音继续，请检查音源或恢复字幕。"})
         if len(self.pcm_batch) >= 10:
             self._flush_pcm()
         segment = self.vad.feed(sequence, pcm)
@@ -339,10 +379,13 @@ class LivePipeline:
         try:
             result = self.asr.transcribe(segment.pcm, SAMPLE_RATE_HZ)
         except AsrError as error:
+            self._note_no_final()
             self._emit({**common, "type": "asr.failed", "message": str(error)})
             return
         source_text = str(result.get("sourceTextEn") or "").strip()
         if not source_text:
+            if result.get("noFinalReason") == "timeout":
+                self._note_no_final()
             self._emit({**common, "type": "asr.empty", "asrMetrics": result})
             return
         if is_non_speech_label(source_text):
@@ -366,11 +409,16 @@ class LivePipeline:
             })
             return
         asr_final_at = time.perf_counter()
+        self.last_final_at = asr_final_at
+        self.consecutive_no_final = 0
+        if self.asr_degraded:
+            self.asr_degraded = False
+            self._emit({"type": "asr.recovered"})
         audio_end_to_asr_final_ms = self._audio_end_latency_ms(segment.audio_end_ms, asr_final_at)
-        self._emit({
+        final_event = self._emit({
             **common,
             "type": "asr.final",
-            "displayEligible": self.caption_presenter.raw_events_are_visible,
+            "displayEligible": self.caption_presenter.raw_events_are_visible and self.translation_units.policy == "legacy" and not (self.source_fragment_policy == "content_words" and is_contentless_fragment(source_text)),
             "sourceTextEn": source_text,
             "asrMetrics": result,
             "uxMetrics": {
@@ -380,6 +428,9 @@ class LivePipeline:
                 "audioEndToAsrFinalMs": audio_end_to_asr_final_ms,
             },
         })
+        if self.source_fragment_policy == "content_words" and is_contentless_fragment(source_text):
+            self._emit({**common, "type": "translation.skipped", "reason": "insufficient_lexical_content", "displayEligible": False, "sourceTextEn": source_text, "sourceSegmentIds": [segment.segment_id]})
+            return
         task = TranslationTask(
             segment_id=segment.segment_id,
             audio_start_ms=segment.audio_start_ms,
@@ -387,6 +438,7 @@ class LivePipeline:
             source_text=source_text,
             asr_final_at=asr_final_at,
             enqueued_at=time.perf_counter(),
+            source_event=final_event,
         )
         if self.aborting:
             skipped_event = self._emit({
@@ -425,14 +477,31 @@ class LivePipeline:
             self.short_asr_repeat_count = 1
         return self.short_asr_repeat_count
 
+    def _note_no_final(self) -> None:
+        self.consecutive_no_final += 1
+        if self.consecutive_no_final >= 3 and not self.asr_degraded:
+            self.asr_degraded = True
+            self._emit({"type": "asr.degraded", "reason": "consecutive_no_final", "message": "连续识别无结果；录音继续，请检查音源或恢复字幕。"})
+
     def _run_translation_worker(self) -> None:
         while True:
-            task = self.translation_work.get()
+            deadline = self.translation_units.deadline_at
+            timeout = max(0, deadline - time.perf_counter()) if deadline is not None else None
+            try:
+                task = self.translation_work.get(timeout=timeout)
+            except queue.Empty:
+                for unit in self.translation_units.flush_due(time.perf_counter()):
+                    self._translate_unit(unit)
+                continue
             if task is None:
+                for unit in self.translation_units.flush(time.perf_counter(), reason="stop"):
+                    self._translate_unit(unit)
                 self.translation_work.task_done()
                 return
             try:
-                self._process_translation(task)
+                final = task.source_event or {"type": "asr.final", "segmentId": task.segment_id, "sourceTextEn": task.source_text, "audioStartMs": task.audio_start_ms, "audioEndMs": task.audio_end_ms}
+                for unit in self.translation_units.add(final, time.perf_counter(), final_at=task.asr_final_at):
+                    self._translate_unit(unit)
             except Exception as error:
                 self._emit({
                     "type": "pipeline.failed",
@@ -443,19 +512,37 @@ class LivePipeline:
             finally:
                 self.translation_work.task_done()
 
+    def _translate_unit(self, unit) -> None:
+        task = TranslationTask(
+            segment_id=unit.segment_id, audio_start_ms=unit.audio_start_ms,
+            audio_end_ms=unit.audio_end_ms, source_text=unit.source_text_en,
+            asr_final_at=unit.last_final_at, enqueued_at=unit.ready_at,
+            unit_metadata=unit.event_metadata(),
+        )
+        try:
+            self._process_translation(task)
+        except Exception as error:
+            self._emit({"type": "pipeline.failed", "stage": "translation_worker", "segmentId": unit.segment_id, "message": str(error)})
+
     def _process_translation(self, task: TranslationTask) -> None:
         common = {
             "segmentId": task.segment_id,
             "audioStartMs": task.audio_start_ms,
             "audioEndMs": task.audio_end_ms,
+            **task.unit_metadata,
         }
         source_text = task.source_text
         translation_started = time.perf_counter()
-        translation_queue_wait_ms = round((translation_started - task.enqueued_at) * 1000)
+        # Waiting behind earlier translations happens before the assembler can
+        # accept this unit. Keep it in queue latency, outside semantic hold.
+        translation_queue_wait_ms = (
+            task.unit_metadata.get("translationUnitQueueWaitMs", 0)
+            + round((translation_started - task.enqueued_at) * 1000)
+        )
         first_token_at: float | None = None
         last_partial_emit = 0.0
         partial_sequence = 0
-        self._emit({**common, "type": "translation.started", "sourceTextEn": source_text})
+        self._emit({**common, "type": "translation.started", "sourceTextEn": source_text, "displayEligible": self.caption_presenter.raw_events_are_visible})
 
         def on_partial(delta: str, target_text: str) -> None:
             nonlocal first_token_at, last_partial_emit, partial_sequence

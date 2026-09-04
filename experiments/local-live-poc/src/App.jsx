@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { observeCaptionFrame } from "./captionObservation.js";
 import QRCode from "qrcode";
 import {
   GATEWAY_URL,
@@ -7,6 +8,7 @@ import {
   finalizeLocalSession,
   getGatewayHealth,
   restartGateway,
+  resumeLocalSession,
   startLocalSession,
 } from "./gatewayClient.js";
 import { LiveCaptionSocket } from "./liveSocket.js";
@@ -93,6 +95,8 @@ export function App() {
   const [runtimeRestartState, setRuntimeRestartState] = useState("idle");
   const [viewerShare, setViewerShare] = useState(null);
   const [viewerQr, setViewerQr] = useState("");
+  const [viewerRoute, setViewerRoute] = useState("public");
+  const [liveRecoveryState, setLiveRecoveryState] = useState("idle");
 
   const streamRef = useRef(null);
   const recorderRef = useRef(null);
@@ -116,6 +120,13 @@ export function App() {
   const renderQueueRef = useRef(Promise.resolve());
   const pcmClockStartedAtRef = useRef(0);
   const recoverableAsrErrorRef = useRef(false);
+  const pcmFrameSequenceRef = useRef(0);
+  const recoveryInProgressRef = useRef(false);
+  const recoveryNeededRef = useRef(false);
+  const recoveryAttemptsRef = useRef(0);
+  const viewerUrl = viewerRoute === "lan"
+    ? viewerShare?.urls?.find((url) => url !== viewerShare?.publicUrl)
+    : viewerShare?.publicUrl || viewerShare?.urls?.[0];
 
   const isRunning = phase === "running";
   const isBusy = phase === "requesting" || phase === "stopping";
@@ -145,7 +156,7 @@ export function App() {
   } : captions;
 
   useEffect(() => {
-    const url = viewerShare?.urls?.[0];
+    const url = viewerUrl;
     if (!url) {
       setViewerQr("");
       return;
@@ -153,7 +164,7 @@ export function App() {
     QRCode.toDataURL(url, { width: 220, margin: 1, errorCorrectionLevel: "M" })
       .then(setViewerQr)
       .catch(() => setViewerQr(""));
-  }, [viewerShare]);
+  }, [viewerUrl]);
 
   const status = useMemo(() => {
     if (phase === "running") return "正在录音 · 本地 ASR 与翻译";
@@ -223,9 +234,6 @@ export function App() {
 
   async function restartBackend() {
     if (runtimeRestartState === "restarting") return;
-    if (recordingActiveRef.current && !window.confirm(
-      "浏览器录音会继续，但当前后台会话可能不完整。建议重启成功后停止并保存，再开始新录音。仍要重启后台吗？",
-    )) return;
 
     setRuntimeRestartState("restarting");
     recoverableAsrErrorRef.current = false;
@@ -243,13 +251,73 @@ export function App() {
       setRuntimeRestartState("ready");
       appendEvent("runtime_restart_completed", { recordingActive: recordingActiveRef.current }, false);
       if (recordingActiveRef.current) {
-        setLocalSaveState("incomplete");
-        setError("后台已重启，浏览器录音仍在继续；请停止并保存，然后开始新录音。");
+        recoveryNeededRef.current = true;
+        await recoverLiveCaptions();
       }
     } catch (caught) {
       setRuntimeRestartState("error");
       setError(`后台重启失败：${caught?.message || "无法连接 Gateway"}。请使用一键停止后重新启动。`);
       appendEvent("runtime_restart_failed", { message: caught?.message || "Gateway unavailable" }, false);
+    }
+  }
+
+  async function recoverLiveCaptions() {
+    if (!recordingActiveRef.current || !localSessionRef.current || recoveryInProgressRef.current) return;
+    recoveryInProgressRef.current = true;
+    recoveryAttemptsRef.current += 1;
+    setLiveRecoveryState("recovering");
+    // Pause writes, not the microphone or MediaRecorder. The durable count is
+    // authoritative if a previous upload succeeded but its response was lost.
+    localWriteFailureRef.current = true;
+    let pendingSocket = null;
+    try {
+      await serverWriteQueueRef.current;
+      if (!recordingActiveRef.current) return;
+      const health = await refreshGatewayHealth();
+      if (!health?.liveStream?.available) throw new Error("识别服务尚未就绪");
+      const session = await resumeLocalSession(localSessionRef.current.sessionId, chunksRef.current.length, pcmFrameSequenceRef.current);
+      localSessionRef.current = session;
+      setLocalSession(session);
+      let uploadedCount = session.audioChunkCount;
+      const backfill = async () => {
+        while (uploadedCount < chunksRef.current.length && recordingActiveRef.current) {
+          await appendAudioChunk(session.sessionId, uploadedCount + 1, chunksRef.current[uploadedCount], recorderRef.current.mimeType);
+          uploadedCount += 1;
+        }
+      };
+      await backfill();
+      if (!recordingActiveRef.current) return;
+      const socket = new LiveCaptionSocket(health.liveStream.webSocketUrl, {
+        onEvent: handleLiveEvent, onLocalEvent: handleLocalLiveEvent,
+      });
+      pendingSocket = socket;
+      await socket.connect(session.sessionId, session.metadata?.contextPolicy || "none");
+      await backfill();
+      if (socket.socket?.readyState !== WebSocket.OPEN || socket.disconnectReported) {
+        throw new Error("录音补存期间字幕连接再次中断，请重试恢复");
+      }
+      if (!recordingActiveRef.current) {
+        return;
+      }
+      liveSocketRef.current = socket;
+      pendingSocket = null;
+      audioChunkSequenceRef.current = chunksRef.current.length;
+      localWriteFailureRef.current = false;
+      recoveryNeededRef.current = false;
+      recoveryAttemptsRef.current = 0;
+      setLocalSaveState("saving");
+      setLiveRecoveryState("recovered");
+      setError("字幕连接已恢复，录音已补存；中断期间的字幕缺口已记入日志。");
+      appendEvent("stream.resumed", { resumeCount: session.resumeCount, pcmFrameSequence: pcmFrameSequenceRef.current });
+    } catch (caught) {
+      setLiveRecoveryState("error");
+      setError(`字幕恢复未完成：${caught?.message || "Gateway unavailable"}。录音保留在浏览器，请勿刷新；可再次恢复或停止后下载。`);
+    } finally {
+      try {
+        if (pendingSocket) await pendingSocket.stop();
+      } finally {
+        recoveryInProgressRef.current = false;
+      }
     }
   }
 
@@ -261,6 +329,10 @@ export function App() {
       if (recordingActiveRef.current && health?.status !== "ready") {
         setError((current) => current || "本地字幕服务已降级；录音仍在继续，请查看底部状态。");
       }
+      if (recordingActiveRef.current && health?.status === "ready"
+          && recoveryNeededRef.current && recoveryAttemptsRef.current < 3) {
+        await recoverLiveCaptions();
+      }
     }, 5000);
     return () => {
       window.clearInterval(healthTimerRef.current);
@@ -270,6 +342,7 @@ export function App() {
 
   function stopResources(updatePhase = true) {
     recordingActiveRef.current = false;
+    recoveryNeededRef.current = false;
     window.clearInterval(timerRef.current);
     window.cancelAnimationFrame(meterFrameRef.current);
     timerRef.current = null;
@@ -293,9 +366,18 @@ export function App() {
 
   function recordCaptionRender(event, renderKind) {
     const receivedAtMs = Date.now();
-    renderQueueRef.current = renderQueueRef.current.then(() => new Promise((resolve) => {
-      window.requestAnimationFrame(() => {
-        const renderedAtMs = Date.now();
+    const observation = observeCaptionFrame().then(({ observed, reason, atMs: renderedAtMs }) => {
+        if (!observed) {
+          appendEvent("caption_render_unobserved", {
+            segmentId: event.segmentId, renderKind, gatewayEventSequence: event.sequence,
+            reason, browserReceivedAt: new Date(receivedAtMs).toISOString(),
+          });
+          return;
+        }
+        if (renderKind.startsWith("readable_")) {
+          renderKind = `readable_${event.displayKind}${renderedTranslationSegmentsRef.current.has(event.segmentId) ? "" : "_first"}`;
+        }
+        renderedTranslationSegmentsRef.current.add(event.segmentId);
         appendEvent("caption_rendered", {
           segmentId: event.segmentId,
           renderKind,
@@ -311,9 +393,10 @@ export function App() {
           presentationPolicy: event.presentationPolicy || null,
           presentationMetrics: event.presentationMetrics || null,
         });
-        resolve();
-      });
-    }));
+    });
+    // Start each bounded observation immediately. A hidden tab cannot build a
+    // serial backlog of suspended animation frames that blocks Stop and save.
+    renderQueueRef.current = Promise.all([renderQueueRef.current, observation]).then(() => {});
   }
 
   function handleLiveEvent(event) {
@@ -338,8 +421,6 @@ export function App() {
         recoverableAsrErrorRef.current = false;
         setError("");
       }
-      activeTranslationSegmentRef.current = event.segmentId || "";
-      partialTranslationRef.current = { segmentId: event.segmentId || "", text: "" };
       if (event.displayEligible !== false) {
         setCaptions((current) => applyCaptionEvent(current, event));
       }
@@ -348,6 +429,12 @@ export function App() {
         ...current,
         asrFinalMs: event.uxMetrics?.audioEndToAsrFinalMs,
       }));
+    } else if (event.type === "translation.started") {
+      activeTranslationSegmentRef.current = event.segmentId || "";
+      partialTranslationRef.current = { segmentId: event.segmentId || "", text: "" };
+      if (event.displayEligible !== false) {
+        setCaptions((current) => applyCaptionEvent(current, { ...event, type: "asr.final" }));
+      }
     } else if (event.type === "translation.partial") {
       if (event.segmentId !== activeTranslationSegmentRef.current) {
         appendEvent("caption_partial_rejected", {
@@ -378,7 +465,6 @@ export function App() {
         endToFirstTokenMs: event.uxMetrics?.audioEndToChineseFirstTokenMs,
       }));
       if (event.displayEligible !== false && !renderedTranslationSegmentsRef.current.has(event.segmentId)) {
-        renderedTranslationSegmentsRef.current.add(event.segmentId);
         recordCaptionRender(event, "chinese_first_token");
       }
     } else if (event.type === "translation.final") {
@@ -400,9 +486,8 @@ export function App() {
       }
     } else if (event.type === "caption.display") {
       setCaptions((current) => applyCaptionEvent(current, event));
-      setTranslationState(event.displayKind === "final" ? "ready" : "streaming");
+      setTranslationState(event.phase === "error" ? "error" : event.displayKind === "final" ? "ready" : "streaming");
       const firstVisible = !renderedTranslationSegmentsRef.current.has(event.segmentId);
-      if (firstVisible) renderedTranslationSegmentsRef.current.add(event.segmentId);
       recordCaptionRender(
         event,
         firstVisible
@@ -415,11 +500,18 @@ export function App() {
       }
       setTranslationState("error");
     } else if (event.type === "translation.skipped") {
+      if (event.reason === "insufficient_lexical_content") {
+        setTranslationState("listening");
+        return;
+      }
       if (event.displayEligible !== false) {
         setCaptions((current) => applyCaptionEvent(current, event));
       }
       setTranslationState("error");
-    } else if (event.type === "asr.failed") {
+    } else if (event.type === "asr.recovered") {
+      if (recoverableAsrErrorRef.current) setError("");
+      recoverableAsrErrorRef.current = false;
+    } else if (event.type === "asr.failed" || event.type === "asr.degraded") {
       recoverableAsrErrorRef.current = true;
       setError(event.message || "本地英文识别暂时不可用；录音仍在继续。");
       setTranslationState("error");
@@ -434,7 +526,9 @@ export function App() {
     appendEvent(event.type, event);
     if (event.type === "stream.disconnected") {
       recoverableAsrErrorRef.current = false;
-      setError("实时字幕连接已中断；浏览器录音仍在继续。请停止并保存后重新开始。");
+      recoveryNeededRef.current = true;
+      setLiveRecoveryState("disconnected");
+      setError("实时字幕连接已中断；录音继续，后台就绪后会尝试恢复并补存录音。");
       setTranslationState("error");
     } else if (event.type === "audio.stream_overrun") {
       recoverableAsrErrorRef.current = false;
@@ -465,7 +559,8 @@ export function App() {
     worklet.port.addEventListener("message", (message) => {
       if (message.data instanceof ArrayBuffer) {
         if (!pcmClockStartedAtRef.current) pcmClockStartedAtRef.current = Date.now() - 100;
-        liveSocketRef.current?.sendPcm(message.data);
+        pcmFrameSequenceRef.current += 1;
+        liveSocketRef.current?.sendPcm(message.data, pcmFrameSequenceRef.current);
       }
     });
     worklet.port.start();
@@ -519,6 +614,10 @@ export function App() {
     renderedTranslationSegmentsRef.current = new Set();
     renderQueueRef.current = Promise.resolve();
     pcmClockStartedAtRef.current = 0;
+    pcmFrameSequenceRef.current = 0;
+    recoveryNeededRef.current = false;
+    recoveryAttemptsRef.current = 0;
+    setLiveRecoveryState("idle");
     setPhase("requesting");
     eventsRef.current = [];
     setEventCount(0);
@@ -599,9 +698,9 @@ export function App() {
       recorder.addEventListener("dataavailable", (event) => {
         if (event.data.size < 1) return;
         chunksRef.current.push(event.data);
+        audioChunkSequenceRef.current = chunksRef.current.length;
         if (!serverSession || localWriteFailureRef.current) return;
-        const sequence = audioChunkSequenceRef.current + 1;
-        audioChunkSequenceRef.current = sequence;
+        const sequence = chunksRef.current.length;
         enqueueServerWrite(async () => {
           await appendAudioChunk(
             serverSession.sessionId,
@@ -638,6 +737,8 @@ export function App() {
           liveSocketRef.current = liveSocket;
         } catch (caught) {
           recoverableAsrErrorRef.current = false;
+          recoveryNeededRef.current = true;
+          setLiveRecoveryState("disconnected");
           setError(`${caught?.message || "实时 ASR 连接失败"}；本次仍会保存录音。`);
         }
       } else {
@@ -665,6 +766,7 @@ export function App() {
     if (phase !== "running") return;
     setPhase("stopping");
     recordingActiveRef.current = false;
+    recoveryNeededRef.current = false;
     const durationMs = Date.now() - startTimeRef.current;
     appendEvent("session_stopped", { durationMs });
     if (localSessionRef.current && !localWriteFailureRef.current) {
@@ -686,7 +788,7 @@ export function App() {
     setLevel(0);
 
     const liveSocket = liveSocketRef.current;
-    let livePipelineDrained = !liveSocket;
+    let livePipelineDrained = false;
     let streamStopResult = null;
     try {
       streamStopResult = await liveSocket?.stop();
@@ -703,8 +805,27 @@ export function App() {
     }
     liveSocketRef.current = null;
     await recorderStopped;
+    while (recoveryInProgressRef.current) {
+      await new Promise((resolve) => window.setTimeout(resolve, 100));
+    }
     await renderQueueRef.current;
     await serverWriteQueueRef.current;
+    if (localSessionRef.current && localWriteFailureRef.current) {
+      try {
+        // A stop during reconnect still saves all original chunks, including
+        // MediaRecorder's final chunk. It never claims an uninterrupted stream.
+        const restored = await resumeLocalSession(localSessionRef.current.sessionId, chunksRef.current.length);
+        for (let index = restored.audioChunkCount; index < chunksRef.current.length; index += 1) {
+          await appendAudioChunk(restored.sessionId, index + 1, chunksRef.current[index], recorder.mimeType);
+        }
+        localSessionRef.current = restored;
+        localWriteFailureRef.current = false;
+        livePipelineDrained = false;
+      } catch (caught) {
+        setLocalSaveState("error");
+        setError(`录音尚未全部存入后台：${caught?.message || "Gateway unavailable"}。请下载浏览器录音与日志。`);
+      }
+    }
     if (localSessionRef.current && !localWriteFailureRef.current) {
       try {
         const result = await finalizeLocalSession(localSessionRef.current.sessionId, {
@@ -826,17 +947,28 @@ export function App() {
         </div>
 
         {error && <p className="error-banner" role="alert">{error}</p>}
-        {isRunning && viewerShare?.urls?.[0] && (
+        {isRunning && ["disconnected", "error", "recovering"].includes(liveRecoveryState) && (
+          <button type="button" onClick={recoverLiveCaptions} disabled={liveRecoveryState === "recovering"}>
+            {liveRecoveryState === "recovering" ? "正在恢复字幕与保存…" : "恢复字幕与保存"}
+          </button>
+        )}
+        {isRunning && viewerUrl && (
           <aside className="viewer-share" aria-label="手机字幕分享">
             {viewerQr && <img src={viewerQr} alt="手机字幕二维码" />}
             <div>
-              <strong>{viewerShare.publicUrl ? "手机公网字幕" : "手机看字幕"}</strong>
+              <strong>{viewerRoute !== "lan" && viewerShare.publicUrl ? "手机公网字幕" : "手机局域网字幕"}</strong>
               <span>
-                {viewerShare.publicUrl
+                {viewerRoute !== "lan" && viewerShare.publicUrl
                   ? "可直接使用蜂窝网络扫码；这是只读页面，无法控制后台。"
                   : "连接同一 Wi-Fi 后扫码；这是只读页面，无法控制后台。"}
               </span>
-              <a href={viewerShare.urls[0]} target="_blank" rel="noreferrer">{viewerShare.urls[0]}</a>
+              {viewerShare.publicUrl && viewerShare.urls.some((url) => url !== viewerShare.publicUrl) && (
+                <label>连接方式 <select value={viewerRoute} onChange={(event) => setViewerRoute(event.target.value)}>
+                  <option value="public">公网 / 蜂窝网络</option>
+                  <option value="lan">局域网 / 同一 Wi-Fi</option>
+                </select></label>
+              )}
+              <a href={viewerUrl} target="_blank" rel="noreferrer">{viewerUrl}</a>
             </div>
           </aside>
         )}

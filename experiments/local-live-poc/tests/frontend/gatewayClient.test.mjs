@@ -84,6 +84,7 @@ class FakeWebSocket {
   static CLOSING = 2;
   static CLOSED = 3;
   static instances = [];
+  static startReply = { type: "stream.ready" };
 
   constructor() {
     this.readyState = FakeWebSocket.CONNECTING;
@@ -92,6 +93,7 @@ class FakeWebSocket {
     this.sent = [];
     FakeWebSocket.instances.push(this);
     queueMicrotask(() => {
+      if (this.readyState !== FakeWebSocket.CONNECTING) return;
       this.readyState = FakeWebSocket.OPEN;
       this.emit("open", {});
     });
@@ -109,6 +111,9 @@ class FakeWebSocket {
 
   send(payload) {
     this.sent.push(payload);
+    if (typeof payload === "string" && JSON.parse(payload).type === "stream.start" && FakeWebSocket.startReply) {
+      queueMicrotask(() => this.emit("message", { data: JSON.stringify(FakeWebSocket.startReply) }));
+    }
   }
 
   close(code = 1000) {
@@ -123,6 +128,7 @@ async function withFakeWebSocket(run) {
   globalThis.window = { setTimeout, clearTimeout };
   globalThis.WebSocket = FakeWebSocket;
   FakeWebSocket.instances = [];
+  FakeWebSocket.startReply = { type: "stream.ready" };
   try {
     await run();
   } finally {
@@ -166,5 +172,62 @@ test("stop timeout returns an incomplete drain result", async () => {
     const result = await live.stop(10);
     assert.equal(result.workerDrained, false);
     assert.equal(result.reason, "drain_timeout");
+  });
+});
+
+test("connect waits for the gateway session handshake after the WebSocket opens", async () => {
+  await withFakeWebSocket(async () => {
+    FakeWebSocket.startReply = null;
+    const live = new LiveCaptionSocket("ws://test/api/live");
+    let connected = false;
+    const connecting = live.connect("session-1").then(() => { connected = true; });
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(connected, false);
+    const socket = FakeWebSocket.instances[0];
+    assert.equal(JSON.parse(socket.sent[0]).type, "stream.start");
+    socket.emit("message", { data: JSON.stringify({ type: "stream.ready" }) });
+    await connecting;
+    assert.equal(connected, true);
+    socket.close();
+  });
+});
+
+test("connect rejects stream.error and stream.closed before ready", async () => {
+  for (const reply of [{ type: "stream.error", message: "session already active" }, { type: "stream.closed" }]) {
+    await withFakeWebSocket(async () => {
+      FakeWebSocket.startReply = reply;
+      const live = new LiveCaptionSocket("ws://test/api/live");
+      await assert.rejects(live.connect("session-1"), /session already active|就绪前关闭/);
+      assert.equal(FakeWebSocket.instances[0].readyState, FakeWebSocket.CLOSED);
+    });
+  }
+});
+
+test("connect rejects a transport close before stream.ready", async () => {
+  await withFakeWebSocket(async () => {
+    FakeWebSocket.startReply = null;
+    const live = new LiveCaptionSocket("ws://test/api/live");
+    const connecting = live.connect("session-1");
+    FakeWebSocket.instances[0].close(1006);
+    await assert.rejects(connecting, /就绪前关闭/);
+  });
+});
+
+test("explicit PCM sequence preserves a resumed session and a dropped-frame gap", async () => {
+  await withFakeWebSocket(async () => {
+    const localEvents = [];
+    const live = new LiveCaptionSocket("ws://test/api/live", { onLocalEvent: (event) => localEvents.push(event) });
+    await live.connect("resumed-session");
+    const socket = FakeWebSocket.instances[0];
+    assert.equal(live.sendPcm(new ArrayBuffer(PCM_BYTES_PER_FRAME), 258), true);
+    socket.bufferedAmount = PCM_BYTES_PER_FRAME * 21;
+    assert.equal(live.sendPcm(new ArrayBuffer(PCM_BYTES_PER_FRAME), 259), false);
+    socket.bufferedAmount = 0;
+    assert.equal(live.sendPcm(new ArrayBuffer(PCM_BYTES_PER_FRAME)), true);
+    const sequences = socket.sent.filter((payload) => payload instanceof ArrayBuffer)
+      .map((payload) => new DataView(payload).getUint32(0, false));
+    assert.deepEqual(sequences, [258, 260]);
+    assert.equal(localEvents[0].frameSequence, 259);
+    socket.close();
   });
 });

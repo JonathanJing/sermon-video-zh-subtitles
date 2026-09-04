@@ -1,0 +1,1768 @@
+{
+  "schemaVersion": "asr-window-ab-audit-v1",
+  "reviewStatus": "machine_text_review_not_human_gold",
+  "recommendation": "keep_3000ms_default_pending_independent_audio_and_human_review",
+  "evidenceBoundary": "One selected 90s development excerpt, sequential real local ASR/translation PCM replay at 1x. No current microphone, browser render, phone render, Gold ASR reference, blinded review, or clean revision confirmation. Caption event timings describe gateway emission only.",
+  "audioProvenance": {
+    "sourceAudioSha256": "9ae93881dcc74bd1f174c99b37bb73ca7686e522e27286672ab8f5255b5743c7",
+    "sourceStartMs": 390000,
+    "sourceEndMs": 480000,
+    "windowSha256": "19d26141b5835ed21b0a2850eebb48439872c5b53b1c8113ad9f51f6eb1f7893",
+    "sourceSessionId": "20260904T194140.715Z-c0524bb5",
+    "captureSource": "prior_microphone_recording_replay",
+    "humanGold": false
+  },
+  "freshSourceChecks": {
+    "sourceAsrWavSha256Matches": true,
+    "slicePcmSha256": "dc35bf7e7ac3ebe034903ce45a06fd05276131afe0dba82ca1378eb4456e240a"
+  },
+  "metricDefinitions": {
+    "percentile": "linear interpolation at (n-1)*q, rounded milliseconds; P50 median; samples per ASR final, not paired sentences",
+    "audioEndToChineseFirstTokenMs": "translation.final uxMetrics (monotonic gateway audio clock)",
+    "audioEndToChineseFinalMs": "translation.final uxMetrics (monotonic gateway audio clock)",
+    "audioEndToFirstCaptionEventMs": "asr.final uxMetrics.audioEndToAsrFinalMs + (first caption.display.at - asr.final.at); rounded ms. Wall timestamp delta anchored to monotonic ASR metric; approximately 1ms precision, no client render acknowledgement.",
+    "audioEndToFinalCaptionEventMs": "same anchor, using first caption.display with displayKind=final",
+    "audioStartMetrics": "corresponding end metric + (audioEndMs - audioStartMs)",
+    "longestBetweenFirstCaptionEventsMs": "maximum timestamp interval between first caption.display of consecutive segments; includes held captions and silence, does not mean a blank screen"
+  },
+  "runs": [
+    {
+      "windowMs": 3000,
+      "sessionId": "20260904T205827.159Z-c201ce4c",
+      "startedAt": "2026-09-04T20:58:27.129845+00:00",
+      "finishedAt": "2026-09-04T20:59:58.824636+00:00",
+      "reportSha256": "0a4cd742184057a5d13fe0b610c07ce6b8ef13b37274186e1b3db0d2111465bc",
+      "eventLogSha256": "d1a935f25ed3718e4238be7a3e76143a4301f65ffb4c0265cd3b9f74485a8c93",
+      "manifestSha256": "b9f6e9a255e0410ad482e14a91c27a037bf7f6f27cac8b33bd9a5da54a67e631",
+      "status": "completed",
+      "framesSent": 900,
+      "pcmFrameCount": 900,
+      "pcmBytes": 2880000,
+      "transmitElapsedMs": 90005,
+      "errors": [],
+      "checks": {
+        "completed": true,
+        "drained": true,
+        "pcmFrameCount": true,
+        "pcmBytes": true,
+        "recoveryHash": true,
+        "pcmHash": true,
+        "pcmWavHash": true
+      },
+      "freshArtifactHashes": {
+        "recoveryWav": "19d26141b5835ed21b0a2850eebb48439872c5b53b1c8113ad9f51f6eb1f7893",
+        "asrWav": "19d26141b5835ed21b0a2850eebb48439872c5b53b1c8113ad9f51f6eb1f7893",
+        "asrPcm": "dc35bf7e7ac3ebe034903ce45a06fd05276131afe0dba82ca1378eb4456e240a"
+      },
+      "freshArtifactHashesMatchInput": true,
+      "persistedEventLogMatchesReplayLog": false,
+      "eventSequencesContiguous": true,
+      "eventCounts": {
+        "stream.ready": 1,
+        "asr.processing": 33,
+        "asr.final": 33,
+        "translation.started": 33,
+        "translation.partial": 92,
+        "translation.final": 33,
+        "caption.display": 34,
+        "stream.closed": 1
+      },
+      "runtimeIdentity": {
+        "capturedAt": "2026-09-04T20:58:18.558421+00:00",
+        "configuration": {
+          "asrFinalizationMode": "vad_silence_frames",
+          "asrModelSha256": "b5bfe4abc1b4c6e58b633096682ec2b6297298add1527119936107d211adf0e8",
+          "asrProvider": "qwen-mlx-websocket",
+          "asrQueueLimit": 2,
+          "asrSilenceFrameCount": 12,
+          "captionPresentationPolicy": "readable_chunks",
+          "contentPackSha256": null,
+          "contentPackVersion": null,
+          "contextPolicy": "none",
+          "frameDurationMs": 100,
+          "frontendOrigin": "http://127.0.0.1:4173",
+          "frontendOrigins": "http://127.0.0.1:4173,http://localhost:4173",
+          "sampleRateHz": 16000,
+          "sourceFragmentPolicy": "content_words",
+          "translationModel": "sermon-milmmt-46-4b-v1-q8:benchmark",
+          "translationModelDigest": "e607c5905ff664410afc93961c9a44e19b0429602b2897ac17e362cbb0895b96",
+          "translationPromptFamily": "frozen_a0",
+          "translationPromptHashScope": "template_with_source_placeholder",
+          "translationPromptSha256": "b8320f22389c59cf876e96d5dba19aa33eafbc2c2e1a67bc0559c8873b53da45",
+          "translationPromptVersion": "milmmt-46-official-english-to-chinese-simplified-v1",
+          "translationQueueLimit": 1,
+          "translationStreaming": true,
+          "translationTemperature": 0,
+          "translationTopK": 1,
+          "translationUnitMaxAudioDurationMs": 6500,
+          "translationUnitMaxAudioGapMs": 800,
+          "translationUnitMaxSegments": 2,
+          "translationUnitMaxWaitMs": 3200,
+          "translationUnitPolicy": "legacy",
+          "vadMaxSegmentMs": 3000,
+          "vadSilenceMs": 500,
+          "vadThresholdRms": 450
+        },
+        "fingerprintSha256": "7ec6d2878980e74b28e47d58c83cabcc19e7b2eed01125a9061e960d65c6d44a",
+        "git": {
+          "available": true,
+          "dirty": true,
+          "revision": "516c3253a077aba5de7fc9f802b88da20154956c"
+        },
+        "runtime": {
+          "gatewayPythonPackages": {
+            "mlx": null,
+            "mlx-audio": null,
+            "websockets": "16.1.1"
+          },
+          "machine": "arm64",
+          "providerVersions": {
+            "ollama": "0.33.3"
+          },
+          "python": "3.13.15",
+          "release": "27.0.0",
+          "system": "Darwin"
+        },
+        "schemaVersion": "local-live-runtime-identity-v1"
+      },
+      "asrFinalCount": 33,
+      "translatedFinalCount": 33,
+      "captionCoveredFinalCount": 33,
+      "asrIntervalsCoveredMs": 88300,
+      "asrIntervalCoverageBoundary": "VAD emitted intervals, not proof every spoken word was transcribed; silence outside intervals is retained in original PCM.",
+      "maxWindowFinalCount": 26,
+      "captionDisplayCount": 34,
+      "captionPartialDisplayCount": 1,
+      "metrics": {
+        "audioEndToAsrFinalMs": {
+          "count": 33,
+          "p50": 1254,
+          "p95": 1518,
+          "max": 1721
+        },
+        "audioStartToAsrFinalMs": {
+          "count": 33,
+          "p50": 4248,
+          "p95": 4262,
+          "max": 4265
+        },
+        "audioEndToChineseFirstTokenMs": {
+          "count": 33,
+          "p50": 1395,
+          "p95": 1658,
+          "max": 1897
+        },
+        "audioStartToChineseFirstTokenMs": {
+          "count": 33,
+          "p50": 4391,
+          "p95": 4434,
+          "max": 4492
+        },
+        "audioEndToChineseFinalMs": {
+          "count": 33,
+          "p50": 1638,
+          "p95": 1910,
+          "max": 1955
+        },
+        "audioStartToChineseFinalMs": {
+          "count": 33,
+          "p50": 4617,
+          "p95": 4789,
+          "max": 4955
+        },
+        "audioEndToFirstCaptionEventMs": {
+          "count": 33,
+          "p50": 1640,
+          "p95": 1894,
+          "max": 1955
+        },
+        "audioStartToFirstCaptionEventMs": {
+          "count": 33,
+          "p50": 4618,
+          "p95": 4790,
+          "max": 4913
+        },
+        "audioEndToFinalCaptionEventMs": {
+          "count": 33,
+          "p50": 1640,
+          "p95": 1911,
+          "max": 1956
+        },
+        "audioStartToFinalCaptionEventMs": {
+          "count": 33,
+          "p50": 4618,
+          "p95": 4790,
+          "max": 4956
+        },
+        "translationQueueWaitMs": {
+          "count": 33,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        }
+      },
+      "longestBetweenFirstCaptionEventsMs": 3702,
+      "samples": [
+        {
+          "segmentId": "seg-000001",
+          "audioStartMs": 0,
+          "audioEndMs": 3000,
+          "sourceTextEn": "Say if you don't let your anger out, if you just.",
+          "targetTextZh": "如果你不把愤怒发泄出来，如果你只是……",
+          "eventSequences": {
+            "asrFinal": 3,
+            "translationFinal": 7,
+            "firstCaption": 8,
+            "finalCaption": 8
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1243,
+            "audioStartToAsrFinalMs": 4243,
+            "audioEndToChineseFirstTokenMs": 1382,
+            "audioStartToChineseFirstTokenMs": 4382,
+            "audioEndToChineseFinalMs": 1584,
+            "audioStartToChineseFinalMs": 4584,
+            "audioEndToFirstCaptionEventMs": 1584,
+            "audioStartToFirstCaptionEventMs": 4584,
+            "audioEndToFinalCaptionEventMs": 1584,
+            "audioStartToFinalCaptionEventMs": 4584,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000002",
+          "audioStartMs": 3000,
+          "audioEndMs": 6000,
+          "sourceTextEn": "Push it down and try to get rid of your anger because you don't want to lose your temper.",
+          "targetTextZh": "压下怒气，试着控制住自己的情绪，因为你不想发火。",
+          "eventSequences": {
+            "asrFinal": 10,
+            "translationFinal": 16,
+            "firstCaption": 17,
+            "finalCaption": 17
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1249,
+            "audioStartToAsrFinalMs": 4249,
+            "audioEndToChineseFirstTokenMs": 1408,
+            "audioStartToChineseFirstTokenMs": 4408,
+            "audioEndToChineseFinalMs": 1759,
+            "audioStartToChineseFinalMs": 4759,
+            "audioEndToFirstCaptionEventMs": 1760,
+            "audioStartToFirstCaptionEventMs": 4760,
+            "audioEndToFinalCaptionEventMs": 1760,
+            "audioStartToFinalCaptionEventMs": 4760,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000003",
+          "audioStartMs": 6000,
+          "audioEndMs": 9000,
+          "sourceTextEn": "Because if you lose your temper, you'll lose your credibility at work, or you'll.",
+          "targetTextZh": "因为如果你发脾气，你就会失去在工作中的信誉，或者你就会……",
+          "eventSequences": {
+            "asrFinal": 19,
+            "translationFinal": 24,
+            "firstCaption": 25,
+            "finalCaption": 25
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1243,
+            "audioStartToAsrFinalMs": 4243,
+            "audioEndToChineseFirstTokenMs": 1406,
+            "audioStartToChineseFirstTokenMs": 4406,
+            "audioEndToChineseFinalMs": 1780,
+            "audioStartToChineseFinalMs": 4780,
+            "audioEndToFirstCaptionEventMs": 1782,
+            "audioStartToFirstCaptionEventMs": 4782,
+            "audioEndToFinalCaptionEventMs": 1782,
+            "audioStartToFinalCaptionEventMs": 4782,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000004",
+          "audioStartMs": 9000,
+          "audioEndMs": 12000,
+          "sourceTextEn": "You lose your credibility with other people. So just push it down.",
+          "targetTextZh": "这样一来，你就会失去别人的信任。所以你就把它压下去吧。",
+          "eventSequences": {
+            "asrFinal": 27,
+            "translationFinal": 33,
+            "firstCaption": 34,
+            "finalCaption": 34
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1247,
+            "audioStartToAsrFinalMs": 4247,
+            "audioEndToChineseFirstTokenMs": 1390,
+            "audioStartToChineseFirstTokenMs": 4390,
+            "audioEndToChineseFinalMs": 1699,
+            "audioStartToChineseFinalMs": 4699,
+            "audioEndToFirstCaptionEventMs": 1701,
+            "audioStartToFirstCaptionEventMs": 4701,
+            "audioEndToFinalCaptionEventMs": 1701,
+            "audioStartToFinalCaptionEventMs": 4701,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000005",
+          "audioStartMs": 12000,
+          "audioEndMs": 15000,
+          "sourceTextEn": "But the articles, the scholarly articles, say that suppression.",
+          "targetTextZh": "但那些文章，那些学术文章，都称这是镇压。",
+          "eventSequences": {
+            "asrFinal": 36,
+            "translationFinal": 42,
+            "firstCaption": 43,
+            "finalCaption": 43
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1247,
+            "audioStartToAsrFinalMs": 4247,
+            "audioEndToChineseFirstTokenMs": 1374,
+            "audioStartToChineseFirstTokenMs": 4374,
+            "audioEndToChineseFinalMs": 1666,
+            "audioStartToChineseFinalMs": 4666,
+            "audioEndToFirstCaptionEventMs": 1667,
+            "audioStartToFirstCaptionEventMs": 4667,
+            "audioEndToFinalCaptionEventMs": 1667,
+            "audioStartToFinalCaptionEventMs": 4667,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000006",
+          "audioStartMs": 15000,
+          "audioEndMs": 18000,
+          "sourceTextEn": "Question of anger actually can bring about cardiovascular.",
+          "targetTextZh": "愤怒的问题实际上会导致心血管疾病。",
+          "eventSequences": {
+            "asrFinal": 45,
+            "translationFinal": 49,
+            "firstCaption": 50,
+            "finalCaption": 50
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1251,
+            "audioStartToAsrFinalMs": 4251,
+            "audioEndToChineseFirstTokenMs": 1388,
+            "audioStartToChineseFirstTokenMs": 4388,
+            "audioEndToChineseFinalMs": 1534,
+            "audioStartToChineseFinalMs": 4534,
+            "audioEndToFirstCaptionEventMs": 1535,
+            "audioStartToFirstCaptionEventMs": 4535,
+            "audioEndToFinalCaptionEventMs": 1535,
+            "audioStartToFinalCaptionEventMs": 4535,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000007",
+          "audioStartMs": 18000,
+          "audioEndMs": 21000,
+          "sourceTextEn": "Cardiovascular damage can damage relationships and.",
+          "targetTextZh": "心血管疾病的损伤会破坏人际关系。",
+          "eventSequences": {
+            "asrFinal": 52,
+            "translationFinal": 56,
+            "firstCaption": 57,
+            "finalCaption": 57
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1253,
+            "audioStartToAsrFinalMs": 4253,
+            "audioEndToChineseFirstTokenMs": 1393,
+            "audioStartToChineseFirstTokenMs": 4393,
+            "audioEndToChineseFinalMs": 1597,
+            "audioStartToChineseFinalMs": 4597,
+            "audioEndToFirstCaptionEventMs": 1598,
+            "audioStartToFirstCaptionEventMs": 4598,
+            "audioEndToFinalCaptionEventMs": 1598,
+            "audioStartToFinalCaptionEventMs": 4598,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000008",
+          "audioStartMs": 21000,
+          "audioEndMs": 24000,
+          "sourceTextEn": "Your emotional health—that burying your.",
+          "targetTextZh": "你的情绪健康——也就是埋葬你的情绪。",
+          "eventSequences": {
+            "asrFinal": 59,
+            "translationFinal": 63,
+            "firstCaption": 64,
+            "finalCaption": 64
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1242,
+            "audioStartToAsrFinalMs": 4242,
+            "audioEndToChineseFirstTokenMs": 1382,
+            "audioStartToChineseFirstTokenMs": 4382,
+            "audioEndToChineseFinalMs": 1574,
+            "audioStartToChineseFinalMs": 4574,
+            "audioEndToFirstCaptionEventMs": 1575,
+            "audioStartToFirstCaptionEventMs": 4575,
+            "audioEndToFinalCaptionEventMs": 1575,
+            "audioStartToFinalCaptionEventMs": 4575,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000009",
+          "audioStartMs": 24000,
+          "audioEndMs": 26400,
+          "sourceTextEn": "Anger isn't really best.",
+          "targetTextZh": "愤怒并不是最好的选择。",
+          "eventSequences": {
+            "asrFinal": 66,
+            "translationFinal": 70,
+            "firstCaption": 71,
+            "finalCaption": 71
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1236,
+            "audioStartToAsrFinalMs": 3636,
+            "audioEndToChineseFirstTokenMs": 1362,
+            "audioStartToChineseFirstTokenMs": 3762,
+            "audioEndToChineseFinalMs": 1457,
+            "audioStartToChineseFinalMs": 3857,
+            "audioEndToFirstCaptionEventMs": 1458,
+            "audioStartToFirstCaptionEventMs": 3858,
+            "audioEndToFinalCaptionEventMs": 1458,
+            "audioStartToFinalCaptionEventMs": 3858,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000010",
+          "audioStartMs": 26600,
+          "audioEndMs": 29600,
+          "sourceTextEn": "David Palisson was a Christian counselor, and he said that.",
+          "targetTextZh": "大卫·帕利森是一位基督教辅导员，他曾这样说过。",
+          "eventSequences": {
+            "asrFinal": 73,
+            "translationFinal": 79,
+            "firstCaption": 80,
+            "finalCaption": 80
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1244,
+            "audioStartToAsrFinalMs": 4244,
+            "audioEndToChineseFirstTokenMs": 1378,
+            "audioStartToChineseFirstTokenMs": 4378,
+            "audioEndToChineseFinalMs": 1727,
+            "audioStartToChineseFinalMs": 4727,
+            "audioEndToFirstCaptionEventMs": 1728,
+            "audioStartToFirstCaptionEventMs": 4728,
+            "audioEndToFinalCaptionEventMs": 1728,
+            "audioStartToFinalCaptionEventMs": 4728,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000011",
+          "audioStartMs": 29700,
+          "audioEndMs": 32700,
+          "sourceTextEn": "Buried anger is rarely.",
+          "targetTextZh": "埋藏的愤怒很少见。",
+          "eventSequences": {
+            "asrFinal": 83,
+            "translationFinal": 87,
+            "firstCaption": 88,
+            "finalCaption": 88
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1254,
+            "audioStartToAsrFinalMs": 4254,
+            "audioEndToChineseFirstTokenMs": 1405,
+            "audioStartToChineseFirstTokenMs": 4405,
+            "audioEndToChineseFinalMs": 1533,
+            "audioStartToChineseFinalMs": 4533,
+            "audioEndToFirstCaptionEventMs": 1534,
+            "audioStartToFirstCaptionEventMs": 4534,
+            "audioEndToFinalCaptionEventMs": 1534,
+            "audioStartToFinalCaptionEventMs": 4534,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000012",
+          "audioStartMs": 32700,
+          "audioEndMs": 33900,
+          "sourceTextEn": "Dead anger.",
+          "targetTextZh": "死气沉沉的愤怒。",
+          "eventSequences": {
+            "asrFinal": 89,
+            "translationFinal": 93,
+            "firstCaption": 94,
+            "finalCaption": 94
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1310,
+            "audioStartToAsrFinalMs": 2510,
+            "audioEndToChineseFirstTokenMs": 1387,
+            "audioStartToChineseFirstTokenMs": 2587,
+            "audioEndToChineseFinalMs": 1529,
+            "audioStartToChineseFinalMs": 2729,
+            "audioEndToFirstCaptionEventMs": 1531,
+            "audioStartToFirstCaptionEventMs": 2731,
+            "audioEndToFinalCaptionEventMs": 1531,
+            "audioStartToFinalCaptionEventMs": 2731,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000013",
+          "audioStartMs": 34100,
+          "audioEndMs": 37100,
+          "sourceTextEn": "So what do we do with her anger? Suppressing it doesn't.",
+          "targetTextZh": "那么，我们该如何应对她的愤怒呢？压抑它并没有什么用。",
+          "eventSequences": {
+            "asrFinal": 96,
+            "translationFinal": 102,
+            "firstCaption": 103,
+            "finalCaption": 103
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1256,
+            "audioStartToAsrFinalMs": 4256,
+            "audioEndToChineseFirstTokenMs": 1399,
+            "audioStartToChineseFirstTokenMs": 4399,
+            "audioEndToChineseFinalMs": 1725,
+            "audioStartToChineseFinalMs": 4725,
+            "audioEndToFirstCaptionEventMs": 1726,
+            "audioStartToFirstCaptionEventMs": 4726,
+            "audioEndToFinalCaptionEventMs": 1726,
+            "audioStartToFinalCaptionEventMs": 4726,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000014",
+          "audioStartMs": 37100,
+          "audioEndMs": 38900,
+          "sourceTextEn": "It's not helpful.",
+          "targetTextZh": "这没有帮助。",
+          "eventSequences": {
+            "asrFinal": 105,
+            "translationFinal": 109,
+            "firstCaption": 110,
+            "finalCaption": 110
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1256,
+            "audioStartToAsrFinalMs": 3056,
+            "audioEndToChineseFirstTokenMs": 1391,
+            "audioStartToChineseFirstTokenMs": 3191,
+            "audioEndToChineseFinalMs": 1466,
+            "audioStartToChineseFinalMs": 3266,
+            "audioEndToFirstCaptionEventMs": 1466,
+            "audioStartToFirstCaptionEventMs": 3266,
+            "audioEndToFinalCaptionEventMs": 1466,
+            "audioStartToFinalCaptionEventMs": 3266,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000015",
+          "audioStartMs": 38900,
+          "audioEndMs": 41900,
+          "sourceTextEn": "And so some then perhaps thought, \"Well, let me express.\"",
+          "targetTextZh": "于是有些人便想：“好吧，让我来表达一下。”",
+          "eventSequences": {
+            "asrFinal": 112,
+            "translationFinal": 116,
+            "firstCaption": 117,
+            "finalCaption": 117
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1242,
+            "audioStartToAsrFinalMs": 4242,
+            "audioEndToChineseFirstTokenMs": 1389,
+            "audioStartToChineseFirstTokenMs": 4389,
+            "audioEndToChineseFinalMs": 1600,
+            "audioStartToChineseFinalMs": 4600,
+            "audioEndToFirstCaptionEventMs": 1601,
+            "audioStartToFirstCaptionEventMs": 4601,
+            "audioEndToFinalCaptionEventMs": 1601,
+            "audioStartToFinalCaptionEventMs": 4601,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000016",
+          "audioStartMs": 41900,
+          "audioEndMs": 44900,
+          "sourceTextEn": "Yes, anger. Let me just get it out. I grew up being told.",
+          "targetTextZh": "是的，愤怒。让我把这话说出来。我从小就被这样教导着长大。",
+          "eventSequences": {
+            "asrFinal": 119,
+            "translationFinal": 126,
+            "firstCaption": 127,
+            "finalCaption": 127
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1247,
+            "audioStartToAsrFinalMs": 4247,
+            "audioEndToChineseFirstTokenMs": 1404,
+            "audioStartToChineseFirstTokenMs": 4404,
+            "audioEndToChineseFinalMs": 1752,
+            "audioStartToChineseFinalMs": 4752,
+            "audioEndToFirstCaptionEventMs": 1753,
+            "audioStartToFirstCaptionEventMs": 4753,
+            "audioEndToFinalCaptionEventMs": 1753,
+            "audioStartToFinalCaptionEventMs": 4753,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000017",
+          "audioStartMs": 44900,
+          "audioEndMs": 47900,
+          "sourceTextEn": "That if you want, don't suppress it. That's bad for you. You'll implode.",
+          "targetTextZh": "如果你想要，就不要压抑它。那对你不好。你会崩溃的。",
+          "eventSequences": {
+            "asrFinal": 129,
+            "translationFinal": 136,
+            "firstCaption": 137,
+            "finalCaption": 137
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1261,
+            "audioStartToAsrFinalMs": 4261,
+            "audioEndToChineseFirstTokenMs": 1451,
+            "audioStartToChineseFirstTokenMs": 4451,
+            "audioEndToChineseFinalMs": 1773,
+            "audioStartToChineseFinalMs": 4773,
+            "audioEndToFirstCaptionEventMs": 1773,
+            "audioStartToFirstCaptionEventMs": 4773,
+            "audioEndToFinalCaptionEventMs": 1773,
+            "audioStartToFinalCaptionEventMs": 4773,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000018",
+          "audioStartMs": 47900,
+          "audioEndMs": 50900,
+          "sourceTextEn": "And so express it. Maybe you had that advice.",
+          "targetTextZh": "所以要表达出来。也许你曾经得到过这样的建议。",
+          "eventSequences": {
+            "asrFinal": 139,
+            "translationFinal": 144,
+            "firstCaption": 145,
+            "finalCaption": 145
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1254,
+            "audioStartToAsrFinalMs": 4254,
+            "audioEndToChineseFirstTokenMs": 1391,
+            "audioStartToChineseFirstTokenMs": 4391,
+            "audioEndToChineseFinalMs": 1633,
+            "audioStartToChineseFinalMs": 4633,
+            "audioEndToFirstCaptionEventMs": 1634,
+            "audioStartToFirstCaptionEventMs": 4634,
+            "audioEndToFinalCaptionEventMs": 1634,
+            "audioStartToFinalCaptionEventMs": 4634,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000019",
+          "audioStartMs": 50900,
+          "audioEndMs": 53900,
+          "sourceTextEn": "You know, be Mike Tyson against some pillows and just let it out.",
+          "targetTextZh": "你知道吗？就当麦克·泰森对阵几张枕头，把怒气都发出来吧。",
+          "eventSequences": {
+            "asrFinal": 148,
+            "translationFinal": 157,
+            "firstCaption": 155,
+            "finalCaption": 158
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1262,
+            "audioStartToAsrFinalMs": 4262,
+            "audioEndToChineseFirstTokenMs": 1367,
+            "audioStartToChineseFirstTokenMs": 4367,
+            "audioEndToChineseFinalMs": 1955,
+            "audioStartToChineseFinalMs": 4955,
+            "audioEndToFirstCaptionEventMs": 1913,
+            "audioStartToFirstCaptionEventMs": 4913,
+            "audioEndToFinalCaptionEventMs": 1956,
+            "audioStartToFinalCaptionEventMs": 4956,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000020",
+          "audioStartMs": 53900,
+          "audioEndMs": 54700,
+          "sourceTextEn": "Out.",
+          "targetTextZh": "出去",
+          "eventSequences": {
+            "asrFinal": 159,
+            "translationFinal": 162,
+            "firstCaption": 163,
+            "finalCaption": 163
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1716,
+            "audioStartToAsrFinalMs": 2516,
+            "audioEndToChineseFirstTokenMs": 1859,
+            "audioStartToChineseFirstTokenMs": 2659,
+            "audioEndToChineseFinalMs": 1881,
+            "audioStartToChineseFinalMs": 2681,
+            "audioEndToFirstCaptionEventMs": 1882,
+            "audioStartToFirstCaptionEventMs": 2682,
+            "audioEndToFinalCaptionEventMs": 1882,
+            "audioStartToFinalCaptionEventMs": 2682,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000021",
+          "audioStartMs": 54700,
+          "audioEndMs": 57700,
+          "sourceTextEn": "But actually, recent research says that the more we",
+          "targetTextZh": "但实际上，最近的研究表明，我们越是",
+          "eventSequences": {
+            "asrFinal": 165,
+            "translationFinal": 170,
+            "firstCaption": 171,
+            "finalCaption": 171
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1256,
+            "audioStartToAsrFinalMs": 4256,
+            "audioEndToChineseFirstTokenMs": 1397,
+            "audioStartToChineseFirstTokenMs": 4397,
+            "audioEndToChineseFinalMs": 1584,
+            "audioStartToChineseFinalMs": 4584,
+            "audioEndToFirstCaptionEventMs": 1584,
+            "audioStartToFirstCaptionEventMs": 4584,
+            "audioEndToFinalCaptionEventMs": 1584,
+            "audioStartToFinalCaptionEventMs": 4584,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000022",
+          "audioStartMs": 57700,
+          "audioEndMs": 60700,
+          "sourceTextEn": "We express our anger. We actually become more angry.",
+          "targetTextZh": "我们表达了愤怒，但实际上反而变得更生气了。",
+          "eventSequences": {
+            "asrFinal": 173,
+            "translationFinal": 178,
+            "firstCaption": 179,
+            "finalCaption": 179
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1256,
+            "audioStartToAsrFinalMs": 4256,
+            "audioEndToChineseFirstTokenMs": 1492,
+            "audioStartToChineseFirstTokenMs": 4492,
+            "audioEndToChineseFinalMs": 1802,
+            "audioStartToChineseFinalMs": 4802,
+            "audioEndToFirstCaptionEventMs": 1803,
+            "audioStartToFirstCaptionEventMs": 4803,
+            "audioEndToFinalCaptionEventMs": 1803,
+            "audioStartToFinalCaptionEventMs": 4803,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000023",
+          "audioStartMs": 61200,
+          "audioEndMs": 64200,
+          "sourceTextEn": "So this is challenging. Don't suppress it.",
+          "targetTextZh": "所以这确实很困难。不要压抑它。",
+          "eventSequences": {
+            "asrFinal": 181,
+            "translationFinal": 186,
+            "firstCaption": 187,
+            "finalCaption": 187
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1255,
+            "audioStartToAsrFinalMs": 4255,
+            "audioEndToChineseFirstTokenMs": 1390,
+            "audioStartToChineseFirstTokenMs": 4390,
+            "audioEndToChineseFinalMs": 1617,
+            "audioStartToChineseFinalMs": 4617,
+            "audioEndToFirstCaptionEventMs": 1618,
+            "audioStartToFirstCaptionEventMs": 4618,
+            "audioEndToFinalCaptionEventMs": 1618,
+            "audioStartToFinalCaptionEventMs": 4618,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000024",
+          "audioStartMs": 64200,
+          "audioEndMs": 67200,
+          "sourceTextEn": "But if you express it, you become even angrier.",
+          "targetTextZh": "但如果你表达出来，你就会变得更生气。",
+          "eventSequences": {
+            "asrFinal": 189,
+            "translationFinal": 194,
+            "firstCaption": 195,
+            "finalCaption": 195
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1257,
+            "audioStartToAsrFinalMs": 4257,
+            "audioEndToChineseFirstTokenMs": 1402,
+            "audioStartToChineseFirstTokenMs": 4402,
+            "audioEndToChineseFinalMs": 1641,
+            "audioStartToChineseFinalMs": 4641,
+            "audioEndToFirstCaptionEventMs": 1641,
+            "audioStartToFirstCaptionEventMs": 4641,
+            "audioEndToFinalCaptionEventMs": 1641,
+            "audioStartToFinalCaptionEventMs": 4641,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000025",
+          "audioStartMs": 67900,
+          "audioEndMs": 70900,
+          "sourceTextEn": "There was a study done by Ohio State University.",
+          "targetTextZh": "俄亥俄州立大学曾进行过一项研究。",
+          "eventSequences": {
+            "asrFinal": 197,
+            "translationFinal": 201,
+            "firstCaption": 202,
+            "finalCaption": 202
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1248,
+            "audioStartToAsrFinalMs": 4248,
+            "audioEndToChineseFirstTokenMs": 1409,
+            "audioStartToChineseFirstTokenMs": 4409,
+            "audioEndToChineseFinalMs": 1643,
+            "audioStartToChineseFinalMs": 4643,
+            "audioEndToFirstCaptionEventMs": 1643,
+            "audioStartToFirstCaptionEventMs": 4643,
+            "audioEndToFinalCaptionEventMs": 1643,
+            "audioStartToFinalCaptionEventMs": 4643,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000026",
+          "audioStartMs": 70900,
+          "audioEndMs": 72600,
+          "sourceTextEn": "Six hundred college students.",
+          "targetTextZh": "六百名大学生",
+          "eventSequences": {
+            "asrFinal": 204,
+            "translationFinal": 207,
+            "firstCaption": 208,
+            "finalCaption": 208
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1246,
+            "audioStartToAsrFinalMs": 2946,
+            "audioEndToChineseFirstTokenMs": 1395,
+            "audioStartToChineseFirstTokenMs": 3095,
+            "audioEndToChineseFinalMs": 1467,
+            "audioStartToChineseFinalMs": 3167,
+            "audioEndToFirstCaptionEventMs": 1471,
+            "audioStartToFirstCaptionEventMs": 3171,
+            "audioEndToFinalCaptionEventMs": 1471,
+            "audioStartToFinalCaptionEventMs": 3171,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000027",
+          "audioStartMs": 72600,
+          "audioEndMs": 75600,
+          "sourceTextEn": "Had people write against their point of view. So.",
+          "targetTextZh": "让人们写下反对他们的观点。所以……",
+          "eventSequences": {
+            "asrFinal": 210,
+            "translationFinal": 214,
+            "firstCaption": 215,
+            "finalCaption": 215
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1261,
+            "audioStartToAsrFinalMs": 4261,
+            "audioEndToChineseFirstTokenMs": 1402,
+            "audioStartToChineseFirstTokenMs": 4402,
+            "audioEndToChineseFinalMs": 1602,
+            "audioStartToChineseFinalMs": 4602,
+            "audioEndToFirstCaptionEventMs": 1603,
+            "audioStartToFirstCaptionEventMs": 4603,
+            "audioEndToFinalCaptionEventMs": 1603,
+            "audioStartToFinalCaptionEventMs": 4603,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000028",
+          "audioStartMs": 75600,
+          "audioEndMs": 78600,
+          "sourceTextEn": "Six hundred college students all did a paper where they are.",
+          "targetTextZh": "六百名大学生都在他们所在的地点完成了论文。",
+          "eventSequences": {
+            "asrFinal": 217,
+            "translationFinal": 221,
+            "firstCaption": 222,
+            "finalCaption": 222
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1260,
+            "audioStartToAsrFinalMs": 4260,
+            "audioEndToChineseFirstTokenMs": 1393,
+            "audioStartToChineseFirstTokenMs": 4393,
+            "audioEndToChineseFinalMs": 1612,
+            "audioStartToChineseFinalMs": 4612,
+            "audioEndToFirstCaptionEventMs": 1613,
+            "audioStartToFirstCaptionEventMs": 4613,
+            "audioEndToFinalCaptionEventMs": 1613,
+            "audioStartToFinalCaptionEventMs": 4613,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000029",
+          "audioStartMs": 78600,
+          "audioEndMs": 81600,
+          "sourceTextEn": "Circulated an ethical viewpoint, and then they all had some.",
+          "targetTextZh": "先散发了一份道德观声明，然后他们全都采纳了。",
+          "eventSequences": {
+            "asrFinal": 224,
+            "translationFinal": 229,
+            "firstCaption": 230,
+            "finalCaption": 230
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1247,
+            "audioStartToAsrFinalMs": 4247,
+            "audioEndToChineseFirstTokenMs": 1393,
+            "audioStartToChineseFirstTokenMs": 4393,
+            "audioEndToChineseFinalMs": 1689,
+            "audioStartToChineseFinalMs": 4689,
+            "audioEndToFirstCaptionEventMs": 1690,
+            "audioStartToFirstCaptionEventMs": 4690,
+            "audioEndToFinalCaptionEventMs": 1690,
+            "audioStartToFinalCaptionEventMs": 4690,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000030",
+          "audioStartMs": 81600,
+          "audioEndMs": 84600,
+          "sourceTextEn": "Somebody who pretended to be against them and go against.",
+          "targetTextZh": "假装反对他们，并与他们为敌的人。",
+          "eventSequences": {
+            "asrFinal": 232,
+            "translationFinal": 237,
+            "firstCaption": 238,
+            "finalCaption": 238
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1265,
+            "audioStartToAsrFinalMs": 4265,
+            "audioEndToChineseFirstTokenMs": 1423,
+            "audioStartToChineseFirstTokenMs": 4423,
+            "audioEndToChineseFinalMs": 1638,
+            "audioStartToChineseFinalMs": 4638,
+            "audioEndToFirstCaptionEventMs": 1640,
+            "audioStartToFirstCaptionEventMs": 4640,
+            "audioEndToFinalCaptionEventMs": 1640,
+            "audioStartToFinalCaptionEventMs": 4640,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000031",
+          "audioStartMs": 84600,
+          "audioEndMs": 87600,
+          "sourceTextEn": "From their viewpoint, these six hundred students were put into three.",
+          "targetTextZh": "从他们的角度来看，这六百名学生被分成三组。",
+          "eventSequences": {
+            "asrFinal": 241,
+            "translationFinal": 246,
+            "firstCaption": 247,
+            "finalCaption": 247
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1263,
+            "audioStartToAsrFinalMs": 4263,
+            "audioEndToChineseFirstTokenMs": 1419,
+            "audioStartToChineseFirstTokenMs": 4419,
+            "audioEndToChineseFinalMs": 1702,
+            "audioStartToChineseFinalMs": 4702,
+            "audioEndToFirstCaptionEventMs": 1703,
+            "audioStartToFirstCaptionEventMs": 4703,
+            "audioEndToFinalCaptionEventMs": 1703,
+            "audioStartToFinalCaptionEventMs": 4703,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000032",
+          "audioStartMs": 87600,
+          "audioEndMs": 88400,
+          "sourceTextEn": "Groups.",
+          "targetTextZh": "群组",
+          "eventSequences": {
+            "asrFinal": 249,
+            "translationFinal": 252,
+            "firstCaption": 253,
+            "finalCaption": 253
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1721,
+            "audioStartToAsrFinalMs": 2521,
+            "audioEndToChineseFirstTokenMs": 1897,
+            "audioStartToChineseFirstTokenMs": 2697,
+            "audioEndToChineseFinalMs": 1954,
+            "audioStartToChineseFinalMs": 2754,
+            "audioEndToFirstCaptionEventMs": 1955,
+            "audioStartToFirstCaptionEventMs": 2755,
+            "audioEndToFinalCaptionEventMs": 1955,
+            "audioStartToFinalCaptionEventMs": 2755,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000033",
+          "audioStartMs": 88400,
+          "audioEndMs": 90000,
+          "sourceTextEn": "And of the three groups, the.",
+          "targetTextZh": "在这三组人中，",
+          "eventSequences": {
+            "asrFinal": 254,
+            "translationFinal": 258,
+            "firstCaption": 259,
+            "finalCaption": 259
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1386,
+            "audioStartToAsrFinalMs": 2986,
+            "audioEndToChineseFirstTokenMs": 1524,
+            "audioStartToChineseFirstTokenMs": 3124,
+            "audioEndToChineseFinalMs": 1635,
+            "audioStartToChineseFinalMs": 3235,
+            "audioEndToFirstCaptionEventMs": 1637,
+            "audioStartToFirstCaptionEventMs": 3237,
+            "audioEndToFinalCaptionEventMs": 1637,
+            "audioStartToFinalCaptionEventMs": 3237,
+            "translationQueueWaitMs": 0
+          }
+        }
+      ],
+      "persistedEventObjectDifferences": [
+        {
+          "sequence": 1,
+          "type": "stream.ready",
+          "fields": [
+            "viewer"
+          ]
+        }
+      ],
+      "persistedEventDataMatchesReplayExcludingViewer": true,
+      "persistedEventLogComparisonNote": "Byte serialization differs; parsed payloads match except WS-only stream.ready viewer enrichment. No viewer URLs/tokens retained here."
+    },
+    {
+      "windowMs": 6000,
+      "sessionId": "20260904T210056.378Z-2bcf73c2",
+      "startedAt": "2026-09-04T21:00:56.339808+00:00",
+      "finishedAt": "2026-09-04T21:02:27.854862+00:00",
+      "reportSha256": "f09fb83ff4d4e4f80ffb81192113b72ba734d5c69464cfc349401830f8f7601a",
+      "eventLogSha256": "ff11210509485e8893bfaefddef09235213f9c60bf67adfdf3d85eb65f18796a",
+      "manifestSha256": "0b829fbafc6925f7c6fa28f21f56e63c39eefc7d999cc7e28bc75a511050d60b",
+      "status": "completed",
+      "framesSent": 900,
+      "pcmFrameCount": 900,
+      "pcmBytes": 2880000,
+      "transmitElapsedMs": 90011,
+      "errors": [],
+      "checks": {
+        "completed": true,
+        "drained": true,
+        "pcmFrameCount": true,
+        "pcmBytes": true,
+        "recoveryHash": true,
+        "pcmHash": true,
+        "pcmWavHash": true
+      },
+      "freshArtifactHashes": {
+        "recoveryWav": "19d26141b5835ed21b0a2850eebb48439872c5b53b1c8113ad9f51f6eb1f7893",
+        "asrWav": "19d26141b5835ed21b0a2850eebb48439872c5b53b1c8113ad9f51f6eb1f7893",
+        "asrPcm": "dc35bf7e7ac3ebe034903ce45a06fd05276131afe0dba82ca1378eb4456e240a"
+      },
+      "freshArtifactHashesMatchInput": true,
+      "persistedEventLogMatchesReplayLog": false,
+      "eventSequencesContiguous": true,
+      "eventCounts": {
+        "stream.ready": 1,
+        "asr.processing": 19,
+        "asr.final": 19,
+        "translation.started": 19,
+        "translation.partial": 74,
+        "caption.display": 27,
+        "translation.final": 19,
+        "stream.closed": 1
+      },
+      "runtimeIdentity": {
+        "capturedAt": "2026-09-04T21:00:39.502579+00:00",
+        "configuration": {
+          "asrFinalizationMode": "vad_silence_frames",
+          "asrModelSha256": "b5bfe4abc1b4c6e58b633096682ec2b6297298add1527119936107d211adf0e8",
+          "asrProvider": "qwen-mlx-websocket",
+          "asrQueueLimit": 2,
+          "asrSilenceFrameCount": 12,
+          "captionPresentationPolicy": "readable_chunks",
+          "contentPackSha256": null,
+          "contentPackVersion": null,
+          "contextPolicy": "none",
+          "frameDurationMs": 100,
+          "frontendOrigin": "http://127.0.0.1:4173",
+          "frontendOrigins": "http://127.0.0.1:4173,http://localhost:4173",
+          "sampleRateHz": 16000,
+          "sourceFragmentPolicy": "content_words",
+          "translationModel": "sermon-milmmt-46-4b-v1-q8:benchmark",
+          "translationModelDigest": "e607c5905ff664410afc93961c9a44e19b0429602b2897ac17e362cbb0895b96",
+          "translationPromptFamily": "frozen_a0",
+          "translationPromptHashScope": "template_with_source_placeholder",
+          "translationPromptSha256": "b8320f22389c59cf876e96d5dba19aa33eafbc2c2e1a67bc0559c8873b53da45",
+          "translationPromptVersion": "milmmt-46-official-english-to-chinese-simplified-v1",
+          "translationQueueLimit": 1,
+          "translationStreaming": true,
+          "translationTemperature": 0,
+          "translationTopK": 1,
+          "translationUnitMaxAudioDurationMs": 6500,
+          "translationUnitMaxAudioGapMs": 800,
+          "translationUnitMaxSegments": 2,
+          "translationUnitMaxWaitMs": 3200,
+          "translationUnitPolicy": "legacy",
+          "vadMaxSegmentMs": 6000,
+          "vadSilenceMs": 500,
+          "vadThresholdRms": 450
+        },
+        "fingerprintSha256": "a1037316eb3c2df372ca250532e2700305558e577cd09d38f00c0c6efd849ab7",
+        "git": {
+          "available": true,
+          "dirty": true,
+          "revision": "516c3253a077aba5de7fc9f802b88da20154956c"
+        },
+        "runtime": {
+          "gatewayPythonPackages": {
+            "mlx": null,
+            "mlx-audio": null,
+            "websockets": "16.1.1"
+          },
+          "machine": "arm64",
+          "providerVersions": {
+            "ollama": "0.33.3"
+          },
+          "python": "3.13.15",
+          "release": "27.0.0",
+          "system": "Darwin"
+        },
+        "schemaVersion": "local-live-runtime-identity-v1"
+      },
+      "asrFinalCount": 19,
+      "translatedFinalCount": 19,
+      "captionCoveredFinalCount": 19,
+      "asrIntervalsCoveredMs": 89100,
+      "asrIntervalCoverageBoundary": "VAD emitted intervals, not proof every spoken word was transcribed; silence outside intervals is retained in original PCM.",
+      "maxWindowFinalCount": 10,
+      "captionDisplayCount": 27,
+      "captionPartialDisplayCount": 8,
+      "metrics": {
+        "audioEndToAsrFinalMs": {
+          "count": 19,
+          "p50": 1259,
+          "p95": 1277,
+          "max": 1279
+        },
+        "audioStartToAsrFinalMs": {
+          "count": 19,
+          "p50": 7254,
+          "p95": 7269,
+          "max": 7279
+        },
+        "audioEndToChineseFirstTokenMs": {
+          "count": 19,
+          "p50": 1408,
+          "p95": 1445,
+          "max": 1450
+        },
+        "audioStartToChineseFirstTokenMs": {
+          "count": 19,
+          "p50": 7396,
+          "p95": 7440,
+          "max": 7444
+        },
+        "audioEndToChineseFinalMs": {
+          "count": 19,
+          "p50": 1795,
+          "p95": 1994,
+          "max": 2007
+        },
+        "audioStartToChineseFinalMs": {
+          "count": 19,
+          "p50": 7681,
+          "p95": 7994,
+          "max": 8007
+        },
+        "audioEndToFirstCaptionEventMs": {
+          "count": 19,
+          "p50": 1796,
+          "p95": 1910,
+          "max": 1941
+        },
+        "audioStartToFirstCaptionEventMs": {
+          "count": 19,
+          "p50": 7683,
+          "p95": 7910,
+          "max": 7941
+        },
+        "audioEndToFinalCaptionEventMs": {
+          "count": 19,
+          "p50": 1796,
+          "p95": 1994,
+          "max": 2008
+        },
+        "audioStartToFinalCaptionEventMs": {
+          "count": 19,
+          "p50": 7683,
+          "p95": 7994,
+          "max": 8008
+        },
+        "translationQueueWaitMs": {
+          "count": 19,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        }
+      },
+      "longestBetweenFirstCaptionEventsMs": 6527,
+      "samples": [
+        {
+          "segmentId": "seg-000001",
+          "audioStartMs": 0,
+          "audioEndMs": 6000,
+          "sourceTextEn": "Say if you don't let your anger out, if you just push it down and try to get rid of your anger because you don't want to lose your temper.",
+          "targetTextZh": "假设你没有发泄自己的愤怒，而是压抑着它，试图消除自己的愤怒，因为你不想发脾气。",
+          "eventSequences": {
+            "asrFinal": 3,
+            "translationFinal": 11,
+            "firstCaption": 10,
+            "finalCaption": 12
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1259,
+            "audioStartToAsrFinalMs": 7259,
+            "audioEndToChineseFirstTokenMs": 1436,
+            "audioStartToChineseFirstTokenMs": 7436,
+            "audioEndToChineseFinalMs": 1922,
+            "audioStartToChineseFinalMs": 7922,
+            "audioEndToFirstCaptionEventMs": 1904,
+            "audioStartToFirstCaptionEventMs": 7904,
+            "audioEndToFinalCaptionEventMs": 1926,
+            "audioStartToFinalCaptionEventMs": 7926,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000002",
+          "audioStartMs": 6000,
+          "audioEndMs": 12000,
+          "sourceTextEn": "Because if you lose your temper, you'll lose your credibility at work or you'll lose your credibility with other people. So just push it down.",
+          "targetTextZh": "因为如果你发脾气，你就会失去在工作中的信誉，或者会失去与他人之间的信任。所以请克制一下。",
+          "eventSequences": {
+            "asrFinal": 14,
+            "translationFinal": 22,
+            "firstCaption": 21,
+            "finalCaption": 23
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1259,
+            "audioStartToAsrFinalMs": 7259,
+            "audioEndToChineseFirstTokenMs": 1436,
+            "audioStartToChineseFirstTokenMs": 7436,
+            "audioEndToChineseFinalMs": 1957,
+            "audioStartToChineseFinalMs": 7957,
+            "audioEndToFirstCaptionEventMs": 1941,
+            "audioStartToFirstCaptionEventMs": 7941,
+            "audioEndToFinalCaptionEventMs": 1958,
+            "audioStartToFinalCaptionEventMs": 7958,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000003",
+          "audioStartMs": 12000,
+          "audioEndMs": 18000,
+          "sourceTextEn": "But the articles, the scholarly articles, say that suppression of anger actually can bring about cardiovascular.",
+          "targetTextZh": "但那些学术文章指出，抑制愤怒实际上会导致心血管疾病。",
+          "eventSequences": {
+            "asrFinal": 25,
+            "translationFinal": 30,
+            "firstCaption": 31,
+            "finalCaption": 31
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1257,
+            "audioStartToAsrFinalMs": 7257,
+            "audioEndToChineseFirstTokenMs": 1408,
+            "audioStartToChineseFirstTokenMs": 7408,
+            "audioEndToChineseFinalMs": 1681,
+            "audioStartToChineseFinalMs": 7681,
+            "audioEndToFirstCaptionEventMs": 1683,
+            "audioStartToFirstCaptionEventMs": 7683,
+            "audioEndToFinalCaptionEventMs": 1683,
+            "audioStartToFinalCaptionEventMs": 7683,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000004",
+          "audioStartMs": 18000,
+          "audioEndMs": 24000,
+          "sourceTextEn": "Cardiovascular damage can damage relationships and your emotional health. That burying your",
+          "targetTextZh": "心血管疾病的损伤会破坏人际关系并影响心理健康。因此，切忌埋怨。",
+          "eventSequences": {
+            "asrFinal": 33,
+            "translationFinal": 40,
+            "firstCaption": 41,
+            "finalCaption": 41
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1257,
+            "audioStartToAsrFinalMs": 7257,
+            "audioEndToChineseFirstTokenMs": 1396,
+            "audioStartToChineseFirstTokenMs": 7396,
+            "audioEndToChineseFinalMs": 1801,
+            "audioStartToChineseFinalMs": 7801,
+            "audioEndToFirstCaptionEventMs": 1802,
+            "audioStartToFirstCaptionEventMs": 7802,
+            "audioEndToFinalCaptionEventMs": 1802,
+            "audioStartToFinalCaptionEventMs": 7802,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000005",
+          "audioStartMs": 24000,
+          "audioEndMs": 26400,
+          "sourceTextEn": "Anger isn't really best.",
+          "targetTextZh": "愤怒并不是最好的选择。",
+          "eventSequences": {
+            "asrFinal": 43,
+            "translationFinal": 47,
+            "firstCaption": 48,
+            "finalCaption": 48
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1258,
+            "audioStartToAsrFinalMs": 3658,
+            "audioEndToChineseFirstTokenMs": 1347,
+            "audioStartToChineseFirstTokenMs": 3747,
+            "audioEndToChineseFinalMs": 1438,
+            "audioStartToChineseFinalMs": 3838,
+            "audioEndToFirstCaptionEventMs": 1439,
+            "audioStartToFirstCaptionEventMs": 3839,
+            "audioEndToFinalCaptionEventMs": 1439,
+            "audioStartToFinalCaptionEventMs": 3839,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000006",
+          "audioStartMs": 26600,
+          "audioEndMs": 32600,
+          "sourceTextEn": "David Palisson was a Christian counselor, and he said that buried anger is rarely.",
+          "targetTextZh": "大卫·帕利森是一位基督教辅导员，他说埋藏的愤怒很少见。",
+          "eventSequences": {
+            "asrFinal": 50,
+            "translationFinal": 56,
+            "firstCaption": 57,
+            "finalCaption": 57
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1264,
+            "audioStartToAsrFinalMs": 7264,
+            "audioEndToChineseFirstTokenMs": 1397,
+            "audioStartToChineseFirstTokenMs": 7397,
+            "audioEndToChineseFinalMs": 1765,
+            "audioStartToChineseFinalMs": 7765,
+            "audioEndToFirstCaptionEventMs": 1766,
+            "audioStartToFirstCaptionEventMs": 7766,
+            "audioEndToFinalCaptionEventMs": 1766,
+            "audioStartToFinalCaptionEventMs": 7766,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000007",
+          "audioStartMs": 32600,
+          "audioEndMs": 33900,
+          "sourceTextEn": "Dead anger.",
+          "targetTextZh": "死气沉沉的愤怒。",
+          "eventSequences": {
+            "asrFinal": 58,
+            "translationFinal": 62,
+            "firstCaption": 63,
+            "finalCaption": 63
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1257,
+            "audioStartToAsrFinalMs": 2557,
+            "audioEndToChineseFirstTokenMs": 1348,
+            "audioStartToChineseFirstTokenMs": 2648,
+            "audioEndToChineseFinalMs": 1488,
+            "audioStartToChineseFinalMs": 2788,
+            "audioEndToFirstCaptionEventMs": 1493,
+            "audioStartToFirstCaptionEventMs": 2793,
+            "audioEndToFinalCaptionEventMs": 1493,
+            "audioStartToFinalCaptionEventMs": 2793,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000008",
+          "audioStartMs": 34100,
+          "audioEndMs": 38900,
+          "sourceTextEn": "So what do we do with her anger? Suppressing it doesn't work. It's not helpful.",
+          "targetTextZh": "那么，我们该如何应对她的愤怒呢？压抑这种愤怒是行不通的，也没有任何帮助。",
+          "eventSequences": {
+            "asrFinal": 65,
+            "translationFinal": 73,
+            "firstCaption": 72,
+            "finalCaption": 74
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1258,
+            "audioStartToAsrFinalMs": 6058,
+            "audioEndToChineseFirstTokenMs": 1422,
+            "audioStartToChineseFirstTokenMs": 6222,
+            "audioEndToChineseFinalMs": 1875,
+            "audioStartToChineseFinalMs": 6675,
+            "audioEndToFirstCaptionEventMs": 1857,
+            "audioStartToFirstCaptionEventMs": 6657,
+            "audioEndToFinalCaptionEventMs": 1876,
+            "audioStartToFinalCaptionEventMs": 6676,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000009",
+          "audioStartMs": 38900,
+          "audioEndMs": 44900,
+          "sourceTextEn": "And so some then perhaps thought, \"Well, let me express anger. Let me just get it out.\" I grew up being told.",
+          "targetTextZh": "于是有些人便会想：“好吧，让我发泄一下愤怒吧。让我把这些情绪都发泄出来。”我从小就被这样教导。",
+          "eventSequences": {
+            "asrFinal": 76,
+            "translationFinal": 84,
+            "firstCaption": 82,
+            "finalCaption": 85
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1279,
+            "audioStartToAsrFinalMs": 7279,
+            "audioEndToChineseFirstTokenMs": 1439,
+            "audioStartToChineseFirstTokenMs": 7439,
+            "audioEndToChineseFinalMs": 1992,
+            "audioStartToChineseFinalMs": 7992,
+            "audioEndToFirstCaptionEventMs": 1907,
+            "audioStartToFirstCaptionEventMs": 7907,
+            "audioEndToFinalCaptionEventMs": 1993,
+            "audioStartToFinalCaptionEventMs": 7993,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000010",
+          "audioStartMs": 44900,
+          "audioEndMs": 50900,
+          "sourceTextEn": "That if you want, don't suppress it. That's bad for you. You'll implode, and so express it. Maybe you had that advice.",
+          "targetTextZh": "如果你想要，就不要压抑它。那对你不好。你会崩溃的，所以要把它表达出来。也许你曾经收到过这样的建议。",
+          "eventSequences": {
+            "asrFinal": 87,
+            "translationFinal": 97,
+            "firstCaption": 95,
+            "finalCaption": 98
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1268,
+            "audioStartToAsrFinalMs": 7268,
+            "audioEndToChineseFirstTokenMs": 1444,
+            "audioStartToChineseFirstTokenMs": 7444,
+            "audioEndToChineseFinalMs": 2007,
+            "audioStartToChineseFinalMs": 8007,
+            "audioEndToFirstCaptionEventMs": 1853,
+            "audioStartToFirstCaptionEventMs": 7853,
+            "audioEndToFinalCaptionEventMs": 2008,
+            "audioStartToFinalCaptionEventMs": 8008,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000011",
+          "audioStartMs": 50900,
+          "audioEndMs": 54700,
+          "sourceTextEn": "You know, be Mike Tyson against some pillows and just let it out.",
+          "targetTextZh": "你知道吗？就当麦克·泰森对阵几张枕头，把怒气都发出来吧。",
+          "eventSequences": {
+            "asrFinal": 100,
+            "translationFinal": 108,
+            "firstCaption": 107,
+            "finalCaption": 109
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1253,
+            "audioStartToAsrFinalMs": 5053,
+            "audioEndToChineseFirstTokenMs": 1357,
+            "audioStartToChineseFirstTokenMs": 5157,
+            "audioEndToChineseFinalMs": 1795,
+            "audioStartToChineseFinalMs": 5595,
+            "audioEndToFirstCaptionEventMs": 1780,
+            "audioStartToFirstCaptionEventMs": 5580,
+            "audioEndToFinalCaptionEventMs": 1796,
+            "audioStartToFinalCaptionEventMs": 5596,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000012",
+          "audioStartMs": 54700,
+          "audioEndMs": 60700,
+          "sourceTextEn": "But actually, recent research says that the more we express our anger, we actually become more angry.",
+          "targetTextZh": "但实际上，最近的研究表明，我们越是表达愤怒，反而会变得越生气。",
+          "eventSequences": {
+            "asrFinal": 111,
+            "translationFinal": 118,
+            "firstCaption": 119,
+            "finalCaption": 119
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1267,
+            "audioStartToAsrFinalMs": 7267,
+            "audioEndToChineseFirstTokenMs": 1423,
+            "audioStartToChineseFirstTokenMs": 7423,
+            "audioEndToChineseFinalMs": 1804,
+            "audioStartToChineseFinalMs": 7804,
+            "audioEndToFirstCaptionEventMs": 1805,
+            "audioStartToFirstCaptionEventMs": 7805,
+            "audioEndToFinalCaptionEventMs": 1805,
+            "audioStartToFinalCaptionEventMs": 7805,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000013",
+          "audioStartMs": 61200,
+          "audioEndMs": 64300,
+          "sourceTextEn": "So this is challenging. Don't suppress it.",
+          "targetTextZh": "所以这确实很困难。不要压抑它。",
+          "eventSequences": {
+            "asrFinal": 121,
+            "translationFinal": 126,
+            "firstCaption": 127,
+            "finalCaption": 127
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1270,
+            "audioStartToAsrFinalMs": 4370,
+            "audioEndToChineseFirstTokenMs": 1335,
+            "audioStartToChineseFirstTokenMs": 4435,
+            "audioEndToChineseFinalMs": 1539,
+            "audioStartToChineseFinalMs": 4639,
+            "audioEndToFirstCaptionEventMs": 1540,
+            "audioStartToFirstCaptionEventMs": 4640,
+            "audioEndToFinalCaptionEventMs": 1540,
+            "audioStartToFinalCaptionEventMs": 4640,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000014",
+          "audioStartMs": 64300,
+          "audioEndMs": 67900,
+          "sourceTextEn": "But if you express it, you become even angrier.",
+          "targetTextZh": "但如果你表达出来，你就会变得更生气。",
+          "eventSequences": {
+            "asrFinal": 129,
+            "translationFinal": 134,
+            "firstCaption": 135,
+            "finalCaption": 135
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1251,
+            "audioStartToAsrFinalMs": 4851,
+            "audioEndToChineseFirstTokenMs": 1392,
+            "audioStartToChineseFirstTokenMs": 4992,
+            "audioEndToChineseFinalMs": 1608,
+            "audioStartToChineseFinalMs": 5208,
+            "audioEndToFirstCaptionEventMs": 1607,
+            "audioStartToFirstCaptionEventMs": 5207,
+            "audioEndToFinalCaptionEventMs": 1607,
+            "audioStartToFinalCaptionEventMs": 5207,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000015",
+          "audioStartMs": 67900,
+          "audioEndMs": 72600,
+          "sourceTextEn": "There was a study done by Ohio State University. Six hundred college students.",
+          "targetTextZh": "俄亥俄州立大学曾进行过一项研究，涉及600名大学生。",
+          "eventSequences": {
+            "asrFinal": 137,
+            "translationFinal": 142,
+            "firstCaption": 143,
+            "finalCaption": 143
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1267,
+            "audioStartToAsrFinalMs": 5967,
+            "audioEndToChineseFirstTokenMs": 1450,
+            "audioStartToChineseFirstTokenMs": 6150,
+            "audioEndToChineseFinalMs": 1795,
+            "audioStartToChineseFinalMs": 6495,
+            "audioEndToFirstCaptionEventMs": 1796,
+            "audioStartToFirstCaptionEventMs": 6496,
+            "audioEndToFinalCaptionEventMs": 1796,
+            "audioStartToFinalCaptionEventMs": 6496,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000016",
+          "audioStartMs": 72600,
+          "audioEndMs": 78600,
+          "sourceTextEn": "Had people write against their point of view. So six hundred college students all did a paper where they articulated.",
+          "targetTextZh": "我让人们写下与他们观点相反的观点。结果有六百名大学生都写了一篇论文来表达自己的观点。",
+          "eventSequences": {
+            "asrFinal": 145,
+            "translationFinal": 152,
+            "firstCaption": 151,
+            "finalCaption": 153
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1254,
+            "audioStartToAsrFinalMs": 7254,
+            "audioEndToChineseFirstTokenMs": 1422,
+            "audioStartToChineseFirstTokenMs": 7422,
+            "audioEndToChineseFinalMs": 1907,
+            "audioStartToChineseFinalMs": 7907,
+            "audioEndToFirstCaptionEventMs": 1898,
+            "audioStartToFirstCaptionEventMs": 7898,
+            "audioEndToFinalCaptionEventMs": 1908,
+            "audioStartToFinalCaptionEventMs": 7908,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000017",
+          "audioStartMs": 78600,
+          "audioEndMs": 84600,
+          "sourceTextEn": "They calculated an ethical viewpoint, and then they all had somebody who pretended to be against them and go against.",
+          "targetTextZh": "他们先计算出一个合乎道德的观点，然后就找一个人假装反对他们，并与他们唱反调。",
+          "eventSequences": {
+            "asrFinal": 155,
+            "translationFinal": 162,
+            "firstCaption": 161,
+            "finalCaption": 163
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1266,
+            "audioStartToAsrFinalMs": 7266,
+            "audioEndToChineseFirstTokenMs": 1416,
+            "audioStartToChineseFirstTokenMs": 7416,
+            "audioEndToChineseFinalMs": 1897,
+            "audioStartToChineseFinalMs": 7897,
+            "audioEndToFirstCaptionEventMs": 1883,
+            "audioStartToFirstCaptionEventMs": 7883,
+            "audioEndToFinalCaptionEventMs": 1898,
+            "audioStartToFinalCaptionEventMs": 7898,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000018",
+          "audioStartMs": 84600,
+          "audioEndMs": 88400,
+          "sourceTextEn": "From their viewpoint, these six hundred students were put into three groups.",
+          "targetTextZh": "从他们的角度来看，这六百名学生被分成三组。",
+          "eventSequences": {
+            "asrFinal": 165,
+            "translationFinal": 171,
+            "firstCaption": 172,
+            "finalCaption": 172
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1256,
+            "audioStartToAsrFinalMs": 5056,
+            "audioEndToChineseFirstTokenMs": 1406,
+            "audioStartToChineseFirstTokenMs": 5206,
+            "audioEndToChineseFinalMs": 1674,
+            "audioStartToChineseFinalMs": 5474,
+            "audioEndToFirstCaptionEventMs": 1675,
+            "audioStartToFirstCaptionEventMs": 5475,
+            "audioEndToFinalCaptionEventMs": 1675,
+            "audioStartToFinalCaptionEventMs": 5475,
+            "translationQueueWaitMs": 0
+          }
+        },
+        {
+          "segmentId": "seg-000019",
+          "audioStartMs": 88400,
+          "audioEndMs": 90000,
+          "sourceTextEn": "And of the three groups, the.",
+          "targetTextZh": "在这三组中，",
+          "eventSequences": {
+            "asrFinal": 173,
+            "translationFinal": 177,
+            "firstCaption": 178,
+            "finalCaption": 178
+          },
+          "latencyMs": {
+            "audioEndToAsrFinalMs": 1277,
+            "audioStartToAsrFinalMs": 2877,
+            "audioEndToChineseFirstTokenMs": 1351,
+            "audioStartToChineseFirstTokenMs": 2951,
+            "audioEndToChineseFinalMs": 1448,
+            "audioStartToChineseFinalMs": 3048,
+            "audioEndToFirstCaptionEventMs": 1449,
+            "audioStartToFirstCaptionEventMs": 3049,
+            "audioEndToFinalCaptionEventMs": 1449,
+            "audioStartToFinalCaptionEventMs": 3049,
+            "translationQueueWaitMs": 0
+          }
+        }
+      ],
+      "persistedEventObjectDifferences": [
+        {
+          "sequence": 1,
+          "type": "stream.ready",
+          "fields": [
+            "viewer"
+          ]
+        }
+      ],
+      "persistedEventDataMatchesReplayExcludingViewer": true,
+      "persistedEventLogComparisonNote": "Byte serialization differs; parsed payloads match except WS-only stream.ready viewer enrichment. No viewer URLs/tokens retained here."
+    }
+  ],
+  "recordedConfigurationDifferences": {
+    "vadMaxSegmentMs": {
+      "3000ms": 3000,
+      "6000ms": 6000
+    }
+  }
+}
