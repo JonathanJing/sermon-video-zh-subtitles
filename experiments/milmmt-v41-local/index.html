@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>v4.1 本地实验翻译</title>
+  <style>
+    :root{color-scheme:light;--ink:#203434;--muted:#5e7170;--line:#d6e0da;--paper:#fffefb;--green:#246a55}
+    *{box-sizing:border-box}body{margin:0;background:#f2f4ef;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;line-height:1.6}
+    main{max-width:1100px;margin:0 auto;padding:48px 28px 24px}header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:24px}
+    .eyebrow{font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--green);margin:0 0 8px}h1{font-size:30px;line-height:1.25;letter-spacing:-.03em;margin:0 0 10px}
+    .sub{margin:0;color:var(--muted);font-size:14px}.status{white-space:nowrap;background:#e4eae4;border-radius:24px;padding:8px 14px;font-size:13px;display:flex;align-items:center;gap:8px}
+    .dot{width:7px;height:7px;border-radius:50%;background:#879088}.ready .dot{background:#247257}.failed .dot{background:#a34325}.failed{background:#f5e5de}
+    .notice{padding:13px 17px;border:1px solid #dfceb1;border-radius:10px;color:#775329;background:#f9f1e3;font-size:13px;margin-bottom:24px}
+    .panels{display:grid;grid-template-columns:1fr 1.1fr;gap:20px}.panel{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:24px;min-width:0}
+    .label-row{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px}.label{font-size:14px;font-weight:650;margin:0}.tiny{font-size:12px;color:var(--muted)}
+    textarea{width:100%;height:260px;resize:vertical;background:transparent;border:0;padding:0;color:var(--ink);font:400 19px/1.8 -apple-system,BlinkMacSystemFont,sans-serif;outline-offset:6px}
+    textarea::placeholder{color:#8a9690}.actions{display:flex;align-items:center;gap:10px;border-top:1px solid var(--line);padding-top:18px;margin-top:12px;flex-wrap:wrap}
+    button{font:inherit;font-size:14px;border:1px solid var(--line);border-radius:8px;padding:9px 16px;cursor:pointer;background:var(--paper);color:var(--ink)}button.primary{background:var(--green);color:white;border-color:var(--green);font-weight:600}button:disabled{opacity:.45;cursor:not-allowed}button:focus-visible,a:focus-visible{outline:3px solid #7ab39d;outline-offset:3px}
+    .zh{font-size:28px;line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere;min-height:220px;margin:0}.placeholder{color:#9aa79e;font-size:23px}.source{border-top:1px solid var(--line);margin:20px 0 0;padding-top:14px;color:var(--muted);font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+    .source:empty{display:none}.result-foot{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:18px}.metrics{font-size:12px;color:var(--muted)}.error{min-height:24px;color:#a14328;font-size:14px;margin:14px 0 0}
+    footer{margin-top:22px;color:var(--muted);font-size:12px;display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap}.hint{font-size:12px;color:var(--muted);margin:14px 0 0}
+    @media(max-width:760px){main{padding:28px 16px}header{display:block}.status{display:inline-flex;margin-top:16px}.panels{grid-template-columns:1fr}.panel{padding:20px}textarea{height:190px}.zh{min-height:150px;font-size:27px}h1{font-size:27px}}
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div><p class="eyebrow">SERMON TRANSLATION · LOCAL EXPERIMENT</p><h1>v4.1 本地实验翻译</h1><p class="sub">输入一段英文，查看后训练模型的中文译文。</p></div>
+    <div class="status" id="status" role="status"><span class="dot"></span><span id="healthText">正在连接模型</span></div>
+  </header>
+  <div class="notice">实验候选 · 神学严重错误质量门尚未通过。译文未经人工确认，请核对原文；本入口用于本机试译。</div>
+  <div class="panels">
+    <section class="panel">
+      <div class="label-row"><label for="source" class="label">英文原文</label><span class="tiny" id="count">0 / 2048</span></div>
+      <textarea id="source" lang="en" maxlength="2048" placeholder="Paste a sentence or a short paragraph here…" spellcheck="false"></textarea>
+      <div class="actions"><button class="primary" id="translate" disabled>翻译为中文</button><button id="cancel" hidden>取消</button><button id="example">填入示例</button><button id="clear">清空</button></div>
+      <p class="hint">⌘ / Ctrl + Enter 翻译 · 建议每次一小段</p>
+      <p class="error" id="error" role="alert"></p>
+    </section>
+    <section class="panel" aria-label="中文翻译结果">
+      <div class="label-row"><h2 class="label">中文译文</h2><span class="tiny" id="resultState">等待原文</span></div>
+      <p class="zh placeholder" id="translation">译文将在这里显示</p>
+      <p class="source" id="pairedSource" lang="en"></p>
+      <div class="result-foot"><span class="metrics" id="metrics"></span><button id="copy" disabled>复制译文</button></div>
+    </section>
+  </div>
+  <footer><span>MiLMMT v4.1 · MLX Q5 · MacBook 本机推理</span><span>输入与译文仅用于当前请求，服务不保存文本</span></footer>
+</main>
+<script>
+  'use strict';
+  const el = id => document.getElementById(id);
+  let healthy = false, modelBusy = false, running = false, controller = null, completeText = '';
+  const updateButtons = () => {
+    el('translate').disabled = !healthy || modelBusy || running || !el('source').value.trim();
+    el('example').disabled = running; el('clear').disabled = running; el('source').disabled = running;
+    el('cancel').hidden = !running;
+    el('count').textContent = `${el('source').value.length} / 2048`;
+  };
+  async function health() {
+    try {
+      const response = await fetch('/api/health', {cache:'no-store', signal:AbortSignal.timeout(3000)});
+      const data = await response.json();
+      healthy = response.ok && data.status === 'ready'; modelBusy = Boolean(data.busy);
+      const labels = {loading:'模型加载中',ready:modelBusy?'正在翻译':'模型已就绪',failed:'模型启动或运行失败',stopping:'服务正在停止'};
+      el('healthText').textContent = labels[data.status] || '模型未就绪';
+      el('status').className = 'status ' + (healthy?'ready':data.status==='failed'?'failed':'');
+    } catch (_) { healthy=false; el('healthText').textContent='服务未连接'; el('status').className='status failed'; }
+    updateButtons();
+  }
+  function resetResult() {
+    completeText=''; el('copy').disabled=true; el('metrics').textContent=''; el('pairedSource').textContent='';
+    el('translation').textContent='译文将在这里显示'; el('translation').className='zh placeholder';
+    el('resultState').textContent='等待原文'; el('error').textContent='';
+  }
+  async function translate() {
+    if (el('translate').disabled) return;
+    const source=el('source').value;
+    resetResult(); running=true; controller=new AbortController(); updateButtons();
+    el('pairedSource').textContent=source; el('translation').textContent='正在生成译文…';
+    el('resultState').textContent='生成中 · 尚未完成';
+    let receivedText='', done=false;
+    try {
+      const response=await fetch('/api/translate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:source,stream:true}),signal:controller.signal});
+      if (!response.ok) { const data=await response.json(); throw new Error(data.error || '请求失败'); }
+      const reader=response.body.getReader(), decoder=new TextDecoder(); let buffer='';
+      const consume = line => {
+        if (!line.trim()) return;
+        const event=JSON.parse(line);
+        if (event.type==='error') throw new Error(event.error);
+        if (event.type==='delta') { receivedText+=event.text; el('translation').textContent=receivedText; el('translation').className='zh'; }
+        if (event.type==='done') {
+          if (event.finishReason!=='stop' || !event.text || event.source!==source) throw new Error('译文未完整结束或原文不匹配');
+          done=true; completeText=event.text; el('translation').textContent=completeText; el('translation').className='zh';
+          el('resultState').textContent='已完成 · 机器译文'; el('copy').disabled=false;
+          el('metrics').textContent=`模型处理 ${(event.elapsedMs/1000).toFixed(2)} 秒`;
+        }
+      };
+      while (true) {
+        const chunk=await reader.read(); buffer+=decoder.decode(chunk.value,{stream:!chunk.done});
+        let split;
+        while ((split=buffer.indexOf('\n'))>=0) { consume(buffer.slice(0,split)); buffer=buffer.slice(split+1); }
+        if (chunk.done) break;
+      }
+      consume(buffer);
+      if (!done) throw new Error('连接中断，译文尚未完整结束');
+    } catch (error) {
+      el('error').textContent=error.name==='AbortError'?'已取消本次翻译。':error.message;
+      el('resultState').textContent='未完成'; completeText=''; el('copy').disabled=true;
+      if (!receivedText) { el('translation').textContent='本次没有完整译文'; el('translation').className='zh placeholder'; }
+    } finally { running=false; controller=null; updateButtons(); await health(); }
+  }
+  el('source').addEventListener('input',updateButtons);
+  el('source').addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){e.preventDefault();translate();}});
+  el('translate').addEventListener('click',translate);
+  el('cancel').addEventListener('click',()=>controller?.abort());
+  el('example').addEventListener('click',()=>{el('source').value='God loves us, and he calls us to love one another.'; updateButtons(); el('source').focus();});
+  el('clear').addEventListener('click',()=>{el('source').value='';resetResult();updateButtons();el('source').focus();});
+  el('copy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(completeText);el('copy').textContent='已复制';setTimeout(()=>el('copy').textContent='复制译文',1200);}catch(_){el('error').textContent='复制失败，请选中译文手动复制。';}});
+  health(); setInterval(health,4000);
+</script>
+</body>
+</html>

@@ -25,6 +25,7 @@ ORIGIN = "http://127.0.0.1:4173"
 RATE = 16000
 FRAME_SAMPLES = 1600
 FRAME_BYTES = 3200
+TRANSLATION_PROVIDERS = ("ollama", "milmmt-v41-mlx")
 FAILURE_TYPES = {
     "stream.error", "storage.failed", "pipeline.failed", "asr.failed",
     "translation.failed", "translation.skipped", "audio.frame_rejected", "audio.stream_gap",
@@ -107,6 +108,7 @@ def prepare_audio(source: Path, destination: Path, start: float, end: float | No
 def run_replay(source: str | Path, gateway_url: str, output: str | Path, *,
                source_start_seconds: float = 0, source_end_seconds: float | None = None,
                duration_seconds: float | None = None, context_policy: str | None = None,
+               translation_provider: str = "ollama",
                stop_timeout_seconds: float = 120) -> dict[str, Any]:
     source, output = Path(source).expanduser().resolve(), Path(output).expanduser().resolve()
     gateway_url = gateway_url.rstrip("/")
@@ -115,6 +117,8 @@ def run_replay(source: str | Path, gateway_url: str, output: str | Path, *,
         raise ValueError("gateway must be a local http://host:port URL")
     if not math.isfinite(stop_timeout_seconds) or stop_timeout_seconds <= 0:
         raise ValueError("stop timeout must be positive")
+    if translation_provider not in TRANSLATION_PROVIDERS:
+        raise ValueError("translation provider must be ollama or milmmt-v41-mlx")
     events_path = output.with_suffix(".events.jsonl")
     replay_path = output.with_suffix(".replay.wav")
     if len({source, output, events_path, replay_path}) != 4 or any(p.exists() for p in (output, events_path, replay_path)):
@@ -124,6 +128,7 @@ def run_replay(source: str | Path, gateway_url: str, output: str | Path, *,
         "schemaVersion": 1, "mode": MODE, "status": "failed",
         "evidenceBoundary": "1x file PCM to gateway/models only; no microphone, browser or phone render validation",
         "browserRenderValidated": False, "qualityReviewStatus": "not_human_reviewed",
+        "translationProvider": translation_provider,
         "startedAt": datetime.now(timezone.utc).isoformat(), "gatewayUrl": gateway_url,
         "eventLogPath": str(events_path), "framesSent": 0, "errors": [],
     }
@@ -135,7 +140,21 @@ def run_replay(source: str | Path, gateway_url: str, output: str | Path, *,
         audio = prepare_audio(source, replay_path, source_start_seconds, source_end_seconds, duration_seconds)
         report["audio"] = audio
         health = request_json(gateway_url + "/api/health")
-        if health.get("service") != "local-live-caption-gateway" or health.get("status") != "ready":
+        providers = health.get("translationProviders") or {}
+        selected_translation = providers.get(translation_provider)
+        gateway_ready = health.get("status") == "ready"
+        if isinstance(selected_translation, dict):
+            gateway_ready = bool(
+                selected_translation.get("ready") is True
+                and health.get("asr", {}).get("available")
+                and health.get("sessionStorage", {}).get("available")
+                and not health.get("liveProgress", {}).get("degraded")
+            )
+        elif translation_provider != "ollama":
+            raise ValueError("target gateway does not advertise the selected translation provider")
+        else:
+            selected_translation = health.get("ollama")
+        if health.get("service") != "local-live-caption-gateway" or not gateway_ready:
             raise ValueError("target gateway is not ready")
         active_count = health.get("liveProgress", {}).get("activeStreamCount")
         if active_count != 0:
@@ -144,15 +163,30 @@ def run_replay(source: str | Path, gateway_url: str, output: str | Path, *,
         socket_target = urlparse(socket_url)
         if socket_target.scheme != "ws" or socket_target.hostname not in {"127.0.0.1", "localhost", "::1"} or socket_target.path != "/api/live":
             raise ValueError("gateway did not provide a local live WebSocket URL")
-        policy = context_policy or str(health.get("defaultContextPolicy") or "none")
-        report["runtime"] = {key: health.get(key) for key in ("asr", "ollama", "contentPack", "defaultContextPolicy", "liveStream")}
+        policy = context_policy or (
+            "none" if translation_provider == "milmmt-v41-mlx"
+            else str(health.get("defaultContextPolicy") or "none")
+        )
+        report["runtime"] = {key: health.get(key) for key in ("asr", "contentPack", "defaultContextPolicy", "liveStream")}
+        report["runtime"]["translation"] = selected_translation
+        if translation_provider == "ollama":
+            report["runtime"]["ollama"] = health.get("ollama")
         session = request_json(gateway_url + "/api/sessions/start", {
             "mode": MODE, "captureSource": "wav_file", "audioMimeType": "audio/wav",
+            "translationProvider": translation_provider,
             "contextPolicy": policy, "sourceAudio": audio, "browserRenderValidated": False,
         })
         if session.get("status") != "recording" or any(session.get(key) for key in ("pcmFrameCount", "audioChunkCount", "eventCount")):
             raise ValueError("gateway did not create a new empty recording session")
         report["sessionId"] = session["sessionId"]
+        metadata = session.get("metadata", {})
+        bound_provider = metadata.get("translationProvider")
+        report["translationSession"] = {
+            "provider": bound_provider,
+            "model": metadata.get("runtimeIdentity", {}).get("configuration", {}).get("translationModel"),
+        }
+        if bound_provider != translation_provider and (bound_provider is not None or translation_provider != "ollama"):
+            raise ValueError("gateway session did not bind the selected translation provider")
         session_url = gateway_url + "/api/sessions/" + session["sessionId"]
         # Save the complete replayable recovery WAV before model processing.
         with replay_path.open("rb") as recording:
@@ -217,6 +251,12 @@ def run_replay(source: str | Path, gateway_url: str, output: str | Path, *,
                 closed = next((event for event in reversed(events) if event.get("type") == "stream.closed"), None)
 
         failures = [event["type"] for event in events if event.get("type") in FAILURE_TYPES]
+        provider_matches = all(
+            event.get("translationProvider", "ollama") == translation_provider
+            for event in events if event.get("type") == "translation.final"
+        )
+        if not provider_matches:
+            failures.append("translation.provider_mismatch")
         report["errors"].extend(failures)
         drained = bool(closed and all(closed.get(key) is True for key in (
             "workerDrained", "asrWorkerDrained", "translationWorkerDrained", "storageHealthy",
@@ -237,6 +277,7 @@ def run_replay(source: str | Path, gateway_url: str, output: str | Path, *,
             "recoveryHash": result.get("audioSha256") == audio["replayWavSha256"],
             "pcmHash": result.get("pcmSha256") == audio["replayPcmSha256"],
             "pcmWavHash": result.get("pcmWavSha256") == audio["replayWavSha256"],
+            "translationProvider": provider_matches,
         }
         report["checks"] = checks
         if not all(checks.values()):
@@ -258,6 +299,13 @@ def run_replay(source: str | Path, gateway_url: str, output: str | Path, *,
         report["streamClosed"] = closed
         report["eventCounts"] = dict(Counter(event.get("type", "unknown") for event in events))
         report["captionOutputObserved"] = any(event.get("type") == "translation.final" for event in events)
+        observed_models = {
+            json.dumps({key: event.get(key) for key in (
+                "model", "translationProvider", "modelSha256", "experimental", "releaseEligible",
+            )}, sort_keys=True)
+            for event in events if event.get("type") == "translation.final"
+        }
+        report["translationModelsObserved"] = [json.loads(model) for model in sorted(observed_models)]
         report["finishedAt"] = datetime.now(timezone.utc).isoformat()
         with output.open("x", encoding="utf-8") as report_file:
             json.dump(report, report_file, ensure_ascii=False, indent=2)
@@ -273,6 +321,8 @@ def main() -> None:
     parser.add_argument("--source-end-seconds", type=float)
     parser.add_argument("--duration-seconds", type=float)
     parser.add_argument("--context-policy", choices=("none", "english_alignment_v1", "weekly_terms_v1", "saturday_alignment_v1"))
+    parser.add_argument("--translation-provider", choices=TRANSLATION_PROVIDERS, default="ollama",
+                        help="Session translation backend; v4.1 MLX remains an experimental candidate")
     parser.add_argument("--stop-timeout-seconds", type=float, default=120)
     parser.add_argument("--output", required=True)
     arguments = parser.parse_args()
@@ -282,10 +332,12 @@ def main() -> None:
                             source_end_seconds=arguments.source_end_seconds,
                             duration_seconds=arguments.duration_seconds,
                             context_policy=arguments.context_policy,
+                            translation_provider=arguments.translation_provider,
                             stop_timeout_seconds=arguments.stop_timeout_seconds)
     except (ValueError, OSError) as error:
         parser.error(str(error))
-    print(json.dumps({"mode": MODE, "status": report["status"], "sessionId": report.get("sessionId"),
+    print(json.dumps({"mode": MODE, "translationProvider": arguments.translation_provider,
+                      "status": report["status"], "sessionId": report.get("sessionId"),
                       "report": str(Path(arguments.output).resolve()), "errors": report["errors"]}, ensure_ascii=False))
     raise SystemExit(0 if report["status"] == "completed" else 1)
 

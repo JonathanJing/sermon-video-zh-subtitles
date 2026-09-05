@@ -16,6 +16,7 @@ Independent greenfield interface for a MacBook-based live sermon caption feasibi
 - Firebase HTTPS public viewing through an outbound-only publisher, plus tokenized LAN/SSE fallback; control and recording APIs stay localhost-only.
 - Same-session Gateway recovery, explicit caption gaps, bounded queues and latest-connection drain before successful save.
 - Current evidence and field limits: [merged-version readiness report](benchmarks/SUNDAY_READINESS_20260904.zh.md).
+- Optional local post-training candidate: select **v4.1 Q5 · 实验候选** before recording, then **启动 v4.1 模型** if needed. See [v4.1 local integration](MILMMT_V41_LOCAL.zh.md) for its separate MLX runtime, recording recovery, and experimental limits.
 
 The live path is microphone → AudioWorklet PCM → WebSocket gateway → energy VAD → configured local English ASR (`Qwen3-ASR` through MLX Audio or `whisper.cpp`) → MiLMMT token stream → caption presenter → Chinese caption. Browser recording remains independent and continues if ASR or translation fails. The default final cadence is 500 ms of silence or a 3-second maximum speech window; only immutable ASR finals start translation. Raw model events remain append-only in the log, while the default `readable_chunks` presenter withholds 1–2-character flashes and keeps the previous complete bilingual block visible until the next readable block is ready. Frozen-English replay/A-B is executable and does not rerun ASR.
 

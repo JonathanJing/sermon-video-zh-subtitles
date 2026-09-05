@@ -1,3 +1,5 @@
+import { isTranslationStreamReady, TRANSLATION_SELECTION_SCHEMA, V41_TRANSLATION_PROVIDER } from "./translationProvider.js";
+
 export const PCM_BYTES_PER_FRAME = 3200;
 export const MAX_BUFFERED_PCM_BYTES = PCM_BYTES_PER_FRAME * 20;
 
@@ -25,6 +27,7 @@ export class LiveCaptionSocket {
     this.closedTimer = null;
     this.stopping = false;
     this.disconnectReported = false;
+    this.handshakeReady = false;
   }
 
   resolveClosed(result) {
@@ -35,12 +38,13 @@ export class LiveCaptionSocket {
     resolver?.(result);
   }
 
-  connect(sessionId, contextPolicy = "none", timeoutMs = 5000) {
+  connect(sessionId, contextPolicy = "none", timeoutMs = 5000, translationProvider = "ollama") {
     return new Promise((resolve, reject) => {
       const socket = new WebSocket(this.url);
       this.socket = socket;
       this.stopping = false;
       this.disconnectReported = false;
+      this.handshakeReady = false;
       let settled = false;
       socket.binaryType = "arraybuffer";
       const timeout = window.setTimeout(() => {
@@ -56,6 +60,9 @@ export class LiveCaptionSocket {
           schemaVersion: 1,
           sessionId,
           contextPolicy,
+          ...(translationProvider === V41_TRANSLATION_PROVIDER ? {
+            translationProvider, translationSelectionSchema: TRANSLATION_SELECTION_SCHEMA,
+          } : {}),
           encoding: "pcm_s16le",
           sampleRateHz: 16000,
           channels: 1,
@@ -77,8 +84,15 @@ export class LiveCaptionSocket {
           if (!settled && event.type === "stream.ready") {
             settled = true;
             window.clearTimeout(timeout);
+            if (!isTranslationStreamReady(event, translationProvider)) {
+              reject(new Error("Gateway 未确认 v4.1 本机实验协议，请重启后台后恢复字幕"));
+              socket.close();
+              return;
+            }
+            this.handshakeReady = true;
             resolve();
           }
+          if (!this.handshakeReady) return;
           this.onEvent(event);
           if (event.type === "stream.closed") this.resolveClosed(event);
         } catch {
@@ -96,6 +110,7 @@ export class LiveCaptionSocket {
         }
       });
       socket.addEventListener("close", (event) => {
+        this.handshakeReady = false;
         if (!settled) {
           settled = true;
           window.clearTimeout(timeout);
@@ -120,7 +135,7 @@ export class LiveCaptionSocket {
 
   sendPcm(pcmBuffer, sequence = this.sequence + 1) {
     this.sequence = sequence;
-    if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return false;
+    if (!this.handshakeReady || !this.socket || this.socket.readyState !== WebSocket.OPEN) return false;
     if (this.socket.bufferedAmount > MAX_BUFFERED_PCM_BYTES) {
       this.onLocalEvent({
         type: "audio.stream_overrun",

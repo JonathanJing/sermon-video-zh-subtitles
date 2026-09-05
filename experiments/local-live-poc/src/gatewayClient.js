@@ -1,8 +1,8 @@
 export const GATEWAY_URL = import.meta.env?.VITE_GATEWAY_URL || "http://127.0.0.1:8766";
 
-async function requestJson(path, options = {}, fetchImpl = globalThis.fetch) {
+async function requestJson(path, options = {}, fetchImpl = globalThis.fetch, timeoutMs = 15000) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const response = await fetchImpl(`${GATEWAY_URL}${path}`, { ...options, signal: controller.signal });
     const payload = await response.json().catch(() => ({}));
@@ -27,6 +27,10 @@ export function getGatewayHealth(fetchImpl) {
 
 export function restartGateway(fetchImpl) {
   return requestJson("/api/runtime/restart", jsonOptions("POST", {}), fetchImpl);
+}
+
+export function startV41TranslationRuntime(fetchImpl) {
+  return requestJson("/api/translation/providers/milmmt-v41-mlx/start", jsonOptions("POST", {}), fetchImpl, 110000);
 }
 
 export function startLocalSession(metadata, fetchImpl) {

@@ -79,13 +79,92 @@ class AudioReplayProtocolTest(unittest.TestCase):
         self.assertEqual(result["eventCounts"]["translation.final"], 1)
         self.assertNotIn("caption_rendered", result["eventCounts"])
         self.assertFalse(result["browserRenderValidated"])
+        self.assertEqual(result["translationProvider"], "ollama")
+        self.assertEqual(result["runtime"]["translation"]["configuredModel"], "test-fake-translator")
+        self.assertEqual(result["translationModelsObserved"][0]["model"], "test-fake-translator")
         manifest = json.loads(Path(result["manifest"]["manifestPath"]).read_text())
         self.assertEqual(manifest["metadata"]["mode"], "audio_file_replay")
+        self.assertEqual(manifest["metadata"]["translationProvider"], "ollama")
         self.assertEqual(manifest["metadata"]["sourceAudio"]["sourceStartSample"], 800)
         with wave.open(result["manifest"]["audioPath"], "rb") as recovery:
             actual = recovery.readframes(recovery.getnframes())
         self.assertEqual(actual, struct.pack("<5600h", *([1200] * 5600)) + bytes(1600))
         self.assertEqual(Path(result["eventLogPath"]).read_text().count('"type": "stream.closed"'), 1)
+
+    def test_candidate_replay_records_selected_session_and_observed_model_without_ollama_attribution(self):
+        provider = "milmmt-v41-mlx"
+        model = "test-fake-v41-mlx"
+        real_request = MODULE.request_json
+
+        def request(url, payload=None):
+            response = real_request(url, payload)
+            if url.endswith("/api/health"):
+                response["status"] = "degraded"  # An unavailable default must not reject a ready selection.
+                response["defaultContextPolicy"] = "weekly_terms_v1"
+                response["translationProviders"] = {
+                    provider: {"id": provider, "configuredModel": model, "ready": True, "experimental": True},
+                }
+            return response
+
+        def create_session(metadata):
+            return self.state.sessions.create({
+                **metadata, "runtimeIdentity": {"configuration": {"translationModel": model}},
+            })
+
+        self.state.translate_stream = lambda *args, **kwargs: {
+            "targetTextZh": "恩典引领我们。", "model": model, "translationProvider": provider,
+            "modelSha256": "a" * 64, "experimental": True, "releaseEligible": False,
+            "alignment": {"confidence": "none"},
+        }
+        with patch.object(MODULE, "request_json", side_effect=request), patch.object(
+            self.state, "create_session", side_effect=create_session,
+        ):
+            result = self.run_replay(duration_seconds=0.35, translation_provider=provider)
+        self.assertEqual(result["status"], "completed", result["errors"])
+        self.assertEqual(result["translationProvider"], provider)
+        self.assertEqual(result["translationSession"], {"provider": provider, "model": model})
+        self.assertEqual(result["runtime"]["translation"]["configuredModel"], model)
+        self.assertNotIn("ollama", result["runtime"])
+        self.assertEqual(result["translationModelsObserved"], [{
+            "model": model, "translationProvider": provider, "modelSha256": "a" * 64,
+            "experimental": True, "releaseEligible": False,
+        }])
+        manifest = json.loads(Path(result["manifest"]["manifestPath"]).read_text())
+        self.assertEqual(manifest["metadata"]["translationProvider"], provider)
+        self.assertEqual(manifest["metadata"]["contextPolicy"], "none")
+        self.assertEqual(manifest["metadata"]["captureSource"], "wav_file")
+        self.assertEqual(manifest["metadata"]["mode"], "audio_file_replay")
+
+    def test_unadvertised_candidate_is_rejected_before_session_creation(self):
+        real_request = MODULE.request_json
+
+        def legacy_health(url, payload=None):
+            response = real_request(url, payload)
+            response.pop("translationProviders", None)
+            return response
+
+        with patch.object(MODULE, "request_json", side_effect=legacy_health):
+            result = self.run_replay(translation_provider="milmmt-v41-mlx")
+        self.assertEqual(result["status"], "failed")
+        self.assertTrue(any("selected translation provider" in error for error in result["errors"]))
+        self.assertEqual(list((self.root / "sessions").iterdir()), [])
+
+    def test_unknown_provider_is_rejected_without_creating_output(self):
+        with self.assertRaisesRegex(ValueError, "translation provider"):
+            self.run_replay(translation_provider="unknown")
+        self.assertFalse((self.root / "report.json").exists())
+
+    def test_observed_provider_mismatch_keeps_recording_but_marks_incomplete(self):
+        self.state.translate_stream = lambda *args, **kwargs: {
+            "targetTextZh": "恩典引领我们。", "model": "wrong-fake-provider",
+            "translationProvider": "milmmt-v41-mlx", "alignment": {"confidence": "none"},
+        }
+        result = self.run_replay(duration_seconds=0.35)
+        self.assertEqual(result["status"], "failed")
+        self.assertIn("translation.provider_mismatch", result["errors"])
+        self.assertEqual(result["manifest"]["status"], "incomplete")
+        self.assertTrue(result["checks"]["recoveryHash"])
+        self.assertFalse(result["checks"]["translationProvider"])
 
     def test_translation_failure_keeps_recovery_and_marks_incomplete(self):
         def fail(*args):
