@@ -45,6 +45,12 @@ Status was calibrated against `main` on **2026-09-04**. Documentation does not p
 | Development notes | [development-notes.md](./development-notes.md) | English-first content in same file |
 | Review and testing notes | [review-testing.md](./review-testing.md) | English-first content in same file |
 
+## Discovery Plans
+
+- [Saturday video to Sunday Chinese audio in the original speaker's voice](./saturday-to-sunday-chinese-voice-plan.zh.md) (Chinese): dubbing and training design, with an [authorized voice-reference MP3/player POC and a small training run](../experiments/sermon-dubbing-poc/README.md); now includes multi-sermon voice training and a [weekly Firebase listening app](https://ai-for-god-sermon-audio.web.app). Full-sermon synchronization and venue readiness remain unverified.
+
+- [Saturday audio extension runbook](../experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md) and [SVG workflow](./diagrams/saturday-chinese-voice-workflow.svg): speaker auditions, resumable weekly generation, pronunciation fixes and inherited Saturday review gates.
+
 ## Reading Order
 
 1. Start with the root [README](../README.md) for the two working workflows and the Discovery boundary.

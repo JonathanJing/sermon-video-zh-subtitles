@@ -8,6 +8,7 @@ These SVG files are the repository's maintained visual summaries. They use bilin
 |---|---|---|
 | `project-map.svg` | Two operator workflows, shared evidence, and Discovery boundary | root READMEs |
 | `solution-journey.svg` | Observed bottlenecks, rejected assumption, current hybrid, and gated future enhancement | root READMEs |
+| `saturday-chinese-voice-workflow.svg` | Optional speaker-training / Chinese audio extension, inherited Saturday reviews and Sunday playback gates | dubbing plan and audio extension runbook |
 | `saturday-post-live-workflow.svg` | Astra Medium weekly profile, dual-PDF QA, automatic export and separate readiness gates | workflow and stable post-live docs |
 | `sunday-live-workflow.svg` | Detailed Sunday live path and visible degradation branches | workflow and POC docs |
 | `saturday-to-sunday-context-pack-flow.svg` | Guarded Saturday evidence handoff, readiness selection, and Sunday runtime fallback | Context Pack plan and POC docs |
