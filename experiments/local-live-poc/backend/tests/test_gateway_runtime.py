@@ -69,6 +69,16 @@ class RuntimeConfigurationTest(unittest.TestCase):
             self.assertNotIn("forged", saved)
             self.assertEqual(saved, state.capture_runtime_identity())
 
+    def test_session_runtime_log_location_is_server_owned(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            state = GatewayState(session_root=temporary)
+            with patch.dict(os.environ, {"LOCAL_LIVE_RUNTIME_LOG_DIRECTORY": "/private/runtime/run-one"}):
+                session = state.create_session({"runtimeLogDirectory": "forged"})
+                self.assertEqual(session["metadata"]["runtimeLogDirectory"], "/private/runtime/run-one")
+            with patch.dict(os.environ, {}, clear=True):
+                session = state.create_session({"runtimeLogDirectory": "forged"})
+                self.assertIsNone(session["metadata"]["runtimeLogDirectory"])
+
     def test_health_uses_captured_identity_and_explicit_origin_for_cors(self):
         with tempfile.TemporaryDirectory() as temporary:
             state = GatewayState(session_root=temporary, frontend_origin="http://127.0.0.1:5174")

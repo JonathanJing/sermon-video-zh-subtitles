@@ -231,6 +231,7 @@ class GatewayState:
             "validUntil": self.pack.get("validUntil"),
         }
         safe_metadata["runtimeIdentity"] = self.capture_runtime_identity()
+        safe_metadata["runtimeLogDirectory"] = os.environ.get("LOCAL_LIVE_RUNTIME_LOG_DIRECTORY") or None
         return self.sessions.create(safe_metadata)
 
     def translate(

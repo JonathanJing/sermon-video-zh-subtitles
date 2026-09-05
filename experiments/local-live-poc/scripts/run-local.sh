@@ -6,8 +6,16 @@ poc_dir="$(cd "$script_dir/.." && pwd)"
 cd "$poc_dir"
 
 runtime_dir="${TMPDIR:-/tmp}/sermon-live-caption-poc"
-mlx_audio_log="$runtime_dir/mlx-audio.log"
+umask 077
 mkdir -p "$runtime_dir"
+log_root="${LOCAL_LIVE_RUNTIME_LOG_ROOT:-$poc_dir/artifacts/runtime}"
+mkdir -p "$log_root"
+log_dir="$(mktemp -d "$log_root/$(date -u +%Y%m%dT%H%M%SZ)-XXXXXX")"
+log_dir="$(cd "$log_dir" && pwd)"
+export LOCAL_LIVE_RUNTIME_LOG_DIRECTORY="$log_dir"
+mlx_audio_log="$log_dir/mlx-audio.log"
+exec > >(tee -a "$log_dir/supervisor.log") 2>&1
+echo "Runtime logs: $log_dir"
 
 asr_model="${LOCAL_LIVE_ASR_MODEL:-artifacts/models/ggml-base.en.bin}"
 asr_provider="${LOCAL_LIVE_ASR_PROVIDER:-whisper-cli}"
@@ -64,7 +72,6 @@ if [ "$asr_provider" = "qwen-mlx-websocket" ]; then
     done
     return 1
   }
-  : > "$mlx_audio_log"
   if ! mlx_audio_ready; then
     start_mlx_audio
     if ! wait_mlx_audio_ready; then
@@ -72,6 +79,8 @@ if [ "$asr_provider" = "qwen-mlx-websocket" ]; then
       wait "$mlx_audio_pid" 2>/dev/null || true
       exit 1
     fi
+  else
+    echo "Reusing external MLX Audio; its stdout is not captured by this launcher." >> "$mlx_audio_log"
   fi
 else
   if [ ! -f "$asr_model" ]; then
@@ -93,12 +102,13 @@ gateway_args+=(--context-policy "${LOCAL_LIVE_CONTEXT_POLICY:-none}")
 restart_exit_code=75
 gateway_pid=""
 start_gateway() {
-  .venv/bin/python -m backend.gateway "${gateway_args[@]}" &
+  printf '%s starting Gateway\n' "$(date -u +%FT%TZ)" >> "$log_dir/gateway.log"
+  PYTHONUNBUFFERED=1 .venv/bin/python -m backend.gateway "${gateway_args[@]}" >> "$log_dir/gateway.log" 2>&1 &
   gateway_pid=$!
 }
 
 start_gateway
-npm run dev -- --host 127.0.0.1 --port 4173 --strictPort &
+npm run dev -- --host 127.0.0.1 --port 4173 --strictPort >> "$log_dir/frontend.log" 2>&1 &
 vite_pid=$!
 
 cleanup() {
