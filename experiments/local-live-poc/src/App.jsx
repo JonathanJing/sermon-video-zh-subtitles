@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { observeCaptionFrame } from "./captionObservation.js";
+import { healthObservation } from "./healthObservation.js";
 import QRCode from "qrcode";
 import {
   GATEWAY_URL,
@@ -325,7 +326,12 @@ export function App() {
     refreshDevices().catch(() => {});
     refreshGatewayHealth();
     healthTimerRef.current = window.setInterval(async () => {
+      const recordingStartedAt = recordingActiveRef.current ? startTimeRef.current : null;
       const health = await refreshGatewayHealth();
+      if (recordingStartedAt !== null && recordingActiveRef.current
+          && recordingStartedAt === startTimeRef.current) {
+        appendEvent("gateway_health_sample", healthObservation(health));
+      }
       if (recordingActiveRef.current && health?.status !== "ready") {
         setError((current) => current || "本地字幕服务已降级；录音仍在继续，请查看底部状态。");
       }
