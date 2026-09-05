@@ -65,6 +65,63 @@ class ReviewIntegrityTests(unittest.TestCase):
             module.local_completion_artifacts.assert_called_once()
             self.assertEqual(read(work / "saturday-completion.json")["status"], "completed")
 
+    def add_reviewed_placement(self, work):
+        job, render = read(work / "job.json"), read(work / "render/report.json")
+        path = work / "synchronization/placement-model-review.json"
+        write_json(path, {"schemaVersion": "sermon-playback-placement-review-v1", "reviewType": "model", "model": "gpt-6-astra",
+            "humanApproval": False, "status": "approved_for_candidate_playback", "reviewedBy": "synthetic model reviewer", "reviewedAt": "2026-09-05T00:00:00Z",
+            "jobSha256": sha256(work / "job.json"), "renderSha256": sha256(work / "render/report.json"),
+            "alignmentSha256": sha256(work / "source-alignment/report.json"), "sourceAudioSha256": job["inputs"]["sourceAudio"]["sha256"],
+            "unresolvedPlacementIssues": [], "evidence": [job["inputs"]["sourceAudio"]],
+            "blocks": [{"blockId": 0, "sourceAnchorStart": 1, "playbackStart": .5, "status": "model_supported", "reason": "Synthetic source gap"}]})
+        anchors = read(work / "source-alignment/report.json")["blocks"]
+        rows, failures = budgets(job["blocks"], anchors, render["cues"], job["sourceDurationSeconds"], {0: .5})
+        timing_path = work / "synchronization/report.json"
+        write_json(timing_path, {**read(timing_path), "blocks": rows, "failures": failures, "placementReviewSha256": sha256(path)})
+        assembly_path = work / "synchronization/assembly.json"
+        write_json(assembly_path, {**read(assembly_path), "timingReportSha256": sha256(timing_path)})
+        return path
+
+    def test_human_reviewed_placement_reaches_original_saturday_gate(self):
+        for completed in [True, False]:
+            with self.subTest(saturday_complete=completed), tempfile.TemporaryDirectory() as tmp:
+                module = types.ModuleType("scripts.run_codex_local_sermon_production")
+                module.local_completion_artifacts = Mock(return_value=completed)
+                work = self.fixture(Path(tmp))
+                path = self.add_reviewed_placement(work)
+                with patch.dict(sys.modules, {module.__name__: module}):
+                    if completed:
+                        validate_review(work)
+                        self.assertEqual(read(work / "saturday-completion.json")["status"], "completed")
+                    else:
+                        with self.assertRaisesRegex(ValueError, "PDF / GCS completion"):
+                            validate_review(work)
+                        self.assertFalse((work / "saturday-completion.json").exists())
+                module.local_completion_artifacts.assert_called_once()
+                self.assertFalse(read(path)["humanApproval"])
+
+    def test_changed_placement_or_missing_human_review_cannot_publish(self):
+        for mutation in ["changed_review", "revoked_review", "deleted_review", "summary_hash", "human_review"]:
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as tmp:
+                work = self.fixture(Path(tmp))
+                path = self.add_reviewed_placement(work)
+                if mutation == "deleted_review":
+                    path.unlink()
+                elif mutation == "summary_hash":
+                    timing_path = work / "synchronization/report.json"
+                    write_json(timing_path, {**read(timing_path), "placementReviewSha256": "different-review"})
+                    assembly_path = work / "synchronization/assembly.json"
+                    write_json(assembly_path, {**read(assembly_path), "timingReportSha256": sha256(timing_path)})
+                elif mutation == "human_review":
+                    path = work / "audio-review-synced.json"
+                    write_json(path, {**read(path), "humanApproval": False})
+                else:
+                    change = {"status": "revoked"} if mutation == "revoked_review" else {"reviewedAt": "2026-09-06T00:00:00Z"}
+                    write_json(path, {**read(path), **change})
+                with self.assertRaises(ValueError):
+                    validate_review(work)
+                self.assertFalse((work / "saturday-completion.json").exists())
+
     def test_stale_alignment_and_revoked_or_changed_review_cannot_publish(self):
         for mutation in ["alignment", "source_hash", "changed_review", "revoked_review", "deleted_review", "new_review", "render"]:
             with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as tmp:

@@ -9,27 +9,45 @@
   </a>
 </p>
 
-This repository has one product goal: help Chinese-speaking attendees follow an English sermon. It now has two concrete operator workflows—a Saturday post-live PDF workflow and a Sunday local live-caption POC. Everything else is research, evaluation, or infrastructure supporting those two paths.
+Help Chinese-speaking attendees follow an English sermon. The featured direction is **Chinese dubbing prepared on Saturday for playback against the same video on Sunday**: reviewed source text, authorized speaker voice training, MP3 audio, timed Chinese captions, and a sermon companion. Dual-PDF production and local live captions remain separate workflows.
 
-The complete diagrams, artifact contracts, local latency budget, and test gates are in the [two-workflow README](docs/workflows/README.zh.md).
-
-> **State calibrated on 2026-09-04, code baseline main `beeda82`.** Current claims below are backed by code, tests, or versioned reports on `main`; they are not a live health check of local services or venue readiness. Per-run recordings, transcripts, and PDFs are intentionally kept out of Git; reviewed benchmark derivatives may be versioned with provenance. Output filenames describe the artifact contract rather than bundled deliverables.
+> **State calibrated on 2026-09-05.** A full-length synchronized listening candidate is available. Same-version sermon-only video intake, the scheduled dubbing hook, and venue acceptance still have explicit gaps. Code checks, model review, candidate publication, and human/venue acceptance have separate evidence. Full weekly media, audio, and PDFs stay outside Git.
 
 > This is an independent personal open-source project. It is not affiliated with, endorsed by, sponsored by, approved by, or operated by Mariners Church. Use only public or otherwise authorized media, and do not bypass access controls, DRM, or platform restrictions.
 
-![Project workflow map](docs/diagrams/project-map.svg)
+## 1. Featured: English sermon video → Chinese dubbing in the speaker’s voice
 
-## Why this architecture exists
+[Listening app](https://ai-for-god-sermon-audio.web.app) · [System design and model choices (中文)](docs/sermon-dubbing-system-design.zh.md) · [Operator runbook](experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md) · [Measured candidate report](docs/sermon-dubbing-astra-review-2026-09-05.zh.md)
+
+![Parallel source routes, speaker training, Chinese audio review and Sunday playback](docs/diagrams/saturday-chinese-voice-workflow.svg)
+
+**Two source routes run in parallel.** The future primary route awaits the exact sermon-only video used on Sunday; verified file identity and sermon-only scope would allow whole-file processing. The current livestream archive remains a fallback, reusing the approved sermon window and dual-PDF QA. Missing primary media does not block the archive workflow, and an archive is not automatically the same Sunday video.
+
+| Stage | Current implementation |
+|---|---|
+| English video transcription | `gpt-transcribe`; reuse trustworthy English sources and check ambiguous audio separately |
+| Spoken Chinese revision and review | In-conversation `gpt-6-astra`, checking complete meaning, negation, Scripture, names and quotation boundaries |
+| Speaker voice | Separate Qwen3-TTS 1.7B Base training on Spark; reuse each speaker’s checkpoint weekly |
+| Audio checks and timing | Local Qwen3-ASR back-transcription, ForcedAligner acoustic anchors, and measured natural speech budgets |
+| Listening delivery | Dedicated Firebase app with weekly selection, MP3 downloads, captions, outline, seeking and fine adjustment |
+
+**Verified candidate:** the August 30 sermon has 55 reviewed blocks, 18 revised spoken passages, and a **29:30 synchronized track with 118 speech units**. All 55 timing budgets pass. Blockwise waveform verification found no speech trimming, overlap, or speed changes. The final invitation has an explicitly reviewed 0.80-second playback lead while retaining its original English anchor. Published file hashes, audio Range requests, playback, seeking, and captions were checked; earlier audition samples remain available.
+
+**Current limits:** three name/pronunciation questions and two minor spoken/ASR variants remain on the listening checklist. The bridge is verified, but its scheduled-task update is unconfirmed. The same-video ingestion adapter, full human listening review, and venue playback are pending. “Synchronized preview” means alignment to the frozen source timeline; it does not automatically track a separate venue player.
+
+## Why dual PDFs and live captions remain
+
+![Dual-PDF and live-caption workflow map](docs/diagrams/project-map.svg)
 
 Sunday services currently do not have dependable Chinese captions. Generic live speech translation can produce a useful draft, but it does not reliably preserve Scripture references, biblical names, quoted verses, or church-specific terminology. Unstable segmentation and end-to-end delay can also make otherwise correct text difficult to follow in the room.
 
-The first hypothesis was to extract and translate the Saturday public livestream, then reuse that content on Sunday. Testing exposed an important boundary: the Saturday and Sunday sermons may follow the same message framework, but they cannot be assumed to be the same delivery word for word. Wording, order, examples, and live additions may differ. A Saturday transcript is therefore useful preparation, but it cannot be the source of truth for Sunday captions.
+When Sunday is a new live delivery rather than playback of the same video, prepared dubbing cannot be applied directly. The earlier live-caption hypothesis was to extract and translate the Saturday public livestream, then reuse that content on Sunday. Testing exposed an important boundary: the Saturday and Sunday sermons may follow the same message framework, but they cannot be assumed to be the same delivery word for word. Wording, order, examples, and live additions may differ. A Saturday transcript is therefore useful preparation, but it cannot be the source of truth for Sunday captions.
 
 The current architecture supports an optional guarded hybrid; the tested Sunday default remains `contextPolicy=none`: Sunday live audio and the English recognized from it remain authoritative, while authorized Saturday material supplies guarded structure, terminology, Scripture references, and reviewed examples. Domain post-training is a separate future enhancement. Its first goal is better terminology and translation quality; any latency improvement must be demonstrated on frozen inputs and the same hardware rather than assumed.
 
 ![Solution journey from the Sunday caption gap to a guarded hybrid workflow](docs/diagrams/solution-journey.svg)
 
-## 1. Working workflows
+## 2. Other independent workflows
 
 ### A. Saturday: livestream/archive to two reviewed PDFs
 
@@ -81,7 +99,7 @@ Key references:
 - [Local live-caption POC](experiments/local-live-poc/README.md)
 - [Local live-caption design](experiments/local-live-poc/DESIGN.zh.md)
 
-## 2. Discovery, gaps, and next work
+## 3. Discovery, gaps, and next work
 
 ### What has been demonstrated
 

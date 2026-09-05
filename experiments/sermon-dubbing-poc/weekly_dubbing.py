@@ -33,6 +33,9 @@ def validate_frozen(job):
     for name, item in job["inputs"].items():
         if sha256(Path(item["path"])) != item["sha256"]:
             raise ValueError(f"Saturday / voice input changed: {name}; prepare a new job")
+    if "spokenReview" in job or "spokenScriptReview" in job["inputs"]:
+        from apply_spoken_review import validate_job_review
+        validate_job_review(job)
 
 
 def prepare(run, voice_run, out, week, title, speaker, scripture, authorization):
@@ -178,14 +181,17 @@ def validate_review(work):
     timing, assembled = read(work / "synchronization/report.json"), read(work / "synchronization/assembly.json")
     if timing["status"] != "natural_timing_fits" or assembled["jobSha256"] != sha256(work / "job.json") or assembled["sha256"] != sha256(audio) or assembled["sourceNaturalMp3Sha256"] != result["sha256"] or assembled["timingReportSha256"] != sha256(work / "synchronization/report.json") or assembled["fullDecode"] != "pass":
         raise ValueError("Synchronized MP3 / timing evidence changed")
-    from check_weekly_timing import budgets, load_anchors
+    from check_weekly_timing import budgets, load_anchors, load_placements
     anchors, approval_hash = load_anchors(work, job, sha256(work / "job.json"))
     if timing.get("jobSha256") != sha256(work / "job.json") or timing.get("alignmentSha256") != sha256(work / "source-alignment/report.json") or timing.get("anchorReviewSha256") != approval_hash:
         raise ValueError("Synchronized anchor evidence changed; review the new timing")
     render = read(work / "render/report.json")
     if render.get("jobSha256") != sha256(work / "job.json") or render.get("sha256") != sha256(work / "render/chinese.raw.wav") or assembled.get("sourceNaturalWavSha256") != render["sha256"]:
         raise ValueError("Synchronized source audio changed")
-    rows, failures = budgets(job["blocks"], anchors, render["cues"], job["sourceDurationSeconds"])
+    placements, placement_hash = load_placements(work, job, render, anchors)
+    if timing.get("placementReviewSha256") != placement_hash:
+        raise ValueError("Synchronized playback placement evidence changed; review the new timing")
+    rows, failures = budgets(job["blocks"], anchors, render["cues"], job["sourceDurationSeconds"], placements)
     if failures or timing.get("blocks") != rows or timing.get("failures") != []:
         raise ValueError("Current acoustic anchors do not match the approved timing")
     # Delegate PDF / GCS completion to the existing supervisor; no new looser

@@ -1,6 +1,6 @@
 # Diagram Assets
 
-Code baseline: `main@beeda82` (2026-09-04). Runtime evidence is linked in the [readiness report](../../experiments/local-live-poc/benchmarks/SUNDAY_READINESS_20260904.zh.md); diagrams describe contracts, not live health.
+PDF/live diagrams retain their 2026-09-04 evidence baseline; the featured dubbing diagram was updated on 2026-09-05. Runtime evidence is linked in the [readiness report](../../experiments/local-live-poc/benchmarks/SUNDAY_READINESS_20260904.zh.md); diagrams describe contracts, not live health.
 
 These SVG files are the repository's maintained visual summaries. They use bilingual labels where one asset is shared by English and Chinese documentation.
 
@@ -8,7 +8,7 @@ These SVG files are the repository's maintained visual summaries. They use bilin
 |---|---|---|
 | `project-map.svg` | Two operator workflows, shared evidence, and Discovery boundary | root READMEs |
 | `solution-journey.svg` | Observed bottlenecks, rejected assumption, current hybrid, and gated future enhancement | root READMEs |
-| `saturday-chinese-voice-workflow.svg` | Optional speaker-training / Chinese audio extension, inherited Saturday reviews and Sunday playback gates | dubbing plan and audio extension runbook |
+| `saturday-chinese-voice-workflow.svg` | Featured parallel source routes, speaker training, Chinese audio review and Sunday playback gates | root READMEs, dubbing system design and runbook |
 | `saturday-post-live-workflow.svg` | Astra Medium weekly profile, dual-PDF QA, automatic export and separate readiness gates | workflow and stable post-live docs |
 | `sunday-live-workflow.svg` | Detailed Sunday live path and visible degradation branches | workflow and POC docs |
 | `saturday-to-sunday-context-pack-flow.svg` | Guarded Saturday evidence handoff, readiness selection, and Sunday runtime fallback | Context Pack plan and POC docs |

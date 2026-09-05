@@ -10,11 +10,19 @@ This folder contains product, system design, research, backlog, and testing note
 
 ## How to Read Status
 
-- **Current source of truth:** the root README, [two-workflow README](./workflows/README.zh.md), stable post-live workflow, Supervisor Agent, and [local live POC README](../experiments/local-live-poc/README.md).
+- **Current source of truth:** the root README, [dubbing system design](./sermon-dubbing-system-design.zh.md), [PDF/live-caption workflow README](./workflows/README.zh.md), stable post-live workflow, Supervisor Agent, and [local live POC README](../experiments/local-live-poc/README.md).
 - **Dated evidence:** benchmarks, audits, and reports describe the named run on the stated date. Later evidence may close an old “next gate” without rewriting the original measurements.
 - **Discovery or historical snapshot:** cloud architecture, provider comparisons, deployment notes, old live runbooks, backlog, and gap analyses are retained for research context; they are not the current operator architecture unless the source of truth links to them explicitly.
 
 Status was calibrated against `main` on **2026-09-04**. Documentation does not prove that a local service is currently running or that venue readiness has passed.
+
+## Start here: prepared Chinese dubbing
+
+The root README now features English video to Chinese dubbing in an authorized speaker voice. A full synchronized listening candidate is published; same-video intake, scheduling and venue gates remain explicit.
+
+- [System design and model choices (中文)](./sermon-dubbing-system-design.zh.md).
+- [Operator runbook](../experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md) and [SVG workflow](./diagrams/saturday-chinese-voice-workflow.svg).
+- [Measured candidate and remaining gates](./sermon-dubbing-astra-review-2026-09-05.zh.md), [listening app](https://ai-for-god-sermon-audio.web.app).
 
 ## Core Documents
 
@@ -47,13 +55,13 @@ Status was calibrated against `main` on **2026-09-04**. Documentation does not p
 
 ## Discovery Plans
 
-- [Saturday video to Sunday Chinese audio in the original speaker's voice](./saturday-to-sunday-chinese-voice-plan.zh.md) (Chinese): dubbing and training design, with an [authorized voice-reference MP3/player POC and a small training run](../experiments/sermon-dubbing-poc/README.md); now includes multi-sermon voice training and a [weekly Firebase listening app](https://ai-for-god-sermon-audio.web.app). Full-sermon synchronization and venue readiness remain unverified.
+- [Saturday video to Sunday Chinese audio in the original speaker's voice](./saturday-to-sunday-chinese-voice-plan.zh.md) (Chinese): dubbing and training design, with an [authorized voice-reference MP3/player POC and a small training run](../experiments/sermon-dubbing-poc/README.md); now includes multi-sermon voice training and a [weekly Firebase listening app](https://ai-for-god-sermon-audio.web.app). A full synchronized candidate is available; human listening and venue readiness remain pending.
 
 - [Saturday audio extension runbook](../experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md) and [SVG workflow](./diagrams/saturday-chinese-voice-workflow.svg): speaker auditions, resumable weekly generation, pronunciation fixes and inherited Saturday review gates.
 
 ## Reading Order
 
-1. Start with the root [README](../README.md) for the two working workflows and the Discovery boundary.
+1. Start with the root [README](../README.md) for the featured dubbing flow, PDF/live-caption paths and their acceptance boundaries.
 2. Read [workflows/README.zh.md](./workflows/README.zh.md) for the complete diagrams, local latency budget, and test gates.
 3. Read [stable-post-live-reading-pdf-workflow.md](./stable-post-live-reading-pdf-workflow.md) for the repository's current stable operator path.
 4. Read [sermon-production-supervisor-agent.md](./sermon-production-supervisor-agent.md) for the Agent control plane, human approval contract, and Scheduler integration.
