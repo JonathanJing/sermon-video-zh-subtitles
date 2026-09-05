@@ -21,6 +21,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from scripts import review_prompts  # noqa: E402
+from scripts.sermon_accounting import AccountingWriteError, _finalize, accounting_session, stage, record_api_attempt, record_api_started, request_metadata, record_workload
 
 
 TRANSCRIBE_URL = "https://api.openai.com/v1/audio/transcriptions"
@@ -153,17 +154,32 @@ def ffprobe_duration(path):
 
 def request_json(req, retries=3):
     for attempt in range(retries):
+        started = time.monotonic()
+        attempt_id = record_api_started(getattr(req, "accounting_model", "unknown"), getattr(req, "accounting_settings", {}))
         try:
             with urllib.request.urlopen(req, timeout=300) as response:
-                return json.loads(response.read().decode())
+                result = json.loads(response.read().decode())
         except urllib.error.HTTPError as exc:
+            _finalize(lambda: record_api_attempt(getattr(req, "accounting_model", "unknown"), None, time.monotonic() - started, "failed", type(exc).__name__, attempt_id=attempt_id, http_status=exc.code), exc)
+            if getattr(exc, "sermon_logging_failed", False):
+                raise
             body = exc.read().decode(errors="replace")
             if attempt == retries - 1 or exc.code < 500:
                 raise RuntimeError(f"HTTP {exc.code}: {body}") from exc
-        except urllib.error.URLError:
-            if attempt == retries - 1:
+        except urllib.error.URLError as exc:
+            _finalize(lambda: record_api_attempt(getattr(req, "accounting_model", "unknown"), None, time.monotonic() - started, "failed", type(exc).__name__, attempt_id=attempt_id), exc)
+            if getattr(exc, "sermon_logging_failed", False) or attempt == retries - 1:
                 raise
-        time.sleep(2**attempt)
+        except BaseException as exc:
+            _finalize(lambda: record_api_attempt(getattr(req, "accounting_model", "unknown"), None, time.monotonic() - started, "failed", type(exc).__name__, attempt_id=attempt_id), exc)
+            raise
+        else:
+            # Receipt failure is not a network failure and must never repeat a
+            # request whose successful response has already been received.
+            record_api_attempt(getattr(req, "accounting_model", "unknown"), result, time.monotonic() - started, attempt_id=attempt_id, http_status=200)
+            return result
+        with stage("api.retry_backoff"):
+            time.sleep(2**attempt)
     raise RuntimeError("Request failed")
 
 
@@ -206,6 +222,8 @@ def multipart_request(url, api_key, fields, file_field, file_path, retries=3):
         },
         method="POST",
     )
+    req.accounting_model = fields.get("model", "unknown")
+    req.accounting_settings = request_metadata(fields)
     return request_json(req, retries=retries)
 
 
@@ -219,6 +237,8 @@ def json_request(url, api_key, payload, retries=3):
         },
         method="POST",
     )
+    req.accounting_model = payload.get("model", "unknown")
+    req.accounting_settings = request_metadata(payload)
     return request_json(req, retries=retries)
 
 
@@ -356,7 +376,9 @@ def read_transcription_cache(result_path, metadata_path, identity):
     try:
         if read_json(metadata_path) != identity:
             return None
-        return read_json(result_path)
+        result = read_json(result_path)
+        with stage("transcription.cache", cache_hit=True):
+            return result
     except (OSError, json.JSONDecodeError):
         return None
 
@@ -822,10 +844,13 @@ def chat_json(api_key, payload, retries=3):
         try:
             return json_request(CHAT_URL, api_key, payload, retries=1)
         except Exception as exc:
+            if isinstance(exc, AccountingWriteError) or getattr(exc, "sermon_logging_failed", False):
+                raise
             last_error = exc
             if "temperature" in str(exc) and "temperature" in payload:
                 payload = {key: value for key, value in payload.items() if key != "temperature"}
-            time.sleep(2**attempt)
+            with stage("chat.retry_backoff"):
+                time.sleep(2**attempt)
     raise last_error
 
 
@@ -858,7 +883,8 @@ def correct_english(
         ),
     }
     if output.exists() and version_file.exists() and read_json(version_file) == version:
-        return read_json(output)
+        with stage("english_correction.cache", cache_hit=True):
+            return read_json(output)
 
     corrected = []
     windows_dir = outdir / "correction_windows"
@@ -1060,6 +1086,7 @@ def translate_chinese(
     reasoning_effort=None,
     workers=1,
 ):
+    record_workload("pipeline.translate", {"inputSegments": len(segments), "inputCharacters": sum(len(x.get("text", "")) for x in segments), "workers": workers})
     output = outdir / "segments_timed_zh.json"
     version_file = outdir / "chinese_translation_prompt.json"
     version = {
@@ -1069,7 +1096,8 @@ def translate_chinese(
         "inputSha256": json_sha256({"segments": segments, "glossary": glossary}),
     }
     if output.exists() and version_file.exists() and read_json(version_file) == version:
-        return read_json(output)
+        with stage("translation.cache", cache_hit=True):
+            return read_json(output)
     glossary_text = glossary_lines(glossary)
     system = review_prompts.CHINESE_TRANSLATION_SYSTEM_PROMPT
     cache_identity = hashlib.sha256(
@@ -1089,7 +1117,8 @@ def translate_chinese(
             f"seg_{seg['id']:04d}.{cache_identity}.{segment_input_hash}.json"
         )
         if cache.exists():
-            parsed = read_json(cache)
+            with stage("translation.segment_cache", cache_hit=True):
+                parsed = read_json(cache)
         else:
             context = {
                 "glossary": glossary_terms(glossary),
@@ -1310,64 +1339,74 @@ def main():
     start = parse_timecode(args.start_time)
     end = parse_timecode(args.end_time) if args.end_time else source_duration
     outdir = make_outdir(args.artifacts_root, args.slug, args.outdir)
+    with accounting_session(outdir / "accounting", "sermon_pipeline"):
+        return produce_pipeline(args, api_key, source_duration, start, end, outdir)
+
+
+def produce_pipeline(args, api_key, source_duration, start, end, outdir):
     glossary = load_glossary(args.glossary)
 
     clip_path = outdir / "source_clip.m4a"
-    clip_and_normalize(args.input, clip_path, start, end)
-    clip_duration = ffprobe_duration(clip_path)
-    if end is not None and abs(clip_duration - (end - start)) > 2.0:
-        raise RuntimeError(
-            f"Source clip duration mismatch: expected {end - start:.3f}s, got {clip_duration:.3f}s"
-        )
+    with stage("pipeline.clip", billing="local"):
+        clip_and_normalize(args.input, clip_path, start, end)
+        clip_duration = ffprobe_duration(clip_path)
+        if end is not None and abs(clip_duration - (end - start)) > 2.0:
+            raise RuntimeError(
+                f"Source clip duration mismatch: expected {end - start:.3f}s, got {clip_duration:.3f}s"
+            )
 
     reference_chunk_seconds = args.reading_chunk_seconds if args.output_mode == "reading" else args.chunk_seconds
-    reference_chunks = transcribe_reference(
-        api_key,
-        clip_path,
-        outdir,
-        reference_chunk_seconds,
-        args.reference_model,
-        glossary,
-    )
-    if args.output_mode == "reading":
-        raw_segments = reference_chunks_to_reading_segments(
-            reference_chunks,
-            target_chars=max(120, args.reading_segment_target_chars),
+    with stage("pipeline.transcribe", billing="api"):
+        reference_chunks = transcribe_reference(
+            api_key,
+            clip_path,
+            outdir,
+            reference_chunk_seconds,
+            args.reference_model,
+            glossary,
         )
-    else:
-        whisper_raw = transcribe_whisper(api_key, clip_path, outdir, args.timing_model, glossary)
-        raw_segments = normalize_whisper_segments(whisper_raw)
+    with stage("pipeline.segment", billing="local"):
+        if args.output_mode == "reading":
+            raw_segments = reference_chunks_to_reading_segments(
+                reference_chunks,
+                target_chars=max(120, args.reading_segment_target_chars),
+            )
+        else:
+            whisper_raw = transcribe_whisper(api_key, clip_path, outdir, args.timing_model, glossary)
+            raw_segments = normalize_whisper_segments(whisper_raw)
     if not raw_segments:
         raise RuntimeError(f"{args.reference_model} returned no usable sermon transcript")
     write_json(outdir / "segments_timed_en_raw.json", raw_segments)
 
-    if args.output_mode == "reading":
-        corrected = raw_segments
-    else:
-        corrected = correct_english(
-            api_key,
-            raw_segments,
-            reference_chunks,
-            outdir,
-            args.en_correction_model,
-            glossary,
-            args.correction_window_seconds,
-            reasoning_effort=args.reasoning_effort,
-        )
-    shaped_en = corrected if args.output_mode == "reading" else shape_durations(corrected)
-    write_json(outdir / "segments_timed_en_corrected.json", shaped_en)
+    with stage("pipeline.source_review", billing="api"):
+        if args.output_mode == "reading":
+            corrected = raw_segments
+        else:
+            corrected = correct_english(
+                api_key,
+                raw_segments,
+                reference_chunks,
+                outdir,
+                args.en_correction_model,
+                glossary,
+                args.correction_window_seconds,
+                reasoning_effort=args.reasoning_effort,
+            )
+        shaped_en = corrected if args.output_mode == "reading" else shape_durations(corrected)
+        write_json(outdir / "segments_timed_en_corrected.json", shaped_en)
 
-    translated = translate_chinese(
-        api_key,
-        shaped_en,
-        outdir,
-        args.zh_model,
-        glossary,
-        reasoning_effort=args.reasoning_effort,
-        workers=max(1, args.translation_workers),
-    )
-    shaped_zh = translated if args.output_mode == "reading" else shape_durations(translated)
-    write_json(outdir / "segments_timed_zh.json", shaped_zh)
+    with stage("pipeline.translate", billing="api"):
+        translated = translate_chinese(
+            api_key,
+            shaped_en,
+            outdir,
+            args.zh_model,
+            glossary,
+            reasoning_effort=args.reasoning_effort,
+            workers=max(1, args.translation_workers),
+        )
+        shaped_zh = translated if args.output_mode == "reading" else shape_durations(translated)
+        write_json(outdir / "segments_timed_zh.json", shaped_zh)
 
     if args.output_mode == "subtitles":
         write_srt(outdir / "sermon_en_relative.srt", shaped_en, "text", lang="en")

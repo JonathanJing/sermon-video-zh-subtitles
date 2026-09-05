@@ -5,8 +5,13 @@ If anchors or durations need review, write a repair worksheet and no synchronize
 audio. Speech is never cut, overlapped or automatically squeezed to pass a gate.
 """
 import argparse
+from contextlib import nullcontext
 from pathlib import Path
+import sys
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+from scripts.sermon_accounting import accounting_session, record_workload, stage
 from poc import sha256, write_json
 from weekly_dubbing import read, validate_frozen, normalize_mp3
 
@@ -171,6 +176,18 @@ def main():
     p.add_argument("--assemble", action="store_true")
     args = p.parse_args()
     work = args.work.resolve()
+    context = nullcontext()
+    if args.assemble:
+        try:
+            job_hash = sha256(work / "job.json")
+        except OSError:
+            job_hash = None
+        context = accounting_session(work / "accounting", "dubbing_sync_assembly", metadata={"jobSha256": job_hash})
+    with context:
+        run(work, args.assemble)
+
+
+def run(work, assemble_audio=False):
     job, render = read(work / "job.json"), read(work / "render/report.json")
     validate_frozen(job)
     job_hash = sha256(work / "job.json")
@@ -188,33 +205,45 @@ def main():
     if placement_hash:
         report["placementReviewSha256"] = placement_hash
     write_json(out / "report.json", report)
-    if args.assemble:
-        if failures:
-            raise ValueError("Timing repair required; no synchronized MP3 was created")
-        import numpy as np
-        import soundfile as sf
-        wave, rate = sf.read(work / "render/chinese.raw.wav", dtype="float32")
-        synced = np.zeros(round(job["sourceDurationSeconds"] * rate), dtype=np.float32)
-        cues = []
-        for row in rows:
-            segment = wave[round(row["chineseStart"] * rate):round(row["chineseEnd"] * rate)]
-            start = round(row["videoStart"] * rate)
-            if start + len(segment) > len(synced):
-                raise ValueError("Speech would exceed the source video")
-            synced[start:start + len(segment)] = segment
-            for cue in render["cues"]:
-                if cue["blockId"] == row["blockId"]:
-                    cues.append({**cue, "start": cue["start"] - row["chineseStart"] + row["videoStart"], "end": cue["end"] - row["chineseStart"] + row["videoStart"]})
-        raw = out / "zh-synced.raw.wav"
-        if raw.exists():
-            raise ValueError("Preserve the existing synchronized audio")
-        sf.write(raw, synced, rate, subtype="PCM_24")
-        info = normalize_mp3(raw, out / "zh-synced.mp3")
-        write_json(out / "assembly.json", {"status": "synchronized_candidate", "jobSha256": job_hash, "timingReportSha256": sha256(out / "report.json"), "sourceNaturalMp3Sha256": sha256(work / "audio/zh-natural.mp3"), "sourceNaturalWavSha256": render["sha256"], "cues": cues, **info, "humanReview": "pending"})
-        template = read(work / "audio-review.json")
-        write_json(work / "audio-review-synced.json", {**template, "mp3Sha256": info["sha256"], "reviewedBy": None, "reviewedAt": None, "humanApproval": False, "checks": dict.fromkeys(template["checks"], "pending"),
-            "notes": "同视频同步版本：确认中文音色、内容与完整视频同步；试听自然版的旧记录不会自动批准此版本。"})
+    record_workload("timing_evidence", {"jobSha256": job_hash, "timingReportSha256": sha256(out / "report.json"),
+        "blockCount": len(rows), "reviewItemCount": len(failures), "durationSeconds": job["sourceDurationSeconds"],
+        "humanSameVideoPlaybackAccepted": False})
+    if assemble_audio:
+        with stage("sync_assembly", billing="local"):
+            assemble_synchronized(work, job, render, rows, failures, out, job_hash)
     print(f"Timing checked: {len(rows)} blocks, {len(failures)} review items")
+
+
+def assemble_synchronized(work, job, render, rows, failures, out, job_hash):
+    if failures:
+        raise ValueError("Timing repair required; no synchronized MP3 was created")
+    import numpy as np
+    import soundfile as sf
+    wave, rate = sf.read(work / "render/chinese.raw.wav", dtype="float32")
+    synced = np.zeros(round(job["sourceDurationSeconds"] * rate), dtype=np.float32)
+    cues = []
+    for row in rows:
+        segment = wave[round(row["chineseStart"] * rate):round(row["chineseEnd"] * rate)]
+        start = round(row["videoStart"] * rate)
+        if start + len(segment) > len(synced):
+            raise ValueError("Speech would exceed the source video")
+        synced[start:start + len(segment)] = segment
+        for cue in render["cues"]:
+            if cue["blockId"] == row["blockId"]:
+                cues.append({**cue, "start": cue["start"] - row["chineseStart"] + row["videoStart"], "end": cue["end"] - row["chineseStart"] + row["videoStart"]})
+    raw = out / "zh-synced.raw.wav"
+    if raw.exists():
+        raise ValueError("Preserve the existing synchronized audio")
+    sf.write(raw, synced, rate, subtype="PCM_24")
+    info = normalize_mp3(raw, out / "zh-synced.mp3")
+    write_json(out / "assembly.json", {"status": "synchronized_candidate", "jobSha256": job_hash, "timingReportSha256": sha256(out / "report.json"), "sourceNaturalMp3Sha256": sha256(work / "audio/zh-natural.mp3"), "sourceNaturalWavSha256": render["sha256"], "cues": cues, **info, "humanReview": "pending"})
+    template = read(work / "audio-review.json")
+    write_json(work / "audio-review-synced.json", {**template, "mp3Sha256": info["sha256"], "reviewedBy": None, "reviewedAt": None, "humanApproval": False, "checks": dict.fromkeys(template["checks"], "pending"),
+        "notes": "同视频同步版本：确认中文音色、内容与完整视频同步；试听自然版的旧记录不会自动批准此版本。"})
+    record_workload("synchronized_output", {"jobSha256": job_hash, "assemblySha256": sha256(out / "assembly.json"),
+        "timingReportSha256": sha256(out / "report.json"), "sourceNaturalWavSha256": render["sha256"],
+        "mp3Sha256": info["sha256"], "durationSeconds": info.get("durationSeconds"),
+        "blockCount": len(rows), "cueCount": len(cues), "humanApproval": False})
 
 
 if __name__ == "__main__":

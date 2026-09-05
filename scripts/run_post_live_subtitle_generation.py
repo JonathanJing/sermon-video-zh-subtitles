@@ -24,6 +24,7 @@ if str(REPO_ROOT) not in sys.path:
 from backend.cloud import access_secret, read_gcs_bytes, upload_file_to_gcs  # noqa: E402
 from backend.observability import log_event, stable_hash, url_summary  # noqa: E402
 from scripts import live_source_monitor, post_live_run_status  # noqa: E402
+from scripts.sermon_accounting import accounting_session, stage as accounting_stage
 
 
 SERMON_PIPELINE_SCRIPT = REPO_ROOT / "scripts" / "sermon_pipeline.py"
@@ -163,6 +164,20 @@ def run_post_live_generation(
     metadata_loader: Callable[[str], dict[str, Any] | None] | None = None,
     runner: Callable[..., subprocess.CompletedProcess] = subprocess.run,
 ) -> dict[str, Any]:
+    if args.plan_only or args.dry_run:
+        return _run_post_live_generation(args, metadata_loader=metadata_loader, runner=runner)
+    with accounting_session(args.work_root / args.sunday / "accounting", "saturday_generation", {"sunday": args.sunday}) as accounting:
+        report = _run_post_live_generation(args, metadata_loader=metadata_loader, runner=runner)
+        report["accounting"] = accounting
+        return report
+
+
+def _run_post_live_generation(
+    args: argparse.Namespace,
+    *,
+    metadata_loader=None,
+    runner=subprocess.run,
+) -> dict[str, Any]:
     if not hasattr(args, "reference_model"):
         args.reference_model = getattr(args, "gpt4o_model", "gpt-transcribe")
     if not hasattr(args, "output_mode"):
@@ -204,7 +219,8 @@ def run_post_live_generation(
             "reason": f"captured state is for {state.get('lastSunday')}",
         }
 
-    metadata = load_metadata(args, live_url, metadata_loader)
+    with accounting_stage("source_metadata"):
+        metadata = load_metadata(args, live_url, metadata_loader)
     post_live_ready = is_post_live_ready(metadata) or args.allow_non_post_live
     if not post_live_ready:
         report = {
@@ -272,19 +288,21 @@ def run_post_live_generation(
     stage_durations: dict[str, float] = {}
     audio_path = newest_downloaded_audio(audio_template.parent)
     if audio_path:
-        stage_durations["downloaded"] = 0.0
+        with accounting_stage("download", cache_hit=True):
+            stage_durations["downloaded"] = 0.0
     else:
         started = time.monotonic()
         run_status = post_live_run_status.update_stage(run_status, args.sunday, "downloaded", "running")
         write_run_status(run_status_path, run_status)
-        audio_path = download_archive_audio(
-            live_url,
-            audio_template,
-            args.audio_format,
-            args.yt_dlp,
-            runner,
-            cookies_path=args.youtube_cookies,
-        )
+        with accounting_stage("download"):
+            audio_path = download_archive_audio(
+                live_url,
+                audio_template,
+                args.audio_format,
+                args.yt_dlp,
+                runner,
+                cookies_path=args.youtube_cookies,
+            )
         stage_durations["downloaded"] = time.monotonic() - started
     run_status = post_live_run_status.update_stage(
         run_status, args.sunday, "downloaded", "complete", artifact=str(audio_path),
@@ -326,10 +344,12 @@ def run_post_live_generation(
         expected_input_fingerprint=pipeline_input_fingerprint,
     )
     if core_ready:
-        stage_durations["pipeline"] = 0.0
+        with accounting_stage("pipeline", cache_hit=True):
+            stage_durations["pipeline"] = 0.0
     else:
         started = time.monotonic()
-        run_command(pipeline_command, runner)
+        with accounting_stage("pipeline", billing="orchestrator"):
+            run_command(pipeline_command, runner)
         record_input_identity(
             pipeline_outdir / "summary.json",
             fingerprint_key="pipelineInputFingerprint",
@@ -344,7 +364,8 @@ def run_post_live_generation(
     write_run_status(run_status_path, run_status)
     if mobile_pdf_command:
         started = time.monotonic()
-        run_command(mobile_pdf_command, runner)
+        with accounting_stage("mobile_pdf"):
+            run_command(mobile_pdf_command, runner)
         stage_durations["mobile_pdf"] = time.monotonic() - started
     else:
         stage_durations["mobile_pdf"] = 0.0
@@ -368,12 +389,14 @@ def run_post_live_generation(
         expected_input_fingerprint=reading_input_fingerprint,
     )
     if reading_ready:
-        stage_durations["reviewed"] = 0.0
+        with accounting_stage("reading_edition", cache_hit=True):
+            stage_durations["reviewed"] = 0.0
     else:
         started = time.monotonic()
         run_status = post_live_run_status.update_stage(run_status, args.sunday, "reviewed", "running")
         write_run_status(run_status_path, run_status)
-        run_command(reading_edition_command, runner)
+        with accounting_stage("reading_edition", billing="orchestrator"):
+            run_command(reading_edition_command, runner)
         record_input_identity(
             reading_report_path,
             fingerprint_key="readingInputFingerprint",
@@ -404,10 +427,12 @@ def run_post_live_generation(
     )
     write_run_status(run_status_path, run_status)
     started = time.monotonic()
-    run_command(reading_pdf_command, runner)
+    with accounting_stage("reading_pdf"):
+        run_command(reading_pdf_command, runner)
     stage_durations["reading_pdf"] = time.monotonic() - started
     started = time.monotonic()
-    run_command(interpretation_command, runner)
+    with accounting_stage("interpretation", billing="orchestrator"):
+        run_command(interpretation_command, runner)
     stage_durations["sermon_interpretation_pdf"] = time.monotonic() - started
     stage_durations["pdf_qa"] = (
         stage_durations["mobile_pdf"]
@@ -439,7 +464,8 @@ def run_post_live_generation(
         ),
     ]
     if getattr(args, "export_sunday_context", False):
-        context = export_sunday_context(args, run_root, metadata, live_url)
+        with accounting_stage("context_pack"):
+            context = export_sunday_context(args, run_root, metadata, live_url)
         report["sundayContext"] = context
         delivery_paths.extend(Path(path) for path in context["paths"].values())
     report["outputs"] = [*report["outputs"], *(str(path) for path in delivery_paths)]
@@ -456,8 +482,9 @@ def run_post_live_generation(
         "running",
     )
     write_run_status(run_status_path, run_status)
-    uploaded = upload_outputs(args, pipeline_outdir, args.output_mode, extra_paths=delivery_paths)
-    publication = publication_report(uploaded, gcs_configured=bool(args.gcs_bucket))
+    with accounting_stage("publication", billing="cloud"):
+        uploaded = upload_outputs(args, pipeline_outdir, args.output_mode, extra_paths=delivery_paths)
+        publication = publication_report(uploaded, gcs_configured=bool(args.gcs_bucket))
     if publication["status"] not in {"pass", "not_configured"}:
         raise RuntimeError("Published artifact hashes did not match local outputs")
     run_status = post_live_run_status.update_stage(

@@ -9,8 +9,9 @@ import json
 import os
 import sys
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Callable, Literal
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -20,7 +21,7 @@ from agents import Agent, ModelSettings, RunConfig, RunContextWrapper, Runner, f
 from pydantic import BaseModel, Field  # noqa: E402
 
 from backend.cloud import access_secret  # noqa: E402
-from scripts import sermon_production_supervisor  # noqa: E402
+from scripts import sermon_accounting, sermon_production_supervisor  # noqa: E402
 
 
 class SupervisorDecision(BaseModel):
@@ -230,21 +231,27 @@ async def run_agent(args: argparse.Namespace) -> dict[str, Any]:
         f"Operating mode: {args.mode}. "
         "Use only persisted evidence and the exposed tools."
     )
-    result = await Runner.run(
-        agent,
-        prompt,
-        context=runtime,
-        max_turns=args.max_turns,
-        run_config=RunConfig(
-            workflow_name="Sermon Production Supervisor",
-            trace_include_sensitive_data=False,
-            trace_metadata={
-                "sunday": args.sunday,
-                "mode": args.mode,
-                "workflow": "post-live-reading-pdf",
-            },
-        ),
-    )
+    with sermon_accounting.sdk_invocation(args.model) as sdk_receipt:
+        result = await Runner.run(
+            agent,
+            prompt,
+            context=runtime,
+            max_turns=args.max_turns,
+            run_config=RunConfig(
+                workflow_name="Sermon Production Supervisor",
+                trace_include_sensitive_data=False,
+                trace_metadata={
+                    "sunday": args.sunday,
+                    "mode": args.mode,
+                    "workflow": "post-live-reading-pdf",
+                },
+            ),
+        )
+        usage = getattr(getattr(result, "context_wrapper", None), "usage", None)
+        sdk_receipt["usage"] = {}
+        for field in ("requests", "input_tokens", "output_tokens", "total_tokens"):
+            value = getattr(usage, field, None)
+            sdk_receipt["usage"][field] = value if type(value) in (int, float) and 0 <= value < float("inf") else None
     final = result.final_output
     if isinstance(final, BaseModel):
         decision = final.model_dump(mode="json")
@@ -307,13 +314,62 @@ def verify_decision(
     }
 
 
-def main() -> int:
-    args = parse_args()
+class _ProductionExitCode(Exception):
+    """Let the ledger observe a failed exit without changing CLI return values."""
+
+    def __init__(self, exit_code: int):
+        self.exit_code = exit_code
+        super().__init__(exit_code)
+
+
+def logged_production_entry(
+    args: argparse.Namespace,
+    workflow: str,
+    operation: Callable[[], tuple[int, dict[str, Any]]],
+) -> int:
+    sunday = date.fromisoformat(args.sunday).isoformat()
+    work = Path(args.work_root).expanduser().resolve() / sunday
+    try:
+        with sermon_accounting.accounting_session(work / "accounting", workflow, metadata={"sunday": sunday, "mode": args.mode}, evidence_directory=work):
+            try:
+                exit_code, report = operation()
+            except BaseException as exc:
+                exit_code = exc.code if isinstance(exc, SystemExit) and type(exc.code) is int else 1
+                sermon_accounting._finalize(lambda: sermon_accounting.record_log("production.entry_exception", level="ERROR",
+                    fields={"status": "failed", "exitCode": exit_code, "reasonCode": "entry_exception"}, exception=exc), exc)
+                raise
+            status = report.get("status", "unknown")
+            snapshot = report.get("finalSnapshot")
+            recommended = snapshot.get("recommendedAction") if isinstance(snapshot, dict) else None
+            recommended = recommended if isinstance(recommended, dict) else {}
+            latch = report.get("completionLatch")
+            action = str(recommended.get("action") or "")
+            if str(status).startswith("waiting") or action.startswith("wait_"):
+                status = "waiting"
+            if not isinstance(status, str) or status not in {"observed", "advanced", "blocked", "complete", "completed", "waiting", "failed"}:
+                status = "unknown"
+            sermon_accounting.record_log("production.entry_result", level="WARNING" if exit_code else "INFO", fields={
+                "status": status, "exitCode": exit_code,
+                "reasonCode": "nonzero_exit" if exit_code else "process_completed",
+                "cacheHit": isinstance(latch, dict) and latch.get("status") == "already_complete"})
+            if exit_code:
+                raise _ProductionExitCode(exit_code)
+            return exit_code
+    except _ProductionExitCode as stopped:
+        return stopped.exit_code
+
+
+def run_cli(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
     report = asyncio.run(run_agent(args))
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
     print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
-    return 0 if report.get("status") in {"observed", "advanced", "complete"} else 2
+    return (0 if report.get("status") in {"observed", "advanced", "complete"} else 2), report
+
+
+def main() -> int:
+    args = parse_args()
+    return logged_production_entry(args, "sermon_production_supervisor", lambda: run_cli(args))
 
 
 if __name__ == "__main__":

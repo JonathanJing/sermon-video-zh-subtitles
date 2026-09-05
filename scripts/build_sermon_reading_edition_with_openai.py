@@ -19,6 +19,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from scripts.sermon_pipeline import chat_json, clean_text, load_env, read_json, write_json
+from scripts.sermon_accounting import accounting_session, stage, record_workload
 
 
 PROMPT_VERSION = "sermon-reading-edition-gpt56sol-v1"
@@ -399,7 +400,8 @@ def edit_batch(
         f"{identity}.{input_hash}.json"
     )
     if cache.exists():
-        parsed = read_json(cache)
+        with stage("reading.batch_cache", cache_hit=True, billing="local"):
+            parsed = read_json(cache)
     else:
         if provider == "codex":
             parsed = codex_json(
@@ -442,52 +444,54 @@ def run_edit_pass(
     codex_cli: Path,
     schema_path: Path,
 ) -> list[dict[str, Any]]:
-    batches = [
-        (start, blocks[start : start + max(1, batch_size)])
-        for start in range(0, len(blocks), max(1, batch_size))
-    ]
+    record_workload(f"reading.edit_pass_{2 if qa_pass else 1}", {"inputBlocks": len(blocks), "batchSize": max(1, batch_size), "batches": (len(blocks)+max(1,batch_size)-1)//max(1,batch_size), "workers": max(1,workers)})
+    with stage(f"reading.edit_pass_{2 if qa_pass else 1}", billing=provider if provider == "codex" else "api"):
+        batches = [
+            (start, blocks[start : start + max(1, batch_size)])
+            for start in range(0, len(blocks), max(1, batch_size))
+        ]
 
-    def run_one(item: tuple[int, list[dict[str, Any]]]) -> tuple[int, dict[str, Any]]:
-        start, batch = item
-        parsed = edit_batch(
-            api_key,
-            blocks,
-            batch,
-            start,
-            cache_dir,
-            model=model,
-            reasoning_effort=reasoning_effort,
-            qa_pass=qa_pass,
-            provider=provider,
-            codex_cli=codex_cli,
-            schema_path=schema_path,
-        )
-        print(
-            f"{'proofread' if qa_pass else 'edited'} reading blocks "
-            f"{batch[0]['id']}-{batch[-1]['id']}",
-            flush=True,
-        )
-        return start, parsed
+        def run_one(item: tuple[int, list[dict[str, Any]]]) -> tuple[int, dict[str, Any]]:
+            start, batch = item
+            parsed = edit_batch(
+                api_key,
+                blocks,
+                batch,
+                start,
+                cache_dir,
+                model=model,
+                reasoning_effort=reasoning_effort,
+                qa_pass=qa_pass,
+                provider=provider,
+                codex_cli=codex_cli,
+                schema_path=schema_path,
+            )
+            print(
+                f"{'proofread' if qa_pass else 'edited'} reading blocks "
+                f"{batch[0]['id']}-{batch[-1]['id']}",
+                flush=True,
+            )
+            return start, parsed
 
-    results: list[tuple[int, dict[str, Any]]] = []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, workers)) as executor:
-        for result in executor.map(run_one, batches):
-            results.append(result)
-    results.sort(key=lambda item: item[0])
-    by_id = {
-        item["id"]: item["zh"]
-        for _, parsed in results
-        for item in parsed["blocks"]
-    }
-    return [
-        {
-            **block,
-            "zh": by_id[block["id"]],
-            "readingEditModel": model,
-            "readingEditPromptVersion": QA_PROMPT_VERSION if qa_pass else PROMPT_VERSION,
+        results: list[tuple[int, dict[str, Any]]] = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, workers)) as executor:
+            for result in executor.map(run_one, batches):
+                results.append(result)
+        results.sort(key=lambda item: item[0])
+        by_id = {
+            item["id"]: item["zh"]
+            for _, parsed in results
+            for item in parsed["blocks"]
         }
-        for block in blocks
-    ]
+        return [
+            {
+                **block,
+                "zh": by_id[block["id"]],
+                "readingEditModel": model,
+                "readingEditPromptVersion": QA_PROMPT_VERSION if qa_pass else PROMPT_VERSION,
+            }
+            for block in blocks
+        ]
 
 
 def parse_json_message(text: str) -> dict[str, Any]:
@@ -537,17 +541,18 @@ def codex_json(
         str(output_path),
         "-",
     ]
-    completed = subprocess.run(
-        command,
-        input=prompt,
-        text=True,
-        capture_output=True,
-        cwd=REPO_ROOT,
-    )
-    if completed.returncode != 0:
-        detail = (completed.stderr or completed.stdout)[-3000:]
-        raise RuntimeError(f"Codex reading edit failed ({completed.returncode}): {detail}")
-    return parse_json_message(output_path.read_text(encoding="utf-8"))
+    with stage("reading.codex_call", billing="codex"):
+        completed = subprocess.run(
+            command,
+            input=prompt,
+            text=True,
+            capture_output=True,
+            cwd=REPO_ROOT,
+        )
+        if completed.returncode != 0:
+            detail = (completed.stderr or completed.stdout)[-3000:]
+            raise RuntimeError(f"Codex reading edit failed ({completed.returncode}): {detail}")
+        return parse_json_message(output_path.read_text(encoding="utf-8"))
 
 
 def srt_time(value: float) -> str:
@@ -828,6 +833,11 @@ def draft_comparison_report(
 
 def main() -> int:
     args = parse_args()
+    with accounting_session(args.outdir / "accounting", "sermon_reading_edition"):
+        return _main(args)
+
+
+def _main(args: argparse.Namespace) -> int:
     if args.repair_existing and not args.review_manifest:
         raise SystemExit("--repair-existing requires --review-manifest")
     api_key = ""

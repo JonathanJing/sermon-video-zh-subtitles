@@ -16,6 +16,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from scripts import build_post_live_timeline, review_prompts, sermon_pipeline  # noqa: E402
+from scripts.sermon_accounting import accounting_session, stage as accounting_stage  # noqa: E402
 
 
 Classifier = Callable[[str, list[dict[str, Any]]], dict[str, Any]]
@@ -23,7 +24,8 @@ Classifier = Callable[[str, list[dict[str, Any]]], dict[str, Any]]
 
 def main() -> int:
     args = parse_args()
-    report = build_multistage_timeline(args)
+    with accounting_session(args.outdir / "accounting", "post_live_multistage_timeline"):
+        report = build_multistage_timeline(args)
     out = resolve_repo_path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     write_json(out, report)
@@ -172,13 +174,16 @@ def build_multistage_timeline(
 def transcribe_absolute_chunks(
     *, api_key: str, source: Path, outdir: Path, chunk_seconds: float, model: str, absolute_offset: float
 ) -> list[dict[str, Any]]:
-    chunks = build_post_live_timeline.transcribe_full_audio_chunks(
-        api_key=api_key,
-        source=source,
-        outdir=outdir,
-        chunk_seconds=chunk_seconds,
-        model=model,
-    )
+    known_stages = {"coarse_120s", "transition_30s", "start_fine_5s", "end_fine_5s"}
+    stage_name = next((part for part in (outdir.name, outdir.parent.name) if part in known_stages), "chunks")
+    with accounting_stage(f"timeline.asr.{stage_name}", billing="api"):
+        chunks = build_post_live_timeline.transcribe_full_audio_chunks(
+            api_key=api_key,
+            source=source,
+            outdir=outdir,
+            chunk_seconds=chunk_seconds,
+            model=model,
+        )
     if absolute_offset:
         chunks = [
             {
@@ -226,28 +231,31 @@ def make_openai_classifier(api_key: str, *, model: str, reasoning_effort: str, c
         digest = hashlib.sha256(serialized.encode("utf-8")).hexdigest()[:16]
         cache = cache_dir / f"{stage}_{digest}.json"
         active_cache = cache_dir / f"{stage}.json"
-        if cache.exists():
-            parsed = read_json(cache)
+        cache_hit = cache.exists()
+        with accounting_stage(f"timeline.classify.{stage}", cache_hit=cache_hit,
+                              billing="local" if cache_hit else "api"):
+            if cache_hit:
+                parsed = read_json(cache)
+                write_json(active_cache, parsed)
+                return parsed
+            payload = {
+                "model": model,
+                "reasoning_effort": reasoning_effort,
+                "response_format": {"type": "json_object"},
+                "messages": [
+                    {"role": "system", "content": review_prompts.BOUNDARY_SYSTEM_PROMPT},
+                    {"role": "user", "content": user_prompt},
+                ],
+            }
+            result = sermon_pipeline.chat_json(api_key, payload)
+            parsed = json.loads(result["choices"][0]["message"]["content"])
+            parsed["model"] = result.get("model", model)
+            parsed["reasoningEffort"] = reasoning_effort
+            parsed["promptVersion"] = review_prompts.BOUNDARY_PROMPT_VERSION
+            parsed["inputSha256Prefix"] = digest
+            write_json(cache, parsed)
             write_json(active_cache, parsed)
             return parsed
-        payload = {
-            "model": model,
-            "reasoning_effort": reasoning_effort,
-            "response_format": {"type": "json_object"},
-            "messages": [
-                {"role": "system", "content": review_prompts.BOUNDARY_SYSTEM_PROMPT},
-                {"role": "user", "content": user_prompt},
-            ],
-        }
-        result = sermon_pipeline.chat_json(api_key, payload)
-        parsed = json.loads(result["choices"][0]["message"]["content"])
-        parsed["model"] = result.get("model", model)
-        parsed["reasoningEffort"] = reasoning_effort
-        parsed["promptVersion"] = review_prompts.BOUNDARY_PROMPT_VERSION
-        parsed["inputSha256Prefix"] = digest
-        write_json(cache, parsed)
-        write_json(active_cache, parsed)
-        return parsed
 
     return classify
 

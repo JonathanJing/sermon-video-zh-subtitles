@@ -9,6 +9,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -22,6 +23,7 @@ if str(REPO_ROOT) not in sys.path:
 from backend.cloud import access_secret as cloud_access_secret
 from backend.cloud import upload_file_to_gcs
 from scripts import review_prompts
+from scripts.sermon_accounting import _finalize, accounting_session, stage, record_api_attempt, record_api_started, request_metadata
 from scripts.render_sermon_interpretation_pdf import render_interpretation_pdf
 
 JS_PREFIX = "window.SERMON_PLAYBACK_SIMULATION = "
@@ -40,6 +42,11 @@ SRT_TIMESTAMP_RE = re.compile(
 
 def main() -> int:
     args = parse_args()
+    with accounting_session(args.out_dir / "accounting", "sermon_interpretation_notes"):
+        return _main(args)
+
+
+def _main(args: argparse.Namespace) -> int:
     if args.api_key_secret:
         validate_secret_resource_name(args.api_key_secret)
     simulation = read_note_source(args)
@@ -54,19 +61,20 @@ def main() -> int:
         model=args.model,
         reasoning_effort=args.reasoning_effort,
     )
-    raw_response = request_openai_notes(
-        request_payload,
-        api_key=api_key,
-        timeout_seconds=args.request_timeout_seconds,
-    )
-    insights = normalize_insights(
-        parse_json_object(extract_response_text(raw_response)),
-        slices=slices,
-        simulation=simulation,
-        model=args.model,
-        reasoning_effort=args.reasoning_effort,
-        api_key_secret=args.api_key_secret,
-    )
+    with stage("notes.generate", billing="api"):
+        raw_response = request_openai_notes(
+            request_payload,
+            api_key=api_key,
+            timeout_seconds=args.request_timeout_seconds,
+        )
+        insights = normalize_insights(
+            parse_json_object(extract_response_text(raw_response)),
+            slices=slices,
+            simulation=simulation,
+            model=args.model,
+            reasoning_effort=args.reasoning_effort,
+            api_key_secret=args.api_key_secret,
+        )
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
     args.model_output_dir.mkdir(parents=True, exist_ok=True)
@@ -80,11 +88,12 @@ def main() -> int:
     if args.pdf_out:
         companion_pdf = args.pdf_out
         companion_qa = args.pdf_qa_out or companion_pdf.with_suffix(".qa.json")
-        qa = render_interpretation_pdf(insights, companion_pdf, font_path=args.font_path)
-        companion_qa.parent.mkdir(parents=True, exist_ok=True)
-        companion_qa.write_text(json.dumps(qa, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
-        if qa.get("status") != "pass":
-            raise SystemExit(f"Sermon interpretation PDF QA did not pass; inspect {companion_qa}")
+        with stage("notes.render_pdf", billing="local"):
+            qa = render_interpretation_pdf(insights, companion_pdf, font_path=args.font_path)
+            companion_qa.parent.mkdir(parents=True, exist_ok=True)
+            companion_qa.write_text(json.dumps(qa, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
+            if qa.get("status") != "pass":
+                raise SystemExit(f"Sermon interpretation PDF QA did not pass; inspect {companion_qa}")
 
     uploads: list[dict[str, str]] = []
     if args.gcs_bucket:
@@ -583,18 +592,40 @@ def request_openai_notes(
     api_key: str,
     timeout_seconds: int = 120,
 ) -> dict[str, Any]:
-    response = requests.post(
-        "https://api.openai.com/v1/responses",
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-        json=payload,
-        timeout=timeout_seconds,
-    )
+    started = time.perf_counter()
+    model = str(payload.get("model") or DEFAULT_MODEL)
+    attempt_id = record_api_started(model, request_metadata(payload))
+    try:
+        response = requests.post(
+            "https://api.openai.com/v1/responses",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+            timeout=timeout_seconds,
+        )
+    except BaseException as exc:
+        _finalize(lambda: record_api_attempt(model=model, response=None,
+                           elapsed_seconds=time.perf_counter() - started,
+                           status="failed", error_type=type(exc).__name__, attempt_id=attempt_id), exc)
+        raise
     if response.status_code >= 400:
-        raise SystemExit(f"OpenAI notes request failed with HTTP {response.status_code}: {safe_error_message(response)}")
-    return response.json()
+        error = SystemExit(f"OpenAI notes request failed with HTTP {response.status_code}: {safe_error_message(response)}")
+        _finalize(lambda: record_api_attempt(model=model, response=None,
+                           elapsed_seconds=time.perf_counter() - started,
+                           status="failed", error_type=f"HTTP{response.status_code}", attempt_id=attempt_id, http_status=response.status_code), error)
+        raise error
+    try:
+        result = response.json()
+    except BaseException as exc:
+        _finalize(lambda: record_api_attempt(model=model, response=None,
+                           elapsed_seconds=time.perf_counter() - started,
+                           status="failed", error_type=type(exc).__name__, attempt_id=attempt_id), exc)
+        raise
+    record_api_attempt(model=model, response=result,
+                       elapsed_seconds=time.perf_counter() - started, attempt_id=attempt_id, http_status=response.status_code)
+    return result
 
 
 def safe_error_message(response: requests.Response) -> str:

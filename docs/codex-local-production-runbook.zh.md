@@ -11,6 +11,12 @@
 
 不再让 Cloud Run Job 负责 YouTube 下载和 post-live 重处理。
 
+## 查看生产日志
+
+本地入口、Supervisor、时间线、双 PDF 和配音入口自动保存本次运行记录。父子进程共享 `runId`，逐阶段保留耗时、缓存、失败、Token 收据和未知费用；业务审批与日志完整性分别判断。详见[日志与计量说明](workflow-accounting.zh.md)。
+
+排查最近一次运行：`.venv/bin/python scripts/sermon_logs.py artifacts/post-live-runs/YYYY-MM-DD/accounting --level WARNING`。查看全部事件去掉级别筛选；添加 `--check` 可用退出码检查错误、未结束或损坏记录。命令不会触发模型或重写账本。
+
 ## 自动运行入口
 
 ```bash

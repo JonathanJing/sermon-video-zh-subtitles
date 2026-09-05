@@ -13,13 +13,16 @@ import shlex
 import subprocess
 import sys
 
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[1]))
+
+from scripts.sermon_accounting import accounting_session, record_workload, stage
 from poc import sha256, write_json
 from weekly_dubbing import read, validate_frozen, assemble
 from render_weekly_audio import render_identity
 from prepare_voice_candidates import ASR, ALIGNER
 from screen_audio import normalize
 
-HERE = Path(__file__).resolve().parent
 REMOTE_ROOT = "/home/achillesjing/dgx-spark-benchmark/results"
 RUNTIME = REMOTE_ROOT + "/sermon-voice-poc-20260905"
 
@@ -204,6 +207,80 @@ def validate_cached_stages(work, job):
         stage_check("Timing", TIMING_RECOVERY, lambda: validate_timing(work, job, render))
 
 
+def receipt_snapshot(work, job):
+    """Count only expected receipts after the existing render validator passes."""
+    return {i: sha256(path) for i in range(len(job["units"]))
+            if (path := work / f"render/unit-{i:04d}.json").is_file()}
+
+
+def revision_workload(work, job):
+    """Report parent reuse only when the revision plan and WAV receipts agree."""
+    metrics = {"revisionReportPresent": False, "revisionEvidenceVerified": False, "revisionReportSha256": None,
+               "parentReusedUnitCount": None, "revisionRegenerateUnitCount": None}
+    path = work / "revision-report.json"
+    if not path.is_file():
+        return metrics
+    metrics["revisionReportPresent"] = True
+    try:
+        metrics["revisionReportSha256"] = sha256(path)
+        report = read(path)
+        parent = Path(job["revisionOf"]["path"])
+        parent_hash = sha256(parent / "job.json")
+        require(report["jobSha256"] == sha256(work / "job.json")
+                and report["parentJobSha256"] == job["revisionOf"]["jobSha256"] == parent_hash, "revision identity")
+        pairs = ([(row["unitId"], row["parentUnitId"]) for row in report["reusedUnits"]]
+                 if "reusedUnits" in report else [(i, i) for i in report["reusedUnitIds"]])
+        reused, parents = [i for i, _ in pairs], [i for _, i in pairs]
+        changed = report["regenerateUnitIds"]
+        require(all(type(i) is int for i in reused + parents + changed)
+                and len(set(reused)) == len(reused) and len(set(parents)) == len(parents)
+                and len(set(changed)) == len(changed) and not set(reused) & set(changed)
+                and set(reused) | set(changed) == set(range(len(job["units"]))), "revision coverage")
+        old = read(parent / "job.json")
+        for child_id, parent_id in pairs:
+            require(0 <= parent_id < len(old["units"]), "parent unit")
+            current = read(work / f"render/unit-{child_id:04d}.json")
+            original_wav = parent / f"render/unit-{parent_id:04d}.wav"
+            original_receipt = original_wav.with_suffix(".json")
+            original = read(original_receipt)
+            provenance = current["reusedFrom"]
+            require(Path(provenance["path"]).resolve() == original_wav.resolve()
+                    and provenance.get("unitId", parent_id) == parent_id
+                    and provenance["receiptSha256"] == sha256(original_receipt)
+                    and provenance["wavSha256"] == original["sha256"] == current["sha256"] == sha256(original_wav)
+                    and provenance["generationIdentity"] == original["identity"]
+                    and original["identity"]["jobSha256"] == parent_hash
+                    and original["unit"] == old["units"][parent_id], "parent receipt")
+            keys = ("blockId", "text", "gapAfterSeconds")
+            previous, unit = original["unit"], job["units"][child_id]
+            require(all(previous.get(k) == unit.get(k) for k in keys)
+                    and previous.get("spokenText", previous["text"]) == unit.get("spokenText", unit["text"]), "reused speech")
+        metrics.update(revisionEvidenceVerified=True, parentReusedUnitCount=len(reused),
+                       revisionRegenerateUnitCount=len(changed))
+    except (OSError, ValueError, KeyError, TypeError, AttributeError, IndexError):
+        # Optional accounting evidence never grants approval or changes existing gates.
+        pass
+    return metrics
+
+
+def record_render_workload(work, job, render, before, imported_render):
+    after = receipt_snapshot(work, job)
+    timer = render.get("generationSeconds")
+    if type(timer) not in (int, float) or not math.isfinite(timer) or timer < 0:
+        timer = None
+    record_workload("render_output", {
+        "jobSha256": sha256(work / "job.json"), "renderReportSha256": sha256(work / "render/report.json"),
+        "acceptedUnitCount": len(after), "localCachedUnitCountAtStart": len(before),
+        "newlyAvailableOutputUnitCount": len(set(after) - set(before)),
+        "preservedLocalReceiptCount": sum(after.get(i) == digest for i, digest in before.items()),
+        "currentRunGeneratedUnitCount": 0 if imported_render else None, "modelInputUnitCount": 0 if imported_render else None,
+        "completeRenderCacheHit": imported_render, "modelTimerSeconds": timer,
+        "modelTimerIsHistorical": True if imported_render else None, "timingScope": "after_model_load",
+        "evidenceScope": "existing_report", "countStatus": "verified_receipts",
+        "modelTimerIsPureModelTime": False, "modelTimerIncludesLoadOrPriorRetries": False,
+        **revision_workload(work, job)})
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--work", type=Path, required=True)
@@ -212,8 +289,27 @@ def main():
     p.add_argument("--mlx-python", type=Path, default=Path.home() / ".local/share/uv/tools/mlx-audio/bin/python")
     args = p.parse_args()
     work = args.work.resolve()
-    job = stage_check("Job", "restore the frozen inputs or prepare a new job", lambda: validated_job(work))
-    validate_cached_stages(work, job)
+    try:
+        job_hash = sha256(work / "job.json")
+    except OSError:
+        job_hash = None  # The existing job validator supplies the actionable error below.
+    with accounting_session(work / "accounting", "weekly_dubbing", metadata={"jobSha256": job_hash}):
+        with stage("job_validation", billing="local"):
+            job = stage_check("Job", "restore the frozen inputs or prepare a new job", lambda: validated_job(work))
+            record_workload("weekly_job", {"jobSha256": job_hash,
+                "blockCount": len(job["blocks"]) if isinstance(job.get("blocks"), list) else None,
+                "unitCount": len(job["units"]) if isinstance(job.get("units"), list) else None,
+                "sourceDurationSeconds": job.get("sourceDurationSeconds")})
+        run(args, work, job)
+
+
+def run(args, work, job):
+    with stage("cache_validation", billing="local"):
+        validate_cached_stages(work, job)
+        before = receipt_snapshot(work, job)
+        record_workload("render_cache", {"expectedUnitCount": len(job["units"]),
+            "localCachedUnitCount": len(before), "missingLocalUnitCount": len(job["units"]) - len(before),
+            "completeRenderCache": (work / "render/report.json").exists()})
     checkpoint = Path(args.remote_checkpoint)
     if not checkpoint.is_absolute() or not str(checkpoint).startswith(REMOTE_ROOT + "/sermon-") or ".." in checkpoint.parts:
         raise ValueError("Use a checkpoint in the isolated sermon results directory")
@@ -222,43 +318,55 @@ def main():
     def ssh(command):
         subprocess.run(["ssh", "-o", "BatchMode=yes", "-o", "ServerAliveInterval=30", args.host, command], check=True)
     if not (work / "render/report.json").exists():
-        ssh("mkdir -p " + shlex.quote(remote))
-        subprocess.run(["scp", "-q", str(work / "job.json"), str(HERE / "render_weekly_audio.py"), str(HERE / "retry_weekly_unit.py"), str(HERE / "run_qwen_training_smoke.py"), args.host + ":" + remote + "/"], check=True)
-        if (work / "render/identity.json").exists():
-            exists = subprocess.run(["ssh", "-o", "BatchMode=yes", args.host, "test -d " + shlex.quote(remote + "/render")])
-            if exists.returncode == 1:
-                subprocess.run(["scp", "-q", "-r", str(work / "render"), args.host + ":" + remote + "/"], check=True)
-            elif exists.returncode != 0:
-                raise ValueError("Cannot inspect the remote resume directory")
+        with stage("transfer_upload", billing="local"):
+            ssh("mkdir -p " + shlex.quote(remote))
+            subprocess.run(["scp", "-q", str(work / "job.json"), str(HERE / "render_weekly_audio.py"), str(HERE / "retry_weekly_unit.py"), str(HERE / "run_qwen_training_smoke.py"), args.host + ":" + remote + "/"], check=True)
+            if (work / "render/identity.json").exists():
+                exists = subprocess.run(["ssh", "-o", "BatchMode=yes", args.host, "test -d " + shlex.quote(remote + "/render")])
+                if exists.returncode == 1:
+                    subprocess.run(["scp", "-q", "-r", str(work / "render"), args.host + ":" + remote + "/"], check=True)
+                elif exists.returncode != 0:
+                    raise ValueError("Cannot inspect the remote resume directory")
         command = ["docker", "run", "--rm", "--name", "sermon-voice-weekly-" + sha256(work / "job.json")[:12], "--gpus", "all", "--memory", "24g", "--memory-swap", "28g", "--cpus", "6", "--shm-size", "1g", "--user", "1000:1000",
             "-v", remote + ":/work", "-v", RUNTIME + "/venv:/work/venv:ro", "-v", str(checkpoint) + ":/checkpoint:ro", "-v", RUNTIME + "/model-cache:/cache", "-w", "/work", "-e", "HF_HOME=/cache", "-e", "USE_TF=0", "-e", "PYTHONUNBUFFERED=1",
             "nvcr.io/nvidia/pytorch:26.06-py3", "/work/venv/bin/python", "/work/render_weekly_audio.py", "--job", "/work/job.json", "--checkpoint", "/checkpoint", "--out", "/work/render"]
         for attempt in range(6):
             try:
-                ssh(shlex.join(command) + " >> " + shlex.quote(remote + "/runner.log") + " 2>&1")
+                with stage("render", billing="local"):
+                    ssh(shlex.join(command) + " >> " + shlex.quote(remote + "/runner.log") + " 2>&1")
                 break
             except subprocess.CalledProcessError:
                 if attempt == 5:
                     raise
-                failure = json.loads(subprocess.check_output(["ssh", "-o", "BatchMode=yes", args.host, "cat " + shlex.quote(remote + "/render/failure.json")], text=True))
-                if failure.get("reason") != "duration_or_signal" or not isinstance(failure.get("unit"), int) or not 0 <= failure["unit"] < len(job["units"]):
-                    raise ValueError("Failure needs inspection; automatic recovery is limited to an identified audio unit")
-                index = command.index("/work/render_weekly_audio.py")
-                repair = command[:index] + ["/work/retry_weekly_unit.py"] + command[index + 1:] + ["--unit", str(failure["unit"]), "--seed", str(142 + attempt)]
-                ssh(shlex.join(repair) + " >> " + shlex.quote(remote + "/recovery.log") + " 2>&1")
-        subprocess.run(["scp", "-q", "-r", args.host + ":" + remote + "/render", str(work)], check=True)
-    render = stage_check("Render", RENDER_RECOVERY, lambda: validate_render(work, job))
-    if not (work / "audio/library.json").exists():
-        assemble(work)
-    track = stage_check("Natural audio", NATURAL_RECOVERY, lambda: validate_natural(work, job, render))
-    stages = [("align_weekly_source.py", "source-alignment/report.json", "Source alignment", ALIGNMENT_RECOVERY, lambda: validate_alignment(work, job)),
-        ("screen_weekly_audio.py", "audio/asr-screening.json", "ASR screening", SCREENING_RECOVERY, lambda: validate_screening(work, job, render, track)),
-        ("check_weekly_timing.py", "synchronization/report.json", "Timing", TIMING_RECOVERY, lambda: validate_timing(work, job, render))]
-    for script, report, name, recovery, check in stages:
-        if not (work / report).exists():
-            subprocess.run([str(args.mlx_python), str(HERE / script), "--work", str(work)], check=True)
-        stage_check(name, recovery, check)
-    evidence = validate_candidate(work)
+                with stage("render_recovery", billing="local"):
+                    failure = json.loads(subprocess.check_output(["ssh", "-o", "BatchMode=yes", args.host, "cat " + shlex.quote(remote + "/render/failure.json")], text=True))
+                    if failure.get("reason") != "duration_or_signal" or not isinstance(failure.get("unit"), int) or not 0 <= failure["unit"] < len(job["units"]):
+                        raise ValueError("Failure needs inspection; automatic recovery is limited to an identified audio unit")
+                    index = command.index("/work/render_weekly_audio.py")
+                    repair = command[:index] + ["/work/retry_weekly_unit.py"] + command[index + 1:] + ["--unit", str(failure["unit"]), "--seed", str(142 + attempt)]
+                    ssh(shlex.join(repair) + " >> " + shlex.quote(remote + "/recovery.log") + " 2>&1")
+        with stage("transfer_download", billing="local"):
+            subprocess.run(["scp", "-q", "-r", args.host + ":" + remote + "/render", str(work)], check=True)
+    with stage("render" if imported_render else "render_validation", cache_hit=imported_render, billing="local"):
+        render = stage_check("Render", RENDER_RECOVERY, lambda: validate_render(work, job))
+        record_render_workload(work, job, render, before, imported_render)
+    cached_assembly = (work / "audio/library.json").exists()
+    with stage("assemble", cache_hit=cached_assembly, billing="local"):
+        if not cached_assembly:
+            assemble(work)
+        track = stage_check("Natural audio", NATURAL_RECOVERY, lambda: validate_natural(work, job, render))
+    stages = [("align_weekly_source.py", "source-alignment/report.json", "Source alignment", "source_alignment", ALIGNMENT_RECOVERY, lambda: validate_alignment(work, job)),
+        ("screen_weekly_audio.py", "audio/asr-screening.json", "ASR screening", "local_asr", SCREENING_RECOVERY, lambda: validate_screening(work, job, render, track)),
+        ("check_weekly_timing.py", "synchronization/report.json", "Timing", "timing", TIMING_RECOVERY, lambda: validate_timing(work, job, render))]
+    for script, report, name, accounting_name, recovery, check in stages:
+        cached = (work / report).exists()
+        with stage(accounting_name, cache_hit=cached, billing="local"):
+            if not cached:
+                subprocess.run([str(args.mlx_python), str(HERE / script), "--work", str(work)], check=True)
+            stage_check(name, recovery, check)
+    with stage("candidate_validation", billing="local"):
+        evidence = validate_candidate(work)
+        record_workload("candidate_evidence", {**evidence, "candidateReady": True, "humanApproval": False})
     write_json(work / "workflow-receipt.json", {"status": "candidate_ready_for_extended_saturday_review", **evidence,
         "remoteWork": None if imported_render else remote, "renderImported": imported_render, "remoteCheckpoint": str(checkpoint), "humanAudioReview": "pending"})
     print(f"Candidate ready: {work / 'audio/zh-natural.mp3'}\nContinue the Saturday review in {work / 'audio-review.json'}")
