@@ -33,8 +33,12 @@ CONFIGURATION_KEYS = frozenset({
     "translationUnitMaxAudioDurationMs", "translationUnitMaxAudioGapMs",
     "sourceFragmentPolicy", "frontendOrigin", "frontendOrigins",
     "translationPromptFamily", "translationPromptHashScope",
+    "translationProvider", "translationExpectedModelDigest", "translationPackageSha256",
+    "translationMaxNewTokens", "translationGreedy", "translationAddSpecialTokens", "translationEosTokenIds",
+    "translationQuantization", "translationCachePolicy", "translationExperimental",
+    "translationReleaseEligible", "publicSharingAllowed",
 })
-VERSION_KEYS = frozenset({"ollama", "mlx_audio", "mlx", "whisper_cpp", "node"})
+VERSION_KEYS = frozenset({"ollama", "mlx_audio", "mlx", "mlx_lm", "transformers", "tokenizers", "safetensors", "whisper_cpp", "node"})
 
 
 def validate_frontend_origin(value: str) -> str:
@@ -89,6 +93,7 @@ def collect_runtime_identity(
     *,
     repo_path: Path | None = None,
     versions: Mapping[str, Any] | None = None,
+    schema_version: str = "local-live-runtime-identity-v1",
 ) -> dict[str, Any]:
     """Return JSON-serializable identity; unavailable facts remain null.
 
@@ -97,6 +102,8 @@ def collect_runtime_identity(
     installed packages here describe only this Python interpreter. The stable
     SHA-256 excludes capture time and is not proof of a clean build when dirty.
     """
+    if schema_version not in {"local-live-runtime-identity-v1", "local-live-runtime-identity-v2"}:
+        raise ValueError("unsupported runtime identity schema")
     packages: dict[str, str | None] = {}
     for name in ("mlx-audio", "mlx", "websockets"):
         try:
@@ -104,7 +111,7 @@ def collect_runtime_identity(
         except importlib.metadata.PackageNotFoundError:
             packages[name] = None
     payload = {
-        "schemaVersion": "local-live-runtime-identity-v1",
+        "schemaVersion": schema_version,
         "git": _git_identity(repo_path or Path(__file__).resolve().parent),
         "configuration": {
             key: value for key, value in configuration.items()

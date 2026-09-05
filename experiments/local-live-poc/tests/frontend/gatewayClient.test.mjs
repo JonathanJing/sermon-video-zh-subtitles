@@ -8,6 +8,7 @@ import {
   translateCaption,
 } from "../../src/gatewayClient.js";
 import { encodePcmFrame, LiveCaptionSocket, PCM_BYTES_PER_FRAME } from "../../src/liveSocket.js";
+import { V41_TRANSLATION_PROVIDER as V41 } from "../../src/translationProvider.js";
 
 function response(payload, { ok = true, status = 200 } = {}) {
   return {
@@ -136,6 +137,97 @@ async function withFakeWebSocket(run) {
     globalThis.WebSocket = previousWebSocket;
   }
 }
+
+function v41StreamReady() {
+  return {
+    type: "stream.ready",
+    translationProvider: V41,
+    translationSelectionSchema: "local-live-translation-selection-v1",
+    experimental: true,
+    viewer: { disabledReason: "experimental_local_only", urls: [], publicUrl: null },
+  };
+}
+
+test("PCM and caption callbacks wait for a valid handshake for every provider", async () => {
+  for (const provider of ["ollama", V41]) {
+    await withFakeWebSocket(async () => {
+      FakeWebSocket.startReply = null;
+      const events = [];
+      const live = new LiveCaptionSocket("ws://test/api/live", { onEvent: (event) => events.push(event) });
+      const pcm = new ArrayBuffer(PCM_BYTES_PER_FRAME);
+      assert.equal(live.sendPcm(pcm), false);
+      const connecting = live.connect("session-1", "none", 5000, provider);
+      const socket = FakeWebSocket.instances[0];
+      assert.equal(live.sendPcm(pcm), false);
+      await new Promise((resolve) => setImmediate(resolve));
+      assert.equal(socket.readyState, FakeWebSocket.OPEN);
+      assert.equal(live.sendPcm(pcm), false);
+      socket.emit("message", { data: JSON.stringify({ type: "translation.final", targetTextZh: "未确认的字幕" }) });
+      assert.deepEqual(events, []);
+      assert.equal(socket.sent.filter((payload) => payload instanceof ArrayBuffer).length, 0);
+
+      const start = JSON.parse(socket.sent[0]);
+      assert.equal(start.type, "stream.start");
+      assert.equal(start.contextPolicy, "none");
+      if (provider === V41) {
+        assert.equal(start.translationProvider, V41);
+        assert.equal(start.translationSelectionSchema, "local-live-translation-selection-v1");
+      } else {
+        assert.equal("translationProvider" in start, false);
+        assert.equal("translationSelectionSchema" in start, false);
+      }
+      const ready = provider === V41 ? v41StreamReady() : { type: "stream.ready" };
+      socket.emit("message", { data: JSON.stringify(ready) });
+      await connecting;
+      assert.deepEqual(events, [ready]);
+      assert.equal(live.sendPcm(pcm, 258), true);
+      const frames = socket.sent.filter((payload) => payload instanceof ArrayBuffer);
+      assert.equal(frames.length, 1);
+      assert.equal(new DataView(frames[0]).getUint32(0, false), 258);
+      const final = { type: "translation.final", targetTextZh: "已确认的字幕" };
+      socket.emit("message", { data: JSON.stringify(final) });
+      assert.deepEqual(events, [ready, final]);
+      socket.close();
+      assert.equal(live.sendPcm(pcm), false);
+    });
+  }
+});
+
+test("v4.1 rejects legacy, forged or shareable stream.ready without PCM or caption callbacks", async () => {
+  const variants = [
+    ["legacy handshake", () => ({ type: "stream.ready" })],
+    ["missing provider", (ready) => { delete ready.translationProvider; return ready; }],
+    ["wrong provider", (ready) => ({ ...ready, translationProvider: "ollama" })],
+    ["missing selection schema", (ready) => { delete ready.translationSelectionSchema; return ready; }],
+    ["wrong selection schema", (ready) => ({ ...ready, translationSelectionSchema: "local-live-translation-selection-v999" })],
+    ["missing experimental status", (ready) => { delete ready.experimental; return ready; }],
+    ["non-experimental status", (ready) => ({ ...ready, experimental: false })],
+    ["missing viewer restrictions", (ready) => { delete ready.viewer; return ready; }],
+    ["wrong disabled reason", (ready) => ({ ...ready, viewer: { ...ready.viewer, disabledReason: "disabled" } })],
+    ["missing LAN URL list", (ready) => { delete ready.viewer.urls; return ready; }],
+    ["LAN sharing URL", (ready) => ({ ...ready, viewer: { ...ready.viewer, urls: ["http://192.0.2.1/viewer/token"] } })],
+    ["public sharing URL", (ready) => ({ ...ready, viewer: { ...ready.viewer, publicUrl: "https://example.invalid/viewer/token" } })],
+    ["missing public sharing restriction", (ready) => { delete ready.viewer.publicUrl; return ready; }],
+  ];
+  for (const [label, mutate] of variants) {
+    await withFakeWebSocket(async () => {
+      FakeWebSocket.startReply = null;
+      const events = [];
+      const live = new LiveCaptionSocket("ws://test/api/live", { onEvent: (event) => events.push(event) });
+      const connecting = assert.rejects(live.connect("candidate-session", "none", 5000, V41), /Gateway 未确认 v4\.1 本机实验协议/, label);
+      await new Promise((resolve) => setImmediate(resolve));
+      const socket = FakeWebSocket.instances[0];
+      assert.equal(live.sendPcm(new ArrayBuffer(PCM_BYTES_PER_FRAME)), false, label);
+      socket.emit("message", { data: JSON.stringify(mutate(v41StreamReady())) });
+      await connecting;
+      assert.equal(socket.readyState, FakeWebSocket.CLOSED, label);
+      assert.equal(live.sendPcm(new ArrayBuffer(PCM_BYTES_PER_FRAME)), false, label);
+      socket.emit("message", { data: JSON.stringify({ type: "translation.final", targetTextZh: "拒绝后字幕" }) });
+      assert.deepEqual(events, [], label);
+      assert.equal(socket.sent.filter((payload) => payload instanceof ArrayBuffer).length, 0, label);
+    });
+  }
+});
 
 test("unexpected WebSocket close emits a visible disconnect event", async () => {
   await withFakeWebSocket(async () => {

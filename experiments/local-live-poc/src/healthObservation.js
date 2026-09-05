@@ -8,7 +8,8 @@ export function healthObservation(health) {
     storageAvailable: boolean(health?.sessionStorage?.available),
     storageFreeBytes: number(health?.sessionStorage?.freeBytes),
     asrAvailable: boolean(health?.asr?.available),
-    translationAvailable: boolean(health?.ollama?.configuredModelInstalled),
+    translationAvailable: boolean(health?.translationAvailable ?? health?.ollama?.configuredModelInstalled),
+    translationProvider: ["ollama", "milmmt-v41-mlx"].includes(health?.selectedTranslationProvider) ? health.selectedTranslationProvider : null,
     liveDegraded: boolean(health?.liveProgress?.degraded),
     streams: (Array.isArray(health?.liveProgress?.streams) ? health.liveProgress.streams : []).map((stream) => ({
       degraded: boolean(stream.degraded),

@@ -26,6 +26,12 @@ from .content_pack import (
     sha256_file,
 )
 from .firebase_publisher import FirebaseCaptionPublisher, FirebasePublisherConfig
+from .milmmt_v41_client import (
+    MANIFEST_SHA as V41_MANIFEST_SHA,
+    PROVIDER_ID as V41_PROVIDER,
+    WEIGHTS_SHA as V41_WEIGHTS_SHA,
+    MilmmtV41Client,
+)
 from .ollama_client import CONTEXT_PROMPT_VERSION, MILMMT_A0_PROMPT_VERSION, OllamaClient, OllamaError
 from .runtime_identity import collect_runtime_identity, validate_frontend_origin
 from .session_store import SessionStore, SessionStoreError
@@ -35,6 +41,8 @@ from .viewer_server import CaptionHub, ViewerService, viewer_urls
 
 DEFAULT_OLLAMA_MODEL = "sermon-milmmt-46-4b-v1-q8:benchmark"
 RUNTIME_RESTART_EXIT_CODE = 75
+DEFAULT_TRANSLATION_PROVIDER = "ollama"
+TRANSLATION_SELECTION_SCHEMA = "local-live-translation-selection-v1"
 
 
 class GatewayState:
@@ -64,6 +72,7 @@ class GatewayState:
         self.pack = load_pack(pack_path) if pack_path else None
         self.pack_sha256 = sha256_file(pack_path) if pack_path else None
         self.ollama = OllamaClient(ollama_model, ollama_url)
+        self.v41 = MilmmtV41Client()
         self.sessions = SessionStore(session_root)
         if asr_provider == "qwen-mlx-websocket":
             self.asr = MlxAudioWebSocketClient(mlx_audio_model, mlx_audio_url)
@@ -109,13 +118,50 @@ class GatewayState:
         self.runtime_restart: Callable[[], None] = lambda: os._exit(RUNTIME_RESTART_EXIT_CODE)
         self.live_pipelines: dict[str, Any] = {}
         self.live_lock = threading.Lock()
+        self.translation_runtime_starting = False
 
     def capture_runtime_identity(
         self, *, provider_versions: dict[str, Any] | None = None,
         translation_model_digest: str | None = None,
         asr_status: dict[str, Any] | None = None,
+        translation_provider: str = DEFAULT_TRANSLATION_PROVIDER,
     ) -> dict[str, Any]:
         """Freeze once before serving; return copies so callers cannot rewrite it."""
+        provider = self.resolve_translation_provider(translation_provider)
+        if provider == V41_PROVIDER:
+            baseline = self.capture_runtime_identity()
+            status = self.v41.status()
+            packages = status.get("runtimePackages") or {}
+            return collect_runtime_identity({
+                **baseline["configuration"],
+                "translationProvider": provider,
+                "translationModel": self.v41.model,
+                "translationModelDigest": status.get("modelSha256") if status.get("ready") else None,
+                "translationExpectedModelDigest": V41_WEIGHTS_SHA,
+                "translationPackageSha256": V41_MANIFEST_SHA,
+                "translationPromptVersion": MILMMT_A0_PROMPT_VERSION,
+                "translationPromptFamily": "frozen_a0",
+                "translationPromptSha256": hashlib.sha256(OllamaClient.build_prompt(
+                    "{{source_text_en}}", {}
+                ).encode("utf-8")).hexdigest(),
+                "translationPromptHashScope": "template_with_source_placeholder",
+                "translationMaxNewTokens": 512,
+                "translationGreedy": True,
+                "translationTopK": None,
+                "translationAddSpecialTokens": False,
+                "translationEosTokenIds": "1,106",
+                "translationQuantization": "mlx-affine-q5-group64",
+                "translationCachePolicy": "new_per_request",
+                "translationExperimental": True,
+                "translationReleaseEligible": False,
+                "publicSharingAllowed": False,
+                "contextPolicy": "none",
+                "contentPackVersion": None,
+                "contentPackSha256": None,
+            }, versions={
+                **baseline["runtime"]["providerVersions"],
+                **{key.replace("-", "_"): value for key, value in packages.items()},
+            }, schema_version="local-live-runtime-identity-v2")
         with self._runtime_identity_lock:
             if self._runtime_identity_json is None:
                 model_sha256 = (asr_status or {}).get("modelSha256")
@@ -181,7 +227,11 @@ class GatewayState:
                 if frame_sequence - manifest["pcmFrameCount"] > 3000:
                     raise SessionStoreError("字幕中断超过五分钟，请停止保存录音并开始新会话")
             resumed = self.sessions.resume(session_id, count)
-            runtime_identity = self.capture_runtime_identity()
+            runtime_identity = self.capture_runtime_identity(
+                translation_provider=self.resolve_translation_provider(
+                    resumed.get("metadata", {}).get("translationProvider")
+                )
+            )
             original_fingerprint = (resumed.get("metadata", {}).get("runtimeIdentity") or {}).get("fingerprintSha256")
             self.sessions.append_event(session_id, {
                 "type": "stream.resume_requested", "resumeCount": resumed["resumeCount"],
@@ -219,18 +269,58 @@ class GatewayState:
             )
         return requested
 
+    @staticmethod
+    def resolve_translation_provider(value: str | None) -> str:
+        if value is None:
+            return DEFAULT_TRANSLATION_PROVIDER
+        if value not in (DEFAULT_TRANSLATION_PROVIDER, V41_PROVIDER):
+            raise PackValidationError("translationProvider must be ollama or milmmt-v41-mlx")
+        return value
+
+    def translation_providers(self, ollama_status: dict[str, Any] | None = None) -> dict[str, Any]:
+        baseline = self.ollama.status() if ollama_status is None else ollama_status
+        return {
+            DEFAULT_TRANSLATION_PROVIDER: {
+                **baseline, "id": DEFAULT_TRANSLATION_PROVIDER,
+                "label": "MiLMMT Q8 · 当前默认",
+                "ready": bool(baseline.get("configuredModelInstalled")),
+                "experimental": False, "startSupported": False,
+            },
+            V41_PROVIDER: {
+                **self.v41.status(), "id": V41_PROVIDER,
+                "label": "MiLMMT v4.1 Q5 · 实验",
+                "experimental": True, "releaseEligible": False,
+            },
+        }
+
+    def translation_context_policy(self, provider: str, requested: str | None) -> str:
+        if provider == V41_PROVIDER:
+            if requested not in (None, "none"):
+                raise PackValidationError("v4.1 experimental translation requires contextPolicy=none")
+            return "none"
+        return self.resolve_context_policy(requested)
+
     def create_session(self, metadata: dict[str, Any]) -> dict[str, Any]:
         safe_metadata = dict(metadata)
-        safe_metadata["contextPolicy"] = self.resolve_context_policy(
+        provider = self.resolve_translation_provider(safe_metadata.get("translationProvider"))
+        safe_metadata["translationProvider"] = provider
+        safe_metadata["translationSelectionSchema"] = TRANSLATION_SELECTION_SCHEMA
+        safe_metadata["experimental"] = provider == V41_PROVIDER
+        # The server owns this decision; a browser cannot publish a candidate
+        # by changing metadata. Existing baseline sharing remains unchanged.
+        safe_metadata["publicSharingAllowed"] = provider != V41_PROVIDER
+        if provider == V41_PROVIDER:
+            safe_metadata["releaseEligible"] = False
+        safe_metadata["contextPolicy"] = self.translation_context_policy(provider,
             safe_metadata.get("contextPolicy")
         )
-        safe_metadata["contentPack"] = None if not self.pack else {
+        safe_metadata["contentPack"] = None if not self.pack or provider == V41_PROVIDER else {
             "packVersion": self.pack.get("packVersion"),
             "packSha256": self.pack_sha256,
             "serviceDate": self.pack.get("serviceDate"),
             "validUntil": self.pack.get("validUntil"),
         }
-        safe_metadata["runtimeIdentity"] = self.capture_runtime_identity()
+        safe_metadata["runtimeIdentity"] = self.capture_runtime_identity(translation_provider=provider)
         safe_metadata["runtimeLogDirectory"] = os.environ.get("LOCAL_LIVE_RUNTIME_LOG_DIRECTORY") or None
         return self.sessions.create(safe_metadata)
 
@@ -239,18 +329,22 @@ class GatewayState:
         source_text: str,
         cursor_sequence: int | None,
         context_policy: str,
+        translation_provider: str = DEFAULT_TRANSLATION_PROVIDER,
     ) -> dict[str, Any]:
-        context_policy = self.resolve_context_policy(context_policy)
+        provider = self.resolve_translation_provider(translation_provider)
+        context_policy = self.translation_context_policy(provider, context_policy)
         pack = self.pack
         hits = (
             retrieve(pack, source_text, limit=5, cursor_sequence=cursor_sequence)
             if pack and context_policy != "none" else []
         )
         context = prompt_context(hits, policy=context_policy)
-        result = self.ollama.translate(source_text, context)
+        client = self.v41 if provider == V41_PROVIDER else self.ollama
+        result = client.translate(source_text, context)
         return {
             "sourceTextEn": source_text,
             **result,
+            "translationProvider": provider,
             "requestedContextPolicy": context_policy,
             "contextPolicy": context_policy if hits else "none",
             "contextHitIds": [hit["entryId"] for hit in hits],
@@ -263,18 +357,22 @@ class GatewayState:
         cursor_sequence: int | None,
         context_policy: str,
         on_partial: Callable[[str, str], None],
+        translation_provider: str = DEFAULT_TRANSLATION_PROVIDER,
     ) -> dict[str, Any]:
-        context_policy = self.resolve_context_policy(context_policy)
+        provider = self.resolve_translation_provider(translation_provider)
+        context_policy = self.translation_context_policy(provider, context_policy)
         pack = self.pack
         hits = (
             retrieve(pack, source_text, limit=5, cursor_sequence=cursor_sequence)
             if pack and context_policy != "none" else []
         )
         context = prompt_context(hits, policy=context_policy)
-        result = self.ollama.translate(source_text, context, on_partial=on_partial)
+        client = self.v41 if provider == V41_PROVIDER else self.ollama
+        result = client.translate(source_text, context, on_partial=on_partial)
         return {
             "sourceTextEn": source_text,
             **result,
+            "translationProvider": provider,
             "requestedContextPolicy": context_policy,
             "contextPolicy": context_policy if hits else "none",
             "contextHitIds": [hit["entryId"] for hit in hits],
@@ -343,6 +441,7 @@ class Handler(BaseHTTPRequestHandler):
         storage = self.server.state.sessions.health()
         pack = self.server.state.pack
         live_health = self.server.state.live_health()
+        core_ready = bool(asr.get("available") and storage.get("available") and not live_health["degraded"])
         self._send(HTTPStatus.OK, {
             "service": "local-live-caption-gateway",
             "runtimeIdentity": self.server.state.capture_runtime_identity(),
@@ -359,6 +458,10 @@ class Handler(BaseHTTPRequestHandler):
                 "entryCount": len(pack["entries"]),
             },
             "defaultContextPolicy": self.server.state.default_context_policy,
+            "defaultTranslationProvider": DEFAULT_TRANSLATION_PROVIDER,
+            "translationSelectionSchema": TRANSLATION_SELECTION_SCHEMA,
+            "translationProviders": self.server.state.translation_providers(ollama),
+            "coreReady": core_ready,
             "ollama": ollama,
             "ollamaWarmup": self.server.state.ollama_warmup,
             "asr": asr,
@@ -420,6 +523,31 @@ class Handler(BaseHTTPRequestHandler):
                     return
                 self._send(HTTPStatus.ACCEPTED, {"status": "restarting"})
                 threading.Timer(0.1, self.server.state.runtime_restart).start()
+            elif parsed.path == f"/api/translation/providers/{V41_PROVIDER}/start":
+                if self.client_address[0] not in {"127.0.0.1", "::1"} or self.headers.get("Origin") not in (*self.server.state.frontend_origins, None):
+                    self._send(HTTPStatus.FORBIDDEN, {"error": "local_only"})
+                    return
+                with self.server.state.live_lock:
+                    # A claimed stream is active even before its pipeline exists.
+                    if self.server.state.live_pipelines:
+                        conflict = {"error": "recording_active", "message": "请停止并保存当前录音后再启动实验模型。"}
+                    elif self.server.state.translation_runtime_starting:
+                        conflict = {"error": "translation_runtime_starting", "message": "实验模型正在启动，请稍后重试。"}
+                    else:
+                        self.server.state.translation_runtime_starting = True
+                        conflict = None
+                if conflict:
+                    self._send(HTTPStatus.CONFLICT, conflict)
+                    return
+                try:
+                    status = self.server.state.v41.start_runtime()
+                except OllamaError as error:
+                    self._send(HTTPStatus.SERVICE_UNAVAILABLE, {"error": "translation_unavailable", "message": str(error)})
+                    return
+                finally:
+                    with self.server.state.live_lock:
+                        self.server.state.translation_runtime_starting = False
+                self._send(HTTPStatus.OK, {"translationProvider": V41_PROVIDER, **status})
             elif parsed.path == "/api/sessions/start":
                 self._send(HTTPStatus.CREATED, self.server.state.create_session(payload))
             elif session_match and session_match.group(2) == "resume":
@@ -483,11 +611,12 @@ class Handler(BaseHTTPRequestHandler):
         if not source_text:
             raise PackValidationError("sourceTextEn is required")
         cursor_sequence = self._cursor_sequence(payload)
-        context_policy = self._context_policy(payload)
+        provider = self.server.state.resolve_translation_provider(payload.get("translationProvider"))
+        context_policy = self.server.state.translation_context_policy(provider, payload.get("contextPolicy"))
         if payload.get("useContext") is False:
             context_policy = "none"
         try:
-            result = self.server.state.translate(source_text, cursor_sequence, context_policy)
+            result = self.server.state.translate(source_text, cursor_sequence, context_policy, translation_provider=provider)
         except OllamaError as error:
             pack = self.server.state.pack
             hits = (

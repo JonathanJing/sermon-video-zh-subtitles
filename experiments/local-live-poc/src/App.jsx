@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { observeCaptionFrame } from "./captionObservation.js";
 import { healthObservation } from "./healthObservation.js";
+import {
+  V41_TRANSLATION_PROVIDER, healthForTranslationProvider, initialTranslationProvider,
+  providerContextPolicy, translationProviderStatus, assertTranslationSession,
+} from "./translationProvider.js";
 import QRCode from "qrcode";
 import {
   GATEWAY_URL,
@@ -11,6 +15,7 @@ import {
   restartGateway,
   resumeLocalSession,
   startLocalSession,
+  startV41TranslationRuntime,
 } from "./gatewayClient.js";
 import { LiveCaptionSocket } from "./liveSocket.js";
 import { applyCaptionEvent, createCaptionState } from "./captionState.js";
@@ -37,6 +42,7 @@ function compactModelName(value, fallback) {
   return name
     .replace(":benchmark", "")
     .replace("qwen3-asr-0.6b-8bit-89e96d92", "Qwen3-ASR 0.6B 8-bit")
+    .replace("milmmt-sermon-v41-experimental-mlx-q5", "MiLMMT v4.1 Q5 · 实验")
     .replace("sermon-milmmt-46-4b-v1-q8", "MiLMMT 4B Q8");
 }
 
@@ -78,6 +84,12 @@ export function App() {
   const [phase, setPhase] = useState("idle");
   const [devices, setDevices] = useState([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState("");
+  const [selectedTranslationProvider, setSelectedTranslationProvider] = useState(
+    () => initialTranslationProvider(window.location.search),
+  );
+  const [modelStartupState, setModelStartupState] = useState("idle");
+  const translationProviderRef = useRef(selectedTranslationProvider);
+  translationProviderRef.current = selectedTranslationProvider;
   const [elapsed, setElapsed] = useState(0);
   const [level, setLevel] = useState(0);
   const [captions, setCaptions] = useState(() => createCaptionState({
@@ -131,15 +143,19 @@ export function App() {
 
   const isRunning = phase === "running";
   const isBusy = phase === "requesting" || phase === "stopping";
+  const modelStarting = modelStartupState === "starting";
+  const isExperimentalTranslation = selectedTranslationProvider === V41_TRANSLATION_PROVIDER;
+  const selectedModelStatus = translationProviderStatus(gatewayHealth, selectedTranslationProvider);
+  const selectedGatewayHealth = healthForTranslationProvider(gatewayHealth, selectedTranslationProvider);
   const asrModelName = compactModelName(
     gatewayHealth?.asr?.modelPath || gatewayHealth?.asr?.provider,
     "ASR",
   );
   const translationModelName = compactModelName(
-    gatewayHealth?.ollama?.configuredModel,
-    "MiLMMT",
+    selectedModelStatus.configuredModel,
+    isExperimentalTranslation ? "MiLMMT v4.1 Q5 · 实验" : "MiLMMT",
   );
-  const contextPolicy = gatewayHealth?.defaultContextPolicy || "none";
+  const contextPolicy = providerContextPolicy(gatewayHealth, selectedTranslationProvider);
   const captionDemo = import.meta.env.DEV
     && new URLSearchParams(window.location.search).get("captionDemo") === "1";
   const visibleCaptions = captionDemo ? {
@@ -226,10 +242,25 @@ export function App() {
     try {
       const health = await getGatewayHealth();
       setGatewayHealth(health);
-      return health;
+      return healthForTranslationProvider(health, translationProviderRef.current);
     } catch (caught) {
       setGatewayHealth({ status: "offline", message: caught?.message || "Gateway unavailable" });
       return null;
+    }
+  }
+
+  async function startExperimentalModel() {
+    if (isRunning || isBusy || modelStarting) return;
+    setModelStartupState("starting");
+    setError("");
+    try {
+      const result = await startV41TranslationRuntime();
+      if (!result.ready) throw new Error("v4.1 尚未就绪，请查看本地模型启动日志。");
+      setModelStartupState("ready");
+      await refreshGatewayHealth();
+    } catch (caught) {
+      setModelStartupState("error");
+      setError(caught?.message || "v4.1 启动失败，请重试。");
     }
   }
 
@@ -288,11 +319,13 @@ export function App() {
       };
       await backfill();
       if (!recordingActiveRef.current) return;
+      const provider = translationProviderRef.current;
+      assertTranslationSession(session, provider);
       const socket = new LiveCaptionSocket(health.liveStream.webSocketUrl, {
         onEvent: handleLiveEvent, onLocalEvent: handleLocalLiveEvent,
       });
       pendingSocket = socket;
-      await socket.connect(session.sessionId, session.metadata?.contextPolicy || "none");
+      await socket.connect(session.sessionId, session.metadata?.contextPolicy || "none", 5000, provider);
       await backfill();
       if (socket.socket?.readyState !== WebSocket.OPEN || socket.disconnectReported) {
         throw new Error("录音补存期间字幕连接再次中断，请重试恢复");
@@ -632,7 +665,8 @@ export function App() {
       await serverWriteQueueRef.current;
       serverWriteQueueRef.current = Promise.resolve();
       const health = await refreshGatewayHealth();
-      const effectiveContextPolicy = health?.defaultContextPolicy || "none";
+      const chosenTranslationProvider = translationProviderRef.current;
+      const effectiveContextPolicy = providerContextPolicy(health, chosenTranslationProvider);
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error("当前浏览器不支持麦克风采集。请使用最新版 Safari 或 Chrome。");
       }
@@ -688,6 +722,7 @@ export function App() {
           audioDeviceLabel: audioTrack?.label || "default",
           audioCaptureSettings,
           contextPolicy: effectiveContextPolicy,
+          translationProvider: chosenTranslationProvider,
         });
         serverSession = result;
         localSessionRef.current = result;
@@ -728,6 +763,7 @@ export function App() {
         asrSource: "microphone_pcm_stream",
         translationGateway: GATEWAY_URL,
         contextPolicy: effectiveContextPolicy,
+        translationProvider: chosenTranslationProvider,
         localSessionId: serverSession?.sessionId || null,
         audioDeviceId: audioTrack?.getSettings().deviceId || "default",
         audioCaptureSettings,
@@ -735,11 +771,12 @@ export function App() {
       appendEvent("gateway_health", { health });
       if (serverSession && health?.liveStream?.webSocketUrl) {
         try {
+          assertTranslationSession(serverSession, chosenTranslationProvider);
           const liveSocket = new LiveCaptionSocket(health.liveStream.webSocketUrl, {
             onEvent: handleLiveEvent,
             onLocalEvent: handleLocalLiveEvent,
           });
-          await liveSocket.connect(serverSession.sessionId, effectiveContextPolicy);
+          await liveSocket.connect(serverSession.sessionId, effectiveContextPolicy, 5000, chosenTranslationProvider);
           liveSocketRef.current = liveSocket;
         } catch (caught) {
           recoverableAsrErrorRef.current = false;
@@ -875,7 +912,7 @@ export function App() {
           <select
             value={selectedDeviceId}
             onChange={(event) => setSelectedDeviceId(event.target.value)}
-            disabled={isRunning || isBusy}
+            disabled={isRunning || isBusy || modelStarting}
           >
             {devices.length === 0 && <option value="">系统默认麦克风</option>}
             {devices.map((device, index) => (
@@ -885,6 +922,27 @@ export function App() {
             ))}
           </select>
         </label>
+
+        <div className="translation-field">
+          <label className="device-field" htmlFor="translation-provider">
+            <span>翻译模型</span>
+            <select id="translation-provider"
+            value={selectedTranslationProvider}
+            onChange={(event) => { setSelectedTranslationProvider(event.target.value); setError(""); }}
+            disabled={isRunning || isBusy || modelStarting}
+          >
+            <option value="ollama">MiLMMT Q8 · 当前默认</option>
+            <option value={V41_TRANSLATION_PROVIDER}>v4.1 Q5 · 实验候选</option>
+            </select>
+          </label>
+          {isExperimentalTranslation && !selectedModelStatus.ready && !isRunning && (
+            <button type="button" className="start-model" onClick={startExperimentalModel}
+              disabled={isBusy || modelStarting || !selectedModelStatus.startSupported}>
+              {modelStarting ? "模型加载中…" : selectedModelStatus.startSupported ? "启动 v4.1 模型"
+                : gatewayHealth?.translationProviders ? "模型启动环境未就绪" : "等待 Gateway 连接"}
+            </button>
+          )}
+        </div>
 
         <div className="level-block" aria-label={`麦克风音量 ${level}%`}>
           <span>输入</span>
@@ -901,7 +959,7 @@ export function App() {
 
         <div className="actions">
           {!isRunning ? (
-            <button className="primary-action" onClick={startSession} disabled={isBusy}>
+            <button className="primary-action" onClick={startSession} disabled={isBusy || modelStarting}>
               {isBusy ? "连接中…" : phase === "stopped" ? "开始新录音" : "开始录音与字幕"}
             </button>
           ) : (
@@ -921,6 +979,11 @@ export function App() {
                 : "麦克风录音 + 本地模型集成 POC"}
           </span>
         </div>
+
+        {isExperimentalTranslation && <p className="experimental-notice" role="note">
+          v4.1 实验候选 · 神学质量门未通过，译文未经人工确认。本次仅在本机显示与保存。
+          {!selectedModelStatus.ready && " 模型未就绪，录音仍可独立保存。"}
+        </p>}
 
         <div className={`caption-copy ${visibleCaptions.previousFinal ? "has-previous" : ""}`}>
           {visibleCaptions.previousFinal && (
@@ -997,19 +1060,19 @@ export function App() {
             字幕延迟：{Number.isFinite(liveMetrics.endToFirstTokenMs) ? `首字 ${liveMetrics.endToFirstTokenMs}ms` : "开始讲话后显示"}
             {Number.isFinite(liveMetrics.endToChineseFinalMs) ? ` · 完整 ${liveMetrics.endToChineseFinalMs}ms` : ""}
           </span>
-          <span data-state={gatewayHealth?.status === "ready" ? "active" : "pending"}>
-            Gateway {gatewayHealth?.status === "ready" ? "就绪" : gatewayHealth?.status === "offline" ? "离线" : "未就绪"}
+          <span data-state={selectedGatewayHealth?.status === "ready" ? "active" : "pending"}>
+            Gateway {selectedGatewayHealth?.status === "ready" ? "就绪" : selectedGatewayHealth?.status === "offline" ? "离线" : "未就绪"}
           </span>
           <span
-            data-state={gatewayHealth?.publicViewer?.configured && !gatewayHealth.publicViewer.lastError ? "active" : "idle"}
-            title={gatewayHealth?.publicViewer?.lastError || ""}
+            data-state={!isExperimentalTranslation && gatewayHealth?.publicViewer?.configured && !gatewayHealth.publicViewer.lastError ? "active" : "idle"}
+            title={isExperimentalTranslation ? "实验模型仅本机显示与保存" : gatewayHealth?.publicViewer?.lastError || ""}
           >
-            公网分享 {gatewayHealth?.publicViewer?.configured
+            公网分享 {isExperimentalTranslation ? "实验会话关闭" : gatewayHealth?.publicViewer?.configured
               ? gatewayHealth.publicViewer.lastError
                 ? "降级"
                 : "就绪"
               : "未配置"}
-            {gatewayHealth?.publicViewer?.configured
+            {!isExperimentalTranslation && gatewayHealth?.publicViewer?.configured
               ? ` · 队列 ${gatewayHealth.publicViewer.queueDepth || 0}`
               : ""}
           </span>

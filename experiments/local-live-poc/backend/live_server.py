@@ -3,12 +3,14 @@ from __future__ import annotations
 import json
 import struct
 import threading
+from functools import partial
 from typing import Any
 
 from websockets.exceptions import ConnectionClosed
 from websockets.sync.server import ServerConnection, serve
 
 from .content_pack import PackValidationError
+from .milmmt_v41_client import PROVIDER_ID as V41_PROVIDER
 from .live_pipeline import LivePipeline, PCM_BYTES_PER_FRAME
 from .session_store import SessionStoreError
 from .viewer_server import viewer_urls
@@ -42,11 +44,24 @@ class LiveSocketService:
         session_id = ""
         claimed = False
         session: dict[str, Any] = {}
+        sharing_allowed = False
         send_lock = threading.Lock()
 
         def send(payload: dict[str, Any]) -> None:
             outgoing = payload
             if payload.get("type") == "stream.ready" and session_id and claimed:
+                if not sharing_allowed:
+                    outgoing = {
+                        **payload,
+                        "translationProvider": V41_PROVIDER,
+                        "translationSelectionSchema": "local-live-translation-selection-v1",
+                        "experimental": True,
+                        "viewer": {"urls": [], "publicUrl": None, "readOnly": True,
+                                   "disabledReason": "experimental_local_only"},
+                    }
+                    with send_lock:
+                        connection.send(json.dumps(outgoing, ensure_ascii=False, separators=(",", ":")))
+                    return
                 token = self.state.caption_hub.start_session(session_id, token=session.get("viewerToken"))
                 local_urls = viewer_urls(token, self.state.viewer_port)
                 public_url = None
@@ -63,7 +78,7 @@ class LiveSocketService:
                         "readOnly": True,
                     },
                 }
-            if session_id and claimed:
+            if session_id and claimed and sharing_allowed:
                 self.state.caption_hub.publish(session_id, outgoing)
                 if self.state.public_caption_publisher:
                     self.state.public_caption_publisher.publish(session_id, outgoing)
@@ -93,6 +108,15 @@ class LiveSocketService:
             except SessionStoreError as error:
                 send({"type": "stream.error", "message": str(error)})
                 return
+            metadata = session.get("metadata") or {}
+            try:
+                translation_provider = self.state.resolve_translation_provider(metadata.get("translationProvider"))
+                if "translationProvider" in start and self.state.resolve_translation_provider(start["translationProvider"]) != translation_provider:
+                    raise PackValidationError("translationProvider is fixed by the recording session")
+                sharing_allowed = translation_provider != V41_PROVIDER
+            except PackValidationError as error:
+                send({"type": "stream.error", "message": str(error)})
+                return
             if (
                 start.get("encoding") != "pcm_s16le"
                 or int(start.get("sampleRateHz") or 0) != 16000
@@ -102,11 +126,19 @@ class LiveSocketService:
                 send({"type": "stream.error", "message": "unsupported PCM stream format"})
                 return
             try:
-                context_policy = self.state.resolve_context_policy(start.get("contextPolicy"))
+                stored_context = metadata.get("contextPolicy")
+                requested_context = start.get("contextPolicy", stored_context)
+                if stored_context is not None and requested_context != stored_context:
+                    raise PackValidationError("contextPolicy is fixed by the recording session")
+                context_policy = self.state.translation_context_policy(translation_provider, requested_context)
             except PackValidationError as error:
                 send({"type": "stream.error", "message": str(error)})
                 return
             with self.state.live_lock:
+                if self.state.translation_runtime_starting:
+                    send({"type": "stream.error", "error": "translation_runtime_starting",
+                          "message": "实验模型正在启动，请稍后重连实时字幕。"})
+                    return
                 if session_id in self.state.live_pipelines:
                     send({"type": "stream.error", "message": "session already has an active live stream"})
                     return
@@ -117,8 +149,10 @@ class LiveSocketService:
                 session_id=session_id,
                 sessions=self.state.sessions,
                 asr=self.state.asr,
-                translate=self.state.translate,
-                translate_stream=self.state.translate_stream,
+                translate=(partial(self.state.translate, translation_provider=translation_provider)
+                           if translation_provider == V41_PROVIDER else self.state.translate),
+                translate_stream=(partial(self.state.translate_stream, translation_provider=translation_provider)
+                                  if translation_provider == V41_PROVIDER else self.state.translate_stream),
                 send=send,
                 context_policy=context_policy,
                 vad_threshold_rms=self.state.vad_threshold_rms,
@@ -158,8 +192,9 @@ class LiveSocketService:
             if pipeline:
                 drained = pipeline.stop().get("workerDrained") is True
             if claimed:
-                self.state.caption_hub.end_session(session_id)
-                if self.state.public_caption_publisher:
+                if sharing_allowed:
+                    self.state.caption_hub.end_session(session_id)
+                if sharing_allowed and self.state.public_caption_publisher:
                     self.state.public_caption_publisher.end_session(session_id)
                 if drained:
                     with self.state.live_lock:
