@@ -9,6 +9,7 @@ from poc import sha256, write_json
 from prepare_voice_candidates import ASR, ALIGNER
 from render_weekly_audio import render_identity
 import run_weekly_dubbing as runner
+from scripts import sermon_accounting as accounting
 from weekly_dubbing import read
 
 
@@ -54,7 +55,8 @@ def candidate_fixture(work):
 
 
 def snapshot(work):
-    return {str(p.relative_to(work)): sha256(p) for p in work.rglob("*") if p.is_file()}
+    return {str(p.relative_to(work)): sha256(p) for p in work.rglob("*")
+            if p.is_file() and p.relative_to(work).parts[0] != "accounting"}
 
 
 def modify(work, path, change):
@@ -64,6 +66,13 @@ def modify(work, path, change):
 
 
 class ResumeIntegrityTests(unittest.TestCase):
+    def setUp(self):
+        # Shared accounting tests cover its read-only Git probe separately.
+        # Keep this suite's no-SSH/no-model subprocess assertions strict.
+        identity = patch.object(accounting, "execution_identity", return_value={"gitCommit": None})
+        identity.start()
+        self.addCleanup(identity.stop)
+
     def run_main(self, work):
         argv = ["run_weekly_dubbing.py", "--work", str(work), "--remote-checkpoint", runner.REMOTE_ROOT + "/sermon-fixture/checkpoint"]
         with patch.object(runner.sys, "argv", argv):

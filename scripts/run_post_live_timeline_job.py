@@ -27,6 +27,7 @@ from backend.cloud import (  # noqa: E402
     write_gcs_text,
 )
 from backend.config import upcoming_sunday  # noqa: E402
+from scripts.sermon_accounting import accounting_session, stage  # noqa: E402
 from backend.observability import log_event, url_summary  # noqa: E402
 from scripts import (  # noqa: E402
     build_multistage_post_live_timeline,
@@ -104,6 +105,38 @@ def run_job(
     gcs_downloader: Callable[[str, str | Path], Path] = download_file_from_gcs,
 ) -> dict[str, Any]:
     sunday = args.sunday or upcoming_sunday().isoformat()
+    with accounting_session(args.work_root / sunday / "accounting", "saturday_timeline",
+                            metadata={"sunday": sunday}):
+        return _run_job(args, metadata_loader=metadata_loader, runner=runner,
+                        uploader=uploader, marker_reader=marker_reader,
+                        marker_writer=marker_writer, notifier=notifier,
+                        handoff_reader=handoff_reader, gcs_downloader=gcs_downloader)
+
+
+def _run_job(
+    args: argparse.Namespace,
+    *,
+    metadata_loader: Callable[[str], dict[str, Any] | None] | None = None,
+    runner: Callable[..., Any] | None = None,
+    uploader: Callable[[str | Path, str], None] = upload_file_to_gcs,
+    marker_reader: Callable[[str], dict[str, Any] | None] | None = None,
+    marker_writer: Callable[[str, str], None] = write_gcs_text,
+    notifier: Callable[[argparse.Namespace, dict[str, Any]], dict[str, Any]] | None = None,
+    handoff_reader: Callable[[str], dict[str, Any] | None] | None = None,
+    gcs_downloader: Callable[[str, str | Path], Path] = download_file_from_gcs,
+) -> dict[str, Any]:
+    # Wrap only the operation, never its command, URL, payload or credentials.
+    original_uploader, original_marker_writer = uploader, marker_writer
+
+    def uploader(*values):
+        with stage("timeline.upload", billing="local"):
+            return original_uploader(*values)
+
+    def marker_writer(*values):
+        with stage("timeline.upload", billing="local"):
+            return original_marker_writer(*values)
+
+    sunday = args.sunday or upcoming_sunday().isoformat()
     state = live_source_monitor.read_state(args.state_file)
     source = run_post_live_subtitle_generation.selected_source_from_state(state)
     live_url = run_post_live_subtitle_generation.live_url_from_state(state, source)
@@ -142,16 +175,17 @@ def run_job(
         getattr(args, "youtube_cookies", None),
         args.work_root,
     )
-    if metadata_loader:
-        metadata = metadata_loader(live_url)
-        metadata_diagnostics = {"selectedProvider": "injected-metadata-loader", "fallbackUsed": False}
-    else:
-        metadata, metadata_diagnostics = youtube_metadata_with_data_api(
-            live_url,
-            api_key_secret=args.youtube_api_key_secret,
-            yt_dlp=args.yt_dlp,
-            cookies_path=cookies_path,
-        )
+    with stage("timeline.metadata", billing="local"):
+        if metadata_loader:
+            metadata = metadata_loader(live_url)
+            metadata_diagnostics = {"selectedProvider": "injected-metadata-loader", "fallbackUsed": False}
+        else:
+            metadata, metadata_diagnostics = youtube_metadata_with_data_api(
+                live_url,
+                api_key_secret=args.youtube_api_key_secret,
+                yt_dlp=args.yt_dlp,
+                cookies_path=cookies_path,
+            )
     if not (run_post_live_subtitle_generation.is_post_live_ready(metadata) or args.allow_non_post_live):
         run_status = post_live_run_status.update_stage(
             run_status, sunday, "archive_ready", "blocked", reason="livestream_not_finished"
@@ -174,7 +208,8 @@ def run_job(
         if notification.get("status") != "sent" and args.discord_bot_token_secret and args.discord_channel_id:
             existing["notification"] = (notifier or send_discord_notification)(args, existing)
             marker_writer(marker_uri, json.dumps(existing, ensure_ascii=False, indent=2, sort_keys=True))
-        return finish({**existing, "status": "already_requires_operator_review", "deduped": True})
+        with stage("timeline.review_cache", cache_hit=True, billing="local"):
+            return finish({**existing, "status": "already_requires_operator_review", "deduped": True})
 
     handoff_uri = f"gs://{args.gcs_bucket}/{prefix}/download/local-download-manifest.json"
     handoff = (handoff_reader or read_optional_gcs_json)(handoff_uri)
@@ -184,7 +219,8 @@ def run_job(
     persist_status(run_status, run_status_path, run_status_uri, args, marker_writer)
     if isinstance(handoff_audio_uri, str) and handoff_audio_uri.startswith("gs://"):
         suffix = Path(handoff_audio_uri).suffix or ".m4a"
-        audio_path = gcs_downloader(handoff_audio_uri, run_root / "download" / f"source_audio{suffix}")
+        with stage("timeline.download_handoff", billing="local"):
+            audio_path = gcs_downloader(handoff_audio_uri, run_root / "download" / f"source_audio{suffix}")
         audio_uri = handoff_audio_uri
         download_source = "local-gcs-handoff"
     else:
@@ -192,14 +228,15 @@ def run_job(
         actual_runner = runner or __import__("subprocess").run
         download_started = time.monotonic()
         try:
-            audio_path = run_post_live_subtitle_generation.download_archive_audio(
-                live_url,
-                audio_template,
-                args.audio_format,
-                args.yt_dlp,
-                actual_runner,
-                cookies_path=cookies_path,
-            )
+            with stage("timeline.download_archive", billing="local"):
+                audio_path = run_post_live_subtitle_generation.download_archive_audio(
+                    live_url,
+                    audio_template,
+                    args.audio_format,
+                    args.yt_dlp,
+                    actual_runner,
+                    cookies_path=cookies_path,
+                )
         except Exception as exc:
             run_status = post_live_run_status.update_stage(
                 run_status,
@@ -259,7 +296,8 @@ def run_job(
         reasoning_effort=args.reasoning_effort,
         api_key_secret=args.api_key_secret,
     )
-    timeline = build_multistage_post_live_timeline.build_multistage_timeline(timeline_args)
+    with stage("timeline.probe", billing="local"):
+        timeline = build_multistage_post_live_timeline.build_multistage_timeline(timeline_args)
     timeline_path.write_text(json.dumps(timeline, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
     timeline_uri = f"gs://{args.gcs_bucket}/{prefix}/timeline/report.json"
     uploader(timeline_path, timeline_uri)

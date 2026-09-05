@@ -24,6 +24,7 @@ from backend.cloud import read_gcs_bytes
 from scripts import (
     live_source_monitor,
     run_sermon_production_supervisor_agent,
+    sermon_accounting,
     sermon_production_supervisor,
 )
 
@@ -462,8 +463,7 @@ def write_report(path: Path, report: dict[str, Any]) -> None:
     print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
 
 
-def main() -> int:
-    args = make_agent_args(parse_args())
+def run_local_production(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
     if args.resume_failed_generation:
         result = sermon_production_supervisor.resume_failed_reading_pdf_generation(
             run_sermon_production_supervisor_agent.make_config(args)
@@ -487,17 +487,19 @@ def main() -> int:
             "finalSnapshot": final_snapshot,
         }
         write_report(args.out, report)
-        return 0 if result.get("status") == "completed" else 2
+        return (0 if result.get("status") == "completed" else 2), report
     completed = completed_production_report(args)
     if completed is not None:
         write_report(args.out, completed)
-        return 0
+        return 0, completed
     if args.skip_source_refresh:
         source_refresh = {"status": "skipped"}
     else:
         try:
             source_refresh = refresh_source_state(args)
         except Exception as exc:
+            sermon_accounting.record_log("production.source_refresh_failed", level="ERROR",
+                fields={"status": "failed", "reasonCode": "source_refresh_error"}, exception=exc)
             source_refresh = {
                 "status": "failed",
                 "errorClass": exc.__class__.__name__,
@@ -506,7 +508,14 @@ def main() -> int:
     report = asyncio.run(run_sermon_production_supervisor_agent.run_agent(args))
     report["sourceRefresh"] = source_refresh
     write_report(args.out, report)
-    return 0 if report.get("status") in {"observed", "advanced", "complete"} else 2
+    return (0 if report.get("status") in {"observed", "advanced", "complete"} else 2), report
+
+
+def main() -> int:
+    args = make_agent_args(parse_args())
+    return run_sermon_production_supervisor_agent.logged_production_entry(
+        args, "codex_local_sermon_production", lambda: run_local_production(args)
+    )
 
 
 if __name__ == "__main__":
