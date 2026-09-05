@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "sermon-saturday-dubbing-bridge-v1",
+  "outputRoot": "artifacts/sermon-dubbing/weekly-bridge",
+  "authorizationStatement": "已获得授权，声音可以用于训练和配音",
+  "scopeReference": "当前 Codex 对话中的明确授权；使用前填写适用于本周素材的授权范围引用",
+  "voiceRuns": {
+    "Eric Geiger": {
+      "voiceRun": "artifacts/sermon-dubbing/2026-09-05-corpus-expansion",
+      "remoteCheckpoint": "/home/achillesjing/dgx-spark-benchmark/results/sermon-voice-expansion-20260905/checkpoints/checkpoint-epoch-0"
+    }
+  },
+  "weeks": {
+    "2026-09-06": {
+      "speaker": null,
+      "title": null,
+      "scripture": null,
+      "sameVideo": {
+        "source": null
+      },
+      "liveArchive": {}
+    }
+  }
+}

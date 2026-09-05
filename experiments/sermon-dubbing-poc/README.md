@@ -6,20 +6,26 @@ The App starts in dark mode for dim venues. The header switches between dark and
 
 The user confirmed authorization for voice training and dubbing and accepted both Eric trained samples. Five additional speakers now have independent three-sermon training checkpoints and Chinese auditions: Jared Kirkwood, Christine Caine, Doug Fields, Kenton Beshore and Steve Bang Lee. Their 223 train-only candidate clips total 1,803 seconds. Short original-English references are available beside the Chinese samples; other speakers' human listening acceptance remains pending.
 
-The new [Saturday audio extension runbook](./SATURDAY_AUDIO_RUNBOOK.zh.md) and [SVG workflow](../../docs/diagrams/saturday-chinese-voice-workflow.svg) cover the reusable weekly path. The [speaker / weekly-flow report](./SPEAKER_BANK_AND_WEEKLY_FLOW_REPORT_20260905.zh.md) records the actual artifacts and limitations. A complete August 30 candidate was generated, screened and revised for numeral/pronoun pronunciation: 122 units, 1,612.84 seconds. The App shows it as **整篇待审**. Nine acoustic boundaries and fifteen natural-speech timing overflows require review before same-video use. This is separate from the already accepted Eric voice sample.
+The [system design and model choices](../../docs/sermon-dubbing-system-design.zh.md), [Saturday audio runbook](./SATURDAY_AUDIO_RUNBOOK.zh.md), and [SVG workflow](../../docs/diagrams/saturday-chinese-voice-workflow.svg) describe the featured weekly path. The latest [Astra revision and synchronized-candidate report](../../docs/sermon-dubbing-astra-review-2026-09-05.zh.md) supersedes the earlier 122-unit timing worksheet: 55 blocks reviewed, 18 spoken passages revised, 118 final speech units, and a 1,770-second synchronized candidate. All block budgets pass, including a separately reviewed 0.80-second lead for the last invitation. The original English anchor remains unchanged. The app labels this **同步试播 · 待现场验收**; three name/pronunciation questions and two minor spoken/ASR variants remain for listening.
+
+Two source routes are separate: the exact Sunday sermon-only video is the future primary input, while the livestream archive continues as a fallback with its existing human window approval. The bridge is implemented; its scheduled-task update and the same-video ingestion adapter remain unconfirmed/unavailable respectively.
 
 ## Run
 
 From the repository root:
 
 ```bash
-python3 experiments/sermon-dubbing-poc/server.py
+python3 experiments/sermon-dubbing-poc/server.py \
+  --pack artifacts/sermon-dubbing/2026-09-05-weekly-app-v5-astra-sync/public
 ```
 
-This command serves the built weekly app on loopback. The current release pack is `artifacts/sermon-dubbing/2026-09-05-weekly-app-v4-dark-final/public`. To export another release, choose a new output directory:
+This command serves the built weekly app on loopback. The latest verified release pack is `artifacts/sermon-dubbing/2026-09-05-weekly-app-v5-astra-sync/public`; the explicit `--pack` above selects it while the legacy server default is retained. To export another release, choose a new output directory:
 
 ```bash
-python3 experiments/sermon-dubbing-poc/build_weekly_app.py \
+.venv/bin/python experiments/sermon-dubbing-poc/build_weekly_app.py \
+  --weekly-job artifacts/sermon-dubbing/2026-09-05-weekly-20260830-v4-astra \
+  --review-preview --sync-preview --include-history \
+  --voice-bank artifacts/sermon-dubbing/2026-09-05-speaker-bank/speaker-bank.json \
   --expansion artifacts/sermon-dubbing/2026-09-05-corpus-expansion/chinese-audio \
   --out artifacts/sermon-dubbing/a-new-weekly-release
 python3 experiments/sermon-dubbing-poc/deploy_firebase.py \
@@ -83,7 +89,7 @@ The generation runner preserves exact text across segmentation variants, caches 
 ## Verification
 
 ```bash
-python3 -m unittest discover -s experiments/sermon-dubbing-poc -p 'test_*.py'
+.venv/bin/python -m unittest discover -s experiments/sermon-dubbing-poc -p 'test_*.py'
 node --test experiments/sermon-dubbing-poc/web/timing.test.mjs experiments/sermon-dubbing-poc/web/catalog.test.mjs
 node --check experiments/sermon-dubbing-poc/web/app.mjs
 git diff --check
@@ -91,4 +97,4 @@ git diff --check
 
 These cover source-text preservation, range requests, directory/path isolation, missing media, seek bounds and cue boundaries. This is dependency-free static browser code; there is no bundler or production-build step. Real model generation, complete decode and browser playback are additional checks, not replacements for human listening and onsite end-to-end acceptance.
 
-The Firebase release includes week selection, listening/transcript/production-progress/speaker-audition tabs, topic/speaker metadata, timecode jumps, subtitle seeking and a sermon-companion modal. August 23 has accepted Eric voice samples; August 30 has a complete review candidate. Published assets are explicit UI/content files, Chinese MP3s and five short authorized English voice references. Full source recordings, training data and checkpoints stay local. Same-video synchronization, real-phone background playback and venue readiness remain unverified.
+The Firebase release includes week selection, listening/transcript/production-progress/speaker-audition tabs, topic/speaker metadata, timecode jumps, subtitle seeking and a sermon-companion modal. August 23 has accepted Eric voice samples; August 30 has a complete review candidate. Published assets are explicit UI/content files, Chinese MP3s and five short authorized English voice references. Full source recordings, training data and checkpoints stay local. Alignment to the frozen source timeline is verified for this candidate; full human same-video listening, real-phone background playback and venue readiness remain pending.

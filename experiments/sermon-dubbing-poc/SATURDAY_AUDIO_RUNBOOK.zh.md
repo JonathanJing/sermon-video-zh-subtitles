@@ -6,6 +6,42 @@
 
 ![从周六生产到中文配音、审核与周日播放](../../docs/diagrams/saturday-chinese-voice-workflow.svg)
 
+系统架构、模型分工及选择依据见[系统设计与模型选择](../../docs/sermon-dubbing-system-design.zh.md)。
+
+## 两路来源与周六定时衔接
+
+两路并行推进：
+
+- **同版本纯证道视频主路（待来源与接入器）**：下一步取得周日实际播放的那一份纯证道视频，绑定文件哈希、版本和完整片长。只有明确的纯证道来源契约成立后，才可使用整片范围；不需要人为重复填写起止时间。目前未收到该视频，不能宣称已经全自动。
+- **直播归档 fallback（当前可用，半自动）**：继续现有直播归档与 PDF 流程，复用已确认的证道窗口。当前 v1 只消费真实人工窗口；将来自动探测和审核边界要另建模型证据契约，不能写成 v1 人工批准。主路缺少来源不会阻挡 fallback。
+
+桥接器默认只读检查；`--execute` 会在来源和 QA 齐备后准备或恢复配音候选，使用按周、来源隔离的锁。文字修订和审核在本对话使用 GPT-6 Astra；桥接器本身不调用另一个文本审核服务。
+
+```bash
+.venv/bin/python experiments/sermon-dubbing-poc/continue_saturday_dubbing.py \
+  --week 2026-09-06 --config artifacts/sermon-dubbing/saturday-bridge.json
+# 实际推进已有来源的配音候选：在同一命令后加 --execute
+```
+
+已建立的本机配置记录六位讲员训练结果、现有授权范围和周次来源。新周次讲员、主题、经文应从真实视频/已审产物核验后登记，不能从目录名猜测。可版本化的结构见 [saturday-bridge.example.json](saturday-bridge.example.json)。配置、音频和审核证据留在忽略目录。
+
+接线目标沿用现有定时任务的周六 18:00、20:00、22:00 与周日 08:00（洛杉矶）的有效唤醒。PDF 已完成仍需检查配音扩展是否完成；只恢复缺失阶段。整篇模型审核候选与周日现场验收分开记录。2026-09-05 本次应用接口未返回，回读仍为原双 PDF 任务；桥接器和配置已验证，定时接线尚待应用确认。
+
+## 本对话的口播修订与边界审核
+
+`apply_spoken_review.py` 将当前对话的两轮 Astra 审核保存为 `sermon-spoken-script-review-v1`，派生新 job，并哈希绑定父版本、英文/中文、审核材料和模型身份。未变的 WAV 与逐段 ASR 可复用；改变英文时用已有原声词证据重新匹配，不修改历史阅读稿或 PDF。
+
+```bash
+.venv/bin/python experiments/sermon-dubbing-poc/apply_spoken_review.py \
+  --parent artifacts/sermon-dubbing/PARENT_JOB \
+  --review artifacts/sermon-dubbing/REVIEW/script-review.json \
+  --out artifacts/sermon-dubbing/NEW_JOB
+```
+
+弱边界模型审核使用独立 `source-alignment/anchor-model-review.json`，要求 Astra 身份、逐块理由、来源/任务/声学证据哈希，不冒充 `anchor-review.json` 的人工批准。可选 `synchronization/placement-model-review.json` 只调整明确审查的中文播放起点：至多提前一秒、不得早于前段英文结束，并重新计算相邻中文时槽。原英文锚保留在报告；这不是现场口型同步验收。
+
+所有恢复步骤检查完整缓存链。输入、渲染、ASR 或对齐证据改变后保留旧记录并停止，不因存在 MP3 就跳过核验。普通定时运行不会自动删除缓存或重做付费阶段。
+
 ## 节点、模型与产物
 
 | 节点 | 当前实现 | 产物与检查 |
@@ -80,7 +116,7 @@ Qwen 的[官方接口](https://github.com/QwenLM/Qwen3-TTS#custom-voice-generati
 }
 ```
 
-上面的时间只示范结构，不能复制为其他视频的审核。由实际看片者填写全部不确定边界及真实审核信息。只有边界已复核且自然中文全部放得进视频时槽，才可装配同视频 MP3：
+上面的时间只示范结构，不能复制为其他视频的审核。由实际看片者填写全部不确定边界及真实审核信息。候选允许使用上述明确标记的 Astra 边界审核；只有边界已复核且自然中文全部放得进审核后的播放时槽，才可装配同视频 MP3：
 
 ```bash
 /Users/jonathan_jing/.local/share/uv/tools/mlx-audio/bin/python \
@@ -111,7 +147,7 @@ python3 experiments/sermon-dubbing-poc/deploy_firebase.py \
   --project ai-for-god-caption-dev --site ai-for-god-sermon-audio --execute
 ```
 
-`--weekly-job` 可重复提供多周，不需要修改前端代码或写死日期。默认只接受正式审核通过的同步版本。专门发给审核人员试听时，可以显式加 `--review-preview`；App 会显示“整篇待审”和未完成的同步状态。预览不会生成周日批准记录。
+`--weekly-job` 可重复提供多周，不需要修改前端代码或写死日期。默认只接受正式审核通过的同步版本。专门发给审核人员试听时，可以显式加 `--review-preview`；App 会显示“整篇待审”和未完成的同步状态。预览不会生成周日批准记录。已通过时槽检查并装配的同步候选，可同时加 `--review-preview --sync-preview`；它使用同步 MP3 与对应字幕时间轴，并在界面标明模型审核候选、现场试听未验收。传入 `--weekly-job` 时默认只构建指定周次，不依赖旧示例目录；显式 `--include-history` 可保留已存在的历史周次和试听。
 
 上传前核对文件清单/哈希，上传后验证 URL、完整文件哈希、音频 Range 206、播放/跳转/字幕、大纲和手机尺寸。独立站点是 [ai-for-god-sermon-audio.web.app](https://ai-for-god-sermon-audio.web.app)，现有实时字幕站点继续使用其原地址。
 
@@ -122,3 +158,5 @@ python3 experiments/sermon-dubbing-poc/deploy_firebase.py \
 五位新增讲员各三篇证道，共 223 段 / 1,803 秒训练候选。五份约 27–31 秒的中文试听 MP3 已生成，完整解码通过；对应固定试听文稿的本地 ASR 未发现文字差异。这不等于已由真人确认音色相似度。
 
 原周六历史样本仍有失败 generation / 未完成 run-status，因此只用来证明候选生成与审核扩展。现场同视频同步、实体手机后台/蓝牙播放及新视频的实际质量，还需要对应实测。SVG 展示完整流程和审核位置，不把这些未验收项标成已上线能力。
+
+最新实测见 [2026-09-05 Astra 修订与同步候选报告](../../docs/sermon-dubbing-astra-review-2026-09-05.zh.md)。

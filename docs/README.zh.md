@@ -10,11 +10,19 @@
 
 ## 如何理解文档状态
 
-- **当前 source of truth：** 根 README、[两条工作流](./workflows/README.zh.md)、稳定 post-live 工作流、Supervisor Agent，以及[本地实时字幕 POC](../experiments/local-live-poc/README.md)。
+- **当前 source of truth：** 根 README、[配音系统设计](./sermon-dubbing-system-design.zh.md)、[PDF 与实时字幕工作流](./workflows/README.zh.md)、稳定 post-live 工作流、Supervisor Agent，以及[本地实时字幕 POC](../experiments/local-live-poc/README.md)。
 - **带日期的证据：** benchmark、audit 和 report 只描述指定日期和指定 run。后续证据可以补齐当时的 “next gate”，但不会改写原始测量值。
 - **Discovery / 历史快照：** Cloud 架构、provider 对比、部署笔记、旧 live runbook、backlog 和 gap analysis 为研究背景，不是当前 operator 架构，除非 source of truth 明确引用。
 
 文档现状已在 **2026-09-04** 按 `main` 校准；文档本身不证明本地服务当前在线，也不证明现场已经验收。
+
+## 优先阅读：预制中文配音
+
+首页优先展示从英文视频到讲员音色中文配音的流程。当前已发布完整同步试听候选；同版本视频接入、定时接线与现场验收的状态见报告。
+
+- [系统设计与模型选择](./sermon-dubbing-system-design.zh.md)：来源、Astra 审核、GPT-Transcribe、Qwen 音色训练/推理、证据链与恢复。
+- [周六配音操作 Runbook](../experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md)与[完整 SVG](./diagrams/saturday-chinese-voice-workflow.svg)。
+- [2026-09-05 实测与剩余门槛](./sermon-dubbing-astra-review-2026-09-05.zh.md)、[试听 App](https://ai-for-god-sermon-audio.web.app)。
 
 ## 核心文档
 
@@ -63,13 +71,13 @@
 
 ## Discovery 方案
 
-- [周六英文视频到周日原讲员音色中文语音](./saturday-to-sunday-chinese-voice-plan.zh.md)：模型、音色训练、同步与音频路由方案；[MP3 与播放器 POC](../experiments/sermon-dubbing-poc/README.md)已实现授权音色训练、后训练语料复用与[每周 Firebase 听译应用](https://ai-for-god-sermon-audio.web.app)；当前可听中文样片，整篇同步与现场能力尚未验收。
+- [周六英文视频到周日原讲员音色中文语音](./saturday-to-sunday-chinese-voice-plan.zh.md)：模型、音色训练、同步与音频路由方案；[MP3 与播放器 POC](../experiments/sermon-dubbing-poc/README.md)已实现授权音色训练、后训练语料复用与[每周 Firebase 听译应用](https://ai-for-god-sermon-audio.web.app)；已有整篇同步候选；现场能力仍待验收。
 
 - [周六配音扩展 Runbook](../experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md)与 [SVG 示意图](./diagrams/saturday-chinese-voice-workflow.svg)：多讲员音色、每周生成、发音修订和继承周六审核的发布步骤。
 
 ## 推荐阅读顺序
 
-1. 先读根目录 [中文版 README](../README.zh.md)，了解两条主工作流与 Discovery 边界。
+1. 先读根目录 [中文版 README](../README.zh.md)，先看配音流程，再看 PDF、实时字幕及各自验收边界。
 2. 再读 [workflows/README.zh.md](./workflows/README.zh.md)，查看完整流程图、本地延迟预算和测试门槛。
 3. 阅读 [stable-post-live-reading-pdf-workflow.zh.md](./stable-post-live-reading-pdf-workflow.zh.md)，这是当前 repo 最稳定的 operator 路径。
 4. 读 [sermon-production-supervisor-agent.zh.md](./sermon-production-supervisor-agent.zh.md)，了解 Agent 控制层、人工审批契约和 Scheduler 接入。
