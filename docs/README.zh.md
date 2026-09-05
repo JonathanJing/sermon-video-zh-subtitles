@@ -61,6 +61,12 @@
 | Development Notes | [development-notes.md](./development-notes.md) | 同文件英文优先内容 |
 | Review / Testing Notes | [review-testing.md](./review-testing.md) | 同文件英文优先内容 |
 
+## Discovery 方案
+
+- [周六英文视频到周日原讲员音色中文语音](./saturday-to-sunday-chinese-voice-plan.zh.md)：模型、音色训练、同步与音频路由方案；[MP3 与播放器 POC](../experiments/sermon-dubbing-poc/README.md)已实现授权音色训练、后训练语料复用与[每周 Firebase 听译应用](https://ai-for-god-sermon-audio.web.app)；当前可听中文样片，整篇同步与现场能力尚未验收。
+
+- [周六配音扩展 Runbook](../experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md)与 [SVG 示意图](./diagrams/saturday-chinese-voice-workflow.svg)：多讲员音色、每周生成、发音修订和继承周六审核的发布步骤。
+
 ## 推荐阅读顺序
 
 1. 先读根目录 [中文版 README](../README.zh.md)，了解两条主工作流与 Discovery 边界。
