@@ -1,0 +1,88 @@
+name: Tongxing
+options:
+  deploymentTarget:
+    iOS: "17.0"
+  xcodeVersion: "16.0"
+  createIntermediateGroups: true
+packages:
+  TongxingCore:
+    path: Core
+  TongxingInfrastructure:
+    path: .
+configs:
+  Debug: debug
+  Release: release
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+    TARGETED_DEVICE_FAMILY: "1,2"
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+targets:
+  Tongxing:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+        excludes:
+          - Info.plist
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.dev
+        PRODUCT_NAME: Tongxing
+        INFOPLIST_FILE: App/Info.plist
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        SUPPORTS_MACCATALYST: NO
+        SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
+    dependencies:
+      - package: TongxingCore
+      - package: TongxingInfrastructure
+        product: TongxingInfrastructure
+  TongxingTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.dev.tests
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: Tongxing
+      - package: TongxingCore
+  TongxingUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: UITests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.dev.uitests
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: Tongxing
+schemes:
+  Tongxing:
+    build:
+      targets:
+        Tongxing: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      gatherCoverageData: true
+      environmentVariables:
+        TONGXING_TEST_HOST: "1"
+      targets:
+        - name: TongxingTests
+          parallelizable: false
+          randomExecutionOrder: false
+        - name: TongxingUITests
+          parallelizable: false
+          randomExecutionOrder: false
+    archive:
+      config: Release

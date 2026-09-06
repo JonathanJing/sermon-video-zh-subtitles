@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "sermon-weekly-catalog-v1",
+  "defaultWeekId": "2026-09-05",
+  "weeks": [{
+    "id": "2026-09-05",
+    "date": "2026-09-05",
+    "sourceId": "synthetic-source",
+    "sourceUrl": "https://example.org/synthetic-sermon",
+    "title": "合成测试",
+    "speaker": "测试讲员",
+    "scripture": "测试引用",
+    "centralMessage": "此文字仅供软件测试。",
+    "outline": [{"title": "测试大纲", "points": ["合成内容。"], "sourceSliceIndexes": [0]}],
+    "contentReview": "synthetic fixture; no human approval",
+    "humanApproval": false,
+    "audioNotice": "合成测试内容，非真实证道。",
+    "tracks": [{
+      "id": "candidate",
+      "label": "测试音轨",
+      "voiceLabel": "合成测试",
+      "audioUrl": "/media/0123456789abcdef-synthetic.mp3",
+      "file": "0123456789abcdef-synthetic.mp3",
+      "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "durationSeconds": 12,
+      "cues": [
+        {"unitId": 0, "blockId": 0, "start": 0, "end": 3, "text": "测试第一句。"},
+        {"unitId": 1, "blockId": 0, "start": 4, "end": 8, "text": "测试第二句。"},
+        {"unitId": 2, "blockId": 1, "start": 8, "end": 12, "text": "测试第三句。"}
+      ],
+      "subtitleTiming": "source_video_aligned_candidate",
+      "scope": "full_candidate"
+    }]
+  }]
+}

@@ -1,0 +1,63 @@
+name: Tongxing iOS
+
+on:
+  pull_request:
+    paths:
+      - 'apps/tongxing-ios/**'
+      - '.github/workflows/tongxing-ios.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-client:
+    runs-on: macos-15
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/tongxing-ios
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show Apple toolchain
+        run: xcodebuild -version
+      - name: Core behavior tests
+        run: swift test --package-path Core
+      - name: Storage and shared source checks
+        run: swift test
+      - name: Build for iOS Simulator without signing
+        run: >-
+          ./scripts/ios.sh build --developer-dir "$(xcode-select -p)"
+          --derived-data DerivedData --artifacts-dir TestResults
+      - name: Select an available iPhone simulator
+        id: simulator
+        run: |
+          python3 - <<'PY'
+          import json, os, subprocess
+          inventory = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "--json"]))
+          runtimes = sorted(
+              (r for r in inventory["runtimes"] if r["isAvailable"] and r["name"].startswith("iOS ")
+               and int(r["version"].split(".")[0]) >= 17),
+              key=lambda r: tuple(map(int, r["version"].split("."))), reverse=True,
+          )
+          candidates = [d for r in runtimes for d in inventory["devices"].get(r["identifier"], [])
+                        if d["isAvailable"] and d["name"].startswith("iPhone")]
+          if not candidates:
+              raise SystemExit("An available iOS 17+ iPhone simulator is required for hosted tests.")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              output.write(f"udid={candidates[0]['udid']}\n")
+          print("Hosted tests:", candidates[0]["name"], candidates[0]["udid"])
+          PY
+      - name: iOS player and user-flow tests
+        run: >-
+          ./scripts/ios.sh test --developer-dir "$(xcode-select -p)"
+          --simulator '${{ steps.simulator.outputs.udid }}'
+          --derived-data DerivedData --artifacts-dir TestResults
+          --only-testing TongxingTests --only-testing TongxingUITests
+      - name: Preserve iOS test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tongxing-ios-tests
+          path: apps/tongxing-ios/TestResults/
+          if-no-files-found: ignore

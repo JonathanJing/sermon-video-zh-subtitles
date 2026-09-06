@@ -1,0 +1,617 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		17719995BCE43C60385DB306 /* PlaybackControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE58D0C358A74F0BDE595617 /* PlaybackControllerTests.swift */; };
+		23FDF718141336A8978A8DB3 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 07B59FA4533A491CF4AA2D83 /* Assets.xcassets */; };
+		272F205288C38B205D9DE540 /* TongxingApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61FE1B88425139B2F592ED0A /* TongxingApp.swift */; };
+		318C506CF300A57522C9F2F9 /* PlaybackDock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE586AE0AE5D2F197DC5483 /* PlaybackDock.swift */; };
+		35529B2801237F81F67785E8 /* TongxingCore in Frameworks */ = {isa = PBXBuildFile; productRef = 46FC649E9CD7E0BF9CEF7E49 /* TongxingCore */; };
+		8B8A2624687249CFAB61DAFB /* ListeningFlowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 239227789D17BF0B1B0A1614 /* ListeningFlowUITests.swift */; };
+		AAE50D4E51C22893F01DEAFD /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = E8CDE0AD081CB32BAE3CD0CB /* PrivacyInfo.xcprivacy */; };
+		B23482E21D63D7D5A3E4F670 /* TongxingCore in Frameworks */ = {isa = PBXBuildFile; productRef = C194255167B8AD9FCB74BBA5 /* TongxingCore */; };
+		B415795B942C6189370AAE61 /* UITestLaunch.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD0FEA1F83F4300CB78A0935 /* UITestLaunch.swift */; };
+		C18C784B85DC395F257A21B7 /* TongxingInfrastructure in Frameworks */ = {isa = PBXBuildFile; productRef = FA2F2228F6CC524F87E2AC7D /* TongxingInfrastructure */; };
+		C7430BCC556F70CBE78D8CDB /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC6D116D3A73A078D6FA5218 /* DesignSystem.swift */; };
+		C84F91355DB74C84BAC96384 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A757BEABA30910DC76E26BE /* ContentView.swift */; };
+		DA598EC364686E234B86F56B /* PlaybackController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34B67E7FE8944242C03C8904 /* PlaybackController.swift */; };
+		F104CF6576ABBCDDF4B54A62 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F81E8D165D65FEF70E65FFF /* AppModel.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		373AECBD190CDBF621E19994 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CB940143191019D62F3299E8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A88D11D259CB9BF9F91FEB90;
+			remoteInfo = Tongxing;
+		};
+		EFAD1467DFA51C22584E39CC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CB940143191019D62F3299E8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A88D11D259CB9BF9F91FEB90;
+			remoteInfo = Tongxing;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		07B59FA4533A491CF4AA2D83 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		0D25C402E721BC4E502AF672 /* tongxing-ios */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "tongxing-ios"; path = .; sourceTree = SOURCE_ROOT; };
+		0F81E8D165D65FEF70E65FFF /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		239227789D17BF0B1B0A1614 /* ListeningFlowUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningFlowUITests.swift; sourceTree = "<group>"; };
+		3258F6BBF467D18B238176B8 /* Tongxing.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Tongxing.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		34B67E7FE8944242C03C8904 /* PlaybackController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackController.swift; sourceTree = "<group>"; };
+		3A757BEABA30910DC76E26BE /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		61FE1B88425139B2F592ED0A /* TongxingApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TongxingApp.swift; sourceTree = "<group>"; };
+		72F704FFC13274A549628FF2 /* Core */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Core; path = Core; sourceTree = SOURCE_ROOT; };
+		AAE586AE0AE5D2F197DC5483 /* PlaybackDock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackDock.swift; sourceTree = "<group>"; };
+		BC6D116D3A73A078D6FA5218 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		BD0FEA1F83F4300CB78A0935 /* UITestLaunch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestLaunch.swift; sourceTree = "<group>"; };
+		D76315F9ECA722C00FEE69F2 /* TongxingUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TongxingUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E89C7099077BFCEE7659F81B /* TongxingTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TongxingTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E8CDE0AD081CB32BAE3CD0CB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		EE58D0C358A74F0BDE595617 /* PlaybackControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackControllerTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		180A55B611AD0E790158B7C9 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				35529B2801237F81F67785E8 /* TongxingCore in Frameworks */,
+				C18C784B85DC395F257A21B7 /* TongxingInfrastructure in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		35F299A77896919168EFD5DC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B23482E21D63D7D5A3E4F670 /* TongxingCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		462945D15FD6BA273AA558BE /* UITests */ = {
+			isa = PBXGroup;
+			children = (
+				239227789D17BF0B1B0A1614 /* ListeningFlowUITests.swift */,
+			);
+			path = UITests;
+			sourceTree = "<group>";
+		};
+		68E719FEB0CDD4F0549EB62F /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3258F6BBF467D18B238176B8 /* Tongxing.app */,
+				E89C7099077BFCEE7659F81B /* TongxingTests.xctest */,
+				D76315F9ECA722C00FEE69F2 /* TongxingUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		6C5420C74F47EF1E13AC8C7D /* App */ = {
+			isa = PBXGroup;
+			children = (
+				0F81E8D165D65FEF70E65FFF /* AppModel.swift */,
+				07B59FA4533A491CF4AA2D83 /* Assets.xcassets */,
+				3A757BEABA30910DC76E26BE /* ContentView.swift */,
+				BC6D116D3A73A078D6FA5218 /* DesignSystem.swift */,
+				34B67E7FE8944242C03C8904 /* PlaybackController.swift */,
+				AAE586AE0AE5D2F197DC5483 /* PlaybackDock.swift */,
+				E8CDE0AD081CB32BAE3CD0CB /* PrivacyInfo.xcprivacy */,
+				61FE1B88425139B2F592ED0A /* TongxingApp.swift */,
+				BD0FEA1F83F4300CB78A0935 /* UITestLaunch.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		DDCFFA9BC8A66D0705E124E9 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				EE58D0C358A74F0BDE595617 /* PlaybackControllerTests.swift */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		EE18E6BD63E32BD2689C8B08 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				72F704FFC13274A549628FF2 /* Core */,
+				0D25C402E721BC4E502AF672 /* tongxing-ios */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		FA4D26A4259E628302C145D3 = {
+			isa = PBXGroup;
+			children = (
+				6C5420C74F47EF1E13AC8C7D /* App */,
+				EE18E6BD63E32BD2689C8B08 /* Packages */,
+				DDCFFA9BC8A66D0705E124E9 /* Tests */,
+				462945D15FD6BA273AA558BE /* UITests */,
+				68E719FEB0CDD4F0549EB62F /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A88D11D259CB9BF9F91FEB90 /* Tongxing */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A0D147F90124C3CF570A1EBC /* Build configuration list for PBXNativeTarget "Tongxing" */;
+			buildPhases = (
+				D128CF3B139D2EA68547E367 /* Sources */,
+				BDBF819BAEDD303CDD9E3D36 /* Resources */,
+				180A55B611AD0E790158B7C9 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Tongxing;
+			packageProductDependencies = (
+				46FC649E9CD7E0BF9CEF7E49 /* TongxingCore */,
+				FA2F2228F6CC524F87E2AC7D /* TongxingInfrastructure */,
+			);
+			productName = Tongxing;
+			productReference = 3258F6BBF467D18B238176B8 /* Tongxing.app */;
+			productType = "com.apple.product-type.application";
+		};
+		A97729024B8941553E7A6962 /* TongxingUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 20266D9C6E0A90A871844E4A /* Build configuration list for PBXNativeTarget "TongxingUITests" */;
+			buildPhases = (
+				6313D3362A815F91E9D38C12 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				3F21D57FE3BE895061BA4D4F /* PBXTargetDependency */,
+			);
+			name = TongxingUITests;
+			packageProductDependencies = (
+			);
+			productName = TongxingUITests;
+			productReference = D76315F9ECA722C00FEE69F2 /* TongxingUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		E2EC64C5107F7C39334E513D /* TongxingTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C51F2968F2E20116C81FBF18 /* Build configuration list for PBXNativeTarget "TongxingTests" */;
+			buildPhases = (
+				B8C1F74B60078389E181B0A0 /* Sources */,
+				35F299A77896919168EFD5DC /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				52B8155EBA72EDA39F28DECE /* PBXTargetDependency */,
+			);
+			name = TongxingTests;
+			packageProductDependencies = (
+				C194255167B8AD9FCB74BBA5 /* TongxingCore */,
+			);
+			productName = TongxingTests;
+			productReference = E89C7099077BFCEE7659F81B /* TongxingTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		CB940143191019D62F3299E8 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					A88D11D259CB9BF9F91FEB90 = {
+						ProvisioningStyle = Automatic;
+					};
+					A97729024B8941553E7A6962 = {
+						ProvisioningStyle = Automatic;
+						TestTargetID = A88D11D259CB9BF9F91FEB90;
+					};
+					E2EC64C5107F7C39334E513D = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = D4C1AD82AD21DBD13925B557 /* Build configuration list for PBXProject "Tongxing" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = FA4D26A4259E628302C145D3;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				D0FA3F0ABFD69D49F277C23D /* XCLocalSwiftPackageReference "Core" */,
+				C266A987AB1E7DB2D0F6B4F4 /* XCLocalSwiftPackageReference "." */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 68E719FEB0CDD4F0549EB62F /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A88D11D259CB9BF9F91FEB90 /* Tongxing */,
+				E2EC64C5107F7C39334E513D /* TongxingTests */,
+				A97729024B8941553E7A6962 /* TongxingUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		BDBF819BAEDD303CDD9E3D36 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				23FDF718141336A8978A8DB3 /* Assets.xcassets in Resources */,
+				AAE50D4E51C22893F01DEAFD /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		6313D3362A815F91E9D38C12 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8B8A2624687249CFAB61DAFB /* ListeningFlowUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B8C1F74B60078389E181B0A0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				17719995BCE43C60385DB306 /* PlaybackControllerTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D128CF3B139D2EA68547E367 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F104CF6576ABBCDDF4B54A62 /* AppModel.swift in Sources */,
+				C84F91355DB74C84BAC96384 /* ContentView.swift in Sources */,
+				C7430BCC556F70CBE78D8CDB /* DesignSystem.swift in Sources */,
+				DA598EC364686E234B86F56B /* PlaybackController.swift in Sources */,
+				318C506CF300A57522C9F2F9 /* PlaybackDock.swift in Sources */,
+				272F205288C38B205D9DE540 /* TongxingApp.swift in Sources */,
+				B415795B942C6189370AAE61 /* UITestLaunch.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		3F21D57FE3BE895061BA4D4F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A88D11D259CB9BF9F91FEB90 /* Tongxing */;
+			targetProxy = 373AECBD190CDBF621E19994 /* PBXContainerItemProxy */;
+		};
+		52B8155EBA72EDA39F28DECE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A88D11D259CB9BF9F91FEB90 /* Tongxing */;
+			targetProxy = EFAD1467DFA51C22584E39CC /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		3E9A90D181BF152B250F5C27 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jonathanjing.tongxing.dev;
+				PRODUCT_NAME = Tongxing;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		5D241FB778395A1EED019D61 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.jonathanjing.tongxing.dev.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Tongxing;
+			};
+			name = Release;
+		};
+		64C002D51CA854D7FE689D17 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		6F296067A767ED41218C5DC3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		8ED642C5DD0EA80CEA6F2AAE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.jonathanjing.tongxing.dev.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Tongxing;
+			};
+			name = Debug;
+		};
+		DECB6AC18673D9ECA82F0B55 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jonathanjing.tongxing.dev;
+				PRODUCT_NAME = Tongxing;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		F014A668BAE63FD41133CE1F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.jonathanjing.tongxing.dev.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Tongxing.app/Tongxing";
+			};
+			name = Release;
+		};
+		F15F2EC59A594723F52E5E7D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.jonathanjing.tongxing.dev.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Tongxing.app/Tongxing";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		20266D9C6E0A90A871844E4A /* Build configuration list for PBXNativeTarget "TongxingUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8ED642C5DD0EA80CEA6F2AAE /* Debug */,
+				5D241FB778395A1EED019D61 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		A0D147F90124C3CF570A1EBC /* Build configuration list for PBXNativeTarget "Tongxing" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3E9A90D181BF152B250F5C27 /* Debug */,
+				DECB6AC18673D9ECA82F0B55 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C51F2968F2E20116C81FBF18 /* Build configuration list for PBXNativeTarget "TongxingTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F15F2EC59A594723F52E5E7D /* Debug */,
+				F014A668BAE63FD41133CE1F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D4C1AD82AD21DBD13925B557 /* Build configuration list for PBXProject "Tongxing" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6F296067A767ED41218C5DC3 /* Debug */,
+				64C002D51CA854D7FE689D17 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		C266A987AB1E7DB2D0F6B4F4 /* XCLocalSwiftPackageReference "." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = .;
+		};
+		D0FA3F0ABFD69D49F277C23D /* XCLocalSwiftPackageReference "Core" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Core;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		46FC649E9CD7E0BF9CEF7E49 /* TongxingCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TongxingCore;
+		};
+		C194255167B8AD9FCB74BBA5 /* TongxingCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TongxingCore;
+		};
+		FA2F2228F6CC524F87E2AC7D /* TongxingInfrastructure */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TongxingInfrastructure;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = CB940143191019D62F3299E8 /* Project object */;
+}
