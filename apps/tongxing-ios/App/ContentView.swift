@@ -603,6 +603,9 @@ private struct AboutSheet: View {
                     Text(localization.text("一起听懂，一路同行。"))
                     Text(localization.text("独立个人项目，与 Mariners Church 无隶属或背书关系。AI 合成中文音频与整理文字仅供个人跟读参考。"))
                         .font(.footnote).foregroundStyle(.secondary)
+                    NavigationLink { PrivacySupportView() } label: {
+                        Label(localization.text("隐私与支持"), systemImage: "hand.raised")
+                    }.accessibilityIdentifier("privacy-support")
                     Link(localization.text("打开网页版"), destination: AppModel.contentOrigin)
                 }
             }.formStyle(.grouped).navigationTitle(localization.text("更多选项"))

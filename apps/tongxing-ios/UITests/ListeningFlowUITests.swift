@@ -5,6 +5,34 @@ import XCTest
 /// these tests do not establish real-network, audible, lock-screen, or venue QA.
 @MainActor
 final class ListeningFlowUITests: XCTestCase {
+    func testPrivacyNoticeIsAvailableWithoutMicrophonePermission() throws {
+        let app = launchFixture()
+        app.terminate()
+        app.launchArguments.append("--ui-testing-offline")
+        app.launch()
+        try waitFor(element("catalog-notice", in: app), "label CONTAINS '上次保存的证道目录'")
+        app.buttons["more-options"].tap()
+        let privacy = element("privacy-support", in: app)
+        for _ in 0..<6 {
+            if privacy.exists && privacy.isHittable { break }
+            app.collectionViews.firstMatch.swipeUp()
+        }
+        XCTAssertTrue(privacy.isHittable)
+        privacy.tap()
+        XCTAssertTrue(app.navigationBars["隐私与支持"].waitForExistence(timeout: 5))
+        XCTAssertTrue(element("full-privacy-policy", in: app).isHittable)
+        XCTAssertTrue(element("privacy-support-website", in: app).isHittable)
+        XCTAssertTrue(element("privacy-contact-email", in: app).isHittable)
+        XCTAssertEqual(app.alerts.count, 0)
+        let localData = app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "删除 App 可移除本机 App 资料；系统备份需在系统设置中管理")).firstMatch
+        for _ in 0..<6 {
+            if localData.exists && localData.isHittable { break }
+            app.collectionViews.firstMatch.swipeUp()
+        }
+        XCTAssertTrue(localData.isHittable)
+        screenshot("privacy-notice-offline-content", app: app)
+    }
+
     func testEnglishInterfaceAndOriginalTranscriptPreserveSelectedPosition() throws {
         let app = launchFixture()
         try selectSecondTrack(in: app)
