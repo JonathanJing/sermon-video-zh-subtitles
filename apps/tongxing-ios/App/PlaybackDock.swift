@@ -2,6 +2,7 @@ import SwiftUI
 import TongxingCore
 
 struct PlaybackDock: View {
+    @ObservedObject private var localization = AppLocalization.shared
     @ObservedObject var playback: PlaybackController
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -67,12 +68,12 @@ struct PlaybackDock: View {
 
     private func compactNudge(_ seconds: Double) -> some View {
         Button { playback.nudge(seconds) } label: {
-            Label("1 秒", systemImage: seconds < 0 ? "gobackward" : "goforward")
+            Label(localization.text("1 秒"), systemImage: seconds < 0 ? "gobackward" : "goforward")
                 .font(.body.weight(.medium)).fixedSize()
                 .frame(maxWidth: .infinity, minHeight: 44)
                 .contentShape(Rectangle())
         }
-        .accessibilityLabel(seconds < 0 ? "中文抢先，后退1秒" : "中文落后，前进1秒")
+        .accessibilityLabel(localization.text(seconds < 0 ? "中文抢先，后退1秒" : "中文落后，前进1秒"))
         .accessibilityIdentifier(seconds < 0 ? "nudge-backward" : "nudge-forward")
     }
 
@@ -91,8 +92,8 @@ struct PlaybackDock: View {
             }
             .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("播放进度")
-            .accessibilityValue("\(PlaybackTime.format(playback.position))，总长 \(PlaybackTime.format(playback.duration))。\(statusLabel)")
+            .accessibilityLabel(localization.text("播放进度"))
+            .accessibilityValue(localization.text("{time}，总长 {duration}。{status}", ["time": PlaybackTime.format(playback.position), "duration": PlaybackTime.format(playback.duration), "status": statusLabel]))
             .accessibilityIdentifier("playback-progress")
             if typeSize.isAccessibilitySize {
                 Text(statusLabel).font(.caption).foregroundStyle(.secondary)
@@ -107,7 +108,7 @@ struct PlaybackDock: View {
                 Image(systemName: seconds < 0 ? "gobackward" : "goforward")
                     .font(.system(size: 24, weight: .medium))
                     .accessibilityHidden(true)
-                Text(seconds < 0 ? "后退 1 秒" : "前进 1 秒")
+                Text(localization.text(seconds < 0 ? "后退 1 秒" : "前进 1 秒"))
                     .font(.caption.weight(.medium))
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -115,8 +116,8 @@ struct PlaybackDock: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain).foregroundStyle(.primary)
-        .accessibilityLabel(seconds < 0 ? "中文抢先，后退1秒" : "中文落后，前进1秒")
-        .accessibilityHint("调整中文音频的位置")
+        .accessibilityLabel(localization.text(seconds < 0 ? "中文抢先，后退1秒" : "中文落后，前进1秒"))
+        .accessibilityHint(localization.text("调整中文音频的位置"))
         .accessibilityIdentifier(seconds < 0 ? "nudge-backward" : "nudge-forward")
     }
 
@@ -162,14 +163,14 @@ struct PlaybackDock: View {
     }
 
     private func currentButton(_ action: @escaping () -> Void) -> some View {
-        Button(action: action) { Label("当前句", systemImage: "text.line.first.and.arrowtriangle.forward")
+        Button(action: action) { Label(localization.text("当前句"), systemImage: "text.line.first.and.arrowtriangle.forward")
                 .frame(minWidth: 44, minHeight: 44).contentShape(Rectangle()) }
-            .accessibilityLabel("回到当前句")
+            .accessibilityLabel(localization.text("回到当前句"))
             .accessibilityIdentifier("current-cue")
     }
 
     private func precisionButton(_ action: @escaping () -> Void) -> some View {
-        Button(action: action) { Label("定位 / 精调", systemImage: "slider.horizontal.3")
+        Button(action: action) { Label(localization.text("定位 / 精调"), systemImage: "slider.horizontal.3")
                 .frame(minWidth: 44, minHeight: 44).contentShape(Rectangle()) }
             .disabled(!playback.isReady || isPreparing)
             .accessibilityIdentifier("precision-controls")
@@ -177,21 +178,21 @@ struct PlaybackDock: View {
 
     private func undoButton(_ previous: Double) -> some View {
         Button { playback.undo() } label: {
-            Label("撤销", systemImage: "arrow.uturn.backward")
+            Label(localization.text("撤销"), systemImage: "arrow.uturn.backward")
                 .frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
         }
-        .accessibilityLabel("撤销跳转，返回 \(PlaybackTime.format(previous))")
+        .accessibilityLabel(localization.text("撤销跳转，返回 {time}", ["time": PlaybackTime.format(previous)]))
         .accessibilityIdentifier("undo-seek")
         .disabled(!playback.isReady || isPreparing)
     }
 
-    private var statusLabel: String { isPreparing ? "正在准备音频…" : playback.message }
+    private var statusLabel: String { localization.text(isPreparing ? "正在准备音频…" : playback.message) }
     private var shortPlayLabel: String {
-        if playback.isPlaying || playback.isWaiting { return "暂停" }
-        return playback.resumePosition == nil ? "播放" : "继续"
+        if playback.isPlaying || playback.isWaiting { return localization.text("暂停") }
+        return localization.text(playback.resumePosition == nil ? "播放" : "继续")
     }
     private var playLabel: String {
-        if playback.isPlaying || playback.isWaiting { return "暂停播放" }
-        return playback.resumePosition == nil ? "开始播放" : "继续收听"
+        if playback.isPlaying || playback.isWaiting { return localization.text("暂停播放") }
+        return localization.text(playback.resumePosition == nil ? "开始播放" : "继续收听")
     }
 }

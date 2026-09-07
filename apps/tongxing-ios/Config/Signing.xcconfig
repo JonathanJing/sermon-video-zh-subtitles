@@ -1,0 +1,2 @@
+// Optional per-machine signing. CI simulator builds do not require a team.
+#include? "Local.xcconfig"

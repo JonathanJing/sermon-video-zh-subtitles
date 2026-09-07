@@ -11,6 +11,27 @@ import XCTest
 /// not represent a real phone call, headphone route, lock-screen or venue test.
 @MainActor
 final class PlaybackControllerTests: XCTestCase {
+    func testAutomaticAlignmentUsesSinglePlayerAndManualCommandsInvalidateIt() async throws {
+        let fixture = try Fixture()
+        defer { fixture.dispose() }
+        try await fixture.load()
+        let revision = fixture.player.alignmentRevision
+        let applied = await fixture.player.applyAlignedPosition(5)
+        XCTAssertTrue(applied)
+        XCTAssertEqual(fixture.player.position, 5, accuracy: 0.1)
+        XCTAssertEqual(fixture.player.offset, 0)
+        XCTAssertEqual(fixture.player.alignmentRevision, revision)
+        XCTAssertFalse(fixture.player.isPlaying)
+        var commands = 0
+        fixture.player.onManualInteraction = { commands += 1 }
+        fixture.player.nudge(1)
+        XCTAssertNotEqual(fixture.player.alignmentRevision, revision)
+        XCTAssertEqual(commands, 1)
+        try await eventually("manual nudge") { abs(fixture.player.position - 6) < 0.1 }
+        fixture.player.pause()
+        XCTAssertEqual(commands, 2)
+    }
+
     func testSelectingSameIdentityPreservesPositionAndOffset() async throws {
         let fixture = try Fixture()
         defer { fixture.dispose() }

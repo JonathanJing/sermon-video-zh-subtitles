@@ -1,0 +1,1766 @@
+{
+  "sourceLanguage": "zh-Hans",
+  "strings": {
+    "{time}，总长 {duration}。{status}": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{time} of {duration}. {status}"
+          }
+        }
+      }
+    },
+    "1 秒": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 sec"
+          }
+        }
+      }
+    },
+    "AI 合成中文配音与整理文字 · 独立个人项目": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI-synthesized Chinese audio and AI-prepared text · an independent personal project"
+          }
+        }
+      }
+    },
+    "AI 整理，供个人跟读参考": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI-prepared text for personal reference"
+          }
+        }
+      }
+    },
+    "AI 整理，供个人跟读参考。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI-prepared text for personal reference."
+          }
+        }
+      }
+    },
+    "App 已进入后台，听声对齐已停止。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The app entered the background. Audio alignment stopped."
+          }
+        }
+      }
+    },
+    "一起听懂，一路同行。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Understand together. Walk together."
+          }
+        }
+      }
+    },
+    "上次听到 {time}": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last heard at {time}"
+          }
+        }
+      }
+    },
+    "下载本篇": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download"
+          }
+        }
+      }
+    },
+    "下载的文件为空。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The downloaded file is empty."
+          }
+        }
+      }
+    },
+    "与 Mariners Church 无隶属或背书关系。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not affiliated with or endorsed by Mariners Church."
+          }
+        }
+      }
+    },
+    "中文抢先，后退1秒": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chinese audio is ahead; go back 1 second"
+          }
+        }
+      }
+    },
+    "中文片段试听": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chinese audio sample"
+          }
+        }
+      }
+    },
+    "中文落后，前进1秒": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chinese audio is behind; go forward 1 second"
+          }
+        }
+      }
+    },
+    "中断已结束，可继续收听并手动对齐。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The interruption has ended. Resume listening and check the timing."
+          }
+        }
+      }
+    },
+    "从头开始": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start from the beginning"
+          }
+        }
+      }
+    },
+    "使用离线版": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use offline audio"
+          }
+        }
+      }
+    },
+    "例如 10:05": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "e.g. 10:05"
+          }
+        }
+      }
+    },
+    "关于同行": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About Tongxing"
+          }
+        }
+      }
+    },
+    "内容地址不符合安全要求。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The content address does not meet security requirements."
+          }
+        }
+      }
+    },
+    "内容文件超过允许的大小。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The content file exceeds the size limit."
+          }
+        }
+      }
+    },
+    "内容服务器的响应无效。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The content server returned an invalid response."
+          }
+        }
+      }
+    },
+    "内容服务器返回错误（{status}）。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The content server returned an error ({status})."
+          }
+        }
+      }
+    },
+    "内容说明": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Content notes"
+          }
+        }
+      }
+    },
+    "刷新证道目录": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh sermon catalog"
+          }
+        }
+      }
+    },
+    "前进 0.25 秒": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forward 0.25 sec"
+          }
+        }
+      }
+    },
+    "前进 1 秒": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forward 1 sec"
+          }
+        }
+      }
+    },
+    "前进 5 秒": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forward 5 sec"
+          }
+        }
+      }
+    },
+    "取消": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        }
+      }
+    },
+    "取消对齐": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel alignment"
+          }
+        }
+      }
+    },
+    "可以先阅读证道大纲。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can read the sermon outline first."
+          }
+        }
+      }
+    },
+    "同行": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tongxing"
+          }
+        }
+      }
+    },
+    "同行 · 证道中文听译": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tongxing · Chinese Sermon Companion"
+          }
+        }
+      }
+    },
+    "后退 0.25 秒": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back 0.25 sec"
+          }
+        }
+      }
+    },
+    "后退 1 秒": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back 1 sec"
+          }
+        }
+      }
+    },
+    "后退 5 秒": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back 5 sec"
+          }
+        }
+      }
+    },
+    "听声对齐未完成，请重试或手动调整。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio alignment did not complete. Retry or adjust the position manually."
+          }
+        }
+      }
+    },
+    "听声被系统中断，请重试。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio capture was interrupted by the system. Try again."
+          }
+        }
+      }
+    },
+    "听现场并对齐": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listen & align"
+          }
+        }
+      }
+    },
+    "回到当前句": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current passage"
+          }
+        }
+      }
+    },
+    "字幕全文": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Full transcript"
+          }
+        }
+      }
+    },
+    "字幕随中文音频更新": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Text follows the Chinese audio"
+          }
+        }
+      }
+    },
+    "完成": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        }
+      }
+    },
+    "定位 / 精调": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seek / fine-tune"
+          }
+        }
+      }
+    },
+    "定位未完成，已保留上次确认的位置。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seeking did not complete. Your last confirmed position is preserved."
+          }
+        }
+      }
+    },
+    "定位未完成，请重试或手动调整。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seeking did not complete. Retry or adjust the position manually."
+          }
+        }
+      }
+    },
+    "对齐超时，请保持前台后重试。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alignment timed out. Keep the page in the foreground and retry."
+          }
+        }
+      }
+    },
+    "尚未完成下载": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download incomplete"
+          }
+        }
+      }
+    },
+    "已下载，可离线收听": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloaded · available offline"
+          }
+        }
+      }
+    },
+    "已取消对齐。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alignment cancelled."
+          }
+        }
+      }
+    },
+    "已定位 {time}": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moved to {time}"
+          }
+        }
+      }
+    },
+    "已定位，请点播放继续收听。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Position found. Tap play to continue listening."
+          }
+        }
+      }
+    },
+    "已审校音频": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reviewed audio"
+          }
+        }
+      }
+    },
+    "已对齐至 {time}。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aligned to {time}."
+          }
+        }
+      }
+    },
+    "已恢复上次位置，现场可能已继续，请手动对齐。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved position restored. The live sermon may have moved on; check the timing again."
+          }
+        }
+      }
+    },
+    "已找到上次收听的位置": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Found your saved listening position"
+          }
+        }
+      }
+    },
+    "已收听完毕": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finished listening"
+          }
+        }
+      }
+    },
+    "已暂停": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paused"
+          }
+        }
+      }
+    },
+    "已返回 {time}": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Returned to {time}"
+          }
+        }
+      }
+    },
+    "已返回开头 · 请按现场起点开始": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Returned to the beginning · start at the agreed live beginning"
+          }
+        }
+      }
+    },
+    "已选择": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selected"
+          }
+        }
+      }
+    },
+    "开始播放": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Play"
+          }
+        }
+      }
+    },
+    "当前使用上次保存的证道目录。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Using the previously saved sermon catalog."
+          }
+        }
+      }
+    },
+    "当前句": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current passage"
+          }
+        }
+      }
+    },
+    "当前字幕": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current transcript"
+          }
+        }
+      }
+    },
+    "当前设备无法进行听声对齐。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio alignment is not available on this device."
+          }
+        }
+      }
+    },
+    "当前音频没有可用的听声对齐资料。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio alignment data is not available for this track."
+          }
+        }
+      }
+    },
+    "恢复位置": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore position"
+          }
+        }
+      }
+    },
+    "恢复位置与微调后，请按现场时间手动对齐。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "After restoring your position and adjustment, check the timing against the live service."
+          }
+        }
+      }
+    },
+    "打开网页版": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open web version"
+          }
+        }
+      }
+    },
+    "接下来": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next"
+          }
+        }
+      }
+    },
+    "提前下载，现场可离线收听": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download ahead to listen offline at the service"
+          }
+        }
+      }
+    },
+    "撤销": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Undo"
+          }
+        }
+      }
+    },
+    "撤销跳转，返回 {time}": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Undo seek and return to {time}"
+          }
+        }
+      }
+    },
+    "播放": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Play"
+          }
+        }
+      }
+    },
+    "播放与存储": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Playback and storage"
+          }
+        }
+      }
+    },
+    "播放中断，位置已保留。请检查网络或使用已下载版本。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Playback stopped and your position is preserved. Check your connection or use downloaded audio."
+          }
+        }
+      }
+    },
+    "播放进度": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Playback position"
+          }
+        }
+      }
+    },
+    "播放进度 · 松开后跳转": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Playback position · release to seek"
+          }
+        }
+      }
+    },
+    "收听位置保存在本机，按周次与音频版本区分，保留30天。已下载的音频可离线收听。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listening positions are saved on this device for 30 days, separately for each week and audio version. Downloaded audio is available offline."
+          }
+        }
+      }
+    },
+    "收听内容": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listening content"
+          }
+        }
+      }
+    },
+    "整篇试听 · 待现场验收": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Full preview · live-service acceptance pending"
+          }
+        }
+      }
+    },
+    "文件未完整下载，请重试。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file did not finish downloading. Try again."
+          }
+        }
+      }
+    },
+    "无法启用音频，请稍后再试。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio could not start. Try again later."
+          }
+        }
+      }
+    },
+    "无法读取或校验对齐指纹，请联网重试。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The alignment fingerprint could not be loaded or verified. Connect to the internet and retry."
+          }
+        }
+      }
+    },
+    "暂停": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause"
+          }
+        }
+      }
+    },
+    "暂停播放": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause"
+          }
+        }
+      }
+    },
+    "暂无字幕": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No transcript available"
+          }
+        }
+      }
+    },
+    "暂时无法更新目录，正在使用此前保存的内容。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The catalog could not be updated. Using previously saved content."
+          }
+        }
+      }
+    },
+    "暂时无法读取证道": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to load sermons"
+          }
+        }
+      }
+    },
+    "暂时无法读取证道目录。请连接网络后重试。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The sermon catalog could not be loaded. Connect to the internet and retry."
+          }
+        }
+      }
+    },
+    "更多选项": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More options"
+          }
+        }
+      }
+    },
+    "未找到可靠匹配，播放位置未改变。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No reliable match found. Playback position is unchanged."
+          }
+        }
+      }
+    },
+    "未能取得有效声音，请重试。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No usable audio was captured. Try again."
+          }
+        }
+      }
+    },
+    "未选择": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not selected"
+          }
+        }
+      }
+    },
+    "本周音频尚未准备好": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This week’s audio is not ready yet"
+          }
+        }
+      }
+    },
+    "本次位置暂时无法保存，关闭 App 后可能需要重新定位。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This position could not be saved. You may need to seek again after closing the app."
+          }
+        }
+      }
+    },
+    "来源与内容说明": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Source and content notes"
+          }
+        }
+      }
+    },
+    "正在下载，请保持 App 打开": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading. Keep the app open."
+          }
+        }
+      }
+    },
+    "正在使用已下载音频": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Using downloaded audio"
+          }
+        }
+      }
+    },
+    "正在准备听声对齐…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparing audio alignment…"
+          }
+        }
+      }
+    },
+    "正在准备所选证道…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparing the selected sermon…"
+          }
+        }
+      }
+    },
+    "正在准备音频…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparing audio…"
+          }
+        }
+      }
+    },
+    "正在听原声，约 8 秒；请保持 App 前台。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listening to the original audio for about 8 seconds. Keep the app in the foreground."
+          }
+        }
+      }
+    },
+    "正在启用音频…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starting audio…"
+          }
+        }
+      }
+    },
+    "正在定位…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seeking…"
+          }
+        }
+      }
+    },
+    "正在收听": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listening"
+          }
+        }
+      }
+    },
+    "正在本机匹配播放位置…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Matching the playback position on this device…"
+          }
+        }
+      }
+    },
+    "正在检查离线音频…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking offline audio…"
+          }
+        }
+      }
+    },
+    "正在缓冲音频…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buffering audio…"
+          }
+        }
+      }
+    },
+    "正在读取本周证道…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading this week’s sermon…"
+          }
+        }
+      }
+    },
+    "点击时间定位；正文可直接阅读。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap a timestamp to seek. Read the text freely."
+          }
+        }
+      }
+    },
+    "独立个人项目，与 Mariners Church 无隶属或背书关系。AI 合成中文音频与整理文字仅供个人跟读参考。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An independent personal project, not affiliated with or endorsed by Mariners Church. AI-synthesized Chinese audio and AI-prepared text are for personal reference."
+          }
+        }
+      }
+    },
+    "现场对齐": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Align with the live service"
+          }
+        }
+      }
+    },
+    "现场收听": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listen"
+          }
+        }
+      }
+    },
+    "界面语言": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interface language"
+          }
+        }
+      }
+    },
+    "界面语言不会更换音轨；证道内容保留其提供的语言。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changing the interface language keeps the current audio track. Sermon content stays in its supplied language."
+          }
+        }
+      }
+    },
+    "离线文件需要重新下载。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download the offline audio again."
+          }
+        }
+      }
+    },
+    "离线音频记录无效，请重新下载。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The offline audio record is invalid. Download it again."
+          }
+        }
+      }
+    },
+    "等待下一段字幕…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for the next passage…"
+          }
+        }
+      }
+    },
+    "累计微调 {seconds} 秒": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total adjustment: {seconds} sec"
+          }
+        }
+      }
+    },
+    "细调四分之一秒": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fine-tune by a quarter second"
+          }
+        }
+      }
+    },
+    "继续": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resume"
+          }
+        }
+      }
+    },
+    "继续收听": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resume listening"
+          }
+        }
+      }
+    },
+    "耳机已断开，播放已暂停。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Headphones disconnected. Playback is paused."
+          }
+        }
+      }
+    },
+    "英文原文": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Original English"
+          }
+        }
+      }
+    },
+    "英文原文在对应内容块末尾显示，不逐句重复。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Original English appears once at the end of each content block."
+          }
+        }
+      }
+    },
+    "英文原文暂缺，保留中文显示。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Original English is not available. The Chinese text remains available."
+          }
+        }
+      }
+    },
+    "英文原视频 ↗": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Original English video ↗"
+          }
+        }
+      }
+    },
+    "证道中文听译": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chinese Sermon Companion"
+          }
+        }
+      }
+    },
+    "证道大纲": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sermon outline"
+          }
+        }
+      }
+    },
+    "语言已切换，本次偏好暂时无法保存。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The interface language changed, but this preference could not be saved."
+          }
+        }
+      }
+    },
+    "请以当前音频的审核状态为准。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refer to the review status of the selected audio."
+          }
+        }
+      }
+    },
+    "请戴好耳机，在约定的证道起点开始播放；中途加入请用“定位 / 精调”手动对齐。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use headphones. Start at the agreed sermon beginning; if joining later, use “Seek / fine-tune” to align the audio."
+          }
+        }
+      }
+    },
+    "请播放同一录音的原声，再点击听声对齐。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Play the original audio from this recording, then tap “Listen & align”."
+          }
+        }
+      }
+    },
+    "请输入音频范围内的分:秒，例如 10:05。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter minutes:seconds within this audio, for example 10:05."
+          }
+        }
+      }
+    },
+    "调整中文音频的位置": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adjust the position of the Chinese audio"
+          }
+        }
+      }
+    },
+    "调整的是中文音频。现场识别仅用于同一录音，每次识别成功后定位一次。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adjust the Chinese audio. Audio recognition works with the same recording and seeks once after each successful match."
+          }
+        }
+      }
+    },
+    "跟随系统": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System default"
+          }
+        }
+      }
+    },
+    "跳至时间": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go to time"
+          }
+        }
+      }
+    },
+    "跳转": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go"
+          }
+        }
+      }
+    },
+    "跳转至 {time}": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go to {time}"
+          }
+        }
+      }
+    },
+    "这条音频的地址无效，未开始播放。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This audio address is invalid. Playback has not started."
+          }
+        }
+      }
+    },
+    "选择一篇证道，开始收听": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a sermon to start listening"
+          }
+        }
+      }
+    },
+    "选择证道": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a sermon"
+          }
+        }
+      }
+    },
+    "选择证道周次": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a sermon"
+          }
+        }
+      }
+    },
+    "部分段落未提供可关联的英文原文，保留中文显示。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Some passages have no linked English source text; their Chinese text remains available."
+          }
+        }
+      }
+    },
+    "重新下载": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download again"
+          }
+        }
+      }
+    },
+    "重新加载": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reload"
+          }
+        }
+      }
+    },
+    "重新加载当前音频": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reload selected audio"
+          }
+        }
+      }
+    },
+    "音频加载失败，请检查网络或使用已下载版本。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The audio could not be loaded. Check your connection or use the downloaded version."
+          }
+        }
+      }
+    },
+    "音频完整性校验失败，请重新下载。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio integrity verification failed. Download it again."
+          }
+        }
+      }
+    },
+    "音频就绪 · 请按现场起点开始": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio ready · start at the agreed live beginning"
+          }
+        }
+      }
+    },
+    "音频服务已恢复，请点击播放继续并手动对齐。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio services have recovered. Tap play to continue and check the timing."
+          }
+        }
+      }
+    },
+    "音频版本": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio version"
+          }
+        }
+      }
+    },
+    "音频被系统中断，位置已保存。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The system interrupted audio. Your position is saved."
+          }
+        }
+      }
+    },
+    "首次使用需要网络，下载后可离线收听。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect to the internet for the first use. Download the audio to listen offline."
+          }
+        }
+      }
+    },
+    "麦克风权限未获允许，请在系统设置中检查权限。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Microphone permission was denied. Check permissions in Settings."
+          }
+        }
+      }
+    },
+    "连接网络后可刷新。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect to the internet to refresh."
+          }
+        }
+      }
+    },
+    "对齐资料已更新，请重新开始识别。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alignment data changed. Please start again."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

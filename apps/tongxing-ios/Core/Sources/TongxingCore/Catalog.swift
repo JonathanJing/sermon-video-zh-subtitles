@@ -98,6 +98,7 @@ public struct SermonWeek: Codable, Sendable, Equatable, Identifiable {
     public let outlineSourceSha256: String?
     public let speakerSource: String?
     public let titleEvidence: String?
+    public let transcript: BilingualTranscript?
 
     public init(id: String, date: String, sourceId: String, sourceUrl: String, title: String,
                 speaker: String, scripture: String, tracks: [SermonTrack], number: String? = nil,
@@ -106,7 +107,8 @@ public struct SermonWeek: Codable, Sendable, Equatable, Identifiable {
                 contentReview: String? = nil, audioStatus: String? = nil, audioNotice: String? = nil,
                 videoSynchronization: String? = nil, humanApproval: JSONValue? = nil,
                 productionStages: [ProductionStage]? = nil, candidateEvidence: JSONValue? = nil,
-                outlineSourceSha256: String? = nil, speakerSource: String? = nil, titleEvidence: String? = nil) {
+                outlineSourceSha256: String? = nil, speakerSource: String? = nil, titleEvidence: String? = nil,
+                transcript: BilingualTranscript? = nil) {
         self.id = id; self.date = date; self.sourceId = sourceId; self.sourceUrl = sourceUrl
         self.title = title; self.speaker = speaker; self.scripture = scripture; self.tracks = tracks
         self.number = number; self.series = series; self.centralMessage = centralMessage; self.summary = summary
@@ -115,6 +117,7 @@ public struct SermonWeek: Codable, Sendable, Equatable, Identifiable {
         self.videoSynchronization = videoSynchronization; self.humanApproval = humanApproval
         self.productionStages = productionStages; self.candidateEvidence = candidateEvidence
         self.outlineSourceSha256 = outlineSourceSha256; self.speakerSource = speakerSource; self.titleEvidence = titleEvidence
+        self.transcript = transcript
     }
 
     public func validate() throws {
@@ -122,7 +125,11 @@ public struct SermonWeek: Codable, Sendable, Equatable, Identifiable {
               Validation.httpsURL(sourceUrl), !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         else { throw CatalogError.invalid("周次来源或日期缺失") }
         guard Set(tracks.map(\.id)).count == tracks.count else { throw CatalogError.invalid("音轨 ID 重复") }
-        for track in tracks { try track.validate() }
+        try transcript?.validate(tracks: tracks)
+        for track in tracks {
+            try track.validate()
+            try track.alignment?.validate(week: self, track: track)
+        }
     }
 }
 
@@ -154,13 +161,16 @@ public struct SermonTrack: Codable, Sendable, Equatable, Identifiable {
     public let subtitleTiming: String
     public let scope: String
     public let voiceSampleReview: String?
+    public let alignment: SermonAudioAlignment?
 
     public init(id: String, label: String, voiceLabel: String, audioUrl: String, file: String,
                 sha256: String, durationSeconds: Double, cues: [SubtitleCue],
-                subtitleTiming: String, scope: String, voiceSampleReview: String? = nil) {
+                subtitleTiming: String, scope: String, voiceSampleReview: String? = nil,
+                alignment: SermonAudioAlignment? = nil) {
         self.id = id; self.label = label; self.voiceLabel = voiceLabel; self.audioUrl = audioUrl
         self.file = file; self.sha256 = sha256; self.durationSeconds = durationSeconds
         self.cues = cues; self.subtitleTiming = subtitleTiming; self.scope = scope; self.voiceSampleReview = voiceSampleReview
+        self.alignment = alignment
     }
 
     public func identity(weekID: String) -> TrackIdentity {
@@ -178,10 +188,11 @@ public struct SermonTrack: Codable, Sendable, Equatable, Identifiable {
                   cue.end > cue.start, cue.end <= durationSeconds,
                   !cue.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                   cue.unitId.map({ $0 >= 0 && unitIDs.insert($0).inserted }) ?? true,
-                  cue.blockId.map({ $0 >= 0 }) ?? true
+                  cue.blockId.map(BlockIdentifier.isValid) ?? true
             else { throw CatalogError.invalid("字幕顺序、范围或标识无效") }
             previousEnd = cue.end
         }
+        try alignment?.validate(track: self)
     }
 
     /// Relative URLs are confined to the published media directory on the selected HTTPS host.
@@ -211,12 +222,29 @@ public struct SermonTrack: Codable, Sendable, Equatable, Identifiable {
 
 public struct SubtitleCue: Codable, Sendable, Equatable {
     public let unitId: Int?
-    public let blockId: Int?
+    /// Numeric IDs in older catalogs and string IDs share one explicit identity.
+    public let blockId: String?
     public let start: Double
     public let end: Double
     public let text: String
-    public init(start: Double, end: Double, text: String, unitId: Int? = nil, blockId: Int? = nil) {
+    public init(start: Double, end: Double, text: String, unitId: Int? = nil, blockId: String? = nil) {
         self.start = start; self.end = end; self.text = text; self.unitId = unitId; self.blockId = blockId
+    }
+
+    private enum CodingKeys: String, CodingKey { case unitId, blockId, start, end, text }
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        unitId = try values.decodeIfPresent(Int.self, forKey: .unitId)
+        start = try values.decode(Double.self, forKey: .start)
+        end = try values.decode(Double.self, forKey: .end)
+        text = try values.decode(String.self, forKey: .text)
+        if try !values.contains(.blockId) || values.decodeNil(forKey: .blockId) { blockId = nil }
+        else if let string = try? values.decode(String.self, forKey: .blockId) { blockId = string }
+        else {
+            let number = try values.decode(Int.self, forKey: .blockId)
+            guard number >= 0, number <= 9_007_199_254_740_991 else { throw CatalogError.invalid("字幕块标识无效") }
+            blockId = String(number)
+        }
     }
 }
 

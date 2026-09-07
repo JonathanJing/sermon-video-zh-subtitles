@@ -2,6 +2,9 @@ import Combine
 import Foundation
 import TongxingCore
 import TongxingInfrastructure
+#if os(iOS)
+import UIKit
+#endif
 
 @MainActor
 final class AppModel: ObservableObject {
@@ -18,6 +21,31 @@ final class AppModel: ObservableObject {
     @Published private(set) var downloadStates: [String: DownloadState] = [:]
     @Published private(set) var usingOfflineAudio = false
     @Published var display: ListeningDisplay = .current
+    @Published private(set) var alignmentStatus = "请播放同一录音的原声，再点击听声对齐。"
+    @Published private(set) var alignmentBusy = false
+    @Published private(set) var alignmentPosition: Double?
+    private var alignmentController: AudioAlignmentController!
+
+    var alignmentAvailable: Bool {
+        #if os(iOS)
+        return playback.isReady && !isPreparing && alignmentController?.available == true
+        #else
+        return false
+        #endif
+    }
+
+    func startAlignment() {
+        #if os(iOS)
+        guard UIApplication.shared.applicationState != .background else { return }
+        #endif
+        guard alignmentAvailable else { return }
+        alignmentController.start()
+    }
+
+    func cancelAlignment() { alignmentController.cancel(resume: true) }
+    func suspendAlignment() {
+        alignmentController.cancel(message: "App 已进入后台，听声对齐已停止。", resume: true)
+    }
 
     enum ListeningDisplay: String, CaseIterable { case current = "现场收听", transcript = "字幕全文" }
     enum DownloadState: Equatable {
@@ -46,6 +74,26 @@ final class AppModel: ObservableObject {
                 baseURL: mediaOrigin,
                 session: session
             )
+        let indexStore = FingerprintIndexStore(directory: support.appendingPathComponent("Alignment", isDirectory: true),
+                                               baseURL: mediaOrigin, session: session)
+        alignmentController = AudioAlignmentController(
+            playback: playback, capture: MicrophoneCapture(),
+            getSelection: { [weak self] in
+                guard let week = self?.selectedWeek, let track = self?.selectedTrack else { return nil }
+                return .init(week: week, track: track)
+            },
+            loadIndex: { selected in
+                guard let alignment = selected.track.alignment else { throw AudioAlignmentError.unavailable }
+                return try await indexStore.load(alignment: alignment, week: selected.week, track: selected.track)
+            },
+            onState: { [weak self] status, busy, position in
+                self?.alignmentStatus = status
+                self?.alignmentBusy = busy
+                self?.alignmentPosition = position
+            }
+        )
+        playback.onManualInteraction = { [weak self] in self?.alignmentController.cancel() }
+
     }
 
     var weeks: [SermonWeek] { catalog?.weeks ?? [] }
@@ -87,6 +135,10 @@ final class AppModel: ObservableObject {
             && selectedTrack?.sha256 == nextTrack?.sha256
             && selectedWeek?.sourceId == week.sourceId && selectedWeek?.sourceUrl == week.sourceUrl
         if unchanged && !force {
+            if selectedTrack?.alignment != nextTrack?.alignment
+                || nextTrack.map({ track in track.alignment.map { (try? $0.validate(week: week, track: track)) == nil } ?? false }) == true {
+                alignmentController.cancel(message: "对齐资料已更新，请重新开始识别。", resume: true)
+            }
             selectedWeek = week
             selectedTrack = nextTrack
             if let nextTrack { playback.updateMetadata(week: week, track: nextTrack) }
@@ -99,6 +151,8 @@ final class AppModel: ObservableObject {
         defer { if preparation == token { isPreparing = false } }
         selectedWeek = week
         selectedTrack = nextTrack
+        alignmentPosition = nil
+        alignmentStatus = nextTrack?.alignment == nil ? "当前音频没有可用的听声对齐资料。" : "请播放同一录音的原声，再点击听声对齐。"
         usingOfflineAudio = false
         display = .current
         guard let track = nextTrack else { return }

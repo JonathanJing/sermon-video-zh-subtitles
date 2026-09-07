@@ -1,0 +1,2 @@
+// Copy to Local.xcconfig (ignored), then enter your Apple Developer team.
+DEVELOPMENT_TEAM = YOUR_TEAM_ID

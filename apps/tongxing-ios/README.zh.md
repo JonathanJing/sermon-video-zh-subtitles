@@ -4,6 +4,8 @@
 
 本目录仍属开发验证范围。编译、桌面运行和网络下载测试不能代替 iPhone 锁屏、耳机、中断恢复或现场听感验收。
 
+本轮已实现灵动岛扩展、短时麦克风指纹对齐、中英界面与双语全文；实测边界及剩余发布步骤见 [发布清单](RELEASE-READINESS.zh.md)。需求与验收见 [iOS 产品 Backlog](BACKLOG.zh.md)：灵动岛、点击后短时麦克风自动对齐、多语言（英文优先）和双语字幕全文。
+
 界面按用户选定的 **iOS 27 设计语言** 实施：系统导航与 Sheet、26 pt 起的动态字幕、单层 Liquid Glass 悬浮播放栏、深色语义配色，以及窄屏、横屏和大字布局。具体规则与 Apple 官方来源见 [设计约定](DESIGN.zh.md)。
 
 ## 打开与运行
@@ -11,11 +13,11 @@
 直接打开 [Tongxing.xcodeproj](Tongxing.xcodeproj)。工程文件已保存，无需先安装依赖管理器；两个 Swift package 都在本地，没有第三方 SDK。
 
 1. 在 Xcode 选择 `Tongxing` scheme 与 iPhone 模拟器或已连接的 iPhone。本机 macOS 27 使用已安装的 `Xcode-beta.app`。
-2. 真机运行时，在 `Signing & Capabilities` 选择自己的开发者 Team。开发用 Bundle ID 默认 `com.jonathanjing.tongxing.dev`，注册前可根据账号调整。
+2. 真机运行时，复制 `Config/Local.example.xcconfig` 为被 Git 忽略的 `Config/Local.xcconfig` 并填写自己的开发者 Team；也可在 Xcode 的 `Signing & Capabilities` 检查实际签名。开发用 Bundle ID 默认 `com.jonathanjing.tongxing.dev`，注册前可根据账号调整。
 3. 点击 Run。首次读取目录需要网络；选择“下载本篇”，待显示“正在使用已下载音频”后可断网收听。
 4. 使用 Product → Test（⌘U）运行 `TongxingTests` 和 `TongxingUITests`。播放器测试使用合成静音和独立临时历史；UI 测试使用显式启动的隔离目录与音频夹具。正常 Run 仍加载已发布内容。
 
-Apple 账号、Team 配置、设备信息和签名凭据不进入 Git。当前工程未注册 App Store Connect 记录、未上传 TestFlight，也没有提交或 push。
+Apple 账号、Team 配置、设备信息和签名凭据不进入 Git。App Store Connect 已创建「同行·证道中文听译」记录；旧 build 2 曾完成分发 IPA 导出；本轮 build 3 已完成签名 Archive，新增扩展的分发导出受 Xcode 账号与描述文件阻塞，尚未上传 TestFlight。详见 [Beta 资料与实测](BETA-TESTING.zh.md)。
 
 修改 `project.yml` 后从本目录重新生成：
 
@@ -36,7 +38,7 @@ xcodegen generate
 
 下载目前应保持 App 打开；取消会清理临时文件，已经完整下载的音频不受影响。尚未实现系统后台下载与跨进程断点续传。正在播放或已手动定位时，下载完成不自动切换音源；可明确选择“使用离线版”。
 
-反馈/使用统计的原生接入、离线文件管理页面、最终 Logo/App Icon、隐私申报和 TestFlight 分发属于后续交付。本阶段原生客户端没有业务统计上传；网页现有统计行为不受影响。用户选择最终 Logo 前，页头沿用现有“同”字标记。
+反馈/使用统计的原生接入、离线文件管理页面、隐私申报和 TestFlight 分发属于后续交付。本阶段原生客户端没有业务统计上传；网页现有统计行为不受影响。App 图标和页头使用用户提供的「同」字与书本组合标识；原图及品牌参考保存在 `Branding/`，尺寸由 `scripts/generate-app-icon.swift` 生成。现已接入浅色/深色外观，配色、资源配置及版本边界见 [品牌标识说明](Branding/README.md)。
 
 ## 数据与模块
 
@@ -169,3 +171,11 @@ UI 测试使用真实 App 与 AVPlayer，但媒体为合成静音，离线由专
 5. 真正现场核对音频与视频起点、漂移、字幕可读性以及单手操作。恢复上次位置不等于现场重新同步。
 
 App 的分发与音频质量是两个验收维度；当前线上候选内容的“待审/待现场验收”状态必须保留。
+
+## 签名与实体 iPhone 验证（2026-09-06）
+
+正式「同」字图标已入包。本机 Team 存在忽略的 `Config/Local.xcconfig`，通过 `Config/Signing.xcconfig` 可选读取；模拟器 CI 不需要 Team。后台声明仅保留已实现的音频播放，系统 HTTPS 与 SHA-256 使用已核对，设置 `ITSAppUsesNonExemptEncryption=NO`。
+
+实体 iPhone 17 Pro / iOS 26.6.1 执行15条播放器与3条 UI 测试：18通过、0失败、0跳过，无运行时警告。UI 使用隔离合成静音及模拟传输失败，截图保存在本机忽略目录。随后恢复普通 App，用户确认真实声音、字幕、锁屏播放和解锁暂停正常；未据此覆盖完整证道、耳机、来电或现场验收。
+
+Release `0.1.0 (1)` 的 `iphoneos/arm64` Archive 与 App Store Connect 分发 IPA 导出均成功，签名校验通过。导出不等于上传或 Beta App Review 通过；Xcode 27 beta 构建能否进入外部 TestFlight 仍须 Apple 上传处理验证。证据位于 `artifacts/tongxing-ios/2026-09-06-beta/`。

@@ -8,19 +8,30 @@
 
 /* Begin PBXBuildFile section */
 		17719995BCE43C60385DB306 /* PlaybackControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE58D0C358A74F0BDE595617 /* PlaybackControllerTests.swift */; };
+		1F287CC791B5CA1037903C80 /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDD37841E68B061E39E91375 /* Localization.swift */; };
 		23FDF718141336A8978A8DB3 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 07B59FA4533A491CF4AA2D83 /* Assets.xcassets */; };
 		272F205288C38B205D9DE540 /* TongxingApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61FE1B88425139B2F592ED0A /* TongxingApp.swift */; };
 		318C506CF300A57522C9F2F9 /* PlaybackDock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE586AE0AE5D2F197DC5483 /* PlaybackDock.swift */; };
+		32B58C5985220B581D4CF45B /* ListeningActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D53F716EC96280DEAF16C4 /* ListeningActivityAttributes.swift */; };
 		35529B2801237F81F67785E8 /* TongxingCore in Frameworks */ = {isa = PBXBuildFile; productRef = 46FC649E9CD7E0BF9CEF7E49 /* TongxingCore */; };
+		4ABE01FD69729C4F7F3EC0BD /* ListeningActivityExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4AE35BDEC7081304D75711B2 /* ListeningActivityExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		6C29EA8473280EA03BE25CF6 /* ListeningActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70BEE8330224D04ACF54EE70 /* ListeningActivityWidget.swift */; };
+		7EC13E455FCB8AD28F90271C /* AudioAlignmentController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98A292DFC6FBB07302A4DE77 /* AudioAlignmentController.swift */; };
+		82DAE4DBC18C3F1A4BD05687 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 02EF54CEB76892C25F99A6FB /* Localizable.xcstrings */; };
 		8B8A2624687249CFAB61DAFB /* ListeningFlowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 239227789D17BF0B1B0A1614 /* ListeningFlowUITests.swift */; };
+		9D37A5E9084A59C6C69B0EEA /* ListeningLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD504056359930D928DD8069 /* ListeningLiveActivity.swift */; };
 		AAE50D4E51C22893F01DEAFD /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = E8CDE0AD081CB32BAE3CD0CB /* PrivacyInfo.xcprivacy */; };
 		B23482E21D63D7D5A3E4F670 /* TongxingCore in Frameworks */ = {isa = PBXBuildFile; productRef = C194255167B8AD9FCB74BBA5 /* TongxingCore */; };
 		B415795B942C6189370AAE61 /* UITestLaunch.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD0FEA1F83F4300CB78A0935 /* UITestLaunch.swift */; };
+		BB468865C54870860F167EA8 /* MicrophoneCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EB48128E58E88F812DC4214 /* MicrophoneCapture.swift */; };
 		C18C784B85DC395F257A21B7 /* TongxingInfrastructure in Frameworks */ = {isa = PBXBuildFile; productRef = FA2F2228F6CC524F87E2AC7D /* TongxingInfrastructure */; };
+		C2AF9808AFFEED2AD7D2DF2A /* AudioAlignmentControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BF531D6B8AD0E94016F0BC3 /* AudioAlignmentControllerTests.swift */; };
 		C7430BCC556F70CBE78D8CDB /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC6D116D3A73A078D6FA5218 /* DesignSystem.swift */; };
 		C84F91355DB74C84BAC96384 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A757BEABA30910DC76E26BE /* ContentView.swift */; };
+		CAB48F9F80542B5845FEF4B7 /* ListeningActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D53F716EC96280DEAF16C4 /* ListeningActivityAttributes.swift */; };
 		DA598EC364686E234B86F56B /* PlaybackController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34B67E7FE8944242C03C8904 /* PlaybackController.swift */; };
 		F104CF6576ABBCDDF4B54A62 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F81E8D165D65FEF70E65FFF /* AppModel.swift */; };
+		FA2D8C343F2F8AC19D4CB662 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = E8AB6F9FA25BB0980EF2FE48 /* InfoPlist.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -31,6 +42,13 @@
 			remoteGlobalIDString = A88D11D259CB9BF9F91FEB90;
 			remoteInfo = Tongxing;
 		};
+		C43F661F950570003922C173 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CB940143191019D62F3299E8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 63C91DB9A0587AFBE3404EE6;
+			remoteInfo = ListeningActivityExtension;
+		};
 		EFAD1467DFA51C22584E39CC /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = CB940143191019D62F3299E8 /* Project object */;
@@ -40,23 +58,49 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		C2437DBFD6C6DE28068C99A2 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				4ABE01FD69729C4F7F3EC0BD /* ListeningActivityExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		02EF54CEB76892C25F99A6FB /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		07B59FA4533A491CF4AA2D83 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0D25C402E721BC4E502AF672 /* tongxing-ios */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "tongxing-ios"; path = .; sourceTree = SOURCE_ROOT; };
 		0F81E8D165D65FEF70E65FFF /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		1EB48128E58E88F812DC4214 /* MicrophoneCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicrophoneCapture.swift; sourceTree = "<group>"; };
 		239227789D17BF0B1B0A1614 /* ListeningFlowUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningFlowUITests.swift; sourceTree = "<group>"; };
 		3258F6BBF467D18B238176B8 /* Tongxing.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Tongxing.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		34B67E7FE8944242C03C8904 /* PlaybackController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackController.swift; sourceTree = "<group>"; };
 		3A757BEABA30910DC76E26BE /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		4AE35BDEC7081304D75711B2 /* ListeningActivityExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = ListeningActivityExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		58CF4F36B9265709AAF09A1C /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
+		60D53F716EC96280DEAF16C4 /* ListeningActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityAttributes.swift; sourceTree = "<group>"; };
 		61FE1B88425139B2F592ED0A /* TongxingApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TongxingApp.swift; sourceTree = "<group>"; };
+		70BEE8330224D04ACF54EE70 /* ListeningActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityWidget.swift; sourceTree = "<group>"; };
 		72F704FFC13274A549628FF2 /* Core */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Core; path = Core; sourceTree = SOURCE_ROOT; };
+		81423A9849E5E7BDFBDA1423 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		98A292DFC6FBB07302A4DE77 /* AudioAlignmentController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAlignmentController.swift; sourceTree = "<group>"; };
+		9BF531D6B8AD0E94016F0BC3 /* AudioAlignmentControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAlignmentControllerTests.swift; sourceTree = "<group>"; };
 		AAE586AE0AE5D2F197DC5483 /* PlaybackDock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackDock.swift; sourceTree = "<group>"; };
 		BC6D116D3A73A078D6FA5218 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 		BD0FEA1F83F4300CB78A0935 /* UITestLaunch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestLaunch.swift; sourceTree = "<group>"; };
+		BDD37841E68B061E39E91375 /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
 		D76315F9ECA722C00FEE69F2 /* TongxingUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TongxingUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E5859794C1B0B7852C183B63 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		E89C7099077BFCEE7659F81B /* TongxingTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TongxingTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E8CDE0AD081CB32BAE3CD0CB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		EE58D0C358A74F0BDE595617 /* PlaybackControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackControllerTests.swift; sourceTree = "<group>"; };
+		FD504056359930D928DD8069 /* ListeningLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningLiveActivity.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -88,9 +132,18 @@
 			path = UITests;
 			sourceTree = "<group>";
 		};
+		4DB7ECDB720204E499FFBEE0 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				60D53F716EC96280DEAF16C4 /* ListeningActivityAttributes.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
 		68E719FEB0CDD4F0549EB62F /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				4AE35BDEC7081304D75711B2 /* ListeningActivityExtension.appex */,
 				3258F6BBF467D18B238176B8 /* Tongxing.app */,
 				E89C7099077BFCEE7659F81B /* TongxingTests.xctest */,
 				D76315F9ECA722C00FEE69F2 /* TongxingUITests.xctest */,
@@ -103,20 +156,51 @@
 			children = (
 				0F81E8D165D65FEF70E65FFF /* AppModel.swift */,
 				07B59FA4533A491CF4AA2D83 /* Assets.xcassets */,
+				98A292DFC6FBB07302A4DE77 /* AudioAlignmentController.swift */,
 				3A757BEABA30910DC76E26BE /* ContentView.swift */,
 				BC6D116D3A73A078D6FA5218 /* DesignSystem.swift */,
+				FD504056359930D928DD8069 /* ListeningLiveActivity.swift */,
+				BDD37841E68B061E39E91375 /* Localization.swift */,
+				1EB48128E58E88F812DC4214 /* MicrophoneCapture.swift */,
 				34B67E7FE8944242C03C8904 /* PlaybackController.swift */,
 				AAE586AE0AE5D2F197DC5483 /* PlaybackDock.swift */,
 				E8CDE0AD081CB32BAE3CD0CB /* PrivacyInfo.xcprivacy */,
 				61FE1B88425139B2F592ED0A /* TongxingApp.swift */,
 				BD0FEA1F83F4300CB78A0935 /* UITestLaunch.swift */,
+				E8AB6F9FA25BB0980EF2FE48 /* InfoPlist.strings */,
+				8DE1B32273C5ED188D2CD1CC /* Resources */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		8A60653E07DA89A904D342D2 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				58CF4F36B9265709AAF09A1C /* Signing.xcconfig */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		8DE1B32273C5ED188D2CD1CC /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				02EF54CEB76892C25F99A6FB /* Localizable.xcstrings */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		BBC78535E102AD4ABEAEA49D /* ListeningActivityExtension */ = {
+			isa = PBXGroup;
+			children = (
+				70BEE8330224D04ACF54EE70 /* ListeningActivityWidget.swift */,
+			);
+			path = ListeningActivityExtension;
 			sourceTree = "<group>";
 		};
 		DDCFFA9BC8A66D0705E124E9 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				9BF531D6B8AD0E94016F0BC3 /* AudioAlignmentControllerTests.swift */,
 				EE58D0C358A74F0BDE595617 /* PlaybackControllerTests.swift */,
 			);
 			path = Tests;
@@ -135,7 +219,10 @@
 			isa = PBXGroup;
 			children = (
 				6C5420C74F47EF1E13AC8C7D /* App */,
+				8A60653E07DA89A904D342D2 /* Config */,
+				BBC78535E102AD4ABEAEA49D /* ListeningActivityExtension */,
 				EE18E6BD63E32BD2689C8B08 /* Packages */,
+				4DB7ECDB720204E499FFBEE0 /* Shared */,
 				DDCFFA9BC8A66D0705E124E9 /* Tests */,
 				462945D15FD6BA273AA558BE /* UITests */,
 				68E719FEB0CDD4F0549EB62F /* Products */,
@@ -145,6 +232,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		63C91DB9A0587AFBE3404EE6 /* ListeningActivityExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3AAC76A3DAB8779AA97B315E /* Build configuration list for PBXNativeTarget "ListeningActivityExtension" */;
+			buildPhases = (
+				C61392996C455A6CC18E7F94 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ListeningActivityExtension;
+			packageProductDependencies = (
+			);
+			productName = ListeningActivityExtension;
+			productReference = 4AE35BDEC7081304D75711B2 /* ListeningActivityExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		A88D11D259CB9BF9F91FEB90 /* Tongxing */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A0D147F90124C3CF570A1EBC /* Build configuration list for PBXNativeTarget "Tongxing" */;
@@ -152,10 +256,12 @@
 				D128CF3B139D2EA68547E367 /* Sources */,
 				BDBF819BAEDD303CDD9E3D36 /* Resources */,
 				180A55B611AD0E790158B7C9 /* Frameworks */,
+				C2437DBFD6C6DE28068C99A2 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				8F4F71024EE2F5C6435F8798 /* PBXTargetDependency */,
 			);
 			name = Tongxing;
 			packageProductDependencies = (
@@ -213,6 +319,9 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
+					63C91DB9A0587AFBE3404EE6 = {
+						ProvisioningStyle = Automatic;
+					};
 					A88D11D259CB9BF9F91FEB90 = {
 						ProvisioningStyle = Automatic;
 					};
@@ -231,6 +340,7 @@
 			knownRegions = (
 				Base,
 				en,
+				"zh-Hans",
 			);
 			mainGroup = FA4D26A4259E628302C145D3;
 			minimizedProjectReferenceProxies = 1;
@@ -244,6 +354,7 @@
 			projectRoot = "";
 			targets = (
 				A88D11D259CB9BF9F91FEB90 /* Tongxing */,
+				63C91DB9A0587AFBE3404EE6 /* ListeningActivityExtension */,
 				E2EC64C5107F7C39334E513D /* TongxingTests */,
 				A97729024B8941553E7A6962 /* TongxingUITests */,
 			);
@@ -256,6 +367,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				23FDF718141336A8978A8DB3 /* Assets.xcassets in Resources */,
+				FA2D8C343F2F8AC19D4CB662 /* InfoPlist.strings in Resources */,
+				82DAE4DBC18C3F1A4BD05687 /* Localizable.xcstrings in Resources */,
 				AAE50D4E51C22893F01DEAFD /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -275,7 +388,17 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C2AF9808AFFEED2AD7D2DF2A /* AudioAlignmentControllerTests.swift in Sources */,
 				17719995BCE43C60385DB306 /* PlaybackControllerTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C61392996C455A6CC18E7F94 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CAB48F9F80542B5845FEF4B7 /* ListeningActivityAttributes.swift in Sources */,
+				6C29EA8473280EA03BE25CF6 /* ListeningActivityWidget.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -284,8 +407,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				F104CF6576ABBCDDF4B54A62 /* AppModel.swift in Sources */,
+				7EC13E455FCB8AD28F90271C /* AudioAlignmentController.swift in Sources */,
 				C84F91355DB74C84BAC96384 /* ContentView.swift in Sources */,
 				C7430BCC556F70CBE78D8CDB /* DesignSystem.swift in Sources */,
+				32B58C5985220B581D4CF45B /* ListeningActivityAttributes.swift in Sources */,
+				9D37A5E9084A59C6C69B0EEA /* ListeningLiveActivity.swift in Sources */,
+				1F287CC791B5CA1037903C80 /* Localization.swift in Sources */,
+				BB468865C54870860F167EA8 /* MicrophoneCapture.swift in Sources */,
 				DA598EC364686E234B86F56B /* PlaybackController.swift in Sources */,
 				318C506CF300A57522C9F2F9 /* PlaybackDock.swift in Sources */,
 				272F205288C38B205D9DE540 /* TongxingApp.swift in Sources */,
@@ -306,15 +434,33 @@
 			target = A88D11D259CB9BF9F91FEB90 /* Tongxing */;
 			targetProxy = EFAD1467DFA51C22584E39CC /* PBXContainerItemProxy */;
 		};
+		8F4F71024EE2F5C6435F8798 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 63C91DB9A0587AFBE3404EE6 /* ListeningActivityExtension */;
+			targetProxy = C43F661F950570003922C173 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		E8AB6F9FA25BB0980EF2FE48 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				E5859794C1B0B7852C183B63 /* en */,
+				81423A9849E5E7BDFBDA1423 /* zh-Hans */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		3E9A90D181BF152B250F5C27 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 3;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -331,8 +477,33 @@
 			};
 			name = Debug;
 		};
+		4FC68D69CDCDB70DD0D5EEAF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CURRENT_PROJECT_VERSION = 3;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ListeningActivityExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.jonathanjing.tongxing.dev.listening-activity";
+				PRODUCT_NAME = ListeningActivityExtension;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
 		5D241FB778395A1EED019D61 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				GENERATE_INFOPLIST_FILE = YES;
@@ -475,6 +646,7 @@
 		};
 		8ED642C5DD0EA80CEA6F2AAE /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				GENERATE_INFOPLIST_FILE = YES;
@@ -490,12 +662,37 @@
 			};
 			name = Debug;
 		};
+		DD7E8BF61EC85D2DCA288A4A /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CURRENT_PROJECT_VERSION = 3;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ListeningActivityExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.jonathanjing.tongxing.dev.listening-activity";
+				PRODUCT_NAME = ListeningActivityExtension;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		DECB6AC18673D9ECA82F0B55 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 3;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -514,6 +711,7 @@
 		};
 		F014A668BAE63FD41133CE1F /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				GENERATE_INFOPLIST_FILE = YES;
@@ -531,6 +729,7 @@
 		};
 		F15F2EC59A594723F52E5E7D /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				GENERATE_INFOPLIST_FILE = YES;
@@ -554,6 +753,15 @@
 			buildConfigurations = (
 				8ED642C5DD0EA80CEA6F2AAE /* Debug */,
 				5D241FB778395A1EED019D61 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		3AAC76A3DAB8779AA97B315E /* Build configuration list for PBXNativeTarget "ListeningActivityExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4FC68D69CDCDB70DD0D5EEAF /* Debug */,
+				DD7E8BF61EC85D2DCA288A4A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

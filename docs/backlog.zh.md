@@ -4,6 +4,8 @@
 
 English version: [backlog.md](./backlog.md)
 
+同行原生客户端的新需求单独维护在 [iOS 产品 Backlog](../apps/tongxing-ios/BACKLOG.zh.md)，包括灵动岛、短时麦克风对齐、多语言及双语全文。
+
 日期：2026-06-22
 
 ## 产品目标

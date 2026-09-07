@@ -21,7 +21,15 @@ let package = Package(
             name: "TongxingPreview",
             dependencies: ["TongxingInfrastructure", .product(name: "TongxingCore", package: "Core")],
             path: "App",
-            exclude: ["Info.plist", "PrivacyInfo.xcprivacy", "Assets.xcassets"]
+            exclude: ["Info.plist", "PrivacyInfo.xcprivacy",
+                      "Assets.xcassets/Contents.json", "Assets.xcassets/AppIcon.appiconset",
+                      "Assets.xcassets/BrandMark.imageset/Contents.json",
+                      "en.lproj", "zh-Hans.lproj"],
+            resources: [
+                .copy("Assets.xcassets/BrandMark.imageset/BrandMark.png"),
+                .copy("Assets.xcassets/BrandMark.imageset/BrandMark-dark.png"),
+                .copy("Resources/Localizable.xcstrings")
+            ]
         ),
         .testTarget(
             name: "TongxingInfrastructureTests",

@@ -2,6 +2,7 @@ import SwiftUI
 
 @main
 struct TongxingApp: App {
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var model: AppModel = {
         #if DEBUG
         if let fixtureModel = UITestLaunch.makeModel() { return fixtureModel }
@@ -13,6 +14,9 @@ struct TongxingApp: App {
         WindowGroup {
             ContentView(model: model)
                 .tint(Brand.accent)
+                .onChange(of: scenePhase) { _, phase in
+                    if phase == .background { model.suspendAlignment() }
+                }
                 #if DEBUG
                 .modifier(UITestTextSize())
                 #endif

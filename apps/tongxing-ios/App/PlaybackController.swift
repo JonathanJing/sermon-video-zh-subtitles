@@ -19,6 +19,42 @@ final class PlaybackController: ObservableObject {
     @Published private(set) var undoPosition: Double?
     @Published private(set) var storageWarning: String?
 
+    private(set) var alignmentRevision = UUID()
+    var onManualInteraction: (() -> Void)?
+    private var alignmentSeekRequest: UUID?
+
+    private func manualInteraction() {
+        alignmentRevision = UUID()
+        cancelAlignmentSeek()
+        onManualInteraction?()
+    }
+
+    var alignmentPlaybackIntent: Bool { wantsPlayback || isPlaying || isWaiting }
+    func pauseForAlignment() { pause(automatic: true) }
+    func resumeAfterAlignment() { play(automatic: true) }
+
+    func applyAlignedPosition(_ value: Double) async -> Bool {
+        guard isReady, value.isFinite, value >= 0, value < duration else { return false }
+        let request = UUID()
+        alignmentSeekRequest = request
+        return await withCheckedContinuation { continuation in
+            seek(to: value, newOffset: 0, rememberUndo: true) { [weak self] success in
+                if self?.alignmentSeekRequest == request { self?.alignmentSeekRequest = nil }
+                continuation.resume(returning: success)
+            }
+        }
+    }
+
+    func cancelAlignmentSeek() {
+        guard alignmentSeekRequest != nil else { return }
+        alignmentSeekRequest = nil
+        seekGeneration = UUID()
+        pendingSeek = nil
+        player.currentItem?.cancelPendingSeeks()
+    }
+
+    private let liveActivity = ListeningLiveActivityCoordinator()
+    private var languageObservation: AnyCancellable?
     private var player = AVPlayer()
     private let historyURL: URL
     private let audioSessionActivator: any AudioSessionActivating
@@ -55,6 +91,9 @@ final class PlaybackController: ObservableObject {
         observePlayer()
         observeNotifications()
         configureRemoteCommands()
+        languageObservation = AppLocalization.shared.$language.dropFirst().sink { [weak self] _ in
+            Task { @MainActor [weak self] in self?.publishNowPlaying() }
+        }
     }
 
     private func observePlayer() {
@@ -83,6 +122,7 @@ final class PlaybackController: ObservableObject {
             updateMetadata(week: week, track: track)
             return
         }
+        manualInteraction()
         saveProgress()
         invalidateActivation()
         if player.status == .failed { recreatePlayer() }
@@ -133,6 +173,7 @@ final class PlaybackController: ObservableObject {
                     self.wantsPlayback = false
                     self.invalidateActivation()
                     self.message = "音频加载失败，请检查网络或使用已下载版本。"
+                    self.liveActivity.end()
                     self.updateRemoteAvailability()
                 case .unknown: break
                 @unknown default: break
@@ -164,6 +205,7 @@ final class PlaybackController: ObservableObject {
         message = "正在准备所选证道…"
         updateRemoteAvailability()
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+        liveActivity.end()
     }
 
     func updateMetadata(week: SermonWeek, track: SermonTrack) {
@@ -180,7 +222,8 @@ final class PlaybackController: ObservableObject {
         else { play() }
     }
 
-    func play() {
+    func play(automatic: Bool = false) {
+        if !automatic { manualInteraction() }
         guard isReady else { return }
         wantsPlayback = true
         // Finish the user's latest requested position before starting audio.
@@ -250,7 +293,8 @@ final class PlaybackController: ObservableObject {
         isWaiting = player.timeControlStatus == .waitingToPlayAtSpecifiedRate
     }
 
-    func pause() {
+    func pause(automatic: Bool = false) {
+        if !automatic { manualInteraction() }
         wantsPlayback = false
         interruptedIntent = false
         invalidateActivation()
@@ -262,6 +306,7 @@ final class PlaybackController: ObservableObject {
     }
 
     func restore(autoplay: Bool = false) {
+        manualInteraction()
         guard let saved = resumePosition, isReady else { return }
         if autoplay { wantsPlayback = true }
         seek(to: saved.position, newOffset: saved.offset, rememberUndo: true,
@@ -269,21 +314,24 @@ final class PlaybackController: ObservableObject {
     }
 
     func restart() {
+        manualInteraction()
         guard isReady else { return }
         seek(to: 0, newOffset: 0, rememberUndo: true,
              completionMessage: "已返回开头 · 请按现场起点开始")
     }
 
     func nudge(_ amount: Double) {
+        manualInteraction()
         guard isReady, amount.isFinite else { return }
         let before = pendingSeek?.position ?? currentPosition()
         let after = max(0, min(duration, before + amount))
         seek(to: after, newOffset: (pendingSeek?.offset ?? offset) + after - before, rememberUndo: true)
     }
 
-    func jump(to value: Double) { seek(to: value, newOffset: pendingSeek?.offset ?? offset, rememberUndo: true) }
+    func jump(to value: Double) { manualInteraction(); seek(to: value, newOffset: pendingSeek?.offset ?? offset, rememberUndo: true) }
 
     func undo() {
+        manualInteraction()
         guard let snapshot = undoSnapshot else { return }
         undoSnapshot = nil
         undoPosition = nil
@@ -291,8 +339,8 @@ final class PlaybackController: ObservableObject {
              completionMessage: "已返回 \(PlaybackTime.format(snapshot.position))")
     }
 
-    private func seek(to value: Double, newOffset: Double, rememberUndo: Bool, completionMessage: String? = nil) {
-        guard isReady, value.isFinite, newOffset.isFinite, duration > 0 else { return }
+    private func seek(to value: Double, newOffset: Double, rememberUndo: Bool, completionMessage: String? = nil, completion: ((Bool) -> Void)? = nil) {
+        guard isReady, value.isFinite, newOffset.isFinite, duration > 0 else { completion?(false); return }
         if rememberUndo {
             undoSnapshot = pendingSeek ?? (currentPosition(), offset)
             undoPosition = undoSnapshot?.position
@@ -306,12 +354,13 @@ final class PlaybackController: ObservableObject {
         message = "正在定位…"
         player.seek(to: CMTime(seconds: destination, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] finished in
             Task { @MainActor [weak self] in
-                guard let self, self.generation == token, self.seekGeneration == seekToken else { return }
+                guard let self, self.generation == token, self.seekGeneration == seekToken else { completion?(false); return }
                 self.pendingSeek = nil
                 guard finished else {
                     self.wantsPlayback = false
                     self.invalidateActivation()
                     self.message = "定位未完成，已保留上次确认的位置。"
+                    completion?(false)
                     return
                 }
                 self.resumePosition = nil
@@ -322,6 +371,7 @@ final class PlaybackController: ObservableObject {
                 self.publishNowPlaying()
                 if self.wantsPlayback { self.startPlayback() }
                 else { self.message = completionMessage ?? "已定位 \(PlaybackTime.format(self.position))" }
+                completion?(true)
             }
         }
     }
@@ -348,6 +398,7 @@ final class PlaybackController: ObservableObject {
         guard identity != nil else { return }
         guard pendingSeek == nil else { return }
         position = currentPosition()
+        publishLiveActivity()
         if positionTouched, Date().timeIntervalSince(lastSave) >= 4 { saveProgress() }
     }
 
@@ -416,6 +467,7 @@ final class PlaybackController: ObservableObject {
         guard let type, let kind = AVAudioSession.InterruptionType(rawValue: type) else { return }
         switch kind {
         case .began:
+            manualInteraction()
             interruptedIntent = wantsPlayback || isPlaying
             interruptedGeneration = generation
             wantsPlayback = false
@@ -450,6 +502,7 @@ final class PlaybackController: ObservableObject {
     }
 
     private func recoverMediaServices() {
+        manualInteraction()
         let source = loadedSource
         saveProgress()
         wantsPlayback = false
@@ -497,12 +550,20 @@ final class PlaybackController: ObservableObject {
         remoteTargets.forEach { $0.0.isEnabled = isReady }
     }
 
+    private func publishLiveActivity() {
+        guard let identity, isReady else { liveActivity.end(); return }
+        liveActivity.update(title: title, speaker: speaker, position: position, duration: duration,
+                            isPlaying: isPlaying, sourceKey: identity.key + "|" + sourceID,
+                            languageCode: AppLocalization.shared.language.rawValue, isWaiting: isWaiting)
+    }
+
     private func publishNowPlaying() {
         guard identity != nil else { return }
+        publishLiveActivity()
         MPNowPlayingInfoCenter.default().nowPlayingInfo = [
             MPMediaItemPropertyTitle: title,
             MPMediaItemPropertyArtist: speaker,
-            MPMediaItemPropertyAlbumTitle: "同行 · 证道中文听译",
+            MPMediaItemPropertyAlbumTitle: AppLocalization.shared.text("同行 · 证道中文听译"),
             MPMediaItemPropertyPlaybackDuration: duration,
             MPNowPlayingInfoPropertyElapsedPlaybackTime: position,
             MPNowPlayingInfoPropertyPlaybackRate: isPlaying ? 1.0 : 0.0,
@@ -528,6 +589,7 @@ final class SystemAudioSessionActivator: AudioSessionActivating, @unchecked Send
     private let queue = DispatchQueue(label: "com.jonathanjing.tongxing.audio-session", qos: .userInitiated)
     private var waiters: [CheckedContinuation<Void, Error>] = []
     private var isActivating = false
+    private var recordingOwner: UUID?
 
     func activate() async throws {
         try Task.checkCancellation()
@@ -537,6 +599,39 @@ final class SystemAudioSessionActivator: AudioSessionActivating, @unchecked Send
                 guard !self.isActivating else { return }
                 self.isActivating = true
                 self.configureAndActivate()
+            }
+        }
+    }
+
+    @MainActor
+    func prepareRecording(token: UUID) async throws {
+        try Task.checkCancellation()
+        queue.async { self.recordingOwner = token }
+        // Wait for any earlier async playback activation before changing category.
+        try await activate()
+        try Task.checkCancellation()
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            queue.async {
+                do {
+                    guard self.recordingOwner == token else { throw CancellationError() }
+                    let session = AVAudioSession.sharedInstance()
+                    try session.setCategory(.playAndRecord, mode: .measurement, options: [.allowBluetoothHFP, .defaultToSpeaker])
+                    try session.setActive(true)
+                    continuation.resume()
+                } catch { continuation.resume(throwing: error) }
+            }
+        }
+    }
+
+    @MainActor
+    func restorePlaybackCategory(token: UUID) {
+        queue.async {
+            guard self.recordingOwner == token else { return }
+            self.recordingOwner = nil
+            let session = AVAudioSession.sharedInstance()
+            // A manual play request can already have restored the category.
+            if session.category != .playback || session.mode != .spokenAudio {
+                try? session.setCategory(.playback, mode: .spokenAudio)
             }
         }
     }

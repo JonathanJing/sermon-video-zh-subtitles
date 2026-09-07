@@ -60,9 +60,9 @@ private enum UITestContent {
                 sha256: SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined(),
                 durationSeconds: duration,
                 cues: [
-                    SubtitleCue(start: 0, end: 12, text: "\(label)：第一句，用于验证选轨。"),
-                    SubtitleCue(start: 12, end: 24, text: "\(label)：第二句，用于验证时间定位。"),
-                    SubtitleCue(start: 24, end: duration, text: "\(label)：第三句，用于验证继续收听。")
+                    SubtitleCue(start: 0, end: 12, text: "\(label)：第一句，用于验证选轨。", blockId: "0"),
+                    SubtitleCue(start: 12, end: 24, text: "\(label)：第二句，用于验证时间定位。", blockId: "1"),
+                    SubtitleCue(start: 24, end: duration, text: "\(label)：第三句，用于验证继续收听。", blockId: "2")
                 ], subtitleTiming: "synthetic-ui-test-fixture", scope: "full_candidate")
         }
         let catalog = try! WeeklyCatalog(defaultWeekId: "ui-test-week", weeks: [
@@ -72,7 +72,12 @@ private enum UITestContent {
                 tracks: [track(id: "fixture-first", label: "甲音轨", data: firstAudio, duration: 36),
                          track(id: "fixture-second", label: "乙音轨", data: secondAudio, duration: 48.024)],
                 contentReview: "合成测试数据，无真实证道内容或审核声明。",
-                audioNotice: "仅用于界面自动化的本地静音夹具，不是证道内容。")
+                audioNotice: "仅用于界面自动化的本地静音夹具，不是证道内容。",
+                transcript: BilingualTranscript(blocks: [
+                    .init(blockId: "0", english: "First synthetic source sentence for UI testing.", sourceTextOrigin: "synthetic-fixture", reviewState: "candidate"),
+                    .init(blockId: "1", english: "Second synthetic source sentence for seek testing.", sourceTextOrigin: "synthetic-fixture", reviewState: "candidate"),
+                    .init(blockId: "2", english: "Third synthetic source sentence for continued listening.", sourceTextOrigin: "synthetic-fixture", reviewState: "candidate")
+                ]))
         ])
         return ["/weekly.json": try! JSONEncoder().encode(catalog),
                 "/media/fixture-first.mp3": firstAudio,

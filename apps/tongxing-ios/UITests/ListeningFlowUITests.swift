@@ -5,6 +5,27 @@ import XCTest
 /// these tests do not establish real-network, audible, lock-screen, or venue QA.
 @MainActor
 final class ListeningFlowUITests: XCTestCase {
+    func testEnglishInterfaceAndOriginalTranscriptPreserveSelectedPosition() throws {
+        let app = launchFixture()
+        try selectSecondTrack(in: app)
+        try downloadSelection(in: app)
+        try seekToSecondSubtitle(in: app)
+        let english = element("transcript-english-1", in: app)
+        try reveal(english, in: app, direction: .up)
+        XCTAssertTrue(english.label.contains("Second synthetic source sentence"))
+        app.buttons["more-options"].tap()
+        let language = element("interface-language", in: app)
+        try reveal(language, in: app, direction: .up)
+        language.tap()
+        app.buttons["English"].tap()
+        app.buttons["Done"].tap()
+        try waitFor(app.buttons["playback-toggle"], "label == 'Play'")
+        try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:12'")
+        XCTAssertEqual(element("sermon-title", in: app).label, "界面测试证道")
+        XCTAssertTrue(english.label.contains("Second synthetic source sentence"))
+        screenshot("english-interface-source-bilingual-transcript", app: app)
+    }
+
     func testSelectTrackDownloadPlayPauseAndSeekToSubtitle() throws {
         let app = launchFixture()
         try selectSecondTrack(in: app)
@@ -94,6 +115,7 @@ final class ListeningFlowUITests: XCTestCase {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing"] + (largeText ? ["--ui-testing-large-text"] : [])
+        app.launchArguments += ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
         app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
         app.launchEnvironment["TONGXING_UI_TEST_RUN_ID"] = UUID().uuidString
         addTeardownBlock { [weak self] in
