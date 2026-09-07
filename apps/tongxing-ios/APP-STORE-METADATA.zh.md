@@ -1,8 +1,8 @@
 # 同行 iOS 商店文案与提交材料
 
-更新日期：2026-09-07。当前目标为 **0.1.0 (5)**，本稿已按 6 篇线上目录更新。build 5 只有 beta SDK 模拟器定向验证，尚无正式 Archive / IPA、Xcode Cloud 运行或审核提交。build 4 的历史上传和 ASC 草稿仍然保留；它使用 beta Xcode，不能提交正式 App Store。当前状态见 [发布准备](RELEASE-READINESS.zh.md)。
+更新日期：2026-09-07。当前目标为 **0.1.0 (5)**，本稿已按 6 篇线上目录更新。正式 Xcode Cloud build 5 已成功完成 Archive、App Store 导出及上传准备，ASC 已处理为 Ready to Submit，Binary State = Validated，随后已关联商店版本并正式提交 App Review，当前 **Waiting for Review**。审核后手动发布仍选中，尚未公开上线。本机未下载 Cloud Archive / IPA。build 4 的 beta Xcode 拒绝保留为历史。当前状态见 [发布准备](RELEASE-READINESS.zh.md)。
 
-[metadata.json](release/metadata.json) 是结构化文案源，下方 16 个纯文本块与 JSON 逐字一致。中英商店描述和宣传文本这 4 个字段已逐字同步 ASC 并保存，中文关键词已将双语字幕改为证道字幕并保存。ASC 审核说明已按当前 6 篇及普通播放样例做语义核验，其句式与本稿不必相同；两种语言副标题也已逐字保存；build 5 TestFlight 文案待正式构建后回填。中英 Support URL 和隐私政策 URL 已在 ASC 填写，App Privacy 已发布，内容权利声明 Yes 已保存。
+[metadata.json](release/metadata.json) 是结构化文案源，下方 16 个纯文本块与 JSON 逐字一致。中英商店描述和宣传文本这 4 个字段已逐字同步 ASC 并保存，中文关键词已将双语字幕改为证道字幕并保存。ASC 审核说明已按当前 6 篇及普通播放样例做语义核验，其句式与本稿不必相同；两种语言副标题也已逐字保存；build 5 中英 What to Test 已保存为与本地长稿语义一致的摘要版，非逐字相同。中英 Support URL 和隐私政策 URL 已在 ASC 填写，App Privacy 已发布，内容权利声明 Yes 已保存。
 
 ## 当前目录与审核入口
 
@@ -215,7 +215,7 @@ Use TestFlight feedback with the sermon date, track, time, reproduction steps, d
 | 类别 | Education 已保存；次分类未在本稿假定 |
 | 首次价格和地区 | ASC 已核验 USD 0.00；Availability 仅 1 个地区，美国 Available on App Release，其他 174 个地区 Not Available |
 | 年龄问卷 | ASC 已按当前 6 篇内容保存 18+；保留实际问卷与目录证据，后续内容更新再复核 |
-| 发布方式 | 商店草稿采用审核后手动发布；尚未正式提交或发布 |
+| 发布方式 | build 5 已正式提交 App Review，Waiting for Review；审核后手动发布，尚未公开上线 |
 
 年龄与内容要求依据：[Apple 年龄评级流程](https://developer.apple.com/help/app-store-connect/manage-app-information/set-an-app-age-rating/)、[审核指南](https://developer.apple.com/app-store/review/guidelines/)。用户权利确认持续有效；后续新增内容仍应保持来源和许可边界。App Store 的政策、支持、隐私标签和构建事实分别核对，不能互相替代。
 
@@ -223,11 +223,11 @@ Use TestFlight feedback with the sermon date, track, time, reproduction steps, d
 
 [当前截图清单](SCREENSHOTS.zh.md)记录已在 ASC 保存并核验的 8 张真实图片：保留 build 4 的四张 `01-listen.jpg`，并加入 build 5 按当前 6 篇目录新采集的四张 `02-transcript.jpg`（iPhone / iPad，各简体中文和英文）。新全文页展示中文及未提供英文的提示，旧双语全文图仅留历史证据。组合目录检查通过，8 张均与各自原件字节相同；各自 build 与目录来源分别保留，不将旧主屏改记为新构建截图。
 
-ASC 再次 Add for Review 只显示两个 beta Xcode 校验错误，根因相同，没有其他材料错误；这不是正式提交成功，也不豁免新文案与截图的最终核对。
+此前 build 4 的 Add for Review 返回两个 beta Xcode 校验错误，属于历史尝试。正式 Cloud build 5 已通过 Apple 二进制处理并关联商店版本。2026-09-07 11:16 PDT，Add for Review 和 Submit for Review 均成功；门户显示 `0.1.0 Waiting for Review`、`1 Item Submitted`、`Draft Submissions (0)`；审核提交 ID 为 `8ad36924-ad49-4ca7-ba7a-6cfab0f0e725`。这是正式审核已提交，尚非审核通过或 App Store 已上线。
 
 当前可用画面应优先选择中文当前字幕、中文全文、证道大纲、离线下载状态；两种界面语言分别保留真实控件。当前没有参考资料的听音对齐不作为审核演示，iPad 不借用 iPhone 灵动岛画面。截图不代表真实耳机、声学输入或现场验收。
 
-后续顺序：本次代码/材料审查已通过且 Git 已获授权，推送完成后，先初始化 Xcode Cloud（当前网页仍显示 Get Started，尚未建立可运行 workflow），再配置正式 SDK 构建 build 5；核对 App/扩展版本、签名、隐私资源、产物及 Apple 处理，再关联正式构建并回填本稿、当前截图与最终分级/地区。build 4 的 Ready to Submit 是 TestFlight 状态，不能替代正式 App Review 接收。首次公开发布依 ASC 的真实审核结果和手动发布设置推进。[Apple 发布选项](https://developer.apple.com/help/app-store-connect/manage-your-apps-availability/select-an-app-store-version-release-option)
+已完成：23 个文件提交/push 至 `codex/tongxing-ios`，远端 commit `539e916f904c9191ebd6ecb9708eaae1880b0a44` 已核验；现有 Default workflow 已补 Archive → App Store Connect，并固定 Xcode `26.6 (17F113)`；macOS 选项保持 Latest Release，本次实际运行版本为 `26.6.2 (25G83)`。Cloud build 5 在 4 分钟成功，源码 commit 一致；ASC 确认为 `0.1.0 (5)`、最低 iOS 17、SDK build `23F81a`、Encryption = No。证据：`artifacts/tongxing-ios/2026-09-07-app-store-build5/cloud-build5-receipt.json`。商店版本已关联 build 5 并完成 App Review 提交，Waiting for Review 是本次实际正式审核状态；TestFlight Ready to Submit 另行保留。下一步等待 Apple 审核结果；首次公开发布依真实结果和手动发布设置推进。[Apple 发布选项](https://developer.apple.com/help/app-store-connect/manage-your-apps-availability/select-an-app-store-version-release-option)
 
 ## 本次长度与一致性检查
 

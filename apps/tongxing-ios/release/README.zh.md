@@ -1,16 +1,16 @@
 # 同行 App 发布材料包
 
-更新日期：2026-09-07。当前目标为 **0.1.0 (5)**。build 4 已上传，但正式 Add for Review 被 beta Xcode 限制拒绝；build 5 只有 beta 模拟器的定向 UI 验证，没有正式 Archive / IPA、Cloud 运行或审核提交。
+更新日期：2026-09-07。当前目标为 **0.1.0 (5)**。正式 Xcode Cloud build 5 已成功，Archive / App Store 导出 / Prepare Build 全部通过，ASC 已处理为 Ready to Submit，Binary State = Validated。**正式 App Review 已提交，当前 Waiting for Review**；审核后手动发布，尚未公开上线。本机未下载 Cloud Archive / IPA。build 4 的 beta Xcode 拒绝保留为历史。
 
 ## 当前材料
 
-- [中英文案](../APP-STORE-METADATA.zh.md)与[结构化字段](metadata.json)：已按当前 6 篇中文目录更新，审核样例为 09-06 普通播放并跳至 00:30；当前没有英文对照块或听音对齐数据。中英商店描述/宣传文本逐字已保存 ASC，中文关键词已改为证道字幕并保存；审核说明语义相符，两种语言副标题已逐字保存；build 5 TestFlight 文案待正式构建后回填。
+- [中英文案](../APP-STORE-METADATA.zh.md)与[结构化字段](metadata.json)：已按当前 6 篇中文目录更新，审核样例为 09-06 普通播放并跳至 00:30；当前没有英文对照块或听音对齐数据。中英商店描述/宣传文本逐字已保存 ASC，中文关键词已改为证道字幕并保存；审核说明语义相符，两种语言副标题已逐字保存；build 5 中英 What to Test 已保存为与本地长稿语义一致的摘要版，非逐字相同。
 - [已发布隐私政策](https://ai-for-god-tongxing-support.web.app/privacy.html)与[支持页面](https://ai-for-god-tongxing-support.web.app/support.html)：中英 URL 已填 ASC。`public-policy/` 的四个公开文件与 HTTP 校验字节相同；保留原文件名的[政策正文](privacy-policy-draft.md)及[支持正文](support-draft.md)也已同步批准和公开联系状态。
 - [App Privacy 依据](public-policy/app-privacy-declaration.json)：ASC 已 Published；Hosting IP 分类依据和 Apple 服务边界保留。
 - [内容权利记录](content-rights-review.json)：用户确认当前内容及声线许可，绑定 6 篇目录；ASC Yes 已保存。权利确认不等于人工质量验收。
 - [截图清单](../SCREENSHOTS.zh.md)、[发布状态](../RELEASE-READINESS.zh.md)、[历史 Beta 证据](../BETA-TESTING.zh.md)。
 
-ASC 当前已核验软件版权 `2026 Jonathan Jing`、Education、18+、USD 0.00，Availability 仅美国 1 个地区，其他 174 地区 Not Available；美国状态为 Available on App Release。再次 Add for Review 仅显示 beta Xcode 同一根因的两个错误，没有其他材料错误。该结果不是正式审核提交成功。
+ASC 当前已核验软件版权 `2026 Jonathan Jing`、Education、18+、USD 0.00，Availability 仅美国 1 个地区，其他 174 地区 Not Available；美国状态为 Available on App Release。此前 build 4 Add for Review 的两个 beta Xcode 错误属于历史；build 5 已通过 Apple 处理并正式提交 App Review，当前 Waiting for Review。
 
 旧 `artifacts/tongxing-ios/2026-09-07-release/Tongxing-0.1.0-4-submission-materials.zip` 保留为 build 4 历史包，不覆盖或冒充 build 5 当前材料。旧文本的 3 篇目录、原声定位样例和双语画面不再作为本次审核依据。
 
@@ -27,10 +27,12 @@ ASC 当前已核验软件版权 `2026 Jonathan Jing`、Education、18+、USD 0.0
 
 ## 正式构建与提交续接
 
-1. 先审查本次应用/材料差异，向用户给出具体范围；取得本次 Git commit / push 的明确请求后再执行，不触碰来源未明的 `Tongxing.xcodeproj/xcshareddata/xcodecloud/manifest.json`。
-2. Xcode Cloud 当前仍是 Get Started，尚未初始化可运行 workflow。完成初始化、源码连接和正式 SDK 配置后，生成 build 5；不能把此前 Xcode Cloud 的历史观察当作当前可运行配置。
-3. 在兼容正式工具链上验证 App/扩展版本、最低系统、签名、隐私资源、Archive / IPA 和 Apple 处理。MacBook 的 macOS 27 与正式 Xcode 26.6 不兼容；本机 beta 模拟器成功不能消除正式提交限制。不要重复导出或上传旧 build 4 来尝试绕过它。
-4. 将当前 6 篇版本的中英文案和所需新截图与 ASC 比对回填，关联正式构建，复核已保存的政策/权利/18+/免费美国配置，再按授权推进正式审核。首次发布方式仍为审核后手动发布。
+1. 已审查并按授权提交/push 23 个文件；分支 `codex/tongxing-ios` 的远端已核验为 `539e916f904c9191ebd6ecb9708eaae1880b0a44`。来源未明的 `Tongxing.xcodeproj/xcshareddata/xcodecloud/manifest.json` 仍排除。
+2. 现有 Default workflow 原来仅有 Build、无分发，现已关联既有 App `com.jonathanjing.tongxing.dev` 并补充 Archive → App Store Connect；固定正式 Xcode `26.6 (17F113)`；macOS 选项保持 Latest Release，本次实际运行版本为 `26.6.2 (25G83)`。Cloud build 5 `e20f505c-9f37-4689-b022-3b4f5489eaff` SUCCESS，耗时 4 分钟，源码 commit 与推送一致。
+3. Archive、App Store 导出、Prepare Build 全部通过；ASC build 5 `2b66dd36-203a-4be9-bcb1-2230870783e0` 已为 Ready to Submit，Binary State = Validated，版本 `0.1.0 (5)`、最低 iOS 17、SDK build `23F81a`、Encryption = No。本机未下载 Cloud Archive / IPA；Cloud 成功解决正式构建路径，不改写本机 macOS 27 的历史不兼容记录。
+4. 商店版本已从 build 4 切换到 build 5 并保存。2026-09-07 11:16 PDT，Add for Review 成功进入 Ready for Review，Submit for Review 成功；门户显示 `0.1.0 Waiting for Review`、`1 Item Submitted`、`Draft Submissions (0)`；审核提交 ID 为 `8ad36924-ad49-4ca7-ba7a-6cfab0f0e725`。中英 What to Test 已以语义一致的摘要保存。政策/权利/18+/免费美国配置和当前截图已保存；首次发布仍为审核后手动发布，尚未公开上线。
+
+本次证据：`artifacts/tongxing-ios/2026-09-07-app-store-build5/cloud-build5-receipt.json`。早前 `cloud-dispatch.json` 记录成功构建步骤；新记录补充后续 Apple 处理与 TestFlight 文案状态。
 
 历史 build 4 的导出、上传及旧材料保存已完成，证据保留在[发布准备](../RELEASE-READINESS.zh.md)。私有账号、证书、Team、设备唯一标识和审核联系人不进入 Git；用户明确批准的公开支持邮箱可以发布。
 

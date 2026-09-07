@@ -1,7 +1,7 @@
 {
   "schemaVersion": "tongxing-app-store-metadata-v1",
   "preparedAt": "2026-09-07",
-  "status": "local-build-5-copy-ready-formal-sdk-build-required",
+  "status": "build-5-submitted-waiting-for-app-review",
   "target": {
     "version": "0.1.0",
     "build": "5",
@@ -147,11 +147,11 @@
   "appStoreConnectStatus": {
     "observedAt": "2026-09-07",
     "version": "0.1.0",
-    "linkedBuild": "4",
-    "formalReviewSubmitted": false,
+    "linkedBuild": "5",
+    "formalReviewSubmitted": true,
     "build5FormalArchiveAvailable": false,
     "build5IPAAvailable": false,
-    "xcodeCloudBuild5Started": false,
+    "xcodeCloudBuild5Started": true,
     "copyright": "2026 Jonathan Jing",
     "primaryCategory": "Education",
     "ageRating": "18+",
@@ -166,17 +166,66 @@
     "privacyStatement": "Published",
     "contentRights": "Yes - Saved",
     "localizedPrivacyAndSupportURLs": "Saved for zh-Hans and en-US",
-    "lastAddForReviewResult": "Rejected only by two beta-Xcode validation messages for the same build 4 toolchain limitation; no other material errors shown.",
-    "localTextRevision": "Both locale promotionalText, description, and subtitle fields are saved in ASC with exact text parity. Chinese keywords use sermon captions. Review notes are semantically verified for six sermons and normal playback at 00:30; wording differs from this file. TestFlight build 5 copy awaits its formal build.",
+    "lastAddForReviewResult": "Build 5 saved to version 0.1.0. Add for Review succeeded, followed by Submit for Review. Portal shows 0.1.0 Waiting for Review, 1 Item Submitted, and Draft Submissions (0). Build 4 beta-Xcode rejection is historical.",
+    "localTextRevision": "Both locale promotionalText, description, and subtitle fields are saved in ASC with exact text parity. Chinese keywords use sermon captions. Review notes are semantically verified for six sermons and normal playback at 00:30; wording differs from this file. Build 5 What to Test is saved for both locales as semantically matching summaries, not exact copies of the local text. No new exact-parity assertion is made for Beta App Description.",
     "privateContacts": "Existing review and TestFlight contact values remain in ASC and are intentionally omitted from this public file.",
-    "xcodeCloudWorkflow": "Not initialized; App Store Connect shows Get Started. No runnable workflow or build 5 Cloud run exists.",
+    "xcodeCloudWorkflow": "Existing Default workflow was associated with the existing app and updated from Build-only to Archive with App Store Connect distribution. Xcode is fixed to 26.6 (17F113). macOS remains Latest Release; the successful build ran on macOS 26.6.2 (25G83).",
     "preflightEvidence": "artifacts/tongxing-ios/2026-09-07-policy-publication/asc-final-preflight.json",
-    "screenshots": "Four current-catalog build 5 transcript screenshots replaced their four old bilingual counterparts in ASC. Four build 4 listening screenshots retained. Each iPhone/iPad and zh-Hans/en-US group shows 01-listen then 02-transcript, 2 screenshots."
+    "screenshots": "Four current-catalog build 5 transcript screenshots replaced their four old bilingual counterparts in ASC. Four build 4 listening screenshots retained. Each iPhone/iPad and zh-Hans/en-US group shows 01-listen then 02-transcript, 2 screenshots.",
+    "availableBuild": "5",
+    "artifactAvailabilityScope": "The two availability flags above refer to local downloaded files. Cloud archive and App Store export succeeded; neither Cloud Archive nor IPA has been downloaded to this workspace.",
+    "currentBuildEvidence": "artifacts/tongxing-ios/2026-09-07-app-store-build5/cloud-build5-receipt.json",
+    "cloudBuild": {
+      "number": 5,
+      "id": "e20f505c-9f37-4689-b022-3b4f5489eaff",
+      "status": "SUCCESS",
+      "duration": "4m",
+      "sourceCommitConfirmed": "539e916f904c9191ebd6ecb9708eaae1880b0a44",
+      "steps": {
+        "archive": "PASSED",
+        "appStoreDistributionExport": "PASSED",
+        "prepareBuildForAppStoreConnect": "PASSED"
+      }
+    },
+    "appleProcessing": {
+      "buildID": "2b66dd36-203a-4be9-bcb1-2230870783e0",
+      "version": "0.1.0",
+      "build": "5",
+      "testFlightStatus": "Ready to Submit",
+      "minimumOS": "17.0",
+      "sdkBuild": "23F81a",
+      "usesNonExemptEncryption": false,
+      "binaryState": "Validated"
+    },
+    "formalReview": {
+      "submitted": true,
+      "status": "Waiting for Review",
+      "version": "0.1.0",
+      "selectedBuild": "5",
+      "submissionItems": 1,
+      "draftSubmissions": 0,
+      "releaseMode": "Manual release after approval",
+      "publiclyReleased": false,
+      "portalProgression": [
+        "Build 5 selected and saved",
+        "Add for Review succeeded: Ready for Review",
+        "Submit for Review succeeded: 0.1.0 Waiting for Review; 1 Item Submitted; Draft Submissions (0)"
+      ],
+      "submittedAtLocal": "2026-09-07 11:16 PDT",
+      "submissionID": "8ad36924-ad49-4ca7-ba7a-6cfab0f0e725"
+    }
   },
   "currentCatalogMetadataUpdate": {
     "sha256": "e88ac7c163307388dc1ee334d393c87f6c6ab9ffb6cf0171807d5c1d908b49ee",
     "snapshot": "artifacts/tongxing-ios/2026-09-07-current-catalog-screenshots/production-weekly.json",
     "comparison": "Only title and sourceLabel changed for six weeks. Source IDs/URLs, Chinese cues, tracks, media hashes and durations remain identical to the audited 94f7c74 snapshot.",
     "diffEvidence": "artifacts/tongxing-ios/2026-09-07-current-catalog-screenshots/catalog-diff.json"
+  },
+  "gitDelivery": {
+    "branch": "codex/tongxing-ios",
+    "commit": "539e916f904c9191ebd6ecb9708eaae1880b0a44",
+    "pushed": true,
+    "remoteVerified": true,
+    "scopedFileCount": 23
   }
 }

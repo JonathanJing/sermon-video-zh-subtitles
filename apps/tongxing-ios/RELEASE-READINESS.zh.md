@@ -6,13 +6,14 @@
 
 ## 正式 App Store 提交续接：build 5
 
-用户已批准隐私政策、公开邮箱、当前内容及声线许可，并指定首次免费、仅美国分发。用户要求提交上架；**尚未正式提交**。ASC 再次 Add for Review 只返回两个 beta Xcode 错误，根因相同：当前关联的 build 4 由 beta Xcode 构建，不能用于正式 App Store。没有其他材料错误；TestFlight 的 Ready to Submit 不代表正式审核接收。
+用户已批准隐私政策、公开邮箱、当前内容及声线许可，并指定首次免费、仅美国分发。**build 5 已由正式 Xcode Cloud 构建并通过 Apple 处理，正式 App Review 已提交，当前为 Waiting for Review**。2026-09-07 11:16 PDT，商店草稿切换 build 5 并保存；Add for Review 成功进入 Ready for Review，随后 Submit for Review 成功，门户明确显示 `0.1.0 Waiting for Review`、`1 Item Submitted`、`Draft Submissions (0)`；审核提交 ID 为 `8ad36924-ad49-4ca7-ba7a-6cfab0f0e725`。审核后手动发布仍选中；**尚未在 App Store 公开上线**。build 4 的 beta Xcode 拒绝保留为历史。
 
 - App / 扩展版本均已改为 5。新增完整隐私政策、支持和邮件资料访问/删除请求入口；中英字符串齐全。build 5 在 beta iOS 27 模拟器定向 UI 验证 1 条通过、0 失败（32.102 秒），包括缓存目录的断网重启、链接可达和本机删除/系统备份说明。App 与扩展均为 `0.1.0 (5)`、最低 iOS 17。证据：`artifacts/tongxing-ios/2026-09-07/cli/20260907T102037-test-a77a92f8/test.xcresult`。
-- 正式 Xcode 26.6 (17F113) 的平台安装初始化已成功；主机 macOS 27 与该正式 Xcode 的支持范围不兼容，完整 iOS Archive 仍不可运行。此前正式 iPhoneOS26.5 SDK 的四模块检查不是 Archive。本机没有 build 5 正式 Archive / IPA，也没有 build 5 上传、Xcode Cloud 运行或审核提交。续接证据：`artifacts/tongxing-ios/2026-09-07-app-store-build5/build5-status.json` 与 `RESUME.md`。
-- Xcode Cloud 网页当前仍显示 Get Started，尚未初始化或建立可运行 workflow。用户已授权本次 Git 提交/push 和 Xcode Cloud 正式构建；完成分支推送后继续 Cloud 初始化、源码连接和正式 SDK 配置，再生成候选构建，不能把本地准备视为 Cloud 已执行或自动可跑。
+- 本机正式 Xcode 26.6 与 macOS 27 不兼容的 Archive 阻塞已通过 Cloud 构建路径解决。本机仍未下载 Cloud Archive / IPA；早前四模块检查、`build5-status.json` 与 `RESUME.md` 保留为本机尝试的历史记录。不能把 Cloud 成功写成本机已有正式产物。
+- 用户授权的 23 个应用/发布材料文件已提交并推送到 `codex/tongxing-ios`，远端核验为 `539e916f904c9191ebd6ecb9708eaae1880b0a44`。发现现有 Default workflow 原先仅有 Build、未配置分发；现已关联既有 App `com.jonathanjing.tongxing.dev`，新增 Archive → App Store Connect，固定 Xcode `26.6 (17F113)`；macOS 选项保持 Latest Release，本次实际运行版本为 `26.6.2 (25G83)`。
+- Cloud build 5 `e20f505c-9f37-4689-b022-3b4f5489eaff` **SUCCESS，4 分钟**，源码 commit 与上述远端一致；Archive、App Store 导出、Prepare Build for App Store Connect 均通过。ASC build 5 `2b66dd36-203a-4be9-bcb1-2230870783e0` 显示 **Ready to Submit，Binary State = Validated**，版本 `0.1.0 (5)`、最低 iOS `17.0`、SDK build `23F81a`、Encryption = No。证据：`artifacts/tongxing-ios/2026-09-07-app-store-build5/cloud-build5-receipt.json`；`cloud-dispatch.json` 保留 Cloud 步骤原始记录。
 - 当前目录改为 6 篇、6 条中文音轨（2026-08-02 至 2026-09-06），没有英文对照块或参考指纹。目录 SHA-256：`94f7c74afc1973c69b86d9b96490a435d9a4433a99ec22de026d97f644d92c8c`。审核样例已改为选择 09-06 普通播放并跳至中文音频 00:30；不使用旧目录的原声匹配样例。快照位于 `artifacts/tongxing-ios/2026-09-07-policy-publication/catalog-current.json`。
-- [结构化文案](release/metadata.json)和[可复制中英文案](APP-STORE-METADATA.zh.md)已按当前目录更新；中英商店描述和宣传文本这 4 个字段已逐字同步 ASC 并保存，中文关键词已改为证道字幕并保存。ASC 审核说明已按当前 6 篇和普通播放样例做语义核验；两种语言副标题也已逐字保存；build 5 TestFlight 文案待正式构建后回填。[当前 8 张截图](SCREENSHOTS.zh.md)已在 ASC 保存并核验：保留 build 4 的四张 `01-listen.jpg`，新增 build 5 当前目录的四张 `02-transcript.jpg`，分别保留真实来源与哈希。旧双语全文图仅留历史证据。
+- [结构化文案](release/metadata.json)和[可复制中英文案](APP-STORE-METADATA.zh.md)已按当前目录更新；中英商店描述和宣传文本这 4 个字段已逐字同步 ASC 并保存，中文关键词已改为证道字幕并保存。ASC 审核说明已按当前 6 篇和普通播放样例做语义核验；两种语言副标题也已逐字保存；build 5 中英 What to Test 已保存为与本地长稿语义一致的摘要版，非逐字相同。[当前 8 张截图](SCREENSHOTS.zh.md)已在 ASC 保存并核验：保留 build 4 的四张 `01-listen.jpg`，新增 build 5 当前目录的四张 `02-transcript.jpg`，分别保留真实来源与哈希。旧双语全文图仅留历史证据。
 - [隐私政策](https://ai-for-god-tongxing-support.web.app/privacy.html)及[支持页面](https://ai-for-god-tongxing-support.web.app/support.html)已真实发布，中英 URL 已填 ASC。版本化 `release/public-policy/` 的四个公开文件与 HTTP 验证字节相同；公开邮箱与反馈留存约定已获批准。证据：`artifacts/tongxing-ios/2026-09-07-policy-publication/http-verification.json`。
 - App Privacy 已 **Published**：Other Data Types，用于 App Functionality 与 Analytics、关联用户、不用于 Tracking。依据是 Hosting 请求 IP 保留及用途；这是证据分类判断，不是 Apple 针对 Firebase 的固定映射。内容权利 Yes 已 Saved；[权利记录](release/content-rights-review.json)绑定当前 6 篇目录，保留运营者确认与人工质量验收的区别。
 - ASC 软件版权由用户设置为 **`2026 Jonathan Jing`**，Education 类别已保存；按新目录复核后的评级为 **18+**。价格已核验 **USD 0.00**；Availability 仅 **1 个国家/地区**，美国为 Available on App Release，其他 **174 个地区 Not Available**。这些是商店草稿/配置状态，不是已经对用户开放下载。终检证据：`artifacts/tongxing-ios/2026-09-07-policy-publication/asc-final-preflight.json`。
@@ -55,22 +56,23 @@
 | build 3 Archive | 已通过：Archive 成功，App 与扩展均为 0.1.0 (3)，最低 iOS 17.0，严格签名校验通过，App 隐私清单已入包 | `artifacts/tongxing-ios/2026-09-07-backlog/Tongxing-0.1.0-3.xcarchive`；Archive 不等于可分发 IPA |
 | build 3 分发 IPA | 导出被阻塞，未产生 IPA 3 | Xcode 账号令牌不可用、新扩展缺少 App Store provisioning profile、分发签名不可用；待本机账号 / 签名与门户状态恢复后处理，不把私有标识写入本文 |
 | 真实麦克风、耳机与系统活动 | 未验收 | 执行 BETA 中 D13–D16，并复测受影响的 D03–D05 |
-| App Store Connect 当前状态 | build 4 已上传，正式 Add for Review 被 beta Xcode 限制拒绝 | 新政策/支持 URL、Published 隐私、权利 Yes、18+、免费仅美国已保存；build 5 正式产物未生成，未提交正式审核 |
+| App Store Connect 当前状态 | build 5 已关联 0.1.0 并正式提交；Waiting for Review，1 Item Submitted，Draft Submissions (0) | 已保存政策/权利/18+/免费仅美国配置；等待 Apple 审核，审核后手动发布，尚未公开上线 |
+| build 5 正式 Cloud 构建 | SUCCESS；固定正式 Xcode 26.6，Archive / App Store 导出 / Prepare Build 全部通过 | `artifacts/tongxing-ios/2026-09-07-app-store-build5/cloud-build5-receipt.json`；未下载本机 Archive / IPA |
 | build 5 定向 UI | beta 模拟器编译和隐私 UI 1 条通过 | `artifacts/tongxing-ios/2026-09-07/cli/20260907T102037-test-a77a92f8/test.xcresult`；不替代正式 SDK 产物 |
 
 Core 31 项、索引存储新增 6 项及现有 StorageTests 13 项通过。Swift 文件回放 166 例与 Web 结果一致（62/63 正例命中、103 负例拒绝）；报告见 `artifacts/tongxing-ios/2026-09-07/fingerprint/swift-replay-report.json`。真机自动化使用合成音频和模拟捕获，不能代表实际麦克风验收；模拟声音、文件回放、截图或预览只能证明对应路径。实际现场同步与完整内容听审分别保留 D11 / D12 验收。
 
-## 正式提交前的剩余检查
+## 正式提交与剩余验收
 
 | 项目 | 已有事实 | 下一步 |
 | --- | --- | --- |
-| 构建身份与正式 SDK | 源码及 beta 模拟器 App/扩展为 0.1.0 (5)；build 4 已上传但不能正式送审 | 在兼容正式工具链的 Xcode Cloud 生成并验证 build 5，确认最终产物/签名/扩展/隐私清单及 Apple 处理；不重复上传 build 4 |
-| 文案与当前目录 | 中英描述/宣传文本逐字已保存，中文关键词已保存；审核说明已做 6 篇及普通播放样例的语义核验 | 两种语言副标题已逐字保存；build 5 TestFlight 文案待正式构建后回填 |
+| 构建身份与正式 SDK | 正式 Xcode 26.6 Cloud build 5 已成功；ASC 二进制处理通过，版本与最低系统已核验；商店版本已关联 build 5 | 正式审核已提交；未下载本机产物，不另称本地包检查完成 |
+| 文案与当前目录 | 中英描述/宣传文本逐字已保存，中文关键词已保存；审核说明已做 6 篇及普通播放样例的语义核验 | 两种语言副标题已逐字保存；build 5 中英 What to Test 已保存为与本地长稿语义一致的摘要版，非逐字相同 |
 | 商店截图 | 当前 8 张已准备，组合目录尺寸/哈希检查通过；四张 build 4 主屏加四张 build 5 中文全文 | iPhone/iPad × 中/英四组已核验：01-listen 保留，02-transcript 已替换；旧上传记录保留为历史 |
 | 政策与权利 | 公开政策/支持、中英 URL、Published App Privacy、Content Rights Yes 已保存 | 在最终提交前确认链接持续可达；新增内容按实际许可和隐私变化复核 |
 | 年龄、价格与地区 | ASC 18+、USD 0.00、仅美国，其他 174 地区不可用 | 最终提交前核对没有被后续编辑覆盖；不扩展地区 |
 | 审核联系人 | 既有 TestFlight/商店审核联系资料已保存 | 继续在私有门户维护，不将私人值提交 Git |
-| 测试与审核状态 | build 4 未分配测试者；本次未正式提交 | 按实际目标记录测试与正式审核结果；不得将按钮点击或 Ready to Submit 当作正式审核通过 |
+| 测试与审核状态 | build 4 未分配测试者的记录保留历史；本次 build 5 已正式提交 App Review | 当前 Waiting for Review；等待 Apple 真实结果，未宣称审核通过或公开发布 |
 
 Apple 的测试资料、商店隐私字段和正式审核各有用途：[TestFlight 资料](https://developer.apple.com/help/app-store-connect/test-a-beta-version/provide-test-information/)、[App Privacy](https://developer.apple.com/app-store/app-privacy-details/)。当前剩余正式构建限制已有明确证据；本机定向 UI、历史真机测试和内容权利确认分别保留其适用范围。
 
@@ -87,6 +89,6 @@ Apple 的测试资料、商店隐私字段和正式审核各有用途：[TestFli
 - 检查完整隐私政策、支持和邮件入口；离线仍可读本机资料与系统备份分别删除/管理的说明。
 - 未来若目录恢复同录音对齐资料，再执行实际麦克风、播放/暂停恢复、取消/后台/拒绝权限、静音/不同录音拒绝以及对应现场误差验收。历史指纹回放结果不冒充当前目录已开放该功能。
 
-本轮已按用户授权完成 build 4 上传及 ASC 配置更新；build 5 正式产物、Cloud 运行、正式审核提交及公开发布仍未完成。后续以具体产物、实际门户结果和已有授权推进。
+本轮已按用户授权完成 Git 提交/push、正式 Cloud build 5、上传与 Apple 二进制处理，以及 App Review 正式提交。当前 Waiting for Review，公开发布尚未完成；首次发布仍按审核后手动发布设置推进。
 
 最新截图目录 SHA-256 为 `e88ac7c163307388dc1ee334d393c87f6c6ab9ffb6cf0171807d5c1d908b49ee`。与上述已审计快照比较，仅六篇的 `title` / `sourceLabel` 共 12 个字段改变；来源 URL/ID、全部中文 cues、音轨、媒体哈希和时长均相同。差异证据：`artifacts/tongxing-ios/2026-09-07-current-catalog-screenshots/catalog-diff.json`。保留原快照作为权利和年龄分级审计依据。

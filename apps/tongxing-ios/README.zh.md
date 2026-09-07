@@ -17,7 +17,7 @@
 3. 点击 Run。首次读取目录需要网络；选择“下载本篇”，待显示“正在使用已下载音频”后可断网收听。
 4. 使用 Product → Test（⌘U）运行 `TongxingTests` 和 `TongxingUITests`。播放器测试使用合成静音和独立临时历史；UI 测试使用显式启动的隔离目录与音频夹具。正常 Run 仍加载已发布内容。
 
-Apple 账号、Team 配置、设备信息和签名凭据不进入 Git。App Store Connect 已创建「同行·证道中文听译」记录；旧 build 2 曾完成分发 IPA 导出；本轮 build 4 已完成签名 Archive、分发 IPA 导出与上传；ASC 已处理为 Ready to Submit，并已关联到 0.1.0 商店草稿。尚未分配测试者或提交审核。详见 [Beta 资料与实测](BETA-TESTING.zh.md)。
+Apple 账号、Team 配置、设备信息和签名凭据不进入 Git。同行 0.1.0 (5) 已使用 Xcode Cloud 的正式 Xcode 26.6 完成归档和 App Store 导出，通过 Apple 二进制校验，并于 2026-09-07 11:16 PDT 正式提交 App Review；当前为 Waiting for Review，审核通过后手动发布，尚未公开上线。首次发行设置为美国免费、18+；尚未分配 TestFlight 测试者。最新证据见 [发布记录](RELEASE-READINESS.zh.md)，历史测试见 [Beta 资料与实测](BETA-TESTING.zh.md)。
 
 修改 `project.yml` 后从本目录重新生成：
 
