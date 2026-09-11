@@ -6,6 +6,8 @@
   </a>
 </p>
 
+**周日运行入口：** [新页面与会话运行白皮书](./sunday-live-operations-whitepaper.zh.md) · [Agent 可直接执行的 Markdown](./sunday-live-agent-runbook.zh.md)。准备操作页、新建本场录音与手机链接、故障恢复和保存交接；默认准备模式不自动录音。
+
 这里收集证道中文字幕 pipeline 的产品目标、系统设计、研究报告、backlog 和测试审查文档。
 
 ## 如何理解文档状态

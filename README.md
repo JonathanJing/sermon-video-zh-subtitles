@@ -15,6 +15,18 @@ Help Chinese-speaking attendees follow an English sermon. The featured direction
 
 > This is an independent personal open-source project. It is not affiliated with, endorsed by, sponsored by, approved by, or operated by Mariners Church. Use only public or otherwise authorized media, and do not bypass access controls, DRM, or platform restrictions.
 
+## Sunday operation: prepare a new caption session
+
+[Operations whitepaper (中文)](docs/sunday-live-operations-whitepaper.zh.md) · [Agent execution entry (中文)](docs/sunday-live-agent-runbook.zh.md)
+
+Use the existing Sunday app to prepare the operator page, create a recording session and obtain its phone-viewer link. Each session gets a new identity; routine Sunday operation does not redeploy the website. The Agent entry covers preflight, microphone and sharing scope, recovery, and verified saving. “Prepare” opens a standby page without starting a recording.
+
+```text
+Read docs/sunday-live-agent-runbook.zh.md and prepare this Sunday's caption page
+using the installed runtime. Check for an active recording first, open the
+operator page in standby, and report the effective model and preflight results.
+```
+
 ## 1. Featured: English sermon video → Chinese dubbing in the speaker’s voice
 
 [Listening app](https://ai-for-god-sermon-audio.web.app) · [System design and model choices (中文)](docs/sermon-dubbing-system-design.zh.md) · [Operator runbook](experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md) · [Measured candidate report](docs/sermon-dubbing-astra-review-2026-09-05.zh.md)

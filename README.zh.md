@@ -15,6 +15,20 @@
 
 > 这是一个独立的个人开源项目，不属于 Mariners Church 官方项目，也没有获得其隶属、背书、赞助、批准或运营支持。只应处理公开或已获授权的媒体，不得绕过访问控制、DRM 或平台限制。
 
+## 周日运行：准备页面与创建本场字幕会话
+
+[运行白皮书](docs/sunday-live-operations-whitepaper.zh.md) · [Agent 直接执行入口](docs/sunday-live-agent-runbook.zh.md)
+
+复用现有应用打开操作页，开始录音后自动建立本场 session 和手机观看链接；每周无需重新部署网页。入口文档包含预检、音频与分享范围、恢复和保存核验。“准备页面”停在待机，不自动录音。
+
+把下面指令交给 Agent 即可开始：
+
+```text
+读取 docs/sunday-live-agent-runbook.zh.md，准备本周日实时字幕操作页。
+复用本机已安装环境，先检查现有录音；打开页面后停在待机。
+返回页面、有效模型、预检结果和还需要我处理的事项。
+```
+
 ## 1. 优先展示：英文证道视频 → 讲员音色中文配音
 
 [打开中文听译 App](https://ai-for-god-sermon-audio.web.app) · [系统设计与模型选择](docs/sermon-dubbing-system-design.zh.md) · [操作 Runbook](experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md) · [本次实测报告](docs/sermon-dubbing-astra-review-2026-09-05.zh.md)
