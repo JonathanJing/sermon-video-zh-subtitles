@@ -1,65 +1,125 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="960" viewBox="0 0 1400 960" role="img" aria-labelledby="title desc">
-<title id="title">Sunday workflow · 周日操作与故障流程</title><desc id="desc">Independent recording continues through model failure · 有缺口就记录，不把恢复写成无损</desc>
-<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#526580"/></marker><style>text{font-family:Arial,"PingFang SC","Microsoft YaHei",sans-serif;fill:#18304b}.title{font-size:30px;font-weight:700}.subtitle{font-size:16px;fill:#536782}.head{font-size:20px;font-weight:700}.body{font-size:17px}.note{font-size:15px;fill:#536782}.edge{fill:none;stroke:#526580;stroke-width:2;marker-end:url(#arrow)}.dash{stroke-dasharray:7 5}</style></defs>
-<rect width="1400" height="960" rx="20" fill="#f5f8fc"/>
-<text x="44" y="55" class="title" text-anchor="start">Sunday workflow · 周日操作与故障流程</text>
-<text x="44" y="86" class="subtitle" text-anchor="start">Independent recording continues through model failure · 有缺口就记录，不把恢复写成无损</text>
-<rect x="44" y="126" width="390" height="150" rx="14" fill="#edf4ff" stroke="#86abe6" stroke-width="1.5"/>
-<text x="64" y="159" class="head" text-anchor="start">1 · Preflight / 预检</text>
-<text x="64" y="189" class="body" text-anchor="start">Start launcher; verify runtime identity</text>
-<text x="64" y="215" class="body" text-anchor="start">Select actual microphone / check level</text>
-<text x="64" y="241" class="body" text-anchor="start">Optional Pack readiness; default none</text>
-<rect x="504" y="126" width="390" height="150" rx="14" fill="#eaf8f1" stroke="#70b897" stroke-width="1.5"/>
-<text x="524" y="159" class="head" text-anchor="start">2 · Capture / 双路径采集</text>
-<text x="524" y="189" class="body" text-anchor="start">MediaRecorder chunks → Gateway disk</text>
-<text x="524" y="215" class="body" text-anchor="start">Worklet PCM → WS → VAD → ASR</text>
-<text x="524" y="241" class="body" text-anchor="start">Record audio even if models fail</text>
-<rect x="964" y="126" width="392" height="150" rx="14" fill="#f3efff" stroke="#aa98dc" stroke-width="1.5"/>
-<text x="984" y="159" class="head" text-anchor="start">3 · Translate / 翻译</text>
-<text x="984" y="189" class="body" text-anchor="start">Immutable English final only</text>
-<text x="984" y="215" class="body" text-anchor="start">Lexical guard → immediate MiLMMT</text>
-<text x="984" y="241" class="body" text-anchor="start">No Saturday transcript substitution</text>
-<path d="M434 201H504" class="edge"/>
-<path d="M894 201H964" class="edge"/>
-<rect x="964" y="366" width="392" height="150" rx="14" fill="#eaf8f1" stroke="#70b897" stroke-width="1.5"/>
-<text x="984" y="399" class="head" text-anchor="start">4 · Read + share / 呈现</text>
-<text x="984" y="429" class="body" text-anchor="start">Readable current + previous bilingual</text>
-<text x="984" y="455" class="body" text-anchor="start">Local UI / LAN SSE / Firebase HTTPS</text>
-<text x="984" y="481" class="body" text-anchor="start">Phone fitting; render timing on operator</text>
-<path d="M1160 276V366" class="edge"/>
-<rect x="504" y="366" width="390" height="150" rx="14" fill="#edf4ff" stroke="#86abe6" stroke-width="1.5"/>
-<text x="524" y="399" class="head" text-anchor="start">5 · Stop + drain / 停止</text>
-<text x="524" y="429" class="body" text-anchor="start">Stop input; finish audio uploads</text>
-<text x="524" y="455" class="body" text-anchor="start">Latest WS epoch closes workers/storage</text>
-<text x="524" y="481" class="body" text-anchor="start">Then finalize manifest, WAV and hashes</text>
-<rect x="44" y="366" width="390" height="150" rx="14" fill="#fff5e9" stroke="#e1aa68" stroke-width="1.5"/>
-<text x="64" y="399" class="head" text-anchor="start">6 · Verify + retain / 保存验证</text>
-<text x="64" y="429" class="body" text-anchor="start">Download recovery copy / event log</text>
-<text x="64" y="455" class="body" text-anchor="start">Decode + sequence + hash + status</text>
-<text x="64" y="481" class="body" text-anchor="start">Saved ≠ uninterrupted or human reviewed</text>
-<path d="M964 441H894" class="edge"/>
-<path d="M504 441H434" class="edge"/>
-<rect x="44" y="640" width="390" height="170" rx="14" fill="#fff5e9" stroke="#e1aa68" stroke-width="1.5"/>
-<text x="64" y="673" class="head" text-anchor="start">Failure: model / 模型故障</text>
-<text x="64" y="703" class="body" text-anchor="start">Continue independent recording</text>
-<text x="64" y="729" class="body" text-anchor="start">ASR failure → explicit fault state</text>
-<text x="64" y="755" class="body" text-anchor="start">Translation failure → English / error</text>
-<text x="64" y="781" class="body" text-anchor="start">No silent replacement with prepared text</text>
-<rect x="504" y="640" width="390" height="170" rx="14" fill="#fff5e9" stroke="#e1aa68" stroke-width="1.5"/>
-<text x="524" y="673" class="head" text-anchor="start">Failure: connection / 连接故障</text>
-<text x="524" y="703" class="body" text-anchor="start">Resume same session and viewer identity</text>
-<text x="524" y="729" class="body" text-anchor="start">Backfill recording by durable sequence</text>
-<text x="524" y="755" class="body" text-anchor="start">Record PCM gaps / missing ASR outcomes</text>
-<text x="524" y="781" class="body" text-anchor="start">Stop safely if recovery cannot finish</text>
-<rect x="964" y="640" width="392" height="170" rx="14" fill="#fff5e9" stroke="#e1aa68" stroke-width="1.5"/>
-<text x="984" y="673" class="head" text-anchor="start">Failure: public network / 公网</text>
-<text x="984" y="703" class="body" text-anchor="start">Bounded publisher does not block locally</text>
-<text x="984" y="729" class="body" text-anchor="start">Viewer reconnects; retain prior caption</text>
-<text x="984" y="755" class="body" text-anchor="start">Use LAN if venue allows device access</text>
-<text x="984" y="781" class="body" text-anchor="start">Physical mobile path still needs testing</text>
-<path d="M1110 276V320H24V610H239V640" class="edge dash"/>
-<path d="M699 276V336H464V590H699V640" class="edge dash"/>
-<path d="M1160 516V640" class="edge dash"/>
-<text x="44" y="911" class="note" text-anchor="start">Default: Qwen3-ASR + MiLMMT Q8 · 3 s max / 500 ms silence · content_words · legacy units · readable_chunks · no Pack.</text>
-<text x="44" y="936" class="note" text-anchor="start">Acceptance: 60-minute browser WAV replay is delivery evidence, not venue input, phone latency, or semantic accuracy.</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1350" viewBox="0 0 1600 1350" role="img" aria-labelledby="title desc">
+<title id="title">周日现场字幕与录音</title><desc id="desc">当前英文驱动字幕，独立音频持续保存，停止后核对完整证据 现场录音和控制接口不向观看者开放；只读分享仅发布允许字幕。现场音频不被周六稿替换。 重连沿用同一会话并标记缺口；saved 不代表字幕无中断。人工语义、实体设备与现场验收仍须独立完成。</desc>
+<style>text{font-family:"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;} text{font-variant-ligatures:none}</style>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M1 1 L7 4 L1 7" fill="none" stroke="context-stroke" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect x="0" y="0" width="1600" height="1350" rx="0" fill="#F5F4EF" stroke="none" />
+<rect x="64" y="57" width="44" height="5" rx="2" fill="#267D72" stroke="none" />
+<text x="124" y="69" font-size="17" font-weight="600" fill="#64787A" text-anchor="start" letter-spacing="2">SUNDAY LIVE OPERATIONS</text>
+<text x="64" y="127" font-size="44" font-weight="650" fill="#19343D" text-anchor="start" >周日现场字幕与录音</text>
+<text x="64" y="172" font-size="22" font-weight="400" fill="#60737A" text-anchor="start" >当前英文驱动字幕，独立音频持续保存，停止后核对完整证据</text>
+<text x="1536" y="69" font-size="18" font-weight="500" fill="#82918F" text-anchor="end" >05 / 11</text>
+<path d="M64 197H1536" stroke="#D8DEDA" stroke-width="1.3"/>
+<path data-edge="preflight:capture" d="M500 370.0 L590 370.0" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="capture:asr" d="M1010 370.0 L1100 370.0" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="asr:translate" d="M1310.0 485 L1310.0 595" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="translate:display" d="M1100 710.0 L1010 710.0" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="display:share" d="M590 710.0 L500 710.0" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="capture:drain" d="M800 485 L800 545 L40 545 L40 1050 L80 1050" fill="none" stroke="#817397" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<rect x="172.0" y="518" width="86.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="215" y="540" font-size="17" font-weight="500" fill="#817397" text-anchor="middle" >独立录音</text>
+<path data-edge="display:drain" d="M800 825 L800 885 L290 885 L290 935" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<rect x="519.0" y="848.0" width="52.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="545.0" y="870.0" font-size="17" font-weight="500" fill="#648A86" text-anchor="middle" >停止</text>
+<path data-edge="drain:save" d="M500 1050.0 L590 1050.0" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<rect x="493.5" y="893" width="103.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="545.0" y="915" font-size="17" font-weight="500" fill="#648A86" text-anchor="middle" >排空确认后</text>
+<g id="node-preflight" data-node="preflight">
+<rect x="80" y="259" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="80" y="255" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="81" y="273" width="4" height="194" rx="2" fill="#AA7930" stroke="none" />
+<rect x="104" y="276" width="35" height="28" rx="8" fill="#FAF2E5" stroke="none" />
+<text x="121.5" y="296" font-size="16" font-weight="700" fill="#AA7930" text-anchor="middle" data-box="104,276,35,28" >01</text>
+<text x="153" y="296" font-size="15" font-weight="600" fill="#AA7930" text-anchor="start" data-box="148,273,332,35" >门槛 / GATE</text>
+<text x="104" y="337" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="100,310,380,162" >启动预检</text>
+<text x="104" y="377" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,310,380,162" >检查麦克风、网络与模型身份</text>
+<text x="104" y="406" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,310,380,162" >默认本地模型与无增强路径</text>
+<text x="104" y="435" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,310,380,162" >实验仅本机，无分享或包</text>
+</g>
+<g id="node-capture" data-node="capture">
+<rect x="590" y="259" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="590" y="255" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="591" y="273" width="4" height="194" rx="2" fill="#46799B" stroke="none" />
+<rect x="614" y="276" width="35" height="28" rx="8" fill="#EAF1F6" stroke="none" />
+<text x="631.5" y="296" font-size="16" font-weight="700" fill="#46799B" text-anchor="middle" data-box="614,276,35,28" >02</text>
+<text x="663" y="296" font-size="15" font-weight="600" fill="#46799B" text-anchor="start" data-box="658,273,332,35" >输入 / INPUT</text>
+<text x="614" y="337" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="610,310,380,162" >双路现场采集</text>
+<text x="614" y="377" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,310,380,162" >录音块与实时音频分流</text>
+<text x="614" y="406" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,310,380,162" >音频保存不依赖推理成功</text>
+</g>
+<g id="node-asr" data-node="asr">
+<rect x="1100" y="259" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="1100" y="255" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="1101" y="273" width="4" height="194" rx="2" fill="#267D72" stroke="none" />
+<rect x="1124" y="276" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="1141.5" y="296" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="1124,276,35,28" >03</text>
+<text x="1173" y="296" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="1168,273,332,35" >执行 / PROCESS</text>
+<text x="1124" y="337" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1120,310,380,162" >稳定英文定稿</text>
+<text x="1124" y="377" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,310,380,162" >Qwen3-ASR / MLX</text>
+<text x="1124" y="406" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,310,380,162" >现场英文定稿不可改写</text>
+<text x="1124" y="435" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,310,380,162" >Whisper 仅启动时备选</text>
+</g>
+<g id="node-translate" data-node="translate">
+<rect x="1100" y="599" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="1100" y="595" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="1101" y="613" width="4" height="194" rx="2" fill="#267D72" stroke="none" />
+<rect x="1124" y="616" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="1141.5" y="636" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="1124,616,35,28" >04</text>
+<text x="1173" y="636" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="1168,613,332,35" >执行 / PROCESS</text>
+<text x="1124" y="677" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1120,650,380,162" >词片门控与中文翻译</text>
+<text x="1124" y="717" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,650,380,162" >MiLMMT Q8 / Ollama</text>
+<text x="1124" y="746" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,650,380,162" >翻译失败仍显示英文</text>
+<text x="1124" y="775" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,650,380,162" >A0 / none</text>
+</g>
+<g id="node-display" data-node="display">
+<rect x="590" y="599" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="590" y="595" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="591" y="613" width="4" height="194" rx="2" fill="#267D72" stroke="none" />
+<rect x="614" y="616" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="631.5" y="636" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="614,616,35,28" >05</text>
+<text x="663" y="636" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="658,613,332,35" >交付 / OUTPUT</text>
+<text x="614" y="677" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="610,650,380,162" >当前与前句双语</text>
+<text x="614" y="717" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,650,380,162" >距离可读与状态明确</text>
+<text x="614" y="746" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,650,380,162" >不把新英文配上旧中文</text>
+</g>
+<g id="node-share" data-node="share">
+<rect x="80" y="599" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="80" y="595" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="81" y="613" width="4" height="194" rx="2" fill="#267D72" stroke="none" />
+<rect x="104" y="616" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="121.5" y="636" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="104,616,35,28" >06</text>
+<text x="153" y="636" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="148,613,332,35" >交付 / OUTPUT</text>
+<text x="104" y="677" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="100,650,380,162" >只读字幕分享</text>
+<text x="104" y="717" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,650,380,162" >LAN / Firebase</text>
+<text x="104" y="746" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,650,380,162" >公网失败不阻塞本地</text>
+<text x="104" y="775" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,650,380,162" >分享后核验访问与显示</text>
+</g>
+<g id="node-drain" data-node="drain">
+<rect x="80" y="939" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="80" y="935" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="81" y="953" width="4" height="194" rx="2" fill="#AA7930" stroke="none" />
+<rect x="104" y="956" width="35" height="28" rx="8" fill="#FAF2E5" stroke="none" />
+<text x="121.5" y="976" font-size="16" font-weight="700" fill="#AA7930" text-anchor="middle" data-box="104,956,35,28" >07</text>
+<text x="153" y="976" font-size="15" font-weight="600" fill="#AA7930" text-anchor="start" data-box="148,953,332,35" >门槛 / GATE</text>
+<text x="104" y="1017" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="100,990,380,162" >停止与完整排空</text>
+<text x="104" y="1057" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,990,380,162" >停止输入并完成上传</text>
+<text x="104" y="1086" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,990,380,162" >最新连接与工作队列排空</text>
+<text x="104" y="1115" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,990,380,162" >存储排空后才允许结束</text>
+</g>
+<g id="node-save" data-node="save">
+<rect x="590" y="939" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="590" y="935" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="591" y="953" width="4" height="194" rx="2" fill="#6D7980" stroke="none" />
+<rect x="614" y="956" width="35" height="28" rx="8" fill="#EDF0F0" stroke="none" />
+<text x="631.5" y="976" font-size="16" font-weight="700" fill="#6D7980" text-anchor="middle" data-box="614,956,35,28" >08</text>
+<text x="663" y="976" font-size="15" font-weight="600" fill="#6D7980" text-anchor="start" data-box="658,953,332,35" >记录 / EVIDENCE</text>
+<text x="614" y="1017" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="610,990,380,162" >音频与清单保存复核</text>
+<text x="614" y="1057" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,990,380,162" >WAV / hash / manifest</text>
+<text x="614" y="1086" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,990,380,162" >保留字幕事件与断流缺口</text>
+<text x="614" y="1115" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,990,380,162" >保存成功不代表人工审核</text>
+</g>
+<rect x="64" y="1221" width="1472" height="78" rx="16" fill="#E9EEE8" stroke="none" />
+<text x="84" y="1250" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >现场录音和控制接口不向观看者开放；只读分享仅发布允许字幕。现场音频不被周六稿替换。</text>
+<text x="84" y="1279" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >重连沿用同一会话并标记缺口；saved 不代表字幕无中断。人工语义、实体设备与现场验收仍须独立完成。</text>
+<text x="64" y="1328" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="start" >内容校准 2026-09-11 · 设计参考 GPT Image 2.5 Sunburst · 原生可编辑 SVG</text>
+<text x="1536" y="1328" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="end" >实线：主路径   虚线：条件 / 实验 / 历史</text>
 </svg>

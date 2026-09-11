@@ -1,0 +1,3099 @@
+[
+  {
+    "name": "project-map",
+    "title": "三条交付路径与共同证据",
+    "english": "PROJECT MAP",
+    "subtitle": "文档、预制音频、实时字幕分别验收；现场输入始终权威",
+    "nodes": [
+      {
+        "id": "source",
+        "title": "授权完整来源",
+        "lines": [
+          "完整媒体与来源身份",
+          "来源资料与审批受控保存"
+        ],
+        "role": "input",
+        "box": [
+          80,
+          255,
+          420,
+          230
+        ],
+        "step": "01"
+      },
+      {
+        "id": "pdf",
+        "title": "周六双 PDF 生产",
+        "lines": [
+          "有效人工窗口审批",
+          "阅读版 PDF + 证道同行 PDF"
+        ],
+        "role": "process",
+        "box": [
+          590,
+          255,
+          420,
+          230
+        ],
+        "step": "02"
+      },
+      {
+        "id": "delivery",
+        "title": "文档核验交付",
+        "lines": [
+          "阅读质量与两份 PDF QA",
+          "远端文件哈希与发布核验"
+        ],
+        "role": "output",
+        "box": [
+          1100,
+          255,
+          420,
+          230
+        ],
+        "step": "03"
+      },
+      {
+        "id": "voice",
+        "title": "中文配音候选",
+        "lines": [
+          "授权声音与来源绑定",
+          "独立内容审核及人工听审"
+        ],
+        "role": "gate",
+        "box": [
+          590,
+          595,
+          420,
+          230
+        ],
+        "step": "04"
+      },
+      {
+        "id": "app",
+        "title": "同行每周发行",
+        "lines": [
+          "完整发行包与历史保留",
+          "发布后访问及音频范围核验"
+        ],
+        "role": "output",
+        "box": [
+          1100,
+          595,
+          420,
+          230
+        ],
+        "step": "05"
+      },
+      {
+        "id": "live",
+        "title": "周日现场采集",
+        "lines": [
+          "当前麦克风与现场英文",
+          "独立录音不依赖模型"
+        ],
+        "role": "input",
+        "box": [
+          80,
+          935,
+          420,
+          230
+        ],
+        "step": "06"
+      },
+      {
+        "id": "translate",
+        "title": "本地实时翻译",
+        "lines": [
+          "稳定英文驱动中文",
+          "无上下文包可用默认路径"
+        ],
+        "role": "process",
+        "box": [
+          590,
+          935,
+          420,
+          230
+        ],
+        "step": "07"
+      },
+      {
+        "id": "captions",
+        "title": "大字字幕与分享",
+        "lines": [
+          "当前与前句双语呈现",
+          "只读分享单独现场验收"
+        ],
+        "role": "output",
+        "box": [
+          1100,
+          935,
+          420,
+          230
+        ],
+        "step": "08"
+      },
+      {
+        "id": "evidence",
+        "title": "共同证据与上下文包",
+        "lines": [
+          "证据独立归档",
+          "包经同篇与内容审核",
+          "能力允许后才可选增强"
+        ],
+        "role": "archive",
+        "box": [
+          80,
+          595,
+          420,
+          230
+        ],
+        "step": "09"
+      }
+    ],
+    "edges": [
+      {
+        "from": "source",
+        "to": "pdf"
+      },
+      {
+        "from": "pdf",
+        "to": "delivery"
+      },
+      {
+        "from": "pdf",
+        "to": "voice"
+      },
+      {
+        "from": "voice",
+        "to": "app"
+      },
+      {
+        "from": "live",
+        "to": "translate"
+      },
+      {
+        "from": "translate",
+        "to": "captions"
+      },
+      {
+        "from": "delivery",
+        "to": "evidence",
+        "label": "可选 Pack",
+        "dashed": true,
+        "points": [
+          [
+            1310,
+            485
+          ],
+          [
+            1310,
+            545
+          ],
+          [
+            290,
+            545
+          ],
+          [
+            290,
+            595
+          ]
+        ],
+        "labelAt": [
+          880,
+          540
+        ]
+      },
+      {
+        "from": "app",
+        "to": "evidence",
+        "label": "发行证据",
+        "dashed": true,
+        "points": [
+          [
+            1310,
+            825
+          ],
+          [
+            1310,
+            865
+          ],
+          [
+            290,
+            865
+          ],
+          [
+            290,
+            825
+          ]
+        ],
+        "labelAt": [
+          1175,
+          860
+        ]
+      },
+      {
+        "from": "captions",
+        "to": "evidence",
+        "label": "会话证据",
+        "dashed": true,
+        "points": [
+          [
+            1520,
+            1050
+          ],
+          [
+            1560,
+            1050
+          ],
+          [
+            1560,
+            530
+          ],
+          [
+            40,
+            530
+          ],
+          [
+            40,
+            710
+          ],
+          [
+            80,
+            710
+          ]
+        ],
+        "labelAt": [
+          1130,
+          525
+        ]
+      },
+      {
+        "from": "evidence",
+        "to": "translate",
+        "label": "能力门控",
+        "dashed": true,
+        "points": [
+          [
+            290,
+            825
+          ],
+          [
+            290,
+            880
+          ],
+          [
+            800,
+            880
+          ],
+          [
+            800,
+            935
+          ]
+        ],
+        "labelAt": [
+          555,
+          875
+        ]
+      }
+    ],
+    "footer": [
+      "文档质检、声音听审、现场验收分别成立；任何一项通过不替代其他交付门槛。",
+      "独立研究：本机实验模型、领域后训练与现场同步；未过质量及现场门，不升级默认。"
+    ],
+    "height": 1350,
+    "bands": [
+      {
+        "x": 56,
+        "y": 211,
+        "w": 1488,
+        "h": 302,
+        "fill": "#EAF1F3",
+        "label": "A · 文档生产与核验交付"
+      },
+      {
+        "x": 56,
+        "y": 551,
+        "w": 1488,
+        "h": 302,
+        "fill": "#F0EDF5",
+        "label": "B · 证据衔接、独立配音与每周发行"
+      },
+      {
+        "x": 56,
+        "y": 891,
+        "w": 1488,
+        "h": 302,
+        "fill": "#EBF1EA",
+        "label": "C · 现场音频驱动的实时字幕"
+      }
+    ]
+  },
+  {
+    "name": "solution-journey",
+    "title": "从现场问题到受控增强",
+    "english": "SOLUTION JOURNEY",
+    "subtitle": "用当前音频决定实时内容，让已审核材料提供可选帮助",
+    "nodes": [
+      {
+        "id": "need",
+        "title": "现场需要可读中文",
+        "lines": [
+          "距离可读与语义完整",
+          "兼顾术语、延迟与稳定性"
+        ],
+        "role": "input",
+        "box": [
+          64,
+          255,
+          334,
+          230
+        ],
+        "step": "01"
+      },
+      {
+        "id": "limits",
+        "title": "通用翻译的限制",
+        "lines": [
+          "术语不稳与分段失真",
+          "低延迟不能替代语义质量"
+        ],
+        "role": "process",
+        "box": [
+          443,
+          255,
+          334,
+          230
+        ],
+        "step": "02"
+      },
+      {
+        "id": "reuse",
+        "title": "曾设想复用周六稿",
+        "lines": [
+          "预先取得结构与术语",
+          "整稿复用仍需同篇证据"
+        ],
+        "role": "archive",
+        "box": [
+          822,
+          255,
+          334,
+          230
+        ],
+        "step": "03"
+      },
+      {
+        "id": "variation",
+        "title": "两次讲述会变化",
+        "lines": [
+          "同主题或同讲员",
+          "不代表逐字同篇或同视频"
+        ],
+        "role": "gate",
+        "box": [
+          1201,
+          255,
+          334,
+          230
+        ],
+        "step": "04"
+      },
+      {
+        "id": "current",
+        "title": "周日当前音频与英文",
+        "lines": [
+          "现场音频是内容来源",
+          "稳定英文不被周六稿替换"
+        ],
+        "role": "input",
+        "box": [
+          80,
+          615,
+          650,
+          220
+        ],
+        "step": "05"
+      },
+      {
+        "id": "reviewed",
+        "title": "周六已审核材料",
+        "lines": [
+          "结构、术语与版本证据",
+          "原文与审核证据受控保存"
+        ],
+        "role": "input",
+        "box": [
+          870,
+          615,
+          650,
+          220
+        ],
+        "step": "06"
+      },
+      {
+        "id": "context",
+        "title": "可选受控上下文",
+        "lines": [
+          "同篇、哈希、有效期、审核",
+          "无包继续默认无增强路径",
+          "A0 / none"
+        ],
+        "role": "gate",
+        "box": [
+          290,
+          975,
+          650,
+          225
+        ],
+        "step": "07"
+      },
+      {
+        "id": "research",
+        "title": "独立模型与同步实验",
+        "lines": [
+          "v4.1 Q5 / MLX",
+          "已有本机实验实现",
+          "神学质量与现场门待验"
+        ],
+        "role": "experiment",
+        "box": [
+          1050,
+          975,
+          470,
+          225
+        ],
+        "step": "08"
+      }
+    ],
+    "edges": [
+      {
+        "from": "need",
+        "to": "limits"
+      },
+      {
+        "from": "limits",
+        "to": "reuse"
+      },
+      {
+        "from": "reuse",
+        "to": "variation"
+      },
+      {
+        "from": "variation",
+        "to": "current",
+        "points": [
+          [
+            1368,
+            485
+          ],
+          [
+            1368,
+            550
+          ],
+          [
+            405,
+            550
+          ],
+          [
+            405,
+            615
+          ]
+        ]
+      },
+      {
+        "from": "current",
+        "to": "context",
+        "label": "实时主输入"
+      },
+      {
+        "from": "reviewed",
+        "to": "context",
+        "label": "独立审核后可选",
+        "dashed": true
+      },
+      {
+        "from": "context",
+        "to": "research",
+        "label": "改进研究",
+        "dashed": true
+      }
+    ],
+    "footer": [
+      "窗口审批不是同篇审批；机器中文仍为候选，不因已导出就进入实时提示词。",
+      "实验实现不代表已上线或质量提升；文档、音频发布仍须各自审核与发布后核验。"
+    ],
+    "height": 1380
+  },
+  {
+    "name": "saturday-chinese-voice-workflow",
+    "title": "中文配音与每周发行",
+    "english": "WEEKLY CHINESE VOICE",
+    "subtitle": "冻结来源，逐讲员生成候选，经人工听审后核验完整发行包",
+    "nodes": [
+      {
+        "id": "samevideo",
+        "title": "同版本纯证道视频",
+        "lines": [
+          "软件接入已验证",
+          "真实来源与整片身份待验"
+        ],
+        "role": "input",
+        "box": [
+          80,
+          255,
+          680,
+          220
+        ],
+        "step": "01"
+      },
+      {
+        "id": "archive",
+        "title": "完整直播归档备选",
+        "lines": [
+          "复用有效人工绝对窗口",
+          "模型不可代签或改起止时间"
+        ],
+        "role": "input",
+        "box": [
+          840,
+          255,
+          680,
+          220
+        ],
+        "step": "02"
+      },
+      {
+        "id": "freeze",
+        "title": "冻结来源与段落映射",
+        "lines": [
+          "英文、译文及音频哈希绑定",
+          "复用文档证据，不朗读大纲",
+          "来源及审批按授权受控保存"
+        ],
+        "role": "process",
+        "box": [
+          80,
+          595,
+          420,
+          230
+        ],
+        "step": "03"
+      },
+      {
+        "id": "script",
+        "title": "中文口播审校",
+        "lines": [
+          "gpt-6-astra / medium",
+          "保留原义与段落身份"
+        ],
+        "role": "agent",
+        "box": [
+          590,
+          595,
+          420,
+          230
+        ],
+        "step": "04"
+      },
+      {
+        "id": "speaker",
+        "title": "已授权讲员声音库",
+        "lines": [
+          "讲员、权重与音频哈希绑定",
+          "训练仅用获准训练集",
+          "各讲员隔离并保留验证集"
+        ],
+        "role": "gate",
+        "box": [
+          1100,
+          595,
+          420,
+          230
+        ],
+        "step": "05"
+      },
+      {
+        "id": "tts",
+        "title": "可恢复配音候选",
+        "lines": [
+          "Qwen3-TTS 1.7B Base",
+          "每讲员独立权重与恢复记录"
+        ],
+        "role": "process",
+        "box": [
+          1100,
+          935,
+          420,
+          230
+        ],
+        "step": "06"
+      },
+      {
+        "id": "align",
+        "title": "原音对齐与时长装配",
+        "lines": [
+          "Qwen3-ForcedAligner + FFmpeg",
+          "中文装配保留同步证据"
+        ],
+        "role": "process",
+        "box": [
+          590,
+          935,
+          420,
+          230
+        ],
+        "step": "07"
+      },
+      {
+        "id": "review",
+        "title": "内容声音与同步审核",
+        "lines": [
+          "人工逐篇听审",
+          "Qwen3-ASR 回听仅辅助",
+          "样片通过不代表整篇通过"
+        ],
+        "role": "gate",
+        "box": [
+          80,
+          935,
+          420,
+          230
+        ],
+        "step": "08"
+      },
+      {
+        "id": "release",
+        "title": "完整每周发行包",
+        "lines": [
+          "保留历史与候选状态",
+          "发布后校验完整文件",
+          "HTTP + Range"
+        ],
+        "role": "output",
+        "box": [
+          80,
+          1275,
+          680,
+          230
+        ],
+        "step": "09"
+      },
+      {
+        "id": "field",
+        "title": "同行播放与现场验收",
+        "lines": [
+          "手动对齐及微调",
+          "同视频现场同步独立验收",
+          "不自动跟随另一播放器"
+        ],
+        "role": "gate",
+        "box": [
+          840,
+          1275,
+          680,
+          230
+        ],
+        "step": "10"
+      }
+    ],
+    "edges": [
+      {
+        "from": "samevideo",
+        "to": "freeze",
+        "label": "来源契约成立后",
+        "dashed": true,
+        "points": [
+          [
+            420,
+            475
+          ],
+          [
+            420,
+            540
+          ],
+          [
+            290,
+            540
+          ],
+          [
+            290,
+            595
+          ]
+        ]
+      },
+      {
+        "from": "archive",
+        "to": "freeze",
+        "label": "有效人工窗口",
+        "points": [
+          [
+            1180,
+            475
+          ],
+          [
+            1180,
+            550
+          ],
+          [
+            290,
+            550
+          ],
+          [
+            290,
+            595
+          ]
+        ]
+      },
+      {
+        "from": "freeze",
+        "to": "script"
+      },
+      {
+        "from": "script",
+        "to": "tts",
+        "points": [
+          [
+            800,
+            825
+          ],
+          [
+            800,
+            885
+          ],
+          [
+            1310,
+            885
+          ],
+          [
+            1310,
+            935
+          ]
+        ]
+      },
+      {
+        "from": "speaker",
+        "to": "tts",
+        "label": "授权与身份绑定"
+      },
+      {
+        "from": "tts",
+        "to": "align"
+      },
+      {
+        "from": "align",
+        "to": "review"
+      },
+      {
+        "from": "review",
+        "to": "release",
+        "label": "审核通过"
+      },
+      {
+        "from": "review",
+        "to": "script",
+        "label": "返修",
+        "dashed": true,
+        "points": [
+          [
+            290,
+            935
+          ],
+          [
+            290,
+            865
+          ],
+          [
+            800,
+            865
+          ],
+          [
+            800,
+            825
+          ]
+        ],
+        "labelAt": [
+          490,
+          860
+        ]
+      },
+      {
+        "from": "review",
+        "to": "tts",
+        "label": "语音返修",
+        "dashed": true,
+        "points": [
+          [
+            500,
+            1080
+          ],
+          [
+            545,
+            1080
+          ],
+          [
+            545,
+            1220
+          ],
+          [
+            1310,
+            1220
+          ],
+          [
+            1310,
+            1165
+          ]
+        ],
+        "labelAt": [
+          800,
+          1215
+        ]
+      },
+      {
+        "from": "release",
+        "to": "field"
+      }
+    ],
+    "footer": [
+      "训练保留 dev/test；回听与对齐仅为辅助，不能替代人听或证明现场同步已完成。",
+      "现有定时任务范围为双文档与上下文包，不能据此认定配音已自动接入；试听候选保留候选标记。"
+    ],
+    "height": 1690
+  },
+  {
+    "name": "saturday-post-live-workflow",
+    "title": "周六双文档与周日导出",
+    "english": "POST LIVE PRODUCTION",
+    "subtitle": "有效审批、质量门与全部要求产物发布核验共同决定完成",
+    "nodes": [
+      {
+        "id": "discover",
+        "title": "定时找源与本地刷新",
+        "lines": [
+          "授权来源与周次匹配",
+          "旧周次不自动重做"
+        ],
+        "role": "input",
+        "box": [
+          80,
+          255,
+          420,
+          230
+        ],
+        "step": "01"
+      },
+      {
+        "id": "media",
+        "title": "完整归档与媒体检查",
+        "lines": [
+          "完整媒体及来源身份",
+          "来源租约防止重复执行"
+        ],
+        "role": "process",
+        "box": [
+          590,
+          255,
+          420,
+          230
+        ],
+        "step": "02"
+      },
+      {
+        "id": "approval",
+        "title": "时间轴与人工窗口",
+        "lines": [
+          "审批绑定来源及时间轴哈希",
+          "变更即失效，有效审批复用",
+          "缺失审批则等待"
+        ],
+        "role": "gate",
+        "box": [
+          1100,
+          255,
+          420,
+          230
+        ],
+        "step": "03"
+      },
+      {
+        "id": "english",
+        "title": "英文来源与转写",
+        "lines": [
+          "已有英文或必要转写",
+          "gpt-transcribe",
+          "保留时间与模型证据"
+        ],
+        "role": "process",
+        "box": [
+          1100,
+          595,
+          420,
+          230
+        ],
+        "step": "04"
+      },
+      {
+        "id": "review",
+        "title": "中文翻译与两轮审核",
+        "lines": [
+          "gpt-6-astra / medium",
+          "生成内容按授权送至模型"
+        ],
+        "role": "agent",
+        "box": [
+          590,
+          595,
+          420,
+          230
+        ],
+        "step": "05"
+      },
+      {
+        "id": "pdf",
+        "title": "阅读版与证道同行",
+        "lines": [
+          "生成两个规范文档",
+          "保留各自来源与生成证据"
+        ],
+        "role": "output",
+        "box": [
+          80,
+          595,
+          420,
+          230
+        ],
+        "step": "06"
+      },
+      {
+        "id": "qa",
+        "title": "阅读质量与双 PDF质检",
+        "lines": [
+          "阅读质量通过",
+          "两个文档各自质检通过",
+          "失败回到对应生成环节"
+        ],
+        "role": "gate",
+        "box": [
+          80,
+          935,
+          420,
+          230
+        ],
+        "step": "07"
+      },
+      {
+        "id": "pack",
+        "title": "原子导出上下文包",
+        "lines": [
+          "初始同篇状态为未知",
+          "导出失败保留旧包并报错",
+          "周日启用仍需独立审批"
+        ],
+        "role": "archive",
+        "box": [
+          590,
+          935,
+          420,
+          230
+        ],
+        "step": "08"
+      },
+      {
+        "id": "publish",
+        "title": "发布核验与新快照",
+        "lines": [
+          "全部要求文件上传至存储",
+          "远端哈希与发布状态核验",
+          "审批、质量、发布均须有效"
+        ],
+        "role": "gate",
+        "box": [
+          1100,
+          935,
+          420,
+          230
+        ],
+        "step": "09"
+      }
+    ],
+    "edges": [
+      {
+        "from": "discover",
+        "to": "media"
+      },
+      {
+        "from": "media",
+        "to": "approval"
+      },
+      {
+        "from": "approval",
+        "to": "english",
+        "label": "有效人工审批"
+      },
+      {
+        "from": "english",
+        "to": "review"
+      },
+      {
+        "from": "review",
+        "to": "pdf"
+      },
+      {
+        "from": "pdf",
+        "to": "qa"
+      },
+      {
+        "from": "qa",
+        "to": "review",
+        "label": "内容返修",
+        "dashed": true
+      },
+      {
+        "from": "qa",
+        "to": "pdf",
+        "label": "版式返修",
+        "dashed": true
+      },
+      {
+        "from": "qa",
+        "to": "pack",
+        "label": "通过"
+      },
+      {
+        "from": "pack",
+        "to": "publish"
+      }
+    ],
+    "footer": [
+      "规范文件：sermon_zh_en_reading.pdf、sermon_interpretation_zh.pdf。",
+      "包已导出不代表现场启用；独立同篇及能力预检通过才可选使用。会话完成不能替代业务完成。"
+    ],
+    "height": 1350
+  },
+  {
+    "name": "sunday-live-workflow",
+    "title": "周日现场字幕与录音",
+    "english": "SUNDAY LIVE OPERATIONS",
+    "subtitle": "当前英文驱动字幕，独立音频持续保存，停止后核对完整证据",
+    "nodes": [
+      {
+        "id": "preflight",
+        "title": "启动预检",
+        "lines": [
+          "检查麦克风、网络与模型身份",
+          "默认本地模型与无增强路径",
+          "实验仅本机，无分享或包"
+        ],
+        "role": "gate",
+        "box": [
+          80,
+          255,
+          420,
+          230
+        ],
+        "step": "01"
+      },
+      {
+        "id": "capture",
+        "title": "双路现场采集",
+        "lines": [
+          "录音块与实时音频分流",
+          "音频保存不依赖推理成功"
+        ],
+        "role": "input",
+        "box": [
+          590,
+          255,
+          420,
+          230
+        ],
+        "step": "02"
+      },
+      {
+        "id": "asr",
+        "title": "稳定英文定稿",
+        "lines": [
+          "Qwen3-ASR / MLX",
+          "现场英文定稿不可改写",
+          "Whisper 仅启动时备选"
+        ],
+        "role": "process",
+        "box": [
+          1100,
+          255,
+          420,
+          230
+        ],
+        "step": "03"
+      },
+      {
+        "id": "translate",
+        "title": "词片门控与中文翻译",
+        "lines": [
+          "MiLMMT Q8 / Ollama",
+          "翻译失败仍显示英文",
+          "A0 / none"
+        ],
+        "role": "process",
+        "box": [
+          1100,
+          595,
+          420,
+          230
+        ],
+        "step": "04"
+      },
+      {
+        "id": "display",
+        "title": "当前与前句双语",
+        "lines": [
+          "距离可读与状态明确",
+          "不把新英文配上旧中文"
+        ],
+        "role": "output",
+        "box": [
+          590,
+          595,
+          420,
+          230
+        ],
+        "step": "05"
+      },
+      {
+        "id": "share",
+        "title": "只读字幕分享",
+        "lines": [
+          "LAN / Firebase",
+          "公网失败不阻塞本地",
+          "分享后核验访问与显示"
+        ],
+        "role": "output",
+        "box": [
+          80,
+          595,
+          420,
+          230
+        ],
+        "step": "06"
+      },
+      {
+        "id": "drain",
+        "title": "停止与完整排空",
+        "lines": [
+          "停止输入并完成上传",
+          "最新连接与工作队列排空",
+          "存储排空后才允许结束"
+        ],
+        "role": "gate",
+        "box": [
+          80,
+          935,
+          420,
+          230
+        ],
+        "step": "07"
+      },
+      {
+        "id": "save",
+        "title": "音频与清单保存复核",
+        "lines": [
+          "WAV / hash / manifest",
+          "保留字幕事件与断流缺口",
+          "保存成功不代表人工审核"
+        ],
+        "role": "archive",
+        "box": [
+          590,
+          935,
+          420,
+          230
+        ],
+        "step": "08"
+      }
+    ],
+    "edges": [
+      {
+        "from": "preflight",
+        "to": "capture"
+      },
+      {
+        "from": "capture",
+        "to": "asr"
+      },
+      {
+        "from": "asr",
+        "to": "translate"
+      },
+      {
+        "from": "translate",
+        "to": "display"
+      },
+      {
+        "from": "display",
+        "to": "share"
+      },
+      {
+        "from": "capture",
+        "to": "drain",
+        "label": "独立录音",
+        "points": [
+          [
+            800,
+            485
+          ],
+          [
+            800,
+            545
+          ],
+          [
+            40,
+            545
+          ],
+          [
+            40,
+            1050
+          ],
+          [
+            80,
+            1050
+          ]
+        ],
+        "dashed": true,
+        "labelAt": [
+          215,
+          540
+        ]
+      },
+      {
+        "from": "display",
+        "to": "drain",
+        "label": "停止",
+        "points": [
+          [
+            800,
+            825
+          ],
+          [
+            800,
+            885
+          ],
+          [
+            290,
+            885
+          ],
+          [
+            290,
+            935
+          ]
+        ]
+      },
+      {
+        "from": "drain",
+        "to": "save",
+        "label": "排空确认后"
+      }
+    ],
+    "footer": [
+      "现场录音和控制接口不向观看者开放；只读分享仅发布允许字幕。现场音频不被周六稿替换。",
+      "重连沿用同一会话并标记缺口；saved 不代表字幕无中断。人工语义、实体设备与现场验收仍须独立完成。"
+    ],
+    "height": 1350
+  },
+  {
+    "name": "saturday-to-sunday-context-pack-flow",
+    "title": "周六上下文包的受控边界",
+    "english": "CONTEXT PACK GATES",
+    "subtitle": "现场输入是主路；包只有在独立审核与能力许可后才提供增强",
+    "nodes": [
+      {
+        "id": "source",
+        "title": "周六来源与窗口证据",
+        "lines": [
+          "源身份、人工窗口及英文",
+          "原文与审批证据受控保存"
+        ],
+        "role": "input",
+        "box": [
+          64,
+          255,
+          334,
+          230
+        ],
+        "step": "01"
+      },
+      {
+        "id": "candidate",
+        "title": "中文与术语候选",
+        "lines": [
+          "机器中文保留候选身份",
+          "未经审核不进入实时提示词"
+        ],
+        "role": "process",
+        "box": [
+          443,
+          255,
+          334,
+          230
+        ],
+        "step": "02"
+      },
+      {
+        "id": "export",
+        "title": "原子导出上下文包",
+        "lines": [
+          "同篇状态初始为未知",
+          "发布后核验文件及远端哈希",
+          "更新失败保留旧包并报错"
+        ],
+        "role": "archive",
+        "box": [
+          822,
+          255,
+          334,
+          230
+        ],
+        "step": "03"
+      },
+      {
+        "id": "approve",
+        "title": "独立同篇与内容审核",
+        "lines": [
+          "窗口批准不等于同篇批准",
+          "机器审核不升级人工证据"
+        ],
+        "role": "gate",
+        "box": [
+          1201,
+          255,
+          334,
+          230
+        ],
+        "step": "04"
+      },
+      {
+        "id": "preflight",
+        "title": "周日包预检",
+        "lines": [
+          "周次、哈希、有效期、审核",
+          "旧包也须重新验证有效性",
+          "失败降为无增强"
+        ],
+        "role": "gate",
+        "box": [
+          1201,
+          610,
+          334,
+          230
+        ],
+        "step": "05"
+      },
+      {
+        "id": "capability",
+        "title": "能力上限与选择",
+        "lines": [
+          "none / English",
+          "terms / alignment",
+          "能力策略不可越级"
+        ],
+        "role": "gate",
+        "box": [
+          822,
+          610,
+          334,
+          230
+        ],
+        "step": "06"
+      },
+      {
+        "id": "live",
+        "title": "现场音频与英文定稿",
+        "lines": [
+          "实时内容的事实来源",
+          "无包仍继续录音与转写"
+        ],
+        "role": "input",
+        "box": [
+          64,
+          610,
+          334,
+          230
+        ],
+        "step": "07"
+      },
+      {
+        "id": "gateway",
+        "title": "网关受限上下文",
+        "lines": [
+          "仅允许能力进入翻译链路",
+          "仅英文时只对齐游标",
+          "不改默认无增强提示词"
+        ],
+        "role": "process",
+        "box": [
+          443,
+          610,
+          334,
+          230
+        ],
+        "step": "08"
+      },
+      {
+        "id": "translate",
+        "title": "实时翻译与可读字幕",
+        "lines": [
+          "MiLMMT / A0",
+          "现场英文始终权威",
+          "增强失败回到默认路径"
+        ],
+        "role": "output",
+        "box": [
+          443,
+          965,
+          650,
+          230
+        ],
+        "step": "09"
+      },
+      {
+        "id": "evidence",
+        "title": "独立录音与版本证据",
+        "lines": [
+          "音频与事件独立保存",
+          "记录包版本及能力状态"
+        ],
+        "role": "archive",
+        "box": [
+          1201,
+          965,
+          334,
+          230
+        ],
+        "step": "10"
+      }
+    ],
+    "edges": [
+      {
+        "from": "source",
+        "to": "candidate"
+      },
+      {
+        "from": "candidate",
+        "to": "export"
+      },
+      {
+        "from": "export",
+        "to": "approve"
+      },
+      {
+        "from": "approve",
+        "to": "preflight"
+      },
+      {
+        "from": "preflight",
+        "to": "capability",
+        "label": "通过按许可；失败 none"
+      },
+      {
+        "from": "capability",
+        "to": "gateway",
+        "label": "获准的可选增强",
+        "dashed": true
+      },
+      {
+        "from": "live",
+        "to": "gateway",
+        "label": "实时主输入"
+      },
+      {
+        "from": "gateway",
+        "to": "translate"
+      },
+      {
+        "from": "live",
+        "to": "evidence",
+        "label": "独立记录",
+        "points": [
+          [
+            231,
+            840
+          ],
+          [
+            231,
+            905
+          ],
+          [
+            1368,
+            905
+          ],
+          [
+            1368,
+            965
+          ]
+        ],
+        "dashed": true,
+        "labelAt": [
+          1080,
+          900
+        ]
+      },
+      {
+        "from": "translate",
+        "to": "evidence",
+        "label": "字幕与能力证据",
+        "points": [
+          [
+            1093,
+            1080
+          ],
+          [
+            1201,
+            1080
+          ]
+        ]
+      }
+    ],
+    "footer": [
+      "机器中文候选无直达提示词通道；ASR 短语偏置未启用或验证。已导出不等于已启用或质量提升。",
+      "无包保持录音、转写与 A0 主路；现场语义和设备验收独立进行，文件发布核验不代替现场证明。"
+    ],
+    "height": 1380
+  },
+  {
+    "name": "local-live-architecture",
+    "title": "本地推理与只读分发",
+    "english": "LOCAL LIVE ARCHITECTURE",
+    "subtitle": "浏览器经网关访问模型；录音独立，实验分支仅允许本机使用",
+    "nodes": [
+      {
+        "id": "browser",
+        "title": "操作浏览器与双路音频",
+        "lines": [
+          "录音块与实时音频",
+          "浏览器不直连模型"
+        ],
+        "role": "input",
+        "box": [
+          590,
+          255,
+          420,
+          230
+        ],
+        "step": "01"
+      },
+      {
+        "id": "gateway",
+        "title": "网关控制与队列",
+        "lines": [
+          "统一推理、录音与分发",
+          "会话开始前选择并锁定模型",
+          "控制及录音接口不公开"
+        ],
+        "role": "process",
+        "box": [
+          590,
+          595,
+          420,
+          270
+        ],
+        "step": "02"
+      },
+      {
+        "id": "asr",
+        "title": "本地英文转写",
+        "lines": [
+          "Qwen3-ASR 0.6B 8-bit",
+          "MLX",
+          "保留不可改写英文定稿"
+        ],
+        "role": "process",
+        "box": [
+          80,
+          595,
+          420,
+          230
+        ],
+        "step": "03"
+      },
+      {
+        "id": "default",
+        "title": "默认中文翻译",
+        "lines": [
+          "MiLMMT 4B Q8",
+          "Ollama / A0 none",
+          "会话中不自动切换模型"
+        ],
+        "role": "process",
+        "box": [
+          1100,
+          595,
+          420,
+          230
+        ],
+        "step": "04"
+      },
+      {
+        "id": "experiment",
+        "title": "隔离的本机实验",
+        "lines": [
+          "v4.1 Q5 / MLX",
+          "禁止局域网及公网分享",
+          "禁止周六包，质量门未过"
+        ],
+        "role": "experiment",
+        "box": [
+          1100,
+          255,
+          420,
+          230
+        ],
+        "step": "05"
+      },
+      {
+        "id": "disk",
+        "title": "独立磁盘录音与事件",
+        "lines": [
+          "恢复沿用会话与序号",
+          "保留音频缺口与未决转写",
+          "最新连接排空后才保存"
+        ],
+        "role": "archive",
+        "box": [
+          80,
+          945,
+          420,
+          230
+        ],
+        "step": "06"
+      },
+      {
+        "id": "pack",
+        "title": "可选已验证上下文包",
+        "lines": [
+          "独立人工同篇及内容审核",
+          "周次、哈希及有效期预检",
+          "仅默认分支可按能力启用"
+        ],
+        "role": "gate",
+        "box": [
+          80,
+          255,
+          420,
+          230
+        ],
+        "step": "07"
+      },
+      {
+        "id": "local",
+        "title": "本机双语呈现",
+        "lines": [
+          "默认与实验各走选定分支",
+          "显示连接与推理状态"
+        ],
+        "role": "output",
+        "box": [
+          590,
+          945,
+          420,
+          230
+        ],
+        "step": "08"
+      },
+      {
+        "id": "lan",
+        "title": "局域网只读视图",
+        "lines": [
+          "仅默认分支允许",
+          "分享后核验设备可读性"
+        ],
+        "role": "output",
+        "box": [
+          1100,
+          945,
+          420,
+          230
+        ],
+        "step": "09"
+      },
+      {
+        "id": "public",
+        "title": "出站公开字幕分发",
+        "lines": [
+          "Firebase public viewer",
+          "仅默认分支；有界尽力发送",
+          "失败不阻塞本地或录音"
+        ],
+        "role": "output",
+        "box": [
+          1100,
+          1295,
+          420,
+          230
+        ],
+        "step": "10"
+      }
+    ],
+    "edges": [
+      {
+        "from": "browser",
+        "to": "gateway",
+        "label": "双路音频 / 控制",
+        "points": [
+          [
+            775,
+            485
+          ],
+          [
+            775,
+            595
+          ]
+        ],
+        "labelAt": [
+          680,
+          570
+        ]
+      },
+      {
+        "from": "gateway",
+        "to": "browser",
+        "label": "状态 / 恢复",
+        "points": [
+          [
+            825,
+            595
+          ],
+          [
+            825,
+            485
+          ]
+        ],
+        "labelAt": [
+          930,
+          570
+        ]
+      },
+      {
+        "from": "gateway",
+        "to": "asr",
+        "label": "音频",
+        "points": [
+          [
+            590,
+            680
+          ],
+          [
+            500,
+            680
+          ]
+        ],
+        "labelAt": [
+          545,
+          666
+        ]
+      },
+      {
+        "from": "asr",
+        "to": "gateway",
+        "label": "定稿",
+        "points": [
+          [
+            500,
+            745
+          ],
+          [
+            590,
+            745
+          ]
+        ],
+        "labelAt": [
+          545,
+          730
+        ]
+      },
+      {
+        "from": "gateway",
+        "to": "default",
+        "label": "英文",
+        "points": [
+          [
+            1010,
+            745
+          ],
+          [
+            1100,
+            745
+          ]
+        ],
+        "labelAt": [
+          1055,
+          730
+        ]
+      },
+      {
+        "from": "default",
+        "to": "gateway",
+        "label": "中文",
+        "points": [
+          [
+            1100,
+            795
+          ],
+          [
+            1010,
+            795
+          ]
+        ],
+        "labelAt": [
+          1055,
+          782
+        ]
+      },
+      {
+        "from": "gateway",
+        "to": "experiment",
+        "label": "开始前选择",
+        "dashed": true,
+        "points": [
+          [
+            1010,
+            645
+          ],
+          [
+            1040,
+            645
+          ],
+          [
+            1040,
+            530
+          ],
+          [
+            1310,
+            530
+          ],
+          [
+            1310,
+            485
+          ]
+        ],
+        "labelAt": [
+          1200,
+          525
+        ]
+      },
+      {
+        "from": "experiment",
+        "to": "gateway",
+        "label": "实验返回 · 仅本机",
+        "dashed": true,
+        "points": [
+          [
+            1100,
+            370
+          ],
+          [
+            1060,
+            370
+          ],
+          [
+            1060,
+            705
+          ],
+          [
+            1010,
+            705
+          ]
+        ],
+        "labelAt": [
+          1310,
+          570
+        ]
+      },
+      {
+        "from": "gateway",
+        "to": "disk",
+        "label": "独立持久化",
+        "points": [
+          [
+            590,
+            830
+          ],
+          [
+            545,
+            830
+          ],
+          [
+            545,
+            1060
+          ],
+          [
+            500,
+            1060
+          ]
+        ]
+      },
+      {
+        "from": "pack",
+        "to": "gateway",
+        "label": "许可 Pack",
+        "dashed": true,
+        "points": [
+          [
+            290,
+            485
+          ],
+          [
+            290,
+            545
+          ],
+          [
+            545,
+            545
+          ],
+          [
+            545,
+            850
+          ],
+          [
+            590,
+            850
+          ]
+        ],
+        "labelAt": [
+          350,
+          540
+        ]
+      },
+      {
+        "from": "gateway",
+        "to": "local"
+      },
+      {
+        "from": "gateway",
+        "to": "lan",
+        "label": "仅默认路径",
+        "points": [
+          [
+            1010,
+            810
+          ],
+          [
+            1060,
+            810
+          ],
+          [
+            1060,
+            1060
+          ],
+          [
+            1100,
+            1060
+          ]
+        ],
+        "labelAt": [
+          1190,
+          880
+        ]
+      },
+      {
+        "from": "gateway",
+        "to": "public",
+        "label": "仅默认路径",
+        "points": [
+          [
+            1010,
+            835
+          ],
+          [
+            1040,
+            835
+          ],
+          [
+            1040,
+            1410
+          ],
+          [
+            1100,
+            1410
+          ]
+        ],
+        "labelAt": [
+          1190,
+          1220
+        ]
+      }
+    ],
+    "footer": [
+      "私有音频与控制接口不对公网开放；公网分发是有界尽力发送，不是持久发件箱，发布后仍须核验。",
+      "模型失败仍保留录音；重连会记录缺口，不保证字幕无损。实验未通过神学及现场门，不能升级默认。"
+    ],
+    "height": 1710
+  },
+  {
+    "name": "live-runtime-sequence",
+    "title": "从现场输入到可靠保存",
+    "english": "LIVE RUNTIME SEQUENCE",
+    "subtitle": "八阶段时序；所有模型结果经网关，独立音频不依赖推理成功",
+    "nodes": [
+      {
+        "id": "start",
+        "title": "启动会话与运行身份",
+        "lines": [
+          "Browser -> Gateway",
+          "记录会话及选定模型身份"
+        ],
+        "role": "input"
+      },
+      {
+        "id": "audio",
+        "title": "双路音频独立写入",
+        "lines": [
+          "Browser -> Gateway -> Disk",
+          "录音块与实时音频分流",
+          "原始记录仅追加"
+        ],
+        "role": "process"
+      },
+      {
+        "id": "asr",
+        "title": "语音门控与英文定稿",
+        "lines": [
+          "Gateway -> ASR -> Gateway",
+          "稳定英文定稿不可改写"
+        ],
+        "role": "process"
+      },
+      {
+        "id": "translation",
+        "title": "许可上下文与翻译",
+        "lines": [
+          "Gateway <-> Translation",
+          "仅注入审核获准的能力",
+          "默认模型或隔离本机实验"
+        ],
+        "role": "process"
+      },
+      {
+        "id": "caption",
+        "title": "追加事件并下发字幕",
+        "lines": [
+          "Gateway -> Disk + Browser",
+          "录音与事件持久化独立",
+          "模型失败不停止音频保存"
+        ],
+        "role": "process"
+      },
+      {
+        "id": "render",
+        "title": "实际可读呈现反馈",
+        "lines": [
+          "Browser -> Gateway",
+          "caption_rendered",
+          "不可观测情况单独记录"
+        ],
+        "role": "output"
+      },
+      {
+        "id": "drain",
+        "title": "停止上传与最新连接排空",
+        "lines": [
+          "停止输入，确认上传完成",
+          "最新连接及工作队列排空",
+          "stream.closed / latest epoch"
+        ],
+        "role": "gate"
+      },
+      {
+        "id": "finalize",
+        "title": "音频与原子清单完成",
+        "lines": [
+          "WAV / hash / manifest",
+          "存储排空后完成原子写入",
+          "保存证据与缺口复核"
+        ],
+        "role": "archive"
+      }
+    ],
+    "edges": [
+      {
+        "from": "start",
+        "to": "audio"
+      },
+      {
+        "from": "audio",
+        "to": "asr"
+      },
+      {
+        "from": "asr",
+        "to": "translation"
+      },
+      {
+        "from": "translation",
+        "to": "caption"
+      },
+      {
+        "from": "caption",
+        "to": "render"
+      },
+      {
+        "from": "audio",
+        "to": "drain",
+        "label": "录音独立到停止"
+      },
+      {
+        "from": "render",
+        "to": "drain",
+        "label": "停止输入"
+      },
+      {
+        "from": "drain",
+        "to": "finalize",
+        "label": "上传与存储均确认"
+      }
+    ],
+    "footer": [
+      "未确认最新连接及存储排空，不报完成；重连不保证字幕无损。手机无逐条呈现确认，不能套用操作页时延。",
+      "现场录音本地保留，上下文按独立审批启用。只读字幕分享另行核验，浏览器回放不替代现场验收。"
+    ],
+    "height": 1620,
+    "kind": "sequence",
+    "stages": [
+      {
+        "name": "建立会话",
+        "events": [
+          [
+            0,
+            1,
+            "start · 会话请求"
+          ],
+          [
+            1,
+            0,
+            "session / runtime identity"
+          ]
+        ]
+      },
+      {
+        "name": "双路采集",
+        "events": [
+          [
+            0,
+            1,
+            "录音 chunks + 100 ms PCM"
+          ],
+          [
+            1,
+            4,
+            "独立持久化 · 不依赖模型"
+          ]
+        ]
+      },
+      {
+        "name": "稳定英文",
+        "events": [
+          [
+            1,
+            2,
+            "VAD → 有界 ASR worker"
+          ],
+          [
+            2,
+            1,
+            "immutable asr.final"
+          ]
+        ]
+      },
+      {
+        "name": "受控翻译",
+        "events": [
+          [
+            1,
+            3,
+            "当前英文 + 许可 context"
+          ],
+          [
+            3,
+            1,
+            "tokens / 正常结束的 final"
+          ]
+        ]
+      },
+      {
+        "name": "字幕事件",
+        "events": [
+          [
+            1,
+            4,
+            "追加模型事件 + caption.display"
+          ],
+          [
+            1,
+            0,
+            "可读字幕 + 明确状态"
+          ]
+        ]
+      },
+      {
+        "name": "实际呈现",
+        "events": [
+          [
+            0,
+            1,
+            "caption_rendered / unobserved"
+          ],
+          [
+            1,
+            4,
+            "保留观测 · 不冒充手机 ACK"
+          ]
+        ]
+      },
+      {
+        "name": "停止排空",
+        "events": [
+          [
+            0,
+            1,
+            "stop + 完成录音上传"
+          ],
+          [
+            1,
+            4,
+            "最新连接 workers / storage drain"
+          ]
+        ]
+      },
+      {
+        "name": "确认保存",
+        "events": [
+          [
+            1,
+            0,
+            "stream.closed · latest epoch"
+          ],
+          [
+            0,
+            1,
+            "finalize（上传与 drain 后）"
+          ],
+          [
+            1,
+            4,
+            "WAV + hash + atomic manifest"
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "name": "supervisor-control-plane",
+    "title": "Agents API 与本地生产控制",
+    "english": "SUPERVISOR CONTROL PLANE",
+    "subtitle": "默认代理会话负责受限决策，本机工具执行，确定性证据决定完成",
+    "nodes": [
+      {
+        "id": "scheduler",
+        "title": "云端定时找源",
+        "lines": [
+          "Cloud Scheduler",
+          "只更新来源证据"
+        ],
+        "role": "input",
+        "box": [
+          80,
+          255,
+          420,
+          230
+        ],
+        "step": "01"
+      },
+      {
+        "id": "gcs",
+        "title": "生产证据与租约",
+        "lines": [
+          "GCS / source lease",
+          "来源与时间轴绑定审批",
+          "源级租约防重复"
+        ],
+        "role": "archive",
+        "box": [
+          590,
+          255,
+          420,
+          230
+        ],
+        "step": "02"
+      },
+      {
+        "id": "operator",
+        "title": "本地定时与操作员",
+        "lines": [
+          "Codex 定时跟进已启用",
+          "人工触发可恢复入口",
+          "计划唤醒仍须实际运行证明"
+        ],
+        "role": "input",
+        "box": [
+          80,
+          615,
+          420,
+          230
+        ],
+        "step": "03"
+      },
+      {
+        "id": "runner",
+        "title": "本地运行与会话记录",
+        "lines": [
+          "完整快照仅写本地报告",
+          "源与审批证据受控存储",
+          "持久化结果与阶段尝试记录"
+        ],
+        "role": "process",
+        "box": [
+          590,
+          615,
+          420,
+          230
+        ],
+        "step": "04"
+      },
+      {
+        "id": "agent",
+        "title": "Agents API 会话",
+        "lines": [
+          "Agents API",
+          "gpt-6-astra / medium",
+          "environment: none"
+        ],
+        "role": "agent",
+        "box": [
+          1100,
+          615,
+          420,
+          230
+        ],
+        "step": "05"
+      },
+      {
+        "id": "tools",
+        "title": "受限工具分发",
+        "lines": [
+          "inspect / timeline",
+          "approved PDF / decision",
+          "无命令行或审批写入工具"
+        ],
+        "role": "process",
+        "box": [
+          590,
+          975,
+          420,
+          230
+        ],
+        "step": "06"
+      },
+      {
+        "id": "production",
+        "title": "确定性时间轴与文档",
+        "lines": [
+          "每会话每阶段最多一次",
+          "变更后重读生产快照",
+          "审批、质量及发布核验"
+        ],
+        "role": "process",
+        "box": [
+          1100,
+          975,
+          420,
+          230
+        ],
+        "step": "07"
+      },
+      {
+        "id": "approval",
+        "title": "模型之外的人工审批",
+        "lines": [
+          "窗口绑定来源及时间轴哈希",
+          "模型不能选择或代签窗口"
+        ],
+        "role": "gate",
+        "box": [
+          1100,
+          255,
+          420,
+          230
+        ],
+        "step": "08"
+      },
+      {
+        "id": "decision",
+        "title": "新快照完成等待或阻塞",
+        "lines": [
+          "有效审批与全部质量门",
+          "要求文件远端哈希核验",
+          "会话完成不等于业务完成"
+        ],
+        "role": "gate",
+        "box": [
+          80,
+          975,
+          420,
+          230
+        ],
+        "step": "09"
+      }
+    ],
+    "edges": [
+      {
+        "from": "scheduler",
+        "to": "gcs"
+      },
+      {
+        "from": "operator",
+        "to": "runner"
+      },
+      {
+        "from": "runner",
+        "to": "agent",
+        "label": "仅日期 / 枚举 / 布尔",
+        "points": [
+          [
+            1010,
+            730
+          ],
+          [
+            1100,
+            730
+          ]
+        ],
+        "labelAt": [
+          1160,
+          590
+        ]
+      },
+      {
+        "from": "agent",
+        "to": "tools",
+        "label": "受限工具请求",
+        "points": [
+          [
+            1310,
+            845
+          ],
+          [
+            1310,
+            910
+          ],
+          [
+            800,
+            910
+          ],
+          [
+            800,
+            975
+          ]
+        ],
+        "labelAt": [
+          1120,
+          905
+        ]
+      },
+      {
+        "from": "tools",
+        "to": "runner",
+        "label": "本机分发",
+        "points": [
+          [
+            775,
+            975
+          ],
+          [
+            775,
+            845
+          ]
+        ],
+        "labelAt": [
+          700,
+          925
+        ]
+      },
+      {
+        "from": "runner",
+        "to": "production",
+        "points": [
+          [
+            1010,
+            795
+          ],
+          [
+            1060,
+            795
+          ],
+          [
+            1060,
+            1090
+          ],
+          [
+            1100,
+            1090
+          ]
+        ],
+        "label": "受保护执行",
+        "labelAt": [
+          1190,
+          870
+        ]
+      },
+      {
+        "from": "gcs",
+        "to": "runner",
+        "label": "读证据",
+        "points": [
+          [
+            770,
+            485
+          ],
+          [
+            770,
+            615
+          ]
+        ],
+        "labelAt": [
+          675,
+          555
+        ]
+      },
+      {
+        "from": "runner",
+        "to": "gcs",
+        "label": "写状态",
+        "points": [
+          [
+            830,
+            615
+          ],
+          [
+            830,
+            485
+          ]
+        ],
+        "labelAt": [
+          890,
+          555
+        ]
+      },
+      {
+        "from": "approval",
+        "to": "gcs",
+        "label": "独立人工审批",
+        "points": [
+          [
+            1100,
+            370
+          ],
+          [
+            1010,
+            370
+          ]
+        ],
+        "labelAt": [
+          1220,
+          525
+        ]
+      },
+      {
+        "from": "production",
+        "to": "gcs",
+        "label": "写入 / 核验",
+        "points": [
+          [
+            1520,
+            1090
+          ],
+          [
+            1560,
+            1090
+          ],
+          [
+            1560,
+            545
+          ],
+          [
+            800,
+            545
+          ],
+          [
+            800,
+            485
+          ]
+        ],
+        "labelAt": [
+          1370,
+          540
+        ]
+      },
+      {
+        "from": "gcs",
+        "to": "decision",
+        "points": [
+          [
+            590,
+            380
+          ],
+          [
+            545,
+            380
+          ],
+          [
+            545,
+            905
+          ],
+          [
+            290,
+            905
+          ],
+          [
+            290,
+            975
+          ]
+        ],
+        "dashed": true
+      },
+      {
+        "from": "decision",
+        "to": "runner",
+        "label": "下次恢复",
+        "points": [
+          [
+            290,
+            975
+          ],
+          [
+            290,
+            905
+          ],
+          [
+            800,
+            905
+          ],
+          [
+            800,
+            845
+          ]
+        ],
+        "dashed": true,
+        "labelAt": [
+          590,
+          900
+        ]
+      }
+    ],
+    "footer": [
+      "新会话须已确认远端终态且无未决工具；超时或取消回执均不足。SDK / Responses 仅显式回退。",
+      "敏感来源及配置不发给代理；旧云端时间轴任务已退役。定时启用不代表未来运行或新文档生成已发生。"
+    ],
+    "height": 1390
+  },
+  {
+    "name": "evidence-promotion-gates",
+    "title": "证据积累与晋级门槛",
+    "english": "EVIDENCE PROMOTION GATES",
+    "subtitle": "证据可以并行积累；全部适用门槛汇合通过后才能晋级",
+    "nodes": [
+      {
+        "id": "engineering",
+        "title": "工程协议与故障测试",
+        "lines": [
+          "解码、恢复与资源边界",
+          "工程测试不代表语义质量"
+        ],
+        "role": "gate",
+        "box": [
+          80,
+          265,
+          420,
+          230
+        ],
+        "step": "01"
+      },
+      {
+        "id": "model",
+        "title": "模型审核参考",
+        "lines": [
+          "provisional",
+          "机器审核不能成为人工金标"
+        ],
+        "role": "gate",
+        "box": [
+          590,
+          265,
+          420,
+          230
+        ],
+        "step": "02"
+      },
+      {
+        "id": "human",
+        "title": "人工金标与语义审核",
+        "lines": [
+          "逐词来源与神学语义",
+          "人工审核证据独立保留"
+        ],
+        "role": "gate",
+        "box": [
+          1100,
+          265,
+          420,
+          230
+        ],
+        "step": "03"
+      },
+      {
+        "id": "replay",
+        "title": "冻结输入对照回放",
+        "lines": [
+          "replay A/B",
+          "输入、模型与版本身份冻结"
+        ],
+        "role": "gate",
+        "box": [
+          80,
+          585,
+          420,
+          230
+        ],
+        "step": "04"
+      },
+      {
+        "id": "browser",
+        "title": "真实模型浏览器长测",
+        "lines": [
+          "约二十分钟音频循环三轮",
+          "不等于六十分钟唯一内容",
+          "多场资源增长上限仍待验"
+        ],
+        "role": "gate",
+        "box": [
+          590,
+          585,
+          420,
+          230
+        ],
+        "step": "05"
+      },
+      {
+        "id": "field",
+        "title": "现场音频与实体手机",
+        "lines": [
+          "麦克风、网络与实际呈现",
+          "现场语义及真机时延待验"
+        ],
+        "role": "gate",
+        "box": [
+          1100,
+          585,
+          420,
+          230
+        ],
+        "step": "06"
+      },
+      {
+        "id": "promote",
+        "title": "适用门槛全部通过",
+        "lines": [
+          "按文档、声音、现场分别判定",
+          "发布后检查交付与访问",
+          "无完整证据不升级默认"
+        ],
+        "role": "output",
+        "box": [
+          590,
+          955,
+          420,
+          230
+        ],
+        "step": "07"
+      },
+      {
+        "id": "repair",
+        "title": "失败返修与独立实验",
+        "lines": [
+          "v4.1 Q5 已能本机运行",
+          "神学质量门仍未通过",
+          "按失败项回到对应证据门"
+        ],
+        "role": "experiment",
+        "box": [
+          1100,
+          955,
+          420,
+          230
+        ],
+        "step": "08"
+      }
+    ],
+    "edges": [
+      {
+        "points": [
+          [
+            800,
+            854
+          ],
+          [
+            800,
+            955
+          ]
+        ],
+        "label": "汇合全部适用证据",
+        "labelAt": [
+          800,
+          906
+        ]
+      },
+      {
+        "from": "promote",
+        "to": "repair",
+        "dashed": true,
+        "label": "不满足",
+        "labelAt": [
+          1057,
+          1055
+        ]
+      },
+      {
+        "points": [
+          [
+            1520,
+            1070
+          ],
+          [
+            1565,
+            1070
+          ],
+          [
+            1565,
+            530
+          ],
+          [
+            1518,
+            530
+          ]
+        ],
+        "dashed": true
+      }
+    ],
+    "footer": [
+      "文档质检、声音听审、现场语义各有门槛；回归测试数量、机器审核或浏览器回放均不能替代人审与现场。",
+      "使用授权媒体，原文与审批受控保存；未完成的人审、现场及多场资源门保持待验，不因重绘改为通过。"
+    ],
+    "height": 1370,
+    "bands": [
+      {
+        "x": 56,
+        "y": 211,
+        "w": 1488,
+        "h": 644,
+        "fill": "#EDF0E9",
+        "label": "证据可并行积累 · 以下不是执行先后顺序"
+      }
+    ]
+  },
+  {
+    "name": "historical-cloud-architecture",
+    "title": "历史云端设计与研究边界",
+    "english": "HISTORICAL CLOUD DESIGN",
+    "subtitle": "历史研究架构，非当前周日主路；不据此推断现存部署或现场就绪",
+    "nodes": [
+      {
+        "id": "scheduler",
+        "title": "历史调度与管理入口",
+        "lines": [
+          "Scheduler / admin",
+          "仅描述历史设计"
+        ],
+        "role": "archive",
+        "box": [
+          80,
+          255,
+          420,
+          230
+        ],
+        "step": "01"
+      },
+      {
+        "id": "source",
+        "title": "历史来源与备选",
+        "lines": [
+          "授权可用来源",
+          "保留来源身份与窗口证据"
+        ],
+        "role": "archive",
+        "box": [
+          590,
+          255,
+          420,
+          230
+        ],
+        "step": "02"
+      },
+      {
+        "id": "models",
+        "title": "历史云端转写与翻译",
+        "lines": [
+          "ASR / translation",
+          "供应商可用性未据图确认"
+        ],
+        "role": "experiment",
+        "box": [
+          1100,
+          255,
+          420,
+          230
+        ],
+        "step": "03"
+      },
+      {
+        "id": "sessions",
+        "title": "历史会话与字幕存储",
+        "lines": [
+          "Firestore",
+          "session / segments"
+        ],
+        "role": "archive",
+        "box": [
+          590,
+          595,
+          420,
+          230
+        ],
+        "step": "04"
+      },
+      {
+        "id": "documents",
+        "title": "历史文档与报告",
+        "lines": [
+          "GCS",
+          "文档及报告证据"
+        ],
+        "role": "archive",
+        "box": [
+          1100,
+          595,
+          420,
+          230
+        ],
+        "step": "05"
+      },
+      {
+        "id": "api",
+        "title": "历史服务接口",
+        "lines": [
+          "Cloud Run API",
+          "权限与读写边界分离"
+        ],
+        "role": "archive",
+        "box": [
+          590,
+          935,
+          420,
+          230
+        ],
+        "step": "06"
+      },
+      {
+        "id": "operator",
+        "title": "历史操作审核界面",
+        "lines": [
+          "Operator PWA",
+          "人工审核与发布权限",
+          "审批入口不向会众开放"
+        ],
+        "role": "gate",
+        "box": [
+          80,
+          935,
+          420,
+          230
+        ],
+        "step": "07"
+      },
+      {
+        "id": "viewer",
+        "title": "历史会众只读视图",
+        "lines": [
+          "只读观看与交付",
+          "发布后仍需核验访问"
+        ],
+        "role": "output",
+        "box": [
+          1100,
+          935,
+          420,
+          230
+        ],
+        "step": "08"
+      }
+    ],
+    "edges": [
+      {
+        "from": "scheduler",
+        "to": "source"
+      },
+      {
+        "from": "source",
+        "to": "models"
+      },
+      {
+        "from": "models",
+        "to": "sessions"
+      },
+      {
+        "from": "models",
+        "to": "documents"
+      },
+      {
+        "from": "sessions",
+        "to": "api"
+      },
+      {
+        "from": "documents",
+        "to": "api",
+        "points": [
+          [
+            1310,
+            825
+          ],
+          [
+            1310,
+            885
+          ],
+          [
+            800,
+            885
+          ],
+          [
+            800,
+            935
+          ]
+        ]
+      },
+      {
+        "from": "api",
+        "to": "operator"
+      },
+      {
+        "from": "api",
+        "to": "viewer"
+      },
+      {
+        "from": "operator",
+        "to": "api",
+        "label": "历史人工审核与发布契约"
+      }
+    ],
+    "footer": [
+      "当前主路是本机实时字幕与本地受限代理文档生产；历史云端时间轴任务已退役，不能按此图恢复。",
+      "云端网页仍提供交付入口，不代表历史转写链仍运行；仅展示获准内容，私有源与审批受控，现场验收另行证明。"
+    ],
+    "height": 1360,
+    "historical": true
+  }
+]

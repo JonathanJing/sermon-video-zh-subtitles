@@ -1,84 +1,171 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1030" viewBox="0 0 1400 1030" role="img" aria-labelledby="title desc">
-<title id="title">Local runtime · 本地架构与分发</title><desc id="desc">Gateway owns inference, storage and publishing · 模型与控制接口不暴露到公网</desc>
-<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#526580"/></marker><style>text{font-family:Arial,"PingFang SC","Microsoft YaHei",sans-serif;fill:#18304b}.title{font-size:30px;font-weight:700}.subtitle{font-size:16px;fill:#536782}.head{font-size:20px;font-weight:700}.body{font-size:17px}.note{font-size:15px;fill:#536782}.edge{fill:none;stroke:#526580;stroke-width:2;marker-end:url(#arrow)}.dash{stroke-dasharray:7 5}</style></defs>
-<rect width="1400" height="1030" rx="20" fill="#f5f8fc"/>
-<text x="44" y="55" class="title" text-anchor="start">Local runtime · 本地架构与分发</text>
-<text x="44" y="86" class="subtitle" text-anchor="start">Gateway owns inference, storage and publishing · 模型与控制接口不暴露到公网</text>
-<rect x="44" y="128" width="340" height="220" rx="14" fill="#eaf8f1" stroke="#70b897" stroke-width="1.5"/>
-<text x="64" y="161" class="head" text-anchor="start">Operator browser · 操作页</text>
-<text x="64" y="191" class="body" text-anchor="start">Microphone → two audio paths</text>
-<text x="64" y="217" class="body" text-anchor="start">MediaRecorder → recovery chunks</text>
-<text x="64" y="243" class="body" text-anchor="start">AudioWorklet → 16 kHz PCM</text>
-<text x="64" y="269" class="body" text-anchor="start">Current + previous bilingual pair</text>
-<text x="64" y="295" class="body" text-anchor="start">Actual readable-render observations</text>
-<rect x="474" y="128" width="435" height="220" rx="14" fill="#edf4ff" stroke="#86abe6" stroke-width="1.5"/>
-<text x="494" y="161" class="head" text-anchor="start">Local Gateway · 控制与数据</text>
-<text x="494" y="191" class="body" text-anchor="start">REST :8766 / WebSocket :8767</text>
-<text x="494" y="217" class="body" text-anchor="start">100 ms PCM → VAD (500 ms / 3 s)</text>
-<text x="494" y="243" class="body" text-anchor="start">ASR queue 2 / translation queue 1</text>
-<text x="494" y="269" class="body" text-anchor="start">Immutable final → lexical guard</text>
-<text x="494" y="295" class="body" text-anchor="start">legacy translation / readable_chunks</text>
-<path d="M384 196H474" class="edge"/>
-<text x="429" y="180" class="note" text-anchor="middle">REST / WS</text>
-<path d="M474 280H384" class="edge"/>
-<text x="429" y="264" class="note" text-anchor="middle">caption / status</text>
-<rect x="999" y="128" width="357" height="100" rx="14" fill="#f3efff" stroke="#aa98dc" stroke-width="1.5"/>
-<text x="1019" y="161" class="head" text-anchor="start">Qwen3-ASR / MLX</text>
-<text x="1019" y="191" class="body" text-anchor="start">English finals → Gateway</text>
-<rect x="999" y="278" width="357" height="120" rx="14" fill="#f3efff" stroke="#aa98dc" stroke-width="1.5"/>
-<text x="1019" y="311" class="head" text-anchor="start">MiLMMT Q8 / Ollama</text>
-<text x="1019" y="341" class="body" text-anchor="start">Frozen A0 prompt · context none</text>
-<text x="1019" y="367" class="body" text-anchor="start">NDJSON → Gateway presenter</text>
-<path d="M909 163H999" class="edge"/>
-<text x="954" y="149" class="note" text-anchor="middle">audio</text>
-<path d="M999 206H909" class="edge"/>
-<text x="954" y="193" class="note" text-anchor="middle">final</text>
-<path d="M909 313H999" class="edge"/>
-<text x="954" y="299" class="note" text-anchor="middle">English</text>
-<path d="M999 372H955V340H909" class="edge"/>
-<rect x="44" y="465" width="340" height="170" rx="14" fill="#fff5e9" stroke="#e1aa68" stroke-width="1.5"/>
-<text x="64" y="498" class="head" text-anchor="start">Independent recovery · 录音</text>
-<text x="64" y="528" class="body" text-anchor="start">Chunks + PCM + events on disk</text>
-<text x="64" y="554" class="body" text-anchor="start">Browser Blob fallback retained</text>
-<text x="64" y="580" class="body" text-anchor="start">Finalize: latest connection drain</text>
-<text x="64" y="606" class="body" text-anchor="start">Hash + WAV + atomic manifest</text>
-<path d="M520 348V435H214V465" class="edge"/>
-<text x="393" y="424" class="note" text-anchor="middle">Gateway writes; browser does not write server disk</text>
-<rect x="474" y="465" width="435" height="170" rx="14" fill="#edf4ff" stroke="#86abe6" stroke-width="1.5"/>
-<text x="494" y="498" class="head" text-anchor="start">Recovery + identity · 恢复与版本</text>
-<text x="494" y="528" class="body" text-anchor="start">Same session / durable seq / viewer token</text>
-<text x="494" y="554" class="body" text-anchor="start">Explicit PCM gaps and caption interruption</text>
-<text x="494" y="580" class="body" text-anchor="start">Git + model + prompt + config hashes</text>
-<text x="494" y="606" class="body" text-anchor="start">No automatic in-flight ASR reconstruction</text>
-<path d="M690 348V465" class="edge"/>
-<rect x="999" y="465" width="357" height="170" rx="14" fill="#fff5e9" stroke="#e1aa68" stroke-width="1.5"/>
-<text x="1019" y="498" class="head" text-anchor="start">Optional Context Pack</text>
-<text x="1019" y="528" class="body" text-anchor="start">Export + readiness implemented</text>
-<text x="1019" y="554" class="body" text-anchor="start">Human identity / review gates</text>
-<text x="1019" y="580" class="body" text-anchor="start">Capability ceiling; fail down</text>
-<text x="1019" y="606" class="body" text-anchor="start">No machine Chinese injection</text>
-<path d="M1177 465V435H984V250H909" class="edge dash"/>
-<rect x="44" y="733" width="340" height="140" rx="14" fill="#eaf8f1" stroke="#70b897" stroke-width="1.5"/>
-<text x="64" y="766" class="head" text-anchor="start">LAN viewer · 同网退路</text>
-<text x="64" y="796" class="body" text-anchor="start">Read-only :8780 / SSE</text>
-<text x="64" y="822" class="body" text-anchor="start">Random session token</text>
-<text x="64" y="848" class="body" text-anchor="start">Portrait + landscape fitting</text>
-<rect x="474" y="733" width="435" height="140" rx="14" fill="#edf4ff" stroke="#86abe6" stroke-width="1.5"/>
-<text x="494" y="766" class="head" text-anchor="start">Outbound publisher · 出站发布</text>
-<text x="494" y="796" class="body" text-anchor="start">Bounded latest-snapshot queue (32)</text>
-<text x="494" y="822" class="body" text-anchor="start">Nonblocking local caption path</text>
-<text x="494" y="848" class="body" text-anchor="start">Best effort; no durable outbox</text>
-<rect x="999" y="733" width="357" height="140" rx="14" fill="#eaf8f1" stroke="#70b897" stroke-width="1.5"/>
-<text x="1019" y="766" class="head" text-anchor="start">Firebase public viewer</text>
-<text x="1019" y="796" class="body" text-anchor="start">HTTPS Hosting + Realtime DB</text>
-<text x="1019" y="822" class="body" text-anchor="start">Read-only captions / reconnect</text>
-<text x="1019" y="848" class="body" text-anchor="start">No audio or control endpoint</text>
-<path d="M474 599H424V695H214V733" class="edge"/>
-<text x="322" y="685" class="note" text-anchor="middle">LAN projection</text>
-<path d="M690 635V733" class="edge"/>
-<text x="778" y="693" class="note" text-anchor="middle">caption snapshots</text>
-<path d="M909 801H999" class="edge"/>
-<text x="954" y="784" class="note" text-anchor="middle">HTTPS</text>
-<text x="44" y="981" class="note" text-anchor="start">Whisper is a startup-selected alternative, not live automatic failover. Public publishing never replaces the local audio path.</text>
-<text x="44" y="1006" class="note" text-anchor="start">Code baseline: main beeda82 · browser replay is verified; venue audio, physical phones, human quality and memory bounds remain gates.</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1710" viewBox="0 0 1600 1710" role="img" aria-labelledby="title desc">
+<title id="title">本地推理与只读分发</title><desc id="desc">浏览器经网关访问模型；录音独立，实验分支仅允许本机使用 私有音频与控制接口不对公网开放；公网分发是有界尽力发送，不是持久发件箱，发布后仍须核验。 模型失败仍保留录音；重连会记录缺口，不保证字幕无损。实验未通过神学及现场门，不能升级默认。</desc>
+<style>text{font-family:"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;} text{font-variant-ligatures:none}</style>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M1 1 L7 4 L1 7" fill="none" stroke="context-stroke" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect x="0" y="0" width="1600" height="1710" rx="0" fill="#F5F4EF" stroke="none" />
+<rect x="64" y="57" width="44" height="5" rx="2" fill="#267D72" stroke="none" />
+<text x="124" y="69" font-size="17" font-weight="600" fill="#64787A" text-anchor="start" letter-spacing="2">LOCAL LIVE ARCHITECTURE</text>
+<text x="64" y="127" font-size="44" font-weight="650" fill="#19343D" text-anchor="start" >本地推理与只读分发</text>
+<text x="64" y="172" font-size="22" font-weight="400" fill="#60737A" text-anchor="start" >浏览器经网关访问模型；录音独立，实验分支仅允许本机使用</text>
+<text x="1536" y="69" font-size="18" font-weight="500" fill="#82918F" text-anchor="end" >07 / 11</text>
+<path d="M64 197H1536" stroke="#D8DEDA" stroke-width="1.3"/>
+<path data-edge="browser:gateway" d="M775 485 L775 595" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<rect x="605.72" y="548" width="148.56" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="680" y="570" font-size="17" font-weight="500" fill="#648A86" text-anchor="middle" >双路音频 / 控制</text>
+<path data-edge="gateway:browser" d="M825 595 L825 485" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<rect x="872.72" y="548" width="114.56" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="930" y="570" font-size="17" font-weight="500" fill="#648A86" text-anchor="middle" >状态 / 恢复</text>
+<path data-edge="gateway:asr" d="M590 680 L500 680" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<rect x="519.0" y="644" width="52.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="545" y="666" font-size="17" font-weight="500" fill="#648A86" text-anchor="middle" >音频</text>
+<path data-edge="asr:gateway" d="M500 745 L590 745" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<rect x="519.0" y="708" width="52.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="545" y="730" font-size="17" font-weight="500" fill="#648A86" text-anchor="middle" >定稿</text>
+<path data-edge="gateway:default" d="M1010 745 L1100 745" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<rect x="1029.0" y="708" width="52.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="1055" y="730" font-size="17" font-weight="500" fill="#648A86" text-anchor="middle" >英文</text>
+<path data-edge="default:gateway" d="M1100 795 L1010 795" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<rect x="1029.0" y="760" width="52.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="1055" y="782" font-size="17" font-weight="500" fill="#648A86" text-anchor="middle" >中文</text>
+<path data-edge="gateway:experiment" d="M1010 645 L1040 645 L1040 530 L1310 530 L1310 485" fill="none" stroke="#817397" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<rect x="1148.5" y="503" width="103.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="1200" y="525" font-size="17" font-weight="500" fill="#817397" text-anchor="middle" >开始前选择</text>
+<path data-edge="experiment:gateway" d="M1100 370 L1060 370 L1060 705 L1010 705" fill="none" stroke="#817397" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<rect x="1227.22" y="548" width="165.56" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="1310" y="570" font-size="17" font-weight="500" fill="#817397" text-anchor="middle" >实验返回 · 仅本机</text>
+<path data-edge="gateway:disk" d="M590 830 L545 830 L545 1060 L500 1060" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<rect x="493.5" y="913.0" width="103.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="545.0" y="935.0" font-size="17" font-weight="500" fill="#648A86" text-anchor="middle" >独立持久化</text>
+<path data-edge="pack:gateway" d="M290 485 L290 545 L545 545 L545 850 L590 850" fill="none" stroke="#817397" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<rect x="300.2" y="518" width="99.60000000000001" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="350" y="540" font-size="17" font-weight="500" fill="#817397" text-anchor="middle" >许可 Pack</text>
+<path data-edge="gateway:local" d="M800.0 865 L800.0 945" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="gateway:lan" d="M1010 810 L1060 810 L1060 1060 L1100 1060" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<rect x="1138.5" y="858" width="103.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="1190" y="880" font-size="17" font-weight="500" fill="#648A86" text-anchor="middle" >仅默认路径</text>
+<path data-edge="gateway:public" d="M1010 835 L1040 835 L1040 1410 L1100 1410" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<rect x="1138.5" y="1198" width="103.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="1190" y="1220" font-size="17" font-weight="500" fill="#648A86" text-anchor="middle" >仅默认路径</text>
+<g id="node-browser" data-node="browser">
+<rect x="590" y="259" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="590" y="255" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="591" y="273" width="4" height="194" rx="2" fill="#46799B" stroke="none" />
+<rect x="614" y="276" width="35" height="28" rx="8" fill="#EAF1F6" stroke="none" />
+<text x="631.5" y="296" font-size="16" font-weight="700" fill="#46799B" text-anchor="middle" data-box="614,276,35,28" >01</text>
+<text x="663" y="296" font-size="15" font-weight="600" fill="#46799B" text-anchor="start" data-box="658,273,332,35" >输入 / INPUT</text>
+<text x="614" y="337" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="610,310,380,162" >操作浏览器与双路音频</text>
+<text x="614" y="377" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,310,380,162" >录音块与实时音频</text>
+<text x="614" y="406" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,310,380,162" >浏览器不直连模型</text>
+</g>
+<g id="node-gateway" data-node="gateway">
+<rect x="590" y="599" width="420" height="270" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="590" y="595" width="420" height="270" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="591" y="613" width="4" height="234" rx="2" fill="#267D72" stroke="none" />
+<rect x="614" y="616" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="631.5" y="636" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="614,616,35,28" >02</text>
+<text x="663" y="636" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="658,613,332,35" >执行 / PROCESS</text>
+<text x="614" y="677" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="610,650,380,202" >网关控制与队列</text>
+<text x="614" y="717" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,650,380,202" >统一推理、录音与分发</text>
+<text x="614" y="746" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,650,380,202" >会话开始前选择并锁定模型</text>
+<text x="614" y="775" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,650,380,202" >控制及录音接口不公开</text>
+</g>
+<g id="node-asr" data-node="asr">
+<rect x="80" y="599" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="80" y="595" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="81" y="613" width="4" height="194" rx="2" fill="#267D72" stroke="none" />
+<rect x="104" y="616" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="121.5" y="636" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="104,616,35,28" >03</text>
+<text x="153" y="636" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="148,613,332,35" >执行 / PROCESS</text>
+<text x="104" y="677" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="100,650,380,162" >本地英文转写</text>
+<text x="104" y="717" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,650,380,162" >Qwen3-ASR 0.6B 8-bit</text>
+<text x="104" y="746" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,650,380,162" >MLX</text>
+<text x="104" y="775" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,650,380,162" >保留不可改写英文定稿</text>
+</g>
+<g id="node-default" data-node="default">
+<rect x="1100" y="599" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="1100" y="595" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="1101" y="613" width="4" height="194" rx="2" fill="#267D72" stroke="none" />
+<rect x="1124" y="616" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="1141.5" y="636" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="1124,616,35,28" >04</text>
+<text x="1173" y="636" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="1168,613,332,35" >执行 / PROCESS</text>
+<text x="1124" y="677" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1120,650,380,162" >默认中文翻译</text>
+<text x="1124" y="717" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,650,380,162" >MiLMMT 4B Q8</text>
+<text x="1124" y="746" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,650,380,162" >Ollama / A0 none</text>
+<text x="1124" y="775" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,650,380,162" >会话中不自动切换模型</text>
+</g>
+<g id="node-experiment" data-node="experiment">
+<rect x="1100" y="259" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="1100" y="255" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="7 5"/>
+<rect x="1101" y="273" width="4" height="194" rx="2" fill="#A25B50" stroke="none" />
+<rect x="1124" y="276" width="35" height="28" rx="8" fill="#F6ECE8" stroke="none" />
+<text x="1141.5" y="296" font-size="16" font-weight="700" fill="#A25B50" text-anchor="middle" data-box="1124,276,35,28" >05</text>
+<text x="1173" y="296" font-size="15" font-weight="600" fill="#A25B50" text-anchor="start" data-box="1168,273,332,35" >实验 / NOT VALIDATED</text>
+<text x="1124" y="337" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1120,310,380,162" >隔离的本机实验</text>
+<text x="1124" y="377" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,310,380,162" >v4.1 Q5 / MLX</text>
+<text x="1124" y="406" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,310,380,162" >禁止局域网及公网分享</text>
+<text x="1124" y="435" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,310,380,162" >禁止周六包，质量门未过</text>
+</g>
+<g id="node-disk" data-node="disk">
+<rect x="80" y="949" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="80" y="945" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="81" y="963" width="4" height="194" rx="2" fill="#6D7980" stroke="none" />
+<rect x="104" y="966" width="35" height="28" rx="8" fill="#EDF0F0" stroke="none" />
+<text x="121.5" y="986" font-size="16" font-weight="700" fill="#6D7980" text-anchor="middle" data-box="104,966,35,28" >06</text>
+<text x="153" y="986" font-size="15" font-weight="600" fill="#6D7980" text-anchor="start" data-box="148,963,332,35" >记录 / EVIDENCE</text>
+<text x="104" y="1027" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="100,1000,380,162" >独立磁盘录音与事件</text>
+<text x="104" y="1067" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,1000,380,162" >恢复沿用会话与序号</text>
+<text x="104" y="1096" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,1000,380,162" >保留音频缺口与未决转写</text>
+<text x="104" y="1125" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,1000,380,162" >最新连接排空后才保存</text>
+</g>
+<g id="node-pack" data-node="pack">
+<rect x="80" y="259" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="80" y="255" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="81" y="273" width="4" height="194" rx="2" fill="#AA7930" stroke="none" />
+<rect x="104" y="276" width="35" height="28" rx="8" fill="#FAF2E5" stroke="none" />
+<text x="121.5" y="296" font-size="16" font-weight="700" fill="#AA7930" text-anchor="middle" data-box="104,276,35,28" >07</text>
+<text x="153" y="296" font-size="15" font-weight="600" fill="#AA7930" text-anchor="start" data-box="148,273,332,35" >门槛 / GATE</text>
+<text x="104" y="337" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="100,310,380,162" >可选已验证上下文包</text>
+<text x="104" y="377" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,310,380,162" >独立人工同篇及内容审核</text>
+<text x="104" y="406" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,310,380,162" >周次、哈希及有效期预检</text>
+<text x="104" y="435" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,310,380,162" >仅默认分支可按能力启用</text>
+</g>
+<g id="node-local" data-node="local">
+<rect x="590" y="949" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="590" y="945" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="591" y="963" width="4" height="194" rx="2" fill="#267D72" stroke="none" />
+<rect x="614" y="966" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="631.5" y="986" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="614,966,35,28" >08</text>
+<text x="663" y="986" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="658,963,332,35" >交付 / OUTPUT</text>
+<text x="614" y="1027" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="610,1000,380,162" >本机双语呈现</text>
+<text x="614" y="1067" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,1000,380,162" >默认与实验各走选定分支</text>
+<text x="614" y="1096" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,1000,380,162" >显示连接与推理状态</text>
+</g>
+<g id="node-lan" data-node="lan">
+<rect x="1100" y="949" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="1100" y="945" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="1101" y="963" width="4" height="194" rx="2" fill="#267D72" stroke="none" />
+<rect x="1124" y="966" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="1141.5" y="986" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="1124,966,35,28" >09</text>
+<text x="1173" y="986" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="1168,963,332,35" >交付 / OUTPUT</text>
+<text x="1124" y="1027" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1120,1000,380,162" >局域网只读视图</text>
+<text x="1124" y="1067" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,1000,380,162" >仅默认分支允许</text>
+<text x="1124" y="1096" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,1000,380,162" >分享后核验设备可读性</text>
+</g>
+<g id="node-public" data-node="public">
+<rect x="1100" y="1299" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="1100" y="1295" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="1101" y="1313" width="4" height="194" rx="2" fill="#267D72" stroke="none" />
+<rect x="1124" y="1316" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="1141.5" y="1336" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="1124,1316,35,28" >10</text>
+<text x="1173" y="1336" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="1168,1313,332,35" >交付 / OUTPUT</text>
+<text x="1124" y="1377" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1120,1350,380,162" >出站公开字幕分发</text>
+<text x="1124" y="1417" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,1350,380,162" >Firebase public viewer</text>
+<text x="1124" y="1446" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,1350,380,162" >仅默认分支；有界尽力发送</text>
+<text x="1124" y="1475" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,1350,380,162" >失败不阻塞本地或录音</text>
+</g>
+<rect x="64" y="1581" width="1472" height="78" rx="16" fill="#E9EEE8" stroke="none" />
+<text x="84" y="1610" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >私有音频与控制接口不对公网开放；公网分发是有界尽力发送，不是持久发件箱，发布后仍须核验。</text>
+<text x="84" y="1639" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >模型失败仍保留录音；重连会记录缺口，不保证字幕无损。实验未通过神学及现场门，不能升级默认。</text>
+<text x="64" y="1688" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="start" >内容校准 2026-09-11 · 设计参考 GPT Image 2.5 Sunburst · 原生可编辑 SVG</text>
+<text x="1536" y="1688" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="end" >实线：主路径   虚线：条件 / 实验 / 历史</text>
 </svg>
