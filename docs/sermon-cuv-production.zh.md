@@ -91,6 +91,26 @@
 
 新 job 仍需自己的配音、逐段回听、时间预算、同步装配与发布证据。旧 PDF 不会由此脚本自动更新；新中文 PDF、字幕、同步音轨、完整视频时间轴下载、指纹音轨绑定和反馈目录须在后续明确重建。保留旧版本用于恢复，页面来源身份及用户确认窗口不变时可继续复用其有效来源批准。
 
+## 实测超时后的旁白修订
+
+仅在上一版完整合成与正式 timing 报告齐全后使用；字数预警、局部 WAV 观察不能代替完整证据。
+
+```bash
+.venv/bin/python scripts/sermon_cuv_translation.py repair-timing \
+  --prior-translation artifacts/cuv-scripture/prior-translation \
+  --parent-job /absolute/path/to/current-dubbing/job.json \
+  --timing-report /absolute/path/to/current-dubbing/synchronization/report.json \
+  --out artifacts/cuv-scripture/new-timing-translation
+```
+
+可用 `--batch-size` 设置每批失败段落数，默认 6。程序首先离线验证上一译文的完整证据链，确认当前 job 精确派生自该审校收据，全部中英文、来源与音色身份一致。随后核验每个单元 WAV 的哈希、真实帧数、生成收据、完整合成 WAV、cue 时间、声学锚点与已有锚点/放置审校，并重算全部时长预算。只处理 `natural_chinese_exceeds_video_slot`；无实际超时、非正时槽、缺失/待审核锚点、缺报告或证据不一致均在模型调用前阻断。
+
+这是显式 `sermon-cuv-narration-timing-revision-v1` 操作，保留原 `run`/`--reuse-from` 身份约束。它继承原全部引用的精确英文范围、和合本字句、opaque token、引用审核和旁白疑点。只有实测失败块进入旁白精练与另一次独立审校；含引用的失败块也不能自由改写经文。输出前检查 token 顺序与完整性、英文及全部经文锁不变、最终审校全部通过、旁白确已缩短。未修改块保留原中文和真实旧审校记录，报告明确区分 `revisedBlockIds` 与 `inheritedReviewBlockIds`，不把继承证据说成新模型调用。目标留约 4%、最多 1 秒余量；模型估计不等于实测合时，不能因目标时长删去意思或经文。
+
+新目录输出完整 `blocks.json`、`report.json`、`spoken-review.json`；审校收据绑定当前合成 job，保持 `humanApproval=false`，`timingAcceptance=pending_new_synthesis_and_measurement`。原译文、报告、缓存和人工状态不变。使用相同参数可恢复，`validate --out` 离线重放新旧证据链。若再次实测超时，可把本次译文作为下一轮 `--prior-translation`，并提供它所派生的新 job 及新实测报告。
+
+之后用现有 `apply_spoken_review.py --parent CURRENT --out NEW --review NEW_TRANSLATION/spoken-review.json` 派生下一版。它按 block ID、显示文本、实际发音文本和间隔精确匹配单元，即使全局 unit ID 位移也可复用未改 WAV；已有机器回听需同时匹配音频哈希与 expected 文本才可复用。其余单元重新生成和回听。新 job 仍要重新计算 timing、同步装配并重建关联 PDF/字幕/下载/发布证据；修订报告本身不授予合时或实际听感验收。
+
 ## 开发验证
 
 ```bash

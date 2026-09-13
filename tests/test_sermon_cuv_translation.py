@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+import wave
 from unittest import mock
 
 from scripts import sermon_cuv_translation as mod
@@ -296,6 +297,187 @@ class CuvTranslationTests(unittest.TestCase):
                     mod.draft_row(row, [])
                 with self.assertRaises(ValueError):
                     mod.reviewed_row(row, [], checks=True)
+
+    def make_timing_source(self):
+        source = self.root / "source.wav"
+        source.write_bytes(b"frozen source fixture")
+        old = mod.read(self.parent)
+        old.update(inputs={"sourceAudio": mod.bind(source)}, voice={"checkpointSha256": "fixed-checkpoint"},
+                   sourceStartSeconds=0, sourceDurationSeconds=20)
+        self.write(self.parent, old)
+        self.mapping["parentJobSha256"] = mod.file_hash(self.parent)
+        self.write(self.map, self.mapping)
+        self.execute()
+        return self.make_measured_parent(self.out, self.root / "rendered")
+
+    def make_measured_parent(self, prior, work):
+        old_manifest = mod.read(prior / "cuv-manifest.json")
+        old_parent = mod.read(old_manifest["parentJob"]["path"])
+        blocks = mod.read(prior / "blocks.json")
+        units = [{"id": i, "blockId": b["id"], "text": b["zh"], "gapAfterSeconds": .45}
+                 for i, b in enumerate(blocks)]
+        job = {**old_parent, "blocks": [{**b, "zh": new["zh"]} for b, new in zip(old_parent["blocks"], blocks)],
+               "units": units, "inputs": {**old_parent["inputs"], "spokenScriptReview": mod.bind(prior / "spoken-review.json")},
+               "revisionOf": {"path": str(Path(old_manifest["parentJob"]["path"]).parent),
+                              "jobSha256": old_manifest["parentJob"]["sha256"]}}
+        self.write(work / "job.json", job)
+        job_hash = mod.file_hash(work / "job.json")
+        def wav(path, frames):
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with wave.open(str(path), "wb") as f:
+                f.setparams((1, 2, 24000, frames, "NONE", "not compressed"))
+                f.writeframes(b"\0\0" * frames)
+        cues, cursor = [], 0
+        for index, unit in enumerate(units):
+            frames = 96000 if index == 0 else 24000
+            path = work / f"render/unit-{index:04d}.wav"
+            wav(path, frames)
+            self.write(path.with_suffix(".json"), {"unit": unit, "sha256": mod.file_hash(path),
+                "identity": {"jobSha256": job_hash, "checkpointSha256": "fixed-checkpoint"}, "durationSeconds": frames / 24000})
+            cues.append({"unitId": index, "blockId": unit["blockId"], "text": unit["text"],
+                         "start": cursor / 24000, "end": (cursor + frames) / 24000})
+            cursor += frames + (10800 if index + 1 < len(units) else 0)
+        wav(work / "render/chinese.raw.wav", cursor)
+        self.write(work / "render/report.json", {"status": "complete_candidate_render", "jobSha256": job_hash,
+            "checkpointSha256": "fixed-checkpoint", "sha256": mod.file_hash(work / "render/chinese.raw.wav"),
+            "durationSeconds": cursor / 24000, "cues": cues})
+        anchors = [{"blockId": 0, "start": 0, "end": 1, "issues": []},
+                   {"blockId": 1, "start": 3, "end": 5, "issues": []}]
+        self.write(work / "source-alignment/report.json", {"jobSha256": job_hash,
+            "sourceAudioSha256": job["inputs"]["sourceAudio"]["sha256"], "timeOrigin": "approved_sermon_clip_start",
+            "fullVideoOffsetSeconds": 0, "blocks": anchors})
+        import sys
+        sys.path.insert(0, str(mod.ROOT / "experiments/sermon-dubbing-poc"))
+        from check_weekly_timing import budgets
+        rows, failures = budgets(job["blocks"], anchors, cues, 20)
+        self.write(work / "synchronization/report.json", {"schemaVersion": "sermon-video-sync-budget-v1",
+            "jobSha256": job_hash, "alignmentSha256": mod.file_hash(work / "source-alignment/report.json"),
+            "anchorReviewSha256": None, "anchorReviewType": "unreviewed_machine_anchors", "sourceVideoOffsetSeconds": 0,
+            "durationSeconds": 20, "blocks": rows, "failures": failures, "status": "needs_timing_review"})
+        return work
+
+    def timing_chat(self, key, payload):
+        instruction = payload["messages"][0]["content"]
+        self.assertTrue(mod.COMPACT_NARRATION in instruction or mod.REVIEW in instruction)
+        data = json.loads(payload["messages"][1]["content"])
+        rows = []
+        for target in data["targets"]:
+            row = {"id": target["id"], "zhTemplate": target["currentTemplate"][1:],
+                   "evidence": ["Narration shortened, all source meaning and CUV tokens preserved"],
+                   "uncertainty": [], "issues": []}
+            if mod.REVIEW in instruction:
+                row.update(checks={k: "pass" for k in mod.CHECKS}, quoteCoverage="pass")
+            rows.append(row)
+        return self.response({"issues": [], "blocks": rows})
+
+    def timing_execute(self, prior, work, out):
+        with mock.patch.dict(mod.os.environ, {"OPENAI_API_KEY": "test-only"}), \
+             mock.patch.object(mod, "chat_json", side_effect=self.timing_chat) as call:
+            result = mod.repair_timing(prior, work / "job.json", work / "synchronization/report.json", out)
+        return result, call.call_count
+
+    def test_timing_revision_reuses_locks_and_reviews_without_replaying_paid_stages(self):
+        work = self.make_timing_source()
+        prior = self.out
+        original = {p: p.read_bytes() for p in prior.rglob("*.json")}
+        revised = self.root / "timing-revision"
+        result, calls = self.timing_execute(prior, work, revised)
+        self.assertEqual(2, calls)
+        self.assertEqual("passed", result["status"])
+        old_blocks, new_blocks = mod.read(prior / "blocks.json"), mod.read(revised / "blocks.json")
+        self.assertEqual(old_blocks[1], new_blocks[1])
+        self.assertEqual(old_blocks[0]["quotes"], new_blocks[0]["quotes"])
+        self.assertEqual(old_blocks[0]["en"], new_blocks[0]["en"])
+        review = mod.read(revised / "spoken-review.json")
+        self.assertEqual(mod.file_hash(work / "job.json"), review["parentJobSha256"])
+        self.assertFalse(review["humanApproval"])
+        report = mod.read(revised / "report.json")
+        self.assertEqual([0], report["timingRevision"]["revisedBlockIds"])
+        self.assertEqual([1], report["timingRevision"]["inheritedReviewBlockIds"])
+        self.assertEqual("pending_new_synthesis_and_measurement", report["timingRevision"]["timingAcceptance"])
+        self.assertTrue(all(p.read_bytes() == value for p, value in original.items()))
+        self.assertEqual(0, self.timing_execute(prior, work, revised)[1])
+        with mock.patch.object(mod, "chat_json", side_effect=AssertionError("offline")):
+            mod.validate_spoken_review(work, revised / "spoken-review.json")
+        next_work = self.make_measured_parent(revised, self.root / "rendered-again")
+        self.assertEqual(2, self.timing_execute(revised, next_work, self.root / "revision-again")[1])
+
+    def test_timing_revision_rejects_missing_render_and_tampered_measurement(self):
+        work = self.make_timing_source()
+        report = work / "synchronization/report.json"
+        value = mod.read(report)
+        value["blocks"][0]["availableSeconds"] += 1
+        self.write(report, value)
+        with mock.patch.object(mod, "chat_json", side_effect=AssertionError("No paid work")):
+            with self.assertRaisesRegex(ValueError, "Timing report differs"):
+                mod.repair_timing(self.out, work / "job.json", report, self.root / "bad-revision")
+            (work / "render/report.json").unlink()
+            with self.assertRaises(OSError):
+                mod.repair_timing(self.out, work / "job.json", report, self.root / "missing-revision")
+        self.assertFalse((self.root / "bad-revision").exists())
+
+    def test_timing_revision_rejects_unit_audio_tampering(self):
+        work = self.make_timing_source()
+        with (work / "render/unit-0000.wav").open("ab") as f:
+            f.write(b"changed")
+        with mock.patch.object(mod, "chat_json", side_effect=AssertionError("No paid work")):
+            with self.assertRaisesRegex(ValueError, "unit receipt changed"):
+                mod.repair_timing(self.out, work / "job.json", work / "synchronization/report.json", self.root / "bad")
+
+    def test_timing_revision_rejects_changed_tokens_and_failed_final_review(self):
+        work = self.make_timing_source()
+        for kind in ("tokens", "review"):
+            def invalid(key, payload):
+                response = self.timing_chat(key, payload)
+                result = json.loads(response["choices"][0]["message"]["content"])
+                if kind == "tokens":
+                    result["blocks"][0]["zhTemplate"] = "删除经文是不允许的。"
+                elif mod.REVIEW in payload["messages"][0]["content"]:
+                    result["blocks"][0]["checks"]["completeMeaning"] = "fail"
+                return self.response(result)
+            with self.subTest(kind=kind), mock.patch.dict(mod.os.environ, {"OPENAI_API_KEY": "test-only"}), \
+                 mock.patch.object(mod, "chat_json", side_effect=invalid):
+                target = self.root / ("bad-" + kind)
+                with self.assertRaises(ValueError):
+                    mod.repair_timing(self.out, work / "job.json", work / "synchronization/report.json", target)
+                self.assertFalse((target / "spoken-review.json").exists())
+
+    def test_timing_revision_rejects_anchor_failures_and_already_fitting_audio(self):
+        work = self.make_timing_source()
+        from check_weekly_timing import budgets
+        for kind in ("uncertain-anchor", "already-fits"):
+            work = self.make_measured_parent(self.out, self.root / kind)
+            alignment_path = work / "source-alignment/report.json"
+            alignment = mod.read(alignment_path)
+            if kind == "uncertain-anchor":
+                alignment["blocks"][0]["issues"] = ["Acoustic boundary needs review"]
+            else:
+                alignment["blocks"][1]["start"] = 6
+                alignment["blocks"][1]["end"] = 7
+            self.write(alignment_path, alignment)
+            timing_path = work / "synchronization/report.json"
+            timing = mod.read(timing_path)
+            rows, failures = budgets(mod.read(work / "job.json")["blocks"], alignment["blocks"],
+                                     mod.read(work / "render/report.json")["cues"], 20)
+            timing.update(alignmentSha256=mod.file_hash(alignment_path), blocks=rows, failures=failures,
+                          status="needs_timing_review" if failures else "natural_timing_fits")
+            self.write(timing_path, timing)
+            with self.subTest(kind=kind), mock.patch.object(mod, "chat_json", side_effect=AssertionError("No paid work")):
+                with self.assertRaisesRegex(ValueError, "requires measured overflows"):
+                    mod.repair_timing(self.out, work / "job.json", timing_path, self.root / (kind + "-revision"))
+
+    def test_timing_revision_unchanged_model_text_is_not_a_repair(self):
+        work = self.make_timing_source()
+        def unchanged(key, payload):
+            response = self.timing_chat(key, payload)
+            data = json.loads(payload["messages"][1]["content"])
+            result = json.loads(response["choices"][0]["message"]["content"])
+            result["blocks"][0]["zhTemplate"] = data["targets"][0]["currentTemplate"]
+            return self.response(result)
+        with mock.patch.dict(mod.os.environ, {"OPENAI_API_KEY": "test-only"}), \
+             mock.patch.object(mod, "chat_json", side_effect=unchanged):
+            with self.assertRaisesRegex(ValueError, "was not revised"):
+                mod.repair_timing(self.out, work / "job.json", work / "synchronization/report.json", self.root / "unchanged")
 
     def reuse_run(self, **kwargs):
         old = self.out
