@@ -23,6 +23,7 @@ Liquid Glass 属于导航与操作层；大量文字的控制优先使用 `.regu
 - 系统控件随减少透明度与减少动态效果等设置调整；自定义播放器也要响应这些设置，必要时采用实底并减少形变或过渡动画。
 - Dynamic Type 增大后，字幕继续增长；时间与状态、按钮标签可调整为上下排列，避免拥挤或遮挡。
 - 小屏、横屏和窗口缩放时，保留播放与微调操作，正文继续可滚动。紧凑高度使用压缩标题与横向控制栏，为当前字幕留出首屏空间；sheet 的内容与底部控制仍需在真机复核。
+- 宽窗口左栏默认大纲，可切换全文；右栏保持当前字幕和主要播放操作。窄窗口与无障碍大字号采用单栏。内容分工、状态连续性和 Duo 专用验证边界见 [自适应布局记录](DUO-ADAPTATION.zh.md)。
 
 上述方向依据 Apple 对文字缩放、布局适应与系统外观设置的要求；具体排版仍需按实际设备尺寸检查。[Typography](https://developer.apple.com/design/human-interface-guidelines/typography) · [Layout](https://developer.apple.com/design/human-interface-guidelines/layout) · [Sheets](https://developer.apple.com/design/human-interface-guidelines/sheets)
 

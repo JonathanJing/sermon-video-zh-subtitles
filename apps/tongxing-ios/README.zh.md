@@ -8,6 +8,8 @@
 
 界面按用户选定的 **iOS 27 设计语言** 实施：系统导航与 Sheet、26 pt 起的动态字幕、单层 Liquid Glass 悬浮播放栏、深色语义配色，以及窄屏、横屏和大字布局。具体规则与 Apple 官方来源见 [设计约定](DESIGN.zh.md)。
 
+单栏与宽窗口双栏的内容分工、播放状态连续性以及 Duo 专用 SDK 的验证边界见 [自适应布局记录](DUO-ADAPTATION.zh.md)。
+
 ## 打开与运行
 
 直接打开 [Tongxing.xcodeproj](Tongxing.xcodeproj)。工程文件已保存，无需先安装依赖管理器；两个 Swift package 都在本地，没有第三方 SDK。
