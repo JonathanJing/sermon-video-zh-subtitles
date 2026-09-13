@@ -1,0 +1,7 @@
+{
+  "projectId": "ai-for-god-caption-dev",
+  "databaseId": "sermon-dubbing-feedback",
+  "serviceAccount": "sermon-feedback-runtime@ai-for-god-caption-dev.iam.gserviceaccount.com",
+  "origins": ["https://ai-for-god-sermon-audio.web.app", "https://ai-for-god-sermon-audio.firebaseapp.com"],
+  "limits": { "mintsPerMinute": 100, "mintsPerDay": 3000, "sessionRequestsPerMinute": 30 }
+}

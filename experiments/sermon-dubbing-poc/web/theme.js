@@ -6,7 +6,7 @@
   function apply(theme) {
     const dark = theme !== "light";
     root.dataset.theme = dark ? "dark" : "light";
-    document.querySelector('meta[name="theme-color"]').content = dark ? "#111819" : "#f5f7f3";
+    document.querySelector('meta[name="theme-color"]').content = dark ? "#141b1a" : "#f5f3eb";
     const button = document.getElementById("theme-toggle");
     if (button) {
       const action = dark ? "切换到浅色模式" : "切换到深色模式";
