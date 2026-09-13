@@ -1,5 +1,7 @@
 # 同行 App 发布材料包
 
+2026-09-13 最新：**TestFlight 1.0.0 (17)** 已完成上传，Xcode Cloud Build/Archive 均成功，中英文测试说明已保存；具体源码与分发边界见 [1.0.0 发布回执](testflight-1.0.0-2026-09-13.zh.md)。主线同步与 69 项验证见 [Build 16 同步记录](testflight-build16-2026-09-13.zh.md)。下文 2026-09-07 的 Build 5 / App Review 状态是历史记录，不能作为当前审核结论。
+
 更新日期：2026-09-07。当前目标为 **0.1.0 (5)**。正式 Xcode Cloud build 5 已成功，Archive / App Store 导出 / Prepare Build 全部通过，ASC 已处理为 Ready to Submit，Binary State = Validated。**正式 App Review 已提交，当前 Waiting for Review**；审核后手动发布，尚未公开上线。本机未下载 Cloud Archive / IPA。build 4 的 beta Xcode 拒绝保留为历史。
 
 ## 当前材料
