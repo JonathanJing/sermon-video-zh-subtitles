@@ -131,7 +131,7 @@ class ReadingEditionTest(unittest.TestCase):
         self.assertEqual("pass", report["status"])
         self.assertEqual([], report["oralFillers"])
         self.assertEqual(
-            "sermon-reading-edition-quality-v3",
+            "sermon-reading-edition-quality-v4",
             report["qualityRuleVersion"],
         )
 

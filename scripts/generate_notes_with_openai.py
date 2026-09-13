@@ -23,6 +23,7 @@ if str(REPO_ROOT) not in sys.path:
 from backend.cloud import access_secret as cloud_access_secret
 from backend.cloud import upload_file_to_gcs
 from scripts import review_prompts
+from scripts import series_terminology
 from scripts.sermon_accounting import _finalize, accounting_session, stage, record_api_attempt, record_api_started, request_metadata
 from scripts.render_sermon_interpretation_pdf import render_interpretation_pdf
 
@@ -539,7 +540,7 @@ def build_openai_request(
                 "content": [
                     {
                         "type": "input_text",
-                        "text": review_prompts.NOTES_SYSTEM_PROMPT,
+                        "text": review_prompts.NOTES_SYSTEM_PROMPT + "\n" + series_terminology.PROMPT_INSTRUCTION,
                     }
                 ],
             },
@@ -577,6 +578,7 @@ def build_openai_request(
                             "fewer or zero is correct when exact citation is unavailable.\n"
                             "Required fields must be present. Use empty arrays, not invented filler, when evidence is absent.\n"
                             f"<sermon_title>{simulation.get('sermonTitle') or simulation.get('title') or ''}</sermon_title>\n"
+                            f"<series_terminology>{json.dumps(series_terminology.context(), ensure_ascii=False)}</series_terminology>\n"
                             f"<caption_slices>{json.dumps(slices, ensure_ascii=False)}</caption_slices>"
                         ),
                     }
@@ -750,6 +752,7 @@ def normalize_insights(
         "status": "ready",
         "generatedFrom": "openai-notes",
         "artifactType": "sermon_interpretation",
+        "seriesTerminology": series_terminology.context(),
         "provider": "openai",
         "model": model,
         "reasoningEffort": reasoning_effort,

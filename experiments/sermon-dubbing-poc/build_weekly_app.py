@@ -7,9 +7,13 @@ from datetime import datetime, timezone
 import json
 from pathlib import Path
 import shutil
+import sys
 
 from poc import ROOT, sha256, write_json
 from server import load_library
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from scripts.series_terminology import canonical_series
 
 HERE = Path(__file__).resolve().parent
 DEFAULT_COMPARISON = ROOT / "artifacts/sermon-dubbing/2026-09-05-authorized-voice-poc/listening-comparison"
@@ -85,7 +89,13 @@ def synchronized_candidate(work, job):
         "sourceNaturalWavSha256": assembled["sourceNaturalWavSha256"]}
 
 
-def weekly_job(work, public, preview, sync_preview=False):
+def series_title(title, series):
+    series = canonical_series(series)
+    suffix = f" · {series}" if series else ""
+    return title if not suffix or title.endswith(suffix) else title + suffix
+
+
+def weekly_job(work, public, preview, sync_preview=False, series=None):
     from weekly_dubbing import read, validate_frozen, validate_review
     if sync_preview and not preview:
         raise ValueError("--sync-preview requires --review-preview")
@@ -110,6 +120,9 @@ def weekly_job(work, public, preview, sync_preview=False):
         tracks = [public_track(synced_track, work / "synchronization", public)]
     else:
         tracks = [public_track(t, work / "audio", public) for t in library["tracks"]]
+    quality_input = job["inputs"].get("readingQuality")
+    terminology = read(Path(quality_input["path"])).get("seriesTerminology") if quality_input else None
+    selected_series = canonical_series(series if series is not None else job.get("series", ""), terminology)
     screening = work / "audio/asr-screening.json"
     machine_issues = sum(len(r["reviewCandidates"]) for r in read(screening)["results"]) if screening.exists() else None
     stages = [
@@ -119,8 +132,8 @@ def weekly_job(work, public, preview, sync_preview=False):
         {"label": "配音检查", "status": "review" if machine_issues is not None else "pending", "detail": f"机器标出 {machine_issues} 处待试听比对" if machine_issues is not None else "等待漏读、重复与发音检查"},
         {"label": "视频同步与人工试听", "status": "review" if sync_preview else "pending" if preview else "pass", "detail": "同步候选已装配；模型审核不能代替现场试听，仍待核对中文流畅度、原声相似度与同视频播放" if sync_preview else "逐段核对原视频，检查中文流畅度、原声相似度与同步"},
         {"label": "周日版本发布", "status": "pending" if preview else "pass", "detail": "本次为审核试听稿" if preview else "审核通过的本周中文配音"}]
-    week = {"id": job["week"], "date": job["week"], "sourceId": job["sourceId"], "sourceUrl": job["sourceUrl"], "title": job["title"], "speaker": job["speaker"],
-        "scripture": job["scripture"], "number": "".join(c for c in job["scripture"] if c.isdigit()), "series": "每周证道", "centralMessage": notes["centralMessageZh"], "summary": notes["summaryZh"],
+    week = {"id": job["week"], "date": job["week"], "sourceId": job["sourceId"], "sourceUrl": job["sourceUrl"], "title": series_title(job["title"], selected_series), "speaker": job["speaker"],
+        "scripture": job["scripture"], "number": "".join(c for c in job["scripture"] if c.isdigit()), "series": selected_series or "每周证道", "centralMessage": notes["centralMessageZh"], "summary": notes["summaryZh"],
         "outline": [{"title": p["title"], "points": p["points"], "sourceSliceIndexes": p.get("sourceSliceIndexes", [])} for p in notes["outlineZh"]],
         "scriptureRefs": notes.get("scriptureRefs", []), "questions": [p["question"] for p in notes.get("reflectionQuestionsZh", [])], "contentReview": "沿用周六审校阅读稿与 AI 整理大纲",
         "tracks": tracks, "audioStatus": "full_candidate" if preview else "full_reviewed", "audioNotice": "整篇中文已生成，正在审核。时间轴对应中文音频；现场视频同步尚未验收。" if preview else "本周中文配音已审核，可使用时间轴与微调跟上现场。",
@@ -131,7 +144,7 @@ def weekly_job(work, public, preview, sync_preview=False):
     return week
 
 
-def build(comparison, out, expansion=None, weekly_jobs=(), voice_bank=None, review_preview=False, sync_preview=False, include_history=False):
+def build(comparison, out, expansion=None, weekly_jobs=(), voice_bank=None, review_preview=False, sync_preview=False, include_history=False, series=None):
     weekly_jobs = tuple(weekly_jobs)
     if sync_preview and (not review_preview or not weekly_jobs):
         raise ValueError("--sync-preview requires --review-preview and at least one --weekly-job")
@@ -180,7 +193,7 @@ def build(comparison, out, expansion=None, weekly_jobs=(), voice_bank=None, revi
         weeks.append(week)
         sources.append({"week": week["id"], "path": str(notes_path.relative_to(ROOT)), "sha256": sha256(notes_path)})
     for work in weekly_jobs:
-        week = weekly_job(work, public, review_preview, sync_preview)
+        week = weekly_job(work, public, review_preview, sync_preview, series)
         weeks = [w for w in weeks if w["id"] != week["id"]] + [week]
         sources.append({"week": week["id"], "path": str(work / "job.json"), "sha256": sha256(work / "job.json")})
     weeks.sort(key=lambda w: w["date"], reverse=True)
@@ -218,8 +231,9 @@ if __name__ == "__main__":
     parser.add_argument("--voice-bank", type=Path)
     parser.add_argument("--review-preview", action="store_true", help="Publish clearly marked listening candidates, not Sunday-ready audio")
     parser.add_argument("--sync-preview", action="store_true", help="Use verified synchronized candidates; requires --review-preview and --weekly-job")
+    parser.add_argument("--series", help="Series name or ID from the shared terminology table")
     args = parser.parse_args()
     if args.sync_preview and (not args.review_preview or not args.weekly_job):
         parser.error("--sync-preview requires --review-preview and at least one --weekly-job")
     build(args.comparison.resolve(), args.out.resolve(), args.expansion.resolve() if args.expansion else None,
-        [p.resolve() for p in args.weekly_job], args.voice_bank.resolve() if args.voice_bank else None, args.review_preview, args.sync_preview, args.include_history)
+        [p.resolve() for p in args.weekly_job], args.voice_bank.resolve() if args.voice_bank else None, args.review_preview, args.sync_preview, args.include_history, args.series)

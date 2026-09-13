@@ -166,3 +166,7 @@ Report the outcome first, then include:
 - commit and remote-ref details when a commit or push was requested.
 
 Clearly distinguish verified facts, evidence-based inference, and unresolved work.
+
+## Series terminology
+
+Before producing or reviewing series pages, subtitles, reading text, outlines or dubbing, read [the shared series terminology table](docs/series-terminology.zh.md). Reuse its established translations and contextual checks. Automatically append verified new series to that table with source evidence, preserving existing entries and active runs.

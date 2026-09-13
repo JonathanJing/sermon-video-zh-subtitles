@@ -81,6 +81,14 @@ def prepare(run, voice_run, out, week, title, speaker, scripture, authorization)
     if not authorized_source(permission, source_id, sha256(paths["sourceAudio"]), "chinese_dubbing"):
         raise ValueError("An authorization receipt bound to this source clip is required")
     blocks, notes = read(paths["reading"]), read(paths["outline"])
+    from scripts.series_terminology import require_consistent
+    terminology = read(paths["readingQuality"]).get("seriesTerminology")
+    if terminology:
+        # New jobs check the exact registry used by editorial QA. Legacy jobs
+        # remain resumable and never gain a terminology review retroactively.
+        require_consistent(blocks, terminology)
+        if notes.get("seriesTerminology", {}).get("sha256") != terminology["sha256"]:
+            raise ValueError("Reading and outline series terminology differ; review a matching version before dubbing")
     if notes.get("status") != "ready" or notes.get("sermonDate") != week:
         raise ValueError("Companion outline is not for this week")
     training, voice_inputs = read(paths["voiceTraining"]), read(paths["voiceInputs"])

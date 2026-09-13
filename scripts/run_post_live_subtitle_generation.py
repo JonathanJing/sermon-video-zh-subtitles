@@ -24,6 +24,7 @@ if str(REPO_ROOT) not in sys.path:
 from backend.cloud import access_secret, read_gcs_bytes, upload_file_to_gcs  # noqa: E402
 from backend.observability import log_event, stable_hash, url_summary  # noqa: E402
 from scripts import live_source_monitor, post_live_run_status  # noqa: E402
+from scripts import series_terminology
 from scripts.sermon_accounting import accounting_session, stage as accounting_stage
 
 
@@ -36,7 +37,7 @@ DEFAULT_WORK_ROOT = Path("/tmp/sermon-post-live-subtitles")
 POST_LIVE_STATES = {"was_live"}
 READING_EDITION_DIRNAME = "reading-edition-v2"
 SERMON_INTERPRETATION_DIRNAME = "sermon-interpretation"
-INPUT_IDENTITY_SCHEMA_VERSION = 1
+INPUT_IDENTITY_SCHEMA_VERSION = 2
 
 
 def main() -> int:
@@ -166,7 +167,7 @@ def run_post_live_generation(
 ) -> dict[str, Any]:
     if args.plan_only or args.dry_run:
         return _run_post_live_generation(args, metadata_loader=metadata_loader, runner=runner)
-    with accounting_session(args.work_root / args.sunday / "accounting", "saturday_generation", {"sunday": args.sunday}) as accounting:
+    with series_terminology.pinned_catalog(args.work_root / args.sunday / "series-terminology.snapshot.json"), accounting_session(args.work_root / args.sunday / "accounting", "saturday_generation", {"sunday": args.sunday}) as accounting:
         report = _run_post_live_generation(args, metadata_loader=metadata_loader, runner=runner)
         report["accounting"] = accounting
         return report
@@ -1123,6 +1124,7 @@ def file_content_identity(path: Path | None) -> dict[str, Any] | None:
 def build_pipeline_input_identity(args: argparse.Namespace, audio_path: Path) -> dict[str, Any]:
     return {
         "schemaVersion": INPUT_IDENTITY_SCHEMA_VERSION,
+        "seriesTerminology": series_terminology.context(),
         "sourceAudio": file_content_identity(audio_path),
         "sermonWindow": {
             "startTime": args.start_time or "00:00:00",
@@ -1145,6 +1147,7 @@ def build_pipeline_input_identity(args: argparse.Namespace, audio_path: Path) ->
         "implementation": {
             "sermonPipeline": file_content_identity(SERMON_PIPELINE_SCRIPT),
             "reviewPrompts": file_content_identity(REVIEW_PROMPTS_SCRIPT),
+            "seriesTerminology": file_content_identity(Path(series_terminology.__file__)),
         },
     }
 
@@ -1157,6 +1160,7 @@ def build_reading_input_identity(
 ) -> dict[str, Any]:
     return {
         "schemaVersion": INPUT_IDENTITY_SCHEMA_VERSION,
+        "seriesTerminology": series_terminology.context(),
         "pipelineInputFingerprint": pipeline_input_fingerprint,
         "sourceArtifacts": {
             "englishCorrected": file_content_identity(pipeline_outdir / "segments_timed_en_corrected.json"),
@@ -1171,6 +1175,7 @@ def build_reading_input_identity(
         "layoutTargets": reading_layout_targets(args),
         "implementation": {
             "readingEdition": file_content_identity(READING_EDITION_SCRIPT),
+            "seriesTerminology": file_content_identity(Path(series_terminology.__file__)),
         },
     }
 

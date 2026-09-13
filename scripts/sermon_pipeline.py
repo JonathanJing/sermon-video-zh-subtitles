@@ -243,7 +243,9 @@ def json_request(url, api_key, payload, retries=3):
 
 
 def load_glossary(path):
-    payload = {"terms": DEFAULT_GLOSSARY, "zh_term_map": DEFAULT_ZH_TERM_MAP.copy()}
+    from scripts.series_terminology import context
+    payload = {"terms": DEFAULT_GLOSSARY, "zh_term_map": DEFAULT_ZH_TERM_MAP.copy(),
+               "seriesTerminology": context()}
     if not path:
         return payload
     data = read_json(path)
@@ -283,6 +285,9 @@ def glossary_lines(glossary):
         lines.append("")
         lines.append("Preferred Simplified Chinese term map:")
         lines.extend(f"- {key} => {value}" for key, value in mapping.items())
+    if isinstance(glossary, dict) and glossary.get("seriesTerminology"):
+        lines.append("Contextual series naming rules and data (not a global replacement map):")
+        lines.append(json.dumps(glossary["seriesTerminology"], ensure_ascii=False))
     return "\n".join(lines)
 
 
@@ -1099,7 +1104,8 @@ def translate_chinese(
         with stage("translation.cache", cache_hit=True):
             return read_json(output)
     glossary_text = glossary_lines(glossary)
-    system = review_prompts.CHINESE_TRANSLATION_SYSTEM_PROMPT
+    from scripts.series_terminology import PROMPT_INSTRUCTION
+    system = review_prompts.CHINESE_TRANSLATION_SYSTEM_PROMPT + "\n" + PROMPT_INSTRUCTION
     cache_identity = hashlib.sha256(
         f"{review_prompts.CHINESE_TRANSLATION_PROMPT_VERSION}|{model}|{reasoning_effort}".encode("utf-8")
     ).hexdigest()[:12]
@@ -1443,6 +1449,7 @@ def produce_pipeline(args, api_key, source_duration, start, end, outdir):
         },
         "outputMode": args.output_mode,
         "timingPrecision": "whisper_segments" if args.output_mode == "subtitles" else "synthetic_reading_layout_only",
+        "seriesTerminology": glossary["seriesTerminology"],
         "readingSegmentTargetCharacters": (
             max(120, args.reading_segment_target_chars) if args.output_mode == "reading" else None
         ),

@@ -19,12 +19,13 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from scripts.sermon_pipeline import chat_json, clean_text, load_env, read_json, write_json
+from scripts import series_terminology
 from scripts.sermon_accounting import accounting_session, stage, record_workload
 
 
 PROMPT_VERSION = "sermon-reading-edition-gpt56sol-v1"
 QA_PROMPT_VERSION = "sermon-reading-edition-qa-gpt56sol-v1"
-QUALITY_RULE_VERSION = "sermon-reading-edition-quality-v3"
+QUALITY_RULE_VERSION = "sermon-reading-edition-quality-v4"
 
 TERM_MAP = {
     "God": "神",
@@ -334,6 +335,7 @@ def request_payload(
     following = blocks[next_index] if next_index < len(blocks) else None
     context = {
         "termMap": TERM_MAP,
+        "seriesTerminology": series_terminology.context(),
         "previousContext": (
             {"id": previous["id"], "en": previous["en"], "zh": previous.get("zh", previous.get("draftZh", ""))}
             if previous
@@ -360,7 +362,7 @@ def request_payload(
         "reasoning_effort": reasoning_effort,
         "response_format": {"type": "json_object"},
         "messages": [
-            {"role": "system", "content": QA_SYSTEM_PROMPT if qa_pass else READING_SYSTEM_PROMPT},
+            {"role": "system", "content": (QA_SYSTEM_PROMPT if qa_pass else READING_SYSTEM_PROMPT) + "\n" + series_terminology.PROMPT_INSTRUCTION},
             {"role": "user", "content": json.dumps(context, ensure_ascii=False)},
         ],
     }
@@ -741,6 +743,9 @@ def reading_quality_report(blocks: list[dict[str, Any]]) -> dict[str, Any]:
             length_ratio_outliers.append({"id": block["id"], "ratio": round(ratio, 3)})
 
     failures = []
+    series_issues = series_terminology.translation_issues(blocks)
+    if series_issues:
+        failures.append("series_terminology")
     if ellipsis:
         failures.append("ellipsis")
     if fillers:
@@ -769,6 +774,8 @@ def reading_quality_report(blocks: list[dict[str, Any]]) -> dict[str, Any]:
         "qaPromptVersion": QA_PROMPT_VERSION,
         "qualityRuleVersion": QUALITY_RULE_VERSION,
         "blockCount": len(blocks),
+        "seriesTerminology": series_terminology.context(),
+        "seriesTerminologyIssues": series_issues,
         "ellipsis": ellipsis,
         "oralFillers": fillers,
         "danglingFragments": dangling,
