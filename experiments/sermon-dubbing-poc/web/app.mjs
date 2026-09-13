@@ -1,7 +1,7 @@
 import { boundedTime, nudge, formatTime, cueIndex } from "/timing.mjs";
 import { validateCatalog, chooseWeek, parseTimecode, bilingualCueRows } from "/catalog.mjs";
 
-import { mountFingerprintUI } from "/fingerprint-ui.mjs";
+import { mountFingerprintUI, playAlignmentAudio } from "/fingerprint-ui.mjs";
 
 const $ = id => document.getElementById(id);
 const audio = $("audio");
@@ -11,15 +11,16 @@ const tabs = [...document.querySelectorAll('[role="tab"]')];
 const fieldAlignment = mountFingerprintUI({
   context: () => ({ week, track, generation, ready: Boolean(track && audio.readyState >= 1 && audio.currentSrc === new URL(track.audioUrl, location.href).href) }),
   pause: () => { audio.pause(); document.querySelectorAll(".voice-card audio").forEach(sample => sample.pause()); update(); },
+  position: () => audio.currentTime,
   seek: time => {
     if (!track || audio.readyState < 1 || !Number.isFinite(audio.duration)) return false;
     audio.currentTime = boundedTime(time, audio.duration); fineOffset = 0;
     $("offset").textContent = "0.00 秒"; update(); return true;
   },
-  play: () => {
+  play: ({ signal }) => {
     const token = generation;
-    return audio.play().catch(error => {
-      if (token === generation) status("已对齐，请点击播放按钮开始收听。");
+    return playAlignmentAudio(audio, { signal }).catch(error => {
+      if (!signal.aborted && token === generation) status("已定位，请使用一键跟上播放。");
       throw error;
     });
   },
@@ -297,14 +298,14 @@ $("outline-dialog").addEventListener("click", event => {
 });
 audio.addEventListener("loadedmetadata", () => { if (!track) return; ready(true); status("音频就绪"); update(); });
 for (const event of ["timeupdate", "durationchange", "seeked"]) audio.addEventListener(event, update);
-audio.addEventListener("play", () => { fieldAlignment.invalidate(); status("正在播放"); update(); });
+audio.addEventListener("play", () => { fieldAlignment.playbackStarted(); status("正在播放"); update(); });
 audio.addEventListener("pause", () => { if (track) status(audio.ended ? "播放完毕" : "已暂停"); update(); });
 audio.addEventListener("ended", () => { status("播放完毕"); update(); });
 audio.addEventListener("waiting", () => { if (track) status("正在缓冲…"); });
 audio.addEventListener("playing", () => { status("正在播放"); update(); });
 audio.addEventListener("error", () => { fieldAlignment.invalidate(); if (track) { ready(false); status("音频读取失败，请刷新页面或下载 MP3。"); } });
 document.addEventListener("keydown", event => {
-  if ($("outline-dialog").open || event.target.matches("input,button,a,select,textarea") || !track || $("play").disabled) return;
+  if ($("outline-dialog").open || $("fingerprint-dialog").open || event.target.matches("input,button,a,select,textarea") || !track || $("play").disabled) return;
   if (event.code === "Space") { event.preventDefault(); togglePlay(); }
   if (event.code === "ArrowLeft" || event.code === "ArrowRight") { event.preventDefault(); seek((event.code === "ArrowRight" ? 1 : -1) * (event.shiftKey ? .25 : 5), event.shiftKey); }
 });

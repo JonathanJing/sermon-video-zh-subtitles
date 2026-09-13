@@ -45,8 +45,8 @@
     <p>开始后暂停中文配音，采集约 10 秒现场声音。请让麦克风靠近英文原声，避免身旁交谈。</p>
     <p class="description">声音仅在当前设备内临时处理，不上传、不保存，不识别人声身份。仅适用于本期同一段原录制。原视频须以正常 1 倍速连续播放；等待确认时请勿暂停或跳转，否则请重新定位。定位后仍可使用微调。现场设备延迟可能需要手动补偿。</p>
     <p id="fingerprint-message" class="field-message" role="status" aria-live="polite">请让设备听到英文原声，再点击开始。</p>
-    <div class="fingerprint-actions"><button id="fingerprint-start" type="button">开始听取 10 秒</button><button id="fingerprint-apply" type="button" hidden>对齐并播放</button><button id="fingerprint-stop" type="button">取消定位</button></div>
-    <p class="description">只有点击“对齐并播放”才会跳转。关闭后保持暂停；可随时取消并手动定位。</p>
+    <div class="fingerprint-actions"><button id="fingerprint-start" type="button">听取后自动对齐播放</button><button id="fingerprint-apply" type="button" hidden>一键跟上播放</button><button id="fingerprint-stop" type="button">取消定位</button></div>
+    <p class="description">可靠命中后会自动对齐并播放中文。若浏览器拦截，请点“一键跟上播放”，会重新补偿等待时间。可随时取消，播放后仍可微调。</p>
   </div></dialog>
   <audio id="audio" preload="metadata"></audio>
   <script type="module" src="/app.mjs"></script>

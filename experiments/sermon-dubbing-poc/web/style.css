@@ -92,4 +92,4 @@
 .fingerprint-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin: 1rem 0; }
 .fingerprint-actions button { min-height: 44px; padding: .7rem 1rem; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-soft); color: inherit; cursor: pointer; }
 .fingerprint-actions button:disabled { opacity: .55; cursor: wait; }
-#fingerprint-apply { font-weight: 700; }
+#fingerprint-apply { font-weight: 700; flex-basis: 100%; min-height: 52px; }
