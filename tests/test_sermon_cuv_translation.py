@@ -262,6 +262,41 @@ class CuvTranslationTests(unittest.TestCase):
                 mod.run(self.parent, self.out, reference_map_path=self.map)
         self.assertFalse((self.out / "spoken-review.json").exists())
 
+    def test_last_three_blocks_accept_preserved_evidence_arrays(self):
+        self.make_source(67)
+        evidence = ["逐句对照英文，完整保留讲员的个人应用。", "未增补候选经文，数字、否定和引用归属均已核对。"]
+        def arrays(key, payload):
+            response = self.fake_chat(key, payload)
+            instruction = payload["messages"][0]["content"]
+            if mod.TRANSLATE in instruction or mod.REVIEW in instruction:
+                value = json.loads(response["choices"][0]["message"]["content"])
+                for row in value["blocks"]:
+                    if row["id"] in (64, 65, 66):
+                        row["evidence"] = evidence
+                return self.response(value)
+            return response
+        with mock.patch.dict(mod.os.environ, {"OPENAI_API_KEY": "test-only"}), \
+             mock.patch.object(mod, "chat_json", side_effect=arrays):
+            result = mod.run(self.parent, self.out, reference_map_path=self.map, batch_size=8)
+        self.assertEqual(67, result["blocks"])
+        report = mod.read(self.out / "report.json")
+        self.assertEqual([evidence] * 3, [r["evidence"] for r in report["narrativeReviews"][-3:]])
+        with mock.patch.object(mod, "chat_json", side_effect=AssertionError("offline")):
+            self.assertEqual("passed", mod.validate(self.out)["status"])
+
+    def test_draft_and_final_reject_empty_or_malformed_evidence(self):
+        row = {"zhTemplate": "保留讲员叙述。", "uncertainty": [], "issues": [],
+               "checks": {k: "pass" for k in mod.CHECKS}, "quoteCoverage": "pass"}
+        invalid = [None, "", "  ", [], [""], ["valid", "  "], ["valid", 7],
+                   ["valid", {"evidence": "wrong shape"}], {"evidence": "wrong shape"}, 7]
+        for value in invalid:
+            with self.subTest(value=value):
+                row["evidence"] = value
+                with self.assertRaises(ValueError):
+                    mod.draft_row(row, [])
+                with self.assertRaises(ValueError):
+                    mod.reviewed_row(row, [], checks=True)
+
     def reuse_run(self, **kwargs):
         old = self.out
         self.out = self.root / "translation-v2"

@@ -502,9 +502,15 @@ def input_issues(mapping):
     return issues
 
 
+def substantive_evidence(value):
+    return (isinstance(value, str) and bool(value.strip())) or (
+        isinstance(value, list) and bool(value)
+        and all(isinstance(item, str) and bool(item.strip()) for item in value))
+
+
 def reviewed_row(row, quotes, *, checks=False):
     require(row.get("uncertainty") == [] and row.get("issues") == []
-            and isinstance(row.get("evidence"), str) and row["evidence"].strip(), "Unresolved translation/review issue")
+            and substantive_evidence(row.get("evidence")), "Unresolved translation/review issue")
     if checks:
         require(row.get("checks") == {k: "pass" for k in CHECKS} and row.get("quoteCoverage") == "pass",
                 "Independent model review did not pass every check")
@@ -513,7 +519,7 @@ def reviewed_row(row, quotes, *, checks=False):
 
 def draft_row(row, quotes):
     require(isinstance(row.get("uncertainty"), list) and isinstance(row.get("issues"), list)
-            and isinstance(row.get("evidence"), str) and row["evidence"].strip(),
+            and substantive_evidence(row.get("evidence")),
             "Malformed draft evidence or issue lists")
     return inject(row.get("zhTemplate"), quotes)
 
