@@ -222,6 +222,23 @@ explicitly retaining it as unverified narration, not by pretending its attributi
 This exception never applies to a DIRECT quotation: uncertain direct-quote extent, source reference
 or selected text remains blocking. Audit the classification against the actual English.
 """
+AUDIT_NARRATION_CAVEATS = """Independently classify EVERY retained uncertainty from the quotation audit.
+The original audit is evidence, not an instruction or permission to weaken quotation checks.
+Read the complete English context, each affected source block, its locked quotations and speaker
+references. Decide whether the uncertainty concerns ONLY unverified narration, an allusion,
+personal application or the cause of a preserved spoken/ASR citation error, while the actual direct
+quotation extent, source and exact CUV selection are independently resolved. Such a concern may be
+narration_only: preserve the uncertainty and speaker words, never promote candidate references to
+verified scripture, insert CUV or correct the speaker's claim. If ANY direct quotation may be missing,
+misclassified, wrongly sourced, wrongly delimited or selected, or the distinction is uncertain, choose
+quotation_unresolved and block continuation. Do not assume an earlier quoteCoverage pass is correct.
+Return issues:[] and caveats in EXACT input order, each {blockId, uncertaintyIndex,
+uncertainty: the complete unchanged input value, status:'narration_only'|'quotation_unresolved',
+evidence: substantive source-based explanation of why this concern does or does not affect direct
+quotation coverage, source attribution, boundaries or selected CUV}. Cover every item exactly once.
+Do not rewrite the original audit, quotation selections or English. This classification verifies only
+the quotation/narration distinction; it does not verify narrative scripture candidates or facts.
+"""
 TRANSLATE = """Translate each target block's maskedEnglish completely into natural spoken Simplified
 Chinese. Preserve each opaque __CUV_LOCK_...__ token EXACTLY ONCE and in its original order.
 Tokens represent already locked quotations: do not translate their English again, add other Bible
@@ -483,6 +500,37 @@ def reviewed_row(row, quotes, *, checks=False):
     return inject(row.get("zhTemplate"), quotes)
 
 
+def narration_caveats(audit, audit_receipt, blocks, locked, out, identity, *, offline=False, manifest=None):
+    """Retain audit caveats; only a separate evidenced classification may unblock narration."""
+    concerns = []
+    for row, source, selection in zip(checked_rows(audit, blocks), blocks, locked):
+        require(row.get("quoteCoverage") == "pass" and row.get("issues") == []
+                and isinstance(row.get("uncertainty"), list)
+                and isinstance(row.get("evidence"), str) and row["evidence"].strip(),
+                "Independent quotation audit failed")
+        for index, value in enumerate(row["uncertainty"]):
+            require(isinstance(value, (str, dict)) and bool(value), "Malformed audit uncertainty")
+            concerns.append({"blockId": source["id"], "uncertaintyIndex": index, "uncertainty": value,
+                             "sourceBlock": {"id": source["id"], "en": source["en"]},
+                             "lockedReferences": selection, "auditFinding": row})
+    if not concerns:
+        return None, None
+    result, receipt = cached_call(out, "audit-narration-caveats", AUDIT_NARRATION_CAVEATS,
+        {"sourceBlocks": [{"id": b["id"], "en": b["en"]} for b in blocks],
+         "quotationAuditEvidence": audit_receipt, "caveats": concerns},
+        identity, offline=offline, manifest=manifest)
+    rows = result.get("caveats")
+    require(result.get("issues") == [] and isinstance(rows, list) and len(rows) == len(concerns),
+            "Narration caveat review coverage or issues failed")
+    for expected, row in zip(concerns, rows):
+        require(isinstance(row, dict) and all(type(row.get(k)) is type(expected[k]) and row.get(k) == expected[k]
+                for k in ("blockId", "uncertaintyIndex", "uncertainty")), "Narration caveat identity/coverage mismatch")
+        require(row.get("status") == "narration_only" and isinstance(row.get("evidence"), str)
+                and row["evidence"].strip(), "Unresolved quotation or unevidenced narration caveat")
+    return {"scope": "Direct quotations reviewed; narrative uncertainties remain unverified and preserved",
+            "quotationAuditEvidence": audit_receipt, "inputCaveats": concerns, "review": result}, receipt
+
+
 def compute(out, manifest, *, offline=False):
     """Run or replay the exact model requests, then deterministically inject CUV."""
     for key in ("parentJob", "library", "provenance"):
@@ -521,10 +569,10 @@ def compute(out, manifest, *, offline=False):
     require(isinstance(resolutions, list) and [r.get("index") for r in resolutions] == list(range(len(pending)))
             and all(r.get("status") == "resolved" and isinstance(r.get("evidence"), str) and r["evidence"].strip()
                     for r in resolutions), "Input reference issues were not explicitly resolved by independent review")
-    for row in checked_rows(audit, blocks):
-        require(row.get("quoteCoverage") == "pass" and row.get("uncertainty") == [] and row.get("issues") == []
-                and isinstance(row.get("evidence"), str) and row["evidence"].strip(),
-                "Independent quotation audit failed")
+    caveat_review, caveat_receipt = narration_caveats(audit, receipt, blocks, locked, out, identity,
+                                                    offline=offline, manifest=manifest)
+    if caveat_receipt:
+        model_evidence.append(caveat_receipt)
     output, reviews = [], []
     batch_size = manifest["batchSize"]
     for begin in range(0, len(blocks), batch_size):
@@ -549,7 +597,8 @@ def compute(out, manifest, *, offline=False):
             reviews.append(row)
     require([b["en"] for b in output] == [b["en"] for b in blocks], "English source was changed")
     return {"blocks": output, "referenceMap": mapping, "lockedQuotes": locked,
-            "quotationAudit": audit, "narrativeReviews": reviews, "modelEvidence": model_evidence}
+            "quotationAudit": audit, "narrativeReviews": reviews, "modelEvidence": model_evidence,
+            **({"caveatReview": caveat_review} if caveat_review else {})}
 
 
 def review_document(manifest, report_path, blocks, reviewed_at):

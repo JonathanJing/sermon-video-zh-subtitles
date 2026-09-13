@@ -94,6 +94,109 @@ class CuvTranslationTests(unittest.TestCase):
              mock.patch.object(mod, "chat_json", side_effect=AssertionError("cached")):
             self.assertEqual(result, mod.run(self.parent, self.out, reference_map_path=self.map))
 
+    def caveat_chat(self, key, payload):
+        instruction = payload["messages"][0]["content"]
+        data = json.loads(payload["messages"][1]["content"])
+        if mod.AUDIT_NARRATION_CAVEATS in instruction:
+            return self.response({"issues": [], "caveats": [
+                {**{k: c[k] for k in ("blockId", "uncertaintyIndex", "uncertainty")},
+                 "status": "narration_only", "evidence": "The source preserves an unverified narrative association; no direct quotation is affected."}
+                for c in data["caveats"]]})
+        response = self.fake_chat(key, payload)
+        if mod.AUDIT_QUOTES in instruction:
+            audit = json.loads(response["choices"][0]["message"]["content"])
+            for b in audit["blocks"]:
+                if b["id"] in (7, 17, 37, 54, 61, 62, 64, 65):
+                    b["uncertainty"] = ["候选经文背景尚未核实；保留为叙述，不提升为已确认出处。"]
+                if b["id"] == 62:
+                    b["uncertainty"].append("没有音频证据判断“John chapter 1”源于口误还是转录错误；保留现有英文，不影响其后直接引文来源的确认。")
+            return self.response(audit)
+        return response
+
+    def test_caveat_resume_retains_nine_findings_and_reuses_existing_audit(self):
+        self.make_source(67)
+        def stopped(key, payload):
+            if mod.AUDIT_NARRATION_CAVEATS in payload["messages"][0]["content"]:
+                raise RuntimeError("Stop before new classification")
+            return self.caveat_chat(key, payload)
+        with mock.patch.dict(mod.os.environ, {"OPENAI_API_KEY": "test-only"}), \
+             mock.patch.object(mod, "chat_json", side_effect=stopped):
+            with self.assertRaises(RuntimeError):
+                mod.run(self.parent, self.out, reference_map_path=self.map, batch_size=8)
+        audit_path = next((self.out / "cache").glob("audit-quotes-*.json"))
+        before = audit_path.read_bytes()
+        with mock.patch.dict(mod.os.environ, {"OPENAI_API_KEY": "test-only"}), \
+             mock.patch.object(mod, "chat_json", side_effect=self.caveat_chat) as call:
+            mod.run(self.parent, self.out, reference_map_path=self.map, batch_size=8)
+        self.assertEqual(19, call.call_count, "Only one classification plus nine translation/review batches")
+        self.assertEqual(before, audit_path.read_bytes())
+        report = mod.read(self.out / "report.json")
+        self.assertEqual(9, len(report["caveatReview"]["review"]["caveats"]))
+        self.assertEqual(8, sum(bool(b["uncertainty"]) for b in report["quotationAudit"]["blocks"]))
+        self.assertEqual(9, len(report["caveatReview"]["inputCaveats"]))
+        self.assertIn("lockedReferences", report["caveatReview"]["inputCaveats"][0])
+        with mock.patch.object(mod, "chat_json", side_effect=AssertionError("offline")):
+            self.assertEqual("passed", mod.validate(self.out)["status"])
+        report["caveatReview"]["review"]["caveats"][0]["uncertainty"] = "erased"
+        self.write(self.out / "report.json", report)
+        with self.assertRaisesRegex(ValueError, "caveatReview"):
+            mod.validate(self.out)
+
+    def test_caveat_classifier_rejects_unresolved_or_missing_evidence(self):
+        for mutation in (lambda r: r.update(status="quotation_unresolved"), lambda r: r.update(evidence="")):
+            with self.subTest(mutation=mutation):
+                def invalid(key, payload):
+                    response = self.caveat_chat(key, payload)
+                    if mod.AUDIT_NARRATION_CAVEATS in payload["messages"][0]["content"]:
+                        value = json.loads(response["choices"][0]["message"]["content"])
+                        mutation(value["caveats"][0])
+                        return self.response(value)
+                    return response
+                self.make_source(8)
+                self.out = self.root / ("failure-" + str(id(mutation)))
+                with mock.patch.dict(mod.os.environ, {"OPENAI_API_KEY": "test-only"}), \
+                     mock.patch.object(mod, "chat_json", side_effect=invalid):
+                    with self.assertRaisesRegex(ValueError, "Unresolved quotation"):
+                        mod.run(self.parent, self.out, reference_map_path=self.map)
+                self.assertFalse((self.out / "spoken-review.json").exists())
+
+    def test_caveat_classifier_rejects_coverage_identity_and_changed_uncertainty(self):
+        mutations = [lambda r: r["caveats"].clear(), lambda r: r["caveats"][0].update(blockId=99),
+                     lambda r: r["caveats"][0].update(uncertaintyIndex=1),
+                     lambda r: r["caveats"][0].update(uncertainty="removed"),
+                     lambda r: r.update(issues=["unresolved"])]
+        for index, mutation in enumerate(mutations):
+            with self.subTest(index=index):
+                self.make_source(8)
+                self.out = self.root / ("coverage-" + str(index))
+                def invalid(key, payload):
+                    response = self.caveat_chat(key, payload)
+                    if mod.AUDIT_NARRATION_CAVEATS in payload["messages"][0]["content"]:
+                        value = json.loads(response["choices"][0]["message"]["content"])
+                        mutation(value)
+                        return self.response(value)
+                    return response
+                with mock.patch.dict(mod.os.environ, {"OPENAI_API_KEY": "test-only"}), \
+                     mock.patch.object(mod, "chat_json", side_effect=invalid):
+                    with self.assertRaisesRegex(ValueError, "Narration caveat"):
+                        mod.run(self.parent, self.out, reference_map_path=self.map)
+
+    def test_caveat_classifier_never_bypasses_failed_quote_audit(self):
+        self.make_source(8)
+        def invalid(key, payload):
+            response = self.caveat_chat(key, payload)
+            if mod.AUDIT_NARRATION_CAVEATS in payload["messages"][0]["content"]:
+                self.fail("Failed quotation must block before classification")
+            if mod.AUDIT_QUOTES in payload["messages"][0]["content"]:
+                value = json.loads(response["choices"][0]["message"]["content"])
+                value["blocks"][0]["quoteCoverage"] = "fail"
+                return self.response(value)
+            return response
+        with mock.patch.dict(mod.os.environ, {"OPENAI_API_KEY": "test-only"}), \
+             mock.patch.object(mod, "chat_json", side_effect=invalid):
+            with self.assertRaisesRegex(ValueError, "Independent quotation audit failed"):
+                mod.run(self.parent, self.out, reference_map_path=self.map)
+
     def reuse_run(self, **kwargs):
         old = self.out
         self.out = self.root / "translation-v2"
