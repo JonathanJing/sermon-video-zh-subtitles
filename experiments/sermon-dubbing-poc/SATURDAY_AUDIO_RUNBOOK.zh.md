@@ -44,6 +44,8 @@
 
 ## 本对话的口播修订与边界审核
 
+新制作默认先完成[和合本（CUV）锁定与全篇审校](../../docs/sermon-cuv-production.zh.md)：英文冻结后、TTS 前执行 `scripts/sermon_cuv_translation.py run`，精确锁住直接引文，再翻译并独立审校旁白；桥接器不会自动补做此步骤。使用其 `blocks.json` 与哈希绑定的 `spoken-review.json` 作为新中文及派生依据，字幕、PDF、配音和大纲所引经文保持同源；讲员解释、玩笑或错引不强改为经文，机器通过不等于人工听审。重译或旁白精练后必须对新 WAV 重测时长；实测超时才按链接中的 `repair-timing` 流程修订，始终保留锁定经文和旧版本证据。
+
 `apply_spoken_review.py` 将当前对话的两轮 Astra 审核保存为 `sermon-spoken-script-review-v1`，派生新 job，并哈希绑定父版本、英文/中文、审核材料和模型身份。未变的 WAV 与逐段 ASR 可复用；改变英文时用已有原声词证据重新匹配，不修改历史阅读稿或 PDF。
 
 ```bash
