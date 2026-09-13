@@ -18,6 +18,7 @@ import {
   startV41TranslationRuntime,
 } from "./gatewayClient.js";
 import { LiveCaptionSocket } from "./liveSocket.js";
+import { waitForGatewayRestart } from "./runtimeRestart.js";
 import { applyCaptionEvent, createCaptionState } from "./captionState.js";
 
 function nowIso() {
@@ -272,19 +273,20 @@ export function App() {
     setError("");
     appendEvent("runtime_restart_requested", { recordingActive: recordingActiveRef.current }, false);
     try {
-      await restartGateway();
-      let health = null;
-      for (let attempt = 0; attempt < 60; attempt += 1) {
-        await new Promise((resolve) => window.setTimeout(resolve, 500));
-        health = await refreshGatewayHealth();
-        if (health?.status === "ready") break;
-      }
-      if (health?.status !== "ready") throw new Error("后台未能在 30 秒内恢复");
+      const restart = await restartGateway();
+      const health = await waitForGatewayRestart(restart.runtimeInstanceId, {
+        getHealth: (timeoutMs) => getGatewayHealth(undefined, timeoutMs),
+      });
+      setGatewayHealth(health);
       setRuntimeRestartState("ready");
       appendEvent("runtime_restart_completed", { recordingActive: recordingActiveRef.current }, false);
       if (recordingActiveRef.current) {
         recoveryNeededRef.current = true;
-        await recoverLiveCaptions();
+        if (healthForTranslationProvider(health, translationProviderRef.current)?.status === "ready") {
+          await recoverLiveCaptions();
+        } else {
+          setError("后台已重新连接；模型尚未就绪，录音继续。模型就绪后可恢复字幕与保存。");
+        }
       }
     } catch (caught) {
       setRuntimeRestartState("error");
@@ -579,6 +581,9 @@ export function App() {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextClass) throw new Error("当前浏览器不支持实时 PCM 音频处理。");
     const context = new AudioContextClass();
+    // Retain the partially initialized context so failure cleanup can release
+    // its audio device without stopping the independent recovery recorder.
+    audioContextRef.current = context;
     await context.resume();
     await context.audioWorklet.addModule("/pcm-capture-worklet.js");
     const source = context.createMediaStreamSource(stream);
@@ -607,7 +612,7 @@ export function App() {
     audioContextRef.current = context;
     workletNodeRef.current = worklet;
     context.addEventListener("statechange", () => {
-      if (recordingActiveRef.current && context.state !== "running") {
+      if (recordingActiveRef.current && audioContextRef.current === context && context.state !== "running") {
         recoverableAsrErrorRef.current = false;
         appendEvent("audio.context_interrupted", { state: context.state });
         setError("浏览器音频处理已暂停；录音仍在继续，请检查系统音频状态。");
@@ -788,7 +793,20 @@ export function App() {
         recoverableAsrErrorRef.current = false;
         setError("实时 ASR Gateway 未就绪；本次仍会保存录音。");
       }
-      await startAudioPipeline(stream);
+      try {
+        await startAudioPipeline(stream);
+      } catch (caught) {
+        workletNodeRef.current?.disconnect();
+        workletNodeRef.current = null;
+        audioContextRef.current?.close().catch(() => {});
+        audioContextRef.current = null;
+        window.cancelAnimationFrame(meterFrameRef.current);
+        meterFrameRef.current = null;
+        setLevel(0);
+        appendEvent("audio.pipeline_start_failed", { message: caught?.message || "PCM initialization failed" });
+        setError(`实时音频处理启动失败：${caught?.message || "PCM 初始化失败"}。录音仍在继续，可停止并保存后重试。`);
+        setTranslationState("error");
+      }
       setPhase("running");
       timerRef.current = window.setInterval(() => {
         setElapsed(Date.now() - startTimeRef.current);

@@ -1,0 +1,2 @@
+# Install only in a dedicated environment, or reuse an existing compatible one.
+websockets>=16.1,<18
