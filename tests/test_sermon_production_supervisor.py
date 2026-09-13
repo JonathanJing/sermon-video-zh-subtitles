@@ -486,9 +486,6 @@ class SermonProductionSupervisorTest(unittest.TestCase):
         )
 
     def test_explicit_resume_archives_failed_report_and_reuses_valid_approval(self):
-        class Lease:
-            pass
-
         with tempfile.TemporaryDirectory() as tempdir:
             root = Path(tempdir)
             state = root / "state.json"
@@ -527,8 +524,7 @@ class SermonProductionSupervisorTest(unittest.TestCase):
             result = mod.resume_failed_reading_pdf_generation(
                 config,
                 runner=runner,
-                lease_acquirer=lambda *_args, **_kwargs: Lease(),
-                lease_releaser=lambda _lease: None,
+                lease_acquirer=lambda *_args, **kwargs: mod.acquire_lease(str(root / "test-generation-lease.json"), **kwargs),
             )
 
             archived = Path(result["archivedFailure"]["local"])

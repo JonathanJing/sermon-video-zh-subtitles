@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "saturday-quality-output-v1",
+  "suiteSha256": "d91581d0334125e2555b33b6235e6c21606727c0f57bd1688a6808ba9c91584b",
+  "identity": "synthetic-handwritten-fixture-v1; no model called",
+  "samples": [
+    {
+      "id": "grouped-number",
+      "en": "The congregation collected 5,300 books.",
+      "sourceSha256": "ec847b0e817e828fa0749f805cb1a9fa4998fc90b887ef5c0a21002517192a06",
+      "zh": "会众收集了5,300本书。",
+      "spokenZh": "会众收集了五千三百本书。"
+    },
+    {
+      "id": "year-pronoun",
+      "en": "In 2026, we pray to you, Lord.",
+      "sourceSha256": "23f52ec78b4940e748ede406da7cccd32c88640cbd834982a934aa489766b4d6",
+      "zh": "在2026年，主啊，我们向祢祷告。",
+      "spokenZh": "在二零二六年，主啊，我们向你祷告。"
+    },
+    {
+      "id": "terms",
+      "en": "Grace leads us to repentance and forgiveness.",
+      "sourceSha256": "1d76033943b325d2c3dff30859d5f3536aa3e23104d45d1223dabbcb7c5a301d",
+      "zh": "恩典引导我们悔改，并领受赦免。",
+      "spokenZh": "恩典引导我们悔改，并领受赦免。"
+    }
+  ]
+}

@@ -150,6 +150,45 @@ class ReadingEditionTest(unittest.TestCase):
         self.assertIn("unexpected_english_tokens", report["failures"])
         self.assertIn("repeated_punctuation", report["failures"])
 
+    def test_ambiguous_acts_and_rhetorical_trinity_do_not_require_book_or_doctrine(self):
+        for english in ["Blessed are those whose lawless acts are forgiven.",
+                        "Acts of kindness matter.",
+                        "The trinity of God's forgiveness meets the trinity of our sin."]:
+            with self.subTest(english=english):
+                report = reading_quality_report([{"id": 0, "en": english, "zh": "神赦免我们的罪，也教导我们行善。"}])
+                self.assertEqual([], report["sourceTermCoverageErrors"])
+
+    def test_actual_acts_and_trinity_references_still_require_terms(self):
+        for english, required in [
+            ("Acts describes the church.", "使徒行传"),
+            ("Read acts 2:1 and the book of acts.", "使徒行传"),
+            ("The Acts of the Apostles tells us this.", "使徒行传"),
+            ("The Trinity is Father, Son, and Holy Spirit.", "三位一体"),
+            ("The trinity of our sin is a metaphor. The Trinity is one God.", "三位一体"),
+        ]:
+            with self.subTest(english=english):
+                report = reading_quality_report([{"id": 0, "en": english, "zh": "这是经文的教导。"}])
+                self.assertIn(required, report["sourceTermCoverageErrors"][0]["missingChineseTerms"])
+
+    def test_source_supported_sms_believe_is_retained_with_chinese_context(self):
+        for english, chinese in [
+            ("Text believe to the number on the screen.", "请将关键词 believe（相信）以短信发送到屏幕上的号码。"),
+            ("TEXT BELIEVE to the number on the screen.", "请将 BELIEVE 以短信发送到屏幕上的号码。"),
+        ]:
+            with self.subTest(chinese=chinese):
+                report = reading_quality_report([{"id": 0, "en": english, "zh": chinese}])
+                self.assertEqual([], report["unexpectedEnglishTokens"])
+
+    def test_believe_without_source_command_or_chinese_context_is_blocked(self):
+        for english, chinese in [
+            ("Believe in God.", "关键词 believe 的意思是相信。"),
+            ("Text believe to the number on the screen.", "请发送 believe。"),
+            ("Text unbelievable to the number.", "请将 believe 以短信发送。"),
+        ]:
+            with self.subTest(english=english, chinese=chinese):
+                report = reading_quality_report([{"id": 0, "en": english, "zh": chinese}])
+                self.assertIn("believe", report["unexpectedEnglishTokens"][0]["tokens"])
+
     def test_quality_report_allows_approved_proper_nouns(self):
         report = reading_quality_report(
             [

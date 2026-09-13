@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+import re
 import shutil
 import sys
+from urllib.parse import urlsplit
 
 from poc import ROOT, sha256, write_json
 from server import load_library
@@ -35,6 +38,23 @@ def public_track(track, pack, public):
         "audioUrl": f"/media/{name}", "file": name, "sha256": digest,
         "durationSeconds": track["durationSeconds"], "cues": track["cues"],
         "subtitleTiming": track.get("subtitleTiming", "measured_synthesis_groups"), "scope": track.get("scope", "excerpt")}
+
+
+def source_page(job):
+    # Older live-archive jobs predate sourceRoute; their approved window remains
+    # the source contract. Page identity must also distinguish this week's VOD.
+    route = job.get("sourceRoute", "live_archive")
+    if route not in {"live_archive", "same_video", "archive_caption"} or not re.fullmatch(r"[A-Za-z0-9_-]{1,128}", job["sourceId"]):
+        raise ValueError("Invalid weekly page source")
+    host = (urlsplit(job.get("sourceUrl", "")).hostname or "").lower()
+    youtube = host in {"youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"}
+    label = "主日播放版" if job.get("sameVideoContractVersion") == "sermon-same-video-source-v2" else (
+        "YouTube 版" if youtube or route in {"same_video", "archive_caption"} else "主日聚会版")
+    result = {"id": f'{job["week"]}-{route}-{job["sourceId"]}', "sourceRoute": route, "sourceLabel": label}
+    if job.get("sameVideoContractVersion") == "sermon-same-video-source-v2":
+        result.update(sourceOrigin=host, sourceStartSeconds=job["sourceStartSeconds"],
+            sourceEndSeconds=job["sourceEndSeconds"], sourceDurationSeconds=job["sourceDurationSeconds"])
+    return result
 
 
 def validate_catalog(catalog):
@@ -91,8 +111,18 @@ def synchronized_candidate(work, job):
 
 def series_title(title, series):
     series = canonical_series(series)
+    base, separator, version = title.rpartition("｜")
+    if separator and version in {"YouTube 版", "主日聚会版", "主日播放版", "正式播放版"}:
+        return series_title(base, series) + separator + version
     suffix = f" · {series}" if series else ""
     return title if not suffix or title.endswith(suffix) else title + suffix
+
+
+def page_title(title, series, version):
+    base, separator, previous = title.rpartition("｜")
+    if separator and previous in {"YouTube 版", "主日聚会版", "主日播放版", "正式播放版"}:
+        title = base
+    return series_title(title, series) + "｜" + version
 
 
 def bilingual_transcript(job, tracks):
@@ -148,22 +178,28 @@ def weekly_job(work, public, preview, sync_preview=False, series=None):
         tracks = [public_track(synced_track, work / "synchronization", public)]
     else:
         tracks = [public_track(t, work / "audio", public) for t in library["tracks"]]
+    page = source_page(job)
+    archive = page["sourceRoute"] == "archive_caption"
     quality_input = job["inputs"].get("readingQuality")
     terminology = read(Path(quality_input["path"])).get("seriesTerminology") if quality_input else None
     selected_series = canonical_series(series if series is not None else job.get("series", ""), terminology)
+    # Feedback/usage keep their YYYY-MM-DD week contract. A source-specific
+    # track ID separates two videos even when their generated audio is equal.
+    for track in tracks:
+        track["id"] = f'{track["id"]}__{page["sourceRoute"]}__{job["sourceId"]}'
     screening = work / "audio/asr-screening.json"
     machine_issues = sum(len(r["reviewCandidates"]) for r in read(screening)["results"]) if screening.exists() else None
     stages = [
-        {"label": "证道范围确认", "status": "pass", "detail": "沿用周六人工确认的同一份视频与证道范围"},
-        {"label": "中文审校与双 PDF", "status": "pass", "detail": "复用阅读稿、两轮文字审校与证道同行大纲"},
+        {"label": "视频来源与证道范围", "status": "pass", "detail": "使用正式发布的完整证道及原有英文字幕" if archive else "使用已绑定的完整证道视频与全片范围" if page["sourceRoute"] == "same_video" else "从直播视频提取，沿用人工确认的证道范围"},
+        {"label": "中文审校与双 PDF", "status": "pass", "detail": "原有英文字幕经翻译与审校，生成阅读稿及证道同行大纲" if archive else "复用阅读稿、两轮文字审校与证道同行大纲"},
         {"label": "讲员音色生成", "status": "pass", "detail": f'{job["speaker"]} · {len(job["units"])} 段中文已生成'},
         {"label": "配音检查", "status": "review" if machine_issues is not None else "pending", "detail": f"机器标出 {machine_issues} 处待试听比对" if machine_issues is not None else "等待漏读、重复与发音检查"},
         {"label": "视频同步与人工试听", "status": "review" if sync_preview else "pending" if preview else "pass", "detail": "同步候选已装配；模型审核不能代替现场试听，仍待核对中文流畅度、原声相似度与同视频播放" if sync_preview else "逐段核对原视频，检查中文流畅度、原声相似度与同步"},
         {"label": "周日版本发布", "status": "pending" if preview else "pass", "detail": "本次为审核试听稿" if preview else "审核通过的本周中文配音"}]
-    week = {"id": job["week"], "date": job["week"], "sourceId": job["sourceId"], "sourceUrl": job["sourceUrl"], "title": series_title(job["title"], selected_series), "speaker": job["speaker"],
+    week = {**page, "date": job["week"], "sourceId": job["sourceId"], "sourceUrl": job["sourceUrl"], "title": page_title(job["title"], selected_series, page["sourceLabel"]), "speaker": job["speaker"],
         "scripture": job["scripture"], "number": "".join(c for c in job["scripture"] if c.isdigit()), "series": selected_series or "每周证道", "centralMessage": notes["centralMessageZh"], "summary": notes["summaryZh"],
         "outline": [{"title": p["title"], "points": p["points"], "sourceSliceIndexes": p.get("sourceSliceIndexes", [])} for p in notes["outlineZh"]],
-        "scriptureRefs": notes.get("scriptureRefs", []), "questions": [p["question"] for p in notes.get("reflectionQuestionsZh", [])], "contentReview": "沿用周六审校阅读稿与 AI 整理大纲",
+        "scriptureRefs": notes.get("scriptureRefs", []), "questions": [p["question"] for p in notes.get("reflectionQuestionsZh", [])], "contentReview": "原有英文字幕经中文审校，附 AI 整理大纲" if archive else "最终发布版英文转写经中文审校，附 AI 整理大纲" if page["sourceRoute"] == "same_video" else "沿用周六审校阅读稿与 AI 整理大纲",
         "tracks": tracks, "audioStatus": "full_candidate" if preview else "full_reviewed", "audioNotice": "整篇中文已生成，正在审核。时间轴对应中文音频；现场视频同步尚未验收。" if preview else "本周中文配音已审核，可使用时间轴与微调跟上现场。",
         "videoSynchronization": "not_validated" if preview else "human_reviewed", "productionStages": stages}
     if sync_preview:
@@ -186,7 +222,30 @@ def weekly_job(work, public, preview, sync_preview=False, series=None):
     return week
 
 
-def build(comparison, out, expansion=None, weekly_jobs=(), voice_bank=None, review_preview=False, sync_preview=False, include_history=False, series=None):
+def apply_content_review(weeks, sources, review_path):
+    """Bind an explicit user content review without granting video-sync approval."""
+    receipt = json.loads(Path(review_path).read_text())
+    if receipt.get("schemaVersion") != "sermon-user-content-review-v1" or receipt.get("decision") != "approved":
+        raise ValueError("Invalid user content review")
+    expected = [{"pageId": w["id"], "jobSha256": next(s["sha256"] for s in sources if s["week"] == w["id"]),
+                 "audioSha256": [t["sha256"] for t in w["tracks"]]} for w in weeks]
+    if receipt.get("items") != expected:
+        raise ValueError("Content review does not match these jobs and audio")
+    for week in weeks:
+        week["humanContentReview"] = "approved"
+        week["audioNotice"] = "整篇中文已审核。字幕随中文音频更新。"
+        for track in week["tracks"]:
+            track["label"] = "整篇中文"
+        for stage in week["productionStages"]:
+            if stage["label"] == "配音检查":
+                stage.update(status="pass", detail="用户已确认审核完成")
+            elif stage["label"] == "视频同步与人工试听":
+                stage.update(label="原视频同步", detail="原视频同步单独验证；本页字幕随中文音频更新")
+            elif stage["label"] == "周日版本发布":
+                stage.update(label="收听页面发布", status="pass", detail="已审核的中文内容")
+
+
+def build(comparison, out, expansion=None, weekly_jobs=(), voice_bank=None, review_preview=False, sync_preview=False, include_history=False, feedback_enabled=False, series=None, content_review=None):
     weekly_jobs = tuple(weekly_jobs)
     if sync_preview and (not review_preview or not weekly_jobs):
         raise ValueError("--sync-preview requires --review-preview and at least one --weekly-job")
@@ -196,9 +255,8 @@ def build(comparison, out, expansion=None, weekly_jobs=(), voice_bank=None, revi
     if public.exists():
         raise ValueError("Use a new output directory to preserve the previous release")
     (public / "media").mkdir(parents=True)
-    for name in ["index.html", "style.css", "app.mjs", "timing.mjs", "catalog.mjs", "theme.js",
-                 "fingerprint-core.mjs", "fingerprint-capture.mjs", "fingerprint-worklet.mjs",
-                 "fingerprint-worker.mjs", "fingerprint-ui.mjs"]:
+    ui_files = ["fingerprint-core.mjs", "fingerprint-capture.mjs", "fingerprint-worklet.mjs", "fingerprint-worker.mjs", "fingerprint-ui.mjs", "index.html", "style.css", "app.mjs", "timing.mjs", "catalog.mjs", "theme.js", "feedback.mjs", "feedback-client.mjs", "listening.mjs", "usage.mjs", "usage-client.mjs", "playback-memory.mjs", "brand-icon.png"]
+    for name in ui_files:
         shutil.copyfile(HERE / "web" / name, public / name)
     weeks, sources = [], []
     for entry in (WEEKS if use_history else ()):
@@ -225,7 +283,7 @@ def build(comparison, out, expansion=None, weekly_jobs=(), voice_bank=None, revi
                         exported["voiceLabel"] = exported["voiceLabel"].replace("（待试听）", "")
                         exported["voiceSampleReview"] = "user_accepted_sample"
                 tracks.insert(1, exported)
-        week = {**entry, "id": entry["date"], "series": "当生活令人费解", "titleEvidence": "descriptive_title_from_existing_sermon_notes",
+        week = {**entry, "id": entry["date"], "series": "当生活令人费解", "title": series_title(entry["title"], "当生活令人费解"), "titleEvidence": "descriptive_title_from_existing_sermon_notes",
             "sourceUrl": f'https://www.youtube.com/watch?v={entry["sourceId"]}',
             "summary": notes["summaryZh"], "centralMessage": notes["centralMessageZh"],
             "outline": [{"title": p["title"], "points": p["points"], "sourceSliceIndexes": p["sourceSliceIndexes"]} for p in notes["outlineZh"]],
@@ -238,9 +296,10 @@ def build(comparison, out, expansion=None, weekly_jobs=(), voice_bank=None, revi
         sources.append({"week": week["id"], "path": str(notes_path.relative_to(ROOT)), "sha256": sha256(notes_path)})
     for work in weekly_jobs:
         week = weekly_job(work, public, review_preview, sync_preview, series)
-        weeks = [w for w in weeks if w["id"] != week["id"]] + [week]
+        weeks = [w for w in weeks if w["id"] != week["id"] and not
+            (w["id"] == week["date"] and w["sourceId"] == week["sourceId"])] + [week]
         sources.append({"week": week["id"], "path": str(work / "job.json"), "sha256": sha256(work / "job.json")})
-    weeks.sort(key=lambda w: w["date"], reverse=True)
+    weeks.sort(key=lambda w: (w["date"], w.get("sourceRoute") == "same_video"), reverse=True)
     catalog = {"schemaVersion": "sermon-weekly-catalog-v1", "defaultWeekId": weeks[0]["id"] if weekly_jobs else library["date"], "weeks": weeks}
     if voice_bank:
         bank = json.loads(voice_bank.read_text())
@@ -252,12 +311,28 @@ def build(comparison, out, expansion=None, weekly_jobs=(), voice_bank=None, revi
             for key in ["reference", "chinese"]:
                 entry[key] = public_track(speaker[key], Path(speaker["pack"]), public)
             catalog["voiceBank"]["speakers"].append(entry)
+    if content_review:
+        apply_content_review(weeks, sources, content_review)
     validate_catalog(catalog)
     write_json(public / "weekly.json", catalog)
+    app_version = hashlib.sha256(b"".join((public / name).read_bytes() for name in ui_files)).hexdigest()[:16]
+    write_json(public / "engagement.json", {"schemaVersion": 1, "enabled": bool(feedback_enabled), "appVersion": app_version})
+    if feedback_enabled:
+        sources_for_feedback = []
+        for week in weeks:
+            for track in week["tracks"]:
+                cues = [{"id": str(i), "start": cue["start"], "end": cue["end"], "blockId": str(cue["blockId"]) if cue.get("blockId") is not None else None} for i, cue in enumerate(track["cues"])]
+                sources_for_feedback.append({"week": week["date"], "trackId": track["id"], "audioSha256": track["sha256"], "durationSeconds": track["durationSeconds"],
+                    "cueIds": [cue["id"] for cue in cues], "blockIds": sorted({cue["blockId"] for cue in cues if cue["blockId"] is not None}), "cues": cues})
+        write_json(out / "feedback-catalog.json", {"schemaVersion": 1, "sources": sources_for_feedback,
+            "weekIds": sorted({week["date"] for week in weeks}), "voiceIds": [speaker["id"] for speaker in catalog.get("voiceBank", {}).get("speakers", [])]})
     files = [{"path": str(p.relative_to(public)), "sha256": sha256(p), "bytes": p.stat().st_size} for p in sorted(public.rglob("*")) if p.is_file()]
     report = {"schemaVersion": "sermon-weekly-build-v1", "builtAt": datetime.now(timezone.utc).isoformat(), "weeks": len(weeks),
         "playableWeeks": sum(bool(w["tracks"]) for w in weeks), "files": files, "sources": sources,
+        "contentReviewSha256": sha256(Path(content_review)) if content_review else None,
         "reviewPreview": review_preview, "syncPreview": sync_preview, "includeHistory": use_history,
+        "feedbackEnabled": bool(feedback_enabled), "appVersion": app_version,
+        "feedbackCatalogSha256": sha256(out / "feedback-catalog.json") if feedback_enabled else None,
         "originalAudioPublished": bool(voice_bank), "originalAudioScope": "short_authorized_voice_references_only" if voice_bank else "none",
         "trainingDataPublished": False, "totalBytes": sum(f["bytes"] for f in files)}
     write_json(out / "build-report.json", report)
@@ -275,9 +350,11 @@ if __name__ == "__main__":
     parser.add_argument("--voice-bank", type=Path)
     parser.add_argument("--review-preview", action="store_true", help="Publish clearly marked listening candidates, not Sunday-ready audio")
     parser.add_argument("--sync-preview", action="store_true", help="Use verified synchronized candidates; requires --review-preview and --weekly-job")
-    parser.add_argument("--series", help="Series name or ID from the shared terminology table")
+    parser.add_argument("--feedback-enabled", action="store_true", help="Enable the dedicated feedback API and opt-in anonymous statistics; deploy the matching feedback catalog first")
+    parser.add_argument("--series", help="Series name for the specified weekly jobs, appended to their display titles")
+    parser.add_argument("--content-review", type=Path, help="Explicit user content review bound to these jobs and audio; does not approve video synchronization")
     args = parser.parse_args()
     if args.sync_preview and (not args.review_preview or not args.weekly_job):
         parser.error("--sync-preview requires --review-preview and at least one --weekly-job")
     build(args.comparison.resolve(), args.out.resolve(), args.expansion.resolve() if args.expansion else None,
-        [p.resolve() for p in args.weekly_job], args.voice_bank.resolve() if args.voice_bank else None, args.review_preview, args.sync_preview, args.include_history, args.series)
+        [p.resolve() for p in args.weekly_job], args.voice_bank.resolve() if args.voice_bank else None, args.review_preview, args.sync_preview, args.include_history, args.feedback_enabled, args.series, args.content_review)

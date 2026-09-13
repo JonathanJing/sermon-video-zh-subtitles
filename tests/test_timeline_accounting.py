@@ -9,7 +9,7 @@ from unittest import mock
 from scripts import build_multistage_post_live_timeline as timeline
 from scripts import run_post_live_timeline_job as job
 from scripts import sermon_accounting as accounting
-from tests.test_run_post_live_timeline_job import make_args, write_state
+from tests.test_run_post_live_timeline_job import make_args, write_state, make_handoff
 
 
 class TimelineAccountingTests(unittest.TestCase):
@@ -62,7 +62,7 @@ class TimelineAccountingTests(unittest.TestCase):
             state = root/"state.json"
             write_state(state)
             notify = mock.Mock(return_value={"status": "skipped"})
-            result = job.run_job(make_args(root, str(state)), metadata_loader=lambda _: {"live_status": "was_live", "was_live": True}, marker_reader=lambda _: None, handoff_reader=lambda _: None, marker_writer=lambda *a: None, notifier=notify)
+            result = job.run_job(make_args(root, str(state)), metadata_loader=lambda _: {"live_status": "was_live", "was_live": True, "duration": 3600}, marker_reader=lambda _: None, handoff_reader=lambda _: None, marker_writer=lambda *a: None, notifier=notify)
             ledger = (root/"2026-07-12/accounting/events.jsonl").read_text()
             events = [json.loads(line) for line in ledger.splitlines()]
         self.assertEqual(result["status"], "waiting_for_download_access")
@@ -80,12 +80,12 @@ class TimelineAccountingTests(unittest.TestCase):
         def fake_probe(args):
             args.outdir.mkdir(parents=True, exist_ok=True)
             return {"analysis": {"suggestedWindow": {"startSeconds": 10, "endSeconds": 20}}}
-        with tempfile.TemporaryDirectory() as temp, mock.patch.dict(os.environ), mock.patch.object(job.build_multistage_post_live_timeline, "build_multistage_timeline", side_effect=fake_probe), mock.patch("builtins.print"):
+        with tempfile.TemporaryDirectory() as temp, mock.patch.dict(os.environ), mock.patch.object(job.build_multistage_post_live_timeline, "build_multistage_timeline", side_effect=fake_probe), mock.patch.object(job.run_post_live_subtitle_generation, "probe_archive_audio", return_value={"format": {"duration": "3600"}, "streams": [{"codec_type": "audio"}]}), mock.patch("builtins.print"):
             self.clean_environment()
             root = Path(temp)
             state = root/"state.json"
             write_state(state)
-            result = job.run_job(make_args(root, str(state)), metadata_loader=lambda _: {"live_status": "was_live", "was_live": True}, marker_reader=lambda _: None, handoff_reader=lambda _: {"status": "complete", "audio": {"gcsUri": "gs://fake/private.m4a"}}, gcs_downloader=fake_download, uploader=lambda *a: None, marker_writer=lambda *a: None, notifier=lambda *a: {"status": "skipped"})
+            result = job.run_job(make_args(root, str(state)), metadata_loader=lambda _: {"live_status": "was_live", "was_live": True, "duration": 3600}, marker_reader=lambda _: None, handoff_reader=lambda _: make_handoff(b"fake"), gcs_downloader=fake_download, uploader=lambda *a: None, marker_writer=lambda *a: None, notifier=lambda *a: {"status": "skipped"})
             events = [json.loads(line) for line in (root/"2026-07-12/accounting/events.jsonl").read_text().splitlines()]
         self.assertEqual(result["status"], "requires_operator_review")
         stages = {e["stage"] for e in events if e["event"] == "stage_finished"}

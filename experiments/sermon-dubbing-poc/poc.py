@@ -33,8 +33,11 @@ def write_json(path: Path, data: object) -> None:
     temporary.replace(path)
 
 
-def probe(path: Path) -> dict:
-    result = subprocess.run(
+def probe(path: Path, *, process_runner=None) -> dict:
+    if process_runner is None:
+        from functools import partial
+        process_runner = partial(subprocess.run, timeout=60)
+    result = process_runner(
         ["ffprobe", "-v", "error", "-show_entries", "format=duration:stream=codec_type,codec_name,sample_rate,channels", "-of", "json", str(path)],
         capture_output=True, text=True, check=True,
     )

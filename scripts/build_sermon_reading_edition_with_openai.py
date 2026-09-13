@@ -125,6 +125,39 @@ SOURCE_TERM_CHECKS = {
 }
 
 
+def source_term_required(source: str, english: str) -> bool:
+    """Scope ambiguous English words before enforcing their doctrinal translation."""
+    for match in re.finditer(rf"\b{re.escape(source)}\b", english, flags=re.IGNORECASE):
+        before, after = english[:match.start()], english[match.end():]
+        if source == "Acts":
+            # Lower-case deeds are not the book title. Caption casing can be
+            # missing, so an explicit book/chapter reference still counts.
+            explicit = (re.search(r"\bbook\s+of\s*$", before, re.IGNORECASE)
+                or re.match(r"\s+(?:chapter\s+)?\d+\b", after, re.IGNORECASE)
+                or re.match(r"\s+of\s+the\s+apostles\b", after, re.IGNORECASE))
+            generic_of = re.match(r"\s+of\s+(?!the\s+apostles\b)", after, re.IGNORECASE)
+            if not explicit and (match.group() != "Acts" or generic_of):
+                continue
+        if source == "Trinity":
+            # This sermon calls three descriptions of forgiveness/sin a
+            # 'trinity'; that rhetorical grouping is not the Trinity doctrine.
+            if re.match(r"\s+of\s+(?:God['’]s\s+forgiveness|our\s+sins?)\b", after, re.IGNORECASE):
+                continue
+        return True
+    return False
+
+
+def contextual_action_keyword(token: str, english: str, chinese: str) -> bool:
+    """Retain the source's actionable SMS keyword with a nearby Chinese gloss."""
+    if token.lower() != "believe" or not re.search(r"\btext\s+believe\b", english, re.IGNORECASE):
+        return False
+    occurrences = list(re.finditer(r"(?<![A-Za-z0-9_])believe(?![A-Za-z0-9_])", chinese, re.IGNORECASE))
+    return bool(occurrences) and all(
+        re.search(r"相信|短信|关键词", chinese[max(0, match.start() - 16):match.end() + 16])
+        for match in occurrences
+    )
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-pipeline", type=Path, required=True)
@@ -685,7 +718,7 @@ def reading_quality_report(blocks: list[dict[str, Any]]) -> dict[str, Any]:
         missing_terms = [
             target
             for source, target in SOURCE_TERM_CHECKS.items()
-            if re.search(rf"\b{re.escape(source)}\b", en, flags=re.IGNORECASE)
+            if source_term_required(source, en)
             and target not in zh
         ]
         if missing_terms:
@@ -697,6 +730,7 @@ def reading_quality_report(blocks: list[dict[str, Any]]) -> dict[str, Any]:
                 token
                 for token in ENGLISH_TOKEN_PATTERN.findall(zh)
                 if token not in ALLOWED_ENGLISH_TOKENS
+                and not contextual_action_keyword(token, en, zh)
             }
         )
         if english_tokens:
