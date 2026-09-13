@@ -41,6 +41,29 @@ class RunSermonProductionSupervisorAgentTest(unittest.TestCase):
         self.assertTrue(mod.claim_stage_attempt(runtime, "generation"))
         self.assertFalse(mod.claim_stage_attempt(runtime, "generation"))
 
+    def test_prompt_uses_each_backends_actual_state_and_output_contract(self):
+        remote = mod.supervisor_instructions("agents-api")
+        sdk = mod.supervisor_instructions("sdk")
+        self.assertIn("windowApprovalValid", remote)
+        self.assertIn("reasonCode", remote)
+        self.assertIn("submit_supervisor_decision", remote)
+        self.assertNotIn("windowApproval.valid", remote)
+        self.assertIn("windowApproval.valid", sdk)
+        self.assertNotIn("windowApprovalValid", sdk)
+        self.assertNotIn("submit_supervisor_decision", sdk)
+
+    def test_verifier_does_not_accept_actionable_execute_as_observation(self):
+        for next_action in ("run_timeline_probe", "resume_failed_timeline", "run_reading_pdf_generation"):
+            with self.subTest(action=next_action):
+                model = {"status": "observed", "action": next_action, "human_action_required": False,
+                         "summary_zh": "等待下次", "evidence": []}
+                state = {"recommendedAction": {"action": next_action, "humanActionRequired": False}}
+                execute = mod.verify_decision(model, state, "execute")
+                self.assertEqual(execute["status"], "blocked")
+                self.assertFalse(execute["modelDecisionAccepted"])
+                self.assertFalse(execute["human_action_required"])
+                self.assertEqual(mod.verify_decision(model, state, "shadow")["status"], "observed")
+
     def test_false_model_complete_is_clamped_by_durable_state(self):
         decision = mod.verify_decision(
             {

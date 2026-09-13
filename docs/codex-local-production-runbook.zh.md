@@ -120,3 +120,9 @@ export SERMON_YOUTUBE_COOKIES_FILE=/absolute/path/youtube.cookies.txt
 2. 可以临时恢复 `sermon-sat-post-live-subtitles` Cloud Scheduler。
 3. GCS lease 会阻止同一阶段重复并发。
 4. 恢复前先检查是否已有本地 timeline 或 generation 在运行。
+
+## 当前 Supervisor 控制后端
+
+本地入口默认 `--agent-backend agents-api`、`gpt-6-astra` Medium；`--agent-backend sdk` 显式回退。API 只接收固定枚举及证据布尔值，本机保存原始生产状态与工具收据。续跑同一会话使用 `--agent-run-dir <原目录> --resume-agent-session`。execute 仍有未尝试可执行阶段时不能提交最终决定；shadow 不刷新源或执行生产。每阶段每会话最多一次，失败/等待保留恢复证据。[修复与提交边界](prompt-agent-skill-audit-fixes-20260912.zh.md)。
+
+2026-09-11 迁移检查发现旧文档所述任务未出现在本机自动化清单；用户明确授权后已创建并回读核验 ACTIVE 跟进任务「每周周六双 PDF 与周日 Context Pack」（ID：`pdf-context-pack`）：洛杉矶时间周六 18:00、20:00、22:00 执行检查/续跑，周日 08:00 补查。调度器同时唤醒的其他周末时段由任务提示词跳过；无变化时保持安静，需要人工窗口确认、失败或完成时才通知当前任务。此跟进通过命令行禁用 SendGrid 通知，仅在 Codex 内汇报。

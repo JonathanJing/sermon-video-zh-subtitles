@@ -158,15 +158,15 @@ operator 独立观看完整录像后，使用同一个 runner 写审批：
 
 ## Codex 本地定时接入
 
-生产定时任务使用 Codex 项目 cron，工作目录固定为本仓库。每次运行只推进当前状态允许的一步：
+2026-09-11 的初次检查未找到历史定时任务；同日后续已创建并回读核验 `pdf-context-pack`，回执和计划时段见 [本地 runbook](./codex-local-production-runbook.zh.md)。判断当前调度健康时重新读取任务及执行记录；不要据旧观察重复创建任务。手动入口用于明确请求的运行或恢复。每次运行只推进当前状态允许的阶段：
 
 - 直播未结束：安全退出，等待下一次运行
 - 可以下载：取得 GCS lease 后运行 timeline
 - timeline 待确认：停止并通知 operator
 - 已存在有效人工审批：运行双 PDF pipeline
-- QA 通过：上传 GCS 并标记完成
+- QA 通过：执行配置发布并核验，再读取确定性完成状态
 
-Cloud Run Job 和 post-live Cloud Scheduler 在本地生产验证后暂停，保留短期回滚，不再作为主执行路径。
+Cloud Run Job 和 post-live Cloud Scheduler 保留为兼容回退参考；其当前启停状态需单独查询。文档中的本地路径选择不证明云端已暂停或本地生产已通过。
 
 ## 旧 Cloud Scheduler / API 接入
 

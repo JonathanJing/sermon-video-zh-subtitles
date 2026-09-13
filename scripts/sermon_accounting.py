@@ -408,13 +408,13 @@ def record_api_attempt(model, response, elapsed_seconds, status="completed", err
 
 
 @contextmanager
-def sdk_invocation(model):
+def sdk_invocation(model, *, backend="sdk"):
     """Record SDK-reported aggregate usage without inventing HTTP receipts."""
     invocation_id = uuid.uuid4().hex
-    base = {"invocationId": invocation_id, "model": _label(model),
-            "measurementScope": "sdk_aggregate_including_tools",
+    base = {"invocationId": invocation_id, "model": _label(model), "agentBackend": backend,
+            "measurementScope": "agents_api_session_including_tools" if backend == "agents-api" else "sdk_aggregate_including_tools",
             "estimatedUsd": None, "costStatus": "unknown",
-            "costReason": "sdk_aggregate_not_provider_receipts",
+            "costReason": "agents_api_best_effort_not_invoice" if backend == "agents-api" else "sdk_aggregate_not_provider_receipts",
             "httpAttemptsKnown": False}
     receipt = {}
     started = time.monotonic()

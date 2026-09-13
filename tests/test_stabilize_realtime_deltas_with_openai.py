@@ -14,6 +14,29 @@ SPEC.loader.exec_module(mod)
 
 
 class StabilizeRealtimeDeltasWithOpenAITest(unittest.TestCase):
+    def test_partial_output_never_claims_ready(self):
+        output = mod.build_output(Path("fixture.jsonl"), "fixture",
+            [{"id": "a", "en": "One"}, {"id": "b", "en": "Two"}],
+            [{"id": "a", "zh": "一"}], "")
+        self.assertEqual(output["status"], "partial")
+        self.assertEqual(output["correctedWindows"], 1)
+        self.assertEqual(output["segments"][1]["stableZh"], "")
+
+    def test_non_text_correction_is_rejected_before_normalization(self):
+        for value in ({"error": "no translation"}, ["一"], 123, True):
+            with self.subTest(value=value), self.assertRaises(SystemExit):
+                mod.normalize_correction({"id": "a", "zh": value})
+
+    def test_invalid_output_cannot_be_merged(self):
+        for rows in ([{"id": "a", "zh": "一"}, {"id": "a", "zh": "二"}],
+                     [{"id": "foreign", "zh": "一"}], [{"id": "a", "zh": ""}]):
+            with self.subTest(rows=rows), self.assertRaises(ValueError):
+                mod.build_output(Path("fixture.jsonl"), "fixture", [{"id": "a", "en": "One"}], rows, "")
+
+    def test_empty_output_is_partial_and_numeric_zero_is_valid(self):
+        self.assertEqual(mod.normalize_correction({"id": 0, "zh": "零"})["id"], "0")
+        self.assertEqual(mod.build_output(Path("fixture"), "fixture", [{"id": "a", "en": "One"}], [], "")["status"], "partial")
+
     def test_builds_candidates_from_final_input_transcripts_and_draft_zh(self):
         events = [
             {

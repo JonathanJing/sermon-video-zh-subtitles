@@ -563,17 +563,12 @@ def build_openai_request(
                             "\"sourceSliceIndexes\":[1]}],"
                             "\"pastoralDistinctionsZh\":[{\"title\":\"...\",\"explanation\":\"...\","
                             "\"sourceSliceIndexes\":[1]}],"
-                            "\"reflectionQuestionsZh\":[{\"question\":\"...\",\"sourceSliceIndexes\":[1]}],"
-                            "\"smallGroupGuideZh\":[{\"section\":\"...\",\"guidance\":\"...\","
-                            "\"sourceSliceIndexes\":[1]}],"
-                            "\"responsePrayerZh\":\"...\",\"responsePrayerSourceSliceIndexes\":[1],"
                             "\"quotes\":[{\"textZh\":\"...\",\"sourceSliceIndex\":1,\"sourceSegmentId\":\"...\","
                             "\"sourceTextZh\":\"...\",\"sourceTextEn\":\"...\",\"startMs\":0,\"endMs\":0}]}.\n"
-                            "Generate one central message, a concise summary, 3-8 outline sections, explicit Scripture context, "
-                            "3-8 theological insights, sermon-illustration analysis when present, 2-6 pastoral distinctions, "
-                            "5-8 reflection questions, a 3-6 item small-group guide, and a concise response prayer. "
+                            "Generate one central message, a concise summary, and an outline of the actual sermon structure. "
+                            "Choose section counts from the evidence, without a minimum quota. Include explicit Scripture context, "
+                            "theological insights, illustration analysis, and pastoral distinctions only when supported. "
                             "Every non-quote item must cite valid sourceSliceIndexes and remain directly grounded in those slices. "
-                            "Reflection questions, group guidance, and prayer are AI-assisted responses, not speaker quotations. "
                             "Generate up to 6 exact quote excerpts copied contiguously from one cited segmentEvidence.textZh; "
                             "fewer or zero is correct when exact citation is unavailable.\n"
                             "Required fields must be present. Use empty arrays, not invented filler, when evidence is absent.\n"
@@ -719,19 +714,6 @@ def normalize_insights(
         data.get("pastoralDistinctionsZh"),
         valid_slice_indexes,
     )
-    reflection_questions = normalize_reflection_questions(
-        data.get("reflectionQuestionsZh"),
-        valid_slice_indexes,
-    )
-    small_group_guide = normalize_small_group_guide(
-        data.get("smallGroupGuideZh"),
-        valid_slice_indexes,
-    )
-    response_prayer = compact_text(data.get("responsePrayerZh") or "")
-    response_prayer_sources = normalize_source_indexes(
-        data.get("responsePrayerSourceSliceIndexes"),
-        valid_slice_indexes,
-    )
     missing_sources = missing_interpretation_source_paths(
         central_message=central_message,
         central_message_sources=central_message_sources,
@@ -742,13 +724,9 @@ def normalize_insights(
         theological_insights=theological_insights,
         illustrations=illustrations,
         pastoral_distinctions=pastoral_distinctions,
-        reflection_questions=reflection_questions,
-        small_group_guide=small_group_guide,
-        response_prayer=response_prayer,
-        response_prayer_sources=response_prayer_sources,
     )
     return {
-        "schemaVersion": 2,
+        "schemaVersion": review_prompts.NOTES_SCHEMA_VERSION,
         "status": "ready",
         "generatedFrom": "openai-notes",
         "artifactType": "sermon_interpretation",
@@ -778,10 +756,6 @@ def normalize_insights(
         "theologicalInsightsZh": theological_insights,
         "illustrationsZh": illustrations,
         "pastoralDistinctionsZh": pastoral_distinctions,
-        "reflectionQuestionsZh": reflection_questions,
-        "smallGroupGuideZh": small_group_guide,
-        "responsePrayerZh": response_prayer,
-        "responsePrayerSourceSliceIndexes": response_prayer_sources,
         "quotes": quotes,
         "traceability": {
             "allInterpretationItemsHaveSource": not missing_sources,
@@ -997,10 +971,6 @@ def missing_interpretation_source_paths(
     theological_insights: list[dict[str, Any]],
     illustrations: list[dict[str, Any]],
     pastoral_distinctions: list[dict[str, Any]],
-    reflection_questions: list[dict[str, Any]],
-    small_group_guide: list[dict[str, Any]],
-    response_prayer: str,
-    response_prayer_sources: list[int],
 ) -> list[str]:
     missing: list[str] = []
     if central_message and not central_message_sources:
@@ -1013,14 +983,10 @@ def missing_interpretation_source_paths(
         ("theologicalInsightsZh", theological_insights),
         ("illustrationsZh", illustrations),
         ("pastoralDistinctionsZh", pastoral_distinctions),
-        ("reflectionQuestionsZh", reflection_questions),
-        ("smallGroupGuideZh", small_group_guide),
     ):
         for index, item in enumerate(items):
             if not item.get("sourceSliceIndexes"):
                 missing.append(f"{field}[{index}].sourceSliceIndexes")
-    if response_prayer and not response_prayer_sources:
-        missing.append("responsePrayerSourceSliceIndexes")
     return missing
 
 

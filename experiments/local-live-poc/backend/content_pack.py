@@ -281,6 +281,11 @@ def _normal(text: str) -> str:
     return " ".join(re.findall(r"[a-z0-9']+", text.lower()))
 
 
+def _source_mentions(value: str, source_normal: str) -> bool:
+    phrase = _normal(value)
+    return bool(phrase and f" {phrase} " in f" {source_normal} ")
+
+
 def _pack_is_active(pack: dict[str, Any], now: datetime) -> bool:
     if pack.get("status") != "active":
         return False
@@ -324,12 +329,11 @@ def retrieve(
         overlap = len(query_tokens & entry_tokens) / max(1, len(query_tokens))
         term_matches = [
             term for term in entry.get("terms", [])
-            if _normal(term.get("source", "")) in query_normal
+            if _source_mentions(term.get("source", ""), query_normal)
         ]
         scripture_matches = [
             reference for reference in entry.get("scriptureRefs", [])
-            if _normal(reference.get("reference", ""))
-            and _normal(reference.get("reference", "")) in query_normal
+            if _source_mentions(reference.get("reference", ""), query_normal)
         ]
         score = (
             (4.0 if exact_match else 0.0)
@@ -363,8 +367,14 @@ def retrieve(
             "translationStatus": entry.get("translationStatus"),
             "canInjectTranslation": can_inject_this_hit,
             "scriptureRefs": [reference["reference"] for reference in entry.get("scriptureRefs", [])],
-            "injectableScriptureRefs": entry.get("injectableScriptureRefs", []),
-            "injectableTerms": entry.get("injectableTerms", []),
+            "injectableScriptureRefs": [
+                reference for reference in entry.get("injectableScriptureRefs", [])
+                if _source_mentions(reference, query_normal)
+            ],
+            "injectableTerms": [
+                term for term in entry.get("injectableTerms", [])
+                if _source_mentions(term.get("source", ""), query_normal)
+            ],
             "audioStartMs": entry.get("audioStartMs"),
             "audioEndMs": entry.get("audioEndMs"),
             "cursorDistance": cursor_distance,
@@ -421,13 +431,20 @@ def prompt_context(
             "reviewedExactExamples": [],
             "reviewedAlignedReferences": [],
         }
-    terms: dict[str, str] = {}
+    terms: dict[str, dict[str, str]] = {}
+    term_scores: dict[str, float] = {}
     exact_examples: list[dict[str, str]] = []
     aligned_references: list[dict[str, Any]] = []
     scripture_refs: set[str] = set()
     for hit in hits:
         for term in hit.get("injectableTerms", []):
-            terms[term["source"]] = term["preferredZh"]
+            source = _normal(term["source"])
+            score = float(hit.get("score") or 0)
+            # Resolve term conflicts without changing cursor-ranked reference order.
+            # Equal scores retain the first retrieved source.
+            if source not in terms or score > term_scores[source]:
+                terms[source] = {"source": term["source"], "preferredZh": term["preferredZh"]}
+                term_scores[source] = score
         scripture_refs.update(hit.get("injectableScriptureRefs", []))
         if hit.get("canInjectTranslation") and hit.get("targetTextZh"):
             exact_examples.append({
@@ -447,7 +464,7 @@ def prompt_context(
                 "targetTextZh": hit["reviewedReferenceTargetTextZh"],
             })
     return {
-        "approvedTerms": [{"source": source, "preferredZh": target} for source, target in sorted(terms.items())],
+        "approvedTerms": [terms[source] for source in sorted(terms)],
         "verifiedScriptureRefs": sorted(scripture_refs),
         "reviewedExactExamples": exact_examples[:2],
         "reviewedAlignedReferences": aligned_references[:2],
