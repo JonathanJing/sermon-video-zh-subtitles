@@ -1,0 +1,229 @@
+{
+  "schemaVersion": "saturday-quality-suite-v2",
+  "corpusKind": "existing_model_reviewed_sermon",
+  "sourceUrl": "https://www.youtube.com/watch?v=l8ucqF9uA9A",
+  "serviceDate": "2026-09-06",
+  "humanAcceptance": "not_evaluated",
+  "pronunciationRuleVersion": "chinese-sermon-pronunciation-v1",
+  "requireAudioEvidence": false,
+  "modelReviewEvidence": {
+    "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/job.json",
+    "sha256": "0e57730861f9ea5fddf807e8b2b51f0400cea4ccdd958be0958a95fd9aab24d3"
+  },
+  "samples": [
+    {
+      "id": "l8ucqF9uA9A-block-1",
+      "en": "Now, when I was a college student, on a random Tuesday, I got invited to go up to Yosemite and to hike Half Dome, which is one of the most prominent features in Yosemite Valley. If you heard this, you know it is one of the most beautiful things that you can see. Now, we walked up to this trailhead, and I was prepared with simply a pair of jean shorts. I had no backpack and a single plastic water bottle.",
+      "sourceSha256": "7a2ac41f1b976a14b950a2dad57e7b3e94469ae44ebbf2f6b1fca36524882790",
+      "referenceChineseSha256": "cea6357367eb990ee6b3e498dbbfc95b41fff76815800ee49712f892b2e602cb",
+      "provenance": {
+        "kind": "model_reviewed",
+        "jobBlockId": 1,
+        "model": "gpt-6-astra",
+        "humanApproval": false,
+        "reviewArtifactSha256": "014ab6d143ebb4c9c1ce0b4402a22f6983f34c24bb8de15071591b5c5be8dcf1"
+      },
+      "constraints": {
+        "terms": [
+          [
+            "优胜美地"
+          ],
+          [
+            "半圆顶"
+          ]
+        ],
+        "forbiddenZh": [],
+        "numbers": []
+      }
+    },
+    {
+      "id": "l8ucqF9uA9A-block-2",
+      "en": "I was in college. It's about the best that I had. Now, this hike itself is nine miles up, and then, of course, it's nine miles back down, a total vertical climb of 5,300 feet of elevation. This entire climb took us nearly 12 hours, and you can see, here's the photo of me sort of comically laying down with my head rested on the top of the dome. That's a 3,000-foot drop right behind my head.",
+      "sourceSha256": "6f3e23dcf35dfe8909c337aa970dcb2b88658996727e0a510a0c78597c34b0b9",
+      "referenceChineseSha256": "afe9308eb7a91a568630a6ffd21f5b4c65bb6de847aef9adaee58db9b96691b1",
+      "provenance": {
+        "kind": "model_reviewed",
+        "jobBlockId": 2,
+        "model": "gpt-6-astra",
+        "humanApproval": false,
+        "reviewArtifactSha256": "014ab6d143ebb4c9c1ce0b4402a22f6983f34c24bb8de15071591b5c5be8dcf1"
+      },
+      "constraints": {
+        "terms": [
+          [
+            "英尺"
+          ],
+          [
+            "小时"
+          ]
+        ],
+        "forbiddenZh": [],
+        "numbers": [
+          {
+            "source": "5,300",
+            "value": 5300,
+            "checkRecognized": true
+          },
+          {
+            "source": "3,000",
+            "value": 3000,
+            "checkRecognized": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "l8ucqF9uA9A-block-9",
+      "en": "In his head, he knows that God is good, but it's in his heart that really almost pulled him down. One of the big principles that we're going to learn from this psalm is that where you look is where you inevitably go. Now, our senior pastor Eric is well on the record by telling us how much he loves to mountain bike. He's a very good mountain biker, except for that time that he broke his collarbone, but other than that, he's pretty good. I have figured out that mountain biking is not for me. In fact, years ago, I went mountain biking with a bunch of our pastors in Utah at a ski slope.",
+      "sourceSha256": "57db495af26777a8d26134c3fe9b50ef176f491e24c785fe1361cdc611b72811",
+      "referenceChineseSha256": "fa315a76ce86fea1b5f71307add64abaf2729862d361a66daef73e9c29a7a4bb",
+      "provenance": {
+        "kind": "model_reviewed",
+        "jobBlockId": 9,
+        "model": "gpt-6-astra",
+        "humanApproval": false,
+        "reviewArtifactSha256": "014ab6d143ebb4c9c1ce0b4402a22f6983f34c24bb8de15071591b5c5be8dcf1"
+      },
+      "constraints": {
+        "terms": [
+          [
+            "埃里克"
+          ],
+          [
+            "锁骨"
+          ]
+        ],
+        "forbiddenZh": [],
+        "numbers": []
+      }
+    },
+    {
+      "id": "l8ucqF9uA9A-block-10",
+      "en": "Now, when I got invited and I heard, Hey, we're going to go ride bikes down a ski slope, I'm picturing beach cruisers kind of gently gliding down these ski runs, and I could not have been more wrong. We actually rode the chairlift up with our bikes attached to the side, and when we reached the top, we did not go down the ski slope; we turned into the woods instead.",
+      "sourceSha256": "db69f2013778f00a8b4e38d033a61eef7034406e7f5e6fd3a035c47edf752840",
+      "referenceChineseSha256": "23288b8361e9880d820ba5fdc4a22ada5543a8c3bf5dfdef0f0743ce660acc25",
+      "provenance": {
+        "kind": "model_reviewed",
+        "jobBlockId": 10,
+        "model": "gpt-6-astra",
+        "humanApproval": false,
+        "reviewArtifactSha256": "014ab6d143ebb4c9c1ce0b4402a22f6983f34c24bb8de15071591b5c5be8dcf1"
+      },
+      "constraints": {
+        "terms": [
+          [
+            "树林"
+          ]
+        ],
+        "forbiddenZh": [],
+        "numbers": []
+      }
+    },
+    {
+      "id": "l8ucqF9uA9A-block-17",
+      "en": "I see people all over Instagram, and I always think to myself, of course they’re fit. They’ve got personal chefs and fitness coaches, right? Of course those people are wealthy. They’ve got trust funds. Of course they’re happy. They don’t just have one car; they open their garage and they’ve got options. This is essentially Asaph doing the very same thing. He’s scrolling the Instagram of his day, and he is seeing the world around him. So he isn’t, though, coveting their jewelry or their bodies or their lifestyle. He’s actually envying the peace that is their life. The word here is shalom. A simple definition of the word shalom is nothing missing, nothing broken. And the wicked appear to possess shalom.",
+      "sourceSha256": "e5832d85b986dfa40947bcbdcfc93a4750aec372128e68e31cc32ecb76be1624",
+      "referenceChineseSha256": "5334d81bf425ab00141a4c111d17829b91f569a0aa5275f37f937356c3ec1710",
+      "provenance": {
+        "kind": "model_reviewed",
+        "jobBlockId": 17,
+        "model": "gpt-6-astra",
+        "humanApproval": false,
+        "reviewArtifactSha256": "014ab6d143ebb4c9c1ce0b4402a22f6983f34c24bb8de15071591b5c5be8dcf1"
+      },
+      "constraints": {
+        "terms": [
+          [
+            "亚萨"
+          ],
+          [
+            "沙洛姆"
+          ],
+          [
+            "毫无缺失"
+          ],
+          [
+            "毫无破损"
+          ]
+        ],
+        "forbiddenZh": [],
+        "numbers": []
+      }
+    },
+    {
+      "id": "l8ucqF9uA9A-block-38",
+      "en": "Doubt is the guise that most people desire to continue living in their own life, chasing after their own dreams, achieving their own goals, maintaining their own authority. But the upside-down kingdom of God is that releasing all and surrendering it to His far better life, that’s what God invites us into. So Asaph, he writes this, and I love this so much, this literary device that he uses.",
+      "sourceSha256": "10b8f9f489a15779ee40d282d952c7024596133a0cd0754fa88f8a79ef30c550",
+      "referenceChineseSha256": "f3ff92ce871c955b305a62dbc8329afdf30b855b23d52bccfca2cd0cef2d0a3b",
+      "provenance": {
+        "kind": "model_reviewed",
+        "jobBlockId": 38,
+        "model": "gpt-6-astra",
+        "humanApproval": false,
+        "reviewArtifactSha256": "014ab6d143ebb4c9c1ce0b4402a22f6983f34c24bb8de15071591b5c5be8dcf1"
+      },
+      "constraints": {
+        "terms": [
+          [
+            "神的国"
+          ],
+          [
+            "降服"
+          ]
+        ],
+        "forbiddenZh": [],
+        "numbers": []
+      }
+    },
+    {
+      "id": "l8ucqF9uA9A-block-42",
+      "en": "It says, Whom have I in heaven but you? And I desire nothing on earth but you. My flesh and my heart may fail, but God is the strength of my heart, my portion forever. Those far from you will certainly perish; you destroy all who are unfaithful to you. But as for me, God's presence is my good. I have made the Lord God my refuge, so I can tell about all you do.",
+      "sourceSha256": "f313813b056476d989dc9fef6b547b3d3a3015eef754eb4d89089db2d1f79c34",
+      "referenceChineseSha256": "eb9a55989c170774c6b7b843cda3b55de23687e5cfb443f023528e32b3fe1fc9",
+      "provenance": {
+        "kind": "model_reviewed",
+        "jobBlockId": 42,
+        "model": "gpt-6-astra",
+        "humanApproval": false,
+        "reviewArtifactSha256": "014ab6d143ebb4c9c1ce0b4402a22f6983f34c24bb8de15071591b5c5be8dcf1"
+      },
+      "constraints": {
+        "terms": [
+          [
+            "我的肉体"
+          ],
+          [
+            "避难所"
+          ]
+        ],
+        "forbiddenZh": [],
+        "numbers": []
+      }
+    },
+    {
+      "id": "l8ucqF9uA9A-block-53",
+      "en": "What did your prayer time sound like in those moments? Who did you turn to, and what was the result of that? What got you through that season? And then how did your faith strengthen? Did your faith strengthen because you brought your doubts to God? You had beautiful people in your life who are walking with Jesus themselves, and they spoke great words of wisdom.",
+      "sourceSha256": "e5794540aa5493e149e50ec8793557ed1ac0dcba16e1e6023dc4f6ce4b100d50",
+      "referenceChineseSha256": "782e65d5b9b707af3c0142673639d367b6eef9991537ffa4df1f9c0efea0ba85",
+      "provenance": {
+        "kind": "model_reviewed",
+        "jobBlockId": 53,
+        "model": "gpt-6-astra",
+        "humanApproval": false,
+        "reviewArtifactSha256": "014ab6d143ebb4c9c1ce0b4402a22f6983f34c24bb8de15071591b5c5be8dcf1"
+      },
+      "constraints": {
+        "terms": [
+          [
+            "疑惑"
+          ],
+          [
+            "耶稣"
+          ]
+        ],
+        "forbiddenZh": [],
+        "numbers": []
+      }
+    }
+  ]
+}

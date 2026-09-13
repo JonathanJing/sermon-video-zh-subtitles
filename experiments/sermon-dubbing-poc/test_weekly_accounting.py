@@ -27,6 +27,7 @@ class WeeklyAccountingTests(unittest.TestCase):
         work = Path(folder) / "weekly"
         work.mkdir()
         job = {"week": "2026-09-06", "sourceDurationSeconds": unit_count * 2,
+               "voice": {"checkpointSha256": "fixture-checkpoint"},
                "blocks": [{"id": i, "en": "English", "zh": "中文"} for i in range(block_count)],
                "units": [{"id": i, "blockId": i % block_count, "text": "中文", "gapAfterSeconds": .45} for i in range(unit_count)]}
         (work / "job.json").write_text(json.dumps(job), encoding="utf-8")
@@ -59,7 +60,10 @@ class WeeklyAccountingTests(unittest.TestCase):
                              "runId": os.environ.get("SERMON_ACCOUNTING_RUN_ID")})
             if os.environ.get("SERMON_ACCOUNTING_STAGE") == "transfer_download":
                 render_files()
-            return subprocess.CompletedProcess(argv, 0)
+            output = (json.dumps(runner.render_identity(work / "job.json", "fixture-checkpoint"))
+                      if argv[-1].endswith("/render/identity.json") else
+                      json.dumps({"reason": "duration_or_signal", "unit": 0}) if argv[-1].startswith("cat ") else "")
+            return subprocess.CompletedProcess(argv, 0, stdout=output)
 
         mocks = {}
         values = {"validated_job": job, "validate_cached_stages": None, "validate_render": render_report,
@@ -73,7 +77,10 @@ class WeeklyAccountingTests(unittest.TestCase):
             stack.enter_context(patch("builtins.print"))
             for name, value in values.items():
                 mocks[name] = stack.enter_context(patch.object(runner, name, return_value=value))
-            process = stack.enter_context(patch.object(runner.subprocess, "run", side_effect=command))
+            process = stack.enter_context(patch.object(runner, "process_run", side_effect=command))
+            # Accounting fixture has fake media; real quarantine validators are
+            # independently covered by test_execution_recovery.
+            stack.enter_context(patch.object(runner, "reconcile_remote", side_effect=lambda target, job, fetch: fetch(target)))
             output = stack.enter_context(patch.object(runner.subprocess, "check_output", return_value=json.dumps({"reason": "duration_or_signal", "unit": 0})))
             yield SimpleNamespace(work=work, mocks=mocks, process=process, output=output,
                                   command=command, commands=commands)
@@ -117,7 +124,7 @@ class WeeklyAccountingTests(unittest.TestCase):
                 self.assertEqual(row["costStatus"], "no_api_receipts")
                 self.assertEqual(row["apiAttempts"], 0)
                 self.assertGreaterEqual(row["elapsedSeconds"], 0)
-            self.assertEqual([row["stage"] for row in f.commands], ["transfer_upload", "transfer_upload",
+            self.assertEqual([row["stage"] for row in f.commands], ["transfer_upload", "transfer_upload", "transfer_upload",
                 "render", "transfer_download", "source_alignment", "local_asr", "timing"])
             receipt = json.loads((f.work / "workflow-receipt.json").read_text(encoding="utf-8"))
             self.assertEqual(receipt["humanAudioReview"], "pending")
@@ -174,8 +181,8 @@ class WeeklyAccountingTests(unittest.TestCase):
             render = [row for row in finished if row["stage"] == "render"]
             self.assertEqual([row["status"] for row in render], ["failed", "completed"])
             self.assertEqual([row["status"] for row in finished if row["stage"] == "render_recovery"], ["completed"])
-            f.output.assert_called_once()
-            repair = [row for row in f.commands if row["stage"] == "render_recovery"]
+            self.assertEqual(len([row for row in f.commands if row["argv"][-1].startswith("cat ")]), 1)
+            repair = [row for row in f.commands if row["stage"] == "render_recovery" and "/work/retry_weekly_unit.py" in row["argv"][-1]]
             self.assertEqual(len(repair), 1)
             self.assertIn("/work/retry_weekly_unit.py", repair[0]["argv"][-1])
             self.assertIn("--seed 142", repair[0]["argv"][-1])
@@ -218,7 +225,8 @@ class WeeklyAccountingTests(unittest.TestCase):
             self.assertEqual(weekly["parentSpanId"], parent_stage["spanId"])
             self.assertTrue(all(row["parentSpanId"] == weekly["spanId"] for row in finished
                                 if row["stage"] not in ("saturday", "weekly_dubbing")))
-            self.assertFalse((f.work / "accounting").exists())
+            self.assertFalse((f.work / "accounting/events.jsonl").exists())
+            self.assertTrue((f.work / "accounting/harness/latest.json").exists())
             self.assertTrue(all(not os.environ.get(key) for key in ENV_KEYS))
 
     def test_job_workload_counts_actual_blocks_units_and_historical_render_timer(self):

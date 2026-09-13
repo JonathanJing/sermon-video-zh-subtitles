@@ -4,6 +4,7 @@ import json
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch, Mock
 from pathlib import Path
 
 
@@ -16,6 +17,45 @@ SPEC.loader.exec_module(mod)
 
 
 class TranslatePlaybackWithOpenAITest(unittest.TestCase):
+    def test_partial_translation_is_recoverable_and_does_not_mutate_input(self):
+        original = {"translationStatus": "needs_translation", "segments": [
+            {"id": "a", "en": "One.", "zh": "", "translationStatus": "needs_translation"},
+            {"id": "b", "en": "Two.", "zh": "", "translationStatus": "needs_translation"},
+        ]}
+        first = mod.apply_translations(original, [mod.normalize_translation({"id": "a", "zh": "一。"})], "fixture", "")
+        self.assertEqual(first["translationStatus"], "partial")
+        self.assertEqual(original["translationStatus"], "needs_translation")
+        self.assertEqual([r["id"] for r in mod.translation_candidates(first, None)], ["b"])
+        final = mod.apply_translations(first, [mod.normalize_translation({"id": "b", "zh": "二。"})], "fixture", "")
+        self.assertEqual(final["translationStatus"], "ready")
+
+    def test_batch_rejects_duplicate_unknown_and_empty_cues(self):
+        for rows in ([{"id": "a", "zh": "一"}, {"id": "a", "zh": "二"}],
+                     [{"id": "unknown", "zh": "一"}], [{"id": "a", "zh": ""}]):
+            with self.subTest(rows=rows):
+                response = Mock(status_code=200)
+                response.json.return_value = {"output_text": json.dumps({"segments": rows})}
+                with patch.object(mod.requests, "post", return_value=response):
+                    with self.assertRaises((ValueError, SystemExit)):
+                        mod.translate_batch([{"id": "a", "en": "One."}], "fixture", "fixture")
+
+    def test_zero_id_is_preserved(self):
+        self.assertEqual(mod.normalize_translation({"id": 0, "zh": "零"})["id"], "0")
+
+    def test_non_text_translation_is_rejected_before_normalization(self):
+        for value in ({"error": "no translation"}, ["一"], 123, True):
+            with self.subTest(value=value), self.assertRaises(SystemExit):
+                mod.normalize_translation({"id": "a", "zh": value})
+
+    def test_model_cannot_replace_source_references_or_annotations(self):
+        original = {"segments": [{"id": "a", "en": "A word.", "ref": "", "note": "source note"}]}
+        translated = mod.apply_translations(original, [{"id": "a", "zh": "一句话。", "draft": "other",
+            "ref": "Invented 1:1", "note": "model note"}], "fixture", "")
+        raw = translated["rawSegments"][0]
+        self.assertEqual(raw["draft"], raw["zh"])
+        self.assertEqual(raw["ref"], "")
+        self.assertEqual(raw["note"], "source note")
+
     def test_reads_and_renders_playback_simulation_js(self):
         simulation = {
             "translationStatus": "needs_translation",

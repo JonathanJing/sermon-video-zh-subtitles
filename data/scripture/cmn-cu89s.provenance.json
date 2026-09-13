@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "editionId": "cmn-cu89s",
+  "nameZh": "新标点和合本（简体，神版）",
+  "sourceUrl": "https://ebible.org/Scriptures/cmn-cu89s_vpl.zip",
+  "detailsUrl": "https://ebible.org/bible/details.php?id=cmn-cu89s",
+  "license": "Public Domain",
+  "sourceUpdated": "2021-10-15",
+  "sourceVerifiedOn": "2026-09-13",
+  "archiveSha256": "8c9969ea5659835c132f9ce93101b948cd04edf298ca507ae50bbe77858d5027",
+  "archiveTextMember": "cmn-cu89s_vpl.txt",
+  "sourceTextSha256": "f9264d61e7abc7cda2e74ed465b0f99fa64038bcdc7e9af1d4dcc9e80e2db705",
+  "libraryPath": "data/scripture/cmn-cu89s.json",
+  "libraryFileSha256": "e545921dcf5c4d45bc43838a33e5a577dc3834ace1bd7d7954e2ee8dbb57ea81",
+  "libraryContentSha256": "9c43dacae44a16ce5fb56bb42ba3afde9f8facfe1eaf1b9ebba6a9b76c8cb80f",
+  "normalizedVersesSha256": "0e73438c22372c7b65bef5215827c38d0ab7ada8f49551c09d6e9c97c354c49d",
+  "normalization": "Preserve source wording, punctuation and editorial bracket contents; normalize U+3000 and other consecutive whitespace to one ASCII space, then trim, matching the existing build_scripture_index.py index. Canonical JSON hash uses UTF-8, ensure_ascii=false, sort_keys=true and separators comma/colon without whitespace.",
+  "bookCount": 66,
+  "chapterCount": 1189,
+  "verseEntryCount": 31021,
+  "numberingNote": "The source VPL merges some verses under the first number, e.g. GEN 24:29 contains 29-30 and has no separate 30 entry. Missing verse numbers must fail closed for source review; never silently split or omit them.",
+  "verification": "Fresh eBible VPL download matched every one of the 31,021 indexed verse entries after the declared whitespace normalization. No text replacements. eBible details page and bundled about.htm both identify this edition as Public Domain; John 3:16 and Genesis 1:1 use 神."
+}

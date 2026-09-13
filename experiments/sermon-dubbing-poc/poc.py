@@ -33,8 +33,11 @@ def write_json(path: Path, data: object) -> None:
     temporary.replace(path)
 
 
-def probe(path: Path) -> dict:
-    result = subprocess.run(
+def probe(path: Path, *, process_runner=None) -> dict:
+    if process_runner is None:
+        from functools import partial
+        process_runner = partial(subprocess.run, timeout=60)
+    result = process_runner(
         ["ffprobe", "-v", "error", "-show_entries", "format=duration:stream=codec_type,codec_name,sample_rate,channels", "-of", "json", str(path)],
         capture_output=True, text=True, check=True,
     )
@@ -45,19 +48,20 @@ def probe(path: Path) -> dict:
     return {"durationSeconds": duration, "streams": data["streams"]}
 
 
-def sentences(text: str) -> list[str]:
+def sentences(text: str, *, cuv_quotes: bool = False) -> list[str]:
     # Attach closing quotes to the sentence whose punctuation they follow.
-    parts = re.findall(r"[^。！？]+[。！？]?[”’\"']*", text)
+    closers = "”’\"'」』" if cuv_quotes else "”’\"'"
+    parts = re.findall(r"[^。！？]+[。！？]?[" + re.escape(closers) + r"]*", text)
     return [s.strip() for s in parts if s.strip()]
 
 
-def speech_units(paragraphs: list[str], mode: str) -> list[str]:
+def speech_units(paragraphs: list[str], mode: str, *, cuv_quotes: bool = False) -> list[str]:
     if mode not in {"flow", "sentence"}:
         raise ValueError("Unknown segmentation mode")
     output = []
     for paragraph in paragraphs:
         current = ""
-        for sentence in sentences(paragraph):
+        for sentence in sentences(paragraph, cuv_quotes=cuv_quotes):
             if mode == "sentence":
                 output.append(sentence)
                 continue

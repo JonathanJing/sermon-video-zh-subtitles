@@ -12,10 +12,12 @@
 
 两路并行推进：
 
-- **同版本纯证道视频主路（待来源与接入器）**：下一步取得周日实际播放的那一份纯证道视频，绑定文件哈希、版本和完整片长。只有明确的纯证道来源契约成立后，才可使用整片范围；不需要人为重复填写起止时间。目前未收到该视频，不能宣称已经全自动。
+- **同版本纯证道视频主路（接入器已实现，待实际来源）**：`prepare_same_video.py` 校验周次、来源 ID／canonicalURL、文件 SHA-256、完整片长、音视频流和同版／纯证道确认依据；独立归档后使用 `0 → 完整片长`。该路记录 `humanWindow=not_applicable`，不生成旧式人工窗口批准。实际视频尚未收到，当前证据为软件测试和合成视频初始化，不能宣称真实来源全流程已通过。
 - **直播归档 fallback（当前可用，半自动）**：继续现有直播归档与 PDF 流程，复用已确认的证道窗口。当前 v1 只消费真实人工窗口；将来自动探测和审核边界要另建模型证据契约，不能写成 v1 人工批准。主路缺少来源不会阻挡 fallback。
 
 桥接器默认只读检查；`--execute` 会在来源和 QA 齐备后准备或恢复配音候选，使用按周、来源隔离的锁。文字修订和审核在本对话使用 GPT-6 Astra；桥接器本身不调用另一个文本审核服务。
+
+需要从 PDF 一起顺序推进时，使用[周六统一入口](../../docs/saturday-harness.zh.md)。配音 runner 另按真实工作目录加锁，命令有超时，SSH 结果不明时先核对远端并隔离导入；恢复规则与收据位置见[执行保护与恢复](../../docs/sermon-execution-harness.zh.md)。固定版本比较可用[离线质量回归](../../docs/saturday-quality-harness.zh.md)，不能替代下文整篇听审。
 
 ```bash
 .venv/bin/python experiments/sermon-dubbing-poc/continue_saturday_dubbing.py \
@@ -23,11 +25,26 @@
 # 实际推进已有来源的配音候选：在同一命令后加 --execute
 ```
 
-已建立的本机配置记录六位讲员训练结果、现有授权范围和周次来源。新周次讲员、主题、经文应从真实视频/已审产物核验后登记，不能从目录名猜测。可版本化的结构见 [saturday-bridge.example.json](saturday-bridge.example.json)。配置、音频和审核证据留在忽略目录。
+同版来源首次就绪后，按桥接报告的 `nextActions` 运行 `prepare_same_video.py --initialize`，在独立 `sameVideo.run` 中归档；它给出当前对话可执行的 ASR／阅读／解读命令。完成修订后运行 `--seal-reviewed`：重验 ASR、英文、阅读稿、双 SRT 和解读切片的来源链，在独立目录重建双 PDF 并绑定输入／输出哈希，然后回到桥接器 `--execute` 准备配音候选。已存在且有效的阶段会被复用；仅封存失败时不会再次执行解读生成。来源或证据失效时保留原文件并停止该路，健康 fallback 仍可推进。完整契约与本轮验证见[开发进度核验](../../docs/saturday-development-progress-2026-09-05.zh.md)。
+
+```bash
+# RUN 使用桥接报告给出的独立来源目录；契约来自已核实视频，不照抄测试数据。
+.venv/bin/python experiments/sermon-dubbing-poc/prepare_same_video.py \
+  --config artifacts/sermon-dubbing/saturday-bridge.json --week YYYY-MM-DD \
+  --run RUN --initialize
+# 完成上述入口给出的生产和审核步骤后：
+.venv/bin/python experiments/sermon-dubbing-poc/prepare_same_video.py \
+  --config artifacts/sermon-dubbing/saturday-bridge.json --week YYYY-MM-DD \
+  --run RUN --seal-reviewed
+```
+
+已建立的本机配置记录六位讲员训练结果、现有授权范围和周次来源。Eric 样片此前已获认可；2026-09-05 用户进一步确认 Jared Kirkwood、Christine Caine、Doug Fields、Kenton Beshore 和 Steve Bang Lee 当前五份中文音色试听均已人工认证，见[按试听音频与检查点绑定的回执](reviews/speaker-voice-acceptance-2026-09-05.json)。这不替代每周整篇审核、训练片段正式准入或现场同步验收。新周次讲员、主题、经文应从真实视频/已审产物核验后登记，不能从目录名猜测。可版本化的结构见 [saturday-bridge.example.json](saturday-bridge.example.json)。配置、音频和审核证据留在忽略目录。
 
 接线目标沿用现有定时任务的周六 18:00、20:00、22:00 与周日 08:00（洛杉矶）的有效唤醒。PDF 已完成仍需检查配音扩展是否完成；只恢复缺失阶段。整篇模型审核候选与周日现场验收分开记录。2026-09-05 本次应用接口未返回，回读仍为原双 PDF 任务；桥接器和配置已验证，定时接线尚待应用确认。
 
 ## 本对话的口播修订与边界审核
+
+新制作默认先完成[和合本（CUV）锁定与全篇审校](../../docs/sermon-cuv-production.zh.md)：英文冻结后、TTS 前执行 `scripts/sermon_cuv_translation.py run`，精确锁住直接引文，再翻译并独立审校旁白；桥接器不会自动补做此步骤。使用其 `blocks.json` 与哈希绑定的 `spoken-review.json` 作为新中文及派生依据，字幕、PDF、配音和大纲所引经文保持同源；讲员解释、玩笑或错引不强改为经文，机器通过不等于人工听审。重译或旁白精练后必须对新 WAV 重测时长；实测超时才按链接中的 `repair-timing` 流程修订，始终保留锁定经文和旧版本证据。
 
 `apply_spoken_review.py` 将当前对话的两轮 Astra 审核保存为 `sermon-spoken-script-review-v1`，派生新 job，并哈希绑定父版本、英文/中文、审核材料和模型身份。未变的 WAV 与逐段 ASR 可复用；改变英文时用已有原声词证据重新匹配，不修改历史阅读稿或 PDF。
 
@@ -99,7 +116,7 @@ Qwen 的[官方接口](https://github.com/QwenLM/Qwen3-TTS#custom-voice-generati
 
 先读取同一周的 `audio/asr-screening.json` 和 `synchronization/report.json`。新步骤关注以下内容：
 
-1. **讲员身份与原声相似度**：原声对照和中文试听交替播放，比较音色、语气、稳定性。Eric 扩充版的样片认可不自动批准其他讲员或新一周完整音轨。
+1. **讲员身份与原声相似度**：原声对照和中文试听交替播放，比较音色、语气、稳定性。Eric 及本次新增五位讲员的当前音色试听均已有用户认可；新检查点或新一周完整音轨仍按其实际内容审核，不能复用样片认可作为整篇批准。
 2. **中文是否自然**：完整句子是否连贯，停顿是否合理，人名、经文、数字是否读对；检查回转写标出的漏读/重复。机器未发现差异仍需真人试听。
 3. **同视频同步**：弱边界需对照原视频确认；超出原声时槽的段落回到同一中文审校流程修订并重新生成。脚本不会截句、叠音或自动加速来掩盖超时。
 4. **冻结本周版本**：审核人、时间、检查点、MP3、job 和原始周六完成证据相互绑定。
@@ -155,7 +172,7 @@ python3 experiments/sermon-dubbing-poc/deploy_firebase.py \
 
 本轮用 8 月 30 日的完整现有证道运行准备、生成、恢复、回听和同步检查，并为发音规范创建独立修订：原版本 122 段、26 分 45 秒；新修订保留 96 段经哈希核对的声音，重做 26 段数字/代词发音输入。父版本、失败样本和原始审核都保留。
 
-五位新增讲员各三篇证道，共 223 段 / 1,803 秒训练候选。五份约 27–31 秒的中文试听 MP3 已生成，完整解码通过；对应固定试听文稿的本地 ASR 未发现文字差异。这不等于已由真人确认音色相似度。
+五位新增讲员各三篇证道，共 223 段 / 1,803 秒训练候选。五份约 27–31 秒的中文试听 MP3 已生成，完整解码通过；对应固定试听文稿的本地 ASR 未发现文字差异。上述机器结果与人工试听分开记录：用户于 2026-09-05 确认这五份当前音色试听已人工认证，[回执](reviews/speaker-voice-acceptance-2026-09-05.json)绑定其 MP3 与检查点。训练候选的逐段准入和整篇配音审核状态继续独立保留。
 
 原周六历史样本仍有失败 generation / 未完成 run-status，因此只用来证明候选生成与审核扩展。现场同视频同步、实体手机后台/蓝牙播放及新视频的实际质量，还需要对应实测。SVG 展示完整流程和审核位置，不把这些未验收项标成已上线能力。
 

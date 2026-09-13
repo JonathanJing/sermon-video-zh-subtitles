@@ -28,6 +28,33 @@ fi
 gateway_args=(--asr-provider "$asr_provider")
 mlx_audio_pid=""
 mlx_audio_server=""
+gateway_pid=""
+vite_pid=""
+# Install cleanup before model startup, which can fail or be interrupted.
+stop_owned_process() {
+  local pid="$1"
+  [ -n "$pid" ] || return 0
+  kill "$pid" 2>/dev/null || true
+  for _ in 1 2 3 4 5; do
+    kill -0 "$pid" 2>/dev/null || break
+    sleep 1
+  done
+  kill -KILL "$pid" 2>/dev/null || true
+  wait "$pid" 2>/dev/null || true
+}
+cleanup() {
+  trap - EXIT INT TERM
+  for pid in "$gateway_pid" "$vite_pid" "$mlx_audio_pid"; do
+    [ -z "$pid" ] || kill "$pid" 2>/dev/null || true
+  done
+  stop_owned_process "$gateway_pid"
+  stop_owned_process "$vite_pid"
+  stop_owned_process "$mlx_audio_pid"
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
 if [ "$asr_provider" = "qwen-mlx-websocket" ]; then
   qwen_model="${LOCAL_LIVE_QWEN_ASR_MODEL:-}"
   if [ -z "$qwen_model" ] || [ ! -d "$qwen_model" ]; then
@@ -76,7 +103,6 @@ if [ "$asr_provider" = "qwen-mlx-websocket" ]; then
     start_mlx_audio
     if ! wait_mlx_audio_ready; then
       echo "MLX Audio did not become ready within 120 seconds." >&2
-      wait "$mlx_audio_pid" 2>/dev/null || true
       exit 1
     fi
   else
@@ -100,7 +126,6 @@ fi
 gateway_args+=(--context-policy "${LOCAL_LIVE_CONTEXT_POLICY:-none}")
 
 restart_exit_code=75
-gateway_pid=""
 start_gateway() {
   printf '%s starting Gateway\n' "$(date -u +%FT%TZ)" >> "$log_dir/gateway.log"
   PYTHONUNBUFFERED=1 .venv/bin/python -m backend.gateway "${gateway_args[@]}" >> "$log_dir/gateway.log" 2>&1 &
@@ -111,44 +136,54 @@ start_gateway
 npm run dev -- --host 127.0.0.1 --port 4173 --strictPort >> "$log_dir/frontend.log" 2>&1 &
 vite_pid=$!
 
-cleanup() {
-  trap - EXIT INT TERM
-  kill "$gateway_pid" "$vite_pid" 2>/dev/null || true
-  if [ -n "$mlx_audio_pid" ]; then
-    kill "$mlx_audio_pid" 2>/dev/null || true
-  fi
-}
-trap cleanup EXIT
-trap 'exit 130' INT
-trap 'exit 143' TERM
-
 echo "Local live captions: http://127.0.0.1:4173/"
 unexpected_restarts=0
 mlx_audio_restarts=0
+mlx_audio_failures=0
+mlx_audio_phase="ready"
+mlx_audio_deadline=0
 while kill -0 "$vite_pid" 2>/dev/null; do
-  if [ "$asr_provider" = "qwen-mlx-websocket" ] && ! mlx_audio_ready; then
-    previous_status="external_or_unknown"
-    if [ -n "$mlx_audio_pid" ]; then
-      set +e
-      wait "$mlx_audio_pid" 2>/dev/null
-      previous_status=$?
-      set -e
+  # Model recovery must never block Gateway restart or browser recording.
+  if [ "$asr_provider" = "qwen-mlx-websocket" ]; then
+    if [ "$mlx_audio_phase" = "stopping" ]; then
+      if kill -0 "$mlx_audio_pid" 2>/dev/null && [ "$SECONDS" -ge "$mlx_audio_deadline" ]; then
+        kill -KILL "$mlx_audio_pid" 2>/dev/null || true
+      fi
+      if ! kill -0 "$mlx_audio_pid" 2>/dev/null; then
+        wait "$mlx_audio_pid" 2>/dev/null || true
+        mlx_audio_pid=""
+        if [ "$mlx_audio_restarts" -ge 3 ]; then
+          echo "MLX Audio recovery exhausted; Gateway and recording remain available. Log: $mlx_audio_log" >&2
+          mlx_audio_phase="exhausted"
+        else
+          mlx_audio_restarts=$((mlx_audio_restarts + 1))
+          echo "Restarting owned MLX Audio ($mlx_audio_restarts/3). Log: $mlx_audio_log" >&2
+          start_mlx_audio
+          mlx_audio_phase="starting"
+          mlx_audio_deadline=$((SECONDS + 120))
+        fi
+      fi
+    elif mlx_audio_ready; then
+      if [ "$mlx_audio_failures" -gt 0 ] || [ "$mlx_audio_phase" = "starting" ]; then
+        echo "MLX Audio recovered."
+      fi
+      mlx_audio_failures=0
+      mlx_audio_phase="ready"
+    elif [ "$mlx_audio_phase" != "exhausted" ]; then
+      mlx_audio_failures=$((mlx_audio_failures + 1))
+      if [ -z "$mlx_audio_pid" ]; then
+        if [ "$mlx_audio_failures" -eq 3 ]; then
+          echo "External MLX Audio unavailable; awaiting its recovery without taking ownership." >&2
+        fi
+      elif { [ "$mlx_audio_phase" = "starting" ] && [ "$SECONDS" -ge "$mlx_audio_deadline" ]; } ||
+           { [ "$mlx_audio_phase" = "ready" ] && [ "$mlx_audio_failures" -ge 3 ]; } ||
+           ! kill -0 "$mlx_audio_pid" 2>/dev/null; then
+        echo "Owned MLX Audio unavailable; stopping it before recovery. Log: $mlx_audio_log" >&2
+        kill "$mlx_audio_pid" 2>/dev/null || true
+        mlx_audio_phase="stopping"
+        mlx_audio_deadline=$((SECONDS + 5))
+      fi
     fi
-    mlx_audio_restarts=$((mlx_audio_restarts + 1))
-    if [ "$mlx_audio_restarts" -gt 3 ]; then
-      echo "MLX Audio exited repeatedly; stop and start the POC again. Log: $mlx_audio_log" >&2
-      exit 1
-    fi
-    echo "MLX Audio unavailable (status $previous_status); restarting ($mlx_audio_restarts/3). Log: $mlx_audio_log" >&2
-    start_mlx_audio
-    if ! wait_mlx_audio_ready; then
-      echo "MLX Audio restart did not become ready. Log: $mlx_audio_log" >&2
-      kill "$mlx_audio_pid" 2>/dev/null || true
-      wait "$mlx_audio_pid" 2>/dev/null || true
-      sleep 1
-      continue
-    fi
-    echo "MLX Audio recovered."
   fi
 
   if kill -0 "$gateway_pid" 2>/dev/null; then

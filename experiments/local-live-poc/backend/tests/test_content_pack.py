@@ -87,6 +87,50 @@ class ContentPackTest(unittest.TestCase):
             "Chinese (Simplified):",
         )
 
+    def test_only_current_source_terms_and_scripture_are_injectable(self) -> None:
+        pack = build_weekly_pack([{
+            "segmentId": "sat-1",
+            "sourceTextEn": "Grace leads us today in John 3:16.",
+            "terms": [
+                {"source": "grace", "preferredZh": "恩典", "status": "approved"},
+                {"source": "race", "preferredZh": "赛跑", "status": "approved"},
+                {"source": "resurrection", "preferredZh": "复活", "status": "approved"},
+            ],
+            "scriptureRefs": [
+                {"reference": "John 3:16", "status": "reviewed"},
+                {"reference": "Romans 8:28", "status": "approved"},
+            ],
+        }], service_date="2026-09-05", source_id="sat", audio_sha256="a" * 64, valid_until="2026-09-07")
+        now = datetime(2026, 9, 6, tzinfo=timezone.utc)
+        for source, expected_refs in [
+            ("Grace leads us today.", []),
+            ("GRACE leads us today in John 3:16.", ["John 3:16"]),
+            ("Grace leads us today in John 3:160.", []),
+        ]:
+            with self.subTest(source=source):
+                hits = retrieve(pack, source, now=now)
+                context = prompt_context(hits)
+                self.assertEqual(context["approvedTerms"], [{"source": "grace", "preferredZh": "恩典"}])
+                self.assertEqual(context["verifiedScriptureRefs"], expected_refs)
+                self.assertEqual(hits[0]["provenance"]["audioSha256"], "a" * 64)
+                prompt = OllamaClient.build_prompt(source, context)
+                self.assertNotIn("resurrection", prompt)
+                self.assertNotIn("Romans 8:28", prompt)
+                self.assertNotIn("赛跑", prompt)
+
+    def test_highest_scoring_term_wins_across_case_variants(self) -> None:
+        hits = [
+            {"score": 3.75, "injectableTerms": [{"source": "grace", "preferredZh": "恩惠"}]},
+            {"score": 8.5, "injectableTerms": [{"source": "Grace", "preferredZh": "恩典"}]},
+            {"score": 8.5, "injectableTerms": [{"source": "GRACE", "preferredZh": "慈恩"}]},
+        ]
+        for index, hit in enumerate(hits):
+            hit.update(segmentId=f"sat-{index}", sourceTextEn=f"Reviewed reference {index}",
+                       hasReviewedTranslation=True, reviewedReferenceTargetTextZh=f"已审参考{index}")
+        context = prompt_context(hits, policy="saturday_alignment_v1")
+        self.assertEqual(context["approvedTerms"], [{"source": "Grace", "preferredZh": "恩典"}])
+        self.assertEqual([ref["segmentId"] for ref in context["reviewedAlignedReferences"]], ["sat-0", "sat-1"])
+
     def test_reviewed_exact_translation_can_be_injected(self) -> None:
         hits = retrieve(
             self.pack,

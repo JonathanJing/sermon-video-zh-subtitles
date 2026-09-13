@@ -1,33 +1,38 @@
-# Prototype Instructions
+# Local Live-Caption POC
 
-Run the local server yourself and open the preview in the browser available to this environment. Do not give the user server-start instructions when you can run it.
+Follow the repository guide, then read only the relevant section of [README.md](README.md), [DESIGN.zh.md](DESIGN.zh.md), [STREAMING.zh.md](STREAMING.zh.md) or [PUBLIC_SHARING.zh.md](PUBLIC_SHARING.zh.md). This is a local React/Vite + Python Gateway application; `src/` holds UI and `backend/` holds runtime code. Check `package.json` for actual commands.
 
-Before making substantial visual changes, use the Product Design plugin's `get-context` skill when the visual source is unclear or no longer matches the current goal. When the user gives durable prototype-specific design feedback, preferences, or decisions, record them in `AGENTS.md`.
+## Operator and display contract
 
-When implementing from a selected generated mock, treat that image as the source of truth for layout, component anatomy, density, spacing, color, typography, visible content, and hierarchy.
+- Keep the POC independent of the repository's `web/admin.html` and cloud production app. The default operator controls are microphone selection, start and stop; add features only when the requested task needs them.
+- Prioritize large Simplified Chinese for distance reading, with smaller English source text on MacBook and phone. Keep the prior complete bilingual segment above the current segment, muted but readable. No moving marquee/transcript by default.
+- When a new ASR final arrives, retain the previous complete pair before showing new English. Never pair that English with the previous segment's Chinese while translation is pending. Preserve the comparison baseline and record presentation-policy changes.
+- Use a user-selected mock as the design reference. For substantial visual work, use the applicable currently available design skill and verify the actual preview; do not depend on a removed skill name or add speculative design rules.
+- Label simulated/replayed captions as such. Browser/fixture output is not live-microphone proof. Make portrait/landscape layout selection work even if orientation locking is refused.
 
-Build app UI in `src/`. Keep `.openai/hosting.json`, `worker/index.js`, `scripts/prepare-sites-build.mjs`, and `tests/sites-worker.test.mjs` intact so the same local prototype can be handed to Sites. Before a Sites handoff, run `npm run build` and `npm run test:sites`; the build must leave `dist/client/index.html`, `dist/server/index.js`, and `dist/.openai/hosting.json`.
+## Audio, context and recovery contract
 
-## Local live caption POC decisions
+- Live English comes from microphone PCM and local ASR. Saturday source audio is immutable replay/provenance input. Candidate machine Chinese is not eligible for live prompts until reviewed.
+- Keep the frozen A0 completion prompt/decoding for `contextPolicy=none` (`raw=true`, temperature 0, top-k 1). The selected model/runtime identity belongs in its configuration and benchmark evidence, not a newly guessed default.
+- Runtime retrieval may align Saturday English. `weekly_terms_v1` injects approved terms and verified scripture references mentioned in the current source, plus reviewed exact bilingual examples. The experimental `saturday_alignment_v1` may also include up to two reviewed non-exact bilingual segments with retrieval score >= 1.5, labeled as another delivery's reference wording; see the [A2 design](DESIGN.zh.md#把周六内容用作顺序讲章地图). Venue and semantic acceptance require their own evidence. Current live English remains authoritative. Interchange uses one `saturday-sermon-segment-v1` JSONL object per stable segment plus source-audio SHA-256.
+- Use REST for lifecycle/health/replay/download and one bidirectional WebSocket for live PCM/events. The Gateway owns VAD, ASR, retrieval, translation and persistence; no direct browser-to-model route, broker or WebRTC for this single-Mac path unless explicitly required.
+- Keep `MediaRecorder` independent for recovery; feed ASR uniform 16 kHz signed 16-bit mono PCM off the main thread, targeting 100 ms frames with bounded queues/backpressure. ASR finals are immutable; only final English starts translation. Change non-streaming MiLMMT behavior only with measured benefit and a stated experiment.
+- Each start owns a Gateway session folder under `artifacts/sessions/`; persist chunks/events incrementally. Finalize an atomic manifest/hash only after workers drain and storage is healthy. Expose degradation and retain browser recovery downloads.
+- Use `scripts/sunday-live.sh` / `Sunday Live Captions.command` for operator startup; a browser shortcut does not start processes. Keep ASR/translation in separate bounded workers.
+- Keep the random-token LAN viewer as fallback. Public viewing uses an HTTPS frontend and outbound caption publisher; expose neither the control Gateway nor audio, logs, restart or model endpoints.
 
-- This is an independent greenfield POC. Do not import or extend the repository's existing `web/admin.html`, `web/app.js`, or cloud publishing workflow.
-- Keep one desktop page for a 15.6-inch MacBook. The only primary actions are microphone selection, start, and stop.
-- The main surface is a large Simplified Chinese caption with a smaller English source line below it.
-- Make the Chinese caption as large as the available viewport permits for distance reading on both MacBook Pro and iPhone; keep the English caption at its current secondary size.
-- Do not add camera, pause, A/B controls, scripture sidebar, timeline review, cloud publishing, PDF/VTT/SRT export, authentication, or dashboards.
-- UI prototype recording may use browser `MediaRecorder`; the later local gateway is the source of truth for production PCM capture and model events.
-- Simulated captions must be visibly labeled as interface demo data and never presented as real local-model output.
-- Saturday livestream audio is immutable provenance and replay input. Its transcript and translation may build a short-lived Weekly Pack, but machine-generated Chinese is never prompt-injectable until reviewed.
-- Runtime retrieval may use Saturday English for matching. Translation prompts may inject only approved terms, verified scripture references, and reviewed exact bilingual examples; current live English remains the source of truth.
-- The translation A0 is `sermon-milmmt-46-4b-v1-q8:benchmark` through Ollama. For `contextPolicy=none`, preserve the frozen official MiLMMT completion prompt and benchmark decoding settings (`raw=true`, temperature 0, top-k 1).
-- Live English must come from the microphone PCM stream and local ASR. Synthetic or replay English is allowed only in clearly labeled automated tests and must never appear as live microphone evidence.
-- Saturday workflow interchange is JSONL with one `saturday-sermon-segment-v1` object per stable English segment; keep the source audio separately and pass its SHA-256 to the pack builder.
-- Every recording start creates one gateway-owned subdirectory under `artifacts/sessions/`. Persist MediaRecorder chunks and JSONL events incrementally, then finalize an atomic manifest with the audio SHA-256. Keep the browser download links as a recovery copy if gateway storage fails.
-- Keep REST as the control plane (`health`, session start/finalize, replay/download) and use one bidirectional WebSocket as the live data plane when ASR is connected. Do not add WebRTC, a message broker, or direct browser-to-model connections for the single-Mac POC.
-- Keep `MediaRecorder` as the independent recovery recording. Feed ASR separately with uniform 16 kHz, signed 16-bit, mono PCM frames produced off the main thread; target 100 ms frames and enforce a bounded send queue/backpressure policy.
-- The gateway owns VAD, ASR, context retrieval, translation, and event persistence. ASR emits explicit `partial` and immutable `final` events; only `final` English starts translation. Keep MiLMMT non-streaming first, and add Ollama token streaming only if measured translation latency justifies it.
-- Sunday operator startup uses the checked `scripts/sunday-live.sh` path and the double-clickable `Sunday Live Captions.command`; a plain browser shortcut is not a process launcher. Keep ASR and translation in separate bounded workers, expose runtime/storage degradation in the UI, and mark a session `completed` only after the live workers confirm drain and storage health.
-- Keep the executable POC's current random-token LAN viewer as a fallback. The planned cellular/public viewer must use a public HTTPS frontend and an outbound-only caption publisher; never expose the MacBook control gateway, audio, logs, restart endpoints, or model APIs to the Internet.
-- The phone viewer must support responsive portrait and landscape layouts plus explicit layout buttons. Treat physical orientation lock as best-effort only; the readable layout switch must still work when a mobile browser refuses orientation locking.
-- Preserve the parent commit's single-caption UI as the A/B baseline. The user selected the two-tier B design for this branch: append-only streaming Chinese for the active bilingual segment, with only the previous final bilingual segment retained above it at a smaller, muted but still readable style. Do not use a horizontal marquee or continuously moving transcript as the default.
-- On a new ASR final, move the prior complete bilingual pair into the previous-caption region before showing the new English. Never visually pair a new English segment with the previous segment's Chinese while waiting for translation tokens.
+## Verification by change
+
+Run from this POC directory after its documented setup. Select the affected tests, not every command for every edit:
+
+| Change | Verification |
+|---|---|
+| Instructions/docs | Link and command checks plus `git diff --check`. |
+| Frontend/display | Relevant `node --test tests/frontend/*.test.mjs` tests, `npm run build`, and actual browser interaction at affected viewport sizes. |
+| Backend module | Relevant `.venv/bin/python -m unittest backend.tests.<module> -v`; include integration when its public contract changes. |
+| Gateway/protocol integration | `npm run test:integration` plus affected frontend/backend tests. |
+| Firebase access rules | `npm run test:firebase-rules`; cloud mutation tests only within an authorized test destination. |
+| Cross-layer release | `npm test` (frontend/backend, integration, Firebase rules and build). |
+| Hardware/model/audio behavior | Relevant tests plus a comparable real replay/acoustic path; identify its source, model/config and measurement endpoint. |
+
+Run the local preview when needed for UI work and verify the resulting behavior. Preserve distinctions among browser WAV replay, physical microphone capture, actual venue input, device rendering and human semantic acceptance. Report remaining gates rather than calling local automation proof of Sunday readiness.

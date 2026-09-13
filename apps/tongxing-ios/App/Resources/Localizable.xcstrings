@@ -1940,6 +1940,26 @@
           }
         }
       }
+    },
+    "英文对照": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "English reference"
+          }
+        }
+      }
+    },
+    "中文优先阅读；点击段末的「英文对照」展开参考。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read in Chinese; expand English reference at the end of a passage to compare."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

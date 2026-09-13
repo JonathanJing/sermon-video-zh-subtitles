@@ -106,6 +106,9 @@ class GatewayTest(unittest.TestCase):
         status, payload = self.request("/api/runtime/restart", {})
         self.assertEqual(status, 202)
         self.assertEqual(payload["status"], "restarting")
+        self.assertEqual(payload["runtimeInstanceId"], self.state.runtime_instance_id)
+        _, health = self.request("/api/health")
+        self.assertEqual(health["runtimeInstanceId"], payload["runtimeInstanceId"])
         self.assertTrue(restarted.wait(timeout=1))
 
     def test_session_folder_persists_audio_events_and_manifest(self) -> None:

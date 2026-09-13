@@ -145,6 +145,67 @@ class RenderSermonInterpretationPdfTest(unittest.TestCase):
             self.assertTrue(qa["responsePrayerPresent"])
             self.assertGreaterEqual(qa["pageCount"], 1)
 
+    def minimal_companion(self):
+        insights = self.complete_insights()
+        insights["schemaVersion"] = 3
+        for field in mod.LEGACY_RESPONSE_FIELDS:
+            insights.pop(field)
+        insights["outlineZh"] = insights["outlineZh"][:1]
+        for field in ("scriptureRefs", "scriptureContextZh", "theologicalInsightsZh",
+                      "illustrationsZh", "pastoralDistinctionsZh", "quotes"):
+            insights[field] = []
+        return insights
+
+    def test_v3_allows_evidence_bounded_optional_sections_without_exercises(self):
+        insights = self.minimal_companion()
+        with tempfile.TemporaryDirectory() as tempdir:
+            qa = mod.render_interpretation_pdf(insights, Path(tempdir) / "companion.pdf")
+        self.assertEqual("pass", qa["status"], qa["failures"])
+        self.assertEqual(3, qa["inputSchemaVersion"])
+        self.assertEqual("sermon-companion-pdf-quality-v3", qa["qualityRuleVersion"])
+        self.assertEqual(1, qa["outlineSectionCount"])
+        self.assertEqual(0, qa["reflectionQuestionCount"])
+        self.assertTrue(qa["interpretationTraceabilityComplete"])
+
+    def test_v3_still_rejects_missing_core_content_and_invalid_sources(self):
+        insights = self.minimal_companion()
+        insights["centralMessageZh"] = ""
+        insights["summarySourceSliceIndexes"] = [999]
+        insights["outlineZh"] = []
+        with tempfile.TemporaryDirectory() as tempdir:
+            qa = mod.render_interpretation_pdf(insights, Path(tempdir) / "companion.pdf")
+        self.assertEqual("needs_review", qa["status"])
+        self.assertIn("missing_central_message", qa["failures"])
+        self.assertIn("missing_outline", qa["failures"])
+        self.assertIn("interpretation_traceability_incomplete", qa["failures"])
+
+    def test_v3_rejects_legacy_exercises_and_invalid_optional_citations(self):
+        insights = self.minimal_companion()
+        insights["reflectionQuestionsZh"] = []
+        insights["theologicalInsightsZh"] = [
+            {"title": "信靠", "explanation": "继续信靠。", "sourceSliceIndexes": [999]}
+        ]
+        with tempfile.TemporaryDirectory() as tempdir:
+            qa = mod.render_interpretation_pdf(insights, Path(tempdir) / "companion.pdf")
+        self.assertIn("out_of_scope_response_fields", qa["failures"])
+        self.assertIn("theologicalInsightsZh[0].sourceSliceIndexes", qa["missingSourcePaths"])
+
+    def test_v3_still_rejects_nonexact_quotes(self):
+        insights = self.minimal_companion()
+        insights["quotes"] = self.complete_insights()["quotes"]
+        insights["quotes"][0]["textZh"] = "一段没有出现在原始字幕的引文。"
+        with tempfile.TemporaryDirectory() as tempdir:
+            qa = mod.render_interpretation_pdf(insights, Path(tempdir) / "companion.pdf")
+        self.assertIn("quote_traceability_incomplete", qa["failures"])
+
+    def test_legacy_v2_retains_original_content_requirements(self):
+        insights = self.minimal_companion()
+        insights["schemaVersion"] = 2
+        with tempfile.TemporaryDirectory() as tempdir:
+            qa = mod.render_interpretation_pdf(insights, Path(tempdir) / "legacy.pdf")
+        self.assertIn("insufficient_reflection_questions", qa["failures"])
+        self.assertIn("missing_scripture_references", qa["failures"])
+
     def test_qa_rejects_missing_interpretation_traceability(self):
         insights = self.complete_insights()
         insights["traceability"] = {

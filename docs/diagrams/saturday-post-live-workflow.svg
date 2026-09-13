@@ -1,55 +1,139 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900" role="img" aria-labelledby="title desc">
-<title id="title">Saturday production · 周六文稿、PDF 与周日导出</title><desc id="desc">Supervisor weekly profile: Astra Medium · 自动生产和模型审核不等于人工同篇确认</desc>
-<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#526580"/></marker><style>text{font-family:Arial,"PingFang SC","Microsoft YaHei",sans-serif;fill:#18304b}.title{font-size:30px;font-weight:700}.subtitle{font-size:16px;fill:#536782}.head{font-size:20px;font-weight:700}.body{font-size:17px}.note{font-size:15px;fill:#536782}.edge{fill:none;stroke:#526580;stroke-width:2;marker-end:url(#arrow)}.dash{stroke-dasharray:7 5}</style></defs>
-<rect width="1400" height="900" rx="20" fill="#f5f8fc"/>
-<text x="44" y="55" class="title" text-anchor="start">Saturday production · 周六文稿、PDF 与周日导出</text>
-<text x="44" y="86" class="subtitle" text-anchor="start">Supervisor weekly profile: Astra Medium · 自动生产和模型审核不等于人工同篇确认</text>
-<rect x="44" y="130" width="392" height="130" rx="14" fill="#edf4ff" stroke="#86abe6" stroke-width="1.5"/>
-<text x="64" y="163" class="head" text-anchor="start">1 · Source + human window</text>
-<text x="64" y="193" class="body" text-anchor="start">Authorized archive / hash / duration</text>
-<text x="64" y="219" class="body" text-anchor="start">Operator approves exact sermon window</text>
-<rect x="504" y="130" width="392" height="130" rx="14" fill="#f3efff" stroke="#aa98dc" stroke-width="1.5"/>
-<text x="524" y="163" class="head" text-anchor="start">2 · English + Chinese</text>
-<text x="524" y="193" class="body" text-anchor="start">Preserve English source provenance</text>
-<text x="524" y="219" class="body" text-anchor="start">Astra Medium translation / two reviews</text>
-<rect x="964" y="130" width="392" height="130" rx="14" fill="#eaf8f1" stroke="#70b897" stroke-width="1.5"/>
-<text x="984" y="163" class="head" text-anchor="start">3 · Reading + PDF QA</text>
-<text x="984" y="193" class="body" text-anchor="start">Reading text + companion → two PDFs</text>
-<text x="984" y="219" class="body" text-anchor="start">Reading QA and both PDF QA must pass</text>
-<path d="M436 195H504" class="edge"/>
-<path d="M896 195H964" class="edge"/>
-<rect x="964" y="360" width="392" height="160" rx="14" fill="#edf4ff" stroke="#86abe6" stroke-width="1.5"/>
-<text x="984" y="393" class="head" text-anchor="start">4 · Delivery + export</text>
-<text x="984" y="423" class="body" text-anchor="start">Supervisor enables export-sunday-context</text>
-<text x="984" y="449" class="body" text-anchor="start">Two PDFs + Context Pack derivatives</text>
-<text x="984" y="475" class="body" text-anchor="start">Standalone CLI: export is opt-in</text>
-<text x="984" y="501" class="body" text-anchor="start">Export errors do not become success</text>
-<path d="M1160 260V360" class="edge"/>
-<text x="1215" y="312" class="note" text-anchor="middle">QA pass</text>
-<rect x="504" y="360" width="392" height="160" rx="14" fill="#fff5e9" stroke="#e1aa68" stroke-width="1.5"/>
-<text x="524" y="393" class="head" text-anchor="start">5 · Pack + readiness</text>
-<text x="524" y="423" class="body" text-anchor="start">Segments / weekly-pack / manifest</text>
-<text x="524" y="449" class="body" text-anchor="start">Same-message identity starts unknown</text>
-<text x="524" y="475" class="body" text-anchor="start">Source hashes / dates / review status</text>
-<text x="524" y="501" class="body" text-anchor="start">Atomic export; preserve prior pack</text>
-<path d="M964 440H896" class="edge"/>
-<rect x="44" y="360" width="392" height="160" rx="14" fill="#fff5e9" stroke="#e1aa68" stroke-width="1.5"/>
-<text x="64" y="393" class="head" text-anchor="start">6 · Sunday capability gate</text>
-<text x="64" y="423" class="body" text-anchor="start">Separate same-message human approval</text>
-<text x="64" y="449" class="body" text-anchor="start">Hash / expiry / review verification</text>
-<text x="64" y="475" class="body" text-anchor="start">Fail down; A0 none remains available</text>
-<text x="64" y="501" class="body" text-anchor="start">Machine Chinese never auto-approved</text>
-<path d="M504 440H436" class="edge"/>
-<rect x="44" y="635" width="620" height="125" rx="14" fill="#fff5e9" stroke="#e1aa68" stroke-width="1.5"/>
-<text x="64" y="668" class="head" text-anchor="start">Failure → preserve evidence and revise</text>
-<text x="64" y="698" class="body" text-anchor="start">Source/window/reading/PDF QA failure blocks delivery.</text>
-<text x="64" y="724" class="body" text-anchor="start">Keep recoverable artifacts; fix the failed stage and rerun.</text>
-<path d="M1356 195H1377V595H354V635" class="edge dash"/>
-<rect x="734" y="635" width="622" height="125" rx="14" fill="#eaf8f1" stroke="#70b897" stroke-width="1.5"/>
-<text x="754" y="668" class="head" text-anchor="start">Optional enhancement, not Sunday source of truth</text>
-<text x="754" y="698" class="body" text-anchor="start">Automatic export is implemented; weekly live benefit is unverified.</text>
-<text x="754" y="724" class="body" text-anchor="start">Sunday audio + current English remain authoritative.</text>
-<path d="M240 520V579H1045V635" class="edge dash"/>
-<text x="44" y="851" class="note" text-anchor="start">Canonical outputs: sermon_zh_en_reading.pdf + sermon_interpretation_zh.pdf, with source/window/reading/PDF QA evidence.</text>
-<text x="44" y="876" class="note" text-anchor="start">Code baseline: main beeda82 · future weekly runs use this profile; historical runs are not silently regenerated.</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1350" viewBox="0 0 1600 1350" role="img" aria-labelledby="title desc">
+<title id="title">周六双文档与周日导出</title><desc id="desc">有效审批、质量门与全部要求产物发布核验共同决定完成 规范文件：sermon_zh_en_reading.pdf、sermon_interpretation_zh.pdf。 包已导出不代表现场启用；独立同篇及能力预检通过才可选使用。会话完成不能替代业务完成。</desc>
+<style>text{font-family:"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;} text{font-variant-ligatures:none}</style>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M1 1 L7 4 L1 7" fill="none" stroke="context-stroke" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect x="0" y="0" width="1600" height="1350" rx="0" fill="#F5F4EF" stroke="none" />
+<rect x="64" y="57" width="44" height="5" rx="2" fill="#267D72" stroke="none" />
+<text x="124" y="69" font-size="17" font-weight="600" fill="#64787A" text-anchor="start" letter-spacing="2">POST LIVE PRODUCTION</text>
+<text x="64" y="127" font-size="44" font-weight="650" fill="#19343D" text-anchor="start" >周六双文档与周日导出</text>
+<text x="64" y="172" font-size="22" font-weight="400" fill="#60737A" text-anchor="start" >有效审批、质量门与全部要求产物发布核验共同决定完成</text>
+<text x="1536" y="69" font-size="18" font-weight="500" fill="#82918F" text-anchor="end" >04 / 11</text>
+<path d="M64 197H1536" stroke="#D8DEDA" stroke-width="1.3"/>
+<path data-edge="discover:media" d="M500 370.0 L590 370.0" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="media:approval" d="M1010 370.0 L1100 370.0" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="approval:english" d="M1310.0 485 L1310.0 595" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<rect x="1250.0" y="508.0" width="120.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="1310.0" y="530.0" font-size="17" font-weight="500" fill="#648A86" text-anchor="middle" >有效人工审批</text>
+<path data-edge="english:review" d="M1100 710.0 L1010 710.0" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="review:pdf" d="M590 710.0 L500 710.0" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="pdf:qa" d="M290.0 825 L290.0 935" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="qa:review" d="M290.0 935 L290.0 880.0 L800.0 880.0 L800.0 825" fill="none" stroke="#817397" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<rect x="502.0" y="848.0" width="86.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="545.0" y="870.0" font-size="17" font-weight="500" fill="#817397" text-anchor="middle" >内容返修</text>
+<path data-edge="qa:pdf" d="M290.0 935 L290.0 825" fill="none" stroke="#817397" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<rect x="247.0" y="848.0" width="86.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="290.0" y="870.0" font-size="17" font-weight="500" fill="#817397" text-anchor="middle" >版式返修</text>
+<path data-edge="qa:pack" d="M500 1050.0 L590 1050.0" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<rect x="519.0" y="1018.0" width="52.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="545.0" y="1040.0" font-size="17" font-weight="500" fill="#648A86" text-anchor="middle" >通过</text>
+<path data-edge="pack:publish" d="M1010 1050.0 L1100 1050.0" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<g id="node-discover" data-node="discover">
+<rect x="80" y="259" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="80" y="255" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="81" y="273" width="4" height="194" rx="2" fill="#46799B" stroke="none" />
+<rect x="104" y="276" width="35" height="28" rx="8" fill="#EAF1F6" stroke="none" />
+<text x="121.5" y="296" font-size="16" font-weight="700" fill="#46799B" text-anchor="middle" data-box="104,276,35,28" >01</text>
+<text x="153" y="296" font-size="15" font-weight="600" fill="#46799B" text-anchor="start" data-box="148,273,332,35" >输入 / INPUT</text>
+<text x="104" y="337" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="100,310,380,162" >定时找源与本地刷新</text>
+<text x="104" y="377" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,310,380,162" >授权来源与周次匹配</text>
+<text x="104" y="406" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,310,380,162" >旧周次不自动重做</text>
+</g>
+<g id="node-media" data-node="media">
+<rect x="590" y="259" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="590" y="255" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="591" y="273" width="4" height="194" rx="2" fill="#267D72" stroke="none" />
+<rect x="614" y="276" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="631.5" y="296" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="614,276,35,28" >02</text>
+<text x="663" y="296" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="658,273,332,35" >执行 / PROCESS</text>
+<text x="614" y="337" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="610,310,380,162" >完整归档与媒体检查</text>
+<text x="614" y="377" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,310,380,162" >完整媒体及来源身份</text>
+<text x="614" y="406" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,310,380,162" >来源租约防止重复执行</text>
+</g>
+<g id="node-approval" data-node="approval">
+<rect x="1100" y="259" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="1100" y="255" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="1101" y="273" width="4" height="194" rx="2" fill="#AA7930" stroke="none" />
+<rect x="1124" y="276" width="35" height="28" rx="8" fill="#FAF2E5" stroke="none" />
+<text x="1141.5" y="296" font-size="16" font-weight="700" fill="#AA7930" text-anchor="middle" data-box="1124,276,35,28" >03</text>
+<text x="1173" y="296" font-size="15" font-weight="600" fill="#AA7930" text-anchor="start" data-box="1168,273,332,35" >门槛 / GATE</text>
+<text x="1124" y="337" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1120,310,380,162" >时间轴与人工窗口</text>
+<text x="1124" y="377" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,310,380,162" >审批绑定来源及时间轴哈希</text>
+<text x="1124" y="406" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,310,380,162" >变更即失效，有效审批复用</text>
+<text x="1124" y="435" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,310,380,162" >缺失审批则等待</text>
+</g>
+<g id="node-english" data-node="english">
+<rect x="1100" y="599" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="1100" y="595" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="1101" y="613" width="4" height="194" rx="2" fill="#267D72" stroke="none" />
+<rect x="1124" y="616" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="1141.5" y="636" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="1124,616,35,28" >04</text>
+<text x="1173" y="636" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="1168,613,332,35" >执行 / PROCESS</text>
+<text x="1124" y="677" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1120,650,380,162" >英文来源与转写</text>
+<text x="1124" y="717" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,650,380,162" >已有英文或必要转写</text>
+<text x="1124" y="746" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,650,380,162" >gpt-transcribe</text>
+<text x="1124" y="775" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,650,380,162" >保留时间与模型证据</text>
+</g>
+<g id="node-review" data-node="review">
+<rect x="590" y="599" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="590" y="595" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="591" y="613" width="4" height="194" rx="2" fill="#766594" stroke="none" />
+<rect x="614" y="616" width="35" height="28" rx="8" fill="#F0EDF5" stroke="none" />
+<text x="631.5" y="636" font-size="16" font-weight="700" fill="#766594" text-anchor="middle" data-box="614,616,35,28" >05</text>
+<text x="663" y="636" font-size="15" font-weight="600" fill="#766594" text-anchor="start" data-box="658,613,332,35" >模型 / CONTEXT</text>
+<text x="614" y="677" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="610,650,380,162" >中文翻译与两轮审核</text>
+<text x="614" y="717" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,650,380,162" >gpt-6-astra / medium</text>
+<text x="614" y="746" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,650,380,162" >生成内容按授权送至模型</text>
+</g>
+<g id="node-pdf" data-node="pdf">
+<rect x="80" y="599" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="80" y="595" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="81" y="613" width="4" height="194" rx="2" fill="#267D72" stroke="none" />
+<rect x="104" y="616" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="121.5" y="636" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="104,616,35,28" >06</text>
+<text x="153" y="636" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="148,613,332,35" >交付 / OUTPUT</text>
+<text x="104" y="677" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="100,650,380,162" >阅读版与证道同行</text>
+<text x="104" y="717" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,650,380,162" >生成两个规范文档</text>
+<text x="104" y="746" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,650,380,162" >保留各自来源与生成证据</text>
+</g>
+<g id="node-qa" data-node="qa">
+<rect x="80" y="939" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="80" y="935" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="81" y="953" width="4" height="194" rx="2" fill="#AA7930" stroke="none" />
+<rect x="104" y="956" width="35" height="28" rx="8" fill="#FAF2E5" stroke="none" />
+<text x="121.5" y="976" font-size="16" font-weight="700" fill="#AA7930" text-anchor="middle" data-box="104,956,35,28" >07</text>
+<text x="153" y="976" font-size="15" font-weight="600" fill="#AA7930" text-anchor="start" data-box="148,953,332,35" >门槛 / GATE</text>
+<text x="104" y="1017" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="100,990,380,162" >阅读质量与双 PDF质检</text>
+<text x="104" y="1057" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,990,380,162" >阅读质量通过</text>
+<text x="104" y="1086" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,990,380,162" >两个文档各自质检通过</text>
+<text x="104" y="1115" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,990,380,162" >失败回到对应生成环节</text>
+</g>
+<g id="node-pack" data-node="pack">
+<rect x="590" y="939" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="590" y="935" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="591" y="953" width="4" height="194" rx="2" fill="#6D7980" stroke="none" />
+<rect x="614" y="956" width="35" height="28" rx="8" fill="#EDF0F0" stroke="none" />
+<text x="631.5" y="976" font-size="16" font-weight="700" fill="#6D7980" text-anchor="middle" data-box="614,956,35,28" >08</text>
+<text x="663" y="976" font-size="15" font-weight="600" fill="#6D7980" text-anchor="start" data-box="658,953,332,35" >记录 / EVIDENCE</text>
+<text x="614" y="1017" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="610,990,380,162" >原子导出上下文包</text>
+<text x="614" y="1057" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,990,380,162" >初始同篇状态为未知</text>
+<text x="614" y="1086" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,990,380,162" >导出失败保留旧包并报错</text>
+<text x="614" y="1115" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,990,380,162" >周日启用仍需独立审批</text>
+</g>
+<g id="node-publish" data-node="publish">
+<rect x="1100" y="939" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="1100" y="935" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="1101" y="953" width="4" height="194" rx="2" fill="#AA7930" stroke="none" />
+<rect x="1124" y="956" width="35" height="28" rx="8" fill="#FAF2E5" stroke="none" />
+<text x="1141.5" y="976" font-size="16" font-weight="700" fill="#AA7930" text-anchor="middle" data-box="1124,956,35,28" >09</text>
+<text x="1173" y="976" font-size="15" font-weight="600" fill="#AA7930" text-anchor="start" data-box="1168,953,332,35" >门槛 / GATE</text>
+<text x="1124" y="1017" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1120,990,380,162" >发布核验与新快照</text>
+<text x="1124" y="1057" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,990,380,162" >全部要求文件上传至存储</text>
+<text x="1124" y="1086" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,990,380,162" >远端哈希与发布状态核验</text>
+<text x="1124" y="1115" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,990,380,162" >审批、质量、发布均须有效</text>
+</g>
+<rect x="64" y="1221" width="1472" height="78" rx="16" fill="#E9EEE8" stroke="none" />
+<text x="84" y="1250" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >规范文件：sermon_zh_en_reading.pdf、sermon_interpretation_zh.pdf。</text>
+<text x="84" y="1279" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >包已导出不代表现场启用；独立同篇及能力预检通过才可选使用。会话完成不能替代业务完成。</text>
+<text x="64" y="1328" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="start" >内容校准 2026-09-11 · 设计参考 GPT Image 2.5 Sunburst · 原生可编辑 SVG</text>
+<text x="1536" y="1328" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="end" >实线：主路径   虚线：条件 / 实验 / 历史</text>
 </svg>

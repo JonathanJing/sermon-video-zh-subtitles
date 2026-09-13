@@ -267,6 +267,60 @@ test("stop timeout returns an incomplete drain result", async () => {
   });
 });
 
+test("repeated stop shares one drain and refuses late PCM", async () => {
+  await withFakeWebSocket(async () => {
+    const live = new LiveCaptionSocket("ws://test/api/live");
+    await live.connect("session-1");
+    const socket = FakeWebSocket.instances[0];
+    const first = live.stop(100);
+    const second = live.stop(100);
+    assert.equal(first, second);
+    assert.equal(live.sendPcm(new ArrayBuffer(PCM_BYTES_PER_FRAME)), false);
+    assert.equal(socket.sent.filter((payload) => typeof payload === "string"
+      && JSON.parse(payload).type === "stream.stop").length, 1);
+    socket.emit("message", {
+      data: JSON.stringify({ type: "stream.closed", workerDrained: true, storageHealthy: true }),
+    });
+    const results = await Promise.all([first, second]);
+    assert.equal(results[0].workerDrained, true);
+    assert.deepEqual(results[0], results[1]);
+    assert.equal(live.closedTimer, null);
+  });
+});
+
+test("stop cancels transport opening or pending handshake without waiting for a drain", async () => {
+  for (const openFirst of [false, true]) {
+    await withFakeWebSocket(async () => {
+      FakeWebSocket.startReply = null;
+      const localEvents = [];
+      const live = new LiveCaptionSocket("ws://test/api/live", { onLocalEvent: (event) => localEvents.push(event) });
+      const connecting = assert.rejects(live.connect("session-1"), /就绪前关闭/);
+      if (openFirst) await new Promise((resolve) => setImmediate(resolve));
+      const socket = FakeWebSocket.instances[0];
+      const result = await live.stop(100);
+      await connecting;
+      assert.equal(result.reason, "stream_not_ready");
+      assert.equal(socket.readyState, FakeWebSocket.CLOSED);
+      assert.equal(socket.sent.length, openFirst ? 1 : 0);
+      assert.deepEqual(localEvents, []);
+      assert.equal(live.closedTimer, null);
+    });
+  }
+});
+
+test("handshake transport error closes the abandoned socket", async () => {
+  await withFakeWebSocket(async () => {
+    FakeWebSocket.startReply = null;
+    const live = new LiveCaptionSocket("ws://test/api/live");
+    const connecting = assert.rejects(live.connect("session-1"), /无法连接/);
+    const socket = FakeWebSocket.instances[0];
+    socket.emit("error", {});
+    await connecting;
+    assert.equal(socket.readyState, FakeWebSocket.CLOSED);
+    assert.equal(live.handshakeReady, false);
+  });
+});
+
 test("connect waits for the gateway session handshake after the WebSocket opens", async () => {
   await withFakeWebSocket(async () => {
     FakeWebSocket.startReply = null;

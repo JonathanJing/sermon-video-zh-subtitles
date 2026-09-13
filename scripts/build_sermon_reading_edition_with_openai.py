@@ -19,12 +19,13 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from scripts.sermon_pipeline import chat_json, clean_text, load_env, read_json, write_json
+from scripts import series_terminology
 from scripts.sermon_accounting import accounting_session, stage, record_workload
 
 
 PROMPT_VERSION = "sermon-reading-edition-gpt56sol-v1"
 QA_PROMPT_VERSION = "sermon-reading-edition-qa-gpt56sol-v1"
-QUALITY_RULE_VERSION = "sermon-reading-edition-quality-v3"
+QUALITY_RULE_VERSION = "sermon-reading-edition-quality-v4"
 
 TERM_MAP = {
     "God": "神",
@@ -122,6 +123,39 @@ SOURCE_TERM_CHECKS = {
     "Luke": "路加福音",
     "Acts": "使徒行传",
 }
+
+
+def source_term_required(source: str, english: str) -> bool:
+    """Scope ambiguous English words before enforcing their doctrinal translation."""
+    for match in re.finditer(rf"\b{re.escape(source)}\b", english, flags=re.IGNORECASE):
+        before, after = english[:match.start()], english[match.end():]
+        if source == "Acts":
+            # Lower-case deeds are not the book title. Caption casing can be
+            # missing, so an explicit book/chapter reference still counts.
+            explicit = (re.search(r"\bbook\s+of\s*$", before, re.IGNORECASE)
+                or re.match(r"\s+(?:chapter\s+)?\d+\b", after, re.IGNORECASE)
+                or re.match(r"\s+of\s+the\s+apostles\b", after, re.IGNORECASE))
+            generic_of = re.match(r"\s+of\s+(?!the\s+apostles\b)", after, re.IGNORECASE)
+            if not explicit and (match.group() != "Acts" or generic_of):
+                continue
+        if source == "Trinity":
+            # This sermon calls three descriptions of forgiveness/sin a
+            # 'trinity'; that rhetorical grouping is not the Trinity doctrine.
+            if re.match(r"\s+of\s+(?:God['’]s\s+forgiveness|our\s+sins?)\b", after, re.IGNORECASE):
+                continue
+        return True
+    return False
+
+
+def contextual_action_keyword(token: str, english: str, chinese: str) -> bool:
+    """Retain the source's actionable SMS keyword with a nearby Chinese gloss."""
+    if token.lower() != "believe" or not re.search(r"\btext\s+believe\b", english, re.IGNORECASE):
+        return False
+    occurrences = list(re.finditer(r"(?<![A-Za-z0-9_])believe(?![A-Za-z0-9_])", chinese, re.IGNORECASE))
+    return bool(occurrences) and all(
+        re.search(r"相信|短信|关键词", chinese[max(0, match.start() - 16):match.end() + 16])
+        for match in occurrences
+    )
 
 
 def parse_args() -> argparse.Namespace:
@@ -334,6 +368,7 @@ def request_payload(
     following = blocks[next_index] if next_index < len(blocks) else None
     context = {
         "termMap": TERM_MAP,
+        "seriesTerminology": series_terminology.context(),
         "previousContext": (
             {"id": previous["id"], "en": previous["en"], "zh": previous.get("zh", previous.get("draftZh", ""))}
             if previous
@@ -360,7 +395,7 @@ def request_payload(
         "reasoning_effort": reasoning_effort,
         "response_format": {"type": "json_object"},
         "messages": [
-            {"role": "system", "content": QA_SYSTEM_PROMPT if qa_pass else READING_SYSTEM_PROMPT},
+            {"role": "system", "content": (QA_SYSTEM_PROMPT if qa_pass else READING_SYSTEM_PROMPT) + "\n" + series_terminology.PROMPT_INSTRUCTION},
             {"role": "user", "content": json.dumps(context, ensure_ascii=False)},
         ],
     }
@@ -683,7 +718,7 @@ def reading_quality_report(blocks: list[dict[str, Any]]) -> dict[str, Any]:
         missing_terms = [
             target
             for source, target in SOURCE_TERM_CHECKS.items()
-            if re.search(rf"\b{re.escape(source)}\b", en, flags=re.IGNORECASE)
+            if source_term_required(source, en)
             and target not in zh
         ]
         if missing_terms:
@@ -695,6 +730,7 @@ def reading_quality_report(blocks: list[dict[str, Any]]) -> dict[str, Any]:
                 token
                 for token in ENGLISH_TOKEN_PATTERN.findall(zh)
                 if token not in ALLOWED_ENGLISH_TOKENS
+                and not contextual_action_keyword(token, en, zh)
             }
         )
         if english_tokens:
@@ -741,6 +777,9 @@ def reading_quality_report(blocks: list[dict[str, Any]]) -> dict[str, Any]:
             length_ratio_outliers.append({"id": block["id"], "ratio": round(ratio, 3)})
 
     failures = []
+    series_issues = series_terminology.translation_issues(blocks)
+    if series_issues:
+        failures.append("series_terminology")
     if ellipsis:
         failures.append("ellipsis")
     if fillers:
@@ -769,6 +808,8 @@ def reading_quality_report(blocks: list[dict[str, Any]]) -> dict[str, Any]:
         "qaPromptVersion": QA_PROMPT_VERSION,
         "qualityRuleVersion": QUALITY_RULE_VERSION,
         "blockCount": len(blocks),
+        "seriesTerminology": series_terminology.context(),
+        "seriesTerminologyIssues": series_issues,
         "ellipsis": ellipsis,
         "oralFillers": fillers,
         "danglingFragments": dangling,

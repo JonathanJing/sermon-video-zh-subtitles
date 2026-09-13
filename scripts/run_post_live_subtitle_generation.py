@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import re
 import shutil
@@ -24,6 +25,7 @@ if str(REPO_ROOT) not in sys.path:
 from backend.cloud import access_secret, read_gcs_bytes, upload_file_to_gcs  # noqa: E402
 from backend.observability import log_event, stable_hash, url_summary  # noqa: E402
 from scripts import live_source_monitor, post_live_run_status  # noqa: E402
+from scripts import series_terminology
 from scripts.sermon_accounting import accounting_session, stage as accounting_stage
 
 
@@ -36,7 +38,7 @@ DEFAULT_WORK_ROOT = Path("/tmp/sermon-post-live-subtitles")
 POST_LIVE_STATES = {"was_live"}
 READING_EDITION_DIRNAME = "reading-edition-v2"
 SERMON_INTERPRETATION_DIRNAME = "sermon-interpretation"
-INPUT_IDENTITY_SCHEMA_VERSION = 1
+INPUT_IDENTITY_SCHEMA_VERSION = 2
 
 
 def main() -> int:
@@ -106,6 +108,7 @@ def parse_args() -> argparse.Namespace:
         help="Durable operator-window-approval.json already validated by the supervisor.",
     )
     parser.add_argument("--glossary", type=Path)
+    parser.add_argument("--source-text-review", type=Path, help="Hash-bound English source corrections; preserves the original ASR evidence.")
     parser.add_argument("--export-sunday-context", action="store_true")
     parser.add_argument("--source-service-date", help="Verified source date (YYYY-MM-DD); otherwise use archive release timestamp.")
     parser.add_argument("--zh-model", default="gpt-6-astra")
@@ -127,6 +130,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--reading-edition-provider", choices=("openai", "codex"), default="openai")
     parser.add_argument("--reading-edition-model", default="gpt-6-astra")
     parser.add_argument("--reading-edition-reasoning-effort", choices=("low", "medium", "high"), default="medium")
+    parser.add_argument("--reading-review-manifest", type=Path, help="Standard reviewed corrections for the reading builder; existing edit caches are preserved.")
     parser.add_argument("--reading-segment-target-chars", type=int, default=420)
     parser.add_argument("--reading-preferred-seconds", type=float, default=24.0)
     parser.add_argument("--reading-preferred-english-chars", type=int, default=420)
@@ -155,7 +159,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--plan-only", action="store_true")
     parser.add_argument("--dry-run", action="store_true", help="Do not download media or run OpenAI pipeline.")
     parser.add_argument("--allow-non-post-live", action="store_true")
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.source_text_review and args.output_mode != "reading":
+        parser.error("--source-text-review is supported only with --output-mode reading")
+    if args.reading_review_manifest and args.output_mode != "reading":
+        parser.error("--reading-review-manifest is supported only with --output-mode reading")
+    return args
 
 
 def run_post_live_generation(
@@ -166,7 +175,7 @@ def run_post_live_generation(
 ) -> dict[str, Any]:
     if args.plan_only or args.dry_run:
         return _run_post_live_generation(args, metadata_loader=metadata_loader, runner=runner)
-    with accounting_session(args.work_root / args.sunday / "accounting", "saturday_generation", {"sunday": args.sunday}) as accounting:
+    with series_terminology.pinned_catalog(args.work_root / args.sunday / "series-terminology.snapshot.json"), accounting_session(args.work_root / args.sunday / "accounting", "saturday_generation", {"sunday": args.sunday}) as accounting:
         report = _run_post_live_generation(args, metadata_loader=metadata_loader, runner=runner)
         report["accounting"] = accounting
         return report
@@ -182,6 +191,9 @@ def _run_post_live_generation(
         args.reference_model = getattr(args, "gpt4o_model", "gpt-transcribe")
     if not hasattr(args, "output_mode"):
         args.output_mode = "reading"
+    if getattr(args, "source_text_review", None) and args.output_mode != "reading":
+        raise ValueError("--source-text-review is supported only with --output-mode reading")
+    reading_review_manifest_identity(args)
     if not hasattr(args, "content_scope"):
         args.content_scope = None
     state = live_source_monitor.read_state(args.state_file)
@@ -284,31 +296,45 @@ def _run_post_live_generation(
         log_post_live_event(report)
         return report
 
-    set_openai_api_key(args)
     stage_durations: dict[str, float] = {}
-    audio_path = newest_downloaded_audio(audio_template.parent)
-    if audio_path:
-        with accounting_stage("download", cache_hit=True):
-            stage_durations["downloaded"] = 0.0
-    else:
-        started = time.monotonic()
-        run_status = post_live_run_status.update_stage(run_status, args.sunday, "downloaded", "running")
+    started = time.monotonic()
+    run_status = post_live_run_status.update_stage(run_status, args.sunday, "downloaded", "running")
+    write_run_status(run_status_path, run_status)
+    try:
+        expected_duration = archive_expected_duration(metadata)
+        audio_path = newest_downloaded_audio(audio_template.parent)
+        if audio_path:
+            with accounting_stage("download", cache_hit=True):
+                validate_archive_audio(audio_path, expected_duration_seconds=expected_duration)
+                stage_durations["downloaded"] = 0.0
+        else:
+            with accounting_stage("download"):
+                audio_path = download_archive_audio(
+                    live_url,
+                    audio_template,
+                    args.audio_format,
+                    args.yt_dlp,
+                    runner,
+                    cookies_path=args.youtube_cookies,
+                    expected_duration_seconds=expected_duration,
+                )
+            stage_durations["downloaded"] = time.monotonic() - started
+    except ArchiveAudioValidationError as exc:
+        run_status = post_live_run_status.update_stage(
+            run_status, args.sunday, "downloaded", "failed", reason=str(exc),
+            duration_seconds=time.monotonic() - started,
+        )
+        run_status = post_live_run_status.mark_terminal(
+            run_status, args.sunday, "failed", stage="downloaded", reason=str(exc),
+        )
         write_run_status(run_status_path, run_status)
-        with accounting_stage("download"):
-            audio_path = download_archive_audio(
-                live_url,
-                audio_template,
-                args.audio_format,
-                args.yt_dlp,
-                runner,
-                cookies_path=args.youtube_cookies,
-            )
-        stage_durations["downloaded"] = time.monotonic() - started
+        raise
     run_status = post_live_run_status.update_stage(
         run_status, args.sunday, "downloaded", "complete", artifact=str(audio_path),
         duration_seconds=stage_durations["downloaded"],
     )
     write_run_status(run_status_path, run_status)
+    set_openai_api_key(args)
     pipeline_command = build_pipeline_command(args, audio_path.parent, pipeline_outdir, live_url, audio_path=audio_path)
     pipeline_input_identity = build_pipeline_input_identity(args, audio_path)
     pipeline_input_fingerprint = stable_payload_hash(pipeline_input_identity)
@@ -336,7 +362,8 @@ def _run_post_live_generation(
         if args.output_mode == "subtitles"
         else ("segments_timed_en_corrected.json", "segments_timed_zh.json", "summary.json")
     )
-    core_ready = all((pipeline_outdir / name).exists() for name in core_outputs) and pipeline_summary_matches(
+    review_cache_ready = source_review_cache_ready(args, pipeline_outdir)
+    core_ready = review_cache_ready and all((pipeline_outdir / name).exists() for name in core_outputs) and pipeline_summary_matches(
         pipeline_outdir / "summary.json",
         output_mode=args.output_mode,
         reference_model=args.reference_model,
@@ -376,7 +403,8 @@ def _run_post_live_generation(
         pipeline_input_fingerprint=pipeline_input_fingerprint,
     )
     reading_input_fingerprint = stable_payload_hash(reading_input_identity)
-    reading_ready = all(
+    manifest_cache_ready = reading_review_cache_ready(args, reading_outdir)
+    reading_ready = manifest_cache_ready and all(
         path.exists()
         for path in (
             reading_outdir / "sermon_zh_reading_revised.srt",
@@ -681,6 +709,8 @@ def build_pipeline_command(
         command.extend(["--end-time", args.end_time])
     if args.glossary:
         command.extend(["--glossary", str(args.glossary)])
+    if getattr(args, "source_text_review", None):
+        command.extend(["--source-text-review", str(args.source_text_review)])
     return command
 
 
@@ -722,7 +752,7 @@ def build_reading_edition_command(
     args: argparse.Namespace,
     pipeline_outdir: Path,
 ) -> list[str]:
-    return [
+    command = [
         sys.executable,
         str(READING_EDITION_SCRIPT),
         "--source-pipeline",
@@ -746,6 +776,9 @@ def build_reading_edition_command(
         "--hard-english-chars",
         str(getattr(args, "reading_hard_english_chars", 840)),
     ]
+    if getattr(args, "reading_review_manifest", None):
+        command.extend(["--review-manifest", str(args.reading_review_manifest)])
+    return command
 
 
 def build_reading_pdf_command(
@@ -961,11 +994,21 @@ def download_archive_audio(
     runner: Callable[..., subprocess.CompletedProcess],
     *,
     cookies_path: Path | None = None,
+    expected_duration_seconds: float | None = None,
 ) -> Path:
     output_template.parent.mkdir(parents=True, exist_ok=True)
+    existing = newest_downloaded_audio(output_template.parent)
+    if existing:
+        validate_archive_audio(existing, expected_duration_seconds=expected_duration_seconds)
+        return existing
+    if any(path.is_file() and any(suffix.startswith((".part", ".ytdl")) for suffix in path.suffixes)
+           for path in output_template.parent.glob("source_audio.*")):
+        raise ArchiveAudioValidationError("Partial download files preserved. " + ARCHIVE_RECOVERY)
     command = [
         yt_dlp,
         "--no-playlist",
+        "--abort-on-unavailable-fragments",
+        "--no-overwrites",
         "--js-runtimes",
         "node",
         "-f",
@@ -977,10 +1020,75 @@ def download_archive_audio(
         command.extend(["--cookies", str(cookies_path)])
     command.append(live_url)
     run_command(command, runner)
-    files = sorted(output_template.parent.glob("source_audio.*"), key=lambda path: path.stat().st_mtime, reverse=True)
-    if not files:
-        raise RuntimeError("yt-dlp completed but no source_audio.* file was created")
-    return files[0]
+    audio_path = newest_downloaded_audio(output_template.parent)
+    if audio_path is None:
+        raise ArchiveAudioValidationError("yt-dlp returned success without a finished media file. " + ARCHIVE_RECOVERY)
+    validate_archive_audio(audio_path, expected_duration_seconds=expected_duration_seconds)
+    return audio_path
+
+
+ARCHIVE_AUDIO_SUFFIXES = {".m4a", ".mp4", ".webm", ".mp3", ".ogg", ".opus", ".wav", ".flac", ".aac", ".mka", ".mkv", ".oga", ".mov"}
+ARCHIVE_RECOVERY = (
+    "Refresh the finished archive metadata and download into a new directory with "
+    "--abort-on-unavailable-fragments; verify its full duration before retrying. "
+    "Existing media and partial files have not been deleted or overwritten."
+)
+
+
+class ArchiveAudioValidationError(RuntimeError):
+    """The archive is not proven complete; no paid ASR or complete upload is allowed."""
+
+
+def archive_expected_duration(metadata: dict[str, Any] | None) -> float:
+    value = (metadata or {}).get("duration")
+    if isinstance(value, bool):
+        value = None
+    try:
+        duration = float(value)
+    except (TypeError, ValueError):
+        duration = 0.0
+    if not math.isfinite(duration) or duration <= 0:
+        raise ArchiveAudioValidationError("Finished archive metadata has no valid duration. " + ARCHIVE_RECOVERY)
+    return duration
+
+
+def is_archive_audio_file(path: Path) -> bool:
+    return (path.is_file() and path.suffix.lower() in ARCHIVE_AUDIO_SUFFIXES
+            and not any(suffix.lower().startswith((".part", ".ytdl")) for suffix in path.suffixes))
+
+
+def probe_archive_audio(path: Path) -> dict[str, Any]:
+    try:
+        result = subprocess.run(
+            ["ffprobe", "-v", "error", "-show_entries", "format=duration:stream=codec_type",
+             "-of", "json", str(path)],
+            check=True, capture_output=True, text=True, timeout=30,
+        )
+        return json.loads(result.stdout)
+    except (OSError, subprocess.SubprocessError, json.JSONDecodeError) as exc:
+        raise ArchiveAudioValidationError("Archive audio could not be probed. " + ARCHIVE_RECOVERY) from exc
+
+
+def validate_archive_audio(path: Path, *, expected_duration_seconds: float | None = None) -> None:
+    if not is_archive_audio_file(path) or path.stat().st_size == 0:
+        raise ArchiveAudioValidationError("Archive path is not a nonempty finished media file. " + ARCHIVE_RECOVERY)
+    probe = probe_archive_audio(path)
+    try:
+        duration = float(probe.get("format", {}).get("duration", 0))
+    except (TypeError, ValueError):
+        duration = 0.0
+    if (not math.isfinite(duration) or duration <= 0
+            or not any(stream.get("codec_type") == "audio" for stream in probe.get("streams", []))):
+        raise ArchiveAudioValidationError("Archive has no valid audio stream and duration. " + ARCHIVE_RECOVERY)
+    if expected_duration_seconds is not None:
+        expected = archive_expected_duration({"duration": expected_duration_seconds})
+        # Allow small archive remux/tail differences, never minutes of missing fragments.
+        tolerance = min(15.0, max(5.0, expected * 0.002))
+        if abs(duration - expected) > tolerance:
+            raise ArchiveAudioValidationError(
+                f"Archive duration mismatch: measured {duration:.3f}s, expected {expected:.3f}s "
+                f"(tolerance {tolerance:.3f}s). " + ARCHIVE_RECOVERY
+            )
 
 
 def newest_downloaded_audio(download_dir: Path) -> Path | None:
@@ -988,7 +1096,7 @@ def newest_downloaded_audio(download_dir: Path) -> Path | None:
         (
             path
             for path in download_dir.glob("source_audio.*")
-            if path.is_file() and path.suffix not in {".part", ".ytdl"}
+            if is_archive_audio_file(path)
         ),
         key=lambda path: path.stat().st_mtime,
         reverse=True,
@@ -1073,6 +1181,45 @@ def pipeline_summary_matches(
     return matches
 
 
+def source_review_cache_ready(args: argparse.Namespace, pipeline_outdir: Path) -> bool:
+    """Verify review evidence before cache reuse, without modifying raw ASR."""
+    review = getattr(args, "source_text_review", None)
+    if review is None:
+        return True
+    if args.output_mode != "reading":
+        raise ValueError("--source-text-review is supported only with --output-mode reading")
+    raw_path = pipeline_outdir / "segments_timed_en_raw.json"
+    audio_path = pipeline_outdir / "source_clip.m4a"
+    asr_path = pipeline_outdir / "asr_reference.json"
+    if not asr_path.is_file():
+        asr_path = pipeline_outdir / "asr_reference_chunks.json"
+    if not all(path.is_file() for path in (raw_path, audio_path, asr_path)):
+        return False
+    from scripts.sermon_source_text_review import apply_review
+
+    raw_segments = json.loads(raw_path.read_text(encoding="utf-8"))
+    corrected, _ = apply_review(raw_segments, review, audio_path, asr_path)
+    from scripts.sermon_pipeline import clean_text, ffprobe_duration, reference_chunks_to_reading_segments
+
+    asr = json.loads(asr_path.read_text(encoding="utf-8"))
+    if asr_path.name == "asr_reference.json":
+        if not isinstance(asr, dict):
+            raise ValueError("Bound single-request ASR must be an object")
+        duration = round(ffprobe_duration(audio_path), 3)
+        chunks = [{"id": 0, "start": 0.0, "end": duration, "duration": duration,
+            "text": clean_text(asr.get("text", "")), "usage": asr.get("usage"), "detectedLanguages": asr.get("languages", [])}]
+    else:
+        if not isinstance(asr, list):
+            raise ValueError("Bound chunked ASR must be an array")
+        chunks = asr
+    expected_raw = reference_chunks_to_reading_segments(
+        chunks, target_chars=max(120, int(getattr(args, "reading_segment_target_chars", 420))))
+    if raw_segments != expected_raw:
+        raise ValueError("Raw reading segments differ from the bound ASR and current segment target")
+    corrected_path = pipeline_outdir / "segments_timed_en_corrected.json"
+    return corrected_path.is_file() and json.loads(corrected_path.read_text(encoding="utf-8")) == corrected
+
+
 def reading_layout_targets(args: argparse.Namespace) -> dict[str, float | int]:
     return {
         "preferredSeconds": float(getattr(args, "reading_preferred_seconds", 24.0)),
@@ -1121,8 +1268,9 @@ def file_content_identity(path: Path | None) -> dict[str, Any] | None:
 
 
 def build_pipeline_input_identity(args: argparse.Namespace, audio_path: Path) -> dict[str, Any]:
-    return {
+    identity = {
         "schemaVersion": INPUT_IDENTITY_SCHEMA_VERSION,
+        "seriesTerminology": series_terminology.context(),
         "sourceAudio": file_content_identity(audio_path),
         "sermonWindow": {
             "startTime": args.start_time or "00:00:00",
@@ -1145,8 +1293,12 @@ def build_pipeline_input_identity(args: argparse.Namespace, audio_path: Path) ->
         "implementation": {
             "sermonPipeline": file_content_identity(SERMON_PIPELINE_SCRIPT),
             "reviewPrompts": file_content_identity(REVIEW_PROMPTS_SCRIPT),
+            "seriesTerminology": file_content_identity(Path(series_terminology.__file__)),
         },
     }
+    if getattr(args, "source_text_review", None):
+        identity["sourceTextReview"] = file_content_identity(args.source_text_review)
+    return identity
 
 
 def build_reading_input_identity(
@@ -1155,8 +1307,9 @@ def build_reading_input_identity(
     *,
     pipeline_input_fingerprint: str,
 ) -> dict[str, Any]:
-    return {
+    identity = {
         "schemaVersion": INPUT_IDENTITY_SCHEMA_VERSION,
+        "seriesTerminology": series_terminology.context(),
         "pipelineInputFingerprint": pipeline_input_fingerprint,
         "sourceArtifacts": {
             "englishCorrected": file_content_identity(pipeline_outdir / "segments_timed_en_corrected.json"),
@@ -1171,8 +1324,64 @@ def build_reading_input_identity(
         "layoutTargets": reading_layout_targets(args),
         "implementation": {
             "readingEdition": file_content_identity(READING_EDITION_SCRIPT),
+            "seriesTerminology": file_content_identity(Path(series_terminology.__file__)),
         },
     }
+    manifest = reading_review_manifest_identity(args)
+    if manifest is not None:
+        identity["readingReviewManifest"] = manifest
+    return identity
+
+
+def reading_review_manifest_identity(args: argparse.Namespace) -> dict[str, Any] | None:
+    path = getattr(args, "reading_review_manifest", None)
+    if path is None:
+        return None
+    if args.output_mode != "reading":
+        raise ValueError("--reading-review-manifest is supported only with --output-mode reading")
+    _, identity = read_reading_review_manifest(path)
+    return identity
+
+
+def read_reading_review_manifest(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
+    try:
+        contents = Path(path).read_bytes()
+    except OSError as exc:
+        raise ValueError("--reading-review-manifest must name an existing readable file") from exc
+    manifest = json.loads(contents)
+    if not isinstance(manifest, dict):
+        raise ValueError("Reading review manifest must be a JSON object")
+    corrections = manifest.get("corrections")
+    if not isinstance(corrections, list) or not corrections:
+        raise ValueError("Reading review manifest requires nonempty corrections")
+    if any(not isinstance(item, dict) or item.get("field") != "zh" for item in corrections):
+        raise ValueError("--reading-review-manifest supports only field='zh'; English requires --source-text-review")
+    return manifest, {"exists": True, "sizeBytes": len(contents), "sha256": hashlib.sha256(contents).hexdigest()}
+
+
+def reading_review_cache_ready(args: argparse.Namespace, reading_outdir: Path) -> bool:
+    """Validate standard manifest application and its receipt before reuse."""
+    identity = reading_review_manifest_identity(args)
+    if identity is None:
+        return True
+    manifest, current_identity = read_reading_review_manifest(args.reading_review_manifest)
+    if current_identity != identity:
+        raise ValueError("Reading review manifest changed during cache validation")
+    final_path = reading_outdir / "reading_blocks.final.json"
+    if not final_path.is_file():
+        return False
+    from scripts.build_sermon_reading_edition_with_openai import apply_review_manifest
+
+    final = json.loads(final_path.read_text(encoding="utf-8"))
+    reviewed, _ = apply_review_manifest(final, manifest)
+    if reviewed != final:
+        return False
+    report_path = reading_outdir / "reading_quality_report.json"
+    if not report_path.is_file():
+        return False
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    recorded = report.get("reviewManifest") or {}
+    return isinstance(recorded, dict) and recorded.get("sha256") == identity["sha256"]
 
 
 def stable_payload_hash(payload: dict[str, Any]) -> str:

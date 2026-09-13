@@ -1,18 +1,117 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="680" viewBox="0 0 1200 680" role="img" aria-labelledby="title desc">
-  <title id="title">Evidence and model promotion gates</title>
-  <desc id="desc">Evidence progresses from engineering smoke to model-reviewed reference, human Gold, frozen replay, browser WAV soak, venue rehearsal, and production promotion, while failures return to Discovery.</desc>
-  <defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0 0L0 6L9 3z" fill="#475569"/></marker><style>text{font-family:Arial,"PingFang SC","Microsoft YaHei",sans-serif}.bg{fill:#f8fafc}.title{font-size:29px;font-weight:700;fill:#0f172a}.sub{font-size:14px;fill:#64748b}.h{font-size:15px;font-weight:700;fill:#0f172a}.t{font-size:13px;fill:#475569}.done{fill:#ecfdf5;stroke:#10b981;stroke-width:2}.partial{fill:#fff7ed;stroke:#f97316;stroke-width:2}.pending{fill:#fff;stroke:#94a3b8;stroke-width:2}.prod{fill:#eff6ff;stroke:#2563eb;stroke-width:2}.line{fill:none;stroke:#475569;stroke-width:2.2;marker-end:url(#a)}.return{fill:none;stroke:#e11d48;stroke-width:2;stroke-dasharray:7 6;marker-end:url(#a)}</style></defs>
-  <rect class="bg" width="1200" height="680" rx="24"/><text class="title" x="48" y="56">Evidence ladder · 模型与工作流晋级门槛</text><text class="sub" x="48" y="84">A passing engineering test is not human quality evidence, and a local soak is not venue acceptance.</text>
-  <rect class="done" x="48" y="150" width="152" height="92" rx="15"/><text class="h" x="124" y="181" text-anchor="middle">Engineering smoke</text><text class="t" x="124" y="205" text-anchor="middle">decode · protocol</text><text class="t" x="124" y="224" text-anchor="middle">failure handling</text>
-  <rect class="done" x="238" y="150" width="152" height="92" rx="15"/><text class="h" x="314" y="181" text-anchor="middle">Reviewed reference</text><text class="t" x="314" y="205" text-anchor="middle">provisional ranking</text><text class="t" x="314" y="224" text-anchor="middle">not human Gold</text>
-  <rect class="partial" x="428" y="150" width="152" height="92" rx="15"/><text class="h" x="504" y="181" text-anchor="middle">Human Gold</text><text class="t" x="504" y="205" text-anchor="middle">word-level review</text><text class="t" x="504" y="224" text-anchor="middle">currently pending</text>
-  <rect class="done" x="618" y="150" width="152" height="92" rx="15"/><text class="h" x="694" y="181" text-anchor="middle">Frozen replay</text><text class="t" x="694" y="205" text-anchor="middle">same inputs</text><text class="t" x="694" y="224" text-anchor="middle">hash provenance</text>
-  <rect class="done" x="808" y="150" width="152" height="92" rx="15"/><text class="h" x="884" y="181" text-anchor="middle">Browser WAV soak</text><text class="t" x="884" y="205" text-anchor="middle">Qwen + MiLMMT</text><text class="t" x="884" y="224" text-anchor="middle">20 min × 3 loops</text>
-  <rect class="partial" x="998" y="150" width="152" height="92" rx="15"/><text class="h" x="1074" y="181" text-anchor="middle">Venue rehearsal</text><text class="t" x="1074" y="205" text-anchor="middle">audio · real phones</text><text class="t" x="1074" y="224" text-anchor="middle">currently pending</text>
-  <path class="line" d="M200 196H234"/><path class="line" d="M390 196H424"/><path class="line" d="M580 196H614"/><path class="line" d="M770 196H804"/><path class="line" d="M960 196H994"/>
-  <rect class="prod" x="450" y="350" width="300" height="94" rx="17"/><text class="h" x="600" y="382" text-anchor="middle">Production promotion</text><text class="t" x="600" y="407" text-anchor="middle">all required gates + fresh evidence</text><text class="t" x="600" y="427" text-anchor="middle">explicit operator decision</text>
-  <path class="line" d="M1074 242V294H600V346"/>
-  <rect class="pending" x="242" y="528" width="716" height="86" rx="17"/><text class="h" x="600" y="559" text-anchor="middle">Discovery / iterate without upgrading the claim</text><text class="t" x="600" y="583" text-anchor="middle">alternate models · VAD tuning · post-training · cloud experiments · failed gates</text>
-  <path class="return" d="M504 246V316H412V500H438V524"/><path class="return" d="M1074 246V500H762V524"/><path class="return" d="M450 397H384V524"/>
-  <rect fill="#e2e8f0" x="230" y="640" width="740" height="28" rx="10"/><text class="t" x="600" y="659" text-anchor="middle">Current: real-model delivery verified; human quality, field devices and memory bounds remain unverified.</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1370" viewBox="0 0 1600 1370" role="img" aria-labelledby="title desc">
+<title id="title">证据积累与晋级门槛</title><desc id="desc">证据可以并行积累；全部适用门槛汇合通过后才能晋级 文档质检、声音听审、现场语义各有门槛；回归测试数量、机器审核或浏览器回放均不能替代人审与现场。 使用授权媒体，原文与审批受控保存；未完成的人审、现场及多场资源门保持待验，不因重绘改为通过。</desc>
+<style>text{font-family:"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;} text{font-variant-ligatures:none}</style>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M1 1 L7 4 L1 7" fill="none" stroke="context-stroke" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect x="0" y="0" width="1600" height="1370" rx="0" fill="#F5F4EF" stroke="none" />
+<rect x="64" y="57" width="44" height="5" rx="2" fill="#267D72" stroke="none" />
+<text x="124" y="69" font-size="17" font-weight="600" fill="#64787A" text-anchor="start" letter-spacing="2">EVIDENCE PROMOTION GATES</text>
+<text x="64" y="127" font-size="44" font-weight="650" fill="#19343D" text-anchor="start" >证据积累与晋级门槛</text>
+<text x="64" y="172" font-size="22" font-weight="400" fill="#60737A" text-anchor="start" >证据可以并行积累；全部适用门槛汇合通过后才能晋级</text>
+<text x="1536" y="69" font-size="18" font-weight="500" fill="#82918F" text-anchor="end" >10 / 11</text>
+<path d="M64 197H1536" stroke="#D8DEDA" stroke-width="1.3"/>
+<rect x="56" y="211" width="1488" height="644" rx="24" fill="#EDF0E9" stroke="none" />
+<text x="78" y="243" font-size="18" font-weight="600" fill="#60737A" text-anchor="start" >证据可并行积累 · 以下不是执行先后顺序</text>
+<path data-edge=":" d="M800 854 L800 955" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<rect x="723.0" y="884" width="154.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="800" y="906" font-size="17" font-weight="500" fill="#648A86" text-anchor="middle" >汇合全部适用证据</text>
+<path data-edge="promote:repair" d="M1010 1070.0 L1100 1070.0" fill="none" stroke="#817397" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<rect x="1022.5" y="1033" width="69.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="1057" y="1055" font-size="17" font-weight="500" fill="#817397" text-anchor="middle" >不满足</text>
+<path data-edge=":" d="M1520 1070 L1565 1070 L1565 530 L1518 530" fill="none" stroke="#817397" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<g id="node-engineering" data-node="engineering">
+<rect x="80" y="269" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="80" y="265" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="81" y="283" width="4" height="194" rx="2" fill="#AA7930" stroke="none" />
+<rect x="104" y="286" width="35" height="28" rx="8" fill="#FAF2E5" stroke="none" />
+<text x="121.5" y="306" font-size="16" font-weight="700" fill="#AA7930" text-anchor="middle" data-box="104,286,35,28" >01</text>
+<text x="153" y="306" font-size="15" font-weight="600" fill="#AA7930" text-anchor="start" data-box="148,283,332,35" >门槛 / GATE</text>
+<text x="104" y="347" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="100,320,380,162" >工程协议与故障测试</text>
+<text x="104" y="387" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,320,380,162" >解码、恢复与资源边界</text>
+<text x="104" y="416" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,320,380,162" >工程测试不代表语义质量</text>
+</g>
+<g id="node-model" data-node="model">
+<rect x="590" y="269" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="590" y="265" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="591" y="283" width="4" height="194" rx="2" fill="#AA7930" stroke="none" />
+<rect x="614" y="286" width="35" height="28" rx="8" fill="#FAF2E5" stroke="none" />
+<text x="631.5" y="306" font-size="16" font-weight="700" fill="#AA7930" text-anchor="middle" data-box="614,286,35,28" >02</text>
+<text x="663" y="306" font-size="15" font-weight="600" fill="#AA7930" text-anchor="start" data-box="658,283,332,35" >门槛 / GATE</text>
+<text x="614" y="347" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="610,320,380,162" >模型审核参考</text>
+<text x="614" y="387" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,320,380,162" >provisional</text>
+<text x="614" y="416" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,320,380,162" >机器审核不能成为人工金标</text>
+</g>
+<g id="node-human" data-node="human">
+<rect x="1100" y="269" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="1100" y="265" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="1101" y="283" width="4" height="194" rx="2" fill="#AA7930" stroke="none" />
+<rect x="1124" y="286" width="35" height="28" rx="8" fill="#FAF2E5" stroke="none" />
+<text x="1141.5" y="306" font-size="16" font-weight="700" fill="#AA7930" text-anchor="middle" data-box="1124,286,35,28" >03</text>
+<text x="1173" y="306" font-size="15" font-weight="600" fill="#AA7930" text-anchor="start" data-box="1168,283,332,35" >门槛 / GATE</text>
+<text x="1124" y="347" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1120,320,380,162" >人工金标与语义审核</text>
+<text x="1124" y="387" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,320,380,162" >逐词来源与神学语义</text>
+<text x="1124" y="416" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,320,380,162" >人工审核证据独立保留</text>
+</g>
+<g id="node-replay" data-node="replay">
+<rect x="80" y="589" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="80" y="585" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="81" y="603" width="4" height="194" rx="2" fill="#AA7930" stroke="none" />
+<rect x="104" y="606" width="35" height="28" rx="8" fill="#FAF2E5" stroke="none" />
+<text x="121.5" y="626" font-size="16" font-weight="700" fill="#AA7930" text-anchor="middle" data-box="104,606,35,28" >04</text>
+<text x="153" y="626" font-size="15" font-weight="600" fill="#AA7930" text-anchor="start" data-box="148,603,332,35" >门槛 / GATE</text>
+<text x="104" y="667" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="100,640,380,162" >冻结输入对照回放</text>
+<text x="104" y="707" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,640,380,162" >replay A/B</text>
+<text x="104" y="736" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,640,380,162" >输入、模型与版本身份冻结</text>
+</g>
+<g id="node-browser" data-node="browser">
+<rect x="590" y="589" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="590" y="585" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="591" y="603" width="4" height="194" rx="2" fill="#AA7930" stroke="none" />
+<rect x="614" y="606" width="35" height="28" rx="8" fill="#FAF2E5" stroke="none" />
+<text x="631.5" y="626" font-size="16" font-weight="700" fill="#AA7930" text-anchor="middle" data-box="614,606,35,28" >05</text>
+<text x="663" y="626" font-size="15" font-weight="600" fill="#AA7930" text-anchor="start" data-box="658,603,332,35" >门槛 / GATE</text>
+<text x="614" y="667" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="610,640,380,162" >真实模型浏览器长测</text>
+<text x="614" y="707" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,640,380,162" >约二十分钟音频循环三轮</text>
+<text x="614" y="736" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,640,380,162" >不等于六十分钟唯一内容</text>
+<text x="614" y="765" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,640,380,162" >多场资源增长上限仍待验</text>
+</g>
+<g id="node-field" data-node="field">
+<rect x="1100" y="589" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="1100" y="585" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="1101" y="603" width="4" height="194" rx="2" fill="#AA7930" stroke="none" />
+<rect x="1124" y="606" width="35" height="28" rx="8" fill="#FAF2E5" stroke="none" />
+<text x="1141.5" y="626" font-size="16" font-weight="700" fill="#AA7930" text-anchor="middle" data-box="1124,606,35,28" >06</text>
+<text x="1173" y="626" font-size="15" font-weight="600" fill="#AA7930" text-anchor="start" data-box="1168,603,332,35" >门槛 / GATE</text>
+<text x="1124" y="667" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1120,640,380,162" >现场音频与实体手机</text>
+<text x="1124" y="707" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,640,380,162" >麦克风、网络与实际呈现</text>
+<text x="1124" y="736" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,640,380,162" >现场语义及真机时延待验</text>
+</g>
+<g id="node-promote" data-node="promote">
+<rect x="590" y="959" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="590" y="955" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="591" y="973" width="4" height="194" rx="2" fill="#267D72" stroke="none" />
+<rect x="614" y="976" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="631.5" y="996" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="614,976,35,28" >07</text>
+<text x="663" y="996" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="658,973,332,35" >交付 / OUTPUT</text>
+<text x="614" y="1037" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="610,1010,380,162" >适用门槛全部通过</text>
+<text x="614" y="1077" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,1010,380,162" >按文档、声音、现场分别判定</text>
+<text x="614" y="1106" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,1010,380,162" >发布后检查交付与访问</text>
+<text x="614" y="1135" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,1010,380,162" >无完整证据不升级默认</text>
+</g>
+<g id="node-repair" data-node="repair">
+<rect x="1100" y="959" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="1100" y="955" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="7 5"/>
+<rect x="1101" y="973" width="4" height="194" rx="2" fill="#A25B50" stroke="none" />
+<rect x="1124" y="976" width="35" height="28" rx="8" fill="#F6ECE8" stroke="none" />
+<text x="1141.5" y="996" font-size="16" font-weight="700" fill="#A25B50" text-anchor="middle" data-box="1124,976,35,28" >08</text>
+<text x="1173" y="996" font-size="15" font-weight="600" fill="#A25B50" text-anchor="start" data-box="1168,973,332,35" >实验 / NOT VALIDATED</text>
+<text x="1124" y="1037" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1120,1010,380,162" >失败返修与独立实验</text>
+<text x="1124" y="1077" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,1010,380,162" >v4.1 Q5 已能本机运行</text>
+<text x="1124" y="1106" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,1010,380,162" >神学质量门仍未通过</text>
+<text x="1124" y="1135" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,1010,380,162" >按失败项回到对应证据门</text>
+</g>
+<rect x="64" y="1241" width="1472" height="78" rx="16" fill="#E9EEE8" stroke="none" />
+<text x="84" y="1270" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >文档质检、声音听审、现场语义各有门槛；回归测试数量、机器审核或浏览器回放均不能替代人审与现场。</text>
+<text x="84" y="1299" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >使用授权媒体，原文与审批受控保存；未完成的人审、现场及多场资源门保持待验，不因重绘改为通过。</text>
+<text x="64" y="1348" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="start" >内容校准 2026-09-11 · 设计参考 GPT Image 2.5 Sunburst · 原生可编辑 SVG</text>
+<text x="1536" y="1348" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="end" >实线：主路径   虚线：条件 / 实验 / 历史</text>
 </svg>

@@ -6,6 +6,40 @@ import UIKit
 /// these tests do not establish real-network, audible, lock-screen, or venue QA.
 @MainActor
 final class ListeningFlowUITests: XCTestCase {
+    func testOpeningTranscriptWhilePlayingLocatesCurrentCueOnlyOnce() throws {
+        let app = launchFixture(largeText: true)
+        try selectSecondTrack(in: app)
+        try downloadSelection(in: app)
+        try seekToSecondSubtitle(in: app)
+        try selectReadingMode(.outline, in: app)
+        try closeReadingPaneIfPresented(in: app)
+        let play = app.buttons["playback-toggle"]
+        play.tap()
+        try waitFor(play, "label == '暂停播放'")
+        try showTranscript(in: app)
+
+        // No reveal: otherwise the test could conceal missing automatic locating.
+        try waitForReadingViewport(app.buttons["subtitle-cue-1"], in: app)
+        screenshot("playing-transcript-auto-located-current-cue", app: app)
+        let first = app.buttons["subtitle-cue-0"]
+        try reveal(first, in: app, direction: .down, scrollIdentifier: "transcript-reading-scroll")
+        let originalY = first.frame.minY
+        let movedAway = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            !first.exists || abs(first.frame.minY - originalY) > 20
+        }, object: nil)
+        movedAway.isInverted = true
+        XCTAssertEqual(XCTWaiter.wait(for: [movedAway], timeout: 2), .completed,
+                       "播放推进不能抢走手动滚动位置")
+        try closeReadingPaneIfPresented(in: app)
+        play.tap()
+        try waitFor(play, "label == '开始播放'")
+        try showTranscript(in: app)
+        try waitForReadingViewport(first, in: app)
+        screenshot("paused-transcript-preserves-reading-position", app: app)
+        try closeReadingPaneIfPresented(in: app)
+        XCTAssertEqual(play.label, "开始播放")
+    }
+
     func testPrivacyNoticeIsAvailableWithoutMicrophonePermission() throws {
         let app = launchFixture()
         app.terminate()
@@ -41,9 +75,17 @@ final class ListeningFlowUITests: XCTestCase {
         try seekToSecondSubtitle(in: app)
         try showTranscript(in: app)
         let english = element("transcript-english-1", in: app)
+        let comparison = element("transcript-english-toggle-1", in: app)
+        try reveal(comparison, in: app, direction: .up, scrollIdentifier: "transcript-reading-scroll")
+        XCTAssertFalse(english.exists)
+        comparison.tap()
         try reveal(english, in: app, direction: .up, scrollIdentifier: "transcript-reading-scroll")
         XCTAssertTrue(english.label.contains("Second synthetic source sentence"))
+        comparison.tap()
+        XCTAssertFalse(english.exists)
+        comparison.tap()
         try closeReadingPaneIfPresented(in: app)
+        try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:12'")
         app.buttons["more-options"].tap()
         let language = element("interface-language", in: app)
         try reveal(language, in: app, direction: .up)
@@ -54,6 +96,10 @@ final class ListeningFlowUITests: XCTestCase {
         try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:12'")
         XCTAssertEqual(element("sermon-title", in: app).label, "界面测试证道")
         try showTranscript(in: app)
+        if !english.exists {
+            try reveal(comparison, in: app, direction: .up, scrollIdentifier: "transcript-reading-scroll")
+            comparison.tap()
+        }
         try reveal(english, in: app, direction: .up, scrollIdentifier: "transcript-reading-scroll")
         XCTAssertTrue(english.label.contains("Second synthetic source sentence"))
         screenshot("english-interface-source-bilingual-transcript", app: app)

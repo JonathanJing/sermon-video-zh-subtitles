@@ -6,6 +6,8 @@
   </a>
 </p>
 
+**Sunday operations:** [Operations whitepaper (中文)](./sunday-live-operations-whitepaper.zh.md) · [Agent execution entry (中文)](./sunday-live-agent-runbook.zh.md). Prepare the operator page, create a session and phone-viewer link, recover from interruptions, and verify saving. Preparation mode leaves the page in standby without recording.
+
 This folder contains product, system design, research, backlog, and testing notes for the sermon Chinese caption pipeline.
 
 ## How to Read Status

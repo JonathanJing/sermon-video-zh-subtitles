@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "sermon-speaker-voice-acceptance-v1",
+  "recordedDate": "2026-09-05",
+  "authority": "explicit_user_confirmation",
+  "confirmation": "5个讲员的语音都已经人工认证",
+  "scope": "current_published_chinese_voice_auditions",
+  "sourceBankSha256": "eaff792b6bd6ae9ec5045bffd4e44675321cf0a0d4218993f4418f6cfaea5ab2",
+  "speakers": [
+    {
+      "speakerId": "jared_kirkwood",
+      "speakerName": "Jared Kirkwood",
+      "checkpointSha256": "a99381477fa7cc1b0ee5de688a68ce896a5f8dd6c60fa80fdf309e7d03ccf588",
+      "chineseAudioSha256": "0e654628269dd944c79e3aa00ac8614bb746df13eaf95c00e9da2e6097fe939a",
+      "referenceAudioSha256": "926e37b4f92c5c9c33c841886f4e22f54d6b214b1c1a1c3c1be2f22b61987e17",
+      "humanListeningStatus": "accepted"
+    },
+    {
+      "speakerId": "christine_caine",
+      "speakerName": "Christine Caine",
+      "checkpointSha256": "480bc27ec6d23708c4e1a202d9c377145f02ca50bf508e9f4cf63de00f1aeac5",
+      "chineseAudioSha256": "00c22d24b3c723f8fa63df92fdba553e355b8b217903dd2caf223573b4652d07",
+      "referenceAudioSha256": "a96bdd6abf2b94197c56a3d76f94504145e88f79b14372ec53328216c34c2f81",
+      "humanListeningStatus": "accepted"
+    },
+    {
+      "speakerId": "doug_fields",
+      "speakerName": "Doug Fields",
+      "checkpointSha256": "010b54bc4a305a62292cb3eb37492f161957cdb66128a61843a1be268841c95b",
+      "chineseAudioSha256": "f65553b0574524cd5afa60a280f651fd870550a0345f7597fc9c21a7c2e09168",
+      "referenceAudioSha256": "95fb563d94990e64012cd0463d75313eefe08cfe785ef306ddccaf5001423440",
+      "humanListeningStatus": "accepted"
+    },
+    {
+      "speakerId": "kenton_beshore",
+      "speakerName": "Kenton Beshore",
+      "checkpointSha256": "d9949de39b2141dc0a0113a86f648eae1782b94b147331dfe3253dd1b11611e1",
+      "chineseAudioSha256": "2556a9a3416c55115d8ab6732745d507619d66efcf487c91354efa4dd89577e2",
+      "referenceAudioSha256": "394552afddac93e08f3049b40ecb52fb62c382205418910e721520e4786d7ab3",
+      "humanListeningStatus": "accepted"
+    },
+    {
+      "speakerId": "steve_bang_lee",
+      "speakerName": "Steve Bang Lee",
+      "checkpointSha256": "b480bc6ab05863ccf1971bb7d968d99b31f64c5570d21d9cb7d10d4c993953a9",
+      "chineseAudioSha256": "ba2346ac01d28981889309355c54a9f3873a584aa6d48f857de79a3aa555ecd5",
+      "referenceAudioSha256": "0661d53954b41e34ac96255c9cb67c73e80a06297f19a0b2976854c81eae3950",
+      "humanListeningStatus": "accepted"
+    }
+  ]
+}

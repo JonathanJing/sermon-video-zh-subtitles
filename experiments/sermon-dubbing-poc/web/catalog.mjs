@@ -1,9 +1,58 @@
+// Publication presentation is independent of human listening/content review.
+export function isFormalPlayback(week) {
+  return week?.releaseLabel === "正式播放版";
+}
+
+const blockKey = value => typeof value === 'string' ? value : Number.isSafeInteger(value) && value >= 0 ? String(value) : null;
+const validBlockKey = value => typeof value === 'string' && value.length > 0 && value.length <= 128 && value.trim() === value && !/[\u0000-\u001f\u007f]/.test(value);
+
+function validateTranscript(week) {
+  const transcript = week.transcript;
+  if (transcript == null) return;
+  if (transcript.schemaVersion !== 'sermon-bilingual-transcript-v1' || !Array.isArray(transcript.blocks)) throw new Error('Invalid bilingual transcript');
+  const ids = new Set();
+  for (const block of transcript.blocks) {
+    if (!validBlockKey(block.blockId) || ids.has(block.blockId)
+        || [block.sourceTextOrigin, block.reviewState, ...[block.english, block.chinese].filter(v => v != null)]
+          .some(v => typeof v !== 'string' || !v.trim())) throw new Error('Invalid bilingual source block');
+    ids.add(block.blockId);
+  }
+  for (const cue of week.tracks.flatMap(t => t.cues)) {
+    if (cue.blockId != null && (!validBlockKey(blockKey(cue.blockId)) || (ids.size && !ids.has(blockKey(cue.blockId))))) throw new Error('Unlinked bilingual cue');
+  }
+}
+
+// Same association rule as iOS: show the complete English source once, after
+// the last Chinese cue bearing its ID. Never infer links from text or timing.
+export function bilingualCueRows(week, track) {
+  const originals = new Map(), ambiguous = new Set(), lastCue = new Map();
+  if (week?.transcript?.schemaVersion === 'sermon-bilingual-transcript-v1') {
+    for (const block of week.transcript.blocks) {
+      if (originals.has(block.blockId)) ambiguous.add(block.blockId);
+      originals.set(block.blockId, block);
+    }
+  }
+  track.cues.forEach((cue, index) => {
+    const id = blockKey(cue.blockId);
+    if (id != null) lastCue.set(id, index);
+  });
+  let missingEnglish = false;
+  const rows = track.cues.map((cue, index) => {
+    const id = blockKey(cue.blockId), block = ambiguous.has(id) ? null : originals.get(id);
+    const hasEnglish = typeof block?.english === 'string' && !!block.english.trim();
+    if (!hasEnglish) missingEnglish = true;
+    return { cue, index, english: hasEnglish && lastCue.get(id) === index ? block.english : null };
+  });
+  return { rows, hasEnglish: rows.some(row => row.english != null), missingEnglish };
+}
+
 export function validateCatalog(catalog) {
   if (catalog?.schemaVersion !== "sermon-weekly-catalog-v1" || !catalog.weeks?.length) throw new Error("Invalid catalog");
   const ids = new Set();
   for (const week of catalog.weeks) {
     if (ids.has(week.id) || !week.title || !week.speaker || !Array.isArray(week.tracks)) throw new Error("Invalid week");
     ids.add(week.id);
+    validateTranscript(week);
     for (const track of week.tracks) {
       if (!/^\/media\/[a-zA-Z0-9_.-]+\.mp3$/.test(track.audioUrl) || !(track.durationSeconds > 0) || !track.cues?.length) throw new Error("Invalid track");
       let previous = 0;
@@ -25,7 +74,48 @@ export function validateCatalog(catalog) {
 }
 
 export function chooseWeek(catalog, id) {
-  return catalog.weeks.find(w => w.id === id) || catalog.weeks.find(w => w.id === catalog.defaultWeekId);
+  return catalog.weeks.find(w => w.id === id)
+    || catalog.weeks.find(w => w.date === id && w.sourceRoute === 'same_video')
+    || catalog.weeks.find(w => w.date === id)
+    || catalog.weeks.find(w => w.id === catalog.defaultWeekId);
+}
+
+// Navigation uses the source page ID. Feedback, usage and playback bookmarks
+// retain their date contract and distinguish versions by the exported track ID.
+export function engagementWeek(week) {
+  return week ? { ...week, id: week.date || week.id } : null;
+}
+
+export function downloadFilename(week, track) {
+  // Use the sermon week, not the download date; keep names portable across OSes.
+  const clean = value => String(value).normalize("NFC")
+    .replace(/[<>:"/\\|?*\u0000-\u001f\u007f]/g, " ")
+    .replace(/\s+/g, " ").trim().replace(/[. ]+$/g, "");
+  const speaker = week.speaker.split(" · ")[0];
+  const parts = [week.date, "证道中文转译", week.title, speaker];
+  const sourceLabels = { live_archive: '主日聚会版', same_video: 'YouTube 版', archive_caption: 'YouTube 版' };
+  const sourceLabel = week.sourceLabel?.trim() || sourceLabels[week.sourceRoute];
+  if (sourceLabel && !week.title.includes(sourceLabel)) parts.push(sourceLabel);
+  if (isFormalPlayback(week)) {
+    if (!parts.some(part => String(part).includes("正式播放版"))) parts.push("正式播放版");
+  } else if (week.humanContentReview === "approved") {
+    // Content review is independent of video synchronization.
+  } else if (track.scope === "full_candidate") {
+    parts.push(track.subtitleTiming === "source_video_aligned_candidate" ? "同步试播" : "试听稿");
+  } else if (track.scope !== "full_reviewed") {
+    parts.push("样片", track.label);
+  }
+  return `${parts.map(clean).filter(Boolean).join("_")}.mp3`;
+}
+
+
+export function weekOptionLabel(week) {
+  const date = String(week.date || week.id || '').replaceAll('-', '.');
+  const title = typeof week.title === 'string' ? week.title.trim() : '';
+  const route = typeof week.sourceLabel === 'string' ? week.sourceLabel.trim() : '';
+  const status = isFormalPlayback(week) ? '正式播放版' : week.humanContentReview === 'approved' ? '整篇中文' : week.audioStatus === 'full_candidate' ? '整篇待审' : week.tracks?.length ? '可试听' : '待配音';
+  const displayStatus = isFormalPlayback(week) && [title, route].some(text => text.includes(status)) ? '' : status;
+  return [date, title, route && !title.includes(route) ? route : '', displayStatus].filter(Boolean).join(' · ');
 }
 
 export function parseTimecode(value) {

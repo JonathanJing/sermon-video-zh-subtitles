@@ -1,4 +1,5 @@
 import argparse
+import hashlib
 import importlib.util
 import json
 import subprocess
@@ -6,6 +7,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "run_post_live_timeline_job.py"
@@ -59,6 +61,19 @@ def write_state(path: Path):
     )
 
 
+def make_handoff(content: bytes, *, sunday="2026-07-12", source_id="5GuhLMPflds", bucket="test-bucket"):
+    slug = f"sermon_{source_id}"
+    return {
+        "schemaVersion": 1, "status": "complete", "handoffKind": "local-download-to-gcs",
+        "sunday": sunday, "slug": slug, "sourceUrl": f"https://www.youtube.com/watch?v={source_id}",
+        "audio": {
+            "gcsUri": f"gs://{bucket}/sundays/{sunday}/post-live-subtitles/{slug}/download/source_audio.m4a",
+            "fileName": "source_audio.m4a", "sizeBytes": len(content),
+            "sha256": hashlib.sha256(content).hexdigest(), "durationSeconds": 3600,
+        },
+    }
+
+
 class PostLiveTimelineJobTest(unittest.TestCase):
     def test_metadata_prefers_youtube_data_api_without_calling_ytdlp(self):
         original_secret = mod.access_secret
@@ -71,6 +86,7 @@ class PostLiveTimelineJobTest(unittest.TestCase):
                 "live_status": "was_live",
                 "was_live": True,
                 "metadata_provider": "youtube-data-api-v3",
+                "duration": 3600,
             }
             mod.youtube_metadata = lambda *_args, **_kwargs: self.fail("yt-dlp fallback should not run")
             metadata, diagnostics = mod.youtube_metadata_with_data_api(
@@ -122,6 +138,7 @@ class PostLiveTimelineJobTest(unittest.TestCase):
             report = mod.run_job(
                 make_args(root, str(state)),
                 metadata_loader=lambda _: {"live_status": "is_live", "is_live": True},
+                marker_reader=lambda _: None,
             )
         self.assertEqual(report["status"], "waiting_for_post_live")
 
@@ -141,6 +158,7 @@ class PostLiveTimelineJobTest(unittest.TestCase):
                     "live_status": "was_live",
                     "was_live": True,
                     "metadata_provider": "youtube-data-api-v3",
+                    "duration": 3600,
                 },
                 runner=failing_runner,
                 marker_reader=lambda _: None,
@@ -171,7 +189,8 @@ class PostLiveTimelineJobTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 mod.resolve_youtube_cookies("projects/p/secrets/cookies", path, Path(tempdir))
 
-    def test_downloads_uploads_probes_and_stops_for_review(self):
+    @mock.patch.object(mod.run_post_live_subtitle_generation, "probe_archive_audio", return_value={"format": {"duration": "3600"}, "streams": [{"codec_type": "audio"}]})
+    def test_downloads_uploads_probes_and_stops_for_review(self, _probe):
         uploads = []
 
         def runner(command, check):
@@ -203,7 +222,7 @@ class PostLiveTimelineJobTest(unittest.TestCase):
             try:
                 report = mod.run_job(
                     make_args(root, str(state)),
-                    metadata_loader=lambda _: {"live_status": "post_live", "was_live": True},
+                    metadata_loader=lambda _: {"live_status": "post_live", "was_live": True, "duration": 3600},
                     runner=runner,
                     uploader=lambda path, uri: uploads.append((str(path), uri)),
                     marker_reader=lambda _: None,
@@ -221,7 +240,8 @@ class PostLiveTimelineJobTest(unittest.TestCase):
         self.assertTrue(any(uri.endswith("/timeline/report.json") for _, uri in uploads))
         self.assertTrue(any(uri.endswith("/timeline/coarse_120s/timeline_chunks.json") for _, uri in uploads))
 
-    def test_consumes_local_gcs_handoff_before_youtube_download(self):
+    @mock.patch.object(mod.run_post_live_subtitle_generation, "probe_archive_audio", return_value={"format": {"duration": "3600"}, "streams": [{"codec_type": "audio"}]})
+    def test_consumes_local_gcs_handoff_before_youtube_download(self, _probe):
         uploads = []
 
         def fake_timeline(args):
@@ -247,23 +267,20 @@ class PostLiveTimelineJobTest(unittest.TestCase):
             try:
                 report = mod.run_job(
                     make_args(root, str(state)),
-                    metadata_loader=lambda _: {"live_status": "was_live", "was_live": True},
+                    metadata_loader=lambda _: {"live_status": "was_live", "was_live": True, "duration": 3600},
                     runner=lambda *_args, **_kwargs: self.fail("YouTube download should not run"),
                     uploader=lambda path, uri: uploads.append((str(path), uri)),
                     marker_reader=lambda _: None,
                     marker_writer=lambda *_args: None,
                     notifier=lambda *_args: {"status": "not_configured"},
-                    handoff_reader=lambda _: {
-                        "status": "complete",
-                        "audio": {"gcsUri": "gs://test-bucket/sundays/x/download/source_audio.m4a"},
-                    },
+                    handoff_reader=lambda _: make_handoff(b"audio from gcs"),
                     gcs_downloader=fake_gcs_download,
                 )
             finally:
                 mod.build_multistage_post_live_timeline.build_multistage_timeline = original
 
         self.assertEqual(report["downloadSource"], "local-gcs-handoff")
-        self.assertEqual(report["audioGcsUri"], "gs://test-bucket/sundays/x/download/source_audio.m4a")
+        self.assertEqual(report["audioGcsUri"], make_handoff(b"audio from gcs")["audio"]["gcsUri"])
         self.assertFalse(any(uri.endswith("/download/source_audio.m4a") for _, uri in uploads))
 
     def test_dedupes_completed_review_gate(self):

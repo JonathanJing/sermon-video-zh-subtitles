@@ -140,7 +140,7 @@ class ProductionLoggingTests(unittest.TestCase):
     def test_caught_source_refresh_failure_has_separate_safe_event(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            args = self.args(local, root)
+            args = self.args(local, root, mode="execute")
             args.skip_source_refresh = False
             message = "source access failed with private-token"
             with patch.object(local, "refresh_source_state", side_effect=RuntimeError(message)):
@@ -196,6 +196,7 @@ class ProductionLoggingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             args = self.args(supervisor, root)
+            args.agent_backend = "sdk"
             usage = {"requests": 2, "input_tokens": 300, "output_tokens": 80, "total_tokens": 380}
             result = SimpleNamespace(final_output={"status": "complete", "action": "complete", "summary_zh": "private SDK output"},
                 context_wrapper=SimpleNamespace(usage=SimpleNamespace(**usage, request_usage_entries=["private provider body"])),
@@ -228,6 +229,7 @@ class ProductionLoggingTests(unittest.TestCase):
             with self.subTest(wrapper=wrapper), tempfile.TemporaryDirectory() as tmp:
                 root = Path(tmp)
                 args = self.args(supervisor, root)
+                args.agent_backend = "sdk"
                 result = SimpleNamespace(final_output={"status": "complete", "action": "complete"}, context_wrapper=wrapper)
                 with patch.object(supervisor, "parse_args", return_value=args), patch.object(supervisor, "build_agent", return_value=object()), \
                         patch.object(supervisor.Runner, "run", new=AsyncMock(return_value=result)), \
@@ -241,6 +243,7 @@ class ProductionLoggingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             args = self.args(supervisor, root)
+            args.agent_backend = "sdk"
             failure = RuntimeError("private SDK request failure")
             with patch.object(supervisor, "parse_args", return_value=args), patch.object(supervisor, "build_agent", return_value=object()), \
                     patch.object(supervisor.Runner, "run", new=AsyncMock(side_effect=failure)) as sdk, \

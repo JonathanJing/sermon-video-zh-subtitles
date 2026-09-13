@@ -243,7 +243,9 @@ def json_request(url, api_key, payload, retries=3):
 
 
 def load_glossary(path):
-    payload = {"terms": DEFAULT_GLOSSARY, "zh_term_map": DEFAULT_ZH_TERM_MAP.copy()}
+    from scripts.series_terminology import context
+    payload = {"terms": DEFAULT_GLOSSARY, "zh_term_map": DEFAULT_ZH_TERM_MAP.copy(),
+               "seriesTerminology": context()}
     if not path:
         return payload
     data = read_json(path)
@@ -283,6 +285,9 @@ def glossary_lines(glossary):
         lines.append("")
         lines.append("Preferred Simplified Chinese term map:")
         lines.extend(f"- {key} => {value}" for key, value in mapping.items())
+    if isinstance(glossary, dict) and glossary.get("seriesTerminology"):
+        lines.append("Contextual series naming rules and data (not a global replacement map):")
+        lines.append(json.dumps(glossary["seriesTerminology"], ensure_ascii=False))
     return "\n".join(lines)
 
 
@@ -1099,7 +1104,8 @@ def translate_chinese(
         with stage("translation.cache", cache_hit=True):
             return read_json(output)
     glossary_text = glossary_lines(glossary)
-    system = review_prompts.CHINESE_TRANSLATION_SYSTEM_PROMPT
+    from scripts.series_terminology import PROMPT_INSTRUCTION
+    system = review_prompts.CHINESE_TRANSLATION_SYSTEM_PROMPT + "\n" + PROMPT_INSTRUCTION
     cache_identity = hashlib.sha256(
         f"{review_prompts.CHINESE_TRANSLATION_PROMPT_VERSION}|{model}|{reasoning_effort}".encode("utf-8")
     ).hexdigest()[:12]
@@ -1309,6 +1315,7 @@ def main():
     )
     parser.add_argument("--chunk-seconds", type=float, default=45.0)
     parser.add_argument("--reading-chunk-seconds", type=float, default=1200.0)
+    parser.add_argument("--source-text-review", type=Path, help="Hash-bound, separately reviewed English source corrections; original ASR stays unchanged.")
     parser.add_argument(
         "--reading-segment-target-chars",
         type=int,
@@ -1329,6 +1336,8 @@ def main():
 
     if not args.input or args.start_time is None:
         raise SystemExit("--input and --start-time are required")
+    if args.source_text_review and args.output_mode != "reading":
+        raise SystemExit("--source-text-review currently requires --output-mode reading")
 
     load_env(Path(".env"))
     api_key = os.environ.get("OPENAI_API_KEY")
@@ -1392,6 +1401,14 @@ def produce_pipeline(args, api_key, source_duration, start, end, outdir):
                 args.correction_window_seconds,
                 reasoning_effort=args.reasoning_effort,
             )
+        source_review = None
+        if args.source_text_review:
+            from scripts.sermon_source_text_review import apply_review
+            asr_path = outdir / "asr_reference.json"
+            if not asr_path.exists():
+                asr_path = outdir / "asr_reference_chunks.json"
+            corrected, source_review = apply_review(corrected, args.source_text_review, clip_path, asr_path)
+            write_json(outdir / "source-text-review-provenance.json", source_review)
         shaped_en = corrected if args.output_mode == "reading" else shape_durations(corrected)
         write_json(outdir / "segments_timed_en_corrected.json", shaped_en)
 
@@ -1443,6 +1460,7 @@ def produce_pipeline(args, api_key, source_duration, start, end, outdir):
         },
         "outputMode": args.output_mode,
         "timingPrecision": "whisper_segments" if args.output_mode == "subtitles" else "synthetic_reading_layout_only",
+        "seriesTerminology": glossary["seriesTerminology"],
         "readingSegmentTargetCharacters": (
             max(120, args.reading_segment_target_chars) if args.output_mode == "reading" else None
         ),
@@ -1467,6 +1485,8 @@ def produce_pipeline(args, api_key, source_duration, start, end, outdir):
         ),
         "argv": sys.argv[1:],
     }
+    if source_review:
+        summary["sourceTextReview"] = source_review
     write_json(outdir / "summary.json", summary)
     print(json.dumps(summary, ensure_ascii=False, indent=2))
 

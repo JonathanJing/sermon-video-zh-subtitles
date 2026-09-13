@@ -1,6 +1,8 @@
 # 周六 PDF 生产与周日实时字幕：完整工作流
 
-这份 README 是项目的 workflow source of truth。它只描述两条面向 operator 的主路径，并明确区分当前已验证能力、尚未接入能力和估算值。
+2026-09-11 安装与验收状态见 [Agents API 生产切换记录](../agents-api-production-cutover-20260911.zh.md)：代码已安装，正式入口 shadow/execute 验收通过，每周调度已启用；当前等待目标周日匹配源。
+
+这份 README 是项目的 workflow source of truth。它描述两条 operator 主路径，区分已验证能力、尚未接入能力和估算值。执行时先按 [AGENTS.md](../../AGENTS.md) 的任务路由读取一个对应入口，不必加载全部文档。
 
 现状校准日期：**2026-09-04**。这里的现状以 `main` 上的代码、测试和 tracked 报告为准；本地未跟踪产物、旧截图和历史运行观察不自动升级为当前事实。运行时健康、现场声学和 Wi-Fi 条件仍需在每次使用前单独检查。
 
@@ -23,6 +25,14 @@
 
 ## A. 周六：直播/归档到两个 PDF
 
+可选的[统一检查与执行入口](../saturday-harness.zh.md)按顺序连接原 PDF Supervisor 和配音桥接器，分开报告 PDF、候选、听审、同步与发布。[执行保护](../sermon-execution-harness.zh.md)连接 [Promptfoo 真实固定回归集](../saturday-quality-harness.zh.md)、[本机持久化追踪与自动观察](../sermon-trace-export.zh.md)及 [Temporal 持久工作流](../sermon-temporal.zh.md)。各自的实际集成证据和运行命令见专题文档；不表示真实生产或现场已通过，也未自动替换定时任务。
+
+**控制层迁移说明（2026-09-11）：** [Production Supervisor](../sermon-production-supervisor-agent.zh.md) 已在本地 runner 接入 OpenAI Agents API，默认 `--agent-backend agents-api`，原 Agents SDK / Responses 通过 `--agent-backend sdk` 显式回退。服务端 session 使用 `environment: none`；本地仍只执行状态检查、timeline 和经审批 PDF 生成三个受限业务工具，另有结构化结论提交。Session 状态和工具结果持久化，同一会话恢复；自动新建会话须先确认远端 completed/failed/cancelled 且无执行中或结果未确认的工具，本地 timeout 或取消 ACK 不足以放行；source、人工审批、lease、恢复、QA 与发布继续由确定性层约束，完成状态须重新读取 production snapshot。
+
+Supervisor 默认使用 `gpt-6-astra` Medium（本账户旧 `gpt-5.6` 查询返回 404），SDK 回退也使用同一 Astra；生产内容的 Astra Medium 和 ASR 的 `gpt-transcribe` 不变。Agents API 仅接收固定 allowlist 的日期、动作枚举与证据布尔状态；完整 snapshot 和用于恢复配置核对的 `configFingerprint` 留在本地。
+
+真实 Agents API 的两个全模拟用例已核验：`live-synthetic-01` 缺审批用例完成 2 次工具调用、未调用生成并返回 usage；`live-synthetic-advance-01` 完成 4 次工具调用，模拟 generation 执行恰好 1 次。`live-real-shadow-minimal-01` 已完成实际生产 GCS 状态的只读检查，目标日期 `2026-09-13`，动作为 `waiting_for_matching_sunday`。三个用例均为零真实生产变更；[报告链接与验证限界](../sermon-production-supervisor-agent.zh.md#验证进度)不能代替生产入口安装或切换回执。随后已完成正式入口 execute 验收并启用每周跟进 `pdf-context-pack`；当前业务状态仍是等待匹配源，完整产物生产与未来定时唤醒各自验收，安装收据见[本地 runbook](../codex-local-production-runbook.zh.md)。本节不更新上方全项目的 2026-09-04 校准日期，也不代表周日现场验收完成。
+
 ### 完整流程图
 
 ![周六 post-live 双 PDF 完整流程](../diagrams/saturday-post-live-workflow.svg)
@@ -40,6 +50,8 @@
 | 最终交付 | `sermon_zh_en_reading.pdf`、`sermon_interpretation_zh.pdf` |
 
 `sermon_zh_en_reading.pdf` 是翻译稿/阅读版。`sermon_interpretation_zh.pdf` 是证道同行/大纲，只保留核心信息、结构、经文背景、神学重点、例证与必要的牧养辨析；不加入讨论题或与证道无关的应用任务。
+
+**同行内容契约（2026-09-12 修复）：** 新生成使用 `sermon-companion-v3` prompt 与 notes schema v3，不再生成讨论题、小组指南或回应祷告；可选节按来源证据决定数量，核心信息、摘要和大纲仍必需。来源引用、精确摘录及双 PDF QA 保留。旧 v2 产物沿用原验收规则，不自动重做。[修复与离线验证记录](../prompt-agent-skill-audit-fixes-20260912.zh.md)包含双 PDF 合成样例；真实模型内容质量仍需新运行验收。
 
 ### 周六内容如何服务周日
 

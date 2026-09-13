@@ -1,22 +1,153 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img" aria-labelledby="title desc">
-  <title id="title">Production Supervisor control plane</title>
-  <desc id="desc">A scheduler or operator wakes a bounded supervisor that reads durable evidence and can invoke timeline or PDF jobs, but cannot create human approval or declare completion without deterministic QA.</desc>
-  <defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0 0L0 6L9 3z" fill="#475569"/></marker><style>text{font-family:Arial,"PingFang SC","Microsoft YaHei",sans-serif}.bg{fill:#f8fafc}.title{font-size:29px;font-weight:700;fill:#0f172a}.sub{font-size:14px;fill:#64748b}.h{font-size:16px;font-weight:700;fill:#0f172a}.t{font-size:14px;fill:#334155}.trigger{fill:#eff6ff;stroke:#3b82f6;stroke-width:2}.agent{fill:#f5f3ff;stroke:#7c3aed;stroke-width:2}.evidence{fill:#fff7ed;stroke:#f97316;stroke-width:2}.human{fill:#fefce8;stroke:#ca8a04;stroke-width:2}.job{fill:#fff;stroke:#94a3b8;stroke-width:2}.ok{fill:#ecfdf5;stroke:#10b981;stroke-width:2}.blocked{fill:#fff1f2;stroke:#e11d48;stroke-width:2}.line{fill:none;stroke:#475569;stroke-width:2.2;marker-end:url(#a)}.dash{fill:none;stroke:#7c3aed;stroke-width:2;stroke-dasharray:7 6;marker-end:url(#a)}</style></defs>
-  <rect class="bg" width="1200" height="700" rx="24"/><text class="title" x="48" y="56">Production Supervisor · 有边界的 Agent 控制层</text><text class="sub" x="48" y="84">The Agent selects a safe next action; deterministic tools and human approval retain authority.</text>
-  <rect class="trigger" x="48" y="132" width="194" height="82" rx="15"/><text class="h" x="145" y="164" text-anchor="middle">Scheduler / operator</text><text class="sub" x="145" y="188" text-anchor="middle">wake only</text>
-  <rect class="agent" x="298" y="132" width="234" height="82" rx="15"/><text class="h" x="415" y="164" text-anchor="middle">Supervisor Agent</text><text class="sub" x="415" y="188" text-anchor="middle">inspect → recommend action</text>
-  <rect class="evidence" x="588" y="120" width="288" height="106" rx="15"/><text class="h" x="732" y="151" text-anchor="middle">Durable source of truth</text><text class="sub" x="732" y="176" text-anchor="middle">state · timeline · approval</text><text class="sub" x="732" y="198" text-anchor="middle">run status · QA · leases</text>
-  <path class="line" d="M242 173H294"/><path class="line" d="M532 173H584"/><path class="dash" d="M588 201H536"/>
-
-  <rect class="job" x="142" y="314" width="230" height="86" rx="15"/><text class="h" x="257" y="346" text-anchor="middle">Timeline probe job</text><text class="sub" x="257" y="371" text-anchor="middle">deterministic evidence</text>
-  <rect class="human" x="452" y="314" width="250" height="86" rx="15"/><text class="h" x="577" y="346" text-anchor="middle">Operator approval</text><text class="sub" x="577" y="371" text-anchor="middle">absolute start / end</text>
-  <rect class="job" x="782" y="314" width="270" height="86" rx="15"/><text class="h" x="917" y="346" text-anchor="middle">Dual-PDF production job</text><text class="sub" x="917" y="371" text-anchor="middle">tested, resumable scripts</text>
-  <path class="line" d="M415 214C415 264 257 260 257 310"/><path class="line" d="M372 357H448"/><path class="line" d="M702 357H778"/><path class="line" d="M917 314C917 260 732 270 732 230"/>
-
-  <polygon class="evidence" points="732,476 840,530 732,584 624,530"/><text class="h" x="732" y="522" text-anchor="middle">All deterministic</text><text class="sub" x="732" y="545" text-anchor="middle">completion gates pass?</text>
-  <path class="line" d="M917 400V446H732V472"/>
-  <rect class="ok" x="924" y="490" width="180" height="80" rx="15"/><text class="h" x="1014" y="523" text-anchor="middle">Complete</text><text class="sub" x="1014" y="547" text-anchor="middle">fresh snapshot agrees</text>
-  <rect class="blocked" x="340" y="490" width="190" height="80" rx="15"/><text class="h" x="435" y="523" text-anchor="middle">Blocked / review</text><text class="sub" x="435" y="547" text-anchor="middle">evidence preserved</text>
-  <path class="line" d="M840 530H920"/><text class="sub" x="877" y="517">yes</text><path class="line" d="M620 530H534"/><text class="sub" x="575" y="517">no</text>
-  <rect fill="#e2e8f0" x="96" y="628" width="1008" height="44" rx="12"/><text class="t" x="600" y="656" text-anchor="middle">Agent cannot write human approval, choose start/end, bypass QA, or establish completion by model judgment</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1390" viewBox="0 0 1600 1390" role="img" aria-labelledby="title desc">
+<title id="title">Agents API 与本地生产控制</title><desc id="desc">默认代理会话负责受限决策，本机工具执行，确定性证据决定完成 新会话须已确认远端终态且无未决工具；超时或取消回执均不足。SDK / Responses 仅显式回退。 敏感来源及配置不发给代理；旧云端时间轴任务已退役。定时启用不代表未来运行或新文档生成已发生。</desc>
+<style>text{font-family:"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;} text{font-variant-ligatures:none}</style>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M1 1 L7 4 L1 7" fill="none" stroke="context-stroke" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect x="0" y="0" width="1600" height="1390" rx="0" fill="#F5F4EF" stroke="none" />
+<rect x="64" y="57" width="44" height="5" rx="2" fill="#267D72" stroke="none" />
+<text x="124" y="69" font-size="17" font-weight="600" fill="#64787A" text-anchor="start" letter-spacing="2">SUPERVISOR CONTROL PLANE</text>
+<text x="64" y="127" font-size="44" font-weight="650" fill="#19343D" text-anchor="start" >Agents API 与本地生产控制</text>
+<text x="64" y="172" font-size="22" font-weight="400" fill="#60737A" text-anchor="start" >默认代理会话负责受限决策，本机工具执行，确定性证据决定完成</text>
+<text x="1536" y="69" font-size="18" font-weight="500" fill="#82918F" text-anchor="end" >09 / 11</text>
+<path d="M64 197H1536" stroke="#D8DEDA" stroke-width="1.3"/>
+<path data-edge="scheduler:gcs" d="M500 370.0 L590 370.0" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="operator:runner" d="M500 730.0 L590 730.0" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="runner:agent" d="M1010 730 L1100 730" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<rect x="1062.94" y="568" width="194.12" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="1160" y="590" font-size="17" font-weight="500" fill="#648A86" text-anchor="middle" >仅日期 / 枚举 / 布尔</text>
+<path data-edge="agent:tools" d="M1310 845 L1310 910 L800 910 L800 975" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<rect x="1060.0" y="883" width="120.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="1120" y="905" font-size="17" font-weight="500" fill="#648A86" text-anchor="middle" >受限工具请求</text>
+<path data-edge="tools:runner" d="M775 975 L775 845" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<rect x="657.0" y="903" width="86.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="700" y="925" font-size="17" font-weight="500" fill="#648A86" text-anchor="middle" >本机分发</text>
+<path data-edge="runner:production" d="M1010 795 L1060 795 L1060 1090 L1100 1090" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<rect x="1138.5" y="848" width="103.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="1190" y="870" font-size="17" font-weight="500" fill="#648A86" text-anchor="middle" >受保护执行</text>
+<path data-edge="gcs:runner" d="M770 485 L770 615" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<rect x="640.5" y="533" width="69.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="675" y="555" font-size="17" font-weight="500" fill="#648A86" text-anchor="middle" >读证据</text>
+<path data-edge="runner:gcs" d="M830 615 L830 485" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<rect x="855.5" y="533" width="69.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="890" y="555" font-size="17" font-weight="500" fill="#648A86" text-anchor="middle" >写状态</text>
+<path data-edge="approval:gcs" d="M1100 370 L1010 370" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<rect x="1160.0" y="503" width="120.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="1220" y="525" font-size="17" font-weight="500" fill="#648A86" text-anchor="middle" >独立人工审批</text>
+<path data-edge="production:gcs" d="M1520 1090 L1560 1090 L1560 545 L800 545 L800 485" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<rect x="1312.72" y="518" width="114.56" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="1370" y="540" font-size="17" font-weight="500" fill="#648A86" text-anchor="middle" >写入 / 核验</text>
+<path data-edge="gcs:decision" d="M590 380 L545 380 L545 905 L290 905 L290 975" fill="none" stroke="#817397" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<path data-edge="decision:runner" d="M290 975 L290 905 L800 905 L800 845" fill="none" stroke="#817397" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<rect x="547.0" y="878" width="86.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="590" y="900" font-size="17" font-weight="500" fill="#817397" text-anchor="middle" >下次恢复</text>
+<g id="node-scheduler" data-node="scheduler">
+<rect x="80" y="259" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="80" y="255" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="81" y="273" width="4" height="194" rx="2" fill="#46799B" stroke="none" />
+<rect x="104" y="276" width="35" height="28" rx="8" fill="#EAF1F6" stroke="none" />
+<text x="121.5" y="296" font-size="16" font-weight="700" fill="#46799B" text-anchor="middle" data-box="104,276,35,28" >01</text>
+<text x="153" y="296" font-size="15" font-weight="600" fill="#46799B" text-anchor="start" data-box="148,273,332,35" >输入 / INPUT</text>
+<text x="104" y="337" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="100,310,380,162" >云端定时找源</text>
+<text x="104" y="377" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,310,380,162" >Cloud Scheduler</text>
+<text x="104" y="406" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,310,380,162" >只更新来源证据</text>
+</g>
+<g id="node-gcs" data-node="gcs">
+<rect x="590" y="259" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="590" y="255" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="591" y="273" width="4" height="194" rx="2" fill="#6D7980" stroke="none" />
+<rect x="614" y="276" width="35" height="28" rx="8" fill="#EDF0F0" stroke="none" />
+<text x="631.5" y="296" font-size="16" font-weight="700" fill="#6D7980" text-anchor="middle" data-box="614,276,35,28" >02</text>
+<text x="663" y="296" font-size="15" font-weight="600" fill="#6D7980" text-anchor="start" data-box="658,273,332,35" >记录 / EVIDENCE</text>
+<text x="614" y="337" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="610,310,380,162" >生产证据与租约</text>
+<text x="614" y="377" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,310,380,162" >GCS / source lease</text>
+<text x="614" y="406" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,310,380,162" >来源与时间轴绑定审批</text>
+<text x="614" y="435" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,310,380,162" >源级租约防重复</text>
+</g>
+<g id="node-operator" data-node="operator">
+<rect x="80" y="619" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="80" y="615" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="81" y="633" width="4" height="194" rx="2" fill="#46799B" stroke="none" />
+<rect x="104" y="636" width="35" height="28" rx="8" fill="#EAF1F6" stroke="none" />
+<text x="121.5" y="656" font-size="16" font-weight="700" fill="#46799B" text-anchor="middle" data-box="104,636,35,28" >03</text>
+<text x="153" y="656" font-size="15" font-weight="600" fill="#46799B" text-anchor="start" data-box="148,633,332,35" >输入 / INPUT</text>
+<text x="104" y="697" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="100,670,380,162" >本地定时与操作员</text>
+<text x="104" y="737" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,670,380,162" >Codex 定时跟进已启用</text>
+<text x="104" y="766" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,670,380,162" >人工触发可恢复入口</text>
+<text x="104" y="795" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,670,380,162" >计划唤醒仍须实际运行证明</text>
+</g>
+<g id="node-runner" data-node="runner">
+<rect x="590" y="619" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="590" y="615" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="591" y="633" width="4" height="194" rx="2" fill="#267D72" stroke="none" />
+<rect x="614" y="636" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="631.5" y="656" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="614,636,35,28" >04</text>
+<text x="663" y="656" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="658,633,332,35" >执行 / PROCESS</text>
+<text x="614" y="697" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="610,670,380,162" >本地运行与会话记录</text>
+<text x="614" y="737" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,670,380,162" >完整快照仅写本地报告</text>
+<text x="614" y="766" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,670,380,162" >源与审批证据受控存储</text>
+<text x="614" y="795" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,670,380,162" >持久化结果与阶段尝试记录</text>
+</g>
+<g id="node-agent" data-node="agent">
+<rect x="1100" y="619" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="1100" y="615" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="1101" y="633" width="4" height="194" rx="2" fill="#766594" stroke="none" />
+<rect x="1124" y="636" width="35" height="28" rx="8" fill="#F0EDF5" stroke="none" />
+<text x="1141.5" y="656" font-size="16" font-weight="700" fill="#766594" text-anchor="middle" data-box="1124,636,35,28" >05</text>
+<text x="1173" y="656" font-size="15" font-weight="600" fill="#766594" text-anchor="start" data-box="1168,633,332,35" >模型 / CONTEXT</text>
+<text x="1124" y="697" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1120,670,380,162" >Agents API 会话</text>
+<text x="1124" y="737" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,670,380,162" >Agents API</text>
+<text x="1124" y="766" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,670,380,162" >gpt-6-astra / medium</text>
+<text x="1124" y="795" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,670,380,162" >environment: none</text>
+</g>
+<g id="node-tools" data-node="tools">
+<rect x="590" y="979" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="590" y="975" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="591" y="993" width="4" height="194" rx="2" fill="#267D72" stroke="none" />
+<rect x="614" y="996" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="631.5" y="1016" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="614,996,35,28" >06</text>
+<text x="663" y="1016" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="658,993,332,35" >执行 / PROCESS</text>
+<text x="614" y="1057" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="610,1030,380,162" >受限工具分发</text>
+<text x="614" y="1097" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,1030,380,162" >inspect / timeline</text>
+<text x="614" y="1126" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,1030,380,162" >approved PDF / decision</text>
+<text x="614" y="1155" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,1030,380,162" >无命令行或审批写入工具</text>
+</g>
+<g id="node-production" data-node="production">
+<rect x="1100" y="979" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="1100" y="975" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="1101" y="993" width="4" height="194" rx="2" fill="#267D72" stroke="none" />
+<rect x="1124" y="996" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="1141.5" y="1016" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="1124,996,35,28" >07</text>
+<text x="1173" y="1016" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="1168,993,332,35" >执行 / PROCESS</text>
+<text x="1124" y="1057" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1120,1030,380,162" >确定性时间轴与文档</text>
+<text x="1124" y="1097" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,1030,380,162" >每会话每阶段最多一次</text>
+<text x="1124" y="1126" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,1030,380,162" >变更后重读生产快照</text>
+<text x="1124" y="1155" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,1030,380,162" >审批、质量及发布核验</text>
+</g>
+<g id="node-approval" data-node="approval">
+<rect x="1100" y="259" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="1100" y="255" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="1101" y="273" width="4" height="194" rx="2" fill="#AA7930" stroke="none" />
+<rect x="1124" y="276" width="35" height="28" rx="8" fill="#FAF2E5" stroke="none" />
+<text x="1141.5" y="296" font-size="16" font-weight="700" fill="#AA7930" text-anchor="middle" data-box="1124,276,35,28" >08</text>
+<text x="1173" y="296" font-size="15" font-weight="600" fill="#AA7930" text-anchor="start" data-box="1168,273,332,35" >门槛 / GATE</text>
+<text x="1124" y="337" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1120,310,380,162" >模型之外的人工审批</text>
+<text x="1124" y="377" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,310,380,162" >窗口绑定来源及时间轴哈希</text>
+<text x="1124" y="406" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,310,380,162" >模型不能选择或代签窗口</text>
+</g>
+<g id="node-decision" data-node="decision">
+<rect x="80" y="979" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="80" y="975" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="81" y="993" width="4" height="194" rx="2" fill="#AA7930" stroke="none" />
+<rect x="104" y="996" width="35" height="28" rx="8" fill="#FAF2E5" stroke="none" />
+<text x="121.5" y="1016" font-size="16" font-weight="700" fill="#AA7930" text-anchor="middle" data-box="104,996,35,28" >09</text>
+<text x="153" y="1016" font-size="15" font-weight="600" fill="#AA7930" text-anchor="start" data-box="148,993,332,35" >门槛 / GATE</text>
+<text x="104" y="1057" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="100,1030,380,162" >新快照完成等待或阻塞</text>
+<text x="104" y="1097" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,1030,380,162" >有效审批与全部质量门</text>
+<text x="104" y="1126" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,1030,380,162" >要求文件远端哈希核验</text>
+<text x="104" y="1155" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,1030,380,162" >会话完成不等于业务完成</text>
+</g>
+<rect x="64" y="1261" width="1472" height="78" rx="16" fill="#E9EEE8" stroke="none" />
+<text x="84" y="1290" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >新会话须已确认远端终态且无未决工具；超时或取消回执均不足。SDK / Responses 仅显式回退。</text>
+<text x="84" y="1319" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >敏感来源及配置不发给代理；旧云端时间轴任务已退役。定时启用不代表未来运行或新文档生成已发生。</text>
+<text x="64" y="1368" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="start" >内容校准 2026-09-11 · 设计参考 GPT Image 2.5 Sunburst · 原生可编辑 SVG</text>
+<text x="1536" y="1368" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="end" >实线：主路径   虚线：条件 / 实验 / 历史</text>
 </svg>

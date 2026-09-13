@@ -35,7 +35,8 @@ apps/tongxing-ios/scripts/ios.sh launch --simulator "$TONGXING_SIMULATOR_UDID"
 
 | 改动 | 必要的定向验证 |
 | --- | --- |
-| 文档、CLI | `git diff --check`、链接/命令检查；`bash -n scripts/ios.sh`、Python 语法、`--help` 与 `--dry-run` |
+| 文档 | `git diff --check`、受影响的链接和命令引用检查 |
+| CLI | 受影响脚本的 shell/Python 语法检查、`--help` 与 `--dry-run`；检查实际退出状态 |
 | Core 数据、时间或历史 | `DEVELOPER_DIR=<完整 Xcode 开发目录> swift test --package-path Core` |
 | 下载、缓存、取消 | 本目录 `swift test --filter StorageTests`，使用完整 Xcode 的 `DEVELOPER_DIR` |
 | 播放器、系统音频 | 对应 `TongxingTests`；新系统与最低支持系统分别保留需要的证据 |

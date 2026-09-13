@@ -31,6 +31,7 @@ from scripts.render_mobile_pdf_from_srt import (  # noqa: E402
     MOBILE_PAGE_SIZE,
     register_cjk_font,
 )
+from scripts import review_prompts  # noqa: E402
 
 
 PAGE_WIDTH, PAGE_HEIGHT = MOBILE_PAGE_SIZE
@@ -38,6 +39,10 @@ MARGIN_X = 23
 MARGIN_TOP = 28
 MARGIN_BOTTOM = 31
 SPARSE_PAGE_USED_HEIGHT = 90
+LEGACY_RESPONSE_FIELDS = (
+    "reflectionQuestionsZh", "smallGroupGuideZh", "responsePrayerZh",
+    "responsePrayerSourceSliceIndexes",
+)
 
 
 class TrackingDocTemplate(SimpleDocTemplate):
@@ -334,6 +339,14 @@ def render_interpretation_pdf(
         fallback_qa["outlineSplitFallbackApplied"] = True
         return fallback_qa
     failures: list[str] = []
+    # v2 remains readable under its original content requirements. v3 removes
+    # response exercises and lets optional sections follow the actual evidence.
+    input_schema_version = insights.get("schemaVersion", 2)
+    companion_v3 = input_schema_version == review_prompts.NOTES_SCHEMA_VERSION
+    if input_schema_version not in (2, review_prompts.NOTES_SCHEMA_VERSION):
+        failures.append("unsupported_insights_schema")
+    if companion_v3 and any(field in insights for field in LEGACY_RESPONSE_FIELDS):
+        failures.append("out_of_scope_response_fields")
     traceability = insights.get("traceability") if isinstance(insights.get("traceability"), dict) else {}
     declared_missing_source_paths = clean_string_list(traceability.get("missingSourcePaths"))
     derived_missing_source_paths = find_missing_or_invalid_source_paths(
@@ -372,22 +385,23 @@ def render_interpretation_pdf(
         failures.append("missing_summary")
     if not central_message:
         failures.append("missing_central_message")
-    if len(outline) < 3:
+    if not outline or (not companion_v3 and len(outline) < 3):
         failures.append("missing_outline")
-    if not scripture_refs:
-        failures.append("missing_scripture_references")
-    if not scripture_context:
-        failures.append("missing_scripture_context")
-    if len(theological_insights) < 2:
-        failures.append("insufficient_theological_insights")
-    if not pastoral_distinctions:
-        failures.append("missing_pastoral_distinctions")
-    if len(reflection_questions) < 3:
-        failures.append("insufficient_reflection_questions")
-    if len(small_group_guide) < 3:
-        failures.append("insufficient_small_group_guide")
-    if not response_prayer:
-        failures.append("missing_response_prayer")
+    if not companion_v3:
+        if not scripture_refs:
+            failures.append("missing_scripture_references")
+        if not scripture_context:
+            failures.append("missing_scripture_context")
+        if len(theological_insights) < 2:
+            failures.append("insufficient_theological_insights")
+        if not pastoral_distinctions:
+            failures.append("missing_pastoral_distinctions")
+        if len(reflection_questions) < 3:
+            failures.append("insufficient_reflection_questions")
+        if len(small_group_guide) < 3:
+            failures.append("insufficient_small_group_guide")
+        if not response_prayer:
+            failures.append("missing_response_prayer")
     if not interpretation_traceability_complete:
         failures.append("interpretation_traceability_incomplete")
     if not out.exists() or out.stat().st_size < 500:
@@ -409,7 +423,9 @@ def render_interpretation_pdf(
         failures.append("missing_glyph_markers")
 
     return {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
+        "inputSchemaVersion": input_schema_version,
+        "qualityRuleVersion": "sermon-companion-pdf-quality-v3",
         "status": "pass" if not failures else "needs_review",
         "artifactType": "sermon_interpretation_pdf",
         "pdf": str(out),
@@ -612,6 +628,12 @@ def section(title: str, body: list[Any], styles: dict[str, ParagraphStyle]) -> l
     if not body:
         return []
     heading = Paragraph(escape(title), styles["section_heading"])
+    if isinstance(body[0], KeepTogether):
+        # A heading's keepWithNext would wrap this container again. When the
+        # nested group splits, the heading can stay behind at the page bottom.
+        # Combine the first item's actual flowables with the heading instead.
+        first_block = KeepTogether([heading, *body[0]._content])
+        return [first_block, *body[1:], Spacer(1, 10)]
     return [heading, *body, Spacer(1, 10)]
 
 

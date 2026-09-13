@@ -1,41 +1,141 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="title desc">
-  <title id="title">Project workflow map</title>
-  <desc id="desc">The project has a Saturday post-live PDF workflow, a Sunday local live-caption POC, shared evidence, and a separate Discovery track.</desc>
-  <defs>
-    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#475569"/></marker>
-    <style>
-      text{font-family:Arial,"PingFang SC","Microsoft YaHei",sans-serif}.bg{fill:#f8fafc}.title{font-size:30px;font-weight:700;fill:#0f172a}.sub{font-size:15px;fill:#475569}.h{font-size:20px;font-weight:700;fill:#0f172a}.t{font-size:15px;fill:#334155}.small{font-size:13px;fill:#64748b}.sat{fill:#eff6ff;stroke:#2563eb;stroke-width:2}.sun{fill:#ecfdf5;stroke:#059669;stroke-width:2}.shared{fill:#fff7ed;stroke:#ea580c;stroke-width:2}.disc{fill:#f8fafc;stroke:#94a3b8;stroke-width:2;stroke-dasharray:8 7}.line{fill:none;stroke:#475569;stroke-width:2.2;marker-end:url(#arrow)}
-    </style>
-  </defs>
-  <rect class="bg" width="1200" height="620" rx="24"/>
-  <text class="title" x="52" y="62">Sermon Chinese Support · 项目全景</text>
-  <text class="sub" x="52" y="91">Two operator workflows share evidence, while experiments remain outside production claims.</text>
-
-  <rect class="sat" x="52" y="132" width="500" height="238" rx="20"/>
-  <text class="h" x="82" y="172">A · Saturday post-live PDFs</text>
-  <text class="sub" x="82" y="197">周六：直播归档 → 两份审核 PDF</text>
-  <rect fill="#fff" stroke="#93c5fd" x="82" y="224" width="128" height="74" rx="12"/><text class="t" x="146" y="254" text-anchor="middle">Public archive</text><text class="small" x="146" y="277" text-anchor="middle">完整媒体</text>
-  <rect fill="#fff" stroke="#93c5fd" x="239" y="224" width="128" height="74" rx="12"/><text class="t" x="303" y="254" text-anchor="middle">Human window</text><text class="small" x="303" y="277" text-anchor="middle">人工边界</text>
-  <rect fill="#fff" stroke="#93c5fd" x="396" y="224" width="126" height="74" rx="12"/><text class="t" x="459" y="254" text-anchor="middle">Dual PDFs</text><text class="small" x="459" y="277" text-anchor="middle">QA 后交付</text>
-  <path class="line" d="M210 261 H235"/><path class="line" d="M367 261 H392"/>
-  <text class="small" x="82" y="334">Working path · completion requires reading QA and both PDF QA reports.</text>
-
-  <rect class="sun" x="648" y="132" width="500" height="238" rx="20"/>
-  <text class="h" x="678" y="172">B · Sunday local live captions</text>
-  <text class="sub" x="678" y="197">周日：麦克风 → 本地英文 ASR → 中文字幕</text>
-  <rect fill="#fff" stroke="#6ee7b7" x="678" y="224" width="128" height="74" rx="12"/><text class="t" x="742" y="254" text-anchor="middle">Microphone</text><text class="small" x="742" y="277" text-anchor="middle">durable audio</text>
-  <rect fill="#fff" stroke="#6ee7b7" x="835" y="224" width="128" height="74" rx="12"/><text class="t" x="899" y="254" text-anchor="middle">Qwen / MLX</text><text class="small" x="899" y="277" text-anchor="middle">ASR final</text>
-  <rect fill="#fff" stroke="#6ee7b7" x="992" y="224" width="126" height="74" rx="12"/><text class="t" x="1055" y="254" text-anchor="middle">MiLMMT</text><text class="small" x="1055" y="277" text-anchor="middle">live Chinese</text>
-  <path class="line" d="M806 261 H831"/><path class="line" d="M963 261 H988"/>
-  <text class="small" x="678" y="334">POC · browser WAV soak verified; field and human review remain.</text>
-
-  <rect class="shared" x="282" y="416" width="636" height="112" rx="18"/>
-  <text class="h" x="600" y="454" text-anchor="middle">Shared evidence layer · 共同证据层</text>
-  <text class="t" x="600" y="483" text-anchor="middle">Pack export + readiness · guarded terms · frozen replay · hashes · QA</text>
-  <text class="small" x="600" y="507" text-anchor="middle">Default A0 none · local captions + Firebase public / LAN fallback.</text>
-  <path class="line" d="M302 370 V412"/><path class="line" d="M898 370 V412"/>
-
-  <rect class="disc" x="354" y="558" width="492" height="44" rx="14"/>
-  <text class="t" x="600" y="586" text-anchor="middle">Discovery: cloud designs · alternate models · post-training</text>
-  <path class="line" d="M600 528 V554"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1350" viewBox="0 0 1600 1350" role="img" aria-labelledby="title desc">
+<title id="title">三条交付路径与共同证据</title><desc id="desc">文档、预制音频、实时字幕分别验收；现场输入始终权威 文档质检、声音听审、现场验收分别成立；任何一项通过不替代其他交付门槛。 独立研究：本机实验模型、领域后训练与现场同步；未过质量及现场门，不升级默认。</desc>
+<style>text{font-family:"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;} text{font-variant-ligatures:none}</style>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M1 1 L7 4 L1 7" fill="none" stroke="context-stroke" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect x="0" y="0" width="1600" height="1350" rx="0" fill="#F5F4EF" stroke="none" />
+<rect x="64" y="57" width="44" height="5" rx="2" fill="#267D72" stroke="none" />
+<text x="124" y="69" font-size="17" font-weight="600" fill="#64787A" text-anchor="start" letter-spacing="2">PROJECT MAP</text>
+<text x="64" y="127" font-size="44" font-weight="650" fill="#19343D" text-anchor="start" >三条交付路径与共同证据</text>
+<text x="64" y="172" font-size="22" font-weight="400" fill="#60737A" text-anchor="start" >文档、预制音频、实时字幕分别验收；现场输入始终权威</text>
+<text x="1536" y="69" font-size="18" font-weight="500" fill="#82918F" text-anchor="end" >01 / 11</text>
+<path d="M64 197H1536" stroke="#D8DEDA" stroke-width="1.3"/>
+<rect x="56" y="211" width="1488" height="302" rx="24" fill="#EAF1F3" stroke="none" />
+<text x="78" y="243" font-size="18" font-weight="600" fill="#60737A" text-anchor="start" >A · 文档生产与核验交付</text>
+<rect x="56" y="551" width="1488" height="302" rx="24" fill="#F0EDF5" stroke="none" />
+<text x="78" y="583" font-size="18" font-weight="600" fill="#60737A" text-anchor="start" >B · 证据衔接、独立配音与每周发行</text>
+<rect x="56" y="891" width="1488" height="302" rx="24" fill="#EBF1EA" stroke="none" />
+<text x="78" y="923" font-size="18" font-weight="600" fill="#60737A" text-anchor="start" >C · 现场音频驱动的实时字幕</text>
+<path data-edge="source:pdf" d="M500 370.0 L590 370.0" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="pdf:delivery" d="M1010 370.0 L1100 370.0" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="pdf:voice" d="M800.0 485 L800.0 595" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="voice:app" d="M1010 710.0 L1100 710.0" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="live:translate" d="M500 1050.0 L590 1050.0" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="translate:captions" d="M1010 1050.0 L1100 1050.0" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="delivery:evidence" d="M1310 485 L1310 545 L290 545 L290 595" fill="none" stroke="#817397" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<rect x="830.2" y="518" width="99.60000000000001" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="880" y="540" font-size="17" font-weight="500" fill="#817397" text-anchor="middle" >可选 Pack</text>
+<path data-edge="app:evidence" d="M1310 825 L1310 865 L290 865 L290 825" fill="none" stroke="#817397" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<rect x="1132.0" y="838" width="86.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="1175" y="860" font-size="17" font-weight="500" fill="#817397" text-anchor="middle" >发行证据</text>
+<path data-edge="captions:evidence" d="M1520 1050 L1560 1050 L1560 530 L40 530 L40 710 L80 710" fill="none" stroke="#817397" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<rect x="1087.0" y="503" width="86.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="1130" y="525" font-size="17" font-weight="500" fill="#817397" text-anchor="middle" >会话证据</text>
+<path data-edge="evidence:translate" d="M290 825 L290 880 L800 880 L800 935" fill="none" stroke="#817397" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<rect x="512.0" y="853" width="86.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="555" y="875" font-size="17" font-weight="500" fill="#817397" text-anchor="middle" >能力门控</text>
+<g id="node-source" data-node="source">
+<rect x="80" y="259" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="80" y="255" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="81" y="273" width="4" height="194" rx="2" fill="#46799B" stroke="none" />
+<rect x="104" y="276" width="35" height="28" rx="8" fill="#EAF1F6" stroke="none" />
+<text x="121.5" y="296" font-size="16" font-weight="700" fill="#46799B" text-anchor="middle" data-box="104,276,35,28" >01</text>
+<text x="153" y="296" font-size="15" font-weight="600" fill="#46799B" text-anchor="start" data-box="148,273,332,35" >输入 / INPUT</text>
+<text x="104" y="337" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="100,310,380,162" >授权完整来源</text>
+<text x="104" y="377" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,310,380,162" >完整媒体与来源身份</text>
+<text x="104" y="406" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,310,380,162" >来源资料与审批受控保存</text>
+</g>
+<g id="node-pdf" data-node="pdf">
+<rect x="590" y="259" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="590" y="255" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="591" y="273" width="4" height="194" rx="2" fill="#267D72" stroke="none" />
+<rect x="614" y="276" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="631.5" y="296" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="614,276,35,28" >02</text>
+<text x="663" y="296" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="658,273,332,35" >执行 / PROCESS</text>
+<text x="614" y="337" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="610,310,380,162" >周六双 PDF 生产</text>
+<text x="614" y="377" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,310,380,162" >有效人工窗口审批</text>
+<text x="614" y="406" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,310,380,162" >阅读版 PDF + 证道同行 PDF</text>
+</g>
+<g id="node-delivery" data-node="delivery">
+<rect x="1100" y="259" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="1100" y="255" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="1101" y="273" width="4" height="194" rx="2" fill="#267D72" stroke="none" />
+<rect x="1124" y="276" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="1141.5" y="296" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="1124,276,35,28" >03</text>
+<text x="1173" y="296" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="1168,273,332,35" >交付 / OUTPUT</text>
+<text x="1124" y="337" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1120,310,380,162" >文档核验交付</text>
+<text x="1124" y="377" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,310,380,162" >阅读质量与两份 PDF QA</text>
+<text x="1124" y="406" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,310,380,162" >远端文件哈希与发布核验</text>
+</g>
+<g id="node-voice" data-node="voice">
+<rect x="590" y="599" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="590" y="595" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="591" y="613" width="4" height="194" rx="2" fill="#AA7930" stroke="none" />
+<rect x="614" y="616" width="35" height="28" rx="8" fill="#FAF2E5" stroke="none" />
+<text x="631.5" y="636" font-size="16" font-weight="700" fill="#AA7930" text-anchor="middle" data-box="614,616,35,28" >04</text>
+<text x="663" y="636" font-size="15" font-weight="600" fill="#AA7930" text-anchor="start" data-box="658,613,332,35" >门槛 / GATE</text>
+<text x="614" y="677" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="610,650,380,162" >中文配音候选</text>
+<text x="614" y="717" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,650,380,162" >授权声音与来源绑定</text>
+<text x="614" y="746" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,650,380,162" >独立内容审核及人工听审</text>
+</g>
+<g id="node-app" data-node="app">
+<rect x="1100" y="599" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="1100" y="595" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="1101" y="613" width="4" height="194" rx="2" fill="#267D72" stroke="none" />
+<rect x="1124" y="616" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="1141.5" y="636" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="1124,616,35,28" >05</text>
+<text x="1173" y="636" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="1168,613,332,35" >交付 / OUTPUT</text>
+<text x="1124" y="677" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1120,650,380,162" >同行每周发行</text>
+<text x="1124" y="717" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,650,380,162" >完整发行包与历史保留</text>
+<text x="1124" y="746" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,650,380,162" >发布后访问及音频范围核验</text>
+</g>
+<g id="node-live" data-node="live">
+<rect x="80" y="939" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="80" y="935" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="81" y="953" width="4" height="194" rx="2" fill="#46799B" stroke="none" />
+<rect x="104" y="956" width="35" height="28" rx="8" fill="#EAF1F6" stroke="none" />
+<text x="121.5" y="976" font-size="16" font-weight="700" fill="#46799B" text-anchor="middle" data-box="104,956,35,28" >06</text>
+<text x="153" y="976" font-size="15" font-weight="600" fill="#46799B" text-anchor="start" data-box="148,953,332,35" >输入 / INPUT</text>
+<text x="104" y="1017" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="100,990,380,162" >周日现场采集</text>
+<text x="104" y="1057" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,990,380,162" >当前麦克风与现场英文</text>
+<text x="104" y="1086" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,990,380,162" >独立录音不依赖模型</text>
+</g>
+<g id="node-translate" data-node="translate">
+<rect x="590" y="939" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="590" y="935" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="591" y="953" width="4" height="194" rx="2" fill="#267D72" stroke="none" />
+<rect x="614" y="956" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="631.5" y="976" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="614,956,35,28" >07</text>
+<text x="663" y="976" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="658,953,332,35" >执行 / PROCESS</text>
+<text x="614" y="1017" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="610,990,380,162" >本地实时翻译</text>
+<text x="614" y="1057" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,990,380,162" >稳定英文驱动中文</text>
+<text x="614" y="1086" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,990,380,162" >无上下文包可用默认路径</text>
+</g>
+<g id="node-captions" data-node="captions">
+<rect x="1100" y="939" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="1100" y="935" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="1101" y="953" width="4" height="194" rx="2" fill="#267D72" stroke="none" />
+<rect x="1124" y="956" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="1141.5" y="976" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="1124,956,35,28" >08</text>
+<text x="1173" y="976" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="1168,953,332,35" >交付 / OUTPUT</text>
+<text x="1124" y="1017" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1120,990,380,162" >大字字幕与分享</text>
+<text x="1124" y="1057" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,990,380,162" >当前与前句双语呈现</text>
+<text x="1124" y="1086" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,990,380,162" >只读分享单独现场验收</text>
+</g>
+<g id="node-evidence" data-node="evidence">
+<rect x="80" y="599" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="80" y="595" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="81" y="613" width="4" height="194" rx="2" fill="#6D7980" stroke="none" />
+<rect x="104" y="616" width="35" height="28" rx="8" fill="#EDF0F0" stroke="none" />
+<text x="121.5" y="636" font-size="16" font-weight="700" fill="#6D7980" text-anchor="middle" data-box="104,616,35,28" >09</text>
+<text x="153" y="636" font-size="15" font-weight="600" fill="#6D7980" text-anchor="start" data-box="148,613,332,35" >记录 / EVIDENCE</text>
+<text x="104" y="677" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="100,650,380,162" >共同证据与上下文包</text>
+<text x="104" y="717" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,650,380,162" >证据独立归档</text>
+<text x="104" y="746" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,650,380,162" >包经同篇与内容审核</text>
+<text x="104" y="775" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,650,380,162" >能力允许后才可选增强</text>
+</g>
+<rect x="64" y="1221" width="1472" height="78" rx="16" fill="#E9EEE8" stroke="none" />
+<text x="84" y="1250" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >文档质检、声音听审、现场验收分别成立；任何一项通过不替代其他交付门槛。</text>
+<text x="84" y="1279" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >独立研究：本机实验模型、领域后训练与现场同步；未过质量及现场门，不升级默认。</text>
+<text x="64" y="1328" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="start" >内容校准 2026-09-11 · 设计参考 GPT Image 2.5 Sunburst · 原生可编辑 SVG</text>
+<text x="1536" y="1328" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="end" >实线：主路径   虚线：条件 / 实验 / 历史</text>
 </svg>

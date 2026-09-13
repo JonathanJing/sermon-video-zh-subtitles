@@ -1,173 +1,152 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="960" viewBox="0 0 1400 960" role="img" aria-labelledby="title desc">
-  <title id="title">Saturday evidence to Sunday live-caption context flow</title>
-  <desc id="desc">A guarded workflow from authorized Saturday media through audio extraction, English transcription, candidate Chinese translation, approved sermon window, separate message-identity review, atomic Runtime Pack export, Sunday readiness checks, capability-based fallback, local ASR finals, translation, captions, and independent evidence storage.</desc>
-  <defs>
-    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
-      <path d="M0 0L0 6L9 3z" fill="#475569"/>
-    </marker>
-    <marker id="arrowSafe" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
-      <path d="M0 0L0 6L9 3z" fill="#2563eb"/>
-    </marker>
-    <marker id="arrowFallback" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
-      <path d="M0 0L0 6L9 3z" fill="#ea580c"/>
-    </marker>
-    <style>
-      text{font-family:Arial,"PingFang SC","Microsoft YaHei",sans-serif}
-      .bg{fill:#f8fafc}
-      .lane{fill:#eef2ff;stroke:#c7d2fe;stroke-width:1.5}
-      .laneSunday{fill:#f0fdf4;stroke:#bbf7d0;stroke-width:1.5}
-      .title{font-size:29px;font-weight:700;fill:#0f172a}
-      .laneTitle{font-size:18px;font-weight:700;fill:#0f172a}
-      .h{font-size:16px;font-weight:700;fill:#0f172a}
-      .t{font-size:14px;fill:#334155}
-      .sub{font-size:13px;fill:#64748b}
-      .source{fill:#fff;stroke:#3b82f6;stroke-width:2}
-      .machine{fill:#f5f3ff;stroke:#8b5cf6;stroke-width:2}
-      .human{fill:#fff7ed;stroke:#f97316;stroke-width:2}
-      .pack{fill:#eff6ff;stroke:#2563eb;stroke-width:2.4}
-      .gate{fill:#fefce8;stroke:#ca8a04;stroke-width:2}
-      .full{fill:#ecfdf5;stroke:#10b981;stroke-width:2}
-      .terms{fill:#f0fdf4;stroke:#22c55e;stroke-width:2}
-      .english{fill:#eff6ff;stroke:#3b82f6;stroke-width:2}
-      .none{fill:#fff7ed;stroke:#f97316;stroke-width:2}
-      .runtime{fill:#fff;stroke:#10b981;stroke-width:2.2}
-      .store{fill:#f8fafc;stroke:#64748b;stroke-width:2}
-      .line{fill:none;stroke:#475569;stroke-width:2.2;marker-end:url(#arrow)}
-      .safe{fill:none;stroke:#2563eb;stroke-width:2.2;marker-end:url(#arrowSafe)}
-      .fallback{fill:none;stroke:#ea580c;stroke-width:2;stroke-dasharray:7 6;marker-end:url(#arrowFallback)}
-      .candidate{fill:none;stroke:#7c3aed;stroke-width:2;stroke-dasharray:5 5;marker-end:url(#arrow)}
-    </style>
-  </defs>
-
-  <rect class="bg" width="1400" height="960" rx="24"/>
-  <text class="title" x="48" y="52">Saturday → Sunday Context Pack · 周六产物如何帮助周日实时字幕</text>
-  <text class="sub" x="48" y="78">Live ASR final is always the source of truth · 机器中文永不自动进入实时翻译 prompt</text>
-
-  <rect class="lane" x="32" y="100" width="1336" height="260" rx="18"/>
-  <text class="laneTitle" x="54" y="130">Saturday Evidence &amp; Export · 周六证据与导出</text>
-
-  <path class="line" d="M214 220H244"/>
-  <path class="line" d="M408 220H438"/>
-  <path class="line" d="M632 220H662"/>
-  <path class="line" d="M872 220H902"/>
-  <path class="line" d="M1074 220H1104"/>
-
-  <rect class="source" x="54" y="166" width="160" height="108" rx="14"/>
-  <text class="h" x="134" y="198" text-anchor="middle">Authorized video</text>
-  <text class="t" x="134" y="222" text-anchor="middle">授权网络视频</text>
-  <text class="sub" x="134" y="247" text-anchor="middle">URL · source ID</text>
-
-  <rect class="source" x="248" y="166" width="160" height="108" rx="14"/>
-  <text class="h" x="328" y="198" text-anchor="middle">Audio + clip</text>
-  <text class="t" x="328" y="222" text-anchor="middle">下载音频与证道片段</text>
-  <text class="sub" x="328" y="247" text-anchor="middle">ffprobe · SHA-256</text>
-
-  <rect class="machine" x="442" y="150" width="190" height="140" rx="14"/>
-  <text class="h" x="537" y="180" text-anchor="middle">English source</text>
-  <text class="t" x="537" y="204" text-anchor="middle">英文 transcript / map</text>
-  <text class="h" x="537" y="233" text-anchor="middle">Chinese candidate</text>
-  <text class="t" x="537" y="257" text-anchor="middle">机器中文候选</text>
-  <text class="sub" x="537" y="278" text-anchor="middle">ASR bias: not enabled</text>
-
-  <rect class="human" x="666" y="144" width="206" height="152" rx="14"/>
-  <text class="h" x="769" y="176" text-anchor="middle">Separate approvals</text>
-  <text class="t" x="769" y="202" text-anchor="middle">① window: required</text>
-  <text class="t" x="769" y="226" text-anchor="middle">② message: separate gate</text>
-  <text class="sub" x="769" y="254" text-anchor="middle">auto export: unknown</text>
-  <text class="sub" x="769" y="276" text-anchor="middle">人工同篇确认后再升级</text>
-
-  <rect class="source" x="906" y="166" width="168" height="108" rx="14"/>
-  <text class="h" x="990" y="198" text-anchor="middle">Atomic exporter</text>
-  <text class="t" x="990" y="222" text-anchor="middle">校验后整体替换</text>
-  <text class="sub" x="990" y="247" text-anchor="middle">failure keeps old pack</text>
-
-  <rect class="pack" x="1108" y="138" width="232" height="164" rx="14"/>
-  <text class="h" x="1224" y="169" text-anchor="middle">Sunday Runtime Pack</text>
-  <text class="t" x="1224" y="195" text-anchor="middle">manifest + weekly-pack</text>
-  <text class="t" x="1224" y="219" text-anchor="middle">segments + ASR phrases</text>
-  <text class="t" x="1224" y="243" text-anchor="middle">identity + readiness</text>
-  <text class="sub" x="1224" y="273" text-anchor="middle">short-lived · hashed · local</text>
-
-  <rect fill="#ede9fe" x="442" y="314" width="430" height="30" rx="8"/>
-  <text class="sub" x="657" y="334" text-anchor="middle">Machine Chinese remains candidate-only until explicit human review</text>
-
-  <rect class="laneSunday" x="32" y="382" width="1336" height="538" rx="18"/>
-  <text class="laneTitle" x="54" y="414">Sunday Preflight &amp; Live Runtime · 周日预检与实时运行</text>
-
-  <path class="safe" d="M1224 302V372C1224 402 1138 402 1138 434"/>
-  <polygon class="gate" points="1138,430 1242,480 1138,530 1034,480"/>
-  <text class="h" x="1138" y="470" text-anchor="middle">Readiness</text>
-  <text class="t" x="1138" y="492" text-anchor="middle">schema · Sunday · hash</text>
-  <text class="sub" x="1138" y="512" text-anchor="middle">identity · expiry · review</text>
-
-  <text class="sub" x="578" y="432">Capability selector · 只可降级，不可越级</text>
-  <path class="line" d="M1032 480H960V446H637V462"/>
-  <path class="line" d="M1032 480H960C934 480 934 500 908 500"/>
-  <path class="line" d="M1032 480H960C934 480 934 570 908 570"/>
-  <path class="line" d="M1244 480H1294V500"/>
-  <path class="fallback" d="M1244 480H1320V570H1294"/>
-
-  <rect class="full" x="550" y="466" width="174" height="68" rx="12"/>
-  <text class="h" x="637" y="493" text-anchor="middle">Full alignment</text>
-  <text class="sub" x="637" y="516" text-anchor="middle">saturday_alignment_v1</text>
-  <rect class="terms" x="734" y="466" width="174" height="68" rx="12"/>
-  <text class="h" x="821" y="493" text-anchor="middle">Terms only</text>
-  <text class="sub" x="821" y="516" text-anchor="middle">weekly_terms_v1</text>
-  <rect class="english" x="734" y="536" width="174" height="68" rx="12"/>
-  <text class="h" x="821" y="563" text-anchor="middle">English map only</text>
-  <text class="sub" x="821" y="586" text-anchor="middle">english_alignment_v1</text>
-  <rect class="none" x="1208" y="536" width="166" height="68" rx="12"/>
-  <text class="h" x="1291" y="563" text-anchor="middle">None / fallback</text>
-  <text class="sub" x="1291" y="586" text-anchor="middle">none · invalid / expired</text>
-
-  <path class="safe" d="M637 534V626H624"/>
-  <path class="safe" d="M900 534H922V615H650V626H624"/>
-  <path class="safe" d="M821 604V626H624"/>
-  <path class="fallback" d="M1291 604V626H624"/>
-
-  <path class="line" d="M214 700H244"/>
-  <path class="line" d="M408 700H438"/>
-  <path class="line" d="M624 700H654"/>
-  <path class="line" d="M846 700H876"/>
-  <path class="line" d="M1068 700H1098"/>
-
-  <rect class="runtime" x="54" y="650" width="160" height="100" rx="14"/>
-  <text class="h" x="134" y="682" text-anchor="middle">Live microphone</text>
-  <text class="t" x="134" y="706" text-anchor="middle">周日现场声音</text>
-  <text class="sub" x="134" y="730" text-anchor="middle">browser capture</text>
-
-  <rect class="runtime" x="248" y="650" width="160" height="100" rx="14"/>
-  <text class="h" x="328" y="682" text-anchor="middle">Local ASR final</text>
-  <text class="t" x="328" y="706" text-anchor="middle">稳定英文</text>
-  <text class="sub" x="328" y="730" text-anchor="middle">only source of truth</text>
-
-  <rect class="pack" x="442" y="626" width="182" height="148" rx="14"/>
-  <text class="h" x="533" y="658" text-anchor="middle">Gateway context</text>
-  <text class="t" x="533" y="684" text-anchor="middle">cursor alignment</text>
-  <text class="t" x="533" y="708" text-anchor="middle">approved prompt fields</text>
-  <text class="sub" x="533" y="737" text-anchor="middle">policy is a hard ceiling</text>
-  <text class="sub" x="533" y="758" text-anchor="middle">机器中文禁止注入</text>
-
-  <rect class="runtime" x="658" y="650" width="188" height="100" rx="14"/>
-  <text class="h" x="752" y="682" text-anchor="middle">MiLMMT translation</text>
-  <text class="t" x="752" y="706" text-anchor="middle">翻译当前 live English</text>
-  <text class="sub" x="752" y="730" text-anchor="middle">partial → final</text>
-
-  <rect class="runtime" x="880" y="650" width="188" height="100" rx="14"/>
-  <text class="h" x="974" y="682" text-anchor="middle">Readable captions</text>
-  <text class="t" x="974" y="706" text-anchor="middle">大字中文 + 小字英文</text>
-  <text class="sub" x="974" y="730" text-anchor="middle">local / LAN / Firebase</text>
-
-  <rect class="store" x="1102" y="640" width="238" height="120" rx="14"/>
-  <text class="h" x="1221" y="672" text-anchor="middle">Independent evidence</text>
-  <text class="t" x="1221" y="697" text-anchor="middle">recording · events · manifest</text>
-  <text class="t" x="1221" y="721" text-anchor="middle">Pack version + SHA-256</text>
-  <text class="sub" x="1221" y="744" text-anchor="middle">continues if models fail</text>
-
-  <path class="safe" d="M134 750V826H1102"/>
-  <path class="safe" d="M533 774V826H1221V764"/>
-  <path class="safe" d="M974 750V796H1221V764"/>
-  <rect fill="#dbeafe" x="54" y="842" width="1286" height="52" rx="12"/>
-  <text class="t" x="697" y="865" text-anchor="middle">Fail-closed contract: no Pack still means live ASR + A0 translation + durable recording</text>
-  <text class="sub" x="697" y="884" text-anchor="middle">ASR or translation failure never substitutes Saturday transcript for what is being spoken live</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1380" viewBox="0 0 1600 1380" role="img" aria-labelledby="title desc">
+<title id="title">周六上下文包的受控边界</title><desc id="desc">现场输入是主路；包只有在独立审核与能力许可后才提供增强 机器中文候选无直达提示词通道；ASR 短语偏置未启用或验证。已导出不等于已启用或质量提升。 无包保持录音、转写与 A0 主路；现场语义和设备验收独立进行，文件发布核验不代替现场证明。</desc>
+<style>text{font-family:"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;} text{font-variant-ligatures:none}</style>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M1 1 L7 4 L1 7" fill="none" stroke="context-stroke" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect x="0" y="0" width="1600" height="1380" rx="0" fill="#F5F4EF" stroke="none" />
+<rect x="64" y="57" width="44" height="5" rx="2" fill="#267D72" stroke="none" />
+<text x="124" y="69" font-size="17" font-weight="600" fill="#64787A" text-anchor="start" letter-spacing="2">CONTEXT PACK GATES</text>
+<text x="64" y="127" font-size="44" font-weight="650" fill="#19343D" text-anchor="start" >周六上下文包的受控边界</text>
+<text x="64" y="172" font-size="22" font-weight="400" fill="#60737A" text-anchor="start" >现场输入是主路；包只有在独立审核与能力许可后才提供增强</text>
+<text x="1536" y="69" font-size="18" font-weight="500" fill="#82918F" text-anchor="end" >06 / 11</text>
+<path d="M64 197H1536" stroke="#D8DEDA" stroke-width="1.3"/>
+<path data-edge="source:candidate" d="M398 370.0 L443 370.0" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="candidate:export" d="M777 370.0 L822 370.0" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="export:approve" d="M1156 370.0 L1201 370.0" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="approve:preflight" d="M1368.0 485 L1368.0 610" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="preflight:capability" d="M1201 725.0 L1156 725.0" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<rect x="1077.7" y="568" width="201.60000000000002" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="1178.5" y="590" font-size="17" font-weight="500" fill="#648A86" text-anchor="middle" >通过按许可；失败 none</text>
+<path data-edge="capability:gateway" d="M822 725.0 L777 725.0" fill="none" stroke="#817397" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<rect x="731.0" y="568" width="137.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="799.5" y="590" font-size="17" font-weight="500" fill="#817397" text-anchor="middle" >获准的可选增强</text>
+<path data-edge="live:gateway" d="M398 725.0 L443 725.0" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<rect x="369.0" y="568" width="103.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="420.5" y="590" font-size="17" font-weight="500" fill="#648A86" text-anchor="middle" >实时主输入</text>
+<path data-edge="gateway:translate" d="M610.0 840 L610.0 902.5 L768.0 902.5 L768.0 965" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="live:evidence" d="M231 840 L231 905 L1368 905 L1368 965" fill="none" stroke="#817397" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<rect x="1037.0" y="878" width="86.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="1080" y="900" font-size="17" font-weight="500" fill="#817397" text-anchor="middle" >独立记录</text>
+<path data-edge="translate:evidence" d="M1093 1080 L1201 1080" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<rect x="1078.5" y="923" width="137.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
+<text x="1147.0" y="945" font-size="17" font-weight="500" fill="#648A86" text-anchor="middle" >字幕与能力证据</text>
+<g id="node-source" data-node="source">
+<rect x="64" y="259" width="334" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="64" y="255" width="334" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="65" y="273" width="4" height="194" rx="2" fill="#46799B" stroke="none" />
+<rect x="88" y="276" width="35" height="28" rx="8" fill="#EAF1F6" stroke="none" />
+<text x="105.5" y="296" font-size="16" font-weight="700" fill="#46799B" text-anchor="middle" data-box="88,276,35,28" >01</text>
+<text x="137" y="296" font-size="15" font-weight="600" fill="#46799B" text-anchor="start" data-box="132,273,246,35" >输入 / INPUT</text>
+<text x="88" y="337" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="84,310,294,162" >周六来源与窗口证据</text>
+<text x="88" y="377" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="84,310,294,162" >源身份、人工窗口及英文</text>
+<text x="88" y="406" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="84,310,294,162" >原文与审批证据受控保存</text>
+</g>
+<g id="node-candidate" data-node="candidate">
+<rect x="443" y="259" width="334" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="443" y="255" width="334" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="444" y="273" width="4" height="194" rx="2" fill="#267D72" stroke="none" />
+<rect x="467" y="276" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="484.5" y="296" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="467,276,35,28" >02</text>
+<text x="516" y="296" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="511,273,246,35" >执行 / PROCESS</text>
+<text x="467" y="337" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="463,310,294,162" >中文与术语候选</text>
+<text x="467" y="377" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="463,310,294,162" >机器中文保留候选身份</text>
+<text x="467" y="406" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="463,310,294,162" >未经审核不进入实时提示词</text>
+</g>
+<g id="node-export" data-node="export">
+<rect x="822" y="259" width="334" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="822" y="255" width="334" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="823" y="273" width="4" height="194" rx="2" fill="#6D7980" stroke="none" />
+<rect x="846" y="276" width="35" height="28" rx="8" fill="#EDF0F0" stroke="none" />
+<text x="863.5" y="296" font-size="16" font-weight="700" fill="#6D7980" text-anchor="middle" data-box="846,276,35,28" >03</text>
+<text x="895" y="296" font-size="15" font-weight="600" fill="#6D7980" text-anchor="start" data-box="890,273,246,35" >记录 / EVIDENCE</text>
+<text x="846" y="337" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="842,310,294,162" >原子导出上下文包</text>
+<text x="846" y="377" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="842,310,294,162" >同篇状态初始为未知</text>
+<text x="846" y="406" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="842,310,294,162" >发布后核验文件及远端哈希</text>
+<text x="846" y="435" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="842,310,294,162" >更新失败保留旧包并报错</text>
+</g>
+<g id="node-approve" data-node="approve">
+<rect x="1201" y="259" width="334" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="1201" y="255" width="334" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="1202" y="273" width="4" height="194" rx="2" fill="#AA7930" stroke="none" />
+<rect x="1225" y="276" width="35" height="28" rx="8" fill="#FAF2E5" stroke="none" />
+<text x="1242.5" y="296" font-size="16" font-weight="700" fill="#AA7930" text-anchor="middle" data-box="1225,276,35,28" >04</text>
+<text x="1274" y="296" font-size="15" font-weight="600" fill="#AA7930" text-anchor="start" data-box="1269,273,246,35" >门槛 / GATE</text>
+<text x="1225" y="337" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1221,310,294,162" >独立同篇与内容审核</text>
+<text x="1225" y="377" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1221,310,294,162" >窗口批准不等于同篇批准</text>
+<text x="1225" y="406" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1221,310,294,162" >机器审核不升级人工证据</text>
+</g>
+<g id="node-preflight" data-node="preflight">
+<rect x="1201" y="614" width="334" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="1201" y="610" width="334" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="1202" y="628" width="4" height="194" rx="2" fill="#AA7930" stroke="none" />
+<rect x="1225" y="631" width="35" height="28" rx="8" fill="#FAF2E5" stroke="none" />
+<text x="1242.5" y="651" font-size="16" font-weight="700" fill="#AA7930" text-anchor="middle" data-box="1225,631,35,28" >05</text>
+<text x="1274" y="651" font-size="15" font-weight="600" fill="#AA7930" text-anchor="start" data-box="1269,628,246,35" >门槛 / GATE</text>
+<text x="1225" y="692" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1221,665,294,162" >周日包预检</text>
+<text x="1225" y="732" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1221,665,294,162" >周次、哈希、有效期、审核</text>
+<text x="1225" y="761" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1221,665,294,162" >旧包也须重新验证有效性</text>
+<text x="1225" y="790" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1221,665,294,162" >失败降为无增强</text>
+</g>
+<g id="node-capability" data-node="capability">
+<rect x="822" y="614" width="334" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="822" y="610" width="334" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="823" y="628" width="4" height="194" rx="2" fill="#AA7930" stroke="none" />
+<rect x="846" y="631" width="35" height="28" rx="8" fill="#FAF2E5" stroke="none" />
+<text x="863.5" y="651" font-size="16" font-weight="700" fill="#AA7930" text-anchor="middle" data-box="846,631,35,28" >06</text>
+<text x="895" y="651" font-size="15" font-weight="600" fill="#AA7930" text-anchor="start" data-box="890,628,246,35" >门槛 / GATE</text>
+<text x="846" y="692" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="842,665,294,162" >能力上限与选择</text>
+<text x="846" y="732" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="842,665,294,162" >none / English</text>
+<text x="846" y="761" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="842,665,294,162" >terms / alignment</text>
+<text x="846" y="790" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="842,665,294,162" >能力策略不可越级</text>
+</g>
+<g id="node-live" data-node="live">
+<rect x="64" y="614" width="334" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="64" y="610" width="334" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="65" y="628" width="4" height="194" rx="2" fill="#46799B" stroke="none" />
+<rect x="88" y="631" width="35" height="28" rx="8" fill="#EAF1F6" stroke="none" />
+<text x="105.5" y="651" font-size="16" font-weight="700" fill="#46799B" text-anchor="middle" data-box="88,631,35,28" >07</text>
+<text x="137" y="651" font-size="15" font-weight="600" fill="#46799B" text-anchor="start" data-box="132,628,246,35" >输入 / INPUT</text>
+<text x="88" y="692" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="84,665,294,162" >现场音频与英文定稿</text>
+<text x="88" y="732" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="84,665,294,162" >实时内容的事实来源</text>
+<text x="88" y="761" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="84,665,294,162" >无包仍继续录音与转写</text>
+</g>
+<g id="node-gateway" data-node="gateway">
+<rect x="443" y="614" width="334" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="443" y="610" width="334" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="444" y="628" width="4" height="194" rx="2" fill="#267D72" stroke="none" />
+<rect x="467" y="631" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="484.5" y="651" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="467,631,35,28" >08</text>
+<text x="516" y="651" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="511,628,246,35" >执行 / PROCESS</text>
+<text x="467" y="692" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="463,665,294,162" >网关受限上下文</text>
+<text x="467" y="732" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="463,665,294,162" >仅允许能力进入翻译链路</text>
+<text x="467" y="761" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="463,665,294,162" >仅英文时只对齐游标</text>
+<text x="467" y="790" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="463,665,294,162" >不改默认无增强提示词</text>
+</g>
+<g id="node-translate" data-node="translate">
+<rect x="443" y="969" width="650" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="443" y="965" width="650" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="444" y="983" width="4" height="194" rx="2" fill="#267D72" stroke="none" />
+<rect x="467" y="986" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="484.5" y="1006" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="467,986,35,28" >09</text>
+<text x="516" y="1006" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="511,983,562,35" >交付 / OUTPUT</text>
+<text x="467" y="1047" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="463,1020,610,162" >实时翻译与可读字幕</text>
+<text x="467" y="1087" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="463,1020,610,162" >MiLMMT / A0</text>
+<text x="467" y="1116" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="463,1020,610,162" >现场英文始终权威</text>
+<text x="467" y="1145" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="463,1020,610,162" >增强失败回到默认路径</text>
+</g>
+<g id="node-evidence" data-node="evidence">
+<rect x="1201" y="969" width="334" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="1201" y="965" width="334" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="1202" y="983" width="4" height="194" rx="2" fill="#6D7980" stroke="none" />
+<rect x="1225" y="986" width="35" height="28" rx="8" fill="#EDF0F0" stroke="none" />
+<text x="1242.5" y="1006" font-size="16" font-weight="700" fill="#6D7980" text-anchor="middle" data-box="1225,986,35,28" >10</text>
+<text x="1274" y="1006" font-size="15" font-weight="600" fill="#6D7980" text-anchor="start" data-box="1269,983,246,35" >记录 / EVIDENCE</text>
+<text x="1225" y="1047" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1221,1020,294,162" >独立录音与版本证据</text>
+<text x="1225" y="1087" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1221,1020,294,162" >音频与事件独立保存</text>
+<text x="1225" y="1116" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1221,1020,294,162" >记录包版本及能力状态</text>
+</g>
+<rect x="64" y="1251" width="1472" height="78" rx="16" fill="#E9EEE8" stroke="none" />
+<text x="84" y="1280" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >机器中文候选无直达提示词通道；ASR 短语偏置未启用或验证。已导出不等于已启用或质量提升。</text>
+<text x="84" y="1309" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >无包保持录音、转写与 A0 主路；现场语义和设备验收独立进行，文件发布核验不代替现场证明。</text>
+<text x="64" y="1358" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="start" >内容校准 2026-09-11 · 设计参考 GPT Image 2.5 Sunburst · 原生可编辑 SVG</text>
+<text x="1536" y="1358" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="end" >实线：主路径   虚线：条件 / 实验 / 历史</text>
 </svg>

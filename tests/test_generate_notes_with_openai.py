@@ -91,9 +91,9 @@ Jesus is our mediator.
         self.assertIn("human church review", payload["input"][0]["content"][0]["text"])
         self.assertIn("empty arrays", payload["input"][1]["content"][0]["text"])
         rendered = json.dumps(payload, ensure_ascii=False)
-        self.assertIn("reflectionQuestionsZh", rendered)
-        self.assertIn("smallGroupGuideZh", rendered)
-        self.assertIn("responsePrayerZh", rendered)
+        self.assertNotIn("reflectionQuestionsZh", rendered)
+        self.assertNotIn("smallGroupGuideZh", rendered)
+        self.assertNotIn("responsePrayerZh", rendered)
         self.assertIn("sourceSliceIndexes", rendered)
 
     def test_normalizes_insights_without_secret_material(self):
@@ -191,11 +191,12 @@ Jesus is our mediator.
         self.assertEqual([], insights["traceability"]["missingSourcePaths"])
         self.assertEqual(insights["quotes"][0]["sourceSegmentId"], "seg_1")
         self.assertEqual(insights["quotes"][0]["sourceTextEn"], "We need a mediator who stands between death and life.")
-        self.assertEqual(
-            "我是否仍在靠自己的表现换取接纳？",
-            insights["reflectionQuestionsZh"][0]["question"],
-        )
-        self.assertEqual([1], insights["responsePrayerSourceSliceIndexes"])
+        self.assertEqual(3, insights["schemaVersion"])
+        self.assertEqual("sermon-companion-v3", insights["promptVersion"])
+        # Old response fields can arrive from a replay, but do not migrate into v3.
+        for field in ("reflectionQuestionsZh", "smallGroupGuideZh", "responsePrayerZh",
+                      "responsePrayerSourceSliceIndexes"):
+            self.assertNotIn(field, insights)
         self.assertNotIn("apiKeySecret", rendered)
         self.assertNotIn("projects/p/secrets", rendered)
         self.assertFalse(insights["apiKeyMaterialIncluded"])
@@ -245,7 +246,7 @@ Jesus is our mediator.
             "outlineZh[0].sourceSliceIndexes",
             insights["traceability"]["missingSourcePaths"],
         )
-        self.assertIn(
+        self.assertNotIn(
             "responsePrayerSourceSliceIndexes",
             insights["traceability"]["missingSourcePaths"],
         )

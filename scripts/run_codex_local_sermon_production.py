@@ -70,7 +70,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--notify-sendgrid-secret", default=DEFAULT_SENDGRID_SECRET)
     parser.add_argument("--notify-recipients-secret", default=DEFAULT_RECIPIENTS_SECRET)
     parser.add_argument("--notify-sender-secret", default=DEFAULT_SENDER_SECRET)
-    parser.add_argument("--model", default="gpt-5.6")
+    parser.add_argument("--model", default="gpt-6-astra")
+    parser.add_argument("--agent-backend", choices=("agents-api", "sdk"), default="agents-api")
+    parser.add_argument("--agent-run-dir", type=Path)
+    parser.add_argument("--resume-agent-session", action="store_true")
+    parser.add_argument("--agent-timeout-seconds", type=float, default=21600)
     parser.add_argument("--max-turns", type=int, default=8)
     parser.add_argument(
         "--skip-source-refresh",
@@ -121,6 +125,10 @@ def make_agent_args(args: argparse.Namespace) -> argparse.Namespace:
         notify_recipients_secret=args.notify_recipients_secret,
         notify_sender_secret=args.notify_sender_secret,
         model=args.model,
+        agent_backend=getattr(args, "agent_backend", "agents-api"),
+        agent_run_dir=getattr(args, "agent_run_dir", None),
+        resume_agent_session=getattr(args, "resume_agent_session", False),
+        agent_timeout_seconds=getattr(args, "agent_timeout_seconds", 21600),
         mode=args.mode,
         max_turns=args.max_turns,
         skip_source_refresh=args.skip_source_refresh,
@@ -465,6 +473,8 @@ def write_report(path: Path, report: dict[str, Any]) -> None:
 
 def run_local_production(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
     if args.resume_failed_generation:
+        if args.mode != "execute":
+            raise SystemExit("--resume-failed-generation requires --mode execute")
         result = sermon_production_supervisor.resume_failed_reading_pdf_generation(
             run_sermon_production_supervisor_agent.make_config(args)
         )
@@ -492,8 +502,8 @@ def run_local_production(args: argparse.Namespace) -> tuple[int, dict[str, Any]]
     if completed is not None:
         write_report(args.out, completed)
         return 0, completed
-    if args.skip_source_refresh:
-        source_refresh = {"status": "skipped"}
+    if args.skip_source_refresh or args.mode == "shadow":
+        source_refresh = {"status": "skipped", "reason": "shadow_mode" if args.mode == "shadow" else "explicit_skip"}
     else:
         try:
             source_refresh = refresh_source_state(args)

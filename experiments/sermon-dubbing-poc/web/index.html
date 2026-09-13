@@ -1,46 +1,97 @@
 <!doctype html>
+<!--
+  同行 · 证道中文听译 | Application design & development: Jonathan Jing
+  Copyright (c) 2026 Jonathan Jing. Application code is licensed under MIT.
+  Original sermon and media rights belong to their respective owners.
+-->
 <html lang="zh-CN" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#111819">
+  <meta name="theme-color" content="#141b1a">
   <meta name="color-scheme" content="dark light">
-  <meta name="description" content="按周选择证道，收听中文配音，跟随字幕与证道同行大纲。">
-  <title>同行 · 每周中文听译</title>
+  <meta name="description" content="按周选择证道，收听中文配音，跟随字幕与证道大纲。">
+  <title>同行 · 证道中文听译</title>
+  <meta name="application-name" content="同行">
+  <meta name="author" content="Jonathan Jing">
+  <meta name="copyright" content="应用设计与代码 © 2026 Jonathan Jing；原始证道与媒体版权归各自权利人所有。">
+  <meta name="apple-mobile-web-app-title" content="同行">
+  <link rel="icon" type="image/png" href="/brand-icon.png">
+  <link rel="apple-touch-icon" href="/brand-icon.png">
   <script src="/theme.js"></script>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <header class="topbar"><a class="brand" href="/"><span class="brand-icon" aria-hidden="true">同</span>同行<span class="brand-detail">中文听译</span></a><div class="topbar-actions"><span class="edition"><i></i>试听版</span><button id="theme-toggle" class="theme-toggle" type="button" aria-label="切换到浅色模式" title="当前深色 · 切换到浅色模式"><svg class="theme-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.3 14.4A8.5 8.5 0 0 1 9.6 3.7a8.5 8.5 0 1 0 10.7 10.7Z"/></svg><svg class="theme-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.4 1.4m11.2 11.2L19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg><span id="theme-label">深色</span></button></div></header>
-  <main>
-    <div class="page-heading"><div><p class="eyebrow">WALK THROUGH THE WORD</p><h1>用熟悉的语言，一同聆听。</h1><p>每周的信息，随声而来的中文。</p></div><div class="week-picker"><label for="week-select">选择证道周次</label><select id="week-select" disabled><option>正在加载…</option></select></div></div>
-    <div class="tabs" role="tablist" aria-label="内容选项卡"><button id="tab-listen" role="tab" aria-selected="true" aria-controls="panel-listen">听译</button><button id="tab-transcript" role="tab" aria-selected="false" aria-controls="panel-transcript" tabindex="-1">字幕全文</button><button id="tab-production" role="tab" aria-selected="false" aria-controls="panel-production" tabindex="-1">制作进度</button><button id="tab-voices" role="tab" aria-selected="false" aria-controls="panel-voices" tabindex="-1">讲员音色</button><span id="week-status" class="tab-note"></span></div>
+  <header class="topbar"><a class="brand" href="/" aria-label="同行 · 证道中文听译首页"><img class="brand-icon" src="/brand-icon.png" alt="" width="40" height="40" decoding="async"><span class="brand-copy"><span class="brand-name">同行</span><span class="brand-detail">证道中文听译</span></span></a><div class="topbar-actions"><span class="edition"><i></i><span id="edition-label">试听版</span></span><button id="theme-toggle" class="theme-toggle" type="button" aria-label="切换到浅色模式" title="当前深色 · 切换到浅色模式"><svg class="theme-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.3 14.4A8.5 8.5 0 0 1 9.6 3.7a8.5 8.5 0 1 0 10.7 10.7Z"/></svg><svg class="theme-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.4 1.4m11.2 11.2L19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg><span id="theme-label">深色</span></button></div></header>
+  <main class="field-main">
+    <section class="sermon-banner" aria-label="证道信息"><div class="banner-copy"><p id="series" class="banner-series" hidden></p><h1 id="title">正在读取证道信息</h1><p class="sermon-meta"><span id="speaker"></span><span id="scripture"></span><span id="date"></span><span class="pill" id="audio-scope">准备中</span></p></div><span id="cover-number" hidden></span></section>
+    <div class="field-nav"><div class="tabs" role="tablist" aria-label="收听内容"><button id="tab-listen" role="tab" aria-selected="true" aria-controls="panel-listen">收听</button><button id="tab-transcript" role="tab" aria-selected="false" aria-controls="panel-transcript" tabindex="-1">字幕全文</button></div><button id="outline-open" class="nav-action" disabled>大纲</button><button id="more-toggle" class="nav-action" aria-expanded="false" aria-controls="more-options">更多</button></div>
+    <section id="more-options" class="more-options" aria-label="更多选项" hidden>
+      <div class="week-picker"><label for="week-select">选择证道周次</label><select id="week-select" disabled><option>正在加载…</option></select></div>
+      <div class="secondary-nav"><button id="tab-production" data-view aria-controls="panel-production" aria-pressed="false">制作进度</button><button id="tab-voices" data-view aria-controls="panel-voices" aria-pressed="false">讲员音色</button><a id="download" hidden>下载 MP3</a></div>
+      <p id="week-status" class="description"></p><p id="voice" class="voice-label"></p><div id="variants" class="variants" role="group" aria-label="选择音色版本"></div><p id="audio-notice" class="note"></p>
+      <details id="feedback-options"><summary>评价和反馈</summary>
+        <section id="feedback-card" class="feedback-card" aria-labelledby="feedback-heading" hidden>
+          <h3 id="feedback-heading">这份中文听译对你有帮助吗？</h3>
+          <div class="feedback-votes"><button id="feedback-up" type="button" aria-pressed="false">👍 有帮助</button><button id="feedback-down" type="button" aria-pressed="false">👎 需要改进</button><button id="feedback-retract-vote" class="text-button" type="button" hidden>撤回评价</button></div>
+          <div class="feedback-links"><button id="feedback-point" class="text-button" type="button">📍 反馈这一处</button><button id="feedback-details" class="text-button" type="button">补充说明</button></div>
+          <p id="feedback-status" class="field-message" role="status"></p><button id="feedback-retract-issue" class="text-button" type="button" hidden>撤回最近一次问题反馈</button>
+          <p class="description">帮助我们改进翻译、发音和播放体验。反馈仅管理员可见；本页会话内可撤回。</p>
+        </section>
+      </details>
+    </section>
+    <section id="resume-card" class="resume-card" aria-label="恢复上次收听" hidden><p id="resume-message"></p><p class="resume-hint">这是上次收听的位置；如需对照原视频，请再手动对齐。</p><div><button id="resume-position" disabled>恢复位置</button><button id="restart-position" disabled>从头开始</button></div></section>
     <section id="panel-voices" class="voices-panel" role="tabpanel" aria-labelledby="tab-voices" tabindex="0" hidden><div class="voices-heading"><div><p class="eyebrow">FAMILIAR VOICES</p><h2>听见熟悉的声音。</h2><p>先听英文原声，再听中文。留意音色、语气和停顿。</p></div><span class="pill">音色试听</span></div><p id="voice-bank-notice" class="description"></p><div id="voice-grid" class="voice-grid"></div><details class="probe-script"><summary>查看统一中文试听文稿</summary><p id="probe-text"></p></details></section>
-    <section class="sermon-banner" aria-label="本周证道"><div class="banner-copy"><p id="series" class="banner-series"></p><h2 id="title">正在读取本周信息</h2><p class="sermon-meta"><span id="speaker"></span><span aria-hidden="true">·</span><span id="scripture"></span><span id="date"></span></p></div><span class="banner-number" id="cover-number" aria-hidden="true"></span><button id="outline-open" class="outline-button" disabled><span aria-hidden="true">☷</span> 证道同行大纲 <span aria-hidden="true">↗</span></button></section>
-    <div class="content-layout">
-      <section class="player-card" aria-label="中文音频播放器">
-        <div class="section-heading"><span class="small-icon" aria-hidden="true">◖)))</span><h2>中文听译</h2><span class="pill" id="audio-scope">准备中</span></div>
-        <p id="voice" class="voice-label"></p><div id="variants" class="variants" role="group" aria-label="选择音色版本"></div>
-        <div class="transport"><button class="skip" id="back" disabled aria-label="后退 5 秒"><span aria-hidden="true">↶</span><small>5 秒</small></button><button class="play" id="play" disabled><span id="play-icon" aria-hidden="true">▶</span><span id="play-label">开始播放</span></button><button class="skip" id="forward" disabled aria-label="前进 5 秒"><span aria-hidden="true">↷</span><small>5 秒</small></button></div>
-        <label class="sr-only" for="progress">播放进度</label><input id="progress" type="range" min="0" max="1" value="0" step="0.01" disabled>
-        <div class="time-row"><span id="elapsed">00:00</span><span id="duration">00:00</span></div>
-        <form id="jump-form" class="jump-row"><label for="jump-time">跳至时间</label><input id="jump-time" placeholder="00:00" inputmode="decimal" autocomplete="off" aria-describedby="jump-message" disabled><button id="jump" type="submit" disabled>跳转</button></form><p id="jump-message" class="field-message" role="status"></p>
-        <div class="adjust-block"><div class="section-heading"><h3>跟上现场</h3><span class="manual">微调播放位置</span></div><p class="description">中文落后时前进，抢先时后退。</p><div class="nudge-row"><button data-nudge="-1" disabled>−1 秒</button><button data-nudge="-0.25" disabled>−0.25 秒</button><button data-nudge="0.25" disabled>+0.25 秒</button><button data-nudge="1" disabled>+1 秒</button></div><p class="nudge-total">本次微调 <strong id="offset">0.00 秒</strong></p></div>
-        <div class="player-footer"><span id="status" role="status">准备音频</span><a id="download" hidden>下载 MP3 ↓</a></div><p id="audio-notice" class="note"></p>
-      </section>
-      <div class="reading-column">
-        <section id="panel-listen" class="subtitle-card" role="tabpanel" aria-labelledby="tab-listen" tabindex="0"><div class="section-heading"><span class="subtitle-dot" aria-hidden="true"></span><h2>正在讲述</h2><span id="cue-count" class="manual"></span></div><p id="current-text" class="current-text">中文音频就绪后，字幕会显示在这里。</p><p id="next-text" class="next-text"></p><div class="subtitle-footer"><span id="subtitle-note">字幕随中文音频更新</span><button id="show-transcript" class="text-button">查看全部字幕 →</button></div></section>
-        <section id="panel-transcript" class="transcript-panel" role="tabpanel" aria-labelledby="tab-transcript" tabindex="0" hidden><div class="section-heading"><h2>字幕全文</h2><span class="manual">点击段落跳转</span></div><p class="description" id="transcript-description">以下为当前音频的完整字幕。</p><div id="transcript-list" class="transcript-list"></div></section>
-        <section id="panel-production" class="production-panel" role="tabpanel" aria-labelledby="tab-production" tabindex="0" hidden><p class="eyebrow">SATURDAY TO SUNDAY</p><h2>从周六准备，到周日聆听。</h2><p class="description">沿用周六的阅读稿与证道同行，再完成配音和现场同步审核。</p><ol id="production-stages" class="production-stages"></ol></section>
-        <section class="companion-preview"><p class="eyebrow">本周默想</p><p id="central-message"></p><button id="outline-secondary" class="text-button" disabled>展开证道同行 <span aria-hidden="true">↗</span></button></section>
-        <p class="disclosure" id="review">AI 合成中文配音与整理文字，供个人跟读参考。</p>
-      </div>
-    </div>
-    <footer class="page-footer"><span>同行 · 让每一周的信息更亲近。</span><a id="source-link" target="_blank" rel="noopener noreferrer" hidden>查看英文原视频 ↗</a></footer>
+    <div class="content-layout"><div class="reading-column">
+      <section id="panel-listen" class="subtitle-card" role="tabpanel" aria-labelledby="tab-listen" tabindex="0"><div class="section-heading"><span class="subtitle-dot" aria-hidden="true"></span><h2>正在讲述</h2><span id="cue-count" class="manual"></span></div><p id="current-text" class="current-text">中文音频就绪后，字幕会显示在这里。</p><p id="next-text" class="next-text"></p><div class="subtitle-footer"><span id="subtitle-note">字幕随中文音频更新</span><button id="show-transcript" class="text-button">查看全文</button></div></section>
+      <section id="panel-transcript" class="transcript-panel" role="tabpanel" aria-labelledby="tab-transcript" tabindex="0" hidden><div class="section-heading"><h2>字幕全文</h2><span class="manual">点时间按钮才会跳转</span></div><p class="description" id="transcript-description">以下为当前音频的完整字幕。</p><div id="transcript-list" class="transcript-list"></div></section>
+        <section id="panel-production" class="production-panel" role="tabpanel" aria-labelledby="tab-production" tabindex="0" hidden><p class="eyebrow">SATURDAY TO SUNDAY</p><h2>从周六准备，到周日聆听。</h2><p class="description">沿用周六的阅读稿与证道大纲，再完成配音和现场同步审核。</p><ol id="production-stages" class="production-stages"></ol></section>
+      <details class="companion-preview"><summary>默想</summary><p id="central-message"></p><button id="outline-secondary" class="text-button" disabled>展开证道大纲</button></details>
+      <section id="week-downloads" class="week-downloads" aria-labelledby="week-downloads-heading" hidden><h2 id="week-downloads-heading">本期资料</h2><div id="week-download-links" class="week-download-links"></div></section>
+      <p class="field-help">播放中文配音时字幕随音频更新；如需对照原视频，请使用“定位 / 精调”手动调整。本页不会自动跟随视频。</p>
+      <p class="disclosure" id="review">AI 合成中文配音与整理文字，供个人跟读参考。</p>
+    </div></div>
+    <footer class="page-footer"><span class="footer-brand"><strong>同行 · 证道中文听译</strong><span>一起听懂，一路同行。</span><span class="author-watermark">© 2026 Jonathan Jing · 应用设计与开发</span></span><a id="source-link" target="_blank" rel="noopener noreferrer" hidden>英文原视频 ↗</a></footer>
     <p class="independence">独立个人项目，与 Mariners Church 无隶属或背书关系。</p>
+    <p class="disclosure">本浏览器会保存收听位置，便于中断后恢复；这不会自动对齐原视频。</p>
+    <p id="statistics-notice" class="disclosure" hidden>匿名使用统计默认开启，可在下方关闭；已关闭的选择会保留。</p>
+    <details id="privacy-controls" class="privacy-controls" hidden><summary>隐私与匿名统计</summary>
+      <p>我们收集使用时间、页面与按钮操作、音色试听和实际收听摘要，帮助决定下一步改进什么。你可以随时关闭统计，仍可正常收听和提交反馈。</p>
+      <label class="statistics-choice"><input id="statistics-opt-in" type="checkbox"> 帮助改进播放体验（匿名统计）</label>
+      <p id="statistics-status" role="status">默认开启；保留此前明确关闭的选择。</p><button id="statistics-retry-delete" class="text-button" type="button" hidden>重试撤回</button>
+      <p>开启后会在本浏览器保存随机标识，用于当天去重；按洛杉矶日期每天更换，不连接跨日个人轨迹。使用记录保留 30 天，反馈保留一年，到期后自动清理；长期仅保留汇总数字。业务统计不记录输入文字、姓名、邮箱、原始 IP 或设备指纹；托管平台可能保留常规访问日志。关闭统计会停止采集，并尝试撤回本页已上传的使用记录。</p>
+    </details>
+
   </main>
-  <dialog id="outline-dialog" aria-labelledby="outline-title"><div class="dialog-header"><div><p class="eyebrow">SERMON COMPANION</p><h2 id="outline-title">证道同行</h2><p id="outline-meta"></p></div><button id="outline-close" class="close-button" aria-label="关闭证道同行大纲">×</button></div><div class="dialog-body"><p id="outline-summary" class="outline-summary"></p><div id="outline-content"></div><section class="reflection"><h3>带着问题，继续同行</h3><ol id="reflection-questions"></ol></section><p id="outline-review" class="disclosure"></p></div></dialog>
+  <section id="field-controls" class="field-controls" aria-label="中文音频播放器">
+    <div class="dock-status"><span id="status" role="status">准备音频</span><span class="dock-times"><span><span id="elapsed">00:00</span> / <span id="duration">00:00</span></span><span id="source-clock" class="source-clock" hidden></span></span></div>
+    <div class="field-transport"><button data-nudge="-1" class="field-nudge" disabled aria-label="中文抢先，后退1秒"><span>中文抢先</span><strong>后退 1 秒</strong></button><button class="play" id="play" disabled><span id="play-icon" aria-hidden="true">▶</span><span id="play-label">开始播放</span></button><button data-nudge="1" class="field-nudge" disabled aria-label="中文落后，前进1秒"><span>中文落后</span><strong>前进 1 秒</strong></button></div>
+    <div class="dock-tools"><button id="transcript-current" class="text-button">回到当前句</button><button id="fingerprint-open" class="text-button" hidden>现场声音定位</button><button id="precision-open" class="text-button" disabled>定位 / 精调</button><button id="feedback-quick" class="text-button" hidden>反馈这一处</button></div>
+    <div id="undo-row" class="undo-row" hidden><span id="undo-message" role="status"></span><button id="undo-seek" type="button">撤销跳转</button></div>
+  </section>
+  <dialog id="fingerprint-dialog" aria-labelledby="fingerprint-title"><div class="dialog-sticky"><div class="dialog-header"><div><h2 id="fingerprint-title">现场声音定位 · 试用</h2><p>听取本期英文原录制，找到中文配音的位置。</p></div><button id="fingerprint-cancel" class="close-button" aria-label="取消并关闭声音定位">×</button></div></div><div class="dialog-body fingerprint-body">
+    <p>开始后暂停中文配音，采集约 10 秒现场声音。请让麦克风靠近英文原声，避免身旁交谈。</p>
+    <p class="description">声音仅在当前设备内临时处理，不上传、不保存，不识别人声身份。仅适用于本期同一段原录制。原视频须以正常 1 倍速连续播放；等待确认时请勿暂停或跳转，否则请重新定位。定位后仍可使用微调。现场设备延迟可能需要手动补偿。</p>
+    <p id="fingerprint-message" class="field-message" role="status" aria-live="polite">请让设备听到英文原声，再点击开始。</p>
+    <div class="fingerprint-actions"><button id="fingerprint-start" type="button">听取后自动对齐播放</button><button id="fingerprint-apply" type="button" hidden>一键跟上播放</button><button id="fingerprint-stop" type="button">取消定位</button></div>
+    <p class="description">可靠命中后会自动对齐并播放中文。若浏览器拦截，请点“一键跟上播放”，会重新补偿等待时间。可随时取消，播放后可撤销或微调。</p>
+  </div></dialog>
+  <dialog id="precision-dialog" aria-labelledby="precision-title"><div class="dialog-sticky"><div class="dialog-header"><div><h2 id="precision-title">定位 / 精调</h2><p>手动调整中文音频，不会自动跟随原视频。</p></div><button id="precision-close" class="close-button" aria-label="关闭定位与精调">×</button></div><div class="dialog-transport" aria-label="音频控制"><button type="button" data-nudge="-1" disabled aria-label="中文抢先，后退1秒">后退 1 秒</button><button type="button" data-play-toggle disabled><span data-play-label>开始播放</span></button><button type="button" data-nudge="1" disabled aria-label="中文落后，前进1秒">前进 1 秒</button><span data-mini-time>00:00</span></div></div><div class="dialog-body">
+    <label for="progress">播放进度 · 松开后跳转</label><input id="progress" type="range" min="0" max="1" value="0" step="0.01" disabled><p id="seek-preview" class="description"></p>
+    <div class="coarse-row"><button class="skip" id="back" disabled aria-label="后退 5 秒">后退 5 秒</button><button class="skip" id="forward" disabled aria-label="前进 5 秒">前进 5 秒</button></div>
+    <form id="jump-form" class="jump-row"><label for="jump-time">跳至时间</label><input id="jump-time" placeholder="例如 10:05" type="text" inputmode="text" autocomplete="off" aria-describedby="jump-message" disabled><button id="jump" type="submit" disabled>跳转</button></form><p id="jump-message" class="field-message" role="status"></p>
+    <div class="adjust-block"><h3>细调四分之一秒</h3><div class="nudge-row"><button data-nudge="-0.25" disabled>后退 0.25 秒</button><button data-nudge="0.25" disabled>前进 0.25 秒</button></div><p class="nudge-total">累计微调 <strong id="offset">0.00 秒</strong></p></div>
+    <button data-seek-undo class="text-button" hidden>撤销上次跳转</button>
+  </div></dialog>
+  <dialog id="outline-dialog" aria-labelledby="outline-title"><div class="dialog-sticky"><div class="dialog-header"><div><h2 id="outline-title">证道大纲</h2><p id="outline-meta"></p></div><button id="outline-close" class="close-button" aria-label="关闭证道大纲">×</button></div><div class="dialog-transport" aria-label="音频控制"><button type="button" data-nudge="-1" disabled aria-label="中文抢先，后退1秒">后退 1 秒</button><button type="button" data-play-toggle disabled><span data-play-label>开始播放</span></button><button type="button" data-nudge="1" disabled aria-label="中文落后，前进1秒">前进 1 秒</button><span data-mini-time>00:00</span></div></div><div class="dialog-body"><p id="outline-summary" class="outline-summary"></p><div id="outline-content"></div><section class="reflection"><h3>带着问题，继续同行</h3><ol id="reflection-questions"></ol></section><p id="outline-review" class="disclosure"></p></div></dialog>
   <audio id="audio" preload="metadata"></audio>
+  <dialog id="feedback-dialog" aria-labelledby="feedback-dialog-title"><div class="dialog-sticky"><div class="dialog-header"><div><h2 id="feedback-dialog-title">反馈这一处</h2><p id="feedback-dialog-context"></p></div><button id="feedback-dialog-close" class="close-button" aria-label="关闭反馈">×</button></div><div class="dialog-transport" aria-label="音频控制"><button type="button" data-nudge="-1" disabled aria-label="中文抢先，后退1秒">后退 1 秒</button><button type="button" data-play-toggle disabled><span data-play-label>开始播放</span></button><button type="button" data-nudge="1" disabled aria-label="中文落后，前进1秒">前进 1 秒</button><span data-mini-time>00:00</span></div></div>
+    <form id="feedback-form" class="dialog-body"><p id="feedback-excerpt" class="feedback-excerpt" hidden></p><fieldset><legend>遇到了什么问题？（可多选）</legend><div id="feedback-categories" class="feedback-categories"></div></fieldset>
+      <label for="feedback-comment">补充说明（可选）</label><textarea id="feedback-comment" maxlength="1000" rows="3" placeholder="例如：这里的人名读音需要调整。请勿填写个人联系方式。"></textarea>
+      <label for="feedback-use-context">在哪里收听？（可选）</label><select id="feedback-use-context"><option value="unspecified">暂不选择</option><option value="venue">现场跟随视频</option><option value="home">在家或其他地方收听</option></select>
+      <p id="feedback-form-status" class="field-message" role="status"></p><button id="feedback-submit" class="feedback-submit" type="submit">提交反馈</button>
+    </form>
+  </dialog>
   <script type="module" src="/app.mjs"></script>
 </body>
 </html>

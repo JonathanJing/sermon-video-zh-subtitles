@@ -15,7 +15,7 @@ import shutil
 
 from poc import sha256, speech_units, write_json
 from render_weekly_audio import render_identity
-from spoken_text import spoken_text, VERSION
+from spoken_text import spoken_text, SUPPORTED_VERSIONS, VERSION
 
 
 SCHEMA = "sermon-spoken-script-review-v1"
@@ -33,6 +33,9 @@ def text_hash(text):
 def reviewed_blocks(parent, review_path):
     old = read(parent / "job.json")
     review = read(review_path)
+    if "cuvTranslation" in review:
+        from scripts.sermon_cuv_translation import validate_spoken_review
+        validate_spoken_review(parent, review_path)
     ids = [b["id"] for b in old["blocks"]]
     if review.get("schemaVersion") != SCHEMA or review.get("parentJobSha256") != sha256(parent / "job.json"):
         raise ValueError("Spoken review belongs to a different parent job")
@@ -82,16 +85,18 @@ def reviewed_blocks(parent, review_path):
     return result
 
 
-def make_units(blocks):
+def make_units(blocks, *, pronunciation_rule_version=VERSION):
+    if not isinstance(pronunciation_rule_version, str) or pronunciation_rule_version not in SUPPORTED_VERSIONS:
+        raise ValueError("Unsupported pronunciation rule version")
     units = []
     for block in blocks:
-        parts = speech_units([block["zh"]], "flow")
+        parts = speech_units([block["zh"]], "flow", cuv_quotes=pronunciation_rule_version == "chinese-sermon-pronunciation-v3")
         for index, text in enumerate(parts):
             if len(text) > 180:
                 raise ValueError(f"Block {block['id']} needs a reviewed sentence break")
             unit = {"id": len(units), "blockId": block["id"], "text": text,
                     "gapAfterSeconds": .45 if index == len(parts) - 1 else .18}
-            spoken = spoken_text(text)
+            spoken = spoken_text(text, version=pronunciation_rule_version)
             if spoken != text:
                 unit["spokenText"] = spoken
             units.append(unit)
@@ -119,10 +124,13 @@ def validate_job_review(job):
     editable = {"createdAt", "blocks", "units", "inputs", "revisionOf", "spokenReview", "pronunciationRuleVersion", "humanAudioReview"}
     if any(job.get(key) != value for key, value in original.items() if key not in editable) or set(job) - (set(original) | editable):
         raise ValueError("Spoken revision must preserve the parent source/voice identity")
-    if job.get("pronunciationRuleVersion") != VERSION or job.get("humanAudioReview") != "pending":
-        raise ValueError("Revised speech must use current pronunciation rules and pending audio review")
+    rule_version = job.get("pronunciationRuleVersion")
+    if not isinstance(rule_version, str) or rule_version not in SUPPORTED_VERSIONS:
+        raise ValueError("Unsupported pronunciation rule version")
+    if job.get("humanAudioReview") != "pending":
+        raise ValueError("Revised speech must retain pending audio review")
     blocks = reviewed_blocks(parent, path)
-    if job["blocks"] != blocks or job["units"] != make_units(blocks):
+    if job["blocks"] != blocks or job["units"] != make_units(blocks, pronunciation_rule_version=rule_version):
         raise ValueError("Job text does not match the approved spoken revision")
     if job["spokenReview"] != {"schemaVersion": SCHEMA, "reviewType": "model", "model": "gpt-6-astra",
                                "status": "approved_for_synthesis", "humanApproval": False}:
@@ -181,7 +189,7 @@ def derive(parent, out, review_path):
         raise ValueError("Parent render text coverage changed")
     if out.exists():
         raise ValueError("Use a new output directory; preserve previous revisions")
-    units = make_units(blocks)
+    units = make_units(blocks, pronunciation_rule_version=VERSION)
     job = {**old, "createdAt": datetime.now(timezone.utc).isoformat(), "blocks": blocks, "units": units,
            "inputs": {**old["inputs"], "spokenScriptReview": {"path": str(review_path.resolve()), "sha256": sha256(review_path)}},
            "revisionOf": {"path": str(parent.resolve()), "jobSha256": parent_hash,

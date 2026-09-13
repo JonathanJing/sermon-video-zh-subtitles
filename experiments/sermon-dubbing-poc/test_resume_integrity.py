@@ -80,7 +80,7 @@ class ResumeIntegrityTests(unittest.TestCase):
 
     def assert_preserved_rejection(self, work, pattern):
         before = snapshot(work)
-        with patch.object(runner.subprocess, "run", side_effect=AssertionError("No subprocess on stale cache")) as call, patch.object(runner, "assemble") as assemble:
+        with patch.object(runner, "process_run", side_effect=AssertionError("No subprocess on stale cache")) as call, patch.object(runner, "assemble") as assemble:
             with self.assertRaisesRegex(ValueError, pattern):
                 self.run_main(work)
             call.assert_not_called()
@@ -91,7 +91,7 @@ class ResumeIntegrityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             work = candidate_fixture(Path(tmp))
             before = snapshot(work)
-            with patch.object(runner.subprocess, "run", side_effect=AssertionError("No subprocess")), patch.object(runner, "assemble", side_effect=AssertionError("No assembly")):
+            with patch.object(runner, "process_run", side_effect=AssertionError("No subprocess")), patch.object(runner, "assemble", side_effect=AssertionError("No assembly")):
                 evidence = runner.validate_candidate(work)
                 self.assertEqual(snapshot(work), before)
                 self.run_main(work)
@@ -205,7 +205,7 @@ class ResumeIntegrityTests(unittest.TestCase):
                     self.assertEqual(Path(command[1]).name, "check_weekly_timing.py")
                     if writes_receipt:
                         write_json(work / "synchronization/report.json", timing)
-                with patch.object(runner.subprocess, "run", side_effect=finish_stage) as call:
+                with patch.object(runner, "process_run", side_effect=finish_stage) as call:
                     if writes_receipt:
                         self.run_main(work)
                     else:
@@ -225,7 +225,7 @@ class ResumeIntegrityTests(unittest.TestCase):
             modify(work, "render/unit-0000.json", lambda d: d.update(reusedFrom={"wavSha256": old["sha256"], "receiptSha256": sha256(parent / "render/unit-0000.json"), "generationIdentity": old["identity"]}))
             self.assertNotEqual(sha256(work / "job.json"), sha256(parent / "job.json"))
             self.assertEqual(read(work / "audio/unit-screening/unit-0000.json"), read(parent / "audio/unit-screening/unit-0000.json"))
-            with patch.object(runner.subprocess, "run", side_effect=AssertionError("No model/SSH work")):
+            with patch.object(runner, "process_run", side_effect=AssertionError("No model/SSH work")):
                 runner.validate_candidate(work)
                 self.run_main(work)
 
