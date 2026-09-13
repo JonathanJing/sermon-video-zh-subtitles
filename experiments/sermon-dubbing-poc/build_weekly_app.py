@@ -170,6 +170,19 @@ def weekly_job(work, public, preview, sync_preview=False, series=None):
         week.update(videoSynchronization="candidate_aligned", humanApproval=False, candidateEvidence=candidate_evidence,
             audioNotice=f'同步试播候选：00:00 对应当前源视频的证道起点（第 {job["sourceStartSeconds"]:g} 秒）。模型审核不等于人工验收；中文流畅度、原声相似度与同视频播放仍待现场试听。')
     week["transcript"] = bilingual_transcript(job, tracks)
+    spoken_review = job.get("inputs", {}).get("spokenScriptReview")
+    if spoken_review:
+        review = read(Path(spoken_review["path"]))
+        if "cuvTranslation" in review:
+            # validate_frozen above replays the CUV proof before publication.
+            from scripts.cuv_scripture import DETAILS_URL, EDITION_ID
+            proof = review["cuvTranslation"]["report"]
+            report = read(Path(proof["path"]))
+            week["scriptureTextSource"] = {"edition": EDITION_ID, "label": "中文和合本（简体神版）",
+                "sourceUrl": DETAILS_URL, "reportSha256": proof["sha256"],
+                "quoteCount": sum(len(b["quotes"]) for b in report["lockedQuotes"]),
+                "reviewType": "model", "humanApproval": False}
+            week["contentReview"] = "中文译文经 AI 审校；所引经文按中文和合本（简体神版）逐字取文，讲员解释与经文分开处理。"
     return week
 
 

@@ -45,19 +45,20 @@ def probe(path: Path) -> dict:
     return {"durationSeconds": duration, "streams": data["streams"]}
 
 
-def sentences(text: str) -> list[str]:
+def sentences(text: str, *, cuv_quotes: bool = False) -> list[str]:
     # Attach closing quotes to the sentence whose punctuation they follow.
-    parts = re.findall(r"[^。！？]+[。！？]?[”’\"']*", text)
+    closers = "”’\"'」』" if cuv_quotes else "”’\"'"
+    parts = re.findall(r"[^。！？]+[。！？]?[" + re.escape(closers) + r"]*", text)
     return [s.strip() for s in parts if s.strip()]
 
 
-def speech_units(paragraphs: list[str], mode: str) -> list[str]:
+def speech_units(paragraphs: list[str], mode: str, *, cuv_quotes: bool = False) -> list[str]:
     if mode not in {"flow", "sentence"}:
         raise ValueError("Unknown segmentation mode")
     output = []
     for paragraph in paragraphs:
         current = ""
-        for sentence in sentences(paragraph):
+        for sentence in sentences(paragraph, cuv_quotes=cuv_quotes):
             if mode == "sentence":
                 output.append(sentence)
                 continue
