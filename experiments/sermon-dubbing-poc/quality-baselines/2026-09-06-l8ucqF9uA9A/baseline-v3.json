@@ -1,0 +1,264 @@
+{
+  "schemaVersion": "saturday-quality-output-v2",
+  "suiteSha256": "4f33c58d62bd69b4614aae13ba4e328c618e146e1a4d076de8a043e7e083ab5b",
+  "identity": "existing-production-2026-09-06-live-fallback-v3-numbers; review=gpt-6-astra; pronunciation=chinese-sermon-pronunciation-v1",
+  "jobEvidence": {
+    "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/job.json",
+    "sha256": "0e57730861f9ea5fddf807e8b2b51f0400cea4ccdd958be0958a95fd9aab24d3"
+  },
+  "samples": [
+    {
+      "id": "l8ucqF9uA9A-block-1",
+      "blockId": 1,
+      "en": "Now, when I was a college student, on a random Tuesday, I got invited to go up to Yosemite and to hike Half Dome, which is one of the most prominent features in Yosemite Valley. If you heard this, you know it is one of the most beautiful things that you can see. Now, we walked up to this trailhead, and I was prepared with simply a pair of jean shorts. I had no backpack and a single plastic water bottle.",
+      "sourceSha256": "7a2ac41f1b976a14b950a2dad57e7b3e94469ae44ebbf2f6b1fca36524882790",
+      "zh": "上大学时，一个普通的星期二，有人邀我去优胜美地，徒步登上半圆顶。那是优胜美地山谷最醒目的地标之一。听说过它的人都知道，那是你能见到的最美景观之一。走到步道起点时，我的装备就只有牛仔短裤和一只塑料水瓶，连背包都没带。",
+      "spokenZh": "上大学时，一个普通的星期二，有人邀我去优胜美地，徒步登上半圆顶。那是优胜美地山谷最醒目的地标之一。听说过它的人都知道，那是你能见到的最美景观之一。走到步道起点时，我的装备就只有牛仔短裤和一只塑料水瓶，连背包都没带。",
+      "recognizedZh": "上大学时，一个普通的星期二，有人邀我去优胜美地徒步登上半圆顶。那是优胜美地山谷最醒目的地标之一。听说过它的人都知道，那是你能见到的最美景观之一。走到步道起点时，我的装备就只有牛仔短裤和一只塑料水瓶，连背包都没带。",
+      "unitEvidence": [
+        {
+          "unitId": 3,
+          "audio": {
+            "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/render/unit-0003.wav",
+            "sha256": "9b8cb7f69a5b127d133c3d45a939b1d4d13874a57fac3f718714177a31629410"
+          },
+          "screening": {
+            "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/audio/unit-screening/unit-0003.json",
+            "sha256": "54b50a981fa8eec0bf2699ede8d027be52478bb16cb1ac5acaf38814680af005"
+          }
+        },
+        {
+          "unitId": 4,
+          "audio": {
+            "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/render/unit-0004.wav",
+            "sha256": "24d9f0712d214649127313dee714c71b3065b217fd10b9feb516861b72407201"
+          },
+          "screening": {
+            "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/audio/unit-screening/unit-0004.json",
+            "sha256": "523a1fb7aa60a858e00068a12f39e76ba6afe15af6ed69eacc988071bdfef875"
+          }
+        }
+      ]
+    },
+    {
+      "id": "l8ucqF9uA9A-block-2",
+      "blockId": 2,
+      "en": "I was in college. It's about the best that I had. Now, this hike itself is nine miles up, and then, of course, it's nine miles back down, a total vertical climb of 5,300 feet of elevation. This entire climb took us nearly 12 hours, and you can see, here's the photo of me sort of comically laying down with my head rested on the top of the dome. That's a 3,000-foot drop right behind my head.",
+      "sourceSha256": "6f3e23dcf35dfe8909c337aa970dcb2b88658996727e0a510a0c78597c34b0b9",
+      "zh": "当时我还是大学生，这差不多就是我最好的装备了。上山9英里，下山也9英里，总共垂直爬升五千三百英尺，走完全程将近12小时。照片里，我滑稽地躺着，头枕在半圆顶顶端；脑袋后面，就是落差三千英尺的悬崖。",
+      "spokenZh": "当时我还是大学生，这差不多就是我最好的装备了。上山九英里，下山也九英里，总共垂直爬升五千三百英尺，走完全程将近十二小时。照片里，我滑稽地躺着，头枕在半圆顶顶端；脑袋后面，就是落差三千英尺的悬崖。",
+      "recognizedZh": "当时我还是大学生，这差不多就是我最好的装备了。上山九英里，下山也九英里，总共垂直爬升五千三百英尺，走完全程将近十二小时。照片里我滑稽地躺着，头枕在半圆顶顶端，脑袋后面就是落差三千英尺的悬崖。",
+      "unitEvidence": [
+        {
+          "unitId": 5,
+          "audio": {
+            "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/render/unit-0005.wav",
+            "sha256": "fd7e653ca1b7e10aca2828544a203a5c97403086c1cb48a986e7f319c471d24e"
+          },
+          "screening": {
+            "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/audio/unit-screening/unit-0005.json",
+            "sha256": "e7161ba9e19e4b2726d03be8b92f637ce1c4b55e7e31e815f030596180d93376"
+          }
+        }
+      ]
+    },
+    {
+      "id": "l8ucqF9uA9A-block-9",
+      "blockId": 9,
+      "en": "In his head, he knows that God is good, but it's in his heart that really almost pulled him down. One of the big principles that we're going to learn from this psalm is that where you look is where you inevitably go. Now, our senior pastor Eric is well on the record by telling us how much he loves to mountain bike. He's a very good mountain biker, except for that time that he broke his collarbone, but other than that, he's pretty good. I have figured out that mountain biking is not for me. In fact, years ago, I went mountain biking with a bunch of our pastors in Utah at a ski slope.",
+      "sourceSha256": "57db495af26777a8d26134c3fe9b50ef176f491e24c785fe1361cdc611b72811",
+      "zh": "理智上，他知道神良善，内心的感受却几乎把他拖垮。这首诗篇教我们一个重要原则：你看向哪里，最终就会走向哪里。主任牧师埃里克公开说过，他热爱山地骑行。他确实骑得很好，除了那次摔断锁骨，其他时候都很不错。我则认清了，山地骑行不适合我。多年前，我曾和教会的一群牧师，在犹他州的一处滑雪场骑山地车。",
+      "spokenZh": "理智上，他知道神良善，内心的感受却几乎把他拖垮。这首诗篇教我们一个重要原则：你看向哪里，最终就会走向哪里。主任牧师埃里克公开说过，他热爱山地骑行。他确实骑得很好，除了那次摔断锁骨，其他时候都很不错。我则认清了，山地骑行不适合我。多年前，我曾和教会的一群牧师，在犹他州的一处滑雪场骑山地车。",
+      "recognizedZh": "理智上，他知道神良善，内心的感受却几乎把他拖垮。这首诗篇教我们一个重要原则：你看向哪里，最终就会走向哪里。主任牧师埃里克公开说过：“他热爱山地骑行，他确实骑得很好，除了那次摔断锁骨，其他时候都很不错。”我则认清了，山地骑行不适合我。多年前，我曾和教会的一群牧师在犹他州的一处滑雪场骑山地车。",
+      "unitEvidence": [
+        {
+          "unitId": 20,
+          "audio": {
+            "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/render/unit-0020.wav",
+            "sha256": "d366487b78fc381b14e3785ce4634d8a65ef2d5534f60be5c77b71d6dce7bcb6"
+          },
+          "screening": {
+            "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/audio/unit-screening/unit-0020.json",
+            "sha256": "3c845b30c0c1781b29f8583fbcfc5799aa07fbbcd95267f0f01d6d9853a29af5"
+          }
+        },
+        {
+          "unitId": 21,
+          "audio": {
+            "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/render/unit-0021.wav",
+            "sha256": "6f2a8264e2ccf862ab06ca546c485c4f2bdb907a70b60dac87e1eb3bd0fb33c5"
+          },
+          "screening": {
+            "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/audio/unit-screening/unit-0021.json",
+            "sha256": "070aee7c686e8bdbd75cbe38f83899205f7c02ff70ceb19b2b1eb130fca83705"
+          }
+        }
+      ]
+    },
+    {
+      "id": "l8ucqF9uA9A-block-10",
+      "blockId": 10,
+      "en": "Now, when I got invited and I heard, Hey, we're going to go ride bikes down a ski slope, I'm picturing beach cruisers kind of gently gliding down these ski runs, and I could not have been more wrong. We actually rode the chairlift up with our bikes attached to the side, and when we reached the top, we did not go down the ski slope; we turned into the woods instead.",
+      "sourceSha256": "db69f2013778f00a8b4e38d033a61eef7034406e7f5e6fd3a035c47edf752840",
+      "zh": "接到邀请时，他们说：“我们要骑车下滑雪坡。”我以为是骑沙滩休闲自行车，沿雪道缓缓滑下，结果大错特错。我们把自行车挂在吊椅缆车侧面，乘缆车上山。到山顶后，我们没有骑下滑雪坡，而是拐进树林。",
+      "spokenZh": "接到邀请时，他们说：“我们要骑车下滑雪坡。”我以为是骑沙滩休闲自行车，沿雪道缓缓滑下，结果大错特错。我们把自行车挂在吊椅缆车侧面，乘缆车上山。到山顶后，我们没有骑下滑雪坡，而是拐进树林。",
+      "recognizedZh": "接到邀请时，他们说：“我们要骑车下滑雪坡。”我以为是骑沙滩休闲自行车沿雪道缓缓滑下，结果大错特错。我们把自行车挂在吊椅，缆车侧面乘缆车上山。到山顶后，我们没有骑下滑雪坡，而是拐进树林。",
+      "unitEvidence": [
+        {
+          "unitId": 22,
+          "audio": {
+            "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/render/unit-0022.wav",
+            "sha256": "60a151dc5f966c9d0148b226a485d98eee52a69a54b99075c7b054a442aa1a74"
+          },
+          "screening": {
+            "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/audio/unit-screening/unit-0022.json",
+            "sha256": "e7678e70a6fa5bca52451bccdf0a7e4abde6e17857bc8f7d63b8bbd09e591ea2"
+          }
+        }
+      ]
+    },
+    {
+      "id": "l8ucqF9uA9A-block-17",
+      "blockId": 17,
+      "en": "I see people all over Instagram, and I always think to myself, of course they’re fit. They’ve got personal chefs and fitness coaches, right? Of course those people are wealthy. They’ve got trust funds. Of course they’re happy. They don’t just have one car; they open their garage and they’ve got options. This is essentially Asaph doing the very same thing. He’s scrolling the Instagram of his day, and he is seeing the world around him. So he isn’t, though, coveting their jewelry or their bodies or their lifestyle. He’s actually envying the peace that is their life. The word here is shalom. A simple definition of the word shalom is nothing missing, nothing broken. And the wicked appear to possess shalom.",
+      "sourceSha256": "e5832d85b986dfa40947bcbdcfc93a4750aec372128e68e31cc32ecb76be1624",
+      "zh": "我在照片墙上看到各种各样的人，总在心里想：他们身材好，那是当然的，他们有私人厨师和健身教练，不是吗？那些人有钱，那是当然的，他们有信托基金。他们快乐，那是当然的。他们不只有一辆车；车库门一开，还有不同的车任他们挑选。亚萨所做的，其实也是同样的事。他在刷他那个时代的照片墙，看着周围的世界。不过，他并不是贪恋他们的珠宝、身材或生活方式。他真正羡慕的，是他们生活中的平安。这里用的词是「沙洛姆」，即平安；简单来说，就是毫无缺失，毫无破损。而恶人似乎就拥有这样的平安。",
+      "spokenZh": "我在照片墙上看到各种各样的人，总在心里想：他们身材好，那是当然的，他们有私人厨师和健身教练，不是吗？那些人有钱，那是当然的，他们有信托基金。他们快乐，那是当然的。他们不只有一辆车；车库门一开，还有不同的车任他们挑选。亚萨所做的，其实也是同样的事。他在刷他那个时代的照片墙，看着周围的世界。不过，他并不是贪恋他们的珠宝、身材或生活方式。他真正羡慕的，是他们生活中的平安。这里用的词是「沙洛姆」，即平安；简单来说，就是毫无缺失，毫无破损。而恶人似乎就拥有这样的平安。",
+      "recognizedZh": "我在照片墙上看到各种各样的人，总在心里想：他们身材好，那是当然的；他们有私人厨师和健身教练，不是吗？那些人有钱，那是当然的；他们有信托基金，他们快乐，那是当然的。他们不只有一辆车，车库门一开，还有不同的车任他们挑选。亚萨所坐的其实也是同样的事：他在刷他那个时代的照片墙，看着周围的世界。不过他并不是贪恋他们的珠宝、身材或生活方式。他真正羡慕的是他们生活中的平安。这里用的词是“沙洛姆”及“平安”，简单来说，就是毫无缺失、毫无破损。而恶人似乎就拥有这样的平安。",
+      "unitEvidence": [
+        {
+          "unitId": 35,
+          "audio": {
+            "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/render/unit-0035.wav",
+            "sha256": "13b80d1e1a6ada8eacb4cad5f6b964c3f645a66c5839406f0e6725430d5ed2fd"
+          },
+          "screening": {
+            "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/audio/unit-screening/unit-0035.json",
+            "sha256": "8800df4f5a469765ed70f08d9c7811149a0b73bbd4f6310bbd989650415bbab5"
+          }
+        },
+        {
+          "unitId": 36,
+          "audio": {
+            "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/render/unit-0036.wav",
+            "sha256": "b3bf9d9ec781ea71d9f91b1d67fa30fbafbf3310b4f3e7513cab2eb623bbef37"
+          },
+          "screening": {
+            "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/audio/unit-screening/unit-0036.json",
+            "sha256": "be5f13a3de20486f15e6e1877475f4e590504a89043331ee7c7e859a0b58dedc"
+          }
+        },
+        {
+          "unitId": 37,
+          "audio": {
+            "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/render/unit-0037.wav",
+            "sha256": "dc989d6f0cbbef792e5e233aa24cc6bed62f19b8418c8b15f34bd75d5a9f54e2"
+          },
+          "screening": {
+            "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/audio/unit-screening/unit-0037.json",
+            "sha256": "9624cc9891d3c8e688edeff7b42db88b3e2608cfd190493f8bd6391c446fc98b"
+          }
+        }
+      ]
+    },
+    {
+      "id": "l8ucqF9uA9A-block-38",
+      "blockId": 38,
+      "en": "Doubt is the guise that most people desire to continue living in their own life, chasing after their own dreams, achieving their own goals, maintaining their own authority. But the upside-down kingdom of God is that releasing all and surrendering it to His far better life, that’s what God invites us into. So Asaph, he writes this, and I love this so much, this literary device that he uses.",
+      "sourceSha256": "10b8f9f489a15779ee40d282d952c7024596133a0cd0754fa88f8a79ef30c550",
+      "zh": "多数人用怀疑作掩饰，想继续过自己的生活，追逐自己的梦想，实现自己的目标，保有自己的主导权。但神的国颠覆世间常理：放下一切，全然降服，进入祂那远为美好的生命。这正是神对我们的邀请。于是，亚萨写下这些话；我很喜爱他运用的文学手法。",
+      "spokenZh": "多数人用怀疑作掩饰，想继续过自己的生活，追逐自己的梦想，实现自己的目标，保有自己的主导权。但神的国颠覆世间常理：放下一切，全然降服，进入他那远为美好的生命。这正是神对我们的邀请。于是，亚萨写下这些话；我很喜爱他运用的文学手法。",
+      "recognizedZh": "多数人用怀疑做掩饰，想继续过自己的生活，追逐自己的梦想，实现自己的目标，保有自己的主导权。但神的国颠覆世间常理，放下一切，全然降服，进入他那远为美好的生命。这正是神对我们的邀请。于是亚瑟写下这些话：“我很喜爱他运用的文学手法。”",
+      "unitEvidence": [
+        {
+          "unitId": 86,
+          "audio": {
+            "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/render/unit-0086.wav",
+            "sha256": "64fe25eadae4bba8e3969e311d4ce9a11f7ade9a51bcba9402b1d7dcdbeaa6d1"
+          },
+          "screening": {
+            "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/audio/unit-screening/unit-0086.json",
+            "sha256": "1c15ef813a41d97c2bdac956af23359bfd74c08d928bbffef8283b8a334e42f1"
+          }
+        },
+        {
+          "unitId": 87,
+          "audio": {
+            "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/render/unit-0087.wav",
+            "sha256": "2c1b40473a28a005806123ef31f2b4a1e53eb25b7711e8a25f649a41f144b26c"
+          },
+          "screening": {
+            "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/audio/unit-screening/unit-0087.json",
+            "sha256": "b4c49e2d6e066efc5f32d6b63c3ce0f973af70ce27b2b144e5c31a07fdd7343c"
+          }
+        }
+      ]
+    },
+    {
+      "id": "l8ucqF9uA9A-block-42",
+      "blockId": 42,
+      "en": "It says, Whom have I in heaven but you? And I desire nothing on earth but you. My flesh and my heart may fail, but God is the strength of my heart, my portion forever. Those far from you will certainly perish; you destroy all who are unfaithful to you. But as for me, God's presence is my good. I have made the Lord God my refuge, so I can tell about all you do.",
+      "sourceSha256": "f313813b056476d989dc9fef6b547b3d3a3015eef754eb4d89089db2d1f79c34",
+      "zh": "经上说：“除你以外，在天上我还有谁呢？除你以外，在地上我也别无所求。我的肉体和我的心或许会衰残，但神是我心里的力量，是我永远的福分。远离你的人必定灭亡；凡对你不忠的人，你都要毁灭。但对我来说，神的同在就是我的福。我已将主神作为我的避难所，好述说你一切的作为。”",
+      "spokenZh": "经上说：“除你以外，在天上我还有谁呢？除你以外，在地上我也别无所求。我的肉体和我的心或许会衰残，但神是我心里的力量，是我永远的福分。远离你的人必定灭亡；凡对你不忠的人，你都要毁灭。但对我来说，神的同在就是我的福。我已将主神作为我的避难所，好述说你一切的作为。”",
+      "recognizedZh": "经上说：“除你以外，在天上我还有谁呢？除你以外，在地上我也别无所求。我的肉体和我的心或许会衰残，但神是我心里的力量，是我永远的福分。远离你的人必定灭亡，凡对你不忠的人，你都要毁灭。”但对我来说，神的同在就是我的福。我已将主神作为我的避难所，好述说你一切的作为。",
+      "unitEvidence": [
+        {
+          "unitId": 96,
+          "audio": {
+            "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/render/unit-0096.wav",
+            "sha256": "5373680b3e5df02a77605799132c0d3322a198d3b16400438d7525e17a0c42ad"
+          },
+          "screening": {
+            "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/audio/unit-screening/unit-0096.json",
+            "sha256": "ada950775aee7b639fe3b505ea03d9f98575e2cc750bb0df94cd27d900eed79a"
+          }
+        },
+        {
+          "unitId": 97,
+          "audio": {
+            "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/render/unit-0097.wav",
+            "sha256": "cba9b71a027895ff55f1453de6964b2e76be978433b75ce9ecb23cbc6b3961b6"
+          },
+          "screening": {
+            "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/audio/unit-screening/unit-0097.json",
+            "sha256": "eac442b3ef73d6289bd3947b037d29c6110c0636f8d2b60ea0abd612d14955f9"
+          }
+        }
+      ]
+    },
+    {
+      "id": "l8ucqF9uA9A-block-53",
+      "blockId": 53,
+      "en": "What did your prayer time sound like in those moments? Who did you turn to, and what was the result of that? What got you through that season? And then how did your faith strengthen? Did your faith strengthen because you brought your doubts to God? You had beautiful people in your life who are walking with Jesus themselves, and they spoke great words of wisdom.",
+      "sourceSha256": "e5794540aa5493e149e50ec8793557ed1ac0dcba16e1e6023dc4f6ce4b100d50",
+      "zh": "在那些时刻，你祷告时都说了些什么？你向谁求助，结果又如何？是什么帮助你走过那段日子？后来，你的信心又是怎样得到坚固的？是因为你把疑惑带到神面前，信心才得到了坚固吗？你生命中有一些美好的人，他们自己也与耶稣同行，对你说了许多充满智慧的话。",
+      "spokenZh": "在那些时刻，你祷告时都说了些什么？你向谁求助，结果又如何？是什么帮助你走过那段日子？后来，你的信心又是怎样得到坚固的？是因为你把疑惑带到神面前，信心才得到了坚固吗？你生命中有一些美好的人，他们自己也与耶稣同行，对你说了许多充满智慧的话。",
+      "recognizedZh": "在那些时刻，你祷告时都说了些什么？你向谁求助？结果又如何？是什么帮助你走过那段日子？后来你的信心又是怎样得到坚固的？是因为你把疑惑带到神面前，信心才得到了坚固吗？你生命中有一些美好的人，他们自己也与耶稣同行，对你说了许多充满智慧的话。",
+      "unitEvidence": [
+        {
+          "unitId": 121,
+          "audio": {
+            "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/render/unit-0121.wav",
+            "sha256": "c7cdcdb0814b12c6a9a894d150bb907acfef37009cfe714e97791dda63e5b5a1"
+          },
+          "screening": {
+            "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/audio/unit-screening/unit-0121.json",
+            "sha256": "c9f30df4b326b22e0f14d90cf03a0e7000fab5f4fa707c827169a0f5fe2b96f0"
+          }
+        },
+        {
+          "unitId": 122,
+          "audio": {
+            "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/render/unit-0122.wav",
+            "sha256": "cdda3d19097d08cab11b34619335b0315ab62afe3c6f4b7e5bfb3d806a4e88e6"
+          },
+          "screening": {
+            "path": "../../../../artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/audio/unit-screening/unit-0122.json",
+            "sha256": "2c9beedfce6b32a3abe5b8d67fc79a6e3bb92e77c20c5083c40929193feb2422"
+          }
+        }
+      ]
+    }
+  ]
+}

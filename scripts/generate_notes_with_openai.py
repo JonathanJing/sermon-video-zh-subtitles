@@ -25,7 +25,6 @@ from backend.cloud import upload_file_to_gcs
 from scripts import review_prompts
 from scripts import series_terminology
 from scripts.sermon_accounting import _finalize, accounting_session, stage, record_api_attempt, record_api_started, request_metadata
-from scripts.render_sermon_interpretation_pdf import render_interpretation_pdf
 
 JS_PREFIX = "window.SERMON_PLAYBACK_SIMULATION = "
 SECRET_RESOURCE_RE = re.compile(
@@ -39,6 +38,12 @@ DEFAULT_REASONING_EFFORT = "high"
 SRT_TIMESTAMP_RE = re.compile(
     r"^\s*(?P<start>\d{1,2}:\d{2}:\d{2}[,.]\d{3})\s*-->\s*(?P<end>\d{1,2}:\d{2}:\d{2}[,.]\d{3})"
 )
+
+
+def render_interpretation_pdf(*args, **kwargs):
+    """Load PDF-only dependencies only when a PDF is actually requested."""
+    from scripts.render_sermon_interpretation_pdf import render_interpretation_pdf as render
+    return render(*args, **kwargs)
 
 
 def main() -> int:

@@ -14,11 +14,14 @@ from poc import sha256, write_json
 from render_weekly_audio import render_identity
 import run_weekly_dubbing as runner
 from server import load_weekly
+from deploy_firebase import verify_release
+from deploy_feedback import verified_feedback_catalog
+from deploy_feedback_compat import verified_feedback_catalog as verified_compat_catalog
 from test_resume_integrity import candidate_fixture, modify, snapshot
 from weekly_dubbing import read
 
 
-def app_fixture(root):
+def app_fixture(root, source_id="weekly-fixture"):
     work = root / "weekly"
     work.mkdir()
     candidate_fixture(work)
@@ -26,7 +29,7 @@ def app_fixture(root):
         "outlineZh": [{"title": "主题大纲", "points": ["第一点"], "sourceSliceIndexes": [0]}], "scriptureRefs": [], "reflectionQuestionsZh": []}
     write_json(work / "outline.json", notes)
     job = read(work / "job.json")
-    job.update(sourceId="weekly-fixture", sourceUrl="https://example.invalid/sermon", title="本周证道", speaker="Eric Geiger", scripture="诗篇 137 篇",
+    job.update(sourceId=source_id, sourceUrl="https://example.invalid/sermon", title="本周证道", speaker="Eric Geiger", scripture="诗篇 137 篇",
         inheritedReview={"generationComplete": False})
     job["inputs"]["outline"] = {"path": str(work / "outline.json"), "sha256": sha256(work / "outline.json")}
     write_json(work / "job.json", job)
@@ -60,8 +63,29 @@ def app_fixture(root):
 
 
 class WeeklyAppBuildTests(unittest.TestCase):
+    def test_feedback_export_binds_api_catalog_to_public_audio_without_text(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            work = app_fixture(root)
+            self.build(root, work, review_preview=True, feedback_enabled=True)
+            # The exported front end, including its recovery module, must also
+            # be admissible to the strict Hosting uploader.
+            verify_release(root / "build")
+            verified_feedback_catalog(root / "build")
+            verified_compat_catalog(root / "build")
+            settings = read(root / "build/public/engagement.json")
+            self.assertTrue(settings["enabled"])
+            self.assertEqual(len(settings["appVersion"]), 16)
+            api = read(root / "build/feedback-catalog.json")["sources"][0]
+            public = read(root / "build/public/weekly.json")["weeks"][0]
+            self.assertEqual(api["audioSha256"], public["tracks"][0]["sha256"])
+            self.assertEqual(api["week"], public["date"])
+            self.assertEqual(api["trackId"], public["tracks"][0]["id"])
+            self.assertEqual(api["cueIds"], [str(i) for i in range(len(public["tracks"][0]["cues"]))])
+            self.assertTrue(all("text" not in cue for cue in api["cues"]))
+
     def setUp(self):
-        no_subprocess = patch.object(runner.subprocess, "run", side_effect=AssertionError("No subprocess / models / network"))
+        no_subprocess = patch.object(runner, "process_run", side_effect=AssertionError("No subprocess / models / network"))
         no_subprocess.start()
         self.addCleanup(no_subprocess.stop)
 
@@ -79,12 +103,25 @@ class WeeklyAppBuildTests(unittest.TestCase):
             self.assertEqual([call.args[0] for call in load.call_args_list], [work / "audio"])
             catalog = load_weekly(root / "build/public")
             self.assertEqual(report["weeks"], 1)
-            self.assertEqual(catalog["defaultWeekId"], "2026-09-06")
-            self.assertEqual([w["id"] for w in catalog["weeks"]], ["2026-09-06"])
+            self.assertEqual(catalog["defaultWeekId"], "2026-09-06-live_archive-weekly-fixture")
+            self.assertEqual([w["id"] for w in catalog["weeks"]], ["2026-09-06-live_archive-weekly-fixture"])
+            self.assertEqual(catalog["weeks"][0]["sourceLabel"], "主日聚会版")
             track = catalog["weeks"][0]["tracks"][0]
             self.assertEqual(track["sha256"], sha256(work / "audio/zh-natural.mp3"))
             self.assertEqual(track["subtitleTiming"], "measured_synthesis_groups")
             self.assertEqual(snapshot(work), before)
+
+    def test_series_override_exports_titles_without_mutating_frozen_job(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            work = app_fixture(root)
+            before = snapshot(work)
+            self.build(root, work, review_preview=True, series="当生活令人费解")
+            week = load_weekly(root / "build/public")["weeks"][0]
+            self.assertEqual(week["series"], "当生活令人费解")
+            self.assertEqual(week["title"], "本周证道 · 当生活令人费解｜主日聚会版")
+            self.assertEqual(snapshot(work), before)
+            self.assertEqual(app.series_title(week["title"], week["series"]), week["title"])
 
     def test_legacy_build_without_weekly_job_keeps_both_examples(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -130,12 +167,13 @@ class WeeklyAppBuildTests(unittest.TestCase):
             self.assertEqual(week["candidateEvidence"]["syncAssemblySha256"], sha256(work / "synchronization/assembly.json"))
             self.assertEqual(snapshot(work), before)
 
-    def test_include_history_keeps_three_old_auditions_and_replaces_matching_week(self):
+    def test_include_history_keeps_three_old_auditions_and_replaces_matching_source(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             work = app_fixture(root)
             entries = [{"date": date, "sourceId": f"fixture-{i}", "title": "历史证道", "scripture": "诗篇 137 篇", "speaker": "Eric", "number": "137"}
                 for i, date in enumerate(["2026-09-06", "2026-08-23"])]
+            entries[0]["sourceId"] = "weekly-fixture"
             for entry in entries:
                 path = root / f'artifacts/post-live-runs/{entry["date"]}/sermon_{entry["sourceId"]}/pipeline/sermon-interpretation/insights/openai-notes.json'
                 write_json(path, {**read(work / "outline.json"), "sermonDate": entry["date"]})
@@ -153,15 +191,62 @@ class WeeklyAppBuildTests(unittest.TestCase):
                 report = app.build(root / "comparison", root / "build", expansion=root / "expansion", weekly_jobs=[work],
                     review_preview=True, sync_preview=True, include_history=True)
             catalog = load_weekly(root / "build/public")
-            self.assertEqual([week["id"] for week in catalog["weeks"]], ["2026-09-06", "2026-08-23"])
-            self.assertEqual(catalog["weeks"][0]["title"], "本周证道")
+            self.assertEqual([week["id"] for week in catalog["weeks"]], ["2026-09-06-live_archive-weekly-fixture", "2026-08-23"])
+            self.assertEqual(catalog["weeks"][0]["title"], "本周证道｜主日聚会版")
             self.assertEqual(catalog["weeks"][0]["tracks"][0]["sha256"], sha256(work / "synchronization/zh-synced.mp3"))
             old = catalog["weeks"][1]
-            self.assertEqual(old["title"], "历史证道")
+            self.assertEqual(old["title"], "历史证道 · 当生活令人费解")
             self.assertEqual(old["outline"][0]["title"], "主题大纲")
             self.assertEqual([track["id"] for track in old["tracks"]], ["accepted", "expanded", "default"])
             self.assertTrue(report["includeHistory"])
             self.assertEqual(sum(call.args[0] == root / "build/build-report.json" for call in write.call_args_list), 1)
+
+    def test_same_week_sources_keep_separate_pages_audio_and_feedback_identities(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "first").mkdir()
+            (root / "second").mkdir()
+            first = app_fixture(root / "first", "first-video")
+            second = app_fixture(root / "second", "second-video")
+            with contextlib.redirect_stdout(io.StringIO()):
+                app.build(root / "missing-history", root / "build", weekly_jobs=[first, second],
+                    review_preview=True, feedback_enabled=True)
+            weeks = load_weekly(root / "build/public")["weeks"]
+            self.assertEqual({w["id"] for w in weeks}, {
+                "2026-09-06-live_archive-first-video", "2026-09-06-live_archive-second-video"})
+            self.assertEqual(len({w["tracks"][0]["id"] for w in weeks}), 2)
+            # Identical fixture MP3 bytes still represent different sources.
+            self.assertEqual(len({w["tracks"][0]["sha256"] for w in weeks}), 1)
+            api = read(root / "build/feedback-catalog.json")
+            self.assertEqual(api["weekIds"], ["2026-09-06"])
+            self.assertEqual({s["week"] for s in api["sources"]}, {"2026-09-06"})
+            self.assertEqual(len({s["trackId"] for s in api["sources"]}), 2)
+            verify_release(root / "build")
+            verified_feedback_catalog(root / "build")
+            verified_compat_catalog(root / "build")
+
+    def test_same_video_and_live_archive_pages_coexist_and_same_video_is_default(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            jobs = []
+            for route in ["same_video", "live_archive"]:
+                work = root / route
+                work.mkdir()
+                write_json(work / "job.json", {"week": "2026-09-06", "sourceRoute": route, "sourceId": "same-id"})
+                jobs.append(work)
+            # Source approval is exercised by the existing weekly_job tests;
+            # this test isolates catalog retention/order after that validation.
+            def exported(work, *args):
+                return {**app.source_page(read(work / "job.json")), "date": "2026-09-06", "sourceId": "same-id",
+                    "title": "本周证道", "speaker": "Eric", "outline": ["大纲"], "tracks": []}
+            with patch.object(app, "weekly_job", side_effect=exported), contextlib.redirect_stdout(io.StringIO()):
+                app.build(root / "missing-history", root / "build", weekly_jobs=jobs, review_preview=True)
+            catalog = load_weekly(root / "build/public")
+            self.assertEqual([w["id"] for w in catalog["weeks"]], [
+                "2026-09-06-same_video-same-id", "2026-09-06-live_archive-same-id"])
+            self.assertEqual(catalog["defaultWeekId"], "2026-09-06-same_video-same-id")
+            self.assertEqual(catalog["weeks"][0]["sourceLabel"], "YouTube 版")
+            self.assertEqual(catalog["weeks"][1]["sourceLabel"], "主日聚会版")
 
     def test_sync_preview_requires_both_flags_and_a_weekly_job(self):
         with tempfile.TemporaryDirectory() as tmp:

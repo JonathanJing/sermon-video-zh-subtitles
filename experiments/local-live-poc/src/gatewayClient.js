@@ -21,8 +21,8 @@ function jsonOptions(method, payload) {
   };
 }
 
-export function getGatewayHealth(fetchImpl) {
-  return requestJson("/api/health", {}, fetchImpl);
+export function getGatewayHealth(fetchImpl, timeoutMs = 15000) {
+  return requestJson("/api/health", {}, fetchImpl, timeoutMs);
 }
 
 export function restartGateway(fetchImpl) {

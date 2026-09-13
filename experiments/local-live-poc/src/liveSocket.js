@@ -28,6 +28,7 @@ export class LiveCaptionSocket {
     this.stopping = false;
     this.disconnectReported = false;
     this.handshakeReady = false;
+    this.stopPromise = null;
   }
 
   resolveClosed(result) {
@@ -45,6 +46,7 @@ export class LiveCaptionSocket {
       this.stopping = false;
       this.disconnectReported = false;
       this.handshakeReady = false;
+      this.stopPromise = null;
       let settled = false;
       socket.binaryType = "arraybuffer";
       const timeout = window.setTimeout(() => {
@@ -104,6 +106,7 @@ export class LiveCaptionSocket {
         if (!settled) {
           settled = true;
           reject(new Error("无法连接本地实时字幕 Gateway"));
+          socket.close();
         } else if (!this.stopping && !this.disconnectReported) {
           this.disconnectReported = true;
           this.onLocalEvent({ type: "stream.disconnected", reason: "socket_error" });
@@ -135,7 +138,7 @@ export class LiveCaptionSocket {
 
   sendPcm(pcmBuffer, sequence = this.sequence + 1) {
     this.sequence = sequence;
-    if (!this.handshakeReady || !this.socket || this.socket.readyState !== WebSocket.OPEN) return false;
+    if (this.stopping || !this.handshakeReady || !this.socket || this.socket.readyState !== WebSocket.OPEN) return false;
     if (this.socket.bufferedAmount > MAX_BUFFERED_PCM_BYTES) {
       this.onLocalEvent({
         type: "audio.stream_overrun",
@@ -148,12 +151,24 @@ export class LiveCaptionSocket {
     return true;
   }
 
-  async stop(timeoutMs = 95000) {
+  stop(timeoutMs = 95000) {
+    if (!this.stopPromise) this.stopPromise = this.finishStop(timeoutMs);
+    return this.stopPromise;
+  }
+
+  async finishStop(timeoutMs) {
     const socket = this.socket;
+    this.stopping = true;
     if (!socket || socket.readyState > WebSocket.OPEN) {
       return { type: "stream.closed", workerDrained: false, reason: "socket_not_open" };
     }
-    this.stopping = true;
+    if (!this.handshakeReady) {
+      // There is no accepted live session to drain. Closing also rejects the
+      // pending connect promise and prevents a later open from starting one.
+      socket.close(1000, "session stopped before ready");
+      this.socket = null;
+      return { type: "stream.closed", workerDrained: false, reason: "stream_not_ready" };
+    }
     const drained = new Promise((resolve) => {
       this.closedResolver = resolve;
       this.closedTimer = window.setTimeout(() => resolve({

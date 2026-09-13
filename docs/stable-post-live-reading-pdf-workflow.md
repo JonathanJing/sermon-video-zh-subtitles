@@ -29,12 +29,12 @@ This workflow is not the same thing as the frontend admin prototype or the Cloud
 
 ## Human checkpoints
 
-Two human checkpoints are part of the stable workflow:
+These checkpoints require valid evidence, not repeated approval on every resume:
 
 1. The operator saves or confirms the correct source URL.
 2. The operator confirms the sermon start and end time before the full run.
 
-The pipeline is intentionally not treated as complete before both core PDFs and their QA reports exist and pass.
+Reuse the saved source and still-valid human approval; request a new window review only when missing or invalidated by source/timeline changes. For scheduled/resumable execution, use [the local runbook](./codex-local-production-runbook.zh.md). The commands below are the manual path. Keep the actual human window confirmation with the run evidence. These examples omit `--approval-evidence` and do not create a durable approval record. To obtain source/timeline-bound approval and Supervisor completion, use the local runbook; do not fabricate approval JSON.
 
 ## Recommended commands
 
@@ -98,6 +98,8 @@ Under the selected run directory, the operator should expect at least these outp
 
 The reading PDF and sermon interpretation PDF are the two core operator deliverables. The interpretation includes the central message, outline, Scripture context, theological insights, illustrations, pastoral distinctions, reflection questions, a small-group guide, and a response prayer. Every generated item must cite transcript slices, and AI-assisted reflection or prayer content is visibly distinguished from speaker quotations.
 
+The current interpretation generator still requires reflection/group/prayer sections. This differs from the narrower companion-PDF target in [the workflow map](./workflows/README.zh.md#canonical-输入与产物); do not claim that target is implemented merely because current QA passes.
+
 The default `reading` mode does not call `whisper-1`. Internal timing values are used only to organize reading blocks and must not be published as synchronized subtitle timing. Select `--output-mode subtitles` explicitly when SRT/VTT timing is required; only that mode enables `whisper-1`.
 
 ## Completion rule
@@ -105,14 +107,16 @@ The default `reading` mode does not call `whisper-1`. Internal timing values are
 Treat the workflow as complete only when all of the following are true:
 
 - the source URL was saved into state successfully
-- the sermon window was manually confirmed
+- the human sermon-window evidence still matches the current source/timeline
+- `reading-edition-v2/reading_quality_report.json` reports pass
 - `sermon_zh_en_reading.pdf` exists
 - `sermon_zh_en_reading.qa.json` reports pass
 - `sermon_interpretation_zh.pdf` exists
 - `sermon_interpretation_zh.qa.json` reports pass
-- the run report and run status are written
+- the generation report is `completed` and run status is written
+- configured publication has verified local/remote artifact parity (`publication.status=pass`)
 
-Partial ASR output alone is not success.
+For the Supervisor path, the fresh deterministic `recommendedAction.action == "complete"` is authoritative; see [the shared completion rule](./sermon-production-supervisor-agent.md#completion-rule). Partial ASR or standalone files are not success.
 
 ## Where the automation actually happens
 

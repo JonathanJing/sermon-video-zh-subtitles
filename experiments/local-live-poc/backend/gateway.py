@@ -6,6 +6,7 @@ import json
 import os
 import re
 import threading
+import uuid
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -108,6 +109,7 @@ class GatewayState:
         )
         self._runtime_identity_json: str | None = None
         self._runtime_identity_lock = threading.Lock()
+        self.runtime_instance_id = uuid.uuid4().hex
         self.caption_hub = CaptionHub()
         firebase_config = FirebasePublisherConfig.from_environment()
         self.public_caption_publisher = (
@@ -444,6 +446,7 @@ class Handler(BaseHTTPRequestHandler):
         core_ready = bool(asr.get("available") and storage.get("available") and not live_health["degraded"])
         self._send(HTTPStatus.OK, {
             "service": "local-live-caption-gateway",
+            "runtimeInstanceId": self.server.state.runtime_instance_id,
             "runtimeIdentity": self.server.state.capture_runtime_identity(),
             "status": "ready" if (
                 ollama.get("configuredModelInstalled")
@@ -521,7 +524,10 @@ class Handler(BaseHTTPRequestHandler):
                 if self.client_address[0] not in {"127.0.0.1", "::1"}:
                     self._send(HTTPStatus.FORBIDDEN, {"error": "local_only"})
                     return
-                self._send(HTTPStatus.ACCEPTED, {"status": "restarting"})
+                self._send(HTTPStatus.ACCEPTED, {
+                    "status": "restarting",
+                    "runtimeInstanceId": self.server.state.runtime_instance_id,
+                })
                 threading.Timer(0.1, self.server.state.runtime_restart).start()
             elif parsed.path == f"/api/translation/providers/{V41_PROVIDER}/start":
                 if self.client_address[0] not in {"127.0.0.1", "::1"} or self.headers.get("Origin") not in (*self.server.state.frontend_origins, None):

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "sources": [{
+    "week": "2026-08-30",
+    "trackId": "replace-with-built-catalog-track-id",
+    "audioSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "durationSeconds": 1770,
+    "cueIds": ["0", "1"],
+    "blockIds": ["1"],
+    "cues": [{"id":"0","start":0,"end":10,"blockId":"1"},{"id":"1","start":10,"end":20,"blockId":"1"}]
+  }]
+}

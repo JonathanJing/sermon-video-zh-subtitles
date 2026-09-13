@@ -1315,6 +1315,7 @@ def main():
     )
     parser.add_argument("--chunk-seconds", type=float, default=45.0)
     parser.add_argument("--reading-chunk-seconds", type=float, default=1200.0)
+    parser.add_argument("--source-text-review", type=Path, help="Hash-bound, separately reviewed English source corrections; original ASR stays unchanged.")
     parser.add_argument(
         "--reading-segment-target-chars",
         type=int,
@@ -1335,6 +1336,8 @@ def main():
 
     if not args.input or args.start_time is None:
         raise SystemExit("--input and --start-time are required")
+    if args.source_text_review and args.output_mode != "reading":
+        raise SystemExit("--source-text-review currently requires --output-mode reading")
 
     load_env(Path(".env"))
     api_key = os.environ.get("OPENAI_API_KEY")
@@ -1398,6 +1401,14 @@ def produce_pipeline(args, api_key, source_duration, start, end, outdir):
                 args.correction_window_seconds,
                 reasoning_effort=args.reasoning_effort,
             )
+        source_review = None
+        if args.source_text_review:
+            from scripts.sermon_source_text_review import apply_review
+            asr_path = outdir / "asr_reference.json"
+            if not asr_path.exists():
+                asr_path = outdir / "asr_reference_chunks.json"
+            corrected, source_review = apply_review(corrected, args.source_text_review, clip_path, asr_path)
+            write_json(outdir / "source-text-review-provenance.json", source_review)
         shaped_en = corrected if args.output_mode == "reading" else shape_durations(corrected)
         write_json(outdir / "segments_timed_en_corrected.json", shaped_en)
 
@@ -1474,6 +1485,8 @@ def produce_pipeline(args, api_key, source_duration, start, end, outdir):
         ),
         "argv": sys.argv[1:],
     }
+    if source_review:
+        summary["sourceTextReview"] = source_review
     write_json(outdir / "summary.json", summary)
     print(json.dumps(summary, ensure_ascii=False, indent=2))
 

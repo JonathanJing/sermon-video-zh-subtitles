@@ -29,12 +29,12 @@
 
 ## 人工关口
 
-当前稳定工作流有两个必须保留的人工作业点：
+以下关口需要有效证据，不要求每次续跑重新确认：
 
 1. operator 保存或确认正确的视频源链接
 2. operator 在正式全量运行前，确认证道开始和结束时间
 
-只有两个核心 PDF 和各自 QA 都通过，才算这次运行真正完成。
+复用已保存的 source 和仍有效的人工审批；只有缺失或 source/timeline 改变导致审批失效时才重新审核窗口。定时生产/续跑走 [本地 runbook](./codex-local-production-runbook.zh.md)；下方命令是手工入口，须自行保留真实的人工窗口确认记录。示例未传 `--approval-evidence`，不会创建持久化审批记录；需要绑定 source/timeline 的审批及 Supervisor 完成状态时，走本地 runbook，不得补造审批 JSON。
 
 ## 推荐命令
 
@@ -98,6 +98,8 @@ python3 scripts/run_post_live_subtitle_generation.py \
 
 阅读版 PDF 和证道解读 PDF 是这条稳定工作流统一的两个核心交付物。解读 PDF 包含核心信息、证道脉络、经文背景、神学重点、例证、牧养辨析、反思题、小组指南和回应祷告。每一项必须回指转录切片；AI 辅助的反思与祷告会明确区别于讲员原话。
 
+当前生成器仍要求反思题/小组指南/祷告等部分，与 [工作流图谱](./workflows/README.zh.md#canonical-输入与产物) 中较窄的证道同行目标存在偏差；不能用当前 QA 通过宣称目标已经实现。
+
 默认 `reading` 模式不调用 `whisper-1`。内部段落时间只服务于阅读版组织，不得作为同步字幕时间轴发布。需要 SRT/VTT 时必须显式使用 `--output-mode subtitles`，此时才启用 `whisper-1`。
 
 ## 完成标准
@@ -105,14 +107,16 @@ python3 scripts/run_post_live_subtitle_generation.py \
 只有同时满足下面条件，才应把这次运行视为完成：
 
 - source URL 已成功保存进 state
-- 证道时间窗已人工确认
+- 人工时间窗审批仍与当前 source/timeline 匹配
+- `reading-edition-v2/reading_quality_report.json` 为 pass
 - `sermon_zh_en_reading.pdf` 已生成
 - `sermon_zh_en_reading.qa.json` 报告为 pass
 - `sermon_interpretation_zh.pdf` 已生成
 - `sermon_interpretation_zh.qa.json` 报告为 pass
-- run report 和 run status 已写出
+- generation report 为 `completed`，run status 已写出
+- 配置发布时，本地/远端产物核验通过（`publication.status=pass`）
 
-只有部分 ASR 结果，不能算成功。
+Supervisor 路径以新读取的确定性 `recommendedAction.action == "complete"` 为准，见 [统一完成规则](./sermon-production-supervisor-agent.zh.md#完成标准)。部分 ASR 或孤立文件不能算成功。
 
 ## 主要脚本入口
 

@@ -1,0 +1,12 @@
+{
+  "name": "sermon-saturday-quality-promptfoo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local saved-output regression checks; no model or cloud calls",
+  "dependencies": {
+    "promptfoo": "0.122.2"
+  },
+  "engines": {
+    "node": ">=22.22.0"
+  }
+}

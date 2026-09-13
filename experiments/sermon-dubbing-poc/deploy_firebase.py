@@ -11,6 +11,8 @@ import subprocess
 from poc import sha256, write_json
 
 HERE = Path(__file__).resolve().parent
+DOWNLOAD_EXTENSIONS = {"readingPdf": "pdf", "companionPdf": "pdf", "fullVideoMp3": "mp3", "fullVideoSrt": "srt"}
+DOWNLOAD_PATH = re.compile(r"/downloads/([a-f0-9]{16})-[A-Za-z0-9][A-Za-z0-9._-]*\.(pdf|mp3|srt)")
 FINGERPRINT_UI = {"fingerprint-core.mjs", "fingerprint-capture.mjs", "fingerprint-worklet.mjs", "fingerprint-worker.mjs", "fingerprint-ui.mjs"}
 
 
@@ -112,6 +114,38 @@ def bound_fingerprints(public, expected):
     return referenced
 
 
+def bound_downloads(public, expected):
+    """Only catalog-selected, content-addressed local deliverables can upload."""
+    catalog_path = public / "weekly.json"
+    catalog = json.loads(catalog_path.read_text()) if catalog_path.is_file() else {"weeks": []}
+    if not isinstance(catalog, dict) or not isinstance(catalog.get("weeks", []), list):
+        raise ValueError("Invalid catalog download bindings")
+    referenced = set()
+    for week in catalog.get("weeks", []):
+        if not isinstance(week, dict):
+            raise ValueError("Invalid catalog week")
+        downloads = week.get("downloads", {})
+        if not isinstance(downloads, dict) or set(downloads) - set(DOWNLOAD_EXTENSIONS):
+            raise ValueError("Unsupported catalog download fields")
+        for kind, url in downloads.items():
+            match = DOWNLOAD_PATH.fullmatch(url) if isinstance(url, str) else None
+            if not match or match.group(2) != DOWNLOAD_EXTENSIONS[kind]:
+                raise ValueError("Download must be a local content-addressed file of its declared format")
+            name = url[1:]
+            info = expected.get(name)
+            if not info or not re.fullmatch(r"[a-f0-9]{64}", str(info.get("sha256", ""))):
+                raise ValueError("Catalog download is not bound to release files")
+            path = public / name
+            if (match.group(1) != info["sha256"][:16] or not path.is_file() or path.is_symlink()
+                    or (public / "downloads").is_symlink()
+                    or not path.resolve().is_relative_to(public) or path.stat().st_size <= 0):
+                raise ValueError("Download hash prefix, path or content is invalid")
+            referenced.add(name)
+    if {name for name in expected if name.startswith("downloads/")} != referenced:
+        raise ValueError("Unreferenced download files may not be uploaded")
+    return referenced
+
+
 def verify_release(release):
     report = json.loads((release / "build-report.json").read_text())
     public = (release / "public").resolve()
@@ -119,13 +153,14 @@ def verify_release(release):
     actual = {str(p.relative_to(public)) for p in public.rglob("*") if p.is_file()}
     if len(expected) != len(report["files"]) or actual != set(expected):
         raise ValueError("Unexpected or missing upload files")
+    downloads = bound_downloads(public, expected)
     fingerprints = bound_fingerprints(public, expected)
     for name, info in expected.items():
         path = public / name
         if not path.resolve().is_relative_to(public) or sha256(path) != info["sha256"]:
             raise ValueError("Release file or path changed")
-        if name not in {"index.html", "style.css", "app.mjs", "timing.mjs", "catalog.mjs", "theme.js", "weekly.json"} | FINGERPRINT_UI and name not in fingerprints and not re.fullmatch(r"media/[a-f0-9]{16}-[\w.-]+\.mp3", name):
-            raise ValueError("Only UI, weekly content, hashed listening MP3s and bound fingerprint indexes may be uploaded")
+        if name not in {"index.html", "style.css", "app.mjs", "timing.mjs", "catalog.mjs", "theme.js", "weekly.json", "feedback.mjs", "feedback-client.mjs", "listening.mjs", "usage.mjs", "usage-client.mjs", "playback-memory.mjs", "engagement.json", "brand-icon.png"} | FINGERPRINT_UI and not re.fullmatch(r"media/[a-f0-9]{16}-[\w.-]+\.mp3", name) and name not in downloads | fingerprints:
+            raise ValueError("Only UI, weekly content, hashed listening MP3s and bound downloads may be uploaded")
     return report
 
 
@@ -140,7 +175,10 @@ def main():
     report = verify_release(release)
     if not re.fullmatch(r"[a-z][a-z0-9-]{4,28}[a-z0-9]", args.site) or args.site == args.project:
         raise ValueError("Use a dedicated, non-default site ID")
-    shutil.copyfile(HERE / "firebase/firebase.json", release / "firebase.json")
+    hosting_config = json.loads((HERE / "firebase/firebase.json").read_text())
+    if report.get("feedbackEnabled"):
+        hosting_config["hosting"]["rewrites"] = [{"source": "/api/**", "function": {"functionId": "sermon-feedback-api", "region": "us-west1"}}]
+    write_json(release / "firebase.json", hosting_config)
     write_json(release / ".firebaserc", {"projects": {"default": args.project}, "targets": {args.project: {"hosting": {"sermonDubbing": [args.site]}}}})
     receipt = {"projectId": args.project, "siteId": args.site, "url": f"https://{args.site}.web.app", "files": len(report["files"]), "bytes": report["totalBytes"],
         "buildReportSha256": sha256(release / "build-report.json"), "only": "hosting:sermonDubbing", "status": "validated_not_deployed"}

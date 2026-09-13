@@ -10,7 +10,7 @@ from pathlib import Path
 import shutil
 
 from run_qwen_training_smoke import sha256
-from render_weekly_audio import write
+from render_weekly_audio import render_identity, write
 
 
 def main():
@@ -23,7 +23,13 @@ def main():
     args = p.parse_args()
     job = json.loads(args.job.read_text())
     identity = json.loads((args.out / "identity.json").read_text())
-    if identity["jobSha256"] != sha256(args.job) or identity["checkpointSha256"] != sha256(args.checkpoint / "model.safetensors") or not 0 <= args.unit < len(job["units"]):
+    batch_size = identity.get("batchSize") if isinstance(identity, dict) else None
+    if type(batch_size) is not int or batch_size not in (1, 2, 4):
+        raise ValueError("Repair requires the original supported renderer batch size")
+    checkpoint_hash = sha256(args.checkpoint / "model.safetensors")
+    if identity != render_identity(args.job, checkpoint_hash, batch_size):
+        raise ValueError("Repair render identity differs from the current job/checkpoint/renderer/settings")
+    if checkpoint_hash != job["voice"]["checkpointSha256"] or not 0 <= args.unit < len(job["units"]):
         raise ValueError("Wrong repair job/checkpoint/unit")
     raw = args.out / f"unit-{args.unit:04d}.wav"
     if raw.with_suffix(".json").exists():

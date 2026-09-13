@@ -4,8 +4,10 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -88,6 +90,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--youtube-cookies", type=Path)
     parser.add_argument("--youtube-api-key-secret")
     parser.add_argument("--allow-non-post-live", action="store_true")
+    parser.add_argument("--resume-failed-timeline", metavar="REPORT_SHA256", help="Retry only a source-bound archive_audio_integrity_failed report with this canonical JSON hash; preserve failure evidence first.")
     parser.set_defaults(persist_run_status=True)
     return parser.parse_args()
 
@@ -166,9 +169,30 @@ def _run_job(
     run_root = args.work_root / sunday / slug
     run_status_path = run_root / "run-status.json"
     run_status_uri = f"gs://{args.gcs_bucket}/{prefix}/run-status.json"
+    marker_uri = f"gs://{args.gcs_bucket}/{prefix}/timeline/job-report.json"
+    local_previous = read_local_report(Path(args.out))
+    if (local_previous and local_previous.get("status") in {"failed", "error", "requires_operator_review", "already_requires_operator_review"}
+            and not timeline_source_matches(local_previous, sunday=sunday, live_url=live_url)):
+        raise RuntimeError("Existing --out evidence belongs to another or unverified source/Sunday; preserve it and choose a source-scoped --out path.")
+    existing = local_previous
+    resume_digest = getattr(args, "resume_failed_timeline", None)
+    if resume_digest:
+        existing = (marker_reader or read_optional_gcs_json)(marker_uri) or local_previous
+        if (not resumable_archive_failure(existing, sunday=sunday, live_url=live_url)
+                or run_post_live_subtitle_generation.stable_payload_hash(existing) != resume_digest):
+            raise RuntimeError("Timeline resume requires the unchanged source-bound archive-integrity failure report; unknown failures require inspection.")
+        archive = archive_timeline_failure(
+            existing, run_root=run_root, marker_uri=marker_uri,
+            run_status_path=run_status_path, run_status_uri=run_status_uri,
+            marker_writer=marker_writer, status_reader=marker_reader or read_optional_gcs_json,
+            sunday=sunday, live_url=live_url,
+        )
+        base["resumedFailure"] = archive
+    elif existing and existing.get("status") in {"failed", "error"}:
+        # Ordinary invocations must never overwrite an unreviewed failure report.
+        return finish(existing)
     run_status = load_local_status(run_status_path, sunday, live_url)
     run_status = post_live_run_status.update_stage(run_status, sunday, "source_saved", "complete", source_url=live_url)
-    persist_status(run_status, run_status_path, run_status_uri, args, marker_writer)
 
     cookies_path = resolve_youtube_cookies(
         args.youtube_cookies_secret,
@@ -186,6 +210,12 @@ def _run_job(
                 yt_dlp=args.yt_dlp,
                 cookies_path=cookies_path,
             )
+    if not resume_digest:
+        existing = (marker_reader or read_optional_gcs_json)(marker_uri) or local_previous
+        if existing and existing.get("status") in {"failed", "error"}:
+            if not timeline_source_matches(existing, sunday=sunday, live_url=live_url):
+                raise RuntimeError("Stored timeline failure belongs to another or unverified source/Sunday; preserve it and inspect the artifact location.")
+            return finish(existing)
     if not (run_post_live_subtitle_generation.is_post_live_ready(metadata) or args.allow_non_post_live):
         run_status = post_live_run_status.update_stage(
             run_status, sunday, "archive_ready", "blocked", reason="livestream_not_finished"
@@ -201,8 +231,6 @@ def _run_job(
 
     run_status = post_live_run_status.update_stage(run_status, sunday, "archive_ready", "complete")
     persist_status(run_status, run_status_path, run_status_uri, args, marker_writer)
-    marker_uri = f"gs://{args.gcs_bucket}/{prefix}/timeline/job-report.json"
-    existing = (marker_reader or read_optional_gcs_json)(marker_uri)
     if existing and existing.get("status") == "requires_operator_review":
         notification = existing.get("notification") or {}
         if notification.get("status") != "sent" and args.discord_bot_token_secret and args.discord_channel_id:
@@ -213,21 +241,25 @@ def _run_job(
 
     handoff_uri = f"gs://{args.gcs_bucket}/{prefix}/download/local-download-manifest.json"
     handoff = (handoff_reader or read_optional_gcs_json)(handoff_uri)
-    handoff_audio = handoff.get("audio") if isinstance(handoff, dict) and handoff.get("status") == "complete" else None
-    handoff_audio_uri = handoff_audio.get("gcsUri") if isinstance(handoff_audio, dict) else None
+    handoff_digest = None
     run_status = post_live_run_status.update_stage(run_status, sunday, "downloaded", "running")
     persist_status(run_status, run_status_path, run_status_uri, args, marker_writer)
-    if isinstance(handoff_audio_uri, str) and handoff_audio_uri.startswith("gs://"):
-        suffix = Path(handoff_audio_uri).suffix or ".m4a"
-        with stage("timeline.download_handoff", billing="local"):
-            audio_path = gcs_downloader(handoff_audio_uri, run_root / "download" / f"source_audio{suffix}")
-        audio_uri = handoff_audio_uri
-        download_source = "local-gcs-handoff"
-    else:
-        audio_template = run_root / "download" / "source_audio.%(ext)s"
-        actual_runner = runner or __import__("subprocess").run
-        download_started = time.monotonic()
-        try:
+    download_started = time.monotonic()
+    try:
+        expected_duration = run_post_live_subtitle_generation.archive_expected_duration(metadata)
+        if isinstance(handoff, dict) and handoff.get("status") == "complete":
+            with stage("timeline.download_handoff", billing="local"):
+                audio_path = materialize_handoff_audio(
+                    handoff, handoff_uri=handoff_uri, live_url=live_url, sunday=sunday,
+                    slug=slug, run_root=run_root, expected_duration=expected_duration,
+                    gcs_downloader=gcs_downloader,
+                )
+            audio_uri = handoff["audio"]["gcsUri"]
+            handoff_digest = run_post_live_subtitle_generation.stable_payload_hash(handoff)
+            download_source = "local-gcs-handoff"
+        else:
+            audio_template = run_root / "download" / "source_audio.%(ext)s"
+            actual_runner = runner or __import__("subprocess").run
             with stage("timeline.download_archive", billing="local"):
                 audio_path = run_post_live_subtitle_generation.download_archive_audio(
                     live_url,
@@ -236,40 +268,64 @@ def _run_job(
                     args.yt_dlp,
                     actual_runner,
                     cookies_path=cookies_path,
+                    expected_duration_seconds=expected_duration,
                 )
-        except Exception as exc:
-            run_status = post_live_run_status.update_stage(
-                run_status,
-                sunday,
-                "downloaded",
-                "blocked",
-                reason="youtube_download_authorization_required",
-                duration_seconds=time.monotonic() - download_started,
-            )
-            persist_status(run_status, run_status_path, run_status_uri, args, marker_writer)
-            blocked_report = {
-                **base,
-                "status": "waiting_for_download_access",
-                "reason": "youtube_metadata_ready_but_archive_download_failed",
-                "metadata": run_post_live_subtitle_generation.safe_metadata(metadata),
-                "metadataDiagnostics": metadata_diagnostics,
-                "localHandoffGcsUri": handoff_uri,
-                "localHandoffReady": False,
-                "downloadDiagnostics": {
-                    "downloader": "yt-dlp",
-                    "cookiesConfigured": bool(cookies_path),
-                    "errorClass": exc.__class__.__name__,
-                },
-                "nextAction": "Run run_local_post_live_download.py or configure --youtube-cookies-secret.",
-                "runStatusGcsUri": run_status_uri,
-            }
-            blocked_report["notification"] = (notifier or send_discord_notification)(args, blocked_report)
-            marker_writer(marker_uri, json.dumps(blocked_report, ensure_ascii=False, indent=2, sort_keys=True))
-            return finish(blocked_report)
-        audio_uri = f"gs://{args.gcs_bucket}/{prefix}/download/{audio_path.name}"
-        uploader(audio_path, audio_uri)
-        download_source = "cloud-youtube-direct"
+            audio_uri = f"gs://{args.gcs_bucket}/{prefix}/download/{audio_path.name}"
+            download_source = "cloud-youtube-direct"
+    except run_post_live_subtitle_generation.ArchiveAudioValidationError as exc:
+        run_status = post_live_run_status.update_stage(
+            run_status, sunday, "downloaded", "failed", reason=str(exc),
+            duration_seconds=time.monotonic() - download_started,
+        )
+        run_status = post_live_run_status.mark_terminal(
+            run_status, sunday, "failed", stage="downloaded", reason=str(exc),
+        )
+        persist_status(run_status, run_status_path, run_status_uri, args, marker_writer)
+        failed_report = {
+            **base, "status": "failed", "reason": "archive_audio_integrity_failed",
+            "sourceUrl": live_url, "slug": slug,
+            "metadata": run_post_live_subtitle_generation.safe_metadata(metadata),
+            "metadataDiagnostics": metadata_diagnostics,
+            "downloadDiagnostics": {"errorClass": exc.__class__.__name__, "reason": str(exc)},
+            "nextAction": run_post_live_subtitle_generation.ARCHIVE_RECOVERY,
+            "runStatusGcsUri": run_status_uri,
+        }
+        marker_writer(marker_uri, json.dumps(failed_report, ensure_ascii=False, indent=2, sort_keys=True))
+        return finish(failed_report)
+    except Exception as exc:
+        run_status = post_live_run_status.update_stage(
+            run_status,
+            sunday,
+            "downloaded",
+            "blocked",
+            reason="youtube_download_authorization_required",
+            duration_seconds=time.monotonic() - download_started,
+        )
+        persist_status(run_status, run_status_path, run_status_uri, args, marker_writer)
+        blocked_report = {
+            **base,
+            "status": "waiting_for_download_access",
+            "reason": "youtube_metadata_ready_but_archive_download_failed",
+            "metadata": run_post_live_subtitle_generation.safe_metadata(metadata),
+            "metadataDiagnostics": metadata_diagnostics,
+            "localHandoffGcsUri": handoff_uri,
+            "localHandoffReady": False,
+            "downloadDiagnostics": {
+                "downloader": "yt-dlp",
+                "cookiesConfigured": bool(cookies_path),
+                "errorClass": exc.__class__.__name__,
+            },
+            "nextAction": "Run run_local_post_live_download.py or configure --youtube-cookies-secret.",
+            "runStatusGcsUri": run_status_uri,
+        }
+        blocked_report["notification"] = (notifier or send_discord_notification)(args, blocked_report)
+        marker_writer(marker_uri, json.dumps(blocked_report, ensure_ascii=False, indent=2, sort_keys=True))
+        return finish(blocked_report)
 
+    if download_source == "cloud-youtube-direct":
+        uploader(audio_path, audio_uri)
+    audio_hash = archive_file_sha256(audio_path)
+    audio_size = audio_path.stat().st_size
     run_status = post_live_run_status.update_stage(
         run_status,
         sunday,
@@ -327,9 +383,12 @@ def _run_job(
         "slug": slug,
         "sourceUrl": live_url,
         "downloadedAudio": str(audio_path),
+        "audioSha256": audio_hash,
+        "audioSizeBytes": audio_size,
         "audioGcsUri": audio_uri,
         "downloadSource": download_source,
         "localHandoffGcsUri": handoff_uri,
+        "handoffManifestSha256": handoff_digest,
         "timelineGcsUri": timeline_uri,
         "runStatusGcsUri": run_status_uri,
         "timelineStageArtifactGcsUris": stage_artifact_uris,
@@ -352,6 +411,147 @@ def read_optional_gcs_json(uri: str) -> dict[str, Any] | None:
         if exc.__class__.__name__ in {"NotFound", "NoSuchKey"} or "404" in str(exc):
             return None
         raise
+
+
+def read_local_report(path: Path) -> dict[str, Any] | None:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return None
+    if not isinstance(payload, dict):
+        raise RuntimeError("Persisted timeline report must be a JSON object.")
+    return payload
+
+
+def resumable_archive_failure(report: dict[str, Any] | None, *, sunday: str, live_url: str) -> bool:
+    if (not isinstance(report, dict) or report.get("status") not in {"failed", "error"}
+            or report.get("reason") != "archive_audio_integrity_failed"):
+        return False
+    return timeline_source_matches(report, sunday=sunday, live_url=live_url)
+
+
+def timeline_source_matches(report: dict[str, Any], *, sunday: str, live_url: str) -> bool:
+    if report.get("sunday") != sunday:
+        return False
+    expected_id = live_source_monitor.youtube_video_id_from_url(live_url)
+    if not expected_id:
+        return False
+    if report.get("slug") is not None and report["slug"] != f"sermon_{expected_id}":
+        return False
+    if report.get("sourceUrl"):
+        return live_source_monitor.youtube_video_id_from_url(str(report["sourceUrl"])) == expected_id
+    # Earlier integrity failures retained the URL summary rather than the raw URL.
+    return (report.get("liveSource") or {}).get("urlHash") == url_summary(live_url)["urlHash"]
+
+
+def preserve_json(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    text = json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True)
+    try:
+        with path.open("x", encoding="utf-8") as stream:
+            stream.write(text)
+    except FileExistsError:
+        if json.loads(path.read_text(encoding="utf-8")) != payload:
+            raise RuntimeError("Preserved timeline evidence differs; existing file was not overwritten.")
+
+
+def archive_timeline_failure(
+    report: dict[str, Any], *, run_root: Path, marker_uri: str,
+    run_status_path: Path, run_status_uri: str, marker_writer: Callable[[str, str], None],
+    status_reader: Callable[[str], dict[str, Any] | None], sunday: str, live_url: str,
+) -> dict[str, Any]:
+    digest = run_post_live_subtitle_generation.stable_payload_hash(report)
+    folder = run_root / "timeline" / "failed-attempts" / digest
+    local = folder / "job-report.json"
+    remote_root = marker_uri.rsplit("/", 1)[0] + f"/failed-attempts/{digest}"
+    preserve_json(local, report)
+    marker_writer(remote_root + "/job-report.json", local.read_text(encoding="utf-8"))
+    old_statuses = [read_local_report(run_status_path), status_reader(run_status_uri)]
+    status_archives = []
+    for old_status in old_statuses:
+        if old_status is None:
+            continue
+        if not timeline_source_matches(old_status, sunday=sunday, live_url=live_url):
+            raise RuntimeError("Previous run-status is not bound to this source/Sunday; preserve it and inspect before timeline resume.")
+        status_digest = run_post_live_subtitle_generation.stable_payload_hash(old_status)
+        status_path = folder / f"run-status-{status_digest}.json"
+        preserve_json(status_path, old_status)
+        marker_writer(remote_root + "/" + status_path.name, status_path.read_text(encoding="utf-8"))
+        status_archives.append({"sha256": status_digest, "local": str(status_path), "gcs": remote_root + "/" + status_path.name})
+    return {"reportSha256": digest, "local": str(local), "gcs": remote_root + "/job-report.json", "runStatusArchives": status_archives}
+
+
+def validate_handoff_manifest(
+    handoff: dict[str, Any], *, handoff_uri: str, live_url: str, sunday: str, slug: str,
+) -> dict[str, Any]:
+    expected_id = live_source_monitor.youtube_video_id_from_url(live_url)
+    source_id = live_source_monitor.youtube_video_id_from_url(str(handoff.get("sourceUrl") or ""))
+    if (handoff.get("schemaVersion") != 1 or handoff.get("status") != "complete"
+            or handoff.get("handoffKind") != "local-download-to-gcs"
+            or handoff.get("sunday") != sunday or handoff.get("slug") != slug
+            or not expected_id or source_id != expected_id):
+        raise run_post_live_subtitle_generation.ArchiveAudioValidationError(
+            "GCS handoff manifest does not match this source, Sunday and slug; existing media preserved. "
+            "Supply the complete source-bound local-download-manifest.json before retrying."
+        )
+    audio = handoff.get("audio")
+    if not isinstance(audio, dict):
+        audio = {}
+    name, size, digest = audio.get("fileName"), audio.get("sizeBytes"), audio.get("sha256")
+    if (not isinstance(name, str) or Path(name).name != name or not name.startswith("source_audio.")
+            or Path(name).suffix.lower() not in run_post_live_subtitle_generation.ARCHIVE_AUDIO_SUFFIXES
+            or any(s.lower().startswith((".part", ".ytdl")) for s in Path(name).suffixes)
+            or not isinstance(size, int) or isinstance(size, bool) or size <= 0
+            or not isinstance(digest, str) or re.fullmatch(r"[0-9a-f]{64}", digest) is None
+            or audio.get("gcsUri") != handoff_uri.rsplit("/", 1)[0] + "/" + str(name)):
+        raise run_post_live_subtitle_generation.ArchiveAudioValidationError(
+            "GCS handoff audio requires a bound media filename, GCS URI, positive sizeBytes and SHA-256; existing media preserved."
+        )
+    return audio
+
+
+def handoff_audio_matches(path: Path, audio: dict[str, Any]) -> bool:
+    if not path.is_file() or path.stat().st_size != audio["sizeBytes"]:
+        return False
+    return archive_file_sha256(path) == audio["sha256"]
+
+
+def archive_file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def materialize_handoff_audio(
+    handoff: dict[str, Any], *, handoff_uri: str, live_url: str, sunday: str,
+    slug: str, run_root: Path, expected_duration: float,
+    gcs_downloader: Callable[[str, str | Path], Path],
+) -> Path:
+    audio = validate_handoff_manifest(handoff, handoff_uri=handoff_uri, live_url=live_url, sunday=sunday, slug=slug)
+    manifest_digest = run_post_live_subtitle_generation.stable_payload_hash(handoff)
+    isolated = run_root / "download" / "handoffs" / manifest_digest
+    preserve_json(isolated / "local-download-manifest.json", handoff)
+    destination = run_root / "download" / audio["fileName"]
+    if destination.exists() and not handoff_audio_matches(destination, audio):
+        destination = isolated / audio["fileName"]
+        attempt = 1
+        while destination.exists() and not handoff_audio_matches(destination, audio):
+            destination = isolated / f"attempt-{attempt:03d}" / audio["fileName"]
+            attempt += 1
+    if not destination.exists():
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        downloaded = Path(gcs_downloader(audio["gcsUri"], destination))
+        if downloaded.resolve() != destination.resolve():
+            raise run_post_live_subtitle_generation.ArchiveAudioValidationError("GCS handoff downloader returned an unexpected destination; files preserved.")
+    if not handoff_audio_matches(destination, audio):
+        raise run_post_live_subtitle_generation.ArchiveAudioValidationError(
+            "GCS handoff audio SHA-256/size differs from its manifest; downloaded and existing files preserved. "
+            "Restore the exact manifest-bound GCS object before retrying."
+        )
+    run_post_live_subtitle_generation.validate_archive_audio(destination, expected_duration_seconds=expected_duration)
+    return destination
 
 
 def resolve_youtube_cookies(
@@ -438,11 +638,32 @@ def youtube_metadata_with_data_api(
             api_key = access_secret(api_key_secret)
             metadata = youtube_data_api.video_metadata(video_id, api_key=api_key)
             if metadata:
-                return metadata, {
+                diagnostics = {
                     "selectedProvider": "youtube-data-api-v3",
                     "fallbackUsed": False,
                     "videoFound": True,
                 }
+                try:
+                    run_post_live_subtitle_generation.archive_expected_duration(metadata)
+                except run_post_live_subtitle_generation.ArchiveAudioValidationError:
+                    diagnostics["fallbackUsed"] = True
+                    # Metadata only; public access must not require an unrelated cookie grant.
+                    try:
+                        public_metadata = youtube_metadata(live_url, yt_dlp=yt_dlp, cookies_path=None)
+                    except Exception as exc:
+                        public_metadata = None
+                        diagnostics["durationFallbackErrorClass"] = exc.__class__.__name__
+                    try:
+                        duration = run_post_live_subtitle_generation.archive_expected_duration(public_metadata)
+                    except run_post_live_subtitle_generation.ArchiveAudioValidationError:
+                        duration = None
+                    if (duration is not None and isinstance(public_metadata, dict)
+                            and public_metadata.get("id") == video_id):
+                        metadata = {**metadata, "duration": duration}
+                        diagnostics["durationProvider"] = "public-yt-dlp"
+                    else:
+                        diagnostics["durationFallbackError"] = "duration_unavailable_or_source_mismatch"
+                return metadata, diagnostics
             data_api_error = "video_not_found_or_not_public"
         except Exception as exc:
             data_api_error = f"{exc.__class__.__name__}: {str(exc)[:300]}"

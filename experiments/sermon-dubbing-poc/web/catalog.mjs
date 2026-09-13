@@ -1,3 +1,8 @@
+// Publication presentation is independent of human listening/content review.
+export function isFormalPlayback(week) {
+  return week?.releaseLabel === "正式播放版";
+}
+
 const blockKey = value => typeof value === 'string' ? value : Number.isSafeInteger(value) && value >= 0 ? String(value) : null;
 const validBlockKey = value => typeof value === 'string' && value.length > 0 && value.length <= 128 && value.trim() === value && !/[\u0000-\u001f\u007f]/.test(value);
 
@@ -69,7 +74,48 @@ export function validateCatalog(catalog) {
 }
 
 export function chooseWeek(catalog, id) {
-  return catalog.weeks.find(w => w.id === id) || catalog.weeks.find(w => w.id === catalog.defaultWeekId);
+  return catalog.weeks.find(w => w.id === id)
+    || catalog.weeks.find(w => w.date === id && w.sourceRoute === 'same_video')
+    || catalog.weeks.find(w => w.date === id)
+    || catalog.weeks.find(w => w.id === catalog.defaultWeekId);
+}
+
+// Navigation uses the source page ID. Feedback, usage and playback bookmarks
+// retain their date contract and distinguish versions by the exported track ID.
+export function engagementWeek(week) {
+  return week ? { ...week, id: week.date || week.id } : null;
+}
+
+export function downloadFilename(week, track) {
+  // Use the sermon week, not the download date; keep names portable across OSes.
+  const clean = value => String(value).normalize("NFC")
+    .replace(/[<>:"/\\|?*\u0000-\u001f\u007f]/g, " ")
+    .replace(/\s+/g, " ").trim().replace(/[. ]+$/g, "");
+  const speaker = week.speaker.split(" · ")[0];
+  const parts = [week.date, "证道中文转译", week.title, speaker];
+  const sourceLabels = { live_archive: '主日聚会版', same_video: 'YouTube 版', archive_caption: 'YouTube 版' };
+  const sourceLabel = week.sourceLabel?.trim() || sourceLabels[week.sourceRoute];
+  if (sourceLabel && !week.title.includes(sourceLabel)) parts.push(sourceLabel);
+  if (isFormalPlayback(week)) {
+    if (!parts.some(part => String(part).includes("正式播放版"))) parts.push("正式播放版");
+  } else if (week.humanContentReview === "approved") {
+    // Content review is independent of video synchronization.
+  } else if (track.scope === "full_candidate") {
+    parts.push(track.subtitleTiming === "source_video_aligned_candidate" ? "同步试播" : "试听稿");
+  } else if (track.scope !== "full_reviewed") {
+    parts.push("样片", track.label);
+  }
+  return `${parts.map(clean).filter(Boolean).join("_")}.mp3`;
+}
+
+
+export function weekOptionLabel(week) {
+  const date = String(week.date || week.id || '').replaceAll('-', '.');
+  const title = typeof week.title === 'string' ? week.title.trim() : '';
+  const route = typeof week.sourceLabel === 'string' ? week.sourceLabel.trim() : '';
+  const status = isFormalPlayback(week) ? '正式播放版' : week.humanContentReview === 'approved' ? '整篇中文' : week.audioStatus === 'full_candidate' ? '整篇待审' : week.tracks?.length ? '可试听' : '待配音';
+  const displayStatus = isFormalPlayback(week) && [title, route].some(text => text.includes(status)) ? '' : status;
+  return [date, title, route && !title.includes(route) ? route : '', displayStatus].filter(Boolean).join(' · ');
 }
 
 export function parseTimecode(value) {

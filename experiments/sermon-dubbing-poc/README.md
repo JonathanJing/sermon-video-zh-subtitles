@@ -4,13 +4,27 @@ A deployed weekly Chinese listening app, with local MP3 generation and isolated 
 
 The App starts in dark mode for dim venues. The header switches between dark and light and remembers the explicit choice on this browser. Warm gray text and muted jade controls cover every tab, the companion dialog and native audio controls; theme changes preserve playback. The small external `theme.js` applies the saved palette before CSS paints, within the existing Hosting content-security policy. Palette values and measured contrast are documented in [the display note](./DISPLAY_THEME.zh.md).
 
-The user confirmed authorization for voice training and dubbing and accepted both Eric trained samples. Five additional speakers now have independent three-sermon training checkpoints and Chinese auditions: Jared Kirkwood, Christine Caine, Doug Fields, Kenton Beshore and Steve Bang Lee. Their 223 train-only candidate clips total 1,803 seconds. Short original-English references are available beside the Chinese samples; other speakers' human listening acceptance remains pending.
+The user confirmed authorization for voice training and dubbing and accepted both Eric trained samples. Five additional speakers now have independent three-sermon training checkpoints and Chinese auditions: Jared Kirkwood, Christine Caine, Doug Fields, Kenton Beshore and Steve Bang Lee. Their 223 train-only candidate clips total 1,803 seconds. Short original-English references are available beside the Chinese samples. On 2026-09-05, the user also confirmed human listening acceptance for all five current voice auditions; the [acceptance receipt](./reviews/speaker-voice-acceptance-2026-09-05.json) binds each speaker to its checkpoint and audio hashes.
 
 The [system design and model choices](../../docs/sermon-dubbing-system-design.zh.md), [Saturday audio runbook](./SATURDAY_AUDIO_RUNBOOK.zh.md), and [SVG workflow](../../docs/diagrams/saturday-chinese-voice-workflow.svg) describe the featured weekly path. The latest [Astra revision and synchronized-candidate report](../../docs/sermon-dubbing-astra-review-2026-09-05.zh.md) supersedes the earlier 122-unit timing worksheet: 55 blocks reviewed, 18 spoken passages revised, 118 final speech units, and a 1,770-second synchronized candidate. All block budgets pass, including a separately reviewed 0.80-second lead for the last invitation. The original English anchor remains unchanged. The app labels this **同步试播 · 待现场验收**; three name/pronunciation questions and two minor spoken/ASR variants remain for listening.
 
 Two source routes are separate: the exact Sunday sermon-only video is the future primary input, while the livestream archive continues as a fallback with its existing human window approval. The bridge is implemented; its scheduled-task update and the same-video ingestion adapter remain unconfirmed/unavailable respectively.
 
+For final-release YouTube series backfill using existing English captions and real audio, follow the [series backfill workflow](../../docs/sermon-series-backfill.zh.md). It uses a distinct archive caption contract and exports review candidates.
+
 ## Run
+
+MP3 downloads use `YYYY-MM-DD_证道中文转译_中文讲题_讲员.mp3`, with the sermon week as the date. Synchronized candidates append `_同步试播`, natural listening candidates append `_试听稿`, and excerpts append `_样片_版本名称`. The download link shows the filename on hover; stored media URLs and verified audio hashes remain stable.
+
+The optional [feedback and anonymous listening summaries](../../docs/sermon-listening-feedback.zh.md) add thumbs up/down, timestamped issues and anonymous statistics. Build with `--feedback-enabled`, deploy its matched catalog using `deploy_feedback.py`, then deploy Hosting. Feedback is private; statistics default on with a visible opt-out; prior explicit opt-outs are preserved. MP3 delivery remains on the dedicated Hosting site.
+
+[Field listening and position recovery](../../docs/sermon-app-field-listening.zh.md) keep subtitles and primary controls together, preserve source-bound local positions, and allow seek undo. This remains manual alignment, not automatic live synchronization.
+
+[WeChat audio startup fix](../../docs/sermon-app-wechat-playback.zh.md) records the metadata/play-button deadlock, retry behavior and controlled browser verification.
+
+[Brand and visual system](../../docs/sermon-app-brand.zh.md) records the selected book monogram, shared sans-serif typography, mobile header, icon provenance and browser verification.
+
+[App usage collection and private reports](../../docs/sermon-app-usage.zh.md) add daily anonymous-browser counts, Los Angeles hourly usage and button timelines. Collection defaults on while respecting saved v2 and legacy opt-outs; daily identifiers rotate and behavior records expire after 30 days. The administrator exports local HTML/JSON with `admin.mjs usage`; reports are not published to the audience App.
 
 From the repository root:
 
@@ -19,7 +33,7 @@ python3 experiments/sermon-dubbing-poc/server.py \
   --pack artifacts/sermon-dubbing/2026-09-05-weekly-app-v5-astra-sync/public
 ```
 
-This command serves the built weekly app on loopback. The latest verified release pack is `artifacts/sermon-dubbing/2026-09-05-weekly-app-v5-astra-sync/public`; the explicit `--pack` above selects it while the legacy server default is retained. To export another release, choose a new output directory:
+This command serves the earlier static audio release on loopback; the explicit `--pack` selects it while the legacy server default is retained. The deployed release is `artifacts/sermon-dubbing/2026-09-05-weekly-app-v15-bugfix/public`, retaining v14 content and adding nonblocking feedback startup, cold-start restart, rapid playback cancellation recovery and failed-summary retries. Its 29 public files were verified over HTTPS, with desktop and mobile-size browser playback checks; its same-origin API is available through Firebase Hosting, not this static preview server. To export another release, choose a new output directory:
 
 ```bash
 .venv/bin/python experiments/sermon-dubbing-poc/build_weekly_app.py \

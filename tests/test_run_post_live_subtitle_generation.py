@@ -255,7 +255,8 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
             "420",
         )
 
-    def test_run_downloads_audio_and_invokes_pipeline(self):
+    @mock.patch.object(mod, "probe_archive_audio", return_value={"format": {"duration": "3600"}, "streams": [{"codec_type": "audio"}]})
+    def test_run_downloads_audio_and_invokes_pipeline(self, _probe):
         calls = []
 
         def fake_runner(command, check):
@@ -329,6 +330,7 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
                     "live_status": "post_live",
                     "media_type": "livestream",
                     "was_live": True,
+                    "duration": 3600,
                 },
                 runner=fake_runner,
             )
@@ -373,6 +375,9 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
             download_dir = Path(tempdir)
             (download_dir / "source_audio.m4a.part").write_text("partial", encoding="utf-8")
             (download_dir / "source_audio.m4a.ytdl").write_text("meta", encoding="utf-8")
+            (download_dir / "source_audio.info.json").write_text("{}", encoding="utf-8")
+            (download_dir / "source_audio.asr.json").write_text("{}", encoding="utf-8")
+            (download_dir / "source_audio.m4a.part-Frag3").write_bytes(b"partial")
             expected = download_dir / "source_audio.m4a"
             expected.write_text("audio", encoding="utf-8")
 

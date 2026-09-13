@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch
 
 from continue_saturday_dubbing import CANDIDATE_FILES, INPUTS, SCHEMA, continue_saturday, inspect_same_video, source_lock
 from poc import sha256, write_json
-from weekly_dubbing import prepare
+from weekly_dubbing import prepare, resolve_approved_timeline
 
 
 class SaturdayBridgeTests(unittest.TestCase):
@@ -96,6 +96,84 @@ class SaturdayBridgeTests(unittest.TestCase):
             self.assertEqual(report["selectedRoute"], "live_archive")
             self.assertEqual(self.snapshot(root), before)
             self.assertFalse(report["humanApprovalWritten"])
+
+    def test_supervisor_bound_timeline_is_selected_prepared_and_reused_without_reapproval(self):
+        from scripts.sermon_production_supervisor import json_digest
+        for raw_report in ("different", "missing", "malformed"):
+            with self.subTest(raw_report=raw_report), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                cfg, sup, _, run = self.fixture(root)
+                timeline = {"status": "requires_operator_review", "stage": "timeline_probed", "sunday": self.week,
+                    "downloadedAudio": "fixture complete archive", "suggestedWindow": {"start": 10, "end": 20}}
+                bound = run / "timeline/agent-job-report.json"
+                # Noncanonical whitespace ensures selection uses the Supervisor
+                # JSON digest, not the raw file SHA-256.
+                bound.write_text(json.dumps(timeline, ensure_ascii=False, indent=4) + "\n")
+                approval_path = run / "operator-window-approval.json"
+                approval = json.loads(approval_path.read_text())
+                approval["timelineReportSha256"] = json_digest(timeline)
+                write_json(approval_path, approval)
+                raw = run / "timeline/report.json"
+                if raw_report == "missing":
+                    raw.unlink()
+                elif raw_report == "malformed":
+                    raw.write_text("{interrupted unrelated raw timeline")
+                before = self.snapshot(run)
+                self.assertEqual(self.inspect(cfg, sup)["status"], "ready_to_prepare")
+                def render(command, **kwargs):
+                    self.write_candidate(Path(command[command.index("--work") + 1]))
+                    return SimpleNamespace(returncode=0)
+                runner = Mock(side_effect=render)
+                validator = lambda work: {"jobSha256": sha256(work / "job.json")}
+                report = self.inspect(cfg, sup, execute=True, preparer=self.preparer, runner=runner, validator=validator)
+                self.assertEqual(report["status"], "waiting_conversation_review")
+                work = Path(report["routes"]["live_archive"]["work"])
+                job = json.loads((work / "job.json").read_text())
+                self.assertEqual(job["inputs"]["timeline"], {"path": str(bound.resolve()), "sha256": sha256(bound)})
+                self.assertEqual(job["inputs"]["windowApproval"]["sha256"], sha256(approval_path))
+                again = self.inspect(cfg, sup, execute=True, preparer=Mock(side_effect=AssertionError("must reuse")), runner=runner, validator=validator)
+                self.assertEqual(again["status"], "waiting_conversation_review")
+                self.assertEqual(again["routes"]["live_archive"]["work"], str(work))
+                self.assertEqual(runner.call_count, 1)
+                self.assertEqual(self.snapshot(run), before)
+
+    def test_legacy_timeline_job_keeps_its_cache_when_identical_agent_report_appears(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cfg, sup, _, run = self.fixture(root)
+            initial = self.inspect(cfg, sup, execute=True, preparer=self.preparer, runner=Mock(return_value=SimpleNamespace(returncode=1)))
+            work = Path(initial["routes"]["live_archive"]["work"])
+            job_hash = sha256(work / "job.json")
+            bound = run / "timeline/report.json"
+            (run / "timeline/agent-job-report.json").write_bytes(bound.read_bytes())
+            before = self.snapshot(root)
+            resumed = self.inspect(cfg, sup)
+            self.assertEqual(resumed["status"], "ready_to_resume")
+            self.assertEqual(resumed["routes"]["live_archive"]["work"], str(work))
+            self.assertEqual(json.loads((work / "job.json").read_text())["inputs"]["timeline"]["path"], str(bound.resolve()))
+            self.assertEqual(sha256(work / "job.json"), job_hash)
+            self.assertEqual(self.snapshot(root), before)
+
+    def test_matching_report_digest_does_not_waive_source_week_or_human_approval(self):
+        changes = [{"sunday": "2026-09-13"}, {"sourceUrlHash": "0" * 64}, {"humanApproval": False},
+            {"timelineReportSha256": "f" * 64}]
+        for change in changes:
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                cfg, sup, _, run = self.fixture(root)
+                approval_path = run / "operator-window-approval.json"
+                approval = json.loads(approval_path.read_text())
+                approval.update(change)
+                write_json(approval_path, approval)
+                before = self.snapshot(root)
+                runner = Mock(side_effect=AssertionError("invalid approval must not start audio"))
+                report = self.inspect(cfg, sup, execute=True, runner=runner)
+                self.assertEqual(report["status"], "waiting_boundary")
+                with self.assertRaises(ValueError):
+                    resolve_approved_timeline(run, approval, week=self.week,
+                        source_url=f"https://www.youtube.com/watch?v={self.source}")
+                runner.assert_not_called()
+                self.assertEqual(self.snapshot(root), before)
 
     def test_configured_python_symlinks_preserve_both_virtual_environment_paths(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -287,10 +365,11 @@ class SaturdayBridgeTests(unittest.TestCase):
             media = Path(tmp) / "sermon.mp4"
             media.write_bytes(b"video fixture")
             source = {"week": self.week, "path": str(media), "sha256": sha256(media), "durationSeconds": 10,
+                "sourceId": "fixture-src", "canonicalURL": "https://example.org/sermons/fixture-src",
                 "sameVersionConfirmed": True, "sermonOnly": True, "confirmationReference": "fixture explicit source confirmation"}
             probe = lambda _: {"durationSeconds": 10, "streams": [{"codec_type": "video"}, {"codec_type": "audio"}]}
             report = inspect_same_video(self.week, {"source": source}, media_probe=probe)
-            self.assertEqual(report["status"], "waiting_same_video_adapter")
+            self.assertEqual(report["status"], "ready_for_source_intake")
             self.assertEqual(report["proposedWindow"]["startSeconds"], 0)
             for field in ["sameVersionConfirmed", "sermonOnly"]:
                 changed = {**source, field: False}

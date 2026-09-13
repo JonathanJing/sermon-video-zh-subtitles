@@ -628,6 +628,12 @@ def section(title: str, body: list[Any], styles: dict[str, ParagraphStyle]) -> l
     if not body:
         return []
     heading = Paragraph(escape(title), styles["section_heading"])
+    if isinstance(body[0], KeepTogether):
+        # A heading's keepWithNext would wrap this container again. When the
+        # nested group splits, the heading can stay behind at the page bottom.
+        # Combine the first item's actual flowables with the heading instead.
+        first_block = KeepTogether([heading, *body[0]._content])
+        return [first_block, *body[1:], Spacer(1, 10)]
     return [heading, *body, Spacer(1, 10)]
 
 

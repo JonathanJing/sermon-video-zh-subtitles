@@ -5,18 +5,22 @@ This command never approves audio, sends messages, or deploys automatically.
 The final review candidate remains bound to the existing Saturday evidence.
 """
 import argparse
+from contextlib import contextmanager
 import difflib
 import json
 import math
 from pathlib import Path
 import shlex
+import shutil
 import subprocess
 import sys
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parents[1]))
 
-from scripts.sermon_accounting import accounting_session, record_workload, stage
+from scripts.sermon_accounting import accounting_session, record_workload, stage as accounting_stage
+from scripts.sermon_execution_harness import (Execution, RemoteOutcomeUnknown, WorkAlreadyRunning,
+    atomic_json, bounded_process as process_run, utc_now, work_lock)
 from poc import sha256, write_json
 from weekly_dubbing import read, validate_frozen, assemble
 from render_weekly_audio import render_identity
@@ -287,6 +291,9 @@ def main():
     p.add_argument("--remote-checkpoint", required=True)
     p.add_argument("--host", default="achillesjing@192.168.1.152")
     p.add_argument("--mlx-python", type=Path, default=Path.home() / ".local/share/uv/tools/mlx-audio/bin/python")
+    p.add_argument("--command-timeout", type=float, default=3600, help="Maximum seconds for each local/model command")
+    p.add_argument("--transfer-timeout", type=float, default=600, help="Maximum seconds for each SSH probe or transfer")
+    p.add_argument("--execution-timeout", type=float, default=21600, help="Maximum seconds for this candidate attempt")
     args = p.parse_args()
     work = args.work.resolve()
     try:
@@ -294,17 +301,145 @@ def main():
     except OSError:
         job_hash = None  # The existing job validator supplies the actionable error below.
     with accounting_session(work / "accounting", "weekly_dubbing", metadata={"jobSha256": job_hash}):
-        with stage("job_validation", billing="local"):
-            job = stage_check("Job", "restore the frozen inputs or prepare a new job", lambda: validated_job(work))
-            record_workload("weekly_job", {"jobSha256": job_hash,
+        run(args, work)
+
+
+def run(args, work, job=None):
+    work = Path(work).resolve()
+    with work_lock(work):
+        with accounting_stage("job_validation", billing="local"):
+            current = stage_check("Job", "restore the frozen inputs or prepare a new job", lambda: validated_job(work))
+            if job is not None and job != current:
+                raise ValueError("Job changed before acquiring its execution lock")
+            job = current
+            record_workload("weekly_job", {"jobSha256": sha256(work / "job.json"),
                 "blockCount": len(job["blocks"]) if isinstance(job.get("blocks"), list) else None,
                 "unitCount": len(job["units"]) if isinstance(job.get("units"), list) else None,
                 "sourceDurationSeconds": job.get("sourceDurationSeconds")})
-        run(args, work, job)
+        with Execution(work, sha256(work / "job.json"), timeout=getattr(args, "execution_timeout", 21600)) as execution:
+            _run(args, work, job, execution)
 
 
-def run(args, work, job):
+def pending_import_path(work):
+    return Path(work) / "accounting" / "harness" / "pending-import.json"
+
+
+def validate_import_source(work, job, folder):
+    """Revalidate quarantined bytes without trusting paths from a pending pointer."""
+    work, folder = Path(work).resolve(), Path(folder)
+    root = work / "accounting" / "remote-recovery"
+    require(root.resolve() == root and folder.is_absolute() and folder.parent == root
+            and folder.resolve() == folder and folder.is_dir(), "Unsafe remote import quarantine path")
+    copied_job = folder / "job.json"
+    require(copied_job.is_file() and not copied_job.is_symlink()
+            and sha256(copied_job) == sha256(work / "job.json"), "Remote import job copy changed")
+    source = folder / "render"
+    require(source.is_dir() and not source.is_symlink() and (source / "identity.json").is_file(),
+            "Remote output has no verifiable render identity; preserve and inspect")
+    require(all(not path.is_symlink() for path in source.rglob("*")), "Unsafe remote import symlink")
+    validate_render(folder, job, complete=(source / "report.json").exists())
+    names = ["identity.json"]
+    for i in range(len(job["units"])):
+        if (source / f"unit-{i:04d}.json").exists():
+            names += [f"unit-{i:04d}.wav", f"unit-{i:04d}.json"]
+    if (source / "report.json").exists():
+        names += ["chinese.raw.wav", "report.json"]
+    for receipt in source.glob("unit-*.json"):
+        override = read(receipt).get("generationOverride", {})
+        if "failedAudioPreserved" in override:
+            relative = Path(override["failedAudioPreserved"])
+            require(not relative.is_absolute() and ".." not in relative.parts
+                    and bool(relative.parts) and relative.parts[0] == "diagnostics", "Unsafe repair diagnostic path")
+            diagnostic = source / relative
+            require(diagnostic.is_file() and sha256(diagnostic) == override.get("failedAudioSha256"),
+                    "Missing or changed repair diagnostic")
+    diagnostics = source / "diagnostics"
+    if diagnostics.exists():
+        for diagnostic in sorted(diagnostics.rglob("*")):
+            if diagnostic.is_file():
+                names.append(str(diagnostic.relative_to(source)))
+    return source, {name: sha256(source / name) for name in names}
+
+
+def validate_import_targets(work, files, *, resuming=False):
+    """Check every collision before copying any missing file."""
+    work = Path(work).resolve()
+    for name, digest in files.items():
+        target = work / "render" / name
+        temporary = target.with_suffix(target.suffix + ".recovery-tmp")
+        require(target.resolve() == target and temporary.resolve() == temporary,
+                "Unsafe local import target path")
+        require(not target.exists() or target.is_file() and sha256(target) == digest,
+                "Local and remote output differ; both preserved for inspection")
+        require(not temporary.exists() or resuming and temporary.is_file(),
+                "Unowned remote import temporary file; preserve and inspect")
+
+
+def resume_pending_import(work, job):
+    """Finish only an explicitly recorded, hash-bound interrupted local import."""
+    work = Path(work).resolve()
+    pending = pending_import_path(work)
+    if not pending.exists():
+        return False
+    require(not pending.is_symlink() and pending.resolve() == pending, "Unsafe pending import path")
+    saved = read(pending)
+    require(isinstance(saved, dict) and saved.get("schemaVersion") == "sermon-remote-import-v1"
+            and saved.get("jobSha256") == sha256(work / "job.json"), "Pending import belongs to a changed job")
+    folder_value = saved.get("quarantine")
+    require(isinstance(folder_value, str), "Missing pending import quarantine")
+    source, files = validate_import_source(work, job, Path(folder_value))
+    require(saved.get("files") == files, "Pending remote import quarantine changed after verification")
+    validate_import_targets(work, files, resuming=True)
+    for name, digest in files.items():
+        target = work / "render" / name
+        temporary = target.with_suffix(target.suffix + ".recovery-tmp")
+        if not target.exists():
+            target.parent.mkdir(parents=True, exist_ok=True)
+            # This scratch file is owned by the durable pending manifest. Its
+            # verified quarantine source survives interruption and is retained.
+            shutil.copyfile(source / name, temporary)
+            require(sha256(temporary) == digest, "Remote import source changed during copy")
+            temporary.replace(target)
+        elif temporary.exists():
+            require(sha256(temporary) == digest, "Unexpected partial temporary beside a completed import")
+            temporary.unlink()
+    validate_cached_stages(work, job)
+    pending.unlink()  # Derived pointer only; immutable quarantine remains intact.
+    return True
+
+
+def reconcile_remote(work, job, fetch):
+    """Fetch to quarantine, validate, then durably record a missing-files import."""
+    import uuid
+    work = Path(work).resolve()
+    pending = pending_import_path(work)
+    require(not pending.exists(), "Resume the existing pending import before fetching remote output")
+    root = work / "accounting" / "remote-recovery"
+    require(root.resolve() == root, "Unsafe remote import quarantine root")
+    folder = root / uuid.uuid4().hex
+    folder.mkdir(parents=True, mode=0o700)
+    shutil.copyfile(work / "job.json", folder / "job.json")
+    fetch(folder)
+    _, files = validate_import_source(work, job, folder)
+    validate_import_targets(work, files)
+    require(pending.resolve() == pending, "Unsafe pending import path")
+    atomic_json(pending, {"schemaVersion": "sermon-remote-import-v1", "jobSha256": sha256(work / "job.json"),
+                         "quarantine": str(folder), "files": files, "createdAt": utc_now()})
+    resume_pending_import(work, job)
+
+
+def _run(args, work, job, execution):
+    @contextmanager
+    def stage(name, *, billing="local", cache_hit=False):
+        with accounting_stage(name, billing=billing, cache_hit=cache_hit), execution.stage(name, cache_hit=cache_hit):
+            yield
+
+    def command(argv, *, transfer=False, **kwargs):
+        limit = getattr(args, "transfer_timeout", 600) if transfer else getattr(args, "command_timeout", 3600)
+        return process_run(argv, timeout=execution.remaining(limit), **kwargs)
+
     with stage("cache_validation", billing="local"):
+        resume_pending_import(work, job)
         validate_cached_stages(work, job)
         before = receipt_snapshot(work, job)
         record_workload("render_cache", {"expectedUnitCount": len(job["units"]),
@@ -314,46 +449,95 @@ def run(args, work, job):
     if not checkpoint.is_absolute() or not str(checkpoint).startswith(REMOTE_ROOT + "/sermon-") or ".." in checkpoint.parts:
         raise ValueError("Use a checkpoint in the isolated sermon results directory")
     remote = f'{REMOTE_ROOT}/sermon-weekly-{job["week"]}-{sha256(work / "job.json")[:12]}'
+    container = "sermon-voice-weekly-" + sha256(work / "job.json")[:12]
+    remote_state = work / "accounting" / "harness" / "remote-attempt.json"
+    remote_marker = remote + "/.harness-attempt-" + execution.attempt
     imported_render = (work / "render/report.json").exists()
-    def ssh(command):
-        subprocess.run(["ssh", "-o", "BatchMode=yes", "-o", "ServerAliveInterval=30", args.host, command], check=True)
+    ssh_options = ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=20", "-o", "ServerAliveInterval=30", "-o", "ServerAliveCountMax=2", args.host]
+    scp_options = ["scp", "-q", "-o", "BatchMode=yes", "-o", "ConnectTimeout=20", "-o", "ServerAliveInterval=30", "-o", "ServerAliveCountMax=2"]
+
+    def ssh(text, *, transfer=False, capture=False):
+        return command([*ssh_options, text], transfer=transfer, check=True, capture_output=capture, text=capture)
+
+    def ensure_remote_idle():
+        result = ssh("docker ps -a --filter " + shlex.quote("name=^/" + container + "$") + " --format '{{.State}}'", transfer=True, capture=True)
+        if result.stdout.strip():
+            raise RemoteOutcomeUnknown("The job container still exists on Spark; inspect it before starting another attempt")
+
+    def remote_model(argv, logfile):
+        atomic_json(remote_state, {"schemaVersion": 1, "jobSha256": sha256(work / "job.json"),
+            "container": container, "remoteWork": remote, "attemptId": execution.attempt,
+            "status": "outcome_unknown", "startedAt": utc_now()})
+        try:
+            ssh("touch " + shlex.quote(remote_marker) + " && " + shlex.join(argv) + " >> " + shlex.quote(remote + "/" + logfile) + " 2>&1")
+        except subprocess.TimeoutExpired as exc:
+            raise RemoteOutcomeUnknown("Remote command timed out; next run must reconcile Spark output before generation") from exc
+        except subprocess.CalledProcessError as exc:
+            if exc.returncode == 255:
+                raise RemoteOutcomeUnknown("SSH disconnected; remote model outcome must be reconciled") from exc
+            # A name conflict/transport failure must not launch a repair against a live job.
+            ensure_remote_idle()
+            raise
+        else:
+            atomic_json(remote_state, {"schemaVersion": 1, "jobSha256": sha256(work / "job.json"),
+                "attemptId": execution.attempt, "status": "command_completed", "endedAt": utc_now()})
+
     if not (work / "render/report.json").exists():
         with stage("transfer_upload", billing="local"):
-            ssh("mkdir -p " + shlex.quote(remote))
-            subprocess.run(["scp", "-q", str(work / "job.json"), str(HERE / "render_weekly_audio.py"), str(HERE / "retry_weekly_unit.py"), str(HERE / "run_qwen_training_smoke.py"), args.host + ":" + remote + "/"], check=True)
-            if (work / "render/identity.json").exists():
-                exists = subprocess.run(["ssh", "-o", "BatchMode=yes", args.host, "test -d " + shlex.quote(remote + "/render")])
-                if exists.returncode == 1:
-                    subprocess.run(["scp", "-q", "-r", str(work / "render"), args.host + ":" + remote + "/"], check=True)
-                elif exists.returncode != 0:
-                    raise ValueError("Cannot inspect the remote resume directory")
-        command = ["docker", "run", "--rm", "--name", "sermon-voice-weekly-" + sha256(work / "job.json")[:12], "--gpus", "all", "--memory", "24g", "--memory-swap", "28g", "--cpus", "6", "--shm-size", "1g", "--user", "1000:1000",
+            ensure_remote_idle()
+            if remote_state.exists():
+                saved = read(remote_state)
+                require(saved.get("jobSha256") == sha256(work / "job.json"), "Remote attempt belongs to another job; preserve and inspect")
+                if saved.get("status") in {"outcome_unknown", "command_completed"}:
+                    try:
+                        reconcile_remote(work, job, lambda folder: command([*scp_options, "-r", args.host + ":" + remote + "/render", str(folder)], transfer=True, check=True))
+                    except (ValueError, OSError, subprocess.SubprocessError) as exc:
+                        raise RemoteOutcomeUnknown("Remote output could not be safely reconciled; preserved copies require inspection") from exc
+                    atomic_json(remote_state, {**saved, "status": "output_reconciled", "reconciledAt": utc_now()})
+            if not (work / "render/report.json").exists():
+                ssh("mkdir -p " + shlex.quote(remote), transfer=True)
+                command([*scp_options, str(work / "job.json"), str(HERE / "render_weekly_audio.py"), str(HERE / "retry_weekly_unit.py"), str(HERE / "run_qwen_training_smoke.py"), args.host + ":" + remote + "/"], transfer=True, check=True)
+                if (work / "render/identity.json").exists():
+                    exists = command([*ssh_options, "test -d " + shlex.quote(remote + "/render")], transfer=True)
+                    if exists.returncode == 1:
+                        command([*scp_options, "-r", str(work / "render"), args.host + ":" + remote + "/"], transfer=True, check=True)
+                    elif exists.returncode != 0:
+                        raise ValueError("Cannot inspect the remote resume directory")
+            else:
+                imported_render = True
+    if not (work / "render/report.json").exists():
+        render_command = ["docker", "run", "--rm", "--name", container, "--gpus", "all", "--memory", "24g", "--memory-swap", "28g", "--cpus", "6", "--shm-size", "1g", "--user", "1000:1000",
             "-v", remote + ":/work", "-v", RUNTIME + "/venv:/work/venv:ro", "-v", str(checkpoint) + ":/checkpoint:ro", "-v", RUNTIME + "/model-cache:/cache", "-w", "/work", "-e", "HF_HOME=/cache", "-e", "USE_TF=0", "-e", "PYTHONUNBUFFERED=1",
             "nvcr.io/nvidia/pytorch:26.06-py3", "/work/venv/bin/python", "/work/render_weekly_audio.py", "--job", "/work/job.json", "--checkpoint", "/checkpoint", "--out", "/work/render"]
         for attempt in range(6):
             try:
                 with stage("render", billing="local"):
-                    ssh(shlex.join(command) + " >> " + shlex.quote(remote + "/runner.log") + " 2>&1")
+                    remote_model(render_command, "runner.log")
                 break
             except subprocess.CalledProcessError:
                 if attempt == 5:
                     raise
                 with stage("render_recovery", billing="local"):
-                    failure = json.loads(subprocess.check_output(["ssh", "-o", "BatchMode=yes", args.host, "cat " + shlex.quote(remote + "/render/failure.json")], text=True))
+                    identity = json.loads(ssh("test " + shlex.quote(remote + "/render/failure.json")
+                        + " -nt " + shlex.quote(remote_marker) + " && cat "
+                        + shlex.quote(remote + "/render/identity.json"), transfer=True, capture=True).stdout)
+                    require(identity == render_identity(work / "job.json", job["voice"]["checkpointSha256"]),
+                        "Repair requires current renderer identity and a failure written by this attempt")
+                    failure = json.loads(ssh("cat " + shlex.quote(remote + "/render/failure.json"), transfer=True, capture=True).stdout)
                     if failure.get("reason") != "duration_or_signal" or not isinstance(failure.get("unit"), int) or not 0 <= failure["unit"] < len(job["units"]):
                         raise ValueError("Failure needs inspection; automatic recovery is limited to an identified audio unit")
-                    index = command.index("/work/render_weekly_audio.py")
-                    repair = command[:index] + ["/work/retry_weekly_unit.py"] + command[index + 1:] + ["--unit", str(failure["unit"]), "--seed", str(142 + attempt)]
-                    ssh(shlex.join(repair) + " >> " + shlex.quote(remote + "/recovery.log") + " 2>&1")
+                    index = render_command.index("/work/render_weekly_audio.py")
+                    repair = render_command[:index] + ["/work/retry_weekly_unit.py"] + render_command[index + 1:] + ["--unit", str(failure["unit"]), "--seed", str(142 + attempt)]
+                    remote_model(repair, "recovery.log")
         with stage("transfer_download", billing="local"):
-            subprocess.run(["scp", "-q", "-r", args.host + ":" + remote + "/render", str(work)], check=True)
+            reconcile_remote(work, job, lambda folder: command([*scp_options, "-r", args.host + ":" + remote + "/render", str(folder)], transfer=True, check=True))
     with stage("render" if imported_render else "render_validation", cache_hit=imported_render, billing="local"):
         render = stage_check("Render", RENDER_RECOVERY, lambda: validate_render(work, job))
         record_render_workload(work, job, render, before, imported_render)
     cached_assembly = (work / "audio/library.json").exists()
     with stage("assemble", cache_hit=cached_assembly, billing="local"):
         if not cached_assembly:
-            assemble(work)
+            assemble(work, process_runner=command)
         track = stage_check("Natural audio", NATURAL_RECOVERY, lambda: validate_natural(work, job, render))
     stages = [("align_weekly_source.py", "source-alignment/report.json", "Source alignment", "source_alignment", ALIGNMENT_RECOVERY, lambda: validate_alignment(work, job)),
         ("screen_weekly_audio.py", "audio/asr-screening.json", "ASR screening", "local_asr", SCREENING_RECOVERY, lambda: validate_screening(work, job, render, track)),
@@ -362,7 +546,7 @@ def run(args, work, job):
         cached = (work / report).exists()
         with stage(accounting_name, cache_hit=cached, billing="local"):
             if not cached:
-                subprocess.run([str(args.mlx_python), str(HERE / script), "--work", str(work)], check=True)
+                command([str(args.mlx_python), str(HERE / script), "--work", str(work)], check=True)
             stage_check(name, recovery, check)
     with stage("candidate_validation", billing="local"):
         evidence = validate_candidate(work)
@@ -373,4 +557,8 @@ def run(args, work, job):
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except WorkAlreadyRunning:
+        print("Another process is executing this job; wait and inspect its current evidence.", file=sys.stderr)
+        sys.exit(75)
