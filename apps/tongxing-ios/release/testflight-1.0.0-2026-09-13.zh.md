@@ -16,7 +16,7 @@
 
 Xcode Cloud Default Build 17 已成功，设备 Build 与 Archive 均通过，源码为上述 `f33f219`。云端使用正式 Xcode 26.6（17F113）和 macOS 26.6.2（25G83）。现有 Bluetooth 兼容名称产生一条弃用警告，无构建错误。
 
-TestFlight 已显示 **1.0.0 (17)**，上传状态 **Complete**，上传时间 Sep 13, 2026 9:49 AM；构建状态 **Ready to Submit**。中英文 What to Test 均已保存，页面 Groups (0)、Individual Testers (0)。
+TestFlight 已显示 **1.0.0 (17)**，上传状态 **Complete**，上传时间 Sep 13, 2026 9:49 AM；分发前构建状态 **Ready to Submit**。中英文 What to Test 均已保存。之后用户明确授权分发给既有 Rooted 内部组和公开测试组；页面已显示 Groups (2)，Individual Testers (0)。
 
 - [Xcode Cloud Build 17](https://appstoreconnect.apple.com/teams/c7cdf869-f024-447a-9d12-3c2501a0d337/apps/6809255441/ci/builds/f14025f1-8663-4ae2-ae07-dfa7edf98e07/summary)
 - [TestFlight 1.0.0 (17)](https://appstoreconnect.apple.com/teams/c7cdf869-f024-447a-9d12-3c2501a0d337/apps/6809255441/testflight/ios/e3985aca-b182-49fe-b12d-2c4e01cb0d5f)
@@ -24,4 +24,13 @@ TestFlight 已显示 **1.0.0 (17)**，上传状态 **Complete**，上传时间 S
 
 ## 分发边界
 
-TestFlight 上传、测试组授权和 App Store 正式审核/发布分别记录。Rooted 内部测试组的添加操作此前被自动审批拒绝，理由是缺少该具体接收组的授权；当前未再次执行。本轮不替换此前的 App Review 提交，也不声称已公开发布或测试员可安装。
+用户于本轮明确授权既有 Rooted 内部组和公开测试组后，已完成两组分配，并提交 TestFlight Beta 审核，保留 Automatically notify testers 勾选。
+
+| 既有组 | 1.0.0 (17) 当前状态 | 可用边界 |
+| --- | --- | --- |
+| Rooted Internal | Testing | 内部测试员可测试；未声称已安装新版 |
+| Rooted External | Waiting for Review | 已提交 Beta 审核，通过后自动通知；当前尚不能作为外部新版可安装证据 |
+
+公开测试组已有邀请链接：https://testflight.apple.com/join/KF44FrKA 。没有新建组或修改链接设置；旧 0.1.0 (5) 保持 Testing。
+
+此前因缺少具体测试组授权的阻塞已解除。上述提交是 TestFlight Beta 审核，没有替换 App Store 正式审核提交或执行正式发布。
