@@ -261,6 +261,17 @@ quotationAttribution:'pass'|'fail',spokenChinese:'pass'|'fail'},
 quoteCoverage:'pass'|'fail', evidence: actual review findings, uncertainty:[], issues:[]}.
 Do not mark pass with any unresolved issue. This is machine review, not human approval.
 """
+REVIEW_DRAFT_CONCERNS = """The draft is provisional and may contain issues or uncertainty: independently
+resolve every translation concern against the English, correcting narration as needed. Do not merely
+erase a concern to obtain pass. Optional caveatReview evidence classifies specified concerns ONLY as
+unverified narration, not verified scripture or facts. Preserve those narrative meanings and their
+unverified status; never add a candidate Bible reference or CUV text. A still-unverified narrative
+background is not itself a translation defect when accurately preserved as speaker narration.
+Explain in review evidence how draft concerns were addressed, distinguishing retained narrative
+caveats from unresolved translation or quotation defects. Retained caveats stay in the original
+audit/caveatReview; return uncertainty/issues for any remaining translation or direct-quotation
+problem. Final approval requires every check to pass and no unresolved translation issue.
+"""
 
 
 def compatible_reuse(current, previous):
@@ -500,6 +511,13 @@ def reviewed_row(row, quotes, *, checks=False):
     return inject(row.get("zhTemplate"), quotes)
 
 
+def draft_row(row, quotes):
+    require(isinstance(row.get("uncertainty"), list) and isinstance(row.get("issues"), list)
+            and isinstance(row.get("evidence"), str) and row["evidence"].strip(),
+            "Malformed draft evidence or issue lists")
+    return inject(row.get("zhTemplate"), quotes)
+
+
 def narration_caveats(audit, audit_receipt, blocks, locked, out, identity, *, offline=False, manifest=None):
     """Retain audit caveats; only a separate evidenced classification may unblock narration."""
     concerns = []
@@ -585,10 +603,21 @@ def compute(out, manifest, *, offline=False):
         translated, receipt = cached_call(out, "translate-" + str(begin), TRANSLATE,
             {"sourceContext": context, "targets": target}, identity, offline=offline, manifest=manifest)
         model_evidence.append(receipt)
-        for row, q in zip(checked_rows(translated, batch), target):
-            reviewed_row(row, q["quotes"])
-        reviewed, receipt = cached_call(out, "review-" + str(begin), REVIEW,
-            {"sourceContext": context, "targets": target, "draft": translated}, identity, offline=offline, manifest=manifest)
+        draft_rows = checked_rows(translated, batch, allow_issues=True)
+        for row, q in zip(draft_rows, target):
+            draft_row(row, q["quotes"])
+        review_input = {"sourceContext": context, "targets": target, "draft": translated}
+        review_instruction = REVIEW
+        batch_ids = {b["id"] for b in batch}
+        batch_caveats = ([c for c in caveat_review["review"]["caveats"] if c["blockId"] in batch_ids]
+                         if caveat_review else [])
+        if batch_caveats:
+            review_input["caveatReview"] = {"scope": caveat_review["scope"], "evidence": caveat_receipt,
+                "quotationAuditEvidence": caveat_review["quotationAuditEvidence"], "caveats": batch_caveats}
+        if batch_caveats or translated["issues"] or any(r["issues"] or r["uncertainty"] for r in draft_rows):
+            review_instruction += REVIEW_DRAFT_CONCERNS
+        reviewed, receipt = cached_call(out, "review-" + str(begin), review_instruction,
+            review_input, identity, offline=offline, manifest=manifest)
         model_evidence.append(receipt)
         for source, row, q in zip(batch, checked_rows(reviewed, batch), target):
             zh, spans = reviewed_row(row, q["quotes"], checks=True)

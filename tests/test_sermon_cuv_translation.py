@@ -197,6 +197,71 @@ class CuvTranslationTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "Independent quotation audit failed"):
                 mod.run(self.parent, self.out, reference_map_path=self.map)
 
+    def test_provisional_draft_concerns_reach_independent_review_with_caveat_evidence(self):
+        self.make_source(8)
+        seen = []
+        def provisional(key, payload):
+            instruction = payload["messages"][0]["content"]
+            if mod.REVIEW in instruction:
+                data = json.loads(payload["messages"][1]["content"])
+                seen.append(data)
+                self.assertIn(mod.REVIEW_DRAFT_CONCERNS, instruction)
+            response = self.caveat_chat(key, payload)
+            if mod.TRANSLATE in instruction:
+                value = json.loads(response["choices"][0]["message"]["content"])
+                value["issues"] = ["Check provisional narration in independent review"]
+                value["blocks"][-1]["uncertainty"] = ["被提背景出处未核实，叙述译文保持讲员意思。"]
+                value["blocks"][-1]["issues"] = ["Confirm this remains narration"]
+                return self.response(value)
+            return response
+        with mock.patch.dict(mod.os.environ, {"OPENAI_API_KEY": "test-only"}), \
+             mock.patch.object(mod, "chat_json", side_effect=provisional):
+            result = mod.run(self.parent, self.out, reference_map_path=self.map, batch_size=8)
+        self.assertEqual("passed", result["status"])
+        self.assertEqual(1, len(seen))
+        self.assertTrue(seen[0]["draft"]["issues"])
+        self.assertTrue(seen[0]["draft"]["blocks"][7]["uncertainty"])
+        self.assertEqual(7, seen[0]["caveatReview"]["caveats"][0]["blockId"])
+        mod.check_binding(seen[0]["caveatReview"]["evidence"])
+        with mock.patch.object(mod, "chat_json", side_effect=AssertionError("offline")):
+            self.assertEqual("passed", mod.validate(self.out)["status"])
+
+    def test_malformed_draft_and_damaged_tokens_stop_before_review(self):
+        mutations = [lambda r: r.update(uncertainty="not a list"), lambda r: r.update(issues=None),
+                     lambda r: r.update(evidence=""), lambda r: r.update(zhTemplate="Missing locked quote")]
+        for index, mutation in enumerate(mutations):
+            with self.subTest(index=index):
+                self.out = self.root / ("bad-draft-" + str(index))
+                def invalid(key, payload):
+                    instruction = payload["messages"][0]["content"]
+                    if mod.REVIEW in instruction:
+                        self.fail("Malformed draft must not reach final review")
+                    response = self.fake_chat(key, payload)
+                    if mod.TRANSLATE in instruction:
+                        value = json.loads(response["choices"][0]["message"]["content"])
+                        mutation(value["blocks"][0])
+                        return self.response(value)
+                    return response
+                with mock.patch.dict(mod.os.environ, {"OPENAI_API_KEY": "test-only"}), \
+                     mock.patch.object(mod, "chat_json", side_effect=invalid):
+                    with self.assertRaises(ValueError):
+                        mod.run(self.parent, self.out, reference_map_path=self.map)
+
+    def test_final_uncertainty_still_blocks_after_provisional_draft(self):
+        def invalid(key, payload):
+            response = self.fake_chat(key, payload)
+            instruction = payload["messages"][0]["content"]
+            if mod.TRANSLATE in instruction or mod.REVIEW in instruction:
+                value = json.loads(response["choices"][0]["message"]["content"])
+                value["blocks"][0]["uncertainty"] = ["Meaning unresolved"]
+                return self.response(value)
+            return response
+        with mock.patch.dict(mod.os.environ, {"OPENAI_API_KEY": "test-only"}), \
+             mock.patch.object(mod, "chat_json", side_effect=invalid):
+            with self.assertRaisesRegex(ValueError, "Unresolved translation/review"):
+                mod.run(self.parent, self.out, reference_map_path=self.map)
+        self.assertFalse((self.out / "spoken-review.json").exists())
+
     def reuse_run(self, **kwargs):
         old = self.out
         self.out = self.root / "translation-v2"
