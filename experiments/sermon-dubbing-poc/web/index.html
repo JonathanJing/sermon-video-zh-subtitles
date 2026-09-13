@@ -26,6 +26,7 @@
         <div class="time-row"><span id="elapsed">00:00</span><span id="duration">00:00</span></div>
         <form id="jump-form" class="jump-row"><label for="jump-time">跳至时间</label><input id="jump-time" placeholder="00:00" inputmode="decimal" autocomplete="off" aria-describedby="jump-message" disabled><button id="jump" type="submit" disabled>跳转</button></form><p id="jump-message" class="field-message" role="status"></p>
         <div class="adjust-block"><div class="section-heading"><h3>跟上现场</h3><span class="manual">微调播放位置</span></div><p class="description">中文落后时前进，抢先时后退。</p><div class="nudge-row"><button data-nudge="-1" disabled>−1 秒</button><button data-nudge="-0.25" disabled>−0.25 秒</button><button data-nudge="0.25" disabled>+0.25 秒</button><button data-nudge="1" disabled>+1 秒</button></div><p class="nudge-total">本次微调 <strong id="offset">0.00 秒</strong></p></div>
+        <button id="fingerprint-open" class="text-button" type="button" hidden>现场声音定位</button>
         <div class="player-footer"><span id="status" role="status">准备音频</span><a id="download" hidden>下载 MP3 ↓</a></div><p id="audio-notice" class="note"></p>
       </section>
       <div class="reading-column">
@@ -40,6 +41,13 @@
     <p class="independence">独立个人项目，与 Mariners Church 无隶属或背书关系。</p>
   </main>
   <dialog id="outline-dialog" aria-labelledby="outline-title"><div class="dialog-header"><div><p class="eyebrow">SERMON COMPANION</p><h2 id="outline-title">证道同行</h2><p id="outline-meta"></p></div><button id="outline-close" class="close-button" aria-label="关闭证道同行大纲">×</button></div><div class="dialog-body"><p id="outline-summary" class="outline-summary"></p><div id="outline-content"></div><section class="reflection"><h3>带着问题，继续同行</h3><ol id="reflection-questions"></ol></section><p id="outline-review" class="disclosure"></p></div></dialog>
+  <dialog id="fingerprint-dialog" aria-labelledby="fingerprint-title"><div class="dialog-sticky"><div class="dialog-header"><div><h2 id="fingerprint-title">现场声音定位 · 试用</h2><p>听取本期英文原录制，找到中文配音的位置。</p></div><button id="fingerprint-cancel" class="close-button" aria-label="取消并关闭声音定位">×</button></div></div><div class="dialog-body fingerprint-body">
+    <p>开始后暂停中文配音，采集约 10 秒现场声音。请让麦克风靠近英文原声，避免身旁交谈。</p>
+    <p class="description">声音仅在当前设备内临时处理，不上传、不保存，不识别人声身份。仅适用于本期同一段原录制。原视频须以正常 1 倍速连续播放；等待确认时请勿暂停或跳转，否则请重新定位。定位后仍可使用微调。现场设备延迟可能需要手动补偿。</p>
+    <p id="fingerprint-message" class="field-message" role="status" aria-live="polite">请让设备听到英文原声，再点击开始。</p>
+    <div class="fingerprint-actions"><button id="fingerprint-start" type="button">开始听取 10 秒</button><button id="fingerprint-apply" type="button" hidden>对齐并播放</button><button id="fingerprint-stop" type="button">取消定位</button></div>
+    <p class="description">只有点击“对齐并播放”才会跳转。关闭后保持暂停；可随时取消并手动定位。</p>
+  </div></dialog>
   <audio id="audio" preload="metadata"></audio>
   <script type="module" src="/app.mjs"></script>
 </body>
