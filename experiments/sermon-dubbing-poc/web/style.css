@@ -87,3 +87,9 @@
 .english-reference summary{cursor:pointer;min-height:44px;padding:10px 0;color:var(--teal);font-size:14px}
 .english-reference summary:focus-visible{outline:3px solid var(--focus);outline-offset:3px;border-radius:4px}
 .english-reference p{margin:4px 0 8px;padding-left:12px;border-left:2px solid var(--line);overflow-wrap:anywhere;white-space:pre-wrap;user-select:text}
+
+.fingerprint-body { max-width: 38rem; }
+.fingerprint-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin: 1rem 0; }
+.fingerprint-actions button { min-height: 44px; padding: .7rem 1rem; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-soft); color: inherit; cursor: pointer; }
+.fingerprint-actions button:disabled { opacity: .55; cursor: wait; }
+#fingerprint-apply { font-weight: 700; }

@@ -183,7 +183,9 @@ def build(comparison, out, expansion=None, weekly_jobs=(), voice_bank=None, revi
     if public.exists():
         raise ValueError("Use a new output directory to preserve the previous release")
     (public / "media").mkdir(parents=True)
-    for name in ["index.html", "style.css", "app.mjs", "timing.mjs", "catalog.mjs", "theme.js"]:
+    for name in ["index.html", "style.css", "app.mjs", "timing.mjs", "catalog.mjs", "theme.js",
+                 "fingerprint-core.mjs", "fingerprint-capture.mjs", "fingerprint-worklet.mjs",
+                 "fingerprint-worker.mjs", "fingerprint-ui.mjs"]:
         shutil.copyfile(HERE / "web" / name, public / name)
     weeks, sources = [], []
     for entry in (WEEKS if use_history else ()):

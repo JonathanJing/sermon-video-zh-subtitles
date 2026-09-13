@@ -1,11 +1,29 @@
 import { boundedTime, nudge, formatTime, cueIndex } from "/timing.mjs";
 import { validateCatalog, chooseWeek, parseTimecode, bilingualCueRows } from "/catalog.mjs";
 
+import { mountFingerprintUI } from "/fingerprint-ui.mjs";
+
 const $ = id => document.getElementById(id);
 const audio = $("audio");
 let catalog, week, track, fineOffset = 0, lastCue = -2, generation = 0;
 const controls = [$("play"), $("back"), $("forward"), $("progress"), $("jump-time"), $("jump"), ...document.querySelectorAll("[data-nudge]")];
 const tabs = [...document.querySelectorAll('[role="tab"]')];
+const fieldAlignment = mountFingerprintUI({
+  context: () => ({ week, track, generation, ready: Boolean(track && audio.readyState >= 1 && audio.currentSrc === new URL(track.audioUrl, location.href).href) }),
+  pause: () => { audio.pause(); document.querySelectorAll(".voice-card audio").forEach(sample => sample.pause()); update(); },
+  seek: time => {
+    if (!track || audio.readyState < 1 || !Number.isFinite(audio.duration)) return false;
+    audio.currentTime = boundedTime(time, audio.duration); fineOffset = 0;
+    $("offset").textContent = "0.00 秒"; update(); return true;
+  },
+  play: () => {
+    const token = generation;
+    return audio.play().catch(error => {
+      if (token === generation) status("已对齐，请点击播放按钮开始收听。");
+      throw error;
+    });
+  },
+});
 function status(text) { $("status").textContent = text; }
 function ready(value) {
   controls.forEach(control => { control.disabled = !value; });
@@ -35,6 +53,7 @@ function update() {
   }
 }
 function selectTab(id, focus = false) {
+  fieldAlignment.invalidate();
   const voices = id === "tab-voices";
   document.querySelector(".sermon-banner").hidden = voices;
   document.querySelector(".content-layout").hidden = voices;
@@ -79,7 +98,7 @@ function renderTranscript() {
       const original = document.createElement("p"); original.lang = "en"; original.textContent = english;
       details.append(summary, original); row.append(details);
     }
-    button.addEventListener("click", () => { audio.currentTime = boundedTime(cue.start, audio.duration); update(); });
+    button.addEventListener("click", () => { fieldAlignment.invalidate(); audio.currentTime = boundedTime(cue.start, audio.duration); update(); });
     $("transcript-list").append(row);
   });
 }
@@ -88,6 +107,7 @@ function selectTrack(id) {
   audio.pause();
   ready(false);
   track = week.tracks.find(t => t.id === id) || null;
+  fieldAlignment.refresh();
   fineOffset = 0;
   lastCue = -2;
   $("offset").textContent = "0.00 秒";
@@ -181,7 +201,7 @@ function renderVoiceBank() {
       sample.preload = "metadata";
       sample.src = speaker[key].audioUrl;
       sample.setAttribute("aria-label", `${speaker.name} ${label.textContent.slice(4)}`);
-      sample.addEventListener("play", () => { document.querySelectorAll("audio").forEach(other => { if (other !== sample) other.pause(); }); });
+      sample.addEventListener("play", () => { fieldAlignment.invalidate(); document.querySelectorAll("audio").forEach(other => { if (other !== sample) other.pause(); }); });
       card.append(label, sample);
     }
     const note = document.createElement("p");
@@ -226,6 +246,7 @@ function selectWeek(id) {
   document.title = `${week.title} · 同行中文听译`;
 }
 async function togglePlay() {
+  fieldAlignment.invalidate();
   if (!track || $("play").disabled) return;
   if (!audio.paused) { audio.pause(); return; }
   if (audio.ended) audio.currentTime = 0;
@@ -233,6 +254,7 @@ async function togglePlay() {
   try { await audio.play(); } catch { if (token === generation) status("无法开始播放，请再次点击或下载 MP3。"); }
 }
 function seek(delta, fine = false) {
+  fieldAlignment.invalidate();
   if (!track || !Number.isFinite(audio.duration)) return;
   const result = nudge(audio.currentTime, delta, audio.duration);
   audio.currentTime = result.time;
@@ -247,9 +269,10 @@ $("play").addEventListener("click", togglePlay);
 $("back").addEventListener("click", () => seek(-5));
 $("forward").addEventListener("click", () => seek(5));
 document.querySelectorAll("[data-nudge]").forEach(button => button.addEventListener("click", () => seek(Number(button.dataset.nudge), true)));
-$("progress").addEventListener("input", event => { if (track) audio.currentTime = boundedTime(Number(event.target.value), audio.duration); update(); });
+$("progress").addEventListener("input", event => { fieldAlignment.invalidate(); if (track) audio.currentTime = boundedTime(Number(event.target.value), audio.duration); update(); });
 $("jump-form").addEventListener("submit", event => {
   event.preventDefault();
+  fieldAlignment.invalidate();
   const time = parseTimecode($("jump-time").value);
   if (time === null) { $("jump-message").textContent = "请输入 分:秒，例如 01:05，也支持 时:分:秒。"; return; }
   if (!track || !Number.isFinite(audio.duration)) return;
@@ -274,12 +297,12 @@ $("outline-dialog").addEventListener("click", event => {
 });
 audio.addEventListener("loadedmetadata", () => { if (!track) return; ready(true); status("音频就绪"); update(); });
 for (const event of ["timeupdate", "durationchange", "seeked"]) audio.addEventListener(event, update);
-audio.addEventListener("play", () => { status("正在播放"); update(); });
+audio.addEventListener("play", () => { fieldAlignment.invalidate(); status("正在播放"); update(); });
 audio.addEventListener("pause", () => { if (track) status(audio.ended ? "播放完毕" : "已暂停"); update(); });
 audio.addEventListener("ended", () => { status("播放完毕"); update(); });
 audio.addEventListener("waiting", () => { if (track) status("正在缓冲…"); });
 audio.addEventListener("playing", () => { status("正在播放"); update(); });
-audio.addEventListener("error", () => { if (track) { ready(false); status("音频读取失败，请刷新页面或下载 MP3。"); } });
+audio.addEventListener("error", () => { fieldAlignment.invalidate(); if (track) { ready(false); status("音频读取失败，请刷新页面或下载 MP3。"); } });
 document.addEventListener("keydown", event => {
   if ($("outline-dialog").open || event.target.matches("input,button,a,select,textarea") || !track || $("play").disabled) return;
   if (event.code === "Space") { event.preventDefault(); togglePlay(); }
