@@ -1,172 +1,54 @@
 # Repository Agent Guide
 
-## Scope and instruction hierarchy
+## Start with the task
 
-These instructions apply to the entire repository. A more specific `AGENTS.md`
-inside a subdirectory supplements or overrides this file for work in that
-subtree. In particular, read `experiments/local-live-poc/AGENTS.md` before
-changing the local live-caption POC.
+Help Chinese-speaking attendees follow an English sermon. The operator paths are Saturday post-live dual-PDF production and Sunday MacBook live captions. Benchmarks, post-training, historical cloud prototypes and incomplete integrations remain Discovery until their own acceptance evidence exists.
 
-Use the English or Chinese README and the linked workflow documents for product
-context. Do not copy changing benchmark results, model versions, or temporary
-run status into this file.
+Read the relevant entry below first, then follow links only when the task needs that detail. [The workflow map](docs/workflows/README.zh.md) is the product-level source of truth; dated reports describe observed runs, not current service health.
 
-## Product goal and workflow boundaries
+| Task | First reference |
+|---|---|
+| Weekly production, resume, approval or delivery | [Local production runbook](docs/codex-local-production-runbook.zh.md) |
+| Manual archive-to-PDF run | [Stable post-live workflow](docs/stable-post-live-reading-pdf-workflow.md) |
+| Supervisor state/tools | [Supervisor contract](docs/sermon-production-supervisor-agent.md) |
+| Local live-caption code/UI | [POC instructions](experiments/local-live-poc/AGENTS.md), then its relevant README/design section |
+| Offline timed-subtitle backup | [Fallback skill](skills/live-caption-zh-fallback/SKILL.md), also discoverable through `.agents/skills/` |
+| Architecture, benchmarks or post-training | README Discovery links and the specific experiment's contract/report |
 
-The repository has one product goal: help Chinese-speaking attendees follow an
-English sermon. It has two primary operator workflows:
+Subdirectory `AGENTS.md` applies within its subtree. Keep changing model versions, run metrics and temporary task state in the referenced documents, not this file.
 
-1. **Saturday post-live production:** acquire authorized media, verify the full
-   archive, obtain a human-confirmed sermon window, prepare the English source
-   and Chinese reading text, and produce two reviewed PDFs with QA evidence.
-2. **Sunday local live captions:** capture microphone audio on a MacBook, retain
-   a recovery recording and event log, produce local English ASR finals, translate
-   stable English into Chinese, and display large Chinese captions with smaller
-   English source text.
+Before producing or reviewing series pages, subtitles, reading text, outlines or dubbing, read [the shared series terminology table](docs/series-terminology.zh.md). Reuse its established translations and follow its contextual usage and pre-dubbing checks. When a verified new series enters production, automatically append it to that same table with source evidence; preserve existing entries and active runs. The table documents current script-integration limits; do not claim a stage consumed it without evidence.
 
-Keep research, provider comparisons, model benchmarks, post-training work,
-historical cloud/realtime prototypes, and incomplete integrations under the
-Discovery or evaluation boundary. Do not present them as part of a working
-operator path without current end-to-end evidence.
+## Source and acceptance invariants
 
-The main workflow source of truth is `docs/workflows/README.zh.md`. Important
-workflow-specific references include:
+- This independent personal project is not affiliated with or endorsed/operated by Mariners Church. Preserve source attribution; label generated content accurately, without claims of official, human-verified or verbatim status lacking evidence.
+- Use public or user-authorized media without bypassing access restrictions. Keep credentials, cookies, private media and personal information out of code, logs, public artifacts and Git.
+- Preserve canonical URL/ID, service date, media hash/duration, timestamps, model/prompt identity and review state as required by the workflow. Separate source media, approved boundaries and generated outputs.
+- Existing English subtitles may supply text and timing. Use ASR for missing text, defined sampling or risk review, retaining provenance; reading-block timing is not synchronized subtitle timing.
+- Human sermon-window approval is bound to the source and timeline evidence. Reuse a still-valid approval; changed inputs invalidate it. Machine review never becomes human Gold through relabeling or a weaker validator.
+- Only reviewed/approved bilingual examples may enter live translation prompts; machine Chinese remains candidate material. Current live English/audio is authoritative, and optional Saturday material must fail down by capability.
+- Preserve immutable English ASR finals, translate only stable/final English, and keep recording/event persistence independent of model success. Recovery recordings must survive model failure.
+- Missing required hashes, segments, approvals, QA or publication evidence prevents completion. Keep partial work recoverable and outside qualified counts. A test, health check, screenshot or replay alone does not prove production/venue readiness.
 
-- `docs/stable-post-live-reading-pdf-workflow.md`
-- `docs/codex-local-production-runbook.zh.md`
-- `docs/sermon-production-supervisor-agent.md`
-- `experiments/local-live-poc/README.md`
-- `experiments/local-live-poc/DESIGN.zh.md`
+## Work and artifacts
 
-## Legal and content boundaries
+Inspect the current branch and relevant diffs before editing; preserve unrelated user work. Follow existing architecture and schema contracts, changing schemas only with an explicit version/migration when required. Keep Saturday production, live POC and post-training separate unless the requested interface joins them.
 
-- This is an independent personal open-source project. It is not affiliated
-  with, endorsed by, sponsored by, approved by, or operated by Mariners Church.
-- Process only publicly available media or media for which the user has explicit
-  authorization.
-- Do not bypass authentication, membership restrictions, access controls, DRM,
-  platform restrictions, or copyright protections.
-- Do not expose credentials, browser cookies, tokens, secret-manager values,
-  private media, or personal information in code, logs, fixtures, commits, or
-  generated reports.
-- Do not describe machine-generated transcripts, translations, interpretations,
-  or captions as official, church-approved, human-verified, or verbatim unless
-  the corresponding review evidence exists.
-- Preserve attribution and source provenance. Do not imply that generated output
-  was authored by a speaker, church, publisher, or reviewer who did not approve it.
+Resume from verified artifacts rather than restarting paid stages. Delegate independent exploration/review when useful; keep state-changing Supervisor stages sequential and lease-protected. For comparisons, freeze inputs and record the changed experimental variable. Do not replace intentionally selected workload models merely to standardize on Astra.
 
-## Evidence and provenance
+Keep ignored media, `artifacts/`, `tmp/`, `output/pdf/`, recordings, environments and build outputs outside Git. Commit only the compact schemas/manifests/review evidence needed for reproducibility. History rewriting requires explicit authorization.
 
-- Preserve canonical source URLs, service dates, source IDs, authorization
-  context, media hashes, durations, timestamps, model/prompt identifiers, and
-  review status when the workflow requires them.
-- Keep source media and approved sermon-window evidence separate from generated
-  transcripts, translations, and PDFs.
-- Existing English subtitles may be the English/timing source. Use paid or local
-  transcription for missing source text, risk review, or defined sampling rather
-  than silently replacing a stronger source.
-- Machine Chinese is candidate material until it is reviewed. Only explicitly
-  reviewed or approved bilingual examples may enter a live translation prompt.
-- Human-approved `Gold` data is the promotion boundary. Never turn provisional,
-  model-reviewed, or machine-reaudited references into human Gold by renaming a
-  field or relaxing a validator.
-- A dry run, unit test, health endpoint, partial batch, browser screenshot, or
-  generated file does not by itself prove a complete production workflow.
-- Fail closed when required segments, hashes, receipts, approvals, QA reports, or
-  final artifacts are missing. Keep partial results recoverable and out of
-  qualified counts.
+## Verify the changed area
 
-## Repository and artifact policy
+| Change | Relevant verification |
+|---|---|
+| Documentation/instructions only | `git diff --check`, affected links, command/path references, skill metadata/discovery. No full model or hardware run. |
+| Root Python code | Targeted affected tests first. CI suite: `python -m unittest discover -s tests -p "test_*.py"`; broader local suite when needed: `PYTHONPATH="$PWD" .venv/bin/python -m pytest tests -q`. |
+| Supervisor prompt/state contract | `.venv/bin/python -m unittest tests.test_run_sermon_production_supervisor_agent tests.test_sermon_production_supervisor tests.test_run_codex_local_sermon_production` |
+| POC code, UI, model or hardware | Use its scoped verification table. Cross-layer release changes need the full POC suite and relevant real-path evidence. |
 
-- Make the smallest change that satisfies the request. Do not add unrelated
-  features, refactors, dependency upgrades, formatting passes, or file moves.
-- Treat unknown working-tree changes as user work. Do not overwrite, revert,
-  reformat, or delete them.
-- Keep the Saturday PDF workflow, Sunday live-caption POC, and post-training
-  experiments structurally separate unless an explicit interface is being added.
-- Do not commit generated or machine-local content covered by `.gitignore`,
-  including `tmp/`, `artifacts/`, `output/pdf/`, benchmark work directories,
-  raw benchmark recordings, virtual environments, build output, and secrets.
-- Keep durable, reviewable structured evidence when it is needed for
-  reproducibility: manifests, schemas, compact reports, metrics, event samples,
-  source hashes, and human-review records.
-- Large media, recovery recordings, render previews, contact sheets, downloaded
-  archives, and disposable benchmark intermediates belong outside Git history.
-- Do not rewrite Git history or purge old blobs unless the user explicitly asks
-  for repository-history rewriting and accepts its coordination impact.
+Inspect exit status and artifacts. After relevant checks pass, widen/repeat only for new changes, failures or unresolved risks. Distinguish synthetic tests, file replay, acoustic input and real-venue/mobile acceptance. If a required environment is unavailable, report the exact unverified path and how to run it.
 
-## Implementation rules
+## Delivery
 
-- Follow existing architecture, naming, and code style.
-- Preserve immutable English ASR final events once emitted. Only stable/final
-  English should start live translation.
-- Recording and event persistence must remain independent of ASR or translation
-  success; model failure must not destroy the recovery path.
-- Keep safety-relevant validation and completion gates fail closed.
-- Preserve backward-compatible artifact schemas unless the task explicitly
-  requires a versioned schema change and migration plan.
-- Prefer deterministic fixtures and frozen inputs for benchmark comparisons.
-  Change one experimental variable at a time and record the changed variable.
-- Never generalize one microphone, room, speaker, replay source, or machine result
-  to venue readiness without a matching end-to-end test.
-
-## Verification
-
-Run verification proportional to the changed area and inspect exit status and
-artifacts, not just command invocation.
-
-For the root Python project, the CI-equivalent test command is:
-
-```bash
-python -m unittest discover -s tests -p "test_*.py"
-```
-
-When the repository virtual environment is available, the broader local suite is:
-
-```bash
-PYTHONPATH="$PWD" .venv/bin/python -m pytest tests -q
-```
-
-For changes under `experiments/local-live-poc/`, follow its setup instructions,
-then run:
-
-```bash
-npm test
-```
-
-At minimum, POC changes must cover the relevant frontend tests, backend tests,
-integration tests, and a successful production build. Hardware/model changes also
-require a real replay or live-path check; mocks alone are insufficient.
-
-For documentation or repository cleanup, run `git diff --check`, verify relative
-links and references to removed files, and confirm that no tracked file is also
-ignored unintentionally.
-
-If a test cannot run because credentials, models, media, hardware, network access,
-or a local environment is unavailable, report exactly what was not verified and
-do not claim it passed.
-
-## Git and delivery
-
-- Inspect `git status`, the active branch, and relevant diffs before editing.
-- Keep unrelated changes out of the commit.
-- Do not commit or push unless the user requests it.
-- Before pushing, fetch the destination branch, check divergence, and avoid
-  force-pushing unless explicitly authorized.
-- After pushing, verify that the remote branch resolves to the intended commit.
-
-## Completion report
-
-Report the outcome first, then include:
-
-- what changed;
-- what was actually verified and the result;
-- important files or systems affected;
-- remaining risks, limitations, or unverified end-to-end behavior;
-- commit and remote-ref details when a commit or push was requested.
-
-Clearly distinguish verified facts, evidence-based inference, and unresolved work.
-
-## Series terminology
-
-Before producing or reviewing series pages, subtitles, reading text, outlines or dubbing, read [the shared series terminology table](docs/series-terminology.zh.md). Reuse its established translations and contextual checks. Automatically append verified new series to that table with source evidence, preserving existing entries and active runs.
+Report the result, meaningful verification and remaining limits. Do not commit or push unless requested. Keep commits scoped; before a requested push, fetch/check divergence, then verify the remote commit. Force-push requires explicit authorization.

@@ -5,7 +5,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
+import signal
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -18,7 +20,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from backend.cloud import read_gcs_text, write_gcs_text  # noqa: E402
-from backend.leases import LeaseHandle, acquire_lease, release_lease  # noqa: E402
+from backend.leases import LeaseGuard, LeaseHandle, acquire_lease, release_lease  # noqa: E402
 from backend.observability import stable_hash, url_summary  # noqa: E402
 from scripts import live_source_monitor, run_post_live_subtitle_generation  # noqa: E402
 
@@ -27,6 +29,7 @@ DEFAULT_BUCKET = "sermon-zh-artifacts-ai-for-god"
 DEFAULT_GCS_PREFIX = "sundays"
 DEFAULT_WORK_ROOT = Path("/tmp/sermon-post-live-subtitles")
 TIMECODE_RE = re.compile(r"^(?P<hours>\d{1,3}):(?P<minutes>[0-5]\d):(?P<seconds>[0-5]\d(?:\.\d{1,3})?)$")
+_SUBPROCESS_RUN = subprocess.run
 
 
 @dataclass(frozen=True)
@@ -51,6 +54,8 @@ class SupervisorConfig:
     reference_model: str = "gpt-transcribe"
     reading_model: str = "gpt-6-astra"
     glossary: Path | None = None
+    source_text_review: Path | None = None
+    reading_review_manifest: Path | None = None
     lease_ttl_seconds: int = 14_400
 
 
@@ -343,6 +348,13 @@ def recommend_action(
             human=False,
         )
     if timeline_status in {"failed", "error"}:
+        from scripts.run_post_live_timeline_job import resumable_archive_failure
+        if resumable_archive_failure(timeline_report, sunday=sunday, live_url=live_url):
+            return action(
+                "resume_failed_timeline",
+                "Preserve the source-bound archive-integrity failure, then revalidate repaired media before retrying the timeline.",
+                human=False,
+            )
         return action(
             "inspect_timeline_failure",
             str(timeline_report.get("reason") or "Timeline job failed."),
@@ -430,7 +442,7 @@ def run_timeline_probe(
 ) -> dict[str, Any]:
     snapshot = production_snapshot(config)
     action_name = snapshot["recommendedAction"]["action"]
-    if action_name not in {"run_timeline_probe", "waiting_for_post_live"}:
+    if action_name not in {"run_timeline_probe", "waiting_for_post_live", "resume_failed_timeline"}:
         return {
             "status": "skipped",
             "reason": f"timeline probe is not valid while recommendedAction={action_name}",
@@ -445,19 +457,30 @@ def run_timeline_probe(
             "status": "already_running",
             "reason": "Another timeline execution holds the production lease.",
         }
-    try:
-        ensure_source_lock(config, snapshot)
+    with LeaseGuard(lease, ttl_seconds=config.lease_ttl_seconds, releaser=lease_releaser) as guard:
+        guard.checkpoint()
+        ensure_source_lock(config, snapshot, guard=guard)
         command = build_timeline_command(config, snapshot)
-        completed = runner(command, check=False, capture_output=True, text=True)
+        if action_name == "resume_failed_timeline":
+            from scripts.run_post_live_timeline_job import resumable_archive_failure
+            failed = read_first_json(*artifact_read_locations(
+                snapshot["locations"].get("timelineReportLocal"), snapshot["locations"].get("timelineReportGcs"),
+            ))
+            live_url = live_url_from_snapshot(snapshot, config=config)
+            digest = json_digest(failed)
+            if (not live_url or not resumable_archive_failure(failed, sunday=config.sunday, live_url=live_url)
+                    or digest != snapshot["timeline"]["reportSha256"]):
+                raise RuntimeError("Timeline failure changed before resume; preserve it and inspect the current state.")
+            command.extend(["--resume-failed-timeline", digest])
+        completed = run_guarded_command(command, runner=runner, guard=guard)
         report = read_first_json(
             *artifact_read_locations(
                 snapshot["locations"].get("timelineReportLocal"),
                 snapshot["locations"].get("timelineReportGcs"),
             )
         )
+        guard.checkpoint()
         return command_result(command, completed, report)
-    finally:
-        lease_releaser(lease)
 
 
 def run_reading_pdf_generation(
@@ -502,15 +525,14 @@ def run_reading_pdf_generation(
             "status": "already_running",
             "reason": "Another reading-PDF generation holds the production lease.",
         }
-    try:
+    with LeaseGuard(lease, ttl_seconds=config.lease_ttl_seconds, releaser=lease_releaser) as guard:
         return execute_reading_pdf_generation(
             config,
             snapshot,
             approval or {},
             runner=runner,
+            guard=guard,
         )
-    finally:
-        lease_releaser(lease)
 
 
 def resume_failed_reading_pdf_generation(
@@ -558,21 +580,22 @@ def resume_failed_reading_pdf_generation(
             "status": "already_running",
             "reason": "Another reading-PDF generation holds the production lease.",
         }
-    try:
+    with LeaseGuard(lease, ttl_seconds=config.lease_ttl_seconds, releaser=lease_releaser) as guard:
+        guard.checkpoint()
         archived = archive_failed_generation_report(
             snapshot["locations"],
             gcs_writer=gcs_writer,
+            guard=guard,
         )
         result = execute_reading_pdf_generation(
             config,
             snapshot,
             approval or {},
             runner=runner,
+            guard=guard,
         )
         result["archivedFailure"] = archived
         return result
-    finally:
-        lease_releaser(lease)
 
 
 def execute_reading_pdf_generation(
@@ -581,16 +604,120 @@ def execute_reading_pdf_generation(
     approval: dict[str, Any],
     *,
     runner: Callable[..., subprocess.CompletedProcess[str]],
+    guard: LeaseGuard | None = None,
 ) -> dict[str, Any]:
+    if guard is None and runner is _SUBPROCESS_RUN:
+        raise RuntimeError("Production generation requires its execution lease guard")
+    if guard:
+        guard.checkpoint()
+    validate_generation_archive_identity(snapshot["locations"])
+    if guard:
+        guard.checkpoint()
     materialize_approval_evidence(snapshot["locations"], approval)
     command = build_generation_command(config, snapshot, approval)
-    completed = runner(command, check=False, capture_output=True, text=True)
+    completed = run_guarded_command(command, runner=runner, guard=guard)
     report = read_optional_json(snapshot["locations"]["generationReportLocal"])
     if report is None:
         report = build_generation_failure_report(completed, snapshot["locations"])
+        if guard:
+            guard.checkpoint()
         write_local_json(Path(snapshot["locations"]["generationReportLocal"]), report)
-    publish_generation_evidence(snapshot["locations"], report)
+    if guard:
+        guard.checkpoint()
+    publish_generation_evidence(snapshot["locations"], report, guard=guard)
+    if guard:
+        guard.checkpoint()
     return command_result(command, completed, report)
+
+
+def run_guarded_command(command, *, runner, guard):
+    """Keep the real child process interruptible even if lease renewal I/O hangs.
+
+    Injected synchronous runners are test adapters; their result is fenced again
+    before the caller can publish it. Production always uses the Popen path.
+    """
+    if guard:
+        guard.checkpoint()
+    if runner is not _SUBPROCESS_RUN:
+        completed = runner(command, check=False, capture_output=True, text=True)
+        if guard:
+            guard.checkpoint()
+        return completed
+    if guard is None:
+        raise RuntimeError("Production commands require an execution lease guard")
+    # The owner keeps only the write side. If it dies (including SIGKILL),
+    # EOF reaches the guardian and kills the dedicated workload process group.
+    # An integer stdin FD leaves Popen.stdin unset, so communicate() cannot
+    # close the owner's write side during ordinary timeout polling.
+    sentinel_read, sentinel_write = os.pipe()
+    try:
+        process = subprocess.Popen(
+            [sys.executable, str(REPO_ROOT / "scripts" / "sermon_guarded_worker.py"), "--", *command],
+            stdin=sentinel_read, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            text=True, start_new_session=True,
+        )
+    except BaseException:
+        os.close(sentinel_write)
+        raise
+    finally:
+        os.close(sentinel_read)
+    try:
+        while True:
+            guard.check()
+            try:
+                stdout, stderr = process.communicate(timeout=min(.2, guard.ttl_seconds / 10))
+                break
+            except subprocess.TimeoutExpired:
+                continue
+        guard.checkpoint()
+        return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
+    except BaseException:
+        # Children/grandchildren share the dedicated group. Killing only the
+        # immediate process would leave a model or publishing child running.
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except OSError:
+            pass
+        try:
+            process.communicate(timeout=5)
+        except (subprocess.TimeoutExpired, OSError):
+            if process.stdout:
+                process.stdout.close()
+            if process.stderr:
+                process.stderr.close()
+        raise
+    finally:
+        os.close(sentinel_write)
+
+
+def validate_generation_archive_identity(locations: dict[str, str]) -> None:
+    """The timeline and generation must use the same archive bytes, including handoffs."""
+    timeline = read_first_json(*artifact_read_locations(
+        locations.get("timelineReportLocal"), locations.get("timelineReportGcs"),
+    ))
+    if not isinstance(timeline, dict) or not timeline.get("downloadedAudio"):
+        return  # Legacy reports without local-media evidence retain their existing gate.
+    run_root = Path(locations["runRoot"]).resolve()
+    canonical = run_post_live_subtitle_generation.newest_downloaded_audio(run_root / "download")
+    if canonical is None:
+        raise RuntimeError("Generation archive is missing; restore the verified timeline audio to the canonical download directory.")
+    from scripts.run_post_live_timeline_job import archive_file_sha256
+    digest = timeline.get("audioSha256")
+    size = timeline.get("audioSizeBytes")
+    if digest is None:
+        # Compatibility with prior reports: require the actual timeline input locally.
+        original = Path(timeline["downloadedAudio"]).resolve()
+        if not original.is_relative_to(run_root / "download") or not original.is_file():
+            raise RuntimeError("Timeline archive hash is unavailable; restore its bound source evidence before generation.")
+        digest, size = archive_file_sha256(original), original.stat().st_size
+    if (not isinstance(digest, str) or re.fullmatch(r"[0-9a-f]{64}", digest) is None
+            or not isinstance(size, int) or isinstance(size, bool) or size <= 0
+            or canonical.stat().st_size != size or archive_file_sha256(canonical) != digest):
+        raise RuntimeError(
+            "Canonical archive differs from the verified timeline audio; files preserved. "
+            "Preserve the old canonical file with a relocation receipt, promote the verified handoff, "
+            "and retry generation only after their SHA-256 and size match."
+        )
 
 
 def build_timeline_command(config: SupervisorConfig, snapshot: dict[str, Any]) -> list[str]:
@@ -696,6 +823,10 @@ def build_generation_command(
         command.extend(["--youtube-cookies", str(config.youtube_cookies_file)])
     if config.glossary:
         command.extend(["--glossary", str(config.glossary)])
+    if config.source_text_review:
+        command.extend(["--source-text-review", str(config.source_text_review)])
+    if config.reading_review_manifest:
+        command.extend(["--reading-review-manifest", str(config.reading_review_manifest)])
     append_secret_flag(command, "--api-key-secret", config.api_key_secret)
     return command
 
@@ -773,6 +904,7 @@ def ensure_source_lock(
     snapshot: dict[str, Any],
     *,
     gcs_writer: Callable[[str, str], None] = write_gcs_text,
+    guard: LeaseGuard | None = None,
 ) -> dict[str, Any]:
     local_location, gcs_location = source_lock_locations(config)
     existing = read_first_json(
@@ -798,7 +930,11 @@ def ensure_source_lock(
     }
     text = json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True)
     if gcs_location:
+        if guard:
+            guard.checkpoint()
         gcs_writer(gcs_location, text)
+    if guard:
+        guard.checkpoint()
     write_local_json(Path(local_location), payload)
     return payload
 
@@ -883,6 +1019,7 @@ def publish_generation_evidence(
     generation_report: dict[str, Any],
     *,
     gcs_writer: Callable[[str, str], None] = write_gcs_text,
+    guard: LeaseGuard | None = None,
 ) -> None:
     """Publish supporting evidence first and the generation report as the commit marker."""
     for local_key, gcs_key in (
@@ -897,9 +1034,13 @@ def publish_generation_evidence(
             continue
         payload = read_optional_json(local)
         if payload is not None:
+            if guard:
+                guard.checkpoint()
             gcs_writer(gcs, json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True))
     generation_gcs = locations.get("generationReportGcs")
     if generation_gcs:
+        if guard:
+            guard.checkpoint()
         gcs_writer(
             generation_gcs,
             json.dumps(generation_report, ensure_ascii=False, indent=2, sort_keys=True),
@@ -957,6 +1098,7 @@ def archive_failed_generation_report(
     locations: dict[str, str],
     *,
     gcs_writer: Callable[[str, str], None] = write_gcs_text,
+    guard: LeaseGuard | None = None,
 ) -> dict[str, Any]:
     local = Path(locations["generationReportLocal"])
     report = read_first_json(
@@ -969,16 +1111,22 @@ def archive_failed_generation_report(
         raise RuntimeError("No failed generation report is available to archive.")
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     archived_local = local.with_name(f"agent-generation-report.failed-{stamp}.json")
+    if guard:
+        guard.checkpoint()
     write_local_json(archived_local, report)
     archived_gcs = None
     current_gcs = locations.get("generationReportGcs")
     if current_gcs:
         archived_gcs = current_gcs.rsplit("/", 1)[0] + f"/agent-generation-report.failed-{stamp}.json"
+        if guard:
+            guard.checkpoint()
         gcs_writer(
             archived_gcs,
             json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True),
         )
     if local.exists():
+        if guard:
+            guard.checkpoint()
         local.unlink()
     return {
         "local": str(archived_local),
@@ -1133,6 +1281,7 @@ def public_timeline_report(report: dict[str, Any] | None) -> dict[str, Any] | No
         "reviewInstructions": report.get("reviewInstructions"),
         "localHandoffReady": report.get("localHandoffReady"),
         "nextAction": report.get("nextAction"),
+        "reportSha256": json_digest(report),
     }
 
 

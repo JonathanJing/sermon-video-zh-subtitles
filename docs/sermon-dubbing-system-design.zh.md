@@ -12,12 +12,12 @@
 
 | 来源 | 设计用途 | 当前实现与边界 |
 |---|---|---|
-| 周日实际播放的同版本纯证道视频 | 未来优先主路；明确整片只有证道后，使用 `0 → 完整片长` | 桥接器检查周次、`sameVersionConfirmed`、`sermonOnly`、确认依据、文件 SHA-256、实测片长和视频流；随后仍返回 `waiting_same_video_adapter`。来源接入与已审文本准备尚未实现。 |
+| 周日实际播放的同版本纯证道视频 | 优先主路；明确整片只有证道后，使用 `0 → 完整片长` | 独立 adapter 校验来源并归档，提供生产命令，重验 ASR／阅读／解读链并封存带哈希的双 PDF；桥接器据此准备／恢复候选。人工窗口记为不适用，实际视频尚待提供；当前仅通过软件和合成输入验证。 |
 | 直播归档中的已确认证道窗口 | 当前可用的半自动 fallback | 复用周六 `operator-window-approval.json`、时间线、裁剪回执、阅读 QA 与双 PDF QA。沿用 `validate_window_approval()`，不将模型边界记录写成人工窗口批准。 |
 
-[continue_saturday_dubbing.py](../experiments/sermon-dubbing-poc/continue_saturday_dubbing.py)分别检查两路，按周次和来源使用独立锁。主路等待来源或接入器时，具备完整输入的 fallback 可继续。桥接器默认只读；显式 `--execute` 才准备或恢复已有来源的配音任务。配置结构见 [saturday-bridge.example.json](../experiments/sermon-dubbing-poc/saturday-bridge.example.json)。
+[continue_saturday_dubbing.py](../experiments/sermon-dubbing-poc/continue_saturday_dubbing.py)分别检查两路，按周次和来源使用独立锁。主路等待来源、生产或证据修复时，具备完整输入的 fallback 可继续。桥接器默认只读；显式 `--execute` 才准备或恢复已有来源的配音任务。配置结构见 [saturday-bridge.example.json](../experiments/sermon-dubbing-poc/saturday-bridge.example.json)。
 
-当前 fallback 的准备器不是通用视频接入器：它消费现有周六目录，仍要求人工窗口及双 PDF 证据。未来纯证道 adapter 要建立自己的来源契约并生成可核验的共同输入，不能为了调用旧接口而伪造 v1 人工窗口。
+fallback 继续要求既有周六人工窗口及双 PDF 证据。纯证道 [prepare_same_video.py](../experiments/sermon-dubbing-poc/prepare_same_video.py) 使用独立版本化的 source／archive／reviewed-handoff 契约；新增 job 的来源扩展由 `validate_frozen` 重验，保持既有 renderer 的 v1 单元结构。它不借用 fallback 时间线或批准，也不将模型审校改称人工批准。
 
 ## 2. 模块与部署分工
 
@@ -77,7 +77,7 @@ Qwen 官方 ASR 系列支持中文和英文识别，另提供独立 ForcedAligne
 
 Spark 训练与推理采用 Torch BF16、SDPA。BF16 是当前实测环境配置，不是本项目测得优于所有量化方案的结论；SDPA 是保留在隔离运行环境和补丁回执中的适配选择。历史 MLX 参考克隆或 IndexTTS 等候选比较仍是各自日期的探索材料，不能用来声称当前六位讲员/整篇配音的统一排名。官方低延迟或通用音质指标也不能替代本项目的整篇试听与现场同步证据。
 
-实测支持的范围是：Eric 首轮与三篇扩充后的训练样片获用户认可；另外五位讲员已有独立检查点和中文试听，尚不能沿用 Eric 的认可。具体训练、兼容性修改和局限见[授权训练报告](../experiments/sermon-dubbing-poc/AUTHORIZED_VOICE_REPORT_20260905.zh.md)、[扩充与每周应用报告](../experiments/sermon-dubbing-poc/WEEKLY_APP_REPORT_20260905.zh.md)、[讲员库报告](../experiments/sermon-dubbing-poc/SPEAKER_BANK_AND_WEEKLY_FLOW_REPORT_20260905.zh.md)。
+实测与人工认可的范围是：Eric 首轮与三篇扩充后的训练样片此前获用户认可；2026-09-05，用户进一步明确确认 Jared Kirkwood、Christine Caine、Doug Fields、Kenton Beshore 和 Steve Bang Lee 当前五份中文音色试听均已人工认证。认可绑定当前试听 MP3 和对应检查点，见[五位讲员人工试听回执](../experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-09-05.json)。这项认可不自动批准新一周整篇音轨、训练片段 Gold 或现场同步。具体训练、兼容性修改和局限见[授权训练报告](../experiments/sermon-dubbing-poc/AUTHORIZED_VOICE_REPORT_20260905.zh.md)、[扩充与每周应用报告](../experiments/sermon-dubbing-poc/WEEKLY_APP_REPORT_20260905.zh.md)、[讲员库报告](../experiments/sermon-dubbing-poc/SPEAKER_BANK_AND_WEEKLY_FLOW_REPORT_20260905.zh.md)。
 
 ## 4. 长期训练与每周推理分开
 
@@ -145,6 +145,6 @@ Firebase 只上传显式构建清单，完整媒体和检查点不进入该目�
 
 [9 月 5 日报告](sermon-dubbing-astra-review-2026-09-05.zh.md)记录 55 段审阅、18 段中文修订，最终 118 个合成单元，55 段时槽无失败，同步长度 29:30。同步 WAV 与自然语音逐块对比波形误差为零，MP3 完整解码；118 段 ASR 全覆盖。61 条文字差异经 Astra 逐项复核，其中 3 处专名声调疑点和 2 处 ASR/口语差异仍留在试听清单。该报告另记录当次 102 项 Python、8 项前端测试和 21 个线上文件哈希检查；这些数字是已记录运行结果，本文更新没有重做模型生产。
 
-继续推进有三项明确工作：取得周日同版本纯证道视频并实现来源 adapter；完成各讲员/整篇人工试听和现场同步，绑定实际播放编排与最终 MP3；恢复周六定时任务接线并确认真实任务回读。两路桥接器和六位讲员配置已准备、真实 8 月 30 日来源检查通过，但 9 月 5 日定时任务更新接口未返回，回读仍是原双 PDF / Context Pack 任务，不能称配音调度已经接通。
+仍需取得周日同版本纯证道视频，使用已实现的 adapter 验证真实来源；完成每周整篇试听和现场同步，绑定实际播放编排与最终 MP3；恢复周六定时任务接线并确认原生任务回读。历史 8 月 30 日 fallback 与新的同版软件路径分开记录。9 月 5 日原生更新通道仍不可用，回读仍是原双 PDF / Context Pack 任务，不能称配音调度已经接通。最新范围和证据见[开发进度核验](saturday-development-progress-2026-09-05.zh.md)。
 
 恢复接线无需重做已经通过的音频与审核。后续新周次沿用来源隔离、不可变 job 和缓存验证，只有实际缺失或改变的阶段才继续执行。

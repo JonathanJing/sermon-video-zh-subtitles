@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
+  <title>手机媒体回路探针</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main>
+  <p class="eyebrow">MEDIA PROBE · WSS 基线</p>
+  <h1>手机媒体回路探针</h1>
+  <p>发送 PCM，接收并通过 WebAudio 播放。此探针不包含 ASR、翻译或 TTS。</p>
+  <p id="status" role="status">尚未连接</p>
+  <section class="setup" aria-label="连接设置">
+    <label>短期令牌 <input id="token" type="password" autocomplete="off" spellcheck="false" placeholder="从私有链接载入，或粘贴令牌"></label>
+    <label class="token-import">从本机令牌文件导入（仅本页读取，不上传） <input id="token-file" type="file" accept="text/plain,.txt,.token"></label>
+    <div class="fields">
+      <label>模式 <select id="role"><option value="loopback">单机回环</option><option value="admin">发送端 admin</option><option value="user">接收端 user</option></select></label>
+      <label>实际设备（自行声明） <select id="device"><option value="unknown">未声明</option><option value="desktop">桌面 / 笔记本</option><option value="phone">真实手机</option></select></label>
+      <label>网络（自行声明） <select id="network"><option value="unknown">未声明</option><option value="wifi">Wi-Fi</option><option value="cellular">蜂窝网络</option><option value="ethernet">有线</option></select></label>
+    </div>
+    <div class="buttons"><button id="connect">连接</button><button id="copy-link" class="secondary">复制接收端链接</button><button id="disconnect" class="secondary" disabled>断开</button></div>
+  </section>
+  <section aria-label="探针控制">
+    <p id="peers">单机回环只需本页；双端模式需 admin 与 user 各一页。</p>
+    <div class="fields">
+      <label>输入 <select id="input-mode"><option value="synthetic_silent">合成静音（仅处理链路）</option><option value="synthetic">合成短音</option><option value="microphone">真实麦克风</option></select></label>
+      <label>时长 <select id="duration"><option value="20">20 秒</option><option value="30" selected>30 秒</option><option value="60">60 秒</option><option value="120">120 秒</option></select></label>
+    </div>
+    <div class="buttons"><button id="audio" disabled>启用接收播放</button><button id="start" disabled>开始探针</button><button id="stop" class="secondary" disabled>停止并清队列</button></div>
+    <p class="note">默认合成静音只验证处理链路，不发出测试音。合成短音和麦克风模式会输出声音；附近正在采音时请选择静音。麦克风回环建议佩戴耳机。切到后台会停止当前探针。</p>
+  </section>
+  <section aria-label="实时测量">
+    <div class="metrics">
+      <div><span>网络 RTT · 中位数</span><strong id="rtt">—</strong></div>
+      <div><span>收帧回执 RTT · 中位数</span><strong id="receive-rtt">—</strong></div>
+      <div><span>播放处理回执 RTT · 中位数</span><strong id="play-rtt">—</strong></div>
+      <div><span>播放回执 − 收帧回执</span><strong id="ack-delta">—</strong></div>
+    </div>
+    <p id="counts">发送 0 · 接收 0 · 播放处理回执 0</p>
+    <p class="note">回执 RTT 使用发送端同一时钟；差值含浏览器缓冲与返程网络抖动。播放回执只证明音频进入 AudioWorklet 输出处理，不能证明耳机中已经听到；不计算未同步设备间的单向延迟。桌面测试不会标为手机验收。</p>
+  </section>
+  <section aria-label="摘要"><button id="download" class="secondary" disabled>下载 JSON 摘要</button><pre id="summary">结束后显示脱敏摘要；不保存原始音频、令牌或完整浏览器标识。</pre></section>
+</main>
+<script type="module" src="/app.js"></script>
+</body>
+</html>

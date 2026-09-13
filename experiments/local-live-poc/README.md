@@ -45,6 +45,10 @@ The backend includes a dependency-free Weekly Pack builder, guarded context retr
 
 The intentionally small system and context-pack plan is in [DESIGN.zh.md](./DESIGN.zh.md). The researched live transport decision and protocol contract are in [STREAMING.zh.md](./STREAMING.zh.md). The cellular/public phone-sharing path is in [PUBLIC_SHARING.zh.md](./PUBLIC_SHARING.zh.md), with the Firebase implementation, security audit, market comparison, and deployment gates in [FIREBASE_PUBLIC_VIEWER.zh.md](./FIREBASE_PUBLIC_VIEWER.zh.md). The saved current-caption baseline and recommended current-plus-previous display are in [CAPTION_DISPLAY.zh.md](./CAPTION_DISPLAY.zh.md).
 
+Discovery: [continuous Chinese speech translation research and plan](./SPEECH_TRANSLATION_RESEARCH_AND_PLAN.zh.md) compares Meta/Google approaches and proposes local streaming TTS, bounded playback, and separate audio acceptance gates. Speech output is planned, not enabled by this document.
+
+The proposed phone-admin capture and shared remote interpretation product is described in the [mobile/remote-host plan](../mobile-live-translation/PLAN.zh.md), including Firebase roles, DGX/MacBook inference, media transport, latency budgets, and sermon-quality comparison with Google. The [dated media and runtime experiment report](../mobile-live-translation/REPORT_20260906.zh.md) records actual tests and remaining phone/audio gates. This remains a separate experiment from the local Sunday runtime.
+
 ## First-time setup
 
 The setup script creates the local Python environment, installs the single WebSocket dependency, verifies `whisper-cli`/Ollama, and downloads the pinned `ggml-base.en` model into the ignored `artifacts/models/` directory:

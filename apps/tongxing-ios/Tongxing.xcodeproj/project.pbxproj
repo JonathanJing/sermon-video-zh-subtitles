@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		17719995BCE43C60385DB306 /* PlaybackControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE58D0C358A74F0BDE595617 /* PlaybackControllerTests.swift */; };
 		1F287CC791B5CA1037903C80 /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDD37841E68B061E39E91375 /* Localization.swift */; };
+		23FBE0C19259FFC619DE3B8B /* PrivacySupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E53066E0326AFD8370B5145 /* PrivacySupportView.swift */; };
 		23FDF718141336A8978A8DB3 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 07B59FA4533A491CF4AA2D83 /* Assets.xcassets */; };
 		272F205288C38B205D9DE540 /* TongxingApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61FE1B88425139B2F592ED0A /* TongxingApp.swift */; };
 		318C506CF300A57522C9F2F9 /* PlaybackDock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE586AE0AE5D2F197DC5483 /* PlaybackDock.swift */; };
@@ -82,6 +83,7 @@
 		3258F6BBF467D18B238176B8 /* Tongxing.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Tongxing.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		34B67E7FE8944242C03C8904 /* PlaybackController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackController.swift; sourceTree = "<group>"; };
 		3A757BEABA30910DC76E26BE /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		3E53066E0326AFD8370B5145 /* PrivacySupportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacySupportView.swift; sourceTree = "<group>"; };
 		4AE35BDEC7081304D75711B2 /* ListeningActivityExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = ListeningActivityExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		58CF4F36B9265709AAF09A1C /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
 		60D53F716EC96280DEAF16C4 /* ListeningActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityAttributes.swift; sourceTree = "<group>"; };
@@ -165,6 +167,7 @@
 				34B67E7FE8944242C03C8904 /* PlaybackController.swift */,
 				AAE586AE0AE5D2F197DC5483 /* PlaybackDock.swift */,
 				E8CDE0AD081CB32BAE3CD0CB /* PrivacyInfo.xcprivacy */,
+				3E53066E0326AFD8370B5145 /* PrivacySupportView.swift */,
 				61FE1B88425139B2F592ED0A /* TongxingApp.swift */,
 				BD0FEA1F83F4300CB78A0935 /* UITestLaunch.swift */,
 				E8AB6F9FA25BB0980EF2FE48 /* InfoPlist.strings */,
@@ -416,6 +419,7 @@
 				BB468865C54870860F167EA8 /* MicrophoneCapture.swift in Sources */,
 				DA598EC364686E234B86F56B /* PlaybackController.swift in Sources */,
 				318C506CF300A57522C9F2F9 /* PlaybackDock.swift in Sources */,
+				23FBE0C19259FFC619DE3B8B /* PrivacySupportView.swift in Sources */,
 				272F205288C38B205D9DE540 /* TongxingApp.swift in Sources */,
 				B415795B942C6189370AAE61 /* UITestLaunch.swift in Sources */,
 			);
@@ -460,7 +464,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 5;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -482,7 +486,7 @@
 			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 5;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ListeningActivityExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -667,7 +671,7 @@
 			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 5;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ListeningActivityExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -692,7 +696,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 5;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (

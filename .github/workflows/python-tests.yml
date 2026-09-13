@@ -52,3 +52,6 @@ jobs:
 
       - name: Check listening app behavior
         run: node --test experiments/sermon-dubbing-poc/web/*.test.mjs
+
+      - name: Check feedback API contracts
+        run: node --test experiments/sermon-dubbing-poc/feedback-api/test/*.test.mjs experiments/sermon-dubbing-poc/feedback-api/usage-report.test.mjs

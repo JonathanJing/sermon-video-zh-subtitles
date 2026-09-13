@@ -10,7 +10,8 @@ comes from the matching Supervisor report, never from the newest directory.
 path, sha256, durationSeconds, sameVersionConfirmed=true, sermonOnly=true and a
 confirmationReference. Until that evidence arrives this route waits; it never
 fabricates a human window or prevents the live_archive fallback from advancing.
-The actual same-video ingestion adapter is a separate step.
+prepare_same_video.py archives that input and seals reviewed same-source PDFs;
+this bridge then prepares/resumes the candidate without a human window record.
 
 --execute may bind the existing authorization to a clip, prepare an immutable
 job and run the existing candidate runner. It never calls a model for review,
@@ -30,7 +31,9 @@ import subprocess
 import sys
 
 from poc import ROOT, probe, sha256, write_json
-from weekly_dubbing import prepare, read, timecode, validate_frozen
+sys.path.insert(0, str(ROOT))
+from scripts.sermon_execution_harness import WorkAlreadyRunning, bounded_process, work_lock
+from weekly_dubbing import prepare, read, resolve_approved_timeline, timecode, validate_frozen
 
 HERE = Path(__file__).resolve().parent
 SCHEMA = "sermon-saturday-dubbing-bridge-v1"
@@ -86,21 +89,69 @@ def inspect_same_video(week, settings, *, root=ROOT, media_probe=probe):
     if not isinstance(source, dict) or source.get("week") != week or source.get("sameVersionConfirmed") is not True or source.get("sermonOnly") is not True or not nonempty(source.get("confirmationReference")):
         return waiting("same_video", "waiting_source_confirmation", "Same-version and sermon-only evidence must be explicit; a livestream window does not confirm this route.", "confirm_same_video_in_this_thread")
     try:
-        media = path_from(source["path"], root)
-        if not media.is_file():
+        from prepare_same_video import validate_archive, validate_source, BOUNDARY_BASIS
+        run = path_from(settings["run"], root) if settings.get("run") else None
+        if run and run.exists():
+            normalized, _ = validate_archive(run, source, root=root, media_probe=media_probe)
+        elif not path_from(source["path"], root).is_file():
             return waiting("same_video", "waiting_source", "The declared same-video media is not local yet.", "obtain_declared_same_video")
-        if sha256(media) != source["sha256"]:
-            raise ValueError("Same-video media hash changed")
-        measured = media_probe(media)
-        if source.get("durationSeconds", 0) <= 0 or abs(measured["durationSeconds"] - source["durationSeconds"]) > .2:
-            raise ValueError("Same-video duration differs from its source contract")
-        if not any(stream.get("codec_type") == "video" for stream in measured.get("streams", [])):
-            raise ValueError("The primary source contract requires the actual video")
+        else:
+            normalized = validate_source(source, week, root=root, media_probe=media_probe)
     except (KeyError, OSError, TypeError, ValueError, subprocess.CalledProcessError) as exc:
         return waiting("same_video", "waiting_source_evidence", str(exc), "inspect_same_video_evidence")
-    return waiting("same_video", "waiting_same_video_adapter", "Source identity is verified. A separate ingestion adapter must prepare reviewed text and evidence without inventing a v1 human window.",
-        "prepare_same_video_route_in_this_thread", sourceId=source.get("sourceId"), mediaSha256=source["sha256"],
-        proposedWindow={"startSeconds": 0, "endSeconds": measured["durationSeconds"], "basis": "explicit_sermon_only_source_contract"})
+    return waiting("same_video", "ready_for_source_intake", "The complete confirmed video supplies this route's source range.",
+        "initialize_same_video_source", sourceId=normalized["sourceId"], mediaSha256=normalized["sha256"],
+        sourceContract=normalized, humanWindow="not_applicable",
+        proposedWindow={"startSeconds": 0, "endSeconds": normalized["durationSeconds"], "basis": BOUNDARY_BASIS})
+
+
+def inspect_same_route(config, config_path, week, settings, supervisor_report, *, root=ROOT, media_probe=probe, validator=None):
+    from prepare_same_video import BOUNDARY_BASIS, CONTRACT_NAME, HANDOFF_NAME, production_plan, reviewed_inputs, validate_archive, validate_handoff
+    source = settings.get("source")
+    output_root = path_from(config.get("outputRoot", "artifacts/sermon-dubbing/weekly-bridge"), root)
+    # No discovery report or liveArchive window/cache is ever used on this route.
+    configured = dict(settings)
+    if isinstance(source, dict) and source.get("sourceId") and source.get("sha256") and not settings.get("run"):
+        if re.fullmatch(r"[A-Za-z0-9_-]{1,128}", str(source["sourceId"])) and re.fullmatch(r"[0-9a-f]{64}", str(source["sha256"])):
+            configured["run"] = str(output_root / week / "same_video" / source["sourceId"] / ("source-" + source["sha256"][:20]))
+    result = inspect_same_video(week, configured, root=root, media_probe=media_probe)
+    if result["status"] != "ready_for_source_intake":
+        return result, None
+    run = path_from(configured["run"], root)
+    metadata = {**config.get("weeks", {}).get(week, {}), **settings.get("metadata", {})}
+    python = str(executable_path_from(config.get("pythonExecutable") or sys.executable, root))
+    adapter = [python, str(HERE / "prepare_same_video.py"), "--config", str(config_path), "--week", week, "--run", str(run)]
+    for field in ("title", "speaker"):
+        if nonempty(metadata.get(field)):
+            adapter += ["--" + field, metadata[field]]
+    result.update(run=str(run), boundaryBasis=BOUNDARY_BASIS, sundayPublication="not_attempted")
+    if not run.exists():
+        result.update(status="waiting_same_video_intake", nextActions=[{"action": "initialize_same_video_source", "route": "same_video", "commands": [adapter + ["--initialize"]]}])
+        return result, None
+    contract, _ = validate_archive(run, source, root=root, media_probe=media_probe)
+    from scripts.sermon_production_supervisor import lease_active
+    if any((run / "leases" / (stage + ".json")).exists() and lease_active(read(run / "leases" / (stage + ".json"))) for stage in ("timeline", "generation")):
+        return waiting("same_video", "waiting_saturday_run", "This same-video source still holds a production lease.", "wait_for_same_video_production", run=str(run)), None
+    if not (run / HANDOFF_NAME).is_file():
+        production = production_plan(run, contract, python=python, title=metadata.get("title"), speaker=metadata.get("speaker"))
+        if (run / "pipeline/reading-edition-v2/reading_blocks.final.json").exists():
+            # Validate the cached reading before dropping paid stages from the
+            # handoff. A failed local PDF/seal never repeats notes generation.
+            reviewed_inputs(run, source, root=root, media_probe=media_probe, include_pdfs=False, include_outline=False)
+            if (run / "pipeline/sermon-interpretation/insights/openai-notes.json").exists():
+                reviewed_inputs(run, source, root=root, media_probe=media_probe, include_pdfs=False)
+                production["commands"] = [adapter + ["--seal-reviewed"]]
+                production["nextAction"] = "seal_existing_same_source_reviewed_artifacts"
+            elif not production["metadataRequiredForPdf"]:
+                production["commands"] = production["commands"][-2:]
+                production["nextAction"] = "generate_companion_from_verified_reading_then_seal"
+        result.update(status="waiting_same_video_production", productionPlan=production,
+            nextActions=[{"action": "produce_and_review_same_video_in_this_thread", "route": "same_video", "model": "gpt-6-astra", "commands": production["commands"]}])
+        return result, None
+    _, inputs = validate_handoff(run, source, root=root, media_probe=media_probe)
+    return plan_candidate(config, config_path, week, settings, supervisor_report, run, contract["sourceId"], inputs,
+        {"kind": "same_video_source_contract", "path": str(run / CONTRACT_NAME), "sha256": sha256(run / CONTRACT_NAME)},
+        route="same_video", root=root, validator=validator, metadata=metadata)
 
 
 def resolve_run(week, settings, supervisor_report, *, root=ROOT):
@@ -131,19 +182,20 @@ def resolve_run(week, settings, supervisor_report, *, root=ROOT):
 def validate_live_inputs(run, week, *, root=ROOT, media_probe=probe):
     """Preflight the same inputs that prepare() validates again before mutation."""
     sys.path.insert(0, str(ROOT))
-    from scripts.sermon_production_supervisor import lease_active, validate_window_approval
+    from scripts.sermon_production_supervisor import lease_active
     for stage in ["timeline", "generation"]:
         lease = run / "leases" / (stage + ".json")
         if lease.exists() and lease_active(read(lease)):
             return None, ("waiting_saturday_run", "An existing Saturday stage still holds its source lease.")
     paths = {key: run / relative for key, relative in INPUTS.items()}
-    if not paths["windowApproval"].is_file() or not paths["timeline"].is_file():
+    if not paths["windowApproval"].is_file():
         return None, ("waiting_boundary", "A matching existing human sermon-window approval is required for the live archive.")
     source_id = run.name.removeprefix("sermon_")
-    valid, reason = validate_window_approval(read(paths["windowApproval"]), sunday=week,
-        live_url=f"https://www.youtube.com/watch?v={source_id}", timeline_report=read(paths["timeline"]))
-    if not valid:
-        return None, ("waiting_boundary", reason)
+    try:
+        paths["timeline"] = resolve_approved_timeline(run, read(paths["windowApproval"]), week=week,
+            source_url=f"https://www.youtube.com/watch?v={source_id}")
+    except ValueError as exc:
+        return None, ("waiting_boundary", str(exc))
     missing = [key for key, path in paths.items() if not path.is_file()]
     if missing:
         return None, ("waiting_saturday_artifacts", "Missing reviewed Saturday artifacts: " + ", ".join(missing))
@@ -204,12 +256,23 @@ def inspect_live_archive(config, config_path, week, settings, supervisor_report,
     inputs, blocked = validate_live_inputs(run, week, root=root, media_probe=media_probe)
     if blocked:
         return waiting(route, *blocked, "continue_existing_saturday_workflow", sourceId=source_id, run=str(run)), None
-    metadata = config.get("weeks", {}).get(week, {})
+    return plan_candidate(config, config_path, week, settings, supervisor_report, run, source_id, inputs, provenance,
+        route=route, root=root, validator=validator)
+
+
+def plan_candidate(config, config_path, week, settings, supervisor_report, run, source_id, inputs, provenance, *, route,
+                   root=ROOT, validator=candidate_validator, metadata=None):
+    metadata = config.get("weeks", {}).get(week, {}) if metadata is None else metadata
     missing = [key for key in ["speaker", "title", "scripture"] if not nonempty(metadata.get(key))]
     if missing:
         return waiting(route, "waiting_metadata", "Explicit weekly metadata is missing; no speaker is inferred from a filename or title.", "record_verified_weekly_metadata", missingFields=missing, sourceId=source_id), None
-    if metadata.get("sourceId") and metadata["sourceId"] != source_id:
+    source_pin = metadata.get("sourceId") if route == "live_archive" else settings.get("metadata", {}).get("sourceId")
+    if source_pin and source_pin != source_id:
         raise ValueError("Weekly metadata belongs to a different source")
+    if route == "same_video":
+        notes = read(Path(inputs["outline"]["path"]))
+        if notes.get("speaker") != metadata["speaker"] or notes.get("sermonTitle") != metadata["title"]:
+            raise ValueError("Same-video title/speaker differs from its reviewed companion metadata")
     voice = config.get("voiceRuns", {}).get(metadata["speaker"])
     if not isinstance(voice, dict) or not voice.get("voiceRun") or not voice.get("remoteCheckpoint"):
         return waiting(route, "waiting_voice", "No configured trained voice exists for the explicitly identified speaker.", "prepare_or_select_speaker_voice", speaker=metadata["speaker"], sourceId=source_id), None
@@ -240,6 +303,8 @@ def inspect_live_archive(config, config_path, week, settings, supervisor_report,
     if (work / "job.json").exists():
         job = read(work / "job.json")
         validate_frozen(job)
+        if (job.get("sourceRoute") == "same_video") != (route == "same_video"):
+            raise ValueError("Existing job belongs to another source route")
         if any(job.get(key) != expected for key, expected in {"week": week, "sourceId": source_id, "speaker": metadata["speaker"], "title": metadata["title"], "scripture": metadata["scripture"]}.items()):
             raise ValueError("Existing job differs from the selected weekly source/metadata")
         if job["voice"]["checkpointSha256"] != training["checkpointSha256"] or any(job["inputs"].get(key) != value for key, value in inputs.items()):
@@ -263,9 +328,9 @@ def inspect_live_archive(config, config_path, week, settings, supervisor_report,
     elif state["status"] == "waiting_evidence_repair":
         actions = [{"action": "inspect_candidate_evidence", "route": route, "work": str(work), "commands": []}]
     report = {"route": route, **state, "sourceId": source_id, "run": str(run), "work": str(work), "sourceProvenance": provenance,
-        "boundaryBasis": "existing_human_window_approval", "nextActions": actions,
+        "boundaryBasis": "explicit_sermon_only_source_contract" if route == "same_video" else "existing_human_window_approval", "nextActions": actions,
         "plannedRunnerCommand": command, "sundayPublication": "not_attempted"}
-    plan = {"run": run, "voiceRun": voice_run, "work": work, "week": week, "metadata": metadata, "sourceId": source_id,
+    plan = {"route": route, "run": run, "voiceRun": voice_run, "work": work, "week": week, "metadata": metadata, "sourceId": source_id,
         "authorization": authorization, "authorizationPath": auth_path, "command": command, "outputRoot": output_root}
     return report, plan
 
@@ -280,15 +345,25 @@ def inspect_bridge(config_path, week, supervisor_report=None, *, root=ROOT, medi
     if not isinstance(settings, dict) or any(not isinstance(settings.get(key, {}), dict) for key in ["sameVideo", "liveArchive"]):
         raise ValueError("Weekly route settings must be explicit objects")
     supervisor_report = path_from(supervisor_report or f"artifacts/sermon-production-supervisor/{week}/latest.json", root)
-    same = inspect_same_video(week, settings.get("sameVideo", {}), root=root, media_probe=media_probe)
+    try:
+        same, same_plan = inspect_same_route(config, config_path, week, settings.get("sameVideo", {}), supervisor_report,
+            root=root, media_probe=media_probe, validator=validator)
+    except (KeyError, OSError, TypeError, ValueError, subprocess.CalledProcessError) as exc:
+        same, same_plan = waiting("same_video", "waiting_evidence_repair", str(exc), "inspect_same_video_evidence"), None
     try:
         fallback, plan = inspect_live_archive(config, config_path, week, settings.get("liveArchive", {}), supervisor_report,
             root=root, media_probe=media_probe, validator=validator)
     except (KeyError, OSError, TypeError, ValueError, subprocess.CalledProcessError) as exc:
         fallback, plan = waiting("live_archive", "waiting_evidence_repair", str(exc), "inspect_live_archive_evidence"), None
+    usable = {"ready_to_prepare", "ready_to_resume", "waiting_conversation_review"}
+    if same_plan and same["status"] in usable:
+        plan = same_plan
+    elif not (plan and fallback["status"] in usable):
+        plan = same_plan or plan
+    selected = same if plan and plan["route"] == "same_video" else fallback if plan else same if same.get("sourceId") else fallback
     return {"schemaVersion": REPORT_SCHEMA, "checkedAt": datetime.now(timezone.utc).isoformat(), "mode": "inspect", "week": week,
         "config": {"path": str(config_path), "sha256": sha256(config_path)},
-        "status": fallback["status"], "selectedRoute": "live_archive" if plan else None,
+        "status": selected["status"], "selectedRoute": plan["route"] if plan else None,
         "routes": {"same_video": same, "live_archive": fallback}, "nextActions": same["nextActions"] + fallback["nextActions"],
         "humanApprovalWritten": False, "globalSourceChanged": False, "published": False}, plan
 
@@ -311,21 +386,22 @@ def source_lock(output_root, week, source_id):
 
 
 def continue_saturday(config_path, week, supervisor_report=None, *, execute=False, root=ROOT, media_probe=probe,
-    validator=candidate_validator, preparer=prepare, runner=subprocess.run):
+    validator=candidate_validator, preparer=prepare, runner=bounded_process):
     options = {"root": root, "media_probe": media_probe, "validator": validator}
     report, plan = inspect_bridge(config_path, week, supervisor_report, **options)
     if not execute or plan is None or report["status"] not in {"ready_to_prepare", "ready_to_resume"}:
         report["mode"] = "execute" if execute else "inspect"
         return report
+    route = plan["route"]
     with source_lock(plan["outputRoot"], week, plan["sourceId"]) as acquired:
         if not acquired:
             report.update(mode="execute", status="waiting_active_dubbing_run")
-            report["routes"]["live_archive"]["status"] = "waiting_active_dubbing_run"
-            report["nextActions"] = [{"action": "wait_for_current_dubbing_run", "route": "live_archive", "commands": []}]
+            report["routes"][route]["status"] = "waiting_active_dubbing_run"
+            report["nextActions"] = [{"action": "wait_for_current_dubbing_run", "route": route, "commands": []}]
             return report
         # Re-read all input evidence inside the lock before making changes.
         report, fresh = inspect_bridge(config_path, week, supervisor_report, **options)
-        if fresh is None or fresh["sourceId"] != plan["sourceId"] or fresh["outputRoot"] != plan["outputRoot"] or report["status"] not in {"ready_to_prepare", "ready_to_resume"}:
+        if fresh is None or fresh["route"] != route or fresh["sourceId"] != plan["sourceId"] or fresh["outputRoot"] != plan["outputRoot"] or report["status"] not in {"ready_to_prepare", "ready_to_resume"}:
             report["mode"] = "execute"
             return report
         plan = fresh
@@ -338,24 +414,32 @@ def continue_saturday(config_path, week, supervisor_report=None, *, execute=Fals
                 else:
                     write_json(auth_path, plan["authorization"])
                 with redirect_stdout(sys.stderr):
-                    preparer(plan["run"], plan["voiceRun"], plan["work"], week, plan["metadata"]["title"],
-                        plan["metadata"]["speaker"], plan["metadata"]["scripture"], auth_path)
+                    extra = {"same_video_contract": plan["run"] / "same-video-source.json"} if route == "same_video" else {}
+                    with work_lock(plan["work"]):
+                        preparer(plan["run"], plan["voiceRun"], plan["work"], week, plan["metadata"]["title"],
+                            plan["metadata"]["speaker"], plan["metadata"]["scripture"], auth_path, **extra)
             with (plan["work"] / "bridge-runner.log").open("a") as log:
-                result = runner(plan["command"], stdout=log, stderr=subprocess.STDOUT, check=False)
+                result = runner(plan["command"], stdout=log, stderr=subprocess.STDOUT, check=False, timeout=21660)
+            if result.returncode == 75:
+                raise WorkAlreadyRunning("The direct candidate runner holds this work directory")
             if result.returncode:
                 raise ValueError(f"Candidate runner stopped with exit {result.returncode}; retained artifacts and bridge-runner.log require inspection")
             # A zero exit or an old receipt cannot stand in for current evidence.
             evidence = validator(plan["work"])
-            report["routes"]["live_archive"].update(status="waiting_conversation_review", candidateEvidence=evidence,
+            report["routes"][route].update(status="waiting_conversation_review", candidateEvidence=evidence,
                 reviewModel="gpt-6-astra", reviewLocation="current_conversation",
-                nextActions=[{"action": "review_candidate_in_this_thread", "route": "live_archive", "model": "gpt-6-astra", "work": str(plan["work"]), "commands": []}])
+                nextActions=[{"action": "review_candidate_in_this_thread", "route": route, "model": "gpt-6-astra", "work": str(plan["work"]), "commands": []}])
             report.update(status="waiting_conversation_review", mode="execute")
-        except (OSError, ValueError, KeyError, subprocess.CalledProcessError) as exc:
+        except WorkAlreadyRunning:
+            report.update(status="waiting_active_dubbing_run", mode="execute")
+            report["routes"][route].update(status="waiting_active_dubbing_run",
+                nextActions=[{"action": "wait_for_current_dubbing_run", "route": route, "commands": []}])
+        except (OSError, ValueError, KeyError, subprocess.SubprocessError) as exc:
             report.update(status="waiting_evidence_repair", mode="execute")
-            report["routes"]["live_archive"].update(status="waiting_evidence_repair", reason=str(exc),
-                nextActions=[{"action": "inspect_candidate_evidence", "route": "live_archive", "work": str(plan["work"]), "commands": []}])
+            report["routes"][route].update(status="waiting_evidence_repair", reason=str(exc),
+                nextActions=[{"action": "inspect_candidate_evidence", "route": route, "work": str(plan["work"]), "commands": []}])
         report["nextActions"] = report["routes"]["same_video"]["nextActions"] + report["routes"]["live_archive"]["nextActions"]
-        write_json(plan["outputRoot"] / week / "live_archive" / plan["sourceId"] / "bridge-latest.json", report)
+        write_json(plan["outputRoot"] / week / route / plan["sourceId"] / "bridge-latest.json", report)
         return report
 
 

@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "sermon-quality-baseline-freeze-v1",
+  "suiteSha256": "4f33c58d62bd69b4614aae13ba4e328c618e146e1a4d076de8a043e7e083ab5b",
+  "baselineSha256": "653ea311dac55bc56fa1dac0d3e4e9c2a465bb534ffc0a835cde5b2e4dc1249a",
+  "knownIssueSha256": "f8eeaccd1c32303db918da99f0c9a0096904d8bc1103a15f0fc7c8c52b4b4231",
+  "sampleIds": [
+    "l8ucqF9uA9A-block-1",
+    "l8ucqF9uA9A-block-2",
+    "l8ucqF9uA9A-block-9",
+    "l8ucqF9uA9A-block-10",
+    "l8ucqF9uA9A-block-17",
+    "l8ucqF9uA9A-block-38",
+    "l8ucqF9uA9A-block-42",
+    "l8ucqF9uA9A-block-53"
+  ],
+  "baselinePassed": true,
+  "knownIssuePassed": false,
+  "knownIssueRules": [
+    {
+      "sampleId": "l8ucqF9uA9A-block-2",
+      "rule": "canonical_number_spoken:5300"
+    },
+    {
+      "sampleId": "l8ucqF9uA9A-block-2",
+      "rule": "canonical_number_recognized:5300"
+    },
+    {
+      "sampleId": "l8ucqF9uA9A-block-2",
+      "rule": "canonical_number_spoken:3000"
+    },
+    {
+      "sampleId": "l8ucqF9uA9A-block-2",
+      "rule": "canonical_number_recognized:3000"
+    }
+  ],
+  "reviewType": "model",
+  "humanApproval": false,
+  "newModelCalls": 0
+}

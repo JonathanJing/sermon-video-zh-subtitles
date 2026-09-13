@@ -10,7 +10,9 @@ from align_weekly_source import match_blocks
 from apply_spoken_review import CHECKS, SCHEMA, derive, make_units, reviewed_blocks, text_hash, validate_job_review
 from check_weekly_timing import anchor_review_type, budgets, load_anchors
 from poc import sha256, write_json
+from render_weekly_audio import render_identity
 from run_weekly_dubbing import validate_cached_stages, validate_timing
+from spoken_text import LEGACY_VERSION, VERSION, spoken_text
 from test_resume_integrity import candidate_fixture, modify, snapshot
 from weekly_dubbing import read, validate_frozen, validate_review
 
@@ -282,6 +284,87 @@ class SpokenReviewTests(unittest.TestCase):
             before = snapshot(parent)
             validate_job_review(job)
             validate_frozen(job)
+            self.assertEqual(snapshot(parent), before)
+
+    def test_v1_review_chain_validates_after_new_jobs_switch_to_v2(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            parent, first, review = self.fixture(root, chinese="上升5,300英尺。")
+            with patch("apply_spoken_review.VERSION", LEGACY_VERSION):
+                derive(parent, first, review)
+            legacy = read(first / "job.json")
+            self.assertEqual(legacy["pronunciationRuleVersion"], LEGACY_VERSION)
+            self.assertEqual(legacy["units"][0]["spokenText"], "上升五,三百英尺。")
+            before = snapshot(first)
+            validate_frozen(legacy)
+
+            second_review = root / "second-review.json"
+            newer = read(review)
+            newer.update(parentJobSha256=sha256(first / "job.json"), blocks=[])
+            write_json(second_review, newer)
+            child = {**legacy, "pronunciationRuleVersion": VERSION,
+                "units": make_units(legacy["blocks"], pronunciation_rule_version=VERSION),
+                "inputs": {**legacy["inputs"], "spokenScriptReview": {"path": str(second_review), "sha256": sha256(second_review)}},
+                "revisionOf": {"path": str(first), "jobSha256": sha256(first / "job.json")}}
+            with patch("subprocess.run", side_effect=AssertionError("No model or render calls")):
+                validate_frozen(child)
+            self.assertEqual(child["units"][0]["spokenText"], "上升五千三百英尺。")
+            self.assertEqual(snapshot(first), before)
+
+    def test_rule_version_and_frozen_spoken_units_cannot_be_changed_independently(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            parent, out, review = self.fixture(Path(tmp), chinese="上升5,300英尺。")
+            with patch("apply_spoken_review.VERSION", LEGACY_VERSION):
+                derive(parent, out, review)
+            original = read(out / "job.json")
+            for version in [None, "unknown", "chinese-sermon-pronunciation-v4", [], True]:
+                changed = copy.deepcopy(original)
+                changed["pronunciationRuleVersion"] = version
+                with self.subTest(version=version), self.assertRaisesRegex(ValueError, "Unsupported pronunciation"):
+                    validate_frozen(changed)
+            changed = copy.deepcopy(original)
+            changed["pronunciationRuleVersion"] = VERSION
+            with self.assertRaisesRegex(ValueError, "Job text does not match"):
+                validate_frozen(changed)
+            changed = copy.deepcopy(original)
+            changed["units"][0]["spokenText"] = "上升五千三百英尺。"
+            with self.assertRaisesRegex(ValueError, "Job text does not match"):
+                validate_frozen(changed)
+
+    def test_rule_upgrade_reuses_only_units_whose_effective_speech_is_unchanged(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            parent, out, review = self.fixture(Path(tmp))
+            source = "上升5,300英尺。"
+            job = read(parent / "job.json")
+            job["pronunciationRuleVersion"] = LEGACY_VERSION
+            job["blocks"][0]["zh"] = source
+            job["units"][0].update(text=source, spokenText=spoken_text(source, version=LEGACY_VERSION))
+            write_json(parent / "job.json", job)
+            identity = render_identity(parent / "job.json", job["voice"]["checkpointSha256"])
+            write_json(parent / "render/identity.json", identity)
+            render = read(parent / "render/report.json")
+            render.update(identity)
+            for index, unit in enumerate(job["units"]):
+                render["cues"][index]["text"] = unit["text"]
+                modify(parent, f"render/unit-{index:04d}.json", lambda d, u=unit: d.update(unit=u, identity=identity))
+            write_json(parent / "render/report.json", render)
+            modify(parent, "source-alignment/report.json", lambda d: d.update(jobSha256=identity["jobSha256"]))
+            modify(parent, "audio/unit-screening/unit-0000.json", lambda d: d["identity"].update(expected=job["units"][0]["spokenText"]))
+            review_fixture(parent, review, chinese=source)
+            before = snapshot(parent)
+            with patch("subprocess.run", side_effect=AssertionError("No model or render calls")):
+                result = derive(parent, out, review)
+                derived = read(out / "job.json")
+                validate_frozen(derived)
+                validate_cached_stages(out, derived)
+            self.assertEqual(derived["pronunciationRuleVersion"], VERSION)
+            self.assertEqual(derived["units"][0]["spokenText"], "上升五千三百英尺。")
+            self.assertEqual(result["changedBlockIds"], [])
+            self.assertEqual(result["regenerateUnitIds"], [0])
+            self.assertEqual(result["reusedUnits"], [{"unitId": 1, "parentUnitId": 1}])
+            self.assertFalse((out / "render/unit-0000.wav").exists())
+            self.assertEqual((out / "render/unit-0001.wav").read_bytes(), (parent / "render/unit-0001.wav").read_bytes())
+            self.assertEqual(read(out / "render/unit-0001.json")["reusedFrom"]["receiptSha256"], sha256(parent / "render/unit-0001.json"))
             self.assertEqual(snapshot(parent), before)
 
 

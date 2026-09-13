@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "saturday-quality-suite-v1",
+  "pronunciationRuleVersion": "chinese-sermon-pronunciation-v2",
+  "requireAudioEvidence": false,
+  "samples": [
+    {
+      "id": "grouped-number",
+      "en": "The congregation collected 5,300 books.",
+      "sourceSha256": "ec847b0e817e828fa0749f805cb1a9fa4998fc90b887ef5c0a21002517192a06",
+      "provenance": {
+        "kind": "synthetic_fixture"
+      },
+      "constraints": {
+        "terms": [
+          [
+            "会众"
+          ]
+        ],
+        "numbers": [
+          {
+            "source": "5,300",
+            "display": "5,300",
+            "spoken": "五千三百"
+          }
+        ],
+        "forbiddenZh": []
+      }
+    },
+    {
+      "id": "year-pronoun",
+      "en": "In 2026, we pray to you, Lord.",
+      "sourceSha256": "23f52ec78b4940e748ede406da7cccd32c88640cbd834982a934aa489766b4d6",
+      "provenance": {
+        "kind": "synthetic_fixture"
+      },
+      "constraints": {
+        "terms": [
+          [
+            "主"
+          ],
+          [
+            "祷告"
+          ]
+        ],
+        "numbers": [
+          {
+            "source": "2026",
+            "display": "2026",
+            "spoken": "二零二六年"
+          }
+        ],
+        "forbiddenZh": []
+      }
+    },
+    {
+      "id": "terms",
+      "en": "Grace leads us to repentance and forgiveness.",
+      "sourceSha256": "1d76033943b325d2c3dff30859d5f3536aa3e23104d45d1223dabbcb7c5a301d",
+      "provenance": {
+        "kind": "synthetic_fixture"
+      },
+      "constraints": {
+        "terms": [
+          [
+            "恩典"
+          ],
+          [
+            "悔改"
+          ],
+          [
+            "赦免",
+            "饶恕"
+          ]
+        ],
+        "numbers": [],
+        "forbiddenZh": []
+      }
+    }
+  ]
+}
