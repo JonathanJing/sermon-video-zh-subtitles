@@ -17,6 +17,7 @@ service-account*.json
 experiments/local-live-poc/firebase/.firebaserc
 experiments/local-live-poc/firebase/.firebase/
 node_modules/
+node_modules
 dist/
 build/
 coverage/

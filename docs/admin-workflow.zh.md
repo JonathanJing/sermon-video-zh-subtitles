@@ -16,7 +16,7 @@ Admin 页面是周日字幕 readiness 的 operator 界面。它和普通会众�
 
 当你需要浏览器内的监控、模拟、手动触发或 readiness 检查时，使用 Admin 页面。
 
-但不要把 Admin 页面上的一次触发或一次页面检查，当作整个工作流已经完成。当前稳定完成标准是双 PDF 路径：source 已保存、证道时间窗已人工确认、`sermon_zh_en_reading.pdf` 和 `sermon_interpretation_zh.pdf` 都已生成、两个 PDF QA 均通过、run report 已写出。
+Admin 页面触发或检查本身不代表生产完成。实际证据须满足[稳定流程完成标准](./stable-post-live-reading-pdf-workflow.zh.md#完成标准)；Supervisor 状态遵循[统一完成规则](./sermon-production-supervisor-agent.zh.md#完成标准)。
 
 ## Route
 
