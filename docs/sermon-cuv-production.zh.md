@@ -109,6 +109,10 @@
 
 新目录输出完整 `blocks.json`、`report.json`、`spoken-review.json`；审校收据绑定当前合成 job，保持 `humanApproval=false`，`timingAcceptance=pending_new_synthesis_and_measurement`。原译文、报告、缓存和人工状态不变。使用相同参数可恢复，`validate --out` 离线重放新旧证据链。若再次实测超时，可把本次译文作为下一轮 `--prior-translation`，并提供它所派生的新 job 及新实测报告。
 
+后续修订可显式加 `--prompt-policy timing-aware-review-v2`，并使用新输出目录。该策略在新 manifest 的 `promptPolicy` 中冻结；未指定时仍使用原协议，旧 manifest、提示、请求 payload 和成功缓存的重放不变。新版以当前真实语音时长比例计算建议中文总字符数，再扣除不可改的经文字符数，形成旁白建议预算；目标时长留约 6%、最多 1.5 秒余量。字符估算只用于精练，不保证合时，不能据此缩短经文或丢失意思。
+
+新版独立审校须保留初稿的精练表达，修复含义时也须避免恢复冗长邀请、过渡或逐字镜像英语语法。最终旁白字符数不得超过精练初稿（忽略空白及经文 token）；若补回遗漏含义需要更多字，须在其他旁白处自然精练，否则报告未决问题并停止。这个防回涨上限不是时长验收：关键重复、不同信息、观众动作及玩笑仍须保留，后续仍以新 WAV 的实际 timing 为准。旧策略不追溯添加这个关口。
+
 之后用现有 `apply_spoken_review.py --parent CURRENT --out NEW --review NEW_TRANSLATION/spoken-review.json` 派生下一版。它按 block ID、显示文本、实际发音文本和间隔精确匹配单元，即使全局 unit ID 位移也可复用未改 WAV；已有机器回听需同时匹配音频哈希与 expected 文本才可复用。其余单元重新生成和回听。新 job 仍要重新计算 timing、同步装配并重建关联 PDF/字幕/下载/发布证据；修订报告本身不授予合时或实际听感验收。
 
 ## 开发验证

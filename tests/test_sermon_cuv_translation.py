@@ -479,6 +479,77 @@ class CuvTranslationTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "was not revised"):
                 mod.repair_timing(self.out, work / "job.json", work / "synchronization/report.json", self.root / "unchanged")
 
+    def test_timing_aware_policy_is_explicit_and_keeps_old_cache_replay(self):
+        work = self.make_timing_source()
+        legacy = self.root / "legacy-timing"
+        self.timing_execute(self.out, work, legacy)
+        self.assertNotIn("promptPolicy", mod.read(legacy / "cuv-manifest.json"))
+        before = {p: p.read_bytes() for p in legacy.rglob("*.json")}
+        modern = self.root / "modern-timing"
+        seen = []
+        def checked(key, payload):
+            seen.append(payload)
+            data = json.loads(payload["messages"][1]["content"])
+            guidance = data["targets"][0]["timingCharacterGuidance"]
+            self.assertTrue(guidance["advisoryOnly"])
+            self.assertGreater(guidance["immutableScriptureChars"], 0)
+            self.assertLess(guidance["suggestedNarrationChars"], guidance["currentNarrationChars"])
+            if mod.REVIEW in payload["messages"][0]["content"]:
+                self.assertIn(mod.TIMING_AWARE_REVIEW, payload["messages"][0]["content"])
+                self.assertEqual(mod.narration_characters(data["draft"]["blocks"][0]["zhTemplate"]),
+                                 data["targets"][0]["maximumFinalNarrationChars"])
+            return self.timing_chat(key, payload)
+        with mock.patch.dict(mod.os.environ, {"OPENAI_API_KEY": "test-only"}), \
+             mock.patch.object(mod, "chat_json", side_effect=checked):
+            mod.repair_timing(self.out, work / "job.json", work / "synchronization/report.json", modern,
+                              prompt_policy=mod.TIMING_AWARE_POLICY)
+        self.assertEqual(2, len(seen))
+        self.assertEqual(mod.TIMING_AWARE_POLICY, mod.read(modern / "cuv-manifest.json")["promptPolicy"])
+        self.assertEqual(mod.TIMING_AWARE_POLICY, mod.read(modern / "report.json")["timingRevision"]["promptPolicy"])
+        with mock.patch.object(mod, "chat_json", side_effect=AssertionError("offline")):
+            mod.validate(legacy)
+            mod.validate(modern)
+        self.assertTrue(all(p.read_bytes() == value for p, value in before.items()))
+        with mock.patch.object(mod, "chat_json", side_effect=AssertionError("frozen")):
+            with self.assertRaisesRegex(ValueError, "Existing artifact differs"):
+                mod.repair_timing(self.out, work / "job.json", work / "synchronization/report.json", legacy,
+                                  prompt_policy=mod.TIMING_AWARE_POLICY)
+
+    def test_timing_aware_policy_rejects_review_regrowth_while_legacy_keeps_its_contract(self):
+        work = self.make_timing_source()
+        def expanded(key, payload):
+            response = self.timing_chat(key, payload)
+            if mod.COMPACT_NARRATION in payload["messages"][0]["content"]:
+                result = json.loads(response["choices"][0]["message"]["content"])
+                data = json.loads(payload["messages"][1]["content"])
+                result["blocks"][0]["zhTemplate"] = data["targets"][0]["currentTemplate"][2:]
+                return self.response(result)
+            return response
+        with mock.patch.dict(mod.os.environ, {"OPENAI_API_KEY": "test-only"}), \
+             mock.patch.object(mod, "chat_json", side_effect=expanded):
+            self.assertEqual("passed", mod.repair_timing(self.out, work / "job.json", work / "synchronization/report.json",
+                                                        self.root / "legacy-expanded")["status"])
+            with self.assertRaisesRegex(ValueError, "expanded the compact narration"):
+                mod.repair_timing(self.out, work / "job.json", work / "synchronization/report.json", self.root / "modern-expanded",
+                                  prompt_policy=mod.TIMING_AWARE_POLICY)
+        self.assertFalse((self.root / "modern-expanded/spoken-review.json").exists())
+
+    def test_unknown_timing_prompt_policy_fails_before_paid_work(self):
+        with mock.patch.object(mod, "chat_json", side_effect=AssertionError("no API")):
+            with self.assertRaisesRegex(ValueError, "Unknown timing prompt policy"):
+                mod.repair_timing(self.out, self.parent, self.root / "missing-report", self.root / "unknown",
+                                  prompt_policy="unrecognized-version")
+
+    def test_timing_character_advice_uses_actual_ratio_and_never_budgets_scripture_edits(self):
+        block = {"zhTemplate": "字" * 133, "quotes": []}
+        guidance = mod.timing_character_guidance(block, {"naturalSeconds": 22.98}, 17.597)
+        self.assertEqual(101, guidance["suggestedNarrationChars"])
+        locked = {"zhTemplate": "说__CUV_LOCK_aaaaaaaaaaaaaaaaaaaaaaaa__", "quotes": [{"cuvText": "字" * 100}]}
+        guidance = mod.timing_character_guidance(locked, {"naturalSeconds": 20}, 10)
+        self.assertEqual(100, guidance["immutableScriptureChars"])
+        self.assertEqual(0, guidance["suggestedNarrationChars"])
+        self.assertTrue(guidance["advisoryOnly"])
+
     def reuse_run(self, **kwargs):
         old = self.out
         self.out = self.root / "translation-v2"
