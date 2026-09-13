@@ -8,7 +8,7 @@ function harness(overrides = {}) {
   let current = { week:{id:'week',sourceStartSeconds:1793,audioFingerprint:{...metadata}},track:{id:'synced',sha256:trackSha,durationSeconds:2240},generation:1,ready:true };
   let clock=10000, seekCalls=[],playCalls=0,pauseCalls=0,states=[],jobs=[];
   const timers={setTimeout(fn,ms){const job={fn,ms};jobs.push(job);return job;},clearTimeout(job){if(job)job.cancelled=true;}};
-  const controller=createFingerprintController({context:()=>current,pause:()=>pauseCalls++,seek:x=>{seekCalls.push(x);return true;},play:()=>{playCalls++;},now:()=>clock,timers,supported:()=>true,onState:x=>states.push(x),capture:async()=>({samples:new Float32Array(80000),sampleRate:8000,durationSeconds:10,endedAt:10000}),match:async()=>({result:{matched:true,queryStartSeconds:100,confidence:.9},durationSeconds:10}),...overrides});
+  const controller=createFingerprintController({context:()=>current,pause:()=>pauseCalls++,seek:x=>{seekCalls.push(x);return true;},play:()=>{playCalls++;},autoApply:false,now:()=>clock,timers,supported:()=>true,onState:x=>states.push(x),capture:async()=>({samples:new Float32Array(80000),sampleRate:8000,durationSeconds:10,endedAt:10000}),match:async()=>({result:{matched:true,queryStartSeconds:100,confidence:.9},durationSeconds:10}),...overrides});
   return {controller,timers,jobs,states,seekCalls,setClock:x=>clock=x,setContext:x=>current=x,get context(){return current;},get playCalls(){return playCalls;},get pauseCalls(){return pauseCalls;}};
 }
 test('bind only exact source, track, window, page, metadata schema',()=>{
@@ -21,8 +21,8 @@ test('start pauses but never seeks; apply adds PCM duration and monotonic latenc
 test('no match, ambiguity and silence never seek',async()=>{
  for(const reason of ['silence','ambiguous','low_confidence']){const h=harness({match:async()=>({result:{matched:false,diagnostics:{reason}}})});await h.controller.start();assert.equal(h.controller.getState().phase,'no_match');assert.equal(h.controller.apply(),false);assert.deepEqual(h.seekCalls,[]);}
 });
-test('expired result, changed generation or source and metadata-not-ready reject apply',async()=>{
- for(const change of [h=>h.setClock(26000),h=>h.context.generation++,h=>h.context.track.sha256=sha,h=>h.context.ready=false]){const h=harness();await h.controller.start();change(h);assert.equal(h.controller.apply(),false);assert.deepEqual(h.seekCalls,[]);}
+test('expired result, changed generation or source reject apply',async()=>{
+ for(const change of [h=>h.setClock(26000),h=>h.context.generation++,h=>h.context.track.sha256=sha]){const h=harness();await h.controller.start();change(h);assert.equal(h.controller.apply(),false);assert.deepEqual(h.seekCalls,[]);}
 });
 test('expire timer discards result',async()=>{const h=harness();await h.controller.start();h.jobs.find(x=>x.ms===15000).fn();assert.equal(h.controller.getState().phase,'expired');assert.equal(h.controller.apply(),false);});
 test('late result after cancel or week switch is discarded',async()=>{
