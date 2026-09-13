@@ -28,3 +28,47 @@ test('reject subtitle overlaps and out of bounds cue times', () => {
     const c = fixture(); c.weeks[1].tracks[0].cues.push(cue); assert.throws(() => validateCatalog(c));
   }
 });
+
+// Contract mirrors TongxingCore/CatalogExtensionTests: source order is irrelevant.
+import { bilingualCueRows } from './catalog.mjs';
+function bilingualFixture() {
+  const c = fixture(), w = c.weeks[1];
+  w.tracks[0].cues = [0, 0, 1].map((blockId, i) => ({ blockId, start: i * 5, end: (i + 1) * 5, text: '中文' }));
+  w.transcript = { schemaVersion: 'sermon-bilingual-transcript-v1', blocks: [
+    { blockId: '1', english: 'Second source block.', sourceTextOrigin: 'job.blocks', reviewState: 'unspecified' },
+    { blockId: '0', english: 'First source block.', sourceTextOrigin: 'job.blocks', reviewState: 'candidate' },
+  ] };
+  return c;
+}
+test('English appears once at the matching block end, for numeric and string cue IDs', () => {
+  const c = bilingualFixture(), w = c.weeks[1];
+  w.tracks[0].cues[0].blockId = '0';
+  validateCatalog(c);
+  const result = bilingualCueRows(w, w.tracks[0]);
+  assert.deepEqual(result.rows.map(r => r.english), [null, 'First source block.', 'Second source block.']);
+  assert.equal(result.missingEnglish, false);
+});
+test('missing English and unlinked legacy cues never borrow another source', () => {
+  const w = bilingualFixture().weeks[1];
+  delete w.transcript.blocks[1].english;
+  assert.deepEqual(bilingualCueRows(w, w.tracks[0]).rows.map(r => r.english), [null, null, 'Second source block.']);
+  assert.equal(bilingualCueRows(w, w.tracks[0]).missingEnglish, true);
+  delete w.tracks[0].cues[2].blockId;
+  assert.equal(bilingualCueRows(w, w.tracks[0]).hasEnglish, false);
+  delete w.transcript;
+  assert.equal(bilingualCueRows(w, w.tracks[0]).hasEnglish, false);
+});
+test('reject duplicate, missing and invalid bilingual identities and unknown schema', () => {
+  for (const mutate of [
+    w => w.transcript.schemaVersion = 'future',
+    w => w.transcript.blocks[1].blockId = '1',
+    w => w.transcript.blocks[1].blockId = 'missing',
+    w => w.transcript.blocks[1].english = ' ',
+    w => w.tracks[0].cues[0].blockId = -1,
+    w => w.tracks[0].cues[0].blockId = true,
+    w => delete w.transcript.blocks[1].sourceTextOrigin,
+  ]) {
+    const c = bilingualFixture(); mutate(c.weeks[1]);
+    assert.throws(() => validateCatalog(c));
+  }
+});

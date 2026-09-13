@@ -95,6 +95,34 @@ def series_title(title, series):
     return title if not suffix or title.endswith(suffix) else title + suffix
 
 
+def bilingual_transcript(job, tracks):
+    """Export frozen source blocks; audio cues retain their own measured timing."""
+    blocks, ids = [], set()
+    for source in job.get("blocks", []):
+        value = source.get("id")
+        if isinstance(value, bool) or not isinstance(value, (str, int)):
+            raise ValueError("Invalid bilingual block identity")
+        block_id = str(value)
+        if (not block_id or block_id.strip() != block_id or len(block_id.encode("utf-16-le")) // 2 > 128
+                or any(ord(c) < 32 or ord(c) == 127 for c in block_id) or block_id in ids):
+            raise ValueError("Invalid or duplicate bilingual block identity")
+        ids.add(block_id)
+        block = {"blockId": block_id, "sourceTextOrigin": "job.blocks",
+                 "reviewState": "reading_quality_pass" if job.get("inheritedReview", {}).get("readingQuality") == "pass" else "unspecified"}
+        for field, key in [("en", "english"), ("zh", "chinese")]:
+            text = source.get(field)
+            if isinstance(text, str) and text.strip():
+                block[key] = text
+        blocks.append(block)
+    for track in tracks:
+        for cue in track["cues"]:
+            value = cue.get("blockId")
+            if value is not None and (isinstance(value, bool) or not isinstance(value, (str, int))
+                                      or (ids and str(value) not in ids)):
+                raise ValueError("Subtitle block has no matching bilingual source")
+    return {"schemaVersion": "sermon-bilingual-transcript-v1", "blocks": blocks}
+
+
 def weekly_job(work, public, preview, sync_preview=False, series=None):
     from weekly_dubbing import read, validate_frozen, validate_review
     if sync_preview and not preview:
@@ -141,6 +169,7 @@ def weekly_job(work, public, preview, sync_preview=False, series=None):
     if sync_preview:
         week.update(videoSynchronization="candidate_aligned", humanApproval=False, candidateEvidence=candidate_evidence,
             audioNotice=f'同步试播候选：00:00 对应当前源视频的证道起点（第 {job["sourceStartSeconds"]:g} 秒）。模型审核不等于人工验收；中文流畅度、原声相似度与同视频播放仍待现场试听。')
+    week["transcript"] = bilingual_transcript(job, tracks)
     return week
 
 

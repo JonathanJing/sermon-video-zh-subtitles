@@ -273,7 +273,7 @@ struct ContentView: View {
             Text(localization.text("点击时间定位；正文可直接阅读。"))
                 .font(.footnote).foregroundStyle(.secondary)
             if bilingual?.hasEnglish == true {
-                Text(localization.text("英文原文在对应内容块末尾显示，不逐句重复。"))
+                Text(localization.text("中文优先阅读；点击段末的「英文对照」展开参考。"))
                     .font(.footnote).foregroundStyle(.secondary)
             }
             if bilingual?.missingEnglish != false {
@@ -293,13 +293,17 @@ struct ContentView: View {
                     sourceText(cue.text, language: "zh-Hans").font(.title3).lineSpacing(7).textSelection(.enabled)
                         .fixedSize(horizontal: false, vertical: true)
                     if let english = row.english {
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text(localization.text("英文原文")).font(.caption.weight(.medium))
+                        DisclosureGroup {
                             sourceText(english, language: "en").font(.body).lineSpacing(5).textSelection(.enabled)
                                 .fixedSize(horizontal: false, vertical: true)
                                 .environment(\.locale, Locale(identifier: "en"))
                                 .accessibilityIdentifier("transcript-english-\(row.index)")
+                        } label: {
+                            Text(localization.text("英文对照"))
+                                .font(.subheadline).frame(minHeight: 44)
+                                .accessibilityIdentifier("transcript-english-toggle-\(row.index)")
                         }
+                        .id("\(model.selectedWeek?.id ?? "")-\(track.id)-english-\(row.index)")
                         .foregroundStyle(.secondary).padding(.top, 6)
                     }
                 }

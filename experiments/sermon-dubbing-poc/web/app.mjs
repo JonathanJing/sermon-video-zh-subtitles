@@ -1,5 +1,5 @@
 import { boundedTime, nudge, formatTime, cueIndex } from "/timing.mjs";
-import { validateCatalog, chooseWeek, parseTimecode } from "/catalog.mjs";
+import { validateCatalog, chooseWeek, parseTimecode, bilingualCueRows } from "/catalog.mjs";
 
 const $ = id => document.getElementById(id);
 const audio = $("audio");
@@ -57,21 +57,30 @@ function selectTab(id, focus = false) {
 function renderTranscript() {
   $("transcript-list").replaceChildren();
   if (!track) {
-    $("transcript-description").textContent = "本周配音尚未生成。可先打开证道同行，阅读大纲与默想。";
+    $("transcript-description").textContent = "本周配音尚未生成。可先打开证道大纲，阅读大纲与默想。";
     return;
   }
-  $("transcript-description").textContent = "以下为当前音频的完整字幕。点击时间或段落可定位中文音频。";
-  track.cues.forEach(cue => {
-    const button = document.createElement("button");
-    button.className = "cue-button";
-    button.disabled = true;
-    const time = document.createElement("time");
-    time.textContent = formatTime(cue.start);
-    const text = document.createElement("span");
-    text.textContent = cue.text;
-    button.append(time, text);
+  const bilingual = bilingualCueRows(week, track);
+  const guidance = ["点击时间定位；正文可直接阅读。"];
+  if (bilingual.hasEnglish) guidance.push("中文优先阅读；点击段末的「英文对照」展开参考。");
+  if (bilingual.missingEnglish) guidance.push(bilingual.hasEnglish ? "部分段落未提供可关联的英文原文，保留中文显示。" : "英文原文暂缺，保留中文显示。");
+  $("transcript-description").textContent = guidance.join(" ");
+  bilingual.rows.forEach(({ cue, english }) => {
+    const row = document.createElement("article"); row.className = "cue-row"; row.tabIndex = -1;
+    const button = document.createElement("button"); button.className = "cue-button"; button.disabled = true;
+    button.setAttribute("aria-label", `跳至 ${formatTime(cue.start)}`);
+    const time = document.createElement("time"); time.textContent = formatTime(cue.start);
+    const text = document.createElement("span"); text.textContent = cue.text;
+    button.append(time); row.append(button, text);
+    text.lang = "zh-Hans";
+    if (english != null) {
+      const details = document.createElement("details"); details.className = "english-reference";
+      const summary = document.createElement("summary"); summary.textContent = "英文对照";
+      const original = document.createElement("p"); original.lang = "en"; original.textContent = english;
+      details.append(summary, original); row.append(details);
+    }
     button.addEventListener("click", () => { audio.currentTime = boundedTime(cue.start, audio.duration); update(); });
-    $("transcript-list").append(button);
+    $("transcript-list").append(row);
   });
 }
 function selectTrack(id) {
