@@ -615,7 +615,9 @@ final class SystemAudioSessionActivator: AudioSessionActivating, @unchecked Send
                 do {
                     guard self.recordingOwner == token else { throw CancellationError() }
                     let session = AVAudioSession.sharedInstance()
-                    try session.setCategory(.playAndRecord, mode: .measurement, options: [.allowBluetoothHFP, .defaultToSpeaker])
+                    // The legacy spelling also builds with the older CI SDK;
+                    // both names select the same Bluetooth HFP option (0x4).
+                    try session.setCategory(.playAndRecord, mode: .measurement, options: [.allowBluetooth, .defaultToSpeaker])
                     try session.setActive(true)
                     continuation.resume()
                 } catch { continuation.resume(throwing: error) }
