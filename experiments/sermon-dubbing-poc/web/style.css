@@ -78,3 +78,12 @@
 .voice-card audio{color-scheme:inherit}
 ::selection{background:var(--selected);color:var(--selected-ink)}
 @media(max-width:480px){.brand-detail{display:none}.topbar-actions{gap:12px}.theme-toggle{min-width:82px;padding:9px 10px}}
+
+.cue-row{display:grid;grid-template-columns:64px minmax(0,1fr);gap:12px;padding:15px 4px;border-bottom:1px solid var(--line);border-radius:10px}
+.cue-row>span{font-size:16px;line-height:1.9;overflow-wrap:anywhere}
+.cue-row>.cue-button{display:block;width:64px;min-height:48px;align-self:start;padding:10px 3px;text-align:center;white-space:nowrap}
+.cue-row>.cue-button time{font-size:12px;padding:0}
+.english-reference{grid-column:2;min-width:0;color:var(--support);font-size:15px;line-height:1.75}
+.english-reference summary{cursor:pointer;min-height:44px;padding:10px 0;color:var(--teal);font-size:14px}
+.english-reference summary:focus-visible{outline:3px solid var(--focus);outline-offset:3px;border-radius:4px}
+.english-reference p{margin:4px 0 8px;padding-left:12px;border-left:2px solid var(--line);overflow-wrap:anywhere;white-space:pre-wrap;user-select:text}
