@@ -26,7 +26,7 @@ flowchart LR
     L[Local runner] <--> A[Agents API session / environment none]
     A --> T[Bounded tool requests]
     T --> L
-    L --> P[Deterministic timeline / PDF tools]
+    L --> P[Deterministic media preparation / PDF tools]
     P --> G
     G --> L
 ```
@@ -48,7 +48,7 @@ The polling interval determines when the next handoff can be observed, in additi
 
 - Agent runner: `scripts/run_sermon_production_supervisor_agent.py`
 - Deterministic state/tool contract: `scripts/sermon_production_supervisor.py`
-- Timeline tool: `scripts/run_post_live_timeline_job.py`
+- Source-media preparation (legacy filename): `scripts/run_post_live_timeline_job.py`
 - Reading-PDF tool: `scripts/run_post_live_subtitle_generation.py`
 - API: `POST /api/admin/sundays/<date>/production-supervisor`
 
@@ -64,7 +64,7 @@ openai-agents>=0.19.1,<0.20
 
 `execute` additionally exposes:
 
-- `run_timeline_probe`
+- `run_timeline_probe` (legacy tool name: download, validate and hash source media; no ASR or boundary model)
 - `run_approved_reading_pdf_generation`
 
 Both mutation tools validate durable state before execution. Together with inspection, these are the only three business tools; structured decision submission is separate. The PDF tool reads times only from a valid human approval artifact; it has no model-controlled start/end parameters. No generic shell or approval-writing tool is exposed.
@@ -104,6 +104,12 @@ The following parameters are integrated in the local runner. Check the verificat
 `--agent-run-dir` is optional for a new session; resumption must use its original persistent directory. `--agent-timeout-seconds` defaults to `21600` and bounds the control loop, without forcibly killing an in-flight local tool. `--max-turns` limits tool calls for Agents API and retains the legacy turn limit for SDK.
 
 If session creation has an unknown outcome, stop automatic creation and reconcile the durable record. Pending requests resume the same session. Automatic creation of another session requires a confirmed remote `completed`, `failed`, or `cancelled` state and no executing or unresolved tool call. A local timeout, budget stop, or cancellation ACK alone is insufficient and must not reset the stage-attempt ledger. Persist tool results before submitting them. A stage-attempt ledger prevents repeated production stages even if the model returns a new `call_id`. Timeout, submission failure, and interruption recovery retain source/approval checks, leases, and deterministic tool recovery.
+
+## Manual boundaries and compatibility (2026-09-19)
+
+Automatic model-based sermon-boundary discovery is retired. The source stage emits v2 media evidence (`source_media_verified`, `operator_supplied`, measured duration, audio SHA-256/size, and no models). The operator supplies the start/end times; approval creation and revalidation reject ranges beyond the verified duration. Content transcription and translation remain downstream of approval.
+
+Existing tool/action names, lease keys and approval report-hash fields remain for stored-session compatibility. New media evidence uses `timeline/source-media-report.json`; legacy reports and valid approvals are preserved. The old standalone timeline builders fail with a retirement message, and the old HTTP `timeline-probe` route returns 410. Scheduler no longer offers model discovery configuration. Removing model configuration changes the session binding: automatic creation is blocked while another configuration's prior session or tool remains unresolved. Stop old runners before upgrading. These are local code changes, not a remote deployment receipt.
 
 ## Human window approval
 

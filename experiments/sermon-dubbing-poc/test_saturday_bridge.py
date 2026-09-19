@@ -97,14 +97,20 @@ class SaturdayBridgeTests(unittest.TestCase):
             self.assertEqual(self.snapshot(root), before)
             self.assertFalse(report["humanApprovalWritten"])
 
-    def test_supervisor_bound_timeline_is_selected_prepared_and_reused_without_reapproval(self):
+    def test_supervisor_v2_manual_source_report_is_selected_prepared_and_reused_without_reapproval(self):
         from scripts.sermon_production_supervisor import json_digest
         for raw_report in ("different", "missing", "malformed"):
             with self.subTest(raw_report=raw_report), tempfile.TemporaryDirectory() as tmp:
                 root = Path(tmp)
                 cfg, sup, _, run = self.fixture(root)
-                timeline = {"status": "requires_operator_review", "stage": "timeline_probed", "sunday": self.week,
-                    "downloadedAudio": "fixture complete archive", "suggestedWindow": {"start": 10, "end": 20}}
+                original = root / "original.m4a"
+                source_url = f"https://www.youtube.com/watch?v={self.source}"
+                timeline = {"schemaVersion": 2, "status": "requires_operator_review",
+                    "stage": "source_media_verified", "boundaryMethod": "operator_supplied",
+                    "sunday": self.week, "sourceUrl": source_url, "slug": run.name,
+                    "downloadedAudio": str(original), "audioSha256": sha256(original),
+                    "audioSizeBytes": original.stat().st_size, "durationSeconds": 30,
+                    "modelsUsed": [], "suggestedWindow": None}
                 bound = run / "timeline/agent-job-report.json"
                 # Noncanonical whitespace ensures selection uses the Supervisor
                 # JSON digest, not the raw file SHA-256.
@@ -119,6 +125,8 @@ class SaturdayBridgeTests(unittest.TestCase):
                 elif raw_report == "malformed":
                     raw.write_text("{interrupted unrelated raw timeline")
                 before = self.snapshot(run)
+                self.assertEqual(resolve_approved_timeline(run, approval, week=self.week,
+                    source_url=source_url), bound)
                 self.assertEqual(self.inspect(cfg, sup)["status"], "ready_to_prepare")
                 def render(command, **kwargs):
                     self.write_candidate(Path(command[command.index("--work") + 1]))
@@ -131,10 +139,15 @@ class SaturdayBridgeTests(unittest.TestCase):
                 job = json.loads((work / "job.json").read_text())
                 self.assertEqual(job["inputs"]["timeline"], {"path": str(bound.resolve()), "sha256": sha256(bound)})
                 self.assertEqual(job["inputs"]["windowApproval"]["sha256"], sha256(approval_path))
+                self.assertEqual(job["inputs"]["originalAudio"], {"path": str(original.resolve()), "sha256": timeline["audioSha256"]})
+                self.assertEqual((job["sourceStartSeconds"], job["sourceEndSeconds"], job["sourceDurationSeconds"]), (10, 20, 10))
+                self.assertEqual(job["inheritedReview"]["humanWindow"], "approved")
+                frozen_job_hash = sha256(work / "job.json")
                 again = self.inspect(cfg, sup, execute=True, preparer=Mock(side_effect=AssertionError("must reuse")), runner=runner, validator=validator)
                 self.assertEqual(again["status"], "waiting_conversation_review")
                 self.assertEqual(again["routes"]["live_archive"]["work"], str(work))
                 self.assertEqual(runner.call_count, 1)
+                self.assertEqual(sha256(work / "job.json"), frozen_job_hash)
                 self.assertEqual(self.snapshot(run), before)
 
     def test_legacy_timeline_job_keeps_its_cache_when_identical_agent_report_appears(self):

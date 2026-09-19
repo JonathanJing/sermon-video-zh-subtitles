@@ -56,7 +56,6 @@ def parse_args() -> argparse.Namespace:
         choices=[
             "discover-source",
             "post-live-subtitles",
-            "post-live-timeline",
             "production-supervisor",
         ],
     )
@@ -74,9 +73,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--include-candidates", action="store_true")
     parser.add_argument("--no-auto-generate", action="store_true")
     parser.add_argument("--slug", help="Post-live subtitle artifact slug.")
-    parser.add_argument("--input", help="Full downloaded audio path for post-live timeline probing.")
-    parser.add_argument("--chunk-seconds", type=float, help="Timeline probe chunk seconds.")
-    parser.add_argument("--timeline-model", help="Timeline probe ASR model.")
     parser.add_argument("--start-time", help="Post-live subtitle sermon start time.")
     parser.add_argument("--end-time", help="Post-live subtitle sermon end time.")
     parser.add_argument("--plan-only", action="store_true", help="Ask post-live endpoint to plan without running.")
@@ -142,7 +138,7 @@ def scheduler_payload(args: argparse.Namespace) -> dict[str, Any]:
     if args.action == "production-supervisor":
         return production_supervisor_payload(args)
     if args.action == "post-live-timeline":
-        return post_live_timeline_payload(args)
+        raise ValueError("post-live-timeline has been retired; provide operator-confirmed --start-time and --end-time with post-live-subtitles.")
     if args.action == "post-live-subtitles":
         return post_live_payload(args)
     return discovery_payload(args)
@@ -180,22 +176,6 @@ def post_live_payload(args: argparse.Namespace) -> dict[str, Any]:
     return payload
 
 
-def post_live_timeline_payload(args: argparse.Namespace) -> dict[str, Any]:
-    payload: dict[str, Any] = {
-        "triggerSource": "cloud-scheduler",
-        "mode": "timeline-probe",
-    }
-    if args.slug:
-        payload["slug"] = args.slug
-    if args.input:
-        payload["input"] = args.input
-    if args.chunk_seconds:
-        payload["chunkSeconds"] = args.chunk_seconds
-    if args.timeline_model:
-        payload["timelineModel"] = args.timeline_model
-    return payload
-
-
 def production_supervisor_payload(args: argparse.Namespace) -> dict[str, Any]:
     return {
         "triggerSource": "cloud-scheduler",
@@ -207,7 +187,7 @@ def production_supervisor_payload(args: argparse.Namespace) -> dict[str, Any]:
 
 def admin_endpoint(service_url: str, sunday: str, action: str) -> str:
     base = service_url.rstrip("/")
-    endpoint_action = "post-live-subtitles" if action == "post-live-timeline" else action
+    endpoint_action = action
     return f"{base}/api/admin/sundays/{quote(sunday, safe='')}/{quote(endpoint_action, safe='')}"
 
 

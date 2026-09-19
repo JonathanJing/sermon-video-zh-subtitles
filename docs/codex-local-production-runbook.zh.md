@@ -15,6 +15,16 @@
 
 2026-09-11 已退役旧 `sermon-post-live-timeline` Job；其配置、IAM 和执行记录保存在本地 `artifacts/evidence/gcp-cleanup-20260911/`。对应 `sermon-sat-post-live-subtitles` Scheduler 保持暂停，不能仅恢复调度就恢复云端生产。
 
+## 人工范围流程（2026-09-19 代码更新）
+
+完整礼拜不再调用模型识别证道起止位置。当前顺序为：下载完整媒体 → ffprobe/完整性核验 → 操作员提供绝对起止时间 → 持久化审批 → 英文转写、中文翻译与双 PDF。纯证道来源沿用独立同视频入口；在归档入口也可人工确认 `0 → 完整片长`。`gpt-transcribe` 仅在后续内容转写等独立阶段使用。
+
+新媒体准备报告使用 `schemaVersion=2`、`stage=source_media_verified`、`boundaryMethod=operator_supplied`，记录实测 `durationSeconds`、`audioSha256`、`audioSizeBytes`，`modelsUsed=[]`，不产生建议范围。审批写入及恢复校验均检查范围未超出实测时长，并继续绑定来源、周次和报告哈希。媒体子报告存为 `timeline/source-media-report.json`。
+
+为兼容已有审批、租约和会话，`run_timeline_probe`、`resume_failed_timeline`、`timelineReportSha256` 与既有 job-report 路径保留旧名称；它们现在只对应媒体准备或旧证据读取。历史报告及仍有效的审批不自动迁移、覆盖或重跑。旧 `build_post_live_timeline.py` / `build_multistage_post_live_timeline.py` 明确拒绝执行，HTTP `timeline-probe` 返回 410；新 Scheduler 配置不再提供该 action 或模型参数。
+
+删除旧模型配置会改变 Supervisor 会话配置指纹。自动入口会检查同目录其他配置的 active 指针；旧会话未确认远端终止、或仍有未结算工具时，停止并要求核对旧会话，不能以新配置绕过执行记录。部署升级前结束旧 runner；本次本地代码和离线测试不代表远端服务、已部署容器或调度已更新。
+
 ## 按现有状态续跑
 
 先读取当前 source、timeline、approval、run status 和 QA；已有授权及仍与 source/timeline hash 匹配的人工审批可继续使用。只推进确定性状态允许的下一阶段，不为重新整理流程再次下载、付费生成或重复索取相同批准。独立资料审核可并行，持有同一 source lease 的生产阶段保持顺序执行。
@@ -50,7 +60,7 @@
 
 模型只看到 ISO 周日日期、固定下一步枚举、source/timeline 是否存在、窗口审批/QA/发布是否通过和租约布尔值。完整路径、源 URL、讲稿、配置、日志及审批细节留在本机。API 使用 `environment: none`，不向远端沙箱上传仓库。
 
-工具只允许检查状态、执行确定性状态允许的 timeline、执行已有人工批准的双 PDF 生成，以及提交结构化决定。每次修改后必须重新检查；同一会话每阶段最多尝试一次，持久化结果防止重放。最终完成同时要求根 turn 完成、结构化输出齐全和新的本地生产证据通过。底层 lease、下载授权、QA、hash 与审批契约保持生效。
+工具只允许检查状态、执行确定性状态允许的来源媒体准备、执行已有人工批准的双 PDF 生成，以及提交结构化决定。每次修改后必须重新检查；同一会话每阶段最多尝试一次，持久化结果防止重放。最终完成同时要求根 turn 完成、结构化输出齐全和新的本地生产证据通过。底层 lease、下载授权、QA、hash 与审批契约保持生效。
 
 默认报告目录下的 `agents-api-runs/` 保存绑定指纹、session ID 和工具收据。未确认远端停止的 timeout/cancel ACK 不允许另开会话重置执行记录；异常停止先检查本地 `state.json`、`result.json` 与远端状态。需要显式续跑原会话时增加 `--agent-run-dir <原目录> --resume-agent-session`。保留 executing 工具记录时必须人工核实实际阶段结果，不删除记录重试。只有确认原会话终止、无未决工具且生产状态允许后才选择新会话或 SDK 回退。
 
@@ -83,8 +93,8 @@ Supervisor 的 generation 命令固定传入上述参数及 `--export-sunday-con
 2. Codex automation 在周六晚间周期性运行本地生产入口，并先从本地网络刷新同一份 GCS state；这是 Cloud Run 被 YouTube bot-check 阻断时的正式兜底。
 3. Supervisor 取得 GCS lease，避免多个生产实例重复执行。
 4. 直播仍是 `is_live` 时，本次运行安全退出。
-5. 直播进入 `was_live/post_live` 后，本地 `yt-dlp` 下载音频并生成多阶段 timeline。
-6. timeline 和建议窗口上传 GCS，流程停止在 `requires_operator_review`。
+5. 直播进入 `was_live/post_live` 后，本地 `yt-dlp` 下载完整音频，检查媒体完整性并记录实测时长与哈希。
+6. 来源媒体报告上传 GCS，流程停止在 `requires_operator_review`，等待操作员提供并确认起止时间。
 
 ## 周日恢复
 
@@ -108,6 +118,7 @@ Supervisor 的 generation 命令固定传入上述参数及 `--export-sunday-con
   --start-time HH:MM:SS \
   --end-time HH:MM:SS \
   --approved-by Jony \
+  --content-scope sermon_only \
   --approval-note '独立观看完整录像后确认' \
   --mode execute
 ```

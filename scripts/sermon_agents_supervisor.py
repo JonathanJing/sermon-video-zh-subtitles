@@ -87,11 +87,30 @@ def read_object(path: Path) -> dict:
     return value
 
 
+def pointer_run(root: Path, pointer: Path) -> tuple[Path, bool]:
+    """Read a prior session without contacting or cancelling its remote run."""
+    previous = read_object(pointer)
+    name = previous.get("runName", "")
+    if not isinstance(name, str) or Path(name).name != name or not name.startswith("run-"):
+        raise AgentsAPIError("invalid_run_pointer")
+    directory = root / name
+    if directory.is_symlink() or (directory / "tool-results").is_symlink():
+        raise AgentsAPIError("symlink_state_not_allowed")
+    result_path = directory / "result.json"
+    terminal = read_object(result_path) if result_path.exists() else {}
+    # Timeout/budget stops and cancel acknowledgements are not terminal proof.
+    known_terminal = (terminal.get("status") in {"completed", "failed", "cancelled"}
+                      or terminal.get("observed_root_status") in {"completed", "failed", "cancelled"})
+    uncertain_tool = any(read_object(path).get("status") != "completed"
+                         for path in (directory / "tool-results").glob("*.json"))
+    return directory, not known_terminal or uncertain_tool
+
+
 def tool_definitions(execute: bool, decision_schema: dict) -> list[dict]:
     names = [("inspect_production_state", "Read current source, approval, leases, QA and the deterministic next action.")]
     if execute:
         names.extend([
-            ("run_timeline_probe", "Run the guarded timeline stage only when the inspected state permits it; at most once per session."),
+            ("run_timeline_probe", "Prepare and validate source media without model-based boundary discovery. The operator supplies sermon start/end times; at most once per session."),
             ("run_approved_reading_pdf_generation", "Run the guarded dual-PDF stage using existing valid human approval; at most once per session."),
         ])
     tools = [{"type": "function", "name": name, "description": description,
@@ -225,7 +244,8 @@ def session_report(args, config, instructions, decision_type, verify_decision, *
         raise AgentsAPIError("invalid_run_root")
     root.mkdir(parents=True, exist_ok=True)
     pointer = root / ("active-" + binding[:16] + ".json")
-    lock_path = root / ("lock-" + binding[:16])
+    # Serialize configuration changes as well as repeated runs of one binding.
+    lock_path = root / "supervisor.lock"
     lock = os.open(lock_path, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
     try:
         try:
@@ -242,21 +262,17 @@ def session_report(args, config, instructions, decision_type, verify_decision, *
             raise AgentsAPIError("resume_requires_agent_run_dir")
         else:
             directory = None
+            # Removed/changed configuration fields change the binding. Never
+            # silently abandon an older remote session or its pending tool.
+            for prior_pointer in sorted(root.glob("active-*.json")):
+                if prior_pointer == pointer:
+                    continue
+                _, unresolved = pointer_run(root, prior_pointer)
+                if unresolved:
+                    raise AgentsAPIError("prior_configuration_session_unresolved_inspect_existing_run")
             if pointer.exists():
-                previous = read_object(pointer)
-                name = previous.get("runName", "")
-                if not isinstance(name, str) or Path(name).name != name or not name.startswith("run-"):
-                    raise AgentsAPIError("invalid_run_pointer")
-                old = root / name
-                result_path = old / "result.json"
-                terminal = read_object(result_path) if result_path.exists() else {}
-                # A local timeout/budget stop is not a remote terminal state.
-                # A cancel ACK alone must never reset the domain attempt fence.
-                known_terminal = (terminal.get("status") in {"completed", "failed", "cancelled"}
-                                  or terminal.get("observed_root_status") in {"completed", "failed", "cancelled"})
-                uncertain_tool = any(read_object(path).get("status") != "completed"
-                                     for path in (old / "tool-results").glob("*.json"))
-                if not known_terminal or uncertain_tool:
+                old, unresolved = pointer_run(root, pointer)
+                if unresolved:
                     directory, resume = old, True
             if directory is None:
                 name = "run-" + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S") + "-" + uuid.uuid4().hex[:12]

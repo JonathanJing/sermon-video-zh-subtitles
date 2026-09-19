@@ -7,13 +7,13 @@ from scripts import sermon_production_supervisor
 
 class RunSermonProductionSupervisorAgentTest(unittest.TestCase):
     def test_shadow_agent_exposes_only_read_tool(self):
-        agent = mod.build_agent(model="gpt-5.6", execute=False)
+        agent = mod.build_agent(model="gpt-6-astra", execute=False)
         self.assertEqual(agent.name, "Sermon Production Supervisor")
         self.assertEqual([tool.name for tool in agent.tools], ["inspect_production_state"])
         self.assertIs(agent.output_type, mod.SupervisorDecision)
 
     def test_execute_agent_exposes_bounded_mutation_tools(self):
-        agent = mod.build_agent(model="gpt-5.6", execute=True)
+        agent = mod.build_agent(model="gpt-6-astra", execute=True)
         self.assertEqual(
             [tool.name for tool in agent.tools],
             [
@@ -24,6 +24,7 @@ class RunSermonProductionSupervisorAgentTest(unittest.TestCase):
         )
         self.assertIn("Never accept a start or end time", mod.SUPERVISOR_INSTRUCTIONS)
         self.assertIn("more than once", mod.SUPERVISOR_INSTRUCTIONS)
+        self.assertIn("never transcribes or proposes boundaries", mod.SUPERVISOR_INSTRUCTIONS)
 
     def test_runtime_allows_each_mutation_stage_only_once(self):
         runtime = mod.SupervisorRuntime(

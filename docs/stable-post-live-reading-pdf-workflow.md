@@ -54,7 +54,7 @@ This writes resumable source state, including the saved generation request that 
 
 ### 2) Manually confirm the sermon start and end
 
-Use timeline evidence, local playback, or a trusted operator review pass to determine the sermon window in the full archive.
+Use local playback or a trusted operator review to supply the sermon window in the full archive. Source preparation now verifies media only; automatic boundary discovery has been retired.
 
 Examples:
 

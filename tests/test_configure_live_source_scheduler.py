@@ -142,33 +142,21 @@ class ConfigureLiveSourceSchedulerTest(unittest.TestCase):
         self.assertNotIn("autoGenerate", plan.payload)
         self.assertIn("*/10 18-23 * * SAT", plan.create_command)
 
-    def test_builds_post_live_timeline_probe_job_payload(self):
-        plan = mod.build_scheduler_plan(
-            self.make_args(
-                job_id="sermon-sat-post-live-timeline",
-                action="post-live-timeline",
-                sunday="upcoming",
-                schedule="*/10 18-23 * * SAT",
-                slug="0D6yZW4_uEA",
-                input="/tmp/sermon-post-live-subtitles/2026-07-05/0D6yZW4_uEA/download/source_audio.m4a",
-                chunk_seconds=120.0,
-                timeline_model="gpt-4o-transcribe",
-            ),
-            internal_task_token="task-token-value",
-        )
+    def test_rejects_retired_timeline_scheduler_action(self):
+        with self.assertRaisesRegex(ValueError, "retired.*operator-confirmed"):
+            mod.build_scheduler_plan(
+                self.make_args(action="post-live-timeline"),
+                internal_task_token="task-token-value",
+            )
 
-        self.assertEqual(
-            plan.endpoint,
-            "https://caption.example.test/api/admin/sundays/upcoming/post-live-subtitles",
+    def test_cli_no_longer_advertises_boundary_models(self):
+        result = subprocess.run(
+            [sys.executable, str(SCRIPT_PATH), "--help"],
+            capture_output=True, text=True, check=True,
         )
-        self.assertEqual(plan.payload["triggerSource"], "cloud-scheduler")
-        self.assertEqual(plan.payload["mode"], "timeline-probe")
-        self.assertEqual(plan.payload["slug"], "0D6yZW4_uEA")
-        self.assertEqual(plan.payload["input"], "/tmp/sermon-post-live-subtitles/2026-07-05/0D6yZW4_uEA/download/source_audio.m4a")
-        self.assertEqual(plan.payload["chunkSeconds"], 120.0)
-        self.assertEqual(plan.payload["timelineModel"], "gpt-4o-transcribe")
-        self.assertNotIn("startTime", plan.payload)
-        self.assertNotIn("endTime", plan.payload)
+        self.assertNotIn("--timeline-model", result.stdout)
+        self.assertNotIn("--chunk-seconds", result.stdout)
+        self.assertNotIn("post-live-timeline", result.stdout)
 
     def test_builds_production_supervisor_payload(self):
         plan = mod.build_scheduler_plan(

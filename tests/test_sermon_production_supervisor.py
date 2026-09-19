@@ -763,6 +763,91 @@ class SermonProductionSupervisorTest(unittest.TestCase):
         self.assertTrue(completed["recommendedAction"]["humanActionRequired"])
         self.assertIn("current timeline report", completed["recommendedAction"]["reason"])
 
+    def test_manual_window_uses_media_identity_without_any_model_suggestion(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            state = root / "state.json"
+            write_state(state)
+            config = self.make_config(root, state, api_key_secret="unused-openai-secret")
+            snapshot = mod.production_snapshot(config)
+            report = self.manual_media_report()
+            write_json(Path(snapshot["locations"]["timelineReportLocal"]), report)
+            waiting = mod.production_snapshot(config)
+            self.assertEqual(waiting["recommendedAction"]["action"], "request_window_approval")
+            self.assertTrue(waiting["recommendedAction"]["humanActionRequired"])
+            command = mod.build_timeline_command(config, snapshot)
+            for flag in ("--timeline-model", "--classifier-model", "--api-key-secret", "--reasoning-effort"):
+                self.assertNotIn(flag, command)
+            approval = mod.approve_window(
+                config, start_time="00:10:00", end_time="00:55:00", approved_by="Operator",
+                content_scope="sermon_only",
+            )
+            ready = mod.production_snapshot(config)
+            self.assertEqual(ready["recommendedAction"]["action"], "run_reading_pdf_generation")
+            self.assertEqual(approval["timelineReportSha256"], mod.json_digest(report))
+            self.assertEqual(ready["timeline"]["durationSeconds"], 3600.0)
+            self.assertNotIn("suggestedWindow", report)
+
+    @staticmethod
+    def manual_media_report():
+        return {"schemaVersion": 2, "status": "requires_operator_review",
+                "stage": "source_media_verified", "boundaryMethod": "operator_supplied",
+                "sourceUrl": "https://www.youtube.com/watch?v=agentTest123", "sunday": "2026-08-02",
+                "durationSeconds": 3600.0, "audioSha256": "a" * 64, "audioSizeBytes": 1000,
+                "modelsUsed": []}
+
+    def test_manual_approval_rejects_invalid_media_or_window_without_writing(self):
+        cases = [
+            ({}, "01:00:01", "exceeds"),
+            ({"stage": None, "boundaryMethod": None}, "00:55:00", "contract"),
+            ({"durationSeconds": None}, "00:55:00", "duration"),
+            ({"durationSeconds": float("nan")}, "00:55:00", "duration"),
+            ({"durationSeconds": float("inf")}, "00:55:00", "duration"),
+            ({"durationSeconds": True}, "00:55:00", "duration"),
+            ({"audioSha256": None}, "00:55:00", "SHA-256"),
+            ({"audioSizeBytes": 0}, "00:55:00", "size"),
+            ({"sourceUrl": "https://example.test/other"}, "00:55:00", "source"),
+            ({"sunday": "2026-08-09"}, "00:55:00", "Sunday"),
+        ]
+        for changes, end, reason in cases:
+            with self.subTest(changes=changes, end=end), tempfile.TemporaryDirectory() as tempdir:
+                root = Path(tempdir)
+                state = root / "state.json"
+                write_state(state)
+                config = self.make_config(root, state)
+                locations = mod.production_snapshot(config)["locations"]
+                report = {**self.manual_media_report(), **changes}
+                write_json(Path(locations["timelineReportLocal"]), report)
+                with self.assertRaisesRegex(ValueError, reason):
+                    mod.approve_window(config, start_time="00:10:00", end_time=end,
+                                       approved_by="Operator", content_scope="sermon_only")
+                self.assertFalse(Path(locations["windowApprovalLocal"]).exists())
+
+    def test_legacy_multistage_v2_approval_remains_valid(self):
+        report = {"schemaVersion": 2, "stage": "multistage_timeline_probed",
+                  "status": "requires_operator_review", "suggestedWindow": {"startSeconds": 600}}
+        source = "https://www.youtube.com/watch?v=agentTest123"
+        approval = {"status": "approved", "humanApproval": True, "sunday": "2026-08-02",
+                    "sourceUrlHash": mod.stable_hash(source), "approvedBy": "Operator",
+                    "startTime": "00:10:00", "endTime": "01:00:00", "contentScope": "sermon_only",
+                    "timelineReportSha256": mod.json_digest(report)}
+        self.assertEqual(mod.validate_window_approval(approval, sunday="2026-08-02",
+                         live_url=source, timeline_report=report), (True, None))
+
+    def test_revalidation_rejects_hash_bound_but_out_of_media_window(self):
+        report = self.manual_media_report()
+        approval = {"status": "approved", "humanApproval": True, "sunday": report["sunday"],
+                    "sourceUrlHash": mod.stable_hash(report["sourceUrl"]), "approvedBy": "Operator",
+                    "startTime": "00:10:00", "endTime": "01:00:01", "contentScope": "sermon_only",
+                    "timelineReportSha256": mod.json_digest(report)}
+        valid, reason = mod.validate_window_approval(approval, sunday=report["sunday"],
+                                                     live_url=report["sourceUrl"], timeline_report=report)
+        self.assertFalse(valid)
+        self.assertIn("exceeds", reason)
+        approval["endTime"] = "01:00:00"
+        self.assertEqual(mod.validate_window_approval(approval, sunday=report["sunday"],
+                         live_url=report["sourceUrl"], timeline_report=report), (True, None))
+
     def test_timecode_validation(self):
         self.assertEqual(mod.parse_timecode("01:02:03.500"), 3723.5)
         self.assertEqual(mod.canonical_timecode(3723.5), "01:02:03.500")

@@ -27,11 +27,13 @@
 
 可选的[统一检查与执行入口](../saturday-harness.zh.md)按顺序连接原 PDF Supervisor 和配音桥接器，分开报告 PDF、候选、听审、同步与发布。[执行保护](../sermon-execution-harness.zh.md)连接 [Promptfoo 真实固定回归集](../saturday-quality-harness.zh.md)、[本机持久化追踪与自动观察](../sermon-trace-export.zh.md)及 [Temporal 持久工作流](../sermon-temporal.zh.md)。各自的实际集成证据和运行命令见专题文档；不表示真实生产或现场已通过，也未自动替换定时任务。
 
-**控制层迁移说明（2026-09-11）：** [Production Supervisor](../sermon-production-supervisor-agent.zh.md) 已在本地 runner 接入 OpenAI Agents API，默认 `--agent-backend agents-api`，原 Agents SDK / Responses 通过 `--agent-backend sdk` 显式回退。服务端 session 使用 `environment: none`；本地仍只执行状态检查、timeline 和经审批 PDF 生成三个受限业务工具，另有结构化结论提交。Session 状态和工具结果持久化，同一会话恢复；自动新建会话须先确认远端 completed/failed/cancelled 且无执行中或结果未确认的工具，本地 timeout 或取消 ACK 不足以放行；source、人工审批、lease、恢复、QA 与发布继续由确定性层约束，完成状态须重新读取 production snapshot。
+**控制层迁移说明（2026-09-11）：** [Production Supervisor](../sermon-production-supervisor-agent.zh.md) 已在本地 runner 接入 OpenAI Agents API，默认 `--agent-backend agents-api`，原 Agents SDK / Responses 通过 `--agent-backend sdk` 显式回退。服务端 session 使用 `environment: none`；本地只执行状态检查、来源媒体准备（保留 timeline 工具名）和经审批 PDF 生成三个受限业务工具，另有结构化结论提交。Session 状态和工具结果持久化，同一会话恢复；自动新建会话须先确认远端 completed/failed/cancelled 且无执行中或结果未确认的工具，本地 timeout 或取消 ACK 不足以放行；source、人工审批、lease、恢复、QA 与发布继续由确定性层约束，完成状态须重新读取 production snapshot。
 
 Supervisor 默认使用 `gpt-6-astra` Medium（本账户旧 `gpt-5.6` 查询返回 404），SDK 回退也使用同一 Astra；生产内容的 Astra Medium 和 ASR 的 `gpt-transcribe` 不变。Agents API 仅接收固定 allowlist 的日期、动作枚举与证据布尔状态；完整 snapshot 和用于恢复配置核对的 `configFingerprint` 留在本地。
 
 真实 Agents API 的两个全模拟用例已核验：`live-synthetic-01` 缺审批用例完成 2 次工具调用、未调用生成并返回 usage；`live-synthetic-advance-01` 完成 4 次工具调用，模拟 generation 执行恰好 1 次。`live-real-shadow-minimal-01` 已完成实际生产 GCS 状态的只读检查，目标日期 `2026-09-13`，动作为 `waiting_for_matching_sunday`。三个用例均为零真实生产变更；[报告链接与验证限界](../sermon-production-supervisor-agent.zh.md#验证进度)不能代替生产入口安装或切换回执。随后已完成正式入口 execute 验收并启用每周跟进 `pdf-context-pack`；当前业务状态仍是等待匹配源，完整产物生产与未来定时唤醒各自验收，安装收据见[本地 runbook](../codex-local-production-runbook.zh.md)。本节不更新上方全项目的 2026-09-04 校准日期，也不代表周日现场验收完成。
+
+**人工范围更新（2026-09-19）：** 完整礼拜的证道起止位置由操作员提供，已移除模型边界探测。前置阶段只下载并核验媒体，后续转写／翻译模型保持各自职责。旧 tool/action 与审批哈希字段为恢复兼容保留；[媒体证据 v2 与旧会话迁移](../codex-local-production-runbook.zh.md#人工范围流程2026-09-19-代码更新)说明具体合同。这是本地代码状态，不是远端发布或现场验收。
 
 ### 完整流程图
 

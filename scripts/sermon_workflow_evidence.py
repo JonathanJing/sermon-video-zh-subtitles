@@ -32,7 +32,7 @@ PATHS = {
     "notes": ("openai-notes.json", "insights/openai-notes.json", "sermon-interpretation/insights/openai-notes.json", "pipeline/sermon-interpretation/insights/openai-notes.json"),
     "context_pack": ("weekly-pack.json", "sunday-context/weekly-pack.json", "sunday-context/manifest.json", "sunday-context/pack-readiness.json", "pipeline/sunday-context/weekly-pack.json", "pipeline/sunday-context/manifest.json", "pipeline/sunday-context/pack-readiness.json", "manifest.json", "pack-readiness.json", "context-pack/manifest.json", "context-pack/pack-readiness.json", "saturday-context-pack/manifest.json", "saturday-context-pack/pack-readiness.json"),
     "window_approval": ("sunday-context/message-identity-approval.json", "pipeline/sunday-context/message-identity-approval.json", "operator-window-approval.json", "message-identity-approval.json", "context-pack/message-identity-approval.json"),
-    "timeline": ("timeline/report.json",),
+    "timeline": ("timeline/report.json", "timeline/agent-job-report.json", "timeline/source-media-report.json"),
     "generation": ("agent-generation-report.json", "run-status.json"),
     "job": ("job.json",),
     "render": ("render/report.json", "assembly-report.json"),
@@ -62,9 +62,10 @@ SAFE_CODE = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:/+-]{0,127}\Z")
 HASH = re.compile(r"[0-9a-fA-F]{64}\Z")
 DATE = re.compile(r"\d{4}-\d{2}-\d{2}(?:T[0-9:.+-]+Z?)?\Z")
 SOURCE_FIELDS = {"sourceId", "videoId", "sourceAudioSha256", "sourceSha256", "mediaSha256", "sermonClipSha256", "serviceDate", "sourceServiceDate", "sourceStartSeconds", "sourceEndSeconds", "sourceDurationSeconds"}
-HASH_FIELDS.update({"sourceVideoSha256", "sourceContractSha256", "sourceContractIdentitySha256"})
-SOURCE_FIELDS.update({"sourceVideoSha256", "sourceContractSha256"})
-IDENTITY_FIELDS.update({"sourceRoute", "boundaryBasis", "humanWindow"})
+HASH_FIELDS.update({"audioSha256", "sourceVideoSha256", "sourceContractSha256", "sourceContractIdentitySha256"})
+SOURCE_FIELDS.update({"audioSha256", "sourceVideoSha256", "sourceContractSha256"})
+NUMBER_FIELDS.add("audioSizeBytes")
+IDENTITY_FIELDS.update({"boundaryMethod", "sourceRoute", "boundaryBasis", "humanWindow"})
 BOOL_FIELDS.update({"sameVersionConfirmed", "sermonOnly"})
 CONTAINERS.update({"sourceContract", "sameVideoArchive", "sameVideoHandoff"})
 

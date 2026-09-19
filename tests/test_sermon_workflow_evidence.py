@@ -36,6 +36,40 @@ class WorkflowEvidenceTests(unittest.TestCase):
         self.assertIn('render', result['missingCategories'])
         self.assertIsNotNone(result['sourceFingerprint'])
 
+    def test_manual_source_evidence_and_legacy_timeline_are_both_collected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            prefix = "sermon_source/timeline/"
+            legacy = {"schemaVersion": 2, "status": "requires_operator_review",
+                      "classifierModel": "legacy-model"}
+            media = {"schemaVersion": 2, "status": "source_media_verified",
+                     "boundaryMethod": "operator_supplied", "durationSeconds": 3600,
+                     "audioSha256": "a" * 64, "audioSizeBytes": 12345,
+                     "sourceUrl": "https://private-source.example/video",
+                     "downloadedAudio": "/private/media.m4a", "apiKey": "PRIVATE_KEY"}
+            self.write(root, prefix + "report.json", legacy)
+            self.write(root, prefix + "source-media-report.json", media)
+            self.write(root, prefix + "agent-job-report.json", {
+                **media, "status": "requires_operator_review", "stage": "source_media_verified"})
+            snapshot = evidence.collect_workflow_evidence(root, "saturday_timeline")
+            paths = {item["path"]: item for item in snapshot["artifacts"]}
+            self.assertEqual(len(paths), 3)
+            self.assertNotIn("timeline", snapshot["missingCategories"])
+            self.assertEqual(paths[prefix + "report.json"]["summary"], legacy)
+            summary = paths[prefix + "source-media-report.json"]["summary"]
+            self.assertEqual(summary["boundaryMethod"], "operator_supplied")
+            self.assertEqual(summary["durationSeconds"], 3600)
+            self.assertEqual(summary["audioSha256"], "a" * 64)
+            self.assertEqual(summary["audioSizeBytes"], 12345)
+            self.assertIn({"audioSha256": "a" * 64}, snapshot["sourceIdentityClaims"])
+            media["audioSha256"] = "b" * 64
+            self.write(root, prefix + "source-media-report.json", media)
+            changed = evidence.collect_workflow_evidence(root, "saturday_timeline")
+            self.assertNotEqual(snapshot["sourceFingerprint"], changed["sourceFingerprint"])
+        self.assertFalse(snapshot["currentRunExecutionProven"])
+        for private in ("private-source.example", "/private/media.m4a", "PRIVATE_KEY"):
+            self.assertNotIn(private, json.dumps(snapshot))
+
     def test_week_layout_is_supported_but_arbitrary_recursion_is_not(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

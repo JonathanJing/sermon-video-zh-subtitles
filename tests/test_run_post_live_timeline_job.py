@@ -26,17 +26,8 @@ def make_args(root: Path, state_file: str, **overrides):
         "out": str(root / "job-report.json"),
         "gcs_bucket": "test-bucket",
         "gcs_prefix": "sundays",
-        "api_key_secret": None,
         "discord_bot_token_secret": None,
         "discord_channel_id": None,
-        "chunk_seconds": 120.0,
-        "transition_chunk_seconds": 30.0,
-        "fine_chunk_seconds": 5.0,
-        "wide_margin_seconds": 180.0,
-        "fine_zone_radius_seconds": 75.0,
-        "timeline_model": "gpt-4o-transcribe",
-        "classifier_model": "gpt-5.6",
-        "reasoning_effort": "high",
         "audio_format": "bestaudio[ext=m4a]/bestaudio",
         "yt_dlp": "yt-dlp",
         "youtube_cookies_secret": None,
@@ -199,57 +190,47 @@ class PostLiveTimelineJobTest(unittest.TestCase):
             (template.parent / "source_audio.m4a").write_bytes(b"audio")
             return subprocess.CompletedProcess(command, 0)
 
-        def fake_timeline(args):
-            chunks = args.outdir / "coarse_120s" / "timeline_chunks.json"
-            chunks.parent.mkdir(parents=True, exist_ok=True)
-            chunks.write_text("[]", encoding="utf-8")
-            return {
-                "status": "requires_operator_review",
-                "analysis": {
-                    "suggestedWindow": {
-                        "startTimecode": "00:20:30.000",
-                        "endTimecode": "00:58:45.000",
-                    }
-                },
-            }
-
         with tempfile.TemporaryDirectory() as tempdir:
             root = Path(tempdir)
             state = root / "state.json"
             write_state(state)
-            original = mod.build_multistage_post_live_timeline.build_multistage_timeline
-            mod.build_multistage_post_live_timeline.build_multistage_timeline = fake_timeline
-            try:
-                report = mod.run_job(
-                    make_args(root, str(state)),
-                    metadata_loader=lambda _: {"live_status": "post_live", "was_live": True, "duration": 3600},
-                    runner=runner,
-                    uploader=lambda path, uri: uploads.append((str(path), uri)),
-                    marker_reader=lambda _: None,
-                    marker_writer=lambda _uri, _text: None,
-                    notifier=lambda _args, _report: {"status": "sent", "messageId": "123"},
-                    handoff_reader=lambda _: None,
-                )
-            finally:
-                mod.build_multistage_post_live_timeline.build_multistage_timeline = original
+            legacy = root / "2026-07-12" / "sermon_5GuhLMPflds" / "timeline" / "report.json"
+            legacy.parent.mkdir(parents=True)
+            legacy.write_text('{"legacy": true}', encoding="utf-8")
+            report = mod.run_job(
+                make_args(root, str(state)),
+                metadata_loader=lambda _: {"live_status": "post_live", "was_live": True, "duration": 3600},
+                runner=runner,
+                uploader=lambda path, uri: uploads.append((str(path), uri)),
+                marker_reader=lambda _: None,
+                marker_writer=lambda _uri, _text: None,
+                notifier=lambda _args, _report: {"status": "sent", "messageId": "123"},
+                handoff_reader=lambda _: None,
+            )
+
+            self.assertEqual(legacy.read_text(), '{"legacy": true}')
+            evidence = json.loads(legacy.with_name("source-media-report.json").read_text())
+            self.assertEqual(evidence["status"], "source_media_verified")
+            self.assertEqual(evidence["durationSeconds"], 3600)
+            self.assertEqual(evidence["audioSha256"], report["audioSha256"])
 
         self.assertEqual(report["status"], "requires_operator_review")
-        self.assertEqual(report["suggestedWindow"]["startTimecode"], "00:20:30.000")
+        self.assertIsNone(report["suggestedWindow"])
+        self.assertEqual(report["schemaVersion"], 2)
+        self.assertEqual(report["stage"], "source_media_verified")
+        self.assertEqual(report["boundaryMethod"], "operator_supplied")
+        self.assertEqual(report["modelsUsed"], [])
+        self.assertEqual(report["durationSeconds"], 3600)
+        self.assertEqual(report["audioSha256"], hashlib.sha256(b"audio").hexdigest())
+        self.assertFalse(hasattr(mod, "build_multistage_post_live_timeline"))
         self.assertEqual(report["notification"]["status"], "sent")
         self.assertTrue(any(uri.endswith("/download/source_audio.m4a") for _, uri in uploads))
-        self.assertTrue(any(uri.endswith("/timeline/report.json") for _, uri in uploads))
-        self.assertTrue(any(uri.endswith("/timeline/coarse_120s/timeline_chunks.json") for _, uri in uploads))
+        self.assertTrue(any(uri.endswith("/timeline/source-media-report.json") for _, uri in uploads))
+        self.assertEqual(len(uploads), 2)
 
     @mock.patch.object(mod.run_post_live_subtitle_generation, "probe_archive_audio", return_value={"format": {"duration": "3600"}, "streams": [{"codec_type": "audio"}]})
     def test_consumes_local_gcs_handoff_before_youtube_download(self, _probe):
         uploads = []
-
-        def fake_timeline(args):
-            args.outdir.mkdir(parents=True, exist_ok=True)
-            return {
-                "status": "requires_operator_review",
-                "analysis": {"suggestedWindow": {"startTimecode": "00:17:10", "endTimecode": "00:44:55"}},
-            }
 
         def fake_gcs_download(uri, destination):
             self.assertTrue(uri.endswith("/download/source_audio.m4a"))
@@ -262,22 +243,17 @@ class PostLiveTimelineJobTest(unittest.TestCase):
             root = Path(tempdir)
             state = root / "state.json"
             write_state(state)
-            original = mod.build_multistage_post_live_timeline.build_multistage_timeline
-            mod.build_multistage_post_live_timeline.build_multistage_timeline = fake_timeline
-            try:
-                report = mod.run_job(
-                    make_args(root, str(state)),
-                    metadata_loader=lambda _: {"live_status": "was_live", "was_live": True, "duration": 3600},
-                    runner=lambda *_args, **_kwargs: self.fail("YouTube download should not run"),
-                    uploader=lambda path, uri: uploads.append((str(path), uri)),
-                    marker_reader=lambda _: None,
-                    marker_writer=lambda *_args: None,
-                    notifier=lambda *_args: {"status": "not_configured"},
-                    handoff_reader=lambda _: make_handoff(b"audio from gcs"),
-                    gcs_downloader=fake_gcs_download,
-                )
-            finally:
-                mod.build_multistage_post_live_timeline.build_multistage_timeline = original
+            report = mod.run_job(
+                make_args(root, str(state)),
+                metadata_loader=lambda _: {"live_status": "was_live", "was_live": True, "duration": 3600},
+                runner=lambda *_args, **_kwargs: self.fail("YouTube download should not run"),
+                uploader=lambda path, uri: uploads.append((str(path), uri)),
+                marker_reader=lambda _: None,
+                marker_writer=lambda *_args: None,
+                notifier=lambda *_args: {"status": "not_configured"},
+                handoff_reader=lambda _: make_handoff(b"audio from gcs"),
+                gcs_downloader=fake_gcs_download,
+            )
 
         self.assertEqual(report["downloadSource"], "local-gcs-handoff")
         self.assertEqual(report["audioGcsUri"], make_handoff(b"audio from gcs")["audio"]["gcsUri"])
@@ -294,11 +270,65 @@ class PostLiveTimelineJobTest(unittest.TestCase):
                 marker_reader=lambda _: {
                     "status": "requires_operator_review",
                     "sunday": "2026-07-12",
+                    "sourceUrl": "https://www.youtube.com/watch?v=5GuhLMPflds",
                     "notification": {"status": "sent"},
                 },
             )
         self.assertEqual(report["status"], "already_requires_operator_review")
         self.assertTrue(report["deduped"])
+
+    def test_preserves_existing_source_media_report_on_conflict(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            path = Path(tempdir) / "source-media-report.json"
+            original = {"audioSha256": "original", "durationSeconds": 3600}
+            mod.preserve_json(path, original)
+            mod.preserve_json(path, original)
+            with self.assertRaisesRegex(RuntimeError, "not overwritten"):
+                mod.preserve_json(path, {"audioSha256": "changed"})
+            self.assertEqual(json.loads(path.read_text()), original)
+
+    def test_rejects_cached_review_from_another_source(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            state = root / "state.json"
+            write_state(state)
+            with self.assertRaisesRegex(RuntimeError, "another or unverified source"):
+                mod.run_job(
+                    make_args(root, str(state)),
+                    metadata_loader=lambda _: {"live_status": "post_live", "was_live": True},
+                    marker_reader=lambda _: {
+                        "status": "requires_operator_review", "sunday": "2026-07-12",
+                        "sourceUrl": "https://www.youtube.com/watch?v=OtherSource",
+                    },
+                )
+
+    @mock.patch.object(mod.run_post_live_subtitle_generation, "probe_archive_audio", return_value={"format": {"duration": "10"}, "streams": [{"codec_type": "audio"}]})
+    def test_incomplete_audio_fails_without_model_or_media_report(self, _probe):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            state = root / "state.json"
+            write_state(state)
+            def runner(command, check):
+                path = Path(command[command.index("-o") + 1]).parent / "source_audio.m4a"
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b"partial")
+                return subprocess.CompletedProcess(command, 0)
+            report = mod.run_job(
+                make_args(root, str(state)),
+                metadata_loader=lambda _: {"live_status": "post_live", "was_live": True, "duration": 3600},
+                runner=runner, marker_reader=lambda _: None, handoff_reader=lambda _: None,
+                marker_writer=lambda *_: None,
+                uploader=lambda *_: self.fail("Invalid audio must not be uploaded"),
+            )
+            self.assertEqual(report["status"], "failed")
+            self.assertEqual(report["reason"], "archive_audio_integrity_failed")
+            self.assertFalse(list(root.rglob("source-media-report.json")))
+
+    def test_cli_has_no_model_or_chunk_controls(self):
+        with mock.patch.object(sys, "argv", ["timeline"]):
+            args = mod.parse_args()
+        for name in ("classifier_model", "timeline_model", "reasoning_effort", "chunk_seconds", "api_key_secret"):
+            self.assertFalse(hasattr(args, name))
 
 
 if __name__ == "__main__":
