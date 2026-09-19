@@ -1317,6 +1317,10 @@ def main():
     parser.add_argument("--reading-chunk-seconds", type=float, default=1200.0)
     parser.add_argument("--reading-aligner", choices=("mfa", "legacy"), default="mfa",
                         help="MFA word/phone timing for reading production; legacy is explicit historical recovery only.")
+    from scripts.mfa_spark import add_arguments
+    add_arguments(parser)
+    from scripts.mfa_backend import add_arguments as add_backend_arguments
+    add_backend_arguments(parser)
     parser.add_argument("--mfa-executable", default=os.environ.get("MFA_EXECUTABLE", "mfa"))
     parser.add_argument("--mfa-dictionary", type=Path, default=os.environ.get("MFA_DICTIONARY"))
     parser.add_argument("--mfa-acoustic-model", type=Path, default=os.environ.get("MFA_ACOUSTIC_MODEL"))
@@ -1373,15 +1377,23 @@ def reading_segments(args, chunks, clip_path, outdir):
     if getattr(args, "reading_aligner", "mfa") == "legacy":
         return reference_chunks_to_reading_segments(
             chunks, target_chars=max(120, args.reading_segment_target_chars))
-    from scripts.mfa_alignment import align_reference_chunks
-    return align_reference_chunks(chunks, clip_path, outdir / "mfa", **mfa_options(args))
+    return align_reading_chunks(args, chunks, clip_path, outdir / "mfa")
+
+
+def align_reading_chunks(args, chunks, clip_path, outdir):
+    from scripts.mfa_backend import align_reference_chunks, options
+    result = align_reference_chunks(chunks, clip_path, outdir, **options(args))
+    receipt = outdir / "backend.json"
+    if receipt.is_file():
+        args._mfa_runtime = json.loads(receipt.read_text())
+    return result
 
 
 def produce_pipeline(args, api_key, source_duration, start, end, outdir):
     glossary = load_glossary(args.glossary)
     if args.output_mode == "reading" and getattr(args, "reading_aligner", "mfa") == "mfa":
-        from scripts.mfa_alignment import preflight
-        preflight(**mfa_options(args))
+        from scripts.mfa_backend import preflight, options
+        args._mfa_runtime = preflight(**options(args))
 
     clip_path = outdir / "source_clip.m4a"
     with stage("pipeline.clip", billing="local"):
@@ -1436,9 +1448,8 @@ def produce_pipeline(args, api_key, source_duration, start, end, outdir):
             write_json(outdir / "source-text-review-provenance.json", source_review)
             if getattr(args, "reading_aligner", "mfa") == "mfa":
                 # Text edits invalidate old word/phone times; realign the reviewed words.
-                from scripts.mfa_alignment import align_reference_chunks
-                corrected = align_reference_chunks(
-                    corrected, clip_path, outdir / "mfa-reviewed", **mfa_options(args))
+                corrected = align_reading_chunks(
+                    args, corrected, clip_path, outdir / "mfa-reviewed")
         shaped_en = corrected if args.output_mode == "reading" else shape_durations(corrected)
         write_json(outdir / "segments_timed_en_corrected.json", shaped_en)
 
@@ -1490,6 +1501,8 @@ def produce_pipeline(args, api_key, source_duration, start, end, outdir):
         },
         "outputMode": args.output_mode,
         "readingAligner": getattr(args, "reading_aligner", "mfa") if args.output_mode == "reading" else None,
+        "readingAlignmentBackend": getattr(args, "_mfa_runtime", {}).get("backend"),
+        "readingAlignmentRuntime": getattr(args, "_mfa_runtime", None),
         "timingPrecision": ("whisper_segments" if args.output_mode == "subtitles" else
                             "mfa_word_aligned" if getattr(args, "reading_aligner", "mfa") == "mfa" else
                             "synthetic_reading_layout_only"),
