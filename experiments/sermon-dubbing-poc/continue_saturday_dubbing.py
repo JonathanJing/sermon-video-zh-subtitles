@@ -317,8 +317,12 @@ def plan_candidate(config, config_path, week, settings, supervisor_report, run, 
     auth_path = source_root / "authorizations" / (identity(authorization) + ".json")
     python = str(executable_path_from(config.get("pythonExecutable") or sys.executable, root))
     command = [python, str(HERE / "run_weekly_dubbing.py"), "--work", str(work), "--remote-checkpoint", str(checkpoint)]
+    if config.get("localTtsCheckpoint"):
+        command += ["--local-checkpoint", str(path_from(config["localTtsCheckpoint"], root))]
+    if config.get("localTtsPython"):
+        command += ["--local-python", str(executable_path_from(config["localTtsPython"], root))]
     if config.get("mlxPython"):
-        command += ["--mlx-python", str(executable_path_from(config["mlxPython"], root))]
+        command += ["--speech-python", str(executable_path_from(config["mlxPython"], root))]
     if config.get("sparkHost"):
         command += ["--host", config["sparkHost"]]
     bridge_command = [python, str(HERE / "continue_saturday_dubbing.py"), "--week", week, "--config", str(config_path), "--supervisor-report", str(supervisor_report), "--execute"]

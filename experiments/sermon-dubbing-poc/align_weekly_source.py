@@ -12,7 +12,7 @@ import re
 import subprocess
 
 from poc import sha256, write_json
-from prepare_voice_candidates import ASR, ALIGNER
+from speech_backend import same_identity, SpeechModel, ASR, ALIGNER
 from weekly_dubbing import read, validate_frozen
 
 
@@ -61,6 +61,16 @@ def match_blocks(blocks, words):
     return anchors, issues
 
 
+def attach_timing_issues(anchors, issues, timing_issues):
+    for issue in timing_issues:
+        if anchors:
+            anchor = min(anchors, key=lambda a: max(a["start"] - issue["time"], issue["time"] - a["end"], 0))
+            issue["blockId"] = anchor["blockId"]
+            if issue["reason"] not in anchor["issues"]:
+                anchor["issues"].append(issue["reason"])
+        issues.append(issue)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--work", type=Path, required=True)
@@ -72,47 +82,55 @@ def main():
     folder.mkdir(exist_ok=True)
     if (folder / "report.json").exists():
         raise ValueError("Preserve completed alignment")
-    from huggingface_hub import snapshot_download
-    from mlx_audio.stt.utils import load_model
-    import mlx.core as mx
-    model = load_model(snapshot_download(repo_id=ASR[0], revision=ASR[1], local_files_only=True))
+    model = SpeechModel(ASR)
     windows = []
+    asr_models = []
     duration = job["sourceDurationSeconds"]
     for offset in range(0, int(duration), 50):
         wav = folder / f"window-{offset:04d}.wav"
         if not wav.exists():
             subprocess.run(["ffmpeg", "-v", "error", "-n", "-ss", str(offset), "-i", job["inputs"]["sourceAudio"]["path"], "-t", str(min(60, duration - offset)), "-ar", "16000", "-ac", "1", str(wav)], check=True)
         receipt = wav.with_suffix(".asr.json")
-        identity = {"audioSha256": sha256(wav), "sourceSha256": job["inputs"]["sourceAudio"]["sha256"], "model": ASR[0], "revision": ASR[1]}
+        identity = {"audioSha256": sha256(wav), "sourceSha256": job["inputs"]["sourceAudio"]["sha256"], "model": model.model[0], "revision": model.model[1]}
         if receipt.exists():
             row = read(receipt)
-            if row["identity"] != identity:
+            if not same_identity(row["identity"], identity):
                 raise ValueError("Stale acoustic timing cache")
         else:
             row = {"identity": identity, "text": model.generate(str(wav), language="English", max_tokens=2048).text}
+            identity.update(model=model.model[0], revision=model.model[1])
+            row["inferenceReceipt"] = model.last_receipt
             write_json(receipt, row)
+        actual_model = [row["identity"]["model"], row["identity"]["revision"]]
+        if actual_model not in asr_models:
+            asr_models.append(actual_model)
         windows.append((offset, wav, row["text"]))
-        mx.clear_cache()
         print(f"Timing evidence {offset}s / {duration}s", flush=True)
+    windows_models = asr_models[0]
     del model
-    mx.clear_cache()
-    aligner = load_model(snapshot_download(repo_id=ALIGNER[0], revision=ALIGNER[1], local_files_only=True))
+    aligner = SpeechModel(ALIGNER)
     words = []
+    timing_issues = []
+    aligner_models = []
     for offset, wav, text in windows:
         result = aligner.generate(str(wav), text=text, language="English")
-        write_json(wav.with_suffix(".alignment.json"), {"audioSha256": sha256(wav), "model": ALIGNER[0], "revision": ALIGNER[1], "words": result.segments})
+        if list(aligner.model) not in aligner_models:
+            aligner_models.append(list(aligner.model))
+        write_json(wav.with_suffix(".alignment.json"), {"audioSha256": sha256(wav), "model": aligner.model[0], "revision": aligner.model[1], "words": result.segments, "inferenceReceipt": aligner.last_receipt})
+        timing_issues.extend({"reason": "zero_duration_alignment_word", "windowStart": offset, "word": w["text"], "time": offset + w["start"]}
+                             for w in result.segments if w["start"] == w["end"])
         left = 0 if offset == 0 else 5
         right = min(55, duration - offset) if offset + 60 < duration else duration - offset
         for word in result.segments:
             if left <= word["start"] < right and word["start"] < word["end"] <= min(60, duration - offset) + .1:
                 words.append({**word, "start": offset + word["start"], "end": offset + word["end"]})
-        mx.clear_cache()
     anchors, issues = match_blocks(job["blocks"], words)
+    attach_timing_issues(anchors, issues, timing_issues)
     write_json(folder / "words.json", words)
     write_json(folder / "report.json", {"schemaVersion": "sermon-acoustic-anchors-v1", "jobSha256": sha256(work / "job.json"),
         "status": "machine_anchors_ready" if not issues else "anchor_review_required", "sourceAudioSha256": job["inputs"]["sourceAudio"]["sha256"],
         "timeOrigin": "approved_sermon_clip_start", "fullVideoOffsetSeconds": job["sourceStartSeconds"], "blocks": anchors, "issues": issues,
-        "asr": ASR, "aligner": ALIGNER, "humanReview": "pending", "readingTextReplaced": False})
+        "asr": windows_models, "aligner": aligner_models[0], "asrModels": asr_models, "alignerModels": aligner_models, "modelIdentityScope": "representative_first_result_with_complete_model_lists", "humanReview": "pending", "readingTextReplaced": False})
     print(json.dumps({"blocks": len(anchors), "issues": len(issues)}), flush=True)
 
 

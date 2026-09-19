@@ -9,6 +9,7 @@ from contextlib import contextmanager
 import difflib
 import json
 import math
+import os
 from pathlib import Path
 import shlex
 import shutil
@@ -24,7 +25,8 @@ from scripts.sermon_execution_harness import (Execution, RemoteOutcomeUnknown, W
 from poc import sha256, write_json
 from weekly_dubbing import read, validate_frozen, assemble
 from render_weekly_audio import render_identity
-from prepare_voice_candidates import ASR, ALIGNER
+from speech_backend import ASR, ALIGNER, accepted_model
+from spark_transport import dispatch
 from screen_audio import normalize
 
 REMOTE_ROOT = "/home/achillesjing/dgx-spark-benchmark/results"
@@ -34,6 +36,12 @@ RUNTIME = REMOTE_ROOT + "/sermon-voice-poc-20260905"
 def require(condition, message):
     if not condition:
         raise ValueError(message)
+
+
+def same_speech_identity(actual, expected):
+    return (accepted_model(actual.get("model"), actual.get("revision"), "asr")
+            and {k: v for k, v in actual.items() if k not in ("model", "revision")}
+            == {k: v for k, v in expected.items() if k not in ("model", "revision")})
 
 
 def same_seconds(left, right, tolerance=.001):
@@ -54,8 +62,9 @@ def validated_job(work):
 
 
 def validate_render(work, job, complete=True):
-    identity = render_identity(work / "job.json", job["voice"]["checkpointSha256"])
     folder = work / "render"
+    saved_identity = read(folder / "identity.json")
+    identity = render_identity(work / "job.json", job["voice"]["checkpointSha256"], device=saved_identity.get("executionDevice", "cuda:0"))
     require(read(folder / "identity.json") == identity, "render job/checkpoint/settings changed; create a new job")
     records = []
     expected_names = {f"unit-{i:04d}" for i in range(len(job["units"]))}
@@ -102,7 +111,17 @@ def validate_natural(work, job, render):
 def validate_alignment(work, job):
     from check_weekly_timing import load_anchors
     report = read(work / "source-alignment/report.json")
-    require(report.get("schemaVersion") == "sermon-acoustic-anchors-v1" and report.get("asr") == list(ASR) and report.get("aligner") == list(ALIGNER), "acoustic model/revision changed")
+    require(report.get("schemaVersion") == "sermon-acoustic-anchors-v1" and accepted_model(*report.get("asr", [None, None]), "asr") and accepted_model(*report.get("aligner", [None, None]), "aligner"), "acoustic model/revision changed")
+    for field, pattern, nested in [("asrModels", "window-*.asr.json", True), ("alignerModels", "window-*.alignment.json", False)]:
+        if field in report:
+            actual = []
+            for receipt in sorted((work / "source-alignment").glob(pattern)):
+                row = read(receipt)
+                row = row["identity"] if nested else row
+                pair = [row["model"], row["revision"]]
+                if pair not in actual:
+                    actual.append(pair)
+            require(report[field] == actual and actual and report["asr" if nested else "aligner"] == actual[0], "Acoustic model inventory differs from actual receipts")
     return load_anchors(work, job, sha256(work / "job.json"))
 
 
@@ -115,11 +134,11 @@ def validate_alignment_cache(work, job):
         wav = folder / (name + ".wav")
         receipt = read(wav.with_suffix(".asr.json"))
         identity = {"audioSha256": sha256(wav), "sourceSha256": job["inputs"]["sourceAudio"]["sha256"], "model": ASR[0], "revision": ASR[1]}
-        require(receipt["identity"] == identity and isinstance(receipt["text"], str), f"acoustic {name} source/audio/model differs from its receipt")
+        require(same_speech_identity(receipt["identity"], identity) and isinstance(receipt["text"], str), f"acoustic {name} source/audio/model differs from its receipt")
         aligned = wav.with_suffix(".alignment.json")
         if aligned.exists():
             row = read(aligned)
-            require(row["audioSha256"] == identity["audioSha256"] and row["model"] == ALIGNER[0] and row["revision"] == ALIGNER[1], f"acoustic {name} alignment settings changed")
+            require(row["audioSha256"] == identity["audioSha256"] and accepted_model(row["model"], row["revision"], "aligner"), f"acoustic {name} alignment settings changed")
     if (folder / "report.json").exists():
         validate_alignment(work, job)
     else:
@@ -138,7 +157,7 @@ def validate_screening_units(work, job, render, complete):
         check = read(path)
         expected_text = unit.get("spokenText", unit["text"])
         identity = {"audioSha256": sha256(work / f"render/unit-{i:04d}.wav"), "expected": expected_text, "model": ASR[0], "revision": ASR[1]}
-        require(check["identity"] == identity and check["unitId"] == i and check["blockId"] == unit["blockId"], f"ASR unit {i} is for changed audio/text/model")
+        require(same_speech_identity(check["identity"], identity) and check["unitId"] == i and check["blockId"] == unit["blockId"], f"ASR unit {i} is for changed audio/text/model")
         expected, actual = normalize(expected_text), normalize(check["recognized"])
         matcher = difflib.SequenceMatcher(None, expected, actual, autojunk=False)
         differences = [{"kind": op, "expected": expected[a:b], "recognized": actual[c:d]} for op, a, b, c, d in matcher.get_opcodes() if op != "equal"]
@@ -150,7 +169,15 @@ def validate_screening_units(work, job, render, complete):
 
 def validate_screening(work, job, render, track):
     report = read(work / "audio/asr-screening.json")
-    require(report["jobSha256"] == sha256(work / "job.json") and report.get("status") == "machine_screening_only" and report.get("model") == ASR[0] and report.get("revision") == ASR[1], "ASR screening job/model changed")
+    require(report["jobSha256"] == sha256(work / "job.json") and report.get("status") == "machine_screening_only" and accepted_model(report.get("model"), report.get("revision"), "asr"), "ASR screening job/model changed")
+    if "modelIdentities" in report:
+        models = []
+        for index in range(len(job["units"])):
+            identity = read(work / f"audio/unit-screening/unit-{index:04d}.json")["identity"]
+            pair = [identity["model"], identity["revision"]]
+            if pair not in models:
+                models.append(pair)
+        require(report["modelIdentities"] == models and models and [report["model"], report["revision"]] == models[0], "Screening model inventory differs from actual receipts")
     require(len(report["results"]) == 1, "ASR screening has incomplete or extra results")
     result = report["results"][0]
     require(result["id"] == track["id"] and result["sha256"] == track["sha256"] and result["fullDecode"] == "pass", "ASR screening is for changed MP3")
@@ -290,7 +317,9 @@ def main():
     p.add_argument("--work", type=Path, required=True)
     p.add_argument("--remote-checkpoint", required=True)
     p.add_argument("--host", default="achillesjing@192.168.1.152")
-    p.add_argument("--mlx-python", type=Path, default=Path.home() / ".local/share/uv/tools/mlx-audio/bin/python")
+    p.add_argument("--local-checkpoint", type=Path, default=os.environ.get("SERMON_LOCAL_TTS_CHECKPOINT", str(HERE.parents[1] / "artifacts/model-routing/macbook-tts/checkpoint")))
+    p.add_argument("--local-python", default=os.environ.get("SERMON_LOCAL_TTS_PYTHON", str(HERE.parents[1] / "artifacts/model-routing/macbook-tts/runtime/bin/python")))
+    p.add_argument("--speech-python", "--mlx-python", dest="speech_python", type=Path, default=Path.home() / ".local/share/uv/tools/mlx-audio/bin/python")
     p.add_argument("--command-timeout", type=float, default=3600, help="Maximum seconds for each local/model command")
     p.add_argument("--transfer-timeout", type=float, default=600, help="Maximum seconds for each SSH probe or transfer")
     p.add_argument("--execution-timeout", type=float, default=21600, help="Maximum seconds for this candidate attempt")
@@ -436,7 +465,7 @@ def _run(args, work, job, execution):
 
     def command(argv, *, transfer=False, **kwargs):
         limit = getattr(args, "transfer_timeout", 600) if transfer else getattr(args, "command_timeout", 3600)
-        return process_run(argv, timeout=execution.remaining(limit), **kwargs)
+        return dispatch(argv, lambda cmd, **options: process_run(cmd, timeout=execution.remaining(limit), **options), **kwargs)
 
     with stage("cache_validation", billing="local"):
         resume_pending_import(work, job)
@@ -445,6 +474,32 @@ def _run(args, work, job, execution):
         record_workload("render_cache", {"expectedUnitCount": len(job["units"]),
             "localCachedUnitCount": len(before), "missingLocalUnitCount": len(job["units"]) - len(before),
             "completeRenderCache": (work / "render/report.json").exists()})
+    local_rendered = False
+    if not (work / "render/report.json").exists():
+        with stage("local_render_attempt", billing="local"):
+            local_checkpoint = getattr(args, "local_checkpoint", None)
+            local_receipt = {"primary": "macbook_mps", "fallback": "dgx_spark_cuda"}
+            if (work / "render").exists():
+                local_receipt["fallbackReason"] = "preserve_existing_render_backend"
+            elif not local_checkpoint or not Path(local_checkpoint).is_dir():
+                local_receipt["fallbackReason"] = "local_checkpoint_unavailable"
+            else:
+                # Checkpoint mismatches and output validation failures never trigger fallback.
+                require(sha256(Path(local_checkpoint) / "model.safetensors") == job["voice"]["checkpointSha256"], "Wrong local speaker checkpoint")
+                try:
+                    command([str(getattr(args, "local_python", sys.executable)), str(HERE / "render_weekly_audio.py"),
+                        "--job", str(work / "job.json"), "--checkpoint", str(local_checkpoint), "--out", str(work / "local-render-mps"), "--device", "mps"], check=True)
+                    (work / "local-render-mps").rename(work / "render")
+                    validate_render(work, job)
+                    local_receipt["status"] = "local_render_complete"
+                    local_rendered = True
+                except FileNotFoundError:
+                    local_receipt["fallbackReason"] = "local_python_unavailable"
+                except subprocess.CalledProcessError as exc:
+                    if exc.returncode != 75:
+                        raise
+                    local_receipt["fallbackReason"] = "local_model_runtime_unavailable"
+            atomic_json(work / "accounting" / "local-render-attempt.json", local_receipt)
     checkpoint = Path(args.remote_checkpoint)
     if not checkpoint.is_absolute() or not str(checkpoint).startswith(REMOTE_ROOT + "/sermon-") or ".." in checkpoint.parts:
         raise ValueError("Use a checkpoint in the isolated sermon results directory")
@@ -452,7 +507,7 @@ def _run(args, work, job, execution):
     container = "sermon-voice-weekly-" + sha256(work / "job.json")[:12]
     remote_state = work / "accounting" / "harness" / "remote-attempt.json"
     remote_marker = remote + "/.harness-attempt-" + execution.attempt
-    imported_render = (work / "render/report.json").exists()
+    imported_render = (work / "render/report.json").exists() and not local_rendered
     ssh_options = ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=20", "-o", "ServerAliveInterval=30", "-o", "ServerAliveCountMax=2", args.host]
     scp_options = ["scp", "-q", "-o", "BatchMode=yes", "-o", "ConnectTimeout=20", "-o", "ServerAliveInterval=30", "-o", "ServerAliveCountMax=2"]
 
@@ -546,13 +601,14 @@ def _run(args, work, job, execution):
         cached = (work / report).exists()
         with stage(accounting_name, cache_hit=cached, billing="local"):
             if not cached:
-                command([str(args.mlx_python), str(HERE / script), "--work", str(work)], check=True)
+                python = getattr(args, "speech_python", Path(sys.executable)) if script != "check_weekly_timing.py" else Path(sys.executable)
+                command([str(python if Path(python).exists() else sys.executable), str(HERE / script), "--work", str(work)], check=True)
             stage_check(name, recovery, check)
     with stage("candidate_validation", billing="local"):
         evidence = validate_candidate(work)
         record_workload("candidate_evidence", {**evidence, "candidateReady": True, "humanApproval": False})
     write_json(work / "workflow-receipt.json", {"status": "candidate_ready_for_extended_saturday_review", **evidence,
-        "remoteWork": None if imported_render else remote, "renderImported": imported_render, "remoteCheckpoint": str(checkpoint), "humanAudioReview": "pending"})
+        "remoteWork": None if imported_render or local_rendered else remote, "localRender": local_rendered, "renderImported": imported_render, "remoteCheckpoint": str(checkpoint), "humanAudioReview": "pending"})
     print(f"Candidate ready: {work / 'audio/zh-natural.mp3'}\nContinue the Saturday review in {work / 'audio-review.json'}")
 
 
