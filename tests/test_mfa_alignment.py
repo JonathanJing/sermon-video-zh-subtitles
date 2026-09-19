@@ -152,8 +152,15 @@ class AlignmentTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             mfa._reference('73:16.', {'73:17.': ['three']})
         self.exe.chmod(0o755)
-        checked = mfa.preflight(self.exe, self.dictionary, self.acoustic, spoken_forms_path=forms)
+        with patch.object(mfa.shutil, 'which', return_value=str(self.exe)):
+            checked = mfa.preflight(self.exe, self.dictionary, self.acoustic, spoken_forms_path=forms)
         self.assertEqual(checked['spoken_forms_sha256'], mfa._sha(forms))
+
+    def test_preflight_rejects_missing_ffmpeg(self):
+        self.exe.chmod(0o755)
+        with patch.object(mfa.shutil, 'which', side_effect=lambda name: None if name == 'ffmpeg' else str(self.exe)):
+            with self.assertRaisesRegex(ValueError, 'ffmpeg is required'):
+                mfa.preflight(self.exe, self.dictionary, self.acoustic)
 
     def test_titles_and_name_initials_preserve_sentence_units(self):
         for title in ('Dr.', 'Mr.', 'Mrs.', 'Ms.', 'St.', 'Rev.', 'Prof.', 'Jr.', 'Sr.', 'J.'):
