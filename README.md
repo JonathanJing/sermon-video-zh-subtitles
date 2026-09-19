@@ -9,6 +9,8 @@
   </a>
 </p>
 
+**[Video → new weekly page: bilingual HTML workflow (GitHub)](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/main/docs/tongxing-video-to-page.html)** — includes model roles and MacBook-first / DGX Spark fallback routing.
+
 Help Chinese-speaking attendees follow an English sermon. The featured direction is **Chinese dubbing prepared on Saturday for playback against the same video on Sunday**: reviewed source text, authorized speaker voice training, MP3 audio, timed Chinese captions, and a sermon companion. Dual-PDF production and local live captions remain separate workflows.
 
 > **State calibrated on 2026-09-05.** A full-length synchronized listening candidate is available. Same-version sermon-only video intake, the scheduled dubbing hook, and venue acceptance still have explicit gaps. Code checks, model review, candidate publication, and human/venue acceptance have separate evidence. Full weekly media, audio, and PDFs stay outside Git.
