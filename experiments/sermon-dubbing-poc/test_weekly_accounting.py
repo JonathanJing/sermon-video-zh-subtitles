@@ -18,6 +18,9 @@ from test_resume_integrity import candidate_fixture
 
 class WeeklyAccountingTests(unittest.TestCase):
     def setUp(self):
+        transport = patch("spark_transport.bridge", return_value="")
+        transport.start()
+        self.addCleanup(transport.stop)
         identity = patch.object(accounting, "execution_identity", return_value={"gitCommit": None})
         identity.start()
         self.addCleanup(identity.stop)
@@ -92,12 +95,35 @@ class WeeklyAccountingTests(unittest.TestCase):
         finished = [row for row in events if row["event"] == "stage_finished"]
         return events, summary, finished
 
+    def test_bad_mps_partial_cache_blocks_missing_checkpoint_or_python_fallback(self):
+        from render_weekly_audio import render_identity
+        for missing in ("checkpoint", "python"):
+            for corruption in ("unreceipted", "hash"):
+                with self.subTest(missing=missing, corruption=corruption), tempfile.TemporaryDirectory() as tmp, self.fixture(tmp) as f:
+                    job = runner.read(f.work / "job.json")
+                    folder = f.work / "local-render-mps"
+                    folder.mkdir()
+                    identity = render_identity(f.work / "job.json", job["voice"]["checkpointSha256"], device="mps")
+                    runner.write_json(folder / "identity.json", identity)
+                    raw = folder / "unit-0000.wav"
+                    raw.write_bytes(b"corrupt audio")
+                    if corruption == "hash":
+                        runner.write_json(raw.with_suffix(".json"), {"unit": job["units"][0], "identity": identity, "sha256": "wrong"})
+                    checkpoint = Path(tmp) / "checkpoint"
+                    if missing == "python":
+                        checkpoint.mkdir()
+                    sys.argv += ["--local-checkpoint", str(checkpoint), "--local-python", "/missing/python"]
+                    with self.assertRaisesRegex(ValueError, "local MPS audio"):
+                        runner.main()
+                    self.assertEqual(f.commands, [])
+                    self.assertEqual(raw.read_bytes(), b"corrupt audio")
+
     def test_fresh_run_records_separate_local_execution_and_no_invented_usage(self):
         with tempfile.TemporaryDirectory() as tmp, self.fixture(tmp) as f:
             runner.main()
             events, summary, finished = self.read_accounting(f.work / "accounting")
             names = [row["stage"] for row in finished]
-            self.assertEqual(names, ["job_validation", "cache_validation", "transfer_upload", "render",
+            self.assertEqual(names, ["job_validation", "cache_validation", "local_render_attempt", "transfer_upload", "render",
                 "transfer_download", "render_validation", "assemble", "source_alignment", "local_asr",
                 "timing", "candidate_validation", "weekly_dubbing"])
             self.assertTrue(all(not row["cacheHit"] and row["status"] == "completed" for row in finished))

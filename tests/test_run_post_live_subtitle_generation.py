@@ -90,6 +90,11 @@ def write_state(path: Path, *, sunday: str = "2026-06-28", url: str = "https://w
 
 
 class PostLiveSubtitleGenerationTest(unittest.TestCase):
+    def setUp(self):
+        remote = mock.patch('scripts.mfa_backend.preflight', return_value={'backend': 'dgx-spark-ssh', 'runtime': {'modelSha256': 'original'}})
+        self.spark_preflight = remote.start()
+        self.addCleanup(remote.stop)
+
     def test_unexpected_failure_reconciles_run_status_to_failed(self):
         with tempfile.TemporaryDirectory() as tempdir:
             root = Path(tempdir)
@@ -371,7 +376,7 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
             self.assertEqual(command[command.index("--reading-aligner") + 1], "mfa")
             self.assertEqual(command[command.index("--mfa-dictionary") + 1], str(dictionary))
             initial = mod.stable_payload_hash(mod.build_pipeline_input_identity(args, audio))
-            dictionary.write_bytes(b"updated dictionary")
+            self.spark_preflight.return_value = {"backend": "dgx-spark-ssh", "runtime": {"modelSha256": "updated"}}
             self.assertNotEqual(initial, mod.stable_payload_hash(mod.build_pipeline_input_identity(args, audio)))
 
     def test_mfa_does_not_reuse_legacy_summary_or_unverified_review_timing(self):

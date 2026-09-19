@@ -132,6 +132,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--reading-edition-reasoning-effort", choices=("low", "medium", "high"), default="medium")
     parser.add_argument("--reading-review-manifest", type=Path, help="Standard reviewed corrections for the reading builder; existing edit caches are preserved.")
     parser.add_argument("--reading-aligner", choices=("mfa", "legacy"), default="mfa")
+    from scripts.mfa_spark import add_arguments
+    add_arguments(parser)
+    from scripts.mfa_backend import add_arguments as add_backend_arguments
+    add_backend_arguments(parser)
     parser.add_argument("--mfa-executable", default=os.environ.get("MFA_EXECUTABLE", "mfa"))
     parser.add_argument("--mfa-dictionary", type=Path, default=os.environ.get("MFA_DICTIONARY"))
     parser.add_argument("--mfa-acoustic-model", type=Path, default=os.environ.get("MFA_ACOUSTIC_MODEL"))
@@ -376,6 +380,7 @@ def _run_post_live_generation(
         reading_segment_target_chars=getattr(args, "reading_segment_target_chars", 420),
         expected_input_fingerprint=pipeline_input_fingerprint,
         reading_aligner=getattr(args, "reading_aligner", "mfa"),
+        expected_alignment_backend=pipeline_input_identity.get("mfa", {}).get("backend"),
     )
     if core_ready:
         with accounting_stage("pipeline", cache_hit=True):
@@ -384,6 +389,15 @@ def _run_post_live_generation(
         started = time.monotonic()
         with accounting_stage("pipeline", billing="orchestrator"):
             run_command(pipeline_command, runner)
+        # A runtime failure can select Spark after the initial local preflight.
+        # Bind the completed backend receipt, never label that run as local.
+        completed_summary_path = pipeline_outdir / "summary.json"
+        if completed_summary_path.is_file():
+            completed_summary = json.loads(completed_summary_path.read_text())
+            actual_runtime = completed_summary.get("readingAlignmentRuntime")
+            if args.output_mode == "reading" and actual_runtime:
+                pipeline_input_identity["mfa"] = actual_runtime
+                pipeline_input_fingerprint = stable_payload_hash(pipeline_input_identity)
         record_input_identity(
             pipeline_outdir / "summary.json",
             fingerprint_key="pipelineInputFingerprint",
@@ -715,6 +729,15 @@ def build_pipeline_command(
     if args.output_mode == "reading":
         command.extend(["--reading-aligner", getattr(args, "reading_aligner", "mfa")])
         if getattr(args, "reading_aligner", "mfa") == "mfa":
+            from scripts.mfa_backend import options
+            backend = options(args)
+            command.append("--mfa-spark-fallback" if backend["allow_spark_fallback"] else "--no-mfa-spark-fallback")
+            for key, value in backend["spark_options"].items():
+                key = {"mfa_executable":"executable", "dictionary_path":"dictionary"}.get(key, key)
+                if key == "spoken_forms_path":
+                    continue
+                if value:
+                    command.extend(["--mfa-spark-" + key.replace("_", "-"), str(value)])
             command.extend(["--mfa-executable", getattr(args, "mfa_executable", os.environ.get("MFA_EXECUTABLE", "mfa"))])
             for name in ("dictionary", "acoustic_model", "g2p_model", "spoken_forms"):
                 value = getattr(args, "mfa_" + name, None) or os.environ.get("MFA_" + name.upper())
@@ -1177,6 +1200,7 @@ def pipeline_summary_matches(
     reading_segment_target_chars: int = 420,
     expected_input_fingerprint: str | None = None,
     reading_aligner: str = "mfa",
+    expected_alignment_backend: str | None = None,
 ) -> bool:
     try:
         summary = json.loads(path.read_text(encoding="utf-8"))
@@ -1194,6 +1218,8 @@ def pipeline_summary_matches(
         )
     if output_mode == "reading":
         matches = matches and summary.get("readingAligner", "legacy") == reading_aligner
+    if expected_alignment_backend is not None:
+        matches = matches and summary.get("readingAlignmentBackend") == expected_alignment_backend
     if expected_input_fingerprint is not None:
         matches = matches and summary.get("pipelineInputFingerprint") == expected_input_fingerprint
     return matches
@@ -1321,18 +1347,12 @@ def build_pipeline_input_identity(args: argparse.Namespace, audio_path: Path) ->
     if args.output_mode == "reading":
         aligner = getattr(args, "reading_aligner", "mfa")
         identity["readingAligner"] = aligner
-        identity["schemaVersion"] = 3  # Reading identity now binds alignment backend and local models.
+        identity["schemaVersion"] = 5  # Bind selected local or Spark runtime before whole-pipeline cache reuse.
         if aligner == "mfa":
-            executable = getattr(args, "mfa_executable", os.environ.get("MFA_EXECUTABLE", "mfa"))
-            resolved_executable = shutil.which(str(executable))
-            identity["mfa"] = {
-                "executable": str(executable),
-                "executableContent": file_content_identity(Path(resolved_executable)) if resolved_executable else None,
-                "adapter": file_content_identity(REPO_ROOT / "scripts" / "mfa_alignment.py"),
-            }
-            for name in ("dictionary", "acoustic_model", "g2p_model", "spoken_forms"):
-                value = getattr(args, "mfa_" + name, None) or os.environ.get("MFA_" + name.upper())
-                identity["mfa"][name] = file_content_identity(Path(value)) if value else None
+            from scripts.mfa_backend import preflight, options
+            identity["mfa"] = preflight(**options(args))
+            identity["mfaBackend"] = file_content_identity(REPO_ROOT / "scripts" / "mfa_backend.py")
+            identity["mfaTransport"] = file_content_identity(REPO_ROOT / "scripts" / "mfa_spark.py")
     if getattr(args, "source_text_review", None):
         identity["sourceTextReview"] = file_content_identity(args.source_text_review)
     return identity
