@@ -478,6 +478,57 @@ class SupervisorBoundaryTests(unittest.TestCase):
         self.timeline.assert_not_called()
         self.generation.assert_not_called()
 
+    def legacy_pointer(self, *, terminal=None, tool_status=None):
+        root = self.root / "agents-api-runs"
+        directory = root / "run-legacy-boundary-model"
+        directory.mkdir(parents=True)
+        legacy_config = {**asdict(self.config), "timeline_model": "gpt-transcribe",
+                         "timeline_classifier_model": "gpt-5.6"}
+        binding = mod.fingerprint({"model": self.args().model, "mode": "execute", "config": legacy_config})
+        pointer = root / ("active-" + binding[:16] + ".json")
+        pointer.write_text(json.dumps({"runName": directory.name, "binding": binding}))
+        if terminal is not None:
+            (directory / "result.json").write_text(json.dumps(terminal))
+        if tool_status is not None:
+            (directory / "tool-results").mkdir()
+            (directory / "tool-results" / "pending.json").write_text(json.dumps({"status": tool_status}))
+        return directory, pointer
+
+    def test_changed_binding_blocks_unresolved_old_session_without_remote_contact(self):
+        directory, pointer = self.legacy_pointer(terminal={"status": "timeout"})
+        before = {p: p.read_bytes() for p in directory.rglob("*.json")}
+        client = FakeClient()
+        with self.assertRaisesRegex(AgentsAPIError, "prior_configuration_session_unresolved"):
+            self.report(client)
+        self.assertEqual(client.created, 0)
+        self.assertEqual(client.index, -1)
+        self.assertEqual(list(pointer.parent.glob("active-*.json")), [pointer])
+        self.assertEqual(list(pointer.parent.glob("run-*")), [directory])
+        self.assertEqual({p: p.read_bytes() for p in directory.rglob("*.json")}, before)
+        self.timeline.assert_not_called()
+        self.generation.assert_not_called()
+
+    def test_terminal_old_session_with_uncertain_tool_still_blocks_new_binding(self):
+        self.legacy_pointer(terminal={"status": "completed"}, tool_status="started")
+        client = FakeClient()
+        with self.assertRaisesRegex(AgentsAPIError, "prior_configuration_session_unresolved"):
+            self.report(client)
+        self.assertEqual(client.created, 0)
+        self.assertEqual(client.index, -1)
+
+    def test_terminal_old_binding_allows_new_session_and_preserves_old_evidence(self):
+        directory, pointer = self.legacy_pointer(terminal={"status": "completed"}, tool_status="completed")
+        before = {p: p.read_bytes() for p in directory.rglob("*.json")}
+        saved_pointer = pointer.read_bytes()
+        self.current = snapshot("complete")
+        client = FakeClient([[action("inspect_production_state", "i1"),
+                              action("submit_supervisor_decision", "d1", decision())]])
+        report = self.report(client)
+        self.assertEqual(client.created, 1)
+        self.assertNotEqual(Path(report["agentSession"]["runDirectory"]), directory)
+        self.assertEqual(pointer.read_bytes(), saved_pointer)
+        self.assertEqual({p: p.read_bytes() for p in directory.rglob("*.json")}, before)
+
     def test_new_remote_call_id_cannot_repeat_a_stage(self):
         calls = [[action("inspect_production_state", "i1"), action("run_timeline_probe", "m1"),
                   action("inspect_production_state", "i2"), action("run_timeline_probe", "m2"),

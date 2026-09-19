@@ -10,6 +10,7 @@ from unittest import mock
 
 from scripts import run_post_live_subtitle_generation as generation
 from scripts import run_post_live_timeline_job as timeline
+from scripts import sermon_pipeline
 from tests.test_run_post_live_subtitle_generation import make_args as generation_args, write_state as generation_state
 from tests.test_run_post_live_timeline_job import make_args as timeline_args, write_state as timeline_state, make_handoff
 
@@ -102,7 +103,7 @@ class ArchiveAudioIntegrityTest(unittest.TestCase):
                 downloader = mock.Mock(side_effect=lambda *_: write_audio())
                 runner = mock.Mock(side_effect=fake_runner)
                 upload = mock.Mock()
-                with mock.patch.object(generation, "probe_archive_audio", return_value=audio_probe(2733.801)), mock.patch.object(timeline.build_multistage_post_live_timeline, "build_multistage_timeline") as model, mock.patch("builtins.print"):
+                with mock.patch.object(generation, "probe_archive_audio", return_value=audio_probe(2733.801)), mock.patch.object(sermon_pipeline, "chat_json", side_effect=AssertionError("Source verification must not classify")) as model, mock.patch.object(sermon_pipeline, "transcribe_openai_audio", side_effect=AssertionError("Source verification must not transcribe")) as asr, mock.patch("builtins.print"):
                     report = timeline.run_job(
                         args, metadata_loader=lambda _: {"live_status": "was_live", "duration": 4722},
                         runner=runner, uploader=upload, marker_reader=lambda _: None,
@@ -117,6 +118,7 @@ class ArchiveAudioIntegrityTest(unittest.TestCase):
                 self.assertEqual(status["stages"]["downloaded"]["status"], "failed")
                 self.assertNotIn("completedAt", status["stages"]["downloaded"])
                 model.assert_not_called()
+                asr.assert_not_called()
                 upload.assert_not_called()
                 self.assertEqual(path.read_bytes(), b"incomplete archive")
                 self.assertEqual(runner.call_count, 1 if mode == "new" else 0)

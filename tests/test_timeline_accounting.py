@@ -1,4 +1,4 @@
-"""Timeline accounting integration with fake media/model/cloud operations."""
+"""Source media accounting with no transcription or classification API calls."""
 import json
 import os
 import tempfile
@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from scripts import build_multistage_post_live_timeline as timeline
+from scripts import sermon_pipeline
 from scripts import run_post_live_timeline_job as job
 from scripts import sermon_accounting as accounting
 from tests.test_run_post_live_timeline_job import make_args, write_state, make_handoff
@@ -16,44 +16,6 @@ class TimelineAccountingTests(unittest.TestCase):
     def clean_environment(self):
         for key in accounting.ENV_KEYS:
             os.environ.pop(key, None)
-
-    def test_classifier_cache_and_api_attempt_are_not_double_counted(self):
-        def fake_chat(key, payload):
-            response = {"id": "classification-response", "model": "test-model",
-                        "usage": {"prompt_tokens": 12, "completion_tokens": 4},
-                        "choices": [{"message": {"content": '{"startChunkId": 1, "endChunkId": 2}'}}]}
-            accounting.record_api_attempt("test-model", response, .01)
-            return response
-        with tempfile.TemporaryDirectory() as temp, mock.patch.dict(os.environ), mock.patch.object(timeline.sermon_pipeline, "chat_json", side_effect=fake_chat) as api:
-            self.clean_environment()
-            root = Path(temp)
-            with accounting.accounting_session(root/"accounting", "test_timeline"):
-                classify = timeline.make_openai_classifier("private-key", model="test-model", reasoning_effort="high", cache_dir=root/"cache")
-                first = classify("coarse", [{"id": 1}, {"id": 2}])
-                second = classify("coarse", [{"id": 1}, {"id": 2}])
-            events = [json.loads(line) for line in (root/"accounting/events.jsonl").read_text().splitlines()]
-        self.assertEqual(first, second)
-        api.assert_called_once()
-        attempts = [e for e in events if e["event"] == "api_attempt"]
-        self.assertEqual(len(attempts), 1)
-        self.assertEqual(attempts[0]["stage"], "timeline.classify.coarse")
-        finished = [e for e in events if e["event"] == "stage_finished" and e["stage"] == "timeline.classify.coarse"]
-        self.assertEqual([e["cacheHit"] for e in finished], [False, True])
-        self.assertNotIn("private-key", json.dumps(events))
-
-    def test_asr_zone_preserves_absolute_timestamps_and_stage(self):
-        def fake_transcribe(**kwargs):
-            accounting.record_api_attempt("test-model", {"id": "asr-response", "usage": {"input_tokens": 9, "output_tokens": 2}}, .01)
-            return [{"id": 0, "start": 0, "end": 5, "text": "private transcript"}]
-        with tempfile.TemporaryDirectory() as temp, mock.patch.dict(os.environ), mock.patch.object(timeline.build_post_live_timeline, "transcribe_full_audio_chunks", side_effect=fake_transcribe):
-            self.clean_environment()
-            root = Path(temp)
-            with accounting.accounting_session(root/"accounting", "test_timeline"):
-                chunks = timeline.transcribe_absolute_chunks(api_key="private-key", source=root/"source.m4a", outdir=root/"start_fine_5s"/"zone_100000_105000", chunk_seconds=5, model="test-model", absolute_offset=100)
-            events = [json.loads(line) for line in (root/"accounting/events.jsonl").read_text().splitlines()]
-        self.assertEqual((chunks[0]["start"], chunks[0]["end"]), (100, 105))
-        self.assertEqual(next(e for e in events if e["event"] == "api_attempt")["stage"], "timeline.asr.start_fine_5s")
-        self.assertNotIn("private transcript", json.dumps(events))
 
     def test_job_download_failure_has_stage_receipt_without_sensitive_command(self):
         with tempfile.TemporaryDirectory() as temp, mock.patch.dict(os.environ), mock.patch.object(job.run_post_live_subtitle_generation, "download_archive_audio", side_effect=RuntimeError("secret-cookie-command")), mock.patch("builtins.print"):
@@ -72,15 +34,12 @@ class TimelineAccountingTests(unittest.TestCase):
         self.assertNotIn("secret-cookie-command", ledger)
         self.assertFalse(any(e["event"] == "api_attempt" for e in events))
 
-    def test_handoff_metadata_and_upload_are_timed_without_changing_review_gate(self):
+    def test_source_verification_has_local_receipts_and_zero_model_api_attempts(self):
         def fake_download(uri, target):
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(b"fake")
             return target
-        def fake_probe(args):
-            args.outdir.mkdir(parents=True, exist_ok=True)
-            return {"analysis": {"suggestedWindow": {"startSeconds": 10, "endSeconds": 20}}}
-        with tempfile.TemporaryDirectory() as temp, mock.patch.dict(os.environ), mock.patch.object(job.build_multistage_post_live_timeline, "build_multistage_timeline", side_effect=fake_probe), mock.patch.object(job.run_post_live_subtitle_generation, "probe_archive_audio", return_value={"format": {"duration": "3600"}, "streams": [{"codec_type": "audio"}]}), mock.patch("builtins.print"):
+        with tempfile.TemporaryDirectory() as temp, mock.patch.dict(os.environ), mock.patch.object(sermon_pipeline, "chat_json", side_effect=AssertionError("Source verification must not classify")) as classifier, mock.patch.object(sermon_pipeline, "transcribe_openai_audio", side_effect=AssertionError("Source verification must not transcribe")) as asr, mock.patch.object(job.run_post_live_subtitle_generation, "probe_archive_audio", return_value={"format": {"duration": "3600"}, "streams": [{"codec_type": "audio"}]}), mock.patch("builtins.print"):
             self.clean_environment()
             root = Path(temp)
             state = root/"state.json"
@@ -88,8 +47,19 @@ class TimelineAccountingTests(unittest.TestCase):
             result = job.run_job(make_args(root, str(state)), metadata_loader=lambda _: {"live_status": "was_live", "was_live": True, "duration": 3600}, marker_reader=lambda _: None, handoff_reader=lambda _: make_handoff(b"fake"), gcs_downloader=fake_download, uploader=lambda *a: None, marker_writer=lambda *a: None, notifier=lambda *a: {"status": "skipped"})
             events = [json.loads(line) for line in (root/"2026-07-12/accounting/events.jsonl").read_text().splitlines()]
         self.assertEqual(result["status"], "requires_operator_review")
+        self.assertEqual(result["schemaVersion"], 2)
+        self.assertEqual(result["stage"], "source_media_verified")
+        self.assertEqual(result["boundaryMethod"], "operator_supplied")
+        self.assertIsNone(result["suggestedWindow"])
+        classifier.assert_not_called()
+        asr.assert_not_called()
+        self.assertFalse(any(e["event"] == "api_attempt" for e in events))
         stages = {e["stage"] for e in events if e["event"] == "stage_finished"}
-        self.assertTrue({"saturday_timeline", "timeline.metadata", "timeline.download_handoff", "timeline.probe", "timeline.upload"} <= stages)
+        self.assertTrue({"saturday_timeline", "timeline.metadata", "timeline.download_handoff", "timeline.verify_source_media", "timeline.upload"} <= stages)
+        self.assertNotIn("timeline.probe", stages)
+        self.assertFalse(any(name.startswith(("timeline.asr.", "timeline.classify.")) for name in stages))
+        self.assertEqual(result["modelsUsed"], [])
+        self.assertTrue(result["timelineGcsUri"].endswith("/timeline/source-media-report.json"))
         self.assertNotIn("gs://fake/private.m4a", json.dumps(events))
 
 

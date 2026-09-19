@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import re
 import signal
@@ -49,8 +50,6 @@ class SupervisorConfig:
     notify_recipients_secret: str | None = None
     notify_sender_secret: str | None = None
     python_executable: str = sys.executable
-    timeline_model: str = "gpt-transcribe"
-    classifier_model: str = "gpt-5.6"
     reference_model: str = "gpt-transcribe"
     reading_model: str = "gpt-6-astra"
     glossary: Path | None = None
@@ -313,7 +312,7 @@ def recommend_action(
     if lease_active(timeline_lease):
         return action(
             "wait_for_active_run",
-            "A timeline execution already holds the production lease.",
+            "A source-media preparation execution already holds the production lease.",
             human=False,
         )
 
@@ -321,7 +320,7 @@ def recommend_action(
     if not timeline_report:
         return action(
             "run_timeline_probe",
-            "The source exists, but no post-live timeline job report is available.",
+            "The source exists, but verified source-media evidence is not yet available.",
             human=False,
         )
     if timeline_status in {"waiting_for_source", "waiting_for_matching_sunday", "waiting_for_post_live"}:
@@ -339,7 +338,7 @@ def recommend_action(
         if not approval_valid:
             return action(
                 "request_window_approval",
-                approval_reason or "The suggested sermon window requires operator approval.",
+                approval_reason or "Provide and approve the sermon start/end times against the verified source media.",
                 human=True,
             )
         return action(
@@ -398,11 +397,14 @@ def approve_window(
     )
     timeline_status = str((timeline or {}).get("status") or "")
     if timeline_status not in {"requires_operator_review", "already_requires_operator_review"}:
-        raise RuntimeError("Cannot approve a window before the timeline job requires operator review.")
+        raise RuntimeError("Cannot approve a window before source-media preparation requires operator review.")
     start_seconds = parse_timecode(start_time)
     end_seconds = parse_timecode(end_time)
     if end_seconds <= start_seconds:
         raise ValueError("end_time must be later than start_time")
+    source_error = validate_source_window(timeline, sunday=config.sunday, live_url=live_url, end=end_seconds)
+    if source_error:
+        raise ValueError(source_error)
     approver = str(approved_by or "").strip()
     if not approver:
         raise ValueError("approved_by is required")
@@ -440,12 +442,13 @@ def run_timeline_probe(
     lease_acquirer: Callable[..., LeaseHandle | None] = acquire_lease,
     lease_releaser: Callable[[LeaseHandle], None] = release_lease,
 ) -> dict[str, Any]:
+    """Prepare verified source media; legacy name retained for persisted sessions and leases."""
     snapshot = production_snapshot(config)
     action_name = snapshot["recommendedAction"]["action"]
     if action_name not in {"run_timeline_probe", "waiting_for_post_live", "resume_failed_timeline"}:
         return {
             "status": "skipped",
-            "reason": f"timeline probe is not valid while recommendedAction={action_name}",
+            "reason": f"source-media preparation is not valid while recommendedAction={action_name}",
             "snapshot": snapshot,
         }
     lease = lease_acquirer(
@@ -455,7 +458,7 @@ def run_timeline_probe(
     if lease is None:
         return {
             "status": "already_running",
-            "reason": "Another timeline execution holds the production lease.",
+            "reason": "Another source-media preparation execution holds the production lease.",
         }
     with LeaseGuard(lease, ttl_seconds=config.lease_ttl_seconds, releaser=lease_releaser) as guard:
         guard.checkpoint()
@@ -734,14 +737,9 @@ def build_timeline_command(config: SupervisorConfig, snapshot: dict[str, Any]) -
         snapshot["locations"]["timelineReportLocal"],
         "--gcs-prefix",
         config.gcs_prefix,
-        "--timeline-model",
-        config.timeline_model,
-        "--classifier-model",
-        config.classifier_model,
     ]
     if config.gcs_bucket:
         command.extend(["--gcs-bucket", config.gcs_bucket])
-    append_secret_flag(command, "--api-key-secret", config.api_key_secret)
     append_secret_flag(command, "--youtube-api-key-secret", config.youtube_api_key_secret)
     append_secret_flag(command, "--youtube-cookies-secret", config.youtube_cookies_secret)
     if config.youtube_cookies_file:
@@ -939,6 +937,39 @@ def ensure_source_lock(
     return payload
 
 
+def validate_source_window(
+    report: dict[str, Any], *, sunday: str, live_url: str, end: float,
+) -> str | None:
+    """Validate v2 manual-input evidence without relabeling legacy approved reports.
+
+    Old model reports stay hash-bound and readable. All newly prepared sources
+    use the explicit manual boundary contract and must carry real media identity.
+    """
+    manual = (report.get("boundaryMethod") == "operator_supplied"
+              or report.get("stage") == "source_media_verified"
+              or (report.get("schemaVersion") == 2
+                  and report.get("stage") != "multistage_timeline_probed"))
+    if not manual:
+        return None
+    if (report.get("schemaVersion") != 2 or report.get("boundaryMethod") != "operator_supplied"
+            or report.get("stage") != "source_media_verified"
+            or report.get("status") not in {"requires_operator_review", "already_requires_operator_review"}):
+        return "Invalid source-media evidence contract."
+    if report.get("sourceUrl") != live_url or report.get("sunday") != sunday:
+        return "Source-media evidence does not match the current source and Sunday."
+    duration = report.get("durationSeconds")
+    if type(duration) not in (float, int) or not math.isfinite(duration) or duration <= 0:
+        return "Source-media evidence must contain a finite positive media duration."
+    if not re.fullmatch(r"[a-f0-9]{64}", str(report.get("audioSha256") or "")):
+        return "Source-media evidence must contain the audio SHA-256."
+    size = report.get("audioSizeBytes")
+    if type(size) is not int or size <= 0:
+        return "Source-media evidence must contain a positive audio size."
+    if end > duration:
+        return "Approved end time exceeds the verified media duration."
+    return None
+
+
 def validate_window_approval(
     approval: dict[str, Any] | None,
     *,
@@ -973,6 +1004,9 @@ def validate_window_approval(
         return False, "The current timeline report is unavailable."
     if approval.get("timelineReportSha256") != json_digest(timeline_report):
         return False, "Window approval does not match the current timeline report."
+    source_error = validate_source_window(timeline_report, sunday=sunday, live_url=live_url, end=end)
+    if source_error:
+        return False, source_error
     return True, None
 
 
@@ -1276,6 +1310,8 @@ def public_timeline_report(report: dict[str, Any] | None) -> dict[str, Any] | No
     return {
         "status": report.get("status"),
         "stage": report.get("stage"),
+        "boundaryMethod": report.get("boundaryMethod"),
+        "durationSeconds": report.get("durationSeconds"),
         "reason": report.get("reason"),
         "suggestedWindow": report.get("suggestedWindow"),
         "reviewInstructions": report.get("reviewInstructions"),

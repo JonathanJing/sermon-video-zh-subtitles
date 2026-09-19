@@ -54,7 +54,7 @@ python3 scripts/live_source_monitor.py \
 
 ### 2）人工确认证道开始和结束时间
 
-根据 timeline evidence、本地播放核对，或者可信的 operator 复核结果，确认完整归档里的证道时间窗。
+通过本地播放核对或可信的 operator 复核，提供完整归档里的证道时间窗。来源准备只核验媒体，模型边界发现已退役。
 
 示例：
 

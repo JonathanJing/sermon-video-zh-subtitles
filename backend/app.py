@@ -35,7 +35,6 @@ from .realtime import (
 from .scripture import ScriptureNotFoundError, ScriptureService
 from .storage import GcsArtifactReader
 from .worker import build_generation_plan, parse_generation_request
-from scripts import build_post_live_timeline
 from scripts import live_source_monitor
 from scripts import run_post_live_subtitle_generation
 from scripts import sermon_production_supervisor
@@ -392,7 +391,16 @@ class ApiHandler(BaseHTTPRequestHandler):
         sunday = self.resolve_admin_sunday(sunday)
         payload = self.read_json_body()
         mode = self.post_live_subtitle_mode(payload)
-        command = self.post_live_timeline_command(payload, sunday) if mode == "timeline-probe" else self.post_live_subtitle_command(payload, sunday)
+        if mode == "timeline-probe":
+            self.write_json(
+                {
+                    "error": "timeline_probe_retired",
+                    "message": "Automatic sermon boundary discovery has been retired. Provide operator-confirmed startTime and endTime using generate-reviewed; see docs/codex-local-production-runbook.zh.md.",
+                },
+                status=410,
+            )
+            return
+        command = self.post_live_subtitle_command(payload, sunday)
         source = trigger_source(self.headers, payload)
         log_event(
             "post_live_subtitle_generation_triggered",
@@ -692,52 +700,6 @@ class ApiHandler(BaseHTTPRequestHandler):
             return "timeline-probe"
         return "generate-reviewed"
 
-    def post_live_timeline_command(self, payload: dict, sunday: str) -> list[str]:
-        work_root = Path(payload.get("workRoot") or payload.get("work_root") or "/tmp/sermon-post-live-subtitles")
-        slug = str(payload.get("slug") or payload.get("videoId") or payload.get("video_id") or "sermon")
-        audio = (
-            payload.get("input")
-            or payload.get("audio")
-            or payload.get("audioPath")
-            or payload.get("audio_path")
-            or str(work_root / sunday / slug / "download" / "source_audio.m4a")
-        )
-        outdir = payload.get("outdir") or str(work_root / sunday / slug / "timeline")
-        out_path = payload.get("out") or str(Path(outdir) / "report.json")
-        command = [
-            sys.executable,
-            str(build_post_live_timeline.REPO_ROOT / "scripts" / "build_post_live_timeline.py"),
-            "--input",
-            str(audio),
-            "--outdir",
-            str(outdir),
-            "--out",
-            str(out_path),
-        ]
-        optional_pairs = [
-            ("chunkSeconds", "--chunk-seconds"),
-            ("chunk_seconds", "--chunk-seconds"),
-            ("timelineModel", "--model"),
-            ("timeline_model", "--model"),
-            ("transcriptJson", "--transcript-json"),
-            ("transcript_json", "--transcript-json"),
-            ("startBufferSeconds", "--start-buffer-seconds"),
-            ("start_buffer_seconds", "--start-buffer-seconds"),
-            ("endBufferSeconds", "--end-buffer-seconds"),
-            ("end_buffer_seconds", "--end-buffer-seconds"),
-        ]
-        seen_flags = set()
-        for key, flag in optional_pairs:
-            if flag in seen_flags:
-                continue
-            value = payload.get(key)
-            if value:
-                command.extend([flag, str(value)])
-                seen_flags.add(flag)
-        api_key_secret = payload.get("apiKeySecret") or payload.get("api_key_secret") or self.config.openai_api_key_secret
-        if api_key_secret and "--transcript-json" not in command:
-            command.extend(["--api-key-secret", str(api_key_secret)])
-        return command
 
     def post_live_subtitle_command(self, payload: dict, sunday: str) -> list[str]:
         state_file = (

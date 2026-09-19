@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Download a completed livestream and stop at the operator timeline-review gate."""
+"""Verify complete source media and wait for operator-supplied sermon times."""
 
 from __future__ import annotations
 
@@ -32,7 +32,6 @@ from backend.config import upcoming_sunday  # noqa: E402
 from scripts.sermon_accounting import accounting_session, stage  # noqa: E402
 from backend.observability import log_event, url_summary  # noqa: E402
 from scripts import (  # noqa: E402
-    build_multistage_post_live_timeline,
     live_source_monitor,
     run_post_live_subtitle_generation,
     post_live_run_status,
@@ -70,20 +69,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--out", default="/tmp/sermon-post-live-subtitles/job-report.json")
     parser.add_argument("--gcs-bucket", default=DEFAULT_BUCKET)
     parser.add_argument("--gcs-prefix", default="sundays")
-    parser.add_argument("--api-key-secret")
     parser.add_argument("--discord-bot-token-secret")
     parser.add_argument("--discord-channel-id")
     parser.add_argument("--notify-sendgrid-secret")
     parser.add_argument("--notify-recipients-secret")
     parser.add_argument("--notify-sender-secret")
-    parser.add_argument("--chunk-seconds", type=float, default=120.0, help="Coarse timeline chunk size.")
-    parser.add_argument("--transition-chunk-seconds", type=float, default=30.0)
-    parser.add_argument("--fine-chunk-seconds", type=float, default=5.0)
-    parser.add_argument("--wide-margin-seconds", type=float, default=180.0)
-    parser.add_argument("--fine-zone-radius-seconds", type=float, default=75.0)
-    parser.add_argument("--timeline-model", default="gpt-transcribe")
-    parser.add_argument("--classifier-model", default="gpt-5.6")
-    parser.add_argument("--reasoning-effort", choices=("low", "medium", "high"), default="high")
     parser.add_argument("--audio-format", default="bestaudio[ext=m4a]/bestaudio")
     parser.add_argument("--yt-dlp", default="yt-dlp")
     parser.add_argument("--youtube-cookies-secret")
@@ -145,7 +135,7 @@ def _run_job(
     live_url = run_post_live_subtitle_generation.live_url_from_state(state, source)
     checked_at = datetime.now(timezone.utc).isoformat()
     base = {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "status": "waiting_for_source",
         "stage": "post_live_timeline_job",
         "sunday": sunday,
@@ -231,7 +221,9 @@ def _run_job(
 
     run_status = post_live_run_status.update_stage(run_status, sunday, "archive_ready", "complete")
     persist_status(run_status, run_status_path, run_status_uri, args, marker_writer)
-    if existing and existing.get("status") == "requires_operator_review":
+    if existing and existing.get("status") in {"requires_operator_review", "already_requires_operator_review"}:
+        if not timeline_source_matches(existing, sunday=sunday, live_url=live_url):
+            raise RuntimeError("Stored review evidence belongs to another or unverified source/Sunday; preserve it and inspect the artifact location.")
         notification = existing.get("notification") or {}
         if notification.get("status") != "sent" and args.discord_bot_token_secret and args.discord_channel_id:
             existing["notification"] = (notifier or send_discord_notification)(args, existing)
@@ -272,6 +264,13 @@ def _run_job(
                 )
             audio_uri = f"gs://{args.gcs_bucket}/{prefix}/download/{audio_path.name}"
             download_source = "cloud-youtube-direct"
+        # The downloader/handoff already validates completeness. Read the measured
+        # duration from ffprobe, never use metadata as the audio duration evidence.
+        with stage("timeline.verify_source_media", billing="local"):
+            probe = run_post_live_subtitle_generation.probe_archive_audio(audio_path)
+            duration = run_post_live_subtitle_generation.archive_expected_duration(
+                {"duration": (probe.get("format") or {}).get("duration")}
+            )
     except run_post_live_subtitle_generation.ArchiveAudioValidationError as exc:
         run_status = post_live_run_status.update_stage(
             run_status, sunday, "downloaded", "failed", reason=str(exc),
@@ -336,48 +335,33 @@ def _run_job(
     )
     persist_status(run_status, run_status_path, run_status_uri, args, marker_writer)
 
-    timeline_outdir = run_root / "timeline"
-    timeline_path = timeline_outdir / "report.json"
-    timeline_args = argparse.Namespace(
-        input=audio_path,
-        out=timeline_path,
-        outdir=timeline_outdir,
-        coarse_chunk_seconds=args.chunk_seconds,
-        transition_chunk_seconds=args.transition_chunk_seconds,
-        fine_chunk_seconds=args.fine_chunk_seconds,
-        wide_margin_seconds=args.wide_margin_seconds,
-        fine_zone_radius_seconds=args.fine_zone_radius_seconds,
-        transcription_model=args.timeline_model,
-        classifier_model=args.classifier_model,
-        reasoning_effort=args.reasoning_effort,
-        api_key_secret=args.api_key_secret,
-    )
-    with stage("timeline.probe", billing="local"):
-        timeline = build_multistage_post_live_timeline.build_multistage_timeline(timeline_args)
-    timeline_path.write_text(json.dumps(timeline, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
-    timeline_uri = f"gs://{args.gcs_bucket}/{prefix}/timeline/report.json"
+    # Keep the legacy directory and report URI field so approvals remain readable,
+    # but never overwrite historical model timeline reports or classifier evidence.
+    timeline_path = run_root / "timeline" / "source-media-report.json"
+    timeline = {
+        "schemaVersion": 2,
+        "status": "source_media_verified",
+        "boundaryMethod": "operator_supplied",
+        "sourceUrl": live_url,
+        "sunday": sunday,
+        "slug": slug,
+        "durationSeconds": duration,
+        "audioSha256": audio_hash,
+        "audioSizeBytes": audio_size,
+        "modelsUsed": [],
+        "suggestedWindow": None,
+    }
+    preserve_json(timeline_path, timeline)
+    timeline_uri = f"gs://{args.gcs_bucket}/{prefix}/timeline/source-media-report.json"
     uploader(timeline_path, timeline_uri)
-    stage_artifact_uris = {}
-    for relative in (
-        "coarse_120s/timeline_chunks.json",
-        "transition_30s/timeline_chunks.json",
-        "start_fine_5s/timeline_chunks.json",
-        "end_fine_5s/timeline_chunks.json",
-        "classifier/coarse.json",
-        "classifier/transition.json",
-        "classifier/exact.json",
-    ):
-        artifact_path = timeline_outdir / relative
-        if artifact_path.exists():
-            uri = f"gs://{args.gcs_bucket}/{prefix}/timeline/{relative}"
-            uploader(artifact_path, uri)
-            stage_artifact_uris[relative] = uri
 
-    suggested = (timeline.get("analysis") or {}).get("suggestedWindow")
     report = {
         **base,
         "status": "requires_operator_review",
-        "stage": "timeline_probed",
+        "stage": "source_media_verified",
+        "boundaryMethod": "operator_supplied",
+        "modelsUsed": [],
+        "durationSeconds": duration,
         "metadata": run_post_live_subtitle_generation.safe_metadata(metadata),
         "metadataDiagnostics": metadata_diagnostics,
         "slug": slug,
@@ -391,10 +375,10 @@ def _run_job(
         "handoffManifestSha256": handoff_digest,
         "timelineGcsUri": timeline_uri,
         "runStatusGcsUri": run_status_uri,
-        "timelineStageArtifactGcsUris": stage_artifact_uris,
-        "suggestedWindow": suggested,
+        "timelineStageArtifactGcsUris": {},
+        "suggestedWindow": None,
         "reviewInstructions": (
-            "Open the completed livestream, independently verify sermon start/end, then compare with suggestedWindow. "
+            "Open the completed livestream and supply the sermon start/end times. "
             "Only confirmed local audio times may be used for generate-reviewed."
         ),
         "completedAt": datetime.now(timezone.utc).isoformat(),
@@ -681,7 +665,6 @@ def youtube_metadata_with_data_api(
 
 
 def send_discord_notification(args: argparse.Namespace, report: dict[str, Any]) -> dict[str, Any]:
-    window = report.get("suggestedWindow") or {}
     if report.get("status") == "waiting_for_download_access":
         lines = [
             "⚠️ **直播录像已结束，但云端下载授权失败**",
@@ -692,13 +675,12 @@ def send_discord_notification(args: argparse.Namespace, report: dict[str, Any]) 
         ]
     else:
         lines = [
-            "🔔 **主日直播已结束，完整音频与时间轴已准备好**",
+            "🔔 **主日直播已结束，完整音频已核验，等待人工提供证道范围**",
             f"日期：{report.get('sunday')}",
             f"直播：{report.get('sourceUrl')}",
-            f"机器建议证道窗口：{window.get('startTimecode') or '未识别'} → {window.get('endTimecode') or '未识别'}",
             f"完整音频：`{report.get('audioGcsUri')}`",
-            f"时间轴报告：`{report.get('timelineGcsUri')}`",
-            "请人工观看录像，独立记录证道开始和结束时间，再与机器建议比较。确认后才能启动 generate-reviewed。",
+            f"来源媒体报告：`{report.get('timelineGcsUri')}`",
+            "请人工观看录像并提供证道开始和结束时间；纯证道视频可选择完整片段。确认后才能启动 generate-reviewed。",
         ]
     content = "\n".join(lines)
     if not args.discord_bot_token_secret or not args.discord_channel_id:

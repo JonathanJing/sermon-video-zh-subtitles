@@ -12,6 +12,7 @@ from unittest import mock
 from agents.tool_context import ToolContext
 
 from scripts import run_post_live_timeline_job as timeline
+from scripts import sermon_pipeline
 from scripts import run_post_live_subtitle_generation as generation
 from scripts import sermon_production_supervisor as supervisor
 from scripts import run_sermon_production_supervisor_agent as agent
@@ -35,11 +36,6 @@ def failed_report(reason="archive_audio_integrity_failed"):
             "metadata": {"live_status": "was_live", "duration": 3600}}
 
 
-def fake_timeline(args):
-    args.outdir.mkdir(parents=True, exist_ok=True)
-    return {"analysis": {"suggestedWindow": {"startTimecode": "00:20:00", "endTimecode": "00:40:00"}}}
-
-
 class TimelineHandoffTest(unittest.TestCase):
     def run_handoff(self, root, content, *, existing=None, received=None):
         state = root / "state.json"
@@ -56,7 +52,7 @@ class TimelineHandoffTest(unittest.TestCase):
             return destination
         downloader = mock.Mock(side_effect=download)
         upload = mock.Mock()
-        with mock.patch.object(generation, "probe_archive_audio", return_value=PROBE), mock.patch.object(timeline.build_multistage_post_live_timeline, "build_multistage_timeline", side_effect=fake_timeline) as model, mock.patch("builtins.print"):
+        with mock.patch.object(generation, "probe_archive_audio", return_value=PROBE), mock.patch.object(sermon_pipeline, "chat_json", side_effect=AssertionError("Source verification must not classify")) as model, mock.patch.object(sermon_pipeline, "transcribe_openai_audio", side_effect=AssertionError("Source verification must not transcribe")) as asr, mock.patch("builtins.print"):
             report = timeline.run_job(
                 make_args(root, str(state)), metadata_loader=lambda _: {"live_status": "was_live", "duration": 3600},
                 runner=mock.Mock(side_effect=AssertionError("Must use the handoff")),
@@ -64,16 +60,22 @@ class TimelineHandoffTest(unittest.TestCase):
                 handoff_reader=lambda _: manifest, gcs_downloader=downloader,
                 notifier=lambda *_: {"status": "not_configured"},
             )
+        asr.assert_not_called()
         return report, canonical, downloader, model, upload
 
     def test_byte_identical_canonical_reuses_handoff_without_download(self):
         with tempfile.TemporaryDirectory() as temp:
             report, canonical, downloader, model, _ = self.run_handoff(Path(temp), b"bound archive", existing=b"bound archive")
             self.assertEqual(report["status"], "requires_operator_review")
+            self.assertEqual(report["schemaVersion"], 2)
+            self.assertEqual(report["stage"], "source_media_verified")
+            self.assertEqual(report["boundaryMethod"], "operator_supplied")
+            self.assertEqual(report["durationSeconds"], 3600)
+            self.assertIsNone(report["suggestedWindow"])
             self.assertEqual(report["downloadedAudio"], str(canonical))
             self.assertEqual(report["audioSha256"], hashlib.sha256(b"bound archive").hexdigest())
             downloader.assert_not_called()
-            model.assert_called_once()
+            model.assert_not_called()
 
     def test_equal_length_wrong_cache_is_preserved_and_correct_handoff_uses_isolated_path(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -88,7 +90,7 @@ class TimelineHandoffTest(unittest.TestCase):
             self.assertEqual(report["audioSha256"], hashlib.sha256(b"right archive").hexdigest())
             self.assertEqual(report["handoffManifestSha256"], generation.stable_payload_hash(make_handoff(b"right archive")))
             downloader.assert_called_once()
-            model.assert_called_once()
+            model.assert_not_called()
             locations = supervisor.artifact_locations(supervisor.SupervisorConfig(SUNDAY, "unused", root, gcs_bucket=None), SLUG)
             put_json(Path(locations["timelineReportLocal"]), report)
             with self.assertRaisesRegex(RuntimeError, "Canonical archive differs"):
@@ -173,7 +175,7 @@ class TimelineResumeTest(unittest.TestCase):
                 put_json(Path(args.out), result)
                 return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
             release = mock.Mock(wraps=supervisor.release_lease)
-            with mock.patch.object(generation, "probe_archive_audio", return_value=PROBE), mock.patch.object(timeline.build_multistage_post_live_timeline, "build_multistage_timeline", side_effect=fake_timeline), mock.patch("builtins.print"):
+            with mock.patch.object(generation, "probe_archive_audio", return_value=PROBE), mock.patch.object(sermon_pipeline, "chat_json", side_effect=AssertionError("Source verification must not classify")), mock.patch.object(sermon_pipeline, "transcribe_openai_audio", side_effect=AssertionError("Source verification must not transcribe")), mock.patch("builtins.print"):
                 result = supervisor.run_timeline_probe(config, runner=runner,
                     lease_acquirer=lambda *_a, **kwargs: supervisor.acquire_lease(str(root / "test-timeline-lease.json"), **kwargs), lease_releaser=release)
             self.assertEqual(result["status"], "requires_operator_review")
@@ -253,7 +255,7 @@ class TimelineResumeTest(unittest.TestCase):
             audio.write_bytes(b"repaired complete source")
             def writer(uri, text):
                 remote[uri] = json.loads(text)
-            with mock.patch.object(generation, "probe_archive_audio", return_value=PROBE), mock.patch.object(timeline.build_multistage_post_live_timeline, "build_multistage_timeline", side_effect=fake_timeline), mock.patch("builtins.print"):
+            with mock.patch.object(generation, "probe_archive_audio", return_value=PROBE), mock.patch.object(sermon_pipeline, "chat_json", side_effect=AssertionError("Source verification must not classify")), mock.patch.object(sermon_pipeline, "transcribe_openai_audio", side_effect=AssertionError("Source verification must not transcribe")), mock.patch("builtins.print"):
                 report = timeline.run_job(make_args(root, config.state_file,
                         resume_failed_timeline=supervisor.json_digest(failed), persist_run_status=True),
                     metadata_loader=lambda _: {"live_status": "was_live", "duration": 3600},

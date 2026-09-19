@@ -167,42 +167,13 @@ class BackendAppTest(unittest.TestCase):
         self.assertEqual(command[command.index("--gcs-bucket") + 1], "sermon-zh-artifacts-ai-for-god")
         self.assertIn("--plan-only", command)
 
-    def test_post_live_timeline_command_uses_full_audio_and_requires_review(self):
+    def test_post_live_timeline_aliases_remain_recognized_for_retirement(self):
         handler = object.__new__(ApiHandler)
-        handler.config = AppConfig(
-            artifact_bucket="sermon-zh-artifacts-ai-for-god",
-            artifact_prefix="sundays",
-            current_manifest_uri=None,
-            sunday_manifest_uri_template=None,
-            timezone="America/Los_Angeles",
-            openai_api_key_secret="projects/ai-for-god/secrets/openai-api-key/versions/latest",
-            operator_admin_token="secret-token",
-            internal_task_token=None,
-            enable_inline_worker=False,
-            live_source_monitor_state_uri="gs://sermon-zh-artifacts-ai-for-god/sundays/live-source-monitor/backend-state.json",
-        )
-
-        command = ApiHandler.post_live_timeline_command(
-            handler,
-            {
-                "slug": "0D6yZW4_uEA",
-                "input": "/tmp/sermon-post-live-subtitles/2026-07-05/0D6yZW4_uEA/download/source_audio.m4a",
-                "chunkSeconds": 120,
-                "timelineModel": "gpt-4o-transcribe",
-            },
-            "2026-07-05",
-        )
-
-        self.assertIn("build_post_live_timeline.py", command[1])
-        self.assertEqual(
-            command[command.index("--input") + 1],
-            "/tmp/sermon-post-live-subtitles/2026-07-05/0D6yZW4_uEA/download/source_audio.m4a",
-        )
-        self.assertEqual(command[command.index("--chunk-seconds") + 1], "120")
-        self.assertEqual(command[command.index("--model") + 1], "gpt-4o-transcribe")
-        self.assertEqual(command[command.index("--api-key-secret") + 1], "projects/ai-for-god/secrets/openai-api-key/versions/latest")
-        self.assertNotIn("--start-time", command)
-        self.assertNotIn("--end-time", command)
+        for payload in ({"mode": "timeline-probe"}, {"postLiveMode": "timeline-probe"},
+                        {"post_live_mode": "timeline-probe"}, {"timelineProbe": True},
+                        {"timeline_probe": True}):
+            with self.subTest(payload=payload):
+                self.assertEqual(handler.post_live_subtitle_mode(payload), "timeline-probe")
 
     def test_post_live_subtitles_endpoint_plans_when_inline_disabled(self):
         class FakeService:
@@ -273,7 +244,7 @@ class BackendAppTest(unittest.TestCase):
         self.assertEqual(command[command.index("--reading-edition-model") + 1], "gpt-5.6-sol")
         self.assertEqual(command[command.index("--reading-edition-reasoning-effort") + 1], "high")
 
-    def test_post_live_subtitles_endpoint_can_plan_timeline_probe(self):
+    def test_post_live_subtitles_endpoint_rejects_retired_timeline_probe(self):
         class FakeService:
             def _resolve_sunday(self, sunday):
                 return "2026-07-05" if sunday == "upcoming" else sunday
@@ -299,10 +270,10 @@ class BackendAppTest(unittest.TestCase):
 
         ApiHandler.handle_post_live_subtitles(handler, "upcoming")
 
-        self.assertEqual(captured["status"], 202)
-        self.assertEqual(captured["payload"]["status"], "planned")
-        self.assertEqual(captured["payload"]["mode"], "timeline-probe")
-        self.assertIn("build_post_live_timeline.py", captured["payload"]["command"][1])
+        self.assertEqual(captured["status"], 410)
+        self.assertEqual(captured["payload"]["error"], "timeline_probe_retired")
+        self.assertIn("operator-confirmed", captured["payload"]["message"])
+        self.assertNotIn("command", captured["payload"])
 
     def test_production_supervisor_command_uses_shared_state_and_bounded_mode(self):
         handler = object.__new__(ApiHandler)

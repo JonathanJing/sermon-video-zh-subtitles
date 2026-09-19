@@ -23,7 +23,7 @@ flowchart LR
     L[本地 runner] <--> A[Agents API session / environment none]
     A --> T[受限工具请求]
     T --> L
-    L --> P[确定性 timeline / PDF 工具]
+    L --> P[确定性媒体准备 / PDF 工具]
     P --> G
     G --> L
 ```
@@ -43,7 +43,7 @@ Cloud Scheduler 不会把一个 HTTP target 的返回结果自动传给另一个
 
 - Agent runner：`scripts/run_sermon_production_supervisor_agent.py`
 - 确定性工具与状态契约：`scripts/sermon_production_supervisor.py`
-- Timeline 工具：`scripts/run_post_live_timeline_job.py`
+- 来源媒体准备工具（保留历史文件名）：`scripts/run_post_live_timeline_job.py`
 - 阅读版生成工具：`scripts/run_post_live_subtitle_generation.py`
 - API 入口：`POST /api/admin/sundays/<date>/production-supervisor`
 
@@ -67,7 +67,7 @@ Agent 可以：
 
 Agent 不能：
 
-- 启动 timeline job
+- 启动来源媒体准备 job
 - 启动 PDF generation
 - 写人工审批
 
@@ -87,7 +87,7 @@ Agent 不能：
 
 Execute 模式另外暴露两个受限工具：
 
-- `run_timeline_probe`
+- `run_timeline_probe`：保留历史工具名，现只下载、核验媒体和记录时长／哈希，不调用 ASR 或边界分类模型。
 - `run_approved_reading_pdf_generation`
 
 这两个工具内部仍会验证当前状态。加上 `inspect_production_state`，业务工具共三个；`submit_supervisor_decision` 只提交结构化结论。Agent 不能通过 prompt 强迫工具跳过状态门禁，也没有通用 shell 或写审批工具。
@@ -149,7 +149,7 @@ SERMON_YOUTUBE_COOKIES_FILE=/absolute/path/youtube.cookies.txt \
 
 ## 人工时间窗审批
 
-机器生成的 `suggestedWindow` 不能直接进入 PDF pipeline。
+2026-09-19 起，不再生成机器建议范围。操作员直接提供绝对起止时间；媒体准备报告 v2 记录实测时长、音频哈希及 `boundaryMethod=operator_supplied`。写入和恢复审批时检查范围未超出完整音频。旧报告和仍有效的审批保持兼容，字段及工具的旧名称仅用于恢复；详见[本地 runbook 的迁移说明](codex-local-production-runbook.zh.md#人工范围流程2026-09-19-代码更新)。
 
 operator 独立观看完整录像后，使用同一个 runner 写审批：
 
@@ -184,10 +184,10 @@ operator 独立观看完整录像后，使用同一个 runner 写审批：
 | 当前证据 | Supervisor 动作 |
 |---|---|
 | 没有 persisted URL | `wait_for_source` |
-| 有 URL、没有 timeline report | `run_timeline_probe` |
+| 有 URL、没有来源媒体证据（旧 timeline report 路径） | `run_timeline_probe` |
 | 直播还未结束 | `waiting_for_post_live` |
 | 云端下载授权失败 | `operator_download_handoff` |
-| Timeline 待审核、没有有效审批 | `request_window_approval` |
+| 媒体已核验、没有人工范围审批 | `request_window_approval` |
 | 有有效审批 | `run_reading_pdf_generation` |
 | 阅读质量或 PDF QA 失败 | `review_quality_failure` |
 | GCS artifact 无法读取 | `restore_artifact_access` |
@@ -200,8 +200,8 @@ operator 独立观看完整录像后，使用同一个 runner 写审批：
 2026-09-11 的初次检查未找到历史定时任务；同日后续已创建并回读核验 `pdf-context-pack`，回执和计划时段见 [本地 runbook](./codex-local-production-runbook.zh.md)。判断当前调度健康时重新读取任务及执行记录；不要据旧观察重复创建任务。手动入口用于明确请求的运行或恢复。每次运行只推进当前状态允许的阶段：
 
 - 直播未结束：安全退出，等待下一次运行
-- 可以下载：取得 GCS lease 后运行 timeline
-- timeline 待确认：停止并通知 operator
+- 可以下载：取得 GCS lease 后准备并核验来源媒体
+- 媒体已核验：停止并通知 operator 提供范围
 - 已存在有效人工审批：运行双 PDF pipeline
 - QA 通过：执行配置发布并核验，再读取确定性完成状态
 
