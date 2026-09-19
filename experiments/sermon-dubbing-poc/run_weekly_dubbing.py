@@ -457,6 +457,34 @@ def reconcile_remote(work, job, fetch):
     resume_pending_import(work, job)
 
 
+def validate_local_render_cache(work, job):
+    """Inspect MPS attempt data before *any* environment-based fallback."""
+    folder = work / "local-render-mps"
+    if not folder.exists():
+        return
+    require(folder.resolve() == folder and folder.is_dir(), "Unsafe local MPS attempt directory")
+    require(all(not path.is_symlink() for path in folder.rglob("*")), "Unsafe local MPS cache symlink")
+    identity = render_identity(work / "job.json", job["voice"]["checkpointSha256"], device="mps")
+    require(read(folder / "identity.json") == identity, "Local MPS cache identity changed")
+    expected = {f"unit-{i:04d}" for i in range(len(job["units"]))}
+    require(all(path.stem in expected and path.suffix in (".wav", ".json") for path in folder.glob("unit-*")), "Unknown local MPS audio unit")
+    for i, unit in enumerate(job["units"]):
+        raw = folder / f"unit-{i:04d}.wav"
+        receipt = raw.with_suffix(".json")
+        require(not raw.exists() or receipt.exists(), "Unreceipted local MPS audio; inspect before fallback")
+        if receipt.exists():
+            saved = read(receipt)
+            require(saved["unit"] == unit and saved["identity"] == identity and saved["sha256"] == sha256(raw), "Stale local MPS audio; inspect before fallback")
+    assembled = folder / "chinese.raw.wav"
+    report_path = folder / "report.json"
+    require(not assembled.exists() or report_path.exists(), "Unreceipted assembled MPS audio")
+    if report_path.exists():
+        report = read(report_path)
+        require(all(report.get(k) == v for k, v in identity.items()) and report.get("status") == "complete_candidate_render"
+                and report["sha256"] == sha256(assembled), "Changed local MPS completion report")
+        require(all((folder / f"unit-{i:04d}.json").exists() for i in range(len(job["units"]))), "Incomplete local MPS completion report")
+
+
 def _run(args, work, job, execution):
     @contextmanager
     def stage(name, *, billing="local", cache_hit=False):
@@ -470,6 +498,7 @@ def _run(args, work, job, execution):
     with stage("cache_validation", billing="local"):
         resume_pending_import(work, job)
         validate_cached_stages(work, job)
+        validate_local_render_cache(work, job)
         before = receipt_snapshot(work, job)
         record_workload("render_cache", {"expectedUnitCount": len(job["units"]),
             "localCachedUnitCount": len(before), "missingLocalUnitCount": len(job["units"]) - len(before),

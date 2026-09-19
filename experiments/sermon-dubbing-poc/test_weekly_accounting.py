@@ -95,6 +95,29 @@ class WeeklyAccountingTests(unittest.TestCase):
         finished = [row for row in events if row["event"] == "stage_finished"]
         return events, summary, finished
 
+    def test_bad_mps_partial_cache_blocks_missing_checkpoint_or_python_fallback(self):
+        from render_weekly_audio import render_identity
+        for missing in ("checkpoint", "python"):
+            for corruption in ("unreceipted", "hash"):
+                with self.subTest(missing=missing, corruption=corruption), tempfile.TemporaryDirectory() as tmp, self.fixture(tmp) as f:
+                    job = runner.read(f.work / "job.json")
+                    folder = f.work / "local-render-mps"
+                    folder.mkdir()
+                    identity = render_identity(f.work / "job.json", job["voice"]["checkpointSha256"], device="mps")
+                    runner.write_json(folder / "identity.json", identity)
+                    raw = folder / "unit-0000.wav"
+                    raw.write_bytes(b"corrupt audio")
+                    if corruption == "hash":
+                        runner.write_json(raw.with_suffix(".json"), {"unit": job["units"][0], "identity": identity, "sha256": "wrong"})
+                    checkpoint = Path(tmp) / "checkpoint"
+                    if missing == "python":
+                        checkpoint.mkdir()
+                    sys.argv += ["--local-checkpoint", str(checkpoint), "--local-python", "/missing/python"]
+                    with self.assertRaisesRegex(ValueError, "local MPS audio"):
+                        runner.main()
+                    self.assertEqual(f.commands, [])
+                    self.assertEqual(raw.read_bytes(), b"corrupt audio")
+
     def test_fresh_run_records_separate_local_execution_and_no_invented_usage(self):
         with tempfile.TemporaryDirectory() as tmp, self.fixture(tmp) as f:
             runner.main()
