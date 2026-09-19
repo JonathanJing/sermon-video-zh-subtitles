@@ -163,7 +163,11 @@ def run(args, *, runner=bounded_process):
         before = signature(args.supervisor_report)
         # Child owns leases, approval checks, logs and publication verification.
         try:
-            result = runner(pdf_command, cwd=ROOT, stdout=sys.stderr, stderr=sys.stderr, check=False, timeout=args.pdf_timeout)
+            from scripts.sermon_accounting import subprocess_environment
+            child_env = subprocess_environment()
+            child_env["SERMON_DUBBING_CONFIG"] = str(args.bridge_config.resolve())
+            result = runner(pdf_command, cwd=ROOT, stdout=sys.stderr, stderr=sys.stderr, check=False,
+                            timeout=args.pdf_timeout, env=child_env)
         except subprocess.TimeoutExpired:
             executions.append({"stage": "pdf", "status": "timed_out", "timeoutSeconds": args.pdf_timeout})
             errors.append("PDF child exceeded its deadline; inspect retained stage evidence before resuming")

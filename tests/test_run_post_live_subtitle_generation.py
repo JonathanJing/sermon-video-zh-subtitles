@@ -264,7 +264,7 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
     def test_run_downloads_audio_and_invokes_pipeline(self, _probe):
         calls = []
 
-        def fake_runner(command, check):
+        def fake_runner(command, check, env=None):
             calls.append(command)
             if command[0] == "yt-dlp":
                 template = Path(command[command.index("-o") + 1])
@@ -346,10 +346,11 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
         self.assertEqual(calls[0][0], "yt-dlp")
         self.assertIn("sermon_pipeline.py", calls[1][1])
         self.assertIn("build_sermon_reading_edition_with_openai.py", calls[2][1])
-        self.assertIn("render_mobile_pdf_from_srt.py", calls[3][1])
-        self.assertIn("--layout", calls[3])
-        self.assertEqual(calls[3][calls[3].index("--layout") + 1], "reading")
-        self.assertIn("generate_notes_with_openai.py", calls[4][1])
+        # Independent PDF branches may start in either order after the reviewed edition.
+        pdf_calls = {Path(command[1]).name: command for command in calls[3:5]}
+        reading_call = pdf_calls["render_mobile_pdf_from_srt.py"]
+        self.assertEqual(reading_call[reading_call.index("--layout") + 1], "reading")
+        self.assertIn("generate_notes_with_openai.py", pdf_calls)
         self.assertTrue(any("reading-edition-v2" in item for item in report["readingEditionCommand"]))
         self.assertIsNone(report["mobilePdfCommand"])
         self.assertTrue(any("sermon_zh_en_reading.pdf" in item for item in report["readingPdfCommand"]))

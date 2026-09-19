@@ -1,6 +1,6 @@
 import json
 import os
-from contextlib import ExitStack, contextmanager
+from contextlib import ExitStack, contextmanager, nullcontext
 from pathlib import Path
 import subprocess
 import sys
@@ -59,8 +59,8 @@ class WeeklyAccountingTests(unittest.TestCase):
         commands = []
 
         def command(argv, **kwargs):
-            commands.append({"argv": argv, "stage": os.environ.get("SERMON_ACCOUNTING_STAGE"),
-                             "runId": os.environ.get("SERMON_ACCOUNTING_RUN_ID")})
+            commands.append({"argv": argv, "stage": kwargs.get("env", os.environ).get("SERMON_ACCOUNTING_STAGE"),
+                             "runId": kwargs.get("env", os.environ).get("SERMON_ACCOUNTING_RUN_ID")})
             if os.environ.get("SERMON_ACCOUNTING_STAGE") == "transfer_download":
                 render_files()
             output = (json.dumps(runner.render_identity(work / "job.json", "fixture-checkpoint"))
@@ -76,10 +76,11 @@ class WeeklyAccountingTests(unittest.TestCase):
         with ExitStack() as stack:
             stack.enter_context(patch.dict(os.environ, {key: "" for key in ENV_KEYS}))
             stack.enter_context(patch.object(sys, "argv", ["run_weekly_dubbing.py", "--work", str(work),
-                "--remote-checkpoint", runner.REMOTE_ROOT + "/sermon-fixture/checkpoint", "--mlx-python", "/fixture/python"]))
+                "--remote-checkpoint", runner.REMOTE_ROOT + "/sermon-fixture/checkpoint", "--mlx-python", "/fixture/python", "--serial-stages"]))
             stack.enter_context(patch("builtins.print"))
             for name, value in values.items():
                 mocks[name] = stack.enter_context(patch.object(runner, name, return_value=value))
+            stack.enter_context(patch.object(runner, "local_model_slot", side_effect=lambda **kwargs: nullcontext()))
             process = stack.enter_context(patch.object(runner, "process_run", side_effect=command))
             # Accounting fixture has fake media; real quarantine validators are
             # independently covered by test_execution_recovery.

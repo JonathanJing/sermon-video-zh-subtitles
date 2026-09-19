@@ -4,7 +4,10 @@
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
+from contextvars import copy_context
 import hashlib
+import importlib.util
 import json
 import math
 import os
@@ -120,6 +123,12 @@ def parse_args() -> argparse.Namespace:
         dest="reference_model",
         default="gpt-transcribe",
     )
+    parser.add_argument("--fingerprint-precompute", action="store_true",
+                        default=os.environ.get("SERMON_FINGERPRINT_PRECOMPUTE") == "1")
+    parser.add_argument("--asr-workers", type=int, choices=range(1, 9), default=2)
+    parser.add_argument("--pdf-workers", type=int, choices=(1, 2), default=2)
+    parser.add_argument("--dubbing-config", type=Path, default=os.environ.get("SERMON_DUBBING_CONFIG"),
+                        help="Optional configured dubbing candidate overlap after reviewed text and outline; no publication.")
     parser.add_argument("--timing-model", default="whisper-1")
     parser.add_argument(
         "--output-mode",
@@ -475,19 +484,22 @@ def _run_post_live_generation(
         duration_seconds=stage_durations["reviewed"],
     )
     write_run_status(run_status_path, run_status)
-    started = time.monotonic()
-    with accounting_stage("reading_pdf"):
-        run_command(reading_pdf_command, runner)
-    stage_durations["reading_pdf"] = time.monotonic() - started
-    started = time.monotonic()
-    with accounting_stage("interpretation", billing="orchestrator"):
-        run_command(interpretation_command, runner)
-    stage_durations["sermon_interpretation_pdf"] = time.monotonic() - started
-    stage_durations["pdf_qa"] = (
-        stage_durations["mobile_pdf"]
-        + stage_durations["reading_pdf"]
-        + stage_durations["sermon_interpretation_pdf"]
-    )
+    dubbing_config = getattr(args, "dubbing_config", None)
+    if dubbing_config:
+        pdf_durations, pdf_wall_seconds, dubbing_candidate = run_pdf_and_dubbing_branches(
+            reading_pdf_command, interpretation_command, runner,
+            config_path=Path(dubbing_config), week=args.sunday, run_root=run_root,
+            workers=getattr(args, "pdf_workers", 2),
+        )
+        report["dubbingCandidate"] = dubbing_candidate
+    else:
+        pdf_durations, pdf_wall_seconds = run_pdf_branches(
+            reading_pdf_command, interpretation_command, runner,
+            workers=getattr(args, "pdf_workers", 2),
+        )
+    stage_durations.update(pdf_durations)
+    stage_durations["pdf_branches_wall"] = pdf_wall_seconds
+    stage_durations["pdf_qa"] = stage_durations["mobile_pdf"] + pdf_wall_seconds
     qa_paths = [
         pipeline_outdir / "sermon_zh_en_reading.qa.json",
         pipeline_outdir / "sermon_interpretation_zh.qa.json",
@@ -708,6 +720,8 @@ def build_pipeline_command(
         str(pipeline_outdir),
         "--reference-model",
         args.reference_model,
+        "--asr-workers",
+        str(getattr(args, "asr_workers", 2)),
         "--output-mode",
         args.output_mode,
         "--en-correction-model",
@@ -717,6 +731,8 @@ def build_pipeline_command(
         "--reasoning-effort",
         args.reasoning_effort,
     ]
+    if getattr(args, "fingerprint_precompute", False):
+        command.append("--fingerprint-precompute")
     if args.output_mode == "subtitles":
         command.extend(["--timing-model", args.timing_model])
     else:
@@ -1207,6 +1223,13 @@ def pipeline_summary_matches(
     except (FileNotFoundError, json.JSONDecodeError, OSError):
         return False
     models = summary.get("models") if isinstance(summary, dict) else None
+    fingerprint = summary.get("sourceFingerprintPrecompute") if isinstance(summary, dict) else None
+    if fingerprint:
+        try:
+            if file_content_identity(Path(fingerprint["path"]))["sha256"] != fingerprint["sha256"]:
+                return False
+        except (OSError, KeyError, TypeError):
+            return False
     matches = (
         summary.get("outputMode") == output_mode
         and isinstance(models, dict)
@@ -1353,6 +1376,11 @@ def build_pipeline_input_identity(args: argparse.Namespace, audio_path: Path) ->
             identity["mfa"] = preflight(**options(args))
             identity["mfaBackend"] = file_content_identity(REPO_ROOT / "scripts" / "mfa_backend.py")
             identity["mfaTransport"] = file_content_identity(REPO_ROOT / "scripts" / "mfa_spark.py")
+    if getattr(args, "fingerprint_precompute", False):
+        identity["fingerprintPrecompute"] = {
+            "script": file_content_identity(REPO_ROOT / "experiments/sermon-dubbing-poc/build_fingerprint_index.mjs"),
+            "algorithm": file_content_identity(REPO_ROOT / "experiments/sermon-dubbing-poc/web/fingerprint-core.mjs"),
+        }
     if getattr(args, "source_text_review", None):
         identity["sourceTextReview"] = file_content_identity(args.source_text_review)
     return identity
@@ -1462,6 +1490,134 @@ def record_input_identity(
     payload[fingerprint_key] = stable_payload_hash(identity)
     payload[identity_key] = identity
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
+
+
+def load_dubbing_producer_hook():
+    directory = REPO_ROOT / "experiments" / "sermon-dubbing-poc"
+    if str(directory) not in sys.path:
+        sys.path.insert(0, str(directory))
+    spec = importlib.util.spec_from_file_location("sermon_dubbing_producer_bridge", directory / "continue_saturday_dubbing.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.start_producer_candidate, module.CandidateNotReady
+
+
+def run_frozen_interpretation_notes(command, runner):
+    """Resume a hash-bound outline; never rewrite inputs of an existing synthesis job."""
+    def option(flag):
+        return command[command.index(flag) + 1]
+    outdir = Path(option("--out-dir"))
+    notes = outdir / "openai-notes.json"
+    raw = Path(option("--model-output-dir")) / "openai-notes-output.jsonl"
+    receipt_path = outdir / "producer-notes-cache.json"
+    sources = {flag: file_content_identity(Path(option(flag)))
+               for flag in ("--srt-input", "--secondary-srt-input")}
+    if any(not item.get("exists") for item in sources.values()):
+        raise RuntimeError("Frozen interpretation requires both reviewed SRT inputs")
+    identity = {"schemaVersion": 1, "command": command, "sources": sources,
+                "seriesTerminology": series_terminology.context(),
+                "implementation": {"generator": file_content_identity(SERMON_INTERPRETATION_SCRIPT),
+                                   "prompts": file_content_identity(REVIEW_PROMPTS_SCRIPT),
+                                   "terminology": file_content_identity(Path(series_terminology.__file__))}}
+    if receipt_path.exists():
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        if receipt.get("identity") != identity or receipt.get("outputs") != {
+                "notes": file_content_identity(notes), "raw": file_content_identity(raw)}:
+            raise RuntimeError("Frozen interpretation inputs or outputs changed; preserve the existing dubbing job and inspect the notes receipt")
+        with accounting_stage("interpretation", billing="orchestrator", cache_hit=True):
+            return
+    if notes.exists() or raw.exists():
+        raise RuntimeError("Existing interpretation has no producer cache receipt; inspect it before creating a new dubbing job")
+    from scripts.sermon_accounting import subprocess_environment
+    with accounting_stage("interpretation", billing="orchestrator"):
+        runner(command, check=True, env=subprocess_environment())
+    outputs = {"notes": file_content_identity(notes), "raw": file_content_identity(raw)}
+    if any(not item.get("exists") for item in outputs.values()):
+        raise RuntimeError("Interpretation did not produce complete notes and model evidence")
+    payload = json.loads(notes.read_text(encoding="utf-8"))
+    if payload.get("status") != "ready":
+        raise RuntimeError("Interpretation is not ready for frozen candidate preparation")
+    receipt_path.write_text(json.dumps({"identity": identity, "outputs": outputs}, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def run_pdf_and_dubbing_branches(reading_command, interpretation_command, runner, *,
+                                 config_path, week, run_root, workers=2, producer_hook=None):
+    """Freeze notes before TTS; join all branches before any delivery publication."""
+    if workers not in (1, 2):
+        raise ValueError("PDF workers must be 1 or 2")
+    if producer_hook is None:
+        hook, not_ready_exception = load_dubbing_producer_hook()
+    else:
+        hook, not_ready_exception = producer_hook, getattr(producer_hook, "not_ready_exception", ())
+    notes_command = list(interpretation_command)
+    outputs = {}
+    for flag in ("--pdf-out", "--pdf-qa-out"):
+        index = notes_command.index(flag)
+        outputs[flag] = notes_command[index + 1]
+        del notes_command[index:index + 2]
+    insights = Path(notes_command[notes_command.index("--out-dir") + 1]) / "openai-notes.json"
+    render_command = [sys.executable, str(REPO_ROOT / "scripts" / "render_sermon_interpretation_pdf.py"),
+                      "--input", str(insights), "--out", outputs["--pdf-out"], "--qa-out", outputs["--pdf-qa-out"]]
+    from scripts.sermon_accounting import subprocess_environment
+
+    def reading_branch():
+        started = time.monotonic()
+        with accounting_stage("reading_pdf"):
+            runner(reading_command, check=True, env=subprocess_environment())
+        return time.monotonic() - started
+
+    started = time.monotonic()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pdf_pool, \
+         concurrent.futures.ThreadPoolExecutor(max_workers=1) as dubbing_pool:
+        reading = pdf_pool.submit(copy_context().run, reading_branch)
+        # workers=1 explicitly serializes PDF branches, but TTS may still overlap rendering.
+        if workers == 1:
+            reading.result()
+        notes_started = time.monotonic()
+        run_frozen_interpretation_notes(notes_command, runner)
+        notes_elapsed = time.monotonic() - notes_started
+        candidate = None
+        try:
+            dubbing = hook(config_path, week, run_root, dubbing_pool)
+        except not_ready_exception as exc:
+            # Ordinary missing voice/week configuration does not revoke reviewed PDF inputs.
+            dubbing = None
+            candidate = {"status": exc.status, "reason": exc.reason, "published": False}
+
+        render_started = time.monotonic()
+        with accounting_stage("interpretation_pdf"):
+            runner(render_command, check=True, env=subprocess_environment())
+        render_elapsed = time.monotonic() - render_started
+        durations = {"reading_pdf": reading.result(), "sermon_interpretation_pdf": notes_elapsed + render_elapsed,
+                     "interpretation_notes": notes_elapsed, "interpretation_render": render_elapsed}
+        pdf_wall = time.monotonic() - started
+        if dubbing is not None:
+            candidate = dubbing.result()
+            if not isinstance(candidate, dict) or candidate.get("status") != "waiting_conversation_review":
+                raise RuntimeError("Dubbing candidate did not produce validated review evidence")
+        durations["pdf_dubbing_wall"] = time.monotonic() - started
+    return durations, pdf_wall, candidate
+
+
+def run_pdf_branches(reading_command, interpretation_command, runner, *, workers=2):
+    """Join both independent branches before QA/publication; retain completed artifacts on failure."""
+    if workers not in (1, 2):
+        raise ValueError("PDF workers must be 1 or 2")
+
+    def run_branch(command, stage_name, billing):
+        started = time.monotonic()
+        with accounting_stage(stage_name, billing=billing):
+            from scripts.sermon_accounting import subprocess_environment
+            runner(command, check=True, env=subprocess_environment())
+        return time.monotonic() - started
+
+    started = time.monotonic()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+        reading = executor.submit(copy_context().run, run_branch, reading_command, "reading_pdf", "local")
+        interpretation = executor.submit(copy_context().run, run_branch, interpretation_command, "interpretation", "orchestrator")
+        # Executor exit waits for any already-running sibling before failure propagates.
+        durations = {"reading_pdf": reading.result(), "sermon_interpretation_pdf": interpretation.result()}
+    return durations, time.monotonic() - started
 
 
 def run_command(command: list[str], runner: Callable[..., subprocess.CompletedProcess]) -> None:
