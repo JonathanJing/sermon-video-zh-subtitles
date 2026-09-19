@@ -1315,6 +1315,13 @@ def main():
     )
     parser.add_argument("--chunk-seconds", type=float, default=45.0)
     parser.add_argument("--reading-chunk-seconds", type=float, default=1200.0)
+    parser.add_argument("--reading-aligner", choices=("mfa", "legacy"), default="mfa",
+                        help="MFA word/phone timing for reading production; legacy is explicit historical recovery only.")
+    parser.add_argument("--mfa-executable", default=os.environ.get("MFA_EXECUTABLE", "mfa"))
+    parser.add_argument("--mfa-dictionary", type=Path, default=os.environ.get("MFA_DICTIONARY"))
+    parser.add_argument("--mfa-acoustic-model", type=Path, default=os.environ.get("MFA_ACOUSTIC_MODEL"))
+    parser.add_argument("--mfa-g2p-model", type=Path, default=os.environ.get("MFA_G2P_MODEL"))
+    parser.add_argument("--mfa-spoken-forms", type=Path, default=os.environ.get("MFA_SPOKEN_FORMS"))
     parser.add_argument("--source-text-review", type=Path, help="Hash-bound, separately reviewed English source corrections; original ASR stays unchanged.")
     parser.add_argument(
         "--reading-segment-target-chars",
@@ -1352,8 +1359,29 @@ def main():
         return produce_pipeline(args, api_key, source_duration, start, end, outdir)
 
 
+def mfa_options(args):
+    return {
+        "mfa_executable": getattr(args, "mfa_executable", os.environ.get("MFA_EXECUTABLE", "mfa")),
+        "dictionary_path": getattr(args, "mfa_dictionary", None) or os.environ.get("MFA_DICTIONARY"),
+        "acoustic_model": getattr(args, "mfa_acoustic_model", None) or os.environ.get("MFA_ACOUSTIC_MODEL"),
+        "g2p_model": getattr(args, "mfa_g2p_model", None) or os.environ.get("MFA_G2P_MODEL"),
+        "spoken_forms_path": getattr(args, "mfa_spoken_forms", None) or os.environ.get("MFA_SPOKEN_FORMS"),
+    }
+
+
+def reading_segments(args, chunks, clip_path, outdir):
+    if getattr(args, "reading_aligner", "mfa") == "legacy":
+        return reference_chunks_to_reading_segments(
+            chunks, target_chars=max(120, args.reading_segment_target_chars))
+    from scripts.mfa_alignment import align_reference_chunks
+    return align_reference_chunks(chunks, clip_path, outdir / "mfa", **mfa_options(args))
+
+
 def produce_pipeline(args, api_key, source_duration, start, end, outdir):
     glossary = load_glossary(args.glossary)
+    if args.output_mode == "reading" and getattr(args, "reading_aligner", "mfa") == "mfa":
+        from scripts.mfa_alignment import preflight
+        preflight(**mfa_options(args))
 
     clip_path = outdir / "source_clip.m4a"
     with stage("pipeline.clip", billing="local"):
@@ -1376,10 +1404,7 @@ def produce_pipeline(args, api_key, source_duration, start, end, outdir):
         )
     with stage("pipeline.segment", billing="local"):
         if args.output_mode == "reading":
-            raw_segments = reference_chunks_to_reading_segments(
-                reference_chunks,
-                target_chars=max(120, args.reading_segment_target_chars),
-            )
+            raw_segments = reading_segments(args, reference_chunks, clip_path, outdir)
         else:
             whisper_raw = transcribe_whisper(api_key, clip_path, outdir, args.timing_model, glossary)
             raw_segments = normalize_whisper_segments(whisper_raw)
@@ -1409,6 +1434,11 @@ def produce_pipeline(args, api_key, source_duration, start, end, outdir):
                 asr_path = outdir / "asr_reference_chunks.json"
             corrected, source_review = apply_review(corrected, args.source_text_review, clip_path, asr_path)
             write_json(outdir / "source-text-review-provenance.json", source_review)
+            if getattr(args, "reading_aligner", "mfa") == "mfa":
+                # Text edits invalidate old word/phone times; realign the reviewed words.
+                from scripts.mfa_alignment import align_reference_chunks
+                corrected = align_reference_chunks(
+                    corrected, clip_path, outdir / "mfa-reviewed", **mfa_options(args))
         shaped_en = corrected if args.output_mode == "reading" else shape_durations(corrected)
         write_json(outdir / "segments_timed_en_corrected.json", shaped_en)
 
@@ -1459,7 +1489,10 @@ def produce_pipeline(args, api_key, source_duration, start, end, outdir):
             },
         },
         "outputMode": args.output_mode,
-        "timingPrecision": "whisper_segments" if args.output_mode == "subtitles" else "synthetic_reading_layout_only",
+        "readingAligner": getattr(args, "reading_aligner", "mfa") if args.output_mode == "reading" else None,
+        "timingPrecision": ("whisper_segments" if args.output_mode == "subtitles" else
+                            "mfa_word_aligned" if getattr(args, "reading_aligner", "mfa") == "mfa" else
+                            "synthetic_reading_layout_only"),
         "seriesTerminology": glossary["seriesTerminology"],
         "readingSegmentTargetCharacters": (
             max(120, args.reading_segment_target_chars) if args.output_mode == "reading" else None

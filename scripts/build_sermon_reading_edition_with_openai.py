@@ -217,6 +217,12 @@ def split_segment_sentences(segment: dict[str, Any]) -> list[dict[str, Any]]:
     text = join_english([str(segment.get("text") or "")])
     if not text:
         return []
+    if segment.get("timingQuality") == "mfa_word_aligned":
+        # MFA segments are frozen sentence units. Do not interpolate their times
+        # by characters or split their IDs away from the corresponding Chinese.
+        return [{"segmentId": segment["id"], "start": float(segment["start"]),
+                 "end": float(segment["end"]), "text": text,
+                 "complete": sentence_complete(text)}]
     boundaries = [
         match.end()
         for match in re.finditer(r'[.!?](?:["\')\]]+)?(?=\s|$)', text)
