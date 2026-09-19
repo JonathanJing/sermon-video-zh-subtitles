@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
-"""Execute/resume a prepared weekly job on the existing isolated Spark runtime.
+"""Execute/resume a prepared weekly job with MacBook-first model routing.
 
 This command never approves audio, sends messages, or deploys automatically.
 The final review candidate remains bound to the existing Saturday evidence.
 """
 import argparse
-from contextlib import contextmanager
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager, nullcontext
+from contextvars import copy_context
+import threading
 import difflib
 import json
 import math
@@ -19,9 +22,10 @@ import sys
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parents[1]))
 
-from scripts.sermon_accounting import accounting_session, record_workload, stage as accounting_stage
-from scripts.sermon_execution_harness import (Execution, RemoteOutcomeUnknown, WorkAlreadyRunning,
+from scripts.sermon_accounting import accounting_session, record_workload, stage as accounting_stage, subprocess_environment
+from scripts.sermon_execution_harness import (Execution, ExecutionTerminated, RemoteOutcomeUnknown, WorkAlreadyRunning,
     atomic_json, bounded_process as process_run, utc_now, work_lock)
+from scripts.sermon_model_resources import local_model_slot
 from poc import sha256, write_json
 from weekly_dubbing import read, validate_frozen, assemble
 from render_weekly_audio import render_identity
@@ -322,6 +326,7 @@ def main():
     p.add_argument("--speech-python", "--mlx-python", dest="speech_python", type=Path, default=Path.home() / ".local/share/uv/tools/mlx-audio/bin/python")
     p.add_argument("--command-timeout", type=float, default=3600, help="Maximum seconds for each local/model command")
     p.add_argument("--transfer-timeout", type=float, default=600, help="Maximum seconds for each SSH probe or transfer")
+    p.add_argument("--serial-stages", action="store_true", help="Disable independent source-alignment/render overlap for diagnostics")
     p.add_argument("--execution-timeout", type=float, default=21600, help="Maximum seconds for this candidate attempt")
     args = p.parse_args()
     work = args.work.resolve()
@@ -432,7 +437,9 @@ def resume_pending_import(work, job):
         elif temporary.exists():
             require(sha256(temporary) == digest, "Unexpected partial temporary beside a completed import")
             temporary.unlink()
-    validate_cached_stages(work, job)
+    # Only render files were imported. Other independent branches may be
+    # between WAV and receipt writes; their own completion gates validate them.
+    validate_render(work, job, complete=(work / "render/report.json").exists())
     pending.unlink()  # Derived pointer only; immutable quarantine remains intact.
     return True
 
@@ -485,7 +492,50 @@ def validate_local_render_cache(work, job):
         require(all((folder / f"unit-{i:04d}.json").exists() for i in range(len(job["units"]))), "Incomplete local MPS completion report")
 
 
+@contextmanager
+def alignment_branch(action, cancel_event, *, parallel=True):
+    """One independent worker; drain/cancel before releasing the parent job lock.
+
+    Context propagation keeps accounting and inherited lock descriptors bound to
+    the same attempt. A failed branch stops new model commands in its sibling;
+    successful receipts survive so the ordinary validators can resume them.
+    """
+    if not parallel:
+        finished = False
+        def join():
+            nonlocal finished
+            if not finished:
+                action()
+                finished = True
+        yield join
+        return
+    pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="source-alignment")
+    def worker():
+        try:
+            return action()
+        except BaseException:
+            cancel_event.set()
+            raise
+    future = pool.submit(copy_context().run, worker)
+    try:
+        yield future.result
+        future.result()
+    except BaseException as exc:
+        cancel_event.set()
+        future.cancel()
+        if isinstance(exc, ExecutionTerminated) and future.done() and not future.cancelled():
+            failure = future.exception()
+            if failure is not None:
+                raise failure from exc
+        raise
+    finally:
+        # bounded_process observes cancellation and terminates only its owned
+        # child process group. Never release the job lease over a live worker.
+        pool.shutdown(wait=True, cancel_futures=True)
+
+
 def _run(args, work, job, execution):
+    cancel_event = threading.Event()
     @contextmanager
     def stage(name, *, billing="local", cache_hit=False):
         with accounting_stage(name, billing=billing, cache_hit=cache_hit), execution.stage(name, cache_hit=cache_hit):
@@ -493,7 +543,16 @@ def _run(args, work, job, execution):
 
     def command(argv, *, transfer=False, **kwargs):
         limit = getattr(args, "transfer_timeout", 600) if transfer else getattr(args, "command_timeout", 3600)
-        return dispatch(argv, lambda cmd, **options: process_run(cmd, timeout=execution.remaining(limit), **options), **kwargs)
+        model_command = len(argv) > 1 and Path(argv[1]).name in {
+            "render_weekly_audio.py", "align_weekly_source.py", "screen_weekly_audio.py"}
+        slot = local_model_slot(cancel_event=cancel_event, timeout=execution.remaining(limit)) if model_command else nullcontext()
+        environment = kwargs.pop("env", None) or subprocess_environment()
+        def invoke(cmd, **options):
+            options.setdefault("env", environment)
+            return process_run(cmd, timeout=execution.remaining(limit),
+                               cancel_event=cancel_event, **options)
+        with slot:
+            return dispatch(argv, invoke, **kwargs)
 
     with stage("cache_validation", billing="local"):
         resume_pending_import(work, job)
@@ -503,6 +562,20 @@ def _run(args, work, job, execution):
         record_workload("render_cache", {"expectedUnitCount": len(job["units"]),
             "localCachedUnitCount": len(before), "missingLocalUnitCount": len(job["units"]) - len(before),
             "completeRenderCache": (work / "render/report.json").exists()})
+    def align_source():
+        cached = (work / "source-alignment/report.json").exists()
+        with stage("source_alignment", cache_hit=cached):
+            if not cached:
+                python = getattr(args, "speech_python", Path(sys.executable))
+                command([str(python if Path(python).exists() else sys.executable),
+                         str(HERE / "align_weekly_source.py"), "--work", str(work)], check=True)
+            stage_check("Source alignment", ALIGNMENT_RECOVERY, lambda: validate_alignment(work, job))
+
+    with alignment_branch(align_source, cancel_event, parallel=not getattr(args, "serial_stages", False)) as join_alignment:
+        _render_and_finish(args, work, job, execution, stage, command, before, join_alignment)
+
+
+def _render_and_finish(args, work, job, execution, stage, command, before, join_alignment):
     local_rendered = False
     if not (work / "render/report.json").exists():
         with stage("local_render_attempt", billing="local"):
@@ -623,10 +696,15 @@ def _run(args, work, job, execution):
         if not cached_assembly:
             assemble(work, process_runner=command)
         track = stage_check("Natural audio", NATURAL_RECOVERY, lambda: validate_natural(work, job, render))
-    stages = [("align_weekly_source.py", "source-alignment/report.json", "Source alignment", "source_alignment", ALIGNMENT_RECOVERY, lambda: validate_alignment(work, job)),
-        ("screen_weekly_audio.py", "audio/asr-screening.json", "ASR screening", "local_asr", SCREENING_RECOVERY, lambda: validate_screening(work, job, render, track)),
+    # Serial diagnostics retain the historic stage order; the default lets
+    # screening use the freed TTS slot while source alignment is still running.
+    if getattr(args, "serial_stages", False):
+        join_alignment()
+    stages = [("screen_weekly_audio.py", "audio/asr-screening.json", "ASR screening", "local_asr", SCREENING_RECOVERY, lambda: validate_screening(work, job, render, track)),
         ("check_weekly_timing.py", "synchronization/report.json", "Timing", "timing", TIMING_RECOVERY, lambda: validate_timing(work, job, render))]
     for script, report, name, accounting_name, recovery, check in stages:
+        if script == "check_weekly_timing.py":
+            join_alignment()
         cached = (work / report).exists()
         with stage(accounting_name, cache_hit=cached, billing="local"):
             if not cached:
