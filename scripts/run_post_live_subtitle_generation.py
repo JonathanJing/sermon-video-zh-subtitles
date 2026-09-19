@@ -131,6 +131,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--reading-edition-model", default="gpt-6-astra")
     parser.add_argument("--reading-edition-reasoning-effort", choices=("low", "medium", "high"), default="medium")
     parser.add_argument("--reading-review-manifest", type=Path, help="Standard reviewed corrections for the reading builder; existing edit caches are preserved.")
+    parser.add_argument("--reading-aligner", choices=("mfa", "legacy"), default="mfa")
+    parser.add_argument("--mfa-executable", default=os.environ.get("MFA_EXECUTABLE", "mfa"))
+    parser.add_argument("--mfa-dictionary", type=Path, default=os.environ.get("MFA_DICTIONARY"))
+    parser.add_argument("--mfa-acoustic-model", type=Path, default=os.environ.get("MFA_ACOUSTIC_MODEL"))
+    parser.add_argument("--mfa-g2p-model", type=Path, default=os.environ.get("MFA_G2P_MODEL"))
+    parser.add_argument("--mfa-spoken-forms", type=Path, default=os.environ.get("MFA_SPOKEN_FORMS"))
     parser.add_argument("--reading-segment-target-chars", type=int, default=420)
     parser.add_argument("--reading-preferred-seconds", type=float, default=24.0)
     parser.add_argument("--reading-preferred-english-chars", type=int, default=420)
@@ -369,6 +375,7 @@ def _run_post_live_generation(
         reference_model=args.reference_model,
         reading_segment_target_chars=getattr(args, "reading_segment_target_chars", 420),
         expected_input_fingerprint=pipeline_input_fingerprint,
+        reading_aligner=getattr(args, "reading_aligner", "mfa"),
     )
     if core_ready:
         with accounting_stage("pipeline", cache_hit=True):
@@ -705,6 +712,14 @@ def build_pipeline_command(
                 str(getattr(args, "reading_segment_target_chars", 420)),
             ]
         )
+    if args.output_mode == "reading":
+        command.extend(["--reading-aligner", getattr(args, "reading_aligner", "mfa")])
+        if getattr(args, "reading_aligner", "mfa") == "mfa":
+            command.extend(["--mfa-executable", getattr(args, "mfa_executable", os.environ.get("MFA_EXECUTABLE", "mfa"))])
+            for name in ("dictionary", "acoustic_model", "g2p_model", "spoken_forms"):
+                value = getattr(args, "mfa_" + name, None) or os.environ.get("MFA_" + name.upper())
+                if value:
+                    command.extend(["--mfa-" + name.replace("_", "-"), str(value)])
     if args.end_time:
         command.extend(["--end-time", args.end_time])
     if args.glossary:
@@ -1161,6 +1176,7 @@ def pipeline_summary_matches(
     reference_model: str,
     reading_segment_target_chars: int = 420,
     expected_input_fingerprint: str | None = None,
+    reading_aligner: str = "mfa",
 ) -> bool:
     try:
         summary = json.loads(path.read_text(encoding="utf-8"))
@@ -1176,6 +1192,8 @@ def pipeline_summary_matches(
         matches = matches and summary.get("readingSegmentTargetCharacters") == max(
             120, int(reading_segment_target_chars)
         )
+    if output_mode == "reading":
+        matches = matches and summary.get("readingAligner", "legacy") == reading_aligner
     if expected_input_fingerprint is not None:
         matches = matches and summary.get("pipelineInputFingerprint") == expected_input_fingerprint
     return matches
@@ -1188,6 +1206,10 @@ def source_review_cache_ready(args: argparse.Namespace, pipeline_outdir: Path) -
         return True
     if args.output_mode != "reading":
         raise ValueError("--source-text-review is supported only with --output-mode reading")
+    if getattr(args, "reading_aligner", "mfa") == "mfa":
+        # Reviewed text must be realigned, so checking apply_review alone cannot
+        # certify timing. Re-enter the pipeline and its hash-bound MFA caches.
+        return False
     raw_path = pipeline_outdir / "segments_timed_en_raw.json"
     audio_path = pipeline_outdir / "source_clip.m4a"
     asr_path = pipeline_outdir / "asr_reference.json"
@@ -1296,6 +1318,21 @@ def build_pipeline_input_identity(args: argparse.Namespace, audio_path: Path) ->
             "seriesTerminology": file_content_identity(Path(series_terminology.__file__)),
         },
     }
+    if args.output_mode == "reading":
+        aligner = getattr(args, "reading_aligner", "mfa")
+        identity["readingAligner"] = aligner
+        identity["schemaVersion"] = 3  # Reading identity now binds alignment backend and local models.
+        if aligner == "mfa":
+            executable = getattr(args, "mfa_executable", os.environ.get("MFA_EXECUTABLE", "mfa"))
+            resolved_executable = shutil.which(str(executable))
+            identity["mfa"] = {
+                "executable": str(executable),
+                "executableContent": file_content_identity(Path(resolved_executable)) if resolved_executable else None,
+                "adapter": file_content_identity(REPO_ROOT / "scripts" / "mfa_alignment.py"),
+            }
+            for name in ("dictionary", "acoustic_model", "g2p_model", "spoken_forms"):
+                value = getattr(args, "mfa_" + name, None) or os.environ.get("MFA_" + name.upper())
+                identity["mfa"][name] = file_content_identity(Path(value)) if value else None
     if getattr(args, "source_text_review", None):
         identity["sourceTextReview"] = file_content_identity(args.source_text_review)
     return identity

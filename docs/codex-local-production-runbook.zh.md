@@ -15,6 +15,10 @@
 
 2026-09-11 已退役旧 `sermon-post-live-timeline` Job；其配置、IAM 和执行记录保存在本地 `artifacts/evidence/gcp-cleanup-20260911/`。对应 `sermon-sat-post-live-subtitles` Scheduler 保持暂停，不能仅恢复调度就恢复云端生产。
 
+## MFA 阅读对齐
+
+新 reading 生产默认使用本地 MFA 词/音素对齐，替代字符比例估时。运行前在执行机配置 MFA 可执行文件、英文词典/声学模型及建议的 G2P 模型；缺失配置会停止。安装、缓存边界和历史恢复见 [MFA 生产接入](mfa-production.zh.md)。MFA 时间仍为模型估计，源窗口审批与人工审核要求保持不变。
+
 ## 按现有状态续跑
 
 先读取当前 source、timeline、approval、run status 和 QA；已有授权及仍与 source/timeline hash 匹配的人工审批可继续使用。只推进确定性状态允许的下一阶段，不为重新整理流程再次下载、付费生成或重复索取相同批准。独立资料审核可并行，持有同一 source lease 的生产阶段保持顺序执行。

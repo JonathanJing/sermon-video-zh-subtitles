@@ -146,11 +146,28 @@ class SourceTextReviewRoutingTests(unittest.TestCase):
                 generation.run_post_live_generation(args)
             state.assert_not_called()
 
-    def test_valid_review_cache_is_read_only_and_supports_chunk_asr(self):
+    def test_mfa_never_accepts_legacy_review_cache_even_with_valid_evidence(self):
         with tempfile.TemporaryDirectory() as tmp:
             pipeline = Path(tmp) / "pipeline"
             review = review_cache_fixture(pipeline)
             args = self.args("--source-text-review", str(review))
+            self.assertEqual(args.reading_aligner, "mfa")
+            before = {p.name: p.read_bytes() for p in pipeline.iterdir()}
+            self.assertFalse(generation.source_review_cache_ready(args, pipeline))
+            self.assertEqual({p.name: p.read_bytes() for p in pipeline.iterdir()}, before)
+            args.reading_aligner = "legacy"
+            self.assertTrue(generation.source_review_cache_ready(args, pipeline))
+            (pipeline / "review-evidence.json").write_text('{"finding":"changed"}')
+            with self.assertRaisesRegex(ValueError, "evidence changed"):
+                generation.source_review_cache_ready(args, pipeline)
+            args.reading_aligner = "mfa"
+            self.assertFalse(generation.source_review_cache_ready(args, pipeline))
+
+    def test_valid_review_cache_is_read_only_and_supports_chunk_asr(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            pipeline = Path(tmp) / "pipeline"
+            review = review_cache_fixture(pipeline)
+            args = self.args("--reading-aligner", "legacy", "--source-text-review", str(review))
             for chunks in [False, True]:
                 if chunks:
                     asr = json.loads((pipeline / "asr_reference.json").read_text())
@@ -171,7 +188,7 @@ class SourceTextReviewRoutingTests(unittest.TestCase):
             with self.subTest(case=i), tempfile.TemporaryDirectory() as tmp:
                 pipeline = Path(tmp) / "pipeline"
                 review = review_cache_fixture(pipeline)
-                args = self.args("--source-text-review", str(review))
+                args = self.args("--reading-aligner", "legacy", "--source-text-review", str(review))
                 for name in ["segments_timed_en_raw.json", "segments_timed_en_corrected.json"]:
                     path = pipeline / name
                     rows = json.loads(path.read_text())
@@ -187,7 +204,7 @@ class SourceTextReviewRoutingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             pipeline = Path(tmp) / "pipeline"
             review = review_cache_fixture(pipeline)
-            args = self.args("--source-text-review", str(review))
+            args = self.args("--reading-aligner", "legacy", "--source-text-review", str(review))
             (pipeline / "asr_reference_chunks.json").write_text('[{"id":0,"start":0,"end":999,"text":"Untrusted derived copy"}]')
             self.assertTrue(generation.source_review_cache_ready(args, pipeline))
             args.reading_segment_target_chars = 120
@@ -209,7 +226,7 @@ class SourceTextReviewRoutingTests(unittest.TestCase):
                 download = pipeline.parent / "download"
                 download.mkdir()
                 (download / "source_audio.m4a").write_bytes(b"source fixture")
-                args = self.args("--source-text-review", str(review), "--work-root", str(root), "--slug", "sermon_fixture")
+                args = self.args("--reading-aligner", "legacy", "--source-text-review", str(review), "--work-root", str(root), "--slug", "sermon_fixture")
                 args.state_file = str(root / "state.json")
                 Path(args.state_file).write_text(json.dumps({"lastSunday": args.sunday, "lastGenerationRequest": {"liveUrl": "https://example.invalid/sermon"}}))
                 mutate(pipeline)
@@ -231,7 +248,7 @@ class SourceTextReviewRoutingTests(unittest.TestCase):
                     (pipeline / missing).unlink()
                 else:
                     (pipeline / "segments_timed_en_corrected.json").write_text('[{"id":0,"text":"stale cached English"}]')
-                args = self.args("--source-text-review", str(review), "--work-root", str(root), "--slug", "sermon_fixture")
+                args = self.args("--reading-aligner", "legacy", "--source-text-review", str(review), "--work-root", str(root), "--slug", "sermon_fixture")
                 self.assertFalse(generation.source_review_cache_ready(args, pipeline))
                 download = pipeline.parent / "download"
                 download.mkdir()

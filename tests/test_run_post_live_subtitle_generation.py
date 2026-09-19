@@ -358,6 +358,32 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
         self.assertTrue(any(path.endswith("中英对照阅读版.pdf") for path in report["outputs"]))
         self.assertTrue(any(path.endswith("证道解读.pdf") for path in report["outputs"]))
 
+    def test_mfa_command_and_model_content_invalidate_cache(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            audio = root / "audio.wav"
+            dictionary = root / "dict.dict"
+            acoustic = root / "acoustic.zip"
+            for path in (audio, dictionary, acoustic):
+                path.write_bytes(b"original")
+            args = make_args(mfa_dictionary=dictionary, mfa_acoustic_model=acoustic)
+            command = mod.build_pipeline_command(args, root, root / "pipeline", "https://example.com/video")
+            self.assertEqual(command[command.index("--reading-aligner") + 1], "mfa")
+            self.assertEqual(command[command.index("--mfa-dictionary") + 1], str(dictionary))
+            initial = mod.stable_payload_hash(mod.build_pipeline_input_identity(args, audio))
+            dictionary.write_bytes(b"updated dictionary")
+            self.assertNotEqual(initial, mod.stable_payload_hash(mod.build_pipeline_input_identity(args, audio)))
+
+    def test_mfa_does_not_reuse_legacy_summary_or_unverified_review_timing(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            summary = root / "summary.json"
+            summary.write_text(json.dumps({"outputMode": "reading", "models": {"referenceAsr": "gpt-transcribe"},
+                "readingSegmentTargetCharacters": 420}))
+            self.assertFalse(mod.pipeline_summary_matches(summary, output_mode="reading", reference_model="gpt-transcribe"))
+            self.assertTrue(mod.pipeline_summary_matches(summary, output_mode="reading", reference_model="gpt-transcribe", reading_aligner="legacy"))
+            self.assertFalse(mod.source_review_cache_ready(make_args(source_text_review=root / "review.json"), root))
+
     def test_subtitle_mode_keeps_whisper_as_explicit_opt_in(self):
         args = make_args(output_mode="subtitles")
         command = mod.build_pipeline_command(
@@ -451,6 +477,7 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
                         "outputMode": "reading",
                         "models": {"referenceAsr": "gpt-transcribe"},
                         "readingSegmentTargetCharacters": 420,
+                        "readingAligner": "mfa",
                         "pipelineInputFingerprint": "fingerprint-v1",
                     }
                 ),
