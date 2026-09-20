@@ -245,15 +245,21 @@ def _snapshot(config, sunday):
     if state["head"] != plan["parentReleaseId"] or state["generation"] != plan["parentGeneration"]:
         raise ValueError("Registry advanced; prepare a fresh release against its current head")
     deployment = release / "deployment-receipt.json"
-    if not deployment.exists():
+    deployed = read(deployment) if deployment.exists() else None
+    if deployed is not None:
+        expected_target = {"projectId": settings["project"], "siteId": settings["site"],
+                           "buildReportSha256": digest(release / "build-report.json")}
+        if (any(deployed.get(k) != v for k, v in expected_target.items())
+                or deployed.get("status") not in {"validated_not_deployed", "deployed_http_verification_pending"}):
+            raise ValueError("Deployment receipt does not bind this release and target")
+    # The Firebase CLI writes a receipt for preflight too. It is evidence of
+    # validation only; require the same exact authorization before deployment.
+    if deployed is None or deployed["status"] == "validated_not_deployed":
         authorized, expected = _authorization(config, sunday, settings, state, plan)
         result["evidence"]["requiredReleaseAuthorization"] = expected
         if not authorized:
             return stop("waiting_release_authorization", "Approve the exact prepared release and dedicated Firebase target", True)
         return stop("deploy_release", "Deploy the explicitly authorized immutable release")
-    deployed = read(deployment)
-    if any(deployed.get(k) != v for k, v in {"status": "deployed_http_verification_pending", "projectId": settings["project"], "siteId": settings["site"], "buildReportSha256": digest(release / "build-report.json")}.items()):
-        raise ValueError("Deployment receipt does not bind this release and target")
     if not verification_path.exists() or read(verification_path).get("passed") is not True:
         return stop("verify_release", "Verify all public files and audio ranges against the release manifest")
     releases.check_verification(release, read(verification_path), settings["origin"])

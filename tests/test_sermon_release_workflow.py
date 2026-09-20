@@ -142,10 +142,38 @@ class ReleaseWorkflowTests(unittest.TestCase):
             with patch.object(flow, 'bounded_process') as runner:
                 self.assertFalse(flow.execute(self.path, self.week, 'deploy_release')['executed'])
                 runner.assert_not_called()
-            self.write(self.row['authorization'], {**waiting['evidence']['requiredReleaseAuthorization'], 'approvedBy': 'fixture', 'approvedAt': 'fixture'})
+            authorization = {**waiting['evidence']['requiredReleaseAuthorization'], 'approvedBy': 'fixture', 'approvedAt': 'fixture'}
+            self.write(self.row['authorization'], authorization)
             self.assertEqual(flow.snapshot(self.path, self.week)['status'], 'deploy_release')
-            self.write(release / 'deployment-receipt.json', {'status': 'deployed_http_verification_pending',
-                'projectId': self.row['project'], 'siteId': self.row['site'], 'buildReportSha256': flow.digest(release / 'build-report.json')})
+            preflight = {'status': 'validated_not_deployed', 'projectId': self.row['project'],
+                'siteId': self.row['site'], 'buildReportSha256': flow.digest(release / 'build-report.json')}
+            receipt_path = release / 'deployment-receipt.json'
+            self.write(receipt_path, preflight)
+            self.assertEqual(flow.snapshot(self.path, self.week)['status'], 'deploy_release')
+            # Preflight does not bypass authorization, even with a valid manifest.
+            Path(self.row['authorization']).unlink()
+            self.assertEqual(flow.snapshot(self.path, self.week)['status'], 'waiting_release_authorization')
+            with patch.object(flow, 'bounded_process') as runner:
+                self.assertFalse(flow.execute(self.path, self.week, 'deploy_release')['executed'])
+                runner.assert_not_called()
+            self.write(self.row['authorization'], authorization)
+            # Neither preflight nor deployed receipts may hide target/hash drift.
+            for status in ('validated_not_deployed', 'deployed_http_verification_pending'):
+                for field in ('projectId', 'siteId', 'buildReportSha256'):
+                    with self.subTest(status=status, changed_field=field):
+                        self.write(receipt_path, {**preflight, 'status': status, field: 'mismatched'})
+                        self.assertEqual(flow.snapshot(self.path, self.week)['status'], 'waiting_evidence_repair')
+            self.write(receipt_path, {**preflight, 'status': 'unknown'})
+            self.assertEqual(flow.snapshot(self.path, self.week)['status'], 'waiting_evidence_repair')
+            self.write(receipt_path, preflight)
+            # Exercise execution admission and the real post-command state check.
+            def deploy(*args, **kwargs):
+                self.write(receipt_path, {**preflight, 'status': 'deployed_http_verification_pending'})
+            with patch.object(flow, 'bounded_process', side_effect=deploy) as runner:
+                outcome = flow.execute(self.path, self.week, 'deploy_release')
+                self.assertTrue(outcome['executed'])
+                runner.assert_called_once()
+                self.assertIn('--execute', runner.call_args.args[0])
             self.assertEqual(flow.snapshot(self.path, self.week)['status'], 'verify_release')
             verified = fixture.verification(release)
             verified['origin'] = self.row['origin']

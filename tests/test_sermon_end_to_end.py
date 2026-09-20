@@ -146,3 +146,62 @@ class EndToEndTests(unittest.TestCase):
         config=replace(self.config,release_workflow_config=None)
         legacy=asdict(config);legacy.pop('release_workflow_config')
         self.assertEqual(agent.bound_configuration(config),legacy)
+
+    def test_orphan_job_is_discovered_without_active_pointer(self):
+        from scripts import sermon_workflow_jobs as jobs
+        original = self.path.read_text()
+        root = flow.job_root(self.config, self.path)
+        job_id = jobs._digest({'orphan': True})
+        # A held durable-job lock plus directory is an admitted queued worker.
+        with jobs._lock(root, job_id) as (folder, _, held):
+            self.assertTrue(held)
+            folder.mkdir()
+            for changed, upstream, expected in (
+                (False, 'complete', 'wait_for_workflow_job'),
+                (True, 'complete', 'inspect_workflow_job_failure'),
+                (True, 'run_reading_pdf_generation', 'wait_for_workflow_job'),
+            ):
+                self.path.write_text('{"changed":true}' if changed else original)
+                with self.subTest(changed=changed, upstream=upstream), \
+                     patch.object(flow.production, 'production_snapshot', return_value=state(upstream)), \
+                     patch('scripts.sermon_release_workflow.load_config'), \
+                     patch('scripts.sermon_release_workflow.snapshot', return_value=state('build_page')), \
+                     patch.object(jobs, 'start_job') as start:
+                    observed = flow.snapshot(self.config)
+                    self.assertEqual(observed['recommendedAction']['action'], expected)
+                    self.assertEqual(flow.start_action(self.config, 'build_page')['status'], 'blocked')
+                    start.assert_not_called()
+            self.assertFalse((root/'active.json').exists())
+
+    def test_launch_failure_leaves_intent_that_blocks_retry(self):
+        from scripts import sermon_workflow_jobs as jobs
+        with patch.object(flow.production, 'production_snapshot', return_value=state(locations={'runRoot': str(self.root/'source')})), \
+             patch('scripts.sermon_release_workflow.load_config'), \
+             patch('scripts.sermon_release_workflow.snapshot', return_value=state('build_page')), \
+             patch.object(jobs, 'start_job', side_effect=RuntimeError('interrupted before launch')) as start:
+            with self.assertRaisesRegex(RuntimeError, 'interrupted'):
+                flow.start_action(self.config, 'build_page')
+            observed = flow.snapshot(self.config)
+            self.assertEqual(observed['workflowJob']['status'], 'uncertain')
+            self.assertEqual(observed['recommendedAction']['action'], 'inspect_workflow_job_failure')
+            self.assertEqual(flow.start_action(self.config, 'build_page')['status'], 'blocked')
+            self.assertEqual(start.call_count, 1)
+
+    def test_failed_intent_write_never_launches_worker(self):
+        from scripts import sermon_workflow_jobs as jobs
+        with patch.object(flow, 'snapshot', return_value=state('build_page', locations={'runRoot': str(self.root/'source')})), \
+             patch.object(jobs, '_persist', side_effect=OSError('disk full')), \
+             patch.object(jobs, 'start_job') as start:
+            with self.assertRaisesRegex(OSError, 'disk full'):
+                flow.start_action(self.config, 'build_page')
+            start.assert_not_called()
+
+    def test_week_admission_lock_is_shared_across_configuration_changes(self):
+        from scripts import sermon_workflow_jobs as jobs
+        week = flow.job_root(self.config, self.path).parent
+        with jobs._lock(week, jobs._digest({'purpose': 'release-admission'})) as (_, _, held):
+            self.assertTrue(held)
+            self.path.write_text('{"changed":true}')
+            with patch.object(flow, 'snapshot') as inspect:
+                self.assertEqual(flow.start_action(self.config, 'build_page')['status'], 'blocked')
+                inspect.assert_not_called()

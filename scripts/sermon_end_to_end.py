@@ -6,10 +6,10 @@ exports a separate minimal allowlist; no model chooses subprocess arguments.
 from __future__ import annotations
 import hashlib
 import json
+import re
 from pathlib import Path
 
 from scripts import sermon_production_supervisor as production
-from scripts.sermon_agents_api import _write_json
 
 ACTIONS = ('generate_audio_candidate', 'sync_audio', 'build_page', 'prepare_release',
            'deploy_release', 'verify_release', 'record_published')
@@ -45,6 +45,37 @@ def _recommend(action, human=False):
     return {'action': action, 'reason': action, 'humanActionRequired': human}
 
 
+def _inspect_job(root, job_id):
+    from scripts.sermon_workflow_jobs import inspect_job
+    try:
+        return inspect_job(root, job_id)
+    except FileNotFoundError:
+        # A persisted launch intent without a job needs reconciliation, not retry.
+        return {'jobId': job_id, 'status': 'uncertain'}
+
+
+def _outstanding_jobs(root):
+    """Discover durable jobs even if an older launcher lost its active pointer."""
+    if not root.parent.exists():
+        return
+    for config_root in sorted(root.parent.iterdir()):
+        if not re.fullmatch(r'[a-f0-9]{64}', config_root.name):
+            continue
+        if config_root.is_symlink() or not config_root.is_dir():
+            raise ValueError('Invalid release job directory')
+        ids = {p.name for p in config_root.iterdir()
+               if re.fullmatch(r'[a-f0-9]{64}', p.name)}
+        pointer = config_root / 'active.json'
+        if pointer.is_symlink():
+            raise ValueError('Invalid release job pointer')
+        if pointer.exists():
+            ids.add(json.loads(pointer.read_text())['jobId'])
+        for job_id in sorted(ids):
+            job = _inspect_job(config_root, job_id)
+            if job['status'] in ('queued', 'running', 'uncertain'):
+                yield config_root, job
+
+
 def snapshot(config):
     upstream = production.production_snapshot(config)
     path = configuration(config)
@@ -59,19 +90,12 @@ def snapshot(config):
     if (upstream.get('recommendedAction') or {}).get('action') != 'complete':
         # Do not start new upstream mutations over an outstanding downstream job.
         root = job_root(config, path)
-        if root.parent.exists():
-            from scripts.sermon_workflow_jobs import inspect_job
-            for pointer_path in root.parent.glob('*/active.json'):
-                if pointer_path.is_symlink() or pointer_path.parent.is_symlink():
-                    raise ValueError('Invalid release job pointer')
-                saved = json.loads(pointer_path.read_text())
-                job = inspect_job(pointer_path.parent, saved['jobId'])
-                if job['status'] in ('queued', 'running', 'uncertain'):
-                    result['workflowJob'] = job
-                    result['recommendedAction'] = _recommend(
-                        'inspect_workflow_job_failure' if job['status'] == 'uncertain' else 'wait_for_workflow_job',
-                        job['status'] == 'uncertain')
-                    break
+        for _, job in _outstanding_jobs(root):
+            result['workflowJob'] = job
+            result['recommendedAction'] = _recommend(
+                'inspect_workflow_job_failure' if job['status'] == 'uncertain' else 'wait_for_workflow_job',
+                job['status'] == 'uncertain')
+            break
         return result
     downstream = release.snapshot(path, config.sunday)
     source_root = (downstream.get('evidence') or {}).get('sourceRunRoot')
@@ -85,26 +109,18 @@ def snapshot(config):
     result['recommendedAction'] = recommended
     root = job_root(config, path)
     # A configuration change cannot abandon a still-running or uncertain job.
-    from scripts.sermon_workflow_jobs import inspect_job
-    if root.parent.exists():
-        for previous in root.parent.glob('*/active.json'):
-            if previous.parent == root:
-                continue
-            if previous.is_symlink() or previous.parent.is_symlink():
-                raise ValueError('Invalid previous release job pointer')
-            saved = json.loads(previous.read_text())
-            prior = inspect_job(previous.parent, saved['jobId'])
-            if prior['status'] in ('queued', 'running', 'uncertain'):
-                result['workflowJob'] = prior
-                result['recommendedAction'] = _recommend('inspect_workflow_job_failure', True)
-                return result
+    for previous, prior in _outstanding_jobs(root):
+        result['workflowJob'] = prior
+        human = previous != root or prior['status'] == 'uncertain'
+        result['recommendedAction'] = _recommend(
+            'inspect_workflow_job_failure' if human else 'wait_for_workflow_job', human)
+        return result
     active = root / 'active.json'
     if active.exists():
         if active.is_symlink():
             raise ValueError('Invalid active release job pointer')
         pointer = json.loads(active.read_text())
-        from scripts.sermon_workflow_jobs import inspect_job
-        state = inspect_job(root, pointer['jobId'])
+        state = _inspect_job(root, pointer['jobId'])
         result['workflowJob'] = state
         if state['status'] in ('queued', 'running'):
             result['recommendedAction'] = _recommend('wait_for_workflow_job')
@@ -119,6 +135,19 @@ def snapshot(config):
 
 
 def start_action(config, action):
+    path = configuration(config)
+    if path is None:
+        return {'status': 'blocked'}
+    from scripts.sermon_workflow_jobs import _lock, _digest
+    # Serialize admission across configurations, and recheck evidence under lock.
+    week_root = job_root(config, path).parent
+    with _lock(week_root, _digest({'purpose': 'release-admission'})) as (_, _, held):
+        if not held:
+            return {'status': 'blocked'}
+        return _start_action_locked(config, action)
+
+
+def _start_action_locked(config, action):
     if action not in ACTIONS:
         raise ValueError('Unknown release operation')
     current = snapshot(config)
@@ -140,7 +169,7 @@ def start_action(config, action):
     if not source_root:
         raise ValueError('Current production source run is required for release execution')
     command.extend(['--expected-source-run-root', str(Path(source_root).resolve())])
-    from scripts.sermon_workflow_jobs import start_job
-    state = start_job(root, identity, command, timeout_seconds=21600)
-    _write_json(root / 'active.json', {'jobId': state['jobId'], 'action': action})
-    return state
+    from scripts.sermon_workflow_jobs import start_job, _digest, _persist
+    root.mkdir(parents=True, exist_ok=True, mode=0o700)
+    _persist(root / 'active.json', {'jobId': _digest(identity), 'action': action})
+    return start_job(root, identity, command, timeout_seconds=21600)
