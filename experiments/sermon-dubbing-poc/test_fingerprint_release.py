@@ -44,4 +44,55 @@ class FingerprintReleaseTests(unittest.TestCase):
         p=next((self.path/'public/fingerprints').glob('*'));p.write_text('{}');self.reject()
         self.write_index(self.index);(self.path/'public/fingerprint-worker.mjs').unlink();refresh_manifest(self.path);self.reject()
 
+    def test_direct_deploy_rejects_unsupported_catalog_schema(self):
+        path = self.path/'public/weekly.json'
+        catalog = json.loads(path.read_text())
+        for schema in ('unsupported-v99', None):
+            with self.subTest(schema=schema):
+                catalog['schemaVersion'] = schema
+                write_json(path, catalog)
+                refresh_manifest(self.path)
+                with self.assertRaisesRegex(ValueError, 'catalog schema'):
+                    verify_release(self.path)
+
+    def test_direct_deploy_rebinds_track_path_url_and_manifest(self):
+        path = self.path/'public/weekly.json'
+        original = json.loads(path.read_text())
+        for change in ('missing', 'url', 'manifest_hash', 'manifest_bytes', 'empty', 'symlink'):
+            with self.subTest(change=change):
+                catalog = copy.deepcopy(original)
+                track = catalog['weeks'][0]['tracks'][0]
+                audio = self.path/'public/media'/track['file']
+                content = audio.read_bytes()
+                try:
+                    if change == 'missing':
+                        track['file'] = track['sha256'][:16] + '-missing.mp3'
+                        track['audioUrl'] = '/media/' + track['file']
+                    elif change == 'url':
+                        track['audioUrl'] = '/media/missing.mp3'
+                    elif change == 'empty':
+                        audio.write_bytes(b'')
+                    elif change == 'symlink':
+                        target = self.root/'outside.mp3'
+                        target.write_bytes(content)
+                        audio.unlink()
+                        audio.symlink_to(target)
+                    write_json(path, catalog)
+                    refresh_manifest(self.path)
+                    if change in ('manifest_hash', 'manifest_bytes'):
+                        report_path = self.path/'build-report.json'
+                        report = json.loads(report_path.read_text())
+                        item = next(f for f in report['files'] if f['path'] == 'media/' + track['file'])
+                        item['sha256' if change == 'manifest_hash' else 'bytes'] = 'b'*64 if change == 'manifest_hash' else 0
+                        write_json(report_path, report)
+                    with self.assertRaisesRegex(ValueError, 'Fingerprint track'):
+                        verify_release(self.path)
+                finally:
+                    if audio.is_symlink():
+                        audio.unlink()
+                    audio.write_bytes(content)
+                    write_json(path, original)
+                    refresh_manifest(self.path)
+        verify_release(self.path)
+
 if __name__=='__main__':unittest.main()
