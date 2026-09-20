@@ -5,6 +5,22 @@ import XCTest
 /// these tests do not establish real-network, audible, lock-screen, or venue QA.
 @MainActor
 final class ListeningFlowUITests: XCTestCase {
+    func testLiveAlignmentStaysBelowPlaybackOnFirstScreenAndTranscript() throws {
+        let app = launchFixture()
+        try assertAlignmentBelowPlayback(in: app)
+        app.segmentedControls["listening-display"].buttons["字幕全文"].tap()
+        try assertAlignmentBelowPlayback(in: app)
+        screenshot("alignment-below-playback-transcript", app: app)
+    }
+
+    func testLandscapeKeepsLiveAlignmentBelowPlayback() throws {
+        XCUIDevice.shared.orientation = .landscapeLeft
+        defer { XCUIDevice.shared.orientation = .portrait }
+        let app = launchFixture()
+        try assertAlignmentBelowPlayback(in: app)
+        screenshot("landscape-alignment-below-playback", app: app)
+    }
+
     func testOpeningTranscriptWhilePlayingLocatesCurrentCueOnlyOnce() throws {
         let app = launchFixture(largeText: true)
         try selectSecondTrack(in: app)
@@ -142,6 +158,7 @@ final class ListeningFlowUITests: XCTestCase {
         let app = launchFixture(largeText: true)
         try downloadSelection(in: app)
         let play = app.buttons["playback-toggle"]
+        try assertAlignmentBelowPlayback(in: app)
         let forward = app.buttons["nudge-forward"]
         let backward = app.buttons["nudge-backward"]
         for control in [play, forward, backward] {
@@ -159,6 +176,19 @@ final class ListeningFlowUITests: XCTestCase {
         play.tap()
         try waitFor(element("playback-progress", in: app), "value CONTAINS '已暂停'")
         screenshot("accessibility3-download-and-playback-controls", app: app)
+    }
+
+    private func assertAlignmentBelowPlayback(in app: XCUIApplication,
+                                              file: StaticString = #filePath, line: UInt = #line) throws {
+        let align = app.buttons["align-live-audio"]
+        try waitFor(align, "exists == true AND hittable == true")
+        let play = app.buttons["playback-toggle"]
+        XCTAssertEqual(app.buttons.matching(identifier: "align-live-audio").count, 1,
+                       "首页只能出现一个现场对齐入口", file: file, line: line)
+        XCTAssertGreaterThanOrEqual(align.frame.minY, play.frame.maxY,
+                                    "现场对齐按钮应在播放按钮下方", file: file, line: line)
+        XCTAssertTrue(app.frame.contains(align.frame),
+                      "无需滚动就应完整显示现场对齐按钮", file: file, line: line)
     }
 
     private func launchFixture(largeText: Bool = false) -> XCUIApplication {

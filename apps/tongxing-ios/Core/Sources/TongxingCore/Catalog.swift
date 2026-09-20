@@ -99,6 +99,10 @@ public struct SermonWeek: Codable, Sendable, Equatable, Identifiable {
     public let speakerSource: String?
     public let titleEvidence: String?
     public let transcript: BilingualTranscript?
+    public let sourceSha256: String?
+    public let sourceStartSeconds: Double?
+    public let sourceEndSeconds: Double?
+    public let audioFingerprint: PublishedFingerprintBinding?
 
     public init(id: String, date: String, sourceId: String, sourceUrl: String, title: String,
                 speaker: String, scripture: String, tracks: [SermonTrack], number: String? = nil,
@@ -108,7 +112,9 @@ public struct SermonWeek: Codable, Sendable, Equatable, Identifiable {
                 videoSynchronization: String? = nil, humanApproval: JSONValue? = nil,
                 productionStages: [ProductionStage]? = nil, candidateEvidence: JSONValue? = nil,
                 outlineSourceSha256: String? = nil, speakerSource: String? = nil, titleEvidence: String? = nil,
-                transcript: BilingualTranscript? = nil) {
+                transcript: BilingualTranscript? = nil, sourceSha256: String? = nil,
+                sourceStartSeconds: Double? = nil, sourceEndSeconds: Double? = nil,
+                audioFingerprint: PublishedFingerprintBinding? = nil) {
         self.id = id; self.date = date; self.sourceId = sourceId; self.sourceUrl = sourceUrl
         self.title = title; self.speaker = speaker; self.scripture = scripture; self.tracks = tracks
         self.number = number; self.series = series; self.centralMessage = centralMessage; self.summary = summary
@@ -118,6 +124,8 @@ public struct SermonWeek: Codable, Sendable, Equatable, Identifiable {
         self.productionStages = productionStages; self.candidateEvidence = candidateEvidence
         self.outlineSourceSha256 = outlineSourceSha256; self.speakerSource = speakerSource; self.titleEvidence = titleEvidence
         self.transcript = transcript
+        self.sourceSha256 = sourceSha256; self.sourceStartSeconds = sourceStartSeconds
+        self.sourceEndSeconds = sourceEndSeconds; self.audioFingerprint = audioFingerprint
     }
 
     public func validate() throws {

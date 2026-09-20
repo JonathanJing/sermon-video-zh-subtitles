@@ -1780,6 +1780,50 @@
           }
         }
       }
+    },
+    "本篇尚未提供现场对齐资料，请刷新目录或手动定位。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live alignment data is not available for this sermon. Refresh the catalog or adjust the position manually."
+          }
+        }
+      }
+    },
+    "正在准备音频，请稍候再开始现场自动对齐。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparing audio. Please wait before starting live alignment."
+          }
+        }
+      }
+    },
+    "音频尚未准备就绪，请稍候或重新载入音频。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio is not ready. Please wait or reload the audio."
+          }
+        }
+      }
+    },
+    "正在听原声，约 10 秒；请保持 App 前台。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listening to the original audio for about 10 seconds. Keep the app in the foreground."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

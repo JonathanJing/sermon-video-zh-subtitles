@@ -46,11 +46,18 @@ struct ContentView: View {
                                 }.pickerStyle(.segmented).accessibilityIdentifier("listening-display")
                                 if model.display == .current {
                                     currentSubtitle(track)
-                                    AlignmentControls(model: model)
-                                        .padding(16).frame(maxWidth: .infinity, alignment: .leading)
-                                        .background(Brand.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
                                 }
                                 else { transcript(track) }
+                                if typeSize.isAccessibilitySize {
+                                    Text(localization.text(model.isPreparing ? "正在准备音频…" : playback.message))
+                                        .font(.footnote).foregroundStyle(.secondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                        .accessibilityIdentifier("playback-status-detail")
+                                }
+                                Text(localization.text(model.alignmentDisplayStatus, ["time": model.alignmentPosition.map(PlaybackTime.format) ?? ""]))
+                                    .font(.footnote).foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .accessibilityIdentifier("alignment-status")
                                 downloadControl
                             } else {
                                 ContentUnavailableView(localization.text("本周音频尚未准备好"), systemImage: "waveform", description: Text(localization.text("可以先阅读证道大纲。")))
@@ -109,7 +116,7 @@ struct ContentView: View {
             .background(Brand.background)
             .listeningBottomBar {
                 if model.selectedTrack != nil {
-                    PlaybackDock(playback: playback, isPreparing: model.isPreparing,
+                    PlaybackDock(playback: playback, isPreparing: model.isPreparing, alignmentModel: model,
                                  precision: { sheet = .precision }, current: { returnToCurrent = UUID() })
                 }
             }
@@ -356,14 +363,20 @@ private func sourceText(_ value: String, language: String) -> Text {
     return Text(text)
 }
 
-private struct AlignmentControls: View {
+struct AlignmentControls: View {
+    var compact: Bool
     @ObservedObject var model: AppModel
     @ObservedObject private var playback: PlaybackController
     @ObservedObject private var localization = AppLocalization.shared
 
-    init(model: AppModel) {
+    init(model: AppModel, compact: Bool = false) {
         self.model = model
         self.playback = model.playback
+        self.compact = compact
+    }
+
+    private var status: String {
+        localization.text(model.alignmentDisplayStatus, ["time": model.alignmentPosition.map(PlaybackTime.format) ?? ""])
     }
 
     var body: some View {
@@ -375,14 +388,21 @@ private struct AlignmentControls: View {
                 Label(localization.text(model.alignmentBusy ? "取消对齐" : "听现场并对齐"),
                       systemImage: model.alignmentBusy ? "stop.circle" : "waveform.badge.mic")
                     .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .contentShape(Rectangle())
             }
-            .buttonStyle(.bordered).frame(minHeight: 44)
+            .buttonStyle(.plain)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(Brand.accent)
             .disabled(!model.alignmentAvailable && !model.alignmentBusy)
             .accessibilityIdentifier("align-live-audio")
-            Text(localization.text(model.alignmentStatus, ["time": model.alignmentPosition.map(PlaybackTime.format) ?? ""]))
-                .font(.footnote).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityIdentifier("alignment-status")
+            .accessibilityHint(status)
+            if !compact {
+                Text(status)
+                    .font(.footnote).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("alignment-status")
+            }
         }
     }
 }

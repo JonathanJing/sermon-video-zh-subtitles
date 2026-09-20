@@ -25,6 +25,33 @@ final class AppModel: ObservableObject {
     @Published private(set) var alignmentBusy = false
     @Published private(set) var alignmentPosition: Double?
     private var alignmentController: AudioAlignmentController!
+    private var hasAlignmentFeedback = false
+
+    var alignmentDisplayStatus: String {
+        if alignmentBusy || hasAlignmentFeedback { return alignmentStatus }
+        guard alignmentController?.available == true else {
+            return "本篇尚未提供现场对齐资料，请刷新目录或手动定位。"
+        }
+        if isPreparing { return "正在准备音频，请稍候再开始现场自动对齐。" }
+        if !playback.isReady { return "音频尚未准备就绪，请稍候或重新载入音频。" }
+        return alignmentStatus
+    }
+
+    func updateAlignmentState(status: String, busy: Bool, position: Double?) {
+        alignmentStatus = status
+        alignmentBusy = busy
+        alignmentPosition = position
+        hasAlignmentFeedback = true
+    }
+
+    private func resetAlignmentState() {
+        hasAlignmentFeedback = false
+        alignmentBusy = false
+        alignmentPosition = nil
+        alignmentStatus = alignmentController?.available == true
+            ? "请播放同一录音的原声，再点击听声对齐。"
+            : "本篇尚未提供现场对齐资料，请刷新目录或手动定位。"
+    }
 
     var alignmentAvailable: Bool {
         #if os(iOS)
@@ -86,10 +113,12 @@ final class AppModel: ObservableObject {
                 guard let alignment = selected.track.alignment else { throw AudioAlignmentError.unavailable }
                 return try await indexStore.load(alignment: alignment, week: selected.week, track: selected.track)
             },
+            loadPublishedIndex: { selected in
+                guard let binding = selected.week.audioFingerprint else { throw AudioAlignmentError.unavailable }
+                return try await indexStore.loadPublished(binding: binding, week: selected.week, track: selected.track)
+            },
             onState: { [weak self] status, busy, position in
-                self?.alignmentStatus = status
-                self?.alignmentBusy = busy
-                self?.alignmentPosition = position
+                self?.updateAlignmentState(status: status, busy: busy, position: position)
             }
         )
         playback.onManualInteraction = { [weak self] in self?.alignmentController.cancel() }
@@ -135,12 +164,23 @@ final class AppModel: ObservableObject {
             && selectedTrack?.sha256 == nextTrack?.sha256
             && selectedWeek?.sourceId == week.sourceId && selectedWeek?.sourceUrl == week.sourceUrl
         if unchanged && !force {
-            if selectedTrack?.alignment != nextTrack?.alignment
-                || nextTrack.map({ track in track.alignment.map { (try? $0.validate(week: week, track: track)) == nil } ?? false }) == true {
+            let capabilityChanged = selectedTrack?.alignment != nextTrack?.alignment
+                || selectedWeek?.audioFingerprint != week.audioFingerprint
+                || selectedWeek?.sourceSha256 != week.sourceSha256
+                || selectedWeek?.sourceStartSeconds != week.sourceStartSeconds
+                || selectedWeek?.sourceEndSeconds != week.sourceEndSeconds
+                || nextTrack.map({ track in
+                    if let binding = week.audioFingerprint {
+                        return (try? binding.validate(week: week, track: track)) == nil
+                    }
+                    return track.alignment.map { (try? $0.validate(week: week, track: track)) == nil } ?? false
+                }) == true
+            if capabilityChanged {
                 alignmentController.cancel(message: "对齐资料已更新，请重新开始识别。", resume: true)
             }
             selectedWeek = week
             selectedTrack = nextTrack
+            if capabilityChanged { resetAlignmentState() }
             if let nextTrack { playback.updateMetadata(week: week, track: nextTrack) }
             return
         }
@@ -151,8 +191,7 @@ final class AppModel: ObservableObject {
         defer { if preparation == token { isPreparing = false } }
         selectedWeek = week
         selectedTrack = nextTrack
-        alignmentPosition = nil
-        alignmentStatus = nextTrack?.alignment == nil ? "当前音频没有可用的听声对齐资料。" : "请播放同一录音的原声，再点击听声对齐。"
+        resetAlignmentState()
         usingOfflineAudio = false
         display = .current
         guard let track = nextTrack else { return }

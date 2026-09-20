@@ -62,6 +62,51 @@ final class FingerprintIndexStoreTests {
         #expect(try FileManager.default.contentsOfDirectory(atPath: directory.path).filter { $0.hasSuffix(".part") }.isEmpty)
     }
 
+    private func publishedFixture() throws -> (Data, SermonWeek, PublishedFingerprintBinding) {
+        let legacy = try fixture(), source = String(repeating: "d", count: 64)
+        let data = try JSONSerialization.data(withJSONObject: [
+            "schemaVersion": "sermon-landmark-index-v1", "algorithmVersion": "spectral-landmarks-v1",
+            "sampleRate": 8000, "fftSize": 1024, "hopSize": 256, "pageId": legacy.week.id,
+            "sourceSha256": source, "trackSha256": legacy.track.sha256,
+            "sourceStartSeconds": 1200, "sourceEndSeconds": 1212,
+            "window": ["startSeconds": 1200, "endSeconds": 1212], "durationSeconds": 12,
+            "landmarkCount": 3, "postings": ["230277": [1, 4, 8]]])
+        let digest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+        var week = try JSONSerialization.jsonObject(with: JSONEncoder().encode(legacy.week)) as! [String: Any]
+        week["sourceSha256"] = source; week["sourceStartSeconds"] = 1200; week["sourceEndSeconds"] = 1212
+        week["audioFingerprint"] = ["schemaVersion": "sermon-audio-fingerprint-binding-v1", "pageId": legacy.week.id,
+            "sourceSha256": source, "trackSha256": legacy.track.sha256,
+            "sourceStartSeconds": 1200, "sourceEndSeconds": 1212, "algorithmVersion": "spectral-landmarks-v1",
+            "captureSeconds": 10, "indexSha256": digest, "indexUrl": "/fingerprints/\(digest.prefix(16))-landmarks.json"]
+        let decoded = try JSONDecoder().decode(SermonWeek.self, from: JSONSerialization.data(withJSONObject: week))
+        return (data, decoded, try #require(decoded.audioFingerprint))
+    }
+
+    @Test func publishedIndexPersistsAndReloadsOfflineAfterVerification() async throws {
+        let (data, week, binding) = try publishedFixture(), calls = FingerprintCounter()
+        install(.init(chunks: [data]), calls: calls)
+        let storage = store()
+        _ = try await storage.loadPublished(binding: binding, week: week, track: week.tracks[0])
+        install(.init(chunks: [], error: URLError(.notConnectedToInternet)), calls: calls)
+        let index = try await storage.loadPublished(binding: binding, week: week, track: week.tracks[0])
+        #expect(index.durationSeconds == 12); #expect(calls.value == 1)
+        #expect(try Data(contentsOf: directory.appendingPathComponent(binding.indexSha256 + "-landmarks.json")) == data)
+        try noPartialFiles()
+    }
+
+    @Test func publishedCorruptedCacheAndBadDownloadNeverBecomeAvailable() async throws {
+        let (_, week, binding) = try publishedFixture()
+        let cached = directory.appendingPathComponent(binding.indexSha256 + "-landmarks.json")
+        try Data("corrupt cache".utf8).write(to: cached)
+        install(.init(chunks: [Data("corrupt response".utf8)]))
+        do {
+            _ = try await store().loadPublished(binding: binding, week: week, track: week.tracks[0])
+            Issue.record("Invalid published index was admitted")
+        } catch { #expect(error as? ContentStorageError == .checksumMismatch) }
+        #expect(!FileManager.default.fileExists(atPath: cached.path))
+        try noPartialFiles()
+    }
+
     @Test func validatedIndexPersistsExactBytesAndLoadsOfflineWithNoSecondRequest() async throws {
         let f = try fixture(), calls = FingerprintCounter()
         install(.init(chunks: [f.data]), calls: calls)

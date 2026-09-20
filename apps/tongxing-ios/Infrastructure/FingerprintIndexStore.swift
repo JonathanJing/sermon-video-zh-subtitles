@@ -45,6 +45,48 @@ public actor FingerprintIndexStore {
         return index
     }
 
+    public func loadPublished(binding: PublishedFingerprintBinding, week: SermonWeek, track: SermonTrack) async throws -> PublishedFingerprintIndex {
+        try Task.checkCancellation()
+        try binding.validate(week: week, track: track)
+        try ContentOrigin.validateHTTPS(baseURL)
+        let url = try binding.indexURL(relativeTo: baseURL)
+        guard ContentOrigin.isSame(baseURL, url) else { throw ContentStorageError.invalidURL }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let cached = directory.appendingPathComponent(binding.indexSha256 + "-landmarks.json")
+        if FileManager.default.fileExists(atPath: cached.path) {
+            do { return try validatePublishedFile(cached, binding: binding) }
+            catch {
+                if Task.isCancelled || error is CancellationError { throw CancellationError() }
+                try? FileManager.default.removeItem(at: cached)
+            }
+        }
+        let temporary = directory.appendingPathComponent("landmarks-\(UUID().uuidString).part")
+        defer { try? FileManager.default.removeItem(at: temporary) }
+        let receipt = try await HTTPFileTransfer(session: session, url: url, temporaryURL: temporary,
+                                                 maximumBytes: maximumBytes).run()
+        try Task.checkCancellation()
+        guard receipt.sha256 == binding.indexSha256 else { throw ContentStorageError.checksumMismatch }
+        let index = try validatePublishedFile(temporary, binding: binding)
+        try Task.checkCancellation()
+        try Data(contentsOf: temporary).write(to: cached, options: .atomic)
+        return index
+    }
+
+    private func validatePublishedFile(_ url: URL, binding: PublishedFingerprintBinding) throws -> PublishedFingerprintIndex {
+        try Task.checkCancellation()
+        let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+        guard size > 0 else { throw ContentStorageError.emptyFile }
+        guard size <= maximumBytes else { throw ContentStorageError.tooLarge(limit: maximumBytes) }
+        let bytes = try Data(contentsOf: url)
+        guard bytes.count <= maximumBytes else { throw ContentStorageError.tooLarge(limit: maximumBytes) }
+        let digest = SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined()
+        guard digest == binding.indexSha256 else { throw ContentStorageError.checksumMismatch }
+        let index = try PublishedFingerprintIndex.decode(bytes)
+        try index.validate(binding: binding)
+        try Task.checkCancellation()
+        return index
+    }
+
     private func validateFile(_ url: URL, alignment: SermonAudioAlignment) throws -> FingerprintIndex {
         try Task.checkCancellation()
         let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0

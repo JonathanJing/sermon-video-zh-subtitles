@@ -150,6 +150,151 @@ final class AudioAlignmentControllerTests: XCTestCase {
         XCTAssertEqual(f.capture.calls, 0)
     }
 
+    func testPublishedCapabilityCapturesTenSecondsAndSilenceNeverSeeks() async throws {
+        let f = try Fixture(published: true)
+        XCTAssertTrue(f.controller.available)
+        f.controller.start()
+        try await eventually { !f.controller.busy }
+        XCTAssertEqual(f.capture.requestedSeconds, [10])
+        XCTAssertEqual(f.player.seeks, [])
+        XCTAssertEqual(f.status, "未找到可靠匹配，播放位置未改变。")
+        XCTAssertGreaterThan(f.capture.stops, 0)
+    }
+
+    func testPublishedCancelledLateIndexCannotStartMicrophone() async throws {
+        let gate = ResultGate()
+        let f = try Fixture(published: true, publishedLoadGate: gate)
+        f.controller.start()
+        try await gate.waitUntilStarted()
+        f.controller.cancel()
+        f.player.position = 42
+        await gate.finish(Self.noMatch)
+        try await Task.sleep(for: .milliseconds(30))
+        XCTAssertEqual(f.capture.calls, 0)
+        XCTAssertEqual(f.player.position, 42)
+        XCTAssertEqual(f.player.seeks, [])
+        XCTAssertFalse(f.controller.busy)
+        XCTAssertEqual(f.status, "已取消对齐。")
+    }
+
+    func testPublishedSourceWindowChangeRejectsLateIndexWithoutResume() async throws {
+        let gate = ResultGate()
+        let f = try Fixture(playing: true, published: true, publishedLoadGate: gate)
+        f.controller.start()
+        try await gate.waitUntilStarted()
+        let selected = try XCTUnwrap(f.selection)
+        var document = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(selected.week)) as? [String: Any])
+        document["sourceStartSeconds"] = 1701
+        let changed = try JSONDecoder().decode(SermonWeek.self, from: JSONSerialization.data(withJSONObject: document))
+        f.selection = .init(week: changed, track: selected.track)
+        XCTAssertFalse(f.controller.available)
+        await gate.finish(Self.noMatch)
+        try await eventually { !f.controller.busy }
+        XCTAssertEqual(f.capture.calls, 0)
+        XCTAssertEqual(f.player.seeks, [])
+        XCTAssertEqual(f.player.resumes, 0)
+        XCTAssertNil(f.resultPosition)
+    }
+
+    func testSameTrackCapabilityRefreshReplacesUnavailableStatus() async throws {
+        let fixture = try Fixture()
+        let selected = try XCTUnwrap(fixture.selection)
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("TongxingAlignmentModel-\(UUID())")
+        let model = AppModel(supportDirectory: directory, contentOrigin: URL(string: "https://example.invalid")!)
+        defer {
+            model.playback.clear()
+            try? FileManager.default.removeItem(at: directory)
+        }
+        let unavailable = withoutAlignment(selected.track)
+        await model.select(week: selected.week, track: unavailable)
+        model.playback.clear()
+        XCTAssertEqual(model.alignmentDisplayStatus, "本篇尚未提供现场对齐资料，请刷新目录或手动定位。")
+        XCTAssertFalse(model.alignmentAvailable)
+
+        await model.select(week: selected.week, track: selected.track)
+
+        XCTAssertEqual(model.alignmentStatus, "请播放同一录音的原声，再点击听声对齐。")
+        XCTAssertEqual(model.alignmentDisplayStatus, "音频尚未准备就绪，请稍候或重新载入音频。")
+        XCTAssertFalse(model.alignmentAvailable, "A capability must not bypass player readiness")
+        XCTAssertNil(model.alignmentPosition)
+    }
+
+    func testSameTrackCapabilityRevocationClearsCompletedAlignmentFeedback() async throws {
+        let fixture = try Fixture()
+        let selected = try XCTUnwrap(fixture.selection)
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("TongxingAlignmentModel-\(UUID())")
+        let model = AppModel(supportDirectory: directory, contentOrigin: URL(string: "https://example.invalid")!)
+        defer {
+            model.playback.clear()
+            try? FileManager.default.removeItem(at: directory)
+        }
+        await model.select(week: selected.week, track: selected.track)
+        model.playback.clear()
+        model.updateAlignmentState(status: "已对齐至 {time}。", busy: false, position: 108)
+        XCTAssertEqual(model.alignmentDisplayStatus, "已对齐至 {time}。")
+        XCTAssertEqual(model.alignmentPosition, 108)
+
+        // A metadata-only refresh must preserve the last result.
+        await model.select(week: selected.week, track: selected.track)
+        XCTAssertEqual(model.alignmentPosition, 108)
+        await model.select(week: selected.week, track: withoutAlignment(selected.track))
+
+        XCTAssertNil(model.alignmentPosition)
+        XCTAssertFalse(model.alignmentBusy)
+        XCTAssertFalse(model.alignmentAvailable)
+        XCTAssertEqual(model.alignmentDisplayStatus, "本篇尚未提供现场对齐资料，请刷新目录或手动定位。")
+    }
+
+    func testPublishedFingerprintRefreshAndWindowChangeInvalidateOldFeedback() async throws {
+        let fixture = try Fixture()
+        let selected = try XCTUnwrap(fixture.selection)
+        let track = withoutAlignment(selected.track)
+        let hash = track.sha256
+        var document = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(selected.week)) as? [String: Any])
+        document["tracks"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode([track]))
+        document["sourceSha256"] = hash
+        document["sourceStartSeconds"] = 1700
+        document["sourceEndSeconds"] = 2000
+        func decodeWeek() throws -> SermonWeek {
+            try JSONDecoder().decode(SermonWeek.self, from: JSONSerialization.data(withJSONObject: document))
+        }
+        let unavailableWeek = try decodeWeek()
+        document["audioFingerprint"] = [
+            "schemaVersion": "sermon-audio-fingerprint-binding-v1", "pageId": selected.week.id,
+            "sourceSha256": hash, "trackSha256": hash,
+            "sourceStartSeconds": 1700, "sourceEndSeconds": 2000,
+            "algorithmVersion": "spectral-landmarks-v1", "captureSeconds": 10,
+            "indexSha256": hash, "indexUrl": "/fingerprints/\(hash.prefix(16))-landmarks.json"
+        ] as [String: Any]
+        let availableWeek = try decodeWeek()
+        try XCTUnwrap(availableWeek.audioFingerprint).validate(week: availableWeek, track: track)
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("TongxingAlignmentModel-\(UUID())")
+        let model = AppModel(supportDirectory: directory, contentOrigin: URL(string: "https://example.invalid")!)
+        defer {
+            model.playback.clear()
+            try? FileManager.default.removeItem(at: directory)
+        }
+        await model.select(week: unavailableWeek, track: track)
+        model.playback.clear()
+        XCTAssertEqual(model.alignmentDisplayStatus, "本篇尚未提供现场对齐资料，请刷新目录或手动定位。")
+        await model.select(week: availableWeek, track: track)
+        XCTAssertEqual(model.alignmentStatus, "请播放同一录音的原声，再点击听声对齐。")
+        XCTAssertEqual(model.alignmentDisplayStatus, "音频尚未准备就绪，请稍候或重新载入音频。")
+        model.updateAlignmentState(status: "已对齐至 {time}。", busy: false, position: 108)
+        document["sourceStartSeconds"] = 1701
+        await model.select(week: try decodeWeek(), track: track)
+        XCTAssertNil(model.alignmentPosition)
+        XCTAssertFalse(model.alignmentAvailable)
+        XCTAssertEqual(model.alignmentDisplayStatus, "本篇尚未提供现场对齐资料，请刷新目录或手动定位。")
+    }
+
+    private func withoutAlignment(_ track: SermonTrack) -> SermonTrack {
+        SermonTrack(id: track.id, label: track.label, voiceLabel: track.voiceLabel,
+            audioUrl: track.audioUrl, file: track.file, sha256: track.sha256,
+            durationSeconds: track.durationSeconds, cues: track.cues,
+            subtitleTiming: track.subtitleTiming, scope: track.scope)
+    }
+
     private static let match = FingerprintMatchResult(matched: true, offsetSeconds: 100, confidence: 0.9,
                                                       diagnostics: .init(reason: "matched"))
     private static let noMatch = FingerprintMatchResult(matched: false, offsetSeconds: nil, confidence: 0,
@@ -175,15 +320,46 @@ final class AudioAlignmentControllerTests: XCTestCase {
         var controller: AudioAlignmentController!
 
         init(playing: Bool = false, result: FingerprintMatchResult = AudioAlignmentControllerTests.match,
-             deadline: Duration = .seconds(20), matcher: AudioAlignmentController.Matcher? = nil) throws {
+             deadline: Duration = .seconds(20), matcher: AudioAlignmentController.Matcher? = nil,
+             published: Bool = false, publishedLoadGate: ResultGate? = nil) throws {
             let hash = String(repeating: "a", count: 64)
             let alignment = SermonAudioAlignment(fingerprintUrl: "/alignment/\(hash)-fingerprint.json", fingerprintSha256: hash,
                 sourceId: "source", referenceAudioSha256: hash, referenceDurationSeconds: 300, sourceVideoOffsetSeconds: 1700, trackSha256: hash)
             let track = SermonTrack(id: "track", label: "Candidate", voiceLabel: "Voice", audioUrl: "/media/test.mp3", file: "test.mp3",
-                sha256: hash, durationSeconds: 300, cues: [], subtitleTiming: "source_video_aligned_candidate", scope: "full_candidate", alignment: alignment)
-            let week = SermonWeek(id: "2026-09-06", date: "2026-09-06", sourceId: "source", sourceUrl: "https://example.test/source",
+                sha256: hash, durationSeconds: 300, cues: [], subtitleTiming: "source_video_aligned_candidate", scope: "full_candidate", alignment: published ? nil : alignment)
+            var week = SermonWeek(id: "2026-09-06", date: "2026-09-06", sourceId: "source", sourceUrl: "https://example.test/source",
                 title: "Synthetic", speaker: "Speaker", scripture: "", tracks: [track], videoSynchronization: "candidate_aligned",
                 humanApproval: .bool(false), candidateEvidence: .object(["syncMp3Sha256": .string(hash)]))
+            var publishedLoader: AudioAlignmentController.PublishedIndexLoader?
+            if published {
+                var doc = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(week)) as? [String: Any])
+                doc["sourceSha256"] = hash
+                doc["sourceStartSeconds"] = 1700
+                doc["sourceEndSeconds"] = 2000
+                doc["audioFingerprint"] = [
+                    "schemaVersion": "sermon-audio-fingerprint-binding-v1", "pageId": week.id,
+                    "sourceSha256": hash, "trackSha256": hash,
+                    "sourceStartSeconds": 1700, "sourceEndSeconds": 2000,
+                    "algorithmVersion": "spectral-landmarks-v1", "captureSeconds": 10,
+                    "indexSha256": hash, "indexUrl": "/fingerprints/\(hash.prefix(16))-landmarks.json"
+                ] as [String: Any]
+                week = try JSONDecoder().decode(SermonWeek.self, from: JSONSerialization.data(withJSONObject: doc))
+                let indexData = try JSONSerialization.data(withJSONObject: [
+                    "schemaVersion": "sermon-landmark-index-v1", "algorithmVersion": "spectral-landmarks-v1",
+                    "sampleRate": 8000, "hopSize": 256, "fftSize": 1024,
+                    "sourceSha256": hash, "trackSha256": hash, "pageId": week.id,
+                    "sourceStartSeconds": 1700, "sourceEndSeconds": 2000,
+                    "window": ["startSeconds": 1700, "endSeconds": 2000], "durationSeconds": 300,
+                    "landmarkCount": 1, "postings": ["1": [0]]
+                ])
+                let publishedIndex = try PublishedFingerprintIndex.decode(indexData)
+                try publishedIndex.validate(binding: XCTUnwrap(week.audioFingerprint))
+                publishedLoader = { _ in
+                    if let publishedLoadGate { _ = await publishedLoadGate.result() }
+                    return publishedIndex
+                }
+                capture.samples = [Float](repeating: 0, count: 80_000)
+            }
             selection = .init(week: week, track: track)
             let algorithm = try JSONSerialization.jsonObject(with: JSONEncoder().encode(FingerprintAlgorithm.supported))
             let indexData = try JSONSerialization.data(withJSONObject: [
@@ -196,7 +372,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
             player.isPlaying = playing; player.alignmentPlaybackIntent = playing
             capture.start = start
             controller = AudioAlignmentController(playback: player, capture: capture, getSelection: { [weak self] in self?.selection },
-                loadIndex: { _ in index }, match: matcher ?? { _, _ in result }, now: { [weak self] in
+                loadIndex: { _ in index }, loadPublishedIndex: publishedLoader, match: matcher ?? { _, _ in result }, now: { [weak self] in
                     self!.start.advanced(by: .seconds(self!.elapsed))
                 }, deadline: deadline, onState: { [weak self] status, _, position in self?.status = status; self?.resultPosition = position })
         }
@@ -226,10 +402,13 @@ final class AudioAlignmentControllerTests: XCTestCase {
         var failure: Error?
         var calls = 0
         var stops = 0
+        var requestedSeconds: [Double] = []
+        var samples: [Float] = []
         func capture(seconds: Double) async throws -> CapturedAudio {
             calls += 1
+            requestedSeconds.append(seconds)
             if let failure { throw failure }
-            return CapturedAudio(samples: [], sampleRate: 8000, startedAt: start)
+            return CapturedAudio(samples: samples, sampleRate: 8000, startedAt: start)
         }
         func cancel() { stops += 1 }
     }

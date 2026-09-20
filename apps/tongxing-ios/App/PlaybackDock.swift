@@ -8,6 +8,7 @@ struct PlaybackDock: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     var isPreparing = false
+    var alignmentModel: AppModel? = nil
     var precision: (() -> Void)? = nil
     var current: (() -> Void)? = nil
 
@@ -28,23 +29,37 @@ struct PlaybackDock: View {
     private var fullControls: some View {
         VStack(spacing: 10) {
             timeAndStatus
-            Group {
+            HStack(spacing: 12) {
                 if typeSize.isAccessibilitySize {
-                    VStack(spacing: 12) {
-                        playButton
-                        HStack(spacing: 16) { nudgeButton(-1); nudgeButton(1) }
-                    }
+                    compactNudge(-1).labelStyle(.iconOnly).frame(width: 44)
+                    playButton
+                    compactNudge(1).labelStyle(.iconOnly).frame(width: 44)
                 } else {
-                    HStack(spacing: 12) {
-                        nudgeButton(-1)
-                        playButton
-                        nudgeButton(1)
-                    }
+                    nudgeButton(-1)
+                    playButton
+                    nudgeButton(1)
                 }
-            }.disabled(!playback.isReady || isPreparing)
+            }
+            .buttonStyle(.plain).foregroundStyle(.primary)
+            .disabled(!playback.isReady || isPreparing)
 
+            if let alignmentModel {
+                AlignmentControls(model: alignmentModel, compact: true)
+            }
             if precision != nil || current != nil || playback.undoPosition != nil {
-                utilityActions
+                if typeSize.isAccessibilitySize {
+                    HStack(spacing: 16) {
+                        if let current { currentButton(current) }
+                        if let previous = playback.undoPosition { undoButton(previous) }
+                        Spacer(minLength: 0)
+                        if let precision { precisionButton(precision) }
+                    }
+                    .labelStyle(.iconOnly)
+                    .font(.footnote.weight(.medium))
+                    .buttonStyle(.plain).foregroundStyle(.primary)
+                } else {
+                    utilityActions
+                }
             }
         }
     }
@@ -63,6 +78,9 @@ struct PlaybackDock: View {
             }
             .buttonStyle(.plain).foregroundStyle(.primary)
             .disabled(!playback.isReady || isPreparing)
+            if let alignmentModel {
+                AlignmentControls(model: alignmentModel, compact: true)
+            }
         }
     }
 
@@ -95,10 +113,6 @@ struct PlaybackDock: View {
             .accessibilityLabel(localization.text("播放进度"))
             .accessibilityValue(localization.text("{time}，总长 {duration}。{status}", ["time": PlaybackTime.format(playback.position), "duration": PlaybackTime.format(playback.duration), "status": statusLabel]))
             .accessibilityIdentifier("playback-progress")
-            if typeSize.isAccessibilitySize {
-                Text(statusLabel).font(.caption).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
         }
     }
 
