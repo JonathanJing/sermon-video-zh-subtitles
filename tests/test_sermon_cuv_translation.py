@@ -562,7 +562,7 @@ class CuvTranslationTests(unittest.TestCase):
     def test_reuse_preserves_actual_request_and_skips_unchanged_selection(self):
         self.execute()
         old, (_, calls) = self.reuse_run()
-        self.assertEqual(3, calls, "Only audit and translation/review should run, not unchanged selection")
+        self.assertEqual(0, calls, "Metadata-only map revision reuses unchanged exact requests, including audit")
         cached = mod.read(next((self.out / "cache").glob("select-*.json")))
         original = mod.read(next((old / "cache").glob("select-*.json")))
         self.assertEqual(original["request"], cached["request"])
@@ -815,6 +815,29 @@ class CuvTranslationTests(unittest.TestCase):
     def test_parent_directory_cannot_be_output(self):
         with self.assertRaisesRegex(ValueError, "outside the parent"):
             mod.run(self.parent, self.parent.parent)
+
+
+    def test_new_run_distinguishes_evidence_block_from_execution_errors(self):
+        original = self.fake_chat
+        for kind in ("blocked", "runtime", "json"):
+            with self.subTest(kind=kind):
+                out = self.root / ("status-" + kind)
+                def fail(key, payload):
+                    if kind == "runtime":
+                        raise RuntimeError("provider unavailable")
+                    if kind == "json":
+                        raise json.JSONDecodeError("invalid response", "?", 0)
+                    response = original(key, payload)
+                    if mod.SELECT in payload["messages"][0]["content"]:
+                        selected = json.loads(response["choices"][0]["message"]["content"])
+                        selected["issues"] = ["Unresolved source extent"]
+                        return self.response(selected)
+                    return response
+                with mock.patch.dict(mod.os.environ, {"OPENAI_API_KEY": "test-only"}), mock.patch.object(mod, "chat_json", side_effect=fail):
+                    with self.assertRaises((ValueError, RuntimeError)):
+                        mod.run(self.parent, out, reference_map_path=self.map)
+                self.assertEqual("blocked" if kind == "blocked" else "error", mod.read(out / "run-status.json")["status"])
+                self.assertFalse((out / "spoken-review.json").exists())
 
 
 if __name__ == "__main__":
