@@ -264,7 +264,7 @@ def assemble(work, *, process_runner=None):
     return track
 
 
-def validate_review(work):
+def validate_review(work, *, write_receipt=True):
     synchronized = (work / "synchronization/assembly.json").exists()
     job, review = read(work / "job.json"), read(work / ("audio-review-synced.json" if synchronized else "audio-review.json"))
     validate_frozen(job)
@@ -318,8 +318,9 @@ def validate_review(work):
         locations[label] = matches[0]["gcsUri"]
     if not local_completion_artifacts({"locations": locations}):
         raise ValueError("Existing Saturday PDF / GCS completion check has not passed")
-    write_json(work / "saturday-completion.json", {"status": "completed", "sourceId": job["sourceId"], "jobSha256": sha256(work / "job.json"),
-        "checkedAt": datetime.now(timezone.utc).isoformat(), "validator": "scripts.run_codex_local_sermon_production.local_completion_artifacts"})
+    if write_receipt:
+        write_json(work / "saturday-completion.json", {"status": "completed", "sourceId": job["sourceId"], "jobSha256": sha256(work / "job.json"),
+            "checkedAt": datetime.now(timezone.utc).isoformat(), "validator": "scripts.run_codex_local_sermon_production.local_completion_artifacts"})
     return review
 
 

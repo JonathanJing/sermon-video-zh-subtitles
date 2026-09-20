@@ -71,6 +71,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--notify-recipients-secret", default=DEFAULT_RECIPIENTS_SECRET)
     parser.add_argument("--notify-sender-secret", default=DEFAULT_SENDER_SECRET)
     parser.add_argument("--model", default="gpt-6-astra")
+    parser.add_argument("--release-workflow-config", type=Path)
     parser.add_argument("--agent-backend", choices=("agents-api", "sdk"), default="agents-api")
     parser.add_argument("--agent-run-dir", type=Path)
     parser.add_argument("--resume-agent-session", action="store_true")
@@ -126,6 +127,7 @@ def make_agent_args(args: argparse.Namespace) -> argparse.Namespace:
         notify_sender_secret=args.notify_sender_secret,
         model=args.model,
         agent_backend=getattr(args, "agent_backend", "agents-api"),
+        release_workflow_config=getattr(args, "release_workflow_config", None),
         agent_run_dir=getattr(args, "agent_run_dir", None),
         resume_agent_session=getattr(args, "resume_agent_session", False),
         agent_timeout_seconds=getattr(args, "agent_timeout_seconds", 21600),
@@ -248,7 +250,7 @@ def completed_production_report(
     gcs_reader: Callable[[str], bytes] = read_gcs_bytes,
 ) -> dict[str, Any] | None:
     """Return a terminal report before refresh/secrets/agent work when this Sunday is done."""
-    if getattr(args, "force_after_complete", False):
+    if getattr(args, "force_after_complete", False) or getattr(args, "release_workflow_config", None):
         return None
     snapshot = local_completed_snapshot(
         args.out,
@@ -472,6 +474,8 @@ def write_report(path: Path, report: dict[str, Any]) -> None:
 
 
 def run_local_production(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
+    if args.resume_failed_generation and getattr(args, "release_workflow_config", None):
+        raise ValueError("Resume PDF generation separately, then re-inspect the full release workflow")
     if args.resume_failed_generation:
         if args.mode != "execute":
             raise SystemExit("--resume-failed-generation requires --mode execute")
@@ -498,7 +502,7 @@ def run_local_production(args: argparse.Namespace) -> tuple[int, dict[str, Any]]
         }
         write_report(args.out, report)
         return (0 if result.get("status") == "completed" else 2), report
-    completed = completed_production_report(args)
+    completed = None if getattr(args, "release_workflow_config", None) else completed_production_report(args)
     if completed is not None:
         write_report(args.out, completed)
         return 0, completed

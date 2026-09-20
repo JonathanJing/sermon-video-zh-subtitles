@@ -95,7 +95,8 @@ def reviewed_fixture(root, *, chunked=False, seal=True):
         srts[field] = path.read_text()
     segments = merge_aligned_segments(segments_from_srt(srts["zh"], lang="zh"), segments_from_srt(srts["en"], lang="en"))
     notes = {"status": "ready", "sermonDate": source["week"], "sermonTitle": "已核实主题", "speaker": "Eric Geiger",
-        "sourceSegmentCount": len(segments), "slices": summarize_slices(build_note_slices(segments))}
+        "sourceSegmentCount": len(segments), "slices": summarize_slices(build_note_slices(segments)),
+        "seriesTerminology": quality["seriesTerminology"]}
     write_json(pipeline / "sermon-interpretation/insights/openai-notes.json", notes)
     if seal:
         intake.seal_reviewed(run, source, media_probe=fake_probe, runner=fake_pdf_render)
