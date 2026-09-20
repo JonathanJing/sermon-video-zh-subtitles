@@ -90,6 +90,11 @@ def write_state(path: Path, *, sunday: str = "2026-06-28", url: str = "https://w
 
 
 class PostLiveSubtitleGenerationTest(unittest.TestCase):
+    def setUp(self):
+        remote = mock.patch('scripts.mfa_backend.preflight', return_value={'backend': 'dgx-spark-ssh', 'runtime': {'modelSha256': 'original'}})
+        self.spark_preflight = remote.start()
+        self.addCleanup(remote.stop)
+
     def test_unexpected_failure_reconciles_run_status_to_failed(self):
         with tempfile.TemporaryDirectory() as tempdir:
             root = Path(tempdir)
@@ -259,7 +264,7 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
     def test_run_downloads_audio_and_invokes_pipeline(self, _probe):
         calls = []
 
-        def fake_runner(command, check):
+        def fake_runner(command, check, env=None):
             calls.append(command)
             if command[0] == "yt-dlp":
                 template = Path(command[command.index("-o") + 1])
@@ -341,10 +346,11 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
         self.assertEqual(calls[0][0], "yt-dlp")
         self.assertIn("sermon_pipeline.py", calls[1][1])
         self.assertIn("build_sermon_reading_edition_with_openai.py", calls[2][1])
-        self.assertIn("render_mobile_pdf_from_srt.py", calls[3][1])
-        self.assertIn("--layout", calls[3])
-        self.assertEqual(calls[3][calls[3].index("--layout") + 1], "reading")
-        self.assertIn("generate_notes_with_openai.py", calls[4][1])
+        # Independent PDF branches may start in either order after the reviewed edition.
+        pdf_calls = {Path(command[1]).name: command for command in calls[3:5]}
+        reading_call = pdf_calls["render_mobile_pdf_from_srt.py"]
+        self.assertEqual(reading_call[reading_call.index("--layout") + 1], "reading")
+        self.assertIn("generate_notes_with_openai.py", pdf_calls)
         self.assertTrue(any("reading-edition-v2" in item for item in report["readingEditionCommand"]))
         self.assertIsNone(report["mobilePdfCommand"])
         self.assertTrue(any("sermon_zh_en_reading.pdf" in item for item in report["readingPdfCommand"]))
@@ -357,6 +363,32 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
         self.assertTrue(str(report["readingQualityReport"]).endswith("reading-edition-v2/reading_quality_report.json"))
         self.assertTrue(any(path.endswith("中英对照阅读版.pdf") for path in report["outputs"]))
         self.assertTrue(any(path.endswith("证道解读.pdf") for path in report["outputs"]))
+
+    def test_mfa_command_and_model_content_invalidate_cache(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            audio = root / "audio.wav"
+            dictionary = root / "dict.dict"
+            acoustic = root / "acoustic.zip"
+            for path in (audio, dictionary, acoustic):
+                path.write_bytes(b"original")
+            args = make_args(mfa_dictionary=dictionary, mfa_acoustic_model=acoustic)
+            command = mod.build_pipeline_command(args, root, root / "pipeline", "https://example.com/video")
+            self.assertEqual(command[command.index("--reading-aligner") + 1], "mfa")
+            self.assertEqual(command[command.index("--mfa-dictionary") + 1], str(dictionary))
+            initial = mod.stable_payload_hash(mod.build_pipeline_input_identity(args, audio))
+            self.spark_preflight.return_value = {"backend": "dgx-spark-ssh", "runtime": {"modelSha256": "updated"}}
+            self.assertNotEqual(initial, mod.stable_payload_hash(mod.build_pipeline_input_identity(args, audio)))
+
+    def test_mfa_does_not_reuse_legacy_summary_or_unverified_review_timing(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            summary = root / "summary.json"
+            summary.write_text(json.dumps({"outputMode": "reading", "models": {"referenceAsr": "gpt-transcribe"},
+                "readingSegmentTargetCharacters": 420}))
+            self.assertFalse(mod.pipeline_summary_matches(summary, output_mode="reading", reference_model="gpt-transcribe"))
+            self.assertTrue(mod.pipeline_summary_matches(summary, output_mode="reading", reference_model="gpt-transcribe", reading_aligner="legacy"))
+            self.assertFalse(mod.source_review_cache_ready(make_args(source_text_review=root / "review.json"), root))
 
     def test_subtitle_mode_keeps_whisper_as_explicit_opt_in(self):
         args = make_args(output_mode="subtitles")
@@ -451,6 +483,7 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
                         "outputMode": "reading",
                         "models": {"referenceAsr": "gpt-transcribe"},
                         "readingSegmentTargetCharacters": 420,
+                        "readingAligner": "mfa",
                         "pipelineInputFingerprint": "fingerprint-v1",
                     }
                 ),

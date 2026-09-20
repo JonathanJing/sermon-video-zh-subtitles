@@ -25,6 +25,8 @@
 
 ## A. 周六：直播/归档到两个 PDF
 
+2026-09-19：[生产并发与 MacBook 调度](../parallel-production.zh.md)已接入分块 ASR、双 PDF、原声对齐与 TTS 的受限并发；配音前置条件通过时可与 PDF 渲染重叠。真实双模型短样本已验证，整篇提速与听审仍待实际运行。最终来源、PDF、音轨和人工审核门槛保持不变。
+
 可选的[统一检查与执行入口](../saturday-harness.zh.md)按顺序连接原 PDF Supervisor 和配音桥接器，分开报告 PDF、候选、听审、同步与发布。[执行保护](../sermon-execution-harness.zh.md)连接 [Promptfoo 真实固定回归集](../saturday-quality-harness.zh.md)、[本机持久化追踪与自动观察](../sermon-trace-export.zh.md)及 [Temporal 持久工作流](../sermon-temporal.zh.md)。各自的实际集成证据和运行命令见专题文档；不表示真实生产或现场已通过，也未自动替换定时任务。
 
 **控制层迁移说明（2026-09-11）：** [Production Supervisor](../sermon-production-supervisor-agent.zh.md) 已在本地 runner 接入 OpenAI Agents API，默认 `--agent-backend agents-api`，原 Agents SDK / Responses 通过 `--agent-backend sdk` 显式回退。服务端 session 使用 `environment: none`；本地只执行状态检查、来源媒体准备（保留 timeline 工具名）和经审批 PDF 生成三个受限业务工具，另有结构化结论提交。Session 状态和工具结果持久化，同一会话恢复；自动新建会话须先确认远端 completed/failed/cancelled 且无执行中或结果未确认的工具，本地 timeout 或取消 ACK 不足以放行；source、人工审批、lease、恢复、QA 与发布继续由确定性层约束，完成状态须重新读取 production snapshot。
@@ -36,6 +38,8 @@ Supervisor 默认使用 `gpt-6-astra` Medium（本账户旧 `gpt-5.6` 查询返�
 **人工范围更新（2026-09-19）：** 完整礼拜的证道起止位置由操作员提供，已移除模型边界探测。前置阶段只下载并核验媒体，后续转写／翻译模型保持各自职责。旧 tool/action 与审批哈希字段为恢复兼容保留；[媒体证据 v2 与旧会话迁移](../codex-local-production-runbook.zh.md#人工范围流程2026-09-19-代码更新)说明具体合同。这是本地代码状态，不是远端发布或现场验收。
 
 **新页面自动听音定位（2026-09-19）：** 同步中文音轨进入 `build_weekly_app.py` 后，固定生成原声指纹、绑定来源／人工范围／页面／音轨，并纳入发行校验。自然语速未同步试听候选明确标记不可用；新同步页面不能漏掉指纹后继续发行。用户主动授权麦克风，本地匹配同一录制并自动定位播放；真实设备与现场效果单独验收。详见[每周发行流程](../tongxing-weekly-release.zh.md#新页面固定包含自动听音定位)及[双语制作流程页](../tongxing-video-to-page.html)。
+
+**每周默认海报交付：** 内容页发行并完成 HTTP 核验后，由 Codex 继续完成 ImageGen 主视觉、目录文字与真实二维码合成，以及最终 PNG／缩略图解码和目视 QA；无需用户每周重复要求。主题、日期、经文、讲员取本周 catalog，二维码精确指向该页 `?week=<page-id>`。这是默认交付约定，不代表 Supervisor 自动调用图像工具、付费 API 或自动发送／上传；海报不能提升页面的发布或人工验收状态。命令与证据要求见[每周海报交付](../tongxing-weekly-release.zh.md#每周海报交付)。
 
 ### 完整流程图
 

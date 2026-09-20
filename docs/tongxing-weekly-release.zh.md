@@ -4,7 +4,7 @@
 
 ## 每周路径
 
-来源完整可用 → 现有流程生成候选 → 内容审阅与对应音轨收据 → 自动生成并绑定听音定位指纹 → 组装完整发行包 → 检查目录差异 → 发布 → HTTP 文件核验 → App 刷新/下载验收。
+来源完整可用 → 现有流程生成候选 → 内容审阅与对应音轨收据 → 自动生成并绑定听音定位指纹 → 组装完整发行包 → 检查目录差异 → 发布 → HTTP 文件核验 → App 刷新/下载验收与本周海报交付（分别验收）。
 
 周次、source route 和 source ID 共同决定内容项。同一周的直播归档与独立 YouTube 视频分别保留。已存在的源身份不能借同一个 page ID 改写。音频与审核声明沿用各页原始数据，不因进入发行清单而升级。
 
@@ -81,6 +81,45 @@ python3 experiments/sermon-dubbing-poc/weekly_release.py record-published \
 登记命令要求完整文件与 Range 检查均通过，且绑定本次 build-report、站点和当前 registry head。成功状态为 `published_http_verified`，不等于真机或现场验收。重复登记同一已验证版本保持幂等。
 
 随后验证 App 刷新能列出新内容、来源与审核提示正确、下载及离线读取可用。新内容的现场同步另行验收；HTTP 报告始终明确标注客户端未测试，不能代替此步骤。
+
+## 每周海报交付
+
+海报是每周内容发行后的默认交付环节，无需用户每周重复要求。先完成本周内容的发布与 HTTP 核验，再以对应本地发行包、明确的页面 ID 和站点 origin 制作；海报交付不自动向聊天群、邮件或其他渠道发送，也不自动上传到站点。
+
+1. 从发行包 `public/weekly.json` 中精确选取 `page-id`，使用该页的中文主题、日期、经文与讲员。不得依据“最新一周”、文件夹名称或图像模型的自由生成文字猜测这些信息。保留该发行包及目录哈希、页面 ID、origin、主视觉文件和最终产物的绑定证据。
+2. 由 Codex 使用内置 ImageGen 制作与主题相符的主视觉，预留文字和二维码区域；二维码使用真实编码器生成，不要求图像模型绘制。合成脚本只使用已有主视觉，不自动调用付费 API。生成失败或工具不可用时记录待完成，不伪称图像已生成。
+3. 用本地脚本合成可分享海报；二维码必须编码选定站点的精确 `?week=<page-id>` 地址。海报上的主题、日期、经文与讲员使用 catalog 数据，不能靠宣传措辞把候选页升级为正式发布、人工听审通过或现场同步已验收，也不得暗示教会官方背书。
+
+不传 `--art` 时，只生成供 Codex 使用的 brief 和 prompt；据此使用内置 ImageGen 生成主视觉，不会由脚本自动调用图像 API。最终渲染必须绑定已通过的 HTTP 核验文件：用 `--verification` 显式指定，或使用发行包内默认的 `http-verification.json`。
+
+```bash
+# 准备 brief / prompt
+python3 scripts/build_sermon_poster.py \
+  --release artifacts/weekly-release/new-release \
+  --page-id '<本周目录中的完整页面 ID>' \
+  --verification /path/to/http-verification.json \
+  --out artifacts/sermon-poster/YYYY-MM-DD/delivery \
+  --origin https://ai-for-god-sermon-audio.web.app
+
+# ImageGen 完成后，用实际主视觉及其生成提示词渲染
+python3 scripts/build_sermon_poster.py \
+  --release artifacts/weekly-release/new-release \
+  --page-id '<本周目录中的完整页面 ID>' \
+  --verification /path/to/http-verification.json \
+  --art artifacts/sermon-poster/YYYY-MM-DD/main-art.png \
+  --art-prompt /path/to/actual-imagegen-prompt.txt \
+  --out artifacts/sermon-poster/YYYY-MM-DD/delivery \
+  --origin https://ai-for-god-sermon-audio.web.app
+```
+
+本地合成需要 macOS 的 Swift 命令行工具（AppKit、CoreImage、Vision）；准备 brief 不调用图片模型。
+
+产物为 `poster.png`、`poster-preview.png` 与 `poster-receipt.json`。`--art-prompt` 绑定实际用于生成该主视觉的提示词文件。
+
+4. 独立解码最终 PNG 与分享缩略图中的二维码，二者必须与目标完整 URL 逐字一致；检查目标页仍可访问且显示正确周次。还须目视检查两种尺寸的中文、日期、经文、讲员、留白、裁切和二维码清晰度。只验证二维码源文件或仅看合成前主视觉不能代替最终产物验收。
+5. Codex 完成两张图片的目视检查后，用完全相同的渲染参数追加 `--visual-reviewed`，把此次图片目视验收记入收据，保持 `humanApproval: false`；不能预先传该参数代替实际看图，也不修改音频人工听审状态。在任务中交付 `poster.png`、`poster-preview.png` 及 `poster-receipt.json`，保存本次输入绑定、二维码解码与目视 QA 结果。机器目视检查保持机器标记，不能记为人工批准；页面发布、音频听审、现场同步、海报 QA 和外部发送分别记录。用户未要求发送时，交付到当前任务即止。
+
+既有 Supervisor 和发行 CLI 不会因这项流程约定自动调用 ImageGen 或发送海报。续跑时复用已验证主视觉和发行包；若页面或链接变化，重新绑定并核验最终图，保留旧版证据。
 
 ## 历史与恢复
 

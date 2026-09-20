@@ -50,3 +50,11 @@ python3 docs/diagrams/render_diagrams.py \
 - [Context Pack 契约](../saturday-to-sunday-context-pack-plan.zh.md)
 
 每次修改须通过 XML、文档链接、`git diff --check`，并在浏览器中完整渲染，检查文字画布/卡片越界与连线。文档修改不重新运行模型生产、完整后端测试或现场实验。
+
+## 2026-09-20 局部更新
+
+本次只更新 `project-map.svg` 与 `saturday-chinese-voice-workflow.svg`，其余九图仍保持原记录。原生源为 `diagram-specs.json`，继续由 `render_diagrams.py` 生成；两图显式记录 `calibratedAt`，未设置该字段的历史图保留 2026-09-11 日期。没有重新调用 ImageGen。
+
+依据[9 月 20 日制作记录](../production-2026-09-20.zh.md)与[每周海报交付](../tongxing-weekly-release.zh.md#每周海报交付)，两图补充 MacBook 本地 TTS 的实际路径、本周用户听审与 Firebase／iOS 验收、尚未证实的现场同步，以及发布 HTTP 核验后默认制作海报的真实二维码和图像 QA。图中 Codex 图像步骤不表示定时 Supervisor 已调用 ImageGen。
+
+验证：两张原生 SVG 通过 XML 解析，并在 Chrome 本地页面完整渲染、分段目视检查全部节点与连接；中文可读、卡片无文字越界，新海报分支与现场路径分开。源文件与渲染结果保持可复现。文档链接和差异空白另随提交检查；没有重跑模型生产或现场实验。

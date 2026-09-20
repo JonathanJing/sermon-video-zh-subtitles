@@ -15,6 +15,14 @@
 
 2026-09-11 已退役旧 `sermon-post-live-timeline` Job；其配置、IAM 和执行记录保存在本地 `artifacts/evidence/gcp-cleanup-20260911/`。对应 `sermon-sat-post-live-subtitles` Scheduler 保持暂停，不能仅恢复调度就恢复云端生产。
 
+## MFA 阅读对齐
+
+新 reading 生产默认使用 MFA 词/音素对齐，替代字符比例估时。所有本地模型的目标路由为 **MacBook 优先、DGX Spark 备用**；MFA／G2P 优先使用本机独立环境，本机健康时不联系 Spark。备用默认启用，可用 `MFA_SPARK_FALLBACK=0` 或 `--no-mfa-spark-fallback` 禁用，远端使用独立的 `MFA_SPARK_*` 模型路径。远程可经 Tailscale 的 Mac mini relay。配置、ARM64 备用环境限制与缓存边界见 [MFA 生产接入](mfa-production.zh.md)。
+
+备用仅处理运行环境或推理可用性故障；文字错误、未知音素、损坏对齐与待审核状态仍停止，不能通过切换机器绕过。MFA 时间仍为模型估计，句界来自冻结英文标点；源窗口审批与人工审核要求保持不变。代码路由不代表两端部署、真实推理或某周产物已验收。
+
+OpenAI 云端转写与语言 API 保持不变。每周 TTS 和配音质检也采用 MacBook 优先、Spark 备用。MacBook MPS 已用授权讲员检查点完成 10 字中文单元的真实合成，输出 2.56 秒音频；短样本成功不代表整篇吞吐、音质或人工听审获准。媒体处理、排版和校验保留在调度端；无模型声音指纹匹配继续在听众浏览器内执行。
+
 ## 人工范围流程（2026-09-19 代码更新）
 
 完整礼拜不再调用模型识别证道起止位置。当前顺序为：下载完整媒体 → ffprobe/完整性核验 → 操作员提供绝对起止时间 → 持久化审批 → 英文转写、中文翻译与双 PDF。纯证道来源沿用独立同视频入口；在归档入口也可人工确认 `0 → 完整片长`。`gpt-transcribe` 仅在后续内容转写等独立阶段使用。
@@ -34,6 +42,12 @@
 这些字段必须保存在本地 log 中，不能仅在对话结束时口头报告。每次完成或停止都保留执行摘要，并关联来源／版本、工作量、质量、审批、交付和恢复证据；尚未采集的指标明确注明。必记内容与现有采集边界见[日志内容规范](workflow-accounting.zh.md#已接入的指标与保留边界)。
 
 排查最近一次执行：`.venv/bin/python scripts/sermon_logs.py artifacts/post-live-runs/YYYY-MM-DD/accounting --level WARNING`。需要完整事件去掉 `--level WARNING`；需要检查退出码加 `--check`。入口、阶段和子进程共享 `runId`，失败及业务等待状态保留在同一账本；详见[统一事件与错误追踪](workflow-accounting.zh.md#统一事件与错误追踪)。
+
+## 每周默认交付海报
+
+每周内容发行并完成 HTTP 核验后，默认继续制作本周分享海报，作为周末交付的一部分；用户无需每周重复提出。复用已核验的发行包和页面 ID，由 Codex 使用内置 ImageGen 生成主视觉，再用 `scripts/build_sermon_poster.py` 合成本周目录文字及真实二维码。不传 `--art` 先准备 brief／prompt；提供 `--art`、`--art-prompt` 及有效 HTTP 核验收据后渲染，实际目视后追加 `--visual-reviewed` 记录机器验收。交付 `poster.png`、`poster-preview.png` 与 `poster-receipt.json`。详细命令、绑定和验收见[每周海报交付](tongxing-weekly-release.zh.md#每周海报交付)。
+
+此处是 Codex 执行流程约定，不表示现有 Supervisor 或 Scheduler 已接入图像工具。准备与本地合成不自动发起付费 API 调用，不自动上传或发送海报；ImageGen 阶段由 Codex 按工具与已有授权执行。工具不可用或 QA 未通过时，保留待完成状态与证据，不把页面发行完成等同于海报完成。
 
 ## 自动运行入口
 

@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "sourceAudioSha256": "f0752e8ea6b1e14eeaa9a65ab35caadfb461f55d2531085fd1dc2cbf5f96aea7",
+  "frozenTextSha256": "6483db0b419575de75abd0d764574616bea672e94e868d68b416a4435a3a33ad",
+  "sourceId": "l8ucqF9uA9A",
+  "clip": "A",
+  "clipStart": 2820,
+  "duration": 60,
+  "exactFrozenTextPreserved": true,
+  "operatorReviewRequired": true,
+  "segments": 16,
+  "words": 148,
+  "sparkPreflightMatchesAlignmentReceipt": true,
+  "timingSeconds": {
+    "sparkCold": 28.104,
+    "sparkCached": 4.405,
+    "localCold": 29.491,
+    "localCached": 4.534
+  },
+  "receipts": {
+    "local": {
+      "backend": "macbook-local",
+      "runtimeSha256": "bfcf777002df9f0577270d5c915f3b2de66fca20abc9c9100531b9beb30b76d2",
+      "version": "3.4.2",
+      "fallbackReason": null,
+      "nativeKalpySha256": [
+        "db679f8fe0db2fc87e92f986436a228efc9d55e7a024f52ac54d461faf838a34"
+      ]
+    },
+    "fallback": {
+      "backend": "dgx-spark-ssh",
+      "runtimeSha256": "9ffc3446d0c94aefb0c11410187a7797f4da3e48fbae177e7c04fd1a4cecc26f",
+      "version": "3.4.2",
+      "fallbackReason": {
+        "phase": "preflight",
+        "code": "local-runtime-unavailable",
+        "detail": "Mac MFA runtime or model files unavailable"
+      }
+    }
+  },
+  "limitations": [
+    "Single 60-second frozen ASR clip; timing accuracy is not measured against human word-level Gold.",
+    "Elapsed times include runtime checks and transport and are not a general performance benchmark.",
+    "Source review and original punctuation remain authoritative; forced alignment estimates do not prove semantic sentence accuracy."
+  ],
+  "verification": {
+    "targetedUnitTests": 57,
+    "passed": true
+  },
+  "implementationSha256": {
+    "mfa_backend.py": "4cd8c6606b65f686bfa6bea9af82f3e15e0be02740e82124ef7ea6312788e246",
+    "mfa_spark.py": "a217ebeb00226525668c8686274306b4232e267b13e24e81c08f3495f663c468",
+    "mfa_alignment.py": "893ca3afb3cf9efe6f939b5962aba04c70deead448386b48c681d129ee866b02"
+  }
+}

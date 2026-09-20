@@ -1,5 +1,7 @@
 # 文档索引
 
+**本周制作记录（2026-09-20）：** [《耶稣的应许》制作过程、时间与 Token 用量](production-2026-09-20.zh.md)，包含发布、人工听审、海报及计量缺口。
+
 <p>
   <a href="./README.md">
     <img src="https://img.shields.io/badge/Language-English-blue" alt="English Documentation" />

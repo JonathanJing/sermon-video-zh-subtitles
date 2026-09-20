@@ -1,5 +1,7 @@
 # Documentation
 
+**Weekly production record (2026-09-20):** [Jesus’ Promises — production steps, timing and token accounting (中文)](production-2026-09-20.zh.md), including publication, listening acceptance, poster delivery and measurement gaps.
+
 <p>
   <a href="./README.zh.md">
     <img src="https://img.shields.io/badge/Language-中文文档-blue" alt="中文文档索引" />

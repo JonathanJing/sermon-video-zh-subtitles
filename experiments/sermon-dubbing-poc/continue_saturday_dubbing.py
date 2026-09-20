@@ -20,6 +20,7 @@ approves a boundary, changes the Supervisor/global source or publishes audio.
 from __future__ import annotations
 
 import argparse
+from contextvars import copy_context
 from contextlib import contextmanager, redirect_stdout
 from datetime import date, datetime, timezone
 import fcntl
@@ -33,7 +34,7 @@ import sys
 from poc import ROOT, probe, sha256, write_json
 sys.path.insert(0, str(ROOT))
 from scripts.sermon_execution_harness import WorkAlreadyRunning, bounded_process, work_lock
-from weekly_dubbing import prepare, read, resolve_approved_timeline, timecode, validate_frozen
+from weekly_dubbing import PDF_PACKAGE_KEYS, prepare, read, resolve_approved_timeline, timecode, validate_frozen, source_id_from_run, deferred_package
 
 HERE = Path(__file__).resolve().parent
 SCHEMA = "sermon-saturday-dubbing-bridge-v1"
@@ -179,18 +180,25 @@ def resolve_run(week, settings, supervisor_report, *, root=ROOT):
     return run, provenance
 
 
-def validate_live_inputs(run, week, *, root=ROOT, media_probe=probe):
+def validate_live_inputs(run, week, *, root=ROOT, media_probe=probe, defer_pdfs=False, reviewed_handoff=None):
     """Preflight the same inputs that prepare() validates again before mutation."""
     sys.path.insert(0, str(ROOT))
     from scripts.sermon_production_supervisor import lease_active
-    for stage in ["timeline", "generation"]:
+    if reviewed_handoff is not None:
+        if not defer_pdfs or reviewed_handoff.get("schemaVersion") != "sermon-producer-reading-handoff-v1" or reviewed_handoff.get("week") != week or reviewed_handoff.get("run") != str(run.resolve()):
+            raise ValueError("Invalid producer reading handoff")
+        expected = {key: {"path": str((run / rel).resolve()), "sha256": sha256(run / rel)}
+            for key, rel in INPUTS.items() if key not in PDF_PACKAGE_KEYS and key != "timeline"}
+        if reviewed_handoff.get("inputs") != expected:
+            raise ValueError("Reviewed producer inputs changed before candidate handoff")
+    for stage in (["timeline"] if reviewed_handoff is not None else ["timeline", "generation"]):
         lease = run / "leases" / (stage + ".json")
         if lease.exists() and lease_active(read(lease)):
             return None, ("waiting_saturday_run", "An existing Saturday stage still holds its source lease.")
-    paths = {key: run / relative for key, relative in INPUTS.items()}
+    paths = {key: run / relative for key, relative in INPUTS.items() if not (defer_pdfs and key in PDF_PACKAGE_KEYS)}
     if not paths["windowApproval"].is_file():
         return None, ("waiting_boundary", "A matching existing human sermon-window approval is required for the live archive.")
-    source_id = run.name.removeprefix("sermon_")
+    source_id = source_id_from_run(run)
     try:
         paths["timeline"] = resolve_approved_timeline(run, read(paths["windowApproval"]), week=week,
             source_url=f"https://www.youtube.com/watch?v={source_id}")
@@ -199,12 +207,12 @@ def validate_live_inputs(run, week, *, root=ROOT, media_probe=probe):
     missing = [key for key, path in paths.items() if not path.is_file()]
     if missing:
         return None, ("waiting_saturday_artifacts", "Missing reviewed Saturday artifacts: " + ", ".join(missing))
-    if any(read(paths[key]).get("status") != "pass" for key in ["readingQuality", "readingPdfQa", "companionPdfQa"]):
+    if any(read(paths[key]).get("status") != "pass" for key in (["readingQuality"] if defer_pdfs else ["readingQuality", "readingPdfQa", "companionPdfQa"])):
         return None, ("waiting_saturday_review", "Saturday reading and both PDF QA gates must pass before dubbing preparation.")
     notes = read(paths["outline"])
     if notes.get("status") != "ready" or notes.get("sermonDate") != week:
         raise ValueError("Companion source is not reviewed for this week")
-    for key in ["readingPdf", "companionPdf"]:
+    for key in ([] if defer_pdfs else ["readingPdf", "companionPdf"]):
         if paths[key].stat().st_size == 0:
             raise ValueError("An existing Saturday PDF is empty")
     approval, clip, summary = read(paths["windowApproval"]), read(paths["clipReceipt"]), read(paths["summary"])
@@ -250,7 +258,7 @@ def inspect_live_archive(config, config_path, week, settings, supervisor_report,
     run, provenance = resolve_run(week, settings, supervisor_report, root=root)
     if run is None:
         return waiting(route, provenance["status"], provenance["reason"], "continue_existing_saturday_workflow"), None
-    source_id = run.name.removeprefix("sermon_")
+    source_id = source_id_from_run(run)
     if not run.is_dir():
         return waiting(route, "waiting_source", "The selected Saturday archive has not been materialized locally.", "continue_existing_saturday_workflow", sourceId=source_id), None
     inputs, blocked = validate_live_inputs(run, week, root=root, media_probe=media_probe)
@@ -293,13 +301,20 @@ def plan_candidate(config, config_path, week, settings, supervisor_report, run, 
         "statement": config["authorizationStatement"], "purposes": ["chinese_dubbing"],
         "scopeReference": config["scopeReference"], "basis": "existing_user_authorization_reused_not_a_new_approval",
         "sources": [{"sourceId": source_id, "sha256": inputs["sourceAudio"]["sha256"]}]}
-    fingerprint = identity({"week": week, "sourceId": source_id, "inputs": inputs,
+    fingerprint_inputs = {"week": week, "sourceId": source_id, "inputs": inputs,
         "metadata": {key: metadata[key] for key in ["speaker", "title", "scripture"]},
-        "voiceInputSha256": training["inputManifestSha256"], "checkpointSha256": training["checkpointSha256"], "authorization": authorization})
+        "voiceInputSha256": training["inputManifestSha256"], "checkpointSha256": training["checkpointSha256"], "authorization": authorization}
+    fingerprint = identity(fingerprint_inputs)
     output_root = path_from(config.get("outputRoot", "artifacts/sermon-dubbing/weekly-bridge"), root)
     source_root = output_root / week / route / source_id
     existing = settings.get("existingWork")
     work = path_from(existing, root) if existing else source_root / ("job-" + fingerprint[:20])
+    # Reuse an earlier producer candidate after PDFs finish; publication-only
+    # inputs must not trigger a second paid TTS job.
+    deferred_inputs = {key: value for key, value in inputs.items() if key not in PDF_PACKAGE_KEYS}
+    candidate_work = source_root / ("job-" + identity({**fingerprint_inputs, "inputs": deferred_inputs})[:20])
+    if not existing and (candidate_work / "job.json").is_file() and deferred_package(read(candidate_work / "job.json")):
+        work = candidate_work
     if (work / "job.json").exists():
         job = read(work / "job.json")
         validate_frozen(job)
@@ -307,7 +322,7 @@ def plan_candidate(config, config_path, week, settings, supervisor_report, run, 
             raise ValueError("Existing job belongs to another source route")
         if any(job.get(key) != expected for key, expected in {"week": week, "sourceId": source_id, "speaker": metadata["speaker"], "title": metadata["title"], "scripture": metadata["scripture"]}.items()):
             raise ValueError("Existing job differs from the selected weekly source/metadata")
-        if job["voice"]["checkpointSha256"] != training["checkpointSha256"] or any(job["inputs"].get(key) != value for key, value in inputs.items()):
+        if job["voice"]["checkpointSha256"] != training["checkpointSha256"] or any(job["inputs"].get(key) != value for key, value in inputs.items() if not (deferred_package(job) and key in PDF_PACKAGE_KEYS)):
             raise ValueError("Existing job is not bound to these Saturday inputs / speaker checkpoint")
         state = candidate_state(work, validator=validator)
     elif existing or work.exists():
@@ -317,8 +332,12 @@ def plan_candidate(config, config_path, week, settings, supervisor_report, run, 
     auth_path = source_root / "authorizations" / (identity(authorization) + ".json")
     python = str(executable_path_from(config.get("pythonExecutable") or sys.executable, root))
     command = [python, str(HERE / "run_weekly_dubbing.py"), "--work", str(work), "--remote-checkpoint", str(checkpoint)]
+    if config.get("localTtsCheckpoint"):
+        command += ["--local-checkpoint", str(path_from(config["localTtsCheckpoint"], root))]
+    if config.get("localTtsPython"):
+        command += ["--local-python", str(executable_path_from(config["localTtsPython"], root))]
     if config.get("mlxPython"):
-        command += ["--mlx-python", str(executable_path_from(config["mlxPython"], root))]
+        command += ["--speech-python", str(executable_path_from(config["mlxPython"], root))]
     if config.get("sparkHost"):
         command += ["--host", config["sparkHost"]]
     bridge_command = [python, str(HERE / "continue_saturday_dubbing.py"), "--week", week, "--config", str(config_path), "--supervisor-report", str(supervisor_report), "--execute"]
@@ -441,6 +460,83 @@ def continue_saturday(config_path, week, supervisor_report=None, *, execute=Fals
         report["nextActions"] = report["routes"]["same_video"]["nextActions"] + report["routes"]["live_archive"]["nextActions"]
         write_json(plan["outputRoot"] / week / route / plan["sourceId"] / "bridge-latest.json", report)
         return report
+
+
+class CandidateNotReady(Exception):
+    """Ordinary audio readiness wait; does not invalidate the independent PDFs."""
+    def __init__(self, status, reason):
+        self.status = status
+        self.reason = reason
+        super().__init__(reason)
+
+
+def start_producer_candidate(config_path, week, run, executor, *, root=ROOT, media_probe=probe,
+                             runner=bounded_process, validator=candidate_validator):
+    """Producer-only milestone hook; call after reviewed reading AND outline.
+
+    The calling producer owns the generation lease and awaits the returned
+    future before completion. The worker rechecks the planned input hashes when
+    freezing its immutable job; only delivery artifacts are deferred. No CLI
+    bypass is exposed.
+    """
+    config_path, run = Path(config_path).resolve(), Path(run).resolve()
+    if not config_path.is_file():
+        raise CandidateNotReady("waiting_configuration", "The dubbing bridge configuration is not available")
+    config = read(config_path)
+    if not isinstance(config, dict) or config.get("schemaVersion") != SCHEMA:
+        raise ValueError("Unsupported dubbing bridge configuration")
+    weeks = config.get("weeks", {})
+    if not isinstance(weeks, dict):
+        raise ValueError("Dubbing weeks configuration must be an object")
+    if week not in weeks:
+        raise CandidateNotReady("waiting_metadata", "No dubbing metadata is configured for this week")
+    if not isinstance(weeks[week], dict):
+        raise ValueError("Weekly dubbing metadata must be an object")
+    handoff = {"schemaVersion": "sermon-producer-reading-handoff-v1", "week": week, "run": str(run),
+        "inputs": {key: {"path": str((run / rel).resolve()), "sha256": sha256(run / rel)}
+            for key, rel in INPUTS.items() if key not in PDF_PACKAGE_KEYS and key != "timeline"}}
+    inputs, blocked = validate_live_inputs(run, week, root=root, media_probe=media_probe,
+                                           defer_pdfs=True, reviewed_handoff=handoff)
+    if blocked:
+        raise ValueError("Producer dubbing handoff is not ready: " + blocked[1])
+    source_id = source_id_from_run(run)
+    settings = config.get("weeks", {}).get(week, {}).get("liveArchive", {})
+    report, plan = plan_candidate(config, config_path, week, settings, None, run, source_id, inputs,
+        {"kind": "producer_reviewed_text_milestone", "pdfPackage": "pending"},
+        route="live_archive", root=root, validator=validator)
+    if plan is None:
+        if report.get("status") in {"waiting_metadata", "waiting_voice", "waiting_authorization_scope"}:
+            raise CandidateNotReady(report["status"], report["reason"])
+        raise ValueError("Producer dubbing handoff is not ready: " + report["reason"])
+
+    def execute():
+        with source_lock(plan["outputRoot"], week, source_id) as acquired:
+            if not acquired:
+                raise WorkAlreadyRunning("Another dubbing runner owns this source")
+            with work_lock(plan["work"]):
+                if not (plan["work"] / "job.json").exists():
+                    auth_path = plan["authorizationPath"]
+                    if auth_path.exists() and read(auth_path) != plan["authorization"]:
+                        raise ValueError("Authorization changed before candidate freeze")
+                    write_json(auth_path, plan["authorization"])
+                    job = prepare(run, plan["voiceRun"], plan["work"], week, plan["metadata"]["title"],
+                        plan["metadata"]["speaker"], plan["metadata"]["scripture"], auth_path,
+                        defer_pdfs=True, report_stream=sys.stderr)
+                    if any(job["inputs"].get(key) != value for key, value in inputs.items()):
+                        raise ValueError("Reviewed source changed before candidate freeze")
+                else:
+                    validate_frozen(read(plan["work"] / "job.json"))
+            write_json(plan["work"] / "producer-reading-handoff.json", handoff)
+            from scripts.sermon_accounting import subprocess_environment
+            with (plan["work"] / "bridge-runner.log").open("a") as log:
+                result = runner(plan["command"], stdout=log, stderr=subprocess.STDOUT, check=False, timeout=21660,
+                                env=subprocess_environment())
+            if result.returncode:
+                raise ValueError("Concurrent dubbing candidate failed; inspect bridge-runner.log")
+            evidence = validator(plan["work"])
+            return {"status": "waiting_conversation_review", "work": str(plan["work"]), "candidateEvidence": evidence,
+                    "pdfPackagePolicy": "deferred_until_release", "published": False}
+    return executor.submit(copy_context().run, execute)
 
 
 def main():

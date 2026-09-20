@@ -105,7 +105,7 @@ class SVG:
         y=self.h-129
         self.rect(64,y,1472,78,'#E9EEE8',rx=16)
         for i,line in enumerate(self.spec['footer'][:2]):self.text(84,y+29+i*29,line,20,'#4C635F')
-        self.text(64,self.h-22,'内容校准 2026-09-11 · 设计参考 GPT Image 2.5 Sunburst · 原生可编辑 SVG',15,'#7B8B88')
+        self.text(64,self.h-22,f"内容校准 {self.spec.get('calibratedAt', '2026-09-11')} · 设计参考 GPT Image 2.5 Sunburst · 原生可编辑 SVG",15,'#7B8B88')
         self.text(1536,self.h-22,'实线：主路径   虚线：条件 / 实验 / 历史',15,'#7B8B88',400,'end')
     def render(self):
         p=self.spec

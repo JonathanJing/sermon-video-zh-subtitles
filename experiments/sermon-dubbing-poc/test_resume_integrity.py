@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from check_weekly_timing import budgets
 from poc import sha256, write_json
-from prepare_voice_candidates import ASR, ALIGNER
+from speech_backend import ASR, ALIGNER
 from render_weekly_audio import render_identity
 import run_weekly_dubbing as runner
 from scripts import sermon_accounting as accounting

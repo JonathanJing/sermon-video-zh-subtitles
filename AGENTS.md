@@ -49,6 +49,10 @@ Keep ignored media, `artifacts/`, `tmp/`, `output/pdf/`, recordings, environment
 
 Inspect exit status and artifacts. After relevant checks pass, widen/repeat only for new changes, failures or unresolved risks. Distinguish synthetic tests, file replay, acoustic input and real-venue/mobile acceptance. If a required environment is unavailable, report the exact unverified path and how to run it.
 
+## Weekly poster delivery
+
+A poster is a default weekly deliverable after the content release and its HTTP verification, without requiring a fresh weekly request. Follow [the poster delivery procedure](docs/tongxing-weekly-release.zh.md#每周海报交付) and reuse verified artifacts. Codex uses the built-in ImageGen tool for the main artwork; `scripts/build_sermon_poster.py` composes catalog-derived Chinese metadata and a real QR code for the exact `?week=<page-id>` link. Without `--art`, prepare the brief/prompt only; render with `--art`, `--art-prompt` and a valid `--verification` receipt (or the release-local default `http-verification.json`). Verify decoding of both `poster.png` and `poster-preview.png`, then visually inspect both. Only after that inspection, repeat the same rendering arguments with `--visual-reviewed` to record Codex visual QA in `poster-receipt.json`, retaining `humanApproval: false`. Keep poster QA separate from publication, listening and live-sync acceptance. Preparation/composition must not automatically call paid APIs, upload the poster or send messages; report and retain any unfinished generation/QA stage rather than claiming completion. Do not alter the page's review status through promotional wording.
+
 ## Delivery
 
 Report the result, meaningful verification and remaining limits. Do not commit or push unless requested. Keep commits scoped; before a requested push, fetch/check divergence, then verify the remote commit. Force-push requires explicit authorization.

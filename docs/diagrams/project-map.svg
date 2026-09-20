@@ -1,8 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1350" viewBox="0 0 1600 1350" role="img" aria-labelledby="title desc">
-<title id="title">三条交付路径与共同证据</title><desc id="desc">文档、预制音频、实时字幕分别验收；现场输入始终权威 文档质检、声音听审、现场验收分别成立；任何一项通过不替代其他交付门槛。 独立研究：本机实验模型、领域后训练与现场同步；未过质量及现场门，不升级默认。</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1690" viewBox="0 0 1600 1690" role="img" aria-labelledby="title desc">
+<title id="title">三条交付路径与共同证据</title><desc id="desc">文档、预制音频、实时字幕分别验收；现场输入始终权威 发布 HTTP 核验后默认交付海报；文档、声音、App、图像及真实现场分别验收。 9/20 Firebase / iOS 与用户听审已通过；现场同步仍未证实，海报不替代任何内容门槛。</desc>
 <style>text{font-family:"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;} text{font-variant-ligatures:none}</style>
 <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M1 1 L7 4 L1 7" fill="none" stroke="context-stroke" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
-<rect x="0" y="0" width="1600" height="1350" rx="0" fill="#F5F4EF" stroke="none" />
+<rect x="0" y="0" width="1600" height="1690" rx="0" fill="#F5F4EF" stroke="none" />
 <rect x="64" y="57" width="44" height="5" rx="2" fill="#267D72" stroke="none" />
 <text x="124" y="69" font-size="17" font-weight="600" fill="#64787A" text-anchor="start" letter-spacing="2">PROJECT MAP</text>
 <text x="64" y="127" font-size="44" font-weight="650" fill="#19343D" text-anchor="start" >三条交付路径与共同证据</text>
@@ -33,6 +33,9 @@
 <path data-edge="evidence:translate" d="M290 825 L290 880 L800 880 L800 935" fill="none" stroke="#817397" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
 <rect x="512.0" y="853" width="86.0" height="30" rx="6" fill="#F5F4EF" stroke="none" />
 <text x="555" y="875" font-size="17" font-weight="500" fill="#817397" text-anchor="middle" >能力门控</text>
+<path data-edge="app:poster" d="M1520 710 L1578 710 L1578 1225 L1310 1225 L1310 1275" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="poster:qr" d="M1100 1390.0 L1010 1390.0" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="qr:posterqa" d="M590 1390.0 L500 1390.0" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
 <g id="node-source" data-node="source">
 <rect x="80" y="259" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
 <rect x="80" y="255" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
@@ -73,9 +76,9 @@
 <rect x="614" y="616" width="35" height="28" rx="8" fill="#FAF2E5" stroke="none" />
 <text x="631.5" y="636" font-size="16" font-weight="700" fill="#AA7930" text-anchor="middle" data-box="614,616,35,28" >04</text>
 <text x="663" y="636" font-size="15" font-weight="600" fill="#AA7930" text-anchor="start" data-box="658,613,332,35" >门槛 / GATE</text>
-<text x="614" y="677" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="610,650,380,162" >中文配音候选</text>
-<text x="614" y="717" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,650,380,162" >授权声音与来源绑定</text>
-<text x="614" y="746" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,650,380,162" >独立内容审核及人工听审</text>
+<text x="614" y="677" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="610,650,380,162" >MacBook 本地中文配音</text>
+<text x="614" y="717" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,650,380,162" >原声参考与来源身份绑定</text>
+<text x="614" y="746" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,650,380,162" >9/20 用户听审已通过</text>
 </g>
 <g id="node-app" data-node="app">
 <rect x="1100" y="599" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
@@ -86,7 +89,7 @@
 <text x="1173" y="636" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="1168,613,332,35" >交付 / OUTPUT</text>
 <text x="1124" y="677" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1120,650,380,162" >同行每周发行</text>
 <text x="1124" y="717" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,650,380,162" >完整发行包与历史保留</text>
-<text x="1124" y="746" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,650,380,162" >发布后访问及音频范围核验</text>
+<text x="1124" y="746" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,650,380,162" >发布后 HTTP / Range 核验</text>
 </g>
 <g id="node-live" data-node="live">
 <rect x="80" y="939" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
@@ -133,9 +136,42 @@
 <text x="104" y="746" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,650,380,162" >包经同篇与内容审核</text>
 <text x="104" y="775" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,650,380,162" >能力允许后才可选增强</text>
 </g>
-<rect x="64" y="1221" width="1472" height="78" rx="16" fill="#E9EEE8" stroke="none" />
-<text x="84" y="1250" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >文档质检、声音听审、现场验收分别成立；任何一项通过不替代其他交付门槛。</text>
-<text x="84" y="1279" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >独立研究：本机实验模型、领域后训练与现场同步；未过质量及现场门，不升级默认。</text>
-<text x="64" y="1328" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="start" >内容校准 2026-09-11 · 设计参考 GPT Image 2.5 Sunburst · 原生可编辑 SVG</text>
-<text x="1536" y="1328" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="end" >实线：主路径   虚线：条件 / 实验 / 历史</text>
+<g id="node-poster" data-node="poster">
+<rect x="1100" y="1279" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="1100" y="1275" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="1101" y="1293" width="4" height="194" rx="2" fill="#267D72" stroke="none" />
+<rect x="1124" y="1296" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="1141.5" y="1316" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="1124,1296,35,28" >10</text>
+<text x="1173" y="1316" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="1168,1293,332,35" >执行 / PROCESS</text>
+<text x="1124" y="1357" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1120,1330,380,162" >Codex 海报主视觉</text>
+<text x="1124" y="1397" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,1330,380,162" >内置 ImageGen</text>
+<text x="1124" y="1426" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,1330,380,162" >定时 Supervisor 不自动调用</text>
+</g>
+<g id="node-qr" data-node="qr">
+<rect x="590" y="1279" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="590" y="1275" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="591" y="1293" width="4" height="194" rx="2" fill="#267D72" stroke="none" />
+<rect x="614" y="1296" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="631.5" y="1316" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="614,1296,35,28" >11</text>
+<text x="663" y="1316" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="658,1293,332,35" >执行 / PROCESS</text>
+<text x="614" y="1357" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="610,1330,380,162" >目录文字 + 真实二维码</text>
+<text x="614" y="1397" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,1330,380,162" >精确本周页面 ?week= 链接</text>
+<text x="614" y="1426" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="610,1330,380,162" >页面状态与海报 QA 分开</text>
+</g>
+<g id="node-posterqa" data-node="posterqa">
+<rect x="80" y="1279" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="80" y="1275" width="420" height="230" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="81" y="1293" width="4" height="194" rx="2" fill="#267D72" stroke="none" />
+<rect x="104" y="1296" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="121.5" y="1316" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="104,1296,35,28" >12</text>
+<text x="153" y="1316" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="148,1293,332,35" >交付 / OUTPUT</text>
+<text x="104" y="1357" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="100,1330,380,162" >每周默认海报交付</text>
+<text x="104" y="1397" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,1330,380,162" >最终 PNG / 缩略图解码</text>
+<text x="104" y="1426" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,1330,380,162" >目视 QA；不自动上传发送</text>
+</g>
+<rect x="64" y="1561" width="1472" height="78" rx="16" fill="#E9EEE8" stroke="none" />
+<text x="84" y="1590" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >发布 HTTP 核验后默认交付海报；文档、声音、App、图像及真实现场分别验收。</text>
+<text x="84" y="1619" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >9/20 Firebase / iOS 与用户听审已通过；现场同步仍未证实，海报不替代任何内容门槛。</text>
+<text x="64" y="1668" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="start" >内容校准 2026-09-20 · 设计参考 GPT Image 2.5 Sunburst · 原生可编辑 SVG</text>
+<text x="1536" y="1668" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="end" >实线：主路径   虚线：条件 / 实验 / 历史</text>
 </svg>

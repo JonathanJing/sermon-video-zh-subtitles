@@ -14,7 +14,7 @@ import prepare_same_video as intake
 import render_weekly_audio as renderer
 from continue_saturday_dubbing import continue_saturday
 from poc import sha256, write_json
-from prepare_voice_candidates import ASR, ALIGNER
+from speech_backend import ASR, ALIGNER
 from run_weekly_dubbing import validate_candidate
 from scripts import sermon_accounting as accounting
 from scripts.build_sermon_reading_edition_with_openai import build_semantic_blocks, reading_quality_report, write_block_srt
@@ -95,7 +95,8 @@ def reviewed_fixture(root, *, chunked=False, seal=True):
         srts[field] = path.read_text()
     segments = merge_aligned_segments(segments_from_srt(srts["zh"], lang="zh"), segments_from_srt(srts["en"], lang="en"))
     notes = {"status": "ready", "sermonDate": source["week"], "sermonTitle": "已核实主题", "speaker": "Eric Geiger",
-        "sourceSegmentCount": len(segments), "slices": summarize_slices(build_note_slices(segments))}
+        "sourceSegmentCount": len(segments), "slices": summarize_slices(build_note_slices(segments)),
+        "seriesTerminology": quality["seriesTerminology"]}
     write_json(pipeline / "sermon-interpretation/insights/openai-notes.json", notes)
     if seal:
         intake.seal_reviewed(run, source, media_probe=fake_probe, runner=fake_pdf_render)

@@ -11,9 +11,9 @@
 
 **[Video → new weekly page: bilingual HTML workflow (GitHub)](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/main/docs/tongxing-video-to-page.html)** — includes model roles and MacBook-first / DGX Spark fallback routing.
 
-Help Chinese-speaking attendees follow an English sermon. The featured direction is **Chinese dubbing prepared on Saturday for playback against the same video on Sunday**: reviewed source text, authorized speaker voice training, MP3 audio, timed Chinese captions, and a sermon companion. Dual-PDF production and local live captions remain separate workflows.
+Help Chinese-speaking attendees follow an English sermon. The featured direction is **Chinese dubbing prepared on Saturday for playback against the same video on Sunday**: reviewed source text, authorized speaker-reference speech synthesis, MP3 audio, timed Chinese captions, and a sermon companion. Dual-PDF production and local live captions remain separate workflows.
 
-> **State calibrated on 2026-09-05.** A full-length synchronized listening candidate is available. Same-version sermon-only video intake, the scheduled dubbing hook, and venue acceptance still have explicit gaps. Code checks, model review, candidate publication, and human/venue acceptance have separate evidence. Full weekly media, audio, and PDFs stay outside Git.
+> **State calibrated on 2026-09-20.** “Jesus promises” by Eric Geiger is published with Chinese audio generated locally on MacBook. The user confirmed listening acceptance and Firebase/iOS playback; venue synchronization remains unverified. A share poster with a real weekly-page QR code is now a default weekly deliverable. See the [September 20 production record (中文)](docs/production-2026-09-20.zh.md). Full weekly media, audio and PDFs stay outside Git.
 
 > This is an independent personal open-source project. It is not affiliated with, endorsed by, sponsored by, approved by, or operated by Mariners Church. Use only public or otherwise authorized media, and do not bypass access controls, DRM, or platform restrictions.
 
@@ -31,23 +31,25 @@ operator page in standby, and report the effective model and preflight results.
 
 ## 1. Featured: English sermon video → Chinese dubbing in the speaker’s voice
 
-[Listening app](https://ai-for-god-sermon-audio.web.app) · [System design and model choices (中文)](docs/sermon-dubbing-system-design.zh.md) · [Operator runbook](experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md) · [Measured candidate report](docs/sermon-dubbing-astra-review-2026-09-05.zh.md)
+[Listening app](https://ai-for-god-sermon-audio.web.app) · [System design and model choices (中文)](docs/sermon-dubbing-system-design.zh.md) · [Operator runbook](experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md) · [This week’s production record (中文)](docs/production-2026-09-20.zh.md)
 
 ![Parallel source routes, speaker training, Chinese audio review and Sunday playback](docs/diagrams/saturday-chinese-voice-workflow.svg)
 
-**Two source routes run in parallel.** The future primary route awaits the exact sermon-only video used on Sunday; verified file identity and sermon-only scope would allow whole-file processing. The current livestream archive remains a fallback, reusing the approved sermon window and dual-PDF QA. Missing primary media does not block the archive workflow, and an archive is not automatically the same Sunday video.
+**Source identity determines playback.** The September 20 edition uses the user-confirmed complete service recording, with the sermon window **29:49–1:02:09** inside a **1:16:07** video. Same-video intake supports an approved window in a full recording as well as a verified sermon-only file. Archive intake remains available; another recording of the same message is not automatically interchangeable.
 
 | Stage | Current implementation |
 |---|---|
 | English video transcription | `gpt-transcribe`; reuse trustworthy English sources and check ambiguous audio separately |
 | Spoken Chinese revision and review | In-conversation `gpt-6-astra`, checking complete meaning, negation, Scripture, names and quotation boundaries |
-| Speaker voice | Separate Qwen3-TTS 1.7B Base training on Spark; reuse each speaker’s checkpoint weekly |
+| Speaker voice | This edition: MacBook-local MLX Qwen3-TTS with an authorized speaker reference; Spark training remains a separate route |
 | Audio checks and timing | Local Qwen3-ASR back-transcription, ForcedAligner acoustic anchors, and measured natural speech budgets |
 | Listening delivery | Dedicated Firebase app with weekly selection, MP3 downloads, captions, outline, seeking and fine adjustment |
 
-**Verified candidate:** the August 30 sermon has 55 reviewed blocks, 18 revised spoken passages, and a **29:30 synchronized track with 118 speech units**. All 55 timing budgets pass. Blockwise waveform verification found no speech trimming, overlap, or speed changes. The final invitation has an explicitly reviewed 0.80-second playback lead while retaining its original English anchor. Published file hashes, audio Range requests, playback, seeking, and captions were checked; earlier audition samples remain available.
+**Current edition:** [Jesus promises — September 20](https://ai-for-god-sermon-audio.web.app/?week=2026-09-20-same_video-7c193fd4-bc90-4f3b-aa00-37dfe8423aa0), Eric Geiger, Revelation 2–3. Source-bound Chinese review, exact CUV quotation locks, local speech synthesis and measured timing were followed by pronunciation repairs and user listening acceptance. Firebase and iOS playback were accepted by the user; the [production record](docs/production-2026-09-20.zh.md) keeps stage timing, token accounting and evidence boundaries.
 
-**Current limits:** three name/pronunciation questions and two minor spoken/ASR variants remain on the listening checklist. The bridge is verified, but its scheduled-task update is unconfirmed. The same-video ingestion adapter, full human listening review, and venue playback are pending. “Synchronized preview” means alignment to the frozen source timeline; it does not automatically track a separate venue player.
+**Default weekly poster:** after publication and HTTP verification, Codex creates ImageGen artwork and composes catalog text plus a real QR code for the exact weekly-page link. Final PNG and sharing-preview decoding and visual QA are required. This is a delivery step; the scheduled Supervisor does not automatically call ImageGen, upload or send the poster. See the [weekly release procedure](docs/tongxing-weekly-release.zh.md#每周海报交付).
+
+**Current limits:** user listening and Firebase/iOS acceptance do not establish venue synchronization. Source timeline alignment and same-recording sound-location capability retain their separate evidence; a different live delivery cannot reuse the timing unchanged. The [August 30 candidate report](docs/sermon-dubbing-astra-review-2026-09-05.zh.md) remains historical evidence.
 
 ## Why dual PDFs and live captions remain
 

@@ -211,7 +211,7 @@ class SaturdayBridgeTests(unittest.TestCase):
             route = report["routes"]["live_archive"]
             command = route["plannedRunnerCommand"]
             self.assertEqual(command[0], str(python.absolute()))
-            self.assertEqual(command[command.index("--mlx-python") + 1], str(mlx_python.absolute()))
+            self.assertEqual(command[command.index("--speech-python") + 1], str(mlx_python.absolute()))
             self.assertEqual(route["nextActions"][0]["commands"][0][0], str(python.absolute()))
             self.assertEqual(route["run"], str(run.resolve()))
             self.assertEqual(self.snapshot(root), before)

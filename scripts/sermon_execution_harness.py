@@ -105,12 +105,14 @@ def _terminate_group(process):
 
 
 def bounded_process(command, *, timeout, check=False, capture_output=False,
-                    stdout=None, stderr=None, text=False, **kwargs):
+                    stdout=None, stderr=None, text=False, cancel_event=None, **kwargs):
     """subprocess.run subset with a finite deadline and process-group cleanup."""
     if not isinstance(timeout, (int, float)) or not math.isfinite(timeout) or timeout <= 0:
         raise ValueError("A positive finite command timeout is required")
     if isinstance(command, (str, bytes)) or kwargs.get("shell"):
         raise ValueError("Use an explicit argument list, never a local shell")
+    if cancel_event is not None and cancel_event.is_set():
+        raise ExecutionTerminated("Parallel stage cancelled before launch")
     if capture_output:
         if stdout is not None or stderr is not None:
             raise ValueError("capture_output conflicts with explicit streams")
@@ -149,7 +151,21 @@ def bounded_process(command, *, timeout, check=False, capture_output=False,
                 os.close(sentinel_read)
                 sentinel_read = None
         try:
-            output, errors = process.communicate(timeout=timeout)
+            if cancel_event is None:
+                output, errors = process.communicate(timeout=timeout)
+            else:
+                deadline = time.monotonic() + timeout
+                while True:
+                    if cancel_event.is_set():
+                        raise ExecutionTerminated("Parallel stage cancelled")
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        raise subprocess.TimeoutExpired(command, timeout)
+                    try:
+                        output, errors = process.communicate(timeout=min(.1, remaining))
+                        break
+                    except subprocess.TimeoutExpired:
+                        continue
         except BaseException as original:
             try:
                 _terminate_group(process)
@@ -176,6 +192,8 @@ class Execution:
     def __init__(self, work, job_sha256, *, timeout=21600):
         if not isinstance(timeout, (int, float)) or not math.isfinite(timeout) or timeout <= 0:
             raise ValueError("A positive finite execution timeout is required")
+        self._mutex = threading.RLock()
+        self._previous_sigterm = None
         self.folder = Path(work) / "accounting" / "harness"
         self.attempt = uuid.uuid4().hex
         self.deadline = time.monotonic() + timeout
@@ -185,9 +203,10 @@ class Execution:
                      "approvalGranted": False, "published": False}
 
     def persist(self):
-        self.data["updatedAt"] = utc_now()
-        atomic_json(self.folder / "attempts" / f"{self.attempt}.json", self.data)
-        atomic_json(self.folder / "latest.json", self.data)
+        with self._mutex:
+            self.data["updatedAt"] = utc_now()
+            atomic_json(self.folder / "attempts" / f"{self.attempt}.json", self.data)
+            atomic_json(self.folder / "latest.json", self.data)
 
     def __enter__(self):
         previous = self.folder / "latest.json"
@@ -204,6 +223,11 @@ class Execution:
                 saved.chmod(0o600)
                 self.data["previousStateUnreadable"] = True
         self.persist()
+        if threading.current_thread() is threading.main_thread():
+            self._previous_sigterm = signal.getsignal(signal.SIGTERM)
+            def terminate(signum, frame):
+                raise ExecutionTerminated("Execution received a termination request")
+            signal.signal(signal.SIGTERM, terminate)
         return self
 
     def remaining(self, limit):
@@ -216,22 +240,28 @@ class Execution:
     def stage(self, name, *, cache_hit=False):
         self.remaining(self.data["timeoutSeconds"])
         item = {"name": name, "startedAt": utc_now(), "status": "running", "cacheHit": bool(cache_hit)}
-        self.data["stages"].append(item)
-        self.persist()
+        with self._mutex:
+            self.data["stages"].append(item)
+            self.persist()
         started = time.monotonic()
         try:
             yield
             self.remaining(self.data["timeoutSeconds"])
         except BaseException as exc:
-            item.update(status="failed", errorType=type(exc).__name__)
+            with self._mutex:
+                item.update(status="failed", errorType=type(exc).__name__)
             raise
         else:
-            item["status"] = "completed"
+            with self._mutex:
+                item["status"] = "completed"
         finally:
-            item.update(endedAt=utc_now(), seconds=time.monotonic() - started)
-            self.persist()
+            with self._mutex:
+                item.update(endedAt=utc_now(), seconds=time.monotonic() - started)
+                self.persist()
 
     def __exit__(self, kind, error, traceback):
+        if self._previous_sigterm is not None:
+            signal.signal(signal.SIGTERM, self._previous_sigterm)
         if kind is None:
             self.data["status"] = "candidate_ready_for_review"
         else:

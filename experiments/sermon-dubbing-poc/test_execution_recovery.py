@@ -20,6 +20,9 @@ from weekly_dubbing import read
 
 class ExecutionRecoveryTests(unittest.TestCase):
     def setUp(self):
+        transport = patch("spark_transport.bridge", return_value="")
+        transport.start()
+        self.addCleanup(transport.stop)
         identity = patch.object(accounting, "execution_identity", return_value={"gitCommit": None})
         identity.start()
         self.addCleanup(identity.stop)
