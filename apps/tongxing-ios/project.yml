@@ -36,8 +36,8 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.dev
         PRODUCT_NAME: Tongxing
         INFOPLIST_FILE: App/Info.plist
-        MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "3"
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "24"
         GENERATE_INFOPLIST_FILE: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         SUPPORTS_MACCATALYST: NO
@@ -64,8 +64,8 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.dev.listening-activity
         PRODUCT_NAME: ListeningActivityExtension
         INFOPLIST_FILE: ListeningActivityExtension/Info.plist
-        MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "3"
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "24"
         GENERATE_INFOPLIST_FILE: NO
         APPLICATION_EXTENSION_API_ONLY: YES
         SKIP_INSTALL: YES

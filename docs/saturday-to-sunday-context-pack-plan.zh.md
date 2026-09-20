@@ -1,8 +1,8 @@
-# 周六产物到周日实时字幕 Context Pack：方案审核、开发框架与实施计划
+# 周六产物到周日实时字幕 Context Pack：合同与实施记录
 
-状态：**Reviewed design / Phase 0–2 initial implementation complete**
+状态：**接口已实现并接入双 PDF 后导出；真实每周收益与现场启用仍未验收**
 
-校准日期：**2026-09-04**
+状态校准：**2026-09-20**。下文的设计日期、示例日期和阶段清单保留历史含义；当前操作状态以[工作流总览](workflows/README.zh.md)及实际 `pack-readiness.json` 为准。
 
 适用范围：周六 post-live 生产与 `experiments/local-live-poc/` 周日本地实时字幕之间的显式接口。
 

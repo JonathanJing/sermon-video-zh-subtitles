@@ -1,6 +1,6 @@
 # Codex 本地周末生产 Runbook
 
-2026-09-11 安装与验收状态见 [Agents API 生产切换记录](agents-api-production-cutover-20260911.zh.md)：代码已安装，正式入口 shadow/execute 验收通过，每周调度已启用；当前等待目标周日匹配源。
+2026-09-11 的安装与验收状态见 [Agents API 生产切换记录](agents-api-production-cutover-20260911.zh.md)：当时代码已安装，正式入口 shadow/execute 验收通过，每周调度已启用，业务状态为等待目标周日匹配源。该状态是切换收据，不是永久运行状态；每次执行必须重新读取当前 source、lease、审批、run status 与 QA。2026-09-20 的完整内容制作证据另见[本周制作记录](production-2026-09-20.zh.md)。
 
 ## 生产边界
 

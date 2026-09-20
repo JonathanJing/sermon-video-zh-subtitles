@@ -364,6 +364,7 @@ private func sourceText(_ value: String, language: String) -> Text {
 }
 
 struct AlignmentControls: View {
+    @State private var showingUnavailableReason = false
     var compact: Bool
     @ObservedObject var model: AppModel
     @ObservedObject private var playback: PlaybackController
@@ -383,7 +384,8 @@ struct AlignmentControls: View {
         VStack(alignment: .leading, spacing: 10) {
             Button {
                 if model.alignmentBusy { model.cancelAlignment() }
-                else { model.startAlignment() }
+                else if model.alignmentAvailable { model.startAlignment() }
+                else { showingUnavailableReason = true }
             } label: {
                 Label(localization.text(model.alignmentBusy ? "取消对齐" : "听现场并对齐"),
                       systemImage: model.alignmentBusy ? "stop.circle" : "waveform.badge.mic")
@@ -394,9 +396,12 @@ struct AlignmentControls: View {
             .buttonStyle(.plain)
             .font(.subheadline.weight(.semibold))
             .foregroundStyle(Brand.accent)
-            .disabled(!model.alignmentAvailable && !model.alignmentBusy)
             .accessibilityIdentifier("align-live-audio")
             .accessibilityHint(status)
+            .alert(localization.text("现场自动对齐暂不可用"), isPresented: $showingUnavailableReason) {
+                Button(localization.text("刷新目录")) { Task { await model.refresh() } }
+                Button(localization.text("关闭"), role: .cancel) {}
+            } message: { Text(status) }
             if !compact {
                 Text(status)
                     .font(.footnote).foregroundStyle(.secondary)

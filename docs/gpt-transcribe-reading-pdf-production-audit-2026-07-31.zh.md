@@ -1,5 +1,7 @@
 # `gpt-transcribe` 阅读版 PDF 生产审核（2026-07-31）
 
+> **带日期的生产证据。** 本文的 PASS 只适用于 2026-07-31 绑定的来源、代码与模型配置，不再定义当前默认参数。现行双 PDF 入口见[本地生产 Runbook](codex-local-production-runbook.zh.md)和[工作流总览](workflows/README.zh.md)。
+
 ## 审核结论
 
 结论：**PASS，可以继续作为阅读版 PDF 的生产默认流程。**

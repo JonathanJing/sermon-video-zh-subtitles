@@ -1,11 +1,12 @@
-# 周六英文证道视频 → 周日原讲员音色中文语音：方案草案
+# 周六英文证道视频 → 周日原讲员音色中文语音：历史方案
 
+> **已由实现与 Runbook 取代。** 本文保留 2026-09-04 至 09-05 的设计选择、模型调研和当时未决条件，不再代表当前实现状态。当前操作以[配音 Runbook](../experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md)、[系统设计](sermon-dubbing-system-design.zh.md)、[每周发行流程](tongxing-weekly-release.zh.md)和[工作流总览](workflows/README.zh.md)为准；2026-09-20 的真实制作与验收边界见[制作记录](production-2026-09-20.zh.md)。
 
-最新进展（2026-09-05）：已完成周六配音桥接器及真实候选验证；定时任务应用更新未确认，口播修订和审核在本对话使用 GPT-6 Astra。未变音频与 ASR 缓存复用，弱边界模型审核单独留证。见[当前配音扩展 Runbook](../experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md)和[试听 App](https://ai-for-god-sermon-audio.web.app)。
+以下“尚未实现”“当前”“建议”等措辞均按原设计时点阅读，不应用来覆盖后续代码或运行证据。
 
 ![两路来源与周六配音、审核和周日试播](./diagrams/saturday-chinese-voice-workflow.svg)
 
-状态：**Discovery / 可恢复的候选流程，现场验收未完成**。同版本纯证道视频的独立接入器已实现并通过软件验证，尚待实际来源；直播归档作为并行 fallback，仍复用真实人工窗口批准，属于半自动。自动边界审核后续另建契约，不代签人工批准。下文保留方案设计与历史模型比较；当前操作以 Runbook 和[开发进度核验](saturday-development-progress-2026-09-05.zh.md)为准。
+历史状态（2026-09-05）：**Discovery / 可恢复的候选流程，现场验收未完成**。同版本纯证道视频的独立接入器当时已通过软件验证但仍待实际来源；直播归档作为并行 fallback，复用真实人工窗口批准。后续流程已改为操作员直接提供范围，并完成真实同录制页面制作；这些进展只在当前 Runbook 与带日期的制作记录中声明。
 
 方案分支：`codex/saturday-sunday-chinese-voice-plan`，起点：`038bf2a`。模型信息来自 2026-09-04 至 09-05 查阅的一手资料；仓库现状来自代码与文档核对，实际生成证据另见 POC。
 

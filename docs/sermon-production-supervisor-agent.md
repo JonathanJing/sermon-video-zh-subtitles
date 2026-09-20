@@ -1,13 +1,13 @@
 # Sermon Reading-PDF Production Supervisor Agent
 
-Production code is installed and the installed default entry passed real read-only validation. Following explicit user authorization, the installed execute entry passed validation and the weekly heartbeat is ACTIVE. The current production decision is waiting_for_matching_sunday; no generation was attempted. See the [cutover receipt](agents-api-production-cutover-20260911.zh.md).
+Production code is installed and the default entry passed read-only and authorized execute validation on September 11. The cutover receipt recorded `waiting_for_matching_sunday` at that time; it is dated evidence, not a current production decision. Every run must re-read source, lease, approval, run-status, and QA state. See the [cutover receipt](agents-api-production-cutover-20260911.zh.md) and the later [September 20 production record](production-2026-09-20.zh.md).
 
 ## Summary
 
 The local runner now integrates **OpenAI Agents API**, with `--agent-backend agents-api` as its default and explicit `--agent-backend sdk` rollback to the existing Agents SDK / Responses path. This document describes the control-plane contract. Real API cases, local scheduling, and real production acceptance have separate evidence; a passing synthetic case does not establish a complete production cutover.
 
 - Cloud Scheduler discovers the source; the local runner drives production. An active Codex schedule must be verified separately.
-- Existing Python scripts are the deterministic execution layer; Cloud Run Jobs are retained as a compatibility/rollback path.
+- Existing Python scripts are the deterministic execution layer. The former post-live Cloud Run Job was retired; rebuilding it is a separately verified recovery option, not an active fallback.
 - GCS state, run-status, and QA JSON remain the source of truth.
 - `Sermon Production Supervisor` reads evidence, selects the next safe action, and calls bounded tools.
 - An operator must still confirm the absolute sermon start and end.
@@ -33,16 +33,16 @@ flowchart LR
 
 Agents API maintains the server-side session and control loop with `environment: none`. The local runner executes bounded tool requests and submits results. Downloading, ASR, translation, PDF rendering, QA, and publication remain in the deterministic Python layer. The supervisor now defaults to **`gpt-6-astra` with reasoning effort `medium`**. The model lookup for the former `gpt-5.6` returned HTTP 404 for this account, so it is not retained as an available default. Explicit SDK rollback uses the same Astra Medium model and changes only the control-plane transport. Translation, reading review, and companion generation remain Astra Medium, and ASR remains `gpt-transcribe`.
 
-The local scheduler inspection did not find this production task. Consult the [local runbook](./codex-local-production-runbook.zh.md) for planned scheduling and current verification receipts; use the manual entry until actual scheduling and execution are verified. Cloud Job/Scheduler activation state also needs a live check.
+The first scheduler inspection on September 11 did not find this production task; a later authorized step created and re-read the active `pdf-context-pack` Codex schedule. That is dated installation evidence, so current health and run history still require a fresh check. See the [local runbook](./codex-local-production-runbook.zh.md).
 
-In the retained Cloud Run topology, Cloud Scheduler does not pass one HTTP target's response into another target. That handoff uses durable state instead:
+The following describes the retired Cloud Run topology retained for recovery analysis. Cloud Scheduler did not pass one HTTP target's response into another target; that handoff used durable state instead:
 
 1. the discovery Scheduler job writes the canonical livestream URL to `LIVE_SOURCE_MONITOR_STATE_URI`
 2. a separate Supervisor Scheduler job calls the production-supervisor endpoint
 3. the endpoint starts the configured Cloud Run Job through the Cloud Run `jobs:run` API
 4. the Agent reads the URL and all subsequent evidence from GCS
 
-The polling interval determines when the next handoff can be observed, in addition to scheduling and execution delays. This legacy topology does not establish that a Supervisor schedule is currently enabled.
+The polling interval determined when the next handoff could be observed, in addition to scheduling and execution delays. The old post-live Job was retired on September 11; this topology is not an active fallback and must be rebuilt and verified before reuse.
 
 ## Entrypoints
 
@@ -134,7 +134,7 @@ The approval binds the Sunday, source URL hash, approved times, approver, and cu
 
 ## Legacy Scheduler / Cloud Run integration
 
-These older API/Scheduler parameters do not demonstrate an Agents API integration on this path. For rollback, verify the container version and select the SDK backend explicitly. Configure the API trigger in shadow mode first:
+These older API/Scheduler parameters do not demonstrate an Agents API integration on this path. The referenced post-live Job is retired; any recovery would first rebuild and verify a suitable Job, then select the SDK backend explicitly. Configure a rebuilt API trigger in shadow mode first:
 
 ```bash
 python3 scripts/configure_live_source_scheduler.py \

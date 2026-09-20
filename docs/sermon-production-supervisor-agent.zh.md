@@ -1,6 +1,6 @@
 # 证道阅读版生产 Supervisor Agent
 
-2026-09-11 安装与验收状态见 [Agents API 生产切换记录](agents-api-production-cutover-20260911.zh.md)：代码已安装，正式入口 shadow/execute 验收通过，每周调度已启用；当前等待目标周日匹配源。
+2026-09-11 的安装与验收状态见 [Agents API 生产切换记录](agents-api-production-cutover-20260911.zh.md)：当时代码已安装，正式入口 shadow/execute 验收通过，每周调度已启用，业务状态为等待匹配源。该值是带日期的切换收据，不是当前周次的永久状态；每次运行都须重新读取 source、lease、审批、run status 与 QA。后续完整内容制作证据见 [2026-09-20 制作记录](production-2026-09-20.zh.md)。
 
 ## 结论
 
@@ -205,11 +205,11 @@ operator 独立观看完整录像后，使用同一个 runner 写审批：
 - 已存在有效人工审批：运行双 PDF pipeline
 - QA 通过：执行配置发布并核验，再读取确定性完成状态
 
-Cloud Run Job 和 post-live Cloud Scheduler 保留为兼容回退参考；其当前启停状态需单独查询。文档中的本地路径选择不证明云端已暂停或本地生产已通过。
+旧 post-live Cloud Run Job 已于 2026-09-11 退役，对应 Scheduler 保持暂停。下面的参数只保留为恢复参考，不是可直接启用的现成回退；确需恢复时须先重建并核验 Job，再决定是否恢复调度。
 
 ## 旧 Cloud Scheduler / API 接入
 
-下面的 Cloud Run Supervisor 方式保留为兼容回退参考。所示旧 API/Scheduler 参数没有证明 Agents API 已接入该路径；回滚时应核对容器版本并显式选择 SDK 后端。
+下面的 Cloud Run Supervisor 方式保留为历史恢复参考。所示旧 API/Scheduler 参数没有证明 Agents API 已接入该路径；恢复时须先重建并核验容器／Job，再显式选择 SDK 后端。
 
 Scheduler 配置脚本支持 `production-supervisor`：
 

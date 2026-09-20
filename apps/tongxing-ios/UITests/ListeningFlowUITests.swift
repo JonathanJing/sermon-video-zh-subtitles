@@ -5,6 +5,70 @@ import XCTest
 /// these tests do not establish real-network, audible, lock-screen, or venue QA.
 @MainActor
 final class ListeningFlowUITests: XCTestCase {
+    func testUnavailableAlignmentExplainsReason() throws {
+        let app = launchFixture()
+        let alignment = app.buttons["align-live-audio"]
+        try waitFor(alignment, "exists == true AND enabled == true AND hittable == true")
+        alignment.tap()
+        let explanation = app.alerts["现场自动对齐暂不可用"]
+        XCTAssertTrue(explanation.waitForExistence(timeout: 5))
+        XCTAssertTrue(explanation.staticTexts["本篇尚未提供现场对齐资料，请刷新目录或手动定位。"].exists)
+        screenshot("unavailable-alignment-explanation", app: app)
+        explanation.buttons["关闭"].tap()
+        XCTAssertFalse(explanation.exists)
+    }
+
+    func testPlaybackDockSwipeCollapsesWithoutPausingAndExpands() throws {
+        let app = launchFixture()
+        try downloadSelection(in: app)
+        let play = app.buttons["playback-toggle"]
+        play.tap()
+        try waitFor(play, "label == '暂停播放'")
+        try waitFor(element("playback-progress", in: app), "NOT (value BEGINSWITH '00:00，')")
+        let expandedPlayFrame = play.frame
+        collapseDock(in: app)
+        try waitFor(element("playback-progress", in: app), "exists == false")
+        XCTAssertFalse(app.buttons["nudge-forward"].exists)
+        XCTAssertFalse(app.buttons["align-live-audio"].exists)
+        XCTAssertEqual(app.buttons.matching(identifier: "playback-toggle").count, 1)
+        XCTAssertEqual(play.label, "暂停播放", "收起操作不能暂停音频")
+        XCTAssertLessThan(play.frame.width, expandedPlayFrame.width)
+        XCTAssertTrue(play.isHittable)
+        play.tap()
+        try waitFor(play, "label == '开始播放'")
+        screenshot("collapsed-player-paused", app: app)
+        expandDock(in: app)
+        try waitFor(element("playback-progress", in: app), "exists == true")
+        try assertAlignmentBelowPlayback(in: app)
+        XCTAssertEqual(play.label, "开始播放", "展开操作不能改变暂停状态")
+        screenshot("expanded-player-restored", app: app)
+    }
+
+    func testAccessibilityTextDockCanCollapseAndExpand() throws {
+        let app = launchFixture(largeText: true)
+        collapseDock(in: app)
+        try waitFor(element("playback-progress", in: app), "exists == false")
+        let play = app.buttons["playback-toggle"]
+        XCTAssertTrue(play.isHittable)
+        XCTAssertGreaterThanOrEqual(play.frame.width, 44)
+        XCTAssertGreaterThanOrEqual(play.frame.height, 44)
+        XCTAssertTrue(app.frame.contains(play.frame))
+        expandDock(in: app)
+        try waitFor(element("playback-progress", in: app), "exists == true")
+        try assertAlignmentBelowPlayback(in: app)
+    }
+
+    private func collapseDock(in app: XCUIApplication) {
+        let progress = element("playback-progress", in: app)
+        let start = progress.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: 70)))
+    }
+
+    private func expandDock(in app: XCUIApplication) {
+        let start = app.buttons["playback-toggle"].coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: -100)))
+    }
+
     func testLiveAlignmentStaysBelowPlaybackOnFirstScreenAndTranscript() throws {
         let app = launchFixture()
         try assertAlignmentBelowPlayback(in: app)

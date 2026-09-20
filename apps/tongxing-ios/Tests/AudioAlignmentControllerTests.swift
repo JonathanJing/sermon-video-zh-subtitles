@@ -161,6 +161,24 @@ final class AudioAlignmentControllerTests: XCTestCase {
         XCTAssertGreaterThan(f.capture.stops, 0)
     }
 
+    func testReviewedPublishedCapabilityRemainsAvailableAndStartsCapture() async throws {
+        let f = try Fixture(published: true)
+        let initial = try XCTUnwrap(f.selection)
+        var document = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(initial.week)) as? [String: Any])
+        var tracks = try XCTUnwrap(document["tracks"] as? [[String: Any]])
+        tracks[0]["scope"] = "full_reviewed"
+        document["tracks"] = tracks
+        document["humanApproval"] = true
+        let reviewed = try JSONDecoder().decode(SermonWeek.self, from: JSONSerialization.data(withJSONObject: document))
+        f.selection = .init(week: reviewed, track: reviewed.tracks[0])
+        XCTAssertTrue(f.controller.available)
+        f.controller.start()
+        try await eventually { !f.controller.busy }
+        XCTAssertEqual(f.capture.requestedSeconds, [10])
+        XCTAssertEqual(f.player.seeks, [])
+        XCTAssertEqual(f.status, "未找到可靠匹配，播放位置未改变。")
+    }
+
     func testPublishedCancelledLateIndexCannotStartMicrophone() async throws {
         let gate = ResultGate()
         let f = try Fixture(published: true, publishedLoadGate: gate)

@@ -1,6 +1,6 @@
 # Stable Post-Live Dual-PDF Workflow
 
-This document describes the repository's current primary working path.
+This document describes the repository's current mature dual-PDF operator path. Prepared weekly audio/pages and Sunday live captions are separate paths; see the [workflow overview](workflows/README.zh.md).
 
 The stable workflow is:
 
@@ -10,7 +10,7 @@ The stable workflow is:
 4. build the English reference transcript with `gpt-transcribe`
 5. generate and QA the Chinese-English reading PDF and Chinese sermon interpretation PDF
 
-This is the workflow that should be documented first in the root README and used as the default operator path today.
+Use this as the default entry when the requested deliverables are the two post-live PDFs.
 
 ## Scope
 

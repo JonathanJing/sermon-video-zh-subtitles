@@ -1,6 +1,4 @@
-# 文档索引
-
-**本周制作记录（2026-09-20）：** [《耶稣的应许》制作过程、时间与 Token 用量](production-2026-09-20.zh.md)，包含发布、人工听审、海报及计量缺口。
+# 文档导航
 
 <p>
   <a href="./README.md">
@@ -8,87 +6,86 @@
   </a>
 </p>
 
-**周日运行入口：** [新页面与会话运行白皮书](./sunday-live-operations-whitepaper.zh.md) · [Agent 可直接执行的 Markdown](./sunday-live-agent-runbook.zh.md)。准备操作页、新建本场录音与手机链接、故障恢复和保存交接；默认准备模式不自动录音。
+本页只负责路由，不重复定义流程。项目当前事实以根目录 [README](../README.zh.md)、[工作流总览](workflows/README.zh.md)、对应操作 Runbook、代码和绑定运行收据共同决定；单独一份设计稿、测试或历史报告不能升级生产状态。
 
-这里收集证道中文字幕 pipeline 的产品目标、系统设计、研究报告、backlog 和测试审查文档。
+状态校准：**2026-09-20，本地 `main` 546b90d**。这是代码与 tracked 证据的校准点；文档不据此声称已 push、远端部署、现场同步或实体设备验收。
 
-## 如何理解文档状态
+## 从任务进入
 
-- **当前 source of truth：** 根 README、[配音系统设计](./sermon-dubbing-system-design.zh.md)、[PDF 与实时字幕工作流](./workflows/README.zh.md)、稳定 post-live 工作流、Supervisor Agent，以及[本地实时字幕 POC](../experiments/local-live-poc/README.md)。
-- **带日期的证据：** benchmark、audit 和 report 只描述指定日期和指定 run。后续证据可以补齐当时的 “next gate”，但不会改写原始测量值。
-- **Discovery / 历史快照：** Cloud 架构、provider 对比、部署笔记、旧 live runbook、backlog 和 gap analysis 为研究背景，不是当前 operator 架构，除非 source of truth 明确引用。
-
-文档现状已在 **2026-09-04** 按 `main` 校准；文档本身不证明本地服务当前在线，也不证明现场已经验收。
-
-## 优先阅读：预制中文配音
-
-首页优先展示从英文视频到讲员音色中文配音的流程。当前已发布完整同步试听候选；同版本视频接入、定时接线与现场验收的状态见报告。
-
-- [系统设计与模型选择](./sermon-dubbing-system-design.zh.md)：来源、Astra 审核、GPT-Transcribe、Qwen 音色训练/推理、证据链与恢复。
-- [周六配音操作 Runbook](../experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md)与[完整 SVG](./diagrams/saturday-chinese-voice-workflow.svg)。
-- [2026-09-05 实测与剩余门槛](./sermon-dubbing-astra-review-2026-09-05.zh.md)、[试听 App](https://ai-for-god-sermon-audio.web.app)。
-
-## 核心文档
-
-| 主题 | English | 中文 |
+| 要做的事 | 先读 | 状态边界 |
 |---|---|---|
-| 两条主工作流与本地延迟预算 | [中文 source of truth](./workflows/README.zh.md) | [workflows/README.zh.md](./workflows/README.zh.md) |
-| 周六产物到周日 Runtime Pack 方案与开发步骤 | 暂无独立英文版 | [saturday-to-sunday-context-pack-plan.zh.md](./saturday-to-sunday-context-pack-plan.zh.md) |
-| 周日公网手机字幕分享方案 | 暂无独立英文版 | [PUBLIC_SHARING.zh.md](../experiments/local-live-poc/PUBLIC_SHARING.zh.md) |
-| 实时字幕显示：当前句流式 + 前一句保留 | 暂无独立英文版 | [CAPTION_DISPLAY.zh.md](../experiments/local-live-poc/CAPTION_DISPLAY.zh.md) |
-| 稳定主流程 | [stable-post-live-reading-pdf-workflow.md](./stable-post-live-reading-pdf-workflow.md) | [stable-post-live-reading-pdf-workflow.zh.md](./stable-post-live-reading-pdf-workflow.zh.md) |
-| Production Supervisor Agent | [sermon-production-supervisor-agent.md](./sermon-production-supervisor-agent.md) | [sermon-production-supervisor-agent.zh.md](./sermon-production-supervisor-agent.zh.md) |
-| 本地实时字幕 POC | [README.md](../experiments/local-live-poc/README.md) | [DESIGN.zh.md](../experiments/local-live-poc/DESIGN.zh.md) |
-| Sunday readiness / 周日验收证据 | [60-minute replay, recovery and field gates](../experiments/local-live-poc/benchmarks/SUNDAY_READINESS_20260904.zh.md) | [脱敏指标 JSON](../experiments/local-live-poc/benchmarks/sunday-readiness-20260904.json) |
-| 维护中的 SVG 示意图 | [diagrams/README.md](./diagrams/README.md) | 中英共用资源 |
-| `gpt-transcribe` 阅读版生产审核（2026-07-31） | [gpt-transcribe-reading-pdf-production-audit-2026-07-31.zh.md](./gpt-transcribe-reading-pdf-production-audit-2026-07-31.zh.md) | 同一份中文文档 |
-| System Design | [system-design.md](./system-design.md) | [system-design.zh.md](./system-design.zh.md) |
-| System Design 实现差距审计 | [system-design-gap-analysis.md](./system-design-gap-analysis.md) | [system-design-gap-analysis.zh.md](./system-design-gap-analysis.zh.md) |
-| Findings Report | [findings-report.md](./findings-report.md) | [findings-report.zh.md](./findings-report.zh.md) |
-| 模型/Provider 比较 | [model-provider-comparison.md](./model-provider-comparison.md) | [model-provider-comparison.zh.md](./model-provider-comparison.zh.md) |
-| 证道实时翻译 Benchmark / A-B Test | 暂无独立英文版 | [live-sermon-translation-benchmark.zh.md](./live-sermon-translation-benchmark.zh.md) |
-| MacBook Pro M1 Max 64 GB 主硬件 Profile | 暂无独立英文版 | [macbook-m1-max-64gb-profile.json](../data/benchmarks/live-sermon-translation-v1/macbook-m1-max-64gb-profile.json) |
-| MacBook Ollama / MLX 翻译 Benchmark V1 | 暂无独立英文版 | [macbook-sermon-translation-benchmark.zh.md](./macbook-sermon-translation-benchmark.zh.md) |
-| MacBook 本地英文 ASR Benchmark V1 | 暂无独立英文版 | [local-asr-benchmark.zh.md](./local-asr-benchmark.zh.md) |
-| MacBook Translation-only 主榜（2026-09-03） | 暂无独立英文版 | [translation-only-leaderboard-20260903.md](../data/benchmarks/live-sermon-translation-v1/runs/macbook-text-baselines/translation-only-leaderboard-20260903.md) |
-| Hy-MT2-1.8B MacBook Ollama Benchmark | 暂无独立英文版 | [report.md](../data/benchmarks/live-sermon-translation-v1/runs/macbook-text-baselines/hymt2-1.8b-q8-ollama-full-20260903/report.md) |
-| MiLMMT-46-4B-v1.0 MacBook Ollama Benchmark | 暂无独立英文版 | [report.md](../data/benchmarks/live-sermon-translation-v1/runs/macbook-text-baselines/milmmt-46-4b-v1-q8-ollama-full-20260903/report.md) |
-| MiLMMT-46-4B MacBook 运行时选择与后训练计划 | 暂无独立英文版 | [milmmt-sermon-post-training-plan.zh.md](./milmmt-sermon-post-training-plan.zh.md) |
-| Qwen3.5-4B-Base BF16 MacBook Ollama Benchmark | 暂无独立英文版 | [report.md](../data/benchmarks/live-sermon-translation-v1/runs/macbook-text-baselines/qwen35-4b-base-bf16-ollama-full-20260903/report.md) |
-| Qwen3.5-9B-Base BF16 MacBook Ollama Benchmark | 暂无独立英文版 | [report.md](../data/benchmarks/live-sermon-translation-v1/runs/macbook-text-baselines/qwen35-9b-base-bf16-ollama-full-20260903/report.md) |
-| A0 Base 模型 Baseline（生成与速度） | 暂无独立英文版 | [baseline-report.md](../data/benchmarks/live-sermon-translation-v1/runs/a0-baseline/baseline-report.md) |
-| Hy-MT2-1.8B DGX Spark Benchmark | 暂无独立英文版 | [report.md](../data/benchmarks/live-sermon-translation-v1/runs/external-baselines/hymt2-1.8b-q8-chinese-full-20260903/report.md) |
-| Hy-MT2-30B-A3B Heretic DGX Spark Benchmark | 暂无独立英文版 | [report.md](../data/benchmarks/live-sermon-translation-v1/runs/external-baselines/hymt2-30b-a3b-heretic-q8-full-20260903/report.md) |
-| Cloud Run 部署准备 | [cloud-run-deployment-prep.md](./cloud-run-deployment-prep.md) | [cloud-run-deployment-prep.zh.md](./cloud-run-deployment-prep.zh.md) |
-| Admin 工作流 | [admin-workflow.md](./admin-workflow.md) | [admin-workflow.zh.md](./admin-workflow.zh.md) |
-| Post-live reviewed Sunday 发布路径 | [post-live-reviewed-sunday-publication.zh.md](./post-live-reviewed-sunday-publication.zh.md) | 同一份中文文档 |
-| 中文圣经来源 | [scripture-source.md](./scripture-source.md) | [scripture-source.zh.md](./scripture-source.zh.md) |
-| 观测与日志 | [observability.md](./observability.md) | [observability.zh.md](./observability.zh.md) |
-| 开源准备检查 | [open-source-readiness.md](./open-source-readiness.md) | [open-source-readiness.zh.md](./open-source-readiness.zh.md) |
-| 周日 live test runbook | [sunday-live-test-runbook.md](./sunday-live-test-runbook.md) | [sunday-live-test-runbook.zh.md](./sunday-live-test-runbook.zh.md) |
-| 每周离线字幕文件生成流程 | [weekly-offline-subtitle-generation.zh.md](./weekly-offline-subtitle-generation.zh.md) | 同一份中文文档 |
-| YouTube source analysis | [youtube-sermon-subtitle-pipeline-analysis.zh-en.md](./youtube-sermon-subtitle-pipeline-analysis.zh-en.md) | 同一份中英文文档 |
-| 离线直播链接时间可行性 | [offline-live-archive-timing-feasibility.zh.md](./offline-live-archive-timing-feasibility.zh.md) | 同一份中文文档 |
-| 开发 Backlog | [backlog.md](./backlog.md) | [backlog.zh.md](./backlog.zh.md) |
-| Development Notes | [development-notes.md](./development-notes.md) | 同文件英文优先内容 |
-| Review / Testing Notes | [review-testing.md](./review-testing.md) | 同文件英文优先内容 |
+| 查看三条产品路径与完成标准 | [工作流总览](workflows/README.zh.md) | 当前总入口 |
+| 周六从完整礼拜／归档生成双 PDF | [本地生产 Runbook](codex-local-production-runbook.zh.md) → [稳定双 PDF 流程](stable-post-live-reading-pdf-workflow.zh.md) | 当前 operator 路径 |
+| 查看或恢复生产 Supervisor | [Supervisor 契约](sermon-production-supervisor-agent.zh.md) | Agents API 控制层；状态仍由本地证据决定 |
+| 从英文视频制作中文音轨与同行页面 | [配音操作 Runbook](../experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md) → [系统设计](sermon-dubbing-system-design.zh.md) | 当前每周内容路径 |
+| 审核 CUV 引文和口播中文 | [CUV 生产流程](sermon-cuv-production.zh.md) → [固定经文库](cuv-scripture-library.zh.md) | 翻译、字幕、TTS 共用同一锁定文本 |
+| 发行同行页面和海报 | [每周发行流程](tongxing-weekly-release.zh.md) | 发布、HTTP 核验、App 验收、海报分别留证 |
+| 准备周日实时字幕页面 | [Agent 执行入口](sunday-live-agent-runbook.zh.md) → [运行白皮书](sunday-live-operations-whitepaper.zh.md) | 准备模式不开始录音 |
+| 修改本地实时字幕 | [POC 说明](../experiments/local-live-poc/README.md) → [POC 目录约定](../experiments/local-live-poc/AGENTS.md) | 本地代码、回放、现场验收分开 |
+| 修改同行 iOS | [iOS 说明](../apps/tongxing-ios/README.zh.md) → [iOS 目录约定](../apps/tongxing-ios/AGENTS.md) | 已在 `main`；构建不等于真机／TestFlight 验收 |
 
-## Discovery 方案
+## 当前生产规范
 
-- [周六英文视频到周日原讲员音色中文语音](./saturday-to-sunday-chinese-voice-plan.zh.md)：模型、音色训练、同步与音频路由方案；[MP3 与播放器 POC](../experiments/sermon-dubbing-poc/README.md)已实现授权音色训练、后训练语料复用与[每周 Firebase 听译应用](https://ai-for-god-sermon-audio.web.app)；已有整篇同步候选；现场能力仍待验收。
+### 来源、文本与 PDF
 
-- [周六配音扩展 Runbook](../experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md)与 [SVG 示意图](./diagrams/saturday-chinese-voice-workflow.svg)：多讲员音色、每周生成、发音修订和继承周六审核的发布步骤。
+- [稳定 post-live 双 PDF 流程](stable-post-live-reading-pdf-workflow.zh.md)及[英文版](stable-post-live-reading-pdf-workflow.md)
+- [中文阅读版质量规范](chinese-reading-edition-quality.zh.md)
+- [系列名称表](series-terminology.zh.md)：页面、字幕、阅读稿、大纲和配音共用术语
+- [MFA 阅读稿对齐](mfa-production.zh.md)
+- [双语全文显示](bilingual-transcript-display.zh.md)
 
-## 推荐阅读顺序
+### 编排、并发与证据
 
-1. 先读根目录 [中文版 README](../README.zh.md)，先看配音流程，再看 PDF、实时字幕及各自验收边界。
-2. 再读 [workflows/README.zh.md](./workflows/README.zh.md)，查看完整流程图、本地延迟预算和测试门槛。
-3. 阅读 [stable-post-live-reading-pdf-workflow.zh.md](./stable-post-live-reading-pdf-workflow.zh.md)，这是当前 repo 最稳定的 operator 路径。
-4. 读 [sermon-production-supervisor-agent.zh.md](./sermon-production-supervisor-agent.zh.md)，了解 Agent 控制层、人工审批契约和 Scheduler 接入。
-5. 查看 [gpt-transcribe-reading-pdf-production-audit-2026-07-31.zh.md](./gpt-transcribe-reading-pdf-production-audit-2026-07-31.zh.md)，确认当前模型、质量门禁与完整 PDF 审核证据。
-6. 阅读[本地实时字幕 POC](../experiments/local-live-poc/README.md)，查看周日当前实现及其带日期的 benchmark 证据。
-7. 再按需要进入其余 System Design、Discovery、部署与历史实验文档。
+- [Agents API 端到端扩展](agents-end-to-end-workflow.zh.md)：显式配置才接入页面发行
+- [周六统一入口](saturday-harness.zh.md)与[执行保护](sermon-execution-harness.zh.md)
+- [受限并发](parallel-production.zh.md)与[配音／PDF 汇合合同](parallel-dubbing-contract.zh.md)
+- [质量回归 Harness](saturday-quality-harness.zh.md)
+- [流程记账](workflow-accounting.zh.md)、[Trace 导出](sermon-trace-export.zh.md)与[Temporal 编排](sermon-temporal.zh.md)
 
-## 文档语言策略
+### 同行页面、音频与客户端
 
-repo 默认入口使用英文，便于 GitHub 浏览和开源协作；中文文档与英文文档并列存放，文件名使用 `.zh.md`。如果文档改动影响产品行为、部署行为或 11:30 会众目标，应同步更新中英文版本。
+- [配音系统设计](sermon-dubbing-system-design.zh.md)
+- [听音定位](sermon-app-field-alignment.zh.md)、[现场收听与恢复](sermon-app-field-listening.zh.md)
+- [反馈](sermon-listening-feedback.zh.md)、[匿名使用摘要](sermon-app-usage.zh.md)、[微信播放](sermon-app-wechat-playback.zh.md)
+- [品牌](sermon-app-brand.zh.md)与[系列补档](sermon-series-backfill.zh.md)
+
+### 安全与公开仓库
+
+- [开源准备检查](open-source-readiness.zh.md)及[英文版](open-source-readiness.md)
+- [中文圣经来源说明](scripture-source.zh.md)及[英文版](scripture-source.md)
+- [流程图清单与再生成方式](diagrams/README.md)；[PDF 示例来源](assets/pdf-examples/README.md)
+
+## 带日期的实施与验收记录
+
+这些文件保留观察值和证据边界，不随当前代码自动更新：
+
+- [2026-09-20《耶稣的应许》制作记录](production-2026-09-20.zh.md)
+- [2026-09-20 CUV 引用核验复盘](cuv-retrospective-2026-09-20.zh.md)
+- [2026-09-11 Agents API 切换记录](agents-api-production-cutover-20260911.zh.md)
+- [2026-09-12 Prompt／Agent／Skill 审计修复](prompt-agent-skill-audit-fixes-20260912.zh.md)
+- [2026-09-05 周六流程开发核验](saturday-development-progress-2026-09-05.zh.md)、[完整验证](saturday-full-validation-2026-09-05.zh.md)、[配音候选记录](sermon-dubbing-astra-review-2026-09-05.zh.md)
+- [2026-07-31 阅读版 PDF 生产审核](gpt-transcribe-reading-pdf-production-audit-2026-07-31.zh.md)
+- `reports/`：机器可读的脱敏计量与 smoke 收据
+
+## 研究、历史和被取代的文档
+
+以下资料不再作为 operator 入口。使用时必须回到上面的当前规范重新核对。
+
+| 类别 | 文档 |
+|---|---|
+| 已由实现与 Runbook 取代的方案 | [原讲员音色方案草案](saturday-to-sunday-chinese-voice-plan.zh.md)、[Context Pack 设计与实施记录](saturday-to-sunday-context-pack-plan.zh.md) |
+| 历史 Cloud 架构／部署 | [System Design](system-design.zh.md)、[差距审计](system-design-gap-analysis.zh.md)、[Cloud Run 部署准备](cloud-run-deployment-prep.zh.md)、[旧周日 Cloud Runbook](sunday-live-test-runbook.zh.md)、[旧 Cloud 观测](observability.zh.md)、[Admin 路径](admin-workflow.zh.md) |
+| 历史发布／离线实现 | [2026-07-05 页面发布复盘](post-live-reviewed-sunday-publication.zh.md)、[旧离线字幕实现笔记](weekly-offline-subtitle-generation.zh.md) |
+| 早期调研 | [发现报告](findings-report.zh.md)、[公开视频可行性分析](youtube-sermon-subtitle-pipeline-analysis.zh-en.md)、[直播归档时间证据](offline-live-archive-timing-feasibility.zh.md)、[Provider 对比](model-provider-comparison.zh.md) |
+| Benchmark／训练 Discovery | [实时翻译 Benchmark](live-sermon-translation-benchmark.zh.md)、[本地 ASR](local-asr-benchmark.zh.md)、[MacBook 翻译](macbook-sermon-translation-benchmark.zh.md)、[MiLMMT 后训练计划](milmmt-sermon-post-training-plan.zh.md) |
+| 旧项目记录 | [Backlog](backlog.zh.md)、[Development Notes](development-notes.md)、[Review/Test Notes](review-testing.md) |
+
+对应英文历史稿仍保留在同目录，用于来源追踪和开源阅读；它们不是另一套独立事实来源。
+
+## 文档维护规则
+
+1. 当前行为只写进工作流总览、任务 Runbook 或接口合同；一次运行的数据写进带日期的报告。
+2. 已完成方案不再继续写“待实现”：在文件顶部标明被哪个实现／Runbook 取代，并保留原设计作为历史。
+3. 模型、价格、云资源和部署状态容易变化；没有当次一手核验时只描述为历史观察。
+4. 中英双份操作合同必须同步；只有中文 source of truth 的文档在英文索引中直接链接中文文件，不复制一份会漂移的摘要。
+5. 文档、测试、部署、人工听审、设备验收和现场同步分别报告，不互相代替。

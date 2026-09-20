@@ -1,5 +1,7 @@
 # 离线直播链接字幕链路的时间可行性证据
 
+> **历史来源可行性研究。** 本文只记录 2026-06-25 的公开视频样本和当时的时间假设，不是当前找源、下载或周日运行合同。当前入口见[本地生产 Runbook](codex-local-production-runbook.zh.md)与[周日实时字幕白皮书](sunday-live-operations-whitepaper.zh.md)。
+
 日期：2026-06-25  
 时区：America/Los_Angeles, PT  
 数据源：Mariners Church YouTube Streams 页面 `https://www.youtube.com/@marinerschurch/streams`  

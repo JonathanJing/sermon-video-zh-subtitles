@@ -1,6 +1,6 @@
 # 稳定的 post-live 双 PDF 工作流
 
-这份文档描述当前这个 repo 最主要、最稳定、最应该先写清楚的工作流。
+这份文档描述当前 repo 成熟的 post-live 双 PDF operator 路径。预制每周音频／页面与周日实时字幕是另外两条路径，关系见[工作流总览](workflows/README.zh.md)。
 
 当前主流程是：
 
@@ -10,7 +10,7 @@
 4. 用 `gpt-transcribe` 生成英文参考转录
 5. 生成并校验中英对照阅读版 PDF 和中文证道解读 PDF
 
-这也是根 README 现在应该优先介绍的默认 operator 路径。
+当目标交付物是两份 post-live PDF 时，以本文作为默认入口。
 
 ## 适用范围
 

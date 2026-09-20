@@ -1824,6 +1824,83 @@
           }
         }
       }
+    },
+    "现场自动对齐暂不可用": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live alignment unavailable"
+          }
+        }
+      }
+    },
+    "刷新目录": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh catalog"
+          }
+        }
+      }
+    },
+    "关闭": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        }
+      }
+    },
+    "收起播放栏": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collapse playback controls"
+          }
+        }
+      }
+    },
+    "展开播放栏": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expand playback controls"
+          }
+        }
+      }
+    },
+    "向下轻扫收起播放栏": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swipe down to collapse playback controls"
+          }
+        }
+      }
+    },
+    "向上轻扫展开播放栏": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swipe up to expand playback controls"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

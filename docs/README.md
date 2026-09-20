@@ -1,6 +1,4 @@
-# Documentation
-
-**Weekly production record (2026-09-20):** [Jesus’ Promises — production steps, timing and token accounting (中文)](production-2026-09-20.zh.md), including publication, listening acceptance, poster delivery and measurement gaps.
+# Documentation Guide
 
 <p>
   <a href="./README.zh.md">
@@ -8,70 +6,59 @@
   </a>
 </p>
 
-**Sunday operations:** [Operations whitepaper (中文)](./sunday-live-operations-whitepaper.zh.md) · [Agent execution entry (中文)](./sunday-live-agent-runbook.zh.md). Prepare the operator page, create a session and phone-viewer link, recover from interruptions, and verify saving. Preparation mode leaves the page in standby without recording.
+This page routes readers to the maintained contracts; it does not redefine them. Current project claims require the root [README](../README.md), the [workflow source of truth](workflows/README.zh.md), the relevant runbook, code, and bound run receipts. A design, test, or historical report alone cannot promote production status.
 
-This folder contains product, system design, research, backlog, and testing notes for the sermon Chinese caption pipeline.
+Calibrated on **2026-09-20 at local `main` 546b90d**. This is a code-and-tracked-evidence checkpoint; it does not establish that the commit was pushed, remotely deployed, accepted at a venue, or accepted on a physical device.
 
-## How to Read Status
+## Start with the task
 
-- **Current source of truth:** the root README, [dubbing system design](./sermon-dubbing-system-design.zh.md), [PDF/live-caption workflow README](./workflows/README.zh.md), stable post-live workflow, Supervisor Agent, and [local live POC README](../experiments/local-live-poc/README.md).
-- **Dated evidence:** benchmarks, audits, and reports describe the named run on the stated date. Later evidence may close an old “next gate” without rewriting the original measurements.
-- **Discovery or historical snapshot:** cloud architecture, provider comparisons, deployment notes, old live runbooks, backlog, and gap analyses are retained for research context; they are not the current operator architecture unless the source of truth links to them explicitly.
-
-Status was calibrated against `main` on **2026-09-04**. Documentation does not prove that a local service is currently running or that venue readiness has passed.
-
-## Start here: prepared Chinese dubbing
-
-The root README now features English video to Chinese dubbing in an authorized speaker voice. A full synchronized listening candidate is published; same-video intake, scheduling and venue gates remain explicit.
-
-- [System design and model choices (中文)](./sermon-dubbing-system-design.zh.md).
-- [Operator runbook](../experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md) and [SVG workflow](./diagrams/saturday-chinese-voice-workflow.svg).
-- [Measured candidate and remaining gates](./sermon-dubbing-astra-review-2026-09-05.zh.md), [listening app](https://ai-for-god-sermon-audio.web.app).
-
-## Core Documents
-
-| Topic | English | Chinese |
+| Task | First reference | Boundary |
 |---|---|---|
-| Two working workflows and local latency budget | [Chinese source of truth](./workflows/README.zh.md) | [workflows/README.zh.md](./workflows/README.zh.md) |
-| Saturday-to-Sunday Runtime Pack design and build plan | [Chinese design source](./saturday-to-sunday-context-pack-plan.zh.md) | [saturday-to-sunday-context-pack-plan.zh.md](./saturday-to-sunday-context-pack-plan.zh.md) |
-| Stable workflow | [stable-post-live-reading-pdf-workflow.md](./stable-post-live-reading-pdf-workflow.md) | [stable-post-live-reading-pdf-workflow.zh.md](./stable-post-live-reading-pdf-workflow.zh.md) |
-| Production Supervisor Agent | [sermon-production-supervisor-agent.md](./sermon-production-supervisor-agent.md) | [sermon-production-supervisor-agent.zh.md](./sermon-production-supervisor-agent.zh.md) |
-| Local live-caption POC | [README.md](../experiments/local-live-poc/README.md) | [DESIGN.zh.md](../experiments/local-live-poc/DESIGN.zh.md) |
-| Sunday readiness / 周日验收证据 | [60-minute replay, recovery and field gates](../experiments/local-live-poc/benchmarks/SUNDAY_READINESS_20260904.zh.md) | [脱敏指标 JSON](../experiments/local-live-poc/benchmarks/sunday-readiness-20260904.json) |
-| Maintained SVG diagrams | [diagrams/README.md](./diagrams/README.md) | bilingual assets |
-| System design | [system-design.md](./system-design.md) | [system-design.zh.md](./system-design.zh.md) |
-| System design gap analysis | [system-design-gap-analysis.md](./system-design-gap-analysis.md) | [system-design-gap-analysis.zh.md](./system-design-gap-analysis.zh.md) |
-| Findings report | [findings-report.md](./findings-report.md) | [findings-report.zh.md](./findings-report.zh.md) |
-| Model/provider comparison | [model-provider-comparison.md](./model-provider-comparison.md) | [model-provider-comparison.zh.md](./model-provider-comparison.zh.md) |
-| Cloud Run deployment prep | [cloud-run-deployment-prep.md](./cloud-run-deployment-prep.md) | [cloud-run-deployment-prep.zh.md](./cloud-run-deployment-prep.zh.md) |
-| Admin workflow | [admin-workflow.md](./admin-workflow.md) | [admin-workflow.zh.md](./admin-workflow.zh.md) |
-| Post-live reviewed Sunday publication | [post-live-reviewed-sunday-publication.zh.md](./post-live-reviewed-sunday-publication.zh.md) | same Chinese document |
-| Scripture source | [scripture-source.md](./scripture-source.md) | [scripture-source.zh.md](./scripture-source.zh.md) |
-| Observability and logs | [observability.md](./observability.md) | [observability.zh.md](./observability.zh.md) |
-| Open-source readiness | [open-source-readiness.md](./open-source-readiness.md) | [open-source-readiness.zh.md](./open-source-readiness.zh.md) |
-| Sunday live test runbook | [sunday-live-test-runbook.md](./sunday-live-test-runbook.md) | [sunday-live-test-runbook.zh.md](./sunday-live-test-runbook.zh.md) |
-| Weekly offline subtitle generation | [weekly-offline-subtitle-generation.zh.md](./weekly-offline-subtitle-generation.zh.md) | same Chinese document |
-| YouTube source analysis | [youtube-sermon-subtitle-pipeline-analysis.zh-en.md](./youtube-sermon-subtitle-pipeline-analysis.zh-en.md) | same bilingual document |
-| Offline live-archive timing feasibility | [offline-live-archive-timing-feasibility.zh.md](./offline-live-archive-timing-feasibility.zh.md) | same Chinese document |
-| Development backlog | [backlog.md](./backlog.md) | [backlog.zh.md](./backlog.zh.md) |
-| Development notes | [development-notes.md](./development-notes.md) | English-first content in same file |
-| Review and testing notes | [review-testing.md](./review-testing.md) | English-first content in same file |
+| Understand the three product paths and completion gates | [Workflow overview (Chinese)](workflows/README.zh.md) | Current top-level source of truth |
+| Produce the Saturday dual PDFs | [Local production runbook (Chinese)](codex-local-production-runbook.zh.md) → [stable workflow](stable-post-live-reading-pdf-workflow.md) | Current operator path |
+| Inspect or resume the production Supervisor | [Supervisor contract](sermon-production-supervisor-agent.md) | Local evidence still controls state |
+| Turn an English video into Chinese audio and a Tongxing page | [Dubbing runbook (Chinese)](../experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md) → [system design](sermon-dubbing-system-design.zh.md) | Current weekly-content path |
+| Review CUV quotations and spoken Chinese | [CUV production contract](sermon-cuv-production.zh.md) → [fixed Scripture library](cuv-scripture-library.zh.md) | Translation, captions, and TTS share the locked text |
+| Release the Tongxing page and poster | [Weekly release contract](tongxing-weekly-release.zh.md) | Publication, HTTP verification, app acceptance, and poster QA stay separate |
+| Prepare Sunday live captions | [Agent entry](sunday-live-agent-runbook.zh.md) → [operations whitepaper](sunday-live-operations-whitepaper.zh.md) | Prepare mode does not start recording |
+| Change the local live-caption runtime | [POC README](../experiments/local-live-poc/README.md) → [directory instructions](../experiments/local-live-poc/AGENTS.md) | Code, replay, and venue acceptance are separate |
+| Change the Tongxing iOS client | [iOS README (Chinese)](../apps/tongxing-ios/README.zh.md) → [directory instructions](../apps/tongxing-ios/AGENTS.md) | Integrated on `main`; a build is not physical-device or TestFlight acceptance |
 
-## Discovery Plans
+## Maintained production contracts
 
-- [Saturday video to Sunday Chinese audio in the original speaker's voice](./saturday-to-sunday-chinese-voice-plan.zh.md) (Chinese): dubbing and training design, with an [authorized voice-reference MP3/player POC and a small training run](../experiments/sermon-dubbing-poc/README.md); now includes multi-sermon voice training and a [weekly Firebase listening app](https://ai-for-god-sermon-audio.web.app). A full synchronized candidate is available; human listening and venue readiness remain pending.
+- Source, text, and PDFs: [stable dual-PDF workflow](stable-post-live-reading-pdf-workflow.md), [reading quality](chinese-reading-edition-quality.zh.md), [series terminology](series-terminology.zh.md), [MFA](mfa-production.zh.md), and [bilingual transcript display](bilingual-transcript-display.zh.md).
+- Orchestration and evidence: [end-to-end Agents extension](agents-end-to-end-workflow.zh.md), [Saturday harness](saturday-harness.zh.md), [execution protection](sermon-execution-harness.zh.md), [bounded parallelism](parallel-production.zh.md), [dubbing/PDF join contract](parallel-dubbing-contract.zh.md), [quality harness](saturday-quality-harness.zh.md), [accounting](workflow-accounting.zh.md), [trace export](sermon-trace-export.zh.md), and [Temporal](sermon-temporal.zh.md).
+- Tongxing content and clients: [dubbing system](sermon-dubbing-system-design.zh.md), [sound alignment](sermon-app-field-alignment.zh.md), [field listening](sermon-app-field-listening.zh.md), [feedback](sermon-listening-feedback.zh.md), [usage](sermon-app-usage.zh.md), [WeChat playback](sermon-app-wechat-playback.zh.md), [brand](sermon-app-brand.zh.md), and [series backfill](sermon-series-backfill.zh.md).
+- Safety and public repository: [open-source readiness](open-source-readiness.md) and [Scripture source](scripture-source.md).
+- Visual assets: [diagram inventory and regeneration](diagrams/README.md) and [PDF example provenance](assets/pdf-examples/README.md).
 
-- [Saturday audio extension runbook](../experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md) and [SVG workflow](./diagrams/saturday-chinese-voice-workflow.svg): speaker auditions, resumable weekly generation, pronunciation fixes and inherited Saturday review gates.
+## Dated implementation and acceptance records
 
-## Reading Order
+These preserve observed values and evidence boundaries; they do not track later code automatically:
 
-1. Start with the root [README](../README.md) for the featured dubbing flow, PDF/live-caption paths and their acceptance boundaries.
-2. Read [workflows/README.zh.md](./workflows/README.zh.md) for the complete diagrams, local latency budget, and test gates.
-3. Read [stable-post-live-reading-pdf-workflow.md](./stable-post-live-reading-pdf-workflow.md) for the repository's current stable operator path.
-4. Read [sermon-production-supervisor-agent.md](./sermon-production-supervisor-agent.md) for the Agent control plane, human approval contract, and Scheduler integration.
-5. Read the [local live-caption POC](../experiments/local-live-poc/README.md) for the current Sunday implementation and its dated benchmark links.
-6. Enter the remaining System Design, Discovery, deployment, and historical experiment documents only when that work is in scope.
+- [September 20 production record (Chinese)](production-2026-09-20.zh.md) and [CUV retrospective](cuv-retrospective-2026-09-20.zh.md).
+- [September 11 Agents API cutover](agents-api-production-cutover-20260911.zh.md) and [September 12 prompt/agent/skill audit](prompt-agent-skill-audit-fixes-20260912.zh.md).
+- [September 5 Saturday development check](saturday-development-progress-2026-09-05.zh.md), [full validation](saturday-full-validation-2026-09-05.zh.md), and [dubbing candidate record](sermon-dubbing-astra-review-2026-09-05.zh.md).
+- [July 31 reading-PDF production audit](gpt-transcribe-reading-pdf-production-audit-2026-07-31.zh.md).
+- `reports/` contains machine-readable sanitized accounting and smoke receipts.
 
-## Current Documentation Language
+## Research, history, and superseded material
 
-The repository entrypoint is English by default for open-source readability. Chinese documents live beside their English counterparts with `.zh.md` filenames. If a document materially changes product behavior, deployment behavior, or the 11:30 congregation goal, update both language versions.
+These files are retained for provenance and research, not as operator entrypoints:
+
+- Superseded plans: [speaker-voice plan](saturday-to-sunday-chinese-voice-plan.zh.md) and [Context Pack design/implementation record](saturday-to-sunday-context-pack-plan.zh.md).
+- Historical cloud architecture: [system design](system-design.md), [gap analysis](system-design-gap-analysis.md), [Cloud Run deployment prep](cloud-run-deployment-prep.md), [old Sunday cloud runbook](sunday-live-test-runbook.md), [cloud observability](observability.md), and [admin workflow](admin-workflow.md).
+- Historical publication and offline implementation: [July 5 publication retrospective](post-live-reviewed-sunday-publication.zh.md) and [old offline subtitle notes](weekly-offline-subtitle-generation.zh.md).
+- Early research: [findings](findings-report.md), [source feasibility](youtube-sermon-subtitle-pipeline-analysis.zh-en.md), [archive timing evidence](offline-live-archive-timing-feasibility.zh.md), and [provider comparison](model-provider-comparison.md).
+- Benchmark and training Discovery: [live translation](live-sermon-translation-benchmark.zh.md), [local ASR](local-asr-benchmark.zh.md), [MacBook translation](macbook-sermon-translation-benchmark.zh.md), and [MiLMMT post-training](milmmt-sermon-post-training-plan.zh.md).
+- Old project records: [backlog](backlog.md), [development notes](development-notes.md), and [review/test notes](review-testing.md).
+
+Chinese and English historical counterparts remain beside one another for provenance. They are not independent current sources of truth.
+
+## Maintenance rules
+
+1. Put current behavior in the workflow overview, a task runbook, or an interface contract; put one run's values in a dated report.
+2. When implementation supersedes a plan, add a banner naming the replacement instead of leaving “to be implemented” as current status.
+3. Re-verify models, prices, cloud resources, and deployment state from primary evidence before using them.
+4. Keep bilingual operator contracts synchronized. When Chinese is the sole source of truth, link it directly instead of creating a drifting English summary.
+5. Report documentation, tests, deployment, listening review, device acceptance, and venue synchronization as separate states.

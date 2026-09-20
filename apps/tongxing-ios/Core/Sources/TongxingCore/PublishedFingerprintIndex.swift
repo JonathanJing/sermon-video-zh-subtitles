@@ -26,12 +26,15 @@ public struct PublishedFingerprintBinding: Codable, Sendable, Equatable {
 
     public func validate(week: SermonWeek, track: SermonTrack) throws {
         try validate()
-        guard pageId == week.id, sourceSha256 == week.sourceSha256,
+        // Editorial approval can advance without changing the source-bound audio.
+        let supportedReviewState = (track.scope == "full_candidate" && week.humanApproval == .bool(false))
+            || (track.scope == "full_reviewed" && week.humanApproval == .bool(true))
+        guard supportedReviewState, pageId == week.id, sourceSha256 == week.sourceSha256,
               sourceStartSeconds == week.sourceStartSeconds, sourceEndSeconds == week.sourceEndSeconds,
-              trackSha256 == track.sha256, track.scope == "full_candidate",
+              trackSha256 == track.sha256,
               track.subtitleTiming == "source_video_aligned_candidate",
               abs(track.durationSeconds - (sourceEndSeconds - sourceStartSeconds)) <= 0.1,
-              week.videoSynchronization == "candidate_aligned", week.humanApproval == .bool(false),
+              week.videoSynchronization == "candidate_aligned",
               case .object(let evidence) = week.candidateEvidence,
               evidence["syncMp3Sha256"] == .string(trackSha256)
         else { throw CatalogError.invalid("已发布声音指纹与当前来源、窗口或音轨不符") }

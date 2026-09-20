@@ -1,10 +1,12 @@
 # Post-live 证道字幕复盘与发布路径
 
+> **历史 Cloud 页面发布 Runbook。** 本文固化 2026-07-05 的旧 manifest／Cloud API 路径，不再作为当前同行页面或双 PDF 的 operator 入口。当前页面发行使用[每周发行流程](tongxing-weekly-release.zh.md)；当前双 PDF 使用[本地生产 Runbook](codex-local-production-runbook.zh.md)。保留本文只为解释旧 artifact 与当时故障。
+
 这份 runbook 固化 2026-07-05 `0D6yZW4_uEA` 的处理经验，目标是让下次从直播归档到正式周日页面时，不再因为时间轴、标题、manifest promotion 或浏览器缓存走弯路。
 
 这份 runbook 描述的是稳定主流程之后的 reviewed / publish 阶段，不是当前 repo 首页里定义的主流程本身。
 
-当前主要工作流是稳定的 post-live 阅读版 PDF 路径，见：
+当前双 PDF operator 路径见：
 
 - [../README.zh.md](../README.zh.md)
 - [stable-post-live-reading-pdf-workflow.zh.md](./stable-post-live-reading-pdf-workflow.zh.md)

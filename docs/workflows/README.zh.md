@@ -1,10 +1,8 @@
-# 周六 PDF 生产与周日实时字幕：完整工作流
+# 项目工作流总览：每周内容、双 PDF 与周日实时字幕
 
-2026-09-11 安装与验收状态见 [Agents API 生产切换记录](../agents-api-production-cutover-20260911.zh.md)：代码已安装，正式入口 shadow/execute 验收通过，每周调度已启用；当前等待目标周日匹配源。
+这份 README 是项目的 workflow source of truth。它描述三条相互独立但可共享证据的路径：预制中文音轨与同行页面、post-live 双 PDF、周日本地实时字幕。执行时先按 [AGENTS.md](../../AGENTS.md) 的任务路由读取对应入口，不必加载全部历史文档。
 
-这份 README 是项目的 workflow source of truth。它描述两条 operator 主路径，区分已验证能力、尚未接入能力和估算值。执行时先按 [AGENTS.md](../../AGENTS.md) 的任务路由读取一个对应入口，不必加载全部文档。
-
-现状校准日期：**2026-09-04**。这里的现状以 `main` 上的代码、测试和 tracked 报告为准；本地未跟踪产物、旧截图和历史运行观察不自动升级为当前事实。运行时健康、现场声学和 Wi-Fi 条件仍需在每次使用前单独检查。
+现状校准日期：**2026-09-20，本地 `main` 546b90d**。9 月 11 日 Agents API 切换、9 月 19 日人工范围与受限并发，以及 9 月 20 日 CUV 证据修复均已进入该代码与 tracked 证据校准点。这里不据本地代码推断 push、远端部署、实时服务健康、实体设备或现场验收。
 
 状态定义：
 
@@ -16,12 +14,33 @@
 
 ![周六、周日与 Discovery 的总体关系](../diagrams/project-map.svg)
 
+当前三条路径：
+
+1. **预制每周内容：** 绑定已批准的同录制来源，生成经审校中文、讲员音色音轨、同步字幕、大纲、页面和分享海报。
+2. **周六双 PDF：** 从完整 post-live 媒体与人工范围生成中英阅读版和中文证道同行 PDF，并可导出受控的周日 Context Pack。
+3. **周日实时字幕：** 以当场麦克风和当下英文 ASR 为事实来源，本地生成中文字幕并保留独立恢复录音。
+
 核心边界：
 
 - 周六路径的目标是生成经过 QA 的 durable 文档。
 - 周日路径的目标是低延迟显示，同时保留足够录音和日志供回放、A/B 与后续训练。
 - 周日实时录音不能依赖 ASR 或翻译成功；模型失败时继续录音，并显示英文或降级状态。
 - 周六 content pack 是可选增强；`A0 / none` 始终保留为可比较基线。
+
+## 0. 预制每周内容：英文视频到同行页面
+
+![两路来源、中文配音审核与同行页面发行](../diagrams/saturday-chinese-voice-workflow.svg)
+
+当前入口是[配音操作 Runbook](../../experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md)、[CUV 生产合同](../sermon-cuv-production.zh.md)和[每周发行流程](../tongxing-weekly-release.zh.md)。早期的[原讲员音色方案草案](../saturday-to-sunday-chinese-voice-plan.zh.md)只保留设计历史，不再描述当前实现状态。
+
+截至 2026-09-20，当前代码已连接以下阶段：
+
+- 人工批准的完整礼拜窗口或核验后的 sermon-only 来源；不再用模型自动寻找证道边界。
+- `gpt-transcribe` 英文、MFA 阅读对齐、Astra Medium 中文／CUV 审核，以及 MacBook 优先、DGX Spark 备用的本地模型路由。
+- 讲员检查点 TTS、中文回转写、原声锚点、同步组装、人工听审、页面构建、声音指纹绑定、发行和 HTTP 文件核验。
+- 页面发行后由 Codex 单独生成并检查本周二维码海报；现有定时 Supervisor 不自动调用 ImageGen，也不自动上传或发送海报。
+
+[9 月 20 日制作记录](../production-2026-09-20.zh.md)保存了一次已完成页面、音频修复、用户听审／Firebase／iOS 播放确认及海报交付的运行证据。该记录不证明未来周次自动成功，也不证明真实现场同步；同录制声音定位、实体设备、现场音频路由与其他场次复用仍分别验收。
 
 ## A. 周六：直播/归档到两个 PDF
 
@@ -35,7 +54,7 @@
 
 Supervisor 默认使用 `gpt-6-astra` Medium（本账户旧 `gpt-5.6` 查询返回 404），SDK 回退也使用同一 Astra；生产内容的 Astra Medium 和 ASR 的 `gpt-transcribe` 不变。Agents API 仅接收固定 allowlist 的日期、动作枚举与证据布尔状态；完整 snapshot 和用于恢复配置核对的 `configFingerprint` 留在本地。
 
-真实 Agents API 的两个全模拟用例已核验：`live-synthetic-01` 缺审批用例完成 2 次工具调用、未调用生成并返回 usage；`live-synthetic-advance-01` 完成 4 次工具调用，模拟 generation 执行恰好 1 次。`live-real-shadow-minimal-01` 已完成实际生产 GCS 状态的只读检查，目标日期 `2026-09-13`，动作为 `waiting_for_matching_sunday`。三个用例均为零真实生产变更；[报告链接与验证限界](../sermon-production-supervisor-agent.zh.md#验证进度)不能代替生产入口安装或切换回执。随后已完成正式入口 execute 验收并启用每周跟进 `pdf-context-pack`；当前业务状态仍是等待匹配源，完整产物生产与未来定时唤醒各自验收，安装收据见[本地 runbook](../codex-local-production-runbook.zh.md)。本节不更新上方全项目的 2026-09-04 校准日期，也不代表周日现场验收完成。
+真实 Agents API 的两个全模拟用例已核验：`live-synthetic-01` 缺审批用例完成 2 次工具调用、未调用生成并返回 usage；`live-synthetic-advance-01` 完成 4 次工具调用，模拟 generation 执行恰好 1 次。`live-real-shadow-minimal-01` 对 2026-09-13 实际生产 GCS 状态作只读检查，当时结果为 `waiting_for_matching_sunday`。这些都是带日期的切换证据，不代表 9 月 20 日以后仍处于相同业务状态；当前周次必须重新读取本地和 GCS snapshot。[报告链接与验证限界](../sermon-production-supervisor-agent.zh.md#验证进度)也不能代替真实产物或现场验收。
 
 **人工范围更新（2026-09-19）：** 完整礼拜的证道起止位置由操作员提供，已移除模型边界探测。前置阶段只下载并核验媒体，后续转写／翻译模型保持各自职责。旧 tool/action 与审批哈希字段为恢复兼容保留；[媒体证据 v2 与旧会话迁移](../codex-local-production-runbook.zh.md#人工范围流程2026-09-19-代码更新)说明具体合同。这是本地代码状态，不是远端发布或现场验收。
 

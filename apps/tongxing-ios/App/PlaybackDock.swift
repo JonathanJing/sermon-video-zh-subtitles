@@ -7,6 +7,8 @@ struct PlaybackDock: View {
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isCollapsed = false
     var isPreparing = false
     var alignmentModel: AppModel? = nil
     var precision: (() -> Void)? = nil
@@ -14,16 +16,67 @@ struct PlaybackDock: View {
 
     var body: some View {
         Group {
-            if verticalSizeClass == .compact { compactControls }
-            else { fullControls }
+            if isCollapsed {
+                miniPlayButton
+                    .padding(6)
+                    .listeningGlassSurface()
+            } else {
+                Group {
+                    if verticalSizeClass == .compact { compactControls }
+                    else { fullControls }
+                }
+                .padding(.horizontal, 18)
+                .padding(.top, verticalSizeClass == .compact ? 10 : 14)
+                .padding(.bottom, 8)
+                .listeningGlassSurface()
+                .frame(maxWidth: verticalSizeClass == .compact ? 880 : 660)
+            }
         }
-        .padding(.horizontal, 18)
-        .padding(.top, verticalSizeClass == .compact ? 10 : 14)
-        .padding(.bottom, 8)
-        .listeningGlassSurface()
+        .contentShape(Rectangle())
+        .simultaneousGesture(dockGesture)
         .padding(.horizontal, 12).padding(.vertical, 8)
-        .frame(maxWidth: verticalSizeClass == .compact ? 880 : 660)
         .frame(maxWidth: .infinity)
+    }
+
+    // Presentation state only: collapsing never changes playback or alignment.
+    private func setCollapsed(_ collapsed: Bool) {
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
+            isCollapsed = collapsed
+        }
+    }
+
+    private var dockGesture: some Gesture {
+        DragGesture(minimumDistance: 16)
+            .onEnded { value in
+                let movement = value.translation
+                guard abs(movement.height) > 32,
+                      abs(movement.height) > abs(movement.width) * 1.5 else { return }
+                setCollapsed(movement.height > 0)
+            }
+    }
+
+    private var miniPlayButton: some View {
+        Button {
+            if playback.isReady && !isPreparing { playback.toggle() }
+        } label: {
+            Image(systemName: playback.isPlaying || playback.isWaiting ? "pause.fill" : "play.fill")
+                .font(.title3.weight(.semibold))
+                .contentTransition(.identity)
+                .frame(width: 56, height: 56)
+                .foregroundStyle(Brand.prominentLabel(scheme))
+                .background(Brand.accent, in: Circle())
+                .opacity(playback.isReady && !isPreparing ? 1 : 0.5)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(playLabel)
+        .accessibilityValue(statusLabel)
+        .accessibilityHint(localization.text("向上轻扫展开播放栏"))
+        .accessibilityIdentifier("playback-toggle")
+        // Keep the custom expand action reachable even while audio is preparing.
+        .accessibilityAction(named: Text(localization.text("展开播放栏"))) { setCollapsed(false) }
+        .contextMenu {
+            Button(localization.text("展开播放栏"), systemImage: "chevron.up") { setCollapsed(false) }
+        }
     }
 
     private var fullControls: some View {
@@ -113,6 +166,7 @@ struct PlaybackDock: View {
             .accessibilityLabel(localization.text("播放进度"))
             .accessibilityValue(localization.text("{time}，总长 {duration}。{status}", ["time": PlaybackTime.format(playback.position), "duration": PlaybackTime.format(playback.duration), "status": statusLabel]))
             .accessibilityIdentifier("playback-progress")
+            .accessibilityAction(named: Text(localization.text("收起播放栏"))) { setCollapsed(true) }
         }
     }
 
@@ -153,6 +207,8 @@ struct PlaybackDock: View {
         .buttonStyle(.plain)
         .accessibilityLabel(playLabel)
         .accessibilityIdentifier("playback-toggle")
+        .accessibilityHint(localization.text("向下轻扫收起播放栏"))
+        .accessibilityAction(named: Text(localization.text("收起播放栏"))) { setCollapsed(true) }
     }
 
     private var utilityActions: some View {

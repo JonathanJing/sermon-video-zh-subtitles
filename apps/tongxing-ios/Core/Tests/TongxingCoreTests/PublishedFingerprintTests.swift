@@ -55,6 +55,51 @@ struct PublishedFingerprintTests {
         }
     }
 
+    @Test func editorialApprovalPreservesSourceBoundAlignment() throws {
+        let (data, _) = try fixture()
+        // The published September 20 catalog retains the track ID and timing
+        // provenance while approval advances scope to full_reviewed.
+        for (scope, approval, expected) in [
+            ("full_candidate", false, true), ("full_reviewed", true, true),
+            ("full_reviewed", false, false), ("full_candidate", true, false),
+            ("preview", true, false)
+        ] {
+            var catalog = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+            var weeks = catalog["weeks"] as! [[String: Any]], week = weeks[0]
+            var tracks = week["tracks"] as! [[String: Any]]
+            tracks[0]["scope"] = scope
+            week["tracks"] = tracks; week["humanApproval"] = approval
+            weeks[0] = week; catalog["weeks"] = weeks
+            let decoded = try WeeklyCatalog.decode(JSONSerialization.data(withJSONObject: catalog)).defaultWeek
+            let binding = try #require(decoded.audioFingerprint)
+            if expected {
+                try binding.validate(week: decoded, track: decoded.tracks[0])
+            } else {
+                #expect(throws: (any Error).self) { try binding.validate(week: decoded, track: decoded.tracks[0]) }
+            }
+        }
+    }
+
+    @Test func reviewedAudioStillRequiresMatchingSourceAndEvidence() throws {
+        let (data, _) = try fixture()
+        for (key, value) in [
+            ("sourceSha256", String(repeating: "d", count: 64) as Any),
+            ("sourceStartSeconds", 1199 as Any),
+            ("candidateEvidence", ["syncMp3Sha256": String(repeating: "d", count: 64)] as Any),
+            ("videoSynchronization", "not_validated" as Any),
+            ("humanApproval", NSNull() as Any)
+        ] {
+            var catalog = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+            var weeks = catalog["weeks"] as! [[String: Any]], week = weeks[0]
+            var tracks = week["tracks"] as! [[String: Any]]
+            tracks[0]["scope"] = "full_reviewed"
+            week["tracks"] = tracks; week["humanApproval"] = true
+            week[key] = value; weeks[0] = week; catalog["weeks"] = weeks
+            let decoded = try WeeklyCatalog.decode(JSONSerialization.data(withJSONObject: catalog)).defaultWeek
+            #expect(throws: (any Error).self) { try decoded.audioFingerprint!.validate(week: decoded, track: decoded.tracks[0]) }
+        }
+    }
+
     @Test func malformedPostingsAndDifferentAlgorithmRejected() throws {
         let (_, data) = try fixture()
         for (key, value) in [("landmarkCount", 4 as Any), ("fftSize", 2048 as Any),

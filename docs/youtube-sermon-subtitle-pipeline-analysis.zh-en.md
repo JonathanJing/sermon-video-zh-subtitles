@@ -1,5 +1,7 @@
 # 证道视频中文字幕 Pipeline 可行性分析 / Sermon Video Chinese Subtitle Pipeline Feasibility Report
 
+> **历史来源研究 / Historical source study.** 本报告保留 2026-06-22 的公开视频观察，不定义当前来源选择、生产流程或周日运行方式。Current entrypoints: [workflow overview](workflows/README.zh.md), [local production runbook](codex-local-production-runbook.zh.md), and [Sunday operations](sunday-live-operations-whitepaper.zh.md).
+
 Report date: 2026-06-22  
 Timezone used for SLA analysis: America/Los_Angeles, PT  
 Target SLA: subtitles generated every Sunday by 11:30 PT, hard deadline 11:50 PT
@@ -349,4 +351,3 @@ The next step should be a repeatable detection system, not subtitle display:
 ### 9. Conclusion
 
 Public YouTube VOD is not a viable input source for this SLA. For the Mariners Church channel, no sampled Sunday main sermon became public before 11:50 PT. The normal public release time is around 12:30 PT. To generate Chinese subtitles by 11:50 PT every Sunday, the project needs access to an earlier video, audio, or transcript source.
-

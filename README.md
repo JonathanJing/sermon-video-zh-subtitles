@@ -119,7 +119,7 @@ Key references:
 
 ## 3. Discovery, gaps, and next work
 
-The [Tongxing native iOS client](apps/tongxing-ios/README.zh.md) is under development on an isolated branch. It reuses the published catalog, audio, and captions to validate offline listening and system audio controls; a development build does not establish device, venue, or App Store acceptance.
+The [Tongxing native iOS client](apps/tongxing-ios/README.zh.md) is integrated on `main` and remains a development-validation client. It reuses the published catalog, audio, and captions for offline listening, system audio controls, bilingual text, and short microphone-based sound alignment; code integration or a development build does not establish physical-device, TestFlight, venue, or App Store acceptance.
 
 ### What has been demonstrated
 
