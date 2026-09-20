@@ -1,5 +1,6 @@
 import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
 import tempfile
@@ -37,6 +38,17 @@ class SaturdayHarnessTests(unittest.TestCase):
         self.supervisor.write_text(json.dumps({"sunday": "2026-09-06", "status": status,
             "finalSnapshot": {"sunday": "2026-09-06", "slug": "sermon_archive-source",
                 "recommendedAction": {"action": "wait_for_source"}}}))
+
+    def test_execute_passes_bridge_config_to_producer_without_mutating_environment(self):
+        before = os.environ.get("SERMON_DUBBING_CONFIG")
+        def child(command, **kwargs):
+            if "run_codex_local_sermon_production.py" in command[1]:
+                self.assertEqual(kwargs["env"]["SERMON_DUBBING_CONFIG"], str(self.config.resolve()))
+                self.write_pdf()
+                return subprocess.CompletedProcess(command, 2)
+            return subprocess.CompletedProcess(command, 0, stdout=json.dumps(self.bridge()))
+        harness.run(harness.parse_args(self.argv + ["--mode", "execute"]), runner=child)
+        self.assertEqual(os.environ.get("SERMON_DUBBING_CONFIG"), before)
 
     def test_default_inspect_has_no_subprocess_or_writes(self):
         runner = Mock(side_effect=AssertionError("read-only called subprocess"))

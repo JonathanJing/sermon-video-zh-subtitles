@@ -15,6 +15,14 @@
 
 2026-09-11 已退役旧 `sermon-post-live-timeline` Job；其配置、IAM 和执行记录保存在本地 `artifacts/evidence/gcp-cleanup-20260911/`。对应 `sermon-sat-post-live-subtitles` Scheduler 保持暂停，不能仅恢复调度就恢复云端生产。
 
+## MFA 阅读对齐
+
+新 reading 生产默认使用 MFA 词/音素对齐，替代字符比例估时。所有本地模型的目标路由为 **MacBook 优先、DGX Spark 备用**；MFA／G2P 优先使用本机独立环境，本机健康时不联系 Spark。备用默认启用，可用 `MFA_SPARK_FALLBACK=0` 或 `--no-mfa-spark-fallback` 禁用，远端使用独立的 `MFA_SPARK_*` 模型路径。远程可经 Tailscale 的 Mac mini relay。配置、ARM64 备用环境限制与缓存边界见 [MFA 生产接入](mfa-production.zh.md)。
+
+备用仅处理运行环境或推理可用性故障；文字错误、未知音素、损坏对齐与待审核状态仍停止，不能通过切换机器绕过。MFA 时间仍为模型估计，句界来自冻结英文标点；源窗口审批与人工审核要求保持不变。代码路由不代表两端部署、真实推理或某周产物已验收。
+
+OpenAI 云端转写与语言 API 保持不变。每周 TTS 和配音质检也采用 MacBook 优先、Spark 备用。MacBook MPS 已用授权讲员检查点完成 10 字中文单元的真实合成，输出 2.56 秒音频；短样本成功不代表整篇吞吐、音质或人工听审获准。媒体处理、排版和校验保留在调度端；无模型声音指纹匹配继续在听众浏览器内执行。
+
 ## 人工范围流程（2026-09-19 代码更新）
 
 完整礼拜不再调用模型识别证道起止位置。当前顺序为：下载完整媒体 → ffprobe/完整性核验 → 操作员提供绝对起止时间 → 持久化审批 → 英文转写、中文翻译与双 PDF。纯证道来源沿用独立同视频入口；在归档入口也可人工确认 `0 → 完整片长`。`gpt-transcribe` 仅在后续内容转写等独立阶段使用。

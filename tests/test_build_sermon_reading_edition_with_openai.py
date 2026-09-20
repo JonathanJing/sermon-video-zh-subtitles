@@ -19,6 +19,18 @@ from scripts.build_sermon_reading_edition_with_openai import (
 
 
 class ReadingEditionTest(unittest.TestCase):
+    def test_mfa_sentence_retains_exact_timing_and_indivisible_id(self):
+        segment = {"id": 9, "start": 1.23, "end": 8.91,
+            "text": "Dr. Smith is here.", "timingQuality": "mfa_word_aligned"}
+        pieces = mod.split_segment_sentences(segment)
+        self.assertEqual(pieces, [{"segmentId": 9, "start": 1.23, "end": 8.91,
+            "text": "Dr. Smith is here.", "complete": True}])
+        blocks = mod.build_semantic_blocks([segment], [{"id": 9, "zh": "史密斯博士来了。"}],
+            preferred_seconds=24, preferred_english_chars=420, hard_seconds=55, hard_english_chars=840)
+        self.assertEqual(blocks[0]["start"], 1.23)
+        self.assertEqual(blocks[0]["end"], 8.91)
+        self.assertEqual(blocks[0]["segmentIds"], [9])
+
     def test_sentence_units_split_multiple_sentences_inside_one_segment(self):
         units = build_sentence_units(
             [

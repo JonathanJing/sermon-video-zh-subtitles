@@ -375,8 +375,11 @@ def render_reviewed_pdfs(run, contract, inputs, *, runner=subprocess.run, python
         companion = [python, str(ROOT / "scripts/render_sermon_interpretation_pdf.py"), "--input", str(paths["outline"]),
             "--out", str(staging / "sermon_interpretation_zh.pdf"), "--qa-out", str(staging / "sermon_interpretation_zh.qa.json")]
         frozen = {key: sha256(path) for key, path in paths.items() if key in PDF_BINDINGS}
-        for command in [reading, companion]:
-            runner(command, check=True, stdout=sys.stderr)
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=2, thread_name_prefix="same-video-pdf") as pool:
+            futures = [pool.submit(runner, command, check=True, stdout=sys.stderr) for command in [reading, companion]]
+            for future in futures:
+                future.result()
         outputs = {key: staging / Path(REVIEWED_INPUTS[key]).name for key in PDF_KEYS}
         require(all(path.is_file() and path.stat().st_size for path in outputs.values())
                 and all(read(outputs[key]).get("status") == "pass" for key in ("readingPdfQa", "companionPdfQa")), "New same-video PDF rendering did not pass")

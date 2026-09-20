@@ -1,0 +1,137 @@
+{
+  "jobSha256": "25afd1bf83008bc5b7a50a382f63f7df0b521f045cd9b3a20e0c515f4ef6bf24",
+  "audioSha256": "f0752e8ea6b1e14eeaa9a65ab35caadfb461f55d2531085fd1dc2cbf5f96aea7",
+  "scriptSha256": "4fc5daf10c76652c4cac4d79fc2af47ac4d56dcc65843d86659c505ed80d581b",
+  "scope": "runtime_probe_not_production",
+  "order": "sequential_then_parallel",
+  "warmFilesystemCacheCaveat": true,
+  "sequentialWallSeconds": 25.27575993537903,
+  "parallelWallSeconds": 16.452661991119385,
+  "wallSpeedup": 1.5362717564502368,
+  "inferenceOverlapSeconds": 1.6910679340362549,
+  "limitations": [
+    "Single short sample; no whole-sermon throughput claim",
+    "No quality or human approval claim",
+    "Order/cache effects are not controlled"
+  ],
+  "machine": {
+    "platform": "Apple Silicon MacBook",
+    "unifiedMemoryBytes": 68719476736,
+    "localModelSlots": 2,
+    "reserveGiB": 12
+  },
+  "models": {
+    "tts": {
+      "identity": {
+        "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+        "checkpointSha256": "3b46fc0f5268c3bf14c55c0b11833125fbacc31c6a7ae8b7f1328a227ef8a4d0",
+        "device": "mps",
+        "dtype": "float32"
+      },
+      "sequentialLoadSeconds": 14.379727840423584,
+      "sequentialInferenceSeconds": 6.132153034210205,
+      "parallelLoadSeconds": 9.089548110961914,
+      "parallelInferenceSeconds": 6.2934410572052,
+      "parallelReadyAtEpoch": 1789859135.876995,
+      "parallelInferenceStartEpoch": 1789859135.9974668,
+      "parallelInferenceEndEpoch": 1789859142.2909079,
+      "parallelPeakRssBytes": 5692784640,
+      "parallelLoadedDeviceMemory": {
+        "allocatedBytes": 8379369472,
+        "driverBytes": 8523218944
+      },
+      "parallelFinalDeviceMemory": {
+        "allocatedBytes": 8379369728,
+        "driverBytes": 9789161472
+      },
+      "output": {
+        "audioSha256": "7cfd3313b117d928938aadc8fca6b9e3e72fa49b379f616e92dae77dce5be724",
+        "durationSeconds": 2.56,
+        "sampleRate": 24000,
+        "humanReview": "pending"
+      }
+    },
+    "asr": {
+      "identity": {
+        "model": "mlx-community/Qwen3-ASR-0.6B-8bit",
+        "revision": "89e96d92ba34aca20b3e29fb10cc284097d1219f",
+        "device": "mlx",
+        "quantization": "8bit"
+      },
+      "sequentialLoadSeconds": 1.6781229972839355,
+      "sequentialInferenceSeconds": 1.437298059463501,
+      "parallelLoadSeconds": 0.9540390968322754,
+      "parallelInferenceSeconds": 1.6910679340362549,
+      "parallelReadyAtEpoch": 1789859127.720459,
+      "parallelInferenceStartEpoch": 1789859136.002752,
+      "parallelInferenceEndEpoch": 1789859137.69382,
+      "parallelPeakRssBytes": 1256177664,
+      "parallelLoadedDeviceMemory": {
+        "allocatedBytes": 1006153740,
+        "peakBytes": 1006153740,
+        "cacheBytes": 7528
+      },
+      "parallelFinalDeviceMemory": {
+        "allocatedBytes": 1011544108,
+        "peakBytes": 2559468800,
+        "cacheBytes": 80865336
+      },
+      "output": {
+        "transcriptSha256": "88473f2de1790886889fb31f07c3265f81c10bfb54b76c6d1df8efd3ca164545",
+        "characters": 820,
+        "humanReview": "pending"
+      }
+    }
+  },
+  "minimumSampledAvailableGiB": 15.383316040039062,
+  "afterRunPressureSnapshot": {
+    "capturedAtEpoch": 1789859150.421084,
+    "phase": "after_parallel_workers_exited",
+    "pressure": {
+      "exitCode": 0,
+      "output": "The system has 68719476736 (4194304 pages with a page size of 16384).\nSystem-wide memory free percentage: 67%"
+    },
+    "swap": {
+      "exitCode": 0,
+      "output": "vm.swapusage: total = 1024.00M  used = 1.06M  free = 1022.94M  (encrypted)"
+    },
+    "pressureLevel": {
+      "exitCode": 0,
+      "output": "kern.memorystatus_vm_pressure_level: 1"
+    }
+  },
+  "completionVerification": {
+    "frozenJobUnchanged": true,
+    "frozenAudioUnchanged": true,
+    "workers": [
+      {
+        "stage": "sequential-tts",
+        "worker": "tts",
+        "pid": 88065,
+        "processExited": true,
+        "outputHashVerified": true
+      },
+      {
+        "stage": "sequential-asr",
+        "worker": "asr",
+        "pid": 88367,
+        "processExited": true,
+        "outputHashVerified": true
+      },
+      {
+        "stage": "parallel",
+        "worker": "tts",
+        "pid": 88418,
+        "processExited": true,
+        "outputHashVerified": true
+      },
+      {
+        "stage": "parallel",
+        "worker": "asr",
+        "pid": 88419,
+        "processExited": true,
+        "outputHashVerified": true
+      }
+    ]
+  }
+}

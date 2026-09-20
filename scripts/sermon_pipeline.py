@@ -3,10 +3,12 @@
 
 import argparse
 import concurrent.futures
+from contextvars import copy_context
 import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -591,7 +593,11 @@ def reference_transcription_keywords(glossary):
     return normalized_transcription_keywords(glossary_terms(glossary))
 
 
-def transcribe_reference_chunks(api_key, clip_path, outdir, chunk_seconds, model, glossary):
+def transcribe_reference_chunks(api_key, clip_path, outdir, chunk_seconds, model, glossary, workers=2):
+    if not 1 <= workers <= 8:
+        raise ValueError("ASR workers must be between 1 and 8")
+    if chunk_seconds <= 0:
+        raise ValueError("ASR chunk seconds must be positive")
     output = outdir / "asr_reference_chunks.json"
     duration = ffprobe_duration(clip_path)
     chunks_dir = outdir / "chunks_reference"
@@ -600,11 +606,9 @@ def transcribe_reference_chunks(api_key, clip_path, outdir, chunk_seconds, model
     keywords = reference_transcription_keywords(glossary)
     languages = DEFAULT_TRANSCRIPTION_LANGUAGES
     chunk_count = int((duration + chunk_seconds - 0.001) // chunk_seconds)
-    for index in range(chunk_count):
+    def transcribe_one(index):
         start = index * chunk_seconds
         length = min(chunk_seconds, duration - start)
-        if length <= 0:
-            continue
         audio = chunks_dir / f"chunk_{index:04d}.m4a"
         result_path = chunks_dir / f"chunk_{index:04d}.json"
         metadata_path = chunks_dir / f"chunk_{index:04d}.request.json"
@@ -654,8 +658,7 @@ def transcribe_reference_chunks(api_key, clip_path, outdir, chunk_seconds, model
                     languages=languages,
                 )
             write_transcription_cache(result_path, metadata_path, result, identity)
-        chunks.append(
-            {
+        chunk = {
                 "id": index,
                 "start": round(start, 3),
                 "end": round(start + length, 3),
@@ -664,13 +667,23 @@ def transcribe_reference_chunks(api_key, clip_path, outdir, chunk_seconds, model
                 "usage": result.get("usage"),
                 "detectedLanguages": result.get("languages", []),
             }
-        )
         print(f"{model} reference chunk {index + 1}/{chunk_count}", flush=True)
+        return chunk
+
+    # Each worker owns one media/cache path; only the coordinator freezes the aggregate.
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = [executor.submit(copy_context().run, transcribe_one, i) for i in range(chunk_count)]
+        try:
+            chunks = [future.result() for future in futures]
+        except BaseException:
+            for future in futures:
+                future.cancel()
+            raise
     write_json(output, chunks)
     return chunks
 
 
-def transcribe_reference(api_key, clip_path, outdir, chunk_seconds, model, glossary):
+def transcribe_reference(api_key, clip_path, outdir, chunk_seconds, model, glossary, workers=2):
     if clip_path.stat().st_size > MAX_SINGLE_TRANSCRIPTION_BYTES:
         return transcribe_reference_chunks(
             api_key,
@@ -679,6 +692,7 @@ def transcribe_reference(api_key, clip_path, outdir, chunk_seconds, model, gloss
             chunk_seconds,
             model,
             glossary,
+            workers=workers,
         )
 
     duration = ffprobe_duration(clip_path)
@@ -718,6 +732,7 @@ def transcribe_reference(api_key, clip_path, outdir, chunk_seconds, model, gloss
                 chunk_seconds,
                 model,
                 glossary,
+                workers=workers,
             )
         write_transcription_cache(result_path, metadata_path, result, identity)
     chunks = [
@@ -1173,7 +1188,8 @@ def translate_chinese(
     items = list(enumerate(segments))
     if workers > 1:
         with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
-            results = executor.map(translate_one, items)
+            futures = [executor.submit(copy_context().run, translate_one, item) for item in items]
+            results = (future.result() for future in futures)
             for idx, translated_segment in enumerate(results):
                 translated.append(translated_segment)
                 if (idx + 1) % 25 == 0 or idx + 1 == len(segments):
@@ -1313,8 +1329,23 @@ def main():
         default=1,
         help="Concurrent per-segment translation requests. Use conservatively to respect rate limits.",
     )
+    parser.add_argument("--fingerprint-precompute", action="store_true",
+                        default=os.environ.get("SERMON_FINGERPRINT_PRECOMPUTE") == "1")
+    parser.add_argument("--asr-workers", type=int, choices=range(1, 9), default=2,
+                        help="Concurrent independent ASR chunks; full-file requests remain single calls.")
     parser.add_argument("--chunk-seconds", type=float, default=45.0)
     parser.add_argument("--reading-chunk-seconds", type=float, default=1200.0)
+    parser.add_argument("--reading-aligner", choices=("mfa", "legacy"), default="mfa",
+                        help="MFA word/phone timing for reading production; legacy is explicit historical recovery only.")
+    from scripts.mfa_spark import add_arguments
+    add_arguments(parser)
+    from scripts.mfa_backend import add_arguments as add_backend_arguments
+    add_backend_arguments(parser)
+    parser.add_argument("--mfa-executable", default=os.environ.get("MFA_EXECUTABLE", "mfa"))
+    parser.add_argument("--mfa-dictionary", type=Path, default=os.environ.get("MFA_DICTIONARY"))
+    parser.add_argument("--mfa-acoustic-model", type=Path, default=os.environ.get("MFA_ACOUSTIC_MODEL"))
+    parser.add_argument("--mfa-g2p-model", type=Path, default=os.environ.get("MFA_G2P_MODEL"))
+    parser.add_argument("--mfa-spoken-forms", type=Path, default=os.environ.get("MFA_SPOKEN_FORMS"))
     parser.add_argument("--source-text-review", type=Path, help="Hash-bound, separately reviewed English source corrections; original ASR stays unchanged.")
     parser.add_argument(
         "--reading-segment-target-chars",
@@ -1352,8 +1383,82 @@ def main():
         return produce_pipeline(args, api_key, source_duration, start, end, outdir)
 
 
+def mfa_options(args):
+    return {
+        "mfa_executable": getattr(args, "mfa_executable", os.environ.get("MFA_EXECUTABLE", "mfa")),
+        "dictionary_path": getattr(args, "mfa_dictionary", None) or os.environ.get("MFA_DICTIONARY"),
+        "acoustic_model": getattr(args, "mfa_acoustic_model", None) or os.environ.get("MFA_ACOUSTIC_MODEL"),
+        "g2p_model": getattr(args, "mfa_g2p_model", None) or os.environ.get("MFA_G2P_MODEL"),
+        "spoken_forms_path": getattr(args, "mfa_spoken_forms", None) or os.environ.get("MFA_SPOKEN_FORMS"),
+    }
+
+
+def reading_segments(args, chunks, clip_path, outdir):
+    if getattr(args, "reading_aligner", "mfa") == "legacy":
+        return reference_chunks_to_reading_segments(
+            chunks, target_chars=max(120, args.reading_segment_target_chars))
+    return align_reading_chunks(args, chunks, clip_path, outdir / "mfa")
+
+
+def align_reading_chunks(args, chunks, clip_path, outdir):
+    from scripts.mfa_backend import align_reference_chunks, options
+    result = align_reference_chunks(chunks, clip_path, outdir, **options(args))
+    receipt = outdir / "backend.json"
+    if receipt.is_file():
+        args._mfa_runtime = json.loads(receipt.read_text())
+    return result
+
+
+def precompute_source_fingerprint(source, start, end, outdir):
+    """Only source landmarks: final page/Chinese-track binding is a later stage."""
+    from scripts.sermon_accounting import subprocess_environment
+    node = shutil.which("node")
+    if not node or not shutil.which("ffmpeg"):
+        raise RuntimeError("Fingerprint precompute requires node and ffmpeg")
+    script = REPO_ROOT / "experiments" / "sermon-dubbing-poc" / "build_fingerprint_index.mjs"
+    identity = {"sourceSha256": file_sha256(source), "sourceStartSeconds": start,
+                "sourceEndSeconds": end, "scriptSha256": file_sha256(script),
+                "algorithmSha256": file_sha256(script.parent / "web" / "fingerprint-core.mjs")}
+    root = outdir / "source-fingerprint" / json_sha256(identity)
+    root.mkdir(parents=True, exist_ok=True)
+    receipt_path = root / "receipt.json"
+    with stage("pipeline.source_fingerprint"):
+        if receipt_path.exists():
+            receipt = read_json(receipt_path)
+            cached = Path(receipt["path"])
+            if receipt.get("identity") == identity and cached.is_file() and file_sha256(cached) == receipt.get("sha256"):
+                return receipt
+        output = root / (uuid.uuid4().hex + ".json")
+        result = subprocess.run([node, str(script), "--mode", "precompute", "--source", str(source),
+                                 "--source-sha", identity["sourceSha256"], "--start", str(start), "--end", str(end),
+                                 "--out", str(output)], check=True, capture_output=True, text=True,
+                                env=subprocess_environment(), timeout=1800)
+        receipt = {**json.loads(result.stdout), "identity": identity, "finalTrackBound": False}
+        if receipt.get("sha256") != file_sha256(output):
+            raise RuntimeError("Fingerprint precompute receipt hash mismatch")
+        write_json(receipt_path, receipt)
+        return receipt
+
+
+def transcribe_with_fingerprint(args, api_key, clip_path, outdir, chunk_seconds, glossary, start, end):
+    def transcribe():
+        with stage("pipeline.transcribe", billing="api"):
+            return transcribe_reference(api_key, clip_path, outdir, chunk_seconds, args.reference_model,
+                                        glossary, workers=getattr(args, "asr_workers", 2))
+    if not getattr(args, "fingerprint_precompute", False):
+        return transcribe(), None
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+        fingerprint = executor.submit(copy_context().run, precompute_source_fingerprint,
+                                      args.input, start, end, outdir)
+        chunks = transcribe()
+        return chunks, fingerprint.result()
+
+
 def produce_pipeline(args, api_key, source_duration, start, end, outdir):
     glossary = load_glossary(args.glossary)
+    if args.output_mode == "reading" and getattr(args, "reading_aligner", "mfa") == "mfa":
+        from scripts.mfa_backend import preflight, options
+        args._mfa_runtime = preflight(**options(args))
 
     clip_path = outdir / "source_clip.m4a"
     with stage("pipeline.clip", billing="local"):
@@ -1365,21 +1470,13 @@ def produce_pipeline(args, api_key, source_duration, start, end, outdir):
             )
 
     reference_chunk_seconds = args.reading_chunk_seconds if args.output_mode == "reading" else args.chunk_seconds
-    with stage("pipeline.transcribe", billing="api"):
-        reference_chunks = transcribe_reference(
-            api_key,
-            clip_path,
-            outdir,
-            reference_chunk_seconds,
-            args.reference_model,
-            glossary,
-        )
+    reference_chunks, fingerprint_receipt = transcribe_with_fingerprint(
+        args, api_key, clip_path, outdir, reference_chunk_seconds, glossary, start,
+        end if end is not None else source_duration,
+    )
     with stage("pipeline.segment", billing="local"):
         if args.output_mode == "reading":
-            raw_segments = reference_chunks_to_reading_segments(
-                reference_chunks,
-                target_chars=max(120, args.reading_segment_target_chars),
-            )
+            raw_segments = reading_segments(args, reference_chunks, clip_path, outdir)
         else:
             whisper_raw = transcribe_whisper(api_key, clip_path, outdir, args.timing_model, glossary)
             raw_segments = normalize_whisper_segments(whisper_raw)
@@ -1409,6 +1506,10 @@ def produce_pipeline(args, api_key, source_duration, start, end, outdir):
                 asr_path = outdir / "asr_reference_chunks.json"
             corrected, source_review = apply_review(corrected, args.source_text_review, clip_path, asr_path)
             write_json(outdir / "source-text-review-provenance.json", source_review)
+            if getattr(args, "reading_aligner", "mfa") == "mfa":
+                # Text edits invalidate old word/phone times; realign the reviewed words.
+                corrected = align_reading_chunks(
+                    args, corrected, clip_path, outdir / "mfa-reviewed")
         shaped_en = corrected if args.output_mode == "reading" else shape_durations(corrected)
         write_json(outdir / "segments_timed_en_corrected.json", shaped_en)
 
@@ -1459,7 +1560,13 @@ def produce_pipeline(args, api_key, source_duration, start, end, outdir):
             },
         },
         "outputMode": args.output_mode,
-        "timingPrecision": "whisper_segments" if args.output_mode == "subtitles" else "synthetic_reading_layout_only",
+        "readingAligner": getattr(args, "reading_aligner", "mfa") if args.output_mode == "reading" else None,
+        "sourceFingerprintPrecompute": fingerprint_receipt,
+        "readingAlignmentBackend": getattr(args, "_mfa_runtime", {}).get("backend"),
+        "readingAlignmentRuntime": getattr(args, "_mfa_runtime", None),
+        "timingPrecision": ("whisper_segments" if args.output_mode == "subtitles" else
+                            "mfa_word_aligned" if getattr(args, "reading_aligner", "mfa") == "mfa" else
+                            "synthetic_reading_layout_only"),
         "seriesTerminology": glossary["seriesTerminology"],
         "readingSegmentTargetCharacters": (
             max(120, args.reading_segment_target_chars) if args.output_mode == "reading" else None

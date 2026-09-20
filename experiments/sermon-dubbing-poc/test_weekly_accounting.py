@@ -1,6 +1,6 @@
 import json
 import os
-from contextlib import ExitStack, contextmanager
+from contextlib import ExitStack, contextmanager, nullcontext
 from pathlib import Path
 import subprocess
 import sys
@@ -18,6 +18,9 @@ from test_resume_integrity import candidate_fixture
 
 class WeeklyAccountingTests(unittest.TestCase):
     def setUp(self):
+        transport = patch("spark_transport.bridge", return_value="")
+        transport.start()
+        self.addCleanup(transport.stop)
         identity = patch.object(accounting, "execution_identity", return_value={"gitCommit": None})
         identity.start()
         self.addCleanup(identity.stop)
@@ -56,8 +59,8 @@ class WeeklyAccountingTests(unittest.TestCase):
         commands = []
 
         def command(argv, **kwargs):
-            commands.append({"argv": argv, "stage": os.environ.get("SERMON_ACCOUNTING_STAGE"),
-                             "runId": os.environ.get("SERMON_ACCOUNTING_RUN_ID")})
+            commands.append({"argv": argv, "stage": kwargs.get("env", os.environ).get("SERMON_ACCOUNTING_STAGE"),
+                             "runId": kwargs.get("env", os.environ).get("SERMON_ACCOUNTING_RUN_ID")})
             if os.environ.get("SERMON_ACCOUNTING_STAGE") == "transfer_download":
                 render_files()
             output = (json.dumps(runner.render_identity(work / "job.json", "fixture-checkpoint"))
@@ -72,11 +75,14 @@ class WeeklyAccountingTests(unittest.TestCase):
                   "assemble": None}
         with ExitStack() as stack:
             stack.enter_context(patch.dict(os.environ, {key: "" for key in ENV_KEYS}))
+            # Remote-path fixtures must not discover an operator's real local voice.
             stack.enter_context(patch.object(sys, "argv", ["run_weekly_dubbing.py", "--work", str(work),
-                "--remote-checkpoint", runner.REMOTE_ROOT + "/sermon-fixture/checkpoint", "--mlx-python", "/fixture/python"]))
+                "--remote-checkpoint", runner.REMOTE_ROOT + "/sermon-fixture/checkpoint", "--mlx-python", "/fixture/python", "--serial-stages",
+                "--local-checkpoint", str(Path(folder) / "missing-local-checkpoint")]))
             stack.enter_context(patch("builtins.print"))
             for name, value in values.items():
                 mocks[name] = stack.enter_context(patch.object(runner, name, return_value=value))
+            stack.enter_context(patch.object(runner, "local_model_slot", side_effect=lambda **kwargs: nullcontext()))
             process = stack.enter_context(patch.object(runner, "process_run", side_effect=command))
             # Accounting fixture has fake media; real quarantine validators are
             # independently covered by test_execution_recovery.
@@ -92,12 +98,35 @@ class WeeklyAccountingTests(unittest.TestCase):
         finished = [row for row in events if row["event"] == "stage_finished"]
         return events, summary, finished
 
+    def test_bad_mps_partial_cache_blocks_missing_checkpoint_or_python_fallback(self):
+        from render_weekly_audio import render_identity
+        for missing in ("checkpoint", "python"):
+            for corruption in ("unreceipted", "hash"):
+                with self.subTest(missing=missing, corruption=corruption), tempfile.TemporaryDirectory() as tmp, self.fixture(tmp) as f:
+                    job = runner.read(f.work / "job.json")
+                    folder = f.work / "local-render-mps"
+                    folder.mkdir()
+                    identity = render_identity(f.work / "job.json", job["voice"]["checkpointSha256"], device="mps")
+                    runner.write_json(folder / "identity.json", identity)
+                    raw = folder / "unit-0000.wav"
+                    raw.write_bytes(b"corrupt audio")
+                    if corruption == "hash":
+                        runner.write_json(raw.with_suffix(".json"), {"unit": job["units"][0], "identity": identity, "sha256": "wrong"})
+                    checkpoint = Path(tmp) / "checkpoint"
+                    if missing == "python":
+                        checkpoint.mkdir()
+                    sys.argv += ["--local-checkpoint", str(checkpoint), "--local-python", "/missing/python"]
+                    with self.assertRaisesRegex(ValueError, "local MPS audio"):
+                        runner.main()
+                    self.assertEqual(f.commands, [])
+                    self.assertEqual(raw.read_bytes(), b"corrupt audio")
+
     def test_fresh_run_records_separate_local_execution_and_no_invented_usage(self):
         with tempfile.TemporaryDirectory() as tmp, self.fixture(tmp) as f:
             runner.main()
             events, summary, finished = self.read_accounting(f.work / "accounting")
             names = [row["stage"] for row in finished]
-            self.assertEqual(names, ["job_validation", "cache_validation", "transfer_upload", "render",
+            self.assertEqual(names, ["job_validation", "cache_validation", "local_render_attempt", "transfer_upload", "render",
                 "transfer_download", "render_validation", "assemble", "source_alignment", "local_asr",
                 "timing", "candidate_validation", "weekly_dubbing"])
             self.assertTrue(all(not row["cacheHit"] and row["status"] == "completed" for row in finished))

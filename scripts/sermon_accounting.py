@@ -282,6 +282,23 @@ def _write_event(event):
         fcntl.flock(stream.fileno(), fcntl.LOCK_UN)
 
 
+def subprocess_environment():
+    """Snapshot child-process attribution without mutating the process-wide environment.
+
+    Worker stages deliberately only change ContextVars. Pass this mapping as
+    subprocess env so concurrently launched children inherit their own span.
+    """
+    env = os.environ.copy()
+    identity = _identity.get()
+    if identity:
+        env[ENV_KEYS[0]], env[ENV_KEYS[1]] = map(str, identity)
+    for key, value in ((ENV_KEYS[2], _stage.get()), (ENV_KEYS[3], _span.get()),
+                       (WORKFLOW_ENV, _workflow.get())):
+        if value is not None:
+            env[key] = str(value)
+    return env
+
+
 @contextmanager
 def stage(name, *, cache_hit=False, billing="local"):
     name = _label(name)

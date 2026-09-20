@@ -29,6 +29,18 @@ def timecode(text):
     return h * 3600 + m * 60 + s
 
 
+def source_id_from_run(run):
+    """Directory is only a candidate identity; approval URL hash validates it."""
+    import re
+    name = Path(run).name
+    for prefix in ("sermon_", "mariners_"):
+        if name.startswith(prefix):
+            source_id = name[len(prefix):]
+            if re.fullmatch(r"[A-Za-z0-9_-]+", source_id):
+                return source_id
+    raise ValueError("Unsupported source run identity; expected sermon_ID or mariners_ID")
+
+
 def resolve_approved_timeline(run, approval, *, week, source_url):
     """Select existing evidence by the approval's canonical digest, never path age.
 
@@ -57,7 +69,18 @@ def resolve_approved_timeline(run, approval, *, week, source_url):
     raise ValueError("No local timeline report matches the existing operator window approval")
 
 
+PDF_PACKAGE_KEYS = {"readingPdf", "companionPdf", "readingPdfQa", "companionPdfQa", "generationReport", "sameVideoPdfReceipt", "sameVideoHandoff"}
+
+
+def deferred_package(job):
+    deferred = job.get("schemaVersion") == "sermon-weekly-dubbing-job-v2"
+    if deferred != (job.get("pdfPackagePolicy") == "deferred_until_release"):
+        raise ValueError("Deferred PDF policy requires the explicit v2 job schema")
+    return deferred
+
+
 def validate_frozen(job):
+    deferred = deferred_package(job)
     for name, item in job["inputs"].items():
         if sha256(Path(item["path"])) != item["sha256"]:
             raise ValueError(f"Saturday / voice input changed: {name}; prepare a new job")
@@ -81,7 +104,11 @@ def validate_frozen(job):
             or "sameVideoHandoff" in job["inputs"] or job.get("inheritedReview", {}).get("humanWindow") == "not_applicable"):
         from prepare_same_video import boundary_metadata, source_window, validate_handoff
         run = Path(job["inputs"]["sourceContract"]["path"]).parent
-        contract, inputs = validate_handoff(run, media_probe=probe)
+        if deferred:
+            from prepare_same_video import reviewed_inputs
+            contract, inputs = reviewed_inputs(run, media_probe=probe, include_pdfs=False)
+        else:
+            contract, inputs = validate_handoff(run, media_probe=probe)
         if (job.get("sourceRoute") != "same_video" or job.get("boundaryBasis") != boundary_metadata(contract)["boundaryBasis"]
                 or job.get("sameVideoContractVersion") != contract["schemaVersion"] or job.get("sourceRun") != str(run.resolve())
                 or job["inheritedReview"].get("humanWindow") != boundary_metadata(contract)["humanWindow"]
@@ -96,8 +123,10 @@ def validate_frozen(job):
         validate_job_review(job)
 
 
-def prepare(run, voice_run, out, week, title, speaker, scripture, authorization, *, same_video_contract=None, archive_contract=None):
+def prepare(run, voice_run, out, week, title, speaker, scripture, authorization, *, same_video_contract=None, archive_contract=None, defer_pdfs=False, report_stream=None):
     date.fromisoformat(week)
+    if defer_pdfs and archive_contract is not None:
+        raise ValueError("Archive caption candidate preparation still requires its complete handoff")
     if same_video_contract is not None and archive_contract is not None:
         raise ValueError("Choose exactly one source contract")
     if out.exists():
@@ -126,7 +155,11 @@ def prepare(run, voice_run, out, week, title, speaker, scripture, authorization,
         from prepare_same_video import CONTRACT_NAME, boundary_metadata, source_window, validate_handoff
         if Path(same_video_contract).resolve() != (run / CONTRACT_NAME).resolve():
             raise ValueError("The same-video contract must belong to this source run")
-        contract, same_inputs = validate_handoff(run, read(same_video_contract), media_probe=probe)
+        if defer_pdfs:
+            from prepare_same_video import reviewed_inputs
+            contract, same_inputs = reviewed_inputs(run, read(same_video_contract), media_probe=probe, include_pdfs=False)
+        else:
+            contract, same_inputs = validate_handoff(run, read(same_video_contract), media_probe=probe)
         if contract["week"] != week:
             raise ValueError("Same-video source belongs to another week")
         paths.update({key: Path(value["path"]) for key, value in same_inputs.items()})
@@ -136,7 +169,7 @@ def prepare(run, voice_run, out, week, title, speaker, scripture, authorization,
     else:
         paths.update(windowApproval=run / "operator-window-approval.json")
         approval, summary = read(paths["windowApproval"]), read(paths["summary"])
-        source_id = run.name.removeprefix("sermon_")
+        source_id = source_id_from_run(run)
         source_url = f"https://www.youtube.com/watch?v={source_id}"
         paths["timeline"] = resolve_approved_timeline(run, approval, week=week, source_url=source_url)
         from poc import ROOT
@@ -153,7 +186,9 @@ def prepare(run, voice_run, out, week, title, speaker, scripture, authorization,
         if abs(probe(paths["sourceAudio"])["durationSeconds"] - (end - start)) > .2:
             raise ValueError("Source clip duration differs from the window")
         human_window = "approved"
-    for key in ["readingQuality", "readingPdfQa", "companionPdfQa"]:
+    if defer_pdfs:
+        paths = {key: path for key, path in paths.items() if key not in PDF_PACKAGE_KEYS}
+    for key in (["readingQuality"] if defer_pdfs else ["readingQuality", "readingPdfQa", "companionPdfQa"]):
         if read(paths[key]).get("status") != "pass":
             raise ValueError(f"Existing Saturday gate has not passed: {key}")
     permission = read(authorization)
@@ -195,7 +230,7 @@ def prepare(run, voice_run, out, week, title, speaker, scripture, authorization,
     # but the existing Saturday completion criterion cannot be bypassed.
     generation = run / "agent-generation-report.json"
     upstream_complete = generation.exists() and read(generation).get("status") == "completed"
-    if generation.exists():
+    if generation.exists() and not defer_pdfs:
         paths["generationReport"] = generation
     job = {"schemaVersion": "sermon-weekly-dubbing-job-v1", "createdAt": datetime.now(timezone.utc).isoformat(),
         "week": week, "title": title, "speaker": speaker, "scripture": scripture, "sourceId": source_id, "sourceUrl": source_url,
@@ -207,6 +242,9 @@ def prepare(run, voice_run, out, week, title, speaker, scripture, authorization,
         "blocks": [{"id": b["id"], "en": b["en"], "zh": b["zh"]} for b in blocks], "units": units,
         "timingPolicy": "natural speech; measured English anchors only; never use reading-layout timestamps",
         "pronunciationRuleVersion": VERSION, "status": "prepared_for_audio_generation", "humanAudioReview": "pending"}
+    if defer_pdfs:
+        job.update(schemaVersion="sermon-weekly-dubbing-job-v2", pdfPackagePolicy="deferred_until_release")
+        job["inheritedReview"].update(readingPdfQa="pending", companionPdfQa="pending", generationComplete=False)
     if archive_contract is not None:
         job.update(sourceRoute="archive_caption", boundaryBasis=BOUNDARY_BASIS,
                    archiveCaptionContractVersion=contract["schemaVersion"], sourceRun=str(run.resolve()))
@@ -216,7 +254,7 @@ def prepare(run, voice_run, out, week, title, speaker, scripture, authorization,
                    sameVideoContractVersion=contract["schemaVersion"], sourceRun=str(run.resolve()))
         validate_frozen(job)
     write_json(out / "job.json", job)
-    print(json.dumps({"job": str(out / "job.json"), "blocks": len(blocks), "units": len(units), "upstreamGenerationComplete": upstream_complete}, ensure_ascii=False))
+    print(json.dumps({"job": str(out / "job.json"), "blocks": len(blocks), "units": len(units), "upstreamGenerationComplete": upstream_complete}, ensure_ascii=False), file=report_stream)
     return job
 
 
@@ -264,6 +302,31 @@ def assemble(work, *, process_runner=None):
     return track
 
 
+def completed_package_job(job):
+    """Read current delivery evidence; never modify the frozen synthesis job."""
+    import copy
+    validate_frozen(job)
+    run = Path(job["inputs"]["sourceContract" if job.get("sourceRoute") == "same_video" else "windowApproval"]["path"]).parent
+    if job.get("sourceRoute") == "same_video":
+        from prepare_same_video import validate_handoff
+        _, inputs = validate_handoff(run, media_probe=probe)
+    else:
+        from continue_saturday_dubbing import validate_live_inputs
+        inputs, blocked = validate_live_inputs(run, job["week"])
+        if blocked:
+            raise ValueError("Deferred PDF package is not complete: " + blocked[1])
+    for key, item in inputs.items():
+        if key not in PDF_PACKAGE_KEYS and job["inputs"].get(key) != item:
+            raise ValueError("Completed PDF package differs from frozen synthesis input: " + key)
+    generation = read(run / "agent-generation-report.json")
+    if generation.get("status") != "completed":
+        raise ValueError("Original Saturday generation is not completed")
+    result = copy.deepcopy(job)
+    result["inputs"].update(inputs)
+    result["inheritedReview"].update(generationComplete=True)
+    return result
+
+
 def validate_review(work, *, write_receipt=True):
     synchronized = (work / "synchronization/assembly.json").exists()
     job, review = read(work / "job.json"), read(work / ("audio-review-synced.json" if synchronized else "audio-review.json"))
@@ -280,6 +343,10 @@ def validate_review(work, *, write_receipt=True):
     result = screening["results"][0]
     if screening.get("jobSha256") != sha256(work / "job.json") or result.get("sha256") != sha256(work / "audio/zh-natural.mp3") or result.get("fullDecode") != "pass" or result.get("screenedUnits") != len(job["units"]):
         raise ValueError("Complete per-unit audio screening is required")
+    if deferred_package(job):
+        # Resolve the completed package without mutating the immutable synthesis
+        # job or laundering pending PDF QA into inherited approval.
+        job = completed_package_job(job)
     if not job["inheritedReview"]["generationComplete"]:
         raise ValueError("Original Saturday generation is not completed")
     if not synchronized:
@@ -328,6 +395,7 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser()
     sub = p.add_subparsers(dest="command", required=True)
     s = sub.add_parser("prepare")
+    s.add_argument("--defer-pdfs", action="store_true", help="Freeze reviewed text now; require full PDF package before release")
     for name in ["run", "voice-run", "out", "authorization"]:
         s.add_argument("--" + name, type=Path, required=True)
     for name in ["week", "title", "speaker", "scripture"]:
@@ -341,7 +409,7 @@ if __name__ == "__main__":
     args = p.parse_args()
     if args.command == "prepare":
         prepare(args.run.resolve(), args.voice_run.resolve(), args.out.resolve(), args.week, args.title, args.speaker, args.scripture, args.authorization.resolve(),
-                same_video_contract=args.same_video_contract, archive_contract=args.archive_contract)
+                same_video_contract=args.same_video_contract, archive_contract=args.archive_contract, defer_pdfs=args.defer_pdfs)
     elif args.command == "assemble":
         print(json.dumps(assemble(args.work.resolve()), ensure_ascii=False))
     else:

@@ -14,7 +14,7 @@ import prepare_same_video as intake
 import render_weekly_audio as renderer
 from continue_saturday_dubbing import continue_saturday
 from poc import sha256, write_json
-from prepare_voice_candidates import ASR, ALIGNER
+from speech_backend import ASR, ALIGNER
 from run_weekly_dubbing import validate_candidate
 from scripts import sermon_accounting as accounting
 from scripts.build_sermon_reading_edition_with_openai import build_semantic_blocks, reading_quality_report, write_block_srt
