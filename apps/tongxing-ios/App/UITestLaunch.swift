@@ -53,7 +53,7 @@ private enum UITestContent {
             return result
         }
         let firstAudio = audio(frameCount: 500)
-        let secondAudio = audio(frameCount: 1667)
+        let secondAudio = audio(frameCount: 667)
         func track(id: String, label: String, data: Data, duration: Double) -> SermonTrack {
             SermonTrack(id: id, label: label, voiceLabel: "自动化静音夹具",
                 audioUrl: "/media/\(id).mp3", file: "\(id).mp3",
@@ -70,11 +70,7 @@ private enum UITestContent {
                 sourceUrl: "https://example.test/synthetic-ui-test", title: "界面测试证道",
                 speaker: "静音夹具", scripture: "自动化验证",
                 tracks: [track(id: "fixture-first", label: "甲音轨", data: firstAudio, duration: 36),
-                         track(id: "fixture-second", label: "乙音轨", data: secondAudio, duration: 120.024)],
-                outline: [
-                    OutlineSection(title: "测试大纲：起点", points: ["浏览此合成段落不会改变播放位置。"]),
-                    OutlineSection(title: "测试大纲：回应", points: ["只有点击全文时间按钮才会显式定位。"])
-                ],
+                         track(id: "fixture-second", label: "乙音轨", data: secondAudio, duration: 48.024)],
                 contentReview: "合成测试数据，无真实证道内容或审核声明。",
                 audioNotice: "仅用于界面自动化的本地静音夹具，不是证道内容。",
                 transcript: BilingualTranscript(blocks: [

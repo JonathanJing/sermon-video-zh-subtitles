@@ -9,21 +9,34 @@
     document.querySelector('meta[name="theme-color"]').content = dark ? "#141b1a" : "#f5f3eb";
     const button = document.getElementById("theme-toggle");
     if (button) {
+      const label = document.getElementById("theme-label");
+      label.setAttribute("data-i18n", dark ? "theme.dark" : "theme.light");
+      button.setAttribute("data-i18n-aria-label", dark ? "theme.toLight" : "theme.toDark");
+      button.setAttribute("data-i18n-title", dark ? "theme.darkTitle" : "theme.lightTitle");
+      // Chinese fallback also works if the application module fails to load.
       const action = dark ? "切换到浅色模式" : "切换到深色模式";
-      document.getElementById("theme-label").textContent = dark ? "深色" : "浅色";
+      label.textContent = dark ? "深色" : "浅色";
       button.setAttribute("aria-label", action);
       button.title = `当前${dark ? "深色" : "浅色"} · ${action}`;
+      document.dispatchEvent(new CustomEvent("sermon-theme-change"));
     }
   }
   let saved = "dark";
   try { saved = localStorage.getItem(key); } catch { /* Dark also works without storage. */ }
   apply(saved);
-  document.addEventListener("DOMContentLoaded", () => {
+  function initializeControls() {
+    const button = document.getElementById("theme-toggle");
+    if (!button) return;
     apply(root.dataset.theme);
-    document.getElementById("theme-toggle").addEventListener("click", () => {
+    button.addEventListener("click", () => {
       const theme = root.dataset.theme === "dark" ? "light" : "dark";
       apply(theme);
       try { localStorage.setItem(key, theme); } catch { /* The current page still switches. */ }
     });
-  }, { once: true });
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initializeControls, { once: true });
+  } else {
+    initializeControls();
+  }
 })();

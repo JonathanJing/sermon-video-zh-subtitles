@@ -1,3 +1,4 @@
+import { t, onLocaleChange } from './i18n.mjs';
 import { captureFingerprintAudio, microphoneSupported, abortError } from './fingerprint-capture.mjs';
 const HASH = /^[a-f0-9]{64}$/;
 export function fingerprintBinding(context) {
@@ -35,8 +36,8 @@ export function captureDiagnostic(error = {}) {
   return {code,stage,...(detail ? {detail} : {}),version:'C3'};
 }
 export function diagnosticMessage(diagnostic) {
-  const messages={MIC_START_TIMEOUT:'麦克风已获许可，但音频数据没有及时开始。请保持页面在前台后重试。',INPUT_INTERRUPTED:'录音过程中声音输入中断，请重新听取。',AUDIO_INTERRUPTED:'系统中断了音频会话，请保持页面在前台后重试。',MIC_BUSY:'系统未能打开麦克风，请结束正在占用麦克风的通话或录音后重试。',MIC_MISSING:'系统未找到可用麦克风。',MIC_ENDED:'麦克风连接已结束，请重新听取。',WORKLET_LOAD:'录音组件加载失败，请刷新页面后重试。',PROCESSOR_ERROR:'录音组件运行失败，请刷新页面后重试。',AUDIO_START:'系统音频会话未能启动，请保持页面在前台后重试。',INDEX_UNAVAILABLE:'声音已采集，但定位索引下载失败，请检查网络后重试。'};
-  return `${messages[diagnostic.code] || '定位未完成，请重试或手动定位。'}（诊断 ${diagnostic.code}${diagnostic.detail ? ':' + diagnostic.detail : ''} / ${diagnostic.stage} · ${diagnostic.version}）`;
+  const known = new Set('MIC_START_TIMEOUT INPUT_INTERRUPTED AUDIO_INTERRUPTED MIC_BUSY MIC_MISSING MIC_ENDED WORKLET_LOAD PROCESSOR_ERROR AUDIO_START INDEX_UNAVAILABLE'.split(' '));
+  return t('fingerprint.diagnostic.detail', { message: t(`fingerprint.diagnostic.${known.has(diagnostic.code) ? diagnostic.code : 'UNKNOWN'}`), code: `${diagnostic.code}${diagnostic.detail ? ':' + diagnostic.detail : ''}`, stage: diagnostic.stage, version: diagnostic.version });
 }
 // The native play promise resolves only when playback can actually start.
 // Cleanup never pauses a later attempt; only this pending operation may pause.
@@ -154,26 +155,21 @@ function clock(seconds) {
 export function mountFingerprintUI(options) {
   const $ = id => document.getElementById(id);
   const dialog = $('fingerprint-dialog');
-  const messages = {
-    idle: '听取后会自动对齐并播放中文，请保持英文原视频连续播放。', permission: '等待麦克风许可… 中文已暂停。',
-    recovering: '声音输入短暂中断，正在重新连接；将重新听取完整 10 秒…',
-    starting: '麦克风已获许可，正在等待声音输入…', recording: '正在听取约 10 秒英文原声…', matching: '采集已停止，正在设备内匹配…',
-    cancelled: '已取消。中文保持暂停，可自行播放。', unavailable: '本期尚未提供现场声音定位。',
-    unsupported: '当前浏览器不支持安全麦克风采集，请使用 HTTPS 页面上的新版 Safari 或 Chrome，或手动定位。',
-    permission_denied: '未获得麦克风权限。可在浏览器设置中允许，或继续手动定位。',
-    timeout: '等待超时，已停止采集。请重试或手动定位。', error: '定位未完成，已停止采集。请重试或手动定位。',
-    no_match: '未找到可靠位置：可能有噪声、静音或当前视频不一致。请重试或手动定位。',
-    expired: '结果已过期或播放内容已切换，请重新定位。', play_starting: '已找到位置，正在跟上并开始播放…', play_blocked: '浏览器需要你再点一次。点击下方按钮，会按此刻的位置跟上播放。', play_failed: '中文尚未开始播放。可点击下方按钮重试，会重新补偿等待时间。',
-  };
-  const controller = createFingerprintController({ ...options, onState(value) {
+  const phases = new Set(["idle", "permission", "recovering", "starting", "recording", "matching", "cancelled", "unavailable", "unsupported", "permission_denied", "timeout", "error", "no_match", "expired", "play_starting", "play_blocked", "play_failed"]);
+  function renderState(value) {
     const busy = ['permission', 'starting', 'recovering', 'recording', 'matching', 'play_starting'].includes(value.phase);
     $('fingerprint-start').disabled = busy;
-    $('fingerprint-start').textContent = value.phase === 'idle' ? '听取后自动对齐播放' : '重新听取并跟上';
+    $('fingerprint-start').textContent = t(value.phase === 'idle' ? 'fingerprint.start' : 'fingerprint.restart');
     $('fingerprint-apply').hidden = !['matched', 'play_blocked', 'play_failed'].includes(value.phase);
-    $('fingerprint-apply').textContent = '一键跟上播放';
-    $('fingerprint-message').textContent = value.phase === 'matched' ? `已找到原视频 ${clock(value.sourceTimeSeconds)} 的位置，正在自动跟上。` : value.phase === 'applied' ? `已跟上原视频 ${clock(value.sourceTimeSeconds)} 并开始播放。` : value.phase === 'error' && value.diagnostic ? diagnosticMessage(value.diagnostic) : messages[value.phase] || messages.error;
+    $('fingerprint-apply').textContent = t('fingerprint.apply');
+    $('fingerprint-message').textContent = value.phase === 'matched' ? t('fingerprint.matched', { time: clock(value.sourceTimeSeconds) }) : value.phase === 'applied' ? t('fingerprint.applied', { time: clock(value.sourceTimeSeconds) }) : value.phase === 'error' && value.diagnostic ? diagnosticMessage(value.diagnostic) : t(`fingerprint.phase.${phases.has(value.phase) ? value.phase : 'error'}`);
+  }
+  const controller = createFingerprintController({ ...options, onState(value) {
+    renderState(value);
     if (value.phase === 'applied' && dialog.open) dialog.close();
   } });
+  onLocaleChange(() => renderState(controller.getState()));
+  renderState(controller.getState());
   $('fingerprint-open').addEventListener('click', () => { controller.cancel('idle'); dialog.showModal(); });
   $('fingerprint-start').addEventListener('click', () => controller.start());
   $('fingerprint-apply').addEventListener('click', () => controller.apply());

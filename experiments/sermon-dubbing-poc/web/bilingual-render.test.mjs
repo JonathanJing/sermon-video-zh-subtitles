@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import { bilingualCueRows } from './catalog.mjs';
+import { messages } from './locales-app.mjs';
 
 test('shipped transcript renders English once, collapsed, without seeking', () => {
   const source = fs.readFileSync(new URL('./app.mjs', import.meta.url), 'utf8');
@@ -21,6 +22,7 @@ test('shipped transcript renders English once, collapsed, without seeking', () =
     { blockId: '0', english: '<Source & original>', sourceTextOrigin: 'job.blocks', reviewState: 'unspecified' },
   ] } };
   const context = vm.createContext({ $, audio, track, week, bilingualCueRows,
+    bilingualDisplay: false, englishByCue: [], englishDetails: [], transcriptRows: [], updateCurrentEnglish() {}, getLocale: () => "zh", t: key => messages.zh[key],
     document: { createElement: tag => new Element(tag) }, formatTime: String,
     setPosition: value => { audio.currentTime = value; }, boundedTime: value => value, update() {},
   });

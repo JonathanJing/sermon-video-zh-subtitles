@@ -8,8 +8,6 @@
 
 界面按用户选定的 **iOS 27 设计语言** 实施：系统导航与 Sheet、26 pt 起的动态字幕、单层 Liquid Glass 悬浮播放栏、深色语义配色，以及窄屏、横屏和大字布局。具体规则与 Apple 官方来源见 [设计约定](DESIGN.zh.md)。
 
-单栏与宽窗口双栏的内容分工、播放状态连续性以及 Duo 专用 SDK 的验证边界见 [自适应布局记录](DUO-ADAPTATION.zh.md)。
-
 ## 打开与运行
 
 直接打开 [Tongxing.xcodeproj](Tongxing.xcodeproj)。工程文件已保存，无需先安装依赖管理器；两个 Swift package 都在本地，没有第三方 SDK。
@@ -19,7 +17,7 @@
 3. 点击 Run。首次读取目录需要网络；选择“下载本篇”，待显示“正在使用已下载音频”后可断网收听。
 4. 使用 Product → Test（⌘U）运行 `TongxingTests` 和 `TongxingUITests`。播放器测试使用合成静音和独立临时历史；UI 测试使用显式启动的隔离目录与音频夹具。正常 Run 仍加载已发布内容。
 
-Apple 账号、Team 配置、设备信息和签名凭据不进入 Git。同行 0.1.0 (5) 已使用 Xcode Cloud 的正式 Xcode 26.6 完成归档和 App Store 导出，通过 Apple 二进制校验，并于 2026-09-07 11:16 PDT 正式提交 App Review；当前为 Waiting for Review，审核通过后手动发布，尚未公开上线。首次发行设置为美国免费、18+；尚未分配 TestFlight 测试者。最新证据见 [发布记录](RELEASE-READINESS.zh.md)，历史测试见 [Beta 资料与实测](BETA-TESTING.zh.md)。
+Apple 账号、Team 配置、设备信息和签名凭据不进入 Git。App Store Connect 已创建「同行·证道中文听译」记录；旧 build 2 曾完成分发 IPA 导出；本轮 build 3 已完成签名 Archive，新增扩展的分发导出受 Xcode 账号与描述文件阻塞，尚未上传 TestFlight。详见 [Beta 资料与实测](BETA-TESTING.zh.md)。
 
 修改 `project.yml` 后从本目录重新生成：
 

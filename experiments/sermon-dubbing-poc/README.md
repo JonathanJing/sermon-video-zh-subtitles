@@ -100,6 +100,8 @@ The UI supports play/pause, MP3 download, a seek bar, ±5-second skips and ±1/�
 
 The generation runner preserves exact text across segmentation variants, caches chunks by source/parameter identity, performs two-pass loudness processing and checks full MP3 decoding. Reference synthesis verifies the explicitly recorded authorization, source hash and voice-profile hash. Existing MLX runtime model-type/tokenizer warnings remain recorded and unresolved, so these samples are not a validated production runtime.
 
+See [interface languages and speaker samples](./UI_LOCALIZATION.zh.md) for the Chinese/English UI and six-speaker update published on 2026-09-14, its verification evidence, source-text boundaries and adding more languages.
+
 ## Verification
 
 ```bash

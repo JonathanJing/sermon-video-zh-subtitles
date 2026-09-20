@@ -6,6 +6,7 @@ import { playAlignmentAudio as realPlayAlignmentAudio } from './fingerprint-ui.m
 import * as timing from './timing.mjs';
 import * as catalogHelpers from './catalog.mjs';
 import { PlaybackMemory } from './playback-memory.mjs';
+import { messages as appMessages } from './locales-app.mjs';
 
 // Exercise the shipped event handlers; only network bootstrap and module imports
 // are replaced. No media metadata arrives unless the test explicitly delivers it.
@@ -130,7 +131,16 @@ function setup({ bookmark = false, bootstrapFetch, alignmentPlay } = {}) {
   const fingerprintMounts = [], fingerprintRefreshes = [];
   let fingerprintInvalidations = 0, fingerprintPlaybackStarts = 0;
   const alignmentPlayCalls = [];
+  let locale = 'zh'; const localeListeners = [];
+  const i18n = {
+    getLocale: () => locale,
+    t: (key, params = {}) => (appMessages[locale][key] || key).replace(/\{(\w+)\}/g, (all, name) => String(params[name] ?? all)),
+    setLocale(value) { locale = value; localeListeners.forEach(listener => listener()); },
+    onLocaleChange: listener => localeListeners.push(listener), localizeDOM() {},
+    localizeWeek: value => value, translateContent: value => value, appMessages,
+  };
   const context = vm.createContext({
+    ...i18n,
     ...timing, ...catalogHelpers, PlaybackMemory, document, window: new Element(),
     localStorage: storage, location: { href: 'https://example.test/', search: '' }, history: { replaceState() {} },
     URL, URLSearchParams, console, performance, queueMicrotask, DOMException,
@@ -560,4 +570,66 @@ test('real helper cancel and late native rejection never pause the newer manual 
   assert.equal(h.audio.paused, false);
   assert.equal(h.get('status').textContent, currentStatus);
   h.audio.playCalls[1].resolve(); await Promise.all(newer);
+});
+
+
+test('subtitle language switches preserve playback, seeking controls and source associations', () => {
+  const h = setup();
+  const bilingualWeek = structuredClone(week);
+  bilingualWeek.tracks[0].id = 'bilingual-track';
+  bilingualWeek.tracks[0].cues[0].blockId = 'source-0';
+  bilingualWeek.transcript = { schemaVersion: 'sermon-bilingual-transcript-v1', blocks: [
+    { blockId: 'source-0', english: 'Frozen English source.', sourceTextOrigin: 'job.blocks', reviewState: 'unspecified' },
+  ] };
+  h.app.initialize(bilingualWeek);
+  h.audio.metadata(); h.app.setPosition(27); h.get('play').click();
+  const loads = h.audio.loadCalls, plays = h.audio.playCalls.length, invalidations = h.fingerprintInvalidations;
+  const rows = h.get('transcript-list').children;
+  assert.equal(rows[0].children[2].open, false);
+  h.get('subtitle-toggle').click();
+  assert.equal(h.get('subtitle-toggle').getAttribute('aria-pressed'), 'true');
+  assert.equal(h.get('current-english').hidden, false);
+  assert.equal(h.get('current-english-text').textContent, 'Frozen English source.');
+  assert.equal(rows[0].children[2].open, true);
+  assert.equal(h.audio.currentTime, 27);
+  assert.equal(h.audio.paused, false);
+  assert.equal(h.audio.loadCalls, loads);
+  assert.equal(h.audio.playCalls.length, plays);
+  assert.equal(h.fingerprintInvalidations, invalidations);
+  assert.ok(h.cues().every(cue => !cue.disabled));
+  assert.equal(h.storage.getItem('sermon-audio-subtitles'), 'bilingual');
+  h.app.setPosition(160);
+  assert.equal(h.get('current-english-text').textContent, '本段英文原文暂缺。');
+  h.get('subtitle-toggle').click();
+  assert.equal(h.get('current-english').hidden, true);
+  assert.equal(rows[0].children[2].open, false);
+  assert.equal(h.storage.getItem('sermon-audio-subtitles'), 'chinese');
+});
+
+
+test('whole-page language change keeps live audio, source identity and grouped English timing', () => {
+  const h = setup();
+  const bilingualWeek = structuredClone(week);
+  bilingualWeek.tracks[0].id = 'english-track';
+  bilingualWeek.tracks[0].cues.forEach(cue => { cue.blockId = 'source'; });
+  bilingualWeek.transcript = { schemaVersion: 'sermon-bilingual-transcript-v1', blocks: [
+    { blockId: 'source', english: 'One complete frozen source passage.', sourceTextOrigin: 'job.blocks', reviewState: 'unspecified' },
+  ] };
+  h.app.initialize(bilingualWeek); h.audio.metadata(); h.app.setPosition(160); h.get('play').click();
+  const loads = h.audio.loadCalls, plays = h.audio.playCalls.length, invalidations = h.fingerprintInvalidations;
+  h.get('language-toggle').click();
+  assert.equal(h.context.getLocale(), 'en');
+  assert.equal(h.get('play-label').textContent, 'Cancel loading');
+  assert.equal(h.get('current-text').textContent, 'One complete frozen source passage.');
+  const rows = h.get('transcript-list').children;
+  assert.equal(rows.length, 1, 'one source passage is not duplicated per Chinese cue');
+  assert.equal(rows[0].getAttribute('aria-current'), 'true', 'group stays highlighted through all associated cues');
+  assert.equal(h.audio.currentTime, 160); assert.equal(h.audio.paused, false);
+  assert.equal(h.audio.loadCalls, loads); assert.equal(h.audio.playCalls.length, plays);
+  assert.equal(h.fingerprintInvalidations, invalidations);
+  assert.equal(h.cues()[0].disabled, false);
+  h.get('language-toggle').click();
+  assert.equal(h.context.getLocale(), 'zh');
+  assert.equal(h.get('current-text').textContent, '第二段');
+  assert.equal(h.audio.currentTime, 160);
 });

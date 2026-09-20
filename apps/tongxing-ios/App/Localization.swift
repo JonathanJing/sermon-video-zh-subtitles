@@ -8,10 +8,6 @@ enum AppLanguage: String, Codable, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
-enum AppReadingMode: String, Codable {
-    case outline, transcript
-}
-
 /// Interface language is independent of the selected sermon and audio track.
 /// The source-language catalog keys are also the Chinese fallback.
 @MainActor
@@ -32,8 +28,6 @@ final class AppLocalization: ObservableObject {
     @Published private(set) var preference: AppLanguage
     @Published private(set) var language: AppLanguage
     @Published private(set) var storageWarning: String?
-    @Published private(set) var readingMode: AppReadingMode
-    @Published private(set) var readingStorageWarning: String?
     var locale: Locale { Locale(identifier: language.rawValue) }
 
     private struct SavedPreference: Codable {
@@ -41,25 +35,13 @@ final class AppLocalization: ObservableObject {
         let language: AppLanguage
     }
 
-    private struct SavedReadingPreference: Codable {
-        let version: Int
-        let mode: AppReadingMode
-    }
-
     private let preferenceURL: URL?
-    private let readingPreferenceURL: URL?
     private var systemLanguageObserver: AnyCancellable?
 
     init(preferenceURL: URL? = nil) {
         let url = preferenceURL ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)
             .first?.appendingPathComponent("Tongxing/ui-language-v1.json")
         self.preferenceURL = url
-        let readingURL = url?.deletingLastPathComponent().appendingPathComponent("reading-mode-v1.json")
-        self.readingPreferenceURL = readingURL
-        let savedReading = readingURL.flatMap { try? Data(contentsOf: $0) }
-            .flatMap { try? JSONDecoder().decode(SavedReadingPreference.self, from: $0) }
-        if let savedReading, savedReading.version == 1 { self.readingMode = savedReading.mode }
-        else { self.readingMode = .outline }
         let saved = url.flatMap { try? Data(contentsOf: $0) }
             .flatMap { try? JSONDecoder().decode(SavedPreference.self, from: $0) }
         let preference: AppLanguage
@@ -82,18 +64,6 @@ final class AppLocalization: ObservableObject {
             storageWarning = nil
         } catch {
             storageWarning = "语言已切换，本次偏好暂时无法保存。"
-        }
-    }
-
-    func setReadingMode(_ mode: AppReadingMode) {
-        readingMode = mode
-        do {
-            guard let readingPreferenceURL else { throw CocoaError(.fileWriteUnknown) }
-            try FileManager.default.createDirectory(at: readingPreferenceURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try JSONEncoder().encode(SavedReadingPreference(version: 1, mode: mode)).write(to: readingPreferenceURL, options: .atomic)
-            readingStorageWarning = nil
-        } catch {
-            readingStorageWarning = "阅读方式已切换，本次偏好暂时无法保存。"
         }
     }
 
@@ -140,15 +110,8 @@ final class AppLocalization: ObservableObject {
 
     private static func englishTranslation(_ key: String) -> String? {
         let localized = englishBundle?.localizedString(forKey: key, value: key, table: "Localizable") ?? key
-        return localized != key ? localized : previewEnglish[key] ?? readingEnglish[key]
+        return localized != key ? localized : previewEnglish[key]
     }
-
-    private static let readingEnglish = [
-        "阅读": "Read",
-        "阅读内容": "Reading content",
-        "本篇暂无大纲": "No outline is available for this sermon.",
-        "阅读方式已切换，本次偏好暂时无法保存。": "Reading mode changed, but this preference could not be saved."
-    ]
 
     private static var resourceBundle: Bundle {
         #if SWIFT_PACKAGE

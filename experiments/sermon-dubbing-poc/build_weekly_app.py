@@ -14,6 +14,7 @@ from urllib.parse import urlsplit
 
 from poc import ROOT, sha256, write_json
 from server import load_library
+from weekly_audio_fingerprint import bind_weekly_fingerprint
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from scripts.series_terminology import canonical_series
@@ -205,6 +206,9 @@ def weekly_job(work, public, preview, sync_preview=False, series=None):
     if sync_preview:
         week.update(videoSynchronization="candidate_aligned", humanApproval=False, candidateEvidence=candidate_evidence,
             audioNotice=f'同步试播候选：00:00 对应当前源视频的证道起点（第 {job["sourceStartSeconds"]:g} 秒）。模型审核不等于人工验收；中文流畅度、原声相似度与同视频播放仍待现场试听。')
+    bind_weekly_fingerprint(job, week, public, synchronized=not preview or sync_preview)
+    stages.insert(-1, {"label": "自动听音定位", "status": "pass" if not preview or sync_preview else "pending",
+        "detail": "已生成并绑定原声指纹；现场听音匹配后跳转同时间轴中文音频，实际场地效果仍需验收" if not preview or sync_preview else "自然语速审核稿未建立原视频同步，暂不提供听音定位"})
     week["transcript"] = bilingual_transcript(job, tracks)
     spoken_review = job.get("inputs", {}).get("spokenScriptReview")
     if spoken_review:
@@ -251,14 +255,14 @@ def build(comparison, out, expansion=None, weekly_jobs=(), voice_bank=None, revi
         raise ValueError("--sync-preview requires --review-preview and at least one --weekly-job")
     use_history = include_history or not weekly_jobs
     library = load_library(comparison) if use_history else None
-    public = out / "public"
+    public = out.resolve() / "public"
     if public.exists():
         raise ValueError("Use a new output directory to preserve the previous release")
     (public / "media").mkdir(parents=True)
-    ui_files = ["fingerprint-core.mjs", "fingerprint-capture.mjs", "fingerprint-worklet.mjs", "fingerprint-worker.mjs", "fingerprint-ui.mjs", "index.html", "style.css", "app.mjs", "timing.mjs", "catalog.mjs", "theme.js", "feedback.mjs", "feedback-client.mjs", "listening.mjs", "usage.mjs", "usage-client.mjs", "playback-memory.mjs", "brand-icon.png"]
+    ui_files = ["fingerprint-core.mjs", "fingerprint-capture.mjs", "fingerprint-worklet.mjs", "fingerprint-worker.mjs", "fingerprint-ui.mjs", "index.html", "style.css", "app.mjs", "timing.mjs", "catalog.mjs", "theme.js", "feedback.mjs", "feedback-client.mjs", "listening.mjs", "usage.mjs", "usage-client.mjs", "playback-memory.mjs", "i18n.mjs", "locales-interface.mjs", "locales-app.mjs", "locales-feedback.mjs", "content-locales.mjs", "brand-icon.png"]
     for name in ui_files:
         shutil.copyfile(HERE / "web" / name, public / name)
-    weeks, sources = [], []
+    weeks, sources, alignment_pages = [], [], []
     for entry in (WEEKS if use_history else ()):
         pipeline = ROOT / f'artifacts/post-live-runs/{entry["date"]}/sermon_{entry["sourceId"]}/pipeline'
         notes_path = pipeline / "sermon-interpretation/insights/openai-notes.json"
@@ -296,6 +300,7 @@ def build(comparison, out, expansion=None, weekly_jobs=(), voice_bank=None, revi
         sources.append({"week": week["id"], "path": str(notes_path.relative_to(ROOT)), "sha256": sha256(notes_path)})
     for work in weekly_jobs:
         week = weekly_job(work, public, review_preview, sync_preview, series)
+        alignment_pages.append(week["id"])
         weeks = [w for w in weeks if w["id"] != week["id"] and not
             (w["id"] == week["date"] and w["sourceId"] == week["sourceId"])] + [week]
         sources.append({"week": week["id"], "path": str(work / "job.json"), "sha256": sha256(work / "job.json")})
@@ -327,7 +332,9 @@ def build(comparison, out, expansion=None, weekly_jobs=(), voice_bank=None, revi
         write_json(out / "feedback-catalog.json", {"schemaVersion": 1, "sources": sources_for_feedback,
             "weekIds": sorted({week["date"] for week in weeks}), "voiceIds": [speaker["id"] for speaker in catalog.get("voiceBank", {}).get("speakers", [])]})
     files = [{"path": str(p.relative_to(public)), "sha256": sha256(p), "bytes": p.stat().st_size} for p in sorted(public.rglob("*")) if p.is_file()]
-    report = {"schemaVersion": "sermon-weekly-build-v1", "builtAt": datetime.now(timezone.utc).isoformat(), "weeks": len(weeks),
+    from deploy_firebase import bound_fingerprints
+    bound_fingerprints(public, {f["path"]: f for f in files}, alignment_pages)
+    report = {"automaticAudioAlignmentPages": alignment_pages, "schemaVersion": "sermon-weekly-build-v1", "builtAt": datetime.now(timezone.utc).isoformat(), "weeks": len(weeks),
         "playableWeeks": sum(bool(w["tracks"]) for w in weeks), "files": files, "sources": sources,
         "contentReviewSha256": sha256(Path(content_review)) if content_review else None,
         "reviewPreview": review_preview, "syncPreview": sync_preview, "includeHistory": use_history,

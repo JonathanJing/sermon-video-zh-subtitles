@@ -394,6 +394,7 @@ def prepare(registry, candidate, out, replace_ids=()):
                  for p in sorted(public.rglob("*")) if p.is_file()]
         report.update(builtAt=now(), weeks=len(catalog["weeks"]), playableWeeks=sum(bool(w["tracks"]) for w in catalog["weeks"]),
                       files=files, sources=list(sources.values()), totalBytes=sum(f["bytes"] for f in files), includeHistory=True,
+                      automaticAudioAlignmentPages=[w["id"] for w in catalog["weeks"] if "automaticAudioAlignment" in w],
                       reviewPreview=any(w.get("audioStatus") != "full_reviewed" for w in catalog["weeks"]),
                       contentReviewSha256=None, originalAudioPublished=bool(catalog.get("voiceBank")),
                       originalAudioScope="short_authorized_voice_references_only" if catalog.get("voiceBank") else "none",

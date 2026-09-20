@@ -1,3 +1,6 @@
+import { t, getLocale, setLocale, onLocaleChange, localizeDOM } from "/i18n.mjs";
+import { localizeWeek, translateContent } from "/content-locales.mjs";
+import { messages as appMessages } from "/locales-app.mjs";
 import { boundedTime, formatTime, cueIndex } from "/timing.mjs";
 import { validateCatalog, chooseWeek, parseTimecode, downloadFilename, engagementWeek, weekOptionLabel, bilingualCueRows, isFormalPlayback } from "/catalog.mjs";
 import { createFeedback } from "/feedback.mjs";
@@ -14,6 +17,30 @@ let activeView = "tab-listen";
 let alignmentPlayAttempt = 0;
 let localPlaybackStorage; try { localPlaybackStorage = localStorage; } catch { localPlaybackStorage = null; }
 const playbackMemory = new PlaybackMemory({ storage: localPlaybackStorage });
+let bilingualDisplay = false, englishByCue = [], englishDetails = [], transcriptRows = [], voiceLabels = [];
+let lastStatus = null;
+try { bilingualDisplay = localPlaybackStorage?.getItem("sermon-audio-subtitles") === "bilingual"; } catch { /* Default to Chinese. */ }
+function updateLanguageControl() {
+  $("subtitle-label").textContent = bilingualDisplay ? t("app.subtitle.bilingual") : t(getLocale() === "en" ? "app.subtitle.english" : "app.subtitle.chinese");
+  $("subtitle-toggle").setAttribute("aria-pressed", String(bilingualDisplay));
+  $("subtitle-toggle").setAttribute("aria-label", bilingualDisplay ? t(getLocale() === "en" ? "app.subtitle.hideEnglish" : "app.subtitle.hide") : t("app.subtitle.show"));
+  $("subtitle-toggle").title = t(getLocale() === "en" ? (bilingualDisplay ? "app.subtitle.hideEnglish" : "app.subtitle.show") : (bilingualDisplay ? "app.subtitle.hideTitle" : "app.subtitle.showTitle"));
+}
+function updateCurrentEnglish(index) {
+  const english = englishByCue[index], englishMode = getLocale() === "en";
+  $("current-english").hidden = !bilingualDisplay || !track;
+  $("current-english-label").textContent = t(englishMode ? "app.transcript.chineseReference" : "app.transcript.englishReference");
+  $("current-english-text").textContent = englishMode ? track?.cues[index]?.text || "" : english || t("app.subtitle.missing");
+  $("current-english-text").lang = englishMode || !english ? "zh-Hans" : "en";
+}
+updateLanguageControl();
+$("subtitle-toggle").addEventListener("click", () => {
+  bilingualDisplay = !bilingualDisplay;
+  try { localPlaybackStorage?.setItem("sermon-audio-subtitles", bilingualDisplay ? "bilingual" : "chinese"); } catch { /* The current page still switches. */ }
+  updateLanguageControl();
+  englishDetails.forEach(details => { details.open = bilingualDisplay; });
+  updateCurrentEnglish(lastCue);
+});
 let feedback = { select() {}, count() {}, error() {}, statisticsEnabled: () => false };
 let usage = { setEnabled() {}, record() {} };
 const controls = [$("play"), $("back"), $("forward"), $("progress"), $("jump-time"), $("jump"), $("precision-open"), ...document.querySelectorAll("[data-nudge],[data-play-toggle]")];
@@ -26,7 +53,46 @@ const fieldAlignment = mountFingerprintUI({
   seek: (time, { correction = false } = {}) => setPosition(time, { offset: 0, alignment: true, undo: !correction }),
   play: options => startAlignmentPlayback(options),
 });
-function status(text) { $("status").textContent = text; }
+function status(key, params) {
+  lastStatus = [key, params];
+  $("status").textContent = key.startsWith("app.") ? t(key, params) : appText(key);
+}
+function appText(value) {
+  for (const [key, source] of Object.entries(appMessages.zh)) {
+    if (value === source || value === appMessages.en[key]) return t(key);
+  }
+  return translateContent(value, getLocale());
+}
+function displayWeek() { return localizeWeek(week, getLocale()); }
+function renderWeekOptions() {
+  $("week-select").replaceChildren();
+  for (const original of catalog.weeks) {
+    const item = localizeWeek(original, getLocale()), option = document.createElement("option");
+    option.value = original.id;
+    option.textContent = getLocale() === "zh" ? weekOptionLabel(original) : [item.date, item.title, isFormalPlayback(original) && item.title.includes(t("app.release.formal")) ? "" : isFormalPlayback(original) ? t("app.release.formal") : original.tracks.length ? t("app.release.full") : t("app.release.pending")].filter(Boolean).join(" · ");
+    $("week-select").append(option);
+  }
+  if (week) $("week-select").value = week.id;
+}
+function renderWeekLabels() {
+  if (!week) return;
+  const view = displayWeek();
+  $("title").textContent = view.title;
+  $("series").textContent = [view.series, view.sourceLabel].filter(Boolean).join(" · ");
+  $("speaker").textContent = view.speaker; $("scripture").textContent = view.scripture;
+  $("central-message").textContent = view.centralMessage;
+  $("audio-notice").textContent = view.audioNotice;
+  $("review").textContent = getLocale() === "en" ? view.contentLocalization?.note || t("app.content.disclosure") : t("app.content.disclosure");
+  $("edition-label").textContent = activeView === "tab-voices" ? t("app.release.preview") : isFormalPlayback(week) ? t("app.release.formal") : t("app.release.preview");
+  $("week-status").textContent = isFormalPlayback(week) ? t("app.week.published") : week.humanContentReview === "approved" || week.audioStatus === "full_reviewed" ? t("app.week.ready") : week.audioStatus === "full_candidate" ? t("app.week.review") : week.tracks.length ? t("app.week.sample") : t("app.week.outline");
+  $("audio-scope").textContent = isFormalPlayback(week) && track ? t("app.release.formal") : week.humanContentReview === "approved" && track ? t("app.release.full") : track?.scope === "full_candidate" ? t("app.release.review") : track?.scope === "full_reviewed" ? t("app.release.full") : track ? t("app.release.sample") : t("app.release.pending");
+  $("voice").textContent = track ? t("app.voice.active", { speaker: week.speaker }) : t("app.voice.pending");
+  $("source-link").textContent = view.sourceLabel ? t("app.source.link", { label: view.sourceLabel }) : t("app.source.open");
+  for (const button of $("variants").children) button.textContent = isFormalPlayback(week) ? t("app.release.formal") : getLocale() === "en" ? t("app.voice.active", { speaker: week.speaker }) : week.tracks.find(item => item.id === button.dataset.id)?.label || "";
+  $("subtitle-note").textContent = getLocale() === "en" ? t("app.transcript.englishTiming") : t("app.subtitle.follow");
+  document.title = `${activeView === "tab-voices" ? t("app.voices.title") : view.title} · ${t("app.brand")}`;
+}
+
 function ready(value) {
   metadataReady = value;
   controls.forEach(control => { control.disabled = !value; });
@@ -40,8 +106,8 @@ function showResume() {
   $("resume-card").hidden = !pendingResume || activeView === "tab-voices";
   $("restart-position").disabled = !track || (!metadataReady && !pendingResume);
   if (!pendingResume) return;
-  $("resume-message").textContent = `上次听到 ${formatTime(pendingResume.positionSeconds)}，可恢复位置与微调。`;
-  $("resume-position").textContent = `恢复到 ${formatTime(pendingResume.positionSeconds)}`;
+  $("resume-message").textContent = t("app.resume.message", { time: formatTime(pendingResume.positionSeconds) });
+  $("resume-position").textContent = t("app.resume.button", { time: formatTime(pendingResume.positionSeconds) });
 }
 function stopStartup() {
   clearTimeout(startupTimer); startupTimer = null;
@@ -75,10 +141,10 @@ function renderDownloads() {
   const list = $("week-download-links");
   list.replaceChildren();
   for (const [key, label, extension] of [
-    ["readingPdf", "阅读版 PDF", ".pdf"],
-    ["companionPdf", "同行版 PDF", ".pdf"],
-    ["fullVideoMp3", "原视频时间轴 MP3", ".mp3"],
-    ["fullVideoSrt", "原视频时间轴 SRT", ".srt"],
+    ["readingPdf", t("app.download.reading"), ".pdf"],
+    ["companionPdf", t("app.download.companion"), ".pdf"],
+    ["fullVideoMp3", t("app.download.mp3"), ".mp3"],
+    ["fullVideoSrt", t("app.download.srt"), ".srt"],
   ]) {
     const url = downloadUrl(week?.downloads?.[key], extension);
     if (!url) continue;
@@ -93,14 +159,14 @@ function update() {
   const time = track ? audio.currentTime : 0;
   $("progress").max = duration || 1;
   if (!scrubbing) $("progress").value = time;
-  if (!scrubbing) $("progress").setAttribute("aria-valuetext", `${formatTime(time)}，共 ${formatTime(duration)}`);
+  if (!scrubbing) $("progress").setAttribute("aria-valuetext", t("app.progress", { time: formatTime(time), duration: formatTime(duration) }));
   $("elapsed").textContent = formatTime(time);
   $("duration").textContent = formatTime(duration);
   const sourceClock = track ? sourceTime(time) : null;
   $("source-clock").hidden = sourceClock === null;
-  $("source-clock").textContent = sourceClock === null ? "" : `原视频 ${sourceClock}`;
+  $("source-clock").textContent = sourceClock === null ? "" : t("app.source.clock", { time: sourceClock });
   $("play-icon").textContent = audio.paused ? "▶" : "Ⅱ";
-  const playLabel = !track ? "配音准备中" : playPending ? "取消加载" : playFailed ? "重试播放" : pendingResume ? "继续上次收听" : audio.ended ? "重新播放" : audio.paused ? "开始播放" : "暂停播放";
+  const playLabel = !track ? t("app.audio.preparing") : playPending ? t("app.audio.cancel") : playFailed ? t("app.audio.retry") : pendingResume ? t("app.audio.continue") : audio.ended ? t("app.audio.replay") : audio.paused ? t("app.audio.play") : t("app.audio.pause");
   $("play-label").textContent = playLabel;
   document.querySelectorAll("[data-play-label]").forEach(label => { label.textContent = playLabel; });
   document.querySelectorAll("[data-mini-time]").forEach(label => { label.textContent = `${formatTime(time)} / ${formatTime(duration)}`; });
@@ -108,12 +174,17 @@ function update() {
   const index = cueIndex(track.cues, time);
   const display = index < 0 ? Math.max(0, track.cues.findLastIndex(cue => cue.start <= time)) : index;
   if (display !== lastCue) {
-    $("current-text").textContent = track.cues[display]?.text || "";
-    const next = track.cues[display + 1]?.text;
-    $("next-text").textContent = next ? `接下来 · ${next.slice(0, 42)}${next.length > 42 ? "…" : ""}` : "";
+    const englishMode = getLocale() === "en";
+    $("current-text").textContent = englishMode ? englishByCue[display] || t("app.subtitle.missing") : track.cues[display]?.text || "";
+    $("current-text").lang = englishMode ? "en" : "zh-Hans";
+    const next = englishMode ? englishByCue.slice(display + 1).find(text => text && text !== englishByCue[display]) : track.cues[display + 1]?.text;
+    $("next-text").textContent = next ? t("app.next", { text: next.slice(0, getLocale() === "en" ? 100 : 42) + (next.length > (getLocale() === "en" ? 100 : 42) ? "…" : "") }) : "";
     $("cue-count").textContent = `${display + 1} / ${track.cues.length}`;
-    document.querySelectorAll(".cue-button").forEach((b, i) => b.setAttribute("aria-current", String(i === display)));
-    document.querySelectorAll(".cue-row").forEach((row, i) => row.setAttribute("aria-current", String(i === display)));
+    transcriptRows.forEach(({ row, button, start, end }) => {
+      const active = start <= display && display <= end;
+      row.setAttribute("aria-current", String(active)); button.setAttribute("aria-current", String(active));
+    });
+    updateCurrentEnglish(display);
     lastCue = display;
   }
 }
@@ -121,7 +192,7 @@ function selectTab(id, focus = false, scroll = false) {
   fieldAlignment.invalidate();
   activeView = id;
   const voices = id === "tab-voices";
-  $("edition-label").textContent = !voices && isFormalPlayback(week) ? "正式播放版" : "试听版";
+  $("edition-label").textContent = !voices && isFormalPlayback(week) ? t("app.release.formal") : t("app.release.preview");
   document.querySelector(".sermon-banner").hidden = voices;
   document.querySelector(".content-layout").hidden = voices;
   $("source-link").hidden = voices;
@@ -133,7 +204,7 @@ function selectTab(id, focus = false, scroll = false) {
   if (id === "tab-listen") url.searchParams.delete("tab");
   else url.searchParams.set("tab", id.replace("tab-", ""));
   history.replaceState(null, "", url);
-  if (week) document.title = `${voices ? "讲员音色" : week.title} · 同行 · 证道中文听译`;
+  if (week) document.title = `${voices ? t("app.voices.title") : displayWeek().title} · ${t("app.brand")}`;
   for (const tab of tabs) {
     const selected = tab.id === id;
     if (tab.getAttribute("role") === "tab") {
@@ -171,7 +242,7 @@ function saveProgress(force = false) {
 }
 function updateUndo() {
   $("undo-row").hidden = !undoPoint;
-  $("undo-message").textContent = undoPoint ? `可返回 ${formatTime(undoPoint.time)}` : "";
+  $("undo-message").textContent = undoPoint ? t("app.undo", { time: formatTime(undoPoint.time) }) : "";
   document.querySelectorAll("[data-seek-undo]").forEach(button => { button.hidden = !undoPoint; });
 }
 function setPosition(time, { fine = false, undo = true, offset, alignment = false } = {}) {
@@ -186,8 +257,8 @@ function setPosition(time, { fine = false, undo = true, offset, alignment = fals
   pendingResume = null;
   resumeOnMetadata = false;
   $("resume-card").hidden = true;
-  $("offset").textContent = `${fineOffset > 0 ? "+" : ""}${fineOffset.toFixed(2)} 秒`;
-  $("jump-message").textContent = `已定位 ${formatTime(next)}`;
+  $("offset").textContent = t("app.offset", { value: `${fineOffset > 0 ? "+" : ""}${fineOffset.toFixed(2)}` });
+  $("jump-message").textContent = t("app.seek.position", { time: formatTime(next) });
   $("seek-preview").textContent = "";
   scrubbing = false;
   updateUndo(); update(); saveProgress(true);
@@ -197,7 +268,7 @@ function restorePosition() {
   if (!pendingResume) return false;
   const saved = pendingResume;
   if (!setPosition(saved.positionSeconds, { offset: saved.fineOffset })) return false;
-  status("已恢复上次位置；如需对照原视频，请再手动对齐。");
+  status("app.resume.restored");
   return true;
 }
 function restartPosition() {
@@ -212,50 +283,62 @@ function restartPosition() {
     showResume(); update();
   }
   playbackMemory.clear(activeSource);
-  status("从头开始；如需对照原视频，请手动调整起点。");
+  status("app.resume.restart");
 }
 function undoSeek() {
   if (!undoPoint) return;
   const point = undoPoint;
   if (setPosition(point.time, { offset: point.offset, undo: false })) {
-    undoPoint = null; updateUndo(); status(`已返回 ${formatTime(point.time)}`);
+    undoPoint = null; updateUndo(); status("app.seek.returned", { time: formatTime(point.time) });
   }
 }
 function renderTranscript() {
   $("transcript-list").replaceChildren();
+  englishByCue = []; englishDetails = []; transcriptRows = [];
+  updateCurrentEnglish(-1);
   if (!track) {
-    $("transcript-description").textContent = "本周配音尚未生成。可先打开证道大纲，阅读大纲与默想。";
+    $("transcript-description").textContent = t("app.transcript.pending");
     return;
   }
   const bilingual = bilingualCueRows(week, track);
-  const guidance = ["点击时间定位；正文可直接阅读。"];
-  if (bilingual.hasEnglish) guidance.push("中文优先阅读；点击段末的「英文对照」展开参考。");
-  if (bilingual.missingEnglish) guidance.push(bilingual.hasEnglish ? "部分段落未提供可关联的英文原文，保留中文显示。" : "英文原文暂缺，保留中文显示。");
+  // Reuse the validated block association, never infer English from cue timing.
+  const originals = new Map(bilingual.rows.filter(row => row.english != null).map(row => [String(row.cue.blockId), row.english]));
+  englishByCue = track.cues.map(cue => cue.blockId == null ? null : originals.get(String(cue.blockId)) || null);
+  const guidance = [t("app.transcript.guide")];
+  if (bilingual.hasEnglish) guidance.push(t("app.transcript.displayGuide"));
+  if (bilingual.missingEnglish) guidance.push(bilingual.hasEnglish ? t("app.transcript.partial") : t("app.transcript.missing"));
   $("transcript-description").textContent = guidance.join(" ");
-  bilingual.rows.forEach(({ cue, english }) => {
+  const englishMode = getLocale() === "en";
+  bilingual.rows.forEach(({ cue, english, index }) => {
+    if (englishMode && englishByCue[index] && index > 0 && String(track.cues[index - 1].blockId) === String(cue.blockId)) return;
+    let end = index;
+    if (englishMode && englishByCue[index]) while (end + 1 < track.cues.length && String(track.cues[end + 1].blockId) === String(cue.blockId)) end++;
+    const chinese = track.cues.slice(index, end + 1).map(item => item.text).join("\n\n");
     const row = document.createElement("article"); row.className = "cue-row"; row.tabIndex = -1;
     const button = document.createElement("button"); button.className = "cue-button"; button.disabled = true;
-    button.setAttribute("aria-label", `跳至 ${formatTime(cue.start)}`);
+    button.setAttribute("aria-label", t("app.seek.to", { time: formatTime(cue.start) }));
     const time = document.createElement("time"); time.textContent = formatTime(cue.start);
-    const text = document.createElement("span"); text.textContent = cue.text;
+    const text = document.createElement("span"); text.textContent = englishMode ? englishByCue[index] || `${t("app.subtitle.missing")} ${cue.text}` : cue.text;
     button.append(time);
     const originalTime = Number.isFinite(week?.sourceStartSeconds) ? sourceTime(cue.start) : null;
     if (originalTime !== null) {
       const sourceLabel = document.createElement("small");
       sourceLabel.className = "cue-source-time";
-      sourceLabel.textContent = `原视频 ${originalTime}`;
+      sourceLabel.textContent = t("app.source.clock", { time: originalTime });
       button.append(sourceLabel);
-      button.setAttribute("aria-label", `跳至音频 ${formatTime(cue.start)}，原视频 ${originalTime}`);
+      button.setAttribute("aria-label", t("app.seek.source", { time: formatTime(cue.start), source: originalTime }));
     }
     row.append(button, text);
-    text.lang = "zh-Hans";
-    if (english != null) {
+    text.lang = englishMode && englishByCue[index] ? "en" : "zh-Hans";
+    if (englishMode ? englishByCue[index] != null : english != null) {
       const details = document.createElement("details"); details.className = "english-reference";
-      const summary = document.createElement("summary"); summary.textContent = "英文对照";
-      const original = document.createElement("p"); original.lang = "en"; original.textContent = english;
+      const summary = document.createElement("summary"); summary.textContent = t(englishMode ? "app.transcript.chineseReference" : "app.transcript.reference");
+      const original = document.createElement("p"); original.lang = englishMode ? "zh-Hans" : "en"; original.textContent = englishMode ? chinese : english;
+      details.open = bilingualDisplay; englishDetails.push(details);
       details.append(summary, original); row.append(details);
     }
     button.addEventListener("click", () => setPosition(cue.start));
+    transcriptRows.push({ row, button, start: index, end });
     $("transcript-list").append(row);
   });
 }
@@ -275,33 +358,33 @@ function selectTrack(id) {
   feedback.select(engagementWeek(week), track);
   fineOffset = 0;
   lastCue = -2;
-  $("offset").textContent = "0.00 秒";
+  $("offset").textContent = t("app.offset", { value: "0.00" });
   $("jump-time").value = "";
   $("jump-message").textContent = "";
   $("download").hidden = !track;
   $("feedback-quick").disabled = !track;
-  $("audio-scope").textContent = isFormalPlayback(week) && track ? "正式播放版" : week.humanContentReview === "approved" && track ? "整篇中文" : track?.scope === "full_candidate" ? "整篇待审" : track?.scope === "full_reviewed" ? "整篇中文" : track ? "样片" : "待配音";
-  $("voice").textContent = track?.voiceLabel || "本周中文语音尚未就绪";
+  $("audio-scope").textContent = isFormalPlayback(week) && track ? t("app.release.formal") : week.humanContentReview === "approved" && track ? t("app.release.full") : track?.scope === "full_candidate" ? t("app.release.review") : track?.scope === "full_reviewed" ? t("app.release.full") : track ? t("app.release.sample") : t("app.release.pending");
+  $("voice").textContent = track ? t("app.voice.active", { speaker: week.speaker }) : t("app.voice.pending");
   renderTranscript();
   for (const button of $("variants").children) button.setAttribute("aria-pressed", String(button.dataset.id === track?.id));
   if (track) {
     pendingResume = playbackMemory.read(activeSource, track.durationSeconds);
     showResume();
-    status(pendingResume ? "点击继续收听，将恢复上次位置" : "点击播放开始收听");
+    status(pendingResume ? "app.resume.start" : "app.audio.start");
     audio.src = track.audioUrl;
     audio.load();
     $("download").href = `${track.audioUrl}?download=1`;
     $("download").download = downloadFilename(week, track);
     $("download").title = $("download").download;
-    $("subtitle-note").textContent = "字幕随中文音频更新";
+    $("subtitle-note").textContent = t("app.subtitle.follow");
   } else {
     audio.removeAttribute("src");
     audio.load();
-    status("本周配音准备中");
-    $("current-text").textContent = "本周大纲已经就绪。中文配音完成后，就能在这里一同聆听。";
-    $("next-text").textContent = "可切换至其他周次收听，或打开讲员音色试听。";
+    status("app.audio.weekPending");
+    $("current-text").textContent = t("app.content.pending");
+    $("next-text").textContent = t("app.content.otherWeeks");
     $("cue-count").textContent = "";
-    $("subtitle-note").textContent = "本周字幕待配音后同步";
+    $("subtitle-note").textContent = t("app.subtitle.pending");
     $("download").removeAttribute("href");
     $("download").removeAttribute("download");
     $("download").removeAttribute("title");
@@ -309,11 +392,12 @@ function selectTrack(id) {
   update();
 }
 function renderOutline() {
-  $("outline-title").textContent = "证道大纲";
-  $("outline-meta").textContent = `${week.title} · ${week.date.replaceAll("-", ".")} · ${week.speaker} · ${week.scripture}`;
-  $("outline-summary").textContent = week.summary;
+  const content = displayWeek();
+  $("outline-title").textContent = t("app.outline.title");
+  $("outline-meta").textContent = `${content.title} · ${week.date.replaceAll("-", ".")} · ${week.speaker} · ${content.scripture}`;
+  $("outline-summary").textContent = content.summary;
   $("outline-content").replaceChildren();
-  for (const item of week.outline) {
+  for (const item of content.outline) {
     const section = document.createElement("section");
     section.className = "outline-section";
     const h3 = document.createElement("h3");
@@ -324,9 +408,9 @@ function renderOutline() {
     $("outline-content").append(section);
   }
   $("reflection-questions").replaceChildren();
-  for (const question of week.questions) { const li = document.createElement("li"); li.textContent = question; $("reflection-questions").append(li); }
-  document.querySelector(".reflection").hidden = !week.questions.length;
-  $("outline-review").textContent = `${week.contentReview}。${week.audioStatus?.startsWith("full_") ? "大纲与整篇中文配音对应同一篇证道。" : "大纲覆盖整篇证道，播放样片仅覆盖其中一小段。"}`;
+  for (const question of content.questions) { const li = document.createElement("li"); li.textContent = question; $("reflection-questions").append(li); }
+  document.querySelector(".reflection").hidden = !content.questions.length;
+  $("outline-review").textContent = `${content.contentReview}${getLocale() === "en" ? " " : "。"}${week.audioStatus?.startsWith("full_") ? t("app.outline.full") : t("app.outline.sample")}`;
 }
 function renderProduction() {
   const stages = week.productionStages || [
@@ -341,7 +425,7 @@ function renderProduction() {
     if (isFormalPlayback(week)) {
       if (original.label === "周日版本发布") item = { ...original, status: "pass", detail: "已按用户发布授权提供正式播放版。" };
       else if (/视频同步|人工试听/.test(original.label)) item = { ...original, detail: "已完成机器时间轴检查与同步装配；人工试听和现场同视频验收尚未记录。" };
-      else if (original.label === "配音检查") item = { ...original, detail: `已完成机器配音检查；${original.detail}` };
+      else if (original.label === "配音检查") item = { ...original, detail: original.detail };
       else if (original.label === "中文配音" && week.tracks.length) item = { ...original, detail: "整篇中文配音已生成。" };
     }
     const li = document.createElement("li");
@@ -350,9 +434,9 @@ function renderProduction() {
     mark.className = "stage-mark";
     mark.textContent = item.status === "pass" ? "✓" : item.status === "review" ? "◐" : "○";
     const body = document.createElement("div"), heading = document.createElement("h3"), detail = document.createElement("p"), state = document.createElement("small");
-    heading.textContent = item.label;
-    detail.textContent = item.detail;
-    state.textContent = item.status === "pass" ? "已完成" : item.status === "review" ? "待审核" : "待完成";
+    heading.textContent = appText(item.label);
+    detail.textContent = appText(item.detail);
+    state.textContent = t(item.status === "pass" ? "app.stage.complete" : item.status === "review" ? "app.stage.reviewPending" : "app.stage.pending");
     body.append(heading, detail);
     li.append(mark, body, state);
     $("production-stages").append(li);
@@ -360,8 +444,11 @@ function renderProduction() {
 }
 function renderVoiceBank() {
   const bank = catalog.voiceBank;
-  $("voice-bank-notice").textContent = bank?.notice || "其他讲员的音色试听正在准备。";
+  voiceLabels = [];
+  const bankLabels = () => { $("voice-bank-notice").textContent = bank?.speakers?.length ? t("app.voices.notice") : t("app.voices.pending"); };
+  voiceLabels.push(bankLabels); bankLabels();
   $("probe-text").textContent = bank?.probeText?.join("\n\n") || "";
+  $("probe-text").lang = "zh-Hans";
   $("voice-grid").replaceChildren();
   for (const speaker of bank?.speakers || []) {
     const card = document.createElement("article");
@@ -369,12 +456,14 @@ function renderVoiceBank() {
     const heading = document.createElement("h3"), meta = document.createElement("p");
     heading.textContent = speaker.name;
     meta.className = "voice-card-meta";
-    meta.textContent = `${speaker.sourceCount} 篇证道 · ${(speaker.trainingSeconds / 60).toFixed(1)} 分钟训练候选片段`;
+    const metaLabel = () => { meta.textContent = t("app.voices.meta", { english: formatTime(speaker.reference.durationSeconds), chinese: formatTime(speaker.chinese.durationSeconds) }); };
+    voiceLabels.push(metaLabel); metaLabel();
     card.append(heading, meta);
     for (const key of ["reference", "chinese"]) {
       const label = document.createElement("p"), sample = document.createElement("audio");
       label.className = "sample-label";
-      label.textContent = key === "reference" ? "01  英文原声" : "02  中文训练音色";
+      const sampleLabel = () => { label.textContent = t(key === "reference" ? "app.voices.english" : "app.voices.chinese"); sample.setAttribute("aria-label", `${speaker.name} ${label.textContent.slice(4)}`); };
+      voiceLabels.push(sampleLabel); sampleLabel();
       sample.controls = true;
       sample.preload = "metadata";
       sample.src = speaker[key].audioUrl;
@@ -383,9 +472,17 @@ function renderVoiceBank() {
       for (const event of ["play", "pause"]) sample.addEventListener(event, () => usage.record(`voice_${key}_${event}`, { speakerId: speaker.id, trackId: null, positionSeconds: null }));
       card.append(label, sample);
     }
+    if (typeof speaker.referenceSourceUrl === "string" && speaker.referenceSourceUrl.startsWith("https://")) {
+      const sourceLink = document.createElement("a");
+      sourceLink.className = "voice-source-link"; sourceLink.href = speaker.referenceSourceUrl;
+      sourceLink.target = "_blank"; sourceLink.rel = "noopener noreferrer";
+      const sourceLabel = () => { sourceLink.textContent = t("app.voices.source"); };
+      voiceLabels.push(sourceLabel); sourceLabel(); card.append(sourceLink);
+    }
     const note = document.createElement("p");
     note.className = "voice-card-note";
-    note.textContent = speaker.humanListeningStatus === "accepted" ? "已获人工试听认可" : "等待试听确认音色与中文流畅度";
+    const noteLabel = () => { note.textContent = t(speaker.humanListeningStatus === "accepted" ? "app.voices.accepted" : "app.voices.review"); };
+    voiceLabels.push(noteLabel); noteLabel();
     card.append(note);
     $("voice-grid").append(card);
   }
@@ -402,18 +499,18 @@ function selectWeek(id) {
   $("scripture").textContent = week.scripture;
   $("cover-number").textContent = week.number;
   $("date").textContent = week.date.replaceAll("-", ".");
-  $("edition-label").textContent = isFormalPlayback(week) ? "正式播放版" : "试听版";
-  $("week-status").textContent = isFormalPlayback(week) ? "正式播放版 · 中文音频已就绪" : week.humanContentReview === "approved" ? "整篇中文已就绪" : week.audioStatus === "full_candidate" ? "整篇中文 · 待审核" : week.audioStatus === "full_reviewed" ? "整篇中文已就绪" : week.tracks.length ? "中文样片可试听" : "大纲已就绪 · 待配音";
+  $("edition-label").textContent = isFormalPlayback(week) ? t("app.release.formal") : t("app.release.preview");
+  $("week-status").textContent = isFormalPlayback(week) ? t("app.week.published") : week.humanContentReview === "approved" ? t("app.week.ready") : week.audioStatus === "full_candidate" ? t("app.week.review") : week.audioStatus === "full_reviewed" ? t("app.week.ready") : week.tracks.length ? t("app.week.sample") : t("app.week.outline");
   $("central-message").textContent = week.centralMessage;
   $("audio-notice").textContent = week.audioNotice;
   $("source-link").href = week.sourceUrl;
-  $("source-link").textContent = week.sourceLabel ? `${week.sourceLabel} · 查看原视频 ↗` : "查看原证道视频 ↗";
+  $("source-link").textContent = week.sourceLabel ? t("app.source.link", { label: localizeWeek(week, getLocale()).sourceLabel }) : t("app.source.open");
   $("source-link").hidden = false;
   $("variants").replaceChildren();
   $("variants").hidden = !week.tracks.length;
   for (const item of week.tracks) {
     const button = document.createElement("button");
-    button.textContent = isFormalPlayback(week) ? "正式播放版" : item.label;
+    button.textContent = isFormalPlayback(week) ? t("app.release.formal") : item.label;
     button.dataset.id = item.id;
     button.addEventListener("click", () => selectTrack(item.id));
     $("variants").append(button);
@@ -428,7 +525,7 @@ function selectWeek(id) {
   const url = new URL(location.href);
   url.searchParams.set("week", week.id);
   history.replaceState(null, "", url);
-  document.title = `${week.title} · 同行 · 证道中文听译`;
+  renderWeekLabels();
 }
 async function startAlignmentPlayback({ signal } = {}) {
   if (signal?.aborted) throw new DOMException("Alignment cancelled", "AbortError");
@@ -436,17 +533,17 @@ async function startAlignmentPlayback({ signal } = {}) {
   const token = generation, attempt = ++alignmentPlayAttempt;
   playPending = true; playFailed = false; positionTouched = true;
   document.querySelectorAll(".voice-card audio").forEach(sample => sample.pause());
-  status("已对齐，正在开始中文播放…"); update();
+  status("app.align.start"); update();
   try {
     // Explicit play, never a toggle; preserve the helper's failure for the controller.
     await playAlignmentAudio(audio, { signal });
     if (!signal?.aborted && token === generation && attempt === alignmentPlayAttempt) {
-      stopStartup(); status("正在播放"); update();
+      stopStartup(); status("app.audio.playing"); update();
     }
   } catch (error) {
     if (!signal?.aborted && token === generation && attempt === alignmentPlayAttempt) {
       stopStartup(); audio.pause(); playFailed = true;
-      status("已定位，但播放未能开始。请手动播放，并微调跟上原声。"); update();
+      status("app.align.failed"); update();
     }
     throw error;
   }
@@ -454,7 +551,7 @@ async function startAlignmentPlayback({ signal } = {}) {
 async function togglePlay(fromAlignment = false) {
   if (fromAlignment !== true) fieldAlignment.invalidate();
   if (!track || $("play").disabled) return;
-  if (playPending) { stopStartup(); audio.pause(); status("已取消加载，可再次点击播放"); update(); return; }
+  if (playPending) { stopStartup(); audio.pause(); status("app.audio.cancelled"); update(); return; }
   if (!audio.paused) { audio.pause(); return; }
   const retry = playFailed || Boolean(audio.error);
   if (retry) {
@@ -472,10 +569,10 @@ async function togglePlay(fromAlignment = false) {
   document.querySelectorAll(".voice-card audio").forEach(sample => sample.pause());
   const token = generation, attempt = ++playAttempt;
   playPending = true; playFailed = false;
-  status("正在连接音频… 可再次点击取消"); update();
+  status("app.audio.connecting"); update();
   startupTimer = setTimeout(() => {
     if (token !== generation || attempt !== playAttempt) return;
-    failStartup("音频连接较慢，请重试；仍无法播放时，可用浏览器打开或下载 MP3。");
+    failStartup("app.audio.slow");
     feedback.error("audio_play");
   }, 15000);
   // Keep play() inside the original click; never await metadata/network first.
@@ -484,7 +581,7 @@ async function togglePlay(fromAlignment = false) {
     if (token === generation && attempt === playAttempt) { stopStartup(); update(); }
   } catch {
     if (token === generation && attempt === playAttempt) {
-      failStartup("无法开始播放，请重试；也可用浏览器打开或下载 MP3。"); feedback.error("audio_play");
+      failStartup("app.audio.failed"); feedback.error("audio_play");
     }
   }
 }
@@ -513,17 +610,17 @@ document.querySelectorAll("[data-nudge]").forEach(button => button.addEventListe
 $("progress").addEventListener("input", event => {
   scrubbing = true;
   const preview = formatTime(Number(event.target.value));
-  event.target.setAttribute("aria-valuetext", `${preview}，松开后跳转`);
-  $("seek-preview").textContent = `准备跳至 ${preview}，松开后生效`;
+  event.target.setAttribute("aria-valuetext", t("app.seek.release", { time: preview }));
+  $("seek-preview").textContent = t("app.seek.preview", { time: preview });
 });
 $("progress").addEventListener("change", event => setPosition(Number(event.target.value)));
 $("progress").addEventListener("pointercancel", () => { scrubbing = false; $("seek-preview").textContent = ""; update(); });
 $("jump-form").addEventListener("submit", event => {
   event.preventDefault();
   const time = parseTimecode($("jump-time").value);
-  if (time === null) { $("jump-message").textContent = "请输入 分:秒，例如 01:05，也支持 时:分:秒。"; return; }
+  if (time === null) { $("jump-message").textContent = t("app.seek.invalid"); return; }
   if (!track || !Number.isFinite(audio.duration)) return;
-  if (time > audio.duration) { $("jump-message").textContent = `超出当前音频，请输入 00:00 至 ${formatTime(audio.duration)}。`; return; }
+  if (time > audio.duration) { $("jump-message").textContent = t("app.seek.range", { duration: formatTime(audio.duration) }); return; }
   setPosition(time);
 });
 tabs.forEach(tab => { tab.addEventListener("click", () => selectTab(tab.id, false, true)); });
@@ -548,7 +645,7 @@ audio.addEventListener("loadedmetadata", () => {
   if (resumeOnMetadata && pendingResume) restorePosition();
   resumeOnMetadata = false;
   showResume();
-  if (!playFailed) status(playPending ? "正在连接音频… 可再次点击取消" : pendingResume ? "已找到上次位置" : "音频就绪 · 可开始收听");
+  if (!playFailed) status(playPending ? "app.audio.connecting" : pendingResume ? "app.resume.found" : "app.audio.ready");
   update();
 });
 for (const event of ["timeupdate", "durationchange", "seeked"]) audio.addEventListener(event, update);
@@ -556,18 +653,18 @@ audio.addEventListener("timeupdate", () => saveProgress());
 audio.addEventListener("pause", () => saveProgress(true));
 window.addEventListener("pagehide", () => saveProgress(true));
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") saveProgress(true); });
-audio.addEventListener("play", () => { if (!playPending) status("正在播放"); update(); });
+audio.addEventListener("play", () => { if (!playPending) status("app.audio.playing"); update(); });
 audio.addEventListener("pause", () => {
   // A queued pause from a cancelled attempt can arrive after play() restarts.
   if (!audio.paused) return;
   if (playPending) stopStartup();
-  if (track && !playFailed) status(audio.ended ? "播放完毕" : "已暂停");
+  if (track && !playFailed) status(audio.ended ? "app.audio.finished" : "app.audio.paused");
   update();
 });
-audio.addEventListener("ended", () => { status("播放完毕"); update(); });
-audio.addEventListener("waiting", () => { if (track) status("正在缓冲…"); });
-audio.addEventListener("playing", () => { if (!audioIsCurrent()) return; stopStartup(); playFailed = false; status("正在播放"); update(); });
-audio.addEventListener("error", () => { if (track && audio.error) { failStartup("音频读取失败，请点击重试；也可用浏览器打开或下载 MP3。"); ready(false); feedback.error("audio_load"); } });
+audio.addEventListener("ended", () => { status("app.audio.finished"); update(); });
+audio.addEventListener("waiting", () => { if (track) status("app.audio.buffering"); });
+audio.addEventListener("playing", () => { if (!audioIsCurrent()) return; stopStartup(); playFailed = false; status("app.audio.playing"); update(); });
+audio.addEventListener("error", () => { if (track && audio.error) { failStartup("app.audio.loadFailed"); ready(false); feedback.error("audio_load"); } });
 document.addEventListener("keydown", event => {
   if (activeView === "tab-voices" || event.target.closest("audio") || $("outline-dialog").open || $("feedback-dialog").open || $("precision-dialog").open || $("fingerprint-dialog").open || event.target.matches("input,button,a,select,textarea") || !track || $("play").disabled) return;
   if (event.code === "Space") { event.preventDefault(); usage.record(audio.paused ? 'play_click' : 'pause_click'); togglePlay(); }
@@ -584,7 +681,7 @@ async function initializeEngagement() {
       const config = await engagement.json();
       usage = createUsage({ catalog: { ...catalog, weeks: catalog.weeks.map(engagementWeek) }, config, audio,
         context: () => ({ week: engagementWeek(week), track, panel: activeView.replace('tab-', '') }),
-        onError: () => { if ($('statistics-opt-in').checked) $('statistics-status').textContent = '部分匿名使用记录暂未送达，稍后会重试；播放不受影响。'; },
+        onError: () => { if ($('statistics-opt-in').checked) feedback.usageDeliveryError?.(); },
       });
       feedback = createFeedback(audio, config, { usage });
       // The listener may have switched sources while the optional request ran.
@@ -594,17 +691,24 @@ async function initializeEngagement() {
     }
   } catch { /* Optional feedback must never prevent playback. */ }
 }
+$("language-toggle").addEventListener("click", () => setLocale(getLocale() === "en" ? "zh" : "en"));
+onLocaleChange(() => {
+  updateLanguageControl();
+  if (!catalog || !week) return;
+  renderWeekOptions(); renderWeekLabels(); renderOutline(); renderProduction(); renderDownloads();
+  renderTranscript(); ready(metadataReady); showResume(); updateUndo();
+  voiceLabels.forEach(refresh => refresh());
+  $("offset").textContent = t("app.offset", { value: `${fineOffset > 0 ? "+" : ""}${fineOffset.toFixed(2)}` });
+  if (lastStatus) status(...lastStatus);
+  $("jump-message").textContent = ""; $("seek-preview").textContent = "";
+  lastCue = -2; update(); syncDockHeight();
+});
+localizeDOM();
 try {
   const response = await fetch("/weekly.json");
   if (!response.ok) throw new Error("Catalog unavailable");
   catalog = validateCatalog(await response.json());
-  $("week-select").replaceChildren();
-  for (const item of catalog.weeks) {
-    const option = document.createElement("option");
-    option.value = item.id;
-    option.textContent = weekOptionLabel(item);
-    $("week-select").append(option);
-  }
+  renderWeekOptions();
   $("week-select").disabled = false;
   renderVoiceBank();
   selectWeek(new URLSearchParams(location.search).get("week"));
@@ -614,7 +718,7 @@ try {
   void initializeEngagement();
 } catch {
   ready(false);
-  $("title").textContent = "暂时无法读取本周信息";
-  status("加载失败，请检查网络后刷新。");
-  $("current-text").textContent = "内容加载失败，请刷新后再试。";
+  $("title").textContent = t("app.load.title");
+  status("app.load.failed");
+  $("current-text").textContent = t("app.load.content");
 }
