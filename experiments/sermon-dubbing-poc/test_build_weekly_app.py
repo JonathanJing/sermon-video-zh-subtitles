@@ -62,6 +62,28 @@ def app_fixture(root, source_id="weekly-fixture"):
     return work
 
 
+def fixture_fingerprint(job, week, public, *, synchronized):
+    if not synchronized:
+        from weekly_audio_fingerprint import bind_weekly_fingerprint
+        return bind_weekly_fingerprint(job, week, public, synchronized=False)
+    start = job["sourceStartSeconds"]
+    end = start + job["sourceDurationSeconds"]
+    identity = {"pageId": week["id"], "sourceSha256": "a" * 64, "trackSha256": week["tracks"][0]["sha256"],
+        "sourceStartSeconds": start, "sourceEndSeconds": end, "algorithmVersion": "spectral-landmarks-v1"}
+    index = {"schemaVersion": "sermon-landmark-index-v1", **identity, "sampleRate": 8000, "hopSize": 256, "fftSize": 1024,
+        "window": {"startSeconds": start, "endSeconds": end}, "durationSeconds": end - start, "landmarkCount": 1, "postings": {"123": [1]}}
+    tmp = public / "fixture-index.json"
+    write_json(tmp, index)
+    digest = sha256(tmp)
+    destination = public / "fingerprints" / f"{digest[:16]}-landmarks.json"
+    destination.parent.mkdir(exist_ok=True)
+    tmp.rename(destination)
+    week.update(sourceSha256="a" * 64, sourceStartSeconds=start, sourceEndSeconds=end, sourceDurationSeconds=end-start)
+    week["audioFingerprint"] = {"schemaVersion": "sermon-audio-fingerprint-binding-v1", **identity,
+        "captureSeconds": 10, "indexSha256": digest, "indexUrl": f"/fingerprints/{destination.name}"}
+    week["automaticAudioAlignment"] = {"schemaVersion": "sermon-automatic-audio-alignment-v1", "status": "ready", "required": True}
+
+
 class WeeklyAppBuildTests(unittest.TestCase):
     def test_feedback_export_binds_api_catalog_to_public_audio_without_text(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -85,6 +107,10 @@ class WeeklyAppBuildTests(unittest.TestCase):
             self.assertTrue(all("text" not in cue for cue in api["cues"]))
 
     def setUp(self):
+        # Extraction uses real media in test_weekly_audio_fingerprint.
+        fingerprint = patch.object(app, "bind_weekly_fingerprint", side_effect=fixture_fingerprint)
+        fingerprint.start()
+        self.addCleanup(fingerprint.stop)
         no_subprocess = patch.object(runner, "process_run", side_effect=AssertionError("No subprocess / models / network"))
         no_subprocess.start()
         self.addCleanup(no_subprocess.stop)
@@ -238,7 +264,9 @@ class WeeklyAppBuildTests(unittest.TestCase):
             # this test isolates catalog retention/order after that validation.
             def exported(work, *args):
                 return {**app.source_page(read(work / "job.json")), "date": "2026-09-06", "sourceId": "same-id",
-                    "title": "本周证道", "speaker": "Eric", "outline": ["大纲"], "tracks": []}
+                    "title": "本周证道", "speaker": "Eric", "outline": ["大纲"], "tracks": [],
+                    "audioStatus": "full_candidate", "videoSynchronization": "not_validated",
+                    "automaticAudioAlignment": {"schemaVersion": "sermon-automatic-audio-alignment-v1", "status": "unavailable", "required": False, "reason": "unsynchronized_review_preview"}}
             with patch.object(app, "weekly_job", side_effect=exported), contextlib.redirect_stdout(io.StringIO()):
                 app.build(root / "missing-history", root / "build", weekly_jobs=jobs, review_preview=True)
             catalog = load_weekly(root / "build/public")

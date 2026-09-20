@@ -81,7 +81,7 @@ GOOGLE_CLOUD_PROJECT=ai-for-god-caption-dev node experiments/sermon-dubbing-poc/
 
 ## 验证
 
-前端测试覆盖关闭统计时不采集、序号冲突、过期不伪撤回、撤回失败保留基线、实际收听区间与跳转；API 测试覆盖来源与字段拒绝、限流、赞踩替换、独立问题、统计去重与撤回，并拒绝 Firestore 不支持的嵌套数组。发布还需要真实 API→Firestore 回读、普通访问拒绝、TTL ACTIVE、桌面/窄屏浏览器提交与撤回证据。测试记录应明确标识，并撤回其业务记录与汇总贡献。
+前端测试覆盖默认无网络采集、序号冲突、过期不伪撤回、撤回失败保留基线、实际收听区间与跳转；API 测试覆盖来源与字段拒绝、限流、赞踩替换、独立问题、统计去重与撤回，并拒绝 Firestore 不支持的嵌套数组。发布还需要真实 API→Firestore 回读、普通访问拒绝、TTL ACTIVE、桌面/窄屏浏览器提交与撤回证据。测试记录应明确标识，并撤回其业务记录与汇总贡献。
 
 设计参考：[Hosting 与 Functions 同域重写](https://firebase.google.com/docs/hosting/functions)、[命名 Firestore 数据库与 IAM](https://firebase.google.com/docs/firestore/manage-databases)、[TTL 清理](https://firebase.google.com/docs/firestore/ttl)、[Cloud Run 请求日志](https://cloud.google.com/run/docs/logging)。
 

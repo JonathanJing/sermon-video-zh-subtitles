@@ -55,6 +55,7 @@ class SupervisorConfig:
     glossary: Path | None = None
     source_text_review: Path | None = None
     reading_review_manifest: Path | None = None
+    release_workflow_config: Path | None = None
     lease_ttl_seconds: int = 14_400
 
 

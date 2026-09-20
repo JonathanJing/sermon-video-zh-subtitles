@@ -2,7 +2,6 @@
 """Deploy only a verified static listening release to its dedicated Hosting site."""
 import argparse
 import json
-import math
 from pathlib import Path
 import re
 import shutil
@@ -16,26 +15,57 @@ DOWNLOAD_PATH = re.compile(r"/downloads/([a-f0-9]{16})-[A-Za-z0-9][A-Za-z0-9._-]
 FINGERPRINT_UI = {"fingerprint-core.mjs", "fingerprint-capture.mjs", "fingerprint-worklet.mjs", "fingerprint-worker.mjs", "fingerprint-ui.mjs"}
 
 
-def bound_fingerprints(public, expected):
+def validate_automatic_audio_alignment(catalog, required_pages=()):
+    """New weekly pages declare availability; historical catalogs remain readable."""
+    if (not isinstance(required_pages, (list, tuple))
+            or any(not isinstance(page, str) for page in required_pages)
+            or len(set(required_pages)) != len(required_pages)):
+        raise ValueError("Invalid automatic audio alignment page requirements")
+    if not isinstance(catalog, dict) or catalog.get("schemaVersion") != "sermon-weekly-catalog-v1":
+        raise ValueError("Unsupported weekly catalog schema")
+    weeks = catalog.get("weeks", [])
+    if not isinstance(weeks, list) or any(not isinstance(w, dict) for w in weeks):
+        raise ValueError("Invalid automatic audio alignment catalog")
+    by_id = {week.get("id"): week for week in weeks}
+    for page in required_pages:
+        if page not in by_id or "automaticAudioAlignment" not in by_id[page]:
+            raise ValueError("Required automatic audio alignment declaration is missing")
+    for week in weeks:
+        marker = week.get("automaticAudioAlignment")
+        if marker is None and "automaticAudioAlignment" not in week:
+            continue
+        if not isinstance(marker, dict) or marker.get("schemaVersion") != "sermon-automatic-audio-alignment-v1":
+            raise ValueError("Unsupported automatic audio alignment declaration")
+        if marker.get("status") == "ready":
+            if marker.get("required") is not True or not isinstance(week.get("audioFingerprint"), dict):
+                raise ValueError("Automatic audio alignment requires a bound fingerprint index")
+            if week.get("videoSynchronization") not in {"candidate_aligned", "human_reviewed"}:
+                raise ValueError("Automatic audio alignment requires a synchronized track")
+            if not re.fullmatch(r"[a-f0-9]{64}", str(week.get("sourceSha256", ""))):
+                raise ValueError("Automatic audio alignment requires explicit source identity")
+        elif marker.get("status") == "unavailable":
+            if (marker.get("required") is not False or marker.get("reason") != "unsynchronized_review_preview"
+                    or week.get("audioStatus") != "full_candidate"
+                    or week.get("videoSynchronization") != "not_validated"
+                    or week.get("audioFingerprint") is not None
+                    or any(t.get("subtitleTiming") in {"source_video_aligned_candidate", "human_reviewed_source_video"}
+                           for t in week.get("tracks", []))):
+                raise ValueError("Only an unsynchronized review preview may omit automatic audio alignment")
+        else:
+            raise ValueError("Unsupported automatic audio alignment availability")
+
+
+def bound_fingerprints(public, expected, required_pages=()):
     """Publish only a non-audio index bound to this source, window and track."""
-    catalog = json.loads((public / "weekly.json").read_text()) if (public / "weekly.json").is_file() else {"weeks": []}
-    if not isinstance(catalog, dict) or not isinstance(catalog.get("weeks", []), list):
-        raise ValueError("Invalid fingerprint catalog")
+    catalog = json.loads((public / "weekly.json").read_text()) if (public / "weekly.json").is_file() else {"schemaVersion": "sermon-weekly-catalog-v1", "weeks": []}
+    validate_automatic_audio_alignment(catalog, required_pages)
     referenced = set()
     for week in catalog.get("weeks", []):
-        if not isinstance(week, dict):
-            raise ValueError("Invalid fingerprint week")
         binding = week.get("audioFingerprint")
         if binding is None:
             continue
-        if catalog.get("schemaVersion") != "sermon-weekly-catalog-v1":
-            raise ValueError("Unsupported fingerprint catalog schema")
         if not isinstance(binding, dict) or binding.get("schemaVersion") != "sermon-audio-fingerprint-binding-v1":
             raise ValueError("Unsupported audio fingerprint binding")
-        required = {"schemaVersion", "algorithmVersion", "captureSeconds", "indexUrl", "indexSha256",
-                    "sourceSha256", "trackSha256", "pageId", "sourceStartSeconds", "sourceEndSeconds"}
-        if not required.issubset(binding):
-            raise ValueError("Incomplete audio fingerprint binding")
         if binding.get("algorithmVersion") != "spectral-landmarks-v1" or binding.get("captureSeconds") != 10:
             raise ValueError("Unsupported audio fingerprint algorithm or capture duration")
         for field in ("indexSha256", "sourceSha256", "trackSha256"):
@@ -49,41 +79,49 @@ def bound_fingerprints(public, expected):
         path = public / name
         if (info.get("sha256") != binding["indexSha256"] or not path.is_file() or path.is_symlink()
                 or (public / "fingerprints").is_symlink() or not path.resolve().is_relative_to(public)
-                or not 0 < path.stat().st_size <= 16 * 1024 * 1024 or info.get("bytes") != path.stat().st_size):
+                or not 0 < path.stat().st_size <= 16 * 1024 * 1024):
             raise ValueError("Fingerprint index is not bound to a regular release file")
         if sha256(path) != binding["indexSha256"]:
             raise ValueError("Fingerprint index content changed")
         index = json.loads(path.read_text())
-        if not isinstance(index, dict) or index.get("schemaVersion") != "sermon-landmark-index-v1":
+        if index.get("schemaVersion") != "sermon-landmark-index-v1":
             raise ValueError("Unsupported fingerprint index schema")
         for field in ("pageId", "sourceSha256", "trackSha256", "sourceStartSeconds", "sourceEndSeconds", "algorithmVersion"):
             if index.get(field) != binding.get(field):
                 raise ValueError("Fingerprint index and catalog identity disagree")
-        if (binding["pageId"] != week.get("id") or week.get("sourceRoute") != "same_video"
-                or not str(week.get("sourceId", "")).endswith(binding["sourceSha256"][:16])):
+        explicit_source = week.get("sourceSha256")
+        source_matches = (explicit_source == binding["sourceSha256"] if explicit_source is not None else
+                          week.get("sourceRoute") == "same_video" and
+                          week.get("sourceId", "").endswith(binding["sourceSha256"][:16]))
+        if (binding["pageId"] != week["id"]
+                or week.get("sourceRoute") not in {"same_video", "archive_caption", "live_archive"}
+                or not source_matches):
             raise ValueError("Fingerprint source does not match the selected recording")
         start, end = binding["sourceStartSeconds"], binding["sourceEndSeconds"]
         if (type(start) not in (int, float) or type(end) not in (int, float) or not 0 <= start < end
-                or not math.isfinite(start) or not math.isfinite(end)
                 or start != week.get("sourceStartSeconds") or end != week.get("sourceEndSeconds")):
             raise ValueError("Fingerprint source window changed")
-        all_tracks = week.get("tracks")
-        if not isinstance(all_tracks, list) or any(not isinstance(t, dict) for t in all_tracks):
-            raise ValueError("Invalid fingerprint audio tracks")
-        tracks = [t for t in all_tracks if t.get("sha256") == binding["trackSha256"]]
-        if (len(tracks) != 1 or type(tracks[0].get("durationSeconds")) not in (int, float)
-                or not math.isfinite(tracks[0]["durationSeconds"])
-                or abs(tracks[0]["durationSeconds"] - (end - start)) > .1):
+        tracks = [t for t in week["tracks"] if t["sha256"] == binding["trackSha256"]]
+        if len(tracks) != 1 or abs(tracks[0]["durationSeconds"] - (end - start)) > .1:
             raise ValueError("Fingerprint requires a same-clock full sermon audio track")
         track = tracks[0]
-        track_name = "media/" + str(track.get("file", ""))
+        filename = track.get("file")
+        if (not isinstance(filename, str)
+                or not re.fullmatch(r"[a-f0-9]{16}-[\w.-]+\.mp3", filename)
+                or not filename.startswith(binding["trackSha256"][:16] + "-")
+                or track.get("audioUrl") != "/media/" + filename):
+            raise ValueError("Fingerprint track must reference its content-addressed local MP3")
+        track_name = "media/" + filename
         track_info = expected.get(track_name, {})
-        if (not re.fullmatch(r"media/" + binding["trackSha256"][:16] + r"-[\w.-]+\.mp3", track_name)
-                or track.get("audioUrl") != "/" + track_name
-                or track_info.get("sha256") != binding["trackSha256"]
-                or type(track_info.get("bytes")) is not int or track_info["bytes"] <= 0
-                or (public / track_name).is_symlink() or (public / "media").is_symlink()):
-            raise ValueError("Fingerprint audio must bind to the published hashed MP3")
+        track_path = public / track_name
+        if (track_info.get("sha256") != binding["trackSha256"]
+                or not track_path.is_file() or track_path.is_symlink()
+                or (public / "media").is_symlink()
+                or not track_path.resolve().is_relative_to(public)
+                or track_path.stat().st_size <= 0
+                or track_info.get("bytes") != track_path.stat().st_size
+                or sha256(track_path) != binding["trackSha256"]):
+            raise ValueError("Fingerprint track is not bound to a nonempty published MP3")
         allowed = {"schemaVersion", "algorithmVersion", "sampleRate", "hopSize", "fftSize", "sourceSha256", "trackSha256", "pageId", "sourceStartSeconds", "sourceEndSeconds", "window", "durationSeconds", "landmarkCount", "postings"}
         if set(index) != allowed or (index["sampleRate"], index["hopSize"], index["fftSize"]) != (8000, 256, 1024):
             raise ValueError("Fingerprint index may contain only supported numeric landmarks and identity fields")
@@ -154,12 +192,12 @@ def verify_release(release):
     if len(expected) != len(report["files"]) or actual != set(expected):
         raise ValueError("Unexpected or missing upload files")
     downloads = bound_downloads(public, expected)
-    fingerprints = bound_fingerprints(public, expected)
+    fingerprints = bound_fingerprints(public, expected, report.get("automaticAudioAlignmentPages", ()))
     for name, info in expected.items():
         path = public / name
         if not path.resolve().is_relative_to(public) or sha256(path) != info["sha256"]:
             raise ValueError("Release file or path changed")
-        if name not in {"index.html", "style.css", "app.mjs", "timing.mjs", "catalog.mjs", "theme.js", "weekly.json", "feedback.mjs", "feedback-client.mjs", "listening.mjs", "usage.mjs", "usage-client.mjs", "playback-memory.mjs", "engagement.json", "brand-icon.png"} | FINGERPRINT_UI and not re.fullmatch(r"media/[a-f0-9]{16}-[\w.-]+\.mp3", name) and name not in downloads | fingerprints:
+        if name not in {"index.html", "style.css", "app.mjs", "timing.mjs", "catalog.mjs", "theme.js", "weekly.json", "feedback.mjs", "feedback-client.mjs", "listening.mjs", "usage.mjs", "usage-client.mjs", "playback-memory.mjs", "i18n.mjs", "locales-interface.mjs", "locales-app.mjs", "locales-feedback.mjs", "content-locales.mjs", "engagement.json", "brand-icon.png"} | FINGERPRINT_UI and not re.fullmatch(r"media/[a-f0-9]{16}-[\w.-]+\.mp3", name) and name not in downloads | fingerprints:
             raise ValueError("Only UI, weekly content, hashed listening MP3s and bound downloads may be uploaded")
     return report
 

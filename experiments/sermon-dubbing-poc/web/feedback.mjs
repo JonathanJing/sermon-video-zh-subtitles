@@ -1,3 +1,5 @@
+import { localizeWeek } from '/content-locales.mjs';
+import { t, onLocaleChange, getLocale } from '/i18n.mjs';
 import { FeedbackClient, FeedbackError, statisticsPreference } from '/feedback-client.mjs';
 import { ListeningSummary } from '/listening.mjs';
 import { formatTime } from '/timing.mjs';
@@ -5,27 +7,39 @@ import { formatTime } from '/timing.mjs';
 // Default on; an explicit current or legacy opt-out remains authoritative.
 const preferenceKey = 'sermon-anonymous-statistics-v2';
 const $ = id => document.getElementById(id);
-const categories = [['translation', '翻译不准确'], ['pronunciation', '发音有误'], ['fluency', '听起来不流畅'],
-  ['voice', '音色不自然'], ['sync', '与视频不同步'], ['volume', '音量问题'], ['playback', '播放或下载问题']];
+const categories = [['translation', 'feedback.category.translation'], ['pronunciation', 'feedback.category.pronunciation'], ['fluency', 'feedback.category.fluency'],
+  ['voice', 'feedback.category.voice'], ['sync', 'feedback.category.sync'], ['volume', 'feedback.category.volume'], ['playback', 'feedback.category.playback']];
 function storedPreference() { try { return statisticsPreference(localStorage); } catch { return true; } }
 function errorMessage(error) {
-  if (error instanceof FeedbackError && error.status === 410) return '本次会话已过期，请刷新页面再提交。旧记录未撤回，将按保留期限清理。';
-  return error instanceof FeedbackError && error.status === 429 ? '提交较频繁，请稍后再试。' : '暂时未能确认保存，请检查网络后重试。';
+  if (error instanceof FeedbackError && error.status === 410) return 'feedback.error.expired';
+  return error instanceof FeedbackError && error.status === 429 ? 'feedback.error.rateLimit' : 'feedback.error.network';
 }
 
 export function createFeedback(audio, config, { usage } = {}) {
   if (!config?.enabled) return { select() {}, count() {}, error() {}, statisticsEnabled: () => false };
   const clients = new Map();
   let current = null, feedbackTarget = null, point = null, issueId = null, busy = false, optIn = storedPreference();
-  const setStatus = text => { $('feedback-status').textContent = text; };
+  const localizedStatus = new Map(), categoryLabels = [];
+  function setText(id, messageKey) { localizedStatus.set(id, messageKey); $(id).textContent = messageKey ? t(messageKey) : ''; }
+  const setStatus = messageKey => setText('feedback-status', messageKey);
+  function refreshLocale() {
+    for (const [id, messageKey] of localizedStatus) $(id).textContent = messageKey ? t(messageKey) : '';
+    for (const [node, messageKey] of categoryLabels) node.textContent = t(messageKey);
+    if (feedbackTarget) {
+      $('feedback-dialog-context').textContent = `${localizeWeek(feedbackTarget.week, getLocale()).title} · ${point ? formatTime(point.positionSeconds) : t('feedback.wholeAudio')}`;
+      if (point?.cueId === null) $('feedback-excerpt').textContent = t('feedback.noCue');
+    }
+  }
+  onLocaleChange(refreshLocale);
   $('privacy-controls').hidden = false;
   $('statistics-notice').hidden = false;
   $('statistics-opt-in').checked = optIn;
-  $('statistics-status').textContent = optIn ? '已开启匿名统计，可随时关闭；每日更换随机标识，不连接跨日个人轨迹。' : '已保留你关闭匿名统计的选择。';
+  setText('statistics-status', optIn ? 'feedback.stats.defaultOn' : 'feedback.stats.savedOff');
   for (const [value, label] of categories) {
     const item = document.createElement('label'), checkbox = document.createElement('input');
     checkbox.type = 'checkbox'; checkbox.value = value; checkbox.name = 'feedback-category';
-    item.append(checkbox, document.createTextNode(label)); $('feedback-categories').append(item);
+    const text = document.createElement('span'); text.textContent = t(label); categoryLabels.push([text, label]);
+    item.append(checkbox, text); $('feedback-categories').append(item);
   }
   function buttons() {
     for (const [id, value] of [['feedback-up', 'up'], ['feedback-down', 'down']]) {
@@ -50,7 +64,7 @@ export function createFeedback(audio, config, { usage } = {}) {
       target.summary.resetSample();
     }).catch(error => {
       target.expired = error instanceof FeedbackError && error.status === 410;
-      if (optIn) $('statistics-status').textContent = target.expired ? '本页会话已结束，匿名统计已暂停；刷新页面可重新开启。' : '暂时无法开启匿名统计，稍后会重试；播放不受影响。';
+      if (optIn) setText('statistics-status', target.expired ? 'feedback.stats.expired' : 'feedback.stats.startFailed');
     }).finally(() => { target.preparing = false; });
   }
   function flush(target = current) {
@@ -62,7 +76,7 @@ export function createFeedback(audio, config, { usage } = {}) {
       target.sent = null;
       target.expired = error instanceof FeedbackError && error.status === 410;
       if (target.expired) target.readyForStats = false;
-      if (optIn) $('statistics-status').textContent = target.expired ? '本页会话已结束，匿名统计已暂停；刷新页面可重新开启。' : '匿名摘要暂未送达，稍后会重试；播放不受影响。';
+      if (optIn) setText('statistics-status', target.expired ? 'feedback.stats.expired' : 'feedback.stats.sendFailed');
     });
   }
   function flushPendingStatistics() {
@@ -80,23 +94,23 @@ export function createFeedback(audio, config, { usage } = {}) {
       const index = current.track.cues.findIndex(cue => cue.start <= seconds && seconds < cue.end);
       point = { positionSeconds: Math.round(seconds * 100) / 100, cueId: index < 0 ? null : String(index),
         blockId: index < 0 || current.track.cues[index].blockId == null ? null : String(current.track.cues[index].blockId) };
-      $('feedback-excerpt').textContent = index < 0 ? '当前位置没有字幕。' : current.track.cues[index].text;
+      $('feedback-excerpt').textContent = index < 0 ? t('feedback.noCue') : current.track.cues[index].text;
     }
     issueId = crypto.randomUUID();
     $('feedback-form').reset();
-    $('feedback-dialog-context').textContent = `${current.week.title} · ${point ? formatTime(point.positionSeconds) : '整份音频'}`;
+    $('feedback-dialog-context').textContent = `${localizeWeek(current.week, getLocale()).title} · ${point ? formatTime(point.positionSeconds) : t('feedback.wholeAudio')}`;
     $('feedback-excerpt').hidden = !point;
-    $('feedback-form-status').textContent = '';
+    setText('feedback-form-status', '');
     $('feedback-dialog').showModal();
   }
   async function vote(value) {
     if (!current || busy) return;
     const target = current;
-    busy = true; buttons(); setStatus('正在保存…');
+    busy = true; buttons(); setStatus('feedback.saving');
     try {
       await target.client.vote(value);
       if (target === current) {
-        setStatus(value ? '谢谢，评价已保存。' : '评价已撤回。');
+        setStatus(value ? 'feedback.saved' : 'feedback.voteWithdrawn');
         if (value === 'down') openDetails(false);
       }
     } catch (error) { if (target === current) setStatus(errorMessage(error)); }
@@ -113,23 +127,23 @@ export function createFeedback(audio, config, { usage } = {}) {
     if (!feedbackTarget || !issueId || $('feedback-submit').disabled) return;
     const selected = [...document.querySelectorAll('[name="feedback-category"]:checked')].map(input => input.value);
     const comment = $('feedback-comment').value.trim();
-    if (!selected.length && !comment) { $('feedback-form-status').textContent = '请选择一个问题，或写下补充说明。'; return; }
+    if (!selected.length && !comment) { setText('feedback-form-status', 'feedback.selectIssue'); return; }
     const target = feedbackTarget, id = issueId;
-    $('feedback-submit').disabled = true; $('feedback-form-status').textContent = '正在保存…';
+    $('feedback-submit').disabled = true; setText('feedback-form-status', 'feedback.saving');
     try {
       await target.client.issue(id, { categories: selected, comment, context: $('feedback-use-context').value,
         ...(point || { positionSeconds: null, cueId: null, blockId: null }) });
       if (issueId === id) $('feedback-dialog').close();
-      if (target === current) setStatus('问题已保存，谢谢你帮助改进中文听译。');
+      if (target === current) setStatus('feedback.issueSaved');
       buttons();
-    } catch (error) { $('feedback-form-status').textContent = errorMessage(error); }
+    } catch (error) { setText('feedback-form-status', errorMessage(error)); }
     finally { $('feedback-submit').disabled = false; }
   });
   $('feedback-retract-issue').addEventListener('click', async () => {
     if (!current?.client.state.lastIssueId || busy) return;
     const target = current, id = target.client.state.lastIssueId;
-    busy = true; buttons(); setStatus('正在撤回…');
-    try { await target.client.issue(id, null, 'delete'); if (target === current) setStatus('最近一次问题反馈已撤回。'); }
+    busy = true; buttons(); setStatus('feedback.withdrawing');
+    try { await target.client.issue(id, null, 'delete'); if (target === current) setStatus('feedback.issueWithdrawn'); }
     catch (error) { if (target === current) setStatus(errorMessage(error)); }
     finally { busy = false; buttons(); }
   });
@@ -141,12 +155,12 @@ export function createFeedback(audio, config, { usage } = {}) {
       usage?.setEnabled(true);
       current?.summary.resetSample();
       prepareStatistics();
-      $('statistics-status').textContent = '已开启：统计使用时间、操作和收听摘要，不连接跨日个人轨迹。';
+      setText('statistics-status', 'feedback.stats.enabled');
     } else {
       usage?.setEnabled(false);
       try { localStorage.setItem('sermon-anonymous-statistics-v1', 'no'); } catch {}
       $('statistics-opt-in').disabled = true;
-      $('statistics-status').textContent = '已关闭匿名统计，正在撤回本页已上传的使用记录…';
+      setText('statistics-status', 'feedback.stats.withdrawing');
       const results = await Promise.allSettled([usage?.retract(), ...[...clients.values()].map(async target => {
         target.readyForStats = false;
         await target.client.deleteEvents();
@@ -157,9 +171,9 @@ export function createFeedback(audio, config, { usage } = {}) {
       $('statistics-opt-in').disabled = false;
       const failures = results.filter(result => result.status === 'rejected');
       const expired = failures.some(result => result.reason instanceof FeedbackError && result.reason.status === 410);
-      $('statistics-status').textContent = expired ? '已停止统计；会话已过期，部分摘要无法在本页撤回，将按 30 天期限清理。'
-        : failures.length ? '已停止统计；部分历史摘要暂未撤回，请联网后点击“重试撤回”。'
-        : '已关闭匿名统计；本页已上传的使用记录已撤回。';
+      setText('statistics-status', expired ? 'feedback.stats.withdrawExpired'
+        : failures.length ? 'feedback.stats.withdrawFailed'
+        : 'feedback.stats.withdrawn');
       $('statistics-retry-delete').hidden = !failures.some(result => !(result.reason instanceof FeedbackError && result.reason.status === 410));
     }
   }
@@ -181,6 +195,7 @@ export function createFeedback(audio, config, { usage } = {}) {
   window.addEventListener('pagehide', () => { observe(); flushPendingStatistics(); });
   return {
     statisticsEnabled: () => optIn,
+    usageDeliveryError() { if (optIn) setText("statistics-status", "app.usage.delayed"); },
     select(week, track) {
       if (current?.playing) { count('pauses'); current.playing = false; }
       flush();

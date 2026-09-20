@@ -75,8 +75,10 @@ class WeeklyAccountingTests(unittest.TestCase):
                   "assemble": None}
         with ExitStack() as stack:
             stack.enter_context(patch.dict(os.environ, {key: "" for key in ENV_KEYS}))
+            # Remote-path fixtures must not discover an operator's real local voice.
             stack.enter_context(patch.object(sys, "argv", ["run_weekly_dubbing.py", "--work", str(work),
-                "--remote-checkpoint", runner.REMOTE_ROOT + "/sermon-fixture/checkpoint", "--mlx-python", "/fixture/python", "--serial-stages"]))
+                "--remote-checkpoint", runner.REMOTE_ROOT + "/sermon-fixture/checkpoint", "--mlx-python", "/fixture/python", "--serial-stages",
+                "--local-checkpoint", str(Path(folder) / "missing-local-checkpoint")]))
             stack.enter_context(patch("builtins.print"))
             for name, value in values.items():
                 mocks[name] = stack.enter_context(patch.object(runner, name, return_value=value))

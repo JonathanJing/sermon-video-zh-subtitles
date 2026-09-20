@@ -27,6 +27,8 @@
 
 2026-09-19：[生产并发与 MacBook 调度](../parallel-production.zh.md)已接入分块 ASR、双 PDF、原声对齐与 TTS 的受限并发；配音前置条件通过时可与 PDF 渲染重叠。真实双模型短样本已验证，整篇提速与听审仍待实际运行。最终来源、PDF、音轨和人工审核门槛保持不变。
 
+**可选全流程扩展：** [Agents API 到页面发行](../agents-end-to-end-workflow.zh.md)通过 `--release-workflow-config` 接入配音候选、同步、页面、发行准备、授权部署、HTTP 核验和登记。长任务有持久化任务 ID，PDF 完成不会提前结束全流程。人工听审及发布授权仍按证据放行；默认入口与现有定时任务未自动切换，真实整篇与线上验收单独执行。
+
 可选的[统一检查与执行入口](../saturday-harness.zh.md)按顺序连接原 PDF Supervisor 和配音桥接器，分开报告 PDF、候选、听审、同步与发布。[执行保护](../sermon-execution-harness.zh.md)连接 [Promptfoo 真实固定回归集](../saturday-quality-harness.zh.md)、[本机持久化追踪与自动观察](../sermon-trace-export.zh.md)及 [Temporal 持久工作流](../sermon-temporal.zh.md)。各自的实际集成证据和运行命令见专题文档；不表示真实生产或现场已通过，也未自动替换定时任务。
 
 **控制层迁移说明（2026-09-11）：** [Production Supervisor](../sermon-production-supervisor-agent.zh.md) 已在本地 runner 接入 OpenAI Agents API，默认 `--agent-backend agents-api`，原 Agents SDK / Responses 通过 `--agent-backend sdk` 显式回退。服务端 session 使用 `environment: none`；本地只执行状态检查、来源媒体准备（保留 timeline 工具名）和经审批 PDF 生成三个受限业务工具，另有结构化结论提交。Session 状态和工具结果持久化，同一会话恢复；自动新建会话须先确认远端 completed/failed/cancelled 且无执行中或结果未确认的工具，本地 timeout 或取消 ACK 不足以放行；source、人工审批、lease、恢复、QA 与发布继续由确定性层约束，完成状态须重新读取 production snapshot。
@@ -36,6 +38,8 @@ Supervisor 默认使用 `gpt-6-astra` Medium（本账户旧 `gpt-5.6` 查询返�
 真实 Agents API 的两个全模拟用例已核验：`live-synthetic-01` 缺审批用例完成 2 次工具调用、未调用生成并返回 usage；`live-synthetic-advance-01` 完成 4 次工具调用，模拟 generation 执行恰好 1 次。`live-real-shadow-minimal-01` 已完成实际生产 GCS 状态的只读检查，目标日期 `2026-09-13`，动作为 `waiting_for_matching_sunday`。三个用例均为零真实生产变更；[报告链接与验证限界](../sermon-production-supervisor-agent.zh.md#验证进度)不能代替生产入口安装或切换回执。随后已完成正式入口 execute 验收并启用每周跟进 `pdf-context-pack`；当前业务状态仍是等待匹配源，完整产物生产与未来定时唤醒各自验收，安装收据见[本地 runbook](../codex-local-production-runbook.zh.md)。本节不更新上方全项目的 2026-09-04 校准日期，也不代表周日现场验收完成。
 
 **人工范围更新（2026-09-19）：** 完整礼拜的证道起止位置由操作员提供，已移除模型边界探测。前置阶段只下载并核验媒体，后续转写／翻译模型保持各自职责。旧 tool/action 与审批哈希字段为恢复兼容保留；[媒体证据 v2 与旧会话迁移](../codex-local-production-runbook.zh.md#人工范围流程2026-09-19-代码更新)说明具体合同。这是本地代码状态，不是远端发布或现场验收。
+
+**新页面自动听音定位（2026-09-19）：** 同步中文音轨进入 `build_weekly_app.py` 后，固定生成原声指纹、绑定来源／人工范围／页面／音轨，并纳入发行校验。自然语速未同步试听候选明确标记不可用；新同步页面不能漏掉指纹后继续发行。用户主动授权麦克风，本地匹配同一录制并自动定位播放；真实设备与现场效果单独验收。详见[每周发行流程](../tongxing-weekly-release.zh.md#新页面固定包含自动听音定位)及[双语制作流程页](../tongxing-video-to-page.html)。
 
 ### 完整流程图
 

@@ -1,5 +1,4 @@
 import XCTest
-import UIKit
 
 /// Real application UI and AVPlayer, with generated silence and an injected
 /// URLSession transport. The offline relaunch simulates transport failure;
@@ -11,61 +10,41 @@ final class ListeningFlowUITests: XCTestCase {
         try selectSecondTrack(in: app)
         try downloadSelection(in: app)
         try seekToSecondSubtitle(in: app)
-        try selectReadingMode(.outline, in: app)
-        try closeReadingPaneIfPresented(in: app)
+        let modes = app.segmentedControls["listening-display"]
+        let currentMode = modes.buttons["现场收听"]
+        try reveal(currentMode, in: app, direction: .down)
+        currentMode.tap()
         let play = app.buttons["playback-toggle"]
         play.tap()
         try waitFor(play, "label == '暂停播放'")
-        try showTranscript(in: app)
+        modes.buttons["字幕全文"].tap()
 
-        // No reveal: otherwise the test could conceal missing automatic locating.
-        try waitForReadingViewport(app.buttons["subtitle-cue-1"], in: app)
+        // Do not use reveal here: it would conceal a missing automatic scroll.
+        let timestamp = app.buttons["subtitle-cue-1"]
+        let located = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            let top = app.navigationBars.firstMatch.frame.maxY
+            let bottom = self.element("playback-progress", in: app).frame.minY - 36
+            return timestamp.exists && timestamp.isHittable
+                && timestamp.frame.minY >= top && timestamp.frame.maxY <= bottom
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [located], timeout: 5), .completed)
         screenshot("playing-transcript-auto-located-current-cue", app: app)
-        let first = app.buttons["subtitle-cue-0"]
-        try reveal(first, in: app, direction: .down, scrollIdentifier: "transcript-reading-scroll")
-        let originalY = first.frame.minY
+
+        try reveal(currentMode, in: app, direction: .down)
         let movedAway = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            !first.exists || abs(first.frame.minY - originalY) > 20
+            currentMode.frame.minY < app.navigationBars.firstMatch.frame.maxY
         }, object: nil)
         movedAway.isInverted = true
         XCTAssertEqual(XCTWaiter.wait(for: [movedAway], timeout: 2), .completed,
                        "播放推进不能抢走手动滚动位置")
-        try closeReadingPaneIfPresented(in: app)
         play.tap()
         try waitFor(play, "label == '开始播放'")
-        try showTranscript(in: app)
-        try waitForReadingViewport(first, in: app)
-        screenshot("paused-transcript-preserves-reading-position", app: app)
-        try closeReadingPaneIfPresented(in: app)
+        currentMode.tap()
+        modes.buttons["字幕全文"].tap()
+        XCTAssertGreaterThanOrEqual(currentMode.frame.minY, app.navigationBars.firstMatch.frame.maxY,
+                                    "暂停时打开全文应保留阅读入口位置")
         XCTAssertEqual(play.label, "开始播放")
-    }
-
-    func testPrivacyNoticeIsAvailableWithoutMicrophonePermission() throws {
-        let app = launchFixture()
-        app.terminate()
-        app.launchArguments.append("--ui-testing-offline")
-        app.launch()
-        try waitFor(element("catalog-notice", in: app), "label CONTAINS '上次保存的证道目录'")
-        app.buttons["more-options"].tap()
-        let privacy = element("privacy-support", in: app)
-        for _ in 0..<6 {
-            if privacy.exists && privacy.isHittable { break }
-            app.collectionViews.firstMatch.swipeUp()
-        }
-        XCTAssertTrue(privacy.isHittable)
-        privacy.tap()
-        XCTAssertTrue(app.navigationBars["隐私与支持"].waitForExistence(timeout: 5))
-        XCTAssertTrue(element("full-privacy-policy", in: app).isHittable)
-        XCTAssertTrue(element("privacy-support-website", in: app).isHittable)
-        XCTAssertTrue(element("privacy-contact-email", in: app).isHittable)
-        XCTAssertEqual(app.alerts.count, 0)
-        let localData = app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "删除 App 可移除本机 App 资料；系统备份需在系统设置中管理")).firstMatch
-        for _ in 0..<6 {
-            if localData.exists && localData.isHittable { break }
-            app.collectionViews.firstMatch.swipeUp()
-        }
-        XCTAssertTrue(localData.isHittable)
-        screenshot("privacy-notice-offline-content", app: app)
+        screenshot("paused-transcript-preserves-reading-position", app: app)
     }
 
     func testEnglishInterfaceAndOriginalTranscriptPreserveSelectedPosition() throws {
@@ -73,19 +52,17 @@ final class ListeningFlowUITests: XCTestCase {
         try selectSecondTrack(in: app)
         try downloadSelection(in: app)
         try seekToSecondSubtitle(in: app)
-        try showTranscript(in: app)
         let english = element("transcript-english-1", in: app)
         let comparison = element("transcript-english-toggle-1", in: app)
-        try reveal(comparison, in: app, direction: .up, scrollIdentifier: "transcript-reading-scroll")
+        try reveal(comparison, in: app, direction: .up)
         XCTAssertFalse(english.exists)
         comparison.tap()
-        try reveal(english, in: app, direction: .up, scrollIdentifier: "transcript-reading-scroll")
+        try reveal(english, in: app, direction: .up)
         XCTAssertTrue(english.label.contains("Second synthetic source sentence"))
+        try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:12'")
         comparison.tap()
         XCTAssertFalse(english.exists)
         comparison.tap()
-        try closeReadingPaneIfPresented(in: app)
-        try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:12'")
         app.buttons["more-options"].tap()
         let language = element("interface-language", in: app)
         try reveal(language, in: app, direction: .up)
@@ -95,16 +72,8 @@ final class ListeningFlowUITests: XCTestCase {
         try waitFor(app.buttons["playback-toggle"], "label == 'Play'")
         try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:12'")
         XCTAssertEqual(element("sermon-title", in: app).label, "界面测试证道")
-        try showTranscript(in: app)
-        if !english.exists {
-            try reveal(comparison, in: app, direction: .up, scrollIdentifier: "transcript-reading-scroll")
-            comparison.tap()
-        }
-        try reveal(english, in: app, direction: .up, scrollIdentifier: "transcript-reading-scroll")
         XCTAssertTrue(english.label.contains("Second synthetic source sentence"))
         screenshot("english-interface-source-bilingual-transcript", app: app)
-        try closeReadingPaneIfPresented(in: app)
-        try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:12'")
     }
 
     func testSelectTrackDownloadPlayPauseAndSeekToSubtitle() throws {
@@ -122,10 +91,12 @@ final class ListeningFlowUITests: XCTestCase {
         try waitFor(element("playback-progress", in: app), "value CONTAINS '已暂停'")
 
         try seekToSecondSubtitle(in: app)
-        try closeReadingPaneIfPresented(in: app)
         let current = app.buttons["current-cue"]
         XCTAssertTrue(current.isHittable)
         current.tap()
+        let currentMode = app.segmentedControls["listening-display"].buttons["现场收听"]
+        try reveal(currentMode, in: app, direction: .down)
+        currentMode.tap()
         try waitFor(element("current-subtitle", in: app), "value == '乙音轨：第二句，用于验证时间定位。'")
         XCTAssertEqual(play.label, "开始播放", "字幕定位必须保留暂停状态")
         screenshot("selected-track-paused-at-second-subtitle", app: app)
@@ -169,21 +140,6 @@ final class ListeningFlowUITests: XCTestCase {
 
     func testAccessibilityTextKeepsDownloadAndPlaybackControlsReachable() throws {
         let app = launchFixture(largeText: true)
-        try verifyAccessiblePlaybackControls(in: app)
-    }
-
-    func testIPadWideAccessibilityTextFallsBackToCompactReadableControls() throws {
-        let app = try launchLandscapeFixture(largeText: true)
-        XCTAssertGreaterThanOrEqual(app.frame.width, 840,
-                                    "必须在实际宽窗口中验证无障碍字号回退")
-        try waitFor(element("compact-layout", in: app), "exists == true")
-        XCTAssertFalse(element("duo-layout", in: app).exists)
-        XCTAssertFalse(element("reading-pane", in: app).exists)
-        try verifyAccessiblePlaybackControls(in: app)
-        screenshot("ipad-wide-accessibility3-compact-fallback", app: app)
-    }
-
-    private func verifyAccessiblePlaybackControls(in app: XCUIApplication) throws {
         try downloadSelection(in: app)
         let play = app.buttons["playback-toggle"]
         let forward = app.buttons["nudge-forward"]
@@ -203,149 +159,6 @@ final class ListeningFlowUITests: XCTestCase {
         play.tap()
         try waitFor(element("playback-progress", in: app), "value CONTAINS '已暂停'")
         screenshot("accessibility3-download-and-playback-controls", app: app)
-    }
-
-    /// Run on an iPad whose actual portrait window becomes compact (for example
-    /// iPad mini). There is no launch argument that forces a layout branch.
-    func testIPadWideOutlineAndTranscriptReadingOnlySeekWithTimestampButton() throws {
-        let app = try launchWideFixture()
-        let pane = element("reading-pane", in: app)
-        let current = element("current-subtitle", in: app)
-        try waitForReadingMode(.outline, in: app)
-        XCTAssertTrue(element("outline-reading-scroll", in: app).exists)
-        XCTAssertTrue(app.staticTexts["测试大纲：起点"].isHittable)
-        XCTAssertTrue(app.staticTexts["测试大纲：回应"].isHittable)
-        XCTAssertTrue(current.isHittable, "宽屏默认应同时显示大纲和当前字幕")
-        XCTAssertLessThanOrEqual(pane.frame.maxX, current.frame.minX + 1,
-                                 "阅读面板和当前字幕应在两个并排区域中")
-        XCTAssertEqual(app.buttons.matching(identifier: "playback-toggle").count, 1)
-
-        try selectSecondTrack(in: app)
-        try downloadSelection(in: app)
-        app.buttons["current-cue"].tap()
-        try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:00，'")
-        try showTranscript(in: app)
-        try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:00，'")
-        let transcript = app.scrollViews["transcript-reading-scroll"]
-        let thirdPassage = transcript.staticTexts["乙音轨：第三句，用于验证继续收听。"]
-        try reveal(thirdPassage, in: app, direction: .up, scrollIdentifier: "transcript-reading-scroll")
-        thirdPassage.tap()
-        try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:00，'")
-        XCTAssertEqual(app.buttons["playback-toggle"].label, "开始播放",
-                       "切换、滚动和点击正文不能自动定位或开始播放")
-
-        try selectReadingMode(.outline, in: app)
-        try selectReadingMode(.transcript, in: app)
-        // Do not reveal again: that would hide a lost reading anchor by scrolling
-        // back to the expected passage as part of the assertion itself.
-        try waitForReadingViewport(thirdPassage, in: app)
-        try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:00，'")
-        XCTAssertEqual(app.buttons["playback-toggle"].label, "开始播放")
-
-        // Start within the current cue, so a mistaken seek to its start would
-        // change the asserted time instead of passing unnoticed at 00:00.
-        app.buttons["nudge-forward"].tap()
-        try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:01，'")
-        let returnToCurrent = app.buttons["reader-current-cue"]
-        XCTAssertTrue(returnToCurrent.isHittable)
-        returnToCurrent.tap()
-        try waitForReadingViewport(transcript.staticTexts["乙音轨：第一句，用于验证选轨。"], in: app)
-        try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:01，'")
-        XCTAssertEqual(app.buttons["playback-toggle"].label, "开始播放",
-                       "阅读面板回到当前句只应滚动，不能改变播放时间或开始播放")
-
-        let timestamp = app.buttons["subtitle-cue-1"]
-        try reveal(timestamp, in: app, direction: .down, scrollIdentifier: "transcript-reading-scroll")
-        timestamp.tap()
-        try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:12，'")
-        try waitFor(current, "value == '乙音轨：第二句，用于验证时间定位。'")
-        try selectReadingMode(.outline, in: app)
-        try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:12，'")
-        XCTAssertTrue(app.staticTexts["测试大纲：起点"].isHittable)
-        XCTAssertEqual(app.buttons["playback-toggle"].label, "开始播放")
-        screenshot("ipad-wide-outline-current-subtitle-explicit-seek", app: app)
-    }
-
-    func testIPadPlaybackAndReadingSelectionSurviveWideCompactWideRotation() throws {
-        let app = try launchWideFixture()
-        try selectSecondTrack(in: app)
-        try downloadSelection(in: app)
-        app.buttons["current-cue"].tap()
-        try seekToSecondSubtitle(in: app)
-        let thirdPassage = app.scrollViews["transcript-reading-scroll"]
-            .staticTexts["乙音轨：第三句，用于验证继续收听。"]
-        try reveal(thirdPassage, in: app, direction: .up, scrollIdentifier: "transcript-reading-scroll")
-        let wideWidth = app.frame.width
-        let progress = element("playback-progress", in: app)
-        let play = app.buttons["playback-toggle"]
-        play.tap()
-        try waitFor(play, "label == '暂停播放'")
-        try waitFor(progress, "value CONTAINS '正在收听'")
-        let beforeRotation = try playbackSeconds(in: app)
-
-        XCUIDevice.shared.orientation = .portrait
-        try waitFor(element("compact-layout", in: app), "exists == true")
-        XCTAssertLessThan(app.frame.width, wideWidth, "必须真实收窄窗口，不能只替换布局标记")
-        XCTAssertFalse(element("duo-layout", in: app).exists)
-        XCTAssertTrue(element("current-subtitle", in: app).isHittable)
-        XCTAssertTrue(play.isHittable)
-        XCTAssertEqual(play.label, "暂停播放", "收窄窗口不能暂停或重新开始播放")
-        XCTAssertGreaterThanOrEqual(try playbackSeconds(in: app), beforeRotation)
-        try openReadingPaneIfNeeded(in: app)
-        try waitForReadingMode(.transcript, in: app)
-        XCTAssertTrue(element("transcript-reading-scroll", in: app).exists)
-        // Observe restoration directly; scrolling here would mask a lost anchor
-        // or an unwanted jump to the currently playing cue.
-        try waitForReadingViewport(thirdPassage, in: app)
-        try closeReadingPaneIfPresented(in: app)
-        screenshot("ipad-portrait-compact-playback-continues", app: app)
-
-        XCUIDevice.shared.orientation = .landscapeLeft
-        try waitFor(element("duo-layout", in: app), "exists == true")
-        XCTAssertGreaterThan(app.frame.width, app.frame.height)
-        try waitForReadingMode(.transcript, in: app)
-        XCTAssertTrue(element("reading-pane", in: app).exists)
-        XCTAssertTrue(app.segmentedControls["reading-mode-picker"].isHittable)
-        try waitForReadingViewport(thirdPassage, in: app)
-        XCTAssertEqual(element("sermon-title", in: app).label, "界面测试证道")
-        XCTAssertEqual(play.label, "暂停播放", "重新展开必须保留播放意图")
-        XCTAssertEqual(app.buttons.matching(identifier: "playback-toggle").count, 1)
-        let afterRotation = try playbackSeconds(in: app)
-        XCTAssertGreaterThan(afterRotation, beforeRotation, "跨布局期间应由同一播放器继续推进")
-        play.tap()
-        try waitFor(progress, "value CONTAINS '已暂停'")
-        let pausedPosition = try playbackSeconds(in: app)
-        XCTAssertGreaterThanOrEqual(pausedPosition, afterRotation)
-        // Returning to the same explicit cue also verifies that the selected
-        // second track survived both changes of the actual window dimensions.
-        let timestamp = app.buttons["subtitle-cue-1"]
-        try reveal(timestamp, in: app, direction: .down, scrollIdentifier: "transcript-reading-scroll")
-        timestamp.tap()
-        try waitFor(progress, "value BEGINSWITH '00:12，'")
-        try waitFor(element("current-subtitle", in: app), "value == '乙音轨：第二句，用于验证时间定位。'")
-        XCTAssertEqual(play.label, "开始播放")
-        screenshot("ipad-landscape-reading-selection-and-track-retained", app: app)
-    }
-
-    private func launchWideFixture() throws -> XCUIApplication {
-        let app = try launchLandscapeFixture()
-        try waitFor(element("duo-layout", in: app), "exists == true")
-        return app
-    }
-
-    private func launchLandscapeFixture(largeText: Bool = false) throws -> XCUIApplication {
-        guard UIDevice.current.userInterfaceIdiom == .pad else {
-            throw XCTSkip("此用例仅在 iPad 执行；iPhone 继续运行通用单屏回归。")
-        }
-        let previousOrientation = XCUIDevice.shared.orientation
-        XCUIDevice.shared.orientation = .landscapeLeft
-        addTeardownBlock {
-            await MainActor.run { XCUIDevice.shared.orientation = previousOrientation }
-        }
-        let app = launchFixture(largeText: largeText)
-        XCTAssertGreaterThan(app.frame.width, app.frame.height,
-                             "此用例需要可在横竖屏间跨越宽屏阈值的 iPad")
-        return app
     }
 
     private func launchFixture(largeText: Bool = false) -> XCUIApplication {
@@ -389,94 +202,28 @@ final class ListeningFlowUITests: XCTestCase {
     }
 
     private func seekToSecondSubtitle(in app: XCUIApplication) throws {
-        try showTranscript(in: app)
+        let transcriptMode = app.segmentedControls["listening-display"].buttons["字幕全文"]
+        try reveal(transcriptMode, in: app, direction: .down)
+        transcriptMode.tap()
         let timestamp = app.buttons["subtitle-cue-1"]
-        try reveal(timestamp, in: app, direction: .up, scrollIdentifier: "transcript-reading-scroll")
+        try reveal(timestamp, in: app, direction: .up)
         XCTAssertTrue(timestamp.isEnabled)
         timestamp.tap()
-        try closeReadingPaneIfPresented(in: app)
         try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:12，'")
         try waitFor(element("playback-progress", in: app), "value CONTAINS '已定位 00:12'")
     }
 
-    private enum ReadingMode { case outline, transcript }
-
-    private func openReadingPaneIfNeeded(in app: XCUIApplication) throws {
-        guard !element("reading-pane", in: app).exists else { return }
-        let open = app.buttons["open-reading-pane"]
-        try reveal(open, in: app, direction: .down)
-        open.tap()
-        try waitFor(element("reading-pane", in: app), "exists == true")
-    }
-
-    private func selectReadingMode(_ mode: ReadingMode, in app: XCUIApplication) throws {
-        try openReadingPaneIfNeeded(in: app)
-        let picker = app.segmentedControls["reading-mode-picker"]
-        try waitFor(picker, "exists == true AND hittable == true")
-        let option = picker.buttons.element(boundBy: mode == .outline ? 0 : 1)
-        try waitFor(option, "exists == true AND hittable == true")
-        if !option.isSelected { option.tap() }
-        try waitForReadingMode(mode, in: app)
-    }
-
-    private func waitForReadingMode(_ mode: ReadingMode, in app: XCUIApplication) throws {
-        let option = app.segmentedControls["reading-mode-picker"].buttons.element(boundBy: mode == .outline ? 0 : 1)
-        try waitFor(option, "exists == true AND selected == true")
-        XCTAssertTrue(option.isSelected, "阅读模式必须由系统分段按钮的实际选中状态确认")
-    }
-
-    private func showTranscript(in app: XCUIApplication) throws {
-        try selectReadingMode(.transcript, in: app)
-    }
-
-    private func closeReadingPaneIfPresented(in app: XCUIApplication) throws {
-        let close = app.buttons["close-reading-pane"]
-        guard close.exists else { return }
-        close.tap()
-        try waitFor(close, "exists == false")
-    }
-
-    private func playbackSeconds(in app: XCUIApplication) throws -> Int {
-        let value = element("playback-progress", in: app).value as? String ?? ""
-        let parts = value.prefix(5).split(separator: ":")
-        guard parts.count == 2, let minutes = Int(parts[0]), let seconds = Int(parts[1]) else {
-            XCTFail("播放器没有可解析的实际时间：\(value)")
-            throw FlowFailure.unreachable
-        }
-        return minutes * 60 + seconds
-    }
-
     private enum ScrollDirection { case up, down }
 
-    private func waitForReadingViewport(_ target: XCUIElement, in app: XCUIApplication) throws {
-        let scroll = app.scrollViews["transcript-reading-scroll"]
-        let visible = NSPredicate { _, _ in
-            guard scroll.exists, target.exists, target.isHittable else { return false }
-            let viewport = scroll.frame.intersection(app.frame)
-            return !target.frame.isEmpty && viewport.contains(target.frame)
-        }
-        let expectation = XCTNSPredicateExpectation(predicate: visible, object: target)
-        guard XCTWaiter.wait(for: [expectation], timeout: 15) == .completed else {
-            screenshot("reading-anchor-not-restored", app: app)
-            XCTFail("阅读位置恢复后，目标正文应直接保留在阅读面板可见范围内")
-            throw FlowFailure.timeout
-        }
-    }
-
-    private func reveal(_ target: XCUIElement, in app: XCUIApplication, direction: ScrollDirection,
-                        scrollIdentifier: String = "listening-scroll") throws {
-        let scroll = app.scrollViews[scrollIdentifier]
+    private func reveal(_ target: XCUIElement, in app: XCUIApplication, direction: ScrollDirection) throws {
+        let scroll = app.scrollViews["listening-scroll"]
         for _ in 0..<10 {
             // safeAreaBar leaves the ScrollView's accessibility frame extending
             // beneath the floating dock. Clip to actual visible reading bounds;
             // a whole-ScrollView percentage can land on the large-text play button.
             let visibleFrame = scroll.frame.intersection(app.frame)
             let top = max(visibleFrame.minY, app.navigationBars.firstMatch.frame.maxY) + 16
-            // The sidebar and compact reading sheet have their own viewport;
-            // the dock belongs to the separate main listening page.
-            let isReadingViewport = scrollIdentifier == "transcript-reading-scroll"
-            let bottom = isReadingViewport ? visibleFrame.maxY - 16
-                : min(visibleFrame.maxY, element("playback-progress", in: app).frame.minY - 36)
+            let bottom = min(visibleFrame.maxY, element("playback-progress", in: app).frame.minY - 36)
             guard bottom - top >= 80 else {
                 screenshot("insufficient-reading-region", app: app)
                 XCTFail("实际界面没有足够的阅读区域供滚动")

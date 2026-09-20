@@ -7,7 +7,7 @@ Production code is installed and the installed default entry passed real read-on
 The local runner now integrates **OpenAI Agents API**, with `--agent-backend agents-api` as its default and explicit `--agent-backend sdk` rollback to the existing Agents SDK / Responses path. This document describes the control-plane contract. Real API cases, local scheduling, and real production acceptance have separate evidence; a passing synthetic case does not establish a complete production cutover.
 
 - Cloud Scheduler discovers the source; the local runner drives production. An active Codex schedule must be verified separately.
-- Existing Python scripts are the deterministic execution layer. The old `sermon-post-live-timeline` Cloud Run Job was retired on 2026-09-11; its retained configuration is a rebuilding reference, not a currently runnable rollback service.
+- Existing Python scripts are the deterministic execution layer; Cloud Run Jobs are retained as a compatibility/rollback path.
 - GCS state, run-status, and QA JSON remain the source of truth.
 - `Sermon Production Supervisor` reads evidence, selects the next safe action, and calls bounded tools.
 - An operator must still confirm the absolute sermon start and end.
@@ -33,7 +33,7 @@ flowchart LR
 
 Agents API maintains the server-side session and control loop with `environment: none`. The local runner executes bounded tool requests and submits results. Downloading, ASR, translation, PDF rendering, QA, and publication remain in the deterministic Python layer. The supervisor now defaults to **`gpt-6-astra` with reasoning effort `medium`**. The model lookup for the former `gpt-5.6` returned HTTP 404 for this account, so it is not retained as an available default. Explicit SDK rollback uses the same Astra Medium model and changes only the control-plane transport. Translation, reading review, and companion generation remain Astra Medium, and ASR remains `gpt-transcribe`.
 
-The initial 2026-09-11 local scheduler inspection did not find this production task. The subsequent user-authorized cutover created and read back the ACTIVE heartbeat, as recorded in the [cutover receipt](agents-api-production-cutover-20260911.zh.md) and [local runbook](./codex-local-production-runbook.zh.md). Those dated observations do not establish its present runtime health; inspect the current schedule and execution receipt when diagnosing a later run.
+The local scheduler inspection did not find this production task. Consult the [local runbook](./codex-local-production-runbook.zh.md) for planned scheduling and current verification receipts; use the manual entry until actual scheduling and execution are verified. Cloud Job/Scheduler activation state also needs a live check.
 
 In the retained Cloud Run topology, Cloud Scheduler does not pass one HTTP target's response into another target. That handoff uses durable state instead:
 
