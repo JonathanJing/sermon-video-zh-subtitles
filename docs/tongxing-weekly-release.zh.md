@@ -8,6 +8,8 @@
 
 周次、source route 和 source ID 共同决定内容项。同一周的直播归档与独立 YouTube 视频分别保留。已存在的源身份不能借同一个 page ID 改写。音频与审核声明沿用各页原始数据，不因进入发行清单而升级。
 
+[可选 Agents API 全流程](agents-end-to-end-workflow.zh.md)可通过 `--release-workflow-config` 连接配音、同步、页面、发行准备、授权部署、HTTP 核验与登记；默认入口和现有定时任务未自动切换。海报继续由 Codex 按下述默认交付环节完成，端到端入口尚未自动调用 ImageGen。
+
 ## 新页面固定包含自动听音定位
 
 `build_weekly_app.py --weekly-job <job目录> --out <新目录>` 在构建同步正式页面时，自动调用 `build_fingerprint_index.mjs`，无需另外手工生成索引或修改 `weekly.json`。同步试播仍使用 `--review-preview --sync-preview`，生成指纹不改变其待审状态。

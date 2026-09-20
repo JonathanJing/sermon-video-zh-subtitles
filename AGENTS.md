@@ -55,4 +55,4 @@ A poster is a default weekly deliverable after the content release and its HTTP 
 
 ## Delivery
 
-Report the result, meaningful verification and remaining limits. Do not commit or push unless requested. Keep commits scoped; before a requested push, fetch/check divergence, then verify the remote commit. Force-push requires explicit authorization.
+Report the result, meaningful verification and remaining limits. Do not commit or push unless requested. Keep commits scoped; before a requested push, fetch/check divergence, then verify the remote commit. Ensure the fetch refspec actually updates the target branch (this repository may track only selected feature branches); use an explicit target refspec and compare `git ls-remote` when necessary. Force-push requires explicit authorization.

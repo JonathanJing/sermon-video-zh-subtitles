@@ -22,12 +22,15 @@ class WeeklyFingerprintTests(unittest.TestCase):
         (public / "media").mkdir(parents=True)
         track = public / "media/chinese.mp3"
         track.write_bytes(b"fixture synchronized track")
+        addressed = track.with_name(sha256(track)[:16] + "-chinese.mp3")
+        track.rename(addressed)
+        track = addressed
         clip = root / "clip.json"
         write_json(clip, {"source": {"sha256": sha256(source)}, "startSeconds": 1, "endSeconds": 11})
         job = {"sourceRoute": "live_archive", "sourceStartSeconds": 1, "sourceEndSeconds": 11, "sourceDurationSeconds": 10,
             "inputs": {"originalAudio": {"path": str(source), "sha256": sha256(source)}, "clipReceipt": {"path": str(clip), "sha256": sha256(clip)}}}
         week = {"id": "2026-09-20-live_archive-fixture", "sourceRoute": "live_archive", "sourceId": "fixture",
-            "videoSynchronization": "candidate_aligned", "audioStatus": "full_candidate", "tracks": [{"sha256": sha256(track), "file": track.name,
+            "videoSynchronization": "candidate_aligned", "audioStatus": "full_candidate", "tracks": [{"sha256": sha256(track), "file": track.name, "audioUrl": "/media/" + track.name,
                 "durationSeconds": 10, "subtitleTiming": "source_video_aligned_candidate"}]}
         return job, week, public
 
@@ -42,8 +45,11 @@ class WeeklyFingerprintTests(unittest.TestCase):
             self.assertEqual(read(index)["window"], {"startSeconds": 1, "endSeconds": 11})
             self.assertTrue(read(index)["postings"])
             self.assertEqual(week["automaticAudioAlignment"]["status"], "ready")
-            write_json(public / "weekly.json", {"weeks": [week]})
-            expected = {binding["indexUrl"][1:]: {"sha256": sha256(index)}, **{n: {} for n in FINGERPRINT_UI}}
+            write_json(public / "weekly.json", {"schemaVersion": "sermon-weekly-catalog-v1", "weeks": [week]})
+            track = public / "media" / week["tracks"][0]["file"]
+            expected = {binding["indexUrl"][1:]: {"sha256": sha256(index)},
+                        "media/" + track.name: {"sha256": sha256(track), "bytes": track.stat().st_size},
+                        **{n: {} for n in FINGERPRINT_UI}}
             self.assertEqual(bound_fingerprints(public, expected, [week["id"]]), {binding["indexUrl"][1:]})
             self.assertFalse(list(public.rglob("*.wav")))
 

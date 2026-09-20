@@ -12,11 +12,13 @@ import hashlib
 import json
 import math
 import os
+import re
 from pathlib import Path
 from typing import Any
 import uuid
 
 from scripts import sermon_accounting, sermon_production_supervisor as production
+from scripts import sermon_end_to_end as workflow
 from scripts.sermon_agents_api import AgentsAPIClient, AgentsAPIError, run_agent_session, _write_json
 
 
@@ -35,6 +37,9 @@ ACTION_STAGES = {
     "run_reading_pdf_generation": "generation",
 }
 
+ALLOWED_ACTIONS = ALLOWED_ACTIONS | frozenset(workflow.ACTIONS + workflow.WAIT_ACTIONS)
+ACTION_STAGES.update({action: "release_" + action for action in workflow.ACTIONS})
+
 
 def executable_stage(snapshot: dict) -> str | None:
     recommendation = snapshot.get("recommendedAction") or {}
@@ -42,6 +47,16 @@ def executable_stage(snapshot: dict) -> str | None:
         return None
     action = recommendation.get("action")
     return ACTION_STAGES.get(action) if isinstance(action, str) else None
+
+
+def safe_workflow_job(value):
+    if not isinstance(value, dict):
+        return {}
+    status = value.get("status")
+    job_id = value.get("jobId")
+    if not isinstance(status, str) or status not in {"queued", "running", "succeeded", "failed", "uncertain"} or not isinstance(job_id, str) or not re.fullmatch(r"[a-f0-9]{64}", job_id):
+        return {}
+    return {"jobId": job_id, "status": status}
 
 
 def remote_snapshot(snapshot: dict, sunday: str) -> dict:
@@ -58,7 +73,10 @@ def remote_snapshot(snapshot: dict, sunday: str) -> dict:
     generation = snapshot.get("generation") or {}
     quality = snapshot.get("quality") or {}
     return {
-        "schemaVersion": "sermon-agent-state-minimal-v1", "sunday": date.fromisoformat(sunday).isoformat(),
+        **({"workflowComplete": snapshot.get("workflowComplete") is True, "workflowScope": "page_release",
+             "workflowJob": safe_workflow_job(snapshot.get("workflowJob"))}
+           if snapshot.get("workflowScope") == "page_release" else {}),
+        "schemaVersion": "sermon-agent-state-minimal-v2" if snapshot.get("workflowScope") == "page_release" else "sermon-agent-state-minimal-v1", "sunday": date.fromisoformat(sunday).isoformat(),
         "recommendedAction": {"action": action, "reasonCode": action,
                               "humanActionRequired": recommendation.get("humanActionRequired") is True},
         "sourceAvailable": bool(snapshot.get("source") or snapshot.get("liveSource")),
@@ -106,13 +124,15 @@ def pointer_run(root: Path, pointer: Path) -> tuple[Path, bool]:
     return directory, not known_terminal or uncertain_tool
 
 
-def tool_definitions(execute: bool, decision_schema: dict) -> list[dict]:
+def tool_definitions(execute: bool, decision_schema: dict, release_enabled: bool = False) -> list[dict]:
     names = [("inspect_production_state", "Read current source, approval, leases, QA and the deterministic next action.")]
     if execute:
         names.extend([
             ("run_timeline_probe", "Prepare and validate source media without model-based boundary discovery. The operator supplies sermon start/end times; at most once per session."),
             ("run_approved_reading_pdf_generation", "Run the guarded dual-PDF stage using existing valid human approval; at most once per session."),
         ])
+    if execute and release_enabled:
+        names.extend((action, "Start the permitted durable release stage; inspect state afterwards. Never grants review or publication authorization.") for action in workflow.ACTIONS)
     tools = [{"type": "function", "name": name, "description": description,
               "parameters": {"type": "object", "properties": {}, "required": [], "additionalProperties": False}}
              for name, description in names]
@@ -120,6 +140,17 @@ def tool_definitions(execute: bool, decision_schema: dict) -> list[dict]:
                   "description": "Submit only after fresh inspection and no unattempted executable stage remains in execute mode. Shadow, completion, waiting, human gates or an already attempted stage may be reported. End the turn only after status recorded; a blocked submission requires following its reasonCode.",
                   "parameters": {**decision_schema, "additionalProperties": False}})
     return tools
+
+
+def bound_configuration(config):
+    value = asdict(config)
+    path = workflow.configuration(config)
+    if path is not None:
+        value["releaseWorkflowSha256"] = workflow.config_hash(path)
+    else:
+        # Preserve pre-extension session fingerprints for the default workflow.
+        value.pop("release_workflow_config", None)
+    return value
 
 
 class ProductionTools:
@@ -130,7 +161,7 @@ class ProductionTools:
         self.state = read_object(self.state_path) if self.state_path.exists() else {
             "schemaVersion": 1, "inspected": False, "needsInspection": True,
             "attemptedStages": [], "decision": None}
-        binding = fingerprint({"config": asdict(config), "execute": execute})
+        binding = fingerprint({"config": bound_configuration(config), "execute": execute})
         if self.state.get("configFingerprint", binding) != binding:
             raise AgentsAPIError("production_configuration_changed")
         self.state["configFingerprint"] = binding
@@ -139,6 +170,9 @@ class ProductionTools:
         _write_json(self.state_path, self.state)
 
     def __call__(self, name: str, arguments: dict) -> dict:
+        current_binding = fingerprint({"config": bound_configuration(self.config), "execute": self.execute})
+        if self.state["configFingerprint"] != current_binding:
+            raise AgentsAPIError("production_configuration_changed")
         if not isinstance(arguments, dict):
             raise AgentsAPIError("invalid_tool_arguments")
         if name == "submit_supervisor_decision":
@@ -151,7 +185,7 @@ class ProductionTools:
                 return {"status": "blocked", "reasonCode": "decision_already_submitted"}
             # The world can change after inspection. Do not let a premature
             # final answer close a session that still has authorized work.
-            snapshot = production.production_snapshot(self.config)
+            snapshot = workflow.snapshot(self.config)
             stage = executable_stage(snapshot)
             if self.execute and stage and stage not in self.state["attemptedStages"]:
                 self.state["needsInspection"] = True
@@ -167,7 +201,7 @@ class ProductionTools:
         if self.state["decision"] is not None:
             return {"status": "blocked", "reasonCode": "decision_already_submitted"}
         if name == "inspect_production_state":
-            snapshot = production.production_snapshot(self.config)
+            snapshot = workflow.snapshot(self.config)
             self.state.update(inspected=True, needsInspection=False)
             self.save()
             return remote_snapshot(snapshot, self.config.sunday)
@@ -175,6 +209,9 @@ class ProductionTools:
             "run_timeline_probe": ("timeline", {"run_timeline_probe", "resume_failed_timeline"}, production.run_timeline_probe),
             "run_approved_reading_pdf_generation": ("generation", {"run_reading_pdf_generation"}, production.run_reading_pdf_generation),
         }
+        if getattr(self.config, "release_workflow_config", None):
+            allowed.update({action: ("release_" + action, {action}, lambda config, action=action: workflow.start_action(config, action))
+                            for action in workflow.ACTIONS})
         if name not in allowed:
             raise AgentsAPIError("unknown_production_tool")
         if not self.execute:
@@ -184,7 +221,7 @@ class ProductionTools:
         stage, actions, operation = allowed[name]
         if stage in self.state["attemptedStages"]:
             return {"status": "skipped", "reasonCode": "stage_already_attempted_in_session"}
-        snapshot = production.production_snapshot(self.config)
+        snapshot = workflow.snapshot(self.config)
         recommendation = snapshot.get("recommendedAction") or {}
         if recommendation.get("action") not in actions or recommendation.get("humanActionRequired"):
             return {"status": "blocked", "reasonCode": "current_state_does_not_allow_stage",
@@ -198,11 +235,12 @@ class ProductionTools:
         # Subprocess output and command/configuration stay in the production
         # ledger. The remote model receives only the bounded operation outcome.
         allowed_status = {"completed", "failed", "blocked", "skipped", "already_running", "requires_operator_review",
-                          "waiting_for_source", "waiting_for_matching_sunday", "waiting_for_post_live", "waiting_for_download_access"}
+                          "waiting_for_source", "waiting_for_matching_sunday", "waiting_for_post_live", "waiting_for_download_access", "queued", "running", "succeeded", "uncertain"}
         status = result.get("status")
         safe = {"status": status if isinstance(status, str) and status in allowed_status else "requires_fresh_inspection"}
         if type(result.get("returnCode")) is int:
             safe["returnCode"] = result["returnCode"]
+        safe.update(safe_workflow_job(result))
         safe["stage"] = stage
         safe["requiresFreshInspection"] = True
         return safe
@@ -231,11 +269,11 @@ def session_report(args, config, instructions, decision_type, verify_decision, *
     if not math.isfinite(timeout) or timeout <= 0 or not 1 <= args.max_turns <= 100:
         raise AgentsAPIError("invalid_supervisor_limits")
     schema = decision_type.model_json_schema()
-    configuration = {"model": args.model, "mode": args.mode, "config": asdict(config)}
+    configuration = {"model": args.model, "mode": args.mode, "config": bound_configuration(config)}
     binding = fingerprint(configuration)
     payload = {
         "agent": {"model": args.model, "reasoning": {"effort": "medium"}, "instructions": instructions,
-                  "tools": tool_definitions(execute, schema), "multi_agent": {"enabled": False}},
+                  "tools": tool_definitions(execute, schema, bool(getattr(config, "release_workflow_config", None))), "multi_agent": {"enabled": False}},
         "environment": {"type": "none"},
         "input": f"Inspect and safely advance Sunday {args.sunday}. Mode: {args.mode}. Use persisted evidence and only the exposed tools.",
     }
@@ -295,7 +333,7 @@ def session_report(args, config, instructions, decision_type, verify_decision, *
                 if not isinstance(decision, dict):
                     raise AgentsAPIError("structured_decision_missing")
         except AgentsAPIError as exc:
-            snapshot = production.production_snapshot(config)
+            snapshot = workflow.snapshot(config)
             saved = read_object(directory / "state.json") if (directory / "state.json").exists() else {}
             return {
                 "schemaVersion": 1, "status": "failed", "sunday": args.sunday, "mode": args.mode,
@@ -305,7 +343,7 @@ def session_report(args, config, instructions, decision_type, verify_decision, *
                                  "status": saved.get("status"), "usage": None, "costStatus": "unknown"},
                 "traceSensitiveDataIncluded": False,
             }
-        snapshot = production.production_snapshot(config)
+        snapshot = workflow.snapshot(config)
         verified = verify_decision(decision, snapshot, args.mode,
                                    attempted_stages=tools.state["attemptedStages"])
         return {
