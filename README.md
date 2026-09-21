@@ -17,6 +17,26 @@ Help Chinese-speaking attendees follow an English sermon. The featured direction
 
 > This is an independent personal open-source project. It is not affiliated with, endorsed by, sponsored by, approved by, or operated by Mariners Church. Use only public or otherwise authorized media, and do not bypass access controls, DRM, or platform restrictions.
 
+## Four-layer production architecture: English truth to multilingual release
+
+The production pipeline has four layers: **English → translation → dubbing → publication**. Each layer has its own deliverable and acceptance gate; passing one layer does not imply that the next layer has passed. Chinese is the current primary production language. Korean and Spanish are future target-language lanes that can use the same interfaces, but each must pass its own translation, dubbing, and release review.
+
+| Layer | Responsibility | Model and program roles | Deliverable and acceptance gate |
+|---|---|---|---|
+| 1. English truth | Lock the source and sermon window, recover the complete English, align words to source audio, then establish stable sentence, clause, punctuation and pause anchors | `gpt-transcribe` or a trustworthy manuscript supplies text; MFA, Qwen ForcedAligner and other candidates supply acoustic word locations; an LLM may review text, punctuation and sentence boundaries but must not invent timestamps | Immutable English anchor units, word times, source/hash, model identity and coverage evidence; completeness and traceable timing come first |
+| 2. Target-language translation | Translate directly from English anchors, preserving the complete meaning of every unit and checking negation, causality, Scripture, names, numbers and terminology | The current Chinese path uses GPT/Astra-class translation plus an independent review pass; each future language may select its own translator, reviewer, prompts and terminology set | Every translation unit retains its English anchor ID; semantic-completeness and language review must pass before dubbing |
+| 3. Dubbing and synchronization | Generate natural-rate speech from approved text, measure actual duration and schedule it against English clauses and pauses; long sentences may be split automatically at semantically stable points into roughly 6–8-second units | Qwen3-TTS and similar speech models synthesize audio; Qwen3-ASR-style back-transcription is a machine screen only; a deterministic scheduler owns duration, gaps and timeline placement, followed by complete human listening | Target-language audio, captions and a playback schedule; pronunciation, omissions, naturalness, overlap/trailing and whole-sermon listening are separate checks |
+| 4. Publication and playback | Bind the correct video, audio, captions, page and language selector, then deploy, download and play them on supported clients | Page builders, FFmpeg, Firebase, Web/iOS clients and validators deliver artifacts; a Supervisor/Agent orchestrates state but does not replace content truth or human acceptance | Locale-isolated release packages, hashes, HTTP/download checks and player verification; venue sync, devices and listener experience retain separate evidence |
+
+Multilingual expansion follows these contracts:
+
+- The English truth layer produces one shared, frozen anchor set. Chinese, Korean, Spanish and other languages branch directly from English; Chinese must not become a pivot source for another language.
+- Each target language records its `locale`, English-anchor hash, translation/review model identities, voice model or checkpoint, timeline and human-review state. Failure in one locale neither blocks nor approves another automatically.
+- Models may be replaced or A/B-tested within a layer, but responsibilities do not blur across layers: a Forced Aligner does not prove semantic completeness, a translation model does not determine acoustic time, back-transcription is not human listening, and a successful deployment is not venue acceptance.
+- Sentence anchoring and clause-stable splitting sit at the English-to-translation boundary: first stabilize what was said and when, then let each target language express it early, completely and naturally.
+
+See the [workflow map (中文)](docs/workflows/README.zh.md), [sentence-aligned interpretation design (中文)](docs/sentence-aligned-interpretation.zh.md), and [system design and model choices (中文)](docs/sermon-dubbing-system-design.zh.md) for the detailed contracts and current implementation.
+
 ## Sunday operation: prepare a new caption session
 
 [Operations whitepaper (中文)](docs/sunday-live-operations-whitepaper.zh.md) · [Agent execution entry (中文)](docs/sunday-live-agent-runbook.zh.md)
