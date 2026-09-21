@@ -30,6 +30,8 @@ All future prepared multilingual sermon production follows the frozen interfaces
 
 Do not skip a layer, silently repair an upstream artifact downstream, or promote machine review to human approval. A downstream stage may start only from the required status and matching hashes of the prior layer. A changed Layer 1 identity invalidates every locale; changed Layer 2 or 3 evidence invalidates only that locale's downstream artifacts.
 
+For Layer 2 implementation and shadow model experiments only, a `candidate_ready_for_translation` English Source Package requires a bound `sermon-english-source-machine-judge-v1` receipt when every deterministic coverage/timeline check and every sentence-level semantic check passes, with zero high-risk or unresolved items. A clean deterministic anchor without that receipt remains `waiting_machine_judge`. This receipt remains `humanApproval=false` and `productionTranslationEligible=false`; it does not create a production `ready_for_translation` package or prove acoustic, device, venue, or publication acceptance.
+
 Existing dual-PDF, Chinese dubbing, catalog and release tools are legacy adapters while their canonical producers are migrated. They may complete their explicitly named scope, but they do not establish four-layer production completion unless the corresponding canonical package and gate evidence exist. Sunday live captions remain an independent low-latency path; if a finalized recording is later reused for durable multilingual content, that reuse starts again at Layer 1. Agents must report the completed scope explicitly (`dual_pdf`, `live_session`, or `four_layer_release`) and never collapse those states into a generic “production complete.”
 
 ## Source and acceptance invariants

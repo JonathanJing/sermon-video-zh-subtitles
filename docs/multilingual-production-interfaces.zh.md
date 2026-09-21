@@ -55,11 +55,13 @@ Target-Language Candidate + Target-Language Audio Package + optional fingerprint
 
 状态含义：
 
-- `blocked`：锚点或对齐有未解决问题，不得调用翻译模型。
-- `candidate_ready_for_translation`：结构检查通过，可用于 shadow 模型实验，但仍缺生产所需的来源或人工门禁。
+- `blocked`：缺少通过的 machine-judge 收据，或锚点／对齐有未解决且不可裁判的问题；不得调用翻译模型。
+- `candidate_ready_for_translation`：确定性结构检查和逐句 GPT machine judge 全部通过；可用于 Layer 2 shadow 开发，但仍缺生产所需的来源或人工门禁。
 - `ready_for_translation`：媒体身份、批准范围和四项英文人工检查均已绑定，允许正式 Layer 2 消费。
 
-当前生成器：[build_english_source_package.py](../scripts/build_english_source_package.py)。未来周入口 [prepare_sentence_interpretation_shadow.py](../scripts/prepare_sentence_interpretation_shadow.py) 同时写出 `anchor-manifest.json` 和 `english-source-package.json`；`run_post_live_subtitle_generation.py` 可用 `--sentence-interpretation-english-review` 绑定人工审核收据并重跑 Layer 1。这一层不写入中文 prompt，也不生成目标语言文字。
+机器裁判由 [judge_english_source_for_translation.py](../scripts/judge_english_source_for_translation.py) 生成 `sermon-english-source-machine-judge-v1` 收据。门线要求 deterministic checks 100% 通过、所有父句逐句裁判 100% pass、零 high-risk sentence、零 unresolved issue。它只审核切片后的英文含义可恢复性和文字／时间元数据一致性，固定 `humanApproval=false`、`productionTranslationEligible=false`；不能证明 MFA 时间与真实音频完全一致，也不能把 package 提升为正式生产 `ready_for_translation`。
+
+当前生成器：[build_english_source_package.py](../scripts/build_english_source_package.py)。未来周入口 [prepare_sentence_interpretation_shadow.py](../scripts/prepare_sentence_interpretation_shadow.py) 同时写出 `anchor-manifest.json` 和 `english-source-package.json`；干净锚点先进入 `waiting_machine_judge`，用 `--machine-judge` 绑定通过的机器裁判收据后才解除 Layer 2 shadow 阻塞。`run_post_live_subtitle_generation.py` 可用 `--sentence-interpretation-english-review` 绑定人工审核收据并重跑 Layer 1。这一层不写入中文 prompt，也不生成目标语言文字。
 
 ## Layer 2：目标语言文字
 

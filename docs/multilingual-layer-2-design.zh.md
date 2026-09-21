@@ -28,9 +28,27 @@
 
 ### 1.2 当前真实产物边界
 
-本分支现有 2026-09-20 production-shadow anchor 仍是 `waiting_anchor_review`，并保留 1 个 alignment word-duration outlier 和 2 个无安全边界的超长 clause unit。ignored artifacts 中尚无一份正式落盘的 `english-source-package.json`。
+本分支原有 2026-09-20 production-shadow anchor 是旧实现生成的 `waiting_anchor_review`，并保留 1 个 alignment word-duration outlier 和 2 个无安全边界的超长 clause unit。旧 manifest 与当前生成器的 deterministic rebuild 不一致，不能直接拿旧文件进入 GPT 裁判；必须从同一份冻结 aligned English 重新生成当前 anchor/package，再运行 machine judge。
 
-所以当前证据可以证明 schema、构建器和门禁行为，但不能把现有 shadow 产物称为可进入正式 Layer 2 的 `ready_for_translation` package。通用 runner 开发可先用合成 fixture；真实韩语整篇运行必须等待 Layer 1 交付一份状态和 hash 都通过的 package。
+Layer 2 开发允许使用同时满足以下条件的 `candidate_ready_for_translation` package：当前生成器可确定性重建、word/source-unit/timeline/translation-request 覆盖 100% 一致，并绑定 `approved_for_layer2_shadow` 的 GPT machine-judge 收据。该路径不能称为正式 `ready_for_translation`；真实韩语生产整篇运行仍须等待 Layer 1 交付人工来源／范围与英文审核均通过的 package。
+
+### 1.3 GPT machine-judge 开发门线
+
+机器裁判使用 `gpt-6-astra`、独立请求和 structured output，逐父句读取完整英文、切片后的 source units、相邻上下文、词 ID、时间范围、边界证据和 manifest issues。放行标准不是模型给一个模糊总分，而是：
+
+- aligned input、manifest deterministic rebuild、source-unit identity、word coverage、timeline monotonicity 和 translation-request coverage 全部 pass；
+- manifest issue 只允许 `alignment_word_duration_outlier` 或 `clause_unit_exceeds_target_without_safe_boundary` 两类可裁判问题；
+- 每个父句的 `meaningPreserved`、否定／数字／专名、引文与从句关系、时间轴一致性和翻译上下文充分性全部 pass；
+- sentence pass rate 为 100%，high risk 为 0，unresolved issue 为 0；
+- 收据精确绑定 aligned file SHA、anchor canonical JSON SHA、每个 manifest issue hash、模型、prompt、request ID 和实现 hash。
+
+通过后只设置 `layer2DevelopmentEligible=true`。收据仍明确 `humanApproval=false`、`productionTranslationEligible=false`；GPT 未听原始音频，因此不能把文字／时间元数据的一致性推断为真实声学 Gold。
+
+### 1.4 2026-09-20 POC 门线证据
+
+在同一份冻结 aligned English（file SHA `b42a9fa57182482b3084588359f789e7cbfe216a29a5e7ea7dfa0286bf6ab7e3`）上，当前生成器得到 94 个父句、108 个 source units、1,317 个词和 0 个 manifest issue。`gpt-6-astra`、`medium` reasoning 的全量 structured-output 裁判结果为 94/94 sentence pass、0 fail、0 high risk、0 unresolved，收据状态 `approved_for_layer2_shadow`。最终 anchor canonical JSON SHA 为 `8b1e920e8fb1477a090a22db4422db2c28f9d88746a3236366e412a132fb31cd`，machine-judge file SHA 为 `751e992d03e818a6a21fa8b0f67d1a171b6c3884ca53f8d680812c0eadb75089`。
+
+绑定收据后的 English Source Package 状态为 `candidate_ready_for_translation`，`candidateTranslationEligible=true`；同时 `translationEligible=false`、`humanApproval=false`、`productionTranslationEligible=false`。这证明当前输入可启动 Layer 2 韩语 shadow 开发，不证明正式生产、声学听审或人工验收完成。
 
 ## 2. Layer 2 流程
 

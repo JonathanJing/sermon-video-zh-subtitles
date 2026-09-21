@@ -145,7 +145,8 @@
       "additionalProperties": false,
       "required": ["pipelineSummary"],
       "properties": {
-        "pipelineSummary": { "oneOf": [{ "$ref": "#/$defs/jsonArtifact" }, { "type": "null" }] }
+        "pipelineSummary": { "oneOf": [{ "$ref": "#/$defs/jsonArtifact" }, { "type": "null" }] },
+        "machineJudge": { "oneOf": [{ "$ref": "#/$defs/jsonArtifact" }, { "type": "null" }] }
       }
     }
   },

@@ -134,7 +134,7 @@ end   = start + measured_natural_audio_duration
 
 [`prepare_sentence_interpretation_shadow.py`](../scripts/prepare_sentence_interpretation_shadow.py) 已把 v2 锚点生成接到未来周生产的 shadow 路径，收据遵循 [`sermon-sentence-interpretation-shadow-v1`](../schemas/sermon-sentence-interpretation-shadow-v1.schema.json)。它同时生成 Layer 1 [`English Source Package`](../schemas/sermon-english-source-package-v1.schema.json)，而不再把中文 prompt 或目标语言文字写入 Layer 1。`run_post_live_subtitle_generation.py` 在存在 `--dubbing-config` 时默认调用它，并把结果写入生产报告的 `sentenceInterpretationShadow`；显式 `--sentence-interpretation-shadow` 可在无配音配置的定向运行中启用，`--sentence-interpretation-english-review` 可在人工审核后绑定收据并重跑，`--no-sentence-interpretation-shadow` 可关闭。输出目录由冻结英文哈希、实现哈希、来源身份、审核和策略共同确定，缓存只允许内容完全相同的重用。
 
-此接线只自动完成 Layer 1 候选和 fail-closed 检查。`candidate_ready_for_translation` 可供 shadow 模型实验；只有绑定来源媒体、批准窗口和英文人工审核后，English Source Package 才是 `ready_for_translation`。随后仍须由独立 Layer 2 runner 生成并复核目标语言文字，再走 Layer 3 自然语速 TTS 和人工听审；`waiting_anchor_review` 或 `shadow_failed` 不影响当前双 PDF，但不得进入新同传候选的付费阶段。正式生产切换需另有真实整篇通过证据。
+此接线只自动完成 Layer 1 锚点和 fail-closed 检查；干净锚点先停在 `waiting_machine_judge`。`judge_english_source_for_translation.py` 对当前实现生成的 anchor 做 GPT machine judge：只有 deterministic coverage/timeline 全通过、每个父句含义与高风险检查 100% pass、零 unresolved issue，才生成 `approved_for_layer2_shadow` 收据；将它通过 `--machine-judge` 绑定后，package 才推进到 `candidate_ready_for_translation`，供 Layer 2 shadow 开发。收据固定 `humanApproval=false`、`productionTranslationEligible=false`，不证明真实声学 Gold。只有绑定来源媒体、批准窗口和英文人工审核后，English Source Package 才是正式 `ready_for_translation`。随后仍须由独立 Layer 2 runner 生成并复核目标语言文字，再走 Layer 3 自然语速 TTS 和人工听审。正式生产切换需另有真实整篇通过证据。
 
 忽略目录中的真实产物：
 
