@@ -66,6 +66,30 @@ final class StorageTests {
         catch { #expect(error as? ContentStorageError == .invalidResponse) }
     }
 
+    @Test func multilingualCatalogAndReleaseAreHashBoundAndSurviveOfflineReload() async throws {
+        let fixture = try multilingualFixture()
+        StubURLProtocol.install(host: baseURL.host!) { request in
+            switch request.url?.path {
+            case "/multilingual.json": return .init(chunks: [fixture.catalog])
+            case "/releases/page-1/ko.json": return .init(chunks: [fixture.release])
+            default: return .init(status: 404, chunks: [Data("missing".utf8)])
+            }
+        }
+        let repository = MultilingualCatalogRepository(
+            origin: baseURL, cacheDirectory: directory.appendingPathComponent("multilingual"), session: session
+        )
+        let online = try await repository.loadCatalog()
+        #expect(online.source == .network)
+        let page = online.catalog.defaultPage
+        let package = try await repository.loadRelease(page: page, locale: "ko")
+        #expect(try package.pageURL(relativeTo: baseURL).path == "/pages/page-1/ko/index.html")
+
+        stub(.init(chunks: [], error: URLError(.notConnectedToInternet)))
+        let offline = try await repository.loadCatalog()
+        #expect(offline.source == .cache)
+        #expect(try await repository.loadRelease(page: offline.catalog.defaultPage, locale: "ko") == package)
+    }
+
     @Test func testVerifiedDownloadTamperDetectionAndRepair() async throws {
         let data = Data("complete MP3 test payload".utf8)
         let track = track(data: data)
@@ -236,6 +260,34 @@ final class StorageTests {
                     file: "test.mp3", sha256: SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined(),
                     durationSeconds: 10, cues: [SubtitleCue(start: 0, end: 5, text: "测试字幕")],
                     subtitleTiming: "candidate", scope: "full")
+    }
+
+    private func multilingualFixture() throws -> (catalog: Data, release: Data) {
+        let hashA = String(repeating: "a", count: 64)
+        let releaseValue: [String: Any] = [
+            "schemaVersion": "sermon-target-language-release-package-v1",
+            "packageId": "page-1-ko", "pageId": "page-1", "sourceLocale": "en", "targetLocale": "ko",
+            "targetLanguageCandidateJsonSha256": hashA, "targetLanguageAudioPackageJsonSha256": NSNull(),
+            "status": "published_http_verified", "contentStatus": "human_reviewed", "audioStatus": "unavailable",
+            "interfaceLocale": "ko", "contentLocale": "ko", "audioLocale": NSNull(),
+            "assets": [["role": "page", "path": "/pages/page-1/ko/index.html", "sha256": hashA]],
+            "httpVerification": ["status": "pass", "evidenceSha256": hashA],
+            "deviceAcceptance": ["status": "not_run", "evidenceSha256": NSNull()],
+            "venueAcceptance": ["status": "not_run", "evidenceSha256": NSNull()], "issues": [],
+        ]
+        let release = try JSONSerialization.data(withJSONObject: releaseValue, options: [.sortedKeys])
+        let releaseHash = SHA256.hash(data: release).map { String(format: "%02x", $0) }.joined()
+        let catalogValue: [String: Any] = [
+            "schemaVersion": "sermon-multilingual-catalog-v2", "generatedAt": "2026-09-21T00:00:00Z",
+            "defaultPageId": "page-1", "pages": [[
+                "id": "page-1", "date": "2026-09-21", "sourceLocale": "en", "sourceIdentitySha256": hashA,
+                "defaultTargetLocale": "ko", "targets": ["ko": [
+                    "releasePackageUrl": "/releases/page-1/ko.json", "releasePackageJsonSha256": releaseHash,
+                    "contentStatus": "human_reviewed", "audioStatus": "unavailable", "capabilities": ["text"],
+                ]],
+            ]],
+        ]
+        return (try JSONSerialization.data(withJSONObject: catalogValue, options: [.sortedKeys]), release)
     }
 
     private func catalogData() throws -> Data {

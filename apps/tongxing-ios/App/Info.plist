@@ -24,6 +24,8 @@
 	<true/>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
+	<key>TongxingContentOrigin</key>
+	<string>$(TONGXING_CONTENT_ORIGIN)</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>点击“听音对齐”后，同行会聆听 8 秒声音，在同一证道录音中查找播放位置。声音仅在本机内存中处理，不保存、不上传。</string>
 	<key>CFBundleURLTypes</key>

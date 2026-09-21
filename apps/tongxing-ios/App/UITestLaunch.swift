@@ -79,7 +79,43 @@ private enum UITestContent {
                     .init(blockId: "2", english: "Third synthetic source sentence for continued listening.", sourceTextOrigin: "synthetic-fixture", reviewState: "candidate")
                 ]))
         ])
+        func release(locale: String) -> Data {
+            let hash = String(repeating: "a", count: 64)
+            let value: [String: Any] = [
+                "schemaVersion": "sermon-target-language-release-package-v1",
+                "packageId": "ui-test-week-\(locale)", "pageId": "ui-test-week", "sourceLocale": "en",
+                "targetLocale": locale, "targetLanguageCandidateJsonSha256": hash,
+                "targetLanguageAudioPackageJsonSha256": NSNull(), "status": "published_http_verified",
+                "contentStatus": "human_reviewed", "audioStatus": "unavailable",
+                "interfaceLocale": locale, "contentLocale": locale, "audioLocale": NSNull(),
+                "assets": [["role": "page", "path": "/pages/ui-test-week/\(locale)/index.html", "sha256": hash]],
+                "httpVerification": ["status": "pass", "evidenceSha256": hash],
+                "deviceAcceptance": ["status": "not_run", "evidenceSha256": NSNull()],
+                "venueAcceptance": ["status": "not_run", "evidenceSha256": NSNull()], "issues": [],
+            ]
+            return try! JSONSerialization.data(withJSONObject: value, options: [.sortedKeys])
+        }
+        let chineseRelease = release(locale: "zh-Hans"), koreanRelease = release(locale: "ko")
+        func hash(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
+        let sourceHash = String(repeating: "b", count: 64)
+        let multilingual: [String: Any] = [
+            "schemaVersion": "sermon-multilingual-catalog-v2", "generatedAt": "2026-09-21T00:00:00Z",
+            "defaultPageId": "ui-test-week", "pages": [[
+                "id": "ui-test-week", "date": "2026-09-06", "sourceLocale": "en",
+                "sourceIdentitySha256": sourceHash, "defaultTargetLocale": "zh-Hans", "targets": [
+                    "zh-Hans": ["releasePackageUrl": "/releases/ui-test-week/zh-Hans.json",
+                                "releasePackageJsonSha256": hash(chineseRelease), "contentStatus": "human_reviewed",
+                                "audioStatus": "unavailable", "capabilities": ["text"]],
+                    "ko": ["releasePackageUrl": "/releases/ui-test-week/ko.json",
+                           "releasePackageJsonSha256": hash(koreanRelease), "contentStatus": "human_reviewed",
+                           "audioStatus": "unavailable", "capabilities": ["text"]],
+                ],
+            ]],
+        ]
         return ["/weekly.json": try! JSONEncoder().encode(catalog),
+                "/multilingual.json": try! JSONSerialization.data(withJSONObject: multilingual, options: [.sortedKeys]),
+                "/releases/ui-test-week/zh-Hans.json": chineseRelease,
+                "/releases/ui-test-week/ko.json": koreanRelease,
                 "/media/fixture-first.mp3": firstAudio,
                 "/media/fixture-second.mp3": secondAudio]
     }()

@@ -137,6 +137,9 @@ struct ContentView: View {
                 case .weeks:
                     WeekSheet(model: model)
                         .presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
+                case .languages:
+                    TargetLanguageSheet(model: model)
+                        .presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
                 case .precision:
                     PrecisionSheet(model: model)
                         .presentationDetents(typeSize.isAccessibilitySize ? [.large] : [.medium, .large])
@@ -165,9 +168,10 @@ struct ContentView: View {
                         .accessibilityIdentifier("sermon-title")
                     Text("\(week.scripture) · \(week.speaker) · \(week.date)")
                         .font(.caption).foregroundStyle(.secondary)
+                    Text(reviewLabel).font(.caption).foregroundStyle(Brand.accent)
                 }
                 Spacer(minLength: 8)
-                Text(reviewLabel).font(.caption).foregroundStyle(Brand.accent)
+                compactLanguageButton
                 Button(localization.text("证道大纲"), systemImage: "list.bullet.rectangle") { sheet = .outline }
                     .buttonStyle(.plain).font(.subheadline).frame(minHeight: 44)
             }
@@ -184,6 +188,12 @@ struct ContentView: View {
                 .accessibilityIdentifier("sermon-title")
             Text("\(week.scripture) · \(week.speaker)")
                 .font(.subheadline).foregroundStyle(.secondary)
+            languageButton
+            if model.selectedContentLocale != "zh-Hans", model.selectedContentTarget != nil {
+                Text(localization.text("所选语言在独立发布页面中打开；原生播放器继续保留当前已验证的中文音轨。"))
+                    .font(.caption).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("published-language-routing-note")
+            }
             HStack {
                 Text(reviewLabel).font(.caption.weight(.medium))
                     .foregroundStyle(Brand.accent)
@@ -195,6 +205,27 @@ struct ContentView: View {
                     .buttonStyle(.plain).foregroundStyle(.primary)
             }
         }
+    }
+
+    private var languageButton: some View {
+        Button { sheet = .languages } label: {
+            Label("\(model.selectedContentLanguageName) · \(localization.text(model.selectedContentCapabilitySummary))",
+                  systemImage: "globe")
+        }
+        .buttonStyle(.bordered)
+        .font(.subheadline.weight(.medium))
+        .frame(minHeight: 44)
+        .accessibilityLabel(localization.text("选择证道语言"))
+        .accessibilityValue("\(model.selectedContentLanguageName)，\(localization.text(model.selectedContentCapabilitySummary))")
+        .accessibilityIdentifier("choose-content-language")
+    }
+
+    private var compactLanguageButton: some View {
+        Button { sheet = .languages } label: { Image(systemName: "globe") }
+            .font(.title3).frame(minWidth: 44, minHeight: 44)
+            .accessibilityLabel(localization.text("选择证道语言"))
+            .accessibilityValue("\(model.selectedContentLanguageName)，\(localization.text(model.selectedContentCapabilitySummary))")
+            .accessibilityIdentifier("choose-content-language")
     }
 
     private var reviewLabel: String {
@@ -413,8 +444,82 @@ struct AlignmentControls: View {
 }
 
 private enum ListeningSheet: String, Identifiable {
-    case weeks, precision, outline, about
+    case weeks, languages, precision, outline, about
     var id: String { rawValue }
+}
+
+private struct TargetLanguageSheet: View {
+    @ObservedObject private var localization = AppLocalization.shared
+    @ObservedObject var model: AppModel
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if model.availableContentLanguages.isEmpty {
+                    ContentUnavailableView(
+                        localization.text("尚无可选择的语言版本"),
+                        systemImage: "globe.badge.chevron.backward",
+                        description: Text(localization.text(model.multilingualNotice ?? "发布目录尚未提供已人工审核的目标语言。"))
+                    )
+                } else {
+                    Section {
+                        ForEach(model.availableContentLanguages, id: \.locale) { option in
+                            Button {
+                                Task {
+                                    guard let url = await model.selectContentLanguage(option.locale) else { return }
+                                    dismiss()
+                                    openURL(url)
+                                }
+                            } label: {
+                                HStack(spacing: 14) {
+                                    VStack(alignment: .leading, spacing: 5) {
+                                        Text(AppModel.languageName(option.locale)).font(.headline)
+                                        Text(capabilitySummary(option.target))
+                                            .font(.caption).foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    if model.isSelectingLanguage && model.selectedContentLocale != option.locale {
+                                        ProgressView().controlSize(.small)
+                                    } else if model.selectedContentLocale == option.locale {
+                                        Image(systemName: "checkmark").foregroundStyle(Brand.accent)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity, minHeight: 54, alignment: .leading)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(model.isSelectingLanguage)
+                            .accessibilityIdentifier("content-language-\(option.locale)")
+                            .accessibilityValue(localization.text(model.selectedContentLocale == option.locale ? "已选择" : "未选择"))
+                        }
+                    } header: {
+                        Text(localization.text("证道语言"))
+                    } footer: {
+                        Text(localization.text("选择后打开该语言自己的已发布页面。界面语言和证道音频语言不会被静默更改。"))
+                    }
+                }
+                if let error = model.languageSelectionError {
+                    Section { Label(localization.text(error), systemImage: "exclamationmark.circle") }
+                }
+            }
+            .navigationTitle(localization.text("选择证道语言"))
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button(localization.text("完成")) { dismiss() } } }
+        }
+        .environment(\.locale, localization.locale)
+        #if os(macOS)
+        .frame(minWidth: 430, minHeight: 560)
+        #endif
+    }
+
+    private func capabilitySummary(_ target: PageTarget) -> String {
+        var values = [localization.text(target.audioStatus == "human_reviewed" ? "文字" : "仅文字")]
+        if target.capabilities.contains(.captions) { values.append(localization.text("字幕")) }
+        if target.audioStatus == "human_reviewed" { values.append(localization.text("音频")) }
+        if target.capabilities.contains(.download) { values.append(localization.text("可下载")) }
+        return values.joined(separator: " · ")
+    }
 }
 
 private struct BrandTitle: View {
@@ -649,7 +754,7 @@ private struct AboutSheet: View {
                     Text(localization.text("一起听懂，一路同行。"))
                     Text(localization.text("独立个人项目，与 Mariners Church 无隶属或背书关系。AI 合成中文音频与整理文字仅供个人跟读参考。"))
                         .font(.footnote).foregroundStyle(.secondary)
-                    Link(localization.text("打开网页版"), destination: AppModel.contentOrigin)
+                    Link(localization.text("打开网页版"), destination: model.mediaOrigin)
                 }
             }.formStyle(.grouped).navigationTitle(localization.text("更多选项"))
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button(localization.text("完成")) { dismiss() } } }

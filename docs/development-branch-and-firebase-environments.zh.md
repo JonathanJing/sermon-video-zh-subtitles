@@ -42,6 +42,8 @@ Firebase 官方建议每个开发环境使用独立 project。听译 App 应建�
 | Dev | `dev` | 新建 `ai-for-god-sermon-audio-dev` | 独立 `*-dev.web.app` | 合成／匿名测试数据，不复制私人生产数据 |
 | Production | `main` | 现有 `ai-for-god` | `ai-for-god-sermon-audio.web.app` | 已批准的周次发布资产 |
 
+2026-09-21 已建立 Dev Firebase project `ai-for-god-sermon-audio-dev`（project number `548454657719`），默认 Hosting site 为 `https://ai-for-god-sermon-audio-dev.web.app`。这只证明环境资源存在；多语言 fixture、HTTP 验证、iOS 设备验收和现场验收仍须分别留证。
+
 执行边界：
 
 - 当前 `deploy_firebase.py` 已强制显式传入 `--project` 和 `--site`，并先校验完整发布清单；继续保留这个 fail-closed 接口。

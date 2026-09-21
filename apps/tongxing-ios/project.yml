@@ -42,6 +42,11 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         SUPPORTS_MACCATALYST: NO
         SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
+      configs:
+        Debug:
+          TONGXING_CONTENT_ORIGIN: "https://ai-for-god-sermon-audio-dev.web.app"
+        Release:
+          TONGXING_CONTENT_ORIGIN: "https://ai-for-god-sermon-audio.web.app"
     dependencies:
       - package: TongxingCore
       - package: TongxingInfrastructure

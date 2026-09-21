@@ -8,7 +8,13 @@ import UIKit
 
 @MainActor
 final class AppModel: ObservableObject {
-    static let contentOrigin = URL(string: "https://ai-for-god-sermon-audio.web.app")!
+    static let productionContentOrigin = URL(string: "https://ai-for-god-sermon-audio.web.app")!
+    static var contentOrigin: URL {
+        guard let value = Bundle.main.object(forInfoDictionaryKey: "TongxingContentOrigin") as? String,
+              let url = URL(string: value), url.scheme == "https", url.user == nil, url.password == nil,
+              url.query == nil, url.fragment == nil else { return productionContentOrigin }
+        return url
+    }
 
     let playback: PlaybackController
     @Published private(set) var catalog: WeeklyCatalog?
@@ -18,6 +24,11 @@ final class AppModel: ObservableObject {
     @Published private(set) var isPreparing = false
     @Published private(set) var errorMessage: String?
     @Published private(set) var catalogNotice: String?
+    @Published private(set) var multilingualCatalog: MultilingualCatalog?
+    @Published private(set) var multilingualNotice: String?
+    @Published private(set) var selectedContentLocale = "zh-Hans"
+    @Published private(set) var isSelectingLanguage = false
+    @Published private(set) var languageSelectionError: String?
     @Published private(set) var downloadStates: [String: DownloadState] = [:]
     @Published private(set) var usingOfflineAudio = false
     @Published var display: ListeningDisplay = .current
@@ -80,8 +91,11 @@ final class AppModel: ObservableObject {
     }
 
     private var repository: CatalogRepository?
+    private var multilingualRepository: MultilingualCatalogRepository?
     private var offlineLibrary: OfflineLibrary?
-    private let mediaOrigin: URL
+    let mediaOrigin: URL
+    private let languagePreferenceURL: URL
+    private var languagePreferences: ContentLanguagePreferences
     private var started = false
     private var preparation = UUID()
     private var downloadTasks: [String: Task<Void, Never>] = [:]
@@ -90,12 +104,22 @@ final class AppModel: ObservableObject {
         let support = supportDirectory ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
             .appendingPathComponent("Tongxing", isDirectory: true)
         mediaOrigin = contentOrigin ?? Self.contentOrigin
+        languagePreferenceURL = support.appendingPathComponent("tongxing-language-preferences-v2.json")
+        let savedPreferences = try? JSONDecoder().decode(ContentLanguagePreferences.self,
+            from: Data(contentsOf: languagePreferenceURL))
+        languagePreferences = savedPreferences?.schemaVersion == "tongxing-language-preferences-v2"
+            ? savedPreferences! : .empty
         playback = PlaybackController(historyURL: support.appendingPathComponent("playback-history-v1.json"))
         repository = CatalogRepository(
                 catalogURL: mediaOrigin.appendingPathComponent("weekly.json"),
                 cacheDirectory: support.appendingPathComponent("Catalog", isDirectory: true),
                 session: session
             )
+        multilingualRepository = MultilingualCatalogRepository(
+            origin: mediaOrigin,
+            cacheDirectory: support.appendingPathComponent("MultilingualCatalog", isDirectory: true),
+            session: session
+        )
         offlineLibrary = OfflineLibrary(
                 directory: support.appendingPathComponent("Audio", isDirectory: true),
                 baseURL: mediaOrigin,
@@ -126,6 +150,20 @@ final class AppModel: ObservableObject {
     }
 
     var weeks: [SermonWeek] { catalog?.weeks ?? [] }
+    var selectedMultilingualPage: MultilingualPage? {
+        guard let multilingualCatalog else { return nil }
+        if let selectedWeek { return multilingualCatalog.pages.first(where: { $0.id == selectedWeek.id }) }
+        return multilingualCatalog.defaultPage
+    }
+    var availableContentLanguages: [(locale: String, target: PageTarget)] {
+        selectedMultilingualPage?.publishedTargets ?? []
+    }
+    var selectedContentTarget: PageTarget? { selectedMultilingualPage?.targets[selectedContentLocale] }
+    var selectedContentLanguageName: String { Self.languageName(selectedContentLocale) }
+    var selectedContentCapabilitySummary: String {
+        guard let target = selectedContentTarget else { return "当前中文版本" }
+        return target.audioStatus == "human_reviewed" ? "文字 · 音频" : "仅文字"
+    }
     var selectionKey: String? {
         guard let week = selectedWeek, let track = selectedTrack else { return nil }
         return track.identity(weekID: week.id).key
@@ -153,8 +191,82 @@ final class AppModel: ObservableObject {
             let next = result.catalog.weeks.first { $0.id == selectedWeek?.id } ?? result.catalog.defaultWeek
             let track = next.tracks.first { $0.id == selectedTrack?.id } ?? next.tracks.first
             await select(week: next, track: track)
+            await refreshMultilingualCatalog(pageID: next.id)
         } catch {
             errorMessage = "暂时无法读取证道目录。请连接网络后重试。"
+            await refreshMultilingualCatalog(pageID: selectedWeek?.id)
+        }
+    }
+
+    private func refreshMultilingualCatalog(pageID: String?) async {
+        guard let multilingualRepository else { return }
+        do {
+            let result = try await multilingualRepository.loadCatalog()
+            multilingualCatalog = result.catalog
+            multilingualNotice = result.warning
+            resolveContentLanguage(pageID: pageID)
+        } catch {
+            // The legacy Chinese catalog remains a valid migration path while a
+            // multilingual catalog has not been published to this environment.
+            multilingualNotice = "此环境尚未提供多语言发布目录，继续显示当前中文版本。"
+        }
+    }
+
+    func selectContentLanguage(_ locale: String) async -> URL? {
+        guard !isSelectingLanguage, let page = selectedMultilingualPage,
+              page.targets[locale]?.contentStatus == "human_reviewed", let multilingualRepository else { return nil }
+        isSelectingLanguage = true
+        languageSelectionError = nil
+        defer { isSelectingLanguage = false }
+        do {
+            let package = try await multilingualRepository.loadRelease(page: page, locale: locale)
+            let url = try package.pageURL(relativeTo: mediaOrigin)
+            selectedContentLocale = locale
+            languagePreferences.preferredContentLocale = locale
+            languagePreferences.pageSelections[page.id] = locale
+            persistLanguagePreferences()
+            return url
+        } catch {
+            languageSelectionError = "暂时无法打开这个语言版本；当前内容和音频没有改变。"
+            return nil
+        }
+    }
+
+    private func resolveContentLanguage(pageID: String?) {
+        guard let catalog = multilingualCatalog else { return }
+        let page: MultilingualPage
+        if let pageID {
+            guard let matching = catalog.pages.first(where: { $0.id == pageID }) else {
+                selectedContentLocale = "zh-Hans"
+                return
+            }
+            page = matching
+        } else {
+            page = catalog.defaultPage
+        }
+        let candidates = [languagePreferences.pageSelections[page.id], languagePreferences.preferredContentLocale,
+                          page.defaultTargetLocale].compactMap { $0 }
+        selectedContentLocale = candidates.first(where: { page.targets[$0]?.contentStatus == "human_reviewed" })
+            ?? page.publishedTargets.first?.locale ?? "zh-Hans"
+    }
+
+    private func persistLanguagePreferences() {
+        do {
+            try FileManager.default.createDirectory(at: languagePreferenceURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try JSONEncoder().encode(languagePreferences).write(to: languagePreferenceURL, options: .atomic)
+        } catch {
+            languageSelectionError = "语言已选择，但本次偏好暂时无法保存。"
+        }
+    }
+
+    static func languageName(_ locale: String) -> String {
+        switch locale {
+        case "zh-Hans": return "简体中文"
+        case "ko": return "한국어"
+        case "es": return "Español"
+        case "vi": return "Tiếng Việt"
+        case "en": return "English"
+        default: return Locale(identifier: locale).localizedString(forIdentifier: locale) ?? locale
         }
     }
 
@@ -180,6 +292,7 @@ final class AppModel: ObservableObject {
             }
             selectedWeek = week
             selectedTrack = nextTrack
+            resolveContentLanguage(pageID: week.id)
             if capabilityChanged { resetAlignmentState() }
             if let nextTrack { playback.updateMetadata(week: week, track: nextTrack) }
             return
@@ -191,6 +304,7 @@ final class AppModel: ObservableObject {
         defer { if preparation == token { isPreparing = false } }
         selectedWeek = week
         selectedTrack = nextTrack
+        resolveContentLanguage(pageID: week.id)
         resetAlignmentState()
         usingOfflineAudio = false
         display = .current
@@ -253,4 +367,16 @@ final class AppModel: ObservableObject {
     }
 
     var currentCue: SubtitleCue? { selectedTrack?.cue(at: playback.position) }
+}
+
+private struct ContentLanguagePreferences: Codable {
+    let schemaVersion: String
+    var preferredContentLocale: String?
+    var pageSelections: [String: String]
+
+    static let empty = ContentLanguagePreferences(
+        schemaVersion: "tongxing-language-preferences-v2",
+        preferredContentLocale: nil,
+        pageSelections: [:]
+    )
 }
