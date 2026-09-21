@@ -63,6 +63,8 @@
 
 ## IOS-03：多语言界面、内容与音轨
 
+Layer 4 的发布接口、目标语言选择、界面语言切换、跨语言音轨标注、catalog adapter、离线身份和完整验收拆分见[多语言 Layer 4 发布与 App 改进 Backlog](../../docs/multilingual-layer-4-delivery-app-backlog.zh.md)。该设计以 `pageId + targetLocale` 为发布边界，App 内将 `interfaceLocale`、`contentLocale` 和 `audioLocale` 分别管理。
+
 已完成基线：简体中文与英文界面可按系统/App 语言选择并保留明确回退；采用 String Catalog 管理按钮、错误、下载状态、权限用途说明、无障碍标签和系统媒体文案。
 
 界面语言、字幕语言、音轨语言分开管理。切换到英文界面不隐式更换正在播放的音轨，也不将中文内容反译后称为英文原文。先接入已有英文原文；英文原声播放作为该条目的后续子项，须有可发布/缓存的来源音轨、时码与完整性信息后才能开放，不能把语言切换当成已具备英文音频。
