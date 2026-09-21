@@ -2,7 +2,7 @@
 
 这份 README 是项目的 workflow source of truth。它描述三条相互独立但可共享证据的路径：预制中文音轨与同行页面、post-live 双 PDF、周日本地实时字幕。执行时先按 [AGENTS.md](../../AGENTS.md) 的任务路由读取对应入口，不必加载全部历史文档。
 
-现状校准日期：**2026-09-20**。9 月 11 日 Agents API 切换、9 月 19 日人工范围与受限并发、9 月 20 日 CUV 证据修复及四层接口冻结均有 tracked 记录。当前提交、push、远端部署、实时服务健康、实体设备和现场验收仍须分别重新核对。
+现状校准日期：**2026-09-21**。9 月 11 日 Agents API 切换、9 月 19 日人工范围与受限并发、9 月 20 日 CUV 证据修复及四层接口冻结、9 月 21 日音频指纹 Layer 3 职责校准均有 tracked 记录。当前提交、push、远端部署、实时服务健康、实体设备和现场验收仍须分别重新核对。
 
 状态定义：
 
@@ -20,7 +20,7 @@
 2. **周六双 PDF：** 从完整 post-live 媒体与人工范围生成中英阅读版和中文证道同行 PDF，并可导出受控的周日 Context Pack。
 3. **周日实时字幕：** 以当场麦克风和当下英文 ASR 为事实来源，本地生成中文字幕并保留独立恢复录音。
 
-**多语言生产合同：** 今后预制生产统一使用 Layer 1“共享英文事实与锚点”、Layer 2“目标语言文字”、Layer 3“目标语言音频与同步”、Layer 4“多语言发布与播放”。四个版本化接口见[多语言生产四层接口](../multilingual-production-interfaces.zh.md)。后续预制内容以 English Source Package 和 Canonical English Content 为共同主干，中文、韩语、西班牙语及其他语言作为独立同级分支；禁止以中文作为其他语言的默认翻译源。当前 Layer 1 已接入 shadow；韩语已实现界面、`sourceLocale=en` 展示 sidecar、Target-Language Candidate 合同和 Layer 2 → Layer 3 speech-job 准备器，但通用 Layer 2–4 producer 及真实韩语翻译、TTS、同步和发布尚未完成。因此现有 legacy 工具只能完成它们明确的 PDF、中文音频或页面范围；没有四个 canonical package 和各自门禁时，不得报告“四层生产完成”。迁移顺序见[英文源到多语言证道生产 POC](../english-to-multilingual-production-poc.zh.md)。
+**多语言生产合同：** 今后预制生产统一使用 Layer 1“共享英文事实与锚点”、Layer 2“目标语言文字”、Layer 3“目标语言音频与同步”、Layer 4“多语言发布与播放”。四个版本化接口见[多语言生产四层接口](../multilingual-production-interfaces.zh.md)。后续预制内容以 English Source Package 和 Canonical English Content 为共同主干，中文、韩语、西班牙语及其他语言作为独立同级分支；禁止以中文作为其他语言的默认翻译源。Layer 3 负责所有声音相关生成，包括自然语速音频、排程、字幕及 source-bound 原声音频指纹；Layer 4 只打包、发布并由 App 消费指纹，不重新生成。当前 Layer 1 已接入 shadow；韩语已实现界面、`sourceLocale=en` 展示 sidecar、Target-Language Candidate 合同和 Layer 2 → Layer 3 speech-job 准备器，但通用 Layer 2–4 producer 及真实韩语翻译、TTS、同步和发布尚未完成。因此现有 legacy 工具只能完成它们明确的 PDF、中文音频或页面范围；没有四个 canonical package 和各自门禁时，不得报告“四层生产完成”。迁移顺序见[英文源到多语言证道生产 POC](../english-to-multilingual-production-poc.zh.md)。
 
 ![四层多语言生产：每层流程、模型、输出与门禁](../diagrams/four-layer-production-workflow.svg)
 
@@ -79,7 +79,7 @@ Supervisor 默认使用 `gpt-6-astra` Medium（本账户旧 `gpt-5.6` 查询返�
 
 **人工范围更新（2026-09-19）：** 完整礼拜的证道起止位置由操作员提供，已移除模型边界探测。前置阶段只下载并核验媒体，后续转写／翻译模型保持各自职责。旧 tool/action 与审批哈希字段为恢复兼容保留；[媒体证据 v2 与旧会话迁移](../codex-local-production-runbook.zh.md#人工范围流程2026-09-19-代码更新)说明具体合同。这是本地代码状态，不是远端发布或现场验收。
 
-**新页面自动听音定位（2026-09-19）：** 同步中文音轨进入 `build_weekly_app.py` 后，固定生成原声指纹、绑定来源／人工范围／页面／音轨，并纳入发行校验。自然语速未同步试听候选明确标记不可用；新同步页面不能漏掉指纹后继续发行。用户主动授权麦克风，本地匹配同一录制并自动定位播放；真实设备与现场效果单独验收。详见[每周发行流程](../tongxing-weekly-release.zh.md#新页面固定包含自动听音定位)及[双语制作流程页](../tongxing-video-to-page.html)。
+**新页面自动听音定位（2026-09-21 职责校准）：** Layer 3 使用 Layer 1 原始录制／批准窗口和实际同步目标语言音轨，生成频谱地标索引并绑定来源／页面／音轨；当前 legacy `build_weekly_app.py` 仍代为触发这一阶段，尚待迁入通用 Layer 3 producer。Layer 4 只把索引纳入 allowlist、发布和校验，再由 Web/iOS 在用户主动授权后本地匹配约 10 秒声音并自动定位播放；声音不上传、不保存。自然语速未同步试听候选明确标记不可用；新同步页面不能漏掉指纹后继续发行。真实设备与现场效果单独验收。详见[每周发行流程](../tongxing-weekly-release.zh.md#新页面固定包含自动听音定位)及[双语制作流程页](../tongxing-video-to-page.html)。
 
 **每周默认海报交付：** 内容页发行并完成 HTTP 核验后，由 Codex 继续完成 ImageGen 主视觉、目录文字与真实二维码合成，以及最终 PNG／缩略图解码和目视 QA；无需用户每周重复要求。主题、日期、经文、讲员取本周 catalog，二维码精确指向该页 `?week=<page-id>`。这是默认交付约定，不代表 Supervisor 自动调用图像工具、付费 API 或自动发送／上传；海报不能提升页面的发布或人工验收状态。命令与证据要求见[每周海报交付](../tongxing-weekly-release.zh.md#每周海报交付)。
 

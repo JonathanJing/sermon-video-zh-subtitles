@@ -115,13 +115,13 @@ class SVG:
         self.text(64,self.h-22,f"内容校准 {self.spec.get('calibratedAt', '2026-09-11')} · 设计参考 {design_reference} · 原生可编辑 SVG",15,'#7B8B88')
         self.text(1536,self.h-22,'实线：主路径   虚线：条件 / 实验 / 历史',15,'#7B8B88',400,'end')
     def four_layer(self):
-        card_y, card_w, card_h, gap = 238, 350, 876, 24
+        card_y, card_w, card_h, gap = 238, 350, 992, 24
         xs = [64 + i * (card_w + gap) for i in range(4)]
         section_layout = [
             ('输入 / INPUT', 'input', 154, 132),
-            ('流程 / PROCESS', 'process', 292, 190),
-            ('模型与工具 / MODELS + TOOLS', 'models', 488, 188),
-            ('输出与门禁 / OUTPUT + GATE', 'output', 682, 164),
+            ('流程 / PROCESS', 'process', 292, 228),
+            ('模型与工具 / MODELS + TOOLS', 'models', 526, 220),
+            ('输出与门禁 / OUTPUT + GATE', 'output', 752, 196),
         ]
 
         for index, (layer, x) in enumerate(zip(self.spec['layers'], xs)):
@@ -156,7 +156,7 @@ class SVG:
             y = card_y + 441
             self.add(f'<path d="M{x1} {y}H{x2}" stroke="#607B76" stroke-width="3" marker-end="url(#arrow)"/>')
 
-        strip_y = 1148
+        strip_y = 1264
         self.rect(64, strip_y, 1472, 122, '#EDF2F0', '#D5DFDB', rx=18, stroke_width=1.1)
         self.text(88, strip_y + 35, '一个共享英文主干；每种目标语言独立完成 Layer 2 → 3 → 4', 20, '#19343D', 650)
         self.text(88, strip_y + 68, 'English Source Package 只生成一次；中文不是韩语或西班牙语的中转源。', 16, '#52676E')
@@ -166,10 +166,11 @@ class SVG:
             self.rect(px, strip_y + 33, 136, 52, fill, color, rx=26, stroke_width=1)
             self.text(px + 68, strip_y + 66, label, 18, color, 700, 'middle')
 
-        live_y = 1296
+        live_y = 1412
         self.rect(64, live_y, 720, 92, '#F7F1E8', '#D8C49B', rx=16, stroke_width=1.1, stroke_dasharray='7 5')
         self.text(86, live_y + 33, '独立旁路：Sunday live / live_session', 18, '#8B6429', 700)
-        self.text(86, live_y + 62, '现场不生成四个包；录音若会后持久化，重新从 Layer 1 开始。', 16, '#5D665E')
+        self.text(86, live_y + 59, 'Qwen3-ASR → MiLMMT Q8；现场不生成四个预制包。', 16, '#5D665E')
+        self.text(86, live_y + 80, '录音若会后持久化，重新从 Layer 1 开始。', 16, '#5D665E')
         self.rect(816, live_y, 720, 92, '#F0EDF5', '#C5B9D7', rx=16, stroke_width=1.1)
         self.text(838, live_y + 33, '跨层编排：GPT-6 Astra Supervisor + 受限确定性工具', 18, '#655184', 700)
         self.text(838, live_y + 62, 'Agent 只编排和重读证据；不能自授人工批准，也不能把 legacy complete 升级。', 16, '#5D665E')

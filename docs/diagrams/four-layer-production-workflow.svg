@@ -1,16 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1580" viewBox="0 0 1600 1580" role="img" aria-labelledby="title desc">
-<title id="title">四层多语言生产</title><desc id="desc">英文事实只冻结一次；每种目标语言分别完成文字、音频与发布门禁 当前 Layer 1 producer 已进入 shadow；通用 Layer 2–4 producer 仍在迁移，legacy 完成不得改写为 four_layer_release。 模型是各层工具，不是事实或人工批准来源；来源、hash、覆盖率、语义、听审与播放证据分别留存。</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1780" viewBox="0 0 1600 1780" role="img" aria-labelledby="title desc">
+<title id="title">四层多语言生产</title><desc id="desc">英文事实只冻结一次；每种目标语言分别完成文字、音频与发布门禁 当前 Layer 1 producer 已进入 shadow；通用 Layer 2–4 producer 仍在迁移，legacy 完成不得改写为 four_layer_release。 原声音频指纹由 Layer 3 确定性生成并绑定音轨；Layer 4 只发布和消费，麦克风声音不上传、不保存。</desc>
 <style>text{font-family:"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;} text{font-variant-ligatures:none}</style>
 <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M1 1 L7 4 L1 7" fill="none" stroke="context-stroke" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
-<rect x="0" y="0" width="1600" height="1580" rx="0" fill="#F5F4EF" stroke="none" />
+<rect x="0" y="0" width="1600" height="1780" rx="0" fill="#F5F4EF" stroke="none" />
 <rect x="64" y="57" width="44" height="5" rx="2" fill="#267D72" stroke="none" />
 <text x="124" y="69" font-size="17" font-weight="600" fill="#64787A" text-anchor="start" letter-spacing="2">FOUR-LAYER MULTILINGUAL PRODUCTION</text>
 <text x="64" y="127" font-size="44" font-weight="650" fill="#19343D" text-anchor="start" >四层多语言生产</text>
 <text x="64" y="172" font-size="22" font-weight="400" fill="#60737A" text-anchor="start" >英文事实只冻结一次；每种目标语言分别完成文字、音频与发布门禁</text>
 <text x="1536" y="69" font-size="18" font-weight="500" fill="#82918F" text-anchor="end" >CANONICAL</text>
 <path d="M64 197H1536" stroke="#D8DEDA" stroke-width="1.3"/>
-<rect x="64" y="243" width="350" height="876" rx="20" fill="#E0E5E2" stroke="none" />
-<rect x="64" y="238" width="350" height="876" rx="20" fill="#FFFFFF" stroke="#D5DFDB" stroke-width="1.25"/>
+<rect x="64" y="243" width="350" height="992" rx="20" fill="#E0E5E2" stroke="none" />
+<rect x="64" y="238" width="350" height="992" rx="20" fill="#FFFFFF" stroke="#D5DFDB" stroke-width="1.25"/>
 <rect x="64" y="238" width="350" height="126" rx="20" fill="#2E78C7" stroke="none" />
 <rect x="64" y="341" width="350" height="23" rx="0" fill="#2E78C7" stroke="none" />
 <rect x="84" y="259" width="48" height="48" rx="24" fill="#FFFFFF" stroke="none" />
@@ -22,24 +22,24 @@
 <text x="95" y="417" font-size="14" font-weight="700" fill="#2E78C7" text-anchor="start" >输入 / INPUT</text>
 <text x="95" y="444" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 授权媒体 + 人工批准范围</text>
 <text x="95" y="468" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 冻结英文 / 可信原稿</text>
-<rect x="80" y="530" width="318" height="190" rx="12" fill="#EAF3FC" stroke="none" />
+<rect x="80" y="530" width="318" height="228" rx="12" fill="#EAF3FC" stroke="none" />
 <text x="95" y="555" font-size="14" font-weight="700" fill="#2E78C7" text-anchor="start" >流程 / PROCESS</text>
 <text x="95" y="582" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 完整转写 → 词级声学对齐</text>
 <text x="95" y="606" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 句、分句、标点、停顿锚定</text>
-<text x="95" y="630" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 来源、覆盖率与 hash 冻结</text>
-<rect x="80" y="726" width="318" height="188" rx="12" fill="#EAF3FC" stroke="none" />
-<text x="95" y="751" font-size="14" font-weight="700" fill="#2E78C7" text-anchor="start" >模型与工具 / MODELS + TOOLS</text>
-<text x="95" y="778" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• gpt-transcribe：英文 ASR</text>
-<text x="95" y="802" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• MFA / Qwen3-ForcedAligner：词时轴</text>
-<text x="95" y="826" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• GPT-6 Astra：文字、标点与断句审核</text>
-<text x="95" y="850" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 模型不得伪造声学时间戳</text>
-<rect x="80" y="920" width="318" height="164" rx="12" fill="#EAF3FC" stroke="none" />
-<text x="95" y="945" font-size="14" font-weight="700" fill="#2E78C7" text-anchor="start" >输出与门禁 / OUTPUT + GATE</text>
-<text x="95" y="972" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• English Source Package</text>
-<text x="95" y="996" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 门禁：ready_for_translation</text>
-<text x="95" y="1020" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 完整性、对齐和句界人工审核</text>
-<rect x="438" y="243" width="350" height="876" rx="20" fill="#E0E5E2" stroke="none" />
-<rect x="438" y="238" width="350" height="876" rx="20" fill="#FFFFFF" stroke="#D5DFDB" stroke-width="1.25"/>
+<text x="95" y="630" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 英文校订、完整性审核与 hash 冻结</text>
+<rect x="80" y="764" width="318" height="220" rx="12" fill="#EAF3FC" stroke="none" />
+<text x="95" y="789" font-size="14" font-weight="700" fill="#2E78C7" text-anchor="start" >模型与工具 / MODELS + TOOLS</text>
+<text x="95" y="816" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• gpt-transcribe：英文 ASR</text>
+<text x="95" y="840" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• MFA / Qwen3-ForcedAligner：词时轴</text>
+<text x="95" y="864" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• GPT-6 Astra：文字、标点与断句审核</text>
+<text x="95" y="888" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 模型不得伪造声学时间戳</text>
+<rect x="80" y="990" width="318" height="196" rx="12" fill="#EAF3FC" stroke="none" />
+<text x="95" y="1015" font-size="14" font-weight="700" fill="#2E78C7" text-anchor="start" >输出与门禁 / OUTPUT + GATE</text>
+<text x="95" y="1042" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• English Source Package</text>
+<text x="95" y="1066" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 门禁：ready_for_translation</text>
+<text x="95" y="1090" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 完整性、对齐和句界人工审核</text>
+<rect x="438" y="243" width="350" height="992" rx="20" fill="#E0E5E2" stroke="none" />
+<rect x="438" y="238" width="350" height="992" rx="20" fill="#FFFFFF" stroke="#D5DFDB" stroke-width="1.25"/>
 <rect x="438" y="238" width="350" height="126" rx="20" fill="#7450B2" stroke="none" />
 <rect x="438" y="341" width="350" height="23" rx="0" fill="#7450B2" stroke="none" />
 <rect x="458" y="259" width="48" height="48" rx="24" fill="#FFFFFF" stroke="none" />
@@ -51,23 +51,23 @@
 <text x="469" y="417" font-size="14" font-weight="700" fill="#7450B2" text-anchor="start" >输入 / INPUT</text>
 <text x="469" y="444" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• Layer 1 package + targetLocale</text>
 <text x="469" y="468" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 翻译策略、术语表与 CUV 规则</text>
-<rect x="454" y="530" width="318" height="190" rx="12" fill="#F1ECFA" stroke="none" />
+<rect x="454" y="530" width="318" height="228" rx="12" fill="#F1ECFA" stroke="none" />
 <text x="469" y="555" font-size="14" font-weight="700" fill="#7450B2" text-anchor="start" >流程 / PROCESS</text>
 <text x="469" y="582" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 按 sourceUnitId 从英文直译</text>
 <text x="469" y="606" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 不同 request 独立语义复核</text>
-<text x="469" y="630" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 检查否定、因果、经文、专名和数字</text>
-<rect x="454" y="726" width="318" height="188" rx="12" fill="#F1ECFA" stroke="none" />
-<text x="469" y="751" font-size="14" font-weight="700" fill="#7450B2" text-anchor="start" >模型与工具 / MODELS + TOOLS</text>
-<text x="469" y="778" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• GPT-6 Astra：当前中文翻译与复核</text>
-<text x="469" y="802" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 语言专属 adapter：ko / es 待验证</text>
-<text x="469" y="826" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 固定 CUV 库：确定性精确取文</text>
-<rect x="454" y="920" width="318" height="164" rx="12" fill="#F1ECFA" stroke="none" />
-<text x="469" y="945" font-size="14" font-weight="700" fill="#7450B2" text-anchor="start" >输出与门禁 / OUTPUT + GATE</text>
-<text x="469" y="972" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• Target-Language Candidate</text>
-<text x="469" y="996" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 门禁：human_translation_approved</text>
-<text x="469" y="1020" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 每个 locale 独立文件与审核</text>
-<rect x="812" y="243" width="350" height="876" rx="20" fill="#E0E5E2" stroke="none" />
-<rect x="812" y="238" width="350" height="876" rx="20" fill="#FFFFFF" stroke="#D5DFDB" stroke-width="1.25"/>
+<text x="469" y="630" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 阅读稿、大纲与 CUV 引文分别生成／复核</text>
+<rect x="454" y="764" width="318" height="220" rx="12" fill="#F1ECFA" stroke="none" />
+<text x="469" y="789" font-size="14" font-weight="700" fill="#7450B2" text-anchor="start" >模型与工具 / MODELS + TOOLS</text>
+<text x="469" y="816" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• GPT-6 Astra：翻译、阅读稿、大纲与复核</text>
+<text x="469" y="840" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 语言专属 adapter：ko / es 待验证</text>
+<text x="469" y="864" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 固定 CUV 库：确定性精确取文</text>
+<rect x="454" y="990" width="318" height="196" rx="12" fill="#F1ECFA" stroke="none" />
+<text x="469" y="1015" font-size="14" font-weight="700" fill="#7450B2" text-anchor="start" >输出与门禁 / OUTPUT + GATE</text>
+<text x="469" y="1042" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• Target-Language Candidate</text>
+<text x="469" y="1066" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 门禁：human_translation_approved</text>
+<text x="469" y="1090" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 每个 locale 独立文件与审核</text>
+<rect x="812" y="243" width="350" height="992" rx="20" fill="#E0E5E2" stroke="none" />
+<rect x="812" y="238" width="350" height="992" rx="20" fill="#FFFFFF" stroke="#D5DFDB" stroke-width="1.25"/>
 <rect x="812" y="238" width="350" height="126" rx="20" fill="#C96E08" stroke="none" />
 <rect x="812" y="341" width="350" height="23" rx="0" fill="#C96E08" stroke="none" />
 <rect x="832" y="259" width="48" height="48" rx="24" fill="#FFFFFF" stroke="none" />
@@ -79,24 +79,26 @@
 <text x="843" y="417" font-size="14" font-weight="700" fill="#C96E08" text-anchor="start" >输入 / INPUT</text>
 <text x="843" y="444" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 已批准 Candidate + Layer 1 锚点</text>
 <text x="843" y="468" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 同 locale 授权声音 / checkpoint</text>
-<rect x="828" y="530" width="318" height="190" rx="12" fill="#FFF3E3" stroke="none" />
+<rect x="828" y="530" width="318" height="228" rx="12" fill="#FFF3E3" stroke="none" />
 <text x="843" y="555" font-size="14" font-weight="700" fill="#C96E08" text-anchor="start" >流程 / PROCESS</text>
 <text x="843" y="582" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 自然语速逐单元 TTS</text>
 <text x="843" y="606" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 实测时长 → 滚动排程与字幕</text>
-<text x="843" y="630" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 机器回转写筛查 + 全文人工听审</text>
-<rect x="828" y="726" width="318" height="188" rx="12" fill="#FFF3E3" stroke="none" />
-<text x="843" y="751" font-size="14" font-weight="700" fill="#C96E08" text-anchor="start" >模型与工具 / MODELS + TOOLS</text>
-<text x="843" y="778" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• Qwen3-TTS：当前中文语音 adapter</text>
-<text x="843" y="802" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• Qwen3-ASR：回转写筛查，不是批准</text>
-<text x="843" y="826" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 确定性 scheduler + FFmpeg</text>
-<text x="843" y="850" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• ko / es speech adapter 待验证</text>
-<rect x="828" y="920" width="318" height="164" rx="12" fill="#FFF3E3" stroke="none" />
-<text x="843" y="945" font-size="14" font-weight="700" fill="#C96E08" text-anchor="start" >输出与门禁 / OUTPUT + GATE</text>
-<text x="843" y="972" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• Target-Language Audio Package</text>
-<text x="843" y="996" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 门禁：human_reviewed / audio_unavailable</text>
-<text x="843" y="1020" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 禁止删义、自动加速、拉伸或裁切</text>
-<rect x="1186" y="243" width="350" height="876" rx="20" fill="#E0E5E2" stroke="none" />
-<rect x="1186" y="238" width="350" height="876" rx="20" fill="#FFFFFF" stroke="#D5DFDB" stroke-width="1.25"/>
+<text x="843" y="630" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 回转写筛查 + 全文人工听审</text>
+<text x="843" y="654" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 生成并绑定原声音频指纹索引</text>
+<rect x="828" y="764" width="318" height="220" rx="12" fill="#FFF3E3" stroke="none" />
+<text x="843" y="789" font-size="14" font-weight="700" fill="#C96E08" text-anchor="start" >模型与工具 / MODELS + TOOLS</text>
+<text x="843" y="816" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• Qwen3-TTS：当前中文语音 adapter</text>
+<text x="843" y="840" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• Qwen3-ASR：回转写筛查，不是批准</text>
+<text x="843" y="864" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• scheduler + FFmpeg：排程与装配</text>
+<text x="843" y="888" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 频谱地标算法：指纹，不是 AI 模型</text>
+<rect x="828" y="990" width="318" height="196" rx="12" fill="#FFF3E3" stroke="none" />
+<text x="843" y="1015" font-size="14" font-weight="700" fill="#C96E08" text-anchor="start" >输出与门禁 / OUTPUT + GATE</text>
+<text x="843" y="1042" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• Target-Language Audio Package</text>
+<text x="843" y="1066" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 音轨 + 字幕 + source-bound 指纹收据</text>
+<text x="843" y="1090" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 门禁：human_reviewed / audio_unavailable</text>
+<text x="843" y="1114" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 禁止删义、自动加速、拉伸或裁切</text>
+<rect x="1186" y="243" width="350" height="992" rx="20" fill="#E0E5E2" stroke="none" />
+<rect x="1186" y="238" width="350" height="992" rx="20" fill="#FFFFFF" stroke="#D5DFDB" stroke-width="1.25"/>
 <rect x="1186" y="238" width="350" height="126" rx="20" fill="#23805A" stroke="none" />
 <rect x="1186" y="341" width="350" height="23" rx="0" fill="#23805A" stroke="none" />
 <rect x="1206" y="259" width="48" height="48" rx="24" fill="#FFFFFF" stroke="none" />
@@ -108,43 +110,45 @@
 <text x="1217" y="417" font-size="14" font-weight="700" fill="#23805A" text-anchor="start" >输入 / INPUT</text>
 <text x="1217" y="444" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 同 locale 文字包 + 音频包</text>
 <text x="1217" y="468" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 页面来源身份与显式资产清单</text>
-<rect x="1202" y="530" width="318" height="190" rx="12" fill="#E8F5EF" stroke="none" />
+<rect x="1202" y="530" width="318" height="228" rx="12" fill="#E8F5EF" stroke="none" />
 <text x="1217" y="555" font-size="14" font-weight="700" fill="#23805A" text-anchor="start" >流程 / PROCESS</text>
 <text x="1217" y="582" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 构建页面 / catalog / allowlist</text>
-<text x="1217" y="606" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 部署后核验 hash、HTTP 与 Range</text>
-<text x="1217" y="630" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• Web、iOS、设备与现场分别验收</text>
-<rect x="1202" y="726" width="318" height="188" rx="12" fill="#E8F5EF" stroke="none" />
-<text x="1217" y="751" font-size="14" font-weight="700" fill="#23805A" text-anchor="start" >模型与工具 / MODELS + TOOLS</text>
-<text x="1217" y="778" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 内容发布不需要生成式模型</text>
-<text x="1217" y="802" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• Firebase + Web / iOS validators</text>
-<text x="1217" y="826" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• GPT-6 Astra Supervisor 只负责编排</text>
-<text x="1217" y="850" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• ImageGen 仅用于可选海报主视觉</text>
-<rect x="1202" y="920" width="318" height="164" rx="12" fill="#E8F5EF" stroke="none" />
-<text x="1217" y="945" font-size="14" font-weight="700" fill="#23805A" text-anchor="start" >输出与门禁 / OUTPUT + GATE</text>
-<text x="1217" y="972" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• Target-Language Release Package</text>
-<text x="1217" y="996" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• HTTP / device / venue 状态分开</text>
-<text x="1217" y="1020" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 下游不得补译或提升上游审核</text>
+<text x="1217" y="606" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 发布 Layer 3 指纹索引及绑定</text>
+<text x="1217" y="630" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• App 本地听音匹配 → 自动定位播放</text>
+<text x="1217" y="654" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 核验 hash / HTTP / Range / 端上播放</text>
+<rect x="1202" y="764" width="318" height="220" rx="12" fill="#E8F5EF" stroke="none" />
+<text x="1217" y="789" font-size="14" font-weight="700" fill="#23805A" text-anchor="start" >模型与工具 / MODELS + TOOLS</text>
+<text x="1217" y="816" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 内容发布不需要生成式模型</text>
+<text x="1217" y="840" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• Firebase + Web / iOS validators</text>
+<text x="1217" y="864" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• GPT-6 Astra Supervisor 只负责编排</text>
+<text x="1217" y="888" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• ImageGen 仅用于可选海报主视觉</text>
+<rect x="1202" y="990" width="318" height="196" rx="12" fill="#E8F5EF" stroke="none" />
+<text x="1217" y="1015" font-size="14" font-weight="700" fill="#23805A" text-anchor="start" >输出与门禁 / OUTPUT + GATE</text>
+<text x="1217" y="1042" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• Target-Language Release Package</text>
+<text x="1217" y="1066" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• HTTP / device / fingerprint / venue 分开</text>
+<text x="1217" y="1090" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 下游不得补译或提升上游审核</text>
 <path d="M417 679H433" stroke="#607B76" stroke-width="3" marker-end="url(#arrow)"/>
 <path d="M791 679H807" stroke="#607B76" stroke-width="3" marker-end="url(#arrow)"/>
 <path d="M1165 679H1181" stroke="#607B76" stroke-width="3" marker-end="url(#arrow)"/>
-<rect x="64" y="1148" width="1472" height="122" rx="18" fill="#EDF2F0" stroke="#D5DFDB" stroke-width="1.1"/>
-<text x="88" y="1183" font-size="20" font-weight="650" fill="#19343D" text-anchor="start" >一个共享英文主干；每种目标语言独立完成 Layer 2 → 3 → 4</text>
-<text x="88" y="1216" font-size="16" font-weight="400" fill="#52676E" text-anchor="start" >English Source Package 只生成一次；中文不是韩语或西班牙语的中转源。</text>
-<rect x="1022" y="1181" width="136" height="52" rx="26" fill="#FCECF0" stroke="#A54059" stroke-width="1"/>
-<text x="1090" y="1214" font-size="18" font-weight="700" fill="#A54059" text-anchor="middle" >zh-Hans</text>
-<rect x="1180" y="1181" width="136" height="52" rx="26" fill="#E9F2FF" stroke="#2E69A7" stroke-width="1"/>
-<text x="1248" y="1214" font-size="18" font-weight="700" fill="#2E69A7" text-anchor="middle" >ko</text>
-<rect x="1338" y="1181" width="136" height="52" rx="26" fill="#EAF6EE" stroke="#23724F" stroke-width="1"/>
-<text x="1406" y="1214" font-size="18" font-weight="700" fill="#23724F" text-anchor="middle" >es</text>
-<rect x="64" y="1296" width="720" height="92" rx="16" fill="#F7F1E8" stroke="#D8C49B" stroke-width="1.1" stroke-dasharray="7 5"/>
-<text x="86" y="1329" font-size="18" font-weight="700" fill="#8B6429" text-anchor="start" >独立旁路：Sunday live / live_session</text>
-<text x="86" y="1358" font-size="16" font-weight="400" fill="#5D665E" text-anchor="start" >现场不生成四个包；录音若会后持久化，重新从 Layer 1 开始。</text>
-<rect x="816" y="1296" width="720" height="92" rx="16" fill="#F0EDF5" stroke="#C5B9D7" stroke-width="1.1"/>
-<text x="838" y="1329" font-size="18" font-weight="700" fill="#655184" text-anchor="start" >跨层编排：GPT-6 Astra Supervisor + 受限确定性工具</text>
-<text x="838" y="1358" font-size="16" font-weight="400" fill="#5D665E" text-anchor="start" >Agent 只编排和重读证据；不能自授人工批准，也不能把 legacy complete 升级。</text>
-<rect x="64" y="1451" width="1472" height="78" rx="16" fill="#E9EEE8" stroke="none" />
-<text x="84" y="1480" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >当前 Layer 1 producer 已进入 shadow；通用 Layer 2–4 producer 仍在迁移，legacy 完成不得改写为 four_layer_release。</text>
-<text x="84" y="1509" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >模型是各层工具，不是事实或人工批准来源；来源、hash、覆盖率、语义、听审与播放证据分别留存。</text>
-<text x="64" y="1558" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="start" >内容校准 2026-09-20 · 设计参考 built-in ImageGen 2026-09-20 · 原生可编辑 SVG</text>
-<text x="1536" y="1558" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="end" >实线：主路径   虚线：条件 / 实验 / 历史</text>
+<rect x="64" y="1264" width="1472" height="122" rx="18" fill="#EDF2F0" stroke="#D5DFDB" stroke-width="1.1"/>
+<text x="88" y="1299" font-size="20" font-weight="650" fill="#19343D" text-anchor="start" >一个共享英文主干；每种目标语言独立完成 Layer 2 → 3 → 4</text>
+<text x="88" y="1332" font-size="16" font-weight="400" fill="#52676E" text-anchor="start" >English Source Package 只生成一次；中文不是韩语或西班牙语的中转源。</text>
+<rect x="1022" y="1297" width="136" height="52" rx="26" fill="#FCECF0" stroke="#A54059" stroke-width="1"/>
+<text x="1090" y="1330" font-size="18" font-weight="700" fill="#A54059" text-anchor="middle" >zh-Hans</text>
+<rect x="1180" y="1297" width="136" height="52" rx="26" fill="#E9F2FF" stroke="#2E69A7" stroke-width="1"/>
+<text x="1248" y="1330" font-size="18" font-weight="700" fill="#2E69A7" text-anchor="middle" >ko</text>
+<rect x="1338" y="1297" width="136" height="52" rx="26" fill="#EAF6EE" stroke="#23724F" stroke-width="1"/>
+<text x="1406" y="1330" font-size="18" font-weight="700" fill="#23724F" text-anchor="middle" >es</text>
+<rect x="64" y="1412" width="720" height="92" rx="16" fill="#F7F1E8" stroke="#D8C49B" stroke-width="1.1" stroke-dasharray="7 5"/>
+<text x="86" y="1445" font-size="18" font-weight="700" fill="#8B6429" text-anchor="start" >独立旁路：Sunday live / live_session</text>
+<text x="86" y="1471" font-size="16" font-weight="400" fill="#5D665E" text-anchor="start" >Qwen3-ASR → MiLMMT Q8；现场不生成四个预制包。</text>
+<text x="86" y="1492" font-size="16" font-weight="400" fill="#5D665E" text-anchor="start" >录音若会后持久化，重新从 Layer 1 开始。</text>
+<rect x="816" y="1412" width="720" height="92" rx="16" fill="#F0EDF5" stroke="#C5B9D7" stroke-width="1.1"/>
+<text x="838" y="1445" font-size="18" font-weight="700" fill="#655184" text-anchor="start" >跨层编排：GPT-6 Astra Supervisor + 受限确定性工具</text>
+<text x="838" y="1474" font-size="16" font-weight="400" fill="#5D665E" text-anchor="start" >Agent 只编排和重读证据；不能自授人工批准，也不能把 legacy complete 升级。</text>
+<rect x="64" y="1651" width="1472" height="78" rx="16" fill="#E9EEE8" stroke="none" />
+<text x="84" y="1680" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >当前 Layer 1 producer 已进入 shadow；通用 Layer 2–4 producer 仍在迁移，legacy 完成不得改写为 four_layer_release。</text>
+<text x="84" y="1709" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >原声音频指纹由 Layer 3 确定性生成并绑定音轨；Layer 4 只发布和消费，麦克风声音不上传、不保存。</text>
+<text x="64" y="1758" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="start" >内容校准 2026-09-21 · 设计参考 built-in ImageGen 2026-09-20 · 原生可编辑 SVG</text>
+<text x="1536" y="1758" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="end" >实线：主路径   虚线：条件 / 实验 / 历史</text>
 </svg>

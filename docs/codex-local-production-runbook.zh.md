@@ -23,8 +23,8 @@
 |---|---|---|---|
 | Layer 1 共享英文事实与锚点 | 授权媒体、人工批准范围、冻结英文和一条选定的字词时间轴 | `English Source Package` | `status=ready_for_translation` 且 `translationEligible=true` |
 | Layer 2 目标语言文字 | Layer 1 package、`targetLocale`、翻译／术语／经文策略 | 每个 locale 一份 `Target-Language Candidate` | 完整覆盖同一套英文锚点，独立复核与人工文字批准 |
-| Layer 3 目标语言音频与同步 | 已批准的同 locale 文字包、授权声音、Layer 1 锚点 | 每个 locale 一份 `Target-Language Audio Package` | 自然语速、完整解码、排程／字幕绑定和全文人工听审；纯文字发布也生成包并显式标为 `audio_unavailable` |
-| Layer 4 多语言发布与播放 | 同 locale 文字包、同 locale 音频包、页面和发布文件清单 | `Target-Language Release Package` | 资产 hash、HTTP／Range、客户端与现场状态分别留证 |
+| Layer 3 目标语言音频与同步 | 已批准的同 locale 文字包、授权声音、Layer 1 锚点与原始录制身份 | 每个 locale 一份 `Target-Language Audio Package`；同步音轨另带 source-bound fingerprint receipt | 自然语速、完整解码、排程／字幕绑定、指纹来源／窗口／音轨绑定和全文人工听审；纯文字发布也生成包并显式标为 `audio_unavailable` |
+| Layer 4 多语言发布与播放 | 同 locale 文字包、同 locale 音频包、可选 Layer 3 指纹收据、页面和发布文件清单 | `Target-Language Release Package` | 资产 hash、HTTP／Range、指纹下载／本地匹配、客户端与现场状态分别留证 |
 
 当前只有 Layer 1 producer 已进入生产 shadow；Layer 2–4 通用 producer 仍在迁移。新周次可以继续完成双 PDF 或 legacy 中文产物，但没有对应 canonical package 时必须报告具体范围，不得报告 `four_layer_release=complete`。一种 locale 失败不自动阻塞或批准其他 locale。
 
@@ -132,8 +132,8 @@ Supervisor 的 generation 命令固定传入上述参数及 `--export-sunday-con
 6. 来源媒体报告上传 GCS，流程停止在 `requires_operator_review`，等待操作员提供并确认起止时间。
 7. 范围批准后生成冻结英文、字词时间轴和 Layer 1 候选；英文人工收据绑定后才放行 Layer 2。
 8. 每个 `targetLocale` 从同一 English Source Package 直接生成和批准 Target-Language Candidate；不经中文中转其他语言。
-9. 仅对人工文字批准的 locale 生成自然语速音频、排程和字幕，完整听审后冻结 Audio Package；可以显式选择纯文字发布。
-10. 按 `pageId + targetLocale` 生成 Release Package，再发布并分别记录 HTTP、设备和现场验收。通用 Layer 2–4 producer 未实现时，停在对应层并报告迁移 blocker，不用 legacy `complete` 越过。
+9. 仅对人工文字批准的 locale 生成自然语速音频、排程和字幕；需要自动听音定位时，用 Layer 1 原始录制和批准窗口生成频谱地标索引，并绑定实际同步音轨 hash。完整听审和指纹绑定通过后冻结 Audio Package 及 companion receipt；可以显式选择纯文字发布。
+10. 按 `pageId + targetLocale` 生成 Release Package，发布 Layer 3 已生成的指纹索引，再分别记录 HTTP、指纹下载／本地匹配、设备和现场验收。通用 Layer 2–4 producer 未实现时，停在对应层并报告迁移 blocker，不用 legacy `complete` 越过。
 
 ## CUV 证据与生产收尾
 

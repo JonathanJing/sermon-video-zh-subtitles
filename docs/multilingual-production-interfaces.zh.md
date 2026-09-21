@@ -28,8 +28,10 @@ English Source Package
 Target-Language Candidate
   └─ candidate hash ────────────> Target-Language Speech Job
                                   └─ measured artifacts ─> Target-Language Audio Package
+English Source Package + synchronized target-language track
+  └─ deterministic spectral landmarks ────────────────> source-bound fingerprint receipt
 
-Target-Language Candidate + Target-Language Audio Package
+Target-Language Candidate + Target-Language Audio Package + optional fingerprint receipt
   └─────────────────────────────> Target-Language Release Package
 ```
 
@@ -73,15 +75,15 @@ Target-Language Candidate + Target-Language Audio Package
 
 输入：一个 `human_translation_approved` Target-Language Candidate、支持相同 `targetLocale` 的授权 voice/checkpoint、同一个 English Source Package 锚点以及自然语速策略。准备阶段使用 [Target-Language Speech Job](../schemas/sermon-target-language-speech-job-v1.schema.json) 锁定 adapter 和输出目录。
 
-处理：逐单元 TTS、完整解码、回转写筛查、实测时长、确定性滚动排程、字幕 cue、人耳全文听审和同视频 1 倍速检查。ASR 筛查不等于人工听审。
+处理：逐单元 TTS、完整解码、回转写筛查、实测时长、确定性滚动排程、字幕 cue、人耳全文听审和同视频 1 倍速检查。ASR 筛查不等于人工听审。需要自动听音定位时，本层还必须使用 Layer 1 绑定的原始录制和批准窗口生成频谱地标索引，再把索引绑定到实际同步音轨 hash；这是确定性音频处理，不调用 ASR、LLM 或 TTS。
 
-输出 schema：[Target-Language Audio Package](../schemas/sermon-target-language-audio-package-v1.schema.json)。每个要发布的 locale 都必须留下这一层的包；`audio_unavailable` 是合法状态，可进入纯文字发布，不得借用另一语言音轨冒充当前 locale。
+输出 schema：[Target-Language Audio Package](../schemas/sermon-target-language-audio-package-v1.schema.json)。每个要发布的 locale 都必须留下这一层的包；`audio_unavailable` 是合法状态，可进入纯文字发布，不得借用另一语言音轨冒充当前 locale。v1 音频包尚未内嵌指纹字段，迁移期以 source-bound fingerprint receipt 作为 Layer 3 companion artifact，由 Layer 4 仅引用、发布和验证；不得在 Layer 4 重新计算或改变其绑定。
 
 ## Layer 4：多语言发布与播放
 
-输入：目标语言文字包，以及同 locale 的音频包（可以为 `audio_unavailable`）；页面来源身份和显式发布文件清单。
+输入：目标语言文字包、同 locale 的音频包（可以为 `audio_unavailable`）、Layer 3 已生成的可选 source-bound fingerprint receipt，以及页面来源身份和显式发布文件清单。
 
-处理：按 `pageId + targetLocale` 聚合，分别记录 `interfaceLocale`、`contentLocale` 和 `audioLocale`，构建 allowlist，验证文件 hash、HTTP、Range 和客户端播放。
+处理：按 `pageId + targetLocale` 聚合，分别记录 `interfaceLocale`、`contentLocale` 和 `audioLocale`，构建 allowlist，发布并验证 Layer 3 指纹索引，验证文件 hash、HTTP、Range 和客户端播放。Web/iOS 仅在用户主动授权后本地采集约 10 秒声音并匹配，不上传或保存麦克风音频；可靠结果才允许自动定位目标语言音轨。
 
 输出 schema：[Target-Language Release Package](../schemas/sermon-target-language-release-package-v1.schema.json)。schema 中可空的音频包 hash 只用于迁移期 legacy 兼容；新的四层生产须绑定 Layer 3 包。HTTP 通过、设备通过和现场通过是三个独立状态。
 
@@ -89,6 +91,6 @@ Target-Language Candidate + Target-Language Audio Package
 
 - Layer 1：代码已实现并进入 shadow；没有英文人工审核收据时只产生 `candidate_ready_for_translation`。
 - Layer 2：中文 legacy runner 可工作，新通用文字包 producer 尚未实现。
-- Layer 3：中文 legacy TTS／同步可工作，新通用音频包 producer 及韩语/西班牙语 speech adapter 尚未实现。
-- Layer 4：当前生产仍为 `sermon-weekly-catalog-v1`；多语言 catalog 和 release package producer 尚未实现。
+- Layer 3：中文 legacy TTS／同步与 source-bound 指纹算法可工作；现有 `build_weekly_app.py` 仍在 Layer 4 legacy build 中代为触发指纹生成，尚待迁移到通用 Layer 3 producer。新通用音频包 producer 及韩语/西班牙语 speech adapter 尚未实现。
+- Layer 4：当前生产仍为 `sermon-weekly-catalog-v1`；它已经能发布并验证 legacy 指纹绑定，但多语言 catalog 和 release package producer 尚未实现。
 - Canonical English Content 是从英文事实派生的页面内容输入，可以作为 English Source Package 的可选绑定；它不是英文逐字稿，也不能替代 Layer 1 审核。

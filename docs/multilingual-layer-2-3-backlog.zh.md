@@ -186,6 +186,16 @@
 
 验收：schema validator 与语义 validator 同时通过；单改音频或 schedule 会改变失效 key。
 
+#### L3-005A 生成并绑定原声音频指纹
+
+- [ ] 从 Layer 1 读取经过 hash 绑定的原始完整录制与批准窗口，不从目标语言音轨反推原声位置。
+- [ ] 用 FFmpeg 与 `spectral-landmarks-v1` 确定性生成 source landmarks；不调用 ASR、LLM 或 TTS，也不把它称为讲员身份声纹。
+- [ ] 将索引绑定到 `sourceSha256 + sourceStartSeconds + sourceEndSeconds + trackSha256 + pageId`，来源、窗口、同步音轨或算法变化时生成新收据。
+- [ ] 指纹 companion receipt 随同 Audio Package 交给 Layer 4；Layer 4 只发布、下载、验证和消费，不重新计算索引。
+- [ ] 为纯文字或非同步音频显式记录 `automaticAudioAlignment=unavailable`，不得伪造可自动定位能力。
+
+验收：同源位置回放命中、错源样本拒绝；索引 hash 与绑定任一漂移均 fail closed。合成／文件回放证据与真实手机麦克风、设备延迟和现场噪声验收分别记录。
+
 ### L3-P1：韩语能力与质量实证
 
 #### L3-006 韩语 voice/TTS 短探针
@@ -261,6 +271,7 @@
 - [ ] 每个 unit、track、caption、schedule 与批准文字 hash 一致。
 - [ ] `audio_unavailable` 能作为明确、合法的文字版结果。
 - [ ] 未做 Layer 4 发布、HTTP、设备或现场验证，不宣称多语言产品已经上线。
+- [ ] 需要自动听音定位的同步音轨具有 source-bound fingerprint receipt；生成职责已从 legacy Layer 4 build 迁入通用 Layer 3 producer。
 
 ## 5. 推荐执行顺序
 

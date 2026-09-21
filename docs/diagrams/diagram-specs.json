@@ -3259,7 +3259,7 @@
         "process": [
           "完整转写 → 词级声学对齐",
           "句、分句、标点、停顿锚定",
-          "来源、覆盖率与 hash 冻结"
+          "英文校订、完整性审核与 hash 冻结"
         ],
         "models": [
           "gpt-transcribe：英文 ASR",
@@ -3283,10 +3283,10 @@
         "process": [
           "按 sourceUnitId 从英文直译",
           "不同 request 独立语义复核",
-          "检查否定、因果、经文、专名和数字"
+          "阅读稿、大纲与 CUV 引文分别生成／复核"
         ],
         "models": [
-          "GPT-6 Astra：当前中文翻译与复核",
+          "GPT-6 Astra：翻译、阅读稿、大纲与复核",
           "语言专属 adapter：ko / es 待验证",
           "固定 CUV 库：确定性精确取文"
         ],
@@ -3306,16 +3306,18 @@
         "process": [
           "自然语速逐单元 TTS",
           "实测时长 → 滚动排程与字幕",
-          "机器回转写筛查 + 全文人工听审"
+          "回转写筛查 + 全文人工听审",
+          "生成并绑定原声音频指纹索引"
         ],
         "models": [
           "Qwen3-TTS：当前中文语音 adapter",
           "Qwen3-ASR：回转写筛查，不是批准",
-          "确定性 scheduler + FFmpeg",
-          "ko / es speech adapter 待验证"
+          "scheduler + FFmpeg：排程与装配",
+          "频谱地标算法：指纹，不是 AI 模型"
         ],
         "output": [
           "Target-Language Audio Package",
+          "音轨 + 字幕 + source-bound 指纹收据",
           "门禁：human_reviewed / audio_unavailable",
           "禁止删义、自动加速、拉伸或裁切"
         ]
@@ -3329,8 +3331,9 @@
         ],
         "process": [
           "构建页面 / catalog / allowlist",
-          "部署后核验 hash、HTTP 与 Range",
-          "Web、iOS、设备与现场分别验收"
+          "发布 Layer 3 指纹索引及绑定",
+          "App 本地听音匹配 → 自动定位播放",
+          "核验 hash / HTTP / Range / 端上播放"
         ],
         "models": [
           "内容发布不需要生成式模型",
@@ -3340,17 +3343,17 @@
         ],
         "output": [
           "Target-Language Release Package",
-          "HTTP / device / venue 状态分开",
+          "HTTP / device / fingerprint / venue 分开",
           "下游不得补译或提升上游审核"
         ]
       }
     ],
     "footer": [
       "当前 Layer 1 producer 已进入 shadow；通用 Layer 2–4 producer 仍在迁移，legacy 完成不得改写为 four_layer_release。",
-      "模型是各层工具，不是事实或人工批准来源；来源、hash、覆盖率、语义、听审与播放证据分别留存。"
+      "原声音频指纹由 Layer 3 确定性生成并绑定音轨；Layer 4 只发布和消费，麦克风声音不上传、不保存。"
     ],
-    "height": 1580,
-    "calibratedAt": "2026-09-20",
+    "height": 1780,
+    "calibratedAt": "2026-09-21",
     "designReference": "built-in ImageGen 2026-09-20"
   }
 ]

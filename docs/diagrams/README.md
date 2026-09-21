@@ -1,12 +1,12 @@
 # 项目流程图 / Diagram Assets
 
-本组包含 2026-09-11 校准的 11 张流程图，以及 2026-09-20 新增的四层生产主图。原 11 图以 **GPT Image 2.5 Sunburst** 为视觉参考；四层主图重新调用 Codex 内置 ImageGen 生成参考，再按冻结接口重建为原生、可编辑 SVG。中文和连接关系均经本地校正；SVG 没有嵌入 PNG、外链字体或脚本。
+本组包含 2026-09-11 校准的 11 张流程图，以及 2026-09-20 新增、2026-09-21 补齐模型职责和 Layer 3 音频指纹的四层生产主图。原 11 图以 **GPT Image 2.5 Sunburst** 为视觉参考；四层主图重新调用 Codex 内置 ImageGen 生成参考，再按冻结接口重建为原生、可编辑 SVG。中文和连接关系均经本地校正；SVG 没有嵌入 PNG、外链字体或脚本。
 
 图面更新时间不等于所有路径的最新实测日期。Agents API 控制层与每周调度已安装；周日实时字幕仍以既有浏览器回放等证据为限，人工语义、真实现场、实体手机与资源上限分别验收。配音候选、人工听审、现场同步与正式发布各自保留边界。历史云端图继续标为 Historical / Discovery；旧 timeline Cloud Run Job 已退役。
 
 | Asset | Purpose | Primary documents |
 |---|---|---|
-| [four-layer-production-workflow.svg](four-layer-production-workflow.svg) | Canonical Layer 1–4 flow with each layer's input, process, models/tools, output and gate | root READMEs, workflow map and bilingual HTML guide |
+| [four-layer-production-workflow.svg](four-layer-production-workflow.svg) | Canonical Layer 1–4 flow, including Layer 3 source-bound audio fingerprint generation and Layer 4 app consumption | root READMEs, workflow map and bilingual HTML guide |
 | [project-map.svg](project-map.svg) | Documents, reviewed audio and live captions with shared evidence and Discovery boundaries | root READMEs |
 | [solution-journey.svg](solution-journey.svg) | Observed bottlenecks, rejected assumption, current hybrid, and gated future enhancement | root READMEs |
 | [saturday-chinese-voice-workflow.svg](saturday-chinese-voice-workflow.svg) | Featured parallel source routes, speaker training, Chinese audio review and Sunday playback gates | root READMEs, dubbing system design and runbook |

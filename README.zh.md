@@ -9,7 +9,7 @@
   </a>
 </p>
 
-**[四层多语言生产：中英双语 HTML 流程（GitHub）](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/main/docs/tongxing-video-to-page.html)** — 分层说明输入、流程、模型／确定性工具、输出、门禁和当前实现边界。
+**[四层多语言生产：在线中英双语流程](https://jonathanjing.github.io/sermon-video-zh-subtitles/tongxing-video-to-page.html)** — 分层说明输入、模型／确定性工具职责、同源音频指纹流程、输出、门禁和当前实现边界。
 
 帮助中文会众听懂英文证道。当前优先展示**周六预制、周日按同一视频时间轴播放的中文配音**：复用已审英文和中文，采用经授权的讲员原声参考配音，交付 MP3、随声字幕与证道同行大纲。双 PDF 生产和本地实时字幕继续作为独立工作流保留。
 
@@ -23,10 +23,10 @@
 
 | 层 | 核心职责 | 模型与程序分工 | 交付物与验收门槛 |
 |---|---|---|---|
-| 1. 共享英文事实与锚点 | 锁定来源、证道范围和完整英文；把字词与原音时间轴对齐，再按句号、逗号、语义分句和停顿建立稳定锚点 | `gpt-transcribe` 或可信原稿提供文字；MFA、Qwen ForcedAligner 等候选负责声学字词定位；LLM 可校对文字、标点和断句，但不能凭语言判断伪造时间戳 | `English Source Package`：不可变英文锚点、字词时间、来源/hash、模型身份和覆盖率 |
-| 2. 目标语言文字 | 从英文锚点直接翻译，完整表达每句意思，并检查否定、因果、经文、专名、数字和术语 | 当前中文由 GPT/Astra 类翻译与独立审核协作；以后每种语言可选择自己的翻译模型、提示词、术语表和审核模型 | `Target-Language Candidate`：每个译文单元关联英文锚点 ID，语义和语言审核独立留证 |
-| 3. 目标语言音频与同步 | 用已批准译文生成自然语速语音，测量真实时长，并利用英文停顿和分句安排滚动播放 | Qwen3-TTS 等语音模型负责合成；Qwen3-ASR 等回转写只做机器筛查；确定性调度器负责时长、间隔和时间轴，最终仍需人工完整听审 | `Target-Language Audio Package`：音频、字幕、调度时间轴、筛查和听审状态 |
-| 4. 多语言发布与播放 | 把正确的视频、文字、音频、字幕、页面和语言入口绑定在一起，完成部署、下载和端上播放 | 页面构建器、FFmpeg、Firebase、Web/iOS 客户端和验证程序负责交付；Supervisor/Agent 只编排状态，不能替代内容事实或人工验收 | `Target-Language Release Package`：按语言隔离的发布包、hash、HTTP/下载检查和播放器验证 |
+| 1. 共享英文事实与锚点 | 锁定来源、证道范围和完整英文；校订英文，把字词与原音时间轴对齐，再按句号、逗号、语义分句和停顿建立稳定锚点 | `gpt-transcribe` 或可信原稿提供文字；MFA 或 Qwen ForcedAligner 负责声学字词定位；GPT-6 Astra 可校订英文并审核句界，但不能凭语言判断伪造时间戳 | `English Source Package`：不可变英文锚点、字词时间、来源/hash、模型身份和覆盖率 |
+| 2. 目标语言文字 | 从英文锚点直接生成全部目标语言文字：完整译文、阅读稿、证道同行大纲及经文相关修订 | 当前中文由 GPT-6 Astra 完成翻译、阅读版两轮编辑、大纲生成和独立复核；固定 CUV 库确定性提供已确认引用的精确经文；以后每种语言使用自己的已验收 adapter | `Target-Language Candidate` 及获审阅读／同行文字：英文锚点覆盖、模型收据和独立审核状态 |
+| 3. 目标语言音频与同步 | 用已批准文字生成自然语速语音，实测并依据英文锚点排程，再生成用于自动听音定位的同源音频指纹 | Qwen3-TTS 负责合成；Qwen3-ASR 回转写只做机器筛查；确定性 scheduler 与 FFmpeg 负责时间轴和装配；频谱地标指纹算法是确定性程序，不是 AI 模型 | `Target-Language Audio Package` 加同源指纹收据：音频、字幕、排程、筛查、听审和自动定位证据 |
+| 4. 多语言发布与播放 | 打包并发布获准的文字、音频和指纹资产，再由 Web/iOS 完成加载、匹配、跳转、下载和播放 | 页面／catalog 构建器、Firebase、Web/iOS 客户端和验证程序负责交付；客户端只在本机匹配用户主动授权的短时麦克风采集；Supervisor/Agent 只编排状态 | `Target-Language Release Package`：按语言隔离的资产，以及分别记录的 HTTP、指纹、设备和现场证据 |
 
 ![四层多语言生产：每层流程、模型、输出与门禁](docs/diagrams/four-layer-production-workflow.svg)
 
@@ -34,7 +34,7 @@
 
 - 共享英文事实与锚点层只生成一套共享、冻结的锚点；中文、韩语、西班牙语等都从英文直接分叉，不以中文译文作为其他语言的翻译源。
 - 每种目标语言分别保存 `locale`、英文锚点 hash、翻译/审核模型、语音模型或 checkpoint、时间轴和人工审核状态；一种语言失败时，不自动阻塞或批准其他语言。
-- 模型可以在层内替换和 A/B 测试，但不得跨层覆盖责任：Forced Aligner 不判断语义完整，翻译模型不决定声学时间，回转写不等于人工听审，部署成功也不等于现场验收。
+- 模型可以在层内替换和 A/B 测试，但不得跨层覆盖责任：Forced Aligner 不判断语义完整，翻译模型不决定声学时间，回转写不等于人工听审，原声音频指纹不是识别讲员身份的生物声纹，部署成功也不等于现场验收。
 - 句级锚定和 clause-stable 拆分位于 Layer 1 与 Layer 2 的接口：先稳定“原文说了什么、何时说”，再让目标语言尽早、完整、自然地表达。
 
 四层的唯一正式命名、输入输出 schema 和失效规则见[多语言生产四层接口](docs/multilingual-production-interfaces.zh.md)；当前实现另见[工作流总览](docs/workflows/README.zh.md)、[句级锚定与滚动同传设计](docs/sentence-aligned-interpretation.zh.md)和[系统设计与模型选择](docs/sermon-dubbing-system-design.zh.md)。

@@ -4,7 +4,7 @@
 
 ## 与四层生产合同的关系
 
-本文描述当前中文页面发行的 legacy Agent adapter，不取代[四层生产接口](multilingual-production-interfaces.zh.md)。`generate_audio_candidate` 当前耦合部分 Layer 2／3 行为，`record_published` 只登记旧 registry；除非执行链实际产出并校验四个正式包，否则这里的 `complete` 只能按本流程自身的 legacy scope 解读，不能报告为 `four_layer_release`。
+本文描述当前中文页面发行的 legacy Agent adapter，不取代[四层生产接口](multilingual-production-interfaces.zh.md)。`generate_audio_candidate` 当前耦合部分 Layer 2／3 行为，`build_page` 仍代为触发本应属于 Layer 3 的 source-bound 音频指纹生成，`record_published` 只登记旧 registry；除非执行链实际产出并校验四个正式包，否则这里的 `complete` 只能按本流程自身的 legacy scope 解读，不能报告为 `four_layer_release`。
 
 今后的预制多语言生产必须从 `ready_for_translation` 的 `English Source Package` 开始；目标语言文字、音频和发布分别消费上一层冻结输出，不得由发布 Agent 补译、改写音频或提升上游审核。迁移期间旧工具可以继续执行，但 Agent 的状态与总结必须同时标明实际 scope 和缺少的规范包。
 
@@ -17,7 +17,7 @@ Agent 检查状态并调用命名工具；本地代码决定动作是否允许�
 | 原来源准备、转写与双 PDF | 现有来源、人工范围、质量、租约和交付校验 |
 | `generate_audio_candidate` | 当前 bridge 的来源与生产目录一致；复用已有候选和缓存 |
 | `sync_audio` | 原声锚点与时序检查通过；组装同步音轨 |
-| `build_page` | 最终音轨有有效人工听审收据；沿用原页面构建和指纹绑定检查 |
+| `build_page` | 最终音轨有有效人工听审收据；legacy adapter 代为触发 Layer 3 指纹生成并执行页面绑定检查。迁移后这里只接收并发布已存在的 fingerprint receipt，不重新计算 |
 | `prepare_release` | 合并到既有发行 registry，保留历史页；明确列出允许更新的页面 |
 | `deploy_release` | 有绑定本次发行包、站点、配置和 registry 父版本的发布授权 |
 | `verify_release` | 核验真实 HTTP 文件哈希和音频 Range |

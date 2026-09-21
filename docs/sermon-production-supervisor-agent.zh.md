@@ -15,7 +15,7 @@
 
 Agent 不直接下载、裁剪、转录、翻译或渲染 PDF。它只能调用现有的、可测试和可恢复的工具层。
 
-这个 Supervisor 当前只负责 `dual_pdf` 范围。它返回的 `complete` 不表示全项目规范的四层多语言生产已经达到 `four_layer_release`。今后的预制多语言生产必须继续生成并通过[四层接口合同](multilingual-production-interfaces.zh.md)定义的正式包和门禁；周日实时字幕仍是独立的 `live_session` 范围。
+这个 Supervisor 当前只负责 `dual_pdf` 范围。它返回的 `complete` 不表示全项目规范的四层多语言生产已经达到 `four_layer_release`。今后的预制多语言生产必须继续生成并通过[四层接口合同](multilingual-production-interfaces.zh.md)定义的正式包和门禁；需要自动听音定位时，Layer 3 还要生成并绑定 source-bound 音频指纹收据，Layer 4 只发布和消费。周日实时字幕仍是独立的 `live_session` 范围。
 
 ## 架构
 

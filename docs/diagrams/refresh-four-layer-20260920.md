@@ -33,6 +33,12 @@ Avoid: 3D effects, dark background, decorative religious symbols, people, illegi
 - [tongxing-video-to-page.html](../tongxing-video-to-page.html)：中英双语响应式解释页，展开每个模型的职责和硬边界。
 - [diagram-specs.json](diagram-specs.json) 与 [render_diagrams.py](render_diagrams.py)：可复现 SVG 来源。
 
+## 2026-09-21 模型与音频指纹补充
+
+再次对照当前生产入口、周日 live 路径和每周发行代码后，补入此前图中被压缩的职责：GPT-6 Astra 还承担英文校订／断句、中文阅读版两轮编辑、证道同行大纲及 CUV 相关重译／复核；Sunday live 当前默认模型链为 Qwen3-ASR + MiLMMT Q8，仍保持为独立 `live_session`。
+
+原声音频指纹生成改为明确归属 Layer 3：使用 Layer 1 原始录制／批准窗口和 Layer 3 实际同步音轨，通过 FFmpeg 与确定性频谱地标算法生成并绑定索引。Layer 4 只发布该索引并由 Web/iOS 本地消费约 10 秒麦克风采集进行匹配；麦克风声音不上传、不保存。当前 legacy `build_weekly_app.py` 仍代为触发生成，文档明确把这一代码位置列为待迁移边界，而不是改变层级职责。本次没有重新调用 ImageGen，沿用原始视觉参考并更新原生 SVG／HTML 事实内容。
+
 ## 事实边界
 
 - Layer 1 producer 已进入 shadow；没有英文人工审核收据时不能进入正式 Layer 2。

@@ -2,6 +2,8 @@
 
 状态：**设计与待实施 backlog**。本文覆盖 Layer 4「多语言发布与播放」以及 Web/iOS 客户端的语言选择体验，不表示多语言 catalog、韩语音频、App 改造或正式发布已经完成。
 
+2026-09-21 现场反馈：坐得较远时，“听现场并对齐”经常不能触发可靠定位。这是已观察到的远场采集／匹配可靠性问题，不能继续写成“现场尚未验证”，也不能归因于 Layer 3 指纹索引生成。当前 Firebase Web 线上版本与仓库实现一致：固定采集 10 秒，并明确关闭 `autoGainControl`、`noiseSuppression` 和 `echoCancellation`；iOS 发布指纹路径同样固定 10 秒，且 `.measurement` 模式会尽量减少系统信号处理。该问题列为 Layer 4 P0，改进前不宣称后排座位现场对齐可用。
+
 正式上游仍是：
 
 - Layer 2：`Target-Language Candidate`；
@@ -282,15 +284,16 @@ Release Package hash 进入缓存引用；同一音频 hash 可以共享 bytes�
 - `AppModel` 分别管理 selected page、content target 和 audio target；`PlaybackController` 仍是唯一播放器。
 - `OfflineLibrary` 引用加入 page/locale/track/release hash；共享 blob 保留现有按 SHA-256 去重。
 - `PlaybackHistory` v2 加入 locale；legacy history 只恢复到 legacy 中文 target，不跨语言套用秒数。
-- 指纹/现场对齐能力绑定实际 audio track；切换语言时必须重新核对 alignment 与 track hash。
+- 指纹／现场对齐索引由 Layer 3 生成并绑定实际 audio track；Layer 4 只发布和消费。切换语言时必须重新核对 fingerprint receipt、alignment 与 track hash，不得在 App 发布阶段重算指纹。
 
 ## 5. Layer 4 发布流程
 
 ```text
 验证 Layer 2 candidate
   + 可选验证同 locale Layer 3 audio package
+  + 可选验证 Layer 3 source-bound fingerprint receipt
   → 生成 locale release package candidate
-  → 构建内容/字幕/音频/下载资产 allowlist
+  → 构建内容/字幕/音频/指纹/下载资产 allowlist
   → 上传 immutable assets
   → 上传 immutable release package
   → CAS 合并 multilingual catalog
@@ -310,6 +313,39 @@ Release Package hash 进入缓存引用；同一音频 hash 可以共享 bytes�
 - `withdrawn` target 从新客户端选择中移除；已离线内容的继续使用策略必须由撤回原因决定并显式记录。
 
 ## 6. Layer 4 与 App 改进 Backlog
+
+### L4-FIELD-P0：远场声音采集与自适应对齐
+
+#### L4-018 Firebase Web 自动增益与 10→15 秒自适应采集
+
+当前事实与边界：
+
+- Firebase Hosting 只发布静态 Web 运行时和内容寻址指纹索引；麦克风 PCM、特征提取和匹配都在浏览器本机完成。自动增益和延长录音不需要服务器处理，也不得把现场录音上传 Firebase。
+- 线上 `fingerprint-capture.mjs` 当前请求 `autoGainControl:false`、`noiseSuppression:false`、`echoCancellation:false`；`fingerprint-ui.mjs` 固定传入 10 秒。当前 matcher 已接受 7–20 秒查询，因此 15 秒查询不要求重建 Layer 3 指纹索引，也不应修改现有匹配门槛。
+- Web 约束是浏览器对采集源的请求，不等同于硬件一定执行；按 [W3C Media Capture and Streams](https://www.w3.org/TR/mediacapture-streams/#constrainable-interface) 必须同时检查 `getSupportedConstraints()` 和授权后 track 的 `getSettings()`。只保留布尔设置与质量统计，不记录 `deviceId`、原始 PCM 或可还原声纹特征。
+
+实现拆分：
+
+- [ ] 为 Web 采集增加版本化 `captureProfile`：`raw-v1` 保留当前行为，`far-field-agc-v1` 请求单声道、`autoGainControl:{ideal:true}`，首轮继续保持回声消除和降噪关闭。先冻结 profile 做 A/B，不把多个变量同时改掉。
+- [ ] 将一次采集改成“最多 15 秒、10 秒 checkpoint”：10 秒窗口可靠匹配即停止麦克风并定位；若原因是 `silence`、`insufficient_audio`、`no_consensus`、`low_confidence` 或 `ambiguous`，保持同一次麦克风会话继续收集到 15 秒，再用完整 15 秒窗口匹配一次。
+- [ ] 延长只增加证据，不降低 `votes`、anchor、覆盖时长、runner-up ratio、match fraction 或三段覆盖门槛；第二次仍不可靠时保持原播放位置。
+- [ ] 新增 `recording_extended` 用户状态，明确显示“声音较远，继续听 5 秒”；取消、切后台、换篇、换轨、手动定位和总超时必须立即停止采音并使迟到结果失效。
+- [ ] 调整当前 35 秒操作 deadline，使“启动 + 最多 15 秒采集 + 两次本机匹配”有一个有上限的完整预算；记录每阶段耗时，不能用无限重试掩盖失败。
+- [ ] 暴露隐私受限诊断：请求／实际 AGC 状态、10/15 秒、RMS、query landmarks、失败 reason、支持票数和 peak ratio。UI 只显示可理解原因；上传使用统计时仅传枚举和数值区间，不传音频、device label、ID 或 landmark。
+- [ ] 单元测试覆盖：AGC 不受支持时安全回退、10 秒成功不延长、合资格失败才延长、15 秒仍失败不 seek、取消／超时释放 track、两次 worker 结果竞争、PCM 不落盘也不上网。
+- [ ] 用同一台手机、同一段扩声音频做 `raw-v1` 与 `far-field-agc-v1` 冻结 A/B：近／中／远三处，各含安静、附近说话和纯环境声；分别统计 10 秒成功、15 秒补救成功、可靠拒绝、误跳、位置误差和总耗时。
+
+代码落点：`fingerprint-capture.mjs` 负责 profile、实际 track settings、同会话 checkpoint 与资源释放；`fingerprint-ui.mjs` 负责 10/15 秒状态机、deadline 和迟到结果；`fingerprint-core.mjs` 的安全阈值首轮不改；`fingerprint-controller.test.mjs` 增加状态机与隐私回归测试。`build_weekly_app.py` 和 `deploy_firebase.py` 已复制并校验这五个现有 fingerprint runtime 文件，因此复用现有文件时无需改 Firebase Hosting 配置；如新增模块，必须同时加入 build allowlist、部署 allowlist 和哈希验证，不能手工绕过正式 release。
+
+晋级门槛：远处指定座位的同源有效语音至少 10 次中 9 次正确定位；非同源／纯噪声／含糊片段至少 30 次测试零误跳；任何失败不改变播放位置且麦克风在退出后关闭。未达到门槛时保留 `raw-v1` 默认或仅在受控 preview 开启 AGC，不直接部署为正式默认。
+
+#### L4-019 iOS 远场采集 POC 与 Web 策略对齐
+
+- [ ] 保留当前 [`.measurement`](https://developer.apple.com/documentation/avfaudio/avaudiosession/mode-swift.struct/measurement) 原始输入作为基线；另做受控 `AVAudioEngine` voice processing／AGC profile。单纯改成 `.voiceChat` 并不保证 AGC；只有在 I/O node 上实际调用 [`setVoiceProcessingEnabled(_:)`](https://developer.apple.com/documentation/avfaudio/avaudioionode/setvoiceprocessingenabled%28_%3A%29) 并核对路由后才能标为 AGC 试验。
+- [ ] 把 `MicrophoneCapture` 当前 12 秒上限扩到可容纳 15 秒，并将发布指纹路径实现为同一次 10→15 秒 checkpoint；旧 8 秒 legacy matcher 不冒充已完成远场改进。
+- [ ] 将 `PublishedFingerprintMatcher` 的诊断原因传到 controller/UI，区分无有效声音、特征不足、没有共识、匹配含糊和低置信；不得继续全部折叠成“未找到可靠匹配”。
+- [ ] 相应调整当前 20 秒 controller deadline，并验证中断、耳机／蓝牙路由、电话、锁屏、切后台、手动播放和取消时不会留下麦克风或迟到 seek。
+- [ ] 使用与 Web 相同的近／中／远冻结音源和负样本矩阵；Web 与 iOS 分别给出结果，不能用一个平台通过替代另一个平台的现场验收。
 
 ### L4-P0：发布接口与原子聚合
 
@@ -445,7 +481,7 @@ Release Package hash 进入缓存引用；同一音频 hash 可以共享 bytes�
 - [ ] 在线逐资产核验和音频 Range 通过。
 - [ ] Web 与 iOS 分别验证语言选择、文字版、跨语言标注、下载和恢复。
 - [ ] 实体 iPhone 验证 Now Playing、锁屏、耳机、中断、VoiceOver 和离线。
-- [ ] 现场验收单独记录，不由 HTTP 或模拟器结果替代。
+- [ ] 现场验收单独记录，不由 HTTP 或模拟器结果替代；至少包含 L4-018/L4-019 的近／中／远座位矩阵和零误跳证据。
 
 ## 7. Layer 4 完成门槛
 
@@ -456,11 +492,16 @@ Release Package hash 进入缓存引用；同一音频 hash 可以共享 bytes�
 - [ ] 没有同语言音频时默认文字版；跨语言音频必须显式且持续标注。
 - [ ] 播放历史、下载、字幕、指纹与 locale/hash 正确绑定。
 - [ ] HTTP、设备、现场验收分别有收据。
+- [ ] Firebase Web 与 iOS 均完成 10→15 秒自适应采集；自动增益只在冻结 A/B 和负样本零误跳通过后成为默认。
 - [ ] 韩语真实文字/音频质量仍以 Layer 2/3 审核为准，Layer 4 不重新判定。
 
 ## 8. 推荐实施顺序
 
 ```text
+L4-018 Web far-field AGC/adaptive capture
+  → L4-019 iOS parity
+  → L4-017 real venue acceptance
+
 L4-001 release validator
   → L4-002 receipt
   → L4-003 catalog v2
