@@ -39,12 +39,25 @@ class SentenceInterpretationShadowTests(unittest.TestCase):
             second = subject.prepare_shadow(source, root / "shadow")
             self.assertEqual(first, second)
             self.assertEqual(first["status"], "ready_for_model_translation")
+            self.assertEqual(first["layer"], "shared_english_source_and_anchors")
+            self.assertEqual(first["interface"], "sermon-english-source-package-v1")
+            self.assertFalse(first["productionTranslationEligible"])
             self.assertFalse(first["releaseEligible"])
             self.assertFalse(first["productionOutputChanged"])
             manifest = json.loads(Path(first["artifacts"]["anchorManifest"]["path"]).read_text())
             self.assertEqual(manifest["schemaVersion"], "sermon-sentence-anchor-manifest-v2")
             self.assertEqual(manifest["policy"]["maxUnitSeconds"], 8.0)
             self.assertEqual(first["nextStage"], "run_sentence_interpretation_models")
+            self.assertNotIn("translationRequest", first["artifacts"])
+            source_package = json.loads(Path(
+                first["artifacts"]["englishSourcePackage"]["path"]
+            ).read_text())
+            self.assertEqual(source_package["status"], "candidate_ready_for_translation")
+            self.assertTrue(source_package["candidateTranslationEligible"])
+            package_schema = json.loads((
+                Path(__file__).parents[1] / "schemas/sermon-english-source-package-v1.schema.json"
+            ).read_text())
+            self.assertEqual(list(Draft202012Validator(package_schema).iter_errors(source_package)), [])
             schema = json.loads((Path(__file__).parents[1] / "schemas/sermon-sentence-interpretation-shadow-v1.schema.json").read_text())
             self.assertEqual(list(Draft202012Validator(schema).iter_errors(first)), [])
 

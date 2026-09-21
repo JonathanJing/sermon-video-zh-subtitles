@@ -25,8 +25,9 @@
     "inputs": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["anchorManifest", "targetLanguageCandidate"],
+      "required": ["englishSourcePackage", "anchorManifest", "targetLanguageCandidate"],
       "properties": {
+        "englishSourcePackage": { "$ref": "#/$defs/jsonArtifact" },
         "anchorManifest": { "$ref": "#/$defs/jsonArtifact" },
         "targetLanguageCandidate": { "$ref": "#/$defs/jsonArtifact" }
       }

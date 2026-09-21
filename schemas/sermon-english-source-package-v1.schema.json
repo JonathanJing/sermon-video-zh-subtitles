@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-english-source-package-v1.schema.json",
+  "title": "Layer 1 shared English Source Package",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "packageId", "sourceLocale", "status", "candidateTranslationEligible", "translationEligible", "implementation", "source", "transcript", "alignment", "anchors", "canonicalEnglishContent", "review", "issues", "downstreamInvalidationKey", "evidence"],
+  "properties": {
+    "schemaVersion": { "const": "sermon-english-source-package-v1" },
+    "packageId": { "type": "string", "pattern": "^english-source-[a-f0-9]{24}$" },
+    "sourceLocale": { "const": "en" },
+    "status": { "enum": ["blocked", "candidate_ready_for_translation", "ready_for_translation"] },
+    "candidateTranslationEligible": { "type": "boolean" },
+    "translationEligible": { "type": "boolean" },
+    "implementation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["builderSha256", "anchorGeneratorSha256"],
+      "properties": {
+        "builderSha256": { "$ref": "#/$defs/sha256" },
+        "anchorGeneratorSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceId", "sourceUrlHash", "serviceDate", "media", "approvedWindow"],
+      "properties": {
+        "sourceId": { "type": "string", "minLength": 1 },
+        "sourceUrlHash": { "oneOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }] },
+        "serviceDate": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "media": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["sha256"],
+              "properties": {
+                "sha256": { "$ref": "#/$defs/sha256" },
+                "sizeBytes": { "type": "integer", "minimum": 0 },
+                "durationSeconds": { "type": "number", "exclusiveMinimum": 0 }
+              }
+            }
+          ]
+        },
+        "approvedWindow": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["startSeconds", "endSeconds", "status", "humanApproval", "evidence"],
+          "properties": {
+            "startSeconds": { "type": "number", "minimum": 0 },
+            "endSeconds": { "type": "number", "exclusiveMinimum": 0 },
+            "status": { "enum": ["pending", "approved"] },
+            "humanApproval": { "type": "boolean" },
+            "evidence": { "oneOf": [{ "$ref": "#/$defs/jsonArtifact" }, { "type": "null" }] }
+          }
+        }
+      }
+    },
+    "transcript": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact", "provenance", "completenessReview"],
+      "properties": {
+        "artifact": { "$ref": "#/$defs/jsonArtifact" },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "model"],
+          "properties": {
+            "kind": { "enum": ["asr", "asr_reviewed", "captions", "manuscript", "mixed"] },
+            "model": { "type": "string", "minLength": 1 }
+          }
+        },
+        "completenessReview": { "$ref": "#/$defs/reviewStatus" }
+      }
+    },
+    "alignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "timingKind", "artifact", "runtime", "sourceWordCount", "issueCount"],
+      "properties": {
+        "provider": { "enum": ["mfa", "qwen3-forced-aligner", "other"] },
+        "timingKind": { "type": "string", "minLength": 1 },
+        "artifact": { "$ref": "#/$defs/jsonArtifact" },
+        "runtime": { "type": ["object", "null"] },
+        "sourceWordCount": { "type": "integer", "minimum": 1 },
+        "issueCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "anchors": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact", "schemaVersion", "unitPolicy", "sourceSentenceCount", "sourceUnitCount", "sourceWordCount", "issueCount"],
+      "properties": {
+        "artifact": { "$ref": "#/$defs/jsonArtifact" },
+        "schemaVersion": { "const": "sermon-sentence-anchor-manifest-v2" },
+        "unitPolicy": { "const": "clause_stable_v2" },
+        "sourceSentenceCount": { "type": "integer", "minimum": 1 },
+        "sourceUnitCount": { "type": "integer", "minimum": 1 },
+        "sourceWordCount": { "type": "integer", "minimum": 1 },
+        "issueCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "canonicalEnglishContent": { "oneOf": [{ "$ref": "#/$defs/jsonArtifact" }, { "type": "null" }] },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["humanApproval", "reviewedBy", "reviewedAt", "reviewedSourceUnitIds", "checks", "evidence"],
+      "properties": {
+        "humanApproval": { "type": "boolean" },
+        "reviewedBy": { "oneOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+        "reviewedAt": { "oneOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }] },
+        "reviewedSourceUnitIds": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "checks": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sourceIdentity", "transcriptCompleteness", "wordAlignment", "sentenceAndPauseBoundaries"],
+          "properties": {
+            "sourceIdentity": { "$ref": "#/$defs/reviewStatus" },
+            "transcriptCompleteness": { "$ref": "#/$defs/reviewStatus" },
+            "wordAlignment": { "$ref": "#/$defs/reviewStatus" },
+            "sentenceAndPauseBoundaries": { "$ref": "#/$defs/reviewStatus" }
+          }
+        },
+        "evidence": { "oneOf": [{ "$ref": "#/$defs/jsonArtifact" }, { "type": "null" }] }
+      }
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["stage", "type"],
+        "properties": {
+          "stage": { "enum": ["source", "transcript", "alignment", "anchors", "review"] },
+          "type": { "type": "string", "minLength": 1 },
+          "detail": { "type": "object" }
+        }
+      }
+    },
+    "downstreamInvalidationKey": { "$ref": "#/$defs/sha256" },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pipelineSummary"],
+      "properties": {
+        "pipelineSummary": { "oneOf": [{ "$ref": "#/$defs/jsonArtifact" }, { "type": "null" }] }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "reviewStatus": { "enum": ["pending", "approved", "rejected"] },
+    "jsonArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "jsonSha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "jsonSha256": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}

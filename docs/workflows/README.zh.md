@@ -20,7 +20,7 @@
 2. **周六双 PDF：** 从完整 post-live 媒体与人工范围生成中英阅读版和中文证道同行 PDF，并可导出受控的周日 Context Pack。
 3. **周日实时字幕：** 以当场麦克风和当下英文 ASR 为事实来源，本地生成中文字幕并保留独立恢复录音。
 
-**多语言 POC：** 后续预制内容以冻结英文事实源和 Canonical English Content 为共同主干，中文、韩语及其他语言作为独立同级分支，各自保存翻译、经文版本、审核、可选 TTS、同步和发布状态；禁止以中文作为韩语的默认翻译源。当前实现韩语界面、`sourceLocale=en` 的展示 sidecar、单目标语言 candidate 准备合同和 Layer 2 → Layer 3 的 speech-job 冻结接口；尚未运行真实韩语翻译、TTS、同步或发布。完整流程与迁移阶段见[英文源到多语言证道生产 POC](../english-to-multilingual-production-poc.zh.md)。这不改变现有中文生产或周日实时字幕的验收状态。
+**多语言 POC：** 全项目统一使用 Layer 1“共享英文事实与锚点”、Layer 2“目标语言文字”、Layer 3“目标语言音频与同步”、Layer 4“多语言发布与播放”。四个版本化接口见[多语言生产四层接口](../multilingual-production-interfaces.zh.md)。后续预制内容以 English Source Package 和 Canonical English Content 为共同主干，中文、韩语及其他语言作为独立同级分支；禁止以中文作为韩语的默认翻译源。当前 Layer 1 已接入 shadow；韩语已实现界面、`sourceLocale=en` 的展示 sidecar、Target-Language Candidate 合同和 Layer 2 → Layer 3 的 speech-job 冻结接口，但尚未运行真实韩语翻译、TTS、同步或发布。完整迁移顺序见[英文源到多语言证道生产 POC](../english-to-multilingual-production-poc.zh.md)。这不改变现有中文生产或周日实时字幕的验收状态。
 
 核心边界：
 

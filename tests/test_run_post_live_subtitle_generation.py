@@ -30,6 +30,7 @@ def make_args(**overrides):
         "speaker": None,
         "content_scope": None,
         "approval_evidence": None,
+        "sentence_interpretation_english_review": None,
         "glossary": None,
         "zh_model": "gpt-5.6",
         "en_correction_model": "gpt-5.6",

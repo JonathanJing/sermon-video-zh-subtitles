@@ -19,6 +19,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts import sermon_sentence_interpretation as contract
+from scripts import build_english_source_package as layer1
 
 
 RECEIPT_SCHEMA = "sermon-sentence-interpretation-shadow-v1"
@@ -41,6 +42,12 @@ def prepare_shadow(
     source_path: Path,
     out_root: Path,
     *,
+    summary_path: Path | None = None,
+    approval_evidence_path: Path | None = None,
+    review_path: Path | None = None,
+    source_id: str | None = None,
+    source_url_hash: str | None = None,
+    service_date: str | None = None,
     max_unit_seconds: float = DEFAULT_MAX_UNIT_SECONDS,
     min_unit_seconds: float = DEFAULT_MIN_UNIT_SECONDS,
     internal_pause_seconds: float = DEFAULT_PAUSE_SECONDS,
@@ -59,6 +66,7 @@ def prepare_shadow(
         "source": {"path": str(source_path), "sha256": contract.sha256(source_path)},
         "implementation": {
             "anchorGeneratorSha256": contract.sha256(Path(contract.__file__).resolve()),
+            "englishSourceBuilderSha256": contract.sha256(Path(layer1.__file__).resolve()),
             "shadowRunnerSha256": contract.sha256(Path(__file__).resolve()),
         },
         "policy": {
@@ -67,6 +75,14 @@ def prepare_shadow(
             "minUnitSeconds": min_unit_seconds,
             "internalPauseSeconds": internal_pause_seconds,
             "wordDurationOutlierSeconds": word_duration_outlier_seconds,
+        },
+        "sourceContext": {
+            "sourceId": source_id,
+            "sourceUrlHash": source_url_hash,
+            "serviceDate": service_date,
+            "summarySha256": contract.sha256(summary_path.resolve()) if summary_path and summary_path.is_file() else None,
+            "approvalEvidenceSha256": contract.sha256(approval_evidence_path.resolve()) if approval_evidence_path and approval_evidence_path.is_file() else None,
+            "reviewSha256": contract.sha256(review_path.resolve()) if review_path and review_path.is_file() else None,
         },
     }
     run_dir = out_root / contract.json_sha256(identity)
@@ -81,16 +97,28 @@ def prepare_shadow(
     )
     if not manifest.get("sourceUnits"):
         raise ValueError("Clause-stable shadow produced no source units; inspect MFA word timing input")
-    request = contract.translation_packet(manifest)
     manifest_path = run_dir / "anchor-manifest.json"
-    request_path = run_dir / "translation-request.json"
     _write_immutable(manifest_path, manifest)
-    _write_immutable(request_path, request)
+    source_package = layer1.build_package(
+        source_path,
+        manifest_path,
+        summary_path=summary_path,
+        approval_evidence_path=approval_evidence_path,
+        review_path=review_path,
+        source_id=source_id,
+        source_url_hash=source_url_hash,
+        service_date=service_date,
+    )
+    source_package_path = run_dir / "english-source-package.json"
+    _write_immutable(source_package_path, source_package)
     status = "ready_for_model_translation" if manifest.get("sourceUnits") and not manifest["issues"] else "waiting_anchor_review"
     receipt = {
         "schemaVersion": RECEIPT_SCHEMA,
+        "layer": "shared_english_source_and_anchors",
+        "interface": layer1.SCHEMA_VERSION,
         "status": status,
         "releaseEligible": False,
+        "productionTranslationEligible": source_package["translationEligible"],
         "productionOutputChanged": False,
         "identity": identity,
         "artifacts": {
@@ -98,9 +126,9 @@ def prepare_shadow(
                 "path": str(manifest_path), "sha256": contract.sha256(manifest_path),
                 "jsonSha256": contract.json_sha256(manifest),
             },
-            "translationRequest": {
-                "path": str(request_path), "sha256": contract.sha256(request_path),
-                "jsonSha256": contract.json_sha256(request),
+            "englishSourcePackage": {
+                "path": str(source_package_path), "sha256": contract.sha256(source_package_path),
+                "jsonSha256": contract.json_sha256(source_package),
             },
         },
         "counts": manifest.get("counts", {}),
@@ -119,6 +147,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mfa-segments", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--summary", type=Path)
+    parser.add_argument("--approval-evidence", type=Path)
+    parser.add_argument("--review", type=Path)
+    parser.add_argument("--source-id")
+    parser.add_argument("--source-url-hash")
+    parser.add_argument("--service-date")
     parser.add_argument("--max-unit-seconds", type=float, default=DEFAULT_MAX_UNIT_SECONDS)
     parser.add_argument("--min-unit-seconds", type=float, default=DEFAULT_MIN_UNIT_SECONDS)
     parser.add_argument("--internal-pause-seconds", type=float, default=DEFAULT_PAUSE_SECONDS)
@@ -127,6 +161,12 @@ def main() -> int:
     receipt = prepare_shadow(
         args.mfa_segments,
         args.out,
+        summary_path=args.summary,
+        approval_evidence_path=args.approval_evidence,
+        review_path=args.review,
+        source_id=args.source_id,
+        source_url_hash=args.source_url_hash,
+        service_date=args.service_date,
         max_unit_seconds=args.max_unit_seconds,
         min_unit_seconds=args.min_unit_seconds,
         internal_pause_seconds=args.internal_pause_seconds,

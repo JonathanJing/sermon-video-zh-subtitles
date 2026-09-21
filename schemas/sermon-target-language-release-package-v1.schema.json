@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-target-language-release-package-v1.schema.json",
+  "title": "Layer 4 Target-Language Release Package",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "packageId", "pageId", "sourceLocale", "targetLocale", "targetLanguageCandidateJsonSha256", "targetLanguageAudioPackageJsonSha256", "status", "contentStatus", "audioStatus", "interfaceLocale", "contentLocale", "audioLocale", "assets", "httpVerification", "deviceAcceptance", "venueAcceptance", "issues"],
+  "properties": {
+    "schemaVersion": { "const": "sermon-target-language-release-package-v1" },
+    "packageId": { "type": "string", "minLength": 1 },
+    "pageId": { "type": "string", "minLength": 1 },
+    "sourceLocale": { "const": "en" },
+    "targetLocale": { "$ref": "#/$defs/locale" },
+    "targetLanguageCandidateJsonSha256": { "$ref": "#/$defs/sha256" },
+    "targetLanguageAudioPackageJsonSha256": { "oneOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }] },
+    "status": { "enum": ["candidate", "published_http_verified", "withdrawn"] },
+    "contentStatus": { "enum": ["draft", "machine_reviewed", "human_reviewed"] },
+    "audioStatus": { "enum": ["unavailable", "candidate", "human_reviewed"] },
+    "interfaceLocale": { "$ref": "#/$defs/locale" },
+    "contentLocale": { "$ref": "#/$defs/locale" },
+    "audioLocale": { "oneOf": [{ "$ref": "#/$defs/locale" }, { "type": "null" }] },
+    "assets": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "path", "sha256"],
+        "properties": {
+          "role": { "enum": ["catalog", "content", "audio", "captions", "download", "page", "other"] },
+          "path": { "type": "string", "minLength": 1 },
+          "sha256": { "$ref": "#/$defs/sha256" }
+        }
+      }
+    },
+    "httpVerification": { "$ref": "#/$defs/acceptance" },
+    "deviceAcceptance": { "$ref": "#/$defs/acceptance" },
+    "venueAcceptance": { "$ref": "#/$defs/acceptance" },
+    "issues": { "type": "array" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "locale": { "type": "string", "pattern": "^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$" },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "evidenceSha256"],
+      "properties": {
+        "status": { "enum": ["not_run", "pass", "fail"] },
+        "evidenceSha256": { "oneOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }] }
+      }
+    }
+  }
+}

@@ -22,6 +22,7 @@ except ImportError:  # Direct execution via ``python scripts/...``.
 
 
 CANDIDATE_SCHEMA = "sermon-target-language-candidate-v2"
+SOURCE_PACKAGE_SCHEMA = "sermon-english-source-package-v1"
 SPEECH_JOB_SCHEMA = "sermon-target-language-speech-job-v1"
 ADAPTER_SCHEMA = "sermon-target-language-speech-adapter-v1"
 SEMANTIC_CHECKS = (
@@ -54,13 +55,24 @@ def _reviewed_at(value: object) -> bool:
     return parsed.tzinfo is not None
 
 
-def validate_target_candidate(anchor: dict[str, Any], candidate: dict[str, Any], *,
+def validate_target_candidate(source_package: dict[str, Any], anchor: dict[str, Any], candidate: dict[str, Any], *,
                               require_human_approval: bool = True) -> dict[str, Any]:
     """Fail closed on locale identity, source coverage and review boundaries."""
+    _require(source_package.get("schemaVersion") == SOURCE_PACKAGE_SCHEMA,
+             "Unsupported English Source Package")
+    _require(source_package.get("status") == "ready_for_translation"
+             and source_package.get("translationEligible") is True,
+             "English Source Package is not approved for translation")
     _require(interpretation.is_supported_anchor_manifest(anchor), "Unsupported anchor manifest")
     _require(candidate.get("schemaVersion") == CANDIDATE_SCHEMA,
              "Unsupported target-language candidate")
     _require(candidate.get("sourceLocale") == "en", "Target candidate source locale must be en")
+    _require(candidate.get("englishSourcePackageJsonSha256")
+             == interpretation.json_sha256(source_package),
+             "Target candidate belongs to another English Source Package")
+    _require(source_package.get("anchors", {}).get("artifact", {}).get("jsonSha256")
+             == interpretation.json_sha256(anchor),
+             "English Source Package belongs to another anchor manifest")
     locale = candidate.get("targetLocale")
     _require(isinstance(locale, str) and LOCALE.fullmatch(locale) is not None
              and locale.split("-", 1)[0] != "en", "Invalid target locale")
@@ -148,13 +160,15 @@ def validate_adapter(adapter: dict[str, Any], target_locale: str) -> None:
                  f"Invalid speech adapter hash: {key}")
 
 
-def prepare_job(anchor_path: Path, candidate_path: Path, adapter_path: Path,
+def prepare_job(source_package_path: Path, anchor_path: Path, candidate_path: Path, adapter_path: Path,
                 out: Path) -> dict[str, Any]:
     _require(not out.exists(), "Use a new speech job directory; prior jobs are immutable")
-    for path in (anchor_path, candidate_path, adapter_path):
+    for path in (source_package_path, anchor_path, candidate_path, adapter_path):
         _require(path.is_file(), f"Missing input: {path}")
-    anchor, candidate, adapter = (_load(path) for path in (anchor_path, candidate_path, adapter_path))
-    identity = validate_target_candidate(anchor, candidate)
+    source_package, anchor, candidate, adapter = (
+        _load(path) for path in (source_package_path, anchor_path, candidate_path, adapter_path)
+    )
+    identity = validate_target_candidate(source_package, anchor, candidate)
     locale = identity["targetLocale"]
     validate_adapter(adapter, locale)
     language_root = f"languages/{locale}"
@@ -169,6 +183,11 @@ def prepare_job(anchor_path: Path, candidate_path: Path, adapter_path: Path,
         "releaseEligible": False,
         "synthesisEligible": verified,
         "inputs": {
+            "englishSourcePackage": {
+                "path": str(source_package_path.resolve()),
+                "sha256": interpretation.sha256(source_package_path),
+                "jsonSha256": interpretation.json_sha256(source_package),
+            },
             "anchorManifest": {
                 "path": str(anchor_path.resolve()),
                 "sha256": interpretation.sha256(anchor_path),
@@ -214,12 +233,15 @@ def prepare_job(anchor_path: Path, candidate_path: Path, adapter_path: Path,
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--english-source-package", type=Path, required=True)
     parser.add_argument("--anchor", type=Path, required=True)
     parser.add_argument("--candidate", type=Path, required=True)
     parser.add_argument("--adapter", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
-    job = prepare_job(args.anchor, args.candidate, args.adapter, args.out)
+    job = prepare_job(
+        args.english_source_package, args.anchor, args.candidate, args.adapter, args.out,
+    )
     print(json.dumps({
         "status": job["status"],
         "targetLocale": job["targetLocale"],

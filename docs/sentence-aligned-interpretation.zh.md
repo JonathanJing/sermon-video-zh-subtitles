@@ -17,9 +17,11 @@
 
 这与“同视频替换音轨、每句中文必须在同一个英文句时槽结束”的目标不同。后者遇到中英文表达长度差异时会不断诱发压缩；滚动同传允许有界延迟，更接近现场译员的工作方式。
 
-## 四层合同
+## 三层句级处理与发布门禁
 
-### 1. 英文与句锚
+这里对应全项目四层中的 Layer 1–3；“正式批准”是进入 Layer 4 前的 release gate，不是另一个生产层。唯一正式层名和接口 schema 见[多语言生产四层接口](multilingual-production-interfaces.zh.md)。
+
+### Layer 1：共享英文事实与锚点
 
 - 输入必须是冻结英文和 MFA `wordTimes`；Forced Aligner 只定位给定英文，不能证明 ASR 没有漏词。
 - 每个词获得稳定 `wordId`，句／分句只引用这些 ID，不重写英文。
@@ -28,7 +30,7 @@
 
 合同：[v1 英文句锚 schema](../schemas/sermon-sentence-anchor-manifest-v1.schema.json)、[clause-stable v2 schema](../schemas/sermon-sentence-anchor-manifest-v2.schema.json)。生成器：[sermon_sentence_interpretation.py](../scripts/sermon_sentence_interpretation.py)。v1 保持兼容；v2 默认以 8 秒为目标，只在标点或至少 0.35 秒的词间停顿处拆分，并为每个边界保存 `splitEvidence`。没有安全边界时，v2 保留完整词序列、标记超时并阻止模型和 TTS 阶段，绝不静默硬切。
 
-### 2. 初译与独立复核
+### Layer 2：目标语言文字（当前为 zh-Hans legacy adapter）
 
 初译请求只翻译目标 `sourceUnitIds`，相邻英文仅作消歧上下文。输出必须保存精确的中文 substring coverage。独立的第二次模型请求逐单元检查：
 
@@ -40,7 +42,7 @@
 
 模型复核不是人工批准。任何检查失败、疑点未清、来源 ID 缺失／重复或上下文被误译进目标，都阻止进入听审候选。
 
-### 3. 自然语速音频与滚动排程
+### Layer 3：目标语言音频与同步
 
 每个中文组绑定最终文字、实测音频时长和合成收据。验证器要求 `playbackRate=1.0`、`ratePolicy=natural_no_time_stretch`，并拒绝音频文字与批准中文不一致。排程公式为：
 
@@ -52,7 +54,7 @@ end   = start + measured_natural_audio_duration
 
 停顿自然地成为可用缓冲，但不会把下一句英文偷进上一句的来源覆盖。排程延迟超限时，应重新检查分句／分组或采用更长的整体播放延迟，而不是改变语义或播放倍率。
 
-### 4. 正式批准
+### 发布门禁：正式批准
 
 候选只有同时保存真实审核人、审核时间、全部来源单元 ID，并通过以下五项，才可能得到 `releaseEligible=true`：
 
@@ -130,9 +132,9 @@ end   = start + measured_natural_audio_duration
 
 ### 未来周生产接线
 
-[`prepare_sentence_interpretation_shadow.py`](../scripts/prepare_sentence_interpretation_shadow.py) 已把 v2 锚点生成接到未来周生产的 shadow 路径，收据遵循 [`sermon-sentence-interpretation-shadow-v1`](../schemas/sermon-sentence-interpretation-shadow-v1.schema.json)。`run_post_live_subtitle_generation.py` 在存在 `--dubbing-config` 时默认调用它，并把结果写入生产报告的 `sentenceInterpretationShadow`；显式 `--sentence-interpretation-shadow` 可在无配音配置的定向运行中启用，`--no-sentence-interpretation-shadow` 可关闭。输出目录由冻结英文哈希、实现哈希和策略共同确定，缓存只允许内容完全相同的重用。
+[`prepare_sentence_interpretation_shadow.py`](../scripts/prepare_sentence_interpretation_shadow.py) 已把 v2 锚点生成接到未来周生产的 shadow 路径，收据遵循 [`sermon-sentence-interpretation-shadow-v1`](../schemas/sermon-sentence-interpretation-shadow-v1.schema.json)。它同时生成 Layer 1 [`English Source Package`](../schemas/sermon-english-source-package-v1.schema.json)，而不再把中文 prompt 或目标语言文字写入 Layer 1。`run_post_live_subtitle_generation.py` 在存在 `--dubbing-config` 时默认调用它，并把结果写入生产报告的 `sentenceInterpretationShadow`；显式 `--sentence-interpretation-shadow` 可在无配音配置的定向运行中启用，`--sentence-interpretation-english-review` 可在人工审核后绑定收据并重跑，`--no-sentence-interpretation-shadow` 可关闭。输出目录由冻结英文哈希、实现哈希、来源身份、审核和策略共同确定，缓存只允许内容完全相同的重用。
 
-此接线只自动完成边界候选和 fail-closed 检查。`ready_for_model_translation` 后仍须由独立模型 runner 生成并复核中文，再走自然语速 TTS 和人工听审；`waiting_anchor_review` 或 `shadow_failed` 不影响当前双 PDF，但不得进入新同传候选的付费阶段。正式生产切换需另有真实整篇通过证据。
+此接线只自动完成 Layer 1 候选和 fail-closed 检查。`candidate_ready_for_translation` 可供 shadow 模型实验；只有绑定来源媒体、批准窗口和英文人工审核后，English Source Package 才是 `ready_for_translation`。随后仍须由独立 Layer 2 runner 生成并复核目标语言文字，再走 Layer 3 自然语速 TTS 和人工听审；`waiting_anchor_review` 或 `shadow_failed` 不影响当前双 PDF，但不得进入新同传候选的付费阶段。正式生产切换需另有真实整篇通过证据。
 
 忽略目录中的真实产物：
 
@@ -143,6 +145,8 @@ end   = start + measured_natural_audio_duration
 - `artifacts/sentence-interpretation-poc/20260920-stratified-13/tts-qwen-eric-natural-v1/final/tts-metrics.json`
 - `artifacts/sentence-interpretation-poc/20260920-stratified-13/tts-qwen-eric-natural-v1/final/validation-report.json`
 - `artifacts/sentence-interpretation-poc/20260920-stratified-13/tts-qwen-eric-natural-v1/screening/representative-asr-screening.json`
+
+上面的 `translation-request.json` 是早期中文 POC 的历史 Layer 2 请求，不是新的 Layer 1 输出。未来周 shadow 的正式 Layer 1 产物名为 `english-source-package.json`。
 
 ## 运行与验证
 

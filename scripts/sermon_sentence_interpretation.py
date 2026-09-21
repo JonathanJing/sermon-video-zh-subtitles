@@ -436,12 +436,6 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
             "maxEndLagSeconds": max_end_lag_seconds,
             "audioRatePolicy": RATE_POLICY,
         },
-        "promptPolicy": {
-            "translation": PROMPT_VERSION,
-            "independentReview": REVIEW_PROMPT_VERSION,
-            "translationSystemPrompt": TRANSLATION_SYSTEM_PROMPT,
-            "reviewSystemPrompt": REVIEW_SYSTEM_PROMPT,
-        },
         "counts": {
             "sourceSentences": len({unit["sourceSentenceId"] for unit in units}),
             "sourceUnits": len(units),

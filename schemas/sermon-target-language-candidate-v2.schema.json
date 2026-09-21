@@ -5,7 +5,7 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "schemaVersion", "sourceLocale", "targetLocale", "anchorManifestSha256",
+    "schemaVersion", "sourceLocale", "targetLocale", "englishSourcePackageJsonSha256", "anchorManifestSha256",
     "translationPolicySha256", "status", "releaseEligible", "generation",
     "groups", "modelReview", "humanReview"
   ],
@@ -13,6 +13,7 @@
     "schemaVersion": { "const": "sermon-target-language-candidate-v2" },
     "sourceLocale": { "const": "en" },
     "targetLocale": { "$ref": "#/$defs/targetLocale" },
+    "englishSourcePackageJsonSha256": { "$ref": "#/$defs/sha256" },
     "anchorManifestSha256": { "$ref": "#/$defs/sha256" },
     "translationPolicySha256": { "$ref": "#/$defs/sha256" },
     "status": {

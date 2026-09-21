@@ -1,6 +1,6 @@
 # 英文源到多语言证道生产 POC 流程
 
-状态：**Layer 2／3 准备合同与韩语界面／内容 sidecar 已实现**。本文定义后续方向，不表示韩语翻译、韩语配音或多语言发布已经完成。Layer 1 接口由 `main` 的独立工作负责；本分支只读取其 anchor，不修改或复制英文事实层。
+状态：**四层正式名称和层间 schema 已冻结；Layer 1 已接入 shadow；Layer 2／3 准备合同与韩语界面／内容 sidecar 已实现。** 本文定义迁移方向，不表示韩语翻译、韩语配音或多语言发布已经完成。唯一正式命名与接口见[多语言生产四层接口](multilingual-production-interfaces.zh.md)。
 
 ## 1. 目标与不变量
 
@@ -33,17 +33,17 @@ flowchart LR
 - 内容摘要和大纲也从 Canonical English Content 分支，不从另一个目标语言回译。
 - 来源批准、语言内容审核、音频听审、视频同步、页面发布、HTTP 核验和设备／现场验收保持独立状态。
 
-## 2. 按 `main` 四层从下向上实施
+## 2. 按冻结的四层接口从下向上实施
 
 不要同时把整条中文管线全部参数化。先冻结相邻两层之间的接口，每次只把一层变成语言中立，并让现有中文 adapter 继续通过原回归；韩语作为第二个 consumer 验证接口确实通用。
 
 ```mermaid
 flowchart TB
-  L1[Layer 1 共享英文事实层] --> Z2[Layer 2 zh-Hans 翻译]
-  L1 --> K2[Layer 2 ko 翻译]
-  Z2 --> Z3[Layer 3 zh-Hans 配音与同步]
-  K2 --> K3[Layer 3 ko 配音与同步]
-  Z2 --> L4[Layer 4 多语言发布]
+  L1[Layer 1 共享英文事实与锚点] --> Z2[Layer 2 zh-Hans 目标语言文字]
+  L1 --> K2[Layer 2 ko 目标语言文字]
+  Z2 --> Z3[Layer 3 zh-Hans 目标语言音频与同步]
+  K2 --> K3[Layer 3 ko 目标语言音频与同步]
+  Z2 --> L4[Layer 4 多语言发布与播放]
   K2 --> L4
   Z3 --> L4
   K3 --> L4
@@ -56,7 +56,7 @@ flowchart TB
 - **Layer 3 沿用相同 locale 边界。** 文字通过不代表该语言有可用 TTS；每个 locale 单独生成、筛查、排程和听审。
 - **Layer 4 只聚合已存在资产。** 页面可以同时展示多个 locale，但不能替下游补翻译、补音频或提升审核状态。
 
-### Layer 1：先冻结共享英文接口
+### Layer 1：共享英文事实与锚点
 
 现有 `sermon-sentence-anchor-manifest-v2` 和 `clause_stable_v2` 已接近目标：`sourceUnits`、`sourceWordIds`、词时间和边界证据本身不依赖中文。第一步应只做收口，不改翻译或播放行为：
 
@@ -65,9 +65,9 @@ flowchart TB
 3. 修复对齐异常和无安全边界单元；Layer 1 有 unresolved issue 时，所有新语言 job 都不能启动。
 4. 用现有中文生产输入做 golden replay，证明抽接口前后英文 word ID、边界和时间完全一致。
 
-Layer 1 完成门槛：同一真实整篇英文可生成一个不可变 anchor manifest；中文和韩语 runner 都只读同一 SHA-256，不复制或改写它。
+Layer 1 完成门槛：同一真实整篇英文可生成一个不可变 English Source Package；中文和韩语 runner 都只读同一 package/anchor SHA-256，不复制或改写它。
 
-### Layer 2：把中文 candidate 抽成单语言通用 candidate
+### Layer 2：目标语言文字
 
 当前 `sermon-sentence-interpretation-candidate-v1` 把 `chinese`、`chineseUtterances`、`spokenChinese` 写进 schema。不要直接在同一对象增加 `korean` 字段；应新建单语言 v2 合同，每个文件只承载一个 locale：
 
@@ -102,7 +102,7 @@ Layer 2 完成门槛：`zh-Hans` 与 `ko` 各自产出独立 candidate，都覆�
 
 本分支已增加 [`sermon-target-language-candidate-v2`](../schemas/sermon-target-language-candidate-v2.schema.json) 准备合同。它固定 `sourceLocale=en`，把通用语义检查与 `languageReview` 插件检查分开，并禁止 candidate 自称可发布。当前只有合成 fixture 验证，尚未接模型 runner、中文 v1 adapter 或真实整篇韩语翻译，因此还没有达到上述完成门槛。
 
-### Layer 3：把音频实现拆成通用调度器 + 语言 adapter
+### Layer 3：目标语言音频与同步
 
 当前主要硬编码点是 `zh-natural.mp3`、`zh-synced.mp3`、`block.zh`、`language="Chinese"` 和中文回转写规则。按两步迁移：
 
@@ -124,7 +124,7 @@ Layer 3 完成门槛：每种语言分别有文字 hash 一致的音频收据、
 
 本分支已增加 [`sermon-target-language-speech-job-v1`](../schemas/sermon-target-language-speech-job-v1.schema.json) 和 [`prepare_target_language_speech_job.py`](../scripts/prepare_target_language_speech_job.py)。准备器只接受人工翻译已批准、完整覆盖共享 anchor 的单语言 candidate，并把输出路径锁在 `languages/<locale>/audio` 与 `languages/<locale>/synchronization`。它不调用 TTS；韩语 adapter 若仍是 `unverified_poc`，任务固定为 `prepared_adapter_validation_required` 且 `synthesisEligible=false`。即使 adapter 已验证，`releaseEligible` 仍为 false，后续必须另做真实合成、回转录、排程和人耳验收。
 
-### Layer 4：最后升级 catalog、Web 和 iOS
+### Layer 4：多语言发布与播放
 
 Layer 4 不应继续把一个 week 视为“只有一条中文 track”。先加入 v1 catalog adapter，再引入 `languages[locale]`：
 
@@ -140,30 +140,30 @@ Layer 4 完成门槛：同一页面能同时装载 `zh-Hans` 与 `ko`，分别�
 
 | PR | 只改哪一层 | 韩语证据 | 不应夹带 |
 |---|---|---|---|
-| 1 | Layer 1 英文 source package／anchor 接口 | 韩语 runner 能读取同一 fixture，但不调用翻译 | 韩语 prompt、TTS、UI |
-| 2 | Layer 2 target-language candidate v2 | 固定 fixture + 一篇完整韩语翻译／独立复核 | 音频与发布 |
-| 3 | Layer 3 speech adapter／通用 scheduler | 韩语探针、完整音轨、回转写、听审与延迟 | catalog v2 或部署 |
-| 4 | Layer 4 catalog v2／Web／iOS／发行 | 中韩并存、fallback、HTTP 与端上验证 | 回写翻译或音频状态 |
+| 1 | English Source Package／anchor 接口 | 韩语 runner 能读取同一 fixture，但不调用翻译 | 韩语 prompt、TTS、UI |
+| 2 | Target-Language Candidate／中文 adapter | 固定 fixture + 一篇完整韩语翻译／独立复核 | 音频与发布 |
+| 3 | Target-Language Audio Package／speech adapter／通用 scheduler | 韩语探针、完整音轨、回转写、听审与延迟 | catalog v2 或部署 |
+| 4 | Target-Language Release Package／catalog v2／Web／iOS | 中韩并存、fallback、HTTP 与端上验证 | 回写翻译或音频状态 |
 
 每个 PR 都先保留旧中文合同，使用 adapter 双写或 shadow 比较；只有该层的真实等价证据通过后，下一 PR 才依赖新合同。这样出现问题时能明确归因于英文锚、翻译、语音还是发布，而不是一次多层改造后无法定位。
 
-## 3. 共享英文主干
+## 3. Layer 1 共享英文主干
 
-### 2.1 来源与范围
+### 3.1 来源与范围
 
 沿用现有来源合同，先确定 canonical URL／ID、service date、媒体 SHA-256、时长和操作员批准的证道范围。同讲题、同讲员或同日期不能替代同一录制身份。
 
-输出 `source-package`，至少包含：
+输出 `English Source Package`（`sermon-english-source-package-v1`），至少包含：
 
 - `sourcePackageId`、来源 URL／ID、媒体 SHA-256 和批准范围；
 - 英文字幕来源类型（已有字幕或 ASR）及其 provenance；
 - 英文逐字稿版本、不可辨识标记和人工／机器审核状态；
 - 词级时间轴、覆盖报告、低置信和边界问题；
-- 生成时间、工具／模型版本和内容哈希。
+- 生成器实现 hash、工具／模型版本和内容哈希。
 
 英文逐字稿一旦修改，相关意义单元、所有目标语言翻译、对齐、音频和审核均按绑定哈希失效；未变化的英文单元可继续按哈希复用。
 
-### 2.2 Canonical English Content
+### 3.2 Canonical English Content
 
 从冻结英文逐字稿生成一份语言中立的英文内容层，而不是从中文摘要反推英文：
 
@@ -175,22 +175,24 @@ Layer 4 完成门槛：同一页面能同时装载 `zh-Hans` 与 `ko`，分别�
 
 这一层是页面内容翻译的唯一上游。英文 transcript 仍是事实证据；Canonical English Content 是派生内容，不能冒充讲员逐字稿。
 
-## 4. 目标语言分支
+## 4. Layer 2 目标语言文字
 
-每个 `targetLocale` 建立独立、可恢复的 language job。建议身份至少由以下字段组成：
+每个 `targetLocale` 建立独立、可恢复的 Target-Language Candidate。身份至少由以下字段组成：
 
 ```json
 {
-  "schemaVersion": "sermon-language-job-v1",
-  "sourcePackageSha256": "<frozen English source package>",
-  "canonicalEnglishContentSha256": "<English page content>",
+  "schemaVersion": "sermon-target-language-candidate-v2",
+  "sourceLocale": "en",
+  "englishSourcePackageJsonSha256": "<frozen English Source Package>",
+  "anchorManifestSha256": "<frozen English anchor manifest>",
   "targetLocale": "ko",
   "translationPolicySha256": "<prompt + model + glossary + scripture policy>",
-  "status": "ready_for_translation"
+  "status": "translation_draft",
+  "releaseEligible": false
 }
 ```
 
-### 3.1 语言策略快照
+### 4.1 语言策略快照
 
 翻译前冻结该语言策略：
 
@@ -203,7 +205,7 @@ Layer 4 完成门槛：同一页面能同时装载 `zh-Hans` 与 `ko`，分别�
 
 中文的 CUV 锁定属于 `zh-Hans` 分支专属策略，不能写进共享英文主干。韩语分支必须另行确定并记录韩文圣经版本及引用规则，不能复用 CUV 文本或“中文已核对”的结论。
 
-### 3.2 逐段翻译与完整性
+### 4.2 逐段翻译与完整性
 
 输入是冻结英文意义单元及上下文，输出保存稳定 segment ID 和一对一／一对多／多对一映射。最低检查包括：
 
@@ -215,7 +217,7 @@ Layer 4 完成门槛：同一页面能同时装载 `zh-Hans` 与 `ko`，分别�
 
 机器初译、机器独立审核、人工内容批准分别记录。只有本语言的审核收据可以推进本语言状态。
 
-### 3.3 页面内容翻译
+### 4.3 页面内容翻译
 
 标题、摘要、大纲和反思从 Canonical English Content 直接翻译。POC 的 `sermon-target-language-content-v1` 要求：
 
@@ -227,7 +229,7 @@ Layer 4 完成门槛：同一页面能同时装载 `zh-Hans` 与 `ko`，分别�
 
 当前韩语 POC 只做到这一展示合同及部分韩语界面；它还不是完整 language job。
 
-### 3.4 可选 TTS 与同步
+## 5. Layer 3 目标语言音频与同步
 
 文字审核通过后，若该语言要提供音轨：
 
@@ -240,7 +242,7 @@ Layer 4 完成门槛：同一页面能同时装载 `zh-Hans` 与 `ko`，分别�
 
 音频文件、cue 文本、ASR 筛查和同步报告必须使用语言中立命名与显式 locale；现有 `zh-natural.mp3`、`zh-synced.mp3`、`block.zh` 等硬编码在迁移前仍属于中文旧合同。
 
-## 5. 多语言目录与页面
+## 6. Layer 4 多语言目录与页面
 
 目标目录建议升级为 `sermon-weekly-catalog-v2`，把来源页身份和语言资产分开：
 
@@ -274,7 +276,7 @@ Layer 4 完成门槛：同一页面能同时装载 `zh-Hans` 与 `ko`，分别�
 
 三者不能再由一个按钮隐式绑定。POC 阶段可以允许“韩语界面 + 中文音频”，但页面必须明确标注；正式多语言版应按可用资产限制组合，并为 fallback 给出可见提示。
 
-## 6. 状态机与验收
+## 7. 状态机与验收
 
 每个目标语言独立经过：
 
@@ -295,7 +297,7 @@ waiting_for_english_source
 
 `audio_unavailable` 可以是合法的文字版终点，不应伪装成失败；但页面不得显示播放按钮或继承中文音频状态。HTTP 核验仍只证明文件发布，不能替代语言内容、人耳听审或现场验收。
 
-## 7. 从当前中文流程迁移
+## 8. 从当前中文流程迁移
 
 ### Phase 0：韩语 POC（当前分支）
 
@@ -305,9 +307,9 @@ waiting_for_english_source
 - 韩语 TTS adapter 能力仍未验证；当前合同不执行翻译、合成、同步或发布。
 - 韩语内容状态固定 `draft`；无韩语音频、字幕审核或发布声明。
 
-### Phase 1：抽出英文主干合同
+### Phase 1：采用 English Source Package
 
-- 从现有 `blocks[].en`、英文词级时间轴和来源证据生成 `source-package`。
+- 从现有英文、词级时间轴和来源证据生成 `English Source Package`。
 - 新增 Canonical English Content；停止把 `content-locales.mjs` 的中文→英文精确映射当长期上游。
 - 用 source/package hash 驱动各语言缓存失效。
 
@@ -333,7 +335,7 @@ waiting_for_english_source
 
 新增语言只添加语言策略、翻译／审核实现、可选 TTS adapter 和验收 fixture；不复制英文下载、逐字稿冻结或词级对齐主干。
 
-## 8. 当前边界
+## 9. 当前边界
 
 - 现有周六中文 PDF、CUV、中文 TTS、中文同步和正式发行继续按原合同运行，迁移不能静默重标历史产物。
 - 周日麦克风实时字幕是独立路径；以后可复用 target-language policy，但不因本 POC 自动变成多语言。

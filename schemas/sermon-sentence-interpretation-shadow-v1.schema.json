@@ -3,23 +3,29 @@
   "$id": "https://local.invalid/schemas/sermon-sentence-interpretation-shadow-v1.schema.json",
   "title": "Future production clause-stable shadow receipt",
   "type": "object",
-  "required": ["schemaVersion", "status", "releaseEligible", "productionOutputChanged", "identity", "artifacts", "counts", "anchorIssueCount", "anchorIssueTypes", "nextStage", "humanReview"],
+  "required": ["schemaVersion", "layer", "interface", "status", "releaseEligible", "productionTranslationEligible", "productionOutputChanged", "identity", "artifacts", "counts", "anchorIssueCount", "anchorIssueTypes", "nextStage", "humanReview"],
   "properties": {
     "schemaVersion": { "const": "sermon-sentence-interpretation-shadow-v1" },
+    "layer": { "const": "shared_english_source_and_anchors" },
+    "interface": { "const": "sermon-english-source-package-v1" },
     "status": { "enum": ["ready_for_model_translation", "waiting_anchor_review"] },
     "releaseEligible": { "const": false },
+    "productionTranslationEligible": { "type": "boolean" },
     "productionOutputChanged": { "const": false },
     "identity": {
       "type": "object",
-      "required": ["schemaVersion", "source", "implementation", "policy"],
+      "additionalProperties": false,
+      "required": ["schemaVersion", "source", "implementation", "policy", "sourceContext"],
       "properties": {
         "schemaVersion": { "const": "sermon-sentence-interpretation-shadow-v1" },
         "source": { "$ref": "#/$defs/pathIdentity" },
         "implementation": {
           "type": "object",
-          "required": ["anchorGeneratorSha256", "shadowRunnerSha256"],
+          "additionalProperties": false,
+          "required": ["anchorGeneratorSha256", "englishSourceBuilderSha256", "shadowRunnerSha256"],
           "properties": {
             "anchorGeneratorSha256": { "$ref": "#/$defs/sha256" },
+            "englishSourceBuilderSha256": { "$ref": "#/$defs/sha256" },
             "shadowRunnerSha256": { "$ref": "#/$defs/sha256" }
           }
         },
@@ -33,15 +39,28 @@
             "internalPauseSeconds": { "type": "number", "minimum": 0 },
             "wordDurationOutlierSeconds": { "type": "number", "exclusiveMinimum": 0 }
           }
+        },
+        "sourceContext": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sourceId", "sourceUrlHash", "serviceDate", "summarySha256", "approvalEvidenceSha256", "reviewSha256"],
+          "properties": {
+            "sourceId": { "type": ["string", "null"] },
+            "sourceUrlHash": { "$ref": "#/$defs/nullableSha256" },
+            "serviceDate": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+            "summarySha256": { "$ref": "#/$defs/nullableSha256" },
+            "approvalEvidenceSha256": { "$ref": "#/$defs/nullableSha256" },
+            "reviewSha256": { "$ref": "#/$defs/nullableSha256" }
+          }
         }
       }
     },
     "artifacts": {
       "type": "object",
-      "required": ["anchorManifest", "translationRequest", "receipt"],
+      "required": ["anchorManifest", "englishSourcePackage", "receipt"],
       "properties": {
         "anchorManifest": { "$ref": "#/$defs/jsonArtifact" },
-        "translationRequest": { "$ref": "#/$defs/jsonArtifact" },
+        "englishSourcePackage": { "$ref": "#/$defs/jsonArtifact" },
         "receipt": {
           "type": "object",
           "required": ["path"],
@@ -67,6 +86,7 @@
   },
   "$defs": {
     "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "nullableSha256": { "oneOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }] },
     "pathIdentity": {
       "type": "object",
       "required": ["path", "sha256"],

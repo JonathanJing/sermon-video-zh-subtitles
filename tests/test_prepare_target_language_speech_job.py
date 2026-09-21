@@ -26,10 +26,17 @@ class TargetLanguageSpeechJobTests(unittest.TestCase):
                 {"sourceUnitId": "block-00-u002", "english": "I am with you."},
             ],
         }
+        self.source_package = {
+            "schemaVersion": subject.SOURCE_PACKAGE_SCHEMA,
+            "status": "ready_for_translation",
+            "translationEligible": True,
+            "anchors": {"artifact": {"jsonSha256": interpretation.json_sha256(self.anchor)}},
+        }
         self.candidate = {
             "schemaVersion": subject.CANDIDATE_SCHEMA,
             "sourceLocale": "en",
             "targetLocale": "ko",
+            "englishSourcePackageJsonSha256": interpretation.json_sha256(self.source_package),
             "anchorManifestSha256": interpretation.json_sha256(self.anchor),
             "translationPolicySha256": "1" * 64,
             "status": "human_translation_approved",
@@ -61,9 +68,11 @@ class TargetLanguageSpeechJobTests(unittest.TestCase):
             "asrScreeningPolicySha256": "3" * 64,
             "subtitlePolicySha256": "4" * 64,
         }
+        self.source_package_path = self.root / "english-source-package.json"
         self.anchor_path = self.root / "anchor.json"
         self.candidate_path = self.root / "candidate.json"
         self.adapter_path = self.root / "adapter.json"
+        write_json(self.source_package_path, self.source_package)
         write_json(self.anchor_path, self.anchor)
         write_json(self.candidate_path, self.candidate)
         write_json(self.adapter_path, self.adapter)
@@ -96,7 +105,8 @@ class TargetLanguageSpeechJobTests(unittest.TestCase):
     def test_korean_candidate_and_prepared_job_match_published_contracts(self):
         self.assertEqual(self.validate_schema("sermon-target-language-candidate-v2.schema.json", self.candidate), [])
         job = subject.prepare_job(
-            self.anchor_path, self.candidate_path, self.adapter_path, self.root / "speech-job",
+            self.source_package_path, self.anchor_path, self.candidate_path,
+            self.adapter_path, self.root / "speech-job",
         )
         self.assertEqual(job["status"], "prepared_adapter_validation_required")
         self.assertFalse(job["synthesisEligible"])
@@ -111,7 +121,8 @@ class TargetLanguageSpeechJobTests(unittest.TestCase):
         self.adapter["capabilityStatus"] = "verified"
         write_json(self.adapter_path, self.adapter)
         job = subject.prepare_job(
-            self.anchor_path, self.candidate_path, self.adapter_path, self.root / "verified-job",
+            self.source_package_path, self.anchor_path, self.candidate_path,
+            self.adapter_path, self.root / "verified-job",
         )
         self.assertEqual(job["status"], "prepared_for_target_language_speech")
         self.assertTrue(job["synthesisEligible"])
@@ -125,13 +136,14 @@ class TargetLanguageSpeechJobTests(unittest.TestCase):
         write_json(self.candidate_path, self.candidate)
         with self.assertRaisesRegex(ValueError, "Human translation approval"):
             subject.prepare_job(
-                self.anchor_path, self.candidate_path, self.adapter_path, self.root / "blocked-job",
+                self.source_package_path, self.anchor_path, self.candidate_path,
+                self.adapter_path, self.root / "blocked-job",
             )
 
     def test_candidate_rejects_locale_mismatch_and_cross_language_adapter(self):
         self.candidate["targetLocale"] = "en"
         with self.assertRaisesRegex(ValueError, "Invalid target locale"):
-            subject.validate_target_candidate(self.anchor, self.candidate)
+            subject.validate_target_candidate(self.source_package, self.anchor, self.candidate)
         changed = copy.deepcopy(self.adapter)
         changed["targetLocale"] = "zh-Hans"
         with self.assertRaisesRegex(ValueError, "locale differs"):
@@ -141,7 +153,7 @@ class TargetLanguageSpeechJobTests(unittest.TestCase):
         self.candidate["groups"].reverse()
         self.candidate["modelReview"]["reviewedGroupIds"].reverse()
         with self.assertRaisesRegex(ValueError, "every source unit exactly once and in order"):
-            subject.validate_target_candidate(self.anchor, self.candidate)
+            subject.validate_target_candidate(self.source_package, self.anchor, self.candidate)
 
 
 if __name__ == "__main__":

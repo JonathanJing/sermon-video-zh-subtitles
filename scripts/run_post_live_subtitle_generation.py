@@ -136,6 +136,12 @@ def parse_args() -> argparse.Namespace:
         help=("Generate clause-stable v2 anchors from frozen MFA English without changing delivery output; "
               "defaults on when --dubbing-config is present."),
     )
+    parser.add_argument(
+        "--sentence-interpretation-english-review",
+        type=Path,
+        help=("Optional sermon-english-source-review-v1 receipt bound to this run's aligned "
+              "English and anchor manifest; promotes Layer 1 only when all source checks pass."),
+    )
     parser.add_argument("--timing-model", default="whisper-1")
     parser.add_argument(
         "--output-mode",
@@ -431,6 +437,11 @@ def _run_post_live_generation(
             with accounting_stage("sentence_interpretation_shadow", billing="local"):
                 report["sentenceInterpretationShadow"] = prepare_weekly_sentence_interpretation_shadow(
                     pipeline_outdir,
+                    source_id=str(metadata.get("id") or source.get("id") or stable_hash(live_url)[:24]),
+                    source_url_hash=stable_hash(live_url),
+                    service_date=getattr(args, "source_service_date", None) or args.sunday,
+                    approval_evidence_path=getattr(args, "approval_evidence", None),
+                    review_path=getattr(args, "sentence_interpretation_english_review", None),
                 )
         except (OSError, ValueError, KeyError, TypeError, IndexError, json.JSONDecodeError) as exc:
             # This is a future candidate lane. It must retain its failure without
@@ -1510,11 +1521,25 @@ def sentence_interpretation_shadow_enabled(args: argparse.Namespace) -> bool:
     return bool(getattr(args, "dubbing_config", None))
 
 
-def prepare_weekly_sentence_interpretation_shadow(pipeline_outdir: Path) -> dict[str, Any]:
+def prepare_weekly_sentence_interpretation_shadow(
+    pipeline_outdir: Path,
+    *,
+    source_id: str | None = None,
+    source_url_hash: str | None = None,
+    service_date: str | None = None,
+    approval_evidence_path: Path | None = None,
+    review_path: Path | None = None,
+) -> dict[str, Any]:
     from scripts.prepare_sentence_interpretation_shadow import prepare_shadow
     return prepare_shadow(
         pipeline_outdir / "segments_timed_en_corrected.json",
         pipeline_outdir / "sentence-interpretation-v2",
+        summary_path=pipeline_outdir / "summary.json",
+        approval_evidence_path=approval_evidence_path,
+        review_path=review_path,
+        source_id=source_id,
+        source_url_hash=source_url_hash,
+        service_date=service_date,
     )
 
 
