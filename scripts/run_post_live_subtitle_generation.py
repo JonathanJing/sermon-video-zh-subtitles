@@ -129,6 +129,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--pdf-workers", type=int, choices=(1, 2), default=2)
     parser.add_argument("--dubbing-config", type=Path, default=os.environ.get("SERMON_DUBBING_CONFIG"),
                         help="Optional configured dubbing candidate overlap after reviewed text and outline; no publication.")
+    parser.add_argument(
+        "--sentence-interpretation-shadow",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help=("Generate clause-stable v2 anchors from frozen MFA English without changing delivery output; "
+              "defaults on when --dubbing-config is present."),
+    )
     parser.add_argument("--timing-model", default="whisper-1")
     parser.add_argument(
         "--output-mode",
@@ -309,6 +316,10 @@ def _run_post_live_generation(
         "deliverySermonInterpretationPdf": str(delivery_interpretation_pdf),
         "outputMode": args.output_mode,
         "contentScope": args.content_scope or "legacy_unspecified",
+        "sentenceInterpretationShadow": {
+            "status": "planned" if sentence_interpretation_shadow_enabled(args) else "disabled",
+            "productionOutputChanged": False,
+        },
         "outputs": expected_outputs(pipeline_outdir, args.output_mode),
     }
     if args.plan_only or args.dry_run:
@@ -414,6 +425,24 @@ def _run_post_live_generation(
             identity=pipeline_input_identity,
         )
         stage_durations["pipeline"] = time.monotonic() - started
+    if sentence_interpretation_shadow_enabled(args):
+        started = time.monotonic()
+        try:
+            with accounting_stage("sentence_interpretation_shadow", billing="local"):
+                report["sentenceInterpretationShadow"] = prepare_weekly_sentence_interpretation_shadow(
+                    pipeline_outdir,
+                )
+        except (OSError, ValueError, KeyError, TypeError, IndexError, json.JSONDecodeError) as exc:
+            # This is a future candidate lane. It must retain its failure without
+            # revoking the independent current PDF and dubbing workflows.
+            report["sentenceInterpretationShadow"] = {
+                "status": "shadow_failed",
+                "releaseEligible": False,
+                "productionOutputChanged": False,
+                "reason": str(exc),
+                "nextStage": "inspect_sentence_interpretation_shadow",
+            }
+        stage_durations["sentence_interpretation_shadow"] = time.monotonic() - started
     for stage in ("clipped", "transcribed", "translated"):
         run_status = post_live_run_status.update_stage(
             run_status, args.sunday, stage, "complete", duration_seconds=stage_durations["pipeline"]
@@ -1472,6 +1501,21 @@ def reading_review_cache_ready(args: argparse.Namespace, reading_outdir: Path) -
 def stable_payload_hash(payload: dict[str, Any]) -> str:
     canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def sentence_interpretation_shadow_enabled(args: argparse.Namespace) -> bool:
+    explicit = getattr(args, "sentence_interpretation_shadow", None)
+    if explicit is not None:
+        return bool(explicit)
+    return bool(getattr(args, "dubbing_config", None))
+
+
+def prepare_weekly_sentence_interpretation_shadow(pipeline_outdir: Path) -> dict[str, Any]:
+    from scripts.prepare_sentence_interpretation_shadow import prepare_shadow
+    return prepare_shadow(
+        pipeline_outdir / "segments_timed_en_corrected.json",
+        pipeline_outdir / "sentence-interpretation-v2",
+    )
 
 
 def record_input_identity(

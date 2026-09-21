@@ -220,7 +220,7 @@ def run(*, manifest_path: Path, out: Path, model: str, effort: str,
         batch_size: int, workers: int, api_key: str,
         caller: Callable[..., dict[str, Any]] = chat_json) -> dict[str, Any]:
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    if manifest.get("schemaVersion") != contract.ANCHOR_SCHEMA or manifest.get("issues") != []:
+    if not contract.is_supported_anchor_manifest(manifest) or manifest.get("issues") != []:
         raise ValueError("Model run requires a clean sentence anchor manifest")
     manifest_hash = contract.json_sha256(manifest)
     requests = manifest.get("translationRequests")

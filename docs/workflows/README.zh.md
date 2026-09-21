@@ -52,7 +52,9 @@
 4. 完整性通过后才生成 TTS 和同步音轨。中文保持自然语速；若完整中文无法自然放入原声时槽，该段停止发布并重新分段或修订，不自动变速、拉伸或裁切。
 5. 正式发行须增加同一录音正常 1 倍速的全篇播放听审，分别记录英文覆盖、中文语速和同步状态。文件可播、回转写、指纹定位或 HTTP 核验均不能单独满足该门槛。
 
-英文词序、句／停顿锚、逐句覆盖、独立语义复核、自然语速音频和滚动同传排程已实现为版本化 shadow 合同，见[句级锚定与滚动同传设计](../sentence-aligned-interpretation.zh.md)及[英文逐字稿与词级时间轴 POC](../../experiments/english-word-timeline-poc/README.zh.md)。13 个分层区块的 99 个意义单元已完成 Astra 初译和不同 request 的独立复核，99/99 机器语义检查通过；99 组自然语速 Qwen TTS 也已生成并完整解码，但实测滚动结束延迟中位数 8.33 秒、P95 20.56 秒、最大 26.13 秒，52/99 组超过 8 秒门槛，因此状态仍为 `candidate_blocked`。下一轮须用更细的 clause-stable 来源子单元重新翻译和合成；它尚未接入正式周任务，也未完成人工全篇听审。在这些验收完成前，不宣称问题已经解决。现场反馈及本周证据边界见[9 月 20 日制作记录](../production-2026-09-20.zh.md#当日实际播放复盘)。
+英文词序、句／停顿锚、逐句覆盖、独立语义复核、自然语速音频和滚动同传排程已实现为版本化 shadow 合同，见[句级锚定与滚动同传设计](../sentence-aligned-interpretation.zh.md)及[英文逐字稿与词级时间轴 POC](../../experiments/english-word-timeline-poc/README.zh.md)。13 个分层区块的 99 个意义单元已完成 Astra 初译和不同 request 的独立复核，99/99 机器语义检查通过；99 组自然语速 Qwen TTS 也已生成并完整解码，但实测滚动结束延迟中位数 8.33 秒、P95 20.56 秒、最大 26.13 秒，52/99 组超过 8 秒门槛，因此状态仍为 `candidate_blocked`。
+
+未来周生产现已接入 clause-stable v2 的**自动 shadow 阶段**：当 `run_post_live_subtitle_generation.py` 配置 `--dubbing-config` 时，默认从同一 run 的 `segments_timed_en_corrected.json` 生成哈希隔离的 v2 句锚、边界证据和翻译请求；也可用 `--no-sentence-interpretation-shadow` 显式关闭。该阶段不调用付费模型、不生成 TTS、不改变双 PDF 或现有配音产物；锚点问题写入 `waiting_anchor_review` 并停止新候选链，干净锚点才标记 `ready_for_model_translation`。这属于未来音轨的生产内 shadow 接线，不是正式音轨切换；逐字稿、边界、中文、自然语速及全篇听审全部通过前，不宣称问题已经解决。现场反馈及本周证据边界见[9 月 20 日制作记录](../production-2026-09-20.zh.md#当日实际播放复盘)。
 
 [9 月 20 日制作记录](../production-2026-09-20.zh.md)保存了一次已完成页面、音频修复、用户听审／Firebase／iOS 播放确认及海报交付的运行证据。该记录不证明未来周次自动成功，也不证明真实现场同步；同录制声音定位、实体设备、现场音频路由与其他场次复用仍分别验收。
 

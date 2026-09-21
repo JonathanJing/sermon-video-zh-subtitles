@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-sentence-interpretation-shadow-v1.schema.json",
+  "title": "Future production clause-stable shadow receipt",
+  "type": "object",
+  "required": ["schemaVersion", "status", "releaseEligible", "productionOutputChanged", "identity", "artifacts", "counts", "anchorIssueCount", "anchorIssueTypes", "nextStage", "humanReview"],
+  "properties": {
+    "schemaVersion": { "const": "sermon-sentence-interpretation-shadow-v1" },
+    "status": { "enum": ["ready_for_model_translation", "waiting_anchor_review"] },
+    "releaseEligible": { "const": false },
+    "productionOutputChanged": { "const": false },
+    "identity": {
+      "type": "object",
+      "required": ["schemaVersion", "source", "implementation", "policy"],
+      "properties": {
+        "schemaVersion": { "const": "sermon-sentence-interpretation-shadow-v1" },
+        "source": { "$ref": "#/$defs/pathIdentity" },
+        "implementation": {
+          "type": "object",
+          "required": ["anchorGeneratorSha256", "shadowRunnerSha256"],
+          "properties": {
+            "anchorGeneratorSha256": { "$ref": "#/$defs/sha256" },
+            "shadowRunnerSha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        "policy": {
+          "type": "object",
+          "required": ["unitPolicy", "maxUnitSeconds", "minUnitSeconds", "internalPauseSeconds", "wordDurationOutlierSeconds"],
+          "properties": {
+            "unitPolicy": { "const": "clause_stable_v2" },
+            "maxUnitSeconds": { "type": "number", "exclusiveMinimum": 0 },
+            "minUnitSeconds": { "type": "number", "exclusiveMinimum": 0 },
+            "internalPauseSeconds": { "type": "number", "minimum": 0 },
+            "wordDurationOutlierSeconds": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "required": ["anchorManifest", "translationRequest", "receipt"],
+      "properties": {
+        "anchorManifest": { "$ref": "#/$defs/jsonArtifact" },
+        "translationRequest": { "$ref": "#/$defs/jsonArtifact" },
+        "receipt": {
+          "type": "object",
+          "required": ["path"],
+          "properties": { "path": { "type": "string", "minLength": 1 } }
+        }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "required": ["sourceSentences", "sourceUnits", "sourceWords", "longSentencesSplit", "pauseDerivedUnits"],
+      "properties": {
+        "sourceSentences": { "type": "integer", "minimum": 0 },
+        "sourceUnits": { "type": "integer", "minimum": 0 },
+        "sourceWords": { "type": "integer", "minimum": 0 },
+        "longSentencesSplit": { "type": "integer", "minimum": 0 },
+        "pauseDerivedUnits": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "anchorIssueCount": { "type": "integer", "minimum": 0 },
+    "anchorIssueTypes": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+    "nextStage": { "enum": ["run_sentence_interpretation_models", "operator_anchor_review"] },
+    "humanReview": { "const": "pending" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "pathIdentity": {
+      "type": "object",
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "jsonArtifact": {
+      "type": "object",
+      "required": ["path", "sha256", "jsonSha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "jsonSha256": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}

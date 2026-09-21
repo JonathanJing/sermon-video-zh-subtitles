@@ -17,6 +17,8 @@
 
 桥接器默认只读检查；`--execute` 会在来源和 QA 齐备后准备或恢复配音候选，使用按周、来源隔离的锁。文字修订和审核在本对话使用 GPT-6 Astra；桥接器本身不调用另一个文本审核服务。
 
+未来周运行只要配置了 `--dubbing-config`，主生产入口也会从冻结的 MFA 英文自动准备 clause-stable v2 shadow。它只写入哈希隔离的句锚、翻译请求和收据；有对齐异常或没有安全分句点时，新候选链停在 `waiting_anchor_review`，不调用 GPT/TTS，也不影响本页描述的现有配音候选或双 PDF。详见[句级锚定与滚动同传设计](../../docs/sentence-aligned-interpretation.zh.md#未来周生产接线)。
+
 需要从 PDF 一起顺序推进时，使用[周六统一入口](../../docs/saturday-harness.zh.md)。配音 runner 另按真实工作目录加锁，命令有超时，SSH 结果不明时先核对远端并隔离导入；恢复规则与收据位置见[执行保护与恢复](../../docs/sermon-execution-harness.zh.md)。固定版本比较可用[离线质量回归](../../docs/saturday-quality-harness.zh.md)，不能替代下文整篇听审。
 
 ```bash

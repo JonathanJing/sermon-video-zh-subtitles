@@ -22,7 +22,13 @@ import re
 from typing import Any
 
 
-ANCHOR_SCHEMA = "sermon-sentence-anchor-manifest-v1"
+ANCHOR_SCHEMA_V1 = "sermon-sentence-anchor-manifest-v1"
+ANCHOR_SCHEMA_V2 = "sermon-sentence-anchor-manifest-v2"
+# Backward-compatible name for callers that intentionally build the v1 contract.
+ANCHOR_SCHEMA = ANCHOR_SCHEMA_V1
+SUPPORTED_ANCHOR_SCHEMAS = frozenset({ANCHOR_SCHEMA_V1, ANCHOR_SCHEMA_V2})
+UNIT_POLICY_V1 = "punctuation_then_pause_split_v1"
+UNIT_POLICY_V2 = "clause_stable_v2"
 DRAFT_SCHEMA = "sermon-sentence-translation-draft-v1"
 REVIEW_SCHEMA = "sermon-sentence-translation-review-v1"
 CANDIDATE_SCHEMA = "sermon-sentence-interpretation-candidate-v1"
@@ -38,6 +44,7 @@ CHECKS = (
 )
 RATE_POLICY = "natural_no_time_stretch"
 BREAK_PUNCTUATION = re.compile(r"[,;:\u2014-][\"')\]]*$")
+BREAK_PUNCTUATION_CAPTURE = re.compile(r"([,;:\u2014-])[\"')\]]*$")
 
 
 TRANSLATION_SYSTEM_PROMPT = """You are preparing natural Simplified Chinese for sentence-anchored
@@ -73,6 +80,10 @@ def _finite(value: object) -> bool:
 def _require(condition: bool, message: str) -> None:
     if not condition:
         raise ValueError(message)
+
+
+def is_supported_anchor_manifest(manifest: dict[str, Any]) -> bool:
+    return manifest.get("schemaVersion") in SUPPORTED_ANCHOR_SCHEMAS
 
 
 def _review_time(value: object) -> bool:
@@ -183,16 +194,93 @@ def _split_long_sentence(words: list[dict[str, Any]], *, max_seconds: float,
     return parts, unresolved
 
 
+def _clause_boundary_evidence(words: list[dict[str, Any]], index: int,
+                              pause_seconds: float) -> dict[str, Any]:
+    word = words[index]
+    gap = max(0.0, float(words[index + 1]["start"]) - float(word["end"]))
+    punctuation_match = BREAK_PUNCTUATION_CAPTURE.search(str(word["text"]))
+    punctuation = punctuation_match.group(1) if punctuation_match else None
+    if punctuation and gap >= pause_seconds:
+        kind = "punctuation_and_audible_pause"
+    elif punctuation:
+        kind = "punctuation"
+    else:
+        kind = "audible_pause"
+    return {
+        "kind": kind,
+        "afterWordId": word["wordId"],
+        "pauseSeconds": round(gap, 6),
+        "punctuation": punctuation,
+        "withinTargetSeconds": True,
+    }
+
+
+def _split_clause_stable(words: list[dict[str, Any]], *, max_seconds: float,
+                         min_unit_seconds: float, pause_seconds: float
+                         ) -> tuple[list[tuple[list[dict[str, Any]], dict[str, Any]]], bool]:
+    """Build v2 subunits without inventing a word-level boundary.
+
+    Every internal split must be supported by punctuation or an audible gap and
+    must keep the emitted prefix within the configured target.  If no such
+    boundary exists, the remaining words stay intact and are explicitly marked
+    over target for operator review.
+    """
+    parts: list[tuple[list[dict[str, Any]], dict[str, Any]]] = []
+    cursor = 0
+    unresolved = False
+    while cursor < len(words):
+        remaining_duration = float(words[-1]["end"]) - float(words[cursor]["start"])
+        if remaining_duration <= max_seconds:
+            parts.append((words[cursor:], {
+                "kind": "source_sentence_end",
+                "afterWordId": words[-1]["wordId"],
+                "pauseSeconds": 0.0,
+                "punctuation": None,
+                "withinTargetSeconds": True,
+            }))
+            break
+
+        safe_candidates: list[tuple[int, dict[str, Any]]] = []
+        for index in range(cursor, len(words) - 1):
+            duration = float(words[index]["end"]) - float(words[cursor]["start"])
+            if duration < min_unit_seconds or duration > max_seconds:
+                continue
+            gap = float(words[index + 1]["start"]) - float(words[index]["end"])
+            if gap >= pause_seconds or BREAK_PUNCTUATION.search(str(words[index]["text"])):
+                safe_candidates.append((index + 1, _clause_boundary_evidence(
+                    words, index, pause_seconds,
+                )))
+        if not safe_candidates:
+            parts.append((words[cursor:], {
+                "kind": "source_sentence_end",
+                "afterWordId": words[-1]["wordId"],
+                "pauseSeconds": 0.0,
+                "punctuation": None,
+                "withinTargetSeconds": False,
+            }))
+            unresolved = True
+            break
+        split_at, evidence = safe_candidates[-1]
+        parts.append((words[cursor:split_at], evidence))
+        cursor = split_at
+    return parts, unresolved
+
+
 def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
-                          max_unit_seconds: float = 12.0, min_unit_seconds: float = 1.5,
+                          max_unit_seconds: float | None = None, min_unit_seconds: float = 1.5,
                           internal_pause_seconds: float = 0.35,
                           reaction_lag_seconds: float = 0.25,
                           inter_utterance_gap_seconds: float = 0.12,
-                          max_end_lag_seconds: float = 8.0) -> dict[str, Any]:
+                          max_end_lag_seconds: float = 8.0,
+                          unit_policy: str = UNIT_POLICY_V1,
+                          word_duration_outlier_seconds: float = 2.5) -> dict[str, Any]:
     _require(segments, "MFA segments must be a nonempty list")
     _require(source_path.is_file(), "MFA segment source file is missing")
     _require(json.loads(source_path.read_text(encoding="utf-8")) == segments,
              "MFA segment data differs from the bound source file")
+    _require(unit_policy in {UNIT_POLICY_V1, UNIT_POLICY_V2}, "Unsupported unit policy")
+    if max_unit_seconds is None:
+        max_unit_seconds = 8.0 if unit_policy == UNIT_POLICY_V2 else 12.0
     for name, value in (
         ("max_unit_seconds", max_unit_seconds),
         ("min_unit_seconds", min_unit_seconds),
@@ -200,9 +288,11 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
         ("reaction_lag_seconds", reaction_lag_seconds),
         ("inter_utterance_gap_seconds", inter_utterance_gap_seconds),
         ("max_end_lag_seconds", max_end_lag_seconds),
+        ("word_duration_outlier_seconds", word_duration_outlier_seconds),
     ):
         _require(_finite(value) and value >= 0, f"{name} must be a finite nonnegative number")
     _require(max_unit_seconds > min_unit_seconds > 0, "Unit duration limits are invalid")
+    _require(word_duration_outlier_seconds > 0, "Word duration outlier limit must be positive")
 
     ordered = sorted(segments, key=lambda item: (float(item.get("start", -1)), int(item.get("id", 0))))
     units: list[dict[str, Any]] = []
@@ -233,15 +323,44 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
         if previous_word_end is not None and words[0]["start"] < previous_word_end - 0.001:
             issues.append({"type": "non_monotonic_segment_order", "sourceSentenceId": sentence_id})
         previous_word_end = words[-1]["end"]
-        parts, unresolved = _split_long_sentence(
-            words,
-            max_seconds=max_unit_seconds,
-            min_unit_seconds=min_unit_seconds,
-            pause_seconds=internal_pause_seconds,
-        )
-        for part_index, part in enumerate(parts, start=1):
-            basis = "frozen_reference_punctuation" if len(parts) == 1 else "long_sentence_pause_clause"
+        if unit_policy == UNIT_POLICY_V2:
+            for word in words:
+                word_duration = float(word["end"]) - float(word["start"])
+                if word_duration > word_duration_outlier_seconds:
+                    issues.append({
+                        "type": "alignment_word_duration_outlier",
+                        "sourceSentenceId": sentence_id,
+                        "wordId": word["wordId"],
+                        "text": word["text"],
+                        "durationSeconds": round(word_duration, 6),
+                        "maximumSeconds": word_duration_outlier_seconds,
+                    })
+            clause_parts, unresolved = _split_clause_stable(
+                words,
+                max_seconds=max_unit_seconds,
+                min_unit_seconds=min_unit_seconds,
+                pause_seconds=internal_pause_seconds,
+            )
+            parts_with_evidence = clause_parts
+        else:
+            parts, unresolved = _split_long_sentence(
+                words,
+                max_seconds=max_unit_seconds,
+                min_unit_seconds=min_unit_seconds,
+                pause_seconds=internal_pause_seconds,
+            )
+            parts_with_evidence = [(part, None) for part in parts]
+        for part_index, (part, split_evidence) in enumerate(parts_with_evidence, start=1):
+            basis = ("frozen_reference_punctuation" if len(parts_with_evidence) == 1
+                     else "long_sentence_pause_clause")
             unit_id = f"{chunk_id}-u{len([u for u in units if u['referenceChunkId'] == chunk_id]) + 1:03d}"
+            boundary = {
+                "basis": basis,
+                "humanReview": "pending",
+                "sourceSentenceBoundary": str(segment.get("sentenceBoundarySource", "unknown")),
+            }
+            if split_evidence is not None:
+                boundary["splitEvidence"] = split_evidence
             units.append({
                 "sourceUnitId": unit_id,
                 "sourceSentenceId": sentence_id,
@@ -253,23 +372,34 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
                 "start": part[0]["start"],
                 "end": part[-1]["end"],
                 "durationSeconds": round(part[-1]["end"] - part[0]["start"], 6),
-                "boundary": {
-                    "basis": basis,
-                    "humanReview": "pending",
-                    "sourceSentenceBoundary": str(segment.get("sentenceBoundarySource", "unknown")),
-                },
+                "boundary": boundary,
                 "requiresOperatorReview": True,
             })
         if unresolved:
-            issues.append({
-                "type": "long_sentence_without_safe_pause_split",
+            unresolved_part = parts_with_evidence[-1][0]
+            issue = {
+                "type": ("clause_unit_exceeds_target_without_safe_boundary"
+                         if unit_policy == UNIT_POLICY_V2
+                         else "long_sentence_without_safe_pause_split"),
                 "sourceSentenceId": sentence_id,
-                "durationSeconds": round(words[-1]["end"] - words[0]["start"], 6),
-            })
+                "durationSeconds": round(
+                    float(unresolved_part[-1]["end"]) - float(unresolved_part[0]["start"]), 6,
+                ),
+            }
+            if unit_policy == UNIT_POLICY_V2:
+                issue.update({
+                    "maximumSeconds": max_unit_seconds,
+                    "sourceWordIds": [word["wordId"] for word in unresolved_part],
+                    "english": _word_text(unresolved_part),
+                })
+            issues.append(issue)
 
     for index, unit in enumerate(units):
         next_start = units[index + 1]["start"] if index + 1 < len(units) else unit["end"]
         unit["boundary"]["pauseAfterSeconds"] = round(max(0.0, next_start - unit["end"]), 6)
+        if (unit_policy == UNIT_POLICY_V2
+                and unit["boundary"]["splitEvidence"]["kind"] == "source_sentence_end"):
+            unit["boundary"]["splitEvidence"]["pauseSeconds"] = unit["boundary"]["pauseAfterSeconds"]
 
     requests = []
     for index, unit in enumerate(units):
@@ -284,7 +414,7 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
         })
 
     return {
-        "schemaVersion": ANCHOR_SCHEMA,
+        "schemaVersion": ANCHOR_SCHEMA_V2 if unit_policy == UNIT_POLICY_V2 else ANCHOR_SCHEMA_V1,
         "status": "machine_anchor_candidate_requires_review" if units else "invalid_anchor_manifest",
         "releaseEligible": False,
         "input": {
@@ -294,10 +424,12 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
             "frozenEnglishCompleteness": "requires_separate_review",
         },
         "policy": {
-            "unitPolicy": "punctuation_then_pause_split_v1",
+            "unitPolicy": unit_policy,
             "maxUnitSeconds": max_unit_seconds,
             "minUnitSeconds": min_unit_seconds,
             "internalPauseSeconds": internal_pause_seconds,
+            **({"wordDurationOutlierSeconds": word_duration_outlier_seconds}
+               if unit_policy == UNIT_POLICY_V2 else {}),
             "interpretationSchedule": "rolling_interpreter_v1",
             "reactionLagSeconds": reaction_lag_seconds,
             "interUtteranceGapSeconds": inter_utterance_gap_seconds,
@@ -333,7 +465,7 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
 
 
 def translation_packet(manifest: dict[str, Any]) -> dict[str, Any]:
-    _require(manifest.get("schemaVersion") == ANCHOR_SCHEMA, "Unsupported anchor manifest")
+    _require(is_supported_anchor_manifest(manifest), "Unsupported anchor manifest")
     return {
         "schemaVersion": "sermon-sentence-translation-request-v1",
         "anchorManifestSha256": json_sha256(manifest),
@@ -395,7 +527,7 @@ def _checked_draft_groups(manifest: dict[str, Any], draft: dict[str, Any]) -> li
 
 
 def review_packet(manifest: dict[str, Any], draft: dict[str, Any]) -> dict[str, Any]:
-    _require(manifest.get("schemaVersion") == ANCHOR_SCHEMA, "Unsupported anchor manifest")
+    _require(is_supported_anchor_manifest(manifest), "Unsupported anchor manifest")
     _require(draft.get("schemaVersion") == DRAFT_SCHEMA, "Unsupported translation draft")
     _require(draft.get("anchorManifestSha256") == json_sha256(manifest),
              "Translation draft belongs to another anchor manifest")
@@ -447,7 +579,7 @@ def _review_pass(group: dict[str, Any], source_ids: list[str], issues: list[dict
 
 
 def validate_candidate(manifest: dict[str, Any], candidate: dict[str, Any]) -> dict[str, Any]:
-    _require(manifest.get("schemaVersion") == ANCHOR_SCHEMA, "Unsupported anchor manifest")
+    _require(is_supported_anchor_manifest(manifest), "Unsupported anchor manifest")
     _require(candidate.get("schemaVersion") == CANDIDATE_SCHEMA, "Unsupported interpretation candidate")
     expected_manifest_hash = json_sha256(manifest)
     _require(candidate.get("anchorManifestSha256") == expected_manifest_hash,
@@ -641,12 +773,19 @@ def main() -> int:
     prepare = sub.add_parser("prepare", help="Build sentence/pause anchors and model request packets")
     prepare.add_argument("--mfa-segments", type=Path, required=True)
     prepare.add_argument("--out", type=Path, required=True)
-    prepare.add_argument("--max-unit-seconds", type=float, default=12.0)
+    prepare.add_argument(
+        "--max-unit-seconds", type=float,
+        help="Target unit duration; defaults to 12s for v1 and 8s for clause_stable_v2",
+    )
     prepare.add_argument("--min-unit-seconds", type=float, default=1.5)
     prepare.add_argument("--internal-pause-seconds", type=float, default=0.35)
     prepare.add_argument("--reaction-lag-seconds", type=float, default=0.25)
     prepare.add_argument("--inter-utterance-gap-seconds", type=float, default=0.12)
     prepare.add_argument("--max-end-lag-seconds", type=float, default=8.0)
+    prepare.add_argument(
+        "--unit-policy", choices=(UNIT_POLICY_V1, UNIT_POLICY_V2), default=UNIT_POLICY_V1,
+    )
+    prepare.add_argument("--word-duration-outlier-seconds", type=float, default=2.5)
     prepare_review = sub.add_parser("prepare-review", help="Bind a translation draft into an independent review request")
     prepare_review.add_argument("--anchor-manifest", type=Path, required=True)
     prepare_review.add_argument("--draft", type=Path, required=True)
@@ -669,6 +808,8 @@ def main() -> int:
             reaction_lag_seconds=args.reaction_lag_seconds,
             inter_utterance_gap_seconds=args.inter_utterance_gap_seconds,
             max_end_lag_seconds=args.max_end_lag_seconds,
+            unit_policy=args.unit_policy,
+            word_duration_outlier_seconds=args.word_duration_outlier_seconds,
         )
         args.out.mkdir(parents=True, exist_ok=True)
         write_json(args.out / "anchor-manifest.json", manifest)

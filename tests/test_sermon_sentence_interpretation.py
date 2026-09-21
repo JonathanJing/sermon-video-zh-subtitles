@@ -124,6 +124,95 @@ class SentenceInterpretationTests(unittest.TestCase):
         self.assertEqual(len(manifest["sourceUnits"]), 1)
         self.assertIn("long_sentence_without_safe_pause_split", {issue["type"] for issue in manifest["issues"]})
 
+    def test_clause_stable_v2_preserves_parent_words_and_records_split_evidence(self):
+        long = segment(
+            "One two, three four.",
+            ["One", "two,", "three", "four."],
+            gaps=[0.1, 0.8, 0.1],
+        )
+        self.source.write_text(json.dumps([long]), encoding="utf-8")
+        manifest = subject.build_anchor_manifest(
+            [long], source_path=self.source, max_unit_seconds=1.5, min_unit_seconds=0.5,
+            internal_pause_seconds=0.35, unit_policy=subject.UNIT_POLICY_V2,
+        )
+        self.assertEqual(manifest["schemaVersion"], subject.ANCHOR_SCHEMA_V2)
+        self.assertEqual(len(manifest["sourceUnits"]), 2)
+        self.assertEqual(
+            {unit["sourceSentenceId"] for unit in manifest["sourceUnits"]},
+            {"block-00-s001"},
+        )
+        self.assertEqual(
+            [word_id for unit in manifest["sourceUnits"] for word_id in unit["sourceWordIds"]],
+            [f"block-00-w{index:04d}" for index in range(1, 5)],
+        )
+        evidence = manifest["sourceUnits"][0]["boundary"]["splitEvidence"]
+        self.assertEqual(evidence["kind"], "punctuation_and_audible_pause")
+        self.assertEqual(evidence["afterWordId"], "block-00-w0002")
+        self.assertAlmostEqual(evidence["pauseSeconds"], 0.8)
+        self.assertTrue(evidence["withinTargetSeconds"])
+        self.assertEqual(manifest["issues"], [])
+
+    def test_clause_stable_v2_never_forces_oversized_punctuation_split(self):
+        long = segment(
+            "One two three, four five.",
+            ["One", "two", "three,", "four", "five."],
+        )
+        self.source.write_text(json.dumps([long]), encoding="utf-8")
+        manifest = subject.build_anchor_manifest(
+            [long], source_path=self.source, max_unit_seconds=1.0, min_unit_seconds=0.5,
+            internal_pause_seconds=0.35, unit_policy=subject.UNIT_POLICY_V2,
+        )
+        self.assertEqual(len(manifest["sourceUnits"]), 1)
+        unit = manifest["sourceUnits"][0]
+        self.assertGreater(unit["durationSeconds"], manifest["policy"]["maxUnitSeconds"])
+        self.assertFalse(unit["boundary"]["splitEvidence"]["withinTargetSeconds"])
+        issue = next(item for item in manifest["issues"]
+                     if item["type"] == "clause_unit_exceeds_target_without_safe_boundary")
+        self.assertEqual(issue["sourceWordIds"], unit["sourceWordIds"])
+        self.assertEqual(issue["english"], unit["english"])
+
+    def test_clause_stable_v2_flags_alignment_word_duration_outlier(self):
+        raw = [{
+            "id": 0,
+            "referenceChunkId": "block-00",
+            "text": "I think—I know.",
+            "start": 0.0,
+            "end": 7.0,
+            "sentenceBoundarySource": "frozen_reference_punctuation",
+            "wordTimes": [
+                {"text": "I", "start": 0.0, "end": 0.2},
+                {"text": "think—I", "start": 0.3, "end": 6.5},
+                {"text": "know.", "start": 6.6, "end": 7.0},
+            ],
+        }]
+        self.source.write_text(json.dumps(raw), encoding="utf-8")
+        manifest = subject.build_anchor_manifest(
+            raw, source_path=self.source, max_unit_seconds=8.0,
+            unit_policy=subject.UNIT_POLICY_V2,
+        )
+        issue = next(item for item in manifest["issues"]
+                     if item["type"] == "alignment_word_duration_outlier")
+        self.assertEqual(issue["wordId"], "block-00-w0002")
+        self.assertAlmostEqual(issue["durationSeconds"], 6.2)
+
+    def test_v2_anchor_is_supported_by_translation_review_and_validation(self):
+        self.manifest = subject.build_anchor_manifest(
+            self.segments, source_path=self.source, unit_policy=subject.UNIT_POLICY_V2,
+        )
+        self.assertTrue(subject.is_supported_anchor_manifest(self.manifest))
+        draft = {
+            "schemaVersion": subject.DRAFT_SCHEMA,
+            "anchorManifestSha256": subject.json_sha256(self.manifest),
+            "groups": self.candidate()["groups"],
+        }
+        self.assertEqual(subject.translation_packet(self.manifest)["requests"],
+                         self.manifest["translationRequests"])
+        self.assertEqual(subject.review_packet(self.manifest, draft)["groups"][0]["source"][0]["english"],
+                         "Do not be afraid.")
+        self.assertTrue(subject.validate_candidate(
+            self.manifest, self.candidate(),
+        )["candidateReadyForHumanReview"])
+
     def test_prepare_rejects_data_that_differs_from_bound_file(self):
         changed = copy.deepcopy(self.segments)
         changed[0]["text"] = "Changed."

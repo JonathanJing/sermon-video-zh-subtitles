@@ -23,6 +23,12 @@
 
 OpenAI 云端转写与语言 API 保持不变。每周 TTS 和配音质检也采用 MacBook 优先、Spark 备用。MacBook MPS 已用授权讲员检查点完成 10 字中文单元的真实合成，输出 2.56 秒音频；短样本成功不代表整篇吞吐、音质或人工听审获准。媒体处理、排版和校验保留在调度端；无模型声音指纹匹配继续在听众浏览器内执行。
 
+### 未来中文同传 shadow
+
+配置 `--dubbing-config` 的未来周生产，会在冻结英文和 MFA 对齐完成后自动运行 clause-stable v2 shadow。入口读取 `pipeline/segments_timed_en_corrected.json`，在 `pipeline/sentence-interpretation-v2/<identity>/` 保存不可变的 `anchor-manifest.json`、`translation-request.json` 和 `receipt.json`。单元目标为约 6–8 秒；内部切点必须有分句标点或至少 0.35 秒词间停顿，并保留父句、原始 `wordId` 和 `splitEvidence`。
+
+`ready_for_model_translation` 仅表示自动锚点结构干净，可以进入独立 GPT 初译／复核；`waiting_anchor_review` 表示词对齐或安全分句仍需处理，不能继续模型或 TTS。该 shadow 不改变当前双 PDF、中文配音或发布完成标准，也不会自动调用付费 API。必要时用 `--no-sentence-interpretation-shadow` 关闭；不带配音配置的双 PDF 流程默认不运行。提升为正式音轨前仍须完成英文完整性、句界听审、中文逐句完整性、自然语速排程和同录音 1 倍速全篇试听。
+
 ## 人工范围流程（2026-09-19 代码更新）
 
 完整礼拜不再调用模型识别证道起止位置。当前顺序为：下载完整媒体 → ffprobe/完整性核验 → 操作员提供绝对起止时间 → 持久化审批 → 英文转写、中文翻译与双 PDF。纯证道来源沿用独立同视频入口；在归档入口也可人工确认 `0 → 完整片长`。`gpt-transcribe` 仅在后续内容转写等独立阶段使用。

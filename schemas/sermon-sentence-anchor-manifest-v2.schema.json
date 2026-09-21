@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-sentence-anchor-manifest-v2.schema.json",
+  "title": "Clause-stable sentence and pause anchored English source manifest",
+  "type": "object",
+  "required": ["schemaVersion", "status", "releaseEligible", "input", "policy", "sourceUnits", "translationRequests", "issues", "humanReview"],
+  "properties": {
+    "schemaVersion": { "const": "sermon-sentence-anchor-manifest-v2" },
+    "status": { "const": "machine_anchor_candidate_requires_review" },
+    "releaseEligible": { "const": false },
+    "input": {
+      "type": "object",
+      "required": ["mfaSegments", "mfaSegmentsSha256", "timingKind", "frozenEnglishCompleteness"],
+      "properties": {
+        "mfaSegments": { "type": "string", "minLength": 1 },
+        "mfaSegmentsSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "timingKind": { "const": "mfa_forced_alignment_estimate" },
+        "frozenEnglishCompleteness": { "const": "requires_separate_review" }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "required": ["unitPolicy", "maxUnitSeconds", "minUnitSeconds", "internalPauseSeconds", "wordDurationOutlierSeconds", "interpretationSchedule", "reactionLagSeconds", "interUtteranceGapSeconds", "maxEndLagSeconds", "audioRatePolicy"],
+      "properties": {
+        "unitPolicy": { "const": "clause_stable_v2" },
+        "maxUnitSeconds": { "type": "number", "exclusiveMinimum": 0 },
+        "minUnitSeconds": { "type": "number", "exclusiveMinimum": 0 },
+        "internalPauseSeconds": { "type": "number", "minimum": 0 },
+        "wordDurationOutlierSeconds": { "type": "number", "exclusiveMinimum": 0 },
+        "interpretationSchedule": { "const": "rolling_interpreter_v1" },
+        "reactionLagSeconds": { "type": "number", "minimum": 0 },
+        "interUtteranceGapSeconds": { "type": "number", "minimum": 0 },
+        "maxEndLagSeconds": { "type": "number", "exclusiveMinimum": 0 },
+        "audioRatePolicy": { "const": "natural_no_time_stretch" }
+      }
+    },
+    "sourceUnits": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["sourceUnitId", "sourceSentenceId", "referenceChunkId", "partIndex", "english", "sourceWordIds", "words", "start", "end", "durationSeconds", "boundary", "requiresOperatorReview"],
+        "properties": {
+          "sourceUnitId": { "type": "string", "minLength": 1 },
+          "sourceSentenceId": { "type": "string", "minLength": 1 },
+          "referenceChunkId": { "type": "string", "minLength": 1 },
+          "partIndex": { "type": "integer", "minimum": 1 },
+          "english": { "type": "string", "minLength": 1 },
+          "sourceWordIds": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+          "words": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["wordId", "text", "start", "end"],
+              "properties": {
+                "wordId": { "type": "string", "minLength": 1 },
+                "text": { "type": "string", "minLength": 1 },
+                "start": { "type": "number", "minimum": 0 },
+                "end": { "type": "number", "exclusiveMinimum": 0 }
+              }
+            }
+          },
+          "start": { "type": "number", "minimum": 0 },
+          "end": { "type": "number", "exclusiveMinimum": 0 },
+          "durationSeconds": { "type": "number", "exclusiveMinimum": 0 },
+          "boundary": {
+            "type": "object",
+            "required": ["basis", "humanReview", "sourceSentenceBoundary", "pauseAfterSeconds", "splitEvidence"],
+            "properties": {
+              "basis": { "enum": ["frozen_reference_punctuation", "long_sentence_pause_clause"] },
+              "humanReview": { "const": "pending" },
+              "sourceSentenceBoundary": { "type": "string", "minLength": 1 },
+              "pauseAfterSeconds": { "type": "number", "minimum": 0 },
+              "splitEvidence": {
+                "type": "object",
+                "required": ["kind", "afterWordId", "pauseSeconds", "punctuation", "withinTargetSeconds"],
+                "properties": {
+                  "kind": { "enum": ["source_sentence_end", "punctuation", "audible_pause", "punctuation_and_audible_pause"] },
+                  "afterWordId": { "type": "string", "minLength": 1 },
+                  "pauseSeconds": { "type": "number", "minimum": 0 },
+                  "punctuation": { "type": ["string", "null"] },
+                  "withinTargetSeconds": { "type": "boolean" }
+                }
+              }
+            }
+          },
+          "requiresOperatorReview": { "const": true }
+        }
+      }
+    },
+    "translationRequests": { "type": "array" },
+    "issues": { "type": "array" },
+    "humanReview": {
+      "type": "object",
+      "required": ["englishTranscriptCompleteness", "sentenceAndPauseBoundaries"],
+      "properties": {
+        "englishTranscriptCompleteness": { "const": "pending" },
+        "sentenceAndPauseBoundaries": { "const": "pending" }
+      }
+    }
+  }
+}

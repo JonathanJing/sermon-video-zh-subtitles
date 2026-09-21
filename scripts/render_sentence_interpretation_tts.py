@@ -61,7 +61,7 @@ def _load_json(path: Path) -> Any:
 
 
 def _semantic_groups(anchor: dict[str, Any], semantic: dict[str, Any]) -> list[dict[str, Any]]:
-    _require(anchor.get("schemaVersion") == interpretation.ANCHOR_SCHEMA, "Unsupported anchor manifest")
+    _require(interpretation.is_supported_anchor_manifest(anchor), "Unsupported anchor manifest")
     _require(semantic.get("schemaVersion") == "sermon-sentence-semantic-candidate-v1",
              "Unsupported semantic candidate")
     _require(semantic.get("status") == "model_review_pass_tts_and_human_review_pending",

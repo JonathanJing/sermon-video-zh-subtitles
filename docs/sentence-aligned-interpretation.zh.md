@@ -26,7 +26,7 @@
 - 普通句沿用冻结文本的标点边界；长句的内部拆分须有停顿或分句标点证据，并保持 `requiresOperatorReview=true`。
 - 英文完整性和句／停顿边界是两个人工门槛，不能由结构检查自动批准。
 
-合同：[英文句锚 schema](../schemas/sermon-sentence-anchor-manifest-v1.schema.json)。生成器：[sermon_sentence_interpretation.py](../scripts/sermon_sentence_interpretation.py)。
+合同：[v1 英文句锚 schema](../schemas/sermon-sentence-anchor-manifest-v1.schema.json)、[clause-stable v2 schema](../schemas/sermon-sentence-anchor-manifest-v2.schema.json)。生成器：[sermon_sentence_interpretation.py](../scripts/sermon_sentence_interpretation.py)。v1 保持兼容；v2 默认以 8 秒为目标，只在标点或至少 0.35 秒的词间停顿处拆分，并为每个边界保存 `splitEvidence`。没有安全边界时，v2 保留完整词序列、标记超时并阻止模型和 TTS 阶段，绝不静默硬切。
 
 ### 2. 初译与独立复核
 
@@ -119,6 +119,21 @@ end   = start + measured_natural_audio_duration
 
 实测结论是：**完整中文可以按自然语速合成，但当前“等整个句级意义单元稳定后才开始中文”的 v1 排程不合格。** `block-01` 的最大结束延迟为 26.13 秒，`block-31` 为 15.95 秒；52 组超限使候选保持 `candidate_blocked`。这不是靠放宽标签或把 8 秒改成更大数字来解决的问题。下一轮应把较长英文句保留为可审计的父句，同时在已有逗号／可听停顿处生成约 6–8 秒的 clause-stable 子单元，再以新的来源映射重做翻译与 TTS；不能在合成后随意切中文，也不能复用本轮 99 组的通过状态冒充新边界已审。
 
+### Clause-stable v2 结构验证
+
+同一份 13 区块、1,316 词 MFA 输入以 `clause_stable_v2` 和 8 秒目标重跑后，生成 107 个子单元；时长中位数 3.24 秒、P95 7.64 秒。所有子单元继续引用原来的父句和原始 `wordId`，新 schema 校验通过。v2 没有沿用 v1 “找不到阈值内边界就选择阈值外第一个边界”的行为，因此真实暴露两个超时来源：
+
+- `block-37-s005` 保留为 19.53 秒完整句；其中 `think—I` 被 MFA 对齐成 6.18 秒单词，超过 2.5 秒异常阈值，需要先修复词级对齐。
+- `block-56-s002` 为 8.41 秒，句内没有达到 0.35 秒的可听停顿，也没有可用分句标点；保留原句并等待操作员听审，不任意切词。
+
+因此本轮结构结果保持阻塞，未调用新的 GPT 初译或 TTS。其意义是把“对齐错误”和“没有安全分句点”从表面上的句长问题中分离出来；只有修复／批准这两个锚点后，才可对 107 个新来源单元重新翻译和合成，不能复用 v1 的 99 组模型通过状态。
+
+### 未来周生产接线
+
+[`prepare_sentence_interpretation_shadow.py`](../scripts/prepare_sentence_interpretation_shadow.py) 已把 v2 锚点生成接到未来周生产的 shadow 路径，收据遵循 [`sermon-sentence-interpretation-shadow-v1`](../schemas/sermon-sentence-interpretation-shadow-v1.schema.json)。`run_post_live_subtitle_generation.py` 在存在 `--dubbing-config` 时默认调用它，并把结果写入生产报告的 `sentenceInterpretationShadow`；显式 `--sentence-interpretation-shadow` 可在无配音配置的定向运行中启用，`--no-sentence-interpretation-shadow` 可关闭。输出目录由冻结英文哈希、实现哈希和策略共同确定，缓存只允许内容完全相同的重用。
+
+此接线只自动完成边界候选和 fail-closed 检查。`ready_for_model_translation` 后仍须由独立模型 runner 生成并复核中文，再走自然语速 TTS 和人工听审；`waiting_anchor_review` 或 `shadow_failed` 不影响当前双 PDF，但不得进入新同传候选的付费阶段。正式生产切换需另有真实整篇通过证据。
+
 忽略目录中的真实产物：
 
 - `artifacts/sentence-interpretation-poc/20260920-stratified-13/anchor-manifest.json`
@@ -134,7 +149,9 @@ end   = start + measured_natural_audio_duration
 ```bash
 .venv/bin/python scripts/sermon_sentence_interpretation.py prepare \
   --mfa-segments <segments.json> \
-  --out artifacts/sentence-interpretation-poc/<run-id>
+  --out artifacts/sentence-interpretation-poc/<run-id> \
+  --unit-policy clause_stable_v2 \
+  --max-unit-seconds 8
 
 .venv/bin/python scripts/sermon_sentence_interpretation.py prepare-review \
   --anchor-manifest <anchor-manifest.json> \
@@ -185,4 +202,4 @@ HF_HUB_OFFLINE=1 artifacts/english-word-timeline-poc/runtime/bin/python \
   tests.test_screen_sentence_interpretation_tts -v
 ```
 
-在生产接线前，还需要完成更细 clause-stable 锚定的同输入对照、把 GPT 初译／独立复核 runner、TTS 单元收据和正式人工 review receipt 接到现有周任务；合并本合同本身不会改变当前生产输出。
+当前周任务已接入 clause-stable 锚点 shadow，但 GPT 初译／独立复核、TTS 单元收据和正式人工 review receipt 仍保持独立门槛；合并本合同不会改变当前生产输出。

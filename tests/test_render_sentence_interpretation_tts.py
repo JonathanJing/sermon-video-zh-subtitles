@@ -84,6 +84,21 @@ class SentenceInterpretationTtsTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "every source unit"):
             subject.prepare_job(self.anchor_path, self.semantic_path, self.checkpoint, self.root / "job")
 
+    def test_prepare_accepts_supported_v2_anchor(self):
+        self.anchor["schemaVersion"] = interpretation.ANCHOR_SCHEMA_V2
+        self.anchor["policy"]["unitPolicy"] = interpretation.UNIT_POLICY_V2
+        self.anchor["sourceUnits"][0]["boundary"]["splitEvidence"] = {
+            "kind": "source_sentence_end", "afterWordId": "block-00-w0001",
+            "pauseSeconds": 0.2, "punctuation": None, "withinTargetSeconds": True,
+        }
+        self.semantic["anchorManifestSha256"] = interpretation.json_sha256(self.anchor)
+        write_json(self.anchor_path, self.anchor)
+        write_json(self.semantic_path, self.semantic)
+        job = subject.prepare_job(
+            self.anchor_path, self.semantic_path, self.checkpoint, self.root / "v2-job",
+        )
+        self.assertEqual(job["units"][0]["sourceUnitIds"], ["block-00-u001"])
+
     def test_finalize_binds_decoded_audio_and_reports_timing(self):
         job_dir = self.root / "job"
         job = subject.prepare_job(self.anchor_path, self.semantic_path, self.checkpoint, job_dir)

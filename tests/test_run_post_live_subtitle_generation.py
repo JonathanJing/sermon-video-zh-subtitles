@@ -162,6 +162,15 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
         self.assertEqual(report["status"], "waiting_for_source")
         self.assertEqual(report["reason"], "captured_state_has_no_live_url")
 
+    def test_sentence_interpretation_shadow_defaults_with_dubbing_and_can_be_disabled(self):
+        self.assertFalse(mod.sentence_interpretation_shadow_enabled(make_args()))
+        self.assertTrue(mod.sentence_interpretation_shadow_enabled(
+            make_args(dubbing_config=Path("bridge.json")),
+        ))
+        self.assertFalse(mod.sentence_interpretation_shadow_enabled(
+            make_args(dubbing_config=Path("bridge.json"), sentence_interpretation_shadow=False),
+        ))
+
     def test_plan_waits_until_metadata_is_post_live(self):
         with tempfile.TemporaryDirectory() as tempdir:
             state_path = Path(tempdir) / "state.json"
@@ -329,7 +338,8 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
 
             report = mod.run_post_live_generation(
                 make_args(state_file=str(state_path), work_root=Path(tempdir), plan_only=False,
-                          export_sunday_context=True, source_service_date="2026-06-27"),
+                          export_sunday_context=True, source_service_date="2026-06-27",
+                          sentence_interpretation_shadow=True),
                 metadata_loader=lambda _: {
                     "id": "MEZHufeQBjc",
                     "live_status": "post_live",
@@ -341,6 +351,8 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
             )
 
         self.assertEqual(report["status"], "completed")
+        self.assertEqual(report["sentenceInterpretationShadow"]["status"], "shadow_failed")
+        self.assertFalse(report["sentenceInterpretationShadow"]["productionOutputChanged"])
         self.assertEqual(len(report["sundayContext"]["paths"]), 6)
         self.assertTrue(any(path.endswith("sunday-context/pack-readiness.json") for path in report["outputs"]))
         self.assertEqual(calls[0][0], "yt-dlp")

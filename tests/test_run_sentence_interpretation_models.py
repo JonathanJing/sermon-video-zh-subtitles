@@ -132,6 +132,24 @@ class SentenceInterpretationModelRunnerTests(unittest.TestCase):
         self.assertEqual(result["status"], "model_review_requires_resolution")
         self.assertEqual(result["counts"]["machineSemanticReviewNeedsResolution"], 1)
 
+    def test_clean_v2_anchor_is_accepted(self):
+        raw = json.loads((self.root / "segments.json").read_text(encoding="utf-8"))
+        self.manifest = contract.build_anchor_manifest(
+            raw, source_path=self.root / "segments.json", unit_policy=contract.UNIT_POLICY_V2,
+        )
+        contract.write_json(self.manifest_path, self.manifest)
+        result = runner.run(
+            manifest_path=self.manifest_path,
+            out=self.root / "v2",
+            model="gpt-6-astra",
+            effort="medium",
+            batch_size=1,
+            workers=1,
+            api_key="test-secret-key",
+            caller=self.fake_call,
+        )
+        self.assertEqual(result["status"], "model_review_pass_tts_and_human_review_pending")
+
 
 if __name__ == "__main__":
     unittest.main()
