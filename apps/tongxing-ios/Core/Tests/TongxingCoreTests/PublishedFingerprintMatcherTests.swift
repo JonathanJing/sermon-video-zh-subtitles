@@ -125,9 +125,12 @@ struct PublishedFingerprintMatcherTests {
     private func signal(_ rate: Int) -> [Float] {
         (0..<(rate * 10)).map { i in
             let t = Double(i) / Double(rate)
-            let first = 0.18 * sin(2 * Double.pi * (300 * t + 45 * t * t + 90 * sin(1.7 * t)))
-            let second = 0.12 * sin(2 * Double.pi * (1100 * t - 29 * t * t + 65 * sin(2.3 * t)))
-            let third = 0.08 * sin(2 * Double.pi * (2100 * t + 13 * t * t + 40 * sin(0.9 * t)))
+            let firstPhase = 300 * t + 45 * t * t + 90 * sin(1.7 * t)
+            let secondPhase = 1100 * t - 29 * t * t + 65 * sin(2.3 * t)
+            let thirdPhase = 2100 * t + 13 * t * t + 40 * sin(0.9 * t)
+            let first = 0.18 * sin(2 * Double.pi * firstPhase)
+            let second = 0.12 * sin(2 * Double.pi * secondPhase)
+            let third = 0.08 * sin(2 * Double.pi * thirdPhase)
             return Float(first + second + third)
         }
     }
