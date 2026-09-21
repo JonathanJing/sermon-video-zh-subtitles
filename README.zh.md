@@ -37,6 +37,8 @@
 
 四层的唯一正式命名、输入输出 schema 和失效规则见[多语言生产四层接口](docs/multilingual-production-interfaces.zh.md)；当前实现另见[工作流总览](docs/workflows/README.zh.md)、[句级锚定与滚动同传设计](docs/sentence-aligned-interpretation.zh.md)和[系统设计与模型选择](docs/sermon-dubbing-system-design.zh.md)。
 
+今后所有预制多语言生产都按这四层留证和放行。现有双 PDF、中文配音和页面工具在迁移期作为明确范围的 legacy adapter；它们各自的 `complete` 不等于四层全流程已完成。周日实时字幕仍是独立的低延迟路径；若之后把录音做成可持久发布内容，须从 Layer 1 重新进入。
+
 ## 周日运行：准备页面与创建本场字幕会话
 
 [运行白皮书](docs/sunday-live-operations-whitepaper.zh.md) · [Agent 直接执行入口](docs/sunday-live-agent-runbook.zh.md)

@@ -4,6 +4,8 @@
 
 当前已有完整同步试播候选；每周全自动接入、整篇人耳试听和现场同步仍有未完成项。本文描述代码接口和设计理由；数字结果以 [2026-09-05 Astra 修订报告](sermon-dubbing-astra-review-2026-09-05.zh.md)为准，操作命令见[周六配音 Runbook](../experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md)。模型官方资料于 2026-09-05 核对。
 
+本文描述现有中文实现模块；全项目正式的 Layer 1–4 名称、层间输入输出与完成条件以[多语言生产四层接口](multilingual-production-interfaces.zh.md)为准。下面的模块表不代表可以越过四层门禁。
+
 ![两路视频来源、长期音色准备、每周配音与审核发布](diagrams/saturday-chinese-voice-workflow.svg)
 
 ## 1. 两路来源，统一到冻结任务
@@ -21,7 +23,7 @@ fallback 继续要求既有周六人工窗口及双 PDF 证据。纯证道 [prep
 
 ## 2. 模块与部署分工
 
-| 层 | 主要入口 | 职责与输出 |
+| 实现模块 | 主要入口 | 职责与输出 |
 |---|---|---|
 | 来源与阅读生产 | [周六本地生产流程](codex-local-production-runbook.zh.md)、[sermon_production_supervisor.py](../scripts/sermon_production_supervisor.py) | 获取来源、确认窗口，生成英文参考、已审中文、双 PDF 与完成证据。 |
 | 配音任务准备 | [weekly_dubbing.py](../experiments/sermon-dubbing-poc/weekly_dubbing.py) 的 `prepare()` | 验证来源、授权、文本、QA、讲员检查点；生成 `job.json`、段落和合成单元。 |

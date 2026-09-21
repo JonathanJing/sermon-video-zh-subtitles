@@ -2,6 +2,8 @@
 
 `scripts/run_saturday_harness.py` 负责按顺序运行已有 PDF Supervisor 和配音桥接器，并把 PDF、音频候选、人工审核、同步、发布分别报告。它不重新实现审批、质量检查或完成门槛。
 
+这是迁移期的 legacy 编排入口，不是[四层生产接口](multilingual-production-interfaces.zh.md)的替代品。现有 PDF 状态属于 `dual_pdf`，桥接器只覆盖当前中文候选链的一部分；`workflowComplete=false` 也不能升级为 `four_layer_release`。今后的预制生产必须绑定 Layer 1 的 `English Source Package`，再由独立 Layer 2／3／4 producer 消费冻结输出并留下各层正式包。
+
 需要跨进程重启保留状态及等待审批证据时，使用 [Temporal 包装入口](sermon-temporal.zh.md)；它调用本页既有入口。固定输出质量比较见 [Promptfoo 回归](saturday-quality-harness.zh.md)，执行账本观察见 [Jaeger/OTLP 集成](sermon-trace-export.zh.md)。
 
 默认 `inspect`，`shadow` 与其相同：只读显式指定的本地报告，不调用模型、不启动任何子进程、不创建目录或写文件。读到的 `complete` 只是保存的 PDF 报告状态，标记 `saved_snapshot_unverified`，不表示当前生产健康。未提供 `--bridge-report` 时，音频显示 `not_observed`，不会扫描“最新目录”或猜测来源。

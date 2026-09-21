@@ -19,16 +19,31 @@ Subdirectory `AGENTS.md` applies within its subtree. Keep changing model version
 
 Before producing or reviewing series pages, subtitles, reading text, outlines or dubbing, read [the shared series terminology table](docs/series-terminology.zh.md). Reuse its established translations and follow its contextual usage and pre-dubbing checks. When a verified new series enters production, automatically append it to that same table with source evidence; preserve existing entries and active runs. The table documents current script-integration limits; do not claim a stage consumed it without evidence.
 
+## Four-layer production contract
+
+All future prepared multilingual sermon production follows the frozen interfaces in [the four-layer contract](docs/multilingual-production-interfaces.zh.md), in this order:
+
+1. **Shared English Source & Anchors** → `English Source Package`
+2. **Target-Language Text** → one `Target-Language Candidate` per locale
+3. **Target-Language Audio & Synchronization** → one same-locale `Target-Language Audio Package`; text-only output records `status=audio_unavailable`
+4. **Multilingual Delivery & Playback** → one `Target-Language Release Package` per `pageId + targetLocale`
+
+Do not skip a layer, silently repair an upstream artifact downstream, or promote machine review to human approval. A downstream stage may start only from the required status and matching hashes of the prior layer. A changed Layer 1 identity invalidates every locale; changed Layer 2 or 3 evidence invalidates only that locale's downstream artifacts.
+
+Existing dual-PDF, Chinese dubbing, catalog and release tools are legacy adapters while their canonical producers are migrated. They may complete their explicitly named scope, but they do not establish four-layer production completion unless the corresponding canonical package and gate evidence exist. Sunday live captions remain an independent low-latency path; if a finalized recording is later reused for durable multilingual content, that reuse starts again at Layer 1. Agents must report the completed scope explicitly (`dual_pdf`, `live_session`, or `four_layer_release`) and never collapse those states into a generic “production complete.”
+
 ## Source and acceptance invariants
 
 - This independent personal project is not affiliated with or endorsed/operated by Mariners Church. Preserve source attribution; label generated content accurately, without claims of official, human-verified or verbatim status lacking evidence.
 - Use public or user-authorized media without bypassing access restrictions. Keep credentials, cookies, private media and personal information out of code, logs, public artifacts and Git.
 - Preserve canonical URL/ID, service date, media hash/duration, timestamps, model/prompt identity and review state as required by the workflow. Separate source media, approved boundaries and generated outputs.
 - Existing English subtitles may supply text and timing. Use ASR for missing text, defined sampling or risk review, retaining provenance; reading-block timing is not synchronized subtitle timing.
+- For future prepared production, bind the approved source, aligned English and review evidence into one `English Source Package`; target-language prompts, text and audio never belong in Layer 1.
 - Human sermon-window approval is bound to the source and timeline evidence. Reuse a still-valid approval; changed inputs invalidate it. Machine review never becomes human Gold through relabeling or a weaker validator.
 - Only reviewed/approved bilingual examples may enter live translation prompts; machine Chinese remains candidate material. Current live English/audio is authoritative, and optional Saturday material must fail down by capability.
 - Preserve immutable English ASR finals, translate only stable/final English, and keep recording/event persistence independent of model success. Recovery recordings must survive model failure.
 - Missing required hashes, segments, approvals, QA or publication evidence prevents completion. Keep partial work recoverable and outside qualified counts. A test, health check, screenshot or replay alone does not prove production/venue readiness.
+- Layer 4 HTTP verification, device acceptance and venue acceptance remain separate evidence. A `Target-Language Release Package` must not upgrade any of them by inference.
 
 ## Work and artifacts
 

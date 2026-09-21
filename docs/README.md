@@ -8,12 +8,13 @@
 
 This page routes readers to the maintained contracts; it does not redefine them. Current project claims require the root [README](../README.md), the [workflow source of truth](workflows/README.zh.md), the relevant runbook, code, and bound run receipts. A design, test, or historical report alone cannot promote production status.
 
-Calibrated on **2026-09-20 at local `main` 546b90d**. This is a code-and-tracked-evidence checkpoint; it does not establish that the commit was pushed, remotely deployed, accepted at a venue, or accepted on a physical device.
+Calibrated on **2026-09-20**. Re-read the actual commit, remote deployment, venue evidence, and physical-device acceptance independently; the document date establishes none of them.
 
 ## Start with the task
 
 | Task | First reference | Boundary |
 |---|---|---|
+| Run future prepared multilingual production | [four-layer contract (Chinese)](multilingual-production-interfaces.zh.md) → [local production runbook (Chinese)](codex-local-production-runbook.zh.md) | Layer 1–4 require separate evidence; legacy completion is not four-layer completion |
 | Understand the three product paths and completion gates | [Workflow overview (Chinese)](workflows/README.zh.md) | Current top-level source of truth |
 | Produce the Saturday dual PDFs | [Local production runbook (Chinese)](codex-local-production-runbook.zh.md) → [stable workflow](stable-post-live-reading-pdf-workflow.md) | Current operator path |
 | Inspect or resume the production Supervisor | [Supervisor contract](sermon-production-supervisor-agent.md) | Local evidence still controls state |
@@ -26,6 +27,7 @@ Calibrated on **2026-09-20 at local `main` 546b90d**. This is a code-and-tracked
 
 ## Maintained production contracts
 
+- Four-layer multilingual production: [canonical interfaces (Chinese)](multilingual-production-interfaces.zh.md). This is the required naming, package, and invalidation contract for future prepared releases.
 - Source, text, and PDFs: [stable dual-PDF workflow](stable-post-live-reading-pdf-workflow.md), [reading quality](chinese-reading-edition-quality.zh.md), [series terminology](series-terminology.zh.md), [MFA](mfa-production.zh.md), and [bilingual transcript display](bilingual-transcript-display.zh.md).
 - Orchestration and evidence: [end-to-end Agents extension](agents-end-to-end-workflow.zh.md), [Saturday harness](saturday-harness.zh.md), [execution protection](sermon-execution-harness.zh.md), [bounded parallelism](parallel-production.zh.md), [dubbing/PDF join contract](parallel-dubbing-contract.zh.md), [quality harness](saturday-quality-harness.zh.md), [accounting](workflow-accounting.zh.md), [trace export](sermon-trace-export.zh.md), and [Temporal](sermon-temporal.zh.md).
 - Tongxing content and clients: [dubbing system](sermon-dubbing-system-design.zh.md), [sound alignment](sermon-app-field-alignment.zh.md), [field listening](sermon-app-field-listening.zh.md), [feedback](sermon-listening-feedback.zh.md), [usage](sermon-app-usage.zh.md), [WeChat playback](sermon-app-wechat-playback.zh.md), [brand](sermon-app-brand.zh.md), and [series backfill](sermon-series-backfill.zh.md).

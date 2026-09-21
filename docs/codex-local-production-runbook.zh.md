@@ -15,6 +15,19 @@
 
 2026-09-11 已退役旧 `sermon-post-live-timeline` Job；其配置、IAM 和执行记录保存在本地 `artifacts/evidence/gcp-cleanup-20260911/`。对应 `sermon-sat-post-live-subtitles` Scheduler 保持暂停，不能仅恢复调度就恢复云端生产。
 
+## 今后预制生产的四层主线
+
+今后凡是要生成可持久的多语言文字、音频或页面，都必须按[多语言生产四层接口](multilingual-production-interfaces.zh.md)从上游到下游执行。不得把旧双 PDF、配音 job 或 Firebase 发布状态直接更名为新四层状态。
+
+| 层 | 必须输入 | canonical 输出 | 进入下一层前的门禁 |
+|---|---|---|---|
+| Layer 1 共享英文事实与锚点 | 授权媒体、人工批准范围、冻结英文和一条选定的字词时间轴 | `English Source Package` | `status=ready_for_translation` 且 `translationEligible=true` |
+| Layer 2 目标语言文字 | Layer 1 package、`targetLocale`、翻译／术语／经文策略 | 每个 locale 一份 `Target-Language Candidate` | 完整覆盖同一套英文锚点，独立复核与人工文字批准 |
+| Layer 3 目标语言音频与同步 | 已批准的同 locale 文字包、授权声音、Layer 1 锚点 | 每个 locale 一份 `Target-Language Audio Package` | 自然语速、完整解码、排程／字幕绑定和全文人工听审；纯文字发布也生成包并显式标为 `audio_unavailable` |
+| Layer 4 多语言发布与播放 | 同 locale 文字包、同 locale 音频包、页面和发布文件清单 | `Target-Language Release Package` | 资产 hash、HTTP／Range、客户端与现场状态分别留证 |
+
+当前只有 Layer 1 producer 已进入生产 shadow；Layer 2–4 通用 producer 仍在迁移。新周次可以继续完成双 PDF 或 legacy 中文产物，但没有对应 canonical package 时必须报告具体范围，不得报告 `four_layer_release=complete`。一种 locale 失败不自动阻塞或批准其他 locale。
+
 ## MFA 阅读对齐
 
 新 reading 生产默认使用 MFA 词/音素对齐，替代字符比例估时。所有本地模型的目标路由为 **MacBook 优先、DGX Spark 备用**；MFA／G2P 优先使用本机独立环境，本机健康时不联系 Spark。备用默认启用，可用 `MFA_SPARK_FALLBACK=0` 或 `--no-mfa-spark-fallback` 禁用，远端使用独立的 `MFA_SPARK_*` 模型路径。远程可经 Tailscale 的 Mac mini relay。配置、ARM64 备用环境限制与缓存边界见 [MFA 生产接入](mfa-production.zh.md)。
@@ -23,11 +36,13 @@
 
 OpenAI 云端转写与语言 API 保持不变。每周 TTS 和配音质检也采用 MacBook 优先、Spark 备用。MacBook MPS 已用授权讲员检查点完成 10 字中文单元的真实合成，输出 2.56 秒音频；短样本成功不代表整篇吞吐、音质或人工听审获准。媒体处理、排版和校验保留在调度端；无模型声音指纹匹配继续在听众浏览器内执行。
 
-### 未来中文同传 shadow
+### Layer 1：英文事实与锚点 shadow
 
-配置 `--dubbing-config` 的未来周生产，会在冻结英文和 MFA 对齐完成后自动运行 clause-stable v2 shadow。入口读取 `pipeline/segments_timed_en_corrected.json`，在 `pipeline/sentence-interpretation-v2/<identity>/` 保存不可变的 `anchor-manifest.json`、`translation-request.json` 和 `receipt.json`。单元目标为约 6–8 秒；内部切点必须有分句标点或至少 0.35 秒词间停顿，并保留父句、原始 `wordId` 和 `splitEvidence`。
+配置 `--dubbing-config` 的未来周生产，会在冻结英文和 MFA 对齐完成后自动运行 clause-stable v2 shadow。入口读取 `pipeline/segments_timed_en_corrected.json`，在 `pipeline/sentence-interpretation-v2/<identity>/` 保存不可变的 `anchor-manifest.json`、`english-source-package.json` 和 `receipt.json`。单元目标为约 6–8 秒；内部切点必须有分句标点或至少 0.35 秒词间停顿，并保留父句、原始 `wordId` 和 `splitEvidence`。Layer 1 不包含中文 prompt、译文、TTS 或发布状态。
 
-`ready_for_model_translation` 仅表示自动锚点结构干净，可以进入独立 GPT 初译／复核；`waiting_anchor_review` 表示词对齐或安全分句仍需处理，不能继续模型或 TTS。该 shadow 不改变当前双 PDF、中文配音或发布完成标准，也不会自动调用付费 API。必要时用 `--no-sentence-interpretation-shadow` 关闭；不带配音配置的双 PDF 流程默认不运行。提升为正式音轨前仍须完成英文完整性、句界听审、中文逐句完整性、自然语速排程和同录音 1 倍速全篇试听。
+shadow receipt 的 `ready_for_model_translation` 只表示自动锚点结构干净；English Source Package 的 `candidate_ready_for_translation` 也只能用于 shadow 模型实验。生产 Layer 2 必须另外绑定 `sermon-english-source-review-v1` 人工收据：重用同一来源与全部已核实的原生成参数，并追加 `--sentence-interpretation-shadow --sentence-interpretation-english-review /absolute/path/english-source-review.json` 后重跑。
+
+只有 package 变为 `ready_for_translation` 且 `translationEligible=true` 才能进入 Layer 2。`waiting_anchor_review` 表示词对齐或安全分句仍需处理，不能继续翻译或 TTS。仅做双 PDF 的范围可用 `--no-sentence-interpretation-shadow`，但该 run 不属于四层完整生产。
 
 ## 人工范围流程（2026-09-19 代码更新）
 
@@ -115,6 +130,10 @@ Supervisor 的 generation 命令固定传入上述参数及 `--export-sunday-con
 4. 直播仍是 `is_live` 时，本次运行安全退出。
 5. 直播进入 `was_live/post_live` 后，本地 `yt-dlp` 下载完整音频，检查媒体完整性并记录实测时长与哈希。
 6. 来源媒体报告上传 GCS，流程停止在 `requires_operator_review`，等待操作员提供并确认起止时间。
+7. 范围批准后生成冻结英文、字词时间轴和 Layer 1 候选；英文人工收据绑定后才放行 Layer 2。
+8. 每个 `targetLocale` 从同一 English Source Package 直接生成和批准 Target-Language Candidate；不经中文中转其他语言。
+9. 仅对人工文字批准的 locale 生成自然语速音频、排程和字幕，完整听审后冻结 Audio Package；可以显式选择纯文字发布。
+10. 按 `pageId + targetLocale` 生成 Release Package，再发布并分别记录 HTTP、设备和现场验收。通用 Layer 2–4 producer 未实现时，停在对应层并报告迁移 blocker，不用 legacy `complete` 越过。
 
 ## CUV 证据与生产收尾
 
@@ -165,7 +184,7 @@ export SERMON_YOUTUBE_COOKIES_FILE=/absolute/path/youtube.cookies.txt
 
 ## 完成标准
 
-只有下列条件同时满足才是生产完成：
+下列条件只能建立 **`dual_pdf` 范围完成**：
 
 - generation report `status=completed`
 - `reading-edition-v2/reading_quality_report.json` 为 `pass`
@@ -175,7 +194,17 @@ export SERMON_YOUTUBE_COOKIES_FILE=/absolute/path/youtube.cookies.txt
 - 当前人工审批仍与 source URL 和 timeline SHA-256 匹配
 - generation 的 `publication.status=pass`，已验证本地/远端要求产物的 hash 一致；配置周日导出时也包含该批 Context Pack/readiness 产物
 
-Supervisor 以新读取的 `snapshot.recommendedAction.action == "complete"` 为最终完成判断；其实现位于 [sermon_production_supervisor.py](../scripts/sermon_production_supervisor.py)。不要另列更宽松的模型口头标准。
+Supervisor 以新读取的 `snapshot.recommendedAction.action == "complete"` 为 `dual_pdf` 范围的最终判断；其实现位于 [sermon_production_supervisor.py](../scripts/sermon_production_supervisor.py)。不要另列更宽松的模型口头标准。
+
+**`four_layer_release` 范围完成**还必须有：
+
+- `ready_for_translation` 的 English Source Package；
+- 每个要发布 locale 的 `human_translation_approved` Target-Language Candidate；
+- 同 locale 的 Target-Language Audio Package：需要音频时人工听审通过，纯文字时状态显式为 `audio_unavailable`；
+- 同 locale 的 Target-Language Release Package 与实际发布资产 hash 一致；
+- HTTP、实体设备、现场验收各自按实际状态记录，不互相代替。
+
+当前 Supervisor 没有完整验证上述四层 package；因此它的 `complete` 不得被 Agent、runbook 或通知改写为整条预制多语言生产完成。
 
 ## 本地恢复与云端重建
 

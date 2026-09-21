@@ -2,6 +2,8 @@
 
 本轮在已有 Supervisor、来源审批、缓存校验和账本上增加执行保护，保留原生产架构。入口见[周六统一入口](saturday-harness.zh.md)；质量比较与执行观察分别见[离线质量回归](saturday-quality-harness.zh.md)和[Trace 导出](sermon-trace-export.zh.md)。这些工具不授予人工审批，也不自动发布中文音频。
 
+这些执行保护适用于各阶段内部，不改变[四层生产接口](multilingual-production-interfaces.zh.md)的顺序、输入输出或审核门禁。本文出现的 `candidate_ready_for_review` 是 legacy 中文音频任务状态，不是 Layer 2 的 `Target-Language Candidate` 状态，也不能据此跳过正式包生成或报告 `four_layer_release`。
+
 ## Supervisor 租约
 
 `backend/leases.py` 为每次持有租约分配独立 token。本地租约用稳定的 flock 文件保护状态变更，保留递增 generation；GCS 用对象 generation 条件读写防止旧持有者续租或释放新租约。

@@ -8,12 +8,13 @@
 
 本页只负责路由，不重复定义流程。项目当前事实以根目录 [README](../README.zh.md)、[工作流总览](workflows/README.zh.md)、对应操作 Runbook、代码和绑定运行收据共同决定；单独一份设计稿、测试或历史报告不能升级生产状态。
 
-状态校准：**2026-09-20，本地 `main` 546b90d**。这是代码与 tracked 证据的校准点；文档不据此声称已 push、远端部署、现场同步或实体设备验收。
+状态校准日期：**2026-09-20**。当前提交、远端部署、现场同步和实体设备验收须分别重新读取实际证据，不从文档日期推断。
 
 ## 从任务进入
 
 | 要做的事 | 先读 | 状态边界 |
 |---|---|---|
+| 执行未来预制多语言生产 | [四层接口合同](multilingual-production-interfaces.zh.md) → [本地生产 Runbook](codex-local-production-runbook.zh.md) | 必须按 Layer 1–4 逐层留证；legacy 完成不等于四层完成 |
 | 查看三条产品路径与完成标准 | [工作流总览](workflows/README.zh.md) | 当前总入口 |
 | 周六从完整礼拜／归档生成双 PDF | [本地生产 Runbook](codex-local-production-runbook.zh.md) → [稳定双 PDF 流程](stable-post-live-reading-pdf-workflow.zh.md) | 当前 operator 路径 |
 | 查看或恢复生产 Supervisor | [Supervisor 契约](sermon-production-supervisor-agent.zh.md) | Agents API 控制层；状态仍由本地证据决定 |
@@ -28,6 +29,7 @@
 
 ### 来源、文本与 PDF
 
+- [多语言生产四层接口](multilingual-production-interfaces.zh.md)：今后预制多语言生产的命名、包和失效规则唯一来源
 - [稳定 post-live 双 PDF 流程](stable-post-live-reading-pdf-workflow.zh.md)及[英文版](stable-post-live-reading-pdf-workflow.md)
 - [中文阅读版质量规范](chinese-reading-edition-quality.zh.md)
 - [系列名称表](series-terminology.zh.md)：页面、字幕、阅读稿、大纲和配音共用术语

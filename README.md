@@ -37,6 +37,8 @@ Multilingual expansion follows these contracts:
 
 The canonical names, input/output schemas and invalidation rules live in the [four-layer multilingual interfaces (中文)](docs/multilingual-production-interfaces.zh.md). See also the [workflow map (中文)](docs/workflows/README.zh.md), [sentence-aligned interpretation design (中文)](docs/sentence-aligned-interpretation.zh.md), and [system design and model choices (中文)](docs/sermon-dubbing-system-design.zh.md).
 
+All future prepared multilingual production runs must be tracked through these four layers. Existing dual-PDF and Chinese page tools remain usable as scoped legacy adapters, but their own `complete` state is not the same as a complete four-layer release. Sunday live captions remain a separate real-time path; publishing a finalized live recording later starts at Layer 1.
+
 ## Sunday operation: prepare a new caption session
 
 [Operations whitepaper (中文)](docs/sunday-live-operations-whitepaper.zh.md) · [Agent execution entry (中文)](docs/sunday-live-agent-runbook.zh.md)

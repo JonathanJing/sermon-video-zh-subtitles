@@ -1,6 +1,8 @@
 # 多语言生产四层接口
 
-状态：四个层间接口名称和 JSON Schema 已冻结为 v1；Layer 1 已有确定性生成器并接入未来周 shadow。Layer 2–4 的 schema 是迁移目标，不表示对应的多语言生产实现已经完成。
+状态：本文是今后所有预制多语言生产的规范合同。四个层间接口名称和 JSON Schema 已冻结为 v1；Layer 1 已有确定性生成器并接入未来周 shadow。Layer 2–4 的 schema 是迁移目标，不表示对应的多语言生产实现已经完成。
+
+现有双 PDF、中文配音和 `weekly.json` 发布工具在迁移期间作为 legacy adapter 保留。它们可以完成各自明确 scope，但只有四个正式包及其门禁均有证据时，才可报告 `workflowScope=four_layer_release`。周日实时字幕属于独立 `live_session`，不在现场强制生成这些预制包；若会后复用录音，应从 Layer 1 开始。
 
 ## 统一命名
 
@@ -27,7 +29,7 @@ Target-Language Candidate
   └─ candidate hash ────────────> Target-Language Speech Job
                                   └─ measured artifacts ─> Target-Language Audio Package
 
-Target-Language Candidate + optional Target-Language Audio Package
+Target-Language Candidate + Target-Language Audio Package
   └─────────────────────────────> Target-Language Release Package
 ```
 
@@ -73,15 +75,15 @@ Target-Language Candidate + optional Target-Language Audio Package
 
 处理：逐单元 TTS、完整解码、回转写筛查、实测时长、确定性滚动排程、字幕 cue、人耳全文听审和同视频 1 倍速检查。ASR 筛查不等于人工听审。
 
-输出 schema：[Target-Language Audio Package](../schemas/sermon-target-language-audio-package-v1.schema.json)。`audio_unavailable` 是合法状态，可进入纯文字发布；不得借用另一语言音轨冒充当前 locale。
+输出 schema：[Target-Language Audio Package](../schemas/sermon-target-language-audio-package-v1.schema.json)。每个要发布的 locale 都必须留下这一层的包；`audio_unavailable` 是合法状态，可进入纯文字发布，不得借用另一语言音轨冒充当前 locale。
 
 ## Layer 4：多语言发布与播放
 
-输入：目标语言文字包，以及同 locale 的可选音频包；页面来源身份和显式发布文件清单。
+输入：目标语言文字包，以及同 locale 的音频包（可以为 `audio_unavailable`）；页面来源身份和显式发布文件清单。
 
 处理：按 `pageId + targetLocale` 聚合，分别记录 `interfaceLocale`、`contentLocale` 和 `audioLocale`，构建 allowlist，验证文件 hash、HTTP、Range 和客户端播放。
 
-输出 schema：[Target-Language Release Package](../schemas/sermon-target-language-release-package-v1.schema.json)。HTTP 通过、设备通过和现场通过是三个独立状态。
+输出 schema：[Target-Language Release Package](../schemas/sermon-target-language-release-package-v1.schema.json)。schema 中可空的音频包 hash 只用于迁移期 legacy 兼容；新的四层生产须绑定 Layer 3 包。HTTP 通过、设备通过和现场通过是三个独立状态。
 
 ## 当前实现边界
 

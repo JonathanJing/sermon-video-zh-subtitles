@@ -1,8 +1,8 @@
-# 项目工作流总览：每周内容、双 PDF 与周日实时字幕
+# 项目工作流总览：四层多语言生产、双 PDF 与周日实时字幕
 
 这份 README 是项目的 workflow source of truth。它描述三条相互独立但可共享证据的路径：预制中文音轨与同行页面、post-live 双 PDF、周日本地实时字幕。执行时先按 [AGENTS.md](../../AGENTS.md) 的任务路由读取对应入口，不必加载全部历史文档。
 
-现状校准日期：**2026-09-20，本地 `main` 546b90d**。9 月 11 日 Agents API 切换、9 月 19 日人工范围与受限并发，以及 9 月 20 日 CUV 证据修复均已进入该代码与 tracked 证据校准点。这里不据本地代码推断 push、远端部署、实时服务健康、实体设备或现场验收。
+现状校准日期：**2026-09-20**。9 月 11 日 Agents API 切换、9 月 19 日人工范围与受限并发、9 月 20 日 CUV 证据修复及四层接口冻结均有 tracked 记录。当前提交、push、远端部署、实时服务健康、实体设备和现场验收仍须分别重新核对。
 
 状态定义：
 
@@ -20,7 +20,7 @@
 2. **周六双 PDF：** 从完整 post-live 媒体与人工范围生成中英阅读版和中文证道同行 PDF，并可导出受控的周日 Context Pack。
 3. **周日实时字幕：** 以当场麦克风和当下英文 ASR 为事实来源，本地生成中文字幕并保留独立恢复录音。
 
-**多语言 POC：** 全项目统一使用 Layer 1“共享英文事实与锚点”、Layer 2“目标语言文字”、Layer 3“目标语言音频与同步”、Layer 4“多语言发布与播放”。四个版本化接口见[多语言生产四层接口](../multilingual-production-interfaces.zh.md)。后续预制内容以 English Source Package 和 Canonical English Content 为共同主干，中文、韩语及其他语言作为独立同级分支；禁止以中文作为韩语的默认翻译源。当前 Layer 1 已接入 shadow；韩语已实现界面、`sourceLocale=en` 的展示 sidecar、Target-Language Candidate 合同和 Layer 2 → Layer 3 的 speech-job 冻结接口，但尚未运行真实韩语翻译、TTS、同步或发布。完整迁移顺序见[英文源到多语言证道生产 POC](../english-to-multilingual-production-poc.zh.md)。这不改变现有中文生产或周日实时字幕的验收状态。
+**多语言生产合同：** 今后预制生产统一使用 Layer 1“共享英文事实与锚点”、Layer 2“目标语言文字”、Layer 3“目标语言音频与同步”、Layer 4“多语言发布与播放”。四个版本化接口见[多语言生产四层接口](../multilingual-production-interfaces.zh.md)。后续预制内容以 English Source Package 和 Canonical English Content 为共同主干，中文、韩语、西班牙语及其他语言作为独立同级分支；禁止以中文作为其他语言的默认翻译源。当前 Layer 1 已接入 shadow；韩语已实现界面、`sourceLocale=en` 展示 sidecar、Target-Language Candidate 合同和 Layer 2 → Layer 3 speech-job 准备器，但通用 Layer 2–4 producer 及真实韩语翻译、TTS、同步和发布尚未完成。因此现有 legacy 工具只能完成它们明确的 PDF、中文音频或页面范围；没有四个 canonical package 和各自门禁时，不得报告“四层生产完成”。迁移顺序见[英文源到多语言证道生产 POC](../english-to-multilingual-production-poc.zh.md)。
 
 核心边界：
 
@@ -28,6 +28,7 @@
 - 周日路径的目标是低延迟显示，同时保留足够录音和日志供回放、A/B 与后续训练。
 - 周日实时录音不能依赖 ASR 或翻译成功；模型失败时继续录音，并显示英文或降级状态。
 - 周六 content pack 是可选增强；`A0 / none` 始终保留为可比较基线。
+- 双 PDF 的 `complete`、周日实时 session 的 `finalized` 和四层预制发行的 `complete` 是三个不同范围，Agent 和报告必须显式标记。
 
 ## 0. 预制每周内容：英文视频到同行页面
 
@@ -56,7 +57,7 @@
 
 英文词序、句／停顿锚、逐句覆盖、独立语义复核、自然语速音频和滚动同传排程已实现为版本化 shadow 合同，见[句级锚定与滚动同传设计](../sentence-aligned-interpretation.zh.md)及[英文逐字稿与词级时间轴 POC](../../experiments/english-word-timeline-poc/README.zh.md)。13 个分层区块的 99 个意义单元已完成 Astra 初译和不同 request 的独立复核，99/99 机器语义检查通过；99 组自然语速 Qwen TTS 也已生成并完整解码，但实测滚动结束延迟中位数 8.33 秒、P95 20.56 秒、最大 26.13 秒，52/99 组超过 8 秒门槛，因此状态仍为 `candidate_blocked`。
 
-未来周生产现已接入 clause-stable v2 的**自动 shadow 阶段**：当 `run_post_live_subtitle_generation.py` 配置 `--dubbing-config` 时，默认从同一 run 的 `segments_timed_en_corrected.json` 生成哈希隔离的 v2 句锚、边界证据和翻译请求；也可用 `--no-sentence-interpretation-shadow` 显式关闭。该阶段不调用付费模型、不生成 TTS、不改变双 PDF 或现有配音产物；锚点问题写入 `waiting_anchor_review` 并停止新候选链，干净锚点才标记 `ready_for_model_translation`。这属于未来音轨的生产内 shadow 接线，不是正式音轨切换；逐字稿、边界、中文、自然语速及全篇听审全部通过前，不宣称问题已经解决。现场反馈及本周证据边界见[9 月 20 日制作记录](../production-2026-09-20.zh.md#当日实际播放复盘)。
+未来周生产现已接入 Layer 1 clause-stable v2 的**自动 shadow 阶段**：当 `run_post_live_subtitle_generation.py` 配置 `--dubbing-config` 时，默认从同一 run 的 `segments_timed_en_corrected.json` 生成哈希隔离的 `anchor-manifest.json`、`english-source-package.json` 和 `receipt.json`。`candidate_ready_for_translation` 只允许 shadow 实验；用 `--sentence-interpretation-english-review` 绑定来源、完整性、字词对齐和句／停顿人工审核后，才可进入 `ready_for_translation`。锚点问题写入 `waiting_anchor_review` 并停止新候选链。只做双 PDF 时可以显式关闭 shadow，但那个 run 不得称为四层生产完成。Layer 1 不调用翻译或 TTS，也不改变双 PDF 产物；完整 Layer 2–4 及全篇听审通过前，不宣称播放问题已解决。详见[四层接口](../multilingual-production-interfaces.zh.md)与[9 月 20 日制作记录](../production-2026-09-20.zh.md#当日实际播放复盘)。
 
 [9 月 20 日制作记录](../production-2026-09-20.zh.md)保存了一次已完成页面、音频修复、用户听审／Firebase／iOS 播放确认及海报交付的运行证据。该记录不证明未来周次自动成功，也不证明真实现场同步；同录制声音定位、实体设备、现场音频路由与其他场次复用仍分别验收。
 
@@ -82,7 +83,7 @@ Supervisor 默认使用 `gpt-6-astra` Medium（本账户旧 `gpt-5.6` 查询返�
 
 **CUV 引用与恢复：** 正文翻译前，区分直接读经、重述、混合引述和未决来源，冻结精确范围与真实证据；图像和共享经节要进入审校请求。新 run 默认本地预检并按块聚合选择失败，全篇独立审校通过后冻结引用预检产物再翻译；结构分类不是语义裁定，也不保证同块问题一次穷尽。增量复用不得改写旧收据，旧新策略迁移首次可能重算，最终保留全篇审核；本周成品通过后，还须将通用临时修复和回归测试收回主线。详见[CUV 流程](../sermon-cuv-production.zh.md)与[本周复盘](../cuv-retrospective-2026-09-20.zh.md)。
 
-### 完整流程图
+### 双 PDF 子流程图
 
 ![周六 post-live 双 PDF 完整流程](../diagrams/saturday-post-live-workflow.svg)
 

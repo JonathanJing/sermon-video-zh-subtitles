@@ -2,6 +2,12 @@
 
 通过 `--release-workflow-config /absolute/path/release-workflow.json` 显式启用。未提供参数时，现有双 PDF Supervisor 的工具和完成判定保持原合同。扩展目前只支持 `--agent-backend agents-api`；保留现有 OpenAI 凭据、模型与 `environment: none`，不新增云端沙箱。
 
+## 与四层生产合同的关系
+
+本文描述当前中文页面发行的 legacy Agent adapter，不取代[四层生产接口](multilingual-production-interfaces.zh.md)。`generate_audio_candidate` 当前耦合部分 Layer 2／3 行为，`record_published` 只登记旧 registry；除非执行链实际产出并校验四个正式包，否则这里的 `complete` 只能按本流程自身的 legacy scope 解读，不能报告为 `four_layer_release`。
+
+今后的预制多语言生产必须从 `ready_for_translation` 的 `English Source Package` 开始；目标语言文字、音频和发布分别消费上一层冻结输出，不得由发布 Agent 补译、改写音频或提升上游审核。迁移期间旧工具可以继续执行，但 Agent 的状态与总结必须同时标明实际 scope 和缺少的规范包。
+
 ## 分工与状态
 
 Agent 检查状态并调用命名工具；本地代码决定动作是否允许，构造固定命令，运行模型或发行程序。工具参数不接受命令、路径、任意目标、审批内容。现有模型并发与机器路由由各阶段执行器负责。
@@ -17,7 +23,7 @@ Agent 检查状态并调用命名工具；本地代码决定动作是否允许�
 | `verify_release` | 核验真实 HTTP 文件哈希和音频 Range |
 | `record_published` | HTTP 证据与当前 registry 一致，登记 `published_http_verified` |
 
-全流程启用后，只有发行登记与完整证据检查通过才报告 `complete`。这仍不表示手机或现场验收完成。默认最小状态 `sermon-agent-state-minimal-v1` 保持兼容；扩展使用 v2，额外提供 `workflowScope` 和 `workflowComplete`。完整路径、稿件、日志和授权详情只保存在本地。
+这个 legacy 扩展启用后，只有发行登记与完整证据检查通过才报告本流程的 `complete`。这不等于 `four_layer_release`，也不表示手机或现场验收完成。默认最小状态 `sermon-agent-state-minimal-v1` 保持兼容；扩展使用 v2，额外提供 `workflowScope` 和 `workflowComplete`。完整路径、稿件、日志和授权详情只保存在本地。
 
 ## 配置
 

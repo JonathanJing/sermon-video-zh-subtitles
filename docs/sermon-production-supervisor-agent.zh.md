@@ -15,6 +15,8 @@
 
 Agent 不直接下载、裁剪、转录、翻译或渲染 PDF。它只能调用现有的、可测试和可恢复的工具层。
 
+这个 Supervisor 当前只负责 `dual_pdf` 范围。它返回的 `complete` 不表示全项目规范的四层多语言生产已经达到 `four_layer_release`。今后的预制多语言生产必须继续生成并通过[四层接口合同](multilingual-production-interfaces.zh.md)定义的正式包和门禁；周日实时字幕仍是独立的 `live_session` 范围。
+
 ## 架构
 
 ```mermaid
@@ -191,7 +193,7 @@ operator 独立观看完整录像后，使用同一个 runner 写审批：
 | 有有效审批 | `run_reading_pdf_generation` |
 | 阅读质量或 PDF QA 失败 | `review_quality_failure` |
 | GCS artifact 无法读取 | `restore_artifact_access` |
-| 新读取的确定性 `recommendedAction.action` 为 `complete`（含有效审批、三项 QA 及配置发布证据） | `complete` |
+| 新读取的确定性 `recommendedAction.action` 为 `complete`（含有效审批、三项 QA 及配置发布证据） | `complete`，仅限 `dual_pdf` scope |
 
 `accessIssues` 与 “artifact missing” 分开记录。网络、凭据或 IAM 错误不会被误判为“尚未生成”。
 
@@ -260,6 +262,8 @@ SERMON_SUPERVISOR_MODE=shadow
 ## 完成标准
 
 以 [确定性 Supervisor](../scripts/sermon_production_supervisor.py) 新读取的 `snapshot.recommendedAction.action == "complete"` 为准：generation completed、阅读质量及两个 PDF QA pass、source/timeline 绑定的人工审批有效，且配置发布时已有核验通过的 publication。实际部署交付要求见 [本地 runbook](./codex-local-production-runbook.zh.md#完成标准)。
+
+这个状态只建立 `workflowScope=dual_pdf` 以及显式配置的 legacy publication 步骤完成。规范的预制生产只有在同一来源下，对目标语言具备有效的 `English Source Package`、`Target-Language Candidate`、`Target-Language Audio Package`（纯文字发行也要显式记录 `audio_unavailable`）和 `Target-Language Release Package` 证据时，才可报告 `four_layer_release`。旧 PDF 或页面状态不得改名冒充四层完成。
 
 等待/阻塞是否需要用户决定按 `humanActionRequired` 判断，不把所有等待都升级为重复确认。修改后重新读取状态；同一生产阶段每轮至多执行一次，依赖阶段保持串行与 lease 保护（禁用并行工具调用；SDK 配置为 `parallel_tool_calls=False`）。独立审核可以并行；已完成阶段凭有效证据复用。部分产物或模型口头判断不代表完成。
 

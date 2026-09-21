@@ -12,6 +12,8 @@
 
 当目标交付物是两份 post-live PDF 时，以本文作为默认入口。
 
+这条流程可以独立完成 `dual_pdf`。凡是今后要继续制作多语言文字、音频或页面发行的预制生产，必须接着执行[四层生产接口](multilingual-production-interfaces.zh.md)；双 PDF 完成不能单独报告为 `four_layer_release`。
+
 ## 适用范围
 
 这条工作流用于：

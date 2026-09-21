@@ -2,6 +2,8 @@
 
 本流程接收既有生产脚本生成的单周候选包，保存完整历史目录，再核验发布后的公共资源。它不调用模型、不重新生成音频、不授予内容审核或现场同步批准，也不创建或替换现有定时任务。生产和配音仍按 [本地生产 runbook](codex-local-production-runbook.zh.md) 执行。
 
+当前 registry／`weekly.json` 流程是 Layer 4 的 legacy adapter。今后的预制多语言生产必须输入同一 `targetLocale` 已批准的 `Target-Language Candidate` 和 `Target-Language Audio Package`；纯文字发行也必须由后者显式记录 `audio_unavailable`。只有实际生成并校验[四层接口合同](multilingual-production-interfaces.zh.md)中的 `Target-Language Release Package`，才建立规范的 Layer 4 完成。现有 `published_http_verified` 仍是 legacy 发行证据，不能反向提升翻译、音频或现场审核状态。
+
 ## 每周路径
 
 来源完整可用 → 现有流程生成候选 → 内容审阅与对应音轨收据 → 自动生成并绑定听音定位指纹 → 组装完整发行包 → 检查目录差异 → 发布 → HTTP 文件核验 → App 刷新/下载验收与本周海报交付（分别验收）。

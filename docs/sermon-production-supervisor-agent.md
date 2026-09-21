@@ -14,6 +14,8 @@ The local runner now integrates **OpenAI Agents API**, with `--agent-backend age
 
 The agent does not implement downloading, clipping, transcription, translation, or PDF rendering. It invokes the existing tested and resumable workflow.
 
+This Supervisor currently owns the `dual_pdf` scope. Its `complete` decision is not a claim that the repository's canonical four-layer multilingual production has reached `four_layer_release`. Future prepared multilingual runs must continue through the packages and gates in the [four-layer interface contract](./multilingual-production-interfaces.zh.md); Sunday live captions remain an independent `live_session` scope.
+
 ## Current operator entry
 
 Use [the local production runbook](./codex-local-production-runbook.zh.md) and `scripts/run_codex_local_sermon_production.py`. Resume from current durable state and reuse valid approval. This document details the state/tool contract; the older Scheduler-to-Cloud-Run topology below is a rollback reference, not the default local execution path.
@@ -167,6 +169,8 @@ If Scheduler calls the endpoint without a configured Job and inline execution is
 ## Completion rule
 
 Use a fresh `snapshot.recommendedAction.action == "complete"` from [the deterministic supervisor](../scripts/sermon_production_supervisor.py). It requires completed generation, passing reading quality and both PDF QA reports, a valid source/timeline-bound human approval, and verified publication when configured. The [local runbook](./codex-local-production-runbook.zh.md#完成标准) describes the deployed delivery contract.
+
+That state establishes completion only for `workflowScope=dual_pdf` and any explicitly configured legacy publication step. Canonical prepared production is complete only when the same source has valid `English Source Package`, `Target-Language Candidate`, `Target-Language Audio Package` (including explicit `audio_unavailable` for text-only release), and `Target-Language Release Package` evidence for the target locale. A legacy PDF or page status must not be relabeled as `four_layer_release`.
 
 Respect `humanActionRequired` on waiting/blocked states; not every wait needs a new human decision. Inspect again after a mutation. Each mutation stage is attempted at most once per run; keep dependent actions sequential (disable parallel tool calls; SDK uses `parallel_tool_calls=False`) and resume on a later run from durable evidence. Parallelize independent audits, not duplicate production stages.
 

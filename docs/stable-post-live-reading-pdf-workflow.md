@@ -12,6 +12,8 @@ The stable workflow is:
 
 Use this as the default entry when the requested deliverables are the two post-live PDFs.
 
+This workflow may complete independently as `dual_pdf`. For any future prepared multilingual text, audio, or page release, continue through the [canonical four-layer production contract](multilingual-production-interfaces.zh.md); dual-PDF completion alone is not `four_layer_release` completion.
+
 ## Scope
 
 This workflow is for:
