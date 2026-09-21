@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-sentence-interpretation-candidate-v1.schema.json",
+  "title": "Reviewed sentence-anchored Chinese interpretation candidate",
+  "type": "object",
+  "required": ["schemaVersion", "anchorManifestSha256", "translator", "reviewer", "groups", "humanReview"],
+  "properties": {
+    "schemaVersion": { "const": "sermon-sentence-interpretation-candidate-v1" },
+    "anchorManifestSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "translator": { "$ref": "#/$defs/modelReceipt" },
+    "reviewer": { "$ref": "#/$defs/modelReceipt" },
+    "groups": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["translationGroupId", "sourceUnitIds", "chineseUtterances", "chinese", "coverage", "review", "audio"],
+        "properties": {
+          "translationGroupId": { "type": "string", "minLength": 1 },
+          "sourceUnitIds": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+          "chineseUtterances": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+          "chinese": { "type": "string", "minLength": 1 },
+          "coverage": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["sourceUnitId", "targetText"],
+              "properties": {
+                "sourceUnitId": { "type": "string", "minLength": 1 },
+                "targetText": { "type": "string", "minLength": 1 }
+              }
+            }
+          },
+          "review": {
+            "type": "object",
+            "required": ["status", "sourceUnits"],
+            "properties": {
+              "status": { "enum": ["pass", "fail"] },
+              "sourceUnits": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": ["sourceUnitId", "checks", "evidence", "uncertainty", "issues"],
+                  "properties": {
+                    "sourceUnitId": { "type": "string", "minLength": 1 },
+                    "checks": {
+                      "type": "object",
+                      "required": ["completeMeaning", "negationsNumbersNames", "quotationAttribution", "noAddedMeaning", "spokenChinese"],
+                      "additionalProperties": false,
+                      "properties": {
+                        "completeMeaning": { "enum": ["pass", "fail"] },
+                        "negationsNumbersNames": { "enum": ["pass", "fail"] },
+                        "quotationAttribution": { "enum": ["pass", "fail"] },
+                        "noAddedMeaning": { "enum": ["pass", "fail"] },
+                        "spokenChinese": { "enum": ["pass", "fail"] }
+                      }
+                    },
+                    "evidence": { "type": "string", "minLength": 1 },
+                    "uncertainty": { "type": "array" },
+                    "issues": { "type": "array" }
+                  }
+                }
+              }
+            }
+          },
+          "audio": {
+            "type": "object",
+            "required": ["text", "durationSeconds", "ratePolicy", "playbackRate", "receiptSha256"],
+            "properties": {
+              "text": { "type": "string", "minLength": 1 },
+              "durationSeconds": { "type": "number", "exclusiveMinimum": 0 },
+              "ratePolicy": { "const": "natural_no_time_stretch" },
+              "playbackRate": { "const": 1.0 },
+              "receiptSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+            }
+          }
+        }
+      }
+    },
+    "humanReview": {
+      "type": "object",
+      "required": ["humanApproval", "reviewer", "reviewedAt", "reviewedSourceUnitIds", "englishTranscriptCompleteness", "sentenceAndPauseBoundaries", "translationCompleteness", "naturalSpeechAndPronunciation", "fullPlayback"],
+      "additionalProperties": false,
+      "properties": {
+        "humanApproval": { "type": "boolean" },
+        "reviewer": { "type": ["string", "null"] },
+        "reviewedAt": { "type": ["string", "null"] },
+        "reviewedSourceUnitIds": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "englishTranscriptCompleteness": { "enum": ["pending", "approved", "rejected"] },
+        "sentenceAndPauseBoundaries": { "enum": ["pending", "approved", "rejected"] },
+        "translationCompleteness": { "enum": ["pending", "approved", "rejected"] },
+        "naturalSpeechAndPronunciation": { "enum": ["pending", "approved", "rejected"] },
+        "fullPlayback": { "enum": ["pending", "approved", "rejected"] }
+      }
+    }
+  },
+  "$defs": {
+    "modelReceipt": {
+      "type": "object",
+      "required": ["model", "promptVersion", "requestId"],
+      "properties": {
+        "model": { "type": "string", "minLength": 1 },
+        "promptVersion": { "type": "string", "minLength": 1 },
+        "requestId": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

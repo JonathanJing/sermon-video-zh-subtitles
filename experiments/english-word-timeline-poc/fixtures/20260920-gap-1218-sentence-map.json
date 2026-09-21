@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "sermon-sentence-translation-map-spec-poc-v1",
+  "sampleId": "20260920-gap-1218",
+  "sourceId": "7c193fd4-bc90-4f3b-aa00-37dfe8423aa0",
+  "sourceSha256": "728f864e92ea08dbce249249369016e0fee47950ec4e6dcb60cd6d83185e8caf",
+  "sermonSourceStartSeconds": 1789.0,
+  "clipSourceStartSeconds": 3007.82,
+  "publishedCatalogUrl": "https://ai-for-god-sermon-audio.web.app/weekly.json",
+  "publishedCatalogSha256": "6b7bbd018e1df2d39ea5287c9e6a3114ee6a6a0c953e2f39cdc4d3d3244204bf",
+  "fitToleranceSeconds": 0.05,
+  "excludedSentences": [
+    {
+      "sentenceIndex": 0,
+      "reason": "left_context_fragment_from_previous_published_cue"
+    }
+  ],
+  "translationGroups": [
+    {
+      "translationGroupId": "20260920-gap-1218-g001",
+      "sourceSentenceIndexes": [1, 2, 3],
+      "chinese": "我本来会错过太多。你看，我们总爱以为这个世界能给我们更好的。可世界给你的，并不比祂给你的更好。",
+      "coverage": [
+        {
+          "sourceSentenceIndex": 1,
+          "targetText": "我本来会错过太多。"
+        },
+        {
+          "sourceSentenceIndex": 2,
+          "targetText": "你看，我们总爱以为这个世界能给我们更好的。"
+        },
+        {
+          "sourceSentenceIndex": 3,
+          "targetText": "可世界给你的，并不比祂给你的更好。"
+        }
+      ],
+      "measuredChineseAudio": {
+        "cueId": 81,
+        "currentCueStart": 1210.1,
+        "currentCueEnd": 1218.82,
+        "text": "我本来会错过太多。你看，我们总爱以为这个世界能给我们更好的。可世界给你的，并不比祂给你的更好。"
+      }
+    }
+  ]
+}

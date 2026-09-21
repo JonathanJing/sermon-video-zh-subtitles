@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "sermon-sentence-translation-map-spec-poc-v1",
+  "sampleId": "20260920-gap-1880",
+  "sourceId": "7c193fd4-bc90-4f3b-aa00-37dfe8423aa0",
+  "sourceSha256": "728f864e92ea08dbce249249369016e0fee47950ec4e6dcb60cd6d83185e8caf",
+  "sermonSourceStartSeconds": 1789.0,
+  "clipSourceStartSeconds": 3669.5,
+  "publishedCatalogUrl": "https://ai-for-god-sermon-audio.web.app/weekly.json",
+  "publishedCatalogSha256": "6b7bbd018e1df2d39ea5287c9e6a3114ee6a6a0c953e2f39cdc4d3d3244204bf",
+  "fitToleranceSeconds": 0.05,
+  "excludedSentences": [
+    {
+      "sentenceIndex": 0,
+      "reason": "left_context_fragment_from_previous_published_cue"
+    }
+  ],
+  "translationGroups": [
+    {
+      "translationGroupId": "20260920-gap-1880-g001",
+      "sourceSentenceIndexes": [1, 2],
+      "chinese": "但下周我们讲到启示录第4章和第5章时，就会看到，耶稣被称为“犹大支派中的狮子”，祂的吼声压倒了撒但的吼声。",
+      "coverage": [
+        {
+          "sourceSentenceIndex": 1,
+          "targetText": "但下周我们讲到启示录第4章和第5章时，就会看到，耶稣被称为“犹大支派中的狮子”"
+        },
+        {
+          "sourceSentenceIndex": 2,
+          "targetText": "祂的吼声压倒了撒但的吼声。"
+        }
+      ],
+      "measuredChineseAudio": {
+        "cueId": 122,
+        "currentCueStart": 1870.1,
+        "currentCueEnd": 1880.5,
+        "text": "但下周我们讲到启示录第4章和第5章时，就会看到，耶稣被称为“犹大支派中的狮子”，祂的吼声压倒了撒但的吼声。"
+      }
+    }
+  ]
+}
