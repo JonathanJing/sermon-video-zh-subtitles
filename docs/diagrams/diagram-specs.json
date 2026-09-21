@@ -3239,5 +3239,118 @@
     ],
     "height": 1360,
     "historical": true
+  },
+  {
+    "name": "four-layer-production-workflow",
+    "kind": "four-layer",
+    "indexLabel": "CANONICAL",
+    "title": "四层多语言生产",
+    "english": "FOUR-LAYER MULTILINGUAL PRODUCTION",
+    "subtitle": "英文事实只冻结一次；每种目标语言分别完成文字、音频与发布门禁",
+    "nodes": [],
+    "layers": [
+      {
+        "title": "共享英文事实与锚点",
+        "english": "Shared English Source & Anchors",
+        "input": [
+          "授权媒体 + 人工批准范围",
+          "冻结英文 / 可信原稿"
+        ],
+        "process": [
+          "完整转写 → 词级声学对齐",
+          "句、分句、标点、停顿锚定",
+          "来源、覆盖率与 hash 冻结"
+        ],
+        "models": [
+          "gpt-transcribe：英文 ASR",
+          "MFA / Qwen3-ForcedAligner：词时轴",
+          "GPT-6 Astra：文字、标点与断句审核",
+          "模型不得伪造声学时间戳"
+        ],
+        "output": [
+          "English Source Package",
+          "门禁：ready_for_translation",
+          "完整性、对齐和句界人工审核"
+        ]
+      },
+      {
+        "title": "目标语言文字",
+        "english": "Target-Language Text",
+        "input": [
+          "Layer 1 package + targetLocale",
+          "翻译策略、术语表与 CUV 规则"
+        ],
+        "process": [
+          "按 sourceUnitId 从英文直译",
+          "不同 request 独立语义复核",
+          "检查否定、因果、经文、专名和数字"
+        ],
+        "models": [
+          "GPT-6 Astra：当前中文翻译与复核",
+          "语言专属 adapter：ko / es 待验证",
+          "固定 CUV 库：确定性精确取文"
+        ],
+        "output": [
+          "Target-Language Candidate",
+          "门禁：human_translation_approved",
+          "每个 locale 独立文件与审核"
+        ]
+      },
+      {
+        "title": "目标语言音频与同步",
+        "english": "Target-Language Audio & Synchronization",
+        "input": [
+          "已批准 Candidate + Layer 1 锚点",
+          "同 locale 授权声音 / checkpoint"
+        ],
+        "process": [
+          "自然语速逐单元 TTS",
+          "实测时长 → 滚动排程与字幕",
+          "机器回转写筛查 + 全文人工听审"
+        ],
+        "models": [
+          "Qwen3-TTS：当前中文语音 adapter",
+          "Qwen3-ASR：回转写筛查，不是批准",
+          "确定性 scheduler + FFmpeg",
+          "ko / es speech adapter 待验证"
+        ],
+        "output": [
+          "Target-Language Audio Package",
+          "门禁：human_reviewed / audio_unavailable",
+          "禁止删义、自动加速、拉伸或裁切"
+        ]
+      },
+      {
+        "title": "多语言发布与播放",
+        "english": "Multilingual Delivery & Playback",
+        "input": [
+          "同 locale 文字包 + 音频包",
+          "页面来源身份与显式资产清单"
+        ],
+        "process": [
+          "构建页面 / catalog / allowlist",
+          "部署后核验 hash、HTTP 与 Range",
+          "Web、iOS、设备与现场分别验收"
+        ],
+        "models": [
+          "内容发布不需要生成式模型",
+          "Firebase + Web / iOS validators",
+          "GPT-6 Astra Supervisor 只负责编排",
+          "ImageGen 仅用于可选海报主视觉"
+        ],
+        "output": [
+          "Target-Language Release Package",
+          "HTTP / device / venue 状态分开",
+          "下游不得补译或提升上游审核"
+        ]
+      }
+    ],
+    "footer": [
+      "当前 Layer 1 producer 已进入 shadow；通用 Layer 2–4 producer 仍在迁移，legacy 完成不得改写为 four_layer_release。",
+      "模型是各层工具，不是事实或人工批准来源；来源、hash、覆盖率、语义、听审与播放证据分别留存。"
+    ],
+    "height": 1580,
+    "calibratedAt": "2026-09-20",
+    "designReference": "built-in ImageGen 2026-09-20"
   }
 ]

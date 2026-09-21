@@ -9,7 +9,7 @@
   </a>
 </p>
 
-**[从视频到新页面：中英双语 HTML 流程（GitHub）](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/main/docs/tongxing-video-to-page.html)** — 包含模型职责及 MacBook 优先、DGX Spark 回退路由。
+**[四层多语言生产：中英双语 HTML 流程（GitHub）](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/main/docs/tongxing-video-to-page.html)** — 分层说明输入、流程、模型／确定性工具、输出、门禁和当前实现边界。
 
 帮助中文会众听懂英文证道。当前优先展示**周六预制、周日按同一视频时间轴播放的中文配音**：复用已审英文和中文，采用经授权的讲员原声参考配音，交付 MP3、随声字幕与证道同行大纲。双 PDF 生产和本地实时字幕继续作为独立工作流保留。
 
@@ -27,6 +27,8 @@
 | 2. 目标语言文字 | 从英文锚点直接翻译，完整表达每句意思，并检查否定、因果、经文、专名、数字和术语 | 当前中文由 GPT/Astra 类翻译与独立审核协作；以后每种语言可选择自己的翻译模型、提示词、术语表和审核模型 | `Target-Language Candidate`：每个译文单元关联英文锚点 ID，语义和语言审核独立留证 |
 | 3. 目标语言音频与同步 | 用已批准译文生成自然语速语音，测量真实时长，并利用英文停顿和分句安排滚动播放 | Qwen3-TTS 等语音模型负责合成；Qwen3-ASR 等回转写只做机器筛查；确定性调度器负责时长、间隔和时间轴，最终仍需人工完整听审 | `Target-Language Audio Package`：音频、字幕、调度时间轴、筛查和听审状态 |
 | 4. 多语言发布与播放 | 把正确的视频、文字、音频、字幕、页面和语言入口绑定在一起，完成部署、下载和端上播放 | 页面构建器、FFmpeg、Firebase、Web/iOS 客户端和验证程序负责交付；Supervisor/Agent 只编排状态，不能替代内容事实或人工验收 | `Target-Language Release Package`：按语言隔离的发布包、hash、HTTP/下载检查和播放器验证 |
+
+![四层多语言生产：每层流程、模型、输出与门禁](docs/diagrams/four-layer-production-workflow.svg)
 
 多语言扩展遵循以下契约：
 

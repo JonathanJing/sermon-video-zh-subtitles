@@ -16,6 +16,12 @@ PALETTE = {
     'archive': ('#6D7980', '#EDF0F0', '记录 / EVIDENCE'),
     'experiment': ('#A25B50', '#F6ECE8', '实验 / NOT VALIDATED'),
 }
+LAYER_PALETTE = [
+    ('#2E78C7', '#EAF3FC'),
+    ('#7450B2', '#F1ECFA'),
+    ('#C96E08', '#FFF3E3'),
+    ('#23805A', '#E8F5EF'),
+]
 FONT = '"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif'
 def esc(value): return html.escape(str(value), quote=True)
 def units(value): return sum(1.0 if ord(c) > 255 else .56 for c in value)
@@ -39,7 +45,7 @@ def wrap(value, capacity):
 class SVG:
     def __init__(self, spec):
         self.spec=spec; self.w=1600; self.h=spec.get('height',1280); self.parts=[]
-        self.nodes={n['id']:n for n in spec['nodes']}
+        self.nodes={n['id']:n for n in spec.get('nodes',[])}
     def add(self,s): self.parts.append(s)
     def text(self,x,y,value,size=22,color='#243E47',weight=400,anchor='start',box=None,**extra):
         attributes=' '.join(f'{esc(k.replace("_","-"))}="{esc(v)}"' for k,v in extra.items())
@@ -99,14 +105,74 @@ class SVG:
         self.text(124,69,p['english'],17,'#64787A',600,letter_spacing='2')
         self.text(64,127,p['title'],44,'#19343D',650)
         self.text(64,172,p['subtitle'],22,'#60737A')
-        self.text(1536,69,f'{p["index"]:02d} / 11',18,'#82918F',500,'end')
+        self.text(1536,69,p.get('indexLabel',f'{p["index"]:02d} / 11'),18,'#82918F',500,'end')
         self.add('<path d="M64 197H1536" stroke="#D8DEDA" stroke-width="1.3"/>')
     def footer(self):
         y=self.h-129
         self.rect(64,y,1472,78,'#E9EEE8',rx=16)
         for i,line in enumerate(self.spec['footer'][:2]):self.text(84,y+29+i*29,line,20,'#4C635F')
-        self.text(64,self.h-22,f"内容校准 {self.spec.get('calibratedAt', '2026-09-11')} · 设计参考 GPT Image 2.5 Sunburst · 原生可编辑 SVG",15,'#7B8B88')
+        design_reference=self.spec.get('designReference', 'GPT Image 2.5 Sunburst')
+        self.text(64,self.h-22,f"内容校准 {self.spec.get('calibratedAt', '2026-09-11')} · 设计参考 {design_reference} · 原生可编辑 SVG",15,'#7B8B88')
         self.text(1536,self.h-22,'实线：主路径   虚线：条件 / 实验 / 历史',15,'#7B8B88',400,'end')
+    def four_layer(self):
+        card_y, card_w, card_h, gap = 238, 350, 876, 24
+        xs = [64 + i * (card_w + gap) for i in range(4)]
+        section_layout = [
+            ('输入 / INPUT', 'input', 154, 132),
+            ('流程 / PROCESS', 'process', 292, 190),
+            ('模型与工具 / MODELS + TOOLS', 'models', 488, 188),
+            ('输出与门禁 / OUTPUT + GATE', 'output', 682, 164),
+        ]
+
+        for index, (layer, x) in enumerate(zip(self.spec['layers'], xs)):
+            accent, tint = LAYER_PALETTE[index]
+            self.rect(x, card_y + 5, card_w, card_h, '#E0E5E2', rx=20)
+            self.rect(x, card_y, card_w, card_h, '#FFFFFF', '#D5DFDB', rx=20, stroke_width=1.25)
+            self.rect(x, card_y, card_w, 126, accent, rx=20)
+            self.rect(x, card_y + 103, card_w, 23, accent, rx=0)
+            self.rect(x + 20, card_y + 21, 48, 48, '#FFFFFF', rx=24)
+            self.text(x + 44, card_y + 54, str(index + 1), 24, accent, 750, 'middle')
+            self.text(x + 82, card_y + 44, f'Layer {index + 1}', 17, '#FFFFFF', 700)
+            for line_index, line in enumerate(wrap(layer['title'], 15)):
+                self.text(x + 82, card_y + 76 + line_index * 25, line, 21, '#FFFFFF', 650)
+            self.text(x + 20, card_y + 112, layer['english'], 14, '#EAF4FF', 500)
+
+            for label, key, y_offset, height in section_layout:
+                section_y = card_y + y_offset
+                self.rect(x + 16, section_y, card_w - 32, height, tint, rx=12)
+                self.text(x + 31, section_y + 25, label, 14, accent, 700)
+                line_y = section_y + 52
+                for item in layer[key]:
+                    item_lines = wrap(item, 25)
+                    for item_index, line in enumerate(item_lines):
+                        prefix = '• ' if item_index == 0 else '  '
+                        self.text(x + 31, line_y, prefix + line, 15, '#304951', 430)
+                        line_y += 21
+                    line_y += 3
+
+        for index in range(3):
+            x1 = xs[index] + card_w + 3
+            x2 = xs[index + 1] - 5
+            y = card_y + 441
+            self.add(f'<path d="M{x1} {y}H{x2}" stroke="#607B76" stroke-width="3" marker-end="url(#arrow)"/>')
+
+        strip_y = 1148
+        self.rect(64, strip_y, 1472, 122, '#EDF2F0', '#D5DFDB', rx=18, stroke_width=1.1)
+        self.text(88, strip_y + 35, '一个共享英文主干；每种目标语言独立完成 Layer 2 → 3 → 4', 20, '#19343D', 650)
+        self.text(88, strip_y + 68, 'English Source Package 只生成一次；中文不是韩语或西班牙语的中转源。', 16, '#52676E')
+        pills = [('zh-Hans', '#FCECF0', '#A54059'), ('ko', '#E9F2FF', '#2E69A7'), ('es', '#EAF6EE', '#23724F')]
+        for i, (label, fill, color) in enumerate(pills):
+            px = 1022 + i * 158
+            self.rect(px, strip_y + 33, 136, 52, fill, color, rx=26, stroke_width=1)
+            self.text(px + 68, strip_y + 66, label, 18, color, 700, 'middle')
+
+        live_y = 1296
+        self.rect(64, live_y, 720, 92, '#F7F1E8', '#D8C49B', rx=16, stroke_width=1.1, stroke_dasharray='7 5')
+        self.text(86, live_y + 33, '独立旁路：Sunday live / live_session', 18, '#8B6429', 700)
+        self.text(86, live_y + 62, '现场不生成四个包；录音若会后持久化，重新从 Layer 1 开始。', 16, '#5D665E')
+        self.rect(816, live_y, 720, 92, '#F0EDF5', '#C5B9D7', rx=16, stroke_width=1.1)
+        self.text(838, live_y + 33, '跨层编排：GPT-6 Astra Supervisor + 受限确定性工具', 18, '#655184', 700)
+        self.text(838, live_y + 62, 'Agent 只编排和重读证据；不能自授人工批准，也不能把 legacy complete 升级。', 16, '#5D665E')
     def render(self):
         p=self.spec
         self.add(f'<svg xmlns="http://www.w3.org/2000/svg" width="{self.w}" height="{self.h}" viewBox="0 0 {self.w} {self.h}" role="img" aria-labelledby="title desc">')
@@ -116,6 +182,7 @@ class SVG:
         self.header()
         for b in p.get('bands',[]):self.band(b)
         if p.get('kind')=='sequence': self.sequence()
+        elif p.get('kind')=='four-layer': self.four_layer()
         else:
             for e in p.get('edges',[]):self.edge(e)
             for n in p['nodes']:self.card(n)

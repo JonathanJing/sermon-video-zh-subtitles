@@ -9,7 +9,7 @@
   </a>
 </p>
 
-**[Video → new weekly page: bilingual HTML workflow (GitHub)](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/main/docs/tongxing-video-to-page.html)** — includes model roles and MacBook-first / DGX Spark fallback routing.
+**[Four-layer multilingual production: bilingual HTML workflow (GitHub)](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/main/docs/tongxing-video-to-page.html)** — shows each layer's inputs, process, models/deterministic tools, output, gate and current implementation boundary.
 
 Help Chinese-speaking attendees follow an English sermon. The featured direction is **Chinese dubbing prepared on Saturday for playback against the same video on Sunday**: reviewed source text, authorized speaker-reference speech synthesis, MP3 audio, timed Chinese captions, and a sermon companion. Dual-PDF production and local live captions remain separate workflows.
 
@@ -27,6 +27,8 @@ The production pipeline has four layers: **Shared English Source & Anchors → T
 | 2. Target-Language Text | Translate directly from English anchors, preserving every unit and checking negation, causality, Scripture, names, numbers and terminology | The current Chinese path uses GPT/Astra-class translation plus an independent review pass; each future locale selects its own translator, reviewer, prompts and terminology | `Target-Language Candidate`: target text, exact English-anchor coverage, model receipts and independent review state |
 | 3. Target-Language Audio & Synchronization | Generate natural-rate speech from approved text, measure actual duration and schedule it against English clauses and pauses | Qwen3-TTS and similar speech models synthesize audio; Qwen3-ASR-style back-transcription is a machine screen only; a deterministic scheduler owns duration, gaps and timeline placement, followed by complete human listening | `Target-Language Audio Package`: audio, captions, schedule, screening and listening state |
 | 4. Multilingual Delivery & Playback | Bind the correct video, text, audio, captions, page and language selectors, then deploy, download and play them on supported clients | Page builders, FFmpeg, Firebase, Web/iOS clients and validators deliver artifacts; a Supervisor/Agent orchestrates state but does not replace content truth or human acceptance | `Target-Language Release Package`: locale-isolated assets, hashes, HTTP/download checks and player verification |
+
+![Four-layer multilingual production with per-layer process, models, outputs and gates](docs/diagrams/four-layer-production-workflow.svg)
 
 Multilingual expansion follows these contracts:
 
