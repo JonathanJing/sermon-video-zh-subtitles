@@ -1,5 +1,7 @@
 # 项目工作流总览：四层多语言生产、双 PDF 与周日实时字幕
 
+日常代码开发遵循 [`feature/*`／`codex/*` → `dev` → `main`](../development-branch-and-firebase-environments.zh.md) 的两级 PR 门禁；Firebase 听译 App 的 Dev 与 Production 环境必须使用独立 project，避免多语言候选影响当前生产 App。
+
 这份 README 是项目的 workflow source of truth。它描述三条相互独立但可共享证据的路径：预制中文音轨与同行页面、post-live 双 PDF、周日本地实时字幕。执行时先按 [AGENTS.md](../../AGENTS.md) 的任务路由读取对应入口，不必加载全部历史文档。
 
 现状校准日期：**2026-09-20**。9 月 11 日 Agents API 切换、9 月 19 日人工范围与受限并发、9 月 20 日 CUV 证据修复及四层接口冻结均有 tracked 记录。当前提交、push、远端部署、实时服务健康、实体设备和现场验收仍须分别重新核对。

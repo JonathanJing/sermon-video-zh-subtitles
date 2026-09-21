@@ -1,0 +1,27 @@
+name: Branch promotion
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  promotion-policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require dev as the main promotion source
+        env:
+          HEAD_BRANCH: ${{ github.head_ref }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          EXPECTED_REPOSITORY: ${{ github.repository }}
+        run: |
+          if [ "$HEAD_BRANCH" != "dev" ] || [ "$HEAD_REPOSITORY" != "$EXPECTED_REPOSITORY" ]; then
+            echo "main accepts normal feature promotion only from this repository's dev branch." >&2
+            echo "received: $HEAD_REPOSITORY:$HEAD_BRANCH" >&2
+            exit 1
+          fi
+          echo "Validated promotion path: dev -> main"
