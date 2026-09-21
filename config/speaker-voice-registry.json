@@ -1,0 +1,208 @@
+{
+  "schemaVersion": "sermon-speaker-voice-registry-v1",
+  "registryId": "mariners-sermon-speakers-2026-09-21",
+  "baseModel": {
+    "provider": "Qwen",
+    "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "revision": "fd4b254389122332181a7c3db7f27e918eec64e3"
+  },
+  "supportedTargetLocales": [
+    "zh-Hans",
+    "ko",
+    "es",
+    "vi"
+  ],
+  "speakers": [
+    {
+      "speakerId": "eric_geiger",
+      "displayName": "Eric Geiger",
+      "speakerKey": "eric_pilot",
+      "checkpoint": {
+        "checkpointRef": "speaker-voice://qwen3-tts-12hz-1.7b-base/eric_geiger/75d28ce6022b3df3a72df3dd6dbc01e53f584d685770d60ea04b341920968c9a",
+        "checkpointSha256": "75d28ce6022b3df3a72df3dd6dbc01e53f584d685770d60ea04b341920968c9a",
+        "trainingStatus": "training_smoke_completed",
+        "trainingReceipt": "artifacts/sermon-dubbing/2026-09-05-authorized-voice-poc/spark-training-smoke/training-report.json"
+      },
+      "authorization": {
+        "status": "authorized",
+        "purposes": [
+          "chinese_dubbing",
+          "multilingual_voice_demo"
+        ],
+        "evidence": [
+          "experiments/sermon-dubbing-poc/AUTHORIZED_VOICE_REPORT_20260905.zh.md",
+          "docs/multilingual-speaker-voice-registry.zh.md#本轮-demo-授权与限制"
+        ]
+      },
+      "localeCapabilities": [
+        {
+          "targetLocale": "zh-Hans",
+          "modelLanguage": "Chinese",
+          "status": "human_reviewed",
+          "demoStatus": "human_reviewed",
+          "reviewEvidence": [
+            "docs/sermon-dubbing-system-design.zh.md#qwen3-tts-12hz-17b-base按讲员-sft再生成中文"
+          ]
+        },
+        {
+          "targetLocale": "ko",
+          "modelLanguage": "Korean",
+          "status": "unverified_poc",
+          "demoStatus": "machine_screened",
+          "reviewEvidence": []
+        },
+        {
+          "targetLocale": "es",
+          "modelLanguage": "Spanish",
+          "status": "unverified_poc",
+          "demoStatus": "machine_screened",
+          "reviewEvidence": []
+        },
+        {
+          "targetLocale": "vi",
+          "modelLanguage": "Vietnamese",
+          "status": "unverified_poc",
+          "demoStatus": "machine_screened",
+          "adapterOverride": {
+            "adapter": "gwen_tts_zero_shot_reference",
+            "model": "g-group-ai-lab/gwen-tts-0.6B",
+            "revision": "a83e1f08656d48217a83f0ad422d1610d5b5c963",
+            "conditioningRef": "speaker-reference://eric_geiger/26688c073a93e551e05a19169d236d53ed1e9bddeb140249c8ac228bf418c807"
+          },
+          "reviewEvidence": []
+        }
+      ]
+    },
+    {
+      "speakerId": "jared_kirkwood",
+      "displayName": "Jared Kirkwood",
+      "speakerKey": "jared_kirkwood",
+      "checkpoint": {
+        "checkpointRef": "speaker-voice://qwen3-tts-12hz-1.7b-base/jared_kirkwood/a99381477fa7cc1b0ee5de688a68ce896a5f8dd6c60fa80fdf309e7d03ccf588",
+        "checkpointSha256": "a99381477fa7cc1b0ee5de688a68ce896a5f8dd6c60fa80fdf309e7d03ccf588",
+        "trainingStatus": "training_smoke_completed",
+        "trainingReceipt": "artifacts/sermon-dubbing/2026-09-05-speaker-bank/jared_kirkwood/training-report.json"
+      },
+      "authorization": {
+        "status": "authorized",
+        "purposes": ["chinese_dubbing", "multilingual_voice_demo"],
+        "evidence": [
+          "artifacts/sermon-dubbing/2026-09-05-speaker-bank/jared_kirkwood/authorization.json",
+          "docs/multilingual-speaker-voice-registry.zh.md#本轮-demo-授权与限制"
+        ]
+      },
+      "localeCapabilities": [
+        {
+          "targetLocale": "zh-Hans",
+          "modelLanguage": "Chinese",
+          "status": "human_reviewed",
+          "demoStatus": "human_reviewed",
+          "reviewEvidence": ["experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-09-05.json"]
+        },
+        {"targetLocale": "ko", "modelLanguage": "Korean", "status": "unverified_poc", "demoStatus": "machine_screened", "reviewEvidence": []},
+        {"targetLocale": "es", "modelLanguage": "Spanish", "status": "unverified_poc", "demoStatus": "machine_screened", "reviewEvidence": []},
+        {"targetLocale": "vi", "modelLanguage": "Vietnamese", "status": "unverified_poc", "demoStatus": "machine_screened", "adapterOverride": {"adapter": "gwen_tts_zero_shot_reference", "model": "g-group-ai-lab/gwen-tts-0.6B", "revision": "a83e1f08656d48217a83f0ad422d1610d5b5c963", "conditioningRef": "speaker-reference://jared_kirkwood/926e37b4f92c5c9c33c841886f4e22f54d6b214b1c1a1c3c1be2f22b61987e17"}, "reviewEvidence": []}
+      ]
+    },
+    {
+      "speakerId": "christine_caine",
+      "displayName": "Christine Caine",
+      "speakerKey": "christine_caine",
+      "checkpoint": {
+        "checkpointRef": "speaker-voice://qwen3-tts-12hz-1.7b-base/christine_caine/480bc27ec6d23708c4e1a202d9c377145f02ca50bf508e9f4cf63de00f1aeac5",
+        "checkpointSha256": "480bc27ec6d23708c4e1a202d9c377145f02ca50bf508e9f4cf63de00f1aeac5",
+        "trainingStatus": "training_smoke_completed",
+        "trainingReceipt": "artifacts/sermon-dubbing/2026-09-05-speaker-bank/christine_caine/training-report.json"
+      },
+      "authorization": {
+        "status": "authorized",
+        "purposes": ["chinese_dubbing", "multilingual_voice_demo"],
+        "evidence": [
+          "artifacts/sermon-dubbing/2026-09-05-speaker-bank/christine_caine/authorization.json",
+          "docs/multilingual-speaker-voice-registry.zh.md#本轮-demo-授权与限制"
+        ]
+      },
+      "localeCapabilities": [
+        {"targetLocale": "zh-Hans", "modelLanguage": "Chinese", "status": "human_reviewed", "demoStatus": "human_reviewed", "reviewEvidence": ["experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-09-05.json"]},
+        {"targetLocale": "ko", "modelLanguage": "Korean", "status": "unverified_poc", "demoStatus": "machine_screened", "reviewEvidence": []},
+        {"targetLocale": "es", "modelLanguage": "Spanish", "status": "unverified_poc", "demoStatus": "machine_screened", "reviewEvidence": []},
+        {"targetLocale": "vi", "modelLanguage": "Vietnamese", "status": "unverified_poc", "demoStatus": "machine_screened", "adapterOverride": {"adapter": "gwen_tts_zero_shot_reference", "model": "g-group-ai-lab/gwen-tts-0.6B", "revision": "a83e1f08656d48217a83f0ad422d1610d5b5c963", "conditioningRef": "speaker-reference://christine_caine/a96bdd6abf2b94197c56a3d76f94504145e88f79b14372ec53328216c34c2f81"}, "reviewEvidence": []}
+      ]
+    },
+    {
+      "speakerId": "doug_fields",
+      "displayName": "Doug Fields",
+      "speakerKey": "doug_fields",
+      "checkpoint": {
+        "checkpointRef": "speaker-voice://qwen3-tts-12hz-1.7b-base/doug_fields/010b54bc4a305a62292cb3eb37492f161957cdb66128a61843a1be268841c95b",
+        "checkpointSha256": "010b54bc4a305a62292cb3eb37492f161957cdb66128a61843a1be268841c95b",
+        "trainingStatus": "training_smoke_completed",
+        "trainingReceipt": "artifacts/sermon-dubbing/2026-09-05-speaker-bank/doug_fields/training-report.json"
+      },
+      "authorization": {
+        "status": "authorized",
+        "purposes": ["chinese_dubbing", "multilingual_voice_demo"],
+        "evidence": [
+          "artifacts/sermon-dubbing/2026-09-05-speaker-bank/doug_fields/authorization.json",
+          "docs/multilingual-speaker-voice-registry.zh.md#本轮-demo-授权与限制"
+        ]
+      },
+      "localeCapabilities": [
+        {"targetLocale": "zh-Hans", "modelLanguage": "Chinese", "status": "human_reviewed", "demoStatus": "human_reviewed", "reviewEvidence": ["experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-09-05.json"]},
+        {"targetLocale": "ko", "modelLanguage": "Korean", "status": "unverified_poc", "demoStatus": "machine_screened", "reviewEvidence": []},
+        {"targetLocale": "es", "modelLanguage": "Spanish", "status": "unverified_poc", "demoStatus": "machine_screened", "reviewEvidence": []},
+        {"targetLocale": "vi", "modelLanguage": "Vietnamese", "status": "unverified_poc", "demoStatus": "machine_screened", "adapterOverride": {"adapter": "gwen_tts_zero_shot_reference", "model": "g-group-ai-lab/gwen-tts-0.6B", "revision": "a83e1f08656d48217a83f0ad422d1610d5b5c963", "conditioningRef": "speaker-reference://doug_fields/95fb563d94990e64012cd0463d75313eefe08cfe785ef306ddccaf5001423440"}, "reviewEvidence": []}
+      ]
+    },
+    {
+      "speakerId": "kenton_beshore",
+      "displayName": "Kenton Beshore",
+      "speakerKey": "kenton_beshore",
+      "checkpoint": {
+        "checkpointRef": "speaker-voice://qwen3-tts-12hz-1.7b-base/kenton_beshore/d9949de39b2141dc0a0113a86f648eae1782b94b147331dfe3253dd1b11611e1",
+        "checkpointSha256": "d9949de39b2141dc0a0113a86f648eae1782b94b147331dfe3253dd1b11611e1",
+        "trainingStatus": "training_smoke_completed",
+        "trainingReceipt": "artifacts/sermon-dubbing/2026-09-05-speaker-bank/kenton_beshore/training-report.json"
+      },
+      "authorization": {
+        "status": "authorized",
+        "purposes": ["chinese_dubbing", "multilingual_voice_demo"],
+        "evidence": [
+          "artifacts/sermon-dubbing/2026-09-05-speaker-bank/kenton_beshore/authorization.json",
+          "docs/multilingual-speaker-voice-registry.zh.md#本轮-demo-授权与限制"
+        ]
+      },
+      "localeCapabilities": [
+        {"targetLocale": "zh-Hans", "modelLanguage": "Chinese", "status": "human_reviewed", "demoStatus": "human_reviewed", "reviewEvidence": ["experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-09-05.json"]},
+        {"targetLocale": "ko", "modelLanguage": "Korean", "status": "unverified_poc", "demoStatus": "machine_screened", "reviewEvidence": []},
+        {"targetLocale": "es", "modelLanguage": "Spanish", "status": "unverified_poc", "demoStatus": "machine_screened", "reviewEvidence": []},
+        {"targetLocale": "vi", "modelLanguage": "Vietnamese", "status": "unverified_poc", "demoStatus": "machine_screened", "adapterOverride": {"adapter": "gwen_tts_zero_shot_reference", "model": "g-group-ai-lab/gwen-tts-0.6B", "revision": "a83e1f08656d48217a83f0ad422d1610d5b5c963", "conditioningRef": "speaker-reference://kenton_beshore/394552afddac93e08f3049b40ecb52fb62c382205418910e721520e4786d7ab3"}, "reviewEvidence": []}
+      ]
+    },
+    {
+      "speakerId": "steve_bang_lee",
+      "displayName": "Steve Bang Lee",
+      "speakerKey": "steve_bang_lee",
+      "checkpoint": {
+        "checkpointRef": "speaker-voice://qwen3-tts-12hz-1.7b-base/steve_bang_lee/b480bc6ab05863ccf1971bb7d968d99b31f64c5570d21d9cb7d10d4c993953a9",
+        "checkpointSha256": "b480bc6ab05863ccf1971bb7d968d99b31f64c5570d21d9cb7d10d4c993953a9",
+        "trainingStatus": "training_smoke_completed",
+        "trainingReceipt": "artifacts/sermon-dubbing/2026-09-05-speaker-bank/steve_bang_lee/training-report.json"
+      },
+      "authorization": {
+        "status": "authorized",
+        "purposes": ["chinese_dubbing", "multilingual_voice_demo"],
+        "evidence": [
+          "artifacts/sermon-dubbing/2026-09-05-speaker-bank/steve_bang_lee/authorization.json",
+          "docs/multilingual-speaker-voice-registry.zh.md#本轮-demo-授权与限制"
+        ]
+      },
+      "localeCapabilities": [
+        {"targetLocale": "zh-Hans", "modelLanguage": "Chinese", "status": "human_reviewed", "demoStatus": "human_reviewed", "reviewEvidence": ["experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-09-05.json"]},
+        {"targetLocale": "ko", "modelLanguage": "Korean", "status": "unverified_poc", "demoStatus": "machine_screened", "reviewEvidence": []},
+        {"targetLocale": "es", "modelLanguage": "Spanish", "status": "unverified_poc", "demoStatus": "machine_screened", "reviewEvidence": []},
+        {"targetLocale": "vi", "modelLanguage": "Vietnamese", "status": "unverified_poc", "demoStatus": "machine_screened", "adapterOverride": {"adapter": "gwen_tts_zero_shot_reference", "model": "g-group-ai-lab/gwen-tts-0.6B", "revision": "a83e1f08656d48217a83f0ad422d1610d5b5c963", "conditioningRef": "speaker-reference://steve_bang_lee/0661d53954b41e34ac96255c9cb67c73e80a06297f19a0b2976854c81eae3950"}, "reviewEvidence": []}
+      ]
+    }
+  ]
+}

@@ -15,7 +15,7 @@
 | Layer 3 | 目标语言音频与同步 | Target-Language Audio & Synchronization | `Target-Language Audio Package` / `sermon-target-language-audio-package-v1` |
 | Layer 4 | 多语言发布与播放 | Multilingual Delivery & Playback | `Target-Language Release Package` / `sermon-target-language-release-package-v1` |
 
-`targetLocale` 一律使用 BCP 47：英文事实源为 `en`，简体中文内容为 `zh-Hans`，韩语为 `ko`，西班牙语为 `es`。现有 Web 界面使用的 `zh-CN` 是 legacy interface-locale adapter，不得写入新的内容、音频或发布包。
+`targetLocale` 一律使用 BCP 47：英文事实源为 `en`，简体中文内容为 `zh-Hans`，韩语为 `ko`，西班牙语为 `es`，越南语为 `vi`。现有 Web 界面使用的 `zh-CN` 是 legacy interface-locale adapter，不得写入新的内容、音频或发布包。
 
 ## 数据流与失效规则
 
@@ -72,6 +72,8 @@ Target-Language Candidate + Target-Language Audio Package
 ## Layer 3：目标语言音频与同步
 
 输入：一个 `human_translation_approved` Target-Language Candidate、支持相同 `targetLocale` 的授权 voice/checkpoint、同一个 English Source Package 锚点以及自然语速策略。准备阶段使用 [Target-Language Speech Job](../schemas/sermon-target-language-speech-job-v1.schema.json) 锁定 adapter 和输出目录。
+
+长期讲员 checkpoint、授权范围与各语言能力由 [Speaker Voice Registry](multilingual-speaker-voice-registry.zh.md) 独立管理；训练不算第五层，也不随每周内容自动重跑。Layer 1 完成后，各 locale 的 Layer 2 并行；某 locale 通过文字门禁后即可独立进入本 locale 的 Layer 3，不等待其他语言。
 
 处理：逐单元 TTS、完整解码、回转写筛查、实测时长、确定性滚动排程、字幕 cue、人耳全文听审和同视频 1 倍速检查。ASR 筛查不等于人工听审。
 

@@ -20,7 +20,7 @@
 2. **周六双 PDF：** 从完整 post-live 媒体与人工范围生成中英阅读版和中文证道同行 PDF，并可导出受控的周日 Context Pack。
 3. **周日实时字幕：** 以当场麦克风和当下英文 ASR 为事实来源，本地生成中文字幕并保留独立恢复录音。
 
-**多语言生产合同：** 今后预制生产统一使用 Layer 1“共享英文事实与锚点”、Layer 2“目标语言文字”、Layer 3“目标语言音频与同步”、Layer 4“多语言发布与播放”。四个版本化接口见[多语言生产四层接口](../multilingual-production-interfaces.zh.md)。后续预制内容以 English Source Package 和 Canonical English Content 为共同主干，中文、韩语、西班牙语及其他语言作为独立同级分支；禁止以中文作为其他语言的默认翻译源。当前 Layer 1 已接入 shadow；韩语已实现界面、`sourceLocale=en` 展示 sidecar、Target-Language Candidate 合同和 Layer 2 → Layer 3 speech-job 准备器，但通用 Layer 2–4 producer 及真实韩语翻译、TTS、同步和发布尚未完成。因此现有 legacy 工具只能完成它们明确的 PDF、中文音频或页面范围；没有四个 canonical package 和各自门禁时，不得报告“四层生产完成”。迁移顺序见[英文源到多语言证道生产 POC](../english-to-multilingual-production-poc.zh.md)。
+**多语言生产合同：** 今后预制生产统一使用 Layer 1“共享英文事实与锚点”、Layer 2“目标语言文字”、Layer 3“目标语言音频与同步”、Layer 4“多语言发布与播放”。四个版本化接口见[多语言生产四层接口](../multilingual-production-interfaces.zh.md)，按 locale 的 DAG 调度与长期讲员 checkpoint 管理见[多语言每周调度与 Speaker Voice Registry](../multilingual-speaker-voice-registry.zh.md)。后续预制内容以 English Source Package 和 Canonical English Content 为共同主干，中文、韩语、西班牙语、越南语及其他语言作为独立同级分支；禁止以中文作为其他语言的默认翻译源。当前 Layer 1 已接入 shadow；韩语已实现界面、`sourceLocale=en` 展示 sidecar、Target-Language Candidate 合同和 Layer 2 → Layer 3 speech-job 准备器，但通用 Layer 2–4 producer 及真实韩语翻译、TTS、同步和发布尚未完成。因此现有 legacy 工具只能完成它们明确的 PDF、中文音频或页面范围；没有四个 canonical package 和各自门禁时，不得报告“四层生产完成”。迁移顺序见[英文源到多语言证道生产 POC](../english-to-multilingual-production-poc.zh.md)。
 
 ![四层多语言生产：每层流程、模型、输出与门禁](../diagrams/four-layer-production-workflow.svg)
 

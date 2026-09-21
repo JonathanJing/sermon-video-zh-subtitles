@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "sermon-multilingual-voice-demo-references-v1",
+  "textEvidenceStatus": "machine_screening_only",
+  "references": [
+    {
+      "speakerId": "eric_geiger",
+      "file": "eric_geiger-reference.wav",
+      "sha256": "26688c073a93e551e05a19169d236d53ed1e9bddeb140249c8ac228bf418c807",
+      "text": "We're going to study the book of Revelation. This book has fascinated people for centuries. For some people, it's scary, like the sci-fi section of the Bible. For others, it's confusing. But really, it shouldn't be either one of those.",
+      "sourceEvidence": "artifacts/sermon-dubbing/2026-09-05-authorized-voice-poc/reference-asr-check.json"
+    },
+    {
+      "speakerId": "jared_kirkwood",
+      "file": "jared_kirkwood-reference.mp3",
+      "sha256": "926e37b4f92c5c9c33c841886f4e22f54d6b214b1c1a1c3c1be2f22b61987e17",
+      "text": "That consequence was for them as well. So the story continues in verse two. It says there was no water for the community, so they assembled against Moses and Aaron.",
+      "sourceEvidence": "artifacts/sermon-dubbing/2026-09-05-speaker-bank/speaker-bank.json"
+    },
+    {
+      "speakerId": "christine_caine",
+      "file": "christine_caine-reference.mp3",
+      "sha256": "a96bdd6abf2b94197c56a3d76f94504145e88f79b14372ec53328216c34c2f81",
+      "text": "He's talking about looking like Jesus because you're already saved. So Paul is speaking against Jewish legalists who believe that you had to keep the law of Moses in order to be saved.",
+      "sourceEvidence": "artifacts/sermon-dubbing/2026-09-05-speaker-bank/speaker-bank.json"
+    },
+    {
+      "speakerId": "doug_fields",
+      "file": "doug_fields-reference.mp3",
+      "sha256": "95fb563d94990e64012cd0463d75313eefe08cfe785ef306ddccaf5001423440",
+      "text": "Well, the answer to that question is actually in verse three, where it says, Jesus knew that the Father had given everything into His hands, that He had come from God and that He was going back to God.",
+      "sourceEvidence": "artifacts/sermon-dubbing/2026-09-05-speaker-bank/speaker-bank.json"
+    },
+    {
+      "speakerId": "kenton_beshore",
+      "file": "kenton_beshore-reference.mp3",
+      "sha256": "394552afddac93e08f3049b40ecb52fb62c382205418910e721520e4786d7ab3",
+      "text": "The Bible tells us God created the heavens and the earth, and He saw that it was very good. The first picture that God gives us of Himself is that He is a worker, and so we see God working.",
+      "sourceEvidence": "artifacts/sermon-dubbing/2026-09-05-speaker-bank/speaker-bank.json"
+    },
+    {
+      "speakerId": "steve_bang_lee",
+      "file": "steve_bang_lee-reference.mp3",
+      "sha256": "0661d53954b41e34ac96255c9cb67c73e80a06297f19a0b2976854c81eae3950",
+      "text": "The people blessed all the men who volunteered to live in Jerusalem. So the city went practically from empty streets into a living, thriving city.",
+      "sourceEvidence": "artifacts/sermon-dubbing/2026-09-05-speaker-bank/speaker-bank.json"
+    }
+  ]
+}

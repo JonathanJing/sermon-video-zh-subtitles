@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "sermon-multilingual-voice-demo-script-v1",
+  "sourceLocale": "en",
+  "scope": "voice_capability_audition_not_sermon_translation",
+  "sourceMeaning": "God meets us in every season of life. We can bring our questions and fears to him in prayer, and trust him to lead us one step at a time. Today, let us encourage someone with the love and hope of Jesus.",
+  "locales": [
+    {
+      "targetLocale": "zh-Hans",
+      "modelLanguage": "Chinese",
+      "text": "在人生的每一个季节，神都与我们相遇。我们可以在祷告中把疑问和惧怕带到祂面前，并相信祂会一步一步地带领我们。今天，让我们用耶稣的爱与盼望鼓励一个人。"
+    },
+    {
+      "targetLocale": "ko",
+      "modelLanguage": "Korean",
+      "text": "삶의 모든 계절 속에서 하나님은 우리를 만나 주십니다. 우리는 기도 가운데 우리의 질문과 두려움을 하나님께 가져가고, 하나님께서 한 걸음씩 인도하실 것을 믿을 수 있습니다. 오늘 예수님의 사랑과 소망으로 누군가를 격려합시다."
+    },
+    {
+      "targetLocale": "es",
+      "modelLanguage": "Spanish",
+      "text": "Dios sale a nuestro encuentro en cada etapa de la vida. Podemos llevarle en oración nuestras preguntas y temores, y confiar en que él nos guiará paso a paso. Hoy, animemos a alguien con el amor y la esperanza de Jesús."
+    },
+    {
+      "targetLocale": "vi",
+      "modelLanguage": "Vietnamese",
+      "text": "Trong mọi giai đoạn của cuộc sống, Đức Chúa Trời luôn gặp gỡ chúng ta. Chúng ta có thể dâng lên Ngài những thắc mắc và nỗi sợ hãi trong lời cầu nguyện, và tin cậy rằng Ngài sẽ dẫn dắt chúng ta từng bước một. Hôm nay, chúng ta hãy khích lệ một người bằng tình yêu và niềm hy vọng nơi Chúa Giê-su."
+    }
+  ]
+}

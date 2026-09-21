@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-multilingual-weekly-plan-v1.schema.json",
+  "title": "Locale-parallel multilingual weekly plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "planId", "mode", "englishSourcePackage", "speakerRegistry", "speaker", "scheduling", "lanes", "invalidation"],
+  "properties": {
+    "schemaVersion": { "const": "sermon-multilingual-weekly-plan-v1" },
+    "planId": { "type": "string", "pattern": "^multilingual-weekly-[a-f0-9]{24}$" },
+    "mode": { "enum": ["shadow", "production"] },
+    "englishSourcePackage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["packageId", "jsonSha256", "downstreamInvalidationKey", "status"],
+      "properties": {
+        "packageId": { "type": "string", "minLength": 1 },
+        "jsonSha256": { "$ref": "#/$defs/sha256" },
+        "downstreamInvalidationKey": { "$ref": "#/$defs/sha256" },
+        "status": { "enum": ["candidate_ready_for_translation", "ready_for_translation"] }
+      }
+    },
+    "speakerRegistry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["registryId", "jsonSha256"],
+      "properties": {
+        "registryId": { "type": "string", "minLength": 1 },
+        "jsonSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "speaker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["speakerId", "speakerKey", "checkpointRef", "checkpointSha256"],
+      "properties": {
+        "speakerId": { "type": "string", "minLength": 1 },
+        "speakerKey": { "type": "string", "minLength": 1 },
+        "checkpointRef": { "type": "string", "minLength": 1 },
+        "checkpointSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "scheduling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["localeBarrier", "layer2Dispatch", "layer3Dispatch", "gpuPolicy", "voiceTrainingPolicy"],
+      "properties": {
+        "localeBarrier": { "const": "none" },
+        "layer2Dispatch": { "const": "all_locales_after_layer1" },
+        "layer3Dispatch": { "const": "per_locale_after_layer2_gate" },
+        "gpuPolicy": { "const": "single_worker_checkpoint_affinity" },
+        "voiceTrainingPolicy": { "const": "separate_cached_dependency" }
+      }
+    },
+    "lanes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["targetLocale", "voice", "layer2", "layer3"],
+        "properties": {
+          "targetLocale": { "$ref": "#/$defs/locale" },
+          "voice": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["capability", "adapter", "model", "revision", "conditioningRef"],
+            "properties": {
+              "capability": { "enum": ["unverified_poc", "candidate", "human_reviewed"] },
+              "adapter": { "enum": ["qwen3_tts_sft", "gwen_tts_zero_shot_reference"] },
+              "model": { "type": "string", "minLength": 1 },
+              "revision": { "type": "string", "minLength": 1 },
+              "conditioningRef": { "type": "string", "minLength": 1 }
+            }
+          },
+          "layer2": { "$ref": "#/$defs/node" },
+          "layer3": { "$ref": "#/$defs/node" }
+        }
+      }
+    },
+    "invalidation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["layer1", "layer2", "voiceCheckpoint"],
+      "properties": {
+        "layer1": { "const": "all_locale_lanes" },
+        "layer2": { "const": "same_locale_layer3_and_layer4" },
+        "voiceCheckpoint": { "const": "dependent_layer3_and_layer4_only" }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "locale": { "type": "string", "pattern": "^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$" },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nodeId", "status", "leaseKey", "dependsOn"],
+      "properties": {
+        "nodeId": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["ready", "waiting_for_layer2_gate"] },
+        "leaseKey": { "type": "string", "minLength": 1 },
+        "dependsOn": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}
