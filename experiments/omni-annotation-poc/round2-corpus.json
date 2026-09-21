@@ -1,0 +1,92 @@
+{
+  "schemaVersion": "sermon-omni-round2-selection-v1",
+  "sourceId": "7c193fd4-bc90-4f3b-aa00-37dfe8423aa0",
+  "reviewState": "candidate_selection_requires_operator_listening_review",
+  "clipDurationSeconds": 15.0,
+  "samples": [
+    {
+      "id": "s01-peter-quote",
+      "relativeStartSeconds": 111.0,
+      "purpose": "scripture_reading_with_slide",
+      "scriptureRefCandidate": "1 Peter 5:8",
+      "transcriptExcerpt": "Peter wrote this in the Scripture: Your adversary, the devil, is prowling around like a roaring lion, looking for anyone that he can devour."
+    },
+    {
+      "id": "s02-peter-visible-explanation",
+      "relativeStartSeconds": 121.0,
+      "purpose": "scripture_visible_explanation_hard_negative",
+      "scriptureRefCandidate": "1 Peter 5:8",
+      "transcriptExcerpt": "And so you get the image when you watch the videos that if he is really prowling like a lion, like the Scripture says he is, he is patient and wants to pounce on us and destroy us."
+    },
+    {
+      "id": "s03-john-quote",
+      "relativeStartSeconds": 145.0,
+      "purpose": "scripture_reading_with_slide",
+      "scriptureRefCandidate": "John 10:10",
+      "transcriptExcerpt": "John recorded Jesus saying this in John chapter 10, verse 10: The thief comes only to steal and kill and destroy; I have come that they may have life, and have it to the full."
+    },
+    {
+      "id": "s04-john-visible-explanation",
+      "relativeStartSeconds": 158.0,
+      "purpose": "scripture_visible_explanation_hard_negative",
+      "scriptureRefCandidate": "John 10:10",
+      "transcriptExcerpt": "I have come that they may have life and have it to the full. And so John records Jesus saying, you have an enemy who wants to destroy you, but here I am. I have great promises for you."
+    },
+    {
+      "id": "s05-revelation-2-1-quote",
+      "relativeStartSeconds": 279.0,
+      "purpose": "scripture_reading_with_slide",
+      "scriptureRefCandidate": "Revelation 2:1",
+      "transcriptExcerpt": "This is Revelation chapter two, verse one. Write to the angel, or the messenger, of the church in Ephesus: Thus says the one who holds the seven stars in His right hand and who walks among the seven golden lampstands."
+    },
+    {
+      "id": "s06-revelation-2-1-explanation",
+      "relativeStartSeconds": 294.0,
+      "purpose": "return_to_explanation_after_scripture",
+      "scriptureRefCandidate": "Revelation 2:1",
+      "transcriptExcerpt": "This is God's word. Now, we saw last week that the seven golden lampstands are the seven churches, and Jesus is among His people. He is among us. He is with us."
+    },
+    {
+      "id": "s07-revelation-2-4-quote",
+      "relativeStartSeconds": 402.0,
+      "purpose": "scripture_reading_with_multi_verse_slide",
+      "scriptureRefCandidate": "Revelation 2:4",
+      "transcriptExcerpt": "Revelation chapter two, verse four, speaking of the church at Ephesus: You have abandoned the love you had at first."
+    },
+    {
+      "id": "s08-revelation-2-4-visible-explanation",
+      "relativeStartSeconds": 414.0,
+      "purpose": "scripture_visible_explanation_hard_negative",
+      "scriptureRefCandidate": "Revelation 2:4",
+      "transcriptExcerpt": "There was a time when you loved Jesus more than you love Jesus today. You have abandoned the love that you once had, your first love."
+    },
+    {
+      "id": "s09-revelation-3-4-quote",
+      "relativeStartSeconds": 447.0,
+      "purpose": "short_scripture_quote_with_multi_verse_slide",
+      "scriptureRefCandidate": "Revelation 3:4",
+      "transcriptExcerpt": "Now look at the church in Sardis, chapter three, verse four: There are a few who have not defiled their clothes. There are not many. There are just a few of you."
+    },
+    {
+      "id": "s10-revelation-3-16-quote",
+      "relativeStartSeconds": 498.0,
+      "purpose": "scripture_reading_with_multi_verse_slide",
+      "scriptureRefCandidate": "Revelation 3:16",
+      "transcriptExcerpt": "Look at the church in Laodicea, chapter three, verse sixteen: Because you are lukewarm, and neither hot nor cold, I am going to vomit you out of my mouth."
+    },
+    {
+      "id": "s11-balaam-visible-explanation",
+      "relativeStartSeconds": 643.0,
+      "purpose": "scripture_visible_but_explained_or_paraphrased",
+      "scriptureRefCandidate": "Revelation 2:14",
+      "transcriptExcerpt": "God says to the church in Pergamum: You have some there who hold to the teaching of Balaam. To understand that statement, you have to understand the Old Testament."
+    },
+    {
+      "id": "s12-rhetorical-repeat",
+      "relativeStartSeconds": 1198.0,
+      "purpose": "rhetorical_pause_and_repetition_without_scripture_slide",
+      "scriptureRefCandidate": null,
+      "transcriptExcerpt": "But they said, let's do this. And eight years ago, I became the pastor. I shudder to think, I shudder to think what I would have missed, what I would have missed."
+    }
+  ]
+}
