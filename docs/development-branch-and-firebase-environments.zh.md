@@ -19,16 +19,17 @@ feature/* 或 codex/*
 - `main` 和 `dev` 都禁止直接 push、force-push 和删除；管理员也遵守保护规则。
 - 两个分支的 PR 都必须基于目标分支最新提交，并通过 `unittest` 和 `native-client`。
 - `main` 额外要求 `promotion-policy`，普通功能只能由 `dev` 晋升。紧急修复也先合并到 `dev`；若确需例外，必须显式修改保护规则并留下原因，不能静默绕过。
-- `main` 要求线性历史并使用 squash merge。`dev` 不要求线性历史：普通功能 PR 仍使用 squash／rebase，但每次生产晋升后必须允许一条受检查的 `main → dev` merge commit，把新的 `main` tip 重新纳入 `dev` 祖先链。
+- `main` 要求线性历史并使用 squash merge。`dev` 不要求线性历史：普通功能 PR 仍使用 squash／rebase，但每次生产晋升后必须通过一个从最新 `dev` 建立的临时 `sync/*` 分支合并 `main`，再用受检查的 `sync/* → dev` PR 把新的 `main` tip 纳入 `dev` 祖先链。
 - 当前仓库为单维护者流程，因此 PR 本身是强制门禁，但批准人数为 0；CI、对话解决和 `main` 线性历史仍是硬条件。增加第二位维护者后，应把批准人数提升为 1。
 - 合并到 `main` 只证明代码门禁通过；Firebase HTTP、iOS/TestFlight、设备和现场验收继续分别留证。
 
 ### 晋升后的回同步
 
 1. 三项 required checks 通过后，将 `dev → main` PR squash merge。
-2. 立即创建 `main → dev` PR；它仍须通过 `unittest` 和 `native-client`。
-3. 这条回同步 PR 使用 merge commit，不能 squash。merge commit 只用于把 production tip 纳入 `dev`，不承载新的功能修改。
-4. 回同步完成后再从最新 `dev` 创建新的功能分支。
+2. 从最新 `dev` 创建临时 `sync/main-to-dev-<date>` 分支，在该临时分支 merge 最新 `main`；禁止直接把 `main` 作为回同步 PR 的 head，因为 strict/up-to-date 要求 head 已包含当前 `dev` tip。
+3. 创建 `sync/main-to-dev-<date> → dev` PR；它仍须通过 `unittest` 和 `native-client`。
+4. 这条回同步 PR 使用 merge commit，不能 squash。merge commit 只用于把 production tip 纳入 `dev`，不承载新的功能修改；完成后删除临时 sync 分支。
+5. 回同步完成后再从最新 `dev` 创建新的功能分支。
 
 这一步解决长期分支的祖先关系：若 `main` squash 后不回同步，`main` 和 `dev` 会拥有内容等价但 SHA 不同的提交；下一轮在 strict/up-to-date 门禁下将需要 force-reset `dev`。本流程明确禁止这种重写历史的恢复方式。
 
