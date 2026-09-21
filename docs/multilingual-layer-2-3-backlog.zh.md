@@ -7,6 +7,8 @@
 
 首个新语言为韩语 `ko`；现有简体中文 `zh-Hans` 用作兼容与等价验证。这里不包含 Layer 1 接口修改，也不包含 Layer 4 catalog、Web/iOS 正式发布或部署。
 
+Layer 2 的开发前流程、模型复用边界、生成物和 hash 协议见 [Layer 2 目标语言文字设计基线](multilingual-layer-2-design.zh.md)。该设计不修改冻结的层间 schema。
+
 ## 1. 开始条件与共同规则
 
 正式运行 Layer 2 前必须取得：
