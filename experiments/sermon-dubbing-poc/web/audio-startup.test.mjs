@@ -7,6 +7,7 @@ import * as timing from './timing.mjs';
 import * as catalogHelpers from './catalog.mjs';
 import { PlaybackMemory } from './playback-memory.mjs';
 import { messages as appMessages } from './locales-app.mjs';
+import { messages as koreanMessages } from './locales-ko.mjs';
 
 // Exercise the shipped event handlers; only network bootstrap and module imports
 // are replaced. No media metadata arrives unless the test explicitly delivers it.
@@ -134,7 +135,7 @@ function setup({ bookmark = false, bootstrapFetch, alignmentPlay } = {}) {
   let locale = 'zh'; const localeListeners = [];
   const i18n = {
     getLocale: () => locale,
-    t: (key, params = {}) => (appMessages[locale][key] || key).replace(/\{(\w+)\}/g, (all, name) => String(params[name] ?? all)),
+    t: (key, params = {}) => ((locale === 'ko' ? koreanMessages[key] : appMessages[locale][key]) || key).replace(/\{(\w+)\}/g, (all, name) => String(params[name] ?? all)),
     setLocale(value) { locale = value; localeListeners.forEach(listener => listener()); },
     onLocaleChange: listener => localeListeners.push(listener), localizeDOM() {},
     localizeWeek: value => value, translateContent: value => value, appMessages,
@@ -628,6 +629,10 @@ test('whole-page language change keeps live audio, source identity and grouped E
   assert.equal(h.audio.loadCalls, loads); assert.equal(h.audio.playCalls.length, plays);
   assert.equal(h.fingerprintInvalidations, invalidations);
   assert.equal(h.cues()[0].disabled, false);
+  h.get('language-toggle').click();
+  assert.equal(h.context.getLocale(), 'ko');
+  assert.equal(h.get('current-text').textContent, '第二段');
+  assert.equal(h.get('play-label').textContent, '불러오기 취소');
   h.get('language-toggle').click();
   assert.equal(h.context.getLocale(), 'zh');
   assert.equal(h.get('current-text').textContent, '第二段');

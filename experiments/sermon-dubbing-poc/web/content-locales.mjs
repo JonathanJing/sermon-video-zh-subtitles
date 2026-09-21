@@ -8,6 +8,7 @@
 export const CONTENT_TRANSLATION_NOTES = Object.freeze({
   'zh-CN': '英文摘要、大纲和反思为 AI 界面译文，并非讲员原话；英文逐字稿沿用已有英文来源，未从中文回译。',
   en: 'English summaries, outlines, and reflections are AI translations of the Chinese companion content, not quotations from the speaker. The English transcript uses the existing English source; it is not translated back from Chinese.',
+  ko: '한국어 제목·요약·개요는 동일한 영어 원본 콘텐츠에서 직접 만든 POC 번역이며 설교자의 직접 인용이 아닙니다. 중국어 음성과 자막은 한국어로 바뀌지 않습니다.',
 });
 
 export const CONTENT_LOCALES = Object.freeze({
@@ -363,6 +364,27 @@ export const CONTENT_LOCALES = Object.freeze({
   "诗篇142篇": "Psalm 142",
   "民数记": "Numbers"
 }),
+  ko: Object.freeze({
+  "正式播放版": "공식 재생판",
+  "YouTube 版": "YouTube 판",
+  "启示录：耶稣带来的安慰与盼望": "요한계시록: 예수님이 주시는 위로와 소망",
+  "当生活令人费解": "삶이 이해되지 않을 때",
+  "民数记研读": "민수기 연구",
+  "视频来源与证道范围": "영상 출처와 설교 구간",
+  "中文审校与双 PDF": "중국어 검토와 두 PDF",
+  "讲员音色生成": "설교자 보이스 생성",
+  "配音检查": "더빙 점검",
+  "视频同步与人工试听": "영상 동기화와 사람의 청취 검토",
+  "周日版本发布": "주일판 게시",
+  "原视频同步": "원본 영상 동기화",
+  "收听页面发布": "듣기 페이지 게시",
+  "已审核的中文内容": "검토된 중국어 콘텐츠",
+  "启示录 1:1–20": "요한계시록 1:1–20",
+  "启示录第1章": "요한계시록 1장",
+  "诗篇 73": "시편 73편",
+  "诗篇第73篇": "시편 73편",
+  "民数记": "민수기"
+}),
 });
 
 const TEXT_FIELDS = Object.freeze([
@@ -386,29 +408,34 @@ export function localizeWeek(week, locale = 'zh-CN') {
   if (/^zh(?:-|$)/i.test(requested)) return week;
   const language = requested.toLowerCase().split('-')[0];
   const dictionary = CONTENT_LOCALES[language];
+  const canonicalSource = week.contentSource?.locale === language ? week.contentSource : undefined;
+  const embedded = week.contentLocalizations?.[language];
+  const selectedContent = canonicalSource || embedded;
+  const fields = selectedContent?.fields && typeof selectedContent.fields === 'object' ? selectedContent.fields : {};
   const fallbackPaths = [];
-  const translate = (value, path) => {
+  const translate = (value, path, localizedValue) => {
     if (typeof value !== 'string') return value;
+    if (typeof localizedValue === 'string' && localizedValue.trim()) return localizedValue;
     if (dictionary && Object.hasOwn(dictionary, value)) return dictionary[value];
     if (hasChinese(value)) fallbackPaths.push(path);
     return value;
   };
   const result = { ...week };
   for (const key of TEXT_FIELDS) {
-    if (Object.hasOwn(week, key)) result[key] = translate(week[key], key);
+    if (Object.hasOwn(week, key)) result[key] = translate(week[key], key, fields[key]);
   }
   for (const key of ['questions', 'scriptureRefs']) {
     if (Array.isArray(week[key])) {
-      result[key] = week[key].map((value, index) => translate(value, `${key}.${index}`));
+      result[key] = week[key].map((value, index) => translate(value, `${key}.${index}`, fields[key]?.[index]));
     }
   }
   if (Array.isArray(week.outline)) {
     result.outline = week.outline.map((section, index) => {
       if (!section || typeof section !== 'object') return section;
       const localized = { ...section };
-      if (Object.hasOwn(section, 'title')) localized.title = translate(section.title, `outline.${index}.title`);
+      if (Object.hasOwn(section, 'title')) localized.title = translate(section.title, `outline.${index}.title`, fields.outline?.[index]?.title);
       if (Array.isArray(section.points)) {
-        localized.points = section.points.map((value, point) => translate(value, `outline.${index}.points.${point}`));
+        localized.points = section.points.map((value, point) => translate(value, `outline.${index}.points.${point}`, fields.outline?.[index]?.points?.[point]));
       }
       return localized;
     });
@@ -418,16 +445,18 @@ export function localizeWeek(week, locale = 'zh-CN') {
       if (!stage || typeof stage !== 'object') return stage;
       const localized = { ...stage };
       for (const key of ['label', 'detail']) {
-        if (Object.hasOwn(stage, key)) localized[key] = translate(stage[key], `productionStages.${index}.${key}`);
+        if (Object.hasOwn(stage, key)) localized[key] = translate(stage[key], `productionStages.${index}.${key}`, fields.productionStages?.[index]?.[key]);
       }
       return localized;
     });
   }
   result.contentLocalization = {
-    locale: dictionary ? language : 'zh-CN',
+    locale: dictionary || selectedContent ? language : 'zh-CN',
     requestedLocale: requested,
     sourceLocale: 'zh-CN',
-    kind: dictionary ? 'ai-ui-translation' : 'source-fallback',
+    kind: canonicalSource ? 'canonical-source' : embedded ? 'target-language-sidecar' : dictionary ? 'legacy-ui-translation' : 'source-fallback',
+    status: selectedContent?.status,
+    sourceContentSha256: canonicalSource?.sha256 || embedded?.sourceContentSha256,
     note: CONTENT_TRANSLATION_NOTES[language] || CONTENT_TRANSLATION_NOTES['zh-CN'],
     fallbackPaths,
   };

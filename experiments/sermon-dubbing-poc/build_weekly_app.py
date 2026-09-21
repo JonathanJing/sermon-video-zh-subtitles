@@ -249,7 +249,90 @@ def apply_content_review(weeks, sources, review_path):
                 stage.update(label="收听页面发布", status="pass", detail="已审核的中文内容")
 
 
-def build(comparison, out, expansion=None, weekly_jobs=(), voice_bank=None, review_preview=False, sync_preview=False, include_history=False, feedback_enabled=False, series=None, content_review=None):
+LOCALIZED_TEXT_FIELDS = {"title", "series", "scripture", "centralMessage", "summary", "sourceLabel", "contentReview", "audioNotice"}
+
+
+def content_fields_sha256(fields):
+    return hashlib.sha256(json.dumps(fields, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def _localized_strings(values, source, field):
+    if not isinstance(values, list) or len(values) != len(source) or not all(isinstance(value, str) and value.strip() for value in values):
+        raise ValueError(f"Invalid localized {field}")
+
+
+def validate_localized_fields(fields, week):
+    if not isinstance(fields, dict) or not fields:
+        raise ValueError("Localized fields must be a non-empty object")
+    allowed = LOCALIZED_TEXT_FIELDS | {"questions", "scriptureRefs", "outline", "productionStages"}
+    if set(fields) - allowed:
+        raise ValueError("Unsupported localized content field")
+    for key in LOCALIZED_TEXT_FIELDS & set(fields):
+        if key not in week or not isinstance(fields[key], str) or not fields[key].strip():
+            raise ValueError(f"Invalid localized {key}")
+    for key in ["questions", "scriptureRefs"]:
+        if key in fields:
+            _localized_strings(fields[key], week.get(key, []), key)
+    for key, child_keys in [("outline", {"title", "points"}), ("productionStages", {"label", "detail"})]:
+        if key not in fields:
+            continue
+        values, source = fields[key], week.get(key, [])
+        if not isinstance(values, list) or len(values) != len(source):
+            raise ValueError(f"Invalid localized {key}")
+        for index, value in enumerate(values):
+            if not isinstance(value, dict) or set(value) - child_keys or not value:
+                raise ValueError(f"Invalid localized {key} item")
+            for child, translated in value.items():
+                if child == "points":
+                    _localized_strings(translated, source[index].get(child, []), f"{key}.{index}.{child}")
+                elif child not in source[index] or not isinstance(translated, str) or not translated.strip():
+                    raise ValueError(f"Invalid localized {key}.{index}.{child}")
+
+
+def _content_shape(value):
+    if isinstance(value, dict):
+        return {key: _content_shape(child) for key, child in sorted(value.items())}
+    if isinstance(value, list):
+        return [_content_shape(child) for child in value]
+    return "text"
+
+
+def apply_content_localizations(weeks, localization_path):
+    payload = json.loads(Path(localization_path).read_text(encoding="utf-8"))
+    if payload.get("schemaVersion") != "sermon-target-language-content-v1" or payload.get("sourceLocale") != "en":
+        raise ValueError("Invalid content localizations")
+    translations = payload.get("translations")
+    if not isinstance(translations, list) or not translations:
+        raise ValueError("Content localizations have no translations")
+    by_id = {week["id"]: week for week in weeks}
+    seen = set()
+    for entry in translations:
+        if not isinstance(entry, dict):
+            raise ValueError("Invalid content localization entry")
+        identity = (entry.get("weekId"), entry.get("locale"))
+        if identity in seen or entry.get("locale") != "ko" or entry.get("status") != "draft" or identity[0] not in by_id:
+            raise ValueError("Invalid or duplicate content localization")
+        seen.add(identity)
+        week = by_id[identity[0]]
+        source_fields, fields = entry.get("sourceFields"), entry.get("fields")
+        validate_localized_fields(source_fields, week)
+        validate_localized_fields(fields, week)
+        if _content_shape(source_fields) != _content_shape(fields):
+            raise ValueError("Target fields do not match canonical English fields")
+        source_hash = content_fields_sha256(source_fields)
+        existing_source = week.get("contentSource")
+        if existing_source and existing_source.get("sha256") != source_hash:
+            raise ValueError("Target languages use different English content sources")
+        week["contentSource"] = {"locale": "en", "status": "provided_poc", "sha256": source_hash, "fields": source_fields}
+        week.setdefault("contentLocalizations", {})["ko"] = {
+            "status": "draft",
+            "sourceLocale": "en",
+            "sourceContentSha256": source_hash,
+            "fields": fields,
+        }
+
+
+def build(comparison, out, expansion=None, weekly_jobs=(), voice_bank=None, review_preview=False, sync_preview=False, include_history=False, feedback_enabled=False, series=None, content_review=None, content_localizations=None):
     weekly_jobs = tuple(weekly_jobs)
     if sync_preview and (not review_preview or not weekly_jobs):
         raise ValueError("--sync-preview requires --review-preview and at least one --weekly-job")
@@ -259,7 +342,7 @@ def build(comparison, out, expansion=None, weekly_jobs=(), voice_bank=None, revi
     if public.exists():
         raise ValueError("Use a new output directory to preserve the previous release")
     (public / "media").mkdir(parents=True)
-    ui_files = ["fingerprint-core.mjs", "fingerprint-capture.mjs", "fingerprint-worklet.mjs", "fingerprint-worker.mjs", "fingerprint-ui.mjs", "index.html", "style.css", "app.mjs", "timing.mjs", "catalog.mjs", "theme.js", "feedback.mjs", "feedback-client.mjs", "listening.mjs", "usage.mjs", "usage-client.mjs", "playback-memory.mjs", "i18n.mjs", "locales-interface.mjs", "locales-app.mjs", "locales-feedback.mjs", "content-locales.mjs", "brand-icon.png"]
+    ui_files = ["fingerprint-core.mjs", "fingerprint-capture.mjs", "fingerprint-worklet.mjs", "fingerprint-worker.mjs", "fingerprint-ui.mjs", "index.html", "style.css", "app.mjs", "timing.mjs", "catalog.mjs", "theme.js", "feedback.mjs", "feedback-client.mjs", "listening.mjs", "usage.mjs", "usage-client.mjs", "playback-memory.mjs", "i18n.mjs", "locales-interface.mjs", "locales-app.mjs", "locales-feedback.mjs", "locales-ko.mjs", "content-locales.mjs", "brand-icon.png"]
     for name in ui_files:
         shutil.copyfile(HERE / "web" / name, public / name)
     weeks, sources, alignment_pages = [], [], []
@@ -318,6 +401,8 @@ def build(comparison, out, expansion=None, weekly_jobs=(), voice_bank=None, revi
             catalog["voiceBank"]["speakers"].append(entry)
     if content_review:
         apply_content_review(weeks, sources, content_review)
+    if content_localizations:
+        apply_content_localizations(weeks, content_localizations)
     validate_catalog(catalog)
     write_json(public / "weekly.json", catalog)
     app_version = hashlib.sha256(b"".join((public / name).read_bytes() for name in ui_files)).hexdigest()[:16]
@@ -337,6 +422,7 @@ def build(comparison, out, expansion=None, weekly_jobs=(), voice_bank=None, revi
     report = {"automaticAudioAlignmentPages": alignment_pages, "schemaVersion": "sermon-weekly-build-v1", "builtAt": datetime.now(timezone.utc).isoformat(), "weeks": len(weeks),
         "playableWeeks": sum(bool(w["tracks"]) for w in weeks), "files": files, "sources": sources,
         "contentReviewSha256": sha256(Path(content_review)) if content_review else None,
+        "contentLocalizationsSha256": sha256(Path(content_localizations)) if content_localizations else None,
         "reviewPreview": review_preview, "syncPreview": sync_preview, "includeHistory": use_history,
         "feedbackEnabled": bool(feedback_enabled), "appVersion": app_version,
         "feedbackCatalogSha256": sha256(out / "feedback-catalog.json") if feedback_enabled else None,
@@ -360,8 +446,11 @@ if __name__ == "__main__":
     parser.add_argument("--feedback-enabled", action="store_true", help="Enable the dedicated feedback API and opt-in anonymous statistics; deploy the matching feedback catalog first")
     parser.add_argument("--series", help="Series name for the specified weekly jobs, appended to their display titles")
     parser.add_argument("--content-review", type=Path, help="Explicit user content review bound to these jobs and audio; does not approve video synchronization")
+    parser.add_argument("--content-localizations", type=Path, help="Draft target-language display content derived directly from canonical English fields; Korean POC uses locale ko")
     args = parser.parse_args()
     if args.sync_preview and (not args.review_preview or not args.weekly_job):
         parser.error("--sync-preview requires --review-preview and at least one --weekly-job")
     build(args.comparison.resolve(), args.out.resolve(), args.expansion.resolve() if args.expansion else None,
-        [p.resolve() for p in args.weekly_job], args.voice_bank.resolve() if args.voice_bank else None, args.review_preview, args.sync_preview, args.include_history, args.feedback_enabled, args.series, args.content_review)
+        [p.resolve() for p in args.weekly_job], args.voice_bank.resolve() if args.voice_bank else None, args.review_preview, args.sync_preview, args.include_history, args.feedback_enabled, args.series,
+        args.content_review.resolve() if args.content_review else None,
+        args.content_localizations.resolve() if args.content_localizations else None)

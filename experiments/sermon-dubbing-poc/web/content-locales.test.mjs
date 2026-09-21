@@ -50,3 +50,34 @@ test('Chinese variants preserve source and unsupported languages do not silently
   assert.equal(translateContent('配音检查', 'zh'), '配音检查');
   assert.equal(translateContent('未知文案', 'en'), '未知文案');
 });
+
+test('Korean uses catalog sidecar fields without changing media or approval data', () => {
+  const source = {
+    id: 'ko-poc', title: '尚未翻译的新一期', series: '当生活令人费解', summary: '中文摘要',
+    tracks: [{ sha256: 'fixed' }], humanApproval: { status: 'pending' },
+    outline: [{ title: '第一点', points: ['第一段'] }], questions: ['问题一'],
+    contentSource: { locale: 'en', status: 'provided_poc', sha256: 'abc123', fields: {
+      title: 'New sermon', summary: 'Canonical English summary', outline: [{ title: 'First', points: ['First paragraph'] }], questions: ['First question'],
+    } },
+    contentLocalizations: { ko: { status: 'draft', sourceLocale: 'en', sourceContentSha256: 'abc123', fields: {
+      title: '새 설교', summary: '한국어 요약', outline: [{ title: '첫째', points: ['첫 문단'] }], questions: ['첫 질문'],
+    } } },
+  };
+  const localized = localizeWeek(source, 'ko-KR');
+  assert.equal(localized.title, '새 설교');
+  assert.equal(localized.series, '삶이 이해되지 않을 때');
+  assert.equal(localized.summary, '한국어 요약');
+  assert.equal(localized.outline[0].points[0], '첫 문단');
+  assert.equal(localized.questions[0], '첫 질문');
+  assert.equal(localized.tracks, source.tracks);
+  assert.equal(localized.humanApproval, source.humanApproval);
+  assert.equal(localized.contentLocalization.kind, 'target-language-sidecar');
+  assert.equal(localized.contentLocalization.status, 'draft');
+  assert.equal(localized.contentLocalization.sourceContentSha256, 'abc123');
+  assert.deepEqual(localized.contentLocalization.fallbackPaths, []);
+  assert.match(localized.contentLocalization.note, /POC/);
+  const english = localizeWeek(source, 'en');
+  assert.equal(english.title, 'New sermon');
+  assert.equal(english.summary, 'Canonical English summary');
+  assert.equal(english.contentLocalization.kind, 'canonical-source');
+});

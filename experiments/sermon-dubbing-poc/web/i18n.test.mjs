@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { messages } from './locales-interface.mjs';
+import { messages as koreanMessages } from './locales-ko.mjs';
 import { runInNewContext } from 'node:vm';
 
 class Element {
@@ -48,7 +49,7 @@ async function fixture(run, { saved = null, blockedStorage = false, beforeImport
   } });
   try {
     await beforeImport?.(doc);
-    for (const file of ['i18n.mjs', 'locales-interface.mjs']) {
+    for (const file of ['i18n.mjs', 'locales-interface.mjs', 'locales-ko.mjs']) {
       await writeFile(join(dir, file), await readFile(new URL(file, import.meta.url), 'utf8'));
     }
     // Domain dictionaries are controlled fixtures so the core is verified independently.
@@ -100,6 +101,10 @@ test('dictionaries merge domains, interpolate, fall back and accept an added loc
     assert.equal(core.t('test.feedback'), 'Comentarios');
     assert.equal(core.t('nav.listen'), '收听');
     assert.equal(core.setLocale('unknown'), 'zh');
+    core.setLocale('ko-KR');
+    assert.equal(core.t('nav.listen'), '듣기');
+    assert.equal(core.t('test.feedback'), 'Feedback');
+    assert.equal(core.supportedLocales.includes('ko'), true);
   });
 });
 
@@ -125,7 +130,7 @@ test('localizeDOM can translate a newly rendered element itself', async () => {
   });
 });
 
-test('all marked static strings have matching Chinese and English dictionaries', async () => {
+test('all marked static strings have matching Chinese, English and Korean POC dictionaries', async () => {
   assert.deepEqual(Object.keys(messages.en).sort(), Object.keys(messages.zh).sort());
   const html = await readFile(new URL('./index.html', import.meta.url), 'utf8');
   const keys = [...html.matchAll(/data-i18n(?:-aria-label|-title|-placeholder)?="([^"]+)"/g)].map((match) => match[1]);
@@ -133,9 +138,11 @@ test('all marked static strings have matching Chinese and English dictionaries',
   for (const key of keys) {
     assert.ok(messages.zh[key], `Missing Chinese: ${key}`);
     assert.ok(messages.en[key], `Missing English: ${key}`);
+    assert.ok(koreanMessages[key], `Missing Korean POC fallback: ${key}`);
   }
   assert.match(html, /id="language-toggle"/);
   assert.match(html, /id="subtitle-toggle"/);
+  assert.ok(Object.entries(koreanMessages).filter(([key, value]) => value !== messages.en[key]).length >= 50);
 });
 
 

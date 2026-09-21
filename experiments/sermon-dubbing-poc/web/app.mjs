@@ -82,13 +82,13 @@ function renderWeekLabels() {
   $("speaker").textContent = view.speaker; $("scripture").textContent = view.scripture;
   $("central-message").textContent = view.centralMessage;
   $("audio-notice").textContent = view.audioNotice;
-  $("review").textContent = getLocale() === "en" ? view.contentLocalization?.note || t("app.content.disclosure") : t("app.content.disclosure");
+  $("review").textContent = getLocale() !== "zh" ? view.contentLocalization?.note || t("app.content.disclosure") : t("app.content.disclosure");
   $("edition-label").textContent = activeView === "tab-voices" ? t("app.release.preview") : isFormalPlayback(week) ? t("app.release.formal") : t("app.release.preview");
   $("week-status").textContent = isFormalPlayback(week) ? t("app.week.published") : week.humanContentReview === "approved" || week.audioStatus === "full_reviewed" ? t("app.week.ready") : week.audioStatus === "full_candidate" ? t("app.week.review") : week.tracks.length ? t("app.week.sample") : t("app.week.outline");
   $("audio-scope").textContent = isFormalPlayback(week) && track ? t("app.release.formal") : week.humanContentReview === "approved" && track ? t("app.release.full") : track?.scope === "full_candidate" ? t("app.release.review") : track?.scope === "full_reviewed" ? t("app.release.full") : track ? t("app.release.sample") : t("app.release.pending");
   $("voice").textContent = track ? t("app.voice.active", { speaker: week.speaker }) : t("app.voice.pending");
   $("source-link").textContent = view.sourceLabel ? t("app.source.link", { label: view.sourceLabel }) : t("app.source.open");
-  for (const button of $("variants").children) button.textContent = isFormalPlayback(week) ? t("app.release.formal") : getLocale() === "en" ? t("app.voice.active", { speaker: week.speaker }) : week.tracks.find(item => item.id === button.dataset.id)?.label || "";
+  for (const button of $("variants").children) button.textContent = isFormalPlayback(week) ? t("app.release.formal") : getLocale() !== "zh" ? t("app.voice.active", { speaker: week.speaker }) : week.tracks.find(item => item.id === button.dataset.id)?.label || "";
   $("subtitle-note").textContent = getLocale() === "en" ? t("app.transcript.englishTiming") : t("app.subtitle.follow");
   document.title = `${activeView === "tab-voices" ? t("app.voices.title") : view.title} · ${t("app.brand")}`;
 }
@@ -691,7 +691,10 @@ async function initializeEngagement() {
     }
   } catch { /* Optional feedback must never prevent playback. */ }
 }
-$("language-toggle").addEventListener("click", () => setLocale(getLocale() === "en" ? "zh" : "en"));
+$("language-toggle").addEventListener("click", () => {
+  const locales = ["zh", "en", "ko"];
+  setLocale(locales[(locales.indexOf(getLocale()) + 1) % locales.length]);
+});
 onLocaleChange(() => {
   updateLanguageControl();
   if (!catalog || !week) return;

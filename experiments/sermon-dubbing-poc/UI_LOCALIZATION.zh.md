@@ -1,8 +1,10 @@
 # 界面语言与讲员音色
 
-顶部语言按钮切换中文／英文界面，保存到当前浏览器的 `sermon-audio-locale`。字幕卡保留独立的双语对照按钮。切换界面只刷新文字，不重载音轨、不跳转、不清空反馈表单，也不重建声音定位会话。
+顶部语言按钮按中文 → English → 한국어循环，保存到当前浏览器的 `sermon-audio-locale`。字幕卡保留独立的双语对照按钮。切换界面只刷新文字，不重载音轨、不跳转、不清空反馈表单，也不重建声音定位会话。
 
 中文模式按现有中文 cue 显示；英文模式使用同一来源已冻结的英文段落，全文按关联 block ID 合并，时间按钮指向这一段首条中文 cue。英文可能来自自动转写，按中文音频的段落提供参考，不是逐词对齐。缺少来源英文时明确提示，全文保留相应中文，而不从中文回译冒充原文。
+
+韩语当前是**界面与内容 sidecar POC**：核心导航、播放、反馈文字显示韩语，尚未翻译的低频诊断回退英文；韩语标题、摘要与大纲必须直接来自同一份 canonical English fields，不能以中文稿为翻译源。播放器仍播放已审核的中文音频，字幕仍以中文 cue 为主、英文原文为可选对照。韩语界面不代表已有韩语配音、韩语同步字幕或韩语内容人工审核。
 
 ## 语言文件
 
@@ -10,9 +12,44 @@
 - `web/locales-interface.mjs`：导航、按钮、弹窗和无障碍标签。
 - `web/locales-app.mjs`：播放、恢复位置、音色等动态提示。
 - `web/locales-feedback.mjs`：反馈、匿名统计和声音定位状态。
+- `web/locales-ko.mjs`：韩语 POC 覆盖；以完整英文词典作低频 fallback，避免缺键时静默显示中文。
 - `web/content-locales.mjs`：当前八期标题、摘要、大纲、反思及来源说明的英文呈现，使用精确原文字串匹配。英文摘要等明确标为 AI 译文；不改变 canonical ID、音轨、时间轴、审核状态或原英文 transcript。
 
-新增语言时，在三份界面字典注册相同 locale 和稳定 key，补齐内容 sidecar，并将顶部两语言按钮扩展为语言菜单。缺少 key 回退中文，缺少内容译文保留原文并记录 `contentLocalization.fallbackPaths`。配音语言、界面语言、字幕对照是独立能力；新增界面语言不会自动生成该语言音频。
+新增语言时，注册稳定 key、明确界面 fallback，并补齐内容 sidecar。缺少内容译文时保留中文原文，并记录 `contentLocalization.fallbackPaths`。配音语言、界面语言、字幕对照是独立能力；新增界面语言不会自动生成该语言音频。
+
+## 韩语内容 sidecar
+
+构建器接受 `--content-localizations <json>`。POC 文件的 `sourceLocale` 固定为 `en`，每条韩语翻译同时带同结构的 `sourceFields` 与 `fields`；两者字段路径和数组长度必须一致，从合同上阻止“中文再翻韩语”。文件只允许 `title`、`series`、`scripture`、`centralMessage`、`summary`、`sourceLabel`、`contentReview`、`audioNotice`、`questions`、`scriptureRefs`、`outline` 和 `productionStages` 等展示字段；写入音频、审核、同步或发布状态会直接失败。每条翻译绑定 `weekId`，构建后记录 canonical English fields 的 SHA-256，sidecar 自身 SHA-256 进入 build report。
+
+```json
+{
+  "schemaVersion": "sermon-target-language-content-v1",
+  "sourceLocale": "en",
+  "translations": [
+    {
+      "weekId": "2026-09-20-same_video-example",
+      "locale": "ko",
+      "status": "draft",
+      "sourceFields": {
+        "title": "The Promise of Jesus | Published edition",
+        "summary": "Canonical English summary",
+        "outline": [
+          {"title": "First", "points": ["First point"]}
+        ]
+      },
+      "fields": {
+        "title": "예수님의 약속｜공식 재생판",
+        "summary": "한국어 요약 초안",
+        "outline": [
+          {"title": "첫째", "points": ["첫 번째 요점"]}
+        ]
+      }
+    }
+  ]
+}
+```
+
+数组字段一旦提供，长度必须与该周页面结构一致，同时与 `sourceFields` 逐项同构，避免错位。`status` 目前只接受 `draft`；它不会提高页面、内容、音频或发布的审核状态。当前构建器只验证 source/target 结构与哈希；英文内容是否确实来自冻结逐字稿仍由上游 canonical English content 收据负责。
 
 ## 音色示例
 

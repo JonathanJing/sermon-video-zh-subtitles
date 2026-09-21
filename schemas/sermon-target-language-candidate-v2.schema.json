@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-target-language-candidate-v2.schema.json",
+  "title": "Single-target-language sermon interpretation candidate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "sourceLocale", "targetLocale", "anchorManifestSha256",
+    "translationPolicySha256", "status", "releaseEligible", "generation",
+    "groups", "modelReview", "humanReview"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "sermon-target-language-candidate-v2" },
+    "sourceLocale": { "const": "en" },
+    "targetLocale": { "$ref": "#/$defs/targetLocale" },
+    "anchorManifestSha256": { "$ref": "#/$defs/sha256" },
+    "translationPolicySha256": { "$ref": "#/$defs/sha256" },
+    "status": {
+      "enum": [
+        "translation_draft",
+        "machine_review_pass_human_review_pending",
+        "human_translation_approved"
+      ]
+    },
+    "releaseEligible": { "const": false },
+    "generation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["translator", "reviewer"],
+      "properties": {
+        "translator": { "$ref": "#/$defs/modelReceipt" },
+        "reviewer": { "$ref": "#/$defs/modelReceipt" }
+      }
+    },
+    "groups": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/group" }
+    },
+    "modelReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reviewedGroupIds"],
+      "properties": {
+        "status": { "enum": ["pending", "pass", "fail"] },
+        "reviewedGroupIds": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    },
+    "humanReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["translation", "reviewer", "reviewedAt", "reviewedGroupIds"],
+      "properties": {
+        "translation": { "enum": ["pending", "approved", "rejected"] },
+        "reviewer": { "type": ["string", "null"] },
+        "reviewedAt": { "type": ["string", "null"], "format": "date-time" },
+        "reviewedGroupIds": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "targetLocale": {
+      "type": "string",
+      "pattern": "^(?!en(?:-|$))[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"
+    },
+    "modelReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model", "promptVersion", "requestIds"],
+      "properties": {
+        "model": { "type": "string", "minLength": 1 },
+        "promptVersion": { "type": "string", "minLength": 1 },
+        "requestIds": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "checkStatus": { "enum": ["pass", "fail"] },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceUnitId", "targetText"],
+      "properties": {
+        "sourceUnitId": { "type": "string", "minLength": 1 },
+        "targetText": { "type": "string", "minLength": 1 }
+      }
+    },
+    "semanticReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "checks", "evidence", "uncertainty", "issues"],
+      "properties": {
+        "status": { "enum": ["pass", "fail"] },
+        "checks": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "completeMeaning", "negationsNumbersNames",
+            "quotationAttribution", "noAddedMeaning"
+          ],
+          "properties": {
+            "completeMeaning": { "$ref": "#/$defs/checkStatus" },
+            "negationsNumbersNames": { "$ref": "#/$defs/checkStatus" },
+            "quotationAttribution": { "$ref": "#/$defs/checkStatus" },
+            "noAddedMeaning": { "$ref": "#/$defs/checkStatus" }
+          }
+        },
+        "evidence": { "type": "string", "minLength": 1 },
+        "uncertainty": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "issues": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "languageCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["checkId", "status", "evidence"],
+      "properties": {
+        "checkId": { "type": "string", "minLength": 1 },
+        "status": { "$ref": "#/$defs/checkStatus" },
+        "evidence": { "type": "string", "minLength": 1 }
+      }
+    },
+    "languageReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "pluginId", "policySha256", "checks"],
+      "properties": {
+        "status": { "enum": ["pass", "fail"] },
+        "pluginId": { "type": "string", "minLength": 1 },
+        "policySha256": { "$ref": "#/$defs/sha256" },
+        "checks": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/languageCheck" }
+        }
+      }
+    },
+    "group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "translationGroupId", "sourceUnitIds", "targetUtterances", "targetText",
+        "coverage", "semanticReview", "languageReview"
+      ],
+      "properties": {
+        "translationGroupId": { "type": "string", "minLength": 1 },
+        "sourceUnitIds": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "targetUtterances": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "targetText": { "type": "string", "minLength": 1 },
+        "coverage": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/coverage" }
+        },
+        "semanticReview": { "$ref": "#/$defs/semanticReview" },
+        "languageReview": { "$ref": "#/$defs/languageReview" }
+      }
+    }
+  }
+}

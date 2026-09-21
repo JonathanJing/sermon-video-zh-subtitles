@@ -149,6 +149,77 @@ class WeeklyAppBuildTests(unittest.TestCase):
             self.assertEqual(snapshot(work), before)
             self.assertEqual(app.series_title(week["title"], week["series"]), week["title"])
 
+    def test_korean_content_sidecar_is_display_only_and_hash_bound(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            work = app_fixture(root)
+            before = snapshot(work)
+            localizations = root / "ko-localizations.json"
+            write_json(localizations, {
+                "schemaVersion": "sermon-target-language-content-v1",
+                "sourceLocale": "en",
+                "translations": [{
+                    "weekId": "2026-09-06-live_archive-weekly-fixture",
+                    "locale": "ko",
+                    "status": "draft",
+                    "sourceFields": {"title": "This Week's Sermon", "summary": "Canonical English summary"},
+                    "fields": {"title": "이번 주 설교", "summary": "한국어 요약 초안"},
+                }],
+            })
+            report = self.build(root, work, review_preview=True, content_localizations=localizations)
+            week = load_weekly(root / "build/public")["weeks"][0]
+            localized = week["contentLocalizations"]["ko"]
+            self.assertEqual(localized["status"], "draft")
+            self.assertEqual(localized["sourceLocale"], "en")
+            self.assertEqual(localized["fields"]["title"], "이번 주 설교")
+            self.assertEqual(localized["sourceContentSha256"], week["contentSource"]["sha256"])
+            self.assertEqual(week["contentSource"]["locale"], "en")
+            self.assertEqual(week["contentSource"]["fields"]["title"], "This Week's Sermon")
+            self.assertEqual(week["contentSource"]["sha256"], app.content_fields_sha256(week["contentSource"]["fields"]))
+            self.assertEqual(report["contentLocalizationsSha256"], sha256(localizations))
+            self.assertEqual(week["tracks"][0]["sha256"], sha256(work / "audio/zh-natural.mp3"))
+            self.assertEqual(snapshot(work), before)
+
+    def test_content_sidecar_rejects_non_display_fields(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            work = app_fixture(root)
+            localizations = root / "invalid-localizations.json"
+            write_json(localizations, {
+                "schemaVersion": "sermon-target-language-content-v1",
+                "sourceLocale": "en",
+                "translations": [{
+                    "weekId": "2026-09-06-live_archive-weekly-fixture",
+                    "locale": "ko",
+                    "status": "draft",
+                    "sourceFields": {"audioStatus": "pending"},
+                    "fields": {"audioStatus": "full_reviewed"},
+                }],
+            })
+            with self.assertRaisesRegex(ValueError, "Unsupported localized content field"):
+                self.build(root, work, review_preview=True, content_localizations=localizations)
+
+    def test_content_sidecar_requires_english_source_and_matching_target_shape(self):
+        cases = [
+            ({"schemaVersion": "sermon-target-language-content-v1", "sourceLocale": "zh-CN", "translations": []}, "Invalid content localizations"),
+            ({
+                "schemaVersion": "sermon-target-language-content-v1", "sourceLocale": "en",
+                "translations": [{
+                    "weekId": "2026-09-06-live_archive-weekly-fixture", "locale": "ko", "status": "draft",
+                    "sourceFields": {"title": "English title", "summary": "English summary"},
+                    "fields": {"title": "한국어 제목"},
+                }],
+            }, "Target fields do not match canonical English fields"),
+        ]
+        for payload, message in cases:
+            with self.subTest(message=message), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                work = app_fixture(root)
+                localizations = root / "invalid-localizations.json"
+                write_json(localizations, payload)
+                with self.assertRaisesRegex(ValueError, message):
+                    self.build(root, work, review_preview=True, content_localizations=localizations)
+
     def test_legacy_build_without_weekly_job_keeps_both_examples(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

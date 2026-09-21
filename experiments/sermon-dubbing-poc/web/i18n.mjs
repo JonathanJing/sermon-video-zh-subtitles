@@ -1,6 +1,7 @@
 import { messages as interfaceMessages } from './locales-interface.mjs';
 import { messages as appMessages } from './locales-app.mjs';
 import { messages as feedbackMessages } from './locales-feedback.mjs';
+import { messages as koreanMessages } from './locales-ko.mjs';
 
 // UI language is independent of the Chinese audio and subtitle comparison mode.
 // Add a locale dictionary to the message modules to make it available here.
@@ -11,6 +12,9 @@ for (const source of [interfaceMessages, appMessages, feedbackMessages]) {
     dictionaries[locale] = { ...dictionaries[locale], ...messages };
   }
 }
+// Korean intentionally ships as an English-complete, Korean-progressive POC.
+// This keeps rare diagnostics understandable while the visible core is Korean.
+dictionaries.ko = { ...dictionaries.ko, ...koreanMessages };
 export const supportedLocales = Object.freeze(Object.keys(dictionaries));
 const listeners = new Set();
 const normalizeLocale = (value) => {
