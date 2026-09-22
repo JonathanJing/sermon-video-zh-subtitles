@@ -70,7 +70,10 @@ class MultilingualDevAppTest(unittest.TestCase):
         variants = release["audioVariants"]
         self.assertEqual(
             [variant["id"] for variant in variants],
-            ["current-poc", "source-pauses", "pace-instruct"],
+            [
+                "current-poc", "source-pauses", "pace-instruct",
+                "focus-baseline", "focus-internal-instruct", "focus-phrase-pauses",
+            ],
         )
         self.assertEqual(release["defaultAudioVariantId"], "pace-instruct")
         self.assertIn("待人工校对", release["contentStatusLabel"])
@@ -81,9 +84,18 @@ class MultilingualDevAppTest(unittest.TestCase):
             self.assertEqual(variant["humanListeningStatus"], "pending")
             self.assertFalse(variant["productionEligible"])
             if "cues" in variant:
-                self.assertEqual([cue["sourceUnitId"] for cue in variant["cues"]], expected_units)
-                self.assertEqual(len(variant["cues"]), 6)
+                if variant.get("reviewFocus"):
+                    self.assertTrue(all(
+                        cue["sourceUnitId"].startswith(variant["reviewFocus"])
+                        for cue in variant["cues"]
+                    ))
+                else:
+                    self.assertEqual([cue["sourceUnitId"] for cue in variant["cues"]], expected_units)
+                    self.assertEqual(len(variant["cues"]), 6)
                 self.assertAlmostEqual(variant["cues"][-1]["end"], variant["durationSeconds"], delta=0.05)
+        focus = [variant for variant in variants if variant.get("reviewFocus")]
+        self.assertEqual(len(focus), 3)
+        self.assertTrue(all(variant["reviewFocus"] == "block-59-u006" for variant in focus))
 
     def test_app_supports_audio_variant_selection_and_variant_cues(self):
         app = (PUBLIC / "app.js").read_text(encoding="utf-8")

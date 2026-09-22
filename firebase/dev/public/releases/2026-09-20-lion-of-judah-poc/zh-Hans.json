@@ -73,6 +73,59 @@
         { "start": 19.98, "end": 29.59, "text": "但下周我们讲到《启示录》第4章和第5章时，就会看到耶稣被称为犹大支派的狮子，", "source": "But we're going to see next week when we get to Revelation chapter 4 and 5 that Jesus is called the Lion of the tribe of Judah,", "sourceUnitId": "block-59-u005" },
         { "start": 29.59, "end": 32.79, "text": "而他的吼声压倒了撒但的吼声。", "source": "and His roar overwhelms Satan's roar.", "sourceUnitId": "block-59-u006" }
       ]
+    },
+    {
+      "id": "focus-baseline",
+      "label": "末句基线（3.20 秒）",
+      "labelEn": "Final-sentence baseline (3.20s)",
+      "description": "只播放末句。沿用上一轮句级慢速指令，没有提出句内重音或停顿要求。",
+      "descriptionEn": "Final sentence only. Reuses the prior sentence-level pace instruction without internal emphasis or pause requests.",
+      "audioUrl": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-focus-baseline.mp3",
+      "audioSha256": "0cabe56bec5e61d65aea0a332291d2de4598f270060a8b7594ba8a684cf3a383",
+      "durationSeconds": 3.2,
+      "timingKind": "measured_focus_unit_baseline",
+      "reviewFocus": "block-59-u006",
+      "humanListeningStatus": "pending",
+      "productionEligible": false,
+      "cues": [
+        { "start": 0.0, "end": 3.2, "text": "而他的吼声压倒了撒但的吼声。", "source": "and His roar overwhelms Satan's roar.", "sourceUnitId": "block-59-u006" }
+      ]
+    },
+    {
+      "id": "focus-internal-instruct",
+      "label": "末句整句指令（3.12 秒）",
+      "labelEn": "Whole-sentence instruction (3.12s)",
+      "description": "只播放末句。单次生成，要求重读“吼声／压倒了／撒但”，并在两个短语后停顿；停顿位置与长度不受确定性控制。",
+      "descriptionEn": "Final sentence only. One generation requests emphasis and two internal pauses, but their placement and duration are not deterministic.",
+      "audioUrl": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-focus-internal-instruct.mp3",
+      "audioSha256": "0d525676aab6e2026bbc79d6017329084b5b3564e49bebf26b1a5e423448f42e",
+      "durationSeconds": 3.12,
+      "timingKind": "measured_whole_unit_natural_language_internal_prosody",
+      "reviewFocus": "block-59-u006",
+      "humanListeningStatus": "pending",
+      "productionEligible": false,
+      "cues": [
+        { "start": 0.0, "end": 3.12, "text": "而他的吼声压倒了撒但的吼声。", "source": "and His roar overwhelms Satan's roar.", "sourceUnitId": "block-59-u006" }
+      ]
+    },
+    {
+      "id": "focus-phrase-pauses",
+      "label": "末句短语精确停顿（6.13 秒）",
+      "labelEn": "Phrase-level exact pauses (6.13s)",
+      "description": "只播放末句。三个短语分别生成，确定性插入英文词时间轴中的 1.20 秒和 0.61 秒停顿；重点校对拼接自然度和重音。",
+      "descriptionEn": "Final sentence only. Three phrases use deterministic 1.20s and 0.61s source pauses; review splice naturalness and emphasis.",
+      "audioUrl": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-focus-phrase-pauses.mp3",
+      "audioSha256": "bd0f3143b2891aa48a9bf215bee72b08b12c31bbba374083842482d9cce554fd",
+      "durationSeconds": 6.13,
+      "timingKind": "measured_phrase_audio_with_layer1_internal_pauses",
+      "reviewFocus": "block-59-u006",
+      "humanListeningStatus": "pending",
+      "productionEligible": false,
+      "cues": [
+        { "start": 0.0, "end": 2.8, "text": "而他的吼声", "source": "and His roar", "sourceUnitId": "block-59-u006-p01" },
+        { "start": 2.8, "end": 4.45, "text": "压倒了", "source": "overwhelms", "sourceUnitId": "block-59-u006-p02" },
+        { "start": 4.45, "end": 6.13, "text": "撒但的吼声。", "source": "Satan's roar.", "sourceUnitId": "block-59-u006-p03" }
+      ]
     }
   ],
   "layer2PackageUrl": "/packages/layer2/2026-09-20-lion-of-judah-poc-zh-Hans.json",

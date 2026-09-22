@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-internal-prosody-poc-spec-v1",
+  "sourceUnitId": "block-59-u006",
+  "basePlanJsonSha256": "c05f83f5acea1159dd5bba20982c7507767ed33ab51e178ecd330e0725df1209",
+  "anchorManifestJsonSha256": "8b1e920e8fb1477a090a22db4422db2c28f9d88746a3236366e412a132fb31cd",
+  "wholeUnitInstruct": "以有力、坚定的证道高潮语气朗读。重读‘吼声’、‘压倒了’和‘撒但’；在第一个‘吼声’后明显停顿，在‘压倒了’后较短停顿。保持自然，不增加或删除文字。",
+  "phrases": [
+    {
+      "phraseId": "p01",
+      "targetText": "而他的吼声",
+      "sourceWordIds": ["block-59-w0070", "block-59-w0071", "block-59-w0072"],
+      "instruct": "以坚定而有张力的证道语气朗读，重读‘吼声’，结尾自然收住。不要增加或删除文字。"
+    },
+    {
+      "phraseId": "p02",
+      "targetText": "压倒了",
+      "sourceWordIds": ["block-59-w0073"],
+      "instruct": "用强而有力的动作感朗读，明显重读‘压倒’，不要增加或删除文字。"
+    },
+    {
+      "phraseId": "p03",
+      "targetText": "撒但的吼声。",
+      "sourceWordIds": ["block-59-w0074", "block-59-w0075"],
+      "instruct": "以胜利、坚定的语气收束，重读‘撒但’和‘吼声’，不要增加或删除文字。"
+    }
+  ]
+}
