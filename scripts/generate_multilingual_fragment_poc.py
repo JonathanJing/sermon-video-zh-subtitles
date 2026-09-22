@@ -14,6 +14,7 @@ import sys
 from typing import Any
 
 import requests
+from jsonschema import Draft202012Validator
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -37,6 +38,30 @@ REVIEW_VERSION = "sermon-fragment-semantic-judge-poc-v1"
 def canonical_sha(value: object) -> str:
     raw = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
     return hashlib.sha256(raw).hexdigest()
+
+
+def validate_source_inputs(anchors: dict[str, Any], package: dict[str, Any]) -> None:
+    """Bind this shadow run to one eligible Layer 1 package before paid calls."""
+    for value, schema_name in (
+        (anchors, "sermon-sentence-anchor-manifest-v2"),
+        (package, "sermon-english-source-package-v1"),
+    ):
+        schema = json.loads((REPO_ROOT / "schemas" / f"{schema_name}.schema.json").read_text(encoding="utf-8"))
+        errors = list(Draft202012Validator(schema).iter_errors(value))
+        if errors:
+            raise ValueError(f"Invalid {schema_name}: {errors[0].message}")
+    if package["status"] == "candidate_ready_for_translation":
+        if package["candidateTranslationEligible"] is not True or package["translationEligible"] is not False:
+            raise ValueError("Layer 1 candidate translation gate is not eligible")
+    elif package["status"] == "ready_for_translation":
+        if package["translationEligible"] is not True:
+            raise ValueError("Layer 1 production translation gate is not eligible")
+    else:
+        raise ValueError("Layer 1 package is blocked for translation")
+    if package["sourceLocale"] != "en" or package["anchors"]["artifact"]["jsonSha256"] != canonical_sha(anchors):
+        raise ValueError("Layer 1 package and anchor manifest belong to different runs")
+    if package["anchors"]["sourceUnitCount"] != len(anchors["sourceUnits"]):
+        raise ValueError("Layer 1 package and anchor manifest have different unit coverage")
 
 
 def response_text(data: dict[str, Any]) -> str:
@@ -115,6 +140,7 @@ def main() -> int:
 
     anchors = json.loads(args.anchor_manifest.read_text(encoding="utf-8"))
     package = json.loads(args.english_source_package.read_text(encoding="utf-8"))
+    validate_source_inputs(anchors, package)
     by_id = {item["sourceUnitId"]: item for item in anchors["sourceUnits"]}
     if len(args.source_units) != len(set(args.source_units)) or any(item not in by_id for item in args.source_units):
         raise SystemExit("Selected source unit IDs must exist and be unique")

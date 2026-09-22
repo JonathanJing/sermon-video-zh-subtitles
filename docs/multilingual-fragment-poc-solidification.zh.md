@@ -69,10 +69,11 @@ Firebase 的 JSON 包进入 Git，音频不进入 Git。部署前从已验证的
 python scripts/stage_multilingual_fragment_poc_firebase.py \
   --layer2 artifacts/multilingual-poc/<run-id>/layer2 \
   --layer3 artifacts/multilingual-poc/<run-id>/layer3 \
+  --variant-media-dir /path/to/reviewed-dev-variant-mp3s \
   --source-media artifacts/resi-live-20260919/mariners-20260919-service-1080p.mp4
 ```
 
-暂存脚本要求 Layer 2/3 哈希绑定，并要求 Layer 3、`weekly.json` 与 MP3 的 SHA-256 完全一致。若 catalog 含英文来源页，`sourceWindow` 必须显式声明 `timebase=sermon_relative_seconds` 和完整来源媒体中的 `sourceMediaOffsetSeconds`；脚本先把证道相对时间转换成完整视频绝对时间，再截取原始讲员音频、完整解码并核对固定哈希。禁止把证道相对秒数直接用作完整聚会视频的 seek 位置。这条 `en` lane 是 Layer 1 对照，不是假装成目标语言翻译。`firebase/dev/public/media/` 被 `.gitignore` 排除，避免把生成媒体提交到仓库。
+暂存脚本要求 Layer 2/3 哈希绑定，并要求 Layer 3、`weekly.json`、release JSON 与 MP3 的 SHA-256 完全一致。页面列出的每个音频变体（包括默认变体）都必须从独立保留的、已校验 artifact 目录提供；干净 checkout 缺少其中任何一份时直接停止，不能部署会 404 的页面。`--variant-media-dir` 可以省略，但仅限 release 没有额外变体。若 catalog 含英文来源页，`sourceWindow` 必须显式声明 `timebase=sermon_relative_seconds` 和完整来源媒体中的 `sourceMediaOffsetSeconds`；脚本先把证道相对时间转换成完整视频绝对时间，再截取原始讲员音频、完整解码并核对固定哈希。禁止把证道相对秒数直接用作完整聚会视频的 seek 位置。这条 `en` lane 是 Layer 1 对照，不是假装成目标语言翻译。`firebase/dev/public/media/` 被 `.gitignore` 排除，避免把生成媒体提交到仓库。
 
 ## 当前模型能力与越南语决策
 
