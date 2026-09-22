@@ -51,6 +51,13 @@
       </nav>
 
       <section class="panel is-active" id="panel-listen" role="tabpanel">
+        <div class="audio-variant-picker" id="audioVariantPicker" hidden>
+          <label for="audioVariantSelect">
+            <small id="audioVariantLabel">校对音频版本</small>
+            <select id="audioVariantSelect"></select>
+          </label>
+          <p id="audioVariantDescription"></p>
+        </div>
         <div class="now-card">
           <div class="section-heading"><span class="pulse-dot"></span><h2 id="nowHeading">正在讲述</h2><span id="cueCounter">0 / 0</span></div>
           <p class="current-caption" id="currentCaption">—</p>

@@ -62,7 +62,36 @@ class MultilingualDevAppTest(unittest.TestCase):
         app = (PUBLIC / "app.js").read_text(encoding="utf-8")
         self.assertIn("(en|zh-Hans|ko|es|vi)", app)
         self.assertIn("sermon-source-language-demo-package-v1", app)
-        self.assertIn('searchParams.set("sha256", release.audioSha256)', app)
+        self.assertIn('searchParams.set("sha256", variant.audioSha256)', app)
+
+    def test_chinese_page_exposes_review_audio_variants_with_bound_timing(self):
+        release = load(PUBLIC / f"releases/{PAGE_ID}/zh-Hans.json")
+        content = load(PUBLIC / f"content/{PAGE_ID}/zh-Hans.json")
+        variants = release["audioVariants"]
+        self.assertEqual(
+            [variant["id"] for variant in variants],
+            ["current-poc", "source-pauses", "pace-instruct"],
+        )
+        self.assertEqual(release["defaultAudioVariantId"], "pace-instruct")
+        self.assertIn("待人工校对", release["contentStatusLabel"])
+        self.assertIn("待人工听审", release["audioStatusLabel"])
+        expected_units = [cue["sourceUnitId"] for cue in content["cues"]]
+        for variant in variants:
+            self.assertRegex(variant["audioSha256"], r"^[0-9a-f]{64}$")
+            self.assertEqual(variant["humanListeningStatus"], "pending")
+            self.assertFalse(variant["productionEligible"])
+            if "cues" in variant:
+                self.assertEqual([cue["sourceUnitId"] for cue in variant["cues"]], expected_units)
+                self.assertEqual(len(variant["cues"]), 6)
+                self.assertAlmostEqual(variant["cues"][-1]["end"], variant["durationSeconds"], delta=0.05)
+
+    def test_app_supports_audio_variant_selection_and_variant_cues(self):
+        app = (PUBLIC / "app.js").read_text(encoding="utf-8")
+        html = (PUBLIC / "index.html").read_text(encoding="utf-8")
+        self.assertIn('id="audioVariantSelect"', html)
+        self.assertIn("function activeCues()", app)
+        self.assertIn("state.audioVariant?.cues", app)
+        self.assertIn("tongxing-dev-audio-", app)
 
 
 if __name__ == "__main__":

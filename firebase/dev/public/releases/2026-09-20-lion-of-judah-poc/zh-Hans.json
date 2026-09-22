@@ -10,12 +10,71 @@
   "targetLocale": "zh-Hans",
   "status": "poc_candidate_machine_screened",
   "contentStatus": "machine_review_pass_human_review_pending",
-  "contentStatusLabel": "Machine pass · human pending",
+  "contentStatusLabel": "机器审核通过 · 待人工校对",
   "audioStatus": "candidate",
-  "audioStatusLabel": "Machine screened · listen pending",
+  "audioStatusLabel": "机器筛查完成 · 待人工听审",
   "pageUrl": "/pages/2026-09-20-lion-of-judah-poc/zh-Hans",
   "contentUrl": "/content/2026-09-20-lion-of-judah-poc/zh-Hans.json",
   "audioUrl": "/media/2026-09-20-lion-of-judah-poc/zh-Hans.mp3",
+  "audioSha256": "925c6304a54e7e0ba48f95041df55ac765db56fd562f57b88b6e3803bd38fa54",
+  "defaultAudioVariantId": "pace-instruct",
+  "audioVariants": [
+    {
+      "id": "current-poc",
+      "label": "当前克隆版",
+      "labelEn": "Current clone",
+      "description": "现有中文 POC 音频；句子时间为按中文字数估算，用作基线对照。",
+      "descriptionEn": "Existing Chinese POC audio with text-length-estimated cue timing; retained as the baseline.",
+      "audioUrl": "/media/2026-09-20-lion-of-judah-poc/zh-Hans.mp3",
+      "audioSha256": "925c6304a54e7e0ba48f95041df55ac765db56fd562f57b88b6e3803bd38fa54",
+      "durationSeconds": 24.08,
+      "timingKind": "estimated_proportional_to_target_text_poc",
+      "humanListeningStatus": "pending",
+      "productionEligible": false
+    },
+    {
+      "id": "source-pauses",
+      "label": "逐句 + 英文停顿",
+      "labelEn": "Per sentence + source pauses",
+      "description": "每句独立合成，并复制英文句间停顿；未调整句内语速，方便听出自然速度与英文时间预算的差距。",
+      "descriptionEn": "Each sentence is synthesized separately with copied English inter-sentence pauses; within-sentence pace is unchanged.",
+      "audioUrl": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-prosody-natural.mp3",
+      "audioSha256": "ed6ed84fc24af5a795e80cdb8feebe43472066057a82b0061bd61a1811f92659",
+      "durationSeconds": 30.432625,
+      "timingKind": "measured_synthesis_units_with_source_pauses",
+      "humanListeningStatus": "pending",
+      "productionEligible": false,
+      "cues": [
+        { "start": 0.0, "end": 6.82, "text": "看似失败的事，其实是耶稣在战胜我们的仇敌，因为他是那位胜过一切的。", "source": "What looked to be like a loss was Jesus really conquering our enemy, because he’s the one who conquers over everything.", "sourceUnitId": "block-59-u001" },
+        { "start": 6.82, "end": 10.35, "text": "他胜过一切。", "source": "He conquers over everything.", "sourceUnitId": "block-59-u002" },
+        { "start": 10.35, "end": 15.9, "text": "你有一个仇敌，是一头吼叫的狮子。", "source": "You have an enemy who is a roaring lion.", "sourceUnitId": "block-59-u003" },
+        { "start": 15.9, "end": 18.3, "text": "正伺机毁灭你，吞吃你。", "source": "Who's seeking to destroy you and devour you.", "sourceUnitId": "block-59-u004" },
+        { "start": 18.3, "end": 27.35, "text": "但下周我们讲到《启示录》第4章和第5章时，就会看到耶稣被称为犹大支派的狮子，", "source": "But we're going to see next week when we get to Revelation chapter 4 and 5 that Jesus is called the Lion of the tribe of Judah,", "sourceUnitId": "block-59-u005" },
+        { "start": 27.35, "end": 30.39, "text": "而他的吼声压倒了撒但的吼声。", "source": "and His roar overwhelms Satan's roar.", "sourceUnitId": "block-59-u006" }
+      ]
+    },
+    {
+      "id": "pace-instruct",
+      "label": "慢速指令 + 英文停顿",
+      "labelEn": "Pace instruction + source pauses",
+      "description": "同一克隆模型加入自然放慢指令，并复制英文句间停顿；这是当前默认校对版，仍未做人工听审。",
+      "descriptionEn": "The same clone model receives a natural-slowing instruction and uses copied English pauses. This is the default review version; human listening remains pending.",
+      "audioUrl": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-prosody-paced.mp3",
+      "audioSha256": "432d9bc65513f58710a3817bf74853f2840fb7ceb406ccb6de41a624ac900135",
+      "durationSeconds": 32.835875,
+      "timingKind": "measured_pace_instruct_units_with_source_pauses",
+      "humanListeningStatus": "pending",
+      "productionEligible": false,
+      "cues": [
+        { "start": 0.0, "end": 7.7, "text": "看似失败的事，其实是耶稣在战胜我们的仇敌，因为他是那位胜过一切的。", "source": "What looked to be like a loss was Jesus really conquering our enemy, because he’s the one who conquers over everything.", "sourceUnitId": "block-59-u001" },
+        { "start": 7.7, "end": 11.23, "text": "他胜过一切。", "source": "He conquers over everything.", "sourceUnitId": "block-59-u002" },
+        { "start": 11.23, "end": 17.1, "text": "你有一个仇敌，是一头吼叫的狮子。", "source": "You have an enemy who is a roaring lion.", "sourceUnitId": "block-59-u003" },
+        { "start": 17.1, "end": 19.98, "text": "正伺机毁灭你，吞吃你。", "source": "Who's seeking to destroy you and devour you.", "sourceUnitId": "block-59-u004" },
+        { "start": 19.98, "end": 29.59, "text": "但下周我们讲到《启示录》第4章和第5章时，就会看到耶稣被称为犹大支派的狮子，", "source": "But we're going to see next week when we get to Revelation chapter 4 and 5 that Jesus is called the Lion of the tribe of Judah,", "sourceUnitId": "block-59-u005" },
+        { "start": 29.59, "end": 32.79, "text": "而他的吼声压倒了撒但的吼声。", "source": "and His roar overwhelms Satan's roar.", "sourceUnitId": "block-59-u006" }
+      ]
+    }
+  ],
   "layer2PackageUrl": "/packages/layer2/2026-09-20-lion-of-judah-poc-zh-Hans.json",
   "layer3PackageUrl": "/packages/layer3/2026-09-20-lion-of-judah-poc-zh-Hans.json",
   "capabilities": [

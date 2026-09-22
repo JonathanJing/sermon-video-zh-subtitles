@@ -72,6 +72,12 @@ h2 { margin-bottom: 0; font-size: 1.2rem; }
 .tabs button.is-active { background: var(--surface); color: var(--ink); box-shadow: 0 2px 10px rgba(24, 48, 41, .09); }
 .panel, .release-card { margin-top: 16px; padding: 26px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: 0 10px 35px rgba(24, 48, 41, .05); }
 .panel[hidden] { display: none; }
+.audio-variant-picker { display: grid; grid-template-columns: minmax(220px, 310px) 1fr; gap: 18px; align-items: end; margin-bottom: 24px; padding: 16px 18px; border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line)); border-radius: 16px; background: var(--accent-soft); }
+.audio-variant-picker[hidden] { display: none; }
+.audio-variant-picker label, .audio-variant-picker small { display: block; }
+.audio-variant-picker small { margin-bottom: 7px; color: var(--muted); font-size: .72rem; font-weight: 850; letter-spacing: .04em; }
+.audio-variant-picker select { width: 100%; min-height: 43px; padding: 0 38px 0 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); font: inherit; font-weight: 800; }
+.audio-variant-picker p { margin: 0; color: var(--muted); font-size: .76rem; line-height: 1.5; }
 .section-heading, .panel-heading, .dialog-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .section-heading h2 { margin-right: auto; }
 .section-heading > span:last-child { color: var(--muted); font-size: .78rem; font-weight: 800; }
@@ -124,6 +130,7 @@ dialog::backdrop { background: rgba(7, 17, 14, .55); backdrop-filter: blur(5px);
   .hero { grid-template-columns: 1fr; gap: 23px; padding: 24px 20px; border-radius: 24px; }
   h1 { font-size: 2.15rem; }
   .panel, .release-card { padding: 20px; border-radius: 18px; }
+  .audio-variant-picker { grid-template-columns: 1fr; gap: 10px; }
   .current-caption { min-height: 132px; margin-top: 25px; }
   .release-card { align-items: flex-start; flex-direction: column; }
   .release-card dl { width: 100%; grid-template-columns: repeat(3, 1fr); gap: 8px; }
