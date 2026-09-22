@@ -93,3 +93,5 @@ Qwen3-TTS 当前官方十种语言为中文、英文、日文、韩文、德文�
 4. 生成 canonical `sermon-target-language-release-package-v1`，而不是 demo schema。
 5. Dev Web、iOS 设备、Firebase HTTP/Range 和现场播放分别验收。
 6. 只有上述证据都绑定到同一组输入 hash，才允许从 `dev` PR 晋升到 `main`；任何 POC 状态都不能自动触发 Production Firebase 发布。
+
+句级语速、Layer 1 停顿复用和同模型 pace-instruct 的最小对照见[多语言配音语速与停顿最小 POC](multilingual-prosody-poc.zh.md)。该实验仍不包含逐词重音迁移或时长可控 TTS。
