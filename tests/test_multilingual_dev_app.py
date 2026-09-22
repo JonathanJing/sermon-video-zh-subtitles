@@ -73,9 +73,10 @@ class MultilingualDevAppTest(unittest.TestCase):
             [
                 "current-poc", "source-pauses", "pace-instruct",
                 "focus-baseline", "focus-internal-instruct", "focus-phrase-pauses",
+                "focus-adaptive-pauses",
             ],
         )
-        self.assertEqual(release["defaultAudioVariantId"], "pace-instruct")
+        self.assertEqual(release["defaultAudioVariantId"], "focus-adaptive-pauses")
         self.assertIn("待人工校对", release["contentStatusLabel"])
         self.assertIn("待人工听审", release["audioStatusLabel"])
         expected_units = [cue["sourceUnitId"] for cue in content["cues"]]
@@ -94,8 +95,13 @@ class MultilingualDevAppTest(unittest.TestCase):
                     self.assertEqual(len(variant["cues"]), 6)
                 self.assertAlmostEqual(variant["cues"][-1]["end"], variant["durationSeconds"], delta=0.05)
         focus = [variant for variant in variants if variant.get("reviewFocus")]
-        self.assertEqual(len(focus), 3)
+        self.assertEqual(len(focus), 4)
         self.assertTrue(all(variant["reviewFocus"] == "block-59-u006" for variant in focus))
+        adaptive = next(variant for variant in variants if variant["id"] == "focus-adaptive-pauses")
+        self.assertEqual(len(adaptive["cues"]), 1)
+        self.assertEqual(adaptive["cues"][0]["text"], content["cues"][-1]["text"])
+        self.assertEqual(adaptive["internalSchedule"]["overrunPhraseCount"], 0)
+        self.assertAlmostEqual(adaptive["internalSchedule"]["sentenceEndLagSeconds"], 0.28)
 
     def test_app_supports_audio_variant_selection_and_variant_cues(self):
         app = (PUBLIC / "app.js").read_text(encoding="utf-8")

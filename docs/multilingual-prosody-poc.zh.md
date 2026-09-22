@@ -52,3 +52,11 @@
 [`run_internal_prosody_poc.py`](../scripts/run_internal_prosody_poc.py) 将实验配置绑定到基线 plan 和 Layer 1 anchor 的 canonical hash，检查英文词覆盖完整且有序，并要求三个中文短语无损拼回原句。整句指令是否真正落在目标词上、短语拼接是否自然，都必须通过人耳判断；完整解码、时长或 ASR 一致不能代替这一步。
 
 首轮实测：上一轮句级基线为 `3.20s`；整句句内指令候选为 `3.12s`，仅从总时长不能看到要求的两段长停顿已稳定实现；短语装配候选为 `6.13s`，相对英文 `5.68s` 晚 `0.45s`，并确定性保留 `1.20s / 0.61s` 两段停顿。三条 MP3 均已完整解码，重音位置与短语拼接自然度仍为 `humanListeningStatus=pending`。
+
+### 锚点驱动的动态停顿
+
+Layer 3 不应机械复制英文静音长度。它先测量目标语言短语音频，再以**下一英文短语开始时间**为锚点补静音：`pauseBefore = max(0, sourcePhraseStart - currentTargetCursor)`。如果目标语音已经越过锚点，只记录 overrun 并进入语速候选／译文／重分段修复，绝不使用负停顿、裁切或时间拉伸。
+
+[`assemble_adaptive_phrase_audio.py`](../scripts/assemble_adaptive_phrase_audio.py) 对当前末句复用同一组三段中文语音，动态插入 `0.70s / 0.94s`，使第二、第三短语分别从 `2.30s / 4.28s` 的英文锚点开始；最大短语起点误差为 `0.000001s`（采样舍入），无短语越界。成品为 `5.96s`，相对英文句尾晚 `0.28s`。
+
+Layer 4 只公开完整中文句子和整句时间范围；内部三段短语、锚点和动态静音保留在发布包的 `internalSchedule` 证据中，不把工程分段显示成三条用户字幕。该候选仍是 Dev POC，完整解码与 HTTP 可取不等于人耳审核通过。

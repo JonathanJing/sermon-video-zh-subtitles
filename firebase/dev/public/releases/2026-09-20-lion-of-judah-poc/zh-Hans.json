@@ -17,7 +17,7 @@
   "contentUrl": "/content/2026-09-20-lion-of-judah-poc/zh-Hans.json",
   "audioUrl": "/media/2026-09-20-lion-of-judah-poc/zh-Hans.mp3",
   "audioSha256": "925c6304a54e7e0ba48f95041df55ac765db56fd562f57b88b6e3803bd38fa54",
-  "defaultAudioVariantId": "pace-instruct",
+  "defaultAudioVariantId": "focus-adaptive-pauses",
   "audioVariants": [
     {
       "id": "current-poc",
@@ -125,6 +125,32 @@
         { "start": 0.0, "end": 2.8, "text": "而他的吼声", "source": "and His roar", "sourceUnitId": "block-59-u006-p01" },
         { "start": 2.8, "end": 4.45, "text": "压倒了", "source": "overwhelms", "sourceUnitId": "block-59-u006-p02" },
         { "start": 4.45, "end": 6.13, "text": "撒但的吼声。", "source": "Satan's roar.", "sourceUnitId": "block-59-u006-p03" }
+      ]
+    },
+    {
+      "id": "focus-adaptive-pauses",
+      "label": "末句动态停顿 · 整句显示（5.96 秒）",
+      "labelEn": "Adaptive pauses · full sentence (5.96s)",
+      "description": "App 始终显示完整译句；Layer 3 根据各短语实测语音长度，动态补 0.70 秒和 0.94 秒，使后续短语从英文锚点开始。",
+      "descriptionEn": "The App keeps the full translated sentence visible. Layer 3 dynamically inserts 0.70s and 0.94s so later phrases start on the English anchors.",
+      "audioUrl": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-focus-adaptive-pauses.mp3",
+      "audioSha256": "65a8559bf2bef194d10010b68bcf2ce959f110499a89037546e3496c4868b857",
+      "durationSeconds": 5.96,
+      "timingKind": "measured_phrase_audio_with_source_start_anchor_fill",
+      "reviewFocus": "block-59-u006",
+      "internalSchedule": {
+        "sourceDurationSeconds": 5.68,
+        "phraseStartAnchorsSeconds": [0.0, 2.299999, 4.279999],
+        "actualPhraseStartsSeconds": [0.0, 2.3, 4.28],
+        "insertedPauseBeforeSeconds": [0.0, 0.7, 0.94],
+        "maxAbsolutePhraseStartLagSeconds": 0.000001,
+        "sentenceEndLagSeconds": 0.28,
+        "overrunPhraseCount": 0
+      },
+      "humanListeningStatus": "pending",
+      "productionEligible": false,
+      "cues": [
+        { "start": 0.0, "end": 5.96, "text": "而他的吼声压倒了撒但的吼声。", "source": "and His roar overwhelms Satan's roar.", "sourceUnitId": "block-59-u006" }
       ]
     }
   ],
