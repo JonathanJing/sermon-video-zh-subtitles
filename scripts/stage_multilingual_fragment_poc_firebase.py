@@ -87,10 +87,17 @@ def main() -> int:
             if not page:
                 raise SystemExit(f"Page is absent from multilingual.json: {args.page_id}")
             window = page["sourceWindow"]
+            if window.get("timebase") != "sermon_relative_seconds":
+                raise SystemExit("English source window must declare sermon_relative_seconds timebase")
+            try:
+                source_media_offset = float(window["sourceMediaOffsetSeconds"])
+            except (KeyError, TypeError, ValueError) as exc:
+                raise SystemExit("English source window lacks a valid source media offset") from exc
             length = float(window["endSeconds"]) - float(window["startSeconds"])
+            source_media_start = source_media_offset + float(window["startSeconds"])
             temporary = english_target.with_name(english_target.stem + ".tmp.mp3")
             subprocess.run([
-                "ffmpeg", "-nostdin", "-v", "error", "-ss", str(window["startSeconds"]),
+                "ffmpeg", "-nostdin", "-v", "error", "-ss", str(source_media_start),
                 "-i", str(args.source_media), "-t", str(length), "-map", "0:a:0", "-ac", "1",
                 "-ar", "44100", "-b:a", "128k", "-map_metadata", "-1", "-write_xing", "0",
                 "-y", str(temporary),

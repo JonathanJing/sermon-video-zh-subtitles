@@ -12,7 +12,9 @@
       "speaker": "Eric Geiger",
       "sourceWindow": {
         "startSeconds": 1858.4,
-        "endSeconds": 1899.280001
+        "endSeconds": 1899.280001,
+        "timebase": "sermon_relative_seconds",
+        "sourceMediaOffsetSeconds": 1789.0
       },
       "defaultTargetLocale": "zh-Hans",
       "targets": {

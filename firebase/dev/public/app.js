@@ -62,7 +62,9 @@ async function selectLocale(locale, { navigate = true } = {}) {
   state.release = release;
   state.content = content;
   audio.pause();
-  audio.src = release.audioUrl;
+  const audioUrl = new URL(release.audioUrl, location.origin);
+  if (release.audioSha256) audioUrl.searchParams.set("sha256", release.audioSha256);
+  audio.src = audioUrl.href;
   audio.load();
   localStorage.setItem(`tongxing-dev-content-${state.page.id}`, locale);
   if (navigate) history.pushState({ locale }, "", release.pageUrl);

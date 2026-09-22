@@ -18,6 +18,12 @@ class MultilingualDevAppTest(unittest.TestCase):
         catalog = load(PUBLIC / "multilingual.json")
         page = next(item for item in catalog["pages"] if item["id"] == PAGE_ID)
         self.assertEqual(tuple(page["targets"]), LOCALES)
+        self.assertEqual(page["sourceWindow"]["timebase"], "sermon_relative_seconds")
+        self.assertEqual(page["sourceWindow"]["sourceMediaOffsetSeconds"], 1789.0)
+        self.assertAlmostEqual(
+            page["sourceWindow"]["sourceMediaOffsetSeconds"] + page["sourceWindow"]["startSeconds"],
+            3647.4,
+        )
         english = page["targets"]["en"]
         self.assertEqual(english["contentStatus"], "source_reference_machine_boundaries_human_review_pending")
         self.assertEqual(english["audioStatus"], "original_source")
@@ -45,15 +51,18 @@ class MultilingualDevAppTest(unittest.TestCase):
         weekly = load(PUBLIC / "weekly.json")
         week = next(item for item in weekly["weeks"] if item["id"] == PAGE_ID)
         english = next(item for item in week["tracks"] if item["locale"] == "en")
+        release = load(PUBLIC / f"releases/{PAGE_ID}/en.json")
         self.assertEqual(english["scope"], "english_source_reference_poc")
         self.assertEqual(english["subtitleTiming"], "layer_1_source_word_timeline")
         self.assertRegex(english["sha256"], r"^[0-9a-f]{64}$")
+        self.assertEqual(release["audioSha256"], english["sha256"])
         self.assertEqual(len(english["cues"]), 6)
 
     def test_app_router_accepts_english(self):
         app = (PUBLIC / "app.js").read_text(encoding="utf-8")
         self.assertIn("(en|zh-Hans|ko|es|vi)", app)
         self.assertIn("sermon-source-language-demo-package-v1", app)
+        self.assertIn('searchParams.set("sha256", release.audioSha256)', app)
 
 
 if __name__ == "__main__":
