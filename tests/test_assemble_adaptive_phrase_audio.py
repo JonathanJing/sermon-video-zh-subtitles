@@ -63,6 +63,29 @@ class AdaptivePhraseAssemblyTest(unittest.TestCase):
             self.assertAlmostEqual(schedule["units"][1]["overrunBeforeSeconds"], 0.5)
             self.assertEqual(manifest["metrics"]["overrunPhraseCount"], 2)
 
+    def test_supports_multiple_sentences_but_keeps_whole_sentence_rows(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            plan = self.plan()
+            plan["units"][2]["sourceUnitId"] = "u2-p1"
+            plan["units"][2]["parentSourceUnitId"] = "u2"
+            plan_path = root / "plan.json"
+            plan_path.write_text(json.dumps(plan), encoding="utf-8")
+            write_wav(root / "render/units/p1.wav", 1.5)
+            write_wav(root / "render/units/p2.wav", 1.0)
+            write_wav(root / "render/units/p3.wav", 1.2)
+
+            manifest = subject.assemble(plan_path, root / "render", root / "out")
+            schedule = json.loads((root / "out/schedule.json").read_text())
+
+            self.assertEqual(schedule["parentSourceUnitIds"], ["u1", "u2"])
+            self.assertNotIn("parentSourceUnitId", schedule)
+            self.assertEqual([row["text"] for row in schedule["sentences"]], ["第一段第二段", "第三段。"])
+            self.assertEqual([row["startSeconds"] for row in schedule["sentences"]], [0.0, 4.0])
+            self.assertEqual([row["endSeconds"] for row in schedule["sentences"]], [4.0, 5.2])
+            self.assertEqual(manifest["metrics"]["sentenceCount"], 2)
+            self.assertEqual(manifest["metrics"]["phraseCount"], 3)
+
 
 if __name__ == "__main__":
     unittest.main()

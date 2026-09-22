@@ -73,10 +73,10 @@ class MultilingualDevAppTest(unittest.TestCase):
             [
                 "current-poc", "source-pauses", "pace-instruct",
                 "focus-baseline", "focus-internal-instruct", "focus-phrase-pauses",
-                "focus-adaptive-pauses",
+                "focus-adaptive-pauses", "long-adaptive-pauses",
             ],
         )
-        self.assertEqual(release["defaultAudioVariantId"], "focus-adaptive-pauses")
+        self.assertEqual(release["defaultAudioVariantId"], "long-adaptive-pauses")
         self.assertIn("待人工校对", release["contentStatusLabel"])
         self.assertIn("待人工听审", release["audioStatusLabel"])
         expected_units = [cue["sourceUnitId"] for cue in content["cues"]]
@@ -102,6 +102,12 @@ class MultilingualDevAppTest(unittest.TestCase):
         self.assertEqual(adaptive["cues"][0]["text"], content["cues"][-1]["text"])
         self.assertEqual(adaptive["internalSchedule"]["overrunPhraseCount"], 0)
         self.assertAlmostEqual(adaptive["internalSchedule"]["sentenceEndLagSeconds"], 0.28)
+        long_sample = next(variant for variant in variants if variant["id"] == "long-adaptive-pauses")
+        self.assertEqual(len(long_sample["cues"]), 6)
+        self.assertEqual(long_sample["internalSchedule"]["phraseCount"], 18)
+        self.assertEqual(long_sample["internalSchedule"]["sentenceCount"], 6)
+        self.assertEqual([cue["text"] for cue in long_sample["cues"]], [cue["text"] for cue in content["cues"]])
+        self.assertEqual(long_sample["internalSchedule"]["ratePolicy"], "measured_natural_phrase_audio_no_time_stretch")
 
     def test_app_supports_audio_variant_selection_and_variant_cues(self):
         app = (PUBLIC / "app.js").read_text(encoding="utf-8")

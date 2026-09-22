@@ -60,3 +60,11 @@ Layer 3 不应机械复制英文静音长度。它先测量目标语言短语音
 [`assemble_adaptive_phrase_audio.py`](../scripts/assemble_adaptive_phrase_audio.py) 对当前末句复用同一组三段中文语音，动态插入 `0.70s / 0.94s`，使第二、第三短语分别从 `2.30s / 4.28s` 的英文锚点开始；最大短语起点误差为 `0.000001s`（采样舍入），无短语越界。成品为 `5.96s`，相对英文句尾晚 `0.28s`。
 
 Layer 4 只公开完整中文句子和整句时间范围；内部三段短语、锚点和动态静音保留在发布包的 `internalSchedule` 证据中，不把工程分段显示成三条用户字幕。该候选仍是 Dev POC，完整解码与 HTTP 可取不等于人耳审核通过。
+
+### 六句长样本
+
+长样本把同一机制扩展到完整的六句、`40.880001s` 英文窗口。配置文件 [`2026-09-20-zh-Hans-long.json`](../experiments/multilingual-prosody-poc/2026-09-20-zh-Hans-long.json) 将六个完整中文译句无损映射为 18 个内部短语；[`prepare_longform_adaptive_prosody_poc.py`](../scripts/prepare_longform_adaptive_prosody_poc.py) 验证每句英文词 ID 完整、有序覆盖，且短语重新拼接后与 Layer 2 候选逐字一致。
+
+实测成品为 `41.08s`，相对英文窗口最终晚 `0.199999s`。其中 7 个短语因自然语音超过下一英文锚点而记录 overrun，最大短语起点偏差为 `0.850001s`；调度器没有压速、裁切或删除文字，并在后续有余量的锚点重新对齐。此样本的用途是校对跨多句的停顿、拼接、重音和 App 字幕行为，不代表已经达到正式 Layer 3 门线。
+
+Layer 4 的 `long-adaptive-pauses` 版本只提供六条完整句子 cue，内部 18 个短语只作为 `internalSchedule` 指标。WAV 与 Dev MP3 均完成全文件解码；中文母语人耳试听仍为 `pending`，因此 `humanApproval=false`、`productionEligible=false`。

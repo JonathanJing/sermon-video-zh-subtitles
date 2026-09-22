@@ -31,9 +31,20 @@ def assemble(plan_path: Path, unit_dir: Path, out: Path) -> dict[str, Any]:
     units = plan.get("units")
     if not isinstance(units, list) or len(units) < 2:
         raise ValueError("Adaptive assembly requires at least two phrases")
-    parents = {unit.get("parentSourceUnitId") for unit in units}
-    if len(parents) != 1 or None in parents:
-        raise ValueError("Every phrase must bind to the same parent source unit")
+    parent_ids: list[str] = []
+    closed_parents: set[str] = set()
+    active_parent: str | None = None
+    for unit in units:
+        parent = unit.get("parentSourceUnitId")
+        if not isinstance(parent, str) or not parent:
+            raise ValueError("Every phrase must bind to a parent source unit")
+        if parent != active_parent:
+            if parent in closed_parents:
+                raise ValueError("Phrases for each parent source unit must be contiguous")
+            if active_parent is not None:
+                closed_parents.add(active_parent)
+            parent_ids.append(parent)
+            active_parent = parent
 
     audio_rows = []
     audio_format: tuple[int, int, int, str, str] | None = None
@@ -101,17 +112,38 @@ def assemble(plan_path: Path, unit_dir: Path, out: Path) -> dict[str, Any]:
 
     duration = cursor_frames / sample_rate
     source_duration = float(plan["sourceWindow"]["durationSeconds"])
+    sentence_rows = []
+    for parent_index, parent_id in enumerate(parent_ids):
+        rows = [row for row in schedule_rows if row["parentSourceUnitId"] == parent_id]
+        source_units = [unit for unit in units if unit["parentSourceUnitId"] == parent_id]
+        next_start = (next(row["startSeconds"] for row in schedule_rows
+                           if row["parentSourceUnitId"] == parent_ids[parent_index + 1])
+                      if parent_index + 1 < len(parent_ids) else round(duration, 6))
+        sentence_rows.append({
+            "sourceUnitId": parent_id,
+            "startSeconds": rows[0]["startSeconds"],
+            "speechEndSeconds": rows[-1]["speechEndSeconds"],
+            "endSeconds": next_start,
+            "sourceStartSeconds": round(float(source_units[0]["sourceStartSeconds"]) - source_origin, 6),
+            "sourceEndSeconds": round(float(source_units[-1].get(
+                "sourceEndSeconds", source_units[-1]["sourceStartSeconds"]
+            )) - source_origin, 6),
+            "text": "".join(unit["targetText"] for unit in source_units),
+        })
     schedule = {
         "schemaVersion": "sermon-target-language-adaptive-phrase-schedule-v1",
         "timingKind": "measured_phrase_audio_with_source_start_anchor_fill",
         "targetLocale": plan["targetLocale"],
-        "parentSourceUnitId": next(iter(parents)),
+        "parentSourceUnitIds": parent_ids,
         "displayText": "".join(unit["targetText"] for unit in units),
         "sourceDurationSeconds": source_duration,
         "trackDurationSeconds": round(duration, 6),
         "sentenceEndLagSeconds": round(duration - source_duration, 6),
+        "sentences": sentence_rows,
         "units": schedule_rows,
     }
+    if len(parent_ids) == 1:
+        schedule["parentSourceUnitId"] = parent_ids[0]
     write_json(out / "schedule.json", schedule)
     manifest = {
         "schemaVersion": "sermon-target-language-adaptive-phrase-assembly-v1",
@@ -126,6 +158,8 @@ def assemble(plan_path: Path, unit_dir: Path, out: Path) -> dict[str, Any]:
             "maxAbsolutePhraseStartLagSeconds": round(max(abs(row["startLagSeconds"]) for row in schedule_rows), 6),
             "sentenceEndLagSeconds": schedule["sentenceEndLagSeconds"],
             "overrunPhraseCount": sum(row["overrunBeforeSeconds"] > 0 for row in schedule_rows),
+            "sentenceCount": len(sentence_rows),
+            "phraseCount": len(schedule_rows),
         },
         "ratePolicy": "measured_natural_phrase_audio_no_time_stretch",
         "pausePolicy": "dynamic_silence_to_next_layer1_phrase_start_anchor",
