@@ -1,0 +1,110 @@
+{
+  "schemaVersion": "sermon-target-language-candidate-v2",
+  "sourceLocale": "en",
+  "targetLocale": "ko",
+  "englishSourcePackageJsonSha256": "d66a7051573ea7fbb21b7edff8c7479fa7174f58149fee1e8877067ef773457e",
+  "anchorManifestSha256": "8b1e920e8fb1477a090a22db4422db2c28f9d88746a3236366e412a132fb31cd",
+  "translationPolicySha256": "93d732e5ce560e42aafeacaa603c62f733eba41fb3006c3cf6637df0be10ad8c",
+  "status": "machine_review_pass_human_review_pending",
+  "releaseEligible": false,
+  "generation": {
+    "translator": {
+      "model": "gpt-6-astra",
+      "promptVersion": "sermon-fragment-translation-poc-v1",
+      "requestIds": [
+        "resp_0bb8559f498f66dc006ab1c6b36bf487d08180f26136f66d26"
+      ]
+    },
+    "reviewer": {
+      "model": "gpt-6-astra",
+      "promptVersion": "sermon-fragment-semantic-judge-poc-v1",
+      "requestIds": [
+        "resp_09da0ad96a146285006ab1c6cf10d487d0829fb07340d8a372"
+      ]
+    }
+  },
+  "groups": [
+    {
+      "translationGroupId": "2026-09-20-lion-of-judah-ko",
+      "sourceUnitIds": [
+        "block-59-u001",
+        "block-59-u002",
+        "block-59-u003",
+        "block-59-u004",
+        "block-59-u005",
+        "block-59-u006"
+      ],
+      "targetUtterances": [
+        "패배처럼 보였던 것은 사실 예수가 우리의 원수를 이기고 있는 것이었습니다. 그는 모든 것을 이기는 분이기 때문입니다.",
+        "그는 모든 것을 이깁니다.",
+        "여러분에게는 으르렁거리는 사자인 원수가 있습니다.",
+        "여러분을 멸망시키고 집어삼키려 하고 있습니다.",
+        "하지만 다음 주에 요한계시록 4장과 5장을 살펴보면, 예수가 유다 지파의 사자라고 불린다는 것을 알게 될 것입니다.",
+        "그리고 그의 포효는 사탄의 포효를 압도합니다."
+      ],
+      "targetText": "패배처럼 보였던 것은 사실 예수가 우리의 원수를 이기고 있는 것이었습니다. 그는 모든 것을 이기는 분이기 때문입니다. 그는 모든 것을 이깁니다. 여러분에게는 으르렁거리는 사자인 원수가 있습니다. 여러분을 멸망시키고 집어삼키려 하고 있습니다. 하지만 다음 주에 요한계시록 4장과 5장을 살펴보면, 예수가 유다 지파의 사자라고 불린다는 것을 알게 될 것입니다. 그리고 그의 포효는 사탄의 포효를 압도합니다.",
+      "coverage": [
+        {
+          "sourceUnitId": "block-59-u001",
+          "targetText": "패배처럼 보였던 것은 사실 예수가 우리의 원수를 이기고 있는 것이었습니다. 그는 모든 것을 이기는 분이기 때문입니다."
+        },
+        {
+          "sourceUnitId": "block-59-u002",
+          "targetText": "그는 모든 것을 이깁니다."
+        },
+        {
+          "sourceUnitId": "block-59-u003",
+          "targetText": "여러분에게는 으르렁거리는 사자인 원수가 있습니다."
+        },
+        {
+          "sourceUnitId": "block-59-u004",
+          "targetText": "여러분을 멸망시키고 집어삼키려 하고 있습니다."
+        },
+        {
+          "sourceUnitId": "block-59-u005",
+          "targetText": "하지만 다음 주에 요한계시록 4장과 5장을 살펴보면, 예수가 유다 지파의 사자라고 불린다는 것을 알게 될 것입니다."
+        },
+        {
+          "sourceUnitId": "block-59-u006",
+          "targetText": "그리고 그의 포효는 사탄의 포효를 압도합니다."
+        }
+      ],
+      "semanticReview": {
+        "status": "pass",
+        "checks": {
+          "completeMeaning": "pass",
+          "negationsNumbersNames": "pass",
+          "quotationAttribution": "pass",
+          "noAddedMeaning": "pass"
+        },
+        "evidence": "Independent GPT semantic review completed for all six source units.",
+        "uncertainty": [],
+        "issues": []
+      },
+      "languageReview": {
+        "status": "pass",
+        "pluginId": "gpt-language-review-poc-v1",
+        "policySha256": "93d732e5ce560e42aafeacaa603c62f733eba41fb3006c3cf6637df0be10ad8c",
+        "checks": [
+          {
+            "checkId": "target_language_and_natural_narration",
+            "status": "pass",
+            "evidence": "Reviewed as Korean narration; human review remains pending."
+          }
+        ]
+      }
+    }
+  ],
+  "modelReview": {
+    "status": "pass",
+    "reviewedGroupIds": [
+      "2026-09-20-lion-of-judah-ko"
+    ]
+  },
+  "humanReview": {
+    "translation": "pending",
+    "reviewer": null,
+    "reviewedAt": null,
+    "reviewedGroupIds": []
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "schemaVersion": "sermon-demo-content-v1",
+  "locale": "es",
+  "poc": true,
+  "series": "Apocalipsis: El consuelo y la esperanza que trae Jesús",
+  "title": "La promesa de Jesús",
+  "speaker": "Eric Geiger · cloned voice POC",
+  "scripture": "Revelation 4–5",
+  "date": "20 de septiembre de 2026",
+  "summary": "Lo que parecía una derrota era la victoria de Jesús; el rugido del León de Judá se impone al del enemigo.",
+  "durationSeconds": 22.48,
+  "translationStatus": "machine_review_pass_human_review_pending",
+  "audioStatus": "candidate",
+  "machineScreening": {
+    "status": "pass",
+    "model": "Qwen/Qwen3-ASR-0.6B",
+    "coverage": 1
+  },
+  "humanReview": {
+    "status": "pending",
+    "humanApproval": false,
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "fullPlayback": "pending"
+  },
+  "captionTiming": "estimated_proportional_to_target_text_poc",
+  "cues": [
+    {
+      "start": 0.0,
+      "end": 6.524,
+      "text": "Lo que parecía una derrota era en realidad Jesús venciendo a nuestro enemigo, porque él es quien lo vence todo.",
+      "source": "What looked to be like a loss was Jesus really conquering our enemy, because he’s the one who conquers over everything.",
+      "sourceUnitId": "block-59-u001"
+    },
+    {
+      "start": 6.524,
+      "end": 7.517,
+      "text": "Él lo vence todo.",
+      "source": "He conquers over everything.",
+      "sourceUnitId": "block-59-u002"
+    },
+    {
+      "start": 7.517,
+      "end": 9.999,
+      "text": "Tienes un enemigo que es un león rugiente.",
+      "source": "You have an enemy who is a roaring lion.",
+      "sourceUnitId": "block-59-u003"
+    },
+    {
+      "start": 9.999,
+      "end": 12.056,
+      "text": "Que busca destruirte y devorarte.",
+      "source": "Who's seeking to destroy you and devour you.",
+      "sourceUnitId": "block-59-u004"
+    },
+    {
+      "start": 12.056,
+      "end": 19.998,
+      "text": "Pero la próxima semana, cuando lleguemos a los capítulos 4 y 5 de Apocalipsis, veremos que a Jesús se le llama el León de la tribu de Judá,",
+      "source": "But we're going to see next week when we get to Revelation chapter 4 and 5 that Jesus is called the Lion of the tribe of Judah,",
+      "sourceUnitId": "block-59-u005"
+    },
+    {
+      "start": 19.998,
+      "end": 22.48,
+      "text": "y su rugido se impone al rugido de Satanás.",
+      "source": "and His roar overwhelms Satan's roar.",
+      "sourceUnitId": "block-59-u006"
+    }
+  ],
+  "outline": [
+    {
+      "title": "Lo que parecía una derrota",
+      "body": "Jesús vence a nuestro enemigo y lo vence todo."
+    },
+    {
+      "title": "El enemigo rugiente",
+      "body": "El enemigo busca destruir y devorar como un león rugiente."
+    },
+    {
+      "title": "El León de Judá",
+      "body": "El rugido de Jesús se impone al rugido de Satanás."
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "sermon-target-language-audio-package-v1",
+  "packageId": "2026-09-20-lion-of-judah-vi-poc-v1",
+  "englishSourcePackageJsonSha256": "d66a7051573ea7fbb21b7edff8c7479fa7174f58149fee1e8877067ef773457e",
+  "targetLanguageCandidateJsonSha256": "20b5fdfdd9715d89e65312165f40a6ee1371d508034f4dd87d9fd6d5ddc6b720",
+  "targetLanguageSpeechJobJsonSha256": "377239c2d8ef0353e6c862d90d9ec901c268738e1bc6b043499215ee51f2acd0",
+  "targetLocale": "vi",
+  "status": "candidate",
+  "ratePolicy": "natural_no_time_stretch",
+  "voice": {
+    "provider": "Gwen",
+    "model": "g-group-ai-lab/gwen-tts-0.6B",
+    "checkpointSha256": "45fea065d8868c192882ed68b77d15a28fe7596fc5311590b7cfd27aa43017a3",
+    "targetLocaleCapability": "candidate",
+    "authorizationStatus": "authorized"
+  },
+  "units": [
+    {
+      "textGroupId": "2026-09-20-lion-of-judah-vi",
+      "targetTextSha256": "a194c377ee4ab0de9eb68c947ca151b3e42c05f25fe57710d09b2e59a90f58fb",
+      "audio": {
+        "path": "audio.mp3",
+        "sha256": "627a57e3eb5e51a3aed66c5107c88706a8b35e4de175b4dbf37097a2f70af10a"
+      },
+      "durationSeconds": 38.8
+    }
+  ],
+  "track": {
+    "path": "audio.mp3",
+    "sha256": "627a57e3eb5e51a3aed66c5107c88706a8b35e4de175b4dbf37097a2f70af10a"
+  },
+  "captions": {
+    "path": "captions.vtt",
+    "sha256": "37fa65730659db2349c4eeceeec94e7694384824e252873fe98fcfdd581511c2"
+  },
+  "schedule": {
+    "path": "schedule.json",
+    "sha256": "f53ac04cb37f389f5967a6263bb514c148350a851496ecc7b9e4d0e5b1d7d971",
+    "jsonSha256": "6508b637368a2f46f6ea2458f884592db8a06b95e85a3681a881f4cdafea712a"
+  },
+  "machineScreening": {
+    "status": "requires_review",
+    "model": "Qwen/Qwen3-ASR-0.6B",
+    "coverage": 1
+  },
+  "humanReview": {
+    "status": "pending",
+    "humanApproval": false,
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "fullPlayback": "pending"
+  },
+  "issues": [
+    "machine_asr_screening_below_threshold_requires_human_review",
+    "human_listening_pending",
+    "estimated_caption_timing_poc",
+    "asr_screening_below_threshold_requires_human_review"
+  ],
+  "downstreamInvalidationKey": "3f4fa55b0b47a1bf655c605b8bbbddc5815767b765f1bdda76d85c5aff0b4c9f"
+}

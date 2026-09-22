@@ -1,6 +1,23 @@
 # 多语言 Layer 4 发布与 App 改进 Backlog
 
-状态：**设计与待实施 backlog**。本文覆盖 Layer 4「多语言发布与播放」以及 Web/iOS 客户端的语言选择体验，不表示多语言 catalog、韩语音频、App 改造或正式发布已经完成。
+状态：**接口与 iOS 路由 POC 开发中**。本文覆盖 Layer 4「多语言发布与播放」以及 Web/iOS 客户端的语言选择体验。v2 catalog／release receipt schema、fail-closed catalog builder，以及 iOS 语言发布页选择已开始实现；这仍不表示韩语音频、多语言正式发布或设备／现场验收已经完成。
+
+## 当前实现切片（2026-09-21）
+
+- 新增 `sermon-multilingual-catalog-v2` 和 `sermon-target-language-release-receipt-v1` schema。
+- `scripts/build_multilingual_catalog.py` 只聚合精确 hash 匹配、人工翻译批准、HTTP 已验证且无 unresolved issue 的 Release Package；跨 locale source identity、同 locale 音频包绑定和完整听审任一不符即停止。
+- iOS Core 解码并验证 v2 catalog 和 immutable Release Package；Infrastructure 下载时复算 package hash，并把 package/page URL 限定到配置的同一 HTTPS origin。
+- Debug build 指向独立 Firebase Dev origin；Release build 继续指向 Production origin。运行时测试仍可显式注入隔离 origin。
+- 标题附近的“证道语言”按钮打开语言 Sheet；只显示 catalog 中 `human_reviewed` 文字版本，并显示文字、字幕、音频和下载能力。选择后先取得并验证该 locale 的 Release Package，再打开其 `page` asset。
+- 本切片不把其他语言页面伪装成原生音轨切换：返回 App 后原生播放器仍明确保留现有已验证中文轨道。原生多语言内容／音频切换、跨轨 source-unit 定位和 PlaybackHistory v2 仍在后续 backlog。
+
+### 交互决策
+
+1. **入口靠近内容，而不是藏在设置里**：用户先选择“要读哪种语言”；“更多 → 界面语言”只控制按钮和提示。
+2. **能力先于语言名**：每行同时显示 `文字／字幕／音频／可下载`，避免看到“한국어”就误以为韩语配音已经存在。
+3. **验证后再导航**：点击 locale 后先验证 catalog 引用、package SHA-256、page/locale/status 和同源 URL；失败时停留在当前内容，不改变播放器。
+4. **迁移期明确边界**：已发布语言页面在对应页面打开；原生播放器不静默借用中文音频，也不把中文秒数直接应用到另一语言轨道。
+5. **选择可恢复但不绑界面语言**：保存全局 content 偏好和 per-page 选择；locale 被撤回时回到该页 catalog 默认值，并显示原因。界面偏好继续独立保存。
 
 正式上游仍是：
 
@@ -315,26 +332,26 @@ Release Package hash 进入缓存引用；同一音频 hash 可以共享 bytes�
 
 #### L4-001 Release Package 语义 validator
 
-- [ ] 在 JSON Schema 外验证 page/source/locale/candidate/audio 的跨包 hash。
-- [ ] 强制 content locale 与 target locale 相同；audio 只能同 locale 或不存在。
-- [ ] capability 从真实资产和状态推导。
-- [ ] 正式发布拒绝 draft/machine-only 文字和未人工听审音频。
+- [x] 在 JSON Schema 外验证 page/source/locale/candidate/audio 的跨包 hash。
+- [x] 强制 content locale 与 target locale 相同；audio 只能同 locale 或不存在。
+- [x] capability 从真实资产和状态推导。
+- [x] 正式 catalog builder 拒绝 draft/machine-only 文字和未人工听审音频。
 
 验收：错 locale、错 candidate、借用中文音频、伪造 reviewed 状态和 asset hash 漂移均 fail closed。
 
 #### L4-002 Release receipt schema 与 writer
 
-- [ ] 定义 `sermon-target-language-release-receipt-v1`。
+- [x] 定义 `sermon-target-language-release-receipt-v1`。
 - [ ] 绑定 immutable Release Package 与 catalog hash。
 - [ ] HTTP、设备、现场分别记录；后两者默认 `not_run`。
 - [ ] 重跑 HTTP 验证生成新 receipt，不改写旧 package。
 
 #### L4-003 Multilingual Catalog v2 schema 与 validator
 
-- [ ] 定义 page/targets/defaultTargetLocale/capabilities/release package 引用。
-- [ ] 校验同 page 各 locale 的 source identity 一致。
-- [ ] 禁止 default 指向撤回、draft 或缺失 target。
-- [ ] 建立大小、路径、重复 ID 和 locale 上限。
+- [x] 定义 page/targets/defaultTargetLocale/capabilities/release package 引用。
+- [x] 校验同 page 各 locale 的 source identity 一致。
+- [x] 禁止 default 指向撤回、draft 或缺失 target。
+- [x] 建立大小、路径、重复 ID 和 locale 上限。
 
 #### L4-004 Release Package Aggregator
 

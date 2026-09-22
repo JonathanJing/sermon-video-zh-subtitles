@@ -1,2 +1,5 @@
 // Copy to Local.xcconfig (ignored), then enter your Apple Developer team.
 DEVELOPMENT_TEAM = YOUR_TEAM_ID
+// Debug defaults to the isolated Firebase Dev project. Override only for an
+// intentional local environment; do not point development builds at production.
+// TONGXING_CONTENT_ORIGIN = https://ai-for-god-sermon-audio-dev.web.app

@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "sermon-source-language-demo-package-v1",
+  "environment": "development",
+  "poc": true,
+  "productionEligible": false,
+  "humanApproval": false,
+  "packageId": "2026-09-20-lion-of-judah-en-source-poc-v1",
+  "pageId": "2026-09-20-lion-of-judah-poc",
+  "sourceLocale": "en",
+  "targetLocale": "en",
+  "status": "source_reference_human_review_pending",
+  "contentStatus": "source_reference_machine_boundaries_human_review_pending",
+  "contentStatusLabel": "English source · boundary review pending",
+  "audioStatus": "original_source",
+  "audioStatusLabel": "Original speaker audio",
+  "pageUrl": "/pages/2026-09-20-lion-of-judah-poc/en",
+  "contentUrl": "/content/2026-09-20-lion-of-judah-poc/en.json",
+  "audioUrl": "/media/2026-09-20-lion-of-judah-poc/en.mp3",
+  "audioSha256": "95d9117fa1d8706bea22bbfbefd7ff6852f264eaf32a8c4a8027ff22aab94d33",
+  "capabilities": [
+    "english_source_reference",
+    "source_word_timeline",
+    "original_speaker_audio"
+  ],
+  "machineScreening": {
+    "status": "not_applicable_source_reference",
+    "model": null,
+    "coverage": 1
+  },
+  "disclaimer": "English source reference for development comparison. Source-unit boundaries and full playback remain pending human review."
+}

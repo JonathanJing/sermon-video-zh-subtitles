@@ -15,6 +15,7 @@ import shutil
 
 from poc import sha256, speech_units, write_json
 from render_weekly_audio import render_identity
+from sentence_synthesis_policy import sentence_parts
 from spoken_text import spoken_text, SUPPORTED_VERSIONS, VERSION
 
 
@@ -85,12 +86,16 @@ def reviewed_blocks(parent, review_path):
     return result
 
 
-def make_units(blocks, *, pronunciation_rule_version=VERSION):
+def make_units(blocks, *, pronunciation_rule_version=VERSION, segmentation="flow"):
     if not isinstance(pronunciation_rule_version, str) or pronunciation_rule_version not in SUPPORTED_VERSIONS:
         raise ValueError("Unsupported pronunciation rule version")
+    if segmentation not in ("flow", "sentence"):
+        raise ValueError("Unsupported speech segmentation")
     units = []
     for block in blocks:
-        parts = speech_units([block["zh"]], "flow", cuv_quotes=pronunciation_rule_version == "chinese-sermon-pronunciation-v3")
+        cuv_quotes = pronunciation_rule_version == "chinese-sermon-pronunciation-v3"
+        parts = (sentence_parts(block["zh"], cuv_quotes=cuv_quotes) if segmentation == "sentence"
+                 else speech_units([block["zh"]], "flow", cuv_quotes=cuv_quotes))
         for index, text in enumerate(parts):
             if len(text) > 180:
                 raise ValueError(f"Block {block['id']} needs a reviewed sentence break")
@@ -130,7 +135,9 @@ def validate_job_review(job):
     if job.get("humanAudioReview") != "pending":
         raise ValueError("Revised speech must retain pending audio review")
     blocks = reviewed_blocks(parent, path)
-    if job["blocks"] != blocks or job["units"] != make_units(blocks, pronunciation_rule_version=rule_version):
+    from weekly_dubbing import synthesis_segmentation
+    if job["blocks"] != blocks or job["units"] != make_units(blocks, pronunciation_rule_version=rule_version,
+                                                               segmentation=synthesis_segmentation(job)):
         raise ValueError("Job text does not match the approved spoken revision")
     if job["spokenReview"] != {"schemaVersion": SCHEMA, "reviewType": "model", "model": "gpt-6-astra",
                                "status": "approved_for_synthesis", "humanApproval": False}:
@@ -189,7 +196,9 @@ def derive(parent, out, review_path):
         raise ValueError("Parent render text coverage changed")
     if out.exists():
         raise ValueError("Use a new output directory; preserve previous revisions")
-    units = make_units(blocks, pronunciation_rule_version=VERSION)
+    from weekly_dubbing import synthesis_segmentation
+    units = make_units(blocks, pronunciation_rule_version=VERSION,
+                       segmentation=synthesis_segmentation(old))
     job = {**old, "createdAt": datetime.now(timezone.utc).isoformat(), "blocks": blocks, "units": units,
            "inputs": {**old["inputs"], "spokenScriptReview": {"path": str(review_path.resolve()), "sha256": sha256(review_path)}},
            "revisionOf": {"path": str(parent.resolve()), "jobSha256": parent_hash,
