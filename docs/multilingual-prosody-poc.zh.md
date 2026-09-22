@@ -68,3 +68,13 @@ Layer 4 只公开完整中文句子和整句时间范围；内部三段短语、
 实测成品为 `41.08s`，相对英文窗口最终晚 `0.199999s`。其中 7 个短语因自然语音超过下一英文锚点而记录 overrun，最大短语起点偏差为 `0.850001s`；调度器没有压速、裁切或删除文字，并在后续有余量的锚点重新对齐。此样本的用途是校对跨多句的停顿、拼接、重音和 App 字幕行为，不代表已经达到正式 Layer 3 门线。
 
 Layer 4 的 `long-adaptive-pauses` 版本只提供六条完整句子 cue，内部 18 个短语只作为 `internalSchedule` 指标。WAV 与 Dev MP3 均完成全文件解码；中文母语人耳试听仍为 `pending`，因此 `humanApproval=false`、`productionEligible=false`。
+
+### 纠正：原声停顿先由 Layer 1 提供
+
+上面的 18 短语版本暴露了错误的层级责任：Layer 3 把每个预设短语的英文词起点当成补静音目标，连没有真实停顿的词边界也被切开；中文读得较短时还会为追时间轴补出过长的静音。`long-adaptive-pauses` 现在保留为旧版对照，Dev 默认改为 `source-acoustic-pauses`。
+
+新的 [`extract_english_pause_evidence_poc.py`](../scripts/extract_english_pause_evidence_poc.py) 只读取英文原声和冻结的 Layer 1 词时间轴，输出独立的 [英文声学停顿证据](../experiments/multilingual-prosody-poc/2026-09-20-en-acoustic-pause-evidence.json)。它分别记录词对齐空档与原声低能量区间；只在两者重合时标为 `supported_pause_candidate`，单靠词间距不能通过。这是 Layer 1 的 shadow 侧车文件，不修改已冻结的正式包或把机器候选写成人工确认。
+
+新的 [中文短语配置](../experiments/multilingual-prosody-poc/2026-09-20-zh-Hans-acoustic.json) 绑定声学证据 hash；Layer 3 准备器仅接受有 Layer 1 声学候选的句内边界，因此六句由 18 个降为 15 个合成单元，其中 9 个是句内停顿。Layer 3 生成目标语音后，按该边界的原声停顿长度限制插入静音；目标语音越过锚点时仍保留最多 `0.2s` 的可听停顿，并如实记录时间偏差。句间若只有对齐空档、声学低能量被背景声掩盖，POC 保留该句间空档为待听审候选，不能把它说成已由声学检测确认。
+
+最终候选 `40.67s`，相对英文窗口早 `0.210001s`；有 1 个短语越过锚点，最大局部起点偏差 `0.970001s`。第一句复用了同一模型已经验证有方向性作用的慢速指令，使句间不再因为它读得过短而补出额外静音。最终总时长接近不代表逐句同步合格。Layer 1 声学侧车文件还有 2 处对齐与声学冲突，需听原声确认边界；中文合成语义、音色和接缝也仍待人工听审。Dev MP3 完整解码通过，本候选的 ASR 复筛尚未运行。正式生产还需要把审核后的英文语气、停顿和词边界纳入版本化 Layer 1 合同，再由 Layer 3 消费相应 hash。

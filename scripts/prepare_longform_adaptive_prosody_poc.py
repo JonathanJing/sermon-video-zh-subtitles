@@ -17,6 +17,7 @@ from scripts.run_multilingual_prosody_poc import PLAN_SCHEMA, canonical_sha, rea
 
 
 SPEC_SCHEMA = "sermon-longform-adaptive-prosody-poc-spec-v1"
+ACOUSTIC_SPEC_SCHEMA = "sermon-longform-acoustic-prosody-poc-spec-v1"
 
 
 def _text_sha(text: str) -> str:
@@ -27,7 +28,8 @@ def _clone(value: object) -> Any:
     return json.loads(json.dumps(value, ensure_ascii=False))
 
 
-def prepare(base_plan_path: Path, anchor_path: Path, spec_path: Path, out: Path) -> dict[str, Any]:
+def prepare(base_plan_path: Path, anchor_path: Path, spec_path: Path, out: Path,
+            pause_evidence_path: Path | None = None) -> dict[str, Any]:
     if out.exists():
         raise ValueError(f"Long-form prosody output already exists: {out}")
     base = read_object(base_plan_path)
@@ -37,8 +39,21 @@ def prepare(base_plan_path: Path, anchor_path: Path, spec_path: Path, out: Path)
         raise ValueError("Long-form prosody POC requires a compatible Layer 3 plan")
     if anchor.get("schemaVersion") != "sermon-sentence-anchor-manifest-v2":
         raise ValueError("Long-form prosody POC requires Layer 1 word anchors")
-    if spec.get("schemaVersion") != SPEC_SCHEMA:
+    acoustic = spec.get("schemaVersion") == ACOUSTIC_SPEC_SCHEMA
+    if spec.get("schemaVersion") not in (SPEC_SCHEMA, ACOUSTIC_SPEC_SCHEMA):
         raise ValueError("Unsupported long-form adaptive-prosody spec")
+    if acoustic and pause_evidence_path is None:
+        raise ValueError("Acoustic phrase plan requires Layer 1 pause evidence")
+    evidence = read_object(pause_evidence_path) if acoustic else None
+    if acoustic:
+        if evidence.get("schemaVersion") != "sermon-english-acoustic-pause-evidence-poc-v1":
+            raise ValueError("Unsupported Layer 1 pause evidence")
+        if evidence.get("anchorManifestJsonSha256") != canonical_sha(anchor):
+            raise ValueError("Pause evidence belongs to another anchor manifest")
+        if spec.get("pauseEvidenceJsonSha256") != canonical_sha(evidence):
+            raise ValueError("Acoustic spec belongs to another pause evidence file")
+    pause_by_after_word = ({row["afterWordId"]: row for row in evidence["boundaries"]}
+                           if evidence else {})
     if spec.get("basePlanJsonSha256") != canonical_sha(base):
         raise ValueError("Long-form spec belongs to another base plan")
     if spec.get("anchorManifestJsonSha256") != canonical_sha(anchor):
@@ -55,7 +70,7 @@ def prepare(base_plan_path: Path, anchor_path: Path, spec_path: Path, out: Path)
 
     anchor_by_id = {row["sourceUnitId"]: row for row in anchor.get("sourceUnits", [])}
     phrase_units: list[dict[str, Any]] = []
-    for sentence_spec, base_unit in zip(sentence_specs, base_units):
+    for sentence_index, (sentence_spec, base_unit) in enumerate(zip(sentence_specs, base_units)):
         source_unit_id = base_unit["sourceUnitId"]
         anchor_unit = anchor_by_id.get(source_unit_id)
         if anchor_unit is None:
@@ -73,6 +88,12 @@ def prepare(base_plan_path: Path, anchor_path: Path, spec_path: Path, out: Path)
         sentence_phrase_units = []
         for phrase_index, phrase in enumerate(phrases):
             phrase_ids = phrase.get("sourceWordIds")
+            if phrase_ids is None and isinstance(phrase.get("sourceWordRange"), list):
+                first_id, last_id = phrase["sourceWordRange"]
+                all_ids = [word["wordId"] for word in words]
+                if first_id not in all_ids or last_id not in all_ids or all_ids.index(first_id) > all_ids.index(last_id):
+                    raise ValueError(f"Invalid source word range in {source_unit_id}")
+                phrase_ids = all_ids[all_ids.index(first_id):all_ids.index(last_id) + 1]
             text = str(phrase.get("targetText", ""))
             instruct = str(phrase.get("instruct", "")).strip()
             if not isinstance(phrase_ids, list) or not phrase_ids or not text or not instruct:
@@ -100,15 +121,45 @@ def prepare(base_plan_path: Path, anchor_path: Path, spec_path: Path, out: Path)
                 "instruct": instruct,
                 "outputRelativePath": f"units/phrase-{unit_index:04d}.wav",
             })
+            if acoustic and phrase_index > 0:
+                previous_word = phrases[phrase_index - 1].get("sourceWordIds")
+                if previous_word is None:
+                    previous_range = phrases[phrase_index - 1]["sourceWordRange"]
+                    previous_word = [previous_range[-1]]
+                pause_row = pause_by_after_word.get(previous_word[-1])
+                if not pause_row or pause_row["beforeWordId"] != phrase_ids[0] or pause_row["classification"] != "supported_pause_candidate":
+                    raise ValueError(f"Internal phrase boundary lacks measured Layer 1 pause evidence: {source_unit_id}")
+                sentence_phrase_units[-1]["sourcePauseEvidence"] = {
+                    "afterWordId": pause_row["afterWordId"],
+                    "beforeWordId": pause_row["beforeWordId"],
+                    "classification": pause_row["classification"],
+                    "measuredLowEnergyOverlapSeconds": pause_row["measuredLowEnergyOverlapSeconds"],
+                    "humanListeningStatus": pause_row["humanListeningStatus"],
+                }
         if flattened_ids != [word["wordId"] for word in words]:
             raise ValueError(f"Phrases must cover Layer 1 words in order: {source_unit_id}")
         if "".join(row["targetText"] for row in sentence_phrase_units) != base_unit["targetText"]:
             raise ValueError(f"Phrase text changed target sentence: {source_unit_id}")
+        if acoustic and sentence_index > 0:
+            previous_anchor = anchor_by_id[base_units[sentence_index - 1]["sourceUnitId"]]
+            after_word_id = previous_anchor["words"][-1]["wordId"]
+            pause_row = pause_by_after_word.get(after_word_id)
+            if not pause_row or pause_row["beforeWordId"] != words[0]["wordId"]:
+                raise ValueError(f"Missing Layer 1 sentence-boundary evidence: {source_unit_id}")
+            sentence_phrase_units[0]["sourcePauseEvidence"] = {
+                "afterWordId": after_word_id,
+                "beforeWordId": words[0]["wordId"],
+                "classification": pause_row["classification"],
+                "alignmentGapSeconds": pause_row["alignmentGapSeconds"],
+                "measuredLowEnergyOverlapSeconds": pause_row["measuredLowEnergyOverlapSeconds"],
+                "humanListeningStatus": pause_row["humanListeningStatus"],
+            }
         phrase_units.extend(sentence_phrase_units)
 
     plan = _clone(base)
     plan.update({
-        "scope": "layer_3_longform_adaptive_phrase_anchor_shadow_poc",
+        "scope": ("layer_3_longform_english_acoustic_pause_shadow_poc" if acoustic
+                  else "layer_3_longform_adaptive_phrase_anchor_shadow_poc"),
         "status": "prepared_longform_adaptive_phrase_render_pending",
         "productionEligible": False,
         "humanApproval": False,
@@ -117,7 +168,8 @@ def prepare(base_plan_path: Path, anchor_path: Path, spec_path: Path, out: Path)
     plan["renderContract"].update({
         "generationMode": "one_call_per_internal_phrase_across_source_window",
         "pacePolicy": "natural_phrase_rate_no_time_stretch",
-        "pausePolicy": "adaptive_source_start_anchor_fill_after_synthesis",
+        "pausePolicy": ("measured_layer1_pause_only_capped_by_source_gap" if acoustic
+                        else "adaptive_source_start_anchor_fill_after_synthesis"),
         "emphasisPolicy": "natural_language_phrase_local_emphasis",
     })
     plan["limitations"] = list(dict.fromkeys(plan.get("limitations", []) + [
@@ -125,6 +177,10 @@ def prepare(base_plan_path: Path, anchor_path: Path, spec_path: Path, out: Path)
         "phrase_to_source_word_mapping_is_machine_poc_not_human_approved",
         "human_listening_required",
     ]))
+    if acoustic:
+        plan["pauseEvidenceJsonSha256"] = canonical_sha(evidence)
+        plan["sourceMediaSha256"] = evidence["sourceMediaSha256"]
+        plan["limitations"].append("layer1_acoustic_pause_candidates_require_human_listening")
 
     out.mkdir(parents=True)
     plan_path = out / "phrase-plan.json"
@@ -137,6 +193,7 @@ def prepare(base_plan_path: Path, anchor_path: Path, spec_path: Path, out: Path)
         "basePlanJsonSha256": canonical_sha(base),
         "anchorManifestJsonSha256": canonical_sha(anchor),
         "specJsonSha256": canonical_sha(spec),
+        "pauseEvidenceJsonSha256": canonical_sha(evidence) if acoustic else None,
         "phrasePlan": {"path": plan_path.name, "jsonSha256": canonical_sha(plan)},
         "sentenceCount": len(base_units),
         "phraseCount": len(phrase_units),
@@ -151,9 +208,10 @@ def main() -> int:
     parser.add_argument("--base-plan", type=Path, required=True)
     parser.add_argument("--anchor", type=Path, required=True)
     parser.add_argument("--spec", type=Path, required=True)
+    parser.add_argument("--pause-evidence", type=Path)
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
-    result = prepare(args.base_plan, args.anchor, args.spec, args.out)
+    result = prepare(args.base_plan, args.anchor, args.spec, args.out, args.pause_evidence)
     print(json.dumps({"status": result["status"], "sentenceCount": result["sentenceCount"], "phraseCount": result["phraseCount"]}, ensure_ascii=False))
     return 0
 

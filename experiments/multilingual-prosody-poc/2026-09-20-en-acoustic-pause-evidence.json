@@ -1,0 +1,1009 @@
+{
+  "schemaVersion": "sermon-english-acoustic-pause-evidence-poc-v1",
+  "scope": "layer_1_english_source_acoustic_pause_shadow_poc",
+  "status": "machine_pause_candidates_human_listening_pending",
+  "humanApproval": false,
+  "productionEligible": false,
+  "sourceMediaSha256": "95d9117fa1d8706bea22bbfbefd7ff6852f264eaf32a8c4a8027ff22aab94d33",
+  "anchorManifestJsonSha256": "8b1e920e8fb1477a090a22db4422db2c28f9d88746a3236366e412a132fb31cd",
+  "sourceWindow": {
+    "startSeconds": 1858.4,
+    "endSeconds": 1899.280001,
+    "audioDurationSeconds": 40.90775
+  },
+  "measurement": {
+    "method": "mono_pcm_16khz_20ms_rms_10ms_hop",
+    "thresholdDbfs": -45.309,
+    "thresholdBelowP95Db": 11.0,
+    "minimumLowEnergySeconds": 0.25,
+    "minimumSupportedGapSeconds": 0.25,
+    "minimumGapOverlapSeconds": 0.22,
+    "caveat": "Low energy and word alignment are candidate evidence; neither proves a rhetorical pause or its intended meaning."
+  },
+  "lowEnergyIntervals": [
+    {
+      "startSeconds": 1.16,
+      "endSeconds": 1.43,
+      "durationSeconds": 0.27
+    },
+    {
+      "startSeconds": 3.79,
+      "endSeconds": 4.06,
+      "durationSeconds": 0.27
+    },
+    {
+      "startSeconds": 6.51,
+      "endSeconds": 6.87,
+      "durationSeconds": 0.36
+    },
+    {
+      "startSeconds": 7.32,
+      "endSeconds": 8.05,
+      "durationSeconds": 0.73
+    },
+    {
+      "startSeconds": 12.46,
+      "endSeconds": 13.42,
+      "durationSeconds": 0.96
+    },
+    {
+      "startSeconds": 15.05,
+      "endSeconds": 15.81,
+      "durationSeconds": 0.76
+    },
+    {
+      "startSeconds": 16.27,
+      "endSeconds": 16.61,
+      "durationSeconds": 0.34
+    },
+    {
+      "startSeconds": 16.89,
+      "endSeconds": 19.27,
+      "durationSeconds": 2.38
+    },
+    {
+      "startSeconds": 20.03,
+      "endSeconds": 20.93,
+      "durationSeconds": 0.9
+    },
+    {
+      "startSeconds": 22.09,
+      "endSeconds": 22.47,
+      "durationSeconds": 0.38
+    },
+    {
+      "startSeconds": 23.03,
+      "endSeconds": 24.57,
+      "durationSeconds": 1.54
+    },
+    {
+      "startSeconds": 26.24,
+      "endSeconds": 26.97,
+      "durationSeconds": 0.73
+    },
+    {
+      "startSeconds": 28.3,
+      "endSeconds": 29.68,
+      "durationSeconds": 1.38
+    },
+    {
+      "startSeconds": 30.69,
+      "endSeconds": 31.6,
+      "durationSeconds": 0.91
+    },
+    {
+      "startSeconds": 33.23,
+      "endSeconds": 33.5,
+      "durationSeconds": 0.27
+    },
+    {
+      "startSeconds": 33.54,
+      "endSeconds": 35.26,
+      "durationSeconds": 1.72
+    },
+    {
+      "startSeconds": 36.26,
+      "endSeconds": 37.57,
+      "durationSeconds": 1.31
+    },
+    {
+      "startSeconds": 38.8,
+      "endSeconds": 39.64,
+      "durationSeconds": 0.84
+    },
+    {
+      "startSeconds": 39.93,
+      "endSeconds": 40.3,
+      "durationSeconds": 0.37
+    },
+    {
+      "startSeconds": 40.34,
+      "endSeconds": 40.90775,
+      "durationSeconds": 0.56775
+    }
+  ],
+  "boundaries": [
+    {
+      "afterWordId": "block-59-w0001",
+      "beforeWordId": "block-59-w0002",
+      "afterText": "What",
+      "beforeText": "looked",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0002",
+      "beforeWordId": "block-59-w0003",
+      "afterText": "looked",
+      "beforeText": "to",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0003",
+      "beforeWordId": "block-59-w0004",
+      "afterText": "to",
+      "beforeText": "be",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0004",
+      "beforeWordId": "block-59-w0005",
+      "afterText": "be",
+      "beforeText": "like",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0005",
+      "beforeWordId": "block-59-w0006",
+      "afterText": "like",
+      "beforeText": "a",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0006",
+      "beforeWordId": "block-59-w0007",
+      "afterText": "a",
+      "beforeText": "loss",
+      "alignmentGapSeconds": 0.24,
+      "measuredLowEnergyOverlapSeconds": 0.2,
+      "measuredLowEnergyInterval": {
+        "startSeconds": 1.16,
+        "endSeconds": 1.43,
+        "durationSeconds": 0.27
+      },
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0007",
+      "beforeWordId": "block-59-w0008",
+      "afterText": "loss",
+      "beforeText": "was",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0008",
+      "beforeWordId": "block-59-w0009",
+      "afterText": "was",
+      "beforeText": "Jesus",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0009",
+      "beforeWordId": "block-59-w0010",
+      "afterText": "Jesus",
+      "beforeText": "really",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0010",
+      "beforeWordId": "block-59-w0011",
+      "afterText": "really",
+      "beforeText": "conquering",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0011",
+      "beforeWordId": "block-59-w0012",
+      "afterText": "conquering",
+      "beforeText": "our",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0012",
+      "beforeWordId": "block-59-w0013",
+      "afterText": "our",
+      "beforeText": "enemy,",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0013",
+      "beforeWordId": "block-59-w0014",
+      "afterText": "enemy,",
+      "beforeText": "because",
+      "alignmentGapSeconds": 0.18,
+      "measuredLowEnergyOverlapSeconds": 0.18,
+      "measuredLowEnergyInterval": {
+        "startSeconds": 3.79,
+        "endSeconds": 4.06,
+        "durationSeconds": 0.27
+      },
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0014",
+      "beforeWordId": "block-59-w0015",
+      "afterText": "because",
+      "beforeText": "he’s",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0015",
+      "beforeWordId": "block-59-w0016",
+      "afterText": "he’s",
+      "beforeText": "the",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0016",
+      "beforeWordId": "block-59-w0017",
+      "afterText": "the",
+      "beforeText": "one",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0017",
+      "beforeWordId": "block-59-w0018",
+      "afterText": "one",
+      "beforeText": "who",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0018",
+      "beforeWordId": "block-59-w0019",
+      "afterText": "who",
+      "beforeText": "conquers",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0019",
+      "beforeWordId": "block-59-w0020",
+      "afterText": "conquers",
+      "beforeText": "over",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0020",
+      "beforeWordId": "block-59-w0021",
+      "afterText": "over",
+      "beforeText": "everything.",
+      "alignmentGapSeconds": 0.27,
+      "measuredLowEnergyOverlapSeconds": 0.27,
+      "measuredLowEnergyInterval": {
+        "startSeconds": 6.51,
+        "endSeconds": 6.87,
+        "durationSeconds": 0.36
+      },
+      "classification": "supported_pause_candidate",
+      "humanListeningStatus": "pending"
+    },
+    {
+      "afterWordId": "block-59-w0021",
+      "beforeWordId": "block-59-w0022",
+      "afterText": "everything.",
+      "beforeText": "He",
+      "alignmentGapSeconds": 0.66,
+      "measuredLowEnergyOverlapSeconds": 0.66,
+      "measuredLowEnergyInterval": {
+        "startSeconds": 7.32,
+        "endSeconds": 8.05,
+        "durationSeconds": 0.73
+      },
+      "classification": "supported_pause_candidate",
+      "humanListeningStatus": "pending"
+    },
+    {
+      "afterWordId": "block-59-w0022",
+      "beforeWordId": "block-59-w0023",
+      "afterText": "He",
+      "beforeText": "conquers",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0023",
+      "beforeWordId": "block-59-w0024",
+      "afterText": "conquers",
+      "beforeText": "over",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0024",
+      "beforeWordId": "block-59-w0025",
+      "afterText": "over",
+      "beforeText": "everything.",
+      "alignmentGapSeconds": 0.31,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "alignment_gap_only",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0025",
+      "beforeWordId": "block-59-w0026",
+      "afterText": "everything.",
+      "beforeText": "You",
+      "alignmentGapSeconds": 2.01,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "alignment_gap_only",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0026",
+      "beforeWordId": "block-59-w0027",
+      "afterText": "You",
+      "beforeText": "have",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0027",
+      "beforeWordId": "block-59-w0028",
+      "afterText": "have",
+      "beforeText": "an",
+      "alignmentGapSeconds": 0.63,
+      "measuredLowEnergyOverlapSeconds": 0.63,
+      "measuredLowEnergyInterval": {
+        "startSeconds": 12.46,
+        "endSeconds": 13.42,
+        "durationSeconds": 0.96
+      },
+      "classification": "supported_pause_candidate",
+      "humanListeningStatus": "pending"
+    },
+    {
+      "afterWordId": "block-59-w0028",
+      "beforeWordId": "block-59-w0029",
+      "afterText": "an",
+      "beforeText": "enemy",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0029",
+      "beforeWordId": "block-59-w0030",
+      "afterText": "enemy",
+      "beforeText": "who",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0030",
+      "beforeWordId": "block-59-w0031",
+      "afterText": "who",
+      "beforeText": "is",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0031",
+      "beforeWordId": "block-59-w0032",
+      "afterText": "is",
+      "beforeText": "a",
+      "alignmentGapSeconds": 0.03,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0032",
+      "beforeWordId": "block-59-w0033",
+      "afterText": "a",
+      "beforeText": "roaring",
+      "alignmentGapSeconds": 0.54,
+      "measuredLowEnergyOverlapSeconds": 0.54,
+      "measuredLowEnergyInterval": {
+        "startSeconds": 15.05,
+        "endSeconds": 15.81,
+        "durationSeconds": 0.76
+      },
+      "classification": "supported_pause_candidate",
+      "humanListeningStatus": "pending"
+    },
+    {
+      "afterWordId": "block-59-w0033",
+      "beforeWordId": "block-59-w0034",
+      "afterText": "roaring",
+      "beforeText": "lion.",
+      "alignmentGapSeconds": 0.040001,
+      "measuredLowEnergyOverlapSeconds": 0.040001,
+      "measuredLowEnergyInterval": {
+        "startSeconds": 16.27,
+        "endSeconds": 16.61,
+        "durationSeconds": 0.34
+      },
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0034",
+      "beforeWordId": "block-59-w0035",
+      "afterText": "lion.",
+      "beforeText": "Who's",
+      "alignmentGapSeconds": 2.270001,
+      "measuredLowEnergyOverlapSeconds": 2.270001,
+      "measuredLowEnergyInterval": {
+        "startSeconds": 16.89,
+        "endSeconds": 19.27,
+        "durationSeconds": 2.38
+      },
+      "classification": "supported_pause_candidate",
+      "humanListeningStatus": "pending"
+    },
+    {
+      "afterWordId": "block-59-w0035",
+      "beforeWordId": "block-59-w0036",
+      "afterText": "Who's",
+      "beforeText": "seeking",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0036",
+      "beforeWordId": "block-59-w0037",
+      "afterText": "seeking",
+      "beforeText": "to",
+      "alignmentGapSeconds": 0.75,
+      "measuredLowEnergyOverlapSeconds": 0.75,
+      "measuredLowEnergyInterval": {
+        "startSeconds": 20.03,
+        "endSeconds": 20.93,
+        "durationSeconds": 0.9
+      },
+      "classification": "supported_pause_candidate",
+      "humanListeningStatus": "pending"
+    },
+    {
+      "afterWordId": "block-59-w0037",
+      "beforeWordId": "block-59-w0038",
+      "afterText": "to",
+      "beforeText": "destroy",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0038",
+      "beforeWordId": "block-59-w0039",
+      "afterText": "destroy",
+      "beforeText": "you",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0039",
+      "beforeWordId": "block-59-w0040",
+      "afterText": "you",
+      "beforeText": "and",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0040",
+      "beforeWordId": "block-59-w0041",
+      "afterText": "and",
+      "beforeText": "devour",
+      "alignmentGapSeconds": 0.120001,
+      "measuredLowEnergyOverlapSeconds": 0.120001,
+      "measuredLowEnergyInterval": {
+        "startSeconds": 22.09,
+        "endSeconds": 22.47,
+        "durationSeconds": 0.38
+      },
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0041",
+      "beforeWordId": "block-59-w0042",
+      "afterText": "devour",
+      "beforeText": "you.",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0042",
+      "beforeWordId": "block-59-w0043",
+      "afterText": "you.",
+      "beforeText": "But",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "alignment_acoustic_conflict",
+      "humanListeningStatus": "pending"
+    },
+    {
+      "afterWordId": "block-59-w0043",
+      "beforeWordId": "block-59-w0044",
+      "afterText": "But",
+      "beforeText": "we're",
+      "alignmentGapSeconds": 1.289999,
+      "measuredLowEnergyOverlapSeconds": 1.289999,
+      "measuredLowEnergyInterval": {
+        "startSeconds": 23.03,
+        "endSeconds": 24.57,
+        "durationSeconds": 1.54
+      },
+      "classification": "supported_pause_candidate",
+      "humanListeningStatus": "pending"
+    },
+    {
+      "afterWordId": "block-59-w0044",
+      "beforeWordId": "block-59-w0045",
+      "afterText": "we're",
+      "beforeText": "going",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0045",
+      "beforeWordId": "block-59-w0046",
+      "afterText": "going",
+      "beforeText": "to",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0046",
+      "beforeWordId": "block-59-w0047",
+      "afterText": "to",
+      "beforeText": "see",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0047",
+      "beforeWordId": "block-59-w0048",
+      "afterText": "see",
+      "beforeText": "next",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0048",
+      "beforeWordId": "block-59-w0049",
+      "afterText": "next",
+      "beforeText": "week",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0049",
+      "beforeWordId": "block-59-w0050",
+      "afterText": "week",
+      "beforeText": "when",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0050",
+      "beforeWordId": "block-59-w0051",
+      "afterText": "when",
+      "beforeText": "we",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0051",
+      "beforeWordId": "block-59-w0052",
+      "afterText": "we",
+      "beforeText": "get",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0052",
+      "beforeWordId": "block-59-w0053",
+      "afterText": "get",
+      "beforeText": "to",
+      "alignmentGapSeconds": 0.039999,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0053",
+      "beforeWordId": "block-59-w0054",
+      "afterText": "to",
+      "beforeText": "Revelation",
+      "alignmentGapSeconds": 0.559999,
+      "measuredLowEnergyOverlapSeconds": 0.559999,
+      "measuredLowEnergyInterval": {
+        "startSeconds": 26.24,
+        "endSeconds": 26.97,
+        "durationSeconds": 0.73
+      },
+      "classification": "supported_pause_candidate",
+      "humanListeningStatus": "pending"
+    },
+    {
+      "afterWordId": "block-59-w0054",
+      "beforeWordId": "block-59-w0055",
+      "afterText": "Revelation",
+      "beforeText": "chapter",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0055",
+      "beforeWordId": "block-59-w0056",
+      "afterText": "chapter",
+      "beforeText": "4",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0056",
+      "beforeWordId": "block-59-w0057",
+      "afterText": "4",
+      "beforeText": "and",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0057",
+      "beforeWordId": "block-59-w0058",
+      "afterText": "and",
+      "beforeText": "5",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0058",
+      "beforeWordId": "block-59-w0059",
+      "afterText": "5",
+      "beforeText": "that",
+      "alignmentGapSeconds": 1.229999,
+      "measuredLowEnergyOverlapSeconds": 1.229999,
+      "measuredLowEnergyInterval": {
+        "startSeconds": 28.3,
+        "endSeconds": 29.68,
+        "durationSeconds": 1.38
+      },
+      "classification": "supported_pause_candidate",
+      "humanListeningStatus": "pending"
+    },
+    {
+      "afterWordId": "block-59-w0059",
+      "beforeWordId": "block-59-w0060",
+      "afterText": "that",
+      "beforeText": "Jesus",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0060",
+      "beforeWordId": "block-59-w0061",
+      "afterText": "Jesus",
+      "beforeText": "is",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0061",
+      "beforeWordId": "block-59-w0062",
+      "afterText": "is",
+      "beforeText": "called",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0062",
+      "beforeWordId": "block-59-w0063",
+      "afterText": "called",
+      "beforeText": "the",
+      "alignmentGapSeconds": 0.539999,
+      "measuredLowEnergyOverlapSeconds": 0.539999,
+      "measuredLowEnergyInterval": {
+        "startSeconds": 30.69,
+        "endSeconds": 31.6,
+        "durationSeconds": 0.91
+      },
+      "classification": "supported_pause_candidate",
+      "humanListeningStatus": "pending"
+    },
+    {
+      "afterWordId": "block-59-w0063",
+      "beforeWordId": "block-59-w0064",
+      "afterText": "the",
+      "beforeText": "Lion",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0064",
+      "beforeWordId": "block-59-w0065",
+      "afterText": "Lion",
+      "beforeText": "of",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0065",
+      "beforeWordId": "block-59-w0066",
+      "afterText": "of",
+      "beforeText": "the",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0066",
+      "beforeWordId": "block-59-w0067",
+      "afterText": "the",
+      "beforeText": "tribe",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0067",
+      "beforeWordId": "block-59-w0068",
+      "afterText": "tribe",
+      "beforeText": "of",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0068",
+      "beforeWordId": "block-59-w0069",
+      "afterText": "of",
+      "beforeText": "Judah,",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0069",
+      "beforeWordId": "block-59-w0070",
+      "afterText": "Judah,",
+      "beforeText": "and",
+      "alignmentGapSeconds": 1.450001,
+      "measuredLowEnergyOverlapSeconds": 1.450001,
+      "measuredLowEnergyInterval": {
+        "startSeconds": 33.54,
+        "endSeconds": 35.26,
+        "durationSeconds": 1.72
+      },
+      "classification": "supported_pause_candidate",
+      "humanListeningStatus": "pending"
+    },
+    {
+      "afterWordId": "block-59-w0070",
+      "beforeWordId": "block-59-w0071",
+      "afterText": "and",
+      "beforeText": "His",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0071",
+      "beforeWordId": "block-59-w0072",
+      "afterText": "His",
+      "beforeText": "roar",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "no_supported_pause",
+      "humanListeningStatus": "not_requested"
+    },
+    {
+      "afterWordId": "block-59-w0072",
+      "beforeWordId": "block-59-w0073",
+      "afterText": "roar",
+      "beforeText": "overwhelms",
+      "alignmentGapSeconds": 1.200001,
+      "measuredLowEnergyOverlapSeconds": 1.200001,
+      "measuredLowEnergyInterval": {
+        "startSeconds": 36.26,
+        "endSeconds": 37.57,
+        "durationSeconds": 1.31
+      },
+      "classification": "supported_pause_candidate",
+      "humanListeningStatus": "pending"
+    },
+    {
+      "afterWordId": "block-59-w0073",
+      "beforeWordId": "block-59-w0074",
+      "afterText": "overwhelms",
+      "beforeText": "Satan's",
+      "alignmentGapSeconds": 0.610001,
+      "measuredLowEnergyOverlapSeconds": 0.610001,
+      "measuredLowEnergyInterval": {
+        "startSeconds": 38.8,
+        "endSeconds": 39.64,
+        "durationSeconds": 0.84
+      },
+      "classification": "supported_pause_candidate",
+      "humanListeningStatus": "pending"
+    },
+    {
+      "afterWordId": "block-59-w0074",
+      "beforeWordId": "block-59-w0075",
+      "afterText": "Satan's",
+      "beforeText": "roar.",
+      "alignmentGapSeconds": 0.0,
+      "measuredLowEnergyOverlapSeconds": 0.0,
+      "measuredLowEnergyInterval": null,
+      "classification": "alignment_acoustic_conflict",
+      "humanListeningStatus": "pending"
+    }
+  ]
+}

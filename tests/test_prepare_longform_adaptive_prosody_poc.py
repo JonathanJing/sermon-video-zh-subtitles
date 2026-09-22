@@ -54,6 +54,37 @@ class LongformAdaptivePreparationTest(unittest.TestCase):
             self.assertEqual(plan["renderContract"]["pausePolicy"], "adaptive_source_start_anchor_fill_after_synthesis")
             self.assertFalse(plan["productionEligible"])
 
+            evidence = {
+                "schemaVersion": "sermon-english-acoustic-pause-evidence-poc-v1",
+                "anchorManifestJsonSha256": canonical_sha(anchor),
+                "sourceMediaSha256": "a" * 64,
+                "boundaries": [
+                    {"afterWordId": "w1", "beforeWordId": "w2", "classification": "alignment_gap_only",
+                     "measuredLowEnergyOverlapSeconds": 0.0, "humanListeningStatus": "pending"},
+                    {"afterWordId": "w2", "beforeWordId": "w3", "classification": "supported_pause_candidate",
+                     "alignmentGapSeconds": 1.0, "measuredLowEnergyOverlapSeconds": 0.8,
+                     "humanListeningStatus": "pending"},
+                ],
+            }
+            acoustic_spec = dict(spec, schemaVersion=subject.ACOUSTIC_SPEC_SCHEMA,
+                                 pauseEvidenceJsonSha256=canonical_sha(evidence))
+            (root / "evidence.json").write_text(json.dumps(evidence), encoding="utf-8")
+            (root / "acoustic-spec.json").write_text(json.dumps(acoustic_spec), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "lacks measured Layer 1 pause evidence"):
+                subject.prepare(root / "base.json", root / "anchor.json", root / "acoustic-spec.json",
+                                root / "rejected", root / "evidence.json")
+            evidence["boundaries"][0]["classification"] = "supported_pause_candidate"
+            evidence["boundaries"][0]["measuredLowEnergyOverlapSeconds"] = 0.4
+            acoustic_spec["pauseEvidenceJsonSha256"] = canonical_sha(evidence)
+            (root / "evidence.json").write_text(json.dumps(evidence), encoding="utf-8")
+            (root / "acoustic-spec.json").write_text(json.dumps(acoustic_spec), encoding="utf-8")
+            accepted = subject.prepare(root / "base.json", root / "anchor.json", root / "acoustic-spec.json",
+                                       root / "acoustic", root / "evidence.json")
+            self.assertEqual(accepted["pauseEvidenceJsonSha256"], canonical_sha(evidence))
+            acoustic_plan = json.loads((root / "acoustic/phrase-plan.json").read_text())
+            self.assertEqual(acoustic_plan["units"][1]["sourcePauseEvidence"]["afterWordId"], "w1")
+            self.assertEqual(acoustic_plan["units"][2]["sourcePauseEvidence"]["afterWordId"], "w2")
+
 
 if __name__ == "__main__":
     unittest.main()

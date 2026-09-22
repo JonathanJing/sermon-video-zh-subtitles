@@ -11,13 +11,13 @@
   "status": "poc_candidate_machine_screened",
   "contentStatus": "machine_review_pass_human_review_pending",
   "contentStatusLabel": "机器审核通过 · 待人工校对",
-  "audioStatus": "candidate",
-  "audioStatusLabel": "机器筛查完成 · 待人工听审",
+  "audioStatus": "candidate_screening_pending",
+  "audioStatusLabel": "待机器复筛 · 待人工听审",
   "pageUrl": "/pages/2026-09-20-lion-of-judah-poc/zh-Hans",
   "contentUrl": "/content/2026-09-20-lion-of-judah-poc/zh-Hans.json",
   "audioUrl": "/media/2026-09-20-lion-of-judah-poc/zh-Hans.mp3",
   "audioSha256": "925c6304a54e7e0ba48f95041df55ac765db56fd562f57b88b6e3803bd38fa54",
-  "defaultAudioVariantId": "long-adaptive-pauses",
+  "defaultAudioVariantId": "source-acoustic-pauses",
   "audioVariants": [
     {
       "id": "current-poc",
@@ -157,6 +157,7 @@
       "id": "long-adaptive-pauses",
       "label": "六句动态停顿 · 整句显示（41.08 秒）",
       "labelEn": "Six-sentence adaptive pauses · full sentences (41.08s)",
+      "supersededBy": "source-acoustic-pauses",
       "description": "约 41 秒长样本。Layer 3 将六句拆成 18 个内部短语，按英文短语起点动态补停顿；App 只显示六个完整译句。未压速、未裁切，7 个短语 overrun 留待下一轮校正。",
       "descriptionEn": "A 41-second sample. Layer 3 renders 18 internal phrases and fills silence to English phrase-start anchors, while the App shows only six complete translated sentences. No time stretching or trimming; seven phrase overruns remain for the next iteration.",
       "audioUrl": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-long-adaptive-pauses.mp3",
@@ -183,6 +184,41 @@
         { "start": 23.21, "end": 35.2, "text": "但下周我们讲到《启示录》第4章和第5章时，就会看到耶稣被称为犹大支派的狮子，", "source": "But we're going to see next week when we get to Revelation chapter 4 and 5 that Jesus is called the Lion of the tribe of Judah,", "sourceUnitId": "block-59-u005" },
         { "start": 35.2, "end": 41.08, "text": "而他的吼声压倒了撒但的吼声。", "source": "and His roar overwhelms Satan's roar.", "sourceUnitId": "block-59-u006" }
       ]
+    },
+    {
+      "id": "source-acoustic-pauses",
+      "label": "英文原声停顿 · 整句显示（40.67 秒）",
+      "labelEn": "English acoustic pauses · full sentences (40.67s)",
+      "description": "英文原声先测出停顿候选，再决定中文短语边界；句内停顿只用有声学证据的位置，句间和句内补静音均受原声停顿长度约束。App 仍显示六个完整句子。原声停顿含待人耳确认的边界。",
+      "descriptionEn": "English source audio is measured first; Chinese phrase boundaries follow the resulting pause candidates. Silence is bounded by the source pause length, and the App keeps six complete sentences. Source pauses still need listening review.",
+      "audioUrl": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-source-acoustic-pauses-v3.mp3",
+      "audioSha256": "8e098c71fe34b7bd11cf80f50c111af2c9b3d0aea37a6b9cd2616a820918155c",
+      "durationSeconds": 40.67,
+      "timingKind": "measured_phrase_audio_with_layer1_acoustic_pause_caps",
+      "internalSchedule": {
+        "sourceDurationSeconds": 40.880001,
+        "sourceMediaSha256": "95d9117fa1d8706bea22bbfbefd7ff6852f264eaf32a8c4a8027ff22aab94d33",
+        "pauseEvidenceJsonSha256": "a226a82a017eaf0370762e584564bdd15030e64473c123f1feeb2aba7cc8aa28",
+        "sentenceCount": 6,
+        "phraseCount": 15,
+        "acousticSupportedInternalPauseCount": 9,
+        "maxAbsolutePhraseStartLagSeconds": 0.970001,
+        "sentenceEndLagSeconds": -0.210001,
+        "overrunPhraseCount": 1,
+        "ratePolicy": "measured_natural_phrase_audio_no_time_stretch",
+        "pausePolicy": "source_acoustic_evidence_and_capped_silence"
+      },
+      "machineScreeningStatus": "pending_for_this_audio_variant",
+      "humanListeningStatus": "pending",
+      "productionEligible": false,
+      "cues": [
+        { "start": 0.0, "end": 7.7, "text": "看似失败的事，其实是耶稣在战胜我们的仇敌，因为他是那位胜过一切的。", "source": "What looked to be like a loss was Jesus really conquering our enemy, because he’s the one who conquers over everything.", "sourceUnitId": "block-59-u001" },
+        { "start": 7.7, "end": 11.39, "text": "他胜过一切。", "source": "He conquers over everything.", "sourceUnitId": "block-59-u002" },
+        { "start": 11.39, "end": 19.2, "text": "你有一个仇敌，是一头吼叫的狮子。", "source": "You have an enemy who is a roaring lion.", "sourceUnitId": "block-59-u003" },
+        { "start": 19.2, "end": 23.05, "text": "正伺机毁灭你，吞吃你。", "source": "Who's seeking to destroy you and devour you.", "sourceUnitId": "block-59-u004" },
+        { "start": 23.05, "end": 35.2, "text": "但下周我们讲到《启示录》第4章和第5章时，就会看到耶稣被称为犹大支派的狮子，", "source": "But we're going to see next week when we get to Revelation chapter 4 and 5 that Jesus is called the Lion of the tribe of Judah,", "sourceUnitId": "block-59-u005" },
+        { "start": 34.9, "end": 40.67, "text": "而他的吼声压倒了撒但的吼声。", "source": "and His roar overwhelms Satan's roar.", "sourceUnitId": "block-59-u006" }
+      ]
     }
   ],
   "layer2PackageUrl": "/packages/layer2/2026-09-20-lion-of-judah-poc-zh-Hans.json",
@@ -193,9 +229,9 @@
     "cloned_voice_poc"
   ],
   "machineScreening": {
-    "status": "pass",
-    "model": "Qwen/Qwen3-ASR-0.6B",
-    "coverage": 1
+    "status": "pending_for_default_audio_variant",
+    "model": null,
+    "coverage": null
   },
   "disclaimer": "Machine POC only. Not human-approved translation or production dubbing."
 }

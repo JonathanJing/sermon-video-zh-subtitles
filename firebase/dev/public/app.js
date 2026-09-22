@@ -97,7 +97,9 @@ async function selectLocale(locale, { navigate = true } = {}) {
   state.content = content;
   const variants = availableAudioVariants();
   const savedVariant = localStorage.getItem(`tongxing-dev-audio-${state.page.id}-${locale}`);
-  const variant = variants.find(item => item.id === savedVariant)
+  const saved = variants.find(item => item.id === savedVariant);
+  const variant = (saved?.supersededBy && variants.find(item => item.id === saved.supersededBy))
+    || saved
     || variants.find(item => item.id === release.defaultAudioVariantId)
     || variants[0];
   loadAudioVariant(variant, { remember: false });
