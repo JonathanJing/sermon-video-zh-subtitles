@@ -1,0 +1,274 @@
+const languageNames = {
+  "zh-Hans": { native: "简体中文", code: "ZH", detail: "中文（简体）" },
+  ko: { native: "한국어", code: "KO", detail: "韩语" },
+  es: { native: "Español", code: "ES", detail: "西班牙语" },
+  vi: { native: "Tiếng Việt", code: "VI", detail: "越南语" }
+};
+
+const interfaceCopy = {
+  zh: {
+    banner: "9 月 20 日证道片段 POC；机器译文与克隆音频均待人工审核。", brand: "多语言证道", languageCard: "证道语言",
+    mockTitle: "真实 Layer 2 + Layer 3 POC", mockBody: "六个英文源句分别翻译并经 GPT 语义裁判；Eric 克隆音色仅供 Dev App 测试。",
+    tabs: ["收听", "字幕全文", "大纲"], now: "正在讲述", transcript: "字幕全文", outline: "证道大纲",
+    playerNote: "机器生成的讲员克隆音色；非原始录音、非正式配音，人工听审待完成。", release: "发布包状态", text: "文字", audio: "音频",
+    mock: "机器审核通过 · 待人工", tone: "克隆音频 · 待听审", dialogTitle: "选择证道语言", dialogHint: "界面语言、内容语言和音频语言分别管理。",
+    dialogFoot: "四种语言均为开发 POC。越南语 ASR 筛查低于门线；正式 App 只展示人工审核并发布的资产。",
+    footer: "独立个人开发项目，与 Mariners Church 无隶属或背书关系。", switchInterface: "切换界面为英文",
+    themeDark: "深色", themeLight: "浅色", capabilities: "机器译文 · 估算字幕 · 克隆音频", loadError: "Dev 内容暂时无法载入"
+  },
+  en: {
+    banner: "September 20 sermon-fragment POC; machine translations and cloned audio await human review.", brand: "Multilingual Sermons", languageCard: "Sermon language",
+    mockTitle: "Real Layer 2 + Layer 3 POC", mockBody: "Six English source units were translated and GPT-judged; Eric's cloned voice is for Dev App testing only.",
+    tabs: ["Listen", "Transcript", "Outline"], now: "Now speaking", transcript: "Full transcript", outline: "Sermon outline",
+    playerNote: "Machine-generated speaker clone; not the original recording or production dubbing. Human listening is pending.", release: "Release package status", text: "Text", audio: "Audio",
+    mock: "Machine pass · human pending", tone: "Cloned audio · listening pending", dialogTitle: "Choose sermon language", dialogHint: "Interface, content, and audio languages are managed separately.",
+    dialogFoot: "All four languages are development POCs. Vietnamese ASR screening is below threshold; production only exposes human-reviewed releases.",
+    footer: "Independent personal development project; not affiliated with or endorsed by Mariners Church.", switchInterface: "Switch interface to Chinese",
+    themeDark: "Dark", themeLight: "Light", capabilities: "Machine text · Estimated captions · Cloned audio", loadError: "Dev content is temporarily unavailable"
+  }
+};
+
+const state = {
+  catalog: null, page: null, locale: null, release: null, content: null,
+  ui: localStorage.getItem("tongxing-dev-ui") === "en" ? "en" : "zh", activeTab: "listen"
+};
+const $ = (id) => document.getElementById(id);
+const audio = $("audio");
+
+async function loadJSON(path) {
+  const response = await fetch(path, { cache: "no-store" });
+  if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
+  return response.json();
+}
+
+function routeLocale() {
+  const match = location.pathname.match(/\/pages\/2026-09-20-lion-of-judah-poc\/(zh-Hans|ko|es|vi)\/?$/);
+  return match?.[1] || new URLSearchParams(location.search).get("lang");
+}
+
+async function selectLocale(locale, { navigate = true } = {}) {
+  const target = state.page.targets[locale];
+  if (!target) return;
+  const release = await loadJSON(target.releasePackageUrl);
+  if (release.schemaVersion !== "sermon-target-language-demo-package-v1" || release.environment !== "development" || !release.poc) {
+    throw new Error("Invalid development release package");
+  }
+  const content = await loadJSON(release.contentUrl);
+  state.locale = locale;
+  state.release = release;
+  state.content = content;
+  audio.pause();
+  audio.src = release.audioUrl;
+  audio.load();
+  localStorage.setItem(`tongxing-dev-content-${state.page.id}`, locale);
+  if (navigate) history.pushState({ locale }, "", release.pageUrl);
+  render();
+  if ($("languageDialog").open) $("languageDialog").close();
+}
+
+function render() {
+  const content = state.content;
+  const copy = interfaceCopy[state.ui];
+  document.documentElement.lang = state.locale;
+  document.title = `${content.title} · 同行 Dev`;
+  $("seriesLabel").textContent = content.series;
+  $("sermonTitle").textContent = content.title;
+  $("sermonMeta").replaceChildren(...[content.speaker, content.scripture, content.date].map(value => {
+    const span = document.createElement("span");
+    span.textContent = value;
+    return span;
+  }));
+  $("sermonSummary").textContent = content.summary;
+  $("languageName").textContent = languageNames[state.locale].native;
+  $("languageCapabilities").textContent = copy.capabilities;
+  $("currentCaption").textContent = currentCue()?.text || content.cues[0].text;
+  $("sourceCaption").textContent = currentCue()?.source || content.cues[0].source;
+  renderTranscript();
+  renderOutline();
+  renderLanguageList();
+  renderInterfaceCopy();
+  syncPlayer();
+}
+
+function renderInterfaceCopy() {
+  const copy = interfaceCopy[state.ui];
+  $("devBannerText").textContent = copy.banner;
+  $("brandSubtitle").textContent = copy.brand;
+  $("languageCardLabel").textContent = copy.languageCard;
+  $("mockNoticeTitle").textContent = copy.mockTitle;
+  $("mockNoticeBody").textContent = copy.mockBody;
+  [$("listenTab"), $("transcriptTab"), $("outlineTab")].forEach((node, index) => node.textContent = copy.tabs[index]);
+  $("nowHeading").textContent = copy.now;
+  $("transcriptHeading").textContent = copy.transcript;
+  $("outlineHeading").textContent = copy.outline;
+  $("playerNote").textContent = copy.playerNote;
+  $("releaseTitle").textContent = copy.release;
+  $("contentStatusLabel").textContent = copy.text;
+  $("audioStatusLabel").textContent = copy.audio;
+  $("contentStatus").textContent = state.release?.contentStatusLabel || copy.mock;
+  $("audioStatus").textContent = state.release?.audioStatusLabel || copy.tone;
+  $("languageDialogTitle").textContent = copy.dialogTitle;
+  $("languageDialogHint").textContent = copy.dialogHint;
+  $("languageDialogFoot").textContent = copy.dialogFoot;
+  $("footerText").textContent = copy.footer;
+  $("interfaceLanguage").textContent = state.ui === "zh" ? "EN" : "中";
+  $("interfaceLanguage").setAttribute("aria-label", copy.switchInterface);
+  $("themeToggle").textContent = document.documentElement.dataset.theme === "dark" ? copy.themeLight : copy.themeDark;
+}
+
+function renderLanguageList() {
+  $("languageList").replaceChildren(...Object.keys(state.page.targets).map(locale => {
+    const info = languageNames[locale];
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `language-option${locale === state.locale ? " is-selected" : ""}`;
+    const status = state.page.targets[locale].machineScreening === "requires_review" ? "ASR REVIEW<br>REQUIRED" : "MACHINE<br>SCREENED";
+    button.innerHTML = `<span class="language-option-name"><span class="language-code">${info.code}</span><span><strong>${info.native}</strong><small>${info.detail}</small></span></span><span class="language-option-caps">TEXT · AUDIO<br>${status}</span>`;
+    button.addEventListener("click", () => selectLocale(locale).catch(showError));
+    return button;
+  }));
+}
+
+function renderTranscript() {
+  $("transcriptList").replaceChildren(...state.content.cues.map((cue, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `transcript-item${currentCueIndex() === index ? " is-current" : ""}`;
+    button.innerHTML = `<span class="transcript-time">${formatTime(cue.start)}</span><span class="transcript-copy"><strong>${escapeHTML(cue.text)}</strong><span lang="en">${escapeHTML(cue.source)}</span></span>`;
+    button.addEventListener("click", () => {
+      audio.currentTime = cue.start;
+      switchTab("listen");
+      audio.play().catch(() => {});
+    });
+    return button;
+  }));
+}
+
+function renderOutline() {
+  $("outlineList").replaceChildren(...state.content.outline.map(item => {
+    const section = document.createElement("section");
+    section.className = "outline-item";
+    const title = document.createElement("h3"); title.textContent = item.title;
+    const body = document.createElement("p"); body.textContent = item.body;
+    section.append(title, body);
+    return section;
+  }));
+}
+
+function currentCueIndex() {
+  if (!state.content) return 0;
+  const active = state.content.cues.findIndex(cue => audio.currentTime >= cue.start && audio.currentTime < cue.end);
+  if (active >= 0) return active;
+  let latest = 0;
+  state.content.cues.forEach((cue, index) => { if (audio.currentTime >= cue.start) latest = index; });
+  return latest;
+}
+
+function currentCue() { return state.content?.cues[currentCueIndex()]; }
+
+function syncPlayer() {
+  if (!state.content) return;
+  const cue = currentCue();
+  $("currentCaption").textContent = cue.text;
+  $("sourceCaption").textContent = cue.source;
+  $("cueCounter").textContent = `${currentCueIndex() + 1} / ${state.content.cues.length}`;
+  const duration = Number.isFinite(audio.duration) ? audio.duration : (state.content?.durationSeconds || 24);
+  const percent = Math.min(100, Math.max(0, audio.currentTime / duration * 100));
+  $("progressFill").style.width = `${percent}%`;
+  $("progressTrack").setAttribute("aria-valuenow", String(Math.round(percent)));
+  $("elapsed").textContent = formatTime(audio.currentTime);
+  $("duration").textContent = formatTime(duration);
+  document.querySelectorAll(".transcript-item").forEach((item, index) => item.classList.toggle("is-current", index === currentCueIndex()));
+}
+
+function switchTab(name) {
+  state.activeTab = name;
+  document.querySelectorAll("[data-tab]").forEach(button => {
+    const active = button.dataset.tab === name;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-selected", String(active));
+  });
+  document.querySelectorAll(".panel").forEach(panel => {
+    const active = panel.id === `panel-${name}`;
+    panel.hidden = !active;
+    panel.classList.toggle("is-active", active);
+  });
+}
+
+function formatTime(value) {
+  const seconds = Math.max(0, Math.floor(value || 0));
+  return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+}
+
+function escapeHTML(value) {
+  const span = document.createElement("span");
+  span.textContent = value;
+  return span.innerHTML;
+}
+
+function showError(error) {
+  console.error(error);
+  $("sermonTitle").textContent = interfaceCopy[state.ui].loadError;
+  $("sermonSummary").textContent = error.message;
+}
+
+function bindEvents() {
+  $("languageButton").addEventListener("click", () => $("languageDialog").showModal());
+  $("closeLanguageDialog").addEventListener("click", () => $("languageDialog").close());
+  $("languageDialog").addEventListener("click", event => { if (event.target === $("languageDialog")) $("languageDialog").close(); });
+  document.querySelectorAll("[data-tab]").forEach(button => button.addEventListener("click", () => switchTab(button.dataset.tab)));
+  $("playButton").addEventListener("click", () => audio.paused ? audio.play().catch(() => {}) : audio.pause());
+  document.querySelectorAll("[data-skip]").forEach(button => button.addEventListener("click", () => {
+      audio.currentTime = Math.max(0, Math.min(audio.duration || state.content?.durationSeconds || 24, audio.currentTime + Number(button.dataset.skip)));
+  }));
+  $("progressTrack").addEventListener("click", event => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    audio.currentTime = (audio.duration || state.content?.durationSeconds || 24) * (event.clientX - rect.left) / rect.width;
+  });
+  $("progressTrack").addEventListener("keydown", event => {
+    if (["ArrowLeft", "ArrowRight"].includes(event.key)) {
+      event.preventDefault();
+      audio.currentTime = Math.max(0, Math.min(audio.duration || state.content?.durationSeconds || 24, audio.currentTime + (event.key === "ArrowRight" ? 1 : -1)));
+    }
+  });
+  audio.addEventListener("timeupdate", syncPlayer);
+  audio.addEventListener("loadedmetadata", syncPlayer);
+  audio.addEventListener("play", () => { $("playIcon").textContent = "❚❚"; $("playButton").setAttribute("aria-label", "暂停"); });
+  audio.addEventListener("pause", () => { $("playIcon").textContent = "▶"; $("playButton").setAttribute("aria-label", "播放"); });
+  $("interfaceLanguage").addEventListener("click", () => {
+    state.ui = state.ui === "zh" ? "en" : "zh";
+    localStorage.setItem("tongxing-dev-ui", state.ui);
+    renderInterfaceCopy();
+  });
+  $("themeToggle").addEventListener("click", () => {
+    const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+    document.documentElement.dataset.theme = next;
+    localStorage.setItem("tongxing-dev-theme", next);
+    renderInterfaceCopy();
+  });
+  window.addEventListener("popstate", () => {
+    const locale = routeLocale() || state.page.defaultTargetLocale;
+    selectLocale(locale, { navigate: false }).catch(showError);
+  });
+}
+
+async function init() {
+  document.documentElement.dataset.theme = localStorage.getItem("tongxing-dev-theme") === "dark" ? "dark" : "light";
+  bindEvents();
+  renderInterfaceCopy();
+  try {
+    state.catalog = await loadJSON("/multilingual.json");
+    if (state.catalog.schemaVersion !== "sermon-multilingual-demo-catalog-v1" || state.catalog.environment !== "development" || !state.catalog.poc) {
+      throw new Error("Invalid Dev catalog");
+    }
+    state.page = state.catalog.pages.find(page => page.id === state.catalog.defaultPageId);
+    const requested = routeLocale();
+    const saved = localStorage.getItem(`tongxing-dev-content-${state.page.id}`);
+    const locale = state.page.targets[requested] ? requested : state.page.targets[saved] ? saved : state.page.defaultTargetLocale;
+    await selectLocale(locale, { navigate: location.pathname !== "/" });
+  } catch (error) {
+    showError(error);
+  }
+}
+
+init();

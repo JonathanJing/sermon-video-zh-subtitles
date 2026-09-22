@@ -1,0 +1,85 @@
+{
+  "schemaVersion": "sermon-demo-content-v1",
+  "locale": "ko",
+  "poc": true,
+  "series": "요한계시록: 예수님이 주시는 위로와 소망",
+  "title": "예수님의 약속",
+  "speaker": "Eric Geiger · cloned voice POC",
+  "scripture": "Revelation 4–5",
+  "date": "2026년 9월 20일",
+  "summary": "패배처럼 보인 십자가는 실제로 예수님의 승리이며, 유다 지파의 사자의 포효가 원수의 포효를 압도합니다.",
+  "durationSeconds": 28.96,
+  "translationStatus": "machine_review_pass_human_review_pending",
+  "audioStatus": "candidate",
+  "machineScreening": {
+    "status": "pass",
+    "model": "Qwen/Qwen3-ASR-0.6B",
+    "coverage": 1
+  },
+  "humanReview": {
+    "status": "pending",
+    "humanApproval": false,
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "fullPlayback": "pending"
+  },
+  "captionTiming": "estimated_proportional_to_target_text_poc",
+  "cues": [
+    {
+      "start": 0.0,
+      "end": 8.322,
+      "text": "패배처럼 보였던 것은 사실 예수가 우리의 원수를 이기고 있는 것이었습니다. 그는 모든 것을 이기는 분이기 때문입니다.",
+      "source": "What looked to be like a loss was Jesus really conquering our enemy, because he’s the one who conquers over everything.",
+      "sourceUnitId": "block-59-u001"
+    },
+    {
+      "start": 8.322,
+      "end": 10.153,
+      "text": "그는 모든 것을 이깁니다.",
+      "source": "He conquers over everything.",
+      "sourceUnitId": "block-59-u002"
+    },
+    {
+      "start": 10.153,
+      "end": 13.981,
+      "text": "여러분에게는 으르렁거리는 사자인 원수가 있습니다.",
+      "source": "You have an enemy who is a roaring lion.",
+      "sourceUnitId": "block-59-u003"
+    },
+    {
+      "start": 13.981,
+      "end": 17.476,
+      "text": "여러분을 멸망시키고 집어삼키려 하고 있습니다.",
+      "source": "Who's seeking to destroy you and devour you.",
+      "sourceUnitId": "block-59-u004"
+    },
+    {
+      "start": 17.476,
+      "end": 25.631,
+      "text": "하지만 다음 주에 요한계시록 4장과 5장을 살펴보면, 예수가 유다 지파의 사자라고 불린다는 것을 알게 될 것입니다.",
+      "source": "But we're going to see next week when we get to Revelation chapter 4 and 5 that Jesus is called the Lion of the tribe of Judah,",
+      "sourceUnitId": "block-59-u005"
+    },
+    {
+      "start": 25.631,
+      "end": 28.96,
+      "text": "그리고 그의 포효는 사탄의 포효를 압도합니다.",
+      "source": "and His roar overwhelms Satan's roar.",
+      "sourceUnitId": "block-59-u006"
+    }
+  ],
+  "outline": [
+    {
+      "title": "패배처럼 보였던 것",
+      "body": "예수님은 우리의 원수를 이기시며 모든 것을 이기십니다."
+    },
+    {
+      "title": "으르렁거리는 원수",
+      "body": "원수는 으르렁거리는 사자처럼 멸망시키고 집어삼키려 합니다."
+    },
+    {
+      "title": "유다 지파의 사자",
+      "body": "예수님의 포효는 사탄의 포효를 압도합니다."
+    }
+  ]
+}

@@ -16,6 +16,7 @@ service-account*.json
 *.credentials.json
 experiments/local-live-poc/firebase/.firebaserc
 experiments/local-live-poc/firebase/.firebase/
+firebase/dev/public/media/
 node_modules/
 dist/
 build/

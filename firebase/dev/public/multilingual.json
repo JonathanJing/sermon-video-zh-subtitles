@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "sermon-multilingual-demo-catalog-v1",
+  "environment": "development",
+  "poc": true,
+  "generatedAt": "2026-09-22T00:24:00Z",
+  "defaultPageId": "2026-09-20-lion-of-judah-poc",
+  "pages": [
+    {
+      "id": "2026-09-20-lion-of-judah-poc",
+      "date": "2026-09-20",
+      "sourceLocale": "en",
+      "speaker": "Eric Geiger",
+      "sourceWindow": {
+        "startSeconds": 1858.4,
+        "endSeconds": 1899.280001
+      },
+      "defaultTargetLocale": "zh-Hans",
+      "targets": {
+        "zh-Hans": {
+          "releasePackageUrl": "/releases/2026-09-20-lion-of-judah-poc/zh-Hans.json",
+          "contentStatus": "machine_review_pass_human_review_pending",
+          "audioStatus": "candidate",
+          "machineScreening": "pass",
+          "capabilities": [
+            "machine_translation",
+            "estimated_captions",
+            "cloned_voice_poc"
+          ]
+        },
+        "ko": {
+          "releasePackageUrl": "/releases/2026-09-20-lion-of-judah-poc/ko.json",
+          "contentStatus": "machine_review_pass_human_review_pending",
+          "audioStatus": "candidate",
+          "machineScreening": "pass",
+          "capabilities": [
+            "machine_translation",
+            "estimated_captions",
+            "cloned_voice_poc"
+          ]
+        },
+        "es": {
+          "releasePackageUrl": "/releases/2026-09-20-lion-of-judah-poc/es.json",
+          "contentStatus": "machine_review_pass_human_review_pending",
+          "audioStatus": "candidate",
+          "machineScreening": "pass",
+          "capabilities": [
+            "machine_translation",
+            "estimated_captions",
+            "cloned_voice_poc"
+          ]
+        },
+        "vi": {
+          "releasePackageUrl": "/releases/2026-09-20-lion-of-judah-poc/vi.json",
+          "contentStatus": "machine_review_pass_human_review_pending",
+          "audioStatus": "candidate",
+          "machineScreening": "requires_review",
+          "capabilities": [
+            "machine_translation",
+            "estimated_captions",
+            "cloned_voice_poc"
+          ]
+        }
+      }
+    }
+  ]
+}

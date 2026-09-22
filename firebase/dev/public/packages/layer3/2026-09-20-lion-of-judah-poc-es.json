@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "sermon-target-language-audio-package-v1",
+  "packageId": "2026-09-20-lion-of-judah-es-poc-v1",
+  "englishSourcePackageJsonSha256": "d66a7051573ea7fbb21b7edff8c7479fa7174f58149fee1e8877067ef773457e",
+  "targetLanguageCandidateJsonSha256": "1d419f0590c3b177ee124066905d1df4b92482fd3a66b4dfcf05716f7522a539",
+  "targetLanguageSpeechJobJsonSha256": "42f0fd384ca382345ac645dcca051bdc3e0eee04323713a4251391cf10bd3c44",
+  "targetLocale": "es",
+  "status": "candidate",
+  "ratePolicy": "natural_no_time_stretch",
+  "voice": {
+    "provider": "Qwen",
+    "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base SFT",
+    "checkpointSha256": "75d28ce6022b3df3a72df3dd6dbc01e53f584d685770d60ea04b341920968c9a",
+    "targetLocaleCapability": "candidate",
+    "authorizationStatus": "authorized"
+  },
+  "units": [
+    {
+      "textGroupId": "2026-09-20-lion-of-judah-es",
+      "targetTextSha256": "b68ec2d720a3df5e483b2d28c2b125843fe867ef7ca567bd23f68ea0cc144cb8",
+      "audio": {
+        "path": "audio.mp3",
+        "sha256": "b4910d9f885b6c6fd91647b39cb51dd30ff42decaafb0e1b2ed41bf63a72517c"
+      },
+      "durationSeconds": 22.48
+    }
+  ],
+  "track": {
+    "path": "audio.mp3",
+    "sha256": "b4910d9f885b6c6fd91647b39cb51dd30ff42decaafb0e1b2ed41bf63a72517c"
+  },
+  "captions": {
+    "path": "captions.vtt",
+    "sha256": "ac7b72de7b5f981a28e0dd691cb170808483a527d8a203dc5650e436d3527e48"
+  },
+  "schedule": {
+    "path": "schedule.json",
+    "sha256": "6a9c6072faf8f9788b86b7ba659b998fdf0ed96c08b3c8f09c573c9db86d2437",
+    "jsonSha256": "11773468f8f349ec7bfe1725ee879e72bfc7e74a08726760fec7622c21f68802"
+  },
+  "machineScreening": {
+    "status": "pass",
+    "model": "Qwen/Qwen3-ASR-0.6B",
+    "coverage": 1
+  },
+  "humanReview": {
+    "status": "pending",
+    "humanApproval": false,
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "fullPlayback": "pending"
+  },
+  "issues": [
+    "human_listening_pending",
+    "estimated_caption_timing_poc"
+  ],
+  "downstreamInvalidationKey": "2f2d6df50745323307e37c38a324d24d6b379758226d48e988eb849ad9e3bf14"
+}

@@ -5,6 +5,9 @@
     "cleanUrls": true,
     "trailingSlash": false,
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      { "source": "/pages/2026-09-20-lion-of-judah-poc/**", "destination": "/index.html" }
+    ],
     "headers": [
       {
         "source": "**",
@@ -13,7 +16,13 @@
           { "key": "X-Content-Type-Options", "value": "nosniff" },
           { "key": "Referrer-Policy", "value": "no-referrer" },
           { "key": "X-Frame-Options", "value": "DENY" },
-          { "key": "Content-Security-Policy", "value": "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'" }
+          { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self'; media-src 'self'; connect-src 'self'; img-src 'self' data:; base-uri 'none'; frame-ancestors 'none'; form-action 'none'; object-src 'none'" }
+        ]
+      },
+      {
+        "source": "/media/**",
+        "headers": [
+          { "key": "Cache-Control", "value": "public,max-age=3600" }
         ]
       }
     ]

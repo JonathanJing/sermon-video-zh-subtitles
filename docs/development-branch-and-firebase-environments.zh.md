@@ -42,7 +42,9 @@ Firebase 官方建议每个开发环境使用独立 project。听译 App 应建�
 | Dev | `dev` | 新建 `ai-for-god-sermon-audio-dev` | 独立 `*-dev.web.app` | 合成／匿名测试数据，不复制私人生产数据 |
 | Production | `main` | 现有 `ai-for-god` | `ai-for-god-sermon-audio.web.app` | 已批准的周次发布资产 |
 
-2026-09-21 已建立 Dev Firebase project `ai-for-god-sermon-audio-dev`（project number `548454657719`），默认 Hosting site 为 `https://ai-for-god-sermon-audio-dev.web.app`。这只证明环境资源存在；多语言 fixture、HTTP 验证、iOS 设备验收和现场验收仍须分别留证。
+2026-09-21 已建立 Dev Firebase project `ai-for-god-sermon-audio-dev`（project number `548454657719`），默认 Hosting site 为 `https://ai-for-god-sermon-audio-dev.web.app`。同日先部署四语言 Web mock，再用 2026-09-20 证道的六个英文源句替换默认页面，完成中文、韩语、西班牙语、越南语的 Layer 2 机器翻译候选、Eric Geiger 声音克隆 POC、估算字幕时间和独立路由。根页面、四个路由、目录、发布包、内容、脚本、样式和音频通过公开 HTTP 检查，音频 Range 返回 `206`。
+
+这次部署建立的是 Web 交互和 Dev Hosting 验证，不是 canonical 四层发布：`multilingual.json` 仍使用 `sermon-multilingual-demo-catalog-v1`，所有文字与音频均保持 `humanApproval=false`；越南语 ASR 相似度 `0.195652`，在 `0.85` 门线下明确显示 `requires_review`。正式 iOS Layer 4 reader 应继续拒绝把 demo catalog 解释成 `sermon-multilingual-catalog-v2`。人工文字审核、母语听审、真实时间对齐、iOS 设备和现场验收仍须分别留证。可复跑与晋升边界见[多语言片段 POC 固化流程](multilingual-fragment-poc-solidification.zh.md)。
 
 执行边界：
 

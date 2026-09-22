@@ -1,0 +1,85 @@
+{
+  "schemaVersion": "sermon-demo-content-v1",
+  "locale": "zh-Hans",
+  "poc": true,
+  "series": "启示录：耶稣带来的安慰与盼望",
+  "title": "耶稣的应许",
+  "speaker": "Eric Geiger · cloned voice POC",
+  "scripture": "Revelation 4–5",
+  "date": "2026年9月20日",
+  "summary": "片段：看似失败的十字架其实是耶稣得胜；犹大支派的狮子压倒仇敌的吼声。",
+  "durationSeconds": 24.08,
+  "translationStatus": "machine_review_pass_human_review_pending",
+  "audioStatus": "candidate",
+  "machineScreening": {
+    "status": "pass",
+    "model": "Qwen/Qwen3-ASR-0.6B",
+    "coverage": 1
+  },
+  "humanReview": {
+    "status": "pending",
+    "humanApproval": false,
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "fullPlayback": "pending"
+  },
+  "captionTiming": "estimated_proportional_to_target_text_poc",
+  "cues": [
+    {
+      "start": 0.0,
+      "end": 6.734,
+      "text": "看似失败的事，其实是耶稣在战胜我们的仇敌，因为他是那位胜过一切的。",
+      "source": "What looked to be like a loss was Jesus really conquering our enemy, because he’s the one who conquers over everything.",
+      "sourceUnitId": "block-59-u001"
+    },
+    {
+      "start": 6.734,
+      "end": 7.958,
+      "text": "他胜过一切。",
+      "source": "He conquers over everything.",
+      "sourceUnitId": "block-59-u002"
+    },
+    {
+      "start": 7.958,
+      "end": 11.223,
+      "text": "你有一个仇敌，是一头吼叫的狮子。",
+      "source": "You have an enemy who is a roaring lion.",
+      "sourceUnitId": "block-59-u003"
+    },
+    {
+      "start": 11.223,
+      "end": 13.468,
+      "text": "正伺机毁灭你，吞吃你。",
+      "source": "Who's seeking to destroy you and devour you.",
+      "sourceUnitId": "block-59-u004"
+    },
+    {
+      "start": 13.468,
+      "end": 21.223,
+      "text": "但下周我们讲到《启示录》第4章和第5章时，就会看到耶稣被称为犹大支派的狮子，",
+      "source": "But we're going to see next week when we get to Revelation chapter 4 and 5 that Jesus is called the Lion of the tribe of Judah,",
+      "sourceUnitId": "block-59-u005"
+    },
+    {
+      "start": 21.223,
+      "end": 24.08,
+      "text": "而他的吼声压倒了撒但的吼声。",
+      "source": "and His roar overwhelms Satan's roar.",
+      "sourceUnitId": "block-59-u006"
+    }
+  ],
+  "outline": [
+    {
+      "title": "看似失败",
+      "body": "耶稣正在战胜我们的仇敌，他胜过一切。"
+    },
+    {
+      "title": "吼叫的仇敌",
+      "body": "仇敌如吼叫的狮子，企图毁灭并吞吃人。"
+    },
+    {
+      "title": "犹大支派的狮子",
+      "body": "耶稣的吼声压倒撒但的吼声。"
+    }
+  ]
+}

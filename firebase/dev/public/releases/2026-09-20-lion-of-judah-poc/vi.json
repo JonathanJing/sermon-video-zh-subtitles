@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "sermon-target-language-demo-package-v1",
+  "environment": "development",
+  "poc": true,
+  "productionEligible": false,
+  "humanApproval": false,
+  "packageId": "2026-09-20-lion-of-judah-vi-poc-v1",
+  "pageId": "2026-09-20-lion-of-judah-poc",
+  "sourceLocale": "en",
+  "targetLocale": "vi",
+  "status": "poc_candidate_requires_review",
+  "contentStatus": "machine_review_pass_human_review_pending",
+  "contentStatusLabel": "Machine pass · human pending",
+  "audioStatus": "candidate",
+  "audioStatusLabel": "ASR review required",
+  "pageUrl": "/pages/2026-09-20-lion-of-judah-poc/vi",
+  "contentUrl": "/content/2026-09-20-lion-of-judah-poc/vi.json",
+  "audioUrl": "/media/2026-09-20-lion-of-judah-poc/vi.mp3",
+  "layer2PackageUrl": "/packages/layer2/2026-09-20-lion-of-judah-poc-vi.json",
+  "layer3PackageUrl": "/packages/layer3/2026-09-20-lion-of-judah-poc-vi.json",
+  "capabilities": [
+    "machine_translation",
+    "estimated_captions",
+    "cloned_voice_poc"
+  ],
+  "machineScreening": {
+    "status": "requires_review",
+    "model": "Qwen/Qwen3-ASR-0.6B",
+    "coverage": 1
+  },
+  "disclaimer": "Machine POC only. Not human-approved translation or production dubbing."
+}
