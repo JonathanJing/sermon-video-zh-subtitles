@@ -1,0 +1,110 @@
+{
+  "schemaVersion": "sermon-target-language-candidate-v2",
+  "sourceLocale": "en",
+  "targetLocale": "zh-Hans",
+  "englishSourcePackageJsonSha256": "d66a7051573ea7fbb21b7edff8c7479fa7174f58149fee1e8877067ef773457e",
+  "anchorManifestSha256": "8b1e920e8fb1477a090a22db4422db2c28f9d88746a3236366e412a132fb31cd",
+  "translationPolicySha256": "93d732e5ce560e42aafeacaa603c62f733eba41fb3006c3cf6637df0be10ad8c",
+  "status": "machine_review_pass_human_review_pending",
+  "releaseEligible": false,
+  "generation": {
+    "translator": {
+      "model": "gpt-6-astra",
+      "promptVersion": "sermon-fragment-translation-poc-v1",
+      "requestIds": [
+        "resp_0bb8559f498f66dc006ab1c6b36bf487d08180f26136f66d26"
+      ]
+    },
+    "reviewer": {
+      "model": "gpt-6-astra",
+      "promptVersion": "sermon-fragment-semantic-judge-poc-v1",
+      "requestIds": [
+        "resp_09da0ad96a146285006ab1c6cf10d487d0829fb07340d8a372"
+      ]
+    }
+  },
+  "groups": [
+    {
+      "translationGroupId": "2026-09-20-lion-of-judah-zh-Hans",
+      "sourceUnitIds": [
+        "block-59-u001",
+        "block-59-u002",
+        "block-59-u003",
+        "block-59-u004",
+        "block-59-u005",
+        "block-59-u006"
+      ],
+      "targetUtterances": [
+        "看似失败的事，其实是耶稣在战胜我们的仇敌，因为他是那位胜过一切的。",
+        "他胜过一切。",
+        "你有一个仇敌，是一头吼叫的狮子。",
+        "正伺机毁灭你，吞吃你。",
+        "但下周我们讲到《启示录》第4章和第5章时，就会看到耶稣被称为犹大支派的狮子，",
+        "而他的吼声压倒了撒但的吼声。"
+      ],
+      "targetText": "看似失败的事，其实是耶稣在战胜我们的仇敌，因为他是那位胜过一切的。 他胜过一切。 你有一个仇敌，是一头吼叫的狮子。 正伺机毁灭你，吞吃你。 但下周我们讲到《启示录》第4章和第5章时，就会看到耶稣被称为犹大支派的狮子， 而他的吼声压倒了撒但的吼声。",
+      "coverage": [
+        {
+          "sourceUnitId": "block-59-u001",
+          "targetText": "看似失败的事，其实是耶稣在战胜我们的仇敌，因为他是那位胜过一切的。"
+        },
+        {
+          "sourceUnitId": "block-59-u002",
+          "targetText": "他胜过一切。"
+        },
+        {
+          "sourceUnitId": "block-59-u003",
+          "targetText": "你有一个仇敌，是一头吼叫的狮子。"
+        },
+        {
+          "sourceUnitId": "block-59-u004",
+          "targetText": "正伺机毁灭你，吞吃你。"
+        },
+        {
+          "sourceUnitId": "block-59-u005",
+          "targetText": "但下周我们讲到《启示录》第4章和第5章时，就会看到耶稣被称为犹大支派的狮子，"
+        },
+        {
+          "sourceUnitId": "block-59-u006",
+          "targetText": "而他的吼声压倒了撒但的吼声。"
+        }
+      ],
+      "semanticReview": {
+        "status": "pass",
+        "checks": {
+          "completeMeaning": "pass",
+          "negationsNumbersNames": "pass",
+          "quotationAttribution": "pass",
+          "noAddedMeaning": "pass"
+        },
+        "evidence": "Independent GPT semantic review completed for all six source units.",
+        "uncertainty": [],
+        "issues": []
+      },
+      "languageReview": {
+        "status": "pass",
+        "pluginId": "gpt-language-review-poc-v1",
+        "policySha256": "93d732e5ce560e42aafeacaa603c62f733eba41fb3006c3cf6637df0be10ad8c",
+        "checks": [
+          {
+            "checkId": "target_language_and_natural_narration",
+            "status": "pass",
+            "evidence": "Reviewed as Simplified Chinese narration; human review remains pending."
+          }
+        ]
+      }
+    }
+  ],
+  "modelReview": {
+    "status": "pass",
+    "reviewedGroupIds": [
+      "2026-09-20-lion-of-judah-zh-Hans"
+    ]
+  },
+  "humanReview": {
+    "translation": "pending",
+    "reviewer": null,
+    "reviewedAt": null,
+    "reviewedGroupIds": []
+  }
+}

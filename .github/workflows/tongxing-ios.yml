@@ -2,9 +2,9 @@ name: Tongxing iOS
 
 on:
   pull_request:
-    paths:
-      - 'apps/tongxing-ios/**'
-      - '.github/workflows/tongxing-ios.yml'
+    branches:
+      - dev
+      - main
   workflow_dispatch:
 
 permissions:

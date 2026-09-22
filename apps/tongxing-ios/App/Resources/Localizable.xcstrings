@@ -1,6 +1,66 @@
 {
   "sourceLanguage": "zh-Hans",
   "strings": {
+    "当前中文版本": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Current Chinese version" } } }
+    },
+    "所选语言在独立发布页面中打开；原生播放器继续保留当前已验证的中文音轨。": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "The selected language opens on its own release page. The native player keeps the currently verified Chinese track." } } }
+    },
+    "选择证道语言": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Choose sermon language" } } }
+    },
+    "尚无可选择的语言版本": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "No language versions available" } } }
+    },
+    "发布目录尚未提供已人工审核的目标语言。": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "The release catalog does not yet contain a human-reviewed target language." } } }
+    },
+    "证道语言": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Sermon language" } } }
+    },
+    "选择后打开该语言自己的已发布页面。界面语言和证道音频语言不会被静默更改。": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Your selection opens that language's published page. The interface and sermon audio languages are never changed silently." } } }
+    },
+    "文字": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Text" } } }
+    },
+    "字幕": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Captions" } } }
+    },
+    "音频": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Audio" } } }
+    },
+    "仅文字": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Text only" } } }
+    },
+    "可下载": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Downloadable" } } }
+    },
+    "此环境尚未提供多语言发布目录，继续显示当前中文版本。": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "This environment has no multilingual release catalog yet. The current Chinese version remains available." } } }
+    },
+    "暂时无法打开这个语言版本；当前内容和音频没有改变。": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "This language version cannot be opened right now. The current content and audio were not changed." } } }
+    },
+    "语言已选择，但本次偏好暂时无法保存。": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "The language was selected, but the preference could not be saved this time." } } }
+    },
     "{time}，总长 {duration}。{status}": {
       "extractionState": "manual",
       "localizations": {

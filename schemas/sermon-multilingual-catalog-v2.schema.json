@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-multilingual-catalog-v2.schema.json",
+  "title": "Layer 4 multilingual sermon catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "generatedAt", "defaultPageId", "pages"],
+  "properties": {
+    "schemaVersion": { "const": "sermon-multilingual-catalog-v2" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "defaultPageId": { "$ref": "#/$defs/identifier" },
+    "pages": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 104,
+      "items": { "$ref": "#/$defs/page" }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "identifier": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,160}$" },
+    "locale": { "type": "string", "pattern": "^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$" },
+    "releasePath": {
+      "type": "string",
+      "pattern": "^/releases/[A-Za-z0-9_-]{1,160}/[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*\\.json$"
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "releasePackageUrl", "releasePackageJsonSha256", "contentStatus",
+        "audioStatus", "capabilities"
+      ],
+      "properties": {
+        "releasePackageUrl": { "$ref": "#/$defs/releasePath" },
+        "releasePackageJsonSha256": { "$ref": "#/$defs/sha256" },
+        "contentStatus": { "const": "human_reviewed" },
+        "audioStatus": { "enum": ["unavailable", "human_reviewed"] },
+        "capabilities": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["text", "captions", "audio", "download", "alignment"] }
+        }
+      }
+    },
+    "page": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "date", "sourceLocale", "sourceIdentitySha256",
+        "defaultTargetLocale", "targets"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "date": { "type": "string", "format": "date" },
+        "sourceLocale": { "const": "en" },
+        "sourceIdentitySha256": { "$ref": "#/$defs/sha256" },
+        "defaultTargetLocale": { "$ref": "#/$defs/locale" },
+        "targets": {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 16,
+          "propertyNames": { "$ref": "#/$defs/locale" },
+          "additionalProperties": { "$ref": "#/$defs/target" }
+        }
+      }
+    }
+  }
+}

@@ -77,3 +77,5 @@ python scripts/render_vietnamese_voice_demos.py \
 目前登记 Eric Geiger、Jared Kirkwood、Christine Caine、Doug Fields、Kenton Beshore 和 Steve Bang Lee 六位讲员。中文能力状态沿用已绑定样片的现有人工认可；其他三种语言在完成本轮生成后仍保持 `unverified_poc`，直至各语言听审完成。越南语 POC 当前是 reference clone，不等于已经完成与中文相同的 per-speaker SFT；是否为 Gwen-TTS 建立长期训练 checkpoint 要在试听和母语发音审核后另行决定。
 
 本轮实跑已生成 6 位讲员 × 4 个 locale 共 24 条 WAV，并编码为 24 条 MP3；源 WAV 与交付 MP3 均完成全文件解码。Qwen3-ASR 完整覆盖筛查中，韩语和西班牙语为 1.00，中文约为 0.97；6 条越南语全部低于 0.85，已标为人工复核优先项。这个结果只证明文件可解码并给出文本一致性风险信号：所有新语言仍等待母语人耳审核，越南语不得进入正式生产。
+
+2026-09-20 证道六句片段的 Eric 单讲员实跑得到同样方向：中文 `0.961905`、韩语 `0.878505`、西班牙语 `1.0` 通过机器筛查门线，越南语 `0.195652` 进入人工复核优先。该结果足以冻结“筛查失败时停止晋升”的调度规则，但不足以断言前三种语言已通过发音、自然度或讲员相似度审核。越南语下一步保留 Gwen-TTS 为基线，同时对支持越南语声音克隆的候选 adapter 做相同文本、相同参考音频、相同 ASR 与母语盲听条件的对照；在对照完成前不把任何新 adapter 写成 Registry 的生产能力。具体固化步骤见[多语言片段 POC 固化流程](multilingual-fragment-poc-solidification.zh.md)。

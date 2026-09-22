@@ -1,0 +1,55 @@
+{
+  "schemaVersion": "sermon-longform-adaptive-prosody-poc-spec-v1",
+  "basePlanJsonSha256": "c05f83f5acea1159dd5bba20982c7507767ed33ab51e178ecd330e0725df1209",
+  "anchorManifestJsonSha256": "8b1e920e8fb1477a090a22db4422db2c28f9d88746a3236366e412a132fb31cd",
+  "sentences": [
+    {
+      "sourceUnitId": "block-59-u001",
+      "phrases": [
+        {"phraseId": "p01", "targetText": "看似失败的事，", "sourceWordIds": ["block-59-w0001", "block-59-w0002", "block-59-w0003", "block-59-w0004", "block-59-w0005", "block-59-w0006", "block-59-w0007"], "instruct": "以自然、连贯的证道语气朗读，稍带转折预备，重读‘失败’；不增加或删除文字。"},
+        {"phraseId": "p02", "targetText": "其实是耶稣在战胜我们的仇敌，", "sourceWordIds": ["block-59-w0008", "block-59-w0009", "block-59-w0010", "block-59-w0011", "block-59-w0012", "block-59-w0013"], "instruct": "以坚定的证道语气朗读，重读‘耶稣’和‘战胜’；不增加或删除文字。"},
+        {"phraseId": "p03", "targetText": "因为他是那位胜过一切的。", "sourceWordIds": ["block-59-w0014", "block-59-w0015", "block-59-w0016", "block-59-w0017", "block-59-w0018", "block-59-w0019", "block-59-w0020", "block-59-w0021"], "instruct": "以有结论感的证道语气朗读，重读‘胜过一切’；不增加或删除文字。"}
+      ]
+    },
+    {
+      "sourceUnitId": "block-59-u002",
+      "phrases": [
+        {"phraseId": "p01", "targetText": "他胜过一切。", "sourceWordIds": ["block-59-w0022", "block-59-w0023", "block-59-w0024", "block-59-w0025"], "instruct": "以坚定、有力的重复语气朗读，重读‘胜过一切’；不增加或删除文字。"}
+      ]
+    },
+    {
+      "sourceUnitId": "block-59-u003",
+      "phrases": [
+        {"phraseId": "p01", "targetText": "你有一个", "sourceWordIds": ["block-59-w0026", "block-59-w0027"], "instruct": "以直接提醒听众的证道语气朗读；不增加或删除文字。"},
+        {"phraseId": "p02", "targetText": "仇敌，", "sourceWordIds": ["block-59-w0028", "block-59-w0029"], "instruct": "短促而清楚地朗读，重读‘仇敌’；不增加或删除文字。"},
+        {"phraseId": "p03", "targetText": "是一头吼叫的狮子。", "sourceWordIds": ["block-59-w0030", "block-59-w0031", "block-59-w0032", "block-59-w0033", "block-59-w0034"], "instruct": "带警告感朗读，重读‘吼叫的狮子’；不增加或删除文字。"}
+      ]
+    },
+    {
+      "sourceUnitId": "block-59-u004",
+      "phrases": [
+        {"phraseId": "p01", "targetText": "正伺机", "sourceWordIds": ["block-59-w0035", "block-59-w0036"], "instruct": "以克制但有警示感的语气朗读；不增加或删除文字。"},
+        {"phraseId": "p02", "targetText": "毁灭你，", "sourceWordIds": ["block-59-w0037", "block-59-w0038", "block-59-w0039"], "instruct": "清楚、有力度地朗读，重读‘毁灭’；不增加或删除文字。"},
+        {"phraseId": "p03", "targetText": "吞吃你。", "sourceWordIds": ["block-59-w0040", "block-59-w0041", "block-59-w0042"], "instruct": "延续警告语气，重读‘吞吃’并自然收句；不增加或删除文字。"}
+      ]
+    },
+    {
+      "sourceUnitId": "block-59-u005",
+      "phrases": [
+        {"phraseId": "p01", "targetText": "但", "sourceWordIds": ["block-59-w0043"], "instruct": "短促、有转折感地朗读‘但’；不增加或删除文字。"},
+        {"phraseId": "p02", "targetText": "下周我们讲到", "sourceWordIds": ["block-59-w0044", "block-59-w0045", "block-59-w0046", "block-59-w0047", "block-59-w0048", "block-59-w0049", "block-59-w0050", "block-59-w0051", "block-59-w0052", "block-59-w0053"], "instruct": "以自然、连贯的预告语气朗读；不增加或删除文字。"},
+        {"phraseId": "p03", "targetText": "《启示录》第4章和第5章时，", "sourceWordIds": ["block-59-w0054", "block-59-w0055", "block-59-w0056", "block-59-w0057", "block-59-w0058"], "instruct": "清楚朗读经卷名与章节，保持证道语气；不增加或删除文字。"},
+        {"phraseId": "p04", "targetText": "就会看到耶稣被称为", "sourceWordIds": ["block-59-w0059", "block-59-w0060", "block-59-w0061", "block-59-w0062"], "instruct": "带逐步揭示的语气朗读，轻微重读‘耶稣’；不增加或删除文字。"},
+        {"phraseId": "p05", "targetText": "犹大支派的狮子，", "sourceWordIds": ["block-59-w0063", "block-59-w0064", "block-59-w0065", "block-59-w0066", "block-59-w0067", "block-59-w0068", "block-59-w0069"], "instruct": "坚定而有宣告感地朗读，重读‘犹大支派的狮子’；不增加或删除文字。"}
+      ]
+    },
+    {
+      "sourceUnitId": "block-59-u006",
+      "phrases": [
+        {"phraseId": "p01", "targetText": "而他的吼声", "sourceWordIds": ["block-59-w0070", "block-59-w0071", "block-59-w0072"], "instruct": "坚定朗读，重读‘吼声’，自然承接上一句；不增加或删除文字。"},
+        {"phraseId": "p02", "targetText": "压倒了", "sourceWordIds": ["block-59-w0073"], "instruct": "短促有力地朗读，强烈重读‘压倒了’；不增加或删除文字。"},
+        {"phraseId": "p03", "targetText": "撒但的吼声。", "sourceWordIds": ["block-59-w0074", "block-59-w0075"], "instruct": "以得胜的结论语气朗读，重读‘撒但’和‘吼声’并自然收句；不增加或删除文字。"}
+      ]
+    }
+  ]
+}

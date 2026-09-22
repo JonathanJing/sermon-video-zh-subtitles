@@ -1,0 +1,85 @@
+{
+  "schemaVersion": "sermon-demo-content-v1",
+  "locale": "vi",
+  "poc": true,
+  "series": "Khải Huyền: Sự an ủi và hy vọng Chúa Giê-su mang đến",
+  "title": "Lời hứa của Chúa Giê-su",
+  "speaker": "Eric Geiger · cloned voice POC",
+  "scripture": "Revelation 4–5",
+  "date": "20 tháng 9 năm 2026",
+  "summary": "Điều tưởng là thất bại thật ra là chiến thắng của Chúa Giê-su; tiếng gầm của Sư tử Giu-đa lấn át kẻ thù.",
+  "durationSeconds": 38.8,
+  "translationStatus": "machine_review_pass_human_review_pending",
+  "audioStatus": "candidate",
+  "machineScreening": {
+    "status": "requires_review",
+    "model": "Qwen/Qwen3-ASR-0.6B",
+    "coverage": 1
+  },
+  "humanReview": {
+    "status": "pending",
+    "humanApproval": false,
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "fullPlayback": "pending"
+  },
+  "captionTiming": "estimated_proportional_to_target_text_poc",
+  "cues": [
+    {
+      "start": 0.0,
+      "end": 11.758,
+      "text": "Điều tưởng như là một thất bại thực ra lại là Giê-su đang chiến thắng kẻ thù của chúng ta, vì Người là Đấng chiến thắng tất cả.",
+      "source": "What looked to be like a loss was Jesus really conquering our enemy, because he’s the one who conquers over everything.",
+      "sourceUnitId": "block-59-u001"
+    },
+    {
+      "start": 11.758,
+      "end": 14.227,
+      "text": "Người chiến thắng tất cả.",
+      "source": "He conquers over everything.",
+      "sourceUnitId": "block-59-u002"
+    },
+    {
+      "start": 14.227,
+      "end": 18.577,
+      "text": "Bạn có một kẻ thù là một con sư tử đang gầm rống.",
+      "source": "You have an enemy who is a roaring lion.",
+      "sourceUnitId": "block-59-u003"
+    },
+    {
+      "start": 18.577,
+      "end": 22.81,
+      "text": "Đang tìm cách hủy diệt bạn và nuốt chửng bạn.",
+      "source": "Who's seeking to destroy you and devour you.",
+      "sourceUnitId": "block-59-u004"
+    },
+    {
+      "start": 22.81,
+      "end": 33.98,
+      "text": "Nhưng tuần tới, khi đến với Khải Huyền chương 4 và 5, chúng ta sẽ thấy rằng Giê-su được gọi là Sư tử của chi phái Giu-đa,",
+      "source": "But we're going to see next week when we get to Revelation chapter 4 and 5 that Jesus is called the Lion of the tribe of Judah,",
+      "sourceUnitId": "block-59-u005"
+    },
+    {
+      "start": 33.98,
+      "end": 38.8,
+      "text": "và tiếng gầm của Người lấn át tiếng gầm của Sa-tan.",
+      "source": "and His roar overwhelms Satan's roar.",
+      "sourceUnitId": "block-59-u006"
+    }
+  ],
+  "outline": [
+    {
+      "title": "Điều tưởng là thất bại",
+      "body": "Chúa Giê-su chiến thắng kẻ thù và chiến thắng tất cả."
+    },
+    {
+      "title": "Kẻ thù gầm rống",
+      "body": "Kẻ thù tìm cách hủy diệt và nuốt chửng như sư tử gầm rống."
+    },
+    {
+      "title": "Sư tử Giu-đa",
+      "body": "Tiếng gầm của Chúa Giê-su lấn át tiếng gầm của Sa-tan."
+    }
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "schemaVersion": "sermon-target-language-candidate-v2",
+  "sourceLocale": "en",
+  "targetLocale": "vi",
+  "englishSourcePackageJsonSha256": "d66a7051573ea7fbb21b7edff8c7479fa7174f58149fee1e8877067ef773457e",
+  "anchorManifestSha256": "8b1e920e8fb1477a090a22db4422db2c28f9d88746a3236366e412a132fb31cd",
+  "translationPolicySha256": "93d732e5ce560e42aafeacaa603c62f733eba41fb3006c3cf6637df0be10ad8c",
+  "status": "machine_review_pass_human_review_pending",
+  "releaseEligible": false,
+  "generation": {
+    "translator": {
+      "model": "gpt-6-astra",
+      "promptVersion": "sermon-fragment-translation-poc-v1",
+      "requestIds": [
+        "resp_0bb8559f498f66dc006ab1c6b36bf487d08180f26136f66d26"
+      ]
+    },
+    "reviewer": {
+      "model": "gpt-6-astra",
+      "promptVersion": "sermon-fragment-semantic-judge-poc-v1",
+      "requestIds": [
+        "resp_09da0ad96a146285006ab1c6cf10d487d0829fb07340d8a372"
+      ]
+    }
+  },
+  "groups": [
+    {
+      "translationGroupId": "2026-09-20-lion-of-judah-vi",
+      "sourceUnitIds": [
+        "block-59-u001",
+        "block-59-u002",
+        "block-59-u003",
+        "block-59-u004",
+        "block-59-u005",
+        "block-59-u006"
+      ],
+      "targetUtterances": [
+        "Điều tưởng như là một thất bại thực ra lại là Giê-su đang chiến thắng kẻ thù của chúng ta, vì Người là Đấng chiến thắng tất cả.",
+        "Người chiến thắng tất cả.",
+        "Bạn có một kẻ thù là một con sư tử đang gầm rống.",
+        "Đang tìm cách hủy diệt bạn và nuốt chửng bạn.",
+        "Nhưng tuần tới, khi đến với Khải Huyền chương 4 và 5, chúng ta sẽ thấy rằng Giê-su được gọi là Sư tử của chi phái Giu-đa,",
+        "và tiếng gầm của Người lấn át tiếng gầm của Sa-tan."
+      ],
+      "targetText": "Điều tưởng như là một thất bại thực ra lại là Giê-su đang chiến thắng kẻ thù của chúng ta, vì Người là Đấng chiến thắng tất cả. Người chiến thắng tất cả. Bạn có một kẻ thù là một con sư tử đang gầm rống. Đang tìm cách hủy diệt bạn và nuốt chửng bạn. Nhưng tuần tới, khi đến với Khải Huyền chương 4 và 5, chúng ta sẽ thấy rằng Giê-su được gọi là Sư tử của chi phái Giu-đa, và tiếng gầm của Người lấn át tiếng gầm của Sa-tan.",
+      "coverage": [
+        {
+          "sourceUnitId": "block-59-u001",
+          "targetText": "Điều tưởng như là một thất bại thực ra lại là Giê-su đang chiến thắng kẻ thù của chúng ta, vì Người là Đấng chiến thắng tất cả."
+        },
+        {
+          "sourceUnitId": "block-59-u002",
+          "targetText": "Người chiến thắng tất cả."
+        },
+        {
+          "sourceUnitId": "block-59-u003",
+          "targetText": "Bạn có một kẻ thù là một con sư tử đang gầm rống."
+        },
+        {
+          "sourceUnitId": "block-59-u004",
+          "targetText": "Đang tìm cách hủy diệt bạn và nuốt chửng bạn."
+        },
+        {
+          "sourceUnitId": "block-59-u005",
+          "targetText": "Nhưng tuần tới, khi đến với Khải Huyền chương 4 và 5, chúng ta sẽ thấy rằng Giê-su được gọi là Sư tử của chi phái Giu-đa,"
+        },
+        {
+          "sourceUnitId": "block-59-u006",
+          "targetText": "và tiếng gầm của Người lấn át tiếng gầm của Sa-tan."
+        }
+      ],
+      "semanticReview": {
+        "status": "pass",
+        "checks": {
+          "completeMeaning": "pass",
+          "negationsNumbersNames": "pass",
+          "quotationAttribution": "pass",
+          "noAddedMeaning": "pass"
+        },
+        "evidence": "Independent GPT semantic review completed for all six source units.",
+        "uncertainty": [],
+        "issues": []
+      },
+      "languageReview": {
+        "status": "pass",
+        "pluginId": "gpt-language-review-poc-v1",
+        "policySha256": "93d732e5ce560e42aafeacaa603c62f733eba41fb3006c3cf6637df0be10ad8c",
+        "checks": [
+          {
+            "checkId": "target_language_and_natural_narration",
+            "status": "pass",
+            "evidence": "Reviewed as Vietnamese narration; human review remains pending."
+          }
+        ]
+      }
+    }
+  ],
+  "modelReview": {
+    "status": "pass",
+    "reviewedGroupIds": [
+      "2026-09-20-lion-of-judah-vi"
+    ]
+  },
+  "humanReview": {
+    "translation": "pending",
+    "reviewer": null,
+    "reviewedAt": null,
+    "reviewedGroupIds": []
+  }
+}

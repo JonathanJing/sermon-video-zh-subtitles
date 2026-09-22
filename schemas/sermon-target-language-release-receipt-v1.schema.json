@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-target-language-release-receipt-v1.schema.json",
+  "title": "Layer 4 publication verification receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "releasePackageJsonSha256", "pageId", "targetLocale",
+    "publishedAt", "catalogJsonSha256", "httpVerification",
+    "deviceAcceptance", "venueAcceptance"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "sermon-target-language-release-receipt-v1" },
+    "releasePackageJsonSha256": { "$ref": "#/$defs/sha256" },
+    "pageId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,160}$" },
+    "targetLocale": { "$ref": "#/$defs/locale" },
+    "publishedAt": { "type": "string", "format": "date-time" },
+    "catalogJsonSha256": { "$ref": "#/$defs/sha256" },
+    "httpVerification": { "$ref": "#/$defs/httpAcceptance" },
+    "deviceAcceptance": { "$ref": "#/$defs/acceptance" },
+    "venueAcceptance": { "$ref": "#/$defs/acceptance" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "locale": { "type": "string", "pattern": "^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$" },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "evidenceSha256"],
+      "properties": {
+        "status": { "enum": ["not_run", "pass", "fail"] },
+        "evidenceSha256": { "oneOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }] }
+      }
+    },
+    "httpAcceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "assets"],
+      "properties": {
+        "status": { "enum": ["pass", "fail"] },
+        "assets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "status", "sha256"],
+            "properties": {
+              "path": { "type": "string", "minLength": 1 },
+              "status": { "type": "integer", "minimum": 200, "maximum": 599 },
+              "sha256": { "$ref": "#/$defs/sha256" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

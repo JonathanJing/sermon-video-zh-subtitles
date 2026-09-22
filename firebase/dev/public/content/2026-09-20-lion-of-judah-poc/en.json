@@ -1,0 +1,85 @@
+{
+  "schemaVersion": "sermon-demo-content-v1",
+  "locale": "en",
+  "poc": true,
+  "series": "Revelation: The Comfort and Hope Jesus Brings",
+  "title": "Jesus' Promise",
+  "speaker": "Eric Geiger · original source audio",
+  "scripture": "Revelation 4–5",
+  "date": "September 20, 2026",
+  "summary": "What looked like defeat was Jesus conquering our enemy; the Lion of Judah overwhelms the enemy's roar.",
+  "durationSeconds": 40.90775,
+  "translationStatus": "source_reference_machine_boundaries_human_review_pending",
+  "audioStatus": "original_source",
+  "machineScreening": {
+    "status": "not_applicable_source_reference",
+    "model": null,
+    "coverage": 1
+  },
+  "humanReview": {
+    "status": "pending",
+    "humanApproval": false,
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "fullPlayback": "pending"
+  },
+  "captionTiming": "layer_1_source_word_timeline",
+  "cues": [
+    {
+      "start": 0.0,
+      "end": 7.32,
+      "text": "What looked to be like a loss was Jesus really conquering our enemy, because he’s the one who conquers over everything.",
+      "source": "What looked to be like a loss was Jesus really conquering our enemy, because he’s the one who conquers over everything.",
+      "sourceUnitId": "block-59-u001"
+    },
+    {
+      "start": 7.98,
+      "end": 9.77,
+      "text": "He conquers over everything.",
+      "source": "He conquers over everything.",
+      "sourceUnitId": "block-59-u002"
+    },
+    {
+      "start": 11.78,
+      "end": 16.93,
+      "text": "You have an enemy who is a roaring lion.",
+      "source": "You have an enemy who is a roaring lion.",
+      "sourceUnitId": "block-59-u003"
+    },
+    {
+      "start": 19.200001,
+      "end": 23.110001,
+      "text": "Who's seeking to destroy you and devour you.",
+      "source": "Who's seeking to destroy you and devour you.",
+      "sourceUnitId": "block-59-u004"
+    },
+    {
+      "start": 23.110001,
+      "end": 33.75,
+      "text": "But we're going to see next week when we get to Revelation chapter 4 and 5 that Jesus is called the Lion of the tribe of Judah,",
+      "source": "But we're going to see next week when we get to Revelation chapter 4 and 5 that Jesus is called the Lion of the tribe of Judah,",
+      "sourceUnitId": "block-59-u005"
+    },
+    {
+      "start": 35.200001,
+      "end": 40.880001,
+      "text": "and His roar overwhelms Satan's roar.",
+      "source": "and His roar overwhelms Satan's roar.",
+      "sourceUnitId": "block-59-u006"
+    }
+  ],
+  "outline": [
+    {
+      "title": "What looked like defeat",
+      "body": "Jesus was conquering our enemy, and he conquers over everything."
+    },
+    {
+      "title": "The roaring enemy",
+      "body": "The enemy seeks to destroy and devour like a roaring lion."
+    },
+    {
+      "title": "The Lion of Judah",
+      "body": "Jesus' roar overwhelms Satan's roar."
+    }
+  ]
+}

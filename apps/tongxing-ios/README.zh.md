@@ -42,7 +42,7 @@ xcodegen generate
 
 ## 数据与模块
 
-客户端读取 `https://ai-for-god-sermon-audio.web.app/weekly.json` 与同源 `/media/*.mp3`。契约为 `sermon-weekly-catalog-v1`，不在客户端重生成或重新审核文字与音频。
+Release build 读取 `https://ai-for-god-sermon-audio.web.app/weekly.json` 与同源 `/media/*.mp3`；Debug build 使用隔离的 `https://ai-for-god-sermon-audio-dev.web.app`。legacy 契约为 `sermon-weekly-catalog-v1`，新增 Layer 4 POC 同源读取 `/multilingual.json` 和 immutable `/releases/<page>/<locale>.json`。客户端只验证、选择并路由已发布包，不重生成、不重新审核文字与音频。
 
 | 路径 | 职责 |
 |---|---|

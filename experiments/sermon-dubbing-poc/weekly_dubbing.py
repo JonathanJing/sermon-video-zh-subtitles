@@ -15,7 +15,8 @@ import re
 import subprocess
 import sys
 
-from poc import probe, sha256, speech_units, write_json
+from poc import probe, sha256, write_json
+from sentence_synthesis_policy import SENTENCE_SYNTHESIS_POLICY, synthesis_segmentation, validate_synthesis_policy
 
 
 def read(path):
@@ -81,6 +82,14 @@ def deferred_package(job):
 
 def validate_frozen(job):
     deferred = deferred_package(job)
+    validate_synthesis_policy(job)
+    if synthesis_segmentation(job) == "sentence":
+        from apply_spoken_review import make_units
+        from spoken_text import VERSION
+        expected = make_units(job["blocks"], pronunciation_rule_version=job.get("pronunciationRuleVersion", VERSION),
+                              segmentation="sentence")
+        if job["units"] != expected:
+            raise ValueError("New synthesis job spoken text differs from the reviewed units")
     for name, item in job["inputs"].items():
         if sha256(Path(item["path"])) != item["sha256"]:
             raise ValueError(f"Saturday / voice input changed: {name}; prepare a new job")
@@ -215,17 +224,9 @@ def prepare(run, voice_run, out, week, title, speaker, scripture, authorization,
         raise ValueError("Selected checkpoint belongs to another speaker")
     if not blocks or len({b["id"] for b in blocks}) != len(blocks) or any(not b.get("en", "").strip() or not b.get("zh", "").strip() for b in blocks):
         raise ValueError("Missing / repeated bilingual reading blocks")
-    units = []
-    from spoken_text import spoken_text, VERSION
-    for block in blocks:
-        parts = speech_units([block["zh"]], "flow")
-        for i, text in enumerate(parts):
-            if len(text) > 180:
-                raise ValueError(f"Reading block {block['id']} needs a reviewed sentence break before synthesis")
-            unit = {"id": len(units), "blockId": block["id"], "text": text, "gapAfterSeconds": .45 if i == len(parts) - 1 else .18}
-            if spoken_text(text) != text:
-                unit["spokenText"] = spoken_text(text)
-            units.append(unit)
+    from apply_spoken_review import make_units
+    from spoken_text import VERSION
+    units = make_units(blocks, pronunciation_rule_version=VERSION, segmentation="sentence")
     # Preserve historical failure receipts. A local candidate can be evaluated,
     # but the existing Saturday completion criterion cannot be bypassed.
     generation = run / "agent-generation-report.json"
@@ -241,6 +242,7 @@ def prepare(run, voice_run, out, week, title, speaker, scripture, authorization,
             "publicationRecheck": "required_before_sunday_release", "translationModel": read(paths["readingQuality"]).get("model"), "translationEffort": read(paths["readingQuality"]).get("reasoningEffort")},
         "blocks": [{"id": b["id"], "en": b["en"], "zh": b["zh"]} for b in blocks], "units": units,
         "timingPolicy": "natural speech; measured English anchors only; never use reading-layout timestamps",
+        "synthesisPolicy": SENTENCE_SYNTHESIS_POLICY,
         "pronunciationRuleVersion": VERSION, "status": "prepared_for_audio_generation", "humanAudioReview": "pending"}
     if defer_pdfs:
         job.update(schemaVersion="sermon-weekly-dubbing-job-v2", pdfPackagePolicy="deferred_until_release")

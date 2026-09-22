@@ -653,7 +653,9 @@ def _render_and_finish(args, work, job, execution, stage, command, before, join_
                     atomic_json(remote_state, {**saved, "status": "output_reconciled", "reconciledAt": utc_now()})
             if not (work / "render/report.json").exists():
                 ssh("mkdir -p " + shlex.quote(remote), transfer=True)
-                command([*scp_options, str(work / "job.json"), str(HERE / "render_weekly_audio.py"), str(HERE / "retry_weekly_unit.py"), str(HERE / "run_qwen_training_smoke.py"), args.host + ":" + remote + "/"], transfer=True, check=True)
+                command([*scp_options, str(work / "job.json"), str(HERE / "render_weekly_audio.py"),
+                         str(HERE / "sentence_synthesis_policy.py"), str(HERE / "retry_weekly_unit.py"),
+                         str(HERE / "run_qwen_training_smoke.py"), args.host + ":" + remote + "/"], transfer=True, check=True)
                 if (work / "render/identity.json").exists():
                     exists = command([*ssh_options, "test -d " + shlex.quote(remote + "/render")], transfer=True)
                     if exists.returncode == 1:

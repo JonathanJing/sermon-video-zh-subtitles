@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "sermon-target-language-audio-package-v1",
+  "packageId": "2026-09-20-lion-of-judah-zh-Hans-poc-v1",
+  "englishSourcePackageJsonSha256": "d66a7051573ea7fbb21b7edff8c7479fa7174f58149fee1e8877067ef773457e",
+  "targetLanguageCandidateJsonSha256": "69a29d0529c1ce1e2444e96b773f53b9a4f8ee28da7ddfa2e93599a75b4d735f",
+  "targetLanguageSpeechJobJsonSha256": "c648974c9d084b501b7fedfde2a02d7d44d6ecfbbdadcfc9af8601e047046a32",
+  "targetLocale": "zh-Hans",
+  "status": "candidate",
+  "ratePolicy": "natural_no_time_stretch",
+  "voice": {
+    "provider": "Qwen",
+    "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base SFT",
+    "checkpointSha256": "75d28ce6022b3df3a72df3dd6dbc01e53f584d685770d60ea04b341920968c9a",
+    "targetLocaleCapability": "reviewed",
+    "authorizationStatus": "authorized"
+  },
+  "units": [
+    {
+      "textGroupId": "2026-09-20-lion-of-judah-zh-Hans",
+      "targetTextSha256": "cdb163ca9dc2a31e93e16239fe833394fdae0084bbb953ee9330228be8fd3ce3",
+      "audio": {
+        "path": "audio.mp3",
+        "sha256": "925c6304a54e7e0ba48f95041df55ac765db56fd562f57b88b6e3803bd38fa54"
+      },
+      "durationSeconds": 24.08
+    }
+  ],
+  "track": {
+    "path": "audio.mp3",
+    "sha256": "925c6304a54e7e0ba48f95041df55ac765db56fd562f57b88b6e3803bd38fa54"
+  },
+  "captions": {
+    "path": "captions.vtt",
+    "sha256": "fc9d75551e30dd636bcaedba785cd08cdf01f8cdb556ddea32f52b09a7533e28"
+  },
+  "schedule": {
+    "path": "schedule.json",
+    "sha256": "38ed5a0d892aae355dd4d1f6b149ad429e9b7aa4b74a2c71dcecff2cb8c8799e",
+    "jsonSha256": "5b7ca7fbc4d4b9a65054a79ede0e62494c68c04d8314448d28d03fea45316bda"
+  },
+  "machineScreening": {
+    "status": "pass",
+    "model": "Qwen/Qwen3-ASR-0.6B",
+    "coverage": 1
+  },
+  "humanReview": {
+    "status": "pending",
+    "humanApproval": false,
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "fullPlayback": "pending"
+  },
+  "issues": [
+    "human_listening_pending",
+    "estimated_caption_timing_poc"
+  ],
+  "downstreamInvalidationKey": "cceefb3ab69dba15cf2311ddf981d922b7e94de6edadd23a9c4c6e4cba4222e3"
+}

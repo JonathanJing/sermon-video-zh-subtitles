@@ -1,0 +1,355 @@
+{
+  "schemaVersion": "sermon-weekly-catalog-v1",
+  "defaultWeekId": "2026-09-20-lion-of-judah-poc",
+  "weeks": [
+    {
+      "id": "2026-09-20-lion-of-judah-poc",
+      "date": "2026-09-20",
+      "sourceId": "2026-09-20-resi-shadow-fragment",
+      "sourceUrl": "https://ai-for-god-sermon-audio-dev.web.app/",
+      "title": "[DEV POC] 耶稣的应许",
+      "speaker": "Eric Geiger · cloned voice POC",
+      "scripture": "Revelation 4–5",
+      "number": "POC",
+      "series": "启示录：耶稣带来的安慰与盼望",
+      "centralMessage": "片段：看似失败的十字架其实是耶稣得胜；犹大支派的狮子压倒仇敌的吼声。",
+      "summary": "六个英文源句的四语言机器翻译与讲员克隆音频；所有语言均待人工审核，越南语 ASR 低于门线。",
+      "contentReview": "machine_review_pass_human_review_pending",
+      "audioStatus": "candidate",
+      "audioNotice": "机器生成的讲员克隆音色；非原始录音、非正式配音。",
+      "humanApproval": false,
+      "outline": [
+        {
+          "title": "看似失败",
+          "points": [
+            "耶稣正在战胜我们的仇敌，他胜过一切。"
+          ]
+        },
+        {
+          "title": "吼叫的仇敌",
+          "points": [
+            "仇敌如吼叫的狮子，企图毁灭并吞吃人。"
+          ]
+        },
+        {
+          "title": "犹大支派的狮子",
+          "points": [
+            "耶稣的吼声压倒撒但的吼声。"
+          ]
+        }
+      ],
+      "tracks": [
+        {
+          "id": "2026-09-20-lion-of-judah-poc-en",
+          "locale": "en",
+          "label": "Jesus' Promise · English source",
+          "voiceLabel": "Eric Geiger · original source audio",
+          "audioUrl": "/media/2026-09-20-lion-of-judah-poc/en.mp3",
+          "file": "en.mp3",
+          "sha256": "95d9117fa1d8706bea22bbfbefd7ff6852f264eaf32a8c4a8027ff22aab94d33",
+          "durationSeconds": 40.90775,
+          "cues": [
+            {
+              "unitId": 0,
+              "blockId": "block-59-u001",
+              "start": 0.0,
+              "end": 7.32,
+              "text": "What looked to be like a loss was Jesus really conquering our enemy, because he’s the one who conquers over everything."
+            },
+            {
+              "unitId": 1,
+              "blockId": "block-59-u002",
+              "start": 7.98,
+              "end": 9.77,
+              "text": "He conquers over everything."
+            },
+            {
+              "unitId": 2,
+              "blockId": "block-59-u003",
+              "start": 11.78,
+              "end": 16.93,
+              "text": "You have an enemy who is a roaring lion."
+            },
+            {
+              "unitId": 3,
+              "blockId": "block-59-u004",
+              "start": 19.200001,
+              "end": 23.110001,
+              "text": "Who's seeking to destroy you and devour you."
+            },
+            {
+              "unitId": 4,
+              "blockId": "block-59-u005",
+              "start": 23.110001,
+              "end": 33.75,
+              "text": "But we're going to see next week when we get to Revelation chapter 4 and 5 that Jesus is called the Lion of the tribe of Judah,"
+            },
+            {
+              "unitId": 5,
+              "blockId": "block-59-u006",
+              "start": 35.200001,
+              "end": 40.880001,
+              "text": "and His roar overwhelms Satan's roar."
+            }
+          ],
+          "subtitleTiming": "layer_1_source_word_timeline",
+          "scope": "english_source_reference_poc",
+          "voiceSampleReview": "not_applicable_original_source",
+          "machineScreening": {
+            "status": "not_applicable_source_reference",
+            "model": null,
+            "coverage": 1
+          }
+        },
+        {
+          "id": "2026-09-20-lion-of-judah-poc-zh-Hans",
+          "locale": "zh-Hans",
+          "label": "耶稣的应许 · zh-Hans POC",
+          "voiceLabel": "Eric Geiger cloned voice · POC",
+          "audioUrl": "/media/2026-09-20-lion-of-judah-poc/zh-Hans.mp3",
+          "file": "zh-Hans.mp3",
+          "sha256": "925c6304a54e7e0ba48f95041df55ac765db56fd562f57b88b6e3803bd38fa54",
+          "durationSeconds": 24.08,
+          "cues": [
+            {
+              "unitId": 0,
+              "blockId": "block-59-u001",
+              "start": 0.0,
+              "end": 6.734,
+              "text": "看似失败的事，其实是耶稣在战胜我们的仇敌，因为他是那位胜过一切的。"
+            },
+            {
+              "unitId": 1,
+              "blockId": "block-59-u002",
+              "start": 6.734,
+              "end": 7.958,
+              "text": "他胜过一切。"
+            },
+            {
+              "unitId": 2,
+              "blockId": "block-59-u003",
+              "start": 7.958,
+              "end": 11.223,
+              "text": "你有一个仇敌，是一头吼叫的狮子。"
+            },
+            {
+              "unitId": 3,
+              "blockId": "block-59-u004",
+              "start": 11.223,
+              "end": 13.468,
+              "text": "正伺机毁灭你，吞吃你。"
+            },
+            {
+              "unitId": 4,
+              "blockId": "block-59-u005",
+              "start": 13.468,
+              "end": 21.223,
+              "text": "但下周我们讲到《启示录》第4章和第5章时，就会看到耶稣被称为犹大支派的狮子，"
+            },
+            {
+              "unitId": 5,
+              "blockId": "block-59-u006",
+              "start": 21.223,
+              "end": 24.08,
+              "text": "而他的吼声压倒了撒但的吼声。"
+            }
+          ],
+          "subtitleTiming": "estimated_proportional_to_target_text_poc",
+          "scope": "machine_poc_not_production",
+          "voiceSampleReview": "pending",
+          "machineScreening": {
+            "status": "pass",
+            "model": "Qwen/Qwen3-ASR-0.6B",
+            "coverage": 1
+          }
+        },
+        {
+          "id": "2026-09-20-lion-of-judah-poc-ko",
+          "locale": "ko",
+          "label": "예수님의 약속 · ko POC",
+          "voiceLabel": "Eric Geiger cloned voice · POC",
+          "audioUrl": "/media/2026-09-20-lion-of-judah-poc/ko.mp3",
+          "file": "ko.mp3",
+          "sha256": "ff02082b5799d1bcdcff0ad151e3c3f7e1794eb3dd42229bb97dd09fa77a5656",
+          "durationSeconds": 28.96,
+          "cues": [
+            {
+              "unitId": 0,
+              "blockId": "block-59-u001",
+              "start": 0.0,
+              "end": 8.322,
+              "text": "패배처럼 보였던 것은 사실 예수가 우리의 원수를 이기고 있는 것이었습니다. 그는 모든 것을 이기는 분이기 때문입니다."
+            },
+            {
+              "unitId": 1,
+              "blockId": "block-59-u002",
+              "start": 8.322,
+              "end": 10.153,
+              "text": "그는 모든 것을 이깁니다."
+            },
+            {
+              "unitId": 2,
+              "blockId": "block-59-u003",
+              "start": 10.153,
+              "end": 13.981,
+              "text": "여러분에게는 으르렁거리는 사자인 원수가 있습니다."
+            },
+            {
+              "unitId": 3,
+              "blockId": "block-59-u004",
+              "start": 13.981,
+              "end": 17.476,
+              "text": "여러분을 멸망시키고 집어삼키려 하고 있습니다."
+            },
+            {
+              "unitId": 4,
+              "blockId": "block-59-u005",
+              "start": 17.476,
+              "end": 25.631,
+              "text": "하지만 다음 주에 요한계시록 4장과 5장을 살펴보면, 예수가 유다 지파의 사자라고 불린다는 것을 알게 될 것입니다."
+            },
+            {
+              "unitId": 5,
+              "blockId": "block-59-u006",
+              "start": 25.631,
+              "end": 28.96,
+              "text": "그리고 그의 포효는 사탄의 포효를 압도합니다."
+            }
+          ],
+          "subtitleTiming": "estimated_proportional_to_target_text_poc",
+          "scope": "machine_poc_not_production",
+          "voiceSampleReview": "pending",
+          "machineScreening": {
+            "status": "pass",
+            "model": "Qwen/Qwen3-ASR-0.6B",
+            "coverage": 1
+          }
+        },
+        {
+          "id": "2026-09-20-lion-of-judah-poc-es",
+          "locale": "es",
+          "label": "La promesa de Jesús · es POC",
+          "voiceLabel": "Eric Geiger cloned voice · POC",
+          "audioUrl": "/media/2026-09-20-lion-of-judah-poc/es.mp3",
+          "file": "es.mp3",
+          "sha256": "b4910d9f885b6c6fd91647b39cb51dd30ff42decaafb0e1b2ed41bf63a72517c",
+          "durationSeconds": 22.48,
+          "cues": [
+            {
+              "unitId": 0,
+              "blockId": "block-59-u001",
+              "start": 0.0,
+              "end": 6.524,
+              "text": "Lo que parecía una derrota era en realidad Jesús venciendo a nuestro enemigo, porque él es quien lo vence todo."
+            },
+            {
+              "unitId": 1,
+              "blockId": "block-59-u002",
+              "start": 6.524,
+              "end": 7.517,
+              "text": "Él lo vence todo."
+            },
+            {
+              "unitId": 2,
+              "blockId": "block-59-u003",
+              "start": 7.517,
+              "end": 9.999,
+              "text": "Tienes un enemigo que es un león rugiente."
+            },
+            {
+              "unitId": 3,
+              "blockId": "block-59-u004",
+              "start": 9.999,
+              "end": 12.056,
+              "text": "Que busca destruirte y devorarte."
+            },
+            {
+              "unitId": 4,
+              "blockId": "block-59-u005",
+              "start": 12.056,
+              "end": 19.998,
+              "text": "Pero la próxima semana, cuando lleguemos a los capítulos 4 y 5 de Apocalipsis, veremos que a Jesús se le llama el León de la tribu de Judá,"
+            },
+            {
+              "unitId": 5,
+              "blockId": "block-59-u006",
+              "start": 19.998,
+              "end": 22.48,
+              "text": "y su rugido se impone al rugido de Satanás."
+            }
+          ],
+          "subtitleTiming": "estimated_proportional_to_target_text_poc",
+          "scope": "machine_poc_not_production",
+          "voiceSampleReview": "pending",
+          "machineScreening": {
+            "status": "pass",
+            "model": "Qwen/Qwen3-ASR-0.6B",
+            "coverage": 1
+          }
+        },
+        {
+          "id": "2026-09-20-lion-of-judah-poc-vi",
+          "locale": "vi",
+          "label": "Lời hứa của Chúa Giê-su · vi POC",
+          "voiceLabel": "Eric Geiger cloned voice · POC",
+          "audioUrl": "/media/2026-09-20-lion-of-judah-poc/vi.mp3",
+          "file": "vi.mp3",
+          "sha256": "627a57e3eb5e51a3aed66c5107c88706a8b35e4de175b4dbf37097a2f70af10a",
+          "durationSeconds": 38.8,
+          "cues": [
+            {
+              "unitId": 0,
+              "blockId": "block-59-u001",
+              "start": 0.0,
+              "end": 11.758,
+              "text": "Điều tưởng như là một thất bại thực ra lại là Giê-su đang chiến thắng kẻ thù của chúng ta, vì Người là Đấng chiến thắng tất cả."
+            },
+            {
+              "unitId": 1,
+              "blockId": "block-59-u002",
+              "start": 11.758,
+              "end": 14.227,
+              "text": "Người chiến thắng tất cả."
+            },
+            {
+              "unitId": 2,
+              "blockId": "block-59-u003",
+              "start": 14.227,
+              "end": 18.577,
+              "text": "Bạn có một kẻ thù là một con sư tử đang gầm rống."
+            },
+            {
+              "unitId": 3,
+              "blockId": "block-59-u004",
+              "start": 18.577,
+              "end": 22.81,
+              "text": "Đang tìm cách hủy diệt bạn và nuốt chửng bạn."
+            },
+            {
+              "unitId": 4,
+              "blockId": "block-59-u005",
+              "start": 22.81,
+              "end": 33.98,
+              "text": "Nhưng tuần tới, khi đến với Khải Huyền chương 4 và 5, chúng ta sẽ thấy rằng Giê-su được gọi là Sư tử của chi phái Giu-đa,"
+            },
+            {
+              "unitId": 5,
+              "blockId": "block-59-u006",
+              "start": 33.98,
+              "end": 38.8,
+              "text": "và tiếng gầm của Người lấn át tiếng gầm của Sa-tan."
+            }
+          ],
+          "subtitleTiming": "estimated_proportional_to_target_text_poc",
+          "scope": "machine_poc_not_production",
+          "voiceSampleReview": "pending",
+          "machineScreening": {
+            "status": "requires_review",
+            "model": "Qwen/Qwen3-ASR-0.6B",
+            "coverage": 1
+          }
+        }
+      ]
+    }
+  ]
+}

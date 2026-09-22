@@ -474,6 +474,7 @@
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				TONGXING_CONTENT_ORIGIN = "https://ai-for-god-sermon-audio-dev.web.app";
 			};
 			name = Debug;
 		};
@@ -706,6 +707,7 @@
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				TONGXING_CONTENT_ORIGIN = "https://ai-for-god-sermon-audio.web.app";
 			};
 			name = Release;
 		};

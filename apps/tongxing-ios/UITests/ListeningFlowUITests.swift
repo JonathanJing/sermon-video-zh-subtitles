@@ -5,6 +5,22 @@ import XCTest
 /// these tests do not establish real-network, audible, lock-screen, or venue QA.
 @MainActor
 final class ListeningFlowUITests: XCTestCase {
+    func testTargetLanguageSheetShowsOnlyPublishedCapabilities() throws {
+        let app = launchFixture()
+        let chooser = app.buttons["choose-content-language"]
+        XCTAssertTrue(chooser.isHittable)
+        XCTAssertTrue(chooser.value as? String == "简体中文，Text only" || chooser.value as? String == "简体中文，仅文字")
+        chooser.tap()
+        let chinese = app.buttons["content-language-zh-Hans"]
+        let korean = app.buttons["content-language-ko"]
+        XCTAssertTrue(chinese.waitForExistence(timeout: 5))
+        XCTAssertTrue(korean.exists)
+        XCTAssertEqual(chinese.value as? String, "已选择")
+        XCTAssertTrue(korean.label.contains("한국어"))
+        XCTAssertTrue(korean.label.contains("仅文字"))
+        screenshot("target-language-sheet-published-capabilities", app: app)
+    }
+
     func testUnavailableAlignmentExplainsReason() throws {
         let app = launchFixture()
         let alignment = app.buttons["align-live-audio"]

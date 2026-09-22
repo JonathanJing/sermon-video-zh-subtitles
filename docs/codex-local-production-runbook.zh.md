@@ -28,6 +28,12 @@
 
 当前只有 Layer 1 producer 已进入生产 shadow；Layer 2–4 通用 producer 仍在迁移。新周次可以继续完成双 PDF 或 legacy 中文产物，但没有对应 canonical package 时必须报告具体范围，不得报告 `four_layer_release=complete`。一种 locale 失败不自动阻塞或批准其他 locale。
 
+### 本周中文配音策略（2026-09-27 起的新 job）
+
+用户听审 2026-09-20 的 POC 后，选择整句自然语速版，否决 40.67 秒的句内多段拼接版。新的 legacy 中文配音 job 绑定 `complete_chinese_sentence_natural_pace_v1`：按完整中文句子或已审稿中的完整分句建立 TTS 单元，每单元一次合成；禁止按英文词停顿把中文句内词组拆开，不做为了凑英文总时长的变速或时间拉伸。句间保留既有短停顿；英文原声的词级停顿只作为 Layer 1 参考和后续对齐证据，不直接成为中文合成切点。过长句子须回到文字审核选择自然断句，不能静默按词长切割。
+
+这项策略由 `weekly_dubbing.py` 准备新 job、`render_weekly_audio.py` 渲染前校验，并随 job hash 冻结；旧 job 不迁移、不重生成。同步预算、人耳全文听审、ASR 完整性、经文／术语和发布门禁保持独立：自然度较好不等于 1 倍速同视频同步通过。若整句方案不满足同步预算，先保留失败证据并审查译文、句界或语音候选，不能退回句内碎片拼接来制造接近的总时长。此为当前可运行的 `zh-Hans` legacy adapter 策略；其他语言的正式 Layer 3 producer 仍未完成，不因本项变更宣称多语言周更已可发布。
+
 ## MFA 阅读对齐
 
 新 reading 生产默认使用 MFA 词/音素对齐，替代字符比例估时。所有本地模型的目标路由为 **MacBook 优先、DGX Spark 备用**；MFA／G2P 优先使用本机独立环境，本机健康时不联系 Spark。备用默认启用，可用 `MFA_SPARK_FALLBACK=0` 或 `--no-mfa-spark-fallback` 禁用，远端使用独立的 `MFA_SPARK_*` 模型路径。远程可经 Tailscale 的 Mac mini relay。配置、ARM64 备用环境限制与缓存边界见 [MFA 生产接入](mfa-production.zh.md)。

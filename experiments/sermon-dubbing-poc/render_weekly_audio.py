@@ -19,7 +19,9 @@ def render_identity(job_path, checkpoint_hash, batch_size=4, device="cuda:0"):
     if device not in ("mps", "cuda:0"):
         raise ValueError("Unsupported render device")
     return {"executionDevice": device, "precision": "float32" if device == "mps" else "bfloat16", "jobSha256": sha256(job_path), "checkpointSha256": checkpoint_hash, "seed": 42, "seedPolicy": "42 plus fixed batch start index", "batchSize": batch_size,
-        "rendererSha256": sha256(Path(__file__)), "temperature": .7, "repetitionPenalty": 1.05, "maxNewTokens": 768}
+        "rendererSha256": sha256(Path(__file__)),
+        "synthesisPolicyValidatorSha256": sha256(Path(__file__).with_name("sentence_synthesis_policy.py")),
+        "temperature": .7, "repetitionPenalty": 1.05, "maxNewTokens": 768}
 
 
 def main():
@@ -33,6 +35,8 @@ def main():
     job = json.loads(args.job.read_text())
     if job.get("schemaVersion") != "sermon-weekly-dubbing-job-v1" or not job.get("units"):
         raise ValueError("Invalid job")
+    from sentence_synthesis_policy import validate_synthesis_policy
+    validate_synthesis_policy(job)
     checkpoint_hash = sha256(args.checkpoint / "model.safetensors")
     if checkpoint_hash != job["voice"]["checkpointSha256"]:
         raise ValueError("Wrong speaker checkpoint")
