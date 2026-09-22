@@ -76,13 +76,17 @@ class MultilingualDevAppTest(unittest.TestCase):
                 "focus-adaptive-pauses", "long-adaptive-pauses", "source-acoustic-pauses",
             ],
         )
-        self.assertEqual(release["defaultAudioVariantId"], "source-acoustic-pauses")
+        self.assertEqual(release["defaultAudioVariantId"], "source-pauses")
         self.assertIn("待人工校对", release["contentStatusLabel"])
         self.assertIn("待人工听审", release["audioStatusLabel"])
         expected_units = [cue["sourceUnitId"] for cue in content["cues"]]
         for variant in variants:
             self.assertRegex(variant["audioSha256"], r"^[0-9a-f]{64}$")
-            self.assertEqual(variant["humanListeningStatus"], "pending")
+            if variant["id"] == "source-acoustic-pauses":
+                self.assertEqual(variant["humanListeningStatus"], "user_reported_uncomfortable")
+                self.assertIn("formal listening review remains pending", variant["listeningFeedback"])
+            else:
+                self.assertEqual(variant["humanListeningStatus"], "pending")
             self.assertFalse(variant["productionEligible"])
             if "cues" in variant:
                 if variant.get("reviewFocus"):
@@ -108,8 +112,9 @@ class MultilingualDevAppTest(unittest.TestCase):
         self.assertEqual(long_sample["internalSchedule"]["sentenceCount"], 6)
         self.assertEqual([cue["text"] for cue in long_sample["cues"]], [cue["text"] for cue in content["cues"]])
         self.assertEqual(long_sample["internalSchedule"]["ratePolicy"], "measured_natural_phrase_audio_no_time_stretch")
-        self.assertEqual(long_sample["supersededBy"], "source-acoustic-pauses")
+        self.assertEqual(long_sample["supersededBy"], "source-pauses")
         acoustic = next(variant for variant in variants if variant["id"] == "source-acoustic-pauses")
+        self.assertEqual(acoustic["supersededBy"], "source-pauses")
         self.assertEqual(len(acoustic["cues"]), 6)
         self.assertEqual(acoustic["internalSchedule"]["phraseCount"], 15)
         self.assertEqual(acoustic["internalSchedule"]["acousticSupportedInternalPauseCount"], 9)

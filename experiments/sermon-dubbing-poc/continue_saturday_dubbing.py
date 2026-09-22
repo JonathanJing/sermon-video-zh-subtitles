@@ -35,11 +35,13 @@ from poc import ROOT, probe, sha256, write_json
 sys.path.insert(0, str(ROOT))
 from scripts.sermon_execution_harness import WorkAlreadyRunning, bounded_process, work_lock
 from weekly_dubbing import PDF_PACKAGE_KEYS, prepare, read, resolve_approved_timeline, timecode, validate_frozen, source_id_from_run, deferred_package
+from sentence_synthesis_policy import SENTENCE_SYNTHESIS_POLICY
 
 HERE = Path(__file__).resolve().parent
 SCHEMA = "sermon-saturday-dubbing-bridge-v1"
 REPORT_SCHEMA = "sermon-saturday-dubbing-bridge-report-v1"
 REMOTE_ROOT = "/home/achillesjing/dgx-spark-benchmark/results/sermon-"
+SENTENCE_POLICY_START_WEEK = "2026-09-27"
 CANDIDATE_FILES = (
     "render/report.json", "render/chinese.raw.wav", "audio/library.json",
     "audio/zh-natural.mp3", "assembly-report.json", "audio/asr-screening.json",
@@ -304,6 +306,8 @@ def plan_candidate(config, config_path, week, settings, supervisor_report, run, 
     fingerprint_inputs = {"week": week, "sourceId": source_id, "inputs": inputs,
         "metadata": {key: metadata[key] for key in ["speaker", "title", "scripture"]},
         "voiceInputSha256": training["inputManifestSha256"], "checkpointSha256": training["checkpointSha256"], "authorization": authorization}
+    if week >= SENTENCE_POLICY_START_WEEK:
+        fingerprint_inputs["synthesisPolicy"] = SENTENCE_SYNTHESIS_POLICY
     fingerprint = identity(fingerprint_inputs)
     output_root = path_from(config.get("outputRoot", "artifacts/sermon-dubbing/weekly-bridge"), root)
     source_root = output_root / week / route / source_id
@@ -318,6 +322,10 @@ def plan_candidate(config, config_path, week, settings, supervisor_report, run, 
     if (work / "job.json").exists():
         job = read(work / "job.json")
         validate_frozen(job)
+        if week >= SENTENCE_POLICY_START_WEEK and job.get("synthesisPolicy") != SENTENCE_SYNTHESIS_POLICY:
+            return waiting(route, "waiting_synthesis_policy",
+                "An existing weekly job uses the older segmentation; preserve it and select a new sentence-policy job.",
+                "prepare_new_sentence_job", work=str(work), sourceId=source_id), None
         if (job.get("sourceRoute") == "same_video") != (route == "same_video"):
             raise ValueError("Existing job belongs to another source route")
         if any(job.get(key) != expected for key, expected in {"week": week, "sourceId": source_id, "speaker": metadata["speaker"], "title": metadata["title"], "scripture": metadata["scripture"]}.items()):

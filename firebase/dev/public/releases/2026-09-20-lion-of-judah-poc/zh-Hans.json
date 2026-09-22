@@ -17,7 +17,7 @@
   "contentUrl": "/content/2026-09-20-lion-of-judah-poc/zh-Hans.json",
   "audioUrl": "/media/2026-09-20-lion-of-judah-poc/zh-Hans.mp3",
   "audioSha256": "925c6304a54e7e0ba48f95041df55ac765db56fd562f57b88b6e3803bd38fa54",
-  "defaultAudioVariantId": "source-acoustic-pauses",
+  "defaultAudioVariantId": "source-pauses",
   "audioVariants": [
     {
       "id": "current-poc",
@@ -34,10 +34,10 @@
     },
     {
       "id": "source-pauses",
-      "label": "逐句 + 英文停顿",
-      "labelEn": "Per sentence + source pauses",
-      "description": "每句独立合成，并复制英文句间停顿；未调整句内语速，方便听出自然速度与英文时间预算的差距。",
-      "descriptionEn": "Each sentence is synthesized separately with copied English inter-sentence pauses; within-sentence pace is unchanged.",
+      "label": "整句自然语速（30.43 秒）",
+      "labelEn": "Whole-sentence natural pace (30.43s)",
+      "description": "当前推荐校对版：每个完整中文句子只合成一次，不在句内拼接，不调整句内语速；仅保留英文句间停顿。比英文窗口短约 10.45 秒，尚未达到同步门线。",
+      "descriptionEn": "Current review default: one synthesis per complete Chinese sentence, no internal splice or pace change, with English inter-sentence pauses. About 10.45s shorter than the English window; sync gate not met.",
       "audioUrl": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-prosody-natural.mp3",
       "audioSha256": "ed6ed84fc24af5a795e80cdb8feebe43472066057a82b0061bd61a1811f92659",
       "durationSeconds": 30.432625,
@@ -157,7 +157,7 @@
       "id": "long-adaptive-pauses",
       "label": "六句动态停顿 · 整句显示（41.08 秒）",
       "labelEn": "Six-sentence adaptive pauses · full sentences (41.08s)",
-      "supersededBy": "source-acoustic-pauses",
+      "supersededBy": "source-pauses",
       "description": "约 41 秒长样本。Layer 3 将六句拆成 18 个内部短语，按英文短语起点动态补停顿；App 只显示六个完整译句。未压速、未裁切，7 个短语 overrun 留待下一轮校正。",
       "descriptionEn": "A 41-second sample. Layer 3 renders 18 internal phrases and fills silence to English phrase-start anchors, while the App shows only six complete translated sentences. No time stretching or trimming; seven phrase overruns remain for the next iteration.",
       "audioUrl": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-long-adaptive-pauses.mp3",
@@ -187,10 +187,11 @@
     },
     {
       "id": "source-acoustic-pauses",
-      "label": "英文原声停顿 · 整句显示（40.67 秒）",
-      "labelEn": "English acoustic pauses · full sentences (40.67s)",
-      "description": "英文原声先测出停顿候选，再决定中文短语边界；句内停顿只用有声学证据的位置，句间和句内补静音均受原声停顿长度约束。App 仍显示六个完整句子。原声停顿含待人耳确认的边界。",
-      "descriptionEn": "English source audio is measured first; Chinese phrase boundaries follow the resulting pause candidates. Silence is bounded by the source pause length, and the App keeps six complete sentences. Source pauses still need listening review.",
+      "label": "旧版：句内拼接（40.67 秒）",
+      "labelEn": "Previous: internal splices (40.67s)",
+      "supersededBy": "source-pauses",
+      "description": "仅供问题对照：15 段独立合成虽接近英文总时长，但中文句内语速和接缝已被用户听出不自然；不再作为默认版，也不能以总时长通过自然度门线。",
+      "descriptionEn": "Problem comparison only: 15 separately synthesized phrases approach the English total duration, but user listening found unnatural Chinese pacing and splices. No longer the default or naturalness-eligible.",
       "audioUrl": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-source-acoustic-pauses-v3.mp3",
       "audioSha256": "8e098c71fe34b7bd11cf80f50c111af2c9b3d0aea37a6b9cd2616a820918155c",
       "durationSeconds": 40.67,
@@ -209,7 +210,8 @@
         "pausePolicy": "source_acoustic_evidence_and_capped_silence"
       },
       "machineScreeningStatus": "pending_for_this_audio_variant",
-      "humanListeningStatus": "pending",
+      "humanListeningStatus": "user_reported_uncomfortable",
+      "listeningFeedback": "2026-09-22: user reported uncomfortable pace variation and within-sentence Chinese splices; formal listening review remains pending.",
       "productionEligible": false,
       "cues": [
         { "start": 0.0, "end": 7.7, "text": "看似失败的事，其实是耶稣在战胜我们的仇敌，因为他是那位胜过一切的。", "source": "What looked to be like a loss was Jesus really conquering our enemy, because he’s the one who conquers over everything.", "sourceUnitId": "block-59-u001" },

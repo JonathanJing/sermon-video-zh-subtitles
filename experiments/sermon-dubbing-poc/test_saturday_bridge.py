@@ -10,6 +10,7 @@ from unittest.mock import Mock, patch
 
 from continue_saturday_dubbing import CANDIDATE_FILES, INPUTS, SCHEMA, continue_saturday, inspect_same_video, source_lock
 from poc import sha256, write_json
+from sentence_synthesis_policy import SENTENCE_SYNTHESIS_POLICY
 from weekly_dubbing import prepare, resolve_approved_timeline
 
 
@@ -96,6 +97,20 @@ class SaturdayBridgeTests(unittest.TestCase):
             self.assertEqual(report["selectedRoute"], "live_archive")
             self.assertEqual(self.snapshot(root), before)
             self.assertFalse(report["humanApprovalWritten"])
+
+    def test_new_week_prepares_sentence_policy_job(self):
+        self.week = "2026-09-27"
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cfg, sup, _, _ = self.fixture(root)
+            def render(command, **kwargs):
+                self.write_candidate(Path(command[command.index("--work") + 1]))
+                return SimpleNamespace(returncode=0)
+            report = self.inspect(cfg, sup, execute=True, preparer=self.preparer,
+                                  runner=render, validator=lambda work: {"jobSha256": sha256(work / "job.json")})
+            self.assertEqual(report["status"], "waiting_conversation_review")
+            job = json.loads((Path(report["routes"]["live_archive"]["work"]) / "job.json").read_text())
+            self.assertEqual(job["synthesisPolicy"], SENTENCE_SYNTHESIS_POLICY)
 
     def test_supervisor_v2_manual_source_report_is_selected_prepared_and_reused_without_reapproval(self):
         from scripts.sermon_production_supervisor import json_digest
