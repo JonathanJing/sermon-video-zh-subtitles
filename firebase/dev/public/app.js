@@ -1,4 +1,5 @@
 const languageNames = {
+  en: { native: "English", code: "EN", detail: "英文原文" },
   "zh-Hans": { native: "简体中文", code: "ZH", detail: "中文（简体）" },
   ko: { native: "한국어", code: "KO", detail: "韩语" },
   es: { native: "Español", code: "ES", detail: "西班牙语" },
@@ -7,24 +8,26 @@ const languageNames = {
 
 const interfaceCopy = {
   zh: {
-    banner: "9 月 20 日证道片段 POC；机器译文与克隆音频均待人工审核。", brand: "多语言证道", languageCard: "证道语言",
+    banner: "9 月 20 日证道片段 POC；可切换英文原文和四种目标语言对照。", brand: "多语言证道", languageCard: "证道语言",
     mockTitle: "真实 Layer 2 + Layer 3 POC", mockBody: "六个英文源句分别翻译并经 GPT 语义裁判；Eric 克隆音色仅供 Dev App 测试。",
+    sourceTitle: "Layer 1 英文原文", sourceBody: "使用同一来源窗口的英文 anchor 和 Eric 原始录音，作为四种译文与克隆音频的对照。",
     tabs: ["收听", "字幕全文", "大纲"], now: "正在讲述", transcript: "字幕全文", outline: "证道大纲",
-    playerNote: "机器生成的讲员克隆音色；非原始录音、非正式配音，人工听审待完成。", release: "发布包状态", text: "文字", audio: "音频",
+    playerNote: "机器生成的讲员克隆音色；非原始录音、非正式配音，人工听审待完成。", sourcePlayerNote: "讲员原始英文录音片段；英文 anchor 仍保留其 Layer 1 机器边界审核状态。", release: "发布包状态", text: "文字", audio: "音频",
     mock: "机器审核通过 · 待人工", tone: "克隆音频 · 待听审", dialogTitle: "选择证道语言", dialogHint: "界面语言、内容语言和音频语言分别管理。",
-    dialogFoot: "四种语言均为开发 POC。越南语 ASR 筛查低于门线；正式 App 只展示人工审核并发布的资产。",
+    dialogFoot: "英文是 Layer 1 来源对照；四种目标语言均为开发 POC。越南语 ASR 筛查低于门线。",
     footer: "独立个人开发项目，与 Mariners Church 无隶属或背书关系。", switchInterface: "切换界面为英文",
-    themeDark: "深色", themeLight: "浅色", capabilities: "机器译文 · 估算字幕 · 克隆音频", loadError: "Dev 内容暂时无法载入"
+    themeDark: "深色", themeLight: "浅色", capabilities: "机器译文 · 估算字幕 · 克隆音频", sourceCapabilities: "英文原文 · 原始录音 · 来源时间轴", loadError: "Dev 内容暂时无法载入"
   },
   en: {
-    banner: "September 20 sermon-fragment POC; machine translations and cloned audio await human review.", brand: "Multilingual Sermons", languageCard: "Sermon language",
+    banner: "September 20 sermon-fragment POC; switch between the English source and four target languages.", brand: "Multilingual Sermons", languageCard: "Sermon language",
     mockTitle: "Real Layer 2 + Layer 3 POC", mockBody: "Six English source units were translated and GPT-judged; Eric's cloned voice is for Dev App testing only.",
+    sourceTitle: "Layer 1 English source", sourceBody: "The aligned English anchors and Eric's original recording provide the reference for all four translations and cloned voices.",
     tabs: ["Listen", "Transcript", "Outline"], now: "Now speaking", transcript: "Full transcript", outline: "Sermon outline",
-    playerNote: "Machine-generated speaker clone; not the original recording or production dubbing. Human listening is pending.", release: "Release package status", text: "Text", audio: "Audio",
+    playerNote: "Machine-generated speaker clone; not the original recording or production dubbing. Human listening is pending.", sourcePlayerNote: "Original English speaker audio; the English anchors retain their Layer 1 machine-boundary review state.", release: "Release package status", text: "Text", audio: "Audio",
     mock: "Machine pass · human pending", tone: "Cloned audio · listening pending", dialogTitle: "Choose sermon language", dialogHint: "Interface, content, and audio languages are managed separately.",
-    dialogFoot: "All four languages are development POCs. Vietnamese ASR screening is below threshold; production only exposes human-reviewed releases.",
+    dialogFoot: "English is the Layer 1 source reference. All four target languages are development POCs; Vietnamese remains below the ASR threshold.",
     footer: "Independent personal development project; not affiliated with or endorsed by Mariners Church.", switchInterface: "Switch interface to Chinese",
-    themeDark: "Dark", themeLight: "Light", capabilities: "Machine text · Estimated captions · Cloned audio", loadError: "Dev content is temporarily unavailable"
+    themeDark: "Dark", themeLight: "Light", capabilities: "Machine text · Estimated captions · Cloned audio", sourceCapabilities: "English source · Original audio · Source timeline", loadError: "Dev content is temporarily unavailable"
   }
 };
 
@@ -42,7 +45,7 @@ async function loadJSON(path) {
 }
 
 function routeLocale() {
-  const match = location.pathname.match(/\/pages\/2026-09-20-lion-of-judah-poc\/(zh-Hans|ko|es|vi)\/?$/);
+  const match = location.pathname.match(/\/pages\/2026-09-20-lion-of-judah-poc\/(en|zh-Hans|ko|es|vi)\/?$/);
   return match?.[1] || new URLSearchParams(location.search).get("lang");
 }
 
@@ -50,7 +53,8 @@ async function selectLocale(locale, { navigate = true } = {}) {
   const target = state.page.targets[locale];
   if (!target) return;
   const release = await loadJSON(target.releasePackageUrl);
-  if (release.schemaVersion !== "sermon-target-language-demo-package-v1" || release.environment !== "development" || !release.poc) {
+  const validSchema = ["sermon-source-language-demo-package-v1", "sermon-target-language-demo-package-v1"].includes(release.schemaVersion);
+  if (!validSchema || release.environment !== "development" || !release.poc) {
     throw new Error("Invalid development release package");
   }
   const content = await loadJSON(release.contentUrl);
@@ -80,9 +84,10 @@ function render() {
   }));
   $("sermonSummary").textContent = content.summary;
   $("languageName").textContent = languageNames[state.locale].native;
-  $("languageCapabilities").textContent = copy.capabilities;
+  $("languageCapabilities").textContent = state.locale === "en" ? copy.sourceCapabilities : copy.capabilities;
   $("currentCaption").textContent = currentCue()?.text || content.cues[0].text;
-  $("sourceCaption").textContent = currentCue()?.source || content.cues[0].source;
+  $("sourceCaption").textContent = state.locale === "en" ? "" : (currentCue()?.source || content.cues[0].source);
+  $("sourceCaption").hidden = state.locale === "en";
   renderTranscript();
   renderOutline();
   renderLanguageList();
@@ -95,13 +100,13 @@ function renderInterfaceCopy() {
   $("devBannerText").textContent = copy.banner;
   $("brandSubtitle").textContent = copy.brand;
   $("languageCardLabel").textContent = copy.languageCard;
-  $("mockNoticeTitle").textContent = copy.mockTitle;
-  $("mockNoticeBody").textContent = copy.mockBody;
+  $("mockNoticeTitle").textContent = state.locale === "en" ? copy.sourceTitle : copy.mockTitle;
+  $("mockNoticeBody").textContent = state.locale === "en" ? copy.sourceBody : copy.mockBody;
   [$("listenTab"), $("transcriptTab"), $("outlineTab")].forEach((node, index) => node.textContent = copy.tabs[index]);
   $("nowHeading").textContent = copy.now;
   $("transcriptHeading").textContent = copy.transcript;
   $("outlineHeading").textContent = copy.outline;
-  $("playerNote").textContent = copy.playerNote;
+  $("playerNote").textContent = state.locale === "en" ? copy.sourcePlayerNote : copy.playerNote;
   $("releaseTitle").textContent = copy.release;
   $("contentStatusLabel").textContent = copy.text;
   $("audioStatusLabel").textContent = copy.audio;
@@ -122,8 +127,10 @@ function renderLanguageList() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = `language-option${locale === state.locale ? " is-selected" : ""}`;
-    const status = state.page.targets[locale].machineScreening === "requires_review" ? "ASR REVIEW<br>REQUIRED" : "MACHINE<br>SCREENED";
-    button.innerHTML = `<span class="language-option-name"><span class="language-code">${info.code}</span><span><strong>${info.native}</strong><small>${info.detail}</small></span></span><span class="language-option-caps">TEXT · AUDIO<br>${status}</span>`;
+    const target = state.page.targets[locale];
+    const status = locale === "en" ? "SOURCE<br>REFERENCE" : target.machineScreening === "requires_review" ? "ASR REVIEW<br>REQUIRED" : "MACHINE<br>SCREENED";
+    const media = locale === "en" ? "TEXT · ORIGINAL AUDIO" : "TEXT · CLONED AUDIO";
+    button.innerHTML = `<span class="language-option-name"><span class="language-code">${info.code}</span><span><strong>${info.native}</strong><small>${info.detail}</small></span></span><span class="language-option-caps">${media}<br>${status}</span>`;
     button.addEventListener("click", () => selectLocale(locale).catch(showError));
     return button;
   }));
@@ -134,7 +141,8 @@ function renderTranscript() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = `transcript-item${currentCueIndex() === index ? " is-current" : ""}`;
-    button.innerHTML = `<span class="transcript-time">${formatTime(cue.start)}</span><span class="transcript-copy"><strong>${escapeHTML(cue.text)}</strong><span lang="en">${escapeHTML(cue.source)}</span></span>`;
+    const source = state.locale === "en" || !cue.source || cue.source === cue.text ? "" : `<span lang="en">${escapeHTML(cue.source)}</span>`;
+    button.innerHTML = `<span class="transcript-time">${formatTime(cue.start)}</span><span class="transcript-copy"><strong>${escapeHTML(cue.text)}</strong>${source}</span>`;
     button.addEventListener("click", () => {
       audio.currentTime = cue.start;
       switchTab("listen");
@@ -170,7 +178,8 @@ function syncPlayer() {
   if (!state.content) return;
   const cue = currentCue();
   $("currentCaption").textContent = cue.text;
-  $("sourceCaption").textContent = cue.source;
+  $("sourceCaption").textContent = state.locale === "en" ? "" : cue.source;
+  $("sourceCaption").hidden = state.locale === "en";
   $("cueCounter").textContent = `${currentCueIndex() + 1} / ${state.content.cues.length}`;
   const duration = Number.isFinite(audio.duration) ? audio.duration : (state.content?.durationSeconds || 24);
   const percent = Math.min(100, Math.max(0, audio.currentTime / duration * 100));

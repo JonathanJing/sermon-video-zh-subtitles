@@ -7,9 +7,10 @@ import hashlib
 import json
 from pathlib import Path
 import shutil
+import subprocess
 
 
-LOCALES = ("zh-Hans", "ko", "es", "vi")
+TARGET_LOCALES = ("zh-Hans", "ko", "es", "vi")
 
 
 def canonical_sha(value: object) -> str:
@@ -29,6 +30,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--layer2", type=Path, required=True)
     parser.add_argument("--layer3", type=Path, required=True)
+    parser.add_argument("--source-media", type=Path, help="Authorized Layer 1 media used to recreate the English reference audio")
     parser.add_argument("--public", type=Path, default=Path("firebase/dev/public"))
     parser.add_argument("--page-id", default="2026-09-20-lion-of-judah-poc")
     args = parser.parse_args()
@@ -38,8 +40,8 @@ def main() -> int:
     if not week:
         raise SystemExit(f"Page is absent from weekly.json: {args.page_id}")
     tracks = {item["locale"]: item for item in week["tracks"]}
-    if set(tracks) != set(LOCALES):
-        raise SystemExit("Committed weekly manifest does not cover all POC locales")
+    if not set(TARGET_LOCALES).issubset(tracks):
+        raise SystemExit("Committed weekly manifest does not cover all target-language POC locales")
 
     destination = args.public / "media" / args.page_id
     destination.mkdir(parents=True, exist_ok=True)
@@ -48,7 +50,7 @@ def main() -> int:
     layer2_public.mkdir(parents=True, exist_ok=True)
     layer3_public.mkdir(parents=True, exist_ok=True)
     staged = []
-    for locale in LOCALES:
+    for locale in TARGET_LOCALES:
         candidate_path = args.layer2 / locale / "target-language-candidate.json"
         package_path = args.layer3 / locale / "target-language-audio-package.json"
         candidate = json.loads(candidate_path.read_text(encoding="utf-8"))
@@ -74,6 +76,40 @@ def main() -> int:
             "audioSha256": expected,
             "layer2JsonSha256": canonical_sha(candidate),
             "layer3JsonSha256": canonical_sha(package),
+        })
+
+    if "en" in tracks:
+        english_track = tracks["en"]
+        english_target = destination / "en.mp3"
+        if args.source_media:
+            catalog = json.loads((args.public / "multilingual.json").read_text(encoding="utf-8"))
+            page = next((item for item in catalog["pages"] if item["id"] == args.page_id), None)
+            if not page:
+                raise SystemExit(f"Page is absent from multilingual.json: {args.page_id}")
+            window = page["sourceWindow"]
+            length = float(window["endSeconds"]) - float(window["startSeconds"])
+            temporary = english_target.with_name(english_target.stem + ".tmp.mp3")
+            subprocess.run([
+                "ffmpeg", "-nostdin", "-v", "error", "-ss", str(window["startSeconds"]),
+                "-i", str(args.source_media), "-t", str(length), "-map", "0:a:0", "-ac", "1",
+                "-ar", "44100", "-b:a", "128k", "-map_metadata", "-1", "-write_xing", "0",
+                "-y", str(temporary),
+            ], check=True)
+            temporary.replace(english_target)
+        if not english_target.exists():
+            raise SystemExit("English source audio is absent; pass --source-media to recreate it")
+        subprocess.run([
+            "ffmpeg", "-nostdin", "-v", "error", "-i", str(english_target),
+            "-map", "0:a:0", "-f", "null", "-",
+        ], check=True)
+        english_hash = file_sha(english_target)
+        if english_hash != english_track["sha256"]:
+            raise SystemExit("English source audio hash differs from weekly.json")
+        staged.insert(0, {
+            "targetLocale": "en",
+            "audioPath": str(english_target),
+            "audioSha256": english_hash,
+            "sourceKind": "original_speaker_audio",
         })
     print(json.dumps({"pageId": args.page_id, "staged": staged}, ensure_ascii=False))
     return 0

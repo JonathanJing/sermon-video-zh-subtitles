@@ -16,6 +16,17 @@
       },
       "defaultTargetLocale": "zh-Hans",
       "targets": {
+        "en": {
+          "releasePackageUrl": "/releases/2026-09-20-lion-of-judah-poc/en.json",
+          "contentStatus": "source_reference_machine_boundaries_human_review_pending",
+          "audioStatus": "original_source",
+          "machineScreening": "not_applicable_source_reference",
+          "capabilities": [
+            "english_source_reference",
+            "source_word_timeline",
+            "original_speaker_audio"
+          ]
+        },
         "zh-Hans": {
           "releasePackageUrl": "/releases/2026-09-20-lion-of-judah-poc/zh-Hans.json",
           "contentStatus": "machine_review_pass_human_review_pending",

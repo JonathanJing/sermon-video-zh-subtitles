@@ -40,6 +40,68 @@
       ],
       "tracks": [
         {
+          "id": "2026-09-20-lion-of-judah-poc-en",
+          "locale": "en",
+          "label": "Jesus' Promise · English source",
+          "voiceLabel": "Eric Geiger · original source audio",
+          "audioUrl": "/media/2026-09-20-lion-of-judah-poc/en.mp3",
+          "file": "en.mp3",
+          "sha256": "bac6da7c2847463b9cc9400c11e9f2ade8012afd3e089269177103118b76b969",
+          "durationSeconds": 40.90775,
+          "cues": [
+            {
+              "unitId": 0,
+              "blockId": "block-59-u001",
+              "start": 0.0,
+              "end": 7.32,
+              "text": "What looked to be like a loss was Jesus really conquering our enemy, because he’s the one who conquers over everything."
+            },
+            {
+              "unitId": 1,
+              "blockId": "block-59-u002",
+              "start": 7.98,
+              "end": 9.77,
+              "text": "He conquers over everything."
+            },
+            {
+              "unitId": 2,
+              "blockId": "block-59-u003",
+              "start": 11.78,
+              "end": 16.93,
+              "text": "You have an enemy who is a roaring lion."
+            },
+            {
+              "unitId": 3,
+              "blockId": "block-59-u004",
+              "start": 19.200001,
+              "end": 23.110001,
+              "text": "Who's seeking to destroy you and devour you."
+            },
+            {
+              "unitId": 4,
+              "blockId": "block-59-u005",
+              "start": 23.110001,
+              "end": 33.75,
+              "text": "But we're going to see next week when we get to Revelation chapter 4 and 5 that Jesus is called the Lion of the tribe of Judah,"
+            },
+            {
+              "unitId": 5,
+              "blockId": "block-59-u006",
+              "start": 35.200001,
+              "end": 40.880001,
+              "text": "and His roar overwhelms Satan's roar."
+            }
+          ],
+          "subtitleTiming": "layer_1_source_word_timeline",
+          "scope": "english_source_reference_poc",
+          "voiceSampleReview": "not_applicable_original_source",
+          "machineScreening": {
+            "status": "not_applicable_source_reference",
+            "model": null,
+            "coverage": 1
+          }
+        },
+        {
           "id": "2026-09-20-lion-of-judah-poc-zh-Hans",
           "locale": "zh-Hans",
           "label": "耶稣的应许 · zh-Hans POC",

@@ -68,10 +68,11 @@ Firebase 的 JSON 包进入 Git，音频不进入 Git。部署前从已验证的
 ```bash
 python scripts/stage_multilingual_fragment_poc_firebase.py \
   --layer2 artifacts/multilingual-poc/<run-id>/layer2 \
-  --layer3 artifacts/multilingual-poc/<run-id>/layer3
+  --layer3 artifacts/multilingual-poc/<run-id>/layer3 \
+  --source-media artifacts/resi-live-20260919/mariners-20260919-service-1080p.mp4
 ```
 
-暂存脚本要求 Layer 2/3 哈希绑定，并要求 Layer 3、`weekly.json` 与 MP3 的 SHA-256 完全一致。`firebase/dev/public/media/` 被 `.gitignore` 排除，避免把生成媒体提交到仓库。
+暂存脚本要求 Layer 2/3 哈希绑定，并要求 Layer 3、`weekly.json` 与 MP3 的 SHA-256 完全一致。若 catalog 含英文来源页，脚本还会从绑定的 Layer 1 source window 截取原始讲员音频、完整解码并核对固定哈希；这条 `en` lane 是 Layer 1 对照，不是假装成目标语言翻译。`firebase/dev/public/media/` 被 `.gitignore` 排除，避免把生成媒体提交到仓库。
 
 ## 当前模型能力与越南语决策
 
