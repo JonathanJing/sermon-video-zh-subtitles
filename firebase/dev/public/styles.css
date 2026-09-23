@@ -263,7 +263,7 @@ body{padding-bottom:calc(var(--dock-height,196px) + 18px)}
   .banner-series { display: none; }
   .sermon-banner { margin-bottom: 8px; }
   .subtitle-card { padding: 12px; }
-  .current-text { margin: 10px 0; }
+  .current-text { margin: 10px 0; font-size: 21px; line-height: 1.6; }
   .dock-capability { display: none; }
   .menu-chevron { display: none; }
   .topbar-actions { gap: 6px; }

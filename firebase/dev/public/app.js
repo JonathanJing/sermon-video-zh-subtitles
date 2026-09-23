@@ -78,7 +78,7 @@ const state = {
   ui: interfaceLocales[localStorage.getItem("tongxing-dev-ui")] ? localStorage.getItem("tongxing-dev-ui") : "zh",
   activeTab: "listen", showSource: false, audioObjectURL: null, selectionToken: 0,
   selectionController: null, variantController: null, pendingLocale: null, pendingResume: null,
-  lastSavedAt: 0, switchingAudio: false
+  lastSavedAt: 0, switchingAudio: false, lastCueIndex: null, captionRevealScheduled: false
 };
 const $ = (id) => document.getElementById(id);
 const audio = $("audio");
@@ -277,6 +277,7 @@ function render() {
     download.download = `${state.page.id}-${state.locale}-${state.audioVariant.id}.mp3`;
   }
   syncPlayer();
+  revealCurrentCaption();
 }
 
 function renderAudioVariantPicker() {
@@ -461,10 +462,27 @@ function currentCueIndex() {
 
 function currentCue() { return activeCues()[currentCueIndex()]; }
 
+function revealCurrentCaption() {
+  if (!state.content || state.activeTab !== "listen" || state.captionRevealScheduled || !$("moreOptions").hidden) return;
+  state.captionRevealScheduled = true;
+  requestAnimationFrame(() => {
+    state.captionRevealScheduled = false;
+    if (state.activeTab !== "listen" || !$("moreOptions").hidden) return;
+    const caption = $("currentCaption").getBoundingClientRect();
+    const dock = $("fieldControls").getBoundingClientRect();
+    const overlap = caption.bottom - dock.top + 16;
+    if (overlap > 0) window.scrollBy({ top: overlap, behavior: "auto" });
+  });
+}
+
 function syncPlayer() {
   if (!state.content) return;
   const cue = currentCue();
   const index = currentCueIndex();
+  if (index !== state.lastCueIndex) {
+    state.lastCueIndex = index;
+    revealCurrentCaption();
+  }
   $("currentCaption").textContent = cue?.text || "";
   $("nextCaption").textContent = activeCues()[index + 1]?.text || "";
   $("sourceCaption").textContent = state.locale === "en" ? "" : cue?.source || "";
@@ -502,6 +520,7 @@ function switchTab(name) {
     panel.hidden = !active;
     panel.classList.toggle("is-active", active);
   });
+  if (name === "listen") revealCurrentCaption();
 }
 
 function formatTime(value) {
