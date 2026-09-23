@@ -52,3 +52,11 @@
 - 最新 Dev 基线的 Python 定向测试 59/59、Node 完整性测试 4/4、Swift catalog 测试 5/5 通过；`git diff --check` 通过。完整 Python 套件在沙箱内因 `ps` 与 loopback 权限报错；使用本机测试权限重跑后 1390 项通过、3 项跳过，日志在 `/private/tmp/sermon-sep20-dev-ready-full-tests.log`。
 - Eric 长句探针实跑：Spark 使用已登记 checkpoint SHA `75d28ce6…`，输出两条 WAV；本地 SHA、`ffprobe` 单音轨／时长及 `ffmpeg` 完整解码通过。ASR 只作机器筛查，重点差异已交付人耳复核。`screen_multilingual_voice_demos.py` 改为允许只有选定 locale 的 manifest，避免对非越南语短探针强制要求 `vietnamese-manifest.json`。
 - 已检查代码和本地页面，尚无本片段正式音频、Release Package、Dev HTTP 或实体设备验收证据。
+
+## 2026-09-23 后续实测更新
+
+上文是本轮开始时的逐步记录；后续已按同一 Layer 1 身份 `4d645ff0…` 补齐正式三语 Layer 2。中文 45 组，韩／西各 44 组；韩／西为末段排程修订的 10／8 组取得新翻译、独立模型复核、语言插件和用户新版全文批准，旧候选未改写。各语言当前候选、人审、speech job、音轨及 ASR 收据哈希见[进度证据](../evidence/2026-09-20-multilingual-clip-layer2.json)。页面信息三语全部获批，其原文和提案哈希另存在忽略目录 `review/formal-dev-metadata.approved.json`。用户已声明拥有本片段 Dev App／音频经文引用权限并允许正式 Eric 克隆音色；许可文件与署名条款尚未交付，不声称已核对凭证或取得全项目授权。
+
+三语完整候选音轨现均已生成、完整解码，并以自然 1 倍速排入 178.178 秒视频；韩／西经测量的首尾静音处理，不做时间拉伸。Qwen3-ASR 完整覆盖各语言全部单元，分别留下中文 2、韩语 6、西语 3 组人耳疑点。三份 `candidate` Audio Package 和待审工作表已保存，**三语全文听审、逐组疑点裁决及原视频 1 倍速同步审核仍待用户完成**；机器筛查没有被提升为人工通过。韩语末端排程余量约 28 ms，尤其需要检查相邻单元衔接。
+
+三语候选 Release Package 的资源准备器、严格 staging 和正式 v2 Dev catalog 适配器已进入 PR #45。资源准备器用真实候选音频预检时按预期拒绝 `zh-Hans: upstream text or audio has not passed human review`，且没有创建输出目录；合成 fixture 从批准页面信息和 `human_reviewed` 音频到 staging 通过。完整 Python 套件在本机正常权限下为 1476 项通过、5 项跳过；受限沙箱内的 20 项 socket／`ps` 权限错误不是代码测试失败。PR #45 的一次 iOS CI 49 项中 3 项失败：两项静音 WAV 准备超时、一项韩语 WebView 显示空白；同版 iOS 26.2 本机模拟器定向重跑这三项均通过，远端新提交的整套 CI 仍需复核。Dev 部署、HTTP、App 实机和场地验收均未进行。

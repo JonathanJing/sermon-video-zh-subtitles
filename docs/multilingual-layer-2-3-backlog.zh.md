@@ -1,11 +1,24 @@
 # 多语言 Layer 2 / Layer 3 实施 Backlog
 
-状态：**影子片段链已验证，正式生产待实施**。本 backlog 从已冻结的四层接口继续推进，覆盖：
+状态：**9 月 20 日 2:58 片段的正式 Layer 1／2 已获人审，三语 Layer 3 完整候选音轨均以 1 倍速排入片段；三语全文听审和 Layer 4 Dev 发布待完成**。本 backlog 从已冻结的四层接口继续推进，覆盖：
 
 - Layer 2「目标语言文字」：`English Source Package` → `Target-Language Candidate`；
 - Layer 3「目标语言音频与同步」：人工批准的 `Target-Language Candidate` → `Target-Language Audio Package`。
 
 首个新语言为韩语 `ko`；现有简体中文 `zh-Hans` 用作兼容与等价验证。Layer 1 的机器裁判只作为上游 shadow 开发门禁；Layer 4、设备和场地验收列为周日可用的下游依赖，不在本 backlog 中伪装成 Layer 2/3 已完成。第 2 层详细设计见[目标语言文字设计基线](multilingual-layer-2-design.zh.md)。
+
+### 2026-09-23 本片段实证与剩余修复
+
+正式 Layer 2 候选覆盖中文 45 组、韩语 44 组、西语 44 组，三语全文已由用户批准；对应不可变候选和人审证据见 [本片段 Layer 2 收据](evidence/2026-09-20-multilingual-clip-layer2.json)。这证明本片段文字，不代表以下整篇证道和通用 producer 验收项均已完成。
+
+- [x] 在授权 Spark 上按同一获批片段、各语言已批准候选和语音身份生成三语全部单元。以已记录的自然偏快口播指令重跑后，中文 45、韩语 44、西语 44 个 WAV 均生成并完整解码；不同指令的渲染分别保留，未覆盖原合成。
+- [x] renderer 对三语真实测量时长执行 1 倍速排程；超时时留下诊断，不生成成功 manifest。韩语原排程末端 203.32 秒，偏快指令加前导静音测量裁剪后为 182.78 秒；西语对应为 183.55 → 180.91 秒。旧版保留作诊断。
+- [x] 中文偏快指令加前导静音测量裁剪后，45 个单元排入 178.178 秒视频，产出完整候选 track 与 render manifest。裁剪仅处理经 RMS 测量的前导静音，保存原 WAV、每单元原／新 SHA 和时长，以及独立裁剪收据；回转录已做，仍需人耳听审，不能据此宣布 Layer 3 通过。
+- [x] 韩／西回到 Layer 2 修订末段 10／8 组，独立翻译、语义复核、语言插件及用户新版全文批准均已记录；原批准候选未改写。新候选重新合成后，以逐单元测得的首尾静音裁剪、零组间空隙及韩语零反应延迟排入 178.178 秒片段，仍为自然 1 倍速，无时间拉伸。韩语尾部余量约 28 ms，必须重点听审相邻单元衔接。
+- [x] 三语完整轨的全部单元已完整解码，并由 Qwen3-ASR 逐组回转录，覆盖率均为 100%。机器筛查均为 `requires_review`：中文 2 组、韩语 6 组、西语 3 组；这不是内容错误定论。候选音频包和待填的人审工作表已生成。
+- [ ] 三语分别做 1 倍速全文听审、与原视频同步审核，以及对上述 11 个 ASR 疑点逐组裁决；重点检查韩语 20 ms 首尾保护垫和相邻单元衔接。须由人审工作表生成独立 v2 收据，不能把机器 `requires_review` 改写成 `pass`。
+- [ ] 三语正式 Audio Package 均达到 `human_reviewed` 后，才建立 Release Package、部署 Dev，并分别验证 HTTP 资源及 App 实机播放。此前不发布纯文字替代页，因为用户已明确要求三语音轨齐全再发布。
+- [x] 三语页面系列、标题、讲员、经文标示、日期、摘要和大纲已获用户批准，逐字段原文及提案 SHA 已写入忽略目录的 `review/formal-dev-metadata.approved.json`；[正式 Dev 资源准备器](formal-dev-release-assets.zh.md)只在三语 Audio Package 全部 `human_reviewed` 时，将这些字段、已审目标文本及测得的 cue 组装为候选内容、媒体和 Release Package。合成 fixture 已通过 staging 门禁；真实包仍待音频人审。
 
 ## 1. 开始条件与共同规则
 
@@ -174,6 +187,7 @@
 
 #### L3-004 抽出语言中立滚动排程器
 
+- [x] 发现 2026-09-20 裁剪片段的 L1 锚点沿用证道相对 320.16–498.32 秒，而 clip 媒体及获批窗口为 0–178.16 秒；已增加独立 `sermon-clip-timeline-map-v1`，显式绑定 L1/anchor/clip SHA、媒体时长和窗口批准证据，L3 排程按经验证的 320.16 秒 offset 转为 clip 时间。真实片段 fixture 已验证首尾映射；不得仅从首个锚点猜 offset。
 - [ ] 从现有中文 timing 代码中分离纯确定性调度：anchor stable time、reaction lag、实测音频时长和 inter-utterance gap。
 - [ ] 输出 planned start/end、end lag、overlap/overflow、source-unit 映射和失败原因。
 - [ ] 排程器不理解中文或韩语文本，只消费 locale-neutral unit 和时长。
@@ -320,19 +334,23 @@ Layer 2 的 P0 全部通过后才能开始正式 Layer 3 韩语合成。Layer 3 
 - [x] 修正审核清单的 5:20.16 时间基准偏移及 Layer 1 shadow 收据写死 `humanReview=pending` 的状态错误；底层锚点哈希保持不变。
 - [x] 修正 Layer 4 catalog 和 iOS Core 对正式 `audio_unavailable` Layer 3 包的接收；同 locale、同来源及候选哈希不符仍拒绝，迁移期 null 哈希需显式开关。
 - [x] 新增 `verify_clip_review_timeline.py` 时间基准校验，避免片段相对时间被二次加偏移；在本片段 45 个单元上核对原录像 35:09.16–38:07.32 全表通过，测试覆盖旧错误值。
-- [ ] 完成西班牙语策略的经文版次／引用政策、术语译名、地域语体和语言审核插件；中文、韩语现有策略中仍 pending 的项目按各自 locale 消除。不得凭模型复核提升。
-- [ ] 三语言从同一个正式 Layer 1 身份生成并人工批准 Target-Language Candidate。现有片段脚本仍是 shadow POC，正式通用 producer 和逐组恢复继续按 L2-002—L2-005 实施。
+- [x] 本片段三语 Policy v2 已绑定同一正式 Layer 1、实际出现的 `Ian Duguid` 及旧人审收据、经文边界和各 locale 语言插件实现哈希；未出现的系列名继续 pending。韩语用 `개역개정`、西语用 `RVR1960`／中性拉美语体。用户声明拥有本次 Dev App／配音引用权限，许可文件及署名条款尚未收到；不得把该片段声明扩成全项目授权。
+- [x] 三语言从同一个正式 Layer 1 身份生成并人工批准 Target-Language Candidate：中文 45 组、韩语及西语各 44 组；新模型翻译与独立语义复核请求、可重算语言插件收据、全文人审工作表及独立收据均在忽略目录 `artifacts/multilingual-clip-20260920/20260920-blocks9-14-178s/layer2-formal-prep/`。西语 `block-10-u009` 曾被独立复核标记解释过度，单组修订为 `la Palabra` 并再次复核后，用户对三语新全文候选明确批准。通用 producer 的逐组失败恢复仍待完善。
+- [x] 提交不含媒体或密钥的[本片段四层哈希与审核进度清单](evidence/2026-09-20-multilingual-clip-layer2.json)，明确三语候选音轨已生成，全文听审和 Dev 发布尚未完成。
 - [x] 三语机器 shadow 已重绑正式 Layer 1 哈希，各 45/45 机器语义复核通过；逐句点播的本地审稿页已生成，用户已回复三语内容批准。该内容批准不等于正式 Layer 2 收据。
 - [x] 用户对中文、韩语、西语三份 45 单元草稿回复“批准”；分别记录候选哈希绑定的内容审核收据。正式语言策略和分组校验未通过前，收据保持 `formalLayer2Admitted=false`。
-- [ ] 韩语按用户选定的 `개역개정`、西语按 `RVR1960`／中性拉美语体冻结经文政策；用户称持有两版使用许可并将稍后提供凭证。收到后核对 App／音频范围、署名和期限，凭证未到前不能仅凭口头说明放行逐字引用。
-- [ ] 正式 Layer 2 producer 以自然句／合格分句组织 group 并保证 `targetText` 与 `targetUtterances` 精确一致；实测既有 POC 的单个 45 单元组被正式校验以 `Target text differs from utterances` 拒绝，三语皆同。后续 shadow 入口已改为逐源单元独立 group，避免西语词界丢失，但旧候选及内容批准哈希不可重标。新增 `produce_target_language_candidate.py` 的来源绑定请求与外部证据编译入口；三语正式 policy／语言插件未 ready，尚不能生成本片段正式候选。后续须实现真实翻译／独立语义复核和可审计语言插件收据。
+- [ ] 保存并核对韩／西语经文许可文件、App／音频授权范围、期限及署名条款；目前只有用户对本 Dev 片段的授权声明，发布材料不得声称已查阅凭证。
+- [x] 正式 Layer 2 producer 已将本片段自然语义组整理为 45／44／44 组，`targetText` 与 `targetUtterances` 精确一致；新翻译、独立模型语义复核、可重算语言插件和正式全文人审收据均通过。旧 shadow 候选与旧内容批准的哈希没有被重标。
 - [ ] 稳定 Layer 1 包的逻辑身份：外层脚本代码变动不应仅因输出目录绝对路径变化而强制三语重跑；先设计兼容迁移与可追溯的 producer 身份。
-- [ ] 对三个 locale 均生成正式 Audio Package，随后构建 Release Package；用户要求三语音频全完成后再发布 Dev。HTTP、iOS 真机与现场状态分别核验；没有上游人审时不以机器预览冒充正式四层完成。
-- [ ] 用户选继续审核 Eric 克隆音色的韩／西语能力；其注册表当前只授权 `chinese_dubbing` 和 `multilingual_voice_demo`，韩／西语仍为 `unverified_poc`。既有 v2 两条短样音已获用户批准，哈希收据保留在忽略目录；本片段四单元长句探针也已在 Spark 生成并完整解码，ASR 提示韩语 `씨름하는→실험하는`、西语 `Éfeso→Efsol`，待人耳判定。只有合格长句／全文听审和 `multilingual_dubbing` 用途证据都到位才升级能力。
+- [x] 三语均生成正式 `candidate` Audio Package 和完整 ASR 机器筛查收据；音轨 SHA、各组 SHA、speech job 及新版韩／西 Layer 2 hash 绑定核对完成。
+- [ ] 三语音频人审后生成 `human_reviewed` Audio Package，再构建 Release Package；用户要求三语音频全完成后再发布 Dev。HTTP、iOS 真机与现场状态分别核验。当前缺全文人耳／视频同步批准，不能晋级 Layer 3。
+- [x] Eric 韩／西语短样音及四单元长句探针均获用户听审批准；片段范围能力收据已绑定原音频、脚本、manifest、L1 和 checkpoint。全局 Registry 仍是 `multilingual_voice_demo`、韩／西语 `unverified_poc`；本片段收据只放行本片段 speech job，不升级全局能力。
+- [x] 新增显式片段时间映射：已审英文锚点 320.16–498.32 秒映到视频 0–178.16 秒。修复 Layer 3 排程误以英文单元终点为配音起点的问题；按每组首个英文单元起点加反应延迟排程，以最后英文单元终点计算尾延迟，并拒绝 1 倍速片段终点溢出。三语完整候选实测均已排入 178.178 秒；自然度和同步仍待人耳验收。
 - [x] 中文直接引文边界建议已由固定 CUV 库取出启示录 2:4、3:4 的精确短句，并绑定本片段英文单元；用户批准两处边界与改文，重复解释句暂按讲员重述处理。批准收据绑定提案 JSON 哈希与正式 Layer 1 哈希，范围仅限经文边界；提案本身保留原始 `humanBoundaryReview=pending` 作为不可变历史，正式中文候选仍须按新文本重建并审核，不得自动改写已审 shadow 候选。
 - [x] Dev Web POC 的 pageId 路由、周次切换与无音轨播放器状态已在本地修正；HTTP 浏览器 fixture 验证了第二页切换、URL／标题更新、播放器隐藏和纯文字提示。fixture 使用占位内容，未证明本片段已发布。
 - [x] Firebase Dev Hosting rewrite 从旧 POC 专属路径扩到 `/pages/**`，使新 pageId 的深链有前端入口；定向配置测试通过，部署后仍须对新片段 URL 实测 GET。
 - [ ] Dev Web/iOS 正式 v2 catalog 消费端支持同一 catalog 内多 `pageId` 的独立页面、三语能力标记与真实音轨；当前 Dev POC demo catalog 和正式 v2 合同仍需明确适配。发布前端到 Dev 后再做实际 HTTP/设备验证。
+- [ ] PR #45 的 iOS 模拟器 CI 仍需绿灯：最近一次 `Tongxing` 49 项有 3 项失败，其中两项静音 WAV 准备超过 10 秒，一项韩语已验证页面在 `WKWebView` 中呈空白（失败截图与无子节点的可访问性树已核对）。这些不是三语音轨的听审结果；需在当前提交重跑并定位 WebView 加载／模拟器环境后，才可把 App 验收标为通过。
 
 本节把已有任务排成可验收的依赖链。目标首先是**周六完成预制、周日可播放**的 `four_layer_release`；周日麦克风实时字幕保持独立 `live_session`。任何阶段只在绑定相同来源、locale 和 hash 的证据通过后推进，不用 Dev 页面可播或机器分数替代人工审核。
 
