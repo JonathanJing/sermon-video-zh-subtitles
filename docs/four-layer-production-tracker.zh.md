@@ -87,7 +87,7 @@ python scripts/four_layer_progress.py artifacts/my-multilingual-run/four-layer-p
   --layer 2 --locale ko --reason '韩语批准译文修订'
 ```
 
-上述首批正式 producer 已支持 `--progress-ledger`，也可对同一周运行设置 `SERMON_FOUR_LAYER_LEDGER`。它们会在账本旁的私有 `accounting/events.jsonl` 写 page ID／语言、开始／结束 span、失败类型、输入单元数、组数及相关 JSON／策略／模型标识 hash；不会自动修改账本状态或授予人工批准。Tracker 公开快照只投影步骤的实测耗时、次数、失败数、未结束执行及操作员审核等待，不公开私有 hash、原文、路径或错误消息。设备／现场验收按语言独立记录，须以各自收据为准。制作正式环境时把 `--target dev` 改为 `--target production`，重新建账本并重新核验，不能把 Dev 状态原样晋升。
+上述首批正式 producer 已支持 `--progress-ledger`，也可对同一周运行设置 `SERMON_FOUR_LAYER_LEDGER`。它们会在账本旁的私有 `accounting/events.jsonl` 写账本运行身份、page ID／语言／目标环境、开始／结束 span、失败类型、输入单元数、组数及相关 JSON／策略／模型标识 hash；不会自动修改账本状态或授予人工批准。审计只采纳运行身份匹配的事件；同目录重建账本后，旧日志保留但不计入新页面。未带身份的旧计时记录保持未知。Tracker 公开快照只投影步骤的实测耗时、次数、失败数、未结束执行及操作员审核等待，不公开私有 hash、原文、路径或错误消息。设备／现场验收按语言独立记录，须以各自收据为准。制作正式环境时把 `--target dev` 改为 `--target production`，重新建账本并重新核验，不能把 Dev 状态原样晋升。
 
 ### 从现在开始保留真实耗时
 

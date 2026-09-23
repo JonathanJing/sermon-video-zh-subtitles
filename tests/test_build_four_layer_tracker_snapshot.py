@@ -97,10 +97,13 @@ class TrackerSnapshotTest(unittest.TestCase):
 
     def test_snapshot_shows_measured_execution_without_promoting_step(self):
         from scripts import four_layer_measure
-        report = four_layer_measure.timing_audit(self.ledger, [{
-            "event": "stage_finished", "stage": "four_layer.L2-03:ko",
-            "status": "failed", "elapsedSeconds": 12.5,
-            "recordedAt": "2026-09-23T12:00:00+00:00"}])
+        report = four_layer_measure.timing_audit(self.ledger, [
+            {"event": "workflow_started", "workflowId": "w1",
+             "metadata": {"pageId": self.ledger["pageId"], "target": "dev",
+                          "ledgerIdentitySha256": four_layer_progress.ledger_identity(self.ledger)}},
+            {"event": "stage_finished", "workflowId": "w1",
+             "stage": "four_layer.L2-03:ko", "status": "failed",
+             "elapsedSeconds": 12.5, "recordedAt": "2026-09-23T12:00:00+00:00"}])
         snapshot = tracker.build_snapshot(self.ledger, timing_report=report)
         step = next(row for row in snapshot["steps"] if row["id"] == "L2-03@ko")
         self.assertEqual(step["timing"]["measuredExecutionSeconds"], 12.5)

@@ -62,7 +62,9 @@ def producer_step(ledger_path: Path | None, step_id: str, *, locale: str | None 
     if inherited and Path(inherited).resolve() != directory.resolve():
         raise ValueError("producer accounting directory differs from progress ledger")
     with accounting.accounting_session(directory, "four_layer_producer",
-                                       {"pageId": ledger["pageId"], "targetLocale": locale or "en"},
+                                       {"pageId": ledger["pageId"], "target": ledger["target"],
+                                        "targetLocale": locale or "en",
+                                        "ledgerIdentitySha256": progress.ledger_identity(ledger)},
                                        evidence_directory=ledger_path.parent):
         with accounting.stage(stage_name(step_id), billing="local"):
             original_error = None
@@ -87,7 +89,9 @@ def execute(ledger_path: Path, step_id: str, command: list[str], *, billing: str
     if billing not in {"local", "api", "orchestrator"}:
         raise ValueError("invalid billing category")
     accounting_dir = ledger_path.parent / "accounting"
-    with accounting.accounting_session(accounting_dir, "four_layer_step"):
+    with accounting.accounting_session(accounting_dir, "four_layer_step",
+                                       {"pageId": ledger["pageId"], "target": ledger["target"],
+                                        "ledgerIdentitySha256": progress.ledger_identity(ledger)}):
         with accounting.stage(stage_name(step_id), billing=billing):
             result = subprocess.run(command, env=accounting.subprocess_environment(), check=False)
             if result.returncode:
@@ -96,13 +100,24 @@ def execute(ledger_path: Path, step_id: str, command: list[str], *, billing: str
 
 
 def timing_audit(ledger: dict, events: list[dict], *, damaged_rows: int = 0) -> dict:
+    identity = progress.ledger_identity(ledger)
+    def matching(metadata: object) -> bool:
+        return (isinstance(metadata, dict)
+                and metadata.get("pageId") == ledger["pageId"]
+                and metadata.get("target") == ledger["target"]
+                and metadata.get("ledgerIdentitySha256") == identity)
+    workflow_ids = {event.get("workflowId") for event in events
+                    if event.get("event") == "workflow_started" and matching(event.get("metadata"))}
+    scoped_events = [event for event in events
+                     if event.get("workflowId") in workflow_ids
+                     and event.get("workflowId") is not None]
     measured: dict[str, dict] = defaultdict(lambda: {"attempts": 0, "failedAttempts": 0,
                                                      "executionSeconds": 0.0,
                                                      "lastStatus": None, "lastAt": None})
     open_spans: dict[str, str] = {}
     attempt_history: dict[str, list[dict]] = defaultdict(list)
     by_span: dict[str, dict] = {}
-    for event in events:
+    for event in scoped_events:
         if event.get("event") not in {"stage_started", "stage_finished", "workload"}:
             continue
         stage = str(event.get("stage") or "")
@@ -183,6 +198,7 @@ def timing_audit(ledger: dict, events: list[dict], *, damaged_rows: int = 0) -> 
                      "openReviewWait": review["openWait"] if review else False})
     return {"schemaVersion": AUDIT_SCHEMA, "pageId": ledger["pageId"],
             "target": ledger["target"], "accountingEvents": len(events),
+            "scopedAccountingEvents": len(scoped_events),
             "damagedAccountingRows": damaged_rows,
             "measuredStepCount": len(measured),
             "completedWithoutMeasuredExecution": [row["step"] for row in rows
@@ -190,6 +206,7 @@ def timing_audit(ledger: dict, events: list[dict], *, damaged_rows: int = 0) -> 
                                                   and row["measuredExecutionSeconds"] is None],
             "rows": rows,
             "limits": ["Operator review intervals use tracker update timestamps, not measured attention time.",
+                       "Unscoped or different-ledger accounting events are excluded from timing.",
                        "Execution spans may overlap; their durations must not be summed as end-to-end time.",
                        "Missing spans are unknown, never zero."]}
 

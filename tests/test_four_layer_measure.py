@@ -24,7 +24,11 @@ class FourLayerMeasureTest(unittest.TestCase):
             events, damaged = accounting.read_events(ledger_path.parent / "accounting")
             self.assertFalse(damaged)
             run = next(event for event in events if event["event"] == "run_started")
-            self.assertEqual(run["metadata"], {"pageId": "test-page", "targetLocale": "ko"})
+            self.assertEqual(run["metadata"]["pageId"], "test-page")
+            self.assertEqual(run["metadata"]["target"], "dev")
+            self.assertEqual(run["metadata"]["targetLocale"], "ko")
+            self.assertEqual(run["metadata"]["ledgerIdentitySha256"],
+                             progress.ledger_identity(progress.load(ledger_path)))
             workloads = [event for event in events if event["event"] == "workload"
                          and event["stage"] == "four_layer.L2-03:ko"]
             self.assertEqual(len(workloads), 2)
@@ -62,12 +66,35 @@ class FourLayerMeasureTest(unittest.TestCase):
 
     def test_unfinished_span_is_not_reported_as_completed_time(self):
         ledger = progress.new_ledger("test-page", ["ko"])
-        report = measure.timing_audit(ledger, [{"event": "stage_started",
-            "stage": "four_layer.L3-01:ko", "spanId": "interrupted"}])
+        report = measure.timing_audit(ledger, [
+            {"event": "workflow_started", "workflowId": "w1",
+             "metadata": {"pageId": "test-page", "target": "dev",
+                          "ledgerIdentitySha256": progress.ledger_identity(ledger)}},
+            {"event": "stage_started", "workflowId": "w1",
+             "stage": "four_layer.L3-01:ko", "spanId": "interrupted"}])
         row = next(row for row in report["rows"] if row["step"] == "L3-01@ko")
         self.assertTrue(row["openExecution"])
         self.assertIsNone(row["measuredExecutionSeconds"])
         self.assertEqual(row["attemptHistory"][0]["status"], "unfinished")
+
+    def test_reinitialized_ledger_does_not_inherit_old_attempts(self):
+        with tempfile.TemporaryDirectory() as temp:
+            ledger_path = Path(temp) / "four-layer-progress.json"
+            old = progress.new_ledger("test-page", ["ko"])
+            progress.save(ledger_path, old)
+            with measure.producer_step(ledger_path, "L2-01@ko", locale="ko"):
+                pass
+            newer = progress.new_ledger("test-page", ["ko"])
+            self.assertNotEqual(progress.ledger_identity(old), progress.ledger_identity(newer))
+            progress.save(ledger_path, newer)
+            events, _ = accounting.read_events(ledger_path.parent / "accounting")
+            old_row = next(row for row in measure.timing_audit(old, events)["rows"]
+                           if row["step"] == "L2-01@ko")
+            new_row = next(row for row in measure.timing_audit(newer, events)["rows"]
+                           if row["step"] == "L2-01@ko")
+            self.assertEqual(old_row["executionAttempts"], 1)
+            self.assertEqual(new_row["executionAttempts"], 0)
+            self.assertIsNone(new_row["measuredExecutionSeconds"])
 
     def test_real_command_span_is_linked_to_step(self):
         with tempfile.TemporaryDirectory() as temp:
