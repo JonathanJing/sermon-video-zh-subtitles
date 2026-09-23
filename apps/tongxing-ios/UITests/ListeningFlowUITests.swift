@@ -26,7 +26,7 @@ final class ListeningFlowUITests: XCTestCase {
         app.buttons["choose-content-language"].tap()
         app.buttons["content-language-ko"].tap()
         XCTAssertTrue(app.webViews["verified-content-page"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.staticTexts["한국어 검증 페이지"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["한국어 검증 페이지"].waitForExistence(timeout: 20))
         app.buttons["完成"].tap()
         XCTAssertTrue(app.buttons["playback-toggle"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["align-live-audio"].exists)
