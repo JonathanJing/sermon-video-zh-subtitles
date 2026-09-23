@@ -17,9 +17,11 @@ from typing import Any, Callable
 try:
     from scripts import prepare_target_language_speech_job as speech
     from scripts import sermon_sentence_interpretation as identity
+    from scripts import clip_timeline_map as timeline_map
 except ImportError:  # Direct execution via ``python scripts/...``.
     import prepare_target_language_speech_job as speech
     import sermon_sentence_interpretation as identity
+    import clip_timeline_map as timeline_map
 
 
 RECEIPT_SCHEMA = "sermon-target-language-audio-unit-receipt-v1"
@@ -57,7 +59,13 @@ def _load_job(path: Path) -> dict[str, Any]:
     adapter = {"schemaVersion": speech.ADAPTER_SCHEMA, "targetLocale": job["targetLocale"]} | {
         key: value for key, value in job["adapter"].items() if key != "configSha256"
     }
-    speech.validate_adapter(adapter, job["targetLocale"], inputs["speakerRegistry"])
+    speech.validate_adapter(
+        adapter, job["targetLocale"], inputs["speakerRegistry"],
+        clip_voice_authorization=inputs.get("clipVoiceAuthorization"),
+        clip_voice_capability=inputs.get("clipVoiceCapability"),
+        source_package=source, candidate=candidate)
+    if "clipTimelineMap" in inputs:
+        timeline_map.validate(inputs["clipTimelineMap"], source, anchor)
     _require(adapter["capabilityStatus"] == "verified"
              and job["targetLocale"] == candidate["targetLocale"],
              "Speech job adapter or locale is not verified")

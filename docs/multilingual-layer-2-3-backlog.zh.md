@@ -1,6 +1,6 @@
 # 多语言 Layer 2 / Layer 3 实施 Backlog
 
-状态：**影子片段链已验证，正式生产待实施**。本 backlog 从已冻结的四层接口继续推进，覆盖：
+状态：**本片段正式 Layer 1／2 已获人审，Layer 3 speech job 已备齐；三语完整音轨和 Layer 4 Dev 发布待完成**。本 backlog 从已冻结的四层接口继续推进，覆盖：
 
 - Layer 2「目标语言文字」：`English Source Package` → `Target-Language Candidate`；
 - Layer 3「目标语言音频与同步」：人工批准的 `Target-Language Candidate` → `Target-Language Audio Package`。
@@ -174,6 +174,7 @@
 
 #### L3-004 抽出语言中立滚动排程器
 
+- [x] 发现 2026-09-20 裁剪片段的 L1 锚点沿用证道相对 320.16–498.32 秒，而 clip 媒体及获批窗口为 0–178.16 秒；已增加独立 `sermon-clip-timeline-map-v1`，显式绑定 L1/anchor/clip SHA、媒体时长和窗口批准证据，L3 排程按经验证的 320.16 秒 offset 转为 clip 时间。真实片段 fixture 已验证首尾映射；不得仅从首个锚点猜 offset。
 - [ ] 从现有中文 timing 代码中分离纯确定性调度：anchor stable time、reaction lag、实测音频时长和 inter-utterance gap。
 - [ ] 输出 planned start/end、end lag、overlap/overflow、source-unit 映射和失败原因。
 - [ ] 排程器不理解中文或韩语文本，只消费 locale-neutral unit 和时长。
@@ -320,15 +321,16 @@ Layer 2 的 P0 全部通过后才能开始正式 Layer 3 韩语合成。Layer 3 
 - [x] 修正审核清单的 5:20.16 时间基准偏移及 Layer 1 shadow 收据写死 `humanReview=pending` 的状态错误；底层锚点哈希保持不变。
 - [x] 修正 Layer 4 catalog 和 iOS Core 对正式 `audio_unavailable` Layer 3 包的接收；同 locale、同来源及候选哈希不符仍拒绝，迁移期 null 哈希需显式开关。
 - [x] 新增 `verify_clip_review_timeline.py` 时间基准校验，避免片段相对时间被二次加偏移；在本片段 45 个单元上核对原录像 35:09.16–38:07.32 全表通过，测试覆盖旧错误值。
-- [ ] 完成西班牙语策略的经文版次／引用政策、术语译名、地域语体和语言审核插件；中文、韩语现有策略中仍 pending 的项目按各自 locale 消除。不得凭模型复核提升。
-- [ ] 三语言从同一个正式 Layer 1 身份生成并人工批准 Target-Language Candidate。现有片段脚本仍是 shadow POC，正式通用 producer 和逐组恢复继续按 L2-002—L2-005 实施。
+- [x] 本片段三语 Policy v2 已绑定同一正式 Layer 1、实际出现的 `Ian Duguid` 及旧人审收据、经文边界和各 locale 语言插件实现哈希；未出现的系列名继续 pending。韩语用 `개역개정`、西语用 `RVR1960`／中性拉美语体。用户声明拥有本次 Dev App／配音引用权限，许可文件及署名条款尚未收到；不得把该片段声明扩成全项目授权。
+- [x] 三语言从同一个正式 Layer 1 身份生成并人工批准 Target-Language Candidate：中文 45 组、韩语及西语各 44 组；新模型翻译与独立语义复核请求、可重算语言插件收据、全文人审工作表及独立收据均在忽略目录 `artifacts/multilingual-clip-20260920/20260920-blocks9-14-178s/layer2-formal-prep/`。西语 `block-10-u009` 曾被独立复核标记解释过度，单组修订为 `la Palabra` 并再次复核后，用户对三语新全文候选明确批准。通用 producer 的逐组失败恢复仍待完善。
 - [x] 三语机器 shadow 已重绑正式 Layer 1 哈希，各 45/45 机器语义复核通过；逐句点播的本地审稿页已生成，用户已回复三语内容批准。该内容批准不等于正式 Layer 2 收据。
 - [x] 用户对中文、韩语、西语三份 45 单元草稿回复“批准”；分别记录候选哈希绑定的内容审核收据。正式语言策略和分组校验未通过前，收据保持 `formalLayer2Admitted=false`。
-- [ ] 韩语按用户选定的 `개역개정`、西语按 `RVR1960`／中性拉美语体冻结经文政策；用户称持有两版使用许可并将稍后提供凭证。收到后核对 App／音频范围、署名和期限，凭证未到前不能仅凭口头说明放行逐字引用。
-- [ ] 正式 Layer 2 producer 以自然句／合格分句组织 group 并保证 `targetText` 与 `targetUtterances` 精确一致；实测既有 POC 的单个 45 单元组被正式校验以 `Target text differs from utterances` 拒绝，三语皆同。后续 shadow 入口已改为逐源单元独立 group，避免西语词界丢失，但旧候选及内容批准哈希不可重标。新增 `produce_target_language_candidate.py` 的来源绑定请求与外部证据编译入口；三语正式 policy／语言插件未 ready，尚不能生成本片段正式候选。后续须实现真实翻译／独立语义复核和可审计语言插件收据。
+- [ ] 保存并核对韩／西语经文许可文件、App／音频授权范围、期限及署名条款；目前只有用户对本 Dev 片段的授权声明，发布材料不得声称已查阅凭证。
+- [x] 正式 Layer 2 producer 已将本片段自然语义组整理为 45／44／44 组，`targetText` 与 `targetUtterances` 精确一致；新翻译、独立模型语义复核、可重算语言插件和正式全文人审收据均通过。旧 shadow 候选与旧内容批准的哈希没有被重标。
 - [ ] 稳定 Layer 1 包的逻辑身份：外层脚本代码变动不应仅因输出目录绝对路径变化而强制三语重跑；先设计兼容迁移与可追溯的 producer 身份。
-- [ ] 对三个 locale 均生成正式 Audio Package，随后构建 Release Package；用户要求三语音频全完成后再发布 Dev。HTTP、iOS 真机与现场状态分别核验；没有上游人审时不以机器预览冒充正式四层完成。
-- [ ] 用户选继续审核 Eric 克隆音色的韩／西语能力；其注册表当前只授权 `chinese_dubbing` 和 `multilingual_voice_demo`，韩／西语仍为 `unverified_poc`。既有 v2 两条短样音已获用户批准，哈希收据保留在忽略目录；本片段四单元长句探针也已在 Spark 生成并完整解码，ASR 提示韩语 `씨름하는→실험하는`、西语 `Éfeso→Efsol`，待人耳判定。只有合格长句／全文听审和 `multilingual_dubbing` 用途证据都到位才升级能力。
+- [ ] 对三个 locale 均生成正式 Audio Package，随后构建 Release Package；用户要求三语音频全完成后再发布 Dev。HTTP、iOS 真机与现场状态分别核验。三语已审 Layer 2、片段范围音色授权收据和 speech job 已备齐；真实逐组音频、整轨、全文 ASR／听审与视频 1 倍速同步收据尚无。
+- [x] Eric 韩／西语短样音及四单元长句探针均获用户听审批准；片段范围能力收据已绑定原音频、脚本、manifest、L1 和 checkpoint。全局 Registry 仍是 `multilingual_voice_demo`、韩／西语 `unverified_poc`；本片段收据只放行本片段 speech job，不升级全局能力。
+- [x] 新增显式片段时间映射：已审英文锚点 320.16–498.32 秒映到视频 0–178.16 秒。修复 Layer 3 排程误以英文单元终点为配音起点的问题；按每组首个英文单元起点加反应延迟排程，以最后英文单元终点计算尾延迟，并拒绝 1 倍速片段终点溢出。真实媒体映射与定向测试通过；真实三语音轨是否能装入 178.178 秒，仍待合成实测。
 - [x] 中文直接引文边界建议已由固定 CUV 库取出启示录 2:4、3:4 的精确短句，并绑定本片段英文单元；用户批准两处边界与改文，重复解释句暂按讲员重述处理。批准收据绑定提案 JSON 哈希与正式 Layer 1 哈希，范围仅限经文边界；提案本身保留原始 `humanBoundaryReview=pending` 作为不可变历史，正式中文候选仍须按新文本重建并审核，不得自动改写已审 shadow 候选。
 - [x] Dev Web POC 的 pageId 路由、周次切换与无音轨播放器状态已在本地修正；HTTP 浏览器 fixture 验证了第二页切换、URL／标题更新、播放器隐藏和纯文字提示。fixture 使用占位内容，未证明本片段已发布。
 - [x] Firebase Dev Hosting rewrite 从旧 POC 专属路径扩到 `/pages/**`，使新 pageId 的深链有前端入口；定向配置测试通过，部署后仍须对新片段 URL 实测 GET。

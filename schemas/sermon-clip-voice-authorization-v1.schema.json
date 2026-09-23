@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-clip-voice-authorization-v1.schema.json",
+  "title": "Source- and candidate-bound voice permission for one Dev clip",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "scope", "englishSourcePackageJsonSha256", "targetLanguageCandidateJsonSha256", "targetLocale", "speakerId", "voiceCheckpointSha256", "userRightsAttestation"],
+  "properties": {
+    "schemaVersion": {"const": "sermon-clip-voice-authorization-v1"},
+    "scope": {"const": "this_clip_dev_audio_only"},
+    "englishSourcePackageJsonSha256": {"$ref": "#/$defs/sha256"},
+    "targetLanguageCandidateJsonSha256": {"$ref": "#/$defs/sha256"},
+    "targetLocale": {"type": "string", "pattern": "^(?!en(?:-|$))[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"},
+    "speakerId": {"type": "string", "minLength": 1},
+    "voiceCheckpointSha256": {"$ref": "#/$defs/sha256"},
+    "userRightsAttestation": {"$ref": "#/$defs/jsonArtifact"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "jsonArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "jsonSha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "jsonSha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}

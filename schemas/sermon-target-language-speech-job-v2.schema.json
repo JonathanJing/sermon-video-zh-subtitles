@@ -73,6 +73,15 @@
         },
         "targetLanguagePolicy": {
           "$ref": "#/$defs/jsonArtifact"
+        },
+        "clipVoiceAuthorization": {
+          "$ref": "#/$defs/jsonArtifact"
+        },
+        "clipVoiceCapability": {
+          "$ref": "#/$defs/jsonArtifact"
+        },
+        "clipTimelineMap": {
+          "$ref": "#/$defs/jsonArtifact"
         }
       }
     },

@@ -1,6 +1,10 @@
 import {
   fetchVerified, validateDemoCatalog, validateDemoContent, validateDemoRelease
 } from "./dev-integrity.mjs";
+import {
+  formalReleaseView, validateFormalCaptions, validateFormalCatalog,
+  validateFormalContent, validateFormalRelease
+} from "./formal-dev-adapter.mjs";
 import { PlaybackMemory } from "./playback-memory.mjs";
 
 const languageNames = {
@@ -76,6 +80,13 @@ const utilityCopy = {
   ko: { error: "Dev 콘텐츠를 불러오지 못했습니다. 현재 설교와 재생은 그대로 유지됩니다.", retry: "다시 시도", resumeAt: "마지막으로 들은 위치", resume: "이어서 듣기", restart: "처음부터", download: "현재 오디오 다운로드", seekTo: "이동", brandHome: "동행 Dev 홈", sermonInfo: "설교 정보", moreOptions: "더보기 옵션", resumeRegion: "이어서 듣기" },
   es: { error: "No se pudo cargar el contenido Dev. Se mantiene la reproducción actual.", retry: "Reintentar", resumeAt: "Última posición", resume: "Continuar", restart: "Empezar de nuevo", download: "Descargar audio actual", seekTo: "Ir a", brandHome: "Inicio de Tongxing Dev", sermonInfo: "Detalles del sermón", moreOptions: "Más opciones", resumeRegion: "Continuar escuchando" },
   vi: { error: "Không tải được nội dung Dev. Bài giảng và âm thanh hiện tại vẫn giữ nguyên.", retry: "Thử lại", resumeAt: "Đã nghe đến", resume: "Nghe tiếp", restart: "Bắt đầu lại", download: "Tải âm thanh hiện tại", seekTo: "Chuyển đến", brandHome: "Trang chủ Đồng Hành Dev", sermonInfo: "Thông tin bài giảng", moreOptions: "Tùy chọn khác", resumeRegion: "Nghe tiếp" }
+};
+const formalCopy = {
+  zh: { edition: "DEV · 四层审核片段", title: "三语审核片段", body: "译文、音频和同步已有独立人工审核收据；发布验收状态单独显示。", player: "目标语言配音 · 已完成全文听审与原视频 1 倍速同步审核。", content: "人工审核通过", audio: "全文听审通过", httpPending: "待 HTTP 验证", httpPass: "HTTP 已验证", language: "译文 · 已审核配音", foot: "此页面提供中文、韩语和西班牙语的审核片段。", caption: "字幕与已审核音频同步 · Dev" },
+  en: { edition: "DEV · FOUR-LAYER REVIEWED", title: "Reviewed three-language clip", body: "The text, audio, and synchronization have independent human review receipts; publication checks are shown separately.", player: "Target-language dubbing reviewed end to end and against the source video at 1×.", content: "Human reviewed", audio: "Full playback reviewed", httpPending: "HTTP check pending", httpPass: "HTTP verified", language: "Reviewed text and dubbing", foot: "This page provides a reviewed Chinese, Korean, and Spanish clip.", caption: "Captions follow reviewed audio · Dev" },
+  ko: { edition: "DEV · 4단계 검토", title: "3개 언어 검토 영상", body: "번역문, 오디오, 동기화의 독립적인 사람 검토 기록이 있습니다. 게시 검증 상태는 별도로 표시됩니다.", player: "전체 청취 및 원본 영상 1배속 동기화 검토를 마친 더빙입니다.", content: "사람 검토 완료", audio: "전체 청취 검토 완료", httpPending: "HTTP 검증 대기", httpPass: "HTTP 검증 완료", language: "검토된 번역과 더빙", foot: "중국어, 한국어, 스페인어 검토 영상을 제공합니다.", caption: "검토된 오디오와 동기화된 자막 · Dev" },
+  es: { edition: "DEV · CUATRO CAPAS REVISADAS", title: "Fragmento revisado en tres idiomas", body: "El texto, el audio y la sincronización tienen revisión humana independiente. La verificación de publicación se muestra aparte.", player: "Doblaje revisado completo y sincronizado con el video original a velocidad 1×.", content: "Revisión humana completa", audio: "Audio escuchado completo", httpPending: "Verificación HTTP pendiente", httpPass: "HTTP verificado", language: "Texto y doblaje revisados", foot: "Esta página ofrece el fragmento revisado en chino, coreano y español.", caption: "Subtítulos sincronizados con audio revisado · Dev" },
+  vi: { edition: "DEV · FOUR-LAYER REVIEWED", title: "Reviewed three-language clip", body: "Text, audio, and synchronization have independent human review receipts.", player: "Target-language dubbing reviewed end to end and against source video at 1×.", content: "Human reviewed", audio: "Full playback reviewed", httpPending: "HTTP check pending", httpPass: "HTTP verified", language: "Reviewed text and dubbing", foot: "Chinese, Korean, and Spanish reviewed clip.", caption: "Captions follow reviewed audio · Dev" }
 };
 Object.assign(interfaceCopy, {
   ko: { ...interfaceCopy.en, brand: "다국어 설교", languageCard: "설교 언어", mockTitle: "Layer 2 + Layer 3 POC", mockBody: "기계 번역과 복제 음성은 개발용이며 사람의 검토가 필요합니다.", sourceTitle: "Layer 1 영어 원문", sourceBody: "영어 원문과 원본 오디오는 번역과 복제 음성의 참고 자료입니다.", tabs: ["듣기", "전체 자막", "개요"], now: "현재 문장", transcript: "전체 자막", outline: "설교 개요", playerNote: "기계 생성 음성입니다. 공식 더빙이 아니며 청취 검토가 필요합니다.", sourcePlayerNote: "원본 영어 오디오입니다. 원문 구간은 아직 기계 검토 상태입니다.", release: "릴리스 패키지 상태", text: "텍스트", audio: "오디오", dialogTitle: "설교 언어 선택", dialogHint: "앱 언어, 설교 언어, 오디오 언어는 별도로 관리됩니다.", dialogFoot: "영어는 원문 참고입니다. 네 가지 번역은 개발 POC이며 베트남어 ASR은 기준 미달입니다.", footer: "Mariners Church와 무관한 개인 개발 프로젝트입니다.", audioVariant: "검토용 오디오 버전", capabilities: "기계 번역 · 예상 자막 · 복제 음성", sourceCapabilities: "영어 원문 · 원본 오디오", loadError: "Dev 콘텐츠를 불러올 수 없습니다" },
@@ -205,7 +216,8 @@ async function switchAudioVariant(variant) {
 
 function routeSelection() {
   const match = location.pathname.match(/^\/pages\/([A-Za-z0-9][A-Za-z0-9._-]{0,127})\/(en|zh-Hans|ko|es|vi)\/?$/);
-  return { pageId: match?.[1], locale: match?.[2] || new URLSearchParams(location.search).get("lang") };
+  const query = new URLSearchParams(location.search);
+  return { pageId: match?.[1] || query.get("week"), locale: match?.[2] || query.get("lang") };
 }
 
 async function selectLocale(locale, { navigate = true, manual = false, page = state.page } = {}) {
@@ -222,10 +234,21 @@ async function selectLocale(locale, { navigate = true, manual = false, page = st
   try {
   const releaseBytes = await fetchVerified(target.releasePackageUrl, target.releasePackageJsonSha256,
     { signal: controller.signal, maxBytes: 1024 * 1024 });
-  const release = validateDemoRelease(JSON.parse(new TextDecoder().decode(releaseBytes)), page, locale);
+  const parsedRelease = JSON.parse(new TextDecoder().decode(releaseBytes));
+  const formal = page.catalogKind === "formal";
+  const release = formal
+    ? formalReleaseView(validateFormalRelease(parsedRelease, page, locale), page, locale)
+    : validateDemoRelease(parsedRelease, page, locale);
   const contentBytes = await fetchVerified(release.contentUrl, release.contentSha256,
     { signal: controller.signal, maxBytes: 4 * 1024 * 1024 });
-  const content = validateDemoContent(JSON.parse(new TextDecoder().decode(contentBytes)), release, locale);
+  const content = formal
+    ? validateFormalContent(JSON.parse(new TextDecoder().decode(contentBytes)), parsedRelease, page, locale)
+    : validateDemoContent(JSON.parse(new TextDecoder().decode(contentBytes)), release, locale);
+  if (formal) {
+    const captionBytes = await fetchVerified(release.captionsUrl, release.captionsSha256,
+      { signal: controller.signal, maxBytes: 4 * 1024 * 1024 });
+    validateFormalCaptions(JSON.parse(new TextDecoder().decode(captionBytes)), content);
+  }
   const variants = availableAudioVariants(release, content, locale);
   const savedVariant = localStorage.getItem(`tongxing-dev-audio-${page.id}-${locale}`);
   const saved = variants.find(item => item.id === savedVariant);
@@ -284,9 +307,8 @@ function render() {
   weekSelect.replaceChildren(...state.catalog.pages.map(page => {
     const option = document.createElement("option");
     option.value = page.id;
-    option.textContent = page.id === state.page.id
-      ? `${content.date} · ${content.title} · Dev POC`
-      : `${page.date} · ${page.id} · Dev POC`;
+    option.textContent = `${page.date} · ${page.catalogKind === "formal" ? "四层审核片段" : "Dev POC"}`;
+    option.selected = page.id === state.page.id;
     return option;
   }));
   weekSelect.value = state.page.id;
@@ -332,7 +354,7 @@ function renderInterfaceCopy() {
   document.documentElement.lang = interfaceLocales[state.ui].htmlLang;
   $("brandName").textContent = extra.brandName;
   $("brandSubtitle").textContent = extra.brandDetail;
-  $("editionLabel").textContent = extra.edition;
+  $("editionLabel").textContent = state.page?.catalogKind === "formal" ? formalCopy[state.ui].edition : extra.edition;
   $("weekLabel").textContent = extra.week;
   $("weekHint").textContent = state.catalog?.pages.length === 1 ? statusCopy[state.ui].oneWeek : extra.weekHint;
   $("weekSelect").title = $("weekHint").textContent;
@@ -357,6 +379,7 @@ function renderInterfaceCopy() {
   $("captionNote").textContent = state.audioVariant ? extra.captionNote : textOnlyCaptionCopy[state.ui];
   $("transcriptHeading").textContent = copy.transcript;
   $("outlineHeading").textContent = copy.outline;
+  $("outlineBadge").textContent = state.page?.catalogKind === "formal" ? "DEV · REVIEWED" : "DEV POC";
   $("playerNote").textContent = !state.audioVariant ? textOnlyCopy[state.ui]
     : state.locale === "en" ? copy.sourcePlayerNote : copy.playerNote;
   $("releaseTitle").textContent = copy.release;
@@ -371,9 +394,30 @@ function renderInterfaceCopy() {
     : screening === "pass" ? statuses.passAudio
     : screening === "requires_review" ? statuses.review
     : ["pending_for_default_audio_variant", "pending_for_this_audio_variant"].includes(screening) ? statuses.pending : statuses.unverified;
+  if (state.page?.catalogKind === "formal") {
+    const formal = formalCopy[state.ui];
+    $("mockNoticeTitle").textContent = formal.title;
+    $("mockNoticeBody").textContent = formal.body;
+    $("playerNote").textContent = formal.player;
+    $("captionNote").textContent = formal.caption;
+    $("contentStatus").textContent = formal.content;
+    $("audioStatus").textContent = formal.audio;
+    $("httpStatus").textContent = state.release?.status === "published_http_verified"
+      ? formal.httpPass : formal.httpPending;
+    $("languageDialogFoot").textContent = formal.foot;
+    $("sourceToggle").hidden = true;
+    $("sourceBlock").hidden = true;
+    $("alignmentNotice").hidden = true;
+    $("alignmentDetail").hidden = true;
+  } else {
+    $("httpStatus").textContent = "Firebase Dev POC";
+    $("sourceToggle").hidden = false;
+    $("alignmentNotice").hidden = false;
+    $("alignmentDetail").hidden = false;
+  }
   $("languageDialogTitle").textContent = copy.dialogTitle;
   $("languageDialogHint").textContent = copy.dialogHint;
-  $("languageDialogFoot").textContent = copy.dialogFoot;
+  if (state.page?.catalogKind !== "formal") $("languageDialogFoot").textContent = copy.dialogFoot;
   $("closeLanguageDialog").setAttribute("aria-label", extra.close);
   $("footerBrand").textContent = extra.footerBrand;
   $("footerMotto").textContent = extra.footerMotto;
@@ -440,8 +484,10 @@ function renderLanguageList() {
     button.className = `language-option${locale === state.locale ? " is-selected" : ""}`;
     const target = state.page.targets[locale];
     const extra = extraCopy[state.ui];
-    const status = locale === "en" ? extra.sourceStatus : target.machineScreening === "requires_review" ? extra.needsReview : extra.screened;
-    const media = target.audioStatus === "unavailable" ? textOnlyCopy[state.ui]
+    const status = state.page.catalogKind === "formal" ? formalCopy[state.ui].content
+      : locale === "en" ? extra.sourceStatus : target.machineScreening === "requires_review" ? extra.needsReview : extra.screened;
+    const media = state.page.catalogKind === "formal" ? formalCopy[state.ui].language
+      : target.audioStatus === "unavailable" ? textOnlyCopy[state.ui]
       : locale === "en" ? extra.sourceMedia : extra.targetMedia;
     const displayName = new Intl.DisplayNames([interfaceLocales[state.ui].htmlLang], { type: "language" }).of(locale);
     button.innerHTML = `<span class="language-option-name"><span class="language-code">${info.code}</span><span><strong lang="${locale}">${info.native}</strong><small>${escapeHTML(displayName)}</small></span></span><span class="language-option-caps">${media}<br>${status}</span>`;
@@ -517,8 +563,8 @@ function syncPlayer() {
   $("currentCaption").textContent = cue?.text || "";
   $("nextCaption").textContent = activeCues()[index + 1]?.text || "";
   $("sourceCaption").textContent = state.locale === "en" ? "" : cue?.source || "";
-  $("sourceBlock").hidden = state.locale === "en" || !state.showSource || !cue?.source;
-  $("sourceToggle").hidden = state.locale === "en";
+  $("sourceBlock").hidden = state.page?.catalogKind === "formal" || state.locale === "en" || !state.showSource || !cue?.source;
+  $("sourceToggle").hidden = state.page?.catalogKind === "formal" || state.locale === "en";
   $("sourceToggle").setAttribute("aria-pressed", String(state.showSource));
   $("cueCounter").textContent = `${currentCueIndex() + 1} / ${activeCues().length}`;
   const duration = effectiveDuration();
@@ -709,7 +755,16 @@ async function openPage(pageId, { navigate = true, requestedLocale = null } = {}
 }
 
 async function loadInitialCatalog() {
-  state.catalog = validateDemoCatalog(await loadJSON("/multilingual.json"));
+  const demo = validateDemoCatalog(await loadJSON("/multilingual.json"));
+  const response = await fetch("/multilingual-v2.json", { cache: "no-store" });
+  if (!response.ok && response.status !== 404) throw new Error(`Formal Dev catalog: HTTP ${response.status}`);
+  const formal = response.ok ? validateFormalCatalog(await response.json()) : null;
+  const pages = [
+    ...(formal?.pages || []).map(page => ({ ...page, catalogKind: "formal" })),
+    ...demo.pages.map(page => ({ ...page, catalogKind: "poc" }))
+  ];
+  if (new Set(pages.map(page => page.id)).size !== pages.length) throw new Error("Dev page ID reused across formal and POC catalogs");
+  state.catalog = { pages, defaultPageId: formal?.defaultPageId || demo.defaultPageId };
   const route = routeSelection();
   await openPage(route.pageId || state.catalog.defaultPageId,
     { navigate: location.pathname !== "/", requestedLocale: route.locale });
