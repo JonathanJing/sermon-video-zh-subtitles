@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "sermon-tracker-fingerprint-v1",
+  "pageId": "REPLACE_WITH_PAGE_ID",
+  "targetLocale": "ko",
+  "trackSha256": "REPLACE_WITH_64_HEX_AUDIO_SHA256",
+  "indexSha256": "REPLACE_WITH_64_HEX_INDEX_SHA256",
+  "indexUrl": "/fingerprints/REPLACE_WITH_FIRST_16_INDEX_SHA256-landmarks.json"
+}
