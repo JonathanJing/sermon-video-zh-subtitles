@@ -33,7 +33,7 @@ flowchart LR
     G --> L
 ```
 
-Agents API maintains the server-side session and control loop with `environment: none`. The local runner executes bounded tool requests and submits results. Downloading, ASR, translation, PDF rendering, QA, and publication remain in the deterministic Python layer. The supervisor now defaults to **`gpt-6-astra` with reasoning effort `medium`**. The model lookup for the former `gpt-5.6` returned HTTP 404 for this account, so it is not retained as an available default. Explicit SDK rollback uses the same Astra Medium model and changes only the control-plane transport. Translation, reading review, and companion generation remain Astra Medium, and ASR remains `gpt-transcribe`.
+Agents API maintains the server-side session and control loop with `environment: none`. The local runner executes bounded tool requests and submits results. Downloading, ASR, translation, PDF rendering, QA, and publication remain in the deterministic Python layer. The supervisor defaults to **`gpt-6-sol` with reasoning effort `medium`**. Explicit SDK rollback uses the same Sol Medium model and changes only the control-plane transport. Translation, reading review, and companion generation remain Astra Medium, and ASR remains `gpt-transcribe`. Existing Astra sessions retain their model binding; finish or reconcile unresolved sessions before starting a Sol session.
 
 The first scheduler inspection on September 11 did not find this production task; a later authorized step created and re-read the active `pdf-context-pack` Codex schedule. That is dated installation evidence, so current health and run history still require a fresh check. See the [local runbook](./codex-local-production-runbook.zh.md).
 
@@ -149,7 +149,7 @@ python3 scripts/configure_live_source_scheduler.py \
   --schedule '*/10 18-23 * * SAT' \
   --timezone America/Los_Angeles \
   --supervisor-mode shadow \
-  --agent-model gpt-6-astra
+  --agent-model gpt-6-sol
 ```
 
 When inline work is disabled and the following environment variables are configured, the endpoint dispatches a Cloud Run Job instead of executing the long workflow inside the web request:

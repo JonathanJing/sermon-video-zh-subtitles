@@ -1,0 +1,45 @@
+const now = new Date().toISOString();
+const row = (layer, locale, complete, total) => ({
+  layer, locale, complete, total, percent: Math.round(complete / total * 100),
+});
+const acceptance = { device: { status: 'not_run' }, venue: { status: 'not_run' } };
+
+export const demoSnapshot = {
+  schemaVersion: 'sermon-public-tracker-snapshot-v1',
+  pageId: 'demo-2026-09-20', target: 'dev', serviceDate: '2026-09-20',
+  generatedAt: now, ledgerUpdatedAt: now, readOnly: true,
+  source: { inputPageUrl: 'https://www.marinerschurch.org/irvine/',
+    inputPageConfigured: true, monitorStatus: 'source_detected', checkedAt: now,
+    videoPresent: true, videoState: 'was_live', videoChange: 'first_seen', lastChangeAt: now },
+  progress: { complete: 18, total: 46, blockerCount: 1, blockedStepIds: ['L3-05@ko'],
+    missingEstimateCount: 1, activeUnits: [{ step: 'L3-02@ko', done: 12, total: 45, percent: 27 }],
+    earliestContinuousEta: null, remainingSerialMinutes: null },
+  sharedLayer1: row(1, null, 4, 4),
+  locales: [
+    { locale: 'zh-Hans', layers: { '2': row(2, 'zh-Hans', 4, 4),
+      '3': row(3, 'zh-Hans', 4, 6), '4': row(4, 'zh-Hans', 2, 4) },
+      delivery: { pageStatus: 'legacy_catalog_local', pageUrl: null,
+        voiceStatus: 'legacy_track_listed', voicePublished: false,
+        fingerprint: { status: 'generated_local' } }, acceptance },
+    { locale: 'ko', layers: { '2': row(2, 'ko', 4, 4),
+      '3': row(3, 'ko', 2, 6), '4': row(4, 'ko', 0, 4) },
+      delivery: { pageStatus: 'not_generated', pageUrl: null,
+        voiceStatus: 'candidate', voicePublished: false,
+        fingerprint: { status: 'not_generated' } }, acceptance },
+    { locale: 'es', layers: { '2': row(2, 'es', 3, 4),
+      '3': row(3, 'es', 0, 6), '4': row(4, 'es', 0, 4) },
+      delivery: { pageStatus: 'not_generated', pageUrl: null,
+        voiceStatus: 'not_generated', voicePublished: false,
+        fingerprint: { status: 'not_generated' } }, acceptance },
+  ],
+  steps: [
+    { id: 'L1-01', layer: 1, locale: null, status: 'complete' },
+    { id: 'L1-02', layer: 1, locale: null, status: 'complete' },
+    { id: 'L1-03', layer: 1, locale: null, status: 'complete' },
+    { id: 'L1-04', layer: 1, locale: null, status: 'complete' },
+    { id: 'L2-04@ko', layer: 2, locale: 'ko', status: 'complete' },
+    { id: 'L3-02@ko', layer: 3, locale: 'ko', status: 'running', doneUnits: 12, totalUnits: 45 },
+    { id: 'L3-05@ko', layer: 3, locale: 'ko', status: 'waiting_review' },
+    { id: 'L4-02@es', layer: 4, locale: 'es', status: 'pending' },
+  ],
+};

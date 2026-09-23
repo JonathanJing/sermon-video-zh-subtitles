@@ -1,0 +1,4 @@
+.firebaserc
+.firebase/
+public/tracker-config.json
+watch-config.json
