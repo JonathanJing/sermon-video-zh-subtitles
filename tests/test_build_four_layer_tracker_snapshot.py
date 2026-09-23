@@ -148,6 +148,38 @@ class TrackerSnapshotTest(unittest.TestCase):
         delivery = next(item["delivery"] for item in snapshot["locales"] if item["locale"] == "ko")
         self.assertEqual(delivery["fingerprint"]["status"], "binding_invalid")
 
+    def test_canonical_chinese_release_does_not_inherit_legacy_fingerprint(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            index = root / "fingerprints" / ("a" * 16 + "-landmarks.json")
+            index.parent.mkdir()
+            index.write_text("{}", encoding="utf-8")
+            index_sha = hashlib.sha256(index.read_bytes()).hexdigest()
+            legacy_sha = "a" * 64
+            week = {"id": self.ledger["pageId"], "tracks": [{"sha256": legacy_sha}],
+                    "audioFingerprint": {"pageId": self.ledger["pageId"],
+                                         "indexUrl": "/fingerprints/" + index.name,
+                                         "indexSha256": index_sha, "trackSha256": legacy_sha}}
+            receipt = {"status": "pass", "files": [{"path": "fingerprints/" + index.name,
+                                                         "status": 200, "hashMatch": True}]}
+            package = {"status": "candidate", "audioStatus": "human_reviewed",
+                       "assets": [{"role": "audio", "sha256": "b" * 64}]}
+            delivery = tracker.locale_delivery("zh-Hans", package, week, root, receipt,
+                                               None, self.ledger["pageId"])
+            self.assertEqual(delivery["fingerprint"]["status"], "not_generated")
+
+    def test_withdrawn_release_does_not_expose_page_voice_or_fingerprint(self):
+        package = {"status": "withdrawn", "audioStatus": "human_reviewed",
+                   "assets": [{"role": "audio", "sha256": "a" * 64}]}
+        binding = {"status": "http_verified", "trackSha256": "a" * 64}
+        delivery = tracker.locale_delivery("ko", package, None, None, None,
+                                           "https://example.web.app", self.ledger["pageId"], binding)
+        self.assertEqual(delivery["pageStatus"], "withdrawn")
+        self.assertEqual(delivery["voiceStatus"], "withdrawn")
+        self.assertEqual(delivery["fingerprint"]["status"], "withdrawn")
+        self.assertIsNone(delivery["pageUrl"])
+        self.assertFalse(delivery["voicePublished"])
+
     def test_published_release_requires_human_text_and_http_evidence(self):
         package = {
             "schemaVersion": "sermon-target-language-release-package-v1",

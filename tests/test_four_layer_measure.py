@@ -35,6 +35,20 @@ class FourLayerMeasureTest(unittest.TestCase):
         self.assertEqual(row["operatorReviewWaitSeconds"], 1200)
         self.assertIsNone(row["measuredExecutionSeconds"])
 
+    def test_invalidation_closes_review_wait_before_new_cycle(self):
+        ledger = progress.new_ledger("test-page", ["ko"])
+        ledger["history"] = [
+            {"at": "2026-09-23T12:00:00+00:00", "action": "update", "step": "L2-04@ko", "status": "waiting_review"},
+            {"at": "2026-09-23T12:05:00+00:00", "action": "invalidate", "steps": ["L2-04@ko"]},
+            {"at": "2026-09-23T12:10:00+00:00", "action": "update", "step": "L2-04@ko", "status": "waiting_review"},
+            {"at": "2026-09-23T12:20:00+00:00", "action": "update", "step": "L2-04@ko", "status": "complete"},
+        ]
+        report = measure.timing_audit(ledger, [])
+        row = next(row for row in report["rows"] if row["step"] == "L2-04@ko")
+        self.assertEqual(row["closedReviewWaits"], 2)
+        self.assertEqual(row["operatorReviewWaitSeconds"], 900)
+        self.assertFalse(row["openReviewWait"])
+
     def test_unknown_step_cannot_run(self):
         with tempfile.TemporaryDirectory() as temp:
             ledger_path = Path(temp) / "four-layer-progress.json"

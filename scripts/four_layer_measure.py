@@ -72,12 +72,20 @@ def timing_audit(ledger: dict, events: list[dict], *, damaged_rows: int = 0) -> 
                                                     "closedWaits": 0, "openWait": False})
     opened: dict[str, datetime] = {}
     for event in ledger.get("history", []):
-        step = event.get("step")
-        if event.get("action") != "update" or step not in ledger["steps"]:
-            continue
         try:
             occurred = datetime.fromisoformat(event["at"].replace("Z", "+00:00"))
         except (KeyError, TypeError, ValueError):
+            continue
+        if event.get("action") == "invalidate":
+            for invalidated_step in event.get("steps", []):
+                if invalidated_step in opened:
+                    seconds = (occurred - opened.pop(invalidated_step)).total_seconds()
+                    if seconds >= 0:
+                        reviews[invalidated_step]["closedWaitSeconds"] += seconds
+                        reviews[invalidated_step]["closedWaits"] += 1
+            continue
+        step = event.get("step")
+        if event.get("action") != "update" or step not in ledger["steps"]:
             continue
         if step in opened and event.get("status") != "waiting_review":
             seconds = (occurred - opened.pop(step)).total_seconds()

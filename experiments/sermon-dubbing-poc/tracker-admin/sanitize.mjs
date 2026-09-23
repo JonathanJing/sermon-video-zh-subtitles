@@ -7,7 +7,7 @@ const DELIVERY = ['unknown', 'not_generated', 'generated_local', 'http_verified'
   'declared_unchecked', 'index_missing', 'hash_mismatch', 'binding_invalid',
   'legacy_catalog_local', 'legacy_catalog_http_verified', 'legacy_track_listed',
   'legacy_track_http_verified', 'release_candidate', 'published_http_verified',
-  'human_reviewed', 'candidate', 'unavailable', 'poc_catalog_local',
+  'human_reviewed', 'candidate', 'withdrawn', 'unavailable', 'poc_catalog_local',
   'poc_catalog_http_verified', 'poc_track_listed', 'poc_track_http_verified',
   'machine_review_pass_human_review_pending'];
 const enumValue = (value, allowed, fallback = 'unknown') => allowed.includes(value) ? value : fallback;

@@ -27,3 +27,16 @@ test('snapshot validation rejects unsafe IDs and missing scope', () => {
     assert.equal(publicData.includes(value), false, value);
   }
 });
+
+test('withdrawn delivery survives the public projection', () => {
+  const snapshot = { schemaVersion: 'sermon-public-tracker-snapshot-v1',
+    pageId: 'week-2026-09-20', target: 'dev', locales: [{ locale: 'ko', delivery: {
+      pageStatus: 'withdrawn', voiceStatus: 'withdrawn', voicePublished: false,
+      fingerprint: { status: 'withdrawn' },
+    } }], steps: [], source: {}, progress: {}, readOnly: true };
+  const delivery = validateSnapshot(snapshot).locales[0].delivery;
+  assert.equal(delivery.pageStatus, 'withdrawn');
+  assert.equal(delivery.voiceStatus, 'withdrawn');
+  assert.equal(delivery.fingerprint.status, 'withdrawn');
+  assert.equal(delivery.pageUrl, null);
+});

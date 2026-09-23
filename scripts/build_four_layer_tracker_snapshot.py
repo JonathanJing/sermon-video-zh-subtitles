@@ -229,12 +229,17 @@ def locale_delivery(locale: str, package: dict | None, week: dict | None,
                     public_root: Path | None, receipt: dict | None,
                     site_url: str | None, page_id: str,
                     binding: dict | None = None) -> dict:
+    if package and package.get("status") == "withdrawn":
+        return {"pageStatus": "withdrawn", "pageUrl": None,
+                "voiceStatus": "withdrawn", "voicePublished": False,
+                "fingerprint": {"status": "withdrawn", "trackSha256": None},
+                "origin": "canonical_release_package"}
     if binding:
         audio_shas = {asset.get("sha256") for asset in (package or {}).get("assets", [])
                       if asset.get("role") == "audio"}
         fingerprint = fingerprint_status(binding, page_id, audio_shas, public_root, receipt)
     else:
-        fingerprint = local_fingerprint(week, public_root, receipt) if locale == "zh-Hans" else {
+        fingerprint = local_fingerprint(week, public_root, receipt) if package is None and locale == "zh-Hans" else {
             "status": "not_generated", "trackSha256": None}
     if package:
         http_pass = package.get("httpVerification", {}).get("status") == "pass"

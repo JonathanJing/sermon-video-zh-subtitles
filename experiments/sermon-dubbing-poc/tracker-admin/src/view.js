@@ -8,7 +8,7 @@ const LABELS = {
   legacy_catalog_http_verified: '旧目录·线上已核验', legacy_track_listed: '旧音轨·已列出',
   legacy_track_http_verified: '旧音轨·线上已核验', release_candidate: '发布候选',
   published_http_verified: '线上已核验', human_reviewed: '人工已审核',
-  candidate: '候选', unavailable: '无音频', unknown: '未知',
+  candidate: '候选', withdrawn: '已撤回', unavailable: '无音频', unknown: '未知',
   not_run: '未执行', passed: '通过', failed: '失败', pass: '通过', fail: '失败',
   first_seen: '首次发现', updated: '视频已更新', unchanged: '未变化',
   not_detected: '未检测到视频', not_checked: '未检查', video_id_unknown: '视频 ID 未知',
@@ -30,7 +30,7 @@ const stepName = (step) => STEP_NAMES[step.id.split('@')[0]] || step.id;
 const STATUS_CLASS = {
   complete: 'ok', passed: 'ok', pass: 'ok', http_verified: 'ok', published_http_verified: 'ok',
   updated: 'ok', running: 'active', first_seen: 'active', waiting_review: 'warn',
-  blocked: 'bad', failed: 'bad', fail: 'bad', hash_mismatch: 'bad',
+  blocked: 'bad', withdrawn: 'bad', failed: 'bad', fail: 'bad', hash_mismatch: 'bad',
   binding_invalid: 'bad', index_missing: 'bad',
 };
 
