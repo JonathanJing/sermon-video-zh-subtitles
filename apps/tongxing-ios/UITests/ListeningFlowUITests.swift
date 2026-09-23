@@ -198,6 +198,16 @@ final class ListeningFlowUITests: XCTestCase {
         }
     }
 
+    func testTopInterfaceLanguageCanChangeBeforeCatalogLoads() {
+        let app = launchFixture(offline: true)
+        let menu = element("app-language-menu", in: app)
+        XCTAssertTrue(menu.waitForExistence(timeout: 5))
+        menu.tap()
+        app.buttons["한국어"].tap()
+        XCTAssertTrue(app.staticTexts["설교를 불러올 수 없습니다"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["새로고침"].exists)
+    }
+
     func testSelectTrackDownloadPlayPauseAndSeekToSubtitle() throws {
         let app = launchFixture()
         try selectSecondTrack(in: app)
@@ -297,10 +307,11 @@ final class ListeningFlowUITests: XCTestCase {
                       "无需滚动就应完整显示现场对齐按钮", file: file, line: line)
     }
 
-    private func launchFixture(largeText: Bool = false) -> XCUIApplication {
+    private func launchFixture(largeText: Bool = false, offline: Bool = false) -> XCUIApplication {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing"] + (largeText ? ["--ui-testing-large-text"] : [])
+            + (offline ? ["--ui-testing-offline"] : [])
         app.launchArguments += ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
         app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
         app.launchEnvironment["TONGXING_UI_TEST_RUN_ID"] = UUID().uuidString
@@ -316,8 +327,12 @@ final class ListeningFlowUITests: XCTestCase {
             }
         }
         app.launch()
-        XCTAssertTrue(element("sermon-title", in: app).waitForExistence(timeout: 15))
-        XCTAssertEqual(element("sermon-title", in: app).label, "界面测试证道")
+        if offline {
+            XCTAssertTrue(app.staticTexts["暂时无法读取证道"].waitForExistence(timeout: 15))
+        } else {
+            XCTAssertTrue(element("sermon-title", in: app).waitForExistence(timeout: 15))
+            XCTAssertEqual(element("sermon-title", in: app).label, "界面测试证道")
+        }
         return app
     }
 

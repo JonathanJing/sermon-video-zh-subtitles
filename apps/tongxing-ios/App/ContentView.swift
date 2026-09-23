@@ -27,6 +27,9 @@ struct ContentView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: verticalSizeClass == .compact ? 12 : 16) {
+                        if model.selectedWeek == nil {
+                            HStack { Spacer(); appLanguageMenu }
+                        }
                         if let week = model.selectedWeek {
                             sermonHeading(week).id("top")
                             if let notice = model.catalogNotice {
