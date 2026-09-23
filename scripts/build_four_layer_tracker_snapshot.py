@@ -19,6 +19,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 from scripts import four_layer_progress as progress
+from scripts import four_layer_measure as measure
+from scripts import sermon_accounting as accounting
 
 
 SCHEMA = "sermon-public-tracker-snapshot-v1"
@@ -313,7 +315,8 @@ def build_snapshot(ledger: dict, *, monitor: dict | None = None,
                    catalog: dict | None = None, public_root: Path | None = None,
                    receipt: dict | None = None, packages: dict | None = None,
                    fingerprints: dict | None = None,
-                   site_url: str | None = None) -> dict:
+                   site_url: str | None = None,
+                   timing_report: dict | None = None) -> dict:
     if site_url and not https_url(site_url):
         raise ValueError("site URL must be HTTPS")
     if catalog and catalog.get("schemaVersion") != "sermon-weekly-catalog-v1":
@@ -338,10 +341,24 @@ def build_snapshot(ledger: dict, *, monitor: dict | None = None,
                         "delivery": delivery,
                         "acceptance": {kind: {"status": ledger["acceptance"][locale][kind]["status"]}
                                        for kind in ("device", "venue")}})
-    steps = [{"id": key, "layer": step["layer"], "locale": step["locale"],
-              "status": step["status"], "doneUnits": step["doneUnits"],
-              "totalUnits": step["totalUnits"]}
-             for key, step in ledger["steps"].items()]
+    timing_rows = {row["step"]: row for row in (timing_report or {}).get("rows", [])}
+    steps = []
+    for key, step in ledger["steps"].items():
+        timing = timing_rows.get(key, {})
+        steps.append({"id": key, "layer": step["layer"], "locale": step["locale"],
+                      "status": step["status"], "doneUnits": step["doneUnits"],
+                      "totalUnits": step["totalUnits"],
+                      "timing": {
+                          "executionAttempts": timing.get("executionAttempts", 0),
+                          "failedExecutionAttempts": timing.get("failedExecutionAttempts", 0),
+                          "measuredExecutionSeconds": timing.get("measuredExecutionSeconds"),
+                          "lastExecutionStatus": timing.get("lastExecutionStatus"),
+                          "lastExecutionAt": public_timestamp(timing.get("lastExecutionAt")),
+                          "openExecution": timing.get("openExecution", False),
+                          "closedReviewWaits": timing.get("closedReviewWaits", 0),
+                          "operatorReviewWaitSeconds": timing.get("operatorReviewWaitSeconds"),
+                          "openReviewWait": timing.get("openReviewWait", False),
+                      }})
     snapshot = {
         "schemaVersion": SCHEMA,
         "pageId": page_id,
@@ -357,6 +374,8 @@ def build_snapshot(ledger: dict, *, monitor: dict | None = None,
                      "activeUnits": report["activeUnits"],
                      "earliestContinuousEta": report["earliestContinuousEta"],
                      "remainingSerialMinutes": report["remainingSerialMinutes"]},
+        "timingCoverage": {"measuredStepCount": (timing_report or {}).get("measuredStepCount", 0),
+                           "damagedAccountingRows": (timing_report or {}).get("damagedAccountingRows", 0)},
         "sharedLayer1": public_row(next(row for row in report["rows"] if row["layer"] == 1)),
         "locales": locales,
         "steps": steps,
@@ -391,6 +410,9 @@ def main() -> None:
         private_source_state = None
     packages = release_packages(args.release_package, ledger["pageId"], ledger["locales"])
     fingerprints = fingerprint_bindings(args.fingerprint_evidence, ledger["pageId"], ledger["locales"])
+    accounting_dir = args.ledger.parent / "accounting"
+    events, damaged = accounting.read_events(accounting_dir) if (accounting_dir / "events.jsonl").exists() else ([], [])
+    timing_report = measure.timing_audit(ledger, events, damaged_rows=len(damaged))
     monitor = read_json(args.source_monitor)
     snapshot = build_snapshot(ledger, monitor=monitor,
                               previous_source_state=private_source_state,
@@ -398,6 +420,7 @@ def main() -> None:
                               catalog=read_json(args.catalog), public_root=args.public_root,
                               receipt=read_json(args.http_receipt), packages=packages,
                               fingerprints=fingerprints,
+                              timing_report=timing_report,
                               site_url=args.site_url)
     progress.save(args.out, snapshot)
     if monitor:

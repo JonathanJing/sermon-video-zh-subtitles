@@ -70,6 +70,10 @@ export function sanitizeSnapshot(input) {
       earliestContinuousEta: stamp(progress.earliestContinuousEta),
       remainingSerialMinutes: progress.remainingSerialMinutes == null ? null : number(progress.remainingSerialMinutes),
     },
+    timingCoverage: {
+      measuredStepCount: number(input.timingCoverage?.measuredStepCount),
+      damagedAccountingRows: number(input.timingCoverage?.damagedAccountingRows),
+    },
     sharedLayer1: row(input.sharedLayer1),
     locales: input.locales.slice(0, 20).filter((item) => LOCALE.test(item?.locale || '')).map((item) => ({
       locale: item.locale,
@@ -95,6 +99,17 @@ export function sanitizeSnapshot(input) {
       status: enumValue(step.status, STATUS, 'pending'),
       doneUnits: step.doneUnits == null ? null : number(step.doneUnits),
       totalUnits: step.totalUnits == null ? null : number(step.totalUnits),
+      timing: {
+        executionAttempts: number(step.timing?.executionAttempts),
+        failedExecutionAttempts: number(step.timing?.failedExecutionAttempts),
+        measuredExecutionSeconds: step.timing?.measuredExecutionSeconds == null ? null : number(step.timing.measuredExecutionSeconds),
+        lastExecutionStatus: enumValue(step.timing?.lastExecutionStatus, ['completed', 'failed'], null),
+        lastExecutionAt: stamp(step.timing?.lastExecutionAt),
+        openExecution: step.timing?.openExecution === true,
+        closedReviewWaits: number(step.timing?.closedReviewWaits),
+        operatorReviewWaitSeconds: step.timing?.operatorReviewWaitSeconds == null ? null : number(step.timing.operatorReviewWaitSeconds),
+        openReviewWait: step.timing?.openReviewWait === true,
+      },
     })),
   };
 }
