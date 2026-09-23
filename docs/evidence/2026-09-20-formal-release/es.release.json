@@ -1,0 +1,45 @@
+{
+  "assets": [
+    {
+      "path": "/content/2026-09-20-revelation-clip/es.json",
+      "role": "content",
+      "sha256": "71888a21f1ff297852794c90e866cdedb88070685cdc70eb44be199415341aa9"
+    },
+    {
+      "path": "/media/2026-09-20-revelation-clip/es.wav",
+      "role": "audio",
+      "sha256": "fac1c70ea88ff787d9150e075d6e6834d47126e6492f63d4b71c3e3aea88ec34"
+    },
+    {
+      "path": "/captions/2026-09-20-revelation-clip/es.json",
+      "role": "captions",
+      "sha256": "5af78e392d907777e6a4f08ec7101ab640ecdeacf4ecce5753d80130eb081c9f"
+    }
+  ],
+  "audioLocale": "es",
+  "audioStatus": "human_reviewed",
+  "contentLocale": "es",
+  "contentStatus": "human_reviewed",
+  "deviceAcceptance": {
+    "evidenceSha256": null,
+    "status": "not_run"
+  },
+  "httpVerification": {
+    "evidenceSha256": null,
+    "status": "not_run"
+  },
+  "interfaceLocale": "es",
+  "issues": [],
+  "packageId": "2026-09-20-revelation-clip-es",
+  "pageId": "2026-09-20-revelation-clip",
+  "schemaVersion": "sermon-target-language-release-package-v1",
+  "sourceLocale": "en",
+  "status": "candidate",
+  "targetLanguageAudioPackageJsonSha256": "13b2243d95fc81205447788df5b8fb9c50e5e8ca8825058f0b8a5db45bcc6b4b",
+  "targetLanguageCandidateJsonSha256": "d5b2efc41c7cf961f77a35a29349accedc9f6d846591933b3f4164f466557f3c",
+  "targetLocale": "es",
+  "venueAcceptance": {
+    "evidenceSha256": null,
+    "status": "not_run"
+  }
+}

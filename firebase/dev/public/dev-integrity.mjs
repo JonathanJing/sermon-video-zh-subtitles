@@ -111,7 +111,10 @@ export async function fetchVerified(path, expectedSha256, {
   fetchImpl = fetch, origin = location.origin, maxBytes = 24 * 1024 * 1024, signal
 } = {}) {
   requireValue(SHA256.test(expectedSha256), "Missing Dev asset hash");
-  const url = sameOriginAsset(path, "/", path.endsWith(".json") ? ".json" : ".mp3", origin);
+  const suffix = typeof path === "string"
+    ? [".json", ".mp3", ".wav"].find(value => path.endsWith(value)) : null;
+  requireValue(suffix, "Unsupported Dev asset type");
+  const url = sameOriginAsset(path, "/", suffix, origin);
   const response = await fetchImpl(url.href, { cache: "no-store", credentials: "omit", redirect: "error", signal });
   requireValue(response.ok && (!response.url || new URL(response.url).origin === origin), "Dev asset unavailable");
   const declared = Number(response.headers?.get("content-length"));
