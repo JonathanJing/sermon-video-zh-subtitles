@@ -1,0 +1,216 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-english-source-machine-judge-v1.schema.json",
+  "title": "Machine judge receipt for Layer 1 sentence anchors",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "reviewType",
+    "humanApproval",
+    "status",
+    "layer2DevelopmentEligible",
+    "productionTranslationEligible",
+    "alignedSegmentsSha256",
+    "anchorManifestJsonSha256",
+    "downstreamInvalidationKey",
+    "implementationSha256",
+    "model",
+    "reasoningEffort",
+    "promptVersion",
+    "requestIds",
+    "responseModels",
+    "reviewedAt",
+    "thresholds",
+    "deterministicReview",
+    "reviewedSourceSentenceIds",
+    "reviewedManifestIssueJsonSha256s",
+    "sentences",
+    "counts",
+    "unresolvedIssues",
+    "requestReceipts"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "sermon-english-source-machine-judge-v1" },
+    "reviewType": { "const": "model" },
+    "humanApproval": { "const": false },
+    "status": {
+      "enum": ["approved_for_layer2_shadow", "rejected_for_layer2_shadow"]
+    },
+    "layer2DevelopmentEligible": { "type": "boolean" },
+    "productionTranslationEligible": { "const": false },
+    "alignedSegmentsSha256": { "$ref": "#/$defs/sha256" },
+    "anchorManifestJsonSha256": { "$ref": "#/$defs/sha256" },
+    "downstreamInvalidationKey": { "$ref": "#/$defs/sha256" },
+    "implementationSha256": { "$ref": "#/$defs/sha256" },
+    "model": { "type": "string", "minLength": 1 },
+    "reasoningEffort": { "type": "string", "minLength": 1 },
+    "promptVersion": { "const": "sermon-english-source-machine-judge-v1" },
+    "requestIds": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "responseModels": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "reviewedAt": { "type": "string", "format": "date-time" },
+    "thresholds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requiredDeterministicCheckPassRate",
+        "requiredSentencePassRate",
+        "maximumHighRiskSentences",
+        "maximumUnresolvedIssues"
+      ],
+      "properties": {
+        "requiredDeterministicCheckPassRate": { "const": 1.0 },
+        "requiredSentencePassRate": { "const": 1.0 },
+        "maximumHighRiskSentences": { "const": 0 },
+        "maximumUnresolvedIssues": { "const": 0 }
+      }
+    },
+    "deterministicReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "checks", "issues"],
+      "properties": {
+        "status": { "$ref": "#/$defs/passFail" },
+        "checks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["checkId", "status", "evidence"],
+            "properties": {
+              "checkId": { "type": "string", "minLength": 1 },
+              "status": { "$ref": "#/$defs/passFail" },
+              "evidence": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "issues": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "reviewedSourceSentenceIds": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "reviewedManifestIssueJsonSha256s": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/sha256" },
+      "uniqueItems": true
+    },
+    "sentences": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/sentence" }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourceSentences",
+        "sourceUnits",
+        "manifestIssues",
+        "sentencePass",
+        "sentenceFail",
+        "highRiskSentences"
+      ],
+      "properties": {
+        "sourceSentences": { "type": "integer", "minimum": 0 },
+        "sourceUnits": { "type": "integer", "minimum": 0 },
+        "manifestIssues": { "type": "integer", "minimum": 0 },
+        "sentencePass": { "type": "integer", "minimum": 0 },
+        "sentenceFail": { "type": "integer", "minimum": 0 },
+        "highRiskSentences": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "unresolvedIssues": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "requestReceipts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "sha256",
+          "requestSha256",
+          "responseId",
+          "model"
+        ],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "sha256": { "$ref": "#/$defs/sha256" },
+          "requestSha256": { "$ref": "#/$defs/sha256" },
+          "responseId": { "type": "string", "minLength": 1 },
+          "model": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "passFail": { "enum": ["pass", "fail"] },
+    "sentence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourceSentenceId",
+        "sourceUnitIds",
+        "verdict",
+        "risk",
+        "checks",
+        "evidence",
+        "unresolvedIssues"
+      ],
+      "properties": {
+        "sourceSentenceId": { "type": "string", "minLength": 1 },
+        "sourceUnitIds": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "verdict": { "$ref": "#/$defs/passFail" },
+        "risk": { "enum": ["low", "medium", "high"] },
+        "checks": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "meaningPreserved",
+            "negationsNumbersNames",
+            "quotationAndClauseIntegrity",
+            "timelineCoherent",
+            "translationContextSufficient"
+          ],
+          "properties": {
+            "meaningPreserved": { "$ref": "#/$defs/passFail" },
+            "negationsNumbersNames": { "$ref": "#/$defs/passFail" },
+            "quotationAndClauseIntegrity": { "$ref": "#/$defs/passFail" },
+            "timelineCoherent": { "$ref": "#/$defs/passFail" },
+            "translationContextSufficient": { "$ref": "#/$defs/passFail" }
+          }
+        },
+        "evidence": { "type": "string", "minLength": 1 },
+        "unresolvedIssues": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

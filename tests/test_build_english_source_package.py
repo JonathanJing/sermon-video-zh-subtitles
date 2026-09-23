@@ -78,11 +78,12 @@ class EnglishSourcePackageTests(unittest.TestCase):
             service_date="2026-09-20",
         )
 
-    def test_candidate_is_target_language_neutral_and_schema_valid(self):
+    def test_package_waits_for_machine_judge_and_is_target_language_neutral(self):
         package = self.build()
-        self.assertEqual(package["status"], "candidate_ready_for_translation")
-        self.assertTrue(package["candidateTranslationEligible"])
+        self.assertEqual(package["status"], "blocked")
+        self.assertFalse(package["candidateTranslationEligible"])
         self.assertFalse(package["translationEligible"])
+        self.assertIsNone(package["evidence"]["machineJudge"])
         self.assertEqual(package["alignment"]["provider"], "mfa")
         encoded = json.dumps(package, ensure_ascii=False)
         self.assertNotIn("translationSystemPrompt", encoded)

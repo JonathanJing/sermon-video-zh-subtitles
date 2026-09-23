@@ -8,7 +8,7 @@
     "schemaVersion": { "const": "sermon-sentence-interpretation-shadow-v1" },
     "layer": { "const": "shared_english_source_and_anchors" },
     "interface": { "const": "sermon-english-source-package-v1" },
-    "status": { "enum": ["ready_for_model_translation", "waiting_anchor_review"] },
+    "status": { "enum": ["ready_for_model_translation", "waiting_anchor_review", "waiting_machine_judge"] },
     "releaseEligible": { "const": false },
     "productionTranslationEligible": { "type": "boolean" },
     "productionOutputChanged": { "const": false },
@@ -50,7 +50,8 @@
             "serviceDate": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
             "summarySha256": { "$ref": "#/$defs/nullableSha256" },
             "approvalEvidenceSha256": { "$ref": "#/$defs/nullableSha256" },
-            "reviewSha256": { "$ref": "#/$defs/nullableSha256" }
+            "reviewSha256": { "$ref": "#/$defs/nullableSha256" },
+            "machineJudgeSha256": { "$ref": "#/$defs/nullableSha256" }
           }
         }
       }
@@ -81,7 +82,7 @@
     },
     "anchorIssueCount": { "type": "integer", "minimum": 0 },
     "anchorIssueTypes": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
-    "nextStage": { "enum": ["run_sentence_interpretation_models", "operator_anchor_review"] },
+    "nextStage": { "enum": ["run_sentence_interpretation_models", "operator_anchor_review", "run_english_source_machine_judge"] },
     "humanReview": { "const": "pending" }
   },
   "$defs": {

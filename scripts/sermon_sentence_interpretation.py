@@ -120,10 +120,52 @@ def _word_text(words: list[dict[str, Any]]) -> str:
     # MFA retains punctuation on the word token.  Whitespace is presentation;
     # the immutable identity is the ordered word IDs and token text.
     text = " ".join(str(word["text"]) for word in words)
-    return re.sub(r"\s+([,.;:!?])", r"\1", text)
+    text = re.sub(r"\s+([,.;:!?])", r"\1", text)
+    return re.sub(r"([\u2014\u2013-])\s+", r"\1", text)
 
 
-def _normal_words(segment: dict[str, Any], chunk_id: str, first_word: int) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+def _split_internal_pause_token(raw: dict[str, Any], *, pause_seconds: float
+                                ) -> list[tuple[str, float, float]] | None:
+    """Recover word boundaries hidden inside one punctuation-joined MFA token.
+
+    MFA can preserve ``think—I`` as one display token while exposing two spoken
+    forms and two phone clusters separated by a long pause. Treating the whole
+    display token as one timed word hides the only safe semantic boundary and
+    creates a false multi-second word. Split only when the display punctuation,
+    spoken-form count, and acoustic phone clusters independently agree.
+    """
+    text = str(raw.get("text", "")).strip()
+    spoken_forms = raw.get("spokenForms")
+    phones = raw.get("phones")
+    if (not isinstance(spoken_forms, list) or len(spoken_forms) != 2
+            or not isinstance(phones, list) or len(phones) < 2
+            or not re.search(r"[\u2014\u2013-]", text)):
+        return None
+    display_parts = [part for part in re.split(r"(?<=[\u2014\u2013-])", text) if part]
+    if len(display_parts) != 2:
+        return None
+    valid_phones = [phone for phone in phones
+                    if _finite(phone.get("start")) and _finite(phone.get("end"))
+                    and float(phone["end"]) > float(phone["start"])]
+    if len(valid_phones) != len(phones):
+        return None
+    gaps = [float(valid_phones[index + 1]["start"]) - float(valid_phones[index]["end"])
+            for index in range(len(valid_phones) - 1)]
+    split_index = max(range(len(gaps)), key=gaps.__getitem__)
+    if gaps[split_index] < pause_seconds:
+        return None
+    clusters = (valid_phones[:split_index + 1], valid_phones[split_index + 1:])
+    if not all(clusters):
+        return None
+    return [
+        (display_parts[index], float(cluster[0]["start"]), float(cluster[-1]["end"]))
+        for index, cluster in enumerate(clusters)
+    ]
+
+
+def _normal_words(segment: dict[str, Any], chunk_id: str, first_word: int,
+                  *, internal_pause_seconds: float
+                  ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     raw_words = segment.get("wordTimes")
     if not isinstance(raw_words, list) or not raw_words:
         return [], [{"type": "missing_word_times", "referenceChunkId": chunk_id}]
@@ -146,12 +188,22 @@ def _normal_words(segment: dict[str, Any], chunk_id: str, first_word: int) -> tu
             })
             continue
         word_id = f"{chunk_id}-w{first_word + offset:04d}"
-        words.append({
-            "wordId": word_id,
-            "text": text,
-            "start": round(float(start), 6),
-            "end": round(float(end), 6),
-        })
+        recovered = _split_internal_pause_token(raw, pause_seconds=internal_pause_seconds)
+        if recovered:
+            for suffix, (part_text, part_start, part_end) in zip(("a", "b"), recovered):
+                words.append({
+                    "wordId": f"{word_id}{suffix}",
+                    "text": part_text,
+                    "start": round(part_start, 6),
+                    "end": round(part_end, 6),
+                })
+        else:
+            words.append({
+                "wordId": word_id,
+                "text": text,
+                "start": round(float(start), 6),
+                "end": round(float(end), 6),
+            })
         previous_end = float(end)
     return words, issues
 
@@ -195,7 +247,7 @@ def _split_long_sentence(words: list[dict[str, Any]], *, max_seconds: float,
 
 
 def _clause_boundary_evidence(words: list[dict[str, Any]], index: int,
-                              pause_seconds: float) -> dict[str, Any]:
+                              pause_seconds: float, max_seconds: float) -> dict[str, Any]:
     word = words[index]
     gap = max(0.0, float(words[index + 1]["start"]) - float(word["end"]))
     punctuation_match = BREAK_PUNCTUATION_CAPTURE.search(str(word["text"]))
@@ -211,7 +263,7 @@ def _clause_boundary_evidence(words: list[dict[str, Any]], index: int,
         "afterWordId": word["wordId"],
         "pauseSeconds": round(gap, 6),
         "punctuation": punctuation,
-        "withinTargetSeconds": True,
+        "withinTargetSeconds": float(word["end"]) - float(words[0]["start"]) <= max_seconds,
     }
 
 
@@ -220,35 +272,37 @@ def _split_clause_stable(words: list[dict[str, Any]], *, max_seconds: float,
                          ) -> tuple[list[tuple[list[dict[str, Any]], dict[str, Any]]], bool]:
     """Build v2 subunits without inventing a word-level boundary.
 
-    Every internal split must be supported by punctuation or an audible gap and
-    must keep the emitted prefix within the configured target.  If no such
-    boundary exists, the remaining words stay intact and are explicitly marked
-    over target for operator review.
+    Every internal split must be supported by punctuation or an audible gap.
+    The configured maximum is a translation-latency target, not permission to
+    sever a semantic dependency. A 0.5-second whole-sentence tolerance and a
+    1.5x boundary search window let the judge prefer a later punctuation/pause
+    boundary while retaining explicit evidence when a unit exceeds the target.
     """
     parts: list[tuple[list[dict[str, Any]], dict[str, Any]]] = []
     cursor = 0
     unresolved = False
     while cursor < len(words):
         remaining_duration = float(words[-1]["end"]) - float(words[cursor]["start"])
-        if remaining_duration <= max_seconds:
+        if remaining_duration <= max_seconds + 0.5:
             parts.append((words[cursor:], {
                 "kind": "source_sentence_end",
                 "afterWordId": words[-1]["wordId"],
                 "pauseSeconds": 0.0,
                 "punctuation": None,
-                "withinTargetSeconds": True,
+                "withinTargetSeconds": remaining_duration <= max_seconds,
             }))
             break
 
         safe_candidates: list[tuple[int, dict[str, Any]]] = []
+        semantic_window_seconds = max_seconds * 1.5
         for index in range(cursor, len(words) - 1):
             duration = float(words[index]["end"]) - float(words[cursor]["start"])
-            if duration < min_unit_seconds or duration > max_seconds:
+            if duration < min_unit_seconds or duration > semantic_window_seconds:
                 continue
             gap = float(words[index + 1]["start"]) - float(words[index]["end"])
             if gap >= pause_seconds or BREAK_PUNCTUATION.search(str(words[index]["text"])):
                 safe_candidates.append((index + 1, _clause_boundary_evidence(
-                    words, index, pause_seconds,
+                    words[cursor:], index - cursor, pause_seconds, max_seconds,
                 )))
         if not safe_candidates:
             parts.append((words[cursor:], {
@@ -260,7 +314,13 @@ def _split_clause_stable(words: list[dict[str, Any]], *, max_seconds: float,
             }))
             unresolved = True
             break
-        split_at, evidence = safe_candidates[-1]
+        punctuation_candidates = [candidate for candidate in safe_candidates
+                                  if candidate[1]["punctuation"] is not None]
+        punctuation_within_target = [candidate for candidate in punctuation_candidates
+                                     if candidate[1]["withinTargetSeconds"]]
+        split_at, evidence = (
+            punctuation_within_target or punctuation_candidates or safe_candidates
+        )[-1]
         parts.append((words[cursor:split_at], evidence))
         cursor = split_at
     return parts, unresolved
@@ -308,7 +368,12 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
         source_sentence_number[chunk_id] = source_sentence_number.get(chunk_id, 0) + 1
         sentence_id = f"{chunk_id}-s{source_sentence_number[chunk_id]:03d}"
         first_word = chunk_word_counts.get(chunk_id, 0) + 1
-        words, word_issues = _normal_words(segment, chunk_id, first_word)
+        words, word_issues = _normal_words(
+            segment,
+            chunk_id,
+            first_word,
+            internal_pause_seconds=internal_pause_seconds,
+        )
         issues.extend(word_issues)
         chunk_word_counts[chunk_id] = chunk_word_counts.get(chunk_id, 0) + len(segment.get("wordTimes") or [])
         if not words:

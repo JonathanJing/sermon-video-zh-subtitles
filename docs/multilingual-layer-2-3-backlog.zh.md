@@ -1,11 +1,11 @@
 # 多语言 Layer 2 / Layer 3 实施 Backlog
 
-状态：**待实施**。本 backlog 从已冻结的四层接口继续推进，只覆盖：
+状态：**影子片段链已验证，正式生产待实施**。本 backlog 从已冻结的四层接口继续推进，覆盖：
 
 - Layer 2「目标语言文字」：`English Source Package` → `Target-Language Candidate`；
 - Layer 3「目标语言音频与同步」：人工批准的 `Target-Language Candidate` → `Target-Language Audio Package`。
 
-首个新语言为韩语 `ko`；现有简体中文 `zh-Hans` 用作兼容与等价验证。这里不包含 Layer 1 接口修改，也不包含 Layer 4 catalog、Web/iOS 正式发布或部署。
+首个新语言为韩语 `ko`；现有简体中文 `zh-Hans` 用作兼容与等价验证。Layer 1 的机器裁判只作为上游 shadow 开发门禁；Layer 4、设备和场地验收列为周日可用的下游依赖，不在本 backlog 中伪装成 Layer 2/3 已完成。第 2 层详细设计见[目标语言文字设计基线](multilingual-layer-2-design.zh.md)。
 
 ## 1. 开始条件与共同规则
 
@@ -37,7 +37,9 @@
 - [x] speech adapter locale 一致性、能力状态和语言隔离输出路径检查。
 - [x] 韩语界面与 `sourceLocale=en` 内容 sidecar，可作为 shadow 消费端。
 - [x] `sermon-target-language-audio-package-v1` 目标 schema 已定义。
-- [ ] 通用 Layer 2 producer、真实韩语翻译、通用 Layer 3 renderer 和真实韩语音频尚未实现。
+- [x] 四语同源六句 shadow 候选、片段音频、完整解码与 ASR 筛查已留收据；`productionEligible=false`、人工译文及音频审核仍 pending。
+- [x] Layer 1 独立机器裁判代码已提取并通过定向单测；它只解锁 Layer 2 shadow，真实来源与人工英文审核仍单独验收。
+- [ ] 通用 Layer 2 producer、整篇人工批准韩语翻译、通用 Layer 3 renderer/同步器及整篇人工听审韩语音轨尚未实现。
 
 ## 3. Layer 2：目标语言文字 Backlog
 
@@ -300,3 +302,44 @@ Layer 2 的 P0 全部通过后才能开始正式 Layer 3 韩语合成。Layer 3 
 8. `docs: record full Korean text and audio acceptance evidence`
 
 每个提交只推进一个层内接口或一组对应验证；真实模型运行、人工批准和发布证据不得用单元测试结果代替。
+
+## 7. 从 Dev 片段到周日可用的里程碑
+
+本节把已有任务排成可验收的依赖链。目标首先是**周六完成预制、周日可播放**的 `four_layer_release`；周日麦克风实时字幕保持独立 `live_session`。任何阶段只在绑定相同来源、locale 和 hash 的证据通过后推进，不用 Dev 页面可播或机器分数替代人工审核。
+
+### M0：把已验证进度纳入 Dev
+
+- [x] 从 `dev` 基线集成 Layer 1 逐句机器裁判、schema、anchor 修订和定向测试；保留 `humanApproval=false`、`productionTranslationEligible=false`。旧 anchor/source package 因实现 hash 改变而失效，按新身份生成，不重标旧收据。
+- [ ] 在干净 shadow 输入上重放确定性构建和机器裁判；核对 receipt、package、anchor 的 JSON/file SHA，证明只进入 `candidate_ready_for_translation`。使用真实正式输入时，英文人工审核仍须产生 `ready_for_translation`。
+- [ ] 对 `zh-Hans`、`ko`、`es`、`vi` 六句 POC 收据做只读回归：schema、同一英文来源、逐 locale 候选与音频 hash、低于 ASR 门线的复核状态。Dev 演示资产保持 `productionEligible=false`。
+
+完成证据：合并提交、CI、更新后的 Layer 1 shadow 收据和未改变生产门禁的测试。集成代码本身不代表已在远端 Dev 或周日现场验收。
+
+### M1：完成正式 Layer 2（L2-001—L2-009）
+
+- [ ] 从一份人工英文审核的 `ready_for_translation` 源包出发，按 `sourcePackage + anchor + locale + policy + implementation` 建不可变单语言 job；初译、独立复核、语言插件和人工批准各有独立收据。先实现 `zh-Hans` 与 `ko`，`es`、`vi` 只有在各自策略和审核者就绪后加入。
+- [ ] `zh-Hans` 对已批准整篇做 legacy→v2 golden shadow；韩语先做含否定、数字、专名、引文和经文的 fixture，再做一篇真实整篇。缺经文版本或授权政策时保持 pending。
+- [ ] 验证修改 Layer 1 会使全部 locale 失效；修改某语言 policy、译文或人审只使该语言下游失效。旧收据复制、漏审、错序、跨语言缓存和恢复中断必须 fail closed。
+
+完成证据：两语言 schema 与语义 validator、完整 coverage、不可变 `human_translation_approved` candidate 和逐 group 人审收据。六句机器通过及 PDF 中文阅读稿不能替代这些证据。
+
+### M2：完成正式 Layer 3（L3-001—L3-012）
+
+- [ ] renderer 只消费正式 `sermon-target-language-speech-job-v1` 和已批准的同 locale 文字；授权、checkpoint hash、locale 能力及文本 hash 在模型加载前核对。先用合成 fixture 实现通用 unit receipt、完整解码、自然语速排程和字幕，随后做中文 golden timing 等价。
+- [ ] 为 Audio Package 加语义 validator：核对实际 speech job/schema、来源与候选 hash、每个 unit/track/caption/schedule 的文件 hash；失效 key 必须覆盖 candidate、job、voice/checkpoint、音频、字幕和排程。现有片段 POC 的 `poc-speech-job` 与只含 candidate/audio/schedule 的失效 key 不满足此门槛。
+- [ ] 停顿只从 Layer 1 已审英文声学证据出发，Layer 3 判断能否放在目标语言完整自然句界。逐句报告局部起点偏差、尾延迟、overrun 和自然度；不以总时长接近或词组拼接掩盖局部失败。原声指纹如供周日自动定位，由本层生成绑定来源和实际音轨的 companion receipt，Layer 4 只发布和核验。
+- [ ] 韩语按短探针→10–20 group→整篇顺序完成回转写、实体音频解码、字幕校验、母语全文听审和同视频 1 倍速检查。语音能力或授权不足时生成合法 `audio_unavailable` 包供纯文字路径，不借用中文音轨。
+
+完成证据：正式 Audio Package 的机器与人工收据、局部排程报告、中文等价对照和失败恢复验证。VoxCPM2、MOSS、AuK 的短样本只保留为 challenger；模型替换须另有同输入 A/B 和目标语母语听审。
+
+### M3：周日预制播放验收（下游依赖）
+
+- [ ] 为每个要交付的 `pageId + targetLocale` 生成同源、同 locale 且 hash 匹配的 Layer 4 Release Package；纯文字版本也绑定状态为 `audio_unavailable` 的 Layer 3 包。仅在上游文字、音频和页面各自的人审状态满足门禁后进入发布。
+- [ ] 周六发布后逐文件 GET/SHA 与音频 Range 206；周日早上在实体设备检查目录刷新、下载、离线、蓝牙/扬声器、同一录制 1 倍速播放和定位；场地音频路由及会众可读性另留现场收据。HTTP、设备和现场状态分别报告。
+- [ ] 周末 Supervisor 保留 `dual_pdf`、`four_layer_release`、`live_session` 三种独立 scope；按 lease/身份恢复已验证单元，遇缺来源、审核或媒体时停在具体层，不因 PDF 完成或 Dev 页面可播宣称周日就绪。
+
+完成证据：一次真实整篇同源、同 locale 的四包链及周六到周日的 HTTP、实体设备、场地收据；再用另一周次验证恢复与复用。阈值须在运行前固定，不能事后按结果调整。
+
+### 可选：已审文字辅助周日实时字幕
+
+四层预制音轨不进入现场低延迟字幕链。若需复用 Layer 2 已审译文，新增确定性投影 adapter，把已批准的来源、locale、候选、人审 hash 映射进 Saturday Evidence Bundle / Sunday Runtime Pack；仅允许审核过的术语、经文和受控示例进入现场 prompt。仍须人工确认周六/周日同篇、检查有效期和 capability；现场 `asr.final` 是唯一事实源，Pack 不合格降为 `none` 基线。韩语/西语实时字幕另需模型、UI、设备和现场验收，不由预制韩语音轨自动获得资格。参见[Context Pack 合同](saturday-to-sunday-context-pack-plan.zh.md)和[周日运行入口](sunday-live-agent-runbook.zh.md)。

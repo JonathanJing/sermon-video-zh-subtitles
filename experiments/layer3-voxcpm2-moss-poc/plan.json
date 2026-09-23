@@ -1,0 +1,118 @@
+{
+  "schemaVersion": "sermon-layer3-voxcpm2-moss-poc-plan-v1",
+  "scope": "layer_3_shadow_experiment",
+  "status": "machine_translation_review_only",
+  "productionEligible": false,
+  "humanApproval": false,
+  "source": {
+    "anchorManifestJsonSha256": "8b1e920e8fb1477a090a22db4422db2c28f9d88746a3236366e412a132fb31cd",
+    "translationStatus": "machine_review_pass_human_review_pending"
+  },
+  "voice": {
+    "speakerId": "eric_geiger",
+    "qwenSpeakerKey": "eric_pilot",
+    "qwenCheckpointSha256": "75d28ce6022b3df3a72df3dd6dbc01e53f584d685770d60ea04b341920968c9a",
+    "referenceAudioSha256": "26688c073a93e551e05a19169d236d53ed1e9bddeb140249c8ac228bf418c807"
+  },
+  "dimensions": [
+    {
+      "id": "direct_clone",
+      "variants": ["qwen_sft_unit", "voxcpm2_clone", "moss_clone"],
+      "purpose": "Compare content fidelity, Eric speaker similarity, naturalness and duration on identical Simplified Chinese units."
+    },
+    {
+      "id": "prosody_and_timing_control",
+      "variants": ["voxcpm2_style_guided", "moss_duration_control", "moss_explicit_pause"],
+      "purpose": "Test style or pace guidance, token-level duration control, and an explicit 1.45 second pause without changing the production contract."
+    },
+    {
+      "id": "four_target_locale_smoke",
+      "variants": ["voxcpm2_clone", "moss_clone"],
+      "purpose": "Screen one frozen Layer 2 unit in zh-Hans, ko, es and vi with the same Eric reference."
+    }
+  ],
+  "evaluation": {
+    "required": [
+      "full_decode",
+      "content_asr_screen",
+      "speaker_similarity_screen",
+      "duration_error",
+      "explicit_pause_screen",
+      "blind_human_listening"
+    ],
+    "durationAbsoluteErrorTargetSeconds": 0.4,
+    "pauseAbsoluteErrorTargetSeconds": 0.2,
+    "warning": "ASR, speaker embeddings and silence detection are machine screens only; they do not establish human listening acceptance."
+  },
+  "primaryUnits": [
+    {
+      "sourceUnitId": "block-59-u001",
+      "targetLocale": "zh-Hans",
+      "language": "Chinese",
+      "targetDurationSeconds": 7.32,
+      "pauseAfterSeconds": 0.66,
+      "targetText": "看似失败的事，其实是耶稣在战胜我们的仇敌，因为他是那位胜过一切的。",
+      "targetTextSha256": "2bc897be609360c2e92a80901ec71a6839a8c5d5f74b70499deac5f0c0faa133",
+      "styleInstruction": "calm sermon narration, slightly faster than the reference, with restrained emphasis on Jesus overcoming every enemy"
+    },
+    {
+      "sourceUnitId": "block-59-u005",
+      "targetLocale": "zh-Hans",
+      "language": "Chinese",
+      "targetDurationSeconds": 10.639999,
+      "pauseAfterSeconds": 1.450001,
+      "targetText": "但下周我们讲到《启示录》第4章和第5章时，就会看到耶稣被称为犹大支派的狮子，",
+      "targetTextSha256": "cc82c5329e1b8e33471d69d5e85d9141494174f755c76a382b997126aee18654",
+      "styleInstruction": "measured sermon narration with restrained emphasis on the Lion of the tribe of Judah"
+    }
+  ],
+  "pauseProbe": {
+    "sampleId": "block-59-u005-pause-u006",
+    "language": "Chinese",
+    "targetLocale": "zh-Hans",
+    "beforeSourceUnitId": "block-59-u005",
+    "afterSourceUnitId": "block-59-u006",
+    "beforeText": "但下周我们讲到《启示录》第4章和第5章时，就会看到耶稣被称为犹大支派的狮子，",
+    "pauseSeconds": 1.450001,
+    "afterText": "而他的吼声压倒了撒但的吼声。",
+    "afterDurationSeconds": 5.68
+  },
+  "multilingualSmoke": [
+    {
+      "sampleId": "smoke-block-59-u001-zh-Hans",
+      "sourceUnitId": "block-59-u001",
+      "targetLocale": "zh-Hans",
+      "language": "Chinese",
+      "targetLanguageCandidateJsonSha256": "0c0fc2d9df155a5ade095d28a4c6c1b27b24457cdaaab3c8378988a5f5ab09e3",
+      "targetText": "看似失败的事，其实是耶稣在战胜我们的仇敌，因为他是那位胜过一切的。",
+      "targetTextSha256": "2bc897be609360c2e92a80901ec71a6839a8c5d5f74b70499deac5f0c0faa133"
+    },
+    {
+      "sampleId": "smoke-block-59-u001-ko",
+      "sourceUnitId": "block-59-u001",
+      "targetLocale": "ko",
+      "language": "Korean",
+      "targetLanguageCandidateJsonSha256": "b46aca3b9568274124898b80e11863df753f0cceba24ba8a97253e359bcc555b",
+      "targetText": "패배처럼 보였던 것은 사실 예수가 우리의 원수를 이기고 있는 것이었습니다. 그는 모든 것을 이기는 분이기 때문입니다.",
+      "targetTextSha256": "274b1911702d41ca016e811f8e7329f749b67a31dd0f79ec6187035b3d2f3f7f"
+    },
+    {
+      "sampleId": "smoke-block-59-u001-es",
+      "sourceUnitId": "block-59-u001",
+      "targetLocale": "es",
+      "language": "Spanish",
+      "targetLanguageCandidateJsonSha256": "3f0ec6f01e1fc0790de8f3b09f4d1e4bde91f4f9d683cce1aacd6b247823e5ff",
+      "targetText": "Lo que parecía una derrota era en realidad Jesús venciendo a nuestro enemigo, porque él es quien lo vence todo.",
+      "targetTextSha256": "c19ad66397a51981dae08348bfa96ce19b17e6368a51545abff21737c9b0b479"
+    },
+    {
+      "sampleId": "smoke-block-59-u001-vi",
+      "sourceUnitId": "block-59-u001",
+      "targetLocale": "vi",
+      "language": "Vietnamese",
+      "targetLanguageCandidateJsonSha256": "49d0f526565443767e34010b5c2fe57355aabe87b8564a955a0b7f3d6f460e7c",
+      "targetText": "Điều tưởng như là một thất bại thực ra lại là Giê-su đang chiến thắng kẻ thù của chúng ta, vì Người là Đấng chiến thắng tất cả.",
+      "targetTextSha256": "3edff73e28cb923f89648df49faba4c22d09133e33f57ef0d15561ea363993dd"
+    }
+  ]
+}
