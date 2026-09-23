@@ -27,5 +27,6 @@
     "model": null,
     "coverage": 1
   },
-  "disclaimer": "English source reference for development comparison. Source-unit boundaries and full playback remain pending human review."
+  "disclaimer": "English source reference for development comparison. Source-unit boundaries and full playback remain pending human review.",
+  "contentSha256": "5fef620dda6d214bd004a117d38dc6a15f0a3b5bebb21d89d4aa0e0348ed2203"
 }
