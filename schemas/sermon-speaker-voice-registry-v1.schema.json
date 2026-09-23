@@ -84,6 +84,7 @@
                   "required": ["adapter", "model", "revision", "conditioningRef"],
                   "properties": {
                     "adapter": { "enum": ["gwen_tts_zero_shot_reference"] },
+                    "provider": { "type": "string", "minLength": 1 },
                     "model": { "type": "string", "minLength": 1 },
                     "revision": { "type": "string", "minLength": 1 },
                     "conditioningRef": { "type": "string", "pattern": "^speaker-reference://" }

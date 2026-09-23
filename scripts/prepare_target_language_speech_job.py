@@ -161,6 +161,8 @@ def validate_policy_binding(candidate: dict[str, Any], policy: dict[str, Any]) -
     for stage in ("translator", "reviewer"):
         expected = policy[stage]
         actual = candidate["generation"][stage]
+        # A model alias resolving to another response identity needs a new
+        # frozen policy; the old policy hash must not silently cover drift.
         _require(actual["model"] == expected["model"]
                  and actual["promptVersion"] == expected["promptVersion"],
                  f"Target candidate {stage} generation differs from policy")
@@ -237,6 +239,9 @@ def validate_adapter(adapter: dict[str, Any], target_locale: str,
         expected_revision = override["revision"]
         expected_ref = override["conditioningRef"]
         expected_hash = expected_ref.rsplit("/", 1)[-1]
+        if "provider" in override:
+            _require(adapter["provider"] == override["provider"],
+                     "Speech adapter provider differs from registry override")
     else:
         expected_adapter = "qwen3_tts_sft"
         expected_model = registry["baseModel"]["model"]
