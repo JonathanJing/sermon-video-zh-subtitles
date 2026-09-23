@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-target-language-human-review-receipt-v1.schema.json",
+  "title": "Human review receipt for one immutable target-language candidate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "decision", "targetLocale", "englishSourcePackageJsonSha256",
+    "anchorManifestJsonSha256", "translationPolicySha256", "candidateJsonSha256",
+    "reviewer", "reviewedAt", "reviewedGroupIds", "groupReviews"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "sermon-target-language-human-review-receipt-v1" },
+    "decision": { "enum": ["approved", "rejected"] },
+    "targetLocale": { "type": "string", "pattern": "^(?!en(?:-|$))[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$" },
+    "englishSourcePackageJsonSha256": { "$ref": "#/$defs/sha256" },
+    "anchorManifestJsonSha256": { "$ref": "#/$defs/sha256" },
+    "translationPolicySha256": { "$ref": "#/$defs/sha256" },
+    "candidateJsonSha256": { "$ref": "#/$defs/sha256" },
+    "reviewer": { "type": "string", "minLength": 1 },
+    "reviewedAt": { "type": "string", "format": "date-time" },
+    "reviewedGroupIds": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "groupReviews": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["translationGroupId", "decision", "evidence"],
+        "properties": {
+          "translationGroupId": { "type": "string", "minLength": 1 },
+          "decision": { "enum": ["approved", "rejected"] },
+          "evidence": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}

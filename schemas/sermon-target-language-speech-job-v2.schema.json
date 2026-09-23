@@ -1,0 +1,310 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-target-language-speech-job-v2.schema.json",
+  "title": "Registry-bound target-language natural-speech job",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "createdAt",
+    "status",
+    "sourceLocale",
+    "targetLocale",
+    "releaseEligible",
+    "synthesisEligible",
+    "inputs",
+    "adapter",
+    "renderContract",
+    "units",
+    "outputContract"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-target-language-speech-job-v2"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "enum": [
+        "prepared_adapter_validation_required",
+        "prepared_for_target_language_speech"
+      ]
+    },
+    "sourceLocale": {
+      "const": "en"
+    },
+    "targetLocale": {
+      "$ref": "#/$defs/targetLocale"
+    },
+    "releaseEligible": {
+      "const": false
+    },
+    "synthesisEligible": {
+      "type": "boolean"
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "englishSourcePackage",
+        "anchorManifest",
+        "targetLanguageCandidate",
+        "humanReviewReceipt",
+        "speakerRegistry",
+        "targetLanguagePolicy"
+      ],
+      "properties": {
+        "englishSourcePackage": {
+          "$ref": "#/$defs/jsonArtifact"
+        },
+        "anchorManifest": {
+          "$ref": "#/$defs/jsonArtifact"
+        },
+        "targetLanguageCandidate": {
+          "$ref": "#/$defs/jsonArtifact"
+        },
+        "humanReviewReceipt": {
+          "$ref": "#/$defs/jsonArtifact"
+        },
+        "speakerRegistry": {
+          "$ref": "#/$defs/jsonArtifact"
+        },
+        "targetLanguagePolicy": {
+          "$ref": "#/$defs/jsonArtifact"
+        }
+      }
+    },
+    "adapter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "adapterId",
+        "adapterVersion",
+        "configSha256",
+        "model",
+        "voice",
+        "languageParameter",
+        "capabilityStatus",
+        "normalizationPolicySha256",
+        "asrScreeningPolicySha256",
+        "subtitlePolicySha256",
+        "provider",
+        "modelRevision",
+        "speakerId",
+        "speakerKey",
+        "conditioningRef",
+        "conditioningSha256",
+        "registryJsonSha256",
+        "authorizationPurpose",
+        "authorizationEvidenceSha256",
+        "capabilityEvidenceSha256"
+      ],
+      "properties": {
+        "adapterId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "adapterVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "configSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "voice": {
+          "type": "string",
+          "minLength": 1
+        },
+        "languageParameter": {
+          "type": "string",
+          "minLength": 1
+        },
+        "capabilityStatus": {
+          "enum": [
+            "unverified_poc",
+            "candidate",
+            "verified"
+          ]
+        },
+        "normalizationPolicySha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "asrScreeningPolicySha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "subtitlePolicySha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "provider": {
+          "type": "string",
+          "minLength": 1
+        },
+        "modelRevision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "speakerId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "speakerKey": {
+          "type": "string",
+          "minLength": 1
+        },
+        "conditioningRef": {
+          "type": "string",
+          "minLength": 1
+        },
+        "conditioningSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "registryJsonSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "authorizationPurpose": {
+          "enum": [
+            "chinese_dubbing",
+            "multilingual_dubbing",
+            "multilingual_voice_demo"
+          ]
+        },
+        "authorizationEvidenceSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "capabilityEvidenceSha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "renderContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "textPolicy",
+        "ratePolicy",
+        "playbackRate",
+        "postProcessing",
+        "humanListeningReview"
+      ],
+      "properties": {
+        "textPolicy": {
+          "const": "exact_human_approved_target_text"
+        },
+        "ratePolicy": {
+          "const": "natural_no_time_stretch"
+        },
+        "playbackRate": {
+          "const": 1.0
+        },
+        "postProcessing": {
+          "const": "none_before_measurement"
+        },
+        "humanListeningReview": {
+          "const": "pending"
+        }
+      }
+    },
+    "units": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "unitIndex",
+          "translationGroupId",
+          "sourceUnitIds",
+          "text",
+          "outputRelativePath"
+        ],
+        "properties": {
+          "unitIndex": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "translationGroupId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sourceUnitIds": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          },
+          "outputRelativePath": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "outputContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "languageRoot",
+        "audioDirectory",
+        "synchronizationDirectory"
+      ],
+      "properties": {
+        "languageRoot": {
+          "type": "string",
+          "minLength": 1
+        },
+        "audioDirectory": {
+          "type": "string",
+          "minLength": 1
+        },
+        "synchronizationDirectory": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "targetLocale": {
+      "type": "string",
+      "pattern": "^(?!en(?:-|$))[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"
+    },
+    "jsonArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256",
+        "jsonSha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "jsonSha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    }
+  }
+}

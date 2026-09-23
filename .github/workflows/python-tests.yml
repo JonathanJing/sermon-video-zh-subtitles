@@ -35,6 +35,9 @@ jobs:
       - name: Install dependencies
         run: python -m pip install -r requirements.txt
 
+      - name: Install audio verification tools
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
       - name: Compile production scripts
         run: >-
           python -m py_compile
