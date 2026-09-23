@@ -1,0 +1,133 @@
+{
+  "schemaVersion": "sermon-formal-dev-http-verification-run-v1",
+  "origin": "https://ai-for-god-sermon-audio-dev.web.app",
+  "pageId": "2026-09-20-revelation-clip",
+  "verifiedAt": "2026-09-23T21:25:48.820007+00:00",
+  "status": "pass",
+  "results": [
+    {
+      "path": "/multilingual-v2.json",
+      "status": 200,
+      "sha256": "0332c2e3cf2f250778601ce4e5a82e587cd50c7a136f9d944e3607f7d6737124",
+      "bytes": 1672,
+      "contentType": "application/json",
+      "range206": false
+    },
+    {
+      "path": "/releases/2026-09-20-revelation-clip/zh-Hans.json",
+      "status": 200,
+      "sha256": "b4acdb4fb75069fd23239c5babeb74367f9f2faa8b6f4c5536efa75f8f62317d",
+      "bytes": 1453,
+      "contentType": "application/json",
+      "range206": false
+    },
+    {
+      "path": "/content/2026-09-20-revelation-clip/zh-Hans.json",
+      "status": 200,
+      "sha256": "20d4d59908e9c6d0fe31b902900a10ddb9a290b2dd6f79706437c944289c8814",
+      "bytes": 11561,
+      "contentType": "application/json",
+      "range206": false
+    },
+    {
+      "path": "/media/2026-09-20-revelation-clip/zh-Hans.wav",
+      "status": 200,
+      "sha256": "a626c1105bfea2c51dedcc5d9b1534b21f536abf658c6230003a95d8d1981356",
+      "bytes": 8552588,
+      "contentType": "audio/wav",
+      "range206": true
+    },
+    {
+      "path": "/captions/2026-09-20-revelation-clip/zh-Hans.json",
+      "status": 200,
+      "sha256": "2c22ac424a3c418c58ab792dea6f521c0a8fcae1b4ac09834a28a5bf31a4ad0b",
+      "bytes": 7649,
+      "contentType": "application/json",
+      "range206": false
+    },
+    {
+      "path": "/releases/2026-09-20-revelation-clip/ko.json",
+      "status": 200,
+      "sha256": "d4243c43084d1c779e1290390ee2ec1527594e0efce6ee3122ef2e0f5422060d",
+      "bytes": 1413,
+      "contentType": "application/json",
+      "range206": false
+    },
+    {
+      "path": "/content/2026-09-20-revelation-clip/ko.json",
+      "status": 200,
+      "sha256": "15867a3abcdd6fb0a7b72738b0be0a1f715b2d3e980c2f222aedcd9c61ad3576",
+      "bytes": 12665,
+      "contentType": "application/json",
+      "range206": false
+    },
+    {
+      "path": "/media/2026-09-20-revelation-clip/ko.wav",
+      "status": 200,
+      "sha256": "57c1a9d61c2c31b8f450ebe07e239f8d43f72bd8308e1659c7646fd23a24215d",
+      "bytes": 8552588,
+      "contentType": "audio/wav",
+      "range206": true
+    },
+    {
+      "path": "/captions/2026-09-20-revelation-clip/ko.json",
+      "status": 200,
+      "sha256": "80bf72d543c695020423a72d16b80e452e607312d7351a28df29a598192b303e",
+      "bytes": 8605,
+      "contentType": "application/json",
+      "range206": false
+    },
+    {
+      "path": "/releases/2026-09-20-revelation-clip/es.json",
+      "status": 200,
+      "sha256": "3124f8dc63daa54ffbbb3d3356bb2e1e7be021def68130083656123d49202e59",
+      "bytes": 1413,
+      "contentType": "application/json",
+      "range206": false
+    },
+    {
+      "path": "/content/2026-09-20-revelation-clip/es.json",
+      "status": 200,
+      "sha256": "71888a21f1ff297852794c90e866cdedb88070685cdc70eb44be199415341aa9",
+      "bytes": 11795,
+      "contentType": "application/json",
+      "range206": false
+    },
+    {
+      "path": "/media/2026-09-20-revelation-clip/es.wav",
+      "status": 200,
+      "sha256": "fac1c70ea88ff787d9150e075d6e6834d47126e6492f63d4b71c3e3aea88ec34",
+      "bytes": 8552588,
+      "contentType": "audio/wav",
+      "range206": true
+    },
+    {
+      "path": "/captions/2026-09-20-revelation-clip/es.json",
+      "status": 200,
+      "sha256": "5af78e392d907777e6a4f08ec7101ab640ecdeacf4ecce5753d80130eb081c9f",
+      "bytes": 7784,
+      "contentType": "application/json",
+      "range206": false
+    },
+    {
+      "path": "/pages/2026-09-20-revelation-clip/zh-Hans",
+      "status": 200,
+      "bytes": 9623,
+      "routeHtml": true
+    },
+    {
+      "path": "/pages/2026-09-20-revelation-clip/ko",
+      "status": 200,
+      "bytes": 9623,
+      "routeHtml": true
+    },
+    {
+      "path": "/pages/2026-09-20-revelation-clip/es",
+      "status": 200,
+      "bytes": 9623,
+      "routeHtml": true
+    }
+  ],
+  "deviceAcceptance": "not_run",
+  "venueAcceptance": "not_run"
+}

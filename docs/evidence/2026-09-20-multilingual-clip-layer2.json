@@ -5,8 +5,8 @@
   "clipMediaSha256": "c931d6f716bd30b9ba9b75ca6cbc9a4f4fd708b8bf8f8e3668187e67bac44c30",
   "layer1Status": "ready_for_translation",
   "layer2Status": "human_translation_approved",
-  "layer3Status": "three_candidate_tracks_1x_fit_clip_asr_requires_review_human_listening_pending",
-  "layer4Status": "metadata_approved_not_staged_not_published",
+  "layer3Status": "three_human_reviewed_audio_packages",
+  "layer4Status": "dev_hosting_published_http_verified_browser_playback_pass_device_not_run",
   "userFullCandidateDecision": "三语全部批准",
   "licenseDocumentsReceived": false,
   "attributionTermsReceived": false,
@@ -28,7 +28,7 @@
       "speechJobJsonSha256": "cc4b48f33c4d22f3005361194c35e58ebc4f83d1e2ec55329070fb0a1c689a06",
       "clipVoiceAuthorizationJsonSha256": "20ffb349a1ded916f2e1bcb178baaa2bb66c61505f839c905f5870da10145a2f",
       "fullAudioTrackStatus": "candidate_track_generated_1x_fits_clip",
-      "fullAudioHumanReviewStatus": "pending",
+      "fullAudioHumanReviewStatus": "human_reviewed",
       "candidateTrackSha256": "a626c1105bfea2c51dedcc5d9b1534b21f536abf658c6230003a95d8d1981356",
       "machineAudioScreeningStatus": "requires_review",
       "machineAudioReviewQueue": [
@@ -37,7 +37,12 @@
       ],
       "candidateAudioPackageJsonSha256": "9232991e7f823f0c46e1e35f48deacd9af8180ed495555d6dda0a8575f924c18",
       "machineAudioScreeningReceiptJsonSha256": "3774e2e2d24f2a511a4d042be0ed0375506936fe5040263bff959a1121589025",
-      "timingRevision": "original_approved"
+      "timingRevision": "original_approved",
+      "reviewedAudioPackageJsonSha256": "bc1bdb7383597bfd2c5fcff996f35b45753c06679ea532d3dd03e193dd97804f",
+      "audioHumanReviewReceiptJsonSha256": "75d958650e0e539decd1a9a9dc96e8fd985e93e11e90c5b4b0defe16bcad871a",
+      "audioHumanReviewedAt": "2026-09-23T21:23:21.581747+00:00",
+      "trackedAudioReviewReceiptPath": "docs/evidence/2026-09-20-formal-audio/zh-Hans.review-receipt.json",
+      "trackedAudioPackageSnapshotPath": "docs/evidence/2026-09-20-formal-audio/zh-Hans.package-snapshot.json"
     },
     "ko": {
       "groupCount": 44,
@@ -50,7 +55,7 @@
       "speechJobJsonSha256": "dd4da24cdabcedb788a1f94d4b9d535a5f0d0da8e3872ede6ecaa411dfaeed2c",
       "clipVoiceAuthorizationJsonSha256": "a1b7afd2c2b662c00a728e94b83cb79ba68c087a615c80f7dbdcbc53a8c2fdc5",
       "fullAudioTrackStatus": "candidate_track_generated_1x_fits_clip",
-      "fullAudioHumanReviewStatus": "pending",
+      "fullAudioHumanReviewStatus": "human_reviewed",
       "clipVoiceCapabilityJsonSha256": "aa65e634283ea17d43a69da5ba19a4a2478a328c0edca6d28eaf1038edfdb6bf",
       "timingRevision": "approved_and_rendered",
       "candidateTrackSha256": "57c1a9d61c2c31b8f450ebe07e239f8d43f72bd8308e1659c7646fd23a24215d",
@@ -70,7 +75,12 @@
       ],
       "independentReviewerRequestIds": [
         "resp_05e229cbf16f64ef006ab425cf249087d0930ed78f3ef0b155"
-      ]
+      ],
+      "reviewedAudioPackageJsonSha256": "2f4b8e57c9150a4e439c7508d81e73465bfea3c95805103ba48a92a9a1525d71",
+      "audioHumanReviewReceiptJsonSha256": "b296c326a5ce69dcbc7111c6d1c31eb7e3d2d18c7ac3353ad41ef12e43e26a77",
+      "audioHumanReviewedAt": "2026-09-23T20:36:06.758086+00:00",
+      "trackedAudioReviewReceiptPath": "docs/evidence/2026-09-20-formal-audio/ko.review-receipt.json",
+      "trackedAudioPackageSnapshotPath": "docs/evidence/2026-09-20-formal-audio/ko.package-snapshot.json"
     },
     "es": {
       "groupCount": 44,
@@ -83,7 +93,7 @@
       "speechJobJsonSha256": "2d8046de40d5c88dbde3a107cd40c926d1ab65ece9f93e58e273f33d1c4b18ec",
       "clipVoiceAuthorizationJsonSha256": "fb69362feb4c022c9657a37d376b8a6aa71dba895c87f8310786920b8c20a7d7",
       "fullAudioTrackStatus": "candidate_track_generated_1x_fits_clip",
-      "fullAudioHumanReviewStatus": "pending",
+      "fullAudioHumanReviewStatus": "human_reviewed",
       "clipVoiceCapabilityJsonSha256": "65e73b68dbbd1564db79d87c8d7a9b4e796fc9bffdf76a3edf55e4fda5507669",
       "timingRevision": "approved_and_rendered",
       "candidateTrackSha256": "fac1c70ea88ff787d9150e075d6e6834d47126e6492f63d4b71c3e3aea88ec34",
@@ -100,12 +110,33 @@
       ],
       "independentReviewerRequestIds": [
         "resp_0e1a0b16bbd39cc7006ab4260411c087d09cc0f4b349e5f631"
-      ]
+      ],
+      "reviewedAudioPackageJsonSha256": "13b2243d95fc81205447788df5b8fb9c50e5e8ca8825058f0b8a5db45bcc6b4b",
+      "audioHumanReviewReceiptJsonSha256": "327c8b1f00e4a4e247fefefb808f9769c7b5aaa0eae5920488b4ab971f005509",
+      "audioHumanReviewedAt": "2026-09-23T20:34:16.620949+00:00",
+      "trackedAudioReviewReceiptPath": "docs/evidence/2026-09-20-formal-audio/es.review-receipt.json",
+      "trackedAudioPackageSnapshotPath": "docs/evidence/2026-09-20-formal-audio/es.package-snapshot.json"
     }
   },
   "pageMetadataReview": {
     "decision": "三语全部批准",
     "proposalFileSha256": "ebb94a6b107b0bb6e57f0d3ab13f238b3db0f91343cc5126203f06e8fc83bbd9",
-    "audioBoundContentPackages": "pending_full_audio_review"
+    "audioBoundContentPackages": "three_built_and_staged"
+  },
+  "layer4DevRelease": {
+    "pageId": "2026-09-20-revelation-clip",
+    "origin": "https://ai-for-god-sermon-audio-dev.web.app",
+    "catalogFileSha256": "0332c2e3cf2f250778601ce4e5a82e587cd50c7a136f9d944e3607f7d6737124",
+    "stageReceiptFileSha256": "d505d4a1d72169f6c7238e223e71dabde58536b97784f30999f3013798294684",
+    "releasePackageFileSha256": {
+      "zh-Hans": "b4acdb4fb75069fd23239c5babeb74367f9f2faa8b6f4c5536efa75f8f62317d",
+      "ko": "d4243c43084d1c779e1290390ee2ec1527594e0efce6ee3122ef2e0f5422060d",
+      "es": "3124f8dc63daa54ffbbb3d3356bb2e1e7be021def68130083656123d49202e59"
+    },
+    "httpVerificationFileSha256": "06636158bb711a8508265c4c4407846448be8469a479bce2fa5d7cd9ba73beec",
+    "httpVerificationStatus": "pass",
+    "browserPlaybackStatus": "three_locales_played",
+    "deviceAcceptance": "not_run",
+    "venueAcceptance": "not_run"
   }
 }

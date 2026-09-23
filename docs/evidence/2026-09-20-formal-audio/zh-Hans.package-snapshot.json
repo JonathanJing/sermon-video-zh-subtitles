@@ -1,0 +1,259 @@
+{
+  "schemaVersion": "sermon-formal-audio-review-evidence-snapshot-v1",
+  "targetLocale": "zh-Hans",
+  "reviewedAudioPackageJsonSha256": "bc1bdb7383597bfd2c5fcff996f35b45753c06679ea532d3dd03e193dd97804f",
+  "audioHumanReviewReceiptJsonSha256": "75d958650e0e539decd1a9a9dc96e8fd985e93e11e90c5b4b0defe16bcad871a",
+  "englishSourcePackageJsonSha256": "4d645ff0aad0b55b2eb913fd0749ebcb3bed010ddfc037e89e1f8a98f44a227b",
+  "targetLanguageCandidateJsonSha256": "23bd937f54add6497712f3af613c00856c2e86063ba9868179dddc3d073bf364",
+  "targetLanguageSpeechJobJsonSha256": "cc4b48f33c4d22f3005361194c35e58ebc4f83d1e2ec55329070fb0a1c689a06",
+  "voice": {
+    "provider": "Qwen",
+    "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "checkpointSha256": "75d28ce6022b3df3a72df3dd6dbc01e53f584d685770d60ea04b341920968c9a",
+    "targetLocaleCapability": "reviewed",
+    "authorizationStatus": "authorized"
+  },
+  "trackSha256": "a626c1105bfea2c51dedcc5d9b1534b21f536abf658c6230003a95d8d1981356",
+  "captionsSha256": "2c22ac424a3c418c58ab792dea6f521c0a8fcae1b4ac09834a28a5bf31a4ad0b",
+  "scheduleSha256": "492f0279d0cee7f94b24b6fac22d8a5420a54ded8eb5a2abf663b35070565d83",
+  "scheduleJsonSha256": "4379820b0f71e933004aad28b40789c1b8189999ccbd770dfb7e57ac4ef5e379",
+  "units": [
+    {
+      "textGroupId": "g-block-09-u001",
+      "targetTextSha256": "639799e03221ecdd984314ff6eec90c1438bebdd8758afdce29c768206e871b4",
+      "audioSha256": "f5d059d40dd7c06ebceeada5293a9dd721d1e60fa9c8633a14a83297c115129a"
+    },
+    {
+      "textGroupId": "g-block-09-u002",
+      "targetTextSha256": "24feee9d44d82a2721b56485de03735b386c99153f9f820cc0db4f18c7cfe8eb",
+      "audioSha256": "9fcbd64075a63c330095b287dc4b79e32f353d4ecac26f3d8748936e42c89e6e"
+    },
+    {
+      "textGroupId": "g-block-09-u003",
+      "targetTextSha256": "df82406a1027f96e38daf29569c8b7f56a4652fae19605aba0f84a0568db08bd",
+      "audioSha256": "bdcd678548f1b447fc6e06118f944c3398ae62e0fefd3ab6177c5bef77dda8a2"
+    },
+    {
+      "textGroupId": "g-block-09-u004",
+      "targetTextSha256": "2780db4354b213ce5f84db0aaae1279f151e1369743dedcf5be70bd443737117",
+      "audioSha256": "7001df00f7634d8fd21817118f5fd75010c30b04f22bcb1cdb72e46838c73b54"
+    },
+    {
+      "textGroupId": "g-block-10-u001",
+      "targetTextSha256": "5341240450a96cd8db8d400b175cc694b80dc1879a3c399ba9c22a4a8726436a",
+      "audioSha256": "a9730f4bec290e252444a3b071c5b9c4fc80e8c9d94ab5c8e5889911af81d40a"
+    },
+    {
+      "textGroupId": "g-block-10-u002",
+      "targetTextSha256": "370e6d20a84685a0c9905bc0c9eb9fc142f88a2492a662dac7c4b46b392ac0b0",
+      "audioSha256": "16796238e8e8896627d1620505d17766d0fcc0a5537468bf4695c7f3d21b19a4"
+    },
+    {
+      "textGroupId": "g-block-10-u003",
+      "targetTextSha256": "fb1d88e3ad7b0fbd29186ab36a4590c0e4391b023395f4a4f6d3b3fba99a09f7",
+      "audioSha256": "93a706858913f2dee519f96884e2b1fa1542219b00c1a2e86d59c6d3a347a19b"
+    },
+    {
+      "textGroupId": "g-block-10-u004",
+      "targetTextSha256": "fb65f29e7d6a30bb3eda0e2c1ba7dd1245b43fbadeb2a718d165a00d8e114f56",
+      "audioSha256": "3bcdae2892e906aa5282f0b491f4f7caa4affc2aa2fb972253683f908ccacffd"
+    },
+    {
+      "textGroupId": "g-block-10-u005",
+      "targetTextSha256": "f0ce9cd8b7ef2c067eba1644b2e031f28e72222db10b27e502d2f0239d5dfaf4",
+      "audioSha256": "7cb0ca04fb0b4ac3ba90b552bc2cfac3de191cb5eb74b0e19695739d3a874590"
+    },
+    {
+      "textGroupId": "g-block-10-u006",
+      "targetTextSha256": "502218b73e9d8db4f355348663126b4c383e891b96938069a4ee54068030cb22",
+      "audioSha256": "32c2eaa142f720ae6b36f2aa13931e07f214dff56c692f54b8990e6c6daa27eb"
+    },
+    {
+      "textGroupId": "g-block-10-u007",
+      "targetTextSha256": "4d812bf9581a5a0dc8d445a92e8795f0ff80e0010957514329e4d24171ec6326",
+      "audioSha256": "92956d12475bb449dff8c3f7a315a930828edb016f603ba9b2ac93750aec767f"
+    },
+    {
+      "textGroupId": "g-block-10-u008",
+      "targetTextSha256": "6412140fedeeee016c8d1abb2d30ace6ee68db92148b25ab06404a8178e77b8b",
+      "audioSha256": "1ea464d41744b95af7f6c8afd5766f8fbfb835e62a720628affabaadf3378344"
+    },
+    {
+      "textGroupId": "g-block-10-u009",
+      "targetTextSha256": "de672bce803f33018a2c44af29b6b5288a3b0b66b43a788ac602f593c1d82a78",
+      "audioSha256": "d718f19cd32c9702ea7b235610e124790dd4a58dc5e8e27ae61e56fbb0f06be6"
+    },
+    {
+      "textGroupId": "g-block-11-u001",
+      "targetTextSha256": "2b5c4b1fa0ce95d313e08892634813b580903edc45c8706ed7f7770386c88a66",
+      "audioSha256": "294e10e2c07b7893924c6c6f412600c3764d3ae8ef21ecb81b5fae29ff870428"
+    },
+    {
+      "textGroupId": "g-block-11-u002",
+      "targetTextSha256": "93479c550ff22a519c4604f5816b7575a594be1052045f746912f58b44553b03",
+      "audioSha256": "db91da83736d899a97314b93788a8e347858d6ed0bb34531eef3bf5fb432ddde"
+    },
+    {
+      "textGroupId": "g-block-11-u003",
+      "targetTextSha256": "7d0f58e17d5387376cbac16ccc340006416540d1f9da020e7aebe4b8023181e7",
+      "audioSha256": "98fffa4c0e25228ec220834907d629daeba440678468073b5323c58300dc13f0"
+    },
+    {
+      "textGroupId": "g-block-11-u004",
+      "targetTextSha256": "9d4d741a891e1c31f9f9ce708c2c83c1e65e7253c4db2bd8ac45f4b19c9879f9",
+      "audioSha256": "ef0dbba10d47023af1f36763847b88be61c6bfa0642a3b25ee8686c0faa2f9a0"
+    },
+    {
+      "textGroupId": "g-block-11-u005",
+      "targetTextSha256": "573eb9a8fe08f9e2dae2ad7f7a26fa9af894ad54d4014b85cc4941a2b41fb579",
+      "audioSha256": "e526ba81d89396599f51c890d381ee4c32620c7cbb2276f69031d862cf1a8ba2"
+    },
+    {
+      "textGroupId": "g-block-11-u006",
+      "targetTextSha256": "5c6b40103ac0e9bf4e3a7737df1c922f2aace701085fa55f8cfa0bacf64a3110",
+      "audioSha256": "2ffd66750e7e624a2988ca3c702a79f28ed5bbbcf93d0afc367f516c9e8c3251"
+    },
+    {
+      "textGroupId": "g-block-11-u007",
+      "targetTextSha256": "92ed09b06a129e5e28ce5a4f3c1c296494cec1b120fbe857bb5cee899fe20715",
+      "audioSha256": "4a2c832da469acdffa8091eab313a94f18075540a3066d4bc8f5c9f6fb6690a6"
+    },
+    {
+      "textGroupId": "g-block-12-u001",
+      "targetTextSha256": "7f6fe3c411a78ce338d49633642f04c6c1a0bc96337fe5bf73151b8f545c9b9d",
+      "audioSha256": "981ae196e51c3131607cd92c654112e46070b6a4ca74f2a02ccc092e77460f69"
+    },
+    {
+      "textGroupId": "g-block-12-u002",
+      "targetTextSha256": "a38feee414a544a1487b712d908fa2a6454b76d3f3b4019fa767a884dabe46bf",
+      "audioSha256": "94de9485bc1978da54fd60334b662ad110e561a68401de386fe679188172dfb2"
+    },
+    {
+      "textGroupId": "g-block-12-u003",
+      "targetTextSha256": "efb16541db2cd7bc44ed2a5366a9ee7676ecc9d57baf63cd6ff6ea5f062c58a2",
+      "audioSha256": "9a70fd2b0a77ed5175b2856d9b990ad99ce59b0172864f6ff3aa96655d0ec291"
+    },
+    {
+      "textGroupId": "g-block-12-u004",
+      "targetTextSha256": "ad561222592df54e6caf518c09e34edfc6e2a92c6034bbe9c51db6d8906c184c",
+      "audioSha256": "a68162f43b5d6cd6b359dc65ecb07aa8ce5cd0415836c621920e13f285a0dde2"
+    },
+    {
+      "textGroupId": "g-block-12-u005",
+      "targetTextSha256": "4d6ddacb9746a19ab84b47968efe50455edba659d6548d9279bcb4258529a3c8",
+      "audioSha256": "fcde27f9b905bda6d12c510826763ec7c04dca6d6b5b34cdd177e6b261766375"
+    },
+    {
+      "textGroupId": "g-block-13-u001",
+      "targetTextSha256": "7a39dc7d8c1c38aceb46996bf9b9622ada8e93d5463c7422dfb05b7cc5b62807",
+      "audioSha256": "82a17ad714823b2b4e83bfccfb52256a2d0cc4110515ce1fde582856b6fbe02b"
+    },
+    {
+      "textGroupId": "g-block-13-u002",
+      "targetTextSha256": "8a3c26ebc6d2618acc4d28f00b1389a7a741f06221066b93c4e38f38a77fa495",
+      "audioSha256": "8b8efda57348d7a31252ecabd516e1099c923afa315f5af6a0a694e4bdd0a81b"
+    },
+    {
+      "textGroupId": "g-block-13-u003",
+      "targetTextSha256": "af3fb8813abb181c5aa9766d226a2b6381e5a6be47099074f318c113a9079039",
+      "audioSha256": "aa98a1464bcff7a933e760ea51665291815e318e1d0e2282f711065229c4b90a"
+    },
+    {
+      "textGroupId": "g-block-13-u004",
+      "targetTextSha256": "cd96f597224b80d013d5776f975f8c9f99cf75e56152712b53c035fa0ee022bc",
+      "audioSha256": "209e4db66ac33d1e06bcc153fb4eab6e6d6c769f581e5b02af03c7c0a6cc79eb"
+    },
+    {
+      "textGroupId": "g-block-13-u005",
+      "targetTextSha256": "80bb506d3990e94b5621d498ea9b96823d332b08026e7bb239e2f14fa95a7a11",
+      "audioSha256": "789369b54e654408c87e71ae775ff9cac8b53ee03700f7dce41372f56075db50"
+    },
+    {
+      "textGroupId": "g-block-13-u006",
+      "targetTextSha256": "331eac7d69db4c085b4f8a93c3e71759068337f59b46dfb17080eeb68ca93587",
+      "audioSha256": "fd3d7122355e52984bc72813c9c8e03caa8b96101c109ab2ef20c680b838c5c4"
+    },
+    {
+      "textGroupId": "g-block-13-u007",
+      "targetTextSha256": "466103f54071250a1afcde47355889ee134e1b3861208315430a0e128cc73760",
+      "audioSha256": "286af2467f605db53d41b3462fa96cc6f3f1380f6ef6e7d2a163317708bd2dac"
+    },
+    {
+      "textGroupId": "g-block-14-u001",
+      "targetTextSha256": "174cd41fe5bea224c756a1edd4d76498f4305cf58d6e496793c9d6d6387e8bcc",
+      "audioSha256": "f8cf80a7259ae00c0086f2f7475f4c6936a854ce221fa3b50772033b79da90c0"
+    },
+    {
+      "textGroupId": "g-block-14-u002",
+      "targetTextSha256": "455d6dd151a0683d7aabf9d65b89b31f1e76c31383457b903246c7aebfdd6436",
+      "audioSha256": "bb5cb23990d54d6ad976bb5c995dfb9ae7e9f725d676d05f5f10ff57c1ce7bc4"
+    },
+    {
+      "textGroupId": "g-block-14-u003",
+      "targetTextSha256": "7f0f52e0951219edf3bac38ccfb3bd9df398768a76dd34c776e1213cb439a3b6",
+      "audioSha256": "df4cb03da031901185e07f5e977f2efd19703b4924595a6a1dcc0f2e363a23ac"
+    },
+    {
+      "textGroupId": "g-block-14-u004",
+      "targetTextSha256": "e817e06ba0f904d7eb0db7723ea951dfaed839fecffa662790d21d479a64120b",
+      "audioSha256": "ee56a418d5d50ec1a5069a036072f2a6ac5595732b2b99ddffdc5ec2abe00ef7"
+    },
+    {
+      "textGroupId": "g-block-14-u005",
+      "targetTextSha256": "23ff3b0570d985125b5e35dd8db551b01dd15379fb5de14814b05e3fd48fcde6",
+      "audioSha256": "2628c987c2a52c359752001acfa759ed36415400ae95402cd55a793416fc8f74"
+    },
+    {
+      "textGroupId": "g-block-14-u006",
+      "targetTextSha256": "f6fbc1a490c915722d44f3bea8b9b21834caf4abd8d6d3e44a345eedd5babffc",
+      "audioSha256": "2f986d8337b9b381c7cce31ed7663c94640d4b2935ce7382bfd8025c59e13368"
+    },
+    {
+      "textGroupId": "g-block-14-u007",
+      "targetTextSha256": "48813abf9161ba139fe3da59730b6b1d1f12b41b966f0684126a3cecbd55b676",
+      "audioSha256": "aac72060cb55dc67bee04a9bb8b3eab0d49c25653ec571c03fdc653f83402e3c"
+    },
+    {
+      "textGroupId": "g-block-14-u008",
+      "targetTextSha256": "a7a222df36d28e0a86e37865f768356a00fcecc3d64158f5b90a95da7fae28c0",
+      "audioSha256": "383176a1812b423356edf7ed6acdc5431467b33a262cd4d40937c41b92752406"
+    },
+    {
+      "textGroupId": "g-block-14-u009",
+      "targetTextSha256": "4fb90e2003a0b007955f7a19de3808ae7a392b708d928f2dfc71cc059ff3a7f9",
+      "audioSha256": "8200847a1a6492e759845b67a219889794ef05d283a7649b324cb099000cae6b"
+    },
+    {
+      "textGroupId": "g-block-14-u010",
+      "targetTextSha256": "3ee2ab2575c003fc9440dc740e4d1ca0711bf6599f5be2a7ba661d2a0d4fb756",
+      "audioSha256": "92aad67c509e5f290c19c24886e3a834f56ed1466505b6067426d63e31006347"
+    },
+    {
+      "textGroupId": "g-block-14-u011",
+      "targetTextSha256": "a709f18a16d25f715f0c915ff3dce5119ebbb4cd1800e0d0391344ed74bbc6e6",
+      "audioSha256": "d1c171d73b62039a12e8067d5aa41eb3bc5a3142d6dc3d320e4b30d568574138"
+    },
+    {
+      "textGroupId": "g-block-14-u012",
+      "targetTextSha256": "2c693bb08d9521282d711755972fd23b80419cc97897bdd8cf1f28b05fd23199",
+      "audioSha256": "c7651075f27860326bc9116fd1363810ef2b3a9363c1f70558efcff38f58b1a7"
+    },
+    {
+      "textGroupId": "g-block-14-u013",
+      "targetTextSha256": "3fd021ffbdc0689e43ef0f2630300aaf6285ca99d505637e68fd35c77ee24d36",
+      "audioSha256": "d62c7ce0688da9f4388b7dbc21ad29dd18b8f2b71951ae0cd2b2a503a2fdddeb"
+    }
+  ],
+  "machineScreening": {
+    "status": "requires_review",
+    "model": "Qwen/Qwen3-ASR-0.6B",
+    "coverage": 1.0
+  },
+  "humanReview": {
+    "status": "approved",
+    "humanApproval": true,
+    "reviewedBy": "user",
+    "reviewedAt": "2026-09-23T21:23:21.581747+00:00",
+    "fullPlayback": "approved"
+  }
+}
