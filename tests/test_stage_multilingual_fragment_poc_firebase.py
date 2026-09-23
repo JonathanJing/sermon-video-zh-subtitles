@@ -35,7 +35,9 @@ class StageMultilingualFragmentPocFirebaseTests(unittest.TestCase):
                 (layer2 / locale / "target-language-candidate.json").write_text(json.dumps(candidate))
                 (layer3 / locale / "target-language-audio-package.json").write_text(json.dumps(package))
                 (layer3 / locale / "audio.mp3").write_bytes(locale.encode())
-                tracks.append({"locale": locale, "sha256": sha(locale.encode())})
+                native_name = subject.native_audio_name(page_id, locale)
+                tracks.append({"locale": locale, "sha256": sha(locale.encode()),
+                               "file": native_name, "audioUrl": f"/media/{native_name}"})
                 release = {"pageId": page_id, "targetLocale": locale,
                            "audioUrl": f"/media/{page_id}/{locale}.mp3",
                            "audioSha256": sha(locale.encode())}
@@ -58,6 +60,9 @@ class StageMultilingualFragmentPocFirebaseTests(unittest.TestCase):
                 with redirect_stdout(io.StringIO()):
                     self.assertEqual(subject.main(), 0)
             self.assertEqual((public / "media" / page_id / "zh-Hans-natural.mp3").read_bytes(), b"natural audio")
+            for locale in subject.TARGET_LOCALES:
+                self.assertEqual((public / "media" / subject.native_audio_name(page_id, locale)).read_bytes(),
+                                 locale.encode())
 
 
 if __name__ == "__main__":

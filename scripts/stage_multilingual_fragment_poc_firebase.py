@@ -13,6 +13,11 @@ import subprocess
 TARGET_LOCALES = ("zh-Hans", "ko", "es", "vi")
 
 
+def native_audio_name(page_id: str, locale: str) -> str:
+    """The legacy native catalog accepts one flat /media/<filename> path."""
+    return f"{page_id}-{locale}.mp3"
+
+
 def canonical_sha(value: object) -> str:
     raw = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
     return hashlib.sha256(raw).hexdigest()
@@ -94,6 +99,10 @@ def main() -> int:
     tracks = {item["locale"]: item for item in week["tracks"]}
     if not set(TARGET_LOCALES).issubset(tracks):
         raise SystemExit("Committed weekly manifest does not cover all target-language POC locales")
+    for locale, track in tracks.items():
+        name = native_audio_name(args.page_id, locale)
+        if track.get("file") != name or track.get("audioUrl") != f"/media/{name}":
+            raise SystemExit(f"Weekly manifest is incompatible with native iOS media paths: {locale}")
 
     destination = args.public / "media" / args.page_id
     layer2_public = args.public / "packages" / "layer2"
@@ -132,6 +141,11 @@ def main() -> int:
                 shutil.copyfile(source, target)
             if file_sha(target) != expected:
                 raise SystemExit(f"Staged media hash mismatch: {locale}/{name}")
+            if name == f"{locale}.mp3":
+                native_target = args.public / "media" / native_audio_name(args.page_id, locale)
+                shutil.copyfile(target, native_target)
+                if file_sha(native_target) != expected:
+                    raise SystemExit(f"Native media alias hash mismatch: {locale}")
         candidate_target = layer2_public / f"{args.page_id}-{locale}.json"
         package_target = layer3_public / f"{args.page_id}-{locale}.json"
         shutil.copyfile(candidate_path, candidate_target)
@@ -179,6 +193,10 @@ def main() -> int:
         english_hash = file_sha(english_target)
         if english_hash != english_track["sha256"]:
             raise SystemExit("English source audio hash differs from weekly.json")
+        english_native_target = args.public / "media" / native_audio_name(args.page_id, "en")
+        shutil.copyfile(english_target, english_native_target)
+        if file_sha(english_native_target) != english_hash:
+            raise SystemExit("Native English source alias hash mismatch")
         staged.insert(0, {
             "targetLocale": "en",
             "audioPath": str(english_target),
