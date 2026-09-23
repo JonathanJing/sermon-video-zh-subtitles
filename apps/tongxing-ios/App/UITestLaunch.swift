@@ -79,8 +79,12 @@ private enum UITestContent {
                     .init(blockId: "2", english: "Third synthetic source sentence for continued listening.", sourceTextOrigin: "synthetic-fixture", reviewState: "candidate")
                 ]))
         ])
+        func page(locale: String) -> Data {
+            Data("<html><head><title>\(locale)</title></head><body><h1>\(locale == "ko" ? "한국어 검증 페이지" : "中文验证页面")</h1></body></html>".utf8)
+        }
         func release(locale: String) -> Data {
             let hash = String(repeating: "a", count: 64)
+            let pageHash = SHA256.hash(data: page(locale: locale)).map { String(format: "%02x", $0) }.joined()
             let value: [String: Any] = [
                 "schemaVersion": "sermon-target-language-release-package-v1",
                 "packageId": "ui-test-week-\(locale)", "pageId": "ui-test-week", "sourceLocale": "en",
@@ -88,7 +92,7 @@ private enum UITestContent {
                 "targetLanguageAudioPackageJsonSha256": NSNull(), "status": "published_http_verified",
                 "contentStatus": "human_reviewed", "audioStatus": "unavailable",
                 "interfaceLocale": locale, "contentLocale": locale, "audioLocale": NSNull(),
-                "assets": [["role": "page", "path": "/pages/ui-test-week/\(locale)/index.html", "sha256": hash]],
+                "assets": [["role": "page", "path": "/pages/ui-test-week/\(locale)/index.html", "sha256": pageHash]],
                 "httpVerification": ["status": "pass", "evidenceSha256": hash],
                 "deviceAcceptance": ["status": "not_run", "evidenceSha256": NSNull()],
                 "venueAcceptance": ["status": "not_run", "evidenceSha256": NSNull()], "issues": [],
@@ -116,6 +120,8 @@ private enum UITestContent {
                 "/multilingual.json": try! JSONSerialization.data(withJSONObject: multilingual, options: [.sortedKeys]),
                 "/releases/ui-test-week/zh-Hans.json": chineseRelease,
                 "/releases/ui-test-week/ko.json": koreanRelease,
+                "/pages/ui-test-week/zh-Hans/index.html": page(locale: "zh-Hans"),
+                "/pages/ui-test-week/ko/index.html": page(locale: "ko"),
                 "/media/fixture-first.mp3": firstAudio,
                 "/media/fixture-second.mp3": secondAudio]
     }()

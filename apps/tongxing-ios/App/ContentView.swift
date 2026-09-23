@@ -1,5 +1,7 @@
 import SwiftUI
 import TongxingCore
+import TongxingInfrastructure
+import WebKit
 
 // Explicitly select the iOS 17-compatible property wrapper; newer SDKs also
 // export a State macro whose plugin is absent from Command Line Tools.
@@ -481,65 +483,83 @@ private struct TargetLanguageSheet: View {
     @ObservedObject private var localization = AppLocalization.shared
     @ObservedObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.openURL) private var openURL
+    @ViewState private var verifiedPage: VerifiedLanguagePage?
 
     var body: some View {
         NavigationStack {
-            List {
-                if model.availableContentLanguages.isEmpty {
-                    ContentUnavailableView(
-                        localization.text("尚无可选择的语言版本"),
-                        systemImage: "globe.badge.chevron.backward",
-                        description: Text(localization.text(model.multilingualNotice ?? "发布目录尚未提供已人工审核的目标语言。"))
-                    )
+            Group {
+                if let verifiedPage {
+                    VerifiedLanguagePageView(page: verifiedPage)
                 } else {
-                    Section {
-                        ForEach(model.availableContentLanguages, id: \.locale) { option in
-                            Button {
-                                Task {
-                                    guard let url = await model.selectContentLanguage(option.locale) else { return }
-                                    dismiss()
-                                    openURL(url)
-                                }
-                            } label: {
-                                HStack(spacing: 14) {
-                                    VStack(alignment: .leading, spacing: 5) {
-                                        Text(AppModel.languageName(option.locale)).font(.headline)
-                                        Text(capabilitySummary(option.target))
-                                            .font(.caption).foregroundStyle(.secondary)
-                                    }
-                                    Spacer()
-                                    if model.isSelectingLanguage && model.selectedContentLocale != option.locale {
-                                        ProgressView().controlSize(.small)
-                                    } else if model.selectedContentLocale == option.locale {
-                                        Image(systemName: "checkmark").foregroundStyle(Brand.accent)
-                                    }
-                                }
-                                .frame(maxWidth: .infinity, minHeight: 54, alignment: .leading)
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            .disabled(model.isSelectingLanguage)
-                            .accessibilityIdentifier("content-language-\(option.locale)")
-                            .accessibilityValue(localization.text(model.selectedContentLocale == option.locale ? "已选择" : "未选择"))
-                        }
-                    } header: {
-                        Text(localization.text("证道语言"))
-                    } footer: {
-                        Text(localization.text("选择后打开该语言自己的已发布页面。界面语言和证道音频语言不会被静默更改。"))
-                    }
-                }
-                if let error = model.languageSelectionError {
-                    Section { Label(localization.text(error), systemImage: "exclamationmark.circle") }
+                    languageList
                 }
             }
             .navigationTitle(localization.text("选择证道语言"))
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button(localization.text("完成")) { dismiss() } } }
+            .toolbar {
+                if verifiedPage != nil {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(localization.text("选择证道语言"), systemImage: "chevron.left") { verifiedPage = nil }
+                            .labelStyle(.iconOnly)
+                            .accessibilityIdentifier("return-to-content-languages")
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) { Button(localization.text("完成")) { dismiss() } }
+            }
         }
         .environment(\.locale, localization.locale)
         #if os(macOS)
         .frame(minWidth: 430, minHeight: 560)
         #endif
+    }
+
+    private var languageList: some View {
+        List {
+            if model.availableContentLanguages.isEmpty {
+                ContentUnavailableView(
+                    localization.text("尚无可选择的语言版本"),
+                    systemImage: "globe.badge.chevron.backward",
+                    description: Text(localization.text(model.multilingualNotice ?? "发布目录尚未提供已人工审核的目标语言。"))
+                )
+            } else {
+                Section {
+                    ForEach(model.availableContentLanguages, id: \.locale) { option in
+                        Button {
+                            Task {
+                                guard let page = await model.selectContentLanguage(option.locale) else { return }
+                                verifiedPage = page
+                            }
+                        } label: {
+                            HStack(spacing: 14) {
+                                VStack(alignment: .leading, spacing: 5) {
+                                    Text(AppModel.languageName(option.locale)).font(.headline)
+                                    Text(capabilitySummary(option.target))
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                if model.isSelectingLanguage && model.selectedContentLocale != option.locale {
+                                    ProgressView().controlSize(.small)
+                                } else if model.selectedContentLocale == option.locale {
+                                    Image(systemName: "checkmark").foregroundStyle(Brand.accent)
+                                }
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 54, alignment: .leading)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(model.isSelectingLanguage)
+                        .accessibilityIdentifier("content-language-\(option.locale)")
+                        .accessibilityValue(localization.text(model.selectedContentLocale == option.locale ? "已选择" : "未选择"))
+                    }
+                } header: {
+                    Text(localization.text("证道语言"))
+                } footer: {
+                    Text(localization.text("选择后打开该语言自己的已发布页面。界面语言和证道音频语言不会被静默更改。"))
+                }
+            }
+            if let error = model.languageSelectionError {
+                Section { Label(localization.text(error), systemImage: "exclamationmark.circle") }
+            }
+        }
     }
 
     private func capabilitySummary(_ target: PageTarget) -> String {
@@ -550,6 +570,72 @@ private struct TargetLanguageSheet: View {
         return values.joined(separator: " · ")
     }
 }
+
+private struct VerifiedLanguagePageView: View {
+    let page: VerifiedLanguagePage
+
+    var body: some View {
+        VerifiedHTMLView(html: page.html)
+            .accessibilityIdentifier("verified-content-page")
+            .ignoresSafeArea(edges: .bottom)
+    }
+}
+
+/// The release page is rendered from verified bytes. Restrict the document to
+/// inline styles and data images so it cannot fetch mutable linked content.
+private struct VerifiedHTMLView {
+    let html: String
+
+    var restrictedHTML: String {
+        let policy = "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; form-action 'none'; base-uri 'none'\">"
+        let injected = html.replacingOccurrences(of: "(?i)(<head(?:\\s[^>]*)?>)", with: "$1\(policy)", options: .regularExpression)
+        return injected == html ? policy + html : injected
+    }
+
+    func configuredView() -> WKWebView {
+        let configuration = WKWebViewConfiguration()
+        configuration.defaultWebpagePreferences.allowsContentJavaScript = false
+        let view = WKWebView(frame: .zero, configuration: configuration)
+        view.navigationDelegate = navigationGuard
+        return view
+    }
+
+    private var navigationGuard: VerifiedPageNavigationGuard { VerifiedPageNavigationGuard.shared }
+}
+
+private final class VerifiedPageNavigationGuard: NSObject, WKNavigationDelegate {
+    static let shared = VerifiedPageNavigationGuard()
+
+    func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction,
+                 decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        let url = action.request.url
+        decisionHandler(url == nil || url?.scheme == "about" ? .allow : .cancel)
+    }
+}
+
+#if os(iOS)
+extension VerifiedHTMLView: UIViewRepresentable {
+    func makeUIView(context: Context) -> WKWebView { configuredView() }
+    func updateUIView(_ view: WKWebView, context: Context) {
+        guard context.coordinator.loadedHTML != html else { return }
+        context.coordinator.loadedHTML = html
+        view.loadHTMLString(restrictedHTML, baseURL: nil)
+    }
+    func makeCoordinator() -> Coordinator { Coordinator() }
+    final class Coordinator { var loadedHTML: String? }
+}
+#else
+extension VerifiedHTMLView: NSViewRepresentable {
+    func makeNSView(context: Context) -> WKWebView { configuredView() }
+    func updateNSView(_ view: WKWebView, context: Context) {
+        guard context.coordinator.loadedHTML != html else { return }
+        context.coordinator.loadedHTML = html
+        view.loadHTMLString(restrictedHTML, baseURL: nil)
+    }
+    func makeCoordinator() -> Coordinator { Coordinator() }
+    final class Coordinator { var loadedHTML: String? }
+}
+#endif
 
 private struct BrandTitle: View {
     @ObservedObject private var localization = AppLocalization.shared
