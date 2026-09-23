@@ -13,7 +13,8 @@ permissions:
 jobs:
   native-client:
     runs-on: macos-15
-    timeout-minutes: 20
+    # Hosted simulator tests can pass near 20 minutes; leave time to upload xcresult.
+    timeout-minutes: 40
     defaults:
       run:
         working-directory: apps/tongxing-ios
