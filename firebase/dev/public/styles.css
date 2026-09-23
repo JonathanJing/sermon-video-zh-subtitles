@@ -174,7 +174,7 @@ body{padding-bottom:calc(var(--dock-height,196px) + 18px)}
 .interface-language-control { position: relative; }
 .language-toggle { font-weight: 650; }
 .menu-chevron { color: var(--muted); font-size: 14px; }
-.interface-language-menu[hidden], .dev-more[hidden], .panel[hidden], .current-english[hidden], .audio-variant-picker[hidden] { display: none; }
+.interface-language-menu[hidden], .dev-more[hidden], .panel[hidden], .current-english[hidden], .audio-variant-picker[hidden], .field-controls[hidden] { display: none; }
 .interface-language-menu { position: absolute; top: calc(100% + 8px); right: 0; z-index: 30; width: 232px; padding: 6px; border: 1px solid var(--control-line); border-radius: 12px; background: var(--surface); box-shadow: 0 18px 42px var(--shadow); }
 .interface-language-menu button { display: flex; width: 100%; min-height: 44px; align-items: center; gap: 12px; padding: 7px 10px; border: 0; border-radius: 8px; background: transparent; text-align: left; }
 .interface-language-menu button:hover, .interface-language-menu button[aria-checked="true"] { background: var(--selected); color: var(--selected-ink); }

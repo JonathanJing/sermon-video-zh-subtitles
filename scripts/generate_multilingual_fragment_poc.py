@@ -31,7 +31,7 @@ LOCALES = {
     "es": {"name": "Spanish", "modelLanguage": "Spanish"},
     "vi": {"name": "Vietnamese", "modelLanguage": "Vietnamese"},
 }
-PROMPT_VERSION = "sermon-fragment-translation-poc-v1"
+PROMPT_VERSION = "sermon-fragment-translation-poc-v2"
 REVIEW_VERSION = "sermon-fragment-semantic-judge-poc-v1"
 
 
@@ -103,11 +103,13 @@ def request_json(api_key: str, model: str, system: str, user: object) -> tuple[s
     return str(payload.get("id") or "missing-response-id"), parsed
 
 
-def index_output(value: dict[str, Any], source_ids: list[str], *, review: bool) -> dict[str, dict[str, dict[str, Any]]]:
+def index_output(value: dict[str, Any], source_ids: list[str], *, review: bool,
+                 target_locales: list[str] | None = None) -> dict[str, dict[str, dict[str, Any]]]:
+    expected_locales = target_locales or list(LOCALES)
     result: dict[str, dict[str, dict[str, Any]]] = {}
     for locale_item in value.get("locales", []):
         locale = locale_item.get("targetLocale")
-        if locale not in LOCALES or locale in result:
+        if locale not in expected_locales or locale in result:
             raise ValueError(f"Unexpected or duplicate locale: {locale}")
         units: dict[str, dict[str, Any]] = {}
         for item in locale_item.get("units", []):
@@ -120,9 +122,40 @@ def index_output(value: dict[str, Any], source_ids: list[str], *, review: bool) 
         if list(units) != source_ids:
             raise ValueError(f"Unit order or coverage differs for {locale}")
         result[locale] = units
-    if set(result) != set(LOCALES):
+    if set(result) != set(expected_locales):
         raise ValueError("Locale coverage differs")
     return result
+
+
+def build_shadow_groups(fragment_id: str, locale: str, policy_sha: str,
+                        units: list[tuple]) -> list[dict[str, Any]]:
+    """Keep each reviewed source unit intact as one target utterance."""
+    groups = []
+    for source_id, text, result, checks, passed in units:
+        target_text = text.strip()
+        groups.append({
+            "translationGroupId": f"{fragment_id}-{locale}-{source_id}",
+            "sourceUnitIds": [source_id],
+            "targetUtterances": [target_text],
+            "targetText": target_text,
+            "coverage": [{"sourceUnitId": source_id, "targetText": target_text}],
+            "semanticReview": {
+                "status": "pass" if passed else "fail",
+                "checks": checks,
+                "evidence": result.get("evidence") or f"Independent semantic review of {source_id}.",
+                "uncertainty": result.get("uncertainty") or [],
+                "issues": result.get("issues") or [],
+            },
+            "languageReview": {
+                "status": "pass" if passed else "fail",
+                "pluginId": "gpt-language-review-poc-v1",
+                "policySha256": policy_sha,
+                "checks": [{"checkId": "target_language_and_natural_narration",
+                            "status": "pass" if passed else "fail",
+                            "evidence": f"Reviewed as {LOCALES[locale]['name']} narration; human review remains pending."}],
+            },
+        })
+    return groups
 
 
 def main() -> int:
@@ -130,11 +163,16 @@ def main() -> int:
     parser.add_argument("--anchor-manifest", type=Path, required=True)
     parser.add_argument("--english-source-package", type=Path, required=True)
     parser.add_argument("--source-unit", action="append", dest="source_units", required=True)
+    parser.add_argument("--target-locale", action="append", choices=tuple(LOCALES),
+                        help="Target locale for this POC; repeat for multiple locales (default: all four)")
     parser.add_argument("--api-key-secret", required=True)
     parser.add_argument("--model", default="gpt-6-astra")
     parser.add_argument("--fragment-id", default="2026-09-20-lion-of-judah")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
+    target_locales = args.target_locale or list(LOCALES)
+    if len(target_locales) != len(set(target_locales)):
+        raise SystemExit("Target locales must be unique")
     if args.out.exists():
         raise SystemExit(f"Output already exists; use a new immutable run directory: {args.out}")
 
@@ -152,15 +190,16 @@ def main() -> int:
         "schemaVersion": "sermon-target-language-policy-poc-v1",
         "scope": "machine_reviewed_fragment_poc_not_production",
         "sourceLocale": "en",
-        "targetLocales": list(LOCALES),
+        "targetLocales": target_locales,
         "rules": [
             "Translate each source unit independently without merging, dropping, or inventing meaning.",
             "Preserve negation, names, numbers, Bible references, imagery, and speaker emphasis.",
+            "When the English source says 'the Word' to refer to Scripture, translate that reference explicitly rather than replacing it with a broader term such as 'truth' or 'message'.",
             "Use natural spoken target-language phrasing suitable for narration.",
             "Human translation approval remains required for production.",
         ],
     }
-    translation_input = {"targetLocales": [{"targetLocale": key, "language": item["name"]} for key, item in LOCALES.items()], "sourceUnits": selected}
+    translation_input = {"targetLocales": [{"targetLocale": key, "language": LOCALES[key]["name"]} for key in target_locales], "sourceUnits": selected}
     api_key = cloud_access_secret(args.api_key_secret)
     translator_id, translation = request_json(
         api_key,
@@ -168,14 +207,14 @@ def main() -> int:
         "You are the translation stage of a sermon localization POC. Return strict JSON only with shape {locales:[{targetLocale,units:[{sourceUnitId,targetText}]}]}. Follow the supplied policy. Do not combine units. Do not add devotional honorifics or theological titles (for example Lord or 主) unless they are explicit in that source unit.",
         {"policy": policy, **translation_input},
     )
-    translated = index_output(translation, args.source_units, review=False)
+    translated = index_output(translation, args.source_units, review=False, target_locales=target_locales)
     reviewer_id, review = request_json(
         api_key,
         args.model,
         "You are an independent semantic judge. Compare every translation to its English source. Return strict JSON only with shape {locales:[{targetLocale,units:[{sourceUnitId,status,completeMeaning,negationsNumbersNames,quotationAttribution,noAddedMeaning,evidence,uncertainty,issues}]}]}. Each status/check is pass or fail. Use empty arrays when none. Be fail-closed.",
         {"policy": policy, "sourceUnits": selected, "translations": translation},
     )
-    reviewed = index_output(review, args.source_units, review=True)
+    reviewed = index_output(review, args.source_units, review=True, target_locales=target_locales)
     del api_key
 
     args.out.mkdir(parents=True, exist_ok=False)
@@ -185,7 +224,7 @@ def main() -> int:
     anchor_sha = canonical_sha(anchors)
     all_pass = True
     candidates = []
-    for locale in LOCALES:
+    for locale in target_locales:
         units = []
         for source_id in args.source_units:
             result = reviewed[locale][source_id]
@@ -193,8 +232,21 @@ def main() -> int:
             unit_pass = result.get("status") == "pass" and set(checks.values()) == {"pass"} and not result.get("issues")
             all_pass = all_pass and unit_pass
             units.append((source_id, translated[locale][source_id]["targetText"], result, checks, unit_pass))
-        group_id = f"{args.fragment_id}-{locale}"
+        locale_dir = args.out / locale
+        locale_dir.mkdir()
+        review_units = [{
+            "sourceUnitId": item[0],
+            "targetText": item[1],
+            "status": "pass" if item[4] else "fail",
+            "checks": item[3],
+            "issues": item[2].get("issues") or [],
+            "uncertainty": item[2].get("uncertainty") or [],
+        } for item in units]
+        review_path = locale_dir / "machine-review-units.json"
+        review_path.write_text(json.dumps(review_units, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         locale_pass = all(item[4] for item in units)
+        groups = build_shadow_groups(args.fragment_id, locale, policy_sha, units)
+        group_ids = [group["translationGroupId"] for group in groups]
         candidate = {
             "schemaVersion": "sermon-target-language-candidate-v2",
             "sourceLocale": "en",
@@ -208,34 +260,13 @@ def main() -> int:
                 "translator": {"model": args.model, "promptVersion": PROMPT_VERSION, "requestIds": [translator_id]},
                 "reviewer": {"model": args.model, "promptVersion": REVIEW_VERSION, "requestIds": [reviewer_id]},
             },
-            "groups": [{
-                "translationGroupId": group_id,
-                "sourceUnitIds": args.source_units,
-                "targetUtterances": [item[1] for item in units],
-                "targetText": " ".join(item[1] for item in units),
-                "coverage": [{"sourceUnitId": item[0], "targetText": item[1]} for item in units],
-                "semanticReview": {
-                    "status": "pass" if locale_pass else "fail",
-                    "checks": {name: "pass" if all(item[3][name] == "pass" for item in units) else "fail" for name in units[0][3]},
-                    "evidence": "Independent GPT semantic review completed for all six source units.",
-                    "uncertainty": [message for item in units for message in (item[2].get("uncertainty") or [])],
-                    "issues": [message for item in units for message in (item[2].get("issues") or [])],
-                },
-                "languageReview": {
-                    "status": "pass" if locale_pass else "fail",
-                    "pluginId": "gpt-language-review-poc-v1",
-                    "policySha256": policy_sha,
-                    "checks": [{"checkId": "target_language_and_natural_narration", "status": "pass" if locale_pass else "fail", "evidence": f"Reviewed as {LOCALES[locale]['name']} narration; human review remains pending."}],
-                },
-            }],
-            "modelReview": {"status": "pass" if locale_pass else "fail", "reviewedGroupIds": [group_id]},
+            "groups": groups,
+            "modelReview": {"status": "pass" if locale_pass else "fail", "reviewedGroupIds": group_ids},
             "humanReview": {"translation": "pending", "reviewer": None, "reviewedAt": None, "reviewedGroupIds": []},
         }
-        locale_dir = args.out / locale
-        locale_dir.mkdir()
         candidate_path = locale_dir / "target-language-candidate.json"
         candidate_path.write_text(json.dumps(candidate, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        candidates.append({"targetLocale": locale, "path": str(candidate_path.relative_to(args.out)), "jsonSha256": canonical_sha(candidate), "status": candidate["status"]})
+        candidates.append({"targetLocale": locale, "path": str(candidate_path.relative_to(args.out)), "jsonSha256": canonical_sha(candidate), "status": candidate["status"], "machineReviewUnits": {"path": str(review_path.relative_to(args.out)), "jsonSha256": canonical_sha(review_units)}})
     receipt = {
         "schemaVersion": "sermon-multilingual-fragment-poc-v1",
         "scope": "layer_2_shadow_poc",
@@ -249,7 +280,7 @@ def main() -> int:
         "candidates": candidates,
     }
     (args.out / "layer2-receipt.json").write_text(json.dumps(receipt, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(json.dumps({"out": str(args.out), "allMachineChecksPass": all_pass, "locales": list(LOCALES)}))
+    print(json.dumps({"out": str(args.out), "allMachineChecksPass": all_pass, "locales": target_locales}))
     return 0 if all_pass else 2
 
 

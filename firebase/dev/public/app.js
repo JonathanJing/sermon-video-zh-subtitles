@@ -60,6 +60,16 @@ const statusCopy = {
   es: { sourceText: "Fuente inglesa · límites pendientes", sourceAudio: "Audio original del predicador", passText: "Revisión automática · revisión humana pendiente", passAudio: "Audio revisado por máquina · escucha pendiente", pending: "Revisión automática pendiente · escucha pendiente", review: "ASR bajo el umbral · requiere revisión", unverified: "Revisión fallida o desconocida · comprobar", textPending: "Estado del texto sin verificar · no publicable", themeLight: "Claro", themeDark: "Oscuro", oneWeek: "Hay un solo fragmento Dev POC" },
   vi: { sourceText: "Bản gốc tiếng Anh · chờ kiểm tra mốc", sourceAudio: "Âm thanh gốc của người giảng", passText: "Máy đã kiểm tra · chờ người duyệt", passAudio: "Máy đã kiểm tra · chờ nghe duyệt", pending: "Chờ máy kiểm tra lại · chờ nghe duyệt", review: "ASR dưới ngưỡng · cần kiểm tra", unverified: "Kiểm tra thất bại hoặc không rõ · cần xem lại", textPending: "Trạng thái văn bản chưa xác minh · chưa thể phát hành", themeLight: "Sáng", themeDark: "Tối", oneWeek: "Hiện chỉ có một bài giảng Dev POC" }
 };
+const textOnlyCopy = {
+  zh: "仅文字 · 无此语言音频", en: "Text only · no audio in this language",
+  ko: "텍스트만 제공 · 이 언어의 음성 없음", es: "Solo texto · sin audio en este idioma",
+  vi: "Chỉ có văn bản · không có âm thanh ngôn ngữ này"
+};
+const textOnlyCaptionCopy = {
+  zh: "阅读译文 · 此语言暂无音频", en: "Read the text · audio is unavailable in this language",
+  ko: "번역문 읽기 · 이 언어의 음성 없음", es: "Leer la traducción · audio no disponible en este idioma",
+  vi: "Đọc bản dịch · không có âm thanh ngôn ngữ này"
+};
 const utilityCopy = {
   zh: { error: "Dev 内容加载失败；当前内容和播放未改变。", retry: "重试", resumeAt: "上次听到", resume: "恢复位置", restart: "从头开始", download: "下载当前音频", seekTo: "跳转到", brandHome: "同行 Dev 首页", sermonInfo: "证道信息", moreOptions: "更多选项", resumeRegion: "恢复收听" },
   en: { error: "Dev content could not load. Your current sermon and playback are unchanged.", retry: "Retry", resumeAt: "Last listened at", resume: "Resume", restart: "Start over", download: "Download current audio", seekTo: "Jump to", brandHome: "Tongxing Dev home", sermonInfo: "Sermon details", moreOptions: "More options", resumeRegion: "Resume listening" },
@@ -92,7 +102,7 @@ async function loadJSON(path) {
 
 function availableAudioVariants(release = state.release, content = state.content, locale = state.locale) {
   if (release?.audioVariants?.length) return release.audioVariants;
-  return release ? [{
+  return release?.audioUrl ? [{
     id: "default",
     label: languageNames[locale]?.native || "Audio",
     labelEn: languageNames[locale]?.native || "Audio",
@@ -114,18 +124,19 @@ function effectiveDuration() {
 }
 
 function loadAudioVariant(variant, objectURL, { remember = true } = {}) {
-  if (!variant) return;
   const previousURL = state.audioObjectURL;
   state.switchingAudio = true;
   audio.pause();
   state.audioVariant = variant;
-  state.audioObjectURL = objectURL;
+  state.audioObjectURL = objectURL || null;
   state.pendingResume = null;
-  audio.src = objectURL;
+  state.lastCueIndex = null;
+  if (variant) audio.src = objectURL;
+  else audio.removeAttribute("src");
   audio.load();
   state.switchingAudio = false;
   if (previousURL) URL.revokeObjectURL(previousURL);
-  if (remember) localStorage.setItem(`tongxing-dev-audio-${state.page.id}-${state.locale}`, variant.id);
+  if (variant && remember) localStorage.setItem(`tongxing-dev-audio-${state.page.id}-${state.locale}`, variant.id);
 }
 
 async function verifiedAudioURL(variant, signal) {
@@ -192,13 +203,12 @@ async function switchAudioVariant(variant) {
   }
 }
 
-function routeLocale() {
-  const match = location.pathname.match(/\/pages\/2026-09-20-lion-of-judah-poc\/(en|zh-Hans|ko|es|vi)\/?$/);
-  return match?.[1] || new URLSearchParams(location.search).get("lang");
+function routeSelection() {
+  const match = location.pathname.match(/^\/pages\/([A-Za-z0-9][A-Za-z0-9._-]{0,127})\/(en|zh-Hans|ko|es|vi)\/?$/);
+  return { pageId: match?.[1], locale: match?.[2] || new URLSearchParams(location.search).get("lang") };
 }
 
-async function selectLocale(locale, { navigate = true, manual = false } = {}) {
-  const page = state.page;
+async function selectLocale(locale, { navigate = true, manual = false, page = state.page } = {}) {
   const target = page?.targets[locale];
   if (!target) return;
   state.selectionController?.abort();
@@ -222,12 +232,13 @@ async function selectLocale(locale, { navigate = true, manual = false } = {}) {
     || saved
     || variants.find(item => item.id === release.defaultAudioVariantId)
     || variants[0];
-  const objectURL = await verifiedAudioURL(variant, controller.signal);
+  const objectURL = variant ? await verifiedAudioURL(variant, controller.signal) : null;
   if (token !== state.selectionToken || controller.signal.aborted) {
-    URL.revokeObjectURL(objectURL);
+    if (objectURL) URL.revokeObjectURL(objectURL);
     return;
   }
   saveProgress(true);
+  state.page = page;
   state.locale = locale;
   state.release = release;
   state.content = content;
@@ -267,9 +278,17 @@ function render() {
   $("sermonSummary").textContent = content.summary;
   $("moreSummary").textContent = content.summary;
   $("languageName").textContent = languageNames[state.locale].native;
-  const weekOption = $("weekSelect").options[0];
-  weekOption.value = state.page.id;
-  weekOption.textContent = `${content.date} · ${content.title} · Dev POC`;
+  const weekSelect = $("weekSelect");
+  weekSelect.replaceChildren(...state.catalog.pages.map(page => {
+    const option = document.createElement("option");
+    option.value = page.id;
+    option.textContent = page.id === state.page.id
+      ? `${content.date} · ${content.title} · Dev POC`
+      : `${page.date} · ${page.id} · Dev POC`;
+    return option;
+  }));
+  weekSelect.value = state.page.id;
+  $("fieldControls").hidden = !state.audioVariant;
   renderTranscript();
   renderOutline();
   renderLanguageList();
@@ -279,6 +298,8 @@ function render() {
   if (state.audioObjectURL) {
     download.href = state.audioObjectURL;
     download.download = `${state.page.id}-${state.locale}-${state.audioVariant.id}.mp3`;
+  } else {
+    download.removeAttribute("href");
   }
   syncPlayer();
   revealCurrentCaption();
@@ -311,8 +332,8 @@ function renderInterfaceCopy() {
   $("brandSubtitle").textContent = extra.brandDetail;
   $("editionLabel").textContent = extra.edition;
   $("weekLabel").textContent = extra.week;
-  $("weekHint").textContent = statusCopy[state.ui].oneWeek;
-  $("weekSelect").title = statusCopy[state.ui].oneWeek;
+  $("weekHint").textContent = state.catalog?.pages.length === 1 ? statusCopy[state.ui].oneWeek : extra.weekHint;
+  $("weekSelect").title = $("weekHint").textContent;
   $("languageButton").setAttribute("aria-label", `${copy.languageCard}: ${languageNames[state.locale]?.native || ""}`);
   document.querySelector(".week-browser").setAttribute("aria-label", extra.week);
   document.querySelector(".brand").setAttribute("aria-label", utility.brandHome);
@@ -331,10 +352,11 @@ function renderInterfaceCopy() {
   $("sourceReferenceLabel").textContent = extra.sourceReference;
   $("transcriptHint").textContent = extra.transcriptHint;
   $("showTranscript").textContent = extra.showTranscript;
-  $("captionNote").textContent = extra.captionNote;
+  $("captionNote").textContent = state.audioVariant ? extra.captionNote : textOnlyCaptionCopy[state.ui];
   $("transcriptHeading").textContent = copy.transcript;
   $("outlineHeading").textContent = copy.outline;
-  $("playerNote").textContent = state.locale === "en" ? copy.sourcePlayerNote : copy.playerNote;
+  $("playerNote").textContent = !state.audioVariant ? textOnlyCopy[state.ui]
+    : state.locale === "en" ? copy.sourcePlayerNote : copy.playerNote;
   $("releaseTitle").textContent = copy.release;
   $("contentStatusLabel").textContent = copy.text;
   $("audioStatusLabel").textContent = copy.audio;
@@ -342,7 +364,8 @@ function renderInterfaceCopy() {
   const screening = state.audioVariant?.machineScreeningStatus || state.release?.machineScreening?.status;
   $("contentStatus").textContent = state.locale === "en" ? statuses.sourceText
     : state.release?.contentStatus === "machine_review_pass_human_review_pending" ? statuses.passText : statuses.textPending;
-  $("audioStatus").textContent = state.locale === "en" ? statuses.sourceAudio
+  $("audioStatus").textContent = state.release?.audioStatus === "unavailable" ? textOnlyCopy[state.ui]
+    : state.locale === "en" ? statuses.sourceAudio
     : screening === "pass" ? statuses.passAudio
     : screening === "requires_review" ? statuses.review
     : ["pending_for_default_audio_variant", "pending_for_this_audio_variant"].includes(screening) ? statuses.pending : statuses.unverified;
@@ -416,7 +439,8 @@ function renderLanguageList() {
     const target = state.page.targets[locale];
     const extra = extraCopy[state.ui];
     const status = locale === "en" ? extra.sourceStatus : target.machineScreening === "requires_review" ? extra.needsReview : extra.screened;
-    const media = locale === "en" ? extra.sourceMedia : extra.targetMedia;
+    const media = target.audioStatus === "unavailable" ? textOnlyCopy[state.ui]
+      : locale === "en" ? extra.sourceMedia : extra.targetMedia;
     const displayName = new Intl.DisplayNames([interfaceLocales[state.ui].htmlLang], { type: "language" }).of(locale);
     button.innerHTML = `<span class="language-option-name"><span class="language-code">${info.code}</span><span><strong lang="${locale}">${info.native}</strong><small>${escapeHTML(displayName)}</small></span></span><span class="language-option-caps">${media}<br>${status}</span>`;
     button.addEventListener("click", () => selectLocale(locale, { manual: true }).catch(showError));
@@ -437,6 +461,7 @@ function renderTranscript() {
     copy.className = "transcript-copy";
     const source = state.locale === "en" || !cue.source || cue.source === cue.text ? "" : `<span lang="en">${escapeHTML(cue.source)}</span>`;
     copy.innerHTML = `<strong lang="${state.locale}">${escapeHTML(cue.text)}</strong>${source}`;
+    button.disabled = !state.audioVariant;
     button.addEventListener("click", () => seekTo(cue.start));
     row.append(button, copy);
     return row;
@@ -467,7 +492,7 @@ function currentCueIndex() {
 function currentCue() { return activeCues()[currentCueIndex()]; }
 
 function revealCurrentCaption() {
-  if (!state.content || state.activeTab !== "listen" || state.captionRevealScheduled || !$("moreOptions").hidden) return;
+  if (!state.content || !state.audioVariant || state.activeTab !== "listen" || state.captionRevealScheduled || !$("moreOptions").hidden) return;
   state.captionRevealScheduled = true;
   requestAnimationFrame(() => {
     state.captionRevealScheduled = false;
@@ -504,7 +529,10 @@ function syncPlayer() {
   $("playIcon").textContent = audio.paused ? "▶" : "❚❚";
   $("playLabel").textContent = audio.paused ? extra.play : extra.pause;
   $("playButton").setAttribute("aria-label", $("playLabel").textContent);
-  $("playerStatus").textContent = audio.paused ? (audio.readyState ? extra.paused : extra.loading) : extra.playing;
+  $("playButton").disabled = !state.audioVariant;
+  $("playerStatus").textContent = state.audioVariant
+    ? (audio.paused ? (audio.readyState ? extra.paused : extra.loading) : extra.playing)
+    : textOnlyCopy[state.ui];
   document.querySelectorAll(".transcript-item").forEach((item, index) => item.classList.toggle("is-current", index === currentCueIndex()));
 }
 
@@ -547,6 +575,7 @@ function showError(error) {
 }
 
 function bindEvents() {
+  $("weekSelect").addEventListener("change", event => openPage(event.target.value).catch(showError));
   $("languageButton").addEventListener("click", () => $("languageDialog").showModal());
   $("closeLanguageDialog").addEventListener("click", () => $("languageDialog").close());
   $("languageDialog").addEventListener("click", event => { if (event.target === $("languageDialog")) $("languageDialog").close(); });
@@ -654,21 +683,33 @@ function bindEvents() {
     renderInterfaceCopy();
   });
   window.addEventListener("popstate", () => {
-    const locale = routeLocale() || state.page.defaultTargetLocale;
-    selectLocale(locale, { navigate: false }).catch(showError);
+    const route = routeSelection();
+    openPage(route.pageId || state.catalog.defaultPageId,
+      { navigate: false, requestedLocale: route.locale }).catch(showError);
   });
+}
+
+async function openPage(pageId, { navigate = true, requestedLocale = null } = {}) {
+  const page = state.catalog.pages.find(item => item.id === pageId);
+  if (!page) throw new Error(`Unknown Dev page: ${pageId}`);
+  const saved = localStorage.getItem(`tongxing-dev-content-override-${page.id}`);
+  const preferred = state.ui === "zh" ? "zh-Hans" : state.ui;
+  const locale = page.targets[requestedLocale] ? requestedLocale
+    : page.targets[saved] ? saved
+    : page.targets[preferred] ? preferred : page.defaultTargetLocale;
+  try {
+    await selectLocale(locale, { navigate, page });
+  } catch (error) {
+    if (state.page) $("weekSelect").value = state.page.id;
+    throw error;
+  }
 }
 
 async function loadInitialCatalog() {
   state.catalog = validateDemoCatalog(await loadJSON("/multilingual.json"));
-  state.page = state.catalog.pages.find(page => page.id === state.catalog.defaultPageId);
-  const requested = routeLocale();
-  const saved = localStorage.getItem(`tongxing-dev-content-override-${state.page.id}`);
-  const preferred = state.ui === "zh" ? "zh-Hans" : state.ui;
-  const locale = state.page.targets[requested] ? requested
-    : state.page.targets[saved] ? saved
-    : state.page.targets[preferred] ? preferred : state.page.defaultTargetLocale;
-  await selectLocale(locale, { navigate: location.pathname !== "/" });
+  const route = routeSelection();
+  await openPage(route.pageId || state.catalog.defaultPageId,
+    { navigate: location.pathname !== "/", requestedLocale: route.locale });
 }
 
 async function init() {

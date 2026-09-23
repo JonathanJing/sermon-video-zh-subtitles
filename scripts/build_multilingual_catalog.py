@@ -151,8 +151,25 @@ def build(args: argparse.Namespace) -> tuple[dict[str, Any], dict[str, Any]]:
 
         audio_hash = release["targetLanguageAudioPackageJsonSha256"]
         if release["audioStatus"] == "unavailable":
-            if audio_hash is not None or release["audioLocale"] is not None or "audio" in {a["role"] for a in release["assets"]}:
-                raise CatalogBuildError(f"{path}: unavailable audio must not expose an audio package or asset")
+            if release["audioLocale"] is not None or "audio" in {a["role"] for a in release["assets"]}:
+                raise CatalogBuildError(f"{path}: unavailable audio must not expose an audio locale or asset")
+            if audio_hash is None:
+                if not args.allow_legacy_null_audio:
+                    raise CatalogBuildError(f"{path}: text-only four-layer release requires an audio_unavailable Layer 3 package")
+            else:
+                audio = audio_packages.get(audio_hash)
+                if audio is None or not (
+                    audio["status"] == "audio_unavailable"
+                    and audio["targetLocale"] == locale
+                    and audio["targetLanguageCandidateJsonSha256"] == candidate_hash
+                    and audio["englishSourcePackageJsonSha256"] == candidate["englishSourcePackageJsonSha256"]
+                    and audio["voice"] is None
+                    and not audio["units"]
+                    and audio["track"] is None
+                    and audio["captions"] is None
+                    and audio["schedule"] is None
+                ):
+                    raise CatalogBuildError(f"{path}: unavailable audio package binding or state is invalid")
         else:
             audio = audio_packages.get(audio_hash)
             if audio is None:
@@ -229,6 +246,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--release", action="append", default=[])
     parser.add_argument("--candidate", action="append", default=[])
     parser.add_argument("--audio-package", action="append", default=[])
+    parser.add_argument("--allow-legacy-null-audio", action="store_true",
+                        help="Accept migration-era text-only releases without a Layer 3 package")
     parser.add_argument("--page-date", action="append", default=[], metavar="PAGE=DATE")
     parser.add_argument("--default-target", action="append", default=[], metavar="PAGE=LOCALE")
     parser.add_argument("--default-page")

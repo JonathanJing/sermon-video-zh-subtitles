@@ -44,6 +44,7 @@ class SentenceInterpretationShadowTests(unittest.TestCase):
             self.assertFalse(first["productionTranslationEligible"])
             self.assertFalse(first["releaseEligible"])
             self.assertFalse(first["productionOutputChanged"])
+            self.assertEqual(first["humanReview"], "pending")
             manifest = json.loads(Path(first["artifacts"]["anchorManifest"]["path"]).read_text())
             self.assertEqual(manifest["schemaVersion"], "sermon-sentence-anchor-manifest-v2")
             self.assertEqual(manifest["policy"]["maxUnitSeconds"], 8.0)

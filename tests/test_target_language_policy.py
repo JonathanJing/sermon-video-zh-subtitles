@@ -16,18 +16,25 @@ def read_policy(locale):
 
 
 class TargetLanguagePolicyTests(unittest.TestCase):
-    def test_frozen_chinese_and_korean_policies_are_separate_and_pending(self):
+    def test_frozen_three_language_policies_keep_distinct_unresolved_gates(self):
         zh = read_policy("zh-Hans")
         ko = read_policy("ko")
+        es = read_policy("es")
         zh_result = subject.validate_policy(zh)
         ko_result = subject.validate_policy(ko)
-        self.assertNotEqual(zh_result["translationPolicySha256"], ko_result["translationPolicySha256"])
+        es_result = subject.validate_policy(es)
+        self.assertEqual(len({result["translationPolicySha256"] for result in
+                              (zh_result, ko_result, es_result)}), 3)
         self.assertEqual(zh["scripture"]["editionId"], "CUV")
         self.assertIn("cuv_exact_quote", zh["languageReview"]["requiredChecks"])
-        self.assertIsNone(ko["scripture"]["editionId"])
+        self.assertEqual(ko["scripture"]["editionId"], "NKRV-1998")
+        self.assertEqual(es["scripture"]["editionId"], "RVR60-1960")
+        self.assertEqual(es["formatting"]["speechRegister"],
+                         "neutral_latin_american_public_sermon_spanish")
         self.assertIn("scripture_policy_pending", ko_result["unresolved"])
-        self.assertFalse(zh_result["productionPolicyReady"])
-        self.assertFalse(ko_result["productionPolicyReady"])
+        self.assertIn("scripture_policy_pending", es_result["unresolved"])
+        self.assertTrue(all(not result["productionPolicyReady"] for result in
+                            (zh_result, ko_result, es_result)))
 
     def test_every_component_changes_global_identity_and_stale_hash_fails(self):
         original = read_policy("ko")

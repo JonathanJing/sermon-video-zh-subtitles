@@ -6,7 +6,7 @@
     "trailingSlash": false,
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
-      { "source": "/pages/2026-09-20-lion-of-judah-poc/**", "destination": "/index.html" }
+      { "source": "/pages/**", "destination": "/index.html" }
     ],
     "headers": [
       {

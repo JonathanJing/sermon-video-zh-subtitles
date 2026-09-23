@@ -45,6 +45,8 @@ def normalize(value: str, locale: str) -> list[str]:
 def collect_generation_tracks(root: Path) -> list[dict[str, Any]]:
     tracks = []
     for name in ("manifest.json", "vietnamese-manifest.json"):
+        if name == "vietnamese-manifest.json" and not (root / name).is_file():
+            continue
         manifest = read_object(root / name, "voice demo manifest")
         if manifest.get("schemaVersion") != "sermon-multilingual-voice-demo-manifest-v1":
             raise ValueError(f"Unsupported voice demo manifest: {name}")

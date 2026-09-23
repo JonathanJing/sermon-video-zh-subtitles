@@ -94,11 +94,30 @@ class BuildMultilingualCatalogTests(unittest.TestCase):
             "issues": [],
         }
 
-    def arguments(self, candidates, releases):
+    def audio_unavailable_package(self, locale, candidate_hash):
+        return {
+            "schemaVersion": "sermon-target-language-audio-package-v1",
+            "packageId": f"audio-unavailable-{locale}",
+            "englishSourcePackageJsonSha256": self.source_hash,
+            "targetLanguageCandidateJsonSha256": candidate_hash,
+            "targetLanguageSpeechJobJsonSha256": self.hash_a,
+            "targetLocale": locale, "status": "audio_unavailable",
+            "ratePolicy": "natural_no_time_stretch", "voice": None,
+            "units": [], "track": None, "captions": None, "schedule": None,
+            "machineScreening": {"status": "not_run", "model": None, "coverage": 0},
+            "humanReview": {"status": "pending", "humanApproval": False,
+                            "reviewedBy": None, "reviewedAt": None, "fullPlayback": "pending"},
+            "issues": ["voice_unavailable"], "downstreamInvalidationKey": self.hash_b,
+        }
+
+    def arguments(self, candidates, releases, *, audio_packages=(), allow_legacy=True,
+                  default_target="zh-Hans"):
         return MODULE.parse_args([
             *sum((["--candidate", str(path)] for path in candidates), []),
             *sum((["--release", str(path)] for path in releases), []),
-            "--page-date", "page-1=2026-09-21", "--default-target", "page-1=zh-Hans",
+            *sum((["--audio-package", str(path)] for path in audio_packages), []),
+            *(["--allow-legacy-null-audio"] if allow_legacy else []),
+            "--page-date", "page-1=2026-09-21", "--default-target", f"page-1={default_target}",
             "--default-page", "page-1", "--generated-at", "2026-09-21T00:00:00Z",
             "--out", str(self.root / "multilingual.json"), "--report", str(self.root / "report.json"),
         ])
@@ -135,6 +154,32 @@ class BuildMultilingualCatalogTests(unittest.TestCase):
         release_path = self.write("release.json", release)
         with self.assertRaisesRegex(MODULE.CatalogBuildError, "unavailable audio"):
             MODULE.build(self.arguments([candidate], [release_path]))
+
+    def test_text_only_four_layer_release_requires_matching_audio_unavailable_package(self):
+        candidate = self.write("candidate.json", self.candidate("ko"))
+        candidate_hash = digest(candidate.read_bytes())
+        release = self.release("ko", candidate_hash)
+        release_path = self.write("release.json", release)
+        with self.assertRaisesRegex(MODULE.CatalogBuildError, "requires an audio_unavailable Layer 3 package"):
+            MODULE.build(self.arguments([candidate], [release_path], allow_legacy=False,
+                                        default_target="ko"))
+
+        audio_path = self.write("audio.json", self.audio_unavailable_package("ko", candidate_hash))
+        release["targetLanguageAudioPackageJsonSha256"] = digest(audio_path.read_bytes())
+        release_path = self.write("release.json", release)
+        catalog, _ = MODULE.build(self.arguments([candidate], [release_path],
+                                                audio_packages=[audio_path], allow_legacy=False,
+                                                default_target="ko"))
+        self.assertEqual(catalog["pages"][0]["targets"]["ko"]["capabilities"], ["text"])
+
+        wrong = self.audio_unavailable_package("es", candidate_hash)
+        wrong_path = self.write("wrong-audio.json", wrong)
+        release["targetLanguageAudioPackageJsonSha256"] = digest(wrong_path.read_bytes())
+        release_path = self.write("release.json", release)
+        with self.assertRaisesRegex(MODULE.CatalogBuildError, "binding or state is invalid"):
+            MODULE.build(self.arguments([candidate], [release_path],
+                                        audio_packages=[wrong_path], allow_legacy=False,
+                                        default_target="ko"))
 
 
 if __name__ == "__main__":

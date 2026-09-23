@@ -114,7 +114,7 @@ public struct TargetLanguageReleasePackage: Codable, Sendable, Equatable {
         guard Set(assetKeys).count == assetKeys.count else { throw CatalogError.invalid("发布资产重复") }
         for asset in assets { try asset.validate() }
         if audioStatus == "unavailable" {
-            guard targetLanguageAudioPackageJsonSha256 == nil, audioLocale == nil,
+            guard targetLanguageAudioPackageJsonSha256.map(Validation.sha256) ?? true, audioLocale == nil,
                   !assets.contains(where: { $0.role == .audio })
             else { throw CatalogError.invalid("无音频语言暴露了音频资产") }
         } else {
