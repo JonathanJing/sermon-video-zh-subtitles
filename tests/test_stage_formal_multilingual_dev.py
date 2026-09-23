@@ -9,6 +9,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+from scripts import build_formal_dev_release_assets as assets_builder
+
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location("stage_formal_multilingual_dev", ROOT / "scripts/stage_formal_multilingual_dev.py")
@@ -397,6 +399,43 @@ class FormalDevStageTests(unittest.TestCase):
         with self.assertRaisesRegex(MODULE.StageError, "ASR review queue"):
             self.stage_with_fixture_source(args)
         self.assertFalse(args.out.exists())
+
+    def test_reviewed_metadata_and_audio_prepare_assets_for_staging(self):
+        proposal = self.root / "metadata-proposal.md"
+        proposal.write_text("Approved series. Approved title. Speaker. Revelation. "
+                            "Approved summary. Approved outline.")
+        metadata = {
+            "schemaVersion": "sermon-formal-dev-metadata-approval-v1",
+            "pageId": self.page_id, "date": "2026-09-20",
+            "proposalFileSha256": MODULE.file_sha(proposal),
+            "decision": "approved_all_three_locales", "approvalText": "三语全部批准",
+            "reviewer": "user", "recordedAt": "2026-09-23T12:00:00-07:00",
+            "locales": {locale: {"series": "Approved series", "title": "Approved title",
+                                "speaker": "Speaker", "scripture": "Revelation",
+                                "summary": "Approved summary", "outline": ["Approved outline"]}
+                        for locale in MODULE.LOCALES},
+        }
+        metadata_path = self.write_json(self.root / "metadata-approved.json", metadata)
+        self.write_json(self.source_path, self.source)
+        prepared = self.root / "prepared"
+        args = assets_builder.argparse.Namespace(
+            source=self.source_path, metadata=metadata_path, metadata_proposal=proposal,
+            page_id=self.page_id, date="2026-09-20", out=prepared,
+            candidate=[f"{locale}={self.paths['candidate'][locale]}" for locale in MODULE.LOCALES],
+            audio_package=[f"{locale}={self.paths['audio'][locale]}" for locale in MODULE.LOCALES])
+        real = assets_builder.stage.read_package
+        with patch.object(assets_builder.stage, "read_package", side_effect=lambda path, schema:
+                          self.source if path == self.source_path else real(path, schema)):
+            receipt = assets_builder.build(args)
+        self.assertEqual(receipt["status"], "candidate_not_deployed")
+        self.assets = prepared / "assets"
+        for locale in MODULE.LOCALES:
+            self.paths["content_receipt"][locale] = prepared / "review/content" / f"{locale}.json"
+            self.paths["release"][locale] = prepared / "releases" / f"{locale}.json"
+        staged = self.stage_with_fixture_source(self.args())
+        self.assertEqual(staged["deploymentStatus"], "not_deployed")
+        with self.assertRaisesRegex(ValueError, "immutable"):
+            assets_builder.build(args)
 
 
 if __name__ == "__main__":

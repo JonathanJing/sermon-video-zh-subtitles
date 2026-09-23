@@ -18,6 +18,7 @@
 - [x] 三语完整轨的全部单元已完整解码，并由 Qwen3-ASR 逐组回转录，覆盖率均为 100%。机器筛查均为 `requires_review`：中文 2 组、韩语 6 组、西语 3 组；这不是内容错误定论。候选音频包和待填的人审工作表已生成。
 - [ ] 三语分别做 1 倍速全文听审、与原视频同步审核，以及对上述 11 个 ASR 疑点逐组裁决；重点检查韩语 20 ms 首尾保护垫和相邻单元衔接。须由人审工作表生成独立 v2 收据，不能把机器 `requires_review` 改写成 `pass`。
 - [ ] 三语正式 Audio Package 均达到 `human_reviewed` 后，才建立 Release Package、部署 Dev，并分别验证 HTTP 资源及 App 实机播放。此前不发布纯文字替代页，因为用户已明确要求三语音轨齐全再发布。
+- [x] 三语页面系列、标题、讲员、经文标示、日期、摘要和大纲已获用户批准，逐字段原文及提案 SHA 已写入忽略目录的 `review/formal-dev-metadata.approved.json`；[正式 Dev 资源准备器](formal-dev-release-assets.zh.md)只在三语 Audio Package 全部 `human_reviewed` 时，将这些字段、已审目标文本及测得的 cue 组装为候选内容、媒体和 Release Package。合成 fixture 已通过 staging 门禁；真实包仍待音频人审。
 
 ## 1. 开始条件与共同规则
 
