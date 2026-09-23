@@ -207,7 +207,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--notify-sendgrid-secret")
     parser.add_argument("--notify-recipients-secret")
     parser.add_argument("--notify-sender-secret")
-    parser.add_argument("--model", default="gpt-6-astra")
+    parser.add_argument("--model", default="gpt-6-sol")
     parser.add_argument("--agent-backend", choices=("agents-api", "sdk"), default="agents-api")
     parser.add_argument("--agent-run-dir", type=Path, help="Use a fresh explicit Agents API session directory.")
     parser.add_argument("--resume-agent-session", action="store_true", help="Resume the session in --agent-run-dir without replaying completed tools.")

@@ -70,7 +70,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--notify-sendgrid-secret", default=DEFAULT_SENDGRID_SECRET)
     parser.add_argument("--notify-recipients-secret", default=DEFAULT_RECIPIENTS_SECRET)
     parser.add_argument("--notify-sender-secret", default=DEFAULT_SENDER_SECRET)
-    parser.add_argument("--model", default="gpt-6-astra")
+    parser.add_argument("--model", default="gpt-6-sol")
     parser.add_argument("--release-workflow-config", type=Path)
     parser.add_argument("--agent-backend", choices=("agents-api", "sdk"), default="agents-api")
     parser.add_argument("--agent-run-dir", type=Path)

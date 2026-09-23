@@ -668,7 +668,7 @@ class ApiHandler(BaseHTTPRequestHandler):
             "--mode",
             mode,
             "--model",
-            str(payload.get("model") or payload.get("agentModel") or "gpt-5.6"),
+            str(payload.get("model") or payload.get("agentModel") or "gpt-6-sol"),
             "--max-turns",
             str(payload.get("maxTurns") or payload.get("max_turns") or 8),
             "--gcs-prefix",

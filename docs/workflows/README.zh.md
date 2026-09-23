@@ -75,7 +75,7 @@
 
 **控制层迁移说明（2026-09-11）：** [Production Supervisor](../sermon-production-supervisor-agent.zh.md) 已在本地 runner 接入 OpenAI Agents API，默认 `--agent-backend agents-api`，原 Agents SDK / Responses 通过 `--agent-backend sdk` 显式回退。服务端 session 使用 `environment: none`；本地只执行状态检查、来源媒体准备（保留 timeline 工具名）和经审批 PDF 生成三个受限业务工具，另有结构化结论提交。Session 状态和工具结果持久化，同一会话恢复；自动新建会话须先确认远端 completed/failed/cancelled 且无执行中或结果未确认的工具，本地 timeout 或取消 ACK 不足以放行；source、人工审批、lease、恢复、QA 与发布继续由确定性层约束，完成状态须重新读取 production snapshot。
 
-Supervisor 默认使用 `gpt-6-astra` Medium（本账户旧 `gpt-5.6` 查询返回 404），SDK 回退也使用同一 Astra；生产内容的 Astra Medium 和 ASR 的 `gpt-transcribe` 不变。Agents API 仅接收固定 allowlist 的日期、动作枚举与证据布尔状态；完整 snapshot 和用于恢复配置核对的 `configFingerprint` 留在本地。
+Supervisor 调度默认使用 `gpt-6-sol` Medium，SDK 回退也使用同一 Sol；生产内容的 Astra Medium 和 ASR 的 `gpt-transcribe` 不变。Agents API 仅接收固定 allowlist 的日期、动作枚举与证据布尔状态；完整 snapshot 和用于恢复配置核对的 `configFingerprint` 留在本地。旧 Astra 会话仍按原模型恢复，未决会话不得因切换默认值而被跳过。
 
 真实 Agents API 的两个全模拟用例已核验：`live-synthetic-01` 缺审批用例完成 2 次工具调用、未调用生成并返回 usage；`live-synthetic-advance-01` 完成 4 次工具调用，模拟 generation 执行恰好 1 次。`live-real-shadow-minimal-01` 对 2026-09-13 实际生产 GCS 状态作只读检查，当时结果为 `waiting_for_matching_sunday`。这些都是带日期的切换证据，不代表 9 月 20 日以后仍处于相同业务状态；当前周次必须重新读取本地和 GCS snapshot。[报告链接与验证限界](../sermon-production-supervisor-agent.zh.md#验证进度)也不能代替真实产物或现场验收。
 
