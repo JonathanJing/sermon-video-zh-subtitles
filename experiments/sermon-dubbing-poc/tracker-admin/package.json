@@ -1,0 +1,19 @@
+{
+  "name": "sermon-four-layer-public-tracker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build --base ./",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "firebase": "12.18.0",
+    "firebase-admin": "14.3.0"
+  },
+  "devDependencies": {
+    "vite": "6.4.2"
+  }
+}

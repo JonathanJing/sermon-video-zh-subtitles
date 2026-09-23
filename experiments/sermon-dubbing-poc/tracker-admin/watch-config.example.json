@@ -1,0 +1,13 @@
+{
+  "ledger": "artifacts/my-multilingual-run/four-layer-progress.json",
+  "out": "artifacts/my-multilingual-run/public-tracker-snapshot.json",
+  "sourceMonitor": "artifacts/live-source-monitor/report.json",
+  "sourcePageUrl": "https://www.marinerschurch.org/irvine/",
+  "serviceDate": "2026-09-20",
+  "catalog": "artifacts/my-release/public/weekly.json",
+  "publicRoot": "artifacts/my-release/public",
+  "httpReceipt": "artifacts/my-release/http-verification.json",
+  "releasePackages": [],
+  "fingerprintEvidence": [],
+  "siteUrl": "https://REPLACE_WITH_LISTENING_SITE.web.app"
+}

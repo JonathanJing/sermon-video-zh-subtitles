@@ -30,6 +30,8 @@
 ### 来源、文本与 PDF
 
 - [多语言生产四层接口](multilingual-production-interfaces.zh.md)：今后预制多语言生产的命名、包和失效规则唯一来源
+- [四层制作 Backlog 与进度追踪](four-layer-production-tracker.zh.md)：每层检查点、状态记录和有条件 ETA
+- [Firebase 四层公开 Tracker](../experiments/sermon-dubbing-poc/tracker-admin/README.zh.md)：每周源视频、三语分层制作、页面／语音／声纹的脱敏实时只读视图
 - [稳定 post-live 双 PDF 流程](stable-post-live-reading-pdf-workflow.zh.md)及[英文版](stable-post-live-reading-pdf-workflow.md)
 - [中文阅读版质量规范](chinese-reading-edition-quality.zh.md)
 - [系列名称表](series-terminology.zh.md)：页面、字幕、阅读稿、大纲和配音共用术语

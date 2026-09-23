@@ -1,0 +1,6 @@
+{
+  "apiKey": "REPLACE_WITH_FIREBASE_WEB_API_KEY",
+  "projectId": "REPLACE_WITH_PROJECT_ID",
+  "appId": "REPLACE_WITH_FIREBASE_WEB_APP_ID",
+  "databaseId": "sermon-tracker"
+}
