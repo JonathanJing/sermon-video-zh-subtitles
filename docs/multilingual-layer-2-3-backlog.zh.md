@@ -38,7 +38,7 @@
 - [x] 韩语界面与 `sourceLocale=en` 内容 sidecar，可作为 shadow 消费端。
 - [x] `sermon-target-language-audio-package-v1` 目标 schema 已定义。
 - [x] 四语同源六句 shadow 候选、片段音频、完整解码与 ASR 筛查已留收据；`productionEligible=false`、人工译文及音频审核仍 pending。
-- [x] Layer 1 独立机器裁判代码已在本集成分支提取，定向单测通过；它只解锁 Layer 2 shadow，合入 `dev` 及真实来源审核仍单独验收。
+- [x] Layer 1 独立机器裁判代码已提取并通过定向单测；它只解锁 Layer 2 shadow，真实来源与人工英文审核仍单独验收。
 - [ ] 通用 Layer 2 producer、整篇人工批准韩语翻译、通用 Layer 3 renderer/同步器及整篇人工听审韩语音轨尚未实现。
 
 ## 3. Layer 2：目标语言文字 Backlog
@@ -309,7 +309,7 @@ Layer 2 的 P0 全部通过后才能开始正式 Layer 3 韩语合成。Layer 3 
 
 ### M0：把已验证进度纳入 Dev
 
-- [ ] 从当前 `dev` 基线集成 Layer 1 逐句机器裁判、schema、anchor 修订和定向测试；保留 `humanApproval=false`、`productionTranslationEligible=false`。旧 anchor/source package 因实现 hash 改变而失效，按新身份生成，不重标旧收据。
+- [x] 从 `dev` 基线集成 Layer 1 逐句机器裁判、schema、anchor 修订和定向测试；保留 `humanApproval=false`、`productionTranslationEligible=false`。旧 anchor/source package 因实现 hash 改变而失效，按新身份生成，不重标旧收据。
 - [ ] 在干净 shadow 输入上重放确定性构建和机器裁判；核对 receipt、package、anchor 的 JSON/file SHA，证明只进入 `candidate_ready_for_translation`。使用真实正式输入时，英文人工审核仍须产生 `ready_for_translation`。
 - [ ] 对 `zh-Hans`、`ko`、`es`、`vi` 六句 POC 收据做只读回归：schema、同一英文来源、逐 locale 候选与音频 hash、低于 ASR 门线的复核状态。Dev 演示资产保持 `productionEligible=false`。
 
