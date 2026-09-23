@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-target-language-policy-v1.schema.json",
+  "title": "Resolved single-locale target-language text policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "sourceLocale", "targetLocale", "translator", "reviewer", "terminology", "scripture", "languageReview", "formatting", "batching", "componentSha256"],
+  "properties": {
+    "schemaVersion": {"const": "sermon-target-language-policy-v1"},
+    "sourceLocale": {"const": "en"},
+    "targetLocale": {"type": "string", "pattern": "^(?!en(?:-|$))[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"},
+    "translator": {"$ref": "#/$defs/modelStage"},
+    "reviewer": {"$ref": "#/$defs/modelStage"},
+    "terminology": {
+      "type": "object", "additionalProperties": false,
+      "required": ["seriesTableSha256", "seriesNames", "properNames"],
+      "properties": {
+        "seriesTableSha256": {"$ref": "#/$defs/sha256"},
+        "seriesNames": {"type": "array", "items": {"$ref": "#/$defs/term"}},
+        "properNames": {"type": "array", "items": {"$ref": "#/$defs/term"}}
+      }
+    },
+    "scripture": {
+      "type": "object", "additionalProperties": false,
+      "required": ["editionId", "citationUseStatus", "quoteCheckPolicy", "referenceStyle"],
+      "properties": {
+        "editionId": {"type": ["string", "null"], "minLength": 1},
+        "citationUseStatus": {"enum": ["pending", "project_source_reviewed"]},
+        "quoteCheckPolicy": {"enum": ["pending", "source_bound_exact_quote", "references_only"]},
+        "referenceStyle": {"type": "string", "minLength": 1}
+      }
+    },
+    "languageReview": {
+      "type": "object", "additionalProperties": false,
+      "required": ["pluginId", "implementationStatus", "requiredChecks", "registerRules"],
+      "properties": {
+        "pluginId": {"type": "string", "minLength": 1},
+        "implementationStatus": {"enum": ["pending", "verified"]},
+        "requiredChecks": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "registerRules": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "formatting": {
+      "type": "object", "additionalProperties": false,
+      "required": ["speechRegister", "punctuationRules", "segmentationRules"],
+      "properties": {
+        "speechRegister": {"type": "string", "minLength": 1},
+        "punctuationRules": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "segmentationRules": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "batching": {
+      "type": "object", "additionalProperties": false,
+      "required": ["batchSize", "workers"],
+      "properties": {
+        "batchSize": {"type": "integer", "minimum": 1, "maximum": 100},
+        "workers": {"type": "integer", "minimum": 1, "maximum": 16}
+      }
+    },
+    "componentSha256": {
+      "type": "object", "additionalProperties": false,
+      "required": ["translator", "reviewer", "terminology", "scripture", "languageReview", "formatting", "batching"],
+      "properties": {
+        "translator": {"$ref": "#/$defs/sha256"},
+        "reviewer": {"$ref": "#/$defs/sha256"},
+        "terminology": {"$ref": "#/$defs/sha256"},
+        "scripture": {"$ref": "#/$defs/sha256"},
+        "languageReview": {"$ref": "#/$defs/sha256"},
+        "formatting": {"$ref": "#/$defs/sha256"},
+        "batching": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "modelStage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["model", "reasoningEffort", "promptVersion"],
+      "properties": {
+        "model": {"type": "string", "minLength": 1},
+        "reasoningEffort": {"enum": ["low", "medium", "high", "xhigh", "max", "ultra"]},
+        "promptVersion": {"type": "string", "minLength": 1}
+      }
+    },
+    "term": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source", "target", "reviewStatus"],
+      "properties": {
+        "source": {"type": "string", "minLength": 1},
+        "target": {"type": ["string", "null"], "minLength": 1},
+        "reviewStatus": {"enum": ["pending", "project_established", "human_reviewed"]}
+      }
+    }
+  }
+}

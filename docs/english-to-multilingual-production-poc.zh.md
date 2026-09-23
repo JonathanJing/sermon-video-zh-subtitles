@@ -122,7 +122,7 @@ languages/ko/synchronization/...
 
 Layer 3 完成门槛：每种语言分别有文字 hash 一致的音频收据、完整解码、自然语速、排程报告和人工听审状态；允许 `ko` 停在 `audio_unavailable`，不阻塞文字版发布。
 
-本分支已增加 [`sermon-target-language-speech-job-v1`](../schemas/sermon-target-language-speech-job-v1.schema.json) 和 [`prepare_target_language_speech_job.py`](../scripts/prepare_target_language_speech_job.py)。准备器只接受人工翻译已批准、完整覆盖共享 anchor 的单语言 candidate，并把输出路径锁在 `languages/<locale>/audio` 与 `languages/<locale>/synchronization`。它不调用 TTS；韩语 adapter 若仍是 `unverified_poc`，任务固定为 `prepared_adapter_validation_required` 且 `synthesisEligible=false`。即使 adapter 已验证，`releaseEligible` 仍为 false，后续必须另做真实合成、回转录、排程和人耳验收。
+历史 [`sermon-target-language-speech-job-v1`](../schemas/sermon-target-language-speech-job-v1.schema.json) 只记录早期 shadow 准备合同。当前 [`prepare_target_language_speech_job.py`](../scripts/prepare_target_language_speech_job.py) 生成 [v2 job](../schemas/sermon-target-language-speech-job-v2.schema.json)：它要求冻结的目标语言 policy、完整覆盖共享 anchor 的人工批准 candidate、绑定相同 candidate hash 的独立人审收据，以及与 Speaker Voice Registry 一致的 adapter。输出路径锁在 `languages/<locale>/audio` 与 `languages/<locale>/synchronization`。它不调用 TTS；韩语 adapter 若仍是 `unverified_poc`，任务固定为 `prepared_adapter_validation_required` 且 `synthesisEligible=false`。即使 adapter 已验证，`releaseEligible` 仍为 false，后续必须另做真实合成、回转录、排程和人耳验收。
 
 ### Layer 4：多语言发布与播放
 

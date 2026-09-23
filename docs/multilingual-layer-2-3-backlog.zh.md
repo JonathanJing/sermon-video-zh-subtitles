@@ -32,8 +32,8 @@
 ## 2. 当前已具备的基础
 
 - [x] `sermon-target-language-candidate-v2` schema。
-- [x] `sermon-target-language-speech-job-v1` schema。
-- [x] Layer 2 → Layer 3 的 fail-closed 准备器；未人工批准的译文不能进入 speech job。
+- [x] `sermon-target-language-speech-job-v1` 历史 shadow schema；新准备器生成显式版本化的 `v2` registry-bound job。
+- [x] Layer 2 → Layer 3 的 fail-closed 准备器；未人工批准、缺独立同 hash 人审收据的译文不能进入 speech job。
 - [x] speech adapter locale 一致性、能力状态和语言隔离输出路径检查。
 - [x] 韩语界面与 `sourceLocale=en` 内容 sidecar，可作为 shadow 消费端。
 - [x] `sermon-target-language-audio-package-v1` 目标 schema 已定义。
@@ -47,9 +47,9 @@
 
 #### L2-001 冻结目标语言策略合同
 
-- [ ] 定义版本化 `Target-Language Policy`，至少包含 `targetLocale`、translator/reviewer、prompt、术语表、经文政策、标点/断句规则和各子项 hash。
-- [ ] 把中文 CUV 检查放进 `zh-Hans` policy，不进入共享英文层。
-- [ ] 建立韩语 policy 初版：系列术语、专名转写、敬语/语体、自然口语、标点断句和韩文圣经引用政策。
+- [x] 定义版本化 `Target-Language Policy`，包含 `targetLocale`、translator/reviewer、prompt、术语表、经文政策、标点/断句规则和各子项 hash；resolved snapshot 的 canonical JSON hash 单独记录。
+- [x] 把中文 CUV 直接引文检查放进 `zh-Hans` policy，不进入共享英文层；通用语言审核插件仍待实现。
+- [x] 建立韩语 policy 初版：系列术语、专名转写、敬语/语体、自然口语、标点断句和韩文圣经引用政策均有明确字段，未审核译名与经文版本保持 `pending`。
 - [ ] 明确韩文圣经版本和引用许可；未决定前经文检查状态必须是 `pending`，不得人工批准全文。
 
 验收：修改任一 policy 组成项都会改变 `translationPolicySha256`；中文与韩语 policy 互不继承审核结果。
@@ -85,9 +85,9 @@
 #### L2-005 建立人工文字审核收据
 
 - [ ] 审核 UI 或 CLI 显示英文 source unit、目标译文、coverage、机器复核证据和语言检查。
-- [ ] 收据绑定 source package、candidate hash、reviewed group IDs、reviewer 和带时区时间。
-- [ ] 只允许完整覆盖且无 unresolved issue 的 candidate 进入 `human_translation_approved`。
-- [ ] 英文 package、policy 或任一 group 改变时自动使批准失效。
+- [x] 收据 schema 与 Layer 3 准备器绑定 source package、anchor、policy、candidate hash、全部 reviewed group IDs、reviewer 和带时区时间；每组须有人工审核决定与说明。
+- [ ] 审核入口只允许完整覆盖且无 unresolved issue 的 candidate 进入 `human_translation_approved`；当前准备器会拒绝不完整候选及收据，但尚无生成批准的入口。
+- [x] 英文 package、policy 或任一 group 改变时，旧收据在 Layer 3 准备阶段失效；完整 candidate 审批工作流仍待实现。
 
 验收：复制旧收据到新 candidate、漏审一个 group 或 hash 不符都不能进入 Layer 3。
 
@@ -144,10 +144,10 @@
 
 #### L3-001 冻结 speech adapter 合同
 
-- [ ] 为 adapter config 增加正式 schema，而不只由 Python 字段检查。
-- [ ] 固定 provider、model/checkpoint、voice authorization、locale capability、语言参数、文本规范化、ASR 筛查和字幕策略 hash。
-- [ ] 区分 `unverified_poc`、`candidate`、`verified`；未验证 adapter 只能准备 job，不能合成正式候选。
-- [ ] 明确 checkpoint/voice 是否真实支持 `ko`，不从中文样片推断。
+- [x] 为 adapter config 增加正式 schema，并在 speech job 准备阶段校验。
+- [ ] provider、model revision、conditioning SHA、voice authorization 和 locale capability 已与 Speaker Voice Registry 逐项核对；文本规范化、ASR 筛查和字幕策略目前只绑定配置中的 hash，仍需验证实际策略文件内容。
+- [x] 区分 `unverified_poc`、`candidate`、`verified`；未验证 adapter 只能准备 `synthesisEligible=false` 的 job，`verified` 还需注册表中同 locale 的人工审核能力和正式配音用途授权。
+- [ ] 当前注册表中的 `ko` 仍为 `unverified_poc`，且只有 demo 用途授权；真实韩语能力和正式用途授权仍需人审证据，不从中文样片推断。
 
 验收：adapter locale、授权、checkpoint 或任一策略不匹配时，在调用模型前失败。
 
@@ -325,7 +325,7 @@ Layer 2 的 P0 全部通过后才能开始正式 Layer 3 韩语合成。Layer 3 
 
 ### M2：完成正式 Layer 3（L3-001—L3-012）
 
-- [ ] renderer 只消费正式 `sermon-target-language-speech-job-v1` 和已批准的同 locale 文字；授权、checkpoint hash、locale 能力及文本 hash 在模型加载前核对。先用合成 fixture 实现通用 unit receipt、完整解码、自然语速排程和字幕，随后做中文 golden timing 等价。
+- [ ] renderer 只消费正式 `sermon-target-language-speech-job-v2` 和带独立人审收据的同 locale 文字；授权、checkpoint hash、locale 能力及文本 hash 在模型加载前核对。先用合成 fixture 实现通用 unit receipt、完整解码、自然语速排程和字幕，随后做中文 golden timing 等价。
 - [ ] 为 Audio Package 加语义 validator：核对实际 speech job/schema、来源与候选 hash、每个 unit/track/caption/schedule 的文件 hash；失效 key 必须覆盖 candidate、job、voice/checkpoint、音频、字幕和排程。现有片段 POC 的 `poc-speech-job` 与只含 candidate/audio/schedule 的失效 key 不满足此门槛。
 - [ ] 停顿只从 Layer 1 已审英文声学证据出发，Layer 3 判断能否放在目标语言完整自然句界。逐句报告局部起点偏差、尾延迟、overrun 和自然度；不以总时长接近或词组拼接掩盖局部失败。原声指纹如供周日自动定位，由本层生成绑定来源和实际音轨的 companion receipt，Layer 4 只发布和核验。
 - [ ] 韩语按短探针→10–20 group→整篇顺序完成回转写、实体音频解码、字幕校验、母语全文听审和同视频 1 倍速检查。语音能力或授权不足时生成合法 `audio_unavailable` 包供纯文字路径，不借用中文音轨。

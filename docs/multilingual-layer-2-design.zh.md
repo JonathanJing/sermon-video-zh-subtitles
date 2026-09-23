@@ -245,6 +245,8 @@ policy 记录请求模型 alias；运行收据同时记录 `requestedModel` 和 
 
 `languageReview.policySha256` 绑定 resolved policy 中 language-review 子树的 canonical JSON SHA-256；它不等同于整个 `translationPolicySha256`，二者用途要在 validator 中分别检查。
 
+首版 [目标语言策略校验器](../scripts/target_language_policy.py) 和 [schema](../schemas/sermon-target-language-policy-v1.schema.json) 已固定 `zh-Hans` 与 `ko` 两份快照。两份 policy 仍为开发起点：通用语言审核插件未实现，韩语系列译名、专名和经文译本／引用许可保持 `pending`；`productionPolicyReady=false`。改变任一子树、系列名称表或 prompt 后必须生成新快照，不能复用旧 candidate 审核。
+
 ## 5. 生成物
 
 建议 ignored run 目录：
@@ -270,8 +272,8 @@ artifacts/target-language-text/<source-package-id>/<target-locale>/<job-id>/
 - `translation-draft.json`：translator-only 内部产物；
 - `independent-review.json`：reviewer 修订、语义 ledger 和 uncertainty；
 - `candidate.machine.json`：正式 v2 机器候选，永远 `releaseEligible=false`；
-- `human-review-receipt.json`：绑定 machine candidate hash 的人工决定；
-- `candidate.approved.json`：新的 v2 revision，可进入 Layer 3，但仍 `releaseEligible=false`；
+- `human-review-receipt.json`：独立的人审决定，绑定待批准 v2 candidate 的完整 JSON hash、源包、anchor、policy 和每组决定；[收据 schema](../schemas/sermon-target-language-human-review-receipt-v1.schema.json) 已定义，审核入口仍待实现；
+- `candidate.approved.json`：新的 v2 revision；其完整 JSON hash 必须与人审收据一致才能进入 Layer 3，仍 `releaseEligible=false`；
 - `run-receipt.json`：job identity、实现 hash、模型调用数、重试、耗时、token／成本摘要和全部紧凑产物 hash。
 
 Git 只提交 schema、policy 模板、无私人内容的 fixture、实现与紧凑测试证据；真实证道文本、完整模型响应和运行目录继续 ignored。
