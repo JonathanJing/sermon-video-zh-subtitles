@@ -1,0 +1,95 @@
+{
+  "schemaVersion": "layer2-model-ab-evidence-receipt-v1",
+  "date": "2026-09-23",
+  "scope": "shadow_only",
+  "hashAlgorithm": "sha256-raw-file-bytes",
+  "artifactRoot": "artifacts/layer2-model-ab-20260923/ (Git ignored; no raw output committed)",
+  "round1": {
+    "sourcePackageJsonSha256": "5b3c5e15d37f70aea047823710d7c45cd247b161509a1f37a73f4e1598c471a7",
+    "policyFileSha256": "a377bd45ad0499e7ce44b6c61757432b5aa70b2392e3176b68845c9186d2754e",
+    "fileSha256": {
+      "fixture.json": "9b8fc7f9ee803bdb6543d8638fc7c3e5bec7a3274fb38a12ef80b6feb3a0cf82",
+      "astra.json": "b0c0fdc2cfde5527dd3e224ada15487bababf8d865455696d0d43dca14e8f325",
+      "sol.json": "26cd7e8a30f29779502f4348f21970a2f144a26c2fd1c75ad527a234865595ed",
+      "blinded-review.json": "ad38ae31397264101593454f23b9bb9fa0291151eb800c7ba524369dc9626195",
+      "review-results.json": "14857912d2cc0168f05996707cae9a93e70317e4cdfed1acd5c93c5410b3d79c",
+      "gemini-judge-v2.json": "a3270edcde996fa1243c4ef67b2bcf48a686b2e6cb6cd73a1e157da224567f22"
+    },
+    "modelIdentities": {
+      "translation": [
+        "gpt-6-astra",
+        "gpt-6-sol"
+      ],
+      "independentReview": [
+        "gpt-6-astra",
+        "gpt-6-sol"
+      ],
+      "judge": "gemini-3.8-flash"
+    },
+    "geminiPromptVersion": "layer2-ko-gemini-blind-judge-v2",
+    "controlErrorsDetected": {
+      "gpt-6-astra": 6,
+      "gpt-6-sol": 6,
+      "gemini-3.8-flash": 6,
+      "total": 6
+    },
+    "formalLayer2Admitted": false,
+    "geminiApiEvidence": {
+      "gemini-judge-v2.json": {
+        "modelReturned": "gemini-3.8-flash",
+        "promptVersion": "layer2-ko-gemini-blind-judge-v2",
+        "requestSha256": "d9b03ec5610a3398c0eb27b353dc70d761946a9ddcf18b820c6826a49d98c7d3",
+        "responseSha256": "01016b6e99ee70dfc512e0587b67580456c4559f90ff19f75e9f833d54d72f48"
+      }
+    }
+  },
+  "round2": {
+    "sourcePackageJsonSha256": "4d645ff0aad0b55b2eb913fd0749ebcb3bed010ddfc037e89e1f8a98f44a227b",
+    "basePolicyJsonSha256": "aa86ad817e6559bb507e959488e6b5197f324237dc471efa5e797c926733b1cf",
+    "anchorManifestJsonSha256": "d8ccc61a7d9088105390c9f74538d0ef6f618af8d33522bcadc316b8525e4146",
+    "fileSha256": {
+      "round2-full45/fixture.json": "d7757cfda741311ec643593166c4ece3ac05b39d318cd8c3838621efc047b18c",
+      "round2-full45/astra-draft.json": "024760451105fb84a762227f28f28de61e7293886fdd92dc6e5ecd7e53b51d1d",
+      "round2-full45/sol-review.json": "fa89c4252b800b1f858fcb040199adab969d32fadd87c905c6c6ed1c910527a5",
+      "round2-full45/gemini-review.result.json": "120eaf4d0702e1cf103a861d371a54ab8cd222edca9fe0bd9e8093e091de3d26",
+      "round2-full45/gemini-adjudication.result.json": "0b822a2f99e69a81b23be456a6f30b8b454bf19f1be597337edef1d5d7bc9964"
+    },
+    "modelIdentities": {
+      "translation": "gpt-6-astra",
+      "groupReview": "gpt-6-sol",
+      "judge": "gemini-3.8-flash"
+    },
+    "geminiPromptVersions": [
+      "layer2-ko-full45-gemini-independent-review-v1",
+      "layer2-ko-full45-gemini-disagreement-adjudication-v1"
+    ],
+    "englishUnits": 45,
+    "targetGroups": 44,
+    "groupsAdjudicated": 5,
+    "groupsConfirmedForRevision": 2,
+    "formalLayer2Admitted": false,
+    "geminiApiEvidence": {
+      "round2-full45/gemini-review.result.json": {
+        "modelReturned": "gemini-3.8-flash",
+        "promptVersion": "layer2-ko-full45-gemini-independent-review-v1",
+        "requestSha256": "5f588c50290ef5fce89531d23f79fe5b05c1b7089c1600c976d8326b2eb8b04b",
+        "responseSha256": "3868d613abe4ed417f6f7fe985b3a79c250be120ca3c533aeab6b309c9939d0d"
+      },
+      "round2-full45/gemini-adjudication.result.json": {
+        "modelReturned": "gemini-3.8-flash",
+        "promptVersion": "layer2-ko-full45-gemini-disagreement-adjudication-v1",
+        "requestSha256": "142599e4cf566b103d5df10fa486f6c02ebfc90e1ac04b170f7cc5a251184416",
+        "responseSha256": "40bfc2c271e0c2c8e9f0a570d9842c641a13b7dc0e516153875e48470088db07"
+      }
+    }
+  },
+  "provenanceLimits": {
+    "astraSolModelIdentitySource": "agent model assignment, not API response receipt",
+    "astraSolPromptTextOrHash": null,
+    "astraSolSessionIds": null,
+    "astraSolRequestIds": null,
+    "astraSolCostAndLatency": null,
+    "geminiRequestAndResponseHashes": "recorded in geminiApiEvidence; raw payload remains Git ignored",
+    "humanTranslationApproval": false
+  }
+}
