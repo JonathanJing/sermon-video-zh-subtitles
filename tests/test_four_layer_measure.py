@@ -3,6 +3,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from scripts import four_layer_measure as measure
 from scripts import four_layer_progress as progress
@@ -10,6 +11,64 @@ from scripts import sermon_accounting as accounting
 
 
 class FourLayerMeasureTest(unittest.TestCase):
+    def test_canonical_producer_records_workload_and_failure_without_approval(self):
+        with tempfile.TemporaryDirectory() as temp:
+            ledger_path = Path(temp) / "four-layer-progress.json"
+            progress.save(ledger_path, progress.new_ledger("test-page", ["ko"]))
+            with measure.producer_step(ledger_path, "L2-03@ko", locale="ko") as metrics:
+                metrics.update(sourceUnits=45, policySha256="a" * 64)
+            with self.assertRaisesRegex(ValueError, "fixture failure"):
+                with measure.producer_step(ledger_path, "L2-03@ko", locale="ko") as metrics:
+                    metrics["sourceUnits"] = 45
+                    raise ValueError("fixture failure")
+            events, damaged = accounting.read_events(ledger_path.parent / "accounting")
+            self.assertFalse(damaged)
+            run = next(event for event in events if event["event"] == "run_started")
+            self.assertEqual(run["metadata"], {"pageId": "test-page", "targetLocale": "ko"})
+            workloads = [event for event in events if event["event"] == "workload"
+                         and event["stage"] == "four_layer.L2-03:ko"]
+            self.assertEqual(len(workloads), 2)
+            self.assertEqual(workloads[0]["metrics"]["sourceUnits"], 45)
+            report = measure.timing_audit(progress.load(ledger_path), events)
+            row = next(row for row in report["rows"] if row["step"] == "L2-03@ko")
+            self.assertEqual((row["executionAttempts"], row["failedExecutionAttempts"]), (2, 1))
+            self.assertEqual(row["lastExecutionStatus"], "failed")
+            self.assertFalse(row["openExecution"])
+            self.assertEqual([attempt["status"] for attempt in row["attemptHistory"]],
+                             ["completed", "failed"])
+            self.assertEqual(row["attemptHistory"][0]["workload"]["sourceUnits"], 45)
+            self.assertEqual(progress.load(ledger_path)["steps"]["L2-03@ko"]["status"], "pending")
+
+    def test_producer_rejects_other_locale_before_logging(self):
+        with tempfile.TemporaryDirectory() as temp:
+            ledger_path = Path(temp) / "four-layer-progress.json"
+            progress.save(ledger_path, progress.new_ledger("test-page", ["ko"]))
+            with self.assertRaisesRegex(ValueError, "does not belong"):
+                with measure.producer_step(ledger_path, "L2-03@ko", locale="es"):
+                    pass
+            self.assertFalse((ledger_path.parent / "accounting").exists())
+
+    def test_weekly_ledger_environment_connects_producer_without_extra_flag(self):
+        with tempfile.TemporaryDirectory() as temp:
+            ledger_path = Path(temp) / "four-layer-progress.json"
+            progress.save(ledger_path, progress.new_ledger("test-page", ["es"]))
+            with patch.dict("os.environ", {"SERMON_FOUR_LAYER_LEDGER": str(ledger_path)}):
+                with measure.producer_step(None, "L2-01@es", locale="es") as metrics:
+                    metrics["sourceUnits"] = 3
+            events, damaged = accounting.read_events(ledger_path.parent / "accounting")
+            self.assertFalse(damaged)
+            self.assertTrue(any(event["event"] == "stage_finished"
+                                and event["stage"] == "four_layer.L2-01:es" for event in events))
+
+    def test_unfinished_span_is_not_reported_as_completed_time(self):
+        ledger = progress.new_ledger("test-page", ["ko"])
+        report = measure.timing_audit(ledger, [{"event": "stage_started",
+            "stage": "four_layer.L3-01:ko", "spanId": "interrupted"}])
+        row = next(row for row in report["rows"] if row["step"] == "L3-01@ko")
+        self.assertTrue(row["openExecution"])
+        self.assertIsNone(row["measuredExecutionSeconds"])
+        self.assertEqual(row["attemptHistory"][0]["status"], "unfinished")
+
     def test_real_command_span_is_linked_to_step(self):
         with tempfile.TemporaryDirectory() as temp:
             ledger_path = Path(temp) / "four-layer-progress.json"

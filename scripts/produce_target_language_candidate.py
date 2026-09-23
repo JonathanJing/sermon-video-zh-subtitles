@@ -19,10 +19,12 @@ import runpy
 from typing import Any
 
 try:
+    from scripts import four_layer_measure as measure
     from scripts import prepare_target_language_speech_job as handoff
     from scripts import sermon_sentence_interpretation as interpretation
     from scripts import target_language_policy as policy_tools
 except ImportError:  # Direct execution via ``python scripts/...``.
+    import four_layer_measure as measure
     import prepare_target_language_speech_job as handoff
     import sermon_sentence_interpretation as interpretation
     import target_language_policy as policy_tools
@@ -292,34 +294,52 @@ def main() -> None:
     parser.add_argument("--language-receipt", type=Path)
     parser.add_argument("--plugin", type=Path)
     parser.add_argument("--plugin-sha256")
+    parser.add_argument("--progress-ledger", type=Path,
+                        help="Record producer timing in this four-layer run ledger")
     parser.add_argument("--out", required=True, type=Path)
     args = parser.parse_args()
-    _require(not args.out.exists(), "Use a new output path; Layer 2 artifacts are immutable")
-    source, anchor, policy = (_load(path) for path in
-                              (args.english_source_package, args.anchor, args.policy))
-    if args.command == "prepare":
-        _require(args.request is None and args.evidence is None and args.language_receipt is None,
-                 "prepare does not consume prior evidence")
-        result = prepare_request(source, anchor, policy)
-    else:
-        _require(args.request is not None and args.evidence is not None,
-                 "review-language and admit require the original request and completed evidence")
-        _require(args.plugin is not None and args.plugin_sha256 is not None,
-                 "A pinned language plugin is required")
-        if args.command == "review-language":
-            _require(args.language_receipt is None,
-                     "review-language creates, not consumes, a plugin receipt")
-            result = run_language_plugin(source, anchor, policy,
-                                         _load(args.request), _load(args.evidence),
-                                         args.plugin, args.plugin_sha256)
+    policy = _load(args.policy)
+    locale = policy.get("targetLocale")
+    step = "L2-01" if args.command == "prepare" else "L2-03"
+    with measure.producer_step(args.progress_ledger, f"{step}@{locale}", locale=locale) as metrics:
+        _require(not args.out.exists(), "Use a new output path; Layer 2 artifacts are immutable")
+        source, anchor = (_load(path) for path in
+                          (args.english_source_package, args.anchor))
+        metrics.update(sourceUnits=len(anchor.get("sourceUnits", [])),
+                       sourcePackageSha256=interpretation.json_sha256(source),
+                       policySha256=interpretation.json_sha256(policy))
+        for role in ("translator", "reviewer"):
+            model = policy.get(role, {}).get("model")
+            if isinstance(model, str):
+                metrics[role + "ModelSha256"] = hashlib.sha256(model.encode()).hexdigest()
+            prompt_version = policy.get(role, {}).get("promptVersion")
+            if isinstance(prompt_version, str):
+                metrics[role + "PromptVersionSha256"] = hashlib.sha256(prompt_version.encode()).hexdigest()
+        if args.command == "prepare":
+            _require(args.request is None and args.evidence is None and args.language_receipt is None,
+                     "prepare does not consume prior evidence")
+            result = prepare_request(source, anchor, policy)
         else:
-            _require(args.language_receipt is not None,
-                     "admit requires a separate language plugin receipt")
-            result = admit_evidence(source, anchor, policy,
-                                    _load(args.request), _load(args.evidence),
-                                    _load(args.language_receipt), args.plugin,
-                                    args.plugin_sha256)
-    interpretation.write_json(args.out, result)
+            _require(args.request is not None and args.evidence is not None,
+                     "review-language and admit require the original request and completed evidence")
+            _require(args.plugin is not None and args.plugin_sha256 is not None,
+                     "A pinned language plugin is required")
+            evidence = _load(args.evidence)
+            metrics["translationGroups"] = len(evidence.get("groups") or [])
+            if args.command == "review-language":
+                _require(args.language_receipt is None,
+                         "review-language creates, not consumes, a plugin receipt")
+                result = run_language_plugin(source, anchor, policy,
+                                             _load(args.request), evidence,
+                                             args.plugin, args.plugin_sha256)
+            else:
+                _require(args.language_receipt is not None,
+                         "admit requires a separate language plugin receipt")
+                result = admit_evidence(source, anchor, policy,
+                                        _load(args.request), evidence,
+                                        _load(args.language_receipt), args.plugin,
+                                        args.plugin_sha256)
+        interpretation.write_json(args.out, result)
     status = {"prepare": "source_bound_request", "review-language": "language_plugin_reviewed",
               "admit": "machine_review_pass_human_review_pending"}[args.command]
     print(json.dumps({"status": status,

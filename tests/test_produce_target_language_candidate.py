@@ -1,14 +1,19 @@
 import copy
 import json
 from pathlib import Path
+import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from scripts import produce_target_language_candidate as subject
 from scripts import prepare_target_language_speech_job as handoff
 from scripts import review_target_language_candidate as human_review
 from scripts import sermon_sentence_interpretation as interpretation
 from scripts import target_language_policy as policy_tools
+from scripts import four_layer_progress as progress
+from scripts import sermon_accounting as accounting
+from scripts import build_four_layer_tracker_snapshot as tracker_snapshot
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -123,6 +128,39 @@ def review_group(policy, english_units, group):
         self.assertEqual(len(worksheet["groupReviews"]), 2)
         with self.assertRaisesRegex(ValueError, "Human translation approval"):
             handoff.validate_target_candidate(self.source, self.anchor, candidate)
+
+    def test_prepare_cli_records_timing_and_source_units(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            paths = {name: root / f"{name}.json" for name in ("source", "anchor", "policy")}
+            for name, value in (("source", self.source), ("anchor", self.anchor), ("policy", self.policy)):
+                paths[name].write_text(json.dumps(value), encoding="utf-8")
+            ledger = root / "four-layer-progress.json"
+            progress.save(ledger, progress.new_ledger("test-page", ["zh-Hans"]))
+            output = root / "request.json"
+            argv = ["produce", "prepare", "--english-source-package", str(paths["source"]),
+                    "--anchor", str(paths["anchor"]), "--policy", str(paths["policy"]),
+                    "--progress-ledger", str(ledger), "--out", str(output)]
+            with patch.object(sys, "argv", argv):
+                subject.main()
+            self.assertEqual(json.loads(output.read_text())["targetLocale"], "zh-Hans")
+            events, damaged = accounting.read_events(root / "accounting")
+            self.assertFalse(damaged)
+            stages = [event for event in events if event["event"] == "stage_finished"
+                      and event["stage"] == "four_layer.L2-01:zh-Hans"]
+            self.assertEqual(len(stages), 1)
+            workload = next(event for event in events if event["event"] == "workload"
+                            and event["stage"] == "four_layer.L2-01:zh-Hans")
+            self.assertEqual(workload["metrics"]["sourceUnits"], 2)
+            self.assertEqual(progress.load(ledger)["steps"]["L2-01@zh-Hans"]["status"], "pending")
+            snapshot_path = root / "public-snapshot.json"
+            with patch.object(sys, "argv", ["tracker", "--ledger", str(ledger),
+                                            "--out", str(snapshot_path)]):
+                tracker_snapshot.main()
+            snapshot = json.loads(snapshot_path.read_text())
+            step = next(row for row in snapshot["steps"] if row["id"] == "L2-01@zh-Hans")
+            self.assertEqual(step["timing"]["executionAttempts"], 1)
+            self.assertEqual(snapshot["timingCoverage"]["measuredStepCount"], 1)
 
     def test_pending_policy_or_source_rejected_before_request(self):
         pending = json.loads((ROOT / "config/target-language-policies/zh-Hans.json")

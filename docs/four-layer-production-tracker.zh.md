@@ -39,6 +39,7 @@ Layer 4 的发布包、catalog、Web／iOS 语言选择、回滚和验证矩阵�
 - [ ] **TRK-004**：将 Dev／正式环境的 HTTP、设备、现场收据自动关联到对应 `pageId + targetLocale`，保留部署、设备和现场三个不同终点。
 - [x] **TRK-005a**：提供四层步骤命令计时入口，复用现有追加式 `sermon-workflow-accounting-v2`，按检查点和语言记录实际执行、失败与重试；提供只读计时覆盖预检。旧步骤不得按文件时间补造耗时。
 - [ ] **TRK-005b**：把 Layer 1–4 正式 producer 逐一接入计时入口，并将审核发出／回复、依赖就绪／开始的时间作为独立事件记录。区分程序执行、资源排队、人工审核等待、外部阻塞和返工；记录输入单元数、模型／prompt、缓存与 API 用量的可用性。
+  - 首批已接入 L1-04 Source Package、L2-01 请求准备、L2-03 语言插件复核／候选准入、L2-04 人工审核稿／批准收据和 L3-01 Speech Job。正式译文模型调用、音频合成、同步与 Layer 4 producer 尚无自动 span；审核发出／回复和资源排队仍待独立事件接入。
 - [ ] **TRK-006**：本轮三语 Dev 流程结束后，对同一 `pageId + source hash + locale` 做完整审计：核对日志覆盖、重试、并行重叠、人工等待、资源竞争及真实关键路径；用实测墙钟时间校准 Tracker ETA，并列出仍未知的时间。审计前不依据检查点百分比或文件时间给瓶颈排名。
 
 ### 周日页面提速 Backlog（本轮结束后按审计证据实施）
@@ -86,11 +87,24 @@ python scripts/four_layer_progress.py artifacts/my-multilingual-run/four-layer-p
   --layer 2 --locale ko --reason '韩语批准译文修订'
 ```
 
-正式生产入口尚未自动写入本账本；接入自动采集属于后续工程工作。接入时应只读取已通过 validator 的包状态和时间，不把 tracker 的人工 `complete` 回写成正式批准。设备／现场验收按语言独立记录，须以各自收据为准。制作正式环境时把 `--target dev` 改为 `--target production`，重新建账本并重新核验，不能把 Dev 状态原样晋升。
+上述首批正式 producer 已支持 `--progress-ledger`，也可对同一周运行设置 `SERMON_FOUR_LAYER_LEDGER`。它们会在账本旁的私有 `accounting/events.jsonl` 写 page ID／语言、开始／结束 span、失败类型、输入单元数、组数及相关 JSON／策略／模型标识 hash；不会自动修改账本状态或授予人工批准。Tracker 公开快照只投影步骤的实测耗时、次数、失败数、未结束执行及操作员审核等待，不公开私有 hash、原文、路径或错误消息。设备／现场验收按语言独立记录，须以各自收据为准。制作正式环境时把 `--target dev` 改为 `--target production`，重新建账本并重新核验，不能把 Dev 状态原样晋升。
 
 ### 从现在开始保留真实耗时
 
-对尚未执行的四层命令，使用[计时入口](../scripts/four_layer_measure.py)运行。它在账本旁的私有 `accounting/events.jsonl` 追加实际执行 span，继承已有子流程日志，保留非零退出；**不**自动把 Tracker 步骤标为完成，也不授予审批。`--` 后使用原本要执行的命令：
+对已接入的正式入口，在原命令中加入同一运行账本即可自动记录；例如：
+
+```bash
+python scripts/produce_target_language_candidate.py prepare \
+  --english-source-package artifacts/my-multilingual-run/english-source-package.json \
+  --anchor artifacts/my-multilingual-run/anchor-manifest.json \
+  --policy artifacts/my-multilingual-run/ko-policy.json \
+  --progress-ledger artifacts/my-multilingual-run/four-layer-progress.json \
+  --out artifacts/my-multilingual-run/ko/request.json
+```
+
+同一 producer 不要再套相同检查点的手动计时命令，否则会重复统计。产出候选或审核稿的命令即使执行成功，也不代表 Layer 2 的人工放行；`L1-04` 生成阻塞包时同样只证明执行完成，不表示可进入正式翻译。日志中的模型标识为 hash，须用冻结策略文件核对；外部翻译调用的 Token、缓存、费用和等待时间若没有原始收据，仍列为未知。
+
+对尚未接入的四层命令，使用[计时入口](../scripts/four_layer_measure.py)运行。它在账本旁的私有 `accounting/events.jsonl` 追加实际执行 span，继承已有子流程日志，保留非零退出；**不**自动把 Tracker 步骤标为完成，也不授予审批。`--` 后使用原本要执行的命令：
 
 ```bash
 python scripts/four_layer_measure.py run \
@@ -98,7 +112,7 @@ python scripts/four_layer_measure.py run \
   --step L3-02@ko --billing local -- python scripts/YOUR_EXISTING_RENDER_COMMAND.py
 ```
 
-人工审核发出时及时将对应步骤更新为 `waiting_review`，收到决定时再按正式收据更新状态；两次操作时间可算**操作员登记的等待区间**，不是人实际审阅时长。命令执行时间来自日志的独立开始／结束 span，重试各记一次。中途未用计时入口运行的步骤保持“未知”，不以 Tracker `updatedAt`、产物 mtime 或模型音频长度倒推。审计预检只读，不启动生产或改变账本：
+人工审核发出时及时将对应步骤更新为 `waiting_review`，收到决定时再按正式收据更新状态；两次操作时间可算**操作员登记的等待区间**，不是人实际审阅时长。命令执行时间来自日志的独立开始／结束 span，重试各记一次；进程中断留下未结束 span，不能当成零耗时或成功。中途未计时的步骤保持“未知”，不以 Tracker `updatedAt`、产物 mtime 或模型音频长度倒推。审计预检只读，不启动生产或改变账本：
 
 ```bash
 python scripts/four_layer_measure.py audit \

@@ -1,12 +1,16 @@
 import json
 from pathlib import Path
+import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from jsonschema import Draft202012Validator, FormatChecker
 
 from scripts import build_english_source_package as subject
 from scripts import sermon_sentence_interpretation as anchors
+from scripts import four_layer_progress as progress
+from scripts import sermon_accounting as accounting
 
 
 def write_json(path: Path, value: object) -> None:
@@ -92,6 +96,26 @@ class EnglishSourcePackageTests(unittest.TestCase):
         self.assertEqual(
             self.schema_errors("sermon-english-source-package-v1.schema.json", package), [],
         )
+
+    def test_source_cli_records_timing_but_blocked_package_remains_blocked(self):
+        ledger = self.root / "four-layer-progress.json"
+        progress.save(ledger, progress.new_ledger("test-page", ["ko"]))
+        output = self.root / "english-source-package.json"
+        argv = ["source-package", "--aligned-segments", str(self.segments_path),
+                "--anchor-manifest", str(self.manifest_path), "--summary", str(self.summary_path),
+                "--approval-evidence", str(self.approval_path), "--source-id", "sermon-fixture",
+                "--source-url-hash", "2" * 64, "--service-date", "2026-09-20",
+                "--progress-ledger", str(ledger), "--out", str(output)]
+        with patch.object(sys, "argv", argv):
+            self.assertEqual(subject.main(), 2)
+        self.assertEqual(json.loads(output.read_text())["status"], "blocked")
+        events, damaged = accounting.read_events(self.root / "accounting")
+        self.assertFalse(damaged)
+        workload = next(event for event in events if event["event"] == "workload"
+                        and event["stage"] == "four_layer.L1-04")
+        self.assertEqual(workload["metrics"]["sourceUnits"], 1)
+        self.assertFalse(workload["metrics"]["approvedForTranslation"])
+        self.assertEqual(progress.load(ledger)["steps"]["L1-04"]["status"], "pending")
 
     def test_bound_human_review_promotes_layer_one_only(self):
         review_path = self.root / "review.json"

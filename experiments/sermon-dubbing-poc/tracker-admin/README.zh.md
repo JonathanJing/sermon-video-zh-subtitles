@@ -2,7 +2,7 @@
 
 这是可部署到独立 Firebase Hosting 站点的**公开只读、脱敏**状态页。它按周显示共享 Layer 1，以及简体中文、韩语、西语等每种语言的 Layer 2–4 检查点、进度和有条件 ETA；从源页面是否出现／更换视频，跟踪到每语言页面、正式语音、声纹索引和设备／现场验收。浏览器从专用 Firestore 命名数据库 `sermon-tracker` 实时读取，规则禁止客户端写入。所有人都能读取已发布状态，管理员在本地用服务端发布器更新。Firebase [Security Rules](https://firebase.google.com/docs/firestore/security/rules-conditions)约束客户端请求；服务端 SDK 写入由 IAM 控制。
 
-公开快照仅有状态、数量、时间、经允许的源页面链接和同周播放页链接。视频 ID／原视频 URL、审核原因、证据路径、内部哈希、声纹音轨 SHA 和凭据不会进入公开文档。发布器还会对生成器输出做一次明确的字段投影，额外字段自动丢弃。页面的百分比只表示检查点；ETA 是连续串行估算，缺工时或待人工审核时显示未知。页面不会替代正式包的 validator、内容听审、HTTP 核验或设备验收。
+公开快照仅有状态、数量、时间、步骤实测耗时与尝试次数、经允许的源页面链接和同周播放页链接。视频 ID／原视频 URL、审核原因、证据路径、内部哈希、声纹音轨 SHA 和凭据不会进入公开文档。发布器还会对生成器输出做一次明确的字段投影，额外字段自动丢弃。页面的百分比只表示检查点；ETA 是连续串行估算，缺工时或待人工审核时显示未知。页面不会替代正式包的 validator、内容听审、HTTP 核验或设备验收。
 
 ## 配置与部署
 
@@ -28,7 +28,7 @@ firebase deploy --only hosting:sermonTrackerAdmin --project YOUR_PROJECT
 
 本地工作账本由[四层 tracker](../../../scripts/four_layer_progress.py)维护；[快照生成器](../../../scripts/build_four_layer_tracker_snapshot.py)汇总账本、源监控、同语言 Release Package、可选旧中文目录、HTTP 收据和声纹证据。正式 producer 尚未全部自动写入账本，所以未有收据的阶段需操作者按真实证据更新。`source-video-state.private.json` 保存在快照旁边的忽略 Git 工作目录，用于比较同一周视频 ID；此文件**不得放进 Hosting public/dist 或 Firestore**。
 
-本轮之后的耗时审计使用[四层计时入口](../../../scripts/four_layer_measure.py)：它把实际执行 span 写入账本旁私有 `accounting/events.jsonl`，`audit` 命令只读地将日志关联到检查点，并列出缺少计时的已完成步骤。公开 Firebase 页面仍只显示状态与有条件 ETA，不上传模型请求细节或私有耗时日志。人工审核等待需在发出和收到审核时及时更新 Tracker 状态；旧产物的文件时间不能补作实测耗时。具体操作及提速 backlog 见[四层 Tracker 文档](../../../docs/four-layer-production-tracker.zh.md#从现在开始保留真实耗时)。
+本轮之后的耗时审计使用[四层计时入口](../../../scripts/four_layer_measure.py)：首批正式 producer 加 `--progress-ledger` 即自动写执行 span；未接入的命令仍用 `run --step` 包装。`audit` 只读地将私有 `accounting/events.jsonl` 关联到检查点，并列出缺少计时的已完成步骤。公开 Firebase 页面显示步骤的实测耗时、重试／失败次数和审核等待，不上传模型请求细节或私有日志。人工审核等待需在发出和收到审核时及时更新 Tracker 状态；旧产物的文件时间不能补作实测耗时。具体操作及提速 backlog 见[四层 Tracker 文档](../../../docs/four-layer-production-tracker.zh.md#从现在开始保留真实耗时)。
 
 ```bash
 python scripts/four_layer_progress.py artifacts/my-run/four-layer-progress.json init \
