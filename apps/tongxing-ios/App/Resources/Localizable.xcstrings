@@ -1,141 +1,440 @@
 {
   "sourceLanguage": "zh-Hans",
   "strings": {
-    "Dev 多语言预览": {
-      "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Dev language preview" } } }
-    },
-    "选择 Dev 演示语言": {
-      "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Choose Dev demo language" } } }
-    },
-    "Dev 多语言预览 · 未经人工审核": {
-      "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Dev language preview · Not reviewed" } } }
-    },
-    "Dev 演示 · 未经人工审核 · 不用于正式发布": {
-      "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Dev demo · Not reviewed · Not for release" } } }
-    },
-    "Dev POC · 人工审核待完成": {
-      "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Dev POC · Human review pending" } } }
-    },
-    "原声参考": {
-      "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Original speaker reference" } } }
-    },
-    "配音候选": {
-      "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Dubbing candidate" } } }
-    },
-    "机器检查需复核 · 人工审核待完成": {
-      "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Machine check needs review · Human review pending" } } }
-    },
-    "演示内容、音频和字幕均未通过正式发布审核；现场自动对齐只在有匹配指纹的音轨上可用。": {
-      "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Demo text, audio and captions are not approved for release. Live alignment requires a matching audio fingerprint." } } }
-    },
-    "Firebase Dev 演示内容未经人工审核，仅供开发预览。": {
-      "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Firebase Dev demo content is not human reviewed and is only for development preview." } } }
-    },
-    "Dev 演示页面暂时无法打开；当前内容和音频没有改变。": {
-      "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "The Dev demo page cannot be opened right now. Current content and audio are unchanged." } } }
-    },
-    "其他语言": {
-      "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Other languages" } } }
-    },
-    "目录标题：简体中文": {
-      "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Catalog title: Simplified Chinese" } } }
-    },
-    "本周证道": {
-      "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "This week's sermon" } } }
-    },
-    "往期证道": {
-      "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Past sermons" } } }
-    },
-    "此篇尚无 {language} 内容，继续显示 {current}。": {
-      "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "This sermon has no {language} edition yet. Showing {current}." } } }
-    },
-    "阅读已发布语言页面": {
-      "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Read published language page" } } }
-    },
-    "正在准备语言页面…": {
-      "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Preparing language page…" } } }
-    },
-    "当前为独立语言页面；中文播放器已暂停。": {
-      "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "This language has its own published page. Chinese playback is paused." } } }
-    },
-    "暂时无法打开这个语言版本；请联网后重试。": {
-      "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "This language version cannot be opened right now. Connect to the internet and try again." } } }
-    },
     "当前中文版本": {
       "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Current Chinese version" } } }
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current Chinese version"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "현재 중국어 버전"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versión actual en chino"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phiên bản tiếng Trung hiện tại"
+          }
+        }
+      }
+    },
+    "所选语言在独立发布页面中打开；原生播放器继续保留当前已验证的中文音轨。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The selected language opens on its own release page. The native player keeps the currently verified Chinese track."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "선택한 언어는 별도의 공개 페이지에서 열립니다. 앱 플레이어는 현재 확인된 중국어 오디오를 유지합니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El idioma elegido se abre en su propia página publicada. El reproductor conserva la pista en chino verificada."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ngôn ngữ đã chọn mở trong trang phát hành riêng. Trình phát vẫn giữ bản âm thanh tiếng Trung đã xác minh."
+          }
+        }
+      }
     },
     "选择证道语言": {
       "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Choose sermon language" } } }
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose sermon language"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "설교 언어 선택"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elegir idioma del sermón"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn ngôn ngữ bài giảng"
+          }
+        }
+      }
     },
     "尚无可选择的语言版本": {
       "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "No language versions available" } } }
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No language versions available"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "선택할 수 있는 언어 버전이 없습니다"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay versiones en otros idiomas"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa có phiên bản ngôn ngữ nào để chọn"
+          }
+        }
+      }
     },
     "发布目录尚未提供已人工审核的目标语言。": {
       "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "The release catalog does not yet contain a human-reviewed target language." } } }
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The release catalog does not yet contain a human-reviewed target language."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "게시 목록에 사람이 검토한 대상 언어가 아직 없습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El catálogo aún no tiene idiomas revisados por una persona."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Danh mục phát hành chưa có ngôn ngữ đích được người duyệt."
+          }
+        }
+      }
     },
     "证道语言": {
       "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Sermon language" } } }
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sermon language"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "설교 언어"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Idioma del sermón"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ngôn ngữ bài giảng"
+          }
+        }
+      }
     },
     "选择后打开该语言自己的已发布页面。界面语言和证道音频语言不会被静默更改。": {
       "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Your selection opens that language's published page. The interface and sermon audio languages are never changed silently." } } }
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your selection opens that language's published page. The interface and sermon audio languages are never changed silently."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "선택한 언어의 공개 페이지가 열립니다. 앱 인터페이스와 설교 오디오 언어는 자동으로 바뀌지 않습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La selección abre la página publicada de ese idioma. El idioma de la app y del audio no cambian automáticamente."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lựa chọn sẽ mở trang phát hành của ngôn ngữ đó. Ngôn ngữ ứng dụng và âm thanh bài giảng không tự thay đổi."
+          }
+        }
+      }
     },
     "文字": {
       "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Text" } } }
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Text"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "텍스트"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Texto"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Văn bản"
+          }
+        }
+      }
     },
     "字幕": {
       "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Captions" } } }
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Captions"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "자막"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtítulos"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phụ đề"
+          }
+        }
+      }
     },
     "音频": {
       "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Audio" } } }
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오디오"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Âm thanh"
+          }
+        }
+      }
     },
     "仅文字": {
       "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Text only" } } }
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Text only"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "텍스트만"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solo texto"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉ có văn bản"
+          }
+        }
+      }
     },
     "可下载": {
       "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Downloadable" } } }
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloadable"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다운로드 가능"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargable"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Có thể tải xuống"
+          }
+        }
+      }
     },
     "此环境尚未提供多语言发布目录，继续显示当前中文版本。": {
       "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "This environment has no multilingual release catalog yet. The current Chinese version remains available." } } }
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This environment has no multilingual release catalog yet. The current Chinese version remains available."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 환경에는 다국어 게시 목록이 아직 없습니다. 현재 중국어 버전을 계속 표시합니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este entorno aún no tiene un catálogo multilingüe publicado. Se mantiene la versión actual en chino."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Môi trường này chưa có danh mục phát hành đa ngôn ngữ. Tiếp tục hiển thị phiên bản tiếng Trung hiện tại."
+          }
+        }
+      }
     },
     "暂时无法打开这个语言版本；当前内容和音频没有改变。": {
       "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "This language version cannot be opened right now. The current content and audio were not changed." } } }
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This language version cannot be opened right now. The current content and audio were not changed."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 언어 버전을 지금 열 수 없습니다. 현재 콘텐츠와 오디오는 변경되지 않았습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se puede abrir esta versión ahora. El contenido y el audio actuales no han cambiado."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiện không thể mở phiên bản ngôn ngữ này. Nội dung và âm thanh hiện tại không thay đổi."
+          }
+        }
+      }
     },
     "语言已选择，但本次偏好暂时无法保存。": {
       "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "The language was selected, but the preference could not be saved this time." } } }
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The language was selected, but the preference could not be saved this time."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "언어를 선택했지만 이번에는 설정을 저장하지 못했습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se eligió el idioma, pero no se pudo guardar la preferencia esta vez."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã chọn ngôn ngữ nhưng lần này không lưu được tùy chọn."
+          }
+        }
+      }
     },
     "{time}，总长 {duration}。{status}": {
       "extractionState": "manual",
@@ -144,6 +443,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "{time} of {duration}. {status}"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{time} / {duration}. {status}"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{time} de {duration}. {status}"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{time} / {duration}. {status}"
           }
         }
       }
@@ -156,6 +473,24 @@
             "state": "translated",
             "value": "1 sec"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1초"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 s"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 giây"
+          }
         }
       }
     },
@@ -166,6 +501,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "AI-synthesized Chinese audio and AI-prepared text · an independent personal project"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI로 합성한 중국어 오디오와 정리한 텍스트 · 개인 독립 프로젝트"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio en chino sintetizado por IA y texto preparado por IA · proyecto personal independiente"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Âm thanh tiếng Trung tổng hợp bằng AI và văn bản do AI biên soạn · dự án cá nhân độc lập"
           }
         }
       }
@@ -178,6 +531,24 @@
             "state": "translated",
             "value": "AI-prepared text for personal reference"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "개인 참고용으로 AI가 정리한 텍스트"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Texto preparado por IA para consulta personal"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Văn bản do AI biên soạn để tham khảo cá nhân"
+          }
         }
       }
     },
@@ -188,6 +559,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "AI-prepared text for personal reference."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "개인 참고용으로 AI가 정리한 텍스트입니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Texto preparado por IA para consulta personal."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Văn bản do AI biên soạn để tham khảo cá nhân."
           }
         }
       }
@@ -200,6 +589,24 @@
             "state": "translated",
             "value": "The app entered the background. Audio alignment stopped."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "앱이 백그라운드로 전환되어 소리 정렬이 중지되었습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La app pasó a segundo plano. Se detuvo la alineación de audio."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ứng dụng đã chuyển sang nền. Căn chỉnh âm thanh đã dừng."
+          }
         }
       }
     },
@@ -210,6 +617,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Understand together. Walk together."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "함께 이해하고 함께 걸어요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comprendamos juntos. Caminemos juntos."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cùng thấu hiểu, cùng đồng hành."
           }
         }
       }
@@ -222,6 +647,24 @@
             "state": "translated",
             "value": "Last heard at {time}"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "마지막 청취 위치 {time}"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Última escucha: {time}"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nghe lần cuối tại {time}"
+          }
         }
       }
     },
@@ -232,6 +675,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Download"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다운로드"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargar"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tải xuống"
           }
         }
       }
@@ -244,6 +705,24 @@
             "state": "translated",
             "value": "The downloaded file is empty."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다운로드한 파일이 비어 있습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El archivo descargado está vacío."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tệp tải xuống trống."
+          }
         }
       }
     },
@@ -254,6 +733,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Not affiliated with or endorsed by Mariners Church."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mariners Church와 제휴 관계가 없으며 공식 후원을 받지 않습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin afiliación ni respaldo de Mariners Church."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không liên kết hoặc được Mariners Church bảo trợ."
           }
         }
       }
@@ -266,6 +763,24 @@
             "state": "translated",
             "value": "Chinese audio is ahead; go back 1 second"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "중국어 오디오가 빠릅니다. 1초 뒤로 이동"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El audio en chino va adelantado; retrocede 1 segundo"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Âm thanh tiếng Trung đi trước; lùi 1 giây"
+          }
         }
       }
     },
@@ -276,6 +791,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Chinese audio sample"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "중국어 오디오 샘플"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Muestra de audio en chino"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nghe thử âm thanh tiếng Trung"
           }
         }
       }
@@ -288,6 +821,24 @@
             "state": "translated",
             "value": "Chinese audio is behind; go forward 1 second"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "중국어 오디오가 늦습니다. 1초 앞으로 이동"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El audio en chino va retrasado; avanza 1 segundo"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Âm thanh tiếng Trung đi sau; tiến 1 giây"
+          }
         }
       }
     },
@@ -298,6 +849,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "The interruption has ended. Resume listening and check the timing."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "중단이 끝났습니다. 다시 듣고 시간을 수동으로 맞춰 주세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La interrupción terminó. Continúa escuchando y comprueba el tiempo manualmente."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gián đoạn đã kết thúc. Tiếp tục nghe và tự kiểm tra thời gian."
           }
         }
       }
@@ -310,6 +879,24 @@
             "state": "translated",
             "value": "Start from the beginning"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "처음부터 시작"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empezar desde el principio"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bắt đầu từ đầu"
+          }
         }
       }
     },
@@ -320,6 +907,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Use offline audio"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오프라인 오디오 사용"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usar audio sin conexión"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dùng âm thanh ngoại tuyến"
           }
         }
       }
@@ -332,6 +937,24 @@
             "state": "translated",
             "value": "e.g. 10:05"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "예: 10:05"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ej.: 10:05"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ví dụ: 10:05"
+          }
         }
       }
     },
@@ -342,6 +965,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "About Tongxing"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tongxing 정보"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acerca de Tongxing"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giới thiệu Tongxing"
           }
         }
       }
@@ -354,6 +995,24 @@
             "state": "translated",
             "value": "The content address does not meet security requirements."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "콘텐츠 주소가 보안 요구 사항을 충족하지 않습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La dirección del contenido no cumple los requisitos de seguridad."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Địa chỉ nội dung không đáp ứng yêu cầu bảo mật."
+          }
         }
       }
     },
@@ -364,6 +1023,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "The content file exceeds the size limit."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "콘텐츠 파일이 허용 크기를 초과했습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El archivo de contenido supera el límite de tamaño."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tệp nội dung vượt quá giới hạn dung lượng."
           }
         }
       }
@@ -376,6 +1053,24 @@
             "state": "translated",
             "value": "The content server returned an invalid response."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "콘텐츠 서버가 잘못된 응답을 보냈습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El servidor de contenido devolvió una respuesta no válida."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máy chủ nội dung trả về phản hồi không hợp lệ."
+          }
         }
       }
     },
@@ -386,6 +1081,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "The content server returned an error ({status})."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "콘텐츠 서버 오류({status})."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El servidor de contenido devolvió un error ({status})."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máy chủ nội dung trả về lỗi ({status})."
           }
         }
       }
@@ -398,6 +1111,24 @@
             "state": "translated",
             "value": "Content notes"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "콘텐츠 안내"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notas del contenido"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ghi chú nội dung"
+          }
         }
       }
     },
@@ -408,6 +1139,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Refresh sermon catalog"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "설교 목록 새로고침"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualizar catálogo de sermones"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Làm mới danh mục bài giảng"
           }
         }
       }
@@ -420,6 +1169,24 @@
             "state": "translated",
             "value": "Forward 0.25 sec"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "0.25초 앞으로"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avanzar 0,25 s"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiến 0,25 giây"
+          }
         }
       }
     },
@@ -430,6 +1197,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Forward 1 sec"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1초 앞으로"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avanzar 1 s"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiến 1 giây"
           }
         }
       }
@@ -442,6 +1227,24 @@
             "state": "translated",
             "value": "Forward 5 sec"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5초 앞으로"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avanzar 5 s"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiến 5 giây"
+          }
         }
       }
     },
@@ -452,6 +1255,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cancel"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "취소"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelar"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hủy"
           }
         }
       }
@@ -464,6 +1285,24 @@
             "state": "translated",
             "value": "Cancel alignment"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "정렬 취소"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelar alineación"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hủy căn chỉnh"
+          }
         }
       }
     },
@@ -475,6 +1314,24 @@
             "state": "translated",
             "value": "You can read the sermon outline first."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "먼저 설교 개요를 읽을 수 있습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puedes leer primero el bosquejo del sermón."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn có thể đọc dàn ý bài giảng trước."
+          }
         }
       }
     },
@@ -482,6 +1339,24 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tongxing"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tongxing"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tongxing"
+          }
+        },
+        "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Tongxing"
@@ -497,6 +1372,24 @@
             "state": "translated",
             "value": "Tongxing · Chinese Sermon Companion"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tongxing · 중국어 설교 동반자"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tongxing · acompañante de sermones en chino"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tongxing · đồng hành cùng bài giảng tiếng Trung"
+          }
         }
       }
     },
@@ -507,6 +1400,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Back 0.25 sec"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "0.25초 뒤로"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retroceder 0,25 s"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lùi 0,25 giây"
           }
         }
       }
@@ -519,6 +1430,24 @@
             "state": "translated",
             "value": "Back 1 sec"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1초 뒤로"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retroceder 1 s"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lùi 1 giây"
+          }
         }
       }
     },
@@ -529,6 +1458,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Back 5 sec"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5초 뒤로"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retroceder 5 s"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lùi 5 giây"
           }
         }
       }
@@ -541,6 +1488,24 @@
             "state": "translated",
             "value": "Audio alignment did not complete. Retry or adjust the position manually."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "소리 정렬이 완료되지 않았습니다. 다시 시도하거나 위치를 수동으로 조정하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La alineación no se completó. Reinténtalo o ajusta la posición manualmente."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Căn chỉnh âm thanh chưa hoàn tất. Thử lại hoặc tự chỉnh vị trí."
+          }
         }
       }
     },
@@ -551,6 +1516,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Audio capture was interrupted by the system. Try again."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "시스템이 소리 입력을 중단했습니다. 다시 시도하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El sistema interrumpió la captura de audio. Reinténtalo."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hệ thống đã ngắt thu âm. Vui lòng thử lại."
           }
         }
       }
@@ -563,6 +1546,24 @@
             "state": "translated",
             "value": "Listen & align"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "현장 소리 듣고 정렬"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escuchar y alinear"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nghe và căn chỉnh"
+          }
         }
       }
     },
@@ -573,6 +1574,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Current passage"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "현재 문장으로"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasaje actual"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đoạn hiện tại"
           }
         }
       }
@@ -585,6 +1604,24 @@
             "state": "translated",
             "value": "Full transcript"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "전체 자막"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcripción completa"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toàn bộ phụ đề"
+          }
         }
       }
     },
@@ -595,6 +1632,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Text follows the Chinese audio"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "텍스트가 중국어 오디오를 따라갑니다"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El texto sigue el audio en chino"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Văn bản theo âm thanh tiếng Trung"
           }
         }
       }
@@ -607,6 +1662,24 @@
             "state": "translated",
             "value": "Done"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "완료"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listo"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xong"
+          }
         }
       }
     },
@@ -617,6 +1690,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Seek / fine-tune"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "위치 이동 / 미세 조정"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ir a posición / ajuste fino"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm vị trí / chỉnh tinh"
           }
         }
       }
@@ -629,6 +1720,24 @@
             "state": "translated",
             "value": "Seeking did not complete. Your last confirmed position is preserved."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "위치 이동이 완료되지 않았습니다. 마지막으로 확인한 위치를 유지했습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se completó el cambio de posición. Se conservó la última posición confirmada."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa tìm xong vị trí. Đã giữ vị trí xác nhận gần nhất."
+          }
         }
       }
     },
@@ -639,6 +1748,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Seeking did not complete. Retry or adjust the position manually."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "위치 이동이 완료되지 않았습니다. 다시 시도하거나 수동으로 조정하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se completó el cambio de posición. Reinténtalo o ajusta manualmente."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa tìm xong vị trí. Thử lại hoặc tự điều chỉnh."
           }
         }
       }
@@ -651,6 +1778,24 @@
             "state": "translated",
             "value": "Alignment timed out. Keep the page in the foreground and retry."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "정렬 시간이 초과되었습니다. 앱을 전면에 두고 다시 시도하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se agotó el tiempo de alineación. Mantén la app en primer plano y reinténtalo."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Căn chỉnh quá thời gian. Giữ ứng dụng ở phía trước rồi thử lại."
+          }
         }
       }
     },
@@ -661,6 +1806,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Download incomplete"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다운로드 미완료"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descarga incompleta"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa tải xong"
           }
         }
       }
@@ -673,6 +1836,24 @@
             "state": "translated",
             "value": "Downloaded · available offline"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다운로드됨 · 오프라인 사용 가능"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargado · disponible sin conexión"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã tải · dùng được ngoại tuyến"
+          }
         }
       }
     },
@@ -683,6 +1864,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Alignment cancelled."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "정렬을 취소했습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alineación cancelada."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã hủy căn chỉnh."
           }
         }
       }
@@ -695,6 +1894,24 @@
             "state": "translated",
             "value": "Moved to {time}"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{time}(으)로 이동"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posición: {time}"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã chuyển đến {time}"
+          }
         }
       }
     },
@@ -705,6 +1922,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Position found. Tap play to continue listening."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "위치를 찾았습니다. 재생을 눌러 계속 들으세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posición encontrada. Toca reproducir para continuar."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã tìm thấy vị trí. Nhấn phát để tiếp tục nghe."
           }
         }
       }
@@ -717,6 +1952,24 @@
             "state": "translated",
             "value": "Reviewed audio"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "검토된 오디오"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio revisado"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Âm thanh đã được duyệt"
+          }
         }
       }
     },
@@ -727,6 +1980,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Aligned to {time}."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{time}(으)로 정렬됨."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alineado en {time}."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã căn chỉnh đến {time}."
           }
         }
       }
@@ -739,6 +2010,24 @@
             "state": "translated",
             "value": "Saved position restored. The live sermon may have moved on; check the timing again."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "마지막 위치를 복원했습니다. 현장 설교가 진행됐을 수 있으니 시간을 다시 확인하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se restauró la última posición. El sermón en vivo pudo avanzar; comprueba el tiempo otra vez."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã khôi phục vị trí gần nhất. Bài giảng trực tiếp có thể đã tiếp tục; hãy kiểm tra lại thời gian."
+          }
         }
       }
     },
@@ -749,6 +2038,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Found your saved listening position"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "저장된 청취 위치를 찾았습니다"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se encontró tu posición guardada"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã tìm thấy vị trí nghe đã lưu"
           }
         }
       }
@@ -761,6 +2068,24 @@
             "state": "translated",
             "value": "Finished listening"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "청취 완료"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escucha terminada"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã nghe xong"
+          }
         }
       }
     },
@@ -771,6 +2096,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Paused"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "일시 정지됨"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En pausa"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã tạm dừng"
           }
         }
       }
@@ -783,6 +2126,24 @@
             "state": "translated",
             "value": "Returned to {time}"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{time}(으)로 돌아감"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volver a {time}"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã trở về {time}"
+          }
         }
       }
     },
@@ -793,6 +2154,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Returned to the beginning · start at the agreed live beginning"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "처음으로 돌아감 · 정해진 현장 시작점에서 재생하세요"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volver al principio · empieza en el punto acordado del servicio"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã trở về đầu · hãy bắt đầu tại mốc đã thống nhất"
           }
         }
       }
@@ -805,6 +2184,24 @@
             "state": "translated",
             "value": "Selected"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "선택됨"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seleccionado"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã chọn"
+          }
         }
       }
     },
@@ -815,6 +2212,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Play"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "재생 시작"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reproducir"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bắt đầu phát"
           }
         }
       }
@@ -827,6 +2242,24 @@
             "state": "translated",
             "value": "Using the previously saved sermon catalog."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이전에 저장한 설교 목록을 사용 중입니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usando el catálogo de sermones guardado anteriormente."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang dùng danh mục bài giảng đã lưu trước đó."
+          }
         }
       }
     },
@@ -837,6 +2270,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Current passage"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "현재 문장"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasaje actual"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đoạn hiện tại"
           }
         }
       }
@@ -849,6 +2300,24 @@
             "state": "translated",
             "value": "Current transcript"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "현재 자막"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtítulo actual"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phụ đề hiện tại"
+          }
         }
       }
     },
@@ -859,6 +2328,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Audio alignment is not available on this device."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 기기에서는 소리 정렬을 사용할 수 없습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La alineación de audio no está disponible en este dispositivo."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thiết bị này không hỗ trợ căn chỉnh âm thanh."
           }
         }
       }
@@ -871,6 +2358,24 @@
             "state": "translated",
             "value": "Audio alignment data is not available for this track."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 오디오에는 소리 정렬 자료가 없습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay datos de alineación para esta pista."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản âm thanh này không có dữ liệu căn chỉnh."
+          }
         }
       }
     },
@@ -881,6 +2386,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Restore position"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "위치 복원"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restaurar posición"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khôi phục vị trí"
           }
         }
       }
@@ -893,6 +2416,24 @@
             "state": "translated",
             "value": "After restoring your position and adjustment, check the timing against the live service."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "위치와 미세 조정을 복원한 뒤 현장 시간에 맞게 수동으로 조정하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Después de restaurar la posición y el ajuste, compárala manualmente con el servicio en vivo."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sau khi khôi phục vị trí và điều chỉnh, hãy tự đối chiếu với thời gian trực tiếp."
+          }
         }
       }
     },
@@ -903,6 +2444,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Open web version"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "웹 버전 열기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir versión web"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở phiên bản web"
           }
         }
       }
@@ -915,6 +2474,24 @@
             "state": "translated",
             "value": "Next"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다음"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Siguiente"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiếp theo"
+          }
         }
       }
     },
@@ -925,6 +2502,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Download ahead to listen offline at the service"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "미리 다운로드하면 현장에서 오프라인으로 들을 수 있습니다"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargar antes para escuchar sin conexión durante el servicio"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tải trước để nghe ngoại tuyến tại buổi nhóm"
           }
         }
       }
@@ -937,6 +2532,24 @@
             "state": "translated",
             "value": "Undo"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "되돌리기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deshacer"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoàn tác"
+          }
         }
       }
     },
@@ -947,6 +2560,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Undo seek and return to {time}"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "위치 이동 취소, {time}(으)로 돌아가기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deshacer salto y volver a {time}"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoàn tác bước nhảy, về {time}"
           }
         }
       }
@@ -959,6 +2590,24 @@
             "state": "translated",
             "value": "Play"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "재생"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reproducir"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phát"
+          }
         }
       }
     },
@@ -969,6 +2618,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Playback and storage"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "재생 및 저장"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reproducción y almacenamiento"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phát và lưu trữ"
           }
         }
       }
@@ -981,6 +2648,24 @@
             "state": "translated",
             "value": "Playback stopped and your position is preserved. Check your connection or use downloaded audio."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "재생이 중단되어 위치가 보존되었습니다. 연결을 확인하거나 다운로드한 오디오를 사용하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La reproducción se detuvo y se conservó tu posición. Comprueba la conexión o usa el audio descargado."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phát đã dừng nhưng vị trí được giữ lại. Kiểm tra kết nối hoặc dùng âm thanh đã tải."
+          }
         }
       }
     },
@@ -991,6 +2676,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Playback position"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "재생 위치"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posición de reproducción"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vị trí phát"
           }
         }
       }
@@ -1003,6 +2706,24 @@
             "state": "translated",
             "value": "Playback position · release to seek"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "재생 위치 · 손을 떼면 이동"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posición de reproducción · suelta para ir"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vị trí phát · thả tay để chuyển"
+          }
         }
       }
     },
@@ -1013,6 +2734,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Listening positions are saved on this device for 30 days, separately for each week and audio version. Downloaded audio is available offline."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "청취 위치는 주차와 오디오 버전별로 이 기기에 30일 동안 저장됩니다. 다운로드한 오디오는 오프라인에서 들을 수 있습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las posiciones se guardan en este dispositivo durante 30 días, por semana y versión de audio. El audio descargado se puede escuchar sin conexión."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vị trí nghe được lưu trên thiết bị này trong 30 ngày, theo từng tuần và phiên bản âm thanh. Có thể nghe âm thanh đã tải khi ngoại tuyến."
           }
         }
       }
@@ -1025,6 +2764,24 @@
             "state": "translated",
             "value": "Listening content"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "청취 콘텐츠"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contenido para escuchar"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nội dung đang nghe"
+          }
         }
       }
     },
@@ -1035,6 +2792,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Full preview · live-service acceptance pending"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "전체 미리듣기 · 현장 검증 대기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vista previa completa · pendiente de aceptación en el servicio"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nghe thử toàn bài · chờ kiểm tra tại buổi nhóm"
           }
         }
       }
@@ -1047,6 +2822,24 @@
             "state": "translated",
             "value": "The file did not finish downloading. Try again."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "파일 다운로드가 완료되지 않았습니다. 다시 시도하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La descarga del archivo no terminó. Reinténtalo."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tệp chưa tải xong. Vui lòng thử lại."
+          }
         }
       }
     },
@@ -1057,6 +2850,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Audio could not start. Try again later."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오디오를 시작할 수 없습니다. 나중에 다시 시도하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo iniciar el audio. Inténtalo más tarde."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể khởi động âm thanh. Hãy thử lại sau."
           }
         }
       }
@@ -1069,6 +2880,24 @@
             "state": "translated",
             "value": "The alignment fingerprint could not be loaded or verified. Connect to the internet and retry."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "정렬 지문을 읽거나 확인할 수 없습니다. 인터넷에 연결하고 다시 시도하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo cargar o verificar la huella de alineación. Conéctate a internet y reinténtalo."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể tải hoặc xác minh dấu vân tay căn chỉnh. Kết nối internet rồi thử lại."
+          }
         }
       }
     },
@@ -1079,6 +2908,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pause"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "일시 정지"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausar"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tạm dừng"
           }
         }
       }
@@ -1091,6 +2938,24 @@
             "state": "translated",
             "value": "Pause"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "일시 정지"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausar"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tạm dừng"
+          }
         }
       }
     },
@@ -1101,6 +2966,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "No transcript available"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "사용 가능한 자막 없음"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay subtítulos disponibles"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa có phụ đề"
           }
         }
       }
@@ -1113,6 +2996,24 @@
             "state": "translated",
             "value": "The catalog could not be updated. Using previously saved content."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "목록을 업데이트할 수 없어 이전에 저장한 콘텐츠를 사용합니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo actualizar el catálogo. Se usa el contenido guardado."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể cập nhật danh mục. Đang dùng nội dung đã lưu."
+          }
         }
       }
     },
@@ -1123,6 +3024,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Unable to load sermons"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "설교를 불러올 수 없습니다"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudieron cargar los sermones"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể tải bài giảng"
           }
         }
       }
@@ -1135,6 +3054,24 @@
             "state": "translated",
             "value": "The sermon catalog could not be loaded. Connect to the internet and retry."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "설교 목록을 불러올 수 없습니다. 인터넷에 연결하고 다시 시도하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo cargar el catálogo. Conéctate a internet y reinténtalo."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể tải danh mục bài giảng. Kết nối internet rồi thử lại."
+          }
         }
       }
     },
@@ -1145,6 +3082,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "More options"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "더 보기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Más opciones"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tùy chọn khác"
           }
         }
       }
@@ -1157,6 +3112,24 @@
             "state": "translated",
             "value": "No reliable match found. Playback position is unchanged."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "신뢰할 수 있는 일치 항목을 찾지 못했습니다. 재생 위치는 그대로입니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se encontró una coincidencia fiable. La posición no cambió."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không tìm thấy kết quả khớp đáng tin cậy. Vị trí phát không thay đổi."
+          }
         }
       }
     },
@@ -1167,6 +3140,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "No usable audio was captured. Try again."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "사용 가능한 소리를 얻지 못했습니다. 다시 시도하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se capturó audio utilizable. Reinténtalo."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thu được âm thanh dùng được. Vui lòng thử lại."
           }
         }
       }
@@ -1179,6 +3170,24 @@
             "state": "translated",
             "value": "Not selected"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "선택되지 않음"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No seleccionado"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa chọn"
+          }
         }
       }
     },
@@ -1189,6 +3198,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "This week’s audio is not ready yet"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번 주 오디오가 아직 준비되지 않았습니다"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El audio de esta semana aún no está listo"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Âm thanh tuần này chưa sẵn sàng"
           }
         }
       }
@@ -1201,6 +3228,24 @@
             "state": "translated",
             "value": "This position could not be saved. You may need to seek again after closing the app."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번 위치를 저장하지 못했습니다. 앱을 닫은 뒤 다시 위치를 찾아야 할 수 있습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo guardar esta posición. Quizá debas buscarla de nuevo al cerrar la app."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lần này không lưu được vị trí. Có thể bạn cần tìm lại sau khi đóng ứng dụng."
+          }
         }
       }
     },
@@ -1211,6 +3256,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Source and content notes"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "출처 및 콘텐츠 안내"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fuente y notas del contenido"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nguồn và ghi chú nội dung"
           }
         }
       }
@@ -1223,6 +3286,24 @@
             "state": "translated",
             "value": "Downloading. Keep the app open."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다운로드 중입니다. 앱을 열어 두세요"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargando. Mantén la app abierta"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang tải xuống. Hãy để ứng dụng mở"
+          }
         }
       }
     },
@@ -1233,6 +3314,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Using downloaded audio"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다운로드한 오디오 사용 중"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usando audio descargado"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang dùng âm thanh đã tải"
           }
         }
       }
@@ -1245,6 +3344,24 @@
             "state": "translated",
             "value": "Preparing audio alignment…"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "소리 정렬 준비 중…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparando alineación de audio…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang chuẩn bị căn chỉnh âm thanh…"
+          }
         }
       }
     },
@@ -1255,6 +3372,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Preparing the selected sermon…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "선택한 설교 준비 중…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparando el sermón seleccionado…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang chuẩn bị bài giảng đã chọn…"
           }
         }
       }
@@ -1267,6 +3402,24 @@
             "state": "translated",
             "value": "Preparing audio…"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오디오 준비 중…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparando audio…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang chuẩn bị âm thanh…"
+          }
         }
       }
     },
@@ -1277,6 +3430,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Listening to the original audio for about 8 seconds. Keep the app in the foreground."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "원본 소리를 약 8초간 듣고 있습니다. 앱을 전면에 두세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escuchando el audio original durante unos 8 segundos. Mantén la app en primer plano."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang nghe âm thanh gốc khoảng 8 giây. Giữ ứng dụng ở phía trước."
           }
         }
       }
@@ -1289,6 +3460,24 @@
             "state": "translated",
             "value": "Starting audio…"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오디오 시작 중…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciando audio…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang khởi động âm thanh…"
+          }
         }
       }
     },
@@ -1299,6 +3488,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Seeking…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "위치 이동 중…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscando posición…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang tìm vị trí…"
           }
         }
       }
@@ -1311,6 +3518,24 @@
             "state": "translated",
             "value": "Listening"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "청취 중"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escuchando"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang nghe"
+          }
         }
       }
     },
@@ -1321,6 +3546,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Matching the playback position on this device…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 기기에서 재생 위치를 찾는 중…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscando la posición en este dispositivo…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang đối chiếu vị trí phát trên thiết bị này…"
           }
         }
       }
@@ -1333,6 +3576,24 @@
             "state": "translated",
             "value": "Checking offline audio…"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오프라인 오디오 확인 중…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comprobando audio sin conexión…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang kiểm tra âm thanh ngoại tuyến…"
+          }
         }
       }
     },
@@ -1343,6 +3604,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Buffering audio…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오디오 버퍼링 중…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cargando audio…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang nạp âm thanh…"
           }
         }
       }
@@ -1355,6 +3634,24 @@
             "state": "translated",
             "value": "Loading this week’s sermon…"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번 주 설교 불러오는 중…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cargando el sermón de esta semana…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang tải bài giảng tuần này…"
+          }
         }
       }
     },
@@ -1365,6 +3662,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tap a timestamp to seek. Read the text freely."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "시간을 눌러 위치를 이동하세요. 본문은 자유롭게 읽을 수 있습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toca una marca de tiempo para ir a esa posición. Puedes leer el texto libremente."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhấn mốc thời gian để chuyển vị trí. Bạn có thể đọc văn bản tự do."
           }
         }
       }
@@ -1377,6 +3692,24 @@
             "state": "translated",
             "value": "An independent personal project, not affiliated with or endorsed by Mariners Church. AI-synthesized Chinese audio and AI-prepared text are for personal reference."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mariners Church와 제휴하거나 공식 후원을 받지 않는 개인 독립 프로젝트입니다. AI로 합성한 중국어 오디오와 정리한 텍스트는 개인 참고용입니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proyecto personal independiente, sin afiliación ni respaldo de Mariners Church. El audio en chino sintetizado por IA y el texto preparado por IA son para consulta personal."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dự án cá nhân độc lập, không liên kết hoặc được Mariners Church bảo trợ. Âm thanh tiếng Trung tổng hợp bằng AI và văn bản do AI biên soạn chỉ để tham khảo cá nhân."
+          }
         }
       }
     },
@@ -1387,6 +3720,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Align with the live service"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "현장 설교와 정렬"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alinear con el servicio en vivo"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Căn chỉnh với buổi nhóm trực tiếp"
           }
         }
       }
@@ -1399,6 +3750,24 @@
             "state": "translated",
             "value": "Listen"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "현장 청취"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escuchar en vivo"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nghe trực tiếp"
+          }
         }
       }
     },
@@ -1409,6 +3778,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Interface language"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "앱 언어"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Idioma de la app"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ngôn ngữ ứng dụng"
           }
         }
       }
@@ -1421,6 +3808,24 @@
             "state": "translated",
             "value": "Changing the interface language keeps the current audio track. Sermon content stays in its supplied language."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "앱 언어를 바꿔도 현재 오디오 트랙은 유지됩니다. 설교 콘텐츠는 제공된 언어로 표시됩니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cambiar el idioma de la app conserva la pista actual. El contenido del sermón permanece en su idioma original."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đổi ngôn ngữ ứng dụng vẫn giữ bản âm thanh hiện tại. Nội dung bài giảng giữ nguyên ngôn ngữ được cung cấp."
+          }
         }
       }
     },
@@ -1431,6 +3836,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Download the offline audio again."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오프라인 오디오를 다시 다운로드하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descarga de nuevo el audio sin conexión."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hãy tải lại âm thanh ngoại tuyến."
           }
         }
       }
@@ -1443,6 +3866,24 @@
             "state": "translated",
             "value": "The offline audio record is invalid. Download it again."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오프라인 오디오 기록이 잘못되었습니다. 다시 다운로드하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El registro del audio sin conexión no es válido. Descárgalo de nuevo."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản ghi âm thanh ngoại tuyến không hợp lệ. Hãy tải lại."
+          }
         }
       }
     },
@@ -1453,6 +3894,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Waiting for the next passage…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다음 자막을 기다리는 중…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esperando el siguiente pasaje…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang chờ đoạn phụ đề tiếp theo…"
           }
         }
       }
@@ -1465,6 +3924,24 @@
             "state": "translated",
             "value": "Total adjustment: {seconds} sec"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "총 조정: {seconds}초"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajuste total: {seconds} s"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tổng điều chỉnh: {seconds} giây"
+          }
         }
       }
     },
@@ -1475,6 +3952,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Fine-tune by a quarter second"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "0.25초씩 미세 조정"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajuste fino de un cuarto de segundo"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉnh tinh theo 0,25 giây"
           }
         }
       }
@@ -1487,6 +3982,24 @@
             "state": "translated",
             "value": "Resume"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "계속"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continuar"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiếp tục"
+          }
         }
       }
     },
@@ -1497,6 +4010,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Resume listening"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "계속 듣기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seguir escuchando"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiếp tục nghe"
           }
         }
       }
@@ -1509,6 +4040,24 @@
             "state": "translated",
             "value": "Headphones disconnected. Playback is paused."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "헤드폰 연결이 끊겨 재생이 일시 정지되었습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se desconectaron los auriculares. La reproducción está en pausa."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tai nghe đã ngắt kết nối. Phát đã tạm dừng."
+          }
         }
       }
     },
@@ -1519,6 +4068,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Original English"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "영어 원문"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Texto original en inglés"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nguyên văn tiếng Anh"
           }
         }
       }
@@ -1531,6 +4098,24 @@
             "state": "translated",
             "value": "Original English appears once at the end of each content block."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "영어 원문은 해당 콘텐츠 블록 끝에 한 번 표시되며 문장마다 반복되지 않습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El texto original en inglés aparece una vez al final de cada bloque, sin repetirse por frase."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nguyên văn tiếng Anh xuất hiện một lần ở cuối mỗi khối nội dung, không lặp theo từng câu."
+          }
         }
       }
     },
@@ -1541,6 +4126,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Original English is not available. The Chinese text remains available."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "영어 원문이 없어 중국어 텍스트를 유지합니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El texto original en inglés no está disponible. Se mantiene el texto en chino."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có nguyên văn tiếng Anh. Văn bản tiếng Trung vẫn được giữ lại."
           }
         }
       }
@@ -1553,6 +4156,24 @@
             "state": "translated",
             "value": "Original English video ↗"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "영어 원본 영상 ↗"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video original en inglés ↗"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video gốc tiếng Anh ↗"
+          }
         }
       }
     },
@@ -1563,6 +4184,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Chinese Sermon Companion"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "중국어 설교 동반자"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acompañante de sermones en chino"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đồng hành cùng bài giảng tiếng Trung"
           }
         }
       }
@@ -1575,6 +4214,24 @@
             "state": "translated",
             "value": "Sermon outline"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "설교 개요"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bosquejo del sermón"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dàn ý bài giảng"
+          }
         }
       }
     },
@@ -1585,6 +4242,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "The interface language changed, but this preference could not be saved."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "앱 언어를 바꿨지만 이번에는 설정을 저장하지 못했습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se cambió el idioma de la app, pero no se pudo guardar la preferencia esta vez."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã đổi ngôn ngữ ứng dụng nhưng lần này không lưu được tùy chọn."
           }
         }
       }
@@ -1597,6 +4272,24 @@
             "state": "translated",
             "value": "Refer to the review status of the selected audio."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "선택한 오디오의 검토 상태를 확인하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Consulta el estado de revisión del audio seleccionado."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hãy xem trạng thái duyệt của bản âm thanh đã chọn."
+          }
         }
       }
     },
@@ -1607,6 +4300,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Use headphones. Start at the agreed sermon beginning; if joining later, use “Seek / fine-tune” to align the audio."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "헤드폰을 착용하고 정해진 설교 시작점에서 재생하세요. 중간에 참여했다면 “위치 이동 / 미세 조정”으로 수동 정렬하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa auriculares. Comienza en el punto acordado del sermón; si llegas más tarde, usa “Ir a posición / ajuste fino” para alinearte manualmente."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đeo tai nghe và bắt đầu tại mốc bài giảng đã thống nhất. Nếu vào muộn, dùng “Tìm vị trí / chỉnh tinh” để tự căn chỉnh."
           }
         }
       }
@@ -1619,6 +4330,24 @@
             "state": "translated",
             "value": "Play the original audio from this recording, then tap “Listen & align”."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "같은 녹음의 원본 소리를 재생한 뒤 “현장 소리 듣고 정렬”을 누르세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reproduce el audio original de la misma grabación y toca “Escuchar y alinear”."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phát âm thanh gốc của cùng bản ghi, rồi nhấn “Nghe và căn chỉnh”."
+          }
         }
       }
     },
@@ -1629,6 +4358,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Enter minutes:seconds within this audio, for example 10:05."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 오디오 범위 안의 분:초를 입력하세요. 예: 10:05."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Introduce minutos:segundos dentro de la duración, por ejemplo 10:05."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhập phút:giây trong thời lượng âm thanh, ví dụ 10:05."
           }
         }
       }
@@ -1641,6 +4388,24 @@
             "state": "translated",
             "value": "Adjust the position of the Chinese audio"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "중국어 오디오 위치 조정"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajustar la posición del audio en chino"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Điều chỉnh vị trí âm thanh tiếng Trung"
+          }
         }
       }
     },
@@ -1651,6 +4416,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Adjust the Chinese audio. Audio recognition works with the same recording and seeks once after each successful match."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "중국어 오디오를 조정합니다. 소리 인식은 같은 녹음에서만 작동하며 일치할 때마다 한 번 위치를 이동합니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se ajusta el audio en chino. El reconocimiento funciona solo con la misma grabación y cambia de posición una vez por coincidencia."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn đang điều chỉnh âm thanh tiếng Trung. Nhận dạng chỉ dùng cho cùng bản ghi và chuyển vị trí một lần sau mỗi lần khớp thành công."
           }
         }
       }
@@ -1663,6 +4446,24 @@
             "state": "translated",
             "value": "System default"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "시스템 기본값"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Predeterminado del sistema"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Theo hệ thống"
+          }
         }
       }
     },
@@ -1673,6 +4474,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Go to time"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "시간으로 이동"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ir a tiempo"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đi đến thời gian"
           }
         }
       }
@@ -1685,6 +4504,24 @@
             "state": "translated",
             "value": "Go"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이동"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ir"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đi"
+          }
         }
       }
     },
@@ -1695,6 +4532,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Go to {time}"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{time}(으)로 이동"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ir a {time}"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đi đến {time}"
           }
         }
       }
@@ -1707,6 +4562,24 @@
             "state": "translated",
             "value": "This audio address is invalid. Playback has not started."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오디오 주소가 잘못되어 재생을 시작하지 않았습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La dirección del audio no es válida. La reproducción no comenzó."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Địa chỉ âm thanh không hợp lệ. Chưa bắt đầu phát."
+          }
         }
       }
     },
@@ -1717,6 +4590,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Choose a sermon to start listening"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "들을 설교를 선택하세요"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige un sermón para escuchar"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn một bài giảng để nghe"
           }
         }
       }
@@ -1729,6 +4620,24 @@
             "state": "translated",
             "value": "Choose a sermon"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "설교 선택"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elegir sermón"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn bài giảng"
+          }
         }
       }
     },
@@ -1739,6 +4648,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Choose a sermon"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "설교 선택"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elegir sermón"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn bài giảng"
           }
         }
       }
@@ -1751,6 +4678,24 @@
             "state": "translated",
             "value": "Some passages have no linked English source text; their Chinese text remains available."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "일부 단락에는 연결된 영어 원문이 없어 중국어 텍스트를 유지합니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Algunos pasajes no tienen texto original en inglés vinculado. Se mantiene el texto en chino."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Một số đoạn không có nguyên văn tiếng Anh được liên kết. Văn bản tiếng Trung vẫn được giữ lại."
+          }
         }
       }
     },
@@ -1761,6 +4706,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Download again"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다시 다운로드"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargar de nuevo"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tải lại"
           }
         }
       }
@@ -1773,6 +4736,24 @@
             "state": "translated",
             "value": "Reload"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "새로고침"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volver a cargar"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nạp lại"
+          }
         }
       }
     },
@@ -1783,6 +4764,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Reload selected audio"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "현재 오디오 다시 불러오기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volver a cargar el audio actual"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nạp lại âm thanh hiện tại"
           }
         }
       }
@@ -1795,6 +4794,24 @@
             "state": "translated",
             "value": "The audio could not be loaded. Check your connection or use the downloaded version."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오디오를 불러올 수 없습니다. 연결을 확인하거나 다운로드한 버전을 사용하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo cargar el audio. Comprueba la conexión o usa la versión descargada."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể nạp âm thanh. Kiểm tra kết nối hoặc dùng bản đã tải."
+          }
         }
       }
     },
@@ -1805,6 +4822,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Audio integrity verification failed. Download it again."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오디오 무결성 확인에 실패했습니다. 다시 다운로드하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Falló la verificación de integridad del audio. Descárgalo de nuevo."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xác minh tính toàn vẹn âm thanh thất bại. Hãy tải lại."
           }
         }
       }
@@ -1817,6 +4852,24 @@
             "state": "translated",
             "value": "Audio ready · start at the agreed live beginning"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오디오 준비 완료 · 정해진 현장 시작점에서 재생하세요"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio listo · empieza en el punto acordado del servicio"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Âm thanh sẵn sàng · hãy bắt đầu tại mốc đã thống nhất"
+          }
         }
       }
     },
@@ -1827,6 +4880,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Audio services have recovered. Tap play to continue and check the timing."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오디오 서비스가 복구되었습니다. 재생을 눌러 계속 듣고 시간을 수동으로 맞추세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los servicios de audio se recuperaron. Toca reproducir y comprueba el tiempo manualmente."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dịch vụ âm thanh đã phục hồi. Nhấn phát để tiếp tục và tự kiểm tra thời gian."
           }
         }
       }
@@ -1839,6 +4910,24 @@
             "state": "translated",
             "value": "Audio version"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오디오 버전"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versión de audio"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phiên bản âm thanh"
+          }
         }
       }
     },
@@ -1849,6 +4938,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "The system interrupted audio. Your position is saved."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "시스템이 오디오를 중단하여 위치가 저장되었습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El sistema interrumpió el audio. Se guardó tu posición."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hệ thống đã ngắt âm thanh. Vị trí của bạn được lưu."
           }
         }
       }
@@ -1861,6 +4968,24 @@
             "state": "translated",
             "value": "Connect to the internet for the first use. Download the audio to listen offline."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "처음 사용할 때는 인터넷이 필요합니다. 다운로드하면 오프라인으로 들을 수 있습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La primera vez necesitas internet. Descarga el audio para escucharlo sin conexión."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lần đầu cần internet. Tải âm thanh để nghe ngoại tuyến."
+          }
         }
       }
     },
@@ -1871,6 +4996,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Microphone permission was denied. Check permissions in Settings."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "마이크 권한이 거부되었습니다. 설정에서 권한을 확인하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se denegó el permiso del micrófono. Compruébalo en Ajustes."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quyền dùng micrô bị từ chối. Kiểm tra quyền trong Cài đặt."
           }
         }
       }
@@ -1883,6 +5026,24 @@
             "state": "translated",
             "value": "Connect to the internet to refresh."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "인터넷에 연결한 뒤 새로고침할 수 있습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conéctate a internet para actualizar."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kết nối internet để làm mới."
+          }
         }
       }
     },
@@ -1894,6 +5055,24 @@
             "state": "translated",
             "value": "Alignment data changed. Please start again."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "정렬 자료가 변경되었습니다. 인식을 다시 시작하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los datos de alineación cambiaron. Inicia el reconocimiento otra vez."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dữ liệu căn chỉnh đã thay đổi. Hãy nhận dạng lại."
+          }
         }
       }
     },
@@ -1904,6 +5083,24 @@
             "state": "translated",
             "value": "English reference"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "영어 대조"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Referencia en inglés"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đối chiếu tiếng Anh"
+          }
         }
       }
     },
@@ -1913,6 +5110,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Read in Chinese; expand English reference at the end of a passage to compare."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "중국어로 읽고 단락 끝의 “영어 대조”를 펼쳐 비교하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lee en chino y despliega “Referencia en inglés” al final del pasaje para comparar."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đọc tiếng Trung và mở “Đối chiếu tiếng Anh” ở cuối đoạn để so sánh."
           }
         }
       }
@@ -1925,6 +5140,24 @@
             "state": "translated",
             "value": "Live alignment data is not available for this sermon. Refresh the catalog or adjust the position manually."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 설교에는 현장 정렬 자료가 없습니다. 목록을 새로고침하거나 수동으로 위치를 조정하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este sermón no tiene datos para alineación en vivo. Actualiza el catálogo o ajusta la posición manualmente."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bài giảng này không có dữ liệu căn chỉnh trực tiếp. Làm mới danh mục hoặc tự chỉnh vị trí."
+          }
         }
       }
     },
@@ -1935,6 +5168,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Preparing audio. Please wait before starting live alignment."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오디오를 준비 중입니다. 현장 자동 정렬을 시작하기 전에 기다려 주세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparando audio. Espera antes de iniciar la alineación automática en vivo."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang chuẩn bị âm thanh. Vui lòng chờ trước khi bắt đầu tự động căn chỉnh trực tiếp."
           }
         }
       }
@@ -1947,6 +5198,24 @@
             "state": "translated",
             "value": "Audio is not ready. Please wait or reload the audio."
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오디오가 아직 준비되지 않았습니다. 기다리거나 다시 불러오세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El audio aún no está listo. Espera o vuelve a cargarlo."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Âm thanh chưa sẵn sàng. Hãy chờ hoặc nạp lại."
+          }
         }
       }
     },
@@ -1957,6 +5226,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Listening to the original audio for about 10 seconds. Keep the app in the foreground."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "원본 소리를 약 10초간 듣고 있습니다. 앱을 전면에 두세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escuchando el audio original durante unos 10 segundos. Mantén la app en primer plano."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang nghe âm thanh gốc khoảng 10 giây. Giữ ứng dụng ở phía trước."
           }
         }
       }
@@ -1969,6 +5256,24 @@
             "state": "translated",
             "value": "Live alignment unavailable"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "현장 자동 정렬을 사용할 수 없음"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alineación en vivo no disponible"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể tự động căn chỉnh trực tiếp"
+          }
         }
       }
     },
@@ -1979,6 +5284,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Refresh catalog"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "목록 새로고침"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualizar catálogo"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Làm mới danh mục"
           }
         }
       }
@@ -1991,6 +5314,24 @@
             "state": "translated",
             "value": "Close"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "닫기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cerrar"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đóng"
+          }
         }
       }
     },
@@ -2001,6 +5342,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Collapse playback controls"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "재생 컨트롤 접기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contraer controles de reproducción"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thu gọn điều khiển phát"
           }
         }
       }
@@ -2013,6 +5372,24 @@
             "state": "translated",
             "value": "Expand playback controls"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "재생 컨트롤 펼치기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expandir controles de reproducción"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở rộng điều khiển phát"
+          }
         }
       }
     },
@@ -2024,6 +5401,24 @@
             "state": "translated",
             "value": "Swipe down to collapse playback controls"
           }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "아래로 쓸어 재생 컨트롤 접기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desliza hacia abajo para contraer los controles"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vuốt xuống để thu gọn điều khiển phát"
+          }
         }
       }
     },
@@ -2034,6 +5429,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Swipe up to expand playback controls"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "위로 쓸어 재생 컨트롤 펼치기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desliza hacia arriba para expandir los controles"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vuốt lên để mở rộng điều khiển phát"
           }
         }
       }

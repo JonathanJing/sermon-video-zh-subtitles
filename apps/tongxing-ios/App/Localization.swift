@@ -5,7 +5,21 @@ enum AppLanguage: String, Codable, CaseIterable, Identifiable {
     case system
     case simplifiedChinese = "zh-CN"
     case english = "en"
+    case korean = "ko"
+    case spanish = "es"
+    case vietnamese = "vi"
     var id: String { rawValue }
+
+    var shortLabel: String {
+        switch self {
+        case .system: return "A"
+        case .simplifiedChinese: return "中"
+        case .english: return "EN"
+        case .korean: return "KO"
+        case .spanish: return "ES"
+        case .vietnamese: return "VI"
+        }
+    }
 }
 
 /// Interface language is independent of the selected sermon and audio track.
@@ -77,40 +91,44 @@ final class AppLocalization: ObservableObject {
             let language = identifier.lowercased().split(separator: "-").first
             if language == "zh" { return .simplifiedChinese }
             if language == "en" { return .english }
+            if language == "ko" { return .korean }
+            if language == "es" { return .spanish }
+            if language == "vi" { return .vietnamese }
         }
         return .english
     }
 
     func text(_ key: String, _ values: [String: String] = [:]) -> String {
-        var result = language == .english ? Self.englishText(key) : key
+        var result = language == .simplifiedChinese ? key : Self.localizedText(key, language: language)
         for (name, value) in values { result = result.replacingOccurrences(of: "{\(name)}", with: value) }
         return result
     }
 
-    private static func englishText(_ key: String) -> String {
-        if let translated = englishTranslation(key) { return translated }
+    private static func localizedText(_ key: String, language: AppLanguage) -> String {
+        if let translated = translation(key, language: language) { return translated }
         // Model messages remain language-neutral keys, including the few legacy
         // messages that interpolate a time or concatenate a catalog warning.
         for (prefix, template) in [("已定位 ", "已定位 {time}"), ("已返回 ", "已返回 {time}")] where key.hasPrefix(prefix) {
-            guard let translated = englishTranslation(template) else { return key }
+            guard let translated = translation(template, language: language) else { return key }
             return translated.replacingOccurrences(of: "{time}", with: String(key.dropFirst(prefix.count)))
         }
         let catalogPrefix = "当前使用上次保存的证道目录。"
-        if key.hasPrefix(catalogPrefix), key != catalogPrefix, let translated = englishTranslation(catalogPrefix) {
-            return translated + " " + englishText(String(key.dropFirst(catalogPrefix.count)))
+        if key.hasPrefix(catalogPrefix), key != catalogPrefix,
+           let translated = translation(catalogPrefix, language: language) {
+            return translated + " " + localizedText(String(key.dropFirst(catalogPrefix.count)), language: language)
         }
         let statusPrefix = "内容服务器返回错误（"
         if key.hasPrefix(statusPrefix), key.hasSuffix("）。"),
-           let translated = englishTranslation("内容服务器返回错误（{status}）。") {
+           let translated = translation("内容服务器返回错误（{status}）。", language: language) {
             let status = key.dropFirst(statusPrefix.count).dropLast(2)
             return translated.replacingOccurrences(of: "{status}", with: String(status))
         }
-        return key
+        return language == .english ? key : translation(key, language: .english) ?? key
     }
 
-    private static func englishTranslation(_ key: String) -> String? {
-        let localized = englishBundle?.localizedString(forKey: key, value: key, table: "Localizable") ?? key
-        return localized != key ? localized : previewEnglish[key]
+    private static func translation(_ key: String, language: AppLanguage) -> String? {
+        let localized = bundles[language]?.localizedString(forKey: key, value: key, table: "Localizable") ?? key
+        return localized != key ? localized : previewTranslations[language]?[key]
     }
 
     private static var resourceBundle: Bundle {
@@ -121,20 +139,26 @@ final class AppLocalization: ObservableObject {
         #endif
     }
 
-    private static let englishBundle: Bundle? = resourceBundle.path(forResource: "en", ofType: "lproj").flatMap(Bundle.init(path:))
+    private static let bundles: [AppLanguage: Bundle] = Dictionary(uniqueKeysWithValues:
+        [AppLanguage.english, .korean, .spanish, .vietnamese].compactMap { language in
+            resourceBundle.path(forResource: language.rawValue, ofType: "lproj")
+                .flatMap(Bundle.init(path:)).map { (language, $0) }
+        })
 
     /// SwiftPM copies the same String Catalog for the macOS preview. The iOS
     /// app uses Xcode's compiled localization resources from that catalog.
-    private static let previewEnglish: [String: String] = {
+    private static let previewTranslations: [AppLanguage: [String: String]] = {
         guard let url = resourceBundle.url(forResource: "Localizable", withExtension: "xcstrings"),
               let data = try? Data(contentsOf: url),
               let root = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
               let strings = root["strings"] as? [String: [String: Any]] else { return [:] }
-        return strings.reduce(into: [:]) { result, item in
-            guard let localizations = item.value["localizations"] as? [String: [String: Any]],
-                  let unit = localizations["en"]?["stringUnit"] as? [String: String],
-                  let value = unit["value"] else { return }
-            result[item.key] = value
+        return [AppLanguage.english, .korean, .spanish, .vietnamese].reduce(into: [:]) { result, language in
+            result[language] = strings.reduce(into: [:]) { translations, item in
+                guard let localizations = item.value["localizations"] as? [String: [String: Any]],
+                      let unit = localizations[language.rawValue]?["stringUnit"] as? [String: String],
+                      let value = unit["value"] else { return }
+                translations[item.key] = value
+            }
         }
     }()
 }
