@@ -146,7 +146,7 @@ def prepare_shadow(
         "anchorIssueCount": len(manifest["issues"]),
         "anchorIssueTypes": sorted({str(issue.get("type")) for issue in manifest["issues"]}),
         "nextStage": next_stage,
-        "humanReview": "pending",
+        "humanReview": "approved" if source_package["review"]["humanApproval"] else "pending",
     }
     receipt_path = run_dir / "receipt.json"
     receipt["artifacts"]["receipt"] = {"path": str(receipt_path)}

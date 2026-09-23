@@ -48,10 +48,16 @@ export function validateDemoRelease(release, page, locale) {
     && release.contentStatus === target.contentStatus && release.audioStatus === target.audioStatus,
     "Invalid Dev release identity or review state");
   const prefix = `/media/${page.id}/`;
-  sameOriginAsset(release.audioUrl, prefix, ".mp3");
-  if (release.audioSha256 !== undefined) requireValue(SHA256.test(release.audioSha256), "Invalid Dev audio hash");
   const variants = release.audioVariants || [];
   requireValue(Array.isArray(variants) && variants.length <= 20, "Invalid Dev audio variants");
+  if (release.audioStatus === "unavailable") {
+    requireValue(locale !== "en" && release.audioUrl == null && release.audioSha256 == null
+      && release.defaultAudioVariantId == null && variants.length === 0,
+      "Unavailable Dev audio must not expose media");
+    return release;
+  }
+  sameOriginAsset(release.audioUrl, prefix, ".mp3");
+  if (release.audioSha256 !== undefined) requireValue(SHA256.test(release.audioSha256), "Invalid Dev audio hash");
   const ids = new Set();
   for (const variant of variants) {
     requireValue(PAGE_ID.test(variant.id) && !ids.has(variant.id)
@@ -85,6 +91,7 @@ export function validateDemoContent(content, release, locale) {
   requireValue(content?.schemaVersion === "sermon-demo-content-v1"
     && content.poc === true && content.locale === locale
     && content.translationStatus === release.contentStatus
+    && (release.audioStatus !== "unavailable" || content.audioStatus === "unavailable")
     && content.humanReview?.humanApproval === false
     && Number.isFinite(content.durationSeconds) && content.durationSeconds > 0
     && Array.isArray(content.cues) && content.cues.length > 0

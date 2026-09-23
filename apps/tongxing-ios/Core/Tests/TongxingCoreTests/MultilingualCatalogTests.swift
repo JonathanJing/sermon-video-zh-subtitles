@@ -103,4 +103,12 @@ struct MultilingualCatalogTests {
             try TargetLanguageReleasePackage.decode(JSONSerialization.data(withJSONObject: value))
         }
     }
+
+    @Test func unavailableAudioMayBindSameLocaleLayer3Package() throws {
+        var value = try #require(JSONSerialization.jsonObject(with: releaseData()) as? [String: Any])
+        value["targetLanguageAudioPackageJsonSha256"] = hashB
+        let package = try TargetLanguageReleasePackage.decode(JSONSerialization.data(withJSONObject: value))
+        #expect(package.targetLanguageAudioPackageJsonSha256 == hashB)
+        #expect(package.audioLocale == nil)
+    }
 }

@@ -12,6 +12,31 @@ from tests.test_prepare_sentence_interpretation_shadow import write_segments
 
 
 class GenerateMultilingualFragmentPocTests(unittest.TestCase):
+    def test_shadow_groups_keep_western_word_boundaries_and_unit_reviews(self):
+        checks = {name: "pass" for name in ("completeMeaning", "negationsNumbersNames",
+                                             "quotationAttribution", "noAddedMeaning")}
+        units = [("u1", "La palabra.", {"evidence": "First sentence."}, checks, True),
+                 ("u2", "Dios habla.", {"evidence": "Second sentence."}, checks, True)]
+        groups = subject.build_shadow_groups("fragment", "es", "a" * 64, units)
+        self.assertEqual([group["sourceUnitIds"] for group in groups], [["u1"], ["u2"]])
+        self.assertEqual([group["targetText"] for group in groups], ["La palabra.", "Dios habla."])
+        self.assertTrue(all(group["targetText"] == "".join(group["targetUtterances"])
+                            for group in groups))
+        self.assertEqual(groups[1]["semanticReview"]["evidence"], "Second sentence.")
+
+    def test_selected_locales_are_exact_and_ordered(self):
+        source_ids = ["u1", "u2"]
+        value = {"locales": [{"targetLocale": locale, "units": [
+            {"sourceUnitId": unit, "targetText": f"{locale}-{unit}"} for unit in source_ids
+        ]} for locale in ("zh-Hans", "ko", "es")]}
+        result = subject.index_output(value, source_ids, review=False,
+                                      target_locales=["zh-Hans", "ko", "es"])
+        self.assertEqual(list(result), ["zh-Hans", "ko", "es"])
+        value["locales"].append({"targetLocale": "vi", "units": []})
+        with self.assertRaisesRegex(ValueError, "Unexpected or duplicate locale"):
+            subject.index_output(value, source_ids, review=False,
+                                 target_locales=["zh-Hans", "ko", "es"])
+
     def test_mismatched_anchor_stops_before_secret_or_model_call(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

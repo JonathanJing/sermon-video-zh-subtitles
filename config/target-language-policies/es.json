@@ -4,18 +4,18 @@
   "translator": {
     "model": "gpt-6-astra",
     "reasoningEffort": "medium",
-    "promptVersion": "sermon-target-language-translate-ko-v1"
+    "promptVersion": "sermon-target-language-translate-es-v1"
   },
   "reviewer": {
     "model": "gpt-6-astra",
     "reasoningEffort": "medium",
-    "promptVersion": "sermon-target-language-review-ko-v1"
+    "promptVersion": "sermon-target-language-review-es-v1"
   },
   "batching": {
     "batchSize": 15,
     "workers": 3
   },
-  "targetLocale": "ko",
+  "targetLocale": "es",
   "terminology": {
     "seriesTableSha256": "a76c75e531d5860fbc485d16f1debec2b78fa8b6fd08f1a8b0d194ed1cdbffb9",
     "seriesNames": [
@@ -44,43 +44,43 @@
     ]
   },
   "scripture": {
-    "editionId": "NKRV-1998",
+    "editionId": "RVR60-1960",
     "citationUseStatus": "pending",
     "quoteCheckPolicy": "pending",
     "referenceStyle": "Use book/chapter/verse references; exact edition text stays blocked until the citation rights and quote policy are resolved."
   },
   "languageReview": {
-    "pluginId": "ko-sermon-v1",
+    "pluginId": "es-sermon-v1",
     "implementationStatus": "pending",
     "requiredChecks": [
-      "natural_korean",
-      "honorific_consistency",
-      "proper_name_transliteration",
+      "natural_spanish",
+      "register_consistency",
+      "proper_name_rendering",
       "scripture_edition",
       "number_reading",
       "tts_segmentation"
     ],
     "registerRules": [
-      "Use a consistent natural public-sermon register.",
-      "Do not add honorifics or theological titles absent from the English source."
+      "Use a consistent neutral Latin American Spanish public-sermon register.",
+      "Do not add theological titles absent from the English source."
     ]
   },
   "formatting": {
-    "speechRegister": "consistent_public_sermon_korean_pending_human_review",
+    "speechRegister": "neutral_latin_american_public_sermon_spanish",
     "punctuationRules": [
-      "Use Korean punctuation for meaning and readability; do not infer speaker pauses from punctuation."
+      "Use Spanish punctuation for meaning and readability; do not infer speaker pauses from punctuation."
     ],
     "segmentationRules": [
-      "Prefer complete Korean clauses suitable for natural TTS; do not force English word-start alignment."
+      "Prefer complete Spanish clauses suitable for natural TTS; do not force English word-start alignment."
     ]
   },
   "componentSha256": {
-    "translator": "ec9392dbf1e7c48e9e602a45ce95e65652c42f15b6fd6ef7ab4e904c77a185d4",
-    "reviewer": "3d65a61849aba4fb9416e4fe8bedfb417d4f9b73bf45d66b3d92a6b9e474497d",
+    "translator": "a9ba083d36c3f8041868ac543cb727bac116129b14e58158b5244ee43e4a5974",
+    "reviewer": "4bbe265b1a7e990bdbd67302d17e2945ffaa597ac8f55875279a92f5b37bdb40",
     "terminology": "baffdeabe1751fa5880611b831669224c869e4107d76e38dddbab84464a7c2b0",
-    "scripture": "9227153760176d5f4a9cc8ef7359262936cc2fd6c3f3ce189c1e2cb961477486",
-    "languageReview": "48ad38e7af7047a7cfeec627fbb5f3472b6ed5fda270013e01d306edf281bc06",
-    "formatting": "3b454a12748597187fde2f165a954fb45a586236ff95ffab279e5bb531425c1e",
+    "scripture": "a170308dcc6aa17f60e971a8ae44b5976d69946224a227ef854de26891ab9786",
+    "languageReview": "fb731971eafac6b92a31d95d818773a1f2dd1f27971dbcc46a75da9e27e6fd18",
+    "formatting": "ef06da39058c88fd1eaab970773019c9f68c7732089f0e1e6b9bddead8524958",
     "batching": "2fb031978de2b7656b3151b490cfc5f81ddba0946a3c680598ef79391c46fd5b"
   }
 }

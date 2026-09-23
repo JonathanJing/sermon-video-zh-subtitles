@@ -42,9 +42,11 @@ def normalize(value: str, locale: str) -> list[str]:
     return [token for token in re.findall(r"[^\W_]+", folded, flags=re.UNICODE) if token]
 
 
-def collect_generation_tracks(root: Path) -> list[dict[str, Any]]:
+def collect_generation_tracks(root: Path, expected_locales: set[str]) -> list[dict[str, Any]]:
     tracks = []
     for name in ("manifest.json", "vietnamese-manifest.json"):
+        if name == "vietnamese-manifest.json" and not (root / name).is_file():
+            continue
         manifest = read_object(root / name, "voice demo manifest")
         if manifest.get("schemaVersion") != "sermon-multilingual-voice-demo-manifest-v1":
             raise ValueError(f"Unsupported voice demo manifest: {name}")
@@ -52,6 +54,9 @@ def collect_generation_tracks(root: Path) -> list[dict[str, Any]]:
     identities = [(track.get("speakerId"), track.get("targetLocale")) for track in tracks]
     if len(identities) != len(set(identities)):
         raise ValueError("Duplicate speaker/locale generation tracks")
+    actual_locales = {track.get("targetLocale") for track in tracks}
+    if actual_locales != expected_locales:
+        raise ValueError(f"Generation tracks do not cover selected script locales: expected {sorted(expected_locales)}, found {sorted(str(locale) for locale in actual_locales)}")
     return tracks
 
 
@@ -59,7 +64,7 @@ def screen(args: argparse.Namespace) -> dict[str, Any]:
     root = args.root.resolve()
     script = read_object(args.script, "multilingual demo script")
     scripts = {item["targetLocale"]: item for item in script["locales"]}
-    tracks = collect_generation_tracks(root)
+    tracks = collect_generation_tracks(root, set(scripts))
     receipt_path = root / "asr-screening.json"
     if receipt_path.exists():
         raise ValueError("ASR screening receipt already exists; preserve completed evidence")

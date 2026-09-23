@@ -52,6 +52,26 @@ test('cross page, cross origin, wrong locale, and promoted review claims are rej
   assert.throws(() => validateDemoCatalog({ ...catalog, pages: [page, page] }));
 });
 
+test('text-only target is bound to matching status and exposes no audio', async () => {
+  const catalog = validateDemoCatalog(await jsonAt('/multilingual.json'));
+  const page = clone(catalog.pages[0]);
+  const locale = 'ko';
+  const release = await jsonAt(page.targets[locale].releasePackageUrl);
+  const content = await jsonAt(release.contentUrl);
+  page.targets[locale].audioStatus = 'unavailable';
+  const textOnly = {
+    ...release, audioStatus: 'unavailable', audioUrl: null, audioSha256: null,
+    defaultAudioVariantId: null, audioVariants: []
+  };
+  assert.equal(validateDemoRelease(textOnly, page, locale), textOnly);
+  assert.equal(validateDemoContent({ ...content, audioStatus: 'unavailable' }, textOnly, locale).audioStatus,
+    'unavailable');
+  assert.throws(() => validateDemoRelease({ ...textOnly, audioUrl: release.audioUrl }, page, locale));
+  assert.throws(() => validateDemoRelease({ ...textOnly, audioVariants: [{ id: 'default' }] }, page, locale));
+  assert.throws(() => validateDemoContent(content, textOnly, locale));
+  assert.throws(() => validateDemoRelease({ ...textOnly, targetLocale: 'en' }, page, locale));
+});
+
 test('verified fetch rejects changed bytes, oversize assets, and redirects', async () => {
   const path = '/content/2026-09-20-lion-of-judah-poc/en.json';
   const bytes = await bytesAt(path);
