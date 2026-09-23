@@ -31,8 +31,9 @@ const interfaceCopy = {
   }
 };
 
-// Interface language controls labels only. Sermon text and its matching audio
-// stay in the selected content locale, independently of this preference.
+// Interface language controls labels only. It supplies the default content
+// locale when opening a sermon without an explicit content choice; changing
+// the interface never interrupts the current sermon or audio.
 const interfaceLocales = {
   zh: { native: "简体中文", code: "中", htmlLang: "zh-Hans" },
   en: { native: "English", code: "EN", htmlLang: "en" },
@@ -48,11 +49,11 @@ const extraCopy = {
   vi: { brandName: "Đồng Hành", brandDetail: "Nghe bài giảng", edition: "DEV · POC TỰ ĐỘNG", week: "Tuần này và trước đây", weekHint: "Chọn ngày bài giảng", more: "Thêm", sourceToggle: "Bản gốc tiếng Anh", sourceReference: "Tham khảo bản gốc tiếng Anh", transcriptHint: "Chạm mốc thời gian để chuyển", showTranscript: "Toàn bộ phụ đề", captionNote: "Phụ đề theo âm thanh · Dev POC", footerBrand: "Đồng Hành · Nghe bài giảng", footerMotto: "Cùng lắng nghe và thấu hiểu.", interfaceLabel: "Chọn ngôn ngữ ứng dụng", close: "Đóng", ready: "Âm thanh đã sẵn sàng", loading: "Đang chuẩn bị âm thanh", playing: "Đang phát", paused: "Đã tạm dừng", play: "Phát", pause: "Tạm dừng", backHint: "Chỉnh lùi", back: "Lùi 5 giây", forwardHint: "Chỉnh tới", forward: "Tới 5 giây", current: "Câu hiện tại", precision: "Tìm / chỉnh vị trí", alignment: "POC này chưa có dữ liệu căn chỉnh tự động tại chỗ", progress: "Tiến trình phát", sourceMedia: "Bản gốc tiếng Anh · âm thanh gốc", targetMedia: "Bản dịch máy · giọng nhân bản", sourceStatus: "Bản gốc tham khảo", screened: "Máy đã kiểm tra", needsReview: "Cần người kiểm tra" }
 };
 const statusCopy = {
-  zh: { sourceText: "英文来源 · 边界待复核", sourceAudio: "讲员原始音频", passText: "机器审核通过 · 待人工", passAudio: "机器筛查 · 待听审", pending: "机器复筛待完成 · 待听审", review: "ASR 筛查未达门线 · 需复核", themeLight: "浅色", themeDark: "深色", oneWeek: "当前只有一个 Dev POC 片段" },
-  en: { sourceText: "English source · boundary review pending", sourceAudio: "Original speaker audio", passText: "Machine pass · human review pending", passAudio: "Machine screened · listening pending", pending: "Machine screening pending · listening pending", review: "ASR below threshold · review required", themeLight: "Light", themeDark: "Dark", oneWeek: "One Dev POC fragment is available" },
-  ko: { sourceText: "영어 원문 · 경계 검토 대기", sourceAudio: "설교자 원본 오디오", passText: "기계 검토 통과 · 사람 검토 대기", passAudio: "기계 검사 · 청취 검토 대기", pending: "기계 재검사 대기 · 청취 검토 대기", review: "ASR 기준 미달 · 재검토 필요", themeLight: "밝게", themeDark: "어둡게", oneWeek: "현재 Dev POC 설교 한 편만 제공됩니다" },
-  es: { sourceText: "Fuente inglesa · límites pendientes", sourceAudio: "Audio original del predicador", passText: "Revisión automática · revisión humana pendiente", passAudio: "Audio revisado por máquina · escucha pendiente", pending: "Revisión automática pendiente · escucha pendiente", review: "ASR bajo el umbral · requiere revisión", themeLight: "Claro", themeDark: "Oscuro", oneWeek: "Hay un solo fragmento Dev POC" },
-  vi: { sourceText: "Bản gốc tiếng Anh · chờ kiểm tra mốc", sourceAudio: "Âm thanh gốc của người giảng", passText: "Máy đã kiểm tra · chờ người duyệt", passAudio: "Máy đã kiểm tra · chờ nghe duyệt", pending: "Chờ máy kiểm tra lại · chờ nghe duyệt", review: "ASR dưới ngưỡng · cần kiểm tra", themeLight: "Sáng", themeDark: "Tối", oneWeek: "Hiện chỉ có một bài giảng Dev POC" }
+  zh: { sourceText: "英文来源 · 边界待复核", sourceAudio: "讲员原始音频", passText: "机器审核通过 · 待人工", passAudio: "机器筛查 · 待听审", pending: "机器复筛待完成 · 待听审", review: "ASR 筛查未达门线 · 需复核", unverified: "机器筛查未通过或状态未知 · 需复核", textPending: "文字状态待核实 · 不可发布", themeLight: "浅色", themeDark: "深色", oneWeek: "当前只有一个 Dev POC 片段" },
+  en: { sourceText: "English source · boundary review pending", sourceAudio: "Original speaker audio", passText: "Machine pass · human review pending", passAudio: "Machine screened · listening pending", pending: "Machine screening pending · listening pending", review: "ASR below threshold · review required", unverified: "Screening failed or unknown · review required", textPending: "Text status unverified · not publishable", themeLight: "Light", themeDark: "Dark", oneWeek: "One Dev POC fragment is available" },
+  ko: { sourceText: "영어 원문 · 경계 검토 대기", sourceAudio: "설교자 원본 오디오", passText: "기계 검토 통과 · 사람 검토 대기", passAudio: "기계 검사 · 청취 검토 대기", pending: "기계 재검사 대기 · 청취 검토 대기", review: "ASR 기준 미달 · 재검토 필요", unverified: "검사 실패 또는 상태 불명 · 검토 필요", textPending: "텍스트 상태 미확인 · 게시 불가", themeLight: "밝게", themeDark: "어둡게", oneWeek: "현재 Dev POC 설교 한 편만 제공됩니다" },
+  es: { sourceText: "Fuente inglesa · límites pendientes", sourceAudio: "Audio original del predicador", passText: "Revisión automática · revisión humana pendiente", passAudio: "Audio revisado por máquina · escucha pendiente", pending: "Revisión automática pendiente · escucha pendiente", review: "ASR bajo el umbral · requiere revisión", unverified: "Revisión fallida o desconocida · comprobar", textPending: "Estado del texto sin verificar · no publicable", themeLight: "Claro", themeDark: "Oscuro", oneWeek: "Hay un solo fragmento Dev POC" },
+  vi: { sourceText: "Bản gốc tiếng Anh · chờ kiểm tra mốc", sourceAudio: "Âm thanh gốc của người giảng", passText: "Máy đã kiểm tra · chờ người duyệt", passAudio: "Máy đã kiểm tra · chờ nghe duyệt", pending: "Chờ máy kiểm tra lại · chờ nghe duyệt", review: "ASR dưới ngưỡng · cần kiểm tra", unverified: "Kiểm tra thất bại hoặc không rõ · cần xem lại", textPending: "Trạng thái văn bản chưa xác minh · chưa thể phát hành", themeLight: "Sáng", themeDark: "Tối", oneWeek: "Hiện chỉ có một bài giảng Dev POC" }
 };
 Object.assign(interfaceCopy, {
   ko: { ...interfaceCopy.en, brand: "다국어 설교", languageCard: "설교 언어", mockTitle: "Layer 2 + Layer 3 POC", mockBody: "기계 번역과 복제 음성은 개발용이며 사람의 검토가 필요합니다.", sourceTitle: "Layer 1 영어 원문", sourceBody: "영어 원문과 원본 오디오는 번역과 복제 음성의 참고 자료입니다.", tabs: ["듣기", "전체 자막", "개요"], now: "현재 문장", transcript: "전체 자막", outline: "설교 개요", playerNote: "기계 생성 음성입니다. 공식 더빙이 아니며 청취 검토가 필요합니다.", sourcePlayerNote: "원본 영어 오디오입니다. 원문 구간은 아직 기계 검토 상태입니다.", release: "릴리스 패키지 상태", text: "텍스트", audio: "오디오", dialogTitle: "설교 언어 선택", dialogHint: "앱 언어, 설교 언어, 오디오 언어는 별도로 관리됩니다.", dialogFoot: "영어는 원문 참고입니다. 네 가지 번역은 개발 POC이며 베트남어 ASR은 기준 미달입니다.", footer: "Mariners Church와 무관한 개인 개발 프로젝트입니다.", audioVariant: "검토용 오디오 버전", capabilities: "기계 번역 · 예상 자막 · 복제 음성", sourceCapabilities: "영어 원문 · 원본 오디오", loadError: "Dev 콘텐츠를 불러올 수 없습니다" },
@@ -62,7 +63,7 @@ Object.assign(interfaceCopy, {
 
 const state = {
   catalog: null, page: null, locale: null, release: null, content: null, audioVariant: null,
-  ui: interfaceLocales[localStorage.getItem("tongxing-dev-ui")] ? localStorage.getItem("tongxing-dev-ui") : "zh", activeTab: "listen", showSource: false, contentOverride: false
+  ui: interfaceLocales[localStorage.getItem("tongxing-dev-ui")] ? localStorage.getItem("tongxing-dev-ui") : "zh", activeTab: "listen", showSource: false
 };
 const $ = (id) => document.getElementById(id);
 const audio = $("audio");
@@ -133,7 +134,6 @@ async function selectLocale(locale, { navigate = true, manual = false } = {}) {
     || variants[0];
   loadAudioVariant(variant, { remember: false });
   if (manual) {
-    state.contentOverride = true;
     localStorage.setItem(`tongxing-dev-content-override-${state.page.id}`, locale);
   }
   if (navigate) history.pushState({ locale }, "", release.pageUrl);
@@ -220,9 +220,13 @@ function renderInterfaceCopy() {
   $("contentStatusLabel").textContent = copy.text;
   $("audioStatusLabel").textContent = copy.audio;
   const statuses = statusCopy[state.ui];
-  const screening = state.release?.machineScreening?.status;
-  $("contentStatus").textContent = state.locale === "en" ? statuses.sourceText : statuses.passText;
-  $("audioStatus").textContent = state.locale === "en" ? statuses.sourceAudio : screening === "requires_review" ? statuses.review : screening === "pending_for_default_audio_variant" ? statuses.pending : statuses.passAudio;
+  const screening = state.audioVariant?.machineScreeningStatus || state.release?.machineScreening?.status;
+  $("contentStatus").textContent = state.locale === "en" ? statuses.sourceText
+    : state.release?.contentStatus === "machine_review_pass_human_review_pending" ? statuses.passText : statuses.textPending;
+  $("audioStatus").textContent = state.locale === "en" ? statuses.sourceAudio
+    : screening === "pass" ? statuses.passAudio
+    : screening === "requires_review" ? statuses.review
+    : ["pending_for_default_audio_variant", "pending_for_this_audio_variant"].includes(screening) ? statuses.pending : statuses.unverified;
   $("languageDialogTitle").textContent = copy.dialogTitle;
   $("languageDialogHint").textContent = copy.dialogHint;
   $("languageDialogFoot").textContent = copy.dialogFoot;
@@ -270,10 +274,7 @@ function renderInterfaceLanguageMenu() {
       localStorage.setItem("tongxing-dev-ui", locale);
       $("interfaceLanguageMenu").hidden = true;
       $("interfaceLanguage").setAttribute("aria-expanded", "false");
-      const contentLocale = locale === "zh" ? "zh-Hans" : locale;
-      if (state.page?.targets[contentLocale] && !state.contentOverride) {
-        selectLocale(contentLocale).catch(showError);
-      } else if (state.content) render(); else renderInterfaceCopy();
+      if (state.content) render(); else renderInterfaceCopy();
       $("interfaceLanguage").focus();
     });
     return button;
@@ -482,7 +483,6 @@ async function init() {
     const requested = routeLocale();
     const saved = localStorage.getItem(`tongxing-dev-content-override-${state.page.id}`);
     const preferred = state.ui === "zh" ? "zh-Hans" : state.ui;
-    state.contentOverride = Boolean(state.page.targets[saved] || (state.page.targets[requested] && requested !== preferred));
     const locale = state.page.targets[requested] ? requested : state.page.targets[saved] ? saved : state.page.targets[preferred] ? preferred : state.page.defaultTargetLocale;
     await selectLocale(locale, { navigate: location.pathname !== "/" });
   } catch (error) {
