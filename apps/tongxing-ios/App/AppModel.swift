@@ -222,21 +222,25 @@ final class AppModel: ObservableObject {
         guard let multilingualRepository else { return }
         do {
             let result = try await multilingualRepository.loadCatalog()
+            let previousContentLocale = selectedContentLocale
             multilingualCatalog = result.catalog
             devDemoCatalog = nil
             selectedDevPreviewURL = nil
             multilingualNotice = result.warning
             resolveContentLanguage(pageID: pageID)
+            await restoreChinesePlaybackIfNeeded(from: previousContentLocale)
             await loadSelectedLanguagePage()
         } catch {
             #if DEBUG
             if let devDemoRepository,
                let catalog = try? await devDemoRepository.loadCatalog() {
+                let previousContentLocale = selectedContentLocale
                 multilingualCatalog = nil
                 devDemoCatalog = catalog
                 selectedContentLocale = "zh-Hans"
                 selectedPublishedPage = nil
                 multilingualNotice = "Firebase Dev 演示内容未经人工审核，仅供开发预览。"
+                await restoreChinesePlaybackIfNeeded(from: previousContentLocale)
                 return
             }
             #endif
@@ -246,6 +250,12 @@ final class AppModel: ObservableObject {
             // multilingual catalog has not been published to this environment.
             multilingualNotice = "此环境尚未提供多语言发布目录，继续显示当前中文版本。"
         }
+    }
+
+    private func restoreChinesePlaybackIfNeeded(from previousContentLocale: String) async {
+        guard previousContentLocale != "zh-Hans", selectedContentLocale == "zh-Hans",
+              let selectedWeek else { return }
+        await select(week: selectedWeek, track: selectedTrack, force: true)
     }
 
     func selectContentLanguage(_ locale: String) async -> Bool {
@@ -493,7 +503,8 @@ final class AppModel: ObservableObject {
                 self.downloadTasks[key] = nil
                 // Switch automatically only before listening starts. A completed
                 // download must never reset or interrupt an active audio source.
-                if self.selectionKey == key && !self.playback.hasUserInteraction
+                if self.selectionKey == key && !self.showingPublishedLanguagePage
+                    && !self.playback.hasUserInteraction
                     && self.playback.resumePosition == nil, let currentWeek = self.selectedWeek,
                     let currentTrack = self.selectedTrack {
                     await self.select(week: currentWeek, track: currentTrack, force: true)

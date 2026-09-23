@@ -87,6 +87,38 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertTrue(app.buttons["playback-toggle"].exists)
     }
 
+    func testCompletedChineseDownloadDoesNotReplacePublishedLanguagePage() throws {
+        let app = launchFixture(delayDownload: true)
+        let download = app.buttons["download-audio"]
+        try reveal(download, in: app, direction: .up)
+        download.tap()
+        app.buttons["choose-content-language"].tap()
+        let korean = app.buttons["content-language-ko"]
+        XCTAssertTrue(korean.waitForExistence(timeout: 5))
+        korean.tap()
+        XCTAssertTrue(app.webViews.staticTexts["한국어 검증 페이지"].waitForExistence(timeout: 10))
+        app.buttons["完成"].tap()
+        try waitFor(app.buttons["open-published-language-page"], "exists == true")
+        Thread.sleep(forTimeInterval: 4)
+        XCTAssertTrue(app.buttons["open-published-language-page"].exists)
+        XCTAssertFalse(app.buttons["playback-toggle"].exists)
+    }
+
+    func testWithdrawingPublishedLanguageRestoresChinesePlayback() throws {
+        let app = launchFixture(revokeKoreanOnRefresh: true)
+        try downloadSelection(in: app)
+        app.buttons["choose-content-language"].tap()
+        let korean = app.buttons["content-language-ko"]
+        XCTAssertTrue(korean.waitForExistence(timeout: 5))
+        korean.tap()
+        XCTAssertTrue(app.webViews.staticTexts["한국어 검증 페이지"].waitForExistence(timeout: 10))
+        app.buttons["完成"].tap()
+        app.buttons["refresh-multilingual-catalog"].tap()
+        XCTAssertTrue(element("sermon-title", in: app).waitForExistence(timeout: 10))
+        try waitFor(app.buttons["playback-toggle"], "enabled == true")
+        XCTAssertFalse(app.buttons["open-published-language-page"].exists)
+    }
+
     func testUnavailableAlignmentExplainsReason() throws {
         let app = launchFixture()
         let alignment = app.buttons["align-live-audio"]
@@ -336,12 +368,15 @@ final class ListeningFlowUITests: XCTestCase {
     }
 
     private func launchFixture(largeText: Bool = false, publishedEnglish: Bool = false,
-                               devPreview: Bool = false) -> XCUIApplication {
+                               devPreview: Bool = false, delayDownload: Bool = false,
+                               revokeKoreanOnRefresh: Bool = false) -> XCUIApplication {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing"] + (largeText ? ["--ui-testing-large-text"] : [])
             + (publishedEnglish ? ["--ui-testing-published-english"] : [])
             + (devPreview ? ["--ui-testing-dev-preview"] : [])
+            + (delayDownload ? ["--ui-testing-delay-download"] : [])
+            + (revokeKoreanOnRefresh ? ["--ui-testing-revoke-korean-on-refresh"] : [])
         app.launchArguments += ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
         app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
         app.launchEnvironment["TONGXING_UI_TEST_RUN_ID"] = UUID().uuidString

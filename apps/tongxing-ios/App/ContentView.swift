@@ -255,6 +255,8 @@ struct ContentView: View {
             }
             Button(localization.text("选择证道语言")) { sheet = .languages }
                 .accessibilityIdentifier("choose-content-language")
+            Button(localization.text("刷新目录")) { Task { await model.refresh() } }
+                .accessibilityIdentifier("refresh-multilingual-catalog")
             Text(localization.text("当前为独立语言页面；中文播放器已暂停。"))
                 .font(.footnote).foregroundStyle(.secondary)
         }

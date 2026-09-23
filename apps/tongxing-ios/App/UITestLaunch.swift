@@ -173,6 +173,9 @@ private enum UITestContent {
 /// Offline launch reports a real URLSession error; the production repositories
 /// must recover from their own previously written cache and verified audio.
 private final class UITestContentProtocol: URLProtocol {
+    private static let requestLock = NSLock()
+    private static var multilingualRequestCount = 0
+
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
@@ -185,9 +188,29 @@ private final class UITestContentProtocol: URLProtocol {
             client?.urlProtocol(self, didFailWithError: URLError(.notConnectedToInternet))
             return
         }
-        guard let data = UITestContent.responses[url.path] else {
+        guard var data = UITestContent.responses[url.path] else {
             client?.urlProtocol(self, didFailWithError: URLError(.fileDoesNotExist))
             return
+        }
+        if url.path == "/multilingual.json",
+           ProcessInfo.processInfo.arguments.contains("--ui-testing-revoke-korean-on-refresh") {
+            Self.requestLock.lock()
+            Self.multilingualRequestCount += 1
+            let isRefresh = Self.multilingualRequestCount > 1
+            Self.requestLock.unlock()
+            if isRefresh,
+               var document = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+               var pages = document["pages"] as? [[String: Any]], !pages.isEmpty,
+               var targets = pages[0]["targets"] as? [String: Any] {
+                targets.removeValue(forKey: "ko")
+                pages[0]["targets"] = targets
+                document["pages"] = pages
+                data = (try? JSONSerialization.data(withJSONObject: document, options: [.sortedKeys])) ?? data
+            }
+        }
+        if url.path.hasPrefix("/media/"),
+           ProcessInfo.processInfo.arguments.contains("--ui-testing-delay-download") {
+            Thread.sleep(forTimeInterval: 3)
         }
         let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "HTTP/1.1",
             headerFields: ["Content-Length": String(data.count),
