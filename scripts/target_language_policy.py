@@ -65,7 +65,9 @@ def validate_policy(policy: dict[str, Any], *, series_table: Path = SERIES_TABLE
         names = [entry["source"] for entry in terms]
         if len(names) != len(set(names)):
             raise ValueError(f"Duplicate {kind} source term")
-        if any(entry["reviewStatus"] != "pending" and not entry["target"] for entry in terms):
+        if any(entry["reviewStatus"] != "pending"
+               and (not isinstance(entry["target"], str) or not entry["target"].strip())
+               for entry in terms):
             raise ValueError(f"Reviewed {kind} term lacks target text")
     if policy["translator"]["promptVersion"] == policy["reviewer"]["promptVersion"]:
         raise ValueError("Translator and reviewer need independent prompt versions")
