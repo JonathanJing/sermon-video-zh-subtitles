@@ -84,10 +84,21 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
                 f"Cached {role} response belongs to different inputs: {output}")
         return saved
     marker = output.with_suffix(".started.json")
-    require(not marker.exists(), f"Uncertain paid {role} call; inspect before retry: {marker}")
-    save_new(marker, {"role": role, "payloadSha256": fingerprint,
-                      "status": "started_response_unconfirmed"})
-    response = caller(api_key, payload)
+    raw_path = output.with_suffix(".raw.json")
+    if raw_path.exists():
+        raw = producer._load(raw_path)
+        require(raw.get("payloadSha256") == fingerprint
+                and isinstance(raw.get("response"), dict),
+                f"Saved raw {role} response belongs to different inputs: {raw_path}")
+        response = raw["response"]
+    else:
+        require(not marker.exists(), f"Uncertain paid {role} call; inspect before retry: {marker}")
+        save_new(marker, {"role": role, "payloadSha256": fingerprint,
+                          "status": "started_response_unconfirmed"})
+        response = caller(api_key, payload)
+        # Persist the actual completed API response before any identity, finish, or
+        # JSON checks; an invalid paid response must remain inspectable and reusable.
+        save_new(raw_path, {"payloadSha256": fingerprint, "response": response})
     require(isinstance(response, dict) and isinstance(response.get("id"), str)
             and response["id"] and response.get("model") == model,
             f"{role} response lacks exact model and request identity")
@@ -101,7 +112,7 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
     saved = {"payloadSha256": fingerprint, "requestId": response["id"],
              "model": model, "result": parsed}
     save_new(output, saved)
-    marker.unlink()
+    marker.unlink(missing_ok=True)
     return saved
 
 

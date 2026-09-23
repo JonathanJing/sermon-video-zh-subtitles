@@ -111,6 +111,33 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
                         "fixture-key", self.fake_call)
         self.assertFalse(self.calls)
 
+    def test_invalid_completed_response_is_saved_before_validation(self):
+        f = self.fixture
+        def malformed(api_key, payload):
+            response = self.fake_call(api_key, payload)
+            response["model"] = "unexpected-model"
+            return response
+        with self.assertRaisesRegex(ValueError, "exact model"):
+            subject.run(f.source, f.anchor, f.policy, self.out,
+                        "fixture-key", malformed)
+        raw_path = self.out / "group-0001-astra.raw.json"
+        self.assertTrue(raw_path.exists())
+        self.assertEqual(json.loads(raw_path.read_text())["response"]["id"], "response-1")
+        self.calls.clear()
+        with self.assertRaisesRegex(ValueError, "exact model"):
+            subject.run(f.source, f.anchor, f.policy, self.out,
+                        "fixture-key", self.fake_call)
+        self.assertFalse(self.calls)
+
+    def test_saved_raw_response_can_rebuild_validated_cache_without_api(self):
+        f = self.fixture
+        subject.run(f.source, f.anchor, f.policy, self.out, "fixture-key", self.fake_call)
+        (self.out / "group-0001-astra.json").unlink()
+        self.calls.clear()
+        subject.run(f.source, f.anchor, f.policy, self.out, "fixture-key", self.fake_call)
+        self.assertFalse(self.calls)
+        self.assertTrue((self.out / "group-0001-astra.json").exists())
+
     def test_stale_group_cache_and_source_change_fail_closed(self):
         f = self.fixture
         subject.run(f.source, f.anchor, f.policy, self.out, "fixture-key", self.fake_call)

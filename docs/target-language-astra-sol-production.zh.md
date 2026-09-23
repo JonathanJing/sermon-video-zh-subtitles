@@ -25,7 +25,7 @@ python scripts/run_target_language_models.py \
   --policy "$POLICY" --plugin "$PLUGIN" --out-dir "$OUT"
 ```
 
-执行器从进程环境读取 `OPENAI_API_KEY`，在付费请求前验证来源、policy、插件实现 hash、模型角色和组覆盖。每组先保存 Astra 响应，再把英文、Astra 译稿及相同 policy 交给 Sol；保存 Sol 的修订文本、四项语义检查和证据。相同身份重跑复用已完成响应。若请求已经开始但响应未持久化，保留 `*.started.json` 并停止自动重试；人工核实服务端状态后在**新目录**恢复，避免不明重复付费或静默覆盖。
+执行器从进程环境读取 `OPENAI_API_KEY`，在付费请求前验证来源、policy、插件实现 hash、模型角色和组覆盖。每组先保存 Astra 响应，再把英文、Astra 译稿及相同 policy 交给 Sol；保存 Sol 的修订文本、四项语义检查和证据。API 返回后先保存 `*.raw.json`，再校验模型身份、完成状态及 JSON 内容；即使校验失败，已付费响应仍可查看。相同身份重跑复用已完成响应，并可从已保存的原始响应重建校验缓存。若请求已经开始但响应未持久化，保留 `*.started.json` 并停止自动重试；人工核实服务端状态后在**新目录**恢复，避免不明重复付费或静默覆盖。
 
 Sol 对任何一组报告 fail、问题或不确定性时，停止生成 `evidence.json`，保留该组响应供人工修订与新 revision。结构、覆盖或模型身份异常同样停止。`evidence.json` 只表示模型复核通过，仍须运行固定插件和候选准入器：
 
