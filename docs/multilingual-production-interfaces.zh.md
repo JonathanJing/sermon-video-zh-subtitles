@@ -90,7 +90,7 @@ Target-Language Candidate + Target-Language Audio Package
 ## 当前实现边界
 
 - Layer 1：确定性锚点和机器裁判代码可运行；无机器裁判且无正式英文人工收据的干净 shadow 输入停在 `waiting_machine_judge`。机器裁判通过只允许 Layer 2 shadow，正式 `ready_for_translation` 仍需英文人工收据。
-- Layer 2：中文 legacy runner 可工作；`zh-Hans`、`ko`、`es`、`vi` 有同源六句 shadow 候选及机器复核，人工翻译批准和通用正式 producer 尚未完成。
+- Layer 2：中文 legacy runner 可工作；`zh-Hans`、`ko`、`es`、`vi` 有同源六句 shadow 候选及机器复核。通用模型执行器、语言插件和候选准入器已实现，新生产策略采用 Astra 初译与 Sol 逐组独立复核；每次正式运行仍需就绪的来源、冻结 policy、逐组机器证据及独立人工批准，代码可运行不等于整篇生产验收。
 - Layer 3：中文 legacy TTS／同步可工作；四语片段 voice/ASR 与音频包 POC 已运行，使用 POC speech job 和估算字幕，不能越过 Layer 2 人工门禁。通用 renderer、同步器、语义校验器及正式 Audio Package producer 尚未完成。
 - Layer 4：Dev 已有多语言 catalog 构建和演示发布路径；正式 Target-Language Release Package producer、逐语言发布及设备／现场验收尚未完成。
 - Canonical English Content 是从英文事实派生的页面内容输入，可以作为 English Source Package 的可选绑定；它不是英文逐字稿，也不能替代 Layer 1 审核。

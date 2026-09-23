@@ -7,13 +7,13 @@
     "promptVersion": "sermon-target-language-translate-es-v1"
   },
   "reviewer": {
-    "model": "gpt-6-astra",
+    "model": "gpt-6-sol",
     "reasoningEffort": "medium",
-    "promptVersion": "sermon-target-language-review-es-v1"
+    "promptVersion": "sermon-target-language-review-es-v2"
   },
   "batching": {
-    "batchSize": 15,
-    "workers": 3
+    "batchSize": 1,
+    "workers": 1
   },
   "targetLocale": "es",
   "terminology": {
@@ -76,11 +76,11 @@
   },
   "componentSha256": {
     "translator": "a9ba083d36c3f8041868ac543cb727bac116129b14e58158b5244ee43e4a5974",
-    "reviewer": "4bbe265b1a7e990bdbd67302d17e2945ffaa597ac8f55875279a92f5b37bdb40",
+    "reviewer": "eae4184515a72db079a9b5291cde2f6b9410e9d2835f37a36e83b37c06e0f5cc",
     "terminology": "baffdeabe1751fa5880611b831669224c869e4107d76e38dddbab84464a7c2b0",
     "scripture": "a170308dcc6aa17f60e971a8ae44b5976d69946224a227ef854de26891ab9786",
     "languageReview": "fb731971eafac6b92a31d95d818773a1f2dd1f27971dbcc46a75da9e27e6fd18",
     "formatting": "ef06da39058c88fd1eaab970773019c9f68c7732089f0e1e6b9bddead8524958",
-    "batching": "2fb031978de2b7656b3151b490cfc5f81ddba0946a3c680598ef79391c46fd5b"
+    "batching": "e07870c4a83888b3266158ceee0af1e1ef1d34caf1b0f73742ad5f4d05914059"
   }
 }
