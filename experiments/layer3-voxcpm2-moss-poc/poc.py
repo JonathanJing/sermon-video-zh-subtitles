@@ -193,16 +193,19 @@ def evaluate(plan, run_dir):
                 "detectedSilences": silences, "closest": closest,
                 "absoluteErrorSeconds": None if closest is None else abs(closest["durationSeconds"] - spec["expectedPauseSeconds"]),
             }
+        audio_hash = sha256(spec["path"])
+        asr_screen = asr_by_key.get(key, {})
+        speaker_screen = speaker_by_key.get(key, {})
         rows.append({
             "sampleId": spec["sampleId"], "sourceUnitId": spec["sourceUnitId"],
             "category": spec["category"], "targetLocale": spec["targetLocale"], "variant": spec["variant"],
-            "audio": {"path": str(spec["path"].relative_to(run_dir)), "sha256": sha256(spec["path"]), **media},
+            "audio": {"path": str(spec["path"].relative_to(run_dir)), "sha256": audio_hash, **media},
             "targetDurationSeconds": target,
             "durationErrorSeconds": error,
             "durationAbsoluteErrorSeconds": None if error is None else abs(error),
             "durationTarget": "not_applicable" if error is None else ("pass" if abs(error) <= plan["evaluation"]["durationAbsoluteErrorTargetSeconds"] else "fail"),
-            "contentAsrScreen": asr_by_key.get(key, {"status": "pending"}),
-            "speakerSimilarityScreen": speaker_by_key.get(key, {"status": "pending"}),
+            "contentAsrScreen": asr_screen if asr_screen.get("audioSha256") == audio_hash and asr_screen.get("status") == "screened" else {"status": "pending"},
+            "speakerSimilarityScreen": speaker_screen if speaker_screen.get("audioSha256") == audio_hash and speaker_screen.get("status") == "screened" else {"status": "pending"},
             "explicitPauseScreen": pause_screen,
             "humanListening": "pending",
         })

@@ -27,9 +27,23 @@ def main():
     candidates = []
     for engine in ("qwen", "voxcpm2"):
         path = args.run_dir / f"{engine}.wav"
+        manifest_path = args.run_dir / f"{engine}-manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        audio_hash = helper.sha256(path)
+        if (
+            manifest.get("schemaVersion") != "sermon-layer3-qwen-voxcpm2-long-ab-render-v1"
+            or manifest.get("sampleId") != plan["passage"]["sampleId"]
+            or manifest.get("engine") != engine
+            or manifest.get("textSha256") != plan["passage"]["textSha256"]
+            or manifest.get("audioSha256") != audio_hash
+            or Path(manifest.get("audio", "")).name != path.name
+            or manifest.get("productionEligible") is not False
+            or manifest.get("humanApproval") is not False
+        ):
+            raise ValueError(f"render manifest does not match plan or audio: {manifest_path}")
         media = helper.probe_audio(path)
         candidates.append({
-            "engine": engine, "audio": path.name, "audioSha256": helper.sha256(path), **media,
+            "engine": engine, "audio": path.name, "audioSha256": audio_hash, **media,
         })
     blind = []
     for index, row in enumerate(sorted(candidates, key=lambda value: value["audioSha256"]), start=1):

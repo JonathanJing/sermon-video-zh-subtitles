@@ -163,23 +163,33 @@ def evaluate(plan, run_dir):
         media = probe(path)
         error = media["durationSeconds"] - unit["targetDurationSeconds"]
         key = (unit["sourceUnitId"], variant)
+        audio_hash = sha256(path)
+        asr_screen = asr_by_key.get(key, {})
+        speaker_screen = speaker_by_key.get(key, {})
         rows.append({
             "sourceUnitId": unit["sourceUnitId"],
             "variant": variant,
-            "audio": {"path": str(path.relative_to(run_dir)), "sha256": sha256(path), **media},
+            "audio": {"path": str(path.relative_to(run_dir)), "sha256": audio_hash, **media},
             "targetDurationSeconds": unit["targetDurationSeconds"],
             "durationErrorSeconds": error,
             "durationAbsoluteErrorSeconds": abs(error),
             "durationTarget": "pass" if abs(error) <= plan["evaluation"]["durationAbsoluteErrorTargetSeconds"] else "fail",
-            "contentAsrScreen": asr_by_key.get(key, {"status": "pending"}),
-            "speakerSimilarityScreen": speaker_by_key.get(key, {"status": "pending"}),
+            "contentAsrScreen": asr_screen if asr_screen.get("audioSha256") == audio_hash and asr_screen.get("status") == "screened" else {"status": "pending"},
+            "speakerSimilarityScreen": speaker_screen if speaker_screen.get("audioSha256") == audio_hash and speaker_screen.get("status") == "screened" else {"status": "pending"},
             "humanListening": "pending",
         })
-    expected = 6 + 2 * 2
+    required = {(unit["sourceUnitId"], "qwen_sft_unit") for unit in plan["units"]}
+    required.update(
+        (unit["sourceUnitId"], variant)
+        for unit in plan["units"] if unit.get("challenger")
+        for variant in ("auk_zero_shot", "qwen_then_auk_speed_emphasis")
+    )
+    observed = {(row["sourceUnitId"], row["variant"]) for row in rows}
+    expected = len(required)
     return {
         "schemaVersion": "sermon-layer3-qwen-auk-poc-evaluation-v1",
         "scope": plan["scope"],
-        "status": "machine_checks_complete_human_listening_pending" if len(rows) >= expected and all(r["contentAsrScreen"].get("status") != "pending" and r["speakerSimilarityScreen"].get("status") != "pending" for r in rows) else "partial",
+        "status": "machine_checks_complete_human_listening_pending" if required <= observed and all(r["contentAsrScreen"].get("status") != "pending" and r["speakerSimilarityScreen"].get("status") != "pending" for r in rows) else "partial",
         "candidateCount": len(rows),
         "expectedMinimumCandidateCount": expected,
         "results": rows,
