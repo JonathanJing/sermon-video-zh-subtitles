@@ -569,6 +569,27 @@ class AudioPackageTests(unittest.TestCase):
         self.assertEqual(decoded["codec"], "pcm_s16le")
         self.assertEqual(decoded["durationSeconds"], 0.7)
 
+    def test_compacted_units_require_matching_trim_evidence(self):
+        rel = "review/leading-silence-trim.json"
+        receipt = {"schemaVersion": "sermon-formal-leading-silence-trim-v1",
+                   "status": "measured_silence_removed", "targetLocale": "ko",
+                   "targetLanguageSpeechJobJsonSha256": subject.json_sha256(self.job),
+                   "sourceJobFileSha256": subject.file_sha256(self.paths["job"]),
+                   "humanListeningStatus": "pending",
+                   "units": [{"unitIndex": index, "textGroupId": row["textGroupId"],
+                              "audioSha256": row["audio"]["sha256"],
+                              "sourceAudioSha256": "a" * 64,
+                              "removedLeadingSeconds": 0.1}
+                             for index, row in enumerate(self.manifest["units"])]}
+        write_json(self.asset_root / rel, receipt)
+        self.manifest["silenceTrimEvidence"] = self.artifact(rel, json_artifact=True)
+        self.build()
+        receipt["units"][0]["audioSha256"] = "b" * 64
+        write_json(self.asset_root / rel, receipt)
+        self.manifest["silenceTrimEvidence"] = self.artifact(rel, json_artifact=True)
+        with self.assertRaisesRegex(ValueError, "trim evidence differs from unit"):
+            self.build()
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -69,6 +69,15 @@ class FormalRenderTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Cached render identity differs"):
             self.render_units()
 
+    def test_delivery_instruction_is_part_of_cached_audio_identity(self):
+        subject.render_units(self.context, self.paths, self.root,
+                             self.root / "checkpoint-map.json", synth_factory=FakeSynth,
+                             instruct="Speak briskly but naturally.")
+        with self.assertRaisesRegex(ValueError, "Cached render identity differs"):
+            subject.render_units(self.context, self.paths, self.root,
+                                 self.root / "checkpoint-map.json", synth_factory=FakeSynth,
+                                 instruct="Speak slowly.")
+
     def test_tampered_audio_and_orphan_are_rejected(self):
         rows = self.render_units()
         (self.root / rows[0]["audio"]["path"]).write_bytes(b"tampered")

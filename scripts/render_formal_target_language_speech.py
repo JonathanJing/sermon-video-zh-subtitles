@@ -178,10 +178,12 @@ def checked_context(paths: dict[str, Path], checkpoint_map_path: Path,
 
 
 class QwenSynthesizer:
-    def __init__(self, checkpoint: Path, *, device: str, dtype: str, attention: str | None):
+    def __init__(self, checkpoint: Path, *, device: str, dtype: str,
+                 attention: str | None, instruct: str | None = None):
         import torch
         from qwen_tts import Qwen3TTSModel
         self.torch = torch
+        self.instruct = instruct
         kwargs: dict[str, Any] = {"device_map": device,
                                   "dtype": torch.bfloat16 if dtype == "bfloat16" else torch.float32}
         if attention:
@@ -192,14 +194,16 @@ class QwenSynthesizer:
         self.torch.manual_seed(seed)
         if self.torch.cuda.is_available():
             self.torch.cuda.manual_seed_all(seed)
-        wavs, sample_rate = self.model.generate_custom_voice(
-            text=text, language=language, speaker=speaker,
-            temperature=0.7, repetition_penalty=1.05, max_new_tokens=768)
+        kwargs = {"text": text, "language": language, "speaker": speaker,
+                  "temperature": 0.7, "repetition_penalty": 1.05, "max_new_tokens": 768}
+        if self.instruct:
+            kwargs["instruct"] = self.instruct
+        wavs, sample_rate = self.model.generate_custom_voice(**kwargs)
         return wavs[0], sample_rate
 
 
 def _intent(context: dict[str, Any], paths: dict[str, Path], index: int, *, seed: int,
-            dtype: str, attention: str | None) -> dict[str, Any]:
+            dtype: str, attention: str | None, instruct: str | None) -> dict[str, Any]:
     job, adapter = context["job"], context["adapter"]
     unit = job["units"][index]
     return {
@@ -220,6 +224,7 @@ def _intent(context: dict[str, Any], paths: dict[str, Path], index: int, *, seed
         "rendererSha256": identity.sha256(Path(__file__)),
         "seed": seed, "temperature": 0.7, "repetitionPenalty": 1.05,
         "maxNewTokens": 768, "dtype": dtype, "attention": attention,
+        "deliveryInstruction": instruct,
         "ratePolicy": "natural_no_time_stretch",
     }
 
@@ -247,6 +252,7 @@ def write_pcm16(path: Path, samples: Any, rate: int) -> None:
 def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                  checkpoint_map_path: Path, *, seed: int = 42, device: str = "cuda:0",
                  dtype: str = "bfloat16", attention: str | None = "sdpa",
+                 instruct: str | None = None,
                  synth_factory: Callable[..., Any] = QwenSynthesizer) -> list[dict[str, Any]]:
     job, adapter = context["job"], context["adapter"]
     model = None
@@ -256,7 +262,8 @@ def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
         receipt_path = root / f"receipts/unit-{index:04d}.json"
         intent_path = root / f"receipts/unit-{index:04d}.intent.json"
         commit_path = root / f"receipts/unit-{index:04d}.render.json"
-        expected = _intent(context, paths, index, seed=seed, dtype=dtype, attention=attention)
+        expected = _intent(context, paths, index, seed=seed, dtype=dtype,
+                           attention=attention, instruct=instruct)
         if intent_path.exists():
             require(package.read_object(intent_path) == expected,
                     f"Cached render identity differs: {unit['translationGroupId']}")
@@ -279,7 +286,7 @@ def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
             require(not wav_path.exists(), f"Uncommitted audio cannot be reused: {wav_path}")
             if model is None:
                 model = synth_factory(context["checkpoint"], device=device, dtype=dtype,
-                                      attention=attention)
+                                      attention=attention, instruct=instruct)
             wavs, rate = model(unit["text"], adapter["languageParameter"],
                                adapter["speakerKey"], seed=seed + index)
             wav_path.parent.mkdir(parents=True, exist_ok=True)
@@ -445,14 +452,15 @@ def render(paths: dict[str, Path], checkpoint_map_path: Path,
            operation_policies_path: Path, *, path_map_path: Path | None = None,
            seed: int = 42,
            device: str = "cuda:0", dtype: str = "bfloat16",
-           attention: str | None = "sdpa", policy: dict[str, float] | None = None,
+           attention: str | None = "sdpa", instruct: str | None = None,
+           policy: dict[str, float] | None = None,
            synth_factory: Callable[..., Any] = QwenSynthesizer) -> dict[str, Any]:
     if path_map_path is not None:
         materialize_path_map(paths["job"], path_map_path)
     context = checked_context(paths, checkpoint_map_path, operation_policies_path)
     root = paths["job"].parent.resolve()
     rows = render_units(context, paths, root, checkpoint_map_path, seed=seed,
-                        device=device, dtype=dtype, attention=attention,
+                        device=device, dtype=dtype, attention=attention, instruct=instruct,
                         synth_factory=synth_factory)
     return assemble(context, paths, root, rows, policy=policy)
 
@@ -475,6 +483,7 @@ def main() -> None:
     parser.add_argument("--dtype", choices=("bfloat16", "float32"), default="bfloat16")
     parser.add_argument("--attention", default="sdpa")
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--instruct", help="Frozen natural delivery instruction; never edits approved text")
     parser.add_argument("--reaction-lag-seconds", type=float, default=0.05)
     parser.add_argument("--inter-utterance-gap-seconds", type=float, default=0.05)
     parser.add_argument("--max-end-lag-seconds", type=float, default=8.0)
@@ -490,7 +499,8 @@ def main() -> None:
               "maxEndLagSeconds": args.max_end_lag_seconds}
     result = render(paths, args.checkpoint_map, args.audio_operation_policies,
                     path_map_path=args.path_map, seed=args.seed, device=args.device,
-                    dtype=args.dtype, attention=args.attention, policy=policy)
+                    dtype=args.dtype, attention=args.attention, instruct=args.instruct,
+                    policy=policy)
     print(json.dumps({"status": "candidate", "targetLocale": result["targetLocale"],
                       "renderManifest": str((paths["job"].parent / "render-manifest.json").resolve()),
                       "machineScreening": "not_run", "humanListeningReview": "pending"},

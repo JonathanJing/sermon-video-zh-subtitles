@@ -347,6 +347,28 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
         units.append({"textGroupId": group_id, "targetTextSha256": text_hash,
                       "audio": audio, "durationSeconds": round(duration, 6)})
         durations.append(duration)
+    if "silenceTrimEvidence" in manifest:
+        trim_artifact = checked_artifact(artifact_root, manifest["silenceTrimEvidence"],
+                                         json_artifact=True)
+        trim = read_object(Path(trim_artifact["path"]))
+        require(trim.get("schemaVersion") == "sermon-formal-leading-silence-trim-v1"
+                and trim.get("status") == "measured_silence_removed"
+                and trim.get("targetLocale") == locale
+                and trim.get("targetLanguageSpeechJobJsonSha256") == job_hash
+                and trim.get("sourceJobFileSha256") == file_sha256(paths["job"])
+                and trim.get("humanListeningStatus") == "pending"
+                and isinstance(trim.get("units"), list)
+                and len(trim["units"]) == len(units),
+                "Leading silence trim evidence differs from formal job")
+        for index, (entry, unit) in enumerate(zip(trim["units"], units)):
+            require(entry.get("unitIndex") == index
+                    and entry.get("textGroupId") == unit["textGroupId"]
+                    and entry.get("audioSha256") == unit["audio"]["sha256"]
+                    and isinstance(entry.get("sourceAudioSha256"), str)
+                    and len(entry["sourceAudioSha256"]) == 64
+                    and isinstance(entry.get("removedLeadingSeconds"), (int, float))
+                    and 0 <= entry["removedLeadingSeconds"] <= 0.75,
+                    f"Leading silence trim evidence differs from unit {index}")
     track = checked_artifact(artifact_root, manifest.get("track"))
     track_duration, _, _ = probe_audio(Path(track["path"]))
     schedule_artifact = checked_artifact(artifact_root, manifest.get("schedule"), json_artifact=True)

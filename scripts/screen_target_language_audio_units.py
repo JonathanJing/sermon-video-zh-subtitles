@@ -154,6 +154,10 @@ def main() -> None:
             "ASR receipt and screened manifest are immutable")
     require(args.out_receipt.resolve().is_relative_to(args.artifact_root.resolve()),
             "ASR receipt must live inside the renderer artifact root")
+    weights = args.model_path.resolve() / "model.safetensors"
+    require(weights.is_file()
+            and args.model_revision == f"model.safetensors:sha256:{file_sha(weights)}",
+            "ASR model revision differs from deployed weights")
     import soundfile as sf
     import torch
     from qwen_asr import Qwen3ASRModel
