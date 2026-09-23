@@ -5,6 +5,7 @@ import subprocess
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "configure_live_source_scheduler.py"
@@ -15,6 +16,10 @@ SPEC.loader.exec_module(mod)
 
 
 class ConfigureLiveSourceSchedulerTest(unittest.TestCase):
+    def test_default_supervisor_model_is_sol(self):
+        with patch.object(sys, "argv", [str(SCRIPT_PATH), "--project", "ai-for-god", "--service-url", "https://caption.example.test"]):
+            self.assertEqual(mod.parse_args().agent_model, "gpt-6-sol")
+
     def make_args(self, **overrides):
         values = {
             "project": "ai-for-god",

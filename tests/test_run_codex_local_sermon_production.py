@@ -13,6 +13,10 @@ from scripts import run_codex_local_sermon_production as mod
 
 
 class RunCodexLocalSermonProductionTest(unittest.TestCase):
+    def test_default_supervisor_model_is_sol(self):
+        with mock.patch.object(sys, "argv", ["run_codex_local_sermon_production.py"]):
+            self.assertEqual(mod.parse_args().model, "gpt-6-sol")
+
     def automation_args(self, root: Path) -> argparse.Namespace:
         return argparse.Namespace(
             sunday="2026-08-02",

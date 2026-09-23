@@ -95,7 +95,7 @@ shadow receipt 的 `ready_for_model_translation` 只表示自动锚点结构干�
 - artifact bucket：`sermon-zh-artifacts-ai-for-god`
 - OpenAI 与 YouTube Data API：通过 Secret Manager resource reference 读取
 - 本任务通知：命令中禁用 SendGrid，仅在 Codex 内报告；CLI 保留兼容配置，单独启用须有收件通知授权
-- Supervisor：`gpt-6-astra` / `medium`，默认 `--agent-backend agents-api`；显式 `sdk` 为人工选择的回退，不在 API 失败后自动切换
+- Supervisor 调度：`gpt-6-sol` / `medium`，默认 `--agent-backend agents-api`；显式 `sdk` 为人工选择的回退，不在 API 失败后自动切换。旧 Astra 会话需按原模型恢复，切换默认值不能跳过未决会话或工具。
 
 ## Agents API 会话与生产工具
 

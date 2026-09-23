@@ -1,6 +1,6 @@
 # Agents API：从生产到页面发行
 
-通过 `--release-workflow-config /absolute/path/release-workflow.json` 显式启用。未提供参数时，现有双 PDF Supervisor 的工具和完成判定保持原合同。扩展目前只支持 `--agent-backend agents-api`；保留现有 OpenAI 凭据、模型与 `environment: none`，不新增云端沙箱。
+通过 `--release-workflow-config /absolute/path/release-workflow.json` 显式启用。未提供参数时，现有双 PDF Supervisor 的工具和完成判定保持原合同。扩展目前只支持 `--agent-backend agents-api`；使用 Supervisor 当前配置的调度模型（默认 `gpt-6-sol`）、现有 OpenAI 凭据与 `environment: none`，不新增云端沙箱。
 
 ## 与四层生产合同的关系
 
