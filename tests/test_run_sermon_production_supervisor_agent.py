@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import hashlib
+import sys
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -10,6 +11,10 @@ from scripts import sermon_production_supervisor
 
 
 class RunSermonProductionSupervisorAgentTest(unittest.TestCase):
+    def test_default_supervisor_model_is_sol(self):
+        with patch.object(sys, "argv", ["run_sermon_production_supervisor_agent.py", "--sunday", "2026-09-20", "--state-file", "state.json"]):
+            self.assertEqual(mod.parse_args().model, "gpt-6-sol")
+
     def test_shadow_agent_exposes_only_read_tool(self):
         agent = mod.build_agent(model="gpt-6-astra", execute=False)
         self.assertEqual(agent.name, "Sermon Production Supervisor")

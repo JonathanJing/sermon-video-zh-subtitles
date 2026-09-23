@@ -40,7 +40,7 @@ def parse_args(argv=None):
     parser.add_argument("--youtube-api-key-secret", required=True)
     parser.add_argument("--youtube-cookies", type=Path)
     parser.add_argument("--glossary", type=Path)
-    parser.add_argument("--model", default="gpt-6-astra", help="PDF Supervisor model; generation models remain owned by its contract.")
+    parser.add_argument("--model", default="gpt-6-sol", help="PDF Supervisor model; generation models remain owned by its contract.")
     parser.add_argument("--agent-backend", choices=("agents-api", "sdk"), default="agents-api")
     parser.add_argument("--max-turns", type=int, default=8)
     parser.add_argument("--skip-source-refresh", action="store_true")

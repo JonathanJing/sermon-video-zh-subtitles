@@ -77,7 +77,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--end-time", help="Post-live subtitle sermon end time.")
     parser.add_argument("--plan-only", action="store_true", help="Ask post-live endpoint to plan without running.")
     parser.add_argument("--supervisor-mode", choices=["shadow", "execute"], default="shadow")
-    parser.add_argument("--agent-model", default="gpt-5.6")
+    parser.add_argument("--agent-model", default="gpt-6-sol")
     parser.add_argument("--max-turns", type=int, default=8)
     parser.add_argument("--attempt-deadline", default="180s")
     parser.add_argument("--internal-task-token-env", default=DEFAULT_TOKEN_ENV)

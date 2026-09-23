@@ -30,7 +30,7 @@ flowchart LR
     G --> L
 ```
 
-Agents API 在服务端保存 session 并驱动控制循环，使用 `environment: none`；本地 runner 执行批准暴露的工具并提交结果。原有下载、ASR、翻译、PDF 渲染、QA 和发布仍在确定性 Python 层。Supervisor 默认模型改为 **`gpt-6-astra`，reasoning effort `medium`**；本账户查询旧 `gpt-5.6` 模型返回 404，不能把它作为可用默认值。显式 SDK 回退也使用同一 Astra Medium 模型，只切换控制层 transport。实际翻译/阅读审核/证道同行保持 Astra Medium，ASR 保持 `gpt-transcribe`。
+Agents API 在服务端保存 session 并驱动控制循环，使用 `environment: none`；本地 runner 执行批准暴露的工具并提交结果。原有下载、ASR、翻译、PDF 渲染、QA 和发布仍在确定性 Python 层。Supervisor 调度默认模型为 **`gpt-6-sol`，reasoning effort `medium`**；显式 SDK 回退也使用同一 Sol Medium 模型，只切换控制层 transport。实际翻译/阅读审核/证道同行保持 Astra Medium，ASR 保持 `gpt-transcribe`。旧 Astra 会话仍绑定原模型，未决会话必须先核实，不因默认值改变而另开 Sol 会话。
 
 Cloud Scheduler 不会把一个 HTTP target 的返回结果自动传给另一个 target。自动交接通过持久状态完成：
 
@@ -226,7 +226,7 @@ python3 scripts/configure_live_source_scheduler.py \
   --schedule '*/10 18-23 * * SAT' \
   --timezone America/Los_Angeles \
   --supervisor-mode shadow \
-  --agent-model gpt-6-astra
+  --agent-model gpt-6-sol
 ```
 
 对应 endpoint：
@@ -240,7 +240,7 @@ POST /api/admin/sundays/upcoming/production-supervisor
 ```json
 {
   "mode": "execute",
-  "model": "gpt-6-astra",
+  "model": "gpt-6-sol",
   "maxTurns": 8
 }
 ```
