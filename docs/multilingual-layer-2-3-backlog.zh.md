@@ -352,6 +352,7 @@ Layer 2 的 P0 全部通过后才能开始正式 Layer 3 韩语合成。Layer 3 
 - [ ] Dev Web 正式 v2 catalog 适配器已合并到 `dev`，但要在部署后核对同一 catalog 多 `pageId`、三语能力标记、真实音轨、深链及旧 POC 回退；iOS 正式 v2 catalog 和真机播放另行验收。
 - [x] PR #45 最新 Python 与 iOS CI 均通过，本机 iOS 26.2 模拟器 14 个 UI 测试也通过，代码已 squash 合并到 `dev` (`436d0b9`)；先前一次 CI 的超时与空白 WebView 失败未在最新运行复现。模拟器结果不代替真机验收。
 - [ ] Dev 部署包保留旧 POC 音频：旧 `multilingual.json`／`weekly.json` 引用的 18 个 MP3 在线存在但未纳入 Git 的 `public` 目录。本次临时目录已保存 18 个资源，14 处声明 SHA 的引用复算一致；通用周产部署需自动保留、核对并监测所有仍被 catalog 引用的资产，避免新页发布删除旧页媒体。
+- [ ] 正式 Audio Package 仍保存本机绝对媒体路径。已将本片段韩语、西语无路径的[人审快照和 v2 收据](evidence/2026-09-20-formal-audio/README.zh.md)纳入 Git，便于干净检出核对批准范围；周产合同还需定义可移植的受控媒体定位和恢复方式，避免只有原工作站能运行 staging。媒体与含绝对路径的原包继续留在授权归档，不入 Git。
 
 本节把已有任务排成可验收的依赖链。目标首先是**周六完成预制、周日可播放**的 `four_layer_release`；周日麦克风实时字幕保持独立 `live_session`。任何阶段只在绑定相同来源、locale 和 hash 的证据通过后推进，不用 Dev 页面可播或机器分数替代人工审核。
 

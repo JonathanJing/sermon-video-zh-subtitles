@@ -73,7 +73,9 @@
       ],
       "reviewedAudioPackageJsonSha256": "2f4b8e57c9150a4e439c7508d81e73465bfea3c95805103ba48a92a9a1525d71",
       "audioHumanReviewReceiptJsonSha256": "b296c326a5ce69dcbc7111c6d1c31eb7e3d2d18c7ac3353ad41ef12e43e26a77",
-      "audioHumanReviewedAt": "2026-09-23T20:36:06.758086+00:00"
+      "audioHumanReviewedAt": "2026-09-23T20:36:06.758086+00:00",
+      "trackedAudioReviewReceiptPath": "docs/evidence/2026-09-20-formal-audio/ko.review-receipt.json",
+      "trackedAudioPackageSnapshotPath": "docs/evidence/2026-09-20-formal-audio/ko.package-snapshot.json"
     },
     "es": {
       "groupCount": 44,
@@ -106,7 +108,9 @@
       ],
       "reviewedAudioPackageJsonSha256": "13b2243d95fc81205447788df5b8fb9c50e5e8ca8825058f0b8a5db45bcc6b4b",
       "audioHumanReviewReceiptJsonSha256": "327c8b1f00e4a4e247fefefb808f9769c7b5aaa0eae5920488b4ab971f005509",
-      "audioHumanReviewedAt": "2026-09-23T20:34:16.620949+00:00"
+      "audioHumanReviewedAt": "2026-09-23T20:34:16.620949+00:00",
+      "trackedAudioReviewReceiptPath": "docs/evidence/2026-09-20-formal-audio/es.review-receipt.json",
+      "trackedAudioPackageSnapshotPath": "docs/evidence/2026-09-20-formal-audio/es.package-snapshot.json"
     }
   },
   "pageMetadataReview": {
