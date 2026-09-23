@@ -5,7 +5,7 @@
   "clipMediaSha256": "c931d6f716bd30b9ba9b75ca6cbc9a4f4fd708b8bf8f8e3668187e67bac44c30",
   "layer1Status": "ready_for_translation",
   "layer2Status": "human_translation_approved",
-  "layer3Status": "three_candidate_tracks_1x_fit_clip_asr_requires_review_human_listening_pending",
+  "layer3Status": "ko_es_human_reviewed_zh_hans_full_listening_pending",
   "layer4Status": "metadata_approved_not_staged_not_published",
   "userFullCandidateDecision": "三语全部批准",
   "licenseDocumentsReceived": false,
@@ -50,7 +50,7 @@
       "speechJobJsonSha256": "dd4da24cdabcedb788a1f94d4b9d535a5f0d0da8e3872ede6ecaa411dfaeed2c",
       "clipVoiceAuthorizationJsonSha256": "a1b7afd2c2b662c00a728e94b83cb79ba68c087a615c80f7dbdcbc53a8c2fdc5",
       "fullAudioTrackStatus": "candidate_track_generated_1x_fits_clip",
-      "fullAudioHumanReviewStatus": "pending",
+      "fullAudioHumanReviewStatus": "human_reviewed",
       "clipVoiceCapabilityJsonSha256": "aa65e634283ea17d43a69da5ba19a4a2478a328c0edca6d28eaf1038edfdb6bf",
       "timingRevision": "approved_and_rendered",
       "candidateTrackSha256": "57c1a9d61c2c31b8f450ebe07e239f8d43f72bd8308e1659c7646fd23a24215d",
@@ -70,7 +70,10 @@
       ],
       "independentReviewerRequestIds": [
         "resp_05e229cbf16f64ef006ab425cf249087d0930ed78f3ef0b155"
-      ]
+      ],
+      "reviewedAudioPackageJsonSha256": "2f4b8e57c9150a4e439c7508d81e73465bfea3c95805103ba48a92a9a1525d71",
+      "audioHumanReviewReceiptJsonSha256": "b296c326a5ce69dcbc7111c6d1c31eb7e3d2d18c7ac3353ad41ef12e43e26a77",
+      "audioHumanReviewedAt": "2026-09-23T20:36:06.758086+00:00"
     },
     "es": {
       "groupCount": 44,
@@ -83,7 +86,7 @@
       "speechJobJsonSha256": "2d8046de40d5c88dbde3a107cd40c926d1ab65ece9f93e58e273f33d1c4b18ec",
       "clipVoiceAuthorizationJsonSha256": "fb69362feb4c022c9657a37d376b8a6aa71dba895c87f8310786920b8c20a7d7",
       "fullAudioTrackStatus": "candidate_track_generated_1x_fits_clip",
-      "fullAudioHumanReviewStatus": "pending",
+      "fullAudioHumanReviewStatus": "human_reviewed",
       "clipVoiceCapabilityJsonSha256": "65e73b68dbbd1564db79d87c8d7a9b4e796fc9bffdf76a3edf55e4fda5507669",
       "timingRevision": "approved_and_rendered",
       "candidateTrackSha256": "fac1c70ea88ff787d9150e075d6e6834d47126e6492f63d4b71c3e3aea88ec34",
@@ -100,7 +103,10 @@
       ],
       "independentReviewerRequestIds": [
         "resp_0e1a0b16bbd39cc7006ab4260411c087d09cc0f4b349e5f631"
-      ]
+      ],
+      "reviewedAudioPackageJsonSha256": "13b2243d95fc81205447788df5b8fb9c50e5e8ca8825058f0b8a5db45bcc6b4b",
+      "audioHumanReviewReceiptJsonSha256": "327c8b1f00e4a4e247fefefb808f9769c7b5aaa0eae5920488b4ab971f005509",
+      "audioHumanReviewedAt": "2026-09-23T20:34:16.620949+00:00"
     }
   },
   "pageMetadataReview": {

@@ -60,3 +60,9 @@
 三语完整候选音轨现均已生成、完整解码，并以自然 1 倍速排入 178.178 秒视频；韩／西经测量的首尾静音处理，不做时间拉伸。Qwen3-ASR 完整覆盖各语言全部单元，分别留下中文 2、韩语 6、西语 3 组人耳疑点。三份 `candidate` Audio Package 和待审工作表已保存，**三语全文听审、逐组疑点裁决及原视频 1 倍速同步审核仍待用户完成**；机器筛查没有被提升为人工通过。韩语末端排程余量约 28 ms，尤其需要检查相邻单元衔接。
 
 三语候选 Release Package 的资源准备器、严格 staging 和正式 v2 Dev catalog 适配器已进入 PR #45。资源准备器用真实候选音频预检时按预期拒绝 `zh-Hans: upstream text or audio has not passed human review`，且没有创建输出目录；合成 fixture 从批准页面信息和 `human_reviewed` 音频到 staging 通过。完整 Python 套件在本机正常权限下为 1476 项通过、5 项跳过；受限沙箱内的 20 项 socket／`ps` 权限错误不是代码测试失败。PR #45 的一次 iOS CI 49 项中 3 项失败：两项静音 WAV 准备超时、一项韩语 WebView 显示空白；同版 iOS 26.2 本机模拟器定向重跑这三项均通过，远端新提交的整套 CI 仍需复核。Dev 部署、HTTP、App 实机和场地验收均未进行。
+
+## 2026-09-23 发布准备状态
+
+PR #45 最新 Python `unittest` 和 iOS `native-client` CI 均通过；本机 iOS 26.2 模拟器整套 14 个 UI 测试也通过。四条自动代码审查意见经代码修复和复核后结案，PR #45 于 20:37:53 UTC squash 合并到 `dev`，远端提交 `436d0b990050524d9c4543bc57d5879e3e2acf27`。这完成代码合并，不代表 Dev 页面已经部署。
+
+用户分别以原视频 1 倍速听审并批准西语全文及 3 组疑点、韩语全文及 6 组疑点；两语各自生成绑定候选包、轨道 SHA、完整 ASR 收据和逐组裁决的独立 v2 人审收据。中文全文及 2 组疑点仍待用户回复，因此三语正式 Release Package 及 Dev 页面仍未生成或发布。为避免新增页面部署清除旧 POC 音频，已从当前 Dev 站点保存旧目录引用的 18 个 MP3 到临时部署目录；其中 14 处带音频 SHA 的引用复算一致，清单位于 `/private/tmp/sep20-dev-deploy/preserved-poc-media.json`。
