@@ -715,13 +715,13 @@ class BackendCLISelectionTests(unittest.TestCase):
                 with patch("sys.argv", ["supervisor", *required]):
                     args = module.parse_args()
                     self.assertEqual(args.agent_backend, "agents-api")
-                    self.assertEqual(args.model, "gpt-6-astra")
+                    self.assertEqual(args.model, "gpt-6-sol")
                 with patch("sys.argv", ["supervisor", *required, "--agent-backend", "sdk"]):
                     self.assertEqual(module.parse_args().agent_backend, "sdk")
 
     def test_sdk_rollback_keeps_medium_reasoning_default(self):
-        agent = entry.build_agent(model="gpt-6-astra", execute=False)
-        self.assertEqual(agent.model, "gpt-6-astra")
+        agent = entry.build_agent(model="gpt-6-sol", execute=False)
+        self.assertEqual(agent.model, "gpt-6-sol")
         self.assertEqual(agent.model_settings.reasoning.effort, "medium")
 
     def test_local_entry_forwards_backend_and_session_recovery_parameters(self):
