@@ -19,6 +19,7 @@
 - [x] 三语分别完成 1 倍速全文听审、与原视频同步审核，以及 11 个 ASR 疑点逐组裁决：中文 2、韩语 6、西语 3 组。独立 v2 收据与无路径快照见[人审证据](evidence/2026-09-20-formal-audio/README.zh.md)。机器 `requires_review` 保留原状态，由独立人审裁决放行。
 - [x] 三语正式 Audio Package 均达到 `human_reviewed` 后，建立 Release Package、部署 Dev，并通过 13 个线上文件 GET／SHA、三条 WAV Range 206、三种语言深链和浏览器实际播放。旧 POC 两份目录及 18 条音频发布后仍完整；证据见[Dev 发布收据](evidence/2026-09-20-formal-release/README.zh.md)。
 - [ ] iOS 真机检查目录刷新、三语下载与离线播放；现场设备及会众可读性单独验收。当前浏览器播放与 HTTP 检查不替代这两项。
+- [ ] 修复 iOS 26.2 CI 中已验证 HTML 偶发空白：失败截图显示韩语发布页的 WebView 已呈现但正文在 20 秒后仍为空白；同一离线夹具本机和部分 CI 运行可显示标题。HTML 下载、哈希与离线缓存由 `StorageTests` 独立覆盖，UI 测试暂只验证路由和原生播放器保留。需在真实设备及相同 CI 系统上定位 WebKit 内容进程／视图加载生命周期，证明正文可见后再将视觉断言恢复；不能把 WebView 容器存在当作 iOS 页面验收。
 - [x] 三语页面系列、标题、讲员、经文标示、日期、摘要和大纲已获用户批准，逐字段原文及提案 SHA 已写入忽略目录的 `review/formal-dev-metadata.approved.json`；[正式 Dev 资源准备器](formal-dev-release-assets.zh.md)在三语 Audio Package 全部 `human_reviewed` 后，完成真实资源、内容及 Release Package 组装，严格 staging 通过。
 
 ## 1. 开始条件与共同规则
