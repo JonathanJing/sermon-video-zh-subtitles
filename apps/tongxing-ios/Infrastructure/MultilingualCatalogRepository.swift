@@ -79,8 +79,8 @@ public actor MultilingualCatalogRepository {
         }
     }
 
-    /// Render only the page bytes named by the verified release package. A
-    /// cached page is reusable only while its hash still matches that package.
+    /// Only pages whose bytes match the verified release package may be shown.
+    /// Recheck cached bytes before every offline use.
     public func loadPage(for package: TargetLanguageReleasePackage) async throws -> VerifiedLanguagePage {
         guard let asset = package.assets.first(where: { $0.role == .page }) else {
             throw ContentStorageError.invalidDownloadReference

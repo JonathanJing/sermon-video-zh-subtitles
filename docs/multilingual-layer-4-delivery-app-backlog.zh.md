@@ -7,19 +7,17 @@
 - 新增 `sermon-multilingual-catalog-v2` 和 `sermon-target-language-release-receipt-v1` schema。
 - `scripts/build_multilingual_catalog.py` 只聚合精确 hash 匹配、人工翻译批准、HTTP 已验证且无 unresolved issue 的 Release Package；跨 locale source identity、同 locale 音频包绑定和完整听审任一不符即停止。
 - iOS Core 解码并验证 v2 catalog 和 immutable Release Package；Infrastructure 下载时复算 package hash，并把 package/page URL 限定到配置的同一 HTTPS origin。
-- Debug build 指向独立 Firebase Dev origin；Release build 继续指向 Production origin。运行时测试仍可显式注入隔离 origin。
-- 页首 App 语言按钮打开选择 Sheet；用户主动切换时验证并直接打开同语言的已发布页面，缺少版本则保留当前内容并提示。标题附近的“证道语言”按钮仍允许逐篇另选。
-- 证道选择 Sheet 第一层只显示本周和“往期证道”入口，第二层列出历史周次；页面语言选择独立于周次导航。
-- 选择非中文目标时先验证 Release Package 和页面资产 hash，再在 App 内阅读页面；旧中文播放器保存位置并清除系统媒体状态。原生结构化多语言内容／音频切换、跨轨 source-unit 定位和 PlaybackHistory v2 仍在后续 backlog。
-- Firebase Dev 的 demo v1 内容只在 Debug 构建通过独立的 Dev 预览入口打开，并清楚显示未获人工审核；此入口验证 demo package 的开发环境身份和同源路由，不宣称 v2 发布包或页面资产哈希已通过。当前 Dev POC 无音频指纹，现场自动对齐继续按既有能力门槛显示不可用原因。
+- Debug build 指向独立 Firebase Dev origin；Release build 继续指向 Production origin。两者沿用同一原生收听界面和功能；运行时测试仍可显式注入隔离 origin。
+- 标题附近的“证道语言”按钮打开语言 Sheet；只显示 catalog 中 `human_reviewed` 文字版本，并显示文字、字幕、音频和下载能力。选择后先取得并验证该 locale 的 Release Package，再打开其 `page` asset。
+- 本切片不把其他语言页面伪装成原生音轨切换：返回 App 后原生播放器仍明确保留现有已验证中文轨道。原生多语言内容／音频切换、跨轨 source-unit 定位和 PlaybackHistory v2 仍在后续 backlog。
 
 ### 交互决策
 
-1. **两个入口各有职责**：页首“界面语言”按钮选择 App 语言，并打开同语言证道已发布页面；标题旁“证道语言”只改这一篇的内容语言。音频语言继续独立。
+1. **两种语言入口分开**：证道标题附近选择“要读哪种语言”；顶部短语言标记与“更多 → 界面语言”只控制 App 按钮和提示。
 2. **能力先于语言名**：每行同时显示 `文字／字幕／音频／可下载`，避免看到“한국어”就误以为韩语配音已经存在。
 3. **验证后再导航**：点击 locale 后先验证 catalog 引用、package SHA-256、page/locale/status 和同源 URL；失败时停留在当前内容，不改变播放器。
-4. **迁移期明确边界**：已发布语言页面在 App 内打开；原生播放器不静默借用中文音频，也不把中文秒数直接应用到另一语言轨道。
-5. **用户动作决定默认值**：用户主动改 App 语言时，当前篇有同语言已发布内容才切换；缺少时保持现状并提示。之后手动改“证道语言”优先，直到再次主动改 App 语言。系统语言变化和启动恢复不覆盖逐篇选择。
+4. **迁移期明确边界**：已发布语言页面在对应页面打开；原生播放器不静默借用中文音频，也不把中文秒数直接应用到另一语言轨道。
+5. **选择可恢复但不绑界面语言**：保存全局 content 偏好和 per-page 选择；locale 被撤回时回到该页 catalog 默认值，并显示原因。界面偏好继续独立保存。
 
 正式上游仍是：
 
@@ -41,7 +39,7 @@ App 同时维护三个不同概念：
 
 核心规则：
 
-- 用户主动切换 App 界面语言时立即重绘界面；当前篇有对应已发布内容才更新内容语言。缺少时显示实际仍在阅读的语言。音轨不静默切换，也不定位或清空下载、反馈。
+- 切换 App 界面语言只重绘界面文案，不换证道内容、不换音轨、不定位、不清空下载或反馈。
 - 选择目标语言时，先切换 `contentLocale`，并优先选择相同 locale 的已发布音轨。
 - 如果目标语言没有合格音轨，默认显示“仅文字”，`audioLocale=null`；不得自动播放中文并让用户误以为是韩语。
 - 用户可以显式选择另一语言音轨，例如“韩语文字 + 中文音频”；主界面和系统媒体必须持续显示这个组合。
@@ -81,11 +79,7 @@ English         原文 · 无配音
 3. catalog 的 `defaultTargetLocale`；
 4. 第一个 `human_reviewed` 文字版本。
 
-用户在顶部明确改变 App 语言时，可更新当前篇的内容选择和全局默认；之后逐篇手动选择优先。启动恢复或系统语言变化不自动覆盖已保存的逐篇选择。
-
-### 2.1a 页面与往期证道导航
-
-顶部保留两个入口：地球按钮显示当前 App 语言并打开选择 Sheet；日历按钮进入“选择证道”。选择证道第一层只有“本周证道”和“往期证道 >”，第二层才列历史篇目。这样本周是默认任务，历史列表不挤占首层。历史条目保留真实目录标题和日期；未获得该语言发布包时不得翻译标题冒充已发布版本，进入后明确显示实际可读语言与可选的其他语言。每篇标题旁的“证道语言”按钮始终可访问该页的已发布语言列表。
+不得根据 `interfaceLocale` 自动覆盖用户已选内容语言。首次使用时可以用界面语言帮助选择，但保存后以目标语言偏好为准。
 
 ### 2.2 音频语言与文字版
 
@@ -122,13 +116,14 @@ English         原文 · 无配音
 
 ### 2.4 App 界面语言
 
-界面语言入口放在顶部地球按钮的 Sheet，支持：
+界面语言可从顶部短语言标记或“更多 → 界面语言”选择，支持：
 
 - 跟随系统；
 - 简体中文；
 - English；
-- 한국어（完整核心界面翻译通过后开放）；
-- Español（以后有完整界面翻译时开放）。
+- 한국어；
+- Español；
+- Tiếng Việt。
 
 实现规则：
 
@@ -137,6 +132,8 @@ English         原文 · 无配音
 - 界面切换即时更新导航、Sheet、错误、下载、权限、Live Activity、Now Playing 辅助文案和 VoiceOver label。
 - 证道正文、讲员名和经文按 `contentLocale` 设置 language identifier；音轨/字幕按实际 `audioLocale` 或 cue locale 设置。
 - App 名称和系统权限说明若受 iOS bundle 本地化限制，记录为“重启/系统语言生效”，不伪装为 App 内即时切换。
+
+当前 Dev 的界面语言译文覆盖 String Catalog 中的按钮、状态与错误提示。译文为开发候选，尚需母语使用者复核；系统权限弹窗仍按 iOS 的系统语言处理。切换界面语言不会显示未经人工审核的 Dev 多语言演示内容，也不会改变现场对齐能力。
 
 ### 2.5 用户可见状态
 

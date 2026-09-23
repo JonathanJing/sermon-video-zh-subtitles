@@ -4,7 +4,9 @@
 
 本目录仍属开发验证范围。编译、桌面运行和网络下载测试不能代替 iPhone 锁屏、耳机、中断恢复或现场听感验收。
 
-本轮已实现灵动岛扩展、短时麦克风指纹对齐、中英界面与双语全文；实测边界及剩余发布步骤见 [发布清单](RELEASE-READINESS.zh.md)。需求与验收见 [iOS 产品 Backlog](BACKLOG.zh.md)：灵动岛、点击后短时麦克风自动对齐、多语言（英文优先）和双语字幕全文。
+本轮已实现灵动岛扩展、短时麦克风指纹对齐、界面语言切换与双语全文；实测边界及剩余发布步骤见 [发布清单](RELEASE-READINESS.zh.md)。需求与验收见 [iOS 产品 Backlog](BACKLOG.zh.md)：灵动岛、点击后短时麦克风自动对齐、多语言（英文优先）和双语字幕全文。
+
+Dev Debug 与正式版沿用同一原生收听界面、播放器、下载、字幕和现场对齐流程。顶部的短语言标记或“更多 → 界面语言”可选择跟随系统、简体中文、English、한국어、Español、Tiếng Việt；切换只更新 App 的按钮与提示，不改变证道内容、音轨、进度或对齐状态。Debug 读取 Firebase Dev，Release 读取正式站点；Dev POC 目录不符合人工审核的 v2 发布条件时，继续显示原生中文版本，不以演示页替换播放器。
 
 界面按用户选定的 **iOS 27 设计语言** 实施：系统导航与 Sheet、26 pt 起的动态字幕、单层 Liquid Glass 悬浮播放栏、深色语义配色，以及窄屏、横屏和大字布局。具体规则与 Apple 官方来源见 [设计约定](DESIGN.zh.md)。
 
@@ -42,17 +44,7 @@ xcodegen generate
 
 ## 数据与模块
 
-Release build 读取 `https://ai-for-god-sermon-audio.web.app/weekly.json` 与同源 `/media/*.mp3`；Debug build 使用隔离的 `https://ai-for-god-sermon-audio-dev.web.app`。legacy 契约为 `sermon-weekly-catalog-v1`，新增 Layer 4 POC 同源读取 `/multilingual.json` 和 immutable `/releases/<page>/<locale>.json`。客户端只验证、选择并路由已发布包，不重生成、不重新审核文字与音频。
-
-### Layer 4 语言页面阶段（2026-09-22）
-
-当正式 v2 目录含有已人工审核的目标语言时，App 校验 release package 与其 `page` 资产的 SHA-256，再在 App 内展示该语言的发布 HTML 页面；页面字节校验通过后才保存所选语言。选择非中文页面时，旧中文播放器会保存位置并清除系统媒体状态，首页不再显示中文标题、字幕、下载或播放控件。重新选择中文时加载原有中文音轨。语言页面缓存仅在哈希仍匹配时可离线重读，加载失败时提供重试。
-
-当前显示使用已发布 HTML 页面，不是新的原生标题、正文、字幕数据合同；页面引用的其他资源仍由 WebKit 按页面地址加载，尚未作为完整离线快照校验。App 界面语言仍只开放系统、简体中文和英文；韩语界面翻译、独立音频选择、跨语言同步、历史/下载隔离仍在 Layer 4 backlog 中。Dev 多语言演示目录尚未达到正式 v2 的人工审核门槛，不会因此显示为正式可选语言。
-
-Debug 构建连接 Firebase Dev 时另有显式的 **Dev 多语言预览**：只解析 `development + poc=true` 的 demo v1 目录，并逐篇核对 demo package 的 `productionEligible=false`、`humanApproval=false`、page/locale 与同源路由。预览以醒目标记在 App 内打开 Dev 网页；它没有正式发布包资产哈希，也不进入上述正式 v2 读取器。打开预览会暂停中文播放并取消正在进行的听声对齐，关闭后仍可使用原中文播放器。当前 Dev POC 的 `weekly.json` 没有绑定音频指纹，所以它的现场自动对齐入口会说明不可用；有有效指纹的周次仍沿用原有对齐流程。
-
-页首“界面语言”按钮打开 App 语言选择 Sheet。明确切换后，如果本篇有同语言、已发布的内容，App 验证资产后直接打开该语言阅读页；缺少版本时继续显示原内容并给出提示。标题旁“证道语言”保留逐篇选择。日历按钮的第一层显示本周与“往期证道”入口，历史列表位于第二层；历史目录标题标明来自 legacy 中文目录，不冒充目标语言标题。切换界面语言不自动借用另一语言的音轨。
+Release build 读取 `https://ai-for-god-sermon-audio.web.app/weekly.json` 与同源 `/media/*.mp3`；Debug build 使用隔离的 `https://ai-for-god-sermon-audio-dev.web.app`。legacy 契约为 `sermon-weekly-catalog-v1`，新增 Layer 4 POC 同源读取 `/multilingual.json` 和 immutable `/releases/<page>/<locale>.json`。客户端选择内容语言时先校验发布包与页面 SHA-256，再在 App 内显示已验证页面；离线缓存每次打开都重新校验。页面预览限制脚本、外部资源和导航，避免显示未验证的网络内容。原生中文播放器与现场对齐保持正式版实现，不重生成、不重新审核文字与音频。
 
 | 路径 | 职责 |
 |---|---|

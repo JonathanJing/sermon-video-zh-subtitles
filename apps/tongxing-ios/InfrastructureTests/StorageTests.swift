@@ -84,6 +84,10 @@ final class StorageTests {
         let page = online.catalog.defaultPage
         let package = try await repository.loadRelease(page: page, locale: "ko")
         #expect(try package.pageURL(relativeTo: baseURL).path == "/pages/page-1/ko/index.html")
+        stub(.init(chunks: [Data("modified page".utf8)]))
+        do { _ = try await repository.loadPage(for: package); Issue.record("Modified network page must fail") }
+        catch { #expect(error as? ContentStorageError == .checksumMismatch) }
+        stub(.init(chunks: [fixture.page]))
         #expect(try await repository.loadPage(for: package).html.contains("한국어"))
 
         stub(.init(chunks: [], error: URLError(.notConnectedToInternet)))
@@ -97,64 +101,6 @@ final class StorageTests {
         try Data("tampered".utf8).write(to: cachedPage)
         do { _ = try await repository.loadPage(for: package); Issue.record("Tampered page must fail") }
         catch { #expect(error as? ContentStorageError == .checksumMismatch) }
-    }
-
-    @Test func devDemoIsExplicitlyUnapprovedAndCannotEnterVerifiedCatalog() async throws {
-        let target: [String: Any] = [
-            "releasePackageUrl": "/releases/demo-page/ko.json",
-            "contentStatus": "machine_review_pass_human_review_pending",
-            "audioStatus": "candidate", "machineScreening": "pass",
-        ]
-        let catalog: [String: Any] = [
-            "schemaVersion": "sermon-multilingual-demo-catalog-v1",
-            "environment": "development", "poc": true, "defaultPageId": "demo-page",
-            "pages": [["id": "demo-page", "defaultTargetLocale": "ko", "targets": ["ko": target]]],
-        ]
-        var release: [String: Any] = [
-            "schemaVersion": "sermon-target-language-demo-package-v1",
-            "environment": "development", "poc": true, "productionEligible": false,
-            "humanApproval": false, "pageId": "demo-page", "targetLocale": "ko",
-            "contentStatus": "machine_review_pass_human_review_pending", "audioStatus": "candidate",
-            "pageUrl": "/pages/demo-page/ko",
-        ]
-        func data(_ value: [String: Any]) throws -> Data {
-            try JSONSerialization.data(withJSONObject: value)
-        }
-        StubURLProtocol.install(host: baseURL.host!) { request in
-            .init(chunks: [try! data(request.url?.path == "/multilingual.json" ? catalog : release)])
-        }
-        let repository = DevDemoCatalogRepository(origin: baseURL, session: session)
-        let loaded = try await repository.loadCatalog()
-        #expect(loaded.page(id: "demo-page")?.targets["ko"]?.contentStatus ==
-                "machine_review_pass_human_review_pending")
-        let url = try await repository.pageURL(page: loaded.page(id: "demo-page")!, locale: "ko")
-        #expect(url.path == "/pages/demo-page/ko")
-        do { _ = try MultilingualCatalog.decode(data(catalog)); Issue.record("Demo must not become a verified release") }
-        catch {}
-
-        release["humanApproval"] = true
-        do { _ = try await repository.pageURL(page: loaded.page(id: "demo-page")!, locale: "ko")
-            Issue.record("Human-approved demo package must be rejected")
-        } catch {}
-        release["humanApproval"] = false
-        release["pageUrl"] = "https://foreign.example/pages/demo-page/ko"
-        do { _ = try await repository.pageURL(page: loaded.page(id: "demo-page")!, locale: "ko")
-            Issue.record("Foreign demo URL must be rejected")
-        } catch {}
-    }
-
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["TONGXING_LIVE_DEV_SMOKE"] == "1"))
-    func liveFirebaseDevDemoCanResolveKoreanPageWithoutUpgradingReview() async throws {
-        let origin = URL(string: "https://ai-for-god-sermon-audio-dev.web.app")!
-        let repository = DevDemoCatalogRepository(origin: origin)
-        let catalog = try await repository.loadCatalog()
-        let page = try #require(catalog.page(id: catalog.defaultPageId))
-        let target = try #require(page.targets["ko"])
-        #expect(target.contentStatus != "human_reviewed")
-        let url = try await repository.pageURL(page: page, locale: "ko")
-        #expect(url.host == origin.host)
-        let (_, response) = try await URLSession.shared.data(from: url)
-        #expect((response as? HTTPURLResponse)?.statusCode == 200)
     }
 
     @Test func testVerifiedDownloadTamperDetectionAndRepair() async throws {
@@ -331,7 +277,7 @@ final class StorageTests {
 
     private func multilingualFixture() throws -> (catalog: Data, release: Data, page: Data) {
         let hashA = String(repeating: "a", count: 64)
-        let page = Data("<html lang=\"ko\"><body>한국어 검증 페이지</body></html>".utf8)
+        let page = Data("<html><head></head><body>한국어 검증 페이지</body></html>".utf8)
         let pageHash = SHA256.hash(data: page).map { String(format: "%02x", $0) }.joined()
         let releaseValue: [String: Any] = [
             "schemaVersion": "sermon-target-language-release-package-v1",
