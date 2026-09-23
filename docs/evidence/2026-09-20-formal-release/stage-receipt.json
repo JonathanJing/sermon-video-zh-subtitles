@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "sermon-formal-dev-stage-receipt-v1",
+  "pageId": "2026-09-20-revelation-clip",
+  "catalogPath": "/multilingual-v2.json",
+  "catalogSha256": "0332c2e3cf2f250778601ce4e5a82e587cd50c7a136f9d944e3607f7d6737124",
+  "sourceIdentitySha256": "4d645ff0aad0b55b2eb913fd0749ebcb3bed010ddfc037e89e1f8a98f44a227b",
+  "targetLocales": [
+    "zh-Hans",
+    "ko",
+    "es"
+  ],
+  "releasePackageSha256": {
+    "zh-Hans": "b4acdb4fb75069fd23239c5babeb74367f9f2faa8b6f4c5536efa75f8f62317d",
+    "ko": "d4243c43084d1c779e1290390ee2ec1527594e0efce6ee3122ef2e0f5422060d",
+    "es": "3124f8dc63daa54ffbbb3d3356bb2e1e7be021def68130083656123d49202e59"
+  },
+  "assetCount": 12,
+  "deploymentStatus": "not_deployed",
+  "httpVerification": "not_run",
+  "deviceAcceptance": "not_run"
+}

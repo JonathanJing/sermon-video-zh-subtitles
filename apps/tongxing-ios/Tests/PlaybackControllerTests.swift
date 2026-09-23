@@ -391,7 +391,9 @@ final class PlaybackControllerTests: XCTestCase {
 
         func load() async throws {
             player.load(week: week(), track: track, url: audioURL)
-            let deadline = Date().addingTimeInterval(10)
+            // AVPlayer can take longer to prepare a local fixture while macOS CI
+            // is booting the simulator; keep the test bound but allow startup time.
+            let deadline = Date().addingTimeInterval(30)
             while !player.isReady {
                 guard Date() < deadline else { throw TestFailure.timeout("synthetic local WAV preparation: \(player.message)") }
                 try await Task.sleep(nanoseconds: 20_000_000)

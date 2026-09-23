@@ -92,3 +92,24 @@ test('verified fetch rejects changed bytes, oversize assets, and redirects', asy
     origin, fetchImpl: async () => response(bytes, 'https://example.com/redirect.json')
   }), /unavailable/);
 });
+
+test('verified fetch accepts hashed formal WAV audio and rejects unknown asset types', async () => {
+  const path = '/media/2026-09-20-revelation-clip/zh-Hans.wav';
+  const bytes = Buffer.from('RIFF-test-WAVE-audio');
+  const hash = digest(bytes);
+  const good = await fetchVerified(path, hash, {
+    origin,
+    fetchImpl: async url => ({
+      ok: true, url,
+      headers: new Headers({ 'content-length': String(bytes.length) }),
+      arrayBuffer: async () => Uint8Array.from(bytes).buffer
+    })
+  });
+  assert.equal(digest(good), hash);
+  await assert.rejects(fetchVerified('/media/2026-09-20-revelation-clip/zh-Hans.bin', hash, {
+    origin, fetchImpl: async () => { throw new Error('unexpected fetch'); }
+  }), /Unsupported Dev asset type/);
+  await assert.rejects(fetchVerified(null, hash, {
+    origin, fetchImpl: async () => { throw new Error('unexpected fetch'); }
+  }), /Unsupported Dev asset type/);
+});

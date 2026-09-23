@@ -152,7 +152,8 @@ function loadAudioVariant(variant, objectURL, { remember = true } = {}) {
 
 async function verifiedAudioURL(variant, signal) {
   const bytes = await fetchVerified(variant.audioUrl, variant.audioSha256, { signal });
-  return URL.createObjectURL(new Blob([bytes], { type: "audio/mpeg" }));
+  const type = variant.audioUrl.endsWith(".wav") ? "audio/wav" : "audio/mpeg";
+  return URL.createObjectURL(new Blob([bytes], { type }));
 }
 
 function playbackSource() {
