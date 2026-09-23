@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-clip-timeline-map-v1.schema.json",
+  "title": "Approved English anchor to clip media timebase binding",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "timebase", "englishSourcePackageJsonSha256", "anchorManifestJsonSha256", "clipMedia", "clipDurationSeconds", "windowApproval", "anchorOffsetSeconds", "anchorFirstStartSeconds", "anchorLastEndSeconds", "originalRecordingStartSeconds", "originalRecordingEndSeconds"],
+  "properties": {
+    "schemaVersion": {"const": "sermon-clip-timeline-map-v1"},
+    "timebase": {"const": "anchor_sermon_relative_to_clip_media"},
+    "englishSourcePackageJsonSha256": {"$ref": "#/$defs/sha256"},
+    "anchorManifestJsonSha256": {"$ref": "#/$defs/sha256"},
+    "clipMedia": {"$ref": "#/$defs/artifact"},
+    "clipDurationSeconds": {"type": "number", "exclusiveMinimum": 0},
+    "windowApproval": {"$ref": "#/$defs/jsonArtifact"},
+    "anchorOffsetSeconds": {"type": "number", "minimum": 0},
+    "anchorFirstStartSeconds": {"type": "number", "minimum": 0},
+    "anchorLastEndSeconds": {"type": "number", "exclusiveMinimum": 0},
+    "originalRecordingStartSeconds": {"type": "number", "minimum": 0},
+    "originalRecordingEndSeconds": {"type": "number", "exclusiveMinimum": 0}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "artifact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha256"}}
+    },
+    "jsonArtifact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "sha256", "jsonSha256"],
+      "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha256"}, "jsonSha256": {"$ref": "#/$defs/sha256"}}
+    }
+  }
+}

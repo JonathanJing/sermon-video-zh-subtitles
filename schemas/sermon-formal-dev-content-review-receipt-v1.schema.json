@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-formal-dev-content-review-receipt-v1.schema.json",
+  "title": "Independent human review of one hash-bound formal Dev content document",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "pageId", "targetLocale", "englishSourcePackageJsonSha256", "targetLanguageCandidateJsonSha256", "targetLanguageAudioPackageJsonSha256", "contentJsonSha256", "decision", "reviewer", "reviewedAt", "reviewedFields"],
+  "properties": {
+    "schemaVersion": { "const": "sermon-formal-dev-content-review-receipt-v1" },
+    "pageId": { "type": "string", "minLength": 1 },
+    "targetLocale": { "type": "string", "minLength": 2 },
+    "englishSourcePackageJsonSha256": { "$ref": "#/$defs/sha256" },
+    "targetLanguageCandidateJsonSha256": { "$ref": "#/$defs/sha256" },
+    "targetLanguageAudioPackageJsonSha256": { "$ref": "#/$defs/sha256" },
+    "contentJsonSha256": { "$ref": "#/$defs/sha256" },
+    "decision": { "const": "approved" },
+    "reviewer": { "type": "string", "minLength": 1 },
+    "reviewedAt": { "type": "string", "format": "date-time" },
+    "reviewedFields": { "type": "array", "minItems": 7, "uniqueItems": true,
+      "items": { "enum": ["series", "title", "speaker", "scripture", "date", "summary", "outline"] } }
+  },
+  "$defs": { "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" } }
+}

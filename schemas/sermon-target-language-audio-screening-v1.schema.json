@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-target-language-audio-screening-v1.schema.json",
+  "title": "Source-bound per-unit target-language ASR screening receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "targetLocale", "targetLanguageSpeechJobJsonSha256", "trackSha256", "status", "model", "modelRevision", "minSimilarity", "coverage", "reviewedGroupIds", "unitAudioSha256s", "results", "humanListeningStatus"],
+  "properties": {
+    "schemaVersion": {"const": "sermon-target-language-audio-screening-v1"},
+    "targetLocale": {"type": "string", "pattern": "^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"},
+    "targetLanguageSpeechJobJsonSha256": {"$ref": "#/$defs/sha256"},
+    "trackSha256": {"$ref": "#/$defs/sha256"},
+    "status": {"enum": ["pass", "requires_review"]},
+    "model": {"type": "string", "minLength": 1},
+    "modelRevision": {"type": "string", "minLength": 1},
+    "minSimilarity": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+    "coverage": {"const": 1},
+    "reviewedGroupIds": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "unitAudioSha256s": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/sha256"}},
+    "results": {"type": "array", "minItems": 1, "items": {"type": "object", "additionalProperties": false,
+      "required": ["textGroupId", "targetTextSha256", "audioSha256", "recognized", "similarity", "differences", "status"],
+      "properties": {
+        "textGroupId": {"type": "string", "minLength": 1},
+        "targetTextSha256": {"$ref": "#/$defs/sha256"},
+        "audioSha256": {"$ref": "#/$defs/sha256"},
+        "recognized": {"type": "string"},
+        "similarity": {"type": "number", "minimum": 0, "maximum": 1},
+        "differences": {"type": "array", "items": {"type": "object", "additionalProperties": false,
+          "required": ["kind", "expected", "recognized"],
+          "properties": {"kind": {"enum": ["replace", "delete", "insert"]}, "expected": {"type": "array", "items": {"type": "string"}}, "recognized": {"type": "array", "items": {"type": "string"}}}}},
+        "status": {"enum": ["pass", "requires_review"]}
+      }}},
+    "humanListeningStatus": {"const": "pending"}
+  },
+  "$defs": {"sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}
+}

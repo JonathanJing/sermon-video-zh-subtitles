@@ -21,10 +21,12 @@ try:
     from scripts import four_layer_measure as measure
     from scripts import sermon_sentence_interpretation as interpretation
     from scripts import target_language_policy as policy_tools
+    from scripts import clip_timeline_map as timeline_map
 except ImportError:  # Direct execution via ``python scripts/...``.
     import four_layer_measure as measure
     import sermon_sentence_interpretation as interpretation
     import target_language_policy as policy_tools
+    import clip_timeline_map as timeline_map
 
 
 CANDIDATE_SCHEMA = "sermon-target-language-candidate-v2"
@@ -214,8 +216,114 @@ def validate_human_review_receipt(source_package: dict[str, Any], anchor: dict[s
              "Human review receipt has missing, rejected, or mismatched group reviews")
 
 
+def validate_clip_voice_authorization(receipt: dict[str, Any], source_package: dict[str, Any],
+                                      candidate: dict[str, Any], adapter: dict[str, Any]) -> None:
+    """Verify a narrowly scoped derivative of the user's clip permission statement."""
+    _validate_schema(receipt, "sermon-clip-voice-authorization-v1.schema.json",
+                     "clip voice authorization")
+    bound = receipt["userRightsAttestation"]
+    attestation_path = Path(bound["path"])
+    _require(attestation_path.is_file()
+             and interpretation.sha256(attestation_path) == bound["sha256"],
+             "Clip voice user attestation file hash mismatch")
+    attestation = _load(attestation_path)
+    _require(interpretation.json_sha256(attestation) == bound["jsonSha256"],
+             "Clip voice user attestation JSON hash mismatch")
+    source_hash = interpretation.json_sha256(source_package)
+    candidate_hash = interpretation.json_sha256(candidate)
+    _require(receipt["englishSourcePackageJsonSha256"] == source_hash
+             and receipt["targetLanguageCandidateJsonSha256"] == candidate_hash
+             and receipt["targetLocale"] == candidate["targetLocale"] == adapter["targetLocale"]
+             and receipt["speakerId"] == adapter["speakerId"]
+             and receipt["voiceCheckpointSha256"] == adapter["conditioningSha256"],
+             "Clip voice authorization differs from source, candidate, locale or checkpoint")
+    _require(attestation.get("schemaVersion") == "sermon-clip-user-rights-attestation-v1"
+             and isinstance(attestation.get("scope"), str)
+             and attestation["scope"].endswith("-dev-app-and-audio_only")
+             and attestation.get("englishSourcePackageJsonSha256") == source_hash
+             and receipt["targetLocale"] in attestation.get("targetLocales", [])
+             and attestation.get("speakerId") == receipt["speakerId"]
+             and attestation.get("voiceCheckpointSha256") == receipt["voiceCheckpointSha256"]
+             and attestation.get("permissionClaimed") is True
+             and isinstance(attestation.get("userStatement"), str)
+             and bool(attestation["userStatement"].strip()),
+             "User attestation does not authorize this Dev clip voice")
+
+
+def _bound_evidence(value: dict[str, Any], *, json_artifact: bool) -> dict[str, Any] | Path:
+    path = Path(value["path"])
+    _require(path.is_file() and interpretation.sha256(path) == value["sha256"],
+             f"Clip voice evidence file hash mismatch: {path}")
+    if not json_artifact:
+        return path
+    evidence = _load(path)
+    _require(interpretation.json_sha256(evidence) == value["jsonSha256"],
+             f"Clip voice evidence JSON hash mismatch: {path}")
+    return evidence
+
+
+def validate_clip_voice_capability(receipt: dict[str, Any], source_package: dict[str, Any],
+                                   adapter: dict[str, Any]) -> None:
+    """Admit only human-approved short and long probes for this source/locale."""
+    _validate_schema(receipt, "sermon-clip-voice-capability-v1.schema.json", "clip voice capability")
+    source_hash = interpretation.json_sha256(source_package)
+    locale = adapter["targetLocale"]
+    speaker_id = adapter["speakerId"]
+    checkpoint = adapter["conditioningSha256"]
+    _require(receipt["englishSourcePackageJsonSha256"] == source_hash
+             and receipt["targetLocale"] == locale
+             and receipt["speakerId"] == speaker_id
+             and receipt["checkpointSha256"] == checkpoint,
+             "Clip voice capability differs from source, locale or checkpoint")
+    short = _bound_evidence(receipt["shortDemoApproval"], json_artifact=True)
+    long = _bound_evidence(receipt["longProbeApproval"], json_artifact=True)
+    manifest = _bound_evidence(receipt["longProbeManifest"], json_artifact=True)
+    _bound_evidence(receipt["shortDemoAudio"], json_artifact=False)
+    _bound_evidence(receipt["longProbeAudio"], json_artifact=False)
+    _require(short.get("schemaVersion") == "sermon-voice-short-demo-human-review-v1"
+             and short.get("speakerId") == speaker_id
+             and short.get("checkpointSha256") == checkpoint
+             and _reviewed_at(short.get("reviewedAt"))
+             and isinstance(short.get("reviewer"), str) and short["reviewer"].strip(),
+             "Short demo human approval identity is invalid")
+    short_rows = [row for row in short.get("tracks", []) if row.get("targetLocale") == locale]
+    _require(len(short_rows) == 1
+             and short_rows[0].get("decision") == "approved_short_demo"
+             and short_rows[0].get("mp3Sha256") == receipt["shortDemoAudio"]["sha256"]
+             and set(short_rows[0].get("reviewItems", [])) >= {
+                 "pronunciation", "naturalness", "completeness", "voice_similarity"}
+             and str(Path(receipt["shortDemoAudio"]["path"])).endswith(short_rows[0]["mp3Path"]),
+             "Short demo approval does not bind this locale audio")
+    _require(long.get("schemaVersion") == "sermon-voice-long-probe-human-review-v1"
+             and long.get("englishSourcePackageJsonSha256") == source_hash
+             and long.get("speakerId") == speaker_id
+             and long.get("checkpointSha256") == checkpoint
+             and _reviewed_at(long.get("reviewedAt"))
+             and isinstance(long.get("reviewer"), str) and long["reviewer"].strip()
+             and long.get("manifestJsonSha256") == interpretation.json_sha256(manifest)
+             and long.get("scriptJsonSha256") == manifest.get("scriptJsonSha256")
+             and manifest.get("fullDecodeCoverage") == 1,
+             "Long probe human approval source or manifest is invalid")
+    long_rows = [row for row in long.get("tracks", []) if row.get("targetLocale") == locale]
+    manifest_rows = [row for row in manifest.get("tracks", []) if row.get("targetLocale") == locale]
+    _require(len(long_rows) == len(manifest_rows) == 1
+             and long_rows[0].get("decision") == "approved_long_probe"
+             and long_rows[0].get("audioSha256") == manifest_rows[0].get("audioSha256")
+             == receipt["longProbeAudio"]["sha256"]
+             and long_rows[0].get("expectedTextSha256") == manifest_rows[0].get("textSha256")
+             and manifest_rows[0].get("speakerId") == speaker_id
+             and manifest_rows[0].get("checkpointSha256") == checkpoint
+             and manifest_rows[0].get("fullDecode") == "pass"
+             and str(Path(receipt["longProbeAudio"]["path"])).endswith(long_rows[0]["audioPath"]),
+             "Long probe approval does not bind this locale audio")
+
+
 def validate_adapter(adapter: dict[str, Any], target_locale: str,
-                     registry: dict[str, Any]) -> None:
+                     registry: dict[str, Any], *,
+                     clip_voice_authorization: dict[str, Any] | None = None,
+                     clip_voice_capability: dict[str, Any] | None = None,
+                     source_package: dict[str, Any] | None = None,
+                     candidate: dict[str, Any] | None = None) -> None:
     """Bind the adapter to registry identity, authorized purpose, and locale evidence."""
     _validate_schema(adapter, "sermon-target-language-speech-adapter-v1.schema.json", "speech adapter")
     _validate_schema(registry, "sermon-speaker-voice-registry-v1.schema.json", "Speaker Voice Registry")
@@ -266,11 +374,21 @@ def validate_adapter(adapter: dict[str, Any], target_locale: str,
              and adapter["languageParameter"] == capability["modelLanguage"],
              "Speech adapter model, checkpoint, or language differs from registry")
     status = adapter["capabilityStatus"]
+    if clip_voice_authorization is not None:
+        _require(source_package is not None and candidate is not None,
+                 "Clip voice authorization requires source and candidate")
+        validate_clip_voice_authorization(
+            clip_voice_authorization, source_package, candidate, adapter)
+    if clip_voice_capability is not None:
+        _require(source_package is not None, "Clip voice capability requires source")
+        validate_clip_voice_capability(clip_voice_capability, source_package, adapter)
     if status == "verified":
         purpose = "chinese_dubbing" if target_locale == "zh-Hans" else "multilingual_dubbing"
-        _require(adapter["authorizationPurpose"] == purpose
-                 and capability["status"] == "human_reviewed"
-                 and bool(capability["reviewEvidence"])
+        clip_scoped = (clip_voice_authorization is not None
+                       and adapter["authorizationPurpose"] == "multilingual_voice_demo")
+        _require((adapter["authorizationPurpose"] == purpose or clip_scoped)
+                 and ((capability["status"] == "human_reviewed" and bool(capability["reviewEvidence"]))
+                      or (clip_scoped and clip_voice_capability is not None))
                  and (not override or bool(override.get("provider"))),
                  "Verified speech adapter lacks production authorization or human-reviewed locale capability")
     elif status == "candidate":
@@ -282,21 +400,36 @@ def validate_adapter(adapter: dict[str, Any], target_locale: str,
 
 def prepare_job(source_package_path: Path, anchor_path: Path, candidate_path: Path, policy_path: Path,
                 human_review_receipt_path: Path, adapter_path: Path, registry_path: Path,
-                out: Path) -> dict[str, Any]:
+                out: Path, *, clip_voice_authorization_path: Path | None = None,
+                clip_voice_capability_path: Path | None = None,
+                clip_timeline_map_path: Path | None = None) -> dict[str, Any]:
     _require(not out.exists(), "Use a new speech job directory; prior jobs are immutable")
     for path in (source_package_path, anchor_path, candidate_path, policy_path,
-                 human_review_receipt_path, adapter_path, registry_path):
+                 human_review_receipt_path, adapter_path, registry_path,
+                 *((clip_voice_authorization_path,) if clip_voice_authorization_path else ()),
+                 *((clip_voice_capability_path,) if clip_voice_capability_path else ()),
+                 *((clip_timeline_map_path,) if clip_timeline_map_path else ())):
         _require(path.is_file(), f"Missing input: {path}")
     source_package, anchor, candidate, policy, human_review_receipt, adapter, registry = (
         _load(path) for path in (source_package_path, anchor_path, candidate_path, policy_path,
                                  human_review_receipt_path, adapter_path, registry_path)
     )
+    clip_voice_authorization = (
+        _load(clip_voice_authorization_path) if clip_voice_authorization_path else None)
+    clip_voice_capability = (
+        _load(clip_voice_capability_path) if clip_voice_capability_path else None)
+    clip_timeline = _load(clip_timeline_map_path) if clip_timeline_map_path else None
     _validate_schema(candidate, "sermon-target-language-candidate-v2.schema.json", "target candidate")
     identity = validate_target_candidate(source_package, anchor, candidate)
     locale = identity["targetLocale"]
     validate_policy_binding(candidate, policy)
     validate_human_review_receipt(source_package, anchor, candidate, human_review_receipt)
-    validate_adapter(adapter, locale, registry)
+    validate_adapter(adapter, locale, registry,
+                     clip_voice_authorization=clip_voice_authorization,
+                     clip_voice_capability=clip_voice_capability,
+                     source_package=source_package, candidate=candidate)
+    if clip_timeline is not None:
+        timeline_map.validate(clip_timeline, source_package, anchor)
     language_root = f"languages/{locale}"
     verified = adapter["capabilityStatus"] == "verified"
     job = {
@@ -369,6 +502,24 @@ def prepare_job(source_package_path: Path, anchor_path: Path, candidate_path: Pa
             "synchronizationDirectory": f"{language_root}/synchronization",
         },
     }
+    if clip_voice_authorization_path is not None:
+        job["inputs"]["clipVoiceAuthorization"] = {
+            "path": str(clip_voice_authorization_path.resolve()),
+            "sha256": interpretation.sha256(clip_voice_authorization_path),
+            "jsonSha256": interpretation.json_sha256(clip_voice_authorization),
+        }
+    if clip_voice_capability_path is not None:
+        job["inputs"]["clipVoiceCapability"] = {
+            "path": str(clip_voice_capability_path.resolve()),
+            "sha256": interpretation.sha256(clip_voice_capability_path),
+            "jsonSha256": interpretation.json_sha256(clip_voice_capability),
+        }
+    if clip_timeline_map_path is not None:
+        job["inputs"]["clipTimelineMap"] = {
+            "path": str(clip_timeline_map_path.resolve()),
+            "sha256": interpretation.sha256(clip_timeline_map_path),
+            "jsonSha256": interpretation.json_sha256(clip_timeline),
+        }
     _validate_schema(job, "sermon-target-language-speech-job-v2.schema.json", "speech job")
     out.mkdir(parents=True)
     interpretation.write_json(out / "job.json", job)
@@ -384,6 +535,9 @@ def main() -> None:
     parser.add_argument("--human-review-receipt", type=Path, required=True)
     parser.add_argument("--adapter", type=Path, required=True)
     parser.add_argument("--speaker-registry", type=Path, required=True)
+    parser.add_argument("--clip-voice-authorization", type=Path)
+    parser.add_argument("--clip-voice-capability", type=Path)
+    parser.add_argument("--clip-timeline-map", type=Path)
     parser.add_argument("--progress-ledger", type=Path,
                         help="Record producer timing in this four-layer run ledger")
     parser.add_argument("--out", type=Path, required=True)
@@ -399,6 +553,9 @@ def main() -> None:
             args.english_source_package, args.anchor, args.candidate, args.policy,
             args.human_review_receipt,
             args.adapter, args.speaker_registry, args.out,
+            clip_voice_authorization_path=args.clip_voice_authorization,
+            clip_voice_capability_path=args.clip_voice_capability,
+            clip_timeline_map_path=args.clip_timeline_map,
         )
         metrics["speechUnits"] = len(job.get("units") or [])
     print(json.dumps({
