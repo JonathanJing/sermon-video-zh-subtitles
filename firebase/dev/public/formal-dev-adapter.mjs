@@ -1,7 +1,7 @@
 import { sameOriginAsset } from "./dev-integrity.mjs";
 
 const SHA256 = /^[a-f0-9]{64}$/;
-const PAGE_ID = /^[A-Za-z0-9_-]{1,160}$/;
+const PAGE_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
 const LOCALES = new Set(["zh-Hans", "ko", "es"]);
 
 function requireValue(condition, message) {
@@ -12,6 +12,24 @@ function exactKeys(value, names) {
   return value && typeof value === "object" && !Array.isArray(value)
     && Object.keys(value).length === names.length
     && names.every(name => Object.hasOwn(value, name));
+}
+
+// The formal catalog is optional while older Dev POC pages remain available.
+// A failed or malformed formal feed must not make the existing reader unusable.
+export async function loadOptionalFormalCatalog(fetcher, existingPageIds = []) {
+  try {
+    const response = await fetcher("/multilingual-v2.json", { cache: "no-store" });
+    if (response.status === 404) return null;
+    if (!response.ok) throw new Error(`Formal Dev catalog: HTTP ${response.status}`);
+    const catalog = validateFormalCatalog(await response.json());
+    const existing = new Set(existingPageIds);
+    requireValue(!catalog.pages.some(page => existing.has(page.id)),
+      "Dev page ID reused across formal and POC catalogs");
+    return catalog;
+  } catch (error) {
+    console.warn("Optional formal Dev catalog unavailable", error);
+    return null;
+  }
 }
 
 export function validateFormalCatalog(catalog) {

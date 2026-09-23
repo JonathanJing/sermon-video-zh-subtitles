@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime
+import difflib
 import hashlib
 import json
 import math
@@ -23,11 +24,13 @@ try:
     from scripts import sermon_sentence_interpretation as interpretation
     from scripts import clip_timeline_map as timeline_map
     from scripts import validate_target_language_audio_unit as unit_integrity
+    from scripts import screen_target_language_audio_units as audio_screen
 except ImportError:
     import prepare_target_language_speech_job as speech
     import sermon_sentence_interpretation as interpretation
     import clip_timeline_map as timeline_map
     import validate_target_language_audio_unit as unit_integrity
+    import screen_target_language_audio_units as audio_screen
 
 
 SCHEMA = "sermon-target-language-audio-package-v1"
@@ -367,15 +370,34 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
         screening_artifact = checked_artifact(
             artifact_root, manifest.get("machineScreeningReceipt"), json_artifact=True)
         screening = read_object(Path(screening_artifact["path"]))
+        speech._validate_schema(screening, "sermon-target-language-audio-screening-v1.schema.json",
+                                "audio screening receipt")
         require(screening.get("schemaVersion") == "sermon-target-language-audio-screening-v1"
                 and screening.get("targetLocale") == locale
                 and screening.get("targetLanguageSpeechJobJsonSha256") == job_hash
+                and screening.get("trackSha256") == track["sha256"]
                 and screening.get("status") == "pass"
                 and screening.get("model") == screen["model"]
                 and screening.get("coverage") == 1.0
                 and screening.get("reviewedGroupIds") == [unit["textGroupId"] for unit in units]
                 and screening.get("unitAudioSha256s") == [unit["audio"]["sha256"] for unit in units],
                 "Machine screening receipt does not cover this exact audio set")
+        require(len(screening["results"]) == len(units),
+                "Machine screening result count differs from audio units")
+        for index, (result, unit, job_unit) in enumerate(zip(
+                screening["results"], units, job["units"])):
+            expected_tokens = audio_screen.tokens(job_unit["text"], locale)
+            actual_tokens = audio_screen.tokens(result["recognized"], locale)
+            similarity = round(difflib.SequenceMatcher(
+                None, expected_tokens, actual_tokens, autojunk=False).ratio(), 6)
+            require(result["textGroupId"] == unit["textGroupId"]
+                    and result["targetTextSha256"] == unit["targetTextSha256"]
+                    and result["audioSha256"] == unit["audio"]["sha256"]
+                    and result["status"] == "pass"
+                    and result["similarity"] == similarity
+                    and similarity >= screening["minSimilarity"]
+                    and (len(expected_tokens) >= 4 or expected_tokens == actual_tokens),
+                    f"Machine screening result is incomplete or below threshold: {index}")
     else:
         require(screen.get("status") != "fail", "Failed machine screening cannot produce package")
     status = "machine_screened" if screen["status"] == "pass" else "candidate"

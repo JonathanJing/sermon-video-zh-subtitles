@@ -16,8 +16,8 @@
     "decision": { "const": "approved" },
     "reviewer": { "type": "string", "minLength": 1 },
     "reviewedAt": { "type": "string", "format": "date-time" },
-    "reviewedFields": { "type": "array", "minItems": 6, "uniqueItems": true,
-      "items": { "enum": ["series", "title", "speaker", "scripture", "date", "summary"] } }
+    "reviewedFields": { "type": "array", "minItems": 7, "uniqueItems": true,
+      "items": { "enum": ["series", "title", "speaker", "scripture", "date", "summary", "outline"] } }
   },
   "$defs": { "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" } }
 }

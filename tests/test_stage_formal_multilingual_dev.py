@@ -156,7 +156,7 @@ class FormalDevStageTests(unittest.TestCase):
             "targetLanguageAudioPackageJsonSha256": audio_hash,
             "contentJsonSha256": MODULE.canonical_sha(content), "decision": "approved",
             "reviewer": "fixture-reviewer", "reviewedAt": "2026-09-23T00:00:00Z",
-            "reviewedFields": ["series", "title", "speaker", "scripture", "date", "summary"]}
+            "reviewedFields": ["series", "title", "speaker", "scripture", "date", "summary", "outline"]}
         content_receipt_path = self.write_json(self.root / f"{locale}-content-receipt.json", content_receipt)
         media_path = self.assets / "media" / self.page_id / f"{locale}.mp3"
         media_path.parent.mkdir(parents=True, exist_ok=True)
@@ -279,6 +279,15 @@ class FormalDevStageTests(unittest.TestCase):
         receipt["contentJsonSha256"] = "f" * 64
         self.write_json(path, receipt)
         with self.assertRaisesRegex(MODULE.StageError, "metadata review"):
+            self.stage_with_fixture_source(self.args())
+        self.assertFalse((self.root / "staged").exists())
+
+    def test_rejects_displayed_outline_without_review(self):
+        path = self.paths["content_receipt"]["zh-Hans"]
+        receipt = json.loads(path.read_text())
+        receipt["reviewedFields"].remove("outline")
+        self.write_json(path, receipt)
+        with self.assertRaises(MODULE.StageError):
             self.stage_with_fixture_source(self.args())
         self.assertFalse((self.root / "staged").exists())
 

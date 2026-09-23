@@ -2,7 +2,7 @@ import {
   fetchVerified, validateDemoCatalog, validateDemoContent, validateDemoRelease
 } from "./dev-integrity.mjs";
 import {
-  formalReleaseView, validateFormalCaptions, validateFormalCatalog,
+  formalReleaseView, loadOptionalFormalCatalog, validateFormalCaptions,
   validateFormalContent, validateFormalRelease
 } from "./formal-dev-adapter.mjs";
 import { PlaybackMemory } from "./playback-memory.mjs";
@@ -756,14 +756,11 @@ async function openPage(pageId, { navigate = true, requestedLocale = null } = {}
 
 async function loadInitialCatalog() {
   const demo = validateDemoCatalog(await loadJSON("/multilingual.json"));
-  const response = await fetch("/multilingual-v2.json", { cache: "no-store" });
-  if (!response.ok && response.status !== 404) throw new Error(`Formal Dev catalog: HTTP ${response.status}`);
-  const formal = response.ok ? validateFormalCatalog(await response.json()) : null;
+  const formal = await loadOptionalFormalCatalog(fetch, demo.pages.map(page => page.id));
   const pages = [
     ...(formal?.pages || []).map(page => ({ ...page, catalogKind: "formal" })),
     ...demo.pages.map(page => ({ ...page, catalogKind: "poc" }))
   ];
-  if (new Set(pages.map(page => page.id)).size !== pages.length) throw new Error("Dev page ID reused across formal and POC catalogs");
   state.catalog = { pages, defaultPageId: formal?.defaultPageId || demo.defaultPageId };
   const route = routeSelection();
   await openPage(route.pageId || state.catalog.defaultPageId,

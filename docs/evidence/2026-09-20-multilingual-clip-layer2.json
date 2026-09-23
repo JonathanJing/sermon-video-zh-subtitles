@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "sermon-clip-formal-progress-evidence-v1",
+  "scope": "2026-09-20-35:09.16-to-38:07.32-dev-clip",
+  "sourceIdentitySha256": "4d645ff0aad0b55b2eb913fd0749ebcb3bed010ddfc037e89e1f8a98f44a227b",
+  "clipMediaSha256": "c931d6f716bd30b9ba9b75ca6cbc9a4f4fd708b8bf8f8e3668187e67bac44c30",
+  "layer1Status": "ready_for_translation",
+  "layer2Status": "human_translation_approved",
+  "layer3Status": "speech_jobs_prepared_no_full_tracks",
+  "layer4Status": "not_staged_not_published",
+  "userFullCandidateDecision": "三语全部批准",
+  "licenseDocumentsReceived": false,
+  "attributionTermsReceived": false,
+  "locales": {
+    "zh-Hans": {
+      "groupCount": 45,
+      "sourceUnitCount": 45,
+      "policyJsonSha256": "2992481a47a5cd64fb41bb6d1082e41d242288b0e451773843e25eb8cd30e59d",
+      "candidateJsonSha256": "23bd937f54add6497712f3af613c00856c2e86063ba9868179dddc3d073bf364",
+      "humanReviewReceiptJsonSha256": "2f055aa7125d2bd68d159b780657436a0357d3b65b2db4e3d723c95fed8eceb8",
+      "humanReviewedAt": "2026-09-23T18:02:20.433543+00:00",
+      "translatorRequestIds": [
+        "resp_06eb4a145c4f54bc006ab4110748fc87d08816dffb660ea8e4"
+      ],
+      "independentReviewerRequestIds": [
+        "resp_0500172e1aef2e08006ab41183abd887d0a5c4c978ed6420f6"
+      ],
+      "languagePluginImplementationSha256": "7d20ed9a4df4fb3c4bdc285eab3b6f81a640cab4ff1b0b27428c67aef1d209c9",
+      "speechJobJsonSha256": "cc4b48f33c4d22f3005361194c35e58ebc4f83d1e2ec55329070fb0a1c689a06",
+      "clipVoiceAuthorizationJsonSha256": "20ffb349a1ded916f2e1bcb178baaa2bb66c61505f839c905f5870da10145a2f",
+      "fullAudioTrackStatus": "not_generated",
+      "fullAudioHumanReviewStatus": "pending"
+    },
+    "ko": {
+      "groupCount": 44,
+      "sourceUnitCount": 45,
+      "policyJsonSha256": "aa86ad817e6559bb507e959488e6b5197f324237dc471efa5e797c926733b1cf",
+      "candidateJsonSha256": "bc31762e84bd37948346ee1ed7f9de106f949cd08a9fd0a5f415cb5cad8b9eb0",
+      "humanReviewReceiptJsonSha256": "11ec3f9397482859609ed8a5274dadabecef76401d9b7136cf4550169f633807",
+      "humanReviewedAt": "2026-09-23T18:02:20.433543+00:00",
+      "translatorRequestIds": [
+        "resp_0924bffffde081f4006ab4112b470487d09ca7232a871f0790"
+      ],
+      "independentReviewerRequestIds": [
+        "resp_0d06167a4fd066f8006ab411d0060087d09b763b5093405efa"
+      ],
+      "languagePluginImplementationSha256": "4fd06b6e197b370a4fa087c34c1020d446569bd8d548621f9bb539c47ac696ce",
+      "speechJobJsonSha256": "d316a5b81ceb192cd435e78801de9a9753128c483dfc63b66f477565f191d658",
+      "clipVoiceAuthorizationJsonSha256": "5d4e735448732c843e5de8c478acad63e64b90579789ee1df543764481451479",
+      "fullAudioTrackStatus": "not_generated",
+      "fullAudioHumanReviewStatus": "pending",
+      "clipVoiceCapabilityJsonSha256": "aa65e634283ea17d43a69da5ba19a4a2478a328c0edca6d28eaf1038edfdb6bf"
+    },
+    "es": {
+      "groupCount": 44,
+      "sourceUnitCount": 45,
+      "policyJsonSha256": "666a60ce7fa8bf4d45a76cb5de16cbd0b94b7efe8ca8404d33bdd0d67cfa1e3e",
+      "candidateJsonSha256": "0b85d025ea73ad5f5180d25b2be89722e067a0fef9b7a46671ccbfde66e3f5c0",
+      "humanReviewReceiptJsonSha256": "31e8a88aefc77b890aff34e3c68025d173b24cb6dc42a149f847d0a88cd6460b",
+      "humanReviewedAt": "2026-09-23T18:02:20.433543+00:00",
+      "translatorRequestIds": [
+        "resp_0f3734aa63b52781006ab41129010087d0b440fccb843aef8d",
+        "resp_03f7b8c240aeee26006ab41267e4c487d08ff3429242906425"
+      ],
+      "independentReviewerRequestIds": [
+        "resp_0d479cd9a74597da006ab411d1159887d09e86302a451782c3",
+        "resp_07c08d92a67be7cf006ab41269fb7087d0b4534b45f3ed2be7"
+      ],
+      "languagePluginImplementationSha256": "1e623f731a94b5e0814b04b134428113e02d71691f296a1213b632c28076ff22",
+      "speechJobJsonSha256": "5343bec8db1a44ad31d71a5ddf80d04f70fd4ae4515d7eefee51968edc86198f",
+      "clipVoiceAuthorizationJsonSha256": "b3dac65c5235457e70fc7503737a16d10ee20a638303aa8f9e10d8c44a37d9d0",
+      "fullAudioTrackStatus": "not_generated",
+      "fullAudioHumanReviewStatus": "pending",
+      "clipVoiceCapabilityJsonSha256": "65e73b68dbbd1564db79d87c8d7a9b4e796fc9bffdf76a3edf55e4fda5507669"
+    }
+  }
+}

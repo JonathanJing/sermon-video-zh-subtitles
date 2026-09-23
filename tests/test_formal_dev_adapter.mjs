@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
-  formalReleaseView, validateFormalCaptions, validateFormalCatalog,
+  formalReleaseView, loadOptionalFormalCatalog, validateFormalCaptions, validateFormalCatalog,
   validateFormalContent, validateFormalRelease
 } from '../firebase/dev/public/formal-dev-adapter.mjs';
 
@@ -43,6 +43,39 @@ const content = {
 };
 const captions = { cues: [{ textGroupId: 'g1', text: 'Text', start: 0, end: 1 }] };
 const clone = value => structuredClone(value);
+
+test('optional formal catalog failure leaves POC catalog available', async () => {
+  const quiet = console.warn;
+  console.warn = () => {};
+  try {
+    assert.equal(await loadOptionalFormalCatalog(async () => { throw new Error('offline'); }), null);
+    assert.equal(await loadOptionalFormalCatalog(async () => ({ ok: false, status: 503 })), null);
+    assert.equal(await loadOptionalFormalCatalog(async () => ({ ok: true, status: 200,
+      json: async () => ({ malformed: true }) })), null);
+    assert.equal(await loadOptionalFormalCatalog(async () => ({ ok: true, status: 200,
+      json: async () => catalog }), [pageId]), null);
+    assert.deepEqual(await loadOptionalFormalCatalog(async () => ({ ok: true, status: 200,
+      json: async () => catalog })), catalog);
+  } finally {
+    console.warn = quiet;
+  }
+});
+
+test('formal page IDs match the player route grammar', () => {
+  for (const invalid of ['_leading', '-leading', 'x'.repeat(129)]) {
+    const changed = clone(catalog);
+    changed.defaultPageId = invalid;
+    changed.pages[0].id = invalid;
+    assert.throws(() => validateFormalCatalog(changed));
+  }
+  const dotted = clone(catalog);
+  dotted.defaultPageId = 'formal.page-1';
+  dotted.pages[0].id = 'formal.page-1';
+  for (const target of Object.values(dotted.pages[0].targets)) {
+    target.releasePackageUrl = target.releasePackageUrl.replace(pageId, 'formal.page-1');
+  }
+  assert.deepEqual(validateFormalCatalog(dotted), dotted);
+});
 
 test('formal v2 catalog and release produce a separate verified player view', () => {
   validateFormalCatalog(catalog);

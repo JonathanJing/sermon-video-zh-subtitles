@@ -24,7 +24,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 
 ROOT = Path(__file__).resolve().parents[1]
 LOCALES = ("zh-Hans", "ko", "es")
-PAGE_ID = re.compile(r"^[A-Za-z0-9_-]{1,160}$")
+PAGE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 
 
 class StageError(ValueError):
@@ -287,7 +287,7 @@ def preflight(args: argparse.Namespace) -> tuple[dict, dict[str, tuple[Path, str
                         or content_receipt["targetLanguageAudioPackageJsonSha256"] != audio_hash
                         or content_receipt["contentJsonSha256"] != canonical_sha(content)
                         or set(content_receipt["reviewedFields"]) != {
-                            "series", "title", "speaker", "scripture", "date", "summary"}):
+                            "series", "title", "speaker", "scripture", "date", "summary", "outline"}):
                     raise StageError(f"{locale}: independent content metadata review is invalid")
                 if abs(content["durationSeconds"] - track_duration) > 0.2:
                     raise StageError(f"{locale}: content duration differs from decoded Layer 3 track")

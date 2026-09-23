@@ -257,9 +257,19 @@ class AudioPackageTests(unittest.TestCase):
         self.screening = {
             "schemaVersion": "sermon-target-language-audio-screening-v1",
             "targetLocale": "ko", "targetLanguageSpeechJobJsonSha256": subject.json_sha256(self.job),
-            "status": "pass", "model": "fixture-asr", "coverage": 1.0,
+            "trackSha256": self.manifest["track"]["sha256"],
+            "status": "pass", "model": "fixture-asr", "modelRevision": "fixture-v1",
+            "minSimilarity": 0.88, "coverage": 1.0,
             "reviewedGroupIds": ["g1", "g2"],
             "unitAudioSha256s": [row["audio"]["sha256"] for row in self.manifest["units"]],
+            "results": [{
+                "textGroupId": unit["translationGroupId"],
+                "targetTextSha256": hashlib.sha256(unit["text"].encode()).hexdigest(),
+                "audioSha256": self.manifest["units"][index]["audio"]["sha256"],
+                "recognized": unit["text"], "similarity": 1.0,
+                "differences": [], "status": "pass",
+            } for index, unit in enumerate(self.job["units"])],
+            "humanListeningStatus": "pending",
         }
         write_json(self.asset_root / screening_rel, self.screening)
         self.manifest["machineScreeningReceipt"] = self.artifact(screening_rel, json_artifact=True)
@@ -524,7 +534,7 @@ class AudioPackageTests(unittest.TestCase):
     def test_screening_receipt_change_changes_package_invalidation_key(self):
         first = self.build()
         rel = self.manifest["machineScreeningReceipt"]["path"]
-        self.screening["runId"] = "fixture-second-run"
+        self.screening["modelRevision"] = "fixture-v2"
         write_json(self.asset_root / rel, self.screening)
         self.manifest["machineScreeningReceipt"] = self.artifact(rel, json_artifact=True)
         second = self.build()
@@ -536,6 +546,16 @@ class AudioPackageTests(unittest.TestCase):
         rel = self.manifest["machineScreeningReceipt"]["path"]
         write_json(self.asset_root / rel, self.screening)
         self.manifest["machineScreeningReceipt"] = self.artifact(rel, json_artifact=True)
+        with self.assertRaisesRegex(ValueError, "exact audio set"):
+            self.build()
+
+    def test_machine_screening_cannot_claim_another_delivered_track(self):
+        rel = self.manifest["track"]["path"]
+        path = self.asset_root / rel
+        changed = bytearray(path.read_bytes())
+        changed[-2:] = b"\x01\x00"
+        path.write_bytes(changed)
+        self.manifest["track"] = self.artifact(rel)
         with self.assertRaisesRegex(ValueError, "exact audio set"):
             self.build()
 
