@@ -201,7 +201,11 @@ def main() -> None:
     parser.add_argument("--date", required=True)
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
-    print(json.dumps(build(args), ensure_ascii=False))
+    try:
+        receipt = build(args)
+    except (ValueError, OSError, json.JSONDecodeError, stage.StageError) as error:
+        parser.exit(2, f"error: {error}\n")
+    print(json.dumps(receipt, ensure_ascii=False))
 
 
 if __name__ == "__main__":
