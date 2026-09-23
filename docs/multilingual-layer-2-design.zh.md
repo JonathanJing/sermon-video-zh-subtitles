@@ -272,11 +272,13 @@ artifacts/target-language-text/<source-package-id>/<target-locale>/<job-id>/
 - `translation-draft.json`：translator-only 内部产物；
 - `independent-review.json`：reviewer 修订、语义 ledger 和 uncertainty；
 - `candidate.machine.json`：正式 v2 机器候选，永远 `releaseEligible=false`；
-- `human-review-receipt.json`：独立的人审决定，绑定待批准 v2 candidate 的完整 JSON hash、源包、anchor、policy 和每组决定；[收据 schema](../schemas/sermon-target-language-human-review-receipt-v1.schema.json) 已定义，审核入口仍待实现；
+- `human-review-receipt.json`：独立的人审决定，绑定待批准 v2 candidate 的完整 JSON hash、源包、anchor、policy 和每组决定；由[审核 CLI](../scripts/review_target_language_candidate.py) 根据人工填写的 worksheet 生成并校验，结构见[收据 schema](../schemas/sermon-target-language-human-review-receipt-v1.schema.json)；
 - `candidate.approved.json`：新的 v2 revision；其完整 JSON hash 必须与人审收据一致才能进入 Layer 3，仍 `releaseEligible=false`；
 - `run-receipt.json`：job identity、实现 hash、模型调用数、重试、耗时、token／成本摘要和全部紧凑产物 hash。
 
 Git 只提交 schema、policy 模板、无私人内容的 fixture、实现与紧凑测试证据；真实证道文本、完整模型响应和运行目录继续 ignored。
+
+人工审核入口先运行 `.venv/bin/python scripts/review_target_language_candidate.py prepare --english-source-package <source.json> --anchor <anchor.json> --candidate <candidate.machine.json> --policy <resolved-policy.json> --out <new-worksheet.json>`。审核者查看每组英文、目标文字、coverage 和机器检查证据，亲自填写 worksheet 的 `reviewer`、带时区的 `reviewedAt`、总 `decision=approved`，以及每组 `decision=approved` 和非空 `evidence`。随后以相同四个输入运行 `approve --worksheet <completed-worksheet.json> --out <new-directory>`，输出新的 `candidate.approved.json` 与 `human-review-receipt.json`。任一来源、policy、candidate 或 worksheet 展示内容变化时，`approve` 会拒绝旧决定；此入口不调用模型，也不代表已有人实际完成审核。
 
 ## 6. 开发切片与验收顺序
 

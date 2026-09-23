@@ -1,12 +1,15 @@
 import copy
 import json
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
 import unittest
 
 from jsonschema import Draft202012Validator, FormatChecker
 
 from scripts import prepare_target_language_speech_job as subject
+from scripts import review_target_language_candidate as human_review
 from scripts import sermon_sentence_interpretation as interpretation
 from scripts import target_language_policy as policy_tools
 
@@ -277,6 +280,97 @@ class TargetLanguageSpeechJobTests(unittest.TestCase):
             subject.validate_human_review_receipt(
                 self.source_package, self.anchor, altered_candidate, self.human_review_receipt,
             )
+
+    def machine_candidate(self):
+        candidate = copy.deepcopy(self.candidate)
+        candidate["status"] = "machine_review_pass_human_review_pending"
+        candidate["humanReview"] = {
+            "translation": "pending", "reviewer": None,
+            "reviewedAt": None, "reviewedGroupIds": [],
+        }
+        return candidate
+
+    def test_review_worksheet_admits_new_candidate_and_receipt(self):
+        machine = self.machine_candidate()
+        worksheet = human_review.build_worksheet(self.source_package, self.anchor, machine, self.policy)
+        self.assertEqual(worksheet["groupReviews"][0]["sourceUnits"][0]["english"], "Do not be afraid.")
+        self.assertEqual(worksheet["groupReviews"][0]["coverage"], machine["groups"][0]["coverage"])
+        worksheet["decision"] = "approved"
+        worksheet["reviewer"] = "Korean reviewer"
+        worksheet["reviewedAt"] = "2026-09-20T12:00:00Z"
+        for row in worksheet["groupReviews"]:
+            row["decision"] = "approved"
+            row["evidence"] = "Reviewed English meaning and Korean text."
+        approved, receipt = human_review.approve_worksheet(
+            self.source_package, self.anchor, machine, self.policy, worksheet,
+        )
+        self.assertEqual(approved["status"], "human_translation_approved")
+        self.assertEqual(receipt["candidateJsonSha256"], interpretation.json_sha256(approved))
+        self.assertEqual(self.validate_schema("sermon-target-language-candidate-v2.schema.json", approved), [])
+        self.assertEqual(self.validate_schema("sermon-target-language-human-review-receipt-v1.schema.json", receipt), [])
+        write_json(self.candidate_path, approved)
+        write_json(self.human_review_receipt_path, receipt)
+        job = subject.prepare_job(
+            self.source_package_path, self.anchor_path, self.candidate_path,
+            self.policy_path, self.human_review_receipt_path, self.adapter_path,
+            self.registry_path, self.root / "reviewed-job",
+        )
+        self.assertFalse(job["synthesisEligible"])
+
+    def test_review_worksheet_rejects_stale_or_partial_review(self):
+        machine = self.machine_candidate()
+        base = human_review.build_worksheet(self.source_package, self.anchor, machine, self.policy)
+        base["decision"] = "approved"
+        base["reviewer"] = "Korean reviewer"
+        base["reviewedAt"] = "2026-09-20T12:00:00Z"
+        for row in base["groupReviews"]:
+            row["decision"] = "approved"
+            row["evidence"] = "Reviewed."
+        stale = copy.deepcopy(base)
+        stale["candidateJsonSha256"] = "0" * 64
+        with self.assertRaisesRegex(ValueError, "identity changed"):
+            human_review.approve_worksheet(self.source_package, self.anchor, machine, self.policy, stale)
+        partial = copy.deepcopy(base)
+        partial["groupReviews"][0]["decision"] = "pending"
+        with self.assertRaisesRegex(ValueError, "unapproved or unexplained"):
+            human_review.approve_worksheet(self.source_package, self.anchor, machine, self.policy, partial)
+        altered = copy.deepcopy(base)
+        altered["groupReviews"][0]["targetText"] = "Changed after review."
+        with self.assertRaisesRegex(ValueError, "evidence changed"):
+            human_review.approve_worksheet(self.source_package, self.anchor, machine, self.policy, altered)
+
+    def test_human_review_cli_writes_immutable_pair(self):
+        write_json(self.candidate_path, self.machine_candidate())
+        script = Path(__file__).parents[1] / "scripts/review_target_language_candidate.py"
+        common = [
+            "--english-source-package", str(self.source_package_path),
+            "--anchor", str(self.anchor_path),
+            "--candidate", str(self.candidate_path),
+            "--policy", str(self.policy_path),
+        ]
+        worksheet_path = self.root / "human-worksheet.json"
+        subprocess.run([sys.executable, str(script), "prepare", *common,
+                        "--out", str(worksheet_path)], check=True, capture_output=True, text=True)
+        worksheet = json.loads(worksheet_path.read_text(encoding="utf-8"))
+        worksheet["decision"] = "approved"
+        worksheet["reviewer"] = "Korean reviewer"
+        worksheet["reviewedAt"] = "2026-09-20T12:00:00Z"
+        for row in worksheet["groupReviews"]:
+            row["decision"] = "approved"
+            row["evidence"] = "Reviewed against source."
+        write_json(worksheet_path, worksheet)
+        out = self.root / "human-approved"
+        subprocess.run([sys.executable, str(script), "approve", *common,
+                        "--worksheet", str(worksheet_path), "--out", str(out)],
+                       check=True, capture_output=True, text=True)
+        approved = json.loads((out / "candidate.approved.json").read_text(encoding="utf-8"))
+        receipt = json.loads((out / "human-review-receipt.json").read_text(encoding="utf-8"))
+        subject.validate_human_review_receipt(self.source_package, self.anchor, approved, receipt)
+        repeated = subprocess.run([sys.executable, str(script), "approve", *common,
+                                   "--worksheet", str(worksheet_path), "--out", str(out)],
+                                  capture_output=True, text=True)
+        self.assertNotEqual(repeated.returncode, 0)
+        self.assertIn("immutable", repeated.stderr)
 
     def test_layer_three_rejects_pending_human_translation_review(self):
         self.candidate["status"] = "machine_review_pass_human_review_pending"

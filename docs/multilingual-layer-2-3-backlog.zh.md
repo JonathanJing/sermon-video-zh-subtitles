@@ -84,9 +84,9 @@
 
 #### L2-005 建立人工文字审核收据
 
-- [ ] 审核 UI 或 CLI 显示英文 source unit、目标译文、coverage、机器复核证据和语言检查。
+- [x] `review_target_language_candidate.py prepare` 生成逐组人工 worksheet，显示英文 source unit、目标译文、coverage、机器复核证据和语言检查；审核者须填写 reviewer、带时区时间、逐组决定与说明。
 - [x] 收据 schema 与 Layer 3 准备器绑定 source package、anchor、policy、candidate hash、全部 reviewed group IDs、reviewer 和带时区时间；每组须有人工审核决定与说明。
-- [ ] 审核入口只允许完整覆盖且无 unresolved issue 的 candidate 进入 `human_translation_approved`；当前准备器会拒绝不完整候选及收据，但尚无生成批准的入口。
+- [x] `approve` 只接受完整覆盖、机器检查全通过、policy 已就绪且逐组人工决定均为 approved 的 worksheet，生成新的 `human_translation_approved` candidate 和独立收据；不会自动替审核者填写决定。
 - [x] 英文 package、policy 或任一 group 改变时，旧收据在 Layer 3 准备阶段失效；完整 candidate 审批工作流仍待实现。
 
 验收：复制旧收据到新 candidate、漏审一个 group 或 hash 不符都不能进入 Layer 3。
