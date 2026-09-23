@@ -136,7 +136,7 @@ Supervisor 的 generation 命令固定传入上述参数及 `--export-sunday-con
 4. 直播仍是 `is_live` 时，本次运行安全退出。
 5. 直播进入 `was_live/post_live` 后，本地 `yt-dlp` 下载完整音频，检查媒体完整性并记录实测时长与哈希。
 6. 来源媒体报告上传 GCS，流程停止在 `requires_operator_review`，等待操作员提供并确认起止时间。
-7. 范围批准后生成冻结英文、字词时间轴和 Layer 1 候选；英文人工收据绑定后才放行 Layer 2。
+7. 范围批准后生成冻结英文、字词时间轴和 Layer 1 候选；干净 shadow 锚点先待独立机器裁判。机器收据只放行 Layer 2 shadow，正式 Layer 2 仍须绑定英文人工审核收据。
 8. 每个 `targetLocale` 从同一 English Source Package 直接生成和批准 Target-Language Candidate；不经中文中转其他语言。
 9. 仅对人工文字批准的 locale 生成自然语速音频、排程和字幕，完整听审后冻结 Audio Package；可以显式选择纯文字发布。
 10. 按 `pageId + targetLocale` 生成 Release Package，再发布并分别记录 HTTP、设备和现场验收。通用 Layer 2–4 producer 未实现时，停在对应层并报告迁移 blocker，不用 legacy `complete` 越过。

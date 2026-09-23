@@ -1,0 +1,113 @@
+{
+  "schemaVersion": "sermon-layer3-qwen-auk-poc-plan-v1",
+  "scope": "layer_3_shadow_experiment",
+  "status": "machine_translation_review_only",
+  "productionEligible": false,
+  "humanApproval": false,
+  "targetLocale": "ko",
+  "source": {
+    "anchorManifestJsonSha256": "8b1e920e8fb1477a090a22db4422db2c28f9d88746a3236366e412a132fb31cd",
+    "targetLanguageCandidateJsonSha256": "0017926d5fe74548842715a56b1a05cb33db8163adfb4de64716dbb61a45e52b",
+    "translationStatus": "machine_review_pass_human_review_pending"
+  },
+  "voice": {
+    "speakerId": "eric_geiger",
+    "qwenSpeakerKey": "eric_pilot",
+    "qwenCheckpointSha256": "75d28ce6022b3df3a72df3dd6dbc01e53f584d685770d60ea04b341920968c9a",
+    "referenceAudioSha256": "26688c073a93e551e05a19169d236d53ed1e9bddeb140249c8ac228bf418c807"
+  },
+  "dimensions": [
+    {
+      "id": "direct_generation",
+      "variants": ["qwen_sft_unit", "auk_zero_shot"],
+      "purpose": "Compare the registered Eric Qwen SFT voice with AuK zero-shot cloning on identical Korean text and duration budgets."
+    },
+    {
+      "id": "prosody_postprocessing",
+      "variants": ["qwen_sft_unit", "qwen_then_auk_speed_emphasis"],
+      "purpose": "Measure whether AuK can improve duration and emphasis while preserving Qwen content and Eric voice identity."
+    }
+  ],
+  "evaluation": {
+    "required": [
+      "full_decode",
+      "content_asr_screen",
+      "speaker_similarity_screen",
+      "duration_error",
+      "deterministic_pause_check",
+      "blind_human_listening"
+    ],
+    "durationAbsoluteErrorTargetSeconds": 0.4,
+    "warning": "ASR and speaker embeddings are machine screens only; they do not establish human listening acceptance."
+  },
+  "units": [
+    {
+      "unitIndex": 0,
+      "sourceUnitId": "block-59-u001",
+      "sourceStartSeconds": 1858.4,
+      "sourceEndSeconds": 1865.72,
+      "targetDurationSeconds": 7.32,
+      "pauseAfterSeconds": 0.66,
+      "targetText": "패배처럼 보였던 것은 사실 예수가 우리의 원수를 이기고 있는 것이었습니다. 그는 모든 것을 이기는 분이기 때문입니다.",
+      "targetTextSha256": "274b1911702d41ca016e811f8e7329f749b67a31dd0f79ec6187035b3d2f3f7f",
+      "challenger": true,
+      "prosodyInstruction": "Preserve the speaker and Korean content, use calm sermon narration, and emphasize that Jesus conquers every enemy."
+    },
+    {
+      "unitIndex": 1,
+      "sourceUnitId": "block-59-u002",
+      "sourceStartSeconds": 1866.38,
+      "sourceEndSeconds": 1868.17,
+      "targetDurationSeconds": 1.79,
+      "pauseAfterSeconds": 2.01,
+      "targetText": "그는 모든 것을 이깁니다.",
+      "targetTextSha256": "24731652e15eda3b9f93f00cc4ad061d8b72bd2c5a6ee8f97952ee37c6a5db40",
+      "challenger": false
+    },
+    {
+      "unitIndex": 2,
+      "sourceUnitId": "block-59-u003",
+      "sourceStartSeconds": 1870.18,
+      "sourceEndSeconds": 1875.33,
+      "targetDurationSeconds": 5.15,
+      "pauseAfterSeconds": 2.270001,
+      "targetText": "여러분에게는 으르렁거리는 사자인 원수가 있습니다.",
+      "targetTextSha256": "a406ee963c28a6f85e139acd5bfb5bff779300543fe76d8831fce6986ca86dce",
+      "challenger": false
+    },
+    {
+      "unitIndex": 3,
+      "sourceUnitId": "block-59-u004",
+      "sourceStartSeconds": 1877.600001,
+      "sourceEndSeconds": 1881.510001,
+      "targetDurationSeconds": 3.91,
+      "pauseAfterSeconds": 0.0,
+      "targetText": "여러분을 멸망시키고 집어삼키려 하고 있습니다.",
+      "targetTextSha256": "fe37429732acd42aca70c67743284efb3ef1da68d50e803df4481f5c36dbfbd6",
+      "challenger": false
+    },
+    {
+      "unitIndex": 4,
+      "sourceUnitId": "block-59-u005",
+      "sourceStartSeconds": 1881.510001,
+      "sourceEndSeconds": 1892.15,
+      "targetDurationSeconds": 10.639999,
+      "pauseAfterSeconds": 1.450001,
+      "targetText": "하지만 다음 주에 요한계시록 4장과 5장을 살펴보면, 예수가 유다 지파의 사자라고 불린다는 것을 알게 될 것입니다.",
+      "targetTextSha256": "81d3318f2fd63c109d2ee1cd2b526e95729c416329f9333cd70e524a066797d3",
+      "challenger": true,
+      "prosodyInstruction": "Preserve the speaker and Korean content, use measured sermon narration, and emphasize the Lion of the tribe of Judah without sounding theatrical."
+    },
+    {
+      "unitIndex": 5,
+      "sourceUnitId": "block-59-u006",
+      "sourceStartSeconds": 1893.600001,
+      "sourceEndSeconds": 1899.280001,
+      "targetDurationSeconds": 5.68,
+      "pauseAfterSeconds": 0.0,
+      "targetText": "그리고 그의 포효는 사탄의 포효를 압도합니다.",
+      "targetTextSha256": "34113fe9e53b10337f8dd91760b3082bfcd0ed808e7953869ad6d97fcb2564db",
+      "challenger": false
+    }
+  ]
+}

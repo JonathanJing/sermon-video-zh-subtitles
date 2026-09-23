@@ -1,6 +1,6 @@
 # 多语言生产四层接口
 
-状态：本文是今后所有预制多语言生产的规范合同。四个层间接口名称和 JSON Schema 已冻结为 v1；Layer 1 已有确定性生成器并接入未来周 shadow。Layer 2–4 的 schema 是迁移目标，不表示对应的多语言生产实现已经完成。
+状态：本文是今后所有预制多语言生产的规范合同。四个层间接口名称和 JSON Schema 已冻结为 v1；Layer 1 已有确定性生成器和独立机器裁判，可为 Layer 2 shadow 开发提供审核收据；机器裁判不授予生产翻译资格。Layer 2–4 的 schema 是迁移目标，Dev 片段 POC 不表示对应的正式多语言生产已经完成。
 
 现有双 PDF、中文配音和 `weekly.json` 发布工具在迁移期间作为 legacy adapter 保留。它们可以完成各自明确 scope，但只有四个正式包及其门禁均有证据时，才可报告 `workflowScope=four_layer_release`。周日实时字幕属于独立 `live_session`，不在现场强制生成这些预制包；若会后复用录音，应从 Layer 1 开始。
 
@@ -54,10 +54,10 @@ Target-Language Candidate + Target-Language Audio Package
 状态含义：
 
 - `blocked`：锚点或对齐有未解决问题，不得调用翻译模型。
-- `candidate_ready_for_translation`：结构检查通过，可用于 shadow 模型实验，但仍缺生产所需的来源或人工门禁。
+- `candidate_ready_for_translation`：结构检查和绑定的逐句机器裁判通过，可用于 Layer 2 shadow 开发，但仍缺生产所需的来源或人工门禁。干净锚点在机器裁判前的 shadow 收据为 `waiting_machine_judge`。
 - `ready_for_translation`：媒体身份、批准范围和四项英文人工检查均已绑定，允许正式 Layer 2 消费。
 
-当前生成器：[build_english_source_package.py](../scripts/build_english_source_package.py)。未来周入口 [prepare_sentence_interpretation_shadow.py](../scripts/prepare_sentence_interpretation_shadow.py) 同时写出 `anchor-manifest.json` 和 `english-source-package.json`；`run_post_live_subtitle_generation.py` 可用 `--sentence-interpretation-english-review` 绑定人工审核收据并重跑 Layer 1。这一层不写入中文 prompt，也不生成目标语言文字。
+当前生成器：[build_english_source_package.py](../scripts/build_english_source_package.py)；[独立机器裁判](../scripts/judge_english_source_for_translation.py)只产生 `humanApproval=false`、`productionTranslationEligible=false` 的 shadow 收据。未来周入口 [prepare_sentence_interpretation_shadow.py](../scripts/prepare_sentence_interpretation_shadow.py) 同时写出 `anchor-manifest.json` 和 `english-source-package.json`；`run_post_live_subtitle_generation.py` 可用 `--sentence-interpretation-english-review` 绑定人工审核收据并重跑 Layer 1。这一层不写入中文 prompt，也不生成目标语言文字。
 
 ## Layer 2：目标语言文字
 
@@ -89,8 +89,8 @@ Target-Language Candidate + Target-Language Audio Package
 
 ## 当前实现边界
 
-- Layer 1：代码已实现并进入 shadow；没有英文人工审核收据时只产生 `candidate_ready_for_translation`。
-- Layer 2：中文 legacy runner 可工作，新通用文字包 producer 尚未实现。
-- Layer 3：中文 legacy TTS／同步可工作，新通用音频包 producer 及韩语/西班牙语 speech adapter 尚未实现。
-- Layer 4：当前生产仍为 `sermon-weekly-catalog-v1`；多语言 catalog 和 release package producer 尚未实现。
+- Layer 1：确定性锚点和机器裁判代码可运行；无机器裁判且无正式英文人工收据的干净 shadow 输入停在 `waiting_machine_judge`。机器裁判通过只允许 Layer 2 shadow，正式 `ready_for_translation` 仍需英文人工收据。
+- Layer 2：中文 legacy runner 可工作；`zh-Hans`、`ko`、`es`、`vi` 有同源六句 shadow 候选及机器复核，人工翻译批准和通用正式 producer 尚未完成。
+- Layer 3：中文 legacy TTS／同步可工作；四语片段 voice/ASR 与音频包 POC 已运行，使用 POC speech job 和估算字幕，不能越过 Layer 2 人工门禁。通用 renderer、同步器、语义校验器及正式 Audio Package producer 尚未完成。
+- Layer 4：Dev 已有多语言 catalog 构建和演示发布路径；正式 Target-Language Release Package producer、逐语言发布及设备／现场验收尚未完成。
 - Canonical English Content 是从英文事实派生的页面内容输入，可以作为 English Source Package 的可选绑定；它不是英文逐字稿，也不能替代 Layer 1 审核。
