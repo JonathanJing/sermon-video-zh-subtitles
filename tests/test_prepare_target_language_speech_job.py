@@ -258,6 +258,39 @@ class TargetLanguageSpeechJobTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "authorization evidence changed"):
             subject.validate_adapter(wrong, "ko", self.registry)
 
+    def test_verified_override_requires_registered_provider(self):
+        registry = copy.deepcopy(self.registry)
+        speaker = registry["speakers"][0]
+        speaker["authorization"]["purposes"].append("multilingual_dubbing")
+        capability = next(row for row in speaker["localeCapabilities"] if row["targetLocale"] == "ko")
+        reference = next(row for row in speaker["localeCapabilities"] if row["targetLocale"] == "vi")
+        capability["adapterOverride"] = copy.deepcopy(reference["adapterOverride"])
+        capability["adapterOverride"]["provider"] = "synthetic-provider"
+        capability["status"] = "human_reviewed"
+        capability["reviewEvidence"] = ["synthetic-test-review-evidence"]
+        adapter = copy.deepcopy(self.adapter)
+        adapter["adapterId"] = capability["adapterOverride"]["adapter"]
+        adapter["provider"] = capability["adapterOverride"]["provider"]
+        adapter["model"] = capability["adapterOverride"]["model"]
+        adapter["modelRevision"] = capability["adapterOverride"]["revision"]
+        adapter["conditioningRef"] = capability["adapterOverride"]["conditioningRef"]
+        adapter["conditioningSha256"] = adapter["conditioningRef"].rsplit("/", 1)[-1]
+        adapter["registryJsonSha256"] = interpretation.json_sha256(registry)
+        adapter["capabilityEvidenceSha256"] = interpretation.json_sha256(capability["reviewEvidence"])
+        adapter["authorizationPurpose"] = "multilingual_dubbing"
+        adapter["capabilityStatus"] = "verified"
+        subject.validate_adapter(adapter, "ko", registry)
+        wrong = copy.deepcopy(adapter)
+        wrong["provider"] = "wrong-provider"
+        with self.assertRaisesRegex(ValueError, "provider differs from registry override"):
+            subject.validate_adapter(wrong, "ko", registry)
+        missing = copy.deepcopy(registry)
+        next(row for row in missing["speakers"][0]["localeCapabilities"]
+             if row["targetLocale"] == "ko")["adapterOverride"].pop("provider")
+        adapter["registryJsonSha256"] = interpretation.json_sha256(missing)
+        with self.assertRaisesRegex(ValueError, "production authorization or human-reviewed"):
+            subject.validate_adapter(adapter, "ko", missing)
+
     def test_human_review_receipt_rejects_stale_or_incomplete_approval(self):
         stale = copy.deepcopy(self.human_review_receipt)
         stale["candidateJsonSha256"] = "0" * 64

@@ -62,6 +62,9 @@ class TargetLanguagePolicyTests(unittest.TestCase):
         ko["terminology"]["seriesNames"][0]["reviewStatus"] = "human_reviewed"
         with self.assertRaisesRegex(ValueError, "lacks target text"):
             subject.freeze_policy(ko)
+        ko["terminology"]["seriesNames"][0]["target"] = "   "
+        with self.assertRaisesRegex(ValueError, "lacks target text"):
+            subject.freeze_policy(ko)
 
     def test_series_table_coverage_and_chinese_names_cannot_drift(self):
         zh = read_policy("zh-Hans")

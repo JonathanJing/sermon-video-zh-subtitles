@@ -210,7 +210,7 @@ OpenAI 当前[模型选择指南](https://developers.openai.com/api/docs/guides/
 
 不在首版加入 fine-tuning，也不把本地模型设为默认。先积累经过韩语人工审核的 source/target/review 对，才有可靠的蒸馏、微调或本地模型比较集。
 
-policy 记录请求模型 alias；运行收据同时记录 `requestedModel` 和 API 实际返回的 `responseModel`。candidate 的 `generation.*.model` 使用实际响应模型，防止 alias 漂移被隐藏。
+policy 记录固定的请求模型身份；运行收据同时记录 `requestedModel` 和 API 实际返回的 `responseModel`。当前 Layer 3 准备器要求 candidate 的 `generation.*.model` 与 policy 的模型字段完全相同；若服务端返回不同版本身份，producer 必须先冻结新的 policy 与 candidate，不能把模型漂移隐藏在旧 hash 下。
 
 ## 4. 目标语言策略合同
 
