@@ -163,12 +163,14 @@
 
 #### L3-003 音频解码和完整性门禁
 
-- [ ] 每个 unit 用 `ffprobe` 验证音频流、采样率、声道和正时长。
-- [ ] 用 `ffmpeg` 完整解码，不以文件存在或 header 可读代替完整检查。
+- [x] 单元校验器对正式 `speech-job-v2` 的每个指定 unit 用 `ffprobe` 验证单一音频流、采样率、声道和正时长，并核对源包、policy、人审收据、voice registry 和已批准文字的 hash。
+- [x] 用 `ffmpeg -xerror` 完整解码后才写入[单元音频收据](../schemas/sermon-target-language-audio-unit-receipt-v1.schema.json)，不以文件存在或 header 可读代替完整检查；真实 renderer 接入仍待 L3-002。
 - [ ] 汇总 track 前核对 unit 数量、顺序、text hash 和 receipt hash。
 - [ ] 任一 unit 缺失或损坏时保留已完成单元，但不生成完整音轨候选。
 
 验收：截断、空文件、错 unit、旧 job 音频和 hash 漂移 fixture 全部被拒绝。
+
+开发入口：`.venv/bin/python scripts/validate_target_language_audio_unit.py --job <job-dir>/job.json --unit-index <n> --audio <job-dir>/languages/<locale>/audio/unit-<n>.wav --out <new-unit-receipt.json>`。只对 `synthesisEligible=true` 的 job 生成收据；单元音频收据不授予 ASR、排程、人工听审或发布资格。
 
 #### L3-004 抽出语言中立滚动排程器
 

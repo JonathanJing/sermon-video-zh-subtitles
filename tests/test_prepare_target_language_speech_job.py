@@ -5,11 +5,13 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import wave
 
 from jsonschema import Draft202012Validator, FormatChecker
 
 from scripts import prepare_target_language_speech_job as subject
 from scripts import review_target_language_candidate as human_review
+from scripts import validate_target_language_audio_unit as audio_integrity
 from scripts import sermon_sentence_interpretation as interpretation
 from scripts import target_language_policy as policy_tools
 
@@ -192,6 +194,13 @@ class TargetLanguageSpeechJobTests(unittest.TestCase):
         self.assertFalse((self.root / "forged-job").exists())
 
     def test_synthetic_verified_registry_allows_preparation_but_not_release(self):
+        job = self.make_verified_speech_job()
+        self.assertEqual(job["status"], "prepared_for_target_language_speech")
+        self.assertTrue(job["synthesisEligible"])
+        self.assertFalse(job["releaseEligible"])
+        self.assertEqual(self.validate_schema("sermon-target-language-speech-job-v2.schema.json", job), [])
+
+    def make_verified_speech_job(self):
         speaker = self.registry["speakers"][0]
         speaker["authorization"]["purposes"].append("multilingual_dubbing")
         capability = next(row for row in speaker["localeCapabilities"] if row["targetLocale"] == "ko")
@@ -209,10 +218,61 @@ class TargetLanguageSpeechJobTests(unittest.TestCase):
             self.policy_path, self.human_review_receipt_path, self.adapter_path,
             self.registry_path, self.root / "verified-job",
         )
-        self.assertEqual(job["status"], "prepared_for_target_language_speech")
-        self.assertTrue(job["synthesisEligible"])
-        self.assertFalse(job["releaseEligible"])
-        self.assertEqual(self.validate_schema("sermon-target-language-speech-job-v2.schema.json", job), [])
+        return job
+
+    def test_audio_unit_receipt_requires_full_decode_and_exact_job_binding(self):
+        job = self.make_verified_speech_job()
+        job_path = self.root / "verified-job/job.json"
+        audio_path = job_path.parent / job["units"][0]["outputRelativePath"]
+        audio_path.parent.mkdir(parents=True)
+        with wave.open(str(audio_path), "wb") as stream:
+            stream.setnchannels(1)
+            stream.setsampwidth(2)
+            stream.setframerate(16000)
+            stream.writeframes(b"\0" * 32000)
+        receipt = audio_integrity.build_receipt(job_path, 0, audio_path)
+        self.assertEqual(receipt["fullDecode"], "pass")
+        self.assertEqual(receipt["sampleRate"], 16000)
+        self.assertEqual(receipt["channels"], 1)
+        self.assertEqual(receipt["targetLocale"], "ko")
+        self.assertEqual(self.validate_schema("sermon-target-language-audio-unit-receipt-v1.schema.json", receipt), [])
+        audio_integrity.validate_receipt(job_path, 0, audio_path, receipt)
+        receipt_path = self.root / "unit-receipt.json"
+        script = Path(__file__).parents[1] / "scripts/validate_target_language_audio_unit.py"
+        subprocess.run([sys.executable, str(script), "--job", str(job_path),
+                        "--unit-index", "0", "--audio", str(audio_path), "--out", str(receipt_path)],
+                       check=True, capture_output=True, text=True)
+        saved = json.loads(receipt_path.read_text(encoding="utf-8"))
+        audio_integrity.validate_receipt(job_path, 0, audio_path, saved)
+        wrong_metadata = copy.deepcopy(receipt)
+        wrong_metadata["sampleRate"] = 48000
+        with self.assertRaisesRegex(ValueError, "metadata differs"):
+            audio_integrity.validate_receipt(job_path, 0, audio_path, wrong_metadata)
+        audio_path.write_bytes(audio_path.read_bytes() + b"changed")
+        with self.assertRaisesRegex(ValueError, "another job, text, path, or audio"):
+            audio_integrity.validate_receipt(job_path, 0, audio_path, receipt)
+        with self.assertRaisesRegex(ValueError, "Audio path differs"):
+            audio_integrity.build_receipt(job_path, 0, self.root / "wrong.wav")
+        audio_path.write_bytes(b"RIFFbad")
+        with self.assertRaises(subprocess.CalledProcessError):
+            audio_integrity.build_receipt(job_path, 0, audio_path)
+
+    def test_audio_unit_gate_rejects_pending_job_and_changed_text(self):
+        pending = subject.prepare_job(
+            self.source_package_path, self.anchor_path, self.candidate_path,
+            self.policy_path, self.human_review_receipt_path, self.adapter_path,
+            self.registry_path, self.root / "pending-job",
+        )
+        pending_path = self.root / "pending-job/job.json"
+        audio_path = pending_path.parent / pending["units"][0]["outputRelativePath"]
+        with self.assertRaisesRegex(ValueError, "not eligible"):
+            audio_integrity.build_receipt(pending_path, 0, audio_path)
+        job = self.make_verified_speech_job()
+        job_path = self.root / "verified-job/job.json"
+        job["units"][0]["text"] = "Altered target text"
+        write_json(job_path, job)
+        with self.assertRaisesRegex(ValueError, "approved text"):
+            audio_integrity.build_receipt(job_path, 0, job_path.parent / job["units"][0]["outputRelativePath"])
 
     def test_pending_korean_policy_or_wrong_policy_hash_blocks_layer_three(self):
         pending = json.loads((Path(__file__).parents[1] / "config/target-language-policies/ko.json").read_text(encoding="utf-8"))
