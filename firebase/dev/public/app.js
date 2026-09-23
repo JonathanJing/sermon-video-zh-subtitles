@@ -77,7 +77,7 @@ const state = {
   catalog: null, page: null, locale: null, release: null, content: null, audioVariant: null,
   ui: interfaceLocales[localStorage.getItem("tongxing-dev-ui")] ? localStorage.getItem("tongxing-dev-ui") : "zh",
   activeTab: "listen", showSource: false, audioObjectURL: null, selectionToken: 0,
-  selectionController: null, variantController: null, pendingLocale: null, pendingResume: null,
+  selectionController: null, variantController: null, pendingLocale: null, pendingVariantId: null, pendingResume: null,
   lastSavedAt: 0, switchingAudio: false, lastCueIndex: null, captionRevealScheduled: false
 };
 const $ = (id) => document.getElementById(id);
@@ -167,6 +167,7 @@ function seekTo(time) {
 
 async function switchAudioVariant(variant) {
   if (!variant || variant.id === state.audioVariant?.id) return;
+  state.pendingVariantId = null;
   state.variantController?.abort();
   const controller = new AbortController();
   state.variantController = controller;
@@ -180,9 +181,11 @@ async function switchAudioVariant(variant) {
     }
     saveProgress(true);
     loadAudioVariant(variant, objectURL);
+    $("loadError").hidden = true;
     render();
   } catch (error) {
     if (!controller.signal.aborted && token === state.selectionToken) {
+      state.pendingVariantId = variant.id;
       renderAudioVariantPicker();
       showError(error);
     }
@@ -204,6 +207,7 @@ async function selectLocale(locale, { navigate = true, manual = false } = {}) {
   const token = ++state.selectionToken;
   state.selectionController = controller;
   state.pendingLocale = locale;
+  state.pendingVariantId = null;
   try {
   const releaseBytes = await fetchVerified(target.releasePackageUrl, target.releasePackageJsonSha256,
     { signal: controller.signal, maxBytes: 1024 * 1024 });
@@ -577,7 +581,9 @@ function bindEvents() {
     seekTo(0);
   });
   $("retryLoad").addEventListener("click", () => {
-    if (state.page) selectLocale(state.pendingLocale || state.locale || state.page.defaultTargetLocale,
+    if (state.pendingVariantId) {
+      void switchAudioVariant(availableAudioVariants().find(item => item.id === state.pendingVariantId));
+    } else if (state.page) selectLocale(state.pendingLocale || state.locale || state.page.defaultTargetLocale,
       { navigate: Boolean(state.pendingLocale) }).catch(showError);
     else loadInitialCatalog().catch(showError);
   });

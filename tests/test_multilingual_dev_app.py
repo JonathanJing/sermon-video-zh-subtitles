@@ -1,6 +1,10 @@
 import json
 from pathlib import Path
+import shutil
+import tempfile
 import unittest
+
+from scripts.seal_multilingual_dev_catalog import seal
 
 
 ROOT = Path(__file__).parents[1]
@@ -95,6 +99,29 @@ class MultilingualDevAppTest(unittest.TestCase):
                     release["contentSha256"],
                     locale,
                 )
+
+    def test_sealer_updates_catalog_when_reviewed_content_status_changes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            public = Path(directory)
+            for name in ("multilingual.json", "weekly.json"):
+                shutil.copy2(PUBLIC / name, public / name)
+            for name in ("releases", "content", "packages/layer3"):
+                shutil.copytree(PUBLIC / name, public / name)
+            release_path = public / f"releases/{PAGE_ID}/ko.json"
+            content_path = public / f"content/{PAGE_ID}/ko.json"
+            release = load(release_path)
+            content = load(content_path)
+            release["contentStatus"] = content["translationStatus"] = "machine_review_pending"
+            release_path.write_text(json.dumps(release, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            content_path.write_text(json.dumps(content, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+            with self.assertRaisesRegex(ValueError, "Content status mismatch"):
+                seal(public, check=True)
+            seal(public)
+            seal(public, check=True)
+            catalog = load(public / "multilingual.json")
+            target = catalog["pages"][0]["targets"]["ko"]
+            self.assertEqual(target["contentStatus"], "machine_review_pending")
 
     def test_chinese_page_exposes_review_audio_variants_with_bound_timing(self):
         release = load(PUBLIC / f"releases/{PAGE_ID}/zh-Hans.json")

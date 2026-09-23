@@ -77,6 +77,11 @@ def seal(public: Path, *, check: bool = False) -> None:
                     raise ValueError(f"Audio status mismatch: {page['id']}/{locale}")
                 target["audioStatus"] = release["audioStatus"]
                 changed = True
+            if target.get("contentStatus") != release.get("contentStatus"):
+                if check:
+                    raise ValueError(f"Content status mismatch: {page['id']}/{locale}")
+                target["contentStatus"] = release["contentStatus"]
+                changed = True
             content_sha = digest(content_path)
             if release.get("contentSha256") != content_sha:
                 if check:
