@@ -1,6 +1,6 @@
 # Layer 2 目标语言文字设计基线
 
-状态：**开发前设计已收敛，通用 producer 尚未实现。** 本文只定义 Layer 2：从一个已批准的 `English Source Package` 生成一个 locale 的 `Target-Language Candidate`。Layer 3 音频与 Layer 4 发布不在本设计的完成声明内。
+状态：Layer 2 的通用模型执行器与候选准入器已实现；新生产运行采用 **GPT-6 Astra 初译 → GPT-6 Sol 逐组独立复核**。实际执行步骤见[Layer 2 生产操作说明](target-language-astra-sol-production.zh.md)。本文只定义 Layer 2：从一个已批准的 `English Source Package` 生成一个 locale 的 `Target-Language Candidate`。Layer 3 音频与 Layer 4 发布不在本设计的完成声明内。
 
 正式层间名称和 JSON Schema 仍以[四层接口合同](multilingual-production-interfaces.zh.md)为准；本文不修改已冻结的 Layer 1 → Layer 2 和 Layer 2 → Layer 3 外部接口。
 
@@ -175,16 +175,16 @@ reviewer 必须使用独立 request 和独立 prompt，只读取冻结英文、t
 
 ### 3.1 首个韩语 POC 基线
 
-首版采用：
+历史 POC 曾采用：
 
 | 角色 | 模型 | reasoning effort | 独立性 |
 |---|---|---:|---|
 | translator | `gpt-6-astra` | `medium` | 独立请求和翻译 prompt |
 | reviewer | `gpt-6-astra` | `medium` | 新请求、独立 reviewer prompt，不带 translator 对话状态 |
 
-这是质量优先的基线，不是最终成本结论。现有中文 sentence-interpretation POC 已用同一模型完成 99 个 source unit、7 个翻译 batch 和 7 个复核 batch，并保留独立请求收据；这只证明 runner 形态可以复用，不证明韩语质量已经通过。
+这是当时质量优先的基线，不是当前生产模型配置。现有中文 sentence-interpretation POC 已用同一模型完成 99 个 source unit、7 个翻译 batch 和 7 个复核 batch，并保留独立请求收据；这只证明 runner 形态可以复用，不证明韩语质量已经通过。
 
-OpenAI 当前[模型选择指南](https://developers.openai.com/api/docs/guides/model-selection)建议先用最强模型建立准确率基线，再用较小模型优化成本与延迟；[`gpt-6-astra` 模型页](https://developers.openai.com/api/docs/models/gpt-6-astra)确认其支持 Chat Completions、Responses、Batch 和 structured outputs。首版继续使用现有 Chat Completions transport，避免同时迁移 API 和泛化翻译合同。
+后续 Layer 2 对照和逐组复核后，用户选定新生产组合为 **Astra 初译、Sol 逐组独立复核**。旧 Astra/Astra 收据继续按原 hash 保留；新运行冻结新的 policy。执行器沿用现有 Chat Completions transport。
 
 ### 3.2 “复用模型”的准确边界
 
@@ -202,7 +202,7 @@ OpenAI 当前[模型选择指南](https://developers.openai.com/api/docs/guides/
 - 中文已有 machine/human pass；
 - “同一模型第二次调用”等同于模型多样性审核的表述。
 
-同一基础模型可用于 POC 的 translator 和 reviewer，但 CLI 与 policy 必须分别配置 `translatorModel` 和 `reviewerModel`，不能保留单一 `--model` 硬绑定。独立性最低要求是不同 request、prompt、cache identity 和 receipt；之后可以在固定韩语 golden fixture 上比较：
+历史 POC 可以用同一基础模型进行对照；当前生产执行器固定不同的 translator/reviewer 模型、prompt、cache identity 和 receipt。历史比较方案如下：
 
 1. `gpt-6-astra` translator + `gpt-6-astra` reviewer（质量基线）；
 2. 较小模型 translator + `gpt-6-astra` reviewer（成本候选）；
@@ -210,11 +210,11 @@ OpenAI 当前[模型选择指南](https://developers.openai.com/api/docs/guides/
 
 不在首版加入 fine-tuning，也不把本地模型设为默认。先积累经过韩语人工审核的 source/target/review 对，才有可靠的蒸馏、微调或本地模型比较集。
 
-policy 记录固定的请求模型身份；运行收据同时记录 `requestedModel` 和 API 实际返回的 `responseModel`。当前 Layer 3 准备器要求 candidate 的 `generation.*.model` 与 policy 的模型字段完全相同；若服务端返回不同版本身份，producer 必须先冻结新的 policy 与 candidate，不能把模型漂移隐藏在旧 hash 下。
+policy 记录固定的请求模型身份；执行器核对 API 实际返回的模型与请求模型完全一致，并在逐组原始收据中保存该身份。当前 Layer 3 准备器要求 candidate 的 `generation.*.model` 与 policy 的模型字段完全相同；若服务端返回不同版本身份，producer 必须先冻结新的 policy 与 candidate，不能把模型漂移隐藏在旧 hash 下。
 
 ## 4. 目标语言策略合同
 
-新增内部 `sermon-target-language-policy-v1`，resolved snapshot 至少包含：
+历史 `sermon-target-language-policy-v1` 示例保留如下；正式生产须冻结 source-scoped v2 policy，并将 reviewer 改为 `gpt-6-sol`：
 
 ```json
 {
