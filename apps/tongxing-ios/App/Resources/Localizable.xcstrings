@@ -1,6 +1,54 @@
 {
   "sourceLanguage": "zh-Hans",
   "strings": {
+    "Dev 多语言预览": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Dev language preview" } } }
+    },
+    "选择 Dev 演示语言": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Choose Dev demo language" } } }
+    },
+    "Dev 多语言预览 · 未经人工审核": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Dev language preview · Not reviewed" } } }
+    },
+    "Dev 演示 · 未经人工审核 · 不用于正式发布": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Dev demo · Not reviewed · Not for release" } } }
+    },
+    "Dev POC · 人工审核待完成": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Dev POC · Human review pending" } } }
+    },
+    "原声参考": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Original speaker reference" } } }
+    },
+    "配音候选": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Dubbing candidate" } } }
+    },
+    "机器检查需复核 · 人工审核待完成": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Machine check needs review · Human review pending" } } }
+    },
+    "演示内容、音频和字幕均未通过正式发布审核；现场自动对齐只在有匹配指纹的音轨上可用。": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Demo text, audio and captions are not approved for release. Live alignment requires a matching audio fingerprint." } } }
+    },
+    "Firebase Dev 演示内容未经人工审核，仅供开发预览。": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Firebase Dev demo content is not human reviewed and is only for development preview." } } }
+    },
+    "Dev 演示页面暂时无法打开；当前内容和音频没有改变。": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "The Dev demo page cannot be opened right now. Current content and audio are unchanged." } } }
+    },
+    "其他语言": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Other languages" } } }
+    },
     "目录标题：简体中文": {
       "extractionState": "manual",
       "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Catalog title: Simplified Chinese" } } }

@@ -137,6 +137,30 @@ private enum UITestContent {
                 "/pages/ui-test-week/ko/index.html": pageHTML(locale: "ko"),
                 "/media/fixture-first.mp3": firstAudio,
                 "/media/fixture-second.mp3": secondAudio]
+        if ProcessInfo.processInfo.arguments.contains("--ui-testing-dev-preview") {
+            let demoTargets = ["en", "ko", "zh-Hans"].reduce(into: [String: Any]()) { result, locale in
+                result[locale] = ["releasePackageUrl": "/releases/ui-test-week/\(locale).json",
+                                  "contentStatus": "machine_review_pass_human_review_pending",
+                                  "audioStatus": "candidate", "machineScreening": "pass"]
+            }
+            let demo: [String: Any] = [
+                "schemaVersion": "sermon-multilingual-demo-catalog-v1", "environment": "development",
+                "poc": true, "defaultPageId": "ui-test-week",
+                "pages": [["id": "ui-test-week", "defaultTargetLocale": "zh-Hans", "targets": demoTargets]],
+            ]
+            responses["/multilingual.json"] = try! JSONSerialization.data(withJSONObject: demo)
+            for locale in ["en", "ko", "zh-Hans"] {
+                let release: [String: Any] = [
+                    "schemaVersion": locale == "en" ? "sermon-source-language-demo-package-v1" :
+                        "sermon-target-language-demo-package-v1",
+                    "environment": "development", "poc": true, "productionEligible": false,
+                    "humanApproval": false, "pageId": "ui-test-week", "targetLocale": locale,
+                    "contentStatus": "machine_review_pass_human_review_pending", "audioStatus": "candidate",
+                    "pageUrl": "/pages/ui-test-week/\(locale)",
+                ]
+                responses["/releases/ui-test-week/\(locale).json"] = try! JSONSerialization.data(withJSONObject: release)
+            }
+        }
         if includeEnglish {
             responses["/releases/ui-test-week/en.json"] = englishRelease
             responses["/pages/ui-test-week/en/index.html"] = pageHTML(locale: "en")

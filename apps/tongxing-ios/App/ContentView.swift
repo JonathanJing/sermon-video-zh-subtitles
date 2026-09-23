@@ -158,7 +158,7 @@ struct ContentView: View {
             .sheet(item: $sheet, onDismiss: {
                 if openPublishedPageAfterLanguageSheet {
                     openPublishedPageAfterLanguageSheet = false
-                    sheet = .languages
+                    sheet = model.selectedPublishedPage != nil ? .languages : .devPreview
                 }
             }) { destination in
                 switch destination {
@@ -170,6 +170,9 @@ struct ContentView: View {
                         .presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
                 case .languages:
                     TargetLanguageSheet(model: model, showingPage: model.showingPublishedLanguagePage)
+                        .presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
+                case .devPreview:
+                    DevDemoSheet(model: model, showingPage: model.selectedDevPreviewURL != nil)
                         .presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
                 case .precision:
                     PrecisionSheet(model: model)
@@ -193,9 +196,9 @@ struct ContentView: View {
             openPublishedPageAfterLanguageSheet = false
             Task {
                 await model.followInterfaceLanguage(localization.language == .english ? "en" : "zh-Hans")
-                guard model.selectedPublishedPage != nil else { return }
+                guard model.selectedPublishedPage != nil || model.selectedDevPreviewURL != nil else { return }
                 if sheet == .appLanguage { openPublishedPageAfterLanguageSheet = true }
-                else { sheet = .languages }
+                else { sheet = model.selectedPublishedPage != nil ? .languages : .devPreview }
             }
         }
     }
@@ -302,22 +305,23 @@ struct ContentView: View {
     }
 
     private var languageButton: some View {
-        Button { sheet = .languages } label: {
-            Label("\(model.selectedContentLanguageName) · \(localization.text(model.selectedContentCapabilitySummary))",
-                  systemImage: "globe")
+        Button { sheet = model.devDemoCatalog == nil ? .languages : .devPreview } label: {
+            Label(model.devDemoCatalog == nil
+                  ? "\(model.selectedContentLanguageName) · \(localization.text(model.selectedContentCapabilitySummary))"
+                  : localization.text("Dev 多语言预览 · 未经人工审核"), systemImage: "globe")
         }
         .buttonStyle(.bordered)
         .font(.subheadline.weight(.medium))
         .frame(minHeight: 44)
-        .accessibilityLabel(localization.text("选择证道语言"))
+        .accessibilityLabel(localization.text(model.devDemoCatalog == nil ? "选择证道语言" : "选择 Dev 演示语言"))
         .accessibilityValue("\(model.selectedContentLanguageName)，\(localization.text(model.selectedContentCapabilitySummary))")
         .accessibilityIdentifier("choose-content-language")
     }
 
     private var compactLanguageButton: some View {
-        Button { sheet = .languages } label: { Image(systemName: "globe") }
+        Button { sheet = model.devDemoCatalog == nil ? .languages : .devPreview } label: { Image(systemName: "globe") }
             .font(.title3).frame(minWidth: 44, minHeight: 44)
-            .accessibilityLabel(localization.text("选择证道语言"))
+            .accessibilityLabel(localization.text(model.devDemoCatalog == nil ? "选择证道语言" : "选择 Dev 演示语言"))
             .accessibilityValue("\(model.selectedContentLanguageName)，\(localization.text(model.selectedContentCapabilitySummary))")
             .accessibilityIdentifier("choose-content-language")
     }
@@ -538,7 +542,7 @@ struct AlignmentControls: View {
 }
 
 private enum ListeningSheet: String, Identifiable {
-    case appLanguage, weeks, languages, precision, outline, about
+    case appLanguage, weeks, languages, devPreview, precision, outline, about
     var id: String { rawValue }
 }
 
@@ -575,6 +579,100 @@ private struct AppLanguageSheet: View {
         .accessibilityValue(localization.text(localization.preference == language ? "已选择" : "未选择"))
     }
 }
+
+private struct DevDemoSheet: View {
+    @ObservedObject private var localization = AppLocalization.shared
+    @ObservedObject var model: AppModel
+    @Environment(\.dismiss) private var dismiss
+    @State var showingPage: Bool
+
+    var body: some View {
+        NavigationStack {
+            if showingPage, let url = model.selectedDevPreviewURL {
+                VStack(spacing: 0) {
+                    Label(localization.text("Dev 演示 · 未经人工审核 · 不用于正式发布"), systemImage: "exclamationmark.triangle")
+                        .font(.footnote.weight(.semibold))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(12)
+                        .background(.yellow.opacity(0.18))
+                    DevDemoWebView(url: url)
+                        .accessibilityIdentifier("dev-demo-page")
+                }
+                .navigationTitle(localization.text("Dev 多语言预览"))
+                .toolbar {
+                    ToolbarItem(placement: .automatic) {
+                        Button(localization.text("其他语言")) { showingPage = false }
+                            .accessibilityIdentifier("dev-preview-other-languages")
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(localization.text("完成")) { dismiss() }
+                    }
+                }
+            } else {
+                List {
+                    Section {
+                        ForEach(model.availableDevDemoLanguages, id: \.self) { locale in
+                            Button {
+                                Task {
+                                    if await model.previewDevLanguage(locale) { showingPage = true }
+                                }
+                            } label: {
+                                VStack(alignment: .leading, spacing: 5) {
+                                    Text(AppModel.languageName(locale)).font(.headline)
+                                    Text(localization.text(
+                                        model.selectedDevDemoPage?.targets[locale]?.machineScreening == "requires_review"
+                                            ? "机器检查需复核 · 人工审核待完成"
+                                            : "Dev POC · 人工审核待完成"
+                                    ) + " · " + localization.text(
+                                        model.selectedDevDemoPage?.targets[locale]?.audioStatus == "original_source"
+                                            ? "原声参考" : "配音候选"
+                                    ))
+                                    .font(.caption).foregroundStyle(.secondary)
+                                }
+                                .frame(minHeight: 54, alignment: .leading)
+                            }
+                            .accessibilityIdentifier("dev-preview-language-\(locale)")
+                        }
+                    } footer: {
+                        Text(localization.text("演示内容、音频和字幕均未通过正式发布审核；现场自动对齐只在有匹配指纹的音轨上可用。"))
+                    }
+                    if let error = model.languageSelectionError {
+                        Section { Label(localization.text(error), systemImage: "exclamationmark.circle") }
+                    }
+                }
+                .navigationTitle(localization.text("Dev 多语言预览"))
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Button(localization.text("完成")) { dismiss() } } }
+            }
+        }
+        .environment(\.locale, localization.locale)
+    }
+}
+
+#if os(iOS)
+private struct DevDemoWebView: UIViewRepresentable {
+    let url: URL
+    func makeUIView(context: Context) -> WKWebView { WKWebView() }
+    func updateUIView(_ view: WKWebView, context: Context) {
+        guard context.coordinator.loadedURL != url else { return }
+        context.coordinator.loadedURL = url
+        view.load(URLRequest(url: url))
+    }
+    func makeCoordinator() -> Coordinator { Coordinator() }
+    final class Coordinator { var loadedURL: URL? }
+}
+#else
+private struct DevDemoWebView: NSViewRepresentable {
+    let url: URL
+    func makeNSView(context: Context) -> WKWebView { WKWebView() }
+    func updateNSView(_ view: WKWebView, context: Context) {
+        guard context.coordinator.loadedURL != url else { return }
+        context.coordinator.loadedURL = url
+        view.load(URLRequest(url: url))
+    }
+    func makeCoordinator() -> Coordinator { Coordinator() }
+    final class Coordinator { var loadedURL: URL? }
+}
+#endif
 
 private struct TargetLanguageSheet: View {
     @ObservedObject private var localization = AppLocalization.shared

@@ -26,6 +26,8 @@ final class AppModel: ObservableObject {
     @Published private(set) var catalogNotice: String?
     @Published private(set) var multilingualCatalog: MultilingualCatalog?
     @Published private(set) var multilingualNotice: String?
+    @Published private(set) var devDemoCatalog: DevDemoCatalog?
+    @Published private(set) var selectedDevPreviewURL: URL?
     @Published private(set) var selectedContentLocale = "zh-Hans"
     @Published private(set) var selectedPublishedPage: VerifiedLanguagePage?
     @Published private(set) var isSelectingLanguage = false
@@ -94,6 +96,7 @@ final class AppModel: ObservableObject {
 
     private var repository: CatalogRepository?
     private var multilingualRepository: MultilingualCatalogRepository?
+    private var devDemoRepository: DevDemoCatalogRepository?
     private var offlineLibrary: OfflineLibrary?
     let mediaOrigin: URL
     private let languagePreferenceURL: URL
@@ -123,6 +126,12 @@ final class AppModel: ObservableObject {
             cacheDirectory: support.appendingPathComponent("MultilingualCatalog", isDirectory: true),
             session: session
         )
+        #if DEBUG
+        if mediaOrigin.host == "ai-for-god-sermon-audio-dev.web.app"
+            || ProcessInfo.processInfo.arguments.contains("--ui-testing-dev-preview") {
+            devDemoRepository = DevDemoCatalogRepository(origin: mediaOrigin, session: session)
+        }
+        #endif
         offlineLibrary = OfflineLibrary(
                 directory: support.appendingPathComponent("Audio", isDirectory: true),
                 baseURL: mediaOrigin,
@@ -160,6 +169,13 @@ final class AppModel: ObservableObject {
     }
     var availableContentLanguages: [(locale: String, target: PageTarget)] {
         selectedMultilingualPage?.publishedTargets ?? []
+    }
+    var selectedDevDemoPage: DevDemoPage? {
+        guard let selectedWeek else { return nil }
+        return devDemoCatalog?.page(id: selectedWeek.id)
+    }
+    var availableDevDemoLanguages: [String] {
+        selectedDevDemoPage?.targets.keys.sorted() ?? []
     }
     var selectedContentTarget: PageTarget? { selectedMultilingualPage?.targets[selectedContentLocale] }
     var showingPublishedLanguagePage: Bool { selectedContentLocale != "zh-Hans" }
@@ -207,10 +223,25 @@ final class AppModel: ObservableObject {
         do {
             let result = try await multilingualRepository.loadCatalog()
             multilingualCatalog = result.catalog
+            devDemoCatalog = nil
+            selectedDevPreviewURL = nil
             multilingualNotice = result.warning
             resolveContentLanguage(pageID: pageID)
             await loadSelectedLanguagePage()
         } catch {
+            #if DEBUG
+            if let devDemoRepository,
+               let catalog = try? await devDemoRepository.loadCatalog() {
+                multilingualCatalog = nil
+                devDemoCatalog = catalog
+                selectedContentLocale = "zh-Hans"
+                selectedPublishedPage = nil
+                multilingualNotice = "Firebase Dev 演示内容未经人工审核，仅供开发预览。"
+                return
+            }
+            #endif
+            devDemoCatalog = nil
+            selectedDevPreviewURL = nil
             // The legacy Chinese catalog remains a valid migration path while a
             // multilingual catalog has not been published to this environment.
             multilingualNotice = "此环境尚未提供多语言发布目录，继续显示当前中文版本。"
@@ -261,9 +292,14 @@ final class AppModel: ObservableObject {
     func followInterfaceLanguage(_ locale: String) async {
         languagePreferences.preferredContentLocale = locale
         persistLanguagePreferences()
+        selectedDevPreviewURL = nil
         guard locale != selectedContentLocale else {
             interfaceContentNotice = nil
             return
+        }
+        if selectedMultilingualPage == nil, locale != "zh-Hans",
+           selectedDevDemoPage?.targets[locale] != nil {
+            if await previewDevLanguage(locale) { return }
         }
         if locale == "zh-Hans", selectedMultilingualPage?.targets[locale] == nil {
             selectedContentLocale = locale
@@ -281,10 +317,33 @@ final class AppModel: ObservableObject {
         }
     }
 
+    /// Debug-only Dev POC route. It never becomes a verified release or an
+    /// audio track and does not change the selected legacy content language.
+    func previewDevLanguage(_ locale: String) async -> Bool {
+        #if DEBUG
+        guard let page = selectedDevDemoPage, page.targets[locale] != nil,
+              let devDemoRepository else { return false }
+        do {
+            let url = try await devDemoRepository.pageURL(page: page, locale: locale)
+            guard selectedDevDemoPage?.id == page.id else { return false }
+            alignmentController.cancel()
+            playback.pause()
+            selectedDevPreviewURL = url
+            languageSelectionError = nil
+            interfaceContentNotice = nil
+            return true
+        } catch {
+            languageSelectionError = "Dev 演示页面暂时无法打开；当前内容和音频没有改变。"
+        }
+        #endif
+        return false
+    }
+
     func loadSelectedLanguagePage() async {
         let token = UUID()
         languageRequest = token
         selectedPublishedPage = nil
+        selectedDevPreviewURL = nil
         guard showingPublishedLanguagePage, let page = selectedMultilingualPage,
               let multilingualRepository else { return }
         alignmentController.cancel()
@@ -391,6 +450,7 @@ final class AppModel: ObservableObject {
         selectedWeek = week
         selectedTrack = nextTrack
         selectedPublishedPage = nil
+        selectedDevPreviewURL = nil
         resolveContentLanguage(pageID: week.id)
         resetAlignmentState()
         usingOfflineAudio = false

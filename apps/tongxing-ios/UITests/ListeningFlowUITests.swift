@@ -5,6 +5,21 @@ import XCTest
 /// these tests do not establish real-network, audible, lock-screen, or venue QA.
 @MainActor
 final class ListeningFlowUITests: XCTestCase {
+    func testFirebaseDevDemoIsClearlyMarkedAndKeepsAlignmentEntry() throws {
+        let app = launchFixture(devPreview: true)
+        XCTAssertTrue(app.buttons["align-live-audio"].exists)
+        app.buttons["choose-content-language"].tap()
+        XCTAssertTrue(app.buttons["dev-preview-language-ko"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Dev POC · 人工审核待完成 · 配音候选"].exists)
+        app.buttons["dev-preview-language-ko"].tap()
+        XCTAssertTrue(app.staticTexts["Dev 演示 · 未经人工审核 · 不用于正式发布"].waitForExistence(timeout: 10))
+        app.buttons["完成"].tap()
+        XCTAssertTrue(app.buttons["align-live-audio"].exists)
+        element("app-language-menu", in: app).tap()
+        app.buttons["English"].tap()
+        XCTAssertTrue(app.staticTexts["Dev demo · Not reviewed · Not for release"].waitForExistence(timeout: 10))
+    }
+
     func testAppLanguageOpensMatchingPublishedPage() throws {
         let app = launchFixture(publishedEnglish: true)
         element("app-language-menu", in: app).tap()
@@ -320,11 +335,13 @@ final class ListeningFlowUITests: XCTestCase {
                       "无需滚动就应完整显示现场对齐按钮", file: file, line: line)
     }
 
-    private func launchFixture(largeText: Bool = false, publishedEnglish: Bool = false) -> XCUIApplication {
+    private func launchFixture(largeText: Bool = false, publishedEnglish: Bool = false,
+                               devPreview: Bool = false) -> XCUIApplication {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing"] + (largeText ? ["--ui-testing-large-text"] : [])
             + (publishedEnglish ? ["--ui-testing-published-english"] : [])
+            + (devPreview ? ["--ui-testing-dev-preview"] : [])
         app.launchArguments += ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
         app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
         app.launchEnvironment["TONGXING_UI_TEST_RUN_ID"] = UUID().uuidString
