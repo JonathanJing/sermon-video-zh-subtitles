@@ -27,8 +27,10 @@ final class AppModel: ObservableObject {
     @Published private(set) var multilingualCatalog: MultilingualCatalog?
     @Published private(set) var multilingualNotice: String?
     @Published private(set) var selectedContentLocale = "zh-Hans"
+    @Published private(set) var selectedPublishedPage: VerifiedLanguagePage?
     @Published private(set) var isSelectingLanguage = false
     @Published private(set) var languageSelectionError: String?
+    @Published private(set) var interfaceContentNotice: String?
     @Published private(set) var downloadStates: [String: DownloadState] = [:]
     @Published private(set) var usingOfflineAudio = false
     @Published var display: ListeningDisplay = .current
@@ -98,6 +100,7 @@ final class AppModel: ObservableObject {
     private var languagePreferences: ContentLanguagePreferences
     private var started = false
     private var preparation = UUID()
+    private var languageRequest = UUID()
     private var downloadTasks: [String: Task<Void, Never>] = [:]
 
     init(supportDirectory: URL? = nil, contentOrigin: URL? = nil, session: URLSession = .shared) {
@@ -159,6 +162,7 @@ final class AppModel: ObservableObject {
         selectedMultilingualPage?.publishedTargets ?? []
     }
     var selectedContentTarget: PageTarget? { selectedMultilingualPage?.targets[selectedContentLocale] }
+    var showingPublishedLanguagePage: Bool { selectedContentLocale != "zh-Hans" }
     var selectedContentLanguageName: String { Self.languageName(selectedContentLocale) }
     var selectedContentCapabilitySummary: String {
         guard let target = selectedContentTarget else { return "当前中文版本" }
@@ -205,6 +209,7 @@ final class AppModel: ObservableObject {
             multilingualCatalog = result.catalog
             multilingualNotice = result.warning
             resolveContentLanguage(pageID: pageID)
+            await loadSelectedLanguagePage()
         } catch {
             // The legacy Chinese catalog remains a valid migration path while a
             // multilingual catalog has not been published to this environment.
@@ -212,32 +217,102 @@ final class AppModel: ObservableObject {
         }
     }
 
-    func selectContentLanguage(_ locale: String) async -> URL? {
+    func selectContentLanguage(_ locale: String) async -> Bool {
         guard !isSelectingLanguage, let page = selectedMultilingualPage,
-              page.targets[locale]?.contentStatus == "human_reviewed", let multilingualRepository else { return nil }
+              page.targets[locale]?.contentStatus == "human_reviewed", let multilingualRepository else { return false }
+        let token = UUID()
+        languageRequest = token
         isSelectingLanguage = true
         languageSelectionError = nil
         defer { isSelectingLanguage = false }
         do {
-            let package = try await multilingualRepository.loadRelease(page: page, locale: locale)
-            let url = try package.pageURL(relativeTo: mediaOrigin)
+            let publishedPage: VerifiedLanguagePage?
+            if locale == "zh-Hans" {
+                // The existing weekly catalog is the Chinese migration path.
+                // Returning to it must work offline even without a cached v2 package.
+                publishedPage = nil
+            } else {
+                let package = try await multilingualRepository.loadRelease(page: page, locale: locale)
+                publishedPage = try await multilingualRepository.loadPage(for: package)
+            }
+            guard languageRequest == token, selectedMultilingualPage?.id == page.id else { return false }
+            if locale != "zh-Hans" {
+                alignmentController.cancel()
+                playback.clear()
+            }
             selectedContentLocale = locale
+            selectedPublishedPage = publishedPage
+            interfaceContentNotice = nil
             languagePreferences.preferredContentLocale = locale
             languagePreferences.pageSelections[page.id] = locale
             persistLanguagePreferences()
-            return url
+            if locale == "zh-Hans", let selectedWeek {
+                await select(week: selectedWeek, track: selectedTrack, force: true)
+            }
+            return true
         } catch {
             languageSelectionError = "暂时无法打开这个语言版本；当前内容和音频没有改变。"
-            return nil
+            return false
+        }
+    }
+
+    /// An explicit App-language change proposes the same sermon language for
+    /// this page. An unavailable target leaves the visible content untouched.
+    func followInterfaceLanguage(_ locale: String) async {
+        languagePreferences.preferredContentLocale = locale
+        persistLanguagePreferences()
+        guard locale != selectedContentLocale else {
+            interfaceContentNotice = nil
+            return
+        }
+        if locale == "zh-Hans", selectedMultilingualPage?.targets[locale] == nil {
+            selectedContentLocale = locale
+            selectedPublishedPage = nil
+            if let selectedWeek { await select(week: selectedWeek, track: selectedTrack, force: true) }
+            interfaceContentNotice = nil
+            return
+        }
+        guard selectedMultilingualPage?.targets[locale]?.contentStatus == "human_reviewed" else {
+            interfaceContentNotice = "此篇尚无 {language} 内容，继续显示 {current}。"
+            return
+        }
+        if !(await selectContentLanguage(locale)) {
+            interfaceContentNotice = "此篇尚无 {language} 内容，继续显示 {current}。"
+        }
+    }
+
+    func loadSelectedLanguagePage() async {
+        let token = UUID()
+        languageRequest = token
+        selectedPublishedPage = nil
+        guard showingPublishedLanguagePage, let page = selectedMultilingualPage,
+              let multilingualRepository else { return }
+        alignmentController.cancel()
+        playback.clear()
+        do {
+            let package = try await multilingualRepository.loadRelease(page: page, locale: selectedContentLocale)
+            let publishedPage = try await multilingualRepository.loadPage(for: package)
+            guard languageRequest == token, selectedMultilingualPage?.id == page.id,
+                  selectedContentLocale == package.targetLocale else { return }
+            selectedPublishedPage = publishedPage
+            languageSelectionError = nil
+        } catch {
+            guard languageRequest == token else { return }
+            languageSelectionError = "暂时无法打开这个语言版本；请联网后重试。"
         }
     }
 
     private func resolveContentLanguage(pageID: String?) {
-        guard let catalog = multilingualCatalog else { return }
+        guard let catalog = multilingualCatalog else {
+            selectedContentLocale = "zh-Hans"
+            if let pageID { updateContentFallbackNotice(pageID: pageID) }
+            return
+        }
         let page: MultilingualPage
         if let pageID {
             guard let matching = catalog.pages.first(where: { $0.id == pageID }) else {
                 selectedContentLocale = "zh-Hans"
+                updateContentFallbackNotice(pageID: pageID)
                 return
             }
             page = matching
@@ -248,6 +323,17 @@ final class AppModel: ObservableObject {
                           page.defaultTargetLocale].compactMap { $0 }
         selectedContentLocale = candidates.first(where: { page.targets[$0]?.contentStatus == "human_reviewed" })
             ?? page.publishedTargets.first?.locale ?? "zh-Hans"
+        updateContentFallbackNotice(pageID: page.id)
+    }
+
+    private func updateContentFallbackNotice(pageID: String) {
+        guard languagePreferences.pageSelections[pageID] == nil,
+              let preferred = languagePreferences.preferredContentLocale,
+              preferred != selectedContentLocale else {
+            interfaceContentNotice = nil
+            return
+        }
+        interfaceContentNotice = "此篇尚无 {language} 内容，继续显示 {current}。"
     }
 
     private func persistLanguagePreferences() {
@@ -304,6 +390,7 @@ final class AppModel: ObservableObject {
         defer { if preparation == token { isPreparing = false } }
         selectedWeek = week
         selectedTrack = nextTrack
+        selectedPublishedPage = nil
         resolveContentLanguage(pageID: week.id)
         resetAlignmentState()
         usingOfflineAudio = false

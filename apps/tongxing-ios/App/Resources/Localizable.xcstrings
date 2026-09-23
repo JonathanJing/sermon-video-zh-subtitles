@@ -1,13 +1,41 @@
 {
   "sourceLanguage": "zh-Hans",
   "strings": {
+    "目录标题：简体中文": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Catalog title: Simplified Chinese" } } }
+    },
+    "本周证道": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "This week's sermon" } } }
+    },
+    "往期证道": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Past sermons" } } }
+    },
+    "此篇尚无 {language} 内容，继续显示 {current}。": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "This sermon has no {language} edition yet. Showing {current}." } } }
+    },
+    "阅读已发布语言页面": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Read published language page" } } }
+    },
+    "正在准备语言页面…": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Preparing language page…" } } }
+    },
+    "当前为独立语言页面；中文播放器已暂停。": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "This language has its own published page. Chinese playback is paused." } } }
+    },
+    "暂时无法打开这个语言版本；请联网后重试。": {
+      "extractionState": "manual",
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "This language version cannot be opened right now. Connect to the internet and try again." } } }
+    },
     "当前中文版本": {
       "extractionState": "manual",
       "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Current Chinese version" } } }
-    },
-    "所选语言在独立发布页面中打开；原生播放器继续保留当前已验证的中文音轨。": {
-      "extractionState": "manual",
-      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "The selected language opens on its own release page. The native player keeps the currently verified Chinese track." } } }
     },
     "选择证道语言": {
       "extractionState": "manual",

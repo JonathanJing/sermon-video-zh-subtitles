@@ -5,6 +5,32 @@ import XCTest
 /// these tests do not establish real-network, audible, lock-screen, or venue QA.
 @MainActor
 final class ListeningFlowUITests: XCTestCase {
+    func testAppLanguageOpensMatchingPublishedPage() throws {
+        let app = launchFixture(publishedEnglish: true)
+        element("app-language-menu", in: app).tap()
+        app.buttons["English"].tap()
+        XCTAssertTrue(app.webViews.staticTexts["English verified page"].waitForExistence(timeout: 15))
+        XCTAssertFalse(app.buttons["playback-toggle"].exists)
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.buttons["open-published-language-page"].waitForExistence(timeout: 5))
+    }
+
+    func testTopAppLanguageAndPastSermonsHierarchy() throws {
+        let app = launchFixture()
+        let languageMenu = element("app-language-menu", in: app)
+        XCTAssertTrue(languageMenu.exists)
+        languageMenu.tap()
+        app.buttons["English"].tap()
+        XCTAssertEqual(element("sermon-title", in: app).label, "界面测试证道")
+        XCTAssertTrue(element("interface-content-notice", in: app).waitForExistence(timeout: 5))
+
+        app.buttons["choose-sermon"].tap()
+        XCTAssertTrue(element("sermon-week-ui-test-week", in: app).exists)
+        XCTAssertFalse(element("sermon-week-ui-test-past-week", in: app).exists)
+        element("past-sermons-entry", in: app).tap()
+        XCTAssertTrue(element("sermon-week-ui-test-past-week", in: app).waitForExistence(timeout: 5))
+    }
+
     func testTargetLanguageSheetShowsOnlyPublishedCapabilities() throws {
         let app = launchFixture()
         let chooser = app.buttons["choose-content-language"]
@@ -19,6 +45,31 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertTrue(korean.label.contains("한국어"))
         XCTAssertTrue(korean.label.contains("仅文字"))
         screenshot("target-language-sheet-published-capabilities", app: app)
+    }
+
+    func testPublishedTextPageOpensInsideAppWithoutChinesePlayer() throws {
+        let app = launchFixture()
+        app.buttons["choose-content-language"].tap()
+        let korean = app.buttons["content-language-ko"]
+        XCTAssertTrue(korean.waitForExistence(timeout: 5))
+        korean.tap()
+        XCTAssertTrue(app.webViews.staticTexts["한국어 검증 페이지"].waitForExistence(timeout: 10))
+        app.buttons["完成"].tap()
+        XCTAssertTrue(app.buttons["open-published-language-page"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["playback-toggle"].exists)
+        XCTAssertFalse(app.staticTexts["界面测试证道"].exists)
+        app.buttons["open-published-language-page"].tap()
+        XCTAssertTrue(app.webViews.staticTexts["한국어 검증 페이지"].waitForExistence(timeout: 10))
+        app.terminate()
+        app.launchArguments.append("--ui-testing-offline")
+        app.launch()
+        XCTAssertTrue(app.buttons["open-published-language-page"].waitForExistence(timeout: 15))
+        app.buttons["open-published-language-page"].tap()
+        XCTAssertTrue(app.webViews.staticTexts["한국어 검증 페이지"].waitForExistence(timeout: 10))
+        app.buttons["back-to-content-languages"].tap()
+        app.buttons["content-language-zh-Hans"].tap()
+        XCTAssertTrue(element("sermon-title", in: app).waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["playback-toggle"].exists)
     }
 
     func testUnavailableAlignmentExplainsReason() throws {
@@ -159,12 +210,10 @@ final class ListeningFlowUITests: XCTestCase {
         comparison.tap()
         XCTAssertFalse(english.exists)
         comparison.tap()
-        app.buttons["more-options"].tap()
-        let language = element("interface-language", in: app)
-        try reveal(language, in: app, direction: .up)
-        language.tap()
+        let languageMenu = element("app-language-menu", in: app)
+        try reveal(languageMenu, in: app, direction: .down)
+        languageMenu.tap()
         app.buttons["English"].tap()
-        app.buttons["Done"].tap()
         try waitFor(app.buttons["playback-toggle"], "label == 'Play'")
         try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:12'")
         XCTAssertEqual(element("sermon-title", in: app).label, "界面测试证道")
@@ -271,10 +320,11 @@ final class ListeningFlowUITests: XCTestCase {
                       "无需滚动就应完整显示现场对齐按钮", file: file, line: line)
     }
 
-    private func launchFixture(largeText: Bool = false) -> XCUIApplication {
+    private func launchFixture(largeText: Bool = false, publishedEnglish: Bool = false) -> XCUIApplication {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing"] + (largeText ? ["--ui-testing-large-text"] : [])
+            + (publishedEnglish ? ["--ui-testing-published-english"] : [])
         app.launchArguments += ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
         app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
         app.launchEnvironment["TONGXING_UI_TEST_RUN_ID"] = UUID().uuidString
@@ -342,6 +392,12 @@ final class ListeningFlowUITests: XCTestCase {
             let readingFrame = CGRect(x: visibleFrame.minX, y: top,
                                       width: visibleFrame.width, height: bottom - top)
             let targetFrame = target.exists ? target.frame : nil
+            if target.identifier == "app-language-menu", let targetFrame,
+               target.isHittable,
+               targetFrame.minY >= app.navigationBars.firstMatch.frame.maxY,
+               targetFrame.maxY < bottom {
+                return
+            }
             // XCTest can report hittable for controls hidden behind Liquid Glass.
             // Every control used by these flows fits in this viewport, so require
             // the whole control to enter the reading region before its normal tap.
