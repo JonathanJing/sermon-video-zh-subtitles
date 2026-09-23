@@ -45,6 +45,7 @@ def prepare_shadow(
     summary_path: Path | None = None,
     approval_evidence_path: Path | None = None,
     review_path: Path | None = None,
+    machine_judge_path: Path | None = None,
     source_id: str | None = None,
     source_url_hash: str | None = None,
     service_date: str | None = None,
@@ -83,6 +84,7 @@ def prepare_shadow(
             "summarySha256": contract.sha256(summary_path.resolve()) if summary_path and summary_path.is_file() else None,
             "approvalEvidenceSha256": contract.sha256(approval_evidence_path.resolve()) if approval_evidence_path and approval_evidence_path.is_file() else None,
             "reviewSha256": contract.sha256(review_path.resolve()) if review_path and review_path.is_file() else None,
+            "machineJudgeSha256": contract.sha256(machine_judge_path.resolve()) if machine_judge_path and machine_judge_path.is_file() else None,
         },
     }
     run_dir = out_root / contract.json_sha256(identity)
@@ -105,13 +107,22 @@ def prepare_shadow(
         summary_path=summary_path,
         approval_evidence_path=approval_evidence_path,
         review_path=review_path,
+        machine_judge_path=machine_judge_path,
         source_id=source_id,
         source_url_hash=source_url_hash,
         service_date=service_date,
     )
     source_package_path = run_dir / "english-source-package.json"
     _write_immutable(source_package_path, source_package)
-    status = "ready_for_model_translation" if manifest.get("sourceUnits") and not manifest["issues"] else "waiting_anchor_review"
+    if source_package["candidateTranslationEligible"]:
+        status = "ready_for_model_translation"
+        next_stage = "run_sentence_interpretation_models"
+    elif manifest["issues"]:
+        status = "waiting_anchor_review"
+        next_stage = "operator_anchor_review"
+    else:
+        status = "waiting_machine_judge"
+        next_stage = "run_english_source_machine_judge"
     receipt = {
         "schemaVersion": RECEIPT_SCHEMA,
         "layer": "shared_english_source_and_anchors",
@@ -134,7 +145,7 @@ def prepare_shadow(
         "counts": manifest.get("counts", {}),
         "anchorIssueCount": len(manifest["issues"]),
         "anchorIssueTypes": sorted({str(issue.get("type")) for issue in manifest["issues"]}),
-        "nextStage": "run_sentence_interpretation_models" if status == "ready_for_model_translation" else "operator_anchor_review",
+        "nextStage": next_stage,
         "humanReview": "pending",
     }
     receipt_path = run_dir / "receipt.json"
@@ -150,6 +161,7 @@ def main() -> int:
     parser.add_argument("--summary", type=Path)
     parser.add_argument("--approval-evidence", type=Path)
     parser.add_argument("--review", type=Path)
+    parser.add_argument("--machine-judge", type=Path)
     parser.add_argument("--source-id")
     parser.add_argument("--source-url-hash")
     parser.add_argument("--service-date")
@@ -164,6 +176,7 @@ def main() -> int:
         summary_path=args.summary,
         approval_evidence_path=args.approval_evidence,
         review_path=args.review,
+        machine_judge_path=args.machine_judge,
         source_id=args.source_id,
         source_url_hash=args.source_url_hash,
         service_date=args.service_date,
