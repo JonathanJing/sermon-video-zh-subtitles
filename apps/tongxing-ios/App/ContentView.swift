@@ -1,5 +1,7 @@
 import SwiftUI
 import TongxingCore
+import TongxingInfrastructure
+import WebKit
 
 // Explicitly select the iOS 17-compatible property wrapper; newer SDKs also
 // export a State macro whose plugin is absent from Command Line Tools.
@@ -16,6 +18,7 @@ struct ContentView: View {
     @ScaledMetric(relativeTo: .title2) private var readingSize: CGFloat = 26
     @ViewState private var sheet: ListeningSheet?
     @ViewState private var returnToCurrent = UUID()
+    @ViewState private var openPublishedPageAfterLanguageSheet = false
 
     init(model: AppModel) {
         self.model = model
@@ -27,8 +30,27 @@ struct ContentView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: verticalSizeClass == .compact ? 12 : 16) {
+                        HStack {
+                            appLanguageButton
+                                .buttonStyle(.bordered)
+                                .controlSize(.regular)
+                                .frame(minHeight: 44)
+                            Spacer()
+                        }
                         if let week = model.selectedWeek {
+                            if model.showingPublishedLanguagePage {
+                                publishedLanguageContent
+                            } else {
                             sermonHeading(week).id("top")
+                            if let notice = interfaceContentNoticeText {
+                                Label(notice, systemImage: "info.circle")
+                                    .font(.footnote).foregroundStyle(.secondary)
+                                    .accessibilityIdentifier("interface-content-notice")
+                            }
+                            if let warning = localization.storageWarning {
+                                Label(localization.text(warning), systemImage: "exclamationmark.circle")
+                                    .font(.footnote)
+                            }
                             if let notice = model.catalogNotice {
                                 Label(localization.text(notice), systemImage: "wifi.slash")
                                     .font(.footnote).foregroundStyle(.secondary)
@@ -63,6 +85,7 @@ struct ContentView: View {
                                 ContentUnavailableView(localization.text("本周音频尚未准备好"), systemImage: "waveform", description: Text(localization.text("可以先阅读证道大纲。")))
                             }
                             footer(week)
+                            }
                         } else if model.isLoading {
                             ProgressView(localization.text("正在读取本周证道…")).frame(maxWidth: .infinity, minHeight: 320)
                         } else {
@@ -115,7 +138,7 @@ struct ContentView: View {
             }
             .background(Brand.background)
             .listeningBottomBar {
-                if model.selectedTrack != nil {
+                if model.selectedTrack != nil && !model.showingPublishedLanguagePage {
                     PlaybackDock(playback: playback, isPreparing: model.isPreparing, alignmentModel: model,
                                  precision: { sheet = .precision }, current: { returnToCurrent = UUID() })
                 }
@@ -132,13 +155,24 @@ struct ContentView: View {
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
-            .sheet(item: $sheet) { destination in
+            .sheet(item: $sheet, onDismiss: {
+                if openPublishedPageAfterLanguageSheet {
+                    openPublishedPageAfterLanguageSheet = false
+                    sheet = model.selectedPublishedPage != nil ? .languages : .devPreview
+                }
+            }) { destination in
                 switch destination {
+                case .appLanguage:
+                    AppLanguageSheet()
+                        .presentationDetents([.medium]).presentationDragIndicator(.visible)
                 case .weeks:
                     WeekSheet(model: model)
                         .presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
                 case .languages:
-                    TargetLanguageSheet(model: model)
+                    TargetLanguageSheet(model: model, showingPage: model.showingPublishedLanguagePage)
+                        .presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
+                case .devPreview:
+                    DevDemoSheet(model: model, showingPage: model.selectedDevPreviewURL != nil)
                         .presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
                 case .precision:
                     PrecisionSheet(model: model)
@@ -158,6 +192,76 @@ struct ContentView: View {
             if phase != .active { playback.saveProgress() }
             else { localization.refreshSystemLanguage() }
         }
+        .onChange(of: localization.preference) { _, _ in
+            openPublishedPageAfterLanguageSheet = false
+            Task {
+                await model.followInterfaceLanguage(localization.language == .english ? "en" : "zh-Hans")
+                guard model.selectedPublishedPage != nil || model.selectedDevPreviewURL != nil else { return }
+                if sheet == .appLanguage { openPublishedPageAfterLanguageSheet = true }
+                else { sheet = model.selectedPublishedPage != nil ? .languages : .devPreview }
+            }
+        }
+    }
+
+    private var appLanguageButton: some View {
+        Button { sheet = .appLanguage } label: {
+            HStack(spacing: 5) {
+                Image(systemName: "globe")
+                Text(localization.text("界面语言"))
+                    .font(.caption)
+                Text(localization.language == .english ? "EN" : "中")
+                    .font(.caption.weight(.semibold))
+                Image(systemName: "chevron.down")
+                    .font(.caption2.weight(.semibold))
+            }
+        }
+        .accessibilityLabel(localization.text("界面语言"))
+        .accessibilityValue(localization.language == .english ? "English" : "简体中文")
+        .accessibilityIdentifier("app-language-menu")
+    }
+
+    private var interfaceContentNoticeText: String? {
+        guard let notice = model.interfaceContentNotice else { return nil }
+        return localization.text(notice, [
+            "language": AppModel.languageName(localization.language == .english ? "en" : "zh-Hans"),
+            "current": model.selectedContentLanguageName,
+        ])
+    }
+
+    private var publishedLanguageContent: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text(model.selectedContentLanguageName).font(.largeTitle.bold())
+                .accessibilityAddTraits(.isHeader)
+            Text(localization.text(model.selectedContentCapabilitySummary))
+                .font(.subheadline).foregroundStyle(.secondary)
+            if let notice = interfaceContentNoticeText {
+                Label(notice, systemImage: "info.circle")
+                    .font(.footnote).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("interface-content-notice")
+            }
+            if let error = model.languageSelectionError {
+                Label(localization.text(error), systemImage: "exclamationmark.circle")
+                    .font(.footnote)
+            }
+            if model.selectedPublishedPage != nil {
+                Button(localization.text("阅读已发布语言页面")) { sheet = .languages }
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("open-published-language-page")
+            } else if model.languageSelectionError != nil {
+                Button(localization.text("重新加载")) { Task { await model.loadSelectedLanguagePage() } }
+                    .buttonStyle(.borderedProminent)
+            } else {
+                ProgressView(localization.text("正在准备语言页面…"))
+            }
+            Button(localization.text("选择证道语言")) { sheet = .languages }
+                .accessibilityIdentifier("choose-content-language")
+            Button(localization.text("刷新目录")) { Task { await model.refresh() } }
+                .accessibilityIdentifier("refresh-multilingual-catalog")
+            Text(localization.text("当前为独立语言页面；中文播放器已暂停。"))
+                .font(.footnote).foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, minHeight: 320, alignment: .topLeading)
+        .padding(.vertical, 24)
     }
 
     @ViewBuilder private func sermonHeading(_ week: SermonWeek) -> some View {
@@ -189,11 +293,6 @@ struct ContentView: View {
             Text("\(week.scripture) · \(week.speaker)")
                 .font(.subheadline).foregroundStyle(.secondary)
             languageButton
-            if model.selectedContentLocale != "zh-Hans", model.selectedContentTarget != nil {
-                Text(localization.text("所选语言在独立发布页面中打开；原生播放器继续保留当前已验证的中文音轨。"))
-                    .font(.caption).foregroundStyle(.secondary)
-                    .accessibilityIdentifier("published-language-routing-note")
-            }
             HStack {
                 Text(reviewLabel).font(.caption.weight(.medium))
                     .foregroundStyle(Brand.accent)
@@ -208,22 +307,23 @@ struct ContentView: View {
     }
 
     private var languageButton: some View {
-        Button { sheet = .languages } label: {
-            Label("\(model.selectedContentLanguageName) · \(localization.text(model.selectedContentCapabilitySummary))",
-                  systemImage: "globe")
+        Button { sheet = model.devDemoCatalog == nil ? .languages : .devPreview } label: {
+            Label(model.devDemoCatalog == nil
+                  ? "\(model.selectedContentLanguageName) · \(localization.text(model.selectedContentCapabilitySummary))"
+                  : localization.text("Dev 多语言预览 · 未经人工审核"), systemImage: "globe")
         }
         .buttonStyle(.bordered)
         .font(.subheadline.weight(.medium))
         .frame(minHeight: 44)
-        .accessibilityLabel(localization.text("选择证道语言"))
+        .accessibilityLabel(localization.text(model.devDemoCatalog == nil ? "选择证道语言" : "选择 Dev 演示语言"))
         .accessibilityValue("\(model.selectedContentLanguageName)，\(localization.text(model.selectedContentCapabilitySummary))")
         .accessibilityIdentifier("choose-content-language")
     }
 
     private var compactLanguageButton: some View {
-        Button { sheet = .languages } label: { Image(systemName: "globe") }
+        Button { sheet = model.devDemoCatalog == nil ? .languages : .devPreview } label: { Image(systemName: "globe") }
             .font(.title3).frame(minWidth: 44, minHeight: 44)
-            .accessibilityLabel(localization.text("选择证道语言"))
+            .accessibilityLabel(localization.text(model.devDemoCatalog == nil ? "选择证道语言" : "选择 Dev 演示语言"))
             .accessibilityValue("\(model.selectedContentLanguageName)，\(localization.text(model.selectedContentCapabilitySummary))")
             .accessibilityIdentifier("choose-content-language")
     }
@@ -444,18 +544,160 @@ struct AlignmentControls: View {
 }
 
 private enum ListeningSheet: String, Identifiable {
-    case weeks, languages, precision, outline, about
+    case appLanguage, weeks, languages, devPreview, precision, outline, about
     var id: String { rawValue }
 }
+
+private struct AppLanguageSheet: View {
+    @ObservedObject private var localization = AppLocalization.shared
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List {
+                languageRow(.system, title: localization.text("跟随系统"))
+                languageRow(.simplifiedChinese, title: "简体中文")
+                languageRow(.english, title: "English")
+            }
+            .navigationTitle(localization.text("界面语言"))
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button(localization.text("完成")) { dismiss() } } }
+        }
+        .environment(\.locale, localization.locale)
+    }
+
+    private func languageRow(_ language: AppLanguage, title: String) -> some View {
+        Button {
+            localization.setPreference(language)
+            dismiss()
+        } label: {
+            HStack {
+                Text(title)
+                Spacer()
+                if localization.preference == language { Image(systemName: "checkmark") }
+            }
+            .frame(minHeight: 44)
+        }
+        .accessibilityIdentifier("app-language-\(language.rawValue)")
+        .accessibilityValue(localization.text(localization.preference == language ? "已选择" : "未选择"))
+    }
+}
+
+private struct DevDemoSheet: View {
+    @ObservedObject private var localization = AppLocalization.shared
+    @ObservedObject var model: AppModel
+    @Environment(\.dismiss) private var dismiss
+    @State var showingPage: Bool
+
+    var body: some View {
+        NavigationStack {
+            if showingPage, let url = model.selectedDevPreviewURL {
+                VStack(spacing: 0) {
+                    Label(localization.text("Dev 演示 · 未经人工审核 · 不用于正式发布"), systemImage: "exclamationmark.triangle")
+                        .font(.footnote.weight(.semibold))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(12)
+                        .background(.yellow.opacity(0.18))
+                    DevDemoWebView(url: url)
+                        .accessibilityIdentifier("dev-demo-page")
+                }
+                .navigationTitle(localization.text("Dev 多语言预览"))
+                .toolbar {
+                    ToolbarItem(placement: .automatic) {
+                        Button(localization.text("其他语言")) { showingPage = false }
+                            .accessibilityIdentifier("dev-preview-other-languages")
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(localization.text("完成")) { dismiss() }
+                    }
+                }
+            } else {
+                List {
+                    Section {
+                        ForEach(model.availableDevDemoLanguages, id: \.self) { locale in
+                            Button {
+                                Task {
+                                    if await model.previewDevLanguage(locale) { showingPage = true }
+                                }
+                            } label: {
+                                VStack(alignment: .leading, spacing: 5) {
+                                    Text(AppModel.languageName(locale)).font(.headline)
+                                    Text(localization.text(
+                                        model.selectedDevDemoPage?.targets[locale]?.machineScreening == "requires_review"
+                                            ? "机器检查需复核 · 人工审核待完成"
+                                            : "Dev POC · 人工审核待完成"
+                                    ) + " · " + localization.text(
+                                        model.selectedDevDemoPage?.targets[locale]?.audioStatus == "original_source"
+                                            ? "原声参考" : "配音候选"
+                                    ))
+                                    .font(.caption).foregroundStyle(.secondary)
+                                }
+                                .frame(minHeight: 54, alignment: .leading)
+                            }
+                            .accessibilityIdentifier("dev-preview-language-\(locale)")
+                        }
+                    } footer: {
+                        Text(localization.text("演示内容、音频和字幕均未通过正式发布审核；现场自动对齐只在有匹配指纹的音轨上可用。"))
+                    }
+                    if let error = model.languageSelectionError {
+                        Section { Label(localization.text(error), systemImage: "exclamationmark.circle") }
+                    }
+                }
+                .navigationTitle(localization.text("Dev 多语言预览"))
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Button(localization.text("完成")) { dismiss() } } }
+            }
+        }
+        .environment(\.locale, localization.locale)
+    }
+}
+
+#if os(iOS)
+private struct DevDemoWebView: UIViewRepresentable {
+    let url: URL
+    func makeUIView(context: Context) -> WKWebView { WKWebView() }
+    func updateUIView(_ view: WKWebView, context: Context) {
+        guard context.coordinator.loadedURL != url else { return }
+        context.coordinator.loadedURL = url
+        view.load(URLRequest(url: url))
+    }
+    func makeCoordinator() -> Coordinator { Coordinator() }
+    final class Coordinator { var loadedURL: URL? }
+}
+#else
+private struct DevDemoWebView: NSViewRepresentable {
+    let url: URL
+    func makeNSView(context: Context) -> WKWebView { WKWebView() }
+    func updateNSView(_ view: WKWebView, context: Context) {
+        guard context.coordinator.loadedURL != url else { return }
+        context.coordinator.loadedURL = url
+        view.load(URLRequest(url: url))
+    }
+    func makeCoordinator() -> Coordinator { Coordinator() }
+    final class Coordinator { var loadedURL: URL? }
+}
+#endif
 
 private struct TargetLanguageSheet: View {
     @ObservedObject private var localization = AppLocalization.shared
     @ObservedObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.openURL) private var openURL
+    @State var showingPage: Bool
 
     var body: some View {
         NavigationStack {
+            if showingPage, let page = model.selectedPublishedPage {
+                VerifiedLanguagePageView(page: page)
+                    .accessibilityIdentifier("published-language-page")
+                    .navigationTitle(model.selectedContentLanguageName)
+                    .toolbar {
+                        ToolbarItem(placement: .automatic) {
+                            Button(localization.text("选择证道语言")) { showingPage = false }
+                                .accessibilityIdentifier("back-to-content-languages")
+                        }
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button(localization.text("完成")) { dismiss() }
+                        }
+                    }
+            } else {
             List {
                 if model.availableContentLanguages.isEmpty {
                     ContentUnavailableView(
@@ -468,9 +710,9 @@ private struct TargetLanguageSheet: View {
                         ForEach(model.availableContentLanguages, id: \.locale) { option in
                             Button {
                                 Task {
-                                    guard let url = await model.selectContentLanguage(option.locale) else { return }
-                                    dismiss()
-                                    openURL(url)
+                                    guard await model.selectContentLanguage(option.locale) else { return }
+                                    if model.showingPublishedLanguagePage { showingPage = true }
+                                    else { dismiss() }
                                 }
                             } label: {
                                 HStack(spacing: 14) {
@@ -506,6 +748,7 @@ private struct TargetLanguageSheet: View {
             }
             .navigationTitle(localization.text("选择证道语言"))
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button(localization.text("完成")) { dismiss() } } }
+            }
         }
         .environment(\.locale, localization.locale)
         #if os(macOS)
@@ -521,6 +764,47 @@ private struct TargetLanguageSheet: View {
         return values.joined(separator: " · ")
     }
 }
+
+private struct VerifiedLanguagePageView: View {
+    let page: VerifiedLanguagePage
+
+    var body: some View {
+        VerifiedHTMLView(html: page.html, baseURL: page.baseURL)
+            .ignoresSafeArea(edges: .bottom)
+    }
+}
+
+#if os(iOS)
+private struct VerifiedHTMLView: UIViewRepresentable {
+    let html: String
+    let baseURL: URL
+
+    func makeUIView(context: Context) -> WKWebView { WKWebView() }
+    func updateUIView(_ view: WKWebView, context: Context) {
+        guard context.coordinator.loadedURL != baseURL || context.coordinator.loadedHTML != html else { return }
+        context.coordinator.loadedURL = baseURL
+        context.coordinator.loadedHTML = html
+        view.loadHTMLString(html, baseURL: baseURL)
+    }
+    func makeCoordinator() -> Coordinator { Coordinator() }
+    final class Coordinator { var loadedURL: URL?; var loadedHTML: String? }
+}
+#else
+private struct VerifiedHTMLView: NSViewRepresentable {
+    let html: String
+    let baseURL: URL
+
+    func makeNSView(context: Context) -> WKWebView { WKWebView() }
+    func updateNSView(_ view: WKWebView, context: Context) {
+        guard context.coordinator.loadedURL != baseURL || context.coordinator.loadedHTML != html else { return }
+        context.coordinator.loadedURL = baseURL
+        context.coordinator.loadedHTML = html
+        view.loadHTMLString(html, baseURL: baseURL)
+    }
+    func makeCoordinator() -> Coordinator { Coordinator() }
+    final class Coordinator { var loadedURL: URL?; var loadedHTML: String? }
+}
+#endif
 
 private struct BrandTitle: View {
     @ObservedObject private var localization = AppLocalization.shared
@@ -552,38 +836,63 @@ private struct WeekSheet: View {
     @ObservedObject private var localization = AppLocalization.shared
     @ObservedObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
+    private var currentWeek: SermonWeek? { model.catalog?.defaultWeek }
+    private var pastWeeks: [SermonWeek] { model.weeks.filter { $0.id != currentWeek?.id } }
+
     var body: some View {
         NavigationStack {
-            ScrollView {
-                LazyVStack(spacing: 0) {
-                    ForEach(model.weeks) { week in
-                        Button {
-                            dismiss()
-                            Task { await model.select(week: week) }
-                        } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 7) {
-                                    Text(week.title).font(.headline)
-                                    Text("\(week.date) · \(week.speaker)").font(.subheadline).foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                if week.id == model.selectedWeek?.id { Image(systemName: "checkmark") }
-                            }
-                            .padding(20).frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("\(week.title)，\(week.date)")
-                        Divider().padding(.horizontal, 20)
-                    }
+            List {
+                if let currentWeek {
+                    Section(localization.text("本周证道")) { weekButton(currentWeek) }
                 }
-            }.navigationTitle(localization.text("选择证道"))
+                Section {
+                    NavigationLink {
+                        List {
+                            ForEach(pastWeeks) { week in weekButton(week) }
+                        }
+                        .navigationTitle(localization.text("往期证道"))
+                        .accessibilityIdentifier("past-sermons-list")
+                    } label: {
+                        Label(localization.text("往期证道"), systemImage: "clock.arrow.circlepath")
+                    }
+                    .disabled(pastWeeks.isEmpty)
+                    .accessibilityIdentifier("past-sermons-entry")
+                }
+            }
+            .navigationTitle(localization.text("选择证道"))
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button(localization.text("完成")) { dismiss() } } }
         }
         .environment(\.locale, localization.locale)
         #if os(macOS)
         .frame(minWidth: 400, minHeight: 480)
         #endif
+    }
+
+    private func weekButton(_ week: SermonWeek) -> some View {
+        Button {
+            dismiss()
+            Task {
+                await model.select(week: week)
+                await model.loadSelectedLanguagePage()
+            }
+        } label: {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(week.title).font(.headline)
+                    Text("\(week.date) · \(week.speaker)")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                    if week.id != currentWeek?.id {
+                        Text(localization.text("目录标题：简体中文"))
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+                if week.id == model.selectedWeek?.id { Image(systemName: "checkmark") }
+            }
+            .frame(minHeight: 54, alignment: .leading)
+        }
+        .accessibilityIdentifier("sermon-week-\(week.id)")
+        .accessibilityValue(localization.text(week.id == model.selectedWeek?.id ? "已选择" : "未选择"))
     }
 }
 
@@ -736,19 +1045,6 @@ private struct AboutSheet: View {
                     Text(localization.text("收听位置保存在本机，按周次与音频版本区分，保留30天。已下载的音频可离线收听。"))
                         .font(.footnote).foregroundStyle(.secondary)
                     if let warning = model.playback.storageWarning { Text(localization.text(warning)).font(.footnote) }
-                }
-                Section(localization.text("界面语言")) {
-                    Picker(localization.text("界面语言"), selection: Binding(get: { localization.preference }, set: { localization.setPreference($0) })) {
-                        Text(localization.text("跟随系统")).tag(AppLanguage.system)
-                        Text("简体中文").tag(AppLanguage.simplifiedChinese)
-                        Text("English").tag(AppLanguage.english)
-                    }
-                    .accessibilityIdentifier("interface-language")
-                    Text(localization.text("界面语言不会更换音轨；证道内容保留其提供的语言。"))
-                        .font(.footnote).foregroundStyle(.secondary)
-                    if let warning = localization.storageWarning {
-                        Text(localization.text(warning)).font(.footnote).foregroundStyle(.secondary)
-                    }
                 }
                 Section(localization.text("关于同行")) {
                     Text(localization.text("一起听懂，一路同行。"))

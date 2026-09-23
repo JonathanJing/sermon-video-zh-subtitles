@@ -77,47 +77,95 @@ private enum UITestContent {
                     .init(blockId: "0", english: "First synthetic source sentence for UI testing.", sourceTextOrigin: "synthetic-fixture", reviewState: "candidate"),
                     .init(blockId: "1", english: "Second synthetic source sentence for seek testing.", sourceTextOrigin: "synthetic-fixture", reviewState: "candidate"),
                     .init(blockId: "2", english: "Third synthetic source sentence for continued listening.", sourceTextOrigin: "synthetic-fixture", reviewState: "candidate")
-                ]))
+                ])),
+            SermonWeek(id: "ui-test-past-week", date: "2026-08-30", sourceId: "ui-test-past-source",
+                sourceUrl: "https://example.test/synthetic-ui-past", title: "往期界面测试证道",
+                speaker: "静音夹具", scripture: "自动化验证",
+                tracks: [track(id: "fixture-first", label: "甲音轨", data: firstAudio, duration: 36)],
+                contentReview: "合成测试数据，无真实证道内容或审核声明。")
         ])
+        func pageHTML(locale: String) -> Data {
+            let title = locale == "ko" ? "한국어 검증 페이지" : (locale == "en" ? "English verified page" : "中文验证页面")
+            return Data("<html lang=\"\(locale)\"><body><h1>\(title)</h1><p>UI fixture only</p></body></html>".utf8)
+        }
+        func hash(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
         func release(locale: String) -> Data {
-            let hash = String(repeating: "a", count: 64)
+            let candidateHash = String(repeating: "a", count: 64)
             let value: [String: Any] = [
                 "schemaVersion": "sermon-target-language-release-package-v1",
                 "packageId": "ui-test-week-\(locale)", "pageId": "ui-test-week", "sourceLocale": "en",
-                "targetLocale": locale, "targetLanguageCandidateJsonSha256": hash,
+                "targetLocale": locale, "targetLanguageCandidateJsonSha256": candidateHash,
                 "targetLanguageAudioPackageJsonSha256": NSNull(), "status": "published_http_verified",
                 "contentStatus": "human_reviewed", "audioStatus": "unavailable",
                 "interfaceLocale": locale, "contentLocale": locale, "audioLocale": NSNull(),
-                "assets": [["role": "page", "path": "/pages/ui-test-week/\(locale)/index.html", "sha256": hash]],
-                "httpVerification": ["status": "pass", "evidenceSha256": hash],
+                "assets": [["role": "page", "path": "/pages/ui-test-week/\(locale)/index.html", "sha256": hash(pageHTML(locale: locale))]],
+                "httpVerification": ["status": "pass", "evidenceSha256": candidateHash],
                 "deviceAcceptance": ["status": "not_run", "evidenceSha256": NSNull()],
                 "venueAcceptance": ["status": "not_run", "evidenceSha256": NSNull()], "issues": [],
             ]
             return try! JSONSerialization.data(withJSONObject: value, options: [.sortedKeys])
         }
         let chineseRelease = release(locale: "zh-Hans"), koreanRelease = release(locale: "ko")
-        func hash(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
+        let englishRelease = release(locale: "en")
+        let includeEnglish = ProcessInfo.processInfo.arguments.contains("--ui-testing-published-english")
         let sourceHash = String(repeating: "b", count: 64)
+        var targets: [String: Any] = [
+            "zh-Hans": ["releasePackageUrl": "/releases/ui-test-week/zh-Hans.json",
+                        "releasePackageJsonSha256": hash(chineseRelease), "contentStatus": "human_reviewed",
+                        "audioStatus": "unavailable", "capabilities": ["text"]],
+            "ko": ["releasePackageUrl": "/releases/ui-test-week/ko.json",
+                   "releasePackageJsonSha256": hash(koreanRelease), "contentStatus": "human_reviewed",
+                   "audioStatus": "unavailable", "capabilities": ["text"]],
+        ]
+        if includeEnglish {
+            targets["en"] = ["releasePackageUrl": "/releases/ui-test-week/en.json",
+                             "releasePackageJsonSha256": hash(englishRelease), "contentStatus": "human_reviewed",
+                             "audioStatus": "unavailable", "capabilities": ["text"]]
+        }
         let multilingual: [String: Any] = [
             "schemaVersion": "sermon-multilingual-catalog-v2", "generatedAt": "2026-09-21T00:00:00Z",
             "defaultPageId": "ui-test-week", "pages": [[
                 "id": "ui-test-week", "date": "2026-09-06", "sourceLocale": "en",
-                "sourceIdentitySha256": sourceHash, "defaultTargetLocale": "zh-Hans", "targets": [
-                    "zh-Hans": ["releasePackageUrl": "/releases/ui-test-week/zh-Hans.json",
-                                "releasePackageJsonSha256": hash(chineseRelease), "contentStatus": "human_reviewed",
-                                "audioStatus": "unavailable", "capabilities": ["text"]],
-                    "ko": ["releasePackageUrl": "/releases/ui-test-week/ko.json",
-                           "releasePackageJsonSha256": hash(koreanRelease), "contentStatus": "human_reviewed",
-                           "audioStatus": "unavailable", "capabilities": ["text"]],
-                ],
+                "sourceIdentitySha256": sourceHash, "defaultTargetLocale": "zh-Hans", "targets": targets,
             ]],
         ]
-        return ["/weekly.json": try! JSONEncoder().encode(catalog),
+        var responses = ["/weekly.json": try! JSONEncoder().encode(catalog),
                 "/multilingual.json": try! JSONSerialization.data(withJSONObject: multilingual, options: [.sortedKeys]),
                 "/releases/ui-test-week/zh-Hans.json": chineseRelease,
                 "/releases/ui-test-week/ko.json": koreanRelease,
+                "/pages/ui-test-week/zh-Hans/index.html": pageHTML(locale: "zh-Hans"),
+                "/pages/ui-test-week/ko/index.html": pageHTML(locale: "ko"),
                 "/media/fixture-first.mp3": firstAudio,
                 "/media/fixture-second.mp3": secondAudio]
+        if ProcessInfo.processInfo.arguments.contains("--ui-testing-dev-preview") {
+            let demoTargets = ["en", "ko", "zh-Hans"].reduce(into: [String: Any]()) { result, locale in
+                result[locale] = ["releasePackageUrl": "/releases/ui-test-week/\(locale).json",
+                                  "contentStatus": "machine_review_pass_human_review_pending",
+                                  "audioStatus": "candidate", "machineScreening": "pass"]
+            }
+            let demo: [String: Any] = [
+                "schemaVersion": "sermon-multilingual-demo-catalog-v1", "environment": "development",
+                "poc": true, "defaultPageId": "ui-test-week",
+                "pages": [["id": "ui-test-week", "defaultTargetLocale": "zh-Hans", "targets": demoTargets]],
+            ]
+            responses["/multilingual.json"] = try! JSONSerialization.data(withJSONObject: demo)
+            for locale in ["en", "ko", "zh-Hans"] {
+                let release: [String: Any] = [
+                    "schemaVersion": locale == "en" ? "sermon-source-language-demo-package-v1" :
+                        "sermon-target-language-demo-package-v1",
+                    "environment": "development", "poc": true, "productionEligible": false,
+                    "humanApproval": false, "pageId": "ui-test-week", "targetLocale": locale,
+                    "contentStatus": "machine_review_pass_human_review_pending", "audioStatus": "candidate",
+                    "pageUrl": "/pages/ui-test-week/\(locale)",
+                ]
+                responses["/releases/ui-test-week/\(locale).json"] = try! JSONSerialization.data(withJSONObject: release)
+            }
+        }
+        if includeEnglish {
+            responses["/releases/ui-test-week/en.json"] = englishRelease
+            responses["/pages/ui-test-week/en/index.html"] = pageHTML(locale: "en")
+        }
+        return responses
     }()
 }
 
@@ -125,6 +173,9 @@ private enum UITestContent {
 /// Offline launch reports a real URLSession error; the production repositories
 /// must recover from their own previously written cache and verified audio.
 private final class UITestContentProtocol: URLProtocol {
+    private static let requestLock = NSLock()
+    private static var multilingualRequestCount = 0
+
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
@@ -137,13 +188,34 @@ private final class UITestContentProtocol: URLProtocol {
             client?.urlProtocol(self, didFailWithError: URLError(.notConnectedToInternet))
             return
         }
-        guard let data = UITestContent.responses[url.path] else {
+        guard var data = UITestContent.responses[url.path] else {
             client?.urlProtocol(self, didFailWithError: URLError(.fileDoesNotExist))
             return
         }
+        if url.path == "/multilingual.json",
+           ProcessInfo.processInfo.arguments.contains("--ui-testing-revoke-korean-on-refresh") {
+            Self.requestLock.lock()
+            Self.multilingualRequestCount += 1
+            let isRefresh = Self.multilingualRequestCount > 1
+            Self.requestLock.unlock()
+            if isRefresh,
+               var document = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+               var pages = document["pages"] as? [[String: Any]], !pages.isEmpty,
+               var targets = pages[0]["targets"] as? [String: Any] {
+                targets.removeValue(forKey: "ko")
+                pages[0]["targets"] = targets
+                document["pages"] = pages
+                data = (try? JSONSerialization.data(withJSONObject: document, options: [.sortedKeys])) ?? data
+            }
+        }
+        if url.path.hasPrefix("/media/"),
+           ProcessInfo.processInfo.arguments.contains("--ui-testing-delay-download") {
+            Thread.sleep(forTimeInterval: 3)
+        }
         let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "HTTP/1.1",
             headerFields: ["Content-Length": String(data.count),
-                           "Content-Type": url.path == "/weekly.json" ? "application/json" : "audio/mpeg"])!
+                           "Content-Type": url.path.hasSuffix(".json") ? "application/json" :
+                               (url.path.hasSuffix(".html") ? "text/html; charset=utf-8" : "audio/mpeg")])!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
         client?.urlProtocol(self, didLoad: data)
         client?.urlProtocolDidFinishLoading(self)
