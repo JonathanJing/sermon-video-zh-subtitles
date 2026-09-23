@@ -6,6 +6,7 @@ import sys
 import tempfile
 import unittest
 import wave
+from unittest.mock import patch
 
 from jsonschema import Draft202012Validator, FormatChecker
 
@@ -14,6 +15,8 @@ from scripts import review_target_language_candidate as human_review
 from scripts import validate_target_language_audio_unit as audio_integrity
 from scripts import sermon_sentence_interpretation as interpretation
 from scripts import target_language_policy as policy_tools
+from scripts import four_layer_progress as progress
+from scripts import sermon_accounting as accounting
 
 
 def write_json(path: Path, value: object) -> None:
@@ -188,6 +191,29 @@ class TargetLanguageSpeechJobTests(unittest.TestCase):
         self.assertEqual(job["inputs"]["targetLanguagePolicy"]["jsonSha256"], interpretation.json_sha256(self.policy))
         self.assertEqual(job["inputs"]["humanReviewReceipt"]["jsonSha256"], interpretation.json_sha256(self.human_review_receipt))
         self.assertEqual(self.validate_schema("sermon-target-language-speech-job-v2.schema.json", job), [])
+
+    def test_speech_job_cli_records_timing_without_promoting_poc_capability(self):
+        ledger = self.root / "four-layer-progress.json"
+        progress.save(ledger, progress.new_ledger("test-page", ["ko"]))
+        output = self.root / "timed-speech-job"
+        argv = ["speech-job", "--english-source-package", str(self.source_package_path),
+                "--anchor", str(self.anchor_path), "--candidate", str(self.candidate_path),
+                "--policy", str(self.policy_path),
+                "--human-review-receipt", str(self.human_review_receipt_path),
+                "--adapter", str(self.adapter_path), "--speaker-registry", str(self.registry_path),
+                "--progress-ledger", str(ledger), "--out", str(output)]
+        with patch.object(sys, "argv", argv):
+            subject.main()
+        self.assertFalse(json.loads((output / "job.json").read_text())["synthesisEligible"])
+        events, damaged = accounting.read_events(self.root / "accounting")
+        self.assertFalse(damaged)
+        stage = next(event for event in events if event["event"] == "stage_finished"
+                     and event["stage"] == "four_layer.L3-01:ko")
+        self.assertEqual(stage["status"], "completed")
+        workload = next(event for event in events if event["event"] == "workload"
+                        and event["stage"] == "four_layer.L3-01:ko")
+        self.assertEqual(workload["metrics"]["speechUnits"], 2)
+        self.assertEqual(progress.load(ledger)["steps"]["L3-01@ko"]["status"], "pending")
 
     def test_forged_verified_adapter_cannot_bypass_registry(self):
         self.adapter["capabilityStatus"] = "verified"

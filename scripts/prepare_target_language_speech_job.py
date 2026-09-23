@@ -18,10 +18,12 @@ from typing import Any
 from jsonschema import Draft202012Validator, FormatChecker
 
 try:
+    from scripts import four_layer_measure as measure
     from scripts import sermon_sentence_interpretation as interpretation
     from scripts import target_language_policy as policy_tools
     from scripts import clip_timeline_map as timeline_map
 except ImportError:  # Direct execution via ``python scripts/...``.
+    import four_layer_measure as measure
     import sermon_sentence_interpretation as interpretation
     import target_language_policy as policy_tools
     import clip_timeline_map as timeline_map
@@ -536,16 +538,26 @@ def main() -> None:
     parser.add_argument("--clip-voice-authorization", type=Path)
     parser.add_argument("--clip-voice-capability", type=Path)
     parser.add_argument("--clip-timeline-map", type=Path)
+    parser.add_argument("--progress-ledger", type=Path,
+                        help="Record producer timing in this four-layer run ledger")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
-    job = prepare_job(
-        args.english_source_package, args.anchor, args.candidate, args.policy,
-        args.human_review_receipt,
-        args.adapter, args.speaker_registry, args.out,
-        clip_voice_authorization_path=args.clip_voice_authorization,
-        clip_voice_capability_path=args.clip_voice_capability,
-        clip_timeline_map_path=args.clip_timeline_map,
-    )
+    candidate = _load(args.candidate)
+    locale = candidate.get("targetLocale")
+    with measure.producer_step(args.progress_ledger, f"L3-01@{locale}", locale=locale) as metrics:
+        metrics.update(candidateSha256=interpretation.json_sha256(candidate),
+                       translationGroups=len(candidate.get("groups") or []),
+                       adapterSha256=interpretation.json_sha256(_load(args.adapter)),
+                       speakerRegistrySha256=interpretation.json_sha256(_load(args.speaker_registry)))
+        job = prepare_job(
+            args.english_source_package, args.anchor, args.candidate, args.policy,
+            args.human_review_receipt,
+            args.adapter, args.speaker_registry, args.out,
+            clip_voice_authorization_path=args.clip_voice_authorization,
+            clip_voice_capability_path=args.clip_voice_capability,
+            clip_timeline_map_path=args.clip_timeline_map,
+        )
+        metrics["speechUnits"] = len(job.get("units") or [])
     print(json.dumps({
         "status": job["status"],
         "targetLocale": job["targetLocale"],

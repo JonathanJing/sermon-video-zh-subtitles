@@ -16,6 +16,11 @@ from pathlib import Path
 import re
 from typing import Any
 
+try:
+    from scripts import four_layer_measure as measure
+except ImportError:  # Direct execution via ``python scripts/...``.
+    import four_layer_measure as measure
+
 
 SCHEMA_VERSION = "sermon-english-source-package-v1"
 REVIEW_SCHEMA_VERSION = "sermon-english-source-review-v1"
@@ -473,20 +478,28 @@ def main() -> int:
     parser.add_argument("--source-id")
     parser.add_argument("--source-url-hash")
     parser.add_argument("--service-date")
+    parser.add_argument("--progress-ledger", type=Path,
+                        help="Record producer timing in this four-layer run ledger")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
-    package = build_package(
-        args.aligned_segments,
-        args.anchor_manifest,
-        summary_path=args.summary,
-        approval_evidence_path=args.approval_evidence,
-        review_path=args.review,
-        machine_judge_path=args.machine_judge,
-        source_id=args.source_id,
-        source_url_hash=args.source_url_hash,
-        service_date=args.service_date,
-    )
-    write_immutable(args.out.resolve(), package)
+    with measure.producer_step(args.progress_ledger, "L1-04") as metrics:
+        package = build_package(
+            args.aligned_segments,
+            args.anchor_manifest,
+            summary_path=args.summary,
+            approval_evidence_path=args.approval_evidence,
+            review_path=args.review,
+            machine_judge_path=args.machine_judge,
+            source_id=args.source_id,
+            source_url_hash=args.source_url_hash,
+            service_date=args.service_date,
+        )
+        metrics.update(sourceUnits=package["anchors"]["sourceUnitCount"],
+                       sourcePackageSha256=json_sha256(package),
+                       approvedForTranslation=package["translationEligible"])
+        output_already_present = args.out.exists()
+        write_immutable(args.out.resolve(), package)
+        metrics["cacheHit"] = output_already_present
     print(json.dumps(package, ensure_ascii=False, indent=2))
     return 0 if package["candidateTranslationEligible"] else 2
 

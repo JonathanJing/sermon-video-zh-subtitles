@@ -14,9 +14,11 @@ from pathlib import Path
 from typing import Any
 
 try:
+    from scripts import four_layer_measure as measure
     from scripts import prepare_target_language_speech_job as handoff
     from scripts import sermon_sentence_interpretation as interpretation
 except ImportError:  # Direct execution via ``python scripts/...``.
+    import four_layer_measure as measure
     import prepare_target_language_speech_job as handoff
     import sermon_sentence_interpretation as interpretation
 
@@ -133,26 +135,34 @@ def main() -> None:
     parser.add_argument("--candidate", type=Path, required=True)
     parser.add_argument("--policy", type=Path, required=True)
     parser.add_argument("--worksheet", type=Path)
+    parser.add_argument("--progress-ledger", type=Path,
+                        help="Record producer timing in this four-layer run ledger")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
-    _require(not args.out.exists(), "Use a new output path; review artifacts are immutable")
-    source_package, anchor, candidate, policy = (
-        _load(path) for path in (args.english_source_package, args.anchor, args.candidate, args.policy)
-    )
-    if args.command == "prepare":
-        _require(args.worksheet is None, "prepare does not consume a worksheet")
-        worksheet = build_worksheet(source_package, anchor, candidate, policy)
-        interpretation.write_json(args.out, worksheet)
-        print(json.dumps({"status": "human_review_pending", "worksheet": str(args.out.resolve())}))
-    else:
-        _require(args.worksheet is not None, "approve requires --worksheet")
-        approved, receipt = approve_worksheet(
-            source_package, anchor, candidate, policy, _load(args.worksheet),
+    candidate = _load(args.candidate)
+    locale = candidate.get("targetLocale")
+    with measure.producer_step(args.progress_ledger, f"L2-04@{locale}", locale=locale) as metrics:
+        _require(not args.out.exists(), "Use a new output path; review artifacts are immutable")
+        source_package, anchor, policy = (
+            _load(path) for path in (args.english_source_package, args.anchor, args.policy)
         )
-        args.out.mkdir(parents=True)
-        interpretation.write_json(args.out / "candidate.approved.json", approved)
-        interpretation.write_json(args.out / "human-review-receipt.json", receipt)
-        print(json.dumps({"status": "human_translation_approved", "out": str(args.out.resolve())}))
+        metrics.update(translationGroups=len(candidate.get("groups") or []),
+                       sourceUnits=len(anchor.get("sourceUnits") or []),
+                       candidateSha256=interpretation.json_sha256(candidate))
+        if args.command == "prepare":
+            _require(args.worksheet is None, "prepare does not consume a worksheet")
+            worksheet = build_worksheet(source_package, anchor, candidate, policy)
+            interpretation.write_json(args.out, worksheet)
+            print(json.dumps({"status": "human_review_pending", "worksheet": str(args.out.resolve())}))
+        else:
+            _require(args.worksheet is not None, "approve requires --worksheet")
+            approved, receipt = approve_worksheet(
+                source_package, anchor, candidate, policy, _load(args.worksheet),
+            )
+            args.out.mkdir(parents=True)
+            interpretation.write_json(args.out / "candidate.approved.json", approved)
+            interpretation.write_json(args.out / "human-review-receipt.json", receipt)
+            print(json.dumps({"status": "human_translation_approved", "out": str(args.out.resolve())}))
 
 
 if __name__ == "__main__":

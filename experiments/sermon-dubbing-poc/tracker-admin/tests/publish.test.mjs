@@ -40,3 +40,19 @@ test('withdrawn delivery survives the public projection', () => {
   assert.equal(delivery.fingerprint.status, 'withdrawn');
   assert.equal(delivery.pageUrl, null);
 });
+
+test('public projection keeps bounded timing counters without private workload hashes', () => {
+  const snapshot = { schemaVersion: 'sermon-public-tracker-snapshot-v1',
+    pageId: 'week-2026-09-20', target: 'dev', locales: [], source: {}, progress: {},
+    timingCoverage: { measuredStepCount: 1, damagedAccountingRows: 0 }, readOnly: true,
+    steps: [{ id: 'L2-03@ko', layer: 2, locale: 'ko', status: 'pending',
+      timing: { executionAttempts: 2, failedExecutionAttempts: 1,
+        measuredExecutionSeconds: 12.5, lastExecutionStatus: 'failed',
+        lastExecutionAt: '2026-09-23T12:00:00Z', policySha256: 'a'.repeat(64) } }] };
+  const publicData = validateSnapshot(snapshot);
+  assert.equal(publicData.steps[0].timing.executionAttempts, 2);
+  assert.equal(publicData.steps[0].timing.failedExecutionAttempts, 1);
+  assert.equal(publicData.steps[0].timing.measuredExecutionSeconds, 12.5);
+  assert.equal(publicData.timingCoverage.measuredStepCount, 1);
+  assert.equal(JSON.stringify(publicData).includes('policySha256'), false);
+});

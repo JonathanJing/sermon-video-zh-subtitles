@@ -191,6 +191,16 @@ function renderSteps(steps, filter) {
     title.append(make('span', 'step-id', step.id), make('strong', '', stepName(step)));
     const right = make('div', 'step-right');
     if (step.totalUnits != null) right.append(make('small', 'muted', `${step.doneUnits || 0}/${step.totalUnits} 单元`));
+    const timing = step.timing;
+    if (timing?.executionAttempts) {
+      const seconds = Math.round(timing.measuredExecutionSeconds || 0);
+      right.append(make('small', 'muted', `实测 ${Math.floor(seconds / 60)}分${seconds % 60}秒 · ${timing.executionAttempts} 次${timing.failedExecutionAttempts ? ` · 失败 ${timing.failedExecutionAttempts}` : ''}`));
+    }
+    if (timing?.openExecution) right.append(make('small', 'muted', '存在未结束执行记录'));
+    if (timing?.operatorReviewWaitSeconds != null) {
+      right.append(make('small', 'muted', `审核等待 ${Math.round(timing.operatorReviewWaitSeconds / 60)} 分钟`));
+    }
+    if (timing?.openReviewWait) right.append(make('small', 'muted', '审核等待中'));
     right.append(pill(step.status));
     row.append(title, right);
     return row;
@@ -210,6 +220,10 @@ export function renderSnapshot(snapshot) {
   const report = snapshot.progress || {};
   text('metric-progress', `${report.complete || 0} / ${report.total || 0}`);
   text('metric-progress-note', '完成数只表示检查点');
+  const timingCoverage = snapshot.timingCoverage || {};
+  if (timingCoverage.measuredStepCount) {
+    text('metric-progress-note', `完成数只表示检查点 · ${timingCoverage.measuredStepCount} 个步骤有实测耗时`);
+  }
   text('metric-eta', report.earliestContinuousEta ? dateTime(report.earliestContinuousEta) : '未知');
   text('metric-blockers', report.blockerCount || 0);
   renderSource(snapshot.source);

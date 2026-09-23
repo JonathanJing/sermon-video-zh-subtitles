@@ -7,10 +7,12 @@ This ledger reports work progress. It never grants a production gate or approval
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
 import tempfile
+import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -87,6 +89,7 @@ def new_ledger(page_id: str, locales: list[str], *, target: str = "dev") -> dict
                 }
     return {
         "schemaVersion": SCHEMA,
+        "ledgerId": uuid.uuid4().hex,
         "pageId": page_id,
         "target": target,
         "locales": locales,
@@ -100,6 +103,17 @@ def new_ledger(page_id: str, locales: list[str], *, target: str = "dev") -> dict
         },
         "history": [],
     }
+
+
+def ledger_identity(ledger: dict) -> str:
+    """Bind timing to one ledger incarnation, including pre-ID v1 ledgers."""
+    identity = ledger.get("ledgerId")
+    if identity is not None and not isinstance(identity, str):
+        raise ValueError("invalid ledger identity")
+    value = identity or json.dumps({key: ledger.get(key) for key in
+                                   ("pageId", "target", "locales", "createdAt")},
+                                  sort_keys=True, ensure_ascii=False)
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
 def load(path: Path) -> dict:
