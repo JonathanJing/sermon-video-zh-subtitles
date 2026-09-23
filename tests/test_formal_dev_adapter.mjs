@@ -25,7 +25,7 @@ const release = {
   interfaceLocale: locale, contentLocale: locale, audioLocale: locale,
   assets: [
     { role: 'content', path: `/content/${pageId}/${locale}.json`, sha256: hash('e') },
-    { role: 'audio', path: `/media/${pageId}/${locale}.mp3`, sha256: hash('f') },
+    { role: 'audio', path: `/media/${pageId}/${locale}.wav`, sha256: hash('f') },
     { role: 'captions', path: `/captions/${pageId}/${locale}.json`, sha256: hash('1') }
   ],
   httpVerification: { status: 'not_run', evidenceSha256: null },
@@ -85,7 +85,7 @@ test('formal v2 catalog and release produce a separate verified player view', ()
   const view = formalReleaseView(checked, page, locale);
   assert.equal(view.formal, true);
   assert.equal(view.schemaVersion, 'sermon-target-language-release-package-v1');
-  assert.equal(view.audioUrl, `/media/${pageId}/${locale}.mp3`);
+  assert.equal(view.audioUrl, `/media/${pageId}/${locale}.wav`);
   assert.equal(view.pageUrl, `/pages/${pageId}/${locale}`);
   assert.equal(view.status, 'candidate');
 });
@@ -104,7 +104,7 @@ test('formal reader rejects POC relabeling and incomplete language catalog', () 
 
 test('formal reader rejects cross-locale assets, review drift and unverified text', () => {
   const otherLocale = clone(release);
-  otherLocale.assets[1].path = `/media/${pageId}/es.mp3`;
+  otherLocale.assets[1].path = `/media/${pageId}/es.wav`;
   assert.throws(() => validateFormalRelease(otherLocale, page, locale));
   assert.throws(() => validateFormalRelease({ ...release, audioStatus: 'candidate' }, page, locale));
   assert.throws(() => validateFormalContent({ ...content, targetLanguageCandidateJsonSha256: hash('0') }, release, page, locale));

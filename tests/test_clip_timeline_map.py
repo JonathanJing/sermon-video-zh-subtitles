@@ -3,9 +3,24 @@ import os
 from pathlib import Path
 import tempfile
 import unittest
+from unittest import mock
 
 from scripts import build_target_language_audio_package as audio_package
 from scripts import clip_timeline_map as subject
+
+
+class Mp4DurationFallbackTests(unittest.TestCase):
+    def test_movie_header_duration_when_ffprobe_is_absent(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "clip.mp4"
+            mvhd = b"\x00\x00\x00\x00" + b"\x00" * 8 + (240000).to_bytes(4, "big") + (42762720).to_bytes(4, "big")
+            movie = (len(mvhd) + 8).to_bytes(4, "big") + b"mvhd" + mvhd
+            path.write_bytes((len(movie) + 8).to_bytes(4, "big") + b"moov" + movie)
+            with mock.patch.object(subject.subprocess, "run", side_effect=FileNotFoundError()):
+                self.assertAlmostEqual(subject.media_duration(path), 178.178, places=3)
+            path.write_bytes(path.read_bytes()[:10])
+            with self.assertRaises(ValueError):
+                subject.mp4_movie_duration(path)
 
 
 class RealSep20TimelineMapTests(unittest.TestCase):

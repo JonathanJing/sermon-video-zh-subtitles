@@ -11,12 +11,13 @@ Mac 绝对输入路径可用 `--path-map` 映射到容器中的 staged 文件。
 ```bash
 SEP20_STAGE=/home/achillesjing/dgx-spark-benchmark/results/sermon-formal-sep20-stage
 docker run --rm --gpus all --ipc=host --read-only --network none \
-  --tmpfs /tmp:rw,nosuid,size=512m --tmpfs /Users:rw,nosuid,size=64m \
+  --tmpfs /tmp:rw,exec,nosuid,size=512m --tmpfs /Users:rw,nosuid,size=64m \
   --tmpfs /private:rw,nosuid,size=64m \
   -v "$SEP20_STAGE":/work:rw \
   -v /home/achillesjing/dgx-spark-benchmark/results:/results:ro \
   -v /home/achillesjing/dgx-spark-benchmark/results/sermon-voice-poc-20260905/venv/lib/python3.12/site-packages:/voice-packages:ro \
   -e PYTHONPATH=/work/repo:/voice-packages -e NUMBA_CACHE_DIR=/tmp/numba \
+  -e TRITON_CACHE_DIR=/tmp/triton -e XDG_CACHE_HOME=/tmp/cache \
   -e HF_HOME=/tmp/hf -e HF_HUB_OFFLINE=1 -e TRANSFORMERS_OFFLINE=1 \
   --entrypoint python nvcr.io/nvidia/pytorch:26.06-py3 \
   /work/repo/scripts/render_formal_target_language_speech.py \

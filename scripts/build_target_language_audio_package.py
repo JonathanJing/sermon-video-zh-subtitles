@@ -100,6 +100,9 @@ def probe_audio(path: Path) -> tuple[float, int, int]:
         subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-xerror", "-i", str(path),
                         "-f", "null", "-"], capture_output=True, text=True, check=True, timeout=300)
         return duration, sample_rate, channels
+    except FileNotFoundError:
+        decoded = unit_integrity.probe_pcm_wav(path)
+        return decoded["durationSeconds"], decoded["sampleRate"], decoded["channels"]
     except (OSError, subprocess.CalledProcessError, ValueError, KeyError, json.JSONDecodeError) as exc:
         raise ValueError(f"Audio probe/full decode failed: {path}: {exc}") from exc
 

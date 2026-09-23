@@ -5,6 +5,7 @@ from pathlib import Path
 import tempfile
 import unittest
 import wave
+from unittest import mock
 
 from scripts import build_target_language_audio_package as subject
 from scripts import prepare_clip_voice_authorization as clip_voice
@@ -558,6 +559,15 @@ class AudioPackageTests(unittest.TestCase):
         self.manifest["track"] = self.artifact(rel)
         with self.assertRaisesRegex(ValueError, "exact audio set"):
             self.build()
+
+    def test_full_pcm_wav_decode_without_ffmpeg_tools(self):
+        path = self.asset_root / self.manifest["track"]["path"]
+        with mock.patch.object(subject.subprocess, "run", side_effect=FileNotFoundError()):
+            self.assertEqual(subject.probe_audio(path), (0.7, 16000, 1))
+        decoded = unit_integrity.probe_full_decode(
+            path, runner=mock.Mock(side_effect=FileNotFoundError()))
+        self.assertEqual(decoded["codec"], "pcm_s16le")
+        self.assertEqual(decoded["durationSeconds"], 0.7)
 
 
 if __name__ == "__main__":

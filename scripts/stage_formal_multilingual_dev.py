@@ -250,7 +250,7 @@ def preflight(args: argparse.Namespace) -> tuple[dict, dict[str, tuple[Path, str
             role, path = asset["role"], asset["path"]
             expected_paths = {
                 "content": f"/content/{args.page_id}/{locale}.json",
-                "audio": f"/media/{args.page_id}/{locale}.mp3",
+                "audio": f"/media/{args.page_id}/{locale}.wav",
                 "captions": f"/captions/{args.page_id}/{locale}.json",
             }
             if role not in expected_paths or path != expected_paths[role]:

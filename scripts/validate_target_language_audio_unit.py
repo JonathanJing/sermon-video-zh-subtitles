@@ -13,6 +13,7 @@ import math
 from pathlib import Path
 import subprocess
 from typing import Any, Callable
+import wave
 
 try:
     from scripts import prepare_target_language_speech_job as speech
@@ -91,12 +92,15 @@ def _bound_audio(job_path: Path, job: dict[str, Any], unit_index: int, audio_pat
 
 
 def probe_full_decode(audio_path: Path, *, runner: Callable[..., Any] = subprocess.run) -> dict[str, Any]:
-    """Require one usable audio stream and decode all frames with ffmpeg."""
-    probe = runner([
+    """Require one usable audio stream and decode all frames."""
+    try:
+        probe = runner([
         "ffprobe", "-v", "error", "-show_entries",
         "format=duration:stream=codec_type,codec_name,sample_rate,channels",
         "-of", "json", str(audio_path),
-    ], capture_output=True, text=True, check=True, timeout=300)
+        ], capture_output=True, text=True, check=True, timeout=300)
+    except FileNotFoundError:
+        return probe_pcm_wav(audio_path)
     data = json.loads(probe.stdout)
     streams = [row for row in data.get("streams", []) if row.get("codec_type") == "audio"]
     _require(len(streams) == 1, "Audio unit must have exactly one audio stream")
@@ -111,10 +115,33 @@ def probe_full_decode(audio_path: Path, *, runner: Callable[..., Any] = subproce
     _require(math.isfinite(duration) and duration > 0 and sample_rate > 0
              and channels > 0 and isinstance(codec, str) and codec,
              "Audio unit has invalid duration, sample rate, channels, or codec")
-    runner(["ffmpeg", "-xerror", "-v", "error", "-i", str(audio_path), "-f", "null", "-"],
-           capture_output=True, text=True, check=True, timeout=300)
+    try:
+        runner(["ffmpeg", "-xerror", "-v", "error", "-i", str(audio_path), "-f", "null", "-"],
+               capture_output=True, text=True, check=True, timeout=300)
+    except FileNotFoundError:
+        return probe_pcm_wav(audio_path)
     return {"codec": codec, "sampleRate": sample_rate, "channels": channels,
             "durationSeconds": duration}
+
+
+def probe_pcm_wav(path: Path) -> dict[str, Any]:
+    """Fully read the PCM16 WAV bytes when ffmpeg tools are unavailable."""
+    try:
+        with wave.open(str(path), "rb") as handle:
+            channels = handle.getnchannels()
+            rate = handle.getframerate()
+            frames = handle.getnframes()
+            width = handle.getsampwidth()
+            codec = handle.getcomptype()
+            signal = handle.readframes(frames)
+            _require(codec == "NONE" and width == 2 and channels == 1 and rate > 0
+                     and frames > 0 and len(signal) == frames * channels * width,
+                     "WAV full decode or PCM16 format failed")
+            _require(not handle.readframes(1), "WAV has extra audio frames")
+        return {"codec": "pcm_s16le", "sampleRate": rate, "channels": channels,
+                "durationSeconds": frames / rate}
+    except (OSError, EOFError, wave.Error) as exc:
+        raise ValueError(f"WAV full decode failed: {path}: {exc}") from exc
 
 
 def build_receipt(job_path: Path, unit_index: int, audio_path: Path, *,

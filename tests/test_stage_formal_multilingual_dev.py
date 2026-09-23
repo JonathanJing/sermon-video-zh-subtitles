@@ -36,9 +36,10 @@ class FormalDevStageTests(unittest.TestCase):
         self.source_hash = MODULE.canonical_sha(self.source)
         self.page_id = "formal-page-1"
         self.paths = {name: {} for name in ("candidate", "receipt", "audio", "audio_receipt", "content_receipt", "release")}
-        self.audio_file = self.root / "tone.mp3"
+        self.audio_file = self.root / "tone.wav"
         subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-f", "lavfi", "-i",
-                        "sine=frequency=440:duration=0.5", "-ac", "1", "-q:a", "8", "-y",
+                        "sine=frequency=440:duration=0.5", "-ac", "1", "-ar", "16000",
+                        "-acodec", "pcm_s16le", "-y",
                         str(self.audio_file)], check=True)
         self.audio_hash = MODULE.file_sha(self.audio_file)
         for locale in MODULE.LOCALES:
@@ -158,7 +159,7 @@ class FormalDevStageTests(unittest.TestCase):
             "reviewer": "fixture-reviewer", "reviewedAt": "2026-09-23T00:00:00Z",
             "reviewedFields": ["series", "title", "speaker", "scripture", "date", "summary", "outline"]}
         content_receipt_path = self.write_json(self.root / f"{locale}-content-receipt.json", content_receipt)
-        media_path = self.assets / "media" / self.page_id / f"{locale}.mp3"
+        media_path = self.assets / "media" / self.page_id / f"{locale}.wav"
         media_path.parent.mkdir(parents=True, exist_ok=True)
         media_path.write_bytes(self.audio_file.read_bytes())
         captions_path = self.assets / "captions" / self.page_id / f"{locale}.json"
@@ -174,7 +175,7 @@ class FormalDevStageTests(unittest.TestCase):
                    "assets": [{"role": role, "path": f"/{role_path}/{self.page_id}/{locale}.{suffix}",
                                "sha256": MODULE.file_sha(path)} for role, role_path, suffix, path in (
                                    ("content", "content", "json", content_path),
-                                   ("audio", "media", "mp3", media_path),
+                                   ("audio", "media", "wav", media_path),
                                    ("captions", "captions", "json", captions_path))],
                    "httpVerification": {"status": "not_run", "evidenceSha256": None},
                    "deviceAcceptance": {"status": "not_run", "evidenceSha256": None},

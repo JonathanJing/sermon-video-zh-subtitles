@@ -98,7 +98,7 @@ export function validateFormalRelease(release, page, locale) {
     "Formal Dev release requires three explicit assets");
   const expected = {
     content: [`/content/${page.id}/${locale}.json`, ".json"],
-    audio: [`/media/${page.id}/${locale}.mp3`, ".mp3"],
+    audio: [`/media/${page.id}/${locale}.wav`, ".wav"],
     captions: [`/captions/${page.id}/${locale}.json`, ".json"]
   };
   const assets = {};

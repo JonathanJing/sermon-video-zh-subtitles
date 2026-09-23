@@ -55,7 +55,59 @@ def media_duration(path: Path) -> float:
         duration = float(result.stdout.strip())
         require(math.isfinite(duration) and duration > 0, "Invalid clip media duration")
         return duration
+    except FileNotFoundError:
+        # GPU containers may have no ffprobe. The MP4 movie header gives the
+        # declared media timebase without trusting a job-supplied duration.
+        return mp4_movie_duration(path)
     except (OSError, ValueError, subprocess.CalledProcessError) as exc:
+        raise ValueError(f"Cannot probe clip media duration: {path}: {exc}") from exc
+
+
+def mp4_movie_duration(path: Path) -> float:
+    try:
+        with path.open("rb") as handle:
+            end = path.stat().st_size
+
+            def boxes(limit: int):
+                while handle.tell() + 8 <= limit:
+                    start = handle.tell()
+                    header = handle.read(8)
+                    size = int.from_bytes(header[:4], "big")
+                    kind = header[4:]
+                    if size == 1:
+                        size = int.from_bytes(handle.read(8), "big")
+                        header_size = 16
+                    else:
+                        header_size = 8
+                        if size == 0:
+                            size = limit - start
+                    require(size >= header_size and start + size <= limit,
+                            "Malformed MP4 box length")
+                    yield kind, start + size
+                    handle.seek(start + size)
+
+            for kind, box_end in boxes(end):
+                if kind != b"moov":
+                    continue
+                # `boxes` yields after reading the header and before seeking.
+                for child_kind, child_end in boxes(box_end):
+                    if child_kind != b"mvhd":
+                        continue
+                    version = handle.read(1)[0]
+                    require(version in {0, 1}, "Unsupported MP4 movie header")
+                    handle.seek(3 + (16 if version else 8), 1)
+                    timescale = int.from_bytes(handle.read(4), "big")
+                    ticks = int.from_bytes(handle.read(8 if version else 4), "big")
+                    require(timescale > 0 and ticks > 0
+                            and ticks != ((2**64 - 1) if version else (2**32 - 1)),
+                            "Invalid MP4 movie timebase")
+                    duration = ticks / timescale
+                    require(math.isfinite(duration) and duration > 0,
+                            "Invalid MP4 movie duration")
+                    return duration
+                break
+        raise ValueError("MP4 movie duration header not found")
+    except (OSError, IndexError) as exc:
         raise ValueError(f"Cannot probe clip media duration: {path}: {exc}") from exc
 
 
