@@ -1,6 +1,6 @@
 # Layer 2 韩语模型 A/B 与第三方裁判：证据摘要
 
-日期：2026-09-23。这里记录两轮 **shadow** 实验的可公开核对结论；完整 fixture、匿名稿、模型响应和 Gemini API 收据保存在本机 Git ignored 的 `artifacts/layer2-model-ab-20260923/`。模型会话中的 Astra/Sol 输出没有 OpenAI API request ID、token、价格或延迟收据，因此本报告不比较两者调用成本或速度。
+日期：2026-09-23。这里记录两轮 **shadow** 实验的可公开核对结论；[去标识化证据收据](20260923-layer2-astra-sol-gemini-ab-receipt.json)固定了本次 fixture、匿名稿、复核结果和 Gemini 请求／响应的 SHA-256。完整内容保存在本机 Git ignored 的 `artifacts/layer2-model-ab-20260923/`，新 checkout 只能核对收据和结论，若需复算须取得同哈希的受控本地材料。Astra/Sol 是指定模型的代理会话输出，原始提示词、会话 ID、API request ID、token、价格和延迟收据没有留存；不能据此复现模型调用或比较成本／速度。
 
 ## 第一轮：Astra 与 Sol 初译、两模型复核
 
@@ -18,4 +18,4 @@ Gemini 的独立全文复核报告 **0 个问题**，与 Sol 的具体发现不�
 
 ## 采用范围
 
-实验支持新运行采用 **Astra 初译 → Sol 独立逐组复核**，并保留确定性 coverage、语言插件、经文／术语政策和逐组人工批准。该组合已写入 [Layer 2 生产操作说明](../target-language-astra-sol-production.zh.md)，但本实验没有生成新的 `human_translation_approved` candidate，没有进入 Layer 3，也没有更改已有批准稿。扩大到整篇证道、其他 locale、成本／延迟及母语人工质量评价仍需各自独立证据。
+根据当前生产选择，新运行采用 **Astra 初译 → Sol 独立逐组复核**，并保留确定性 coverage、语言插件、经文／术语政策和逐组人工批准。该组合已写入 [Layer 2 生产操作说明](../target-language-astra-sol-production.zh.md)。实验支持“逐组复核能发现值得定向裁决的问题”，但第二轮没有在相同冻结组和提示词上分别运行 Astra 与 Sol reviewer；第一轮两者控制错误检出率相同。因此不能从本实验推出 Sol 的复核能力优于 Astra，或证明 Astra 初译单独足够。本实验没有生成新的 `human_translation_approved` candidate，没有进入 Layer 3，也没有更改已有批准稿。扩大到整篇证道、其他 locale、成本／延迟及母语人工质量评价仍需各自独立证据。
