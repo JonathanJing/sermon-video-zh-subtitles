@@ -27,18 +27,20 @@
             "english_source_reference",
             "source_word_timeline",
             "original_speaker_audio"
-          ]
+          ],
+          "releasePackageJsonSha256": "cab812b492f93274d66908c826189e7eec1407f1330120b169b0d6a8c4875960"
         },
         "zh-Hans": {
           "releasePackageUrl": "/releases/2026-09-20-lion-of-judah-poc/zh-Hans.json",
           "contentStatus": "machine_review_pass_human_review_pending",
-          "audioStatus": "candidate",
+          "audioStatus": "candidate_screening_pending",
           "machineScreening": "pass",
           "capabilities": [
             "machine_translation",
             "estimated_captions",
             "cloned_voice_poc"
-          ]
+          ],
+          "releasePackageJsonSha256": "6825e41c2ffb5bf0f05da611abe17523334b7520cc44a18a2705e84b229aa8d6"
         },
         "ko": {
           "releasePackageUrl": "/releases/2026-09-20-lion-of-judah-poc/ko.json",
@@ -49,7 +51,8 @@
             "machine_translation",
             "estimated_captions",
             "cloned_voice_poc"
-          ]
+          ],
+          "releasePackageJsonSha256": "ba9c0d78f31606f58006973d5ec023d102e7a0bd4aa12159d65953072f2a5764"
         },
         "es": {
           "releasePackageUrl": "/releases/2026-09-20-lion-of-judah-poc/es.json",
@@ -60,7 +63,8 @@
             "machine_translation",
             "estimated_captions",
             "cloned_voice_poc"
-          ]
+          ],
+          "releasePackageJsonSha256": "4da4ae499876d9fecb8e0693895526d5204cca05f22d8791665cccc3dfd18d8c"
         },
         "vi": {
           "releasePackageUrl": "/releases/2026-09-20-lion-of-judah-poc/vi.json",
@@ -71,7 +75,8 @@
             "machine_translation",
             "estimated_captions",
             "cloned_voice_poc"
-          ]
+          ],
+          "releasePackageJsonSha256": "14770b145e24ae02c6cf6acca6038f8da27862db5eb59ea5600236127de5b285"
         }
       }
     }

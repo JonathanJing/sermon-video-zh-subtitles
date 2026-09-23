@@ -70,9 +70,31 @@ class MultilingualDevAppTest(unittest.TestCase):
 
     def test_app_router_accepts_english(self):
         app = (PUBLIC / "app.js").read_text(encoding="utf-8")
+        integrity = (PUBLIC / "dev-integrity.mjs").read_text(encoding="utf-8")
         self.assertIn("(en|zh-Hans|ko|es|vi)", app)
-        self.assertIn("sermon-source-language-demo-package-v1", app)
-        self.assertIn('searchParams.set("sha256", variant.audioSha256)', app)
+        self.assertIn("sermon-source-language-demo-package-v1", integrity)
+        self.assertIn("fetchVerified(target.releasePackageUrl", app)
+        self.assertIn("verifiedAudioURL(variant", app)
+
+    def test_dev_release_hashes_bind_exact_committed_bytes(self):
+        import hashlib
+
+        catalog = load(PUBLIC / "multilingual.json")
+        for page in catalog["pages"]:
+            for locale, target in page["targets"].items():
+                release_path = PUBLIC / target["releasePackageUrl"].lstrip("/")
+                release = load(release_path)
+                content_path = PUBLIC / release["contentUrl"].lstrip("/")
+                self.assertEqual(
+                    hashlib.sha256(release_path.read_bytes()).hexdigest(),
+                    target["releasePackageJsonSha256"],
+                    locale,
+                )
+                self.assertEqual(
+                    hashlib.sha256(content_path.read_bytes()).hexdigest(),
+                    release["contentSha256"],
+                    locale,
+                )
 
     def test_chinese_page_exposes_review_audio_variants_with_bound_timing(self):
         release = load(PUBLIC / f"releases/{PAGE_ID}/zh-Hans.json")

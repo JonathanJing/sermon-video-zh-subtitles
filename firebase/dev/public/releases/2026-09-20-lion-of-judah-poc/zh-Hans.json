@@ -235,5 +235,6 @@
     "model": null,
     "coverage": null
   },
-  "disclaimer": "Machine POC only. Not human-approved translation or production dubbing."
+  "disclaimer": "Machine POC only. Not human-approved translation or production dubbing.",
+  "contentSha256": "ce96effa8e2ed0bc51ff26c532f84b7c4460c02c5fe83061e89a5100955280c8"
 }

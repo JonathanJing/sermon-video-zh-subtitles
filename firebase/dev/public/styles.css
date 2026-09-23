@@ -218,6 +218,8 @@ body{padding-bottom:calc(var(--dock-height,196px) + 18px)}
 .transcript-item { display: grid; width: 100%; grid-template-columns: 58px minmax(0, 1fr); gap: 12px; padding: 14px 8px; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--ink); text-align: left; }
 .transcript-item:hover, .transcript-item.is-current { background: var(--selected); color: var(--selected-ink); }
 .transcript-time { color: var(--teal); font-size: 12px; font-variant-numeric: tabular-nums; }
+.transcript-time { min-width: 58px; min-height: 44px; padding: 9px 3px; border: 1px solid var(--control-line); border-radius: 8px; background: var(--surface-soft); cursor: pointer; }
+.transcript-copy { user-select: text; }
 .transcript-copy strong, .transcript-copy span { display: block; line-height: 1.7; }
 .transcript-copy span { margin-top: 4px; color: var(--muted); font-size: 12px; }
 .outline-item { padding: 12px 0; border-bottom: 1px solid var(--line); }
@@ -240,6 +242,14 @@ body{padding-bottom:calc(var(--dock-height,196px) + 18px)}
 .language-option small { color: var(--muted); font-size: 11px; }
 .language-option-caps { color: var(--support); font-size: 10px; text-align: right; }
 .dialog-foot { padding: 0 20px 18px; margin: 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+.dev-more .week-browser { margin: 0 0 12px; padding: 0; border: 0; background: transparent; }
+.more-summary { color: var(--support); font-size: 13px; line-height: 1.7; }
+.dev-resume { margin: 0 0 16px; }
+.dev-download { display: inline-flex; align-items: center; min-height: 44px; margin-top: 12px; padding: 8px 12px; border: 1px solid var(--control-line); border-radius: 8px; background: var(--surface-soft); color: var(--teal); text-decoration: none; font-size: 13px; }
+.dev-capability-note { margin: 14px 0 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.load-error { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; padding: 12px 16px; border: 1px solid var(--warning); border-radius: 10px; color: var(--ink); }
+.load-error button { min-height: 44px; padding: 8px 14px; border: 1px solid var(--control-line); border-radius: 8px; background: var(--surface); }
+@media(min-width:481px) { .more-summary { display: none; } }
 @media(max-width:700px) {
   .topbar-actions { gap: 8px; }
   .topbar-actions .edition { display: none; }
@@ -250,6 +260,11 @@ body{padding-bottom:calc(var(--dock-height,196px) + 18px)}
   .field-main { padding-bottom: 275px; }
 }
 @media(max-width:380px) {
+  .banner-series { display: none; }
+  .sermon-banner { margin-bottom: 8px; }
+  .subtitle-card { padding: 12px; }
+  .current-text { margin: 10px 0; }
+  .dock-capability { display: none; }
   .menu-chevron { display: none; }
   .topbar-actions { gap: 6px; }
   .language-toggle { padding: 8px; }
@@ -258,4 +273,9 @@ body{padding-bottom:calc(var(--dock-height,196px) + 18px)}
   .field-nav .tabs { gap: 6px; }
   .field-nav .tabs button, .field-nav .nav-action { font-size: 12px; }
   .content-language-button { max-width: 100%; flex-wrap: wrap; }
+}
+@media(max-width:480px) {
+  .sermon-summary { display: none; }
+  .field-nav .tabs { gap: 5px; }
+  .field-nav .tabs button { font-size: 12px; }
 }

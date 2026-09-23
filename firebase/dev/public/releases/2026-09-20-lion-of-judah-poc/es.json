@@ -28,5 +28,7 @@
     "model": "Qwen/Qwen3-ASR-0.6B",
     "coverage": 1
   },
-  "disclaimer": "Machine POC only. Not human-approved translation or production dubbing."
+  "disclaimer": "Machine POC only. Not human-approved translation or production dubbing.",
+  "contentSha256": "335486a91ac60e8e6208a66cb042c49c847f25b4a569d5e1d4eb29029725e391",
+  "audioSha256": "b4910d9f885b6c6fd91647b39cb51dd30ff42decaafb0e1b2ed41bf63a72517c"
 }
