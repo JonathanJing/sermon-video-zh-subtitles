@@ -53,7 +53,8 @@
 - [x] `sermon-target-language-audio-package-v1` 目标 schema 已定义。
 - [x] 四语同源六句 shadow 候选、片段音频、完整解码与 ASR 筛查已留收据；`productionEligible=false`、人工译文及音频审核仍 pending。
 - [x] Layer 1 独立机器裁判代码已提取并通过定向单测；它只解锁 Layer 2 shadow，真实来源与人工英文审核仍单独验收。
-- [ ] 通用 Layer 2 producer、整篇人工批准韩语翻译、通用 Layer 3 renderer/同步器及整篇人工听审韩语音轨尚未实现。
+- [x] 通用 Layer 2 Astra 初译、Sol 逐组独立复核执行器和候选准入器已实现；每次运行仍须来源／policy／人工审核门禁。
+- [ ] 整篇人工批准韩语翻译、通用 Layer 3 renderer/同步器及整篇人工听审韩语音轨尚未实现。
 
 ## 3. Layer 2：目标语言文字 Backlog
 
@@ -70,19 +71,19 @@
 
 #### L2-002 实现通用翻译 producer
 
-- [ ] 新增只消费 `English Source Package + anchor + targetLocale + policy` 的 runner。
-- [ ] CLI 使用显式 `--target-locale`、`--policy`、`--out`；移除通用路径中的 `--zh-*` 假设。
-- [ ] 逐 group 保存 source unit、上下文、target utterances、coverage ledger 和模型 request ID。
+- [x] 新增只消费 `English Source Package + anchor + policy` 的 runner；locale 从冻结 policy 读取并写入请求身份。
+- [x] CLI 使用显式 `--policy`、`--out-dir`，不使用通用路径中的 `--zh-*` 假设。
+- [x] 逐 group 保存来源、上下文、译文、coverage ledger 和模型 request ID；原始请求输入以 payload hash 绑定缓存。
 - [ ] 上下文只用于消歧，不得被翻入目标文本。
-- [ ] 支持确定性 resume；已成功 group 按完整身份复用，身份变化时不覆盖旧产物。
+- [x] 支持确定性 resume；已成功 group 按完整身份复用，未确认完成的付费请求保留 started 标记并阻止自动重试。
 
 验收：同一输入重复运行得到相同 group 身份与内容 hash；`ko` 输出中不读取中文 candidate 或中文页面字段。
 
 #### L2-003 实现独立模型复核
 
-- [ ] reviewer 与 translator 使用不同 request；收据保留模型和 prompt 版本。
-- [ ] 通用语义检查固定为：含义完整、否定/数字/专名、引文归属、无新增含义。
-- [ ] fail 或 uncertainty 非空时，candidate 停在 review/revision 状态。
+- [x] reviewer 与 translator 使用不同 request；收据保留模型和 prompt 版本。
+- [x] 通用语义检查固定为：含义完整、否定/数字/专名、引文归属、无新增含义。
+- [x] fail 或 uncertainty 非空时停止准入；原始逐组复核结果保留供修订。
 - [ ] 修订后重新计算 group/candidate hash，不在原 candidate 上原地提升状态。
 
 验收：遗漏、重复、错序、否定反转、数字错误和引文归属错误 fixture 全部 fail closed。
