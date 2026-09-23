@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-target-language-speech-adapter-v1.schema.json",
+  "title": "Registry-bound single-locale target-language speech adapter",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "targetLocale", "adapterId", "adapterVersion", "provider", "model", "modelRevision", "voice", "speakerId", "speakerKey", "conditioningRef", "conditioningSha256", "registryJsonSha256", "authorizationPurpose", "authorizationEvidenceSha256", "capabilityEvidenceSha256", "languageParameter", "capabilityStatus", "normalizationPolicySha256", "asrScreeningPolicySha256", "subtitlePolicySha256"],
+  "properties": {
+    "schemaVersion": {"const": "sermon-target-language-speech-adapter-v1"},
+    "targetLocale": {"type": "string", "pattern": "^(?!en(?:-|$))[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"},
+    "adapterId": {"type": "string", "minLength": 1},
+    "adapterVersion": {"type": "string", "minLength": 1},
+    "provider": {"type": "string", "minLength": 1},
+    "model": {"type": "string", "minLength": 1},
+    "modelRevision": {"type": "string", "minLength": 1},
+    "voice": {"type": "string", "minLength": 1},
+    "speakerId": {"type": "string", "minLength": 1},
+    "speakerKey": {"type": "string", "minLength": 1},
+    "conditioningRef": {"type": "string", "minLength": 1},
+    "conditioningSha256": {"$ref": "#/$defs/sha256"},
+    "registryJsonSha256": {"$ref": "#/$defs/sha256"},
+    "authorizationPurpose": {"enum": ["chinese_dubbing", "multilingual_dubbing", "multilingual_voice_demo"]},
+    "authorizationEvidenceSha256": {"$ref": "#/$defs/sha256"},
+    "capabilityEvidenceSha256": {"$ref": "#/$defs/sha256"},
+    "languageParameter": {"type": "string", "minLength": 1},
+    "capabilityStatus": {"enum": ["unverified_poc", "candidate", "verified"]},
+    "normalizationPolicySha256": {"$ref": "#/$defs/sha256"},
+    "asrScreeningPolicySha256": {"$ref": "#/$defs/sha256"},
+    "subtitlePolicySha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {"sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}
+}

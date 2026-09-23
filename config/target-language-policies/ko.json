@@ -1,0 +1,86 @@
+{
+  "schemaVersion": "sermon-target-language-policy-v1",
+  "sourceLocale": "en",
+  "translator": {
+    "model": "gpt-6-astra",
+    "reasoningEffort": "medium",
+    "promptVersion": "sermon-target-language-translate-ko-v1"
+  },
+  "reviewer": {
+    "model": "gpt-6-astra",
+    "reasoningEffort": "medium",
+    "promptVersion": "sermon-target-language-review-ko-v1"
+  },
+  "batching": {
+    "batchSize": 15,
+    "workers": 3
+  },
+  "targetLocale": "ko",
+  "terminology": {
+    "seriesTableSha256": "a76c75e531d5860fbc485d16f1debec2b78fa8b6fd08f1a8b0d194ed1cdbffb9",
+    "seriesNames": [
+      {
+        "source": "Revelation: The Comfort and Hope Jesus Brings",
+        "target": null,
+        "reviewStatus": "pending"
+      },
+      {
+        "source": "When Life Doesn’t Make Sense",
+        "target": null,
+        "reviewStatus": "pending"
+      },
+      {
+        "source": "A Study of the Book of Numbers",
+        "target": null,
+        "reviewStatus": "pending"
+      }
+    ],
+    "properNames": [
+      {
+        "source": "Eric Geiger",
+        "target": null,
+        "reviewStatus": "pending"
+      }
+    ]
+  },
+  "scripture": {
+    "editionId": null,
+    "citationUseStatus": "pending",
+    "quoteCheckPolicy": "pending",
+    "referenceStyle": "Keep Bible reference review pending until a Korean edition and citation policy are approved."
+  },
+  "languageReview": {
+    "pluginId": "ko-sermon-v1",
+    "implementationStatus": "pending",
+    "requiredChecks": [
+      "natural_korean",
+      "honorific_consistency",
+      "proper_name_transliteration",
+      "scripture_edition",
+      "number_reading",
+      "tts_segmentation"
+    ],
+    "registerRules": [
+      "Use a consistent natural public-sermon register.",
+      "Do not add honorifics or theological titles absent from the English source."
+    ]
+  },
+  "formatting": {
+    "speechRegister": "consistent_public_sermon_korean_pending_human_review",
+    "punctuationRules": [
+      "Use Korean punctuation for meaning and readability; do not infer speaker pauses from punctuation."
+    ],
+    "segmentationRules": [
+      "Prefer complete Korean clauses suitable for natural TTS; do not force English word-start alignment."
+    ]
+  },
+  "componentSha256": {
+    "translator": "ec9392dbf1e7c48e9e602a45ce95e65652c42f15b6fd6ef7ab4e904c77a185d4",
+    "reviewer": "3d65a61849aba4fb9416e4fe8bedfb417d4f9b73bf45d66b3d92a6b9e474497d",
+    "terminology": "baffdeabe1751fa5880611b831669224c869e4107d76e38dddbab84464a7c2b0",
+    "scripture": "cb75d8c9d5efc5e7f66ff8f60061c3be9fa51b630c512ac7bd5d20cc2a55ee82",
+    "languageReview": "48ad38e7af7047a7cfeec627fbb5f3472b6ed5fda270013e01d306edf281bc06",
+    "formatting": "3b454a12748597187fde2f165a954fb45a586236ff95ffab279e5bb531425c1e",
+    "batching": "2fb031978de2b7656b3151b490cfc5f81ddba0946a3c680598ef79391c46fd5b"
+  }
+}

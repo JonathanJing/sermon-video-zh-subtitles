@@ -24,7 +24,7 @@
 1. `anchorManifestSha256` 始终指 anchor manifest 的 **canonical JSON SHA-256**，不是文件原始字节 SHA-256。
 2. translator-only 输出是内部 `translation-draft`；因为 v2 candidate 要求 translator 和 reviewer 两份收据，所以只有 reviewer 已运行后才能生成正式 `sermon-target-language-candidate-v2`。
 3. v2 的 `translation_draft` 表示 reviewer 已运行但仍有 fail／uncertainty／待修订项，不表示“只有初译尚未复核”。
-4. 从 `machine_review_pass_human_review_pending` 到 `human_translation_approved` 必须生成新 candidate revision；不得原地覆盖机器候选。人工审核收据绑定旧 candidate hash，并由 finalizer 生成新文件。
+4. 从 `machine_review_pass_human_review_pending` 到 `human_translation_approved` 必须生成新 candidate revision；不得原地覆盖机器候选。worksheet 绑定机器候选 hash，审核入口产出的独立收据绑定新批准候选 hash；Layer 3 两者都要核对。
 
 ### 1.2 当前真实产物边界
 
@@ -164,12 +164,12 @@ reviewer 必须使用独立 request 和独立 prompt，只读取冻结英文、t
 人工审核收据是 Layer 2 内部的独立、版本化合同，至少绑定：
 
 - English Source Package JSON hash；
-- machine candidate canonical JSON hash；
+- worksheet 中的 machine candidate canonical JSON hash，以及最终收据中的 approved candidate canonical JSON hash；
 - `targetLocale` 与 `translationPolicySha256`；
 - 完整、按顺序的 reviewed group IDs；
 - reviewer、带时区时间、决定和 unresolved issues。
 
-finalizer 只在所有 group 机器与语言检查通过、人工收据 hash 匹配且完整覆盖时，生成新的 `human_translation_approved` candidate。Layer 3 仍只消费最终 candidate，不直接依赖 Layer 2 内部收据格式。
+审核 CLI 只在所有 group 机器与语言检查通过、worksheet 对应的机器候选 hash 匹配且完整覆盖时，生成新的 `human_translation_approved` candidate 和独立收据。Layer 3 同时消费最终 candidate 与收据，并核对批准候选、源包、anchor 和 policy 的 hash。
 
 ## 3. 模型选择与复用决定
 
@@ -210,7 +210,7 @@ OpenAI 当前[模型选择指南](https://developers.openai.com/api/docs/guides/
 
 不在首版加入 fine-tuning，也不把本地模型设为默认。先积累经过韩语人工审核的 source/target/review 对，才有可靠的蒸馏、微调或本地模型比较集。
 
-policy 记录请求模型 alias；运行收据同时记录 `requestedModel` 和 API 实际返回的 `responseModel`。candidate 的 `generation.*.model` 使用实际响应模型，防止 alias 漂移被隐藏。
+policy 记录固定的请求模型身份；运行收据同时记录 `requestedModel` 和 API 实际返回的 `responseModel`。当前 Layer 3 准备器要求 candidate 的 `generation.*.model` 与 policy 的模型字段完全相同；若服务端返回不同版本身份，producer 必须先冻结新的 policy 与 candidate，不能把模型漂移隐藏在旧 hash 下。
 
 ## 4. 目标语言策略合同
 
@@ -245,6 +245,8 @@ policy 记录请求模型 alias；运行收据同时记录 `requestedModel` 和 
 
 `languageReview.policySha256` 绑定 resolved policy 中 language-review 子树的 canonical JSON SHA-256；它不等同于整个 `translationPolicySha256`，二者用途要在 validator 中分别检查。
 
+首版 [目标语言策略校验器](../scripts/target_language_policy.py) 和 [schema](../schemas/sermon-target-language-policy-v1.schema.json) 已固定 `zh-Hans` 与 `ko` 两份快照。两份 policy 仍为开发起点：通用语言审核插件未实现，韩语系列译名、专名和经文译本／引用许可保持 `pending`；`productionPolicyReady=false`。改变任一子树、系列名称表或 prompt 后必须生成新快照，不能复用旧 candidate 审核。
+
 ## 5. 生成物
 
 建议 ignored run 目录：
@@ -270,11 +272,13 @@ artifacts/target-language-text/<source-package-id>/<target-locale>/<job-id>/
 - `translation-draft.json`：translator-only 内部产物；
 - `independent-review.json`：reviewer 修订、语义 ledger 和 uncertainty；
 - `candidate.machine.json`：正式 v2 机器候选，永远 `releaseEligible=false`；
-- `human-review-receipt.json`：绑定 machine candidate hash 的人工决定；
-- `candidate.approved.json`：新的 v2 revision，可进入 Layer 3，但仍 `releaseEligible=false`；
+- `human-review-receipt.json`：独立的人审决定，绑定待批准 v2 candidate 的完整 JSON hash、源包、anchor、policy 和每组决定；由[审核 CLI](../scripts/review_target_language_candidate.py) 根据人工填写的 worksheet 生成并校验，结构见[收据 schema](../schemas/sermon-target-language-human-review-receipt-v1.schema.json)；
+- `candidate.approved.json`：新的 v2 revision；其完整 JSON hash 必须与人审收据一致才能进入 Layer 3，仍 `releaseEligible=false`；
 - `run-receipt.json`：job identity、实现 hash、模型调用数、重试、耗时、token／成本摘要和全部紧凑产物 hash。
 
 Git 只提交 schema、policy 模板、无私人内容的 fixture、实现与紧凑测试证据；真实证道文本、完整模型响应和运行目录继续 ignored。
+
+人工审核入口先运行 `.venv/bin/python scripts/review_target_language_candidate.py prepare --english-source-package <source.json> --anchor <anchor.json> --candidate <candidate.machine.json> --policy <resolved-policy.json> --out <new-worksheet.json>`。审核者查看每组英文、目标文字、coverage 和机器检查证据，亲自填写 worksheet 的 `reviewer`、带时区的 `reviewedAt`、总 `decision=approved`，以及每组 `decision=approved` 和非空 `evidence`。随后以相同四个输入运行 `approve --worksheet <completed-worksheet.json> --out <new-directory>`，输出新的 `candidate.approved.json` 与 `human-review-receipt.json`。任一来源、policy、candidate 或 worksheet 展示内容变化时，`approve` 会拒绝旧决定；此入口不调用模型，也不代表已有人实际完成审核。
 
 ## 6. 开发切片与验收顺序
 
