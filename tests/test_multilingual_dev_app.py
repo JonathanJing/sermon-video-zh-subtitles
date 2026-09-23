@@ -139,6 +139,17 @@ class MultilingualDevAppTest(unittest.TestCase):
         self.assertIn("state.audioVariant?.cues", app)
         self.assertIn("tongxing-dev-audio-", app)
 
+    def test_dev_shell_tracks_production_visual_base(self):
+        production = ROOT / "experiments/sermon-dubbing-poc/web"
+        self.assertTrue(
+            (PUBLIC / "styles.css").read_bytes().startswith((production / "style.css").read_bytes()),
+            "Dev CSS must start with the production stylesheet before Dev overrides",
+        )
+        self.assertEqual(
+            (PUBLIC / "brand-icon.png").read_bytes(),
+            (production / "brand-icon.png").read_bytes(),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
