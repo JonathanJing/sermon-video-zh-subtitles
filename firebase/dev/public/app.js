@@ -87,7 +87,7 @@ const state = {
   catalog: null, page: null, locale: null, release: null, content: null, audioVariant: null,
   ui: interfaceLocales[localStorage.getItem("tongxing-dev-ui")] ? localStorage.getItem("tongxing-dev-ui") : "zh",
   activeTab: "listen", showSource: false, audioObjectURL: null, selectionToken: 0,
-  selectionController: null, variantController: null, pendingLocale: null, pendingVariantId: null, pendingResume: null,
+  selectionController: null, variantController: null, pendingPageId: null, pendingLocale: null, pendingVariantId: null, pendingResume: null,
   lastSavedAt: 0, switchingAudio: false, lastCueIndex: null, captionRevealScheduled: false
 };
 const $ = (id) => document.getElementById(id);
@@ -216,6 +216,7 @@ async function selectLocale(locale, { navigate = true, manual = false, page = st
   const controller = new AbortController();
   const token = ++state.selectionToken;
   state.selectionController = controller;
+  state.pendingPageId = page.id;
   state.pendingLocale = locale;
   state.pendingVariantId = null;
   try {
@@ -242,6 +243,7 @@ async function selectLocale(locale, { navigate = true, manual = false, page = st
   state.locale = locale;
   state.release = release;
   state.content = content;
+  state.pendingPageId = null;
   state.pendingLocale = null;
   state.pendingResume = null;
   loadAudioVariant(variant, objectURL, { remember: false });
@@ -612,8 +614,9 @@ function bindEvents() {
   $("retryLoad").addEventListener("click", () => {
     if (state.pendingVariantId) {
       void switchAudioVariant(availableAudioVariants().find(item => item.id === state.pendingVariantId));
-    } else if (state.page) selectLocale(state.pendingLocale || state.locale || state.page.defaultTargetLocale,
-      { navigate: Boolean(state.pendingLocale) }).catch(showError);
+    } else if (state.pendingPageId) openPage(state.pendingPageId,
+      { requestedLocale: state.pendingLocale }).catch(showError);
+    else if (state.page) selectLocale(state.locale || state.page.defaultTargetLocale).catch(showError);
     else loadInitialCatalog().catch(showError);
   });
   $("precisionOpen").addEventListener("click", () => $("progressTrack").focus());

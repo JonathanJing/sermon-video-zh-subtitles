@@ -1,5 +1,4 @@
 import copy
-import hashlib
 import json
 from pathlib import Path
 import tempfile
@@ -29,7 +28,7 @@ def review_group(policy, english_units, group):
              "evidence": "Deterministic fixture check for " + group["translationGroupId"]}
             for check in policy["languageReview"]["requiredChecks"]]
 ''', encoding="utf-8")
-        self.plugin_sha = hashlib.sha256(self.plugin_path.read_bytes()).hexdigest()
+        self.plugin_sha = subject.plugin_implementation_sha256(self.plugin_path)
         self.anchor = {
             "schemaVersion": interpretation.ANCHOR_SCHEMA_V2,
             "sourceUnits": [
@@ -53,7 +52,14 @@ def review_group(policy, english_units, group):
         policy = json.loads((ROOT / "config/target-language-policies/zh-Hans.json")
                             .read_text(encoding="utf-8"))
         policy.pop("componentSha256")
+        policy["schemaVersion"] = policy_tools.POLICY_V2
+        policy["sourceScope"] = {
+            "englishSourcePackageJsonSha256": interpretation.json_sha256(self.source),
+            "anchorManifestSha256": interpretation.json_sha256(self.anchor),
+            "usedSeriesNames": [], "usedProperNames": [], "termApprovalEvidence": [],
+        }
         policy["languageReview"]["implementationStatus"] = "verified"
+        policy["languageReview"]["pluginImplementationSha256"] = self.plugin_sha
         self.policy = policy_tools.freeze_policy(policy)
         self.identity = policy_tools.validate_policy(self.policy)
         self.request = subject.prepare_request(self.source, self.anchor, self.policy)
@@ -203,8 +209,32 @@ def review_group(policy, english_units, group):
         receipt = self.receipt()
         self.plugin_path.write_text(self.plugin_path.read_text(encoding="utf-8") + "\n# drift\n",
                                     encoding="utf-8")
-        with self.assertRaisesRegex(ValueError, "implementation hash changed"):
+        with self.assertRaisesRegex(ValueError, "implementation hash differs from frozen policy"):
             self.admit(receipt)
+
+    def test_rejects_replaced_plugin_even_if_cli_reports_its_new_hash(self):
+        self.plugin_path.write_text(self.plugin_path.read_text(encoding="utf-8")
+                                    + "\n# replacement claims same plugin ID and passes checks\n",
+                                    encoding="utf-8")
+        replacement_sha = subject.plugin_implementation_sha256(self.plugin_path)
+        with self.assertRaisesRegex(ValueError, "implementation hash differs from frozen policy"):
+            subject.run_language_plugin(self.source, self.anchor, self.policy,
+                                        self.request, self.evidence, self.plugin_path,
+                                        replacement_sha)
+        with self.assertRaisesRegex(ValueError, "implementation hash differs from frozen policy"):
+            subject.admit_evidence(self.source, self.anchor, self.policy,
+                                   self.request, self.evidence, {}, self.plugin_path,
+                                   replacement_sha)
+
+    def test_new_policy_hash_cannot_reuse_old_translation_request(self):
+        changed_policy = copy.deepcopy(self.policy)
+        changed_policy["languageReview"]["pluginImplementationSha256"] = "b" * 64
+        changed_policy["componentSha256"]["languageReview"] = (
+            policy_tools.canonical_sha256(changed_policy["languageReview"]))
+        with self.assertRaisesRegex(ValueError, "request was changed"):
+            subject.run_language_plugin(self.source, self.anchor, changed_policy,
+                                        self.request, self.evidence, self.plugin_path,
+                                        "b" * 64)
 
 
 if __name__ == "__main__":

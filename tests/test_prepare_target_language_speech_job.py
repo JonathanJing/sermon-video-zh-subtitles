@@ -86,6 +86,12 @@ class TargetLanguageSpeechJobTests(unittest.TestCase):
         }
         policy_draft = json.loads((Path(__file__).parents[1] / "config/target-language-policies/ko.json").read_text(encoding="utf-8"))
         policy_draft.pop("componentSha256")
+        policy_draft["schemaVersion"] = policy_tools.POLICY_V2
+        policy_draft["sourceScope"] = {
+            "englishSourcePackageJsonSha256": interpretation.json_sha256(self.source_package),
+            "anchorManifestSha256": interpretation.json_sha256(self.anchor),
+            "usedSeriesNames": [], "usedProperNames": [], "termApprovalEvidence": [],
+        }
         for term in policy_draft["terminology"]["seriesNames"] + policy_draft["terminology"]["properNames"]:
             term["target"] = "synthetic-test-term"
             term["reviewStatus"] = "human_reviewed"
@@ -94,6 +100,7 @@ class TargetLanguageSpeechJobTests(unittest.TestCase):
             "quoteCheckPolicy": "references_only",
         })
         policy_draft["languageReview"]["implementationStatus"] = "verified"
+        policy_draft["languageReview"]["pluginImplementationSha256"] = "a" * 64
         self.policy = policy_tools.freeze_policy(policy_draft)
         identity = policy_tools.validate_policy(self.policy)
         self.candidate["translationPolicySha256"] = identity["translationPolicySha256"]

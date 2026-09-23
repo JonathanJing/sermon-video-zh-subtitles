@@ -30,6 +30,7 @@ except ImportError:  # Direct execution via ``python scripts/...``.
 
 REQUEST_SCHEMA = "sermon-target-language-evidence-request-v1"
 LANGUAGE_RECEIPT_SCHEMA = "sermon-target-language-plugin-receipt-v1"
+BUILTIN_PLUGIN_NAMES = {"zh_hans_sermon.py", "ko_sermon.py", "es_sermon.py"}
 
 
 def _require(condition: bool, message: str) -> None:
@@ -41,6 +42,24 @@ def _load(path: Path) -> dict[str, Any]:
     result = json.loads(path.read_text(encoding="utf-8"))
     _require(isinstance(result, dict), f"Expected JSON object: {path}")
     return result
+
+
+def plugin_implementation_sources(plugin_path: Path) -> list[Path]:
+    """Hash the reviewed built-in plugin and its executable shared rules."""
+    path = plugin_path.resolve()
+    builtins = (Path(__file__).resolve().parent / "language_review_plugins").resolve()
+    if path.parent == builtins and path.name in BUILTIN_PLUGIN_NAMES:
+        return [path, builtins / "common.py"]
+    return [path]
+
+
+def plugin_implementation_sha256(plugin_path: Path) -> str:
+    digest = hashlib.sha256()
+    for source in plugin_implementation_sources(plugin_path):
+        _require(source.is_file(), f"Language plugin dependency is missing: {source.name}")
+        digest.update(source.name.encode("utf-8") + b"\0")
+        digest.update(source.read_bytes() + b"\0")
+    return digest.hexdigest()
 
 
 def prepare_request(source: dict[str, Any], anchor: dict[str, Any],
@@ -70,6 +89,7 @@ def prepare_request(source: dict[str, Any], anchor: dict[str, Any],
     _require(source.get("anchors", {}).get("artifact", {}).get("jsonSha256") == anchor_hash,
              "Source package and anchor manifest differ")
     identity = policy_tools.validate_policy(policy)
+    policy_tools.validate_source_scope(policy, source, anchor)
     _require(identity["productionPolicyReady"],
              "Production policy has unresolved scripture, terminology, or language-review gates")
     return {
@@ -186,9 +206,11 @@ def run_language_plugin(source: dict[str, Any], anchor: dict[str, Any],
                 "translationPolicySha256", "sourceUnits"):
         _require(evidence.get(key) == expected[key], f"Layer 2 evidence identity changed: {key}")
     _require(plugin_path.is_file(), "Language plugin implementation is missing")
-    implementation_sha = hashlib.sha256(plugin_path.read_bytes()).hexdigest()
-    _require(expected_plugin_sha256 == implementation_sha,
-             "Language plugin implementation hash changed")
+    implementation_sha = plugin_implementation_sha256(plugin_path)
+    _require(policy["schemaVersion"] == policy_tools.POLICY_V2
+             and policy["languageReview"]["pluginImplementationSha256"] == expected_plugin_sha256
+             and expected_plugin_sha256 == implementation_sha,
+             "Language plugin implementation hash differs from frozen policy or file")
     module = runpy.run_path(str(plugin_path))
     plugin_id = policy["languageReview"]["pluginId"]
     _require(module.get("PLUGIN_ID") == plugin_id
@@ -217,6 +239,7 @@ def run_language_plugin(source: dict[str, Any], anchor: dict[str, Any],
             "sourceUnitIds": unit_ids,
             "targetUtterances": utterances,
             "targetText": target_text,
+            "englishSourcePackageJsonSha256": expected["englishSourcePackageJsonSha256"],
         }
         checks = module["review_group"](
             copy.deepcopy(policy),
