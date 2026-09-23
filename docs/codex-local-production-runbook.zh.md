@@ -4,7 +4,7 @@
 
 ## 生产边界
 
-2026-09-11 起，本地生产入口默认使用 Agents API（Astra Medium），继续采用 local-first hybrid：
+2026-09-11 起，本地生产入口默认使用 Agents API，继续采用 local-first hybrid；当前 Supervisor 调度默认模型为 Sol Medium，内容模型仍按各阶段配置：
 
 - GCP Cloud Scheduler：只发现直播源并写入 GCS state
 - GCS：保存 source、lease、run-status、timeline、审批、QA 和最终 PDF
