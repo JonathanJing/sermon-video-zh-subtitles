@@ -83,6 +83,44 @@ def reviewed_candidate(candidate: dict) -> bool:
     )
 
 
+def validate_audio_screening_review(audio: dict, receipt: dict,
+                                    screening: dict | None) -> None:
+    status = audio["machineScreening"]["status"]
+    if receipt["schemaVersion"] == "sermon-target-language-audio-human-review-receipt-v1":
+        if status != "pass":
+            raise StageError("Unresolved ASR review requires a v2 human adjudication receipt")
+        return
+    if screening is None:
+        raise StageError("v2 audio review requires the bound full ASR screening receipt")
+    group_ids = [row["textGroupId"] for row in audio["units"]]
+    if (status not in {"pass", "requires_review"}
+            or receipt["machineScreeningStatus"] != status
+            or receipt["machineScreeningReceiptJsonSha256"] != canonical_sha(screening)
+            or screening["status"] != status
+            or screening["model"] != audio["machineScreening"]["model"]
+            or screening["targetLocale"] != audio["targetLocale"]
+            or screening["trackSha256"] != audio["track"]["sha256"]
+            or screening["targetLanguageSpeechJobJsonSha256"] != audio["targetLanguageSpeechJobJsonSha256"]
+            or screening["coverage"] != 1.0
+            or screening["reviewedGroupIds"] != group_ids
+            or screening["unitAudioSha256s"] != [row["audio"]["sha256"] for row in audio["units"]]
+            or len(screening["results"]) != len(group_ids)):
+        raise StageError("Audio ASR receipt is not bound to the reviewed package")
+    queue = []
+    for result, unit in zip(screening["results"], audio["units"]):
+        if (result["textGroupId"] != unit["textGroupId"]
+                or result["targetTextSha256"] != unit["targetTextSha256"]
+                or result["audioSha256"] != unit["audio"]["sha256"]):
+            raise StageError("ASR result differs from reviewed audio unit")
+        if result["status"] == "requires_review":
+            queue.append(result["textGroupId"])
+    if ((status == "pass") != (not queue)
+            or [row["textGroupId"] for row in receipt["asrAdjudications"]] != queue
+            or any(row["decision"] != "approved" or not row["evidence"].strip()
+                   for row in receipt["asrAdjudications"])):
+        raise StageError("ASR review queue lacks exact human adjudications")
+
+
 def checked_file(path: Path, expected: str, label: str) -> Path:
     if not path.is_file() or file_sha(path) != expected:
         raise StageError(f"{label}: file absent or SHA-256 mismatch: {path}")
@@ -155,6 +193,9 @@ def preflight(args: argparse.Namespace) -> tuple[dict, dict[str, tuple[Path, str
     content_review_paths = assignment_map(args.content_review_receipt, "--content-review-receipt")
     audio_paths = assignment_map(args.audio_package, "--audio-package")
     audio_review_paths = assignment_map(args.audio_human_review_receipt, "--audio-human-review-receipt")
+    screening_values = getattr(args, "audio_screening_receipt", [])
+    screening_paths = (assignment_map(screening_values, "--audio-screening-receipt")
+                       if screening_values else {})
     release_paths = assignment_map(args.release, "--release")
     files: dict[str, tuple[Path, str]] = {}
     targets = {}
@@ -162,8 +203,16 @@ def preflight(args: argparse.Namespace) -> tuple[dict, dict[str, tuple[Path, str
         candidate = read_package(candidate_paths[locale], "sermon-target-language-candidate-v2.schema.json")
         human_receipt = read_package(review_paths[locale], "sermon-target-language-human-review-receipt-v1.schema.json")
         audio = read_package(audio_paths[locale], "sermon-target-language-audio-package-v1.schema.json")
+        audio_receipt_version = json.loads(audio_review_paths[locale].read_text(encoding="utf-8")).get("schemaVersion")
+        if audio_receipt_version not in {
+                "sermon-target-language-audio-human-review-receipt-v1",
+                "sermon-target-language-audio-human-review-receipt-v2"}:
+            raise StageError(f"{locale}: unsupported audio human review receipt version")
         audio_receipt = read_package(
-            audio_review_paths[locale], "sermon-target-language-audio-human-review-receipt-v1.schema.json")
+            audio_review_paths[locale], f"{audio_receipt_version}.schema.json")
+        screening = (read_package(screening_paths[locale],
+                                  "sermon-target-language-audio-screening-v1.schema.json")
+                     if locale in screening_paths else None)
         release = read_package(release_paths[locale], "sermon-target-language-release-package-v1.schema.json")
         candidate_hash = canonical_sha(candidate)
         audio_hash = canonical_sha(audio)
@@ -188,7 +237,8 @@ def preflight(args: argparse.Namespace) -> tuple[dict, dict[str, tuple[Path, str
             raise StageError(f"{locale}: independent Layer 2 human review receipt is invalid")
         if (audio["targetLocale"] != locale or audio["englishSourcePackageJsonSha256"] != source_hash
                 or audio["targetLanguageCandidateJsonSha256"] != candidate_hash
-                or audio["status"] != "human_reviewed" or audio["machineScreening"]["status"] != "pass"
+                or audio["status"] != "human_reviewed"
+                or audio["machineScreening"]["status"] not in {"pass", "requires_review"}
                 or audio["humanReview"]["status"] != "approved"
                 or audio["humanReview"]["humanApproval"] is not True
                 or audio["humanReview"]["fullPlayback"] != "approved"
@@ -196,6 +246,7 @@ def preflight(args: argparse.Namespace) -> tuple[dict, dict[str, tuple[Path, str
                 or audio["voice"]["targetLocaleCapability"] != "reviewed" or audio["issues"]
                 or audio["track"] is None):
             raise StageError(f"{locale}: Layer 3 package is not fully reviewed and bound")
+        validate_audio_screening_review(audio, audio_receipt, screening)
         if (audio_receipt["targetLocale"] != locale
                 or audio_receipt["englishSourcePackageJsonSha256"] != source_hash
                 or audio_receipt["targetLanguageCandidateJsonSha256"] != candidate_hash
@@ -382,6 +433,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--content-review-receipt", action="append", default=[], metavar="LOCALE=PATH")
     parser.add_argument("--audio-package", action="append", default=[], metavar="LOCALE=PATH")
     parser.add_argument("--audio-human-review-receipt", action="append", default=[], metavar="LOCALE=PATH")
+    parser.add_argument("--audio-screening-receipt", action="append", default=[], metavar="LOCALE=PATH")
     parser.add_argument("--release", action="append", default=[], metavar="LOCALE=PATH")
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--page-id", required=True)

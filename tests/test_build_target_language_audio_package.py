@@ -590,6 +590,36 @@ class AudioPackageTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "trim evidence differs from unit"):
             self.build()
 
+    def test_edge_trim_duration_and_gap_evidence_are_checked(self):
+        rel = "review/edge-silence-trim.json"
+        schedule = json.loads((self.asset_root / self.manifest["schedule"]["path"]).read_text())
+        receipt = {
+            "schemaVersion": "sermon-formal-edge-silence-trim-v1",
+            "status": "measured_silence_removed", "targetLocale": "ko",
+            "targetLanguageSpeechJobJsonSha256": subject.json_sha256(self.job),
+            "sourceJobFileSha256": subject.file_sha256(self.paths["job"]),
+            "humanListeningStatus": "pending", "trimTrailing": True,
+            "paddingSeconds": 0.04,
+            "interUtteranceGapSeconds": schedule["policy"]["interUtteranceGapSeconds"],
+            "reactionLagSeconds": schedule["policy"]["reactionLagSeconds"],
+            "units": [{
+                "unitIndex": index, "textGroupId": row["textGroupId"],
+                "audioSha256": row["audio"]["sha256"],
+                "sourceAudioSha256": "a" * 64,
+                "removedLeadingSeconds": 0.1,
+                "removedTrailingSeconds": 0.2,
+                "originalDurationSeconds": row["durationSeconds"] + 0.3,
+            } for index, row in enumerate(self.manifest["units"])],
+        }
+        write_json(self.asset_root / rel, receipt)
+        self.manifest["silenceTrimEvidence"] = self.artifact(rel, json_artifact=True)
+        self.build()
+        receipt["units"][0]["removedTrailingSeconds"] = 0.21
+        write_json(self.asset_root / rel, receipt)
+        self.manifest["silenceTrimEvidence"] = self.artifact(rel, json_artifact=True)
+        with self.assertRaisesRegex(ValueError, "Edge silence trim duration"):
+            self.build()
+
 
 if __name__ == "__main__":
     unittest.main()

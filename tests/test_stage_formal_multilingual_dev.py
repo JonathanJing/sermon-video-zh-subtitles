@@ -325,6 +325,79 @@ class FormalDevStageTests(unittest.TestCase):
             self.stage_with_fixture_source(self.args())
         self.assertFalse((self.root / "staged").exists())
 
+    def test_v2_human_adjudication_can_stage_original_asr_review_status(self):
+        locale = "ko"
+        audio_path = self.paths["audio"][locale]
+        audio = json.loads(audio_path.read_text())
+        audio["machineScreening"]["status"] = "requires_review"
+        self.write_json(audio_path, audio)
+        audio_hash = MODULE.canonical_sha(audio)
+        unit = audio["units"][0]
+        screening = {
+            "schemaVersion": "sermon-target-language-audio-screening-v1",
+            "targetLocale": locale,
+            "targetLanguageSpeechJobJsonSha256": audio["targetLanguageSpeechJobJsonSha256"],
+            "trackSha256": self.audio_hash, "status": "requires_review",
+            "model": "fixture", "modelRevision": "weights:sha256:" + "a" * 64,
+            "minSimilarity": 0.88, "coverage": 1.0,
+            "reviewedGroupIds": [unit["textGroupId"]],
+            "unitAudioSha256s": [self.audio_hash],
+            "results": [{"textGroupId": unit["textGroupId"],
+                         "targetTextSha256": unit["targetTextSha256"],
+                         "audioSha256": self.audio_hash, "recognized": "fixture variant",
+                         "similarity": 0.8, "differences": [],
+                         "status": "requires_review"}],
+            "humanListeningStatus": "pending",
+        }
+        screening_path = self.write_json(self.root / "ko-screening.json", screening)
+        receipt_path = self.paths["audio_receipt"][locale]
+        receipt = json.loads(receipt_path.read_text())
+        receipt.update(schemaVersion="sermon-target-language-audio-human-review-receipt-v2",
+                       targetLanguageAudioPackageJsonSha256=audio_hash,
+                       machineScreeningStatus="requires_review",
+                       machineScreeningReceiptJsonSha256=MODULE.canonical_sha(screening),
+                       asrAdjudications=[{"textGroupId": unit["textGroupId"],
+                                          "decision": "approved",
+                                          "evidence": "Heard the approved words in the full 1x track."}])
+        self.write_json(receipt_path, receipt)
+        content_path = self.assets / "content" / self.page_id / "ko.json"
+        content = json.loads(content_path.read_text())
+        content["targetLanguageAudioPackageJsonSha256"] = audio_hash
+        self.write_json(content_path, content)
+        content_receipt_path = self.paths["content_receipt"][locale]
+        content_receipt = json.loads(content_receipt_path.read_text())
+        content_receipt["targetLanguageAudioPackageJsonSha256"] = audio_hash
+        content_receipt["contentJsonSha256"] = MODULE.canonical_sha(content)
+        self.write_json(content_receipt_path, content_receipt)
+        release_path = self.paths["release"][locale]
+        release = json.loads(release_path.read_text())
+        release["targetLanguageAudioPackageJsonSha256"] = audio_hash
+        release["assets"][0]["sha256"] = MODULE.file_sha(content_path)
+        self.write_json(release_path, release)
+        args = self.args()
+        args.audio_screening_receipt = [f"{locale}={screening_path}"]
+        for other in ("zh-Hans", "es"):
+            other_audio = json.loads(self.paths["audio"][other].read_text())
+            other_unit = other_audio["units"][0]
+            other_screening = dict(screening,
+                targetLocale=other,
+                targetLanguageSpeechJobJsonSha256=other_audio["targetLanguageSpeechJobJsonSha256"],
+                status="pass", reviewedGroupIds=[other_unit["textGroupId"]],
+                results=[dict(screening["results"][0],
+                              textGroupId=other_unit["textGroupId"],
+                              targetTextSha256=other_unit["targetTextSha256"],
+                              similarity=1.0, status="pass")])
+            other_path = self.write_json(self.root / f"{other}-screening.json", other_screening)
+            args.audio_screening_receipt.append(f"{other}={other_path}")
+        self.assertEqual(self.stage_with_fixture_source(args)["deploymentStatus"], "not_deployed")
+
+        receipt["asrAdjudications"] = []
+        self.write_json(receipt_path, receipt)
+        args.out = self.root / "staged-bad"
+        with self.assertRaisesRegex(MODULE.StageError, "ASR review queue"):
+            self.stage_with_fixture_source(args)
+        self.assertFalse(args.out.exists())
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -2,7 +2,9 @@
 
 `scripts/render_formal_target_language_speech.py` 只接受已人工审核的 v2 speech job。先验证 Layer 1/2、独立人审、音色授权与能力收据、clip timeline、adapter/registry、音频操作策略三项哈希以及部署 checkpoint 的权重 SHA。它逐组使用 job 的原文合成自然速度 WAV，完整解码并写 unit receipt，按 clip-relative 首个源单元起点排程。默认 reaction lag 0.05 秒、组间 gap 0.05 秒、末单元源结束后最大 8 秒；最终音频必须在片段媒体时长内。越界时保留已解码的单元与 `render-diagnostics.json`，不写成功 manifest，不调速、不裁剪、不跳过。
 
-可选 `--instruct` 将自然口播要求送入 Qwen TTS，并纳入每单元缓存身份；改指令必须写入新 job 目录，保留原音频。只测量并移除前导静音时，可对已完整提交的单元运行 `scripts/compact_formal_target_audio.py --source-job <原 job> --destination-root <新目录>`，其余身份参数与 renderer 相同。此工具逐单元复核原始 intent、commit、WAV 和收据，以 10 ms RMS 窗口和 0.01 阈值寻找首个有声窗口，保留 60 ms 前垫、每组最多移除 750 ms；保存原／新 SHA、精确移除时长和独立 `silenceTrimEvidence`。原目录不变，新目录重新排程并只在无溢出时写 manifest。音频包构建器会核验该裁剪证据；是否有吞字或不自然起音仍须回转录和人耳听审。
+可选 `--instruct` 将自然口播要求送入 Qwen TTS，并纳入每单元缓存身份；改指令必须写入新 job 目录，保留原音频。只测量并移除前导静音时，可对已完整提交的单元运行 `scripts/compact_formal_target_audio.py --source-job <原 job> --destination-root <新目录>`，其余身份参数与 renderer 相同。此工具逐单元复核原始 intent、commit、WAV 和收据，以 10 ms RMS 窗口和 0.01 阈值寻找首个有声窗口，默认保留 60 ms 前垫、每组最多移除 750 ms；保存原／新 SHA、精确移除时长和独立 `silenceTrimEvidence`。原目录不变，新目录重新排程并只在无溢出时写 manifest。音频包构建器会核验裁剪证据；是否有吞字或不自然起音仍须回转录和人耳听审。
+
+9 月 20 日新版韩／西语已批准文字的末段合成仍接近片段末端，因此正式候选采用 `--trim-trailing` 测量首尾静音，另显式记录 `--padding-seconds`、`--inter-utterance-gap-seconds` 和 `--reaction-lag-seconds`。韩语保留首尾各 20 ms、零组间空隙、零反应延迟；西语保留首尾各 40 ms、零组间空隙、50 ms 反应延迟。原始单元、裁剪单元和独立证据均保留；没有时间拉伸。韩语约 28 ms 的末端余量只说明排程没有越界，不代表自然度或衔接已合格。
 
 重跑时按 job、源与候选、adapter、checkpoint map/权重、策略文件、文本、renderer SHA 与合成参数比较缓存身份；任何旧稿或旧音色无法复用。一个单元在 WAV 写出后中断时，可凭已写的 SHA commit 记录恢复。`render-manifest.json` 的机器筛查为 `not_run`，人工听审仍待完成。
 
@@ -39,4 +41,4 @@ docker run --rm --gpus all --ipc=host --read-only --network none \
   --path-map /work/path-map.json
 ```
 
-中文已有全局人审能力时可省略 `--clip-voice-capability`。以上命令是路径模板；2026-09-23 的真实结果见 [Layer 2/3 backlog](multilingual-layer-2-3-backlog.zh.md)。`build_target_language_audio_package.py` 以 renderer 的 manifest 构建最高为 `candidate` 的 Layer 3 包。机器筛查及全文人工听审需单独完成。
+中文已有全局人审能力时可省略 `--clip-voice-capability`。以上命令是路径模板；2026-09-23 的真实结果见 [Layer 2/3 backlog](multilingual-layer-2-3-backlog.zh.md)。`build_target_language_audio_package.py` 以 renderer 的 manifest 构建最高为 `candidate` 的 Layer 3 包。三语均有完整 Qwen3-ASR 筛查收据，机器结果仍为 `requires_review`。`review_target_language_audio.py prepare` 从候选包和同一整轨／单元 hash 的筛查收据生成待审工作表；只在真人完成全文 1 倍速播放、视频同步及每个 ASR 疑点的显式裁决后，`approve` 才能产出 `human_reviewed` 包与 v2 人审收据。Dev staging 继续核对该收据及原机器筛查，不把机器状态改写为通过。

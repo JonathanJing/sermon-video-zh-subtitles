@@ -351,7 +351,10 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
         trim_artifact = checked_artifact(artifact_root, manifest["silenceTrimEvidence"],
                                          json_artifact=True)
         trim = read_object(Path(trim_artifact["path"]))
-        require(trim.get("schemaVersion") == "sermon-formal-leading-silence-trim-v1"
+        edge_mode = trim.get("schemaVersion") == "sermon-formal-edge-silence-trim-v1"
+        require(trim.get("schemaVersion") in {
+                    "sermon-formal-leading-silence-trim-v1",
+                    "sermon-formal-edge-silence-trim-v1"}
                 and trim.get("status") == "measured_silence_removed"
                 and trim.get("targetLocale") == locale
                 and trim.get("targetLanguageSpeechJobJsonSha256") == job_hash
@@ -359,7 +362,16 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
                 and trim.get("humanListeningStatus") == "pending"
                 and isinstance(trim.get("units"), list)
                 and len(trim["units"]) == len(units),
-                "Leading silence trim evidence differs from formal job")
+                "Speech-edge silence trim evidence differs from formal job")
+        if edge_mode:
+            require(isinstance(trim.get("trimTrailing"), bool)
+                    and isinstance(trim.get("paddingSeconds"), (int, float))
+                    and 0.02 <= trim["paddingSeconds"] <= 0.06
+                    and isinstance(trim.get("interUtteranceGapSeconds"), (int, float))
+                    and 0 <= trim["interUtteranceGapSeconds"] <= 0.05
+                    and isinstance(trim.get("reactionLagSeconds", 0.05), (int, float))
+                    and 0 <= trim.get("reactionLagSeconds", 0.05) <= 0.05,
+                    "Edge trim parameters are invalid")
         for index, (entry, unit) in enumerate(zip(trim["units"], units)):
             require(entry.get("unitIndex") == index
                     and entry.get("textGroupId") == unit["textGroupId"]
@@ -369,6 +381,15 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
                     and isinstance(entry.get("removedLeadingSeconds"), (int, float))
                     and 0 <= entry["removedLeadingSeconds"] <= 0.75,
                     f"Leading silence trim evidence differs from unit {index}")
+            if edge_mode:
+                require(isinstance(entry.get("removedTrailingSeconds"), (int, float))
+                        and 0 <= entry["removedTrailingSeconds"] <= 0.75
+                        and isinstance(entry.get("originalDurationSeconds"), (int, float))
+                        and abs(entry["originalDurationSeconds"] -
+                                entry["removedLeadingSeconds"] -
+                                entry["removedTrailingSeconds"] -
+                                unit["durationSeconds"]) <= 0.002,
+                        f"Edge silence trim duration differs from unit {index}")
     track = checked_artifact(artifact_root, manifest.get("track"))
     track_duration, _, _ = probe_audio(Path(track["path"]))
     schedule_artifact = checked_artifact(artifact_root, manifest.get("schedule"), json_artifact=True)
@@ -379,6 +400,10 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
         require(Path(item["path"]).is_relative_to(locale_root),
                 f"{label} belongs to another locale")
     schedule = read_object(Path(schedule_artifact["path"]))
+    if "silenceTrimEvidence" in manifest and trim.get("schemaVersion") == "sermon-formal-edge-silence-trim-v1":
+        require(schedule["policy"]["interUtteranceGapSeconds"] == trim["interUtteranceGapSeconds"]
+                and schedule["policy"]["reactionLagSeconds"] == trim.get("reactionLagSeconds", 0.05),
+                "Edge trim schedule policy differs from evidence")
     captions = read_object(Path(captions_artifact["path"]))
     validate_schedule(schedule, candidate, anchor, durations, track_duration,
                       clip_timeline["anchorOffsetSeconds"],
