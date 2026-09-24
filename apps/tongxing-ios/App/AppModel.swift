@@ -94,6 +94,7 @@ final class AppModel: ObservableObject {
     private var multilingualRepository: MultilingualCatalogRepository?
     private var offlineLibrary: OfflineLibrary?
     let mediaOrigin: URL
+    let mediaSession: URLSession
     private let languagePreferenceURL: URL
     private var languagePreferences: ContentLanguagePreferences
     private var started = false
@@ -104,6 +105,7 @@ final class AppModel: ObservableObject {
         let support = supportDirectory ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
             .appendingPathComponent("Tongxing", isDirectory: true)
         mediaOrigin = contentOrigin ?? Self.contentOrigin
+        mediaSession = session
         languagePreferenceURL = support.appendingPathComponent("tongxing-language-preferences-v2.json")
         let savedPreferences = try? JSONDecoder().decode(ContentLanguagePreferences.self,
             from: Data(contentsOf: languagePreferenceURL))
