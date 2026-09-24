@@ -17,9 +17,11 @@ from urllib.parse import urlparse
 
 try:
     from scripts import assemble_multilingual_hosting as hosting
+    from scripts import build_multilingual_voice_preview as voice_preview
     from scripts import multilingual_dev_preview as preview
 except ImportError:
     import assemble_multilingual_hosting as hosting
+    import build_multilingual_voice_preview as voice_preview
     import multilingual_dev_preview as preview
 
 
@@ -142,6 +144,10 @@ def verify_candidate_overlay(candidate: Path, report: dict) -> dict:
             and prior.get("checkedFiles") == len(report["devBaseFiles"])
             and report.get("voiceDemoCatalogSha256")
             == hosting.digest(public / PREFIX / "catalog.json")
+            and report.get("sourceValidation")
+            == "bound_registry_manifests_script_and_full_decode_pass"
+            and isinstance(report.get("sourceRegistrySha256"), str)
+            and len(report["sourceRegistrySha256"]) == 64
             and report.get("baseCleanUrls") == hosting.load(candidate / "firebase.json")["hosting"].get("cleanUrls")
             and report.get("modifiedFiles") == list(PAGES)
             and report.get("addedFileCount") == 33,
@@ -177,9 +183,14 @@ def stage(base: Path, delivery: Path, prior_http: Path, out: Path,
             and prior.get("buildReportSha256") == hosting.digest(base / "build-report.json")
             and prior.get("checkedFiles") == len(base_report["files"]),
             "Prior Dev HTTP receipt does not bind the current release")
-    source = hosting.load(delivery / "delivery-manifest.json")
+    source, script, registry, script_path, registry_path, source_registry_hashes = (
+        voice_preview.validate(delivery, decode=True))
+    require(script_path.resolve() == (delivery / "demo-script.json").resolve()
+            and registry_path.resolve() == (delivery / "registry.json").resolve()
+            and len(source_registry_hashes) == 2
+            and all(len(value) == 64 for value in source_registry_hashes),
+            "Voice demo must use its bound script and registry snapshots")
     refs = hosting.load(delivery / "references.json")
-    script = hosting.load(delivery / "demo-script.json")
     require(source.get("schemaVersion") == "sermon-multilingual-voice-demo-delivery-v1"
             and source.get("status") == "encoded_and_fully_decoded"
             and source.get("scope") == "voice_capability_audition_not_sermon_translation"
@@ -193,10 +204,12 @@ def stage(base: Path, delivery: Path, prior_http: Path, out: Path,
             and {item.get("targetLocale") for item in script.get("locales", [])} == LOCALES,
             "Voice demo sources are incomplete or misrepresented")
     references = {item["speakerId"]: item for item in refs["references"]}
+    registered = {item["speakerId"]: item for item in registry["speakers"]}
     tracks = {(item["speakerId"], item["targetLocale"]): item
               for item in source["tracks"]}
     require(len(references) == 6 and len(tracks) == 24
-            and len(refs["references"]) == 6 and len(source["tracks"]) == 24,
+            and len(refs["references"]) == 6 and len(source["tracks"]) == 24
+            and set(references) == set(registered),
             "Voice demo speaker or locale duplicated")
     scripts = {item["targetLocale"]: item["text"] for item in script["locales"]}
     base_public = base / "public"
@@ -212,6 +225,14 @@ def stage(base: Path, delivery: Path, prior_http: Path, out: Path,
         speakers = []
         for speaker_id, reference in sorted(references.items()):
             bank = voice_bank[speaker_id]
+            identity = registered[speaker_id]
+            vietnamese = next(item for item in identity["localeCapabilities"]
+                              if item["targetLocale"] == "vi")
+            require(reference["sha256"] == vietnamese["adapterOverride"]["conditioningRef"].rsplit("/", 1)[-1]
+                    and bank["name"] == identity["displayName"]
+                    and identity["authorization"]["status"] == "authorized"
+                    and "multilingual_voice_demo" in identity["authorization"]["purposes"],
+                    f"Original reference or speaker authorization differs: {speaker_id}")
             source_url = bank.get("referenceSourceUrl")
             parsed = urlparse(source_url or "")
             require(parsed.scheme == "https" and parsed.hostname,
@@ -271,6 +292,9 @@ def stage(base: Path, delivery: Path, prior_http: Path, out: Path,
                   "sourceDeliveryManifestSha256": hosting.digest(delivery / "delivery-manifest.json"),
                   "sourceReferencesSha256": hosting.digest(delivery / "references.json"),
                   "sourceDemoScriptSha256": hosting.digest(delivery / "demo-script.json"),
+                  "sourceRegistrySha256": hosting.digest(delivery / "registry.json"),
+                  "sourceRegistrySnapshotHashes": source_registry_hashes,
+                  "sourceValidation": "bound_registry_manifests_script_and_full_decode_pass",
                   "modifiedFiles": list(PAGES), "addedFileCount": 33}
         (temporary / "build-report.json").write_text(
             json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2) + "\n",

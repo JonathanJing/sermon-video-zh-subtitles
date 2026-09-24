@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 
 from scripts import multilingual_dev_preview as preview
 from scripts import stage_voice_demo_dev as demo
@@ -30,6 +31,7 @@ class VoiceDemoStagingTest(unittest.TestCase):
         speakers = []
         refs = []
         tracks = []
+        registered = []
         for n in range(6):
             speaker = f"speaker_{n}"
             original = public / "media" / f"original-{n}.mp3"
@@ -40,6 +42,12 @@ class VoiceDemoStagingTest(unittest.TestCase):
                          "text": f"Original English speaker {n}."})
             speakers.append({"id": speaker, "name": f"Speaker {n}",
                              "referenceSourceUrl": f"https://example.com/sermon/{n}"})
+            registered.append({"speakerId": speaker, "displayName": f"Speaker {n}",
+                               "authorization": {"status": "authorized",
+                                                 "purposes": ["multilingual_voice_demo"]},
+                               "localeCapabilities": [{"targetLocale": "vi",
+                                                       "adapterOverride": {"conditioningRef":
+                                                            f"speaker-reference://{speaker}/{original_hash}"}}]})
             for locale in demo.LOCALE_ORDER:
                 file = self.delivery / "mp3" / speaker / f"{locale}.mp3"
                 file.parent.mkdir(parents=True, exist_ok=True)
@@ -64,23 +72,36 @@ class VoiceDemoStagingTest(unittest.TestCase):
                                   "status": "pass", "origin": preview.DEV_ORIGIN,
                                   "buildReportSha256": demo.hosting.digest(self.base / "build-report.json"),
                                   "checkedFiles": len(report["files"])})
-        write_json(self.delivery / "delivery-manifest.json", {
+        self.registry = {"speakers": registered}
+        write_json(self.delivery / "registry.json", self.registry)
+        self.source = {
             "schemaVersion": "sermon-multilingual-voice-demo-delivery-v1",
             "status": "encoded_and_fully_decoded",
             "scope": "voice_capability_audition_not_sermon_translation",
             "speakerCount": 6, "trackCount": 24,
-            "humanListeningStatus": "pending", "tracks": tracks})
+            "humanListeningStatus": "pending", "tracks": tracks}
+        write_json(self.delivery / "delivery-manifest.json", self.source)
         write_json(self.delivery / "references.json", {
             "schemaVersion": "sermon-multilingual-voice-demo-references-v1",
             "textEvidenceStatus": "machine_screening_only", "references": refs})
-        write_json(self.delivery / "demo-script.json", {
+        self.script = {
             "schemaVersion": "sermon-multilingual-voice-demo-script-v1",
             "scope": "voice_capability_audition_not_sermon_translation",
             "locales": [{"targetLocale": locale, "text": f"Sample {locale}."}
-                        for locale in demo.LOCALE_ORDER]})
+                        for locale in demo.LOCALE_ORDER]}
+        write_json(self.delivery / "demo-script.json", self.script)
+
+    def stage_fixture(self):
+        validated = (self.source, self.script, self.registry,
+                     self.delivery / "demo-script.json", self.delivery / "registry.json",
+                     ["a" * 64, "b" * 64])
+        with patch.object(demo.voice_preview, "validate", return_value=validated) as check:
+            report = demo.stage(self.base, self.delivery, self.receipt, self.out, {})
+        check.assert_called_once_with(self.delivery, decode=True)
+        return report
 
     def test_stages_originals_before_samples_without_promoting_review(self):
-        report = demo.stage(self.base, self.delivery, self.receipt, self.out, {})
+        report = self.stage_fixture()
         self.assertEqual(report["addedFileCount"], 33)
         self.assertEqual(len(preview.candidate_report(self.out)["files"]),
                          len(report["devBaseFiles"]) + 33)
@@ -94,7 +115,7 @@ class VoiceDemoStagingTest(unittest.TestCase):
                          (self.base / "public/weekly.json").read_bytes())
 
     def test_rejects_changed_audio_or_review_status(self):
-        demo.stage(self.base, self.delivery, self.receipt, self.out, {})
+        self.stage_fixture()
         catalog_path = self.out / "public" / demo.PREFIX / "catalog.json"
         catalog = json.loads(catalog_path.read_text())
         audio = self.out / "public" / catalog["speakers"][0]["samples"][0]["path"].lstrip("/")
@@ -106,6 +127,13 @@ class VoiceDemoStagingTest(unittest.TestCase):
         write_json(catalog_path, catalog)
         with self.assertRaisesRegex(ValueError, "file changed|approved sermon content"):
             preview.candidate_report(self.out)
+
+    def test_rejects_failed_source_identity_validation(self):
+        with patch.object(demo.voice_preview, "validate",
+                          side_effect=ValueError("Voice identity differs")):
+            with self.assertRaisesRegex(ValueError, "Voice identity differs"):
+                demo.stage(self.base, self.delivery, self.receipt, self.out, {})
+        self.assertFalse(self.out.exists())
 
 
 if __name__ == "__main__":
