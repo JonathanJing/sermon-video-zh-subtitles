@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 
 from scripts import multilingual_dev_preview as preview
 
@@ -120,6 +121,39 @@ class ProductionConfigBindingTest(unittest.TestCase):
             (candidate / "firebase.json").write_text(json.dumps(config))
             with self.assertRaisesRegex(ValueError, "configuration changed"):
                 preview.checked_production_config(candidate, report)
+
+
+class DevHttpVerificationTest(unittest.TestCase):
+    def test_rejects_wrong_public_content_type(self):
+        with TemporaryDirectory() as folder:
+            candidate = Path(folder)
+            (candidate / "build-report.json").write_text("{}")
+            report = {"pageId": "reviewed-page", "files": [{
+                "path": "multilingual-v2.json", "bytes": 2, "sha256": "a" * 64}]}
+            catalog = {"pages": [{"id": "reviewed-page", "targets": {}}]}
+            with patch.object(preview, "candidate_report", return_value=report), \
+                 patch.object(preview.hosting, "load", return_value=catalog), \
+                 patch.object(preview.verifier, "request_file", return_value=(
+                     200, {"content-type": "text/html", "cache-control": "no-store"},
+                     2, "a" * 64)):
+                with self.assertRaisesRegex(ValueError, "Unexpected Dev Content-Type"):
+                    preview.verify(candidate)
+
+    def test_records_content_type_on_pass(self):
+        with TemporaryDirectory() as folder:
+            candidate = Path(folder)
+            (candidate / "build-report.json").write_text("{}")
+            report = {"pageId": "reviewed-page", "files": [{
+                "path": "multilingual-v2.json", "bytes": 2, "sha256": "a" * 64}]}
+            catalog = {"pages": [{"id": "reviewed-page", "targets": {}}]}
+            with patch.object(preview, "candidate_report", return_value=report), \
+                 patch.object(preview.hosting, "load", return_value=catalog), \
+                 patch.object(preview.verifier, "request_file", return_value=(
+                     200, {"content-type": "application/json; charset=utf-8",
+                           "cache-control": "no-store"}, 2, "a" * 64)):
+                receipt = preview.verify(candidate)
+            self.assertEqual(receipt["status"], "pass")
+            self.assertEqual(receipt["results"][0]["contentType"], "application/json")
 
 
 if __name__ == "__main__":

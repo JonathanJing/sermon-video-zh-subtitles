@@ -38,6 +38,18 @@ ALIAS = {
 COMMAND = ["npx", "--yes", "firebase-tools@15.29.0", "deploy", "--only",
            "hosting", "--project", DEV_PROJECT, "--non-interactive", "--message",
            "Reviewed multilingual Dev production preview"]
+CONTENT_TYPES = {
+    ".json": {"application/json", "text/json"},
+    ".html": {"text/html"},
+    ".js": {"text/javascript", "application/javascript"},
+    ".mjs": {"text/javascript", "application/javascript"},
+    ".css": {"text/css"},
+    ".mp3": {"audio/mpeg", "audio/mp3"},
+    ".wav": {"audio/wav", "audio/x-wav", "audio/wave"},
+    ".pdf": {"application/pdf"},
+    ".srt": {"application/x-subrip", "text/plain"},
+    ".png": {"image/png"},
+}
 
 
 def require(ok: bool, message: str) -> None:
@@ -334,10 +346,15 @@ def verify(candidate: Path) -> dict:
         status, headers, size, actual = verifier.request_file(DEV_ORIGIN, path)
         require(status == 200 and size == item["bytes"] and actual == item["sha256"],
                 f"Dev file missing or changed after deployment: {path}")
+        mime = headers.get("content-type", "").split(";")[0].lower()
+        expected_mime = CONTENT_TYPES.get(Path(path).suffix.lower())
+        if expected_mime is not None and mime not in expected_mime:
+            raise ValueError(f"Unexpected Dev Content-Type for {path}: {mime}")
         if path == "/multilingual-v2.json":
             require("no-store" in headers.get("cache-control", ""),
                     "Dev formal catalog must be no-store")
-        results.append({"path": path, "sha256": actual, "bytes": size})
+        results.append({"path": path, "sha256": actual, "bytes": size,
+                        "contentType": mime})
     catalog = hosting.load(candidate / "public/multilingual-v2.json")
     page = next(item for item in catalog["pages"] if item["id"] == report["pageId"])
     for locale, target in page["targets"].items():

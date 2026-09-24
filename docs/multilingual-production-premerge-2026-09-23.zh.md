@@ -9,7 +9,7 @@ Firebase Dev 的 Production 布局预演、发布核验和旧内容保留结果�
 ## 当前事实
 
 - Firebase Dev 的 2026-09-20 正式样片有三语文字、配音、同步人工审核与发布后 HTTP 证据；仅覆盖原录像 35:09.16–38:07.32。[收据](evidence/2026-09-20-formal-release/README.zh.md)不批准下周整篇。
-- Firebase Dev 的 Production 布局首页已发布；完整 121 文件 HTTP/SHA、三条音轨 Range 206、三语深链及真实浏览器短时播放通过。旧六句实验入口和九周中文入口仍可访问。这是已审 2:58 样片的 Dev 验收，不能代替新一周 Production 发布或实体设备验收。
+- Firebase Dev 的 Production 布局首页已发布；完整 121 文件 HTTP/SHA/Content-Type、三条音轨 Range 206、三语深链及真实浏览器短时播放通过。旧六句实验入口和九周中文入口仍可访问。这是已审 2:58 样片的 Dev 验收，不能代替新一周 Production 发布或实体设备验收。
 - 只读线上核对：Production /weekly.json 是 sermon-weekly-catalog-v1，共 9 个中文周次；Production /multilingual-v2.json 返回 404。本地 registry head 的 weekly.json 与线上字节 SHA-256 相同：6b7bbd018e1df2d39ea5287c9e6a3114ee6a6a0c953e2f39cdc4d3d3244204bf。三语尚未发布到 Production。
 - 原生 iOS Release 仍读取 Production 的中文目录。多语言目前通过已验证的网页页面提供；iOS 的原生跨语言播放、下载、历史和现场定位仍见 [Layer 4 backlog](multilingual-layer-4-delivery-app-backlog.zh.md)。
 
