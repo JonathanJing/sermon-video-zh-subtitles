@@ -281,8 +281,9 @@ def _reusable_speculative_audio(previous_root: Path, unit: dict[str, Any], index
     package.speech.validate_adapter(evidence["adapter"], snapshot["targetLocale"],
                                     evidence["registry"],
                                     source_package=evidence["source"], candidate=snapshot)
-    require(evidence["adapter"].get("authorizationPurpose")
-            in {"multilingual_voice_demo", "chinese_dubbing"},
+    require(evidence["adapter"].get("authorizationPurpose") == "multilingual_voice_demo"
+            or (snapshot["targetLocale"] == "zh-Hans"
+                and evidence["adapter"].get("authorizationPurpose") == "chinese_dubbing"),
             "Speculative voice purpose was not authorized")
     require(identity.json_sha256(snapshot) == manifest.get("candidateJsonSha256")
             and identity.json_sha256(evidence["source"]) == manifest.get("sourceJsonSha256")

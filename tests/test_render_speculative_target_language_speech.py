@@ -103,6 +103,12 @@ class SpeculativeRenderTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "audio changed"):
             self.render(group_ids=["g1"])
 
+    def test_chinese_only_voice_purpose_cannot_render_korean_preview(self):
+        self.fixture.adapter["authorizationPurpose"] = "chinese_dubbing"
+        speech_fixture.write_json(self.fixture.adapter_path, self.fixture.adapter)
+        with self.assertRaisesRegex(ValueError, "demo/Chinese voice purpose"):
+            self.render(group_ids=["g1"])
+
     def test_committed_partial_audio_resumes_without_synthesis(self):
         self.render(group_ids=["g1"])
         audio = self.out / "units/unit-0000.wav"

@@ -50,8 +50,9 @@ def checked_context(paths: dict[str, Path], checkpoint_map_path: Path,
     speech.validate_adapter(adapter, candidate["targetLocale"], registry,
                             source_package=source, candidate=candidate)
     formal.require(adapter["adapterId"] == "qwen3_tts_sft"
-                   and adapter["authorizationPurpose"] in
-                   {"multilingual_voice_demo", "chinese_dubbing"},
+                   and (adapter["authorizationPurpose"] == "multilingual_voice_demo"
+                        or (candidate["targetLocale"] == "zh-Hans"
+                            and adapter["authorizationPurpose"] == "chinese_dubbing")),
                    "Speculative speech requires a registered demo/Chinese voice purpose")
     policies = formal.package.read_object(operation_policies_path)
     formal.require(all(isinstance(policies.get(name), dict)
