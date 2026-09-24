@@ -580,13 +580,36 @@ class CuvTranslationTests(unittest.TestCase):
         selected = mod.read(next((self.out / "cache").glob("select-*.json")))
         self.assertNotIn("reuseFrom", selected)
 
-    def test_incompatible_reuse_fails_before_model(self):
+    def test_changed_batch_size_reuses_only_exact_stage_requests(self):
         self.execute()
-        with mock.patch.object(mod, "chat_json") as call:
-            with self.assertRaisesRegex(ValueError, "Reuse run settings changed"):
-                mod.run(self.parent, self.root / "other", reference_map_path=self.map,
-                        reuse_from=self.out, batch_size=1)
-            call.assert_not_called()
+        old = self.out
+        self.out = self.root / "other"
+        result, calls = self.execute(reuse_from=old, batch_size=1)
+        self.assertEqual("passed", result["status"])
+        self.assertEqual(4, calls)
+        for stage in ("select-0", "audit-quotes"):
+            self.assertIn("reuseFrom", mod.read(next((self.out / "cache").glob(stage + "-*.json"))))
+        for stage in ("translate-0", "review-0", "translate-1", "review-1"):
+            self.assertNotIn("reuseFrom", mod.read(next((self.out / "cache").glob(stage + "-*.json"))))
+        with mock.patch.object(mod, "chat_json", side_effect=AssertionError("offline")):
+            self.assertEqual("passed", mod.validate(self.out)["status"])
+
+    def test_parallel_batches_keep_source_order_and_offline_receipts(self):
+        import threading
+        self.make_source(8)
+        barrier = threading.Barrier(2)
+        def concurrent_chat(key, payload):
+            if mod.TRANSLATE in payload["messages"][0]["content"]:
+                barrier.wait(timeout=3)
+            return self.fake_chat(key, payload)
+        with mock.patch.dict(mod.os.environ, {"OPENAI_API_KEY": "test-only"}), \
+             mock.patch.object(mod, "chat_json", side_effect=concurrent_chat):
+            result = mod.run(self.parent, self.out, reference_map_path=self.map,
+                             batch_size=4, workers=2)
+        self.assertEqual("passed", result["status"])
+        self.assertEqual([b["id"] for b in self.blocks], [b["id"] for b in mod.read(self.out / "blocks.json")])
+        with mock.patch.object(mod, "chat_json", side_effect=AssertionError("offline")):
+            self.assertEqual("passed", mod.validate(self.out)["status"])
 
     def test_reuse_rejects_tampered_original_response(self):
         self.execute()

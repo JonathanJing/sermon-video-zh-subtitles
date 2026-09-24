@@ -17,9 +17,9 @@
 
 重复字串须使用 Python Unicode 字符偏移、左闭右开的 `start/end` 同时定位英文与选中的和合本片段，校验真实切片与文本一致。来源投影图不仅要存在、路径和哈希正确，还须实际进入需要该证据的模型请求；共享出处也须提供固定库查得的完整经节文本。检查缓存里的真实 payload，不能把文件清单当作模型已看图的证据。历史请求没有这些内容时，保留旧收据，新增请求身份，不篡改旧调用。
 
-新建 `run` 默认冻结 `preflightPolicy`：在选择经文前批量检查引用库 lookup、共享出处和来源媒体，生成 `preflight.json`。外部映射带 `sourceContext` 或 `sharedReferences` 时自动启用实际图像／经节审计输入，也可显式使用 `--audit-source-media`；媒体缺失会在相关模型选择前阻断。提供外部映射时，这些预检可在任何 API 调用前完成；自动 discover 路径须先取得映射。
+新建 `run` 默认冻结 `preflightPolicy`：在选择经文前批量检查引用库 lookup、共享出处和来源媒体，生成 `preflight.json`。报告的 `reviewFocus` 汇总待重点核对的出处、图像、共享经节、混合叙述与讲员引用问题；它只是审阅清单，不是额外审批。外部映射带 `sourceContext` 或 `sharedReferences` 时自动启用实际图像／经节审计输入，也可显式使用 `--audit-source-media`；媒体缺失会在相关模型选择前阻断。提供外部映射时，这些预检可在任何 API 调用前完成；自动 discover 路径须先取得映射。
 
-经文选择失败按块聚合到 `selection-blocked.json`，保留真实收据和已完成结果。这不保证穷尽同一块内所有问题，程序或响应格式错误也不应假称内容未决后继续。全篇引文独立审核以及必要的旁白疑点审核通过后，才冻结 `quotation-preflight.json`（`ready_for_translation`），随后开始正文翻译；它不是人工批准，也不能以结构清单替代语义审校。
+经文选择失败按块及块内引用聚合到 `selection-blocked.json`，保留真实收据和已完成结果。单个引用通常只报告首先遇到的无效片段；程序或响应格式错误也不应假称内容未决后继续。输入问题逐项消解后，全篇引文审核会一次列出全部失败块。全篇引文独立审核以及必要的旁白疑点审核通过后，才冻结 `quotation-preflight.json`（`ready_for_translation`），随后开始正文翻译；它不是人工批准，也不能以结构清单代替语义审校。
 
 ## 执行与恢复
 
@@ -28,15 +28,16 @@
 ```bash
 .venv/bin/python scripts/sermon_cuv_translation.py run \
   --parent-job /absolute/path/to/dubbing-v2/job.json \
+  --workers 3 \
   --out artifacts/cuv-scripture/new-translation
 
 .venv/bin/python scripts/sermon_cuv_translation.py validate \
   --out artifacts/cuv-scripture/new-translation
 ```
 
-可用 `--reference-map /absolute/path/to/reviewed-map.json` 提供独立审计的出处映射，省去自动识别调用；它不能跳过经文取文、独立覆盖审核或叙述审校。可显式指定 `--library`、`--provenance`；库仍须通过固定版本与内容哈希验证。`--batch-size` 默认为 6，支持 1–20。
+可用 `--reference-map /absolute/path/to/reviewed-map.json` 提供独立审计的出处映射，省去自动识别调用；它不能跳过经文取文、独立覆盖审核或叙述审校。可显式指定 `--library`、`--provenance`；库仍须通过固定版本与内容哈希验证。`--batch-size` 默认为 6，支持 1–20。`--workers` 默认为 1，可设为 2–3：独立选文块以及翻译→复核批次并发运行；每批仍先翻译后复核，结果按英文原顺序合并。离线 `validate` 始终串行。
 
-修订映射后，用新输出目录并指定 `--reuse-from /absolute/path/to/previous-translation`，可以复用上一运行中完整请求 payload、阶段和版本完全相同的模型结果。父 job、库、来源元数据、父时间预算的哈希，以及模型、推理强度和批次大小都必须一致。输入改变的选择或审核会正常重新调用。复用收据保留真正执行过的原始 request 和 response，通过 `reuseFrom` 绑定旧收据及 manifest；新运行身份只记录为复用上下文，不伪造新请求。离线校验会递归验证这条来源链，因此旧证据目录须保留。
+修订映射后，用新输出目录并指定 `--reuse-from /absolute/path/to/previous-translation`，可以复用上一运行中完整请求 payload、阶段和版本完全相同的模型结果。父 job、库、来源元数据、父时间预算的哈希，以及模型与推理强度必须一致；批次大小改变时，仅复用仍然完全相同的阶段请求（常见的是选文和全篇审核），重组后的翻译/复核批次重新调用。绑定旧运行的映射修订、选文修复与复核来源链仍要求相同批次大小。输入改变的选择或审核会正常重新调用。复用收据保留真正执行过的原始 request 和 response，通过 `reuseFrom` 绑定旧收据及 manifest；新运行身份只记录为复用上下文，不伪造新请求。离线校验会递归验证这条来源链，因此旧证据目录须保留。
 
 独立审核发现选文错误时，可在新运行加 `--repair-from /absolute/path/to/failed-translation`，并同时把它作为 `--reuse-from`。程序绑定且核验该运行唯一的全篇独立审核缓存、原始请求/响应和 manifest，只将被判失败段落的完整审核意见及旧选文作为 `repairContext` 传给对应的选文请求。未失败段落的 SELECT payload 不变，可继续复用。失败记录不会被改成通过，新选文仍须重新经过全篇审核。没有失败段落、缺少完整审核覆盖、来源不兼容、证据改变或无法定位到引用选文的问题均拒绝作为修复入口。
 
