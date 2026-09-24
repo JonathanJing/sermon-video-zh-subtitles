@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "sermon-dev-browser-verification-v1",
+  "observedAt": "2026-09-24T01:23:21.113852+00:00",
+  "origin": "https://ai-for-god-sermon-audio-dev.web.app",
+  "pageId": "2026-09-20-revelation-clip",
+  "surface": "in-app browser, desktop",
+  "observations": [
+    {
+      "route": "/pages/2026-09-20-revelation-clip/zh-Hans",
+      "groups": 45,
+      "duration": "02:58",
+      "audio": "clicked; counter advanced from 00:36 to 00:40"
+    },
+    {
+      "route": "/pages/2026-09-20-revelation-clip/ko",
+      "groups": 44,
+      "duration": "02:58",
+      "audio": "clicked; counter advanced to 00:02"
+    },
+    {
+      "route": "/pages/2026-09-20-revelation-clip/es",
+      "groups": 44,
+      "duration": "02:58",
+      "audio": "clicked; counter advanced from saved 01:35; interface switched from Chinese to Korean while Spanish content and audio continued through 01:43"
+    },
+    {
+      "route": "/dev-poc.html",
+      "result": "6-unit machine POC retained; 00:28 audio label visible"
+    },
+    {
+      "route": "/legacy-reader.html",
+      "result": "9 historical Chinese weeks visible; PDF/MP3/SRT links and 32:20 audio ready; disabled feedback and statistics absent"
+    },
+    {
+      "route": "/?week=2026-09-20-same_video-7c193fd4-bc90-4f3b-aa00-37dfe8423aa0",
+      "result": "redirected to matching legacy reader page; title and 9-week list visible"
+    },
+    {
+      "route": "/?week=2026-09-20-revelation-clip",
+      "result": "loaded reviewed trilingual reader; Spanish content persisted with Korean interface in same browser session"
+    }
+  ],
+  "scope": "route loading and short playback only; does not repeat full human audio review or verify downloaded files",
+  "deviceAcceptance": "not_run",
+  "venueAcceptance": "not_run"
+}

@@ -1,0 +1,364 @@
+{
+  "buildReportSha256": "03dd49385e8d3bb18f96b52d795e9b031cfca7340f3d9bc32621af95df2bddda",
+  "checkedAt": "2026-09-24T01:16:51.131118+00:00",
+  "checkedFiles": 59,
+  "origin": "https://ai-for-god-sermon-audio-dev.web.app",
+  "results": [
+    {
+      "bytes": 266,
+      "path": "/404.html",
+      "requestedPath": "/404",
+      "sha256": "3c2aed32d1a4e2d34105b862438a3c3ee5e09498fcfed34c7b82746ee02e2b5c"
+    },
+    {
+      "bytes": 55558,
+      "path": "/app.js",
+      "requestedPath": "/app.js",
+      "sha256": "27ab8c761b09ea7ba04faaeb2e279bd0ba891908b799c06645100d9216df6670"
+    },
+    {
+      "bytes": 923395,
+      "path": "/brand-icon.png",
+      "requestedPath": "/brand-icon.png",
+      "sha256": "12e138ca3e35ec7613eda6de48441a4362665b24977a43faca1472517747f36d"
+    },
+    {
+      "bytes": 7784,
+      "path": "/captions/2026-09-20-revelation-clip/es.json",
+      "requestedPath": "/captions/2026-09-20-revelation-clip/es.json",
+      "sha256": "5af78e392d907777e6a4f08ec7101ab640ecdeacf4ecce5753d80130eb081c9f"
+    },
+    {
+      "bytes": 8605,
+      "path": "/captions/2026-09-20-revelation-clip/ko.json",
+      "requestedPath": "/captions/2026-09-20-revelation-clip/ko.json",
+      "sha256": "80bf72d543c695020423a72d16b80e452e607312d7351a28df29a598192b303e"
+    },
+    {
+      "bytes": 7649,
+      "path": "/captions/2026-09-20-revelation-clip/zh-Hans.json",
+      "requestedPath": "/captions/2026-09-20-revelation-clip/zh-Hans.json",
+      "sha256": "2c22ac424a3c418c58ab792dea6f521c0a8fcae1b4ac09834a28a5bf31a4ad0b"
+    },
+    {
+      "bytes": 2873,
+      "path": "/content/2026-09-20-lion-of-judah-poc/en.json",
+      "requestedPath": "/content/2026-09-20-lion-of-judah-poc/en.json",
+      "sha256": "5fef620dda6d214bd004a117d38dc6a15f0a3b5bebb21d89d4aa0e0348ed2203"
+    },
+    {
+      "bytes": 2867,
+      "path": "/content/2026-09-20-lion-of-judah-poc/es.json",
+      "requestedPath": "/content/2026-09-20-lion-of-judah-poc/es.json",
+      "sha256": "335486a91ac60e8e6208a66cb042c49c847f25b4a569d5e1d4eb29029725e391"
+    },
+    {
+      "bytes": 3123,
+      "path": "/content/2026-09-20-lion-of-judah-poc/ko.json",
+      "requestedPath": "/content/2026-09-20-lion-of-judah-poc/ko.json",
+      "sha256": "78b765aad1965403d7123b44d54ad4872e61eb63b2ac98f492f756647c2280b8"
+    },
+    {
+      "bytes": 3177,
+      "path": "/content/2026-09-20-lion-of-judah-poc/vi.json",
+      "requestedPath": "/content/2026-09-20-lion-of-judah-poc/vi.json",
+      "sha256": "c67c22aabca80af6b7c10db2063cd02d03e1f58cb874a8fdc25ff39194968b1f"
+    },
+    {
+      "bytes": 2769,
+      "path": "/content/2026-09-20-lion-of-judah-poc/zh-Hans.json",
+      "requestedPath": "/content/2026-09-20-lion-of-judah-poc/zh-Hans.json",
+      "sha256": "ce96effa8e2ed0bc51ff26c532f84b7c4460c02c5fe83061e89a5100955280c8"
+    },
+    {
+      "bytes": 11795,
+      "path": "/content/2026-09-20-revelation-clip/es.json",
+      "requestedPath": "/content/2026-09-20-revelation-clip/es.json",
+      "sha256": "71888a21f1ff297852794c90e866cdedb88070685cdc70eb44be199415341aa9"
+    },
+    {
+      "bytes": 12665,
+      "path": "/content/2026-09-20-revelation-clip/ko.json",
+      "requestedPath": "/content/2026-09-20-revelation-clip/ko.json",
+      "sha256": "15867a3abcdd6fb0a7b72738b0be0a1f715b2d3e980c2f222aedcd9c61ad3576"
+    },
+    {
+      "bytes": 11561,
+      "path": "/content/2026-09-20-revelation-clip/zh-Hans.json",
+      "requestedPath": "/content/2026-09-20-revelation-clip/zh-Hans.json",
+      "sha256": "20d4d59908e9c6d0fe31b902900a10ddb9a290b2dd6f79706437c944289c8814"
+    },
+    {
+      "bytes": 6834,
+      "path": "/dev-integrity.mjs",
+      "requestedPath": "/dev-integrity.mjs",
+      "sha256": "1f7aa343812d04901d2146e85904ccb054491ee4a8e0c32933d1bfa33b2d6770"
+    },
+    {
+      "bytes": 9216,
+      "path": "/formal-dev-adapter.mjs",
+      "requestedPath": "/formal-dev-adapter.mjs",
+      "sha256": "d6e50b70a432d49b0a62c735c8fbac9967030735b520795dd0fd6bcaaa82fa51"
+    },
+    {
+      "bytes": 9623,
+      "path": "/index.html",
+      "requestedPath": "/",
+      "sha256": "aaf98bd67fbf46897d6b6e35eda4febd11cba43c33e4b0730bf54547d2a9bee1"
+    },
+    {
+      "bytes": 654568,
+      "path": "/media/2026-09-20-lion-of-judah-poc-en.mp3",
+      "requestedPath": "/media/2026-09-20-lion-of-judah-poc-en.mp3",
+      "sha256": "95d9117fa1d8706bea22bbfbefd7ff6852f264eaf32a8c4a8027ff22aab94d33"
+    },
+    {
+      "bytes": 360741,
+      "path": "/media/2026-09-20-lion-of-judah-poc-es.mp3",
+      "requestedPath": "/media/2026-09-20-lion-of-judah-poc-es.mp3",
+      "sha256": "b4910d9f885b6c6fd91647b39cb51dd30ff42decaafb0e1b2ed41bf63a72517c"
+    },
+    {
+      "bytes": 464395,
+      "path": "/media/2026-09-20-lion-of-judah-poc-ko.mp3",
+      "requestedPath": "/media/2026-09-20-lion-of-judah-poc-ko.mp3",
+      "sha256": "ff02082b5799d1bcdcff0ad151e3c3f7e1794eb3dd42229bb97dd09fa77a5656"
+    },
+    {
+      "bytes": 621966,
+      "path": "/media/2026-09-20-lion-of-judah-poc-vi.mp3",
+      "requestedPath": "/media/2026-09-20-lion-of-judah-poc-vi.mp3",
+      "sha256": "627a57e3eb5e51a3aed66c5107c88706a8b35e4de175b4dbf37097a2f70af10a"
+    },
+    {
+      "bytes": 386237,
+      "path": "/media/2026-09-20-lion-of-judah-poc-zh-Hans.mp3",
+      "requestedPath": "/media/2026-09-20-lion-of-judah-poc-zh-Hans.mp3",
+      "sha256": "925c6304a54e7e0ba48f95041df55ac765db56fd562f57b88b6e3803bd38fa54"
+    },
+    {
+      "bytes": 654568,
+      "path": "/media/2026-09-20-lion-of-judah-poc/en.mp3",
+      "requestedPath": "/media/2026-09-20-lion-of-judah-poc/en.mp3",
+      "sha256": "95d9117fa1d8706bea22bbfbefd7ff6852f264eaf32a8c4a8027ff22aab94d33"
+    },
+    {
+      "bytes": 360741,
+      "path": "/media/2026-09-20-lion-of-judah-poc/es.mp3",
+      "requestedPath": "/media/2026-09-20-lion-of-judah-poc/es.mp3",
+      "sha256": "b4910d9f885b6c6fd91647b39cb51dd30ff42decaafb0e1b2ed41bf63a72517c"
+    },
+    {
+      "bytes": 464395,
+      "path": "/media/2026-09-20-lion-of-judah-poc/ko.mp3",
+      "requestedPath": "/media/2026-09-20-lion-of-judah-poc/ko.mp3",
+      "sha256": "ff02082b5799d1bcdcff0ad151e3c3f7e1794eb3dd42229bb97dd09fa77a5656"
+    },
+    {
+      "bytes": 621966,
+      "path": "/media/2026-09-20-lion-of-judah-poc/vi.mp3",
+      "requestedPath": "/media/2026-09-20-lion-of-judah-poc/vi.mp3",
+      "sha256": "627a57e3eb5e51a3aed66c5107c88706a8b35e4de175b4dbf37097a2f70af10a"
+    },
+    {
+      "bytes": 96591,
+      "path": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-focus-adaptive-pauses.mp3",
+      "requestedPath": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-focus-adaptive-pauses.mp3",
+      "sha256": "65a8559bf2bef194d10010b68bcf2ce959f110499a89037546e3496c4868b857"
+    },
+    {
+      "bytes": 52287,
+      "path": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-focus-baseline.mp3",
+      "requestedPath": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-focus-baseline.mp3",
+      "sha256": "0cabe56bec5e61d65aea0a332291d2de4598f270060a8b7594ba8a684cf3a383"
+    },
+    {
+      "bytes": 51034,
+      "path": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-focus-internal-instruct.mp3",
+      "requestedPath": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-focus-internal-instruct.mp3",
+      "sha256": "0d525676aab6e2026bbc79d6017329084b5b3564e49bebf26b1a5e423448f42e"
+    },
+    {
+      "bytes": 99099,
+      "path": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-focus-phrase-pauses.mp3",
+      "requestedPath": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-focus-phrase-pauses.mp3",
+      "sha256": "bd0f3143b2891aa48a9bf215bee72b08b12c31bbba374083842482d9cce554fd"
+    },
+    {
+      "bytes": 658328,
+      "path": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-long-adaptive-pauses.mp3",
+      "requestedPath": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-long-adaptive-pauses.mp3",
+      "sha256": "120b08ca3557b559fc539591a6972cd199623525959e0db1351b8f68fcbf437c"
+    },
+    {
+      "bytes": 486966,
+      "path": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-prosody-natural.mp3",
+      "requestedPath": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-prosody-natural.mp3",
+      "sha256": "ed6ed84fc24af5a795e80cdb8feebe43472066057a82b0061bd61a1811f92659"
+    },
+    {
+      "bytes": 525418,
+      "path": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-prosody-paced.mp3",
+      "requestedPath": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-prosody-paced.mp3",
+      "sha256": "432d9bc65513f58710a3817bf74853f2840fb7ceb406ccb6de41a624ac900135"
+    },
+    {
+      "bytes": 651641,
+      "path": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-source-acoustic-pauses-v3.mp3",
+      "requestedPath": "/media/2026-09-20-lion-of-judah-poc/zh-Hans-source-acoustic-pauses-v3.mp3",
+      "sha256": "8e098c71fe34b7bd11cf80f50c111af2c9b3d0aea37a6b9cd2616a820918155c"
+    },
+    {
+      "bytes": 386237,
+      "path": "/media/2026-09-20-lion-of-judah-poc/zh-Hans.mp3",
+      "requestedPath": "/media/2026-09-20-lion-of-judah-poc/zh-Hans.mp3",
+      "sha256": "925c6304a54e7e0ba48f95041df55ac765db56fd562f57b88b6e3803bd38fa54"
+    },
+    {
+      "bytes": 8552588,
+      "path": "/media/2026-09-20-revelation-clip/es.wav",
+      "requestedPath": "/media/2026-09-20-revelation-clip/es.wav",
+      "sha256": "fac1c70ea88ff787d9150e075d6e6834d47126e6492f63d4b71c3e3aea88ec34"
+    },
+    {
+      "bytes": 8552588,
+      "path": "/media/2026-09-20-revelation-clip/ko.wav",
+      "requestedPath": "/media/2026-09-20-revelation-clip/ko.wav",
+      "sha256": "57c1a9d61c2c31b8f450ebe07e239f8d43f72bd8308e1659c7646fd23a24215d"
+    },
+    {
+      "bytes": 8552588,
+      "path": "/media/2026-09-20-revelation-clip/zh-Hans.wav",
+      "requestedPath": "/media/2026-09-20-revelation-clip/zh-Hans.wav",
+      "sha256": "a626c1105bfea2c51dedcc5d9b1534b21f536abf658c6230003a95d8d1981356"
+    },
+    {
+      "bytes": 1672,
+      "path": "/multilingual-v2.json",
+      "requestedPath": "/multilingual-v2.json",
+      "sha256": "0332c2e3cf2f250778601ce4e5a82e587cd50c7a136f9d944e3607f7d6737124"
+    },
+    {
+      "bytes": 3224,
+      "path": "/multilingual.json",
+      "requestedPath": "/multilingual.json",
+      "sha256": "f1121b99b222193eb568a772e9d5732816668a26f70bf4ff585f64081a5dfe36"
+    },
+    {
+      "bytes": 4177,
+      "path": "/packages/layer2/2026-09-20-lion-of-judah-poc-es.json",
+      "requestedPath": "/packages/layer2/2026-09-20-lion-of-judah-poc-es.json",
+      "sha256": "3f0ec6f01e1fc0790de8f3b09f4d1e4bde91f4f9d683cce1aacd6b247823e5ff"
+    },
+    {
+      "bytes": 4632,
+      "path": "/packages/layer2/2026-09-20-lion-of-judah-poc-ko.json",
+      "requestedPath": "/packages/layer2/2026-09-20-lion-of-judah-poc-ko.json",
+      "sha256": "b46aca3b9568274124898b80e11863df753f0cceba24ba8a97253e359bcc555b"
+    },
+    {
+      "bytes": 4699,
+      "path": "/packages/layer2/2026-09-20-lion-of-judah-poc-vi.json",
+      "requestedPath": "/packages/layer2/2026-09-20-lion-of-judah-poc-vi.json",
+      "sha256": "49d0f526565443767e34010b5c2fe57355aabe87b8564a955a0b7f3d6f460e7c"
+    },
+    {
+      "bytes": 4065,
+      "path": "/packages/layer2/2026-09-20-lion-of-judah-poc-zh-Hans.json",
+      "requestedPath": "/packages/layer2/2026-09-20-lion-of-judah-poc-zh-Hans.json",
+      "sha256": "0c0fc2d9df155a5ade095d28a4c6c1b27b24457cdaaab3c8378988a5f5ab09e3"
+    },
+    {
+      "bytes": 2057,
+      "path": "/packages/layer3/2026-09-20-lion-of-judah-poc-es.json",
+      "requestedPath": "/packages/layer3/2026-09-20-lion-of-judah-poc-es.json",
+      "sha256": "37df8d32edbdf2d56fea16703b579d4b2fb311dc0c0e204d7967d679a36f89a5"
+    },
+    {
+      "bytes": 2057,
+      "path": "/packages/layer3/2026-09-20-lion-of-judah-poc-ko.json",
+      "requestedPath": "/packages/layer3/2026-09-20-lion-of-judah-poc-ko.json",
+      "sha256": "b6f52479e6a53d7ebfa60003607a002d74c837eafa292dee5bc6bdf47ed8baa3"
+    },
+    {
+      "bytes": 2188,
+      "path": "/packages/layer3/2026-09-20-lion-of-judah-poc-vi.json",
+      "requestedPath": "/packages/layer3/2026-09-20-lion-of-judah-poc-vi.json",
+      "sha256": "ae294e672469d8a84db14230ae2792ae5652a18ebf8a3061f905857bfd9821c5"
+    },
+    {
+      "bytes": 2071,
+      "path": "/packages/layer3/2026-09-20-lion-of-judah-poc-zh-Hans.json",
+      "requestedPath": "/packages/layer3/2026-09-20-lion-of-judah-poc-zh-Hans.json",
+      "sha256": "cfe4ac945cf307e0309ea80417c08f017d55cfe10f9b3da9885c82851669cf43"
+    },
+    {
+      "bytes": 5338,
+      "path": "/playback-memory.mjs",
+      "requestedPath": "/playback-memory.mjs",
+      "sha256": "448b32804b26bb36c3e8a8da70f712cca884350e2fc08a0ff88a950cd15755df"
+    },
+    {
+      "bytes": 1328,
+      "path": "/releases/2026-09-20-lion-of-judah-poc/en.json",
+      "requestedPath": "/releases/2026-09-20-lion-of-judah-poc/en.json",
+      "sha256": "cab812b492f93274d66908c826189e7eec1407f1330120b169b0d6a8c4875960"
+    },
+    {
+      "bytes": 1376,
+      "path": "/releases/2026-09-20-lion-of-judah-poc/es.json",
+      "requestedPath": "/releases/2026-09-20-lion-of-judah-poc/es.json",
+      "sha256": "4da4ae499876d9fecb8e0693895526d5204cca05f22d8791665cccc3dfd18d8c"
+    },
+    {
+      "bytes": 1376,
+      "path": "/releases/2026-09-20-lion-of-judah-poc/ko.json",
+      "requestedPath": "/releases/2026-09-20-lion-of-judah-poc/ko.json",
+      "sha256": "ba9c0d78f31606f58006973d5ec023d102e7a0bd4aa12159d65953072f2a5764"
+    },
+    {
+      "bytes": 1371,
+      "path": "/releases/2026-09-20-lion-of-judah-poc/vi.json",
+      "requestedPath": "/releases/2026-09-20-lion-of-judah-poc/vi.json",
+      "sha256": "14770b145e24ae02c6cf6acca6038f8da27862db5eb59ea5600236127de5b285"
+    },
+    {
+      "bytes": 17761,
+      "path": "/releases/2026-09-20-lion-of-judah-poc/zh-Hans.json",
+      "requestedPath": "/releases/2026-09-20-lion-of-judah-poc/zh-Hans.json",
+      "sha256": "6825e41c2ffb5bf0f05da611abe17523334b7520cc44a18a2705e84b229aa8d6"
+    },
+    {
+      "bytes": 1413,
+      "path": "/releases/2026-09-20-revelation-clip/es.json",
+      "requestedPath": "/releases/2026-09-20-revelation-clip/es.json",
+      "sha256": "3124f8dc63daa54ffbbb3d3356bb2e1e7be021def68130083656123d49202e59"
+    },
+    {
+      "bytes": 1413,
+      "path": "/releases/2026-09-20-revelation-clip/ko.json",
+      "requestedPath": "/releases/2026-09-20-revelation-clip/ko.json",
+      "sha256": "d4243c43084d1c779e1290390ee2ec1527594e0efce6ee3122ef2e0f5422060d"
+    },
+    {
+      "bytes": 1453,
+      "path": "/releases/2026-09-20-revelation-clip/zh-Hans.json",
+      "requestedPath": "/releases/2026-09-20-revelation-clip/zh-Hans.json",
+      "sha256": "b4acdb4fb75069fd23239c5babeb74367f9f2faa8b6f4c5536efa75f8f62317d"
+    },
+    {
+      "bytes": 42647,
+      "path": "/styles.css",
+      "requestedPath": "/styles.css",
+      "sha256": "617abeafb1a17e2217a9c5bd4f6802b222d04ce25fc18a8f09d08ca6041b81e2"
+    },
+    {
+      "bytes": 13363,
+      "path": "/weekly.json",
+      "requestedPath": "/weekly.json",
+      "sha256": "b35380d274ec8e7424860d93779b9792cfb5684563e41d839bdae6e15dd7cfa2"
+    }
+  ],
+  "schemaVersion": "sermon-multilingual-dev-preview-preflight-v1",
+  "status": "pass"
+}
