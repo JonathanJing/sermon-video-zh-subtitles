@@ -36,6 +36,8 @@ Dev 经文授权声明和样片页面／音频审核不能自动覆盖 Productio
 
 ## 周六操作顺序
 
+周六只把三类内容决定交给人：来源与英文、每种语言的最终译文、每种语言的正式整轨听审。中文／韩语／西语可在同一轮对照页分别给出决定，但收据仍按 locale 独立绑定；已审全文无例外时使用 `approve-batch` 生成逐组收据，有局部修订时用 `record-group` 保留段级决定，待全部有效后用 `approve-groups` 聚合。经文边界和页面字段在文字审核轮次一并展示，原有经文策略与页面字段收据仍分别保存，不再反复询问；音色短样／长句能力只在新 checkpoint、locale、adapter 或授权用途出现时审核，复用须有对应范围的现成注册证据。Layer 4 核对目标与清单，不重复内容人审；已有 Dev 发布授权时直接执行部署和 HTTP 核验。Production 的授权和发布窗口仍独立。机器复核、文件哈希与 HTTP 检查由工具执行，不能因此省略正式全文听审。
+
 1. 按[本地生产 runbook](codex-local-production-runbook.zh.md)完成来源、窗口和英文批准。仅在 Layer 1 ready_for_translation 后启动三语 Layer 2。
 2. 分别完成文字审核，再用 --track-format mp3 渲染三条新整篇音轨，逐语言完成 ASR、全文听审和视频同步。任一语言未通过时保留候选，不加入正式 catalog；本周要求三语音频齐全，整页等待。
 3. 使用 build_formal_dev_release_assets.py 与 stage_formal_multilingual_dev.py 准备同一新 page ID 的三语 stage。修订建立新身份，不能覆盖旧发布包。
