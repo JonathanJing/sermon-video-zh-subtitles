@@ -1,6 +1,6 @@
 # Firebase 四层制作公开 Tracker
 
-这是可部署到独立 Firebase Hosting 站点的**公开只读、脱敏**状态页。它按周显示共享 Layer 1，以及简体中文、韩语、西语等每种语言的 Layer 2–4 检查点、进度和有条件 ETA；从源页面是否出现／更换视频，跟踪到每语言页面、正式语音、声纹索引和设备／现场验收。浏览器从专用 Firestore 命名数据库 `sermon-tracker` 实时读取，规则禁止客户端写入。所有人都能读取已发布状态，管理员在本地用服务端发布器更新。Firebase [Security Rules](https://firebase.google.com/docs/firestore/security/rules-conditions)约束客户端请求；服务端 SDK 写入由 IAM 控制。
+这是可部署到独立 Firebase Hosting 站点的**公开只读、脱敏**状态页。它按周显示共享 Layer 1、每种语言独立的 Layer 2–3，以及单独的 Layer 4 多语言发布区；Layer 4 区内仍按语言列出四个检查点、正式页面、语音、声纹索引和设备／现场验收。流程图的汇合只表示同次发布的视图，正式 Release Package 与验证仍按 `pageId + targetLocale` 独立。页面还显示条件 ETA 与源页面是否出现／更换视频。浏览器从专用 Firestore 命名数据库 `sermon-tracker` 实时读取，规则禁止客户端写入。所有人都能读取已发布状态，管理员在本地用服务端发布器更新。Firebase [Security Rules](https://firebase.google.com/docs/firestore/security/rules-conditions)约束客户端请求；服务端 SDK 写入由 IAM 控制。
 
 公开快照仅有状态、数量、时间、步骤实测耗时与尝试次数、经允许的源页面链接和同周播放页链接。视频 ID／原视频 URL、审核原因、证据路径、内部哈希、声纹音轨 SHA 和凭据不会进入公开文档。发布器还会对生成器输出做一次明确的字段投影，额外字段自动丢弃。页面的百分比只表示检查点；ETA 是连续串行估算，缺工时或待人工审核时显示未知。页面不会替代正式包的 validator、内容听审、HTTP 核验或设备验收。
 
@@ -23,6 +23,8 @@ firebase deploy --only hosting:sermonTrackerAdmin --project YOUR_PROJECT
 ```
 
 已在项目 `ai-for-god-sermon-audio-dev` 建立独立站点 `ai-for-god-sermon-tracker-dev`、专用数据库 `sermon-tracker`（`us-west1`、Standard、删除保护、首库免费配额）和公开 Web App；规则与页面于 2026-09-23 部署。[线上 Tracker](https://ai-for-god-sermon-tracker-dev.web.app/) 可直接查看。其他项目复用时仍按上述步骤建立自己的独立资源。`?demo=1` 显示明确标记的合成样例，不读取真实数据。
+
+2026-09-24 已将[远程审核通信演示](https://ai-for-god-sermon-tracker-dev.web.app/?bridgeMock=1)发布到上述 Dev Hosting。`?bridgeMock=1` 额外显示此面板：它沿用公开 Tracker 的实时状态，可展开现有文字状态，显示媒体不可用说明，并试用「同意／不同意」、审核意见和模拟提交。**现有文字只是检查点状态，不是完整候选译文或音频审核证据。** 页面上的裁决、提交、领取和重置只改变当前浏览器画面，**不会写 Firestore、批准内容或启动 Agent**。页面显示的云端到本机测试时间是静态历史收据，不表示本机领取器当前在线。真实传输探针见[测试记录](../../../docs/reports/20260924-tracker-bridge-probe.zh.md)及本目录的 `bridge-mock.mjs`；只支持私有 `mock_ping`，使用本机 ADC 访问 Dev 的命名数据库。正式浏览器提交还需要登录鉴权、私有证据服务和经过门禁验证的后端接口。
 
 本地 UI 审核可先 `npm run build`，将 `dist/` 复制到忽略 Git 的 `artifacts/tracker-ui-review/`，用快照生成器把当前账本写成该目录的 `local-preview.json`，再从仓库根目录运行 `python -m http.server 4178 --bind 127.0.0.1 --directory artifacts/tracker-ui-review`。打开 `http://127.0.0.1:4178/?local=1` 即可查看**非实时**脱敏快照；此模式不连接 Firestore，也不执行发布。
 

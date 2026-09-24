@@ -7,6 +7,7 @@ let selectedId = null;
 let connectionState = ['正在连接', 'Connecting', 'neutral'];
 let emptyState = null;
 let refreshMode = 'cloud';
+let bridgeMock = null;
 
 function connection(chinese, english, status = 'neutral') {
   connectionState = [chinese, english, status];
@@ -35,7 +36,7 @@ function selectRun(pageId) {
   const selected = runs.find((run) => run.pageId === pageId);
   if (!selected) return empty('暂无制作记录', 'No production record',
     '状态发布器尚未写入本周页面。', 'The publisher has not written this page yet.');
-  try { renderSnapshot(selected); emptyState = null; }
+  try { renderSnapshot(selected); bridgeMock?.render(selected); emptyState = null; }
   catch { empty('状态格式不兼容', 'Incompatible status format',
     '请检查状态发布器与页面版本。', 'Check the publisher and page versions.'); }
 }
@@ -57,6 +58,10 @@ function renderRunList() {
 
 async function start() {
   translateStatic();
+  if (new URLSearchParams(location.search).get('bridgeMock') === '1') {
+    bridgeMock = await import('./bridge-mock.js');
+    bridgeMock.mount();
+  }
   connection(...connectionState);
   refreshNote();
   for (const code of ['zh', 'en']) {

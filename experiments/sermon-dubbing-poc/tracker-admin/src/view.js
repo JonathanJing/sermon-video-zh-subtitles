@@ -188,19 +188,35 @@ function renderFlow(snapshot) {
   for (const item of snapshot.locales || []) {
     const row = make('div', 'flow-branch');
     row.append(make('strong', 'flow-locale', name(item.locale)));
-    for (const layer of [2, 3, 4]) {
+    for (const layer of [2, 3]) {
       if (layer > 2) row.append(make('span', 'flow-arrow', '→'));
       const progress = item.layers?.[String(layer)] || { complete: 0, total: 0 };
       const state = layerState(steps, item.locale, layer, progress);
       row.append(flowButton(`Layer ${layer}`, `${progress.complete}/${progress.total}`,
         state, layerId(item.locale, layer), label(state)));
     }
-    const evidence = flowButton(tr('交付与验收', 'Delivery and acceptance'), tr('独立证据', 'Separate evidence'), 'pending', deliveryId(item.locale));
-    evidence.classList.add('evidence');
-    row.append(evidence);
     branches.append(row);
   }
-  byId('flow-map').replaceChildren(shared, branches);
+  const locales = snapshot.locales || [];
+  const layer3Ready = locales.filter((item) => {
+    const progress = item.layers?.['3'];
+    return progress?.total > 0 && progress.complete === progress.total &&
+      layerState(steps, item.locale, 3, progress) === 'complete';
+  }).length;
+  const releaseComplete = locales.reduce((sum, item) => sum + (item.layers?.['4']?.complete || 0), 0);
+  const releaseTotal = locales.reduce((sum, item) => sum + (item.layers?.['4']?.total || 0), 0);
+  const releaseSteps = steps.filter((step) => step.layer === 4);
+  const releaseState = releaseSteps.some((step) => step.status === 'blocked') ? 'blocked' :
+    releaseSteps.some((step) => step.status === 'waiting_review') ? 'waiting_review' :
+    releaseSteps.some((step) => step.status === 'running') ? 'running' :
+    releaseTotal > 0 && releaseComplete === releaseTotal ? 'complete' :
+    releaseComplete > 0 ? 'running' : 'pending';
+  const join = make('div', 'flow-join');
+  join.append(make('span', 'flow-join-arrow', '↓'), flowButton(
+    tr('Layer 4 · 多语言发布与播放', 'Layer 4 · Multilingual delivery and playback'),
+    `${releaseComplete}/${releaseTotal}`,
+    releaseState, 'release-panel', tr(`Layer 3 分支 ${layer3Ready}/${locales.length} 已记录`, `Layer 3 branches ${layer3Ready}/${locales.length} recorded`)));
+  byId('flow-map').replaceChildren(shared, branches, join);
 }
 
 function renderEta(report) {
@@ -238,17 +254,21 @@ function renderBlockers(report, steps) {
 
 function renderLocales(locales, steps) {
   const grid = byId('locale-grid');
-  const openDeliveries = new Set([...grid.querySelectorAll('.delivery-details[open]')].map((item) => item.id));
+  const releaseGrid = byId('release-grid');
+  const openDeliveries = new Set([...releaseGrid.querySelectorAll('.delivery-details[open]')].map((item) => item.id));
+  const releases = [];
   grid.replaceChildren(...locales.map((item) => {
     const card = make('article', 'locale-card panel');
+    const releaseCard = make('article', 'release-card panel');
+    releaseCard.append(make('h4', '', name(item.locale)));
     const top = make('div', 'locale-head');
     const title = make('div');
     title.append(make('span', 'eyebrow', item.locale), make('h4', '', name(item.locale)));
-    const completed = [2, 3, 4].reduce((sum, layer) => sum + (item.layers?.[String(layer)]?.complete || 0), 0);
-    const total = [2, 3, 4].reduce((sum, layer) => sum + (item.layers?.[String(layer)]?.total || 0), 0);
+    const completed = [2, 3].reduce((sum, layer) => sum + (item.layers?.[String(layer)]?.complete || 0), 0);
+    const total = [2, 3].reduce((sum, layer) => sum + (item.layers?.[String(layer)]?.total || 0), 0);
     const localeProgress = make('div', 'locale-overall');
     localeProgress.append(make('strong', '', `${total ? Math.round(100 * completed / total) : 0}%`),
-      make('span', '', tr(`${completed}/${total} 检查点`, `${completed}/${total} checkpoints`)));
+      make('span', '', tr(`Layer 2–3 · ${completed}/${total} 检查点`, `Layer 2–3 · ${completed}/${total} checkpoints`)));
     top.append(title, localeProgress);
     card.append(top);
     const layers = make('div', 'locale-layers');
@@ -280,7 +300,8 @@ function renderLocales(locales, steps) {
       }));
       if (!layerSteps.length) list.append(make('li', 'muted', tr('暂无检查点明细', 'No checkpoint details')));
       block.append(meta, track, list);
-      layers.append(block);
+      if (layer === 4) releaseCard.append(block);
+      else layers.append(block);
     }
     card.append(layers);
     if (item.delivery?.origin === 'dev_poc_catalog') {
@@ -294,7 +315,7 @@ function renderLocales(locales, steps) {
       const poc = make('div', 'poc-progress');
       poc.append(make('strong', '', tr(`Dev POC 资产 ${complete}/${checks.length}`, `Dev POC assets ${complete}/${checks.length}`)),
         make('small', '', checks.map(([title, yes]) => `${title}${yes ? ' ✓' : ' —'}`).join(' · ')));
-      card.append(poc);
+      releaseCard.append(poc);
     }
     const delivery = make('details', 'delivery-details');
     delivery.id = deliveryId(item.locale);
@@ -335,9 +356,20 @@ function renderLocales(locales, steps) {
       }
     }
     delivery.append(fields);
-    card.append(delivery);
+    releaseCard.append(delivery);
+    releases.push(releaseCard);
     return card;
   }));
+  releaseGrid.replaceChildren(...releases);
+  const ready = locales.filter((item) => {
+    const progress = item.layers?.['3'];
+    return progress?.total > 0 && progress.complete === progress.total &&
+      layerState(steps, item.locale, 3, progress) === 'complete';
+  }).length;
+  const complete = locales.reduce((sum, item) => sum + (item.layers?.['4']?.complete || 0), 0);
+  const total = locales.reduce((sum, item) => sum + (item.layers?.['4']?.total || 0), 0);
+  text('release-readiness', `${ready}/${locales.length}`);
+  text('release-progress', `${complete}/${total}`);
 }
 
 function renderSteps(steps, filter) {
