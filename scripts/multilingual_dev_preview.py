@@ -383,9 +383,8 @@ def preflight(candidate: Path) -> dict:
     results = []
     for item in report["devBaseFiles"]:
         path = "/" + item["path"]
-        # The current Dev release uses cleanUrls=true, which redirects
-        # /index.html and /404.html to their canonical URLs. The preview
-        # deliberately uses cleanUrls=false for exact-file verification.
+        # The initial POC base used cleanUrls=true and redirected these files.
+        # Later Dev candidates record their baseline's actual policy.
         current_url = ({"/index.html": "/", "/404.html": "/404"}.get(path, path)
                        if report.get("baseCleanUrls", True) else path)
         status, _, size, actual = verifier.request_file(DEV_ORIGIN, current_url)

@@ -68,6 +68,24 @@ class DevPreviewDeploymentTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "file changed"):
             preview.deploy(self.candidate, self.preflight, execute=False)
 
+    def test_initial_poc_preflight_keeps_legacy_clean_url_routes(self):
+        report = preview.hosting.load(self.candidate / "build-report.json")
+        report["devBaseFiles"] = [
+            {"path": "index.html", "sha256": "a" * 64, "bytes": 3},
+            {"path": "404.html", "sha256": "b" * 64, "bytes": 4},
+        ]
+        (self.candidate / "build-report.json").write_text(json.dumps(report))
+        requested = []
+
+        def respond(origin, path):
+            requested.append(path)
+            return (200, {}, 3, "a" * 64) if path == "/" else (200, {}, 4, "b" * 64)
+
+        with patch.object(preview.verifier, "request_file", side_effect=respond):
+            receipt = preview.preflight(self.candidate)
+        self.assertEqual(receipt["checkedFiles"], 2)
+        self.assertEqual(requested, ["/", "/404"])
+
 
 class DevPocAssetTest(unittest.TestCase):
     def test_rejects_missing_or_changed_archived_audio(self):
