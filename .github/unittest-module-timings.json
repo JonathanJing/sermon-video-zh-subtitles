@@ -1,0 +1,714 @@
+{
+  "modules": {
+    "test_accounting_observability": {
+      "seconds": 0.704,
+      "tests": 6
+    },
+    "test_accounting_retry_safety": {
+      "seconds": 0.017,
+      "tests": 6
+    },
+    "test_apply_cloud_run_realtime_update_plan": {
+      "seconds": 0.005,
+      "tests": 6
+    },
+    "test_archive_audio_integrity": {
+      "seconds": 0.796,
+      "tests": 8
+    },
+    "test_assemble_adaptive_phrase_audio": {
+      "seconds": 0.013,
+      "tests": 5
+    },
+    "test_assemble_multilingual_hosting": {
+      "seconds": 0.273,
+      "tests": 6
+    },
+    "test_audit_production_goal_readiness": {
+      "seconds": 0.059,
+      "tests": 14
+    },
+    "test_backend_app": {
+      "seconds": 0.007,
+      "tests": 40
+    },
+    "test_backend_manifest": {
+      "seconds": 0.001,
+      "tests": 3
+    },
+    "test_backend_storage": {
+      "seconds": 0.0,
+      "tests": 1
+    },
+    "test_backend_worker": {
+      "seconds": 0.0,
+      "tests": 7
+    },
+    "test_branch_promotion_policy": {
+      "seconds": 0.685,
+      "tests": 2
+    },
+    "test_build_english_source_package": {
+      "seconds": 0.187,
+      "tests": 7
+    },
+    "test_build_four_layer_tracker_snapshot": {
+      "seconds": 0.009,
+      "tests": 10
+    },
+    "test_build_local_sunday_manifest_evidence": {
+      "seconds": 0.036,
+      "tests": 2
+    },
+    "test_build_multilingual_catalog": {
+      "seconds": 0.015,
+      "tests": 4
+    },
+    "test_build_multilingual_voice_preview": {
+      "seconds": 0.05,
+      "tests": 3
+    },
+    "test_build_multistage_post_live_timeline": {
+      "seconds": 0.027,
+      "tests": 2
+    },
+    "test_build_no_caption_asr_sample_chain": {
+      "seconds": 0.005,
+      "tests": 2
+    },
+    "test_build_playback_simulation": {
+      "seconds": 0.007,
+      "tests": 12
+    },
+    "test_build_post_live_timeline": {
+      "seconds": 0.028,
+      "tests": 2
+    },
+    "test_build_scripture_index": {
+      "seconds": 0.0,
+      "tests": 1
+    },
+    "test_build_sermon_poster": {
+      "seconds": 0.003,
+      "tests": 6
+    },
+    "test_build_sermon_reading_edition_with_openai": {
+      "seconds": 0.186,
+      "tests": 23
+    },
+    "test_build_target_language_audio_package": {
+      "seconds": 21.226,
+      "tests": 37
+    },
+    "test_clip_timeline_map": {
+      "seconds": 0.001,
+      "tests": 3
+    },
+    "test_cloud_run_jobs": {
+      "seconds": 0.0,
+      "tests": 2
+    },
+    "test_collect_production_evidence_matrix": {
+      "seconds": 0.038,
+      "tests": 69
+    },
+    "test_compact_formal_target_audio": {
+      "seconds": 2.393,
+      "tests": 2
+    },
+    "test_configure_live_source_scheduler": {
+      "seconds": 0.056,
+      "tests": 11
+    },
+    "test_contextual_name_rules": {
+      "seconds": 0.002,
+      "tests": 6
+    },
+    "test_cuv_audit_source_media": {
+      "seconds": 0.375,
+      "tests": 4
+    },
+    "test_cuv_dubbing_gate": {
+      "seconds": 0.002,
+      "tests": 2
+    },
+    "test_cuv_incremental_reuse": {
+      "seconds": 1.896,
+      "tests": 2
+    },
+    "test_cuv_preflight": {
+      "seconds": 0.406,
+      "tests": 9
+    },
+    "test_cuv_scripture": {
+      "seconds": 0.314,
+      "tests": 9
+    },
+    "test_cuv_selection_batch": {
+      "seconds": 0.377,
+      "tests": 7
+    },
+    "test_cuv_selection_offsets": {
+      "seconds": 1.272,
+      "tests": 11
+    },
+    "test_cuv_timing_review_repair": {
+      "seconds": 0.009,
+      "tests": 5
+    },
+    "test_cuv_visual_context": {
+      "seconds": 0.042,
+      "tests": 4
+    },
+    "test_cuv_weekly_replay": {
+      "seconds": 0.001,
+      "tests": 5
+    },
+    "test_export_playback_captions": {
+      "seconds": 0.003,
+      "tests": 5
+    },
+    "test_export_saturday_live_context": {
+      "seconds": 0.223,
+      "tests": 4
+    },
+    "test_extract_english_pause_evidence_poc": {
+      "seconds": 0.002,
+      "tests": 1
+    },
+    "test_finalize_multilingual_fragment_poc": {
+      "seconds": 0.018,
+      "tests": 3
+    },
+    "test_four_layer_measure": {
+      "seconds": 1.119,
+      "tests": 10
+    },
+    "test_four_layer_progress": {
+      "seconds": 0.001,
+      "tests": 3
+    },
+    "test_generate_multilingual_fragment_poc": {
+      "seconds": 0.015,
+      "tests": 4
+    },
+    "test_generate_notes_with_openai": {
+      "seconds": 0.002,
+      "tests": 10
+    },
+    "test_generation_progress": {
+      "seconds": 0.004,
+      "tests": 7
+    },
+    "test_ios_ci_route": {
+      "seconds": 0.656,
+      "tests": 3
+    },
+    "test_judge_english_source_for_translation": {
+      "seconds": 0.019,
+      "tests": 5
+    },
+    "test_language_review_plugins": {
+      "seconds": 0.011,
+      "tests": 11
+    },
+    "test_lease_fencing": {
+      "seconds": 3.037,
+      "tests": 15
+    },
+    "test_leases": {
+      "seconds": 0.006,
+      "tests": 2
+    },
+    "test_live_source_monitor": {
+      "seconds": 2.654,
+      "tests": 26
+    },
+    "test_logging_reliability": {
+      "seconds": 0.133,
+      "tests": 9
+    },
+    "test_mfa_alignment": {
+      "seconds": 0.06,
+      "tests": 12
+    },
+    "test_mfa_backend": {
+      "seconds": 0.006,
+      "tests": 10
+    },
+    "test_mfa_pipeline_integration": {
+      "seconds": 0.001,
+      "tests": 3
+    },
+    "test_mfa_spark": {
+      "seconds": 0.189,
+      "tests": 7
+    },
+    "test_multilingual_dev_app": {
+      "seconds": 0.003,
+      "tests": 9
+    },
+    "test_multilingual_dev_preview": {
+      "seconds": 0.095,
+      "tests": 8
+    },
+    "test_observability": {
+      "seconds": 0.0,
+      "tests": 5
+    },
+    "test_offline_live_sermon_subtitles": {
+      "seconds": 0.002,
+      "tests": 20
+    },
+    "test_package_multilingual_voice_demos": {
+      "seconds": 0.002,
+      "tests": 2
+    },
+    "test_parallel_model_execution": {
+      "seconds": 0.227,
+      "tests": 4
+    },
+    "test_parallel_reading": {
+      "seconds": 0.385,
+      "tests": 9
+    },
+    "test_plan_gcs_sunday_manifest_publish": {
+      "seconds": 0.017,
+      "tests": 6
+    },
+    "test_post_live_run_status": {
+      "seconds": 0.0,
+      "tests": 2
+    },
+    "test_prepare_cloud_run_realtime_update_plan": {
+      "seconds": 0.001,
+      "tests": 2
+    },
+    "test_prepare_live_link_playback": {
+      "seconds": 0.004,
+      "tests": 11
+    },
+    "test_prepare_longform_adaptive_prosody_poc": {
+      "seconds": 0.004,
+      "tests": 1
+    },
+    "test_prepare_multilingual_weekly_plan": {
+      "seconds": 0.003,
+      "tests": 6
+    },
+    "test_prepare_sentence_interpretation_shadow": {
+      "seconds": 0.013,
+      "tests": 3
+    },
+    "test_prepare_target_language_speech_job": {
+      "seconds": 1.939,
+      "tests": 23
+    },
+    "test_produce_target_language_candidate": {
+      "seconds": 0.354,
+      "tests": 9
+    },
+    "test_production_logging": {
+      "seconds": 0.277,
+      "tests": 14
+    },
+    "test_promote_sunday_manifest": {
+      "seconds": 2.145,
+      "tests": 10
+    },
+    "test_public_admin_boundary": {
+      "seconds": 0.008,
+      "tests": 5
+    },
+    "test_publish_post_live_sunday_manifest": {
+      "seconds": 0.004,
+      "tests": 1
+    },
+    "test_reading_accounting": {
+      "seconds": 0.195,
+      "tests": 8
+    },
+    "test_realtime": {
+      "seconds": 0.004,
+      "tests": 17
+    },
+    "test_realtime_media_worker": {
+      "seconds": 0.01,
+      "tests": 24
+    },
+    "test_realtime_openai_smoke_test": {
+      "seconds": 0.003,
+      "tests": 11
+    },
+    "test_realtime_stabilized_smoke_test": {
+      "seconds": 0.002,
+      "tests": 3
+    },
+    "test_refresh_multilingual_hosting_with_legacy": {
+      "seconds": 0.112,
+      "tests": 2
+    },
+    "test_refresh_production_preflight_evidence": {
+      "seconds": 0.012,
+      "tests": 12
+    },
+    "test_render_formal_target_language_speech": {
+      "seconds": 11.154,
+      "tests": 14
+    },
+    "test_render_mobile_pdf_from_srt": {
+      "seconds": 0.362,
+      "tests": 18
+    },
+    "test_render_multilingual_voice_demos": {
+      "seconds": 0.0,
+      "tests": 4
+    },
+    "test_render_sentence_interpretation_tts": {
+      "seconds": 0.012,
+      "tests": 4
+    },
+    "test_render_sermon_interpretation_pdf": {
+      "seconds": 1.377,
+      "tests": 12
+    },
+    "test_render_speculative_target_language_speech": {
+      "seconds": 3.731,
+      "tests": 11
+    },
+    "test_render_vietnamese_voice_demos": {
+      "seconds": 0.0,
+      "tests": 3
+    },
+    "test_review_target_language_audio": {
+      "seconds": 0.003,
+      "tests": 2
+    },
+    "test_run_cloud_run_realtime_preflight": {
+      "seconds": 0.002,
+      "tests": 5
+    },
+    "test_run_codex_local_sermon_production": {
+      "seconds": 1.187,
+      "tests": 13
+    },
+    "test_run_deployed_webrtc_session_smoke": {
+      "seconds": 0.002,
+      "tests": 6
+    },
+    "test_run_internal_prosody_poc": {
+      "seconds": 0.004,
+      "tests": 3
+    },
+    "test_run_local_post_live_download": {
+      "seconds": 0.002,
+      "tests": 4
+    },
+    "test_run_multilingual_cd": {
+      "seconds": 0.01,
+      "tests": 5
+    },
+    "test_run_multilingual_prosody_poc": {
+      "seconds": 0.006,
+      "tests": 4
+    },
+    "test_run_no_caption_archive_asr_route": {
+      "seconds": 0.006,
+      "tests": 5
+    },
+    "test_run_offline_archive_preflight": {
+      "seconds": 0.001,
+      "tests": 5
+    },
+    "test_run_offline_asr_fallback_smoke": {
+      "seconds": 0.001,
+      "tests": 2
+    },
+    "test_run_openai_model_access_preflight": {
+      "seconds": 0.001,
+      "tests": 6
+    },
+    "test_run_post_live_subtitle_generation": {
+      "seconds": 0.449,
+      "tests": 24
+    },
+    "test_run_post_live_timeline_job": {
+      "seconds": 1.332,
+      "tests": 13
+    },
+    "test_run_realtime_audio_source_preflight": {
+      "seconds": 0.003,
+      "tests": 6
+    },
+    "test_run_realtime_live_session": {
+      "seconds": 0.006,
+      "tests": 7
+    },
+    "test_run_realtime_public_sse_smoke": {
+      "seconds": 0.006,
+      "tests": 10
+    },
+    "test_run_realtime_stabilizer_loop": {
+      "seconds": 0.003,
+      "tests": 8
+    },
+    "test_run_realtime_stable_reconnect_smoke": {
+      "seconds": 0.002,
+      "tests": 1
+    },
+    "test_run_sentence_interpretation_models": {
+      "seconds": 0.016,
+      "tests": 3
+    },
+    "test_run_sermon_production_supervisor_agent": {
+      "seconds": 0.003,
+      "tests": 10
+    },
+    "test_run_sunday_evidence_bundle": {
+      "seconds": 0.008,
+      "tests": 16
+    },
+    "test_run_target_language_models": {
+      "seconds": 0.114,
+      "tests": 11
+    },
+    "test_run_unittest_ci": {
+      "seconds": 0.0,
+      "tests": 2
+    },
+    "test_run_voxtral_tts_poc": {
+      "seconds": 0.001,
+      "tests": 5
+    },
+    "test_saturday_harness": {
+      "seconds": 0.016,
+      "tests": 16
+    },
+    "test_screen_multilingual_voice_demos": {
+      "seconds": 0.001,
+      "tests": 4
+    },
+    "test_screen_sentence_interpretation_tts": {
+      "seconds": 0.003,
+      "tests": 2
+    },
+    "test_screen_target_language_audio_units": {
+      "seconds": 0.006,
+      "tests": 3
+    },
+    "test_scripture_service": {
+      "seconds": 0.049,
+      "tests": 2
+    },
+    "test_series_terminology": {
+      "seconds": 0.012,
+      "tests": 9
+    },
+    "test_sermon_accounting": {
+      "seconds": 2.033,
+      "tests": 16
+    },
+    "test_sermon_agents_api": {
+      "seconds": 0.155,
+      "tests": 32
+    },
+    "test_sermon_agents_supervisor": {
+      "seconds": 0.216,
+      "tests": 43
+    },
+    "test_sermon_cuv_translation": {
+      "seconds": 32.713,
+      "tests": 48
+    },
+    "test_sermon_end_to_end": {
+      "seconds": 0.041,
+      "tests": 17
+    },
+    "test_sermon_execution_harness": {
+      "seconds": 10.732,
+      "tests": 11
+    },
+    "test_sermon_logs": {
+      "seconds": 1.132,
+      "tests": 5
+    },
+    "test_sermon_observability": {
+      "seconds": 3.672,
+      "tests": 7
+    },
+    "test_sermon_pipeline": {
+      "seconds": 0.013,
+      "tests": 15
+    },
+    "test_sermon_production_supervisor": {
+      "seconds": 0.054,
+      "tests": 29
+    },
+    "test_sermon_release_workflow": {
+      "seconds": 0.333,
+      "tests": 15
+    },
+    "test_sermon_sentence_interpretation": {
+      "seconds": 0.018,
+      "tests": 23
+    },
+    "test_sermon_source_text_review": {
+      "seconds": 0.045,
+      "tests": 24
+    },
+    "test_sermon_temporal": {
+      "seconds": 0.007,
+      "tests": 7
+    },
+    "test_sermon_trace_export": {
+      "seconds": 0.119,
+      "tests": 6
+    },
+    "test_sermon_workflow_evidence": {
+      "seconds": 0.023,
+      "tests": 9
+    },
+    "test_sermon_workflow_jobs": {
+      "seconds": 3.449,
+      "tests": 12
+    },
+    "test_serve_milmmt_v41_local": {
+      "seconds": 2.484,
+      "tests": 21
+    },
+    "test_source_text_review_routing": {
+      "seconds": 4.058,
+      "tests": 15
+    },
+    "test_stabilize_realtime_deltas_with_openai": {
+      "seconds": 0.001,
+      "tests": 17
+    },
+    "test_stage_formal_multilingual_dev": {
+      "seconds": 5.861,
+      "tests": 12
+    },
+    "test_stage_multilingual_fragment_poc_firebase": {
+      "seconds": 0.014,
+      "tests": 1
+    },
+    "test_stage_voice_demo_dev": {
+      "seconds": 0.112,
+      "tests": 3
+    },
+    "test_supervisor_owner_death": {
+      "seconds": 0.571,
+      "tests": 3
+    },
+    "test_target_language_policy": {
+      "seconds": 0.022,
+      "tests": 5
+    },
+    "test_target_language_policy_v2": {
+      "seconds": 0.005,
+      "tests": 4
+    },
+    "test_timeline_accounting": {
+      "seconds": 0.393,
+      "tests": 2
+    },
+    "test_timeline_recovery_and_handoff": {
+      "seconds": 2.173,
+      "tests": 12
+    },
+    "test_tongxing_interface_locales": {
+      "seconds": 0.004,
+      "tests": 1
+    },
+    "test_translate_playback_with_openai": {
+      "seconds": 0.006,
+      "tests": 20
+    },
+    "test_validate_cloud_run_realtime_config": {
+      "seconds": 0.002,
+      "tests": 6
+    },
+    "test_validate_offline_chain": {
+      "seconds": 0.018,
+      "tests": 20
+    },
+    "test_validate_production_readiness": {
+      "seconds": 0.012,
+      "tests": 4
+    },
+    "test_validate_public_caption_view_runtime": {
+      "seconds": 0.206,
+      "tests": 2
+    },
+    "test_validate_realtime_handoff": {
+      "seconds": 0.007,
+      "tests": 7
+    },
+    "test_validate_realtime_session": {
+      "seconds": 0.003,
+      "tests": 24
+    },
+    "test_validate_server_realtime_contract": {
+      "seconds": 0.001,
+      "tests": 2
+    },
+    "test_validate_stable_correction_contract": {
+      "seconds": 0.001,
+      "tests": 2
+    },
+    "test_validate_sunday_manifest": {
+      "seconds": 0.01,
+      "tests": 10
+    },
+    "test_validate_web_realtime_contract": {
+      "seconds": 0.524,
+      "tests": 3
+    },
+    "test_verify_clip_review_timeline": {
+      "seconds": 0.0,
+      "tests": 2
+    },
+    "test_verify_multilingual_hosting": {
+      "seconds": 0.205,
+      "tests": 9
+    },
+    "test_web_app_realtime_contract": {
+      "seconds": 0.002,
+      "tests": 13
+    },
+    "test_write_1130_live_realtime_run_plan": {
+      "seconds": 0.001,
+      "tests": 2
+    },
+    "test_write_model_access_recovery_plan": {
+      "seconds": 0.002,
+      "tests": 3
+    },
+    "test_write_no_caption_asr_fallback_plan": {
+      "seconds": 0.001,
+      "tests": 2
+    },
+    "test_write_operator_approval_bundle": {
+      "seconds": 0.004,
+      "tests": 3
+    },
+    "test_write_production_go_live_sequence": {
+      "seconds": 0.012,
+      "tests": 6
+    },
+    "test_write_production_unblock_plan": {
+      "seconds": 0.001,
+      "tests": 4
+    },
+    "test_write_worker_caption_first_plan": {
+      "seconds": 0.001,
+      "tests": 4
+    },
+    "test_youtube_data_api": {
+      "seconds": 0.0,
+      "tests": 4
+    }
+  },
+  "schemaVersion": 1,
+  "source": "Full root suite on local macOS, Python 3.13, 2026-09-24, origin/dev ba33052; durations guide CI sharding only"
+}
