@@ -47,8 +47,9 @@ def request_bytes(origin: str, path: str, *, opener=urlopen, range_first=False) 
         return status, returned, data
 
 
-def request_file(origin: str, path: str, *, opener=urlopen) -> tuple[int, dict, int, str]:
-    with opener(Request(origin + path, method="GET"), timeout=180) as response:
+def request_file(origin: str, path: str, *, opener=urlopen,
+                 request_headers: dict[str, str] | None = None) -> tuple[int, dict, int, str]:
+    with opener(Request(origin + path, headers=request_headers or {}, method="GET"), timeout=180) as response:
         final, expected = urlparse(response.geturl()), urlparse(origin)
         if (final.scheme, final.netloc, final.path) != (
                 expected.scheme, expected.netloc, path):

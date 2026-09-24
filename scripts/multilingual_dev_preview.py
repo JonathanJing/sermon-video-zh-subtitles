@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime, timezone
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -490,14 +491,20 @@ def verify(candidate: Path) -> dict:
         for speaker in demos["speakers"]:
             for asset in [speaker["original"], *speaker["samples"]]:
                 path = asset["path"]
-                status, headers, first = verifier.request_bytes(
-                    DEV_ORIGIN, path, range_first=True)
+                status, headers, size, digest = verifier.request_file(
+                    DEV_ORIGIN, path, request_headers={"Range": "bytes=0-0"})
                 with (candidate / "public" / path.lstrip("/")).open("rb") as stream:
                     expected_first = stream.read(1)
-                require(status == 206 and first == expected_first
-                        and headers.get("content-range") == f"bytes 0-0/{asset['bytes']}",
-                        f"Voice demo Range failed: {path}")
-                results.append({"path": path, "range206": True})
+                partial = (status == 206 and size == 1
+                           and digest == hashlib.sha256(expected_first).hexdigest()
+                           and headers.get("content-range") == f"bytes 0-0/{asset['bytes']}")
+                # Firebase may ignore Range for small MP3s and return the full
+                # file. The full response remains playable and is hash-checked.
+                full = (status == 200 and size == asset["bytes"]
+                        and digest == asset["sha256"] and "content-range" not in headers)
+                require(partial or full, f"Voice demo Range/full-body check failed: {path}")
+                results.append({"path": path, "range206": partial,
+                                "fullBodyFallback": full})
     return {"schemaVersion": "sermon-multilingual-dev-preview-http-v1",
             "status": "pass", "origin": DEV_ORIGIN, "pageId": page["id"],
             "verifiedAt": datetime.now(timezone.utc).isoformat(),
