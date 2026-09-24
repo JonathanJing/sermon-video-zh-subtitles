@@ -991,7 +991,7 @@ private struct VoiceDemoSection: View {
                         assetButton(speaker.original, title: localization.text("讲员原始英文片段"))
                             .accessibilityIdentifier("voice-demo-original-\(speaker.id)")
                         DisclosureGroup(localization.text("查看英文机器转写参考")) {
-                            Text(speaker.original.text).font(.footnote)
+                            sourceText(speaker.original.text, language: "en").font(.footnote)
                         }
                         if let source = speaker.original.sourceUrl.flatMap(URL.init(string:)) {
                             Button(localization.text("原声来源")) { openURL(source) }
@@ -1001,7 +1001,7 @@ private struct VoiceDemoSection: View {
                             assetButton(sample, title: "\(languageName(sample.locale)) · \(localization.text("AI 合成样音"))")
                                 .accessibilityIdentifier("voice-demo-sample-\(speaker.id)-\(sample.locale ?? "")")
                             DisclosureGroup(localization.text("查看样音文稿")) {
-                                Text(sample.text).font(.footnote)
+                                sourceText(sample.text, language: sample.locale ?? "en").font(.footnote)
                             }
                         }
                         Text(localization.text("样音待人工听审，不代表正式证道音轨。"))
