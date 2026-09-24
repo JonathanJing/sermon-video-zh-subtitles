@@ -23,7 +23,7 @@ from scripts import four_layer_measure as measure
 from scripts import sermon_accounting as accounting
 
 
-SCHEMA = "sermon-public-tracker-snapshot-v1"
+SCHEMA = "sermon-public-tracker-snapshot-v2"
 VIDEO_ID = re.compile(r"[A-Za-z0-9_-]{11}")
 MAX_BYTES = 512 * 1024
 MAX_ELAPSED_SECONDS = 366 * 24 * 60 * 60

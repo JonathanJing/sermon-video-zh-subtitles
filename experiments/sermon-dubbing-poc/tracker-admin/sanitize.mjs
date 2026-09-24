@@ -34,17 +34,19 @@ function publicUrl(value, source = false) {
 }
 
 export function sanitizeSnapshot(input) {
-  if (!input || input.schemaVersion !== 'sermon-public-tracker-snapshot-v1'
+  if (!input || !['sermon-public-tracker-snapshot-v1', 'sermon-public-tracker-snapshot-v2'].includes(input.schemaVersion)
       || !PAGE_ID.test(input.pageId || '') || !['dev', 'production'].includes(input.target)
       || !Array.isArray(input.locales) || !Array.isArray(input.steps)
       || !input.source || !input.progress || input.readOnly !== true) {
     throw new Error('invalid tracker snapshot');
   }
   if (Buffer.byteLength(JSON.stringify(input), 'utf8') > 512 * 1024) throw new Error('snapshot too large');
+  const hasElapsed = input.schemaVersion === 'sermon-public-tracker-snapshot-v2';
   const source = input.source;
   const progress = input.progress;
   return {
-    schemaVersion: 'sermon-public-tracker-snapshot-v1', pageId: input.pageId,
+    // Upgrade existing v1 records to v2; missing elapsed counters remain null.
+    schemaVersion: 'sermon-public-tracker-snapshot-v2', pageId: input.pageId,
     target: input.target,
     serviceDate: /^\d{4}-\d\d-\d\d$/.test(input.serviceDate || '') ? input.serviceDate : null,
     generatedAt: stamp(input.generatedAt), ledgerUpdatedAt: stamp(input.ledgerUpdatedAt),
@@ -107,9 +109,9 @@ export function sanitizeSnapshot(input) {
         lastExecutionStatus: enumValue(step.timing?.lastExecutionStatus, ['completed', 'failed'], null),
         lastExecutionAt: stamp(step.timing?.lastExecutionAt),
         openExecution: step.timing?.openExecution === true,
-        openExecutionElapsedSeconds: step.timing?.openExecution === true
+        openExecutionElapsedSeconds: hasElapsed && step.timing?.openExecution === true
           ? elapsed(step.timing?.openExecutionElapsedSeconds) : null,
-        statusElapsedSeconds: ['running', 'waiting_review'].includes(step.status)
+        statusElapsedSeconds: hasElapsed && ['running', 'waiting_review'].includes(step.status)
           ? elapsed(step.timing?.statusElapsedSeconds) : null,
         closedReviewWaits: number(step.timing?.closedReviewWaits),
         operatorReviewWaitSeconds: step.timing?.operatorReviewWaitSeconds == null ? null : number(step.timing.operatorReviewWaitSeconds),

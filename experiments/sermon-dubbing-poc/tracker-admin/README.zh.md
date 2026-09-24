@@ -34,7 +34,7 @@ firebase deploy --only hosting:sermonTrackerAdmin --project YOUR_PROJECT
 
 ## 更新每周状态
 
-本地工作账本由[四层 tracker](../../../scripts/four_layer_progress.py)维护；[快照生成器](../../../scripts/build_four_layer_tracker_snapshot.py)汇总账本、源监控、同语言 Release Package、可选旧中文目录、HTTP 收据和声纹证据。正式 producer 尚未全部自动写入账本，所以未有收据的阶段需操作者按真实证据更新。`source-video-state.private.json` 保存在快照旁边的忽略 Git 工作目录，用于比较同一周视频 ID；此文件**不得放进 Hosting public/dist 或 Firestore**。
+本地工作账本由[四层 tracker](../../../scripts/four_layer_progress.py)维护；[快照生成器](../../../scripts/build_four_layer_tracker_snapshot.py)汇总账本、源监控、同语言 Release Package、可选旧中文目录、HTTP 收据和声纹证据。当前公开快照为 `sermon-public-tracker-snapshot-v2`，增加进行中状态与未结束执行的有界秒数；旧版 v1 快照仍可在网页读取，发布器投影会将其迁移为 v2，缺少的计时字段保持未知。正式 producer 尚未全部自动写入账本，所以未有收据的阶段需操作者按真实证据更新。`source-video-state.private.json` 保存在快照旁边的忽略 Git 工作目录，用于比较同一周视频 ID；此文件**不得放进 Hosting public/dist 或 Firestore**。
 
 本轮之后的片段 POC 用[四层 Tracker 文档](../../../docs/four-layer-production-tracker.zh.md)中的 `init-poc` 建立准确 `pageId`、原视频及候选窗口绑定的新账本；它不授予人工范围批准。耗时审计使用[四层计时入口](../../../scripts/four_layer_measure.py)：首批正式 producer 加 `--progress-ledger` 即自动写执行 span；未接入的命令仍用 `run --step` 包装。`audit` 只读地将私有 `accounting/events.jsonl` 关联到检查点，并列出缺少计时的已完成步骤。公开 Firebase 页面在 Layer 1、各语言 Layer 2–3、联合 Layer 4 和逐项列表显示同一检查点的实测执行累计、重试／失败次数，以及有开始事件时截至快照的进行中状态和未结束执行时长；未记录的耗时明确显示未知。状态持续时间不等于实际执行或人工审阅时间。页面不上传模型请求细节、私有开始时间或日志。人工审核等待需在发出和收到审核时及时更新 Tracker 状态；旧产物的文件时间不能补作实测耗时。
 

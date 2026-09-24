@@ -118,7 +118,7 @@ async function start() {
   const recent = query(collection(db, 'sermonTrackerRuns'), orderBy('updatedAt', 'desc'), limit(32));
   onSnapshot(recent, (result) => {
     runs = result.docs.map((doc) => doc.data().snapshot)
-      .filter((item) => item && item.schemaVersion === 'sermon-public-tracker-snapshot-v1');
+      .filter((item) => item && ['sermon-public-tracker-snapshot-v1', 'sermon-public-tracker-snapshot-v2'].includes(item.schemaVersion));
     connection('实时同步', 'Live sync', 'ok');
     renderRunList();
   }, () => {

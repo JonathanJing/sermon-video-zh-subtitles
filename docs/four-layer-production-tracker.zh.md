@@ -98,7 +98,7 @@ python scripts/four_layer_progress.py artifacts/my-multilingual-run/four-layer-p
   --layer 2 --locale ko --reason '韩语批准译文修订'
 ```
 
-上述首批正式 producer 已支持 `--progress-ledger`，也可对同一周运行设置 `SERMON_FOUR_LAYER_LEDGER`。它们会在账本旁的私有 `accounting/events.jsonl` 写账本运行身份、page ID／语言／目标环境、开始／结束 span、失败类型、输入单元数、组数及相关 JSON／策略／模型标识 hash；不会自动修改账本状态或授予人工批准。审计只采纳运行身份匹配的事件；同目录重建账本后，旧日志保留但不计入新页面。未带身份的旧计时记录保持未知。Tracker 公开快照按检查点显示累计实测执行耗时（含失败重试）、未结束执行记录截至快照的时长，以及 `running`／`waiting_review` 账本状态持续时间；后两项不是已完成执行耗时，也不证明进程或审核者仍在线。快照不公开私有开始时间、hash、原文、路径或错误消息。设备／现场验收按语言独立记录，须以各自收据为准。制作正式环境时把 `--target dev` 改为 `--target production`，重新建账本并重新核验，不能把 Dev 状态原样晋升。
+上述首批正式 producer 已支持 `--progress-ledger`，也可对同一周运行设置 `SERMON_FOUR_LAYER_LEDGER`。它们会在账本旁的私有 `accounting/events.jsonl` 写账本运行身份、page ID／语言／目标环境、开始／结束 span、失败类型、输入单元数、组数及相关 JSON／策略／模型标识 hash；不会自动修改账本状态或授予人工批准。审计只采纳运行身份匹配的事件；同目录重建账本后，旧日志保留但不计入新页面。未带身份的旧计时记录保持未知。Tracker 公开快照 v2 按检查点显示累计实测执行耗时（含失败重试）、未结束执行记录截至快照的时长，以及 `running`／`waiting_review` 账本状态持续时间；旧版 v1 快照仍可读取，缺少的活动计时保持未知。后两项不是已完成执行耗时，也不证明进程或审核者仍在线。快照不公开私有开始时间、hash、原文、路径或错误消息。设备／现场验收按语言独立记录，须以各自收据为准。制作正式环境时把 `--target dev` 改为 `--target production`，重新建账本并重新核验，不能把 Dev 状态原样晋升。
 
 ### 从现在开始保留真实耗时
 

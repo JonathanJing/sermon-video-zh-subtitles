@@ -43,7 +43,7 @@ test('withdrawn delivery survives the public projection', () => {
 });
 
 test('public projection keeps bounded timing counters without private workload hashes', () => {
-  const snapshot = { schemaVersion: 'sermon-public-tracker-snapshot-v1',
+  const snapshot = { schemaVersion: 'sermon-public-tracker-snapshot-v2',
     pageId: 'week-2026-09-20', target: 'dev', locales: [], source: {}, progress: {},
     timingCoverage: { measuredStepCount: 1, damagedAccountingRows: 0 }, readOnly: true,
     steps: [{ id: 'L2-03@ko', layer: 2, locale: 'ko', status: 'pending',
@@ -64,7 +64,7 @@ test('public projection keeps bounded timing counters without private workload h
 });
 
 test('running duration is kept only with matching public status and bounded seconds', () => {
-  const base = { schemaVersion: 'sermon-public-tracker-snapshot-v1', pageId: 'week-2026-09-20',
+  const base = { schemaVersion: 'sermon-public-tracker-snapshot-v2', pageId: 'week-2026-09-20',
     target: 'dev', locales: [], source: {}, progress: {}, readOnly: true };
   const step = { id: 'L3-02@ko', layer: 3, locale: 'ko', status: 'running',
     timing: { openExecution: true, openExecutionElapsedSeconds: 92, statusElapsedSeconds: 500 } };
@@ -74,6 +74,20 @@ test('running duration is kept only with matching public status and bounded seco
   assert.equal(validateSnapshot({ ...base, steps: [{ ...step, timing: { ...step.timing,
     openExecutionElapsedSeconds: Number.MAX_SAFE_INTEGER } }] })
     .steps[0].timing.openExecutionElapsedSeconds, null);
+});
+
+test('v1 snapshots migrate without inventing active elapsed counters', () => {
+  const old = { schemaVersion: 'sermon-public-tracker-snapshot-v1', pageId: 'week-2026-09-20',
+    target: 'dev', locales: [], source: {}, progress: {}, readOnly: true,
+    steps: [{ id: 'L3-02@ko', layer: 3, locale: 'ko', status: 'running',
+      timing: { measuredExecutionSeconds: 12.5, openExecution: true,
+        openExecutionElapsedSeconds: 95, statusElapsedSeconds: 480 } }] };
+  const migrated = validateSnapshot(old);
+  assert.equal(migrated.schemaVersion, 'sermon-public-tracker-snapshot-v2');
+  assert.equal(migrated.steps[0].timing.measuredExecutionSeconds, 12.5);
+  assert.equal(migrated.steps[0].timing.openExecutionElapsedSeconds, null);
+  assert.equal(migrated.steps[0].timing.statusElapsedSeconds, null);
+  assert.throws(() => validateSnapshot({ ...old, schemaVersion: 'sermon-public-tracker-snapshot-v3' }), /invalid/);
 });
 
 test('step timing labels separate measured attempts from open and status time', () => {

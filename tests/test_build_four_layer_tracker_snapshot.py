@@ -25,6 +25,7 @@ class TrackerSnapshotTest(unittest.TestCase):
         first = tracker.build_snapshot(self.ledger, monitor=self.monitor,
                                        source_page_url="https://www.marinerschurch.org/irvine/",
                                        service_date="2026-09-20")
+        self.assertEqual(first["schemaVersion"], "sermon-public-tracker-snapshot-v2")
         self.assertEqual(first["source"]["videoChange"], "first_seen")
         self.assertNotIn("videoId", first["source"])
         self.assertNotIn("videoUrl", first["source"])

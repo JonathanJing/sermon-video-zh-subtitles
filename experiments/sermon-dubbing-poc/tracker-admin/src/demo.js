@@ -5,7 +5,7 @@ const row = (layer, locale, complete, total) => ({
 const acceptance = { device: { status: 'not_run' }, venue: { status: 'not_run' } };
 
 export const demoSnapshot = {
-  schemaVersion: 'sermon-public-tracker-snapshot-v1',
+  schemaVersion: 'sermon-public-tracker-snapshot-v2',
   pageId: 'demo-2026-09-20', target: 'dev', serviceDate: '2026-09-20',
   generatedAt: now, ledgerUpdatedAt: now, readOnly: true,
   source: { inputPageUrl: 'https://www.marinerschurch.org/irvine/',

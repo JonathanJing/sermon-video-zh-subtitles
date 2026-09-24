@@ -397,7 +397,7 @@ function renderSteps(steps, filter) {
 }
 
 export function renderSnapshot(snapshot) {
-  if (!snapshot || snapshot.schemaVersion !== 'sermon-public-tracker-snapshot-v1') {
+  if (!snapshot || !['sermon-public-tracker-snapshot-v1', 'sermon-public-tracker-snapshot-v2'].includes(snapshot.schemaVersion)) {
     throw new Error('Unsupported tracker snapshot');
   }
   byId('empty').hidden = true;
