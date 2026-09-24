@@ -54,13 +54,23 @@ def inside(root: Path, relative: str) -> Path:
     return resolved
 
 
+def snapshot_path(root: Path, name: str, repository_relative: str) -> Path:
+    local = root / name
+    if local.is_file():
+        return local
+    return Path(__file__).resolve().parents[1] / repository_relative
+
+
 def validate(root: Path, *, decode: bool = True) -> tuple[dict[str, Any],
-                                                           dict[str, Any], dict[str, Any]]:
+                                                           dict[str, Any], dict[str, Any], Path, Path,
+                                                           list[str]]:
     root = root.resolve()
     delivery_path = root / "delivery-manifest.json"
     delivery = read_json(delivery_path)
-    script = read_json(root / "demo-script.json")
-    registry_path = root / "registry.json"
+    script_path = snapshot_path(root, "demo-script.json",
+                                "experiments/sermon-dubbing-poc/multilingual-voice-demo-script-v1.json")
+    registry_path = snapshot_path(root, "registry.json", "config/speaker-voice-registry.json")
+    script = read_json(script_path)
     registry = read_json(registry_path)
     require(delivery.get("schemaVersion") == DELIVERY_SCHEMA
             and delivery.get("status") == "encoded_and_fully_decoded"
@@ -76,6 +86,8 @@ def validate(root: Path, *, decode: bool = True) -> tuple[dict[str, Any],
     sources = delivery.get("sourceManifests")
     require(isinstance(sources, list) and len(sources) == 2,
             "Expected both Qwen and Vietnamese voice manifests")
+    source_tracks: dict[tuple[str, str], dict[str, Any]] = {}
+    source_registry_hashes = set()
     for record in sources:
         source_path = inside(root, record["path"])
         require(source_path.is_file() and sha256(source_path) == record["sha256"],
@@ -83,6 +95,13 @@ def validate(root: Path, *, decode: bool = True) -> tuple[dict[str, Any],
         source = read_json(source_path)
         require(source.get("scriptJsonSha256") == json_sha256(script),
                 "Voice source manifest uses another audition script")
+        require(isinstance(source.get("registryJsonSha256"), str),
+                "Voice source manifest lacks registry provenance")
+        source_registry_hashes.add(source["registryJsonSha256"])
+        for track in source.get("tracks", []):
+            key = (track.get("speakerId"), track.get("targetLocale"))
+            require(key not in source_tracks, "Duplicate source voice track")
+            source_tracks[key] = track
     locale_rows = script.get("locales")
     require(isinstance(locale_rows, list)
             and {row.get("targetLocale") for row in locale_rows} == set(LOCALE_ORDER)
@@ -105,14 +124,42 @@ def validate(root: Path, *, decode: bool = True) -> tuple[dict[str, Any],
     require(len(set(actual)) == 24 and set(actual) == expected,
             "Voice delivery has duplicate or missing speaker-language pairs")
     speaker_index = {speaker["speakerId"]: speaker for speaker in speakers}
+    locale_text = {row["targetLocale"]: row["text"] for row in locale_rows}
     for row in rows:
         speaker = speaker_index[row["speakerId"]]
+        key = (row["speakerId"], row["targetLocale"])
+        generated = source_tracks.get(key)
+        require(generated is not None, f"Missing source voice track: {key}")
         capability = next((item for item in speaker["localeCapabilities"]
                            if item["targetLocale"] == row["targetLocale"]), None)
         require(capability is not None
                 and row.get("displayName") == speaker["displayName"]
-                and row.get("capabilityStatus") == capability["status"],
+                and row.get("capabilityStatus") == capability["status"]
+                and row.get("displayName") == generated.get("displayName")
+                and row.get("capabilityStatus") == generated.get("capabilityStatus")
+                and row.get("humanListeningStatus") == generated.get("humanListeningStatus")
+                and row.get("sourceWav", {}).get("path") == generated.get("file")
+                and row.get("sourceWav", {}).get("sha256") == generated.get("audioSha256")
+                and generated.get("textSha256") == hashlib.sha256(
+                    locale_text[row["targetLocale"]].encode("utf-8")).hexdigest(),
                 "Voice delivery differs from registered speaker capability")
+        if row["targetLocale"] == "vi":
+            adapter = capability.get("adapterOverride", {})
+            require(row.get("adapter") == generated.get("adapter") == adapter.get("adapter")
+                    and generated.get("model") == adapter.get("model")
+                    and generated.get("modelRevision") == adapter.get("revision")
+                    and generated.get("conditioningRef") == adapter.get("conditioningRef")
+                    and generated.get("referenceAudioSha256") ==
+                    adapter.get("conditioningRef", "").rsplit("/", 1)[-1],
+                    f"Vietnamese voice identity differs from registry: {key}")
+        else:
+            checkpoint = speaker["checkpoint"]
+            require(row.get("adapter") == "qwen3_tts_sft"
+                    and generated.get("speakerKey") == speaker["speakerKey"]
+                    and generated.get("checkpointRef") == checkpoint["checkpointRef"]
+                    and generated.get("checkpointSha256") == checkpoint["checkpointSha256"]
+                    and generated.get("modelLanguage") == capability["modelLanguage"],
+                    f"Qwen voice identity differs from registry: {key}")
         mp3 = row.get("mp3", {})
         wav = row.get("sourceWav", {})
         path = inside(root, mp3.get("path", ""))
@@ -131,7 +178,8 @@ def validate(root: Path, *, decode: bool = True) -> tuple[dict[str, Any],
                 capture_output=True, text=True, check=False)
             require(result.returncode == 0,
                     f"Voice MP3 cannot be fully decoded: {row['speakerId']}/{row['targetLocale']}")
-    return delivery, script, registry
+    require(len(source_tracks) == len(rows), "Source voice track matrix differs from delivery")
+    return delivery, script, registry, script_path, registry_path, sorted(source_registry_hashes)
 
 
 def render(root: Path, delivery: dict[str, Any], script: dict[str, Any],
@@ -148,8 +196,10 @@ def render(root: Path, delivery: dict[str, Any], script: dict[str, Any],
             track = tracks[(speaker_id, locale)]
             audio = track["mp3"]
             src = quote(audio["path"], safe="/-._~")
-            status = ("中文样片已审" if track["capabilityStatus"] == "human_reviewed"
-                      else "此语言样音待审")
+            status = ("本次样音已听审" if track["humanListeningStatus"] == "approved"
+                      else "本次样音待听审")
+            capability_note = ("旧中文样片已有能力认可" if track["capabilityStatus"] == "human_reviewed"
+                               else "语言能力尚未晋升")
             priority = track.get("asrScreening") or {}
             priority_html = ('<span class="chip caution">机器复核优先</span>'
                              if priority.get("reviewPriority") else "")
@@ -163,7 +213,7 @@ def render(root: Path, delivery: dict[str, Any], script: dict[str, Any],
               <audio controls preload="none" src="{escape(src, quote=True)}"
                      aria-label="{name} {LOCALE_LABELS[locale]}音色试听"></audio>
               <details><summary>查看试听文稿</summary><p lang="{escape(locale)}">{escape(locale_text[locale])}</p></details>
-              <p class="sample-note">{escape(score_text)}</p>
+              <p class="sample-note">{escape(capability_note)} · {escape(score_text)}</p>
             </section>''')
         initials = "".join(part[0] for part in speaker["displayName"].split()[:2]).upper()
         cards.append(f'''<article class="speaker-card" data-speaker="{escape(speaker_id)}"
@@ -237,7 +287,8 @@ update();
 
 
 def build(root: Path, out: Path, *, decode: bool = True) -> dict[str, Any]:
-    delivery, script, registry = validate(root, decode=decode)
+    delivery, script, registry, script_path, registry_path, source_hashes = validate(
+        root, decode=decode)
     page = render(root, delivery, script, registry)
     root = root.resolve()
     out = out.resolve()
@@ -247,7 +298,11 @@ def build(root: Path, out: Path, *, decode: bool = True) -> dict[str, Any]:
     receipt = {
         "schemaVersion": "sermon-multilingual-voice-preview-verification-v1",
         "deliveryManifestSha256": sha256(root / "delivery-manifest.json"),
-        "demoScriptSha256": sha256(root / "demo-script.json"),
+        "demoScriptSha256": sha256(script_path),
+        "registrySha256": sha256(registry_path),
+        "sourceRegistryJsonSha256": source_hashes,
+        "sourceRegistrySnapshotMatch": source_hashes == [json_sha256(registry)],
+        "voiceIdentityBinding": "per_track_checkpoint_or_adapter",
         "speakerCount": delivery["speakerCount"],
         "trackCount": delivery["trackCount"],
         "mp3HashCoverage": 1,
