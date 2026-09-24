@@ -58,6 +58,12 @@ Firebase 官方建议每个开发环境使用独立 project。听译 App 应建�
 - 发布收据、候选目录和媒体均保留在 ignored artifacts，不上传到 Git。GitHub Actions 目前负责代码门禁；约 700 MB 的内容候选使用本机受控 CD。未来若迁到 GitHub runner，必须先定义候选存储、凭据、环境审核和同站点串行部署，不能把本机路径写进云端工作流。
 - 多语言功能先在 Dev App 验证 locale 选择、资源缺失降级、音频切换和旧中文周次回归；通过不等于自动发布 Production。
 
+### 「更多」中的多语种音色试听
+
+Dev Web 的「更多」可按讲员展开音色 Demo：每位先放原始英语片段，再放中文、韩语、西班牙语、越南语的 AI 样音。样音使用统一示例文稿，属于音色能力试听；其 `humanListeningStatus=pending` 必须保持独立于每周正式 Layer 2／3 审核。英语参考文字也只标为机器转写参考。此 Demo 不写入正式多语言 catalog、release package 或默认播放器。
+
+本机用 `scripts/stage_voice_demo_dev.py` 把 `artifacts/sermon-dubbing/2026-09-21-multilingual-voice-demos-v2` 的 24 条已解码样音、六位讲员的英语原声和前端组件叠加到**已发布且已有 HTTP 收据**的完整 Dev 候选。脚本校验来源 SHA、四语言覆盖和既有 121 个文件不被改变；原声缺失时用 `--reference speakerId=/path/to/original.wav` 明确补入。产物是新的 immutable v3 候选，Demo 媒体与目录仍留在 ignored `artifacts/` 或本机临时目录。此后按上面的本机 CD 入口先核对线上基线，再用干净且与远端一致的 `dev` checkout 执行部署和逐文件 HTTP／30 条音频 Range 核验。浏览器听测与人工音色审核仍分别记录。
+
 ## 建立 Dev App 的接受标准
 
 1. 新 Firebase project 和独立 Hosting site 已创建，并标记为非生产环境。

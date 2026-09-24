@@ -346,7 +346,8 @@ def prepare_update(dev_base_candidate: Path, staged: Path, out: Path) -> dict:
 def candidate_report(candidate: Path) -> dict:
     report = hosting.load(candidate / "build-report.json")
     require(report.get("schemaVersion") in {
-                "sermon-multilingual-dev-preview-v1", "sermon-multilingual-dev-preview-v2"}
+                "sermon-multilingual-dev-preview-v1", "sermon-multilingual-dev-preview-v2",
+                "sermon-multilingual-dev-preview-v3"}
             and report.get("status") == "validated_not_deployed"
             and report.get("projectId") == DEV_PROJECT
             and report.get("siteId") == DEV_SITE
@@ -389,6 +390,12 @@ def candidate_report(candidate: Path) -> dict:
                 and merge.get("productionReader") is False
                 and report.get("pageId") == merge.get("newPageId"),
                 "Dev update provenance changed")
+    if report.get("schemaVersion") == "sermon-multilingual-dev-preview-v3":
+        try:
+            from scripts import stage_voice_demo_dev
+        except ImportError:
+            import stage_voice_demo_dev
+        stage_voice_demo_dev.verify_candidate_overlay(candidate, report)
     return report
 
 
@@ -474,6 +481,23 @@ def verify(candidate: Path) -> dict:
                 and b"<html" in html[:4096].lower(), f"Dev deep link failed: {path}")
         results.append({"path": audio["path"], "range206": True})
         results.append({"path": path, "status": route_status})
+    if report.get("schemaVersion") == "sermon-multilingual-dev-preview-v3":
+        try:
+            from scripts import stage_voice_demo_dev
+        except ImportError:
+            import stage_voice_demo_dev
+        demos = stage_voice_demo_dev.public_catalog(candidate / "public")
+        for speaker in demos["speakers"]:
+            for asset in [speaker["original"], *speaker["samples"]]:
+                path = asset["path"]
+                status, headers, first = verifier.request_bytes(
+                    DEV_ORIGIN, path, range_first=True)
+                with (candidate / "public" / path.lstrip("/")).open("rb") as stream:
+                    expected_first = stream.read(1)
+                require(status == 206 and first == expected_first
+                        and headers.get("content-range") == f"bytes 0-0/{asset['bytes']}",
+                        f"Voice demo Range failed: {path}")
+                results.append({"path": path, "range206": True})
     return {"schemaVersion": "sermon-multilingual-dev-preview-http-v1",
             "status": "pass", "origin": DEV_ORIGIN, "pageId": page["id"],
             "verifiedAt": datetime.now(timezone.utc).isoformat(),
