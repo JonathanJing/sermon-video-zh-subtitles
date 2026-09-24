@@ -4,6 +4,8 @@
 
 [本次本地演练与线上基线证据](evidence/2026-09-23-production-readiness/README.zh.md)。
 
+Firebase Dev 的 Production 布局预演和旧内容保留步骤见[Dev 预演收据](evidence/2026-09-23-production-readiness/DEV-PREVIEW.zh.md)。它使用已审样片做端到端预览，不把新一周尚未发生的 Layer 1–3 标为通过。
+
 ## 当前事实
 
 - Firebase Dev 的 2026-09-20 正式样片有三语文字、配音、同步人工审核与发布后 HTTP 证据；仅覆盖原录像 35:09.16–38:07.32。[收据](evidence/2026-09-20-formal-release/README.zh.md)不批准下周整篇。
