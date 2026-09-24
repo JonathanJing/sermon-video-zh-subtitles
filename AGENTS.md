@@ -41,4 +41,4 @@ Layer 4 may record `published_http_verified` while device or venue acceptance re
 
 For a requested weekly poster, or the default poster following a verified weekly content release, follow [the poster procedure](docs/tongxing-weekly-release.zh.md#每周海报交付). Its image and QR checks are separate from page publication and audio/venue acceptance; it does not block the page. Do not send or upload it without the user's instruction.
 
-Do not commit or push unless requested. Before a requested push, fetch/check the target branch and verify the remote commit. History rewriting requires explicit authorization.
+After completing scoped work and its relevant verification, commit and push it to the working branch without a separate request. Before pushing, fetch/check the target branch and verify the remote commit. History rewriting requires explicit authorization.
