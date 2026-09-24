@@ -35,12 +35,18 @@
   --out /absolute/path/to/http-verification.json
 ```
 
-部署器要求不超过 30 分钟、覆盖旧 Dev 每个文件的线上 GET/大小/SHA 预检；发布仅指向 Dev 项目。发布后再次读取候选全部文件并复算线上 SHA，另查三条音轨 Range 206 和三语深链。浏览器点击播放、旧页下载、手机/设备与现场需单独记录。
+部署器要求不超过 30 分钟、覆盖旧 Dev 每个文件的线上 GET/大小/SHA 预检；发布仅指向 Dev 项目。发布后再次读取候选全部文件并复算线上 SHA，核对已知文件类型的 `Content-Type`、目录缓存，再查三条音轨 Range 206 和三语深链。浏览器点击播放、旧页下载、手机/设备与现场需单独记录。
 
-## 本轮本地核对
+## 本轮构建与本地核对
 
-- 源 Production 布局候选报告 SHA-256：`eea22c48d94e4976b3fafd44313bd3233248afc7f2e9eb16c6282dc7efe3947a`；Dev 预览 v4 报告 SHA-256：`03dd49385e8d3bb18f96b52d795e9b031cfca7340f3d9bc32621af95df2bddda`。
+- 源 Production 布局候选报告 SHA-256：`eea22c48d94e4976b3fafd44313bd3233248afc7f2e9eb16c6282dc7efe3947a`；[最终 Dev 预览构建报告](dev-preview-build-report.json) SHA-256：`03dd49385e8d3bb18f96b52d795e9b031cfca7340f3d9bc32621af95df2bddda`。
 - 候选 121 个文件、708,820,221 字节；上次 Dev 公开目录 59 个文件，逐文件线上预检已通过。原 Dev POC 路由跳回正式样片的问题在隔离入口修正；韩语界面与西语内容独立、中文内容切换、六句 POC 默认页和旧九周及 PDF/MP3/SRT 入口均在 Hosting 模拟器实际打开。Dev 预览旧页的反馈与匿名统计入口已关闭。
-- `tests.test_multilingual_dev_preview` 与相邻 Hosting 测试共 17 项通过；`node --check` 和 `git diff --check` 通过。模拟器的本地音频 Range 行为不能代替 Firebase 线上 206 验证。
+- `tests.test_multilingual_dev_preview` 与相邻 Hosting 测试共 19 项通过；`node --check` 和 `git diff --check` 通过。模拟器的本地音频 Range 行为不能代替 Firebase 线上 206 验证。
 
-本段只记录本地候选；真正 Dev 部署与 HTTP、浏览器验收须使用独立收据补充。下一周发布需重新生成 Production 布局候选，并从当时完整的线上 Dev 版本建立新快照。旧发行目录及新候选都是 ignored media；不要把 708 MB 媒体提交 Git。
+## Firebase Dev 发布与线上核验
+
+- 2026-09-24 01:17 UTC 发布到 [`ai-for-god-sermon-audio-dev.web.app`](https://ai-for-god-sermon-audio-dev.web.app/)；项目与 Hosting site 均为 `ai-for-god-sermon-audio-dev`。[59 文件发布前预检](dev-preview-preflight.json) SHA-256：`8f1329b37a7897214e62a88a82b11c07791ba05bb8b39fd4e4f399fe07086b1c`；[部署收据](dev-preview-deployment.json) SHA-256：`0410a1241235bf98c828793af9e98eac075583b906e947e66fbcecb3fdbdf1d2`。
+- 01:28 UTC 的[最终独立 HTTP 收据](dev-preview-http-verification.json)状态为 `pass`，SHA-256：`760ac9b74ad97f60abe0679cf7923d824e2a957c0ee7342a089df0ee2240e017`。线上 121 个文件逐一 GET、核对大小、SHA 和对应 `Content-Type`；目录 `no-store`，中、韩、西三条 WAV 的 Range 请求均为 206；三种深链均为 200。该收据仍把浏览器、设备、现场验收标为 `not_run`，浏览器观察另行记录。
+- 真实 Dev 浏览器已打开[中文](https://ai-for-god-sermon-audio-dev.web.app/pages/2026-09-20-revelation-clip/zh-Hans)、[韩语](https://ai-for-god-sermon-audio-dev.web.app/pages/2026-09-20-revelation-clip/ko)、[西语](https://ai-for-god-sermon-audio-dev.web.app/pages/2026-09-20-revelation-clip/es)页面，分别见 45、44、44 组和 2:58 音轨，点击播放后时间向前推进；韩语界面下西语内容、音轨与 URL 保持西语。旧 `/dev-poc.html` 仍显示六句机器实验，旧 `/legacy-reader.html` 仍显示九周中文及 PDF/MP3/SRT 下载入口；旧 `/?week=<page-id>` 在线转入旧阅读器，新样片 `/?week=2026-09-20-revelation-clip` 进入三语阅读器。浏览器点击仅证明加载与短时播放，不代表重新完成全文听审、实体手机或现场验收。
+
+上述报告与收据的原字节副本已纳入本目录；[浏览器观察](dev-preview-browser-verification.json)单独记录短时播放及其边界。完整候选与旧 Dev 快照保存在本机忽略目录 `artifacts/multilingual-dev-preview/2026-09-23-production-layout/`。下一周发布需重新生成 Production 布局候选，并从当时完整的线上 Dev 版本建立新快照。旧发行目录及新候选都是 ignored media；不要把 708 MB 媒体提交 Git。
