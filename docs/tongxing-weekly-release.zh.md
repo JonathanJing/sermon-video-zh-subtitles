@@ -60,6 +60,18 @@ python3 experiments/sermon-dubbing-poc/weekly_release.py prepare \
 
 该命令复用登记版本的 UI、声音库、反馈开关与其他设置，保留旧哈希媒体地址，并为合并后的全部页重建反馈目录。候选包中附带的页面代码更新需走单独 UI 发布流程；候选声音库与登记版本不一致时拒绝合并，声音库变更须单独审阅发布。
 
+**Production 站点已有 `multilingual-v2.json` 时，不直接部署这个 legacy-only 包。** 旧发行器不会把多语言目录和正式资源纳入它的严格清单；`deploy_firebase.py --execute` 会先读取 Production v2 catalog 并默认拒绝覆盖。将这份已准备的 legacy release 与当前已通过 Production HTTP 核验的完整多语言候选合成一个新候选：
+
+```bash
+.venv/bin/python scripts/refresh_multilingual_hosting_with_legacy.py \
+  --base-candidate /absolute/path/to/current-production-multilingual-candidate \
+  --legacy-release /absolute/path/to/prepared-legacy-release \
+  --prior-http-verification /absolute/path/to/previous-production-http-verification.json \
+  --out /absolute/path/to/next-production-hosting-candidate
+```
+
+组装器核对旧三语文件与 Firebase 配置哈希、新 legacy 包及其发行计划、旧周次全集、反馈配置和旧 UI；只更新 `weekly.json`，并加入新的哈希媒体与下载。新候选再按[分支与 Firebase 环境流程](development-branch-and-firebase-environments.zh.md#每周内容与代码发布顺序)执行 Production 预检、部署和 HTTP 核验，并向 `run_multilingual_cd.py` 传入同一个 `--legacy-release`。反馈开启时，统一入口先按既有 `deploy_feedback.py` 准备／部署新 API 目录，再部署 Hosting；其收据状态仍为 `deployed_verification_pending`，须独立核验 API，Hosting 的 HTTP 成功不能代替。明确回退到完整 legacy 快照时，原部署器才可使用 `--allow-multilingual-rollback`；该选项是有意移除三语目录，不用于普通周更。
+
 输出目录必须是新目录，不能位于 registry 或 candidate 内。准备过程不推进 registry head。`build-report.json` 与发行计划绑定候选输入、上一版本及上一代 generation，避免并发候选覆盖较新的发行记录。
 
 ## 发布与核验

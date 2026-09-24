@@ -6,6 +6,9 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+from urllib.error import HTTPError
+from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 
 from poc import sha256, write_json
 
@@ -13,6 +16,28 @@ HERE = Path(__file__).resolve().parent
 DOWNLOAD_EXTENSIONS = {"readingPdf": "pdf", "companionPdf": "pdf", "fullVideoMp3": "mp3", "fullVideoSrt": "srt"}
 DOWNLOAD_PATH = re.compile(r"/downloads/([a-f0-9]{16})-[A-Za-z0-9][A-Za-z0-9._-]*\.(pdf|mp3|srt)")
 FINGERPRINT_UI = {"fingerprint-core.mjs", "fingerprint-capture.mjs", "fingerprint-worklet.mjs", "fingerprint-worker.mjs", "fingerprint-ui.mjs"}
+PRODUCTION_SITE = "ai-for-god-sermon-audio"
+
+
+def production_has_multilingual_catalog(site, *, opener=urlopen):
+    """Fail closed before a legacy-only deploy can erase the formal catalog."""
+    url = f"https://{site}.web.app/multilingual-v2.json"
+    try:
+        with opener(Request(url, method="GET"), timeout=30) as response:
+            final = urlparse(response.geturl())
+            if (final.scheme, final.netloc, final.path) != (
+                    "https", f"{site}.web.app", "/multilingual-v2.json"):
+                raise ValueError("Multilingual catalog request redirected")
+            if response.status != 200:
+                raise ValueError("Unexpected multilingual catalog response")
+            value = json.load(response)
+            if value.get("schemaVersion") != "sermon-multilingual-catalog-v2":
+                raise ValueError("Production catalog is unreadable; refuse legacy deploy")
+            return True
+    except HTTPError as error:
+        if error.code == 404:
+            return False
+        raise
 
 
 def validate_automatic_audio_alignment(catalog, required_pages=()):
@@ -208,11 +233,19 @@ def main():
     parser.add_argument("--project", required=True)
     parser.add_argument("--site", required=True)
     parser.add_argument("--execute", action="store_true")
+    parser.add_argument("--allow-multilingual-rollback", action="store_true",
+                        help="Explicitly replace a multilingual Production site with this legacy snapshot")
     args = parser.parse_args()
     release = args.release.resolve()
     report = verify_release(release)
     if not re.fullmatch(r"[a-z][a-z0-9-]{4,28}[a-z0-9]", args.site) or args.site == args.project:
         raise ValueError("Use a dedicated, non-default site ID")
+    if args.allow_multilingual_rollback and not args.execute:
+        raise ValueError("Rollback override applies only to an actual deploy")
+    if (args.execute and args.site == PRODUCTION_SITE
+            and production_has_multilingual_catalog(args.site)
+            and not args.allow_multilingual_rollback):
+        raise ValueError("Production has a multilingual catalog; use the overlay release path or explicit rollback")
     hosting_config = json.loads((HERE / "firebase/firebase.json").read_text())
     if report.get("feedbackEnabled"):
         hosting_config["hosting"]["rewrites"] = [{"source": "/api/**", "function": {"functionId": "sermon-feedback-api", "region": "us-west1"}}]
