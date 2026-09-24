@@ -1,5 +1,7 @@
 # 多语言 Layer 4 发布与 App 改进 Backlog
 
+顶层优先级、跨层依赖与状态统一维护在 [Dev 统一 Backlog](backlog.zh.md) 的 `DEV-L4-*`／`DEV-IOS-*`／`DEV-FIELD-*` 项；本页只保留 Layer 4 的接口、发布、Web／App 交互和验证细节。
+
 状态：**Dev 三语审核样片已发布；每周 Production 与 iOS 原生多语言仍在开发**。本文覆盖 Layer 4「多语言发布与播放」以及 Web/iOS 客户端的语言选择体验。v2 catalog／release receipt schema、fail-closed catalog builder，以及 iOS 语言发布页选择已开始实现；样片韩语音频和 Dev HTTP 验证不代表整篇周更、Production、设备或现场验收完成。
 
 ## 2026-09-23 Production 候选进度
