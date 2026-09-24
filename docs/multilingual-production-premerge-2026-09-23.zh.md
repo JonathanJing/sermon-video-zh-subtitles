@@ -54,7 +54,8 @@ Dev 经文授权声明和样片页面／音频审核不能自动覆盖 Productio
        .venv/bin/python scripts/verify_multilingual_hosting.py \
          --candidate /absolute/path/to/new-hosting-candidate \
          --origin https://ai-for-god-sermon-audio.web.app \
-         --preflight-baseline --out /absolute/path/to/preflight.json
+         --preflight-baseline --http-workers 4 \
+         --out /absolute/path/to/preflight.json
 
 6. 审核 firebase.json、.firebaserc、build-report.json 的目标站点、反馈转发及修改文件清单。使用以下显式发布入口；先不加 --execute 可生成部署计划，真正发布须另用新的输出文件加 --execute：
 
@@ -68,7 +69,7 @@ Dev 经文授权声明和样片页面／音频审核不能自动覆盖 Productio
        .venv/bin/python scripts/verify_multilingual_hosting.py \
          --candidate /absolute/path/to/new-hosting-candidate \
          --origin https://ai-for-god-sermon-audio.web.app \
-         --out /absolute/path/to/http-verification.json
+         --http-workers 4 --out /absolute/path/to/http-verification.json
 
 首次切换的回退源是切换前的完整 legacy registry release；本次只读调用 `deploy_firebase.verify_release` 已通过其 58 个文件及反馈配置的本地校验。若实际切换后需回退，应先把该不可变发行复制到新的回退目录，再按既有 `experiments/sermon-dubbing-poc/deploy_firebase.py --release ... --project ai-for-god-caption-dev --site ai-for-god-sermon-audio --execute --allow-multilingual-rollback` 明确发布，并用 `verify_weekly_release.py` 完整核验。普通 legacy 周更现在默认拒绝覆盖在线多语言目录，须先走 `refresh_multilingual_hosting_with_legacy.py` 组装完整候选。不能修改 registry 原件，不能把本地可回退判定冒充一次实际回退演练。后续多语言版本间的回退仍需专门流程。
 
