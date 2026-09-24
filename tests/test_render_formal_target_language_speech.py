@@ -197,6 +197,22 @@ class FormalRenderTests(unittest.TestCase):
                          [group["targetText"] for group in self.context["candidate"]["groups"]])
         self.assertTrue((self.root / manifest["track"]["path"]).is_file())
 
+    def test_fresh_full_length_delivery_can_use_hash_bound_mp3_track(self):
+        rows = self.render_units()
+        plan_policy = {"reactionLagSeconds": 0.0, "interUtteranceGapSeconds": 0.0,
+                       "maxEndLagSeconds": 8.0}
+        manifest = subject.assemble(self.context, self.paths, self.root, rows,
+                                    policy=plan_policy, track_format="mp3")
+        track = self.root / manifest["track"]["path"]
+        self.assertEqual(track.suffix, ".mp3")
+        self.assertEqual(manifest["track"]["sha256"], subject.identity.sha256(track))
+        self.assertLess(track.stat().st_size,
+                        (self.root / "languages/ko/audio/track.wav").stat().st_size)
+        self.assertEqual(subject.integrity.probe_full_decode(track)["codec"], "mp3")
+        with self.assertRaisesRegex(ValueError, "different track format"):
+            subject.assemble(self.context, self.paths, self.root, rows,
+                             policy=plan_policy, track_format="wav")
+
 
 if __name__ == "__main__":
     unittest.main()

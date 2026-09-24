@@ -1,6 +1,6 @@
 # 多语言生产四层接口
 
-状态：本文是今后所有预制多语言生产的规范合同。四个层间接口名称和 JSON Schema 已冻结为 v1；Layer 1 已有确定性生成器和独立机器裁判，可为 Layer 2 shadow 开发提供审核收据；机器裁判不授予生产翻译资格。Layer 2–4 的 schema 是迁移目标，Dev 片段 POC 不表示对应的正式多语言生产已经完成。
+状态：本文是今后所有预制多语言生产的规范合同。四个层间接口名称和 JSON Schema 已冻结为 v1；Layer 1 已有确定性生成器和独立机器裁判，机器裁判不授予生产翻译资格。2026-09-20 的 2:58 三语样片已有正式 Layer 1–4 包、全文人工审核和 Dev HTTP 收据；当前周更整篇与 Production 尚未通过。可用代码路径及缺口见[合并 main 前检查](multilingual-production-premerge-2026-09-23.zh.md)。
 
 现有双 PDF、中文配音和 `weekly.json` 发布工具在迁移期间作为 legacy adapter 保留。它们可以完成各自明确 scope，但只有四个正式包及其门禁均有证据时，才可报告 `workflowScope=four_layer_release`。周日实时字幕属于独立 `live_session`，不在现场强制生成这些预制包；若会后复用录音，应从 Layer 1 开始。
 
@@ -91,6 +91,6 @@ Target-Language Candidate + Target-Language Audio Package
 
 - Layer 1：确定性锚点和机器裁判代码可运行；无机器裁判且无正式英文人工收据的干净 shadow 输入停在 `waiting_machine_judge`。机器裁判通过只允许 Layer 2 shadow，正式 `ready_for_translation` 仍需英文人工收据。
 - Layer 2：中文 legacy runner 可工作；`zh-Hans`、`ko`、`es`、`vi` 有同源六句 shadow 候选及机器复核。通用模型执行器、语言插件和候选准入器已实现，新生产策略采用 Astra 初译与 Sol 逐组独立复核；每次正式运行仍需就绪的来源、冻结 policy、逐组机器证据及独立人工批准，代码可运行不等于整篇生产验收。
-- Layer 3：中文 legacy TTS／同步可工作；四语片段 voice/ASR 与音频包 POC 已运行，使用 POC speech job 和估算字幕，不能越过 Layer 2 人工门禁。通用 renderer、同步器、语义校验器及正式 Audio Package producer 尚未完成。
-- Layer 4：Dev 已有多语言 catalog 构建和演示发布路径；正式 Target-Language Release Package producer、逐语言发布及设备／现场验收尚未完成。
+- Layer 3：中文 legacy TTS／同步可工作；9 月 20 日样片的中、韩、西正式 renderer、实测同步、ASR 筛查和 Audio Package producer 已通过对应人工门禁。整篇周更尚未实跑；新的 MP3 输出仅有合成测试，仍需逐语言完整听审及同步批准。
+- Layer 4：Dev 样片已有正式同语言 Release Package、三语发布与 HTTP 收据；Production 的完整旧站点叠加、首页替换、部署前基线和发布后核验已有候选代码及本地模拟器验证。实际 Production 发布、设备／现场验收和周更整篇仍未完成。
 - Canonical English Content 是从英文事实派生的页面内容输入，可以作为 English Source Package 的可选绑定；它不是英文逐字稿，也不能替代 Layer 1 审核。

@@ -1,6 +1,12 @@
 # 多语言 Layer 4 发布与 App 改进 Backlog
 
-状态：**接口与 iOS 路由 POC 开发中**。本文覆盖 Layer 4「多语言发布与播放」以及 Web/iOS 客户端的语言选择体验。v2 catalog／release receipt schema、fail-closed catalog builder，以及 iOS 语言发布页选择已开始实现；这仍不表示韩语音频、多语言正式发布或设备／现场验收已经完成。
+状态：**Dev 三语审核样片已发布；每周 Production 与 iOS 原生多语言仍在开发**。本文覆盖 Layer 4「多语言发布与播放」以及 Web/iOS 客户端的语言选择体验。v2 catalog／release receipt schema、fail-closed catalog builder，以及 iOS 语言发布页选择已开始实现；样片韩语音频和 Dev HTTP 验证不代表整篇周更、Production、设备或现场验收完成。
+
+## 2026-09-23 Production 候选进度
+
+9 月 20 日 2:58 三语正式样片已在 Firebase Dev 发布并完成 HTTP 与浏览器播放核验；Production 仍只有 legacy 中文 weekly.json，线上 multilingual-v2.json 为 404。当前分支新增可在完整旧站点上叠加单个已审三语页面的不可变 Hosting 候选；可把多语言阅读器设为首页，旧中文九周页面、下载资源和 `/?week=` 链接保留。本地 Firebase Hosting 模拟器已验证首页、三语深链、韩／西语界面切换、韩语播放时间推进与旧中文页面。前端可读多个正式 page、部分已发布 locale 和已审 MP3；新 Layer 3 job 可选 64 kbps MP3 以适应整篇播放。部署前完整基线检查、限定站点的显式发布入口和发布后逐文件 HTTP 核验已有定向测试。具体范围与剩余门槛见[合并 main 前检查](multilingual-production-premerge-2026-09-23.zh.md)。
+
+上述是候选准备与本地验证；本周新整篇内容、Production 部署后 HTTP 收据、实体设备、原生 iOS 音轨与现场验收均未完成。以下未勾选的原子聚合、单语言回滚及生产验收项保持未完成。
 
 ## 当前实现切片（2026-09-21）
 
