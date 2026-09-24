@@ -1,9 +1,9 @@
 // Dev-only copy. The shared Production reader owns the language setting.
 const copy = {
-  "zh-Hans": ["DEV 预演 · 9 月 20 日三语审核样片。本周新整篇尚未发布。", "六句实验页"],
-  en: ["DEV preview · Reviewed September 20 trilingual clip. This week's full sermon is not published yet.", "Six-unit experiment"],
-  ko: ["DEV 미리보기 · 9월 20일 검토된 3개 언어 설교 부분입니다. 이번 주 전체 설교는 아직 게시되지 않았습니다.", "여섯 문장 실험"],
-  es: ["Vista previa DEV · Fragmento trilingüe revisado del 20 de septiembre. El sermón completo de esta semana aún no está publicado.", "Prueba de seis unidades"],
+  "zh-Hans": ["DEV 测试站 · 此页用于核验已审核的多语言内容；公开发布请以正式站点为准。", "六句实验页"],
+  en: ["Dev test site · Reviewed multilingual content is shown here for verification. Check the public site for the released version.", "Six-unit experiment"],
+  ko: ["DEV 테스트 사이트 · 검토된 다국어 콘텐츠를 확인하는 페이지입니다. 공식 게시 여부는 공식 사이트에서 확인하세요.", "여섯 문장 실험"],
+  es: ["Sitio de pruebas DEV · Aquí se verifica contenido multilingüe revisado. Consulta el sitio público para la versión publicada.", "Prueba de seis unidades"],
 };
 
 function render() {

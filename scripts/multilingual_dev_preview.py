@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import tempfile
@@ -29,6 +30,8 @@ DEV_PROJECT = "ai-for-god-sermon-audio-dev"
 DEV_SITE = "ai-for-god-sermon-audio-dev"
 DEV_ORIGIN = f"https://{DEV_SITE}.web.app"
 LABEL_SCRIPT = Path(__file__).resolve().parents[1] / "firebase/dev-preview/dev-preview-label.mjs"
+DEV_MESSAGE = "DEV 测试站 · 此页用于核验已审核的多语言内容；公开发布请以正式站点为准。"
+REQUIRED_LOCALES = frozenset({"zh-Hans", "ko", "es"})
 ALIAS = {
     "app.js": "dev-poc-app.js",
     "formal-dev-adapter.mjs": "dev-poc-formal-dev-adapter.mjs",
@@ -207,7 +210,7 @@ def prepare(production_candidate: Path, dev_base: Path, out: Path) -> dict:
             poc_html.replace('<script type="module" src="/app.js"></script>',
                              '<script type="module" src="/dev-poc-app.js"></script>', 1))
         notice = ('<p class="field-help" role="note"><span id="devPreviewMessage">'
-                  'DEV 预演 · 9 月 20 日三语审核样片。本周新整篇尚未发布。'
+                  f'{DEV_MESSAGE}'
                   '</span> <a id="devPocLink" href="/dev-poc.html">六句实验页</a></p>')
         for name in ("index.html", "multilingual-reader.html"):
             text = (public / name).read_text()
@@ -272,9 +275,76 @@ def prepare(production_candidate: Path, dev_base: Path, out: Path) -> dict:
         raise
 
 
+def prepare_update(dev_base_candidate: Path, staged: Path, out: Path) -> dict:
+    """Append a reviewed page to the complete currently published Dev snapshot."""
+    require(not out.exists() and not out.is_symlink(), f"Output exists: {out}")
+    base_report = candidate_report(dev_base_candidate)
+    base_public = dev_base_candidate / "public"
+    verify_dev_poc_assets(base_public)
+    require(set(ALIAS.values()) <= set(hosting.regular_files(base_public)),
+            "Current Dev release lacks the preserved POC entry")
+    base_config = hosting.load(dev_base_candidate / "firebase.json")
+    require(type(base_config["hosting"].get("cleanUrls")) is bool,
+            "Current Dev cleanUrls policy is missing")
+    incoming = hosting.load(staged / hosting.CATALOG)
+    require(len(incoming.get("pages", [])) == 1
+            and set(incoming["pages"][0]["targets"]) == REQUIRED_LOCALES
+            and all(target["contentStatus"] == "human_reviewed"
+                    and target["audioStatus"] == "human_reviewed"
+                    for target in incoming["pages"][0]["targets"].values()),
+            "Dev release plan requires reviewed text and audio in all three locales")
+
+    out.parent.mkdir(parents=True, exist_ok=True)
+    temporary = Path(tempfile.mkdtemp(prefix=f".{out.name}-", dir=out.parent))
+    try:
+        assembled = temporary / "assembled"
+        merge = hosting.assemble(base_public, staged, assembled)
+        require(merge["productionReader"] is False
+                and merge["oldCatalogSha256"] == hosting.digest(base_public / hosting.CATALOG)
+                and merge["baseFiles"] == base_report["files"]
+                and merge["modifiedFiles"] == [hosting.CATALOG],
+                "New Dev page changed the complete baseline unexpectedly")
+        os.rename(assembled / "public", temporary / "public")
+        shutil.copyfile(assembled / "build-report.json", temporary / "hosting-merge-report.json")
+        shutil.copyfile(assembled / "rollback-multilingual-v2.json",
+                        temporary / "rollback-multilingual-v2.json")
+        shutil.rmtree(assembled)
+        for name in ("index.html", "multilingual-reader.html"):
+            path = temporary / "public" / name
+            text = path.read_text(encoding="utf-8")
+            text, count = re.subn(r'(<span id="devPreviewMessage">)[^<]*(</span>)',
+                                  lambda match: match[1] + DEV_MESSAGE + match[2], text)
+            require(count == 1, f"Dev notice marker changed: {name}")
+            path.write_text(text, encoding="utf-8")
+        shutil.copyfile(LABEL_SCRIPT, temporary / "public/dev-preview-label.mjs")
+        shutil.copyfile(dev_base_candidate / "firebase.json", temporary / "firebase.json")
+        report = {
+            "schemaVersion": "sermon-multilingual-dev-preview-v2",
+            "status": "validated_not_deployed", "projectId": DEV_PROJECT,
+            "siteId": DEV_SITE, "origin": DEV_ORIGIN,
+            "pageId": merge["newPageId"], "preservedPocAliases": ALIAS,
+            "baseBuildReportSha256": hosting.digest(dev_base_candidate / "build-report.json"),
+            "baseCleanUrls": base_config["hosting"]["cleanUrls"],
+            "devBaseFiles": base_report["files"], "files": inventory(temporary / "public"),
+            "firebaseConfigSha256": hosting.digest(temporary / "firebase.json"),
+            "hostingMergeReportSha256": hosting.digest(temporary / "hosting-merge-report.json"),
+            "stagingReceiptSha256": merge["stagingReceiptSha256"],
+            "oldCatalogSha256": merge["oldCatalogSha256"],
+            "newCatalogSha256": merge["newCatalogSha256"],
+        }
+        (temporary / "build-report.json").write_text(
+            json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2) + "\n")
+        os.rename(temporary, out)
+        return report
+    except Exception:
+        shutil.rmtree(temporary)
+        raise
+
+
 def candidate_report(candidate: Path) -> dict:
     report = hosting.load(candidate / "build-report.json")
-    require(report.get("schemaVersion") == "sermon-multilingual-dev-preview-v1"
+    require(report.get("schemaVersion") in {
+                "sermon-multilingual-dev-preview-v1", "sermon-multilingual-dev-preview-v2"}
             and report.get("status") == "validated_not_deployed"
             and report.get("projectId") == DEV_PROJECT
             and report.get("siteId") == DEV_SITE
@@ -289,6 +359,22 @@ def candidate_report(candidate: Path) -> dict:
             and config["hosting"].get("rewrites") == [
                 {"source": "/pages/**", "destination": "/index.html"}],
             "Dev Firebase target/config changed")
+    if report["schemaVersion"] == "sermon-multilingual-dev-preview-v2":
+        merge = hosting.load(candidate / "hosting-merge-report.json")
+        require(type(report.get("baseCleanUrls")) is bool
+                and report.get("hostingMergeReportSha256")
+                == hosting.digest(candidate / "hosting-merge-report.json")
+                and report.get("oldCatalogSha256")
+                == hosting.digest(candidate / "rollback-multilingual-v2.json")
+                == merge.get("oldCatalogSha256")
+                and report.get("newCatalogSha256")
+                == hosting.digest(candidate / "public" / hosting.CATALOG)
+                == merge.get("newCatalogSha256")
+                and report.get("stagingReceiptSha256")
+                == merge.get("stagingReceiptSha256")
+                and report.get("devBaseFiles") == merge.get("baseFiles")
+                and report.get("pageId") == merge.get("newPageId"),
+                "Dev update provenance changed")
     return report
 
 
@@ -300,7 +386,8 @@ def preflight(candidate: Path) -> dict:
         # The current Dev release uses cleanUrls=true, which redirects
         # /index.html and /404.html to their canonical URLs. The preview
         # deliberately uses cleanUrls=false for exact-file verification.
-        current_url = {"/index.html": "/", "/404.html": "/404"}.get(path, path)
+        current_url = ({"/index.html": "/", "/404.html": "/404"}.get(path, path)
+                       if report.get("baseCleanUrls", True) else path)
         status, _, size, actual = verifier.request_file(DEV_ORIGIN, current_url)
         require(status == 200 and size == item["bytes"] and actual == item["sha256"],
                 f"Dev baseline changed: {path}")
@@ -390,6 +477,10 @@ def main() -> None:
     build.add_argument("--production-candidate", type=Path, required=True)
     build.add_argument("--dev-base-public", type=Path, required=True)
     build.add_argument("--out", type=Path, required=True)
+    update = sub.add_parser("build-update")
+    update.add_argument("--dev-base-candidate", type=Path, required=True)
+    update.add_argument("--staged", type=Path, required=True)
+    update.add_argument("--out", type=Path, required=True)
     for action in ("preflight", "verify"):
         command = sub.add_parser(action)
         command.add_argument("--candidate", type=Path, required=True)
@@ -402,6 +493,8 @@ def main() -> None:
     args = parser.parse_args()
     if args.action == "build":
         result = prepare(args.production_candidate, args.dev_base_public, args.out)
+    elif args.action == "build-update":
+        result = prepare_update(args.dev_base_candidate, args.staged, args.out)
     else:
         require(not args.out.exists() and not args.out.is_symlink(),
                 f"Output exists: {args.out}")

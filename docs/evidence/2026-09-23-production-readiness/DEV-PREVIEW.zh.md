@@ -49,4 +49,17 @@
 - 01:28 UTC 的[最终独立 HTTP 收据](dev-preview-http-verification.json)状态为 `pass`，SHA-256：`760ac9b74ad97f60abe0679cf7923d824e2a957c0ee7342a089df0ee2240e017`。线上 121 个文件逐一 GET、核对大小、SHA 和对应 `Content-Type`；目录 `no-store`，中、韩、西三条 WAV 的 Range 请求均为 206；三种深链均为 200。该收据仍把浏览器、设备、现场验收标为 `not_run`，浏览器观察另行记录。
 - 真实 Dev 浏览器已打开[中文](https://ai-for-god-sermon-audio-dev.web.app/pages/2026-09-20-revelation-clip/zh-Hans)、[韩语](https://ai-for-god-sermon-audio-dev.web.app/pages/2026-09-20-revelation-clip/ko)、[西语](https://ai-for-god-sermon-audio-dev.web.app/pages/2026-09-20-revelation-clip/es)页面，分别见 45、44、44 组和 2:58 音轨，点击播放后时间向前推进；韩语界面下西语内容、音轨与 URL 保持西语。旧 `/dev-poc.html` 仍显示六句机器实验，旧 `/legacy-reader.html` 仍显示九周中文及 PDF/MP3/SRT 下载入口；旧 `/?week=<page-id>` 在线转入旧阅读器，新样片 `/?week=2026-09-20-revelation-clip` 进入三语阅读器。浏览器点击仅证明加载与短时播放，不代表重新完成全文听审、实体手机或现场验收。
 
-上述报告与收据的原字节副本已纳入本目录；[浏览器观察](dev-preview-browser-verification.json)单独记录短时播放及其边界。完整候选与旧 Dev 快照保存在本机忽略目录 `artifacts/multilingual-dev-preview/2026-09-23-production-layout/`。下一周发布需重新生成 Production 布局候选，并从当时完整的线上 Dev 版本建立新快照。旧发行目录及新候选都是 ignored media；不要把 708 MB 媒体提交 Git。
+上述报告与收据的原字节副本已纳入本目录；[浏览器观察](dev-preview-browser-verification.json)单独记录短时播放及其边界。完整候选与旧 Dev 快照保存在本机忽略目录 `artifacts/multilingual-dev-preview/2026-09-23-production-layout/`。下一周的 Dev 更新以当时完整的线上 Dev 版本为基线；Production 候选与部署另走独立发布路径。旧发行目录及新候选都是 ignored media；不要把 708 MB 媒体提交 Git。
+
+## 后续 Dev 周次
+
+首次预演的 `build` 只适用于旧六句 Dev POC 与同一 9 月 20 日已审样片的合并，不能直接拿它重新叠加新的周次。后续从**当前完整 Dev 候选**及新周次已审 Layer 4 stage 追加页面：
+
+```bash
+.venv/bin/python scripts/multilingual_dev_preview.py build-update \
+  --dev-base-candidate /absolute/path/to/current-complete-dev-candidate \
+  --staged /absolute/path/to/new-reviewed-layer4-stage \
+  --out /absolute/path/to/next-dev-candidate
+```
+
+`build-update` 先复核当前候选、正式目录、旧 POC 资源和 stage 的同语言发布包哈希，并执行本轮计划的中文、韩语、西语**三语文字及音频均经人工审核**门槛；再只追加新页面的 immutable 资源、更新 v2 catalog 默认页面并保存旧 catalog 回退副本。旧九周、已审样片及 POC 文件原字节保留。它把旧候选的完整文件清单作为新的发布前基线，记录当前 Hosting 的 `cleanUrls` 策略，避免把本轮 `/404.html` 错按旧站 `/404` 请求。新页面使用通用 Dev 提示文案，不再写死 9 月 20 日样片。之后按上节 `preflight → deploy → verify` 顺序执行，每一步使用新的输出收据；没有新周次的 Layer 1–3 人审与 Layer 4 stage 时不生成或发布新页面。此入口目前通过合成 fixture 的本地测试，下一次真实整篇仍须独立验收。
