@@ -481,3 +481,48 @@ final class PlaybackControllerTests: XCTestCase {
         }
     }
 }
+
+final class VoiceDemoCatalogTests: XCTestCase {
+    func testAcceptsDemoOnlyCatalogAndRejectsPromotedOrUnsafeAssets() throws {
+        let prefix = "/voice-demos/2026-09-21-v2"
+        let speakers: [[String: Any]] = (0..<6).map { index in
+            let id = "speaker_\(index)"
+            return [
+                "speakerId": id, "displayName": "Synthetic speaker \(index)",
+                "original": ["path": "\(prefix)/\(id)/en-original.mp3",
+                             "sha256": String(repeating: "a", count: 64), "bytes": 100,
+                             "text": "Synthetic source.",
+                             "transcriptStatus": "machine_screening_only",
+                             "sourceUrl": "https://example.test/\(index)"],
+                "samples": ["zh-Hans", "ko", "es", "vi"].map { locale in
+                    ["path": "\(prefix)/\(id)/\(locale).mp3",
+                     "sha256": String(repeating: "b", count: 64), "bytes": 100,
+                     "text": "Synthetic sample.", "locale": locale,
+                     "humanListeningStatus": "pending"]
+                },
+            ]
+        }
+        func encode(_ value: [String: Any]) throws -> Data {
+            try JSONSerialization.data(withJSONObject: value)
+        }
+        var value: [String: Any] = [
+            "schemaVersion": "sermon-multilingual-voice-demo-public-v1",
+            "status": "audition_demo",
+            "sourceScope": "voice_capability_audition_not_sermon_translation",
+            "humanListeningStatus": "pending", "speakerCount": 6,
+            "sampleCount": 24, "speakers": speakers,
+        ]
+        XCTAssertEqual(try VoiceDemoCatalog.validated(encode(value)).speakers.count, 6)
+        value["humanListeningStatus"] = "approved"
+        XCTAssertThrowsError(try VoiceDemoCatalog.validated(encode(value)))
+        value["humanListeningStatus"] = "pending"
+        var changed = speakers
+        var first = changed[0]
+        var original = first["original"] as! [String: Any]
+        original["path"] = "\(prefix)/../private.mp3"
+        first["original"] = original
+        changed[0] = first
+        value["speakers"] = changed
+        XCTAssertThrowsError(try VoiceDemoCatalog.validated(encode(value)))
+    }
+}

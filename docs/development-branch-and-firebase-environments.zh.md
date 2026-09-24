@@ -62,7 +62,7 @@ Firebase 官方建议每个开发环境使用独立 project。听译 App 应建�
 
 Dev Web 的「更多」可按讲员展开音色 Demo：每位先放原始英语片段，再放中文、韩语、西班牙语、越南语的 AI 样音。样音使用统一示例文稿，属于音色能力试听；其 `humanListeningStatus=pending` 必须保持独立于每周正式 Layer 2／3 审核。英语参考文字也只标为机器转写参考。此 Demo 不写入正式多语言 catalog、release package 或默认播放器。
 
-本机用 `scripts/stage_voice_demo_dev.py` 把 `artifacts/sermon-dubbing/2026-09-21-multilingual-voice-demos-v2` 的 24 条已解码样音、六位讲员的英语原声和前端组件叠加到**已发布且已有 HTTP 收据**的完整 Dev 候选。脚本校验来源 SHA、四语言覆盖和既有 121 个文件不被改变；原声缺失时用 `--reference speakerId=/path/to/original.wav` 明确补入。产物是新的 immutable v3 候选，Demo 媒体与目录仍留在 ignored `artifacts/` 或本机临时目录。此后按上面的本机 CD 入口先核对线上基线，再用干净且与远端一致的 `dev` checkout 执行部署和逐文件 HTTP／30 条音频 Range 核验。浏览器听测与人工音色审核仍分别记录。
+本机用 `scripts/stage_voice_demo_dev.py` 把 `artifacts/sermon-dubbing/2026-09-21-multilingual-voice-demos-v2` 的 24 条已解码样音、六位讲员的英语原声和前端组件叠加到**已发布且已有 HTTP 收据**的完整 Dev 候选。脚本校验来源 SHA、四语言覆盖和既有 121 个文件不被改变；原声缺失时用 `--reference speakerId=/path/to/original.wav` 明确补入。产物是新的 immutable v3 候选，Demo 媒体与目录仍留在 ignored `artifacts/` 或本机临时目录。此后按上面的本机 CD 入口先核对线上基线，再用干净且与远端一致的 `dev` checkout 执行部署和逐文件 HTTP 核验；30 条音频优先检查 Range 206，Firebase 对小文件返回完整 200 时核对完整长度与 SHA，并在收据中记录回退。浏览器听测与人工音色审核仍分别记录。
 
 ## 建立 Dev App 的接受标准
 

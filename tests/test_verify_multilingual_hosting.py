@@ -101,6 +101,16 @@ class VerifyHostingTest(unittest.TestCase):
         self.assertTrue(any(item.get("range206") for item in receipt["results"]))
         self.assertTrue(any(item.get("routeHtml") for item in receipt["results"]))
 
+    def test_request_file_can_hash_a_range_response(self):
+        path = "/index.html"
+        data = (self.out / "public/index.html").read_bytes()
+        status, headers, size, digest = verification.request_file(
+            ORIGIN, path, opener=FakeHosting(self.out / "public"),
+            request_headers={"Range": "bytes=0-0"})
+        self.assertEqual((status, size), (206, 1))
+        self.assertEqual(headers["content-range"], f"bytes 0-0/{len(data)}")
+        self.assertEqual(digest, verification.hashlib.sha256(data[:1]).hexdigest())
+
     def test_parallel_full_file_checks_keep_manifest_order(self):
         hosting_opener = FakeHosting(self.out / "public")
         lock = threading.Lock()

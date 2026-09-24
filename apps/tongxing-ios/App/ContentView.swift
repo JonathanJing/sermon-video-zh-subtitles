@@ -845,6 +845,9 @@ private struct AboutSheet: View {
                         Text(week.contentReview ?? localization.text("AI 整理，供个人跟读参考。"))
                     }
                 }
+                Section {
+                    VoiceDemoSection(model: model)
+                }
                 Section(localization.text("播放与存储")) {
                     Button(localization.text("重新加载当前音频")) { dismiss(); Task { await model.retryAudio() } }
                     Button(localization.text("刷新证道目录")) { dismiss(); Task { await model.refresh() } }
@@ -881,5 +884,179 @@ private struct AboutSheet: View {
         #if os(macOS)
         .frame(minWidth: 430, minHeight: 630)
         #endif
+    }
+}
+
+struct VoiceDemoCatalog: Decodable {
+    struct Asset: Decodable {
+        let path: String
+        let sha256: String
+        let bytes: Int
+        let text: String
+        let transcriptStatus: String?
+        let humanListeningStatus: String?
+        let sourceUrl: String?
+        let locale: String?
+
+        func url(relativeTo origin: URL) -> URL {
+            URL(string: path, relativeTo: origin)!.absoluteURL
+        }
+    }
+
+    struct Speaker: Decodable, Identifiable {
+        let speakerId: String
+        let displayName: String
+        let original: Asset
+        let samples: [Asset]
+        var id: String { speakerId }
+    }
+
+    let schemaVersion: String
+    let status: String
+    let sourceScope: String
+    let humanListeningStatus: String
+    let speakerCount: Int
+    let sampleCount: Int
+    let speakers: [Speaker]
+
+    static let relativePath = "voice-demos/2026-09-21-v2/catalog.json"
+    private static let prefix = "/voice-demos/2026-09-21-v2/"
+    private static let locales: Set<String> = ["zh-Hans", "ko", "es", "vi"]
+
+    static func validated(_ data: Data) throws -> VoiceDemoCatalog {
+        let catalog = try JSONDecoder().decode(VoiceDemoCatalog.self, from: data)
+        guard catalog.schemaVersion == "sermon-multilingual-voice-demo-public-v1",
+              catalog.status == "audition_demo",
+              catalog.sourceScope == "voice_capability_audition_not_sermon_translation",
+              catalog.humanListeningStatus == "pending",
+              catalog.speakerCount == 6, catalog.sampleCount == 24,
+              catalog.speakers.count == 6,
+              Set(catalog.speakers.map(\.speakerId)).count == 6 else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        var paths = Set<String>()
+        for speaker in catalog.speakers {
+            guard !speaker.speakerId.isEmpty, !speaker.displayName.isEmpty,
+                  speaker.original.transcriptStatus == "machine_screening_only",
+                  !speaker.original.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  speaker.original.sourceUrl.flatMap(URL.init(string:))?.scheme == "https",
+                  speaker.samples.count == 4,
+                  Set(speaker.samples.compactMap(\.locale)) == locales else {
+                throw CocoaError(.fileReadCorruptFile)
+            }
+            for asset in [speaker.original] + speaker.samples {
+                let allowed = CharacterSet(charactersIn:
+                    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._/")
+                guard asset.path.hasPrefix(prefix), !asset.path.contains(".."),
+                      !asset.path.contains("//"),
+                      asset.path.unicodeScalars.allSatisfy({ allowed.contains($0) }),
+                      asset.sha256.count == 64,
+                      asset.sha256.unicodeScalars.allSatisfy({ CharacterSet(charactersIn: "0123456789abcdef").contains($0) }),
+                      asset.bytes > 0, paths.insert(asset.path).inserted else {
+                    throw CocoaError(.fileReadCorruptFile)
+                }
+                if asset.locale != nil && (asset.humanListeningStatus != "pending"
+                    || asset.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) {
+                    throw CocoaError(.fileReadCorruptFile)
+                }
+            }
+        }
+        guard paths.count == 30 else { throw CocoaError(.fileReadCorruptFile) }
+        return catalog
+    }
+}
+
+private struct VoiceDemoSection: View {
+    @ObservedObject private var localization = AppLocalization.shared
+    @ObservedObject var model: AppModel
+    @Environment(\.openURL) private var openURL
+    @ViewState private var expanded = false
+    @ViewState private var loading = false
+    @ViewState private var catalog: VoiceDemoCatalog?
+    @ViewState private var unavailable = false
+
+    var body: some View {
+        DisclosureGroup(isExpanded: $expanded) {
+            Text(localization.text("先听讲员英语原声，再比较四种 AI 样音。示例文稿并非本周证道。"))
+                .font(.footnote).foregroundStyle(.secondary)
+            if loading { ProgressView(localization.text("正在读取试听资料…")) }
+            if unavailable {
+                Button(localization.text("试听资料暂不可用，点击重试")) {
+                    Task { await load() }
+                }
+            }
+            if let catalog {
+                ForEach(catalog.speakers) { speaker in
+                    DisclosureGroup {
+                        assetButton(speaker.original, title: localization.text("讲员原始英文片段"))
+                            .accessibilityIdentifier("voice-demo-original-\(speaker.id)")
+                        DisclosureGroup(localization.text("查看英文机器转写参考")) {
+                            sourceText(speaker.original.text, language: "en").font(.footnote)
+                        }
+                        if let source = speaker.original.sourceUrl.flatMap(URL.init(string:)) {
+                            Button(localization.text("原声来源")) { openURL(source) }
+                                .font(.footnote)
+                        }
+                        ForEach(speaker.samples, id: \.path) { sample in
+                            assetButton(sample, title: "\(languageName(sample.locale)) · \(localization.text("AI 合成样音"))")
+                                .accessibilityIdentifier("voice-demo-sample-\(speaker.id)-\(sample.locale ?? "")")
+                            DisclosureGroup(localization.text("查看样音文稿")) {
+                                sourceText(sample.text, language: sample.locale ?? "en").font(.footnote)
+                            }
+                        }
+                        Text(localization.text("样音待人工听审，不代表正式证道音轨。"))
+                            .font(.footnote).foregroundStyle(.secondary)
+                    } label: {
+                        Text(speaker.displayName)
+                            .accessibilityIdentifier("voice-demo-speaker-\(speaker.id)")
+                    }
+                }
+            }
+        } label: {
+            Text(localization.text("多语种音色试听 · Demo"))
+                .accessibilityIdentifier("voice-demo-disclosure")
+        }
+        .onChange(of: expanded) { _, value in
+            if value && catalog == nil && !loading { Task { await load() } }
+        }
+    }
+
+    private func assetButton(_ asset: VoiceDemoCatalog.Asset, title: String) -> some View {
+        Button {
+            model.playback.pause()
+            openURL(asset.url(relativeTo: model.mediaOrigin))
+        } label: {
+            Label(title, systemImage: "play.circle")
+        }
+    }
+
+    private func languageName(_ locale: String?) -> String {
+        switch locale {
+        case "zh-Hans": return "中文"
+        case "ko": return "한국어"
+        case "es": return "Español"
+        case "vi": return "Tiếng Việt"
+        default: return ""
+        }
+    }
+
+    @MainActor private func load() async {
+        guard !loading, let url = URL(string: VoiceDemoCatalog.relativePath,
+                                     relativeTo: model.mediaOrigin)?.absoluteURL,
+              url.scheme == "https", url.host == model.mediaOrigin.host else { return }
+        loading = true
+        unavailable = false
+        defer { loading = false }
+        do {
+            var request = URLRequest(url: url)
+            request.cachePolicy = .reloadIgnoringLocalCacheData
+            request.timeoutInterval = 15
+            let (data, response) = try await model.mediaSession.data(for: request)
+            guard (response as? HTTPURLResponse)?.statusCode == 200,
+                  data.count < 200_000 else { throw CocoaError(.fileReadCorruptFile) }
+            catalog = try VoiceDemoCatalog.validated(data)
+        } catch {
+            unavailable = true
+        }
     }
 }
