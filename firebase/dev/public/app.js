@@ -94,14 +94,44 @@ Object.assign(interfaceCopy, {
   vi: { ...interfaceCopy.en, brand: "Bài giảng đa ngôn ngữ", languageCard: "Ngôn ngữ bài giảng", mockTitle: "POC lớp 2 + lớp 3", mockBody: "Bản dịch máy và giọng nhân bản chỉ dành cho phát triển, cần được người kiểm tra.", sourceTitle: "Bản gốc tiếng Anh lớp 1", sourceBody: "Văn bản và âm thanh tiếng Anh gốc là tài liệu tham khảo cho các bản dịch.", tabs: ["Nghe", "Toàn bộ phụ đề", "Dàn ý"], now: "Đang nói", transcript: "Toàn bộ phụ đề", outline: "Dàn ý bài giảng", playerNote: "Giọng do máy tạo, không phải bản lồng tiếng chính thức. Chưa được nghe kiểm tra.", sourcePlayerNote: "Âm thanh tiếng Anh gốc; mốc câu vẫn ở trạng thái máy kiểm tra.", release: "Trạng thái gói phát hành", text: "Văn bản", audio: "Âm thanh", dialogTitle: "Chọn ngôn ngữ bài giảng", dialogHint: "Ngôn ngữ ứng dụng, nội dung và âm thanh được quản lý riêng.", dialogFoot: "Tiếng Anh là bản gốc. Bốn bản dịch là POC; ASR tiếng Việt dưới ngưỡng yêu cầu.", footer: "Dự án cá nhân độc lập, không liên kết hoặc được Mariners Church bảo trợ.", audioVariant: "Phiên bản âm thanh để kiểm tra", capabilities: "Bản dịch máy · phụ đề ước tính · giọng nhân bản", sourceCapabilities: "Bản gốc tiếng Anh · âm thanh gốc", loadError: "Không tải được nội dung Dev" }
 });
 
+const productionReader = document.documentElement.dataset.readerMode === "production";
+const storedInterfaceLocale = localStorage.getItem("tongxing-dev-ui");
 const state = {
   catalog: null, page: null, locale: null, release: null, content: null, audioVariant: null,
-  ui: interfaceLocales[localStorage.getItem("tongxing-dev-ui")] ? localStorage.getItem("tongxing-dev-ui") : "zh",
+  ui: interfaceLocales[storedInterfaceLocale] && !(productionReader && storedInterfaceLocale === "vi")
+    ? storedInterfaceLocale : "zh",
   activeTab: "listen", showSource: false, audioObjectURL: null, selectionToken: 0,
   selectionController: null, variantController: null, pendingPageId: null, pendingLocale: null, pendingVariantId: null, pendingResume: null,
   lastSavedAt: 0, switchingAudio: false, lastCueIndex: null, captionRevealScheduled: false
 };
 const $ = (id) => document.getElementById(id);
+const productionFormalCopy = {
+  zh: { edition: "四层审核版本", title: "多语言证道", body: "译文、配音和同步均有独立人工审核记录。", foot: "可选择本页已发布的证道语言。", caption: "字幕与已审核音频同步", httpPending: "发布核验见独立收据" },
+  en: { edition: "FOUR-LAYER REVIEWED", title: "Multilingual sermon", body: "Text, dubbing and synchronization have separate human review records.", foot: "Choose an available sermon language.", caption: "Captions follow reviewed audio", httpPending: "Publication check is recorded separately" },
+  ko: { edition: "4단계 검토", title: "다국어 설교", body: "번역문, 더빙, 동기화에는 각각 사람의 검토 기록이 있습니다.", foot: "게시된 설교 언어를 선택하세요.", caption: "자막은 검토된 음성을 따릅니다.", httpPending: "게시 확인은 별도로 기록됩니다." },
+  es: { edition: "CUATRO CAPAS REVISADAS", title: "Sermón multilingüe", body: "El texto, el doblaje y la sincronización tienen revisiones humanas independientes.", foot: "Elige un idioma publicado.", caption: "Subtítulos sincronizados con el audio revisado", httpPending: "La verificación de publicación se registra por separado" },
+  vi: { edition: "FOUR-LAYER REVIEWED", title: "Multilingual sermon", body: "Text, dubbing and synchronization have separate human review records.", foot: "Choose an available sermon language.", caption: "Captions follow reviewed audio", httpPending: "Publication check is recorded separately" }
+};
+const productionUtilityCopy = {
+  zh: { error: "证道内容加载失败；当前播放未改变。", brandHome: "同行首页" },
+  en: { error: "Sermon content could not load. Current playback is unchanged.", brandHome: "Tongxing home" },
+  ko: { error: "설교 내용을 불러오지 못했습니다. 현재 재생은 그대로 유지됩니다.", brandHome: "동행 홈" },
+  es: { error: "No se pudo cargar el sermón. La reproducción actual no ha cambiado.", brandHome: "Inicio de Tongxing" }
+};
+const productionOneWeek = {
+  zh: "当前有一篇多语言证道", en: "One multilingual sermon is available",
+  ko: "다국어 설교 한 편을 이용할 수 있습니다", es: "Hay un sermón multilingüe disponible"
+};
+const legacyLinkCopy = {
+  zh: "过往中文证道", en: "Earlier Chinese sermons",
+  ko: "지난 중국어 설교", es: "Sermones anteriores en chino"
+};
+function reviewedCopy(ui) {
+  return productionReader ? { ...formalCopy[ui], ...productionFormalCopy[ui] } : formalCopy[ui];
+}
+function utilityFor(ui) {
+  return productionReader ? { ...utilityCopy[ui], ...productionUtilityCopy[ui] } : utilityCopy[ui];
+}
 const audio = $("audio");
 const playbackMemory = new PlaybackMemory({ storage: localStorage });
 
@@ -151,7 +181,8 @@ function loadAudioVariant(variant, objectURL, { remember = true } = {}) {
 }
 
 async function verifiedAudioURL(variant, signal) {
-  const bytes = await fetchVerified(variant.audioUrl, variant.audioSha256, { signal });
+  const bytes = await fetchVerified(variant.audioUrl, variant.audioSha256,
+    { signal, maxBytes: 64 * 1024 * 1024 });
   const type = variant.audioUrl.endsWith(".wav") ? "audio/wav" : "audio/mpeg";
   return URL.createObjectURL(new Blob([bytes], { type }));
 }
@@ -177,7 +208,7 @@ function saveProgress(force = false) {
 function renderResume() {
   const saved = state.pendingResume;
   $("resumeCard").hidden = !saved;
-  if (saved) $("resumeMessage").textContent = `${utilityCopy[state.ui].resumeAt} ${formatTime(saved.positionSeconds)}`;
+  if (saved) $("resumeMessage").textContent = `${utilityFor(state.ui).resumeAt} ${formatTime(saved.positionSeconds)}`;
 }
 
 function seekTo(time) {
@@ -287,7 +318,7 @@ async function selectLocale(locale, { navigate = true, manual = false, page = st
 function render() {
   const content = state.content;
   document.documentElement.lang = interfaceLocales[state.ui].htmlLang;
-  document.title = `${content.title} · ${extraCopy[state.ui].brandName} Dev`;
+  document.title = `${content.title} · ${extraCopy[state.ui].brandName}${productionReader ? "" : " Dev"}`;
   $("seriesLabel").textContent = content.series;
   $("sermonTitle").textContent = content.title;
   $("seriesLabel").lang = state.locale;
@@ -308,7 +339,7 @@ function render() {
   weekSelect.replaceChildren(...state.catalog.pages.map(page => {
     const option = document.createElement("option");
     option.value = page.id;
-    option.textContent = `${page.date} · ${page.catalogKind === "formal" ? "四层审核片段" : "Dev POC"}`;
+    option.textContent = `${page.date} · ${page.catalogKind === "formal" ? "四层审核页面" : "Dev POC"}`;
     option.selected = page.id === state.page.id;
     return option;
   }));
@@ -322,7 +353,8 @@ function render() {
   download.hidden = !state.audioObjectURL;
   if (state.audioObjectURL) {
     download.href = state.audioObjectURL;
-    download.download = `${state.page.id}-${state.locale}-${state.audioVariant.id}.mp3`;
+    const extension = state.audioVariant.audioUrl.endsWith(".wav") ? "wav" : "mp3";
+    download.download = `${state.page.id}-${state.locale}-${state.audioVariant.id}.${extension}`;
   } else {
     download.removeAttribute("href");
   }
@@ -351,17 +383,21 @@ function renderAudioVariantPicker() {
 function renderInterfaceCopy() {
   const copy = interfaceCopy[state.ui];
   const extra = extraCopy[state.ui];
-  const utility = utilityCopy[state.ui];
+  const utility = utilityFor(state.ui);
   document.documentElement.lang = interfaceLocales[state.ui].htmlLang;
   $("brandName").textContent = extra.brandName;
   $("brandSubtitle").textContent = extra.brandDetail;
-  $("editionLabel").textContent = state.page?.catalogKind === "formal" ? formalCopy[state.ui].edition : extra.edition;
+  $("editionLabel").textContent = state.page?.catalogKind === "formal" ? reviewedCopy(state.ui).edition : extra.edition;
   $("weekLabel").textContent = extra.week;
-  $("weekHint").textContent = state.catalog?.pages.length === 1 ? statusCopy[state.ui].oneWeek : extra.weekHint;
+  $("weekHint").textContent = state.catalog?.pages.length === 1
+    ? (productionReader ? productionOneWeek[state.ui] : statusCopy[state.ui].oneWeek) : extra.weekHint;
   $("weekSelect").title = $("weekHint").textContent;
+  const legacyLink = $("legacyReaderLink");
+  if (legacyLink) legacyLink.textContent = legacyLinkCopy[state.ui];
   $("languageButton").setAttribute("aria-label", `${copy.languageCard}: ${languageNames[state.locale]?.native || ""}`);
   document.querySelector(".week-browser").setAttribute("aria-label", extra.week);
-  document.querySelector(".brand").setAttribute("aria-label", utility.brandHome);
+  document.querySelector(".brand").setAttribute("aria-label",
+    utility.brandHome);
   document.querySelector(".sermon-banner").setAttribute("aria-label", utility.sermonInfo);
   $("moreOptions").setAttribute("aria-label", utility.moreOptions);
   $("resumeCard").setAttribute("aria-label", utility.resumeRegion);
@@ -380,7 +416,7 @@ function renderInterfaceCopy() {
   $("captionNote").textContent = state.audioVariant ? extra.captionNote : textOnlyCaptionCopy[state.ui];
   $("transcriptHeading").textContent = copy.transcript;
   $("outlineHeading").textContent = copy.outline;
-  $("outlineBadge").textContent = state.page?.catalogKind === "formal" ? "DEV · REVIEWED" : "DEV POC";
+  $("outlineBadge").textContent = state.page?.catalogKind === "formal" ? (productionReader ? "REVIEWED" : "DEV · REVIEWED") : "DEV POC";
   $("playerNote").textContent = !state.audioVariant ? textOnlyCopy[state.ui]
     : state.locale === "en" ? copy.sourcePlayerNote : copy.playerNote;
   $("releaseTitle").textContent = copy.release;
@@ -396,7 +432,7 @@ function renderInterfaceCopy() {
     : screening === "requires_review" ? statuses.review
     : ["pending_for_default_audio_variant", "pending_for_this_audio_variant"].includes(screening) ? statuses.pending : statuses.unverified;
   if (state.page?.catalogKind === "formal") {
-    const formal = formalCopy[state.ui];
+    const formal = reviewedCopy(state.ui);
     $("mockNoticeTitle").textContent = formal.title;
     $("mockNoticeBody").textContent = formal.body;
     $("playerNote").textContent = formal.player;
@@ -455,7 +491,9 @@ function renderInterfaceCopy() {
 }
 
 function renderInterfaceLanguageMenu() {
-  $("interfaceLanguageMenu").replaceChildren(...Object.entries(interfaceLocales).map(([locale, info]) => {
+  $("interfaceLanguageMenu").replaceChildren(...Object.entries(interfaceLocales)
+    .filter(([locale]) => !productionReader || locale !== "vi")
+    .map(([locale, info]) => {
     const button = document.createElement("button");
     button.type = "button";
     button.setAttribute("role", "menuitemradio");
@@ -485,9 +523,9 @@ function renderLanguageList() {
     button.className = `language-option${locale === state.locale ? " is-selected" : ""}`;
     const target = state.page.targets[locale];
     const extra = extraCopy[state.ui];
-    const status = state.page.catalogKind === "formal" ? formalCopy[state.ui].content
+    const status = state.page.catalogKind === "formal" ? reviewedCopy(state.ui).content
       : locale === "en" ? extra.sourceStatus : target.machineScreening === "requires_review" ? extra.needsReview : extra.screened;
-    const media = state.page.catalogKind === "formal" ? formalCopy[state.ui].language
+    const media = state.page.catalogKind === "formal" ? reviewedCopy(state.ui).language
       : target.audioStatus === "unavailable" ? textOnlyCopy[state.ui]
       : locale === "en" ? extra.sourceMedia : extra.targetMedia;
     const displayName = new Intl.DisplayNames([interfaceLocales[state.ui].htmlLang], { type: "language" }).of(locale);
@@ -506,7 +544,7 @@ function renderTranscript() {
     row.className = `transcript-item${currentCueIndex() === index ? " is-current" : ""}`;
     button.className = "transcript-time";
     button.textContent = formatTime(cue.start);
-    button.setAttribute("aria-label", `${utilityCopy[state.ui].seekTo} ${formatTime(cue.start)}`);
+    button.setAttribute("aria-label", `${utilityFor(state.ui).seekTo} ${formatTime(cue.start)}`);
     copy.className = "transcript-copy";
     const source = state.locale === "en" || !cue.source || cue.source === cue.text ? "" : `<span lang="en">${escapeHTML(cue.source)}</span>`;
     copy.innerHTML = `<strong lang="${state.locale}">${escapeHTML(cue.text)}</strong>${source}`;
@@ -618,7 +656,7 @@ function escapeHTML(value) {
 function showError(error) {
   if (error?.name === "AbortError") return;
   console.error(error);
-  $("loadErrorMessage").textContent = utilityCopy[state.ui].error;
+  $("loadErrorMessage").textContent = utilityFor(state.ui).error;
   $("loadError").hidden = false;
   if (!state.content) $("sermonTitle").textContent = interfaceCopy[state.ui].loadError;
 }
@@ -756,11 +794,19 @@ async function openPage(pageId, { navigate = true, requestedLocale = null } = {}
 }
 
 async function loadInitialCatalog() {
-  const demo = validateDemoCatalog(await loadJSON("/multilingual.json"));
-  const formal = await loadOptionalFormalCatalog(fetch, demo.pages.map(page => page.id));
+  let demo = null;
+  if (!productionReader) {
+    try {
+      demo = validateDemoCatalog(await loadJSON("/multilingual.json"));
+    } catch (error) {
+      console.warn("Optional Dev POC catalog unavailable", error);
+    }
+  }
+  const formal = await loadOptionalFormalCatalog(fetch, demo?.pages.map(page => page.id) || []);
+  if (!formal && !demo) throw new Error("No reviewed or Dev catalog is available");
   const pages = [
     ...(formal?.pages || []).map(page => ({ ...page, catalogKind: "formal" })),
-    ...demo.pages.map(page => ({ ...page, catalogKind: "poc" }))
+    ...(demo?.pages || []).map(page => ({ ...page, catalogKind: "poc" }))
   ];
   state.catalog = { pages, defaultPageId: formal?.defaultPageId || demo.defaultPageId };
   const route = routeSelection();

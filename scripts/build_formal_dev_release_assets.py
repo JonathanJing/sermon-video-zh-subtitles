@@ -95,6 +95,7 @@ def build(args: argparse.Namespace) -> dict:
                 and audio["captions"] is not None,
                 f"{locale}: upstream text or audio has not passed human review")
         track = stage.local_artifact(audio_paths[locale], audio["track"], f"{locale} track")
+        require(track.suffix in {".wav", ".mp3"}, f"{locale}: unsupported release track format")
         schedule = stage.local_artifact(audio_paths[locale], audio["schedule"], f"{locale} schedule")
         captions = stage.local_artifact(audio_paths[locale], audio["captions"], f"{locale} captions")
         rows[locale] = (candidate, audio, {"candidate": candidate_hash, "audio": audio_hash},
@@ -150,7 +151,7 @@ def build(args: argparse.Namespace) -> dict:
             "reviewedFields": ["series", "title", "speaker", "scripture", "date", "summary", "outline"],
         }
         write_json(output_root / "review/content" / f"{locale}.json", content_receipt)
-        media_path = output_root / "assets/media" / args.page_id / f"{locale}.wav"
+        media_path = output_root / "assets/media" / args.page_id / f"{locale}{track.suffix}"
         caption_path = output_root / "assets/captions" / args.page_id / f"{locale}.json"
         media_path.parent.mkdir(parents=True, exist_ok=True)
         caption_path.parent.mkdir(parents=True, exist_ok=True)
@@ -172,7 +173,7 @@ def build(args: argparse.Namespace) -> dict:
                         "sha256": stage.file_sha(path)}
                        for role, directory, suffix, path in (
                            ("content", "content", "json", content_path),
-                           ("audio", "media", "wav", media_path),
+                           ("audio", "media", track.suffix.lstrip("."), media_path),
                            ("captions", "captions", "json", caption_path))],
             "httpVerification": {"status": "not_run", "evidenceSha256": None},
             "deviceAcceptance": {"status": "not_run", "evidenceSha256": None},

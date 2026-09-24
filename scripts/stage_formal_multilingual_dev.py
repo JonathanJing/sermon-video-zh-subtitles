@@ -276,6 +276,8 @@ def preflight(args: argparse.Namespace) -> tuple[dict, dict[str, tuple[Path, str
         track = local_artifact(audio_paths[locale], audio["track"], f"{locale} track") if audio["track"] else None
         if track is None or audio["captions"] is None or audio["schedule"] is None or not audio["units"]:
             raise StageError(f"{locale}: measured track, captions, schedule, and units are required")
+        if track.suffix not in {".wav", ".mp3"}:
+            raise StageError(f"{locale}: reviewed track must be WAV or MP3")
         track_duration = decode_audio(track, f"{locale} track")
         captions_path = local_artifact(audio_paths[locale], audio["captions"], f"{locale} captions")
         captions = json.loads(captions_path.read_text(encoding="utf-8"))
@@ -301,7 +303,7 @@ def preflight(args: argparse.Namespace) -> tuple[dict, dict[str, tuple[Path, str
             role, path = asset["role"], asset["path"]
             expected_paths = {
                 "content": f"/content/{args.page_id}/{locale}.json",
-                "audio": f"/media/{args.page_id}/{locale}.wav",
+                "audio": f"/media/{args.page_id}/{locale}{track.suffix}",
                 "captions": f"/captions/{args.page_id}/{locale}.json",
             }
             if role not in expected_paths or path != expected_paths[role]:

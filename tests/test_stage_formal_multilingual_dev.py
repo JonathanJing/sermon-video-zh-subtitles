@@ -225,6 +225,45 @@ class FormalDevStageTests(unittest.TestCase):
         self.assertEqual(set(catalog["pages"][0]["targets"]), set(MODULE.LOCALES))
         self.assertEqual(json.loads((output / "releases" / self.page_id / "ko.json").read_text())["status"], "candidate")
 
+    def test_stages_reviewed_compressed_track_without_relabeling_audio(self):
+        locale = "ko"
+        mp3 = self.root / "tone.mp3"
+        subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-i", str(self.audio_file),
+                        "-ac", "1", "-b:a", "64k", "-y", str(mp3)], check=True)
+        mp3_hash = MODULE.file_sha(mp3)
+        media = self.assets / "media" / self.page_id / f"{locale}.mp3"
+        media.write_bytes(mp3.read_bytes())
+        (self.assets / "media" / self.page_id / f"{locale}.wav").unlink()
+        audio_path = self.paths["audio"][locale]
+        audio = json.loads(audio_path.read_text())
+        audio["track"] = {"path": str(mp3), "sha256": mp3_hash}
+        self.write_json(audio_path, audio)
+        audio_hash = MODULE.canonical_sha(audio)
+        review_path = self.paths["audio_receipt"][locale]
+        review = json.loads(review_path.read_text())
+        review["trackSha256"] = mp3_hash
+        review["targetLanguageAudioPackageJsonSha256"] = audio_hash
+        self.write_json(review_path, review)
+        content_path = self.assets / "content" / self.page_id / f"{locale}.json"
+        content = json.loads(content_path.read_text())
+        content["targetLanguageAudioPackageJsonSha256"] = audio_hash
+        self.write_json(content_path, content)
+        receipt_path = self.paths["content_receipt"][locale]
+        receipt = json.loads(receipt_path.read_text())
+        receipt["targetLanguageAudioPackageJsonSha256"] = audio_hash
+        receipt["contentJsonSha256"] = MODULE.canonical_sha(content)
+        self.write_json(receipt_path, receipt)
+        release_path = self.paths["release"][locale]
+        release = json.loads(release_path.read_text())
+        release["targetLanguageAudioPackageJsonSha256"] = audio_hash
+        release["assets"][0]["sha256"] = MODULE.file_sha(content_path)
+        release["assets"][1]["path"] = f"/media/{self.page_id}/{locale}.mp3"
+        release["assets"][1]["sha256"] = mp3_hash
+        self.write_json(release_path, release)
+        result = self.stage_with_fixture_source(self.args())
+        self.assertEqual(result["targetLocales"], list(MODULE.LOCALES))
+        self.assertTrue((self.root / "staged" / "media" / self.page_id / "ko.mp3").is_file())
+
     def test_rejects_missing_locale_without_output(self):
         args = self.args()
         args.audio_package = args.audio_package[:-1]

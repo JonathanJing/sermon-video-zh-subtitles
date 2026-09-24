@@ -90,11 +90,32 @@ test('formal v2 catalog and release produce a separate verified player view', ()
   assert.equal(view.status, 'candidate');
 });
 
-test('formal reader rejects POC relabeling and incomplete language catalog', () => {
+test('formal reader accepts reviewed MP3 delivery without changing locale binding', () => {
+  const compressed = clone(release);
+  compressed.assets[1].path = `/media/${pageId}/${locale}.mp3`;
+  const view = formalReleaseView(validateFormalRelease(compressed, page, locale), page, locale);
+  assert.equal(view.audioUrl, compressed.assets[1].path);
+  const foreign = clone(compressed);
+  foreign.assets[1].path = `/media/${pageId}/es.mp3`;
+  assert.throws(() => validateFormalRelease(foreign, page, locale));
+});
+
+test('formal reader rejects POC relabeling but accepts independently published locales', () => {
   assert.throws(() => validateFormalCatalog({ ...catalog, schemaVersion: 'sermon-multilingual-demo-catalog-v1' }));
   const incomplete = clone(catalog);
   delete incomplete.pages[0].targets.es;
+  assert.deepEqual(validateFormalCatalog(incomplete), incomplete);
+  delete incomplete.pages[0].targets.ko;
+  assert.deepEqual(validateFormalCatalog(incomplete), incomplete);
+  delete incomplete.pages[0].targets['zh-Hans'];
   assert.throws(() => validateFormalCatalog(incomplete));
+  const second = clone(catalog);
+  second.pages.push({ ...clone(page), id: 'next-week',
+    targets: { ko: { ...page.targets.ko, releasePackageUrl: '/releases/next-week/ko.json' } },
+    defaultTargetLocale: 'ko' });
+  assert.deepEqual(validateFormalCatalog(second), second);
+  second.pages[1].id = pageId;
+  assert.throws(() => validateFormalCatalog(second));
   assert.throws(() => validateFormalRelease({ ...release, poc: true, schemaVersion: 'sermon-target-language-demo-package-v1' }, page, locale));
   assert.throws(() => validateFormalRelease({ ...release, poc: true }, page, locale));
   assert.throws(() => validateFormalRelease({ ...release, audioVariants: [

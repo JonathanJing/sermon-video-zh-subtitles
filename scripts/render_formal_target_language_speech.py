@@ -15,6 +15,7 @@ import math
 import os
 from pathlib import Path
 import struct
+import subprocess
 import tempfile
 from typing import Any, Callable
 import wave as wave_module
@@ -344,20 +345,26 @@ def schedule(context: dict[str, Any], rows: list[dict[str, Any]],
 
 
 def assemble(context: dict[str, Any], paths: dict[str, Path], root: Path,
-             rows: list[dict[str, Any]], *, policy: dict[str, float] | None = None) -> dict[str, Any]:
+             rows: list[dict[str, Any]], *, policy: dict[str, float] | None = None,
+             track_format: str = "wav") -> dict[str, Any]:
     policy = DEFAULT_POLICY.copy() if policy is None else policy.copy()
     require(all(isinstance(value, (float, int)) and not isinstance(value, bool)
                 and math.isfinite(value) and value >= 0 for value in policy.values())
             and set(policy) == set(DEFAULT_POLICY), "Invalid schedule policy")
+    require(track_format in {"wav", "mp3"}, "Unsupported formal track format")
     locale = context["job"]["targetLocale"]
     locale_root = root / "languages" / locale
     schedule_path = locale_root / "synchronization/schedule.json"
     captions_path = locale_root / "synchronization/captions.json"
-    track_path = locale_root / "audio/track.wav"
+    wav_path = locale_root / "audio/track.wav"
+    track_path = locale_root / f"audio/track.{track_format}"
     manifest_path = root / "render-manifest.json"
     if manifest_path.exists():
+        existing = package.read_object(manifest_path)
+        require(Path(existing["track"]["path"]).suffix == f".{track_format}",
+                "Cached render uses a different track format")
         package.build_package(paths, manifest_path, root)
-        return package.read_object(manifest_path)
+        return existing
     plan = schedule(context, rows, policy)
     if plan["status"] != "pass":
         write_json_atomic(root / "render-diagnostics.json", {
@@ -393,20 +400,37 @@ def assemble(context: dict[str, Any], paths: dict[str, Path], root: Path,
         offset = start * channels * 2
         track[offset:offset + len(encoded)] = encoded
     # No time stretching, truncation, loudness normalization, or omitted units.
-    track_path.parent.mkdir(parents=True, exist_ok=True)
-    partial = track_path.with_suffix(".partial.wav")
+    wav_path.parent.mkdir(parents=True, exist_ok=True)
+    partial = wav_path.with_suffix(".partial.wav")
     with wave_module.open(str(partial), "wb") as handle:
         handle.setnchannels(channels)
         handle.setsampwidth(2)
         handle.setframerate(sample_rate)
         handle.writeframes(track)
     integrity.probe_full_decode(partial)
-    if track_path.exists():
-        require(identity.sha256(track_path) == identity.sha256(partial),
+    if wav_path.exists():
+        require(identity.sha256(wav_path) == identity.sha256(partial),
                 "Existing track differs from newly assembled 1x audio")
         partial.unlink()
     else:
-        os.replace(partial, track_path)
+        os.replace(partial, wav_path)
+    if track_format == "mp3":
+        partial_mp3 = track_path.with_suffix(".partial.mp3")
+        encoded = subprocess.run([
+            "ffmpeg", "-nostdin", "-xerror", "-v", "error", "-y",
+            "-i", str(wav_path), "-map", "0:a:0", "-ac", "1",
+            "-c:a", "libmp3lame", "-b:a", "64k", "-write_xing", "0",
+            "-map_metadata", "-1", "-f", "mp3", str(partial_mp3),
+        ], capture_output=True, text=True, check=False)
+        require(encoded.returncode == 0 and partial_mp3.is_file(),
+                f"Formal MP3 encode failed: {encoded.stderr[:400]}")
+        integrity.probe_full_decode(partial_mp3)
+        if track_path.exists():
+            require(identity.sha256(track_path) == identity.sha256(partial_mp3),
+                    "Existing compressed track differs from new render")
+            partial_mp3.unlink()
+        else:
+            os.replace(partial_mp3, track_path)
     plan["trackDurationSeconds"] = integrity.probe_full_decode(track_path)["durationSeconds"]
     captions = {"cues": [{"textGroupId": group["translationGroupId"],
                          "text": group["targetText"],
@@ -453,7 +477,7 @@ def render(paths: dict[str, Path], checkpoint_map_path: Path,
            seed: int = 42,
            device: str = "cuda:0", dtype: str = "bfloat16",
            attention: str | None = "sdpa", instruct: str | None = None,
-           policy: dict[str, float] | None = None,
+           policy: dict[str, float] | None = None, track_format: str = "wav",
            synth_factory: Callable[..., Any] = QwenSynthesizer) -> dict[str, Any]:
     if path_map_path is not None:
         materialize_path_map(paths["job"], path_map_path)
@@ -462,7 +486,7 @@ def render(paths: dict[str, Path], checkpoint_map_path: Path,
     rows = render_units(context, paths, root, checkpoint_map_path, seed=seed,
                         device=device, dtype=dtype, attention=attention, instruct=instruct,
                         synth_factory=synth_factory)
-    return assemble(context, paths, root, rows, policy=policy)
+    return assemble(context, paths, root, rows, policy=policy, track_format=track_format)
 
 
 def main() -> None:
@@ -487,6 +511,8 @@ def main() -> None:
     parser.add_argument("--reaction-lag-seconds", type=float, default=0.05)
     parser.add_argument("--inter-utterance-gap-seconds", type=float, default=0.05)
     parser.add_argument("--max-end-lag-seconds", type=float, default=8.0)
+    parser.add_argument("--track-format", choices=("wav", "mp3"), default="wav",
+                        help="Use reviewed 64 kbps mono MP3 for a full-length web release")
     args = parser.parse_args()
     paths = {name: getattr(args, name) for name in ("source", "anchor", "candidate",
                                                    "job", "adapter", "policy", "human_receipt",
@@ -500,7 +526,7 @@ def main() -> None:
     result = render(paths, args.checkpoint_map, args.audio_operation_policies,
                     path_map_path=args.path_map, seed=args.seed, device=args.device,
                     dtype=args.dtype, attention=args.attention, instruct=args.instruct,
-                    policy=policy)
+                    policy=policy, track_format=args.track_format)
     print(json.dumps({"status": "candidate", "targetLocale": result["targetLocale"],
                       "renderManifest": str((paths["job"].parent / "render-manifest.json").resolve()),
                       "machineScreening": "not_run", "humanListeningReview": "pending"},

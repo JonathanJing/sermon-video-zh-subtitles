@@ -37,6 +37,7 @@ export function validateFormalCatalog(catalog) {
     && catalog.schemaVersion === "sermon-multilingual-catalog-v2"
     && Array.isArray(catalog.pages) && catalog.pages.length > 0
     && PAGE_ID.test(catalog.defaultPageId), "Invalid formal Dev catalog");
+  requireValue(catalog.pages.length <= 104, "Formal catalog has too many pages");
   const ids = new Set();
   for (const page of catalog.pages) {
     requireValue(exactKeys(page, ["id", "date", "sourceLocale", "sourceIdentitySha256", "defaultTargetLocale", "targets"])
@@ -45,8 +46,9 @@ export function validateFormalCatalog(catalog) {
       && /^\d{4}-\d{2}-\d{2}$/.test(page.date)
       && LOCALES.has(page.defaultTargetLocale)
       && page.targets && typeof page.targets === "object" && !Array.isArray(page.targets)
-      && Object.keys(page.targets).length === 3
-      && [...LOCALES].every(locale => page.targets[locale]), "Invalid formal Dev page");
+      && Object.keys(page.targets).length >= 1
+      && Object.keys(page.targets).length <= LOCALES.size
+      && page.targets[page.defaultTargetLocale], "Invalid formal Dev page");
     ids.add(page.id);
     for (const [locale, target] of Object.entries(page.targets)) {
       requireValue(LOCALES.has(locale)
@@ -55,6 +57,7 @@ export function validateFormalCatalog(catalog) {
         && SHA256.test(target.releasePackageJsonSha256)
         && target.contentStatus === "human_reviewed" && target.audioStatus === "human_reviewed"
         && Array.isArray(target.capabilities) && target.capabilities.length === 3
+        && new Set(target.capabilities).size === 3
         && ["text", "captions", "audio"].every(value => target.capabilities.includes(value)),
       "Invalid formal Dev release reference");
     }
@@ -104,10 +107,12 @@ export function validateFormalRelease(release, page, locale) {
   const assets = {};
   for (const asset of release.assets) {
     const rule = expected[asset?.role];
+    const audioMp3 = asset?.role === "audio"
+      && asset.path === `/media/${page.id}/${locale}.mp3`;
     requireValue(exactKeys(asset, ["role", "path", "sha256"])
-      && rule && !assets[asset.role] && asset.path === rule[0]
+      && rule && !assets[asset.role] && (asset.path === rule[0] || audioMp3)
       && SHA256.test(asset.sha256), "Invalid formal Dev asset");
-    sameOriginAsset(asset.path, rule[0], rule[1]);
+    sameOriginAsset(asset.path, audioMp3 ? asset.path : rule[0], audioMp3 ? ".mp3" : rule[1]);
     assets[asset.role] = asset;
   }
   requireValue(Object.keys(assets).length === 3, "Missing formal Dev asset");
