@@ -1,6 +1,8 @@
 # 同行 iOS 产品 Backlog
 
-更新：2026-09-20。原四项的中英基线已完成首版原生实现；自动化验证通过，实体设备的声学对齐、灵动岛视觉与无障碍验收仍待完成。9 月 20 日实际播放暴露的英文覆盖、词级时间轴和中文语速问题属于上游 P0 生产修复，不因客户端可播放而视为通过；西班牙语和韩语是本次新增 backlog，尚未实现。Gemini 音视频 sidecar 的全篇 POC 已完成，但结论是仅保留为 Discovery/shadow 审阅辅助，待人工 Gold 和分类质量优化后再评估生产接入。当前版本与证据见 [README](README.zh.md)、[Beta 验收](BETA-TESTING.zh.md)、[当日播放复盘](../../docs/production-2026-09-20.zh.md#当日实际播放复盘)和[全篇 sidecar 结果](../../experiments/omni-annotation-poc/FULL-SERMON-RESULT-2026-09-20.zh.md)。仓库的[旧 backlog](../../docs/backlog.zh.md)仍是历史 Web/实时字幕快照。
+顶层优先级、上游依赖与跨模块状态统一维护在 [Dev 统一 Backlog](../../docs/backlog.zh.md) 的 `DEV-IOS-*`／`DEV-FIELD-*` 项；本页只保留原生客户端的详细需求与平台验收。
+
+更新：2026-09-20。原四项的中英基线已完成首版原生实现；自动化验证通过，实体设备的声学对齐、灵动岛视觉与无障碍验收仍待完成。9 月 20 日实际播放暴露的英文覆盖、词级时间轴和中文语速问题属于上游 P0 生产修复，不因客户端可播放而视为通过；西班牙语和韩语是本次新增 backlog，尚未实现。Gemini 音视频 sidecar 的全篇 POC 已完成，但结论是仅保留为 Discovery/shadow 审阅辅助，待人工 Gold 和分类质量优化后再评估生产接入。当前版本与证据见 [README](README.zh.md)、[Beta 验收](BETA-TESTING.zh.md)、[当日播放复盘](../../docs/production-2026-09-20.zh.md#当日实际播放复盘)和[全篇 sidecar 结果](../../experiments/omni-annotation-poc/FULL-SERMON-RESULT-2026-09-20.zh.md)。早期 Web／实时字幕需求已移到 [Dev 统一 Backlog 的历史附录](../../docs/backlog.zh.md#历史附录2026-06-22-1130-会众中文字幕-backlog)。
 
 | 编号 | 需求 | 拆分与依赖 |
 | --- | --- | --- |

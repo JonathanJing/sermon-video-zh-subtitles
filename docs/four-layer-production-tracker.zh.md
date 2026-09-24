@@ -1,5 +1,7 @@
 # 四层制作 Backlog 与进度追踪
 
+Dev 跨层优先级与稳定任务 ID 统一维护在 [Dev 统一 Backlog](backlog.zh.md)。本页只记录某次制作的 Layer 1–4 检查点、证据、实际耗时与 ETA，不再作为全项目顶层 backlog。
+
 本页是**每次制作**的操作清单和状态入口。正式包、门禁和失效规则以[四层接口合同](multilingual-production-interfaces.zh.md)为准；本地 tracker 是工作记录，**不能**凭勾选、文件路径或百分比授予人工批准、发布资格、HTTP、设备或现场验收。
 
 需要跨设备查看时，使用[Firebase 四层公开 Tracker](../experiments/sermon-dubbing-poc/tracker-admin/README.zh.md)：它从本地账本、source monitor 与发行收据生成脱敏的实时只读页面，显示每语言页面、语音和声纹状态。
