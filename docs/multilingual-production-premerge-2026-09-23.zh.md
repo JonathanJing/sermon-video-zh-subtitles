@@ -71,7 +71,7 @@ Dev 经文授权声明和样片页面／音频审核不能自动覆盖 Productio
          --origin https://ai-for-god-sermon-audio.web.app \
          --http-workers 4 --out /absolute/path/to/http-verification.json
 
-首次切换的回退源是切换前的完整 legacy registry release；本次只读调用 `deploy_firebase.verify_release` 已通过其 58 个文件及反馈配置的本地校验。若实际切换后需回退，应先把该不可变发行复制到新的回退目录，再按既有 `experiments/sermon-dubbing-poc/deploy_firebase.py --release ... --project ai-for-god-caption-dev --site ai-for-god-sermon-audio --execute` 重新发布，并用 `verify_weekly_release.py` 完整核验。不能修改 registry 原件，不能把本地可回退判定冒充一次实际回退演练。后续多语言版本间的回退仍需专门流程。
+首次切换的回退源是切换前的完整 legacy registry release；本次只读调用 `deploy_firebase.verify_release` 已通过其 58 个文件及反馈配置的本地校验。若实际切换后需回退，应先把该不可变发行复制到新的回退目录，再按既有 `experiments/sermon-dubbing-poc/deploy_firebase.py --release ... --project ai-for-god-caption-dev --site ai-for-god-sermon-audio --execute --allow-multilingual-rollback` 明确发布，并用 `verify_weekly_release.py` 完整核验。普通 legacy 周更现在默认拒绝覆盖在线多语言目录，须先走 `refresh_multilingual_hosting_with_legacy.py` 组装完整候选。不能修改 registry 原件，不能把本地可回退判定冒充一次实际回退演练。后续多语言版本间的回退仍需专门流程。
 
 ## 合并 main 前仍需解决
 
