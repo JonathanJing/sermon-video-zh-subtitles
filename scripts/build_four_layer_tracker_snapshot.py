@@ -23,9 +23,10 @@ from scripts import four_layer_measure as measure
 from scripts import sermon_accounting as accounting
 
 
-SCHEMA = "sermon-public-tracker-snapshot-v1"
+SCHEMA = "sermon-public-tracker-snapshot-v2"
 VIDEO_ID = re.compile(r"[A-Za-z0-9_-]{11}")
 MAX_BYTES = 512 * 1024
+MAX_ELAPSED_SECONDS = 366 * 24 * 60 * 60
 
 
 def read_json(path: Path | None) -> dict | None:
@@ -64,6 +65,38 @@ def public_timestamp(value: object) -> str | None:
     except ValueError:
         return None
     return value if "T" in value else None
+
+
+def elapsed_since(value: object, at: datetime) -> int | None:
+    """Return elapsed wall seconds only for a valid, bounded, timezone-aware start."""
+    stamp = public_timestamp(value)
+    if stamp is None:
+        return None
+    started = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
+    if started.tzinfo is None:
+        return None
+    seconds = (at - started).total_seconds()
+    return int(seconds) if 0 <= seconds <= MAX_ELAPSED_SECONDS else None
+
+
+def status_started_at(ledger: dict) -> dict[str, str]:
+    """Find the start of each current, contiguous ledger status interval."""
+    current: dict[str, str] = {}
+    started: dict[str, str] = {}
+    for event in ledger.get("history", []):
+        if event.get("action") == "invalidate":
+            for key in event.get("steps", []):
+                current[key] = "pending"
+                started.pop(key, None)
+        elif event.get("action") == "update":
+            key, status = event.get("step"), event.get("status")
+            if key not in ledger["steps"]:
+                continue
+            if current.get(key) != status:
+                started[key] = event.get("at")
+            current[key] = status
+    return {key: stamp for key, stamp in started.items()
+            if current.get(key) == ledger["steps"][key]["status"]}
 
 
 def video_id(url: str | None) -> str | None:
@@ -349,9 +382,19 @@ def build_snapshot(ledger: dict, *, monitor: dict | None = None,
                         "acceptance": {kind: {"status": ledger["acceptance"][locale][kind]["status"]}
                                        for kind in ("device", "venue")}})
     timing_rows = {row["step"]: row for row in (timing_report or {}).get("rows", [])}
+    generated = datetime.now(timezone.utc)
+    status_starts = status_started_at(ledger)
     steps = []
     for key, step in ledger["steps"].items():
         timing = timing_rows.get(key, {})
+        open_execution_seconds = None
+        if timing.get("openExecution"):
+            open_ages = [elapsed_since(attempt.get("startedAt"), generated)
+                         for attempt in timing.get("attemptHistory", [])
+                         if attempt.get("status") == "unfinished"]
+            open_execution_seconds = max((age for age in open_ages if age is not None), default=None)
+        status_seconds = (elapsed_since(status_starts.get(key), generated)
+                          if step["status"] in {"running", "waiting_review"} else None)
         steps.append({"id": key, "layer": step["layer"], "locale": step["locale"],
                       "status": step["status"], "doneUnits": step["doneUnits"],
                       "totalUnits": step["totalUnits"],
@@ -362,6 +405,8 @@ def build_snapshot(ledger: dict, *, monitor: dict | None = None,
                           "lastExecutionStatus": timing.get("lastExecutionStatus"),
                           "lastExecutionAt": public_timestamp(timing.get("lastExecutionAt")),
                           "openExecution": timing.get("openExecution", False),
+                          "openExecutionElapsedSeconds": open_execution_seconds,
+                          "statusElapsedSeconds": status_seconds,
                           "closedReviewWaits": timing.get("closedReviewWaits", 0),
                           "operatorReviewWaitSeconds": timing.get("operatorReviewWaitSeconds"),
                           "openReviewWait": timing.get("openReviewWait", False),
@@ -371,7 +416,7 @@ def build_snapshot(ledger: dict, *, monitor: dict | None = None,
         "pageId": page_id,
         "target": ledger["target"],
         "serviceDate": service_date,
-        "generatedAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "generatedAt": generated.isoformat(timespec="seconds"),
         "ledgerUpdatedAt": ledger["updatedAt"],
         "source": source,
         "progress": {"complete": report["complete"], "total": report["total"],

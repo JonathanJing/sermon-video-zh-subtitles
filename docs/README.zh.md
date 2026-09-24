@@ -8,12 +8,13 @@
 
 本页只负责路由，不重复定义流程。项目当前事实以根目录 [README](../README.zh.md)、[工作流总览](workflows/README.zh.md)、对应操作 Runbook、代码和绑定运行收据共同决定；单独一份设计稿、测试或历史报告不能升级生产状态。
 
-状态校准日期：**2026-09-20**。当前提交、远端部署、现场同步和实体设备验收须分别重新读取实际证据，不从文档日期推断。
+状态校准日期：**2026-09-24**。当前提交、远端部署、现场同步和实体设备验收须分别重新读取实际证据，不从文档日期推断。
 
 ## 从任务进入
 
 | 要做的事 | 先读 | 状态边界 |
 |---|---|---|
+| 查看或更新 Dev 开发优先级 | [Dev 统一 Backlog](backlog.zh.md) | 唯一顶层开发清单；专项 backlog 只展开细节，生产 Tracker 只记录单次运行 |
 | 执行未来预制多语言生产 | [四层接口合同](multilingual-production-interfaces.zh.md) → [本地生产 Runbook](codex-local-production-runbook.zh.md) | 必须按 Layer 1–4 逐层留证；legacy 完成不等于四层完成 |
 | 查看三条产品路径与完成标准 | [工作流总览](workflows/README.zh.md) | 当前总入口 |
 | 周六从完整礼拜／归档生成双 PDF | [本地生产 Runbook](codex-local-production-runbook.zh.md) → [稳定双 PDF 流程](stable-post-live-reading-pdf-workflow.zh.md) | 当前 operator 路径 |
@@ -30,7 +31,8 @@
 ### 来源、文本与 PDF
 
 - [多语言生产四层接口](multilingual-production-interfaces.zh.md)：今后预制多语言生产的命名、包和失效规则唯一来源
-- [四层制作 Backlog 与进度追踪](four-layer-production-tracker.zh.md)：每层检查点、状态记录和有条件 ETA
+- [Dev 统一 Backlog](backlog.zh.md)：跨 Layer 1–4、Firebase Dev、Web／iOS、现场对齐、CI 与审核工具的唯一顶层优先级
+- [四层制作 Tracker](four-layer-production-tracker.zh.md)：单次制作的每层检查点、状态记录和有条件 ETA
 - [Firebase 四层公开 Tracker](../experiments/sermon-dubbing-poc/tracker-admin/README.zh.md)：每周源视频、三语分层制作、页面／语音／声纹的脱敏实时只读视图
 - [稳定 post-live 双 PDF 流程](stable-post-live-reading-pdf-workflow.zh.md)及[英文版](stable-post-live-reading-pdf-workflow.md)
 - [中文阅读版质量规范](chinese-reading-edition-quality.zh.md)
@@ -82,7 +84,7 @@
 | 历史发布／离线实现 | [2026-07-05 页面发布复盘](post-live-reviewed-sunday-publication.zh.md)、[旧离线字幕实现笔记](weekly-offline-subtitle-generation.zh.md) |
 | 早期调研 | [发现报告](findings-report.zh.md)、[公开视频可行性分析](youtube-sermon-subtitle-pipeline-analysis.zh-en.md)、[直播归档时间证据](offline-live-archive-timing-feasibility.zh.md)、[Provider 对比](model-provider-comparison.zh.md) |
 | Benchmark／训练 Discovery | [实时翻译 Benchmark](live-sermon-translation-benchmark.zh.md)、[本地 ASR](local-asr-benchmark.zh.md)、[MacBook 翻译](macbook-sermon-translation-benchmark.zh.md)、[MiLMMT 后训练计划](milmmt-sermon-post-training-plan.zh.md) |
-| 旧项目记录 | [Backlog](backlog.zh.md)、[Development Notes](development-notes.md)、[Review/Test Notes](review-testing.md) |
+| 旧项目记录 | [Development Notes](development-notes.md)、[Review/Test Notes](review-testing.md)；旧 2026-06-22 live-caption backlog 已保留在当前 [Dev Backlog 的历史附录](backlog.zh.md#历史附录2026-06-22-1130-会众中文字幕-backlog) |
 
 对应英文历史稿仍保留在同目录，用于来源追踪和开源阅读；它们不是另一套独立事实来源。
 

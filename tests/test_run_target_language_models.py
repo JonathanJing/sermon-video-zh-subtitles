@@ -1,7 +1,11 @@
 import copy
 import hashlib
+
+from contextvars import ContextVar
 import json
 import tempfile
+import threading
+import time
 import unittest
 from pathlib import Path
 
@@ -63,6 +67,94 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         self.assertEqual(subject.run(f.source, f.anchor, f.policy, self.out,
                                      "fixture-key", self.fake_call), evidence)
         self.assertEqual(self.calls, [])
+
+    def test_two_workers_overlap_groups_but_review_each_after_its_draft(self):
+        f = self.fixture
+        policy = copy.deepcopy(f.policy)
+        policy["batching"]["workers"] = 2
+        policy["componentSha256"]["batching"] = policy_tools.canonical_sha256(policy["batching"])
+        barrier = threading.Barrier(2)
+        lock = threading.Lock()
+        events = []
+        group_ids = [row["translationGroupId"] for row in subject.group_plan(
+            producer.prepare_request(f.source, f.anchor, policy), f.anchor)]
+        def concurrent_call(api_key, payload):
+            data = json.loads(payload["messages"][1]["content"])
+            group_id = data["translationGroupId"]
+            role = "translator" if payload["model"] == "gpt-6-astra" else "reviewer"
+            if role == "translator":
+                barrier.wait(timeout=3)
+            else:
+                self.assertIn("astraDraft", data)
+            with lock:
+                events.append((group_id, role))
+            group = next(row for row in f.evidence["groups"]
+                         if row["sourceUnitIds"] == data["sourceUnitIds"])
+            keys = ("translationGroupId", "sourceUnitIds", "targetUtterances", "coverage")
+            result = {key: copy.deepcopy(group[key]) for key in keys}
+            result["translationGroupId"] = group_id
+            if role == "reviewer":
+                result["semanticReview"] = copy.deepcopy(group["semanticReview"])
+            return {"id": group_id + "-" + role, "model": payload["model"],
+                    "choices": [{"finish_reason": "stop",
+                                 "message": {"content": json.dumps(result)}}]}
+        evidence = subject.run(f.source, f.anchor, policy, self.out,
+                               "fixture-key", concurrent_call)
+        self.assertEqual(group_ids, [row["translationGroupId"] for row in evidence["groups"]])
+        self.assertEqual([group_id + "-translator" for group_id in group_ids],
+                         evidence["generation"]["translator"]["requestIds"])
+        self.assertEqual([group_id + "-reviewer" for group_id in group_ids],
+                         evidence["generation"]["reviewer"]["requestIds"])
+        for group_id in group_ids:
+            self.assertLess(events.index((group_id, "translator")),
+                            events.index((group_id, "reviewer")))
+        receipt = producer.run_language_plugin(f.source, f.anchor, policy,
+                                               producer.prepare_request(f.source, f.anchor, policy),
+                                               evidence, f.plugin_path, f.plugin_sha)
+        candidate = producer.admit_evidence(
+            f.source, f.anchor, policy,
+            producer.prepare_request(f.source, f.anchor, policy),
+            evidence, receipt, f.plugin_path, f.plugin_sha)
+        self.assertEqual("machine_review_pass_human_review_pending", candidate["status"])
+        subject.run(f.source, f.anchor, policy, self.out, "fixture-key",
+                    lambda *_: self.fail("completed requests must be reused"))
+
+    def test_worker_limit_is_checked_before_paid_calls(self):
+        policy = copy.deepcopy(self.fixture.policy)
+        policy["batching"]["workers"] = 4
+        policy["componentSha256"]["batching"] = policy_tools.canonical_sha256(policy["batching"])
+        with self.assertRaisesRegex(ValueError, "workers=1..3"):
+            subject.run(self.fixture.source, self.fixture.anchor, policy,
+                        self.out, "fixture-key", self.fake_call)
+        self.assertEqual([], self.calls)
+
+    def test_parallel_failure_does_not_start_later_groups(self):
+        barrier = threading.Barrier(2)
+        started = []
+        lock = threading.Lock()
+        def worker(index):
+            with lock:
+                started.append(index)
+            if index < 2:
+                barrier.wait(timeout=3)
+            if index == 0:
+                raise ValueError("first group failed")
+            if index == 1:
+                time.sleep(0.03)
+            return index
+        with self.assertRaisesRegex(ValueError, "first group failed"):
+            subject.ordered_group_results([0, 1, 2], worker, 2)
+        self.assertEqual({0, 1}, set(started))
+
+    def test_parallel_workers_keep_accounting_context(self):
+        context = ContextVar("layer2_test_identity")
+        token = context.set("page-and-locale")
+        try:
+            self.assertEqual(["page-and-locale"] * 3,
+                             subject.ordered_group_results(
+                                 [0, 1, 2], lambda _: context.get(), 2))
+        finally:
+            context.reset(token)
 
     def test_wrong_role_model_or_coverage_blocks_before_paid_call(self):
         f = self.fixture

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -46,8 +47,9 @@ def request_bytes(origin: str, path: str, *, opener=urlopen, range_first=False) 
         return status, returned, data
 
 
-def request_file(origin: str, path: str, *, opener=urlopen) -> tuple[int, dict, int, str]:
-    with opener(Request(origin + path, method="GET"), timeout=180) as response:
+def request_file(origin: str, path: str, *, opener=urlopen,
+                 request_headers: dict[str, str] | None = None) -> tuple[int, dict, int, str]:
+    with opener(Request(origin + path, headers=request_headers or {}, method="GET"), timeout=180) as response:
         final, expected = urlparse(response.geturl()), urlparse(origin)
         if (final.scheme, final.netloc, final.path) != (
                 expected.scheme, expected.netloc, path):
@@ -61,7 +63,35 @@ def request_file(origin: str, path: str, *, opener=urlopen) -> tuple[int, dict, 
         return response.status, headers, length, digest.hexdigest()
 
 
-def verify(candidate: Path, origin: str, *, opener=urlopen) -> dict:
+def ordered_checks(items: list, check, workers: int) -> list:
+    """Bound in-flight requests and return evidence in manifest order."""
+    if type(workers) is not int or not 1 <= workers <= 8:
+        raise ValueError("HTTP workers must be between 1 and 8")
+    if workers == 1 or len(items) < 2:
+        return [check(item) for item in items]
+    results = []
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        pending = {}
+        source = iter(enumerate(items))
+        for _ in range(min(workers, len(items))):
+            index, item = next(source)
+            pending[index] = pool.submit(check, item)
+        for index in range(len(items)):
+            future = pending.pop(index)
+            try:
+                results.append(future.result())
+            except BaseException:
+                for remaining in pending.values():
+                    remaining.cancel()
+                raise
+            next_item = next(source, None)
+            if next_item is not None:
+                next_index, item = next_item
+                pending[next_index] = pool.submit(check, item)
+    return results
+
+
+def verify(candidate: Path, origin: str, *, opener=urlopen, http_workers=1) -> dict:
     origin = checked_origin(origin)
     public = candidate / "public"
     report = hosting.load(candidate / "build-report.json")
@@ -84,8 +114,8 @@ def verify(candidate: Path, origin: str, *, opener=urlopen) -> dict:
     if report.get("productionReader") and urlparse(origin).hostname != "ai-for-god-sermon-audio.web.app":
         raise ValueError("Production reader candidate targets the Production Hosting origin")
 
-    results = []
-    for name, info in sorted(expected.items()):
+    def check_file(item):
+        name, info = item
         path = "/" + name
         status, headers, length, actual = request_file(origin, path, opener=opener)
         if status != 200 or length != info["bytes"]:
@@ -100,8 +130,9 @@ def verify(candidate: Path, origin: str, *, opener=urlopen) -> dict:
             raise ValueError(f"Unexpected Content-Type for {path}: {mime}")
         if name == hosting.CATALOG and "no-store" not in headers.get("cache-control", ""):
             raise ValueError("Online multilingual catalog must use no-store")
-        results.append({"path": path, "status": status, "sha256": actual,
-                        "bytes": length, "contentType": mime})
+        return {"path": path, "status": status, "sha256": actual,
+                "bytes": length, "contentType": mime}
+    results = ordered_checks(sorted(expected.items()), check_file, http_workers)
 
     for page in catalog["pages"]:
         for locale in page["targets"]:
@@ -135,7 +166,7 @@ def verify(candidate: Path, origin: str, *, opener=urlopen) -> dict:
     }
 
 
-def verify_baseline(candidate: Path, origin: str, *, opener=urlopen) -> dict:
+def verify_baseline(candidate: Path, origin: str, *, opener=urlopen, http_workers=1) -> dict:
     """Refuse to publish an overlay made from an older Production snapshot."""
     origin = checked_origin(origin)
     report = hosting.load(candidate / "build-report.json")
@@ -150,13 +181,13 @@ def verify_baseline(candidate: Path, origin: str, *, opener=urlopen) -> dict:
         raise ValueError("Candidate lacks a complete base snapshot")
     if len({item["path"] for item in expected}) != len(expected):
         raise ValueError("Duplicate base file")
-    results = []
-    for item in expected:
+    def check_file(item):
         path = "/" + item["path"]
         status, _, size, actual = request_file(origin, path, opener=opener)
         if status != 200 or size != item["bytes"] or actual != item["sha256"]:
             raise ValueError(f"Production baseline changed: {path}")
-        results.append({"path": path, "sha256": actual, "bytes": size})
+        return {"path": path, "sha256": actual, "bytes": size}
+    results = ordered_checks(expected, check_file, http_workers)
     if report.get("oldCatalogSha256") is None:
         try:
             status, _, _, _ = request_file(origin, "/" + hosting.CATALOG, opener=opener)
@@ -180,11 +211,14 @@ def main() -> None:
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--preflight-baseline", action="store_true",
                         help="Compare every base file with live Production before deploy")
+    parser.add_argument("--http-workers", type=int, default=1,
+                        help="Concurrent full-file GET/SHA checks (1-8; use 4 for a measured trial)")
     args = parser.parse_args()
     if args.out.exists() or args.out.is_symlink():
         raise ValueError(f"Verification output already exists: {args.out}")
-    receipt = (verify_baseline(args.candidate, args.origin) if args.preflight_baseline
-               else verify(args.candidate, args.origin))
+    receipt = (verify_baseline(args.candidate, args.origin, http_workers=args.http_workers)
+               if args.preflight_baseline else
+               verify(args.candidate, args.origin, http_workers=args.http_workers))
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(receipt, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
                         encoding="utf-8")

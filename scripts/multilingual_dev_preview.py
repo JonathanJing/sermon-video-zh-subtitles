@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime, timezone
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -433,7 +434,7 @@ def candidate_report(candidate: Path) -> dict:
                 and merge.get("productionReader") is False
                 and report.get("pageId") == merge.get("newPageId"),
                 "Dev update provenance changed")
-    if report["schemaVersion"] == "sermon-multilingual-dev-preview-v3":
+    if report.get("schemaVersion") == "sermon-multilingual-dev-preview-v3" and "repairPaths" in report:
         base = hosting.load(candidate / "dev-base-build-report.json")
         original = {item["path"]: item for item in base.get("files", [])}
         current = {item["path"]: item for item in report["files"]}
@@ -453,6 +454,12 @@ def candidate_report(candidate: Path) -> dict:
                 == hosting.digest(candidate / "public/multilingual-v2.json")
                 and report.get("baseCleanUrls") == config["hosting"].get("cleanUrls"),
                 "Dev reader repair provenance changed")
+    elif report.get("schemaVersion") == "sermon-multilingual-dev-preview-v3":
+        try:
+            from scripts import stage_voice_demo_dev
+        except ImportError:
+            import stage_voice_demo_dev
+        stage_voice_demo_dev.verify_candidate_overlay(candidate, report)
     return report
 
 
@@ -538,6 +545,29 @@ def verify(candidate: Path) -> dict:
                 and b"<html" in html[:4096].lower(), f"Dev deep link failed: {path}")
         results.append({"path": audio["path"], "range206": True})
         results.append({"path": path, "status": route_status})
+    if report.get("schemaVersion") == "sermon-multilingual-dev-preview-v3":
+        try:
+            from scripts import stage_voice_demo_dev
+        except ImportError:
+            import stage_voice_demo_dev
+        demos = stage_voice_demo_dev.public_catalog(candidate / "public")
+        for speaker in demos["speakers"]:
+            for asset in [speaker["original"], *speaker["samples"]]:
+                path = asset["path"]
+                status, headers, size, digest = verifier.request_file(
+                    DEV_ORIGIN, path, request_headers={"Range": "bytes=0-0"})
+                with (candidate / "public" / path.lstrip("/")).open("rb") as stream:
+                    expected_first = stream.read(1)
+                partial = (status == 206 and size == 1
+                           and digest == hashlib.sha256(expected_first).hexdigest()
+                           and headers.get("content-range") == f"bytes 0-0/{asset['bytes']}")
+                # Firebase may ignore Range for small MP3s and return the full
+                # file. The full response remains playable and is hash-checked.
+                full = (status == 200 and size == asset["bytes"]
+                        and digest == asset["sha256"] and "content-range" not in headers)
+                require(partial or full, f"Voice demo Range/full-body check failed: {path}")
+                results.append({"path": path, "range206": partial,
+                                "fullBodyFallback": full})
     return {"schemaVersion": "sermon-multilingual-dev-preview-http-v1",
             "status": "pass", "origin": DEV_ORIGIN, "pageId": page["id"],
             "verifiedAt": datetime.now(timezone.utc).isoformat(),

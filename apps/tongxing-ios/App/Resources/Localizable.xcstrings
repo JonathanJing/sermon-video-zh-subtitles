@@ -5450,6 +5450,296 @@
           }
         }
       }
+    },
+    "多语种音色试听 · Demo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Multilingual voice demos"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다국어 음색 데모"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Demos de voces multilingües"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản nghe thử giọng đa ngôn ngữ"
+          }
+        }
+      }
+    },
+    "先听讲员英语原声，再比较四种 AI 样音。示例文稿并非本周证道。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hear the speaker’s original English clip, then compare four AI samples. The sample script is not this week’s sermon."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "설교자의 영어 원음을 먼저 듣고 네 가지 AI 샘플을 비교하세요. 예문은 이번 주 설교가 아닙니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escucha primero el audio original en inglés y luego compara cuatro muestras de IA. El texto de muestra no es el sermón de esta semana."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nghe đoạn tiếng Anh gốc của diễn giả trước, rồi so sánh bốn bản mẫu AI. Văn bản mẫu không phải bài giảng tuần này."
+          }
+        }
+      }
+    },
+    "正在读取试听资料…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading voice demos…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "음색 데모를 불러오는 중…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cargando demos de voces…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang tải bản nghe thử giọng…"
+          }
+        }
+      }
+    },
+    "试听资料暂不可用，点击重试": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voice demos are unavailable. Tap to retry."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "음색 데모를 사용할 수 없습니다. 탭하여 다시 시도하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las demos no están disponibles. Toca para reintentar."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản nghe thử hiện không khả dụng. Chạm để thử lại."
+          }
+        }
+      }
+    },
+    "讲员原始英文片段": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Original English clip"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "설교자 영어 원음"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio original en inglés"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đoạn tiếng Anh gốc"
+          }
+        }
+      }
+    },
+    "查看英文机器转写参考": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View machine transcript reference"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "영어 기계 전사 참고 보기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver transcripción automática"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem bản chép tiếng Anh tự động"
+          }
+        }
+      }
+    },
+    "原声来源": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Original source"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "원음 출처"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fuente original"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nguồn âm thanh gốc"
+          }
+        }
+      }
+    },
+    "AI 合成样音": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI generated sample"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 합성 샘플"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Muestra generada por IA"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mẫu giọng AI"
+          }
+        }
+      }
+    },
+    "查看样音文稿": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View sample script"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "샘플 원고 보기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver texto de muestra"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem văn bản mẫu"
+          }
+        }
+      }
+    },
+    "样音待人工听审，不代表正式证道音轨。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These samples await human listening review and are not official sermon tracks."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 샘플은 사람의 청취 검토 대기 중이며 정식 설교 음성이 아닙니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estas muestras esperan revisión auditiva humana y no son pistas oficiales del sermón."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các bản mẫu đang chờ người nghe kiểm duyệt và không phải bản âm thanh bài giảng chính thức."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

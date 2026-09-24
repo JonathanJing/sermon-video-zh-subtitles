@@ -1,5 +1,6 @@
 import io
 import mimetypes
+import threading
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -128,6 +129,44 @@ class VerifyHostingTest(unittest.TestCase):
         self.assertEqual(receipt["pageIds"], ["following-week", "new-week"])
         self.assertEqual(sum(bool(item.get("routeHtml")) for item in receipt["results"]), 2)
         self.assertEqual(sum(bool(item.get("range206")) for item in receipt["results"]), 2)
+
+    def test_request_file_can_hash_a_range_response(self):
+        path = "/index.html"
+        data = (self.out / "public/index.html").read_bytes()
+        status, headers, size, digest = verification.request_file(
+            ORIGIN, path, opener=FakeHosting(self.out / "public"),
+            request_headers={"Range": "bytes=0-0"})
+        self.assertEqual((status, size), (206, 1))
+        self.assertEqual(headers["content-range"], f"bytes 0-0/{len(data)}")
+        self.assertEqual(digest, verification.hashlib.sha256(data[:1]).hexdigest())
+
+    def test_parallel_full_file_checks_keep_manifest_order(self):
+        hosting_opener = FakeHosting(self.out / "public")
+        lock = threading.Lock()
+        barrier = threading.Barrier(2)
+        started = 0
+        def concurrent_opener(request, timeout):
+            nonlocal started
+            with lock:
+                started += 1
+                position = started
+            if position <= 2:
+                barrier.wait(timeout=3)
+            return hosting_opener(request, timeout)
+        receipt = verification.verify(self.out, ORIGIN, opener=concurrent_opener,
+                                      http_workers=2)
+        expected = sorted(item["path"] for item in
+                          hosting.load(self.out / "build-report.json")["files"])
+        self.assertEqual(["/" + path for path in expected],
+                         [item["path"] for item in receipt["results"][:len(expected)]])
+        self.assertEqual(receipt["checkedFiles"], len(expected))
+
+    def test_parallel_preflight_still_rejects_changed_base(self):
+        write(self.base / "weekly.json", b'{"weeks":["newer"]}')
+        with self.assertRaisesRegex(ValueError, "baseline changed"):
+            verification.verify_baseline(
+                self.out, ORIGIN, opener=FakeHosting(self.base, omit_catalog=True),
+                http_workers=2)
 
     def test_postdeploy_refuses_tampered_media(self):
         deployed = Path(self.temp.name) / "tampered"

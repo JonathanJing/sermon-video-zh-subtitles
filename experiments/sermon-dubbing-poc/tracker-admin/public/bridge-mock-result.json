@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "sermon-tracker-bridge-mock-result-v1",
+  "projectId": "ai-for-god-sermon-audio-dev",
+  "databaseId": "sermon-tracker",
+  "action": "mock_ping",
+  "mockOnly": true,
+  "cloudState": "received",
+  "cloudCreatedAt": "2026-09-24T21:20:30.138Z",
+  "cloudReceivedAt": "2026-09-24T21:20:31.361Z",
+  "receiptHashMatched": true
+}

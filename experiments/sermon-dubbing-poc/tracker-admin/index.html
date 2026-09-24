@@ -13,56 +13,72 @@
           <div class="mark" aria-hidden="true">4</div>
           <div>
             <span class="eyebrow">SERMON PRODUCTION · PUBLIC STATUS</span>
-            <h1>四层制作进度</h1>
+            <h1 data-en="Four-Layer Production">四层制作进度</h1>
           </div>
         </div>
         <div class="top-actions">
           <span id="connection" class="connection">正在连接</span>
-          <span class="badge">公开只读 · 脱敏</span>
+          <div id="language-switch" class="language-switch" role="group" aria-label="页面语言">
+            <button id="language-zh" type="button" aria-pressed="true">中文</button>
+            <button id="language-en" type="button" aria-pressed="false">EN</button>
+          </div>
+          <span class="badge" data-en="Public read-only · Redacted">公开只读 · 脱敏</span>
         </div>
       </header>
 
       <main>
         <section id="empty" class="empty-state" aria-live="polite">
           <div class="empty-symbol" aria-hidden="true">◌</div>
-          <h2 id="empty-title">正在载入状态</h2>
-          <p id="empty-detail">此页面只显示已发布的脱敏制作状态。</p>
+          <h2 id="empty-title" data-en="Loading status">正在载入状态</h2>
+          <p id="empty-detail" data-en="This page shows published, redacted production status only.">此页面只显示已发布的脱敏制作状态。</p>
         </section>
 
         <div id="dashboard" hidden>
           <section class="page-heading">
             <div>
-              <span class="eyebrow">每周页面 · 公开状态</span>
+              <span class="eyebrow" data-en="WEEKLY PAGE · PUBLIC STATUS">每周页面 · 公开状态</span>
               <h2 id="page-title">—</h2>
               <p id="page-subtitle" class="muted">—</p>
             </div>
             <div class="page-controls">
-              <label for="week-select">选择页面</label>
+              <label for="week-select" data-en="Select page">选择页面</label>
               <select id="week-select"></select>
               <span id="updated-at" class="muted small">—</span>
+              <span id="refresh-note" class="muted small">—</span>
             </div>
           </section>
 
           <section class="metrics" aria-label="总览">
-            <article class="metric metric-overall"><span>整体进度 · 正式门禁检查点</span><strong id="metric-progress">—</strong><small id="metric-progress-count">—</small><div class="progress-track overall-track"><div id="overall-fill" class="progress-fill"></div></div><small id="metric-progress-note">—</small></article>
-            <article class="metric"><span>预计时间</span><strong id="metric-eta">—</strong><small>连续串行估计；缺工时或待审则未知</small></article>
-            <article class="metric"><span>当前阻塞</span><strong id="metric-blockers">—</strong><small>含待人工审核</small></article>
-            <article class="metric"><span>视频更新</span><strong id="metric-video">—</strong><small id="metric-video-note">—</small></article>
+            <article class="metric metric-overall"><span data-en="Overall progress · Formal checkpoints">整体进度 · 正式门禁检查点</span><strong id="metric-progress">—</strong><small id="metric-progress-count">—</small><div class="progress-track overall-track"><div id="overall-fill" class="progress-fill"></div></div><small id="metric-progress-note">—</small></article>
+            <article class="metric"><span data-en="Estimated time">预计时间</span><strong id="metric-eta">—</strong><small id="metric-eta-note">—</small><details class="metric-details"><summary data-en="How is this calculated?">怎样计算？</summary><p id="eta-explanation">—</p></details></article>
+            <article class="metric"><span data-en="Open gates">待处理关口</span><strong id="metric-blockers">—</strong><small data-en="Human review or blocked">待人工审核或阻塞</small><details class="metric-details" id="blocker-details"><summary data-en="View details">查看详情</summary><ul id="blocker-list"></ul></details></article>
+            <article class="metric"><span data-en="Video update">视频更新</span><strong id="metric-video">—</strong><small id="metric-video-note">—</small></article>
+          </section>
+
+          <section id="bridge-mock" class="section-block bridge-mock" aria-labelledby="bridge-mock-title" hidden>
+            <div class="section-heading"><div><span class="eyebrow">REVIEW BRIDGE · MOCKUP</span><h3 id="bridge-mock-title" data-en="Remote review to Mac · mockup">远程审核到本机 · 模拟界面</h3></div><span class="badge warn" data-en="Demo only · No approval">仅演示 · 不授予审核</span></div>
+            <p class="muted small" data-en="This panel demonstrates the review handoff. Its buttons change only this browser; they do not write to Firebase or production artifacts.">此面板演示审核交接；按钮只改变当前浏览器，不写 Firebase 或正式产物。</p>
+            <div id="bridge-mock-content"></div>
+          </section>
+
+          <section class="section-block flow-section" aria-labelledby="flow-title">
+            <div class="section-heading"><div><span class="eyebrow">WORKFLOW MAP</span><h3 id="flow-title" data-en="Production workflow">制作流程总览</h3></div><p data-en="Select a node to inspect its checkpoints; language branches meet at delivery">点击节点查看检查点；各语言分支在发布层汇合</p></div>
+            <div id="flow-map" class="flow-map"></div>
           </section>
 
           <section class="source-grid">
-            <article class="panel source-panel">
-              <div class="section-top"><div><span class="eyebrow">INPUT SOURCE</span><h3>源页面与本周视频</h3></div><span id="source-state" class="badge">—</span></div>
+            <article id="source-panel" class="panel source-panel">
+              <div class="section-top"><div><span class="eyebrow">INPUT SOURCE</span><h3 data-en="Source page and this week's video">源页面与本周视频</h3></div><span id="source-state" class="badge">—</span></div>
               <dl class="facts">
-                <div><dt>输入源页面</dt><dd id="source-page">—</dd></div>
-                <div><dt>检测到的视频</dt><dd id="source-video">—</dd></div>
-                <div><dt>视频状态</dt><dd id="source-video-state">—</dd></div>
-                <div><dt>最近检查</dt><dd id="source-checked">—</dd></div>
+                <div><dt data-en="Source page">输入源页面</dt><dd id="source-page">—</dd></div>
+                <div><dt data-en="Detected video">检测到的视频</dt><dd id="source-video">—</dd></div>
+                <div><dt data-en="Video state">视频状态</dt><dd id="source-video-state">—</dd></div>
+                <div><dt data-en="Last checked">最近检查</dt><dd id="source-checked">—</dd></div>
               </dl>
-              <p class="hint">“视频已更新”仅表示本周监控到的视频 ID 与上次快照不同；媒体下载、完整性与人工范围仍在 Layer 1 单独核验。</p>
+              <p class="hint" data-en="A video update only means the monitored video ID changed since the previous snapshot. Media download, integrity, and the approved sermon window are verified separately in Layer 1.">“视频已更新”仅表示本周监控到的视频 ID 与上次快照不同；媒体下载、完整性与人工范围仍在 Layer 1 单独核验。</p>
             </article>
-            <article class="panel shared-panel">
-              <div class="section-top"><div><span class="eyebrow">SHARED · LAYER 1</span><h3>英文事实与锚点</h3></div><span id="shared-status" class="badge">—</span></div>
+            <article id="shared-panel" class="panel shared-panel">
+              <div class="section-top"><div><span class="eyebrow">SHARED · LAYER 1</span><h3 data-en="English source and anchors">英文事实与锚点</h3></div><span id="shared-status" class="badge">—</span></div>
               <div class="progress-track"><div id="shared-fill" class="progress-fill"></div></div>
               <p id="shared-detail" class="muted">—</p>
               <ul id="shared-steps" class="compact-steps"></ul>
@@ -70,22 +86,24 @@
           </section>
 
           <section class="section-block">
-            <div class="section-heading"><div><span class="eyebrow">LOCALE BRANCHES</span><h3>各语言 Layer 2–4</h3></div><p>正式门禁与 Dev POC 候选分开记录</p></div>
+            <div class="section-heading"><div><span class="eyebrow">LOCALE BRANCHES</span><h3 data-en="Layer 2–3 by language">各语言 Layer 2–3</h3></div><p data-en="Text and audio advance independently by language">文字与音频按语言独立推进</p></div>
             <div id="locale-grid" class="locale-grid"></div>
           </section>
 
-          <section class="section-block">
-            <div class="section-heading"><div><span class="eyebrow">DELIVERY CHECK</span><h3>页面、语音与声纹</h3></div><p>发布、音频与声纹分列；缺证据保持未完成</p></div>
-            <div class="table-wrap"><table><thead><tr><th>语言</th><th>页面</th><th>语音</th><th>声纹索引</th><th>设备</th><th>现场</th></tr></thead><tbody id="delivery-body"></tbody></table></div>
+          <section id="release-panel" class="section-block release-section" aria-labelledby="release-title">
+            <div class="section-heading"><div><span class="eyebrow">SHARED JOIN · LAYER 4</span><h3 id="release-title" data-en="Multilingual delivery and playback">多语言发布与播放</h3></div><p data-en="One release stage; packages and verification remain separate by language">统一发布阶段；发布包与验证仍按语言分别记录</p></div>
+            <div class="release-summary panel"><div><span data-en="Layer 3 branches recorded">Layer 3 分支已记录</span><strong id="release-readiness">—</strong></div><div><span data-en="Layer 4 checkpoints recorded">Layer 4 检查点已记录</span><strong id="release-progress">—</strong></div><small data-en="These are ledger counts. Formal release still requires matching packages, approvals, hashes and the release plan.">以上仅为账本计数；正式发布还须符合包、批准、哈希与本次发布计划。</small></div>
+            <div id="release-grid" class="release-grid"></div>
           </section>
 
           <section class="section-block">
-            <div class="section-heading"><div><span class="eyebrow">CHECKPOINTS</span><h3>逐项进度</h3></div><label class="filter">筛选 <select id="step-filter"><option value="all">全部</option><option value="pending">待开始</option><option value="running">进行中</option><option value="waiting_review">待审核</option><option value="blocked">阻塞</option><option value="complete">已记录</option></select></label></div>
+            <div class="section-heading"><div><span class="eyebrow">CHECKPOINTS</span><h3 data-en="Checkpoint timing and filters">检查点计时与筛选</h3></div><label class="filter"><span data-en="Filter">筛选</span> <select id="step-filter"><option value="all" data-en="All">全部</option><option value="pending" data-en="Not started">待开始</option><option value="running" data-en="In progress">进行中</option><option value="waiting_review" data-en="Awaiting review">待审核</option><option value="blocked" data-en="Blocked">阻塞</option><option value="complete" data-en="Recorded">已记录</option></select></label></div>
+            <p class="hint timing-hint" data-en="Measured execution totals include retries. In-progress and review durations show time in that ledger status at the snapshot; they are not measured execution and do not add to the total.">执行实测累计包含重试；进行中与待审时长是截至快照的账本状态持续时间，不是实测执行，也不与执行累计相加。</p>
             <div id="step-list" class="step-list"></div>
           </section>
         </div>
       </main>
-      <footer>状态页只读 · 进度账本不授予四层门禁、内容批准或现场验收</footer>
+      <footer data-en="Read-only status · The progress ledger does not grant formal gates, content approval, or venue acceptance">状态页只读 · 进度账本不授予四层门禁、内容批准或现场验收</footer>
     </div>
     <script type="module" src="/src/main.js"></script>
   </body>
