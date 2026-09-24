@@ -1,4 +1,5 @@
 import json
+import hashlib
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -143,6 +144,47 @@ class ProductionConfigBindingTest(unittest.TestCase):
 
 
 class DevHttpVerificationTest(unittest.TestCase):
+    def test_voice_demo_accepts_verified_full_body_when_range_is_ignored(self):
+        with TemporaryDirectory() as folder:
+            candidate = Path(folder)
+            path = "/voice-demos/2026-09-21-v2/test/en-original.mp3"
+            audio = candidate / "public" / path.lstrip("/")
+            audio.parent.mkdir(parents=True)
+            payload = b"ID3demo"
+            audio.write_bytes(payload)
+            (candidate / "build-report.json").write_text("{}")
+            asset = {"path": path, "bytes": len(payload),
+                     "sha256": hashlib.sha256(payload).hexdigest()}
+            report = {"schemaVersion": "sermon-multilingual-dev-preview-v3",
+                      "pageId": "reviewed-page", "files": []}
+            catalog = {"pages": [{"id": "reviewed-page", "targets": {}}]}
+            demos = {"speakers": [{"original": asset, "samples": []}]}
+            with patch.object(preview, "candidate_report", return_value=report), \
+                 patch.object(preview.hosting, "load", return_value=catalog), \
+                 patch("scripts.stage_voice_demo_dev.public_catalog", return_value=demos), \
+                 patch.object(preview.verifier, "request_file", return_value=(
+                     200, {"content-type": "audio/mpeg"}, len(payload), asset["sha256"])) as request:
+                receipt = preview.verify(candidate)
+            self.assertEqual(receipt["status"], "pass")
+            self.assertEqual(receipt["results"][0]["fullBodyFallback"], True)
+            request.assert_called_once_with(preview.DEV_ORIGIN, path,
+                                            request_headers={"Range": "bytes=0-0"})
+            with patch.object(preview, "candidate_report", return_value=report), \
+                 patch.object(preview.hosting, "load", return_value=catalog), \
+                 patch("scripts.stage_voice_demo_dev.public_catalog", return_value=demos), \
+                 patch.object(preview.verifier, "request_file", return_value=(
+                     206, {"content-range": f"bytes 0-0/{len(payload)}"}, 1,
+                     hashlib.sha256(payload[:1]).hexdigest())):
+                receipt = preview.verify(candidate)
+            self.assertEqual(receipt["results"][0]["range206"], True)
+            with patch.object(preview, "candidate_report", return_value=report), \
+                 patch.object(preview.hosting, "load", return_value=catalog), \
+                 patch("scripts.stage_voice_demo_dev.public_catalog", return_value=demos), \
+                 patch.object(preview.verifier, "request_file", return_value=(
+                     200, {}, len(payload), "0" * 64)):
+                with self.assertRaisesRegex(ValueError, "Range/full-body check failed"):
+                    preview.verify(candidate)
+
     def test_rejects_wrong_public_content_type(self):
         with TemporaryDirectory() as folder:
             candidate = Path(folder)
