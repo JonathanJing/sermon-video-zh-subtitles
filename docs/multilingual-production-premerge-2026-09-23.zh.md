@@ -4,11 +4,12 @@
 
 [本次本地演练与线上基线证据](evidence/2026-09-23-production-readiness/README.zh.md)。
 
-Firebase Dev 的 Production 布局预演和旧内容保留步骤见[Dev 预演收据](evidence/2026-09-23-production-readiness/DEV-PREVIEW.zh.md)。它使用已审样片做端到端预览，不把新一周尚未发生的 Layer 1–3 标为通过。
+Firebase Dev 的 Production 布局预演、发布核验和旧内容保留结果见[Dev 预演收据](evidence/2026-09-23-production-readiness/DEV-PREVIEW.zh.md)。它使用已审样片做端到端预览，不把新一周尚未发生的 Layer 1–3 标为通过。
 
 ## 当前事实
 
 - Firebase Dev 的 2026-09-20 正式样片有三语文字、配音、同步人工审核与发布后 HTTP 证据；仅覆盖原录像 35:09.16–38:07.32。[收据](evidence/2026-09-20-formal-release/README.zh.md)不批准下周整篇。
+- Firebase Dev 的 Production 布局首页已发布；完整 121 文件 HTTP/SHA、三条音轨 Range 206、三语深链及真实浏览器短时播放通过。旧六句实验入口和九周中文入口仍可访问。这是已审 2:58 样片的 Dev 验收，不能代替新一周 Production 发布或实体设备验收。
 - 只读线上核对：Production /weekly.json 是 sermon-weekly-catalog-v1，共 9 个中文周次；Production /multilingual-v2.json 返回 404。本地 registry head 的 weekly.json 与线上字节 SHA-256 相同：6b7bbd018e1df2d39ea5287c9e6a3114ee6a6a0c953e2f39cdc4d3d3244204bf。三语尚未发布到 Production。
 - 原生 iOS Release 仍读取 Production 的中文目录。多语言目前通过已验证的网页页面提供；iOS 的原生跨语言播放、下载、历史和现场定位仍见 [Layer 4 backlog](multilingual-layer-4-delivery-app-backlog.zh.md)。
 
@@ -27,7 +28,7 @@ Firebase Dev 的 Production 布局预演和旧内容保留步骤见[Dev 预演�
 | Layer 1 | 完整归档媒体、人工批准的证道窗口、词时间与英文审核收据；English Source Package ready_for_translation | 本周新来源尚未生成 |
 | Layer 2 | 同一英文身份的中、韩、西正式候选；经文、术语、独立模型复核和全文人工批准 | 仅样片通过 |
 | Layer 3 | 三条同 locale MP3、完整解码与哈希、全组 ASR 筛查／裁决、全文听审与原视频 1 倍速同步审核 | 整篇未生成；MP3 只有合成测试 |
-| Layer 4 | 同 locale Release Package、旧站点快照、候选校验、Production 部署、逐文件 GET/SHA、音频 Range、三语深链与真实播放 | 本地候选通过；未部署 |
+| Layer 4 | 同 locale Release Package、旧站点快照、候选校验、Production 部署、逐文件 GET/SHA、音频 Range、三语深链与真实播放 | 已审样片的 Dev Production 布局已部署、HTTP 和浏览器短时播放通过；新整篇及 Production 未部署 |
 | 设备／现场 | 实体设备与现场验收分别留证；iOS 原生多语言若列入范围须另验收 | 未执行 |
 
 Dev 经文授权声明和样片页面／音频审核不能自动覆盖 Production 的许可范围与署名要求；正式发布前核对适用条款并落实署名。样片收据不能复制给整篇。
