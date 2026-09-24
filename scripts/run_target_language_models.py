@@ -7,6 +7,8 @@ An unfinished request marker deliberately blocks automatic paid retries.
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from contextvars import copy_context
 import copy
 import hashlib
 import json
@@ -123,6 +125,37 @@ def _utterances(value: object) -> list[str]:
     return [item.strip() for item in value]
 
 
+def ordered_group_results(items: list, worker, workers: int) -> list:
+    """Keep only a bounded set of paid groups in flight and merge in source order."""
+    if workers == 1 or len(items) < 2:
+        return [worker(item) for item in items]
+    results = {}
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        source = iter(enumerate(items))
+        pending = {}
+        for _ in range(min(workers, len(items))):
+            index, item = next(source)
+            pending[pool.submit(copy_context().run, worker, item)] = index
+        while pending:
+            done, _ = wait(pending, return_when=FIRST_COMPLETED)
+            completed_count = 0
+            for future in sorted(done, key=lambda item: pending[item]):
+                index = pending.pop(future)
+                try:
+                    results[index] = future.result()
+                except BaseException:
+                    for remaining in pending:
+                        remaining.cancel()
+                    raise
+                completed_count += 1
+            for _ in range(completed_count):
+                next_item = next(source, None)
+                if next_item is not None:
+                    next_index, item = next_item
+                    pending[pool.submit(copy_context().run, worker, item)] = next_index
+    return [results[index] for index in range(len(items))]
+
+
 def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
         out: Path, api_key: str,
         caller: Callable[[str, dict[str, Any]], dict[str, Any]],
@@ -132,8 +165,10 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
     for role, expected in MODEL_ROLES.items():
         require(policy[role]["model"] == expected,
                 f"Production {role} model must be {expected}; freeze a new policy")
-    require(policy["batching"] == {"batchSize": 1, "workers": 1},
-            "Per-group production runner requires batchSize=1 and workers=1")
+    workers = policy["batching"].get("workers")
+    require(policy["batching"].get("batchSize") == 1
+            and type(workers) is int and 1 <= workers <= 3,
+            "Per-group production runner requires batchSize=1 and workers=1..3")
     if plugin_path is not None:
         require(producer.plugin_implementation_sha256(plugin_path)
                 == policy["languageReview"]["pluginImplementationSha256"],
@@ -155,8 +190,8 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
     else:
         require(producer._load(request_path) == request, "Cached request changed")
     units = {row["sourceUnitId"]: row["english"] for row in request["sourceUnits"]}
-    reviewed = []
-    for index, group in enumerate(plan, 1):
+    def process_group(item):
+        index, group = item
         source_rows = [{"sourceUnitId": unit_id, "english": units[unit_id]}
                        for unit_id in group["sourceUnitIds"]]
         context = {"before": units[request["sourceUnits"][sum(len(row["sourceUnitIds"])
@@ -224,13 +259,15 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
                 and isinstance(semantic.get("uncertainty"), list)
                 and isinstance(semantic.get("issues"), list),
                 f"Sol semantic review is incomplete: {stem}")
-        reviewed.append({**copy.deepcopy(group), "targetUtterances": utterances,
-                         "coverage": coverage, "semanticReview": semantic,
-                         "translatorRequestId": translated["requestId"],
-                         "reviewerRequestId": reviewed_response["requestId"]})
+        reviewed_row = {**copy.deepcopy(group), "targetUtterances": utterances,
+                        "coverage": coverage, "semanticReview": semantic,
+                        "translatorRequestId": translated["requestId"],
+                        "reviewerRequestId": reviewed_response["requestId"]}
         if semantic["status"] != "pass" or any(value != "pass" for value in semantic["checks"].values()) \
                 or semantic["uncertainty"] or semantic["issues"]:
             raise ValueError(f"Sol flagged group {stem}; inspect saved response before admission")
+        return reviewed_row
+    reviewed = ordered_group_results(list(enumerate(plan, 1)), process_group, workers)
     translator_ids = list(dict.fromkeys(row["translatorRequestId"] for row in reviewed))
     reviewer_ids = list(dict.fromkeys(row["reviewerRequestId"] for row in reviewed))
     require(len(translator_ids) == len(reviewed) and len(reviewer_ids) == len(reviewed)
