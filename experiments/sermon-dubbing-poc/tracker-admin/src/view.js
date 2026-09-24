@@ -1,5 +1,5 @@
 import './style.css';
-import { timingCoverageNote } from './timing.js';
+import { stepTimingSummary, timingCoverageNote } from './timing.js';
 import { tr, uiLanguage } from './i18n.js';
 
 const LABELS = {
@@ -145,7 +145,11 @@ function renderShared(row, steps) {
   list.replaceChildren(...steps.filter((step) => step.layer === 1).map((step) => {
     const item = make('li');
     item.id = stepId(step.id);
-    item.append(make('span', `dot ${statusClass(step.status)}`), make('span', '', stepName(step)), pill(step.status));
+    const detail = make('span', 'shared-step-body');
+    detail.append(make('span', '', stepName(step)));
+    const timing = stepTimingSummary(step);
+    if (timing.length) detail.append(make('small', 'step-timing', timing.join(' · ')));
+    item.append(make('span', `dot ${statusClass(step.status)}`), detail, pill(step.status));
     return item;
   }));
 }
@@ -295,6 +299,8 @@ function renderLocales(locales, steps) {
         description.append(make('span', 'layer-step-number', step.id.split('@')[0]),
           make('span', 'layer-step-name', stepName(step)));
         if (step.totalUnits != null) description.append(make('small', 'unit-count', tr(`${step.doneUnits || 0}/${step.totalUnits} 单元`, `${step.doneUnits || 0}/${step.totalUnits} units`)));
+        const timing = stepTimingSummary(step);
+        if (timing.length) description.append(make('small', 'step-timing', timing.join(' · ')));
         line.append(description, pill(step.status));
         return line;
       }));
@@ -381,18 +387,8 @@ function renderSteps(steps, filter) {
     title.append(make('span', 'step-id', step.id), make('strong', '', stepName(step)));
     const right = make('div', 'step-right');
     if (step.totalUnits != null) right.append(make('small', 'muted', tr(`${step.doneUnits || 0}/${step.totalUnits} 单元`, `${step.doneUnits || 0}/${step.totalUnits} units`)));
-    const timing = step.timing;
-    if (timing?.executionAttempts) {
-      const seconds = Math.round(timing.measuredExecutionSeconds || 0);
-      right.append(make('small', 'muted', tr(
-        `实测 ${Math.floor(seconds / 60)}分${seconds % 60}秒 · ${timing.executionAttempts} 次${timing.failedExecutionAttempts ? ` · 失败 ${timing.failedExecutionAttempts}` : ''}`,
-        `Measured ${Math.floor(seconds / 60)}m ${seconds % 60}s · ${timing.executionAttempts} attempts${timing.failedExecutionAttempts ? ` · ${timing.failedExecutionAttempts} failed` : ''}`)));
-    }
-    if (timing?.openExecution) right.append(make('small', 'muted', tr('存在未结束执行记录', 'Execution record still open')));
-    if (timing?.operatorReviewWaitSeconds != null) {
-      right.append(make('small', 'muted', tr(`审核等待 ${Math.round(timing.operatorReviewWaitSeconds / 60)} 分钟`, `Review wait ${Math.round(timing.operatorReviewWaitSeconds / 60)} minutes`)));
-    }
-    if (timing?.openReviewWait) right.append(make('small', 'muted', tr('审核等待中', 'Awaiting review')));
+    const timing = stepTimingSummary(step);
+    if (timing.length) right.append(make('small', 'step-timing', timing.join(' · ')));
     right.append(pill(step.status));
     row.append(title, right);
     return row;

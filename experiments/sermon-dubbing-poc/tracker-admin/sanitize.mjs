@@ -12,6 +12,7 @@ const DELIVERY = ['unknown', 'not_generated', 'generated_local', 'http_verified'
   'machine_review_pass_human_review_pending'];
 const enumValue = (value, allowed, fallback = 'unknown') => allowed.includes(value) ? value : fallback;
 const number = (value) => Number.isFinite(value) && value >= 0 ? value : 0;
+const elapsed = (value) => Number.isInteger(value) && value >= 0 && value <= 366 * 24 * 60 * 60 ? value : null;
 const stamp = (value) => typeof value === 'string' && /^\d{4}-\d\d-\d\dT/.test(value)
   && !Number.isNaN(Date.parse(value)) ? value : null;
 const row = (value) => ({ layer: [1, 2, 3, 4].includes(value?.layer) ? value.layer : null,
@@ -106,6 +107,10 @@ export function sanitizeSnapshot(input) {
         lastExecutionStatus: enumValue(step.timing?.lastExecutionStatus, ['completed', 'failed'], null),
         lastExecutionAt: stamp(step.timing?.lastExecutionAt),
         openExecution: step.timing?.openExecution === true,
+        openExecutionElapsedSeconds: step.timing?.openExecution === true
+          ? elapsed(step.timing?.openExecutionElapsedSeconds) : null,
+        statusElapsedSeconds: ['running', 'waiting_review'].includes(step.status)
+          ? elapsed(step.timing?.statusElapsedSeconds) : null,
         closedReviewWaits: number(step.timing?.closedReviewWaits),
         operatorReviewWaitSeconds: step.timing?.operatorReviewWaitSeconds == null ? null : number(step.timing.operatorReviewWaitSeconds),
         openReviewWait: step.timing?.openReviewWait === true,
