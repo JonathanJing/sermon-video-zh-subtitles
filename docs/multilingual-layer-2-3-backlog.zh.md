@@ -109,7 +109,7 @@
 
 #### L2/L3-P0 层内局部审核与缓存解耦（第一阶段已实现，待真实整篇验收）
 
-`approve-batch` 仅减少完整人审后的逐行填表；新增 `record-group`／`approve-groups` 留下逐组收据。默认整候选上下文；有明确人审证明无跨 block 依赖时才按连通 block 复用，全部有效收据聚合后才进入正式 speech job。renderer 的 `--reuse-from` 在新完整 job 通过现有门禁后验证旧单元音频证据并复用未变 WAV；改动组重新合成。详见[局部审核与增量失效设计](multilingual-intralayer-review-decoupling.zh.md)。仍待真实整篇修订 A/B、跨段依赖覆盖与排程／全文听审验收；一组待改时整份 locale candidate 依然不能进入正式 speech job。
+`approve-batch` 仅减少完整人审后的逐行填表；`record-group`／`approve-groups` 留下逐组收据。默认整候选上下文；有明确人审证明无跨 block 依赖时才按连通 block 复用，全部有效收据聚合后才进入正式 speech job。新增 `render_speculative_target_language_speech.py`：机器复核通过、文字人审待定时可按组预生成 `preview_only` 音频，独立于人工决定，不生成正式 Layer 3 包。正式 renderer 的 `--speculative-from` 在完整 job 通过现有门禁后核验原候选快照、来源、声音参数、音频 hash 和解码，再复用未改 WAV；`--reuse-from` 仍复用旧正式 job 的未变单元。详见[局部审核与增量失效设计](multilingual-intralayer-review-decoupling.zh.md)。仍待真实整篇修订 A/B、跨段依赖覆盖、预生成算力浪费率和排程／全文听审验收；一组待改时整份 locale candidate 依然不能进入正式 speech job。
 
 ### L2-P1：兼容中文并完成韩语实证
 

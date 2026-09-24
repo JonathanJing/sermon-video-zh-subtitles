@@ -213,8 +213,13 @@ def _intent(context: dict[str, Any], paths: dict[str, Path], index: int, *, seed
         "jobJsonSha256": identity.json_sha256(job),
         "jobFileSha256": identity.sha256(paths["job"]),
         "sourceJsonSha256": identity.json_sha256(context["source"]),
+        "anchorJsonSha256": identity.json_sha256(context["anchor"]),
+        "translationPolicySha256": context["candidate"]["translationPolicySha256"],
         "candidateJsonSha256": identity.json_sha256(context["candidate"]),
         "adapterFileSha256": identity.sha256(paths["adapter"]),
+        "adapterId": adapter["adapterId"], "model": adapter["model"],
+        "modelRevision": adapter["modelRevision"],
+        "conditioningRef": adapter["conditioningRef"],
         "checkpointMapFileSha256": context["checkpointMapFileSha256"],
         "operationPoliciesFileSha256": context["operationPoliciesFileSha256"],
         "checkpointSha256": adapter["conditioningSha256"],
@@ -222,6 +227,7 @@ def _intent(context: dict[str, Any], paths: dict[str, Path], index: int, *, seed
         "targetLocale": job["targetLocale"],
         "languageParameter": adapter["languageParameter"],
         "groupId": unit["translationGroupId"],
+        "sourceUnitIds": unit["sourceUnitIds"],
         "textSha256": hashlib.sha256(unit["text"].encode()).hexdigest(),
         "rendererSha256": identity.sha256(Path(__file__)),
         "seed": seed, "temperature": 0.7, "repetitionPenalty": 1.05,
@@ -229,6 +235,99 @@ def _intent(context: dict[str, Any], paths: dict[str, Path], index: int, *, seed
         "deliveryInstruction": instruct,
         "ratePolicy": "natural_no_time_stretch",
     }
+
+
+SPECULATIVE_MATCH_FIELDS = (
+    "unitIndex", "sourceJsonSha256", "anchorJsonSha256", "translationPolicySha256",
+    "adapterId", "model", "modelRevision", "conditioningRef",
+    "checkpointMapFileSha256", "operationPoliciesFileSha256", "checkpointSha256",
+    "speakerId", "speakerKey", "targetLocale", "languageParameter", "groupId",
+    "sourceUnitIds", "textSha256", "rendererSha256", "seed", "temperature",
+    "repetitionPenalty", "maxNewTokens", "dtype", "attention",
+    "deliveryInstruction", "ratePolicy",
+)
+
+
+def _reusable_speculative_audio(previous_root: Path, unit: dict[str, Any], index: int,
+                                expected: dict[str, Any]) -> Path | None:
+    """Admit only the same sound from an explicitly non-formal pre-render lane."""
+    manifest_path = previous_root / "manifest.json"
+    if not manifest_path.is_file():
+        raise ValueError("Speculative render manifest is missing")
+    manifest = package.read_object(manifest_path)
+    require(manifest.get("schemaVersion") == "sermon-speculative-target-speech-v1"
+            and manifest.get("status") == "preview_only"
+            and manifest.get("synthesisEligible") is False
+            and manifest.get("releaseEligible") is False,
+            "Speculative render cannot claim formal eligibility")
+    snapshot_path = previous_root / "candidate.json"
+    require(snapshot_path.is_file()
+            and snapshot_path.resolve().is_relative_to(previous_root.resolve()),
+            "Speculative candidate snapshot is missing")
+    snapshot = package.read_object(snapshot_path)
+    evidence = {}
+    for name in ("source", "anchor", "policy", "adapter", "registry"):
+        evidence_path = previous_root / f"{name}.json"
+        require(evidence_path.is_file()
+                and evidence_path.resolve().is_relative_to(previous_root.resolve()),
+                f"Speculative {name} snapshot is missing")
+        evidence[name] = package.read_object(evidence_path)
+    package.speech.validate_target_candidate(evidence["source"], evidence["anchor"],
+                                             snapshot, require_human_approval=False)
+    require(snapshot.get("status") == "machine_review_pass_human_review_pending"
+            and snapshot.get("humanReview", {}).get("translation") == "pending",
+            "Speculative candidate was not human-pending")
+    package.speech.validate_policy_binding(snapshot, evidence["policy"])
+    package.speech.validate_adapter(evidence["adapter"], snapshot["targetLocale"],
+                                    evidence["registry"],
+                                    source_package=evidence["source"], candidate=snapshot)
+    require(evidence["adapter"].get("authorizationPurpose") == "multilingual_voice_demo"
+            or (snapshot["targetLocale"] == "zh-Hans"
+                and evidence["adapter"].get("authorizationPurpose") == "chinese_dubbing"),
+            "Speculative voice purpose was not authorized")
+    require(identity.json_sha256(snapshot) == manifest.get("candidateJsonSha256")
+            and identity.json_sha256(evidence["source"]) == manifest.get("sourceJsonSha256")
+            and identity.json_sha256(evidence["anchor"]) == manifest.get("anchorJsonSha256")
+            and snapshot["translationPolicySha256"] == manifest.get("translationPolicySha256")
+            and manifest.get("sourceJsonSha256") == expected["sourceJsonSha256"]
+            and manifest.get("anchorJsonSha256") == expected["anchorJsonSha256"]
+            and manifest.get("translationPolicySha256") == expected["translationPolicySha256"]
+            and manifest.get("targetLocale") == expected["targetLocale"],
+            "Speculative candidate or source binding changed")
+    groups = snapshot.get("groups", [])
+    require(isinstance(groups, list), "Speculative candidate groups are malformed")
+    if index >= len(groups):
+        return None
+    require(isinstance(groups[index], dict),
+            "Speculative candidate unit is malformed")
+    receipt_path = previous_root / f"receipts/unit-{index:04d}.json"
+    wav_path = previous_root / f"units/unit-{index:04d}.wav"
+    if not receipt_path.exists() and not wav_path.exists():
+        return None
+    require(receipt_path.is_file() and wav_path.is_file()
+            and all(path.resolve().is_relative_to(previous_root.resolve())
+                    for path in (receipt_path, wav_path)),
+            f"Incomplete speculative unit: {unit['translationGroupId']}")
+    receipt = package.read_object(receipt_path)
+    sound = receipt.get("soundIdentity")
+    require(receipt.get("schemaVersion") == "sermon-speculative-target-speech-unit-v1"
+            and receipt.get("status") == "preview_only"
+            and isinstance(sound, dict)
+            and manifest.get("candidateJsonSha256") == receipt.get("candidateJsonSha256")
+            and receipt.get("audioSha256") == identity.sha256(wav_path),
+            f"Speculative audio evidence changed: {unit['translationGroupId']}")
+    require(groups[index].get("translationGroupId") == sound.get("groupId")
+            and groups[index].get("sourceUnitIds") == sound.get("sourceUnitIds")
+            and isinstance(groups[index].get("targetText"), str)
+            and hashlib.sha256(groups[index]["targetText"].encode()).hexdigest()
+            == sound.get("textSha256"),
+            "Speculative receipt differs from candidate snapshot")
+    # A revised translation may retain only units with exactly the same sound
+    # identity. All formal review, authorization and package checks ran first.
+    if sound != {key: expected[key] for key in SPECULATIVE_MATCH_FIELDS}:
+        return None
+    integrity.probe_full_decode(wav_path)
+    return wav_path
 
 
 def _reusable_audio(previous_root: Path, unit: dict[str, Any], index: int,
@@ -285,11 +384,15 @@ def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                  dtype: str = "bfloat16", attention: str | None = "sdpa",
                  instruct: str | None = None,
                  reuse_from: Path | None = None,
+                 speculative_from: Path | None = None,
                  synth_factory: Callable[..., Any] = QwenSynthesizer) -> list[dict[str, Any]]:
     job, adapter = context["job"], context["adapter"]
     if reuse_from is not None:
         require(reuse_from.is_dir() and reuse_from.resolve() != root.resolve(),
                 "Previous render root must be a distinct existing directory")
+    if speculative_from is not None:
+        require(speculative_from.is_dir() and speculative_from.resolve() != root.resolve(),
+                "Speculative render root must be a distinct existing directory")
     model = None
     rows = []
     for index, unit in enumerate(job["units"]):
@@ -323,6 +426,8 @@ def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
             partial = wav_path.with_suffix(".partial.wav")
             previous = (_reusable_audio(reuse_from, unit, index, expected)
                         if reuse_from is not None else None)
+            if previous is None and speculative_from is not None:
+                previous = _reusable_speculative_audio(speculative_from, unit, index, expected)
             if previous is not None:
                 shutil.copyfile(previous, partial)
             else:
@@ -514,6 +619,7 @@ def assemble(context: dict[str, Any], paths: dict[str, Path], root: Path,
 def render(paths: dict[str, Path], checkpoint_map_path: Path,
            operation_policies_path: Path, *, path_map_path: Path | None = None,
            reuse_from: Path | None = None,
+           speculative_from: Path | None = None,
            seed: int = 42,
            device: str = "cuda:0", dtype: str = "bfloat16",
            attention: str | None = "sdpa", instruct: str | None = None,
@@ -526,6 +632,7 @@ def render(paths: dict[str, Path], checkpoint_map_path: Path,
     rows = render_units(context, paths, root, checkpoint_map_path, seed=seed,
                         device=device, dtype=dtype, attention=attention, instruct=instruct,
                         reuse_from=reuse_from,
+                        speculative_from=speculative_from,
                         synth_factory=synth_factory)
     return assemble(context, paths, root, rows, policy=policy, track_format=track_format)
 
@@ -556,6 +663,8 @@ def main() -> None:
                         help="Use reviewed 64 kbps mono MP3 for a full-length web release")
     parser.add_argument("--reuse-from", type=Path,
                         help="Previously validated render directory for unchanged units")
+    parser.add_argument("--speculative-from", type=Path,
+                        help="Preview-only unit audio; formal human and rights gates still run first")
     args = parser.parse_args()
     paths = {name: getattr(args, name) for name in ("source", "anchor", "candidate",
                                                    "job", "adapter", "policy", "human_receipt",
@@ -568,6 +677,7 @@ def main() -> None:
               "maxEndLagSeconds": args.max_end_lag_seconds}
     result = render(paths, args.checkpoint_map, args.audio_operation_policies,
                     path_map_path=args.path_map, reuse_from=args.reuse_from,
+                    speculative_from=args.speculative_from,
                     seed=args.seed, device=args.device,
                     dtype=args.dtype, attention=args.attention, instruct=args.instruct,
                     policy=policy, track_format=args.track_format)
