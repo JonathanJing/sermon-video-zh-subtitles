@@ -1,5 +1,7 @@
 # 项目工作流总览：四层多语言生产、双 PDF 与周日实时字幕
 
+媒体获取参考：[Resi 直播已播内容下载](../resi-live-download.zh.md)（冻结公开清单、合并、校验；下载完成不等于证道范围批准）。
+
 日常代码开发遵循 [`feature/*`／`codex/*` → `dev` → `main`](../development-branch-and-firebase-environments.zh.md) 的两级 PR 门禁；Firebase 听译 App 的 Dev 与 Production 环境必须使用独立 project，避免多语言候选影响当前生产 App。
 
 这份 README 是项目的 workflow source of truth。它描述三条相互独立但可共享证据的路径：预制中文音轨与同行页面、post-live 双 PDF、周日本地实时字幕。执行时先按 [AGENTS.md](../../AGENTS.md) 的任务路由读取对应入口，不必加载全部历史文档。
