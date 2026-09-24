@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import argparse
 import base64
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager, nullcontext
+from contextvars import copy_context
 from datetime import datetime, timezone
 import hashlib
 import fcntl
@@ -315,8 +317,11 @@ audio and a fresh timing report can establish actual fit.
 """
 
 
-def compatible_reuse(current, previous):
-    for key in ("schemaVersion", "model", "reasoningEffort", "batchSize"):
+def compatible_reuse(current, previous, *, exact_request=False):
+    keys = ("schemaVersion", "model", "reasoningEffort")
+    if not exact_request:
+        keys += ("batchSize",)
+    for key in keys:
         require(current.get(key) == previous.get(key), "Reuse run settings changed: " + key)
     for key in ("parentJob", "library", "provenance", "timingReport"):
         a, b = current.get(key), previous.get(key)
@@ -453,7 +458,7 @@ def check_model_receipt(receipt, expected, manifest, *, seen=None):
     require(source["receipt"]["path"] not in visited, "Cyclic model reuse provenance")
     visited.add(source["receipt"]["path"])
     prior = read(source["manifest"]["path"])
-    compatible_reuse(manifest, prior)
+    compatible_reuse(manifest, prior, exact_request=True)
     old_expected = {**expected, "identity": digest(prior)}
     require(Path(source["receipt"]["path"]).name == expected["stage"] + "-" + digest(old_expected) + ".json",
             "Reused request filename/hash mismatch")
@@ -469,7 +474,7 @@ def find_reuse(request, manifest):
     source = manifest["reuseFrom"]
     check_binding(source)
     previous = read(source["path"])
-    compatible_reuse(manifest, previous)
+    compatible_reuse(manifest, previous, exact_request=True)
     old_expected = {**request, "identity": digest(previous)}
     path = Path(source["path"]).parent / "cache" / (request["stage"] + "-" + digest(old_expected) + ".json")
     if not path.exists():
@@ -841,16 +846,64 @@ def quotation_token(identity, manifest, block, quote, parts):
     return "__CUV_LOCK_" + digest({"source": source, "block": block["id"], "quote": quote["quoteId"]})[:24] + "__"
 
 
-def selections(mapping, blocks, library, out, identity, *, offline=False, manifest=None):
+class SelectionQuoteError(ValueError):
+    def __init__(self, message, part_index=None):
+        super().__init__(message)
+        self.part_index = part_index
+
+
+def lock_selected_quote(identity, manifest, block, block_index, quote, selection,
+                        offset_repairs, applied_offsets):
+    require(selection.get("uncertainty") == [] and isinstance(selection.get("evidence"), str)
+            and selection["evidence"].strip(), "CUV selection lacks resolved evidence")
+    parts = selection.get("parts")
+    require(isinstance(parts, list) and parts, "CUV selection is empty")
+    verses = {parse_reference(v["ref"]).canonical_ref: (i, v["text"])
+              for i, v in enumerate(quote["verses"])}
+    normalized, previous = [], (-1, -1)
+    for part_index, part in enumerate(parts):
+        try:
+            offset_key = ("select-" + str(block_index), quote["quoteId"], part_index)
+            offset_repair = offset_repairs.get(offset_key)
+            if offset_repair:
+                require(part == offset_repair["originalPart"], "Offset repair no longer matches selected part")
+                part = {**part, "start": offset_repair["start"], "end": offset_repair["end"]}
+                applied_offsets.add(offset_key)
+            ref = parse_reference(part["reference"]).canonical_ref
+            require(ref in verses, "Selected verse is outside identified source reference")
+            i, full = verses[ref]
+            text = part.get("text")
+            start, end = selected_part_span(part, full, explicit_offsets=bool(manifest and manifest.get("selectionPolicy") == SELECTION_OFFSETS_POLICY))
+            require(i > previous[0] or (i == previous[0] and start >= previous[1]),
+                    "CUV parts overlap or reverse scripture order")
+            contiguous = (not normalized or (i == previous[0] and start == previous[1])
+                          or (i == previous[0] + 1 and start == 0
+                              and previous[1] == len(quote["verses"][previous[0]]["text"])))
+            previous = i, end
+            normalized.append({"reference": ref, "text": text, "start": start, "end": end,
+                               "joinBefore": "" if contiguous else "……",
+                               "verseTextSha256": hashlib.sha256(full.encode()).hexdigest(),
+                               **({"offsetRepairEvidence": offset_repair["repairEvidence"], "offsetRationale": offset_repair["evidence"]} if offset_repair else {})})
+        except ValueError as exc:
+            raise SelectionQuoteError(str(exc), part_index) from exc
+    token = quotation_token(identity, manifest, block, quote, normalized)
+    return {k: v for k, v in {**quote, "parts": normalized, "token": token,
+        "cuvText": "".join(p["joinBefore"] + p["text"] for p in normalized),
+        "sourceUncertainty": quote["uncertainty"], "uncertainty": [],
+        "editionDifference": selection.get("editionDifference", ""), "selectionEvidence": selection["evidence"]}.items()
+                   if k != "verses"}
+
+
+def selections(mapping, blocks, library, out, identity, *, offline=False, manifest=None, workers=1):
     """Resolve references first; model only selects substrings of fixed verses."""
     result, receipts = [], []
     repairs = repair_contexts(manifest) if manifest else {}
     offset_repairs = selection_offset_repairs(manifest)
-    applied_offsets = set()
     selection_reviews = selection_review_contexts(manifest)
-    applied_reviews = set()
-    failures = []
-    for block_index, (block, row) in enumerate(zip(blocks, mapping["blocks"])):
+    def select_block(item):
+        block_index, (block, row) = item
+        block_result, block_receipts, block_failures = [], [], []
+        applied_offsets, applied_reviews = set(), set()
         current_quote_id, current_part_index = None, None
         selection_received = False
         try:
@@ -859,8 +912,8 @@ def selections(mapping, blocks, library, out, identity, *, offline=False, manife
                 lookup = library.lookup(parse_reference(quote["reference"]))
                 candidates.append({**quote, "reference": lookup["canonicalRef"], "verses": lookup["verses"]})
             if not candidates:
-                result.append({**row, "quotes": []})
-                continue
+                block_result.append({**row, "quotes": []})
+                return block_result, block_receipts, block_failures, applied_offsets, applied_reviews
             data = {"block": block, "quotations": candidates}
             if "sourceContext" in row:
                 data["sourceContext"] = row["sourceContext"]
@@ -880,57 +933,43 @@ def selections(mapping, blocks, library, out, identity, *, offline=False, manife
                 instruction += SELECT_OFFSETS
             selected, receipt = cached_call(out, stage_name, instruction,
                 data, identity, offline=offline, manifest=manifest)
-            receipts.append(receipt)
+            block_receipts.append(receipt)
             selection_received = True
             require(selected.get("issues") == [], "Unresolved CUV selection issues")
             require([q.get("quoteId") for q in selected.get("quotes", [])] == [q["quoteId"] for q in candidates],
                     "CUV selection quotation IDs differ")
             locked = []
+            quote_failures = []
             for quote, selection in zip(candidates, selected["quotes"]):
                 current_quote_id, current_part_index = quote["quoteId"], None
-                require(selection.get("uncertainty") == [] and isinstance(selection.get("evidence"), str)
-                        and selection["evidence"].strip(), "CUV selection lacks resolved evidence")
-                parts = selection.get("parts")
-                require(isinstance(parts, list) and parts, "CUV selection is empty")
-                verses = {parse_reference(v["ref"]).canonical_ref: (i, v["text"])
-                          for i, v in enumerate(quote["verses"])}
-                normalized, previous = [], (-1, -1)
-                for part_index, part in enumerate(parts):
-                    current_part_index = part_index
-                    offset_key = ("select-" + str(block_index), quote["quoteId"], part_index)
-                    offset_repair = offset_repairs.get(offset_key)
-                    if offset_repair:
-                        require(part == offset_repair["originalPart"], "Offset repair no longer matches selected part")
-                        part = {**part, "start": offset_repair["start"], "end": offset_repair["end"]}
-                        applied_offsets.add(offset_key)
-                    ref = parse_reference(part["reference"]).canonical_ref
-                    require(ref in verses, "Selected verse is outside identified source reference")
-                    i, full = verses[ref]
-                    text = part.get("text")
-                    start, end = selected_part_span(part, full, explicit_offsets=bool(manifest and manifest.get("selectionPolicy") == SELECTION_OFFSETS_POLICY))
-                    require(i > previous[0] or (i == previous[0] and start >= previous[1]),
-                            "CUV parts overlap or reverse scripture order")
-                    contiguous = (not normalized or (i == previous[0] and start == previous[1])
-                                  or (i == previous[0] + 1 and start == 0
-                                      and previous[1] == len(quote["verses"][previous[0]]["text"])))
-                    previous = i, end
-                    normalized.append({"reference": ref, "text": text, "start": start, "end": end,
-                                       "joinBefore": "" if contiguous else "……",
-                                       "verseTextSha256": hashlib.sha256(full.encode()).hexdigest(),
-                                       **({"offsetRepairEvidence": offset_repair["repairEvidence"], "offsetRationale": offset_repair["evidence"]} if offset_repair else {})})
-                token = quotation_token(identity, manifest, block, quote, normalized)
-                locked.append({k: v for k, v in {**quote, "parts": normalized, "token": token,
-                    "cuvText": "".join(p["joinBefore"] + p["text"] for p in normalized),
-                    "sourceUncertainty": quote["uncertainty"], "uncertainty": [],
-                    "editionDifference": selection.get("editionDifference", ""), "selectionEvidence": selection["evidence"]}.items()
-                               if k != "verses"})
-            result.append({**row, "quotes": locked})
+                try:
+                    locked.append(lock_selected_quote(identity, manifest, block, block_index,
+                                                       quote, selection, offset_repairs, applied_offsets))
+                except ValueError as exc:
+                    if not (manifest and manifest.get("preflightPolicy") == PREFLIGHT_POLICY):
+                        raise
+                    quote_failures.append({"blockId": block["id"], "blockIndex": block_index,
+                        "quoteId": quote["quoteId"], "partIndex": getattr(exc, "part_index", None),
+                        "error": str(exc)})
+            if quote_failures:
+                block_failures.extend(quote_failures)
+                return block_result, block_receipts, block_failures, applied_offsets, applied_reviews
+            block_result.append({**row, "quotes": locked})
         except json.JSONDecodeError:
             raise
         except ValueError as exc:
             if not selection_received or not (manifest and manifest.get("preflightPolicy") == PREFLIGHT_POLICY):
                 raise
-            failures.append({"blockId": block["id"], "blockIndex": block_index, "quoteId": current_quote_id, "partIndex": current_part_index, "error": str(exc)})
+            block_failures.append({"blockId": block["id"], "blockIndex": block_index, "quoteId": current_quote_id, "partIndex": current_part_index, "error": str(exc)})
+        return block_result, block_receipts, block_failures, applied_offsets, applied_reviews
+    failures, applied_offsets, applied_reviews = [], set(), set()
+    for block_result, block_receipts, block_failures, block_offsets, block_reviews in ordered_workers(
+            list(enumerate(zip(blocks, mapping["blocks"]))), select_block, 1 if offline else workers):
+        result.extend(block_result)
+        receipts.extend(block_receipts)
+        failures.extend(block_failures)
+        applied_offsets.update(block_offsets)
+        applied_reviews.update(block_reviews)
     if failures:
         if not offline:
             save_frozen(out / "selection-blocked.json", {"schemaVersion": PREFLIGHT_POLICY,
@@ -979,22 +1018,27 @@ def narration_caveats(audit, audit_receipt, blocks, locked, out, identity, *, of
     """Retain audit caveats; only a separate evidenced classification may unblock narration."""
     concerns = []
     audit_rows = checked_rows(audit, blocks, allow_issues=True)
-    require_evidence(audit["issues"] == [], "Unresolved global issues", manifest,
-                     "quotation_audit", issues=audit["issues"], receipt=audit_receipt)
+    findings = ([{"scope": "global", "issues": audit["issues"], "receipt": audit_receipt}]
+                if audit["issues"] else [])
     for row, source, selection in zip(audit_rows, blocks, locked):
         passed = (row.get("quoteCoverage") == "pass" and row.get("issues") == []
                   and isinstance(row.get("uncertainty"), list)
                   and isinstance(row.get("evidence"), str) and bool(row["evidence"].strip()))
-        if not passed and manifest and manifest.get("preflightPolicy") == PREFLIGHT_POLICY:
-            error = EvidenceBlocked("quotation_audit", [{"blockId": source["id"], "finding": row, "receipt": audit_receipt}])
-            error.args = ("Independent quotation audit failed: " + str(error),)
-            raise error
-        require(passed, "Independent quotation audit failed")
+        if not passed:
+            findings.append({"scope": "block", "blockId": source["id"],
+                             "finding": row, "receipt": audit_receipt})
+            continue
         for index, value in enumerate(row["uncertainty"]):
             require(isinstance(value, (str, dict)) and bool(value), "Malformed audit uncertainty")
             concerns.append({"blockId": source["id"], "uncertaintyIndex": index, "uncertainty": value,
-                             "sourceBlock": {"id": source["id"], "en": source["en"]},
-                             "lockedReferences": selection, "auditFinding": row})
+                "sourceBlock": {"id": source["id"], "en": source["en"]},
+                "lockedReferences": selection, "auditFinding": row})
+    if findings:
+        if manifest and manifest.get("preflightPolicy") == PREFLIGHT_POLICY:
+            error = EvidenceBlocked("quotation_audit", findings)
+            error.args = ("Independent quotation audit failed: " + str(error),)
+            raise error
+        raise ValueError("Independent quotation audit failed")
     if not concerns:
         return None, None
     result, receipt = cached_call(out, "audit-narration-caveats", AUDIT_NARRATION_CAVEATS,
@@ -1016,7 +1060,16 @@ def narration_caveats(audit, audit_receipt, blocks, locked, out, identity, *, of
             "quotationAuditEvidence": audit_receipt, "inputCaveats": concerns, "review": result}, receipt
 
 
-def compute(out, manifest, *, offline=False):
+def ordered_workers(items, worker, count):
+    """Drain every worker before propagating an error or releasing the output lock."""
+    if count == 1 or len(items) < 2:
+        return [worker(item) for item in items]
+    with ThreadPoolExecutor(max_workers=count) as pool:
+        futures = [pool.submit(copy_context().run, worker, item) for item in items]
+        return [future.result() for future in futures]
+
+
+def compute(out, manifest, *, offline=False, workers=1):
     """Run or replay the exact model requests, then deterministically inject CUV."""
     if manifest.get("operation") == TIMING_REVISION:
         return compute_timing_revision(out, manifest, offline=offline)
@@ -1027,7 +1080,7 @@ def compute(out, manifest, *, offline=False):
         check_binding(manifest["referenceMap"])
     if manifest.get("reuseFrom"):
         check_binding(manifest["reuseFrom"])
-        compatible_reuse(manifest, read(manifest["reuseFrom"]["path"]))
+        compatible_reuse(manifest, read(manifest["reuseFrom"]["path"]), exact_request=True)
     validate_reference_map_revision(manifest)
     timing = {}
     if manifest.get("timingReport"):
@@ -1055,7 +1108,8 @@ def compute(out, manifest, *, offline=False):
         if not offline:
             atomic_json(out / "preflight.json", report)
         require_ready(report)
-    locked, receipts = selections(mapping, blocks, library, out, identity, offline=offline, manifest=manifest)
+    locked, receipts = selections(mapping, blocks, library, out, identity, offline=offline, manifest=manifest,
+                                  workers=workers)
     model_evidence.extend(receipts)
     pending = input_issues(mapping)
     audit, receipt = cached_call(out, "audit-quotes", AUDIT_QUOTES,
@@ -1077,7 +1131,7 @@ def compute(out, manifest, *, offline=False):
             "evidence": model_evidence, "humanApproval": False})
     output, reviews = [], []
     batch_size = manifest["batchSize"]
-    for begin in range(0, len(blocks), batch_size):
+    def translate_review_batch(begin):
         batch = blocks[begin:begin + batch_size]
         target = [{"id": b["id"], "originalEnglish": b["en"],
                    "priorChinese": b["zh"], "availableSeconds": timing.get(b["id"]),
@@ -1086,7 +1140,7 @@ def compute(out, manifest, *, offline=False):
                   for b, q in zip(batch, locked[begin:begin + batch_size])]
         translated, receipt = cached_call(out, "translate-" + str(begin), TRANSLATE,
             {"sourceContext": context, "targets": target}, identity, offline=offline, manifest=manifest)
-        model_evidence.append(receipt)
+        batch_evidence = [receipt]
         draft_rows = checked_rows(translated, batch, allow_issues=True)
         for row, q in zip(draft_rows, target):
             draft_row(row, q["quotes"])
@@ -1102,12 +1156,19 @@ def compute(out, manifest, *, offline=False):
             review_instruction += REVIEW_DRAFT_CONCERNS
         reviewed, receipt = cached_call(out, "review-" + str(begin), review_instruction,
             review_input, identity, offline=offline, manifest=manifest)
-        model_evidence.append(receipt)
+        batch_evidence.append(receipt)
+        batch_output, batch_reviews = [], []
         for source, row, q in zip(batch, checked_rows(reviewed, batch), target):
             zh, spans = reviewed_row(row, q["quotes"], checks=True)
-            output.append({**source, "zh": zh, "zhTemplate": row["zhTemplate"], "quotes": q["quotes"],
+            batch_output.append({**source, "zh": zh, "zhTemplate": row["zhTemplate"], "quotes": q["quotes"],
                            "quoteSpansZh": spans, "speakerReferences": q["speakerReferences"]})
-            reviews.append(row)
+            batch_reviews.append(row)
+        return batch_output, batch_reviews, batch_evidence
+    for batch_output, batch_reviews, batch_evidence in ordered_workers(
+            list(range(0, len(blocks), batch_size)), translate_review_batch, 1 if offline else workers):
+        output.extend(batch_output)
+        reviews.extend(batch_reviews)
+        model_evidence.extend(batch_evidence)
     require([b["en"] for b in output] == [b["en"] for b in blocks], "English source was changed")
     return {"blocks": output, "referenceMap": mapping, "lockedQuotes": locked,
             "quotationAudit": audit, "narrativeReviews": reviews, "modelEvidence": model_evidence,
@@ -1447,10 +1508,11 @@ def validate_spoken_review(parent, review_path):
 
 
 def run(parent_job, out, *, library=DEFAULT_LIBRARY_PATH, provenance=DEFAULT_PROVENANCE_PATH,
-        reference_map_path=None, batch_size=6, reuse_from=None, repair_from=None, selection_offset_repair=None, reference_map_revision=None, selection_review_from=None, selection_review_block_indexes=None, inherit_selection_review_from=None, audit_source_media=False):
+        reference_map_path=None, batch_size=6, workers=1, reuse_from=None, repair_from=None, selection_offset_repair=None, reference_map_revision=None, selection_review_from=None, selection_review_block_indexes=None, inherit_selection_review_from=None, audit_source_media=False):
     parent_job, out = Path(parent_job).resolve(), Path(out).resolve()
     require(not out.is_relative_to(parent_job.parent), "Use a new directory outside the parent job")
     require(type(batch_size) is int and 1 <= batch_size <= 20, "Batch size must be between 1 and 20")
+    require(type(workers) is int and 1 <= workers <= 3, "Workers must be between 1 and 3")
     CuvLibrary.from_path(library, provenance_path=provenance)  # Fail before any model request.
     source_blocks(read(parent_job))
     manifest = {"schemaVersion": VERSION, "parentJob": bind(parent_job), "library": bind(library),
@@ -1473,7 +1535,7 @@ def run(parent_job, out, *, library=DEFAULT_LIBRARY_PATH, provenance=DEFAULT_PRO
         previous_path = Path(reuse_from).resolve() / "cuv-manifest.json"
         require(previous_path.parent != out, "Reuse source must be a different run")
         manifest["reuseFrom"] = bind(previous_path)
-        compatible_reuse(manifest, read(previous_path))
+        compatible_reuse(manifest, read(previous_path), exact_request=True)
     if reference_map_revision is not None:
         require(reference_map_path is not None and reuse_from is not None, "Reference-map revision requires --reference-map and --reuse-from")
         manifest["referenceMapRevision"] = bind(reference_map_revision)
@@ -1522,7 +1584,7 @@ def run(parent_job, out, *, library=DEFAULT_LIBRARY_PATH, provenance=DEFAULT_PRO
         try:
             with accounting_session(out / "accounting", "sermon_cuv_translation",
                                     metadata={"jobSha256": manifest["parentJob"]["sha256"]}):
-                result = compute(out, manifest)
+                result = compute(out, manifest, workers=workers)
             saved = save_result(out, manifest, result)
         except json.JSONDecodeError as exc:
             if manifest.get("preflightPolicy") == PREFLIGHT_POLICY:
@@ -1570,6 +1632,7 @@ def main(argv=None):
     create.add_argument("--reference-map", type=Path)
     create.add_argument("--reference-map-revision", type=Path, help="Explicit source-map revision bound to previous discovery/map and changed block IDs")
     create.add_argument("--batch-size", type=int, default=6)
+    create.add_argument("--workers", type=int, default=1, help="Concurrent independent selection blocks and translation/review batches (1-3)")
     create.add_argument("--reuse-from", type=Path, help="Reuse exact matching model requests from a compatible prior run")
     create.add_argument("--repair-from", type=Path, help="Repair only quotation blocks rejected by a prior independent audit")
     create.add_argument("--audit-source-media", action="store_true", help="Attach hash-bound real source images and shared verse lookups to both independent audits")
@@ -1597,7 +1660,7 @@ def main(argv=None):
                                    args.out, batch_size=args.batch_size, prompt_policy=args.prompt_policy, timing_review_repair_from=args.timing_review_repair_from)
         else:
             result = run(args.parent_job, args.out, library=args.library, provenance=args.provenance,
-                reference_map_path=args.reference_map, batch_size=args.batch_size,
+                reference_map_path=args.reference_map, batch_size=args.batch_size, workers=args.workers,
                 reuse_from=args.reuse_from, repair_from=args.repair_from, selection_offset_repair=args.selection_offset_repair, reference_map_revision=args.reference_map_revision, selection_review_from=args.selection_review_from, selection_review_block_indexes=args.selection_review_block_index, inherit_selection_review_from=args.inherit_selection_review_from, audit_source_media=args.audit_source_media)
         print(json.dumps(result, ensure_ascii=False))
         return 0
