@@ -64,10 +64,12 @@ Dev 经文授权声明和样片页面／音频审核不能自动覆盖 Productio
          --origin https://ai-for-god-sermon-audio.web.app \
          --out /absolute/path/to/http-verification.json
 
+首次切换的回退源是切换前的完整 legacy registry release；本次只读调用 `deploy_firebase.verify_release` 已通过其 58 个文件及反馈配置的本地校验。若实际切换后需回退，应先把该不可变发行复制到新的回退目录，再按既有 `experiments/sermon-dubbing-poc/deploy_firebase.py --release ... --project ai-for-god-caption-dev --site ai-for-god-sermon-audio --execute` 重新发布，并用 `verify_weekly_release.py` 完整核验。不能修改 registry 原件，不能把本地可回退判定冒充一次实际回退演练。后续多语言版本间的回退仍需专门流程。
+
 ## 合并 main 前仍需解决
 
 - P0：本周新整篇实跑。来源、三语人审、完整音轨和移动浏览器听播尚不存在；2:58 样片不能代替。
-- P0：真实发布与回退演练。部署和 HTTP 核验入口已有定向测试，但尚未在 Production 执行；Firebase 版本回退与线上无原子 CAS，需冻结同站点发布窗口并保留旧发行。不要把本地报告标为发布通过。
+- P0：真实发布与回退演练。部署和 HTTP 核验入口已有定向测试，旧 legacy 发行可通过现有部署器静态验证，但尚未在 Production 执行回退；Firebase 版本切换无原子 CAS，需冻结同站点发布窗口并保留旧发行。不要把本地报告标为发布通过。
 - P0：旧发行器衔接。后续 legacy 中文发行可能覆盖多语言首页；每次周更必须以当时完整 registry head 重新叠加。长期需把 v2 保留与回滚纳入 registry 合同；新中文周更应同时可从旧页访问。
 - P1：若本周包含原生 iOS/TestFlight，需完成跨语言音轨、locale/hash 下载与历史、实体 iPhone 验收；网页候选不满足。
 - P1：单 locale 回滚与内容修订。当前拒绝同 ID 覆盖，以免静默修改已发布资产；尚需受审核的新版本路径和 CAS 单语言回滚。

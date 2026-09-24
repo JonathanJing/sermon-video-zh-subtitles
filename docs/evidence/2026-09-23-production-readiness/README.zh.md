@@ -9,6 +9,7 @@
 - 候选：`/private/tmp/sermon-prod-overlay-rehearsal-v7`，状态 `validated_not_deployed`；`build-report.json` SHA-256 为 `eea22c48d94e4976b3fafd44313bd3233248afc7f2e9eb16c6282dc7efe3947a`。候选共 78 个公开文件；旧站点 58 个文件中 57 个原字节保留，仅 `index.html` 按首页切换意图修改。三语正式资源新增 12 个文件，另新增阅读器和旧页入口文件。旧 `weekly.json` 不变。
 - 线上基线：2026-09-24 00:14:23 UTC，以 `verify_multilingual_hosting.py --preflight-baseline` 对 Production 逐个 GET、大小和 SHA-256 核对 58 个旧文件，全部匹配。此收据只有发布前短时效力，周六须对新的完整候选重新运行。
 - 部署计划：`deploy_multilingual_hosting.py` 无 `--execute` 本地校验通过，目标固定为 `ai-for-god-caption-dev` 项目的 `ai-for-god-sermon-audio` Hosting site，状态 `validated_not_deployed`。没有向 Firebase 发布。
+- 回退源：旧 registry head `rel_cbd3c91f6e220482fe00acbc` 通过原有 `deploy_firebase.verify_release` 本地校验，58 个公开文件、反馈开关均可读取；未执行回退部署。
 - Firebase Hosting 模拟器：`/` 显示三语阅读器；`/pages/2026-09-20-revelation-clip/ko` 和 `/es` 深链显示对应内容；韩语界面与音轨可播放，进度到 00:06；西语界面显示西语内容；`/legacy-reader.html` 可读 9 个旧中文周次和既有 PDF/MP3/SRT 下载入口。旧 `/?week=<legacy-id>` 转入旧页，新 `/?week=<four-layer-id>` 保持在三语阅读器，兼容周更海报链接。
 - 定向测试：Python Hosting/部署/核验 13 项、Layer 3 渲染与 staging 24 项、JavaScript reader 与海报路由 14 项，合计 51 项通过；`git diff --check`、JS 语法及新 Python 脚本编译通过。POC 全套 334 项、根目录全套 1,529 项（5 项跳过）在允许本机测试端口的环境通过。
 
