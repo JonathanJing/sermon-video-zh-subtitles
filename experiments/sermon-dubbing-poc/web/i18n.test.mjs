@@ -49,7 +49,7 @@ async function fixture(run, { saved = null, blockedStorage = false, beforeImport
   } });
   try {
     await beforeImport?.(doc);
-    for (const file of ['i18n.mjs', 'locales-interface.mjs', 'locales-ko.mjs']) {
+    for (const file of ['i18n.mjs', 'locales-interface.mjs', 'locales-ko.mjs', 'locales-es.mjs']) {
       await writeFile(join(dir, file), await readFile(new URL(file, import.meta.url), 'utf8'));
     }
     // Domain dictionaries are controlled fixtures so the core is verified independently.
@@ -99,7 +99,7 @@ test('dictionaries merge domains, interpolate, fall back and accept an added loc
     assert.equal(core.t('test.count'), '{count} items');
     core.setLocale('es');
     assert.equal(core.t('test.feedback'), 'Comentarios');
-    assert.equal(core.t('nav.listen'), '收听');
+    assert.equal(core.t('nav.listen'), 'Escuchar');
     assert.equal(core.setLocale('unknown'), 'zh');
     core.setLocale('ko-KR');
     assert.equal(core.t('nav.listen'), '듣기');

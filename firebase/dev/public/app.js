@@ -2,7 +2,7 @@ import {
   fetchVerified, validateDemoCatalog, validateDemoContent, validateDemoRelease
 } from "./dev-integrity.mjs";
 import {
-  formalReleaseView, loadOptionalFormalCatalog, validateFormalCaptions,
+  formalReleaseView, loadOptionalFormalCatalog, loadRequiredFormalCatalog, validateFormalCaptions,
   validateFormalContent, validateFormalRelease
 } from "./formal-dev-adapter.mjs";
 import { PlaybackMemory } from "./playback-memory.mjs";
@@ -121,6 +121,10 @@ const productionUtilityCopy = {
 const productionOneWeek = {
   zh: "当前有一篇多语言证道", en: "One multilingual sermon is available",
   ko: "다국어 설교 한 편을 이용할 수 있습니다", es: "Hay un sermón multilingüe disponible"
+};
+const reviewedPageLabel = {
+  zh: "四层审核页面", en: "Reviewed sermon page",
+  ko: "4단계 검토 설교", es: "Página de sermón revisada"
 };
 const legacyLinkCopy = {
   zh: "过往中文证道", en: "Earlier Chinese sermons",
@@ -298,6 +302,9 @@ async function selectLocale(locale, { navigate = true, manual = false, page = st
   state.locale = locale;
   state.release = release;
   state.content = content;
+  state.pageTitles ??= {};
+  state.pageTitles[page.id] ??= {};
+  state.pageTitles[page.id][locale] = content.title;
   state.pendingPageId = null;
   state.pendingLocale = null;
   state.pendingResume = null;
@@ -339,7 +346,9 @@ function render() {
   weekSelect.replaceChildren(...state.catalog.pages.map(page => {
     const option = document.createElement("option");
     option.value = page.id;
-    option.textContent = `${page.date} · ${page.catalogKind === "formal" ? "四层审核页面" : "Dev POC"}`;
+    const pageName = state.pageTitles?.[page.id]?.[state.ui === "zh" ? "zh-Hans" : state.ui]
+      || page.id.replace(/^\d{4}-\d{2}-\d{2}-/, "").replace(/-/g, " ");
+    option.textContent = `${page.date} · ${pageName} · ${page.catalogKind === "formal" ? reviewedPageLabel[state.ui] : "Dev POC"}`;
     option.selected = page.id === state.page.id;
     return option;
   }));
@@ -658,7 +667,8 @@ function showError(error) {
   console.error(error);
   $("loadErrorMessage").textContent = utilityFor(state.ui).error;
   $("loadError").hidden = false;
-  if (!state.content) $("sermonTitle").textContent = interfaceCopy[state.ui].loadError;
+  if (!state.content) $("sermonTitle").textContent = productionReader
+    ? utilityFor(state.ui).error : interfaceCopy[state.ui].loadError;
 }
 
 function bindEvents() {
@@ -732,7 +742,9 @@ function bindEvents() {
   audio.addEventListener("play", syncPlayer);
   audio.addEventListener("pause", () => { syncPlayer(); saveProgress(true); });
   audio.addEventListener("ended", syncPlayer);
-  audio.addEventListener("error", () => { if (audio.error) showError(new Error("Dev audio failed")); });
+  audio.addEventListener("error", () => {
+    if (audio.error) showError(new Error(productionReader ? "Reviewed audio failed" : "Dev audio failed"));
+  });
   window.addEventListener("pagehide", () => saveProgress(true));
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") saveProgress(true);
@@ -779,7 +791,7 @@ function bindEvents() {
 
 async function openPage(pageId, { navigate = true, requestedLocale = null } = {}) {
   const page = state.catalog.pages.find(item => item.id === pageId);
-  if (!page) throw new Error(`Unknown Dev page: ${pageId}`);
+  if (!page) throw new Error(`Unknown ${productionReader ? "reviewed" : "Dev"} page: ${pageId}`);
   const saved = localStorage.getItem(`tongxing-dev-content-override-${page.id}`);
   const preferred = state.ui === "zh" ? "zh-Hans" : state.ui;
   const locale = page.targets[requestedLocale] ? requestedLocale
@@ -802,7 +814,9 @@ async function loadInitialCatalog() {
       console.warn("Optional Dev POC catalog unavailable", error);
     }
   }
-  const formal = await loadOptionalFormalCatalog(fetch, demo?.pages.map(page => page.id) || []);
+  const formal = productionReader
+    ? await loadRequiredFormalCatalog(fetch)
+    : await loadOptionalFormalCatalog(fetch, demo?.pages.map(page => page.id) || []);
   if (!formal && !demo) throw new Error("No reviewed or Dev catalog is available");
   const pages = [
     ...(formal?.pages || []).map(page => ({ ...page, catalogKind: "formal" })),

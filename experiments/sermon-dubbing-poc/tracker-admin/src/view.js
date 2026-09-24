@@ -1,4 +1,5 @@
 import './style.css';
+import { measuredDuration, timingCoverageNote } from './timing.js';
 
 const LABELS = {
   pending: '待开始', running: '进行中', waiting_review: '待审核', blocked: '阻塞', complete: '已记录',
@@ -108,29 +109,48 @@ function renderShared(row, steps) {
   }));
 }
 
-function renderLocales(locales) {
+function renderLocales(locales, steps) {
   const grid = byId('locale-grid');
   grid.replaceChildren(...locales.map((item) => {
     const card = make('article', 'locale-card panel');
     const top = make('div', 'locale-head');
     const title = make('div');
     title.append(make('span', 'eyebrow', item.locale), make('h4', '', name(item.locale)));
-    top.append(title, pill(item.delivery?.pageStatus));
+    const completed = [2, 3, 4].reduce((sum, layer) => sum + (item.layers?.[String(layer)]?.complete || 0), 0);
+    const total = [2, 3, 4].reduce((sum, layer) => sum + (item.layers?.[String(layer)]?.total || 0), 0);
+    const localeProgress = make('div', 'locale-overall');
+    localeProgress.append(make('strong', '', `${total ? Math.round(100 * completed / total) : 0}%`),
+      make('span', '', `${completed}/${total} 检查点`));
+    top.append(title, localeProgress);
     card.append(top);
+    const layers = make('div', 'locale-layers');
     for (const layer of [2, 3, 4]) {
-      const row = item.layers?.[String(layer)] || { complete: 0, total: 1, percent: 0 };
-      const block = make('div', 'layer-row');
+      const row = item.layers?.[String(layer)] || { complete: 0, total: 0, percent: 0 };
+      const block = make('section', 'layer-row');
       const meta = make('div', 'layer-meta');
       const layerName = { 2: '目标语言文字', 3: '音频与同步', 4: '发布与播放' }[layer];
       meta.append(make('span', '', `Layer ${layer} · ${layerName}`),
-                  make('strong', '', `${row.complete}/${row.total}`));
+                  make('strong', '', `${row.complete}/${row.total} · ${row.percent || 0}%`));
       const track = make('div', 'progress-track small-track');
       const fill = make('div', 'progress-fill');
       fill.style.width = `${Math.max(0, Math.min(100, row.percent || 0))}%`;
       track.append(fill);
-      block.append(meta, track);
-      card.append(block);
+      const list = make('ol', 'layer-steps');
+      const layerSteps = (steps || []).filter((step) => step.locale === item.locale && step.layer === layer);
+      list.replaceChildren(...layerSteps.map((step) => {
+        const line = make('li', `layer-step ${statusClass(step.status)}`);
+        const description = make('div', 'layer-step-description');
+        description.append(make('span', 'layer-step-number', step.id.split('@')[0]),
+          make('span', 'layer-step-name', stepName(step)));
+        if (step.totalUnits != null) description.append(make('small', 'unit-count', `${step.doneUnits || 0}/${step.totalUnits} 单元`));
+        line.append(description, pill(step.status));
+        return line;
+      }));
+      if (!layerSteps.length) list.append(make('li', 'muted', '暂无检查点明细'));
+      block.append(meta, track, list);
+      layers.append(block);
     }
+    card.append(layers);
     if (item.delivery?.origin === 'dev_poc_catalog') {
       const checks = [
         ['文字候选', item.delivery.pocCandidateStatus === 'machine_review_pass_human_review_pending'],
@@ -193,8 +213,7 @@ function renderSteps(steps, filter) {
     if (step.totalUnits != null) right.append(make('small', 'muted', `${step.doneUnits || 0}/${step.totalUnits} 单元`));
     const timing = step.timing;
     if (timing?.executionAttempts) {
-      const seconds = Math.round(timing.measuredExecutionSeconds || 0);
-      right.append(make('small', 'muted', `实测 ${Math.floor(seconds / 60)}分${seconds % 60}秒 · ${timing.executionAttempts} 次${timing.failedExecutionAttempts ? ` · 失败 ${timing.failedExecutionAttempts}` : ''}`));
+      right.append(make('small', 'muted', `实测 ${measuredDuration(timing.measuredExecutionSeconds)} · ${timing.executionAttempts} 次${timing.failedExecutionAttempts ? ` · 失败 ${timing.failedExecutionAttempts}` : ''}`));
     }
     if (timing?.openExecution) right.append(make('small', 'muted', '存在未结束执行记录'));
     if (timing?.operatorReviewWaitSeconds != null) {
@@ -218,17 +237,18 @@ export function renderSnapshot(snapshot) {
   text('page-subtitle', `${snapshot.serviceDate || '日期未登记'} · ${snapshot.target || '目标环境未知'} · 来源与多语言制作`);
   text('updated-at', `状态更新 ${dateTime(snapshot.ledgerUpdatedAt)} · 快照 ${dateTime(snapshot.generatedAt)}`);
   const report = snapshot.progress || {};
-  text('metric-progress', `${report.complete || 0} / ${report.total || 0}`);
-  text('metric-progress-note', '完成数只表示检查点');
-  const timingCoverage = snapshot.timingCoverage || {};
-  if (timingCoverage.measuredStepCount) {
-    text('metric-progress-note', `完成数只表示检查点 · ${timingCoverage.measuredStepCount} 个步骤有实测耗时`);
-  }
+  const complete = report.complete || 0;
+  const total = report.total || 0;
+  const percent = total ? Math.round(100 * complete / total) : 0;
+  text('metric-progress', `${percent}%`);
+  text('metric-progress-count', `${complete} / ${total} 检查点已记录`);
+  byId('overall-fill').style.width = `${Math.max(0, Math.min(100, percent))}%`;
+  text('metric-progress-note', timingCoverageNote(snapshot.timingCoverage, snapshot.steps));
   text('metric-eta', report.earliestContinuousEta ? dateTime(report.earliestContinuousEta) : '未知');
   text('metric-blockers', report.blockerCount || 0);
   renderSource(snapshot.source);
   renderShared(snapshot.sharedLayer1, snapshot.steps || []);
-  renderLocales(snapshot.locales || []);
+  renderLocales(snapshot.locales || [], snapshot.steps || []);
   renderDelivery(snapshot.locales || []);
   renderSteps(snapshot.steps, byId('step-filter').value);
   byId('step-filter').onchange = () => renderSteps(snapshot.steps, byId('step-filter').value);

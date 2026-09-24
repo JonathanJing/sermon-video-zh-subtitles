@@ -24,11 +24,13 @@ firebase deploy --only hosting:sermonTrackerAdmin --project YOUR_PROJECT
 
 已在项目 `ai-for-god-sermon-audio-dev` 建立独立站点 `ai-for-god-sermon-tracker-dev`、专用数据库 `sermon-tracker`（`us-west1`、Standard、删除保护、首库免费配额）和公开 Web App；规则与页面于 2026-09-23 部署。[线上 Tracker](https://ai-for-god-sermon-tracker-dev.web.app/) 可直接查看。其他项目复用时仍按上述步骤建立自己的独立资源。`?demo=1` 显示明确标记的合成样例，不读取真实数据。
 
+本地 UI 审核可先 `npm run build`，将 `dist/` 复制到忽略 Git 的 `artifacts/tracker-ui-review/`，用快照生成器把当前账本写成该目录的 `local-preview.json`，再从仓库根目录运行 `python -m http.server 4178 --bind 127.0.0.1 --directory artifacts/tracker-ui-review`。打开 `http://127.0.0.1:4178/?local=1` 即可查看**非实时**脱敏快照；此模式不连接 Firestore，也不执行发布。
+
 ## 更新每周状态
 
 本地工作账本由[四层 tracker](../../../scripts/four_layer_progress.py)维护；[快照生成器](../../../scripts/build_four_layer_tracker_snapshot.py)汇总账本、源监控、同语言 Release Package、可选旧中文目录、HTTP 收据和声纹证据。正式 producer 尚未全部自动写入账本，所以未有收据的阶段需操作者按真实证据更新。`source-video-state.private.json` 保存在快照旁边的忽略 Git 工作目录，用于比较同一周视频 ID；此文件**不得放进 Hosting public/dist 或 Firestore**。
 
-本轮之后的耗时审计使用[四层计时入口](../../../scripts/four_layer_measure.py)：首批正式 producer 加 `--progress-ledger` 即自动写执行 span；未接入的命令仍用 `run --step` 包装。`audit` 只读地将私有 `accounting/events.jsonl` 关联到检查点，并列出缺少计时的已完成步骤。公开 Firebase 页面显示步骤的实测耗时、重试／失败次数和审核等待，不上传模型请求细节或私有日志。人工审核等待需在发出和收到审核时及时更新 Tracker 状态；旧产物的文件时间不能补作实测耗时。具体操作及提速 backlog 见[四层 Tracker 文档](../../../docs/four-layer-production-tracker.zh.md#从现在开始保留真实耗时)。
+本轮之后的片段 POC 用[四层 Tracker 文档](../../../docs/four-layer-production-tracker.zh.md)中的 `init-poc` 建立准确 `pageId`、原视频及候选窗口绑定的新账本；它不授予人工范围批准。耗时审计使用[四层计时入口](../../../scripts/four_layer_measure.py)：首批正式 producer 加 `--progress-ledger` 即自动写执行 span；未接入的命令仍用 `run --step` 包装。`audit` 只读地将私有 `accounting/events.jsonl` 关联到检查点，并列出缺少计时的已完成步骤。公开 Firebase 页面显示步骤的实测耗时、重试／失败次数、审核等待和缺实测计时的完成步骤数，不上传模型请求细节或私有日志。人工审核等待需在发出和收到审核时及时更新 Tracker 状态；旧产物的文件时间不能补作实测耗时。
 
 ```bash
 python scripts/four_layer_progress.py artifacts/my-run/four-layer-progress.json init \

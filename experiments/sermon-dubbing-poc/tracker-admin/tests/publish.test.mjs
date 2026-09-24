@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseArgs, validateSnapshot } from '../publish.mjs';
+import { measuredDuration, timingCoverageNote } from '../src/timing.js';
 
 test('publishing requires an explicit project, database and snapshot', () => {
   assert.throws(() => parseArgs(['--project', 'example-project', '--database', 'sermon-tracker']), /snapshot/);
@@ -55,4 +56,21 @@ test('public projection keeps bounded timing counters without private workload h
   assert.equal(publicData.steps[0].timing.measuredExecutionSeconds, 12.5);
   assert.equal(publicData.timingCoverage.measuredStepCount, 1);
   assert.equal(JSON.stringify(publicData).includes('policySha256'), false);
+});
+
+test('public timing projection and older snapshots expose completed unmeasured steps', () => {
+  const snapshot = { schemaVersion: 'sermon-public-tracker-snapshot-v1',
+    pageId: 'week-2026-09-20', target: 'dev', locales: [], source: {}, progress: {},
+    timingCoverage: { measuredStepCount: 0 }, readOnly: true,
+    steps: [{ id: 'L1-01', layer: 1, locale: null, status: 'complete' },
+      { id: 'L2-01@ko', layer: 2, locale: 'ko', status: 'complete',
+        timing: { measuredExecutionSeconds: 1.2 } },
+      { id: 'private/step', layer: 3, locale: 'ko', status: 'complete' }] };
+  const publicData = validateSnapshot(snapshot);
+  assert.equal(publicData.timingCoverage.completedWithoutMeasuredExecutionCount, 1);
+  assert.deepEqual(publicData.timingCoverage.completedWithoutMeasuredExecutionStepIds, ['L1-01']);
+  assert.match(timingCoverageNote(publicData.timingCoverage, publicData.steps), /1 个已记录步骤缺实测计时/);
+  assert.match(timingCoverageNote({}, snapshot.steps.slice(0, 1)), /1 个已记录步骤缺实测计时/);
+  assert.equal(measuredDuration(0.3482), '0.348秒');
+  assert.equal(measuredDuration(69.2), '1分9秒');
 });

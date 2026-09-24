@@ -322,6 +322,13 @@ def build_snapshot(ledger: dict, *, monitor: dict | None = None,
     if catalog and catalog.get("schemaVersion") != "sermon-weekly-catalog-v1":
         raise ValueError("only validated legacy catalog v1 is supported; use release packages for new locales")
     page_id = ledger["pageId"]
+    poc_source = progress.poc_source_identity(ledger)
+    if poc_source:
+        if service_date and service_date != poc_source["serviceDate"]:
+            raise ValueError("snapshot service date differs from POC source identity")
+        service_date = poc_source["serviceDate"]
+    if timing_report is None:
+        timing_report = measure.timing_audit(ledger, [])
     week = catalog_week(catalog, page_id)
     report = progress.summary(ledger)
     source, _private_source = source_summary(monitor, previous_source_state,
@@ -375,7 +382,11 @@ def build_snapshot(ledger: dict, *, monitor: dict | None = None,
                      "earliestContinuousEta": report["earliestContinuousEta"],
                      "remainingSerialMinutes": report["remainingSerialMinutes"]},
         "timingCoverage": {"measuredStepCount": (timing_report or {}).get("measuredStepCount", 0),
-                           "damagedAccountingRows": (timing_report or {}).get("damagedAccountingRows", 0)},
+                           "damagedAccountingRows": (timing_report or {}).get("damagedAccountingRows", 0),
+                           "completedWithoutMeasuredExecutionCount":
+                               (timing_report or {}).get("completedWithoutMeasuredExecutionCount", 0),
+                           "completedWithoutMeasuredExecutionStepIds":
+                               (timing_report or {}).get("completedWithoutMeasuredExecution", [])},
         "sharedLayer1": public_row(next(row for row in report["rows"] if row["layer"] == 1)),
         "locales": locales,
         "steps": steps,
@@ -405,8 +416,10 @@ def main() -> None:
     private_state_path = args.source_state or args.out.with_name("source-video-state.private.json")
     private_source_state = read_json(private_state_path) if private_state_path.exists() else None
     ledger = progress.load(args.ledger)
+    poc_source = progress.poc_source_identity(ledger)
+    service_date = args.service_date or (poc_source or {}).get("serviceDate")
     if private_source_state and (private_source_state.get("pageId") != ledger["pageId"]
-                                 or private_source_state.get("serviceDate") != args.service_date):
+                                 or private_source_state.get("serviceDate") != service_date):
         private_source_state = None
     packages = release_packages(args.release_package, ledger["pageId"], ledger["locales"])
     fingerprints = fingerprint_bindings(args.fingerprint_evidence, ledger["pageId"], ledger["locales"])
@@ -416,7 +429,7 @@ def main() -> None:
     monitor = read_json(args.source_monitor)
     snapshot = build_snapshot(ledger, monitor=monitor,
                               previous_source_state=private_source_state,
-                              source_page_url=args.source_page_url, service_date=args.service_date,
+                              source_page_url=args.source_page_url, service_date=service_date,
                               catalog=read_json(args.catalog), public_root=args.public_root,
                               receipt=read_json(args.http_receipt), packages=packages,
                               fingerprints=fingerprints,
@@ -425,9 +438,9 @@ def main() -> None:
     progress.save(args.out, snapshot)
     if monitor:
         _, next_private_state = source_summary(monitor, private_source_state,
-                                                args.source_page_url, args.service_date)
+                                                args.source_page_url, service_date)
         next_private_state["pageId"] = ledger["pageId"]
-        next_private_state["serviceDate"] = args.service_date
+        next_private_state["serviceDate"] = service_date
         progress.save(private_state_path, next_private_state)
     print(json.dumps({"pageId": snapshot["pageId"], "source": snapshot["source"]["videoChange"],
                       "complete": snapshot["progress"]["complete"],

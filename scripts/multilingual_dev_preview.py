@@ -30,6 +30,7 @@ DEV_PROJECT = "ai-for-god-sermon-audio-dev"
 DEV_SITE = "ai-for-god-sermon-audio-dev"
 DEV_ORIGIN = f"https://{DEV_SITE}.web.app"
 LABEL_SCRIPT = Path(__file__).resolve().parents[1] / "firebase/dev-preview/dev-preview-label.mjs"
+ADAPTER_SCRIPT = Path(__file__).resolve().parents[1] / "firebase/dev/public/formal-dev-adapter.mjs"
 DEV_MESSAGE = "DEV 测试站 · 此页用于核验已审核的多语言内容；公开发布请以正式站点为准。"
 REQUIRED_LOCALES = frozenset({"zh-Hans", "ko", "es"})
 ALIAS = {
@@ -343,10 +344,53 @@ def prepare_update(dev_base_candidate: Path, staged: Path, out: Path) -> dict:
         raise
 
 
+def prepare_reader_repair(dev_base_candidate: Path, out: Path) -> dict:
+    """Repair the two formal catalog readers against an exact published Dev snapshot."""
+    require(not out.exists() and not out.is_symlink(), f"Output exists: {out}")
+    base = candidate_report(dev_base_candidate)
+    require(base["schemaVersion"] == "sermon-multilingual-dev-preview-v2",
+            "Reader repair requires the complete published Dev update candidate")
+    repair_paths = ("formal-dev-adapter.mjs", ALIAS["formal-dev-adapter.mjs"])
+    require(all((dev_base_candidate / "public" / name).is_file() for name in repair_paths),
+            "Dev candidate lacks both formal readers")
+    require(ADAPTER_SCRIPT.is_file(), "Checked-in formal reader is missing")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    temporary = Path(tempfile.mkdtemp(prefix=f".{out.name}-", dir=out.parent))
+    try:
+        shutil.copytree(dev_base_candidate / "public", temporary / "public")
+        for name in repair_paths:
+            shutil.copyfile(ADAPTER_SCRIPT, temporary / "public" / name)
+        shutil.copyfile(dev_base_candidate / "firebase.json", temporary / "firebase.json")
+        shutil.copyfile(dev_base_candidate / "build-report.json",
+                        temporary / "dev-base-build-report.json")
+        report = {
+            "schemaVersion": "sermon-multilingual-dev-preview-v3",
+            "status": "validated_not_deployed", "projectId": DEV_PROJECT,
+            "siteId": DEV_SITE, "origin": DEV_ORIGIN,
+            "pageId": base["pageId"], "preservedPocAliases": ALIAS,
+            "baseCleanUrls": hosting.load(temporary / "firebase.json")["hosting"]["cleanUrls"],
+            "baseBuildReportSha256": hosting.digest(dev_base_candidate / "build-report.json"),
+            "devBaseFiles": base["files"], "files": inventory(temporary / "public"),
+            "firebaseConfigSha256": hosting.digest(temporary / "firebase.json"),
+            "catalogSha256": hosting.digest(temporary / "public/multilingual-v2.json"),
+            "repairPaths": sorted(repair_paths),
+            "adapterSha256": hosting.digest(ADAPTER_SCRIPT),
+        }
+        (temporary / "build-report.json").write_text(
+            json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2) + "\n")
+        candidate_report(temporary)
+        os.rename(temporary, out)
+        return report
+    except Exception:
+        shutil.rmtree(temporary)
+        raise
+
+
 def candidate_report(candidate: Path) -> dict:
     report = hosting.load(candidate / "build-report.json")
     require(report.get("schemaVersion") in {
-                "sermon-multilingual-dev-preview-v1", "sermon-multilingual-dev-preview-v2"}
+                "sermon-multilingual-dev-preview-v1", "sermon-multilingual-dev-preview-v2",
+                "sermon-multilingual-dev-preview-v3"}
             and report.get("status") == "validated_not_deployed"
             and report.get("projectId") == DEV_PROJECT
             and report.get("siteId") == DEV_SITE
@@ -389,6 +433,26 @@ def candidate_report(candidate: Path) -> dict:
                 and merge.get("productionReader") is False
                 and report.get("pageId") == merge.get("newPageId"),
                 "Dev update provenance changed")
+    if report["schemaVersion"] == "sermon-multilingual-dev-preview-v3":
+        base = hosting.load(candidate / "dev-base-build-report.json")
+        original = {item["path"]: item for item in base.get("files", [])}
+        current = {item["path"]: item for item in report["files"]}
+        changed = sorted(name for name in current if current[name] != original.get(name))
+        require(base.get("schemaVersion") == "sermon-multilingual-dev-preview-v2"
+                and base.get("pageId") == report["pageId"]
+                and base.get("firebaseConfigSha256") == report["firebaseConfigSha256"]
+                and report.get("baseBuildReportSha256")
+                == hosting.digest(candidate / "dev-base-build-report.json")
+                and report.get("devBaseFiles") == base["files"]
+                and set(current) == set(original)
+                and changed == report.get("repairPaths") == sorted((
+                    "formal-dev-adapter.mjs", ALIAS["formal-dev-adapter.mjs"]))
+                and report.get("adapterSha256") == current["formal-dev-adapter.mjs"]["sha256"]
+                == current[ALIAS["formal-dev-adapter.mjs"]]["sha256"]
+                and report.get("catalogSha256")
+                == hosting.digest(candidate / "public/multilingual-v2.json")
+                and report.get("baseCleanUrls") == config["hosting"].get("cleanUrls"),
+                "Dev reader repair provenance changed")
     return report
 
 
@@ -494,6 +558,9 @@ def main() -> None:
     update.add_argument("--dev-base-candidate", type=Path, required=True)
     update.add_argument("--staged", type=Path, required=True)
     update.add_argument("--out", type=Path, required=True)
+    repair = sub.add_parser("build-repair")
+    repair.add_argument("--dev-base-candidate", type=Path, required=True)
+    repair.add_argument("--out", type=Path, required=True)
     for action in ("preflight", "verify"):
         command = sub.add_parser(action)
         command.add_argument("--candidate", type=Path, required=True)
@@ -508,6 +575,8 @@ def main() -> None:
         result = prepare(args.production_candidate, args.dev_base_public, args.out)
     elif args.action == "build-update":
         result = prepare_update(args.dev_base_candidate, args.staged, args.out)
+    elif args.action == "build-repair":
+        result = prepare_reader_repair(args.dev_base_candidate, args.out)
     else:
         require(not args.out.exists() and not args.out.is_symlink(),
                 f"Output exists: {args.out}")

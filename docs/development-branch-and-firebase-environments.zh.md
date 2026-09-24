@@ -40,7 +40,7 @@ Firebase 官方建议每个开发环境使用独立 project。听译 App 应建�
 | 环境 | Git 来源 | Firebase project | Hosting site | 数据 |
 |---|---|---|---|---|
 | Dev | `dev` | 新建 `ai-for-god-sermon-audio-dev` | 独立 `*-dev.web.app` | 合成／匿名测试数据，不复制私人生产数据 |
-| Production | `main` | 现有 `ai-for-god` | `ai-for-god-sermon-audio.web.app` | 已批准的周次发布资产 |
+| Production | `main` | 当前部署脚本配置 `ai-for-god-caption-dev` | `ai-for-god-sermon-audio.web.app` | 已批准的周次发布资产 |
 
 2026-09-21 已建立 Dev Firebase project `ai-for-god-sermon-audio-dev`（project number `548454657719`），默认 Hosting site 为 `https://ai-for-god-sermon-audio-dev.web.app`。同日先部署四语言 Web mock，再用 2026-09-20 证道的六个英文源句替换默认页面，完成英文 Layer 1 来源对照页，以及中文、韩语、西班牙语、越南语的 Layer 2 机器翻译候选、Eric Geiger 声音克隆 POC、估算字幕时间和独立路由。英文页使用同一 source window 的原始讲员音频和来源时间轴，不经过 Layer 2/3。根页面、各语言路由、目录、发布包、内容、脚本、样式和音频分别验证。
 

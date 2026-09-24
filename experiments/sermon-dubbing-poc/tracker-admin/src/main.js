@@ -28,6 +28,14 @@ function renderRunList() {
 
 async function start() {
   byId('week-select').addEventListener('change', (event) => selectRun(event.target.value));
+  if (new URLSearchParams(location.search).get('local') === '1') {
+    const response = await fetch('./local-preview.json', { cache: 'no-store' });
+    if (!response.ok) throw new Error('local preview snapshot unavailable');
+    runs = [await response.json()];
+    showConnection('本地快照 · 非实时', 'warn');
+    renderRunList();
+    return;
+  }
   if (new URLSearchParams(location.search).get('demo') === '1') {
     const { demoSnapshot } = await import('./demo.js');
     runs = [demoSnapshot];

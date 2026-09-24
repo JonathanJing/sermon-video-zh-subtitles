@@ -49,6 +49,8 @@ Dev 经文授权声明和样片页面／音频审核不能自动覆盖 Productio
          --out /absolute/path/to/new-hosting-candidate \
          --production-reader --promote-home
 
+   同一次切换包含多个已审页面时，按期望默认页顺序重复 `--staged`，最后一个成为默认页。构建器在最终 `build-report.json` 中保存全部 `newPageIds`，并把 `baseFiles` 绑定到**最初**的完整线上快照；不要把中间候选当成线上基线。发布后核验逐页检查各语言深链和音频 Range。
+
 5. 在发布窗口停止其他对同一 Hosting 站点的部署；逐文件核对线上旧站点与候选基线。若 registry head 或线上字节改变，废弃候选，从新 head 重建。保留旧完整 registry release 和候选的 rollback-multilingual-v2.json。
 
        .venv/bin/python scripts/verify_multilingual_hosting.py \
@@ -70,7 +72,7 @@ Dev 经文授权声明和样片页面／音频审核不能自动覆盖 Productio
          --origin https://ai-for-god-sermon-audio.web.app \
          --out /absolute/path/to/http-verification.json
 
-首次切换的回退源是切换前的完整 legacy registry release；本次只读调用 `deploy_firebase.verify_release` 已通过其 58 个文件及反馈配置的本地校验。若实际切换后需回退，应先把该不可变发行复制到新的回退目录，再按既有 `experiments/sermon-dubbing-poc/deploy_firebase.py --release ... --project ai-for-god-caption-dev --site ai-for-god-sermon-audio --execute` 重新发布，并用 `verify_weekly_release.py` 完整核验。不能修改 registry 原件，不能把本地可回退判定冒充一次实际回退演练。后续多语言版本间的回退仍需专门流程。
+首次切换的回退源是切换前的完整 legacy registry release；本次只读调用 `deploy_firebase.verify_release` 已通过其 58 个文件及反馈配置的本地校验。若实际切换后需回退，应先把该不可变发行复制到新的回退目录，再按既有 `experiments/sermon-dubbing-poc/deploy_firebase.py --release ... --project ai-for-god-caption-dev --site ai-for-god-sermon-audio --execute --allow-multilingual-rollback` 明确发起回退，并用 `verify_weekly_release.py` 完整核验。普通 legacy 发布若探测到线上 v2 目录会拒绝覆盖；该显式回退参数只用于已决定恢复旧版的操作。不能修改 registry 原件，不能把本地可回退判定冒充一次实际回退演练。后续多语言版本间的回退仍需专门流程。
 
 ## 合并 main 前仍需解决
 

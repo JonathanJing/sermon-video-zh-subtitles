@@ -111,6 +111,24 @@ class TrackerSnapshotTest(unittest.TestCase):
         self.assertEqual(step["status"], "pending")
         self.assertEqual(snapshot["timingCoverage"]["measuredStepCount"], 1)
 
+    def test_snapshot_exposes_completed_steps_missing_real_timing(self):
+        four_layer_progress.update_step(self.ledger, "L1-01", "complete", evidence="source.json")
+        snapshot = tracker.build_snapshot(self.ledger)
+        coverage = snapshot["timingCoverage"]
+        self.assertEqual(coverage["measuredStepCount"], 0)
+        self.assertEqual(coverage["completedWithoutMeasuredExecutionCount"], 1)
+        self.assertEqual(coverage["completedWithoutMeasuredExecutionStepIds"], ["L1-01"])
+        self.assertNotIn("source.json", json.dumps(snapshot))
+
+    def test_poc_snapshot_uses_bound_service_date_and_rejects_other_date(self):
+        ledger = four_layer_progress.new_poc_ledger(
+            "test-page", ["ko"], target="dev", service_date="2026-09-27",
+            source_id="video-id", source_url_sha256="a" * 64,
+            window_start_seconds=10, window_end_seconds=20)
+        self.assertEqual(tracker.build_snapshot(ledger)["serviceDate"], "2026-09-27")
+        with self.assertRaisesRegex(ValueError, "service date"):
+            tracker.build_snapshot(ledger, service_date="2026-09-28")
+
     def test_dev_poc_catalog_tracks_are_visible_without_formal_voice_promotion(self):
         catalog = {"schemaVersion": "sermon-weekly-catalog-v1", "weeks": [{
             "id": self.ledger["pageId"], "humanApproval": False,

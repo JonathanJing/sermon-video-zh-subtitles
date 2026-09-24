@@ -117,6 +117,108 @@ class FormalRenderTests(unittest.TestCase):
                                  self.root / "checkpoint-map.json", synth_factory=FakeSynth,
                                  instruct="Speak slowly.")
 
+    def test_prior_renderer_reuses_same_instructed_audio_after_revision(self):
+        instruction = "Speak briskly but naturally."
+        subject.render_units(self.context, self.paths, self.root,
+                             self.root / "checkpoint-map.json", synth_factory=FakeSynth,
+                             instruct=instruction)
+        for index in range(2):
+            intent_path = self.root / f"receipts/unit-{index:04d}.intent.json"
+            commit_path = self.root / f"receipts/unit-{index:04d}.render.json"
+            old = subject.package.read_object(intent_path)
+            old["rendererSha256"] = next(iter(subject.COMPATIBLE_NO_SPOKEN_FORM_RENDERER_SHA256))
+            intent_path.write_text(json.dumps(old))
+            commit = subject.package.read_object(commit_path)
+            commit["identity"] = old
+            commit_path.write_text(json.dumps(commit))
+        newer = copy.deepcopy(self.context)
+        newer["candidate"]["groups"][1]["targetText"] = "Revised spoken text."
+        newer["job"]["units"][1]["text"] = "Revised spoken text."
+        next_root = self.root.parent / "instructed-revision"
+        next_root.mkdir()
+        next_paths = dict(self.paths)
+        next_paths["job"] = next_root / "job.json"
+        next_paths["candidate"] = next_root / "candidate.json"
+        for name in ("job", "candidate"):
+            next_paths[name].write_text(json.dumps(newer[name]))
+        with patch.object(subject.integrity, "build_receipt",
+                          return_value={"fullDecode": "pass", "durationSeconds": 0.08}):
+            subject.render_units(newer, next_paths, next_root,
+                                 self.root / "checkpoint-map.json",
+                                 reuse_from=self.root, synth_factory=FakeSynth,
+                                 instruct=instruction)
+        self.assertEqual(len(FakeSynth.calls), 3)
+        self.assertEqual(subject.identity.sha256(next_root / newer["job"]["units"][0]["outputRelativePath"]),
+                         subject.identity.sha256(self.root / newer["job"]["units"][0]["outputRelativePath"]))
+
+    def test_targeted_instruction_changes_only_selected_unit_audio(self):
+        old_rows = self.render_units()
+        group = self.context["job"]["units"][0]["translationGroupId"]
+        instruction = "Pause after the church name and read the scripture reference clearly."
+        document = {
+            "schemaVersion": "sermon-unit-delivery-instructions-v1",
+            "targetLocale": self.context["job"]["targetLocale"],
+            "speechJobJsonSha256": subject.identity.json_sha256(self.context["job"]),
+            "units": [{"translationGroupId": group,
+                       "approvedTextSha256": hashlib.sha256(self.context["job"]["units"][0]["text"].encode()).hexdigest(),
+                       "instruction": instruction, "operatorEvidence": "Human pronunciation correction"}],
+        }
+        map_path = self.root.parent / "unit-instructions.json"
+        map_path.write_text(json.dumps(document))
+        overrides = subject.unit_instructions(self.context["job"], map_path)
+        next_root = self.root.parent / "targeted-render"
+        next_root.mkdir()
+        with patch.object(subject.integrity, "build_receipt",
+                          return_value={"fullDecode": "pass", "durationSeconds": 0.08}):
+            rows = subject.render_units(self.context, self.paths, next_root,
+                                        self.root / "checkpoint-map.json",
+                                        reuse_from=self.root, instructions_by_group=overrides,
+                                        synth_factory=FakeSynth)
+        self.assertEqual(len(FakeSynth.calls), 3)
+        self.assertEqual(rows[1]["audio"]["sha256"], old_rows[1]["audio"]["sha256"])
+        self.assertEqual(subject.package.read_object(next_root / "receipts/unit-0000.intent.json")
+                         ["deliveryInstruction"], instruction)
+        document["units"][0]["approvedTextSha256"] = "0" * 64
+        map_path.write_text(json.dumps(document))
+        with self.assertRaisesRegex(ValueError, "approved text"):
+            subject.unit_instructions(self.context["job"], map_path)
+
+    def test_spoken_form_keeps_approved_text_and_caches_its_own_sound(self):
+        approved = "现在来看老底嘉教会，《启示录》第3章第16节。"
+        spoken = "现在来看老底嘉教会。《启示录》第三章第十六节。"
+        self.assertTrue(subject._spoken_equivalent(approved, spoken))
+        self.assertTrue(subject._spoken_equivalent("参见《启示录》3:16", "参见《启示录》第三章第十六节"))
+        self.assertFalse(subject._spoken_equivalent(approved, spoken.replace("嘉", "家")))
+        self.assertFalse(subject._spoken_equivalent(approved, spoken.replace("十六", "十五")))
+
+        self.context["job"]["targetLocale"] = "zh-Hans"
+        self.context["job"]["units"][0]["text"] = approved
+        group = self.context["job"]["units"][0]["translationGroupId"]
+        document = {
+            "schemaVersion": "sermon-unit-delivery-instructions-v1",
+            "targetLocale": "zh-Hans",
+            "speechJobJsonSha256": subject.identity.json_sha256(self.context["job"]),
+            "units": [{"translationGroupId": group,
+                       "approvedTextSha256": hashlib.sha256(approved.encode()).hexdigest(),
+                       "instruction": "Pause at the sentence boundary.",
+                       "spokenText": spoken,
+                       "operatorEvidence": "Operator confirmed chapter and verse reading."}],
+        }
+        map_path = self.root.parent / "spoken-instructions.json"
+        map_path.write_text(json.dumps(document))
+        overrides = subject.unit_instructions(self.context["job"], map_path)
+        subject.render_units(self.context, self.paths, self.root,
+                             self.root / "checkpoint-map.json",
+                             instructions_by_group=overrides, synth_factory=FakeSynth)
+        self.assertEqual(FakeSynth.calls[0][0], spoken)
+        intent = subject.package.read_object(self.root / "receipts/unit-0000.intent.json")
+        self.assertEqual(intent["textSha256"], hashlib.sha256(approved.encode()).hexdigest())
+        self.assertEqual(intent["spokenTextSha256"], hashlib.sha256(spoken.encode()).hexdigest())
+        document["units"][0]["spokenText"] = spoken.replace("十六", "十五")
+        map_path.write_text(json.dumps(document))
+        with self.assertRaisesRegex(ValueError, "Spoken form changes"):
+            subject.unit_instructions(self.context["job"], map_path)
+
     def test_tampered_audio_and_orphan_are_rejected(self):
         rows = self.render_units()
         (self.root / rows[0]["audio"]["path"]).write_bytes(b"tampered")
@@ -207,6 +309,34 @@ class FormalRenderTests(unittest.TestCase):
                           str(root / "original/segments.json"): str(evidence)}}))
             subject.materialize_path_map(job, mapping)
             self.assertTrue((root / "original/segments.json").is_symlink())
+
+    def test_path_map_follows_reused_capability_to_probe_audio(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            staged = root / "staged"
+            staged.mkdir()
+            probe = staged / "probe.wav"
+            probe.write_bytes(b"probe-audio")
+            approval = staged / "approval.json"
+            approval.write_text(json.dumps({"probe": {"path": str(root / "original/probe.wav"),
+                "sha256": subject.identity.sha256(probe)}}))
+            reuse = staged / "reuse.json"
+            reuse.write_text(json.dumps({"priorApproval": {
+                "path": str(root / "original/approval.json"),
+                "sha256": subject.identity.sha256(approval),
+                "jsonSha256": subject.identity.json_sha256(json.loads(approval.read_text()))}}))
+            job = root / "job.json"
+            job.write_text(json.dumps({"inputs": {"clipVoiceCapability": {
+                "path": str(root / "original/reuse.json"),
+                "sha256": subject.identity.sha256(reuse),
+                "jsonSha256": subject.identity.json_sha256(json.loads(reuse.read_text()))}}}))
+            mapping = root / "path-map.json"
+            mapping.write_text(json.dumps({"schemaVersion": "sermon-deployment-path-map-v1",
+                "paths": {str(root / "original/reuse.json"): str(reuse),
+                          str(root / "original/approval.json"): str(approval),
+                          str(root / "original/probe.wav"): str(probe)}}))
+            subject.materialize_path_map(job, mapping)
+            self.assertTrue((root / "original/probe.wav").is_symlink())
 
     def test_schedule_uses_first_source_start_and_reports_clip_overflow(self):
         rows = self.render_units()

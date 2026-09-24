@@ -33,6 +33,7 @@ except ImportError:  # Direct execution via ``python scripts/...``.
 REQUEST_SCHEMA = "sermon-target-language-evidence-request-v1"
 LANGUAGE_RECEIPT_SCHEMA = "sermon-target-language-plugin-receipt-v1"
 BUILTIN_PLUGIN_NAMES = {"zh_hans_sermon.py", "ko_sermon.py", "es_sermon.py"}
+LAODICEA_PLUGIN_NAMES = {"zh_hans_laodicea.py", "ko_laodicea.py", "es_laodicea.py"}
 
 
 def _require(condition: bool, message: str) -> None:
@@ -52,6 +53,8 @@ def plugin_implementation_sources(plugin_path: Path) -> list[Path]:
     builtins = (Path(__file__).resolve().parent / "language_review_plugins").resolve()
     if path.parent == builtins and path.name in BUILTIN_PLUGIN_NAMES:
         return [path, builtins / "common.py"]
+    if path.parent == builtins and path.name in LAODICEA_PLUGIN_NAMES:
+        return [path, builtins / "common.py", builtins / "laodicea_common.py"]
     return [path]
 
 

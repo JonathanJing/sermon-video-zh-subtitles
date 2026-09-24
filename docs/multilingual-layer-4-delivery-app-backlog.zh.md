@@ -1,5 +1,7 @@
 # 多语言 Layer 4 发布与 App 改进 Backlog
 
+2026-09-24 第二片段复盘、双页 Production 候选与 release 门槛见[Firebase Release Backlog](multilingual-firebase-release-backlog-2026-09-24.zh.md)。iOS 后续改动等待当前 review 结果。
+
 状态：**Dev 三语审核样片已发布；每周 Production 与 iOS 原生多语言仍在开发**。本文覆盖 Layer 4「多语言发布与播放」以及 Web/iOS 客户端的语言选择体验。v2 catalog／release receipt schema、fail-closed catalog builder，以及 iOS 语言发布页选择已开始实现；样片韩语音频和 Dev HTTP 验证不代表整篇周更、Production、设备或现场验收完成。
 
 ## 2026-09-23 Production 候选进度

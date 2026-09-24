@@ -9,16 +9,20 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import re
 import tempfile
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 
 SCHEMA = "sermon-four-layer-progress-v1"
+POC_SOURCE_FIELDS = ("sourceId", "sourceUrlSha256", "sourceMediaSha256",
+                     "serviceDate", "windowStartSeconds", "windowEndSeconds")
 STATUSES = {"pending", "running", "waiting_review", "blocked", "complete"}
 STEPS = {
     1: (
@@ -105,15 +109,125 @@ def new_ledger(page_id: str, locales: list[str], *, target: str = "dev") -> dict
     }
 
 
+def poc_source_identity(ledger: dict) -> dict | None:
+    poc = [event["source"] for event in ledger.get("history", [])
+           if event.get("action") == "poc_source_identity"]
+    if len(poc) > 1:
+        raise ValueError("POC source identity must be unique")
+    return poc[0] if poc else None
+
+
 def ledger_identity(ledger: dict) -> str:
-    """Bind timing to one ledger incarnation, including pre-ID v1 ledgers."""
+    """Bind timing to one ledger incarnation and its POC source/window, if set."""
     identity = ledger.get("ledgerId")
     if identity is not None and not isinstance(identity, str):
         raise ValueError("invalid ledger identity")
     value = identity or json.dumps({key: ledger.get(key) for key in
                                    ("pageId", "target", "locales", "createdAt")},
                                   sort_keys=True, ensure_ascii=False)
+    poc = poc_source_identity(ledger)
+    if poc:
+        value = json.dumps({"ledger": value,
+                            "pocSource": {**{key: poc.get(key) for key in POC_SOURCE_FIELDS},
+                                          "approvalStatus": "proposed_not_approved"}},
+                           sort_keys=True, ensure_ascii=False)
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def new_poc_ledger(page_id: str, locales: list[str], *, target: str,
+                   service_date: str, source_id: str, source_url_sha256: str,
+                   window_start_seconds: float, window_end_seconds: float,
+                   source_media_sha256: str | None = None) -> dict:
+    """Create a new POC ledger with a proposed, non-approving source binding."""
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,159}", page_id):
+        raise ValueError("page ID must be a safe exact release page ID")
+    try:
+        if date.fromisoformat(service_date).isoformat() != service_date:
+            raise ValueError
+    except ValueError as exc:
+        raise ValueError("service date must be YYYY-MM-DD") from exc
+    if not source_id.strip() or len(source_id) > 200:
+        raise ValueError("source ID is required and must be at most 200 characters")
+    for name, value in (("source URL SHA-256", source_url_sha256),
+                        ("source media SHA-256", source_media_sha256)):
+        if (value is None and name == "source URL SHA-256") \
+                or (value is not None and not re.fullmatch(r"[a-f0-9]{64}", value)):
+            raise ValueError(f"{name} must be lowercase hex SHA-256")
+    if not isinstance(window_start_seconds, (int, float)) or not isinstance(window_end_seconds, (int, float)) \
+            or not math.isfinite(window_start_seconds) or not math.isfinite(window_end_seconds) \
+            or not 0 <= window_start_seconds < window_end_seconds:
+        raise ValueError("window must have nonnegative start before end")
+    ledger = new_ledger(page_id, locales, target=target)
+    ledger["history"].append({"at": timestamp(), "action": "poc_source_identity",
+                              "source": {"sourceId": source_id.strip(),
+                                         "sourceUrlSha256": source_url_sha256,
+                                         "sourceMediaSha256": source_media_sha256,
+                                         "serviceDate": service_date,
+                                         "windowStartSeconds": float(window_start_seconds),
+                                         "windowEndSeconds": float(window_end_seconds),
+                                         "approvalStatus": "proposed_not_approved"}})
+    return ledger
+
+
+def _receipt_time_seconds(value: object) -> Decimal:
+    if not isinstance(value, str):
+        raise ValueError("approval receipt window time is missing")
+    match = re.fullmatch(r"(\d+):([0-5]\d):([0-5]\d(?:\.\d+)?)", value)
+    if not match:
+        raise ValueError("approval receipt window time must be HH:MM:SS")
+    try:
+        return Decimal(match[1]) * 3600 + Decimal(match[2]) * 60 + Decimal(match[3])
+    except InvalidOperation as exc:
+        raise ValueError("approval receipt window time is invalid") from exc
+
+
+def approve_poc_source(ledger: dict, receipt: dict, receipt_sha256: str) -> bool:
+    """Record an existing human window approval only for this exact POC source."""
+    if not isinstance(receipt, dict):
+        raise ValueError("approval receipt must be a JSON object")
+    source = poc_source_identity(ledger)
+    if source is None:
+        raise ValueError("ledger has no POC source identity")
+    if not re.fullmatch(r"[a-f0-9]{64}", receipt_sha256):
+        raise ValueError("approval receipt SHA-256 is invalid")
+    if (receipt.get("schemaVersion") != "sermon-clip-window-approval-v1"
+            or receipt.get("status") != "approved" or receipt.get("humanApproval") is not True):
+        raise ValueError("receipt is not a human-approved clip window")
+    if (not isinstance(receipt.get("approvedBy"), str) or not receipt["approvedBy"].strip()
+            or not isinstance(receipt.get("evidence"), str) or not receipt["evidence"].strip()):
+        raise ValueError("approval receipt needs reviewer and evidence")
+    try:
+        approved_at = datetime.fromisoformat(receipt["approvedAt"].replace("Z", "+00:00"))
+    except (KeyError, AttributeError, ValueError) as exc:
+        raise ValueError("approval receipt needs a valid approvedAt") from exc
+    if approved_at.tzinfo is None:
+        raise ValueError("approval receipt approvedAt needs a timezone")
+    matches = (("sourceId", "sourceId"), ("sourceUrlHash", "sourceUrlSha256"),
+               ("sourceMediaSha256", "sourceMediaSha256"))
+    if source.get("sourceMediaSha256") is None:
+        raise ValueError("POC ledger needs a source media SHA-256 before approval")
+    for receipt_key, source_key in matches:
+        if receipt.get(receipt_key) != source.get(source_key):
+            raise ValueError(f"approval receipt {receipt_key} differs from POC source")
+    if (_receipt_time_seconds(receipt.get("startTime")) != Decimal(str(source["windowStartSeconds"]))
+            or _receipt_time_seconds(receipt.get("endTime")) != Decimal(str(source["windowEndSeconds"]))):
+        raise ValueError("approval receipt window differs from POC source")
+    status = source.get("approvalStatus")
+    if status == "approved":
+        if source.get("approvalReceiptSha256") == receipt_sha256:
+            return False
+        raise ValueError("POC source already approved by a different receipt")
+    if status != "proposed_not_approved":
+        raise ValueError("POC source approval status is invalid")
+    source["approvalStatus"] = "approved"
+    source["approvalReceiptSha256"] = receipt_sha256
+    source["approvedAt"] = receipt["approvedAt"]
+    source["approvedBy"] = receipt["approvedBy"]
+    ledger["updatedAt"] = timestamp()
+    ledger["history"].append({"at": ledger["updatedAt"], "action": "poc_source_approved",
+                              "approvalReceiptSha256": receipt_sha256,
+                              "approvedAt": receipt["approvedAt"]})
+    return True
 
 
 def load(path: Path) -> dict:
@@ -141,6 +255,19 @@ def save(path: Path, ledger: dict) -> None:
     finally:
         if os.path.exists(temp_name):
             os.unlink(temp_name)
+
+
+def save_new(path: Path, ledger: dict) -> None:
+    """Publish an initialized ledger atomically without replacing another run."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, temp_name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+            json.dump(ledger, stream, ensure_ascii=False, indent=2)
+            stream.write("\n")
+        os.link(temp_name, path)
+    finally:
+        os.unlink(temp_name)
 
 
 def update_step(ledger: dict, key: str, status: str, *, evidence: str | None = None,
@@ -325,6 +452,18 @@ def main() -> None:
     init.add_argument("--page-id", required=True)
     init.add_argument("--locales", nargs="+", required=True)
     init.add_argument("--target", choices=("dev", "production"), default="dev")
+    poc = commands.add_parser("init-poc", help="initialize a new ledger bound to one proposed source window")
+    poc.add_argument("--page-id", required=True)
+    poc.add_argument("--locales", nargs="+", required=True)
+    poc.add_argument("--target", choices=("dev", "production"), default="dev")
+    poc.add_argument("--service-date", required=True)
+    poc.add_argument("--source-id", required=True)
+    poc.add_argument("--source-url-sha256", required=True)
+    poc.add_argument("--source-media-sha256")
+    poc.add_argument("--window-start-seconds", type=float, required=True)
+    poc.add_argument("--window-end-seconds", type=float, required=True)
+    approve = commands.add_parser("approve-source", help="record an exact human clip-window approval")
+    approve.add_argument("--receipt", type=Path, required=True)
     update = commands.add_parser("update")
     update.add_argument("--step", required=True)
     update.add_argument("--status", required=True, choices=sorted(STATUSES))
@@ -348,14 +487,26 @@ def main() -> None:
     show.add_argument("--json", action="store_true")
     args = parser.parse_args()
     try:
-        if args.command == "init":
+        if args.command in {"init", "init-poc"}:
             if args.ledger.exists():
                 raise ValueError("ledger already exists; refusing to overwrite")
-            ledger = new_ledger(args.page_id, args.locales, target=args.target)
-            save(args.ledger, ledger)
+            ledger = (new_ledger(args.page_id, args.locales, target=args.target)
+                      if args.command == "init" else
+                      new_poc_ledger(args.page_id, args.locales, target=args.target,
+                                     service_date=args.service_date, source_id=args.source_id,
+                                     source_url_sha256=args.source_url_sha256,
+                                     source_media_sha256=args.source_media_sha256,
+                                     window_start_seconds=args.window_start_seconds,
+                                     window_end_seconds=args.window_end_seconds))
+            save_new(args.ledger, ledger)
         else:
             ledger = load(args.ledger)
-            if args.command == "update":
+            if args.command == "approve-source":
+                receipt_bytes = args.receipt.read_bytes()
+                receipt = json.loads(receipt_bytes)
+                if approve_poc_source(ledger, receipt, hashlib.sha256(receipt_bytes).hexdigest()):
+                    save(args.ledger, ledger)
+            elif args.command == "update":
                 update_step(ledger, args.step, args.status, evidence=args.evidence,
                             reason=args.reason, estimate_minutes=args.estimate_minutes,
                             elapsed_minutes=args.elapsed_minutes, done_units=args.done_units,

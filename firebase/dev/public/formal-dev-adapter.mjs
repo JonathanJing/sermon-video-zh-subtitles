@@ -14,6 +14,12 @@ function exactKeys(value, names) {
     && names.every(name => Object.hasOwn(value, name));
 }
 
+function keysWithOptional(value, required, optional) {
+  return value && typeof value === "object" && !Array.isArray(value)
+    && required.every(name => Object.hasOwn(value, name))
+    && Object.keys(value).every(name => required.includes(name) || optional.includes(name));
+}
+
 // The formal catalog is optional while older Dev POC pages remain available.
 // A failed or malformed formal feed must not make the existing reader unusable.
 export async function loadOptionalFormalCatalog(fetcher, existingPageIds = []) {
@@ -32,6 +38,12 @@ export async function loadOptionalFormalCatalog(fetcher, existingPageIds = []) {
   }
 }
 
+export async function loadRequiredFormalCatalog(fetcher) {
+  const response = await fetcher("/multilingual-v2.json", { cache: "no-store" });
+  if (!response.ok) throw new Error(`Reviewed catalog: HTTP ${response.status}`);
+  return validateFormalCatalog(await response.json());
+}
+
 export function validateFormalCatalog(catalog) {
   requireValue(exactKeys(catalog, ["schemaVersion", "generatedAt", "defaultPageId", "pages"])
     && catalog.schemaVersion === "sermon-multilingual-catalog-v2"
@@ -40,9 +52,12 @@ export function validateFormalCatalog(catalog) {
   requireValue(catalog.pages.length <= 104, "Formal catalog has too many pages");
   const ids = new Set();
   for (const page of catalog.pages) {
-    requireValue(exactKeys(page, ["id", "date", "sourceLocale", "sourceIdentitySha256", "defaultTargetLocale", "targets"])
+    requireValue(keysWithOptional(page,
+      ["id", "date", "sourceLocale", "sourceIdentitySha256", "defaultTargetLocale", "targets"],
+      ["sourceMediaSha256"])
       && PAGE_ID.test(page.id) && !ids.has(page.id)
       && page.sourceLocale === "en" && SHA256.test(page.sourceIdentitySha256)
+      && (page.sourceMediaSha256 === undefined || SHA256.test(page.sourceMediaSha256))
       && /^\d{4}-\d{2}-\d{2}$/.test(page.date)
       && LOCALES.has(page.defaultTargetLocale)
       && page.targets && typeof page.targets === "object" && !Array.isArray(page.targets)
@@ -51,14 +66,34 @@ export function validateFormalCatalog(catalog) {
       && page.targets[page.defaultTargetLocale], "Invalid formal Dev page");
     ids.add(page.id);
     for (const [locale, target] of Object.entries(page.targets)) {
+      const binding = target.audioFingerprint;
+      const capabilities = target.capabilities;
       requireValue(LOCALES.has(locale)
-        && exactKeys(target, ["releasePackageUrl", "releasePackageJsonSha256", "contentStatus", "audioStatus", "capabilities"])
+        && keysWithOptional(target,
+          ["releasePackageUrl", "releasePackageJsonSha256", "contentStatus", "audioStatus", "capabilities"],
+          ["audioFingerprint"])
         && target.releasePackageUrl === `/releases/${page.id}/${locale}.json`
         && SHA256.test(target.releasePackageJsonSha256)
         && target.contentStatus === "human_reviewed" && target.audioStatus === "human_reviewed"
-        && Array.isArray(target.capabilities) && target.capabilities.length === 3
-        && new Set(target.capabilities).size === 3
-        && ["text", "captions", "audio"].every(value => target.capabilities.includes(value)),
+        && Array.isArray(capabilities) && [3, 4].includes(capabilities.length)
+        && new Set(capabilities).size === capabilities.length
+        && ["text", "captions", "audio"].every(value => capabilities.includes(value))
+        && capabilities.every(value => ["text", "captions", "audio", "alignment"].includes(value))
+        && capabilities.includes("alignment") === (binding !== undefined)
+        && (binding === undefined || (
+          exactKeys(binding, ["schemaVersion", "pageId", "sourceSha256", "trackSha256",
+            "sourceStartSeconds", "sourceEndSeconds", "algorithmVersion", "captureSeconds",
+            "indexSha256", "indexUrl"])
+          && binding.schemaVersion === "sermon-audio-fingerprint-binding-v1"
+          && binding.pageId === page.id && binding.sourceSha256 === page.sourceMediaSha256
+          && SHA256.test(binding.trackSha256)
+          && Number.isFinite(binding.sourceStartSeconds) && binding.sourceStartSeconds >= 0
+          && Number.isFinite(binding.sourceEndSeconds)
+          && binding.sourceEndSeconds > binding.sourceStartSeconds
+          && binding.algorithmVersion === "spectral-landmarks-v1"
+          && binding.captureSeconds === 10 && SHA256.test(binding.indexSha256)
+          && binding.indexUrl === `/fingerprints/${binding.indexSha256.slice(0, 16)}-landmarks.json`
+        )),
       "Invalid formal Dev release reference");
     }
   }
@@ -116,6 +151,8 @@ export function validateFormalRelease(release, page, locale) {
     assets[asset.role] = asset;
   }
   requireValue(Object.keys(assets).length === 3, "Missing formal Dev asset");
+  requireValue(!target.audioFingerprint || target.audioFingerprint.trackSha256 === assets.audio.sha256,
+    "Formal Dev fingerprint differs from reviewed audio");
   return { release, assets };
 }
 

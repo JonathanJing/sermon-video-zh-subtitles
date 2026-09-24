@@ -42,6 +42,10 @@ export function sanitizeSnapshot(input) {
   if (Buffer.byteLength(JSON.stringify(input), 'utf8') > 512 * 1024) throw new Error('snapshot too large');
   const source = input.source;
   const progress = input.progress;
+  const missingTimingStepIds = input.steps.slice(0, 150)
+    .filter((step) => STEP.test(step?.id || '') && step.status === 'complete'
+      && step.timing?.measuredExecutionSeconds == null)
+    .map((step) => step.id);
   return {
     schemaVersion: 'sermon-public-tracker-snapshot-v1', pageId: input.pageId,
     target: input.target,
@@ -73,6 +77,8 @@ export function sanitizeSnapshot(input) {
     timingCoverage: {
       measuredStepCount: number(input.timingCoverage?.measuredStepCount),
       damagedAccountingRows: number(input.timingCoverage?.damagedAccountingRows),
+      completedWithoutMeasuredExecutionCount: missingTimingStepIds.length,
+      completedWithoutMeasuredExecutionStepIds: missingTimingStepIds,
     },
     sharedLayer1: row(input.sharedLayer1),
     locales: input.locales.slice(0, 20).filter((item) => LOCALE.test(item?.locale || '')).map((item) => ({

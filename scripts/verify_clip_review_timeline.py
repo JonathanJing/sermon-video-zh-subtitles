@@ -17,7 +17,8 @@ def seconds(value: str) -> float:
 
 
 def verify(anchor: dict, markdown: str, *, original_sermon_start: float,
-           clip_start: float, clip_end: float, tolerance: float = 0.03) -> int:
+           clip_start: float, clip_end: float, tolerance: float = 0.03,
+           max_trailing_silence: float = 0.0) -> int:
     units = anchor["sourceUnits"]
     rows = [match.groups() for line in markdown.splitlines()
             if (match := ROW.match(line))]
@@ -25,7 +26,8 @@ def verify(anchor: dict, markdown: str, *, original_sermon_start: float,
         raise ValueError("Review table must cover every anchor in source order")
     if abs(original_sermon_start + float(units[0]["start"]) - clip_start) > tolerance:
         raise ValueError("First anchor does not match selected clip start")
-    if abs(original_sermon_start + float(units[-1]["end"]) - clip_end) > tolerance:
+    trailing = clip_end - (original_sermon_start + float(units[-1]["end"]))
+    if trailing < -tolerance or trailing > max_trailing_silence + tolerance:
         raise ValueError("Last anchor does not match selected clip end")
     for unit, (_, start, end) in zip(units, rows):
         expected_start = original_sermon_start + float(unit["start"])
@@ -42,12 +44,14 @@ def main() -> None:
     parser.add_argument("--original-sermon-start-seconds", required=True, type=float)
     parser.add_argument("--clip-absolute-start-seconds", required=True, type=float)
     parser.add_argument("--clip-absolute-end-seconds", required=True, type=float)
+    parser.add_argument("--max-trailing-silence-seconds", type=float, default=0.0)
     args = parser.parse_args()
     count = verify(json.loads(args.anchor_manifest.read_text(encoding="utf-8")),
                    args.review_markdown.read_text(encoding="utf-8"),
                    original_sermon_start=args.original_sermon_start_seconds,
                    clip_start=args.clip_absolute_start_seconds,
-                   clip_end=args.clip_absolute_end_seconds)
+                   clip_end=args.clip_absolute_end_seconds,
+                   max_trailing_silence=args.max_trailing_silence_seconds)
     print(json.dumps({"status": "pass", "checkedSourceUnits": count}))
 
 
