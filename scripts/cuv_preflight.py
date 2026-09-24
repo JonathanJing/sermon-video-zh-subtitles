@@ -25,7 +25,7 @@ def preflight(manifest, mapping, blocks, library, *, validate_context, audit_con
     """
     if manifest.get("preflightPolicy") != POLICY:
         raise ValueError("Unknown CUV preflight policy")
-    findings, inventory = [], []
+    findings, inventory, review_focus = [], [], []
     seen_context = set()
     pending = bool(mapping.get("issues"))
     for block, row in zip(blocks, mapping["blocks"]):
@@ -47,6 +47,24 @@ def preflight(manifest, mapping, blocks, library, *, validate_context, audit_con
                           "classificationBasis": "proposed-map-structure",
                           "quoteIds": [q["quoteId"] for q in quotes],
                           "uncertainty": concerns, "requiresIndependentReview": True})
+        focus_codes = []
+        if concerns:
+            focus_codes.append("unresolved_reference_or_source_issue")
+        if row.get("sourceContext"):
+            focus_codes.append("visual_source_context")
+        if any(q.get("sharedReferences") is not None for q in quotes):
+            focus_codes.append("shared_verse_reference")
+        if classification == "mixed":
+            focus_codes.append("mixed_quotation_and_narration")
+        if any(ref.get("kind") in {"allusion", "misquotation"}
+               for ref in row["speakerReferences"]):
+            focus_codes.append("speaker_allusion_or_misquotation")
+        if focus_codes:
+            review_focus.append({"blockId": block["id"], "focusCodes": focus_codes,
+                                 "quoteIds": [q["quoteId"] for q in quotes],
+                                 "sourceContextBinding": (row["sourceContext"].get("evidenceBinding")
+                                                          if row.get("sourceContext") else None),
+                                 "humanApproval": False})
         for quote in quotes:
             refs = [quote["reference"]]
             shared = quote.get("sharedReferences")
@@ -77,6 +95,9 @@ def preflight(manifest, mapping, blocks, library, *, validate_context, audit_con
                     findings.append({"blockId": block["id"], "code": "source_context", "detail": str(exc)})
         if any(q.get("sharedReferences") is not None for q in quotes) and not manifest.get("auditSourceMediaPolicy"):
             findings.append({"blockId": block["id"], "code": "shared_verse_evidence_not_enabled"})
+    if mapping.get("issues"):
+        review_focus.insert(0, {"scope": "global", "focusCodes": ["unresolved_reference_map_issue"],
+                                "issueCount": len(mapping["issues"]), "humanApproval": False})
     if manifest.get("auditSourceMediaPolicy"):
         try:
             # Build the actual multimodal envelope now: paths/hashes alone are
@@ -85,7 +106,8 @@ def preflight(manifest, mapping, blocks, library, *, validate_context, audit_con
         except (ValueError, OSError, KeyError, TypeError) as exc:
             findings.append({"code": "audit_payload", "detail": str(exc)})
     report = {"schemaVersion": POLICY, "status": "blocked" if findings else "ready_for_independent_review",
-              "humanApproval": False, "inventory": inventory, "findings": findings,
+              "humanApproval": False, "inventory": inventory, "reviewFocus": review_focus,
+              "findings": findings,
               "hasPendingInterpretation": pending}
     return report
 

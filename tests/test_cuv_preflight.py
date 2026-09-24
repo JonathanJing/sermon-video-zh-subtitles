@@ -41,6 +41,19 @@ class PreflightTests(unittest.TestCase):
         self.assertEqual(report['status'], 'ready_for_independent_review')
         self.assertTrue(report['hasPendingInterpretation'])
 
+    def test_review_focus_groups_ambiguous_source_evidence_without_adding_gate(self):
+        blocks, mapping = self.make()
+        mapping['blocks'][0]['sourceContext'] = {
+            'evidenceBinding': {'path': 'frame.json', 'sha256': 'hash'}}
+        mapping['blocks'][0]['quotes'][0]['sharedReferences'] = ['REV 2:7']
+        report = self.call(blocks, mapping, auditSourceMediaPolicy='images')
+        self.assertEqual(report['status'], 'ready_for_independent_review')
+        self.assertEqual([row['blockId'] for row in report['reviewFocus']], ['a'])
+        self.assertEqual(report['reviewFocus'][0]['focusCodes'], [
+            'visual_source_context', 'shared_verse_reference',
+            'mixed_quotation_and_narration'])
+        self.assertFalse(report['reviewFocus'][0]['humanApproval'])
+
     def test_source_context_requires_real_images(self):
         blocks, mapping = self.make()
         mapping['blocks'][0]['sourceContext'] = {'evidenceBinding': {'path': 'frame.json', 'sha256': 'hash'}}
@@ -119,3 +132,22 @@ class RunPreflightTests(unittest.TestCase):
                                  [{'id': 0}], [], None, 'identity',
                                  manifest={'preflightPolicy': POLICY})
         self.assertEqual('quotation_audit', caught.exception.stage)
+
+    def test_audit_reports_all_global_and_block_failures_together(self):
+        from scripts import sermon_cuv_translation as mod
+        blocks = [{'id': i, 'en': f'English {i}'} for i in range(3)]
+        audit = {'issues': ['Unresolved shared verse'], 'blocks': [
+            {'id': 0, 'quoteCoverage': 'fail', 'issues': ['Missing quotation'],
+             'uncertainty': [], 'evidence': 'First finding'},
+            {'id': 1, 'quoteCoverage': 'pass', 'issues': [],
+             'uncertainty': [], 'evidence': 'Passed'},
+            {'id': 2, 'quoteCoverage': 'fail', 'issues': ['Wrong perspective'],
+             'uncertainty': [], 'evidence': 'Third finding'},
+        ]}
+        receipt = {'path': 'fixture', 'sha256': 'fixture'}
+        with self.assertRaises(EvidenceBlocked) as caught:
+            mod.narration_caveats(audit, receipt, blocks, [{}, {}, {}], None,
+                                 'identity', manifest={'preflightPolicy': POLICY})
+        findings = caught.exception.findings
+        self.assertEqual([row.get('blockId') for row in findings], [None, 0, 2])
+        self.assertTrue(all(row['receipt'] == receipt for row in findings))
