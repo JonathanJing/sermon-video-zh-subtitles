@@ -593,7 +593,7 @@ class TargetLanguageSpeechJobTests(unittest.TestCase):
         revised = copy.deepcopy(machine)
         revised["groups"][1]["semanticReview"]["evidence"] = "Fresh model check."
         new_g2 = make(revised, "g2")
-        with self.assertRaisesRegex(ValueError, "identity or context changed: g1"):
+        with self.assertRaisesRegex(ValueError, "belongs to another candidate: g1"):
             human_review.approve_group_receipts(
                 self.source_package, self.anchor, revised, self.policy, [g1, new_g2],
             )
@@ -601,6 +601,21 @@ class TargetLanguageSpeechJobTests(unittest.TestCase):
             self.source_package, self.anchor, machine, self.policy, [g1, g2],
         )
         subject.validate_human_review_receipt(self.source_package, self.anchor, approved, receipt)
+
+    def test_default_group_receipt_rejects_changed_top_level_provenance(self):
+        machine = self.machine_candidate()
+        receipts = [human_review.record_group_review(
+            self.source_package, self.anchor, machine, self.policy,
+            group_id=group_id, decision="approved", evidence="Reviewed source and context.",
+            reviewer="Korean reviewer", reviewed_at="2026-09-20T12:00:00Z",
+        ) for group_id in ("g1", "g2")]
+        revised = copy.deepcopy(machine)
+        revised["generation"]["translator"]["requestIds"] = ["new-request"]
+        self.assertEqual(machine["groups"], revised["groups"])
+        with self.assertRaisesRegex(ValueError, "belongs to another candidate"):
+            human_review.approve_group_receipts(
+                self.source_package, self.anchor, revised, self.policy, receipts,
+            )
 
     def test_group_review_cli_aggregates_only_complete_receipts(self):
         write_json(self.candidate_path, self.machine_candidate())

@@ -45,7 +45,7 @@
 
 ## 迁移步骤与验收
 
-1. **已实现，待真实整篇验收：** 增加版本化的 group-review receipt sidecar。审核身份绑定完整 Layer 1 来源和 policy，单元 row 及上下文；默认 `whole_candidate`，只有明确提供 block 独立性人审说明才使用 `connected_blocks`，未知 source ID 格式保守地绑定全候选。`record-group` 只写审核者给定的单组决定；一组待改不删除其他有效收据。
+1. **已实现，待真实整篇验收：** 增加版本化的 group-review receipt sidecar。审核身份绑定完整 Layer 1 来源和 policy，单元 row 及上下文；默认 `whole_candidate` 还要求与原整份候选 hash 完全相同，只有明确提供 block 独立性人审说明才使用 `connected_blocks`；未知 source ID 格式拒绝 block 范围，必须改用整候选。`record-group` 只写审核者给定的单组决定；一组待改不删除其他有效收据。
 2. **已实现，待真实整篇验收：** `approve-groups` 验证每组收据、来源／policy、上下文和同一审核者，缺组、拒绝、修订后的旧收据全部 fail closed，再输出原有 `human_translation_approved` 包、独立收据和段级聚合清单。当前正式包只容纳一个 reviewer，混合审核者仍需新版本 schema。
 3. **已实现合成测试，待真实音频 A/B：** renderer 通过 `--reuse-from <old-render-dir>` 显式读取旧原始单元。旧证据／字节损坏时停止；身份不同时正常重新合成。新 job 仍须先通过现有完整文字、人审、音色和授权校验；旧排程／字幕／整轨／听审收据绝不复用。
 4. Layer 3 将单元听审与整轨排程／衔接审核分开记录。先保留当前“新整轨全文听审”门禁；是否改为仅重听变更段及连接处，须用真实整篇对照、漏读检出率和审核者确认后另行修订合同。Layer 4 仍要求完整、同 hash、已审的正式包。

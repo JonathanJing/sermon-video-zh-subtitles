@@ -172,7 +172,7 @@ def _context_rows(worksheet: dict[str, Any], group_id: str,
         for unit in row["sourceUnits"]:
             match = re.fullmatch(r"(.+)-u\d+", unit["sourceUnitId"])
             if match is None:
-                return rows  # Unknown anchor naming: never infer a narrow dependency.
+                raise ValueError("Unknown source unit naming cannot use block-scoped review")
             names.append(match.group(1))
         blocks[row["translationGroupId"]] = set(names)
     affected = {group_id}
@@ -262,6 +262,9 @@ def approve_group_receipts(source_package: dict[str, Any], anchor: dict[str, Any
                   and isinstance(receipt["contextEvidence"], str)
                   and receipt["contextEvidence"].strip()),
                  f"Group context reuse evidence is missing: {group_id}")
+        _require(receipt["contextScope"] != "whole_candidate"
+                 or receipt["originCandidateJsonSha256"] == worksheet["candidateJsonSha256"],
+                 f"Whole-candidate group review belongs to another candidate: {group_id}")
         context = _context_rows(frozen, group_id, receipt["contextScope"])
         _require(receipt["targetLocale"] == worksheet["targetLocale"]
                  and receipt["englishSourcePackageJsonSha256"] == worksheet["englishSourcePackageJsonSha256"]
