@@ -98,6 +98,25 @@ def verify_dev_poc_assets(public: Path) -> None:
             check(track["audioUrl"], track["sha256"], f"{week['id']}/track")
 
 
+def checked_production_config(candidate: Path, report: dict) -> dict:
+    config_path = candidate / "firebase.json"
+    targets_path = candidate / ".firebaserc"
+    require(report.get("firebaseConfigSha256") == hosting.digest(config_path)
+            and report.get("firebaseTargetsSha256") == hosting.digest(targets_path),
+            "Reviewed Production Firebase configuration changed")
+    config = hosting.load(config_path)
+    targets = hosting.load(targets_path)
+    require(config.get("hosting", {}).get("target") == "sermonDubbing"
+            and config["hosting"].get("public") == "public"
+            and config["hosting"].get("ignore") == [
+                "firebase.json", "**/.*", "**/node_modules/**"]
+            and targets.get("projects", {}).get("default") == "ai-for-god-caption-dev"
+            and targets.get("targets", {}).get("ai-for-god-caption-dev", {})
+            .get("hosting", {}).get("sermonDubbing") == ["ai-for-god-sermon-audio"],
+            "Reviewed Production Firebase target changed")
+    return config
+
+
 def prepare(production_candidate: Path, dev_base: Path, out: Path) -> dict:
     require(not out.exists() and not out.is_symlink(), f"Output exists: {out}")
     production_report = hosting.load(production_candidate / "build-report.json")
@@ -106,6 +125,7 @@ def prepare(production_candidate: Path, dev_base: Path, out: Path) -> dict:
             and production_report.get("productionReader") is True
             and production_report.get("promotedHome") is True,
             "Expected reviewed, promoted Production-layout candidate")
+    production_config = checked_production_config(production_candidate, production_report)
     prod = checked_inventory(production_candidate / "public", production_report.get("files"),
                              "Production candidate")
     formal = hosting.load(production_candidate / "public/multilingual-v2.json")
@@ -198,7 +218,7 @@ def prepare(production_candidate: Path, dev_base: Path, out: Path) -> dict:
         engagement["enabled"] = False  # Dev has no matching feedback/usage API.
         (public / "engagement.json").write_text(
             json.dumps(engagement, ensure_ascii=False, sort_keys=True, indent=2) + "\n")
-        config = hosting.load(production_candidate / "firebase.json")
+        config = production_config
         config["hosting"].pop("target", None)
         config["hosting"]["site"] = DEV_SITE
         config["hosting"]["rewrites"] = [rule for rule in config["hosting"]["rewrites"]

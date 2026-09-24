@@ -102,5 +102,25 @@ class DevPocAssetTest(unittest.TestCase):
                 preview.verify_dev_poc_assets(public)
 
 
+class ProductionConfigBindingTest(unittest.TestCase):
+    def test_refuses_modified_upstream_firebase_config(self):
+        with TemporaryDirectory() as folder:
+            candidate = Path(folder)
+            config = {"hosting": {"target": "sermonDubbing", "public": "public",
+                                  "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]}}
+            targets = {"projects": {"default": "ai-for-god-caption-dev"},
+                       "targets": {"ai-for-god-caption-dev": {"hosting": {
+                           "sermonDubbing": ["ai-for-god-sermon-audio"]}}}}
+            (candidate / "firebase.json").write_text(json.dumps(config))
+            (candidate / ".firebaserc").write_text(json.dumps(targets))
+            report = {"firebaseConfigSha256": preview.hosting.digest(candidate / "firebase.json"),
+                      "firebaseTargetsSha256": preview.hosting.digest(candidate / ".firebaserc")}
+            self.assertEqual(preview.checked_production_config(candidate, report), config)
+            config["hosting"]["ignore"].append("**/*.mp3")
+            (candidate / "firebase.json").write_text(json.dumps(config))
+            with self.assertRaisesRegex(ValueError, "configuration changed"):
+                preview.checked_production_config(candidate, report)
+
+
 if __name__ == "__main__":
     unittest.main()
