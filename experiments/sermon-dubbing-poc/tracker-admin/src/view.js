@@ -144,17 +144,23 @@ function renderShared(row, steps) {
   const list = byId('shared-steps');
   list.replaceChildren(...steps.filter((step) => step.layer === 1).map((step) => {
     const item = make('li');
+    item.id = stepId(step.id);
     item.append(make('span', `dot ${statusClass(step.status)}`), make('span', '', stepName(step)), pill(step.status));
     return item;
   }));
 }
 
-function layerState(steps, locale, layer) {
+function layerState(steps, locale, layer, progress) {
   const related = steps.filter((step) => step.locale === locale && step.layer === layer);
-  if (related.length && related.every((step) => step.status === 'complete')) return 'complete';
   if (related.some((step) => step.status === 'blocked')) return 'blocked';
   if (related.some((step) => step.status === 'waiting_review')) return 'waiting_review';
   if (related.some((step) => step.status === 'running')) return 'running';
+  if (progress?.total > 0) {
+    if (progress.complete >= progress.total) return 'complete';
+    if (progress.complete > 0) return 'running';
+  }
+  if (related.length && related.every((step) => step.status === 'complete')) return 'complete';
+  if (related.some((step) => step.status === 'complete')) return 'running';
   return 'pending';
 }
 
@@ -169,13 +175,14 @@ function flowButton(title, detail, state, target, stateLabel = '') {
 
 function renderFlow(snapshot) {
   const steps = snapshot.steps || [];
+  const sharedState = layerState(steps, null, 1, snapshot.sharedLayer1);
   const shared = make('div', 'flow-shared');
   const sourceMonitor = flowButton(tr('视频更新监控 · 独立观察', 'Video update monitor · Separate observation'), label(snapshot.source?.videoChange),
     snapshot.source?.videoChange === 'not_checked' ? 'pending' : 'running', 'source-panel');
   sourceMonitor.classList.add('evidence');
   shared.append(flowButton(tr('Layer 1 · 英文事实与锚点', 'Layer 1 · English source and anchors'),
       `${snapshot.sharedLayer1?.complete || 0}/${snapshot.sharedLayer1?.total || 0}`,
-      layerState(steps, null, 1), 'shared-panel', label(layerState(steps, null, 1))),
+      sharedState, 'shared-panel', label(sharedState)),
     sourceMonitor);
   const branches = make('div', 'flow-branches');
   for (const item of snapshot.locales || []) {
@@ -184,7 +191,7 @@ function renderFlow(snapshot) {
     for (const layer of [2, 3, 4]) {
       if (layer > 2) row.append(make('span', 'flow-arrow', '→'));
       const progress = item.layers?.[String(layer)] || { complete: 0, total: 0 };
-      const state = layerState(steps, item.locale, layer);
+      const state = layerState(steps, item.locale, layer, progress);
       row.append(flowButton(`Layer ${layer}`, `${progress.complete}/${progress.total}`,
         state, layerId(item.locale, layer), label(state)));
     }
