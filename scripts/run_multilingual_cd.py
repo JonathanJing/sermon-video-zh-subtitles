@@ -23,7 +23,8 @@ except ImportError:
 ROOT = Path(__file__).resolve().parents[1]
 MODES = {
     "dev": {"branch": "dev", "script": ROOT / "scripts/multilingual_dev_preview.py",
-            "schema": {"sermon-multilingual-dev-preview-v1", "sermon-multilingual-dev-preview-v2"}},
+            "schema": {"sermon-multilingual-dev-preview-v1", "sermon-multilingual-dev-preview-v2",
+                       "sermon-multilingual-dev-preview-v3"}},
     "production": {"branch": "main", "script": ROOT / "scripts/deploy_multilingual_hosting.py",
                    "schema": {"sermon-multilingual-hosting-candidate-v1"}},
 }
