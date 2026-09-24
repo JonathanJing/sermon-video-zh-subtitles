@@ -36,6 +36,12 @@ Speaker Voice Registry（长期缓存依赖）───────────�
 
 注册表不保存私有样本、checkpoint 权重、凭据或 DGX 路径。运行环境通过不进 Git 的 `sermon-speaker-checkpoint-map-v1` 将逻辑 ref 解析到真实目录；renderer 在模型加载前重算权重 hash，并验证 checkpoint 包含目标 `speakerKey`。
 
+### 固定音色与每周审核
+
+周更按实际讲员的 `speakerId` 解析固定的 `speakerKey`、adapter、模型 revision 和 checkpoint；同一讲员的中、韩、西语不在每周重新选声或训练。9 月 20 日片段已使用 Eric 的同一 Qwen SFT checkpoint，韩／西语短样、长句探针及正式片段音轨均有当次人工听审结果。只要这些声音身份和适用授权范围不变，周更不重复要求短样／长句能力试听。每周仍检查新译文产生的整轨发音、完整性和同步，因为这些随内容变化。
+
+**固定选用**与**跨周生产资格**分别记录。当前提交的 Registry 对 Eric 韩／西语仍为 `unverified_poc`，用途为 `multilingual_voice_demo`；现有正式放行凭证明确限于 9 月 20 日片段。准备后续整篇正式 Layer 3 时，需先把跨周用途与能力证据按真实授权范围登记并绑定同一 checkpoint，不能靠“音色已选定”或复用片段收据自动改写状态。待审译文的 `preview_only` 单元配音可先使用已登记的试听用途，不等待该正式资格登记。
+
 同一个按讲员 SFT checkpoint 可以作为中文、韩语和西班牙语的候选，但能力状态不能跨语言继承。Qwen3-TTS 官方与本地 runtime 支持的十种语言不包含越南语，因此越南语不得伪装成同一 adapter 已支持；本轮 Registry 为 `vi` 显式选择基于 Qwen3-TTS 0.6B 的 Gwen-TTS 零样本 reference-clone adapter，并固定模型 revision。中文样片已认可只证明绑定的中文样片；韩语、西班牙语、越南语从 `unverified_poc` 开始，各自经过完整解码、ASR 机器筛查和母语人耳审核后才可晋升。[Qwen3-TTS 官方语言列表](https://github.com/QwenLM/Qwen3-TTS#released-models-description-and-download)、[Gwen-TTS 官方用法](https://github.com/ggroup-ai-lab/gwen-tts#quick-start)
 
 ## Demo 生成

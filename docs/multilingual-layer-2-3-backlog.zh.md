@@ -215,6 +215,8 @@
 
 #### L3-006 韩语 voice/TTS 短探针
 
+此项用于首次建立某讲员／checkpoint／locale 的能力证据，不是周更重复步骤。Eric 的韩／西语短样、长句探针和 9 月 20 日正式片段听审已经完成，固定音色选择可直接复用；全局 Registry 中跨周 `multilingual_dubbing` 用途与 `human_reviewed` 能力仍未登记，因此整篇周更正式 job 不能只凭片段收据放行。待审译文可先走独立 `preview_only` 配音通道。
+
 - [ ] 使用已授权 voice/checkpoint，合成姓名、数字、经文、英语借词、长短句和敬语 fixture。
 - [ ] 记录模型实际 locale 参数、runtime 和 checkpoint hash。
 - [ ] 韩语听者评价可懂度、发音、韵律、说话人相似度和不自然模式。
