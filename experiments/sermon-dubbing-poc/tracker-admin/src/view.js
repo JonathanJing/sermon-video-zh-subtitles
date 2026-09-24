@@ -208,6 +208,7 @@ function renderFlow(snapshot) {
   const releaseSteps = steps.filter((step) => step.layer === 4);
   const releaseState = releaseSteps.some((step) => step.status === 'blocked') ? 'blocked' :
     releaseSteps.some((step) => step.status === 'waiting_review') ? 'waiting_review' :
+    releaseSteps.some((step) => step.status === 'running') ? 'running' :
     releaseTotal > 0 && releaseComplete === releaseTotal ? 'complete' :
     releaseComplete > 0 ? 'running' : 'pending';
   const join = make('div', 'flow-join');

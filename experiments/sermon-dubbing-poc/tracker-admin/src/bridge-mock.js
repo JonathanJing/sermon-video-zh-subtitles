@@ -127,6 +127,10 @@ export function mount() {
 }
 
 export function render(snapshot) {
+  if (lastSnapshot?.pageId !== snapshot.pageId) {
+    selectedStep = null;
+    reset();
+  }
   lastSnapshot = snapshot;
   const available = reviewSteps(snapshot);
   if (!available.some((step) => step.id === selectedStep)) {
