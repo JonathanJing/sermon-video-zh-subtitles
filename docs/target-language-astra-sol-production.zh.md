@@ -6,7 +6,7 @@
 
 1. 使用状态为 `ready_for_translation`、`translationEligible=true` 的 `English Source Package`，并提供与其 hash 相符的 anchor manifest。来源范围与英文单元必须已有完整人工审核。
 2. 为该来源与 locale 冻结 `sermon-target-language-policy-v2`。术语来源、专名、经文版本／引用政策、语言插件实现 hash 和 source scope 必须已解决。`config/target-language-policies/` 是初始模板，其中未决项不能直接用于付费生产调用。
-3. 新 policy 的 translator 固定为 `gpt-6-astra`，reviewer 固定为 `gpt-6-sol`；两个 prompt version 和 request ID 必须分开。执行器逐组串行调用，要求 `batching={"batchSize":1,"workers":1}`，调用量约为组数的两倍。各语言采用相同角色分工，语言规则由各自 policy 与插件决定。
+3. 新 policy 的 translator 固定为 `gpt-6-astra`，reviewer 固定为 `gpt-6-sol`；两个 prompt version 和 request ID 必须分开。执行器要求 `batchSize=1`，新冻结的 v2 policy 可选择 `workers=1..3`。同组仍先 Astra 后 Sol；不同组可有界并行，调用量仍约为组数的两倍，结果按原组顺序合并。各语言采用相同角色分工，语言规则由各自 policy 与插件决定。
 4. 输出目录应放在忽略的 `artifacts/` 下。记录来源、policy 和代码版本；不要把 API key 或原始模型文本提交到 Git。
 
 ## 执行
@@ -26,6 +26,8 @@ python scripts/run_target_language_models.py \
 ```
 
 执行器从进程环境读取 `OPENAI_API_KEY`，在付费请求前验证来源、policy、插件实现 hash、模型角色和组覆盖。每组先保存 Astra 响应，再把英文、Astra 译稿及相同 policy 交给 Sol；保存 Sol 的修订文本、四项语义检查和证据。API 返回后先保存 `*.raw.json`，再校验模型身份、完成状态及 JSON 内容；即使校验失败，已付费响应仍可查看。相同身份重跑复用已完成响应，并可从已保存的原始响应重建校验缓存。若请求已经开始但响应未持久化，保留 `*.started.json` 并停止自动重试；人工核实服务端状态后在**新目录**恢复，避免不明重复付费或静默覆盖。
+
+`workers` 是冻结 policy 的一部分：从 1 改成 2 或 3 必须建立新 policy、新输出目录，不能沿用旧候选或人工批准收据。runner 代码身份也绑定在运行目录；新版本不原地接管旧目录。一旦观测到某组失败，就停止提交新组，等待已经启动的至多 `workers` 个组结束；不写最终 `evidence.json`。在失败被观测到之前，较早完成的其他组可能已经触发后续组请求。是否真的缩短整页时间，还需在相同来源／设备上记录每组 API 延迟、限流、失败重试和完整 locale 墙钟。
 
 Sol 对任何一组报告 fail、问题或不确定性时，停止生成 `evidence.json`，保留该组响应供人工修订与新 revision。结构、覆盖或模型身份异常同样停止。`evidence.json` 只表示模型复核通过，仍须运行固定插件和候选准入器：
 
