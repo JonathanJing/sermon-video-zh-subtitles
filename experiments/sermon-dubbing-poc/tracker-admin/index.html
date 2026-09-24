@@ -98,6 +98,7 @@
 
           <section class="section-block">
             <div class="section-heading"><div><span class="eyebrow">CHECKPOINTS</span><h3 data-en="Checkpoint timing and filters">检查点计时与筛选</h3></div><label class="filter"><span data-en="Filter">筛选</span> <select id="step-filter"><option value="all" data-en="All">全部</option><option value="pending" data-en="Not started">待开始</option><option value="running" data-en="In progress">进行中</option><option value="waiting_review" data-en="Awaiting review">待审核</option><option value="blocked" data-en="Blocked">阻塞</option><option value="complete" data-en="Recorded">已记录</option></select></label></div>
+            <p class="hint timing-hint" data-en="Measured execution totals include retries. In-progress and review durations show time in that ledger status at the snapshot; they are not measured execution and do not add to the total.">执行实测累计包含重试；进行中与待审时长是截至快照的账本状态持续时间，不是实测执行，也不与执行累计相加。</p>
             <div id="step-list" class="step-list"></div>
           </section>
         </div>

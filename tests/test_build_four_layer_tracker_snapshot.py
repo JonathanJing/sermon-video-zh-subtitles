@@ -3,6 +3,7 @@ import json
 import sys
 import tempfile
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
 
@@ -24,6 +25,7 @@ class TrackerSnapshotTest(unittest.TestCase):
         first = tracker.build_snapshot(self.ledger, monitor=self.monitor,
                                        source_page_url="https://www.marinerschurch.org/irvine/",
                                        service_date="2026-09-20")
+        self.assertEqual(first["schemaVersion"], "sermon-public-tracker-snapshot-v2")
         self.assertEqual(first["source"]["videoChange"], "first_seen")
         self.assertNotIn("videoId", first["source"])
         self.assertNotIn("videoUrl", first["source"])
@@ -110,6 +112,45 @@ class TrackerSnapshotTest(unittest.TestCase):
         self.assertEqual(step["timing"]["failedExecutionAttempts"], 1)
         self.assertEqual(step["status"], "pending")
         self.assertEqual(snapshot["timingCoverage"]["measuredStepCount"], 1)
+
+    def test_running_step_shows_bounded_elapsed_at_snapshot_without_exposing_start(self):
+        key = "L3-02@ko"
+        now = datetime.now(timezone.utc)
+        status_start = (now - timedelta(minutes=8)).isoformat()
+        execution_start = (now - timedelta(seconds=95)).isoformat()
+        self.ledger["steps"][key]["status"] = "running"
+        self.ledger["history"] = [
+            {"action": "update", "step": key, "status": "running", "at": status_start},
+            {"action": "update", "step": key, "status": "running",
+             "at": (now - timedelta(minutes=2)).isoformat()},
+        ]
+        report = {"rows": [{"step": key, "openExecution": True,
+                           "attemptHistory": [{"status": "unfinished", "startedAt": execution_start}]}]}
+        snapshot = tracker.build_snapshot(self.ledger, timing_report=report)
+        timing = next(row["timing"] for row in snapshot["steps"] if row["id"] == key)
+        self.assertTrue(479 <= timing["statusElapsedSeconds"] <= 481)
+        self.assertTrue(94 <= timing["openExecutionElapsedSeconds"] <= 96)
+        self.assertNotIn("startedAt", json.dumps(snapshot))
+        self.assertNotIn(execution_start, json.dumps(snapshot))
+
+    def test_status_timer_restarts_after_status_change_and_ignores_missing_history(self):
+        key = "L2-02@es"
+        now = datetime.now(timezone.utc)
+        self.ledger["steps"][key]["status"] = "running"
+        snapshot = tracker.build_snapshot(self.ledger)
+        timing = next(row["timing"] for row in snapshot["steps"] if row["id"] == key)
+        self.assertIsNone(timing["statusElapsedSeconds"])
+        self.ledger["history"] = [
+            {"action": "update", "step": key, "status": "running",
+             "at": (now - timedelta(hours=2)).isoformat()},
+            {"action": "update", "step": key, "status": "waiting_review",
+             "at": (now - timedelta(minutes=20)).isoformat()},
+            {"action": "update", "step": key, "status": "running",
+             "at": (now - timedelta(minutes=3)).isoformat()},
+        ]
+        snapshot = tracker.build_snapshot(self.ledger)
+        timing = next(row["timing"] for row in snapshot["steps"] if row["id"] == key)
+        self.assertTrue(179 <= timing["statusElapsedSeconds"] <= 181)
 
     def test_dev_poc_catalog_tracks_are_visible_without_formal_voice_promotion(self):
         catalog = {"schemaVersion": "sermon-weekly-catalog-v1", "weeks": [{
