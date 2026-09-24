@@ -62,4 +62,4 @@
   --out /absolute/path/to/next-dev-candidate
 ```
 
-`build-update` 先复核当前候选、正式目录、旧 POC 资源和 stage 的同语言发布包哈希，并执行本轮计划的中文、韩语、西语**三语文字及音频均经人工审核**门槛；再只追加新页面的 immutable 资源、更新 v2 catalog 默认页面并保存旧 catalog 回退副本。旧九周、已审样片及 POC 文件原字节保留。它把旧候选的完整文件清单作为新的发布前基线，记录当前 Hosting 的 `cleanUrls` 策略，避免把本轮 `/404.html` 错按旧站 `/404` 请求。新页面使用通用 Dev 提示文案，不再写死 9 月 20 日样片。之后按上节 `preflight → deploy → verify` 顺序执行，每一步使用新的输出收据；没有新周次的 Layer 1–3 人审与 Layer 4 stage 时不生成或发布新页面。此入口目前通过合成 fixture 的本地测试，下一次真实整篇仍须独立验收。
+`build-update` 先复核当前候选、正式目录、旧 POC 资源和 stage 的同语言发布包哈希，并执行本轮计划的中文、韩语、西语**三语文字及音频均经人工审核**门槛；再只追加新页面的 immutable 资源、更新 v2 catalog 默认页面并保存旧 catalog 回退副本。旧九周、已审样片及 POC 文件原字节保留。它保存旧 Dev 构建报告的原字节副本，并把该报告的完整文件清单作为新的发布前基线；部署前会重新验证这条哈希绑定。当前 Hosting 的 `cleanUrls` 策略也随候选记录，避免把本轮 `/404.html` 错按旧站 `/404` 请求。新页面使用通用 Dev 提示文案，不再写死 9 月 20 日样片。之后按上节 `preflight → deploy → verify` 顺序执行，每一步使用新的输出收据；没有新周次的 Layer 1–3 人审与 Layer 4 stage 时不生成或发布新页面。此入口目前通过合成 fixture 的本地测试，下一次真实整篇仍须独立验收。

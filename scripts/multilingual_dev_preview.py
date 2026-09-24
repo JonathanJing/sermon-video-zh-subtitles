@@ -308,6 +308,8 @@ def prepare_update(dev_base_candidate: Path, staged: Path, out: Path) -> dict:
         shutil.copyfile(assembled / "build-report.json", temporary / "hosting-merge-report.json")
         shutil.copyfile(assembled / "rollback-multilingual-v2.json",
                         temporary / "rollback-multilingual-v2.json")
+        shutil.copyfile(dev_base_candidate / "build-report.json",
+                        temporary / "dev-base-build-report.json")
         shutil.rmtree(assembled)
         for name in ("index.html", "multilingual-reader.html"):
             path = temporary / "public" / name
@@ -361,7 +363,17 @@ def candidate_report(candidate: Path) -> dict:
             "Dev Firebase target/config changed")
     if report["schemaVersion"] == "sermon-multilingual-dev-preview-v2":
         merge = hosting.load(candidate / "hosting-merge-report.json")
+        base = hosting.load(candidate / "dev-base-build-report.json")
         require(type(report.get("baseCleanUrls")) is bool
+                and report["baseCleanUrls"] == config["hosting"].get("cleanUrls")
+                and report.get("baseBuildReportSha256")
+                == hosting.digest(candidate / "dev-base-build-report.json")
+                and base.get("files") == report.get("devBaseFiles")
+                and base.get("projectId") == DEV_PROJECT
+                and base.get("siteId") == DEV_SITE
+                and base.get("firebaseConfigSha256") == report.get("firebaseConfigSha256")
+                and base.get("pageId") == hosting.load(
+                    candidate / "rollback-multilingual-v2.json").get("defaultPageId")
                 and report.get("hostingMergeReportSha256")
                 == hosting.digest(candidate / "hosting-merge-report.json")
                 and report.get("oldCatalogSha256")
@@ -373,6 +385,8 @@ def candidate_report(candidate: Path) -> dict:
                 and report.get("stagingReceiptSha256")
                 == merge.get("stagingReceiptSha256")
                 and report.get("devBaseFiles") == merge.get("baseFiles")
+                and merge.get("modifiedFiles") == [hosting.CATALOG]
+                and merge.get("productionReader") is False
                 and report.get("pageId") == merge.get("newPageId"),
                 "Dev update provenance changed")
     return report

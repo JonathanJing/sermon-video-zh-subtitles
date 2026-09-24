@@ -263,6 +263,8 @@ class DevUpdateTest(unittest.TestCase):
             self.assertEqual(report["pageId"], new["id"])
             self.assertFalse(report["baseCleanUrls"])
             self.assertEqual(preview.candidate_report(candidate), report)
+            self.assertEqual((candidate / "dev-base-build-report.json").read_bytes(),
+                             (base / "build-report.json").read_bytes())
             merged = preview.hosting.load(candidate / "public/multilingual-v2.json")
             self.assertEqual([page["id"] for page in merged["pages"]],
                              ["reviewed-next", "reviewed-prior"])
@@ -290,6 +292,14 @@ class DevUpdateTest(unittest.TestCase):
             self.assertNotIn("/404", requested)
             self.assertNotIn("/", requested)
 
+            report_path = candidate / "build-report.json"
+            report["baseBuildReportSha256"] = "0" * 64
+            report_path.write_text(json.dumps(report))
+            with self.assertRaisesRegex(ValueError, "provenance changed"):
+                preview.candidate_report(candidate)
+            report["baseBuildReportSha256"] = preview.hosting.digest(
+                candidate / "dev-base-build-report.json")
+            report_path.write_text(json.dumps(report))
             (candidate / "rollback-multilingual-v2.json").write_text("{}")
             with self.assertRaisesRegex(ValueError, "provenance changed"):
                 preview.candidate_report(candidate)
