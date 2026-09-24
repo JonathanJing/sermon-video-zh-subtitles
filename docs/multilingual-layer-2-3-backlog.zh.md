@@ -1,5 +1,7 @@
 # 多语言 Layer 2 / Layer 3 实施 Backlog
 
+顶层优先级、跨层依赖与状态统一维护在 [Dev 统一 Backlog](backlog.zh.md) 的 `DEV-L2-*`／`DEV-L3-*` 项；本页只保留 Layer 2/3 的原子实现、接口与验收细节。
+
 状态：**9 月 20 日 2:58 片段的正式 Layer 1–3 已获三语人审，Layer 4 Dev 页面已部署并通过 HTTP 与浏览器播放核验；iOS 真机、现场及整篇周产验收尚未完成**。本 backlog 从已冻结的四层接口继续推进，覆盖：
 
 - Layer 2「目标语言文字」：`English Source Package` → `Target-Language Candidate`；

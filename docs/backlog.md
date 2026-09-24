@@ -1,10 +1,12 @@
 # Development Backlog
 
-> **Historical backlog snapshot.** Items are not automatically current or approved. Reconcile them with the [workflow source of truth](./workflows/README.zh.md) before implementation.
+> The canonical, unified Dev backlog is maintained in Chinese at [Dev 统一 Backlog](./backlog.zh.md). It owns cross-layer priorities, stable IDs, dependencies, and completion boundaries for Layer 1–4, Firebase Dev, Web/iOS, far-field alignment, CI, review tooling, and the separate live session.
+>
+> The English sections below are the preserved 2026-06-22 live-caption snapshot. They are not the current top-level plan; active work is mapped in the canonical backlog.
 
-Last updated: 2026-06-22
+Legacy snapshot last updated: 2026-06-22
 
-Chinese version: [backlog.zh.md](./backlog.zh.md)
+Canonical backlog: [backlog.zh.md](./backlog.zh.md)
 
 Current native-client requests are maintained in the [Tongxing iOS backlog (Chinese)](../apps/tongxing-ios/BACKLOG.zh.md): Dynamic Island, on-demand microphone alignment, localization, and bilingual transcripts.
 
