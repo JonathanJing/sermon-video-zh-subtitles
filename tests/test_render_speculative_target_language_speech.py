@@ -211,6 +211,16 @@ class FormalAdmissionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.formal_render()
 
+    def test_new_approved_unit_after_preview_is_cache_miss(self):
+        unit = {"translationGroupId": "g3", "sourceUnitIds": ["block-00-u003"]}
+        expected = formal._intent(self.fixture.context, self.fixture.paths, 1,
+                                  seed=42, dtype="bfloat16", attention="sdpa",
+                                  instruct=None)
+        expected.update(unitIndex=2, groupId="g3",
+                        sourceUnitIds=unit["sourceUnitIds"])
+        self.assertIsNone(formal._reusable_speculative_audio(
+            self.spec_root, unit, 2, expected))
+
 
 if __name__ == "__main__":
     unittest.main()

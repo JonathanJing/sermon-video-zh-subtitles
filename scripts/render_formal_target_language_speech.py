@@ -295,9 +295,11 @@ def _reusable_speculative_audio(previous_root: Path, unit: dict[str, Any], index
             and manifest.get("targetLocale") == expected["targetLocale"],
             "Speculative candidate or source binding changed")
     groups = snapshot.get("groups", [])
-    require(isinstance(groups, list) and index < len(groups)
-            and isinstance(groups[index], dict),
-            "Speculative candidate has no matching unit")
+    require(isinstance(groups, list), "Speculative candidate groups are malformed")
+    if index >= len(groups):
+        return None
+    require(isinstance(groups[index], dict),
+            "Speculative candidate unit is malformed")
     receipt_path = previous_root / f"receipts/unit-{index:04d}.json"
     wav_path = previous_root / f"units/unit-{index:04d}.wav"
     if not receipt_path.exists() and not wav_path.exists():
