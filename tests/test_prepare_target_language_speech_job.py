@@ -465,6 +465,186 @@ class TargetLanguageSpeechJobTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "evidence changed"):
             human_review.approve_worksheet(self.source_package, self.anchor, machine, self.policy, altered)
 
+    def test_batch_attestation_expands_only_a_complete_pending_worksheet(self):
+        machine = self.machine_candidate()
+        pending = human_review.build_worksheet(self.source_package, self.anchor, machine, self.policy)
+        filled = human_review.apply_batch_approval(
+            pending, reviewer="Korean reviewer", reviewed_at="2026-09-20T12:00:00Z",
+            evidence="Reviewed every group against the English source and scripture policy.",
+        )
+        self.assertEqual(pending["decision"], "pending")
+        self.assertTrue(all(row["decision"] == "approved" for row in filled["groupReviews"]))
+        approved, receipt = human_review.approve_worksheet(
+            self.source_package, self.anchor, machine, self.policy, filled,
+        )
+        subject.validate_human_review_receipt(self.source_package, self.anchor, approved, receipt)
+        self.assertEqual(len(receipt["groupReviews"]), len(machine["groups"]))
+        for change in ("decision", "evidence"):
+            altered = copy.deepcopy(pending)
+            altered["groupReviews"][0][change] = "rejected" if change == "decision" else "prior note"
+            with self.assertRaisesRegex(ValueError, "cannot override"):
+                human_review.apply_batch_approval(
+                    altered, reviewer="Korean reviewer", reviewed_at="2026-09-20T12:00:00Z",
+                    evidence="Reviewed every group against the English source.",
+                )
+        with self.assertRaisesRegex(ValueError, "timezone-aware"):
+            human_review.apply_batch_approval(
+                pending, reviewer="Korean reviewer", reviewed_at="2026-09-20T12:00:00",
+                evidence="Reviewed every group against the English source.",
+            )
+        stale = copy.deepcopy(pending)
+        stale["candidateJsonSha256"] = "0" * 64
+        filled_stale = human_review.apply_batch_approval(
+            stale, reviewer="Korean reviewer", reviewed_at="2026-09-20T12:00:00Z",
+            evidence="Reviewed every group against the English source.",
+        )
+        with self.assertRaisesRegex(ValueError, "identity changed"):
+            human_review.approve_worksheet(
+                self.source_package, self.anchor, machine, self.policy, filled_stale,
+            )
+
+    def test_batch_review_cli_writes_the_same_bound_receipt(self):
+        write_json(self.candidate_path, self.machine_candidate())
+        script = Path(__file__).parents[1] / "scripts/review_target_language_candidate.py"
+        common = [
+            "--english-source-package", str(self.source_package_path),
+            "--anchor", str(self.anchor_path),
+            "--candidate", str(self.candidate_path),
+            "--policy", str(self.policy_path),
+        ]
+        worksheet_path = self.root / "batch-worksheet.json"
+        subprocess.run([sys.executable, str(script), "prepare", *common,
+                        "--out", str(worksheet_path)], check=True, capture_output=True, text=True)
+        output = self.root / "batch-approved"
+        subprocess.run([sys.executable, str(script), "approve-batch", *common,
+                        "--worksheet", str(worksheet_path), "--reviewer", "Korean reviewer",
+                        "--reviewed-at", "2026-09-20T12:00:00Z",
+                        "--full-review-evidence", "Reviewed every source and target group.",
+                        "--out", str(output)], check=True, capture_output=True, text=True)
+        approved = json.loads((output / "candidate.approved.json").read_text(encoding="utf-8"))
+        receipt = json.loads((output / "human-review-receipt.json").read_text(encoding="utf-8"))
+        subject.validate_human_review_receipt(self.source_package, self.anchor, approved, receipt)
+        self.assertEqual([row["translationGroupId"] for row in receipt["groupReviews"]],
+                         [row["translationGroupId"] for row in approved["groups"]])
+
+    def test_group_receipts_keep_other_blocks_reviewed_across_candidate_revision(self):
+        anchor = copy.deepcopy(self.anchor)
+        anchor["sourceUnits"][1]["sourceUnitId"] = "block-01-u001"
+        source = copy.deepcopy(self.source_package)
+        source["anchors"]["artifact"]["jsonSha256"] = interpretation.json_sha256(anchor)
+        policy_draft = copy.deepcopy(self.policy)
+        policy_draft.pop("componentSha256")
+        policy_draft["sourceScope"]["englishSourcePackageJsonSha256"] = interpretation.json_sha256(source)
+        policy_draft["sourceScope"]["anchorManifestSha256"] = interpretation.json_sha256(anchor)
+        policy = policy_tools.freeze_policy(policy_draft)
+        first = self.machine_candidate()
+        first["englishSourcePackageJsonSha256"] = interpretation.json_sha256(source)
+        first["anchorManifestSha256"] = interpretation.json_sha256(anchor)
+        first["translationPolicySha256"] = policy_tools.validate_policy(policy)["translationPolicySha256"]
+        first["groups"][1] = self.group("g2", "block-01-u001", "내가 당신과 함께 있습니다.")
+        first["groups"][1]["languageReview"] = copy.deepcopy(first["groups"][0]["languageReview"])
+        make = lambda candidate, group_id: human_review.record_group_review(
+            source, anchor, candidate, policy, group_id=group_id, decision="approved",
+            evidence="Reviewed against the source and local context.",
+            reviewer="Korean reviewer", reviewed_at="2026-09-20T12:00:00Z",
+            context_scope="connected_blocks",
+            context_evidence="Reviewed adjacent context; no cross-block reference or quotation.",
+        )
+        g1, old_g2 = make(first, "g1"), make(first, "g2")
+        self.assertEqual(g1["contextGroupIds"], ["g1"])
+        with self.assertRaisesRegex(ValueError, "explicit reviewed context evidence"):
+            human_review.record_group_review(
+                source, anchor, first, policy, group_id="g1", decision="approved",
+                evidence="Reviewed.", reviewer="Korean reviewer",
+                reviewed_at="2026-09-20T12:00:00Z", context_scope="connected_blocks",
+            )
+        revised = copy.deepcopy(first)
+        revised["groups"][1]["targetText"] = "저는 당신과 함께 있습니다."
+        revised["groups"][1]["targetUtterances"] = [revised["groups"][1]["targetText"]]
+        revised["groups"][1]["coverage"][0]["targetText"] = revised["groups"][1]["targetText"]
+        with self.assertRaisesRegex(ValueError, "identity or context changed: g2"):
+            human_review.approve_group_receipts(source, anchor, revised, policy, [g1, old_g2])
+        new_g2 = make(revised, "g2")
+        approved, receipt, manifest = human_review.approve_group_receipts(
+            source, anchor, revised, policy, [g1, new_g2],
+        )
+        subject.validate_human_review_receipt(source, anchor, approved, receipt)
+        self.assertNotEqual(g1["originCandidateJsonSha256"], interpretation.json_sha256(revised))
+        self.assertEqual([row["translationGroupId"] for row in manifest["groupReceipts"]],
+                         ["g1", "g2"])
+
+    def test_group_review_keeps_same_block_and_missing_group_fail_closed(self):
+        machine = self.machine_candidate()
+        make = lambda candidate, group_id, decision="approved": human_review.record_group_review(
+            self.source_package, self.anchor, candidate, self.policy,
+            group_id=group_id, decision=decision, evidence="Reviewed source and context.",
+            reviewer="Korean reviewer", reviewed_at="2026-09-20T12:00:00Z",
+        )
+        g1, g2 = make(machine, "g1"), make(machine, "g2")
+        with self.assertRaisesRegex(ValueError, "required per group"):
+            human_review.approve_group_receipts(
+                self.source_package, self.anchor, machine, self.policy, [g1],
+            )
+        rejected = make(machine, "g2", "rejected")
+        with self.assertRaisesRegex(ValueError, "not approved"):
+            human_review.approve_group_receipts(
+                self.source_package, self.anchor, machine, self.policy, [g1, rejected],
+            )
+        revised = copy.deepcopy(machine)
+        revised["groups"][1]["semanticReview"]["evidence"] = "Fresh model check."
+        new_g2 = make(revised, "g2")
+        with self.assertRaisesRegex(ValueError, "belongs to another candidate: g1"):
+            human_review.approve_group_receipts(
+                self.source_package, self.anchor, revised, self.policy, [g1, new_g2],
+            )
+        approved, receipt, _ = human_review.approve_group_receipts(
+            self.source_package, self.anchor, machine, self.policy, [g1, g2],
+        )
+        subject.validate_human_review_receipt(self.source_package, self.anchor, approved, receipt)
+
+    def test_default_group_receipt_rejects_changed_top_level_provenance(self):
+        machine = self.machine_candidate()
+        receipts = [human_review.record_group_review(
+            self.source_package, self.anchor, machine, self.policy,
+            group_id=group_id, decision="approved", evidence="Reviewed source and context.",
+            reviewer="Korean reviewer", reviewed_at="2026-09-20T12:00:00Z",
+        ) for group_id in ("g1", "g2")]
+        revised = copy.deepcopy(machine)
+        revised["generation"]["translator"]["requestIds"] = ["new-request"]
+        self.assertEqual(machine["groups"], revised["groups"])
+        with self.assertRaisesRegex(ValueError, "belongs to another candidate"):
+            human_review.approve_group_receipts(
+                self.source_package, self.anchor, revised, self.policy, receipts,
+            )
+
+    def test_group_review_cli_aggregates_only_complete_receipts(self):
+        write_json(self.candidate_path, self.machine_candidate())
+        script = Path(__file__).parents[1] / "scripts/review_target_language_candidate.py"
+        common = [
+            "--english-source-package", str(self.source_package_path),
+            "--anchor", str(self.anchor_path),
+            "--candidate", str(self.candidate_path),
+            "--policy", str(self.policy_path),
+        ]
+        receipts = []
+        for group_id in ("g1", "g2"):
+            path = self.root / f"{group_id}-review.json"
+            subprocess.run([sys.executable, str(script), "record-group", *common,
+                            "--group-id", group_id, "--decision", "approved",
+                            "--evidence", "Reviewed source and block context.",
+                            "--reviewer", "Korean reviewer",
+                            "--reviewed-at", "2026-09-20T12:00:00Z", "--out", str(path)],
+                           check=True, capture_output=True, text=True)
+            receipts.append(path)
+        out = self.root / "assembled-group-review"
+        subprocess.run([sys.executable, str(script), "approve-groups", *common,
+                        *(part for path in receipts for part in ("--group-receipt", str(path))),
+                        "--out", str(out)], check=True, capture_output=True, text=True)
+        approved = json.loads((out / "candidate.approved.json").read_text())
+        receipt = json.loads((out / "human-review-receipt.json").read_text())
+        subject.validate_human_review_receipt(self.source_package, self.anchor, approved, receipt)
+        self.assertTrue((out / "group-review-aggregation.json").is_file())
+
     def test_human_review_cli_writes_immutable_pair(self):
         write_json(self.candidate_path, self.machine_candidate())
         script = Path(__file__).parents[1] / "scripts/review_target_language_candidate.py"

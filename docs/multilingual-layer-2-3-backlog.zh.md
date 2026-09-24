@@ -100,12 +100,16 @@
 
 #### L2-005 建立人工文字审核收据
 
-- [x] `review_target_language_candidate.py prepare` 生成逐组人工 worksheet，显示英文 source unit、目标译文、coverage、机器复核证据和语言检查；审核者须填写 reviewer、带时区时间、逐组决定与说明。
+- [x] `review_target_language_candidate.py prepare` 生成逐组人工 worksheet，显示英文 source unit、目标译文、coverage、机器复核证据和语言检查；逐组修改／拒绝仍使用手填决定与说明。
 - [x] 收据 schema 与 Layer 3 准备器绑定 source package、anchor、policy、candidate hash、全部 reviewed group IDs、reviewer 和带时区时间；每组须有人工审核决定与说明。
-- [x] `approve` 只接受完整覆盖、机器检查全通过、policy 已就绪且逐组人工决定均为 approved 的 worksheet，生成新的 `human_translation_approved` candidate 和独立收据；不会自动替审核者填写决定。
+- [x] `approve` 只接受完整覆盖、机器检查全通过、policy 已就绪且逐组人工决定均为 approved 的 worksheet，生成新的 `human_translation_approved` candidate 和独立收据。`approve-batch` 在审核者明确声明已审完最终全文、所有组仍待决且无例外时，展开同一人审说明到原有逐组收据；旧决定、改过的展示内容或过期 hash 均被拒绝。它节省填表，不自动作出内容判断。
 - [x] 英文 package、policy 或任一 group 改变时，旧收据在 Layer 3 准备阶段失效；完整 candidate 审批工作流仍待实现。
 
 验收：复制旧收据到新 candidate、漏审一个 group 或 hash 不符都不能进入 Layer 3。
+
+#### L2/L3-P0 层内局部审核与缓存解耦（第一阶段已实现，待真实整篇验收）
+
+`approve-batch` 仅减少完整人审后的逐行填表；新增 `record-group`／`approve-groups` 留下逐组收据。默认整候选上下文；有明确人审证明无跨 block 依赖时才按连通 block 复用，全部有效收据聚合后才进入正式 speech job。renderer 的 `--reuse-from` 在新完整 job 通过现有门禁后验证旧单元音频证据并复用未变 WAV；改动组重新合成。详见[局部审核与增量失效设计](multilingual-intralayer-review-decoupling.zh.md)。仍待真实整篇修订 A/B、跨段依赖覆盖与排程／全文听审验收；一组待改时整份 locale candidate 依然不能进入正式 speech job。
 
 ### L2-P1：兼容中文并完成韩语实证
 

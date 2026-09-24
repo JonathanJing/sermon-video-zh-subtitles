@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 import hashlib
+import copy
 import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from scripts import render_formal_target_language_speech as subject
 from tests import test_build_target_language_audio_package as fixture_module
@@ -58,6 +60,43 @@ class FormalRenderTests(unittest.TestCase):
                              ["fullDecode"], "pass")
         self.assertEqual(self.render_units(), rows)
         self.assertEqual(len(FakeSynth.calls), 2)
+
+    def test_unchanged_unit_reuses_verified_audio_across_candidate_revision(self):
+        old_rows = self.render_units()
+        newer = copy.deepcopy(self.context)
+        newer["candidate"]["groups"][1]["targetText"] = "Revised spoken text."
+        newer["job"]["units"][1]["text"] = "Revised spoken text."
+        next_root = self.root.parent / "next-render"
+        next_root.mkdir()
+        next_paths = dict(self.paths)
+        next_paths["job"] = next_root / "job.json"
+        next_paths["candidate"] = next_root / "candidate.json"
+        for name in ("job", "candidate"):
+            next_paths[name].write_text(json.dumps(newer[name]))
+        # The fixture's old clip authorization binds its first candidate; the
+        # production entry point validates fresh approvals before render_units.
+        with patch.object(subject.integrity, "build_receipt",
+                          return_value={"fullDecode": "pass", "durationSeconds": 0.08}):
+            rows = subject.render_units(
+                newer, next_paths, next_root, self.root / "checkpoint-map.json",
+                reuse_from=self.root, synth_factory=FakeSynth,
+            )
+        self.assertEqual(len(FakeSynth.calls), 3)
+        self.assertEqual(rows[0]["audio"]["sha256"], old_rows[0]["audio"]["sha256"])
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(subject.package.read_object(next_root / rows[0]["receipt"]["path"])
+                         ["fullDecode"], "pass")
+
+    def test_reuse_rejects_tampered_previous_audio(self):
+        rows = self.render_units()
+        (self.root / rows[0]["audio"]["path"]).write_bytes(b"tampered")
+        next_root = self.root.parent / "next-render"
+        next_root.mkdir()
+        with self.assertRaisesRegex(ValueError, "Previous render evidence or audio changed"):
+            subject.render_units(
+                self.context, self.paths, next_root, self.root / "checkpoint-map.json",
+                reuse_from=self.root, synth_factory=FakeSynth,
+            )
 
     def test_changed_text_or_checkpoint_map_cannot_reuse_cached_wav(self):
         self.render_units()

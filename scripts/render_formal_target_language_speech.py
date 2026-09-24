@@ -14,6 +14,7 @@ import json
 import math
 import os
 from pathlib import Path
+import shutil
 import struct
 import subprocess
 import tempfile
@@ -230,6 +231,35 @@ def _intent(context: dict[str, Any], paths: dict[str, Path], index: int, *, seed
     }
 
 
+def _reusable_audio(previous_root: Path, unit: dict[str, Any], index: int,
+                    expected: dict[str, Any]) -> Path | None:
+    """Use old bytes only after validating their original render evidence."""
+    old_intent_path = previous_root / f"receipts/unit-{index:04d}.intent.json"
+    old_commit_path = previous_root / f"receipts/unit-{index:04d}.render.json"
+    old_audio_path = previous_root / unit["outputRelativePath"]
+    require(all(path.resolve().is_relative_to(previous_root.resolve())
+                for path in (old_intent_path, old_commit_path, old_audio_path)),
+            "Previous render evidence escapes its directory")
+    if not any(path.exists() for path in (old_intent_path, old_commit_path, old_audio_path)):
+        return None
+    require(all(path.is_file() for path in (old_intent_path, old_commit_path, old_audio_path)),
+            f"Incomplete previous render evidence: {unit['translationGroupId']}")
+    old_intent = package.read_object(old_intent_path)
+    old_commit = package.read_object(old_commit_path)
+    require(old_commit.get("identity") == old_intent
+            and old_commit.get("audioSha256") == identity.sha256(old_audio_path),
+            f"Previous render evidence or audio changed: {unit['translationGroupId']}")
+    whole_job_fields = {"jobJsonSha256", "jobFileSha256", "candidateJsonSha256"}
+    old_unit_identity = {key: value for key, value in old_intent.items()
+                         if key not in whole_job_fields}
+    new_unit_identity = {key: value for key, value in expected.items()
+                         if key not in whole_job_fields}
+    if old_unit_identity != new_unit_identity:
+        return None
+    integrity.probe_full_decode(old_audio_path)
+    return old_audio_path
+
+
 def write_pcm16(path: Path, samples: Any, rate: int) -> None:
     """Encode model float output as an unaltered-rate mono PCM waveform."""
     if hasattr(samples, "detach"):
@@ -254,8 +284,12 @@ def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                  checkpoint_map_path: Path, *, seed: int = 42, device: str = "cuda:0",
                  dtype: str = "bfloat16", attention: str | None = "sdpa",
                  instruct: str | None = None,
+                 reuse_from: Path | None = None,
                  synth_factory: Callable[..., Any] = QwenSynthesizer) -> list[dict[str, Any]]:
     job, adapter = context["job"], context["adapter"]
+    if reuse_from is not None:
+        require(reuse_from.is_dir() and reuse_from.resolve() != root.resolve(),
+                "Previous render root must be a distinct existing directory")
     model = None
     rows = []
     for index, unit in enumerate(job["units"]):
@@ -285,15 +319,20 @@ def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                     f"Cached audio identity or hash changed: {unit['translationGroupId']}")
         else:
             require(not wav_path.exists(), f"Uncommitted audio cannot be reused: {wav_path}")
-            if model is None:
-                model = synth_factory(context["checkpoint"], device=device, dtype=dtype,
-                                      attention=attention, instruct=instruct)
-            wavs, rate = model(unit["text"], adapter["languageParameter"],
-                               adapter["speakerKey"], seed=seed + index)
             wav_path.parent.mkdir(parents=True, exist_ok=True)
             partial = wav_path.with_suffix(".partial.wav")
-            # A partial belongs to this same intent and is safe to replace on resume.
-            write_pcm16(partial, wavs, int(rate))
+            previous = (_reusable_audio(reuse_from, unit, index, expected)
+                        if reuse_from is not None else None)
+            if previous is not None:
+                shutil.copyfile(previous, partial)
+            else:
+                if model is None:
+                    model = synth_factory(context["checkpoint"], device=device, dtype=dtype,
+                                          attention=attention, instruct=instruct)
+                wavs, rate = model(unit["text"], adapter["languageParameter"],
+                                   adapter["speakerKey"], seed=seed + index)
+                # A partial belongs to this same intent and is safe to replace on resume.
+                write_pcm16(partial, wavs, int(rate))
             integrity.probe_full_decode(partial)
             commit = {"identity": expected, "audioSha256": identity.sha256(partial)}
             write_json_atomic(commit_path, commit)
@@ -474,6 +513,7 @@ def assemble(context: dict[str, Any], paths: dict[str, Path], root: Path,
 
 def render(paths: dict[str, Path], checkpoint_map_path: Path,
            operation_policies_path: Path, *, path_map_path: Path | None = None,
+           reuse_from: Path | None = None,
            seed: int = 42,
            device: str = "cuda:0", dtype: str = "bfloat16",
            attention: str | None = "sdpa", instruct: str | None = None,
@@ -485,6 +525,7 @@ def render(paths: dict[str, Path], checkpoint_map_path: Path,
     root = paths["job"].parent.resolve()
     rows = render_units(context, paths, root, checkpoint_map_path, seed=seed,
                         device=device, dtype=dtype, attention=attention, instruct=instruct,
+                        reuse_from=reuse_from,
                         synth_factory=synth_factory)
     return assemble(context, paths, root, rows, policy=policy, track_format=track_format)
 
@@ -513,6 +554,8 @@ def main() -> None:
     parser.add_argument("--max-end-lag-seconds", type=float, default=8.0)
     parser.add_argument("--track-format", choices=("wav", "mp3"), default="wav",
                         help="Use reviewed 64 kbps mono MP3 for a full-length web release")
+    parser.add_argument("--reuse-from", type=Path,
+                        help="Previously validated render directory for unchanged units")
     args = parser.parse_args()
     paths = {name: getattr(args, name) for name in ("source", "anchor", "candidate",
                                                    "job", "adapter", "policy", "human_receipt",
@@ -524,7 +567,8 @@ def main() -> None:
               "interUtteranceGapSeconds": args.inter_utterance_gap_seconds,
               "maxEndLagSeconds": args.max_end_lag_seconds}
     result = render(paths, args.checkpoint_map, args.audio_operation_policies,
-                    path_map_path=args.path_map, seed=args.seed, device=args.device,
+                    path_map_path=args.path_map, reuse_from=args.reuse_from,
+                    seed=args.seed, device=args.device,
                     dtype=args.dtype, attention=args.attention, instruct=args.instruct,
                     policy=policy, track_format=args.track_format)
     print(json.dumps({"status": "candidate", "targetLocale": result["targetLocale"],
