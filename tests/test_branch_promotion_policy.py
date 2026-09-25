@@ -59,6 +59,28 @@ class PromotionPolicyTest(unittest.TestCase):
         self.assertNotEqual(self.check("dev", self.dev_sha, "fork/example").returncode, 0)
         self.assertNotEqual(self.check("feature/skip", self.dev_sha).returncode, 0)
 
+    def test_merge_commit_cannot_hide_unreviewed_tree_change(self):
+        self.git("switch", "-q", "main")
+        self.git("switch", "-qc", "release/2026-W39")
+        self.git("merge", "--no-ff", "--no-commit", "dev")
+        (self.repo / "unreviewed").write_text("hidden in merge")
+        self.git("add", "-A")
+        self.git("commit", "-qm", "merge with unreviewed content")
+        result = self.check("release/2026-W39", self.git("rev-parse", "HEAD").strip())
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("merge commit not admitted", result.stderr)
+
+    def test_reviewed_dev_sync_merge_is_allowed_on_frozen_release(self):
+        self.git("switch", "-q", "main")
+        (self.repo / "production-tip").write_text("promoted")
+        self.git("add", "-A")
+        self.git("commit", "-qm", "new production tip")
+        self.git("push", "-q", "origin", "main")
+        self.git("switch", "-q", "dev")
+        self.git("merge", "--no-ff", "-qm", "sync production tip", "main")
+        self.git("push", "-q", "origin", "dev")
+        self.assertEqual(self.check("release/2026-W39", self.git("rev-parse", "HEAD").strip()).returncode, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

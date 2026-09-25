@@ -1,3 +1,4 @@
+import CryptoKit
 import SwiftUI
 import TongxingCore
 import TongxingInfrastructure
@@ -901,6 +902,38 @@ struct VoiceDemoCatalog: Decodable {
         func url(relativeTo origin: URL) -> URL {
             URL(string: path, relativeTo: origin)!.absoluteURL
         }
+
+        func verify(_ data: Data) throws {
+            let digest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+            guard data.count == bytes, digest == sha256 else { throw CocoaError(.fileReadCorruptFile) }
+        }
+
+        func verifiedLocalURL(origin: URL, session: URLSession, directory: URL) async throws -> URL {
+            let source = url(relativeTo: origin)
+            guard origin.scheme == "https", source.scheme == "https", source.host == origin.host,
+                  source.port == origin.port, source.user == nil, source.password == nil,
+                  source.query == nil, source.fragment == nil else { throw CocoaError(.fileReadNoPermission) }
+            let file = directory.appendingPathComponent("\(sha256).mp3")
+            if let cached = try? Data(contentsOf: file) {
+                if (try? verify(cached)) != nil { return file }
+                try? FileManager.default.removeItem(at: file)
+            }
+            var request = URLRequest(url: source)
+            request.cachePolicy = .reloadIgnoringLocalCacheData
+            request.timeoutInterval = 30
+            let (data, response) = try await session.data(for: request)
+            try Task.checkCancellation()
+            guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw CocoaError(.fileReadUnknown) }
+            try verify(data)
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            try data.write(to: file, options: .atomic)
+            do { try verify(Data(contentsOf: file)) }
+            catch {
+                try? FileManager.default.removeItem(at: file)
+                throw error
+            }
+            return file
+        }
     }
 
     struct Speaker: Decodable, Identifiable {
@@ -952,7 +985,8 @@ struct VoiceDemoCatalog: Decodable {
                       asset.path.unicodeScalars.allSatisfy({ allowed.contains($0) }),
                       asset.sha256.count == 64,
                       asset.sha256.unicodeScalars.allSatisfy({ CharacterSet(charactersIn: "0123456789abcdef").contains($0) }),
-                      asset.bytes > 0, paths.insert(asset.path).inserted else {
+                      asset.bytes > 0, asset.bytes <= 5_000_000,
+                      paths.insert(asset.path).inserted else {
                     throw CocoaError(.fileReadCorruptFile)
                 }
                 if asset.locale != nil && (asset.humanListeningStatus != "pending"
@@ -974,6 +1008,9 @@ private struct VoiceDemoSection: View {
     @ViewState private var loading = false
     @ViewState private var catalog: VoiceDemoCatalog?
     @ViewState private var unavailable = false
+    @ViewState private var demoError = false
+    @ViewState private var busyAssetPath: String?
+    @ViewState private var assetTask: Task<Void, Never>?
 
     var body: some View {
         DisclosureGroup(isExpanded: $expanded) {
@@ -984,6 +1021,10 @@ private struct VoiceDemoSection: View {
                 Button(localization.text("试听资料暂不可用，点击重试")) {
                     Task { await load() }
                 }
+            }
+            if demoError {
+                Text(localization.text("音频加载失败，请检查网络或使用已下载版本。"))
+                    .font(.footnote).foregroundStyle(.secondary)
             }
             if let catalog {
                 ForEach(catalog.speakers) { speaker in
@@ -1019,15 +1060,43 @@ private struct VoiceDemoSection: View {
         .onChange(of: expanded) { _, value in
             if value && catalog == nil && !loading { Task { await load() } }
         }
+        .onDisappear {
+            assetTask?.cancel()
+            assetTask = nil
+            busyAssetPath = nil
+            if model.playback.isPreview {
+                model.playback.clear()
+                if let week = model.selectedWeek {
+                    Task { await model.select(week: week, track: model.selectedTrack, force: true) }
+                }
+            }
+        }
     }
 
     private func assetButton(_ asset: VoiceDemoCatalog.Asset, title: String) -> some View {
         Button {
-            model.playback.pause()
-            openURL(asset.url(relativeTo: model.mediaOrigin))
+            assetTask?.cancel()
+            busyAssetPath = asset.path
+            demoError = false
+            assetTask = Task {
+                do {
+                    let directory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+                        .appendingPathComponent("Tongxing/VoiceDemos", isDirectory: true)
+                    let file = try await asset.verifiedLocalURL(
+                        origin: model.mediaOrigin, session: model.mediaSession, directory: directory)
+                    try Task.checkCancellation()
+                    model.playback.loadPreview(url: file, title: title)
+                } catch is CancellationError {
+                    // A later tap or dismissal owns the player now.
+                } catch {
+                    demoError = true
+                }
+                if busyAssetPath == asset.path { busyAssetPath = nil }
+            }
         } label: {
             Label(title, systemImage: "play.circle")
         }
+        .disabled(busyAssetPath != nil)
     }
 
     private func languageName(_ locale: String?) -> String {
