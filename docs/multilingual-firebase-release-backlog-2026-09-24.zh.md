@@ -6,7 +6,9 @@
 
 正式站**暂不展示** 9 月 20 日两个三语片段，只保留九个旧中文周次。它们的标题、大纲、字幕和音频固定使用已发布的中文资源；英文、韩文、西文内容入口标为未发布并禁用。界面语言独立切换中文、英文、韩文、西文；西文界面当前有英文低频文案回退，应继续补齐。两个已审核片段继续留在 Dev，不因通过审核而自动进入正式站。自 9 月 27 日周次起，按四层流程制作三语；目前没有可宣称已完成的新周三语发布包。
 
-本地已从当前 registry head 生成 UI-only 候选 `artifacts/weekly-release/ui-refresh-2026-09-24/`：`rel_35c2bfb63b0ca64d689ceb2b`，`build-report.json` SHA-256 `14a7d8cbe47dcf1974b5cbdf5b06e84679b48743bac2a68e8cae66744aad1f77`。它保留九周目录和媒体字节；构建与本地浏览器验证不等于已经从 `main` 发布。
+2026-09-25 已从远端 `main` 的 `d85ea24e4dd6b3ec934ad4ee1faefb162c3c8dde` 构建并发布 UI-only release `rel_afda7e194e8a52cb2dfc0e61`，`build-report.json` SHA-256 为 `7b7485ca34f8cda8444d00c6d50d3091e5c37d8211807da056a055a68c9da065`。先前的 `rel_35c2bfb63b0ca64d689ceb2b` 只是发布前预览候选；两个候选的 60 个公开文件逐字节相同，正式版本另有独立构建时间和收据。正式站地址为 <https://ai-for-god-sermon-audio.web.app/>。
+
+发布前，线上原版 58 个文件逐一 HTTP/SHA 核对通过；发布后，新版 60 个文件及全部 MP3 Range 核对通过，registry head 更新到上述 release，generation 从 15 到 16。浏览器实测九个旧中文周次、四种界面语言、三种未发布内容语言禁用、8 月 30 日旧书签深链及中文音频开始／暂停。反馈函数路由对空 JSON 的 POST 返回 `400 invalid_payload`，证明路由和校验工作；未创建真实会话或提交反馈。证据在忽略目录 `artifacts/weekly-release/ui-refresh-2026-09-24-main-d85ea24/` 的 `deployment-receipt.json`、`http-verification.json`、`production-acceptance.json`，以及 registry 对应 release 快照。设备与现场验收仍为 `not_run`。
 
 ## 已解决并保留的证据
 
@@ -19,9 +21,9 @@
 | 两个已审片段连续构建时，候选错误地把未上线的中间产物当作线上基线 | `assemble_multilingual_hosting.py` 现可多次传 `--staged`，最终报告绑定最初的完整 Production 快照；正式核验逐页查所有已发布 locale 的深链和 Range。定向 19 个 Python、9 个 Node 测试通过。 |
 | Production 阅读器把正式目录当作可缺失的 Dev POC 资源，且同日两页选择标签完全相同 | 正式模式现在要求 v2 目录加载成功，审核标签按界面语言显示；同日页面以页面标识区分，已加载页面显示其审核标题。Dev POC 仍走可选目录。 |
 
-## 当前可复核的 Firebase 候选
+## 未上线的三语 Firebase 候选
 
-忽略目录 `artifacts/multilingual-production-candidates/2026-09-24-two-clips-v3/` 包含一次切换的不可变候选及部署计划；v1/v2 是较早的本地版本，不用于发布。它以 registry head `rel_cbd3c91f6e220482fe00acbc` 为基线，合并 `2026-09-20-revelation-clip` 与 `2026-09-20-laodicea-clip` 两个已审核页面；v2 目录有两页、各三语，默认第二片段，旧 `weekly.json` 保留九周。候选共 93 文件，原 Production 基线 58 文件。2026-09-24 的线上逐文件基线检查为 `pass`；部署计划为 `validated_not_deployed`，没有执行正式站部署。该预检仅在生成后 30 分钟内可用于部署，过期必须重跑；线上或 registry head 改变则必须重建候选。
+忽略目录 `artifacts/multilingual-production-candidates/2026-09-24-two-clips-v3/` 保留未部署的两片段三语候选及当时的部署计划；v1/v2 是较早的本地版本，不用于发布。它以旧 registry head `rel_cbd3c91f6e220482fe00acbc` 为基线，合并 `2026-09-20-revelation-clip` 与 `2026-09-20-laodicea-clip` 两个已审核页面；旧 `weekly.json` 保留九周。候选共 93 文件，旧 Production 基线 58 文件。其 2026-09-24 的预检已过期，且正式 registry 已推进到 generation 16；将来若决定发布三语片段，必须按新基线重建候选与预检。本次正式站没有部署该候选。
 
 Hosting 模拟器在 v1/v2 上实际打开两段的中文、韩语和西语示例页；页面选择器可切换同日两片段，第二段韩语音轨播放进度达到 00:05。最终 v3 又打开第二段西语页并切到第一段中文页。旧九周阅读器仍显示 9 个周次及 PDF/MP3/SRT 下载入口，旧 `/?week=` 转至旧页，新片段 `/?week=` 打开三语页。模拟器的反馈 `/api/session` 返回 403，因此不能据此宣称反馈后端已通过；此项要在正式发布前用适当的真实后端环境验证。韩／西文已批准字幕在若干句号后仍缺空格，修改需走新的语言 revision。
 
@@ -33,8 +35,8 @@ Hosting 模拟器在 v1/v2 上实际打开两段的中文、韩语和西语示�
 | --- | --- | --- |
 | P0 | **周更发行与多语言首页共存**：legacy 部署入口现探测正式站 v2，发现后拒绝覆盖；显式回退要单独传参。但 registry/周更构建尚不能从多语言站点叠加新中文周次。 | 合成 fixture 证明新中文周次、两段三语页面、旧九周、`/?week=`、下载及反馈路由同时保留；其他旧式发布入口也不能静默删除 v2。 |
 | 已决 | **正式内容范围**：两页合计只是 9 月 20 日的两个片段。 | 用户已确认本次 Production 只展示九个旧中文周次；两段留在 Dev。新周次按四层流程另行发布。 |
-| P0 | **正式站切换与恢复**：本地基线、候选和部署计划不等于已发布；实际回退也未演练。 | 从 `main` 可追溯版本发布，经实时基线、目标配置、所有文件/旧周次深链/Range、浏览器四种界面语言验证；保存旧完整 release 和恢复收据。此次不验证正式站三语片段播放，因为它们不上线。 |
-| P0 | **Production 浏览器与反馈回归**：旧站切换界面语言时必须保持中文内容和中文音轨；下载及反馈后端要保留。 | 发布前后核对九周选择、旧书签、四种界面语言、禁用项、下载 Range、真实反馈后端；HTTP 与浏览器证据分开记录。 |
+| P1 | **正式站恢复演练**：本次从 `main` 发布、实时基线、逐文件/Range 和浏览器检查已完成，旧完整 release 已保留；尚未实际执行回退。 | 在不影响周日使用的受控窗口演练回退及重新发布，分别保留 Firebase 与 HTTP 收据。 |
+| P1 | **反馈真实会话回归**：Hosting rewrite 和函数输入校验已通过；尚未完成生产会话创建与反馈提交。 | 用专门标识的测试数据完成会话、反馈、查询与清理，核对 Firestore 实际写入及权限；不要把 `400` 校验回执当作完整后端验收。 |
 | P1 | **西语界面文案补齐**：目前常用导航和状态已译，少用诊断和隐私长文暂用英文回退。 | 完整西语界面文案人审，静态键与运行时状态全覆盖；不得把旧中文周次伪装成西语内容。 |
 | P1 | **跨页导航标题**：未打开的页面以 ID 词组区分；没有按界面语言显示已批准的完整标题。 | 从哈希绑定的页面信息生成各界面语言的导航标题；同日多页无重复、缺失时有明确回退。 |
 | P1 | **单语言修订/撤回**：同 page ID 被安全拒绝覆盖，但缺版本化替换与独立回滚。 | 新 revision 与旧包并存，按 `pageId + locale` CAS 切换；只使该 locale 下游哈希失效，其他语言和页面不动。 |
@@ -46,4 +48,4 @@ Hosting 模拟器在 v1/v2 上实际打开两段的中文、韩语和西语示�
 
 隔离工作树 `/Users/jonathan_jing/.codex/worktrees/release-firebase-2026-09-24/sermon-video-zh-subtitles` 从 `dev` 的 `74309ee` 创建 `codex/release-firebase-2026-09-24`。先带入 Web、生产脚本、Tracker、schema、测试和文档改动，没有从原始工作区复制未提交的 iOS 工作；之后合入当前 `dev`，解决 Tracker 和并行生产代码的冲突。原始工作区 `codex/release-2026-09-20-second-clip` 的未提交工作仍独立保留。
 
-2026-09-25，release 分支的 [PR #76](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/76) 通过 `unittest`、`native-client` 等检查，已 squash 合并到 `dev`，合并提交 `aa715ac`。进入 `main` 的 [PR #77](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/77) 仍为草稿，等待确认是否一并晋升 `dev` 中已有的 iOS 代码；创建草稿和通过检查都不代表 `main` 合并或 Firebase 正式发布。候选媒体、`.env` 和发布收据保留在 Git 忽略目录。9 月 24 日两个已审核片段保持 Dev 范围，本次正式站候选只更新九个旧中文周次的 UI。
+2026-09-25，release 分支的 [PR #76](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/76) 已 squash 合并到 `dev`（`aa715ac`）。进入 `main` 的 [PR #77](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/77) 经用户批准纳入 `dev` 中已有的 iOS 代码。自动评审指出 release merge 旁路和 iOS 试听未校验音频的问题；修复经 [PR #79](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/79) 进入 `dev` 后，#77 的 Python、晋升策略与完整 iOS 模拟器门禁通过，squash 合并为 `d85ea24`。随后 [PR #80](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/80) 用无文件差异的 merge commit `8393598` 将正式 `main` tip 回同步至 `dev`，并验证两者代码树一致。候选媒体、`.env` 和发布收据保留在 Git 忽略目录。两个已审核片段仍只在 Dev，iOS 上架及真机验收继续等待独立 review 和测试。
