@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "sermon-layer3-qwen-voxcpm2-long-ab-plan-v1",
+  "scope": "layer_3_shadow_experiment",
+  "status": "synthetic_chinese_listening_script",
+  "productionEligible": false,
+  "humanApproval": false,
+  "voice": {
+    "speakerId": "eric_geiger",
+    "qwenSpeakerKey": "eric_pilot",
+    "qwenCheckpointSha256": "75d28ce6022b3df3a72df3dd6dbc01e53f584d685770d60ea04b341920968c9a",
+    "referenceAudioSha256": "26688c073a93e551e05a19169d236d53ed1e9bddeb140249c8ac228bf418c807"
+  },
+  "passage": {
+    "sampleId": "zh-long-prosody-001",
+    "language": "Chinese",
+    "targetLocale": "zh-Hans",
+    "text": "有时候，我们以为沉默就是失败，以为等待意味着上帝没有工作。可是，请记住：十字架看起来像失败，却正是耶稣得胜的地方。祂不是在事情失控以后，才匆忙作出回应；祂从一开始，就掌管整个故事。所以，当恐惧告诉你“一切都结束了”的时候，不要只听恐惧的声音。停下来，深呼吸，再看一次耶稣。祂胜过罪，胜过死亡，也胜过那位控告我们的仇敌。也许你今天还看不见答案，但看不见，并不等于上帝没有行动。真正的信心，不是假装问题不存在；而是在问题仍然存在的时候，仍然相信耶稣掌权。",
+    "textSha256": "1186bc2d3b0e07a9ac8c6f16894c97127b8beaa99fbd56fe3cbe637df6fbdd1c",
+    "listeningDimensions": [
+      "Eric speaker likeness",
+      "emphasis on contrast and repeated victory phrases",
+      "short punctuation pauses and sentence-level pauses",
+      "long-form stability and naturalness"
+    ]
+  }
+}

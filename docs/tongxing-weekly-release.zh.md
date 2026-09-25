@@ -60,6 +60,18 @@ python3 experiments/sermon-dubbing-poc/weekly_release.py prepare \
 
 该命令复用登记版本的 UI、声音库、反馈开关与其他设置，保留旧哈希媒体地址，并为合并后的全部页重建反馈目录。候选包中附带的页面代码更新需走单独 UI 发布流程；候选声音库与登记版本不一致时拒绝合并，声音库变更须单独审阅发布。
 
+**Production 站点已有 `multilingual-v2.json` 时，不直接部署这个 legacy-only 包。** 旧发行器不会把多语言目录和正式资源纳入它的严格清单；`deploy_firebase.py --execute` 会先读取 Production v2 catalog 并默认拒绝覆盖。将这份已准备的 legacy release 与当前已通过 Production HTTP 核验的完整多语言候选合成一个新候选：
+
+```bash
+.venv/bin/python scripts/refresh_multilingual_hosting_with_legacy.py \
+  --base-candidate /absolute/path/to/current-production-multilingual-candidate \
+  --legacy-release /absolute/path/to/prepared-legacy-release \
+  --prior-http-verification /absolute/path/to/previous-production-http-verification.json \
+  --out /absolute/path/to/next-production-hosting-candidate
+```
+
+组装器核对旧三语文件与 Firebase 配置哈希、新 legacy 包及其发行计划、旧周次全集、反馈配置和旧 UI；只更新 `weekly.json`，并加入新的哈希媒体与下载。新候选再按[分支与 Firebase 环境流程](development-branch-and-firebase-environments.zh.md#每周内容与代码发布顺序)执行 Production 预检、部署和 HTTP 核验，并向 `run_multilingual_cd.py` 传入同一个 `--legacy-release`。反馈开启时，统一入口先按既有 `deploy_feedback.py` 准备／部署新 API 目录，再部署 Hosting；其收据状态仍为 `deployed_verification_pending`，须独立核验 API，Hosting 的 HTTP 成功不能代替。明确回退到完整 legacy 快照时，原部署器才可使用 `--allow-multilingual-rollback`；该选项是有意移除三语目录，不用于普通周更。
+
 输出目录必须是新目录，不能位于 registry 或 candidate 内。准备过程不推进 registry head。`build-report.json` 与发行计划绑定候选输入、上一版本及上一代 generation，避免并发候选覆盖较新的发行记录。
 
 ## 发布与核验
@@ -145,13 +157,13 @@ python3 -m unittest discover -s experiments/sermon-dubbing-poc -p 'test_build_we
 
 ## Agents API 与费用边界
 
-发行清单与 HTTP 核验仍是普通程序，本身不增加模型调用。2026-09-11 上游生产 Supervisor 已实现 Agents API 默认后端（Astra Medium）：以最小状态白名单选择现有确定性生产工具，保持人工审批、租约及发布校验。具体切换状态见 [生产 runbook](codex-local-production-runbook.zh.md) 与 [Supervisor 设计](sermon-production-supervisor-agent.zh.md)。配音候选审核及本章的 Firebase 发行流程仍需各自的有效收据，不能用 Agent 会话完成代替。
+发行清单与 HTTP 核验仍是普通程序，本身不增加模型调用。2026-09-11 上游生产 Supervisor 已实现 Agents API 默认后端；当前调度默认模型为 Sol Medium，以最小状态白名单选择现有确定性生产工具，保持人工审批、租约及发布校验。具体切换状态见 [生产 runbook](codex-local-production-runbook.zh.md) 与 [Supervisor 设计](sermon-production-supervisor-agent.zh.md)。配音候选审核及本章的 Firebase 发行流程仍需各自的有效收据，不能用 Agent 会话完成代替。
 
 此前在 Codex 对话中完成的上层处理，使用的是所选 Codex 登录/计费方式。脚本内部单独调用的转写、翻译等 API 仍有自己的费用。切换到 Agents API 后，上层 Agent 模型调用也按 API 计费，不能视为已经包含在 ChatGPT 订阅里。
 
 费用口径为全部模型调用的输入、缓存、输出（含 reasoning）之和，再加实际使用的工具、沙箱与第三方服务。多轮工具结果、子 Agent 和重试都会贡献用量；任务不是按“每篇页面”固定收费。使用 `environment: none` 和本机函数可避免托管沙箱这一项，但模型 token 与底层生产成本仍存在。
 
-2026-09-10 查得 Astra 标准价：每百万 tokens 普通输入 $10、缓存读取 $1、缓存写入 $12.50、输出 $50。超过 272K 输入的单次请求有长上下文加价，其他运行模式也可能有不同价格。简单算例：累计 100K 普通输入与 10K 输出，在没有缓存写入、工具、沙箱和其他加价的条件下约 $1.50。这不是本项目每周实测费用或账单承诺。
+以下是 2026-09-10 查得的 Astra 内容模型历史算例，不适用于当前 Sol Supervisor 计价：每百万 tokens 普通输入 $10、缓存读取 $1、缓存写入 $12.50、输出 $50。超过 272K 输入的单次请求有长上下文加价，其他运行模式也可能有不同价格。简单算例：累计 100K 普通输入与 10K 输出，在没有缓存写入、工具、沙箱和其他加价的条件下约 $1.50。这不是本项目每周实测费用或账单承诺。
 
 Agents API turn usage 为 best-effort，可为 null，且不单列 cache-write count；费用报告必须保留 unknown 并与 Platform 账单核对，不能把未知记为零。实测会话既出现已知 token 计数，也出现 null；最终费用须对账。
 

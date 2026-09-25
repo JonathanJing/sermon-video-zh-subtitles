@@ -34,6 +34,12 @@ class SaturdayHarnessTests(unittest.TestCase):
                 "live_archive": {"sourceId": "archive-source", "status": "waiting_conversation_review",
                     "candidateEvidence": {"timingReportSha256": "abc"}}}, "nextActions": []}
 
+    def test_default_supervisor_model_is_sol(self):
+        args = harness.parse_args(self.argv)
+        self.assertEqual(args.model, "gpt-6-sol")
+        command = harness.commands(args)[0]
+        self.assertEqual(command[command.index("--model") + 1], "gpt-6-sol")
+
     def write_pdf(self, status="blocked"):
         self.supervisor.write_text(json.dumps({"sunday": "2026-09-06", "status": status,
             "finalSnapshot": {"sunday": "2026-09-06", "slug": "sermon_archive-source",

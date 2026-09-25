@@ -11,17 +11,47 @@ permissions:
 jobs:
   promotion-policy:
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 5
     steps:
-      - name: Require dev as the main promotion source
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: Require a reviewed dev or weekly release source
         env:
           HEAD_BRANCH: ${{ github.head_ref }}
           HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
           EXPECTED_REPOSITORY: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          if [ "$HEAD_BRANCH" != "dev" ] || [ "$HEAD_REPOSITORY" != "$EXPECTED_REPOSITORY" ]; then
-            echo "main accepts normal feature promotion only from this repository's dev branch." >&2
-            echo "received: $HEAD_REPOSITORY:$HEAD_BRANCH" >&2
+          set -euo pipefail
+          if [ "$HEAD_REPOSITORY" != "$EXPECTED_REPOSITORY" ]; then
+            echo "main promotions must come from this repository." >&2
             exit 1
           fi
-          echo "Validated promotion path: dev -> main"
+          if [ "$HEAD_BRANCH" = dev ]; then
+            echo "Validated dev -> main"
+            exit 0
+          fi
+          if ! [[ "$HEAD_BRANCH" =~ ^release/[0-9]{4}-W(0[1-9]|[1-4][0-9]|5[0-3])$ ]]; then
+            echo "main accepts dev or release/YYYY-Www only." >&2
+            exit 1
+          fi
+          git fetch --no-tags origin \
+            +refs/heads/dev:refs/remotes/origin/dev \
+            +refs/heads/main:refs/remotes/origin/main
+          git merge-base --is-ancestor origin/main "$HEAD_SHA" || {
+            echo "Release branch must include the current main tip." >&2
+            exit 1
+          }
+          while read -r merge; do
+            if ! git merge-base --is-ancestor "$merge" origin/dev; then
+              echo "Release branch contains a merge commit not admitted to dev." >&2
+              exit 1
+            fi
+          done < <(git rev-list --merges "origin/main..$HEAD_SHA")
+          if git cherry origin/dev "$HEAD_SHA" origin/main | grep -q '^+'; then
+            echo "Release branch contains a change not yet admitted to dev." >&2
+            exit 1
+          fi
+          echo "Validated weekly release branch from reviewed dev changes"

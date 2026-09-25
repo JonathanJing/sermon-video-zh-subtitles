@@ -1,19 +1,29 @@
 # 多语言 Layer 4 发布与 App 改进 Backlog
 
-状态：**接口与 iOS 路由 POC 开发中**。本文覆盖 Layer 4「多语言发布与播放」以及 Web/iOS 客户端的语言选择体验。v2 catalog／release receipt schema、fail-closed catalog builder，以及 iOS 语言发布页选择已开始实现；这仍不表示韩语音频、多语言正式发布或设备／现场验收已经完成。
+顶层优先级、跨层依赖与状态统一维护在 [Dev 统一 Backlog](backlog.zh.md) 的 `DEV-L4-*`／`DEV-IOS-*`／`DEV-FIELD-*` 项；本页只保留 Layer 4 的接口、发布、Web／App 交互和验证细节。
+
+2026-09-24 第二片段 POC 复盘、正式站仅保留九个旧中文周次的范围与本轮 release 门槛见 [Firebase Release Backlog](multilingual-firebase-release-backlog-2026-09-24.zh.md)。iOS 后续调整等待当前 review 结果。
+
+状态：**Dev 三语审核样片已发布；每周 Production 与 iOS 原生多语言仍在开发**。本文覆盖 Layer 4「多语言发布与播放」以及 Web/iOS 客户端的语言选择体验。v2 catalog／release receipt schema、fail-closed catalog builder，以及 iOS 语言发布页选择已开始实现；样片韩语音频和 Dev HTTP 验证不代表整篇周更、Production、设备或现场验收完成。
+
+## 2026-09-23 Production 候选进度
+
+9 月 20 日 2:58 三语正式样片已在 Firebase Dev 发布并完成 HTTP 与浏览器播放核验；Production 仍只有 legacy 中文 weekly.json，线上 multilingual-v2.json 为 404。当前分支新增可在完整旧站点上叠加单个已审三语页面的不可变 Hosting 候选；可把多语言阅读器设为首页，旧中文九周页面、下载资源和 `/?week=` 链接保留。本地 Firebase Hosting 模拟器已验证首页、三语深链、韩／西语界面切换、韩语播放时间推进与旧中文页面。前端可读多个正式 page、部分已发布 locale 和已审 MP3；新 Layer 3 job 可选 64 kbps MP3 以适应整篇播放。部署前完整基线检查、限定站点的显式发布入口和发布后逐文件 HTTP 核验已有定向测试。具体范围与剩余门槛见[合并 main 前检查](multilingual-production-premerge-2026-09-23.zh.md)。
+
+上述是候选准备与本地验证；本周新整篇内容、Production 部署后 HTTP 收据、实体设备、原生 iOS 音轨与现场验收均未完成。以下未勾选的原子聚合、单语言回滚及生产验收项保持未完成。
 
 ## 当前实现切片（2026-09-21）
 
 - 新增 `sermon-multilingual-catalog-v2` 和 `sermon-target-language-release-receipt-v1` schema。
 - `scripts/build_multilingual_catalog.py` 只聚合精确 hash 匹配、人工翻译批准、HTTP 已验证且无 unresolved issue 的 Release Package；跨 locale source identity、同 locale 音频包绑定和完整听审任一不符即停止。
 - iOS Core 解码并验证 v2 catalog 和 immutable Release Package；Infrastructure 下载时复算 package hash，并把 package/page URL 限定到配置的同一 HTTPS origin。
-- Debug build 指向独立 Firebase Dev origin；Release build 继续指向 Production origin。运行时测试仍可显式注入隔离 origin。
+- Debug build 指向独立 Firebase Dev origin；Release build 继续指向 Production origin。两者沿用同一原生收听界面和功能；运行时测试仍可显式注入隔离 origin。
 - 标题附近的“证道语言”按钮打开语言 Sheet；只显示 catalog 中 `human_reviewed` 文字版本，并显示文字、字幕、音频和下载能力。选择后先取得并验证该 locale 的 Release Package，再打开其 `page` asset。
 - 本切片不把其他语言页面伪装成原生音轨切换：返回 App 后原生播放器仍明确保留现有已验证中文轨道。原生多语言内容／音频切换、跨轨 source-unit 定位和 PlaybackHistory v2 仍在后续 backlog。
 
 ### 交互决策
 
-1. **入口靠近内容，而不是藏在设置里**：用户先选择“要读哪种语言”；“更多 → 界面语言”只控制按钮和提示。
+1. **两种语言入口分开**：证道标题附近选择“要读哪种语言”；顶部短语言标记与“更多 → 界面语言”只控制 App 按钮和提示。
 2. **能力先于语言名**：每行同时显示 `文字／字幕／音频／可下载`，避免看到“한국어”就误以为韩语配音已经存在。
 3. **验证后再导航**：点击 locale 后先验证 catalog 引用、package SHA-256、page/locale/status 和同源 URL；失败时停留在当前内容，不改变播放器。
 4. **迁移期明确边界**：已发布语言页面在对应页面打开；原生播放器不静默借用中文音频，也不把中文秒数直接应用到另一语言轨道。
@@ -116,13 +126,14 @@ English         原文 · 无配音
 
 ### 2.4 App 界面语言
 
-界面语言设置保留在“更多 → 界面语言”，支持：
+界面语言可从顶部短语言标记或“更多 → 界面语言”选择，支持：
 
 - 跟随系统；
 - 简体中文；
 - English；
-- 한국어（完整核心界面翻译通过后开放）；
-- Español（以后有完整界面翻译时开放）。
+- 한국어；
+- Español；
+- Tiếng Việt。
 
 实现规则：
 
@@ -131,6 +142,8 @@ English         原文 · 无配音
 - 界面切换即时更新导航、Sheet、错误、下载、权限、Live Activity、Now Playing 辅助文案和 VoiceOver label。
 - 证道正文、讲员名和经文按 `contentLocale` 设置 language identifier；音轨/字幕按实际 `audioLocale` 或 cue locale 设置。
 - App 名称和系统权限说明若受 iOS bundle 本地化限制，记录为“重启/系统语言生效”，不伪装为 App 内即时切换。
+
+当前 Dev 的界面语言译文覆盖 String Catalog 中的按钮、状态与错误提示。译文为开发候选，尚需母语使用者复核；系统权限弹窗仍按 iOS 的系统语言处理。切换界面语言不会显示未经人工审核的 Dev 多语言演示内容，也不会改变现场对齐能力。
 
 ### 2.5 用户可见状态
 

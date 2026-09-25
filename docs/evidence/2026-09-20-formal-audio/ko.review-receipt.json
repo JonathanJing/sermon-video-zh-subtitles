@@ -1,0 +1,102 @@
+{
+  "schemaVersion": "sermon-target-language-audio-human-review-receipt-v2",
+  "targetLocale": "ko",
+  "englishSourcePackageJsonSha256": "4d645ff0aad0b55b2eb913fd0749ebcb3bed010ddfc037e89e1f8a98f44a227b",
+  "targetLanguageCandidateJsonSha256": "cce0ffdf0c74e2d207c8f11db43ed68fa0d6ac3369aafdb2693856df1ea7e597",
+  "targetLanguageAudioPackageJsonSha256": "2f4b8e57c9150a4e439c7508d81e73465bfea3c95805103ba48a92a9a1525d71",
+  "trackSha256": "57c1a9d61c2c31b8f450ebe07e239f8d43f72bd8308e1659c7646fd23a24215d",
+  "machineScreeningStatus": "requires_review",
+  "machineScreeningReceiptJsonSha256": "144807381d413eb8fa4dc22ba60dd300464091a183baecf12a64ba5ebf395f8b",
+  "asrAdjudications": [
+    {
+      "textGroupId": "g-block-10-u008",
+      "decision": "approved",
+      "evidence": "User confirmed full 1x Korean track and this flagged group against the original video: 韩语全文及六组均批准."
+    },
+    {
+      "textGroupId": "g-block-11-u004",
+      "decision": "approved",
+      "evidence": "User confirmed full 1x Korean track and this flagged group against the original video: 韩语全文及六组均批准."
+    },
+    {
+      "textGroupId": "g-block-13-u005",
+      "decision": "approved",
+      "evidence": "User confirmed full 1x Korean track and this flagged group against the original video: 韩语全文及六组均批准."
+    },
+    {
+      "textGroupId": "g-block-13-u006",
+      "decision": "approved",
+      "evidence": "User confirmed full 1x Korean track and this flagged group against the original video: 韩语全文及六组均批准."
+    },
+    {
+      "textGroupId": "g-block-14-u007",
+      "decision": "approved",
+      "evidence": "User confirmed full 1x Korean track and this flagged group against the original video: 韩语全文及六组均批准."
+    },
+    {
+      "textGroupId": "g-block-14-u010",
+      "decision": "approved",
+      "evidence": "User confirmed full 1x Korean track and this flagged group against the original video: 韩语全文及六组均批准."
+    }
+  ],
+  "decision": "approved",
+  "reviewedBy": "user",
+  "reviewedAt": "2026-09-23T20:36:06.758086+00:00",
+  "fullPlayback": "approved",
+  "videoSync1x": "approved",
+  "reviewedUnitIds": [
+    "g-block-09-u001",
+    "g-block-09-u002",
+    "g-block-09-u003",
+    "g-block-09-u004",
+    "g-block-10-u001",
+    "g-block-10-u002",
+    "g-block-10-u003",
+    "g-block-10-u004",
+    "g-block-10-u005",
+    "g-block-10-u006",
+    "g-block-10-u007",
+    "g-block-10-u008",
+    "g-block-10-u009",
+    "g-block-11-u001",
+    "g-block-11-u002",
+    "g-block-11-u003",
+    "g-block-11-u004",
+    "g-block-11-u005",
+    "g-block-11-u006",
+    "g-block-11-u007",
+    "g-block-12-u001",
+    "g-block-12-u002",
+    "g-block-12-u003",
+    "g-block-12-u004",
+    "g-block-12-u005",
+    "g-block-13-u001",
+    "g-block-13-u002",
+    "g-block-13-u003",
+    "g-block-13-u004",
+    "g-block-13-u005",
+    "g-block-13-u006",
+    "g-block-13-u007",
+    "g-block-14-u001",
+    "g-block-14-u002",
+    "g-block-14-u004",
+    "g-block-14-u005",
+    "g-block-14-u006",
+    "g-block-14-u007",
+    "g-block-14-u008",
+    "g-block-14-u009",
+    "g-block-14-u010",
+    "g-block-14-u011",
+    "g-block-14-u012",
+    "g-block-14-u013"
+  ],
+  "checks": {
+    "pronunciation": "approved",
+    "naturalness": "approved",
+    "completeness": "approved",
+    "scripture": "approved",
+    "voiceIdentity": "approved",
+    "synchronization": "approved"
+  },
+  "issues": []
+}

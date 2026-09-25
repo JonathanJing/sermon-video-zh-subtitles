@@ -28,6 +28,24 @@ class SparkTransportTests(unittest.TestCase):
         with patch.object(spark.subprocess, 'run', side_effect=execute):
             self.assertEqual(spark.preflight(**self.options())['backend'], 'dgx-spark-ssh')
 
+    def test_transport_uploads_symlinked_audio_as_regular_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            audio = root / 'original.wav'
+            audio.write_bytes(b'cached audio')
+            link = root / 'audio.wav'
+            link.symlink_to(audio)
+
+            def execute(command, **kwargs):
+                with tarfile.open(fileobj=kwargs['stdin']) as bundle:
+                    member = bundle.getmember('audio')
+                    self.assertTrue(member.isfile())
+                    self.assertEqual(bundle.extractfile(member).read(), b'cached audio')
+                return subprocess.CompletedProcess(command, 0, b'{"schemaVersion":1,"backend":"dgx-spark-ssh","runtime":{}}')
+
+            with patch.object(spark.subprocess, 'run', side_effect=execute):
+                spark._call('align', chunks=[{'text': 'Hello.'}], clip_path=link, **self.options())
+
     def test_nested_relay_uses_mini_key_and_host_alias(self):
         with patch.object(spark.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, b'{"schemaVersion":1,"backend":"dgx-spark-ssh"}')) as run:
             spark.preflight(**self.options(), relay_host='jony@100.1.2.3', relay_host_key_alias='mini.local')

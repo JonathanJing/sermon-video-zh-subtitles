@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "sermon-clip-formal-progress-evidence-v1",
+  "scope": "2026-09-20-35:09.16-to-38:07.32-dev-clip",
+  "sourceIdentitySha256": "4d645ff0aad0b55b2eb913fd0749ebcb3bed010ddfc037e89e1f8a98f44a227b",
+  "clipMediaSha256": "c931d6f716bd30b9ba9b75ca6cbc9a4f4fd708b8bf8f8e3668187e67bac44c30",
+  "layer1Status": "ready_for_translation",
+  "layer2Status": "human_translation_approved",
+  "layer3Status": "three_human_reviewed_audio_packages",
+  "layer4Status": "dev_hosting_published_http_verified_browser_playback_pass_device_not_run",
+  "userFullCandidateDecision": "三语全部批准",
+  "licenseDocumentsReceived": false,
+  "attributionTermsReceived": false,
+  "locales": {
+    "zh-Hans": {
+      "groupCount": 45,
+      "sourceUnitCount": 45,
+      "policyJsonSha256": "2992481a47a5cd64fb41bb6d1082e41d242288b0e451773843e25eb8cd30e59d",
+      "candidateJsonSha256": "23bd937f54add6497712f3af613c00856c2e86063ba9868179dddc3d073bf364",
+      "humanReviewReceiptJsonSha256": "2f055aa7125d2bd68d159b780657436a0357d3b65b2db4e3d723c95fed8eceb8",
+      "humanReviewedAt": "2026-09-23T18:02:20.433543+00:00",
+      "translatorRequestIds": [
+        "resp_06eb4a145c4f54bc006ab4110748fc87d08816dffb660ea8e4"
+      ],
+      "independentReviewerRequestIds": [
+        "resp_0500172e1aef2e08006ab41183abd887d0a5c4c978ed6420f6"
+      ],
+      "languagePluginImplementationSha256": "7d20ed9a4df4fb3c4bdc285eab3b6f81a640cab4ff1b0b27428c67aef1d209c9",
+      "speechJobJsonSha256": "cc4b48f33c4d22f3005361194c35e58ebc4f83d1e2ec55329070fb0a1c689a06",
+      "clipVoiceAuthorizationJsonSha256": "20ffb349a1ded916f2e1bcb178baaa2bb66c61505f839c905f5870da10145a2f",
+      "fullAudioTrackStatus": "candidate_track_generated_1x_fits_clip",
+      "fullAudioHumanReviewStatus": "human_reviewed",
+      "candidateTrackSha256": "a626c1105bfea2c51dedcc5d9b1534b21f536abf658c6230003a95d8d1981356",
+      "machineAudioScreeningStatus": "requires_review",
+      "machineAudioReviewQueue": [
+        "g-block-11-u004",
+        "g-block-13-u006"
+      ],
+      "candidateAudioPackageJsonSha256": "9232991e7f823f0c46e1e35f48deacd9af8180ed495555d6dda0a8575f924c18",
+      "machineAudioScreeningReceiptJsonSha256": "3774e2e2d24f2a511a4d042be0ed0375506936fe5040263bff959a1121589025",
+      "timingRevision": "original_approved",
+      "reviewedAudioPackageJsonSha256": "bc1bdb7383597bfd2c5fcff996f35b45753c06679ea532d3dd03e193dd97804f",
+      "audioHumanReviewReceiptJsonSha256": "75d958650e0e539decd1a9a9dc96e8fd985e93e11e90c5b4b0defe16bcad871a",
+      "audioHumanReviewedAt": "2026-09-23T21:23:21.581747+00:00",
+      "trackedAudioReviewReceiptPath": "docs/evidence/2026-09-20-formal-audio/zh-Hans.review-receipt.json",
+      "trackedAudioPackageSnapshotPath": "docs/evidence/2026-09-20-formal-audio/zh-Hans.package-snapshot.json"
+    },
+    "ko": {
+      "groupCount": 44,
+      "sourceUnitCount": 45,
+      "policyJsonSha256": "aa86ad817e6559bb507e959488e6b5197f324237dc471efa5e797c926733b1cf",
+      "candidateJsonSha256": "cce0ffdf0c74e2d207c8f11db43ed68fa0d6ac3369aafdb2693856df1ea7e597",
+      "humanReviewReceiptJsonSha256": "e021aea507e0f864611ac51830afdc8a9ebfd12cad2a4ea2f0bb731d1a2050d7",
+      "humanReviewedAt": "2026-09-23T19:22:11.418731+00:00",
+      "languagePluginImplementationSha256": "4fd06b6e197b370a4fa087c34c1020d446569bd8d548621f9bb539c47ac696ce",
+      "speechJobJsonSha256": "dd4da24cdabcedb788a1f94d4b9d535a5f0d0da8e3872ede6ecaa411dfaeed2c",
+      "clipVoiceAuthorizationJsonSha256": "a1b7afd2c2b662c00a728e94b83cb79ba68c087a615c80f7dbdcbc53a8c2fdc5",
+      "fullAudioTrackStatus": "candidate_track_generated_1x_fits_clip",
+      "fullAudioHumanReviewStatus": "human_reviewed",
+      "clipVoiceCapabilityJsonSha256": "aa65e634283ea17d43a69da5ba19a4a2478a328c0edca6d28eaf1038edfdb6bf",
+      "timingRevision": "approved_and_rendered",
+      "candidateTrackSha256": "57c1a9d61c2c31b8f450ebe07e239f8d43f72bd8308e1659c7646fd23a24215d",
+      "candidateAudioPackageJsonSha256": "2f0141760c1c6eb5de21933a176e3c4fbba3ef902561407af917645900c6bdb7",
+      "machineAudioScreeningStatus": "requires_review",
+      "machineAudioScreeningReceiptJsonSha256": "144807381d413eb8fa4dc22ba60dd300464091a183baecf12a64ba5ebf395f8b",
+      "machineAudioReviewQueue": [
+        "g-block-10-u008",
+        "g-block-11-u004",
+        "g-block-13-u005",
+        "g-block-13-u006",
+        "g-block-14-u007",
+        "g-block-14-u010"
+      ],
+      "translatorRequestIds": [
+        "resp_0cd5777a2ca0d5bf006ab425c2538c87d091e65d8b33cbff14"
+      ],
+      "independentReviewerRequestIds": [
+        "resp_05e229cbf16f64ef006ab425cf249087d0930ed78f3ef0b155"
+      ],
+      "reviewedAudioPackageJsonSha256": "2f4b8e57c9150a4e439c7508d81e73465bfea3c95805103ba48a92a9a1525d71",
+      "audioHumanReviewReceiptJsonSha256": "b296c326a5ce69dcbc7111c6d1c31eb7e3d2d18c7ac3353ad41ef12e43e26a77",
+      "audioHumanReviewedAt": "2026-09-23T20:36:06.758086+00:00",
+      "trackedAudioReviewReceiptPath": "docs/evidence/2026-09-20-formal-audio/ko.review-receipt.json",
+      "trackedAudioPackageSnapshotPath": "docs/evidence/2026-09-20-formal-audio/ko.package-snapshot.json"
+    },
+    "es": {
+      "groupCount": 44,
+      "sourceUnitCount": 45,
+      "policyJsonSha256": "666a60ce7fa8bf4d45a76cb5de16cbd0b94b7efe8ca8404d33bdd0d67cfa1e3e",
+      "candidateJsonSha256": "d5b2efc41c7cf961f77a35a29349accedc9f6d846591933b3f4164f466557f3c",
+      "humanReviewReceiptJsonSha256": "f466076dce1dc04c20983b39a6f7ba3d0f8ae925f8fac6e2c5ce0eb5c9b36346",
+      "humanReviewedAt": "2026-09-23T19:22:11.418731+00:00",
+      "languagePluginImplementationSha256": "1e623f731a94b5e0814b04b134428113e02d71691f296a1213b632c28076ff22",
+      "speechJobJsonSha256": "2d8046de40d5c88dbde3a107cd40c926d1ab65ece9f93e58e273f33d1c4b18ec",
+      "clipVoiceAuthorizationJsonSha256": "fb69362feb4c022c9657a37d376b8a6aa71dba895c87f8310786920b8c20a7d7",
+      "fullAudioTrackStatus": "candidate_track_generated_1x_fits_clip",
+      "fullAudioHumanReviewStatus": "human_reviewed",
+      "clipVoiceCapabilityJsonSha256": "65e73b68dbbd1564db79d87c8d7a9b4e796fc9bffdf76a3edf55e4fda5507669",
+      "timingRevision": "approved_and_rendered",
+      "candidateTrackSha256": "fac1c70ea88ff787d9150e075d6e6834d47126e6492f63d4b71c3e3aea88ec34",
+      "candidateAudioPackageJsonSha256": "d1d4e8dd8d11dacbb676dcd8d352ffc31142b97183f9fc4a0442922bdf5bd3af",
+      "machineAudioScreeningStatus": "requires_review",
+      "machineAudioScreeningReceiptJsonSha256": "04711ae14d1c1f3531042aade0b9ef39007b5481c827585357428f67a04c6797",
+      "machineAudioReviewQueue": [
+        "g-block-10-u003",
+        "g-block-10-u004",
+        "g-block-10-u007"
+      ],
+      "translatorRequestIds": [
+        "resp_08e93ebf3b6c2c9c006ab425f46c1c87d0ab15efd11ac56608"
+      ],
+      "independentReviewerRequestIds": [
+        "resp_0e1a0b16bbd39cc7006ab4260411c087d09cc0f4b349e5f631"
+      ],
+      "reviewedAudioPackageJsonSha256": "13b2243d95fc81205447788df5b8fb9c50e5e8ca8825058f0b8a5db45bcc6b4b",
+      "audioHumanReviewReceiptJsonSha256": "327c8b1f00e4a4e247fefefb808f9769c7b5aaa0eae5920488b4ab971f005509",
+      "audioHumanReviewedAt": "2026-09-23T20:34:16.620949+00:00",
+      "trackedAudioReviewReceiptPath": "docs/evidence/2026-09-20-formal-audio/es.review-receipt.json",
+      "trackedAudioPackageSnapshotPath": "docs/evidence/2026-09-20-formal-audio/es.package-snapshot.json"
+    }
+  },
+  "pageMetadataReview": {
+    "decision": "三语全部批准",
+    "proposalFileSha256": "ebb94a6b107b0bb6e57f0d3ab13f238b3db0f91343cc5126203f06e8fc83bbd9",
+    "audioBoundContentPackages": "three_built_and_staged"
+  },
+  "layer4DevRelease": {
+    "pageId": "2026-09-20-revelation-clip",
+    "origin": "https://ai-for-god-sermon-audio-dev.web.app",
+    "catalogFileSha256": "0332c2e3cf2f250778601ce4e5a82e587cd50c7a136f9d944e3607f7d6737124",
+    "stageReceiptFileSha256": "d505d4a1d72169f6c7238e223e71dabde58536b97784f30999f3013798294684",
+    "releasePackageFileSha256": {
+      "zh-Hans": "b4acdb4fb75069fd23239c5babeb74367f9f2faa8b6f4c5536efa75f8f62317d",
+      "ko": "d4243c43084d1c779e1290390ee2ec1527594e0efce6ee3122ef2e0f5422060d",
+      "es": "3124f8dc63daa54ffbbb3d3356bb2e1e7be021def68130083656123d49202e59"
+    },
+    "httpVerificationFileSha256": "06636158bb711a8508265c4c4407846448be8469a479bce2fa5d7cd9ba73beec",
+    "httpVerificationStatus": "pass",
+    "browserPlaybackStatus": "three_locales_played",
+    "deviceAcceptance": "not_run",
+    "venueAcceptance": "not_run"
+  }
+}

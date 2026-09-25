@@ -150,9 +150,10 @@ def _call(action, *, chunks=None, clip_path=None, host, proxy_jump='', relay_hos
             bundle.addfile(entry, io.BytesIO(data))
             bundle.add(adapter, arcname='mfa_alignment.py')
             if spoken_forms_path:
-                bundle.add(spoken_forms_path, arcname='spoken.json')
+                bundle.add(Path(spoken_forms_path).resolve(strict=True), arcname='spoken.json')
             if action == 'align':
-                bundle.add(clip_path, arcname='audio')
+                # Cached inputs may be symlinks. The worker accepts regular files only.
+                bundle.add(Path(clip_path).resolve(strict=True), arcname='audio')
         payload.seek(0)
         try:
             completed = subprocess.run(command, stdin=payload, capture_output=True, check=True,

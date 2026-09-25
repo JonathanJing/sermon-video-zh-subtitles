@@ -1,0 +1,86 @@
+{
+  "schemaVersion": "sermon-target-language-policy-v1",
+  "sourceLocale": "en",
+  "translator": {
+    "model": "gpt-6-astra",
+    "reasoningEffort": "medium",
+    "promptVersion": "sermon-target-language-translate-es-v1"
+  },
+  "reviewer": {
+    "model": "gpt-6-sol",
+    "reasoningEffort": "medium",
+    "promptVersion": "sermon-target-language-review-es-v2"
+  },
+  "batching": {
+    "batchSize": 1,
+    "workers": 1
+  },
+  "targetLocale": "es",
+  "terminology": {
+    "seriesTableSha256": "a76c75e531d5860fbc485d16f1debec2b78fa8b6fd08f1a8b0d194ed1cdbffb9",
+    "seriesNames": [
+      {
+        "source": "Revelation: The Comfort and Hope Jesus Brings",
+        "target": null,
+        "reviewStatus": "pending"
+      },
+      {
+        "source": "When Life Doesn’t Make Sense",
+        "target": null,
+        "reviewStatus": "pending"
+      },
+      {
+        "source": "A Study of the Book of Numbers",
+        "target": null,
+        "reviewStatus": "pending"
+      }
+    ],
+    "properNames": [
+      {
+        "source": "Eric Geiger",
+        "target": null,
+        "reviewStatus": "pending"
+      }
+    ]
+  },
+  "scripture": {
+    "editionId": "RVR60-1960",
+    "citationUseStatus": "pending",
+    "quoteCheckPolicy": "pending",
+    "referenceStyle": "Use book/chapter/verse references; exact edition text stays blocked until the citation rights and quote policy are resolved."
+  },
+  "languageReview": {
+    "pluginId": "es-sermon-v1",
+    "implementationStatus": "pending",
+    "requiredChecks": [
+      "natural_spanish",
+      "register_consistency",
+      "proper_name_rendering",
+      "scripture_edition",
+      "number_reading",
+      "tts_segmentation"
+    ],
+    "registerRules": [
+      "Use a consistent neutral Latin American Spanish public-sermon register.",
+      "Do not add theological titles absent from the English source."
+    ]
+  },
+  "formatting": {
+    "speechRegister": "neutral_latin_american_public_sermon_spanish",
+    "punctuationRules": [
+      "Use Spanish punctuation for meaning and readability; do not infer speaker pauses from punctuation."
+    ],
+    "segmentationRules": [
+      "Prefer complete Spanish clauses suitable for natural TTS; do not force English word-start alignment."
+    ]
+  },
+  "componentSha256": {
+    "translator": "a9ba083d36c3f8041868ac543cb727bac116129b14e58158b5244ee43e4a5974",
+    "reviewer": "eae4184515a72db079a9b5291cde2f6b9410e9d2835f37a36e83b37c06e0f5cc",
+    "terminology": "baffdeabe1751fa5880611b831669224c869e4107d76e38dddbab84464a7c2b0",
+    "scripture": "a170308dcc6aa17f60e971a8ae44b5976d69946224a227ef854de26891ab9786",
+    "languageReview": "fb731971eafac6b92a31d95d818773a1f2dd1f27971dbcc46a75da9e27e6fd18",
+    "formatting": "ef06da39058c88fd1eaab970773019c9f68c7732089f0e1e6b9bddead8524958",
+    "batching": "e07870c4a83888b3266158ceee0af1e1ef1d34caf1b0f73742ad5f4d05914059"
+  }
+}

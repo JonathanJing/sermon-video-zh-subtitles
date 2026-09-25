@@ -152,7 +152,7 @@ class SentenceInterpretationTests(unittest.TestCase):
         self.assertTrue(evidence["withinTargetSeconds"])
         self.assertEqual(manifest["issues"], [])
 
-    def test_clause_stable_v2_never_forces_oversized_punctuation_split(self):
+    def test_clause_stable_v2_prefers_later_semantic_boundary_over_duration_target(self):
         long = segment(
             "One two three, four five.",
             ["One", "two", "three,", "four", "five."],
@@ -162,14 +162,12 @@ class SentenceInterpretationTests(unittest.TestCase):
             [long], source_path=self.source, max_unit_seconds=1.0, min_unit_seconds=0.5,
             internal_pause_seconds=0.35, unit_policy=subject.UNIT_POLICY_V2,
         )
-        self.assertEqual(len(manifest["sourceUnits"]), 1)
-        unit = manifest["sourceUnits"][0]
-        self.assertGreater(unit["durationSeconds"], manifest["policy"]["maxUnitSeconds"])
-        self.assertFalse(unit["boundary"]["splitEvidence"]["withinTargetSeconds"])
-        issue = next(item for item in manifest["issues"]
-                     if item["type"] == "clause_unit_exceeds_target_without_safe_boundary")
-        self.assertEqual(issue["sourceWordIds"], unit["sourceWordIds"])
-        self.assertEqual(issue["english"], unit["english"])
+        self.assertEqual(len(manifest["sourceUnits"]), 2)
+        first = manifest["sourceUnits"][0]
+        self.assertEqual(first["english"], "One two three,")
+        self.assertGreater(first["durationSeconds"], manifest["policy"]["maxUnitSeconds"])
+        self.assertFalse(first["boundary"]["splitEvidence"]["withinTargetSeconds"])
+        self.assertEqual(manifest["issues"], [])
 
     def test_clause_stable_v2_flags_alignment_word_duration_outlier(self):
         raw = [{
@@ -194,6 +192,37 @@ class SentenceInterpretationTests(unittest.TestCase):
                      if item["type"] == "alignment_word_duration_outlier")
         self.assertEqual(issue["wordId"], "block-00-w0002")
         self.assertAlmostEqual(issue["durationSeconds"], 6.2)
+
+    def test_clause_stable_v2_recovers_internal_pause_from_phone_clusters(self):
+        raw = [{
+            "id": 0,
+            "referenceChunkId": "block-00",
+            "text": "I think—I know.",
+            "start": 0.0,
+            "end": 7.0,
+            "sentenceBoundarySource": "frozen_reference_punctuation",
+            "wordTimes": [
+                {"text": "I", "start": 0.0, "end": 0.2},
+                {
+                    "text": "think—I", "start": 0.3, "end": 6.5,
+                    "spokenForms": ["think", "i"],
+                    "phones": [
+                        {"start": 0.3, "end": 0.6, "phone": "think"},
+                        {"start": 6.3, "end": 6.5, "phone": "i"},
+                    ],
+                },
+                {"text": "know.", "start": 6.6, "end": 7.0},
+            ],
+        }]
+        self.source.write_text(json.dumps(raw), encoding="utf-8")
+        manifest = subject.build_anchor_manifest(
+            raw, source_path=self.source, max_unit_seconds=4.0,
+            min_unit_seconds=0.5, unit_policy=subject.UNIT_POLICY_V2,
+        )
+        self.assertEqual([unit["english"] for unit in manifest["sourceUnits"]],
+                         ["I think—", "I know."])
+        self.assertEqual(manifest["counts"]["sourceWords"], 4)
+        self.assertEqual(manifest["issues"], [])
 
     def test_v2_anchor_is_supported_by_translation_review_and_validation(self):
         self.manifest = subject.build_anchor_manifest(

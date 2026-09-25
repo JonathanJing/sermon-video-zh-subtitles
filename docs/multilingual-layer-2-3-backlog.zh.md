@@ -1,11 +1,28 @@
 # 多语言 Layer 2 / Layer 3 实施 Backlog
 
-状态：**待实施**。本 backlog 从已冻结的四层接口继续推进，只覆盖：
+顶层优先级、跨层依赖与状态统一维护在 [Dev 统一 Backlog](backlog.zh.md) 的 `DEV-L2-*`／`DEV-L3-*` 项；本页只保留 Layer 2/3 的原子实现、接口与验收细节。
+
+状态：**9 月 20 日 2:58 片段的正式 Layer 1–3 已获三语人审，Layer 4 Dev 页面已部署并通过 HTTP 与浏览器播放核验；iOS 真机、现场及整篇周产验收尚未完成**。本 backlog 从已冻结的四层接口继续推进，覆盖：
 
 - Layer 2「目标语言文字」：`English Source Package` → `Target-Language Candidate`；
 - Layer 3「目标语言音频与同步」：人工批准的 `Target-Language Candidate` → `Target-Language Audio Package`。
 
-首个新语言为韩语 `ko`；现有简体中文 `zh-Hans` 用作兼容与等价验证。这里不包含 Layer 1 接口修改，也不包含 Layer 4 catalog、Web/iOS 正式发布或部署。
+首个新语言为韩语 `ko`；现有简体中文 `zh-Hans` 用作兼容与等价验证。Layer 1 的机器裁判只作为上游 shadow 开发门禁；Layer 4、设备和场地验收列为周日可用的下游依赖，不在本 backlog 中伪装成 Layer 2/3 已完成。第 2 层详细设计见[目标语言文字设计基线](multilingual-layer-2-design.zh.md)。
+
+### 2026-09-23 本片段实证与剩余修复
+
+正式 Layer 2 候选覆盖中文 45 组、韩语 44 组、西语 44 组，三语全文已由用户批准；对应不可变候选和人审证据见 [本片段 Layer 2 收据](evidence/2026-09-20-multilingual-clip-layer2.json)。这证明本片段文字，不代表以下整篇证道和通用 producer 验收项均已完成。
+
+- [x] 在授权 Spark 上按同一获批片段、各语言已批准候选和语音身份生成三语全部单元。以已记录的自然偏快口播指令重跑后，中文 45、韩语 44、西语 44 个 WAV 均生成并完整解码；不同指令的渲染分别保留，未覆盖原合成。
+- [x] renderer 对三语真实测量时长执行 1 倍速排程；超时时留下诊断，不生成成功 manifest。韩语原排程末端 203.32 秒，偏快指令加前导静音测量裁剪后为 182.78 秒；西语对应为 183.55 → 180.91 秒。旧版保留作诊断。
+- [x] 中文偏快指令加前导静音测量裁剪后，45 个单元排入 178.178 秒视频，产出完整候选 track 与 render manifest。裁剪仅处理经 RMS 测量的前导静音，保存原 WAV、每单元原／新 SHA 和时长，以及独立裁剪收据；回转录已做，仍需人耳听审，不能据此宣布 Layer 3 通过。
+- [x] 韩／西回到 Layer 2 修订末段 10／8 组，独立翻译、语义复核、语言插件及用户新版全文批准均已记录；原批准候选未改写。新候选重新合成后，以逐单元测得的首尾静音裁剪、零组间空隙及韩语零反应延迟排入 178.178 秒片段，仍为自然 1 倍速，无时间拉伸。韩语尾部余量约 28 ms，必须重点听审相邻单元衔接。
+- [x] 三语完整轨的全部单元已完整解码，并由 Qwen3-ASR 逐组回转录，覆盖率均为 100%。机器筛查均为 `requires_review`：中文 2 组、韩语 6 组、西语 3 组；这不是内容错误定论。候选音频包和待填的人审工作表已生成。
+- [x] 三语分别完成 1 倍速全文听审、与原视频同步审核，以及 11 个 ASR 疑点逐组裁决：中文 2、韩语 6、西语 3 组。独立 v2 收据与无路径快照见[人审证据](evidence/2026-09-20-formal-audio/README.zh.md)。机器 `requires_review` 保留原状态，由独立人审裁决放行。
+- [x] 三语正式 Audio Package 均达到 `human_reviewed` 后，建立 Release Package、部署 Dev，并通过 13 个线上文件 GET／SHA、三条 WAV Range 206、三种语言深链和浏览器实际播放。旧 POC 两份目录及 18 条音频发布后仍完整；证据见[Dev 发布收据](evidence/2026-09-20-formal-release/README.zh.md)。
+- [ ] iOS 真机检查目录刷新、三语下载与离线播放；现场设备及会众可读性单独验收。当前浏览器播放与 HTTP 检查不替代这两项。
+- [ ] 修复 iOS 26.2 CI 中已验证 HTML 偶发空白：失败截图显示韩语发布页的 WebView 已呈现但正文在 20 秒后仍为空白；同一离线夹具本机和部分 CI 运行可显示标题。HTML 下载、哈希与离线缓存由 `StorageTests` 独立覆盖，UI 测试暂只验证路由和原生播放器保留。需在真实设备及相同 CI 系统上定位 WebKit 内容进程／视图加载生命周期，证明正文可见后再将视觉断言恢复；不能把 WebView 容器存在当作 iOS 页面验收。
+- [x] 三语页面系列、标题、讲员、经文标示、日期、摘要和大纲已获用户批准，逐字段原文及提案 SHA 已写入忽略目录的 `review/formal-dev-metadata.approved.json`；[正式 Dev 资源准备器](formal-dev-release-assets.zh.md)在三语 Audio Package 全部 `human_reviewed` 后，完成真实资源、内容及 Release Package 组装，严格 staging 通过。
 
 ## 1. 开始条件与共同规则
 
@@ -32,12 +49,15 @@
 ## 2. 当前已具备的基础
 
 - [x] `sermon-target-language-candidate-v2` schema。
-- [x] `sermon-target-language-speech-job-v1` schema。
-- [x] Layer 2 → Layer 3 的 fail-closed 准备器；未人工批准的译文不能进入 speech job。
+- [x] `sermon-target-language-speech-job-v1` 历史 shadow schema；新准备器生成显式版本化的 `v2` registry-bound job。
+- [x] Layer 2 → Layer 3 的 fail-closed 准备器；未人工批准、缺独立同 hash 人审收据的译文不能进入 speech job。
 - [x] speech adapter locale 一致性、能力状态和语言隔离输出路径检查。
 - [x] 韩语界面与 `sourceLocale=en` 内容 sidecar，可作为 shadow 消费端。
 - [x] `sermon-target-language-audio-package-v1` 目标 schema 已定义。
-- [ ] 通用 Layer 2 producer、真实韩语翻译、通用 Layer 3 renderer 和真实韩语音频尚未实现。
+- [x] 四语同源六句 shadow 候选、片段音频、完整解码与 ASR 筛查已留收据；`productionEligible=false`、人工译文及音频审核仍 pending。
+- [x] Layer 1 独立机器裁判代码已提取并通过定向单测；它只解锁 Layer 2 shadow，真实来源与人工英文审核仍单独验收。
+- [x] 通用 Layer 2 Astra 初译、Sol 逐组独立复核执行器和候选准入器已实现；每次运行仍须来源／policy／人工审核门禁。
+- [ ] 整篇人工批准韩语翻译、通用 Layer 3 renderer/同步器及整篇人工听审韩语音轨尚未实现。
 
 ## 3. Layer 2：目标语言文字 Backlog
 
@@ -45,28 +65,28 @@
 
 #### L2-001 冻结目标语言策略合同
 
-- [ ] 定义版本化 `Target-Language Policy`，至少包含 `targetLocale`、translator/reviewer、prompt、术语表、经文政策、标点/断句规则和各子项 hash。
-- [ ] 把中文 CUV 检查放进 `zh-Hans` policy，不进入共享英文层。
-- [ ] 建立韩语 policy 初版：系列术语、专名转写、敬语/语体、自然口语、标点断句和韩文圣经引用政策。
+- [x] 定义版本化 `Target-Language Policy`，包含 `targetLocale`、translator/reviewer、prompt、术语表、经文政策、标点/断句规则和各子项 hash；resolved snapshot 的 canonical JSON hash 单独记录。
+- [x] 把中文 CUV 直接引文检查放进 `zh-Hans` policy，不进入共享英文层；通用语言审核插件仍待实现。
+- [x] 建立韩语 policy 初版：系列术语、专名转写、敬语/语体、自然口语、标点断句和韩文圣经引用政策均有明确字段，未审核译名与经文版本保持 `pending`。
 - [ ] 明确韩文圣经版本和引用许可；未决定前经文检查状态必须是 `pending`，不得人工批准全文。
 
 验收：修改任一 policy 组成项都会改变 `translationPolicySha256`；中文与韩语 policy 互不继承审核结果。
 
 #### L2-002 实现通用翻译 producer
 
-- [ ] 新增只消费 `English Source Package + anchor + targetLocale + policy` 的 runner。
-- [ ] CLI 使用显式 `--target-locale`、`--policy`、`--out`；移除通用路径中的 `--zh-*` 假设。
-- [ ] 逐 group 保存 source unit、上下文、target utterances、coverage ledger 和模型 request ID。
+- [x] 新增只消费 `English Source Package + anchor + policy` 的 runner；locale 从冻结 policy 读取并写入请求身份。
+- [x] CLI 使用显式 `--policy`、`--out-dir`，不使用通用路径中的 `--zh-*` 假设。
+- [x] 逐 group 保存来源、上下文、译文、coverage ledger 和模型 request ID；原始请求输入以 payload hash 绑定缓存。
 - [ ] 上下文只用于消歧，不得被翻入目标文本。
-- [ ] 支持确定性 resume；已成功 group 按完整身份复用，身份变化时不覆盖旧产物。
+- [x] 支持确定性 resume；已成功 group 按完整身份复用，未确认完成的付费请求保留 started 标记并阻止自动重试。
 
 验收：同一输入重复运行得到相同 group 身份与内容 hash；`ko` 输出中不读取中文 candidate 或中文页面字段。
 
 #### L2-003 实现独立模型复核
 
-- [ ] reviewer 与 translator 使用不同 request；收据保留模型和 prompt 版本。
-- [ ] 通用语义检查固定为：含义完整、否定/数字/专名、引文归属、无新增含义。
-- [ ] fail 或 uncertainty 非空时，candidate 停在 review/revision 状态。
+- [x] reviewer 与 translator 使用不同 request；收据保留模型和 prompt 版本。
+- [x] 通用语义检查固定为：含义完整、否定/数字/专名、引文归属、无新增含义。
+- [x] fail 或 uncertainty 非空时停止准入；原始逐组复核结果保留供修订。
 - [ ] 修订后重新计算 group/candidate hash，不在原 candidate 上原地提升状态。
 
 验收：遗漏、重复、错序、否定反转、数字错误和引文归属错误 fixture 全部 fail closed。
@@ -82,12 +102,16 @@
 
 #### L2-005 建立人工文字审核收据
 
-- [ ] 审核 UI 或 CLI 显示英文 source unit、目标译文、coverage、机器复核证据和语言检查。
-- [ ] 收据绑定 source package、candidate hash、reviewed group IDs、reviewer 和带时区时间。
-- [ ] 只允许完整覆盖且无 unresolved issue 的 candidate 进入 `human_translation_approved`。
-- [ ] 英文 package、policy 或任一 group 改变时自动使批准失效。
+- [x] `review_target_language_candidate.py prepare` 生成逐组人工 worksheet，显示英文 source unit、目标译文、coverage、机器复核证据和语言检查；逐组修改／拒绝仍使用手填决定与说明。
+- [x] 收据 schema 与 Layer 3 准备器绑定 source package、anchor、policy、candidate hash、全部 reviewed group IDs、reviewer 和带时区时间；每组须有人工审核决定与说明。
+- [x] `approve` 只接受完整覆盖、机器检查全通过、policy 已就绪且逐组人工决定均为 approved 的 worksheet，生成新的 `human_translation_approved` candidate 和独立收据。`approve-batch` 在审核者明确声明已审完最终全文、所有组仍待决且无例外时，展开同一人审说明到原有逐组收据；旧决定、改过的展示内容或过期 hash 均被拒绝。它节省填表，不自动作出内容判断。
+- [x] 英文 package、policy 或任一 group 改变时，旧收据在 Layer 3 准备阶段失效；完整 candidate 审批工作流仍待实现。
 
 验收：复制旧收据到新 candidate、漏审一个 group 或 hash 不符都不能进入 Layer 3。
+
+#### L2/L3-P0 层内局部审核与缓存解耦（第一阶段已实现，待真实整篇验收）
+
+`approve-batch` 仅减少完整人审后的逐行填表；`record-group`／`approve-groups` 留下逐组收据。默认整候选上下文；有明确人审证明无跨 block 依赖时才按连通 block 复用，全部有效收据聚合后才进入正式 speech job。新增 `render_speculative_target_language_speech.py`：机器复核通过、文字人审待定时可按组预生成 `preview_only` 音频，独立于人工决定，不生成正式 Layer 3 包。正式 renderer 的 `--speculative-from` 在完整 job 通过现有门禁后核验原候选快照、来源、声音参数、音频 hash 和解码，再复用未改 WAV；`--reuse-from` 仍复用旧正式 job 的未变单元。详见[局部审核与增量失效设计](multilingual-intralayer-review-decoupling.zh.md)。仍待真实整篇修订 A/B、跨段依赖覆盖、预生成算力浪费率和排程／全文听审验收；一组待改时整份 locale candidate 依然不能进入正式 speech job。
 
 ### L2-P1：兼容中文并完成韩语实证
 
@@ -142,10 +166,10 @@
 
 #### L3-001 冻结 speech adapter 合同
 
-- [ ] 为 adapter config 增加正式 schema，而不只由 Python 字段检查。
-- [ ] 固定 provider、model/checkpoint、voice authorization、locale capability、语言参数、文本规范化、ASR 筛查和字幕策略 hash。
-- [ ] 区分 `unverified_poc`、`candidate`、`verified`；未验证 adapter 只能准备 job，不能合成正式候选。
-- [ ] 明确 checkpoint/voice 是否真实支持 `ko`，不从中文样片推断。
+- [x] 为 adapter config 增加正式 schema，并在 speech job 准备阶段校验。
+- [ ] provider、model revision、conditioning SHA、voice authorization 和 locale capability 已与 Speaker Voice Registry 逐项核对；文本规范化、ASR 筛查和字幕策略目前只绑定配置中的 hash，仍需验证实际策略文件内容。
+- [x] 区分 `unverified_poc`、`candidate`、`verified`；未验证 adapter 只能准备 `synthesisEligible=false` 的 job，`verified` 还需注册表中同 locale 的人工审核能力和正式配音用途授权。
+- [ ] 当前注册表中的 `ko` 仍为 `unverified_poc`，且只有 demo 用途授权；真实韩语能力和正式用途授权仍需人审证据，不从中文样片推断。
 
 验收：adapter locale、授权、checkpoint 或任一策略不匹配时，在调用模型前失败。
 
@@ -161,15 +185,18 @@
 
 #### L3-003 音频解码和完整性门禁
 
-- [ ] 每个 unit 用 `ffprobe` 验证音频流、采样率、声道和正时长。
-- [ ] 用 `ffmpeg` 完整解码，不以文件存在或 header 可读代替完整检查。
+- [x] 单元校验器对正式 `speech-job-v2` 的每个指定 unit 用 `ffprobe` 验证单一音频流、采样率、声道和正时长，并核对源包、policy、人审收据、voice registry 和已批准文字的 hash。
+- [x] 用 `ffmpeg -xerror` 完整解码后才写入[单元音频收据](../schemas/sermon-target-language-audio-unit-receipt-v1.schema.json)，不以文件存在或 header 可读代替完整检查；真实 renderer 接入仍待 L3-002。
 - [ ] 汇总 track 前核对 unit 数量、顺序、text hash 和 receipt hash。
 - [ ] 任一 unit 缺失或损坏时保留已完成单元，但不生成完整音轨候选。
 
 验收：截断、空文件、错 unit、旧 job 音频和 hash 漂移 fixture 全部被拒绝。
 
+开发入口：`.venv/bin/python scripts/validate_target_language_audio_unit.py --job <job-dir>/job.json --unit-index <n> --audio <job-dir>/languages/<locale>/audio/unit-<n>.wav --out <new-unit-receipt.json>`。只对 `synthesisEligible=true` 的 job 生成收据；单元音频收据不授予 ASR、排程、人工听审或发布资格。
+
 #### L3-004 抽出语言中立滚动排程器
 
+- [x] 发现 2026-09-20 裁剪片段的 L1 锚点沿用证道相对 320.16–498.32 秒，而 clip 媒体及获批窗口为 0–178.16 秒；已增加独立 `sermon-clip-timeline-map-v1`，显式绑定 L1/anchor/clip SHA、媒体时长和窗口批准证据，L3 排程按经验证的 320.16 秒 offset 转为 clip 时间。真实片段 fixture 已验证首尾映射；不得仅从首个锚点猜 offset。
 - [ ] 从现有中文 timing 代码中分离纯确定性调度：anchor stable time、reaction lag、实测音频时长和 inter-utterance gap。
 - [ ] 输出 planned start/end、end lag、overlap/overflow、source-unit 映射和失败原因。
 - [ ] 排程器不理解中文或韩语文本，只消费 locale-neutral unit 和时长。
@@ -189,6 +216,8 @@
 ### L3-P1：韩语能力与质量实证
 
 #### L3-006 韩语 voice/TTS 短探针
+
+此项用于首次建立某讲员／checkpoint／locale 的能力证据，不是周更重复步骤。Eric 的韩／西语短样、长句探针和 9 月 20 日正式片段听审已经完成，固定音色选择可直接复用；全局 Registry 中跨周 `multilingual_dubbing` 用途与 `human_reviewed` 能力仍未登记，因此整篇周更正式 job 不能只凭片段收据放行。待审译文可先走独立 `preview_only` 配音通道。
 
 - [ ] 使用已授权 voice/checkpoint，合成姓名、数字、经文、英语借词、长短句和敬语 fixture。
 - [ ] 记录模型实际 locale 参数、runtime 和 checkpoint hash。
@@ -300,3 +329,78 @@ Layer 2 的 P0 全部通过后才能开始正式 Layer 3 韩语合成。Layer 3 
 8. `docs: record full Korean text and audio acceptance evidence`
 
 每个提交只推进一个层内接口或一组对应验证；真实模型运行、人工批准和发布证据不得用单元测试结果代替。
+
+## 7. 从 Dev 片段到周日可用的里程碑
+
+### 2026-09-23 三分钟真实片段跟进
+
+实测来源、两次选段、Layer 1 人工门禁及发现的问题见[片段四层 Dev 流程记录](reports/20260923-sep20-three-minute-dev-run.zh.md)。本次目标 locale 为 `zh-Hans`、`ko`、`es`。
+
+- [x] 复用同版完整媒体并核对 SHA/时长；截出连续 178.16 秒候选，完成 MFA 词级对齐、45 单元锚点结构检查及 42/42 句独立机器裁判。
+- [x] 修复 MFA 符号链接缓存的 Spark 上传失败，并增加定向回归测试。
+- [x] 片段 Layer 2 POC 入口支持显式选定 locale 集合，不额外生成越南语候选。
+- [x] 新增西班牙语 Target-Language Policy 草案，冻结组件身份并显式保留待定版次、引用许可、术语和语言插件。
+- [x] 首轮真实 45 单元三语 shadow 发现 `block-10-u009` 的中文 “the Word” 被泛化；译文规则 v2 明确保留经文指向，并让逐单元机器复核 sidecar 可定位失败与不确定性。新身份重跑与人审分开记录。
+- [x] 用户确认片段边界、英文完整性、词时间和句界；审核清单时间列纠偏后再次确认，生成绑定媒体与 45 单元的人工收据。正式 Layer 1 包为 `ready_for_translation`、`translationEligible=true`；机器 shadow 的 42/42 通过仍仅是独立辅助证据。
+- [x] 修正审核清单的 5:20.16 时间基准偏移及 Layer 1 shadow 收据写死 `humanReview=pending` 的状态错误；底层锚点哈希保持不变。
+- [x] 修正 Layer 4 catalog 和 iOS Core 对正式 `audio_unavailable` Layer 3 包的接收；同 locale、同来源及候选哈希不符仍拒绝，迁移期 null 哈希需显式开关。
+- [x] 新增 `verify_clip_review_timeline.py` 时间基准校验，避免片段相对时间被二次加偏移；在本片段 45 个单元上核对原录像 35:09.16–38:07.32 全表通过，测试覆盖旧错误值。
+- [x] 本片段三语 Policy v2 已绑定同一正式 Layer 1、实际出现的 `Ian Duguid` 及旧人审收据、经文边界和各 locale 语言插件实现哈希；未出现的系列名继续 pending。韩语用 `개역개정`、西语用 `RVR1960`／中性拉美语体。用户声明拥有本次 Dev App／配音引用权限，许可文件及署名条款尚未收到；不得把该片段声明扩成全项目授权。
+- [x] 三语言从同一个正式 Layer 1 身份生成并人工批准 Target-Language Candidate：中文 45 组、韩语及西语各 44 组；新模型翻译与独立语义复核请求、可重算语言插件收据、全文人审工作表及独立收据均在忽略目录 `artifacts/multilingual-clip-20260920/20260920-blocks9-14-178s/layer2-formal-prep/`。西语 `block-10-u009` 曾被独立复核标记解释过度，单组修订为 `la Palabra` 并再次复核后，用户对三语新全文候选明确批准。通用 producer 的逐组失败恢复仍待完善。
+- [x] 提交不含媒体或密钥的[本片段四层哈希与审核进度清单](evidence/2026-09-20-multilingual-clip-layer2.json)，明确三语候选音轨已生成，全文听审和 Dev 发布尚未完成。
+- [x] 三语机器 shadow 已重绑正式 Layer 1 哈希，各 45/45 机器语义复核通过；逐句点播的本地审稿页已生成，用户已回复三语内容批准。该内容批准不等于正式 Layer 2 收据。
+- [x] 用户对中文、韩语、西语三份 45 单元草稿回复“批准”；分别记录候选哈希绑定的内容审核收据。正式语言策略和分组校验未通过前，收据保持 `formalLayer2Admitted=false`。
+- [ ] 保存并核对韩／西语经文许可文件、App／音频授权范围、期限及署名条款；目前只有用户对本 Dev 片段的授权声明，发布材料不得声称已查阅凭证。
+- [x] 正式 Layer 2 producer 已将本片段自然语义组整理为 45／44／44 组，`targetText` 与 `targetUtterances` 精确一致；新翻译、独立模型语义复核、可重算语言插件和正式全文人审收据均通过。旧 shadow 候选与旧内容批准的哈希没有被重标。
+- [ ] 稳定 Layer 1 包的逻辑身份：外层脚本代码变动不应仅因输出目录绝对路径变化而强制三语重跑；先设计兼容迁移与可追溯的 producer 身份。
+- [x] 三语均生成正式 `candidate` Audio Package 和完整 ASR 机器筛查收据；音轨 SHA、各组 SHA、speech job 及新版韩／西 Layer 2 hash 绑定核对完成。
+- [x] 三语音频人审后生成 `human_reviewed` Audio Package，再构建 Release Package；用户要求三语音频全完成后再发布 Dev 已满足。HTTP 和浏览器播放通过，iOS 真机与现场状态仍分别待验。
+- [x] Eric 韩／西语短样音及四单元长句探针均获用户听审批准；片段范围能力收据已绑定原音频、脚本、manifest、L1 和 checkpoint。全局 Registry 仍是 `multilingual_voice_demo`、韩／西语 `unverified_poc`；本片段收据只放行本片段 speech job，不升级全局能力。
+- [x] 新增显式片段时间映射：已审英文锚点 320.16–498.32 秒映到视频 0–178.16 秒。修复 Layer 3 排程误以英文单元终点为配音起点的问题；按每组首个英文单元起点加反应延迟排程，以最后英文单元终点计算尾延迟，并拒绝 1 倍速片段终点溢出。三语完整候选实测均已排入 178.178 秒；自然度和同步仍待人耳验收。
+- [x] 中文直接引文边界建议已由固定 CUV 库取出启示录 2:4、3:4 的精确短句，并绑定本片段英文单元；用户批准两处边界与改文，重复解释句暂按讲员重述处理。批准收据绑定提案 JSON 哈希与正式 Layer 1 哈希，范围仅限经文边界；提案本身保留原始 `humanBoundaryReview=pending` 作为不可变历史，正式中文候选仍须按新文本重建并审核，不得自动改写已审 shadow 候选。
+- [x] Dev Web POC 的 pageId 路由、周次切换与无音轨播放器状态已在本地修正；HTTP 浏览器 fixture 验证了第二页切换、URL／标题更新、播放器隐藏和纯文字提示。fixture 使用占位内容，未证明本片段已发布。
+- [x] Firebase Dev Hosting rewrite 从旧 POC 专属路径扩到 `/pages/**`，使新 pageId 的深链有前端入口；定向配置测试通过，部署后仍须对新片段 URL 实测 GET。
+- [x] Dev Web 正式 v2 catalog 已部署；三语真实音轨、深链、字幕及大纲在浏览器可读，播放计时前进。首次线上检查暴露 `fetchVerified()` 错拒 WAV，已增加 WAV 白名单与正确 MIME，重部署并回归验证。旧 POC catalog 和资源保留。
+- [ ] iOS 正式 v2 catalog 与三语音轨在真机上的刷新、下载及播放另行验收；不能从 Web 浏览器或模拟器推断。
+- [x] PR #45 最新 Python 与 iOS CI 均通过，本机 iOS 26.2 模拟器 14 个 UI 测试也通过，代码已 squash 合并到 `dev` (`436d0b9`)；先前一次 CI 的超时与空白 WebView 失败未在最新运行复现。模拟器结果不代替真机验收。
+- [ ] Dev 部署包保留旧 POC 音频：旧 `multilingual.json`／`weekly.json` 引用的 18 个 MP3 在线存在但未纳入 Git 的 `public` 目录。本次临时目录已保存 18 个资源，14 处声明 SHA 的引用复算一致；通用周产部署需自动保留、核对并监测所有仍被 catalog 引用的资产，避免新页发布删除旧页媒体。
+- [ ] 正式 Audio Package 仍保存本机绝对媒体路径。已将本片段三语无路径的[人审快照和 v2 收据](evidence/2026-09-20-formal-audio/README.zh.md)纳入 Git，便于干净检出核对批准范围；周产合同还需定义可移植的受控媒体定位和恢复方式，避免只有原工作站能运行 staging。媒体与含绝对路径的原包继续留在授权归档，不入 Git。
+
+本节把已有任务排成可验收的依赖链。目标首先是**周六完成预制、周日可播放**的 `four_layer_release`；周日麦克风实时字幕保持独立 `live_session`。任何阶段只在绑定相同来源、locale 和 hash 的证据通过后推进，不用 Dev 页面可播或机器分数替代人工审核。
+
+### M0：把已验证进度纳入 Dev
+
+- [x] 从 `dev` 基线集成 Layer 1 逐句机器裁判、schema、anchor 修订和定向测试；保留 `humanApproval=false`、`productionTranslationEligible=false`。旧 anchor/source package 因实现 hash 改变而失效，按新身份生成，不重标旧收据。
+- [ ] 在干净 shadow 输入上重放确定性构建和机器裁判；核对 receipt、package、anchor 的 JSON/file SHA，证明只进入 `candidate_ready_for_translation`。使用真实正式输入时，英文人工审核仍须产生 `ready_for_translation`。
+- [ ] 对 `zh-Hans`、`ko`、`es`、`vi` 六句 POC 收据做只读回归：schema、同一英文来源、逐 locale 候选与音频 hash、低于 ASR 门线的复核状态。Dev 演示资产保持 `productionEligible=false`。
+
+完成证据：合并提交、CI、更新后的 Layer 1 shadow 收据和未改变生产门禁的测试。集成代码本身不代表已在远端 Dev 或周日现场验收。
+
+### M1：完成正式 Layer 2（L2-001—L2-009）
+
+- [ ] 从一份人工英文审核的 `ready_for_translation` 源包出发，按 `sourcePackage + anchor + locale + policy + implementation` 建不可变单语言 job；初译、独立复核、语言插件和人工批准各有独立收据。先实现 `zh-Hans` 与 `ko`，`es`、`vi` 只有在各自策略和审核者就绪后加入。
+- [ ] `zh-Hans` 对已批准整篇做 legacy→v2 golden shadow；韩语先做含否定、数字、专名、引文和经文的 fixture，再做一篇真实整篇。缺经文版本或授权政策时保持 pending。
+- [ ] 验证修改 Layer 1 会使全部 locale 失效；修改某语言 policy、译文或人审只使该语言下游失效。旧收据复制、漏审、错序、跨语言缓存和恢复中断必须 fail closed。
+
+完成证据：两语言 schema 与语义 validator、完整 coverage、不可变 `human_translation_approved` candidate 和逐 group 人审收据。六句机器通过及 PDF 中文阅读稿不能替代这些证据。
+
+### M2：完成正式 Layer 3（L3-001—L3-012）
+
+- [ ] renderer 只消费正式 `sermon-target-language-speech-job-v2` 和带独立人审收据的同 locale 文字；授权、checkpoint hash、locale 能力及文本 hash 在模型加载前核对。先用合成 fixture 实现通用 unit receipt、完整解码、自然语速排程和字幕，随后做中文 golden timing 等价。
+- [ ] 为 Audio Package 加语义 validator：核对实际 speech job/schema、来源与候选 hash、每个 unit/track/caption/schedule 的文件 hash；失效 key 必须覆盖 candidate、job、voice/checkpoint、音频、字幕和排程。现有片段 POC 的 `poc-speech-job` 与只含 candidate/audio/schedule 的失效 key 不满足此门槛。
+- [ ] 停顿只从 Layer 1 已审英文声学证据出发，Layer 3 判断能否放在目标语言完整自然句界。逐句报告局部起点偏差、尾延迟、overrun 和自然度；不以总时长接近或词组拼接掩盖局部失败。原声指纹如供周日自动定位，由本层生成绑定来源和实际音轨的 companion receipt，Layer 4 只发布和核验。
+- [ ] 韩语按短探针→10–20 group→整篇顺序完成回转写、实体音频解码、字幕校验、母语全文听审和同视频 1 倍速检查。语音能力或授权不足时生成合法 `audio_unavailable` 包供纯文字路径，不借用中文音轨。
+
+完成证据：正式 Audio Package 的机器与人工收据、局部排程报告、中文等价对照和失败恢复验证。VoxCPM2、MOSS、AuK 的短样本只保留为 challenger；模型替换须另有同输入 A/B 和目标语母语听审。
+
+### M3：周日预制播放验收（下游依赖）
+
+- [ ] 为每个要交付的 `pageId + targetLocale` 生成同源、同 locale 且 hash 匹配的 Layer 4 Release Package；纯文字版本也绑定状态为 `audio_unavailable` 的 Layer 3 包。仅在上游文字、音频和页面各自的人审状态满足门禁后进入发布。
+- [ ] 周六发布后逐文件 GET/SHA 与音频 Range 206；周日早上在实体设备检查目录刷新、下载、离线、蓝牙/扬声器、同一录制 1 倍速播放和定位；场地音频路由及会众可读性另留现场收据。HTTP、设备和现场状态分别报告。
+- [ ] 周末 Supervisor 保留 `dual_pdf`、`four_layer_release`、`live_session` 三种独立 scope；按 lease/身份恢复已验证单元，遇缺来源、审核或媒体时停在具体层，不因 PDF 完成或 Dev 页面可播宣称周日就绪。
+
+完成证据：一次真实整篇同源、同 locale 的四包链及周六到周日的 HTTP、实体设备、场地收据；再用另一周次验证恢复与复用。阈值须在运行前固定，不能事后按结果调整。
+
+### 可选：已审文字辅助周日实时字幕
+
+四层预制音轨不进入现场低延迟字幕链。若需复用 Layer 2 已审译文，新增确定性投影 adapter，把已批准的来源、locale、候选、人审 hash 映射进 Saturday Evidence Bundle / Sunday Runtime Pack；仅允许审核过的术语、经文和受控示例进入现场 prompt。仍须人工确认周六/周日同篇、检查有效期和 capability；现场 `asr.final` 是唯一事实源，Pack 不合格降为 `none` 基线。韩语/西语实时字幕另需模型、UI、设备和现场验收，不由预制韩语音轨自动获得资格。参见[Context Pack 合同](saturday-to-sunday-context-pack-plan.zh.md)和[周日运行入口](sunday-live-agent-runbook.zh.md)。

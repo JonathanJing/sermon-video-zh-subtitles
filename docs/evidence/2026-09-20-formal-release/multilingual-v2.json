@@ -1,0 +1,49 @@
+{
+  "defaultPageId": "2026-09-20-revelation-clip",
+  "generatedAt": "2026-09-23T21:24:14.047976+00:00",
+  "pages": [
+    {
+      "date": "2026-09-20",
+      "defaultTargetLocale": "zh-Hans",
+      "id": "2026-09-20-revelation-clip",
+      "sourceIdentitySha256": "4d645ff0aad0b55b2eb913fd0749ebcb3bed010ddfc037e89e1f8a98f44a227b",
+      "sourceLocale": "en",
+      "targets": {
+        "es": {
+          "audioStatus": "human_reviewed",
+          "capabilities": [
+            "text",
+            "captions",
+            "audio"
+          ],
+          "contentStatus": "human_reviewed",
+          "releasePackageJsonSha256": "3124f8dc63daa54ffbbb3d3356bb2e1e7be021def68130083656123d49202e59",
+          "releasePackageUrl": "/releases/2026-09-20-revelation-clip/es.json"
+        },
+        "ko": {
+          "audioStatus": "human_reviewed",
+          "capabilities": [
+            "text",
+            "captions",
+            "audio"
+          ],
+          "contentStatus": "human_reviewed",
+          "releasePackageJsonSha256": "d4243c43084d1c779e1290390ee2ec1527594e0efce6ee3122ef2e0f5422060d",
+          "releasePackageUrl": "/releases/2026-09-20-revelation-clip/ko.json"
+        },
+        "zh-Hans": {
+          "audioStatus": "human_reviewed",
+          "capabilities": [
+            "text",
+            "captions",
+            "audio"
+          ],
+          "contentStatus": "human_reviewed",
+          "releasePackageJsonSha256": "b4acdb4fb75069fd23239c5babeb74367f9f2faa8b6f4c5536efa75f8f62317d",
+          "releasePackageUrl": "/releases/2026-09-20-revelation-clip/zh-Hans.json"
+        }
+      }
+    }
+  ],
+  "schemaVersion": "sermon-multilingual-catalog-v2"
+}

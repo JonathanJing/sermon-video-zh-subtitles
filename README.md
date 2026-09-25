@@ -178,4 +178,22 @@ Training and quality acceptance remain separate from the operator workflow:
 4. Train a smaller student translation model with SFT/LoRA, then compare it against MiLMMT A0 on terminology, Scripture names, adequacy, hallucination rate, and latency.
 5. Promote a model only when the frozen evaluation gate passes. Ollama models use `LOCAL_LIVE_OLLAMA_MODEL`; the experimental v4.1 MLX provider uses its own pinned adapter and explicit pre-recording selection. A successful launch or code merge does not change the default model.
 
-All other architecture, provider comparisons, cloud experiments, historical realtime prototypes, and deployment notes belong in the [documentation index](docs/README.md), not in the primary product narrative.
+Detailed architecture, provider comparisons, cloud experiments, historical realtime prototypes, and deployment notes are indexed in the [documentation index](docs/README.md). The completed experiment boundaries are summarized below.
+
+## 4. 已做实验与 A/B：不同方向的边界探索
+
+下表只列已实际运行的比较或 POC。它们使用的音频、文本、设备和评价方式不同，不能合并成一张“最佳模型”排行榜。机器参考、模型裁判、文件回放、浏览器事件和人工听审分别是不同等级的证据。
+
+| 探索方向与方法 | 已观察到的结果 | 当前边界与选择 | 证据 |
+|---|---|---|---|
+| 本地翻译模型，四模型同源文本比较 | 239 个冻结英文段均完成；Qwen3.5 9B 自动参考 BLEU `43.25` 最高，Hy-MT2 1.8B 的请求 P95 `1.627s` 最短。 | 量化格式不同，且缺独立语义人审和 ASR／字幕共存验证；不凭自动分数替换周日默认模型。 | [翻译榜单](data/benchmarks/live-sermon-translation-v1/runs/macbook-text-baselines/translation-only-leaderboard-20260903.md) |
+| 英文 ASR，同音频 Qwen 与 Whisper 对照 | 10 分钟 1 倍速回放给出 Qwen3-ASR 与 `small.en` 的暂定质量／资源比较；Qwen 后续完成 MiLMMT 共存和浏览器长测。 | 参考文本仍是模型审核层，且两条流式延迟口径不同；没有人工逐字 Gold 或现场麦克风验收。 | [本地 ASR 基准](docs/local-asr-benchmark.zh.md) |
+| 实时 ASR 最长窗口，3 秒／6 秒 A/B | 90 秒同源回放中，6 秒减少部分碎片，却仍截断关键关系并出现增译；从音频段开始到首条字幕事件的 P95 从 `4.790s` 升至 `7.910s`。 | 保留 3 秒默认；字幕事件不是屏幕呈现，单一开发片段也不能证明总体准确率。 | [窗口 A/B](experiments/local-live-poc/benchmarks/asr-window-ab-20260904.md) |
+| 翻译单元，原始 final／有界合并 A/B | 对 42 个发生变化的单元完成 126 次 MiLMMT 请求；合并修复部分断句，也在否定、因果和经文关系上产生严重退化。 | `legacy` 保持默认；少一次请求不等于端到端更快或语义更准。 | [单元 A/B](experiments/local-live-poc/benchmarks/translation-unit-ab-20260904.md) |
+| Layer 1 英文词对齐，Qwen／MFA 同输入对照 | 同一 60 秒音频与 191 词上，两者都保留词序；Qwen 有 3 个零时长词，MFA 没有。 | MFA 只通过本轮结构门槛；无人工逐词 Gold，不能宣称其边界更准确。 | [对齐器对照](experiments/english-word-timeline-poc/ALIGNER-COMPARISON-2026-09-20.zh.md) |
+| Layer 2 韩语，Astra／Sol 初译与复核 A/B，Gemini 裁判 | 14 单元小样本里，Astra 与 Sol reviewer 均检出 6/6 植入错误；扩至 45 单元／44 组时，Sol 的逐组发现促使 Gemini 定向裁决确认 2 处需修订，而 Gemini 全文扫描曾报告 0 问题。 | 当前生产选择 Astra 初译、Sol 逐组独立复核；实验支持逐组复核的作用，尚不能比较 Sol 与 Astra 的复核优劣，也不能证明单模型初译足够。仍须冻结 policy、语言插件与人工批准。模型会话缺成本／延迟收据，样本也非整篇证道。 | [A/B 证据摘要](docs/reports/20260923-layer2-astra-sol-gemini-ab.zh.md) · [生产流程](docs/target-language-astra-sol-production.zh.md) |
+| Layer 3 语速／停顿，整句、pace 指令与短语装配对照 | 六句英文窗口 `40.88s`；复制句间停顿的韩语音轨为 `35.83s`，同模型 pace 指令后为 `35.59s`。中文句内拼接版虽接近总时长，用户听后指出语速与接缝不自然。 | 总时长和完整解码不能替代局部同步、源语声学停顿证据或目标语人耳自然度；完整句自然语速对照仍非同步达标。 | [多语言韵律 POC](docs/multilingual-prosody-poc.zh.md) |
+| 声音适配，Qwen Base／训练 speaker 同稿探针 | 固定中文稿的第二轮探针中，Base 出现较大片段重复和混杂，训练 speaker 的回转写只留下两处差异候选。 | 条件输入也从参考音频变为 speaker slot，不能把差异单独归因于训练；跨证道、音色相似度和人耳验收未完成。 | [授权声音试验](experiments/sermon-dubbing-poc/AUTHORIZED_VOICE_REPORT_20260905.zh.md) |
+| 周日模型后训练，v4.1 单路径集成 POC | 45 秒原声文件回放产生 17 条英文 final、17 条中文 final；网页录音与保存控制单独验证。 | 这不是与当前 Q8 的同条件质量 A/B；v4.1 神学质量门仍未通过，文件事件不等于现场或浏览器中文字幕验收。 | [v4.1 集成报告](experiments/local-live-poc/benchmarks/MILMMT_V41_POC_INTEGRATION_20260905.zh.md) |
+
+实验结论仅在其冻结输入与验证路径内成立。提升默认模型或生产资产时，仍需匹配的来源身份、独立质量审核、时延／资源与恢复证据，以及对应层的人审、听审和设备验收。媒体与完整模型响应保留在 Git ignored 的本地 `artifacts/`；README 链接的是可提交的紧凑报告。

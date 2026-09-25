@@ -1,6 +1,8 @@
 """Synthetic selection batch failures and locally stable scripture locks."""
 import copy
 import tempfile
+import threading
+import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -32,6 +34,49 @@ class SelectionBatchTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError,'provider offline'):
                 m.selections(mapping,blocks,CuvLibrary.from_path(),Path(tmp),'identity',manifest=manifest)
             self.assertEqual(call.call_count,1)
+
+    def test_parallel_selection_aggregates_in_source_order(self):
+        blocks,mapping,manifest=self.fixture()
+        barrier=threading.Barrier(2)
+        def call(out,name,*args,**kwargs):
+            if name in ('select-0','select-1'):
+                barrier.wait(timeout=3)
+            return {'issues':['unresolved'],'quotes':[]},{'path':name,'sha256':name}
+        with tempfile.TemporaryDirectory() as tmp,patch.object(m,'cached_call',side_effect=call):
+            with self.assertRaises(m.EvidenceBlocked) as caught:
+                m.selections(mapping,blocks,CuvLibrary.from_path(),Path(tmp),'identity',manifest=manifest,workers=2)
+            self.assertEqual([x['blockIndex'] for x in caught.exception.findings],[0,1,2])
+            self.assertEqual([r['path'] for r in m.read(Path(tmp)/'selection-blocked.json')['receipts']],
+                             ['select-0','select-1','select-2'])
+
+    def test_worker_error_waits_for_other_worker_to_finish(self):
+        completed=threading.Event()
+        def worker(index):
+            if index == 0:
+                raise RuntimeError('provider failed')
+            time.sleep(0.03)
+            completed.set()
+        with self.assertRaisesRegex(RuntimeError,'provider failed'):
+            m.ordered_workers([0,1],worker,2)
+        self.assertTrue(completed.is_set())
+
+    def test_multiple_quotes_in_one_block_report_each_selection_failure(self):
+        blocks, mapping, manifest = self.fixture()
+        blocks[0]['en'] = 'You are You are'
+        mapping['blocks'][0]['quotes'] = [
+            {**mapping['blocks'][0]['quotes'][0], 'quoteId': quote_id, 'start': start, 'end': start + 7}
+            for quote_id, start in [('q0a', 0), ('q0b', 8)]
+        ]
+        blocks, mapping = blocks[:1], {'blocks': mapping['blocks'][:1]}
+        def call(*args, **kwargs):
+            return {'issues': [], 'quotes': [
+                {'quoteId': quote_id, 'parts': [], 'uncertainty': [], 'evidence': 'Checked'}
+                for quote_id in ('q0a', 'q0b')
+            ]}, {'path': 'synthetic', 'sha256': 'synthetic'}
+        with tempfile.TemporaryDirectory() as tmp, patch.object(m, 'cached_call', side_effect=call):
+            with self.assertRaises(m.EvidenceBlocked) as caught:
+                m.selections(mapping, blocks, CuvLibrary.from_path(), Path(tmp), 'identity', manifest=manifest)
+            self.assertEqual([row['quoteId'] for row in caught.exception.findings], ['q0a', 'q0b'])
 
     def test_lock_local_dependency_and_legacy_identity(self):
         blocks,mapping,manifest=self.fixture();q=mapping['blocks'][0]['quotes'][0]

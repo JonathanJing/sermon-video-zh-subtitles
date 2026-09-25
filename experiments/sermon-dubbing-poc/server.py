@@ -14,7 +14,7 @@ HERE = Path(__file__).resolve().parent
 DEFAULT_PACK = HERE.parents[1] / "artifacts/sermon-dubbing/2026-09-05-weekly-app-v4-dark-final/public"
 STATIC = {"/theme.js": ("theme.js", "text/javascript"), "/": ("index.html", "text/html; charset=utf-8"), "/app.mjs": ("app.mjs", "text/javascript"), "/catalog.mjs": ("catalog.mjs", "text/javascript"), "/timing.mjs": ("timing.mjs", "text/javascript"), "/style.css": ("style.css", "text/css")}
 STATIC["/brand-icon.png"] = ("brand-icon.png", "image/png")
-STATIC.update({f"/{name}": (name, "application/json" if name.endswith(".json") else "text/javascript") for name in ["engagement.json", "feedback.mjs", "feedback-client.mjs", "listening.mjs", "usage.mjs", "usage-client.mjs", "playback-memory.mjs", "i18n.mjs", "locales-interface.mjs", "locales-app.mjs", "locales-feedback.mjs", "locales-ko.mjs", "content-locales.mjs"]})
+STATIC.update({f"/{name}": (name, "application/json" if name.endswith(".json") else "text/javascript") for name in ["engagement.json", "feedback.mjs", "feedback-client.mjs", "listening.mjs", "usage.mjs", "usage-client.mjs", "playback-memory.mjs", "i18n.mjs", "locales-interface.mjs", "locales-app.mjs", "locales-feedback.mjs", "locales-ko.mjs", "locales-es.mjs", "content-locales.mjs"]})
 
 
 def byte_range(value: str | None, size: int) -> tuple[int, int]:

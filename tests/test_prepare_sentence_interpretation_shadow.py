@@ -30,7 +30,7 @@ def write_segments(path: Path, *, long_without_boundary: bool = False) -> None:
 
 
 class SentenceInterpretationShadowTests(unittest.TestCase):
-    def test_clean_anchor_is_immutable_and_ready_for_model_stage(self):
+    def test_clean_anchor_is_immutable_and_waits_for_machine_judge(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             source = root / "segments.json"
@@ -38,22 +38,23 @@ class SentenceInterpretationShadowTests(unittest.TestCase):
             first = subject.prepare_shadow(source, root / "shadow")
             second = subject.prepare_shadow(source, root / "shadow")
             self.assertEqual(first, second)
-            self.assertEqual(first["status"], "ready_for_model_translation")
+            self.assertEqual(first["status"], "waiting_machine_judge")
             self.assertEqual(first["layer"], "shared_english_source_and_anchors")
             self.assertEqual(first["interface"], "sermon-english-source-package-v1")
             self.assertFalse(first["productionTranslationEligible"])
             self.assertFalse(first["releaseEligible"])
             self.assertFalse(first["productionOutputChanged"])
+            self.assertEqual(first["humanReview"], "pending")
             manifest = json.loads(Path(first["artifacts"]["anchorManifest"]["path"]).read_text())
             self.assertEqual(manifest["schemaVersion"], "sermon-sentence-anchor-manifest-v2")
             self.assertEqual(manifest["policy"]["maxUnitSeconds"], 8.0)
-            self.assertEqual(first["nextStage"], "run_sentence_interpretation_models")
+            self.assertEqual(first["nextStage"], "run_english_source_machine_judge")
             self.assertNotIn("translationRequest", first["artifacts"])
             source_package = json.loads(Path(
                 first["artifacts"]["englishSourcePackage"]["path"]
             ).read_text())
-            self.assertEqual(source_package["status"], "candidate_ready_for_translation")
-            self.assertTrue(source_package["candidateTranslationEligible"])
+            self.assertEqual(source_package["status"], "blocked")
+            self.assertFalse(source_package["candidateTranslationEligible"])
             package_schema = json.loads((
                 Path(__file__).parents[1] / "schemas/sermon-english-source-package-v1.schema.json"
             ).read_text())

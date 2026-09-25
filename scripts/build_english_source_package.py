@@ -16,9 +16,30 @@ from pathlib import Path
 import re
 from typing import Any
 
+try:
+    from scripts import four_layer_measure as measure
+except ImportError:  # Direct execution via ``python scripts/...``.
+    import four_layer_measure as measure
+
 
 SCHEMA_VERSION = "sermon-english-source-package-v1"
 REVIEW_SCHEMA_VERSION = "sermon-english-source-review-v1"
+MACHINE_JUDGE_SCHEMA_VERSION = "sermon-english-source-machine-judge-v1"
+MACHINE_JUDGE_MODEL = "gpt-6-astra"
+MACHINE_JUDGE_REASONING_EFFORT = "medium"
+MACHINE_JUDGE_CHECKS = frozenset({
+    "meaningPreserved",
+    "negationsNumbersNames",
+    "quotationAndClauseIntegrity",
+    "timelineCoherent",
+    "translationContextSufficient",
+})
+MACHINE_JUDGE_THRESHOLDS = {
+    "requiredDeterministicCheckPassRate": 1.0,
+    "requiredSentencePassRate": 1.0,
+    "maximumHighRiskSentences": 0,
+    "maximumUnresolvedIssues": 0,
+}
 SHA256 = re.compile(r"^[a-f0-9]{64}$")
 APPROVED_CHECKS = (
     "sourceIdentity",
@@ -167,6 +188,76 @@ def _review_payload(
     }, review
 
 
+def _machine_judge_payload(
+    machine_judge_path: Path | None,
+    *,
+    aligned_sha256: str,
+    anchor_json_sha256: str,
+    source_sentence_ids: list[str],
+    manifest_issues: list[dict[str, Any]],
+) -> tuple[dict[str, Any] | None, bool]:
+    if machine_judge_path is None:
+        return None, False
+    machine_judge_path = machine_judge_path.resolve()
+    judge = read_object(machine_judge_path, "English source machine judge receipt")
+    if judge.get("schemaVersion") != MACHINE_JUDGE_SCHEMA_VERSION:
+        raise ValueError("Unsupported English source machine judge schema")
+    if judge.get("reviewType") != "model" or judge.get("humanApproval") is not False:
+        raise ValueError("English source machine judge must retain model-only provenance")
+    judge_script = Path(__file__).resolve().with_name("judge_english_source_for_translation.py")
+    if (judge.get("implementationSha256") != file_sha256(judge_script)
+            or judge.get("model") != MACHINE_JUDGE_MODEL
+            or judge.get("reasoningEffort") != MACHINE_JUDGE_REASONING_EFFORT
+            or judge.get("promptVersion") != MACHINE_JUDGE_SCHEMA_VERSION
+            or judge.get("thresholds") != MACHINE_JUDGE_THRESHOLDS):
+        raise ValueError("English source machine judge implementation or policy is not current")
+    if judge.get("alignedSegmentsSha256") != aligned_sha256:
+        raise ValueError("English source machine judge belongs to different aligned segments")
+    if judge.get("anchorManifestJsonSha256") != anchor_json_sha256:
+        raise ValueError("English source machine judge belongs to a different anchor manifest")
+    if judge.get("reviewedSourceSentenceIds") != source_sentence_ids:
+        raise ValueError("English source machine judge must cover every source sentence in order")
+    expected_issue_hashes = [json_sha256(issue) for issue in manifest_issues]
+    if judge.get("reviewedManifestIssueJsonSha256s") != expected_issue_hashes:
+        raise ValueError("English source machine judge does not bind every manifest issue")
+    deterministic = judge.get("deterministicReview", {})
+    sentences = judge.get("sentences")
+    sentence_ids = [item.get("sourceSentenceId") for item in sentences or [] if isinstance(item, dict)]
+    counts = judge.get("counts", {})
+    pass_state = bool(
+        judge.get("status") == "approved_for_layer2_shadow"
+        and judge.get("layer2DevelopmentEligible") is True
+        and judge.get("productionTranslationEligible") is False
+        and deterministic.get("status") == "pass"
+        and isinstance(deterministic.get("checks"), list)
+        and deterministic["checks"]
+        and all(item.get("status") == "pass" for item in deterministic["checks"] if isinstance(item, dict))
+        and len(deterministic["checks"]) == sum(isinstance(item, dict) for item in deterministic["checks"])
+        and deterministic.get("issues") == []
+        and sentence_ids == source_sentence_ids
+        and all(
+            item.get("verdict") == "pass"
+            and item.get("risk") != "high"
+            and set(item.get("checks", {})) == MACHINE_JUDGE_CHECKS
+            and all(item["checks"][name] == "pass" for name in MACHINE_JUDGE_CHECKS)
+            and item.get("unresolvedIssues") == []
+            for item in sentences or [] if isinstance(item, dict)
+        )
+        and len(sentences or []) == len(source_sentence_ids)
+        and counts.get("sourceSentences") == len(source_sentence_ids)
+        and counts.get("sourceUnits") > 0
+        and counts.get("manifestIssues") == len(manifest_issues)
+        and counts.get("sentencePass") == len(source_sentence_ids)
+        and counts.get("sentenceFail") == 0
+        and counts.get("highRiskSentences") == 0
+        and isinstance(judge.get("requestIds"), list) and bool(judge["requestIds"])
+        and judge.get("unresolvedIssues") == []
+    )
+    if judge.get("layer2DevelopmentEligible") is True and not pass_state:
+        raise ValueError("English source machine judge pass is internally inconsistent")
+    return artifact(machine_judge_path, value=judge), pass_state
+
+
 def build_package(
     aligned_segments_path: Path,
     anchor_manifest_path: Path,
@@ -174,6 +265,7 @@ def build_package(
     summary_path: Path | None = None,
     approval_evidence_path: Path | None = None,
     review_path: Path | None = None,
+    machine_judge_path: Path | None = None,
     source_id: str | None = None,
     source_url_hash: str | None = None,
     service_date: str | None = None,
@@ -250,8 +342,16 @@ def build_package(
         anchor_json_sha256=anchor_json_sha,
         source_unit_ids=source_unit_ids,
     )
-    media = _source_media(summary)
     manifest_issues = manifest.get("issues") if isinstance(manifest.get("issues"), list) else []
+    source_sentence_ids = list(dict.fromkeys(str(unit["sourceSentenceId"]) for unit in source_units))
+    machine_judge_artifact, machine_judge_pass = _machine_judge_payload(
+        machine_judge_path,
+        aligned_sha256=aligned_sha,
+        anchor_json_sha256=anchor_json_sha,
+        source_sentence_ids=source_sentence_ids,
+        manifest_issues=[item for item in manifest_issues if isinstance(item, dict)],
+    )
+    media = _source_media(summary)
     issues: list[dict[str, Any]] = [
         {"stage": "anchors", "type": str(item.get("type", "unknown_anchor_issue")), "detail": item}
         for item in manifest_issues if isinstance(item, dict)
@@ -264,12 +364,12 @@ def build_package(
         if value != "approved":
             issues.append({"stage": "review", "type": f"{name}_review_pending"})
 
-    anchor_blocked = bool(manifest_issues)
     production_ready = not issues
+    candidate_ready = production_ready or machine_judge_pass
     status = (
-        "blocked" if anchor_blocked
-        else "ready_for_translation" if production_ready
-        else "candidate_ready_for_translation"
+        "ready_for_translation" if production_ready
+        else "candidate_ready_for_translation" if candidate_ready
+        else "blocked"
     )
     invalidation_identity = {
         "sourceId": source_id,
@@ -281,6 +381,7 @@ def build_package(
         "sourceMediaSha256": media.get("sha256") if media else None,
         "approvalEvidenceSha256": approval_artifact.get("sha256") if approval_artifact else None,
         "reviewEvidenceSha256": review["evidence"].get("sha256") if review["evidence"] else None,
+        "machineJudgeEvidenceSha256": machine_judge_artifact.get("sha256") if machine_judge_artifact else None,
         "implementation": {
             "builderSha256": file_sha256(Path(__file__).resolve()),
             "anchorGeneratorSha256": file_sha256(
@@ -299,7 +400,7 @@ def build_package(
         "packageId": f"english-source-{downstream_key[:24]}",
         "sourceLocale": "en",
         "status": status,
-        "candidateTranslationEligible": not anchor_blocked,
+        "candidateTranslationEligible": candidate_ready,
         "translationEligible": production_ready,
         "implementation": invalidation_identity["implementation"],
         "source": {
@@ -347,7 +448,10 @@ def build_package(
         "review": review,
         "issues": issues,
         "downstreamInvalidationKey": downstream_key,
-        "evidence": {"pipelineSummary": summary_artifact},
+        "evidence": {
+            "pipelineSummary": summary_artifact,
+            "machineJudge": machine_judge_artifact,
+        },
     }
 
 
@@ -370,22 +474,32 @@ def main() -> int:
     parser.add_argument("--summary", type=Path)
     parser.add_argument("--approval-evidence", type=Path)
     parser.add_argument("--review", type=Path)
+    parser.add_argument("--machine-judge", type=Path)
     parser.add_argument("--source-id")
     parser.add_argument("--source-url-hash")
     parser.add_argument("--service-date")
+    parser.add_argument("--progress-ledger", type=Path,
+                        help="Record producer timing in this four-layer run ledger")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
-    package = build_package(
-        args.aligned_segments,
-        args.anchor_manifest,
-        summary_path=args.summary,
-        approval_evidence_path=args.approval_evidence,
-        review_path=args.review,
-        source_id=args.source_id,
-        source_url_hash=args.source_url_hash,
-        service_date=args.service_date,
-    )
-    write_immutable(args.out.resolve(), package)
+    with measure.producer_step(args.progress_ledger, "L1-04") as metrics:
+        package = build_package(
+            args.aligned_segments,
+            args.anchor_manifest,
+            summary_path=args.summary,
+            approval_evidence_path=args.approval_evidence,
+            review_path=args.review,
+            machine_judge_path=args.machine_judge,
+            source_id=args.source_id,
+            source_url_hash=args.source_url_hash,
+            service_date=args.service_date,
+        )
+        metrics.update(sourceUnits=package["anchors"]["sourceUnitCount"],
+                       sourcePackageSha256=json_sha256(package),
+                       approvedForTranslation=package["translationEligible"])
+        output_already_present = args.out.exists()
+        write_immutable(args.out.resolve(), package)
+        metrics["cacheHit"] = output_already_present
     print(json.dumps(package, ensure_ascii=False, indent=2))
     return 0 if package["candidateTranslationEligible"] else 2
 

@@ -51,6 +51,14 @@ def _safe_metadata(data):
     for key, value in data.items():
         if key in {"sunday", "week", "sourceServiceDate"} and isinstance(value, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
             safe[key] = value
+        elif key == "pageId" and isinstance(value, str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,159}", value):
+            safe[key] = value
+        elif key == "targetLocale" and isinstance(value, str) and re.fullmatch(r"[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*", value):
+            safe[key] = value
+        elif key == "target" and value in {"dev", "production"}:
+            safe[key] = value
+        elif key == "ledgerIdentitySha256" and isinstance(value, str) and re.fullmatch(r"[a-f0-9]{64}", value):
+            safe[key] = value
         elif key in {"sourceId", "videoId"} and isinstance(value, str) and re.fullmatch(r"[A-Za-z0-9_-]{1,64}", value):
             safe[key] = value
         elif key in {"jobSha256", "sourceSha256", "videoSha256", "sourceVideoSha256", "sourceAudioSha256"} and isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value):

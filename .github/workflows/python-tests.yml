@@ -18,9 +18,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  unittest:
+  test_group:
+    name: test-group (root-${{ matrix.shard_index }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard_index: [0, 1]
 
     steps:
       - name: Check out repository
@@ -35,7 +40,11 @@ jobs:
       - name: Install dependencies
         run: python -m pip install -r requirements.txt
 
+      - name: Install audio verification tools
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
       - name: Compile production scripts
+        if: matrix.shard_index == 1
         run: >-
           python -m py_compile
           scripts/build_sermon_reading_edition_with_openai.py
@@ -49,13 +58,41 @@ jobs:
           scripts/sermon_production_supervisor.py
 
       - name: Run unit tests
-        run: python -m unittest discover -s tests -p "test_*.py"
+        run: >-
+          python scripts/run_unittest_ci.py
+          --weights .github/unittest-module-timings.json
+          --shard-count 2
+          --shard-index ${{ matrix.shard_index }}
+          --report "${RUNNER_TEMP}/unittest-root-${{ matrix.shard_index }}.json"
+
+      - name: Preserve unit test timings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unittest-timings-root-${{ matrix.shard_index }}
+          path: ${{ runner.temp }}/unittest-root-${{ matrix.shard_index }}.json
+          if-no-files-found: warn
 
       - name: Run dubbing workflow and review contract tests
+        if: matrix.shard_index == 1
         run: python -m unittest discover -s experiments/sermon-dubbing-poc -p "test_*.py"
 
       - name: Check listening app behavior
+        if: matrix.shard_index == 1
         run: node --test experiments/sermon-dubbing-poc/web/*.test.mjs
 
       - name: Check feedback API contracts
+        if: matrix.shard_index == 1
         run: node --test experiments/sermon-dubbing-poc/feedback-api/test/*.test.mjs experiments/sermon-dubbing-poc/feedback-api/usage-report.test.mjs
+
+  # Keep this job name stable: branch protection requires the unittest check.
+  unittest:
+    needs: test_group
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require every test group to pass
+        env:
+          TEST_GROUP_RESULT: ${{ needs.test_group.result }}
+        run: test "$TEST_GROUP_RESULT" = success

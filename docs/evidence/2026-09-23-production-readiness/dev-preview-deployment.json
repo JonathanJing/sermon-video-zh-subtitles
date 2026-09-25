@@ -1,0 +1,25 @@
+{
+  "buildReportSha256": "03dd49385e8d3bb18f96b52d795e9b031cfca7340f3d9bc32621af95df2bddda",
+  "command": [
+    "npx",
+    "--yes",
+    "firebase-tools@15.29.0",
+    "deploy",
+    "--only",
+    "hosting",
+    "--project",
+    "ai-for-god-sermon-audio-dev",
+    "--non-interactive",
+    "--message",
+    "Reviewed multilingual Dev production preview"
+  ],
+  "deployedAt": "2026-09-24T01:17:21.538084+00:00",
+  "files": 121,
+  "origin": "https://ai-for-god-sermon-audio-dev.web.app",
+  "pageId": "2026-09-20-revelation-clip",
+  "preflightSha256": "8f1329b37a7897214e62a88a82b11c07791ba05bb8b39fd4e4f399fe07086b1c",
+  "projectId": "ai-for-god-sermon-audio-dev",
+  "schemaVersion": "sermon-multilingual-dev-preview-deployment-v1",
+  "siteId": "ai-for-god-sermon-audio-dev",
+  "status": "deployed_http_verification_pending"
+}

@@ -1,5 +1,8 @@
+import CryptoKit
 import SwiftUI
 import TongxingCore
+import TongxingInfrastructure
+import WebKit
 
 // Explicitly select the iOS 17-compatible property wrapper; newer SDKs also
 // export a State macro whose plugin is absent from Command Line Tools.
@@ -27,6 +30,9 @@ struct ContentView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: verticalSizeClass == .compact ? 12 : 16) {
+                        if model.selectedWeek == nil {
+                            HStack { Spacer(); appLanguageMenu }
+                        }
                         if let week = model.selectedWeek {
                             sermonHeading(week).id("top")
                             if let notice = model.catalogNotice {
@@ -171,6 +177,7 @@ struct ContentView: View {
                     Text(reviewLabel).font(.caption).foregroundStyle(Brand.accent)
                 }
                 Spacer(minLength: 8)
+                appLanguageMenu
                 compactLanguageButton
                 Button(localization.text("证道大纲"), systemImage: "list.bullet.rectangle") { sheet = .outline }
                     .buttonStyle(.plain).font(.subheadline).frame(minHeight: 44)
@@ -182,7 +189,11 @@ struct ContentView: View {
 
     private func regularSermonHeading(_ week: SermonWeek) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(week.date).font(.caption.weight(.medium)).foregroundStyle(.secondary)
+            HStack {
+                Text(week.date).font(.caption.weight(.medium)).foregroundStyle(.secondary)
+                Spacer()
+                appLanguageMenu
+            }
             Text(week.title).font(.largeTitle.bold()).fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
                 .accessibilityIdentifier("sermon-title")
@@ -205,6 +216,27 @@ struct ContentView: View {
                     .buttonStyle(.plain).foregroundStyle(.primary)
             }
         }
+    }
+
+    private var appLanguageMenu: some View {
+        Menu {
+            Picker(localization.text("界面语言"), selection: Binding(
+                get: { localization.preference },
+                set: { localization.setPreference($0) })) {
+                Text(localization.text("跟随系统")).tag(AppLanguage.system)
+                Text("简体中文").tag(AppLanguage.simplifiedChinese)
+                Text("English").tag(AppLanguage.english)
+                Text("한국어").tag(AppLanguage.korean)
+                Text("Español").tag(AppLanguage.spanish)
+                Text("Tiếng Việt").tag(AppLanguage.vietnamese)
+            }
+        } label: {
+            Text(localization.language.shortLabel).font(.caption.weight(.bold))
+                .frame(minWidth: 44, minHeight: 44)
+        }
+        .accessibilityLabel(localization.text("界面语言"))
+        .accessibilityValue(localization.language.shortLabel)
+        .accessibilityIdentifier("app-language-menu")
     }
 
     private var languageButton: some View {
@@ -452,65 +484,83 @@ private struct TargetLanguageSheet: View {
     @ObservedObject private var localization = AppLocalization.shared
     @ObservedObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.openURL) private var openURL
+    @ViewState private var verifiedPage: VerifiedLanguagePage?
 
     var body: some View {
         NavigationStack {
-            List {
-                if model.availableContentLanguages.isEmpty {
-                    ContentUnavailableView(
-                        localization.text("尚无可选择的语言版本"),
-                        systemImage: "globe.badge.chevron.backward",
-                        description: Text(localization.text(model.multilingualNotice ?? "发布目录尚未提供已人工审核的目标语言。"))
-                    )
+            Group {
+                if let verifiedPage {
+                    VerifiedLanguagePageView(page: verifiedPage)
                 } else {
-                    Section {
-                        ForEach(model.availableContentLanguages, id: \.locale) { option in
-                            Button {
-                                Task {
-                                    guard let url = await model.selectContentLanguage(option.locale) else { return }
-                                    dismiss()
-                                    openURL(url)
-                                }
-                            } label: {
-                                HStack(spacing: 14) {
-                                    VStack(alignment: .leading, spacing: 5) {
-                                        Text(AppModel.languageName(option.locale)).font(.headline)
-                                        Text(capabilitySummary(option.target))
-                                            .font(.caption).foregroundStyle(.secondary)
-                                    }
-                                    Spacer()
-                                    if model.isSelectingLanguage && model.selectedContentLocale != option.locale {
-                                        ProgressView().controlSize(.small)
-                                    } else if model.selectedContentLocale == option.locale {
-                                        Image(systemName: "checkmark").foregroundStyle(Brand.accent)
-                                    }
-                                }
-                                .frame(maxWidth: .infinity, minHeight: 54, alignment: .leading)
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            .disabled(model.isSelectingLanguage)
-                            .accessibilityIdentifier("content-language-\(option.locale)")
-                            .accessibilityValue(localization.text(model.selectedContentLocale == option.locale ? "已选择" : "未选择"))
-                        }
-                    } header: {
-                        Text(localization.text("证道语言"))
-                    } footer: {
-                        Text(localization.text("选择后打开该语言自己的已发布页面。界面语言和证道音频语言不会被静默更改。"))
-                    }
-                }
-                if let error = model.languageSelectionError {
-                    Section { Label(localization.text(error), systemImage: "exclamationmark.circle") }
+                    languageList
                 }
             }
             .navigationTitle(localization.text("选择证道语言"))
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button(localization.text("完成")) { dismiss() } } }
+            .toolbar {
+                if verifiedPage != nil {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(localization.text("选择证道语言"), systemImage: "chevron.left") { verifiedPage = nil }
+                            .labelStyle(.iconOnly)
+                            .accessibilityIdentifier("return-to-content-languages")
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) { Button(localization.text("完成")) { dismiss() } }
+            }
         }
         .environment(\.locale, localization.locale)
         #if os(macOS)
         .frame(minWidth: 430, minHeight: 560)
         #endif
+    }
+
+    private var languageList: some View {
+        List {
+            if model.availableContentLanguages.isEmpty {
+                ContentUnavailableView(
+                    localization.text("尚无可选择的语言版本"),
+                    systemImage: "globe.badge.chevron.backward",
+                    description: Text(localization.text(model.multilingualNotice ?? "发布目录尚未提供已人工审核的目标语言。"))
+                )
+            } else {
+                Section {
+                    ForEach(model.availableContentLanguages, id: \.locale) { option in
+                        Button {
+                            Task {
+                                guard let page = await model.selectContentLanguage(option.locale) else { return }
+                                verifiedPage = page
+                            }
+                        } label: {
+                            HStack(spacing: 14) {
+                                VStack(alignment: .leading, spacing: 5) {
+                                    Text(AppModel.languageName(option.locale)).font(.headline)
+                                    Text(capabilitySummary(option.target))
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                if model.isSelectingLanguage && model.selectedContentLocale != option.locale {
+                                    ProgressView().controlSize(.small)
+                                } else if model.selectedContentLocale == option.locale {
+                                    Image(systemName: "checkmark").foregroundStyle(Brand.accent)
+                                }
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 54, alignment: .leading)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(model.isSelectingLanguage)
+                        .accessibilityIdentifier("content-language-\(option.locale)")
+                        .accessibilityValue(localization.text(model.selectedContentLocale == option.locale ? "已选择" : "未选择"))
+                    }
+                } header: {
+                    Text(localization.text("证道语言"))
+                } footer: {
+                    Text(localization.text("选择后打开该语言自己的已发布页面。界面语言和证道音频语言不会被静默更改。"))
+                }
+            }
+            if let error = model.languageSelectionError {
+                Section { Label(localization.text(error), systemImage: "exclamationmark.circle") }
+            }
+        }
     }
 
     private func capabilitySummary(_ target: PageTarget) -> String {
@@ -521,6 +571,72 @@ private struct TargetLanguageSheet: View {
         return values.joined(separator: " · ")
     }
 }
+
+private struct VerifiedLanguagePageView: View {
+    let page: VerifiedLanguagePage
+
+    var body: some View {
+        VerifiedHTMLView(html: page.html)
+            .accessibilityIdentifier("verified-content-page")
+            .ignoresSafeArea(edges: .bottom)
+    }
+}
+
+/// The release page is rendered from verified bytes. Restrict the document to
+/// inline styles and data images so it cannot fetch mutable linked content.
+private struct VerifiedHTMLView {
+    let html: String
+
+    var restrictedHTML: String {
+        let policy = "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; form-action 'none'; base-uri 'none'\">"
+        let injected = html.replacingOccurrences(of: "(?i)(<head(?:\\s[^>]*)?>)", with: "$1\(policy)", options: .regularExpression)
+        return injected == html ? policy + html : injected
+    }
+
+    func configuredView() -> WKWebView {
+        let configuration = WKWebViewConfiguration()
+        configuration.defaultWebpagePreferences.allowsContentJavaScript = false
+        let view = WKWebView(frame: .zero, configuration: configuration)
+        view.navigationDelegate = navigationGuard
+        return view
+    }
+
+    private var navigationGuard: VerifiedPageNavigationGuard { VerifiedPageNavigationGuard.shared }
+}
+
+private final class VerifiedPageNavigationGuard: NSObject, WKNavigationDelegate {
+    static let shared = VerifiedPageNavigationGuard()
+
+    func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction,
+                 decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        let url = action.request.url
+        decisionHandler(url == nil || url?.scheme == "about" ? .allow : .cancel)
+    }
+}
+
+#if os(iOS)
+extension VerifiedHTMLView: UIViewRepresentable {
+    func makeUIView(context: Context) -> WKWebView { configuredView() }
+    func updateUIView(_ view: WKWebView, context: Context) {
+        guard context.coordinator.loadedHTML != html else { return }
+        context.coordinator.loadedHTML = html
+        view.loadHTMLString(restrictedHTML, baseURL: nil)
+    }
+    func makeCoordinator() -> Coordinator { Coordinator() }
+    final class Coordinator { var loadedHTML: String? }
+}
+#else
+extension VerifiedHTMLView: NSViewRepresentable {
+    func makeNSView(context: Context) -> WKWebView { configuredView() }
+    func updateNSView(_ view: WKWebView, context: Context) {
+        guard context.coordinator.loadedHTML != html else { return }
+        context.coordinator.loadedHTML = html
+        view.loadHTMLString(restrictedHTML, baseURL: nil)
+    }
+    func makeCoordinator() -> Coordinator { Coordinator() }
+    final class Coordinator { var loadedHTML: String? }
+}
+#endif
 
 private struct BrandTitle: View {
     @ObservedObject private var localization = AppLocalization.shared
@@ -730,6 +846,9 @@ private struct AboutSheet: View {
                         Text(week.contentReview ?? localization.text("AI 整理，供个人跟读参考。"))
                     }
                 }
+                Section {
+                    VoiceDemoSection(model: model)
+                }
                 Section(localization.text("播放与存储")) {
                     Button(localization.text("重新加载当前音频")) { dismiss(); Task { await model.retryAudio() } }
                     Button(localization.text("刷新证道目录")) { dismiss(); Task { await model.refresh() } }
@@ -742,6 +861,9 @@ private struct AboutSheet: View {
                         Text(localization.text("跟随系统")).tag(AppLanguage.system)
                         Text("简体中文").tag(AppLanguage.simplifiedChinese)
                         Text("English").tag(AppLanguage.english)
+                        Text("한국어").tag(AppLanguage.korean)
+                        Text("Español").tag(AppLanguage.spanish)
+                        Text("Tiếng Việt").tag(AppLanguage.vietnamese)
                     }
                     .accessibilityIdentifier("interface-language")
                     Text(localization.text("界面语言不会更换音轨；证道内容保留其提供的语言。"))
@@ -763,5 +885,247 @@ private struct AboutSheet: View {
         #if os(macOS)
         .frame(minWidth: 430, minHeight: 630)
         #endif
+    }
+}
+
+struct VoiceDemoCatalog: Decodable {
+    struct Asset: Decodable {
+        let path: String
+        let sha256: String
+        let bytes: Int
+        let text: String
+        let transcriptStatus: String?
+        let humanListeningStatus: String?
+        let sourceUrl: String?
+        let locale: String?
+
+        func url(relativeTo origin: URL) -> URL {
+            URL(string: path, relativeTo: origin)!.absoluteURL
+        }
+
+        func verify(_ data: Data) throws {
+            let digest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+            guard data.count == bytes, digest == sha256 else { throw CocoaError(.fileReadCorruptFile) }
+        }
+
+        func verifiedLocalURL(origin: URL, session: URLSession, directory: URL) async throws -> URL {
+            let source = url(relativeTo: origin)
+            guard origin.scheme == "https", source.scheme == "https", source.host == origin.host,
+                  source.port == origin.port, source.user == nil, source.password == nil,
+                  source.query == nil, source.fragment == nil else { throw CocoaError(.fileReadNoPermission) }
+            let file = directory.appendingPathComponent("\(sha256).mp3")
+            if let cached = try? Data(contentsOf: file) {
+                if (try? verify(cached)) != nil { return file }
+                try? FileManager.default.removeItem(at: file)
+            }
+            var request = URLRequest(url: source)
+            request.cachePolicy = .reloadIgnoringLocalCacheData
+            request.timeoutInterval = 30
+            let (data, response) = try await session.data(for: request)
+            try Task.checkCancellation()
+            guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw CocoaError(.fileReadUnknown) }
+            try verify(data)
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            try data.write(to: file, options: .atomic)
+            do { try verify(Data(contentsOf: file)) }
+            catch {
+                try? FileManager.default.removeItem(at: file)
+                throw error
+            }
+            return file
+        }
+    }
+
+    struct Speaker: Decodable, Identifiable {
+        let speakerId: String
+        let displayName: String
+        let original: Asset
+        let samples: [Asset]
+        var id: String { speakerId }
+    }
+
+    let schemaVersion: String
+    let status: String
+    let sourceScope: String
+    let humanListeningStatus: String
+    let speakerCount: Int
+    let sampleCount: Int
+    let speakers: [Speaker]
+
+    static let relativePath = "voice-demos/2026-09-21-v2/catalog.json"
+    private static let prefix = "/voice-demos/2026-09-21-v2/"
+    private static let locales: Set<String> = ["zh-Hans", "ko", "es", "vi"]
+
+    static func validated(_ data: Data) throws -> VoiceDemoCatalog {
+        let catalog = try JSONDecoder().decode(VoiceDemoCatalog.self, from: data)
+        guard catalog.schemaVersion == "sermon-multilingual-voice-demo-public-v1",
+              catalog.status == "audition_demo",
+              catalog.sourceScope == "voice_capability_audition_not_sermon_translation",
+              catalog.humanListeningStatus == "pending",
+              catalog.speakerCount == 6, catalog.sampleCount == 24,
+              catalog.speakers.count == 6,
+              Set(catalog.speakers.map(\.speakerId)).count == 6 else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        var paths = Set<String>()
+        for speaker in catalog.speakers {
+            guard !speaker.speakerId.isEmpty, !speaker.displayName.isEmpty,
+                  speaker.original.transcriptStatus == "machine_screening_only",
+                  !speaker.original.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  speaker.original.sourceUrl.flatMap(URL.init(string:))?.scheme == "https",
+                  speaker.samples.count == 4,
+                  Set(speaker.samples.compactMap(\.locale)) == locales else {
+                throw CocoaError(.fileReadCorruptFile)
+            }
+            for asset in [speaker.original] + speaker.samples {
+                let allowed = CharacterSet(charactersIn:
+                    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._/")
+                guard asset.path.hasPrefix(prefix), !asset.path.contains(".."),
+                      !asset.path.contains("//"),
+                      asset.path.unicodeScalars.allSatisfy({ allowed.contains($0) }),
+                      asset.sha256.count == 64,
+                      asset.sha256.unicodeScalars.allSatisfy({ CharacterSet(charactersIn: "0123456789abcdef").contains($0) }),
+                      asset.bytes > 0, asset.bytes <= 5_000_000,
+                      paths.insert(asset.path).inserted else {
+                    throw CocoaError(.fileReadCorruptFile)
+                }
+                if asset.locale != nil && (asset.humanListeningStatus != "pending"
+                    || asset.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) {
+                    throw CocoaError(.fileReadCorruptFile)
+                }
+            }
+        }
+        guard paths.count == 30 else { throw CocoaError(.fileReadCorruptFile) }
+        return catalog
+    }
+}
+
+private struct VoiceDemoSection: View {
+    @ObservedObject private var localization = AppLocalization.shared
+    @ObservedObject var model: AppModel
+    @Environment(\.openURL) private var openURL
+    @ViewState private var expanded = false
+    @ViewState private var loading = false
+    @ViewState private var catalog: VoiceDemoCatalog?
+    @ViewState private var unavailable = false
+    @ViewState private var demoError = false
+    @ViewState private var busyAssetPath: String?
+    @ViewState private var assetTask: Task<Void, Never>?
+
+    var body: some View {
+        DisclosureGroup(isExpanded: $expanded) {
+            Text(localization.text("先听讲员英语原声，再比较四种 AI 样音。示例文稿并非本周证道。"))
+                .font(.footnote).foregroundStyle(.secondary)
+            if loading { ProgressView(localization.text("正在读取试听资料…")) }
+            if unavailable {
+                Button(localization.text("试听资料暂不可用，点击重试")) {
+                    Task { await load() }
+                }
+            }
+            if demoError {
+                Text(localization.text("音频加载失败，请检查网络或使用已下载版本。"))
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
+            if let catalog {
+                ForEach(catalog.speakers) { speaker in
+                    DisclosureGroup {
+                        assetButton(speaker.original, title: localization.text("讲员原始英文片段"))
+                            .accessibilityIdentifier("voice-demo-original-\(speaker.id)")
+                        DisclosureGroup(localization.text("查看英文机器转写参考")) {
+                            sourceText(speaker.original.text, language: "en").font(.footnote)
+                        }
+                        if let source = speaker.original.sourceUrl.flatMap(URL.init(string:)) {
+                            Button(localization.text("原声来源")) { openURL(source) }
+                                .font(.footnote)
+                        }
+                        ForEach(speaker.samples, id: \.path) { sample in
+                            assetButton(sample, title: "\(languageName(sample.locale)) · \(localization.text("AI 合成样音"))")
+                                .accessibilityIdentifier("voice-demo-sample-\(speaker.id)-\(sample.locale ?? "")")
+                            DisclosureGroup(localization.text("查看样音文稿")) {
+                                sourceText(sample.text, language: sample.locale ?? "en").font(.footnote)
+                            }
+                        }
+                        Text(localization.text("样音待人工听审，不代表正式证道音轨。"))
+                            .font(.footnote).foregroundStyle(.secondary)
+                    } label: {
+                        Text(speaker.displayName)
+                            .accessibilityIdentifier("voice-demo-speaker-\(speaker.id)")
+                    }
+                }
+            }
+        } label: {
+            Text(localization.text("多语种音色试听 · Demo"))
+                .accessibilityIdentifier("voice-demo-disclosure")
+        }
+        .onChange(of: expanded) { _, value in
+            if value && catalog == nil && !loading { Task { await load() } }
+        }
+        .onDisappear {
+            assetTask?.cancel()
+            assetTask = nil
+            busyAssetPath = nil
+            if model.playback.isPreview {
+                model.playback.clear()
+                if let week = model.selectedWeek {
+                    Task { await model.select(week: week, track: model.selectedTrack, force: true) }
+                }
+            }
+        }
+    }
+
+    private func assetButton(_ asset: VoiceDemoCatalog.Asset, title: String) -> some View {
+        Button {
+            assetTask?.cancel()
+            busyAssetPath = asset.path
+            demoError = false
+            assetTask = Task {
+                do {
+                    let directory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+                        .appendingPathComponent("Tongxing/VoiceDemos", isDirectory: true)
+                    let file = try await asset.verifiedLocalURL(
+                        origin: model.mediaOrigin, session: model.mediaSession, directory: directory)
+                    try Task.checkCancellation()
+                    model.playback.loadPreview(url: file, title: title)
+                } catch is CancellationError {
+                    // A later tap or dismissal owns the player now.
+                } catch {
+                    demoError = true
+                }
+                if busyAssetPath == asset.path { busyAssetPath = nil }
+            }
+        } label: {
+            Label(title, systemImage: "play.circle")
+        }
+        .disabled(busyAssetPath != nil)
+    }
+
+    private func languageName(_ locale: String?) -> String {
+        switch locale {
+        case "zh-Hans": return "中文"
+        case "ko": return "한국어"
+        case "es": return "Español"
+        case "vi": return "Tiếng Việt"
+        default: return ""
+        }
+    }
+
+    @MainActor private func load() async {
+        guard !loading, let url = URL(string: VoiceDemoCatalog.relativePath,
+                                     relativeTo: model.mediaOrigin)?.absoluteURL,
+              url.scheme == "https", url.host == model.mediaOrigin.host else { return }
+        loading = true
+        unavailable = false
+        defer { loading = false }
+        do {
+            var request = URLRequest(url: url)
+            request.cachePolicy = .reloadIgnoringLocalCacheData
+            request.timeoutInterval = 15
+            let (data, response) = try await model.mediaSession.data(for: request)
+            guard (response as? HTTPURLResponse)?.statusCode == 200,
+                  data.count < 200_000 else { throw CocoaError(.fileReadCorruptFile) }
+            catalog = try VoiceDemoCatalog.validated(data)
+        } catch {
+            unavailable = true
+        }
     }
 }

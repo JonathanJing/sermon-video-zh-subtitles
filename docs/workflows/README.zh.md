@@ -1,5 +1,7 @@
 # 项目工作流总览：四层多语言生产、双 PDF 与周日实时字幕
 
+媒体获取参考：[Resi 直播已播内容下载](../resi-live-download.zh.md)（冻结公开清单、合并、校验；下载完成不等于证道范围批准）。
+
 日常代码开发遵循 [`feature/*`／`codex/*` → `dev` → `main`](../development-branch-and-firebase-environments.zh.md) 的两级 PR 门禁；Firebase 听译 App 的 Dev 与 Production 环境必须使用独立 project，避免多语言候选影响当前生产 App。
 
 这份 README 是项目的 workflow source of truth。它描述三条相互独立但可共享证据的路径：预制中文音轨与同行页面、post-live 双 PDF、周日本地实时字幕。执行时先按 [AGENTS.md](../../AGENTS.md) 的任务路由读取对应入口，不必加载全部历史文档。
@@ -22,7 +24,7 @@
 2. **周六双 PDF：** 从完整 post-live 媒体与人工范围生成中英阅读版和中文证道同行 PDF，并可导出受控的周日 Context Pack。
 3. **周日实时字幕：** 以当场麦克风和当下英文 ASR 为事实来源，本地生成中文字幕并保留独立恢复录音。
 
-**多语言生产合同：** 今后预制生产统一使用 Layer 1“共享英文事实与锚点”、Layer 2“目标语言文字”、Layer 3“目标语言音频与同步”、Layer 4“多语言发布与播放”。四个版本化接口见[多语言生产四层接口](../multilingual-production-interfaces.zh.md)，按 locale 的 DAG 调度与长期讲员 checkpoint 管理见[多语言每周调度与 Speaker Voice Registry](../multilingual-speaker-voice-registry.zh.md)。后续预制内容以 English Source Package 和 Canonical English Content 为共同主干，中文、韩语、西班牙语、越南语及其他语言作为独立同级分支；禁止以中文作为其他语言的默认翻译源。当前 Layer 1 已接入 shadow；韩语已实现界面、`sourceLocale=en` 展示 sidecar、Target-Language Candidate 合同和 Layer 2 → Layer 3 speech-job 准备器，但通用 Layer 2–4 producer 及真实韩语翻译、TTS、同步和发布尚未完成。因此现有 legacy 工具只能完成它们明确的 PDF、中文音频或页面范围；没有四个 canonical package 和各自门禁时，不得报告“四层生产完成”。迁移顺序见[英文源到多语言证道生产 POC](../english-to-multilingual-production-poc.zh.md)。
+**多语言生产合同：** 今后预制生产统一使用 Layer 1“共享英文事实与锚点”、Layer 2“目标语言文字”、Layer 3“目标语言音频与同步”、Layer 4“多语言发布与播放”。四个版本化接口见[多语言生产四层接口](../multilingual-production-interfaces.zh.md)，按 locale 的 DAG 调度与长期讲员 checkpoint 管理见[多语言每周调度与 Speaker Voice Registry](../multilingual-speaker-voice-registry.zh.md)。后续预制内容以 English Source Package 和 Canonical English Content 为共同主干，中文、韩语、西班牙语、越南语及其他语言作为独立同级分支；禁止以中文作为其他语言的默认翻译源。当前 Layer 1 已接入确定性 shadow，独立机器裁判可解锁 Layer 2 shadow 开发但不授予正式资格；韩语已有界面、`sourceLocale=en` 展示 sidecar、六句机器审核候选、片段 TTS/ASR 演示、Target-Language Candidate 合同和 Layer 2 → Layer 3 speech-job 准备器。韩语整篇人工翻译、完整音轨听审、真实同步及通用 Layer 2–4 正式 producer 尚未完成。因此现有 legacy 工具只能完成它们明确的 PDF、中文音频或页面范围；没有四个 canonical package 和各自门禁时，不得报告“四层生产完成”。迁移顺序见[英文源到多语言证道生产 POC](../english-to-multilingual-production-poc.zh.md)。
 
 ![四层多语言生产：每层流程、模型、输出与门禁](../diagrams/four-layer-production-workflow.svg)
 
@@ -61,7 +63,7 @@
 
 英文词序、句／停顿锚、逐句覆盖、独立语义复核、自然语速音频和滚动同传排程已实现为版本化 shadow 合同，见[句级锚定与滚动同传设计](../sentence-aligned-interpretation.zh.md)及[英文逐字稿与词级时间轴 POC](../../experiments/english-word-timeline-poc/README.zh.md)。13 个分层区块的 99 个意义单元已完成 Astra 初译和不同 request 的独立复核，99/99 机器语义检查通过；99 组自然语速 Qwen TTS 也已生成并完整解码，但实测滚动结束延迟中位数 8.33 秒、P95 20.56 秒、最大 26.13 秒，52/99 组超过 8 秒门槛，因此状态仍为 `candidate_blocked`。
 
-未来周生产现已接入 Layer 1 clause-stable v2 的**自动 shadow 阶段**：当 `run_post_live_subtitle_generation.py` 配置 `--dubbing-config` 时，默认从同一 run 的 `segments_timed_en_corrected.json` 生成哈希隔离的 `anchor-manifest.json`、`english-source-package.json` 和 `receipt.json`。`candidate_ready_for_translation` 只允许 shadow 实验；用 `--sentence-interpretation-english-review` 绑定来源、完整性、字词对齐和句／停顿人工审核后，才可进入 `ready_for_translation`。锚点问题写入 `waiting_anchor_review` 并停止新候选链。只做双 PDF 时可以显式关闭 shadow，但那个 run 不得称为四层生产完成。Layer 1 不调用翻译或 TTS，也不改变双 PDF 产物；完整 Layer 2–4 及全篇听审通过前，不宣称播放问题已解决。详见[四层接口](../multilingual-production-interfaces.zh.md)与[9 月 20 日制作记录](../production-2026-09-20.zh.md#当日实际播放复盘)。
+未来周生产现已接入 Layer 1 clause-stable v2 的**自动 shadow 阶段**：当 `run_post_live_subtitle_generation.py` 配置 `--dubbing-config` 时，默认从同一 run 的 `segments_timed_en_corrected.json` 生成哈希隔离的 `anchor-manifest.json`、`english-source-package.json` 和 `receipt.json`。干净锚点先记录 `waiting_machine_judge`；绑定独立逐句机器裁判通过的收据后，`candidate_ready_for_translation` 才允许 Layer 2 shadow 实验。用 `--sentence-interpretation-english-review` 绑定来源、完整性、字词对齐和句／停顿人工审核后，才可进入 `ready_for_translation`。锚点问题写入 `waiting_anchor_review` 并停止新候选链。只做双 PDF 时可以显式关闭 shadow，但那个 run 不得称为四层生产完成。Layer 1 不调用翻译或 TTS，也不改变双 PDF 产物；完整 Layer 2–4 及全篇听审通过前，不宣称播放问题已解决。详见[四层接口](../multilingual-production-interfaces.zh.md)与[9 月 20 日制作记录](../production-2026-09-20.zh.md#当日实际播放复盘)。
 
 [9 月 20 日制作记录](../production-2026-09-20.zh.md)保存了一次已完成页面、音频修复、用户听审／Firebase／iOS 播放确认及海报交付的运行证据。该记录不证明未来周次自动成功，也不证明真实现场同步；同录制声音定位、实体设备、现场音频路由与其他场次复用仍分别验收。
 
@@ -73,9 +75,11 @@
 
 可选的[统一检查与执行入口](../saturday-harness.zh.md)按顺序连接原 PDF Supervisor 和配音桥接器，分开报告 PDF、候选、听审、同步与发布。[执行保护](../sermon-execution-harness.zh.md)连接 [Promptfoo 真实固定回归集](../saturday-quality-harness.zh.md)、[本机持久化追踪与自动观察](../sermon-trace-export.zh.md)及 [Temporal 持久工作流](../sermon-temporal.zh.md)。各自的实际集成证据和运行命令见专题文档；不表示真实生产或现场已通过，也未自动替换定时任务。
 
+**Layer 2 新生产模型流程：** 已审核的 `ready_for_translation` 英文包按[目标语言 Astra→Sol 操作说明](../target-language-astra-sol-production.zh.md)执行：Astra 初译、Sol 逐组独立复核，之后运行冻结语言插件并逐组人工审核。旧运行保持其原 policy／收据身份；双 PDF 路径和 Layer 1 shadow 不会自动升级为 Layer 2 完成。
+
 **控制层迁移说明（2026-09-11）：** [Production Supervisor](../sermon-production-supervisor-agent.zh.md) 已在本地 runner 接入 OpenAI Agents API，默认 `--agent-backend agents-api`，原 Agents SDK / Responses 通过 `--agent-backend sdk` 显式回退。服务端 session 使用 `environment: none`；本地只执行状态检查、来源媒体准备（保留 timeline 工具名）和经审批 PDF 生成三个受限业务工具，另有结构化结论提交。Session 状态和工具结果持久化，同一会话恢复；自动新建会话须先确认远端 completed/failed/cancelled 且无执行中或结果未确认的工具，本地 timeout 或取消 ACK 不足以放行；source、人工审批、lease、恢复、QA 与发布继续由确定性层约束，完成状态须重新读取 production snapshot。
 
-Supervisor 默认使用 `gpt-6-astra` Medium（本账户旧 `gpt-5.6` 查询返回 404），SDK 回退也使用同一 Astra；生产内容的 Astra Medium 和 ASR 的 `gpt-transcribe` 不变。Agents API 仅接收固定 allowlist 的日期、动作枚举与证据布尔状态；完整 snapshot 和用于恢复配置核对的 `configFingerprint` 留在本地。
+Supervisor 调度默认使用 `gpt-6-sol` Medium，SDK 回退也使用同一 Sol；生产内容的 Astra Medium 和 ASR 的 `gpt-transcribe` 不变。Agents API 仅接收固定 allowlist 的日期、动作枚举与证据布尔状态；完整 snapshot 和用于恢复配置核对的 `configFingerprint` 留在本地。旧 Astra 会话仍按原模型恢复，未决会话不得因切换默认值而被跳过。
 
 真实 Agents API 的两个全模拟用例已核验：`live-synthetic-01` 缺审批用例完成 2 次工具调用、未调用生成并返回 usage；`live-synthetic-advance-01` 完成 4 次工具调用，模拟 generation 执行恰好 1 次。`live-real-shadow-minimal-01` 对 2026-09-13 实际生产 GCS 状态作只读检查，当时结果为 `waiting_for_matching_sunday`。这些都是带日期的切换证据，不代表 9 月 20 日以后仍处于相同业务状态；当前周次必须重新读取本地和 GCS snapshot。[报告链接与验证限界](../sermon-production-supervisor-agent.zh.md#验证进度)也不能代替真实产物或现场验收。
 

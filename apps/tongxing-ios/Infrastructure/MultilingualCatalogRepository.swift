@@ -9,12 +9,18 @@ public struct MultilingualCatalogLoadResult: Sendable {
     public let warning: String?
 }
 
+public struct VerifiedLanguagePage: Sendable {
+    public let html: String
+    public let baseURL: URL
+}
+
 public actor MultilingualCatalogRepository {
     private let origin: URL
     private let cacheDirectory: URL
     private let session: URLSession
     private let maximumCatalogBytes: Int64
     private let maximumPackageBytes: Int64
+    private let maximumPageBytes: Int64 = 4 * 1_024 * 1_024
 
     public init(origin: URL, cacheDirectory: URL, session: URLSession = .shared,
                 maximumCatalogBytes: Int64 = 2 * 1_024 * 1_024,
@@ -71,6 +77,36 @@ public actor MultilingualCatalogRepository {
             guard receipt == target.releasePackageJsonSha256 else { throw ContentStorageError.checksumMismatch }
             return package
         }
+    }
+
+    /// Only pages whose bytes match the verified release package may be shown.
+    /// Recheck cached bytes before every offline use.
+    public func loadPage(for package: TargetLanguageReleasePackage) async throws -> VerifiedLanguagePage {
+        guard let asset = package.assets.first(where: { $0.role == .page }) else {
+            throw ContentStorageError.invalidDownloadReference
+        }
+        let url = try package.pageURL(relativeTo: origin)
+        guard ContentOrigin.isSame(origin, url) else { throw ContentStorageError.invalidURL }
+        let cacheURL = cacheDirectory.appendingPathComponent("Pages", isDirectory: true)
+            .appendingPathComponent("\(asset.sha256).html")
+        let data: Data
+        do {
+            let (downloaded, receivedHash) = try await download(url: url, maximumBytes: maximumPageBytes)
+            guard receivedHash == asset.sha256 else { throw ContentStorageError.checksumMismatch }
+            try FileManager.default.createDirectory(at: cacheURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try downloaded.write(to: cacheURL, options: .atomic)
+            data = downloaded
+        } catch {
+            if Task.isCancelled || error is CancellationError { throw CancellationError() }
+            guard FileManager.default.fileExists(atPath: cacheURL.path) else { throw error }
+            let cached = try readBounded(cacheURL, maximumBytes: maximumPageBytes)
+            guard SHA256.hash(data: cached).map({ String(format: "%02x", $0) }).joined() == asset.sha256 else {
+                throw ContentStorageError.checksumMismatch
+            }
+            data = cached
+        }
+        guard let html = String(data: data, encoding: .utf8) else { throw ContentStorageError.invalidResponse }
+        return VerifiedLanguagePage(html: html, baseURL: url)
     }
 
     private var catalogCacheURL: URL { cacheDirectory.appendingPathComponent("multilingual.json") }

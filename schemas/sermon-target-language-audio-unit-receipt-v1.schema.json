@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-target-language-audio-unit-receipt-v1.schema.json",
+  "title": "Full-decoded target-language audio unit receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "targetLocale", "jobJsonSha256", "jobFileSha256",
+    "unitIndex", "translationGroupId", "sourceUnitIds", "targetTextSha256",
+    "audioRelativePath", "audioSha256", "codec", "sampleRate", "channels",
+    "durationSeconds", "fullDecode", "humanListeningReview", "releaseEligible"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "sermon-target-language-audio-unit-receipt-v1" },
+    "targetLocale": { "type": "string", "pattern": "^(?!en(?:-|$))[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$" },
+    "jobJsonSha256": { "$ref": "#/$defs/sha256" },
+    "jobFileSha256": { "$ref": "#/$defs/sha256" },
+    "unitIndex": { "type": "integer", "minimum": 0 },
+    "translationGroupId": { "type": "string", "minLength": 1 },
+    "sourceUnitIds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "targetTextSha256": { "$ref": "#/$defs/sha256" },
+    "audioRelativePath": { "type": "string", "minLength": 1 },
+    "audioSha256": { "$ref": "#/$defs/sha256" },
+    "codec": { "type": "string", "minLength": 1 },
+    "sampleRate": { "type": "integer", "minimum": 1 },
+    "channels": { "type": "integer", "minimum": 1 },
+    "durationSeconds": { "type": "number", "exclusiveMinimum": 0 },
+    "fullDecode": { "const": "pass" },
+    "humanListeningReview": { "const": "pending" },
+    "releaseEligible": { "const": false }
+  },
+  "$defs": { "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" } }
+}

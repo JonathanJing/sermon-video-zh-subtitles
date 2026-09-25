@@ -1,0 +1,77 @@
+{
+  "schemaVersion": "sermon-target-language-policy-v1",
+  "sourceLocale": "en",
+  "translator": {
+    "model": "gpt-6-astra",
+    "reasoningEffort": "medium",
+    "promptVersion": "sermon-target-language-translate-zh-Hans-v1"
+  },
+  "reviewer": {
+    "model": "gpt-6-sol",
+    "reasoningEffort": "medium",
+    "promptVersion": "sermon-target-language-review-zh-Hans-v2"
+  },
+  "batching": {
+    "batchSize": 1,
+    "workers": 1
+  },
+  "targetLocale": "zh-Hans",
+  "terminology": {
+    "seriesTableSha256": "a76c75e531d5860fbc485d16f1debec2b78fa8b6fd08f1a8b0d194ed1cdbffb9",
+    "seriesNames": [
+      {
+        "source": "Revelation: The Comfort and Hope Jesus Brings",
+        "target": "启示录：耶稣带来的安慰与盼望",
+        "reviewStatus": "project_established"
+      },
+      {
+        "source": "When Life Doesn’t Make Sense",
+        "target": "当生活令人费解",
+        "reviewStatus": "project_established"
+      },
+      {
+        "source": "A Study of the Book of Numbers",
+        "target": "民数记研读",
+        "reviewStatus": "project_established"
+      }
+    ],
+    "properNames": []
+  },
+  "scripture": {
+    "editionId": "CUV",
+    "citationUseStatus": "project_source_reviewed",
+    "quoteCheckPolicy": "source_bound_exact_quote",
+    "referenceStyle": "Use the project pinned CUV source for direct quotations; distinguish book names from series titles."
+  },
+  "languageReview": {
+    "pluginId": "zh-Hans-sermon-v1",
+    "implementationStatus": "pending",
+    "requiredChecks": [
+      "spoken_chinese",
+      "cuv_exact_quote",
+      "number_name_reading",
+      "tts_segmentation"
+    ],
+    "registerRules": [
+      "Natural spoken Simplified Chinese; keep exact pinned CUV words in direct quotations."
+    ]
+  },
+  "formatting": {
+    "speechRegister": "natural_spoken_simplified_chinese",
+    "punctuationRules": [
+      "Use punctuation to reflect meaning, not as acoustic pause evidence."
+    ],
+    "segmentationRules": [
+      "Keep complete semantic clauses; do not split only to chase English word timing."
+    ]
+  },
+  "componentSha256": {
+    "translator": "7b27ac3b96896b05244c32389e3ec32f98c3a833f44e2141cd81b38acdbb58d9",
+    "reviewer": "c47beff7c4b4f76189448fbbc5075fc32097cd3b0644250713d22eeb969d825a",
+    "terminology": "2667d447f578f8ed493b36d5eecf439796e98a4551bd27d383d44adfce548c43",
+    "scripture": "70b734b857f814cd2a9371a184012cc90fb8b41705f3bb50100aab675e0d8603",
+    "languageReview": "6d7594dd5763adda2971a85f9f07f50214112990bcedc3f6909637c1bb24873b",
+    "formatting": "c89601cde85a6be36e671cf17f0a4771d9dc13749e372f1f6eee992584f6cd06",
+    "batching": "e07870c4a83888b3266158ceee0af1e1ef1d34caf1b0f73742ad5f4d05914059"
+  }
+}

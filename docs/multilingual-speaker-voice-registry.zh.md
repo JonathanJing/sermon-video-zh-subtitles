@@ -36,6 +36,12 @@ Speaker Voice Registry（长期缓存依赖）───────────�
 
 注册表不保存私有样本、checkpoint 权重、凭据或 DGX 路径。运行环境通过不进 Git 的 `sermon-speaker-checkpoint-map-v1` 将逻辑 ref 解析到真实目录；renderer 在模型加载前重算权重 hash，并验证 checkpoint 包含目标 `speakerKey`。
 
+### 固定音色与每周审核
+
+周更按实际讲员的 `speakerId` 解析固定的 `speakerKey`、adapter、模型 revision 和 checkpoint；同一讲员的中、韩、西语不在每周重新选声或训练。9 月 20 日片段已使用 Eric 的同一 Qwen SFT checkpoint，韩／西语短样、长句探针及正式片段音轨均有当次人工听审结果。只要这些声音身份和适用授权范围不变，周更不重复要求短样／长句能力试听。新片段可用 `sermon-voice-capability-reuse-v1` 收据绑定当前 English Source Package、旧 Source Package 和原始人工探针收据；校验仍逐项核对音频、讲员、语言与 checkpoint。此收据不延伸旧片段的配音授权，也不代替新译文的整轨发音、完整性和同步听审。
+
+**固定选用**与**跨周生产资格**分别记录。当前提交的 Registry 对 Eric 韩／西语仍为 `unverified_poc`，用途为 `multilingual_voice_demo`；现有正式放行凭证明确限于 9 月 20 日片段。准备后续整篇正式 Layer 3 时，需先把跨周用途与能力证据按真实授权范围登记并绑定同一 checkpoint，不能靠“音色已选定”或复用片段收据自动改写状态。待审译文的 `preview_only` 单元配音可先使用已登记的试听用途，不等待该正式资格登记。
+
 同一个按讲员 SFT checkpoint 可以作为中文、韩语和西班牙语的候选，但能力状态不能跨语言继承。Qwen3-TTS 官方与本地 runtime 支持的十种语言不包含越南语，因此越南语不得伪装成同一 adapter 已支持；本轮 Registry 为 `vi` 显式选择基于 Qwen3-TTS 0.6B 的 Gwen-TTS 零样本 reference-clone adapter，并固定模型 revision。中文样片已认可只证明绑定的中文样片；韩语、西班牙语、越南语从 `unverified_poc` 开始，各自经过完整解码、ASR 机器筛查和母语人耳审核后才可晋升。[Qwen3-TTS 官方语言列表](https://github.com/QwenLM/Qwen3-TTS#released-models-description-and-download)、[Gwen-TTS 官方用法](https://github.com/ggroup-ai-lab/gwen-tts#quick-start)
 
 ## Demo 生成
@@ -77,5 +83,7 @@ python scripts/render_vietnamese_voice_demos.py \
 目前登记 Eric Geiger、Jared Kirkwood、Christine Caine、Doug Fields、Kenton Beshore 和 Steve Bang Lee 六位讲员。中文能力状态沿用已绑定样片的现有人工认可；其他三种语言在完成本轮生成后仍保持 `unverified_poc`，直至各语言听审完成。越南语 POC 当前是 reference clone，不等于已经完成与中文相同的 per-speaker SFT；是否为 Gwen-TTS 建立长期训练 checkpoint 要在试听和母语发音审核后另行决定。
 
 本轮实跑已生成 6 位讲员 × 4 个 locale 共 24 条 WAV，并编码为 24 条 MP3；源 WAV 与交付 MP3 均完成全文件解码。Qwen3-ASR 完整覆盖筛查中，韩语和西班牙语为 1.00，中文约为 0.97；6 条越南语全部低于 0.85，已标为人工复核优先项。这个结果只证明文件可解码并给出文本一致性风险信号：所有新语言仍等待母语人耳审核，越南语不得进入正式生产。
+
+统一试听页可从 v2 交付目录离线重建：`python scripts/build_multilingual_voice_preview.py --root artifacts/sermon-dubbing/2026-09-21-multilingual-voice-demos-v2`。目录内若没有注册表与文稿快照，生成器从仓库的 `config/speaker-voice-registry.json` 和 `experiments/sermon-dubbing-poc/multilingual-voice-demo-script-v1.json` 读取，并核对交付清单哈希。它逐条比对生成清单中的 checkpoint 或越南语 adapter 身份与当前注册表、WAV／MP3 哈希，完整解码 24 条 MP3，随后写入同目录的 `index.html` 与 `preview-verification.json`。页面按讲员／语言筛选和播放，分别标示本次样音听审与既有语言能力状态；它本身不修改 Registry、正式音轨或发布资格。
 
 2026-09-20 证道六句片段的 Eric 单讲员实跑得到同样方向：中文 `0.961905`、韩语 `0.878505`、西班牙语 `1.0` 通过机器筛查门线，越南语 `0.195652` 进入人工复核优先。该结果足以冻结“筛查失败时停止晋升”的调度规则，但不足以断言前三种语言已通过发音、自然度或讲员相似度审核。越南语下一步保留 Gwen-TTS 为基线，同时对支持越南语声音克隆的候选 adapter 做相同文本、相同参考音频、相同 ASR 与母语盲听条件的对照；在对照完成前不把任何新 adapter 写成 Registry 的生产能力。具体固化步骤见[多语言片段 POC 固化流程](multilingual-fragment-poc-solidification.zh.md)。

@@ -72,6 +72,7 @@ final class StorageTests {
             switch request.url?.path {
             case "/multilingual.json": return .init(chunks: [fixture.catalog])
             case "/releases/page-1/ko.json": return .init(chunks: [fixture.release])
+            case "/pages/page-1/ko/index.html": return .init(chunks: [fixture.page])
             default: return .init(status: 404, chunks: [Data("missing".utf8)])
             }
         }
@@ -83,11 +84,23 @@ final class StorageTests {
         let page = online.catalog.defaultPage
         let package = try await repository.loadRelease(page: page, locale: "ko")
         #expect(try package.pageURL(relativeTo: baseURL).path == "/pages/page-1/ko/index.html")
+        stub(.init(chunks: [Data("modified page".utf8)]))
+        do { _ = try await repository.loadPage(for: package); Issue.record("Modified network page must fail") }
+        catch { #expect(error as? ContentStorageError == .checksumMismatch) }
+        stub(.init(chunks: [fixture.page]))
+        #expect(try await repository.loadPage(for: package).html.contains("한국어"))
 
         stub(.init(chunks: [], error: URLError(.notConnectedToInternet)))
         let offline = try await repository.loadCatalog()
         #expect(offline.source == .cache)
         #expect(try await repository.loadRelease(page: offline.catalog.defaultPage, locale: "ko") == package)
+        #expect(try await repository.loadPage(for: package).html.contains("한국어"))
+
+        let pageHash = package.assets.first { $0.role == .page }!.sha256
+        let cachedPage = directory.appendingPathComponent("multilingual/Pages/\(pageHash).html")
+        try Data("tampered".utf8).write(to: cachedPage)
+        do { _ = try await repository.loadPage(for: package); Issue.record("Tampered page must fail") }
+        catch { #expect(error as? ContentStorageError == .checksumMismatch) }
     }
 
     @Test func testVerifiedDownloadTamperDetectionAndRepair() async throws {
@@ -262,15 +275,17 @@ final class StorageTests {
                     subtitleTiming: "candidate", scope: "full")
     }
 
-    private func multilingualFixture() throws -> (catalog: Data, release: Data) {
+    private func multilingualFixture() throws -> (catalog: Data, release: Data, page: Data) {
         let hashA = String(repeating: "a", count: 64)
+        let page = Data("<html><head></head><body>한국어 검증 페이지</body></html>".utf8)
+        let pageHash = SHA256.hash(data: page).map { String(format: "%02x", $0) }.joined()
         let releaseValue: [String: Any] = [
             "schemaVersion": "sermon-target-language-release-package-v1",
             "packageId": "page-1-ko", "pageId": "page-1", "sourceLocale": "en", "targetLocale": "ko",
             "targetLanguageCandidateJsonSha256": hashA, "targetLanguageAudioPackageJsonSha256": NSNull(),
             "status": "published_http_verified", "contentStatus": "human_reviewed", "audioStatus": "unavailable",
             "interfaceLocale": "ko", "contentLocale": "ko", "audioLocale": NSNull(),
-            "assets": [["role": "page", "path": "/pages/page-1/ko/index.html", "sha256": hashA]],
+            "assets": [["role": "page", "path": "/pages/page-1/ko/index.html", "sha256": pageHash]],
             "httpVerification": ["status": "pass", "evidenceSha256": hashA],
             "deviceAcceptance": ["status": "not_run", "evidenceSha256": NSNull()],
             "venueAcceptance": ["status": "not_run", "evidenceSha256": NSNull()], "issues": [],
@@ -287,7 +302,7 @@ final class StorageTests {
                 ]],
             ]],
         ]
-        return (try JSONSerialization.data(withJSONObject: catalogValue, options: [.sortedKeys]), release)
+        return (try JSONSerialization.data(withJSONObject: catalogValue, options: [.sortedKeys]), release, page)
     }
 
     private func catalogData() throws -> Data {

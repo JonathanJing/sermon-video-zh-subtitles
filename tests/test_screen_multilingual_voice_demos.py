@@ -1,5 +1,7 @@
 import importlib.util
 from pathlib import Path
+import json
+import tempfile
 import unittest
 
 
@@ -13,6 +15,26 @@ SPEC.loader.exec_module(subject)
 
 
 class MultilingualVoiceDemoScreenTest(unittest.TestCase):
+    def test_selected_locale_probe_does_not_require_vietnamese_manifest(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "manifest.json").write_text(json.dumps({
+                "schemaVersion": "sermon-multilingual-voice-demo-manifest-v1",
+                "tracks": [{"speakerId": "eric_geiger", "targetLocale": "ko"}],
+            }), encoding="utf-8")
+            self.assertEqual(subject.collect_generation_tracks(root, {"ko"}),
+                             [{"speakerId": "eric_geiger", "targetLocale": "ko"}])
+
+    def test_full_matrix_requires_vietnamese_generation_tracks(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "manifest.json").write_text(json.dumps({
+                "schemaVersion": "sermon-multilingual-voice-demo-manifest-v1",
+                "tracks": [{"speakerId": "eric_geiger", "targetLocale": "ko"}],
+            }), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "do not cover selected script locales"):
+                subject.collect_generation_tracks(root, {"ko", "vi"})
+
     def test_chinese_compares_characters_without_punctuation(self):
         self.assertEqual(subject.normalize("神与我们相遇。", "zh-Hans"), list("神与我们相遇"))
 

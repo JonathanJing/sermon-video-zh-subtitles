@@ -79,8 +79,12 @@ private enum UITestContent {
                     .init(blockId: "2", english: "Third synthetic source sentence for continued listening.", sourceTextOrigin: "synthetic-fixture", reviewState: "candidate")
                 ]))
         ])
+        func page(locale: String) -> Data {
+            Data("<html><head><title>\(locale)</title></head><body><h1>\(locale == "ko" ? "한국어 검증 페이지" : "中文验证页面")</h1></body></html>".utf8)
+        }
         func release(locale: String) -> Data {
             let hash = String(repeating: "a", count: 64)
+            let pageHash = SHA256.hash(data: page(locale: locale)).map { String(format: "%02x", $0) }.joined()
             let value: [String: Any] = [
                 "schemaVersion": "sermon-target-language-release-package-v1",
                 "packageId": "ui-test-week-\(locale)", "pageId": "ui-test-week", "sourceLocale": "en",
@@ -88,7 +92,7 @@ private enum UITestContent {
                 "targetLanguageAudioPackageJsonSha256": NSNull(), "status": "published_http_verified",
                 "contentStatus": "human_reviewed", "audioStatus": "unavailable",
                 "interfaceLocale": locale, "contentLocale": locale, "audioLocale": NSNull(),
-                "assets": [["role": "page", "path": "/pages/ui-test-week/\(locale)/index.html", "sha256": hash]],
+                "assets": [["role": "page", "path": "/pages/ui-test-week/\(locale)/index.html", "sha256": pageHash]],
                 "httpVerification": ["status": "pass", "evidenceSha256": hash],
                 "deviceAcceptance": ["status": "not_run", "evidenceSha256": NSNull()],
                 "venueAcceptance": ["status": "not_run", "evidenceSha256": NSNull()], "issues": [],
@@ -112,10 +116,39 @@ private enum UITestContent {
                 ],
             ]],
         ]
+        let demoPrefix = "/voice-demos/2026-09-21-v2"
+        let demoSpeakers: [[String: Any]] = (0..<6).map { index in
+            let speaker = "speaker_\(index)"
+            let original: [String: Any] = [
+                "path": "\(demoPrefix)/\(speaker)/en-original.mp3",
+                "sha256": String(repeating: "c", count: 64), "bytes": 100,
+                "text": "Synthetic English reference.",
+                "transcriptStatus": "machine_screening_only",
+                "sourceUrl": "https://example.test/sermon/\(index)",
+            ]
+            let samples: [[String: Any]] = ["zh-Hans", "ko", "es", "vi"].map { locale in
+                ["path": "\(demoPrefix)/\(speaker)/\(locale).mp3",
+                 "sha256": String(repeating: "d", count: 64), "bytes": 100,
+                 "locale": locale, "text": "Synthetic sample.",
+                 "humanListeningStatus": "pending"]
+            }
+            return ["speakerId": speaker, "displayName": "Synthetic speaker \(index)",
+                    "original": original, "samples": samples]
+        }
+        let demos = try! JSONSerialization.data(withJSONObject: [
+            "schemaVersion": "sermon-multilingual-voice-demo-public-v1",
+            "status": "audition_demo",
+            "sourceScope": "voice_capability_audition_not_sermon_translation",
+            "humanListeningStatus": "pending", "speakerCount": 6, "sampleCount": 24,
+            "speakers": demoSpeakers,
+        ], options: [.sortedKeys])
         return ["/weekly.json": try! JSONEncoder().encode(catalog),
                 "/multilingual.json": try! JSONSerialization.data(withJSONObject: multilingual, options: [.sortedKeys]),
+                "\(demoPrefix)/catalog.json": demos,
                 "/releases/ui-test-week/zh-Hans.json": chineseRelease,
                 "/releases/ui-test-week/ko.json": koreanRelease,
+                "/pages/ui-test-week/zh-Hans/index.html": page(locale: "zh-Hans"),
+                "/pages/ui-test-week/ko/index.html": page(locale: "ko"),
                 "/media/fixture-first.mp3": firstAudio,
                 "/media/fixture-second.mp3": secondAudio]
     }()
@@ -143,7 +176,7 @@ private final class UITestContentProtocol: URLProtocol {
         }
         let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "HTTP/1.1",
             headerFields: ["Content-Length": String(data.count),
-                           "Content-Type": url.path == "/weekly.json" ? "application/json" : "audio/mpeg"])!
+                           "Content-Type": url.path.hasSuffix(".json") ? "application/json" : "audio/mpeg"])!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
         client?.urlProtocol(self, didLoad: data)
         client?.urlProtocolDidFinishLoading(self)

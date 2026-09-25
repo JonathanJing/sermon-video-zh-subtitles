@@ -4,7 +4,11 @@
 
 本目录仍属开发验证范围。编译、桌面运行和网络下载测试不能代替 iPhone 锁屏、耳机、中断恢复或现场听感验收。
 
-本轮已实现灵动岛扩展、短时麦克风指纹对齐、中英界面与双语全文；实测边界及剩余发布步骤见 [发布清单](RELEASE-READINESS.zh.md)。需求与验收见 [iOS 产品 Backlog](BACKLOG.zh.md)：灵动岛、点击后短时麦克风自动对齐、多语言（英文优先）和双语字幕全文。
+本轮已实现灵动岛扩展、短时麦克风指纹对齐、界面语言切换与双语全文；实测边界及剩余发布步骤见 [发布清单](RELEASE-READINESS.zh.md)。需求与验收见 [iOS 产品 Backlog](BACKLOG.zh.md)：灵动岛、点击后短时麦克风自动对齐、多语言（英文优先）和双语字幕全文。
+
+Dev Debug 与正式版沿用同一原生收听界面、播放器、下载、字幕和现场对齐流程。顶部的短语言标记或“更多 → 界面语言”可选择跟随系统、简体中文、English、한국어、Español、Tiếng Việt；切换只更新 App 的按钮与提示，不改变证道内容、音轨、进度或对齐状态。Debug 读取 Firebase Dev，Release 读取正式站点；Dev POC 目录不符合人工审核的 v2 发布条件时，继续显示原生中文版本，不以演示页替换播放器。
+
+“更多选项 → 多语种音色试听 · Demo”按需读取当前环境同源的试听目录。展开讲员后先列英语原声，再列四语 AI 样音；点击音频会暂停原生证道播放器，并在系统浏览器打开试听链接，不建立第二个原生播放器或改变当前证道音轨。目录缺失时显示重试入口；Release 不会借用 Dev 音频。试听仍标为待人工听审，不进入正式 Layer 3 审核状态。
 
 界面按用户选定的 **iOS 27 设计语言** 实施：系统导航与 Sheet、26 pt 起的动态字幕、单层 Liquid Glass 悬浮播放栏、深色语义配色，以及窄屏、横屏和大字布局。具体规则与 Apple 官方来源见 [设计约定](DESIGN.zh.md)。
 
@@ -42,7 +46,7 @@ xcodegen generate
 
 ## 数据与模块
 
-Release build 读取 `https://ai-for-god-sermon-audio.web.app/weekly.json` 与同源 `/media/*.mp3`；Debug build 使用隔离的 `https://ai-for-god-sermon-audio-dev.web.app`。legacy 契约为 `sermon-weekly-catalog-v1`，新增 Layer 4 POC 同源读取 `/multilingual.json` 和 immutable `/releases/<page>/<locale>.json`。客户端只验证、选择并路由已发布包，不重生成、不重新审核文字与音频。
+Release build 读取 `https://ai-for-god-sermon-audio.web.app/weekly.json` 与同源 `/media/*.mp3`；Debug build 使用隔离的 `https://ai-for-god-sermon-audio-dev.web.app`。legacy 契约为 `sermon-weekly-catalog-v1`，新增 Layer 4 POC 同源读取 `/multilingual.json` 和 immutable `/releases/<page>/<locale>.json`。客户端选择内容语言时先校验发布包与页面 SHA-256，再在 App 内显示已验证页面；离线缓存每次打开都重新校验。页面预览限制脚本、外部资源和导航，避免显示未验证的网络内容。原生中文播放器与现场对齐保持正式版实现，不重生成、不重新审核文字与音频。
 
 | 路径 | 职责 |
 |---|---|

@@ -11,6 +11,20 @@ import XCTest
 /// not represent a real phone call, headphone route, lock-screen or venue test.
 @MainActor
 final class PlaybackControllerTests: XCTestCase {
+    func testVerifiedVoicePreviewUsesSharedPlayerWithoutBookmark() async throws {
+        let fixture = try Fixture()
+        defer { fixture.dispose() }
+        fixture.player.loadPreview(url: fixture.audioURL, title: "Synthetic voice demo")
+        try await eventually("voice demo ready") { fixture.player.isReady }
+        XCTAssertTrue(fixture.player.isPreview)
+        XCTAssertEqual(MPNowPlayingInfoCenter.default().nowPlayingInfo?[MPMediaItemPropertyTitle] as? String,
+                       "Synthetic voice demo")
+        fixture.player.pause()
+        XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.historyURL.path))
+        fixture.player.load(week: fixture.week(), track: fixture.track, url: fixture.audioURL)
+        XCTAssertFalse(fixture.player.isPreview)
+    }
+
     func testAutomaticAlignmentUsesSinglePlayerAndManualCommandsInvalidateIt() async throws {
         let fixture = try Fixture()
         defer { fixture.dispose() }
@@ -391,7 +405,9 @@ final class PlaybackControllerTests: XCTestCase {
 
         func load() async throws {
             player.load(week: week(), track: track, url: audioURL)
-            let deadline = Date().addingTimeInterval(10)
+            // AVPlayer can take longer to prepare a local fixture while macOS CI
+            // is booting the simulator; keep the test bound but allow startup time.
+            let deadline = Date().addingTimeInterval(30)
             while !player.isReady {
                 guard Date() < deadline else { throw TestFailure.timeout("synthetic local WAV preparation: \(player.message)") }
                 try await Task.sleep(nanoseconds: 20_000_000)
@@ -477,5 +493,61 @@ final class PlaybackControllerTests: XCTestCase {
             requests[index] = nil
             continuation.resume(with: result)
         }
+    }
+}
+
+final class VoiceDemoCatalogTests: XCTestCase {
+    func testVoiceDemoBytesMustMatchPublishedSizeAndHash() throws {
+        let data = Data("synthetic voice demo".utf8)
+        let hash = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+        let asset = VoiceDemoCatalog.Asset(path: "/voice-demos/2026-09-21-v2/demo.mp3",
+            sha256: hash, bytes: data.count, text: "Synthetic text", transcriptStatus: nil,
+            humanListeningStatus: "pending", sourceUrl: nil, locale: "ko")
+        XCTAssertNoThrow(try asset.verify(data))
+        XCTAssertThrowsError(try asset.verify(Data("changed voice demo".utf8)))
+        XCTAssertThrowsError(try asset.verify(data + Data([0])))
+    }
+
+    func testAcceptsDemoOnlyCatalogAndRejectsPromotedOrUnsafeAssets() throws {
+        let prefix = "/voice-demos/2026-09-21-v2"
+        let speakers: [[String: Any]] = (0..<6).map { index in
+            let id = "speaker_\(index)"
+            return [
+                "speakerId": id, "displayName": "Synthetic speaker \(index)",
+                "original": ["path": "\(prefix)/\(id)/en-original.mp3",
+                             "sha256": String(repeating: "a", count: 64), "bytes": 100,
+                             "text": "Synthetic source.",
+                             "transcriptStatus": "machine_screening_only",
+                             "sourceUrl": "https://example.test/\(index)"],
+                "samples": ["zh-Hans", "ko", "es", "vi"].map { locale in
+                    ["path": "\(prefix)/\(id)/\(locale).mp3",
+                     "sha256": String(repeating: "b", count: 64), "bytes": 100,
+                     "text": "Synthetic sample.", "locale": locale,
+                     "humanListeningStatus": "pending"]
+                },
+            ]
+        }
+        func encode(_ value: [String: Any]) throws -> Data {
+            try JSONSerialization.data(withJSONObject: value)
+        }
+        var value: [String: Any] = [
+            "schemaVersion": "sermon-multilingual-voice-demo-public-v1",
+            "status": "audition_demo",
+            "sourceScope": "voice_capability_audition_not_sermon_translation",
+            "humanListeningStatus": "pending", "speakerCount": 6,
+            "sampleCount": 24, "speakers": speakers,
+        ]
+        XCTAssertEqual(try VoiceDemoCatalog.validated(encode(value)).speakers.count, 6)
+        value["humanListeningStatus"] = "approved"
+        XCTAssertThrowsError(try VoiceDemoCatalog.validated(encode(value)))
+        value["humanListeningStatus"] = "pending"
+        var changed = speakers
+        var first = changed[0]
+        var original = first["original"] as! [String: Any]
+        original["path"] = "\(prefix)/../private.mp3"
+        first["original"] = original
+        changed[0] = first
+        value["speakers"] = changed
+        XCTAssertThrowsError(try VoiceDemoCatalog.validated(encode(value)))
     }
 }

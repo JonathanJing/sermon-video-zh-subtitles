@@ -75,6 +75,8 @@ python scripts/stage_multilingual_fragment_poc_firebase.py \
 
 暂存脚本要求 Layer 2/3 哈希绑定，并要求 Layer 3、`weekly.json`、release JSON 与 MP3 的 SHA-256 完全一致。页面列出的每个音频变体（包括默认变体）都必须从独立保留的、已校验 artifact 目录提供；干净 checkout 缺少其中任何一份时直接停止，不能部署会 404 的页面。`--variant-media-dir` 可以省略，但仅限 release 没有额外变体。若 catalog 含英文来源页，`sourceWindow` 必须显式声明 `timebase=sermon_relative_seconds` 和完整来源媒体中的 `sourceMediaOffsetSeconds`；脚本先把证道相对时间转换成完整视频绝对时间，再截取原始讲员音频、完整解码并核对固定哈希。禁止把证道相对秒数直接用作完整聚会视频的 seek 位置。这条 `en` lane 是 Layer 1 对照，不是假装成目标语言翻译。`firebase/dev/public/media/` 被 `.gitignore` 排除，避免把生成媒体提交到仓库。
 
+Dev 浏览器会按 `multilingual.json → release JSON → content JSON / MP3` 的 SHA-256 绑定校验后切换播放。改动 JSON 时先运行 `python scripts/seal_multilingual_dev_catalog.py` 更新绑定；部署前运行 `python scripts/seal_multilingual_dev_catalog.py --check`、`node --test tests/test_dev_integrity.mjs`，并核对暂存 MP3 与 release 中每个音频变体的 SHA-256。任一环节不符时，浏览器保留当前内容与播放并显示重试入口。当前片段没有与英文来源窗口同钟的目标语言音轨或指纹索引，Dev 页面不提供现场自动定位；此限制不改变 iOS 或正式 Web 已有的定位功能。
+
 ## 当前模型能力与越南语决策
 
 | locale | 当前 adapter | 2026-09-20 片段机器筛查 | 当前结论 |

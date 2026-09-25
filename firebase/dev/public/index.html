@@ -1,106 +1,121 @@
 <!doctype html>
-<html lang="zh-Hans" data-theme="light">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#eef5ef">
-    <meta name="description" content="同行多语言证道应用开发演示：9 月 20 日证道片段的机器翻译与讲员克隆音频 POC。">
-    <title>同行 · 9 月 20 日多语言 POC</title>
-    <link rel="stylesheet" href="/styles.css">
-  </head>
-  <body>
-    <div class="dev-banner" role="status">
-      <strong>MACHINE POC</strong>
-      <span id="devBannerText">界面、页面和播放器可测试；译文与音频不是正式内容。</span>
-    </div>
-
-    <header class="topbar">
-      <a class="brand" href="/" aria-label="同行多语言开发演示首页">
-        <span class="brand-mark" aria-hidden="true">同</span>
-        <span><strong>同行</strong><small id="brandSubtitle">多语言证道</small></span>
-      </a>
-      <div class="top-actions">
-        <button class="quiet-button" id="interfaceLanguage" type="button" aria-label="切换界面语言">EN</button>
-        <button class="quiet-button" id="themeToggle" type="button" aria-label="切换显示主题">深色</button>
-      </div>
-    </header>
-
-    <main>
-      <section class="hero" aria-labelledby="sermonTitle">
-        <div class="hero-copy">
-          <p class="eyebrow" id="seriesLabel">DEMO SERIES</p>
-          <h1 id="sermonTitle">正在载入多语言页面…</h1>
-          <p class="sermon-meta" id="sermonMeta"></p>
-          <p class="hero-summary" id="sermonSummary"></p>
-        </div>
-        <button class="language-card" id="languageButton" type="button" aria-haspopup="dialog">
-          <span><small id="languageCardLabel">证道语言</small><strong id="languageName">—</strong></span>
-          <span class="language-card-side"><span id="languageCapabilities">—</span><b aria-hidden="true">›</b></span>
+<html lang="zh-Hans" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#141b1a">
+  <meta name="description" content="同行 Firebase Dev：多语言证道界面与机器翻译、音频片段测试。">
+  <title>同行 · 多语言 Dev</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="同行 Dev 首页">
+      <img class="brand-icon" src="/brand-icon.png" alt="" width="40" height="40" decoding="async">
+      <span class="brand-copy"><span class="brand-name" id="brandName">同行</span><span class="brand-detail" id="brandSubtitle">证道中文听译</span></span>
+    </a>
+    <div class="topbar-actions">
+      <span class="edition"><i aria-hidden="true"></i><span id="editionLabel">DEV · MACHINE POC</span></span>
+      <div class="interface-language-control">
+        <button id="interfaceLanguage" class="language-toggle" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="interfaceLanguageMenu" aria-label="选择界面语言">
+          <span aria-hidden="true">◎</span><span id="interfaceLanguageCode">中</span><span class="menu-chevron" aria-hidden="true">⌄</span>
         </button>
-      </section>
+        <div id="interfaceLanguageMenu" class="interface-language-menu" role="menu" aria-label="界面语言" hidden></div>
+      </div>
+      <button id="themeToggle" class="theme-toggle" type="button" aria-label="切换到浅色模式">
+        <svg class="theme-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.3 14.4A8.5 8.5 0 0 1 9.6 3.7a8.5 8.5 0 1 0 10.7 10.7Z"/></svg>
+        <svg class="theme-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.4 1.4m11.2 11.2L19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg>
+        <span id="themeLabel">深色</span>
+      </button>
+    </div>
+  </header>
 
-      <section class="mock-notice" aria-labelledby="mockNoticeTitle">
-        <div aria-hidden="true">i</div>
-          <p><strong id="mockNoticeTitle">真实 Layer 2 + Layer 3 POC</strong><span id="mockNoticeBody">机器译文与克隆音频均待人工审核。</span></p>
-      </section>
+  <main class="field-main">
+    <div id="loadError" class="load-error" role="alert" hidden><span id="loadErrorMessage"></span><button id="retryLoad" type="button">重试</button></div>
 
-      <nav class="tabs" aria-label="内容视图" role="tablist">
-        <button class="is-active" type="button" role="tab" aria-selected="true" data-tab="listen" id="listenTab">收听</button>
-        <button type="button" role="tab" aria-selected="false" data-tab="transcript" id="transcriptTab">字幕全文</button>
-        <button type="button" role="tab" aria-selected="false" data-tab="outline" id="outlineTab">大纲</button>
-      </nav>
+    <section class="sermon-banner" aria-label="证道信息">
+      <p id="seriesLabel" class="banner-series"></p>
+      <h1 id="sermonTitle">正在载入多语言页面…</h1>
+      <p class="sermon-meta" id="sermonMeta"></p>
+      <button id="languageButton" class="content-language-button" type="button" aria-haspopup="dialog">
+        <span id="languageCardLabel">证道语言</span><strong id="languageName">—</strong><span class="content-language-arrow" aria-hidden="true">⌄</span>
+      </button>
+      <p id="sermonSummary" class="sermon-summary"></p>
+    </section>
 
-      <section class="panel is-active" id="panel-listen" role="tabpanel">
-        <div class="audio-variant-picker" id="audioVariantPicker" hidden>
-          <label for="audioVariantSelect">
-            <small id="audioVariantLabel">校对音频版本</small>
-            <select id="audioVariantSelect"></select>
-          </label>
-          <p id="audioVariantDescription"></p>
+    <div class="field-nav">
+      <div class="tabs" role="tablist" aria-label="收听内容">
+        <button class="is-active" type="button" role="tab" aria-selected="true" aria-controls="panel-listen" data-tab="listen" id="listenTab">收听</button>
+        <button type="button" role="tab" aria-selected="false" aria-controls="panel-transcript" data-tab="transcript" id="transcriptTab">字幕全文</button>
+        <button id="outlineTab" type="button" role="tab" aria-selected="false" aria-controls="panel-outline" data-tab="outline">大纲</button>
+      </div>
+      <button id="moreToggle" class="nav-action" type="button" aria-expanded="false" aria-controls="moreOptions">更多</button>
+    </div>
+    <section id="moreOptions" class="more-options dev-more" aria-label="更多选项" hidden>
+      <section class="week-browser" aria-label="本期与往期证道">
+        <div class="week-picker">
+          <label for="weekSelect"><span id="weekLabel">本期与往期</span><span id="weekHint">选择日期，收听往期证道</span></label>
+          <select id="weekSelect"><option>2026.09.20 · 耶稣的应许 · Dev POC</option></select>
         </div>
-        <div class="now-card">
-          <div class="section-heading"><span class="pulse-dot"></span><h2 id="nowHeading">正在讲述</h2><span id="cueCounter">0 / 0</span></div>
-          <p class="current-caption" id="currentCaption">—</p>
-          <p class="source-caption" id="sourceCaption" lang="en">—</p>
-          <div class="progress-track" id="progressTrack" role="slider" tabindex="0" aria-label="播放进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progressFill"></span></div>
-          <div class="time-row"><span id="elapsed">00:00</span><span id="duration">00:24</span></div>
-        </div>
-        <div class="transport">
-          <button type="button" data-skip="-5" aria-label="后退五秒">−5</button>
-          <button class="play-button" id="playButton" type="button" aria-label="播放"><span id="playIcon">▶</span></button>
-          <button type="button" data-skip="5" aria-label="前进五秒">+5</button>
-        </div>
-        <p class="player-note" id="playerNote">机器生成的讲员克隆音色；非原始录音、非正式配音。</p>
       </section>
-
-      <section class="panel" id="panel-transcript" role="tabpanel" hidden>
-        <div class="panel-heading"><div><p class="eyebrow">TIMED TEXT</p><h2 id="transcriptHeading">字幕全文</h2></div><span class="mock-chip">POC</span></div>
-        <div class="transcript-list" id="transcriptList"></div>
-      </section>
-
-      <section class="panel" id="panel-outline" role="tabpanel" hidden>
-        <div class="panel-heading"><div><p class="eyebrow">SERMON OUTLINE</p><h2 id="outlineHeading">证道大纲</h2></div><span class="mock-chip">POC</span></div>
-        <div class="outline-list" id="outlineList"></div>
-      </section>
-
+      <p id="moreSummary" class="more-summary"></p>
+      <p class="dev-disclosure"><strong id="mockNoticeTitle">真实 Layer 2 + Layer 3 POC</strong><span id="mockNoticeBody">机器译文与克隆音频均待人工审核。</span></p>
+      <div class="audio-variant-picker" id="audioVariantPicker" hidden>
+        <label for="audioVariantSelect"><span id="audioVariantLabel">校对音频版本</span><select id="audioVariantSelect"></select></label>
+        <p id="audioVariantDescription"></p>
+      </div>
       <section class="release-card" aria-labelledby="releaseTitle">
-        <div><p class="eyebrow">LAYER 4 · DEV</p><h2 id="releaseTitle">发布包状态</h2></div>
+        <h2 id="releaseTitle">发布包状态</h2>
         <dl><div><dt id="contentStatusLabel">文字</dt><dd id="contentStatus">机器 POC · 待人工</dd></div><div><dt id="audioStatusLabel">音频</dt><dd id="audioStatus">克隆音频 · 待听审</dd></div><div><dt>HTTP</dt><dd id="httpStatus">Firebase Dev</dd></div></dl>
       </section>
-    </main>
+      <p id="alignmentDetail" class="dev-capability-note">此 POC 未发布现场自动对齐资料</p>
+      <a id="downloadAudio" class="dev-download" hidden download>下载当前音频</a>
+    </section>
 
-    <footer>
-      <strong>同行 · Multilingual POC</strong>
-      <span id="footerText">独立个人开发项目，与 Mariners Church 无隶属或背书关系。</span>
-    </footer>
+    <section class="panel subtitle-card is-active" id="panel-listen" role="tabpanel" aria-labelledby="listenTab">
+      <div class="section-heading"><span class="subtitle-dot" aria-hidden="true"></span><h2 id="nowHeading">正在讲述</h2><span id="cueCounter">0 / 0</span><button id="sourceToggle" class="text-button" type="button" aria-pressed="false">中英对照</button></div>
+      <p class="current-text" id="currentCaption">—</p>
+      <div id="sourceBlock" class="current-english" hidden><span id="sourceReferenceLabel">英文原文参考</span><p id="sourceCaption" lang="en">—</p></div>
+      <p id="nextCaption" class="next-text"></p>
+      <div class="subtitle-footer"><span id="captionNote">字幕随当前音频更新 · Dev POC</span><button id="showTranscript" class="text-button" type="button">查看全文</button></div>
+    </section>
 
-    <dialog id="languageDialog" aria-labelledby="languageDialogTitle">
-      <div class="dialog-header"><div><p class="eyebrow">CONTENT LANGUAGE</p><h2 id="languageDialogTitle">选择证道语言</h2><p id="languageDialogHint">界面语言、内容语言和音频语言分别管理。</p></div><button class="close-button" id="closeLanguageDialog" type="button" aria-label="关闭">×</button></div>
-      <div class="language-list" id="languageList"></div>
-      <p class="dialog-foot" id="languageDialogFoot">所有语言均为机器 POC。正式 App 只会显示已审核并发布的语言资产。</p>
-    </dialog>
+    <section class="panel transcript-panel" id="panel-transcript" role="tabpanel" aria-labelledby="transcriptTab" hidden>
+      <div class="section-heading"><h2 id="transcriptHeading">字幕全文</h2><span id="transcriptHint">点时间按钮才会跳转</span></div>
+      <div class="transcript-list" id="transcriptList"></div>
+    </section>
 
-    <audio id="audio" preload="metadata"></audio>
-    <script type="module" src="/app.js"></script>
-  </body>
+    <section class="panel outline-panel" id="panel-outline" role="tabpanel" aria-labelledby="outlineTab" hidden>
+      <div class="section-heading"><h2 id="outlineHeading">证道大纲</h2><span class="pill" id="outlineBadge">DEV POC</span></div>
+      <div class="outline-list" id="outlineList"></div>
+    </section>
+
+    <section id="resumeCard" class="resume-card dev-resume" aria-label="恢复收听" hidden>
+      <p id="resumeMessage"></p>
+      <div><button id="resumePosition" type="button">恢复位置</button><button id="restartPosition" type="button">从头开始</button></div>
+    </section>
+
+    <p class="player-note" id="playerNote">机器生成的讲员克隆音色；非原始录音、非正式配音。</p>
+    <footer class="page-footer"><span class="footer-brand"><strong id="footerBrand">同行 · 证道中文听译</strong><span id="footerMotto">一起听懂，一路同行。</span></span><span id="footerText">独立个人开发项目，与 Mariners Church 无隶属或背书关系。</span></footer>
+  </main>
+
+  <section class="field-controls" id="fieldControls" aria-label="音频播放器">
+    <div class="dock-status"><span id="playerStatus" role="status">音频准备中</span><span><span id="elapsed">00:00</span> / <span id="duration">00:00</span></span></div>
+    <div class="field-transport">
+      <button type="button" class="field-nudge" data-skip="-5" aria-label="后退 5 秒"><span id="backHint">向前调整</span><strong id="backLabel">后退 5 秒</strong></button>
+      <button class="play" id="playButton" type="button" aria-label="开始播放"><span id="playIcon" aria-hidden="true">▶</span><span id="playLabel">开始播放</span></button>
+      <button type="button" class="field-nudge" data-skip="5" aria-label="前进 5 秒"><span id="forwardHint">向后调整</span><strong id="forwardLabel">前进 5 秒</strong></button>
+    </div>
+    <div class="dock-tools"><button id="transcriptCurrent" class="text-button" type="button">回到当前句</button><button id="precisionOpen" class="text-button" type="button">定位 / 精调</button><span id="alignmentNotice" class="dock-capability">此 POC 未发布现场自动对齐资料</span></div>
+    <div class="progress-track" id="progressTrack" role="slider" tabindex="0" aria-label="播放进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progressFill"></span></div>
+  </section>
+
+  <dialog id="languageDialog" aria-labelledby="languageDialogTitle">
+    <div class="dialog-header"><div><p class="eyebrow">CONTENT LANGUAGE</p><h2 id="languageDialogTitle">选择证道语言</h2><p id="languageDialogHint">界面语言、内容语言和音频语言分别管理。</p></div><button class="close-button" id="closeLanguageDialog" type="button" aria-label="关闭">×</button></div>
+    <div class="language-list" id="languageList"></div>
+    <p class="dialog-foot" id="languageDialogFoot">英文是来源对照；四种目标语言均为开发 POC。</p>
+  </dialog>
+  <audio id="audio" preload="metadata"></audio>
+  <script type="module" src="/app.js"></script>
+</body>
 </html>

@@ -5,15 +5,84 @@ on:
     branches:
       - dev
       - main
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
+
+concurrency:
+  group: tongxing-ios-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
 
 jobs:
-  native-client:
+  # Keep the workflow unconditional: a path-filtered required check stays pending.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      scope: ${{ steps.detect.outputs.scope }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Detect native and shared-contract changes
+        id: detect
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import subprocess
+
+          if os.environ["GITHUB_EVENT_NAME"] == "workflow_dispatch":
+              scope = "native"
+          else:
+              base, head = os.environ["BASE_SHA"], os.environ["HEAD_SHA"]
+              if not base or not head:
+                  raise SystemExit("Pull request SHAs are missing")
+              paths = [p.decode("utf-8") for p in subprocess.check_output(
+                  ["git", "diff", "--name-only", "-z", f"{base}...{head}"]
+              ).split(b"\0") if p]
+              shared_contracts = {
+                  "schemas/sermon-multilingual-catalog-v2.schema.json",
+                  "schemas/sermon-target-language-release-package-v1.schema.json",
+                  "scripts/build_multilingual_catalog.py",
+                  "scripts/stage_formal_multilingual_dev.py",
+                  "firebase/dev/public/formal-dev-adapter.mjs",
+              }
+              if any(p.startswith("apps/tongxing-ios/") or
+                     p == ".github/workflows/tongxing-ios.yml" for p in paths):
+                  scope = "native"
+              elif any(p in shared_contracts for p in paths):
+                  scope = "contract"
+              else:
+                  scope = "none"
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"scope={scope}\n")
+          print("Native validation scope:", scope)
+          PY
+
+  contract-validation:
+    needs: changes
+    if: (needs.changes.outputs.scope == 'contract' || (needs.changes.outputs.scope == 'native' && github.base_ref == 'dev')) && !github.event.pull_request.draft
     runs-on: macos-15
-    timeout-minutes: 20
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/tongxing-ios
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check native catalog decoding and storage contracts
+        run: |
+          swift test --package-path Core
+          swift test
+
+  ios-validation:
+    needs: changes
+    if: needs.changes.outputs.scope == 'native' && (github.event_name == 'workflow_dispatch' || (github.base_ref == 'main' && !github.event.pull_request.draft))
+    runs-on: macos-15
+    timeout-minutes: 35
     defaults:
       run:
         working-directory: apps/tongxing-ios
@@ -61,3 +130,37 @@ jobs:
           name: tongxing-ios-tests
           path: apps/tongxing-ios/TestResults/
           if-no-files-found: ignore
+
+  # Branch protection requires this stable status on every PR.
+  native-client:
+    needs: [changes, contract-validation, ios-validation]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Check required iOS result
+        env:
+          CHANGE_RESULT: ${{ needs.changes.result }}
+          SCOPE: ${{ needs.changes.outputs.scope }}
+          IS_DRAFT: ${{ github.event.pull_request.draft }}
+          BASE_BRANCH: ${{ github.base_ref }}
+          EVENT_NAME: ${{ github.event_name }}
+          CONTRACT_RESULT: ${{ needs.contract-validation.result }}
+          IOS_RESULT: ${{ needs.ios-validation.result }}
+        run: |
+          set -euo pipefail
+          test "$CHANGE_RESULT" = success
+          if test "$EVENT_NAME" != workflow_dispatch && test "$IS_DRAFT" = true; then
+            test "$CONTRACT_RESULT" = skipped
+            test "$IOS_RESULT" = skipped
+          elif test "$SCOPE" = native && { test "$BASE_BRANCH" = main || test "$EVENT_NAME" = workflow_dispatch; }; then
+            test "$IOS_RESULT" = success
+            test "$CONTRACT_RESULT" = skipped
+          elif test "$SCOPE" = contract || { test "$SCOPE" = native && test "$BASE_BRANCH" = dev; }; then
+            test "$CONTRACT_RESULT" = success
+            test "$IOS_RESULT" = skipped
+          else
+            test "$SCOPE" = none
+            test "$CONTRACT_RESULT" = skipped
+            test "$IOS_RESULT" = skipped
+          fi

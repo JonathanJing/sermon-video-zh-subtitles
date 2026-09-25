@@ -50,6 +50,16 @@ class MultilingualDevAppTest(unittest.TestCase):
     def test_weekly_manifest_binds_original_english_audio(self):
         weekly = load(PUBLIC / "weekly.json")
         week = next(item for item in weekly["weeks"] if item["id"] == PAGE_ID)
+        self.assertEqual(week["tracks"][0]["locale"], "zh-Hans", "Native listening stays Chinese-first")
+        for track in week["tracks"]:
+            name = f"{PAGE_ID}-{track['locale']}.mp3"
+            self.assertEqual(track["file"], name)
+            self.assertEqual(track["audioUrl"], f"/media/{name}")
+            if track["locale"] == "en":
+                expected_hash = load(PUBLIC / f"releases/{PAGE_ID}/en.json")["audioSha256"]
+            else:
+                expected_hash = load(PUBLIC / f"packages/layer3/{PAGE_ID}-{track['locale']}.json")["track"]["sha256"]
+            self.assertEqual(track["sha256"], expected_hash)
         english = next(item for item in week["tracks"] if item["locale"] == "en")
         release = load(PUBLIC / f"releases/{PAGE_ID}/en.json")
         self.assertEqual(english["scope"], "english_source_reference_poc")
@@ -60,9 +70,15 @@ class MultilingualDevAppTest(unittest.TestCase):
 
     def test_app_router_accepts_english(self):
         app = (PUBLIC / "app.js").read_text(encoding="utf-8")
+        integrity = (PUBLIC / "dev-integrity.mjs").read_text(encoding="utf-8")
         self.assertIn("(en|zh-Hans|ko|es|vi)", app)
-        self.assertIn("sermon-source-language-demo-package-v1", app)
-        self.assertIn('searchParams.set("sha256", variant.audioSha256)', app)
+        self.assertIn('sermon-source-language-demo-package-v1', integrity)
+        self.assertIn('fetchVerified(variant.audioUrl, variant.audioSha256', app)
+
+    def test_hosting_rewrites_every_page_id_to_the_app_shell(self):
+        hosting = load(ROOT / "firebase/dev/firebase.json")["hosting"]
+        self.assertIn({"source": "/pages/**", "destination": "/index.html"},
+                      hosting["rewrites"])
 
     def test_chinese_page_exposes_review_audio_variants_with_bound_timing(self):
         release = load(PUBLIC / f"releases/{PAGE_ID}/zh-Hans.json")
@@ -128,6 +144,17 @@ class MultilingualDevAppTest(unittest.TestCase):
         self.assertIn("function activeCues()", app)
         self.assertIn("state.audioVariant?.cues", app)
         self.assertIn("tongxing-dev-audio-", app)
+
+    def test_dev_shell_tracks_production_visual_base(self):
+        production = ROOT / "experiments/sermon-dubbing-poc/web"
+        self.assertTrue(
+            (PUBLIC / "styles.css").read_bytes().startswith((production / "style.css").read_bytes()),
+            "Dev CSS must start with the production stylesheet before Dev overrides",
+        )
+        self.assertEqual(
+            (PUBLIC / "brand-icon.png").read_bytes(),
+            (production / "brand-icon.png").read_bytes(),
+        )
 
 
 if __name__ == "__main__":

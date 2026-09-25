@@ -94,6 +94,7 @@ final class AppModel: ObservableObject {
     private var multilingualRepository: MultilingualCatalogRepository?
     private var offlineLibrary: OfflineLibrary?
     let mediaOrigin: URL
+    let mediaSession: URLSession
     private let languagePreferenceURL: URL
     private var languagePreferences: ContentLanguagePreferences
     private var started = false
@@ -104,6 +105,7 @@ final class AppModel: ObservableObject {
         let support = supportDirectory ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
             .appendingPathComponent("Tongxing", isDirectory: true)
         mediaOrigin = contentOrigin ?? Self.contentOrigin
+        mediaSession = session
         languagePreferenceURL = support.appendingPathComponent("tongxing-language-preferences-v2.json")
         let savedPreferences = try? JSONDecoder().decode(ContentLanguagePreferences.self,
             from: Data(contentsOf: languagePreferenceURL))
@@ -212,7 +214,7 @@ final class AppModel: ObservableObject {
         }
     }
 
-    func selectContentLanguage(_ locale: String) async -> URL? {
+    func selectContentLanguage(_ locale: String) async -> VerifiedLanguagePage? {
         guard !isSelectingLanguage, let page = selectedMultilingualPage,
               page.targets[locale]?.contentStatus == "human_reviewed", let multilingualRepository else { return nil }
         isSelectingLanguage = true
@@ -220,12 +222,13 @@ final class AppModel: ObservableObject {
         defer { isSelectingLanguage = false }
         do {
             let package = try await multilingualRepository.loadRelease(page: page, locale: locale)
-            let url = try package.pageURL(relativeTo: mediaOrigin)
+            let verifiedPage = try await multilingualRepository.loadPage(for: package)
+            guard selectedMultilingualPage?.id == page.id else { return nil }
             selectedContentLocale = locale
             languagePreferences.preferredContentLocale = locale
             languagePreferences.pageSelections[page.id] = locale
             persistLanguagePreferences()
-            return url
+            return verifiedPage
         } catch {
             languageSelectionError = "暂时无法打开这个语言版本；当前内容和音频没有改变。"
             return nil
