@@ -276,7 +276,6 @@ final class AppModel: ObservableObject {
     func selectContentLanguage(_ locale: String) async -> VerifiedLanguagePage? {
         guard !isSelectingLanguage, let page = selectedMultilingualPage,
               page.targets[locale]?.contentStatus == "human_reviewed", let multilingualRepository else { return nil }
-        cancelPublishedAudioPreparation()
         isSelectingLanguage = true
         languageSelectionError = nil
         defer { isSelectingLanguage = false }
@@ -284,6 +283,7 @@ final class AppModel: ObservableObject {
             let package = try await multilingualRepository.loadRelease(page: page, locale: locale)
             let verifiedPage = try await multilingualRepository.loadPage(for: package)
             guard selectedMultilingualPage?.id == page.id else { return nil }
+            if locale != selectedContentLocale { cancelPublishedAudioPreparation() }
             if selectedAudioLocale != nil && selectedAudioLocale != locale {
                 playback.clear()
                 selectedAudioLocale = nil
