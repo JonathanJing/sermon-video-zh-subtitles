@@ -13,13 +13,13 @@
 
 Help Chinese-speaking attendees follow an English sermon. The featured direction is **Chinese dubbing prepared on Saturday for playback against the same video on Sunday**: reviewed source text, authorized speaker-reference speech synthesis, MP3 audio, timed Chinese captions, and a sermon companion. Dual-PDF production and local live captions remain separate workflows.
 
-> **State calibrated on 2026-09-20.** “Jesus promises” by Eric Geiger is published with Chinese audio generated locally on MacBook. The user confirmed listening acceptance and Firebase/iOS playback; venue synchronization remains unverified. A share poster with a real weekly-page QR code is now a default weekly deliverable. See the [September 20 production record (中文)](docs/production-2026-09-20.zh.md). Full weekly media, audio and PDFs stay outside Git.
+> **Production site as of 2026-09-25.** The [Firebase listening app](https://ai-for-god-sermon-audio.web.app/) now offers separate Chinese, English, Korean, and Spanish interface choices. Its nine published weeks still contain Chinese content only; English, Korean, and Spanish content choices are disabled as unpublished. The two reviewed September 20 trilingual POC clips remain on Dev and are absent from Production. This was a UI-only release: prior media bytes were preserved, and post-deployment HTTP/SHA and MP3 Range checks passed. Physical-device and venue acceptance have not run. See the [Firebase release record and backlog (中文)](docs/multilingual-firebase-release-backlog-2026-09-24.zh.md). Full weekly media, audio and PDFs stay outside Git.
 
 > This is an independent personal open-source project. It is not affiliated with, endorsed by, sponsored by, approved by, or operated by Mariners Church. Use only public or otherwise authorized media, and do not bypass access controls, DRM, or platform restrictions.
 
 ## Four-layer production architecture: shared English source to multilingual playback
 
-The production pipeline has four layers: **Shared English Source & Anchors → Target-Language Text → Target-Language Audio & Synchronization → Multilingual Delivery & Playback**. Each layer has its own deliverable and acceptance gate; passing one layer does not imply that the next layer has passed. Chinese is the current primary production language. Korean and Spanish are future target-language lanes that can use the same interfaces, but each must pass its own translation, audio, and release review.
+The production pipeline has four layers: **Shared English Source & Anchors → Target-Language Text → Target-Language Audio & Synchronization → Multilingual Delivery & Playback**. Each layer has its own deliverable and acceptance gate; passing one layer does not imply that the next layer has passed. Production currently publishes Chinese content only. Korean and Spanish passed review in the Dev clip POC, while future full weekly editions still require separate text, audio, and release acceptance for each locale.
 
 | Layer | Responsibility | Model and program roles | Deliverable and acceptance gate |
 |---|---|---|---|
@@ -29,6 +29,22 @@ The production pipeline has four layers: **Shared English Source & Anchors → T
 | 4. Multilingual Delivery & Playback | Bind the correct video, text, audio, captions, page and language selectors, then deploy, download and play them on supported clients | Page builders, FFmpeg, Firebase, Web/iOS clients and validators deliver artifacts; a Supervisor/Agent orchestrates state but does not replace content truth or human acceptance | `Target-Language Release Package`: locale-isolated assets, hashes, HTTP/download checks and player verification |
 
 ![Four-layer multilingual production with per-layer process, models, outputs and gates](docs/diagrams/four-layer-production-workflow.svg)
+
+The release diagram separates **content review, Git promotion, and Firebase deployment**. Reviewed Dev clips do not automatically appear in Production, and merging code to `main` does not publish a new weekly edition.
+
+![Dev review, main promotion, and Firebase Production release gates](docs/diagrams/firebase-release-flow.svg)
+
+### Production app screenshots
+
+These are captures of the same Chinese weekly edition at the Production URL on 2026-09-25. The Spanish screenshot changes the **interface** language; the content remains Chinese and unpublished languages stay disabled. Browser screenshots do not establish device or venue acceptance.
+
+**Chinese interface, Chinese content**
+
+![Production app with Chinese interface and Chinese content](docs/assets/firebase-production-2026-09-25-zh.jpg)
+
+**Spanish interface, Chinese content**
+
+![Production app with Spanish interface and Chinese content](docs/assets/firebase-production-2026-09-25-es.jpg)
 
 Multilingual expansion follows these contracts:
 

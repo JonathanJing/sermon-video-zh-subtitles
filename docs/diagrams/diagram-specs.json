@@ -3286,8 +3286,8 @@
           "检查否定、因果、经文、专名和数字"
         ],
         "models": [
-          "GPT-6 Astra：当前中文翻译与复核",
-          "语言专属 adapter：ko / es 待验证",
+          "片段策略：Astra 初译 / Sol 逐组复核",
+          "ko / es 片段已审；正式周次待验",
           "固定 CUV 库：确定性精确取文"
         ],
         "output": [
@@ -3312,7 +3312,7 @@
           "Qwen3-TTS：当前中文语音 adapter",
           "Qwen3-ASR：回转写筛查，不是批准",
           "确定性 scheduler + FFmpeg",
-          "ko / es speech adapter 待验证"
+          "ko / es 配音：Dev 片段已听审"
         ],
         "output": [
           "Target-Language Audio Package",
@@ -3346,11 +3346,11 @@
       }
     ],
     "footer": [
-      "当前 Layer 1 producer 已进入 shadow；通用 Layer 2–4 producer 仍在迁移，legacy 完成不得改写为 four_layer_release。",
+      "两段三语 Dev 片段已审；正式站仍九周中文。通用 Layer 2–4 producer 持续迁移，legacy complete 不等于四层发布。",
       "模型是各层工具，不是事实或人工批准来源；来源、hash、覆盖率、语义、听审与播放证据分别留存。"
     ],
     "height": 1580,
-    "calibratedAt": "2026-09-20",
+    "calibratedAt": "2026-09-25",
     "designReference": "built-in ImageGen 2026-09-20"
   }
 ]

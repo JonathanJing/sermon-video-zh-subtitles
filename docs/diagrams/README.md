@@ -1,12 +1,13 @@
 # 项目流程图 / Diagram Assets
 
-本组包含 2026-09-11 校准的 11 张流程图，以及 2026-09-20 新增的四层生产主图。原 11 图以 **GPT Image 2.5 Sunburst** 为视觉参考；四层主图重新调用 Codex 内置 ImageGen 生成参考，再按冻结接口重建为原生、可编辑 SVG。中文和连接关系均经本地校正；SVG 没有嵌入 PNG、外链字体或脚本。
+本组包含 2026-09-11 校准的 11 张流程图、2026-09-20 新增的四层生产主图，以及 2026-09-25 新增的 Firebase 发布边界图。原 11 图以 **GPT Image 2.5 Sunburst** 为视觉参考；四层主图重新调用 Codex 内置 ImageGen 生成参考，再按冻结接口重建为原生、可编辑 SVG。新增发布边界图直接按当前分支策略和发布记录绘制。中文和连接关系均经本地校正；SVG 没有嵌入 PNG、外链字体或脚本。
 
 图面更新时间不等于所有路径的最新实测日期。Agents API 控制层与每周调度已安装；周日实时字幕仍以既有浏览器回放等证据为限，人工语义、真实现场、实体手机与资源上限分别验收。配音候选、人工听审、现场同步与正式发布各自保留边界。历史云端图继续标为 Historical / Discovery；旧 timeline Cloud Run Job 已退役。
 
 | Asset | Purpose | Primary documents |
 |---|---|---|
 | [four-layer-production-workflow.svg](four-layer-production-workflow.svg) | Canonical Layer 1–4 flow with each layer's input, process, models/tools, output and gate | root READMEs, workflow map and bilingual HTML guide |
+| [firebase-release-flow.svg](firebase-release-flow.svg) | Separate content approval, Dev preview, Git promotion, Production deployment and device/venue acceptance | root READMEs, branch policy and Firebase release backlog |
 | [project-map.svg](project-map.svg) | Documents, reviewed audio and live captions with shared evidence and Discovery boundaries | root READMEs |
 | [solution-journey.svg](solution-journey.svg) | Observed bottlenecks, rejected assumption, current hybrid, and gated future enhancement | root READMEs |
 | [saturday-chinese-voice-workflow.svg](saturday-chinese-voice-workflow.svg) | Featured parallel source routes, speaker training, Chinese audio review and Sunday playback gates | root READMEs, dubbing system design and runbook |
@@ -37,6 +38,10 @@ python3 docs/diagrams/render_diagrams.py \
   --spec docs/diagrams/diagram-specs.json \
   --out-dir docs/diagrams
 ```
+
+`firebase-release-flow.svg` 为手写原生 SVG，不由上述历史图批量渲染脚本生成；修改它时直接更新 SVG 并完成浏览器目视检查。
+
+2026-09-25 对四层主图的状态文字作局部校准：两段三语片段已在 Dev 审核，正式站仍只保留九周中文；图中的四层接口和通用 producer 迁移边界不变。新增发布图以 [分支与环境策略](../development-branch-and-firebase-environments.zh.md)和 [Firebase release 记录](../multilingual-firebase-release-backlog-2026-09-24.zh.md)为事实依据。
 
 `imagegen-prompts.jsonl` 保存 2026-09-11 的 11 份 CLI 提示，显式指定 `gpt-image-2.5-sunburst`、high、1536×1024。新增四层图使用 Codex 内置 ImageGen，不推断其未返回的具体模型版本；提示、结果路径和重建边界见[四层更新记录](refresh-four-layer-20260920.md)。图像稿仅用于设计参考，最终流程事实以向量图和源文档为准。
 
