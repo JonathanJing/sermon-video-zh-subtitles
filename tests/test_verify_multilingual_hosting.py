@@ -101,6 +101,35 @@ class VerifyHostingTest(unittest.TestCase):
         self.assertTrue(any(item.get("range206") for item in receipt["results"]))
         self.assertTrue(any(item.get("routeHtml") for item in receipt["results"]))
 
+    def test_two_page_candidate_checks_original_baseline_and_every_route(self):
+        second_stage = Path(self.temp.name) / "second-stage"
+        second_stage.mkdir()
+        next_page = fixture(second_stage, "following-week", "2026-10-04")
+        catalog = {"schemaVersion": "sermon-multilingual-catalog-v2",
+                   "generatedAt": "2026-10-04T00:00:00Z",
+                   "defaultPageId": next_page["id"], "pages": [next_page]}
+        catalog_hash = write(second_stage / hosting.CATALOG, catalog)
+        write(second_stage / "stage-receipt.json", {
+            "schemaVersion": "sermon-formal-dev-stage-receipt-v1",
+            "deploymentStatus": "not_deployed", "httpVerification": "not_run",
+            "catalogSha256": catalog_hash, "pageId": next_page["id"],
+            "sourceIdentitySha256": next_page["sourceIdentitySha256"],
+            "targetLocales": ["ko"], "assetCount": 4,
+            "releasePackageSha256": {
+                "ko": next_page["targets"]["ko"]["releasePackageJsonSha256"]},
+        })
+        candidate = Path(self.temp.name) / "two-pages"
+        hosting.assemble_many(self.base, [self.stage, second_stage], candidate,
+                              production_reader=True)
+        preflight = verification.verify_baseline(
+            candidate, ORIGIN, opener=FakeHosting(self.base, omit_catalog=True))
+        self.assertEqual(preflight["checkedFiles"], len(hosting.regular_files(self.base)))
+        receipt = verification.verify(candidate, ORIGIN,
+                                      opener=FakeHosting(candidate / "public"))
+        self.assertEqual(receipt["pageIds"], ["following-week", "new-week"])
+        self.assertEqual(sum(bool(item.get("routeHtml")) for item in receipt["results"]), 2)
+        self.assertEqual(sum(bool(item.get("range206")) for item in receipt["results"]), 2)
+
     def test_request_file_can_hash_a_range_response(self):
         path = "/index.html"
         data = (self.out / "public/index.html").read_bytes()

@@ -196,14 +196,16 @@ def timing_audit(ledger: dict, events: list[dict], *, damaged_rows: int = 0) -> 
                      "operatorReviewWaitSeconds": round(review["closedWaitSeconds"], 3) if review and review["closedWaits"] else None,
                      "closedReviewWaits": review["closedWaits"] if review else 0,
                      "openReviewWait": review["openWait"] if review else False})
+    missing_completed = [row["step"] for row in rows
+                         if row["status"] == "complete"
+                         and row["measuredExecutionSeconds"] is None]
     return {"schemaVersion": AUDIT_SCHEMA, "pageId": ledger["pageId"],
             "target": ledger["target"], "accountingEvents": len(events),
             "scopedAccountingEvents": len(scoped_events),
             "damagedAccountingRows": damaged_rows,
             "measuredStepCount": len(measured),
-            "completedWithoutMeasuredExecution": [row["step"] for row in rows
-                                                  if row["status"] == "complete"
-                                                  and row["measuredExecutionSeconds"] is None],
+            "completedWithoutMeasuredExecutionCount": len(missing_completed),
+            "completedWithoutMeasuredExecution": missing_completed,
             "rows": rows,
             "limits": ["Operator review intervals use tracker update timestamps, not measured attention time.",
                        "Unscoped or different-ledger accounting events are excluded from timing.",

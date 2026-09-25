@@ -134,29 +134,30 @@ def verify(candidate: Path, origin: str, *, opener=urlopen, http_workers=1) -> d
                 "bytes": length, "contentType": mime}
     results = ordered_checks(sorted(expected.items()), check_file, http_workers)
 
-    page = next(item for item in catalog["pages"] if item["id"] == report["newPageId"])
-    for locale in page["targets"]:
-        release = hosting.load(public / page["targets"][locale]["releasePackageUrl"][1:])
-        audio = next(item for item in release["assets"] if item["role"] == "audio")
-        status, headers, data = request_bytes(origin, audio["path"], opener=opener,
-                                              range_first=True)
-        size = (public / audio["path"][1:]).stat().st_size
-        with (public / audio["path"][1:]).open("rb") as stream:
-            first = stream.read(1)
-        if (status != 206 or data != first
-                or headers.get("content-range") != f"bytes 0-0/{size}"):
-            raise ValueError(f"Audio Range 206 failed: {audio['path']}")
-        page_url = f"/pages/{page['id']}/{locale}"
-        route_status, route_headers, html = request_bytes(origin, page_url, opener=opener)
-        if (route_status != 200 or "text/html" not in route_headers.get("content-type", "")
-                or b"<html" not in html[:4096].lower()):
-            raise ValueError(f"Multilingual deep link failed: {page_url}")
-        results.append({"path": audio["path"], "range206": True,
-                        "contentRange": headers["content-range"]})
-        results.append({"path": page_url, "routeHtml": True, "status": route_status})
+    for page in catalog["pages"]:
+        for locale in page["targets"]:
+            release = hosting.load(public / page["targets"][locale]["releasePackageUrl"][1:])
+            audio = next(item for item in release["assets"] if item["role"] == "audio")
+            status, headers, data = request_bytes(origin, audio["path"], opener=opener,
+                                                  range_first=True)
+            size = (public / audio["path"][1:]).stat().st_size
+            with (public / audio["path"][1:]).open("rb") as stream:
+                first = stream.read(1)
+            if (status != 206 or data != first
+                    or headers.get("content-range") != f"bytes 0-0/{size}"):
+                raise ValueError(f"Audio Range 206 failed: {audio['path']}")
+            page_url = f"/pages/{page['id']}/{locale}"
+            route_status, route_headers, html = request_bytes(origin, page_url, opener=opener)
+            if (route_status != 200 or "text/html" not in route_headers.get("content-type", "")
+                    or b"<html" not in html[:4096].lower()):
+                raise ValueError(f"Multilingual deep link failed: {page_url}")
+            results.append({"path": audio["path"], "range206": True,
+                            "contentRange": headers["content-range"]})
+            results.append({"path": page_url, "routeHtml": True, "status": route_status})
     return {
         "schemaVersion": "sermon-multilingual-hosting-http-verification-v1",
-        "origin": origin, "pageId": page["id"],
+        "origin": origin, "pageId": report["newPageId"],
+        "pageIds": [page["id"] for page in catalog["pages"]],
         "verifiedAt": datetime.now(timezone.utc).isoformat(),
         "status": "pass", "buildReportSha256": hosting.digest(candidate / "build-report.json"),
         "catalogSha256": report["newCatalogSha256"],

@@ -24,6 +24,23 @@
       "type": "string",
       "pattern": "^/releases/[A-Za-z0-9_-]{1,160}/[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*\\.json$"
     },
+    "fingerprintBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "pageId", "sourceSha256", "trackSha256", "sourceStartSeconds", "sourceEndSeconds", "algorithmVersion", "captureSeconds", "indexSha256", "indexUrl"],
+      "properties": {
+        "schemaVersion": { "const": "sermon-audio-fingerprint-binding-v1" },
+        "pageId": { "$ref": "#/$defs/identifier" },
+        "sourceSha256": { "$ref": "#/$defs/sha256" },
+        "trackSha256": { "$ref": "#/$defs/sha256" },
+        "sourceStartSeconds": { "type": "number", "minimum": 0 },
+        "sourceEndSeconds": { "type": "number", "exclusiveMinimum": 0 },
+        "algorithmVersion": { "const": "spectral-landmarks-v1" },
+        "captureSeconds": { "const": 10 },
+        "indexSha256": { "$ref": "#/$defs/sha256" },
+        "indexUrl": { "type": "string", "pattern": "^/fingerprints/[a-f0-9]{16}-landmarks\\.json$" }
+      }
+    },
     "target": {
       "type": "object",
       "additionalProperties": false,
@@ -41,7 +58,8 @@
           "minItems": 1,
           "uniqueItems": true,
           "items": { "enum": ["text", "captions", "audio", "download", "alignment"] }
-        }
+        },
+        "audioFingerprint": { "$ref": "#/$defs/fingerprintBinding" }
       }
     },
     "page": {
@@ -56,6 +74,7 @@
         "date": { "type": "string", "format": "date" },
         "sourceLocale": { "const": "en" },
         "sourceIdentitySha256": { "$ref": "#/$defs/sha256" },
+        "sourceMediaSha256": { "$ref": "#/$defs/sha256" },
         "defaultTargetLocale": { "$ref": "#/$defs/locale" },
         "targets": {
           "type": "object",

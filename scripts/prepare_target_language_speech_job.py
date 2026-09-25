@@ -264,7 +264,24 @@ def _bound_evidence(value: dict[str, Any], *, json_artifact: bool) -> dict[str, 
 
 def validate_clip_voice_capability(receipt: dict[str, Any], source_package: dict[str, Any],
                                    adapter: dict[str, Any]) -> None:
-    """Admit only human-approved short and long probes for this source/locale."""
+    """Admit human-approved probes, including a hash-bound unchanged-checkpoint reuse."""
+    if receipt.get("schemaVersion") == "sermon-voice-capability-reuse-v1":
+        _validate_schema(receipt, "sermon-voice-capability-reuse-v1.schema.json",
+                         "voice capability reuse")
+        _require(receipt["targetEnglishSourcePackageJsonSha256"]
+                 == interpretation.json_sha256(source_package)
+                 and receipt["targetLocale"] == adapter["targetLocale"]
+                 and receipt["speakerId"] == adapter["speakerId"]
+                 and receipt["checkpointSha256"] == adapter["conditioningSha256"],
+                 "Voice capability reuse differs from target source, locale or checkpoint")
+        prior_source = _bound_evidence(receipt["priorEnglishSourcePackage"], json_artifact=True)
+        prior_receipt = _bound_evidence(receipt["priorClipVoiceCapability"], json_artifact=True)
+        _require(prior_receipt.get("schemaVersion") == "sermon-clip-voice-capability-v1"
+                 and prior_receipt.get("englishSourcePackageJsonSha256")
+                 == interpretation.json_sha256(prior_source),
+                 "Voice capability reuse lacks a matching original source and receipt")
+        validate_clip_voice_capability(prior_receipt, prior_source, adapter)
+        return
     _validate_schema(receipt, "sermon-clip-voice-capability-v1.schema.json", "clip voice capability")
     source_hash = interpretation.json_sha256(source_package)
     locale = adapter["targetLocale"]

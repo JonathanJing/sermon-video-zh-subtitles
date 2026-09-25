@@ -44,6 +44,12 @@ jobs:
             echo "Release branch must include the current main tip." >&2
             exit 1
           }
+          while read -r merge; do
+            if ! git merge-base --is-ancestor "$merge" origin/dev; then
+              echo "Release branch contains a merge commit not admitted to dev." >&2
+              exit 1
+            fi
+          done < <(git rev-list --merges "origin/main..$HEAD_SHA")
           if git cherry origin/dev "$HEAD_SHA" origin/main | grep -q '^+'; then
             echo "Release branch contains a change not yet admitted to dev." >&2
             exit 1

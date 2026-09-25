@@ -42,7 +42,7 @@ def checked_metadata(path: Path, proposal: Path, page_id: str, date: str) -> dic
             and metadata.get("pageId") == page_id
             and metadata.get("date") == date
             and metadata.get("decision") == "approved_all_three_locales"
-            and metadata.get("approvalText") == "三语全部批准"
+            and metadata.get("approvalText") in {"三语全部批准", "三语页面信息全部批准"}
             and metadata.get("reviewer") == "user"
             and metadata.get("proposalFileSha256") == stage.file_sha(proposal)
             and set(metadata.get("locales", {})) == set(stage.LOCALES),

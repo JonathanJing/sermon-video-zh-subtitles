@@ -1,4 +1,6 @@
 import copy
+import hashlib
+
 from contextvars import ContextVar
 import json
 import tempfile
@@ -190,6 +192,43 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         self.assertFalse((self.out / "evidence.json").exists())
         self.assertEqual(len(self.calls), 2)
 
+    def test_sol_boolean_checks_are_normalized_without_rewriting_raw_response(self):
+        f = self.fixture
+        def boolean_checks(api_key, payload):
+            response = self.fake_call(api_key, payload)
+            if payload["model"] == "gpt-6-sol":
+                result = json.loads(response["choices"][0]["message"]["content"])
+                semantic = result["semanticReview"]
+                semantic["checks"] = {key: True for key in semantic["checks"]}
+                semantic["uncertainty"] = False
+                response["choices"][0]["message"]["content"] = json.dumps(result)
+            return response
+        evidence = subject.run(f.source, f.anchor, f.policy, self.out,
+                               "fixture-key", boolean_checks)
+        self.assertEqual(set(evidence["groups"][0]["semanticReview"]["checks"].values()),
+                         {"pass"})
+        self.assertEqual(evidence["groups"][0]["semanticReview"]["uncertainty"], [])
+        raw = json.loads((self.out / "group-0001-sol.json").read_text())["result"]
+        self.assertTrue(raw["semanticReview"]["checks"]["completeMeaning"])
+
+    def test_sol_boolean_uncertainty_still_blocks(self):
+        f = self.fixture
+        def uncertain(api_key, payload):
+            response = self.fake_call(api_key, payload)
+            if payload["model"] == "gpt-6-sol":
+                result = json.loads(response["choices"][0]["message"]["content"])
+                result["semanticReview"]["uncertainty"] = True
+                response["choices"][0]["message"]["content"] = json.dumps(result)
+            return response
+        with self.assertRaisesRegex(ValueError, "Sol flagged group"):
+            subject.run(f.source, f.anchor, f.policy, self.out,
+                        "fixture-key", uncertain)
+
+    def test_sol_null_empty_fields_normalize_to_empty_lists(self):
+        self.assertEqual(subject.normalize_semantic_review({"uncertainty": None,
+                                                            "issues": None}),
+                         {"uncertainty": [], "issues": []})
+
     def test_unconfirmed_request_blocks_automatic_paid_retry(self):
         f = self.fixture
         def interrupted(api_key, payload):
@@ -246,6 +285,102 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
             subject.run(f.source, f.anchor, f.policy, self.out,
                         "fixture-key", self.fake_call)
         self.assertFalse(self.calls)
+
+    def test_group_revision_reuses_unchanged_calls_and_invalidates_changed_payloads(self):
+        f = self.fixture
+        previous = self.out.parent / "previous"
+        old = subject.run(f.source, f.anchor, f.policy, previous,
+                          "fixture-key", self.fake_call)
+        self.calls.clear()
+        changed = old["groups"][1]
+        prior_text = "".join(changed["targetUtterances"])
+        brief = {
+            "schemaVersion": subject.REVISION_BRIEF_SCHEMA,
+            "targetLocale": f.request["targetLocale"],
+            "englishSourcePackageJsonSha256": f.request["englishSourcePackageJsonSha256"],
+            "anchorManifestSha256": f.request["anchorManifestSha256"],
+            "translationPolicySha256": f.request["translationPolicySha256"],
+            "groups": [{
+                "translationGroupId": changed["translationGroupId"],
+                "sourceUnitIds": changed["sourceUnitIds"],
+                "priorTargetTextSha256": hashlib.sha256(prior_text.encode()).hexdigest(),
+                "proposedTargetText": "A shorter, still complete translation.",
+            }],
+        }
+
+        def revised_call(api_key, payload):
+            self.assertEqual(api_key, "fixture-key")
+            self.calls.append(payload)
+            model_input = json.loads(payload["messages"][1]["content"])
+            self.assertEqual(model_input["translationGroupId"], changed["translationGroupId"])
+            self.assertEqual(model_input["revisionBrief"]["proposedTargetText"],
+                             "A shorter, still complete translation.")
+            if payload["model"] == "gpt-6-astra":
+                fields = ("translationGroupId", "sourceUnitIds", "targetUtterances", "coverage")
+            else:
+                fields = ("translationGroupId", "sourceUnitIds", "targetUtterances", "coverage",
+                          "semanticReview")
+            result = {key: copy.deepcopy(changed[key]) for key in fields}
+            return {"id": f"new-response-{len(self.calls)}", "model": payload["model"],
+                    "choices": [{"finish_reason": "stop",
+                                 "message": {"content": json.dumps(result)}}]}
+
+        updated = subject.run(f.source, f.anchor, f.policy, self.out,
+                              "fixture-key", revised_call,
+                              revision_brief=brief, reuse_from=previous)
+        self.assertEqual([call["model"] for call in self.calls],
+                         ["gpt-6-astra", "gpt-6-sol"])
+        self.assertEqual(updated["groups"][0], old["groups"][0])
+        for role in ("astra", "sol"):
+            self.assertEqual((self.out / f"group-0001-{role}.json").read_bytes(),
+                             (previous / f"group-0001-{role}.json").read_bytes())
+            self.assertNotEqual(
+                json.loads((self.out / f"group-0002-{role}.json").read_text())["payloadSha256"],
+                json.loads((previous / f"group-0002-{role}.json").read_text())["payloadSha256"])
+
+    def test_group_revision_rejects_changed_source_group_and_prior_text_before_calls(self):
+        f = self.fixture
+        previous = self.out.parent / "previous"
+        old = subject.run(f.source, f.anchor, f.policy, previous,
+                          "fixture-key", self.fake_call)
+        self.calls.clear()
+        changed = old["groups"][1]
+        brief = {
+            "schemaVersion": subject.REVISION_BRIEF_SCHEMA,
+            "targetLocale": f.request["targetLocale"],
+            "englishSourcePackageJsonSha256": f.request["englishSourcePackageJsonSha256"],
+            "anchorManifestSha256": f.request["anchorManifestSha256"],
+            "translationPolicySha256": f.request["translationPolicySha256"],
+            "groups": [{"translationGroupId": changed["translationGroupId"],
+                        "sourceUnitIds": changed["sourceUnitIds"],
+                        "priorTargetTextSha256": "0" * 64,
+                        "proposedTargetText": "A shorter translation."}],
+        }
+        with self.assertRaisesRegex(ValueError, "prior target text"):
+            subject.run(f.source, f.anchor, f.policy, self.out,
+                        "fixture-key", self.fake_call,
+                        revision_brief=brief, reuse_from=previous)
+        brief["groups"][0]["priorTargetTextSha256"] = hashlib.sha256(
+            "".join(changed["targetUtterances"]).encode()).hexdigest()
+        brief["groups"][0]["sourceUnitIds"] = ["wrong-unit"]
+        with self.assertRaisesRegex(ValueError, "revision group"):
+            subject.run(f.source, f.anchor, f.policy, self.out,
+                        "fixture-key", self.fake_call,
+                        revision_brief=brief, reuse_from=previous)
+        brief["groups"][0]["sourceUnitIds"] = changed["sourceUnitIds"]
+        brief["englishSourcePackageJsonSha256"] = "0" * 64
+        with self.assertRaisesRegex(ValueError, "source or policy changed"):
+            subject.run(f.source, f.anchor, f.policy, self.out,
+                        "fixture-key", self.fake_call,
+                        revision_brief=brief, reuse_from=previous)
+        self.assertFalse(self.calls)
+        self.assertFalse(self.out.exists())
+
+    def test_coverage_tolerates_only_whitespace_at_utterance_boundary(self):
+        self.assertTrue(subject._coverage_substring(
+            "다시 데웁니다. 차가운 것이", "다시 데웁니다.차가운 것이"))
+        self.assertFalse(subject._coverage_substring(
+            "다시 데웁니다. 뜨거운 것이", "다시 데웁니다.차가운 것이"))
 
 
 if __name__ == "__main__":

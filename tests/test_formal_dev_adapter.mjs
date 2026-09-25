@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
-  formalReleaseView, loadOptionalFormalCatalog, validateFormalCaptions, validateFormalCatalog,
+  formalReleaseView, loadOptionalFormalCatalog, loadRequiredFormalCatalog,
+  validateFormalCaptions, validateFormalCatalog,
   validateFormalContent, validateFormalRelease
 } from '../firebase/dev/public/formal-dev-adapter.mjs';
 
@@ -61,6 +62,15 @@ test('optional formal catalog failure leaves POC catalog available', async () =>
   }
 });
 
+test('production formal catalog fails closed', async () => {
+  await assert.rejects(loadRequiredFormalCatalog(async () => ({ ok: false, status: 404 })),
+    /Reviewed catalog: HTTP 404/);
+  await assert.rejects(loadRequiredFormalCatalog(async () => ({ ok: true,
+    json: async () => ({ malformed: true }) })), /Invalid formal/);
+  assert.deepEqual(await loadRequiredFormalCatalog(async () => ({ ok: true,
+    json: async () => catalog })), catalog);
+});
+
 test('formal page IDs match the player route grammar', () => {
   for (const invalid of ['_leading', '-leading', 'x'.repeat(129)]) {
     const changed = clone(catalog);
@@ -88,6 +98,27 @@ test('formal v2 catalog and release produce a separate verified player view', ()
   assert.equal(view.audioUrl, `/media/${pageId}/${locale}.wav`);
   assert.equal(view.pageUrl, `/pages/${pageId}/${locale}`);
   assert.equal(view.status, 'candidate');
+});
+
+test('formal reader accepts a source-bound alignment index and rejects audio drift', () => {
+  const aligned = clone(catalog);
+  const alignedPage = aligned.pages[0];
+  alignedPage.sourceMediaSha256 = hash('9');
+  const target = alignedPage.targets.ko;
+  target.capabilities.push('alignment');
+  target.audioFingerprint = {
+    schemaVersion: 'sermon-audio-fingerprint-binding-v1', pageId,
+    sourceSha256: alignedPage.sourceMediaSha256, trackSha256: hash('f'),
+    sourceStartSeconds: 0, sourceEndSeconds: 138,
+    algorithmVersion: 'spectral-landmarks-v1', captureSeconds: 10,
+    indexSha256: hash('1'), indexUrl: `/fingerprints/${hash('1').slice(0, 16)}-landmarks.json`
+  };
+  assert.deepEqual(validateFormalCatalog(aligned), aligned);
+  assert.equal(validateFormalRelease(release, alignedPage, locale).assets.audio.sha256, hash('f'));
+  target.audioFingerprint.trackSha256 = hash('0');
+  assert.throws(() => validateFormalRelease(release, alignedPage, locale));
+  target.audioFingerprint.sourceSha256 = hash('0');
+  assert.throws(() => validateFormalCatalog(aligned));
 });
 
 test('formal reader accepts reviewed MP3 delivery without changing locale binding', () => {

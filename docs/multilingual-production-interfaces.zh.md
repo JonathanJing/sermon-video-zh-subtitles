@@ -33,6 +33,8 @@ Target-Language Candidate + Target-Language Audio Package
   └─────────────────────────────> Target-Language Release Package
 ```
 
+流程图可将各语言 Layer 2–3 分支汇入一个 Layer 4 发布阶段，便于显示同一次多语言发布的等待与整体进度。这是调度与界面上的汇合，**不是**合并正式输出：Layer 4 仍为每个 `pageId + targetLocale` 生成独立 Release Package，并逐语言记录 HTTP、设备与现场结果。是否等待全部语言由该次发布计划决定；本次三语 Dev 发布明确要求三条正式音轨齐全。
+
 - Layer 1 的 `downstreamInvalidationKey` 改变时，所有目标语言文字、音频和发布审核失效。
 - Layer 2 的 `downstreamInvalidationKey` 改变时，只使同一 `targetLocale` 的音频和发布失效，不影响其他语言。
 - Layer 3 改变时，只使同一语言的发布包失效，不回写或修改译文。

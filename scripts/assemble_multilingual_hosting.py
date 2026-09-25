@@ -111,6 +111,7 @@ def verify_catalog_assets(public: Path, catalog: dict) -> set[str]:
                     or release.get("issues")):
                 raise ValueError(f"{name}: release identity or review differs")
             roles = set()
+            audio_sha = None
             for asset in release.get("assets", []):
                 role, asset_name = asset["role"], asset["path"]
                 if role in roles or asset_name in referenced:
@@ -132,8 +133,35 @@ def verify_catalog_assets(public: Path, catalog: dict) -> set[str]:
                 if not asset_path.is_file() or digest(asset_path) != asset["sha256"]:
                     raise ValueError(f"{asset_name}: asset hash differs")
                 referenced.add(asset_name[1:])
+                if role == "audio":
+                    audio_sha = asset["sha256"]
             if roles != {"content", "audio", "captions"}:
                 raise ValueError(f"{name}: incomplete reviewed release assets")
+            binding = target.get("audioFingerprint")
+            if ("alignment" in target.get("capabilities", [])) != (binding is not None):
+                raise ValueError(f"{name}: alignment capability and fingerprint binding differ")
+            if binding is not None:
+                index_url = binding["indexUrl"]
+                index_sha = binding["indexSha256"]
+                if (index_url != f"/fingerprints/{index_sha[:16]}-landmarks.json"
+                        or binding["pageId"] != page["id"]
+                        or binding["sourceSha256"] != page.get("sourceMediaSha256")
+                        or binding["trackSha256"] != audio_sha
+                        or index_url[1:] in referenced):
+                    raise ValueError(f"{name}: fingerprint identity or path differs")
+                index_path = checked_public_path(public, index_url)
+                if not index_path.is_file() or digest(index_path) != index_sha:
+                    raise ValueError(f"{index_url}: fingerprint hash differs")
+                index = load(index_path)
+                if (index.get("schemaVersion") != "sermon-landmark-index-v1"
+                        or index.get("algorithmVersion") != binding["algorithmVersion"]
+                        or index.get("pageId") != page["id"]
+                        or index.get("sourceSha256") != binding["sourceSha256"]
+                        or index.get("trackSha256") != audio_sha
+                        or index.get("sourceStartSeconds") != binding["sourceStartSeconds"]
+                        or index.get("sourceEndSeconds") != binding["sourceEndSeconds"]):
+                    raise ValueError(f"{index_url}: fingerprint index binding differs")
+                referenced.add(index_url[1:])
     return referenced
 
 
@@ -384,17 +412,74 @@ def assemble(base_public: Path, staged: Path, out: Path,
         raise
 
 
+def assemble_many(base_public: Path, staged_pages: list[Path], out: Path,
+                  *, production_reader: bool = False, promote_home: bool = False) -> dict:
+    """Prepare one release from several reviewed pages against one live base."""
+    if not staged_pages:
+        raise ValueError("At least one reviewed stage is required")
+    if len(staged_pages) == 1:
+        return assemble(base_public, staged_pages[0], out,
+                        production_reader=production_reader, promote_home=promote_home)
+    if out.exists() or out.is_symlink():
+        raise ValueError(f"Output already exists: {out}")
+    base_files = regular_files(base_public)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    scratch = Path(tempfile.mkdtemp(prefix=f".{out.name}-build-", dir=out.parent))
+    try:
+        source = base_public
+        page_ids = []
+        receipt_hashes = []
+        for index, staged in enumerate(staged_pages):
+            target = scratch / f"step-{index + 1}"
+            step = assemble(source, staged, target,
+                            production_reader=production_reader, promote_home=promote_home)
+            page_ids.append(step["newPageId"])
+            receipt_hashes.append(step["stagingReceiptSha256"])
+            source = target / "public"
+        final = scratch / f"step-{len(staged_pages)}"
+        report_path = final / "build-report.json"
+        report = load(report_path)
+        final_files = regular_files(final / "public")
+        modified = sorted(name for name, path in base_files.items()
+                          if name in final_files and digest(path) != digest(final_files[name]))
+        report.update({
+            "newPageIds": page_ids,
+            "stagingReceiptSha256s": receipt_hashes,
+            "oldCatalogSha256": digest(base_files[CATALOG]) if CATALOG in base_files else None,
+            "baseFiles": [
+                {"path": name, "sha256": digest(path), "bytes": path.stat().st_size}
+                for name, path in sorted(base_files.items())
+            ],
+            "legacyHomepageSha256": digest(base_files["index.html"]) if production_reader else None,
+            "preservedFileCount": len(base_files) - len(modified),
+            "addedFileCount": len(set(final_files) - set(base_files)),
+            "modifiedFiles": modified,
+        })
+        rollback = final / "rollback-multilingual-v2.json"
+        if CATALOG in base_files:
+            shutil.copyfile(base_files[CATALOG], rollback)
+        elif rollback.exists():
+            rollback.unlink()
+        report_path.write_text(json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+                               encoding="utf-8")
+        os.rename(final, out)
+        return report
+    finally:
+        shutil.rmtree(scratch)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-public", type=Path, required=True)
-    parser.add_argument("--staged", type=Path, required=True)
+    parser.add_argument("--staged", type=Path, required=True, action="append",
+                        help="Reviewed stage; repeat in intended catalog order")
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--production-reader", action="store_true")
     parser.add_argument("--promote-home", action="store_true")
     args = parser.parse_args()
-    report = assemble(args.base_public, args.staged, args.out,
-                      production_reader=args.production_reader,
-                      promote_home=args.promote_home)
+    report = assemble_many(args.base_public, args.staged, args.out,
+                           production_reader=args.production_reader,
+                           promote_home=args.promote_home)
     print(json.dumps({key: report[key] for key in (
         "status", "newPageId", "newCatalogSha256", "preservedFileCount",
         "addedFileCount", "productionReader")}, ensure_ascii=False, sort_keys=True))

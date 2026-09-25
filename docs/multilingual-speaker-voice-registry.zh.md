@@ -38,7 +38,7 @@ Speaker Voice Registry（长期缓存依赖）───────────�
 
 ### 固定音色与每周审核
 
-周更按实际讲员的 `speakerId` 解析固定的 `speakerKey`、adapter、模型 revision 和 checkpoint；同一讲员的中、韩、西语不在每周重新选声或训练。9 月 20 日片段已使用 Eric 的同一 Qwen SFT checkpoint，韩／西语短样、长句探针及正式片段音轨均有当次人工听审结果。只要这些声音身份和适用授权范围不变，周更不重复要求短样／长句能力试听。每周仍检查新译文产生的整轨发音、完整性和同步，因为这些随内容变化。
+周更按实际讲员的 `speakerId` 解析固定的 `speakerKey`、adapter、模型 revision 和 checkpoint；同一讲员的中、韩、西语不在每周重新选声或训练。9 月 20 日片段已使用 Eric 的同一 Qwen SFT checkpoint，韩／西语短样、长句探针及正式片段音轨均有当次人工听审结果。只要这些声音身份和适用授权范围不变，周更不重复要求短样／长句能力试听。新片段可用 `sermon-voice-capability-reuse-v1` 收据绑定当前 English Source Package、旧 Source Package 和原始人工探针收据；校验仍逐项核对音频、讲员、语言与 checkpoint。此收据不延伸旧片段的配音授权，也不代替新译文的整轨发音、完整性和同步听审。
 
 **固定选用**与**跨周生产资格**分别记录。当前提交的 Registry 对 Eric 韩／西语仍为 `unverified_poc`，用途为 `multilingual_voice_demo`；现有正式放行凭证明确限于 9 月 20 日片段。准备后续整篇正式 Layer 3 时，需先把跨周用途与能力证据按真实授权范围登记并绑定同一 checkpoint，不能靠“音色已选定”或复用片段收据自动改写状态。待审译文的 `preview_only` 单元配音可先使用已登记的试听用途，不等待该正式资格登记。
 

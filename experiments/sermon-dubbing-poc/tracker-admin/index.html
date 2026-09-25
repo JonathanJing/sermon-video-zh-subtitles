@@ -55,8 +55,14 @@
             <article class="metric"><span data-en="Video update">视频更新</span><strong id="metric-video">—</strong><small id="metric-video-note">—</small></article>
           </section>
 
+          <section id="bridge-mock" class="section-block bridge-mock" aria-labelledby="bridge-mock-title" hidden>
+            <div class="section-heading"><div><span class="eyebrow">REVIEW BRIDGE · MOCKUP</span><h3 id="bridge-mock-title" data-en="Remote review to Mac · mockup">远程审核到本机 · 模拟界面</h3></div><span class="badge warn" data-en="Demo only · No approval">仅演示 · 不授予审核</span></div>
+            <p class="muted small" data-en="This panel demonstrates the review handoff. Its buttons change only this browser; they do not write to Firebase or production artifacts.">此面板演示审核交接；按钮只改变当前浏览器，不写 Firebase 或正式产物。</p>
+            <div id="bridge-mock-content"></div>
+          </section>
+
           <section class="section-block flow-section" aria-labelledby="flow-title">
-            <div class="section-heading"><div><span class="eyebrow">WORKFLOW MAP</span><h3 id="flow-title" data-en="Production workflow">制作流程总览</h3></div><p data-en="Select a node to inspect its checkpoints; each language advances independently">点击节点跳转到检查点；各语言独立推进</p></div>
+            <div class="section-heading"><div><span class="eyebrow">WORKFLOW MAP</span><h3 id="flow-title" data-en="Production workflow">制作流程总览</h3></div><p data-en="Select a node to inspect its checkpoints; language branches meet at delivery">点击节点查看检查点；各语言分支在发布层汇合</p></div>
             <div id="flow-map" class="flow-map"></div>
           </section>
 
@@ -80,12 +86,19 @@
           </section>
 
           <section class="section-block">
-            <div class="section-heading"><div><span class="eyebrow">LOCALE BRANCHES</span><h3 data-en="Layer 2–4 by language">各语言 Layer 2–4</h3></div><p data-en="Formal gates and Dev POC candidates are tracked separately">正式门禁与 Dev POC 候选分开记录</p></div>
+            <div class="section-heading"><div><span class="eyebrow">LOCALE BRANCHES</span><h3 data-en="Layer 2–3 by language">各语言 Layer 2–3</h3></div><p data-en="Text and audio advance independently by language">文字与音频按语言独立推进</p></div>
             <div id="locale-grid" class="locale-grid"></div>
+          </section>
+
+          <section id="release-panel" class="section-block release-section" aria-labelledby="release-title">
+            <div class="section-heading"><div><span class="eyebrow">SHARED JOIN · LAYER 4</span><h3 id="release-title" data-en="Multilingual delivery and playback">多语言发布与播放</h3></div><p data-en="One release stage; packages and verification remain separate by language">统一发布阶段；发布包与验证仍按语言分别记录</p></div>
+            <div class="release-summary panel"><div><span data-en="Layer 3 branches recorded">Layer 3 分支已记录</span><strong id="release-readiness">—</strong></div><div><span data-en="Layer 4 checkpoints recorded">Layer 4 检查点已记录</span><strong id="release-progress">—</strong></div><small data-en="These are ledger counts. Formal release still requires matching packages, approvals, hashes and the release plan.">以上仅为账本计数；正式发布还须符合包、批准、哈希与本次发布计划。</small></div>
+            <div id="release-grid" class="release-grid"></div>
           </section>
 
           <section class="section-block">
             <div class="section-heading"><div><span class="eyebrow">CHECKPOINTS</span><h3 data-en="Checkpoint timing and filters">检查点计时与筛选</h3></div><label class="filter"><span data-en="Filter">筛选</span> <select id="step-filter"><option value="all" data-en="All">全部</option><option value="pending" data-en="Not started">待开始</option><option value="running" data-en="In progress">进行中</option><option value="waiting_review" data-en="Awaiting review">待审核</option><option value="blocked" data-en="Blocked">阻塞</option><option value="complete" data-en="Recorded">已记录</option></select></label></div>
+            <p class="hint timing-hint" data-en="Measured execution totals include retries. In-progress and review durations show time in that ledger status at the snapshot; they are not measured execution and do not add to the total.">执行实测累计包含重试；进行中与待审时长是截至快照的账本状态持续时间，不是实测执行，也不与执行累计相加。</p>
             <div id="step-list" class="step-list"></div>
           </section>
         </div>

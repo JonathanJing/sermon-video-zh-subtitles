@@ -1,6 +1,6 @@
 # Firebase 四层制作公开 Tracker
 
-这是可部署到独立 Firebase Hosting 站点的**公开只读、脱敏**状态页。它按周显示共享 Layer 1，以及简体中文、韩语、西语等每种语言的 Layer 2–4 检查点、进度和有条件 ETA；从源页面是否出现／更换视频，跟踪到每语言页面、正式语音、声纹索引和设备／现场验收。浏览器从专用 Firestore 命名数据库 `sermon-tracker` 实时读取，规则禁止客户端写入。所有人都能读取已发布状态，管理员在本地用服务端发布器更新。Firebase [Security Rules](https://firebase.google.com/docs/firestore/security/rules-conditions)约束客户端请求；服务端 SDK 写入由 IAM 控制。
+这是可部署到独立 Firebase Hosting 站点的**公开只读、脱敏**状态页。它按周显示共享 Layer 1、每种语言独立的 Layer 2–3，以及单独的 Layer 4 多语言发布区；Layer 4 区内仍按语言列出四个检查点、正式页面、语音、声纹索引和设备／现场验收。流程图的汇合只表示同次发布的视图，正式 Release Package 与验证仍按 `pageId + targetLocale` 独立。页面还显示条件 ETA 与源页面是否出现／更换视频。浏览器从专用 Firestore 命名数据库 `sermon-tracker` 实时读取，规则禁止客户端写入。所有人都能读取已发布状态，管理员在本地用服务端发布器更新。Firebase [Security Rules](https://firebase.google.com/docs/firestore/security/rules-conditions)约束客户端请求；服务端 SDK 写入由 IAM 控制。
 
 公开快照仅有状态、数量、时间、步骤实测耗时与尝试次数、经允许的源页面链接和同周播放页链接。视频 ID／原视频 URL、审核原因、证据路径、内部哈希、声纹音轨 SHA 和凭据不会进入公开文档。发布器还会对生成器输出做一次明确的字段投影，额外字段自动丢弃。页面的百分比只表示检查点；ETA 是连续串行估算，缺工时或待人工审核时显示未知。页面不会替代正式包的 validator、内容听审、HTTP 核验或设备验收。
 
@@ -24,17 +24,19 @@ firebase deploy --only hosting:sermonTrackerAdmin --project YOUR_PROJECT
 
 已在项目 `ai-for-god-sermon-audio-dev` 建立独立站点 `ai-for-god-sermon-tracker-dev`、专用数据库 `sermon-tracker`（`us-west1`、Standard、删除保护、首库免费配额）和公开 Web App；规则与页面于 2026-09-23 部署。[线上 Tracker](https://ai-for-god-sermon-tracker-dev.web.app/) 可直接查看。其他项目复用时仍按上述步骤建立自己的独立资源。`?demo=1` 显示明确标记的合成样例，不读取真实数据。
 
+2026-09-24 已将[远程审核通信演示](https://ai-for-god-sermon-tracker-dev.web.app/?bridgeMock=1)发布到上述 Dev Hosting。`?bridgeMock=1` 额外显示此面板：它沿用公开 Tracker 的实时状态，可展开现有文字状态，显示媒体不可用说明，并试用「同意／不同意」、审核意见和模拟提交。**现有文字只是检查点状态，不是完整候选译文或音频审核证据。** 页面上的裁决、提交、领取和重置只改变当前浏览器画面，**不会写 Firestore、批准内容或启动 Agent**。页面显示的云端到本机测试时间是静态历史收据，不表示本机领取器当前在线。真实传输探针见[测试记录](../../../docs/reports/20260924-tracker-bridge-probe.zh.md)及本目录的 `bridge-mock.mjs`；只支持私有 `mock_ping`，使用本机 ADC 访问 Dev 的命名数据库。正式浏览器提交还需要登录鉴权、私有证据服务和经过门禁验证的后端接口。
+
 本地 UI 审核可先 `npm run build`，将 `dist/` 复制到忽略 Git 的 `artifacts/tracker-ui-review/`，用快照生成器把当前账本写成该目录的 `local-preview.json`，再从仓库根目录运行 `python -m http.server 4178 --bind 127.0.0.1 --directory artifacts/tracker-ui-review`。打开 `http://127.0.0.1:4178/?local=1` 即可查看**非实时**脱敏快照；此模式不连接 Firestore，也不执行发布。
 
 页面顶部的「中文 / EN」只切换 tracker 界面语言，选择保存在当前浏览器的 localStorage；它不翻译经文或制作内容，也不改变账本。`?local=1` 只在页面载入时读取一次 `local-preview.json`。要刷新本地制作进度，先用下文的快照生成器从**当前本地账本及证据路径**重建这个 JSON，再重载浏览器；单独重载网页不会扫描 MacBook 或更新账本。页面分别显示账本更新时间和快照生成时间，前者没有推进时不能把新的快照时间当作新的制作进度。
 
-线上页面订阅 Firestore 文档变更，没有固定的浏览器轮询间隔。本地发布器在带 `--watch --execute` 运行时默认每 15 秒读取配置的**本地**账本及证据文件、重建快照；只在内容状态变化时写入 Firestore，网页随订阅更新。15 秒是发布器检查周期，并非源视频监控或 producer 的运行周期。发布器停止、MacBook 休眠、账本未更新，或上游证据文件未刷新时，线上状态保持上次发布值。同步时用同一 `pageId` 的账本作检查点来源，生成器合并当前本地证据，发布器写入脱敏快照；设备与现场验收仍需各自收据。
+线上页面订阅 Firestore 文档变更，没有固定的浏览器轮询间隔。本地发布器在带 `--watch --execute` 运行时默认每 15 秒读取配置的**本地**账本及证据文件、重建快照；内容状态变化时写入 Firestore。若有 `running`／`waiting_review` 状态或未结束执行计时，状态持续秒数会随每次快照变化，因此这些期间约每 15 秒发布一次。15 秒是发布器检查周期，并非源视频监控或 producer 的运行周期。发布器停止或 MacBook 休眠后，网页的时间停在最后一份快照，不在浏览器里继续推算。同步时用同一 `pageId` 的账本作检查点来源，生成器合并当前本地证据，发布器写入脱敏快照；设备与现场验收仍需各自收据。
 
 ## 更新每周状态
 
-本地工作账本由[四层 tracker](../../../scripts/four_layer_progress.py)维护；[快照生成器](../../../scripts/build_four_layer_tracker_snapshot.py)汇总账本、源监控、同语言 Release Package、可选旧中文目录、HTTP 收据和声纹证据。正式 producer 尚未全部自动写入账本，所以未有收据的阶段需操作者按真实证据更新。`source-video-state.private.json` 保存在快照旁边的忽略 Git 工作目录，用于比较同一周视频 ID；此文件**不得放进 Hosting public/dist 或 Firestore**。
+本地工作账本由[四层 tracker](../../../scripts/four_layer_progress.py)维护；[快照生成器](../../../scripts/build_four_layer_tracker_snapshot.py)汇总账本、源监控、同语言 Release Package、可选旧中文目录、HTTP 收据和声纹证据。当前公开快照为 `sermon-public-tracker-snapshot-v2`，增加进行中状态与未结束执行的有界秒数；旧版 v1 快照仍可在网页读取，发布器投影会将其迁移为 v2，缺少的计时字段保持未知。正式 producer 尚未全部自动写入账本，所以未有收据的阶段需操作者按真实证据更新。`source-video-state.private.json` 保存在快照旁边的忽略 Git 工作目录，用于比较同一周视频 ID；此文件**不得放进 Hosting public/dist 或 Firestore**。
 
-本轮之后的片段 POC 用[四层 Tracker 文档](../../../docs/four-layer-production-tracker.zh.md)中的 `init-poc` 建立准确 `pageId`、原视频及候选窗口绑定的新账本；它不授予人工范围批准。耗时审计使用[四层计时入口](../../../scripts/four_layer_measure.py)：首批正式 producer 加 `--progress-ledger` 即自动写执行 span；未接入的命令仍用 `run --step` 包装。`audit` 只读地将私有 `accounting/events.jsonl` 关联到检查点，并列出缺少计时的已完成步骤。公开 Firebase 页面显示步骤的实测耗时、重试／失败次数、审核等待和缺实测计时的完成步骤数，不上传模型请求细节或私有日志。人工审核等待需在发出和收到审核时及时更新 Tracker 状态；旧产物的文件时间不能补作实测耗时。
+本轮之后的片段 POC 用[四层 Tracker 文档](../../../docs/four-layer-production-tracker.zh.md)中的 `init-poc` 建立准确 `pageId`、原视频及候选窗口绑定的新账本；它不授予人工范围批准。耗时审计使用[四层计时入口](../../../scripts/four_layer_measure.py)：首批正式 producer 加 `--progress-ledger` 即自动写执行 span；未接入的命令仍用 `run --step` 包装。`audit` 只读地将私有 `accounting/events.jsonl` 关联到检查点，并列出缺少计时的已完成步骤。公开 Firebase 页面在 Layer 1、各语言 Layer 2–3、联合 Layer 4 和逐项列表显示同一检查点的实测执行累计、重试／失败次数，以及有开始事件时截至快照的进行中状态和未结束执行时长；未记录的耗时明确显示未知。状态持续时间不等于实际执行或人工审阅时间。页面不上传模型请求细节、私有开始时间或日志。人工审核等待需在发出和收到审核时及时更新 Tracker 状态；旧产物的文件时间不能补作实测耗时。
 
 ```bash
 python scripts/four_layer_progress.py artifacts/my-run/four-layer-progress.json init \
@@ -58,7 +60,7 @@ node publish.mjs --project YOUR_PROJECT --database sermon-tracker \
   --watch-config watch-config.json --watch --execute
 ```
 
-`--watch` 默认每 15 秒重建，只在内容状态变化时写入；网页收到 Firestore 更新后实时刷新。它不会启动模型、下载视频或部署网页。发布器的 ADC 身份需要相应数据库的写入 IAM 权限，凭据不能放进网页或公开快照。发布器默认 dry run，并要求明确 `--execute`。
+`--watch` 默认每 15 秒重建；状态变化或有可计时的进行中／待审步骤时写入，网页收到 Firestore 更新后刷新。它不会启动模型、下载视频或部署网页。发布器的 ADC 身份需要相应数据库的写入 IAM 权限，凭据不能放进网页或公开快照。发布器默认 dry run，并要求明确 `--execute`。
 
 ### 本机定时发布状态（2026-09-24 核对）
 

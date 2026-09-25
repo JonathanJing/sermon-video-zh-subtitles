@@ -8,7 +8,7 @@ Dev 跨层优先级与稳定任务 ID 统一维护在 [Dev 统一 Backlog](backl
 
 ## 四层制作 Backlog
 
-每篇只有一份 Layer 1；从 Layer 2 起，每种目标语言各有一条独立分支。以下 ID 是 tracker 的检查点，工程实现的详细任务分别见[Layer 2/3 开发 backlog](multilingual-layer-2-3-backlog.zh.md)和[Layer 4 开发 backlog](multilingual-layer-4-delivery-app-backlog.zh.md)。两类 backlog 不互相冒充完成。
+每篇只有一份 Layer 1；Layer 2 和 Layer 3 按目标语言独立推进。本次三语 Dev 发布要等中、韩、西三条正式音轨及对应门禁齐备后，才在 Layer 4 汇合发布。Tracker 因此把 Layer 4 画成单独的联合发布区；区内仍按 `pageId + targetLocale` 分列发布包、L4-01～04 检查点及交付验收，不能用一个汇合节点代替三语言的证据。其他发布计划可允许不同语言独立发布或显式 `audio_unavailable` 文字路径，不把本次三语等待条件写成普遍合同。以下 ID 是 tracker 的检查点，工程实现的详细任务分别见[Layer 2/3 开发 backlog](multilingual-layer-2-3-backlog.zh.md)和[Layer 4 开发 backlog](multilingual-layer-4-delivery-app-backlog.zh.md)。两类 backlog 不互相冒充完成。
 
 | 层 | 检查点 | 完成证据及放行条件 |
 |---|---|---|
@@ -46,7 +46,7 @@ Layer 4 的发布包、catalog、Web／iOS 语言选择、回滚和验证矩阵�
 
 ### 多语言人工审核后台 Backlog
 
-- [ ] **REV-001（P1）私有多同工审核工作台**：为不同语言和职责的同工提供登录后的待审队列、逐段审核窗口与明确的决定按钮；与现有[公开只读 Tracker](../experiments/sermon-dubbing-poc/tracker-admin/README.zh.md)分开。先交付 Layer 2 译文与 Layer 3 音轨审核，再接 Layer 1 英文来源和 Layer 4 发布验收。
+- [ ] **REV-001（P1）私有多同工审核工作台**：为不同语言和职责的同工提供登录后的待审队列、逐段审核窗口与明确的决定按钮；与现有[公开只读 Tracker](../experiments/sermon-dubbing-poc/tracker-admin/README.zh.md)分开。[远程审核到本机续跑通信设计](tracker-remote-review-bridge.zh.md)规定 Firebase 指令队列、本机领取、收据校验和 Agent 交接。先交付 Layer 2 译文与 Layer 3 音轨审核，再接 Layer 1 英文来源和 Layer 4 发布验收。
   - **分配和权限**：任务按 `pageId + layer + targetLocale + artifact hash + unit/group ID` 定位；管理员分配审核者及其语言／步骤权限。同工只读取获授权的原文、译文、音视频和审核证据；公开 Tracker 不接收正文、私有媒体或审核原因。不同语言可并行认领；当前正式 Layer 2 候选只接受同一审核者的全部组收据。同语言任务产生首个决定后若移交，新审核者须重审整份候选；跨审核者聚合要另做版本化 schema／validator 迁移。
   - **需要审核的窗口**：Layer 1 对照原视频、英文逐字稿、词时间、句界和来源范围；Layer 2 左右对照英文单元与本语言译文，显示覆盖、术语／经文出处、机器复核和风险标记；Layer 3 对照原视频、已批准文字、逐单元与整轨音频、字幕 cue、排程及回转写问题，提供 1 倍速和时间点定位；Layer 4 展示同语言页面字段、清单、线上 HTTP／Range 与客户端验收项目。每个窗口明确显示当前 hash、状态、尚未审核的范围和上游变更。
   - **人工输入与按钮**：逐段可输入改文、时间点／时间范围、问题类别与说明，并可“保存草稿”“标记问题”“提交修订”“通过当前段”“退回”。Layer 1 的“批准英文范围与锚点”、Layer 2 的“批准本语言文字”、Layer 3 的“批准本语言整轨”分别在规定范围已审完且无未解决问题时启用；Layer 3 还须记录全文 1 倍速听审与同视频同步检查。Layer 4 分开记录发布、HTTP、设备和现场验收，不用一个“通过”按钮合并这些状态。批量批准须预览所含 ID 与 hash。
@@ -67,6 +67,34 @@ Layer 4 的发布包、catalog、Web／iOS 语言选择、回滚和验证矩阵�
 状态枚举：`pending`、`running`、`waiting_review`、`blocked`、`complete`。`complete` 必须附证据引用；引用只是定位信息，审核仍由各层正式 validator／人工收据决定。完成的检查点需要重做时用 `invalidate`，不要改写旧收据。共享 Layer 1 失效会重开所有语言的 Layer 2–4；Layer 2/3 失效只重开本语言下游。
 
 用[本地 tracker](../scripts/four_layer_progress.py)为每个 page 建立一个**忽略 Git 的运行目录**中的账本。它不自动调用翻译、TTS 或部署；操作者在阶段完成、等待、阻塞时登记真实证据和时间。示例路径只用于新 run，不会覆盖已存在账本：
+
+片段 POC 从新的、准确的发布 `pageId` 开始，使用 `init-poc` 将原视频身份和候选截取窗口写进本地账本。URL 哈希须对选定的规范来源 URL 原样计算；可选媒体 SHA-256 仅在已完整下载并核验媒体时提供。此记录标记为 `proposed_not_approved`，不代替 Layer 1 来源、人工范围或英文审核收据。来源或窗口若改变，应建立新账本，旧计时 span 不会错误套用到新身份。
+
+```bash
+POC_SOURCE_URL='https://www.youtube.com/watch?v=VIDEO_ID'
+POC_URL_SHA256=$(printf %s "$POC_SOURCE_URL" | shasum -a 256 | cut -d ' ' -f1)
+python scripts/four_layer_progress.py artifacts/new-clip/four-layer-progress.json init-poc \
+  --page-id 2026-09-27-example-clip --target dev --locales zh-Hans ko es \
+  --service-date 2026-09-27 --source-id VIDEO_ID \
+  --source-url-sha256 "$POC_URL_SHA256" \
+  --window-start-seconds 600 --window-end-seconds 780
+```
+
+`init-poc` 拒绝覆盖已有账本。若初始化时媒体尚未下载，完整取得并核验文件后先执行 `bind-source-media --media <完整原视频文件>`；它会计算文件 SHA-256、绑定原账本并保留既有进度和计时身份，换成不同媒体文件会拒绝。正式 Source Package 出来后，须核对其中的 `source.sourceId`、`source.sourceUrlHash`、媒体 hash 和 `source.approvedWindow` 与本次账本身份、实际文件及人工收据一致；这些字段不由 Tracker 自动授予批准。
+
+```bash
+python scripts/four_layer_progress.py artifacts/new-clip/four-layer-progress.json bind-source-media \
+  --media artifacts/new-clip/source-video.mp4
+```
+
+用户已明确批准同一片段来源窗口，且本地存在该决定的 `sermon-clip-window-approval-v1` 收据时，运行一次：
+
+```bash
+python scripts/four_layer_progress.py artifacts/new-clip/four-layer-progress.json approve-source \
+  --receipt artifacts/new-clip/clip-window-approval.json
+```
+
+命令要求收据有 `humanApproval=true`、审核人、带时区时间与具体证据，并逐项核对 `sourceId`、来源 URL hash、媒体 SHA-256 和片段相对起止时间。通过后，账本将来源绑定的 `approvalStatus` 更新为 `approved`，记录收据原始字节 SHA-256，并追加批准登记事件；重复使用同一收据为无操作，不同收据会被拒绝。批准前后不可变来源身份的计时绑定保持一致，已有真实执行 span 不丢失。此登记不会勾选 L1-01 或替代正式 Layer 1 英文来源、对齐和人工审核门禁；操作者仍需核对原录像窗口与收据的关系。
 
 ```bash
 python scripts/four_layer_progress.py artifacts/my-multilingual-run/four-layer-progress.json init \
@@ -98,7 +126,7 @@ python scripts/four_layer_progress.py artifacts/my-multilingual-run/four-layer-p
   --layer 2 --locale ko --reason '韩语批准译文修订'
 ```
 
-上述首批正式 producer 已支持 `--progress-ledger`，也可对同一周运行设置 `SERMON_FOUR_LAYER_LEDGER`。它们会在账本旁的私有 `accounting/events.jsonl` 写账本运行身份、page ID／语言／目标环境、开始／结束 span、失败类型、输入单元数、组数及相关 JSON／策略／模型标识 hash；不会自动修改账本状态或授予人工批准。审计只采纳运行身份匹配的事件；同目录重建账本后，旧日志保留但不计入新页面。未带身份的旧计时记录保持未知。Tracker 公开快照只投影步骤的实测耗时、次数、失败数、未结束执行及操作员审核等待，不公开私有 hash、原文、路径或错误消息。设备／现场验收按语言独立记录，须以各自收据为准。制作正式环境时把 `--target dev` 改为 `--target production`，重新建账本并重新核验，不能把 Dev 状态原样晋升。
+上述首批正式 producer 已支持 `--progress-ledger`，也可对同一周运行设置 `SERMON_FOUR_LAYER_LEDGER`。它们会在账本旁的私有 `accounting/events.jsonl` 写账本运行身份、page ID／语言／目标环境、开始／结束 span、失败类型、输入单元数、组数及相关 JSON／策略／模型标识 hash；不会自动修改账本状态或授予人工批准。审计只采纳运行身份匹配的事件；同目录重建账本后，旧日志保留但不计入新页面。未带身份的旧计时记录保持未知。Tracker 公开快照 v2 按检查点显示累计实测执行耗时（含失败重试）、未结束执行记录截至快照的时长，以及 `running`／`waiting_review` 账本状态持续时间；旧版 v1 快照仍可读取，缺少的活动计时保持未知。后两项不是已完成执行耗时，也不证明进程或审核者仍在线。快照不公开私有开始时间、hash、原文、路径或错误消息。设备／现场验收按语言独立记录，须以各自收据为准。制作正式环境时把 `--target dev` 改为 `--target production`，重新建账本并重新核验，不能把 Dev 状态原样晋升。
 
 ### 从现在开始保留真实耗时
 
@@ -129,5 +157,7 @@ python scripts/four_layer_measure.py run \
 python scripts/four_layer_measure.py audit \
   --ledger artifacts/my-multilingual-run/four-layer-progress.json
 ```
+
+`audit` 输出 `completedWithoutMeasuredExecutionCount` 与具体步骤 ID。快照及公开页也显示缺实测计时的已完成检查点数；本地旧账本和线上旧快照须重新生成、重新发布后才会带新字段。即使已有步骤标记为 `complete`，没有匹配本账本与来源窗口的真实 span，耗时仍为未知。
 
 当前 9 月 20 日 178 秒片段的 19 个已登记完成步骤是事后根据正式收据回填，均无执行计时。新入口只对**此后通过它运行**的步骤建立实测时间；本轮结束时审计必须把这 19 项列为计时缺口，并结合已有正式收据与人工审核时间线说明可证范围。
