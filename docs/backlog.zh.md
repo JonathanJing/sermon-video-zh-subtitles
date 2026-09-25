@@ -76,6 +76,7 @@ Firebase Hosting 只发布静态运行时和指纹索引；采集、特征和匹
 | `DEV-EXP-001` | Gemini 音视频 sidecar／事件分类 | `in_progress` | 继续 Discovery/shadow；没有人工 Gold 和按类别质量证据前，不改写 Layer 1、翻译、TTS 或发布状态。 |
 | `DEV-EXP-002` | VoxCPM2、MOSS、AuK 等 TTS challenger | `pending` | 只做同输入盲听 A/B；不能因为短样本更好替换 Qwen3-TTS SFT 正式 checkpoint。 |
 | `DEV-EXP-003` | Cloud Run、笔记、金句与历史回放 | `pending` | 不阻塞四层 Dev 周产或独立 live session；引用必须保留 source unit 与 timecode，历史 Cloud 方案不自动成为当前部署方向。 |
+| `DEV-EXP-004` | DeepSeek Harness／Terra 调度 A/B | `pending` | 先隔离比较 CUV 状态检查、工具调度和恢复；保持生产翻译／核验模型及人工门禁不变。未测量前不替换正式入口。详见[实验提案](scheduler-harness-ab-experiment.zh.md)。 |
 
 ## 专项文档归属
 
