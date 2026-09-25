@@ -7,6 +7,7 @@ import { createFeedback } from "/feedback.mjs";
 import { createUsage } from "/usage.mjs";
 import { mountFingerprintUI, playAlignmentAudio } from "/fingerprint-ui.mjs";
 import { PlaybackMemory } from "/playback-memory.mjs";
+import { createMediaSession } from "/media-session.mjs";
 
 const $ = id => document.getElementById(id);
 for (const id of ["week-select", "series", "title", "speaker", "scripture", "central-message", "current-text", "transcript-list", "outline-meta", "outline-summary", "outline-content", "reflection-questions"]) {
@@ -55,6 +56,13 @@ const fieldAlignment = mountFingerprintUI({
   position: () => audio.currentTime,
   seek: (time, { correction = false } = {}) => setPosition(time, { offset: 0, alignment: true, undo: !correction }),
   play: options => startAlignmentPlayback(options),
+});
+const mediaSession = createMediaSession({
+  audio,
+  getSelection: () => activeView !== "tab-voices" && week && track ? { week, track } : null,
+  play: () => { if (audio.paused && !playPending) void togglePlay(); },
+  pause: () => { if (!audio.paused) audio.pause(); },
+  seek: time => setPosition(time),
 });
 function status(key, params) {
   lastStatus = [key, params];
@@ -174,6 +182,7 @@ function update() {
   $("play-label").textContent = playLabel;
   document.querySelectorAll("[data-play-label]").forEach(label => { label.textContent = playLabel; });
   document.querySelectorAll("[data-mini-time]").forEach(label => { label.textContent = `${formatTime(time)} / ${formatTime(duration)}`; });
+  mediaSession.update();
   if (!track) return;
   const index = cueIndex(track.cues, time);
   const display = index < 0 ? Math.max(0, track.cues.findLastIndex(cue => cue.start <= time)) : index;
