@@ -115,6 +115,49 @@ class AuditMiLMMTStateTest(unittest.TestCase):
             self.assertEqual(result["textReviewCompletedSermons"], 0)
             self.assertTrue(result["missingReportsOrSources"])
 
+    def test_audio_completion_requires_frozen_video_and_segment_count(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            video_id = "heldout"
+            source_path = root / MODULE.V4_SOURCE_ROOT / video_id / "segments.en.jsonl"
+            source_path.parent.mkdir(parents=True)
+            source_path.write_bytes(b'{"id":"s1","en":"source"}\n')
+            manifest_path = root / MODULE.SPLIT_PATH
+            manifest_path.parent.mkdir(parents=True)
+            manifest_path.write_text(json.dumps({"candidateCount": 1, "sermons": [{
+                "videoId": video_id, "split": "untouched_final_v4", "segmentCount": 1,
+                "sourcePath": str(source_path.relative_to(root)),
+                "sourceSha256": MODULE.file_evidence(source_path)["sha256"],
+            }]}))
+            report_dir = root / MODULE.V4_REFERENCE_ROOT / video_id
+            report_dir.mkdir(parents=True)
+            audio_path = report_dir / "selective-audio-audit-report.json"
+            audio = {"status": MODULE.AUDIO_SOL_STATUS, "videoId": video_id,
+                     "totalSegmentCount": 1, "selectedSegmentCount": 1,
+                     "audioEvidenceReviewer": {"model": "gpt-5.6-sol", "reasoningEffort": "high"}}
+
+            def audited_audio():
+                audio_path.write_text(json.dumps(audio))
+                result = MODULE.audit_v4(root, set(), set())
+                return result["sermons"][0]["audio"], result["solHighAudioCompletedSermons"]
+
+            item, completed = audited_audio()
+            self.assertTrue(item["solHighCompleted"])
+            self.assertEqual(completed, 1)
+
+            audio["videoId"] = "another-video"
+            item, completed = audited_audio()
+            self.assertFalse(item["videoIdMatchesFrozen"])
+            self.assertFalse(item["solHighCompleted"])
+            self.assertEqual(completed, 0)
+
+            audio["videoId"] = video_id
+            audio["totalSegmentCount"] = 2
+            item, completed = audited_audio()
+            self.assertFalse(item["totalSegmentsMatchFrozen"])
+            self.assertFalse(item["solHighCompleted"])
+            self.assertEqual(completed, 0)
+
     def test_empty_hash_prefix_is_not_a_hash_match(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "nonempty"

@@ -211,7 +211,10 @@ function selectTab(id, focus = false, scroll = false) {
   $("field-controls").hidden = voices;
   $("resume-card").hidden = voices || !pendingResume;
   if (voices) { stopStartup(); audio.pause(); update(); }
-  else document.querySelectorAll(".voice-card audio").forEach(item => item.pause());
+  else {
+    document.querySelectorAll(".voice-card audio").forEach(item => item.pause());
+    mediaSession.update();
+  }
   const url = new URL(location.href);
   if (id === "tab-listen") url.searchParams.delete("tab");
   else url.searchParams.set("tab", id.replace("tab-", ""));

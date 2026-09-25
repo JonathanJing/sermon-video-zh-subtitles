@@ -221,10 +221,14 @@ def audit_v4(root: Path, train_ids: set[str], dev_ids: set[str]) -> dict:
                     "status": audio.get("status"),
                     "selectedSegments": audio.get("selectedSegmentCount"),
                     "totalSegments": audio.get("totalSegmentCount"),
+                    "videoIdMatchesFrozen": audio.get("videoId") == video_id,
+                    "totalSegmentsMatchFrozen": audio.get("totalSegmentCount") == sermon["segmentCount"],
                     "decisionCounts": audio.get("decisionCounts", {}),
                     "reviewerModel": reviewer.get("model"),
                     "reviewerReasoningEffort": reviewer.get("reasoningEffort"),
                     "solHighCompleted": audio.get("status") == AUDIO_SOL_STATUS
+                        and audio.get("videoId") == video_id
+                        and audio.get("totalSegmentCount") == sermon["segmentCount"]
                         and reviewer.get("model") == "gpt-5.6-sol"
                         and reviewer.get("reasoningEffort") == "high",
                     "humanApprovalClaimed": audio.get("humanApprovalClaimed"),
