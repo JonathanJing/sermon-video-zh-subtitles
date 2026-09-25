@@ -56,6 +56,23 @@ class DocsChangeGateTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "Broken local link"):
                 gate.check_markdown_links(path)
 
+    def test_reference_definition_is_validated(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "README.md"
+            path.write_text("[guide][g]\n\n[g]: docs/missing.svg\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "Broken local link"):
+                gate.check_markdown_links(path)
+
+    def test_deleted_asset_still_linked_by_unchanged_markdown_blocks_fast_path(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "README.md").write_text("[guide][g]\n\n[g]: docs/deleted.md\n", encoding="utf-8")
+            import subprocess
+            subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+            subprocess.run(["git", "add", "README.md"], cwd=root, check=True)
+            with self.assertRaisesRegex(ValueError, "still linked"):
+                gate.check_inbound_links(root, ["docs/deleted.md"])
+
 
 if __name__ == "__main__":
     unittest.main()

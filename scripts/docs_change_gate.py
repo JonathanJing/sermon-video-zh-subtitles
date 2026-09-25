@@ -15,7 +15,9 @@ from urllib.parse import unquote, urlsplit
 
 
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp"}
-LINK = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
+INLINE_LINK = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
+REFERENCE_LINK = re.compile(r"^ {0,3}\[[^\]]+\]:\s*(\S+)", re.MULTILINE)
+HTML_LINK = re.compile(r"\b(?:src|href)\s*=\s*[\"']([^\"']+)[\"']", re.IGNORECASE)
 
 
 def is_documentation_path(path: str) -> bool:
@@ -41,15 +43,49 @@ def changed_paths(base: str, head: str, event: str) -> list[str]:
     return [part.decode("utf-8") for part in result.split(b"\0") if part]
 
 
-def check_markdown_links(path: Path) -> None:
-    for raw in LINK.findall(path.read_text(encoding="utf-8")):
+def local_link_targets(path: Path):
+    # Examples inside fenced code blocks are not live Markdown links.
+    lines = []
+    fence = None
+    for line in path.read_text(encoding="utf-8").splitlines():
+        marker = re.match(r"^\s{0,3}(`{3,}|~{3,})", line)
+        if marker:
+            if fence is None:
+                fence = marker.group(1)[0]
+            elif marker.group(1)[0] == fence:
+                fence = None
+            continue
+        if fence is None:
+            lines.append(line)
+    content = "\n".join(lines)
+    for raw in (*INLINE_LINK.findall(content), *REFERENCE_LINK.findall(content), *HTML_LINK.findall(content)):
         target = raw.strip().split(" ", 1)[0].strip("<>")
         url = urlsplit(target)
         if url.scheme or url.netloc or not url.path or url.path.startswith("/"):
             continue
-        candidate = path.parent / unquote(url.path)
+        yield raw, (path.parent / unquote(url.path)).resolve()
+
+
+def check_markdown_links(path: Path) -> None:
+    for raw, candidate in local_link_targets(path):
         if not candidate.exists():
             raise ValueError(f"Broken local link in {path}: {raw}")
+
+
+def check_inbound_links(root: Path, deleted: list[str]) -> None:
+    if not deleted:
+        return
+    deleted_targets = {(root / name).resolve() for name in deleted}
+    tracked = subprocess.check_output(["git", "ls-files", "-z"], cwd=root)
+    for part in tracked.split(b"\0"):
+        if not part or not part.endswith(b".md"):
+            continue
+        path = root / part.decode("utf-8")
+        if not path.is_file() or path.is_symlink():
+            continue
+        for raw, candidate in local_link_targets(path):
+            if candidate in deleted_targets:
+                raise ValueError(f"Deleted documentation asset is still linked in {path}: {raw}")
 
 
 def check_image(path: Path) -> None:
@@ -89,11 +125,13 @@ def check_generated_diagrams(root: Path, paths: list[str]) -> None:
 def check_documentation(root: Path, paths: list[str], base: str, head: str, event: str) -> None:
     revision = f"{base}...{head}" if event == "pull_request" else f"{base}..{head}"
     subprocess.run(["git", "diff", "--check", revision], check=True, cwd=root)
+    deleted = []
     for name in paths:
         path = root / name
         if path.is_symlink():
             raise ValueError(f"Documentation symlink needs full review: {name}")
         if not path.exists():  # Deleted documentation does not need content validation.
+            deleted.append(name)
             continue
         suffix = path.suffix.lower()
         if suffix == ".md":
@@ -104,6 +142,7 @@ def check_documentation(root: Path, paths: list[str], base: str, head: str, even
             check_image(path)
         elif name == "docs/diagrams/diagram-specs.json":
             json.loads(path.read_text(encoding="utf-8"))
+    check_inbound_links(root, deleted)
     check_generated_diagrams(root, paths)
 
 
