@@ -1064,9 +1064,11 @@ private struct VoiceDemoSection: View {
             assetTask?.cancel()
             assetTask = nil
             busyAssetPath = nil
-            if model.playback.isPreview, let week = model.selectedWeek {
+            if model.playback.isPreview {
                 model.playback.clear()
-                Task { await model.select(week: week, track: model.selectedTrack, force: true) }
+                if let week = model.selectedWeek {
+                    Task { await model.select(week: week, track: model.selectedTrack, force: true) }
+                }
             }
         }
     }
