@@ -44,6 +44,6 @@ Hosting 模拟器在 v1/v2 上实际打开两段的中文、韩语和西语示�
 
 ## Release 分支边界
 
-隔离工作树 `/Users/jonathan_jing/.codex/worktrees/release-firebase-2026-09-24/sermon-video-zh-subtitles` 已从 `dev` 的 `74309ee` 创建 `codex/release-firebase-2026-09-24`，只带入 Web、生产脚本、Tracker、schema、测试和文档改动；没有带入 `apps/tongxing-ios/` 的任何改动。原始工作区 `codex/release-2026-09-20-second-clip` 保留既有 iOS 未提交工作。两边目前均未提交或 push。合并路径遵循 `dev → main` 的现有门禁；候选媒体、`.env` 和发布收据仍在原工作区的 Git 忽略目录。现阶段不把该分支、候选或本地测试标成已在 `main` 发布。
+隔离工作树 `/Users/jonathan_jing/.codex/worktrees/release-firebase-2026-09-24/sermon-video-zh-subtitles` 从 `dev` 的 `74309ee` 创建 `codex/release-firebase-2026-09-24`。先带入 Web、生产脚本、Tracker、schema、测试和文档改动，没有从原始工作区复制未提交的 iOS 工作；之后合入当前 `dev`，解决 Tracker 和并行生产代码的冲突。原始工作区 `codex/release-2026-09-20-second-clip` 的未提交工作仍独立保留。
 
-隔离后原工作区的 `scripts/build_four_layer_tracker_snapshot.py` 和 `experiments/sermon-dubbing-poc/tracker-admin/sanitize.mjs` 又出现新计时字段改动；它们未自动同步到 release 工作树。合并前应按独立工作状态复核这两处差异。
+2026-09-25，release 分支的 [PR #76](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/76) 通过 `unittest`、`native-client` 等检查，已 squash 合并到 `dev`，合并提交 `aa715ac`。进入 `main` 的 [PR #77](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/77) 仍为草稿，等待确认是否一并晋升 `dev` 中已有的 iOS 代码；创建草稿和通过检查都不代表 `main` 合并或 Firebase 正式发布。候选媒体、`.env` 和发布收据保留在 Git 忽略目录。9 月 24 日两个已审核片段保持 Dev 范围，本次正式站候选只更新九个旧中文周次的 UI。
