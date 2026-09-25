@@ -71,6 +71,25 @@ class RealSep20TimelineMapTests(unittest.TestCase):
             subject.validate(mapping, subject.read_object(self.source_path),
                              subject.read_object(self.anchor_path))
 
+    def test_bounded_trailing_silence_is_allowed_but_larger_gap_is_not(self):
+        mapping = subject.prepare(self.source_path, self.anchor_path, self.clip_path,
+                                  320.16, Path(self.temp.name) / "map.json")
+        source, anchor = subject.read_object(self.source_path), subject.read_object(self.anchor_path)
+        shortened = copy.deepcopy(anchor)
+        shortened["sourceUnits"][-1]["end"] -= 0.23
+        mapping["anchorLastEndSeconds"] -= 0.23
+        mapping["anchorManifestJsonSha256"] = subject.interpretation.json_sha256(shortened)
+        source["anchors"]["artifact"]["jsonSha256"] = mapping["anchorManifestJsonSha256"]
+        mapping["englishSourcePackageJsonSha256"] = subject.interpretation.json_sha256(source)
+        self.assertAlmostEqual(subject.validate(mapping, source, shortened), 320.16)
+        shortened["sourceUnits"][-1]["end"] -= 0.2
+        mapping["anchorLastEndSeconds"] -= 0.2
+        mapping["anchorManifestJsonSha256"] = subject.interpretation.json_sha256(shortened)
+        source["anchors"]["artifact"]["jsonSha256"] = mapping["anchorManifestJsonSha256"]
+        mapping["englishSourcePackageJsonSha256"] = subject.interpretation.json_sha256(source)
+        with self.assertRaisesRegex(ValueError, "anchor offset"):
+            subject.validate(mapping, source, shortened)
+
 
 if __name__ == "__main__":
     unittest.main()

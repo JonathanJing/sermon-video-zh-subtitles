@@ -154,6 +154,31 @@ class WeeklyReleaseTests(unittest.TestCase):
     def registry_bytes(self):
         return (self.registry / "registry.json").read_bytes()
 
+    def test_ui_refresh_preserves_every_week_and_media_byte(self):
+        self.bootstrap()
+        source = self.root / "ui"
+        source.mkdir()
+        for name in release.UI_REFRESH_FILES:
+            (source / name).write_text(f"// refreshed {name}\n")
+        out = self.root / "ui-prepared"
+        before = self.registry_bytes()
+        plan = release.prepare_ui_refresh(self.registry, source, out)
+        report, catalog = release.read_release(out)
+        self.assertEqual(plan["uiPolicy"], "refresh_registered_ui_only")
+        self.assertEqual(catalog, self.catalog(self.base))
+        self.assertEqual(before, self.registry_bytes())
+        for name in ["weekly.json", *[f["path"] for f in release.read_release(self.base)[0]["files"] if f["path"].startswith("media/")]]:
+            self.assertEqual((out / "public" / name).read_bytes(), (self.base / "public" / name).read_bytes())
+        self.assertEqual(report["appVersion"], json.loads((out / "public/engagement.json").read_text())["appVersion"])
+        self.assertEqual((out / "public/locales-es.mjs").read_text(), "// refreshed locales-es.mjs\n")
+
+    def test_ui_refresh_requires_complete_regular_source(self):
+        self.bootstrap()
+        source = self.root / "ui"
+        source.mkdir()
+        with self.assertRaisesRegex(ValueError, "missing or linked UI source"):
+            release.prepare_ui_refresh(self.registry, source, self.root / "invalid-ui")
+
     def test_read_release_accepts_complete_bound_local_fixture(self):
         report, catalog = release.read_release(self.base)
         self.assertEqual(report["weeks"], 2)

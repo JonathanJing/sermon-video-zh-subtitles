@@ -19,6 +19,7 @@ except ImportError:
 
 SCHEMA = "sermon-clip-timeline-map-v1"
 EPSILON = 0.025
+MAX_TRAILING_SILENCE_SECONDS = 0.25
 
 
 def require(ok: bool, message: str) -> None:
@@ -167,7 +168,8 @@ def validate(value: dict[str, Any], source: dict[str, Any], anchor: dict[str, An
     require(abs(units[0]["start"] - value["anchorFirstStartSeconds"]) <= EPSILON
             and abs(units[-1]["end"] - value["anchorLastEndSeconds"]) <= EPSILON
             and abs(units[0]["start"] - offset - start) <= EPSILON
-            and abs(units[-1]["end"] - offset - end) <= EPSILON,
+            and -EPSILON <= end - (units[-1]["end"] - offset)
+            <= MAX_TRAILING_SILENCE_SECONDS + EPSILON,
             "Clip timeline map anchor offset does not align approved clip edges")
     previous = start
     for unit in units:

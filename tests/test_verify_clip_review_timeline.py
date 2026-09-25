@@ -23,6 +23,17 @@ class ClipReviewTimelineTests(unittest.TestCase):
             verify(self.anchor, markdown, original_sermon_start=1789,
                    clip_start=2109.16, clip_end=2120.24)
 
+    def test_accepts_bounded_trailing_silence(self):
+        markdown = ("| `block-09-u001` | 35:09.16–35:16.28 | text |\n"
+                    "| `block-09-u002` | 35:16.49–35:20.24 | text |")
+        self.assertEqual(verify(self.anchor, markdown, original_sermon_start=1789,
+                                clip_start=2109.16, clip_end=2120.47,
+                                max_trailing_silence=0.25), 2)
+        with self.assertRaisesRegex(ValueError, "Last anchor"):
+            verify(self.anchor, markdown, original_sermon_start=1789,
+                   clip_start=2109.16, clip_end=2121.0,
+                   max_trailing_silence=0.25)
+
 
 if __name__ == "__main__":
     unittest.main()

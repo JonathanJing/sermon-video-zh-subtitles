@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-voice-capability-reuse-v1.schema.json",
+  "title": "Reuse a reviewed speaker and locale probe with the same checkpoint for a new source",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "targetEnglishSourcePackageJsonSha256", "targetLocale", "speakerId", "checkpointSha256", "priorEnglishSourcePackage", "priorClipVoiceCapability"],
+  "properties": {
+    "schemaVersion": {"const": "sermon-voice-capability-reuse-v1"},
+    "targetEnglishSourcePackageJsonSha256": {"$ref": "#/$defs/sha256"},
+    "targetLocale": {"type": "string", "pattern": "^(?!en(?:-|$))[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"},
+    "speakerId": {"type": "string", "minLength": 1},
+    "checkpointSha256": {"$ref": "#/$defs/sha256"},
+    "priorEnglishSourcePackage": {"$ref": "#/$defs/jsonArtifact"},
+    "priorClipVoiceCapability": {"$ref": "#/$defs/jsonArtifact"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "jsonArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "jsonSha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "jsonSha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}

@@ -14,6 +14,7 @@ import json
 import math
 import os
 from pathlib import Path
+import re
 import shutil
 import struct
 import subprocess
@@ -102,32 +103,30 @@ def materialize_path_map(job_path: Path, path_map_path: Path) -> None:
     job = package.read_object(job_path)
     inputs = job.get("inputs", {})
     require(isinstance(inputs, dict), "Speech job has no bound inputs")
-    references = _evidence_paths(inputs)
-    staged_documents = []
-    for ref in references:
+    pending = _evidence_paths(inputs)
+    references = []
+    seen: dict[str, dict[str, Any]] = {}
+    while pending:
+        ref = pending.pop(0)
         original = ref["path"]
-        staged = Path(aliases.get(original, original))
-        require(Path(original).is_absolute() and staged.is_absolute() and staged.is_file()
-                and identity.sha256(staged) == ref["sha256"],
-                f"Mapped speech input missing or hash mismatch: {original}")
-        value = json.loads(staged.read_text(encoding="utf-8"))
-        if "jsonSha256" in ref:
-            require(identity.json_sha256(value) == ref["jsonSha256"],
-                    f"Mapped speech JSON input mismatch: {original}")
-        staged_documents.append(value)
-    nested = [ref for document in staged_documents for ref in _evidence_paths(document)]
-    for ref in references + nested:
+        if original in seen:
+            require(seen[original] == ref, f"Conflicting mapped evidence: {original}")
+            continue
+        seen[original] = ref
         original = Path(ref["path"])
         staged = Path(aliases.get(str(original), str(original)))
         require(original.is_absolute() and staged.is_absolute() and staged.is_file()
                 and identity.sha256(staged) == ref["sha256"],
                 f"Mapped evidence missing or hash mismatch: {original}")
         if "jsonSha256" in ref:
-            require(identity.json_sha256(json.loads(staged.read_text(encoding="utf-8"))) == ref["jsonSha256"],
+            value = json.loads(staged.read_text(encoding="utf-8"))
+            require(identity.json_sha256(value) == ref["jsonSha256"],
                     f"Mapped evidence JSON hash mismatch: {original}")
+            pending.extend(_evidence_paths(value))
+        references.append(ref)
     # Only after all hash checks pass may aliases be made visible to legacy
     # validators that dereference absolute paths from the unchanged job JSON.
-    for ref in references + nested:
+    for ref in references:
         original = Path(ref["path"])
         staged = Path(aliases.get(str(original), str(original)))
         if original.exists():
@@ -205,10 +204,11 @@ class QwenSynthesizer:
 
 
 def _intent(context: dict[str, Any], paths: dict[str, Path], index: int, *, seed: int,
-            dtype: str, attention: str | None, instruct: str | None) -> dict[str, Any]:
+            dtype: str, attention: str | None, instruct: str | None,
+            spoken_text: str | None = None) -> dict[str, Any]:
     job, adapter = context["job"], context["adapter"]
     unit = job["units"][index]
-    return {
+    result = {
         "schemaVersion": VERSION, "unitIndex": index,
         "jobJsonSha256": identity.json_sha256(job),
         "jobFileSha256": identity.sha256(paths["job"]),
@@ -235,6 +235,9 @@ def _intent(context: dict[str, Any], paths: dict[str, Path], index: int, *, seed
         "deliveryInstruction": instruct,
         "ratePolicy": "natural_no_time_stretch",
     }
+    if spoken_text is not None:
+        result["spokenTextSha256"] = hashlib.sha256(spoken_text.encode()).hexdigest()
+    return result
 
 
 SPECULATIVE_MATCH_FIELDS = (
@@ -247,10 +250,57 @@ SPECULATIVE_MATCH_FIELDS = (
     "deliveryInstruction", "ratePolicy",
 )
 
+# This renderer revision added per-unit spoken forms and delivery instructions.
+# For an old unit with no spoken-form override, unchanged text, instruction,
+# model settings and a verified audio hash preserve the same sound intent.
+COMPATIBLE_NO_SPOKEN_FORM_RENDERER_SHA256 = {
+    "7975b13796b0269adfad1b5188f981102eb9359c7d2627e0ebbfd69c0f97b56c"
+}
+
+
+def _spoken_equivalent(approved: str, spoken: str) -> bool:
+    """Allow only punctuation and the confirmed Revelation 3:16 reading."""
+    def normalized(value: str) -> str:
+        value = re.sub(r"第3章第16节|3:16|第三章第十六节", "第三章第十六节", value)
+        return "".join(char for char in value if char.isalnum())
+    return normalized(approved) == normalized(spoken)
+
+
+def unit_instructions(job: dict[str, Any], path: Path | None) -> dict[str, dict[str, str]]:
+    if path is None:
+        return {}
+    document = package.read_object(path)
+    require(document.get("schemaVersion") == "sermon-unit-delivery-instructions-v1"
+            and document.get("targetLocale") == job["targetLocale"]
+            and document.get("speechJobJsonSha256") == identity.json_sha256(job)
+            and isinstance(document.get("units"), list)
+            and document["units"], "Unit delivery instruction identity differs")
+    allowed = {unit["translationGroupId"]: unit for unit in job["units"]}
+    result: dict[str, dict[str, str]] = {}
+    for row in document["units"]:
+        group = row.get("translationGroupId")
+        instruction = row.get("instruction")
+        require(group in allowed and group not in result
+                and row.get("approvedTextSha256") == hashlib.sha256(allowed[group]["text"].encode()).hexdigest()
+                and isinstance(instruction, str) and instruction.strip()
+                and isinstance(row.get("operatorEvidence"), str) and row["operatorEvidence"].strip(),
+                "Unit delivery instruction lacks approved text or operator evidence")
+        spoken = row.get("spokenText")
+        if spoken is not None:
+            require(job["targetLocale"] == "zh-Hans" and isinstance(spoken, str)
+                    and spoken.strip() and _spoken_equivalent(allowed[group]["text"], spoken),
+                    "Spoken form changes approved words or unsupported locale")
+        result[group] = {"instruction": instruction.strip()}
+        if spoken is not None:
+            result[group]["spokenText"] = spoken.strip()
+    return result
+
 
 def _reusable_speculative_audio(previous_root: Path, unit: dict[str, Any], index: int,
                                 expected: dict[str, Any]) -> Path | None:
     """Admit only the same sound from an explicitly non-formal pre-render lane."""
+    if expected.get("spokenTextSha256") is not None:
+        return None
     manifest_path = previous_root / "manifest.json"
     if not manifest_path.is_file():
         raise ValueError("Speculative render manifest is missing")
@@ -354,7 +404,14 @@ def _reusable_audio(previous_root: Path, unit: dict[str, Any], index: int,
     new_unit_identity = {key: value for key, value in expected.items()
                          if key not in whole_job_fields}
     if old_unit_identity != new_unit_identity:
-        return None
+        previous_renderer = old_unit_identity.get("rendererSha256")
+        old_unit_identity.pop("rendererSha256", None)
+        new_unit_identity.pop("rendererSha256", None)
+        if (previous_renderer not in COMPATIBLE_NO_SPOKEN_FORM_RENDERER_SHA256
+                or old_intent.get("spokenTextSha256") is not None
+                or expected.get("spokenTextSha256") is not None
+                or old_unit_identity != new_unit_identity):
+            return None
     integrity.probe_full_decode(old_audio_path)
     return old_audio_path
 
@@ -383,6 +440,7 @@ def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                  checkpoint_map_path: Path, *, seed: int = 42, device: str = "cuda:0",
                  dtype: str = "bfloat16", attention: str | None = "sdpa",
                  instruct: str | None = None,
+                 instructions_by_group: dict[str, dict[str, str]] | None = None,
                  reuse_from: Path | None = None,
                  speculative_from: Path | None = None,
                  synth_factory: Callable[..., Any] = QwenSynthesizer) -> list[dict[str, Any]]:
@@ -396,12 +454,16 @@ def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
     model = None
     rows = []
     for index, unit in enumerate(job["units"]):
+        overrides = (instructions_by_group or {}).get(unit["translationGroupId"], {})
+        unit_instruct = overrides.get("instruction", instruct)
+        spoken_text = overrides.get("spokenText")
         wav_path = root / unit["outputRelativePath"]
         receipt_path = root / f"receipts/unit-{index:04d}.json"
         intent_path = root / f"receipts/unit-{index:04d}.intent.json"
         commit_path = root / f"receipts/unit-{index:04d}.render.json"
         expected = _intent(context, paths, index, seed=seed, dtype=dtype,
-                           attention=attention, instruct=instruct)
+                           attention=attention, instruct=unit_instruct,
+                           spoken_text=spoken_text)
         if intent_path.exists():
             require(package.read_object(intent_path) == expected,
                     f"Cached render identity differs: {unit['translationGroupId']}")
@@ -433,8 +495,10 @@ def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
             else:
                 if model is None:
                     model = synth_factory(context["checkpoint"], device=device, dtype=dtype,
-                                          attention=attention, instruct=instruct)
-                wavs, rate = model(unit["text"], adapter["languageParameter"],
+                                          attention=attention, instruct=unit_instruct)
+                else:
+                    model.instruct = unit_instruct
+                wavs, rate = model(spoken_text or unit["text"], adapter["languageParameter"],
                                    adapter["speakerKey"], seed=seed + index)
                 # A partial belongs to this same intent and is safe to replace on resume.
                 write_pcm16(partial, wavs, int(rate))
@@ -623,14 +687,17 @@ def render(paths: dict[str, Path], checkpoint_map_path: Path,
            seed: int = 42,
            device: str = "cuda:0", dtype: str = "bfloat16",
            attention: str | None = "sdpa", instruct: str | None = None,
+           unit_instructions_path: Path | None = None,
            policy: dict[str, float] | None = None, track_format: str = "wav",
            synth_factory: Callable[..., Any] = QwenSynthesizer) -> dict[str, Any]:
     if path_map_path is not None:
         materialize_path_map(paths["job"], path_map_path)
     context = checked_context(paths, checkpoint_map_path, operation_policies_path)
+    instructions_by_group = unit_instructions(context["job"], unit_instructions_path)
     root = paths["job"].parent.resolve()
     rows = render_units(context, paths, root, checkpoint_map_path, seed=seed,
                         device=device, dtype=dtype, attention=attention, instruct=instruct,
+                        instructions_by_group=instructions_by_group,
                         reuse_from=reuse_from,
                         speculative_from=speculative_from,
                         synth_factory=synth_factory)
@@ -656,6 +723,8 @@ def main() -> None:
     parser.add_argument("--attention", default="sdpa")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--instruct", help="Frozen natural delivery instruction; never edits approved text")
+    parser.add_argument("--unit-instructions", type=Path,
+                        help="Source-bound per-unit pronunciation and pause instructions")
     parser.add_argument("--reaction-lag-seconds", type=float, default=0.05)
     parser.add_argument("--inter-utterance-gap-seconds", type=float, default=0.05)
     parser.add_argument("--max-end-lag-seconds", type=float, default=8.0)
@@ -680,6 +749,7 @@ def main() -> None:
                     speculative_from=args.speculative_from,
                     seed=args.seed, device=args.device,
                     dtype=args.dtype, attention=args.attention, instruct=args.instruct,
+                    unit_instructions_path=args.unit_instructions,
                     policy=policy, track_format=args.track_format)
     print(json.dumps({"status": "candidate", "targetLocale": result["targetLocale"],
                       "renderManifest": str((paths["job"].parent / "render-manifest.json").resolve()),

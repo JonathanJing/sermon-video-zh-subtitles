@@ -105,6 +105,45 @@ class AssembleHostingTest(unittest.TestCase):
             hosting.assemble(self.base, self.stage, output)
         self.assertFalse(output.exists())
 
+    def test_fingerprint_index_is_referenced_and_verified(self):
+        page = self.new_page
+        page["sourceMediaSha256"] = "b" * 64
+        audio_sha = hosting.load(self.stage / "releases/new-week/ko.json")["assets"][1]["sha256"]
+        index = {
+            "schemaVersion": "sermon-landmark-index-v1",
+            "algorithmVersion": "spectral-landmarks-v1",
+            "pageId": page["id"], "sourceSha256": page["sourceMediaSha256"],
+            "trackSha256": audio_sha, "sourceStartSeconds": 0,
+            "sourceEndSeconds": 138,
+        }
+        index_path = self.stage / "fingerprints/index.json"
+        index_sha = write(index_path, index)
+        named_path = self.stage / f"fingerprints/{index_sha[:16]}-landmarks.json"
+        index_path.rename(named_path)
+        target = page["targets"]["ko"]
+        target["capabilities"].append("alignment")
+        target["audioFingerprint"] = {
+            "schemaVersion": "sermon-audio-fingerprint-binding-v1",
+            "pageId": page["id"], "sourceSha256": page["sourceMediaSha256"],
+            "trackSha256": audio_sha, "sourceStartSeconds": 0,
+            "sourceEndSeconds": 138, "algorithmVersion": "spectral-landmarks-v1",
+            "captureSeconds": 10, "indexSha256": index_sha,
+            "indexUrl": f"/fingerprints/{index_sha[:16]}-landmarks.json",
+        }
+        catalog_sha = write(self.stage / hosting.CATALOG, self.new_catalog)
+        receipt = hosting.load(self.stage / "stage-receipt.json")
+        receipt["catalogSha256"] = catalog_sha
+        receipt["assetCount"] = 5
+        write(self.stage / "stage-receipt.json", receipt)
+        output = self.root / "release"
+        report = hosting.assemble(self.base, self.stage, output)
+        self.assertEqual(report["addedFileCount"], 5)
+        self.assertEqual(hosting.digest(output / "public" / target["audioFingerprint"]["indexUrl"][1:]),
+                         index_sha)
+        named_path.write_text("{}")
+        with self.assertRaisesRegex(ValueError, "fingerprint hash differs"):
+            hosting.verify_catalog_assets(self.stage, self.new_catalog)
+
     def test_production_overlay_keeps_legacy_catalog_and_exposes_reviewed_reader(self):
         write(self.base / "index.html", b'<main class="field-main"></main>')
         write(self.base / "weekly.json", {"schemaVersion": "sermon-weekly-catalog-v1",
@@ -231,6 +270,39 @@ class AssembleHostingTest(unittest.TestCase):
             hosting.digest(first / "public/media/new-week/ko.wav"),
             hosting.digest(second / "public/media/new-week/ko.wav"))
         self.assertEqual(report["modifiedFiles"], ["index.html", hosting.CATALOG])
+
+    def test_two_pages_in_one_production_candidate_bind_original_base(self):
+        write(self.base / "index.html", b'<html><main class="field-main"></main></html>')
+        write(self.base / "weekly.json", {"schemaVersion": "sermon-weekly-catalog-v1",
+                                          "weeks": [{"id": "old-legacy-week"}]})
+        second_stage = self.root / "second-stage"
+        second_stage.mkdir()
+        second_page = fixture(second_stage, "following-week", "2026-09-27")
+        second_catalog = {**self.new_catalog, "defaultPageId": second_page["id"],
+                          "pages": [second_page]}
+        catalog_hash = write(second_stage / hosting.CATALOG, second_catalog)
+        write(second_stage / "stage-receipt.json", {
+            "schemaVersion": "sermon-formal-dev-stage-receipt-v1",
+            "deploymentStatus": "not_deployed", "httpVerification": "not_run",
+            "catalogSha256": catalog_hash, "pageId": second_page["id"],
+            "sourceIdentitySha256": second_page["sourceIdentitySha256"],
+            "targetLocales": ["ko"], "assetCount": 4,
+            "releasePackageSha256": {
+                "ko": second_page["targets"]["ko"]["releasePackageJsonSha256"]},
+        })
+        output = self.root / "two-page-production"
+        report = hosting.assemble_many(self.base, [self.stage, second_stage], output,
+                                       production_reader=True, promote_home=True)
+        self.assertEqual(report["newPageIds"], ["new-week", "following-week"])
+        self.assertEqual({item["path"] for item in report["baseFiles"]},
+                         set(hosting.regular_files(self.base)))
+        self.assertEqual(report["oldCatalogSha256"], hosting.digest(self.base / hosting.CATALOG))
+        self.assertEqual((output / "rollback-multilingual-v2.json").read_bytes(),
+                         (self.base / hosting.CATALOG).read_bytes())
+        self.assertEqual(hosting.load(output / "public" / hosting.CATALOG)["defaultPageId"],
+                         "following-week")
+        self.assertEqual((output / "public/legacy-reader.html").read_bytes(),
+                         (self.base / "index.html").read_bytes())
 
 
 if __name__ == "__main__":

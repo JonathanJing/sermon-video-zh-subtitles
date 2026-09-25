@@ -421,6 +421,63 @@ def prepare(registry, candidate, out, replace_ids=()):
             shutil.rmtree(temporary)
 
 
+UI_REFRESH_FILES = ("index.html", "style.css", "app.mjs", "i18n.mjs",
+                    "locales-interface.mjs", "locales-ko.mjs", "locales-es.mjs")
+
+
+def prepare_ui_refresh(registry, ui_source, out):
+    """Create an immutable UI-only revision of the registered Chinese release."""
+    registry, ui_source, out = Path(registry), Path(ui_source), Path(out)
+    if out.exists() or out.is_symlink():
+        raise ValueError("use a new output directory")
+    if out.resolve().is_relative_to(registry.resolve()) or out.resolve().is_relative_to(ui_source.resolve()):
+        raise ValueError("output must be outside registry and UI source")
+    state, base, base_report, base_catalog = load_registry(registry)
+    for name in UI_REFRESH_FILES:
+        path = ui_source / name
+        if path.is_symlink() or not path.is_file():
+            raise ValueError(f"missing or linked UI source: {name}")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    temporary = Path(tempfile.mkdtemp(prefix=".ui-release-", dir=out.parent))
+    try:
+        public = temporary / "public"
+        shutil.copytree(base / "public", public)
+        for name in UI_REFRESH_FILES:
+            shutil.copyfile(ui_source / name, public / name)
+        engagement = read_json(public / "engagement.json")
+        ui_hash = hashlib.sha256()
+        for name in UI_REFRESH_FILES:
+            ui_hash.update((public / name).read_bytes())
+        engagement["appVersion"] = ui_hash.hexdigest()[:16]
+        write_json(public / "engagement.json", engagement)
+        report = copy.deepcopy(base_report)
+        files = [{"path": str(p.relative_to(public)), "sha256": sha256(p), "bytes": p.stat().st_size}
+                 for p in sorted(public.rglob("*")) if p.is_file()]
+        report.update(builtAt=now(), files=files, totalBytes=sum(f["bytes"] for f in files),
+                      appVersion=engagement["appVersion"],
+                      releaseRegistry={"parentReleaseId": state["head"], "parentGeneration": state["generation"],
+                                       "uiRefreshFiles": list(UI_REFRESH_FILES)})
+        if report.get("feedbackEnabled"):
+            shutil.copy2(base / "feedback-catalog.json", temporary / "feedback-catalog.json")
+        write_json(temporary / "build-report.json", report)
+        _, catalog = read_release(temporary)
+        if catalog != base_catalog:
+            raise ValueError("UI refresh changed the weekly catalog")
+        changes = {"added": [], "updated": [], "unchanged": sorted(w["id"] for w in catalog["weeks"]), "removed": []}
+        plan = {"schemaVersion": "sermon-weekly-release-plan-v1", "createdAt": now(), "origin": state["origin"],
+                "parentReleaseId": state["head"], "parentGeneration": state["generation"],
+                "releaseId": release_id(report), "buildReportSha256": sha256(temporary / "build-report.json"),
+                "changes": changes, "previousWeekIds": changes["unchanged"], "weekIds": changes["unchanged"],
+                "status": "prepared_not_deployed", "uiPolicy": "refresh_registered_ui_only",
+                "humanApprovalGranted": False, "workflowComplete": False, "rollbackReleaseId": state["head"]}
+        write_json(temporary / "release-plan.json", plan)
+        temporary.rename(out)
+        return plan
+    finally:
+        if temporary.exists():
+            shutil.rmtree(temporary)
+
+
 def record_published(registry, release, verification):
     registry, release = Path(registry), Path(release)
     plan = read_json(release / "release-plan.json")
@@ -475,6 +532,10 @@ def main():
     build.add_argument("--candidate", type=Path, required=True)
     build.add_argument("--out", type=Path, required=True)
     build.add_argument("--replace-page", action="append", default=[], help="Explicitly replace this existing page, retaining candidate review status")
+    ui = commands.add_parser("prepare-ui-refresh")
+    ui.add_argument("--registry", type=Path, required=True)
+    ui.add_argument("--ui-source", type=Path, required=True)
+    ui.add_argument("--out", type=Path, required=True)
     publish = commands.add_parser("record-published")
     publish.add_argument("--registry", type=Path, required=True)
     publish.add_argument("--release", type=Path, required=True)
@@ -486,6 +547,8 @@ def main():
         result = bootstrap(args.registry, args.release, args.origin, read_json(args.verification) if args.verification else None)
     elif args.command == "prepare":
         result = prepare(args.registry, args.candidate, args.out, args.replace_page)
+    elif args.command == "prepare-ui-refresh":
+        result = prepare_ui_refresh(args.registry, args.ui_source, args.out)
     elif args.command == "record-published":
         result = record_published(args.registry, args.release, read_json(args.verification))
     else:

@@ -8,6 +8,7 @@ import * as catalogHelpers from './catalog.mjs';
 import { PlaybackMemory } from './playback-memory.mjs';
 import { messages as appMessages } from './locales-app.mjs';
 import { messages as koreanMessages } from './locales-ko.mjs';
+import { messages as spanishMessages } from './locales-es.mjs';
 
 // Exercise the shipped event handlers; only network bootstrap and module imports
 // are replaced. No media metadata arrives unless the test explicitly delivers it.
@@ -135,7 +136,7 @@ function setup({ bookmark = false, bootstrapFetch, alignmentPlay } = {}) {
   let locale = 'zh'; const localeListeners = [];
   const i18n = {
     getLocale: () => locale,
-    t: (key, params = {}) => ((locale === 'ko' ? koreanMessages[key] : appMessages[locale][key]) || key).replace(/\{(\w+)\}/g, (all, name) => String(params[name] ?? all)),
+    t: (key, params = {}) => ((locale === 'ko' ? koreanMessages[key] : locale === 'es' ? spanishMessages[key] : appMessages[locale][key]) || key).replace(/\{(\w+)\}/g, (all, name) => String(params[name] ?? all)),
     setLocale(value) { locale = value; localeListeners.forEach(listener => listener()); },
     onLocaleChange: listener => localeListeners.push(listener), localizeDOM() {},
     localizeWeek: value => value, translateContent: value => value, appMessages,
@@ -621,10 +622,10 @@ test('whole-page language change keeps live audio, source identity and grouped E
   h.get('language-toggle').click();
   assert.equal(h.context.getLocale(), 'en');
   assert.equal(h.get('play-label').textContent, 'Cancel loading');
-  assert.equal(h.get('current-text').textContent, 'One complete frozen source passage.');
+  assert.equal(h.get('current-text').textContent, '第二段');
   const rows = h.get('transcript-list').children;
-  assert.equal(rows.length, 1, 'one source passage is not duplicated per Chinese cue');
-  assert.equal(rows[0].getAttribute('aria-current'), 'true', 'group stays highlighted through all associated cues');
+  assert.equal(rows.length, bilingualWeek.tracks[0].cues.length, 'the Chinese transcript stays available for every cue');
+  assert.equal(rows[1].getAttribute('aria-current'), 'true', 'the active Chinese cue stays highlighted');
   assert.equal(h.audio.currentTime, 160); assert.equal(h.audio.paused, false);
   assert.equal(h.audio.loadCalls, loads); assert.equal(h.audio.playCalls.length, plays);
   assert.equal(h.fingerprintInvalidations, invalidations);
@@ -634,7 +635,9 @@ test('whole-page language change keeps live audio, source identity and grouped E
   assert.equal(h.get('current-text').textContent, '第二段');
   assert.equal(h.get('play-label').textContent, '불러오기 취소');
   h.get('language-toggle').click();
-  assert.equal(h.context.getLocale(), 'zh');
+  assert.equal(h.context.getLocale(), 'es');
   assert.equal(h.get('current-text').textContent, '第二段');
+  h.get('language-toggle').click();
+  assert.equal(h.context.getLocale(), 'zh');
   assert.equal(h.audio.currentTime, 160);
 });

@@ -68,6 +68,34 @@ Layer 4 的发布包、catalog、Web／iOS 语言选择、回滚和验证矩阵�
 
 用[本地 tracker](../scripts/four_layer_progress.py)为每个 page 建立一个**忽略 Git 的运行目录**中的账本。它不自动调用翻译、TTS 或部署；操作者在阶段完成、等待、阻塞时登记真实证据和时间。示例路径只用于新 run，不会覆盖已存在账本：
 
+片段 POC 从新的、准确的发布 `pageId` 开始，使用 `init-poc` 将原视频身份和候选截取窗口写进本地账本。URL 哈希须对选定的规范来源 URL 原样计算；可选媒体 SHA-256 仅在已完整下载并核验媒体时提供。此记录标记为 `proposed_not_approved`，不代替 Layer 1 来源、人工范围或英文审核收据。来源或窗口若改变，应建立新账本，旧计时 span 不会错误套用到新身份。
+
+```bash
+POC_SOURCE_URL='https://www.youtube.com/watch?v=VIDEO_ID'
+POC_URL_SHA256=$(printf %s "$POC_SOURCE_URL" | shasum -a 256 | cut -d ' ' -f1)
+python scripts/four_layer_progress.py artifacts/new-clip/four-layer-progress.json init-poc \
+  --page-id 2026-09-27-example-clip --target dev --locales zh-Hans ko es \
+  --service-date 2026-09-27 --source-id VIDEO_ID \
+  --source-url-sha256 "$POC_URL_SHA256" \
+  --window-start-seconds 600 --window-end-seconds 780
+```
+
+`init-poc` 拒绝覆盖已有账本。若初始化时媒体尚未下载，完整取得并核验文件后先执行 `bind-source-media --media <完整原视频文件>`；它会计算文件 SHA-256、绑定原账本并保留既有进度和计时身份，换成不同媒体文件会拒绝。正式 Source Package 出来后，须核对其中的 `source.sourceId`、`source.sourceUrlHash`、媒体 hash 和 `source.approvedWindow` 与本次账本身份、实际文件及人工收据一致；这些字段不由 Tracker 自动授予批准。
+
+```bash
+python scripts/four_layer_progress.py artifacts/new-clip/four-layer-progress.json bind-source-media \
+  --media artifacts/new-clip/source-video.mp4
+```
+
+用户已明确批准同一片段来源窗口，且本地存在该决定的 `sermon-clip-window-approval-v1` 收据时，运行一次：
+
+```bash
+python scripts/four_layer_progress.py artifacts/new-clip/four-layer-progress.json approve-source \
+  --receipt artifacts/new-clip/clip-window-approval.json
+```
+
+命令要求收据有 `humanApproval=true`、审核人、带时区时间与具体证据，并逐项核对 `sourceId`、来源 URL hash、媒体 SHA-256 和片段相对起止时间。通过后，账本将来源绑定的 `approvalStatus` 更新为 `approved`，记录收据原始字节 SHA-256，并追加批准登记事件；重复使用同一收据为无操作，不同收据会被拒绝。批准前后不可变来源身份的计时绑定保持一致，已有真实执行 span 不丢失。此登记不会勾选 L1-01 或替代正式 Layer 1 英文来源、对齐和人工审核门禁；操作者仍需核对原录像窗口与收据的关系。
+
 ```bash
 python scripts/four_layer_progress.py artifacts/my-multilingual-run/four-layer-progress.json init \
   --page-id my-page --target dev --locales zh-Hans ko es
@@ -129,5 +157,7 @@ python scripts/four_layer_measure.py run \
 python scripts/four_layer_measure.py audit \
   --ledger artifacts/my-multilingual-run/four-layer-progress.json
 ```
+
+`audit` 输出 `completedWithoutMeasuredExecutionCount` 与具体步骤 ID。快照及公开页也显示缺实测计时的已完成检查点数；本地旧账本和线上旧快照须重新生成、重新发布后才会带新字段。即使已有步骤标记为 `complete`，没有匹配本账本与来源窗口的真实 span，耗时仍为未知。
 
 当前 9 月 20 日 178 秒片段的 19 个已登记完成步骤是事后根据正式收据回填，均无执行计时。新入口只对**此后通过它运行**的步骤建立实测时间；本轮结束时审计必须把这 19 项列为计时缺口，并结合已有正式收据与人工审核时间线说明可证范围。

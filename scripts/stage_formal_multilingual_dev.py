@@ -197,6 +197,9 @@ def preflight(args: argparse.Namespace) -> tuple[dict, dict[str, tuple[Path, str
     screening_paths = (assignment_map(screening_values, "--audio-screening-receipt")
                        if screening_values else {})
     release_paths = assignment_map(args.release, "--release")
+    fingerprint_values = getattr(args, "fingerprint_index", [])
+    fingerprint_paths = (assignment_map(fingerprint_values, "--fingerprint-index")
+                         if fingerprint_values else {})
     files: dict[str, tuple[Path, str]] = {}
     targets = {}
     for locale in LOCALES:
@@ -382,13 +385,53 @@ def preflight(args: argparse.Namespace) -> tuple[dict, dict[str, tuple[Path, str
             "audioStatus": "human_reviewed",
             "capabilities": ["text", "captions", "audio"],
         }
+        if locale in fingerprint_paths:
+            index_path = fingerprint_paths[locale]
+            index_sha = file_sha(index_path)
+            index = json.loads(index_path.read_text(encoding="utf-8"))
+            window = source["source"]["approvedWindow"]
+            start, end = window["startSeconds"], window["endSeconds"]
+            if (index.get("schemaVersion") != "sermon-landmark-index-v1"
+                    or index.get("algorithmVersion") != "spectral-landmarks-v1"
+                    or index.get("sampleRate") != 8000 or index.get("hopSize") != 256
+                    or index.get("fftSize") != 1024
+                    or index.get("pageId") != args.page_id
+                    or index.get("sourceSha256") != source["source"]["media"]["sha256"]
+                    or index.get("trackSha256") != audio["track"]["sha256"]
+                    or index.get("sourceStartSeconds") != start
+                    or index.get("sourceEndSeconds") != end
+                    or index.get("window") != {"startSeconds": start, "endSeconds": end}
+                    or index.get("durationSeconds") != end - start
+                    or not isinstance(index.get("landmarkCount"), int)
+                    or not 0 < index["landmarkCount"] <= math.ceil(end - start) * 14 * 8
+                    or not isinstance(index.get("postings"), dict)
+                    or sum(len(times) for times in index["postings"].values()) != index["landmarkCount"]
+                    or abs(track_duration - (end - start)) > 0.1):
+                raise StageError(f"{locale}: source fingerprint or reviewed track binding differs")
+            index_url = f"/fingerprints/{index_sha[:16]}-landmarks.json"
+            if index_url in files and files[index_url] != (index_path, index_sha):
+                raise StageError(f"{locale}: fingerprint index path collision")
+            files[index_url] = (index_path, index_sha)
+            targets[locale]["capabilities"].append("alignment")
+            targets[locale]["audioFingerprint"] = {
+                "schemaVersion": "sermon-audio-fingerprint-binding-v1",
+                "pageId": args.page_id,
+                "sourceSha256": source["source"]["media"]["sha256"],
+                "trackSha256": audio["track"]["sha256"],
+                "sourceStartSeconds": start, "sourceEndSeconds": end,
+                "algorithmVersion": "spectral-landmarks-v1", "captureSeconds": 10,
+                "indexSha256": index_sha, "indexUrl": index_url,
+            }
+    page = {"id": args.page_id, "date": args.page_date, "sourceLocale": "en",
+            "sourceIdentitySha256": source_hash, "defaultTargetLocale": args.default_target,
+            "targets": targets}
+    if fingerprint_paths:
+        page["sourceMediaSha256"] = source["source"]["media"]["sha256"]
     catalog = {
         "schemaVersion": "sermon-multilingual-catalog-v2",
         "generatedAt": args.generated_at,
         "defaultPageId": args.page_id,
-        "pages": [{"id": args.page_id, "date": args.page_date, "sourceLocale": "en",
-                   "sourceIdentitySha256": source_hash, "defaultTargetLocale": args.default_target,
-                   "targets": targets}],
+        "pages": [page],
     }
     schema = json.loads((ROOT / "schemas/sermon-multilingual-catalog-v2.schema.json").read_text())
     errors = list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(catalog))
@@ -437,6 +480,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--audio-human-review-receipt", action="append", default=[], metavar="LOCALE=PATH")
     parser.add_argument("--audio-screening-receipt", action="append", default=[], metavar="LOCALE=PATH")
     parser.add_argument("--release", action="append", default=[], metavar="LOCALE=PATH")
+    parser.add_argument("--fingerprint-index", action="append", default=[], metavar="LOCALE=PATH")
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--page-id", required=True)
     parser.add_argument("--page-date", required=True)

@@ -96,6 +96,24 @@ class FourLayerMeasureTest(unittest.TestCase):
             self.assertEqual(new_row["executionAttempts"], 0)
             self.assertIsNone(new_row["measuredExecutionSeconds"])
 
+    def test_poc_source_window_change_excludes_old_timing_and_reports_gap(self):
+        with tempfile.TemporaryDirectory() as temp:
+            ledger_path = Path(temp) / "four-layer-progress.json"
+            ledger = progress.new_poc_ledger(
+                "test-page", ["ko"], target="dev", service_date="2026-09-27",
+                source_id="video-id", source_url_sha256="a" * 64,
+                window_start_seconds=10, window_end_seconds=20)
+            progress.save(ledger_path, ledger)
+            measure.execute(ledger_path, "L2-01@ko", [sys.executable, "-c", "pass"])
+            events, _ = accounting.read_events(ledger_path.parent / "accounting")
+            progress.update_step(ledger, "L2-01@ko", "complete", evidence="policy.json")
+            self.assertEqual(measure.timing_audit(ledger, events)["completedWithoutMeasuredExecutionCount"], 0)
+            ledger["history"][0]["source"]["windowEndSeconds"] = 21.0
+            audit = measure.timing_audit(ledger, events)
+            self.assertEqual(audit["measuredStepCount"], 0)
+            self.assertEqual(audit["completedWithoutMeasuredExecution"], ["L2-01@ko"])
+            self.assertEqual(audit["completedWithoutMeasuredExecutionCount"], 1)
+
     def test_real_command_span_is_linked_to_step(self):
         with tempfile.TemporaryDirectory() as temp:
             ledger_path = Path(temp) / "four-layer-progress.json"
