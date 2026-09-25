@@ -21,6 +21,9 @@ feature/* 或 codex/*
 
 - `main` 和 `dev` 都禁止直接 push、force-push 和删除；管理员也遵守保护规则。
 - 两个分支的 PR 都必须基于目标分支最新提交，并通过 `unittest` 和 `native-client`。`native-client` 是固定名称的必需检查：普通后端／Web／周次变更不启动 Mac；共享发布合同与进入 `dev` 的原生代码运行原生包测试；只有晋升到 `main` 的原生代码变更或显式 `workflow_dispatch` 才运行 iOS 模拟器构建和测试。草稿转为 Ready for review 会重新触发检查；正式代码候选的完整 iOS 验证必须对应待晋升的最新提交。
+- `unittest` 同样保留固定检查名。若 PR／push 的所有改动都限于根 README、`docs/` 下的 Markdown／SVG／图片或 `docs/diagrams/diagram-specs.json`，先检查空白、相对链接、SVG／图片格式和生成图与 spec 一致性，再由 `unittest` 快速确认，两个 Python 测试分片不启动。空差异、无法分类、工作流、脚本、App 资源或其他路径一律运行完整测试；文档校验失败仍阻止合并。`native-client` 与 `promotion-policy` 保持各自独立门禁。
+
+检查文档专用 PR 时，以 `changes=pass`、两个 `test-group` 为 `skipped`、固定的 `unittest=pass` 为快路径实际生效的证据；只看到 `unittest=pass` 不足以判断耗时测试有没有运行。若变更包含非允许路径，两个分片必须执行并通过。
 - `main` 额外要求 `promotion-policy`。它只接收同仓库 `dev` 或 `release/YYYY-Www`；release 分支须包含当前 main，且相对 main 的每个代码补丁已进入 dev。需修复候选时先把变更并入 dev，再带入 release 分支；不得直接在 release 分支加入未审补丁。短发布窗口可继续使用 `dev → main`，不要长期打开一个随 dev 每次提交更新的晋升 PR。
 - `main` 要求线性历史并使用 squash merge。`dev` 不要求线性历史：普通功能 PR 仍使用 squash／rebase，但每次生产晋升后必须通过一个从最新 `dev` 建立的临时 `sync/*` 分支合并 `main`，再用受检查的 `sync/* → dev` PR 把新的 `main` tip 纳入 `dev` 祖先链。
 - 当前仓库为单维护者流程，因此 PR 本身是强制门禁，但批准人数为 0；CI、对话解决和 `main` 线性历史仍是硬条件。增加第二位维护者后，应把批准人数提升为 1。

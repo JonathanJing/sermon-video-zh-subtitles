@@ -18,8 +18,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.classify.outputs.docs_only }}
+    steps:
+      - name: Check out repository history
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Classify and validate documentation changes
+        id: classify
+        env:
+          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          CHANGE_EVENT: ${{ github.event_name }}
+        run: >-
+          python3 scripts/docs_change_gate.py
+          --base "$BASE_SHA"
+          --head "$HEAD_SHA"
+          --event "$CHANGE_EVENT"
+          --output "$GITHUB_OUTPUT"
+
   test_group:
     name: test-group (root-${{ matrix.shard_index }})
+    needs: changes
+    if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
@@ -87,12 +111,22 @@ jobs:
 
   # Keep this job name stable: branch protection requires the unittest check.
   unittest:
-    needs: test_group
+    needs: [changes, test_group]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - name: Require every test group to pass
+      - name: Require docs validation or every test group
         env:
+          CHANGE_RESULT: ${{ needs.changes.result }}
+          DOCS_ONLY: ${{ needs.changes.outputs.docs_only }}
           TEST_GROUP_RESULT: ${{ needs.test_group.result }}
-        run: test "$TEST_GROUP_RESULT" = success
+        run: |
+          set -euo pipefail
+          test "$CHANGE_RESULT" = success
+          if test "$DOCS_ONLY" = true; then
+            test "$TEST_GROUP_RESULT" = skipped
+          else
+            test "$DOCS_ONLY" = false
+            test "$TEST_GROUP_RESULT" = success
+          fi
