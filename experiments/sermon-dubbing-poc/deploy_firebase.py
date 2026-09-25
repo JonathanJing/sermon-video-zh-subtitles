@@ -240,7 +240,7 @@ def verify_release(release):
         path = public / name
         if not path.resolve().is_relative_to(public) or sha256(path) != info["sha256"]:
             raise ValueError("Release file or path changed")
-        if name not in {"index.html", "style.css", "app.mjs", "timing.mjs", "catalog.mjs", "theme.js", "weekly.json", "feedback.mjs", "feedback-client.mjs", "listening.mjs", "usage.mjs", "usage-client.mjs", "playback-memory.mjs", "media-session.mjs", "i18n.mjs", "locales-interface.mjs", "locales-app.mjs", "locales-feedback.mjs", "locales-ko.mjs", "locales-es.mjs", "content-locales.mjs", "engagement.json", "brand-icon.png"} | FINGERPRINT_UI and not re.fullmatch(r"media/[a-f0-9]{16}-[\w.-]+\.mp3", name) and name not in downloads | fingerprints:
+        if name not in {"index.html", "style.css", "app.mjs", "timing.mjs", "catalog.mjs", "theme.js", "weekly.json", "feedback.mjs", "feedback-client.mjs", "listening.mjs", "usage.mjs", "usage-client.mjs", "playback-memory.mjs", "media-session.mjs", "i18n.mjs", "locales-interface.mjs", "locales-app.mjs", "locales-feedback.mjs", "locales-ko.mjs", "locales-es.mjs", "content-locales.mjs", "engagement.json", "brand-icon.png", "brand-icon-light.png"} | FINGERPRINT_UI and not re.fullmatch(r"media/[a-f0-9]{16}-[\w.-]+\.mp3", name) and name not in downloads | fingerprints:
             raise ValueError("Only UI, weekly content, hashed listening MP3s and bound downloads may be uploaded")
     return report
 

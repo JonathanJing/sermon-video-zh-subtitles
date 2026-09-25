@@ -153,8 +153,9 @@ function executeTheme(doc) {
 function mountTheme(doc) {
   const label = new Element({ id: 'theme-label' });
   const button = new Element({ id: 'theme-toggle' }, [label]);
-  doc.children.push(button);
-  return { label, button };
+  const icon = new Element({ id: 'brand-icon' });
+  doc.children.push(button, icon);
+  return { label, button, icon };
 }
 
 test('head palette script localizes after DOMContentLoaded, language changes, and theme clicks', async () => {
@@ -164,12 +165,14 @@ test('head palette script localizes after DOMContentLoaded, language changes, an
     assert.equal(doc.documentElement.dataset.theme, 'dark');
     doc.dispatchEvent({ type: 'DOMContentLoaded' });
     assert.equal(theme.label.textContent, '深色');
+    assert.equal(theme.icon.src, '/brand-icon.png');
     assert.equal(theme.label.getAttribute('data-i18n'), 'theme.dark');
     core.setLocale('en');
     assert.equal(theme.label.textContent, 'Dark');
     assert.equal(theme.button.getAttribute('aria-label'), 'Switch to light mode');
     theme.button.dispatchEvent({ type: 'click' });
     assert.equal(doc.documentElement.dataset.theme, 'light');
+    assert.equal(theme.icon.src, '/brand-icon-light.png');
     assert.equal(theme.label.textContent, 'Light');
     assert.equal(theme.button.getAttribute('aria-label'), 'Switch to dark mode');
     core.setLocale('zh');
