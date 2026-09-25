@@ -5916,30 +5916,30 @@
         }
       }
     },
-    "只有你点击听音对齐时，App 才会请求麦克风权限并聆听约 8 秒。声音仅在设备内存中匹配，不保存为录音、不上传。取消或进入后台会停止采音。拒绝权限仍可手动收听和定位。": {
+    "只有你点击听音对齐时，App 才会请求麦克风权限。根据所选内容，App 会聆听约 8 秒或 10 秒。声音仅在设备内存中匹配，不保存为录音、不上传。取消或进入后台会停止采音。拒绝权限仍可手动收听和定位。": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Only when you start sound alignment does the app request microphone permission and listen for about 8 seconds. Audio is matched in device memory; it is not saved as a recording or uploaded. Cancelling or backgrounding stops capture. You can still listen and seek manually without permission."
+            "value": "Only when you start sound alignment does the app request microphone permission. Depending on the selected content, it listens for about 8 or 10 seconds. Audio is matched in device memory; it is not saved as a recording or uploaded. Cancelling or backgrounding stops capture. You can still listen and seek manually without permission."
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "듣기 정렬을 시작할 때만 앱이 마이크 권한을 요청하고 약 8초 동안 소리를 듣습니다. 소리는 기기 메모리에서만 일치 여부를 확인하며 녹음으로 저장하거나 업로드하지 않습니다. 취소하거나 앱이 백그라운드로 전환되면 수음이 중지됩니다. 권한을 거부해도 수동으로 듣고 재생 위치를 이동할 수 있습니다."
+            "value": "듣기 정렬을 시작할 때만 앱이 마이크 권한을 요청합니다. 선택한 콘텐츠에 따라 약 8초 또는 10초 동안 소리를 듣습니다. 소리는 기기 메모리에서만 일치 여부를 확인하며 녹음으로 저장하거나 업로드하지 않습니다. 취소하거나 앱이 백그라운드로 전환되면 수음이 중지됩니다. 권한을 거부해도 수동으로 듣고 재생 위치를 이동할 수 있습니다."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "La app solo solicita acceso al micrófono y escucha durante unos 8 segundos cuando inicias la alineación por sonido. El audio se compara en la memoria del dispositivo; no se guarda como grabación ni se sube. La captura se detiene al cancelar o al pasar la app a segundo plano. Puedes seguir escuchando y buscando la posición manualmente sin conceder el permiso."
+            "value": "La app solo solicita acceso al micrófono cuando inicias la alineación por sonido. Según el contenido seleccionado, escucha durante unos 8 o 10 segundos. El audio se compara en la memoria del dispositivo; no se guarda como grabación ni se sube. La captura se detiene al cancelar o al pasar la app a segundo plano. Puedes seguir escuchando y buscando la posición manualmente sin conceder el permiso."
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ứng dụng chỉ yêu cầu quyền sử dụng micrô và nghe trong khoảng 8 giây khi bạn bắt đầu căn chỉnh bằng âm thanh. Âm thanh chỉ được đối chiếu trong bộ nhớ thiết bị, không được lưu thành bản ghi hay tải lên. Việc thu âm dừng khi bạn hủy hoặc chuyển ứng dụng sang nền. Bạn vẫn có thể nghe và tua thủ công nếu từ chối cấp quyền."
+            "value": "Ứng dụng chỉ yêu cầu quyền sử dụng micrô khi bạn bắt đầu căn chỉnh bằng âm thanh. Tùy theo nội dung được chọn, ứng dụng nghe trong khoảng 8 hoặc 10 giây. Âm thanh chỉ được đối chiếu trong bộ nhớ thiết bị, không được lưu thành bản ghi hay tải lên. Việc thu âm dừng khi bạn hủy hoặc chuyển ứng dụng sang nền. Bạn vẫn có thể nghe và tua thủ công nếu từ chối cấp quyền."
           }
         }
       }

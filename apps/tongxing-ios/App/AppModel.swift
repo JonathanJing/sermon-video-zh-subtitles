@@ -350,6 +350,7 @@ final class AppModel: ObservableObject {
               page.targets[selectedContentLocale]?.audioStatus == "human_reviewed",
               let multilingualRepository else { return }
         let locale = selectedContentLocale
+        guard let requestedTarget = page.targets[locale] else { return }
         let request = UUID()
         publishedAudioRequest = request
         isPreparingPublishedAudio = true
@@ -359,7 +360,11 @@ final class AppModel: ObservableObject {
             let package = try await multilingualRepository.loadRelease(page: page, locale: locale)
             let audio = try await multilingualRepository.loadAudio(for: package, page: page)
             guard publishedAudioRequest == request, selectedWeek == nil,
-                  selectedMultilingualPage?.id == page.id, selectedContentLocale == locale else { return }
+                  let currentPage = selectedMultilingualPage,
+                  currentPage.id == page.id,
+                  currentPage.sourceIdentitySha256 == page.sourceIdentitySha256,
+                  currentPage.targets[locale] == requestedTarget,
+                  selectedContentLocale == locale else { return }
             playback.loadPublishedAudio(audio)
             selectedAudioLocale = locale
             publishedAudioSha256 = audio.sha256

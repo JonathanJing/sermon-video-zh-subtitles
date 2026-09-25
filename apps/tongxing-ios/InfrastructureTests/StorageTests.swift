@@ -122,6 +122,8 @@ final class StorageTests {
         #expect(verified.locale == "ko")
         #expect(verified.pageID == "page-1")
         #expect(try Data(contentsOf: verified.localURL) == audio)
+        #expect(try verified.localURL.deletingLastPathComponent()
+            .resourceValues(forKeys: [.isExcludedFromBackupKey]).isExcludedFromBackup == true)
 
         stub(.init(chunks: [], error: URLError(.notConnectedToInternet)))
         #expect(try await repository.loadAudio(for: package, page: page).localURL == verified.localURL)

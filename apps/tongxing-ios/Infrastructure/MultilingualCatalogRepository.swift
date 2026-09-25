@@ -172,9 +172,12 @@ public actor MultilingualCatalogRepository {
               let source = URL(string: asset.path, relativeTo: origin)?.absoluteURL,
               ContentOrigin.isSame(origin, source) else { throw ContentStorageError.invalidURL }
         let extensionName = (filename as NSString).pathExtension
-        let cache = cacheDirectory.appendingPathComponent("Audio", isDirectory: true)
-            .appendingPathComponent("\(asset.sha256).\(extensionName)")
-        try FileManager.default.createDirectory(at: cache.deletingLastPathComponent(), withIntermediateDirectories: true)
+        var audioCacheDirectory = cacheDirectory.appendingPathComponent("Audio", isDirectory: true)
+        let cache = audioCacheDirectory.appendingPathComponent("\(asset.sha256).\(extensionName)")
+        try FileManager.default.createDirectory(at: audioCacheDirectory, withIntermediateDirectories: true)
+        var backupValues = URLResourceValues()
+        backupValues.isExcludedFromBackup = true
+        try audioCacheDirectory.setResourceValues(backupValues)
         if FileManager.default.fileExists(atPath: cache.path),
            (try? verifyAudioFile(cache, sha256: asset.sha256)) != nil {
             return .init(localURL: cache, pageID: page.id, locale: package.targetLocale,
