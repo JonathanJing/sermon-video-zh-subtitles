@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseArgs, validateSnapshot } from '../publish.mjs';
-import { formatDuration, stepTimingSummary } from '../src/timing.js';
+import { formatDuration, stepTimingSummary, timingCoverageNote } from '../src/timing.js';
 
 test('publishing requires an explicit project, database and snapshot', () => {
   assert.throws(() => parseArgs(['--project', 'example-project', '--database', 'sermon-tracker']), /snapshot/);
@@ -100,4 +100,21 @@ test('step timing labels separate measured attempts from open and status time', 
   assert.match(lines[1], /未结束执行计时 1分35秒（截至快照）/);
   assert.match(lines[2], /进行中状态持续 8分0秒（截至快照，非执行耗时）/);
   assert.match(stepTimingSummary({ status: 'complete' })[0], /执行耗时未记录/);
+});
+
+test('public timing projection and older snapshots expose completed unmeasured steps', () => {
+  const snapshot = { schemaVersion: 'sermon-public-tracker-snapshot-v1',
+    pageId: 'week-2026-09-20', target: 'dev', locales: [], source: {}, progress: {},
+    timingCoverage: { measuredStepCount: 0 }, readOnly: true,
+    steps: [{ id: 'L1-01', layer: 1, locale: null, status: 'complete' },
+      { id: 'L2-01@ko', layer: 2, locale: 'ko', status: 'complete',
+        timing: { measuredExecutionSeconds: 1.2 } },
+      { id: 'private/step', layer: 3, locale: 'ko', status: 'complete' }] };
+  const publicData = validateSnapshot(snapshot);
+  assert.equal(publicData.timingCoverage.completedWithoutMeasuredExecutionCount, 1);
+  assert.deepEqual(publicData.timingCoverage.completedWithoutMeasuredExecutionStepIds, ['L1-01']);
+  assert.match(timingCoverageNote(publicData.timingCoverage, publicData.steps), /1 个已记录步骤缺实测计时/);
+  assert.match(timingCoverageNote({}, snapshot.steps.slice(0, 1)), /1 个已记录步骤缺实测计时/);
+  assert.equal(formatDuration(0.3482), '0.348秒');
+  assert.equal(formatDuration(69.2), '1分9秒');
 });

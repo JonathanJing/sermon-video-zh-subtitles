@@ -161,6 +161,59 @@ final class AudioAlignmentControllerTests: XCTestCase {
         XCTAssertGreaterThan(f.capture.stops, 0)
     }
 
+    func testIndependentPageUsesBoundIndexAndCancelsAfterLocaleChange() async throws {
+        let hash = String(repeating: "a", count: 64)
+        let trackHash = String(repeating: "b", count: 64)
+        let catalogData = try JSONSerialization.data(withJSONObject: [
+            "schemaVersion": "sermon-multilingual-catalog-v2", "generatedAt": "2026-09-24T00:00:00Z",
+            "defaultPageId": "clip-1", "pages": [[
+                "id": "clip-1", "date": "2026-09-20", "sourceLocale": "en",
+                "sourceIdentitySha256": hash, "sourceMediaSha256": hash,
+                "defaultTargetLocale": "zh-Hans", "targets": ["zh-Hans": [
+                    "releasePackageUrl": "/releases/clip-1/zh-Hans.json",
+                    "releasePackageJsonSha256": hash, "contentStatus": "human_reviewed",
+                    "audioStatus": "human_reviewed", "capabilities": ["text", "audio", "alignment"],
+                    "audioFingerprint": ["schemaVersion": "sermon-audio-fingerprint-binding-v1",
+                        "pageId": "clip-1", "sourceSha256": hash, "trackSha256": trackHash,
+                        "sourceStartSeconds": 0, "sourceEndSeconds": 138,
+                        "algorithmVersion": "spectral-landmarks-v1", "captureSeconds": 10,
+                        "indexSha256": hash, "indexUrl": "/fingerprints/aaaaaaaaaaaaaaaa-landmarks.json"]
+                ]]]]
+        ])
+        let page = try MultilingualCatalog.decode(catalogData).defaultPage
+        let indexData = try JSONSerialization.data(withJSONObject: [
+            "schemaVersion": "sermon-landmark-index-v1", "algorithmVersion": "spectral-landmarks-v1",
+            "sampleRate": 8000, "hopSize": 256, "fftSize": 1024,
+            "sourceSha256": hash, "trackSha256": trackHash, "pageId": page.id,
+            "sourceStartSeconds": 0, "sourceEndSeconds": 138,
+            "window": ["startSeconds": 0, "endSeconds": 138], "durationSeconds": 138,
+            "landmarkCount": 1, "postings": ["1": [0]]
+        ])
+        let index = try PublishedFingerprintIndex.decode(indexData)
+        let player = FakePlayback()
+        player.duration = 138.004
+        let capture = FakeCapture()
+        capture.samples = [Float](repeating: 0, count: 80_000)
+        var selected: AudioAlignmentController.PublishedSelection? =
+            .init(page: page, locale: "zh-Hans", trackSha256: trackHash, durationSeconds: player.duration)
+        var loaded = 0
+        let controller = AudioAlignmentController(playback: player, capture: capture,
+            getSelection: { nil }, loadIndex: { _ in throw AudioAlignmentError.unavailable },
+            getPublishedSelection: { selected }, loadPageIndex: { selection in
+                loaded += 1
+                try index.validate(binding: XCTUnwrap(selection.page.targets[selection.locale]?.audioFingerprint))
+                return index
+            }, onState: { _, _, _ in })
+        XCTAssertTrue(controller.available)
+        controller.start()
+        try await eventually { !controller.busy }
+        XCTAssertEqual(loaded, 1)
+        XCTAssertEqual(capture.requestedSeconds, [10])
+        XCTAssertTrue(player.seeks.isEmpty)
+        selected = nil
+        XCTAssertFalse(controller.available)
+    }
+
     func testReviewedPublishedCapabilityRemainsAvailableAndStartsCapture() async throws {
         let f = try Fixture(published: true)
         let initial = try XCTUnwrap(f.selection)

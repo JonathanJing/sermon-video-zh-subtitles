@@ -69,6 +69,42 @@ struct ContentView: View {
                                 ContentUnavailableView(localization.text("本周音频尚未准备好"), systemImage: "waveform", description: Text(localization.text("可以先阅读证道大纲。")))
                             }
                             footer(week)
+                        } else if let page = model.selectedMultilingualPage {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text(localization.text("已发布页面"))
+                                    .font(.caption.weight(.medium)).foregroundStyle(.secondary)
+                                Text(page.id).font(.largeTitle.bold())
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .accessibilityAddTraits(.isHeader)
+                                    .accessibilityIdentifier("published-page-title")
+                                Text(page.date).font(.subheadline).foregroundStyle(.secondary)
+                                languageButton
+                                Text("\(localization.text("内容语言")) · \(model.selectedContentLanguageName)")
+                                    .font(.footnote).foregroundStyle(.secondary)
+                                if let audioLanguage = model.selectedAudioLanguageName {
+                                    Text("\(localization.text("音频语言")) · \(audioLanguage)")
+                                        .font(.footnote.weight(.medium))
+                                        .accessibilityIdentifier("published-audio-locale")
+                                } else if model.selectedContentTarget?.audioStatus == "human_reviewed" {
+                                    Button {
+                                        Task { await model.prepareSelectedPublishedAudio() }
+                                    } label: {
+                                        Label(localization.text("下载并准备本语言音频"), systemImage: "arrow.down.circle")
+                                    }
+                                    .buttonStyle(.borderedProminent)
+                                    .disabled(model.isPreparingPublishedAudio)
+                                    .accessibilityIdentifier("prepare-published-audio")
+                                    if model.isPreparingPublishedAudio { ProgressView() }
+                                    if let error = model.publishedAudioError {
+                                        Label(localization.text(error), systemImage: "exclamationmark.circle")
+                                            .font(.footnote)
+                                    }
+                                } else {
+                                    Text(localization.text("本语言仅提供文字"))
+                                        .font(.footnote).foregroundStyle(.secondary)
+                                }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         } else if model.isLoading {
                             ProgressView(localization.text("正在读取本周证道…")).frame(maxWidth: .infinity, minHeight: 320)
                         } else {
@@ -121,9 +157,11 @@ struct ContentView: View {
             }
             .background(Brand.background)
             .listeningBottomBar {
-                if model.selectedTrack != nil {
-                    PlaybackDock(playback: playback, isPreparing: model.isPreparing, alignmentModel: model,
-                                 precision: { sheet = .precision }, current: { returnToCurrent = UUID() })
+                if model.selectedTrack != nil || model.selectedAudioLocale != nil {
+                    PlaybackDock(playback: playback, isPreparing: model.isPreparing || model.isPreparingPublishedAudio,
+                                 alignmentModel: model,
+                                 precision: model.selectedTrack == nil ? nil : { sheet = .precision },
+                                 current: model.selectedTrack == nil ? nil : { returnToCurrent = UUID() })
                 }
             }
             .toolbar {
@@ -690,7 +728,35 @@ private struct WeekSheet: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("\(week.title)，\(week.date)")
+                        .accessibilityIdentifier("legacy-week-\(week.id)")
                         Divider().padding(.horizontal, 20)
+                    }
+                    if !model.independentPages.isEmpty {
+                        Text(localization.text("已发布页面"))
+                            .font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 20).padding(.top, 18)
+                        ForEach(model.independentPages) { page in
+                            Button {
+                                model.selectPublishedPage(page)
+                                dismiss()
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 7) {
+                                        Text(page.id).font(.headline)
+                                        Text("\(page.date) · \(page.publishedTargets.map { AppModel.languageName($0.locale) }.joined(separator: " · "))")
+                                            .font(.subheadline).foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    if page.id == model.selectedPageID { Image(systemName: "checkmark") }
+                                }
+                                .padding(20).frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("published-page-\(page.id)")
+                            Divider().padding(.horizontal, 20)
+                        }
                     }
                 }
             }.navigationTitle(localization.text("选择证道"))

@@ -33,17 +33,24 @@ public struct MultilingualPage: Codable, Sendable, Equatable, Identifiable {
     public let date: String
     public let sourceLocale: String
     public let sourceIdentitySha256: String
+    public let sourceMediaSha256: String?
     public let defaultTargetLocale: String
     public let targets: [String: PageTarget]
 
     public func validate() throws {
         guard Validation.identifier(id), Validation.isoDate(date), sourceLocale == "en",
               Validation.sha256(sourceIdentitySha256), Validation.locale(defaultTargetLocale),
+              sourceMediaSha256.map(Validation.sha256) ?? true,
               !targets.isEmpty, targets.count <= 16, targets[defaultTargetLocale] != nil
         else { throw CatalogError.invalid("多语言页面来源、日期或默认语言无效") }
         for (locale, target) in targets {
             guard Validation.locale(locale) else { throw CatalogError.invalid("目标语言代码无效") }
             try target.validate(pageID: id, locale: locale)
+            if let binding = target.audioFingerprint {
+                guard sourceMediaSha256 == binding.sourceSha256 else {
+                    throw CatalogError.invalid("多语言页面声音指纹来源不符")
+                }
+            }
         }
     }
 
@@ -60,14 +67,22 @@ public struct PageTarget: Codable, Sendable, Equatable {
     public let contentStatus: String
     public let audioStatus: String
     public let capabilities: [LanguageCapability]
+    public let audioFingerprint: PublishedFingerprintBinding?
 
     public func validate(pageID: String, locale: String) throws {
         let expected = "/releases/\(pageID)/\(locale).json"
         guard releasePackageUrl == expected, Validation.sha256(releasePackageJsonSha256),
               contentStatus == "human_reviewed", ["unavailable", "human_reviewed"].contains(audioStatus),
               capabilities.contains(.text), Set(capabilities.map(\.rawValue)).count == capabilities.count,
-              (audioStatus == "human_reviewed") == capabilities.contains(.audio)
+              (audioStatus == "human_reviewed") == capabilities.contains(.audio),
+              (audioFingerprint != nil) == capabilities.contains(.alignment)
         else { throw CatalogError.invalid("目标语言发布引用或能力无效") }
+        if let audioFingerprint {
+            try audioFingerprint.validate()
+            guard audioFingerprint.pageId == pageID, audioStatus == "human_reviewed" else {
+                throw CatalogError.invalid("目标语言声音指纹与页面不符")
+            }
+        }
     }
 
     public func packageURL(relativeTo baseURL: URL) throws -> URL {
@@ -96,20 +111,23 @@ public struct TargetLanguageReleasePackage: Codable, Sendable, Equatable {
     public let venueAcceptance: ReleaseAcceptance
     public let issues: [JSONValue]
 
-    public static func decode(_ data: Data) throws -> Self {
+    public static func decode(_ data: Data, allowDevCandidate: Bool = false) throws -> Self {
         let value = try JSONDecoder().decode(Self.self, from: data)
-        try value.validate()
+        try value.validate(allowDevCandidate: allowDevCandidate)
         return value
     }
 
-    public func validate() throws {
+    public func validate(allowDevCandidate: Bool = false) throws {
         guard schemaVersion == Self.supportedSchemaVersion, Validation.identifier(packageId),
               Validation.identifier(pageId), sourceLocale == "en", Validation.locale(targetLocale),
-              Validation.sha256(targetLanguageCandidateJsonSha256), status == "published_http_verified",
+              Validation.sha256(targetLanguageCandidateJsonSha256),
               contentStatus == "human_reviewed", interfaceLocale == targetLocale,
-              contentLocale == targetLocale, httpVerification.status == "pass", issues.isEmpty,
+              contentLocale == targetLocale, issues.isEmpty,
               !assets.isEmpty
         else { throw CatalogError.invalid("目标语言发布包状态或绑定无效") }
+        let published = status == "published_http_verified" && httpVerification.status == "pass"
+        let devCandidate = allowDevCandidate && status == "candidate" && httpVerification.status == "not_run"
+        guard published || devCandidate else { throw CatalogError.invalid("目标语言发布包尚未通过所需发布状态") }
         let assetKeys = assets.map { "\($0.role.rawValue):\($0.path)" }
         guard Set(assetKeys).count == assetKeys.count else { throw CatalogError.invalid("发布资产重复") }
         for asset in assets { try asset.validate() }
@@ -123,12 +141,25 @@ public struct TargetLanguageReleasePackage: Codable, Sendable, Equatable {
                   assets.contains(where: { $0.role == .audio })
             else { throw CatalogError.invalid("音频语言或审核状态无效") }
         }
-        guard assets.contains(where: { $0.role == .page }) else { throw CatalogError.invalid("发布包缺少语言页面") }
+        if published {
+            guard assets.contains(where: { $0.role == .page }) else { throw CatalogError.invalid("发布包缺少语言页面") }
+        } else {
+            guard assets.contains(where: { $0.role == .content &&
+                $0.path == "/content/\(pageId)/\(targetLocale).json" })
+            else { throw CatalogError.invalid("Dev 候选包缺少语言内容") }
+        }
     }
 
     public func pageURL(relativeTo baseURL: URL) throws -> URL {
         guard let page = assets.first(where: { $0.role == .page }) else { throw CatalogError.invalid("发布包缺少语言页面") }
         return try secureURL(path: page.path, baseURL: baseURL)
+    }
+
+    public func contentURL(relativeTo baseURL: URL) throws -> URL {
+        guard status == "candidate", let content = assets.first(where: { $0.role == .content }),
+              content.path == "/content/\(pageId)/\(targetLocale).json"
+        else { throw CatalogError.invalid("Dev 候选包缺少语言内容") }
+        return try secureURL(path: content.path, baseURL: baseURL)
     }
 }
 

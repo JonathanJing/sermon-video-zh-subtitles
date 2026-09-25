@@ -17,6 +17,24 @@ DOWNLOAD_EXTENSIONS = {"readingPdf": "pdf", "companionPdf": "pdf", "fullVideoMp3
 DOWNLOAD_PATH = re.compile(r"/downloads/([a-f0-9]{16})-[A-Za-z0-9][A-Za-z0-9._-]*\.(pdf|mp3|srt)")
 FINGERPRINT_UI = {"fingerprint-core.mjs", "fingerprint-capture.mjs", "fingerprint-worklet.mjs", "fingerprint-worker.mjs", "fingerprint-ui.mjs"}
 PRODUCTION_SITE = "ai-for-god-sermon-audio"
+PRODUCTION_PROJECT = "ai-for-god-caption-dev"
+
+
+def guard_multilingual_home(project, site, *, allow_rollback=False, opener=urlopen):
+    """Keep the legacy deploy guarded even if the earlier preflight changes."""
+    if (project, site) != (PRODUCTION_PROJECT, PRODUCTION_SITE) or allow_rollback:
+        return
+    url = f"https://{site}.web.app/multilingual-v2.json"
+    try:
+        with opener(Request(url, method="GET"), timeout=30) as response:
+            status = response.status
+    except HTTPError as error:
+        status = error.code
+    if status == 404:
+        return
+    if status == 200:
+        raise ValueError("Production has a multilingual catalog; use the overlay release or explicit rollback")
+    raise ValueError(f"Cannot establish Production multilingual state: HTTP {status}")
 
 
 def production_has_multilingual_catalog(site, *, opener=urlopen):
@@ -254,6 +272,8 @@ def main():
     receipt = {"projectId": args.project, "siteId": args.site, "url": f"https://{args.site}.web.app", "files": len(report["files"]), "bytes": report["totalBytes"],
         "buildReportSha256": sha256(release / "build-report.json"), "only": "hosting:sermonDubbing", "status": "validated_not_deployed"}
     if args.execute:
+        guard_multilingual_home(args.project, args.site,
+                                allow_rollback=args.allow_multilingual_rollback)
         command = ["npx", "--yes", "firebase-tools@15.29.0", "deploy", "--only", "hosting:sermonDubbing", "--project", args.project, "--non-interactive", "--message", "Weekly Chinese sermon listening app"]
         with (release / "deploy.log").open("w") as log:
             subprocess.run(command, cwd=release, stdout=log, stderr=subprocess.STDOUT, check=True)

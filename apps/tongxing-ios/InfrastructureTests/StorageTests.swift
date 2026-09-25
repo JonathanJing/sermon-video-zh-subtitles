@@ -70,7 +70,7 @@ final class StorageTests {
         let fixture = try multilingualFixture()
         StubURLProtocol.install(host: baseURL.host!) { request in
             switch request.url?.path {
-            case "/multilingual.json": return .init(chunks: [fixture.catalog])
+            case "/multilingual-v2.json": return .init(chunks: [fixture.catalog])
             case "/releases/page-1/ko.json": return .init(chunks: [fixture.release])
             case "/pages/page-1/ko/index.html": return .init(chunks: [fixture.page])
             default: return .init(status: 404, chunks: [Data("missing".utf8)])
@@ -101,6 +101,33 @@ final class StorageTests {
         try Data("tampered".utf8).write(to: cachedPage)
         do { _ = try await repository.loadPage(for: package); Issue.record("Tampered page must fail") }
         catch { #expect(error as? ContentStorageError == .checksumMismatch) }
+    }
+
+    @Test func reviewedLocaleAudioIsDownloadedByHashAndCachedBytesAreRechecked() async throws {
+        let audio = Data("synthetic reviewed audio bytes".utf8)
+        let fixture = try multilingualFixture(audio: audio)
+        StubURLProtocol.install(host: baseURL.host!) { request in
+            switch request.url?.path {
+            case "/multilingual-v2.json": return .init(chunks: [fixture.catalog])
+            case "/releases/page-1/ko.json": return .init(chunks: [fixture.release])
+            case "/media/page-1/ko.wav": return .init(chunks: [audio])
+            default: return .init(status: 404, chunks: [Data("missing".utf8)])
+            }
+        }
+        let repository = MultilingualCatalogRepository(
+            origin: baseURL, cacheDirectory: directory.appendingPathComponent("multilingual-audio"), session: session)
+        let page = try await repository.loadCatalog().catalog.defaultPage
+        let package = try await repository.loadRelease(page: page, locale: "ko")
+        let verified = try await repository.loadAudio(for: package, page: page)
+        #expect(verified.locale == "ko")
+        #expect(verified.pageID == "page-1")
+        #expect(try Data(contentsOf: verified.localURL) == audio)
+
+        stub(.init(chunks: [], error: URLError(.notConnectedToInternet)))
+        #expect(try await repository.loadAudio(for: package, page: page).localURL == verified.localURL)
+        try Data("tampered".utf8).write(to: verified.localURL)
+        do { _ = try await repository.loadAudio(for: package, page: page); Issue.record("Bad cache must not play offline") }
+        catch { #expect(error is URLError) }
     }
 
     @Test func testVerifiedDownloadTamperDetectionAndRepair() async throws {
@@ -275,17 +302,20 @@ final class StorageTests {
                     subtitleTiming: "candidate", scope: "full")
     }
 
-    private func multilingualFixture() throws -> (catalog: Data, release: Data, page: Data) {
+    private func multilingualFixture(audio: Data? = nil) throws -> (catalog: Data, release: Data, page: Data) {
         let hashA = String(repeating: "a", count: 64)
         let page = Data("<html><head></head><body>한국어 검증 페이지</body></html>".utf8)
         let pageHash = SHA256.hash(data: page).map { String(format: "%02x", $0) }.joined()
+        let audioHash = audio.map { SHA256.hash(data: $0).map { String(format: "%02x", $0) }.joined() }
         let releaseValue: [String: Any] = [
             "schemaVersion": "sermon-target-language-release-package-v1",
             "packageId": "page-1-ko", "pageId": "page-1", "sourceLocale": "en", "targetLocale": "ko",
-            "targetLanguageCandidateJsonSha256": hashA, "targetLanguageAudioPackageJsonSha256": NSNull(),
-            "status": "published_http_verified", "contentStatus": "human_reviewed", "audioStatus": "unavailable",
-            "interfaceLocale": "ko", "contentLocale": "ko", "audioLocale": NSNull(),
-            "assets": [["role": "page", "path": "/pages/page-1/ko/index.html", "sha256": pageHash]],
+            "targetLanguageCandidateJsonSha256": hashA, "targetLanguageAudioPackageJsonSha256": audio == nil ? NSNull() : hashA as Any,
+            "status": "published_http_verified", "contentStatus": "human_reviewed",
+            "audioStatus": audio == nil ? "unavailable" : "human_reviewed",
+            "interfaceLocale": "ko", "contentLocale": "ko", "audioLocale": audio == nil ? NSNull() : "ko" as Any,
+            "assets": [["role": "page", "path": "/pages/page-1/ko/index.html", "sha256": pageHash]]
+                + (audioHash.map { [["role": "audio", "path": "/media/page-1/ko.wav", "sha256": $0]] } ?? []),
             "httpVerification": ["status": "pass", "evidenceSha256": hashA],
             "deviceAcceptance": ["status": "not_run", "evidenceSha256": NSNull()],
             "venueAcceptance": ["status": "not_run", "evidenceSha256": NSNull()], "issues": [],
@@ -298,7 +328,8 @@ final class StorageTests {
                 "id": "page-1", "date": "2026-09-21", "sourceLocale": "en", "sourceIdentitySha256": hashA,
                 "defaultTargetLocale": "ko", "targets": ["ko": [
                     "releasePackageUrl": "/releases/page-1/ko.json", "releasePackageJsonSha256": releaseHash,
-                    "contentStatus": "human_reviewed", "audioStatus": "unavailable", "capabilities": ["text"],
+                    "contentStatus": "human_reviewed", "audioStatus": audio == nil ? "unavailable" : "human_reviewed",
+                    "capabilities": audio == nil ? ["text"] : ["text", "audio"],
                 ]],
             ]],
         ]

@@ -54,6 +54,95 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertEqual(app.staticTexts["sermon-title"].label, "界面测试证道")
     }
 
+    func testIndependentPublishedPageKeepsLocalesSeparateFromLegacyWeek() throws {
+        let app = launchFixture()
+        app.buttons["choose-sermon"].tap()
+        let independent = app.buttons["published-page-ui-test-clip"]
+        XCTAssertTrue(independent.waitForExistence(timeout: 5))
+        independent.tap()
+        XCTAssertEqual(app.staticTexts["published-page-title"].label, "ui-test-clip")
+        XCTAssertFalse(app.buttons["playback-toggle"].exists)
+
+        app.buttons["choose-content-language"].tap()
+        XCTAssertTrue(app.buttons["content-language-es"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["content-language-ko"].exists)
+        app.buttons["content-language-es"].tap()
+        XCTAssertTrue(app.webViews["verified-content-page"].waitForExistence(timeout: 10))
+        app.buttons["完成"].tap()
+
+        let prepare = app.buttons["prepare-published-audio"]
+        XCTAssertTrue(prepare.waitForExistence(timeout: 5))
+        prepare.tap()
+        XCTAssertTrue(app.staticTexts["published-audio-locale"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["published-audio-locale"].label.contains("Español"))
+        let play = app.buttons["playback-toggle"]
+        try waitFor(play, "exists == true AND enabled == true AND hittable == true")
+        play.tap()
+        try waitFor(play, "label == '暂停播放'")
+        try waitFor(element("playback-progress", in: app), "NOT (value BEGINSWITH '00:00，')")
+
+        app.buttons["choose-sermon"].tap()
+        app.buttons["legacy-week-ui-test-week"].tap()
+        XCTAssertEqual(app.staticTexts["sermon-title"].label, "界面测试证道")
+        XCTAssertTrue(app.buttons["playback-toggle"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["published-audio-locale"].exists)
+        app.buttons["choose-content-language"].tap()
+        XCTAssertTrue(app.buttons["content-language-ko"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["content-language-es"].exists)
+    }
+
+    func testLiveDevSecondClipShowsThreeLanguagesAndPlaysReviewedAudio() throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["TONGXING_LIVE_DEV_SMOKE"] == "1",
+                          "Run explicitly against Firebase Dev")
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launch()
+        defer { app.terminate() }
+        XCTAssertTrue(app.buttons["choose-sermon"].waitForExistence(timeout: 20))
+        app.buttons["choose-sermon"].tap()
+        let clip = app.buttons["published-page-2026-09-20-laodicea-clip"]
+        for _ in 0..<8 where !clip.exists {
+            app.scrollViews.element(boundBy: app.scrollViews.count - 1).swipeUp()
+        }
+        XCTAssertTrue(clip.waitForExistence(timeout: 5))
+        clip.tap()
+        let title = app.staticTexts["published-page-title"]
+        if !title.waitForExistence(timeout: 3), clip.exists { clip.tap() }
+        XCTAssertTrue(title.waitForExistence(timeout: 10))
+        XCTAssertEqual(title.label, "2026-09-20-laodicea-clip")
+
+        app.buttons["choose-content-language"].tap()
+        for locale in ["zh-Hans", "ko", "es"] {
+            XCTAssertTrue(app.buttons["content-language-\(locale)"].waitForExistence(timeout: 10))
+        }
+        app.buttons["完成"].tap()
+        let titles = [
+            "zh-Hans": "老底嘉：不冷不热的警告（片段）",
+            "es": "Laodicea: la advertencia contra la tibieza (fragmento)",
+            "ko": "라오디게아: 미지근함에 대한 경고 (발췌)",
+        ]
+        for locale in ["zh-Hans", "es", "ko"] {
+            app.buttons["choose-content-language"].tap()
+            app.buttons["content-language-\(locale)"].tap()
+            let web = app.webViews["verified-content-page"]
+            XCTAssertTrue(web.waitForExistence(timeout: 20))
+            XCTAssertTrue(web.staticTexts[titles[locale]!].waitForExistence(timeout: 10))
+            screenshot("live-dev-second-clip-\(locale)-content", app: app)
+            app.buttons["完成"].tap()
+        }
+        let prepare = app.buttons["prepare-published-audio"]
+        XCTAssertTrue(prepare.waitForExistence(timeout: 10))
+        prepare.tap()
+        XCTAssertTrue(app.staticTexts["published-audio-locale"].waitForExistence(timeout: 30))
+        XCTAssertTrue(app.staticTexts["published-audio-locale"].label.contains("한국어"))
+        let play = app.buttons["playback-toggle"]
+        try waitFor(play, "exists == true AND enabled == true AND hittable == true")
+        play.tap()
+        try waitFor(play, "label == '暂停播放'")
+        try waitFor(element("playback-progress", in: app), "NOT (value BEGINSWITH '00:00，')")
+        screenshot("live-dev-second-clip-korean-playing", app: app)
+    }
+
     func testUnavailableAlignmentExplainsReason() throws {
         let app = launchFixture()
         let alignment = app.buttons["align-live-audio"]

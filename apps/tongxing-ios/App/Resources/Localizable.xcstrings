@@ -1,6 +1,69 @@
 {
   "sourceLanguage": "zh-Hans",
   "strings": {
+    "已发布页面": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Published pages" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "게시된 페이지" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Páginas publicadas" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Trang đã xuất bản" } }
+      }
+    },
+    "内容语言": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Content language" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "콘텐츠 언어" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Idioma del contenido" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Ngôn ngữ nội dung" } }
+      }
+    },
+    "音频语言": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Audio language" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "오디오 언어" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Idioma del audio" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Ngôn ngữ âm thanh" } }
+      }
+    },
+    "下载并准备本语言音频": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Download this language's audio" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "이 언어의 오디오 다운로드" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Descargar audio de este idioma" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Tải âm thanh ngôn ngữ này" } }
+      }
+    },
+    "本语言仅提供文字": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Text only in this language" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "이 언어는 텍스트만 제공됩니다" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Solo texto en este idioma" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Ngôn ngữ này chỉ có văn bản" } }
+      }
+    },
+    "无法下载或校验所选语言音频，请联网后重试。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Could not download or verify this language's audio. Connect to the internet and retry." } },
+        "ko": { "stringUnit": { "state": "translated", "value": "이 언어의 오디오를 다운로드하거나 확인할 수 없습니다. 인터넷에 연결한 후 다시 시도하세요." } },
+        "es": { "stringUnit": { "state": "translated", "value": "No se pudo descargar o verificar el audio. Conéctate a Internet y vuelve a intentarlo." } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Không thể tải hoặc xác minh âm thanh. Hãy kết nối Internet rồi thử lại." } }
+      }
+    },
+    "音频就绪 · 可以播放": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Audio ready · Tap play" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "오디오 준비 완료 · 재생을 누르세요" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Audio listo · Toca reproducir" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Âm thanh đã sẵn sàng · Nhấn phát" } }
+      }
+    },
     "当前中文版本": {
       "extractionState": "manual",
       "localizations": {

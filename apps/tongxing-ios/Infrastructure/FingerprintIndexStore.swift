@@ -48,6 +48,19 @@ public actor FingerprintIndexStore {
     public func loadPublished(binding: PublishedFingerprintBinding, week: SermonWeek, track: SermonTrack) async throws -> PublishedFingerprintIndex {
         try Task.checkCancellation()
         try binding.validate(week: week, track: track)
+        return try await loadPublishedIndex(binding: binding)
+    }
+
+    public func loadPublished(binding: PublishedFingerprintBinding, page: MultilingualPage,
+                              locale: String, trackSha256: String,
+                              durationSeconds: Double) async throws -> PublishedFingerprintIndex {
+        try Task.checkCancellation()
+        try binding.validate(page: page, locale: locale, trackSha256: trackSha256,
+                             durationSeconds: durationSeconds)
+        return try await loadPublishedIndex(binding: binding)
+    }
+
+    private func loadPublishedIndex(binding: PublishedFingerprintBinding) async throws -> PublishedFingerprintIndex {
         try ContentOrigin.validateHTTPS(baseURL)
         let url = try binding.indexURL(relativeTo: baseURL)
         guard ContentOrigin.isSame(baseURL, url) else { throw ContentStorageError.invalidURL }
