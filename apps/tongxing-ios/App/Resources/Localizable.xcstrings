@@ -5803,6 +5803,136 @@
           }
         }
       }
+    },
+    "App 通过 HTTPS 从 Google Firebase Hosting 下载证道目录、音频和参考指纹。Google 为检测滥用和分析服务使用情况处理请求 IP，其公开说明将 IP 数据保留期描述为数月。打开原视频或网页版后，适用对应网站的隐私规则。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The app downloads catalogs, audio, and reference fingerprints over HTTPS from Google Firebase Hosting. Google processes request IP addresses to detect abuse and analyze service usage, and states that IP data is retained for a few months. Original videos and the web app are governed by their respective websites’ privacy practices."
+          }
+        }
+      }
+    },
+    "关于本说明": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About this notice"
+          }
+        }
+      }
+    },
+    "内容请求": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Content requests"
+          }
+        }
+      }
+    },
+    "反馈与支持": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Feedback & support"
+          }
+        }
+      }
+    },
+    "只有你点击听音对齐时，App 才会请求麦克风权限并聆听约 8 秒。声音仅在设备内存中匹配，不保存为录音、不上传。取消或进入后台会停止采音。拒绝权限仍可手动收听和定位。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only when you start sound alignment does the app request microphone permission and listen for about 8 seconds. Audio is matched in device memory; it is not saved as a recording or uploaded. Cancelling or backgrounding stops capture. You can still listen and seek manually without permission."
+          }
+        }
+      }
+    },
+    "本机资料": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local data"
+          }
+        }
+      }
+    },
+    "本说明适用于同行原生 App。同行是独立个人项目，不设登录、广告或业务统计上传。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This notice covers the native Tongxing app. Tongxing is an independent personal project with no sign-in, advertising, or business analytics uploads."
+          }
+        }
+      }
+    },
+    "私密反馈、资料访问或删除请求，请通过邮件联系。下方说明可离线阅读。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Email us for private feedback or requests to access or delete your data. The information below is available offline."
+          }
+        }
+      }
+    },
+    "系统播放展示": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System playback display"
+          }
+        }
+      }
+    },
+    "锁屏媒体控件和实时活动会显示当前证道、讲员、播放状态和时间。实时活动不使用推送服务；这些状态不会另行上传到业务服务器。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lock Screen media controls and Live Activities show the current sermon, speaker, playback state, and time. Live Activities do not use push notifications; these states are not separately uploaded to a business server."
+          }
+        }
+      }
+    },
+    "隐私与支持": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy & Support"
+          }
+        }
+      }
+    },
+    "音频、目录、参考指纹、语言偏好和收听位置保存在本机。收听位置最多保留 12 条，读取或更新时清理超过 30 天的记录。下载音频不进入系统备份；其他本机资料可能随你的系统备份设置保存。删除 App 可移除本机 App 资料；系统备份需在系统设置中管理。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio, catalogs, reference fingerprints, language preferences, and listening positions are stored locally. Up to 12 listening positions are retained; entries older than 30 days are removed when read or updated. Downloaded audio is excluded from system backups; other local data may be backed up according to your settings. Deleting the app removes local app data; manage system backups separately in Settings."
+          }
+        }
+      }
+    },
+    "麦克风": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Microphone"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

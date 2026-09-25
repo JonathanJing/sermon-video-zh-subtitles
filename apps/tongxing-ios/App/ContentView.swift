@@ -887,6 +887,12 @@ private struct AboutSheet: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    NavigationLink { PrivacySupportView() } label: {
+                        Label(localization.text("隐私与支持"), systemImage: "hand.raised")
+                    }
+                    .accessibilityIdentifier("privacy-support-link")
+                }
                 if let week = model.selectedWeek {
                     Section(localization.text("音频版本")) {
                         ForEach(week.tracks) { track in

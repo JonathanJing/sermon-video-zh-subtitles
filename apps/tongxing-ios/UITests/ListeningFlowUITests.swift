@@ -5,6 +5,16 @@ import XCTest
 /// these tests do not establish real-network, audible, lock-screen, or venue QA.
 @MainActor
 final class ListeningFlowUITests: XCTestCase {
+    func testPrivacySupportIsAvailableOfflineFromMoreOptions() throws {
+        let app = launchFixture(offline: true)
+        app.buttons["more-options"].tap()
+        let link = element("privacy-support-link", in: app)
+        XCTAssertTrue(link.waitForExistence(timeout: 5))
+        link.tap()
+        XCTAssertTrue(element("privacy-support-page", in: app).waitForExistence(timeout: 5))
+        XCTAssertTrue(element("privacy-contact-email", in: app).exists)
+    }
+
     func testMoreExpandsVoiceDemosWithOriginalEnglishBeforeSamples() throws {
         let app = launchFixture()
         app.buttons["more-options"].tap()
