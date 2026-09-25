@@ -659,4 +659,8 @@ test('media session follows the selected track and routes seeks through the play
   assert.ok(h.mediaUpdates > before);
   h.app.selectTab('tab-voices');
   assert.equal(session.getSelection(), null);
+  const afterVoices = h.mediaUpdates;
+  h.app.selectTab('tab-listen');
+  assert.equal(session.getSelection().track.id, 'second');
+  assert.ok(h.mediaUpdates > afterVoices, 'returning from samples restores sermon media controls');
 });

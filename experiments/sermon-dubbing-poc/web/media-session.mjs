@@ -4,6 +4,7 @@ export function createMediaSession({ audio, getSelection, play, pause, seek,
   session = globalThis.navigator?.mediaSession, Metadata = globalThis.MediaMetadata } = {}) {
   if (!session) return { update() {}, dispose() {} };
   let signature = null;
+  let handlersBound = false;
   const actions = {
     play: () => play(), pause: () => pause(),
     seekbackward: details => seek(Math.max(0, audio.currentTime - (details?.seekOffset || 5))),
@@ -11,16 +12,22 @@ export function createMediaSession({ audio, getSelection, play, pause, seek,
     seekto: details => { if (Number.isFinite(details?.seekTime)) seek(details.seekTime); },
     stop: () => pause(),
   };
-  for (const [action, handler] of Object.entries(actions)) {
-    try { session.setActionHandler(action, handler); } catch { /* Browser-specific supported actions. */ }
+  function setHandlers(enabled) {
+    if (handlersBound === enabled) return;
+    for (const [action, handler] of Object.entries(actions)) {
+      try { session.setActionHandler(action, enabled ? handler : null); } catch { /* Browser-specific supported actions. */ }
+    }
+    handlersBound = enabled;
   }
   function update() {
     const selected = getSelection();
     if (!selected?.track) {
+      setHandlers(false);
       signature = null; session.metadata = null; session.playbackState = 'none';
       try { session.setPositionState?.(); } catch {}
       return;
     }
+    setHandlers(true);
     const metadata = { title: selected.week.title, artist: selected.week.speaker,
       album: selected.album || '同行 · 证道中文听译',
       artwork: [{ src: selected.artwork || '/brand-icon.png', sizes: '1024x1024', type: 'image/png' }] };
@@ -37,7 +44,7 @@ export function createMediaSession({ audio, getSelection, play, pause, seek,
     }
   }
   return { update, dispose() {
-    for (const action of Object.keys(actions)) { try { session.setActionHandler(action, null); } catch {} }
+    setHandlers(false);
     session.metadata = null; session.playbackState = 'none';
     try { session.setPositionState?.(); } catch {}
   } };

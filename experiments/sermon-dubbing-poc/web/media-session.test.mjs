@@ -14,7 +14,28 @@ test('media actions use the existing player, positions follow seeks, and metadat
   assert.equal(plays, 1); assert.equal(pauses, 1); assert.deepEqual(seeks, [95, 110, 200]);
   audio.currentTime = 200; controls.update(); assert.equal(positions.at(-1).position, 200);
   selection = null; controls.update(); assert.equal(session.metadata, null); assert.equal(session.playbackState, 'none');
+  assert.ok(Object.values(handlers).every(value => value === null));
   controls.dispose(); assert.ok(Object.values(handlers).every(value => value === null));
+});
+
+test('voice sample view releases sermon media actions and restores them on return', () => {
+  const handlers = {}, seeks = [];
+  let selection = { week: { title: 'Sermon', speaker: 'Speaker' }, track: { id: 'track' } };
+  const audio = { paused: true, currentTime: 30, duration: 600, playbackRate: 1 };
+  const session = { setActionHandler: (key, fn) => handlers[key] = fn, setPositionState() {} };
+  const controls = createMediaSession({ audio, session, getSelection: () => selection,
+    play() {}, pause() {}, seek: value => seeks.push(value) });
+  controls.update();
+  assert.equal(typeof handlers.seekforward, 'function');
+  selection = null; // The voice sample view owns media controls now.
+  controls.update();
+  assert.equal(session.metadata, null);
+  assert.ok(Object.values(handlers).every(value => value === null));
+  selection = { week: { title: 'Sermon', speaker: 'Speaker' }, track: { id: 'track' } };
+  controls.update();
+  handlers.seekforward({ seekOffset: 5 });
+  assert.deepEqual(seeks, [35]);
+  controls.dispose();
 });
 
 test('unsupported browser and unsupported individual actions do not break audio', () => {
