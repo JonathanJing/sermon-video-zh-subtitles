@@ -132,6 +132,7 @@ function setup({ bookmark = false, bootstrapFetch, alignmentPlay } = {}) {
   const feedbackSelections = [], usageStates = [];
   const fingerprintMounts = [], fingerprintRefreshes = [];
   let fingerprintInvalidations = 0, fingerprintPlaybackStarts = 0;
+  const mediaSessions = []; let mediaUpdates = 0;
   const alignmentPlayCalls = [];
   let locale = 'zh'; const localeListeners = [];
   const i18n = {
@@ -161,6 +162,7 @@ function setup({ bookmark = false, bootstrapFetch, alignmentPlay } = {}) {
     playAlignmentAudio: (player, options) => { alignmentPlayCalls.push({ player, options }); return alignmentPlay ? alignmentPlay(player, options) : player.play(); },
     createFeedback: () => ({ select: (...args) => feedbackSelections.push(args), count() {}, error() {}, statisticsEnabled: () => true }),
     createUsage: () => ({ setEnabled: value => usageStates.push(value), record() {} }),
+    createMediaSession: options => { mediaSessions.push(options); return { update() { mediaUpdates += 1; }, dispose() {} }; },
   });
   const expose = `\nglobalThis.app = {
     initialize(value) { catalog = { weeks: [value] }; week = value; selectTrack(value.tracks[0].id); },
@@ -172,7 +174,7 @@ function setup({ bookmark = false, bootstrapFetch, alignmentPlay } = {}) {
     context.app.initialize(week);
   }
   return { audio, get, miniPlay, nudges, storage, timers, context, feedbackSelections, usageStates,
-    document, alignmentPlayCalls, fingerprintMounts, fingerprintRefreshes, get fingerprintPlaybackStarts() { return fingerprintPlaybackStarts; }, get fingerprintInvalidations() { return fingerprintInvalidations; },
+    document, alignmentPlayCalls, fingerprintMounts, fingerprintRefreshes, mediaSessions, get mediaUpdates() { return mediaUpdates; }, get fingerprintPlaybackStarts() { return fingerprintPlaybackStarts; }, get fingerprintInvalidations() { return fingerprintInvalidations; },
     app: context.app, cues: () => document.querySelectorAll('.cue-button') };
 }
 
@@ -640,4 +642,25 @@ test('whole-page language change keeps live audio, source identity and grouped E
   h.get('language-toggle').click();
   assert.equal(h.context.getLocale(), 'zh');
   assert.equal(h.audio.currentTime, 160);
+});
+
+test('media session follows the selected track and routes seeks through the player', () => {
+  const h = setup();
+  assert.equal(h.mediaSessions.length, 1);
+  const session = h.mediaSessions[0];
+  assert.equal(session.getSelection().track.id, 'first');
+  assert.ok(h.mediaUpdates > 0);
+  h.audio.metadata();
+  session.seek(42);
+  assert.equal(h.audio.currentTime, 42);
+  const before = h.mediaUpdates;
+  h.app.selectTrack('second');
+  assert.equal(session.getSelection().track.id, 'second');
+  assert.ok(h.mediaUpdates > before);
+  h.app.selectTab('tab-voices');
+  assert.equal(session.getSelection(), null);
+  const afterVoices = h.mediaUpdates;
+  h.app.selectTab('tab-listen');
+  assert.equal(session.getSelection().track.id, 'second');
+  assert.ok(h.mediaUpdates > afterVoices, 'returning from samples restores sermon media controls');
 });

@@ -40,16 +40,35 @@ final class AudioAlignmentController {
         let week: SermonWeek
         let track: SermonTrack
     }
+    struct PublishedSelection {
+        let page: MultilingualPage
+        let locale: String
+        let trackSha256: String
+        let durationSeconds: Double
+    }
+    private enum ActiveSelection {
+        case legacy(Selection)
+        case published(PublishedSelection)
+        var durationSeconds: Double {
+            switch self {
+            case .legacy(let value): value.track.durationSeconds
+            case .published(let value): value.durationSeconds
+            }
+        }
+    }
     typealias IndexLoader = (Selection) async throws -> FingerprintIndex
     typealias PublishedIndexLoader = (Selection) async throws -> PublishedFingerprintIndex
+    typealias PageIndexLoader = (PublishedSelection) async throws -> PublishedFingerprintIndex
     typealias Matcher = @Sendable (CapturedAudio, FingerprintIndex) async throws -> FingerprintMatchResult
 
     private let playback: any AlignmentPlayback
     private let capture: any MicrophoneCapturing
     private let getSelection: () -> Selection?
+    private let getPublishedSelection: (() -> PublishedSelection?)?
     private let loadIndex: IndexLoader
     private let match: Matcher
     private let loadPublishedIndex: PublishedIndexLoader?
+    private let loadPageIndex: PageIndexLoader?
     private let onState: (String, Bool, Double?) -> Void
     private let now: () -> ContinuousClock.Instant
     private let deadline: Duration
@@ -57,6 +76,7 @@ final class AudioAlignmentController {
     private var selectionKey: String?
     private var capability: SermonAudioAlignment?
     private var publishedCapability: PublishedFingerprintBinding?
+    private var pageCapability: PublishedFingerprintBinding?
     private var wasPlaying = false
     private var runningTask: Task<Void, Never>?
     private var timeoutTask: Task<Void, Never>?
@@ -64,6 +84,8 @@ final class AudioAlignmentController {
     init(playback: any AlignmentPlayback, capture: any MicrophoneCapturing,
          getSelection: @escaping () -> Selection?, loadIndex: @escaping IndexLoader,
          loadPublishedIndex: PublishedIndexLoader? = nil,
+         getPublishedSelection: (() -> PublishedSelection?)? = nil,
+         loadPageIndex: PageIndexLoader? = nil,
          match: @escaping Matcher = { recording, index in
              let work = Task.detached(priority: .userInitiated) {
                  try FingerprintMatcher.match(samples: recording.samples, sampleRate: recording.sampleRate, index: index)
@@ -75,37 +97,71 @@ final class AudioAlignmentController {
         self.loadIndex = loadIndex; self.match = match; self.onState = onState
         self.now = now; self.deadline = deadline
         self.loadPublishedIndex = loadPublishedIndex
+        self.getPublishedSelection = getPublishedSelection
+        self.loadPageIndex = loadPageIndex
+    }
+
+    private func activeSelection() -> ActiveSelection? {
+        if let selected = getSelection() { return .legacy(selected) }
+        if let selected = getPublishedSelection?() { return .published(selected) }
+        return nil
     }
 
     var busy: Bool { requestID != nil }
     var available: Bool {
-        guard let selected = getSelection() else { return false }
-        if let alignment = selected.track.alignment {
-            return (try? alignment.validate(week: selected.week, track: selected.track)) != nil
+        guard let selected = activeSelection() else { return false }
+        switch selected {
+        case .legacy(let selected):
+            if let alignment = selected.track.alignment {
+                return (try? alignment.validate(week: selected.week, track: selected.track)) != nil
+            }
+            guard loadPublishedIndex != nil, let binding = selected.week.audioFingerprint else { return false }
+            return (try? binding.validate(week: selected.week, track: selected.track)) != nil
+        case .published(let selected):
+            guard loadPageIndex != nil,
+                  let binding = selected.page.targets[selected.locale]?.audioFingerprint else { return false }
+            return (try? binding.validate(page: selected.page, locale: selected.locale,
+                                          trackSha256: selected.trackSha256,
+                                          durationSeconds: selected.durationSeconds)) != nil
         }
-        guard loadPublishedIndex != nil, let binding = selected.week.audioFingerprint else { return false }
-        return (try? binding.validate(week: selected.week, track: selected.track)) != nil
     }
 
     private func key() -> String? {
-        guard let selected = getSelection() else { return nil }
-        return [selected.week.id, selected.week.sourceId, selected.week.sourceUrl,
-                selected.track.id, selected.track.sha256, playback.alignmentRevision.uuidString].joined(separator: "|")
+        guard let selected = activeSelection() else { return nil }
+        switch selected {
+        case .legacy(let selected):
+            return [selected.week.id, selected.week.sourceId, selected.week.sourceUrl,
+                    selected.track.id, selected.track.sha256, playback.alignmentRevision.uuidString].joined(separator: "|")
+        case .published(let selected):
+            let binding = selected.page.targets[selected.locale]?.audioFingerprint
+            return [selected.page.id, selected.page.sourceIdentitySha256, selected.locale,
+                    selected.trackSha256, binding?.indexSha256 ?? "", binding?.sourceSha256 ?? "",
+                    playback.alignmentRevision.uuidString].joined(separator: "|")
+        }
     }
     private var sourceStillCurrent: Bool {
         selectionKey == key() && capability == getSelection()?.track.alignment
-            && publishedCapability == getSelection()?.week.audioFingerprint && available
+            && publishedCapability == getSelection()?.week.audioFingerprint
+            && pageCapability == getPublishedSelection?()?.page.targets[getPublishedSelection?()?.locale ?? ""]?.audioFingerprint
+            && available
     }
     private func current(_ token: UUID) -> Bool { requestID == token && sourceStillCurrent && !Task.isCancelled }
 
     func start() {
         guard !busy else { return }
-        guard playback.isReady, available, let selected = getSelection() else {
+        guard playback.isReady, available, let selected = activeSelection() else {
             onState("当前音频没有可用的听声对齐资料。", false, nil); return
         }
         let token = UUID()
-        requestID = token; selectionKey = key(); capability = selected.track.alignment
-        publishedCapability = selected.week.audioFingerprint
+        requestID = token; selectionKey = key()
+        switch selected {
+        case .legacy(let value):
+            capability = value.track.alignment; publishedCapability = value.week.audioFingerprint
+            pageCapability = nil
+        case .published(let value):
+            capability = nil; publishedCapability = nil
+            pageCapability = value.page.targets[value.locale]?.audioFingerprint
+        }
         wasPlaying = playback.alignmentPlaybackIntent
         playback.pauseForAlignment()
         onState("正在准备听声对齐…", true, nil)
@@ -131,7 +187,7 @@ final class AudioAlignmentController {
         onState(message, false, nil)
     }
 
-    private func run(_ selected: Selection, token: UUID) async {
+    private func run(_ selected: ActiveSelection, token: UUID) async {
         var resumed = false, mayResume = true
         var status = "听声对齐未完成，请重试或手动调整。"
         var confirmedPosition: Double?
@@ -148,8 +204,21 @@ final class AudioAlignmentController {
         }
         do {
             let result: FingerprintMatchResult
-            if selected.track.alignment == nil, let loadPublishedIndex {
-                let index = try await loadPublishedIndex(selected)
+            if case .published(let page) = selected, let loadPageIndex {
+                let index = try await loadPageIndex(page)
+                guard current(token) else { return }
+                onState("正在听原声，约 10 秒；请保持 App 前台。", true, nil)
+                let recording = try await capture.capture(seconds: 10)
+                guard current(token) else { return }
+                capturedStart = recording.startedAt
+                onState("正在本机匹配播放位置…", true, nil)
+                let worker = Task.detached(priority: .userInitiated) {
+                    try PublishedFingerprintMatcher.match(samples: recording.samples, sampleRate: recording.sampleRate, index: index)
+                }
+                result = try await withTaskCancellationHandler { try await worker.value } onCancel: { worker.cancel() }
+            } else if case .legacy(let legacy) = selected, legacy.track.alignment == nil,
+                      let loadPublishedIndex {
+                let index = try await loadPublishedIndex(legacy)
                 guard current(token) else { return }
                 onState("正在听原声，约 10 秒；请保持 App 前台。", true, nil)
                 let recording = try await capture.capture(seconds: 10)
@@ -161,7 +230,8 @@ final class AudioAlignmentController {
                 }
                 result = try await withTaskCancellationHandler { try await worker.value } onCancel: { worker.cancel() }
             } else {
-                let index = try await loadIndex(selected)
+                guard case .legacy(let legacy) = selected else { throw AudioAlignmentError.unavailable }
+                let index = try await loadIndex(legacy)
                 guard current(token) else { return }
                 onState("正在听原声，约 8 秒；请保持 App 前台。", true, nil)
                 let recording = try await capture.capture(seconds: 8)
@@ -173,7 +243,7 @@ final class AudioAlignmentController {
             guard current(token) else { return }
             guard result.matched,
                   let target = AlignmentTarget.position(offset: result.offsetSeconds, startedAt: capturedStart,
-                                                        now: now(), duration: selected.track.durationSeconds) else {
+                                                        now: now(), duration: selected.durationSeconds) else {
                 status = "未找到可靠匹配，播放位置未改变。"; return
             }
             let applied = await playback.applyAlignedPosition(target)
@@ -194,7 +264,7 @@ final class AudioAlignmentController {
                 }
                 guard current(token) else { return }
                 if let final = AlignmentTarget.position(offset: result.offsetSeconds, startedAt: capturedStart,
-                                                       now: now(), duration: selected.track.durationSeconds),
+                                                       now: now(), duration: selected.durationSeconds),
                    abs(final - playback.position) > 0.15 {
                     let corrected = await playback.applyAlignedPosition(final)
                     guard current(token) else { return }

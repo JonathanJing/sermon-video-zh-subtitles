@@ -64,6 +64,65 @@ struct MultilingualCatalogTests {
                 == "/releases/page-1/ko.json")
     }
 
+    @Test func independentlyPublishedPagesKeepTheirOwnLocales() throws {
+        let catalog = try MultilingualCatalog.decode(catalogData { root in
+            var pages = root["pages"] as! [[String: Any]]
+            pages.append([
+                "id": "clip-2", "date": "2026-09-24", "sourceLocale": "en",
+                "sourceIdentitySha256": hashB, "defaultTargetLocale": "es",
+                "targets": ["es": [
+                    "releasePackageUrl": "/releases/clip-2/es.json",
+                    "releasePackageJsonSha256": hashA, "contentStatus": "human_reviewed",
+                    "audioStatus": "unavailable", "capabilities": ["text"],
+                ]],
+            ])
+            root["pages"] = pages
+        })
+        #expect(catalog.defaultPage.id == "page-1")
+        #expect(catalog.pages.map(\.id) == ["page-1", "clip-2"])
+        #expect(catalog.pages[0].publishedTargets.map(\.locale) == ["ko", "zh-Hans"])
+        #expect(catalog.pages[1].publishedTargets.map(\.locale) == ["es"])
+        #expect(try catalog.pages[1].targets["es"]?.packageURL(relativeTo: URL(string: "https://example.org")!).path
+                == "/releases/clip-2/es.json")
+    }
+
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["TONGXING_MULTILINGUAL_CATALOG_SMOKE_PATH"] != nil))
+    func frozenPublishedCatalogDecodesInNativeClient() throws {
+        guard let path = ProcessInfo.processInfo.environment["TONGXING_MULTILINGUAL_CATALOG_SMOKE_PATH"] else {
+            return
+        }
+        let catalog = try MultilingualCatalog.decode(Data(contentsOf: URL(fileURLWithPath: path)))
+        #expect(catalog.pages.contains { $0.id == catalog.defaultPageId })
+        #expect(catalog.pages.allSatisfy { !$0.publishedTargets.isEmpty })
+    }
+
+    @Test func publishedPageFingerprintRequiresExactSourceAndTrack() throws {
+        let catalog = try MultilingualCatalog.decode(catalogData { root in
+            var pages = root["pages"] as! [[String: Any]], page = pages[0]
+            page["sourceMediaSha256"] = hashA
+            var targets = page["targets"] as! [String: Any]
+            var chinese = targets["zh-Hans"] as! [String: Any]
+            chinese["capabilities"] = ["text", "captions", "audio", "alignment"]
+            chinese["audioFingerprint"] = [
+                "schemaVersion": "sermon-audio-fingerprint-binding-v1", "pageId": "page-1",
+                "sourceSha256": hashA, "trackSha256": hashB,
+                "sourceStartSeconds": 0, "sourceEndSeconds": 138,
+                "algorithmVersion": "spectral-landmarks-v1", "captureSeconds": 10,
+                "indexSha256": hashA, "indexUrl": "/fingerprints/aaaaaaaaaaaaaaaa-landmarks.json",
+            ] as [String: Any]
+            targets["zh-Hans"] = chinese; page["targets"] = targets; pages[0] = page; root["pages"] = pages
+        })
+        let page = catalog.defaultPage
+        let binding = try #require(page.targets["zh-Hans"]?.audioFingerprint)
+        try binding.validate(page: page, locale: "zh-Hans", trackSha256: hashB, durationSeconds: 138.004)
+        #expect(throws: (any Error).self) {
+            try binding.validate(page: page, locale: "zh-Hans", trackSha256: hashA, durationSeconds: 138)
+        }
+        #expect(throws: (any Error).self) {
+            try binding.validate(page: page, locale: "ko", trackSha256: hashB, durationSeconds: 138)
+        }
+    }
+
     @Test func catalogRejectsLocaleKeyPathAndCapabilityMismatches() throws {
         #expect(throws: (any Error).self) {
             try MultilingualCatalog.decode(catalogData { root in
@@ -110,5 +169,21 @@ struct MultilingualCatalogTests {
         let package = try TargetLanguageReleasePackage.decode(JSONSerialization.data(withJSONObject: value))
         #expect(package.targetLanguageAudioPackageJsonSha256 == hashB)
         #expect(package.audioLocale == nil)
+    }
+
+    @Test func devContentCandidateNeedsExplicitOptInAndExactPath() throws {
+        var value = try #require(JSONSerialization.jsonObject(with: releaseData()) as? [String: Any])
+        value["status"] = "candidate"
+        value["httpVerification"] = ["status": "not_run", "evidenceSha256": NSNull()]
+        value["assets"] = [["role": "content", "path": "/content/page-1/ko.json", "sha256": hashA]]
+        let data = try JSONSerialization.data(withJSONObject: value)
+        #expect(throws: (any Error).self) { try TargetLanguageReleasePackage.decode(data) }
+        let candidate = try TargetLanguageReleasePackage.decode(data, allowDevCandidate: true)
+        #expect(try candidate.contentURL(relativeTo: URL(string: "https://dev.example")!).path
+                == "/content/page-1/ko.json")
+        value["assets"] = [["role": "content", "path": "/content/other/ko.json", "sha256": hashA]]
+        #expect(throws: (any Error).self) {
+            try TargetLanguageReleasePackage.decode(JSONSerialization.data(withJSONObject: value), allowDevCandidate: true)
+        }
     }
 }

@@ -54,6 +54,7 @@ private enum UITestContent {
         }
         let firstAudio = audio(frameCount: 500)
         let secondAudio = audio(frameCount: 667)
+        let spanishAudio = audio(frameCount: 550)
         func track(id: String, label: String, data: Data, duration: Double) -> SermonTrack {
             SermonTrack(id: id, label: label, voiceLabel: "自动化静音夹具",
                 audioUrl: "/media/\(id).mp3", file: "\(id).mp3",
@@ -79,27 +80,33 @@ private enum UITestContent {
                     .init(blockId: "2", english: "Third synthetic source sentence for continued listening.", sourceTextOrigin: "synthetic-fixture", reviewState: "candidate")
                 ]))
         ])
-        func page(locale: String) -> Data {
-            Data("<html><head><title>\(locale)</title></head><body><h1>\(locale == "ko" ? "한국어 검증 페이지" : "中文验证页面")</h1></body></html>".utf8)
+        func page(pageID: String, locale: String) -> Data {
+            Data("<html><head><title>\(pageID) \(locale)</title></head><body><h1>\(pageID) · \(locale)</h1></body></html>".utf8)
         }
-        func release(locale: String) -> Data {
+        func release(pageID: String, locale: String, audio: Data? = nil) -> Data {
             let hash = String(repeating: "a", count: 64)
-            let pageHash = SHA256.hash(data: page(locale: locale)).map { String(format: "%02x", $0) }.joined()
+            let pageHash = SHA256.hash(data: page(pageID: pageID, locale: locale)).map { String(format: "%02x", $0) }.joined()
+            let audioHash = audio.map { SHA256.hash(data: $0).map { String(format: "%02x", $0) }.joined() }
+            let assets: [[String: Any]] = [["role": "page", "path": "/pages/\(pageID)/\(locale)/index.html", "sha256": pageHash]]
+                + (audioHash.map { [["role": "audio", "path": "/media/\(pageID)/\(locale).mp3", "sha256": $0]] } ?? [])
             let value: [String: Any] = [
                 "schemaVersion": "sermon-target-language-release-package-v1",
-                "packageId": "ui-test-week-\(locale)", "pageId": "ui-test-week", "sourceLocale": "en",
+                "packageId": "\(pageID)-\(locale)", "pageId": pageID, "sourceLocale": "en",
                 "targetLocale": locale, "targetLanguageCandidateJsonSha256": hash,
-                "targetLanguageAudioPackageJsonSha256": NSNull(), "status": "published_http_verified",
-                "contentStatus": "human_reviewed", "audioStatus": "unavailable",
-                "interfaceLocale": locale, "contentLocale": locale, "audioLocale": NSNull(),
-                "assets": [["role": "page", "path": "/pages/ui-test-week/\(locale)/index.html", "sha256": pageHash]],
+                "targetLanguageAudioPackageJsonSha256": audio == nil ? NSNull() : hash as Any,
+                "status": "published_http_verified", "contentStatus": "human_reviewed",
+                "audioStatus": audio == nil ? "unavailable" : "human_reviewed",
+                "interfaceLocale": locale, "contentLocale": locale, "audioLocale": audio == nil ? NSNull() : locale as Any,
+                "assets": assets,
                 "httpVerification": ["status": "pass", "evidenceSha256": hash],
                 "deviceAcceptance": ["status": "not_run", "evidenceSha256": NSNull()],
                 "venueAcceptance": ["status": "not_run", "evidenceSha256": NSNull()], "issues": [],
             ]
             return try! JSONSerialization.data(withJSONObject: value, options: [.sortedKeys])
         }
-        let chineseRelease = release(locale: "zh-Hans"), koreanRelease = release(locale: "ko")
+        let chineseRelease = release(pageID: "ui-test-week", locale: "zh-Hans")
+        let koreanRelease = release(pageID: "ui-test-week", locale: "ko")
+        let spanishRelease = release(pageID: "ui-test-clip", locale: "es", audio: spanishAudio)
         func hash(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
         let sourceHash = String(repeating: "b", count: 64)
         let multilingual: [String: Any] = [
@@ -113,6 +120,13 @@ private enum UITestContent {
                     "ko": ["releasePackageUrl": "/releases/ui-test-week/ko.json",
                            "releasePackageJsonSha256": hash(koreanRelease), "contentStatus": "human_reviewed",
                            "audioStatus": "unavailable", "capabilities": ["text"]],
+                ],
+            ], [
+                "id": "ui-test-clip", "date": "2026-09-24", "sourceLocale": "en",
+                "sourceIdentitySha256": sourceHash, "defaultTargetLocale": "es", "targets": [
+                    "es": ["releasePackageUrl": "/releases/ui-test-clip/es.json",
+                           "releasePackageJsonSha256": hash(spanishRelease), "contentStatus": "human_reviewed",
+                           "audioStatus": "human_reviewed", "capabilities": ["text", "audio"]],
                 ],
             ]],
         ]
@@ -143,14 +157,17 @@ private enum UITestContent {
             "speakers": demoSpeakers,
         ], options: [.sortedKeys])
         return ["/weekly.json": try! JSONEncoder().encode(catalog),
-                "/multilingual.json": try! JSONSerialization.data(withJSONObject: multilingual, options: [.sortedKeys]),
+                "/multilingual-v2.json": try! JSONSerialization.data(withJSONObject: multilingual, options: [.sortedKeys]),
                 "\(demoPrefix)/catalog.json": demos,
                 "/releases/ui-test-week/zh-Hans.json": chineseRelease,
                 "/releases/ui-test-week/ko.json": koreanRelease,
-                "/pages/ui-test-week/zh-Hans/index.html": page(locale: "zh-Hans"),
-                "/pages/ui-test-week/ko/index.html": page(locale: "ko"),
+                "/releases/ui-test-clip/es.json": spanishRelease,
+                "/pages/ui-test-week/zh-Hans/index.html": page(pageID: "ui-test-week", locale: "zh-Hans"),
+                "/pages/ui-test-week/ko/index.html": page(pageID: "ui-test-week", locale: "ko"),
+                "/pages/ui-test-clip/es/index.html": page(pageID: "ui-test-clip", locale: "es"),
                 "/media/fixture-first.mp3": firstAudio,
-                "/media/fixture-second.mp3": secondAudio]
+                "/media/fixture-second.mp3": secondAudio,
+                "/media/ui-test-clip/es.mp3": spanishAudio]
     }()
 }
 

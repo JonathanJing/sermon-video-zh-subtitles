@@ -3,6 +3,7 @@ import Combine
 import Foundation
 import MediaPlayer
 import TongxingCore
+import TongxingInfrastructure
 
 /// The single owner of audio. Views observe AVPlayer instead of keeping a second
 /// play/pause state; selecting, seeking and interruption callbacks are source-bound.
@@ -75,7 +76,11 @@ final class PlaybackController: ObservableObject {
     private var interruptedGeneration: UUID?
     private var undoSnapshot: (position: Double, offset: Double)?
     private var pendingSeek: (position: Double, offset: Double)?
-    private var loadedSource: (week: SermonWeek, track: SermonTrack, url: URL)?
+    private enum LoadedSource {
+        case legacy(week: SermonWeek, track: SermonTrack, url: URL)
+        case published(VerifiedLanguageAudio)
+    }
+    private var loadedSource: LoadedSource?
     private var lastSave = Date.distantPast
     private var timeObserver: Any?
     private var stateObservation: NSKeyValueObservation?
@@ -119,10 +124,28 @@ final class PlaybackController: ObservableObject {
 
     func load(week: SermonWeek, track: SermonTrack, url: URL) {
         let next = track.identity(weekID: week.id)
-        guard next != identity || sourceID != week.sourceId || loadedSource?.week.sourceUrl != week.sourceUrl else {
+        let previousSourceURL: String?
+        if case .some(.legacy(let previousWeek, _, _)) = loadedSource { previousSourceURL = previousWeek.sourceUrl }
+        else { previousSourceURL = nil }
+        guard next != identity || sourceID != week.sourceId || previousSourceURL != week.sourceUrl else {
             updateMetadata(week: week, track: track)
             return
         }
+        loadSource(identity: next, sourceID: week.sourceId, title: week.title, speaker: week.speaker,
+                   url: url, duration: track.durationSeconds, source: .legacy(week: week, track: track, url: url))
+    }
+
+    func loadPublishedAudio(_ audio: VerifiedLanguageAudio) {
+        let next = TrackIdentity(weekID: audio.pageID, trackID: "published_\(audio.locale)", audioSHA256: audio.sha256)
+        guard next.isValid, audio.localURL.isFileURL, audio.sourceIdentitySha256.count == 64 else { return }
+        if next == identity, sourceID == audio.sourceIdentitySha256 { return }
+        loadSource(identity: next, sourceID: audio.sourceIdentitySha256, title: audio.pageID,
+                   speaker: audio.locale, url: audio.localURL, duration: 0, source: .published(audio))
+    }
+
+    private func loadSource(identity next: TrackIdentity, sourceID nextSourceID: String,
+                            title nextTitle: String, speaker nextSpeaker: String, url: URL,
+                            duration estimatedDuration: Double, source: LoadedSource) {
         manualInteraction()
         saveProgress()
         invalidateActivation()
@@ -136,12 +159,12 @@ final class PlaybackController: ObservableObject {
         itemObservation = nil
         isPreview = false
         identity = next
-        loadedSource = (week, track, url)
-        sourceID = week.sourceId
-        title = week.title
-        speaker = week.speaker
+        loadedSource = source
+        sourceID = nextSourceID
+        title = nextTitle
+        speaker = nextSpeaker
         position = 0
-        duration = track.durationSeconds
+        duration = estimatedDuration
         offset = 0
         positionTouched = false
         pendingSeek = nil
@@ -167,7 +190,9 @@ final class PlaybackController: ObservableObject {
                         }
                     }
                     self.isReady = true
-                    self.message = self.resumePosition == nil ? "音频就绪 · 请按现场起点开始" : "已找到上次收听的位置"
+                    self.message = self.resumePosition == nil
+                        ? (self.isPublishedAudio ? "音频就绪 · 可以播放" : "音频就绪 · 请按现场起点开始")
+                        : "已找到上次收听的位置"
                     self.updateRemoteAvailability()
                     self.publishNowPlaying()
                 case .failed:
@@ -222,6 +247,11 @@ final class PlaybackController: ObservableObject {
         player.replaceCurrentItem(with: item)
     }
 
+    private var isPublishedAudio: Bool {
+        if case .some(.published) = loadedSource { return true }
+        return false
+    }
+
     func clear() {
         saveProgress()
         pause()
@@ -248,10 +278,10 @@ final class PlaybackController: ObservableObject {
 
     func updateMetadata(week: SermonWeek, track: SermonTrack) {
         guard identity == track.identity(weekID: week.id), sourceID == week.sourceId,
-              let loadedSource else { return }
+              case .some(.legacy(_, _, let url)) = loadedSource else { return }
         title = week.title
         speaker = week.speaker
-        self.loadedSource = (week, track, loadedSource.url)
+        self.loadedSource = .legacy(week: week, track: track, url: url)
         publishNowPlaying()
     }
 
@@ -551,7 +581,11 @@ final class PlaybackController: ObservableObject {
         identity = nil
         pendingSeek = nil
         recreatePlayer()
-        if let source { load(week: source.week, track: source.track, url: source.url) }
+        switch source {
+        case .some(.legacy(let week, let track, let url)): load(week: week, track: track, url: url)
+        case .some(.published(let audio)): loadPublishedAudio(audio)
+        case nil: break
+        }
         message = "音频服务已恢复，请点击播放继续并手动对齐。"
     }
 

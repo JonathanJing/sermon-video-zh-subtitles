@@ -342,7 +342,7 @@ def build(comparison, out, expansion=None, weekly_jobs=(), voice_bank=None, revi
     if public.exists():
         raise ValueError("Use a new output directory to preserve the previous release")
     (public / "media").mkdir(parents=True)
-    ui_files = ["fingerprint-core.mjs", "fingerprint-capture.mjs", "fingerprint-worklet.mjs", "fingerprint-worker.mjs", "fingerprint-ui.mjs", "index.html", "style.css", "app.mjs", "timing.mjs", "catalog.mjs", "theme.js", "feedback.mjs", "feedback-client.mjs", "listening.mjs", "usage.mjs", "usage-client.mjs", "playback-memory.mjs", "i18n.mjs", "locales-interface.mjs", "locales-app.mjs", "locales-feedback.mjs", "locales-ko.mjs", "locales-es.mjs", "content-locales.mjs", "brand-icon.png"]
+    ui_files = ["fingerprint-core.mjs", "fingerprint-capture.mjs", "fingerprint-worklet.mjs", "fingerprint-worker.mjs", "fingerprint-ui.mjs", "index.html", "style.css", "app.mjs", "timing.mjs", "catalog.mjs", "theme.js", "feedback.mjs", "feedback-client.mjs", "listening.mjs", "usage.mjs", "usage-client.mjs", "playback-memory.mjs", "media-session.mjs", "i18n.mjs", "locales-interface.mjs", "locales-app.mjs", "locales-feedback.mjs", "locales-ko.mjs", "locales-es.mjs", "content-locales.mjs", "brand-icon.png", "brand-icon-light.png"]
     for name in ui_files:
         shutil.copyfile(HERE / "web" / name, public / name)
     weeks, sources, alignment_pages = [], [], []
