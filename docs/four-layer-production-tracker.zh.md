@@ -80,7 +80,12 @@ python scripts/four_layer_progress.py artifacts/new-clip/four-layer-progress.jso
   --window-start-seconds 600 --window-end-seconds 780
 ```
 
-`init-poc` 拒绝覆盖已有账本。正式 Source Package 出来后，须核对其中的 `source.sourceId`、`source.sourceUrlHash`、媒体 hash 和 `source.approvedWindow` 与本次账本身份、实际文件及人工收据一致；这些字段不由 Tracker 自动授予批准。
+`init-poc` 拒绝覆盖已有账本。若初始化时媒体尚未下载，完整取得并核验文件后先执行 `bind-source-media --media <完整原视频文件>`；它会计算文件 SHA-256、绑定原账本并保留既有进度和计时身份，换成不同媒体文件会拒绝。正式 Source Package 出来后，须核对其中的 `source.sourceId`、`source.sourceUrlHash`、媒体 hash 和 `source.approvedWindow` 与本次账本身份、实际文件及人工收据一致；这些字段不由 Tracker 自动授予批准。
+
+```bash
+python scripts/four_layer_progress.py artifacts/new-clip/four-layer-progress.json bind-source-media \
+  --media artifacts/new-clip/source-video.mp4
+```
 
 用户已明确批准同一片段来源窗口，且本地存在该决定的 `sermon-clip-window-approval-v1` 收据时，运行一次：
 

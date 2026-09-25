@@ -64,6 +64,58 @@ class FourLayerProgressTest(unittest.TestCase):
                 tracker.main()
             self.assertEqual(path.read_bytes(), original)
 
+    def test_bind_downloaded_media_preserves_progress_and_allows_exact_approval(self):
+        with tempfile.TemporaryDirectory() as directory:
+            media = Path(directory) / "source.mp4"
+            media.write_bytes(b"complete authorized media fixture")
+            media_hash = hashlib.sha256(media.read_bytes()).hexdigest()
+            ledger = tracker.new_poc_ledger(
+                "test-page", ["ko"], target="dev", service_date="2026-09-20",
+                source_id="clip-id", source_url_sha256="a" * 64,
+                window_start_seconds=0, window_end_seconds=138)
+            tracker.update_step(ledger, "L1-01", "running", elapsed_minutes=3)
+            original_identity = tracker.ledger_identity(ledger)
+            original_step = copy.deepcopy(ledger["steps"]["L1-01"])
+            self.assertTrue(tracker.bind_poc_source_media(ledger, media))
+            self.assertEqual(tracker.ledger_identity(ledger), original_identity)
+            self.assertEqual(ledger["steps"]["L1-01"], original_step)
+            self.assertEqual(tracker.poc_source_identity(ledger)["sourceMediaSha256"], media_hash)
+            self.assertFalse(tracker.bind_poc_source_media(ledger, media))
+            other = Path(directory) / "other.mp4"
+            other.write_bytes(b"other source")
+            with self.assertRaisesRegex(ValueError, "different bytes"):
+                tracker.bind_poc_source_media(ledger, other)
+            receipt = {"schemaVersion": "sermon-clip-window-approval-v1",
+                       "sourceId": "clip-id", "sourceUrlHash": "a" * 64,
+                       "sourceMediaSha256": media_hash, "startTime": "00:00:00",
+                       "endTime": "00:02:18.000", "status": "approved", "humanApproval": True,
+                       "approvedAt": "2026-09-24T18:51:31Z", "approvedBy": "user",
+                       "evidence": "Approved this exact source and clip window."}
+            self.assertTrue(tracker.approve_poc_source(ledger, receipt, "c" * 64))
+            self.assertEqual(tracker.ledger_identity(ledger), original_identity)
+            tracker.poc_source_identity(ledger)["windowEndSeconds"] = 139.0
+            with self.assertRaisesRegex(ValueError, "changed source or window"):
+                tracker.ledger_identity(ledger)
+
+    def test_bind_source_media_cli_hashes_file_without_recreating_ledger(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            media = root / "source.mp4"
+            media.write_bytes(b"complete source media")
+            ledger_path = root / "progress.json"
+            ledger = tracker.new_poc_ledger(
+                "test-page", ["ko"], target="dev", service_date="2026-09-20",
+                source_id="clip-id", source_url_sha256="a" * 64,
+                window_start_seconds=0, window_end_seconds=138)
+            tracker.save_new(ledger_path, ledger)
+            with patch.object(sys, "argv", ["progress", str(ledger_path), "bind-source-media",
+                                            "--media", str(media)]):
+                tracker.main()
+            actual = tracker.load(ledger_path)
+            self.assertEqual(tracker.poc_source_identity(actual)["sourceMediaSha256"],
+                             hashlib.sha256(media.read_bytes()).hexdigest())
+            self.assertEqual(tracker.ledger_identity(actual), tracker.ledger_identity(ledger))
+
     def test_approve_source_requires_exact_existing_human_receipt_and_keeps_timing_identity(self):
         ledger = tracker.new_poc_ledger(
             "test-page", ["ko"], target="dev", service_date="2026-09-20",

@@ -127,11 +127,54 @@ def ledger_identity(ledger: dict) -> str:
                                   sort_keys=True, ensure_ascii=False)
     poc = poc_source_identity(ledger)
     if poc:
+        binding = [event for event in ledger.get("history", [])
+                   if event.get("action") == "poc_source_media_bound"]
+        if len(binding) > 1:
+            raise ValueError("POC media binding must be unique")
+        source = {key: poc.get(key) for key in POC_SOURCE_FIELDS}
+        if binding:
+            # Earlier work spans remain valid for the unchanged source/window.
+            # Approval and the media file are still checked against the new hash.
+            if binding[0].get("sourceMediaSha256") != source["sourceMediaSha256"]:
+                raise ValueError("POC media binding differs from source identity")
+            source["sourceMediaSha256"] = None
         value = json.dumps({"ledger": value,
-                            "pocSource": {**{key: poc.get(key) for key in POC_SOURCE_FIELDS},
-                                          "approvalStatus": "proposed_not_approved"}},
+                            "pocSource": {**source, "approvalStatus": "proposed_not_approved"}},
                            sort_keys=True, ensure_ascii=False)
+        identity = hashlib.sha256(value.encode("utf-8")).hexdigest()
+        if binding and binding[0].get("timingIdentitySha256") != identity:
+            raise ValueError("POC media binding changed source or window identity")
+        return identity
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def bind_poc_source_media(ledger: dict, media_path: Path) -> bool:
+    """Bind a fully available local media file without resetting progress history."""
+    source = poc_source_identity(ledger)
+    if source is None or source.get("approvalStatus") != "proposed_not_approved":
+        raise ValueError("only an unapproved POC source can bind media")
+    media_path = Path(media_path)
+    if media_path.is_symlink() or not media_path.is_file() or media_path.stat().st_size == 0:
+        raise ValueError("source media must be a nonempty regular local file")
+    digest = hashlib.sha256()
+    with media_path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    media_sha256 = digest.hexdigest()
+    current = source.get("sourceMediaSha256")
+    if current is not None:
+        if current == media_sha256:
+            return False
+        raise ValueError("POC source media is already bound to different bytes")
+    timing_identity = ledger_identity(ledger)
+    source["sourceMediaSha256"] = media_sha256
+    ledger["history"].append({"at": timestamp(), "action": "poc_source_media_bound",
+                              "sourceMediaSha256": media_sha256,
+                              "timingIdentitySha256": timing_identity})
+    ledger["updatedAt"] = timestamp()
+    if ledger_identity(ledger) != timing_identity:
+        raise ValueError("POC timing identity changed during media binding")
+    return True
 
 
 def new_poc_ledger(page_id: str, locales: list[str], *, target: str,
@@ -464,6 +507,8 @@ def main() -> None:
     poc.add_argument("--window-end-seconds", type=float, required=True)
     approve = commands.add_parser("approve-source", help="record an exact human clip-window approval")
     approve.add_argument("--receipt", type=Path, required=True)
+    bind = commands.add_parser("bind-source-media", help="hash and bind the downloaded source media before approval")
+    bind.add_argument("--media", type=Path, required=True)
     update = commands.add_parser("update")
     update.add_argument("--step", required=True)
     update.add_argument("--status", required=True, choices=sorted(STATUSES))
@@ -501,7 +546,10 @@ def main() -> None:
             save_new(args.ledger, ledger)
         else:
             ledger = load(args.ledger)
-            if args.command == "approve-source":
+            if args.command == "bind-source-media":
+                if bind_poc_source_media(ledger, args.media):
+                    save(args.ledger, ledger)
+            elif args.command == "approve-source":
                 receipt_bytes = args.receipt.read_bytes()
                 receipt = json.loads(receipt_bytes)
                 if approve_poc_source(ledger, receipt, hashlib.sha256(receipt_bytes).hexdigest()):
