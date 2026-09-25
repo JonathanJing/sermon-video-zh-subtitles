@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1580" viewBox="0 0 1600 1580" role="img" aria-labelledby="title desc">
-<title id="title">四层多语言生产</title><desc id="desc">英文事实只冻结一次；每种目标语言分别完成文字、音频与发布门禁。九月两段三语片段在 Dev 完成审核，正式站仍只有九周中文；通用 Layer 2–4 producer 持续迁移。模型是各层工具，不是事实或人工批准来源；来源、hash、覆盖率、语义、听审与播放证据分别留存。</desc>
+<title id="title">四层多语言生产</title><desc id="desc">英文事实只冻结一次；每种目标语言分别完成文字、音频与发布门禁 两段三语 Dev 片段已审；正式站仍九周中文。通用 Layer 2–4 producer 持续迁移，legacy complete 不等于四层发布。 模型是各层工具，不是事实或人工批准来源；来源、hash、覆盖率、语义、听审与播放证据分别留存。</desc>
 <style>text{font-family:"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;} text{font-variant-ligatures:none}</style>
 <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M1 1 L7 4 L1 7" fill="none" stroke="context-stroke" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
 <rect x="0" y="0" width="1600" height="1580" rx="0" fill="#F5F4EF" stroke="none" />
