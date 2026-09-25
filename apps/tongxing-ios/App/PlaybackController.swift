@@ -60,6 +60,7 @@ final class PlaybackController: ObservableObject {
     private let audioSessionActivator: any AudioSessionActivating
     private var history = PlaybackHistory()
     private var identity: TrackIdentity?
+    private(set) var isPreview = false
     private var sourceID = ""
     private var title = ""
     private var speaker = ""
@@ -133,6 +134,7 @@ final class PlaybackController: ObservableObject {
         generation = UUID()
         seekGeneration = UUID()
         itemObservation = nil
+        isPreview = false
         identity = next
         loadedSource = (week, track, url)
         sourceID = week.sourceId
@@ -185,6 +187,41 @@ final class PlaybackController: ObservableObject {
         publishNowPlaying()
     }
 
+    /// Play a locally verified audition sample through the same player. Demos
+    /// have no weekly identity, bookmark, alignment, or live activity.
+    func loadPreview(url: URL, title: String) {
+        guard url.isFileURL else { return }
+        clear()
+        isPreview = true
+        self.title = title
+        speaker = ""
+        message = "正在准备音频…"
+        let token = generation
+        let item = AVPlayerItem(url: url)
+        itemObservation = item.observe(\.status, options: [.initial, .new]) { [weak self] _, _ in
+            Task { @MainActor [weak self] in
+                guard let self, self.generation == token, self.isPreview else { return }
+                switch item.status {
+                case .readyToPlay:
+                    let measured = item.duration.seconds
+                    guard measured.isFinite, measured > 0 else {
+                        self.message = "音频加载失败，请检查网络或使用已下载版本。"
+                        return
+                    }
+                    self.duration = measured
+                    self.isReady = true
+                    self.updateRemoteAvailability()
+                    self.play()
+                case .failed:
+                    self.message = "音频加载失败，请检查网络或使用已下载版本。"
+                case .unknown: break
+                @unknown default: break
+                }
+            }
+        }
+        player.replaceCurrentItem(with: item)
+    }
+
     func clear() {
         saveProgress()
         pause()
@@ -192,6 +229,7 @@ final class PlaybackController: ObservableObject {
         seekGeneration = UUID()
         player.replaceCurrentItem(with: nil)
         itemObservation = nil
+        isPreview = false
         identity = nil
         loadedSource = nil
         pendingSeek = nil
@@ -395,7 +433,7 @@ final class PlaybackController: ObservableObject {
     }
 
     private func tick() {
-        guard identity != nil else { return }
+        guard identity != nil || isPreview else { return }
         guard pendingSeek == nil else { return }
         position = currentPosition()
         publishLiveActivity()
@@ -558,7 +596,7 @@ final class PlaybackController: ObservableObject {
     }
 
     private func publishNowPlaying() {
-        guard identity != nil else { return }
+        guard identity != nil || isPreview else { return }
         publishLiveActivity()
         MPNowPlayingInfoCenter.default().nowPlayingInfo = [
             MPMediaItemPropertyTitle: title,

@@ -11,6 +11,20 @@ import XCTest
 /// not represent a real phone call, headphone route, lock-screen or venue test.
 @MainActor
 final class PlaybackControllerTests: XCTestCase {
+    func testVerifiedVoicePreviewUsesSharedPlayerWithoutBookmark() async throws {
+        let fixture = try Fixture()
+        defer { fixture.dispose() }
+        fixture.player.loadPreview(url: fixture.audioURL, title: "Synthetic voice demo")
+        try await eventually("voice demo ready") { fixture.player.isReady }
+        XCTAssertTrue(fixture.player.isPreview)
+        XCTAssertEqual(MPNowPlayingInfoCenter.default().nowPlayingInfo?[MPMediaItemPropertyTitle] as? String,
+                       "Synthetic voice demo")
+        fixture.player.pause()
+        XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.historyURL.path))
+        fixture.player.load(week: fixture.week(), track: fixture.track, url: fixture.audioURL)
+        XCTAssertFalse(fixture.player.isPreview)
+    }
+
     func testAutomaticAlignmentUsesSinglePlayerAndManualCommandsInvalidateIt() async throws {
         let fixture = try Fixture()
         defer { fixture.dispose() }
@@ -483,6 +497,17 @@ final class PlaybackControllerTests: XCTestCase {
 }
 
 final class VoiceDemoCatalogTests: XCTestCase {
+    func testVoiceDemoBytesMustMatchPublishedSizeAndHash() throws {
+        let data = Data("synthetic voice demo".utf8)
+        let hash = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+        let asset = VoiceDemoCatalog.Asset(path: "/voice-demos/2026-09-21-v2/demo.mp3",
+            sha256: hash, bytes: data.count, text: "Synthetic text", transcriptStatus: nil,
+            humanListeningStatus: "pending", sourceUrl: nil, locale: "ko")
+        XCTAssertNoThrow(try asset.verify(data))
+        XCTAssertThrowsError(try asset.verify(Data("changed voice demo".utf8)))
+        XCTAssertThrowsError(try asset.verify(data + Data([0])))
+    }
+
     func testAcceptsDemoOnlyCatalogAndRejectsPromotedOrUnsafeAssets() throws {
         let prefix = "/voice-demos/2026-09-21-v2"
         let speakers: [[String: Any]] = (0..<6).map { index in
