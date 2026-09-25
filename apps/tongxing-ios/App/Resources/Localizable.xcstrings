@@ -1,6 +1,69 @@
 {
   "sourceLanguage": "zh-Hans",
   "strings": {
+    "已发布页面": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Published pages" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "게시된 페이지" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Páginas publicadas" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Trang đã xuất bản" } }
+      }
+    },
+    "内容语言": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Content language" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "콘텐츠 언어" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Idioma del contenido" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Ngôn ngữ nội dung" } }
+      }
+    },
+    "音频语言": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Audio language" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "오디오 언어" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Idioma del audio" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Ngôn ngữ âm thanh" } }
+      }
+    },
+    "下载并准备本语言音频": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Download this language's audio" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "이 언어의 오디오 다운로드" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Descargar audio de este idioma" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Tải âm thanh ngôn ngữ này" } }
+      }
+    },
+    "本语言仅提供文字": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Text only in this language" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "이 언어는 텍스트만 제공됩니다" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Solo texto en este idioma" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Ngôn ngữ này chỉ có văn bản" } }
+      }
+    },
+    "无法下载或校验所选语言音频，请联网后重试。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Could not download or verify this language's audio. Connect to the internet and retry." } },
+        "ko": { "stringUnit": { "state": "translated", "value": "이 언어의 오디오를 다운로드하거나 확인할 수 없습니다. 인터넷에 연결한 후 다시 시도하세요." } },
+        "es": { "stringUnit": { "state": "translated", "value": "No se pudo descargar o verificar el audio. Conéctate a Internet y vuelve a intentarlo." } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Không thể tải hoặc xác minh âm thanh. Hãy kết nối Internet rồi thử lại." } }
+      }
+    },
+    "音频就绪 · 可以播放": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Audio ready · Tap play" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "오디오 준비 완료 · 재생을 누르세요" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Audio listo · Toca reproducir" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Âm thanh đã sẵn sàng · Nhấn phát" } }
+      }
+    },
     "当前中文版本": {
       "extractionState": "manual",
       "localizations": {
@@ -5737,6 +5800,370 @@
           "stringUnit": {
             "state": "translated",
             "value": "Các bản mẫu đang chờ người nghe kiểm duyệt và không phải bản âm thanh bài giảng chính thức."
+          }
+        }
+      }
+    },
+    "App 通过 HTTPS 从 Google Firebase Hosting 下载证道目录、音频和参考指纹。Google 为检测滥用和分析服务使用情况处理请求 IP，其公开说明将 IP 数据保留期描述为数月。打开原视频或网页版后，适用对应网站的隐私规则。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The app downloads catalogs, audio, and reference fingerprints over HTTPS from Google Firebase Hosting. Google processes request IP addresses to detect abuse and analyze service usage, and states that IP data is retained for a few months. Original videos and the web app are governed by their respective websites’ privacy practices."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "앱은 Google Firebase Hosting에서 HTTPS를 통해 설교 목록, 오디오 및 참조 지문을 다운로드합니다. Google은 악용 탐지와 서비스 사용 분석을 위해 요청 IP 주소를 처리하며, 공개 안내에 따르면 IP 데이터는 몇 달 동안 보관됩니다. 원본 동영상이나 웹 앱을 열면 해당 웹사이트의 개인정보 보호 정책이 적용됩니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La app descarga catálogos de sermones, audio y huellas de referencia mediante HTTPS desde Google Firebase Hosting. Google procesa las direcciones IP de las solicitudes para detectar abusos y analizar el uso del servicio; según su información pública, conserva los datos de IP durante algunos meses. Al abrir el video original o la versión web, se aplican las prácticas de privacidad de sus respectivos sitios."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ứng dụng tải danh mục bài giảng, âm thanh và dấu vân tay tham chiếu qua HTTPS từ Google Firebase Hosting. Google xử lý địa chỉ IP của yêu cầu để phát hiện hành vi lạm dụng và phân tích việc sử dụng dịch vụ; theo thông tin công khai của Google, dữ liệu IP được lưu trong vài tháng. Khi mở video gốc hoặc phiên bản web, chính sách quyền riêng tư của trang web tương ứng sẽ áp dụng."
+          }
+        }
+      }
+    },
+    "关于本说明": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About this notice"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 안내에 대하여"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acerca de este aviso"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Về thông báo này"
+          }
+        }
+      }
+    },
+    "内容请求": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Content requests"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "콘텐츠 요청"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solicitudes de contenido"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yêu cầu nội dung"
+          }
+        }
+      }
+    },
+    "反馈与支持": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Feedback & support"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "피드백 및 지원"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comentarios y asistencia"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phản hồi và hỗ trợ"
+          }
+        }
+      }
+    },
+    "只有你点击听音对齐时，App 才会请求麦克风权限。根据所选内容，App 会聆听约 8 秒或 10 秒。声音仅在设备内存中匹配，不保存为录音、不上传。取消或进入后台会停止采音。拒绝权限仍可手动收听和定位。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only when you start sound alignment does the app request microphone permission. Depending on the selected content, it listens for about 8 or 10 seconds. Audio is matched in device memory; it is not saved as a recording or uploaded. Cancelling or backgrounding stops capture. You can still listen and seek manually without permission."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "듣기 정렬을 시작할 때만 앱이 마이크 권한을 요청합니다. 선택한 콘텐츠에 따라 약 8초 또는 10초 동안 소리를 듣습니다. 소리는 기기 메모리에서만 일치 여부를 확인하며 녹음으로 저장하거나 업로드하지 않습니다. 취소하거나 앱이 백그라운드로 전환되면 수음이 중지됩니다. 권한을 거부해도 수동으로 듣고 재생 위치를 이동할 수 있습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La app solo solicita acceso al micrófono cuando inicias la alineación por sonido. Según el contenido seleccionado, escucha durante unos 8 o 10 segundos. El audio se compara en la memoria del dispositivo; no se guarda como grabación ni se sube. La captura se detiene al cancelar o al pasar la app a segundo plano. Puedes seguir escuchando y buscando la posición manualmente sin conceder el permiso."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ứng dụng chỉ yêu cầu quyền sử dụng micrô khi bạn bắt đầu căn chỉnh bằng âm thanh. Tùy theo nội dung được chọn, ứng dụng nghe trong khoảng 8 hoặc 10 giây. Âm thanh chỉ được đối chiếu trong bộ nhớ thiết bị, không được lưu thành bản ghi hay tải lên. Việc thu âm dừng khi bạn hủy hoặc chuyển ứng dụng sang nền. Bạn vẫn có thể nghe và tua thủ công nếu từ chối cấp quyền."
+          }
+        }
+      }
+    },
+    "本机资料": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local data"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기기 내 데이터"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datos locales"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dữ liệu trên thiết bị"
+          }
+        }
+      }
+    },
+    "本说明适用于同行原生 App。同行是独立个人项目，不设登录、广告或业务统计上传。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This notice covers the native Tongxing app. Tongxing is an independent personal project with no sign-in, advertising, or business analytics uploads."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 안내는 동행 네이티브 앱에 적용됩니다. 동행은 독립적인 개인 프로젝트로, 로그인이나 광고가 없고 비즈니스 분석 데이터를 업로드하지 않습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este aviso se aplica a la app nativa Tongxing. Tongxing es un proyecto personal independiente, sin inicio de sesión, anuncios ni envío de datos de análisis comerciales."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thông báo này áp dụng cho ứng dụng Tongxing bản gốc. Tongxing là dự án cá nhân độc lập, không có đăng nhập, quảng cáo hoặc tải lên dữ liệu phân tích kinh doanh."
+          }
+        }
+      }
+    },
+    "私密反馈、资料访问或删除请求，请通过邮件联系。下方说明可离线阅读。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Email us for private feedback or requests to access or delete your data. The information below is available offline."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "비공개 의견이나 데이터 열람 또는 삭제 요청은 이메일로 보내 주세요. 아래 안내는 오프라인에서도 읽을 수 있습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Para enviar comentarios privados o solicitar acceso a tus datos o su eliminación, contáctanos por correo electrónico. La información siguiente se puede leer sin conexión."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vui lòng liên hệ qua email nếu bạn muốn gửi phản hồi riêng tư hoặc yêu cầu truy cập hay xóa dữ liệu. Bạn có thể đọc thông tin bên dưới khi ngoại tuyến."
+          }
+        }
+      }
+    },
+    "系统播放展示": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System playback display"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "시스템 재생 표시"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visualización de reproducción del sistema"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiển thị phát lại trên hệ thống"
+          }
+        }
+      }
+    },
+    "锁屏媒体控件和实时活动会显示当前证道、讲员、播放状态和时间。实时活动不使用推送服务；这些状态不会另行上传到业务服务器。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lock Screen media controls and Live Activities show the current sermon, speaker, playback state, and time. Live Activities do not use push notifications; these states are not separately uploaded to a business server."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "잠금 화면의 미디어 컨트롤과 실시간 현황에는 현재 설교, 설교자, 재생 상태 및 시간이 표시됩니다. 실시간 현황은 푸시 알림을 사용하지 않으며, 이 상태 정보는 별도의 서비스 서버로 업로드되지 않습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los controles multimedia de la pantalla bloqueada y las Actividades en Vivo muestran el sermón y el orador actuales, el estado de reproducción y el tiempo. Las Actividades en Vivo no usan notificaciones push; estos estados no se suben por separado a un servidor del servicio."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các nút điều khiển phương tiện trên Màn hình khóa và Hoạt động trực tiếp hiển thị bài giảng, người giảng, trạng thái phát và thời gian hiện tại. Hoạt động trực tiếp không dùng thông báo đẩy; các trạng thái này không được tải riêng lên máy chủ dịch vụ."
+          }
+        }
+      }
+    },
+    "隐私与支持": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy & Support"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "개인정보 및 지원"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacidad y asistencia"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quyền riêng tư và hỗ trợ"
+          }
+        }
+      }
+    },
+    "音频、目录、参考指纹、语言偏好和收听位置保存在本机。收听位置最多保留 12 条，读取或更新时清理超过 30 天的记录。下载音频不进入系统备份；其他本机资料可能随你的系统备份设置保存。删除 App 可移除本机 App 资料；系统备份需在系统设置中管理。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio, catalogs, reference fingerprints, language preferences, and listening positions are stored locally. Up to 12 listening positions are retained; entries older than 30 days are removed when read or updated. Downloaded audio is excluded from system backups; other local data may be backed up according to your settings. Deleting the app removes local app data; manage system backups separately in Settings."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오디오, 목록, 참조 지문, 언어 설정 및 듣기 위치는 기기에 저장됩니다. 듣기 위치는 최대 12개까지 보관하며, 읽거나 업데이트할 때 30일이 지난 기록을 삭제합니다. 다운로드한 오디오는 시스템 백업에서 제외됩니다. 다른 기기 내 데이터는 시스템 백업 설정에 따라 백업될 수 있습니다. 앱을 삭제하면 기기에 저장된 앱 데이터가 제거되며, 시스템 백업은 설정에서 별도로 관리해야 합니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El audio, los catálogos, las huellas de referencia, las preferencias de idioma y las posiciones de escucha se guardan en el dispositivo. Se conservan hasta 12 posiciones de escucha; los registros de más de 30 días se eliminan al leerlos o actualizarlos. El audio descargado se excluye de las copias de seguridad del sistema; otros datos locales pueden incluirse según tus ajustes. Al eliminar la app se borran sus datos locales; las copias de seguridad del sistema deben gestionarse por separado en Ajustes."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Âm thanh, danh mục, dấu vân tay tham chiếu, tùy chọn ngôn ngữ và vị trí nghe được lưu trên thiết bị. Tối đa 12 vị trí nghe được giữ lại; các mục cũ hơn 30 ngày sẽ bị xóa khi được đọc hoặc cập nhật. Âm thanh đã tải xuống không được đưa vào bản sao lưu hệ thống; dữ liệu khác trên thiết bị có thể được sao lưu tùy theo cài đặt của bạn. Xóa ứng dụng sẽ xóa dữ liệu ứng dụng trên thiết bị; bạn cần quản lý riêng bản sao lưu hệ thống trong phần Cài đặt."
+          }
+        }
+      }
+    },
+    "麦克风": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Microphone"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "마이크"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Micrófono"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Micrô"
           }
         }
       }

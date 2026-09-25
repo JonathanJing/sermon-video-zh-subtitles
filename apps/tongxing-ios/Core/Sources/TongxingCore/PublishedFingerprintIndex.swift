@@ -40,6 +40,17 @@ public struct PublishedFingerprintBinding: Codable, Sendable, Equatable {
         else { throw CatalogError.invalid("已发布声音指纹与当前来源、窗口或音轨不符") }
     }
 
+    public func validate(page: MultilingualPage, locale: String,
+                         trackSha256: String, durationSeconds: Double) throws {
+        try validate()
+        guard page.id == pageId, page.sourceMediaSha256 == sourceSha256,
+              page.targets[locale]?.audioFingerprint == self,
+              page.targets[locale]?.audioStatus == "human_reviewed",
+              self.trackSha256 == trackSha256, durationSeconds.isFinite,
+              abs(durationSeconds - (sourceEndSeconds - sourceStartSeconds)) <= 0.1
+        else { throw CatalogError.invalid("声音指纹与当前多语言页面或音轨不符") }
+    }
+
     public func indexURL(relativeTo baseURL: URL) throws -> URL {
         try validate()
         guard Validation.httpsURL(baseURL.absoluteString),
