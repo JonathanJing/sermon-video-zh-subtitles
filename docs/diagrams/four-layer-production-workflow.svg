@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1580" viewBox="0 0 1600 1580" role="img" aria-labelledby="title desc">
-<title id="title">四层多语言生产</title><desc id="desc">英文事实只冻结一次；每种目标语言分别完成文字、音频与发布门禁 当前 Layer 1 producer 已进入 shadow；通用 Layer 2–4 producer 仍在迁移，legacy 完成不得改写为 four_layer_release。 模型是各层工具，不是事实或人工批准来源；来源、hash、覆盖率、语义、听审与播放证据分别留存。</desc>
+<title id="title">四层多语言生产</title><desc id="desc">英文事实只冻结一次；每种目标语言分别完成文字、音频与发布门禁 两段三语 Dev 片段已审；正式站仍九周中文。通用 Layer 2–4 producer 持续迁移，legacy complete 不等于四层发布。 模型是各层工具，不是事实或人工批准来源；来源、hash、覆盖率、语义、听审与播放证据分别留存。</desc>
 <style>text{font-family:"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;} text{font-variant-ligatures:none}</style>
 <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M1 1 L7 4 L1 7" fill="none" stroke="context-stroke" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
 <rect x="0" y="0" width="1600" height="1580" rx="0" fill="#F5F4EF" stroke="none" />
@@ -58,8 +58,8 @@
 <text x="469" y="630" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 检查否定、因果、经文、专名和数字</text>
 <rect x="454" y="726" width="318" height="188" rx="12" fill="#F1ECFA" stroke="none" />
 <text x="469" y="751" font-size="14" font-weight="700" fill="#7450B2" text-anchor="start" >模型与工具 / MODELS + TOOLS</text>
-<text x="469" y="778" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• GPT-6 Astra：当前中文翻译与复核</text>
-<text x="469" y="802" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 语言专属 adapter：ko / es 待验证</text>
+<text x="469" y="778" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 片段策略：Astra 初译 / Sol 逐组复核</text>
+<text x="469" y="802" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• ko / es 片段已审；正式周次待验</text>
 <text x="469" y="826" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 固定 CUV 库：确定性精确取文</text>
 <rect x="454" y="920" width="318" height="164" rx="12" fill="#F1ECFA" stroke="none" />
 <text x="469" y="945" font-size="14" font-weight="700" fill="#7450B2" text-anchor="start" >输出与门禁 / OUTPUT + GATE</text>
@@ -89,7 +89,7 @@
 <text x="843" y="778" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• Qwen3-TTS：当前中文语音 adapter</text>
 <text x="843" y="802" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• Qwen3-ASR：回转写筛查，不是批准</text>
 <text x="843" y="826" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• 确定性 scheduler + FFmpeg</text>
-<text x="843" y="850" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• ko / es speech adapter 待验证</text>
+<text x="843" y="850" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• ko / es 配音：Dev 片段已听审</text>
 <rect x="828" y="920" width="318" height="164" rx="12" fill="#FFF3E3" stroke="none" />
 <text x="843" y="945" font-size="14" font-weight="700" fill="#C96E08" text-anchor="start" >输出与门禁 / OUTPUT + GATE</text>
 <text x="843" y="972" font-size="15" font-weight="430" fill="#304951" text-anchor="start" >• Target-Language Audio Package</text>
@@ -143,8 +143,8 @@
 <text x="838" y="1329" font-size="18" font-weight="700" fill="#655184" text-anchor="start" >跨层编排：GPT-6 Astra Supervisor + 受限确定性工具</text>
 <text x="838" y="1358" font-size="16" font-weight="400" fill="#5D665E" text-anchor="start" >Agent 只编排和重读证据；不能自授人工批准，也不能把 legacy complete 升级。</text>
 <rect x="64" y="1451" width="1472" height="78" rx="16" fill="#E9EEE8" stroke="none" />
-<text x="84" y="1480" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >当前 Layer 1 producer 已进入 shadow；通用 Layer 2–4 producer 仍在迁移，legacy 完成不得改写为 four_layer_release。</text>
+<text x="84" y="1480" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >两段三语 Dev 片段已审；正式站仍九周中文。通用 Layer 2–4 producer 持续迁移，legacy complete 不等于四层发布。</text>
 <text x="84" y="1509" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >模型是各层工具，不是事实或人工批准来源；来源、hash、覆盖率、语义、听审与播放证据分别留存。</text>
-<text x="64" y="1558" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="start" >内容校准 2026-09-20 · 设计参考 built-in ImageGen 2026-09-20 · 原生可编辑 SVG</text>
+<text x="64" y="1558" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="start" >内容校准 2026-09-25 · 设计参考 built-in ImageGen 2026-09-20 · 原生可编辑 SVG</text>
 <text x="1536" y="1558" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="end" >实线：主路径   虚线：条件 / 实验 / 历史</text>
 </svg>
