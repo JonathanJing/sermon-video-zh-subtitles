@@ -15,6 +15,7 @@ from urllib.parse import unquote, urlsplit
 
 
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp"}
+STANDALONE_GENERATED_DIAGRAMS = {"firebase-release-flow.svg"}
 INLINE_LINK = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
 REFERENCE_LINK = re.compile(r"^ {0,3}\[[^\]]+\]:\s*(\S+)", re.MULTILINE)
 HTML_LINK = re.compile(r"\b(?:src|href)\s*=\s*[\"']([^\"']+)[\"']", re.IGNORECASE)
@@ -107,6 +108,7 @@ def check_generated_diagrams(root: Path, paths: list[str]) -> None:
         return
     spec = root / "docs/diagrams/diagram-specs.json"
     names = {item["name"] + ".svg" for item in json.loads(spec.read_text(encoding="utf-8"))}
+    names.update(STANDALONE_GENERATED_DIAGRAMS)
     compared = names if spec_changed else names & changed_diagrams
     if not compared:
         return
@@ -119,7 +121,7 @@ def check_generated_diagrams(root: Path, paths: list[str]) -> None:
             committed = root / "docs/diagrams" / name
             generated = Path(destination) / name
             if committed.read_bytes() != generated.read_bytes():
-                raise ValueError(f"Generated diagram differs from diagram-specs.json: {name}")
+                raise ValueError(f"Generated diagram differs from renderer output: {name}")
 
 
 def check_documentation(root: Path, paths: list[str], base: str, head: str, event: str) -> None:
