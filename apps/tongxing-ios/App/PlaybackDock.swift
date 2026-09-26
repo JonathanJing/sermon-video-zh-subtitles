@@ -88,7 +88,7 @@ struct PlaybackDock: View {
             .frame(width: 48, height: 52)
             .contentShape(Rectangle())
         }
-        .accessibilityLabel(localization.text("展开播放栏"))
+        .accessibilityLabel(localization.text("更多"))
         .accessibilityIdentifier("playback-more")
         .popover(isPresented: $showingMore, arrowEdge: placement == .trailing ? .trailing : .bottom) {
             moreControls

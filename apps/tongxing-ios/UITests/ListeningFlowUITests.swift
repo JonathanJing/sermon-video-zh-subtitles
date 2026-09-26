@@ -5,6 +5,15 @@ import XCTest
 /// these tests do not establish real-network, audible, lock-screen, or venue QA.
 @MainActor
 final class ListeningFlowUITests: XCTestCase {
+    func testPlaybackStatusAndMoreLabelAreVisibleAtRegularTextSize() {
+        let app = launchFixture()
+        let status = app.staticTexts["playback-status-detail"]
+        XCTAssertTrue(status.waitForExistence(timeout: 5))
+        XCTAssertTrue(status.isHittable)
+        XCTAssertFalse(status.label.isEmpty)
+        XCTAssertEqual(app.buttons["playback-more"].label, "更多")
+    }
+
     func testDuoOuterPlayerKeepsReadingAreaWhenMoreOpens() throws {
         let app = launchFixture()
         try XCTSkipUnless(abs(app.frame.width - 466) < 2 && abs(app.frame.height - 678) < 2,
@@ -12,6 +21,9 @@ final class ListeningFlowUITests: XCTestCase {
 
         let more = app.buttons["playback-more"]
         XCTAssertTrue(more.waitForExistence(timeout: 5))
+        XCTAssertEqual(more.label, "更多")
+        XCTAssertTrue(app.staticTexts["playback-status-detail"].isHittable,
+                      "播放状态应在正常字号下可见")
         let sideRegionStart = app.frame.maxX - 84
         for identifier in ["nudge-backward", "playback-toggle", "nudge-forward", "playback-more"] {
             let button = app.buttons[identifier]

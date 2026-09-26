@@ -90,6 +90,7 @@ struct ContentView: View {
                                 if let saved = playback.resumePosition {
                                     resumeCard(saved)
                                 }
+                                playbackStatusDetail
                                 Picker(localization.text("收听内容"), selection: $model.display) {
                                     ForEach(AppModel.ListeningDisplay.allCases, id: \.self) { Text(localization.text($0.rawValue)).tag($0) }
                                 }.pickerStyle(.segmented).accessibilityIdentifier("listening-display")
@@ -97,12 +98,6 @@ struct ContentView: View {
                                     currentSubtitle(track)
                                 }
                                 else { transcript(track) }
-                                if typeSize.isAccessibilitySize {
-                                    Text(localization.text(model.isPreparing ? "正在准备音频…" : playback.message))
-                                        .font(.footnote).foregroundStyle(.secondary)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                        .accessibilityIdentifier("playback-status-detail")
-                                }
                                 Text(localization.text(model.alignmentDisplayStatus, ["time": model.alignmentPosition.map(PlaybackTime.format) ?? ""]))
                                     .font(.footnote).foregroundStyle(.secondary)
                                     .fixedSize(horizontal: false, vertical: true)
@@ -145,6 +140,9 @@ struct ContentView: View {
                                 } else {
                                     Text(localization.text("本语言仅提供文字"))
                                         .font(.footnote).foregroundStyle(.secondary)
+                                }
+                                if model.selectedAudioLocale != nil {
+                                    playbackStatusDetail
                                 }
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -269,6 +267,15 @@ struct ContentView: View {
             }
             }
         }
+    }
+
+    private var playbackStatusDetail: some View {
+        Text(localization.text(model.isPreparing || model.isPreparingPublishedAudio
+                               ? "正在准备音频…" : playback.message))
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityIdentifier("playback-status-detail")
     }
 
     private func listeningPlaybackDock(placement: PlaybackDockPlacement,
