@@ -8,6 +8,32 @@ import WebKit
 // export a State macro whose plugin is absent from Command Line Tools.
 private typealias ViewState<Value> = SwiftUI.State<Value>
 
+private struct ToolbarVerticalEdgeReader<Content: View>: View {
+    let content: (HorizontalEdge?) -> Content
+
+    var body: some View {
+        #if compiler(>=6.4)
+        if #available(iOS 27.1, macOS 27.1, *) {
+            CurrentToolbarVerticalEdge(content: content)
+        } else {
+            content(nil)
+        }
+        #else
+        content(nil)
+        #endif
+    }
+}
+
+#if compiler(>=6.4)
+@available(iOS 27.1, macOS 27.1, *)
+private struct CurrentToolbarVerticalEdge<Content: View>: View {
+    @Environment(\.toolbarVerticalEdge) private var edge
+    let content: (HorizontalEdge?) -> Content
+
+    var body: some View { content(edge) }
+}
+#endif
+
 struct ContentView: View {
     @ObservedObject private var localization = AppLocalization.shared
     @ObservedObject var model: AppModel
@@ -26,8 +52,25 @@ struct ContentView: View {
     }
 
     var body: some View {
+        GeometryReader { geometry in
+            let controlRegion = dockControlRegion(in: geometry)
+            listeningNavigation(
+                controlRegion: controlRegion,
+                usesTrailingDock: controlRegion.width >= 700 && controlRegion.height < 700
+            )
+        }
+        .environment(\.locale, localization.locale)
+        .onChange(of: scenePhase) { _, phase in
+            if phase != .active { playback.saveProgress() }
+            else { localization.refreshSystemLanguage() }
+        }
+    }
+
+    private func listeningNavigation(controlRegion: CGRect, usesTrailingDock: Bool) -> some View {
         NavigationStack {
-            ScrollViewReader { proxy in
+            ToolbarVerticalEdgeReader { verticalBarEdge in
+                let usesSystemVerticalBar = verticalBarEdge != nil
+                return ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: verticalSizeClass == .compact ? 12 : 16) {
                         if model.selectedWeek == nil {
@@ -47,6 +90,7 @@ struct ContentView: View {
                                 if let saved = playback.resumePosition {
                                     resumeCard(saved)
                                 }
+                                playbackStatusDetail
                                 Picker(localization.text("收听内容"), selection: $model.display) {
                                     ForEach(AppModel.ListeningDisplay.allCases, id: \.self) { Text(localization.text($0.rawValue)).tag($0) }
                                 }.pickerStyle(.segmented).accessibilityIdentifier("listening-display")
@@ -54,12 +98,6 @@ struct ContentView: View {
                                     currentSubtitle(track)
                                 }
                                 else { transcript(track) }
-                                if typeSize.isAccessibilitySize {
-                                    Text(localization.text(model.isPreparing ? "正在准备音频…" : playback.message))
-                                        .font(.footnote).foregroundStyle(.secondary)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                        .accessibilityIdentifier("playback-status-detail")
-                                }
                                 Text(localization.text(model.alignmentDisplayStatus, ["time": model.alignmentPosition.map(PlaybackTime.format) ?? ""]))
                                     .font(.footnote).foregroundStyle(.secondary)
                                     .fixedSize(horizontal: false, vertical: true)
@@ -102,6 +140,9 @@ struct ContentView: View {
                                 } else {
                                     Text(localization.text("本语言仅提供文字"))
                                         .font(.footnote).foregroundStyle(.secondary)
+                                }
+                                if model.selectedAudioLocale != nil {
+                                    playbackStatusDetail
                                 }
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -156,22 +197,50 @@ struct ContentView: View {
                 }
             }
             .background(Brand.background)
-            .listeningBottomBar {
-                if model.selectedTrack != nil || model.selectedAudioLocale != nil {
-                    PlaybackDock(playback: playback, isPreparing: model.isPreparing || model.isPreparingPublishedAudio,
-                                 alignmentModel: model,
-                                 precision: model.selectedTrack == nil ? nil : { sheet = .precision },
-                                 current: model.selectedTrack == nil ? nil : { returnToCurrent = UUID() })
+            .listeningPlayerDock(atTrailingEdge: usesTrailingDock,
+                                 inSystemBar: usesSystemVerticalBar) {
+                if usesTrailingDock && !usesSystemVerticalBar {
+                    VStack(spacing: 12) {
+                        trailingNavigationActions
+                        if model.selectedTrack != nil || model.selectedAudioLocale != nil {
+                            listeningPlaybackDock(placement: .trailing)
+                        }
+                    }
+                    .frame(width: 80)
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    .padding(.top, 8)
+                } else {
+                    if model.selectedTrack != nil || model.selectedAudioLocale != nil {
+                        HStack(spacing: 0) {
+                            Color.clear.frame(width: controlRegion.minX, height: 0)
+                            listeningPlaybackDock(placement: .bottom)
+                                .frame(width: controlRegion.width)
+                            Spacer(minLength: 0)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
                 }
             }
             .toolbar {
                 ToolbarItem(placement: .principal) { BrandTitle() }
-                ToolbarItemGroup(placement: .primaryAction) {
-                    Button(localization.text("选择证道周次"), systemImage: "calendar") { sheet = .weeks }
-                        .labelStyle(.iconOnly).accessibilityIdentifier("choose-sermon")
-                    Button(localization.text("更多选项"), systemImage: "ellipsis.circle") { sheet = .about }
-                        .labelStyle(.iconOnly).accessibilityIdentifier("more-options")
+                if !usesTrailingDock || usesSystemVerticalBar {
+                    ToolbarItemGroup(placement: .primaryAction) {
+                        Button(localization.text("选择证道周次"), systemImage: "calendar") { sheet = .weeks }
+                            .labelStyle(.iconOnly).accessibilityIdentifier("choose-sermon")
+                        Button(localization.text("更多选项"), systemImage: "ellipsis.circle") { sheet = .about }
+                            .labelStyle(.iconOnly).accessibilityIdentifier("more-options")
+                    }
                 }
+                #if compiler(>=6.4)
+                if #available(iOS 27.1, macOS 27.1, *), usesSystemVerticalBar,
+                   model.selectedTrack != nil || model.selectedAudioLocale != nil {
+                    ToolbarItem(placement: .primaryAction) {
+                        listeningPlaybackDock(placement: .trailing, inSystemBar: true)
+                    }
+                    .axisBehavior(.verticalPreferred)
+                    .visibilityPriority(.high)
+                }
+                #endif
             }
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -196,12 +265,69 @@ struct ContentView: View {
                         .presentationDetents([.large]).presentationDragIndicator(.visible)
                 }
             }
+            }
         }
-        .environment(\.locale, localization.locale)
-        .onChange(of: scenePhase) { _, phase in
-            if phase != .active { playback.saveProgress() }
-            else { localization.refreshSystemLanguage() }
+    }
+
+    private var playbackStatusDetail: some View {
+        Text(localization.text(model.isPreparing || model.isPreparingPublishedAudio
+                               ? "正在准备音频…" : playback.message))
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityIdentifier("playback-status-detail")
+    }
+
+    private func listeningPlaybackDock(placement: PlaybackDockPlacement,
+                                       inSystemBar: Bool = false) -> some View {
+        PlaybackDock(
+            playback: playback,
+            isPreparing: model.isPreparing || model.isPreparingPublishedAudio,
+            alignmentModel: model,
+            precision: model.selectedTrack == nil ? nil : { sheet = .precision },
+            current: model.selectedTrack == nil ? nil : { returnToCurrent = UUID() },
+            placement: placement,
+            inSystemBar: inSystemBar
+        )
+    }
+
+    private var trailingNavigationActions: some View {
+        VStack(spacing: 0) {
+            Button { sheet = .weeks } label: {
+                Image(systemName: "calendar")
+                    .frame(width: 56, height: 52)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel(localization.text("选择证道周次"))
+            .accessibilityIdentifier("choose-sermon")
+
+            Button { sheet = .about } label: {
+                Image(systemName: "ellipsis.circle")
+                    .frame(width: 56, height: 52)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel(localization.text("更多选项"))
+            .accessibilityIdentifier("more-options")
         }
+        .font(.title3.weight(.medium))
+        .buttonStyle(.plain)
+        .foregroundStyle(Brand.accent)
+        .padding(6)
+        .listeningGlassSurface()
+        .padding(.horizontal, 6)
+    }
+
+    private func dockControlRegion(in geometry: GeometryProxy) -> CGRect {
+        let bounds = CGRect(origin: .zero, size: geometry.size)
+        #if compiler(>=6.4)
+        if #available(iOS 27.1, macOS 27.1, *) {
+            let divisions = geometry.reservedRegions(kind: .division)
+                .filter(\.isActive)
+                .map(\.frame)
+            return PlaybackControlRegion.resolve(in: bounds, excluding: divisions)
+        }
+        #endif
+        return bounds
     }
 
     @ViewBuilder private func sermonHeading(_ week: SermonWeek) -> some View {
