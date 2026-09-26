@@ -8,7 +8,7 @@ Apple 已发布 iOS 27 设计资源，并继续完善 Liquid Glass，包括让�
 
 | 区域 | 实施方向 |
 | --- | --- |
-| 导航 | 默认使用系统导航与工具栏；宽而矮的阅读布局保留系统标题，将右侧两个导航动作排在安全区内的独立控制组。同行绿用于品牌和主操作，文字、次级信息使用适应外观的语义颜色。 |
+| 导航 | 使用系统导航与工具栏。iOS 27.1 Duo 竖向系统栏出现时，页面选择、更多选项与播放器共同进入状态信息下方的侧边区域；其他宽横屏保留安全区内的控制列。同行绿用于品牌和主操作，文字、次级信息使用适应外观的语义颜色。 |
 | 当前字幕 | 使用稳定实底，基准字号 26 pt，随 Dynamic Type 增长。允许自然换行和滚动，避免用固定高度、截断或缩字掩盖空间不足。 |
 | 字幕全文与大纲 | 保持清晰的内容层，使用普通背景、间距和文字层级；正文不应用 Liquid Glass。 |
 | 悬浮播放器 | 采用单层 `.regular` Liquid Glass，内部使用普通按钮。播放、暂停与前后微调保持稳定位置，主播放操作用同行绿突出；不叠加第二层玻璃按钮或额外模糊背景。 |
@@ -28,11 +28,11 @@ Liquid Glass 属于导航与操作层；大量文字的控制优先使用 `.regu
 
 [Duo 几何资料](https://safearea.info/iphone-duo)列出：外屏竖向为 466×678 pt，右侧安全区 84 pt、底部 34 pt，安全区内约 382×644 pt；内屏横向为 951×669 pt，右侧同样留 84 pt，安全区内约 867×635 pt；内屏竖向为 669×951 pt，顶部留 82 pt、底部 34 pt。页面还列出相机遮挡和半折时的折痕保留区域。尺寸用于回归检查，不在 App 中按机型名称或这些固定数值排版。
 
-主界面留在 SwiftUI 安全区内。播放栏从运行时 `GeometryReader` 获取可用区域；iOS 27.1 起读取**已激活**的 `.division` 保留区域，把整组播放按钮放在折痕的一侧。宽而矮的可用区域（至少 700 pt 宽、低于 700 pt 高）在安全区右侧排一列**两个同轴、有间距的控制组**：上方为页面选择与更多选项，下方为进度、±1 秒、播放与播放“更多”；阅读区避开整列。它们不是一条连续的系统工具栏。其他布局继续使用系统导航栏及底部单排播放控制。“更多”以临时浮层呈现现场对齐、当前句、撤销与精调，不改变常驻栏尺寸；收放仅改变呈现，不改变播放状态或定位。
+主界面留在 SwiftUI 安全区内。播放栏从运行时 `GeometryReader` 获取可用区域；iOS 27.1 起读取**已激活**的 `.division` 保留区域，把整组播放按钮放在折痕的一侧。iOS 27.1 的 `toolbarVerticalEdge` 出现时，页面选择、更多选项与竖向适配的播放器使用 `NavigationStack` 的系统工具栏，进入状态信息下方的共享侧边区域；播放器不再叠加自己的玻璃背景，播放键缩至 44 pt 以适合栏宽。系统负责状态信息避让和项目溢出。其他设备的宽横屏仍使用安全区内的自定义控制列；普通竖屏继续使用底部单排播放控制。“更多”以临时浮层呈现现场对齐、当前句、撤销与精调，不改变播放状态或定位。
 
-此分组是根据 Apple [Toolbars](https://developer.apple.com/design/human-interface-guidelines/toolbars)、[Layout](https://developer.apple.com/design/human-interface-guidelines/layout) 和 [Accessibility](https://developer.apple.com/design/human-interface-guidelines/accessibility) 的原则作出的适配：导航和播放功能视觉分组，图标按钮保留至少 44×44 pt 命中区，控制区避开安全区和正文。Apple 没有为 Duo 上这一具体竖列提供现成布局或逐项认可；因此仍须检查两种横屏方向、大字与 VoiceOver 顺序。
+此分组依据 Apple [Raise the bar with iPhone Duo](https://developer.apple.com/videos/play/tech-talks/111462/) 的系统竖栏、`axisBehavior(.verticalPreferred)` 和溢出规则，以及 [Layout](https://developer.apple.com/design/human-interface-guidelines/layout) 与 [Accessibility](https://developer.apple.com/design/human-interface-guidelines/accessibility) 的原则：导航和播放功能保持顺序，图标按钮保留至少 44×44 pt 命中区，正文由系统栏安全区避让。Duo 内屏、半折、大字与 VoiceOver 顺序仍须检查。
 
-Apple 的 [Duo 适配说明](https://developer.apple.com/videos/play/tech-talks/111461/)和 [保留区域 API 示例](https://developer.apple.com/videos/play/tech-talks/111463/)要求以实际 size class、安全区和保留区域响应展开与半折。此前 iOS 27.1 Duo 外屏模拟器已验证底部常驻栏位于右侧安全区内，打开“更多”不会移动播放按钮；本轮 iOS 17.5 与 iOS 27.0 普通 iPhone 横屏测试验证了两组控件的顺序、间距、同轴位置，以及页面选择、更多选项和播放更多的入口。此轮 Duo 外屏定向测试因模拟器当前几何不符而跳过，不能计为通过。此前外屏截图位于忽略目录 `artifacts/tongxing-ios/2026-09-26/duo-unified-player/`。Duo 内屏开合、半折与真机仍需视觉和操作验收；其他机型横屏不能代替内屏实测。
+Apple 的 [Duo 适配说明](https://developer.apple.com/videos/play/tech-talks/111461/)和 [保留区域 API 示例](https://developer.apple.com/videos/play/tech-talks/111463/)要求以实际 size class、安全区和保留区域响应展开与半折。本轮 iOS 27.1 Duo 外屏模拟器已验证控件进入状态信息下方的系统侧边区域、页面选择与更多入口可打开、播放更多不会移动播放键；截图位于忽略目录 `artifacts/tongxing-ios/2026-09-26/duo-system-side-bar-final/`。iOS 17.5 普通 iPhone 横屏回退交互测试也已通过。Duo 内屏、半折与真机仍需视觉和操作验收；其他机型横屏不能代替内屏实测。
 
 上述方向依据 Apple 对文字缩放、布局适应与系统外观设置的要求；具体排版仍需按实际设备尺寸检查。[Typography](https://developer.apple.com/design/human-interface-guidelines/typography) · [Layout](https://developer.apple.com/design/human-interface-guidelines/layout) · [Sheets](https://developer.apple.com/design/human-interface-guidelines/sheets)
 

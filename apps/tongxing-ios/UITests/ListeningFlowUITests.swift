@@ -8,17 +8,26 @@ final class ListeningFlowUITests: XCTestCase {
     func testDuoOuterPlayerKeepsReadingAreaWhenMoreOpens() throws {
         let app = launchFixture()
         try XCTSkipUnless(abs(app.frame.width - 466) < 2 && abs(app.frame.height - 678) < 2,
-                          "This geometry check targets the iPhone Duo outer portrait display")
+                          "This geometry check targets the iPhone Duo outer portrait display; observed \(app.frame)")
 
         let more = app.buttons["playback-more"]
         XCTAssertTrue(more.waitForExistence(timeout: 5))
-        let safeTrailingEdge = app.frame.maxX - 84
+        let sideRegionStart = app.frame.maxX - 84
         for identifier in ["nudge-backward", "playback-toggle", "nudge-forward", "playback-more"] {
             let button = app.buttons[identifier]
             XCTAssertTrue(button.isHittable, "\(identifier) must remain usable")
-            XCTAssertLessThanOrEqual(button.frame.maxX, safeTrailingEdge + 1,
-                                     "\(identifier) must avoid the reserved right edge")
+            XCTAssertGreaterThanOrEqual(button.frame.midX, sideRegionStart,
+                                        "\(identifier) should share the system side region")
         }
+        assertNavigationActionsAbovePlayer(in: app)
+        XCTAssertLessThanOrEqual(app.buttons["playback-toggle"].frame.width, 45,
+                                 "系统侧边栏的播放按钮应收进栏宽")
+        app.buttons["choose-sermon"].tap()
+        XCTAssertTrue(app.buttons["legacy-week-ui-test-week"].waitForExistence(timeout: 5))
+        app.buttons["完成"].tap()
+        app.buttons["more-options"].tap()
+        XCTAssertTrue(element("privacy-support-link", in: app).waitForExistence(timeout: 5))
+        app.buttons["完成"].tap()
         XCTAssertFalse(app.buttons["align-live-audio"].exists)
         let playerFrame = app.buttons["playback-toggle"].frame
         more.tap()
@@ -35,11 +44,12 @@ final class ListeningFlowUITests: XCTestCase {
     func testDuoInnerLandscapeUsesTrailingPlayerRail() throws {
         let app = launchFixture()
         try XCTSkipUnless(abs(app.frame.width - 951) < 2 && abs(app.frame.height - 669) < 2,
-                          "This geometry check targets the iPhone Duo inner landscape display")
+                          "This geometry check targets the iPhone Duo inner landscape display; observed \(app.frame)")
         let play = app.buttons["playback-toggle"]
         XCTAssertTrue(play.waitForExistence(timeout: 5))
         XCTAssertGreaterThan(play.frame.minX, app.frame.midX)
-        XCTAssertLessThanOrEqual(play.frame.maxX, app.frame.maxX - 84 + 1)
+        XCTAssertGreaterThanOrEqual(play.frame.midX, app.frame.maxX - 84,
+                                    "播放栏应进入状态栏下方的系统侧边区域")
         assertNavigationActionsAbovePlayer(in: app)
         XCTAssertTrue(app.buttons["playback-more"].isHittable)
         screenshot("duo-inner-trailing-player", app: app)

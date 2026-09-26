@@ -39,9 +39,11 @@ enum Brand {
 extension View {
     @ViewBuilder
     func listeningPlayerDock<Bar: View>(
-        atTrailingEdge: Bool, @ViewBuilder content: () -> Bar
+        atTrailingEdge: Bool, inSystemBar: Bool = false, @ViewBuilder content: () -> Bar
     ) -> some View {
-        if atTrailingEdge {
+        if inSystemBar {
+            self
+        } else if atTrailingEdge {
             safeAreaInset(edge: .trailing, spacing: 0, content: content)
         } else {
             listeningBottomBar(content: content)

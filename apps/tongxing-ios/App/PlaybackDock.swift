@@ -19,6 +19,7 @@ struct PlaybackDock: View {
     var precision: (() -> Void)? = nil
     var current: (() -> Void)? = nil
     var placement: PlaybackDockPlacement = .bottom
+    var inSystemBar = false
 
     var body: some View {
         Group {
@@ -33,9 +34,11 @@ struct PlaybackDock: View {
     private var dockSurface: some View {
         Group {
             if isCollapsed {
-                playButton.padding(6).listeningGlassSurface()
+                if inSystemBar { playButton }
+                else { playButton.padding(6).listeningGlassSurface() }
             } else if placement == .trailing {
-                verticalControls.padding(6).listeningGlassSurface()
+                if inSystemBar { verticalControls }
+                else { verticalControls.padding(6).listeningGlassSurface() }
             } else {
                 horizontalControls
                     .padding(.horizontal, 8).padding(.vertical, 6)
@@ -44,8 +47,8 @@ struct PlaybackDock: View {
         }
         .contentShape(Rectangle())
         .simultaneousGesture(dockGesture)
-        .padding(.horizontal, placement == .trailing ? 6 : 12)
-        .padding(.vertical, 8)
+        .padding(.horizontal, inSystemBar ? 0 : placement == .trailing ? 6 : 12)
+        .padding(.vertical, inSystemBar ? 0 : 8)
     }
 
     private var horizontalControls: some View {
@@ -215,7 +218,7 @@ struct PlaybackDock: View {
             Image(systemName: playback.isPlaying || playback.isWaiting ? "pause.fill" : "play.fill")
                 .font(.title3.weight(.semibold))
                 .contentTransition(.identity)
-                .frame(width: 56, height: 56)
+                .frame(width: inSystemBar ? 44 : 56, height: inSystemBar ? 44 : 56)
                 .foregroundStyle(Brand.prominentLabel(scheme))
                 .background(Brand.accent, in: Circle())
                 .opacity(playback.isReady && !isPreparing ? 1 : 0.5)

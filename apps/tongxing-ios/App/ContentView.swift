@@ -8,6 +8,32 @@ import WebKit
 // export a State macro whose plugin is absent from Command Line Tools.
 private typealias ViewState<Value> = SwiftUI.State<Value>
 
+private struct ToolbarVerticalEdgeReader<Content: View>: View {
+    let content: (HorizontalEdge?) -> Content
+
+    var body: some View {
+        #if compiler(>=6.4)
+        if #available(iOS 27.1, macOS 27.1, *) {
+            CurrentToolbarVerticalEdge(content: content)
+        } else {
+            content(nil)
+        }
+        #else
+        content(nil)
+        #endif
+    }
+}
+
+#if compiler(>=6.4)
+@available(iOS 27.1, macOS 27.1, *)
+private struct CurrentToolbarVerticalEdge<Content: View>: View {
+    @Environment(\.toolbarVerticalEdge) private var edge
+    let content: (HorizontalEdge?) -> Content
+
+    var body: some View { content(edge) }
+}
+#endif
+
 struct ContentView: View {
     @ObservedObject private var localization = AppLocalization.shared
     @ObservedObject var model: AppModel
@@ -42,7 +68,9 @@ struct ContentView: View {
 
     private func listeningNavigation(controlRegion: CGRect, usesTrailingDock: Bool) -> some View {
         NavigationStack {
-            ScrollViewReader { proxy in
+            ToolbarVerticalEdgeReader { verticalBarEdge in
+                let usesSystemVerticalBar = verticalBarEdge != nil
+                return ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: verticalSizeClass == .compact ? 12 : 16) {
                         if model.selectedWeek == nil {
@@ -171,8 +199,9 @@ struct ContentView: View {
                 }
             }
             .background(Brand.background)
-            .listeningPlayerDock(atTrailingEdge: usesTrailingDock) {
-                if usesTrailingDock {
+            .listeningPlayerDock(atTrailingEdge: usesTrailingDock,
+                                 inSystemBar: usesSystemVerticalBar) {
+                if usesTrailingDock && !usesSystemVerticalBar {
                     VStack(spacing: 12) {
                         trailingNavigationActions
                         if model.selectedTrack != nil || model.selectedAudioLocale != nil {
@@ -196,7 +225,7 @@ struct ContentView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .principal) { BrandTitle() }
-                if !usesTrailingDock {
+                if !usesTrailingDock || usesSystemVerticalBar {
                     ToolbarItemGroup(placement: .primaryAction) {
                         Button(localization.text("选择证道周次"), systemImage: "calendar") { sheet = .weeks }
                             .labelStyle(.iconOnly).accessibilityIdentifier("choose-sermon")
@@ -204,6 +233,16 @@ struct ContentView: View {
                             .labelStyle(.iconOnly).accessibilityIdentifier("more-options")
                     }
                 }
+                #if compiler(>=6.4)
+                if #available(iOS 27.1, macOS 27.1, *), usesSystemVerticalBar,
+                   model.selectedTrack != nil || model.selectedAudioLocale != nil {
+                    ToolbarItem(placement: .primaryAction) {
+                        listeningPlaybackDock(placement: .trailing, inSystemBar: true)
+                    }
+                    .axisBehavior(.verticalPreferred)
+                    .visibilityPriority(.high)
+                }
+                #endif
             }
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -228,17 +267,20 @@ struct ContentView: View {
                         .presentationDetents([.large]).presentationDragIndicator(.visible)
                 }
             }
+            }
         }
     }
 
-    private func listeningPlaybackDock(placement: PlaybackDockPlacement) -> some View {
+    private func listeningPlaybackDock(placement: PlaybackDockPlacement,
+                                       inSystemBar: Bool = false) -> some View {
         PlaybackDock(
             playback: playback,
             isPreparing: model.isPreparing || model.isPreparingPublishedAudio,
             alignmentModel: model,
             precision: model.selectedTrack == nil ? nil : { sheet = .precision },
             current: model.selectedTrack == nil ? nil : { returnToCurrent = UUID() },
-            placement: placement
+            placement: placement,
+            inSystemBar: inSystemBar
         )
     }
 
