@@ -12,6 +12,9 @@ SPEC.loader.exec_module(gate)
 
 
 class DocsChangeGateTests(unittest.TestCase):
+    def test_committed_diagrams_match_real_renderer(self):
+        gate.check_generated_diagrams(ROOT, ["docs/diagrams/diagram-specs.json"])
+
     def test_only_repository_documentation_assets_get_fast_path(self):
         allowed = (
             "README.md",
