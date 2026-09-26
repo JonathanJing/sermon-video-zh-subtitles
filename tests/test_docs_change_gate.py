@@ -2,6 +2,7 @@ import importlib.util
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -72,6 +73,23 @@ class DocsChangeGateTests(unittest.TestCase):
             subprocess.run(["git", "add", "README.md"], cwd=root, check=True)
             with self.assertRaisesRegex(ValueError, "still linked"):
                 gate.check_inbound_links(root, ["docs/deleted.md"])
+
+    def test_standalone_generated_diagram_is_checked_when_svg_changes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            diagrams = root / "docs/diagrams"
+            diagrams.mkdir(parents=True)
+            (diagrams / "diagram-specs.json").write_text("[]", encoding="utf-8")
+            (diagrams / "firebase-release-flow.svg").write_bytes(b"stale")
+
+            def render(command, **kwargs):
+                destination = Path(command[command.index("--out-dir") + 1])
+                (destination / "firebase-release-flow.svg").write_bytes(b"current")
+
+            with patch.object(gate.subprocess, "run", side_effect=render) as run:
+                with self.assertRaisesRegex(ValueError, "firebase-release-flow.svg"):
+                    gate.check_generated_diagrams(root, ["docs/diagrams/firebase-release-flow.svg"])
+                run.assert_called_once()
 
 
 if __name__ == "__main__":
