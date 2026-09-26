@@ -26,6 +26,17 @@ struct ContentView: View {
     }
 
     var body: some View {
+        GeometryReader { geometry in
+            listeningNavigation(controlRegion: dockControlRegion(in: geometry))
+        }
+        .environment(\.locale, localization.locale)
+        .onChange(of: scenePhase) { _, phase in
+            if phase != .active { playback.saveProgress() }
+            else { localization.refreshSystemLanguage() }
+        }
+    }
+
+    private func listeningNavigation(controlRegion: CGRect) -> some View {
         NavigationStack {
             ScrollViewReader { proxy in
                 ScrollView {
@@ -158,10 +169,17 @@ struct ContentView: View {
             .background(Brand.background)
             .listeningBottomBar {
                 if model.selectedTrack != nil || model.selectedAudioLocale != nil {
-                    PlaybackDock(playback: playback, isPreparing: model.isPreparing || model.isPreparingPublishedAudio,
-                                 alignmentModel: model,
-                                 precision: model.selectedTrack == nil ? nil : { sheet = .precision },
-                                 current: model.selectedTrack == nil ? nil : { returnToCurrent = UUID() })
+                    HStack(spacing: 0) {
+                        Color.clear.frame(width: controlRegion.minX, height: 0)
+                        PlaybackDock(playback: playback, isPreparing: model.isPreparing || model.isPreparingPublishedAudio,
+                                     alignmentModel: model,
+                                     precision: model.selectedTrack == nil ? nil : { sheet = .precision },
+                                     current: model.selectedTrack == nil ? nil : { returnToCurrent = UUID() },
+                                     prefersCompactPresentation: controlRegion.width < 440 && controlRegion.height < 700)
+                            .frame(width: controlRegion.width)
+                        Spacer(minLength: 0)
+                    }
+                    .frame(maxWidth: .infinity)
                 }
             }
             .toolbar {
@@ -197,11 +215,19 @@ struct ContentView: View {
                 }
             }
         }
-        .environment(\.locale, localization.locale)
-        .onChange(of: scenePhase) { _, phase in
-            if phase != .active { playback.saveProgress() }
-            else { localization.refreshSystemLanguage() }
+    }
+
+    private func dockControlRegion(in geometry: GeometryProxy) -> CGRect {
+        let bounds = CGRect(origin: .zero, size: geometry.size)
+        #if compiler(>=6.4)
+        if #available(iOS 27.1, macOS 27.1, *) {
+            let divisions = geometry.reservedRegions(kind: .division)
+                .filter(\.isActive)
+                .map(\.frame)
+            return PlaybackControlRegion.resolve(in: bounds, excluding: divisions)
         }
+        #endif
+        return bounds
     }
 
     @ViewBuilder private func sermonHeading(_ week: SermonWeek) -> some View {

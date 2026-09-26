@@ -9,10 +9,12 @@ struct PlaybackDock: View {
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isCollapsed = false
+    @State private var isCompactExpanded = false
     var isPreparing = false
     var alignmentModel: AppModel? = nil
     var precision: (() -> Void)? = nil
     var current: (() -> Void)? = nil
+    var prefersCompactPresentation = false
 
     var body: some View {
         Group {
@@ -20,6 +22,25 @@ struct PlaybackDock: View {
                 miniPlayButton
                     .padding(6)
                     .listeningGlassSurface()
+            } else if prefersCompactPresentation {
+                VStack(spacing: 6) {
+                    if isCompactExpanded {
+                        fullControls
+                        Button { setCompactExpanded(false) } label: {
+                            Label(localization.text("收起播放栏"), systemImage: "chevron.down")
+                                .font(.caption.weight(.medium))
+                                .frame(minHeight: 44)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("playback-less")
+                    } else {
+                        compactPrimaryControls
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.top, 10)
+                .padding(.bottom, 8)
+                .listeningGlassSurface()
             } else {
                 Group {
                     if verticalSizeClass == .compact { compactControls }
@@ -42,6 +63,38 @@ struct PlaybackDock: View {
     private func setCollapsed(_ collapsed: Bool) {
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
             isCollapsed = collapsed
+        }
+    }
+
+    private func setCompactExpanded(_ expanded: Bool) {
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
+            isCompactExpanded = expanded
+        }
+    }
+
+    private var compactPrimaryControls: some View {
+        VStack(spacing: 6) {
+            timeAndStatus
+            HStack(spacing: 6) {
+                HStack(spacing: 6) {
+                    compactNudge(-1).labelStyle(.iconOnly).frame(width: 44)
+                    playButton
+                    compactNudge(1).labelStyle(.iconOnly).frame(width: 44)
+                }
+                .disabled(!playback.isReady || isPreparing)
+                Button { setCompactExpanded(true) } label: {
+                    VStack(spacing: 3) {
+                        Image(systemName: "ellipsis").font(.body.weight(.semibold))
+                        Text(localization.text("更多")).font(.caption2.weight(.medium))
+                    }
+                    .frame(minWidth: 48, minHeight: 60)
+                    .contentShape(Rectangle())
+                }
+                .accessibilityLabel(localization.text("展开播放栏"))
+                .accessibilityIdentifier("playback-more")
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.primary)
         }
     }
 

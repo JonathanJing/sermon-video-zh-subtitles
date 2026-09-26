@@ -29,6 +29,22 @@ struct PlaybackControlRegionTests {
         #expect(result.maxY == bounds.maxY)
     }
 
+    @Test func duoSizedSafeAreasKeepControlsOnOneSideOfAnActiveDivision() {
+        let outerSafeArea = CGRect(x: 0, y: 0, width: 382, height: 644)
+        #expect(PlaybackControlRegion.resolve(in: outerSafeArea, excluding: []) == outerSafeArea)
+
+        let innerLandscapeSafeArea = CGRect(x: 0, y: 0, width: 867, height: 635)
+        let verticalDivision = CGRect(x: 414, y: 0, width: 40, height: 635)
+        let landscapeControls = PlaybackControlRegion.resolve(in: innerLandscapeSafeArea, excluding: [verticalDivision])
+        #expect(landscapeControls == CGRect(x: 454, y: 0, width: 413, height: 635))
+        #expect(landscapeControls.intersection(verticalDivision).isEmpty)
+
+        let innerPortraitSafeArea = CGRect(x: 0, y: 0, width: 669, height: 835)
+        let horizontalDivision = CGRect(x: 0, y: 397, width: 669, height: 40)
+        let portraitControls = PlaybackControlRegion.resolve(in: innerPortraitSafeArea, excluding: [horizontalDivision])
+        #expect(portraitControls == CGRect(x: 0, y: 437, width: 669, height: 398))
+    }
+
     @Test func shortNarrowAndInvalidBoundsRemainBounded() {
         let narrow = CGRect(x: 0, y: 0, width: 200, height: 80)
         #expect(PlaybackControlRegion.resolve(in: narrow, excluding: []) == narrow)

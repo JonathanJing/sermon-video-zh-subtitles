@@ -1,6 +1,15 @@
 {
   "sourceLanguage": "zh-Hans",
   "strings": {
+    "更多": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "More" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "더 보기" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Más" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Thêm" } }
+      }
+    },
     "已发布页面": {
       "extractionState": "manual",
       "localizations": {

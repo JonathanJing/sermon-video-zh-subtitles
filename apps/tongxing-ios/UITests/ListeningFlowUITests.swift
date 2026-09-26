@@ -5,6 +5,30 @@ import XCTest
 /// these tests do not establish real-network, audible, lock-screen, or venue QA.
 @MainActor
 final class ListeningFlowUITests: XCTestCase {
+    func testDuoOuterCompactPlayerStaysInsideTrailingSafeAreaAndExpands() throws {
+        let app = launchFixture()
+        try XCTSkipUnless(abs(app.frame.width - 466) < 2 && abs(app.frame.height - 678) < 2,
+                          "This geometry check targets the iPhone Duo outer portrait display")
+
+        let more = app.buttons["playback-more"]
+        XCTAssertTrue(more.waitForExistence(timeout: 5))
+        let safeTrailingEdge = app.frame.maxX - 84
+        for identifier in ["nudge-backward", "playback-toggle", "nudge-forward", "playback-more"] {
+            let button = app.buttons[identifier]
+            XCTAssertTrue(button.isHittable, "\(identifier) must remain usable")
+            XCTAssertLessThanOrEqual(button.frame.maxX, safeTrailingEdge + 1,
+                                     "\(identifier) must avoid the reserved right edge")
+        }
+        XCTAssertFalse(app.buttons["align-live-audio"].exists)
+        more.tap()
+        XCTAssertTrue(app.buttons["align-live-audio"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["precision-controls"].exists)
+        screenshot("duo-outer-expanded-player", app: app)
+        app.buttons["playback-less"].tap()
+        XCTAssertTrue(more.waitForExistence(timeout: 5))
+        screenshot("duo-outer-compact-player", app: app)
+    }
+
     func testPrivacySupportIsAvailableOfflineFromMoreOptions() throws {
         let app = launchFixture(offline: true)
         app.buttons["more-options"].tap()
@@ -60,6 +84,7 @@ final class ListeningFlowUITests: XCTestCase {
         // own device acceptance rather than making this routing test intermittent.
         app.buttons["完成"].tap()
         XCTAssertTrue(app.buttons["playback-toggle"].waitForExistence(timeout: 5))
+        expandCompactDockIfNeeded(in: app)
         XCTAssertTrue(app.buttons["align-live-audio"].exists)
         XCTAssertEqual(app.staticTexts["sermon-title"].label, "界面测试证道")
     }
@@ -155,6 +180,7 @@ final class ListeningFlowUITests: XCTestCase {
 
     func testUnavailableAlignmentExplainsReason() throws {
         let app = launchFixture()
+        expandCompactDockIfNeeded(in: app)
         let alignment = app.buttons["align-live-audio"]
         try waitFor(alignment, "exists == true AND enabled == true AND hittable == true")
         alignment.tap()
@@ -326,6 +352,7 @@ final class ListeningFlowUITests: XCTestCase {
             try waitFor(app.buttons["playback-toggle"], "label == '\(playLabel)'")
             try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:12'")
             XCTAssertEqual(element("sermon-title", in: app).label, "界面测试证道")
+            expandCompactDockIfNeeded(in: app)
             XCTAssertTrue(app.buttons["align-live-audio"].exists)
         }
     }
@@ -428,6 +455,7 @@ final class ListeningFlowUITests: XCTestCase {
 
     private func assertAlignmentBelowPlayback(in app: XCUIApplication,
                                               file: StaticString = #filePath, line: UInt = #line) throws {
+        expandCompactDockIfNeeded(in: app)
         let align = app.buttons["align-live-audio"]
         try waitFor(align, "exists == true AND hittable == true")
         let play = app.buttons["playback-toggle"]
@@ -437,6 +465,11 @@ final class ListeningFlowUITests: XCTestCase {
                                     "现场对齐按钮应在播放按钮下方", file: file, line: line)
         XCTAssertTrue(app.frame.contains(align.frame),
                       "无需滚动就应完整显示现场对齐按钮", file: file, line: line)
+    }
+
+    private func expandCompactDockIfNeeded(in app: XCUIApplication) {
+        let more = app.buttons["playback-more"]
+        if more.exists { more.tap() }
     }
 
     private func launchFixture(largeText: Bool = false, offline: Bool = false) -> XCUIApplication {
