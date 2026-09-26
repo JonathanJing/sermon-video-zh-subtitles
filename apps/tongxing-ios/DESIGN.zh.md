@@ -28,9 +28,9 @@ Liquid Glass 属于导航与操作层；大量文字的控制优先使用 `.regu
 
 [Duo 几何资料](https://safearea.info/iphone-duo)列出：外屏竖向为 466×678 pt，右侧安全区 84 pt、底部 34 pt，安全区内约 382×644 pt；内屏横向为 951×669 pt，右侧同样留 84 pt，安全区内约 867×635 pt；内屏竖向为 669×951 pt，顶部留 82 pt、底部 34 pt。页面还列出相机遮挡和半折时的折痕保留区域。尺寸用于回归检查，不在 App 中按机型名称或这些固定数值排版。
 
-主界面和系统工具栏留在 SwiftUI 安全区内。底栏从运行时 `GeometryReader` 获取可用区域；iOS 27.1 起读取**已激活**的 `.division` 保留区域，把整组播放按钮放在折痕的一侧。短而窄的可用区域默认显示进度、播放、±1 秒和“更多”；展开可使用现场对齐、当前句、撤销与精调。收放仅改变呈现，不改变播放状态或定位。其他系统继续使用安全区内的布局。
+主界面和系统工具栏留在 SwiftUI 安全区内。播放栏从运行时 `GeometryReader` 获取可用区域；iOS 27.1 起读取**已激活**的 `.division` 保留区域，把整组播放按钮放在折痕的一侧。宽而矮的可用区域（至少 700 pt 宽、低于 700 pt 高）将常驻播放控制放在安全区最右侧的窄竖栏，并让阅读区避开竖栏；其他布局使用底部单排控制。两种位置均显示进度、播放、±1 秒和“更多”。“更多”以临时浮层呈现现场对齐、当前句、撤销与精调，不改变常驻栏尺寸；收放仅改变呈现，不改变播放状态或定位。其他系统继续使用安全区内的布局。
 
-Apple 的 [Duo 适配说明](https://developer.apple.com/videos/play/tech-talks/111461/)和 [保留区域 API 示例](https://developer.apple.com/videos/play/tech-talks/111463/)要求以实际 size class、安全区和保留区域响应展开与半折。本轮 iOS 27.1 Duo 外屏模拟器已验证按钮位于右侧安全区内、“更多”展开与大字收放；截图位于忽略目录 `artifacts/tongxing-ios/2026-09-26/duo-safearea/`。内屏开合、半折与真机仍需视觉和操作验收；构建与 Core 几何测试不能代替这些检查。
+Apple 的 [Duo 适配说明](https://developer.apple.com/videos/play/tech-talks/111461/)和 [保留区域 API 示例](https://developer.apple.com/videos/play/tech-talks/111463/)要求以实际 size class、安全区和保留区域响应展开与半折。本轮 iOS 27.1 Duo 外屏模拟器已验证常驻栏位于右侧安全区内，打开“更多”不会移动播放按钮；iOS 17.5 横屏已验证右侧竖栏及浮层入口。外屏截图位于忽略目录 `artifacts/tongxing-ios/2026-09-26/duo-unified-player/`。Duo 内屏开合、半折与真机仍需视觉和操作验收；其他机型横屏不能代替内屏实测。
 
 上述方向依据 Apple 对文字缩放、布局适应与系统外观设置的要求；具体排版仍需按实际设备尺寸检查。[Typography](https://developer.apple.com/design/human-interface-guidelines/typography) · [Layout](https://developer.apple.com/design/human-interface-guidelines/layout) · [Sheets](https://developer.apple.com/design/human-interface-guidelines/sheets)
 

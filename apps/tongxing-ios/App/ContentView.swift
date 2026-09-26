@@ -27,7 +27,11 @@ struct ContentView: View {
 
     var body: some View {
         GeometryReader { geometry in
-            listeningNavigation(controlRegion: dockControlRegion(in: geometry))
+            let controlRegion = dockControlRegion(in: geometry)
+            listeningNavigation(
+                controlRegion: controlRegion,
+                usesTrailingDock: controlRegion.width >= 700 && controlRegion.height < 700
+            )
         }
         .environment(\.locale, localization.locale)
         .onChange(of: scenePhase) { _, phase in
@@ -36,7 +40,7 @@ struct ContentView: View {
         }
     }
 
-    private func listeningNavigation(controlRegion: CGRect) -> some View {
+    private func listeningNavigation(controlRegion: CGRect, usesTrailingDock: Bool) -> some View {
         NavigationStack {
             ScrollViewReader { proxy in
                 ScrollView {
@@ -167,19 +171,19 @@ struct ContentView: View {
                 }
             }
             .background(Brand.background)
-            .listeningBottomBar {
+            .listeningPlayerDock(atTrailingEdge: usesTrailingDock) {
                 if model.selectedTrack != nil || model.selectedAudioLocale != nil {
-                    HStack(spacing: 0) {
-                        Color.clear.frame(width: controlRegion.minX, height: 0)
-                        PlaybackDock(playback: playback, isPreparing: model.isPreparing || model.isPreparingPublishedAudio,
-                                     alignmentModel: model,
-                                     precision: model.selectedTrack == nil ? nil : { sheet = .precision },
-                                     current: model.selectedTrack == nil ? nil : { returnToCurrent = UUID() },
-                                     prefersCompactPresentation: controlRegion.width < 440 && controlRegion.height < 700)
-                            .frame(width: controlRegion.width)
-                        Spacer(minLength: 0)
+                    if usesTrailingDock {
+                        listeningPlaybackDock(placement: .trailing)
+                    } else {
+                        HStack(spacing: 0) {
+                            Color.clear.frame(width: controlRegion.minX, height: 0)
+                            listeningPlaybackDock(placement: .bottom)
+                                .frame(width: controlRegion.width)
+                            Spacer(minLength: 0)
+                        }
+                        .frame(maxWidth: .infinity)
                     }
-                    .frame(maxWidth: .infinity)
                 }
             }
             .toolbar {
@@ -215,6 +219,17 @@ struct ContentView: View {
                 }
             }
         }
+    }
+
+    private func listeningPlaybackDock(placement: PlaybackDockPlacement) -> some View {
+        PlaybackDock(
+            playback: playback,
+            isPreparing: model.isPreparing || model.isPreparingPublishedAudio,
+            alignmentModel: model,
+            precision: model.selectedTrack == nil ? nil : { sheet = .precision },
+            current: model.selectedTrack == nil ? nil : { returnToCurrent = UUID() },
+            placement: placement
+        )
     }
 
     private func dockControlRegion(in geometry: GeometryProxy) -> CGRect {

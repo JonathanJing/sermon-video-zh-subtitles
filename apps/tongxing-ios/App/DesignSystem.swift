@@ -37,6 +37,17 @@ enum Brand {
 }
 
 extension View {
+    @ViewBuilder
+    func listeningPlayerDock<Bar: View>(
+        atTrailingEdge: Bool, @ViewBuilder content: () -> Bar
+    ) -> some View {
+        if atTrailingEdge {
+            safeAreaInset(edge: .trailing, spacing: 0, content: content)
+        } else {
+            listeningBottomBar(content: content)
+        }
+    }
+
     // Older SDKs still compile the iOS 17 fallback; 26+ SDKs use the real system
     // material and register the bar for the scroll-edge legibility treatment.
     @ViewBuilder
