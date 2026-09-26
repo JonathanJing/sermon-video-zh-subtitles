@@ -40,6 +40,7 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertTrue(play.waitForExistence(timeout: 5))
         XCTAssertGreaterThan(play.frame.minX, app.frame.midX)
         XCTAssertLessThanOrEqual(play.frame.maxX, app.frame.maxX - 84 + 1)
+        assertNavigationActionsAbovePlayer(in: app)
         XCTAssertTrue(app.buttons["playback-more"].isHittable)
         screenshot("duo-inner-trailing-player", app: app)
     }
@@ -282,8 +283,29 @@ final class ListeningFlowUITests: XCTestCase {
         let play = app.buttons["playback-toggle"]
         XCTAssertGreaterThan(play.frame.minX, app.frame.midX,
                              "宽而矮的阅读区应把播放栏移到右侧")
+        assertNavigationActionsAbovePlayer(in: app)
+        app.buttons["choose-sermon"].tap()
+        XCTAssertTrue(app.buttons["legacy-week-ui-test-week"].waitForExistence(timeout: 5))
+        app.buttons["完成"].tap()
+        app.buttons["more-options"].tap()
+        XCTAssertTrue(element("privacy-support-link", in: app).waitForExistence(timeout: 5))
+        app.buttons["完成"].tap()
         try assertAlignmentAvailableInMore(in: app)
         screenshot("landscape-alignment-in-more", app: app)
+    }
+
+    private func assertNavigationActionsAbovePlayer(in app: XCUIApplication,
+                                                    file: StaticString = #filePath, line: UInt = #line) {
+        let choose = app.buttons["choose-sermon"]
+        let options = app.buttons["more-options"]
+        let progress = element("playback-progress", in: app)
+        XCTAssertTrue(choose.isHittable, file: file, line: line)
+        XCTAssertTrue(options.isHittable, file: file, line: line)
+        XCTAssertLessThan(choose.frame.maxY, options.frame.minY + 1, file: file, line: line)
+        XCTAssertLessThan(options.frame.maxY + 8, progress.frame.minY,
+                          "导航组和播放组需要清晰间距", file: file, line: line)
+        XCTAssertEqual(choose.frame.midX, app.buttons["playback-toggle"].frame.midX, accuracy: 8,
+                       "两组控件应在同一右侧轴线上", file: file, line: line)
     }
 
     func testOpeningTranscriptWhilePlayingLocatesCurrentCueOnlyOnce() throws {

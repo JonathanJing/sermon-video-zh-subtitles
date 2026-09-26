@@ -172,10 +172,18 @@ struct ContentView: View {
             }
             .background(Brand.background)
             .listeningPlayerDock(atTrailingEdge: usesTrailingDock) {
-                if model.selectedTrack != nil || model.selectedAudioLocale != nil {
-                    if usesTrailingDock {
-                        listeningPlaybackDock(placement: .trailing)
-                    } else {
+                if usesTrailingDock {
+                    VStack(spacing: 12) {
+                        trailingNavigationActions
+                        if model.selectedTrack != nil || model.selectedAudioLocale != nil {
+                            listeningPlaybackDock(placement: .trailing)
+                        }
+                    }
+                    .frame(width: 80)
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    .padding(.top, 8)
+                } else {
+                    if model.selectedTrack != nil || model.selectedAudioLocale != nil {
                         HStack(spacing: 0) {
                             Color.clear.frame(width: controlRegion.minX, height: 0)
                             listeningPlaybackDock(placement: .bottom)
@@ -188,11 +196,13 @@ struct ContentView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .principal) { BrandTitle() }
-                ToolbarItemGroup(placement: .primaryAction) {
-                    Button(localization.text("选择证道周次"), systemImage: "calendar") { sheet = .weeks }
-                        .labelStyle(.iconOnly).accessibilityIdentifier("choose-sermon")
-                    Button(localization.text("更多选项"), systemImage: "ellipsis.circle") { sheet = .about }
-                        .labelStyle(.iconOnly).accessibilityIdentifier("more-options")
+                if !usesTrailingDock {
+                    ToolbarItemGroup(placement: .primaryAction) {
+                        Button(localization.text("选择证道周次"), systemImage: "calendar") { sheet = .weeks }
+                            .labelStyle(.iconOnly).accessibilityIdentifier("choose-sermon")
+                        Button(localization.text("更多选项"), systemImage: "ellipsis.circle") { sheet = .about }
+                            .labelStyle(.iconOnly).accessibilityIdentifier("more-options")
+                    }
                 }
             }
             #if os(iOS)
@@ -230,6 +240,32 @@ struct ContentView: View {
             current: model.selectedTrack == nil ? nil : { returnToCurrent = UUID() },
             placement: placement
         )
+    }
+
+    private var trailingNavigationActions: some View {
+        VStack(spacing: 0) {
+            Button { sheet = .weeks } label: {
+                Image(systemName: "calendar")
+                    .frame(width: 56, height: 52)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel(localization.text("选择证道周次"))
+            .accessibilityIdentifier("choose-sermon")
+
+            Button { sheet = .about } label: {
+                Image(systemName: "ellipsis.circle")
+                    .frame(width: 56, height: 52)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel(localization.text("更多选项"))
+            .accessibilityIdentifier("more-options")
+        }
+        .font(.title3.weight(.medium))
+        .buttonStyle(.plain)
+        .foregroundStyle(Brand.accent)
+        .padding(6)
+        .listeningGlassSurface()
+        .padding(.horizontal, 6)
     }
 
     private func dockControlRegion(in geometry: GeometryProxy) -> CGRect {

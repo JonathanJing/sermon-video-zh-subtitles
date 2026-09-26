@@ -23,7 +23,7 @@ struct PlaybackDock: View {
     var body: some View {
         Group {
             if placement == .trailing {
-                dockSurface.frame(width: 80).frame(maxHeight: .infinity)
+                dockSurface.frame(width: 80)
             } else {
                 dockSurface.frame(maxWidth: 440).frame(maxWidth: .infinity)
             }
