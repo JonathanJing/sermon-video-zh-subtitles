@@ -7,6 +7,8 @@ import json
 import math
 from pathlib import Path
 
+from readme_diagram_renderer import README_DIAGRAMS, render as render_readme_diagram, render_firebase_release
+
 PALETTE = {
     'input': ('#46799B', '#EAF1F6', '输入 / INPUT'),
     'process': ('#267D72', '#EAF3EF', '执行 / PROCESS'),
@@ -214,6 +216,9 @@ def main():
     parser=argparse.ArgumentParser();parser.add_argument('--spec',type=Path,required=True);parser.add_argument('--out-dir',type=Path,required=True);args=parser.parse_args();args.out_dir.mkdir(parents=True,exist_ok=True)
     specs=json.loads(args.spec.read_text())
     for i,spec in enumerate(specs,1):
-        spec['index']=i;(args.out_dir/(spec['name']+'.svg')).write_text(SVG(spec).render())
-    print(f'Rendered {len(specs)} native SVG diagrams')
+        spec['index']=i
+        svg = render_readme_diagram(spec) if spec['name'] in README_DIAGRAMS else SVG(spec).render()
+        (args.out_dir/(spec['name']+'.svg')).write_text(svg)
+    (args.out_dir/'firebase-release-flow.svg').write_text(render_firebase_release())
+    print(f'Rendered {len(specs) + 1} native SVG diagrams')
 if __name__=='__main__':main()

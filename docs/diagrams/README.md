@@ -1,6 +1,6 @@
 # 项目流程图 / Diagram Assets
 
-本组包含 2026-09-11 校准的 11 张流程图、2026-09-20 新增的四层生产主图，以及 2026-09-25 新增的 Firebase 发布边界图。原 11 图以 **GPT Image 2.5 Sunburst** 为视觉参考；四层主图重新调用 Codex 内置 ImageGen 生成参考，再按冻结接口重建为原生、可编辑 SVG。新增发布边界图直接按当前分支策略和发布记录绘制。中文和连接关系均经本地校正；SVG 没有嵌入 PNG、外链字体或脚本。
+本组包含 2026-09-11 校准的 11 张流程图、2026-09-20 新增的四层生产主图，以及 2026-09-25 新增的 Firebase 发布边界图。2026-09-25 对两个根 README 引用的 8 张图统一重新设计为原生 SVG：白色阶段卡片、角色色条、明确的主路径与条件箭头，以及单独的审核门槛。图中的文字和连接仍来自校准后的项目图稿；本轮没有调用 ImageGen。SVG 没有嵌入 PNG、外链字体或脚本。
 
 图面更新时间不等于所有路径的最新实测日期。Agents API 控制层与每周调度已安装；周日实时字幕仍以既有浏览器回放等证据为限，人工语义、真实现场、实体手机与资源上限分别验收。配音候选、人工听审、现场同步与正式发布各自保留边界。历史云端图继续标为 Historical / Discovery；旧 timeline Cloud Run Job 已退役。
 
@@ -31,7 +31,7 @@
 
 ## 可复现来源
 
-`diagram-specs.json` 保存节点、文案与连接坐标；`render_diagrams.py` 生成所有 SVG：
+`diagram-specs.json` 保存原有 12 张图的节点、文案与连接坐标；`render_diagrams.py` 生成全部 13 张 SVG。`readme_diagram_renderer.py` 为根 README 的 7 张图提供新版样式，并生成 Firebase 发布边界图；其余 5 张继续使用原有渲染器：
 
 ```bash
 python3 docs/diagrams/render_diagrams.py \
@@ -39,11 +39,11 @@ python3 docs/diagrams/render_diagrams.py \
   --out-dir docs/diagrams
 ```
 
-`firebase-release-flow.svg` 为手写原生 SVG，不由上述历史图批量渲染脚本生成；修改它时直接更新 SVG 并完成浏览器目视检查。
+`firebase-release-flow.svg` 的发布边界文案与布局写在 `readme_diagram_renderer.py` 的 `render_firebase_release()`，由同一命令重建。修改发布状态时须与根 README 和 release 记录核对，再完成浏览器目视检查。
 
 2026-09-25 对四层主图的状态文字作局部校准：两段三语片段已在 Dev 审核，正式站仍只保留九周中文；图中的四层接口和通用 producer 迁移边界不变。新增发布图以 [分支与环境策略](../development-branch-and-firebase-environments.zh.md)和 [Firebase release 记录](../multilingual-firebase-release-backlog-2026-09-24.zh.md)为事实依据。
 
-`imagegen-prompts.jsonl` 保存 2026-09-11 的 11 份 CLI 提示，显式指定 `gpt-image-2.5-sunburst`、high、1536×1024。新增四层图使用 Codex 内置 ImageGen，不推断其未返回的具体模型版本；提示、结果路径和重建边界见[四层更新记录](refresh-four-layer-20260920.md)。图像稿仅用于设计参考，最终流程事实以向量图和源文档为准。
+`imagegen-prompts.jsonl` 保存 2026-09-11 的 11 份历史 CLI 提示，显式指定 `gpt-image-2.5-sunburst`、high、1536×1024。四层图的历史 ImageGen 参考见[四层更新记录](refresh-four-layer-20260920.md)。当前 README 图由 SVG 代码直接绘制；流程事实仍以图稿和源文档为准。
 
 ## 内容依据与验证
 
