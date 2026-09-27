@@ -396,6 +396,214 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         self.assertFalse(self.calls)
         self.assertFalse(self.out.exists())
 
+    def test_partial_repair_reuses_successful_cache_from_incomplete_run(self):
+        f = self.fixture
+        previous = self.out.parent / "incomplete"
+        failed_id = subject.group_plan(f.request, f.anchor)[1]["translationGroupId"]
+
+        def failing(api_key, payload):
+            response = self.fake_call(api_key, payload)
+            group_id = json.loads(payload["messages"][1]["content"])["translationGroupId"]
+            if payload["model"] == "gpt-6-sol" and group_id == failed_id:
+                result = json.loads(response["choices"][0]["message"]["content"])
+                result["semanticReview"]["status"] = "fail"
+                result["semanticReview"]["checks"]["quotationAttribution"] = "fail"
+                result["semanticReview"]["issues"] = ["Misread a paraphrase as a quote"]
+                response["choices"][0]["message"]["content"] = json.dumps(result)
+            return response
+
+        with self.assertRaisesRegex(ValueError, "Sol flagged group"):
+            subject.run(f.source, f.anchor, f.policy, previous,
+                        "fixture-key", failing)
+        self.assertFalse((previous / "evidence.json").exists())
+        old_failed_bytes = (previous / "group-0002-sol.json").read_bytes()
+        brief = {
+            "schemaVersion": subject.PARTIAL_REPAIR_SCHEMA,
+            "targetLocale": f.request["targetLocale"],
+            "englishSourcePackageJsonSha256": f.request["englishSourcePackageJsonSha256"],
+            "anchorManifestSha256": f.request["anchorManifestSha256"],
+            "translationPolicySha256": f.request["translationPolicySha256"],
+            "groups": [{
+                "translationGroupId": failed_id,
+                "sourceUnitIds": f.evidence["groups"][1]["sourceUnitIds"],
+                "failedRole": "reviewer",
+                "failedCacheSha256": hashlib.sha256(old_failed_bytes).hexdigest(),
+                "failureReason": "Sol confused indirect description with a direct quote",
+                "instruction": "Treat this sentence as the speaker's paraphrase.",
+            }],
+        }
+        calls = []
+
+        def repaired(api_key, payload):
+            self.assertEqual(api_key, "fixture-key")
+            calls.append(payload)
+            data = json.loads(payload["messages"][1]["content"])
+            self.assertEqual(data["translationGroupId"], failed_id)
+            self.assertEqual(data["partialRepair"]["instruction"],
+                             "Treat this sentence as the speaker's paraphrase.")
+            self.assertIn("speaker's paraphrase", payload["messages"][0]["content"])
+            group = f.evidence["groups"][1]
+            keys = ["translationGroupId", "sourceUnitIds", "targetUtterances", "coverage"]
+            if payload["model"] == "gpt-6-sol":
+                keys.append("semanticReview")
+            result = {key: copy.deepcopy(group[key]) for key in keys}
+            result["translationGroupId"] = failed_id
+            return {"id": f"repaired-{len(calls)}", "model": payload["model"],
+                    "choices": [{"finish_reason": "stop",
+                                 "message": {"content": json.dumps(result)}}]}
+
+        evidence = subject.run(f.source, f.anchor, f.policy, self.out,
+                               "fixture-key", repaired,
+                               reuse_from=previous, partial_repair_brief=brief)
+        self.assertEqual([call["model"] for call in calls],
+                         ["gpt-6-astra", "gpt-6-sol"])
+        self.assertEqual((previous / "group-0002-sol.json").read_bytes(), old_failed_bytes)
+        for role in ("astra", "sol"):
+            self.assertEqual((self.out / f"group-0001-{role}.json").read_bytes(),
+                             (previous / f"group-0001-{role}.json").read_bytes())
+            self.assertNotEqual(
+                json.loads((self.out / f"group-0002-{role}.json").read_text())["payloadSha256"],
+                json.loads((previous / f"group-0002-{role}.json").read_text())["payloadSha256"])
+        self.assertEqual(len(evidence["groups"]), 2)
+        self.assertTrue((self.out / "evidence.json").exists())
+
+    def test_partial_repair_rejects_stale_failed_cache_before_calls(self):
+        f = self.fixture
+        previous = self.out.parent / "incomplete"
+        with self.assertRaisesRegex(ValueError, "Sol flagged group"):
+            subject.run(f.source, f.anchor, f.policy, previous,
+                        "fixture-key", lambda key, payload: self._first_group_fail(key, payload))
+        self.calls.clear()
+        first = subject.group_plan(f.request, f.anchor)[0]
+        brief = {
+            "schemaVersion": subject.PARTIAL_REPAIR_SCHEMA,
+            "targetLocale": f.request["targetLocale"],
+            "englishSourcePackageJsonSha256": f.request["englishSourcePackageJsonSha256"],
+            "anchorManifestSha256": f.request["anchorManifestSha256"],
+            "translationPolicySha256": f.request["translationPolicySha256"],
+            "groups": [{"translationGroupId": first["translationGroupId"],
+                        "sourceUnitIds": first["sourceUnitIds"],
+                        "failedRole": "reviewer", "failedCacheSha256": "0" * 64,
+                        "failureReason": "old machine failure",
+                        "instruction": "Review the English source again."}],
+        }
+        with self.assertRaisesRegex(ValueError, "failed cache is missing or changed"):
+            subject.run(f.source, f.anchor, f.policy, self.out,
+                        "fixture-key", self.fake_call,
+                        reuse_from=previous, partial_repair_brief=brief)
+        self.assertFalse(self.calls)
+        self.assertFalse(self.out.exists())
+
+    def test_partial_repair_continues_groups_missing_from_prior_run(self):
+        f = self.fixture
+        previous = self.out.parent / "incomplete"
+        with self.assertRaisesRegex(ValueError, "Sol flagged group"):
+            subject.run(f.source, f.anchor, f.policy, previous,
+                        "fixture-key", self._first_group_fail)
+        self.assertFalse((previous / "group-0002-astra.json").exists())
+        failed = previous / "group-0001-sol.json"
+        first = subject.group_plan(f.request, f.anchor)[0]
+        brief = {
+            "schemaVersion": subject.PARTIAL_REPAIR_SCHEMA,
+            "targetLocale": f.request["targetLocale"],
+            "englishSourcePackageJsonSha256": f.request["englishSourcePackageJsonSha256"],
+            "anchorManifestSha256": f.request["anchorManifestSha256"],
+            "translationPolicySha256": f.request["translationPolicySha256"],
+            "groups": [{"translationGroupId": first["translationGroupId"],
+                        "sourceUnitIds": first["sourceUnitIds"],
+                        "failedRole": "reviewer",
+                        "failedCacheSha256": hashlib.sha256(failed.read_bytes()).hexdigest(),
+                        "failureReason": "old machine failure",
+                        "instruction": "Review the English source again."}],
+        }
+        self.calls.clear()
+        result = subject.run(f.source, f.anchor, f.policy, self.out,
+                             "fixture-key", self.fake_call,
+                             reuse_from=previous, partial_repair_brief=brief)
+        self.assertEqual([call["model"] for call in self.calls],
+                         ["gpt-6-astra", "gpt-6-sol"] * 2)
+        self.assertEqual(len(result["groups"]), 2)
+        self.assertTrue((self.out / "evidence.json").exists())
+
+    def test_partial_repair_carries_previous_revision_and_resumes_paid_attempt(self):
+        f = self.fixture
+        base = self.out.parent / "base"
+        first = subject.run(f.source, f.anchor, f.policy, base,
+                            "fixture-key", self.fake_call)
+        first_group = first["groups"][0]
+        revision = {
+            "schemaVersion": subject.REVISION_BRIEF_SCHEMA,
+            "targetLocale": f.request["targetLocale"],
+            "englishSourcePackageJsonSha256": f.request["englishSourcePackageJsonSha256"],
+            "anchorManifestSha256": f.request["anchorManifestSha256"],
+            "translationPolicySha256": f.request["translationPolicySha256"],
+            "groups": [{"translationGroupId": first_group["translationGroupId"],
+                        "sourceUnitIds": first_group["sourceUnitIds"],
+                        "priorTargetTextSha256": hashlib.sha256(
+                            "".join(first_group["targetUtterances"]).encode()).hexdigest(),
+                        "proposedTargetText": "A source-bound revised draft."}],
+        }
+        calls = []
+
+        def by_input(api_key, payload):
+            calls.append(payload)
+            model_input = json.loads(payload["messages"][1]["content"])
+            group = next(row for row in f.evidence["groups"]
+                         if row["sourceUnitIds"] == model_input["sourceUnitIds"])
+            keys = ["translationGroupId", "sourceUnitIds", "targetUtterances", "coverage"]
+            if payload["model"] == "gpt-6-sol":
+                keys.append("semanticReview")
+            result = {key: copy.deepcopy(group[key]) for key in keys}
+            result["translationGroupId"] = model_input["translationGroupId"]
+            return {"id": f"later-{len(calls)}", "model": payload["model"],
+                    "choices": [{"finish_reason": "stop",
+                                 "message": {"content": json.dumps(result)}}]}
+
+        prior = self.out.parent / "prior-revised"
+        subject.run(f.source, f.anchor, f.policy, prior,
+                    "fixture-key", by_input, revision_brief=revision, reuse_from=base)
+        self.assertEqual(len(calls), 2)
+        second_group = first["groups"][1]
+        failed_cache = prior / "group-0002-sol.json"
+        repair = {
+            "schemaVersion": subject.PARTIAL_REPAIR_SCHEMA,
+            "targetLocale": f.request["targetLocale"],
+            "englishSourcePackageJsonSha256": f.request["englishSourcePackageJsonSha256"],
+            "anchorManifestSha256": f.request["anchorManifestSha256"],
+            "translationPolicySha256": f.request["translationPolicySha256"],
+            "groups": [{"translationGroupId": second_group["translationGroupId"],
+                        "sourceUnitIds": second_group["sourceUnitIds"],
+                        "failedRole": "reviewer",
+                        "failedCacheSha256": hashlib.sha256(failed_cache.read_bytes()).hexdigest(),
+                        "failureReason": "Language plugin found a numeral format issue",
+                        "instruction": "Keep the source number as digits."}],
+        }
+        attempt = self.out.parent / "paid-attempt"
+        subject.run(f.source, f.anchor, f.policy, attempt,
+                    "fixture-key", by_input,
+                    reuse_from=prior, partial_repair_brief=repair)
+        self.assertEqual(len(calls), 4)
+        recovered = subject.run(
+            f.source, f.anchor, f.policy, self.out, "fixture-key",
+            lambda *_: self.fail("completed paid responses must be reused"),
+            reuse_from=prior, partial_repair_brief=repair,
+            resume_cache_from=attempt)
+        self.assertEqual(len(recovered["groups"]), 2)
+        for role in ("astra", "sol"):
+            self.assertEqual((self.out / f"group-0001-{role}.json").read_bytes(),
+                             (prior / f"group-0001-{role}.json").read_bytes())
+            self.assertEqual((self.out / f"group-0002-{role}.json").read_bytes(),
+                             (attempt / f"group-0002-{role}.json").read_bytes())
+
+    def _first_group_fail(self, api_key, payload):
+        response = self.fake_call(api_key, payload)
+        if payload["model"] == "gpt-6-sol":
+            result = json.loads(response["choices"][0]["message"]["content"])
+            result["semanticReview"]["status"] = "fail"
+            result["semanticReview"]["issues"] = ["Unresolved concern"]
+            response["choices"][0]["message"]["content"] = json.dumps(result)
+        return response
+
     def test_coverage_tolerates_only_whitespace_at_utterance_boundary(self):
         self.assertTrue(subject._coverage_substring(
             "다시 데웁니다. 차가운 것이", "다시 데웁니다.차가운 것이"))

@@ -31,6 +31,7 @@ except ImportError:
 MODEL_ROLES = {"translator": "gpt-6-astra", "reviewer": "gpt-6-sol"}
 SEMANTIC_CHECKS = ("completeMeaning", "negationsNumbersNames", "quotationAttribution", "noAddedMeaning")
 REVISION_BRIEF_SCHEMA = "sermon-target-language-group-revision-brief-v1"
+PARTIAL_REPAIR_SCHEMA = "sermon-target-language-partial-repair-brief-v1"
 
 
 def scripture_prompt_instruction(policy: dict[str, Any]) -> str:
@@ -257,6 +258,129 @@ def validate_revision_brief(brief: dict[str, Any] | None,
         result[group_id] = row
     return result
 
+
+def validate_partial_repair_brief(brief: dict[str, Any] | None,
+                                  request: dict[str, Any],
+                                  plan: list[dict[str, Any]],
+                                  reuse_from: Path | None) -> dict[str, dict[str, Any]]:
+    """Bind a new revision to a failed cache in an incomplete prior run.
+
+    The old model response remains untouched. A changed group gets a fresh
+    Astra request and an independent Sol request; all other matching caches
+    can be copied from the prior run, even when it has no evidence.json yet.
+    """
+    if brief is None:
+        return {}
+    require(reuse_from is not None and (reuse_from / "request.json").is_file(),
+            "Partial repair requires a prior run request")
+    require(producer._load(reuse_from / "request.json") == request,
+            "Partial repair prior request belongs to another source or policy")
+    require(isinstance(brief, dict)
+            and set(brief) == {"schemaVersion", "targetLocale",
+                               "englishSourcePackageJsonSha256", "anchorManifestSha256",
+                               "translationPolicySha256", "groups"}
+            and brief["schemaVersion"] == PARTIAL_REPAIR_SCHEMA,
+            "Invalid partial repair brief")
+    for key in ("targetLocale", "englishSourcePackageJsonSha256",
+                "anchorManifestSha256", "translationPolicySha256"):
+        require(brief[key] == request[key], f"Partial repair source or policy changed: {key}")
+    entries = brief["groups"]
+    require(isinstance(entries, list) and entries, "Partial repair needs failed groups")
+    plan_by_id = {row["translationGroupId"]: (index, row)
+                  for index, row in enumerate(plan, 1)}
+    result: dict[str, dict[str, Any]] = {}
+    for row in entries:
+        require(isinstance(row, dict) and set(row) == {
+            "translationGroupId", "sourceUnitIds", "failedRole",
+            "failedCacheSha256", "failureReason", "instruction"},
+            "Invalid partial repair row")
+        group_id = row["translationGroupId"]
+        require(group_id in plan_by_id and group_id not in result,
+                f"Unknown or duplicate partial repair group: {group_id}")
+        index, group = plan_by_id[group_id]
+        require(row["sourceUnitIds"] == group["sourceUnitIds"]
+                and row["failedRole"] in {"translator", "reviewer"}
+                and isinstance(row["failureReason"], str) and row["failureReason"].strip()
+                and isinstance(row["instruction"], str) and row["instruction"].strip()
+                and len(row["instruction"]) <= 2000,
+                f"Invalid partial repair source, role, or instruction: {group_id}")
+        suffix = "astra" if row["failedRole"] == "translator" else "sol"
+        failed_cache = reuse_from / f"group-{index:04d}-{suffix}.json"
+        require(failed_cache.is_file()
+                and row["failedCacheSha256"] == hashlib.sha256(failed_cache.read_bytes()).hexdigest(),
+                f"Partial repair failed cache is missing or changed: {group_id}")
+        saved = producer._load(failed_cache)
+        prior_result = saved.get("result")
+        require(saved.get("model") == MODEL_ROLES[row["failedRole"]]
+                and isinstance(saved.get("payloadSha256"), str)
+                and isinstance(prior_result, dict)
+                and prior_result.get("translationGroupId") == group_id
+                and prior_result.get("sourceUnitIds") == group["sourceUnitIds"],
+                f"Partial repair failed cache has different group identity: {group_id}")
+        result[group_id] = row
+    return result
+
+
+def reusable_cache(prior_run: Path | None, stem: str, role: str) -> Path | None:
+    """Return a complete old cache, but never retry an uncertain old request."""
+    if prior_run is None:
+        return None
+    path = prior_run / f"{stem}-{role}.json"
+    if path.is_file():
+        return path
+    require(not path.with_suffix(".started.json").exists()
+            and not path.with_suffix(".raw.json").exists(),
+            f"Prior {role} request needs inspection before retry: {path}")
+    return None
+
+
+def carry_forward_group(prior_run: Path, out: Path, index: int,
+                        group: dict[str, Any], prior_row: dict[str, Any],
+                        policy: dict[str, Any]) -> dict[str, Any]:
+    """Preserve a completed group's exact paid responses and reviewed text."""
+    require(prior_row.get("translationGroupId") == group["translationGroupId"]
+            and prior_row.get("sourceUnitIds") == group["sourceUnitIds"]
+            and prior_row.get("semanticReview", {}).get("status") == "pass"
+            and not prior_row["semanticReview"].get("uncertainty")
+            and not prior_row["semanticReview"].get("issues")
+            and all(value == "pass" for value in
+                    prior_row["semanticReview"].get("checks", {}).values()),
+            f"Prior complete evidence has an unresolved group: {group['translationGroupId']}")
+    for role, suffix, request_key in (("translator", "astra", "translatorRequestId"),
+                                      ("reviewer", "sol", "reviewerRequestId")):
+        source = prior_run / f"group-{index:04d}-{suffix}.json"
+        require(source.is_file(), f"Prior complete evidence lacks {role} cache: {source}")
+        cached = producer._load(source)
+        require(cached.get("model") == policy[role]["model"]
+                and cached.get("requestId") == prior_row.get(request_key)
+                and isinstance(cached.get("payloadSha256"), str)
+                and isinstance(cached.get("result"), dict)
+                and cached["result"].get("translationGroupId") == group["translationGroupId"]
+                and cached["result"].get("sourceUnitIds") == group["sourceUnitIds"],
+                f"Prior complete evidence/cache identity differs: {source}")
+        raw = source.with_suffix(".raw.json")
+        if raw.is_file():
+            raw_record = producer._load(raw)
+            require(raw_record.get("payloadSha256") == cached["payloadSha256"]
+                    and isinstance(raw_record.get("response"), dict)
+                    and raw_record["response"].get("id") == cached["requestId"],
+                    f"Prior complete raw response differs: {raw}")
+        target = out / source.name
+        if target.exists():
+            require(target.read_bytes() == source.read_bytes(),
+                    f"Carried-forward cache changed: {target}")
+        else:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source, target)
+        if raw.is_file():
+            target_raw = out / raw.name
+            if target_raw.exists():
+                require(target_raw.read_bytes() == raw.read_bytes(),
+                        f"Carried-forward raw response changed: {target_raw}")
+            else:
+                shutil.copyfile(raw, target_raw)
+    return copy.deepcopy(prior_row)
+
 def ordered_group_results(items: list, worker, workers: int) -> list:
     """Keep only a bounded set of paid groups in flight and merge in source order."""
     if workers == 1 or len(items) < 2:
@@ -294,7 +418,9 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
         custom_plan: list[dict[str, Any]] | None = None,
         plugin_path: Path | None = None,
         revision_brief: dict[str, Any] | None = None,
-        reuse_from: Path | None = None) -> dict[str, Any]:
+        reuse_from: Path | None = None,
+        partial_repair_brief: dict[str, Any] | None = None,
+        resume_cache_from: Path | None = None) -> dict[str, Any]:
     request = producer.prepare_request(source, anchor, policy)
     for role, expected in MODEL_ROLES.items():
         require(policy[role]["model"] == expected,
@@ -308,14 +434,42 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
                 == policy["languageReview"]["pluginImplementationSha256"],
                 "Language plugin implementation differs from frozen policy")
     plan = group_plan(request, anchor, custom_plan)
-    prior_evidence = producer._load(reuse_from / "evidence.json") if reuse_from else None
+    require(revision_brief is None or partial_repair_brief is None,
+            "Use one changed-group revision mechanism at a time")
+    prior_evidence = (producer._load(reuse_from / "evidence.json")
+                      if reuse_from and (reuse_from / "evidence.json").is_file() else None)
+    if prior_evidence is not None:
+        for key in ("schemaVersion", "sourceLocale", "targetLocale",
+                    "englishSourcePackageJsonSha256", "anchorManifestSha256",
+                    "translationPolicySha256", "sourceUnits"):
+            require(prior_evidence.get(key) == request[key],
+                    f"Prior complete evidence source or policy changed: {key}")
+        prior_groups = prior_evidence.get("groups")
+        require(isinstance(prior_groups, list)
+                and [(row.get("translationGroupId"), row.get("sourceUnitIds"))
+                     for row in prior_groups] ==
+                [(row["translationGroupId"], row["sourceUnitIds"]) for row in plan],
+                "Prior complete evidence group plan changed")
     briefs = validate_revision_brief(revision_brief, request, plan, prior_evidence)
+    repairs = validate_partial_repair_brief(partial_repair_brief, request, plan,
+                                             reuse_from)
     if reuse_from is not None:
         require(reuse_from.resolve() != out.resolve(), "Reuse source and output must differ")
+    if resume_cache_from is not None:
+        require(reuse_from is not None and resume_cache_from.resolve() != out.resolve()
+                and resume_cache_from.resolve() != reuse_from.resolve()
+                and (resume_cache_from / "request.json").is_file()
+                and producer._load(resume_cache_from / "request.json") == request,
+                "Resume cache must be a separate attempt for this source and policy")
     identity = {"request": request, "groupPlan": plan,
                 "runnerImplementationSha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
     if revision_brief is not None:
         identity["revisionBriefSha256"] = policy_tools.canonical_sha256(revision_brief)
+    if partial_repair_brief is not None:
+        identity["partialRepairBriefSha256"] = policy_tools.canonical_sha256(
+            partial_repair_brief)
+    if resume_cache_from is not None:
+        identity["resumeCacheFrom"] = str(resume_cache_from.resolve())
     identity_hash = policy_tools.canonical_sha256(identity)
     manifest = out / "run-identity.json"
     if manifest.exists():
@@ -332,6 +486,11 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
     units = {row["sourceUnitId"]: row["english"] for row in request["sourceUnits"]}
     def process_group(item):
         index, group = item
+        brief = briefs.get(group["translationGroupId"])
+        repair = repairs.get(group["translationGroupId"])
+        if prior_evidence is not None and brief is None and repair is None:
+            return carry_forward_group(reuse_from, out, index, group,
+                                       prior_evidence["groups"][index - 1], policy)
         source_rows = [{"sourceUnitId": unit_id, "english": units[unit_id]}
                        for unit_id in group["sourceUnitIds"]]
         context = surrounding_context(request, plan, index - 1)
@@ -340,7 +499,6 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
                   "context": context, "targetLocale": request["targetLocale"],
                   "terminology": policy["terminology"], "scripture": policy["scripture"],
                   "formatting": policy["formatting"]}
-        brief = briefs.get(group["translationGroupId"])
         if brief is not None:
             common["revisionBrief"] = {
                 "instruction": ("Treat proposedTargetText as a duration-motivated draft, not "
@@ -352,11 +510,24 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
                 "priorTargetTextSha256": brief["priorTargetTextSha256"],
                 "proposedTargetText": brief["proposedTargetText"],
             }
+        if repair is not None:
+            common["partialRepair"] = {
+                "priorFailedRole": repair["failedRole"],
+                "priorFailedCacheSha256": repair["failedCacheSha256"],
+                "failureReason": repair["failureReason"],
+                "instruction": repair["instruction"],
+            }
+        repair_instruction = (
+            " This group is a new revision after a prior machine failure. "
+            "Follow the source-bound repair instruction while independently "
+            "checking the English source; do not assume the prior answer was correct. "
+            + repair["instruction"] + " " if repair is not None else "")
         translate_prompt = {
             "instruction": ("Translate the English sermon group into the target locale. Preserve every "
                             "meaning, negation, number, name, quotation and theological distinction. "
                             + scripture_prompt_instruction(policy) +
                             register_prompt_instruction(policy) +
+                            repair_instruction +
                             "Resolve pronouns and elliptical repetitions using the surrounding "
                             "source units; translate only the requested English units. "
                             "Use context only for interpretation. Return JSON with exactly "
@@ -367,8 +538,10 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
         stem = f"group-{index:04d}"
         translated = _model_call("translator", translate_prompt, policy,
                                  out / f"{stem}-astra.json", api_key, caller,
-                                 reuse_from / f"{stem}-astra.json"
-                                 if reuse_from and brief is None else None)
+                                 reusable_cache(resume_cache_from, stem, "astra")
+                                 if resume_cache_from is not None else
+                                 reusable_cache(reuse_from, stem, "astra")
+                                 if brief is None and repair is None else None)
         draft = translated["result"]
         require(draft.get("translationGroupId") == group["translationGroupId"]
                 and draft.get("sourceUnitIds") == group["sourceUnitIds"],
@@ -384,6 +557,7 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
             "instruction": ("Independently compare the English source and Astra draft, one group at a time. "
                             + scripture_prompt_instruction(policy) +
                             register_prompt_instruction(policy) +
+                            repair_instruction +
                             "Check that pronouns and elliptical repetitions retain the intended "
                             "referent and predicate from surrounding source units. "
                             "Correct any error in final targetUtterances and coverage. Check every English "
@@ -400,8 +574,10 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
             "input": {**common, "astraDraft": draft}}
         reviewed_response = _model_call("reviewer", review_prompt, policy,
                                         out / f"{stem}-sol.json", api_key, caller,
-                                        reuse_from / f"{stem}-sol.json"
-                                        if reuse_from and brief is None else None)
+                                        reusable_cache(resume_cache_from, stem, "sol")
+                                        if resume_cache_from is not None else
+                                        reusable_cache(reuse_from, stem, "sol")
+                                        if brief is None and repair is None else None)
         result = reviewed_response["result"]
         require(result.get("translationGroupId") == group["translationGroupId"]
                 and result.get("sourceUnitIds") == group["sourceUnitIds"],
@@ -463,11 +639,21 @@ def main() -> None:
     parser.add_argument("--revision-brief", type=Path,
                         help="Source-bound changed-group proposal; requires --reuse-from")
     parser.add_argument("--reuse-from", type=Path,
-                        help="Prior complete model run; unchanged requests reuse verified caches")
+                        help="Prior model run; unchanged requests reuse verified caches")
+    parser.add_argument("--partial-repair-brief", type=Path,
+                        help="Source-bound failed-group repair; accepts an incomplete prior run")
+    parser.add_argument("--resume-cache-from", type=Path,
+                        help="Reuse verified paid responses from an incomplete attempt of this revision")
     parser.add_argument("--out-dir", type=Path, required=True)
     args = parser.parse_args()
     require(args.revision_brief is None or args.reuse_from is not None,
             "--revision-brief requires --reuse-from")
+    require(args.partial_repair_brief is None or args.reuse_from is not None,
+            "--partial-repair-brief requires --reuse-from")
+    require(args.revision_brief is None or args.partial_repair_brief is None,
+            "Choose either --revision-brief or --partial-repair-brief")
+    require(args.resume_cache_from is None or args.partial_repair_brief is not None,
+            "--resume-cache-from requires --partial-repair-brief")
     source, anchor, policy = (producer._load(path) for path in
                               (args.english_source_package, args.anchor, args.policy))
     # Validate all policy/source/plan conditions before requiring a secret or making a paid call.
@@ -484,7 +670,10 @@ def main() -> None:
                    json.loads(args.group_plan.read_text(encoding="utf-8"))
                    if args.group_plan else None, args.plugin,
                    producer._load(args.revision_brief) if args.revision_brief else None,
-                   args.reuse_from)
+                   args.reuse_from,
+                   producer._load(args.partial_repair_brief)
+                   if args.partial_repair_brief else None,
+                   args.resume_cache_from)
     print(json.dumps({"status": "independent_model_review_pass",
                       "groups": len(evidence["groups"]),
                       "evidence": str((args.out_dir / "evidence.json").resolve())}))
