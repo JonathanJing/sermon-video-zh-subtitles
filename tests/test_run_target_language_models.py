@@ -16,6 +16,12 @@ from tests import test_produce_target_language_candidate as fixture_module
 
 
 class RunTargetLanguageModelsTests(unittest.TestCase):
+    def test_reference_only_rule_is_system_level_for_both_model_roles(self):
+        policy = {"scripture": {"quoteCheckPolicy": "references_only"}}
+        instruction = subject.scripture_prompt_instruction(policy)
+        self.assertIn("paraphrase the speaker's meaning", instruction)
+        self.assertIn("Do not present the text as an exact quotation", instruction)
+
     def setUp(self):
         self.fixture = fixture_module.ProduceTargetLanguageCandidateTests(
             methodName="test_compiles_valid_candidate_without_human_approval")
@@ -51,6 +57,8 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
                          ["gpt-6-astra", "gpt-6-sol"] * 2)
         self.assertEqual([call["reasoning_effort"] for call in self.calls],
                          ["medium"] * 4)
+        self.assertTrue(all("never invent it" in call["messages"][0]["content"]
+                            for call in self.calls))
         self.assertEqual(evidence["generation"]["translator"]["requestIds"],
                          ["response-1", "response-3"])
         self.assertEqual(evidence["generation"]["reviewer"]["requestIds"],

@@ -33,6 +33,20 @@ SEMANTIC_CHECKS = ("completeMeaning", "negationsNumbersNames", "quotationAttribu
 REVISION_BRIEF_SCHEMA = "sermon-target-language-group-revision-brief-v1"
 
 
+def scripture_prompt_instruction(policy: dict[str, Any]) -> str:
+    """Put the frozen scripture rule at system priority for both model roles."""
+    scripture = policy["scripture"]
+    if scripture["quoteCheckPolicy"] == "references_only":
+        return ("For Bible passages, cite the book, chapter, and verse when known, "
+                "and paraphrase the speaker's meaning in the target language. "
+                "Do not present the text as an exact quotation from any Bible edition. ")
+    if scripture["quoteCheckPolicy"] == "source_bound_exact_quote":
+        return ("For a direct Bible quotation, use only the reviewed source-bound "
+                "wording from the pinned edition. Flag uncertainty if the quote "
+                "boundary or exact wording is unavailable; never invent it. ")
+    raise ValueError("Scripture quotation policy is unresolved")
+
+
 def require(condition: bool, message: str) -> None:
     if not condition:
         raise ValueError(message)
@@ -329,6 +343,7 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
         translate_prompt = {
             "instruction": ("Translate the English sermon group into the target locale. Preserve every "
                             "meaning, negation, number, name, quotation and theological distinction. "
+                            + scripture_prompt_instruction(policy) +
                             "Use context only for interpretation. Return JSON with exactly "
                             "translationGroupId, sourceUnitIds, targetUtterances and coverage. "
                             "Coverage has one sourceUnitId and exact targetText substring per source unit. "
@@ -352,6 +367,7 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
                 f"Astra source coverage is incomplete: {stem}")
         review_prompt = {
             "instruction": ("Independently compare the English source and Astra draft, one group at a time. "
+                            + scripture_prompt_instruction(policy) +
                             "Correct any error in final targetUtterances and coverage. Check every English "
                             "unit for omitted or added meaning, negations, numbers, names, and quotation "
                             "attribution. If uncertain or unresolved, mark fail. Return JSON with exactly "
