@@ -259,6 +259,11 @@ SPECULATIVE_MATCH_FIELDS = (
 COMPATIBLE_NO_SPOKEN_FORM_RENDERER_SHA256 = {
     "7975b13796b0269adfad1b5188f981102eb9359c7d2627e0ebbfd69c0f97b56c"
 }
+# This revision changes only how a preview snapshot's demo voice capability is
+# checked during admission. It does not change the synthesis inputs or sound.
+COMPATIBLE_PREVIEW_ADMISSION_RENDERER_SHA256 = {
+    "462f63dfd3cc215ce923c187d9904ab89145a587a732a7ed1b5f6a9d41fb7985"
+}
 
 
 def _spoken_equivalent(approved: str, spoken: str) -> bool:
@@ -333,7 +338,8 @@ def _reusable_speculative_audio(previous_root: Path, unit: dict[str, Any], index
     package.speech.validate_policy_binding(snapshot, evidence["policy"])
     package.speech.validate_adapter(evidence["adapter"], snapshot["targetLocale"],
                                     evidence["registry"],
-                                    source_package=evidence["source"], candidate=snapshot)
+                                    source_package=evidence["source"], candidate=snapshot,
+                                    preview_only=True)
     require(evidence["adapter"].get("authorizationPurpose") == "multilingual_voice_demo"
             or (snapshot["targetLocale"] == "zh-Hans"
                 and evidence["adapter"].get("authorizationPurpose") == "chinese_dubbing"),
@@ -377,8 +383,14 @@ def _reusable_speculative_audio(previous_root: Path, unit: dict[str, Any], index
             "Speculative receipt differs from candidate snapshot")
     # A revised translation may retain only units with exactly the same sound
     # identity. All formal review, authorization and package checks ran first.
-    if sound != {key: expected[key] for key in SPECULATIVE_MATCH_FIELDS}:
-        return None
+    expected_sound = {key: expected[key] for key in SPECULATIVE_MATCH_FIELDS}
+    if sound != expected_sound:
+        previous_renderer = sound.get("rendererSha256")
+        if previous_renderer not in COMPATIBLE_PREVIEW_ADMISSION_RENDERER_SHA256:
+            return None
+        expected_sound["rendererSha256"] = previous_renderer
+        if sound != expected_sound:
+            return None
     integrity.probe_full_decode(wav_path)
     return wav_path
 

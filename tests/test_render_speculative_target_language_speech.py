@@ -190,6 +190,33 @@ class FormalAdmissionTests(unittest.TestCase):
             receipt = formal.package.read_object(self.fixture.root / row["receipt"]["path"])
             self.assertEqual(receipt["fullDecode"], "pass")
 
+    def test_verified_demo_adapter_with_unreviewed_locale_reuses_preview_audio(self):
+        adapter_path = self.spec_root / "adapter.json"
+        adapter = formal.package.read_object(adapter_path)
+        adapter["capabilityStatus"] = "verified"
+        formal.write_json_atomic(adapter_path, adapter)
+        rows = self.formal_render()
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(FakeSynth.calls, [])
+
+    def test_previous_admission_renderer_audio_is_reused_with_same_sound_intent(self):
+        for index in range(2):
+            path = self.spec_root / f"receipts/unit-{index:04d}.json"
+            receipt = formal.package.read_object(path)
+            receipt["soundIdentity"]["rendererSha256"] = next(iter(
+                formal.COMPATIBLE_PREVIEW_ADMISSION_RENDERER_SHA256))
+            formal.write_json_atomic(path, receipt)
+        self.formal_render()
+        self.assertEqual(FakeSynth.calls, [])
+
+    def test_unknown_preview_renderer_is_not_reused(self):
+        path = self.spec_root / "receipts/unit-0000.json"
+        receipt = formal.package.read_object(path)
+        receipt["soundIdentity"]["rendererSha256"] = "0" * 64
+        formal.write_json_atomic(path, receipt)
+        self.formal_render()
+        self.assertEqual(len(FakeSynth.calls), 1)
+
     def test_changed_text_resynthesizes_only_changed_unit(self):
         self.fixture.context["candidate"]["groups"][1]["targetText"] = "Revised text."
         self.fixture.context["job"]["units"][1]["text"] = "Revised text."
