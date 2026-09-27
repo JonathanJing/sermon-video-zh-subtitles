@@ -23,4 +23,4 @@
 | v2 正式包 | `/releases-v2/<pageId>/<locale>.json` |
 | 新 App 目录 | `/multilingual-v3.json` |
 
-本周 `pageId` 是 `2026-09-27-weekend-sermon-drive-530`。本地已准备的候选在忽略目录 `artifacts/drive-source-20260926-1730/layer4-app-prepared-20260927-v3/`；它尚未成为 HTTP 或设备／现场验收凭据。发布后网页、App 实机与现场仍分别记状态，不以任何一项推断另外两项。
+本周 `pageId` 是 `2026-09-27-weekend-sermon-drive-530`。原始候选保存在忽略目录 `artifacts/drive-source-20260926-1730/layer4-app-prepared-20260927-v3/`。2026-09-27 已将封装后的三语包与 v3 目录发布到正式 Hosting；最终候选的 111 个文件逐一下载并通过 SHA-256 核对，三条 MP3 的 Range 请求均返回 206。收据位于同一忽略目录下的 `layer4-app-publish-20260927-v1/`。新版 iOS Release 模拟器构建读取正式目录并打开本周页，线上客户端存储测试加载三语阅读页并校验中文音轨。App Store Connect 二进制分发、真机和现场验收另行留证，不从这些结果推断。
