@@ -27,7 +27,9 @@ final class AppModel: ObservableObject {
     @Published private(set) var multilingualCatalog: MultilingualCatalog?
     @Published private(set) var multilingualNotice: String?
     @Published private(set) var selectedPageID: String?
-    @Published private(set) var selectedContentLocale = "zh-Hans"
+    @Published private(set) var selectedContentLocale = "zh-Hans" {
+        didSet { playback.statisticsContentLocale = selectedContentLocale }
+    }
     @Published private(set) var isSelectingLanguage = false
     @Published private(set) var languageSelectionError: String?
     @Published private(set) var selectedAudioLocale: String?
@@ -119,7 +121,7 @@ final class AppModel: ObservableObject {
         isPreparingPublishedAudio = false
     }
 
-    init(supportDirectory: URL? = nil, contentOrigin: URL? = nil, session: URLSession = .shared) {
+    init(supportDirectory: URL? = nil, contentOrigin: URL? = nil, session: URLSession = .shared, statisticsDefaults: UserDefaults = .standard) {
         let support = supportDirectory ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
             .appendingPathComponent("Tongxing", isDirectory: true)
         mediaOrigin = contentOrigin ?? Self.contentOrigin
@@ -130,6 +132,7 @@ final class AppModel: ObservableObject {
         languagePreferences = savedPreferences?.schemaVersion == "tongxing-language-preferences-v2"
             ? savedPreferences! : .empty
         playback = PlaybackController(historyURL: support.appendingPathComponent("playback-history-v1.json"))
+        playback.configureStatistics(origin: mediaOrigin, defaults: statisticsDefaults, session: contentOrigin == nil ? nil : session)
         repository = CatalogRepository(
                 catalogURL: mediaOrigin.appendingPathComponent("weekly.json"),
                 cacheDirectory: support.appendingPathComponent("Catalog", isDirectory: true),
@@ -288,6 +291,10 @@ final class AppModel: ObservableObject {
         do {
             let result = try await repository.load()
             catalog = result.catalog
+            if let track = result.catalog.defaultWeek.tracks.first {
+                playback.statisticsInterfaceVisit(source: ListeningSource(week: result.catalog.defaultWeek.date,
+                    trackId: track.id, audioSha256: track.sha256))
+            }
             catalogNotice = result.warning
             if result.source == .cache {
                 catalogNotice = "当前使用上次保存的证道目录。\(result.warning ?? "连接网络后可刷新。")"

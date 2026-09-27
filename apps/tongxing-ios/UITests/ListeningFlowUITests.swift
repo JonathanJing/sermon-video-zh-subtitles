@@ -90,6 +90,23 @@ final class ListeningFlowUITests: XCTestCase {
         screenshot("duo-inner-trailing-player", app: app)
     }
 
+    func testAnonymousStatisticsDefaultOffAndOptInOut() throws {
+        let app = launchFixture()
+        app.buttons["more-options"].tap()
+        let link = element("privacy-support-link", in: app)
+        XCTAssertTrue(link.waitForExistence(timeout: 5))
+        link.tap()
+        let toggle = app.switches["anonymous-statistics-toggle"]
+        try reveal(toggle, in: app, direction: .up)
+        XCTAssertEqual(toggle.value as? String, "0")
+        toggle.switches.firstMatch.tap()
+        XCTAssertEqual(toggle.value as? String, "1")
+        screenshot("anonymous-statistics-enabled", app: app)
+        toggle.switches.firstMatch.tap()
+        XCTAssertEqual(toggle.value as? String, "0")
+        screenshot("anonymous-statistics-disabled", app: app)
+    }
+
     func testPrivacySupportIsAvailableOfflineFromMoreOptions() throws {
         let app = launchFixture(offline: true)
         app.buttons["more-options"].tap()

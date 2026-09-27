@@ -405,6 +405,7 @@ function selectTrack(id) {
   activeSource = nextSource; pendingResume = null; positionTouched = false; undoPoint = null; scrubbing = false;
   $("resume-card").hidden = true; updateUndo();
   feedback.select(engagementWeek(week), track);
+  usage.select?.(engagementWeek(week), track);
   fineOffset = 0;
   lastCue = -2;
   $("offset").textContent = t("app.offset", { value: "0.00" });
@@ -748,6 +749,7 @@ async function initializeEngagement() {
       feedback = createFeedback(audio, config, { usage });
       // The listener may have switched sources while the optional request ran.
       feedback.select(engagementWeek(week), track);
+      usage.select?.(engagementWeek(week), track);
       $("feedback-quick").hidden = !config.enabled;
       usage.setEnabled(feedback.statisticsEnabled());
     }

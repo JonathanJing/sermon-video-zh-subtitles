@@ -1,6 +1,116 @@
 {
   "sourceLanguage": "zh-Hans",
   "strings": {
+    "匿名使用统计": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anonymous usage statistics"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "익명 사용 통계"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estadísticas de uso anónimas"
+          }
+        }
+      }
+    },
+    "分享匿名使用统计": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share anonymous usage statistics"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "익명 사용 통계 공유"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compartir estadísticas anónimas"
+          }
+        }
+      }
+    },
+    "默认关闭。开启后上传界面语言访问、内容与音频语言、收听时长和播放覆盖范围；只使用每日更新的随机标识，不含姓名、邮箱或广告标识，不跨日追踪。设备数不等于人数。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Off by default. When enabled, the app sends interface-language visits, content and audio languages, listening time and playback coverage. It uses a random identifier that changes daily, with no name, email or advertising ID and no tracking across days. Device counts are not people counts."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기본적으로 꺼져 있습니다. 켜면 화면 언어별 방문, 콘텐츠 및 오디오 언어, 청취 시간과 재생 범위를 전송합니다. 매일 바뀌는 무작위 식별자만 사용하며 이름, 이메일, 광고 식별자는 포함하지 않고 날짜 간 추적을 하지 않습니다. 기기 수는 사람 수와 다릅니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desactivado por defecto. Al activarlo, la app envía visitas por idioma de interfaz, idiomas del contenido y audio, tiempo de escucha y cobertura de reproducción. Solo usa un identificador aleatorio que cambia cada día, sin nombre, correo ni identificador publicitario y sin seguimiento entre días. Los dispositivos no equivalen a personas."
+          }
+        }
+      }
+    },
+    "关闭后立即停止，并尝试撤回本次 App 运行中已上传的统计；断网时无法保证撤回。没有离线上传队列，未联网期间的使用可能不计入。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turning this off stops reporting immediately and attempts to remove statistics uploaded during this app run. Removal cannot be guaranteed offline. There is no offline upload queue; use without connectivity may not be counted."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "끄면 전송이 즉시 중단되며 이번 앱 실행 중 전송된 통계 삭제를 시도합니다. 오프라인에서는 삭제를 보장할 수 없습니다. 오프라인 업로드 대기열이 없으므로 연결되지 않은 동안의 사용은 집계되지 않을 수 있습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Al desactivarlo, se detienen los envíos y se intenta retirar las estadísticas enviadas durante esta ejecución de la app. Sin conexión no se garantiza su eliminación. No hay cola de envíos sin conexión; ese uso puede no contabilizarse."
+          }
+        }
+      }
+    },
+    "本说明适用于同行原生 App。同行是独立个人项目，不设登录或广告。匿名统计由你自愿开启。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This notice covers the native Tongxing app, an independent personal project with no sign-in or advertising. Anonymous statistics are optional and require you to enable them."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 안내는 로그인이나 광고가 없는 독립 개인 프로젝트인 Tongxing 네이티브 앱에 적용됩니다. 익명 통계는 선택 사항이며 직접 켜야 합니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este aviso cubre la app nativa Tongxing, un proyecto personal independiente sin inicio de sesión ni publicidad. Las estadísticas anónimas son opcionales y debes activarlas."
+          }
+        }
+      }
+    },
     "文稿暂时无法读取，请重试。": {
       "extractionState": "manual",
       "localizations": {

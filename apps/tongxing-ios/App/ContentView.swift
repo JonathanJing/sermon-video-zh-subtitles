@@ -1151,7 +1151,7 @@ private struct AboutSheet: View {
         NavigationStack {
             Form {
                 Section {
-                    NavigationLink { PrivacySupportView() } label: {
+                    NavigationLink { PrivacySupportView(playback: model.playback) } label: {
                         Label(localization.text("隐私与支持"), systemImage: "hand.raised")
                     }
                     .accessibilityIdentifier("privacy-support-link")

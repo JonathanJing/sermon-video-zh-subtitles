@@ -11,6 +11,8 @@ export const messages = Object.freeze({
   ...appMessages.en,
   ...feedbackMessages.en,
 
+  'privacy.summary': '서비스 개선을 위해 화면 언어, 선택한 설교 페이지와 본문 언어, 실제 재생한 음성의 언어와 청취 시간, 이용 시간, 페이지 및 버튼 조작, 음색 미리듣기를 수집합니다. 통계를 언제든지 끌 수 있으며, 청취와 의견 제출은 계속 이용할 수 있습니다.',
+
   'app.title': '동행 · 설교 중국어 통역',
   'app.name': '동행',
   'app.tagline': '설교 중국어 통역',

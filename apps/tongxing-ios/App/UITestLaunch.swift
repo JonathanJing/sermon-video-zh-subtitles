@@ -22,7 +22,8 @@ enum UITestLaunch {
         configuration.protocolClasses = [UITestContentProtocol.self]
         configuration.urlCache = nil
         return AppModel(supportDirectory: support, contentOrigin: UITestContent.origin,
-                        session: URLSession(configuration: configuration))
+                        session: URLSession(configuration: configuration),
+                        statisticsDefaults: UserDefaults(suiteName: "Tongxing-UITests-\(runID.uuidString)")!)
     }
 }
 

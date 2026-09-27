@@ -8,6 +8,8 @@ export const messages = Object.freeze({
   ...interfaceMessages.en,
   ...appMessages.en,
   ...feedbackMessages.en,
+
+  'privacy.summary': 'Para mejorar el servicio, recopilamos el idioma de la interfaz, la página del sermón y el idioma del texto seleccionados, el idioma y la duración del audio realmente reproducido, el tiempo de uso, las interacciones con páginas y botones y las muestras de voz. Puede desactivar las estadísticas en cualquier momento y seguir escuchando y enviando comentarios.',
   'app.title': '同行 · Sermones en chino',
   'app.name': '同行',
   'app.tagline': 'Sermones en chino',
