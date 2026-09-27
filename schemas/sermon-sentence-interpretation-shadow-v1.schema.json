@@ -37,7 +37,11 @@
             "maxUnitSeconds": { "type": "number", "exclusiveMinimum": 0 },
             "minUnitSeconds": { "type": "number", "exclusiveMinimum": 0 },
             "internalPauseSeconds": { "type": "number", "minimum": 0 },
-            "wordDurationOutlierSeconds": { "type": "number", "exclusiveMinimum": 0 }
+            "wordDurationOutlierSeconds": { "type": "number", "exclusiveMinimum": 0 },
+            "boundaryOverrides": {
+              "type": "object", "minProperties": 1,
+              "additionalProperties": { "type": "string", "minLength": 1 }
+            }
           }
         },
         "sourceContext": {
@@ -51,7 +55,8 @@
             "summarySha256": { "$ref": "#/$defs/nullableSha256" },
             "approvalEvidenceSha256": { "$ref": "#/$defs/nullableSha256" },
             "reviewSha256": { "$ref": "#/$defs/nullableSha256" },
-            "machineJudgeSha256": { "$ref": "#/$defs/nullableSha256" }
+            "machineJudgeSha256": { "$ref": "#/$defs/nullableSha256" },
+            "boundaryOverridesEvidenceSha256": { "$ref": "#/$defs/sha256" }
           }
         }
       }

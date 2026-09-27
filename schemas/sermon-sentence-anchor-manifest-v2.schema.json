@@ -27,6 +27,12 @@
         "minUnitSeconds": { "type": "number", "exclusiveMinimum": 0 },
         "internalPauseSeconds": { "type": "number", "minimum": 0 },
         "wordDurationOutlierSeconds": { "type": "number", "exclusiveMinimum": 0 },
+        "boundaryOverrides": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": { "pattern": "^.+-s[0-9]+$" },
+          "additionalProperties": { "type": "string", "pattern": "^.+-w[0-9]+$" }
+        },
         "interpretationSchedule": { "const": "rolling_interpreter_v1" },
         "reactionLagSeconds": { "type": "number", "minimum": 0 },
         "interUtteranceGapSeconds": { "type": "number", "minimum": 0 },

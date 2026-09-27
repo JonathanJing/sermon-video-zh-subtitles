@@ -97,6 +97,32 @@ class SentenceInterpretationTests(unittest.TestCase):
         self.assertEqual(self.manifest["translationRequests"][0]["contextAfter"], "I am with you.")
         self.assertFalse(self.manifest["releaseEligible"])
 
+    def test_explicit_boundary_override_uses_existing_safe_punctuation(self):
+        words = ["Alpha", "bravo", "charlie", "delta,", "echo", "foxtrot,",
+                 "golf", "hotel", "india", "juliet."]
+        source = [segment(" ".join(words), words)]
+        self.source.write_text(json.dumps(source), encoding="utf-8")
+        manifest = subject.build_anchor_manifest(
+            source, source_path=self.source, unit_policy=subject.UNIT_POLICY_V2,
+            max_unit_seconds=3.0,
+            boundary_overrides={"block-00-s001": "block-00-w0004"},
+        )
+        self.assertEqual(manifest["policy"]["boundaryOverrides"],
+                         {"block-00-s001": "block-00-w0004"})
+        self.assertEqual(manifest["sourceUnits"][0]["boundary"]["splitEvidence"]["afterWordId"],
+                         "block-00-w0004")
+        self.assertEqual(manifest["counts"]["sourceWords"], len(words))
+        self.assertEqual(manifest["issues"], [])
+
+        for invalid in ({"block-00-s001": "block-00-w0003"},
+                        {"block-00-s001": "block-00-w9999"},
+                        {"block-00-s999": "block-00-w0004"}):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                subject.build_anchor_manifest(
+                    source, source_path=self.source, unit_policy=subject.UNIT_POLICY_V2,
+                    max_unit_seconds=3.0, boundary_overrides=invalid,
+                )
+
     def test_long_sentence_splits_only_at_pause_and_keeps_word_ids(self):
         long = segment(
             "One two three, four five six seven.",

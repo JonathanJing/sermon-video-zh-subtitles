@@ -75,6 +75,28 @@ class EnglishSourceMachineJudgeTests(unittest.TestCase):
             }],
         }
 
+    def test_deterministic_review_rebuilds_explicit_boundary_override(self):
+        words = ["Alpha", "bravo", "charlie", "delta,", "echo", "foxtrot,",
+                 "golf", "hotel", "india", "juliet."]
+        timed = []
+        cursor = 0.0
+        for word in words:
+            timed.append({"text": word, "start": cursor, "end": cursor + 0.4})
+            cursor += 0.5
+        aligned = [{"id": 0, "referenceChunkId": "block-00", "text": " ".join(words),
+                    "start": 0.0, "end": timed[-1]["end"],
+                    "sentenceBoundarySource": "frozen_reference_punctuation", "wordTimes": timed}]
+        write_json(self.aligned_path, aligned)
+        manifest = anchors.build_anchor_manifest(
+            aligned, source_path=self.aligned_path, unit_policy=anchors.UNIT_POLICY_V2,
+            max_unit_seconds=3.0,
+            boundary_overrides={"block-00-s001": "block-00-w0004"},
+        )
+        self.assertEqual(subject.deterministic_review(self.aligned_path, manifest)["status"], "pass")
+        changed = json.loads(json.dumps(manifest))
+        changed["sourceUnits"][0]["english"] = "tampered"
+        self.assertEqual(subject.deterministic_review(self.aligned_path, changed)["status"], "fail")
+
     def test_machine_judge_passes_reviewable_anchor_issue_for_layer2_shadow_only(self):
         receipt_path = self.root / "judge" / "receipt.json"
         receipt = subject.run(

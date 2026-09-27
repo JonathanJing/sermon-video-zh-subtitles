@@ -156,6 +156,7 @@ def deterministic_review(aligned_path: Path, manifest: dict[str, Any]) -> dict[s
             inter_utterance_gap_seconds=policy.get("interUtteranceGapSeconds", 0.12),
             max_end_lag_seconds=policy.get("maxEndLagSeconds", 8.0),
             word_duration_outlier_seconds=policy.get("wordDurationOutlierSeconds", 2.5),
+            boundary_overrides=policy.get("boundaryOverrides"),
         )
         rebuilt["input"]["mfaSegments"] = manifest.get("input", {}).get("mfaSegments")
         rebuild_matches = rebuilt == manifest
