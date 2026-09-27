@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-clip-timeline-map-v2.schema.json",
+  "title": "Approved complete-source English anchor to media timebase binding",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "timebase", "englishSourcePackageJsonSha256", "anchorManifestJsonSha256", "clipMedia", "clipDurationSeconds", "windowApproval", "anchorOffsetSeconds", "anchorFirstStartSeconds", "anchorLastEndSeconds"],
+  "properties": {
+    "schemaVersion": {"const": "sermon-clip-timeline-map-v2"},
+    "timebase": {"const": "anchor_source_relative_to_complete_media"},
+    "englishSourcePackageJsonSha256": {"$ref": "#/$defs/sha256"},
+    "anchorManifestJsonSha256": {"$ref": "#/$defs/sha256"},
+    "clipMedia": {"$ref": "#/$defs/artifact"},
+    "clipDurationSeconds": {"type": "number", "exclusiveMinimum": 0},
+    "windowApproval": {"$ref": "#/$defs/jsonArtifact"},
+    "anchorOffsetSeconds": {"const": 0},
+    "anchorFirstStartSeconds": {"type": "number", "minimum": 0},
+    "anchorLastEndSeconds": {"type": "number", "exclusiveMinimum": 0}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "artifact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha256"}}
+    },
+    "jsonArtifact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "sha256", "jsonSha256"],
+      "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha256"}, "jsonSha256": {"$ref": "#/$defs/sha256"}}
+    }
+  }
+}
