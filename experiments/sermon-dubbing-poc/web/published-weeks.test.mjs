@@ -17,7 +17,7 @@ function fixture(mutate = () => {}) {
       status: 'human_reviewed', audioStatus: 'unavailable', englishSourcePackageJsonSha256: page.sourceIdentitySha256,
       targetLanguageCandidateJsonSha256: 'b'.repeat(64), title: `Title ${locale}`, speaker: 'Eric Geiger',
       series: 'Series', scripture: 'Revelation 4–5', summary: `Summary ${locale}`, outline: ['Point one'],
-      durationSeconds: 10, sourceVideoUrl: `/pages/${pageId}/full-video-browser.mp4`,
+      sourceMediaSha256: 'd'.repeat(64), durationSeconds: 10, sourceVideoUrl: `/pages/${pageId}/full-video-browser.mp4`,
       cues: [{ textGroupId: 'first', start: 0, end: 8, text: `Full reading text ${locale}` }],
     };
     const captions = { cues: [{ textGroupId: 'first', start: .5, end: 7, text: `Short spoken text ${locale}` }] };
@@ -141,4 +141,42 @@ test('optional requests have a bounded timeout and abort pending network work', 
   assert.deepEqual(result.weeks, []);
   assert.match(result.errors[0], /timed out/);
   assert.equal(signal.aborted, true);
+});
+
+function addAlignment(f, mutate = () => {}) {
+  const catalog = JSON.parse(f.files.get('/multilingual-v3.json')), page = catalog.pages[0];
+  const targets = Object.fromEntries(Object.entries(page.targets).map(([locale, target]) => [locale, {
+    releasePackageJsonSha256: target.releasePackageJsonSha256,
+    audioFingerprint: {schemaVersion:'sermon-audio-fingerprint-binding-v1', algorithmVersion:'spectral-landmarks-v1',
+      pageId, sourceSha256:'d'.repeat(64), trackSha256:'c'.repeat(64), indexSha256:'e'.repeat(64),
+      sourceStartSeconds:0, sourceEndSeconds:10, captureSeconds:10,
+      indexUrl:`/fingerprints/${'e'.repeat(16)}-landmarks.json`},
+  }]));
+  const sidecar={schemaVersion:'sermon-published-alignment-v1',pageId,sourceIdentitySha256:page.sourceIdentitySha256,targets};
+  mutate(sidecar);
+  f.files.set(`/alignment/${pageId}.json`,JSON.stringify(sidecar));
+}
+test('published listening alignment binds each locale to its reviewed source and audio', async () => {
+  const f=fixture(); addAlignment(f);
+  const result=await loadPublishedWeeks(f.fetchImpl);
+  assert.deepEqual(result.errors,[]);
+  for (const v of Object.values(result.weeks[0].contentVariants)) {
+    assert.equal(v.audioFingerprint.trackSha256,v.tracks[0].sha256);
+    assert.equal(v.audioFingerprint.sourceSha256,v.sourceSha256);
+    assert.equal(v.automaticAudioAlignment.status,'ready');
+  }
+});
+test('stale track, source, release and window bindings disable alignment without losing playback', async () => {
+  for (const change of [m=>m.trackSha256='f'.repeat(64),m=>m.sourceSha256='f'.repeat(64),m=>m.sourceEndSeconds=11,m=>m.indexUrl='/wrong.json']) {
+    const f=fixture();addAlignment(f,s=>change(s.targets.ko.audioFingerprint));
+    const result=await loadPublishedWeeks(f.fetchImpl);
+    assert.equal(result.weeks[0].contentVariants.ko.audioFingerprint,undefined);
+    assert.ok(result.weeks[0].contentVariants['zh-Hans'].audioFingerprint);
+    assert.equal(result.weeks[0].contentVariants.ko.tracks.length,1);
+    assert.equal(result.errors.length,1);
+  }
+  const f=fixture();addAlignment(f,s=>s.targets.es.releasePackageJsonSha256='f'.repeat(64));
+  const result=await loadPublishedWeeks(f.fetchImpl);
+  assert.equal(result.weeks[0].contentVariants.es.audioFingerprint,undefined);
+  assert.equal(result.weeks[0].contentVariants.es.tracks.length,1);
 });

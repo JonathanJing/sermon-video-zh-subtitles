@@ -120,7 +120,7 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs) {
     id: page.id, date: page.date, number: '', targetLocale: locale, defaultTargetLocale: locale, title: content.title,
     series: content.series, speaker: content.speaker, scripture: content.scripture,
     sourceUrl: assetPath(content.sourceVideoUrl), sourceLabel: labels.source,
-    sourceRoute: 'full_video', sourceStartSeconds: 0, sourceDurationSeconds: content.durationSeconds,
+    sourceRoute: 'full_video', sourceSha256: content.sourceMediaSha256, sourceStartSeconds: 0, sourceEndSeconds: content.durationSeconds, sourceDurationSeconds: content.durationSeconds,
     releaseLabel: '正式播放版', humanContentReview: 'approved', audioStatus: 'full_reviewed',
     audioNotice: labels.notice, contentReview: labels.review,
     productionStages: labels.stages.map(([label, detail]) => ({ label, detail, status: 'pass' })),
@@ -162,6 +162,32 @@ export async function loadPublishedWeeks(fetchImpl = globalThis.fetch, { request
       catch (error) { errors.push(`${page.id}/${locale}: ${error.message}`); return null; }
     }));
     const contentVariants = Object.fromEntries(variants.filter(Boolean));
+    // Optional delivery sidecar: never change a reviewed release or hide its audio
+    // because listening alignment is unavailable. Each locale binds its own track.
+    try {
+      const alignment = await readJson(fetchImpl, `/alignment/${page.id}.json`, undefined, timeoutMs, true);
+      if (alignment !== null) {
+        required(alignment.schemaVersion === 'sermon-published-alignment-v1'
+          && alignment.pageId === page.id && alignment.sourceIdentitySha256 === page.sourceIdentitySha256,
+        'Invalid alignment catalog identity');
+        for (const [locale, variant] of Object.entries(contentVariants)) {
+          try {
+            const target = alignment.targets?.[locale], m = target?.audioFingerprint;
+            required(target?.releasePackageJsonSha256 === variant.releasePackageJsonSha256
+              && m?.schemaVersion === 'sermon-audio-fingerprint-binding-v1'
+              && m.algorithmVersion === 'spectral-landmarks-v1' && m.pageId === page.id
+              && HASH.test(m.sourceSha256) && m.sourceSha256 === variant.sourceSha256
+              && m.trackSha256 === variant.tracks[0].sha256 && HASH.test(m.indexSha256)
+              && m.sourceStartSeconds === 0 && m.sourceEndSeconds === variant.sourceDurationSeconds
+              && m.captureSeconds === 10
+              && m.indexUrl === `/fingerprints/${m.indexSha256.slice(0, 16)}-landmarks.json`,
+            'Invalid alignment track/source binding');
+            variant.audioFingerprint = { ...m };
+            variant.automaticAudioAlignment = { schemaVersion: 'sermon-automatic-audio-alignment-v1', status: 'ready', required: true };
+          } catch (error) { errors.push(`${page.id}/${locale}: ${error.message}`); }
+        }
+      }
+    } catch (error) { errors.push(`${page.id}: ${error.message}`); }
     const defaultLocale = contentVariants[page.defaultTargetLocale] ? page.defaultTargetLocale : Object.keys(contentVariants)[0];
     if (defaultLocale) weeks.push({ ...contentVariants[defaultLocale], defaultTargetLocale: defaultLocale, contentVariants });
   }

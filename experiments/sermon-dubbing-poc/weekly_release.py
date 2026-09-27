@@ -422,7 +422,7 @@ def prepare(registry, candidate, out, replace_ids=()):
 
 
 UI_REFRESH_FILES = ("index.html", "style.css", "app.mjs", "catalog.mjs", "published-weeks.mjs",
-                    "media-session.mjs", "locales-app.mjs", "i18n.mjs",
+                    "media-session.mjs", "locales-app.mjs", "locales-feedback.mjs", "i18n.mjs",
                     "locales-interface.mjs", "locales-ko.mjs", "locales-es.mjs")
 
 

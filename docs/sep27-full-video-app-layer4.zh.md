@@ -34,3 +34,15 @@
 本次 UI 候选位于忽略目录 `artifacts/drive-source-20260926-1730/layer4-app-hosting-phase5-in-app-20260927-v1/`；只更新播放器界面及加载模块，已批准的视频、文稿、字幕、音轨和发布包保持原字节。发布与实际浏览器验证收据存放在该目录。此发布范围是 Firebase Web App，原生 iOS 二进制分发、真机和现场验收仍独立记录。
 
 2026-09-27 本次部署完成：11 项变更 UI 资产均 HTTP 200 且 SHA-256 与候选一致；线上浏览器在根路径分别启动三语音轨，播放时间推进至中文 9.02 秒、韩语 4.87 秒、西语 8.41 秒，三者时长均 1891.677333 秒且无媒体错误。往期切换回中文并禁用不存在的韩／西内容，返回本周恢复三语选择。另留有 390×844 手机宽度截图。定向验证为 69 项 JavaScript 测试、32 项周发布 Python 测试通过；这不代表手机真机或现场验收。
+
+## 本周现场声音定位
+
+`bind_published_fingerprints.mjs --public <新Hosting候选/public> --page-id <pageId> --source <冻结原视频>` 为已发布三语生成定位补充资产。先核验 v3 目录、正式包、文稿、原视频及三条配音哈希，使用原视频完整 0–1891.677333 秒提取一次声纹，然后分别绑定三条音轨；既有正式包和已批准媒体不改动。
+
+补充接口 `/alignment/<pageId>.json` 使用 `sermon-published-alignment-v1`：顶层为 `pageId`、`sourceIdentitySha256`、`targets`；各 locale 包含 `releasePackageJsonSha256` 与现有 `sermon-audio-fingerprint-binding-v1` 的 `audioFingerprint`。这是独立、可选的新接口，无旧数据迁移；未提供或不匹配时仅关闭定位，保留配音播放。客户端核对来源、页面、音轨、窗口、发布包和索引哈希路径；Worker 在听音时再校验整个索引 SHA 和身份。切换语言使用对应音轨绑定并取消旧定位结果。
+
+本周索引及补充接口在 `layer4-app-hosting-phase6-alignment-20260927-v1/` 候选内。沿用原定位算法、10 秒采集和可靠性阈值；声音在当前设备处理。页面入口与原声回放测试、实际手机麦克风和现场验收分别记录。
+
+原声回放检查：7 个分布于 01:00–30:00 的 10 秒片段 × 3 语言索引，21/21 命中，测得偏差均为 0 秒；静音和另一篇 Sep20 英文原声 × 3 索引，6/6 拒绝。详见该候选内 `fingerprint-replay-validation.json`。这项结果仅证明离线原声匹配，不代表真实手机麦克风或现场噪声下的成功率。
+
+Firebase 部署后，2 个 UI 文件、1 份绑定接口和 3 份索引均 HTTP 200、完整 SHA 一致；线上浏览器逐一切换中、韩、西内容并成功打开定位面板，始终停留根路径。手机宽度截图为 `alignment-mobile.png`；未启动真实麦克风或现场验收。
