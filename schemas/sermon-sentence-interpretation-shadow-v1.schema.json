@@ -88,7 +88,7 @@
     "anchorIssueCount": { "type": "integer", "minimum": 0 },
     "anchorIssueTypes": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
     "nextStage": { "enum": ["run_sentence_interpretation_models", "operator_anchor_review", "run_english_source_machine_judge"] },
-    "humanReview": { "const": "pending" }
+    "humanReview": { "enum": ["pending", "approved"] }
   },
   "$defs": {
     "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
