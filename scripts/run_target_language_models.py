@@ -31,6 +31,15 @@ except ImportError:
 MODEL_ROLES = {"translator": "gpt-6-astra", "reviewer": "gpt-6-sol"}
 SEMANTIC_CHECKS = ("completeMeaning", "negationsNumbersNames", "quotationAttribution", "noAddedMeaning")
 REVISION_BRIEF_SCHEMA = "sermon-target-language-group-revision-brief-v1"
+
+
+def revision_boundary_instruction(target_locale: str, *, revising: bool) -> str:
+    if not revising or target_locale != "ko":
+        return ""
+    return ("For Korean spoken units, a complete polite predicate may end with a "
+            "period even when the next English unit begins with 'because'. The next "
+            "Korean unit may state that reason as its own sentence. Do not force a "
+            "trailing comma merely to mirror the English clause boundary. ")
 PARTIAL_REPAIR_SCHEMA = "sermon-target-language-partial-repair-brief-v1"
 
 
@@ -494,6 +503,8 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
         source_rows = [{"sourceUnitId": unit_id, "english": units[unit_id]}
                        for unit_id in group["sourceUnitIds"]]
         context = surrounding_context(request, plan, index - 1)
+        korean_boundary = revision_boundary_instruction(
+            request["targetLocale"], revising=brief is not None)
         common = {"translationGroupId": group["translationGroupId"],
                   "sourceUnitIds": group["sourceUnitIds"], "englishUnits": source_rows,
                   "context": context, "targetLocale": request["targetLocale"],
@@ -516,7 +527,7 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
                                 "name even when context identifies it. "
                                 "Preserve an unfinished source clause when the next source "
                                 "unit completes it; do not finish or repeat that continuation "
-                                "inside this group. "
+                                "inside this group. " + korean_boundary +
                                 "If the essential meaning cannot fit, report the "
                                 "conflict in independent review."),
                 "priorTargetTextSha256": brief["priorTargetTextSha256"],
@@ -549,6 +560,7 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
                             if brief is not None else
                             "Translate the English sermon group into the target locale. Preserve every "
                             "meaning, negation, number, name, quotation and theological distinction. ") +
+                            korean_boundary +
                             scripture_prompt_instruction(policy) +
                             register_prompt_instruction(policy) +
                             repair_instruction +
@@ -590,6 +602,7 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
                                "name. Check adjacent source units: preserve an unfinished "
                                "clause and do not duplicate its completion in this group. "
                                if brief is not None else "")
+                            + korean_boundary
                             + scripture_prompt_instruction(policy) +
                             register_prompt_instruction(policy) +
                             repair_instruction +

@@ -16,6 +16,14 @@ from tests import test_produce_target_language_candidate as fixture_module
 
 
 class RunTargetLanguageModelsTests(unittest.TestCase):
+    def test_korean_spoken_revision_can_close_a_complete_clause(self):
+        instruction = subject.revision_boundary_instruction("ko", revising=True)
+        self.assertIn("complete polite predicate", instruction)
+        self.assertIn("next English unit begins with 'because'", instruction)
+        self.assertIn("Do not force a trailing comma", instruction)
+        self.assertEqual("", subject.revision_boundary_instruction("ko", revising=False))
+        self.assertEqual("", subject.revision_boundary_instruction("es", revising=True))
+
     def test_reference_only_rule_is_system_level_for_both_model_roles(self):
         policy = {"scripture": {"quoteCheckPolicy": "references_only"}}
         instruction = subject.scripture_prompt_instruction(policy)
