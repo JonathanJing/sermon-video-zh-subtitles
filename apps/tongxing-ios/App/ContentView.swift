@@ -320,13 +320,9 @@ struct ContentView: View {
                 Color.clear
                     .contentShape(Rectangle())
                     .onTapGesture { showingPlaybackMore = false }
+                    .accessibilityHidden(true)
                 playbackMoreControls(width: min(320, max(0, proxy.size.width - 24)))
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 28))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 28)
-                            .strokeBorder(.primary.opacity(0.1), lineWidth: 0.5)
-                    }
-                    .shadow(color: .black.opacity(0.14), radius: 18, y: 8)
+                    .listeningGlassSurface()
                     .onGeometryChange(for: CGSize.self, of: { $0.size }) { size in
                         playbackMorePanelSize = size
                     }

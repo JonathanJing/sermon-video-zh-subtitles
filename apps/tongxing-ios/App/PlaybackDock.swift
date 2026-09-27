@@ -204,6 +204,7 @@ struct PlaybackDock: View {
 struct PlaybackMoreControls: View {
     @ObservedObject private var localization = AppLocalization.shared
     @ObservedObject var playback: PlaybackController
+    @AccessibilityFocusState private var closeFocused: Bool
     var isPreparing: Bool
     var alignmentModel: AppModel?
     var precision: (() -> Void)?
@@ -223,6 +224,7 @@ struct PlaybackMoreControls: View {
                 }
                 .accessibilityLabel(localization.text("关闭"))
                 .accessibilityIdentifier("playback-more-close")
+                .accessibilityFocused($closeFocused)
             }
             if let alignmentModel {
                 AlignmentControls(model: alignmentModel, compact: true)
@@ -235,6 +237,9 @@ struct PlaybackMoreControls: View {
         .frame(width: width)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("playback-more-panel")
+        .accessibilityAddTraits(.isModal)
+        .accessibilityAction(.escape, onClose)
+        .task { closeFocused = true }
     }
 
     private var utilityActions: some View {

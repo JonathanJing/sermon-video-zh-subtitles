@@ -13,11 +13,14 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertFalse(status.label.isEmpty)
         let more = app.buttons["playback-more"]
         XCTAssertEqual(more.label, "更多")
-        more.tap()
         let play = app.buttons["playback-toggle"]
+        let moreFrame = more.frame
         let besideTrailingRail = abs(play.frame.midX - more.frame.midX) < 16
             && more.frame.minY > play.frame.maxY
-        assertPlaybackMorePopoverNearButton(in: app, besideTrailingRail: besideTrailingRail)
+        more.tap()
+        assertPlaybackMorePopoverNearButton(in: app, buttonFrame: moreFrame,
+                                          besideTrailingRail: besideTrailingRail)
+        XCTAssertTrue(app.alerts["playback-more-panel"].exists)
         screenshot("playback-more-near-button", app: app)
         app.buttons["playback-more-close"].tap()
     }
@@ -50,15 +53,18 @@ final class ListeningFlowUITests: XCTestCase {
         app.buttons["完成"].tap()
         XCTAssertFalse(app.buttons["align-live-audio"].exists)
         let playerFrame = app.buttons["playback-toggle"].frame
+        let moreFrame = more.frame
         more.tap()
         XCTAssertTrue(app.buttons["align-live-audio"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["precision-controls"].exists)
-        assertPlaybackMorePopoverNearButton(in: app, besideTrailingRail: true)
-        XCTAssertEqual(app.buttons["playback-toggle"].frame, playerFrame,
-                       "更多不能撑高或移动常驻播放栏")
+        assertPlaybackMorePopoverNearButton(in: app, buttonFrame: moreFrame, besideTrailingRail: true)
+        XCTAssertTrue(app.alerts["playback-more-panel"].exists,
+                      "更多浮窗应呈现模态辅助功能特征")
         screenshot("duo-outer-more-popover", app: app)
         app.buttons["playback-more-close"].tap()
         XCTAssertTrue(more.waitForExistence(timeout: 5))
+        XCTAssertEqual(app.buttons["playback-toggle"].frame, playerFrame,
+                       "更多不能撑高或移动常驻播放栏")
         screenshot("duo-outer-player", app: app)
     }
 
@@ -76,8 +82,9 @@ final class ListeningFlowUITests: XCTestCase {
         assertNavigationActionsAbovePlayer(in: app)
         let more = app.buttons["playback-more"]
         XCTAssertTrue(more.isHittable)
+        let moreFrame = more.frame
         more.tap()
-        assertPlaybackMorePopoverNearButton(in: app, besideTrailingRail: true)
+        assertPlaybackMorePopoverNearButton(in: app, buttonFrame: moreFrame, besideTrailingRail: true)
         screenshot("duo-inner-more-popover", app: app)
         app.buttons["playback-more-close"].tap()
         screenshot("duo-inner-trailing-player", app: app)
@@ -662,12 +669,12 @@ final class ListeningFlowUITests: XCTestCase {
         app.descendants(matching: .any).matching(identifier: identifier).firstMatch
     }
 
-    private func assertPlaybackMorePopoverNearButton(in app: XCUIApplication, besideTrailingRail: Bool,
+    private func assertPlaybackMorePopoverNearButton(in app: XCUIApplication, buttonFrame: CGRect,
+                                                    besideTrailingRail: Bool,
                                                     file: StaticString = #filePath, line: UInt = #line) {
         let panel = element("playback-more-panel", in: app)
         XCTAssertTrue(panel.waitForExistence(timeout: 5), file: file, line: line)
         guard panel.exists else { return }
-        let buttonFrame = app.buttons["playback-more"].frame
         let panelFrame = panel.frame
         let horizontalGap = max(0, max(panelFrame.minX - buttonFrame.maxX, buttonFrame.minX - panelFrame.maxX))
         let verticalGap = max(0, max(panelFrame.minY - buttonFrame.maxY, buttonFrame.minY - panelFrame.maxY))
