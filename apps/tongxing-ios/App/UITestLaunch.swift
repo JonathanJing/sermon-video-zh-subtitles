@@ -111,7 +111,8 @@ private enum UITestContent {
         let sourceHash = String(repeating: "b", count: 64)
         let multilingual: [String: Any] = [
             "schemaVersion": "sermon-multilingual-catalog-v2", "generatedAt": "2026-09-21T00:00:00Z",
-            "defaultPageId": "ui-test-week", "pages": [[
+            "defaultPageId": ProcessInfo.processInfo.arguments.contains("--ui-testing-current-page-default")
+                ? "ui-test-clip" : "ui-test-week", "pages": [[
                 "id": "ui-test-week", "date": "2026-09-06", "sourceLocale": "en",
                 "sourceIdentitySha256": sourceHash, "defaultTargetLocale": "zh-Hans", "targets": [
                     "zh-Hans": ["releasePackageUrl": "/releases/ui-test-week/zh-Hans.json",

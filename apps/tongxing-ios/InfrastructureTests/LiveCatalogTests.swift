@@ -39,6 +39,25 @@ func publishedCatalogAndAudioSurviveOfflineReload() async throws {
     #expect(try await restartedLibrary.offlineFile(for: track) == nil)
 }
 
+@Test(.enabled(if: ProcessInfo.processInfo.environment["TONGXING_LIVE_SMOKE"] == "1"),
+      .timeLimit(.minutes(2)))
+func currentProductionMultilingualPagesOpenInNativeRepository() async throws {
+    let base = URL(string: "https://ai-for-god-sermon-audio.web.app")!
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent("tongxing-v3-\(UUID().uuidString)")
+    defer { try? FileManager.default.removeItem(at: root) }
+    let repository = MultilingualCatalogRepository(origin: base, cacheDirectory: root)
+    let catalog = try await repository.loadCatalog().catalog
+    let page = catalog.defaultPage
+    #expect(page.id == "2026-09-27-weekend-sermon-drive-530")
+    for locale in ["zh-Hans", "ko", "es"] {
+        let package = try await repository.loadRelease(page: page, locale: locale)
+        #expect(package.status == "published_http_verified")
+        #expect(package.audioStatus == "human_reviewed")
+        let content = try await repository.loadPage(for: package)
+        #expect(content.html.contains("<html"))
+    }
+}
+
 private final class UnavailableNetworkProtocol: URLProtocol {
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }

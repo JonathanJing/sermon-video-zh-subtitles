@@ -6,6 +6,7 @@ public enum LanguageCapability: String, Codable, CaseIterable, Sendable {
 
 public struct MultilingualCatalog: Codable, Sendable, Equatable {
     public static let supportedSchemaVersion = "sermon-multilingual-catalog-v2"
+    public static let productionSchemaVersion = "sermon-multilingual-catalog-v3"
     public let schemaVersion: String
     public let generatedAt: String
     public let defaultPageId: String
@@ -20,11 +21,12 @@ public struct MultilingualCatalog: Codable, Sendable, Equatable {
     }
 
     public func validate() throws {
-        guard schemaVersion == Self.supportedSchemaVersion else { throw CatalogError.invalid("不支持的多语言目录版本") }
+        guard [Self.supportedSchemaVersion, Self.productionSchemaVersion].contains(schemaVersion)
+        else { throw CatalogError.invalid("不支持的多语言目录版本") }
         guard !pages.isEmpty, pages.count <= 104 else { throw CatalogError.invalid("多语言目录页数无效") }
         guard Set(pages.map(\.id)).count == pages.count else { throw CatalogError.invalid("多语言页面 ID 重复") }
         guard pages.contains(where: { $0.id == defaultPageId }) else { throw CatalogError.invalid("默认多语言页面不存在") }
-        for page in pages { try page.validate() }
+        for page in pages { try page.validate(catalogVersion: schemaVersion) }
     }
 }
 
@@ -34,18 +36,20 @@ public struct MultilingualPage: Codable, Sendable, Equatable, Identifiable {
     public let sourceLocale: String
     public let sourceIdentitySha256: String
     public let sourceMediaSha256: String?
+    public let title: String?
     public let defaultTargetLocale: String
     public let targets: [String: PageTarget]
 
-    public func validate() throws {
+    public func validate(catalogVersion: String = MultilingualCatalog.supportedSchemaVersion) throws {
         guard Validation.identifier(id), Validation.isoDate(date), sourceLocale == "en",
               Validation.sha256(sourceIdentitySha256), Validation.locale(defaultTargetLocale),
               sourceMediaSha256.map(Validation.sha256) ?? true,
+              title.map({ !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) ?? true,
               !targets.isEmpty, targets.count <= 16, targets[defaultTargetLocale] != nil
         else { throw CatalogError.invalid("多语言页面来源、日期或默认语言无效") }
         for (locale, target) in targets {
             guard Validation.locale(locale) else { throw CatalogError.invalid("目标语言代码无效") }
-            try target.validate(pageID: id, locale: locale)
+            try target.validate(pageID: id, locale: locale, catalogVersion: catalogVersion)
             if let binding = target.audioFingerprint {
                 guard sourceMediaSha256 == binding.sourceSha256 else {
                     throw CatalogError.invalid("多语言页面声音指纹来源不符")
@@ -69,8 +73,10 @@ public struct PageTarget: Codable, Sendable, Equatable {
     public let capabilities: [LanguageCapability]
     public let audioFingerprint: PublishedFingerprintBinding?
 
-    public func validate(pageID: String, locale: String) throws {
-        let expected = "/releases/\(pageID)/\(locale).json"
+    public func validate(pageID: String, locale: String,
+                         catalogVersion: String = MultilingualCatalog.supportedSchemaVersion) throws {
+        let directory = catalogVersion == MultilingualCatalog.productionSchemaVersion ? "releases-v2" : "releases"
+        let expected = "/\(directory)/\(pageID)/\(locale).json"
         guard releasePackageUrl == expected, Validation.sha256(releasePackageJsonSha256),
               contentStatus == "human_reviewed", ["unavailable", "human_reviewed"].contains(audioStatus),
               capabilities.contains(.text), Set(capabilities.map(\.rawValue)).count == capabilities.count,
@@ -92,12 +98,14 @@ public struct PageTarget: Codable, Sendable, Equatable {
 
 public struct TargetLanguageReleasePackage: Codable, Sendable, Equatable {
     public static let supportedSchemaVersion = "sermon-target-language-release-package-v1"
+    public static let productionSchemaVersion = "sermon-target-language-release-package-v2"
     public let schemaVersion: String
     public let packageId: String
     public let pageId: String
     public let sourceLocale: String
     public let targetLocale: String
     public let targetLanguageCandidateJsonSha256: String
+    public let spokenTargetLanguageCandidateJsonSha256: String?
     public let targetLanguageAudioPackageJsonSha256: String?
     public let status: String
     public let contentStatus: String
@@ -118,7 +126,10 @@ public struct TargetLanguageReleasePackage: Codable, Sendable, Equatable {
     }
 
     public func validate(allowDevCandidate: Bool = false) throws {
-        guard schemaVersion == Self.supportedSchemaVersion, Validation.identifier(packageId),
+        guard [Self.supportedSchemaVersion, Self.productionSchemaVersion].contains(schemaVersion),
+              (schemaVersion == Self.supportedSchemaVersion ||
+               spokenTargetLanguageCandidateJsonSha256.map(Validation.sha256) == true),
+              Validation.identifier(packageId),
               Validation.identifier(pageId), sourceLocale == "en", Validation.locale(targetLocale),
               Validation.sha256(targetLanguageCandidateJsonSha256),
               contentStatus == "human_reviewed", interfaceLocale == targetLocale,

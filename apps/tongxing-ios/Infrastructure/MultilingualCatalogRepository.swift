@@ -45,8 +45,10 @@ public actor MultilingualCatalogRepository {
     }
 
     public func loadCatalog() async throws -> MultilingualCatalogLoadResult {
-        let url = origin.appendingPathComponent("multilingual-v2.json")
-        guard url.path == "/multilingual-v2.json", url.query == nil else { throw ContentStorageError.invalidURL }
+        let name = origin.host == "ai-for-god-sermon-audio.web.app"
+            ? "multilingual-v3.json" : "multilingual-v2.json"
+        let url = origin.appendingPathComponent(name)
+        guard url.path == "/\(name)", url.query == nil else { throw ContentStorageError.invalidURL }
         try ContentOrigin.validateHTTPS(url)
         try FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
         do {
@@ -214,7 +216,10 @@ public actor MultilingualCatalogRepository {
         }
     }
 
-    private var catalogCacheURL: URL { cacheDirectory.appendingPathComponent("multilingual-v2.json") }
+    private var catalogCacheURL: URL {
+        cacheDirectory.appendingPathComponent(origin.host == "ai-for-god-sermon-audio.web.app"
+            ? "multilingual-v3.json" : "multilingual-v2.json")
+    }
 
     private func packageCacheURL(pageID: String, locale: String) -> URL {
         cacheDirectory.appendingPathComponent("Releases", isDirectory: true)

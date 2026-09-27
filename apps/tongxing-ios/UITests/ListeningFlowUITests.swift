@@ -71,7 +71,7 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertTrue(independent.waitForExistence(timeout: 5))
         independent.tap()
         XCTAssertEqual(app.staticTexts["published-page-title"].label, "ui-test-clip")
-        XCTAssertFalse(app.buttons["playback-toggle"].exists)
+        XCTAssertTrue(app.staticTexts["published-audio-locale"].waitForExistence(timeout: 10))
 
         app.buttons["choose-content-language"].tap()
         XCTAssertTrue(app.buttons["content-language-es"].waitForExistence(timeout: 5))
@@ -80,9 +80,7 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertTrue(app.webViews["verified-content-page"].waitForExistence(timeout: 10))
         app.buttons["完成"].tap()
 
-        let prepare = app.buttons["prepare-published-audio"]
-        XCTAssertTrue(prepare.waitForExistence(timeout: 5))
-        prepare.tap()
+        XCTAssertFalse(app.buttons["prepare-published-audio"].exists)
         XCTAssertTrue(app.staticTexts["published-audio-locale"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.staticTexts["published-audio-locale"].label.contains("Español"))
         let play = app.buttons["playback-toggle"]
@@ -99,6 +97,15 @@ final class ListeningFlowUITests: XCTestCase {
         app.buttons["choose-content-language"].tap()
         XCTAssertTrue(app.buttons["content-language-ko"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["content-language-es"].exists)
+    }
+
+    func testFreshLaunchOpensCurrentPublishedPageAndPreparesAudio() throws {
+        let app = launchFixture(independentDefault: true)
+        XCTAssertTrue(app.staticTexts["published-page-title"].waitForExistence(timeout: 10))
+        XCTAssertEqual(app.staticTexts["published-page-title"].label, "ui-test-clip")
+        XCTAssertTrue(app.staticTexts["published-audio-locale"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["prepare-published-audio"].exists)
+        XCTAssertTrue(app.buttons["playback-toggle"].exists)
     }
 
     func testLiveDevSecondClipShowsThreeLanguagesAndPlaysReviewedAudio() throws {
@@ -140,9 +147,7 @@ final class ListeningFlowUITests: XCTestCase {
             screenshot("live-dev-second-clip-\(locale)-content", app: app)
             app.buttons["完成"].tap()
         }
-        let prepare = app.buttons["prepare-published-audio"]
-        XCTAssertTrue(prepare.waitForExistence(timeout: 10))
-        prepare.tap()
+        XCTAssertFalse(app.buttons["prepare-published-audio"].exists)
         XCTAssertTrue(app.staticTexts["published-audio-locale"].waitForExistence(timeout: 30))
         XCTAssertTrue(app.staticTexts["published-audio-locale"].label.contains("한국어"))
         let play = app.buttons["playback-toggle"]
@@ -439,11 +444,13 @@ final class ListeningFlowUITests: XCTestCase {
                       "无需滚动就应完整显示现场对齐按钮", file: file, line: line)
     }
 
-    private func launchFixture(largeText: Bool = false, offline: Bool = false) -> XCUIApplication {
+    private func launchFixture(largeText: Bool = false, offline: Bool = false,
+                               independentDefault: Bool = false) -> XCUIApplication {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing"] + (largeText ? ["--ui-testing-large-text"] : [])
             + (offline ? ["--ui-testing-offline"] : [])
+            + (independentDefault ? ["--ui-testing-current-page-default"] : [])
         app.launchArguments += ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
         app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
         app.launchEnvironment["TONGXING_UI_TEST_RUN_ID"] = UUID().uuidString
@@ -461,6 +468,8 @@ final class ListeningFlowUITests: XCTestCase {
         app.launch()
         if offline {
             XCTAssertTrue(app.staticTexts["暂时无法读取证道"].waitForExistence(timeout: 15))
+        } else if independentDefault {
+            XCTAssertTrue(app.staticTexts["published-page-title"].waitForExistence(timeout: 15))
         } else {
             XCTAssertTrue(element("sermon-title", in: app).waitForExistence(timeout: 15))
             XCTAssertEqual(element("sermon-title", in: app).label, "界面测试证道")
