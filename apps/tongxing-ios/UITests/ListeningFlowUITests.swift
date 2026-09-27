@@ -238,6 +238,14 @@ final class ListeningFlowUITests: XCTestCase {
         app.launch()
         defer { app.terminate() }
         XCTAssertTrue(app.staticTexts["published-page-title"].waitForExistence(timeout: 30))
+        app.buttons["choose-sermon"].tap()
+        let currentPage = app.buttons["published-page-2026-09-27-weekend-sermon-drive-530"]
+        let previousWeek = app.buttons["legacy-week-2026-09-20-same_video-7c193fd4-bc90-4f3b-aa00-37dfe8423aa0"]
+        XCTAssertTrue(currentPage.waitForExistence(timeout: 10))
+        XCTAssertTrue(previousWeek.waitForExistence(timeout: 5))
+        XCTAssertLessThan(currentPage.frame.minY, previousWeek.frame.minY)
+        screenshot("production-native-current-week-first-in-picker", app: app)
+        currentPage.tap()
         for locale in ["zh-Hans", "ko", "es"] {
             app.buttons["choose-content-language"].tap()
             app.buttons["content-language-\(locale)"].tap()

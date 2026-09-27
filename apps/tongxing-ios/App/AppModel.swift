@@ -408,6 +408,7 @@ final class AppModel: ObservableObject {
 
     func selectPublishedPage(_ page: MultilingualPage) {
         guard independentPages.contains(where: { $0.id == page.id }) else { return }
+        guard selectedWeek != nil || selectedPageID != page.id else { return }
         cancelPublishedAudioPreparation()
         playback.clear()
         preparation = UUID()

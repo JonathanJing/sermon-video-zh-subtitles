@@ -973,33 +973,12 @@ private struct WeekSheet: View {
         NavigationStack {
             ScrollView {
                 LazyVStack(spacing: 0) {
-                    ForEach(model.weeks) { week in
-                        Button {
-                            dismiss()
-                            Task { await model.select(week: week) }
-                        } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 7) {
-                                    Text(week.title).font(.headline)
-                                    Text("\(week.date) · \(week.speaker)").font(.subheadline).foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                if week.id == model.selectedWeek?.id { Image(systemName: "checkmark") }
-                            }
-                            .padding(20).frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("\(week.title)，\(week.date)")
-                        .accessibilityIdentifier("legacy-week-\(week.id)")
-                        Divider().padding(.horizontal, 20)
-                    }
                     if !model.independentPages.isEmpty {
                         Text(localization.text("已发布页面"))
                             .font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 20).padding(.top, 18)
-                        ForEach(model.independentPages) { page in
+                        ForEach(model.independentPages.sorted { $0.date > $1.date }) { page in
                             Button {
                                 model.selectPublishedPage(page)
                                 dismiss()
@@ -1020,6 +999,27 @@ private struct WeekSheet: View {
                             .accessibilityIdentifier("published-page-\(page.id)")
                             Divider().padding(.horizontal, 20)
                         }
+                    }
+                    ForEach(model.weeks) { week in
+                        Button {
+                            dismiss()
+                            Task { await model.select(week: week) }
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 7) {
+                                    Text(week.title).font(.headline)
+                                    Text("\(week.date) · \(week.speaker)").font(.subheadline).foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                if week.id == model.selectedWeek?.id { Image(systemName: "checkmark") }
+                            }
+                            .padding(20).frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("\(week.title)，\(week.date)")
+                        .accessibilityIdentifier("legacy-week-\(week.id)")
+                        Divider().padding(.horizontal, 20)
                     }
                 }
             }.navigationTitle(localization.text("选择证道"))
