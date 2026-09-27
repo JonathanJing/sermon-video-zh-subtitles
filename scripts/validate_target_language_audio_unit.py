@@ -63,6 +63,7 @@ def _load_job(path: Path) -> dict[str, Any]:
     speech.validate_adapter(
         adapter, job["targetLocale"], inputs["speakerRegistry"],
         clip_voice_authorization=inputs.get("clipVoiceAuthorization"),
+        source_voice_authorization=inputs.get("sourceVoiceAuthorization"),
         clip_voice_capability=inputs.get("clipVoiceCapability"),
         source_package=source, candidate=candidate)
     if "clipTimelineMap" in inputs:

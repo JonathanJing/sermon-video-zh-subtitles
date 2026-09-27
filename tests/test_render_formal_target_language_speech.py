@@ -366,6 +366,19 @@ class FormalRenderTests(unittest.TestCase):
                          [group["targetText"] for group in self.context["candidate"]["groups"]])
         self.assertTrue((self.root / manifest["track"]["path"]).is_file())
 
+    def test_assembly_copies_source_voice_attestation_without_review_claim(self):
+        self.context["source_voice_authorization"] = self.context.pop("clip_voice_authorization")
+        self.paths["source_voice_authorization"] = self.paths.pop("clip_voice_authorization")
+        rows = self.render_units()
+        manifest = subject.assemble(self.context, self.paths, self.root, rows,
+                                    policy={"reactionLagSeconds": 0.0,
+                                            "interUtteranceGapSeconds": 0.0,
+                                            "maxEndLagSeconds": 8.0})
+        self.assertEqual(manifest["voiceAuthorization"]["sha256"],
+                         subject.identity.sha256(Path(self.context[
+                             "source_voice_authorization"]["userRightsAttestation"]["path"])))
+        self.assertEqual(manifest["machineScreening"]["status"], "not_run")
+
     def test_fresh_full_length_delivery_can_use_hash_bound_mp3_track(self):
         rows = self.render_units()
         plan_policy = {"reactionLagSeconds": 0.0, "interUtteranceGapSeconds": 0.0,

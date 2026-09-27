@@ -200,7 +200,9 @@ def main():
         parser.add_argument(f"--{name}", type=Path, required=True)
     parser.add_argument("--human-review-receipt", dest="human_receipt", type=Path, required=True)
     parser.add_argument("--speaker-registry", dest="registry", type=Path, required=True)
-    parser.add_argument("--clip-voice-authorization", dest="clip_voice_authorization", type=Path, required=True)
+    authorization = parser.add_mutually_exclusive_group(required=True)
+    authorization.add_argument("--clip-voice-authorization", dest="clip_voice_authorization", type=Path)
+    authorization.add_argument("--source-voice-authorization", dest="source_voice_authorization", type=Path)
     parser.add_argument("--clip-voice-capability", dest="clip_voice_capability", type=Path)
     parser.add_argument("--clip-timeline-map", dest="clip_timeline_map", type=Path, required=True)
     parser.add_argument("--source-job", type=Path, required=True)
@@ -217,7 +219,11 @@ def main():
     args = parser.parse_args()
     paths = {name: getattr(args, name) for name in ("source", "anchor", "candidate", "adapter",
                                                    "policy", "human_receipt", "registry",
-                                                   "clip_voice_authorization", "clip_timeline_map")}
+                                                   "clip_timeline_map")}
+    if args.clip_voice_authorization:
+        paths["clip_voice_authorization"] = args.clip_voice_authorization
+    if args.source_voice_authorization:
+        paths["source_voice_authorization"] = args.source_voice_authorization
     if args.clip_voice_capability:
         paths["clip_voice_capability"] = args.clip_voice_capability
     manifest = compact(paths, args.source_job, args.destination_root, args.checkpoint_map,
