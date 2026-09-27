@@ -1315,6 +1315,14 @@ def main():
     )
     parser.add_argument("--timing-model", default="whisper-1")
     parser.add_argument("--output-mode", choices=("reading", "subtitles"), default="reading")
+    parser.add_argument(
+        "--english-source-only", action="store_true",
+        help="Stop after frozen English transcription and word alignment; do not translate.",
+    )
+    parser.add_argument(
+        "--english-transcript-only", action="store_true",
+        help="Freeze English ASR before alignment when the MFA runtime is unavailable; do not translate.",
+    )
     parser.add_argument("--en-correction-model", default="gpt-5.6")
     parser.add_argument("--zh-model", default="gpt-5.6")
     parser.add_argument(
@@ -1369,6 +1377,12 @@ def main():
         raise SystemExit("--input and --start-time are required")
     if args.source_text_review and args.output_mode != "reading":
         raise SystemExit("--source-text-review currently requires --output-mode reading")
+    if args.english_source_only and (args.output_mode != "reading" or args.reading_aligner != "mfa"):
+        raise SystemExit("--english-source-only requires --output-mode reading --reading-aligner mfa")
+    if args.english_transcript_only and (args.output_mode != "reading" or args.english_source_only):
+        raise SystemExit("--english-transcript-only requires reading mode and excludes --english-source-only")
+    if args.english_transcript_only and args.source_text_review:
+        raise SystemExit("--source-text-review requires word alignment; rerun with --english-source-only")
 
     load_env(Path(".env"))
     api_key = os.environ.get("OPENAI_API_KEY")
@@ -1456,9 +1470,16 @@ def transcribe_with_fingerprint(args, api_key, clip_path, outdir, chunk_seconds,
 
 def produce_pipeline(args, api_key, source_duration, start, end, outdir):
     glossary = load_glossary(args.glossary)
-    if args.output_mode == "reading" and getattr(args, "reading_aligner", "mfa") == "mfa":
+    if (args.output_mode == "reading" and getattr(args, "reading_aligner", "mfa") == "mfa"
+            and not args.english_transcript_only):
         from scripts.mfa_backend import preflight, options
         args._mfa_runtime = preflight(**options(args))
+    source_identity = None
+    if args.english_source_only or args.english_transcript_only:
+        source_identity = {
+            "sha256": file_sha256(args.input),
+            "sizeBytes": args.input.stat().st_size,
+        }
 
     clip_path = outdir / "source_clip.m4a"
     with stage("pipeline.clip", billing="local"):
@@ -1474,6 +1495,32 @@ def produce_pipeline(args, api_key, source_duration, start, end, outdir):
         args, api_key, clip_path, outdir, reference_chunk_seconds, glossary, start,
         end if end is not None else source_duration,
     )
+    if args.english_transcript_only:
+        if (file_sha256(args.input) != source_identity["sha256"]
+                or args.input.stat().st_size != source_identity["sizeBytes"]):
+            raise RuntimeError("Source media changed during English transcription")
+        if not reference_chunks:
+            raise RuntimeError("English transcription returned no chunks")
+        summary = {
+            "status": "english_transcript_candidate",
+            "source": str(args.input),
+            "sourceDurationSeconds": source_duration,
+            "sourceClip": str(clip_path),
+            "clipDurationSeconds": clip_duration,
+            "sermonStartSeconds": start,
+            "sermonEndSeconds": end,
+            "models": {"referenceAsr": args.reference_model},
+            "pipelineInputIdentity": {"sourceAudio": source_identity},
+            "asrChunkCount": len(reference_chunks),
+            "asrChunkJsonSha256": json_sha256(reference_chunks),
+            "alignmentStatus": "pending_mfa",
+            "humanReview": "pending",
+            "outputs": ["asr_reference.json", "asr_reference_chunks.json"],
+            "argv": sys.argv[1:],
+        }
+        write_json(outdir / "transcript-only-summary.json", summary)
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
+        return
     with stage("pipeline.segment", billing="local"):
         if args.output_mode == "reading":
             raw_segments = reading_segments(args, reference_chunks, clip_path, outdir)
@@ -1512,6 +1559,35 @@ def produce_pipeline(args, api_key, source_duration, start, end, outdir):
                     args, corrected, clip_path, outdir / "mfa-reviewed")
         shaped_en = corrected if args.output_mode == "reading" else shape_durations(corrected)
         write_json(outdir / "segments_timed_en_corrected.json", shaped_en)
+
+    if args.english_source_only:
+        if (file_sha256(args.input) != source_identity["sha256"]
+                or args.input.stat().st_size != source_identity["sizeBytes"]):
+            raise RuntimeError("Source media changed during English transcription or alignment")
+        summary = {
+            "status": "english_source_candidate",
+            "source": str(args.input),
+            "sourceDurationSeconds": source_duration,
+            "sourceClip": str(clip_path),
+            "clipDurationSeconds": clip_duration,
+            "sermonStartSeconds": start,
+            "sermonEndSeconds": end,
+            "models": {"referenceAsr": args.reference_model},
+            "outputMode": args.output_mode,
+            "readingAligner": args.reading_aligner,
+            "readingAlignmentBackend": getattr(args, "_mfa_runtime", {}).get("backend"),
+            "readingAlignmentRuntime": getattr(args, "_mfa_runtime", None),
+            "timingPrecision": "mfa_word_aligned",
+            "pipelineInputIdentity": {"sourceAudio": source_identity, "readingAligner": args.reading_aligner},
+            "segmentCount": len(shaped_en),
+            "outputs": ["asr_reference.json", "asr_reference_chunks.json", "segments_timed_en_corrected.json"],
+            "argv": sys.argv[1:],
+        }
+        if source_review:
+            summary["sourceTextReview"] = source_review
+        write_json(outdir / "summary.json", summary)
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
+        return
 
     with stage("pipeline.translate", billing="api"):
         translated = translate_chinese(
