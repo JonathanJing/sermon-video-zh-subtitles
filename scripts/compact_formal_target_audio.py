@@ -55,13 +55,34 @@ def trimmed_samples(path: Path, *, padding_seconds: float = PADDING_SECONDS,
         values.byteswap()
     window = max(1, round(rate * WINDOW_SECONDS))
     first_active = last_active_end = None
-    for start in range(0, len(values), window):
-        block = values[start:start + window]
-        rms = math.sqrt(sum(sample * sample for sample in block) / len(block)) / 32768
-        if rms >= THRESHOLD:
-            if first_active is None:
-                first_active = start
-            last_active_end = min(len(values), start + window)
+    try:
+        import numpy as np
+    except ModuleNotFoundError:
+        np = None
+    if np is not None:
+        samples = np.frombuffer(raw, dtype="<i2")
+        full_count = len(samples) // window
+        if full_count:
+            blocks = samples[:full_count * window].astype(np.float64).reshape(full_count, window)
+            active = np.flatnonzero(np.sqrt(np.mean(blocks * blocks, axis=1)) / 32768 >= THRESHOLD)
+            if active.size:
+                first_active = int(active[0]) * window
+                last_active_end = (int(active[-1]) + 1) * window
+        if full_count * window < len(samples):
+            tail = samples[full_count * window:]
+            tail_rms = math.sqrt(sum(int(sample) ** 2 for sample in tail) / len(tail)) / 32768
+            if tail_rms >= THRESHOLD:
+                if first_active is None:
+                    first_active = full_count * window
+                last_active_end = len(samples)
+    else:
+        for start in range(0, len(values), window):
+            block = values[start:start + window]
+            rms = math.sqrt(sum(sample * sample for sample in block) / len(block)) / 32768
+            if rms >= THRESHOLD:
+                if first_active is None:
+                    first_active = start
+                last_active_end = min(len(values), start + window)
     require(first_active is not None, f"No audible speech energy: {path}")
     removed = min(max(0, first_active - round(padding_seconds * rate)),
                   round(MAX_TRIM_SECONDS * rate))
