@@ -282,6 +282,7 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
     validate_job(source, anchor, candidate, job, adapter, policy, human_receipt, registry,
                  clip_auth, clip_cap, clip_timeline, paths,
                  source_voice_authorization=source_auth)
+    job_file_sha256 = file_sha256(paths["job"])
     manifest = read_object(render_manifest_path)
     locale = candidate["targetLocale"]
     job_hash = json_sha256(job)
@@ -362,7 +363,9 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
         receipt = read_object(Path(receipt_artifact["path"]))
         require(receipt.get("schemaVersion") == RECEIPT_SCHEMA,
                 f"Unsupported unit receipt schema at {index}")
-        unit_integrity.validate_receipt(paths["job"], index, Path(audio["path"]), receipt)
+        unit_integrity.validate_receipt(
+            paths["job"], index, Path(audio["path"]), receipt,
+            validated_job=job, validated_job_file_sha256=job_file_sha256)
         require(receipt["translationGroupId"] == group_id
                 and receipt["targetTextSha256"] == text_hash
                 and receipt["audioSha256"] == audio["sha256"]
@@ -500,6 +503,13 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
     schema_path = Path(__file__).parents[1] / "schemas" / "sermon-target-language-audio-package-v1.schema.json"
     errors = list(Draft202012Validator(read_object(schema_path), format_checker=FormatChecker()).iter_errors(package))
     require(not errors, f"Audio Package schema error: {errors[0].message if errors else ''}")
+    # Recheck the bound inputs once after the batch so a mid-run change still
+    # fails, without rehashing the source video for every audio unit.
+    validate_job(source, anchor, candidate, job, adapter, policy, human_receipt, registry,
+                 clip_auth, clip_cap, clip_timeline, paths,
+                 source_voice_authorization=source_auth)
+    require(file_sha256(paths["job"]) == job_file_sha256,
+            "Speech job changed during audio package build")
     return package
 
 

@@ -319,6 +319,37 @@ class AudioPackageTests(unittest.TestCase):
         self.assertEqual([unit["textGroupId"] for unit in package["units"]], ["g1", "g2"])
         self.assertEqual(len(package["downstreamInvalidationKey"]), 64)
 
+    def test_full_source_media_is_checked_per_batch_not_per_unit(self):
+        original = interpretation.sha256
+        media_hashes = 0
+
+        def counting_sha(path):
+            nonlocal media_hashes
+            if Path(path).resolve() == self.clip_media_path.resolve():
+                media_hashes += 1
+            return original(path)
+
+        with mock.patch.object(interpretation, "sha256", side_effect=counting_sha):
+            self.build()
+        self.assertEqual(media_hashes, 2)
+
+    def test_source_media_change_during_batch_is_rejected(self):
+        original = unit_integrity.validate_receipt
+        changed = False
+
+        def change_media_after_first_unit(*args, **kwargs):
+            nonlocal changed
+            original(*args, **kwargs)
+            if not changed:
+                self.clip_media_path.write_bytes(self.clip_media_path.read_bytes() + b"changed")
+                changed = True
+
+        with mock.patch.object(unit_integrity, "validate_receipt",
+                               side_effect=change_media_after_first_unit):
+            with self.assertRaisesRegex(ValueError, "Clip media|source media|timeline|clip"):
+                self.build()
+        self.assertTrue(changed)
+
     def test_source_voice_receipt_uses_separate_job_binding(self):
         # The dedicated validator's full-source checks are tested in the
         # speech-job suite; here exercise the Audio Package binding path.

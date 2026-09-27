@@ -97,8 +97,12 @@ def trimmed_samples(path: Path, *, padding_seconds: float = PADDING_SECONDS,
 
 def compact_unit(source_job: Path, destination_job: Path, index: int,
                  *, expected_job_hash: str, padding_seconds: float = PADDING_SECONDS,
-                 trim_trailing: bool = False) -> dict:
-    job = json.loads(source_job.read_text(encoding="utf-8"))
+                 trim_trailing: bool = False,
+                 validated_job: dict | None = None,
+                 source_job_file_sha256: str | None = None,
+                 destination_job_file_sha256: str | None = None) -> dict:
+    job = (json.loads(source_job.read_text(encoding="utf-8"))
+           if validated_job is None else validated_job)
     unit = job["units"][index]
     source_root, destination_root = source_job.parent, destination_job.parent
     raw = source_root / unit["outputRelativePath"]
@@ -107,8 +111,10 @@ def compact_unit(source_job: Path, destination_job: Path, index: int,
     commit = source_root / f"receipts/unit-{index:04d}.render.json"
     require(all(path.is_file() for path in (raw, receipt, intent, commit)),
             f"Raw committed unit missing: {index}")
-    integrity.validate_receipt(source_job, index, raw,
-                               json.loads(receipt.read_text(encoding="utf-8")))
+    integrity.validate_receipt(
+        source_job, index, raw, json.loads(receipt.read_text(encoding="utf-8")),
+        validated_job=validated_job,
+        validated_job_file_sha256=source_job_file_sha256)
     source_intent = json.loads(intent.read_text(encoding="utf-8"))
     source_commit = json.loads(commit.read_text(encoding="utf-8"))
     raw_sha = identity.sha256(raw)
@@ -137,11 +143,17 @@ def compact_unit(source_job: Path, destination_job: Path, index: int,
         os.replace(partial, output)
     output_receipt = destination_root / f"receipts/unit-{index:04d}.json"
     if output_receipt.exists():
-        integrity.validate_receipt(destination_job, index, output,
-                                   json.loads(output_receipt.read_text(encoding="utf-8")))
+        integrity.validate_receipt(
+            destination_job, index, output,
+            json.loads(output_receipt.read_text(encoding="utf-8")),
+            validated_job=validated_job,
+            validated_job_file_sha256=destination_job_file_sha256)
     else:
         renderer.write_json_atomic(output_receipt,
-                                   integrity.build_receipt(destination_job, index, output))
+                                   integrity.build_receipt(
+                                       destination_job, index, output,
+                                       validated_job=validated_job,
+                                       validated_job_file_sha256=destination_job_file_sha256))
     item = json.loads(output_receipt.read_text(encoding="utf-8"))
     result = {"unitIndex": index, "textGroupId": unit["translationGroupId"],
             "sourceAudioSha256": raw_sha, "audioSha256": identity.sha256(output),
@@ -182,9 +194,22 @@ def compact(paths: dict[str, Path], source_job: Path, destination_root: Path,
     adapted_paths = dict(paths, job=destination_job)
     context = renderer.checked_context(adapted_paths, checkpoint_map, operation_policies)
     job_hash = identity.json_sha256(context["job"])
+    source_job_file_sha256 = identity.sha256(source_job)
+    destination_job_file_sha256 = identity.sha256(destination_job)
+    require(source_job_file_sha256 == destination_job_file_sha256,
+            "Compacted job bytes differ from raw job")
     rows = [compact_unit(source_job, destination_job, index, expected_job_hash=job_hash,
-                         padding_seconds=padding_seconds, trim_trailing=trim_trailing)
+                         padding_seconds=padding_seconds, trim_trailing=trim_trailing,
+                         validated_job=context["job"],
+                         source_job_file_sha256=source_job_file_sha256,
+                         destination_job_file_sha256=destination_job_file_sha256)
             for index in range(len(context["job"]["units"]))]
+    require(identity.sha256(source_job) == source_job_file_sha256
+            and identity.sha256(destination_job) == destination_job_file_sha256,
+            "Speech job changed during silence compaction")
+    require(identity.json_sha256(renderer.checked_context(
+        adapted_paths, checkpoint_map, operation_policies)["job"]) == job_hash,
+        "Bound speech job changed during silence compaction")
     edge_mode = trim_trailing or padding_seconds != PADDING_SECONDS
     receipt = {"schemaVersion": EDGE_SCHEMA if edge_mode else SCHEMA,
                "status": "measured_silence_removed",
