@@ -22,10 +22,14 @@ try:
     from scripts import produce_target_language_candidate as producer
     from scripts import sermon_pipeline
     from scripts import target_language_policy as policy_tools
+    from scripts import four_layer_measure as measure
+    from scripts import sermon_accounting as accounting
 except ImportError:
     import produce_target_language_candidate as producer
     import sermon_pipeline
     import target_language_policy as policy_tools
+    import four_layer_measure as measure
+    import sermon_accounting as accounting
 
 
 MODEL_ROLES = {"translator": "gpt-6-astra", "reviewer": "gpt-6-sol"}
@@ -335,10 +339,11 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
                             "Do not claim human approval. Prompt version: " + policy["translator"]["promptVersion"]),
             "input": common}
         stem = f"group-{index:04d}"
-        translated = _model_call("translator", translate_prompt, policy,
-                                 out / f"{stem}-astra.json", api_key, caller,
-                                 reuse_from / f"{stem}-astra.json"
-                                 if reuse_from and brief is None else None)
+        with measure.producer_substage("initial_translation", billing="api"):
+            translated = _model_call("translator", translate_prompt, policy,
+                                     out / f"{stem}-astra.json", api_key, caller,
+                                     reuse_from / f"{stem}-astra.json"
+                                     if reuse_from and brief is None else None)
         draft = translated["result"]
         require(draft.get("translationGroupId") == group["translationGroupId"]
                 and draft.get("sourceUnitIds") == group["sourceUnitIds"],
@@ -364,10 +369,11 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
                             "issues empty. Mark status fail for any unresolved concern. "
                             "Do not claim human approval. Prompt version: " + policy["reviewer"]["promptVersion"]),
             "input": {**common, "astraDraft": draft}}
-        reviewed_response = _model_call("reviewer", review_prompt, policy,
-                                        out / f"{stem}-sol.json", api_key, caller,
-                                        reuse_from / f"{stem}-sol.json"
-                                        if reuse_from and brief is None else None)
+        with measure.producer_substage("independent_review", billing="api"):
+            reviewed_response = _model_call("reviewer", review_prompt, policy,
+                                            out / f"{stem}-sol.json", api_key, caller,
+                                            reuse_from / f"{stem}-sol.json"
+                                            if reuse_from and brief is None else None)
         result = reviewed_response["result"]
         require(result.get("translationGroupId") == group["translationGroupId"]
                 and result.get("sourceUnitIds") == group["sourceUnitIds"],
@@ -430,6 +436,8 @@ def main() -> None:
                         help="Source-bound changed-group proposal; requires --reuse-from")
     parser.add_argument("--reuse-from", type=Path,
                         help="Prior complete model run; unchanged requests reuse verified caches")
+    parser.add_argument("--progress-ledger", type=Path,
+                        help="Record checkpoint and per-group substage timing in the four-layer ledger")
     parser.add_argument("--out-dir", type=Path, required=True)
     args = parser.parse_args()
     require(args.revision_brief is None or args.reuse_from is not None,
@@ -438,19 +446,26 @@ def main() -> None:
                               (args.english_source_package, args.anchor, args.policy))
     # Validate all policy/source/plan conditions before requiring a secret or making a paid call.
     request = producer.prepare_request(source, anchor, policy)
-    group_plan(request, anchor, json.loads(args.group_plan.read_text(encoding="utf-8"))
-               if args.group_plan else None)
+    plan = group_plan(request, anchor, json.loads(args.group_plan.read_text(encoding="utf-8"))
+                      if args.group_plan else None)
     require(producer.plugin_implementation_sha256(args.plugin)
             == policy["languageReview"]["pluginImplementationSha256"],
             "Language plugin implementation differs from frozen policy")
     api_key = os.environ.get("OPENAI_API_KEY")
     require(bool(api_key), "OPENAI_API_KEY is not configured")
-    evidence = run(source, anchor, policy, args.out_dir, api_key,
-                   lambda key, payload: sermon_pipeline.chat_json(key, payload, retries=1),
-                   json.loads(args.group_plan.read_text(encoding="utf-8"))
-                   if args.group_plan else None, args.plugin,
-                   producer._load(args.revision_brief) if args.revision_brief else None,
-                   args.reuse_from)
+    locale = request["targetLocale"]
+    step_id = f"L2-02@{locale}"
+    with measure.producer_step(args.progress_ledger, step_id, locale=locale) as metrics:
+        metrics.update(translationGroups=len(plan), sourceUnits=len(request["sourceUnits"]))
+        if measure.configured_ledger(args.progress_ledger) is not None:
+            accounting.record_workload(measure.stage_name(step_id), {
+                "translationGroups": len(plan), "sourceUnits": len(request["sourceUnits"]),
+                "countStatus": "current_execution"})
+        evidence = run(source, anchor, policy, args.out_dir, api_key,
+                       lambda key, payload: sermon_pipeline.chat_json(key, payload, retries=1),
+                       plan, args.plugin,
+                       producer._load(args.revision_brief) if args.revision_brief else None,
+                       args.reuse_from)
     print(json.dumps({"status": "independent_model_review_pass",
                       "groups": len(evidence["groups"]),
                       "evidence": str((args.out_dir / "evidence.json").resolve())}))

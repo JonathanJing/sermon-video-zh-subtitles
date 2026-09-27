@@ -2,6 +2,7 @@
 const PAGE_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,159}$/;
 const LOCALE = /^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/;
 const STEP = /^L[1-4]-\d{2}(?:@[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*)?$/;
+const SUBSTAGE = ['initial_translation', 'independent_review'];
 const STATUS = ['pending', 'running', 'waiting_review', 'blocked', 'complete'];
 const DELIVERY = ['unknown', 'not_generated', 'generated_local', 'http_verified',
   'declared_unchecked', 'index_missing', 'hash_mismatch', 'binding_invalid',
@@ -122,6 +123,17 @@ export function sanitizeSnapshot(input) {
         closedReviewWaits: number(step.timing?.closedReviewWaits),
         operatorReviewWaitSeconds: step.timing?.operatorReviewWaitSeconds == null ? null : number(step.timing.operatorReviewWaitSeconds),
         openReviewWait: step.timing?.openReviewWait === true,
+        subStages: (Array.isArray(step.timing?.subStages) ? step.timing.subStages : [])
+          .filter((child) => SUBSTAGE.includes(child?.id)).slice(0, 8).map((child) => ({
+            id: child.id,
+            attempts: number(child.attempts),
+            failedAttempts: number(child.failedAttempts),
+            completedUnits: number(child.completedUnits),
+            totalUnits: child.totalUnits == null ? null : number(child.totalUnits),
+            running: number(child.running),
+            executionSeconds: number(child.executionSeconds),
+            openElapsedSeconds: child.openElapsedSeconds == null ? null : elapsed(child.openElapsedSeconds),
+          })),
       },
     })),
   };

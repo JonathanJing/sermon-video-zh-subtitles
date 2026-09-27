@@ -1,5 +1,5 @@
 import './style.css';
-import { stepTimingSummary, timingCoverageNote } from './timing.js';
+import { formatDuration, stepTimingSummary, timingCoverageNote } from './timing.js';
 import { tr, uiLanguage } from './i18n.js';
 
 const LABELS = {
@@ -301,6 +301,47 @@ function renderLocales(locales, steps) {
         if (step.totalUnits != null) description.append(make('small', 'unit-count', tr(`${step.doneUnits || 0}/${step.totalUnits} 单元`, `${step.doneUnits || 0}/${step.totalUnits} units`)));
         const timing = stepTimingSummary(step);
         if (timing.length) description.append(make('small', 'step-timing', timing.join(' · ')));
+        const childStages = step.timing?.subStages || [];
+        if (childStages.length) {
+          const details = make('details', 'substage-details');
+          details.append(make('summary', '', tr('分组子阶段', 'Group substages')));
+          details.append(make('small', 'substage-note', tr(
+            '组数表示该子阶段已完成的模型处理；不代表人工批准或检查点通过。',
+            'Counts show completed model work; they do not mean human approval or checkpoint completion.')));
+          const rows = make('ul', 'substage-list');
+          rows.replaceChildren(...childStages.map((child) => {
+            const row = make('li', 'substage-row');
+            const stageName = child.id === 'initial_translation'
+              ? tr('分组初译', 'Group translation')
+              : child.id === 'independent_review'
+                ? tr('独立复核', 'Independent review') : child.id;
+            const total = Number.isInteger(child.totalUnits) ? child.totalUnits : null;
+            const progress = total == null
+              ? tr(`${child.completedUnits || 0} 次完成`, `${child.completedUnits || 0} completed`)
+              : `${Math.min(child.completedUnits || 0, total)}/${total} ${tr('组', 'groups')}`;
+            const metrics = [progress,
+              tr(`运行 ${child.running || 0}`, `${child.running || 0} running`),
+              tr(`失败 ${child.failedAttempts || 0}`, `${child.failedAttempts || 0} failed`),
+              tr(`实测 ${formatDuration(child.executionSeconds || 0)}`,
+                `Measured ${formatDuration(child.executionSeconds || 0)}`)];
+            if (child.openElapsedSeconds != null) {
+              metrics.push(tr(`当前运行 ${formatDuration(child.openElapsedSeconds)}`,
+                `Current run ${formatDuration(child.openElapsedSeconds)}`));
+            }
+            row.append(make('span', '', stageName), make('small', '', metrics.join(' · ')));
+            if (total != null) {
+              const meter = make('div', 'substage-meter');
+              const fill = make('div', 'progress-fill');
+              fill.style.width = `${Math.max(0, Math.min(100,
+                100 * (child.completedUnits || 0) / total))}%`;
+              meter.append(fill);
+              row.append(meter);
+            }
+            return row;
+          }));
+          details.append(rows);
+          description.append(details);
+        }
         line.append(description, pill(step.status));
         return line;
       }));
