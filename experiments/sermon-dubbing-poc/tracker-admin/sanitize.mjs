@@ -15,6 +15,7 @@ const DELIVERY = ['unknown', 'not_generated', 'generated_local', 'http_verified'
 const enumValue = (value, allowed, fallback = 'unknown') => allowed.includes(value) ? value : fallback;
 const number = (value) => Number.isFinite(value) && value >= 0 ? value : 0;
 const elapsed = (value) => Number.isInteger(value) && value >= 0 && value <= 366 * 24 * 60 * 60 ? value : null;
+const elapsedDuration = (value) => Number.isFinite(value) && value >= 0 && value <= 366 * 24 * 60 * 60 ? value : null;
 const stamp = (value) => typeof value === 'string' && /^\d{4}-\d\d-\d\dT/.test(value)
   && !Number.isNaN(Date.parse(value)) ? value : null;
 const row = (value) => ({ layer: [1, 2, 3, 4].includes(value?.layer) ? value.layer : null,
@@ -133,7 +134,7 @@ export function sanitizeSnapshot(input) {
             totalUnits: child.totalUnits == null ? null : number(child.totalUnits),
             running: number(child.running),
             executionSeconds: number(child.executionSeconds),
-            openElapsedSeconds: child.openElapsedSeconds == null ? null : elapsed(child.openElapsedSeconds),
+            openElapsedSeconds: child.openElapsedSeconds == null ? null : elapsedDuration(child.openElapsedSeconds),
             audioSeconds: child.audioSeconds == null ? null : number(child.audioSeconds),
             overLimitUnits: child.overLimitUnits == null ? null : number(child.overLimitUnits),
             clipDurationSeconds: child.clipDurationSeconds == null ? null : number(child.clipDurationSeconds),

@@ -1,5 +1,6 @@
 import './style.css';
 import { formatDuration, stepTimingSummary, timingCoverageNote } from './timing.js';
+import { substageProgressLabel } from './substage.js';
 import { tr, uiLanguage } from './i18n.js';
 
 const LABELS = {
@@ -322,9 +323,8 @@ function renderLocales(locales, steps) {
                     : child.id === 'schedule_sync'
                       ? tr('排程与同步检查', 'Scheduling and sync check') : child.id;
             const total = Number.isInteger(child.totalUnits) ? child.totalUnits : null;
-            const progress = total == null
-              ? tr(`${child.completedUnits || 0} 次完成`, `${child.completedUnits || 0} completed`)
-              : `${Math.min(child.completedUnits || 0, total)}/${total} ${tr('组', 'groups')}`;
+            const progress = substageProgressLabel(child.id, child.completedUnits || 0, total,
+              uiLanguage() === 'en' ? 'en' : 'zh');
             const metrics = [progress,
               tr(`尝试 ${child.attempts || 0}`, `${child.attempts || 0} attempts`),
               tr(`运行 ${child.running || 0}`, `${child.running || 0} running`),
