@@ -37,6 +37,7 @@ SCHEMA = "sermon-target-language-audio-package-v1"
 RENDER_SCHEMA = "sermon-target-language-render-manifest-v1"
 RECEIPT_SCHEMA = unit_integrity.RECEIPT_SCHEMA
 EPSILON = 0.035
+MP3_CONTAINER_PADDING_SECONDS = 0.10
 
 
 def require(ok: bool, message: str) -> None:
@@ -208,15 +209,26 @@ def validate_job(source: dict[str, Any], anchor: dict[str, Any], candidate: dict
 
 def validate_schedule(schedule: dict[str, Any], candidate: dict[str, Any], anchor: dict[str, Any],
                       durations: list[float], track_duration: float,
-                      anchor_offset_seconds: float, clip_duration_seconds: float) -> None:
+                      anchor_offset_seconds: float, clip_duration_seconds: float, *,
+                      track_format: str = "wav") -> None:
     require(schedule.get("targetLocale") == candidate["targetLocale"],
             "Schedule locale mismatch")
     require(schedule.get("timingKind") == "measured_target_audio",
             "Schedule must use measured target audio timing")
     require(schedule.get("status") == "pass" and schedule.get("issues") == [],
             "Schedule has unresolved issues")
-    near(track_duration, schedule.get("trackDurationSeconds"), "Schedule track duration")
-    require(track_duration <= clip_duration_seconds + EPSILON,
+    require(track_format in {"wav", "mp3"}, "Unsupported track format")
+    # Older ffprobe counts MP3 encoder padding even when Xing/LAME metadata
+    # gives the exact presentation duration. The source PCM is checked below.
+    track_tolerance = MP3_CONTAINER_PADDING_SECONDS if track_format == "mp3" else EPSILON
+    scheduled_duration = schedule.get("trackDurationSeconds")
+    require(isinstance(scheduled_duration, (int, float))
+            and not isinstance(scheduled_duration, bool)
+            and math.isfinite(scheduled_duration)
+            and abs(track_duration - scheduled_duration) <= track_tolerance,
+            "Schedule track duration differs from measured audio")
+    require(track_duration <= clip_duration_seconds + track_tolerance
+            and scheduled_duration <= clip_duration_seconds + track_tolerance,
             "Dubbed track exceeds approved 1x source clip duration")
     policy = schedule.get("policy", {})
     reaction = policy.get("reactionLagSeconds")
@@ -421,6 +433,14 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
                         f"Edge silence trim duration differs from unit {index}")
     track = checked_artifact(artifact_root, manifest.get("track"))
     track_duration, _, _ = probe_audio(Path(track["path"]))
+    track_format = Path(track["path"]).suffix.removeprefix(".").lower()
+    require(track_format in {"wav", "mp3"}, "Unsupported formal track format")
+    if track_format == "mp3":
+        pcm_track = Path(track["path"]).with_suffix(".wav")
+        require(pcm_track.is_file(), "MP3 source PCM track is missing")
+        pcm_duration, _, _ = probe_audio(pcm_track)
+        require(abs(pcm_duration - clip_timeline["clipDurationSeconds"]) <= EPSILON,
+                "MP3 source PCM differs from approved 1x source clip duration")
     schedule_artifact = checked_artifact(artifact_root, manifest.get("schedule"), json_artifact=True)
     captions_artifact = checked_artifact(artifact_root, manifest.get("captions"))
     locale_root = (artifact_root / "languages" / locale).resolve()
@@ -436,7 +456,7 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
     captions = read_object(Path(captions_artifact["path"]))
     validate_schedule(schedule, candidate, anchor, durations, track_duration,
                       clip_timeline["anchorOffsetSeconds"],
-                      clip_timeline["clipDurationSeconds"])
+                      clip_timeline["clipDurationSeconds"], track_format=track_format)
     validate_captions(captions, candidate, schedule, track_duration)
     screen = manifest.get("machineScreening", {})
     require(isinstance(screen, dict) and screen.get("status") in {"not_run", "pass", "requires_review", "fail"}

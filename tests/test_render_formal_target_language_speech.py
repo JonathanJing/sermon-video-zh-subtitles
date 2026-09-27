@@ -397,6 +397,19 @@ class FormalRenderTests(unittest.TestCase):
         package = subject.package.build_package(
             self.paths, self.root / "render-manifest.json", self.root)
         self.assertEqual(package["track"]["sha256"], manifest["track"]["sha256"])
+        schedule_path = self.root / manifest["schedule"]["path"]
+        schedule = subject.package.read_object(schedule_path)
+        schedule["trackDurationSeconds"] += 0.06
+        subject.write_json_atomic(schedule_path, schedule)
+        manifest["schedule"] = subject.artifact(self.root, schedule_path, json_artifact=True)
+        subject.write_json_atomic(self.root / "render-manifest.json", manifest)
+        subject.package.build_package(self.paths, self.root / "render-manifest.json", self.root)
+        schedule["trackDurationSeconds"] += 0.20
+        subject.write_json_atomic(schedule_path, schedule)
+        manifest["schedule"] = subject.artifact(self.root, schedule_path, json_artifact=True)
+        subject.write_json_atomic(self.root / "render-manifest.json", manifest)
+        with self.assertRaisesRegex(ValueError, "Schedule track duration"):
+            subject.package.build_package(self.paths, self.root / "render-manifest.json", self.root)
         with self.assertRaisesRegex(ValueError, "different track format"):
             subject.assemble(self.context, self.paths, self.root, rows,
                              policy=plan_policy, track_format="wav")
