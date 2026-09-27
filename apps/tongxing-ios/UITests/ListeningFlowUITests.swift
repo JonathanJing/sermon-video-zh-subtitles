@@ -11,7 +11,15 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertTrue(status.waitForExistence(timeout: 5))
         XCTAssertTrue(status.isHittable)
         XCTAssertFalse(status.label.isEmpty)
-        XCTAssertEqual(app.buttons["playback-more"].label, "更多")
+        let more = app.buttons["playback-more"]
+        XCTAssertEqual(more.label, "更多")
+        more.tap()
+        let play = app.buttons["playback-toggle"]
+        let besideTrailingRail = abs(play.frame.midX - more.frame.midX) < 16
+            && more.frame.minY > play.frame.maxY
+        assertPlaybackMorePopoverNearButton(in: app, besideTrailingRail: besideTrailingRail)
+        screenshot("playback-more-near-button", app: app)
+        app.buttons["playback-more-close"].tap()
     }
 
     func testDuoOuterPlayerKeepsReadingAreaWhenMoreOpens() throws {
@@ -45,6 +53,7 @@ final class ListeningFlowUITests: XCTestCase {
         more.tap()
         XCTAssertTrue(app.buttons["align-live-audio"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["precision-controls"].exists)
+        assertPlaybackMorePopoverNearButton(in: app, besideTrailingRail: true)
         XCTAssertEqual(app.buttons["playback-toggle"].frame, playerFrame,
                        "更多不能撑高或移动常驻播放栏")
         screenshot("duo-outer-more-popover", app: app)
@@ -54,6 +63,8 @@ final class ListeningFlowUITests: XCTestCase {
     }
 
     func testDuoInnerLandscapeUsesTrailingPlayerRail() throws {
+        XCUIDevice.shared.orientation = .landscapeLeft
+        defer { XCUIDevice.shared.orientation = .portrait }
         let app = launchFixture()
         try XCTSkipUnless(abs(app.frame.width - 951) < 2 && abs(app.frame.height - 669) < 2,
                           "This geometry check targets the iPhone Duo inner landscape display; observed \(app.frame)")
@@ -63,7 +74,12 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertGreaterThanOrEqual(play.frame.midX, app.frame.maxX - 84,
                                     "播放栏应进入状态栏下方的系统侧边区域")
         assertNavigationActionsAbovePlayer(in: app)
-        XCTAssertTrue(app.buttons["playback-more"].isHittable)
+        let more = app.buttons["playback-more"]
+        XCTAssertTrue(more.isHittable)
+        more.tap()
+        assertPlaybackMorePopoverNearButton(in: app, besideTrailingRail: true)
+        screenshot("duo-inner-more-popover", app: app)
+        app.buttons["playback-more-close"].tap()
         screenshot("duo-inner-trailing-player", app: app)
     }
 
@@ -644,6 +660,27 @@ final class ListeningFlowUITests: XCTestCase {
 
     private func element(_ identifier: String, in app: XCUIApplication) -> XCUIElement {
         app.descendants(matching: .any).matching(identifier: identifier).firstMatch
+    }
+
+    private func assertPlaybackMorePopoverNearButton(in app: XCUIApplication, besideTrailingRail: Bool,
+                                                    file: StaticString = #filePath, line: UInt = #line) {
+        let panel = element("playback-more-panel", in: app)
+        XCTAssertTrue(panel.waitForExistence(timeout: 5), file: file, line: line)
+        guard panel.exists else { return }
+        let buttonFrame = app.buttons["playback-more"].frame
+        let panelFrame = panel.frame
+        let horizontalGap = max(0, max(panelFrame.minX - buttonFrame.maxX, buttonFrame.minX - panelFrame.maxX))
+        let verticalGap = max(0, max(panelFrame.minY - buttonFrame.maxY, buttonFrame.minY - panelFrame.maxY))
+        XCTAssertLessThanOrEqual((horizontalGap * horizontalGap + verticalGap * verticalGap).squareRoot(), 44,
+                                 "播放更多浮窗应贴近更多按钮", file: file, line: line)
+        if besideTrailingRail {
+            XCTAssertLessThanOrEqual(panelFrame.maxX, buttonFrame.minX + 4,
+                                     "竖栏的更多浮窗应在按钮左侧", file: file, line: line)
+        } else {
+            XCTAssertLessThanOrEqual(panelFrame.maxY, buttonFrame.minY + 4,
+                                     "底栏的更多浮窗应在按钮上方", file: file, line: line)
+        }
+        XCTAssertTrue(app.frame.contains(panelFrame), "播放更多浮窗应完整位于屏幕内", file: file, line: line)
     }
 
     private func waitFor(_ element: XCUIElement, _ predicate: String,

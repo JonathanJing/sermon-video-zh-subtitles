@@ -20,6 +20,9 @@ struct PlaybackDock: View {
     var current: (() -> Void)? = nil
     var placement: PlaybackDockPlacement = .bottom
     var inSystemBar = false
+    var onMoreTap: (() -> Void)? = nil
+    var onMoreDismiss: (() -> Void)? = nil
+    var onMoreFrameChange: ((CGRect) -> Void)? = nil
 
     var body: some View {
         Group {
@@ -78,7 +81,10 @@ struct PlaybackDock: View {
     }
 
     private var moreButton: some View {
-        Button { showingMore = true } label: {
+        Button {
+            if let onMoreTap { onMoreTap() }
+            else { showingMore = true }
+        } label: {
             VStack(spacing: 1) {
                 Image(systemName: "ellipsis").font(.body.weight(.semibold))
                 if !typeSize.isAccessibilitySize {
@@ -91,89 +97,18 @@ struct PlaybackDock: View {
         .accessibilityLabel(localization.text("更多"))
         .accessibilityIdentifier("playback-more")
         .popover(isPresented: $showingMore, arrowEdge: placement == .trailing ? .trailing : .bottom) {
-            moreControls
+            PlaybackMoreControls(playback: playback, isPreparing: isPreparing,
+                                 alignmentModel: alignmentModel, precision: precision,
+                                 current: current, onClose: { showingMore = false })
                 .presentationCompactAdaptation(.popover)
         }
-    }
-
-    private var moreControls: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text(localization.text("更多")).font(.headline)
-                Spacer()
-                Button { showingMore = false } label: {
-                    Image(systemName: "xmark")
-                        .font(.footnote.weight(.semibold))
-                        .frame(width: 44, height: 44)
-                }
-                .accessibilityLabel(localization.text("关闭"))
-                .accessibilityIdentifier("playback-more-close")
-            }
-            if let alignmentModel {
-                AlignmentControls(model: alignmentModel, compact: true)
-            }
-            if current != nil || precision != nil || playback.undoPosition != nil {
-                utilityActions
-            }
+        .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { frame in
+            onMoreFrameChange?(frame)
         }
-        .padding(12)
-        .frame(width: 320)
-    }
-
-    private var utilityActions: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 8) {
-                if let current { currentButton(current) }
-                if let previous = playback.undoPosition { undoButton(previous) }
-                Spacer(minLength: 0)
-                if let precision { precisionButton(precision) }
-            }
-            VStack(alignment: .leading, spacing: 0) {
-                if let current { currentButton(current) }
-                if let previous = playback.undoPosition { undoButton(previous) }
-                if let precision { precisionButton(precision) }
-            }
+        .onDisappear {
+            onMoreFrameChange?(.null)
+            onMoreDismiss?()
         }
-        .font(.footnote.weight(.medium))
-        .buttonStyle(.plain)
-        .foregroundStyle(.primary)
-    }
-
-    private func currentButton(_ action: @escaping () -> Void) -> some View {
-        Button {
-            showingMore = false
-            action()
-        } label: {
-            Label(localization.text("当前句"), systemImage: "text.line.first.and.arrowtriangle.forward")
-                .frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
-        }
-        .accessibilityLabel(localization.text("回到当前句"))
-        .accessibilityIdentifier("current-cue")
-    }
-
-    private func precisionButton(_ action: @escaping () -> Void) -> some View {
-        Button {
-            showingMore = false
-            DispatchQueue.main.async(execute: action)
-        } label: {
-            Label(localization.text("定位 / 精调"), systemImage: "slider.horizontal.3")
-                .frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
-        }
-        .disabled(!playback.isReady || isPreparing)
-        .accessibilityIdentifier("precision-controls")
-    }
-
-    private func undoButton(_ previous: Double) -> some View {
-        Button {
-            showingMore = false
-            playback.undo()
-        } label: {
-            Label(localization.text("撤销"), systemImage: "arrow.uturn.backward")
-                .frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
-        }
-        .accessibilityLabel(localization.text("撤销跳转，返回 {time}", ["time": PlaybackTime.format(previous)]))
-        .accessibilityIdentifier("undo-seek")
-        .disabled(!playback.isReady || isPreparing)
     }
 
     private var timeAndStatus: some View {
@@ -252,7 +187,10 @@ struct PlaybackDock: View {
     private func setCollapsed(_ collapsed: Bool) {
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
             isCollapsed = collapsed
-            if collapsed { showingMore = false }
+            if collapsed {
+                showingMore = false
+                onMoreDismiss?()
+            }
         }
     }
 
@@ -260,5 +198,98 @@ struct PlaybackDock: View {
     private var playLabel: String {
         if playback.isPlaying || playback.isWaiting { return localization.text("暂停播放") }
         return localization.text(playback.resumePosition == nil ? "开始播放" : "继续收听")
+    }
+}
+
+struct PlaybackMoreControls: View {
+    @ObservedObject private var localization = AppLocalization.shared
+    @ObservedObject var playback: PlaybackController
+    var isPreparing: Bool
+    var alignmentModel: AppModel?
+    var precision: (() -> Void)?
+    var current: (() -> Void)?
+    var onClose: () -> Void
+    var width: CGFloat = 320
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text(localization.text("更多")).font(.headline)
+                Spacer()
+                Button(action: onClose) {
+                    Image(systemName: "xmark")
+                        .font(.footnote.weight(.semibold))
+                        .frame(width: 44, height: 44)
+                }
+                .accessibilityLabel(localization.text("关闭"))
+                .accessibilityIdentifier("playback-more-close")
+            }
+            if let alignmentModel {
+                AlignmentControls(model: alignmentModel, compact: true)
+            }
+            if current != nil || precision != nil || playback.undoPosition != nil {
+                utilityActions
+            }
+        }
+        .padding(12)
+        .frame(width: width)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("playback-more-panel")
+    }
+
+    private var utilityActions: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) {
+                if let current { currentButton(current) }
+                if let previous = playback.undoPosition { undoButton(previous) }
+                Spacer(minLength: 0)
+                if let precision { precisionButton(precision) }
+            }
+            VStack(alignment: .leading, spacing: 0) {
+                if let current { currentButton(current) }
+                if let previous = playback.undoPosition { undoButton(previous) }
+                if let precision { precisionButton(precision) }
+            }
+        }
+        .font(.footnote.weight(.medium))
+        .buttonStyle(.plain)
+        .foregroundStyle(.primary)
+    }
+
+    private func currentButton(_ action: @escaping () -> Void) -> some View {
+        Button {
+            onClose()
+            action()
+        } label: {
+            Label(localization.text("当前句"), systemImage: "text.line.first.and.arrowtriangle.forward")
+                .frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
+        }
+        .accessibilityLabel(localization.text("回到当前句"))
+        .accessibilityIdentifier("current-cue")
+    }
+
+    private func precisionButton(_ action: @escaping () -> Void) -> some View {
+        Button {
+            onClose()
+            DispatchQueue.main.async(execute: action)
+        } label: {
+            Label(localization.text("定位 / 精调"), systemImage: "slider.horizontal.3")
+                .frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
+        }
+        .disabled(!playback.isReady || isPreparing)
+        .accessibilityIdentifier("precision-controls")
+    }
+
+    private func undoButton(_ previous: Double) -> some View {
+        Button {
+            onClose()
+            playback.undo()
+        } label: {
+            Label(localization.text("撤销"), systemImage: "arrow.uturn.backward")
+                .frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
+        }
+        .accessibilityLabel(localization.text("撤销跳转，返回 {time}", ["time": PlaybackTime.format(previous)]))
+        .accessibilityIdentifier("undo-seek")
+        .disabled(!playback.isReady || isPreparing)
     }
 }
