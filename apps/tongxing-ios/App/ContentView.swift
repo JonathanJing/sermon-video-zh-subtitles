@@ -45,6 +45,10 @@ struct ContentView: View {
     @ScaledMetric(relativeTo: .title2) private var readingSize: CGFloat = 26
     @ViewState private var sheet: ListeningSheet?
     @ViewState private var returnToCurrent = UUID()
+    @ViewState private var showingPlaybackMore = false
+    @ViewState private var playbackMoreButtonFrame: CGRect = .null
+    @ViewState private var playbackMorePanelSize = CGSize(width: 320, height: 176)
+    @ViewState private var playbackMorePlacement: PlaybackDockPlacement = .bottom
 
     init(model: AppModel) {
         self.model = model
@@ -58,6 +62,7 @@ struct ContentView: View {
                 controlRegion: controlRegion,
                 usesTrailingDock: controlRegion.width >= 700 && controlRegion.height < 700
             )
+            .overlay { playbackMoreOverlay }
         }
         .environment(\.locale, localization.locale)
         .onChange(of: scenePhase) { _, phase in
@@ -287,8 +292,57 @@ struct ContentView: View {
             precision: model.selectedTrack == nil ? nil : { sheet = .precision },
             current: model.selectedTrack == nil ? nil : { returnToCurrent = UUID() },
             placement: placement,
-            inSystemBar: inSystemBar
+            inSystemBar: inSystemBar,
+            onMoreTap: {
+                playbackMorePlacement = placement
+                showingPlaybackMore = true
+            },
+            onMoreDismiss: { showingPlaybackMore = false },
+            onMoreFrameChange: { playbackMoreButtonFrame = $0 }
         )
+    }
+
+    private func playbackMoreControls(width: CGFloat) -> some View {
+        PlaybackMoreControls(
+            playback: playback,
+            isPreparing: model.isPreparing || model.isPreparingPublishedAudio,
+            alignmentModel: model,
+            precision: model.selectedTrack == nil ? nil : { sheet = .precision },
+            current: model.selectedTrack == nil ? nil : { returnToCurrent = UUID() },
+            onClose: { showingPlaybackMore = false },
+            width: width
+        )
+    }
+
+    @ViewBuilder private var playbackMoreOverlay: some View {
+        if showingPlaybackMore && !playbackMoreButtonFrame.isNull {
+            GeometryReader { proxy in
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture { showingPlaybackMore = false }
+                    .accessibilityHidden(true)
+                playbackMoreControls(width: min(320, max(0, proxy.size.width - 24)))
+                    .listeningGlassSurface()
+                    .onGeometryChange(for: CGSize.self, of: { $0.size }) { size in
+                        playbackMorePanelSize = size
+                    }
+                    .position(playbackMorePosition(in: proxy))
+            }
+        }
+    }
+
+    private func playbackMorePosition(in proxy: GeometryProxy) -> CGPoint {
+        let root = proxy.frame(in: .global)
+        let button = playbackMoreButtonFrame.offsetBy(dx: -root.minX, dy: -root.minY)
+        let width = min(320, max(0, proxy.size.width - 24))
+        let height = playbackMorePanelSize.height
+        let proposedX = playbackMorePlacement == .trailing
+            ? button.minX - width - 10 : button.midX - width / 2
+        let proposedY = playbackMorePlacement == .trailing
+            ? button.midY - height / 2 : button.minY - height - 8
+        let x = min(max(proposedX, 12), max(12, proxy.size.width - width - 12))
+        let y = min(max(proposedY, 12), max(12, proxy.size.height - height - 12))
+        return CGPoint(x: x + width / 2, y: y + height / 2)
     }
 
     private var trailingNavigationActions: some View {
