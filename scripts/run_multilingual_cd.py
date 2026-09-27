@@ -54,7 +54,8 @@ def run_command(*args: str) -> None:
 
 def release_voice_samples(candidate: Path, out: Path, *, execute: bool,
                           expected_commit: str | None,
-                          expected_build_report_sha256: str | None) -> dict:
+                          expected_build_report_sha256: str | None,
+                          legacy_release: Path | None) -> dict:
     """Publish a demo-only Production overlay through the same main-branch gate."""
     from datetime import datetime, timezone
     try:
@@ -65,6 +66,23 @@ def release_voice_samples(candidate: Path, out: Path, *, execute: bool,
     build_sha = hosting.digest(candidate / "build-report.json")
     if expected_build_report_sha256 and build_sha != expected_build_report_sha256:
         raise ValueError("Selected candidate build report changed")
+    report = voices.verify_candidate(candidate)
+    legacy_feedback = None
+    if report.get("legacyWeeklyReleaseBuildReportSha256"):
+        if (legacy_release is None
+                or hosting.digest(legacy_release / "build-report.json") !=
+                report["legacyWeeklyReleaseBuildReportSha256"]):
+            raise ValueError("Voice overlay weekly refresh requires its bound legacy release")
+        if report["feedbackEnabled"]:
+            if (not (candidate / "feedback-catalog.json").is_file()
+                    or hosting.digest(candidate / "feedback-catalog.json") != report.get(
+                        "feedbackCatalogSha256")
+                    or hosting.digest(legacy_release / "feedback-catalog.json") != report.get(
+                        "feedbackCatalogSha256")):
+                raise ValueError("Voice overlay feedback catalog differs from weekly release")
+            legacy_feedback = legacy_release
+    elif legacy_release is not None:
+        raise ValueError("Voice overlay does not include the selected legacy release")
     code_sha = git_value("rev-parse", "HEAD")
     if execute:
         if not expected_commit or not expected_build_report_sha256:
@@ -78,7 +96,6 @@ def release_voice_samples(candidate: Path, out: Path, *, execute: bool,
         run_command(str(ROOT / "scripts/stage_production_voice_samples.py"), "preflight",
                     "--candidate", str(candidate), "--out", str(preflight))
         receipt = hosting.load(preflight)
-        report = voices.verify_candidate(candidate)
         if (receipt.get("status") != "pass" or receipt.get("phase") != "baseline"
                 or receipt.get("buildReportSha256") != build_sha
                 or receipt.get("checkedFiles") != len(report["baseFiles"])):
@@ -87,6 +104,17 @@ def release_voice_samples(candidate: Path, out: Path, *, execute: bool,
                       "status": "validated_not_deployed", "siteId": voices.SITE,
                       "projectId": voices.PROJECT, "buildReportSha256": build_sha,
                       "preflightSha256": hosting.digest(preflight)}
+        if legacy_feedback is not None:
+            feedback_args = [str(ROOT / "experiments/sermon-dubbing-poc/deploy_feedback.py"),
+                             "--release", str(legacy_feedback),
+                             "--out", str(out / "feedback-api")]
+            if execute:
+                feedback_args.append("--execute")
+            run_command(*feedback_args)
+            feedback_receipt = hosting.load(out / "feedback-api/deployment-receipt.json")
+            if feedback_receipt.get("status") != (
+                    "deployed_verification_pending" if execute else "prepared_not_deployed"):
+                raise ValueError("Feedback API did not reach the expected deployment state")
         if execute:
             command = ["npx", "--yes", "firebase-tools@15.29.0", "deploy", "--only",
                        "hosting", "--project", voices.PROJECT, "--non-interactive",
@@ -113,7 +141,9 @@ def release_voice_samples(candidate: Path, out: Path, *, execute: bool,
                   "preflightSha256": hosting.digest(preflight),
                   "deploymentSha256": hosting.digest(deployment_path),
                   "httpVerificationSha256": hosting.digest(verification) if execute else None,
-                  "feedbackDeploymentStatus": "unchanged",
+                  "feedbackDeploymentStatus": (
+                      "deployed_verification_pending" if execute else "prepared_not_deployed"
+                  ) if legacy_feedback is not None else "unchanged",
                   "deviceAcceptance": "not_run", "venueAcceptance": "not_run"}
         (out / "cd-receipt.json").write_text(
             json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
@@ -142,11 +172,12 @@ def release(mode: str, candidate: Path, out: Path, *, execute: bool,
     if expected_build_report_sha256 and build_sha != expected_build_report_sha256:
         raise ValueError("Selected candidate build report changed")
     if report["schemaVersion"] == "sermon-production-voice-overlay-v1":
-        if mode != "production" or legacy_release is not None:
+        if mode != "production":
             raise ValueError("Voice audition overlay is Production only")
         return release_voice_samples(candidate, out, execute=execute,
                                      expected_commit=expected_commit,
-                                     expected_build_report_sha256=expected_build_report_sha256)
+                                     expected_build_report_sha256=expected_build_report_sha256,
+                                     legacy_release=legacy_release)
     legacy_feedback = None
     if report.get("legacyWeeklyReleaseBuildReportSha256"):
         if mode != "production" or legacy_release is None:
