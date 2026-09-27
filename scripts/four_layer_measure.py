@@ -28,6 +28,10 @@ from scripts import sermon_accounting as accounting
 AUDIT_SCHEMA = "sermon-four-layer-timing-audit-v1"
 STEP_PATTERN = re.compile(r"L[1-4]-\d{2}(?:@[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*)?")
 SUBSTAGE_PATTERN = re.compile(r"[a-z][a-z0-9_]{1,39}")
+PUBLIC_SUBSTAGES = {
+    "initial_translation", "independent_review", "unit_synthesis",
+    "audio_validation", "schedule_sync",
+}
 
 
 def stage_name(step_id: str) -> str:
@@ -49,6 +53,13 @@ def producer_substage(name: str, *, billing: str = "api"):
         raise ValueError("invalid billing category")
     with accounting.stage(f"{parent}.sub.{name}", billing=billing):
         yield
+
+
+def record_substage_metrics(metrics: dict) -> None:
+    """Append only the supplied aggregate metrics to the active child span."""
+    stage = accounting._stage.get() or os.environ.get("SERMON_ACCOUNTING_STAGE", "")
+    if stage.startswith("four_layer.L") and ".sub." in stage:
+        accounting.record_workload(stage, metrics)
 
 
 def configured_ledger(path: Path | None) -> Path | None:
@@ -136,7 +147,7 @@ def timing_audit(ledger: dict, events: list[dict], *, damaged_rows: int = 0) -> 
     substage_runs: dict[str, dict[str, dict[str, dict]]] = defaultdict(
         lambda: defaultdict(lambda: defaultdict(lambda: {
             "attempts": 0, "failedAttempts": 0, "executionSeconds": 0.0,
-            "completedUnits": 0, "running": 0})))
+            "completedUnits": 0, "running": 0, "metrics": {}})))
     substage_spans: dict[str, tuple[str, str, str]] = {}
     step_stage_names = {stage_name(step): step for step in ledger["steps"]}
     for event in scoped_events:
@@ -179,6 +190,16 @@ def timing_audit(ledger: dict, events: list[dict], *, damaged_rows: int = 0) -> 
                     **(by_span[span_id].get("workload") or {}),
                     **(event.get("metrics") if isinstance(event.get("metrics"), dict) else {}),
                 }
+            elif isinstance(span_id, str) and span_id in substage_spans:
+                child_step, parent_span, child_id = substage_spans[span_id]
+                metrics = event.get("metrics") if isinstance(event.get("metrics"), dict) else {}
+                safe_keys = {"audioSeconds", "overLimitUnits", "clipDurationSeconds",
+                             "plannedDurationSeconds"}
+                target = substage_runs[child_step][parent_span][child_id]["metrics"]
+                for key, value in metrics.items():
+                    if key not in safe_keys or not isinstance(value, (int, float)) or isinstance(value, bool):
+                        continue
+                    target[key] = target.get(key, 0) + value if key == "audioSeconds" else value
             continue
         if substage and isinstance(span_id, str) and span_id in substage_spans:
             _, parent_span, _ = substage_spans[span_id]
@@ -246,8 +267,12 @@ def timing_audit(ledger: dict, events: list[dict], *, damaged_rows: int = 0) -> 
         latest_substages = substage_runs.get(step, {}).get(latest_parent, {})
         parent_workload = next((attempt.get("workload") for attempt in reversed(attempt_history.get(step, []))
                                 if attempt.get("spanId") == latest_parent and attempt.get("workload")), {})
-        total_units = parent_workload.get("translationGroups") if isinstance(parent_workload, dict) else None
+        total_units = None
+        if isinstance(parent_workload, dict):
+            count_key = "translationGroups" if step.startswith("L2-") else "speechUnits"
+            total_units = parent_workload.get(count_key)
         for substage, data in sorted(latest_substages.items()):
+            child_total_units = None if substage == "schedule_sync" else total_units
             open_ages = []
             for span_id, (open_step, open_parent, open_substage) in substage_spans.items():
                 if open_step == step and open_parent == latest_parent and open_substage == substage:
@@ -263,10 +288,11 @@ def timing_audit(ledger: dict, events: list[dict], *, damaged_rows: int = 0) -> 
             child_rows.append({"id": substage, "attempts": data["attempts"],
                                "failedAttempts": data["failedAttempts"],
                                "completedUnits": data["completedUnits"],
-                               "totalUnits": total_units,
+                               "totalUnits": child_total_units,
                                "running": data["running"],
                                "executionSeconds": round(data["executionSeconds"], 3),
-                               "openElapsedSeconds": round(max(open_ages), 3) if open_ages else None})
+                               "openElapsedSeconds": round(max(open_ages), 3) if open_ages else None,
+                               **data["metrics"]})
         rows.append({"step": step, "status": state["status"],
                      "measuredExecutionSeconds": round(execution["executionSeconds"], 3) if execution else None,
                      "executionAttempts": execution["attempts"] if execution else 0,

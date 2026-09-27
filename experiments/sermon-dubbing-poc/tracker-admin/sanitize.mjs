@@ -2,7 +2,8 @@
 const PAGE_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,159}$/;
 const LOCALE = /^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/;
 const STEP = /^L[1-4]-\d{2}(?:@[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*)?$/;
-const SUBSTAGE = ['initial_translation', 'independent_review'];
+const SUBSTAGE = ['initial_translation', 'independent_review', 'unit_synthesis',
+  'audio_validation', 'schedule_sync'];
 const STATUS = ['pending', 'running', 'waiting_review', 'blocked', 'complete'];
 const DELIVERY = ['unknown', 'not_generated', 'generated_local', 'http_verified',
   'declared_unchecked', 'index_missing', 'hash_mismatch', 'binding_invalid',
@@ -133,6 +134,10 @@ export function sanitizeSnapshot(input) {
             running: number(child.running),
             executionSeconds: number(child.executionSeconds),
             openElapsedSeconds: child.openElapsedSeconds == null ? null : elapsed(child.openElapsedSeconds),
+            audioSeconds: child.audioSeconds == null ? null : number(child.audioSeconds),
+            overLimitUnits: child.overLimitUnits == null ? null : number(child.overLimitUnits),
+            clipDurationSeconds: child.clipDurationSeconds == null ? null : number(child.clipDurationSeconds),
+            plannedDurationSeconds: child.plannedDurationSeconds == null ? null : number(child.plannedDurationSeconds),
           })),
       },
     })),

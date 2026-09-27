@@ -397,12 +397,12 @@ def build_snapshot(ledger: dict, *, monitor: dict | None = None,
                           if step["status"] in {"running", "waiting_review"} else None)
         sub_stages = []
         for child in timing.get("subStages", []):
-            if not isinstance(child, dict) or child.get("id") not in {
-                    "initial_translation", "independent_review"}:
+            if not isinstance(child, dict) or child.get("id") not in measure.PUBLIC_SUBSTAGES:
                 continue
             sub_stages.append({field: child.get(field) for field in (
                 "id", "attempts", "failedAttempts", "completedUnits", "totalUnits",
-                "running", "executionSeconds", "openElapsedSeconds")})
+                "running", "executionSeconds", "openElapsedSeconds", "audioSeconds",
+                "overLimitUnits", "clipDurationSeconds", "plannedDurationSeconds")})
         steps.append({"id": key, "layer": step["layer"], "locale": step["locale"],
                       "status": step["status"], "doneUnits": step["doneUnits"],
                       "totalUnits": step["totalUnits"],
