@@ -152,12 +152,39 @@ def _entries(raw, tier, duration):
     return validated
 
 
-def _segments(raw, chunk, text, spoken, mapping):
+def _drop_phone_empty_duplicates(words, phones, spoken):
+    """Accept only duplicate MFA words spanning a long pause with no phones."""
+    if [entry[2] for entry in words] == spoken:
+        return words, []
+    kept, dropped = [], []
+    for index, (start, end, label) in enumerate(words):
+        if end - start <= 5 or any(s >= start - 1e-6 and e <= end + 1e-6
+                                     for s, e, _ in phones):
+            kept.append(words[index])
+            continue
+        neighbors = [words[j] for j in (index - 1, index + 1) if 0 <= j < len(words)]
+        has_spoken_duplicate = any(
+            neighbor[2] == label and any(s >= neighbor[0] - 1e-6 and e <= neighbor[1] + 1e-6
+                                         for s, e, _ in phones)
+            for neighbor in neighbors
+        )
+        if not has_spoken_duplicate:
+            kept.append(words[index])
+            continue
+        dropped.append({'word': label, 'start': start, 'end': end,
+                        'reason': 'long_phone_empty_duplicate'})
+    if [entry[2] for entry in kept] != spoken:
+        raise ValueError('MFA aligned words differ from frozen reference (missing, extra, or changed words)')
+    return kept, dropped
+
+
+def _segments(raw, chunk, text, spoken, mapping, normalization_events=None):
     duration = float(chunk['end']) - float(chunk['start'])
     words = _entries(raw, 'words', duration)
     phones = _entries(raw, 'phones', duration)
-    if [entry[2] for entry in words] != spoken:
-        raise ValueError('MFA aligned words differ from frozen reference (missing, extra, or changed words)')
+    words, dropped = _drop_phone_empty_duplicates(words, phones, spoken)
+    if normalization_events is not None:
+        normalization_events.extend(dropped)
     assigned_phone_count = 0
     for start, end, word in words:
         assigned = [(s, e, p) for s, e, p in phones if s >= start - 1e-6 and e <= end + 1e-6]
@@ -324,10 +351,14 @@ def align_reference_chunks(chunks, clip_path, outdir, *, mfa_executable,
               '--no_textgrid_cleanup', '--clean', '--overwrite'], env=env,
              log=run / 'align.log', timeout=max(600, min(14400, int(total_duration * 6 + 300))))
     segments = []
+    normalization_events = []
     for path, (chunk, text, spoken, mapping) in zip(raw_paths, prepared):
         if not path.is_file():
             raise ValueError(f'MFA did not align required chunk: {path.name}')
-        segments.extend(_segments(json.loads(path.read_text()), chunk, text, spoken, mapping))
+        chunk_events = []
+        segments.extend(_segments(json.loads(path.read_text()), chunk, text, spoken, mapping,
+                                  normalization_events=chunk_events))
+        normalization_events.extend({'chunkId': chunk.get('id'), **event} for event in chunk_events)
     for i, segment in enumerate(segments):
         segment['id'] = i
         segment['mfaManifest'] = str(manifest_path)
@@ -335,6 +366,7 @@ def align_reference_chunks(chunks, clip_path, outdir, *, mfa_executable,
         _write(manifest_path, {'schemaVersion': SCHEMA_VERSION, 'identity': identity,
                               'outputHashes': {str(p.relative_to(run)): _sha(p) for p in raw_paths},
                               'dictionaryUsedSha256': _sha(run / 'dictionary.dict'),
+                              'normalizationEvents': normalization_events,
                               'requires_operator_review': True,
                               'limitations': ['Times are forced-alignment estimates, not human verified.',
                                               'Integer expansion and G2P pronunciations are unverified candidates.']})
