@@ -395,6 +395,14 @@ def build_snapshot(ledger: dict, *, monitor: dict | None = None,
             open_execution_seconds = max((age for age in open_ages if age is not None), default=None)
         status_seconds = (elapsed_since(status_starts.get(key), generated)
                           if step["status"] in {"running", "waiting_review"} else None)
+        sub_stages = []
+        for child in timing.get("subStages", []):
+            if not isinstance(child, dict) or child.get("id") not in {
+                    "initial_translation", "independent_review"}:
+                continue
+            sub_stages.append({field: child.get(field) for field in (
+                "id", "attempts", "failedAttempts", "completedUnits", "totalUnits",
+                "running", "executionSeconds", "openElapsedSeconds")})
         steps.append({"id": key, "layer": step["layer"], "locale": step["locale"],
                       "status": step["status"], "doneUnits": step["doneUnits"],
                       "totalUnits": step["totalUnits"],
@@ -410,6 +418,7 @@ def build_snapshot(ledger: dict, *, monitor: dict | None = None,
                           "closedReviewWaits": timing.get("closedReviewWaits", 0),
                           "operatorReviewWaitSeconds": timing.get("operatorReviewWaitSeconds"),
                           "openReviewWait": timing.get("openReviewWait", False),
+                          "subStages": sub_stages,
                       }})
     snapshot = {
         "schemaVersion": SCHEMA,

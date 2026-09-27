@@ -29,6 +29,23 @@ test('snapshot validation rejects unsafe IDs and missing scope', () => {
   }
 });
 
+test('snapshot sanitizer preserves only approved aggregate substage metrics', () => {
+  const valid = { schemaVersion: 'sermon-public-tracker-snapshot-v2', pageId: 'week-2026-09-20',
+    target: 'dev', locales: [], source: {}, progress: {}, readOnly: true,
+    steps: [{ id: 'L2-02@ko', layer: 2, locale: 'ko', status: 'running',
+      timing: { subStages: [
+        { id: 'initial_translation', attempts: 3, failedAttempts: 1, completedUnits: 2,
+          totalUnits: 5, running: 1, executionSeconds: 42.5, openElapsedSeconds: 8 },
+        { id: 'raw_error_text', reason: 'private content' },
+      ] } }] };
+  const publicSnapshot = validateSnapshot(valid);
+  assert.deepEqual(publicSnapshot.steps[0].timing.subStages, [{
+    id: 'initial_translation', attempts: 3, failedAttempts: 1, completedUnits: 2,
+    totalUnits: 5, running: 1, executionSeconds: 42.5, openElapsedSeconds: 8,
+  }]);
+  assert.equal(JSON.stringify(publicSnapshot).includes('private content'), false);
+});
+
 test('withdrawn delivery survives the public projection', () => {
   const snapshot = { schemaVersion: 'sermon-public-tracker-snapshot-v1',
     pageId: 'week-2026-09-20', target: 'dev', locales: [{ locale: 'ko', delivery: {
