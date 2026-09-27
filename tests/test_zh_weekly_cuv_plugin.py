@@ -77,18 +77,53 @@ class ChineseWeeklyCuvTests(unittest.TestCase):
                                     group(text, source_hash=source_hash), receipt)
         return {row["checkId"]: row["status"] for row in rows}
 
-    def test_eight_candidate_references_do_not_grant_human_approval(self):
+    def test_embedded_review_is_source_bound_and_covers_eight_candidates(self):
         self.assertEqual(len(plugin.CANDIDATE_VERSES), 8)
         library = CuvLibrary.from_path()
         for references in plugin.CANDIDATE_VERSES.values():
             for reference in references:
                 self.assertEqual(library.lookup(reference)["edition"]["id"], "cmn-cu89s")
-        self.assertIsNone(plugin.APPROVED_BOUNDARY_REVIEW)
+        approved = plugin.APPROVED_BOUNDARY_REVIEW
+        self.assertTrue(approved["humanApproval"])
+        self.assertEqual(len(approved["decisions"]), 8)
+        self.assertEqual(approved["decisions"][3]["paraphraseUnitIds"],
+                         ["0-u167", "0-u168"])
+        exact_scope = {"sourceScope": {
+            "englishSourcePackageJsonSha256": approved["englishSourcePackageJsonSha256"],
+            "anchorManifestSha256": approved["anchorManifestJsonSha256"],
+        }}
+        parts, valid, _ = plugin._approved_parts(exact_scope, approved)
+        self.assertTrue(valid)
+        self.assertEqual(sum(len(rows) for rows in parts.values()), 19)
         text = "约翰说：" + self.excerpt
         self.assertEqual(self.checks(text, None)["cuv_exact_quote"], "fail")
         self.assertEqual({row["checkId"] for row in plugin.review_group(
             policy(), [UNIT], group(text))}, set(plugin.REQUIRED))
         self.assertEqual(plugin.review_group(policy(), [UNIT], group(text))[1]["status"], "fail")
+
+    def test_pinned_cuv_name_form_wins_inside_approved_quote(self):
+        approved = plugin.APPROVED_BOUNDARY_REVIEW
+        source_a = "Day and night, they never stop saying, Holy, holy, holy, Lord God, the Almighty."
+        source_b = "Who was, who is, and who is to come."
+        selected = approved["decisions"][1]["parts"]
+        target = "他们昼夜不停地说：" + "".join(part["cuvExcerpt"] for part in selected)
+        local_policy = policy()
+        local_policy["sourceScope"] = {
+            "englishSourcePackageJsonSha256": approved["englishSourcePackageJsonSha256"],
+            "anchorManifestSha256": approved["anchorManifestJsonSha256"],
+        }
+        local_policy["terminology"]["properNames"] = [
+            {"source": "Lord God", "target": "主神", "reviewStatus": "pending"},
+        ]
+        units = [{"sourceUnitId": "0-u086", "english": source_a},
+                 {"sourceUnitId": "0-u087", "english": source_b}]
+        value = {"englishSourcePackageJsonSha256": approved["englishSourcePackageJsonSha256"],
+                 "sourceUnitIds": ["0-u086", "0-u087"], "targetText": target,
+                 "targetUtterances": [target]}
+        checks = {row["checkId"]: row["status"] for row in
+                  plugin.review_group(local_policy, units, value)}
+        self.assertEqual(checks["cuv_exact_quote"], "pass")
+        self.assertEqual(checks["number_name_reading"], "pass")
 
     def test_hypothetical_review_checks_mixed_unit_and_exact_cuv(self):
         receipt = simulated_review(self.excerpt, self.excerpt_hash)

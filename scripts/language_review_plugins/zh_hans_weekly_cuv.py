@@ -1,8 +1,7 @@
 """Chinese Layer 2 screen for the Sep 27 Drive sermon.
 
-The eight Revelation references below are candidate locations, not approvals.
-The production entry point fails the CUV check until a source-bound human
-boundary receipt is embedded after review and this plugin is rehashed.
+The embedded eight-reference boundary decision is source and hash bound.
+It approves CUV selection rules, not the complete Chinese translation.
 """
 from __future__ import annotations
 
@@ -24,7 +23,7 @@ except ImportError:  # Direct producer execution from scripts/.
 
 
 PLUGIN_ID = "zh-Hans-weekly-cuv-v1"
-PLUGIN_VERSION = "2026-09-27-boundary-review-pending-v1"
+PLUGIN_VERSION = "2026-09-27-source-bound-cuv-approved-v1"
 REQUIRED = ["spoken_chinese", "cuv_exact_quote", "number_name_reading", "tts_segmentation"]
 CUV_EDITION_ID = "cmn-cu89s"
 
@@ -67,10 +66,176 @@ MIXED_UNIT_QUOTE_LIMITS = {
     "0-u240": (9, 103),
 }
 
-# Set this only from the user's review of the final anchor's eight boundaries.
-# Required receipt fields are validated below. Its data becomes part of the
-# plugin implementation hash; the current machine worksheet is insufficient.
-APPROVED_BOUNDARY_REVIEW: dict | None = None
+# User confirmed the eight-candidate recommendation. Exact unit fragments
+# were resolved from the pinned CUV library and final English anchor; the
+# receipt records that the user did not review this JSON line by line.
+# This static value is included in the plugin implementation hash.
+APPROVED_BOUNDARY_REVIEW: dict | None = {'decision': 'approved',
+ 'humanApproval': True,
+ 'approvedBy': 'user',
+ 'sourceMediaSha256': '374662dc7c00993820360b2095e277ecd7ebf17bc4d873ccf7e2b76a6c7c7930',
+ 'englishSourcePackageJsonSha256': 'a0cf67203bae17bff080b2d1af41f88bdef786345a435021c2739d14f15394ac',
+ 'anchorManifestJsonSha256': '9805110b89021c23de4b20b46b44269572b4ac476d588c0a897a297039a065c5',
+ 'reviewWorksheetSha256': '2e37446fda7a23329c1a6135df7af6cb72a4e0debf89ea0b22ee2522d1a29e65',
+ 'cuvEditionId': 'cmn-cu89s',
+ 'approvedReceiptSha256': '22deab032d8445537841ded01e89223acbe748dec51b7a509d3ef0c95af27eca',
+ 'decisions': [{'candidateId': 'rev-4-2-3',
+                'classification': 'partial_direct_quote',
+                'paraphraseUnitIds': [],
+                'parts': [{'sourceUnitId': '0-u067',
+                           'englishStartOffset': 26,
+                           'englishEndOffset': 122,
+                           'englishExcerptSha256': 'c8f82fd453cc56f685ebe13a208e8f791b440200c0df8b72c44fbbf6e9961b51',
+                           'reference': 'REV 4:2',
+                           'cuvExcerpt': '我立刻被[圣]灵感动，见有一个宝座安置在天上，又有一位坐在宝座上。',
+                           'cuvExcerptSha256': 'aec7b76d54bfd09a46afa14639fe89e875ad910b8842ae6b06e3e669a598da3a'},
+                          {'sourceUnitId': '0-u068',
+                           'englishStartOffset': 0,
+                           'englishEndOffset': 141,
+                           'englishExcerptSha256': '1450d14bc8c4bef97f18ffc5ddad80fc33183a67de78269b25bfe21399d15c3e',
+                           'reference': 'REV 4:3',
+                           'cuvExcerpt': '看那坐着的，好像碧玉和红宝石；又有虹围着宝座，好像绿宝石。',
+                           'cuvExcerptSha256': '25e72b52060a2b47ab2920d14054f479002bf11704cb832da878fc225af7434d'}]},
+               {'candidateId': 'rev-4-8',
+                'classification': 'partial_direct_quote',
+                'paraphraseUnitIds': [],
+                'parts': [{'sourceUnitId': '0-u086',
+                           'englishStartOffset': 39,
+                           'englishEndOffset': 80,
+                           'englishExcerptSha256': '6aaf9a5a95b0f819f3df00dd826524c23c1bf873f76bd95dfb5d495e03a56a42',
+                           'reference': 'REV 4:8',
+                           'cuvExcerpt': '圣哉！圣哉！圣哉！ 主 神是',
+                           'cuvExcerptSha256': 'c810045b110271524a8ce018642b30b627eaf0ddd4de5970c01ff5ccef03f52e'},
+                          {'sourceUnitId': '0-u087',
+                           'englishStartOffset': 0,
+                           'englishEndOffset': 36,
+                           'englishExcerptSha256': 'a1653ea112d2343eb7f81bb8e5b7b02042dcdc8d9a577832400bdb9110a53d39',
+                           'reference': 'REV 4:8',
+                           'cuvExcerpt': '昔在、今在、 以后[永]在的全能者。',
+                           'cuvExcerptSha256': '1960a58dbdd67b4f52b551ceb7eea296eeb4bfbc29ce60932af754442ac4a429'}]},
+               {'candidateId': 'rev-4-10-11',
+                'classification': 'partial_direct_quote',
+                'paraphraseUnitIds': [],
+                'parts': [{'sourceUnitId': '0-u138',
+                           'englishStartOffset': 50,
+                           'englishEndOffset': 120,
+                           'englishExcerptSha256': '71545b8bf47d7eb903f4f1051fb6ed42117268df7ffbc6ffdb2fea53082d6155',
+                           'reference': 'REV 4:11',
+                           'cuvExcerpt': '我们的主，我们的 神， 你是配得荣耀、尊贵、权柄的；',
+                           'cuvExcerptSha256': 'dea6c99117b8356fe9d7c50eed94f439e615af8c34d1d70279ced0141394fe42'},
+                          {'sourceUnitId': '0-u139',
+                           'englishStartOffset': 0,
+                           'englishEndOffset': 82,
+                           'englishExcerptSha256': '57a2a9843978d5864c5828efaa8d5b5dc4cb6bd705076a067efc7cbf1d6f4478',
+                           'reference': 'REV 4:11',
+                           'cuvExcerpt': '因为你创造了万物， 并且万物是因你的旨意被创造而有的。',
+                           'cuvExcerptSha256': '66d17903ddef41e7ab0d0d1438f816a5297a630eb3deb2dd7a60e404e533f5d8'}]},
+               {'candidateId': 'rev-5-1-4',
+                'classification': 'partial_direct_quote',
+                'paraphraseUnitIds': ['0-u167', '0-u168'],
+                'parts': [{'sourceUnitId': '0-u161',
+                           'englishStartOffset': 0,
+                           'englishEndOffset': 10,
+                           'englishExcerptSha256': '6457a935d094c5f54b554c6bdd6d7921f31672bba4e99bda68a9d88478b93a78',
+                           'reference': 'REV 5:1',
+                           'cuvExcerpt': '我看见',
+                           'cuvExcerptSha256': 'bc2cf905e8a495c82c2833c6ec364fd61a197076f19eb8a9b81f67a4d8847ea6'},
+                          {'sourceUnitId': '0-u162',
+                           'englishStartOffset': 0,
+                           'englishEndOffset': 111,
+                           'englishExcerptSha256': 'ce6d92c27097628f78b6cc1afb5d77e0576353d14f71795a033dd655ea196344',
+                           'reference': 'REV 5:1',
+                           'cuvExcerpt': '坐宝座的右手中有书卷，里外都写着字，用七印封严了。',
+                           'cuvExcerptSha256': '618ef6fd170484d41282eeb6bba61b430594523116bd7a560f5799f171187bf6'},
+                          {'sourceUnitId': '0-u164',
+                           'englishStartOffset': 0,
+                           'englishEndOffset': 105,
+                           'englishExcerptSha256': 'ddeed883a1d5de7a5557bc983d412e7eaa86cb292a9b1c2426692a22a5ec99a2',
+                           'reference': 'REV 5:2',
+                           'cuvExcerpt': '我又看见一位大力的天使大声宣传说：「有谁配展开那书卷，揭开那七印呢？」',
+                           'cuvExcerptSha256': '170a61175a7e1ecbf502bd72884a941ba5ee6365b5ef54f6d56bc9e627f3d094'},
+                          {'sourceUnitId': '0-u165',
+                           'englishStartOffset': 0,
+                           'englishEndOffset': 102,
+                           'englishExcerptSha256': '79a141881454170b8e592824076c628b1478176118f874073733b004e2f61b69',
+                           'reference': 'REV 5:3',
+                           'cuvExcerpt': '在天上、地上、地底下，没有能展开、能观看那书卷的。',
+                           'cuvExcerptSha256': '7ec32a3c2460dd907f18efe66151eb5fcb7babf5fb58d5430e94e190aeb703d4'}]},
+               {'candidateId': 'rev-5-5',
+                'classification': 'partial_direct_quote',
+                'paraphraseUnitIds': [],
+                'parts': [{'sourceUnitId': '0-u193',
+                           'englishStartOffset': 0,
+                           'englishEndOffset': 48,
+                           'englishExcerptSha256': '2cf0d026b3fce99ceb79da3b887e20bf26e2e06083453f636098f90c896cf0df',
+                           'reference': 'REV 5:5',
+                           'cuvExcerpt': '长老中有一位对我说：「不要哭！',
+                           'cuvExcerptSha256': '23f4dfee58182cd8fd1c2394ce24409ef1bc234154ac74c06475cfb7906c55d2'},
+                          {'sourceUnitId': '0-u194',
+                           'englishStartOffset': 0,
+                           'englishEndOffset': 73,
+                           'englishExcerptSha256': 'bd76354af8d02a76225deeac2791c1fcbcc90fcc7e055e83e791bc04a12f43fc',
+                           'reference': 'REV 5:5',
+                           'cuvExcerpt': '看哪，犹大支派中的狮子，大卫的根，他已得胜，',
+                           'cuvExcerptSha256': '5578d35476cdd9cda826d4ac0a40fbdf0174c035b8802c531f0fee5c0e8c5e98'},
+                          {'sourceUnitId': '0-u195',
+                           'englishStartOffset': 0,
+                           'englishEndOffset': 54,
+                           'englishExcerptSha256': '948a03050eb095a20d87d4f8a7ab3cf90b79045710d28561cf4d1c243ec00768',
+                           'reference': 'REV 5:5',
+                           'cuvExcerpt': '能以展开那书卷，揭开那七印。」',
+                           'cuvExcerptSha256': 'fb934da63cd1a1ee5b0f8be3bc87794ffbe08a67b29e3f77b4450ce5af230fbd'}]},
+               {'candidateId': 'rev-5-6',
+                'classification': 'partial_direct_quote',
+                'paraphraseUnitIds': [],
+                'parts': [{'sourceUnitId': '0-u240',
+                           'englishStartOffset': 9,
+                           'englishEndOffset': 103,
+                           'englishExcerptSha256': 'dc7c9db6a827b47bc8c99082d388fb8b9394f2789eb03379b893eb103f224f38',
+                           'reference': 'REV 5:6',
+                           'cuvExcerpt': '有七角七眼，就是 神的七灵，奉差遣往普天下去的。',
+                           'cuvExcerptSha256': '756760a7765c8417e436dd8df7f348c47a83257556c6839c10ae2d90f2dffde9'}]},
+               {'candidateId': 'rev-5-9-10',
+                'classification': 'partial_direct_quote',
+                'paraphraseUnitIds': [],
+                'parts': [{'sourceUnitId': '0-u256',
+                           'englishStartOffset': 0,
+                           'englishEndOffset': 53,
+                           'englishExcerptSha256': 'ab0b7c2cc3779c8cc60436973a7f9ea81726503a2bf27590dfe9e15f54fe839e',
+                           'reference': 'REV 5:9',
+                           'cuvExcerpt': '你配拿书卷， 配揭开七印；',
+                           'cuvExcerptSha256': '65c66d4f27fa5c57a68f03a63a303950a923527df400207e074f962a4c51a7b2'},
+                          {'sourceUnitId': '0-u257',
+                           'englishStartOffset': 0,
+                           'englishEndOffset': 128,
+                           'englishExcerptSha256': '310efee9d65f4d5b266eebab49793b6db4f3d27c4c5ded2831fadda4ce049573',
+                           'reference': 'REV 5:9',
+                           'cuvExcerpt': '因为你曾被杀， 用自己的血 从各族、各方、各民、各国中买了人来， 叫他们归于 神，',
+                           'cuvExcerptSha256': 'ac15283e73686a75c454500a8ba0f36cd85881434235ceeaf03cebd67fa61bd8'},
+                          {'sourceUnitId': '0-u258',
+                           'englishStartOffset': 0,
+                           'englishEndOffset': 81,
+                           'englishExcerptSha256': '36652542d557b6c3b4fe191a5fd54abc44c30f2c16d4a098af92c1fc79f521f5',
+                           'reference': 'REV 5:10',
+                           'cuvExcerpt': '又叫他们成为国民， 作祭司归于 神， 在地上执掌王权。',
+                           'cuvExcerptSha256': '82250697d5ff6c14eea6070b457d56b672f1116876876b6494aaad2b7245305d'}]},
+               {'candidateId': 'rev-5-12',
+                'classification': 'partial_direct_quote',
+                'paraphraseUnitIds': [],
+                'parts': [{'sourceUnitId': '0-u374',
+                           'englishStartOffset': 0,
+                           'englishEndOffset': 38,
+                           'englishExcerptSha256': '92d5d30d78f6a592d51e881cd65c36c251f2a724d270524e51bc45434ecf6176',
+                           'reference': 'REV 5:12',
+                           'cuvExcerpt': '曾被杀的羔羊是配得',
+                           'cuvExcerptSha256': '3c5d17048ddcff1d98517012ef7288badf409360268b14e1e91d9beddaffcd01'},
+                          {'sourceUnitId': '0-u375',
+                           'englishStartOffset': 0,
+                           'englishEndOffset': 85,
+                           'englishExcerptSha256': '67862c9bfbae73a4dba6e5ed65a9b4e14b9ca80824007361965bae24dc47bb50',
+                           'reference': 'REV 5:12',
+                           'cuvExcerpt': '权柄、丰富、智慧、能力、 尊贵、荣耀、颂赞的。',
+                           'cuvExcerptSha256': '8bf03bb6e7fe82e32a5a55c23997d51595e288835b41329fdf95a1053fc13133'}]}]}
 
 
 @lru_cache(maxsize=1)
@@ -215,10 +380,24 @@ def _review_group(policy: dict, english_units: list[dict], group: dict,
     series_errors = explicit_series_errors(policy, english_units, text)
     spoken_ok = bool(re.search(r"[\u3400-\u9fff]", text)) and not series_errors
     spoken_ok = spoken_ok and not re.search(r"\b(?:TODO|TBD|PLACEHOLDER)\b", text, re.I)
-    missing_names = [term["source"] for term in policy["terminology"]["properNames"]
-                     if term["source"].casefold() in english.casefold()
-                     and (term["reviewStatus"] == "pending" or not term["target"]
-                          or term["target"] not in text)]
+    missing_names = []
+    for term in policy["terminology"]["properNames"]:
+        occurrences = [(unit, match) for unit in english_units
+                       for match in re.finditer(re.escape(term["source"]),
+                                                unit["english"], re.IGNORECASE)]
+        if not occurrences:
+            continue
+        # The pinned CUV is authoritative inside an approved exact quote;
+        # ordinary proper-name spellings still apply to speaker text.
+        outside_quote = any(
+            not (quote_ok and any(part["englishStartOffset"] <= match.start()
+                                  and match.end() <= part["englishEndOffset"]
+                                  for part in parts_by_unit.get(unit["sourceUnitId"], [])))
+            for unit, match in occurrences
+        )
+        if outside_quote and (term["reviewStatus"] == "pending" or not term["target"]
+                              or term["target"] not in text):
+            missing_names.append(term["source"])
     digits = re.findall(r"(?<!\w)(?:\d{1,3}(?:,\d{3})+|\d+)(?!\w)", english)
     lost_digits = [number for number in digits if number not in text]
     number_name_ok = not missing_names and not lost_digits
