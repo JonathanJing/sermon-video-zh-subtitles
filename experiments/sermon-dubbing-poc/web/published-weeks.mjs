@@ -1,0 +1,170 @@
+// Runtime bridge from published Layer 4 assets to the existing listening App.
+// Only the small JSON assets are fetched here. Audio plays directly from Hosting.
+const LOCALES = ['zh-Hans', 'ko', 'es'];
+const LABELS = {
+  'zh-Hans': {
+    source: '完整视频', audio: '中文同步配音', voice: 'Eric Geiger · AI 配音',
+    notice: 'AI 配音采用已批准的精简口播稿，字幕随配音播放；完整文稿另列供阅读。',
+    review: '完整文稿及配音均已人工审核批准',
+    stages: [['文稿审核', '完整文稿已审核批准。'], ['配音与字幕', '配音已审核批准，字幕采用对应口播稿。'], ['线上发布', '正式音轨及文稿已发布，线上文件核验通过。']],
+  },
+  ko: {
+    source: '전체 영상', audio: '한국어 동기화 더빙', voice: 'Eric Geiger · AI 더빙',
+    notice: 'AI 더빙은 승인된 간결한 구술 원고를 사용합니다. 자막은 더빙을 따르며 전체 읽기 원고는 별도로 제공됩니다.',
+    review: '전체 원고와 더빙의 사람 검토 및 승인이 기록되었습니다',
+    stages: [['원고 검토', '전체 원고가 검토 및 승인되었습니다.'], ['더빙과 자막', '더빙이 검토 및 승인되었으며 자막은 해당 구술 원고를 사용합니다.'], ['온라인 게시', '정식 음원과 원고가 게시되었고 온라인 파일 검증을 통과했습니다.']],
+  },
+  es: {
+    source: 'Video completo', audio: 'Doblaje sincronizado en español', voice: 'Eric Geiger · doblaje con IA',
+    notice: 'El doblaje con IA utiliza el guion oral abreviado aprobado. Los subtítulos siguen el audio; el texto íntegro se ofrece por separado.',
+    review: 'El texto íntegro y el doblaje tienen revisión y aprobación humanas registradas',
+    stages: [['Revisión del texto', 'El texto íntegro está revisado y aprobado.'], ['Doblaje y subtítulos', 'El doblaje está revisado y aprobado; los subtítulos utilizan su guion oral.'], ['Publicación', 'El audio oficial y el texto están publicados y sus archivos en línea están verificados.']],
+  },
+};
+const HASH = /^[a-f0-9]{64}$/;
+const ID = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
+const required = (condition, message) => { if (!condition) throw new Error(message); };
+const text = value => typeof value === 'string' && value.trim().length > 0;
+
+function assetPath(value) {
+  required(typeof value === 'string' && /^\/[A-Za-z0-9_./-]+$/.test(value)
+    && !value.includes('//') && !value.split('/').some(part => part === '.' || part === '..'), 'Unsafe published asset path');
+  return value;
+}
+
+async function readJson(fetchImpl, path, expectedHash, timeoutMs, optional = false) {
+  const controller = new AbortController();
+  let timer;
+  const request = async () => {
+    const response = await fetchImpl(assetPath(path), { cache: 'no-cache', signal: controller.signal });
+    if (optional && response.status === 404) return null;
+    required(response.ok, `Published asset unavailable: ${path}`);
+    const bytes = await response.arrayBuffer();
+    if (expectedHash !== undefined) {
+      required(HASH.test(expectedHash), 'Missing published asset hash');
+      const digest = await globalThis.crypto.subtle.digest('SHA-256', bytes);
+      const actual = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+      required(actual === expectedHash, `Published asset hash mismatch: ${path}`);
+    }
+    return JSON.parse(new TextDecoder().decode(bytes));
+  };
+  try {
+    return await Promise.race([request(), new Promise((_, reject) => {
+      timer = setTimeout(() => {
+        controller.abort();
+        reject(new Error(`Published asset request timed out: ${path}`));
+      }, timeoutMs);
+    })]);
+  } finally { clearTimeout(timer); }
+}
+
+function validatedCues(cues, duration) {
+  required(Array.isArray(cues) && cues.length > 0, 'Missing published transcript');
+  let previous = 0;
+  const ids = new Set();
+  return cues.map(cue => {
+    required(Number.isFinite(cue.start) && Number.isFinite(cue.end)
+      && cue.start >= previous && cue.start < cue.end && cue.end <= duration + .001
+      && text(cue.text) && text(cue.textGroupId) && !ids.has(cue.textGroupId), 'Invalid published transcript cue');
+    previous = cue.end;
+    ids.add(cue.textGroupId);
+    return { start: cue.start, end: cue.end, text: cue.text, textGroupId: cue.textGroupId };
+  });
+}
+
+async function loadVariant(fetchImpl, page, locale, timeoutMs) {
+  const target = page.targets[locale];
+  required(target?.contentStatus === 'human_reviewed' && target.audioStatus === 'human_reviewed'
+    && ['text', 'captions', 'audio'].every(capability => target.capabilities?.includes(capability)), 'Target is not ready for playback');
+  const release = await readJson(fetchImpl, target.releasePackageUrl, target.releasePackageJsonSha256, timeoutMs);
+  required(release.schemaVersion === 'sermon-target-language-release-package-v2'
+    && release.pageId === page.id && release.targetLocale === locale && release.contentLocale === locale
+    && release.audioLocale === locale && release.sourceLocale === 'en'
+    && release.status === 'published_http_verified' && release.httpVerification?.status === 'pass'
+    && release.contentStatus === 'human_reviewed' && release.audioStatus === 'human_reviewed', 'Invalid published release identity or status');
+  const assets = {};
+  for (const role of ['content', 'captions', 'audio']) {
+    const matches = release.assets?.filter(asset => asset.role === role) || [];
+    required(matches.length === 1 && HASH.test(matches[0].sha256), `Invalid ${role} asset`);
+    assets[role] = { ...matches[0], path: assetPath(matches[0].path) };
+    const extension = role === 'audio' ? 'mp3' : 'json';
+    const directory = role === 'audio' ? 'media' : role;
+    required(assets[role].path === `/${directory}/${page.id}/${locale}.${extension}`, 'Published asset identity mismatch');
+  }
+  const [content, captions] = await Promise.all([
+    readJson(fetchImpl, assets.content.path, assets.content.sha256, timeoutMs),
+    readJson(fetchImpl, assets.captions.path, assets.captions.sha256, timeoutMs),
+  ]);
+  required(content.schemaVersion === 'sermon-full-video-text-content-v1'
+    && content.pageId === page.id && content.targetLocale === locale && content.sourceLocale === 'en'
+    && content.status === 'human_reviewed' && content.englishSourcePackageJsonSha256 === page.sourceIdentitySha256
+    && content.targetLanguageCandidateJsonSha256 === release.targetLanguageCandidateJsonSha256
+    && HASH.test(release.targetLanguageCandidateJsonSha256), 'Published content identity mismatch');
+  required(['title', 'speaker', 'series', 'scripture', 'summary'].every(key => text(content[key]))
+    && Array.isArray(content.outline) && content.outline.every(text)
+    && Number.isFinite(content.durationSeconds) && content.durationSeconds > 0, 'Invalid published content metadata');
+  const cues = validatedCues(captions.cues, content.durationSeconds);
+  const fullTranscript = validatedCues(content.cues, content.durationSeconds);
+  // Full reading text and shorter spoken captions remain separate, explicitly linked by group ID.
+  const fullIds = new Set(fullTranscript.map(cue => cue.textGroupId));
+  required(cues.length === fullTranscript.length && cues.every(cue => fullIds.has(cue.textGroupId)), 'Spoken captions do not match full-text groups');
+  const labels = LABELS[locale];
+  const track = {
+    id: `${page.id}-${locale}-${assets.audio.sha256.slice(0, 12)}`,
+    audioUrl: assets.audio.path, sha256: assets.audio.sha256,
+    durationSeconds: content.durationSeconds, cues, scope: 'full_reviewed',
+    label: labels.audio, voiceLabel: labels.voice, targetLocale: locale,
+    subtitleTiming: 'source_video_aligned',
+  };
+  return {
+    id: page.id, date: page.date, number: '', targetLocale: locale, defaultTargetLocale: locale, title: content.title,
+    series: content.series, speaker: content.speaker, scripture: content.scripture,
+    sourceUrl: assetPath(content.sourceVideoUrl), sourceLabel: labels.source,
+    sourceRoute: 'full_video', sourceStartSeconds: 0, sourceDurationSeconds: content.durationSeconds,
+    releaseLabel: '正式播放版', humanContentReview: 'approved', audioStatus: 'full_reviewed',
+    audioNotice: labels.notice, contentReview: labels.review,
+    productionStages: labels.stages.map(([label, detail]) => ({ label, detail, status: 'pass' })),
+    centralMessage: content.summary, summary: content.summary,
+    outline: content.outline.map(title => ({ title, points: [] })),
+    questions: [], scriptureRefs: [content.scripture], tracks: [track], fullTranscript,
+    contentSha256: assets.content.sha256, captionsSha256: assets.captions.sha256,
+    releasePackageJsonSha256: target.releasePackageJsonSha256,
+  };
+}
+
+/**
+ * Returns { weeks, defaultWeekId, errors }. Each week has a contentVariants map
+ * keyed by the exact published target locale. Variants contain their own track,
+ * spoken cues and fullTranscript. An unavailable optional catalog leaves legacy
+ * weeks usable; a rejected locale is reported in errors and is never selectable.
+ */
+export async function loadPublishedWeeks(fetchImpl = globalThis.fetch, { requestTimeoutMs = 10000 } = {}) {
+  const timeoutMs = Number.isFinite(requestTimeoutMs) && requestTimeoutMs > 0 ? Math.min(requestTimeoutMs, 30000) : 10000;
+  const empty = { weeks: [], defaultWeekId: null, errors: [] };
+  let catalog;
+  try {
+    catalog = await readJson(fetchImpl, '/multilingual-v3.json', undefined, timeoutMs, true);
+    if (catalog === null) return empty;
+    required(catalog.schemaVersion === 'sermon-multilingual-catalog-v3' && Array.isArray(catalog.pages), 'Invalid published catalog');
+  } catch (error) { return { ...empty, errors: [error.message] }; }
+  const errors = [];
+  const seen = new Set();
+  const weeks = [];
+  for (const page of catalog.pages) {
+    if (!page || typeof page !== 'object' || !ID.test(page.id) || !/^\d{4}-\d{2}-\d{2}$/.test(page.date) || seen.has(page.id)
+      || page.sourceLocale !== 'en' || !HASH.test(page.sourceIdentitySha256) || !page.targets) {
+      errors.push('Invalid published page');
+      continue;
+    }
+    seen.add(page.id);
+    const variants = await Promise.all(LOCALES.filter(locale => page.targets[locale]).map(async locale => {
+      try { return [locale, await loadVariant(fetchImpl, page, locale, timeoutMs)]; }
+      catch (error) { errors.push(`${page.id}/${locale}: ${error.message}`); return null; }
+    }));
+    const contentVariants = Object.fromEntries(variants.filter(Boolean));
+    const defaultLocale = contentVariants[page.defaultTargetLocale] ? page.defaultTargetLocale : Object.keys(contentVariants)[0];
+    if (defaultLocale) weeks.push({ ...contentVariants[defaultLocale], defaultTargetLocale: defaultLocale, contentVariants });
+  }
+  weeks.sort((a, b) => b.date.localeCompare(a.date));
+  return { weeks, defaultWeekId: weeks.find(week => week.id === catalog.defaultPageId)?.id || weeks[0]?.id || null, errors };
+}

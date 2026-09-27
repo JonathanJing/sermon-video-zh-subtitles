@@ -1,0 +1,144 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import { loadPublishedWeeks } from './published-weeks.mjs';
+
+const hash = value => createHash('sha256').update(value).digest('hex');
+const pageId = '2026-09-27-weekend-sermon-drive-530';
+function fixture(mutate = () => {}) {
+  const files = new Map(), requests = [];
+  const page = {
+    id: pageId, date: '2026-09-27', sourceLocale: 'en', defaultTargetLocale: 'zh-Hans',
+    sourceIdentitySha256: 'a'.repeat(64), targets: {},
+  };
+  for (const locale of ['zh-Hans', 'ko', 'es']) {
+    const content = {
+      schemaVersion: 'sermon-full-video-text-content-v1', pageId, targetLocale: locale, sourceLocale: 'en',
+      status: 'human_reviewed', audioStatus: 'unavailable', englishSourcePackageJsonSha256: page.sourceIdentitySha256,
+      targetLanguageCandidateJsonSha256: 'b'.repeat(64), title: `Title ${locale}`, speaker: 'Eric Geiger',
+      series: 'Series', scripture: 'Revelation 4–5', summary: `Summary ${locale}`, outline: ['Point one'],
+      durationSeconds: 10, sourceVideoUrl: `/pages/${pageId}/full-video-browser.mp4`,
+      cues: [{ textGroupId: 'first', start: 0, end: 8, text: `Full reading text ${locale}` }],
+    };
+    const captions = { cues: [{ textGroupId: 'first', start: .5, end: 7, text: `Short spoken text ${locale}` }] };
+    const release = {
+      schemaVersion: 'sermon-target-language-release-package-v2', pageId,
+      targetLocale: locale, audioLocale: locale, contentLocale: locale, sourceLocale: 'en',
+      status: 'published_http_verified', httpVerification: { status: 'pass' },
+      audioStatus: 'human_reviewed', contentStatus: 'human_reviewed',
+      targetLanguageCandidateJsonSha256: content.targetLanguageCandidateJsonSha256,
+      assets: [
+        { role: 'content', path: `/content/${pageId}/${locale}.json` },
+        { role: 'captions', path: `/captions/${pageId}/${locale}.json` },
+        { role: 'audio', path: `/media/${pageId}/${locale}.mp3`, sha256: 'c'.repeat(64) },
+      ],
+    };
+    mutate({ content, captions, release, locale });
+    for (const [role, data] of [['content', content], ['captions', captions]]) {
+      const asset = release.assets.find(item => item.role === role);
+      const body = JSON.stringify(data);
+      files.set(asset.path, body); asset.sha256 = hash(body);
+    }
+    const releasePath = `/releases-v2/${pageId}/${locale}.json`;
+    const body = JSON.stringify(release); files.set(releasePath, body);
+    page.targets[locale] = {
+      releasePackageUrl: releasePath, releasePackageJsonSha256: hash(body),
+      contentStatus: 'human_reviewed', audioStatus: 'human_reviewed', capabilities: ['text', 'captions', 'audio'],
+    };
+  }
+  files.set('/multilingual-v3.json', JSON.stringify({ schemaVersion: 'sermon-multilingual-catalog-v3', defaultPageId: pageId, pages: [page] }));
+  const fetchImpl = async path => {
+    requests.push(path);
+    return files.has(path) ? new Response(files.get(path)) : new Response('', { status: 404 });
+  };
+  return { files, requests, fetchImpl };
+}
+
+test('published three-language tracks work inside the legacy week shape without mixing reading text and spoken captions', async () => {
+  const f = fixture();
+  const result = await loadPublishedWeeks(f.fetchImpl);
+  assert.deepEqual(result.errors, []);
+  assert.equal(result.defaultWeekId, pageId);
+  const [week] = result.weeks;
+  assert.equal(week.title, 'Title zh-Hans');
+  assert.equal(week.releaseLabel, '正式播放版');
+  assert.equal(week.audioStatus, 'full_reviewed');
+  assert.deepEqual(Object.keys(week.contentVariants), ['zh-Hans', 'ko', 'es']);
+  for (const [locale, variant] of Object.entries(week.contentVariants)) {
+    assert.equal(variant.targetLocale, locale);
+    assert.equal(variant.defaultTargetLocale, locale);
+    assert.equal(variant.number, '');
+    assert.ok(variant.audioNotice.length > 0);
+    assert.ok(variant.contentReview.length > 0);
+    assert.equal(variant.productionStages.length, 3);
+    assert.ok(variant.productionStages.every(stage => stage.status === 'pass' && !/视频同步|人工试听/.test(stage.label)));
+    assert.equal(variant.tracks[0].audioUrl, `/media/${pageId}/${locale}.mp3`);
+    assert.equal(variant.tracks[0].cues[0].text, `Short spoken text ${locale}`);
+    assert.equal(variant.fullTranscript[0].text, `Full reading text ${locale}`);
+    assert.equal(variant.tracks[0].scope, 'full_reviewed');
+    assert.equal(variant.sourceStartSeconds, 0);
+    assert.equal(variant.fingerprint, undefined);
+  }
+  assert.ok(!f.requests.some(path => /\.mp3$/.test(path)), 'runtime never predownloads audio for validation');
+});
+
+test('tampered caption bytes reject only that locale', async () => {
+  const f = fixture();
+  f.files.set(`/captions/${pageId}/ko.json`, '{"cues":[]}');
+  const result = await loadPublishedWeeks(f.fetchImpl);
+  assert.deepEqual(Object.keys(result.weeks[0].contentVariants), ['zh-Hans', 'es']);
+  assert.match(result.errors[0], /hash mismatch/);
+});
+
+test('release hashes are verified before their content is read', async () => {
+  const f = fixture();
+  f.files.set(`/releases-v2/${pageId}/es.json`, '{}');
+  const result = await loadPublishedWeeks(f.fetchImpl);
+  assert.equal(result.weeks[0].contentVariants.es, undefined);
+  assert.ok(!f.requests.includes(`/content/${pageId}/es.json`));
+});
+
+test('wrong identity, unreviewed release, unsafe assets and mismatched caption groups never become selectable', async () => {
+  const mutations = [
+    ({ release }) => { release.targetLocale = 'wrong'; },
+    ({ release }) => { release.audioStatus = 'candidate'; },
+    ({ release }) => { release.assets[2].path = 'https://other.test/audio.mp3'; },
+    ({ release }) => { release.assets[2].path = `/media/${pageId}/../secret.mp3`; },
+    ({ content }) => { content.englishSourcePackageJsonSha256 = 'd'.repeat(64); },
+    ({ content }) => { content.sourceVideoUrl = '//other.test/video.mp4'; },
+    ({ captions }) => { captions.cues[0].textGroupId = 'other'; },
+    ({ captions }) => { captions.cues[0].end = 15; },
+  ];
+  for (const mutate of mutations) {
+    const result = await loadPublishedWeeks(fixture(mutate).fetchImpl);
+    assert.deepEqual(result.weeks, []);
+    assert.equal(result.errors.length, 3);
+  }
+});
+
+test('optional missing or unavailable catalog keeps the legacy app usable', async () => {
+  assert.deepEqual(await loadPublishedWeeks(async () => new Response('', { status: 404 })), { weeks: [], defaultWeekId: null, errors: [] });
+  const failed = await loadPublishedWeeks(async () => { throw new Error('offline'); });
+  assert.deepEqual(failed.weeks, []);
+  assert.deepEqual(failed.errors, ['offline']);
+});
+
+test('missing Chinese release falls back to an actually available default locale', async () => {
+  const f = fixture();
+  f.files.delete(`/releases-v2/${pageId}/zh-Hans.json`);
+  const result = await loadPublishedWeeks(f.fetchImpl);
+  assert.equal(result.weeks[0].defaultTargetLocale, 'ko');
+  assert.equal(result.weeks[0].targetLocale, 'ko');
+  assert.equal(result.weeks[0].tracks[0].targetLocale, 'ko');
+});
+
+test('optional requests have a bounded timeout and abort pending network work', async () => {
+  let signal;
+  const result = await loadPublishedWeeks(async (_path, options) => {
+    signal = options.signal;
+    return new Promise(() => {});
+  }, { requestTimeoutMs: 5 });
+  assert.deepEqual(result.weeks, []);
+  assert.match(result.errors[0], /timed out/);
+  assert.equal(signal.aborted, true);
+});

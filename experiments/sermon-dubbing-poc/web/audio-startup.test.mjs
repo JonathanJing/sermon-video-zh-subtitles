@@ -150,6 +150,7 @@ function setup({ bookmark = false, bootstrapFetch, alignmentPlay } = {}) {
     setTimeout: (callback, delay) => { timers.set(++timerId, { callback, delay }); return timerId; },
     clearTimeout: id => timers.delete(id),
     fetch: bootstrapFetch,
+    loadPublishedWeeks: async () => ({ weeks: [], defaultWeekId: null, errors: [] }),
     // Capture/matching has its own controller suite; retain the real app wiring here.
     mountFingerprintUI: options => {
       fingerprintMounts.push(options);
@@ -166,7 +167,8 @@ function setup({ bookmark = false, bootstrapFetch, alignmentPlay } = {}) {
   });
   const expose = `\nglobalThis.app = {
     initialize(value) { catalog = { weeks: [value] }; week = value; selectTrack(value.tracks[0].id); },
-    selectTrack, setPosition, selectTab
+    selectTrack, selectWeek, setPosition, selectTab,
+    loadCatalog(value) { catalog = value; week = undefined; selectWeek(value.defaultWeekId); }
   };`;
   if (bootstrapFetch) vm.runInContext(`globalThis.bootstrap = (async () => { ${fullAppSource}\n${expose} })();`, context);
   else {
@@ -663,4 +665,38 @@ test('media session follows the selected track and routes seeks through the play
   h.app.selectTab('tab-listen');
   assert.equal(session.getSelection().track.id, 'second');
   assert.ok(h.mediaUpdates > afterVoices, 'returning from samples restores sermon media controls');
+});
+
+
+test('published week switches language in the existing player and keeps full reading text separate', () => {
+  const h = setup();
+  const id = '2026-09-27-full-video';
+  const variants = Object.fromEntries(['zh-Hans', 'ko', 'es'].map((locale, index) => [locale, {
+    ...week, id, date: '2026-09-27', targetLocale: locale, title: `Title ${locale}`,
+    releaseLabel: '正式播放版', contentReview: 'Reviewed',
+    fullTranscript: [{ start: 0, end: 100, text: `Full reading ${locale}` }],
+    tracks: [{ ...week.tracks[0], id: `${id}-${locale}`, sha256: String(index + 3).repeat(64),
+      audioUrl: `/media/${id}/${locale}.mp3`, cues: [{ start: 0, end: 300, text: `Spoken ${locale}` }] }],
+  }]));
+  const published = { ...variants['zh-Hans'], contentVariants: variants, defaultTargetLocale: 'zh-Hans' };
+  h.app.loadCatalog({ defaultWeekId: id, weeks: [published, week] });
+  h.audio.metadata(300);
+  h.get('play').click();
+  h.get('content-language').value = 'ko'; h.get('content-language').dispatch('change');
+  assert.equal(h.audio.paused, true, 'old audio stops when the content language changes');
+  assert.equal(h.audio.src, `https://example.test/media/${id}/ko.mp3`);
+  assert.equal(h.get('title').textContent, 'Title ko');
+  assert.equal(h.get('current-text').textContent, 'Spoken ko');
+  assert.equal(h.get('subtitle-toggle').hidden, true, 'no fabricated English associations');
+  const reading = h.get('transcript-list').children[0];
+  assert.equal(reading.className, 'full-reading');
+  assert.match(reading.children[2].textContent, /Full reading ko/);
+  assert.equal(h.get('transcript-list').children[1].children[1].textContent, 'Spoken ko');
+  assert.equal(h.context.location.href, 'https://example.test/', 'selection stays in this App');
+  h.get('content-language').value = 'es'; h.get('content-language').dispatch('change');
+  assert.equal(h.audio.src, `https://example.test/media/${id}/es.mp3`);
+  h.app.selectWeek(week.id);
+  assert.equal(h.audio.src, 'https://example.test/media/first.mp3');
+  assert.equal(h.get('content-language').value, 'zh-Hans');
+  assert.equal(h.get('content-language').children.find(option => option.value === 'ko').disabled, true);
 });
