@@ -50,7 +50,7 @@ GOOGLE_CLOUD_PROJECT=ai-for-god-caption-dev node admin.mjs listening --from 2026
 - 后台 61 项测试、网页统计与界面文案 25 项测试、来源目录 5 项测试、构建 17 项和部署保护 3 项测试通过。
 - 线上 API 17 项检查通过；合成请求与实际客户端证据分别保存。
 - 实际网页：韩语界面、中文页面及音轨播放；Firestore 读回 45.77 秒。随后关闭统计，确认两类记录清零。
-- 原生 URLSession 8 次真实 HTTP 请求全部 200，关闭后两类记录读回零；iOS 17.5 与 27.1 的默认关闭/开启/关闭 UI 测试通过。build 42 签名归档及上传已成功；Apple 处理与分发状态另记录，模拟器验证不等于实体设备验收。
+- 原生 URLSession 8 次真实 HTTP 请求全部 200，关闭后两类记录读回零；iOS 17.5 与 27.1 的默认关闭/开启/关闭 UI 测试通过。build 42 签名归档及上传已成功；App Store Connect 读回 Rooted 内部组 Testing（1 位测试者），外部组 Approved（0 位测试者）。现有 App Store build 34 审核未变；尚未进行实体设备验收。
 - 测试记录已撤回；报告从新客户端开始累计，零记录不代表无人使用。
 
 证据文件包括 `live-smoke-evidence.json`、`browser-live-readback.json`、`browser-after-optout-readback.json`、`ios-after-optout-readback.json`、`hosting-http-readback.json`、`support-http-readback.json`。不要提交私有报表或完整运行记录到 Git。
