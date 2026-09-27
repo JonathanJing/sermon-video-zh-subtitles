@@ -43,6 +43,53 @@ class FourLayerMeasureTest(unittest.TestCase):
             self.assertEqual(row["attemptHistory"][0]["workload"]["sourceUnits"], 45)
             self.assertEqual(progress.load(ledger_path)["steps"]["L2-03@ko"]["status"], "pending")
 
+    def test_nested_substages_report_latest_group_counts_without_promoting_checkpoint(self):
+        with tempfile.TemporaryDirectory() as temp:
+            ledger_path = Path(temp) / "four-layer-progress.json"
+            progress.save(ledger_path, progress.new_ledger("test-page", ["ko"]))
+            step = "L2-02@ko"
+            with measure.producer_step(ledger_path, step, locale="ko"):
+                accounting.record_workload(measure.stage_name(step), {"translationGroups": 3})
+                with measure.producer_substage("initial_translation"):
+                    pass
+                with measure.producer_substage("initial_translation"):
+                    pass
+                with self.assertRaisesRegex(ValueError, "review fixture"):
+                    with measure.producer_substage("independent_review"):
+                        raise ValueError("review fixture")
+            events, damaged = accounting.read_events(ledger_path.parent / "accounting")
+            self.assertFalse(damaged)
+            report = measure.timing_audit(progress.load(ledger_path), events)
+            row = next(row for row in report["rows"] if row["step"] == step)
+            by_id = {child["id"]: child for child in row["subStages"]}
+            self.assertEqual((by_id["initial_translation"]["completedUnits"],
+                              by_id["initial_translation"]["totalUnits"]), (2, 3))
+            self.assertEqual(by_id["independent_review"]["failedAttempts"], 1)
+            self.assertEqual(progress.load(ledger_path)["steps"][step]["status"], "pending")
+
+    def test_audio_substages_include_sync_metrics_and_use_speech_unit_total(self):
+        with tempfile.TemporaryDirectory() as temp:
+            ledger_path = Path(temp) / "four-layer-progress.json"
+            progress.save(ledger_path, progress.new_ledger("test-page", ["ko"]))
+            step = "L3-02@ko"
+            with measure.producer_step(ledger_path, step, locale="ko"):
+                accounting.record_workload(measure.stage_name(step), {"speechUnits": 4})
+                with measure.producer_substage("unit_synthesis", billing="local"):
+                    pass
+                with measure.producer_substage("schedule_sync", billing="local"):
+                    measure.record_substage_metrics({"overLimitUnits": 2,
+                                                     "clipDurationSeconds": 120,
+                                                     "plannedDurationSeconds": 124})
+            events, damaged = accounting.read_events(ledger_path.parent / "accounting")
+            self.assertFalse(damaged)
+            row = next(row for row in measure.timing_audit(progress.load(ledger_path), events)["rows"]
+                       if row["step"] == step)
+            by_id = {child["id"]: child for child in row["subStages"]}
+            self.assertEqual(by_id["unit_synthesis"]["totalUnits"], 4)
+            self.assertIsNone(by_id["schedule_sync"]["totalUnits"])
+            self.assertEqual(by_id["schedule_sync"]["overLimitUnits"], 2)
+            self.assertEqual(by_id["schedule_sync"]["plannedDurationSeconds"], 124)
+
     def test_producer_rejects_other_locale_before_logging(self):
         with tempfile.TemporaryDirectory() as temp:
             ledger_path = Path(temp) / "four-layer-progress.json"

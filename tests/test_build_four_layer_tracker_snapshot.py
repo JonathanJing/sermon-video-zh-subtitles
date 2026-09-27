@@ -106,11 +106,19 @@ class TrackerSnapshotTest(unittest.TestCase):
             {"event": "stage_finished", "workflowId": "w1",
              "stage": "four_layer.L2-03:ko", "status": "failed",
              "elapsedSeconds": 12.5, "recordedAt": "2026-09-23T12:00:00+00:00"}])
+        row = next(row for row in report["rows"] if row["step"] == "L2-03@ko")
+        row["subStages"] = [{"id": "independent_review", "attempts": 5,
+                             "failedAttempts": 1, "completedUnits": 4,
+                             "totalUnits": 7, "running": 1,
+                             "executionSeconds": 23.0, "openElapsedSeconds": 9.0},
+                            {"id": "private_raw_error", "attempts": 1}]
         snapshot = tracker.build_snapshot(self.ledger, timing_report=report)
         step = next(row for row in snapshot["steps"] if row["id"] == "L2-03@ko")
         self.assertEqual(step["timing"]["measuredExecutionSeconds"], 12.5)
         self.assertEqual(step["timing"]["failedExecutionAttempts"], 1)
         self.assertEqual(step["status"], "pending")
+        self.assertEqual(step["timing"]["subStages"][0]["id"], "independent_review")
+        self.assertNotIn("private_raw_error", json.dumps(snapshot))
         self.assertEqual(snapshot["timingCoverage"]["measuredStepCount"], 1)
 
     def test_snapshot_exposes_completed_steps_missing_real_timing(self):
