@@ -28,3 +28,5 @@
 ## Firebase App 首页
 
 正式 Hosting 首页 `/` 和 `/index.html` 在没有 `week` 参数时，由 `firebase/production-overlay/current-week-router.js` 打开本周完整视频页。带 `?week=<旧周次 ID>` 的直接链接仍进入原有按周阅读器。首页旧入口的“配音待补充”提示已更新为三语配音已发布。本次从前一版 111 文件候选复制，只新增路由脚本并修改首页 HTML；视频、文稿、音轨和发布包均未改动。发布候选和差异、HTTP 核对收据保存在忽略目录 `artifacts/drive-source-20260926-1730/layer4-app-hosting-phase3-home-20260927-v1/`。浏览器实测首页进入 31:31 视频页，韩语和西语均显示对应全文及可选配音；旧周次直接链接仍打开旧页。此网页发布不代表原生 iOS 二进制已在 App Store 分发。
+
+用户从旧周次书签进入时，首页跳转不会发生；因此后来将同一本周页面加入旧阅读器的“本期与往期”选择器，选择 2026.09.27 即打开完整视频页。此修复只更新上述路由脚本，Hosting 候选与差异收据在忽略目录 `artifacts/drive-source-20260926-1730/layer4-app-hosting-phase4-picker-20260927-v1/`。已从线上 2026.09.20 页面实测列表出现本周选项，选择后到达本周 31:31 页面。
