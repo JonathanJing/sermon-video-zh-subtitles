@@ -271,6 +271,29 @@ def _clause_boundary_evidence(words: list[dict[str, Any]], index: int,
     }
 
 
+def _dependent_clause_boundary(words: list[dict[str, Any]], index: int) -> bool:
+    """Reject pauses that leave a short grammatical dependency unresolved."""
+    previous = re.sub(r"[^a-z]+$", "", str(words[index]["text"]).lower())
+    next_word = re.sub(r"^[^a-z]+", "", str(words[index + 1]["text"]).lower())
+    if previous in {"on", "be"}:
+        return True
+    if previous == "there" and next_word in {"is", "are", "was", "were"}:
+        return True
+    if previous == "means" and next_word == "that":
+        return True
+    if previous in {"choose", "chooses", "chose", "chosen"} and next_word in {"out", "to"}:
+        return True
+    if str(words[index]["text"]).endswith(",") and next_word == "to":
+        return True
+    if previous == "blood" and next_word == "purchases":
+        return True
+    if str(words[index]["text"]).endswith(",") and next_word in {"your", "his", "her", "their", "our", "my"}:
+        return True
+    if previous == "sorry" and index > 0 and re.search(r"(?:i['’]m|i am)$", str(words[index - 1]["text"]).lower()):
+        return True
+    return False
+
+
 def _split_clause_stable(words: list[dict[str, Any]], *, max_seconds: float,
                          min_unit_seconds: float, pause_seconds: float
                          ) -> tuple[list[tuple[list[dict[str, Any]], dict[str, Any]]], bool]:
@@ -303,8 +326,12 @@ def _split_clause_stable(words: list[dict[str, Any]], *, max_seconds: float,
             duration = float(words[index]["end"]) - float(words[cursor]["start"])
             if duration < min_unit_seconds or duration > semantic_window_seconds:
                 continue
+            remaining_after_split = float(words[-1]["end"]) - float(words[index + 1]["start"])
+            if remaining_after_split < min_unit_seconds:
+                continue
             gap = float(words[index + 1]["start"]) - float(words[index]["end"])
-            if gap >= pause_seconds or BREAK_PUNCTUATION.search(str(words[index]["text"])):
+            if ((gap >= pause_seconds or BREAK_PUNCTUATION.search(str(words[index]["text"])))
+                    and not _dependent_clause_boundary(words, index)):
                 safe_candidates.append((index + 1, _clause_boundary_evidence(
                     words[cursor:], index - cursor, pause_seconds, max_seconds,
                 )))
