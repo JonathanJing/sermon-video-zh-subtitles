@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+from hashlib import sha256
 import runpy
 import unittest
 from pathlib import Path
@@ -47,8 +48,10 @@ def simulated_review(excerpt: str, excerpt_hash: str) -> dict:
     decisions[0] = {
         "candidateId": "rev-4-2-3", "classification": "partial_direct_quote",
         "parts": [{"sourceUnitId": UNIT["sourceUnitId"],
-                   "englishStart": "Immediately I was in the Spirit",
-                   "englishEnd": "someone was seated on it.",
+                   "englishStartOffset": ENGLISH.index("Immediately I was in the Spirit"),
+                   "englishEndOffset": len(ENGLISH),
+                   "englishExcerptSha256": sha256(ENGLISH[ENGLISH.index(
+                       "Immediately I was in the Spirit"):].encode()).hexdigest(),
                    "reference": "REV 4:2", "cuvExcerpt": excerpt,
                    "cuvExcerptSha256": excerpt_hash}],
     }
@@ -106,8 +109,111 @@ class ChineseWeeklyCuvTests(unittest.TestCase):
         damaged["decisions"][0]["parts"][0]["cuvExcerptSha256"] = "0" * 64
         self.assertEqual(self.checks(text, damaged)["cuv_exact_quote"], "fail")
         damaged = copy.deepcopy(receipt)
+        damaged["decisions"][0]["parts"][0]["englishStartOffset"] += 1
+        self.assertEqual(self.checks(text, damaged)["cuv_exact_quote"], "fail")
+        damaged = copy.deepcopy(receipt)
+        damaged["decisions"][0]["parts"][0]["sourceUnitId"] = "0-u168"
+        self.assertEqual(self.checks(text, damaged)["cuv_exact_quote"], "fail")
+        damaged = copy.deepcopy(receipt)
+        damaged["decisions"][0]["parts"][0]["englishStartOffset"] = 0
+        damaged["decisions"][0]["parts"][0]["englishExcerptSha256"] = sha256(
+            ENGLISH.encode()).hexdigest()
+        self.assertEqual(self.checks(text, damaged)["cuv_exact_quote"], "fail")
+        damaged = copy.deepcopy(receipt)
         damaged["decisions"].pop()
         self.assertEqual(self.checks(text, damaged)["cuv_exact_quote"], "fail")
+
+    def test_human_paraphrase_decisions_need_no_cuv_fragments(self):
+        receipt = simulated_review(self.excerpt, self.excerpt_hash)
+        receipt["decisions"][0] = {
+            "candidateId": "rev-4-2-3", "classification": "speaker_paraphrase", "parts": [],
+        }
+        self.assertEqual(self.checks("约翰描述天上有一座宝座。", receipt)
+                         ["cuv_exact_quote"], "pass")
+        self.assertEqual(self.checks(self.excerpt, receipt)["cuv_exact_quote"], "fail")
+
+    def test_whole_direct_quote_cannot_claim_two_one_unit_groups(self):
+        receipt = simulated_review(self.excerpt, self.excerpt_hash)
+        receipt["decisions"][0]["classification"] = "direct_quote"
+        second = copy.deepcopy(receipt["decisions"][0]["parts"][0])
+        second["sourceUnitId"] = "0-u068"
+        receipt["decisions"][0]["parts"].append(second)
+        self.assertEqual(self.checks("约翰说：" + self.excerpt, receipt)
+                         ["cuv_exact_quote"], "fail")
+
+    def test_split_four_eight_requires_each_units_own_cuv_selection(self):
+        english_a = "Day and night, they never stop saying, Holy, holy, holy, Lord God, the Almighty."
+        english_b = "Who was, who is, and who is to come."
+        cuv_a = "圣哉！圣哉！圣哉！"
+        cuv_b = "昔在、今在、 以后[永]在的全能者。"
+        library = CuvLibrary.from_path()
+        receipt = simulated_review(self.excerpt, self.excerpt_hash)
+        receipt["decisions"][0] = {
+            "candidateId": "rev-4-2-3", "classification": "speaker_paraphrase", "parts": [],
+        }
+        receipt["decisions"][1] = {
+            "candidateId": "rev-4-8", "classification": "partial_direct_quote", "parts": [
+                {"sourceUnitId": "0-u086", "englishStartOffset": english_a.index("Holy"),
+                 "englishEndOffset": len(english_a),
+                 "englishExcerptSha256": sha256(english_a[english_a.index("Holy"):].encode()).hexdigest(),
+                 "reference": "REV 4:8", "cuvExcerpt": cuv_a,
+                 "cuvExcerptSha256": library.lookup("REV 4:8", excerpt=cuv_a)["textSha256"]},
+                {"sourceUnitId": "0-u087", "englishStartOffset": 0,
+                 "englishEndOffset": len(english_b),
+                 "englishExcerptSha256": sha256(english_b.encode()).hexdigest(),
+                 "reference": "REV 4:8", "cuvExcerpt": cuv_b,
+                 "cuvExcerptSha256": library.lookup("REV 4:8", excerpt=cuv_b)["textSha256"]},
+            ],
+        }
+        for unit_id, english, excerpt in (("0-u086", english_a, cuv_a),
+                                          ("0-u087", english_b, cuv_b)):
+            units = [{"sourceUnitId": unit_id, "english": english}]
+            target = "经文说：" + excerpt
+            group_value = {"englishSourcePackageJsonSha256": SOURCE_HASH,
+                           "sourceUnitIds": [unit_id], "targetText": target,
+                           "targetUtterances": [target]}
+            checks = plugin._review_group(policy(), units, group_value, receipt)
+            self.assertEqual(checks[1]["status"], "pass")
+            group_value["targetText"] = "经文说："
+            self.assertEqual(plugin._review_group(policy(), units, group_value, receipt)[1]
+                             ["status"], "fail")
+
+    def test_five_four_can_be_paraphrase_while_five_one_is_selected(self):
+        library = CuvLibrary.from_path()
+        english_one = "in the right hand of the one seated on the throne a scroll with writing on both sides, sealed with seven seals."
+        cuv_one = library.lookup("REV 5:1")
+        receipt = simulated_review(self.excerpt, self.excerpt_hash)
+        receipt["decisions"][0] = {
+            "candidateId": "rev-4-2-3", "classification": "speaker_paraphrase", "parts": [],
+        }
+        receipt["decisions"][3] = {
+            "candidateId": "rev-5-1-4", "classification": "partial_direct_quote",
+            "parts": [{"sourceUnitId": "0-u162", "englishStartOffset": 0,
+                       "englishEndOffset": len(english_one),
+                       "englishExcerptSha256": sha256(english_one.encode()).hexdigest(),
+                       "reference": "REV 5:1", "cuvExcerpt": cuv_one["text"],
+                       "cuvExcerptSha256": cuv_one["textSha256"]}],
+        }
+        for unit_id, english, target in (
+            ("0-u162", english_one, cuv_one["text"]),
+            ("0-u167", "I wept and I wept", "我哭了又哭。"),
+            ("0-u168", "because no one was found worthy to open the scroll or even to look in it.",
+             "因为找不到能打开或查看书卷的人。"),
+        ):
+            value = {"englishSourcePackageJsonSha256": SOURCE_HASH,
+                     "sourceUnitIds": [unit_id], "targetText": target,
+                     "targetUtterances": [target]}
+            self.assertEqual(plugin._review_group(
+                policy(), [{"sourceUnitId": unit_id, "english": english}], value, receipt,
+            )[1]["status"], "pass")
+        cuv_four = library.lookup("REV 5:4")["text"]
+        value = {"englishSourcePackageJsonSha256": SOURCE_HASH,
+                 "sourceUnitIds": ["0-u167"], "targetText": cuv_four,
+                 "targetUtterances": [cuv_four]}
+        self.assertEqual(plugin._review_group(
+            policy(), [{"sourceUnitId": "0-u167", "english": "I wept and I wept"}],
+            value, receipt,
+        )[1]["status"], "fail")
 
     def test_plugin_hash_includes_shared_and_pinned_library_code(self):
         path = ROOT / "scripts/language_review_plugins/zh_hans_weekly_cuv.py"
