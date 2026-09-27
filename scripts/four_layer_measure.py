@@ -15,7 +15,7 @@ import subprocess
 import sys
 from collections import defaultdict
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -27,12 +27,39 @@ from scripts import sermon_accounting as accounting
 
 AUDIT_SCHEMA = "sermon-four-layer-timing-audit-v1"
 STEP_PATTERN = re.compile(r"L[1-4]-\d{2}(?:@[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*)?")
+SUBSTAGE_PATTERN = re.compile(r"[a-z][a-z0-9_]{1,39}")
+PUBLIC_SUBSTAGES = {
+    "initial_translation", "independent_review", "unit_synthesis",
+    "audio_validation", "schedule_sync",
+}
 
 
 def stage_name(step_id: str) -> str:
     if not STEP_PATTERN.fullmatch(step_id):
         raise ValueError("invalid four-layer step ID")
     return "four_layer." + step_id.replace("@", ":")
+
+
+@contextmanager
+def producer_substage(name: str, *, billing: str = "api"):
+    """Record one bounded child operation inside an active four-layer producer."""
+    if not SUBSTAGE_PATTERN.fullmatch(name):
+        raise ValueError("invalid four-layer substage ID")
+    parent = accounting._stage.get() or os.environ.get("SERMON_ACCOUNTING_STAGE", "")
+    if not parent.startswith("four_layer.L"):
+        yield
+        return
+    if billing not in {"local", "api", "orchestrator"}:
+        raise ValueError("invalid billing category")
+    with accounting.stage(f"{parent}.sub.{name}", billing=billing):
+        yield
+
+
+def record_substage_metrics(metrics: dict) -> None:
+    """Append only the supplied aggregate metrics to the active child span."""
+    stage = accounting._stage.get() or os.environ.get("SERMON_ACCOUNTING_STAGE", "")
+    if stage.startswith("four_layer.L") and ".sub." in stage:
+        accounting.record_workload(stage, metrics)
 
 
 def configured_ledger(path: Path | None) -> Path | None:
@@ -117,16 +144,39 @@ def timing_audit(ledger: dict, events: list[dict], *, damaged_rows: int = 0) -> 
     open_spans: dict[str, str] = {}
     attempt_history: dict[str, list[dict]] = defaultdict(list)
     by_span: dict[str, dict] = {}
+    substage_runs: dict[str, dict[str, dict[str, dict]]] = defaultdict(
+        lambda: defaultdict(lambda: defaultdict(lambda: {
+            "attempts": 0, "failedAttempts": 0, "executionSeconds": 0.0,
+            "completedUnits": 0, "running": 0, "metrics": {}})))
+    substage_spans: dict[str, tuple[str, str, str]] = {}
+    step_stage_names = {stage_name(step): step for step in ledger["steps"]}
     for event in scoped_events:
         if event.get("event") not in {"stage_started", "stage_finished", "workload"}:
             continue
-        stage = str(event.get("stage") or "")
-        if not stage.startswith("four_layer."):
+        event_stage = str(event.get("stage") or "")
+        step = step_stage_names.get(event_stage)
+        substage = None
+        if step is None:
+            for parent_stage, candidate in step_stage_names.items():
+                prefix = parent_stage + ".sub."
+                if event_stage.startswith(prefix):
+                    step = candidate
+                    substage = event_stage[len(prefix):]
+                    if not SUBSTAGE_PATTERN.fullmatch(substage):
+                        step = None
+                    break
+        if step is None:
             continue
-        step = stage.removeprefix("four_layer.").replace(":", "@", 1)
         span_id = event.get("spanId")
         if event.get("event") == "stage_started":
             if step in ledger["steps"] and isinstance(span_id, str):
+                if substage:
+                    parent_span = event.get("parentSpanId")
+                    row = substage_runs[step][parent_span][substage]
+                    row["attempts"] += 1
+                    row["running"] += 1
+                    substage_spans[span_id] = (step, parent_span, substage)
+                    continue
                 open_spans[span_id] = step
                 attempt = {"spanId": span_id, "startedAt": event.get("startedAt"),
                            "finishedAt": None, "status": "unfinished",
@@ -136,7 +186,33 @@ def timing_audit(ledger: dict, events: list[dict], *, damaged_rows: int = 0) -> 
             continue
         if event.get("event") == "workload":
             if isinstance(span_id, str) and span_id in by_span:
-                by_span[span_id]["workload"] = event.get("metrics")
+                by_span[span_id]["workload"] = {
+                    **(by_span[span_id].get("workload") or {}),
+                    **(event.get("metrics") if isinstance(event.get("metrics"), dict) else {}),
+                }
+            elif isinstance(span_id, str) and span_id in substage_spans:
+                child_step, parent_span, child_id = substage_spans[span_id]
+                metrics = event.get("metrics") if isinstance(event.get("metrics"), dict) else {}
+                safe_keys = {"audioSeconds", "overLimitUnits", "clipDurationSeconds",
+                             "plannedDurationSeconds"}
+                target = substage_runs[child_step][parent_span][child_id]["metrics"]
+                for key, value in metrics.items():
+                    if key not in safe_keys or not isinstance(value, (int, float)) or isinstance(value, bool):
+                        continue
+                    target[key] = target.get(key, 0) + value if key == "audioSeconds" else value
+            continue
+        if substage and isinstance(span_id, str) and span_id in substage_spans:
+            _, parent_span, _ = substage_spans[span_id]
+            row = substage_runs[step][parent_span][substage]
+            row["running"] = max(0, row["running"] - 1)
+            elapsed = event.get("elapsedSeconds")
+            if isinstance(elapsed, (int, float)) and elapsed >= 0:
+                row["executionSeconds"] += elapsed
+            if event.get("status") == "completed":
+                row["completedUnits"] += 1
+            else:
+                row["failedAttempts"] += 1
+            substage_spans.pop(span_id, None)
             continue
         open_spans.pop(span_id, None)
         elapsed = event.get("elapsedSeconds")
@@ -182,9 +258,41 @@ def timing_audit(ledger: dict, events: list[dict], *, damaged_rows: int = 0) -> 
         reviews[step]["openWait"] = True
 
     rows = []
+    now_utc = datetime.now(timezone.utc)
     for step, state in ledger["steps"].items():
         execution = measured.get(step)
         review = reviews.get(step)
+        child_rows = []
+        latest_parent = attempt_history.get(step, [])[-1]["spanId"] if attempt_history.get(step) else None
+        latest_substages = substage_runs.get(step, {}).get(latest_parent, {})
+        parent_workload = next((attempt.get("workload") for attempt in reversed(attempt_history.get(step, []))
+                                if attempt.get("spanId") == latest_parent and attempt.get("workload")), {})
+        total_units = None
+        if isinstance(parent_workload, dict):
+            count_key = "translationGroups" if step.startswith("L2-") else "speechUnits"
+            total_units = parent_workload.get(count_key)
+        for substage, data in sorted(latest_substages.items()):
+            child_total_units = None if substage == "schedule_sync" else total_units
+            open_ages = []
+            for span_id, (open_step, open_parent, open_substage) in substage_spans.items():
+                if open_step == step and open_parent == latest_parent and open_substage == substage:
+                    started_event = next((e for e in reversed(scoped_events)
+                                          if e.get("event") == "stage_started"
+                                          and e.get("spanId") == span_id), None)
+                    if started_event:
+                        try:
+                            started = datetime.fromisoformat(started_event["startedAt"].replace("Z", "+00:00"))
+                            open_ages.append(max(0.0, (now_utc - started).total_seconds()))
+                        except (KeyError, TypeError, ValueError):
+                            pass
+            child_rows.append({"id": substage, "attempts": data["attempts"],
+                               "failedAttempts": data["failedAttempts"],
+                               "completedUnits": data["completedUnits"],
+                               "totalUnits": child_total_units,
+                               "running": data["running"],
+                               "executionSeconds": round(data["executionSeconds"], 3),
+                               "openElapsedSeconds": round(max(open_ages), 3) if open_ages else None,
+                               **data["metrics"]})
         rows.append({"step": step, "status": state["status"],
                      "measuredExecutionSeconds": round(execution["executionSeconds"], 3) if execution else None,
                      "executionAttempts": execution["attempts"] if execution else 0,
@@ -196,6 +304,7 @@ def timing_audit(ledger: dict, events: list[dict], *, damaged_rows: int = 0) -> 
                      "operatorReviewWaitSeconds": round(review["closedWaitSeconds"], 3) if review and review["closedWaits"] else None,
                      "closedReviewWaits": review["closedWaits"] if review else 0,
                      "openReviewWait": review["openWait"] if review else False})
+        rows[-1]["subStages"] = child_rows
     missing_completed = [row["step"] for row in rows
                          if row["status"] == "complete"
                          and row["measuredExecutionSeconds"] is None]

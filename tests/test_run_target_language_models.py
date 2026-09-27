@@ -96,6 +96,28 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
                                      "fixture-key", self.fake_call), evidence)
         self.assertEqual(self.calls, [])
 
+    def test_progress_ledger_tracks_translation_and_review_groups_separately(self):
+        f = self.fixture
+        ledger_path = self.out.parent / "four-layer-progress.json"
+        from scripts import four_layer_measure as measure
+        from scripts import four_layer_progress as progress
+        from scripts import sermon_accounting as accounting
+        progress.save(ledger_path, progress.new_ledger("test-page", ["ko"]))
+        step = "L2-02@ko"
+        with measure.producer_step(ledger_path, step, locale="ko"):
+            plan = subject.group_plan(producer.prepare_request(f.source, f.anchor, f.policy), f.anchor)
+            accounting.record_workload(measure.stage_name(step), {"translationGroups": len(plan)})
+            subject.run(f.source, f.anchor, f.policy, self.out,
+                        "fixture-key", self.fake_call)
+        events, damaged = accounting.read_events(ledger_path.parent / "accounting")
+        self.assertFalse(damaged)
+        row = next(row for row in measure.timing_audit(progress.load(ledger_path), events)["rows"]
+                   if row["step"] == step)
+        substages = {child["id"]: child for child in row["subStages"]}
+        self.assertEqual(substages["initial_translation"]["completedUnits"], len(plan))
+        self.assertEqual(substages["independent_review"]["completedUnits"], len(plan))
+        self.assertEqual(progress.load(ledger_path)["steps"][step]["status"], "pending")
+
     def test_two_workers_overlap_groups_but_review_each_after_its_draft(self):
         f = self.fixture
         policy = copy.deepcopy(f.policy)
