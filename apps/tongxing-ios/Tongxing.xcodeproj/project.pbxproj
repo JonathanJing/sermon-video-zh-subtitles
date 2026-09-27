@@ -33,6 +33,7 @@
 		DA598EC364686E234B86F56B /* PlaybackController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34B67E7FE8944242C03C8904 /* PlaybackController.swift */; };
 		F104CF6576ABBCDDF4B54A62 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F81E8D165D65FEF70E65FFF /* AppModel.swift */; };
 		FA2D8C343F2F8AC19D4CB662 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = E8AB6F9FA25BB0980EF2FE48 /* InfoPlist.strings */; };
+		FEDBAD81783CCD9C4BCAC030 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = EEFE877B3072430F0D7A31CB /* AppIcon.icon */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -102,6 +103,7 @@
 		E89C7099077BFCEE7659F81B /* TongxingTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TongxingTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E8CDE0AD081CB32BAE3CD0CB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		EE58D0C358A74F0BDE595617 /* PlaybackControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackControllerTests.swift; sourceTree = "<group>"; };
+		EEFE877B3072430F0D7A31CB /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		FD504056359930D928DD8069 /* ListeningLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningLiveActivity.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -156,6 +158,7 @@
 		6C5420C74F47EF1E13AC8C7D /* App */ = {
 			isa = PBXGroup;
 			children = (
+				EEFE877B3072430F0D7A31CB /* AppIcon.icon */,
 				0F81E8D165D65FEF70E65FFF /* AppModel.swift */,
 				07B59FA4533A491CF4AA2D83 /* Assets.xcassets */,
 				98A292DFC6FBB07302A4DE77 /* AudioAlignmentController.swift */,
@@ -372,6 +375,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FEDBAD81783CCD9C4BCAC030 /* AppIcon.icon in Resources */,
 				23FDF718141336A8978A8DB3 /* Assets.xcassets in Resources */,
 				FA2D8C343F2F8AC19D4CB662 /* InfoPlist.strings in Resources */,
 				82DAE4DBC18C3F1A4BD05687 /* Localizable.xcstrings in Resources */,
