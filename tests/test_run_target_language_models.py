@@ -335,6 +335,13 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
             self.assertEqual(model_input["translationGroupId"], changed["translationGroupId"])
             self.assertEqual(model_input["revisionBrief"]["proposedTargetText"],
                              "A shorter, still complete translation.")
+            instruction = payload["messages"][0]["content"]
+            self.assertIn("shorter spoken", instruction)
+            self.assertIn("parenthetical verse citations", instruction)
+            if payload["model"] == "gpt-6-astra":
+                self.assertIn("proposal's length", instruction)
+            else:
+                self.assertIn("proposedTargetText", instruction)
             if payload["model"] == "gpt-6-astra":
                 fields = ("translationGroupId", "sourceUnitIds", "targetUtterances", "coverage")
             else:

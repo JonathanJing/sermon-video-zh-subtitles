@@ -501,12 +501,18 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
                   "formatting": policy["formatting"]}
         if brief is not None:
             common["revisionBrief"] = {
-                "instruction": ("Treat proposedTargetText as a duration-motivated draft, not "
-                                "as verified source truth. Produce concise natural target-language "
-                                "text while "
-                                "preserving every English meaning, name, number, negation, "
-                                "quotation, and rhetorical repetition. Report unresolved "
-                                "semantic concerns in independent review."),
+                "instruction": ("This is a shorter spoken adaptation for a fixed video cue. "
+                                "Use proposedTargetText as the wording and length target, "
+                                "not as verified source truth. Keep it when it conveys the "
+                                "source's facts and rhetorical purpose. Repair only a specific "
+                                "missing or changed fact, name, number, negation, quotation, "
+                                "theological distinction, or necessary rhetorical beat. "
+                                "Prefer a concise repair over restoring the prior full "
+                                "translation. Do not restore conversational filler or expand "
+                                "for style. Do not add parenthetical verse citations or "
+                                "editorial references that are absent from the spoken English. "
+                                "If the essential meaning cannot fit, report the "
+                                "conflict in independent review."),
                 "priorTargetTextSha256": brief["priorTargetTextSha256"],
                 "proposedTargetText": brief["proposedTargetText"],
             }
@@ -523,9 +529,17 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
             "checking the English source; do not assume the prior answer was correct. "
             + repair["instruction"] + " " if repair is not None else "")
         translate_prompt = {
-            "instruction": ("Translate the English sermon group into the target locale. Preserve every "
-                            "meaning, negation, number, name, quotation and theological distinction. "
-                            + scripture_prompt_instruction(policy) +
+            "instruction": (("Revise the proposed shorter spoken text against the English "
+                            "sermon group. Stay close to the proposal's length and wording; "
+                            "change it only to repair a specific essential meaning error. "
+                            "Preserve the source's facts, negations, numbers, names, quotations, "
+                            "theological distinctions and rhetorical purpose. "
+                            "Do not add parenthetical verse citations or editorial references "
+                            "absent from the spoken English. "
+                            if brief is not None else
+                            "Translate the English sermon group into the target locale. Preserve every "
+                            "meaning, negation, number, name, quotation and theological distinction. ") +
+                            scripture_prompt_instruction(policy) +
                             register_prompt_instruction(policy) +
                             repair_instruction +
                             "Resolve pronouns and elliptical repetitions using the surrounding "
@@ -555,6 +569,13 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
                 f"Astra source coverage is incomplete: {stem}")
         review_prompt = {
             "instruction": ("Independently compare the English source and Astra draft, one group at a time. "
+                            + ("This is a shorter spoken adaptation: keep the final text close "
+                               "to proposedTargetText in wording and length. Expand only to fix "
+                               "a specific essential error; do not restore filler or stylistic "
+                               "detail from the prior full translation. Explain any necessary "
+                               "expansion in semanticReview.evidence. Do not restore "
+                               "parenthetical verse citations or editorial references "
+                               "absent from the spoken English. " if brief is not None else "")
                             + scripture_prompt_instruction(policy) +
                             register_prompt_instruction(policy) +
                             repair_instruction +
