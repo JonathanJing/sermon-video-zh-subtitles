@@ -67,6 +67,8 @@ Dev Web 的「更多」可按讲员展开音色 Demo：每位先放原始英语�
 
 本机用 `scripts/stage_voice_demo_dev.py` 把 `artifacts/sermon-dubbing/2026-09-21-multilingual-voice-demos-v2` 的 24 条已解码样音、六位讲员的英语原声和前端组件叠加到**已发布且已有 HTTP 收据**的完整 Dev 候选。脚本校验来源 SHA、四语言覆盖和既有 121 个文件不被改变；原声缺失时用 `--reference speakerId=/path/to/original.wav` 明确补入。产物是新的 immutable v3 候选，Demo 媒体与目录仍留在 ignored `artifacts/` 或本机临时目录。此后按上面的本机 CD 入口先核对线上基线，再用干净且与远端一致的 `dev` checkout 执行部署和逐文件 HTTP 核验；30 条音频优先检查 Range 206，Firebase 对小文件返回完整 200 时核对完整长度与 SHA，并在收据中记录回退。浏览器听测与人工音色审核仍分别记录。
 
+正式站现有「讲员音色」卡片可独立追加 Dev 的六位讲员韩语与西语 Demo。`scripts/stage_production_voice_samples.py stage` 读取完整已发布 Production 快照、Dev Demo 候选及 `--delivery` 指向的原始交付目录；核对授权用途、注册表、统一文稿、24 条音频来源链，再逐条核对选出的 12 个 MP3 大小、SHA 与 `humanListeningStatus=pending`。候选只新增独立 Demo 目录及 `voice-samples.mjs`，并更新首页引用和样式。旧 `weekly.json` 与每周发布资源保持原样；新目录标明样音使用示例文稿，不代表正式韩／西证道音轨。`run_multilingual_cd.py --mode production` 对此类候选执行完整线上基线预检，`--execute` 仍要求干净且与远端同 SHA 的 `main`，部署后逐文件 HTTP/SHA 核验。下一次旧版中文周更可用 `stage_production_voice_samples.py refresh-weekly` 从已发布且完整 HTTP 核验的音色候选叠加新旧版发行包；它保留样音与当前首页，并把新周次、反馈目录绑定到新的候选与 CD 收据。真人听审、设备试听与现场验收各自记录。
+
 ## 建立 Dev App 的接受标准
 
 1. 新 Firebase project 和独立 Hosting site 已创建，并标记为非生产环境。
