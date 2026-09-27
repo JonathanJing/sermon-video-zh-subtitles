@@ -17,7 +17,11 @@ swift apps/tongxing-ios/scripts/generate-app-icon.swift
 | `AppIcon.appiconset`，1024×1024 | `AppIcon.png` | `AppIcon-dark.png` |
 | `BrandMark.imageset`，128×128 | `BrandMark.png` | `BrandMark-dark.png` |
 
-Xcode 的 `AppIcon` 资源中，默认图片不设 appearance，深色图片使用 `appearances: [{"appearance":"luminosity","value":"dark"}]`。在支持的 iOS 上，主屏幕图标按用户选择的图标外观显示；选择自动模式才跟随相应系统设置。旧系统使用默认图标。此次提供 Any 与 Dark 两种资源，没有单独制作 Tinted 资源。[Apple App Icon 配置](https://developer.apple.com/documentation/xcode/configuring-your-app-icon) · [主屏幕外观设置](https://support.apple.com/guide/iphone/customize-apps-and-widgets-on-the-home-screen-iph385473442/ios)
+`AppIcon.appiconset` 保留原来的默认与深色 PNG，供对照和回退；同名的 `App/AppIcon.icon` 是 Icon Composer 试验文件。Xcode 27.1 构建时优先采用 `.icon`，`scripts/generate-app-icon.swift` 不会更新它。主屏幕的图标外观由用户选择；系统切换深色模式不一定改变图标样式。[Apple Icon Composer 指南](https://developer.apple.com/documentation/xcode/creating-your-app-icon-using-icon-composer) · [主屏幕外观设置](https://support.apple.com/guide/iphone/customize-apps-and-widgets-on-the-home-screen-iph385473442/ios)
+
+### Icon Composer 试验
+
+在 Xcode 项目导航器中打开 `App/AppIcon.icon`，点击 **Open with Icon Composer** 编辑。文件复用 `Logo-light-source.png` 与 `Logo-source.png`，以图层透明度分别指定默认和深色外观；Mono/着色版由 Icon Composer 自动生成。保存后构建 `Tongxing` 即可预览。两个素材都是完整的扁平 PNG，因此玻璃效果作用于整张图层；要精细控制「同」字和书本的折射、高光，还需单独设计透明图层。此试验不改变 App 内 `BrandMark`。
 
 App 内页头使用 `BrandMark` 图片资源的 Any / Dark 变体，原生 SwiftUI 的 `Image("BrandMark")` 按当前视图外观选择。Mac SwiftPM 预览将两张 PNG 单独打包，并根据 `colorScheme` 选择。桌面图标与 App 内 Logo 的选择是两个机制，不通过程序调用更换备用 App 图标来模拟外观切换。
 
