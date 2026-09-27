@@ -157,7 +157,7 @@ def admit_evidence(source: dict[str, Any], anchor: dict[str, Any],
                  "Target utterances are missing")
         candidate_group = {key: copy.deepcopy(value) for key, value in group.items()
                            if key not in {"translatorRequestId", "reviewerRequestId"}}
-        candidate_group["targetText"] = "".join(text.strip() for text in utterances)
+        candidate_group["targetText"] = "".join(utterances)
         candidate_groups.append(candidate_group)
     t_receipt, r_receipt = generation["translator"], generation["reviewer"]
     _require(isinstance(t_receipt, dict) and isinstance(r_receipt, dict),
@@ -245,7 +245,7 @@ def run_language_plugin(source: dict[str, Any], anchor: dict[str, Any],
                  and isinstance(utterances, list) and utterances
                  and all(isinstance(text, str) and text.strip() for text in utterances),
                  "Language plugin group lacks bound source or target text")
-        target_text = "".join(text.strip() for text in utterances)
+        target_text = "".join(utterances)
         plugin_group = {
             "translationGroupId": group_id,
             "sourceUnitIds": unit_ids,

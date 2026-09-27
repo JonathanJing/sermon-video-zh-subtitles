@@ -112,7 +112,7 @@ def validate_target_candidate(source_package: dict[str, Any], anchor: dict[str, 
         _require(isinstance(utterances, list) and utterances
                  and all(isinstance(item, str) and item.strip() for item in utterances),
                  f"Invalid target utterances: {group_id}")
-        _require(group.get("targetText") == "".join(item.strip() for item in utterances),
+        _require(group.get("targetText") == "".join(utterances),
                  f"Target text differs from utterances: {group_id}")
         coverage = group.get("coverage")
         _require(isinstance(coverage, list)
