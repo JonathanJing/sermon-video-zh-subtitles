@@ -206,10 +206,10 @@ final class AppModel: ObservableObject {
         selectedMultilingualPage?.publishedTargets ?? []
     }
     var selectedContentTarget: PageTarget? { selectedMultilingualPage?.targets[selectedContentLocale] }
-    var fullVideoPageURL: URL? {
+    var fullVideoURL: URL? {
         guard multilingualCatalog?.schemaVersion == MultilingualCatalog.dualScriptSchemaVersion,
               let page = selectedMultilingualPage else { return nil }
-        return mediaOrigin.appendingPathComponent("pages/\(page.id)/index.html")
+        return mediaOrigin.appendingPathComponent("pages/\(page.id)/full-video-browser.mp4")
     }
     var usesNativePublishedReader: Bool {
         selectedWeek == nil && multilingualCatalog?.schemaVersion == MultilingualCatalog.dualScriptSchemaVersion

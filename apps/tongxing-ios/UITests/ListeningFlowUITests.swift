@@ -208,6 +208,9 @@ final class ListeningFlowUITests: XCTestCase {
         let app = launchFixture(dualScript: true)
         XCTAssertEqual(app.staticTexts["published-page-title"].label, "测试完整视频证道")
         XCTAssertTrue(element("watch-full-video", in: app).exists)
+        app.buttons["watch-full-video"].tap()
+        XCTAssertTrue(app.staticTexts["native-full-video"].waitForExistence(timeout: 5))
+        app.buttons["完成"].tap()
         let prepare = app.buttons["prepare-published-audio"]
         XCTAssertTrue(prepare.waitForExistence(timeout: 5))
         prepare.tap()
@@ -246,6 +249,10 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertLessThan(currentPage.frame.minY, previousWeek.frame.minY)
         screenshot("production-native-current-week-first-in-picker", app: app)
         currentPage.tap()
+        app.buttons["watch-full-video"].tap()
+        XCTAssertTrue(app.staticTexts["native-full-video"].waitForExistence(timeout: 5))
+        screenshot("production-native-full-video-in-app", app: app)
+        app.buttons["完成"].tap()
         for locale in ["zh-Hans", "ko", "es"] {
             app.buttons["choose-content-language"].tap()
             app.buttons["content-language-\(locale)"].tap()

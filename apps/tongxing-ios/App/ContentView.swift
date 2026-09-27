@@ -1,3 +1,4 @@
+import AVKit
 import CryptoKit
 import SwiftUI
 import TongxingCore
@@ -125,8 +126,11 @@ struct ContentView: View {
                                     .accessibilityIdentifier("published-page-title")
                                 Text(page.date).font(.subheadline).foregroundStyle(.secondary)
                                 languageButton
-                                if let videoURL = model.fullVideoPageURL {
-                                    Link(destination: videoURL) {
+                                if model.fullVideoURL != nil {
+                                    Button {
+                                        playback.pause()
+                                        sheet = .video
+                                    } label: {
                                         Label(localization.text("观看完整视频"), systemImage: "play.rectangle")
                                     }
                                     .accessibilityIdentifier("watch-full-video")
@@ -279,6 +283,8 @@ struct ContentView: View {
                 case .about:
                     AboutSheet(model: model)
                         .presentationDetents([.large]).presentationDragIndicator(.visible)
+                case .video:
+                    if let url = model.fullVideoURL { FullVideoSheet(url: url) }
                 }
             }
             }
@@ -772,8 +778,34 @@ struct AlignmentControls: View {
 }
 
 private enum ListeningSheet: String, Identifiable {
-    case weeks, languages, precision, outline, about
+    case weeks, languages, precision, outline, about, video
     var id: String { rawValue }
+}
+
+private struct FullVideoSheet: View {
+    @ObservedObject private var localization = AppLocalization.shared
+    @Environment(\.dismiss) private var dismiss
+    @ViewState private var player: AVPlayer
+
+    init(url: URL) { _player = ViewState(initialValue: AVPlayer(url: url)) }
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 16) {
+                VideoPlayer(player: player)
+                    .aspectRatio(16 / 9, contentMode: .fit)
+                    .accessibilityIdentifier("native-full-video-player")
+                Text(localization.text("原始英文视频"))
+                    .font(.footnote).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("native-full-video")
+                Spacer(minLength: 0)
+            }
+            .padding()
+            .navigationTitle(localization.text("观看完整视频"))
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button(localization.text("完成")) { dismiss() } } }
+        }
+        .onDisappear { player.pause() }
+    }
 }
 
 private struct TargetLanguageSheet: View {

@@ -4399,6 +4399,24 @@
         }
       }
     },
+    "原始英文视频": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Original English video" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "영어 원본 영상" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Video original en inglés" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Video gốc tiếng Anh" } }
+      }
+    },
+    "观看完整视频": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Watch full video" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "전체 영상 보기" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Ver video completo" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Xem video đầy đủ" } }
+      }
+    },
     "英文原视频 ↗": {
       "extractionState": "manual",
       "localizations": {

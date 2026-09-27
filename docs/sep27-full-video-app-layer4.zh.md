@@ -1,6 +1,8 @@
 # 2026-09-27 完整视频的 App Layer 4 发布
 
-本周网页保留完整 31:31 视频及已批准的完整三语文稿。配音使用另行批准的短口播稿；两份文字同属一个已批准英文来源，但三语音轨分别绑定短口播候选。因此本次 App 发布使用 `sermon-target-language-release-package-v2`：`targetLanguageCandidateJsonSha256` 指完整阅读稿，`spokenTargetLanguageCandidateJsonSha256` 指短口播稿，`targetLanguageAudioPackageJsonSha256` 指已经整轨听审的音频包。Layer 4 只核对和聚合，不修改任何上游文字或音频。
+本周面向听众的交付物是**在同行 App 内可选择、打开和收听的 9 月 27 日证道**。`/pages/2026-09-27-weekend-sermon-drive-530/index.html` 是公开内容资产和浏览器兼容入口；单独访问该 URL 或取得 HTTP 200，不算完成 App 交付。App 内须能从“选择证道”看到本周并进入同一阅读／播放界面，在界面内观看完整 31:31 原视频、切换中韩西三语配音与文字、阅读英文对照并使用现场声音定位。网页 App 与原生 iOS 分别验收；已安装旧 iOS 版本还需取得并安装支持该目录的更新。
+
+配音使用另行批准的短口播稿；完整阅读稿与短口播稿同属一个已批准英文来源，但三语音轨分别绑定短口播候选。因此本次 App 发布使用 `sermon-target-language-release-package-v2`：`targetLanguageCandidateJsonSha256` 指完整阅读稿，`spokenTargetLanguageCandidateJsonSha256` 指短口播稿，`targetLanguageAudioPackageJsonSha256` 指已经整轨听审的音频包。Layer 4 只核对和聚合，不修改任何上游文字或音频。
 
 旧版 App 保持读取 `/multilingual-v2.json` 与 `/releases/` 的 v1 包；新版 App 读取独立的 `/multilingual-v3.json` 与 `/releases-v2/` 的 v2 包。不得把 v2 发布包写入旧目录。新版目录的页面标题来自已批准中文完整页面资料。
 
@@ -60,6 +62,8 @@ Firebase 部署后，2 个 UI 文件、1 份绑定接口和 3 份索引均 HTTP 
 ## iOS 本周内容同步（2026-09-27）
 
 原生阅读区直接消费同一 v3 目录与 v2 发布包，分别展示短口播字幕和完整文稿；两者均按 `textGroupId + sourceUnitIds` 使用已批准英文对照。选择语言返回 App 内阅读区，准备对应的哈希校验音轨，沿用唯一 `PlaybackController`。全文的定位按钮使用同组口播字幕时间，避免把原视频时间误当作配音时间。界面语言保持独立。
+
+2026-09-27 复盘修正：原生 App 的“观看完整视频”原先是打开上述网页地址，偏离 App 内交付目标。当前工作分支改为在原生视频 sheet 中播放同源 `/pages/<pageId>/full-video-browser.mp4`，打开视频时暂停配音，关闭视频时停止其播放器。选择证道列表把 v3 已发布本周页置于往期 `weekly.json` 前面。此代码与模拟器验证须和 TestFlight 分发、用户手机安装分别留证；签名归档或模拟器截图不能替代手机上的可打开状态。
 
 `VerifiedPublishedTranscript` 校验页面、语言、来源与完整候选身份，Repository 校验正式包和内容／字幕字节哈希。坏缓存不可用；英文补充资料缺失或绑定不匹配时只隐藏英文，不阻止已批准译文。全文和字幕可以从已验证缓存读取；英文补充资料目前只在线读取，未宣称英文离线可用。
 
