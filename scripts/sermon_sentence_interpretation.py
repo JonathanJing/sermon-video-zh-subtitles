@@ -116,12 +116,16 @@ def write_json(path: Path, value: object) -> None:
     temporary.replace(path)
 
 
-def _word_text(words: list[dict[str, Any]]) -> str:
-    # MFA retains punctuation on the word token.  Whitespace is presentation;
-    # the immutable identity is the ordered word IDs and token text.
-    text = " ".join(str(word["text"]) for word in words)
+def _presentation_text(text: str) -> str:
+    # Spacing around punctuation is presentation, not a change to frozen words.
+    text = re.sub(r"\s+", " ", text.strip())
     text = re.sub(r"\s+([,.;:!?])", r"\1", text)
     return re.sub(r"([\u2014\u2013-])\s+", r"\1", text)
+
+
+def _word_text(words: list[dict[str, Any]]) -> str:
+    # MFA retains punctuation on the word token; word IDs and token text are identity.
+    return _presentation_text(" ".join(str(word["text"]) for word in words))
 
 
 def _split_internal_pause_token(raw: dict[str, Any], *, pause_seconds: float
@@ -378,7 +382,7 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
         chunk_word_counts[chunk_id] = chunk_word_counts.get(chunk_id, 0) + len(segment.get("wordTimes") or [])
         if not words:
             continue
-        if re.sub(r"\s+", " ", str(segment.get("text", "")).strip()) != _word_text(words):
+        if _presentation_text(str(segment.get("text", ""))) != _word_text(words):
             issues.append({
                 "type": "segment_word_text_mismatch",
                 "sourceSentenceId": sentence_id,

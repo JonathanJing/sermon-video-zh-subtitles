@@ -255,6 +255,12 @@ class SentenceInterpretationTests(unittest.TestCase):
         manifest = subject.build_anchor_manifest(changed, source_path=self.source)
         self.assertIn("segment_word_text_mismatch", {issue["type"] for issue in manifest["issues"]})
 
+    def test_dash_spacing_is_only_presentation(self):
+        segments = [segment("And you— Purchased.", ["And", "you—", "Purchased."], start=0.0)]
+        self.source.write_text(json.dumps(segments), encoding="utf-8")
+        manifest = subject.build_anchor_manifest(segments, source_path=self.source)
+        self.assertNotIn("segment_word_text_mismatch", {issue["type"] for issue in manifest["issues"]})
+
     def test_valid_candidate_builds_rolling_schedule_but_is_not_release_eligible(self):
         report = subject.validate_candidate(self.manifest, self.candidate())
         self.assertTrue(report["candidateReadyForHumanReview"])
