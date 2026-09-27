@@ -26,7 +26,8 @@ MODES = {
             "schema": {"sermon-multilingual-dev-preview-v1", "sermon-multilingual-dev-preview-v2",
                        "sermon-multilingual-dev-preview-v3"}},
     "production": {"branch": "main", "script": ROOT / "scripts/deploy_multilingual_hosting.py",
-                   "schema": {"sermon-multilingual-hosting-candidate-v1"}},
+                   "schema": {"sermon-multilingual-hosting-candidate-v1",
+                              "sermon-production-voice-overlay-v1"}},
 }
 
 
@@ -51,6 +52,75 @@ def run_command(*args: str) -> None:
     subprocess.run([sys.executable, *map(str, args)], cwd=ROOT, check=True)
 
 
+def release_voice_samples(candidate: Path, out: Path, *, execute: bool,
+                          expected_commit: str | None,
+                          expected_build_report_sha256: str | None) -> dict:
+    """Publish a demo-only Production overlay through the same main-branch gate."""
+    from datetime import datetime, timezone
+    try:
+        from scripts import stage_production_voice_samples as voices
+    except ImportError:
+        import stage_production_voice_samples as voices
+
+    build_sha = hosting.digest(candidate / "build-report.json")
+    if expected_build_report_sha256 and build_sha != expected_build_report_sha256:
+        raise ValueError("Selected candidate build report changed")
+    code_sha = git_value("rev-parse", "HEAD")
+    if execute:
+        if not expected_commit or not expected_build_report_sha256:
+            raise ValueError("Execution requires explicit code and candidate hashes")
+        code_sha = require_release_checkout("production", expected_commit)
+    out.mkdir(parents=True)
+    lock_path = out.parent / ".sermon-multilingual-production-deploy.lock"
+    with lock_path.open("a+b") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        preflight = out / "preflight.json"
+        run_command(str(ROOT / "scripts/stage_production_voice_samples.py"), "preflight",
+                    "--candidate", str(candidate), "--out", str(preflight))
+        receipt = hosting.load(preflight)
+        report = voices.verify_candidate(candidate)
+        if (receipt.get("status") != "pass" or receipt.get("phase") != "baseline"
+                or receipt.get("buildReportSha256") != build_sha
+                or receipt.get("checkedFiles") != len(report["baseFiles"])):
+            raise ValueError("Voice audition preflight did not bind the complete baseline")
+        deployment = {"schemaVersion": "sermon-production-voice-deployment-v1",
+                      "status": "validated_not_deployed", "siteId": voices.SITE,
+                      "projectId": voices.PROJECT, "buildReportSha256": build_sha,
+                      "preflightSha256": hosting.digest(preflight)}
+        if execute:
+            command = ["npx", "--yes", "firebase-tools@15.29.0", "deploy", "--only",
+                       "hosting", "--project", voices.PROJECT, "--non-interactive",
+                       "--message", "Korean and Spanish speaker voice auditions"]
+            subprocess.run(command, cwd=candidate, check=True)
+            deployment["status"] = "deployed_http_verification_pending"
+            deployment["deployedAt"] = datetime.now(timezone.utc).isoformat()
+        deployment_path = out / "deployment.json"
+        deployment_path.write_text(json.dumps(deployment, ensure_ascii=False, sort_keys=True,
+                                              indent=2) + "\n", encoding="utf-8")
+        verification = out / "http-verification.json"
+        if execute:
+            run_command(str(ROOT / "scripts/stage_production_voice_samples.py"), "verify",
+                        "--candidate", str(candidate), "--out", str(verification))
+            checked = hosting.load(verification)
+            if (checked.get("status") != "pass" or checked.get("phase") != "published"
+                    or checked.get("buildReportSha256") != build_sha
+                    or checked.get("checkedFiles") != len(report["files"])):
+                raise ValueError("Voice audition HTTP verification failed")
+        result = {"schemaVersion": "sermon-multilingual-cd-receipt-v1",
+                  "environment": "production",
+                  "status": "published_http_verified" if execute else "validated_not_deployed",
+                  "codeCommitSha": code_sha, "buildReportSha256": build_sha,
+                  "preflightSha256": hosting.digest(preflight),
+                  "deploymentSha256": hosting.digest(deployment_path),
+                  "httpVerificationSha256": hosting.digest(verification) if execute else None,
+                  "feedbackDeploymentStatus": "unchanged",
+                  "deviceAcceptance": "not_run", "venueAcceptance": "not_run"}
+        (out / "cd-receipt.json").write_text(
+            json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+            encoding="utf-8")
+        return result
+
+
 def release(mode: str, candidate: Path, out: Path, *, execute: bool,
             expected_commit: str | None = None,
             expected_build_report_sha256: str | None = None,
@@ -71,6 +141,12 @@ def release(mode: str, candidate: Path, out: Path, *, execute: bool,
     build_sha = hosting.digest(report_path)
     if expected_build_report_sha256 and build_sha != expected_build_report_sha256:
         raise ValueError("Selected candidate build report changed")
+    if report["schemaVersion"] == "sermon-production-voice-overlay-v1":
+        if mode != "production" or legacy_release is not None:
+            raise ValueError("Voice audition overlay is Production only")
+        return release_voice_samples(candidate, out, execute=execute,
+                                     expected_commit=expected_commit,
+                                     expected_build_report_sha256=expected_build_report_sha256)
     legacy_feedback = None
     if report.get("legacyWeeklyReleaseBuildReportSha256"):
         if mode != "production" or legacy_release is None:
