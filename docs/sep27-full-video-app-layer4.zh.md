@@ -24,3 +24,7 @@
 | 新 App 目录 | `/multilingual-v3.json` |
 
 本周 `pageId` 是 `2026-09-27-weekend-sermon-drive-530`。原始候选保存在忽略目录 `artifacts/drive-source-20260926-1730/layer4-app-prepared-20260927-v3/`。2026-09-27 已将封装后的三语包与 v3 目录发布到正式 Hosting；最终候选的 111 个文件逐一下载并通过 SHA-256 核对，三条 MP3 的 Range 请求均返回 206。收据位于同一忽略目录下的 `layer4-app-publish-20260927-v1/`。新版 iOS Release 模拟器构建读取正式目录并打开本周页，线上客户端存储测试加载三语阅读页并校验中文音轨。App Store Connect 二进制分发、真机和现场验收另行留证，不从这些结果推断。
+
+## Firebase App 首页
+
+正式 Hosting 首页 `/` 和 `/index.html` 在没有 `week` 参数时，由 `firebase/production-overlay/current-week-router.js` 打开本周完整视频页。带 `?week=<旧周次 ID>` 的直接链接仍进入原有按周阅读器。首页旧入口的“配音待补充”提示已更新为三语配音已发布。本次从前一版 111 文件候选复制，只新增路由脚本并修改首页 HTML；视频、文稿、音轨和发布包均未改动。发布候选和差异、HTTP 核对收据保存在忽略目录 `artifacts/drive-source-20260926-1730/layer4-app-hosting-phase3-home-20260927-v1/`。浏览器实测首页进入 31:31 视频页，韩语和西语均显示对应全文及可选配音；旧周次直接链接仍打开旧页。此网页发布不代表原生 iOS 二进制已在 App Store 分发。
