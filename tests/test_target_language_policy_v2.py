@@ -13,10 +13,12 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class ScopedPolicyTests(unittest.TestCase):
     def test_capitalized_sentence_openings_are_not_scoped_proper_names(self):
-        rows = [{"english": "If Jesus speaks, When Jesus responds, The Bible says Our Lord reigns. "
-                            "Julius Caesar appears in the example. Listen to the If I Had More Time podcast."}]
+        rows = [{"english": "As Jesus endured death, In Revelation 4 and 5 we see the throne. "
+                            "When Caligula was made emperor, What He has for you is amazing. "
+                            "Julius Caesar and Nicholas Carr are named. "
+                            "Listen to the If I Had More Time podcast."}]
         self.assertEqual(subject.source_scoped_proper_names(rows, set()),
-                         {"Julius Caesar", "If I Had More Time"})
+                         {"Julius Caesar", "Nicholas Carr", "If I Had More Time"})
 
     def setUp(self):
         self.anchor = {"sourceUnits": [
