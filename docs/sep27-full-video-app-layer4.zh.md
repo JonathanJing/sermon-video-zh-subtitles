@@ -72,3 +72,5 @@ Firebase 部署后，2 个 UI 文件、1 份绑定接口和 3 份索引均 HTTP 
 同日 iPhone Duo / iOS 27.1 的正式 Firebase 路径 UI 检查通过：中、韩、西各自下载并准备音轨、播放时间推进、在 App 内切换语言、当前英文与字幕全文英文可见。结果为 `native-week41/production-ui-v2.xcresult`（1 项通过，53.712 秒），6 张截图在 `native-week41/production-screenshots/`；韩语截图已视觉检查。Release UI 测试使用 `ENABLE_TESTABILITY=YES` 的模拟器构建，正式签名归档不使用此开关。初次尝试因 Release 模块未启用测试、随后测试脚本使用了错误按钮标识失败，最终按既有 `playback-toggle` 修正测试后通过；没有因此修改生产播放器。
 
 1.0.0（41）于 2026-09-27 07:57 PDT 上传成功，Apple 接收后进入 Processing；此上传记录本身不表示测试者可安装。App Store 的 1.0.0（34）仍为 In Review，本次没有撤回它。真机、现场麦克风与会场噪声验收未执行。
+
+最终 TestFlight 回读：Apple 已完成 build 41 处理；内部 Rooted 显示 **Testing**（1 名既有测试者），外部 Rooted 的 Beta Review 提交后显示 **Approved**（0 名测试者）。本轮没有新增测试者或邀请。用户可通过已加入的内部测试组在 TestFlight 更新至 1.0.0（41）；外部组审核通过不代表已有外部收件人。此状态不等同 App Store 上架；build 34 的正式审核保持不变。
