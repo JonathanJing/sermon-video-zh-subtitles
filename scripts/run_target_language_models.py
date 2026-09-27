@@ -511,6 +511,12 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
                                 "translation. Do not restore conversational filler or expand "
                                 "for style. Do not add parenthetical verse citations or "
                                 "editorial references that are absent from the spoken English. "
+                                "Keep references at the speaker's spoken specificity: if "
+                                "English only says 'verse 5', do not add a book or chapter "
+                                "name even when context identifies it. "
+                                "Preserve an unfinished source clause when the next source "
+                                "unit completes it; do not finish or repeat that continuation "
+                                "inside this group. "
                                 "If the essential meaning cannot fit, report the "
                                 "conflict in independent review."),
                 "priorTargetTextSha256": brief["priorTargetTextSha256"],
@@ -536,6 +542,10 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
                             "theological distinctions and rhetorical purpose. "
                             "Do not add parenthetical verse citations or editorial references "
                             "absent from the spoken English. "
+                            "If English only says a relative verse number, do not add an "
+                            "unspoken book or chapter name. "
+                            "Keep unfinished clauses open for the next source unit instead "
+                            "of completing or repeating the next unit's words. "
                             if brief is not None else
                             "Translate the English sermon group into the target locale. Preserve every "
                             "meaning, negation, number, name, quotation and theological distinction. ") +
@@ -575,7 +585,11 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
                                "detail from the prior full translation. Explain any necessary "
                                "expansion in semanticReview.evidence. Do not restore "
                                "parenthetical verse citations or editorial references "
-                               "absent from the spoken English. " if brief is not None else "")
+                               "absent from the spoken English. Keep a relative verse "
+                               "reference relative; do not add an unspoken book or chapter "
+                               "name. Check adjacent source units: preserve an unfinished "
+                               "clause and do not duplicate its completion in this group. "
+                               if brief is not None else "")
                             + scripture_prompt_instruction(policy) +
                             register_prompt_instruction(policy) +
                             repair_instruction +

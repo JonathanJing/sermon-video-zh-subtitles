@@ -338,6 +338,8 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
             instruction = payload["messages"][0]["content"]
             self.assertIn("shorter spoken", instruction)
             self.assertIn("parenthetical verse citations", instruction)
+            self.assertIn("unspoken book or chapter", instruction)
+            self.assertIn("unfinished", instruction)
             if payload["model"] == "gpt-6-astra":
                 self.assertIn("proposal's length", instruction)
             else:
