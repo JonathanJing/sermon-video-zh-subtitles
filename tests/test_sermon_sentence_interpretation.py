@@ -292,6 +292,34 @@ class SentenceInterpretationTests(unittest.TestCase):
         self.assertFalse(any(unit["english"].endswith("chose,")
                              for unit in manifest["sourceUnits"]))
 
+    def test_clause_stable_v2_keeps_restrictive_that_with_everything(self):
+        raw = segment(
+            "Worthy is the Lamb to receive everything that you are.",
+            ["Worthy", "is", "the", "Lamb", "to", "receive", "everything", "that", "you", "are."],
+            gaps=[0.1] * 6 + [1.2, 0.1, 0.1],
+        )
+        self.source.write_text(json.dumps([raw]), encoding="utf-8")
+        manifest = subject.build_anchor_manifest(
+            [raw], source_path=self.source, max_unit_seconds=3.0,
+            min_unit_seconds=0.5, unit_policy=subject.UNIT_POLICY_V2,
+        )
+        self.assertFalse(any(unit["english"].endswith("everything")
+                             for unit in manifest["sourceUnits"]))
+
+    def test_clause_stable_v2_keeps_parallel_as_complements_together(self):
+        raw = segment(
+            "If you reject Jesus as your Savior, as your sacrifice, he will judge you.",
+            ["If", "you", "reject", "Jesus", "as", "your", "Savior,", "as", "your",
+             "sacrifice,", "he", "will", "judge", "you."],
+        )
+        self.source.write_text(json.dumps([raw]), encoding="utf-8")
+        manifest = subject.build_anchor_manifest(
+            [raw], source_path=self.source, max_unit_seconds=3.0,
+            min_unit_seconds=0.5, unit_policy=subject.UNIT_POLICY_V2,
+        )
+        self.assertFalse(any(unit["english"].endswith("Savior,")
+                             for unit in manifest["sourceUnits"]))
+
     def test_clause_stable_v2_recovers_internal_pause_from_phone_clusters(self):
         raw = [{
             "id": 0,

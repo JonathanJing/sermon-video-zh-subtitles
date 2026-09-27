@@ -281,6 +281,10 @@ def _dependent_clause_boundary(words: list[dict[str, Any]], index: int) -> bool:
         return True
     if previous == "means" and next_word == "that":
         return True
+    if previous in {"everything", "anything", "something", "nothing", "all"} and next_word == "that":
+        return True
+    if str(words[index]["text"]).endswith(",") and next_word == "as":
+        return True
     if previous in {"choose", "chooses", "chose", "chosen"} and next_word in {"out", "to"}:
         return True
     if str(words[index]["text"]).endswith(",") and next_word == "to":

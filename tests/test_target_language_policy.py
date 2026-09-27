@@ -36,6 +36,19 @@ class TargetLanguagePolicyTests(unittest.TestCase):
         self.assertTrue(all(not result["productionPolicyReady"] for result in
                             (zh_result, ko_result, es_result)))
 
+    def test_reference_only_policy_needs_no_bible_edition_but_keeps_other_gates(self):
+        draft = read_policy("ko")
+        draft.pop("componentSha256")
+        draft["scripture"]["editionId"] = None
+        draft["scripture"]["citationUseStatus"] = "project_source_reviewed"
+        draft["scripture"]["quoteCheckPolicy"] = "references_only"
+        resolved = subject.validate_policy(subject.freeze_policy(draft))
+        self.assertNotIn("scripture_policy_pending", resolved["unresolved"])
+        self.assertIn("language_review_plugin_pending", resolved["unresolved"])
+        draft["scripture"]["quoteCheckPolicy"] = "source_bound_exact_quote"
+        exact_quote = subject.validate_policy(subject.freeze_policy(draft))
+        self.assertIn("scripture_policy_pending", exact_quote["unresolved"])
+
     def test_every_component_changes_global_identity_and_stale_hash_fails(self):
         original = read_policy("ko")
         original_hash = subject.validate_policy(original)["translationPolicySha256"]

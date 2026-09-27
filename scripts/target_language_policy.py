@@ -81,7 +81,10 @@ def validate_policy(policy: dict[str, Any], *, series_table: Path = SERIES_TABLE
         raise ValueError("Translator and reviewer need independent prompt versions")
     scripture = policy["scripture"]
     unresolved = []
-    if not scripture["editionId"] or scripture["citationUseStatus"] == "pending" or scripture["quoteCheckPolicy"] == "pending":
+    edition_needed = scripture["quoteCheckPolicy"] == "source_bound_exact_quote"
+    if (scripture["citationUseStatus"] == "pending"
+            or scripture["quoteCheckPolicy"] == "pending"
+            or (edition_needed and not scripture["editionId"])):
         unresolved.append("scripture_policy_pending")
     if policy["languageReview"]["implementationStatus"] != "verified":
         unresolved.append("language_review_plugin_pending")
