@@ -1,4 +1,5 @@
 import json
+import hashlib
 from pathlib import Path
 import tempfile
 import unittest
@@ -49,7 +50,8 @@ class ProductionVoiceWeeklyRefreshTests(unittest.TestCase):
             with patch.object(voices, "verify_candidate",
                               side_effect=lambda candidate: hosting.load(candidate / "build-report.json")), \
                  patch.object(voices.weekly_release, "read_release",
-                              return_value=({"feedbackEnabled": False}, new_weekly)):
+                              return_value=({"feedbackEnabled": False, "reviewPreview": False},
+                                            new_weekly)):
                 refreshed = voices.refresh(base, legacy, prior, out)
             self.assertEqual((out / "public/index.html").read_text(),
                              "current Production home with voice auditions")
@@ -59,6 +61,39 @@ class ProductionVoiceWeeklyRefreshTests(unittest.TestCase):
             self.assertEqual((out / "public/media/new.mp3").read_text(), "new published track")
             self.assertEqual(refreshed["modifiedFiles"], ["weekly.json"])
             self.assertEqual(refreshed["addedFiles"], ["media/new.mp3"])
+            with patch.object(voices, "verify_candidate", return_value=report), \
+                 patch.object(voices.weekly_release, "read_release",
+                              return_value=({"feedbackEnabled": False,
+                                             "reviewPreview": True}, new_weekly)):
+                with self.assertRaisesRegex(ValueError, "Weekly release"):
+                    voices.refresh(base, legacy, prior, root / "unreviewed")
+
+
+class ProductionVoiceRangeTests(unittest.TestCase):
+    def test_audio_range_accepts_exact_byte_or_checked_full_body(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            public = Path(temporary)
+            asset = public / "voice-demos/eric/ko.mp3"
+            asset.parent.mkdir(parents=True)
+            asset.write_bytes(b"sample")
+            item = {"path": "voice-demos/eric/ko.mp3", "bytes": 6,
+                    "sha256": hosting.digest(asset)}
+            partial = (206, {"content-range": "bytes 0-0/6"}, 1,
+                       hashlib.sha256(b"s").hexdigest())
+            full = (200, {}, 6, item["sha256"])
+            for response, expected in ((partial, {"range206": True,
+                                                  "fullBodyFallback": False}),
+                                       (full, {"range206": False,
+                                               "fullBodyFallback": True})):
+                with patch.object(voices.http, "request_file", return_value=response) as request:
+                    self.assertEqual(voices.check_audio_range(public, item), expected)
+                    self.assertEqual(request.call_args.kwargs["request_headers"],
+                                     {"Range": "bytes=0-0"})
+            with patch.object(voices.http, "request_file",
+                              return_value=(206, {"content-range": "bytes 0-1/6"}, 1,
+                                            hashlib.sha256(b"s").hexdigest())):
+                with self.assertRaisesRegex(ValueError, "Range/full-body"):
+                    voices.check_audio_range(public, item)
 
 
 if __name__ == "__main__":
