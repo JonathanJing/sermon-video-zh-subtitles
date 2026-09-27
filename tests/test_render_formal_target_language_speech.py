@@ -10,6 +10,9 @@ import unittest
 from unittest.mock import patch
 
 from scripts import render_formal_target_language_speech as subject
+from scripts import four_layer_measure as measure
+from scripts import four_layer_progress as progress
+from scripts import sermon_accounting as accounting
 from tests import test_build_target_language_audio_package as fixture_module
 
 
@@ -55,6 +58,25 @@ class FormalRenderTests(unittest.TestCase):
         rows = self.render_units()
         self.assertEqual(len(rows), 2)
         self.assertEqual(len(FakeSynth.calls), 2)
+
+    def test_progress_ledger_tracks_audio_render_validation_and_sync(self):
+        ledger_path = self.root.parent / "four-layer-progress.json"
+        progress.save(ledger_path, progress.new_ledger("audio-page", ["ko"]))
+        step = "L3-02@ko"
+        with measure.producer_step(ledger_path, step, locale="ko"):
+            accounting.record_workload(measure.stage_name(step), {"speechUnits": len(self.context["job"]["units"])})
+            rows = self.render_units()
+            subject.assemble(self.context, self.paths, self.root, rows)
+        events, damaged = accounting.read_events(ledger_path.parent / "accounting")
+        self.assertFalse(damaged)
+        row = next(row for row in measure.timing_audit(progress.load(ledger_path), events)["rows"]
+                   if row["step"] == step)
+        substages = {child["id"]: child for child in row["subStages"]}
+        self.assertEqual(substages["unit_synthesis"]["completedUnits"], 2)
+        self.assertEqual(substages["audio_validation"]["completedUnits"], 2)
+        self.assertGreater(substages["audio_validation"]["audioSeconds"], 0)
+        self.assertEqual(substages["schedule_sync"]["completedUnits"], 1)
+        self.assertEqual(substages["schedule_sync"]["overLimitUnits"], 0)
         for row in rows:
             self.assertEqual(subject.package.read_object(self.root / row["receipt"]["path"])
                              ["fullDecode"], "pass")

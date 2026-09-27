@@ -24,12 +24,16 @@ import wave as wave_module
 
 try:
     from scripts import build_target_language_audio_package as package
+    from scripts import four_layer_measure as measure
     from scripts import render_multilingual_voice_demos as demos
+    from scripts import sermon_accounting as accounting
     from scripts import sermon_sentence_interpretation as identity
     from scripts import validate_target_language_audio_unit as integrity
 except ImportError:
     import build_target_language_audio_package as package
+    import four_layer_measure as measure
     import render_multilingual_voice_demos as demos
+    import sermon_accounting as accounting
     import sermon_sentence_interpretation as identity
     import validate_target_language_audio_unit as integrity
 
@@ -493,16 +497,19 @@ def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
             if previous is not None:
                 shutil.copyfile(previous, partial)
             else:
-                if model is None:
-                    model = synth_factory(context["checkpoint"], device=device, dtype=dtype,
-                                          attention=attention, instruct=unit_instruct)
-                else:
-                    model.instruct = unit_instruct
-                wavs, rate = model(spoken_text or unit["text"], adapter["languageParameter"],
-                                   adapter["speakerKey"], seed=seed + index)
-                # A partial belongs to this same intent and is safe to replace on resume.
-                write_pcm16(partial, wavs, int(rate))
-            integrity.probe_full_decode(partial)
+                with measure.producer_substage("unit_synthesis", billing="local"):
+                    if model is None:
+                        model = synth_factory(context["checkpoint"], device=device, dtype=dtype,
+                                              attention=attention, instruct=unit_instruct)
+                    else:
+                        model.instruct = unit_instruct
+                    wavs, rate = model(spoken_text or unit["text"], adapter["languageParameter"],
+                                       adapter["speakerKey"], seed=seed + index)
+                    # A partial belongs to this same intent and is safe to replace on resume.
+                    write_pcm16(partial, wavs, int(rate))
+            with measure.producer_substage("audio_validation", billing="local"):
+                decoded = integrity.probe_full_decode(partial)
+                measure.record_substage_metrics({"audioSeconds": decoded["durationSeconds"]})
             commit = {"identity": expected, "audioSha256": identity.sha256(partial)}
             write_json_atomic(commit_path, commit)
             os.replace(partial, wav_path)
@@ -573,13 +580,19 @@ def assemble(context: dict[str, Any], paths: dict[str, Path], root: Path,
                 "Cached render uses a different track format")
         package.build_package(paths, manifest_path, root)
         return existing
-    plan = schedule(context, rows, policy)
-    if plan["status"] != "pass":
-        write_json_atomic(root / "render-diagnostics.json", {
-            "schemaVersion": "sermon-formal-render-diagnostics-v1", "status": "schedule_overflow",
-            "jobJsonSha256": identity.json_sha256(context["job"]),
-            "targetLocale": locale, "schedule": plan})
-        raise ValueError(f"Measured target audio exceeds 1x clip schedule: {plan['issues'][0]}")
+    with measure.producer_substage("schedule_sync", billing="local"):
+        plan = schedule(context, rows, policy)
+        measure.record_substage_metrics({
+            "overLimitUnits": len(plan["issues"]),
+            "clipDurationSeconds": context["clip_timeline_map"]["clipDurationSeconds"],
+            "plannedDurationSeconds": plan["entries"][-1]["plannedEnd"] if plan["entries"] else 0,
+        })
+        if plan["status"] != "pass":
+            write_json_atomic(root / "render-diagnostics.json", {
+                "schemaVersion": "sermon-formal-render-diagnostics-v1", "status": "schedule_overflow",
+                "jobJsonSha256": identity.json_sha256(context["job"]),
+                "targetLocale": locale, "schedule": plan})
+            raise ValueError(f"Measured target audio exceeds 1x clip schedule: {plan['issues'][0]}")
     clip_duration = context["clip_timeline_map"]["clipDurationSeconds"]
     sample_rate = None
     channels = None
@@ -689,19 +702,27 @@ def render(paths: dict[str, Path], checkpoint_map_path: Path,
            attention: str | None = "sdpa", instruct: str | None = None,
            unit_instructions_path: Path | None = None,
            policy: dict[str, float] | None = None, track_format: str = "wav",
-           synth_factory: Callable[..., Any] = QwenSynthesizer) -> dict[str, Any]:
+           synth_factory: Callable[..., Any] = QwenSynthesizer,
+           progress_ledger: Path | None = None) -> dict[str, Any]:
     if path_map_path is not None:
         materialize_path_map(paths["job"], path_map_path)
     context = checked_context(paths, checkpoint_map_path, operation_policies_path)
     instructions_by_group = unit_instructions(context["job"], unit_instructions_path)
     root = paths["job"].parent.resolve()
-    rows = render_units(context, paths, root, checkpoint_map_path, seed=seed,
-                        device=device, dtype=dtype, attention=attention, instruct=instruct,
-                        instructions_by_group=instructions_by_group,
-                        reuse_from=reuse_from,
-                        speculative_from=speculative_from,
-                        synth_factory=synth_factory)
-    return assemble(context, paths, root, rows, policy=policy, track_format=track_format)
+    locale = context["job"]["targetLocale"]
+    step_id = f"L3-02@{locale}"
+    with measure.producer_step(progress_ledger, step_id, locale=locale) as metrics:
+        metrics["speechUnits"] = len(context["job"].get("units") or [])
+        if measure.configured_ledger(progress_ledger) is not None:
+            accounting.record_workload(measure.stage_name(step_id), {
+                "speechUnits": metrics["speechUnits"], "countStatus": "current_execution"})
+        rows = render_units(context, paths, root, checkpoint_map_path, seed=seed,
+                            device=device, dtype=dtype, attention=attention, instruct=instruct,
+                            instructions_by_group=instructions_by_group,
+                            reuse_from=reuse_from,
+                            speculative_from=speculative_from,
+                            synth_factory=synth_factory)
+        return assemble(context, paths, root, rows, policy=policy, track_format=track_format)
 
 
 def main() -> None:
@@ -734,6 +755,8 @@ def main() -> None:
                         help="Previously validated render directory for unchanged units")
     parser.add_argument("--speculative-from", type=Path,
                         help="Preview-only unit audio; formal human and rights gates still run first")
+    parser.add_argument("--progress-ledger", type=Path,
+                        help="Record checkpoint and audio substage timing in the four-layer ledger")
     args = parser.parse_args()
     paths = {name: getattr(args, name) for name in ("source", "anchor", "candidate",
                                                    "job", "adapter", "policy", "human_receipt",
@@ -750,7 +773,8 @@ def main() -> None:
                     seed=args.seed, device=args.device,
                     dtype=args.dtype, attention=args.attention, instruct=args.instruct,
                     unit_instructions_path=args.unit_instructions,
-                    policy=policy, track_format=args.track_format)
+                    policy=policy, track_format=args.track_format,
+                    progress_ledger=args.progress_ledger)
     print(json.dumps({"status": "candidate", "targetLocale": result["targetLocale"],
                       "renderManifest": str((paths["job"].parent / "render-manifest.json").resolve()),
                       "machineScreening": "not_run", "humanListeningReview": "pending"},

@@ -36,12 +36,21 @@ test('snapshot sanitizer preserves only approved aggregate substage metrics', ()
       timing: { subStages: [
         { id: 'initial_translation', attempts: 3, failedAttempts: 1, completedUnits: 2,
           totalUnits: 5, running: 1, executionSeconds: 42.5, openElapsedSeconds: 8 },
+        { id: 'schedule_sync', attempts: 1, failedAttempts: 0, completedUnits: 1,
+          totalUnits: null, running: 0, executionSeconds: 1.5, openElapsedSeconds: null,
+          audioSeconds: null, overLimitUnits: 2, clipDurationSeconds: 1800,
+          plannedDurationSeconds: 1840 },
         { id: 'raw_error_text', reason: 'private content' },
       ] } }] };
   const publicSnapshot = validateSnapshot(valid);
   assert.deepEqual(publicSnapshot.steps[0].timing.subStages, [{
     id: 'initial_translation', attempts: 3, failedAttempts: 1, completedUnits: 2,
     totalUnits: 5, running: 1, executionSeconds: 42.5, openElapsedSeconds: 8,
+    audioSeconds: null, overLimitUnits: null, clipDurationSeconds: null, plannedDurationSeconds: null,
+  }, {
+    id: 'schedule_sync', attempts: 1, failedAttempts: 0, completedUnits: 1,
+    totalUnits: null, running: 0, executionSeconds: 1.5, openElapsedSeconds: null,
+    audioSeconds: null, overLimitUnits: 2, clipDurationSeconds: 1800, plannedDurationSeconds: 1840,
   }]);
   assert.equal(JSON.stringify(publicSnapshot).includes('private content'), false);
 });
