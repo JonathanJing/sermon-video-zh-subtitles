@@ -84,6 +84,15 @@ class SpeculativeRenderTests(unittest.TestCase):
         self.assertEqual(self.render(group_ids=["g2"])["renderedGroupIds"], ["g2"])
         self.assertEqual(len(FakeSynth.calls), 2)
 
+    def test_verified_adapter_with_unreviewed_locale_is_preview_only(self):
+        self.fixture.adapter["capabilityStatus"] = "verified"
+        speech_fixture.write_json(self.fixture.adapter_path, self.fixture.adapter)
+        with self.assertRaisesRegex(ValueError, "production authorization or human-reviewed"):
+            subject.speech.validate_adapter(self.fixture.adapter, "ko", self.fixture.registry)
+        result = self.render(group_ids=["g1"])
+        self.assertEqual(result["status"], "preview_only")
+        self.assertFalse((self.out / "job.json").exists())
+
     def test_approved_or_failed_machine_candidate_cannot_enter_preview_lane(self):
         self.fixture.candidate["status"] = "human_translation_approved"
         self.fixture.candidate["humanReview"]["translation"] = "approved"

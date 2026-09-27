@@ -404,7 +404,8 @@ def validate_adapter(adapter: dict[str, Any], target_locale: str,
                      source_voice_authorization: dict[str, Any] | None = None,
                      clip_voice_capability: dict[str, Any] | None = None,
                      source_package: dict[str, Any] | None = None,
-                     candidate: dict[str, Any] | None = None) -> None:
+                     candidate: dict[str, Any] | None = None,
+                     preview_only: bool = False) -> None:
     """Bind the adapter to registry identity, authorized purpose, and locale evidence."""
     _validate_schema(adapter, "sermon-target-language-speech-adapter-v1.schema.json", "speech adapter")
     _validate_schema(registry, "sermon-speaker-voice-registry-v1.schema.json", "Speaker Voice Registry")
@@ -470,6 +471,11 @@ def validate_adapter(adapter: dict[str, Any], target_locale: str,
     if clip_voice_capability is not None:
         _require(source_package is not None, "Clip voice capability requires source")
         validate_clip_voice_capability(clip_voice_capability, source_package, adapter)
+    if preview_only:
+        _require(clip_voice_authorization is None and source_voice_authorization is None
+                 and clip_voice_capability is None,
+                 "Preview-only adapter check cannot grant formal voice authorization")
+        return
     if status == "verified":
         purpose = "chinese_dubbing" if target_locale == "zh-Hans" else "multilingual_dubbing"
         scoped = ((clip_voice_authorization is not None or source_voice_authorization is not None)
