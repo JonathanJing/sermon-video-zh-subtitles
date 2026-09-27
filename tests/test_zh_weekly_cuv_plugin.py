@@ -43,10 +43,13 @@ def group(text: str, *, source_hash: str = SOURCE_HASH) -> dict:
 
 def simulated_review(excerpt: str, excerpt_hash: str) -> dict:
     """Test fixture only: no production approval is embedded in the plugin."""
-    decisions = [{"candidateId": candidate, "classification": "speaker_paraphrase", "parts": []}
+    decisions = [{"candidateId": candidate, "classification": "speaker_paraphrase",
+                  "parts": [],
+                  "paraphraseUnitIds": sorted(plugin.CANDIDATE_QUOTE_UNITS[candidate])}
                  for candidate in plugin.CANDIDATE_VERSES]
     decisions[0] = {
         "candidateId": "rev-4-2-3", "classification": "partial_direct_quote",
+        "paraphraseUnitIds": ["0-u068"],
         "parts": [{"sourceUnitId": UNIT["sourceUnitId"],
                    "englishStartOffset": ENGLISH.index("Immediately I was in the Spirit"),
                    "englishEndOffset": len(ENGLISH),
@@ -122,11 +125,18 @@ class ChineseWeeklyCuvTests(unittest.TestCase):
         damaged = copy.deepcopy(receipt)
         damaged["decisions"].pop()
         self.assertEqual(self.checks(text, damaged)["cuv_exact_quote"], "fail")
+        damaged = copy.deepcopy(receipt)
+        damaged["decisions"][0]["paraphraseUnitIds"] = []
+        self.assertEqual(self.checks(text, damaged)["cuv_exact_quote"], "fail")
+        damaged = copy.deepcopy(receipt)
+        damaged["decisions"][0]["paraphraseUnitIds"].append("0-u067")
+        self.assertEqual(self.checks(text, damaged)["cuv_exact_quote"], "fail")
 
     def test_human_paraphrase_decisions_need_no_cuv_fragments(self):
         receipt = simulated_review(self.excerpt, self.excerpt_hash)
         receipt["decisions"][0] = {
             "candidateId": "rev-4-2-3", "classification": "speaker_paraphrase", "parts": [],
+            "paraphraseUnitIds": sorted(plugin.CANDIDATE_QUOTE_UNITS["rev-4-2-3"]),
         }
         self.assertEqual(self.checks("约翰描述天上有一座宝座。", receipt)
                          ["cuv_exact_quote"], "pass")
@@ -138,6 +148,7 @@ class ChineseWeeklyCuvTests(unittest.TestCase):
         second = copy.deepcopy(receipt["decisions"][0]["parts"][0])
         second["sourceUnitId"] = "0-u068"
         receipt["decisions"][0]["parts"].append(second)
+        receipt["decisions"][0]["paraphraseUnitIds"] = []
         self.assertEqual(self.checks("约翰说：" + self.excerpt, receipt)
                          ["cuv_exact_quote"], "fail")
 
@@ -150,9 +161,11 @@ class ChineseWeeklyCuvTests(unittest.TestCase):
         receipt = simulated_review(self.excerpt, self.excerpt_hash)
         receipt["decisions"][0] = {
             "candidateId": "rev-4-2-3", "classification": "speaker_paraphrase", "parts": [],
+            "paraphraseUnitIds": sorted(plugin.CANDIDATE_QUOTE_UNITS["rev-4-2-3"]),
         }
         receipt["decisions"][1] = {
-            "candidateId": "rev-4-8", "classification": "partial_direct_quote", "parts": [
+            "candidateId": "rev-4-8", "classification": "partial_direct_quote",
+            "paraphraseUnitIds": [], "parts": [
                 {"sourceUnitId": "0-u086", "englishStartOffset": english_a.index("Holy"),
                  "englishEndOffset": len(english_a),
                  "englishExcerptSha256": sha256(english_a[english_a.index("Holy"):].encode()).hexdigest(),
@@ -185,9 +198,11 @@ class ChineseWeeklyCuvTests(unittest.TestCase):
         receipt = simulated_review(self.excerpt, self.excerpt_hash)
         receipt["decisions"][0] = {
             "candidateId": "rev-4-2-3", "classification": "speaker_paraphrase", "parts": [],
+            "paraphraseUnitIds": sorted(plugin.CANDIDATE_QUOTE_UNITS["rev-4-2-3"]),
         }
         receipt["decisions"][3] = {
             "candidateId": "rev-5-1-4", "classification": "partial_direct_quote",
+            "paraphraseUnitIds": ["0-u161", "0-u164", "0-u165", "0-u167", "0-u168"],
             "parts": [{"sourceUnitId": "0-u162", "englishStartOffset": 0,
                        "englishEndOffset": len(english_one),
                        "englishExcerptSha256": sha256(english_one.encode()).hexdigest(),

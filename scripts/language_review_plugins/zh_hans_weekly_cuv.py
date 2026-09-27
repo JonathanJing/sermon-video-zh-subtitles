@@ -100,10 +100,17 @@ def _approved_parts(policy: dict, approval: dict | None) -> tuple[dict[str, list
         for decision in decisions:
             kind = decision["classification"]
             parts = decision["parts"]
+            paraphrase_units = decision["paraphraseUnitIds"]
             if kind not in {"direct_quote", "partial_direct_quote", "speaker_paraphrase"}:
                 raise ValueError("unknown boundary classification")
             if not isinstance(parts, list) or (kind == "speaker_paraphrase") != (not parts):
                 raise ValueError("quote parts do not match classification")
+            allowed_units = CANDIDATE_QUOTE_UNITS[decision["candidateId"]]
+            if (not isinstance(paraphrase_units, list)
+                    or any(not isinstance(unit_id, str) for unit_id in paraphrase_units)
+                    or len(paraphrase_units) != len(set(paraphrase_units))
+                    or not set(paraphrase_units) <= allowed_units):
+                raise ValueError("paraphrase units are invalid")
             # The producer reviews one English unit at a time. It cannot
             # prove a whole-verse quote assembled from several target groups.
             if (kind == "direct_quote"
@@ -111,6 +118,7 @@ def _approved_parts(policy: dict, approval: dict | None) -> tuple[dict[str, list
                          != parts[0]["cuvExcerpt"])):
                 raise ValueError("whole direct quote must fit one source unit")
             allowed = CANDIDATE_VERSES[decision["candidateId"]]
+            quoted_units: set[str] = set()
             for part in parts:
                 unit_id = part["sourceUnitId"]
                 start, end = part["englishStartOffset"], part["englishEndOffset"]
@@ -118,7 +126,7 @@ def _approved_parts(policy: dict, approval: dict | None) -> tuple[dict[str, list
                 reference, excerpt = part["reference"], part["cuvExcerpt"]
                 if (not all(isinstance(value, str) and value.strip()
                             for value in (unit_id, reference, excerpt))
-                        or unit_id not in CANDIDATE_QUOTE_UNITS[decision["candidateId"]]
+                        or unit_id not in allowed_units
                         or type(start) is not int or type(end) is not int
                         or start < 0 or end <= start
                         or not isinstance(excerpt_hash, str)
@@ -133,7 +141,11 @@ def _approved_parts(policy: dict, approval: dict | None) -> tuple[dict[str, list
                 if (selected["text"] != excerpt or selected["textSha256"]
                         != part["cuvExcerptSha256"]):
                     raise ValueError("approved excerpt differs from pinned CUV")
+                quoted_units.add(unit_id)
                 parts_by_unit.setdefault(unit_id, []).append(part)
+            if (quoted_units & set(paraphrase_units)
+                    or quoted_units | set(paraphrase_units) != allowed_units):
+                raise ValueError("quote and paraphrase decisions do not cover candidate units")
     except (CuvError, KeyError, TypeError, ValueError):
         return {}, False, "Human boundary receipt or pinned CUV excerpt is invalid"
     return parts_by_unit, True, "Human boundary receipt and pinned CUV excerpts match this source"
