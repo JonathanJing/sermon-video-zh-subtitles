@@ -1,6 +1,75 @@
 {
   "sourceLanguage": "zh-Hans",
   "strings": {
+    "文稿暂时无法读取，请重试。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The transcript could not be loaded. Please try again."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "원고를 불러올 수 없습니다. 다시 시도해 주세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo cargar el texto. Inténtalo de nuevo."
+          }
+        }
+      }
+    },
+    "选择语言后，在 App 内阅读并准备对应配音。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select a language to read and prepare its audio in the app."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "언어를 선택하여 앱에서 원고를 읽고 해당 음성을 준비하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige un idioma para leer y preparar su audio en la app."
+          }
+        }
+      }
+    },
+    "完整文稿 · 英文对照": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Full text · English reference"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "전체 원고 · 영어 대조"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Texto completo · Referencia en inglés"
+          }
+        }
+      }
+    },
     "更多": {
       "extractionState": "manual",
       "localizations": {

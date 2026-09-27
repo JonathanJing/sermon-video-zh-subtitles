@@ -352,6 +352,142 @@ final class StorageTests {
         try assertTemporaryFilesEmpty()
     }
 
+    @Test func publishedTranscriptSeparatesSpokenTimesAndJoinsApprovedEnglish() async throws {
+        let fixture = try publishedTranscriptFixture()
+        installTranscriptFixture(fixture)
+        let repository = MultilingualCatalogRepository(origin: baseURL, cacheDirectory: directory, session: session)
+        let result = try await repository.loadPublishedTranscript(for: fixture.package, page: fixture.page)
+        #expect(result.title == "한국어 전체 원고")
+        #expect(result.fullText[0].text == "전체 원고")
+        #expect(result.captions[0].text == "짧은 원고")
+        #expect(result.fullText[0].start == 0)
+        #expect(result.captions[0].start == 1)
+        #expect(result.fullText[0].english == "Approved English.")
+        #expect(result.captions[0].english == "Approved English.")
+        stub(.init(chunks: [], error: URLError(.notConnectedToInternet)))
+        let offline = try await repository.loadPublishedTranscript(for: fixture.package, page: fixture.page)
+        #expect(offline.fullText[0].text == result.fullText[0].text)
+        #expect(offline.captions[0].text == result.captions[0].text)
+        #expect(offline.fullText[0].english == nil)
+    }
+
+    @Test func publishedTranscriptRejectsTamperedNetworkAndOfflineBytes() async throws {
+        let fixture = try publishedTranscriptFixture()
+        installTranscriptFixture(fixture, alteredContent: Data("{}".utf8))
+        let repository = MultilingualCatalogRepository(origin: baseURL, cacheDirectory: directory, session: session)
+        do { _ = try await repository.loadPublishedTranscript(for: fixture.package, page: fixture.page)
+            Issue.record("Unverified text must not display")
+        } catch { #expect(error as? ContentStorageError == .checksumMismatch) }
+        installTranscriptFixture(fixture)
+        _ = try await repository.loadPublishedTranscript(for: fixture.package, page: fixture.page)
+        let hash = fixture.package.assets.first { $0.role == .captions }!.sha256
+        try Data("{}".utf8).write(to: directory.appendingPathComponent("Transcripts/\(hash).json"))
+        stub(.init(chunks: [], error: URLError(.notConnectedToInternet)))
+        do { _ = try await repository.loadPublishedTranscript(for: fixture.package, page: fixture.page)
+            Issue.record("Unverified cached captions must not display")
+        } catch { #expect(error as? ContentStorageError == .checksumMismatch) }
+    }
+
+    @Test func optionalEnglishRejectsChangedSourceGroupAndReleaseWithoutHidingText() async throws {
+        let fixture = try publishedTranscriptFixture()
+        for mutation in ["group", "units", "release", "source", "content"] {
+            var sidecar = try #require(JSONSerialization.jsonObject(with: fixture.english) as? [String: Any])
+            var targets = sidecar["targets"] as! [String: [String: Any]]
+            var target = targets["ko"]!
+            var blocks = target["blocks"] as! [[String: Any]]
+            switch mutation {
+            case "group": blocks[0]["textGroupId"] = "wrong"
+            case "units": blocks[0]["sourceUnitIds"] = ["source-wrong"]
+            case "release": target["releasePackageJsonSha256"] = String(repeating: "e", count: 64)
+            case "content": target["contentSha256"] = String(repeating: "e", count: 64)
+            default: sidecar["sourceIdentitySha256"] = String(repeating: "e", count: 64)
+            }
+            target["blocks"] = blocks; targets["ko"] = target; sidecar["targets"] = targets
+            let data = try JSONSerialization.data(withJSONObject: sidecar)
+            installTranscriptFixture(fixture, alteredEnglish: data)
+            let repository = MultilingualCatalogRepository(origin: baseURL, cacheDirectory: directory, session: session)
+            let result = try await repository.loadPublishedTranscript(for: fixture.package, page: fixture.page)
+            #expect(result.fullText[0].text == "전체 원고")
+            #expect(result.fullText[0].english == nil)
+            #expect(result.captions[0].english == nil)
+        }
+        installTranscriptFixture(fixture, alteredEnglish: Data("broken".utf8))
+        let repository = MultilingualCatalogRepository(origin: baseURL, cacheDirectory: directory, session: session)
+        #expect(try await repository.loadPublishedTranscript(for: fixture.package, page: fixture.page).fullText[0].english == nil)
+    }
+
+    @Test func spokenGroupMismatchCannotBecomeFullTextSubtitles() async throws {
+        let fixture = try publishedTranscriptFixture()
+        let mismatched = Data("{\"cues\":[{\"textGroupId\":\"wrong\",\"text\":\"spoken\",\"start\":1,\"end\":2}]}".utf8)
+        do {
+            _ = try VerifiedPublishedTranscript.decode(content: fixture.content, captions: mismatched,
+                package: fixture.package, page: fixture.page)
+            Issue.record("Wrong spoken group must fail even when the cue timings fit")
+        } catch { #expect(error is CatalogError) }
+    }
+
+    private struct TranscriptFixture {
+        let release: Data
+        let package: TargetLanguageReleasePackage
+        let page: MultilingualPage
+        let content: Data
+        let captions: Data
+        let english: Data
+    }
+
+    private func installTranscriptFixture(_ fixture: TranscriptFixture, alteredContent: Data? = nil,
+                                          alteredEnglish: Data? = nil) {
+        StubURLProtocol.install(host: baseURL.host!) { request in
+            switch request.url?.path {
+            case "/releases-v2/page-1/ko.json": return .init(chunks: [fixture.release])
+            case "/content/page-1/ko.json": return .init(chunks: [alteredContent ?? fixture.content])
+            case "/captions/page-1/ko.json": return .init(chunks: [fixture.captions])
+            case "/english-reference/page-1.json": return .init(chunks: [alteredEnglish ?? fixture.english])
+            default: return .init(status: 404, chunks: [])
+            }
+        }
+    }
+
+    private func publishedTranscriptFixture() throws -> TranscriptFixture {
+        let hashA = String(repeating: "a", count: 64)
+        func json(_ value: [String: Any]) throws -> Data { try JSONSerialization.data(withJSONObject: value, options: [.sortedKeys]) }
+        func hash(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
+        let content = try json([
+            "schemaVersion": "sermon-full-video-text-content-v1", "pageId": "page-1", "sourceLocale": "en",
+            "targetLocale": "ko", "status": "human_reviewed", "englishSourcePackageJsonSha256": hashA,
+            "targetLanguageCandidateJsonSha256": hashA, "sourceMediaSha256": hashA,
+            "durationSeconds": 10, "title": "한국어 전체 원고",
+            "cues": [["textGroupId": "group-1", "sourceUnitIds": ["source-1"], "text": "전체 원고", "start": 0, "end": 2]],
+        ])
+        let captions = try json(["cues": [["textGroupId": "group-1", "text": "짧은 원고", "start": 1, "end": 3]]])
+        let legacy = try multilingualFixture(audio: Data("audio".utf8))
+        var releaseValue = try #require(JSONSerialization.jsonObject(with: legacy.release) as? [String: Any])
+        releaseValue["schemaVersion"] = TargetLanguageReleasePackage.dualScriptSchemaVersion
+        releaseValue["spokenTargetLanguageCandidateJsonSha256"] = hashA
+        releaseValue["assets"] = [
+            ["role": "page", "path": "/pages/page-1/ko/index.html", "sha256": hashA],
+            ["role": "content", "path": "/content/page-1/ko.json", "sha256": hash(content)],
+            ["role": "captions", "path": "/captions/page-1/ko.json", "sha256": hash(captions)],
+            ["role": "audio", "path": "/media/page-1/ko.mp3", "sha256": hashA],
+        ]
+        let release = try json(releaseValue)
+        let page = try JSONDecoder().decode(MultilingualPage.self, from: json([
+            "id": "page-1", "title": "Sermon", "date": "2026-09-27", "sourceLocale": "en",
+            "sourceIdentitySha256": hashA, "sourceMediaSha256": hashA, "defaultTargetLocale": "ko",
+            "targets": ["ko": ["releasePackageUrl": "/releases-v2/page-1/ko.json", "releasePackageJsonSha256": hash(release),
+                "contentStatus": "human_reviewed", "audioStatus": "human_reviewed", "capabilities": ["text", "captions", "audio"]]],
+        ]))
+        let english = try json([
+            "schemaVersion": "sermon-published-english-reference-v1", "pageId": "page-1", "sourceIdentitySha256": hashA,
+            "sourceMediaSha256": hashA, "reviewState": "human_approved", "targets": ["ko": [
+                "releasePackageJsonSha256": hash(release), "contentSha256": hash(content), "captionsSha256": hash(captions),
+                "blocks": [["textGroupId": "group-1", "sourceUnitIds": ["source-1"], "english": "Approved English."]],
+            ]],
+        ])
+        return .init(release: release, package: try TargetLanguageReleasePackage.decode(release), page: page,
+                     content: content, captions: captions, english: english)
+    }
+
     private func track(id: String = "full", data: Data) -> SermonTrack {
         SermonTrack(id: id, label: "测试音轨", voiceLabel: "测试声音", audioUrl: "/media/test.mp3",
                     file: "test.mp3", sha256: SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined(),

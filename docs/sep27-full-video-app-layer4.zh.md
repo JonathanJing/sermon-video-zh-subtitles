@@ -56,3 +56,19 @@ Firebase 部署后，2 个 UI 文件、1 份绑定接口和 3 份索引均 HTTP 
 本周“字幕全文”的配音字幕下默认展开英文对照；“完整文稿”展开后同样逐段显示原稿。界面语言和配音语言保持独立，现场声音定位继续使用已发布的音轨绑定。
 
 2026-09-27 Phase7 已部署：3 个界面文件和 1 份英文对照资产 HTTP 200、SHA 一致。线上浏览器核验中文 419、韩语 420、西语 420 组配音字幕及完整文稿均有英文，配音字幕对照默认展开；三语仍留在同一 App，现场声音定位入口保留。59 项定向 JavaScript 测试通过。候选、HTTP／浏览器证据和手机宽度截图位于 `layer4-app-hosting-phase7-english-20260927-v1/`。
+
+## iOS 本周内容同步（2026-09-27）
+
+原生阅读区直接消费同一 v3 目录与 v2 发布包，分别展示短口播字幕和完整文稿；两者均按 `textGroupId + sourceUnitIds` 使用已批准英文对照。选择语言返回 App 内阅读区，准备对应的哈希校验音轨，沿用唯一 `PlaybackController`。全文的定位按钮使用同组口播字幕时间，避免把原视频时间误当作配音时间。界面语言保持独立。
+
+`VerifiedPublishedTranscript` 校验页面、语言、来源与完整候选身份，Repository 校验正式包和内容／字幕字节哈希。坏缓存不可用；英文补充资料缺失或绑定不匹配时只隐藏英文，不阻止已批准译文。全文和字幕可以从已验证缓存读取；英文补充资料目前只在线读取，未宣称英文离线可用。
+
+`scripts/bind_published_alignment_catalog.py --public <候选/public> --page-id <pageId>` 将已核验的定位补充资产绑定到现有 v3 字段 `sourceMediaSha256` 和各语言 `audioFingerprint`／`alignment` capability，供原生定位消费者使用；无 schema 变更。phase9 候选的 119 个公开文件中只有 `multilingual-v3.json` 变化，已批准包和资源保持原字节。2026-09-27 已部署并回读，目录 SHA 为 `595fbc1ba844dbc00b2fbe4d9d14763883d4a30255a52ebb8f6fd083cecb4e41`，HTTP 收据位于主仓库 `artifacts/drive-source-20260926-1730/layer4-app-hosting-phase9-ios-alignment-20260927-v1/phase9-http-receipt.json`。
+
+定向验证：定位目录脚本 5 项通过；Core 实际执行 55 项通过、5 项 opt-in 跳过；Storage 20 项通过；生产三语读取检查 1 项通过，中文 419 组、韩语与西语各 420 组全文及口播字幕均有匹配英文；iOS 17.5 双文稿原生 UI 测试通过。Debug 与 Release 模拟器构建成功。iOS 独有的竖栏 API 限定在 iOS 编译条件下，macOS SwiftPM 校验可运行。
+
+二进制与 TestFlight 的独立证据保存在当前 worktree 的 `artifacts/tongxing-ios/2026-09-27/native-week41-distribution/`。正式内容源签名归档为 1.0.0（41）；App 与扩展版本一致、签名校验通过。生产接口校验、模拟器播放、TestFlight 可测试、App Store 正式上架和真实麦克风／现场验收分别记录。
+
+同日 iPhone Duo / iOS 27.1 的正式 Firebase 路径 UI 检查通过：中、韩、西各自下载并准备音轨、播放时间推进、在 App 内切换语言、当前英文与字幕全文英文可见。结果为 `native-week41/production-ui-v2.xcresult`（1 项通过，53.712 秒），6 张截图在 `native-week41/production-screenshots/`；韩语截图已视觉检查。Release UI 测试使用 `ENABLE_TESTABILITY=YES` 的模拟器构建，正式签名归档不使用此开关。初次尝试因 Release 模块未启用测试、随后测试脚本使用了错误按钮标识失败，最终按既有 `playback-toggle` 修正测试后通过；没有因此修改生产播放器。
+
+1.0.0（41）于 2026-09-27 07:57 PDT 上传成功，Apple 接收后进入 Processing；此上传记录本身不表示测试者可安装。App Store 的 1.0.0（34）仍为 In Review，本次没有撤回它。真机、现场麦克风与会场噪声验收未执行。

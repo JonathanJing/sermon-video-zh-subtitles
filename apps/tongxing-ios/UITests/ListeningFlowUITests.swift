@@ -197,12 +197,55 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["published-audio-locale"].waitForExistence(timeout: 10))
         app.buttons["choose-content-language"].tap()
         app.buttons["content-language-ko"].tap()
-        XCTAssertTrue(app.webViews["verified-content-page"].waitForExistence(timeout: 10))
-        app.buttons["完成"].tap()
+        XCTAssertTrue(app.staticTexts["published-current-subtitle"].waitForExistence(timeout: 10))
+        XCTAssertEqual(app.staticTexts["published-current-subtitle"].label, "짧은 자막입니다.")
+        XCTAssertEqual(app.staticTexts["published-current-english"].label, "This is the approved English source.")
+        app.segmentedControls["listening-display"].buttons["字幕全文"].tap()
+        XCTAssertTrue(app.staticTexts["published-caption-english-g1"].waitForExistence(timeout: 5))
+        screenshot("dual-script-native-english-captions", app: app)
         app.buttons["choose-sermon"].tap()
         XCTAssertTrue(app.buttons["published-page-ui-test-full-video"].waitForExistence(timeout: 5))
         app.buttons["legacy-week-ui-test-week"].tap()
         XCTAssertEqual(app.staticTexts["sermon-title"].label, "界面测试证道")
+    }
+
+    /// Explicit Release-only production check; default Debug UI runs skip it.
+    func testLiveProductionCurrentWeekNativeThreeLanguages() throws {
+        #if DEBUG
+        throw XCTSkip("Run this selected test with Release to verify production content.")
+        #else
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
+        app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
+        app.launch()
+        defer { app.terminate() }
+        XCTAssertTrue(app.staticTexts["published-page-title"].waitForExistence(timeout: 30))
+        for locale in ["zh-Hans", "ko", "es"] {
+            app.buttons["choose-content-language"].tap()
+            app.buttons["content-language-\(locale)"].tap()
+            XCTAssertTrue(app.staticTexts["published-current-subtitle"].waitForExistence(timeout: 30))
+            XCTAssertTrue(app.staticTexts["published-current-english"].waitForExistence(timeout: 10))
+            let prepare = app.buttons["prepare-published-audio"]
+            if prepare.exists {
+                prepare.tap()
+                XCTAssertTrue(app.staticTexts["published-audio-locale"].waitForExistence(timeout: 60))
+            }
+            XCTAssertTrue(app.staticTexts["published-audio-locale"].label.contains(appLanguageNames[locale]!))
+            app.buttons["playback-toggle"].tap()
+            try waitFor(element("playback-progress", in: app), "NOT (value BEGINSWITH '00:00，')")
+            screenshot("production-native-\(locale)-playing-english", app: app)
+            app.buttons["playback-toggle"].tap()
+            app.segmentedControls["listening-display"].buttons["字幕全文"].tap()
+            XCTAssertTrue(app.staticTexts["published-caption-english-translation-0-u001"].waitForExistence(timeout: 10))
+            screenshot("production-native-\(locale)-transcript-english", app: app)
+            app.segmentedControls["listening-display"].buttons["现场收听"].tap()
+        }
+        #endif
+    }
+
+    private var appLanguageNames: [String: String] {
+        ["zh-Hans": "简体中文", "ko": "한국어", "es": "Español"]
     }
 
     func testLiveDevSecondClipShowsThreeLanguagesAndPlaysReviewedAudio() throws {

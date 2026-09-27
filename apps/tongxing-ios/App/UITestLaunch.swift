@@ -178,6 +178,18 @@ private enum UITestContent {
         func hash(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
         let displayHash = String(repeating: "a", count: 64)
         let spokenHash = String(repeating: "b", count: 64)
+        let content = try! JSONSerialization.data(withJSONObject: [
+            "schemaVersion": "sermon-full-video-text-content-v1", "pageId": pageID,
+            "sourceLocale": "en", "targetLocale": locale, "status": "human_reviewed",
+            "englishSourcePackageJsonSha256": displayHash,
+            "sourceMediaSha256": displayHash,
+            "targetLanguageCandidateJsonSha256": displayHash,
+            "durationSeconds": 20.0, "title": "测试完整视频证道",
+            "cues": [["textGroupId": "g1", "sourceUnitIds": ["u1"], "start": 0.0, "end": 10.0, "text": "전체 원고입니다."]]
+        ], options: [.sortedKeys])
+        let captions = try! JSONSerialization.data(withJSONObject: [
+            "cues": [["textGroupId": "g1", "start": 0.0, "end": 10.0, "text": "짧은 자막입니다."]]
+        ], options: [.sortedKeys])
         let release: [String: Any] = [
             "schemaVersion": "sermon-target-language-release-package-v2",
             "packageId": "\(pageID)-\(locale)", "pageId": pageID,
@@ -190,8 +202,8 @@ private enum UITestContent {
             "contentLocale": locale, "audioLocale": locale,
             "assets": [
                 ["role": "page", "path": "/pages/\(pageID)/\(locale)/index.html", "sha256": hash(html)],
-                ["role": "content", "path": "/content/\(pageID)/\(locale).json", "sha256": displayHash],
-                ["role": "captions", "path": "/captions/\(pageID)/\(locale).json", "sha256": spokenHash],
+                ["role": "content", "path": "/content/\(pageID)/\(locale).json", "sha256": hash(content)],
+                ["role": "captions", "path": "/captions/\(pageID)/\(locale).json", "sha256": hash(captions)],
                 ["role": "audio", "path": "/media/\(pageID)/\(locale).mp3", "sha256": hash(audio)],
             ],
             "httpVerification": ["status": "pass", "evidenceSha256": displayHash],
@@ -200,6 +212,14 @@ private enum UITestContent {
             "issues": [],
         ]
         let releaseData = try! JSONSerialization.data(withJSONObject: release, options: [.sortedKeys])
+        let english = try! JSONSerialization.data(withJSONObject: [
+            "schemaVersion": "sermon-published-english-reference-v1", "pageId": pageID,
+            "sourceIdentitySha256": displayHash, "sourceMediaSha256": displayHash,
+            "reviewState": "human_approved",
+            "targets": [locale: ["contentSha256": hash(content), "captionsSha256": hash(captions),
+                "releasePackageJsonSha256": hash(releaseData),
+                "blocks": [["textGroupId": "g1", "sourceUnitIds": ["u1"], "english": "This is the approved English source."]]]]
+        ], options: [.sortedKeys])
         let catalog: [String: Any] = [
             "schemaVersion": "sermon-multilingual-catalog-v3", "generatedAt": "2026-09-27T00:00:00Z",
             "defaultPageId": pageID,
@@ -215,6 +235,9 @@ private enum UITestContent {
             "/multilingual-v3.json": try! JSONSerialization.data(withJSONObject: catalog, options: [.sortedKeys]),
             "/releases-v2/\(pageID)/\(locale).json": releaseData,
             "/pages/\(pageID)/\(locale)/index.html": html,
+            "/content/\(pageID)/\(locale).json": content,
+            "/captions/\(pageID)/\(locale).json": captions,
+            "/english-reference/\(pageID).json": english,
             "/media/\(pageID)/\(locale).mp3": audio,
         ]
     }()

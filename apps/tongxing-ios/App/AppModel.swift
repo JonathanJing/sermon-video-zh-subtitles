@@ -34,6 +34,10 @@ final class AppModel: ObservableObject {
     @Published private(set) var publishedAudioSha256: String?
     @Published private(set) var isPreparingPublishedAudio = false
     @Published private(set) var publishedAudioError: String?
+    @Published private(set) var publishedTranscript: VerifiedPublishedTranscript?
+    @Published private(set) var isLoadingPublishedTranscript = false
+    @Published private(set) var publishedTranscriptError: String?
+    private var transcriptRequest = UUID()
     @Published private(set) var downloadStates: [String: DownloadState] = [:]
     @Published private(set) var usingOfflineAudio = false
     @Published var display: ListeningDisplay = .current
@@ -204,6 +208,59 @@ final class AppModel: ObservableObject {
               let page = selectedMultilingualPage else { return nil }
         return mediaOrigin.appendingPathComponent("pages/\(page.id)/index.html")
     }
+    var usesNativePublishedReader: Bool {
+        selectedWeek == nil && multilingualCatalog?.schemaVersion == MultilingualCatalog.dualScriptSchemaVersion
+    }
+    var publishedTranscriptSelectionKey: String? {
+        guard usesNativePublishedReader, let page = selectedMultilingualPage,
+              let target = selectedContentTarget else { return nil }
+        return "\(page.id):\(selectedContentLocale):\(target.releasePackageJsonSha256)"
+    }
+
+    func loadSelectedPublishedTranscript() async {
+        let request = UUID()
+        transcriptRequest = request
+        publishedTranscript = nil
+        publishedTranscriptError = nil
+        isLoadingPublishedTranscript = false
+        guard let key = publishedTranscriptSelectionKey,
+              let page = selectedMultilingualPage, let multilingualRepository else { return }
+        let locale = selectedContentLocale
+        isLoadingPublishedTranscript = true
+        defer { if transcriptRequest == request { isLoadingPublishedTranscript = false } }
+        do {
+            let package = try await multilingualRepository.loadRelease(page: page, locale: locale)
+            let transcript = try await multilingualRepository.loadPublishedTranscript(for: package, page: page)
+            try Task.checkCancellation()
+            guard transcriptRequest == request, publishedTranscriptSelectionKey == key else { return }
+            publishedTranscript = transcript
+        } catch is CancellationError {
+            return
+        } catch {
+            guard transcriptRequest == request, publishedTranscriptSelectionKey == key else { return }
+            publishedTranscriptError = "文稿暂时无法读取，请重试。"
+        }
+    }
+
+    func selectPublishedContentLanguage(_ locale: String) {
+        guard usesNativePublishedReader, let page = selectedMultilingualPage,
+              page.targets[locale]?.contentStatus == "human_reviewed" else { return }
+        guard locale != selectedContentLocale else { return }
+        cancelPublishedAudioPreparation()
+        alignmentController.cancel()
+        playback.clear()
+        selectedAudioLocale = nil
+        publishedAudioSha256 = nil
+        publishedAudioError = nil
+        publishedTranscript = nil
+        publishedTranscriptError = nil
+        transcriptRequest = UUID()
+        selectedContentLocale = locale
+        languagePreferences.preferredContentLocale = locale
+        languagePreferences.pageSelections[page.id] = locale
+        persistLanguagePreferences()
+        resetAlignmentState()
+    }
     var selectedContentLanguageName: String { Self.languageName(selectedContentLocale) }
     var selectedAudioLanguageName: String? { selectedAudioLocale.map(Self.languageName) }
     var selectedContentCapabilitySummary: String {
@@ -351,6 +408,9 @@ final class AppModel: ObservableObject {
         selectedWeek = nil
         selectedTrack = nil
         selectedPageID = page.id
+        publishedTranscript = nil
+        publishedTranscriptError = nil
+        transcriptRequest = UUID()
         selectedAudioLocale = nil
         publishedAudioSha256 = nil
         publishedAudioError = nil
@@ -425,6 +485,8 @@ final class AppModel: ObservableObject {
         selectedAudioLocale = nil
         publishedAudioSha256 = nil
         publishedAudioError = nil
+        publishedTranscript = nil
+        transcriptRequest = UUID()
         let nextTrack = track ?? week.tracks.first
         let unchanged = selectedWeek?.id == week.id && selectedTrack?.id == nextTrack?.id
             && selectedTrack?.sha256 == nextTrack?.sha256

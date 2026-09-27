@@ -235,6 +235,53 @@ public actor MultilingualCatalogRepository {
                      sourceIdentitySha256: page.sourceIdentitySha256, sha256: asset.sha256)
     }
 
+    /// Load both approved scripts without turning full reading text into spoken
+    /// subtitles. Every cached asset is rehashed before use.
+    public func loadPublishedTranscript(for package: TargetLanguageReleasePackage,
+                                        page: MultilingualPage) async throws -> VerifiedPublishedTranscript {
+        let verified = try await loadRelease(page: page, locale: package.targetLocale)
+        guard verified == package, package.schemaVersion == TargetLanguageReleasePackage.dualScriptSchemaVersion,
+              let content = package.assets.first(where: { $0.role == .content }),
+              let captions = package.assets.first(where: { $0.role == .captions }) else {
+            throw ContentStorageError.invalidDownloadReference
+        }
+        let contentData = try await loadTranscriptAsset(content)
+        let captionData = try await loadTranscriptAsset(captions)
+        let referenceURL = origin.appendingPathComponent("english-reference/\(page.id).json")
+        var englishData: Data?
+        do {
+            englishData = try await download(url: referenceURL, maximumBytes: maximumPageBytes).0
+        } catch {
+            if Task.isCancelled || error is CancellationError { throw CancellationError() }
+            // This supplementary reference has no catalog hash, so do not trust
+            // an offline cache as approved English. Base approved scripts work.
+        }
+        return try VerifiedPublishedTranscript.decode(content: contentData, captions: captionData,
+            englishReference: englishData, package: package, page: page)
+    }
+
+    private func loadTranscriptAsset(_ asset: ReleaseAsset) async throws -> Data {
+        guard let url = URL(string: asset.path, relativeTo: origin)?.absoluteURL,
+              ContentOrigin.isSame(origin, url) else { throw ContentStorageError.invalidURL }
+        let cache = cacheDirectory.appendingPathComponent("Transcripts", isDirectory: true)
+            .appendingPathComponent("\(asset.sha256).json")
+        do {
+            let (data, hash) = try await download(url: url, maximumBytes: maximumPageBytes)
+            guard hash == asset.sha256 else { throw ContentStorageError.checksumMismatch }
+            try FileManager.default.createDirectory(at: cache.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try data.write(to: cache, options: .atomic)
+            return data
+        } catch {
+            if Task.isCancelled || error is CancellationError { throw CancellationError() }
+            guard FileManager.default.fileExists(atPath: cache.path) else { throw error }
+            let data = try readBounded(cache, maximumBytes: maximumPageBytes)
+            guard SHA256.hash(data: data).map({ String(format: "%02x", $0) }).joined() == asset.sha256 else {
+                throw ContentStorageError.checksumMismatch
+            }
+            return data
+        }
+    }
+
     private func verifyAudioFile(_ url: URL, sha256: String) throws {
         let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
         guard size > 0, size <= maximumAudioBytes else { throw ContentStorageError.invalidDownloadReference }
