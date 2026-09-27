@@ -186,19 +186,36 @@ def validate_source_scope(policy: dict[str, Any], source: dict[str, Any],
         raise ValueError("Source-scoped series terminology is incomplete or overdeclared")
     # Multiword capitalized names are conservatively required in the scoped
     # proper-name list. Single biblical names are audited by locale plugins.
-    candidates = {name for row in rows
-                  for name in re.findall(r"\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+\b",
-                                         row.get("english", ""))}
-    discourse_starts = {"So", "Now", "And", "But", "Then", "His", "This", "Only", "First"}
-    observed_names = {name for name in candidates
-                      if name.split()[0] not in discourse_starts
-                      and not any(name in title for title in observed_series)}
+    observed_names = source_scoped_proper_names(rows, observed_series)
     if observed_names != set(scope["usedProperNames"]):
         raise ValueError("Source-scoped proper names are incomplete or overdeclared")
     by_id = {row["sourceUnitId"]: row["english"] for row in rows}
     for item in scope["termApprovalEvidence"]:
         if item["sourceUnitId"] not in by_id or item["source"] not in by_id[item["sourceUnitId"]]:
             raise ValueError("Source-scoped term evidence points outside its English unit")
+
+
+def source_scoped_proper_names(rows: list[dict[str, Any]],
+                               observed_series: set[str]) -> set[str]:
+    """Conservative multiword names, excluding common sentence openings."""
+    candidates = {name for row in rows
+                  for name in re.findall(r"\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+\b",
+                                         row.get("english", ""))}
+    # An isolated capital I inside a media title is not captured by the
+    # ordinary multiword-name pattern. Keep the whole title when it is named
+    # as a podcast, book, or film, rather than its trailing fragment.
+    for row in rows:
+        for title in re.findall(
+            r"\b(If I [A-Z][a-z]+(?: [A-Z][a-z]+)+)\s+(?:podcast|book|film)\b",
+            row.get("english", ""),
+        ):
+            candidates.add(title)
+            candidates.discard(title.removeprefix("If I "))
+    discourse_starts = {"So", "Now", "And", "But", "Then", "His", "This", "Only",
+                        "First", "If", "When", "The", "Our"}
+    return {name for name in candidates
+            if (name.split()[0] not in discourse_starts or name.startswith("If I "))
+            and not any(name in title for title in observed_series)}
 
 
 def main() -> None:
