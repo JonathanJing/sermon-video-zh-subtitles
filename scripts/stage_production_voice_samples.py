@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime, timezone
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -235,12 +236,21 @@ def verify_candidate(candidate: Path) -> dict:
 def check_http(candidate: Path, *, baseline: bool, workers: int = 4) -> dict:
     report = verify_candidate(candidate)
     expected = report["baseFiles"] if baseline else report["files"]
+    voice_paths = set()
+    if not baseline:
+        catalog = hosting.load(candidate / "public" / CATALOG_NAME)
+        voice_paths = {sample["path"] for speaker in catalog["speakers"]
+                       for sample in speaker["samples"]}
+        require(len(voice_paths) == 12, "Voice catalog has incomplete audio samples")
     def check(item: dict) -> dict:
         path = "/" + item["path"]
         status, headers, size, digest = http.request_file(ORIGIN, path)
         require(status == 200 and size == item["bytes"] and digest == item["sha256"],
                 f"Production file changed: {path}")
-        return {"path": path, "sha256": digest, "bytes": size}
+        result = {"path": path, "sha256": digest, "bytes": size}
+        if path in voice_paths:
+            result.update(check_audio_range(candidate / "public", item))
+        return result
     results = http.ordered_checks(expected, check, workers)
     if baseline and CATALOG_NAME not in {item["path"] for item in expected}:
         from urllib.error import HTTPError
@@ -257,6 +267,22 @@ def check_http(candidate: Path, *, baseline: bool, workers: int = 4) -> dict:
             "buildReportSha256": hosting.digest(candidate / "build-report.json"),
             "checkedFiles": len(expected), "results": results,
             "deviceAcceptance": "not_run", "venueAcceptance": "not_run"}
+
+
+def check_audio_range(public: Path, item: dict) -> dict:
+    """Verify the one-byte response or Firebase's checked full-body fallback."""
+    path = "/" + item["path"]
+    status, headers, size, digest = http.request_file(
+        ORIGIN, path, request_headers={"Range": "bytes=0-0"})
+    with (public / item["path"]).open("rb") as stream:
+        first_byte = stream.read(1)
+    partial = (status == 206 and size == 1
+               and digest == hashlib.sha256(first_byte).hexdigest()
+               and headers.get("content-range") == f"bytes 0-0/{item['bytes']}")
+    full = (status == 200 and size == item["bytes"]
+            and digest == item["sha256"] and "content-range" not in headers)
+    require(partial or full, f"Voice audition Range/full-body check failed: {path}")
+    return {"range206": partial, "fullBodyFallback": full}
 
 
 def refresh(base: Path, legacy: Path, prior_http: Path, out: Path) -> dict:
@@ -284,6 +310,7 @@ def refresh(base: Path, legacy: Path, prior_http: Path, out: Path) -> dict:
             and plan.get("changes", {}).get("removed") == []
             and plan.get("uiPolicy") == "reuse_registered_ui_and_settings"
             and previous_ids.issubset(incoming_ids)
+            and legacy_report.get("reviewPreview") is False
             and legacy_report.get("feedbackEnabled") == current["feedbackEnabled"],
             "Weekly release does not extend the current catalog and feedback policy")
     old_public = base / "public"
