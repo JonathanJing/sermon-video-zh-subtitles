@@ -353,6 +353,11 @@ function renderTranscript() {
       const paragraph = document.createElement("p"); paragraph.lang = contentLocale;
       paragraph.textContent = `${formatTime(cue.start)}  ${cue.text}`;
       reading.append(paragraph);
+      if (cue.english) {
+        const reference = document.createElement("p"); reference.className = "full-reading-english";
+        reference.lang = "en"; reference.textContent = cue.english;
+        reading.append(reference);
+      }
     }
     $("transcript-list").append(reading);
   }
@@ -378,7 +383,7 @@ function renderTranscript() {
       const details = document.createElement("details"); details.className = "english-reference";
       const summary = document.createElement("summary"); summary.textContent = t("app.transcript.reference");
       const original = document.createElement("p"); original.lang = "en"; original.textContent = english;
-      details.open = bilingualDisplay; englishDetails.push(details);
+      details.open = Boolean(week.contentVariants) || bilingualDisplay; englishDetails.push(details);
       details.append(summary, original); row.append(details);
     }
     button.addEventListener("click", () => setPosition(cue.start));

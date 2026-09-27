@@ -18,7 +18,7 @@ function fixture(mutate = () => {}) {
       targetLanguageCandidateJsonSha256: 'b'.repeat(64), title: `Title ${locale}`, speaker: 'Eric Geiger',
       series: 'Series', scripture: 'Revelation 4–5', summary: `Summary ${locale}`, outline: ['Point one'],
       sourceMediaSha256: 'd'.repeat(64), durationSeconds: 10, sourceVideoUrl: `/pages/${pageId}/full-video-browser.mp4`,
-      cues: [{ textGroupId: 'first', start: 0, end: 8, text: `Full reading text ${locale}` }],
+      cues: [{ textGroupId: 'first', sourceUnitIds: ['u1','u2'], start: 0, end: 8, text: `Full reading text ${locale}` }],
     };
     const captions = { cues: [{ textGroupId: 'first', start: .5, end: 7, text: `Short spoken text ${locale}` }] };
     const release = {
@@ -179,4 +179,40 @@ test('stale track, source, release and window bindings disable alignment without
   const result=await loadPublishedWeeks(f.fetchImpl);
   assert.equal(result.weeks[0].contentVariants.es.audioFingerprint,undefined);
   assert.equal(result.weeks[0].contentVariants.es.tracks.length,1);
+});
+
+function addEnglishReference(f, mutate = () => {}) {
+  const page=JSON.parse(f.files.get('/multilingual-v3.json')).pages[0];
+  const targets=Object.fromEntries(Object.entries(page.targets).map(([locale,target])=>{
+    const release=JSON.parse(f.files.get(target.releasePackageUrl));
+    return [locale,{releasePackageJsonSha256:target.releasePackageJsonSha256,
+      contentSha256:release.assets.find(a=>a.role==='content').sha256,
+      captionsSha256:release.assets.find(a=>a.role==='captions').sha256,
+      blocks:[{textGroupId:'first',sourceUnitIds:['u1','u2'],english:'Complete first unit. Complete second unit.'}]}];
+  }));
+  const reference={schemaVersion:'sermon-published-english-reference-v1',pageId,
+    sourceIdentitySha256:page.sourceIdentitySha256,sourceMediaSha256:'d'.repeat(64),reviewState:'human_approved',targets};
+  mutate(reference);
+  f.files.set(`/english-reference/${pageId}.json`,JSON.stringify(reference));
+}
+test('approved English maps merged source units to both full text and spoken captions in every locale',async()=>{
+  const f=fixture();addEnglishReference(f);
+  const result=await loadPublishedWeeks(f.fetchImpl);
+  assert.deepEqual(result.errors,[]);
+  for(const variant of Object.values(result.weeks[0].contentVariants)) {
+    assert.equal(variant.fullTranscript[0].english,'Complete first unit. Complete second unit.');
+    assert.equal(variant.tracks[0].cues[0].blockId,'first');
+    assert.equal(variant.transcript.blocks[0].blockId,'first');
+    assert.equal(variant.transcript.blocks[0].reviewState,'human_approved');
+  }
+});
+test('changed English source, release hashes or unit associations cannot show wrong reference text',async()=>{
+  for(const mutate of [s=>s.sourceIdentitySha256='f'.repeat(64),s=>s.targets.ko.contentSha256='f'.repeat(64),
+    s=>s.targets.ko.blocks[0].sourceUnitIds=['u2','u1'],s=>s.targets.ko.blocks[0].textGroupId='wrong']) {
+    const f=fixture();addEnglishReference(f,mutate);
+    const result=await loadPublishedWeeks(f.fetchImpl);
+    assert.equal(result.weeks[0].contentVariants.ko.transcript,undefined);
+    assert.equal(result.weeks[0].contentVariants.ko.tracks.length,1);
+    assert.ok(result.errors.length);
+  }
 });

@@ -68,7 +68,7 @@ function validatedCues(cues, duration) {
       && text(cue.text) && text(cue.textGroupId) && !ids.has(cue.textGroupId), 'Invalid published transcript cue');
     previous = cue.end;
     ids.add(cue.textGroupId);
-    return { start: cue.start, end: cue.end, text: cue.text, textGroupId: cue.textGroupId };
+    return { start: cue.start, end: cue.end, text: cue.text, textGroupId: cue.textGroupId, ...(Array.isArray(cue.sourceUnitIds) ? { sourceUnitIds: [...cue.sourceUnitIds] } : {}) };
   });
 }
 
@@ -184,6 +184,39 @@ export async function loadPublishedWeeks(fetchImpl = globalThis.fetch, { request
             'Invalid alignment track/source binding');
             variant.audioFingerprint = { ...m };
             variant.automaticAudioAlignment = { schemaVersion: 'sermon-automatic-audio-alignment-v1', status: 'ready', required: true };
+          } catch (error) { errors.push(`${page.id}/${locale}: ${error.message}`); }
+        }
+      }
+    } catch (error) { errors.push(`${page.id}: ${error.message}`); }
+    try {
+      const reference = await readJson(fetchImpl, `/english-reference/${page.id}.json`, undefined, timeoutMs, true);
+      if (reference !== null) {
+        required(reference.schemaVersion === 'sermon-published-english-reference-v1'
+          && reference.pageId === page.id && reference.sourceIdentitySha256 === page.sourceIdentitySha256
+          && reference.reviewState === 'human_approved', 'Invalid English reference identity');
+        for (const [locale, variant] of Object.entries(contentVariants)) {
+          try {
+            const target = reference.targets?.[locale];
+            required(reference.sourceMediaSha256 === variant.sourceSha256
+              && target?.releasePackageJsonSha256 === variant.releasePackageJsonSha256
+              && target.contentSha256 === variant.contentSha256 && target.captionsSha256 === variant.captionsSha256
+              && Array.isArray(target.blocks) && target.blocks.length === variant.fullTranscript.length,
+            'English reference is not bound to this release');
+            const blocks = new Map();
+            for (const [i, block] of target.blocks.entries()) {
+              const cue = variant.fullTranscript[i];
+              required(block.textGroupId === cue.textGroupId && !blocks.has(block.textGroupId)
+                && text(block.english) && Array.isArray(block.sourceUnitIds) && block.sourceUnitIds.length > 0
+                && JSON.stringify(block.sourceUnitIds) === JSON.stringify(cue.sourceUnitIds),
+              'English reference group mismatch');
+              blocks.set(block.textGroupId, block);
+            }
+            // Associate by approved group IDs, never by translated wording or timing.
+            variant.transcript = { schemaVersion: 'sermon-bilingual-transcript-v1', blocks: target.blocks.map(block => ({
+              blockId: block.textGroupId, english: block.english, sourceTextOrigin: 'approved_english_source', reviewState: 'human_approved',
+            })) };
+            variant.tracks[0].cues = variant.tracks[0].cues.map(cue => ({...cue, blockId: cue.textGroupId}));
+            variant.fullTranscript = variant.fullTranscript.map(cue => ({...cue, english: blocks.get(cue.textGroupId).english}));
           } catch (error) { errors.push(`${page.id}/${locale}: ${error.message}`); }
         }
       }

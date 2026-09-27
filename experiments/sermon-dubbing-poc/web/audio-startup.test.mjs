@@ -674,9 +674,10 @@ test('published week switches language in the existing player and keeps full rea
   const variants = Object.fromEntries(['zh-Hans', 'ko', 'es'].map((locale, index) => [locale, {
     ...week, id, date: '2026-09-27', targetLocale: locale, title: `Title ${locale}`,
     releaseLabel: '正式播放版', contentReview: 'Reviewed',
-    fullTranscript: [{ start: 0, end: 100, text: `Full reading ${locale}` }],
+    fullTranscript: [{ start: 0, end: 100, text: `Full reading ${locale}`, english: 'Approved English reference.' }],
+    transcript: {schemaVersion:'sermon-bilingual-transcript-v1',blocks:[{blockId:'approved-group',english:'Approved English reference.',sourceTextOrigin:'approved_english_source',reviewState:'human_approved'}]},
     tracks: [{ ...week.tracks[0], id: `${id}-${locale}`, sha256: String(index + 3).repeat(64),
-      audioUrl: `/media/${id}/${locale}.mp3`, cues: [{ start: 0, end: 300, text: `Spoken ${locale}` }] }],
+      audioUrl: `/media/${id}/${locale}.mp3`, cues: [{ start: 0, end: 300, text: `Spoken ${locale}`, blockId: 'approved-group' }] }],
   }]));
   const published = { ...variants['zh-Hans'], contentVariants: variants, defaultTargetLocale: 'zh-Hans' };
   h.app.loadCatalog({ defaultWeekId: id, weeks: [published, week] });
@@ -687,10 +688,14 @@ test('published week switches language in the existing player and keeps full rea
   assert.equal(h.audio.src, `https://example.test/media/${id}/ko.mp3`);
   assert.equal(h.get('title').textContent, 'Title ko');
   assert.equal(h.get('current-text').textContent, 'Spoken ko');
-  assert.equal(h.get('subtitle-toggle').hidden, true, 'no fabricated English associations');
+  assert.equal(h.get('subtitle-toggle').hidden, true, 'listening toggle remains independent of transcript comparison');
   const reading = h.get('transcript-list').children[0];
   assert.equal(reading.className, 'full-reading');
   assert.match(reading.children[2].textContent, /Full reading ko/);
+  assert.equal(reading.children[3].textContent, 'Approved English reference.');
+  const english=h.get('transcript-list').children[1].children[2];
+  assert.equal(english.open,true);
+  assert.equal(english.children[1].textContent,'Approved English reference.');
   assert.equal(h.get('transcript-list').children[1].children[1].textContent, 'Spoken ko');
   assert.equal(h.context.location.href, 'https://example.test/', 'selection stays in this App');
   h.get('content-language').value = 'es'; h.get('content-language').dispatch('change');

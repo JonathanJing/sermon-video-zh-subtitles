@@ -46,3 +46,13 @@
 原声回放检查：7 个分布于 01:00–30:00 的 10 秒片段 × 3 语言索引，21/21 命中，测得偏差均为 0 秒；静音和另一篇 Sep20 英文原声 × 3 索引，6/6 拒绝。详见该候选内 `fingerprint-replay-validation.json`。这项结果仅证明离线原声匹配，不代表真实手机麦克风或现场噪声下的成功率。
 
 Firebase 部署后，2 个 UI 文件、1 份绑定接口和 3 份索引均 HTTP 200、完整 SHA 一致；线上浏览器逐一切换中、韩、西内容并成功打开定位面板，始终停留根路径。手机宽度截图为 `alignment-mobile.png`；未启动真实麦克风或现场验收。
+
+## 字幕全文的英文对照
+
+`build_published_english_reference.py --public <新Hosting候选/public> --page-id <pageId> --source <已批准English Source Package>` 将同一英文来源的已审单元按完整译文 `sourceUnitIds` 精确组合。合并单元保留全部原话，不按时间或翻译文字猜测。产物是 `/english-reference/<pageId>.json`，不改动已批准的三语文稿、配音和正式包。
+
+新的可选接口 `sermon-published-english-reference-v1` 使用 `pageId`、`sourceIdentitySha256`、`sourceMediaSha256`、`reviewState` 绑定来源；每 locale 的 `targets` 绑定内容、字幕和正式包 SHA，`blocks` 含 `textGroupId`、`sourceUnitIds`、`english`。无旧数据迁移。客户端按原稿编号与组编号显示英文，来源或关联不一致时不显示该对照，音轨继续可用。
+
+本周“字幕全文”的配音字幕下默认展开英文对照；“完整文稿”展开后同样逐段显示原稿。界面语言和配音语言保持独立，现场声音定位继续使用已发布的音轨绑定。
+
+2026-09-27 Phase7 已部署：3 个界面文件和 1 份英文对照资产 HTTP 200、SHA 一致。线上浏览器核验中文 419、韩语 420、西语 420 组配音字幕及完整文稿均有英文，配音字幕对照默认展开；三语仍留在同一 App，现场声音定位入口保留。59 项定向 JavaScript 测试通过。候选、HTTP／浏览器证据和手机宽度截图位于 `layer4-app-hosting-phase7-english-20260927-v1/`。
