@@ -71,7 +71,7 @@ def stage(base: Path, dev_public: Path, out: Path) -> dict:
     temporary = Path(tempfile.mkdtemp(prefix=f".{out.name}-", dir=out.parent))
     try:
         public = temporary / "public"
-        shutil.copytree(base_public, public, copy_function=os.link)
+        shutil.copytree(base_public, public)
         speakers = []
         for speaker in source["speakers"]:
             speaker_id = speaker["speakerId"]
@@ -102,7 +102,7 @@ def stage(base: Path, dev_public: Path, out: Path) -> dict:
         marker = '  <script type="module" src="/app.mjs"></script>'
         require(html.count(marker) == 1 and "voice-samples.mjs" not in html,
                 "Production entry point changed")
-        index.unlink()  # copytree uses hard links; never mutate the base snapshot.
+        index.unlink()
         index.write_text(html.replace(marker, marker +
                             '\n  <script type="module" src="/voice-samples.mjs"></script>', 1),
                          encoding="utf-8")
