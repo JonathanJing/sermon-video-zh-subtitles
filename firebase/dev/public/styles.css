@@ -38,6 +38,13 @@
 .voice-card h3 { font-size: 23px; margin: 0 0 8px; color: var(--ink); }
 .voice-card-meta, .voice-card-note { color: var(--muted); font-size: 13px; line-height: 1.8; }
 .voice-card audio { width: 100%; display: block; height: 42px; }
+.voice-demo-intro { margin: 12px 0 0; }
+.voice-demo-sample { border-top: 1px solid var(--line); margin-top: 18px; padding-top: 2px; }
+.voice-demo-text { color: var(--support); font-size: 13px; line-height: 1.7; margin-top: 8px; }
+.voice-demo-text summary { cursor: pointer; }
+.voice-demo-text p { overflow-wrap: anywhere; margin: 6px 0; }
+.voice-demo-status, .voice-demo-priority { font-size: 12px; line-height: 1.6; color: var(--muted); margin: 8px 0 0; }
+.voice-demo-priority { color: var(--warning); }
 .sample-label { font-size: 13px; font-weight: 650; letter-spacing: .8px; margin: 22px 0 10px; color: var(--support); }
 .voice-card-note { border-top: 1px solid var(--line); padding-top: 16px; margin-top: 22px; }
 .probe-script { margin: 28px 0; border: 1px solid var(--line); border-radius: 14px; padding: 20px; color: var(--support); }
