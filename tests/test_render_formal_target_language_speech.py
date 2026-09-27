@@ -415,7 +415,7 @@ class FormalRenderTests(unittest.TestCase):
         self.assertEqual(subject.integrity.probe_full_decode(track)["codec"], "mp3")
         self.assertAlmostEqual(subject.integrity.probe_full_decode(track)["durationSeconds"],
                                self.context["clip_timeline_map"]["clipDurationSeconds"],
-                               delta=0.035)
+                               delta=subject.package.MP3_CONTAINER_PADDING_SECONDS)
         package = subject.package.build_package(
             self.paths, self.root / "render-manifest.json", self.root)
         self.assertEqual(package["track"]["sha256"], manifest["track"]["sha256"])
