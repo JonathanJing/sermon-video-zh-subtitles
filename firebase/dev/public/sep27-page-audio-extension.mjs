@@ -92,7 +92,9 @@ async function fetchVerified(path, expectedHash, maxBytes) {
 
 async function start() {
   const script = document.querySelector("script[data-audio-extension]");
-  const pageData = window.fullVideoPageData;
+  // page-data.js defines DATA in the document's global lexical scope.
+  // Read it directly so the page works under Production's script-src 'self' CSP.
+  const pageData = typeof DATA === "undefined" ? null : DATA;
   if (!script || !pageData || !SHA.test(script.dataset.manifestSha256 || "")) return;
   let manifest;
   try {

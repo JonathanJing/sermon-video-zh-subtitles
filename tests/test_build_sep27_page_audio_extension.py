@@ -211,6 +211,9 @@ class DualTextBindingTests(unittest.TestCase):
              mock.patch.object(subject.stage, "decode_audio", return_value=1):
             subject.build(args)
         output = args.out
+        staged_html = (output / "pages" / subject.PAGE_ID / "index.html").read_text()
+        self.assertNotIn("<script>window.fullVideoPageData", staged_html)
+        self.assertIn('type="module" src="sep27-page-audio-extension.mjs"', staged_html)
         self.assertEqual((output / "pages" / subject.PAGE_ID / "page-data.js").read_bytes(),
                          page_data.read_bytes())
         for locale in subject.LOCALES:

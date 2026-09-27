@@ -260,7 +260,7 @@ def build(args: argparse.Namespace) -> Path:
         html = html.replace(old_notice, "三语配音已完成全文听审；完整译文仍按原视频显示")
         html = html.replace(old_footer, "配音使用另行人审的精简口播稿，字幕与完整译文分开显示")
         html = html.replace("</body>",
-                            f'<script>window.fullVideoPageData = DATA;</script><script type="module" '
+                            f'<script type="module" '
                             f'src="{SCRIPT.name}" data-audio-extension '
                             f'data-manifest-sha256="{stage.file_sha(manifest_file)}"></script></body>')
         html_path.write_text(html, encoding="utf-8")
