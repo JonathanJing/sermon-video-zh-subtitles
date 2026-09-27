@@ -45,25 +45,53 @@ public actor MultilingualCatalogRepository {
     }
 
     public func loadCatalog() async throws -> MultilingualCatalogLoadResult {
-        let url = origin.appendingPathComponent("multilingual-v2.json")
-        guard url.path == "/multilingual-v2.json", url.query == nil else { throw ContentStorageError.invalidURL }
-        try ContentOrigin.validateHTTPS(url)
         try FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
         do {
-            let (data, _) = try await download(url: url, maximumBytes: maximumCatalogBytes)
-            let catalog = try MultilingualCatalog.decode(data)
-            try validatePackageURLs(catalog)
-            try data.write(to: catalogCacheURL, options: .atomic)
-            return .init(catalog: catalog, source: .network, warning: nil)
+            return try await loadNetworkCatalog(named: "multilingual-v3.json",
+                                                schemaVersion: MultilingualCatalog.dualScriptSchemaVersion)
+        } catch ContentStorageError.httpStatus(404) {
+            // A missing v3 catalog means this site still serves the v1 release protocol.
+            do {
+                return try await loadNetworkCatalog(named: "multilingual-v2.json",
+                                                    schemaVersion: MultilingualCatalog.supportedSchemaVersion)
+            } catch {
+                if Task.isCancelled || error is CancellationError { throw CancellationError() }
+                return try loadCachedCatalog(preferredNames: ["multilingual-v2.json", "multilingual-v3.json"],
+                                             originalError: error)
+            }
         } catch {
             if Task.isCancelled || error is CancellationError { throw CancellationError() }
-            guard FileManager.default.fileExists(atPath: catalogCacheURL.path) else { throw error }
-            let data = try readBounded(catalogCacheURL, maximumBytes: maximumCatalogBytes)
+            return try loadCachedCatalog(preferredNames: ["multilingual-v3.json", "multilingual-v2.json"],
+                                         originalError: error)
+        }
+    }
+
+    private func loadNetworkCatalog(named name: String, schemaVersion: String) async throws -> MultilingualCatalogLoadResult {
+        let url = origin.appendingPathComponent(name)
+        guard url.path == "/\(name)", url.query == nil else { throw ContentStorageError.invalidURL }
+        try ContentOrigin.validateHTTPS(url)
+        let (data, _) = try await download(url: url, maximumBytes: maximumCatalogBytes)
+        let catalog = try MultilingualCatalog.decode(data)
+        guard catalog.schemaVersion == schemaVersion else { throw ContentStorageError.invalidResponse }
+        try validatePackageURLs(catalog)
+        try data.write(to: catalogCacheURL(named: name), options: .atomic)
+        return .init(catalog: catalog, source: .network, warning: nil)
+    }
+
+    private func loadCachedCatalog(preferredNames: [String], originalError: Error) throws -> MultilingualCatalogLoadResult {
+        for name in preferredNames {
+            let path = catalogCacheURL(named: name)
+            guard FileManager.default.fileExists(atPath: path.path) else { continue }
+            let data = try readBounded(path, maximumBytes: maximumCatalogBytes)
             let catalog = try MultilingualCatalog.decode(data)
+            let expected = name == "multilingual-v3.json"
+                ? MultilingualCatalog.dualScriptSchemaVersion : MultilingualCatalog.supportedSchemaVersion
+            guard catalog.schemaVersion == expected else { throw ContentStorageError.invalidResponse }
             try validatePackageURLs(catalog)
             return .init(catalog: catalog, source: .cache,
                          warning: "暂时无法更新多语言目录，正在使用此前保存的语言列表。")
         }
+        throw originalError
     }
 
     public func loadRelease(page: MultilingualPage, locale: String) async throws -> TargetLanguageReleasePackage {
@@ -122,6 +150,13 @@ public actor MultilingualCatalogRepository {
             data = cached
         }
         guard let html = String(data: data, encoding: .utf8) else { throw ContentStorageError.invalidResponse }
+        if package.schemaVersion == TargetLanguageReleasePackage.dualScriptSchemaVersion {
+            let lower = html.lowercased()
+            guard lower.contains("<html"), lower.contains("<body"),
+                  !["<script", "<link", "<iframe", "<video", "<audio"].contains(where: lower.contains) else {
+                throw ContentStorageError.invalidResponse
+            }
+        }
         return VerifiedLanguagePage(html: html, baseURL: url)
     }
 
@@ -214,7 +249,7 @@ public actor MultilingualCatalogRepository {
         }
     }
 
-    private var catalogCacheURL: URL { cacheDirectory.appendingPathComponent("multilingual-v2.json") }
+    private func catalogCacheURL(named name: String) -> URL { cacheDirectory.appendingPathComponent(name) }
 
     private func packageCacheURL(pageID: String, locale: String) -> URL {
         cacheDirectory.appendingPathComponent("Releases", isDirectory: true)
@@ -260,6 +295,9 @@ public actor MultilingualCatalogRepository {
               let target = page.targets[locale],
               package.contentStatus == target.contentStatus, package.audioStatus == target.audioStatus
         else { throw ContentStorageError.invalidDownloadReference }
+        let expectedSchema = target.releasePackageUrl.hasPrefix("/releases-v2/")
+            ? TargetLanguageReleasePackage.dualScriptSchemaVersion : TargetLanguageReleasePackage.supportedSchemaVersion
+        guard package.schemaVersion == expectedSchema else { throw ContentStorageError.invalidDownloadReference }
         let pageURL = try package.status == "candidate"
             ? package.contentURL(relativeTo: origin) : package.pageURL(relativeTo: origin)
         guard ContentOrigin.isSame(origin, pageURL) else { throw ContentStorageError.invalidURL }

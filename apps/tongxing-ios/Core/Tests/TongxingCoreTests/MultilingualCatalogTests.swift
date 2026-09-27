@@ -186,4 +186,62 @@ struct MultilingualCatalogTests {
             try TargetLanguageReleasePackage.decode(JSONSerialization.data(withJSONObject: value), allowDevCandidate: true)
         }
     }
+
+    @Test func dualScriptCatalogRoutesOnlyToVersionedReleases() throws {
+        let data = try catalogData { root in
+            root["schemaVersion"] = MultilingualCatalog.dualScriptSchemaVersion
+            var pages = root["pages"] as! [[String: Any]], page = pages[0]
+            page["title"] = "测试双稿证道"
+            var targets = page["targets"] as! [String: Any]
+            for (locale, value) in targets {
+                var target = value as! [String: Any]
+                target["releasePackageUrl"] = "/releases-v2/page-1/\(locale).json"
+                targets[locale] = target
+            }
+            page["targets"] = targets; pages[0] = page; root["pages"] = pages
+        }
+        let catalog = try MultilingualCatalog.decode(data)
+        #expect(catalog.schemaVersion == MultilingualCatalog.dualScriptSchemaVersion)
+        #expect(catalog.defaultPage.title == "测试双稿证道")
+        #expect(try catalog.defaultPage.targets["ko"]?.packageURL(relativeTo: URL(string: "https://example.org")!).path
+                == "/releases-v2/page-1/ko.json")
+        #expect(throws: (any Error).self) {
+            try MultilingualCatalog.decode(catalogData { root in
+                root["schemaVersion"] = MultilingualCatalog.dualScriptSchemaVersion
+            })
+        }
+    }
+
+    @Test func dualScriptReleaseKeepsDisplayAndSpokenBindingsDistinct() throws {
+        var value = try #require(JSONSerialization.jsonObject(with: releaseData(locale: "ko", audioAvailable: true)) as? [String: Any])
+        value["schemaVersion"] = TargetLanguageReleasePackage.dualScriptSchemaVersion
+        value["spokenTargetLanguageCandidateJsonSha256"] = hashB
+        value["assets"] = [
+            ["role": "page", "path": "/pages/page-1/ko/index.html", "sha256": hashA],
+            ["role": "content", "path": "/content/page-1/ko.json", "sha256": hashA],
+            ["role": "captions", "path": "/captions/page-1/ko.json", "sha256": hashB],
+            ["role": "audio", "path": "/media/page-1/ko.mp3", "sha256": hashB],
+        ]
+        let data = try JSONSerialization.data(withJSONObject: value)
+        let package = try TargetLanguageReleasePackage.decode(data)
+        #expect(package.targetLanguageCandidateJsonSha256 == hashA)
+        #expect(package.spokenTargetLanguageCandidateJsonSha256 == hashB)
+        let mutations: [(inout [String: Any]) -> Void] = [
+            { (release: inout [String: Any]) in _ = release.removeValue(forKey: "spokenTargetLanguageCandidateJsonSha256") },
+            { (release: inout [String: Any]) in release["contentLocale"] = "es" },
+            { (release: inout [String: Any]) in var assets = release["assets"] as! [[String: Any]]; assets[3]["path"] = "/media/page-1/es.mp3"; release["assets"] = assets },
+            { (release: inout [String: Any]) in var assets = release["assets"] as! [[String: Any]]; assets[0]["path"] = "/pages/page-1/index.html"; release["assets"] = assets },
+        ]
+        for mutation in mutations {
+            var changed = value
+            mutation(&changed)
+            #expect(throws: (any Error).self) {
+                try TargetLanguageReleasePackage.decode(JSONSerialization.data(withJSONObject: changed))
+            }
+        }
+        value["schemaVersion"] = TargetLanguageReleasePackage.supportedSchemaVersion
+        #expect(throws: (any Error).self) {
+            try TargetLanguageReleasePackage.decode(JSONSerialization.data(withJSONObject: value))
+        }
+    }
 }

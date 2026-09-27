@@ -73,12 +73,18 @@ struct ContentView: View {
                             VStack(alignment: .leading, spacing: 12) {
                                 Text(localization.text("已发布页面"))
                                     .font(.caption.weight(.medium)).foregroundStyle(.secondary)
-                                Text(page.id).font(.largeTitle.bold())
+                                Text(page.title ?? page.id).font(.largeTitle.bold())
                                     .fixedSize(horizontal: false, vertical: true)
                                     .accessibilityAddTraits(.isHeader)
                                     .accessibilityIdentifier("published-page-title")
                                 Text(page.date).font(.subheadline).foregroundStyle(.secondary)
                                 languageButton
+                                if let videoURL = model.fullVideoPageURL {
+                                    Link(destination: videoURL) {
+                                        Label(localization.text("观看完整视频"), systemImage: "play.rectangle")
+                                    }
+                                    .accessibilityIdentifier("watch-full-video")
+                                }
                                 Text("\(localization.text("内容语言")) · \(model.selectedContentLanguageName)")
                                     .font(.footnote).foregroundStyle(.secondary)
                                 if let audioLanguage = model.selectedAudioLanguageName {
@@ -743,7 +749,7 @@ private struct WeekSheet: View {
                             } label: {
                                 HStack {
                                     VStack(alignment: .leading, spacing: 7) {
-                                        Text(page.id).font(.headline)
+                                        Text(page.title ?? page.id).font(.headline)
                                         Text("\(page.date) · \(page.publishedTargets.map { AppModel.languageName($0.locale) }.joined(separator: " · "))")
                                             .font(.subheadline).foregroundStyle(.secondary)
                                     }

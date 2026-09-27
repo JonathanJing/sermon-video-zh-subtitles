@@ -132,6 +132,61 @@ final class StorageTests {
         catch { #expect(error is URLError) }
     }
 
+    @Test func dualScriptCatalogTakesPriorityAndUsesStaticPageAndCanonicalAudio() async throws {
+        let audio = Data("approved synthetic dual-script audio".utf8)
+        let legacy = try multilingualFixture(audio: audio)
+        var release = try #require(JSONSerialization.jsonObject(with: legacy.release) as? [String: Any])
+        release["schemaVersion"] = TargetLanguageReleasePackage.dualScriptSchemaVersion
+        release["spokenTargetLanguageCandidateJsonSha256"] = String(repeating: "b", count: 64)
+        let page = Data("<html><head><style>body{color:black}</style></head><body>已批准完整韩语文稿</body></html>".utf8)
+        let pageHash = SHA256.hash(data: page).map { String(format: "%02x", $0) }.joined()
+        let audioHash = SHA256.hash(data: audio).map { String(format: "%02x", $0) }.joined()
+        release["assets"] = [
+            ["role": "page", "path": "/pages/page-1/ko/index.html", "sha256": pageHash],
+            ["role": "content", "path": "/content/page-1/ko.json", "sha256": String(repeating: "a", count: 64)],
+            ["role": "captions", "path": "/captions/page-1/ko.json", "sha256": String(repeating: "b", count: 64)],
+            ["role": "audio", "path": "/media/page-1/ko.mp3", "sha256": audioHash],
+        ]
+        let releaseData = try JSONSerialization.data(withJSONObject: release, options: [.sortedKeys])
+        let releaseHash = SHA256.hash(data: releaseData).map { String(format: "%02x", $0) }.joined()
+        var catalog = try #require(JSONSerialization.jsonObject(with: legacy.catalog) as? [String: Any])
+        catalog["schemaVersion"] = MultilingualCatalog.dualScriptSchemaVersion
+        var pages = catalog["pages"] as! [[String: Any]], first = pages[0]
+        first["title"] = "本周证道"
+        var targets = first["targets"] as! [String: Any], korean = targets["ko"] as! [String: Any]
+        korean["releasePackageUrl"] = "/releases-v2/page-1/ko.json"
+        korean["releasePackageJsonSha256"] = releaseHash
+        targets["ko"] = korean; first["targets"] = targets; pages[0] = first; catalog["pages"] = pages
+        let catalogData = try JSONSerialization.data(withJSONObject: catalog, options: [.sortedKeys])
+        StubURLProtocol.install(host: baseURL.host!) { request in
+            switch request.url?.path {
+            case "/multilingual-v3.json": return .init(chunks: [catalogData])
+            case "/multilingual-v2.json": return .init(chunks: [legacy.catalog])
+            case "/releases-v2/page-1/ko.json": return .init(chunks: [releaseData])
+            case "/pages/page-1/ko/index.html": return .init(chunks: [page])
+            case "/media/page-1/ko.mp3": return .init(chunks: [audio])
+            default: return .init(status: 404, chunks: [Data("missing".utf8)])
+            }
+        }
+        let repository = MultilingualCatalogRepository(origin: baseURL,
+            cacheDirectory: directory.appendingPathComponent("dual-script"), session: session)
+        let loaded = try await repository.loadCatalog()
+        #expect(loaded.catalog.schemaVersion == MultilingualCatalog.dualScriptSchemaVersion)
+        #expect(loaded.catalog.defaultPage.title == "本周证道")
+        let selected = try await repository.loadRelease(page: loaded.catalog.defaultPage, locale: "ko")
+        #expect(selected.spokenTargetLanguageCandidateJsonSha256 == String(repeating: "b", count: 64))
+        #expect(try await repository.loadPage(for: selected).html.contains("已批准完整韩语文稿"))
+        #expect(try await repository.loadAudio(for: selected, page: loaded.catalog.defaultPage).sha256 == audioHash)
+
+        StubURLProtocol.install(host: baseURL.host!) { request in
+            request.url?.path == "/multilingual-v2.json"
+                ? .init(chunks: [legacy.catalog]) : .init(status: 404, chunks: [Data("missing".utf8)])
+        }
+        let fallback = try await repository.loadCatalog()
+        #expect(fallback.catalog.schemaVersion == MultilingualCatalog.supportedSchemaVersion)
+        #expect(fallback.source == .network)
+    }
+
     @Test func testVerifiedDownloadTamperDetectionAndRepair() async throws {
         let data = Data("complete MP3 test payload".utf8)
         let track = track(data: data)

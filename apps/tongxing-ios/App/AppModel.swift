@@ -199,6 +199,11 @@ final class AppModel: ObservableObject {
         selectedMultilingualPage?.publishedTargets ?? []
     }
     var selectedContentTarget: PageTarget? { selectedMultilingualPage?.targets[selectedContentLocale] }
+    var fullVideoPageURL: URL? {
+        guard multilingualCatalog?.schemaVersion == MultilingualCatalog.dualScriptSchemaVersion,
+              let page = selectedMultilingualPage else { return nil }
+        return mediaOrigin.appendingPathComponent("pages/\(page.id)/index.html")
+    }
     var selectedContentLanguageName: String { Self.languageName(selectedContentLocale) }
     var selectedAudioLanguageName: String? { selectedAudioLocale.map(Self.languageName) }
     var selectedContentCapabilitySummary: String {
@@ -219,6 +224,7 @@ final class AppModel: ObservableObject {
 
     func refresh() async {
         guard !isLoading, let repository else { return }
+        let preferPublishedDefault = selectedWeek == nil && selectedPageID == nil
         if isPreparingPublishedAudio { cancelPublishedAudioPreparation() }
         isLoading = true
         defer { isLoading = false }
@@ -235,14 +241,14 @@ final class AppModel: ObservableObject {
                 let track = next.tracks.first { $0.id == selectedTrack?.id } ?? next.tracks.first
                 await select(week: next, track: track)
             }
-            await refreshMultilingualCatalog(pageID: selectedPageID)
+            await refreshMultilingualCatalog(pageID: selectedPageID, preferPublishedDefault: preferPublishedDefault)
         } catch {
             errorMessage = "暂时无法读取证道目录。请连接网络后重试。"
-            await refreshMultilingualCatalog(pageID: selectedPageID)
+            await refreshMultilingualCatalog(pageID: selectedPageID, preferPublishedDefault: preferPublishedDefault)
         }
     }
 
-    private func refreshMultilingualCatalog(pageID: String?) async {
+    private func refreshMultilingualCatalog(pageID: String?, preferPublishedDefault: Bool = false) async {
         guard let multilingualRepository else { return }
         do {
             let oldAudioTarget = selectedAudioLocale.flatMap { selectedMultilingualPage?.targets[$0] }
@@ -250,7 +256,13 @@ final class AppModel: ObservableObject {
             let result = try await multilingualRepository.loadCatalog()
             multilingualCatalog = result.catalog
             multilingualNotice = result.warning
-            if let pageID, result.catalog.pages.contains(where: { $0.id == pageID }) {
+            let usePublishedDefault = preferPublishedDefault
+                && result.catalog.schemaVersion == MultilingualCatalog.dualScriptSchemaVersion
+                && independentPages.contains(where: { $0.id == result.catalog.defaultPageId })
+            if usePublishedDefault {
+                selectPublishedPage(result.catalog.defaultPage)
+            }
+            if !usePublishedDefault, let pageID, result.catalog.pages.contains(where: { $0.id == pageID }) {
                 selectedPageID = pageID
             } else if selectedWeek == nil {
                 selectedPageID = result.catalog.defaultPageId
