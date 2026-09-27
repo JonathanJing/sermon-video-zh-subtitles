@@ -47,6 +47,23 @@ def scripture_prompt_instruction(policy: dict[str, Any]) -> str:
     raise ValueError("Scripture quotation policy is unresolved")
 
 
+def surrounding_context(request: dict[str, Any], plan: list[dict[str, Any]],
+                        group_index: int) -> dict[str, list[dict[str, str]]]:
+    """Give short, source-bound context on both sides of one translation group."""
+    start = sum(len(group["sourceUnitIds"]) for group in plan[:group_index])
+    end = start + len(plan[group_index]["sourceUnitIds"])
+    rows = request["sourceUnits"]
+    return {
+        "before": copy.deepcopy(rows[max(0, start - 3):start]),
+        "after": copy.deepcopy(rows[end:end + 2]),
+    }
+
+
+def register_prompt_instruction(policy: dict[str, Any]) -> str:
+    return ("Follow the locale's public-sermon register consistently: "
+            + "; ".join(policy["languageReview"]["registerRules"]) + ". ")
+
+
 def require(condition: bool, message: str) -> None:
     if not condition:
         raise ValueError(message)
@@ -317,12 +334,7 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
         index, group = item
         source_rows = [{"sourceUnitId": unit_id, "english": units[unit_id]}
                        for unit_id in group["sourceUnitIds"]]
-        context = {"before": units[request["sourceUnits"][sum(len(row["sourceUnitIds"])
-                         for row in plan[:index-1]) - 1]["sourceUnitId"]]
-                   if index > 1 else "",
-                   "after": units[request["sourceUnits"][sum(len(row["sourceUnitIds"])
-                         for row in plan[:index])]["sourceUnitId"]]
-                   if index < len(plan) else ""}
+        context = surrounding_context(request, plan, index - 1)
         common = {"translationGroupId": group["translationGroupId"],
                   "sourceUnitIds": group["sourceUnitIds"], "englishUnits": source_rows,
                   "context": context, "targetLocale": request["targetLocale"],
@@ -344,6 +356,9 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
             "instruction": ("Translate the English sermon group into the target locale. Preserve every "
                             "meaning, negation, number, name, quotation and theological distinction. "
                             + scripture_prompt_instruction(policy) +
+                            register_prompt_instruction(policy) +
+                            "Resolve pronouns and elliptical repetitions using the surrounding "
+                            "source units; translate only the requested English units. "
                             "Use context only for interpretation. Return JSON with exactly "
                             "translationGroupId, sourceUnitIds, targetUtterances and coverage. "
                             "Coverage has one sourceUnitId and exact targetText substring per source unit. "
@@ -368,6 +383,9 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
         review_prompt = {
             "instruction": ("Independently compare the English source and Astra draft, one group at a time. "
                             + scripture_prompt_instruction(policy) +
+                            register_prompt_instruction(policy) +
+                            "Check that pronouns and elliptical repetitions retain the intended "
+                            "referent and predicate from surrounding source units. "
                             "Correct any error in final targetUtterances and coverage. Check every English "
                             "unit for omitted or added meaning, negations, numbers, names, and quotation "
                             "attribution. If uncertain or unresolved, mark fail. Return JSON with exactly "

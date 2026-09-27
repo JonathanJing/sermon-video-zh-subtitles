@@ -22,6 +22,16 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         self.assertIn("paraphrase the speaker's meaning", instruction)
         self.assertIn("Do not present the text as an exact quotation", instruction)
 
+    def test_context_keeps_three_prior_units_for_elliptical_repeat(self):
+        rows = [{"sourceUnitId": f"u{i}", "english": f"sentence {i}"}
+                for i in range(1, 7)]
+        request = {"sourceUnits": rows}
+        plan = [{"sourceUnitIds": [row["sourceUnitId"]]} for row in rows]
+        context = subject.surrounding_context(request, plan, 4)
+        self.assertEqual([row["sourceUnitId"] for row in context["before"]],
+                         ["u2", "u3", "u4"])
+        self.assertEqual([row["sourceUnitId"] for row in context["after"]], ["u6"])
+
     def setUp(self):
         self.fixture = fixture_module.ProduceTargetLanguageCandidateTests(
             methodName="test_compiles_valid_candidate_without_human_approval")
@@ -58,6 +68,8 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         self.assertEqual([call["reasoning_effort"] for call in self.calls],
                          ["medium"] * 4)
         self.assertTrue(all("never invent it" in call["messages"][0]["content"]
+                            for call in self.calls))
+        self.assertTrue(all("elliptical repetitions" in call["messages"][0]["content"]
                             for call in self.calls))
         self.assertEqual(evidence["generation"]["translator"]["requestIds"],
                          ["response-1", "response-3"])
