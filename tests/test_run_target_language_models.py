@@ -10,6 +10,7 @@ import unittest
 from pathlib import Path
 
 from scripts import run_target_language_models as subject
+from scripts import sermon_accounting as accounting
 from scripts import produce_target_language_candidate as producer
 from scripts import target_language_policy as policy_tools
 from tests import test_produce_target_language_candidate as fixture_module
@@ -67,6 +68,21 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         self.assertEqual(subject.run(f.source, f.anchor, f.policy, self.out,
                                      "fixture-key", self.fake_call), evidence)
         self.assertEqual(self.calls, [])
+
+    def test_each_group_and_model_role_has_measured_attempts_on_resume(self):
+        f = self.fixture
+        with accounting.accounting_session(self.out / "accounting", "layer2_models",
+                                           {"targetLocale": f.policy["targetLocale"]}):
+            subject.run(f.source, f.anchor, f.policy, self.out,
+                        "fixture-key", self.fake_call)
+            subject.run(f.source, f.anchor, f.policy, self.out,
+                        "fixture-key", lambda *_: self.fail("must reuse"))
+        attempts = accounting.summarize(self.out / "accounting")["stageAttempts"]
+        unit_attempts = [row for row in attempts if row["stage"].startswith("layer2.")]
+        self.assertEqual(len(unit_attempts), 12)
+        self.assertEqual(sum(row["cacheHit"] for row in unit_attempts), 4)
+        self.assertTrue(all(row["finishedAt"] and row["elapsedSeconds"] is not None
+                            for row in unit_attempts))
 
     def test_two_workers_overlap_groups_but_review_each_after_its_draft(self):
         f = self.fixture

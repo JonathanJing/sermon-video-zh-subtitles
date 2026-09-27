@@ -10,6 +10,7 @@ import unittest
 from unittest.mock import patch
 
 from scripts import render_formal_target_language_speech as subject
+from scripts import sermon_accounting as accounting
 from tests import test_build_target_language_audio_package as fixture_module
 
 
@@ -60,6 +61,25 @@ class FormalRenderTests(unittest.TestCase):
                              ["fullDecode"], "pass")
         self.assertEqual(self.render_units(), rows)
         self.assertEqual(len(FakeSynth.calls), 2)
+
+    def test_each_audio_unit_records_generation_then_verified_reuse(self):
+        directory = self.root / "accounting"
+        with accounting.accounting_session(directory, "layer3_formal_render"):
+            self.render_units()
+            self.render_units()
+        events, damaged = accounting.read_events(directory)
+        self.assertFalse(damaged)
+        attempts = [row for row in accounting.summarize(directory)["stageAttempts"]
+                    if row["stage"].startswith("layer3.unit.")]
+        self.assertEqual(len(attempts), 4)
+        self.assertEqual([row["cacheHit"] for row in attempts], [False, False, True, True])
+        self.assertTrue(all(row["startedAt"] and row["finishedAt"] for row in attempts))
+        workloads = [event["metrics"] for event in events
+                     if event["event"] == "workload" and event["stage"].startswith("layer3.unit.")]
+        self.assertEqual(sum(item["synthesized"] for item in workloads), 2)
+        self.assertEqual(sum(item["reusedCurrent"] for item in workloads), 2)
+        self.assertEqual(sum(event["event"] == "stage_finished" and
+                             event["stage"].startswith("layer3.model_load.") for event in events), 1)
 
     def test_unchanged_unit_reuses_verified_audio_across_candidate_revision(self):
         old_rows = self.render_units()

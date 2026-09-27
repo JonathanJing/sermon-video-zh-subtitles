@@ -139,6 +139,33 @@ class FourLayerMeasureTest(unittest.TestCase):
         self.assertEqual(row["operatorReviewWaitSeconds"], 1200)
         self.assertIsNone(row["measuredExecutionSeconds"])
 
+    def test_quota_block_and_review_wait_are_separate_intervals(self):
+        ledger = progress.new_ledger("test-page", ["ko"])
+        ledger["history"] = [
+            {"at": "2026-09-23T12:00:00+00:00", "action": "update", "step": "L2-02@ko", "status": "blocked"},
+            {"at": "2026-09-23T12:05:00+00:00", "action": "update", "step": "L2-02@ko", "status": "blocked"},
+            {"at": "2026-09-23T12:20:00+00:00", "action": "update", "step": "L2-02@ko", "status": "running"},
+            {"at": "2026-09-23T12:30:00+00:00", "action": "update", "step": "L2-02@ko", "status": "waiting_review"},
+            {"at": "2026-09-23T12:40:00+00:00", "action": "update", "step": "L2-02@ko", "status": "complete"},
+        ]
+        row = next(row for row in measure.timing_audit(ledger, [])["rows"]
+                   if row["step"] == "L2-02@ko")
+        self.assertEqual(row["blockedWaitSeconds"], 1200)
+        self.assertEqual(row["closedBlockedWaits"], 1)
+        self.assertEqual(row["operatorReviewWaitSeconds"], 600)
+        self.assertIsNone(row["measuredExecutionSeconds"])
+
+    def test_direct_completion_and_unrecorded_transition_are_reported(self):
+        ledger = progress.new_ledger("test-page", ["ko"])
+        progress.update_step(ledger, "L1-01", "complete", evidence="source.json")
+        ledger["steps"]["L2-01@ko"]["status"] = "complete"  # Simulate an old direct mutation.
+        report = measure.timing_audit(ledger, [])
+        self.assertIn("L1-01", report["completedWithoutReportedStart"])
+        self.assertEqual(report["statusHistoryMismatch"], ["L2-01@ko"])
+        first = next(row for row in report["rows"] if row["step"] == "L1-01")
+        self.assertIsNone(first["reportedFirstRunningAt"])
+        self.assertIsNotNone(first["reportedLastCompletedAt"])
+
     def test_invalidation_closes_review_wait_before_new_cycle(self):
         ledger = progress.new_ledger("test-page", ["ko"])
         ledger["history"] = [

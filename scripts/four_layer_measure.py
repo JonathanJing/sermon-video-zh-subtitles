@@ -154,7 +154,9 @@ def timing_audit(ledger: dict, events: list[dict], *, damaged_rows: int = 0) -> 
 
     reviews: dict[str, dict] = defaultdict(lambda: {"closedWaitSeconds": 0.0,
                                                     "closedWaits": 0, "openWait": False})
-    opened: dict[str, datetime] = {}
+    blockers: dict[str, dict] = defaultdict(lambda: {"closedWaitSeconds": 0.0,
+                                                     "closedWaits": 0, "openWait": False})
+    opened: dict[tuple[str, str], datetime] = {}
     for event in ledger.get("history", []):
         try:
             occurred = datetime.fromisoformat(event["at"].replace("Z", "+00:00"))
@@ -162,30 +164,56 @@ def timing_audit(ledger: dict, events: list[dict], *, damaged_rows: int = 0) -> 
             continue
         if event.get("action") == "invalidate":
             for invalidated_step in event.get("steps", []):
-                if invalidated_step in opened:
-                    seconds = (occurred - opened.pop(invalidated_step)).total_seconds()
-                    if seconds >= 0:
-                        reviews[invalidated_step]["closedWaitSeconds"] += seconds
-                        reviews[invalidated_step]["closedWaits"] += 1
+                for state, bucket in (("waiting_review", reviews), ("blocked", blockers)):
+                    key = (invalidated_step, state)
+                    if key in opened:
+                        seconds = (occurred - opened.pop(key)).total_seconds()
+                        if seconds >= 0:
+                            bucket[invalidated_step]["closedWaitSeconds"] += seconds
+                            bucket[invalidated_step]["closedWaits"] += 1
             continue
         step = event.get("step")
         if event.get("action") != "update" or step not in ledger["steps"]:
             continue
-        if step in opened and event.get("status") != "waiting_review":
-            seconds = (occurred - opened.pop(step)).total_seconds()
-            if seconds >= 0:
-                reviews[step]["closedWaitSeconds"] += seconds
-                reviews[step]["closedWaits"] += 1
-        if event.get("status") == "waiting_review" and step not in opened:
-            opened[step] = occurred
-    for step in opened:
-        reviews[step]["openWait"] = True
+        for state, bucket in (("waiting_review", reviews), ("blocked", blockers)):
+            key = (step, state)
+            if key in opened and event.get("status") != state:
+                seconds = (occurred - opened.pop(key)).total_seconds()
+                if seconds >= 0:
+                    bucket[step]["closedWaitSeconds"] += seconds
+                    bucket[step]["closedWaits"] += 1
+            if event.get("status") == state and key not in opened:
+                opened[key] = occurred
+    for step, state in opened:
+        (reviews if state == "waiting_review" else blockers)[step]["openWait"] = True
+
+    reported: dict[str, dict] = defaultdict(dict)
+    for event in ledger.get("history", []):
+        if event.get("action") == "invalidate":
+            for key in event.get("steps", []):
+                if key in ledger["steps"]:
+                    reported[key] = {"lastStatus": "pending"}
+            continue
+        key = event.get("step")
+        if event.get("action") != "update" or key not in ledger["steps"]:
+            continue
+        status = event.get("status")
+        if status == "running" and "firstRunningAt" not in reported[key]:
+            reported[key]["firstRunningAt"] = event.get("at")
+        if status == "complete":
+            reported[key]["lastCompletedAt"] = event.get("at")
+        reported[key]["lastStatus"] = status
 
     rows = []
     for step, state in ledger["steps"].items():
         execution = measured.get(step)
         review = reviews.get(step)
+        blocker = blockers.get(step)
+        reported_step = reported.get(step, {})
         rows.append({"step": step, "status": state["status"],
+                     "reportedFirstRunningAt": reported_step.get("firstRunningAt"),
+                     "reportedLastCompletedAt": reported_step.get("lastCompletedAt"),
+                     "statusHistoryMatchesCurrent": reported_step.get("lastStatus", "pending") == state["status"],
                      "measuredExecutionSeconds": round(execution["executionSeconds"], 3) if execution else None,
                      "executionAttempts": execution["attempts"] if execution else 0,
                      "failedExecutionAttempts": execution["failedAttempts"] if execution else 0,
@@ -195,10 +223,16 @@ def timing_audit(ledger: dict, events: list[dict], *, damaged_rows: int = 0) -> 
                      "attemptHistory": attempt_history.get(step, []),
                      "operatorReviewWaitSeconds": round(review["closedWaitSeconds"], 3) if review and review["closedWaits"] else None,
                      "closedReviewWaits": review["closedWaits"] if review else 0,
-                     "openReviewWait": review["openWait"] if review else False})
+                     "openReviewWait": review["openWait"] if review else False,
+                     "blockedWaitSeconds": round(blocker["closedWaitSeconds"], 3) if blocker and blocker["closedWaits"] else None,
+                     "closedBlockedWaits": blocker["closedWaits"] if blocker else 0,
+                     "openBlockedWait": blocker["openWait"] if blocker else False})
     missing_completed = [row["step"] for row in rows
                          if row["status"] == "complete"
                          and row["measuredExecutionSeconds"] is None]
+    missing_starts = [row["step"] for row in rows
+                      if row["status"] == "complete" and row["reportedFirstRunningAt"] is None]
+    mismatched_history = [row["step"] for row in rows if not row["statusHistoryMatchesCurrent"]]
     return {"schemaVersion": AUDIT_SCHEMA, "pageId": ledger["pageId"],
             "target": ledger["target"], "accountingEvents": len(events),
             "scopedAccountingEvents": len(scoped_events),
@@ -206,6 +240,10 @@ def timing_audit(ledger: dict, events: list[dict], *, damaged_rows: int = 0) -> 
             "measuredStepCount": len(measured),
             "completedWithoutMeasuredExecutionCount": len(missing_completed),
             "completedWithoutMeasuredExecution": missing_completed,
+            "completedWithoutReportedStartCount": len(missing_starts),
+            "completedWithoutReportedStart": missing_starts,
+            "statusHistoryMismatchCount": len(mismatched_history),
+            "statusHistoryMismatch": mismatched_history,
             "rows": rows,
             "limits": ["Operator review intervals use tracker update timestamps, not measured attention time.",
                        "Unscoped or different-ledger accounting events are excluded from timing.",

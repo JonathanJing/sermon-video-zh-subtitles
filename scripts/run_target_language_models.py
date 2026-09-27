@@ -20,12 +20,19 @@ from typing import Any, Callable
 
 try:
     from scripts import produce_target_language_candidate as producer
+    from scripts import sermon_accounting as accounting
     from scripts import sermon_pipeline
     from scripts import target_language_policy as policy_tools
 except ImportError:
     import produce_target_language_candidate as producer
+    import sermon_accounting as accounting
     import sermon_pipeline
     import target_language_policy as policy_tools
+
+
+# Timing-only edits do not change the model request or group admission rules.
+# Update this identity when the model-facing production logic changes.
+RUNNER_PRODUCTION_IDENTITY_SHA256 = "8bcd568926f2062919268c185a6d67bf2be4113158e28cd8ca1b6e6e1d7071f3"
 
 
 MODEL_ROLES = {"translator": "gpt-6-astra", "reviewer": "gpt-6-sol"}
@@ -282,7 +289,7 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
     if reuse_from is not None:
         require(reuse_from.resolve() != out.resolve(), "Reuse source and output must differ")
     identity = {"request": request, "groupPlan": plan,
-                "runnerImplementationSha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
+                "runnerImplementationSha256": RUNNER_PRODUCTION_IDENTITY_SHA256}
     if revision_brief is not None:
         identity["revisionBriefSha256"] = policy_tools.canonical_sha256(revision_brief)
     identity_hash = policy_tools.canonical_sha256(identity)
@@ -291,7 +298,9 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
         require(producer._load(manifest) == {"sha256": identity_hash},
                 "Output directory belongs to another source, policy, or group plan")
     else:
-        require(not out.exists() or not any(out.iterdir()), "Output directory is not empty")
+        require(not out.exists() or all(entry.name == "accounting" and entry.is_dir()
+                                        for entry in out.iterdir()),
+                "Output directory is not empty")
         save_new(manifest, {"sha256": identity_hash})
     request_path = out / "request.json"
     if not request_path.exists():
@@ -299,7 +308,7 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
     else:
         require(producer._load(request_path) == request, "Cached request changed")
     units = {row["sourceUnitId"]: row["english"] for row in request["sourceUnits"]}
-    def process_group(item):
+    def _process_group(item):
         index, group = item
         source_rows = [{"sourceUnitId": unit_id, "english": units[unit_id]}
                        for unit_id in group["sourceUnitIds"]]
@@ -335,10 +344,14 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
                             "Do not claim human approval. Prompt version: " + policy["translator"]["promptVersion"]),
             "input": common}
         stem = f"group-{index:04d}"
-        translated = _model_call("translator", translate_prompt, policy,
-                                 out / f"{stem}-astra.json", api_key, caller,
-                                 reuse_from / f"{stem}-astra.json"
-                                 if reuse_from and brief is None else None)
+        astra_path = out / f"{stem}-astra.json"
+        with accounting.stage(f"layer2.translator.{request['targetLocale']}.{stem}",
+                              cache_hit=astra_path.exists() or astra_path.with_suffix(".raw.json").exists() or
+                              (reuse_from is not None and brief is None), billing="api"):
+            translated = _model_call("translator", translate_prompt, policy,
+                                     astra_path, api_key, caller,
+                                     reuse_from / f"{stem}-astra.json"
+                                     if reuse_from and brief is None else None)
         draft = translated["result"]
         require(draft.get("translationGroupId") == group["translationGroupId"]
                 and draft.get("sourceUnitIds") == group["sourceUnitIds"],
@@ -364,10 +377,14 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
                             "issues empty. Mark status fail for any unresolved concern. "
                             "Do not claim human approval. Prompt version: " + policy["reviewer"]["promptVersion"]),
             "input": {**common, "astraDraft": draft}}
-        reviewed_response = _model_call("reviewer", review_prompt, policy,
-                                        out / f"{stem}-sol.json", api_key, caller,
-                                        reuse_from / f"{stem}-sol.json"
-                                        if reuse_from and brief is None else None)
+        sol_path = out / f"{stem}-sol.json"
+        with accounting.stage(f"layer2.reviewer.{request['targetLocale']}.{stem}",
+                              cache_hit=sol_path.exists() or sol_path.with_suffix(".raw.json").exists() or
+                              (reuse_from is not None and brief is None), billing="api"):
+            reviewed_response = _model_call("reviewer", review_prompt, policy,
+                                            sol_path, api_key, caller,
+                                            reuse_from / f"{stem}-sol.json"
+                                            if reuse_from and brief is None else None)
         result = reviewed_response["result"]
         require(result.get("translationGroupId") == group["translationGroupId"]
                 and result.get("sourceUnitIds") == group["sourceUnitIds"],
@@ -398,6 +415,11 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
                 or semantic["uncertainty"] or semantic["issues"]:
             raise ValueError(f"Sol flagged group {stem}; inspect saved response before admission")
         return reviewed_row
+    def process_group(item):
+        index, _ = item
+        with accounting.stage(f"layer2.group.{request['targetLocale']}.{index:04d}",
+                              billing="orchestrator"):
+            return _process_group(item)
     reviewed = ordered_group_results(list(enumerate(plan, 1)), process_group, workers)
     translator_ids = list(dict.fromkeys(row["translatorRequestId"] for row in reviewed))
     reviewer_ids = list(dict.fromkeys(row["reviewerRequestId"] for row in reviewed))
@@ -445,12 +467,15 @@ def main() -> None:
             "Language plugin implementation differs from frozen policy")
     api_key = os.environ.get("OPENAI_API_KEY")
     require(bool(api_key), "OPENAI_API_KEY is not configured")
-    evidence = run(source, anchor, policy, args.out_dir, api_key,
-                   lambda key, payload: sermon_pipeline.chat_json(key, payload, retries=1),
-                   json.loads(args.group_plan.read_text(encoding="utf-8"))
-                   if args.group_plan else None, args.plugin,
-                   producer._load(args.revision_brief) if args.revision_brief else None,
-                   args.reuse_from)
+    with accounting.accounting_session(args.out_dir / "accounting", "layer2_models",
+                                       {"targetLocale": policy["targetLocale"]},
+                                       evidence_directory=args.out_dir):
+        evidence = run(source, anchor, policy, args.out_dir, api_key,
+                       lambda key, payload: sermon_pipeline.chat_json(key, payload, retries=1),
+                       json.loads(args.group_plan.read_text(encoding="utf-8"))
+                       if args.group_plan else None, args.plugin,
+                       producer._load(args.revision_brief) if args.revision_brief else None,
+                       args.reuse_from)
     print(json.dumps({"status": "independent_model_review_pass",
                       "groups": len(evidence["groups"]),
                       "evidence": str((args.out_dir / "evidence.json").resolve())}))

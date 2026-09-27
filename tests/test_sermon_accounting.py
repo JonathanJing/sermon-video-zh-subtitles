@@ -112,6 +112,26 @@ class AccountingTests(unittest.TestCase):
             a._emit({"event":"stage_started","stage":"lost","spanId":"open","startedAt":a.now()})
             d=a.summarize(t);self.assertEqual(len(d["unfinishedStages"]),1)
             self.assertIsNone(d["unfinishedStages"][0]["elapsedSeconds"])
+            attempt = next(row for row in d["stageAttempts"] if row["spanId"] == "open")
+            self.assertEqual(attempt["status"], "interrupted_or_running")
+            self.assertIsNone(attempt["finishedAt"])
+            self.assertIn("lost", (Path(t) / "stage-attempts.csv").read_text())
+
+    def test_stage_attempts_export_each_start_finish_and_cache_reuse(self):
+        with tempfile.TemporaryDirectory() as t:
+            with a.accounting_session(t, "weekly"):
+                with a.stage("layer3.unit.ko.0000"):
+                    pass
+                with a.stage("layer3.unit.ko.0000", cache_hit=True):
+                    pass
+            attempts = [row for row in a.summarize(t)["stageAttempts"]
+                        if row["stage"] == "layer3.unit.ko.0000"]
+            self.assertEqual(len(attempts), 2)
+            self.assertEqual([row["cacheHit"] for row in attempts], [False, True])
+            self.assertTrue(all(row["startedAt"] and row["finishedAt"] and
+                                row["elapsedSeconds"] is not None for row in attempts))
+            self.assertEqual(len((Path(t) / "stage-attempts.csv").read_text().splitlines()),
+                             len(a.summarize(t)["stageAttempts"]) + 1)
 
     def test_hard_interruption_preserves_potential_billable_attempt(self):
         with tempfile.TemporaryDirectory() as t:
