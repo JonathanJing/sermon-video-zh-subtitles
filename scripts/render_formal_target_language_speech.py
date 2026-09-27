@@ -642,7 +642,7 @@ def assemble(context: dict[str, Any], paths: dict[str, Path], root: Path,
         encoded = subprocess.run([
             "ffmpeg", "-nostdin", "-xerror", "-v", "error", "-y",
             "-i", str(wav_path), "-map", "0:a:0", "-ac", "1",
-            "-c:a", "libmp3lame", "-b:a", "64k", "-write_xing", "0",
+            "-c:a", "libmp3lame", "-b:a", "64k", "-write_xing", "1",
             "-map_metadata", "-1", "-f", "mp3", str(partial_mp3),
         ], capture_output=True, text=True, check=False)
         require(encoded.returncode == 0 and partial_mp3.is_file(),
