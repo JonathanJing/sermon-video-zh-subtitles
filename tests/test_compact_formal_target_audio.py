@@ -4,6 +4,7 @@ import shutil
 import tempfile
 import unittest
 import wave
+from unittest.mock import patch
 
 from scripts import compact_formal_target_audio as subject
 from scripts import sermon_sentence_interpretation as identity
@@ -80,6 +81,27 @@ class CompactAudioTests(unittest.TestCase):
         with wave.open(str(output), 'rb') as handle:
             samples = handle.readframes(handle.getnframes())
         self.assertIn(bytes([0x33, 0x13]), samples)
+
+    def test_compacted_delivery_track_can_be_mp3(self):
+        fixture = render_tests.FormalRenderTests(
+            'test_two_units_full_decode_and_resume_without_synthesis')
+        fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+        subject.renderer.render_units(fixture.context, fixture.paths, fixture.root,
+                                      fixture.root / 'checkpoint-map.json',
+                                      synth_factory=EdgeSynth)
+        destination = fixture.root.parent / 'mp3-compacted'
+        with patch.object(subject.renderer, 'checked_context', return_value=fixture.context):
+            manifest = subject.compact(
+                fixture.paths, fixture.paths['job'], destination,
+                fixture.root / 'checkpoint-map.json',
+                fixture.root / 'audio-operation-policies.json',
+                trim_trailing=True, track_format='mp3')
+        track = destination / manifest['track']['path']
+        self.assertEqual(track.suffix, '.mp3')
+        self.assertEqual(manifest['track']['sha256'], identity.sha256(track))
+        self.assertEqual(subject.integrity.probe_full_decode(track)['codec'], 'mp3')
+        self.assertTrue((destination / 'review/leading-silence-trim.json').is_file())
 
 
 if __name__ == '__main__':

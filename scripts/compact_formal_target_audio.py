@@ -163,7 +163,8 @@ def compact(paths: dict[str, Path], source_job: Path, destination_root: Path,
             checkpoint_map: Path, operation_policies: Path, *, path_map: Path | None = None,
             padding_seconds: float = PADDING_SECONDS, trim_trailing: bool = False,
             inter_utterance_gap_seconds: float = renderer.DEFAULT_POLICY["interUtteranceGapSeconds"],
-            reaction_lag_seconds: float = renderer.DEFAULT_POLICY["reactionLagSeconds"]) -> dict:
+            reaction_lag_seconds: float = renderer.DEFAULT_POLICY["reactionLagSeconds"],
+            track_format: str = "wav") -> dict:
     require(0 <= inter_utterance_gap_seconds <= renderer.DEFAULT_POLICY["interUtteranceGapSeconds"],
             "Silence compaction cannot expand the inter-utterance gap")
     require(0 <= reaction_lag_seconds <= renderer.DEFAULT_POLICY["reactionLagSeconds"],
@@ -208,7 +209,8 @@ def compact(paths: dict[str, Path], source_job: Path, destination_root: Path,
                   interUtteranceGapSeconds=inter_utterance_gap_seconds,
                   reactionLagSeconds=reaction_lag_seconds)
     manifest = renderer.assemble(context, adapted_paths, destination_root,
-                                 [row["manifestUnit"] for row in rows], policy=policy)
+                                 [row["manifestUnit"] for row in rows], policy=policy,
+                                 track_format=track_format)
     manifest["silenceTrimEvidence"] = renderer.artifact(destination_root, trim_path,
                                                         json_artifact=True)
     renderer.write_json_atomic(destination_root / "render-manifest.json", manifest)
@@ -237,6 +239,7 @@ def main():
                         default=renderer.DEFAULT_POLICY["interUtteranceGapSeconds"])
     parser.add_argument("--reaction-lag-seconds", type=float,
                         default=renderer.DEFAULT_POLICY["reactionLagSeconds"])
+    parser.add_argument("--track-format", choices=("wav", "mp3"), default="wav")
     args = parser.parse_args()
     paths = {name: getattr(args, name) for name in ("source", "anchor", "candidate", "adapter",
                                                    "policy", "human_receipt", "registry",
@@ -252,7 +255,8 @@ def main():
                        padding_seconds=args.padding_seconds,
                        trim_trailing=args.trim_trailing,
                        inter_utterance_gap_seconds=args.inter_utterance_gap_seconds,
-                       reaction_lag_seconds=args.reaction_lag_seconds)
+                       reaction_lag_seconds=args.reaction_lag_seconds,
+                       track_format=args.track_format)
     print(json.dumps({"status": "candidate", "locale": manifest["targetLocale"],
                       "trimmedUnits": len(manifest["units"]),
                       "track": manifest["track"]}, ensure_ascii=False))
