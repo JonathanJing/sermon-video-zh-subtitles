@@ -119,9 +119,11 @@ def audit(public: Path, audio_packages: dict[str, Path],
     require(page.get("sourceLocale") == "en" and valid_hash(source_hash),
             "Production catalog: invalid English source identity")
     targets = page.get("targets")
+    default_locale = page.get("defaultTargetLocale")
     require(isinstance(targets, dict) and targets and
             all(isinstance(locale, str) and LOCALE.fullmatch(locale) for locale in targets),
             "Production catalog: invalid target locales")
+    require(default_locale in targets, "Production catalog: invalid default target locale")
     require(set(audio_packages) == set(targets) == set(audio_receipts)
             == set(spoken_candidates) == set(spoken_receipts),
             "Private reviewed inputs must cover every published locale exactly")
@@ -265,6 +267,12 @@ def audit(public: Path, audio_packages: dict[str, Path],
         require(content.get("englishSourcePackageJsonSha256") == source_hash
                 and content.get("targetLanguageCandidateJsonSha256") == full_hash,
                 f"{locale}: public full text identity differs")
+        if locale == default_locale:
+            series, title = content.get("series"), content.get("title")
+            require(isinstance(series, str) and bool(series.strip())
+                    and isinstance(title, str) and bool(title.strip())
+                    and page.get("title") == f"{series} · {title}",
+                    f"{locale}: catalog page name must include the approved series and sermon title")
         rows.append({
             "locale": locale, "status": "pass", "releaseUrl": release_url,
             "releaseFileSha256": release_hash,

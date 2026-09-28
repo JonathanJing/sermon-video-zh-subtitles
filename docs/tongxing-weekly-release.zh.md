@@ -10,6 +10,8 @@
 
 周次、source route 和 source ID 共同决定内容项。同一周的直播归档与独立 YouTube 视频分别保留。已存在的源身份不能借同一个 page ID 改写。音频与审核声明沿用各页原始数据，不因进入发行清单而升级。
 
+正式多语言目录的页面名称采用默认内容语言已批准的「系列名 · 本篇标题」，例如「启示录：耶稣带来的安慰与盼望 · 耶稣配得」。`multilingual-v3.json` 的 `pages[].title` 供 iOS 选页列表和本周页头直接读取；只改目录元数据即可让已安装的 App 在刷新目录后显示新名称。每周发布前用同语言 `content/<pageId>/<locale>.json` 的 `series`、`title` 校验该字段，不能只写简称或从未审核文字另造系列名。
+
 [可选 Agents API 全流程](agents-end-to-end-workflow.zh.md)可通过 `--release-workflow-config` 连接配音、同步、页面、发行准备、授权部署、HTTP 核验与登记；默认入口和现有定时任务未自动切换。海报继续由 Codex 按下述默认交付环节完成，端到端入口尚未自动调用 ImageGen。
 
 ## 新页面固定包含自动听音定位

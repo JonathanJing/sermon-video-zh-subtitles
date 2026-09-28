@@ -86,6 +86,8 @@ class ProductionReleaseBindingAuditTest(unittest.TestCase):
         write_json(self.assets["content"], {
             "englishSourcePackageJsonSha256": SOURCE,
             "targetLanguageCandidateJsonSha256": FULL,
+            "series": "启示录：耶稣带来的安慰与盼望",
+            "title": "耶稣配得",
         })
         self.assets["audio"].write_bytes(track.read_bytes())
         self.assets["captions"].write_bytes(captions.read_bytes())
@@ -128,6 +130,8 @@ class ProductionReleaseBindingAuditTest(unittest.TestCase):
             "pages": [{
                 "id": PAGE, "sourceLocale": "en",
                 "sourceIdentitySha256": SOURCE,
+                "defaultTargetLocale": LOCALE,
+                "title": "启示录：耶稣带来的安慰与盼望 · 耶稣配得",
                 "targets": {LOCALE: {
                     "releasePackageUrl": f"/releases-v2/{PAGE}/{LOCALE}.json",
                     "releasePackageJsonSha256": "",
@@ -198,6 +202,13 @@ class ProductionReleaseBindingAuditTest(unittest.TestCase):
         write_json(self.spoken_receipt_path, self.spoken_receipt)
         with self.assertRaisesRegex(binding.BindingAuditError,
                                     "spoken human review receipt differs"):
+            self.run_audit()
+
+    def test_page_name_without_series_is_rejected(self) -> None:
+        self.catalog["pages"][0]["title"] = "耶稣配得"
+        write_json(self.catalog_path, self.catalog)
+        with self.assertRaisesRegex(binding.BindingAuditError,
+                                    "must include the approved series"):
             self.run_audit()
 
 
