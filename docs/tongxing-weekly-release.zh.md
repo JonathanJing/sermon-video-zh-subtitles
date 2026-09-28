@@ -20,7 +20,7 @@
 
 已发行的 Hosting 视频周次沿用 `three_locale_full_video_v1`：**21 个新周 Hosting 资源 + 1 个更新的 `/multilingual-v3.json` = 22 个 Hosting 文件**。新的 bucket 视频周次使用 `three_locale_bucket_video_v2`：**20 个新周 Hosting 资源 + 1 个更新的 catalog = 21 个 Hosting 文件，另有 1 个不可变 Cloud Storage 视频对象**；合计处理 22 个 Firebase 资源，但不可把它写成 22 个 Hosting 文件。两个配置都只约束单周增量，既有完整站点、客户端代码、海报和 Dev dry run 分别计数。
 
-从模拟链接到 Layer 1–4 的快速测试使用独立的 [Firebase Dev 四层演练](firebase-dev-four-layer-bucket-dry-run.zh.md)。它按同一 20+1+1 文件形状验证发布链路，但模拟包和 Dev 目录不取得正式人审资格，也不写入 Production catalog。
+从模拟链接到 Layer 1–4 的快速测试使用独立的 [Firebase Dev 四层演练](firebase-dev-four-layer-bucket-dry-run.zh.md)。它按正式周资源的 20+1+1 形状验证资产，再额外更新 1 个 Dev App 演练周次指针；**App 内选页、三语切换与播放是演练通过条件**，独立 HTML 仅供调试。模拟包不取得正式人审资格，也不写入 Production catalog。
 
 | 资源 | 数量 | 固定路径 |
 | --- | ---: | --- |

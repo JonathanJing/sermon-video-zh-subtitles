@@ -6,6 +6,8 @@
 
 状态：**Dev 三语审核样片与 2026-09-27 整篇 Production 页面均有发布收据；iOS 真机与现场验收仍待完成**。本文覆盖 Layer 4「多语言发布与播放」以及 Web/iOS 客户端的语言选择体验。正式站 HTTP、Range 和浏览器播放证据不等于设备或现场验收。
 
+2026-09-28 的 [Firebase Dev 四层模拟演练](firebase-dev-four-layer-bucket-dry-run.zh.md)已把 9/27 的 30 秒截片接入 **Dev App 内选页**：`dryrun-20260927-clip-03` 能从首页周次选择器进入、切换中韩西内容并在 App 内试播三语音轨；正式 9/27 整篇仍是默认周次。今后 Dev dry run 的 Layer 4 通过条件须包含 App 选页、语言、播放和模拟标识；三种独立 HTML 只作调试展示。此结果不代替正式 v3 发布门禁或 iOS 验收。
+
 ## 2026-09-27 整篇正式发布复盘：`DEV-L4-003`
 
 本周 Production 已新增 `multilingual-v3.json`、三语 `releases-v2/` 和音轨，并有 HTTP、Range 与浏览器短时播放收据。旧 `releases/` v1 候选仍绑定旧 `packages/layer3/` 的 `audio_unavailable` 文字版包；v2 Release 则绑定私有已听审 Layer 3 包的规范化 JSON hash。两套版本各有用途，不覆盖旧不可变路径。已听审包包含本机绝对路径，不能直接复制到公开 Hosting。

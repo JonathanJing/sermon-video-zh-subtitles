@@ -29,7 +29,7 @@ def get(url: str, headers: dict | None = None):
 
 def verify(candidate: Path, baseline_preflight: Path) -> dict:
     report = dry.read(candidate / "dry-run-report.json")
-    if (report.get("schemaVersion") != "sermon-dev-four-layer-bucket-dry-run-v1"
+    if (report.get("schemaVersion") != "sermon-dev-four-layer-bucket-dry-run-v2"
             or report.get("status") != "validated_not_deployed"
             or report.get("origin") != dry.DEV_ORIGIN
             or report.get("formalCatalogUpdated") is not False):
@@ -40,7 +40,8 @@ def verify(candidate: Path, baseline_preflight: Path) -> dict:
     if baseline.get("status") != "pass" or baseline.get("origin") != dry.DEV_ORIGIN:
         raise ValueError("Dev baseline was not fully checked")
     stage = dry.weekly.regular_files(candidate / "stage-public")
-    if len(stage) != 21 or report["weeklyHostingFileCount"] != 21:
+    if (len(stage) != 22 or report["weeklyHostingFileCount"] != 21
+            or report["devHostingChangedFileCount"] != 22):
         raise ValueError("Dev bucket-video file count differs")
     manifest_path = candidate / "simulation/stage-manifest.json"
     if dry.sha(manifest_path) != report["stageManifestSha256"]:
@@ -51,6 +52,11 @@ def verify(candidate: Path, baseline_preflight: Path) -> dict:
             or {item["path"].lstrip("/"): item["sha256"] for item in manifest["files"]}
             != {name: dry.sha(path) for name, path in stage.items() if not name.startswith("dry-run/")}):
         raise ValueError("Staged files do not bind to simulated manifest")
+    app_index = dry.read(candidate / "stage-public/dry-run/latest.json")
+    if (app_index.get("status") != "simulation_only" or app_index.get("pageId") != report["pageId"]
+            or app_index.get("catalogSha256")
+            != dry.sha(candidate / f"stage-public/dry-run/{report['pageId']}/catalog.json")):
+        raise ValueError("Dev App index does not bind to the latest simulated week")
     config = dry.read(candidate / "hosting/firebase.json")
     redirect = {r["source"]: r for r in config["hosting"]["redirects"]}.get(
         report["videoDelivery"]["canonicalUrl"])
@@ -67,8 +73,9 @@ def verify(candidate: Path, baseline_preflight: Path) -> dict:
                     or response.headers.get("ETag") != row["etag"]
                     or dry.sha(public / row["path"]) != row["sha256"]):
                 raise ValueError(f"Previously published Dev file changed: {row['path']}")
+    preserved_rows = [row for row in baseline["files"] if row["path"] != "dry-run/latest.json"]
     with ThreadPoolExecutor(max_workers=8) as pool:
-        list(pool.map(check_preserved, baseline["files"]))
+        list(pool.map(check_preserved, preserved_rows))
     for name, path in stage.items():
         if dry.sha(public / name) != dry.sha(path):
             raise ValueError(f"Candidate changed staged file: {name}")
@@ -117,7 +124,7 @@ def verify(candidate: Path, baseline_preflight: Path) -> dict:
     return {"schemaVersion": "sermon-dev-four-layer-bucket-http-receipt-v1",
             "status": "pass", "simulationOnly": True, "pageId": report["pageId"],
             "origin": origin, "hostingAssetsVerified": len(stage),
-            "existingDevFilesPreserved": len(baseline["files"]),
+            "existingDevFilesPreserved": len(preserved_rows),
             "bucketBytesVerified": delivery["bytes"], "bucketSha256": delivery["sha256"],
             "videoRedirectStatus": 302, "videoRangeStatus": 206,
             "localeAudioRangeVerified": list(dry.LOCALES),

@@ -402,29 +402,40 @@ def build(*, source_url: str, expected_clip_sha: str, parent_video: Path,
                            "inputLayer1Sha256": l1_sha, "layer2Sha256": l2_shas,
                            "layer3Sha256": l3_shas}
         preview_catalog_path = f"dry-run/{page_id}/catalog.json"
-        write(stage / preview_catalog_path, preview_catalog)
+        preview_sha = write(stage / preview_catalog_path, preview_catalog)
+        write(stage / "dry-run/latest.json", {
+            "schemaVersion": "sermon-dev-simulated-app-index-v1", "status": "simulation_only",
+            "pageId": page_id, "catalogUrl": "/" + preview_catalog_path,
+            "catalogSha256": preview_sha,
+        })
         candidate = temp / "hosting"
         shutil.copytree(base_dev / "public", candidate / "public", copy_function=clone)
         for name, path in weekly.regular_files(stage).items():
             target = candidate / "public" / name
             if target.exists():
-                raise ValueError(f"Dev snapshot would overwrite {name}")
+                if name != "dry-run/latest.json" or read(target).get("status") != "simulation_only":
+                    raise ValueError(f"Dev snapshot would overwrite {name}")
+                target.unlink()  # copytree uses hardlinks; preserve the input snapshot
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(path, target)
         config = weekly.add_video_redirect(config, delivery)
         write(candidate / "firebase.json", config)
         expected = weekly.regular_files(base_dev / "public")
         actual = weekly.regular_files(candidate / "public")
-        if set(actual) - set(expected) != set(weekly.regular_files(stage)):
+        if set(actual) - set(expected) != set(weekly.regular_files(stage)) - {"dry-run/latest.json"}:
             raise ValueError("Dev candidate file set differs from staged dry run")
-        if any(sha(actual[name]) != sha(path) for name, path in expected.items()):
+        if any(sha(actual[name]) != sha(path) for name, path in expected.items()
+               if name != "dry-run/latest.json"):
             raise ValueError("Dev candidate changed an existing App file")
+        if "published-weeks-base.mjs" not in expected or "dry-run-app-weeks.mjs" not in expected:
+            raise ValueError("Dev App does not have the simulated-week adapter")
         finish(events, "layer4.catalog_and_candidate", l4_began,
-               hostingAssetCount=20, previewCatalogCount=1, bucketObjectCount=1)
+               hostingAssetCount=20, previewCatalogCount=1, appIndexCount=1,
+               bucketObjectCount=1)
         timing_sha = write(private / "timing-log.json", {
             "schemaVersion": "sermon-dev-four-layer-timing-log-v1", "status": "simulation_only",
             "pageId": page_id, "events": events})
-        report = {"schemaVersion": "sermon-dev-four-layer-bucket-dry-run-v1",
+        report = {"schemaVersion": "sermon-dev-four-layer-bucket-dry-run-v2",
                   "status": "validated_not_deployed", "simulationOnly": True,
                   "pageId": page_id, "origin": DEV_ORIGIN,
                   "clipSourceSha256": clip_sha, "parentVideoSha256": parent_sha,
@@ -436,6 +447,9 @@ def build(*, source_url: str, expected_clip_sha: str, parent_video: Path,
                   "hostingAssetCount": 20, "catalogUpdateFileCount": 1,
                   "weeklyHostingFileCount": 21, "bucketObjectCount": 1,
                   "weeklyFirebaseObjectCount": 22,
+                  "devAppIndexUpdateFileCount": 1, "devHostingChangedFileCount": 22,
+                  "devFirebaseChangedObjectCount": 23,
+                  "appUrl": f"{DEV_ORIGIN}/?week={page_id}",
                   "baseDevCatalogSha256": sha(base_dev / "public/multilingual-v3.json"),
                   "baselinePreflightSha256": sha(baseline_preflight),
                   "baseDevAppSha256": sha(base_dev / "public/app.mjs"),
