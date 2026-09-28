@@ -2,15 +2,29 @@
 
 本流程接收既有生产脚本生成的单周候选包，保存完整历史目录，再核验发布后的公共资源。它不调用模型、不重新生成音频、不授予内容审核或现场同步批准，也不创建或替换现有定时任务。生产和配音仍按 [本地生产 runbook](codex-local-production-runbook.zh.md) 执行。
 
-当前 registry／`weekly.json` 流程是 Layer 4 的 legacy adapter。今后的预制多语言生产必须输入同一 `targetLocale` 已批准的 `Target-Language Candidate` 和 `Target-Language Audio Package`；纯文字发行也必须由后者显式记录 `audio_unavailable`。只有实际生成并校验[四层接口合同](multilingual-production-interfaces.zh.md)中的 `Target-Language Release Package`，才建立规范的 Layer 4 完成。现有 `published_http_verified` 仍是 legacy 发行证据，不能反向提升翻译、音频或现场审核状态。
+当前 registry／`weekly.json` 流程是 Layer 4 的 legacy adapter。今后的 Production 多语言周更必须输入同一 `targetLocale` 已批准的 `Target-Language Candidate` 和 `Target-Language Audio Package`，生成逐语言 [Release Package v2](../schemas/sermon-target-language-release-package-v2.schema.json)，并以 [Catalog v3](../schemas/sermon-multilingual-catalog-v3.schema.json) 让 Firebase 与已安装 iOS App 刷新发现页面。纯文字发行也必须由同语言 Layer 3 显式记录 `audio_unavailable`，且先确认 Web/iOS 都支持该能力。旧 v1/v2 CLI 不能作为正式 v3 周更证据。`published_http_verified` 不反向提升翻译、音频或现场审核状态。
 
 ## 每周路径
 
-来源完整可用 → 现有流程生成候选 → 内容审阅与对应音轨收据 → 自动生成并绑定听音定位指纹 → 组装完整发行包 → 检查目录差异 → 发布 → HTTP 文件核验 → App 刷新/下载验收与本周海报交付（分别验收）。
+来源完整可用 → 现有流程生成候选 → 内容审阅与对应音轨收据 → 自动生成并绑定听音定位指纹 → 在正式站完整快照上追加 v2 Release／v3 Catalog 候选 → 检查历史文件与目录差异 → 资产先发、v3 目录最后发 → HTTP 文件核验 → Firebase App 和同版本 iOS App 刷新选页／播放验收 → 本周海报交付（分别验收）。每周只更新内容；客户端出现不支持的新 schema、语言或能力时才安排 App 版本更新。
 
 周次、source route 和 source ID 共同决定内容项。同一周的直播归档与独立 YouTube 视频分别保留。已存在的源身份不能借同一个 page ID 改写。音频与审核声明沿用各页原始数据，不因进入发行清单而升级。
 
 正式多语言目录的页面名称采用默认内容语言已批准的「系列名 · 本篇标题」，例如「启示录：耶稣带来的安慰与盼望 · 耶稣配得」。`multilingual-v3.json` 的 `pages[].title` 供 iOS 选页列表和本周页头直接读取；只改目录元数据即可让已安装的 App 在刷新目录后显示新名称。每周发布前用同语言 `content/<pageId>/<locale>.json` 的 `series`、`title` 校验该字段，不能只写简称或从未审核文字另造系列名。
+
+### v3 周更发布清单与验收
+
+这一清单优先于下文仅适用于 `weekly.json` 的 legacy 命令。当前仓库的 `assemble_multilingual_hosting.py`、`deploy_multilingual_hosting.py`、`verify_multilingual_hosting.py` 仍只处理 v2 Catalog／v1 Release；在 v3 入口实现并通过定向测试前，不得用这些命令部署新周后宣称两端已经刷新可用。
+
+| 阶段 | 必须保存的结果 |
+| --- | --- |
+| 构建 | 从冻结的 Layer 1–3 包与批准的系列／标题生成本周各语言 v2 Release、页面、全文、英文对照、字幕、原视频、音频和定位 sidecar；每个公开文件有安全同源路径及 SHA；不公开含绝对路径的私有包。 |
+| 合并 | 读取正式站完整基线与旧 v3 hash，追加本周 `pageId` 和 target，设置本周 `defaultPageId`；旧周、旧语言、legacy 功能及被引用资产逐一保留，覆盖／丢失即失败。 |
+| 发布 | 先上传不可变资产与 Release，最后更新 `/multilingual-v3.json`；目录明确 `no-store`，记录新旧目录 hash 和可回退的旧版本。 |
+| HTTP | 对 catalog、Release、页面、全文、英文对照、字幕、原视频、定位文件和音频逐项 GET／SHA；音频验证 206／Range；确认三语和功能声明与真实资产相符。 |
+| App | Firebase App 重新加载后，在 App 选页中打开本周每个已发布语言并试播；同一已安装 iOS 版本点击“刷新证道目录”后完成相同检查。记录构建版本、时间、所选 pageId／locale、结果；不得以独立 HTML 页、HTTP 收据或模拟器代替真机结论。 |
+
+当用户正听旧周时，刷新只增加本周选项，不强制中断播放；本周仍须在选页入口容易找到。设备、现场和海报分别记录，不阻塞已通过的 HTTP 状态。
 
 [可选 Agents API 全流程](agents-end-to-end-workflow.zh.md)可通过 `--release-workflow-config` 连接配音、同步、页面、发行准备、授权部署、HTTP 核验与登记；默认入口和现有定时任务未自动切换。海报继续由 Codex 按下述默认交付环节完成，端到端入口尚未自动调用 ImageGen。
 
