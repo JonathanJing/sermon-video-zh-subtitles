@@ -73,6 +73,32 @@ export function dubOutputFromVideo(volume, intendedMuted) {
   return { volume, muted: Boolean(intendedMuted) };
 }
 
+export function bindDubPlayback(video, audio, isActive, onPlaybackFailure) {
+  let buffering = video.readyState < 3;
+  let attempt = 0;
+  function pause() {
+    attempt += 1;
+    audio.pause();
+  }
+  async function play() {
+    if (!isActive() || video.paused || buffering || video.readyState < 3) return;
+    const currentAttempt = ++attempt;
+    try { await audio.play(); }
+    catch {
+      // A pause while play() is pending may reject with AbortError. Only a
+      // failure of the current, still-needed attempt makes the dub unavailable.
+      if (currentAttempt === attempt && isActive() && !video.paused && !buffering)
+        onPlaybackFailure();
+    }
+  }
+  video.addEventListener("play", () => { void play(); });
+  video.addEventListener("playing", () => { buffering = false; void play(); });
+  for (const event of ["waiting", "stalled"])
+    video.addEventListener(event, () => { buffering = true; pause(); });
+  video.addEventListener("pause", pause);
+  return { pause, play };
+}
+
 async function sha256(bytes) {
   return [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))]
     .map(value => value.toString(16).padStart(2, "0")).join("");
@@ -168,7 +194,7 @@ async function start() {
     caption.hidden = !cue;
   }
   function setOriginal() {
-    audio.pause();
+    playback.pause();
     active = null;
     dubMute.hidden = true;
     video.muted = originalMuted;
@@ -201,7 +227,7 @@ async function start() {
       originalMuted = video.muted;
       dubMuted = video.muted;
     }
-    audio.pause();
+    playback.pause();
     active = locale;
     audio.src = row.url;
     audio.currentTime = video.currentTime;
@@ -212,9 +238,7 @@ async function start() {
     original.setAttribute("aria-pressed", "false");
     for (const [key, button] of buttons) button.setAttribute("aria-pressed", String(key === locale));
     showCaption();
-    if (!video.paused) {
-      try { await audio.play(); } catch { setOriginal(); }
-    }
+    await playback.play();
   }
   async function showLocale() {
     const locale = currentLocale();
@@ -251,8 +275,7 @@ async function start() {
     syncDubOutput();
   });
   original.setAttribute("aria-pressed", "true");
-  video.addEventListener("play", () => { if (active) audio.play().catch(setOriginal); });
-  video.addEventListener("pause", () => audio.pause());
+  const playback = bindDubPlayback(video, audio, () => Boolean(active), setOriginal);
   video.addEventListener("seeking", () => { if (active) audio.currentTime = video.currentTime; });
   video.addEventListener("ratechange", () => { audio.playbackRate = video.playbackRate; });
   video.addEventListener("volumechange", () => {

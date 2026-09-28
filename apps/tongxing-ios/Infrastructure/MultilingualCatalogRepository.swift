@@ -80,17 +80,24 @@ public actor MultilingualCatalogRepository {
 
     private func loadCachedCatalog(preferredNames: [String], originalError: Error) throws -> MultilingualCatalogLoadResult {
         for name in preferredNames {
+            try Task.checkCancellation()
             let path = catalogCacheURL(named: name)
             guard FileManager.default.fileExists(atPath: path.path) else { continue }
-            let data = try readBounded(path, maximumBytes: maximumCatalogBytes)
-            let catalog = try MultilingualCatalog.decode(data)
-            let expected = name == "multilingual-v3.json"
-                ? MultilingualCatalog.dualScriptSchemaVersion : MultilingualCatalog.supportedSchemaVersion
-            guard catalog.schemaVersion == expected else { throw ContentStorageError.invalidResponse }
-            try validatePackageURLs(catalog)
-            return .init(catalog: catalog, source: .cache,
-                         warning: "暂时无法更新多语言目录，正在使用此前保存的语言列表。")
+            do {
+                let data = try readBounded(path, maximumBytes: maximumCatalogBytes)
+                let catalog = try MultilingualCatalog.decode(data)
+                let expected = name == "multilingual-v3.json"
+                    ? MultilingualCatalog.dualScriptSchemaVersion : MultilingualCatalog.supportedSchemaVersion
+                guard catalog.schemaVersion == expected else { throw ContentStorageError.invalidResponse }
+                try validatePackageURLs(catalog)
+                return .init(catalog: catalog, source: .cache,
+                             warning: "暂时无法更新多语言目录，正在使用此前保存的语言列表。")
+            } catch {
+                if Task.isCancelled || error is CancellationError { throw CancellationError() }
+                // A damaged preferred cache must not prevent a valid older catalog from loading.
+            }
         }
+        try Task.checkCancellation()
         throw originalError
     }
 

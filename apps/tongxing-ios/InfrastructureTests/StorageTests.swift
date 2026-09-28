@@ -103,6 +103,34 @@ final class StorageTests {
         catch { #expect(error as? ContentStorageError == .checksumMismatch) }
     }
 
+    @Test func damagedPreferredCatalogCacheFallsBackAndPreservesNetworkError() async throws {
+        let legacy = try multilingualFixture()
+        StubURLProtocol.install(host: baseURL.host!) { request in
+            request.url?.path == "/multilingual-v2.json"
+                ? .init(chunks: [legacy.catalog]) : .init(status: 404, chunks: [])
+        }
+        let cache = directory.appendingPathComponent("multilingual-cache-fallback")
+        let repository = MultilingualCatalogRepository(origin: baseURL, cacheDirectory: cache, session: session)
+        #expect(try await repository.loadCatalog().source == .network)
+
+        stub(.init(chunks: [], error: URLError(.notConnectedToInternet)))
+        let preferred = cache.appendingPathComponent("multilingual-v3.json")
+        for invalid in [Data("{".utf8), legacy.catalog] {
+            try invalid.write(to: preferred)
+            let fallback = try await repository.loadCatalog()
+            #expect(fallback.source == .cache)
+            #expect(fallback.catalog.schemaVersion == MultilingualCatalog.supportedSchemaVersion)
+        }
+
+        try Data("{".utf8).write(to: cache.appendingPathComponent("multilingual-v2.json"))
+        do {
+            _ = try await repository.loadCatalog()
+            Issue.record("When both caches are invalid, the original network error must be returned")
+        } catch {
+            #expect((error as? URLError)?.code == .notConnectedToInternet)
+        }
+    }
+
     @Test func reviewedLocaleAudioIsDownloadedByHashAndCachedBytesAreRechecked() async throws {
         let audio = Data("synthetic reviewed audio bytes".utf8)
         let fixture = try multilingualFixture(audio: audio)

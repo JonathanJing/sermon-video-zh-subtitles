@@ -20,6 +20,12 @@
             "state": "translated",
             "value": "Estadísticas de uso anónimas"
           }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thống kê sử dụng ẩn danh"
+          }
         }
       }
     },
@@ -41,6 +47,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Compartir estadísticas anónimas"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chia sẻ thống kê sử dụng ẩn danh"
           }
         }
       }
@@ -64,6 +76,12 @@
             "state": "translated",
             "value": "Desactivado por defecto. Al activarlo, la app envía visitas por idioma de interfaz, idiomas del contenido y audio, tiempo de escucha y cobertura de reproducción. Solo usa un identificador aleatorio que cambia cada día, sin nombre, correo ni identificador publicitario y sin seguimiento entre días. Los dispositivos no equivalen a personas."
           }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mặc định tắt. Khi bật, ứng dụng gửi lượt truy cập theo ngôn ngữ giao diện, ngôn ngữ nội dung và âm thanh, thời gian nghe và mức độ phát. Ứng dụng chỉ dùng mã định danh ngẫu nhiên thay đổi hằng ngày, không có tên, email hoặc mã quảng cáo và không theo dõi qua các ngày. Số thiết bị không phải số người."
+          }
         }
       }
     },
@@ -86,6 +104,12 @@
             "state": "translated",
             "value": "Al desactivarlo, se detienen los envíos y se intenta retirar las estadísticas enviadas durante esta ejecución de la app. Sin conexión no se garantiza su eliminación. No hay cola de envíos sin conexión; ese uso puede no contabilizarse."
           }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khi tắt, việc gửi dữ liệu dừng ngay và ứng dụng cố gắng thu hồi số liệu đã gửi trong lần chạy này; không thể bảo đảm thu hồi khi mất mạng. Không có hàng đợi tải lên ngoại tuyến, nên việc sử dụng khi không có mạng có thể không được tính."
+          }
         }
       }
     },
@@ -107,6 +131,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Este aviso cubre la app nativa Tongxing, un proyecto personal independiente sin inicio de sesión ni publicidad. Las estadísticas anónimas son opcionales y debes activarlas."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thông báo này áp dụng cho ứng dụng Tongxing bản gốc, một dự án cá nhân độc lập không yêu cầu đăng nhập và không có quảng cáo. Thống kê ẩn danh là tùy chọn và chỉ được bật khi bạn đồng ý."
           }
         }
       }
@@ -131,6 +161,12 @@
             "state": "translated",
             "value": "No se pudo cargar el texto. Inténtalo de nuevo."
           }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể tải bản thảo. Vui lòng thử lại."
+          }
         }
       }
     },
@@ -154,6 +190,12 @@
             "state": "translated",
             "value": "Elige un idioma para leer y preparar su audio en la app."
           }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn ngôn ngữ để đọc và chuẩn bị âm thanh tương ứng trong ứng dụng."
+          }
         }
       }
     },
@@ -176,6 +218,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Texto completo · Referencia en inglés"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toàn văn · Đối chiếu tiếng Anh"
           }
         }
       }
