@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "model-production-ab-inputs-v1",
+  "baseCommit": "e95730c9d7a5caa7971d7cae149ee70d84e617ab",
+  "sourcePackagePath": "artifacts/multilingual-clip-20260920/20260920-blocks9-14-178s/layer1/3fb4ca066371c249c8454a8f7627f425871d4a8c54a2cc340713f7bd656f3276/english-source-package.json",
+  "sourcePackageCanonicalSha256": "4d645ff0aad0b55b2eb913fd0749ebcb3bed010ddfc037e89e1f8a98f44a227b",
+  "sourceStatus": "ready_for_translation",
+  "anchorPath": "artifacts/multilingual-clip-20260920/20260920-blocks9-14-178s/layer1/3fb4ca066371c249c8454a8f7627f425871d4a8c54a2cc340713f7bd656f3276/anchor-manifest.json",
+  "anchorCanonicalSha256": "d8ccc61a7d9088105390c9f74538d0ef6f618af8d33522bcadc316b8525e4146",
+  "sourceUnits": 45,
+  "defaultTranslationGroups": 45,
+  "locales": [
+    {
+      "locale": "zh-Hans",
+      "basePolicyPath": "artifacts/multilingual-clip-20260920/20260920-blocks9-14-178s/layer2-formal-prep/zh-Hans/policy-v2.json",
+      "basePolicyCanonicalSha256": "2992481a47a5cd64fb41bb6d1082e41d242288b0e451773843e25eb8cd30e59d",
+      "productionPolicyReady": true,
+      "plugin": "scripts/language_review_plugins/zh_hans_sermon.py"
+    },
+    {
+      "locale": "ko",
+      "basePolicyPath": "artifacts/multilingual-clip-20260920/20260920-blocks9-14-178s/layer2-formal-prep/ko/policy-v2.json",
+      "basePolicyCanonicalSha256": "aa86ad817e6559bb507e959488e6b5197f324237dc471efa5e797c926733b1cf",
+      "productionPolicyReady": true,
+      "plugin": "scripts/language_review_plugins/ko_sermon.py"
+    },
+    {
+      "locale": "es",
+      "basePolicyPath": "artifacts/multilingual-clip-20260920/20260920-blocks9-14-178s/layer2-formal-prep/es/policy-v2.json",
+      "basePolicyCanonicalSha256": "666a60ce7fa8bf4d45a76cb5de16cbd0b94b7efe8ca8404d33bdd0d67cfa1e3e",
+      "productionPolicyReady": true,
+      "plugin": "scripts/language_review_plugins/es_sermon.py"
+    }
+  ],
+  "preflightModels": [
+    "gpt-6-astra",
+    "gpt-6-sol",
+    "gpt-6-luna"
+  ]
+}
