@@ -24,12 +24,14 @@ import wave as wave_module
 
 try:
     from scripts import build_target_language_audio_package as package
+    from scripts import four_layer_measure as measure
     from scripts import render_multilingual_voice_demos as demos
     from scripts import sermon_accounting as accounting
     from scripts import sermon_sentence_interpretation as identity
     from scripts import validate_target_language_audio_unit as integrity
 except ImportError:
     import build_target_language_audio_package as package
+    import four_layer_measure as measure
     import render_multilingual_voice_demos as demos
     import sermon_accounting as accounting
     import sermon_sentence_interpretation as identity
@@ -724,6 +726,19 @@ def render(paths: dict[str, Path], checkpoint_map_path: Path,
         return assemble(context, paths, root, rows, policy=policy, track_format=track_format)
 
 
+def render_accounted(paths: dict[str, Path], checkpoint_map_path: Path,
+                     operation_policies_path: Path, *, progress_ledger: Path | None = None,
+                     **kwargs: Any) -> dict[str, Any]:
+    locale = package.read_object(paths["job"])["targetLocale"]
+    with measure.producer_step(progress_ledger, f"L3-02@{locale}", locale=locale) as metrics:
+        with accounting.accounting_session(paths["job"].parent / "accounting",
+                                           "layer3_formal_render",
+                                           evidence_directory=paths["job"].parent):
+            result = render(paths, checkpoint_map_path, operation_policies_path, **kwargs)
+        metrics["doneUnits"] = len(result["units"])
+    return result
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("source", "anchor", "candidate", "job", "adapter", "policy"):
@@ -754,6 +769,8 @@ def main() -> None:
                         help="Previously validated render directory for unchanged units")
     parser.add_argument("--speculative-from", type=Path,
                         help="Preview-only unit audio; formal human and rights gates still run first")
+    parser.add_argument("--progress-ledger", type=Path,
+                        help="Bind render and per-unit timing to this week's four-layer ledger")
     args = parser.parse_args()
     paths = {name: getattr(args, name) for name in ("source", "anchor", "candidate",
                                                    "job", "adapter", "policy", "human_receipt",
@@ -764,15 +781,15 @@ def main() -> None:
     policy = {"reactionLagSeconds": args.reaction_lag_seconds,
               "interUtteranceGapSeconds": args.inter_utterance_gap_seconds,
               "maxEndLagSeconds": args.max_end_lag_seconds}
-    with accounting.accounting_session(paths["job"].parent / "accounting",
-                                       "layer3_formal_render", evidence_directory=paths["job"].parent):
-        result = render(paths, args.checkpoint_map, args.audio_operation_policies,
-                        path_map_path=args.path_map, reuse_from=args.reuse_from,
-                        speculative_from=args.speculative_from,
-                        seed=args.seed, device=args.device,
-                        dtype=args.dtype, attention=args.attention, instruct=args.instruct,
-                        unit_instructions_path=args.unit_instructions,
-                        policy=policy, track_format=args.track_format)
+    result = render_accounted(
+        paths, args.checkpoint_map, args.audio_operation_policies,
+        progress_ledger=args.progress_ledger,
+        path_map_path=args.path_map, reuse_from=args.reuse_from,
+        speculative_from=args.speculative_from,
+        seed=args.seed, device=args.device,
+        dtype=args.dtype, attention=args.attention, instruct=args.instruct,
+        unit_instructions_path=args.unit_instructions,
+        policy=policy, track_format=args.track_format)
     print(json.dumps({"status": "candidate", "targetLocale": result["targetLocale"],
                       "renderManifest": str((paths["job"].parent / "render-manifest.json").resolve()),
                       "machineScreening": "not_run", "humanListeningReview": "pending"},

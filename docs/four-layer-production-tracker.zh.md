@@ -141,6 +141,8 @@ python scripts/produce_target_language_candidate.py prepare \
   --out artifacts/my-multilingual-run/ko/request.json
 ```
 
+9 月 27 日整篇复盘后，`run_target_language_models.py` 的实际付费逐组模型调用接入 `L2-02@<locale>`，`render_formal_target_language_speech.py` 的正式逐单元合成接入 `L3-02@<locale>`。这两个入口各自接受 `--progress-ledger <同一周账本>`，或读取 `SERMON_FOUR_LAYER_LEDGER`；子 span 与父检查点写入账本旁同一个私有 `accounting/events.jsonl`，保留每组／每单元尝试、失败和缓存复用。若未配置账本，仍在原输出目录记录自身计时，不能算作 Tracker 的已测步骤。
+
 同一 producer 不要再套相同检查点的手动计时命令，否则会重复统计。产出候选或审核稿的命令即使执行成功，也不代表 Layer 2 的人工放行；`L1-04` 生成阻塞包时同样只证明执行完成，不表示可进入正式翻译。日志中的模型标识为 hash，须用冻结策略文件核对；外部翻译调用的 Token、缓存、费用和等待时间若没有原始收据，仍列为未知。
 
 对尚未接入的四层命令，使用[计时入口](../scripts/four_layer_measure.py)运行。它在账本旁的私有 `accounting/events.jsonl` 追加实际执行 span，继承已有子流程日志，保留非零退出；**不**自动把 Tracker 步骤标为完成，也不授予审批。`--` 后使用原本要执行的命令：
@@ -160,4 +162,4 @@ python scripts/four_layer_measure.py audit \
 
 `audit` 输出 `completedWithoutMeasuredExecutionCount` 与具体步骤 ID。快照及公开页也显示缺实测计时的已完成检查点数；本地旧账本和线上旧快照须重新生成、重新发布后才会带新字段。即使已有步骤标记为 `complete`，没有匹配本账本与来源窗口的真实 span，耗时仍为未知。
 
-当前 9 月 20 日 178 秒片段的 19 个已登记完成步骤是事后根据正式收据回填，均无执行计时。新入口只对**此后通过它运行**的步骤建立实测时间；本轮结束时审计必须把这 19 项列为计时缺口，并结合已有正式收据与人工审核时间线说明可证范围。
+9 月 27 日 31:31 整篇的公开快照虽标为 46/46，只有 3 步有实测执行 span，另外 43 步的执行时长未知；细分产物的音频时长和文件时间不能补造生产耗时。当前入口只对**此后通过它运行**的步骤建立实测时间。后续按 TRK-005b 接入筛查、同步、构建、部署与审核等待，再按 TRK-006 核对并行重叠和真实关键路径。9 月 20 日 178 秒片段的 19 个已登记完成步骤同样是事后根据正式收据回填，继续列为计时缺口。

@@ -19,11 +19,13 @@ import shutil
 from typing import Any, Callable
 
 try:
+    from scripts import four_layer_measure as measure
     from scripts import produce_target_language_candidate as producer
     from scripts import sermon_accounting as accounting
     from scripts import sermon_pipeline
     from scripts import target_language_policy as policy_tools
 except ImportError:
+    import four_layer_measure as measure
     import produce_target_language_candidate as producer
     import sermon_accounting as accounting
     import sermon_pipeline
@@ -441,6 +443,21 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
     return evidence
 
 
+def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
+                  api_key: str, call, group_plan_data, plugin: Path,
+                  revision_brief: dict | None, reuse_from: Path | None,
+                  *, progress_ledger: Path | None = None) -> dict:
+    locale = policy["targetLocale"]
+    with measure.producer_step(progress_ledger, f"L2-02@{locale}", locale=locale) as metrics:
+        with accounting.accounting_session(out_dir / "accounting", "layer2_models",
+                                           {"targetLocale": locale},
+                                           evidence_directory=out_dir):
+            evidence = run(source, anchor, policy, out_dir, api_key, call,
+                           group_plan_data, plugin, revision_brief, reuse_from)
+        metrics["doneUnits"] = len(evidence["groups"])
+    return evidence
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--english-source-package", type=Path, required=True)
@@ -453,6 +470,8 @@ def main() -> None:
     parser.add_argument("--reuse-from", type=Path,
                         help="Prior complete model run; unchanged requests reuse verified caches")
     parser.add_argument("--out-dir", type=Path, required=True)
+    parser.add_argument("--progress-ledger", type=Path,
+                        help="Bind model and per-group timing to this week's four-layer ledger")
     args = parser.parse_args()
     require(args.revision_brief is None or args.reuse_from is not None,
             "--revision-brief requires --reuse-from")
@@ -467,15 +486,13 @@ def main() -> None:
             "Language plugin implementation differs from frozen policy")
     api_key = os.environ.get("OPENAI_API_KEY")
     require(bool(api_key), "OPENAI_API_KEY is not configured")
-    with accounting.accounting_session(args.out_dir / "accounting", "layer2_models",
-                                       {"targetLocale": policy["targetLocale"]},
-                                       evidence_directory=args.out_dir):
-        evidence = run(source, anchor, policy, args.out_dir, api_key,
-                       lambda key, payload: sermon_pipeline.chat_json(key, payload, retries=1),
-                       json.loads(args.group_plan.read_text(encoding="utf-8"))
-                       if args.group_plan else None, args.plugin,
-                       producer._load(args.revision_brief) if args.revision_brief else None,
-                       args.reuse_from)
+    evidence = run_accounted(
+        source, anchor, policy, args.out_dir, api_key,
+        lambda key, payload: sermon_pipeline.chat_json(key, payload, retries=1),
+        json.loads(args.group_plan.read_text(encoding="utf-8"))
+        if args.group_plan else None, args.plugin,
+        producer._load(args.revision_brief) if args.revision_brief else None,
+        args.reuse_from, progress_ledger=args.progress_ledger)
     print(json.dumps({"status": "independent_model_review_pass",
                       "groups": len(evidence["groups"]),
                       "evidence": str((args.out_dir / "evidence.json").resolve())}))
