@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>每周四层制作时间线</title>
+<style>
+:root{color-scheme:light dark;font:15px/1.45 system-ui,-apple-system,sans-serif;--bg:#f7f9f7;--fg:#17312a;--muted:#547169;--line:#c9d8d2;--card:#fff;--running:#4b789e;--review:#c28a2b;--blocked:#b86155;--measured:#287d62;--point:#263b35}
+@media(prefers-color-scheme:dark){:root{--bg:#101a18;--fg:#e4f0eb;--muted:#a6c1b6;--line:#3d554d;--card:#1c2b26;--running:#83b1d4;--review:#e0b45b;--blocked:#dd897d;--measured:#65c39b;--point:#e6f4ec}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg)}main{max-width:1550px;margin:auto;padding:24px}h1{font-size:1.55rem;margin:0 0 8px}h2{font-size:1.05rem;margin:0 0 10px}p{margin:6px 0;color:var(--muted)}button{font:inherit;color:inherit;cursor:pointer}button:focus-visible{outline:2px solid var(--measured);outline-offset:2px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0}.tabs button{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:var(--card)}.tabs button[aria-selected=true]{background:var(--fg);color:var(--bg)}.meta{display:flex;gap:18px;flex-wrap:wrap;margin:10px 0 18px}.meta span{font-variant-numeric:tabular-nums}.legend{display:flex;gap:14px;flex-wrap:wrap;margin:12px 0;font-size:.9rem}.swatch{display:inline-block;width:14px;height:9px;border-radius:2px;margin-right:5px}.swatch.running{background:var(--running)}.swatch.review{background:var(--review)}.swatch.blocked{background:var(--blocked)}.swatch.measured{background:var(--measured)}.swatch.point{background:var(--point);width:9px;border-radius:50%}.layout{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:20px;align-items:start}.plot-scroll{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:10px}.chart{min-width:830px;padding:10px 12px 18px}.axis{height:46px;display:grid;grid-template-columns:300px 1fr;align-items:end;border-bottom:1px solid var(--line)}.axis strong{font-size:.9rem}.axis-grid{position:relative;height:42px}.tick{position:absolute;bottom:4px;transform:translateX(-50%);font-size:11px;color:var(--muted);white-space:nowrap}.tick:first-child{transform:none}.tick:last-child{transform:translateX(-100%)}.group{padding:9px 0 5px;font-weight:600;color:var(--muted);border-bottom:1px solid var(--line)}.timeline-row{width:100%;display:grid;grid-template-columns:300px 1fr;min-height:31px;align-items:center;padding:0;border:0;border-bottom:1px solid var(--line);background:transparent;text-align:left}.timeline-row:hover,.timeline-row.selected{background:color-mix(in srgb,var(--measured) 11%,transparent)}.timeline-row.dependency{background:color-mix(in srgb,var(--review) 13%,transparent)}.row-label{padding:4px 7px;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.row-label b{font-weight:600;margin-right:5px}.lane{position:relative;height:30px;background:repeating-linear-gradient(to right,transparent 0,transparent calc(25% - 1px),var(--line) calc(25% - 1px),var(--line) 25%)}.bar{position:absolute;height:9px;top:6px;min-width:2px;border-radius:2px}.bar.running{background:var(--running)}.bar.review{background:var(--review)}.bar.blocked{background:var(--blocked)}.bar.measured{background:var(--measured);top:17px}.point{position:absolute;top:4px;width:8px;height:8px;border-radius:50%;background:var(--point);transform:translateX(-50%)}aside{position:sticky;top:12px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px}aside p,aside li{font-size:.87rem}aside ol{padding-left:20px;margin:8px 0}aside li{margin-bottom:7px}.detail{border-top:1px solid var(--line);padding-top:12px;margin-top:14px}.detail strong{display:block;margin-bottom:4px}.muted{color:var(--muted)}.small{font-size:.83rem}.foot{margin-top:18px;font-size:.83rem}@media(max-width:980px){.layout{grid-template-columns:1fr}aside{position:static}.chart{min-width:760px}.axis,.timeline-row{grid-template-columns:260px 1fr}}
+</style>
+</head>
+<body>
+<main>
+<h1>每周四层制作时间线</h1>
+<p>横轴为实际时间，纵轴为生产步骤。单击步骤查看其正式依赖和计时证据。</p>
+<div class="tabs" role="tablist" aria-label="运行记录" id="tabs"></div>
+<div class="meta" id="meta"></div>
+<p id="note"></p>
+<div class="legend" id="legend"></div>
+<div class="layout">
+ <section class="plot-scroll" aria-label="流程时间图"><div class="chart"><div class="axis"><strong>流程 / 步骤</strong><div class="axis-grid" id="axis"></div></div><div id="rows"></div></div></section>
+ <aside><h2>耗时与依赖</h2><div id="ranking"></div><div id="detail" class="detail" aria-live="polite">选择左侧步骤查看依赖。</div></aside>
+</div>
+<p class="foot">数据来自本地进度账本、同一账本身份的执行跨度，以及单独标明的 Dev 模拟计时。条形重叠时不累加成总耗时；缺失起点的步骤只显示完成点。依赖来自四层正式门禁，不能从时间上的先后推断。</p>
+</main>
+<script id="timeline-data" type="application/json">__TIMELINE_DATA__</script>
+<script>
+(() => {
+ const report=JSON.parse(document.getElementById('timeline-data').textContent);
+ const tabs=document.getElementById('tabs'),meta=document.getElementById('meta'),note=document.getElementById('note'),legend=document.getElementById('legend'),axis=document.getElementById('axis'),rowsEl=document.getElementById('rows'),ranking=document.getElementById('ranking'),detail=document.getElementById('detail');
+ let modeIndex=0,selected=null;
+ const fmt=(ms)=>new Intl.DateTimeFormat('zh-CN',{timeZone:'America/Los_Angeles',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date(ms));
+ const duration=(s)=>s<1?`${Math.round(s*1000)} 毫秒`:s<60?`${s.toFixed(1)} 秒`:s<3600?`${(s/60).toFixed(1)} 分钟`:`${(s/3600).toFixed(2)} 小时`;
+ const esc=(s)=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ function render(){
+  const m=report.modes[modeIndex];
+  tabs.innerHTML='';report.modes.forEach((x,i)=>{const b=document.createElement('button');b.type='button';b.setAttribute('role','tab');b.setAttribute('aria-selected',String(i===modeIndex));b.textContent=x.label;b.onclick=()=>{modeIndex=i;selected=null;render()};tabs.appendChild(b)});
+  const all=m.rows.flatMap(r=>[...r.intervals.flatMap(x=>[Date.parse(x.start),Date.parse(x.end)]),...r.attempts.flatMap(x=>[Date.parse(x.start),Date.parse(x.end)]),...(r.completedAt?[Date.parse(r.completedAt)]:[])]).filter(Number.isFinite);
+  if(!all.length){rowsEl.textContent='没有可绘制的时间点。';return}
+  const min=Math.min(...all),max=Math.max(...all),range=Math.max(1,max-min),position=t=>Math.max(0,Math.min(100,(Date.parse(t)-min)/range*100));
+  meta.innerHTML=`<span><b>${esc(m.pageId||'')}</b></span><span>${fmt(min)}—${fmt(max)}（洛杉矶时间）</span><span>跨度 ${duration(range/1000)}</span><span>${m.kind==='production'?`${m.coverage.steps} 步，${m.coverage.measured} 步有执行实测，${m.coverage.missingCompleted} 步完成但缺执行计时`:`${m.coverage.events} 条模拟事件，${m.coverage.groups} 类细分步骤`}</span>`;
+  note.textContent=m.note;
+  legend.innerHTML=m.kind==='production'?'<span><i class="swatch running"></i>账本 running</span><span><i class="swatch review"></i>等待审核</span><span><i class="swatch blocked"></i>阻塞</span><span><i class="swatch measured"></i>实测执行</span><span><i class="swatch point"></i>完成点</span>':'<span><i class="swatch measured"></i>模拟实测（父子跨度可重叠）</span>';
+  axis.innerHTML='';for(let i=0;i<=4;i++){const t=document.createElement('span');t.className='tick';t.style.left=(i*25)+'%';t.textContent=fmt(min+range*i/4);axis.appendChild(t)}
+  rowsEl.innerHTML='';let prior='';
+  for(const row of m.rows){const group=`Layer ${row.layer||'0 · 输入'}${row.locale?' / '+row.locale:''}`;if(group!==prior){const g=document.createElement('div');g.className='group';g.textContent=group;rowsEl.appendChild(g);prior=group}
+   const b=document.createElement('button');b.type='button';b.className='timeline-row';b.dataset.id=row.id;b.setAttribute('aria-label',`${row.id} ${row.label}`);const label=document.createElement('span');label.className='row-label';label.innerHTML=`<b>${esc(row.id)}</b>${esc(row.label)}`;b.appendChild(label);const lane=document.createElement('span');lane.className='lane';
+   for(const span of [...row.intervals,...row.attempts]){const mark=document.createElement('i');mark.className='bar '+span.kind;mark.style.left=position(span.start)+'%';mark.style.width=Math.max(.15,position(span.end)-position(span.start))+'%';mark.title=`${span.kind} · ${duration(span.seconds)} · ${fmt(Date.parse(span.start))}—${fmt(Date.parse(span.end))}`;lane.appendChild(mark)}
+   if(row.completedAt){const dot=document.createElement('i');dot.className='point';dot.style.left=position(row.completedAt)+'%';dot.title='完成于 '+fmt(Date.parse(row.completedAt));lane.appendChild(dot)}
+   b.appendChild(lane);b.onclick=()=>{selected=row.id;updateSelection(m)};rowsEl.appendChild(b)}
+  const candidates=m.rows.flatMap(r=>r.intervals.map(x=>({row:r,span:x})));candidates.sort((a,b)=>b.span.seconds-a.span.seconds);
+  const measured=m.rows.flatMap(r=>r.attempts.map(x=>({row:r,span:x}))).filter(x=>m.kind==='production'||(!x.row.id.includes('.unit')&&!x.row.id.includes('.cue')&&!x.row.id.includes('parent_cut_proof'))).sort((a,b)=>b.span.seconds-a.span.seconds);
+  ranking.innerHTML=(m.kind==='production'?`<p><b>最长账本状态区间</b>（不等于人工/机器实际工作时间）</p><ol>${candidates.slice(0,5).map(x=>`<li>${esc(x.row.id)} · ${esc(x.span.kind)} · ${duration(x.span.seconds)}</li>`).join('')}</ol>`:'')+`<p><b>${m.kind==='production'?'有起止实测的步骤':'模拟阶段耗时'}</b></p><ol>${measured.slice(0,5).map(x=>`<li>${esc(x.row.id)} · ${duration(x.span.seconds)}</li>`).join('')||'<li>没有完整跨度</li>'}</ol>`;
+  updateSelection(m)
+ }
+ function updateSelection(m){const deps=m.dependencies[selected]||[];for(const b of rowsEl.querySelectorAll('.timeline-row')){b.classList.toggle('selected',b.dataset.id===selected);b.classList.toggle('dependency',deps.includes(b.dataset.id))}const r=m.rows.find(x=>x.id===selected);if(!r){detail.textContent='选择左侧步骤查看依赖。';return}const intervals=[...r.intervals,...r.attempts];detail.innerHTML=`<strong>${esc(r.id)} · ${esc(r.label)}</strong><p>正式依赖：${deps.length?deps.map(esc).join('、'):'无已编码的跨层门禁；可能有层内资料依赖'}</p><p>可并行：不同目标语言分支可并行；同一语言须遵守上述正式门禁。</p><p>计时：${intervals.length?intervals.map(x=>`${esc(x.kind)} ${duration(x.seconds)}`).join('；'):'无完整起止记录'}${r.completedAt?`；完成点 ${fmt(Date.parse(r.completedAt))}`:''}</p>`}
+ render();
+})();
+</script>
+</body>
+</html>
