@@ -16,6 +16,16 @@
 
 这一清单优先于下文仅适用于 `weekly.json` 的 legacy 命令。当前仓库的 `assemble_multilingual_hosting.py`、`deploy_multilingual_hosting.py`、`verify_multilingual_hosting.py` 仍只处理 v2 Catalog／v1 Release；在 v3 入口实现并通过定向测试前，不得用这些命令部署新周后宣称两端已经刷新可用。
 
+已开始的 v3 本地候选入口如下；`stage-public` 仅放单个新周的 v3 目录及公开资产，`stage-manifest.json` 逐文件给出以 `/` 开头的 `path` 与 `sha256`。输出状态固定为 `validated_not_deployed`，不能直接作为上线收据：
+
+```bash
+.venv/bin/python scripts/assemble_multilingual_v3_update.py \
+  --base-public artifacts/<已核对的完整正式站快照>/public \
+  --stage-public artifacts/<本周已审公开资产>/public \
+  --stage-manifest artifacts/<本周已审公开资产>/stage-manifest.json \
+  --out artifacts/<本周-v3-候选>
+```
+
 | 阶段 | 必须保存的结果 |
 | --- | --- |
 | 构建 | 从冻结的 Layer 1–3 包与批准的系列／标题生成本周各语言 v2 Release、页面、全文、英文对照、字幕、原视频、音频和定位 sidecar；每个公开文件有安全同源路径及 SHA；不公开含绝对路径的私有包。 |

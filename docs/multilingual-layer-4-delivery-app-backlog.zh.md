@@ -12,7 +12,7 @@
 
 本分支新增只读本地审计入口 [`audit_production_release_bindings.py`](../scripts/audit_production_release_bindings.py)：输入公开目录和每种语言私有的已批准短口播稿、口播人审收据、已听审音频包、音频人审收据，检查 v3→v2→口播稿→音频→公开文件的身份与 SHA。9 月 27 日本地发布快照三语通过，覆盖西语 420、韩语 420、中文 419 个已听审音频单元；这不是重新执行 Production 部署或真机验收。尚未把该入口接入发布命令，公开目录的额外私有资料泄漏扫描也尚未实现。
 
-后续周更使用 [Production v3 内容与刷新合同](multilingual-production-interfaces.zh.md#每周-app-内容合同与刷新门槛)：逐语言 v2 Release 和 v3 catalog 的 Schema 已入库；当前 `assemble_multilingual_hosting.py`、`deploy_multilingual_hosting.py`、`verify_multilingual_hosting.py` 仍只支持 v2 catalog／v1 Release。本周一次性 Web 桥接运行时还在忽略的 staging 目录。`DEV-L4-004` 完成前，不能把下文的旧命令当作新周可重复发布入口。Web 重载与 iOS 手动刷新可读取新目录，但同版本跨周客户端验收尚无收据。
+后续周更使用 [Production v3 内容与刷新合同](multilingual-production-interfaces.zh.md#每周-app-内容合同与刷新门槛)：逐语言 v2 Release 和 v3 catalog 的 Schema 已入库。`DEV-L4-004` 已于 2026-09-27 开始，新增只在本地生成候选的 [`assemble_multilingual_v3_update.py`](../scripts/assemble_multilingual_v3_update.py)，验证新旧 v3 目录、v2 Release、公开资产、英文对照、定位侧文件、完整视频与 stage allowlist，拒绝覆盖旧文件，输出回滚目录及文件哈希报告。它尚不部署或做在线预检。旧 `assemble_multilingual_hosting.py`、`deploy_multilingual_hosting.py`、`verify_multilingual_hosting.py` 仍只支持 v2 catalog／v1 Release。本周一次性 Web 桥接运行时还在忽略的 staging 目录。正式音频审计接入、线上基线 CAS、部署后 HTTP／Range 与同版本双 App 客户端验收仍待完成，不能把本地候选当成正式周更发布收据。
 
 - [ ] 正式 v2 构建前逐 locale 运行私有跨层审计：v3 目录指向的 v2 Release 必须绑定同 locale、同来源、同已批准短口播稿的 `human_reviewed` Layer 3 原件和人工音频审核收据，并核对公开 MP3、字幕 SHA。错绑、缺收据或私有路径进入公开目录都失败。
 - [ ] 审计只输出无正文、无本机路径的 hash／状态摘要；旧文字版包和旧 v1 Release 保持不变。未来若需要公开音频包证明，另建版本化、可移植的派生证明清单，不能把私有原包改名上传。
