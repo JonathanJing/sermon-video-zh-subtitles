@@ -204,6 +204,39 @@ def prepare(base: Path, production_public: Path, production_config: Path, out: P
         raise
 
 
+def prepare_label_update(base: Path, out: Path) -> dict:
+    """Change only the Dev label after a v3 candidate has been deployed."""
+    if out.exists() or out.is_symlink():
+        raise ValueError(f"Output already exists: {out}")
+    old = candidate_report(base)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    temporary = Path(tempfile.mkdtemp(prefix=f".{out.name}-", dir=out.parent))
+    try:
+        shutil.copytree(base / "public", temporary / "public")
+        shutil.copyfile(DEV_LABEL, temporary / "public/dev-preview-label.mjs")
+        shutil.copyfile(base / "firebase.json", temporary / "firebase.json")
+        current = inventory(temporary / "public")
+        before = {item["path"]: item for item in old["files"]}
+        after = {item["path"]: item for item in current}
+        changed = {name for name in before if before[name] != after.get(name)}
+        if set(before) != set(after) or changed != {"dev-preview-label.mjs"}:
+            raise ValueError(f"Unexpected Dev label update: {sorted(changed)}")
+        report = {"schemaVersion": SCHEMA, "status": "validated_not_deployed",
+                  "siteId": SITE, "origin": ORIGIN, "pageId": old["pageId"],
+                  "locales": old["locales"], "labelUpdateOnly": True,
+                  "baseBuildReportSha256": digest(base / "build-report.json"),
+                  "baseFiles": old["files"],
+                  "productionCatalogSha256": old["productionCatalogSha256"],
+                  "devLabelScriptSha256": digest(DEV_LABEL),
+                  "firebaseConfigSha256": digest(temporary / "firebase.json"), "files": current}
+        (temporary / "build-report.json").write_text(json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2) + "\n")
+        temporary.rename(out)
+        return report
+    except BaseException:
+        shutil.rmtree(temporary)
+        raise
+
+
 def candidate_report(candidate: Path) -> dict:
     report = load(candidate / "build-report.json")
     if (report.get("schemaVersion") != SCHEMA or report.get("status") != "validated_not_deployed"
@@ -213,6 +246,12 @@ def candidate_report(candidate: Path) -> dict:
         raise ValueError("Dev v3 candidate changed")
     if load(candidate / "firebase.json")["hosting"].get("site") != SITE:
         raise ValueError("Not the Firebase Dev site")
+    if report.get("labelUpdateOnly"):
+        before = {item["path"]: item for item in report["baseFiles"]}
+        after = {item["path"]: item for item in report["files"]}
+        if (set(before) != set(after)
+                or {name for name in before if before[name] != after[name]} != {"dev-preview-label.mjs"}):
+            raise ValueError("Dev label update changed another file")
     validate_published_week(candidate / "public")
     old_dev.verify_dev_poc_assets(candidate / "public")
     return report
@@ -220,7 +259,8 @@ def candidate_report(candidate: Path) -> dict:
 
 def preflight(candidate: Path, base: Path) -> dict:
     report = candidate_report(candidate)
-    base_report = old_dev.candidate_report(base)
+    base_schema = load(base / "build-report.json").get("schemaVersion")
+    base_report = candidate_report(base) if base_schema == SCHEMA else old_dev.candidate_report(base)
     if report["baseBuildReportSha256"] != digest(base / "build-report.json") or report["baseFiles"] != base_report["files"]:
         raise ValueError("Candidate uses a different Dev baseline")
     results = []
@@ -292,6 +332,54 @@ def verify(candidate: Path) -> dict:
             "results": results, "browserAcceptance": "not_run", "deviceAcceptance": "not_run"}
 
 
+def verify_label_update(candidate: Path, base: Path, full_receipt: Path) -> dict:
+    """Check a one-file update against the preceding complete HTTP receipt."""
+    report, previous = candidate_report(candidate), candidate_report(base)
+    if (report.get("labelUpdateOnly") is not True
+            or report["baseBuildReportSha256"] != digest(base / "build-report.json")
+            or report["baseFiles"] != previous["files"]):
+        raise ValueError("Label update is not bound to the verified Dev release")
+    full = load(full_receipt)
+    by_path = {item["path"]: item for item in full.get("results", []) if "sha256" in item}
+    if (full.get("schemaVersion") != "sermon-firebase-dev-v3-http-v1"
+            or full.get("status") != "pass"
+            or full.get("buildReportSha256") != digest(base / "build-report.json")
+            or full.get("checkedFiles") != len(previous["files"])
+            or any(by_path.get(item["path"], {}).get("sha256") != item["sha256"]
+                   or by_path[item["path"]].get("bytes") != item["bytes"]
+                   for item in previous["files"])):
+        raise ValueError("Prior complete HTTP receipt is missing or changed")
+    public = candidate / "public"
+    checks = []
+    for path in ("/dev-preview-label.mjs", "/index.html", "/multilingual-v3.json"):
+        status, headers, size, sha = http.request_file(ORIGIN, path)
+        expected = public / path.lstrip("/")
+        if status != 200 or size != expected.stat().st_size or sha != digest(expected):
+            raise ValueError(f"Dev label update HTTP mismatch: {path}")
+        checks.append({"path": path, "sha256": sha, "bytes": size,
+                       "contentType": headers.get("content-type")})
+    catalog = load(public / "multilingual-v3.json")
+    page = next(p for p in catalog["pages"] if p["id"] == PAGE_ID)
+    for locale, target in page["targets"].items():
+        release = load(public / target["releasePackageUrl"].lstrip("/"))
+        audio = next(a for a in release["assets"] if a["role"] == "audio")
+        status, headers, first = http.request_bytes(ORIGIN, audio["path"], range_first=True)
+        audio_file = public / audio["path"].lstrip("/")
+        with audio_file.open("rb") as stream:
+            expected_first = stream.read(1)
+        if (status != 206 or first != expected_first
+                or headers.get("content-range") != f"bytes 0-0/{audio_file.stat().st_size}"):
+            raise ValueError(f"Dev audio Range failed after label update: {locale}")
+        checks.append({"path": audio["path"], "range206": True})
+    return {"schemaVersion": "sermon-firebase-dev-v3-label-http-v1",
+            "status": "pass_delta", "origin": ORIGIN, "pageId": PAGE_ID,
+            "verifiedAt": datetime.now(timezone.utc).isoformat(),
+            "buildReportSha256": digest(candidate / "build-report.json"),
+            "priorFullReceiptSha256": digest(full_receipt),
+            "unchangedFilesInherited": len(previous["files"]) - 1,
+            "results": checks, "browserAcceptance": "not_run", "deviceAcceptance": "not_run"}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="action", required=True)
@@ -300,6 +388,9 @@ def main() -> None:
     build.add_argument("--production-public", type=Path, required=True)
     build.add_argument("--production-config", type=Path, required=True)
     build.add_argument("--out", type=Path, required=True)
+    label = sub.add_parser("build-label-update")
+    label.add_argument("--dev-base-candidate", type=Path, required=True)
+    label.add_argument("--out", type=Path, required=True)
     check = sub.add_parser("preflight")
     check.add_argument("--candidate", type=Path, required=True)
     check.add_argument("--dev-base-candidate", type=Path, required=True)
@@ -310,16 +401,25 @@ def main() -> None:
         cmd.add_argument("--out", type=Path, required=True)
         if action == "deploy":
             cmd.add_argument("--preflight", type=Path, required=True)
+    delta = sub.add_parser("verify-label-update")
+    delta.add_argument("--candidate", type=Path, required=True)
+    delta.add_argument("--dev-base-candidate", type=Path, required=True)
+    delta.add_argument("--base-http-receipt", type=Path, required=True)
+    delta.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     if args.action == "build":
         result = prepare(args.dev_base_candidate, args.production_public, args.production_config, args.out)
+    elif args.action == "build-label-update":
+        result = prepare_label_update(args.dev_base_candidate, args.out)
     elif args.action == "preflight":
         result = preflight(args.candidate, args.dev_base_candidate)
     elif args.action == "deploy":
         result = deploy(args.candidate, args.preflight)
+    elif args.action == "verify-label-update":
+        result = verify_label_update(args.candidate, args.dev_base_candidate, args.base_http_receipt)
     else:
         result = verify(args.candidate)
-    if args.action != "build":
+    if args.action not in {"build", "build-label-update"}:
         if args.out.exists():
             raise ValueError(f"Output exists: {args.out}")
         args.out.parent.mkdir(parents=True, exist_ok=True)

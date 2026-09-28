@@ -15,4 +15,5 @@ function render() {
 }
 
 document.getElementById("interface-language")?.addEventListener("change", render);
+document.getElementById("language-toggle")?.addEventListener("click", () => queueMicrotask(render));
 render();

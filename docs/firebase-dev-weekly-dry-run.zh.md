@@ -39,3 +39,10 @@ OUT=/absolute/path/to/ignored/dev-dry-run
 4. **Production 决策**：使用真实 Layer 4 包和独立 Production 目标完成相同检查。Dev 的演练收据只证明发布链路，不代替该周内容审核。
 
 通用 v3 `next-week build-update` 仍需接入 Dev 发布器；当前旧 `multilingual_dev_preview.py build-update` 只接受 v2 目录，不能用于下一周正式 v3 页面。对应开发项见 `docs/backlog.zh.md` 的 `DEV-L4-005`。
+
+## 2026-09-27 首次对齐结果
+
+- 使用本机完整 Dev 基线与已公开的 9/27 Production 静态快照构建 220 文件候选。发布前 169 个旧 Dev 文件逐个线上 GET／大小／SHA-256 通过；2026-09-28 03:05 UTC 部署到 Dev。
+- 03:09 UTC 完成 220 文件的线上 GET／大小／SHA-256 核验，三语 MP3 Range 与三份实际 `index.html` 通过。随后只修正 Dev 提示条对顶部界面语言按钮的响应；更新前重新检查了线上 220 文件，更新后以先前完整 HTTP 收据为基线，核对改变的脚本、首页、v3 目录和三语 Range，`219` 个不变文件沿用完整收据。03:13 UTC 增量 HTTP 收据为 `pass_delta`。
+- 线上浏览器观察：App 首页直接打开 9/27，显示 31:31 音轨及声音定位入口；韩语、西语切换到各自音轨，西语播放时间推进至 00:04；西语字幕全文显示逐段英文对照；旧周目录和 `/dev-poc.html` 仍在。顶部按钮切换到韩语界面时，Dev 提示条同步变为韩语。浏览器短时观察不代表整篇重新听审、iOS 设备或现场接收。
+- 原始候选及收据位于 Git 忽略目录 `artifacts/multilingual-dev-preview/2026-09-27-alignment/`。最终候选是 `candidate-label-v2`，对应 `label-deployment.json` 与 `label-http-verification.json`；原完整核验是 `http-verification.json`。
