@@ -38,7 +38,7 @@ except ImportError:
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SCHEMA = "sermon-backend-four-layer-dry-run-v1"
+SCHEMA = "sermon-backend-four-layer-dry-run-v2"
 FIXTURE_SCHEMA = "sermon-backend-four-layer-dry-run-fixture-v1"
 LOCALES = ("zh-Hans", "ko", "es")
 RATE = 12000

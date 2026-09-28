@@ -97,10 +97,16 @@ def baseline_report(base: Path) -> dict:
 
 def checked_backend_run(root: Path) -> tuple[dict, dict[str, Path]]:
     report = dev.load(root / "run-report.json")
-    if (report.get("schemaVersion") != "sermon-backend-four-layer-dry-run-v1"
+    if (report.get("schemaVersion") != "sermon-backend-four-layer-dry-run-v2"
             or report.get("simulationOnly") is not True or report.get("status") != "pass_simulated"
             or report.get("formalApproval") is not False
             or report.get("productionReleaseEligible") is not False
+            or report.get("sharedControlLoops") != {
+                "layer2": "astra_sol_group_runner",
+                "layer3": "pcm16_schedule_and_assembly"}
+            or any(report.get("layers", {}).get("layer2", {}).get(locale, {}).get("modelCalls")
+                   != 2 * report.get("layers", {}).get("layer2", {}).get(locale, {}).get("groups", -1)
+                   for locale in LOCALES)
             or set(report.get("externalCalls", {})) != {"download", "asr", "translation", "tts", "firebase"}
             or any(value != 0 for value in report.get("externalCalls", {}).values())):
         raise ValueError("Complete simulation-only backend run required")
@@ -116,6 +122,8 @@ def checked_backend_run(root: Path) -> tuple[dict, dict[str, Path]]:
     summary = dev.load(root / "public/flow/report.json")
     if (summary.get("simulationOnly") is not True or summary.get("status") != "pass_simulated"
             or summary.get("sourceUrlSha256") != report.get("sourceUrlSha256")
+            or summary.get("schemaVersion") != report.get("schemaVersion")
+            or summary.get("sharedControlLoops") != report.get("sharedControlLoops")
             or summary.get("formalApproval") is not False):
         raise ValueError("Backend public report differs from simulation")
     if b"DRY RUN" not in (root / "public/flow/index.html").read_bytes():

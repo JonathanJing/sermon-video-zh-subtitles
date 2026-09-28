@@ -41,6 +41,7 @@ OUT=/absolute/path/to/ignored/dry-run-run
 - Layer 1 真实构建结果仍是 `blocked`，`humanApproval=false`。演练只投影一个标记 `simulationProjection=true` 的 shadow 规划视图，供真实 lane planner 测试三语分流；它不是正式 English Source Package。
 - Layer 2 的三语文字仍是固定夹具，但经过与正式运行共用的 Astra 初译→Sol 独立逐组复核循环、响应解析、覆盖检查和本地缓存校验；不发模型请求、不记 API 计费。模拟 request/evidence 带 `simulationOnly=true` 和 `sermon-dry-run-*` schema，不能被正式候选准入器消费，也不复用正式响应缓存。Layer 3 的 WAV 是测试音，经过与正式 renderer 共用的排程和 PCM16 拼接；不写正式 Candidate、Speech Job、Audio Package 或人工审核收据。真实翻译模型、TTS、全轨听审和同步听审并未执行。
 - Layer 4 只复制 `public/flow/` 到 Dev 的 `/dry-run/<id>/flow/`；App 演练页提供入口。正式 `/multilingual-v3.json` 与 `/releases-v2/` 不修改。部署前完整校验 Dev 基线，部署后逐文件 HTTP／SHA，并检查模拟页可访问。Production、iOS 与现场验收均不从此推断。
+- 后端报告 schema 升为 `sermon-backend-four-layer-dry-run-v2`；Dev 导入器要求共用循环标记及每组两次固定模型响应。旧 v1 测试页可留在 Dev 历史路径，但不能作为新版本 dry run 的导入依据。
 - `run-report.json` 保留每个步骤的时间、状态、源哈希、各语言交接哈希、模拟边界和外部调用次数。公开 `flow/report.json` 只用于展示模拟状态；没有正式审批或发布资格。
 
 ## 尚需接入的生产共用编排

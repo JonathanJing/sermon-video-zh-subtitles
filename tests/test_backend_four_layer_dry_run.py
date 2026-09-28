@@ -15,6 +15,7 @@ class BackendFourLayerDryRunTests(unittest.TestCase):
             root = Path(folder) / "run"
             report = dry.run(self.fixture, root)
             self.assertEqual(report["status"], "pass_simulated")
+            self.assertEqual(report["schemaVersion"], "sermon-backend-four-layer-dry-run-v2")
             self.assertEqual(report["sourceAcquisition"], "simulated_no_network")
             self.assertEqual(set(report["layers"]), {"layer1", "layer2", "layer3", "layer4"})
             self.assertEqual(report["layers"]["layer1"]["status"],
