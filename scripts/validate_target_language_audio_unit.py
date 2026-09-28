@@ -63,6 +63,7 @@ def _load_job(path: Path) -> dict[str, Any]:
     speech.validate_adapter(
         adapter, job["targetLocale"], inputs["speakerRegistry"],
         clip_voice_authorization=inputs.get("clipVoiceAuthorization"),
+        source_voice_authorization=inputs.get("sourceVoiceAuthorization"),
         clip_voice_capability=inputs.get("clipVoiceCapability"),
         source_package=source, candidate=candidate)
     if "clipTimelineMap" in inputs:
@@ -145,15 +146,21 @@ def probe_pcm_wav(path: Path) -> dict[str, Any]:
 
 
 def build_receipt(job_path: Path, unit_index: int, audio_path: Path, *,
-                  runner: Callable[..., Any] = subprocess.run) -> dict[str, Any]:
-    job = _load_job(job_path)
+                  runner: Callable[..., Any] = subprocess.run,
+                  validated_job: dict[str, Any] | None = None,
+                  validated_job_file_sha256: str | None = None) -> dict[str, Any]:
+    job = _load_job(job_path) if validated_job is None else validated_job
+    _require(validated_job is None or validated_job_file_sha256 is not None,
+             "Prevalidated job requires its file hash")
+    job_file_sha256 = (identity.sha256(job_path) if validated_job is None
+                       else validated_job_file_sha256)
     unit = _bound_audio(job_path, job, unit_index, audio_path)
     metadata = probe_full_decode(audio_path, runner=runner)
     receipt = {
         "schemaVersion": RECEIPT_SCHEMA,
         "targetLocale": job["targetLocale"],
         "jobJsonSha256": identity.json_sha256(job),
-        "jobFileSha256": identity.sha256(job_path),
+        "jobFileSha256": job_file_sha256,
         "unitIndex": unit_index,
         "translationGroupId": unit["translationGroupId"],
         "sourceUnitIds": unit["sourceUnitIds"],
@@ -172,16 +179,22 @@ def build_receipt(job_path: Path, unit_index: int, audio_path: Path, *,
 
 def validate_receipt(job_path: Path, unit_index: int, audio_path: Path,
                      receipt: dict[str, Any], *,
-                     runner: Callable[..., Any] = subprocess.run) -> None:
+                     runner: Callable[..., Any] = subprocess.run,
+                     validated_job: dict[str, Any] | None = None,
+                     validated_job_file_sha256: str | None = None) -> None:
     """Reject a receipt copied from changed text, job, locale, path, or audio bytes."""
     speech._validate_schema(receipt, "sermon-target-language-audio-unit-receipt-v1.schema.json",
                             "audio unit receipt")
-    job = _load_job(job_path)
+    job = _load_job(job_path) if validated_job is None else validated_job
+    _require(validated_job is None or validated_job_file_sha256 is not None,
+             "Prevalidated job requires its file hash")
+    job_file_sha256 = (identity.sha256(job_path) if validated_job is None
+                       else validated_job_file_sha256)
     unit = _bound_audio(job_path, job, unit_index, audio_path)
     expected = {
         "targetLocale": job["targetLocale"],
         "jobJsonSha256": identity.json_sha256(job),
-        "jobFileSha256": identity.sha256(job_path),
+        "jobFileSha256": job_file_sha256,
         "unitIndex": unit_index,
         "translationGroupId": unit["translationGroupId"],
         "sourceUnitIds": unit["sourceUnitIds"],

@@ -1,8 +1,12 @@
 import importlib.util
+import hashlib
+import json
 import sys
 import tempfile
 import unittest
+from contextlib import nullcontext
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 
@@ -15,6 +19,77 @@ SPEC.loader.exec_module(mod)
 
 
 class SermonPipelineTest(unittest.TestCase):
+    def test_alignment_preflight_failure_prevents_transcription(self):
+        args = SimpleNamespace(output_mode="reading", reading_aligner="mfa", glossary=None,
+                               english_transcript_only=False)
+        with mock.patch("scripts.mfa_backend.preflight", side_effect=RuntimeError("MFA unavailable")), \
+                mock.patch.object(mod, "transcribe_with_fingerprint") as transcribe:
+            with self.assertRaisesRegex(RuntimeError, "MFA unavailable"):
+                mod.produce_pipeline(args, "unused-key", 10.0, 1.0, 3.0, Path("unused"))
+        transcribe.assert_not_called()
+
+    def test_english_source_only_stops_before_translation_and_binds_media(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            source = root / "service.mp4"
+            source.write_bytes(b"verified source media")
+            outdir = root / "pipeline"
+            outdir.mkdir()
+            args = SimpleNamespace(
+                input=source, output_mode="reading", reading_aligner="mfa",
+                english_source_only=True, english_transcript_only=False,
+                reference_model="gpt-transcribe",
+                source_text_review=None, glossary=None, reading_chunk_seconds=1200.0,
+            )
+            english = [{"id": 0, "start": 0.0, "end": 2.0, "text": "Hello world.",
+                        "words": [{"word": "Hello", "start": 0.0, "end": 1.0},
+                                  {"word": "world.", "start": 1.0, "end": 2.0}]}]
+            with mock.patch("scripts.mfa_backend.preflight", return_value={"backend": "local"}), \
+                    mock.patch.object(mod, "load_glossary", return_value={}), \
+                    mock.patch.object(mod, "stage", side_effect=lambda *a, **k: nullcontext()), \
+                    mock.patch.object(mod, "clip_and_normalize"), \
+                    mock.patch.object(mod, "ffprobe_duration", return_value=2.0), \
+                    mock.patch.object(mod, "transcribe_with_fingerprint", return_value=([{"text": "Hello world."}], None)), \
+                    mock.patch.object(mod, "reading_segments", return_value=english), \
+                    mock.patch.object(mod, "translate_chinese") as translate:
+                mod.produce_pipeline(args, "unused-key", 10.0, 1.0, 3.0, outdir)
+            translate.assert_not_called()
+            self.assertFalse((outdir / "segments_timed_zh.json").exists())
+            summary = json.loads((outdir / "summary.json").read_text())
+            self.assertEqual(summary["status"], "english_source_candidate")
+            self.assertEqual(summary["pipelineInputIdentity"]["sourceAudio"]["sha256"],
+                             hashlib.sha256(source.read_bytes()).hexdigest())
+
+    def test_english_transcript_only_preserves_asr_without_alignment_or_translation(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            source = root / "service.mp4"
+            source.write_bytes(b"approved source")
+            outdir = root / "pipeline"
+            outdir.mkdir()
+            args = SimpleNamespace(
+                input=source, output_mode="reading", reading_aligner="mfa",
+                english_source_only=False, english_transcript_only=True,
+                reference_model="gpt-transcribe", glossary=None,
+                reading_chunk_seconds=1200.0,
+            )
+            chunks = [{"start": 0.0, "end": 2.0, "text": "Hello world."}]
+            with mock.patch("scripts.mfa_backend.preflight") as preflight, \
+                    mock.patch.object(mod, "load_glossary", return_value={}), \
+                    mock.patch.object(mod, "stage", side_effect=lambda *a, **k: nullcontext()), \
+                    mock.patch.object(mod, "clip_and_normalize"), \
+                    mock.patch.object(mod, "ffprobe_duration", return_value=2.0), \
+                    mock.patch.object(mod, "transcribe_with_fingerprint", return_value=(chunks, None)), \
+                    mock.patch.object(mod, "reading_segments") as align, \
+                    mock.patch.object(mod, "translate_chinese") as translate:
+                mod.produce_pipeline(args, "unused-key", 10.0, 1.0, 3.0, outdir)
+            preflight.assert_not_called()
+            align.assert_not_called()
+            translate.assert_not_called()
+            summary = json.loads((outdir / "transcript-only-summary.json").read_text())
+            self.assertEqual(summary["status"], "english_transcript_candidate")
+            self.assertEqual(summary["alignmentStatus"], "pending_mfa")
+
     def test_load_glossary_accepts_zh_terms_alias(self):
         with tempfile.TemporaryDirectory() as tempdir:
             glossary_path = Path(tempdir) / "glossary.json"

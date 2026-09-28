@@ -7,6 +7,7 @@ import { createFeedback } from "/feedback.mjs";
 import { createUsage } from "/usage.mjs";
 import { mountFingerprintUI, playAlignmentAudio } from "/fingerprint-ui.mjs";
 import { PlaybackMemory } from "/playback-memory.mjs";
+import { loadPublishedWeeks } from "/published-weeks.mjs";
 import { createMediaSession } from "/media-session.mjs";
 
 const $ = id => document.getElementById(id);
@@ -18,6 +19,7 @@ let catalog, week, track, fineOffset = 0, lastCue = -2, generation = 0;
 let activeSource = null, pendingResume = null, positionTouched = false, undoPoint = null, scrubbing = false, lastSavedAt = 0;
 let metadataReady = false, playPending = false, playFailed = false, resumeOnMetadata = false, playAttempt = 0, startupTimer = null;
 let activeView = "tab-listen";
+let contentLocale = new URLSearchParams(location.search).get("contentLang") || "zh-Hans";
 let alignmentPlayAttempt = 0;
 let localPlaybackStorage; try { localPlaybackStorage = localStorage; } catch { localPlaybackStorage = null; }
 const playbackMemory = new PlaybackMemory({ storage: localPlaybackStorage });
@@ -25,6 +27,7 @@ let bilingualDisplay = false, englishByCue = [], englishDetails = [], transcript
 let lastStatus = null;
 try { bilingualDisplay = localPlaybackStorage?.getItem("sermon-audio-subtitles") === "bilingual"; } catch { /* Default to Chinese. */ }
 function updateLanguageControl() {
+  $("subtitle-toggle").hidden = Boolean(week?.contentVariants);
   $("subtitle-label").textContent = bilingualDisplay ? t("app.subtitle.bilingual") : t("app.subtitle.chinese");
   $("subtitle-toggle").setAttribute("aria-pressed", String(bilingualDisplay));
   $("subtitle-toggle").setAttribute("aria-label", t(bilingualDisplay ? "app.subtitle.hide" : "app.subtitle.show"));
@@ -32,7 +35,7 @@ function updateLanguageControl() {
 }
 function updateCurrentEnglish(index) {
   const english = englishByCue[index];
-  $("current-english").hidden = !bilingualDisplay || !track;
+  $("current-english").hidden = !bilingualDisplay || !track || Boolean(week?.contentVariants);
   $("current-english-label").textContent = t("app.transcript.englishReference");
   $("current-english-text").textContent = english || t("app.subtitle.missing");
   $("current-english-text").lang = english ? "en" : "zh-Hans";
@@ -74,8 +77,25 @@ function appText(value) {
   }
   return value;
 }
-// These nine legacy weeks have only approved Chinese content and audio.
-function displayWeek() { return localizeWeek(week, "zh"); }
+// Content language follows the selected audio; interface language stays separate.
+function displayWeek() { return week?.contentVariants ? week : localizeWeek(week, "zh"); }
+function renderContentLanguages() {
+  const available = week?.contentVariants || { "zh-Hans": week };
+  const picker = $("content-language");
+  picker.replaceChildren();
+  for (const [locale, label] of [["zh-Hans", "中文"], ["ko", "한국어"], ["es", "Español"]]) {
+    const option = document.createElement("option");
+    option.value = locale; option.textContent = label;
+    option.disabled = !available[locale];
+    picker.append(option);
+  }
+  picker.value = contentLocale;
+  $("content-language-note").textContent = t(week?.contentVariants ? "app.content.available" : "app.content.legacy");
+  for (const id of ["series", "title", "speaker", "scripture", "central-message", "current-text", "next-text", "transcript-list", "outline-meta", "outline-summary", "outline-content", "reflection-questions"]) {
+    $(id).lang = contentLocale;
+  }
+  updateLanguageControl();
+}
 function renderWeekOptions() {
   $("week-select").replaceChildren();
   for (const original of catalog.weeks) {
@@ -89,6 +109,7 @@ function renderWeekOptions() {
 function renderWeekLabels() {
   if (!week) return;
   const view = displayWeek();
+  renderContentLanguages();
   $("title").textContent = view.title;
   $("series").textContent = [view.series, view.sourceLabel].filter(Boolean).join(" · ");
   $("speaker").textContent = view.speaker; $("scripture").textContent = view.scripture;
@@ -321,8 +342,25 @@ function renderTranscript() {
   englishByCue = track.cues.map(cue => cue.blockId == null ? null : originals.get(String(cue.blockId)) || null);
   const guidance = [t("app.transcript.guide")];
   if (bilingual.hasEnglish) guidance.push(t("app.transcript.displayGuide"));
-  if (bilingual.missingEnglish) guidance.push(bilingual.hasEnglish ? t("app.transcript.partial") : t("app.transcript.missing"));
-  $("transcript-description").textContent = guidance.join(" ");
+  if (bilingual.missingEnglish && !week.contentVariants) guidance.push(bilingual.hasEnglish ? t("app.transcript.partial") : t("app.transcript.missing"));
+  $("transcript-description").textContent = week.contentVariants ? t("app.content.spokenHint") : guidance.join(" ");
+  if (week.fullTranscript?.length) {
+    const reading = document.createElement("details"); reading.className = "full-reading";
+    const title = document.createElement("summary"); title.textContent = t("app.content.fullText");
+    const hint = document.createElement("p"); hint.className = "description"; hint.textContent = t("app.content.fullTextHint");
+    reading.append(title, hint);
+    for (const cue of week.fullTranscript) {
+      const paragraph = document.createElement("p"); paragraph.lang = contentLocale;
+      paragraph.textContent = `${formatTime(cue.start)}  ${cue.text}`;
+      reading.append(paragraph);
+      if (cue.english) {
+        const reference = document.createElement("p"); reference.className = "full-reading-english";
+        reference.lang = "en"; reference.textContent = cue.english;
+        reading.append(reference);
+      }
+    }
+    $("transcript-list").append(reading);
+  }
   bilingual.rows.forEach(({ cue, english, index }) => {
     const end = index;
     const row = document.createElement("article"); row.className = "cue-row"; row.tabIndex = -1;
@@ -340,12 +378,12 @@ function renderTranscript() {
       button.setAttribute("aria-label", t("app.seek.source", { time: formatTime(cue.start), source: originalTime }));
     }
     row.append(button, text);
-    text.lang = "zh-Hans";
+    text.lang = week.targetLocale || "zh-Hans";
     if (english != null) {
       const details = document.createElement("details"); details.className = "english-reference";
       const summary = document.createElement("summary"); summary.textContent = t("app.transcript.reference");
       const original = document.createElement("p"); original.lang = "en"; original.textContent = english;
-      details.open = bilingualDisplay; englishDetails.push(details);
+      details.open = Boolean(week.contentVariants) || bilingualDisplay; englishDetails.push(details);
       details.append(summary, original); row.append(details);
     }
     button.addEventListener("click", () => setPosition(cue.start));
@@ -367,6 +405,7 @@ function selectTrack(id) {
   activeSource = nextSource; pendingResume = null; positionTouched = false; undoPoint = null; scrubbing = false;
   $("resume-card").hidden = true; updateUndo();
   feedback.select(engagementWeek(week), track);
+  usage.select?.(engagementWeek(week), track);
   fineOffset = 0;
   lastCue = -2;
   $("offset").textContent = t("app.offset", { value: "0.00" });
@@ -500,8 +539,14 @@ function renderVoiceBank() {
 }
 function selectWeek(id) {
   fieldAlignment.invalidate();
-  const nextWeek = chooseWeek(catalog, id);
-  if (week?.id === nextWeek.id) return;
+  const original = chooseWeek(catalog, id);
+  const selectedLocale = original.contentVariants?.[contentLocale]
+    ? contentLocale : original.defaultTargetLocale || "zh-Hans";
+  const nextWeek = original.contentVariants
+    ? { ...original, ...original.contentVariants[selectedLocale], contentVariants: original.contentVariants }
+    : original;
+  contentLocale = selectedLocale;
+  if (week?.id === nextWeek.id && week?.targetLocale === nextWeek.targetLocale) return;
   week = nextWeek;
   $("week-select").value = week.id;
   $("title").textContent = week.title;
@@ -535,6 +580,8 @@ function selectWeek(id) {
   if (activeView === "tab-voices") selectTab("tab-listen");
   const url = new URL(location.href);
   url.searchParams.set("week", week.id);
+  if (week.contentVariants) url.searchParams.set("contentLang", contentLocale);
+  else url.searchParams.delete("contentLang");
   history.replaceState(null, "", url);
   renderWeekLabels();
 }
@@ -599,6 +646,11 @@ async function togglePlay(fromAlignment = false) {
 function seek(delta, fine = false) { setPosition(audio.currentTime + delta, { fine }); }
 audio.addEventListener("play", () => fieldAlignment.playbackStarted());
 $("week-select").addEventListener("change", event => selectWeek(event.target.value));
+$("content-language").addEventListener("change", event => {
+  if (!week?.contentVariants?.[event.target.value]) return;
+  contentLocale = event.target.value;
+  selectWeek(week.id);
+});
 $("play").addEventListener("click", togglePlay);
 document.querySelectorAll("[data-play-toggle]").forEach(button => button.addEventListener("click", togglePlay));
 $("resume-position").addEventListener("click", restorePosition);
@@ -697,6 +749,7 @@ async function initializeEngagement() {
       feedback = createFeedback(audio, config, { usage });
       // The listener may have switched sources while the optional request ran.
       feedback.select(engagementWeek(week), track);
+      usage.select?.(engagementWeek(week), track);
       $("feedback-quick").hidden = !config.enabled;
       usage.setEnabled(feedback.statisticsEnabled());
     }
@@ -725,6 +778,14 @@ try {
   const response = await fetch("/weekly.json");
   if (!response.ok) throw new Error("Catalog unavailable");
   catalog = validateCatalog(await response.json());
+  const published = await loadPublishedWeeks();
+  if (published.weeks.length) {
+    const ids = new Set(published.weeks.map(item => item.id));
+    catalog = validateCatalog({ ...catalog,
+      defaultWeekId: published.defaultWeekId || catalog.defaultWeekId,
+      weeks: [...published.weeks, ...catalog.weeks.filter(item => !ids.has(item.id))],
+    });
+  }
   renderWeekOptions();
   $("week-select").disabled = false;
   renderVoiceBank();

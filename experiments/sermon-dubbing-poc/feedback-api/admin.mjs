@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Firestore } from '@google-cloud/firestore';
+import { fetchListeningSessions, fetchInterfaceUsageSessions, parseListeningArgs, summarizeListening, writeListeningReport } from './listening-report.mjs';
 import { fetchUsageSessions, parseUsageArgs, summarizeUsage, writeUsageReport } from './usage-report.mjs';
 
 // IAM/ADC-only local operator tool; never imported into the HTTP runtime.
@@ -8,7 +9,14 @@ const projectId = process.env.GOOGLE_CLOUD_PROJECT;
 const databaseId = process.env.FEEDBACK_DATABASE_ID || 'sermon-dubbing-feedback';
 if (!projectId || databaseId === '(default)') throw new Error('Set GOOGLE_CLOUD_PROJECT and use the named feedback database');
 const db = new Firestore({ projectId, databaseId });
-if (command === 'usage') {
+if (command === 'listening') {
+  const options = parseListeningArgs(args);
+  const now = Date.now();
+  const { records, query } = await fetchListeningSessions(db, { ...options, now });
+  const { records: interfaceRecords, query: interfaceQuery } = await fetchInterfaceUsageSessions(db, { ...options, now });
+  const report = summarizeListening(records, { ...options, now, query, interfaceRecords, interfaceQuery });
+  console.log(JSON.stringify(await writeListeningReport(options.out, report)));
+} else if (command === 'usage') {
   const options = parseUsageArgs(args);
   const now = Date.now();
   const { records, query } = await fetchUsageSessions(db, { ...options, now });
@@ -33,4 +41,4 @@ if (command === 'usage') {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(week || '')) throw new Error('Usage: node admin.mjs metrics YYYY-MM-DD');
   const result = await db.collection('weeklyMetrics').where('week', '==', week).get();
   for (const doc of result.docs) console.log(JSON.stringify(doc.data()));
-} else throw new Error('Commands: usage --from YYYY-MM-DD --to YYYY-MM-DD --out NEW_DIRECTORY; list YYYY-MM-DD; metrics YYYY-MM-DD; status ID pending|confirmed|fixed [FIXED_VERSION]');
+} else throw new Error('Commands: listening|usage --from YYYY-MM-DD --to YYYY-MM-DD --out NEW_DIRECTORY; list YYYY-MM-DD; metrics YYYY-MM-DD; status ID pending|confirmed|fixed [FIXED_VERSION]');

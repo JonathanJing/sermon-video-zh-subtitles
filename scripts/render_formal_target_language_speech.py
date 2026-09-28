@@ -145,15 +145,18 @@ def materialize_path_map(job_path: Path, path_map_path: Path) -> None:
 def checked_context(paths: dict[str, Path], checkpoint_map_path: Path,
                     operation_policies_path: Path) -> dict[str, Any]:
     required = ("source", "anchor", "candidate", "job", "adapter", "policy",
-                "human_receipt", "registry", "clip_voice_authorization", "clip_timeline_map")
+                "human_receipt", "registry", "clip_timeline_map")
     require(all(name in paths and paths[name].is_file() for name in required),
             "Missing formal Layer 3 input")
+    require(("clip_voice_authorization" in paths) != ("source_voice_authorization" in paths),
+            "Formal Layer 3 requires exactly one source-bound voice authorization")
     data = {name: package.read_object(path) for name, path in paths.items()}
     package.validate_job(data["source"], data["anchor"], data["candidate"],
                          data["job"], data["adapter"], data["policy"],
                          data["human_receipt"], data["registry"],
-                         data["clip_voice_authorization"],
-                         data.get("clip_voice_capability"), data["clip_timeline_map"], paths)
+                         data.get("clip_voice_authorization"),
+                         data.get("clip_voice_capability"), data["clip_timeline_map"], paths,
+                         source_voice_authorization=data.get("source_voice_authorization"))
     adapter, registry, job = data["adapter"], data["registry"], data["job"]
     policies = package.read_object(operation_policies_path)
     validate_operation_policies(policies, adapter, job)
@@ -260,6 +263,11 @@ SPECULATIVE_MATCH_FIELDS = (
 COMPATIBLE_NO_SPOKEN_FORM_RENDERER_SHA256 = {
     "7975b13796b0269adfad1b5188f981102eb9359c7d2627e0ebbfd69c0f97b56c"
 }
+# This revision changes only how a preview snapshot's demo voice capability is
+# checked during admission. It does not change the synthesis inputs or sound.
+COMPATIBLE_PREVIEW_ADMISSION_RENDERER_SHA256 = {
+    "462f63dfd3cc215ce923c187d9904ab89145a587a732a7ed1b5f6a9d41fb7985"
+}
 
 
 def _spoken_equivalent(approved: str, spoken: str) -> bool:
@@ -334,7 +342,8 @@ def _reusable_speculative_audio(previous_root: Path, unit: dict[str, Any], index
     package.speech.validate_policy_binding(snapshot, evidence["policy"])
     package.speech.validate_adapter(evidence["adapter"], snapshot["targetLocale"],
                                     evidence["registry"],
-                                    source_package=evidence["source"], candidate=snapshot)
+                                    source_package=evidence["source"], candidate=snapshot,
+                                    preview_only=True)
     require(evidence["adapter"].get("authorizationPurpose") == "multilingual_voice_demo"
             or (snapshot["targetLocale"] == "zh-Hans"
                 and evidence["adapter"].get("authorizationPurpose") == "chinese_dubbing"),
@@ -378,8 +387,14 @@ def _reusable_speculative_audio(previous_root: Path, unit: dict[str, Any], index
             "Speculative receipt differs from candidate snapshot")
     # A revised translation may retain only units with exactly the same sound
     # identity. All formal review, authorization and package checks ran first.
-    if sound != {key: expected[key] for key in SPECULATIVE_MATCH_FIELDS}:
-        return None
+    expected_sound = {key: expected[key] for key in SPECULATIVE_MATCH_FIELDS}
+    if sound != expected_sound:
+        previous_renderer = sound.get("rendererSha256")
+        if previous_renderer not in COMPATIBLE_PREVIEW_ADMISSION_RENDERER_SHA256:
+            return None
+        expected_sound["rendererSha256"] = previous_renderer
+        if sound != expected_sound:
+            return None
     integrity.probe_full_decode(wav_path)
     return wav_path
 
@@ -640,7 +655,7 @@ def assemble(context: dict[str, Any], paths: dict[str, Path], root: Path,
         encoded = subprocess.run([
             "ffmpeg", "-nostdin", "-xerror", "-v", "error", "-y",
             "-i", str(wav_path), "-map", "0:a:0", "-ac", "1",
-            "-c:a", "libmp3lame", "-b:a", "64k", "-write_xing", "0",
+            "-c:a", "libmp3lame", "-b:a", "64k", "-write_xing", "1",
             "-map_metadata", "-1", "-f", "mp3", str(partial_mp3),
         ], capture_output=True, text=True, check=False)
         require(encoded.returncode == 0 and partial_mp3.is_file(),
@@ -662,7 +677,8 @@ def assemble(context: dict[str, Any], paths: dict[str, Path], root: Path,
             require(package.read_object(path) == value, f"Existing artifact differs: {path}")
         else:
             write_json_atomic(path, value)
-    attestation_path = Path(context["clip_voice_authorization"]["userRightsAttestation"]["path"])
+    authorization = context.get("source_voice_authorization") or context["clip_voice_authorization"]
+    attestation_path = Path(authorization["userRightsAttestation"]["path"])
     auth_path = root / "review/user-rights-attestation.json"
     auth_path.parent.mkdir(parents=True, exist_ok=True)
     if auth_path.exists():
@@ -731,8 +747,9 @@ def main() -> None:
         parser.add_argument(f"--{name}", type=Path, required=True)
     parser.add_argument("--human-review-receipt", dest="human_receipt", type=Path, required=True)
     parser.add_argument("--speaker-registry", dest="registry", type=Path, required=True)
-    parser.add_argument("--clip-voice-authorization", dest="clip_voice_authorization",
-                        type=Path, required=True)
+    authorization = parser.add_mutually_exclusive_group(required=True)
+    authorization.add_argument("--clip-voice-authorization", dest="clip_voice_authorization", type=Path)
+    authorization.add_argument("--source-voice-authorization", dest="source_voice_authorization", type=Path)
     parser.add_argument("--clip-voice-capability", dest="clip_voice_capability", type=Path)
     parser.add_argument("--clip-timeline-map", dest="clip_timeline_map", type=Path, required=True)
     parser.add_argument("--checkpoint-map", type=Path, required=True)
@@ -760,8 +777,12 @@ def main() -> None:
     args = parser.parse_args()
     paths = {name: getattr(args, name) for name in ("source", "anchor", "candidate",
                                                    "job", "adapter", "policy", "human_receipt",
-                                                   "registry", "clip_voice_authorization",
+                                                   "registry",
                                                    "clip_timeline_map")}
+    if args.clip_voice_authorization:
+        paths["clip_voice_authorization"] = args.clip_voice_authorization
+    if args.source_voice_authorization:
+        paths["source_voice_authorization"] = args.source_voice_authorization
     if args.clip_voice_capability:
         paths["clip_voice_capability"] = args.clip_voice_capability
     policy = {"reactionLagSeconds": args.reaction_lag_seconds,

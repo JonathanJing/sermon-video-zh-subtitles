@@ -27,6 +27,9 @@ const normalizeLocale = (value) => {
 };
 let locale = 'zh';
 try { locale = normalizeLocale(globalThis.localStorage?.getItem(LOCALE_STORAGE_KEY)); } catch { /* Storage is optional. */ }
+// Shared/QR links choose the interface explicitly, independently of contentLang.
+const linkedLocale = new URLSearchParams(globalThis.location?.search || '').get('lang');
+if (linkedLocale && Object.hasOwn(dictionaries, linkedLocale)) locale = linkedLocale;
 
 export function getLocale() { return locale; }
 

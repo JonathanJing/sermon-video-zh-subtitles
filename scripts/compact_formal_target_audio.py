@@ -55,13 +55,34 @@ def trimmed_samples(path: Path, *, padding_seconds: float = PADDING_SECONDS,
         values.byteswap()
     window = max(1, round(rate * WINDOW_SECONDS))
     first_active = last_active_end = None
-    for start in range(0, len(values), window):
-        block = values[start:start + window]
-        rms = math.sqrt(sum(sample * sample for sample in block) / len(block)) / 32768
-        if rms >= THRESHOLD:
-            if first_active is None:
-                first_active = start
-            last_active_end = min(len(values), start + window)
+    try:
+        import numpy as np
+    except ModuleNotFoundError:
+        np = None
+    if np is not None:
+        samples = np.frombuffer(raw, dtype="<i2")
+        full_count = len(samples) // window
+        if full_count:
+            blocks = samples[:full_count * window].astype(np.float64).reshape(full_count, window)
+            active = np.flatnonzero(np.sqrt(np.mean(blocks * blocks, axis=1)) / 32768 >= THRESHOLD)
+            if active.size:
+                first_active = int(active[0]) * window
+                last_active_end = (int(active[-1]) + 1) * window
+        if full_count * window < len(samples):
+            tail = samples[full_count * window:]
+            tail_rms = math.sqrt(sum(int(sample) ** 2 for sample in tail) / len(tail)) / 32768
+            if tail_rms >= THRESHOLD:
+                if first_active is None:
+                    first_active = full_count * window
+                last_active_end = len(samples)
+    else:
+        for start in range(0, len(values), window):
+            block = values[start:start + window]
+            rms = math.sqrt(sum(sample * sample for sample in block) / len(block)) / 32768
+            if rms >= THRESHOLD:
+                if first_active is None:
+                    first_active = start
+                last_active_end = min(len(values), start + window)
     require(first_active is not None, f"No audible speech energy: {path}")
     removed = min(max(0, first_active - round(padding_seconds * rate)),
                   round(MAX_TRIM_SECONDS * rate))
@@ -76,8 +97,12 @@ def trimmed_samples(path: Path, *, padding_seconds: float = PADDING_SECONDS,
 
 def compact_unit(source_job: Path, destination_job: Path, index: int,
                  *, expected_job_hash: str, padding_seconds: float = PADDING_SECONDS,
-                 trim_trailing: bool = False) -> dict:
-    job = json.loads(source_job.read_text(encoding="utf-8"))
+                 trim_trailing: bool = False,
+                 validated_job: dict | None = None,
+                 source_job_file_sha256: str | None = None,
+                 destination_job_file_sha256: str | None = None) -> dict:
+    job = (json.loads(source_job.read_text(encoding="utf-8"))
+           if validated_job is None else validated_job)
     unit = job["units"][index]
     source_root, destination_root = source_job.parent, destination_job.parent
     raw = source_root / unit["outputRelativePath"]
@@ -86,8 +111,10 @@ def compact_unit(source_job: Path, destination_job: Path, index: int,
     commit = source_root / f"receipts/unit-{index:04d}.render.json"
     require(all(path.is_file() for path in (raw, receipt, intent, commit)),
             f"Raw committed unit missing: {index}")
-    integrity.validate_receipt(source_job, index, raw,
-                               json.loads(receipt.read_text(encoding="utf-8")))
+    integrity.validate_receipt(
+        source_job, index, raw, json.loads(receipt.read_text(encoding="utf-8")),
+        validated_job=validated_job,
+        validated_job_file_sha256=source_job_file_sha256)
     source_intent = json.loads(intent.read_text(encoding="utf-8"))
     source_commit = json.loads(commit.read_text(encoding="utf-8"))
     raw_sha = identity.sha256(raw)
@@ -116,11 +143,17 @@ def compact_unit(source_job: Path, destination_job: Path, index: int,
         os.replace(partial, output)
     output_receipt = destination_root / f"receipts/unit-{index:04d}.json"
     if output_receipt.exists():
-        integrity.validate_receipt(destination_job, index, output,
-                                   json.loads(output_receipt.read_text(encoding="utf-8")))
+        integrity.validate_receipt(
+            destination_job, index, output,
+            json.loads(output_receipt.read_text(encoding="utf-8")),
+            validated_job=validated_job,
+            validated_job_file_sha256=destination_job_file_sha256)
     else:
         renderer.write_json_atomic(output_receipt,
-                                   integrity.build_receipt(destination_job, index, output))
+                                   integrity.build_receipt(
+                                       destination_job, index, output,
+                                       validated_job=validated_job,
+                                       validated_job_file_sha256=destination_job_file_sha256))
     item = json.loads(output_receipt.read_text(encoding="utf-8"))
     result = {"unitIndex": index, "textGroupId": unit["translationGroupId"],
             "sourceAudioSha256": raw_sha, "audioSha256": identity.sha256(output),
@@ -142,7 +175,8 @@ def compact(paths: dict[str, Path], source_job: Path, destination_root: Path,
             checkpoint_map: Path, operation_policies: Path, *, path_map: Path | None = None,
             padding_seconds: float = PADDING_SECONDS, trim_trailing: bool = False,
             inter_utterance_gap_seconds: float = renderer.DEFAULT_POLICY["interUtteranceGapSeconds"],
-            reaction_lag_seconds: float = renderer.DEFAULT_POLICY["reactionLagSeconds"]) -> dict:
+            reaction_lag_seconds: float = renderer.DEFAULT_POLICY["reactionLagSeconds"],
+            track_format: str = "wav") -> dict:
     require(0 <= inter_utterance_gap_seconds <= renderer.DEFAULT_POLICY["interUtteranceGapSeconds"],
             "Silence compaction cannot expand the inter-utterance gap")
     require(0 <= reaction_lag_seconds <= renderer.DEFAULT_POLICY["reactionLagSeconds"],
@@ -160,9 +194,22 @@ def compact(paths: dict[str, Path], source_job: Path, destination_root: Path,
     adapted_paths = dict(paths, job=destination_job)
     context = renderer.checked_context(adapted_paths, checkpoint_map, operation_policies)
     job_hash = identity.json_sha256(context["job"])
+    source_job_file_sha256 = identity.sha256(source_job)
+    destination_job_file_sha256 = identity.sha256(destination_job)
+    require(source_job_file_sha256 == destination_job_file_sha256,
+            "Compacted job bytes differ from raw job")
     rows = [compact_unit(source_job, destination_job, index, expected_job_hash=job_hash,
-                         padding_seconds=padding_seconds, trim_trailing=trim_trailing)
+                         padding_seconds=padding_seconds, trim_trailing=trim_trailing,
+                         validated_job=context["job"],
+                         source_job_file_sha256=source_job_file_sha256,
+                         destination_job_file_sha256=destination_job_file_sha256)
             for index in range(len(context["job"]["units"]))]
+    require(identity.sha256(source_job) == source_job_file_sha256
+            and identity.sha256(destination_job) == destination_job_file_sha256,
+            "Speech job changed during silence compaction")
+    require(identity.json_sha256(renderer.checked_context(
+        adapted_paths, checkpoint_map, operation_policies)["job"]) == job_hash,
+        "Bound speech job changed during silence compaction")
     edge_mode = trim_trailing or padding_seconds != PADDING_SECONDS
     receipt = {"schemaVersion": EDGE_SCHEMA if edge_mode else SCHEMA,
                "status": "measured_silence_removed",
@@ -187,7 +234,8 @@ def compact(paths: dict[str, Path], source_job: Path, destination_root: Path,
                   interUtteranceGapSeconds=inter_utterance_gap_seconds,
                   reactionLagSeconds=reaction_lag_seconds)
     manifest = renderer.assemble(context, adapted_paths, destination_root,
-                                 [row["manifestUnit"] for row in rows], policy=policy)
+                                 [row["manifestUnit"] for row in rows], policy=policy,
+                                 track_format=track_format)
     manifest["silenceTrimEvidence"] = renderer.artifact(destination_root, trim_path,
                                                         json_artifact=True)
     renderer.write_json_atomic(destination_root / "render-manifest.json", manifest)
@@ -200,7 +248,9 @@ def main():
         parser.add_argument(f"--{name}", type=Path, required=True)
     parser.add_argument("--human-review-receipt", dest="human_receipt", type=Path, required=True)
     parser.add_argument("--speaker-registry", dest="registry", type=Path, required=True)
-    parser.add_argument("--clip-voice-authorization", dest="clip_voice_authorization", type=Path, required=True)
+    authorization = parser.add_mutually_exclusive_group(required=True)
+    authorization.add_argument("--clip-voice-authorization", dest="clip_voice_authorization", type=Path)
+    authorization.add_argument("--source-voice-authorization", dest="source_voice_authorization", type=Path)
     parser.add_argument("--clip-voice-capability", dest="clip_voice_capability", type=Path)
     parser.add_argument("--clip-timeline-map", dest="clip_timeline_map", type=Path, required=True)
     parser.add_argument("--source-job", type=Path, required=True)
@@ -214,10 +264,15 @@ def main():
                         default=renderer.DEFAULT_POLICY["interUtteranceGapSeconds"])
     parser.add_argument("--reaction-lag-seconds", type=float,
                         default=renderer.DEFAULT_POLICY["reactionLagSeconds"])
+    parser.add_argument("--track-format", choices=("wav", "mp3"), default="wav")
     args = parser.parse_args()
     paths = {name: getattr(args, name) for name in ("source", "anchor", "candidate", "adapter",
                                                    "policy", "human_receipt", "registry",
-                                                   "clip_voice_authorization", "clip_timeline_map")}
+                                                   "clip_timeline_map")}
+    if args.clip_voice_authorization:
+        paths["clip_voice_authorization"] = args.clip_voice_authorization
+    if args.source_voice_authorization:
+        paths["source_voice_authorization"] = args.source_voice_authorization
     if args.clip_voice_capability:
         paths["clip_voice_capability"] = args.clip_voice_capability
     manifest = compact(paths, args.source_job, args.destination_root, args.checkpoint_map,
@@ -225,7 +280,8 @@ def main():
                        padding_seconds=args.padding_seconds,
                        trim_trailing=args.trim_trailing,
                        inter_utterance_gap_seconds=args.inter_utterance_gap_seconds,
-                       reaction_lag_seconds=args.reaction_lag_seconds)
+                       reaction_lag_seconds=args.reaction_lag_seconds,
+                       track_format=args.track_format)
     print(json.dumps({"status": "candidate", "locale": manifest["targetLocale"],
                       "trimmedUnits": len(manifest["units"]),
                       "track": manifest["track"]}, ensure_ascii=False))

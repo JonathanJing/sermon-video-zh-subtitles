@@ -10,13 +10,21 @@ func need(_ condition: Bool, _ message: String) throws { if !condition { throw F
 struct Brief: Decodable {
     let title, series, date, speaker, scripture, tagline, qrURL, origin, reviewLabel: String
     let labels: [String:String]
+    let locale: String?
 }
 let W = 1800, H = 2400
 let ink = NSColor(calibratedRed: 0.055, green: 0.23, blue: 0.24, alpha: 1)
 let muted = NSColor(calibratedRed: 0.29, green: 0.39, blue: 0.39, alpha: 1)
 let paper = NSColor(calibratedRed: 0.953, green: 0.941, blue: 0.897, alpha: 1)
+var posterLocale = "zh-Hans"
 func font(_ size: CGFloat, serif: Bool = false) -> NSFont {
-    NSFont(name: serif ? "Songti SC" : "PingFang SC", size: size) ?? NSFont(name: "PingFang SC", size: size) ?? NSFont.systemFont(ofSize:size)
+    let names: [String]
+    switch posterLocale {
+    case "ko": names = serif ? ["AppleMyungjo", "Apple SD Gothic Neo"] : ["Apple SD Gothic Neo"]
+    case "es": names = serif ? ["Georgia", "Times New Roman"] : ["Helvetica Neue"]
+    default: names = serif ? ["Songti SC", "PingFang SC"] : ["PingFang SC"]
+    }
+    return names.compactMap { NSFont(name: $0, size: size) }.first ?? NSFont.systemFont(ofSize:size)
 }
 func text(_ value: String, _ rect: NSRect, maxSize: CGFloat, minSize: CGFloat = 16, serif: Bool = false, color: NSColor = ink, alignment: NSTextAlignment = .left) throws {
     guard !value.isEmpty else { return }
@@ -65,8 +73,16 @@ func main() throws {
     let brief=try JSONDecoder().decode(Brief.self,from:Data(contentsOf:URL(fileURLWithPath:args[1])))
     for (key,value) in [("title",brief.title),("date",brief.date),("speaker",brief.speaker),("scripture",brief.scripture),("tagline",brief.tagline),("reviewLabel",brief.reviewLabel)] { try need(!value.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty,"Missing \(key)") }
     guard let url=URL(string:brief.qrURL),url.scheme == "https",url.host != nil else { throw Failure(description:"qrURL must be an absolute HTTPS URL") }
+    posterLocale = brief.locale ?? "zh-Hans"
+    try need(["zh-Hans", "ko", "es"].contains(posterLocale), "Unsupported poster locale")
     let disclaimer=brief.labels["disclaimer"] ?? ""
-    try need(disclaimer.contains("独立") && disclaimer.contains("AI") && disclaimer.contains("非教会官方"),"labels.disclaimer must explicitly state 独立, AI and 非教会官方")
+    let terms: [String]
+    switch posterLocale {
+    case "ko": terms = ["독립", "AI", "교회 공식"]
+    case "es": terms = ["independiente", "IA", "oficial de la iglesia"]
+    default: terms = ["独立", "AI", "非教会官方"]
+    }
+    try need(terms.allSatisfy { disclaimer.contains($0) }, "labels.disclaimer must state independent production, AI assistance and no official church affiliation in the poster language")
     guard let art=NSImage(contentsOfFile:args[2]),art.size.width > 0,art.size.height > 0 else { throw Failure(description:"Cannot load art") }
     let out=URL(fileURLWithPath:args[3],isDirectory:true)
     try FileManager.default.createDirectory(at:out,withIntermediateDirectories:true)

@@ -1,4 +1,5 @@
 import copy
+import json
 import os
 from pathlib import Path
 import tempfile
@@ -7,6 +8,89 @@ from unittest import mock
 
 from scripts import build_target_language_audio_package as audio_package
 from scripts import clip_timeline_map as subject
+
+
+class CompleteMediaTimelineMapTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        root = Path(self.temp.name)
+        self.media_path = root / "complete.mp4"
+        self.media_path.write_bytes(b"complete-media-fixture")
+        self.approval_path = root / "approval.json"
+        self.approval = {"status": "approved", "humanApproval": True,
+                         "sourceMediaSha256": subject.interpretation.sha256(self.media_path),
+                         "startTime": "00:00:00", "endTime": "00:00:10"}
+        self.approval_path.write_text(json.dumps(self.approval))
+        self.anchor_path = root / "anchor.json"
+        self.anchor = {"sourceUnits": [
+            {"sourceUnitId": "u1", "start": 0.44, "end": 2.0},
+            {"sourceUnitId": "u2", "start": 3.0, "end": 8.9},
+        ]}
+        self.anchor_path.write_text(json.dumps(self.anchor))
+        self.source_path = root / "source.json"
+        self.source = {"source": {
+            "media": {"sha256": subject.interpretation.sha256(self.media_path),
+                      "durationSeconds": 10.0},
+            "approvedWindow": {
+                "startSeconds": 0, "endSeconds": 10.0,
+                "status": "approved", "humanApproval": True,
+                "evidence": {"path": str(self.approval_path),
+                             "sha256": subject.interpretation.sha256(self.approval_path),
+                             "jsonSha256": subject.interpretation.json_sha256(self.approval)},
+            },
+        }, "anchors": {"artifact": {
+            "jsonSha256": subject.interpretation.json_sha256(self.anchor)}}}
+        self.source_path.write_text(json.dumps(self.source))
+
+    def prepare(self, offset=None):
+        with mock.patch.object(subject, "media_duration", return_value=10.0):
+            return subject.prepare(self.source_path, self.anchor_path, self.media_path,
+                                   offset, Path(self.temp.name) / "map.json")
+
+    def validate(self, mapping):
+        with mock.patch.object(subject, "media_duration", return_value=10.0):
+            return subject.validate(mapping, self.source, self.anchor)
+
+    def test_complete_source_binds_natural_leading_and_trailing_silence(self):
+        mapping = self.prepare()
+        self.assertEqual(mapping["schemaVersion"], subject.COMPLETE_MEDIA_SCHEMA)
+        self.assertEqual(mapping["anchorOffsetSeconds"], 0)
+        self.assertNotIn("originalRecordingStartSeconds", mapping)
+        self.assertEqual(self.validate(mapping), 0)
+
+    def test_complete_source_rejects_arbitrary_offset_and_partial_window(self):
+        with self.assertRaisesRegex(ValueError, "media origin"):
+            self.prepare(0.44)
+        mapping = self.prepare()
+        mapping["anchorOffsetSeconds"] = 0.44
+        with self.assertRaisesRegex(ValueError, "schema error"):
+            self.validate(mapping)
+        mapping["anchorOffsetSeconds"] = 0
+        self.source["source"]["approvedWindow"]["endSeconds"] = 9.0
+        self.approval["endTime"] = "00:00:09"
+        self.approval_path.write_text(json.dumps(self.approval))
+        evidence = self.source["source"]["approvedWindow"]["evidence"]
+        evidence["sha256"] = subject.interpretation.sha256(self.approval_path)
+        evidence["jsonSha256"] = subject.interpretation.json_sha256(self.approval)
+        mapping["windowApproval"] = evidence
+        mapping["englishSourcePackageJsonSha256"] = subject.interpretation.json_sha256(self.source)
+        with self.assertRaisesRegex(ValueError, "full-media approval"):
+            self.validate(mapping)
+
+    def test_legacy_clip_still_requires_explicit_offset_and_original_window(self):
+        self.approval["originalRecordingWindow"] = "00:00:02-00:00:12"
+        self.approval_path.write_text(json.dumps(self.approval))
+        evidence = self.source["source"]["approvedWindow"]["evidence"]
+        evidence["sha256"] = subject.interpretation.sha256(self.approval_path)
+        evidence["jsonSha256"] = subject.interpretation.json_sha256(self.approval)
+        self.source_path.write_text(json.dumps(self.source))
+        with self.assertRaisesRegex(ValueError, "explicit anchor offset"):
+            self.prepare()
+        # A legacy extracted clip is still rejected when its anchors do not
+        # reach the approved clip edges, even if the offset is explicit.
+        with self.assertRaisesRegex(ValueError, "anchor offset"):
+            self.prepare(0)
 
 
 class Mp4DurationFallbackTests(unittest.TestCase):

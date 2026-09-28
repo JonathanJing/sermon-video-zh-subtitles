@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-full-video-audio-extension-v1.schema.json",
+  "title": "A reviewed spoken audio layer beside an unchanged full-video translation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "pageId", "englishSourcePackageJsonSha256", "sourceMediaSha256", "pageDataSha256", "status", "locales"],
+  "properties": {
+    "schemaVersion": {"const": "sermon-full-video-audio-extension-v1"},
+    "pageId": {"type": "string", "minLength": 1},
+    "englishSourcePackageJsonSha256": {"$ref": "#/$defs/sha256"},
+    "sourceMediaSha256": {"$ref": "#/$defs/sha256"},
+    "pageDataSha256": {"$ref": "#/$defs/sha256"},
+    "status": {"const": "three_locale_audio_human_reviewed_candidate"},
+    "locales": {
+      "type": "object", "additionalProperties": false,
+      "required": ["zh-Hans", "ko", "es"],
+      "properties": {
+        "zh-Hans": {"$ref": "#/$defs/locale"},
+        "ko": {"$ref": "#/$defs/locale"},
+        "es": {"$ref": "#/$defs/locale"}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "asset": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "pattern": "^/"},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "locale": {
+      "type": "object", "additionalProperties": false,
+      "required": ["displayCandidateJsonSha256", "displayContentSha256", "spokenCandidateJsonSha256", "audioPackageJsonSha256", "audioHumanReviewReceiptJsonSha256", "machineScreeningReceiptJsonSha256", "audio", "captions", "durationSeconds", "spokenCueCount"],
+      "properties": {
+        "displayCandidateJsonSha256": {"$ref": "#/$defs/sha256"},
+        "displayContentSha256": {"$ref": "#/$defs/sha256"},
+        "spokenCandidateJsonSha256": {"$ref": "#/$defs/sha256"},
+        "audioPackageJsonSha256": {"$ref": "#/$defs/sha256"},
+        "audioHumanReviewReceiptJsonSha256": {"$ref": "#/$defs/sha256"},
+        "machineScreeningReceiptJsonSha256": {"$ref": "#/$defs/sha256"},
+        "audio": {"$ref": "#/$defs/asset"},
+        "captions": {"$ref": "#/$defs/asset"},
+        "durationSeconds": {"type": "number", "exclusiveMinimum": 0},
+        "spokenCueCount": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}

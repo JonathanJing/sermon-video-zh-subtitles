@@ -1,4 +1,5 @@
 import json
+import hashlib
 from pathlib import Path
 import tempfile
 import unittest
@@ -71,6 +72,43 @@ class SentenceInterpretationShadowTests(unittest.TestCase):
             self.assertEqual(receipt["status"], "waiting_anchor_review")
             self.assertEqual(receipt["nextStage"], "operator_anchor_review")
             self.assertIn("clause_unit_exceeds_target_without_safe_boundary", receipt["anchorIssueTypes"])
+
+    def test_override_evidence_must_bind_exact_aligned_segments(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "segments.json"
+            words = ["Alpha", "bravo", "charlie", "delta,", "echo", "foxtrot,",
+                     "golf", "hotel", "india", "juliet."]
+            timed = []
+            cursor = 0.0
+            for word in words:
+                timed.append({"text": word, "start": cursor, "end": cursor + 0.4})
+                cursor += 0.5
+            source.write_text(json.dumps([{
+                "id": 0, "referenceChunkId": "block-00", "text": " ".join(words),
+                "start": 0.0, "end": timed[-1]["end"],
+                "sentenceBoundarySource": "frozen_reference_punctuation", "wordTimes": timed,
+            }]), encoding="utf-8")
+            evidence = root / "boundary-overrides.json"
+            payload = {"schemaVersion": "sermon-anchor-boundary-overrides-v1",
+                       "alignedSegmentsSha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+                       "overrides": {"block-00-s001": "block-00-w0004"}}
+            evidence.write_text(json.dumps(payload), encoding="utf-8")
+            receipt = subject.prepare_shadow(
+                source, root / "shadow", max_unit_seconds=3.0,
+                boundary_overrides_path=evidence,
+            )
+            manifest = json.loads(Path(receipt["artifacts"]["anchorManifest"]["path"]).read_text())
+            self.assertEqual(manifest["policy"]["boundaryOverrides"], payload["overrides"])
+            self.assertEqual(receipt["anchorIssueCount"], 0)
+            self.assertEqual(receipt["identity"]["sourceContext"]["boundaryOverridesEvidenceSha256"],
+                             hashlib.sha256(evidence.read_bytes()).hexdigest())
+            schema = json.loads((Path(__file__).parents[1] / "schemas/sermon-sentence-interpretation-shadow-v1.schema.json").read_text())
+            self.assertEqual(list(Draft202012Validator(schema).iter_errors(receipt)), [])
+            payload["alignedSegmentsSha256"] = "0" * 64
+            evidence.write_text(json.dumps(payload), encoding="utf-8")
+            with self.assertRaises(ValueError):
+                subject.prepare_shadow(source, root / "other", boundary_overrides_path=evidence)
 
     def test_changed_source_uses_new_identity_directory(self):
         with tempfile.TemporaryDirectory() as temporary:

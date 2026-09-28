@@ -143,6 +143,44 @@ class EnglishSourcePackageTests(unittest.TestCase):
             self.schema_errors("sermon-english-source-package-v1.schema.json", package), [],
         )
 
+    def test_long_intact_clause_needs_both_reviews_to_clear_production_gate(self):
+        self.manifest["issues"] = [{
+            "type": "clause_unit_exceeds_target_without_safe_boundary",
+            "sourceSentenceId": self.manifest["sourceUnits"][0]["sourceSentenceId"],
+            "durationSeconds": 1.9,
+            "maximumSeconds": 1.0,
+        }]
+        write_json(self.manifest_path, self.manifest)
+        review_path = self.root / "review-long-clause.json"
+        write_json(review_path, {
+            "schemaVersion": subject.REVIEW_SCHEMA_VERSION,
+            "alignedSegmentsSha256": subject.file_sha256(self.segments_path),
+            "anchorManifestJsonSha256": subject.json_sha256(self.manifest),
+            "humanApproval": True,
+            "reviewedBy": "Fixture reviewer",
+            "reviewedAt": "2026-09-20T12:00:00Z",
+            "reviewedSourceUnitIds": [unit["sourceUnitId"] for unit in self.manifest["sourceUnits"]],
+            "checks": {name: "approved" for name in subject.APPROVED_CHECKS},
+        })
+        self.assertEqual(self.build(review_path=review_path)["status"], "blocked")
+        with patch.object(subject, "_machine_judge_payload", return_value=(None, True)):
+            approved = self.build(review_path=review_path)
+            self.assertEqual(approved["status"], "ready_for_translation")
+            self.assertEqual(approved["issues"], [])
+            self.assertEqual(approved["anchors"]["issueCount"], 1)
+            self.assertEqual(
+                self.schema_errors("sermon-english-source-package-v1.schema.json", approved), [],
+            )
+            self.manifest["issues"].append({"type": "alignment_word_duration_outlier"})
+            write_json(self.manifest_path, self.manifest)
+            changed_review = json.loads(review_path.read_text())
+            changed_review["anchorManifestJsonSha256"] = subject.json_sha256(self.manifest)
+            write_json(review_path, changed_review)
+            blocked = self.build(review_path=review_path)
+            self.assertEqual(blocked["status"], "candidate_ready_for_translation")
+            self.assertFalse(blocked["translationEligible"])
+            self.assertIn("alignment_word_duration_outlier", {item["type"] for item in blocked["issues"]})
+
     def test_review_bound_to_other_anchor_is_rejected(self):
         review_path = self.root / "review.json"
         write_json(review_path, {

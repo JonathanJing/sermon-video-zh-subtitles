@@ -48,7 +48,8 @@ def checked_context(paths: dict[str, Path], checkpoint_map_path: Path,
     speech.validate_policy_binding(candidate, data["policy"])
     adapter, registry = data["adapter"], data["registry"]
     speech.validate_adapter(adapter, candidate["targetLocale"], registry,
-                            source_package=source, candidate=candidate)
+                            source_package=source, candidate=candidate,
+                            preview_only=True)
     formal.require(adapter["adapterId"] == "qwen3_tts_sft"
                    and (adapter["authorizationPurpose"] == "multilingual_voice_demo"
                         or (candidate["targetLocale"] == "zh-Hans"
