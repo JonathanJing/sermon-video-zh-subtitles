@@ -191,6 +191,24 @@
           "type": "string",
           "minLength": 1,
           "pattern": "\\S"
+        },
+        "videoDelivery": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schemaVersion", "canonicalUrl", "storageUrl", "sha256", "bytes"],
+          "properties": {
+            "schemaVersion": { "const": "sermon-video-delivery-v1" },
+            "canonicalUrl": {
+              "type": "string",
+              "pattern": "^/pages/[A-Za-z0-9_-]{1,160}/full-video-browser\\.mp4$"
+            },
+            "storageUrl": {
+              "type": "string",
+              "pattern": "^https://storage\\.googleapis\\.com/ai-for-god-sermon-media-(dev|prod)/weekly/[A-Za-z0-9_-]{1,160}/[a-f0-9]{64}\\.mp4$"
+            },
+            "sha256": { "$ref": "#/$defs/sha256" },
+            "bytes": { "type": "integer", "minimum": 1 }
+          }
         }
       }
     }

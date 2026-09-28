@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-multilingual-v3-stage-manifest-v3.schema.json",
+  "title": "Three-locale weekly stage with one external video object",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "profile", "pageId", "files", "videoDelivery"],
+  "properties": {
+    "schemaVersion": { "const": "sermon-multilingual-v3-stage-manifest-v3" },
+    "profile": { "const": "three_locale_bucket_video_v2" },
+    "pageId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,160}$" },
+    "files": {
+      "type": "array", "minItems": 20, "maxItems": 20,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": { "type": "string", "pattern": "^/[^/].*" },
+          "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+        }
+      }
+    },
+    "videoDelivery": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schemaVersion", "canonicalUrl", "storageUrl", "sha256", "bytes"],
+      "properties": {
+        "schemaVersion": { "const": "sermon-video-delivery-v1" },
+        "canonicalUrl": {
+          "type": "string",
+          "pattern": "^/pages/[A-Za-z0-9_-]{1,160}/full-video-browser\\.mp4$"
+        },
+        "storageUrl": {
+          "type": "string",
+          "pattern": "^https://storage\\.googleapis\\.com/ai-for-god-sermon-media-(dev|prod)/weekly/[A-Za-z0-9_-]{1,160}/[a-f0-9]{64}\\.mp4$"
+        },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "bytes": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

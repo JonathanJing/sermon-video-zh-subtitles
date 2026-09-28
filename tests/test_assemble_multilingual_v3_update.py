@@ -30,6 +30,7 @@ def page_fixture(public: Path, page_id: str, date: str) -> dict:
         content_sha = write(public / f"content/{page_id}/{locale}.json", {
             "pageId": page_id, "targetLocale": locale, "series": "启示录",
             "title": "耶稣配得", "browserVideoSha256": video_sha,
+            "sourceVideoUrl": f"/pages/{page_id}/full-video-browser.mp4",
         })
         captions_sha = write(public / f"captions/{page_id}/{locale}.json", {"cues": []})
         audio_sha = write(public / f"media/{page_id}/{locale}.mp3",
@@ -203,8 +204,68 @@ class AssembleMultilingualV3UpdateTests(unittest.TestCase):
         manifest = update.load(self.manifest)
         manifest["schemaVersion"] = "sermon-multilingual-v3-stage-manifest-v1"
         write(self.manifest, manifest)
-        with self.assertRaisesRegex(ValueError, "v2 three-locale file contract"):
+        with self.assertRaisesRegex(ValueError, "supported three-locale file contract"):
             update.assemble(self.base, self.stage, self.manifest, self.root / "candidate")
+
+    def test_bucket_profile_keeps_video_out_of_hosting(self) -> None:
+        video = self.stage / "pages/new-week/full-video-browser.mp4"
+        delivery = {
+            "schemaVersion": "sermon-video-delivery-v1",
+            "canonicalUrl": "/pages/new-week/full-video-browser.mp4",
+            "storageUrl": f"https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/new-week/{update.digest(video)}.mp4",
+            "sha256": update.digest(video), "bytes": video.stat().st_size,
+        }
+        self.new_page["videoDelivery"] = delivery
+        write(self.stage / update.CATALOG, catalog(self.new_page))
+        for locale in ("zh-Hans", "ko", "es"):
+            content_path = self.stage / f"content/new-week/{locale}.json"
+            content = update.load(content_path)
+            content["sourceVideoUrl"] = delivery["canonicalUrl"]
+            new_sha = write(content_path, content)
+            release_path = self.stage / f"releases-v2/new-week/{locale}.json"
+            release = update.load(release_path)
+            next(asset for asset in release["assets"] if asset["role"] == "content")["sha256"] = new_sha
+            release_sha = write(release_path, release)
+            self.new_page["targets"][locale]["releasePackageJsonSha256"] = release_sha
+            for folder in ("english-reference", "alignment"):
+                sidecar_path = self.stage / f"{folder}/new-week.json"
+                sidecar = update.load(sidecar_path)
+                sidecar["targets"][locale]["releasePackageJsonSha256"] = release_sha
+                if folder == "english-reference":
+                    sidecar["targets"][locale]["contentSha256"] = new_sha
+                write(sidecar_path, sidecar)
+        write(self.stage / update.CATALOG, catalog(self.new_page))
+        video_copy = self.root / "video.mp4"
+        video.rename(video_copy)
+        write(self.manifest, {
+            "schemaVersion": update.BUCKET_STAGE_SCHEMA,
+            "profile": update.BUCKET_PROFILE,
+            "pageId": "new-week", "videoDelivery": delivery,
+            "files": [{"path": "/" + name, "sha256": update.digest(path)}
+                      for name, path in sorted(update.regular_files(self.stage).items())
+                      if name != update.CATALOG],
+        })
+        config = self.root / "firebase.json"
+        write(config, {"hosting": {"public": "public", "site": "prod",
+                              "headers": [{"source": "**", "headers": [{
+                                  "key": "Content-Security-Policy",
+                                  "value": "default-src 'none'; media-src 'self' blob:;"
+                              }]}]}})
+        out = self.root / "bucket-candidate"
+        report = update.assemble(self.base, self.stage, self.manifest, out, video_copy,
+                                 config)
+        self.assertEqual(report["addedFileCount"], 20)
+        self.assertEqual(report["weeklyFileCount"], 21)
+        self.assertEqual(report["bucketObjectCount"], 1)
+        self.assertEqual(report["weeklyFirebaseObjectCount"], 22)
+        self.assertFalse((out / "public/pages/new-week/full-video-browser.mp4").exists())
+        self.assertEqual(update.load(out / "firebase.json")["hosting"]["redirects"], [{
+            "source": delivery["canonicalUrl"],
+            "destination": delivery["storageUrl"], "type": 302,
+        }])
+        with self.assertRaisesRegex(ValueError, "Bucket video file missing or changed"):
+            update.assemble(self.base, self.stage, self.manifest,
+                            self.root / "missing-video", self.root / "wrong.mp4", config)
 
     def test_rejects_client_unsupported_locale(self) -> None:
         candidate = catalog(copy.deepcopy(self.new_page))

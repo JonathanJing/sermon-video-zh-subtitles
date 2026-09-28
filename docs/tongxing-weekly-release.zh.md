@@ -18,33 +18,48 @@
 
 ### 正式三语周更文件数合同
 
-当前 Production 配置固定为 `three_locale_full_video_v1`：**每周恰好处理 22 个 Firebase Hosting 文件**，其中 21 个是新周不可变资源，另 1 个是更新既有 `/multilingual-v3.json`。这不是部署时的整站文件总数；整站快照还必须保留历史周次和 App 文件。文件大小随视频、音轨和文字变化，不以数量代替容量或流量预算。
+已发行的 Hosting 视频周次沿用 `three_locale_full_video_v1`：**21 个新周 Hosting 资源 + 1 个更新的 `/multilingual-v3.json` = 22 个 Hosting 文件**。新的 bucket 视频周次使用 `three_locale_bucket_video_v2`：**20 个新周 Hosting 资源 + 1 个更新的 catalog = 21 个 Hosting 文件，另有 1 个不可变 Cloud Storage 视频对象**；合计处理 22 个 Firebase 资源，但不可把它写成 22 个 Hosting 文件。两个配置都只约束单周增量，既有完整站点、客户端代码、海报和 Dev dry run 分别计数。
 
 | 资源 | 数量 | 固定路径 |
 | --- | ---: | --- |
-| 完整视频 | 1 | `/pages/<pageId>/full-video-browser.mp4` |
+| 完整视频，旧配置 | 1 Hosting | `/pages/<pageId>/full-video-browser.mp4` |
+| 完整视频，新配置 | 1 bucket 对象、0 Hosting 文件 | `https://storage.googleapis.com/<专用媒体bucket>/weekly/<pageId>/<播放文件SHA>.mp4`；原同源路径用精确 302 指向该对象 |
 | 中文、韩语、西语的页面、全文、字幕、音轨、v2 Release、听音定位指纹 | 18（每语 6） | `/pages/<pageId>/<locale>/index.html`、`/content/<pageId>/<locale>.json`、`/captions/<pageId>/<locale>.json`、`/media/<pageId>/<locale>.mp3`、`/releases-v2/<pageId>/<locale>.json`、`/fingerprints/<sha前16位>-landmarks.json` |
 | 英文对照与对齐索引 | 2 | `/english-reference/<pageId>.json`、`/alignment/<pageId>.json` |
 | v3 目录 | 1（更新） | `/multilingual-v3.json` |
 
-`stage-public` 必须正好包含上述 22 个文件；`stage-manifest.json` 使用 `sermon-multilingual-v3-stage-manifest-v2`、`profile=three_locale_full_video_v1`、本周 `pageId`，逐项列出目录以外的 **21** 个文件及 SHA。组装器拒绝缺失、额外文件、旧 v1 Release／私有 Layer 3 包、重复 `spoken/` 音轨或字幕别名；报告分别记录 `addedFileCount=21`、`catalogUpdateFileCount=1`、`weeklyFileCount=22`。App 程序更新、旧周保留、PDF、海报、样音及 Dev dry run 各走独立发布清单，不混入本周 22 个文件。若以后将视频移至 Cloud Storage bucket，或扩展语言／文字版，须先发布新版本合同并验收 Web／iOS；不能沿用此 Hosting 清单假报 22 个。
+旧配置的 `stage-public`、manifest v2 和 21 文件校验保持可读。新配置的 `stage-public` **不包含 MP4**，manifest v3 使用 `profile=three_locale_bucket_video_v2`，列出恰好 20 个新 Hosting 文件及 `videoDelivery`（同源固定路径、bucket HTTPS URL、播放文件 SHA-256、字节数）。同一 `videoDelivery` 必须写入 v3 catalog 的本周 page；三语 content 的 `sourceVideoUrl` 仍是同源路径，`browserVideoSha256` 均等于视频对象 SHA。`--video-file` 指向暂存区外的已审完整 MP4，组装时实测字节数与 SHA；来源母版的 `sourceMediaSha256` 保持原身份，不能混用。组装器拒绝缺失／多余文件、对象不匹配及不安全 URL。新报告分别记录 `addedFileCount=20`、`catalogUpdateFileCount=1`、`weeklyFileCount=21`、`bucketObjectCount=1`、`weeklyFirebaseObjectCount=22`。
 
-旧 `sermon-multilingual-v3-stage-manifest-v1` 候选只需保留原始文件与审核证据，按上述路径去掉别名后重新生成 v2 清单；组装器不自动迁移或替旧清单补齐文件。输出状态固定为 `validated_not_deployed`，不能直接作为上线收据。入口如下：
+发布顺序是：在与正式站分离的 Dev 项目用模拟视频和真实 bucket 完成端到端测试；正式发布时先上传并验证不可变对象的大小、哈希、`Content-Type: video/mp4`、公开 GET、首尾 206／`Content-Range`，再准备 Hosting 完整快照及精确 302、限定 `media-src` 的 CSP，最后更新 catalog。发布后的同源视频 URL 必须返回预期重定向并可在 Web 播放和拖动；未点视频时不应下载完整视频。当前独立页面使用 `preload="metadata"`，仍可能下载少量视频数据；若要零预取，须在新周页面生成时改为 `preload="none"` 并重算页面及 Release 哈希。回退保留上一版 catalog、Hosting 配置及旧视频文件，不能先删除旧资源。iOS 当前已安装版本只提供文稿／音频，没有原生原视频播放器；本合同不把 bucket 视频 HTTP 验证宣称为 iOS 视频验收。要让 iOS App 内看原视频须另行开发并发布一次客户端更新。
+
+旧 `sermon-multilingual-v3-stage-manifest-v1` 候选只需保留原始文件与审核证据，按实际选择的配置重新生成清单；组装器不自动迁移或替旧清单补齐文件。输出状态固定为 `validated_not_deployed`，不能直接作为上线收据。bucket 配置还须传 `--video-file`；入口如下：
 
 ```bash
 .venv/bin/python scripts/assemble_multilingual_v3_update.py \
   --base-public artifacts/<已核对的完整正式站快照>/public \
   --stage-public artifacts/<本周已审公开资产>/public \
   --stage-manifest artifacts/<本周已审公开资产>/stage-manifest.json \
+  --base-firebase-json artifacts/<已核对的完整正式站快照>/firebase.json \
+  --video-file artifacts/<本周已审完整播放视频>.mp4 \
   --out artifacts/<本周-v3-候选>
+```
+
+上例用于 bucket 配置；旧 Hosting 视频配置不传 `--video-file` 和 `--base-firebase-json`。bucket 配置的候选同时输出带精确 302 与视频 CSP 的 `firebase.json`，但组装器不上传对象、不部署站点。发布后以如下命令单独取得视频的线上收据；它会完整读回一次 MP4 核对 SHA，并检查旧同源 URL 的 302、首尾 206／Range 和 CORS，因此会产生一次视频大小的下载流量：
+
+```bash
+.venv/bin/python scripts/verify_v3_bucket_video.py \
+  --origin https://ai-for-god-sermon-audio.web.app \
+  --catalog artifacts/<本周已发布候选>/public/multilingual-v3.json \
+  --page-id <本周pageId> \
+  --out artifacts/<本周视频HTTP收据>.json
 ```
 
 | 阶段 | 必须保存的结果 |
 | --- | --- |
-| 构建 | 从冻结的 Layer 1–3 包与批准的系列／标题生成本周各语言 v2 Release、页面、全文、英文对照、字幕、原视频、音频和定位 sidecar；每个公开文件有安全同源路径及 SHA；不公开含绝对路径的私有包。 |
+| 构建 | 从冻结的 Layer 1–3 包与批准的系列／标题生成本周各语言 v2 Release、页面、全文、英文对照、字幕、完整播放视频、音频和定位 sidecar；按所选配置把视频放在 Hosting 或独立 bucket。每个公开资源有固定路径及 SHA；不公开含绝对路径的私有包。 |
 | 合并 | 读取正式站完整基线与旧 v3 hash，追加本周 `pageId` 和 target，设置本周 `defaultPageId`；旧周、旧语言、legacy 功能及被引用资产逐一保留，覆盖／丢失即失败。 |
 | 发布 | 先上传不可变资产与 Release，最后更新 `/multilingual-v3.json`；目录明确 `no-store`，记录新旧目录 hash 和可回退的旧版本。 |
-| HTTP | 对 catalog、Release、页面、全文、英文对照、字幕、原视频、定位文件和音频逐项 GET／SHA；音频验证 206／Range；确认三语和功能声明与真实资产相符。 |
+| HTTP | 对 catalog、Release、页面、全文、英文对照、字幕、定位文件和音频逐项 GET／SHA；音频验证 206／Range。bucket 配置另验对象身份、视频首尾 Range 及同源 URL 的重定向和播放；确认三语和功能声明与真实资产相符。 |
 | App | Firebase App 重新加载后，在 App 选页中打开本周每个已发布语言并试播；同一已安装 iOS 版本点击“刷新证道目录”后完成相同检查。记录构建版本、时间、所选 pageId／locale、结果；不得以独立 HTML 页、HTTP 收据或模拟器代替真机结论。 |
 
 当用户正听旧周时，刷新只增加本周选项，不强制中断播放；本周仍须在选页入口容易找到。设备、现场和海报分别记录，不阻塞已通过的 HTTP 状态。

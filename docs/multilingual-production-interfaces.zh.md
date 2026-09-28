@@ -115,7 +115,7 @@ Target-Language Candidate + Target-Language Audio Package
 
 输出：每种语言一个 [Target-Language Release Package v2](../schemas/sermon-target-language-release-package-v2.schema.json)，再汇总成 [Multilingual Catalog v3](../schemas/sermon-multilingual-catalog-v3.schema.json)。v2 包必须绑定 Layer 2 全文、已批准口播稿和 Layer 3 Audio Package 的 hash；实际资产也须匹配。v1 Release 与 v2 Catalog 继续供历史／Dev 读取，不可覆盖到正式 v3 路径。公开包不得复制含本机绝对路径、凭据或私有收据的上游原件。
 
-现行 Production 三语完整视频周更采用固定的 [`three_locale_full_video_v1` 文件数合同](tongxing-weekly-release.zh.md#正式三语周更文件数合同)：21 个新周资源加 1 个更新的 v3 catalog，总计 22 个 Hosting 文件。此合同只约束本周内容增量；既有站点完整快照、App 代码发布及 Dev 模拟流程分别计数。其他语言、纯文字发行或 bucket 视频须使用另一个经客户端验收的版本化发布配置，不把缺失资产凑成 22 个。
+已发行的 Hosting 视频周次沿用 [`three_locale_full_video_v1` 文件数合同](tongxing-weekly-release.zh.md#正式三语周更文件数合同)：21 个新周 Hosting 资源加 1 个 catalog 更新。新的 `three_locale_bucket_video_v2` 合同为 20 个新周 Hosting 资源、1 个 catalog 更新及 1 个 Cloud Storage 视频对象；两种配置不能混报文件数。bucket 视频对客户端保留同源 `/pages/<pageId>/full-video-browser.mp4`，Hosting 以精确 302 指向不可变对象，catalog 的可选 `videoDelivery` 记录对象身份与哈希。Dev、Production 对象及凭据分离；完整上线顺序、回退与 Web／iOS 验收见每周发行合同。其他语言或纯文字发行仍需独立版本化配置。
 
 ### 每周 App 内容合同与刷新门槛
 

@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Assemble one Production v3 weekly content update without deploying it.
+"""Assemble a Production v3 weekly update without deploying it.
 
-The staged public directory contains one-page multilingual-v3.json plus exactly
-21 referenced weekly assets listed by its v2 stage manifest. The existing
-public directory must be a complete snapshot of the current Production site.
+The legacy profile stages 21 Hosting assets. The bucket-video profile stages
+20 Hosting assets and binds one separately uploaded, immutable MP4 object.
 """
 
 from __future__ import annotations
@@ -33,6 +32,9 @@ STAGE_SCHEMA_FILE = f"{STAGE_SCHEMA}.schema.json"
 PUBLICATION_PROFILE = "three_locale_full_video_v1"
 STAGE_FILE_COUNT = 21
 WEEKLY_FILE_COUNT = STAGE_FILE_COUNT + 1  # The mutable v3 catalog is updated last.
+BUCKET_PROFILE = "three_locale_bucket_video_v2"
+BUCKET_STAGE_SCHEMA = "sermon-multilingual-v3-stage-manifest-v3"
+BUCKET_STAGE_FILE_COUNT = 20
 
 
 def validate_schema(value: dict, name: str) -> None:
@@ -157,24 +159,86 @@ def validate_page(public: Path, page: dict) -> set[str]:
         refs.add(name)
 
     video_name = f"pages/{page_id}/full-video-browser.mp4"
-    if not (public / video_name).is_file() or digest(public / video_name) != video_sha:
-        raise ValueError(f"{page_id}: full sermon video missing")
-    refs.add(video_name)
+    delivery = page.get("videoDelivery")
+    if delivery is None:
+        if not (public / video_name).is_file() or digest(public / video_name) != video_sha:
+            raise ValueError(f"{page_id}: full sermon video missing")
+        refs.add(video_name)
+    else:
+        validate_video_delivery(page_id, delivery, video_sha)
+        for locale in page["targets"]:
+            content = load(public / f"content/{page_id}/{locale}.json")
+            if content.get("sourceVideoUrl") != delivery["canonicalUrl"]:
+                raise ValueError(f"{page_id}/{locale}: canonical video URL differs")
     return refs
 
 
+def validate_video_delivery(page_id: str, delivery: dict, video_sha: str) -> None:
+    """The object URL is immutable; clients keep using the canonical path."""
+    if (delivery.get("schemaVersion") != "sermon-video-delivery-v1"
+            or delivery.get("canonicalUrl") != f"/pages/{page_id}/full-video-browser.mp4"
+            or delivery.get("sha256") != video_sha
+            or not isinstance(delivery.get("bytes"), int) or delivery["bytes"] <= 0):
+        raise ValueError(f"{page_id}: invalid bucket video binding")
+    url = delivery.get("storageUrl", "")
+    if (not isinstance(url, str)
+            or not url.startswith("https://storage.googleapis.com/ai-for-god-sermon-media-")
+            or not url.endswith(f"/weekly/{page_id}/{video_sha}.mp4")
+            or "?" in url or "#" in url):
+        raise ValueError(f"{page_id}: invalid immutable bucket URL")
+
+
+def add_video_redirect(config: dict, delivery: dict) -> dict:
+    """Return a new Hosting config with one exact video redirect and media CSP."""
+    config = json.loads(json.dumps(config))
+    hosting = config.get("hosting")
+    if not isinstance(hosting, dict) or hosting.get("public") != "public":
+        raise ValueError("Expected complete Hosting configuration")
+    canonical = delivery["canonicalUrl"]
+    redirects = hosting.setdefault("redirects", [])
+    if any(rule.get("source") == canonical for rule in redirects):
+        raise ValueError("Video redirect already exists")
+    redirects.append({"source": canonical, "destination": delivery["storageUrl"], "type": 302})
+    matches = [item for rule in hosting.get("headers", [])
+               for item in rule.get("headers", [])
+               if item.get("key", "").lower() == "content-security-policy"]
+    if len(matches) != 1:
+        raise ValueError("Expected exactly one site-wide media CSP")
+    value = matches[0].get("value", "")
+    if "media-src 'self' blob:" in value:
+        matches[0]["value"] = value.replace("media-src 'self' blob:",
+                                            "media-src 'self' https://storage.googleapis.com blob:")
+    elif "media-src 'self' https://storage.googleapis.com blob:" not in value:
+        raise ValueError("Unexpected CSP media-src; review before migration")
+    return config
+
+
+def require_video_redirect(config: dict, delivery: dict) -> None:
+    matches = [rule for rule in config.get("hosting", {}).get("redirects", [])
+               if rule.get("source") == delivery["canonicalUrl"]]
+    if matches != [{"source": delivery["canonicalUrl"],
+                    "destination": delivery["storageUrl"], "type": 302}]:
+        raise ValueError("Historical bucket video redirect is missing or changed")
+
+
 def stage_files_from_manifest(stage_public: Path, manifest_path: Path,
-                              page_id: str) -> dict[str, Path]:
+                              page_id: str) -> tuple[dict[str, Path], dict | None]:
     manifest = load(manifest_path)
-    if (set(manifest) != {"schemaVersion", "profile", "pageId", "files"}
-            or manifest.get("schemaVersion") != STAGE_SCHEMA
-            or manifest.get("profile") != PUBLICATION_PROFILE
+    profile = manifest.get("profile")
+    bucket = profile == BUCKET_PROFILE
+    expected_keys = {"schemaVersion", "profile", "pageId", "files"}
+    if bucket:
+        expected_keys.add("videoDelivery")
+    schema = BUCKET_STAGE_SCHEMA if bucket else STAGE_SCHEMA
+    count = BUCKET_STAGE_FILE_COUNT if bucket else STAGE_FILE_COUNT
+    if (set(manifest) != expected_keys or manifest.get("schemaVersion") != schema
+            or profile not in {PUBLICATION_PROFILE, BUCKET_PROFILE}
             or manifest.get("pageId") != page_id):
-        raise ValueError("Production weekly stage requires the v2 three-locale file contract")
+        raise ValueError("Production weekly stage requires a supported three-locale file contract")
     entries = manifest.get("files")
-    if not isinstance(entries, list) or len(entries) != STAGE_FILE_COUNT:
-        raise ValueError(f"Production weekly stage requires exactly {STAGE_FILE_COUNT} assets")
-    validate_schema(manifest, STAGE_SCHEMA_FILE)
+    if not isinstance(entries, list) or len(entries) != count:
+        raise ValueError(f"Production weekly stage requires exactly {count} assets")
+    validate_schema(manifest, f"{schema}.schema.json")
     actual = regular_files(stage_public)
     listed: set[str] = set()
     for entry in entries:
@@ -189,10 +253,12 @@ def stage_files_from_manifest(stage_public: Path, manifest_path: Path,
         listed.add(name)
     if set(actual) != listed | {CATALOG}:
         raise ValueError("Stage manifest differs from staged public files")
-    return {name: actual[name] for name in listed}
+    return {name: actual[name] for name in listed}, manifest.get("videoDelivery")
 
 
-def assemble(base_public: Path, stage_public: Path, stage_manifest: Path, out: Path) -> dict:
+def assemble(base_public: Path, stage_public: Path, stage_manifest: Path, out: Path,
+             video_file: Path | None = None,
+             base_firebase_json: Path | None = None) -> dict:
     if out.exists() or out.is_symlink():
         raise ValueError("Output already exists")
     base_files = regular_files(base_public)
@@ -215,12 +281,24 @@ def assemble(base_public: Path, stage_public: Path, stage_manifest: Path, out: P
         raise ValueError("Existing page ID cannot be overwritten")
     for prior in old["pages"]:
         validate_page(base_public, prior)
-    stage_files = stage_files_from_manifest(stage_public, stage_manifest, page["id"])
+    stage_files, delivery = stage_files_from_manifest(stage_public, stage_manifest, page["id"])
+    if delivery != page.get("videoDelivery"):
+        raise ValueError("Stage video delivery differs from catalog")
+    if delivery is not None:
+        validate_video_delivery(page["id"], delivery, delivery["sha256"])
+        if "/ai-for-god-sermon-media-prod/" not in delivery["storageUrl"]:
+            raise ValueError("Production bucket profile requires the Production media bucket")
+        if (video_file is None or not video_file.is_file() or video_file.is_symlink()
+                or video_file.stat().st_size != delivery["bytes"]
+                or digest(video_file) != delivery["sha256"]):
+            raise ValueError("Bucket video file missing or changed")
+    elif video_file is not None:
+        raise ValueError("Legacy Hosting profile must not supply a bucket video file")
     if set(stage_files) & set(base_files):
         raise ValueError("Stage would overwrite an existing Production file")
     required = validate_page(stage_public, page)
-    if len(required) != STAGE_FILE_COUNT or required != set(stage_files):
-        raise ValueError("Stage must contain exactly the 21 referenced weekly assets, without aliases")
+    if len(required) != len(stage_files) or required != set(stage_files):
+        raise ValueError("Stage must contain exactly the referenced weekly assets, without aliases")
     merged = {
         "schemaVersion": "sermon-multilingual-catalog-v3",
         "generatedAt": incoming["generatedAt"],
@@ -229,6 +307,16 @@ def assemble(base_public: Path, stage_public: Path, stage_manifest: Path, out: P
                         key=lambda item: (item["date"], item["id"]), reverse=True),
     }
     validate_schema(merged, SCHEMA)
+    config = None
+    if delivery:
+        config_path = base_firebase_json or base_public.parent / "firebase.json"
+        if not config_path.is_file():
+            raise ValueError("Bucket profile requires the complete base firebase.json")
+        base_config = load(config_path)
+        for prior in old["pages"]:
+            if prior.get("videoDelivery"):
+                require_video_redirect(base_config, prior["videoDelivery"])
+        config = add_video_redirect(base_config, delivery)
     out.parent.mkdir(parents=True, exist_ok=True)
     temporary = Path(tempfile.mkdtemp(prefix=f".{out.name}-", dir=out.parent))
     try:
@@ -243,6 +331,9 @@ def assemble(base_public: Path, stage_public: Path, stage_manifest: Path, out: P
         old_catalog_sha = digest(public / CATALOG)
         shutil.copyfile(public / CATALOG, temporary / f"rollback-{CATALOG}")
         (public / CATALOG).write_text(json.dumps(merged, ensure_ascii=False, sort_keys=True, indent=2) + "\n")
+        if config is not None:
+            (temporary / "firebase.json").write_text(
+                json.dumps(config, ensure_ascii=False, sort_keys=True, indent=2) + "\n")
         validate_page(public, page)
         for name, source in base_files.items():
             if name != CATALOG and digest(public / name) != digest(source):
@@ -250,7 +341,7 @@ def assemble(base_public: Path, stage_public: Path, stage_manifest: Path, out: P
         report = {
             "schemaVersion": "sermon-multilingual-v3-update-candidate-v2",
             "status": "validated_not_deployed",
-            "publicationProfile": PUBLICATION_PROFILE,
+            "publicationProfile": BUCKET_PROFILE if delivery else PUBLICATION_PROFILE,
             "pageId": page["id"],
             "targetLocales": sorted(page["targets"]),
             "oldCatalogSha256": old_catalog_sha,
@@ -258,7 +349,11 @@ def assemble(base_public: Path, stage_public: Path, stage_manifest: Path, out: P
             "baseFileCount": len(base_files),
             "addedFileCount": len(stage_files),
             "catalogUpdateFileCount": 1,
-            "weeklyFileCount": WEEKLY_FILE_COUNT,
+            "weeklyFileCount": len(stage_files) + 1,
+            "bucketObjectCount": 1 if delivery else 0,
+            "weeklyFirebaseObjectCount": len(stage_files) + 1 + (1 if delivery else 0),
+            "videoDelivery": delivery,
+            "firebaseConfigSha256": digest(temporary / "firebase.json") if config else None,
             "createdAt": datetime.now(timezone.utc).isoformat(),
             "files": [
                 {"path": name, "bytes": path.stat().st_size, "sha256": digest(path)}
@@ -280,8 +375,13 @@ def main() -> None:
     parser.add_argument("--stage-public", type=Path, required=True)
     parser.add_argument("--stage-manifest", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--video-file", type=Path,
+                        help="Required for the bucket profile; kept outside stage-public")
+    parser.add_argument("--base-firebase-json", type=Path,
+                        help="Complete Hosting config required for the bucket profile")
     args = parser.parse_args()
-    report = assemble(args.base_public, args.stage_public, args.stage_manifest, args.out)
+    report = assemble(args.base_public, args.stage_public, args.stage_manifest, args.out,
+                      args.video_file, args.base_firebase_json)
     print(json.dumps({key: report[key] for key in ("status", "pageId", "targetLocales", "addedFileCount", "weeklyFileCount")},
                      ensure_ascii=False))
 
