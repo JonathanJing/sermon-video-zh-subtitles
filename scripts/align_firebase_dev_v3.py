@@ -279,7 +279,7 @@ def verify(candidate: Path) -> dict:
         if (status != 206 or first != expected_first
                 or headers.get("content-range") != f"bytes 0-0/{audio_file.stat().st_size}"):
             raise ValueError(f"Dev audio Range failed: {locale}")
-        route = f"/pages/{PAGE_ID}/{locale}/"
+        route = f"/pages/{PAGE_ID}/{locale}/index.html"
         status, headers, html = http.request_bytes(ORIGIN, route)
         if (status != 200 or "text/html" not in headers.get("content-type", "")
                 or b"cue-1" not in html or len(html) < 10000):
