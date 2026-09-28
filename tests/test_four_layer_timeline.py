@@ -43,6 +43,43 @@ class FourLayerTimelineTest(unittest.TestCase):
         self.assertEqual({row["id"] for row in data["rows"]}, {"layer2.unit@ko#u1", "layer2.unit@ko#u2"})
         self.assertTrue(all(row["status"] == "simulation_only" for row in data["rows"]))
 
+    def test_nested_accounting_spans_attach_only_to_matching_step_identity(self):
+        ledger = four_layer_progress.new_ledger("week", ["ko"])
+        identity = four_layer_progress.ledger_identity(ledger)
+        events = [
+            {"event": "workflow_started", "workflowId": "w", "metadata":
+             {"pageId": "week", "target": "dev", "ledgerIdentitySha256": identity}},
+            {"event": "stage_started", "workflowId": "w", "stage": "four_layer.L2-02:ko",
+             "spanId": "root", "startedAt": "2026-09-28T10:00:00Z"},
+            {"event": "stage_started", "workflowId": "w", "stage": "layer2.group.ko.0001",
+             "spanId": "group", "parentSpanId": "root", "startedAt": "2026-09-28T10:00:01Z"},
+            {"event": "stage_started", "workflowId": "w", "stage": "layer2.translator.ko.group-0001",
+             "spanId": "translator", "parentSpanId": "group", "startedAt": "2026-09-28T10:00:02Z"},
+            {"event": "stage_finished", "workflowId": "w", "stage": "layer2.translator.ko.group-0001",
+             "spanId": "translator", "recordedAt": "2026-09-28T10:00:05Z", "elapsedSeconds": 3,
+             "status": "completed"},
+            {"event": "stage_finished", "workflowId": "w", "stage": "layer2.group.ko.0001",
+             "spanId": "group", "recordedAt": "2026-09-28T10:00:06Z", "elapsedSeconds": 5,
+             "status": "completed"},
+            {"event": "stage_finished", "workflowId": "w", "stage": "four_layer.L2-02:ko",
+             "spanId": "root", "recordedAt": "2026-09-28T10:00:07Z", "elapsedSeconds": 7,
+             "status": "completed"},
+            {"event": "stage_started", "workflowId": "foreign", "stage": "layer2.reviewer.ko.group-0001",
+             "spanId": "foreign", "parentSpanId": "other", "startedAt": "2026-09-28T10:00:02Z"},
+            {"event": "stage_finished", "workflowId": "foreign", "stage": "layer2.reviewer.ko.group-0001",
+             "spanId": "foreign", "recordedAt": "2026-09-28T10:00:08Z", "elapsedSeconds": 6,
+             "status": "completed"},
+        ]
+        data = production_data(ledger, events)
+        row = next(row for row in data["rows"] if row["id"] == "L2-02@ko")
+        child = {item["id"]: item for item in row["substeps"]}
+        self.assertEqual(child["L2-02@ko/group"]["attempts"][0]["seconds"], 5)
+        self.assertEqual(child["L2-02@ko/translator"]["attempts"][0]["seconds"], 3)
+        self.assertEqual(child["L2-02@ko/reviewer"]["attempts"], [])
+        self.assertEqual(child["L2-02@ko/reviewer"]["dependsOn"],
+                         ["L2-02@ko/translator"])
+        self.assertEqual(data["coverage"]["measuredSubsteps"], 2)
+
 
 if __name__ == "__main__":
     unittest.main()
