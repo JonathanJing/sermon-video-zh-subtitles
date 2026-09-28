@@ -6,7 +6,7 @@
 
 `scripts/backend_four_layer_dry_run.py` 使用仓库内 6 秒固定夹具。模拟链接固定为 `.invalid` 域名，不发网络请求。它在本地生成短 WAV、固定英文词时间和三语文字；通过真实的 Layer 1 锚点/English Source Package 构建器和三语 shadow lane planner。Layer 2 逐组使用正式 Astra→Sol 调度循环，但响应由固定夹具提供；Layer 3 使用正式的 1 倍速排程和 PCM16 音轨拼接函数，最后输出独立的 `preview_only` 页面和报告。接链、媒体夹具、Layer 1、shadow 规划、每个语言及每次模拟模型响应／音频单元、Layer 4 均记录开始、结束、耗时和失败原因；失败注入可定位断点。
 
-以后修改四层后端、模型调度、音频排程或 Dev 导入器时，先运行本地评估，再提交 PR。`dev`/`main` 的 Python CI 也会执行相同评估，验证成功路径和四个故障阻断点；模拟结果只用于开发回归，不给正式周更授予审核或发布资格。
+以后修改四层后端、模型调度、音频排程或 Dev 导入器时，先运行本地评估，再提交 PR。`dev`/`main` 的 Python CI 也会执行相同评估，验证成功路径、四个故障阻断点及无效故障点拒绝；模拟结果只用于开发回归，不给正式周更授予审核或发布资格。
 
 ```bash
 /absolute/path/to/repo/.venv/bin/python scripts/evaluate_backend_four_layer_dry_run.py \
@@ -58,5 +58,5 @@ OUT=/absolute/path/to/ignored/dry-run-run
 ## 共用控制循环迭代
 
 - 第二版固定夹具本地评估生成 29 条步骤事件，其中 12 次是固定模型响应，另有 6 个音频单元事件。下载、ASR、翻译 API、TTS 和 Firebase 外部调用仍全部为 0。
-- 成功路径及 `layer1`、韩语首组 Sol、`layer3:es`、`layer4` 四处失败注入全部通过；失败运行不能被 Dev 导入器接收。定向测试覆盖 Layer 2 真实 runner、Layer 3 renderer 与此模拟器。
+- 成功路径及 `layer1`、韩语首组 Sol、`layer3:es`、`layer4` 四处失败注入全部通过；不存在的单元故障点会被拒绝，失败运行不能被 Dev 导入器接收。定向测试覆盖 Layer 2 真实 runner、Layer 3 renderer 与此模拟器。
 - Python CI 的非文档 PR 检查会运行 `evaluate_backend_four_layer_dry_run.py` 并保存 JSON 评估收据。正式审核门禁、iOS 和现场仍单独验证。

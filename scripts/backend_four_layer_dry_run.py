@@ -378,6 +378,10 @@ def run(fixture_path: Path, out: Path, *, fail_at: str | None = None) -> dict:
                 return path
             audio[locale] = step(f"layer3:{locale}", make_audio)
 
+        if fail_at and fail_at != "layer4" and not any(
+                event["step"] == fail_at for event in events):
+            raise ValueError(f"Failure injection point was not reached: {fail_at}")
+
         def make_layer4():
             public = temporary / "public/flow"
             report["layers"]["layer4"] = {"status": "preview_only",

@@ -52,6 +52,14 @@ def evaluate() -> dict:
             cases.append({"failurePoint": failure_point, "status": "blocked_as_expected",
                           "failedStep": next(event["step"] for event in reversed(result["events"])
                                              if event["status"] == "fail")})
+        unreachable = dry.run(dry.ROOT / "config/backend-four-layer-dry-run.fixture.json",
+                              root / "unreachable", fail_at="layer2:ko:unit-7:sol")
+        if (unreachable["status"] != "failed"
+                or "was not reached" not in unreachable.get("failure", "")
+                or (root / "unreachable/public/flow/index.html").exists()):
+            raise ValueError("Unreachable failure injection reported success")
+        cases.append({"failurePoint": "layer2:ko:unit-7:sol",
+                      "status": "rejected_unreachable", "failedStep": None})
         return {"schemaVersion": "sermon-backend-dry-run-evaluation-v1",
                 "status": "pass", "simulationOnly": True,
                 "successfulRun": {"events": len(passed["events"]),

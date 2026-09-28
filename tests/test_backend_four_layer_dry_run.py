@@ -81,6 +81,16 @@ class BackendFourLayerDryRunTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 checked_backend_run(root)
 
+    def test_unreachable_failure_point_cannot_report_success(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder) / "unreachable"
+            report = dry.run(self.fixture, root, fail_at="layer2:ko:unit-7:sol")
+            self.assertEqual(report["status"], "failed")
+            self.assertIn("was not reached", report["failure"])
+            self.assertFalse((root / "public/flow/index.html").exists())
+            with self.assertRaises(ValueError):
+                checked_backend_run(root)
+
     def test_rejects_real_link_and_tampered_preview(self):
         with TemporaryDirectory() as folder:
             root = Path(folder)
