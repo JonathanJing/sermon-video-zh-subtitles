@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "sermon-backend-four-layer-dry-run-fixture-v1",
+  "simulationOnly": true,
+  "sourceUrl": "https://weekly-dry-run.invalid/watch/fixture-001",
+  "sourceId": "weekly-dry-run-fixture-001",
+  "serviceDate": "2026-10-04",
+  "speakerId": "eric_geiger",
+  "durationSeconds": 6.0,
+  "englishSegments": [
+    {
+      "id": 0,
+      "referenceChunkId": "fixture-00",
+      "text": "Grace gives us hope.",
+      "start": 0.5,
+      "end": 2.2,
+      "sentenceBoundarySource": "frozen_reference_punctuation",
+      "wordTimes": [
+        {"text": "Grace", "start": 0.5, "end": 0.9},
+        {"text": "gives", "start": 0.95, "end": 1.3},
+        {"text": "us", "start": 1.35, "end": 1.55},
+        {"text": "hope.", "start": 1.6, "end": 2.2}
+      ]
+    },
+    {
+      "id": 1,
+      "referenceChunkId": "fixture-01",
+      "text": "We can care for one another.",
+      "start": 3.0,
+      "end": 5.0,
+      "sentenceBoundarySource": "frozen_reference_punctuation",
+      "wordTimes": [
+        {"text": "We", "start": 3.0, "end": 3.2},
+        {"text": "can", "start": 3.25, "end": 3.45},
+        {"text": "care", "start": 3.5, "end": 3.8},
+        {"text": "for", "start": 3.85, "end": 4.1},
+        {"text": "one", "start": 4.15, "end": 4.45},
+        {"text": "another.", "start": 4.5, "end": 5.0}
+      ]
+    }
+  ],
+  "translations": {
+    "zh-Hans": ["恩典给我们盼望。", "我们可以彼此关怀。"],
+    "ko": ["은혜는 우리에게 소망을 줍니다.", "우리는 서로 돌볼 수 있습니다."],
+    "es": ["La gracia nos da esperanza.", "Podemos cuidarnos unos a otros."]
+  }
+}

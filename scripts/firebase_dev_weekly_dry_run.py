@@ -95,7 +95,36 @@ def baseline_report(base: Path) -> dict:
     raise ValueError("Unsupported complete Dev v3 baseline")
 
 
-def build(base: Path, feature_public: Path, preview_id: str, out: Path) -> dict:
+def checked_backend_run(root: Path) -> tuple[dict, dict[str, Path]]:
+    report = dev.load(root / "run-report.json")
+    if (report.get("schemaVersion") != "sermon-backend-four-layer-dry-run-v1"
+            or report.get("simulationOnly") is not True or report.get("status") != "pass_simulated"
+            or report.get("formalApproval") is not False
+            or report.get("productionReleaseEligible") is not False
+            or set(report.get("externalCalls", {})) != {"download", "asr", "translation", "tts", "firebase"}
+            or any(value != 0 for value in report.get("externalCalls", {}).values())):
+        raise ValueError("Complete simulation-only backend run required")
+    actual = dev.files(root / "public")
+    if not actual or set(actual) != {item["path"] for item in report.get("publicFiles", [])}:
+        raise ValueError("Backend preview file set changed")
+    for item in report["publicFiles"]:
+        if (not item["path"].startswith("flow/")
+                or item["path"].startswith("flow/../")
+                or item["bytes"] != actual[item["path"]].stat().st_size
+                or item["sha256"] != dev.digest(actual[item["path"]])):
+            raise ValueError("Backend preview file changed or escaped flow namespace")
+    summary = dev.load(root / "public/flow/report.json")
+    if (summary.get("simulationOnly") is not True or summary.get("status") != "pass_simulated"
+            or summary.get("sourceUrlSha256") != report.get("sourceUrlSha256")
+            or summary.get("formalApproval") is not False):
+        raise ValueError("Backend public report differs from simulation")
+    if b"DRY RUN" not in (root / "public/flow/index.html").read_bytes():
+        raise ValueError("Backend preview label is missing")
+    return report, actual
+
+
+def build(base: Path, feature_public: Path, preview_id: str, out: Path,
+          *, backend_run: Path | None = None) -> dict:
     page_path, manifest_path = paths(preview_id)
     if out.exists() or out.is_symlink():
         raise ValueError("Output already exists")
@@ -117,6 +146,7 @@ def build(base: Path, feature_public: Path, preview_id: str, out: Path) -> dict:
     source = (public_base / "index.html").read_text(encoding="utf-8")
     if source.count(ENTRY) != 1 or source.count(NOTICE) != 1:
         raise ValueError("Dev App insertion points changed")
+    backend_report, backend_files = checked_backend_run(backend_run) if backend_run else (None, {})
     out.parent.mkdir(parents=True, exist_ok=True)
     temporary = Path(tempfile.mkdtemp(prefix=f".{out.name}-", dir=out.parent))
     try:
@@ -136,6 +166,8 @@ def build(base: Path, feature_public: Path, preview_id: str, out: Path) -> dict:
         label.unlink()
         shutil.copyfile(dev.DEV_LABEL, label)
         sample_title = html.escape(sample["title"])
+        backend_link = (f' · <a href="/dry-run/{preview_id}/flow/index.html">'
+                        '查看模拟链接 → Layer 1–4 结果</a>') if backend_report else ""
         preview_note = (
             '<p class="field-help dev-preview-notice" id="dryRunStatus" role="status" '
             'data-release-state="preview_only"><strong>DRY RUN · preview_only</strong> · '
@@ -143,12 +175,18 @@ def build(base: Path, feature_public: Path, preview_id: str, out: Path) -> dict:
             + " · ".join(
                 f'<a href="/{page_path}?week={sample_id}&amp;contentLang={locale}">{label}</a>'
                 for locale, label in (("zh-Hans", "中文"), ("ko", "한국어"), ("es", "Español"))
-            ) + "</p>"
+            ) + backend_link + "</p>"
         )
         preview = home.replace(NOTICE, NOTICE + "\n    " + preview_note, 1)
         page = public / page_path
         page.parent.mkdir(parents=True)
         page.write_text(preview, encoding="utf-8")
+        for name, source_file in backend_files.items():
+            target = public / f"dry-run/{preview_id}/{name}"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source_file, target)
+            if dev.digest(target) != dev.digest(source_file):
+                raise ValueError(f"Backend preview copy differs: {name}")
         # This manifest has its own namespace; the formal v3 catalog is unchanged.
         runtime_sha = {name: dev.digest(public / name) for name in RUNTIME}
         manifest = {
@@ -157,12 +195,16 @@ def build(base: Path, feature_public: Path, preview_id: str, out: Path) -> dict:
             "appRuntimeSha256": runtime_sha, "pagePath": "/" + page_path,
             "featureJavascriptSha256": feature_sha,
             "locales": list(LOCALES), "generatedAt": datetime.now(timezone.utc).isoformat(),
+            "backendRunReportSha256": dev.digest(backend_run / "run-report.json") if backend_report else None,
+            "backendFlowFiles": sorted(backend_files),
         }
         json_write(public / manifest_path, manifest)
         shutil.copyfile(base / "firebase.json", temporary / "firebase.json")
         before = {item["path"]: item for item in old["files"]}
         after = {item["path"]: item for item in dev.inventory(public)}
-        if set(after) - set(before) != {page_path, manifest_path}:
+        expected_added = {page_path, manifest_path} | {
+            f"dry-run/{preview_id}/{name}" for name in backend_files}
+        if set(after) - set(before) != expected_added:
             raise ValueError("Dry-run file set changed unexpectedly")
         changed = {name for name in before if before[name] != after[name]}
         if "index.html" not in changed or changed - {"index.html", "dev-preview-label.mjs"}:
@@ -180,6 +222,8 @@ def build(base: Path, feature_public: Path, preview_id: str, out: Path) -> dict:
             "baseFiles": old["files"], "firebaseConfigSha256": dev.digest(temporary / "firebase.json"),
             "runtimeSha256": runtime_sha, "files": list(after[name] for name in sorted(after)),
             "featureJavascriptSha256": feature_sha,
+            "backendRunReportSha256": manifest["backendRunReportSha256"],
+            "backendFlowFiles": manifest["backendFlowFiles"],
         }
         json_write(temporary / "build-report.json", report)
         temporary.rename(out)
@@ -205,8 +249,23 @@ def candidate_report(candidate: Path) -> dict:
             or manifest.get("sampleCatalogSha256") != dev.digest(candidate / "public/multilingual-v3.json")
             or manifest.get("appRuntimeSha256") != report["runtimeSha256"]
             or manifest.get("featureJavascriptSha256") != report["featureJavascriptSha256"]
+            or manifest.get("backendRunReportSha256") != report.get("backendRunReportSha256")
+            or manifest.get("backendFlowFiles") != report.get("backendFlowFiles")
             or report["runtimeSha256"] != {name: dev.digest(candidate / "public" / name) for name in RUNTIME}):
         raise ValueError("Preview manifest changed")
+    flow_files = report.get("backendFlowFiles", [])
+    if (not isinstance(flow_files, list) or len(flow_files) != len(set(flow_files))
+            or any(not isinstance(name, str) or not name.startswith("flow/")
+                   or ".." in Path(name).parts for name in flow_files)):
+        raise ValueError("Backend flow paths changed")
+    if flow_files:
+        flow = candidate / "public" / f"dry-run/{report['previewId']}/flow/report.json"
+        summary = dev.load(flow)
+        if (summary.get("status") != "pass_simulated"
+                or summary.get("simulationOnly") is not True
+                or summary.get("formalApproval") is not False
+                or b"flow/index.html" not in (candidate / "public" / page_path).read_bytes()):
+            raise ValueError("Backend flow is not a labeled simulation")
     if (report["samplePageId"] != dev.load(candidate / "public/multilingual-v3.json")["defaultPageId"]
             or b'preview_only' not in (candidate / "public" / page_path).read_bytes()):
         raise ValueError("Preview does not use the reviewed sample")
@@ -265,6 +324,12 @@ def verify(candidate: Path) -> dict:
     for locale in LOCALES:
         if f"contentLang={locale}".encode() not in body:
             raise ValueError(f"Dry-run language link missing: {locale}")
+    if report.get("backendFlowFiles"):
+        flow_path = f"/dry-run/{report['previewId']}/flow/index.html"
+        status, headers, flow = http.request_bytes(dev.ORIGIN, flow_path)
+        if (status != 200 or "text/html" not in headers.get("content-type", "")
+                or b"DRY RUN" not in flow or b"SIMULATED" not in flow):
+            raise ValueError("Backend simulation page is unavailable")
     return {"schemaVersion": SCHEMA, "status": "pass", "origin": dev.ORIGIN,
             "previewId": report["previewId"], "pagePath": report["pagePath"],
             "samplePageId": report["samplePageId"], "checkedFiles": len(report["files"]),
@@ -280,6 +345,7 @@ def main() -> None:
     create.add_argument("--dev-base-candidate", type=Path, required=True)
     create.add_argument("--feature-public", type=Path, required=True)
     create.add_argument("--preview-id", required=True)
+    create.add_argument("--backend-run", type=Path)
     create.add_argument("--out", type=Path, required=True)
     check = commands.add_parser("preflight")
     check.add_argument("--candidate", type=Path, required=True)
@@ -293,7 +359,8 @@ def main() -> None:
             command.add_argument("--preflight", type=Path, required=True)
     args = parser.parse_args()
     if args.action == "build":
-        result = build(args.dev_base_candidate, args.feature_public, args.preview_id, args.out)
+        result = build(args.dev_base_candidate, args.feature_public, args.preview_id, args.out,
+                       backend_run=args.backend_run)
     elif args.action == "preflight":
         result = preflight(args.candidate, args.dev_base_candidate)
     elif args.action == "deploy":
