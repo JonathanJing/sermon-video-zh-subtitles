@@ -115,6 +115,8 @@ Target-Language Candidate + Target-Language Audio Package
 
 输出：每种语言一个 [Target-Language Release Package v2](../schemas/sermon-target-language-release-package-v2.schema.json)，再汇总成 [Multilingual Catalog v3](../schemas/sermon-multilingual-catalog-v3.schema.json)。v2 包必须绑定 Layer 2 全文、已批准口播稿和 Layer 3 Audio Package 的 hash；实际资产也须匹配。v1 Release 与 v2 Catalog 继续供历史／Dev 读取，不可覆盖到正式 v3 路径。公开包不得复制含本机绝对路径、凭据或私有收据的上游原件。
 
+现行 Production 三语完整视频周更采用固定的 [`three_locale_full_video_v1` 文件数合同](tongxing-weekly-release.zh.md#正式三语周更文件数合同)：21 个新周资源加 1 个更新的 v3 catalog，总计 22 个 Hosting 文件。此合同只约束本周内容增量；既有站点完整快照、App 代码发布及 Dev 模拟流程分别计数。其他语言、纯文字发行或 bucket 视频须使用另一个经客户端验收的版本化发布配置，不把缺失资产凑成 22 个。
+
 ### 每周 App 内容合同与刷新门槛
 
 1. v3 catalog 的 `defaultPageId` 指向本周 `pages[].id`；本周页 `title` 使用默认内容语言已批准的「系列名 · 本篇标题」，并与该语言 `content/<pageId>/<locale>.json` 的 `series`、`title` 一致。每个 target 的 `releasePackageUrl` 固定为同源 `/releases-v2/<pageId>/<locale>.json`，其 SHA 指向不可变 v2 包。页面、内容、字幕、音轨和完整原视频均为本周同一来源；页面须在 App 内打开，独立 HTML URL 只能是兼容入口，不能代替 App 的本周页。

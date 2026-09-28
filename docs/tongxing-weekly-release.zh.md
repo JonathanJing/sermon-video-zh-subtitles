@@ -16,7 +16,20 @@
 
 这一清单优先于下文仅适用于 `weekly.json` 的 legacy 命令。当前仓库的 `assemble_multilingual_hosting.py`、`deploy_multilingual_hosting.py`、`verify_multilingual_hosting.py` 仍只处理 v2 Catalog／v1 Release；在 v3 入口实现并通过定向测试前，不得用这些命令部署新周后宣称两端已经刷新可用。
 
-已开始的 v3 本地候选入口如下；`stage-public` 仅放单个新周的 v3 目录及公开资产，`stage-manifest.json` 逐文件给出以 `/` 开头的 `path` 与 `sha256`。输出状态固定为 `validated_not_deployed`，不能直接作为上线收据：
+### 正式三语周更文件数合同
+
+当前 Production 配置固定为 `three_locale_full_video_v1`：**每周恰好处理 22 个 Firebase Hosting 文件**，其中 21 个是新周不可变资源，另 1 个是更新既有 `/multilingual-v3.json`。这不是部署时的整站文件总数；整站快照还必须保留历史周次和 App 文件。文件大小随视频、音轨和文字变化，不以数量代替容量或流量预算。
+
+| 资源 | 数量 | 固定路径 |
+| --- | ---: | --- |
+| 完整视频 | 1 | `/pages/<pageId>/full-video-browser.mp4` |
+| 中文、韩语、西语的页面、全文、字幕、音轨、v2 Release、听音定位指纹 | 18（每语 6） | `/pages/<pageId>/<locale>/index.html`、`/content/<pageId>/<locale>.json`、`/captions/<pageId>/<locale>.json`、`/media/<pageId>/<locale>.mp3`、`/releases-v2/<pageId>/<locale>.json`、`/fingerprints/<sha前16位>-landmarks.json` |
+| 英文对照与对齐索引 | 2 | `/english-reference/<pageId>.json`、`/alignment/<pageId>.json` |
+| v3 目录 | 1（更新） | `/multilingual-v3.json` |
+
+`stage-public` 必须正好包含上述 22 个文件；`stage-manifest.json` 使用 `sermon-multilingual-v3-stage-manifest-v2`、`profile=three_locale_full_video_v1`、本周 `pageId`，逐项列出目录以外的 **21** 个文件及 SHA。组装器拒绝缺失、额外文件、旧 v1 Release／私有 Layer 3 包、重复 `spoken/` 音轨或字幕别名；报告分别记录 `addedFileCount=21`、`catalogUpdateFileCount=1`、`weeklyFileCount=22`。App 程序更新、旧周保留、PDF、海报、样音及 Dev dry run 各走独立发布清单，不混入本周 22 个文件。若以后将视频移至 Cloud Storage bucket，或扩展语言／文字版，须先发布新版本合同并验收 Web／iOS；不能沿用此 Hosting 清单假报 22 个。
+
+旧 `sermon-multilingual-v3-stage-manifest-v1` 候选只需保留原始文件与审核证据，按上述路径去掉别名后重新生成 v2 清单；组装器不自动迁移或替旧清单补齐文件。输出状态固定为 `validated_not_deployed`，不能直接作为上线收据。入口如下：
 
 ```bash
 .venv/bin/python scripts/assemble_multilingual_v3_update.py \

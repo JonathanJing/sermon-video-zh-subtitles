@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Assemble one Production v3 weekly content update without deploying it.
 
-The staged public directory contains one-page multilingual-v3.json and only
-the files enumerated by its adjacent stage-manifest.json. The existing public
-directory must be a complete snapshot of the current Production Hosting site.
+The staged public directory contains one-page multilingual-v3.json plus exactly
+21 referenced weekly assets listed by its v2 stage manifest. The existing
+public directory must be a complete snapshot of the current Production site.
 """
 
 from __future__ import annotations
@@ -28,6 +28,11 @@ CATALOG = "multilingual-v3.json"
 SCHEMA = "sermon-multilingual-catalog-v3.schema.json"
 RELEASE_SCHEMA = "sermon-target-language-release-package-v2.schema.json"
 SUPPORTED_LOCALES = {"zh-Hans", "ko", "es"}
+STAGE_SCHEMA = "sermon-multilingual-v3-stage-manifest-v2"
+STAGE_SCHEMA_FILE = f"{STAGE_SCHEMA}.schema.json"
+PUBLICATION_PROFILE = "three_locale_full_video_v1"
+STAGE_FILE_COUNT = 21
+WEEKLY_FILE_COUNT = STAGE_FILE_COUNT + 1  # The mutable v3 catalog is updated last.
 
 
 def validate_schema(value: dict, name: str) -> None:
@@ -101,6 +106,8 @@ def validate_page(public: Path, page: dict) -> set[str]:
         if has_audio and (release["audioLocale"] != locale
                           or "audio" not in target["capabilities"]):
             raise ValueError(f"{page_id}/{locale}: audio locale/capability differs")
+        if has_audio and roles["audio"]["path"] != f"/media/{page_id}/{locale}.mp3":
+            raise ValueError(f"{page_id}/{locale}: audio must use the canonical weekly path")
         if not has_audio and (release["audioLocale"] is not None
                               or "audio" in target["capabilities"]):
             raise ValueError(f"{page_id}/{locale}: text-only capability differs")
@@ -112,6 +119,8 @@ def validate_page(public: Path, page: dict) -> set[str]:
                     or binding["sourceSha256"] != page["sourceMediaSha256"]
                     or binding["trackSha256"] != roles["audio"]["sha256"]):
                 raise ValueError(f"{page_id}/{locale}: fingerprint binding differs")
+            if binding["indexUrl"] != f"/fingerprints/{binding['indexSha256'][:16]}-landmarks.json":
+                raise ValueError(f"{page_id}/{locale}: fingerprint must use its hash path")
             index = load(require_file(public, binding["indexUrl"], binding["indexSha256"]))
             if (index.get("pageId") != page_id
                     or index.get("sourceSha256") != binding["sourceSha256"]
@@ -154,13 +163,18 @@ def validate_page(public: Path, page: dict) -> set[str]:
     return refs
 
 
-def stage_files_from_manifest(stage_public: Path, manifest_path: Path) -> dict[str, Path]:
+def stage_files_from_manifest(stage_public: Path, manifest_path: Path,
+                              page_id: str) -> dict[str, Path]:
     manifest = load(manifest_path)
-    if manifest.get("schemaVersion") != "sermon-multilingual-v3-stage-manifest-v1":
-        raise ValueError("Unsupported v3 stage manifest")
+    if (set(manifest) != {"schemaVersion", "profile", "pageId", "files"}
+            or manifest.get("schemaVersion") != STAGE_SCHEMA
+            or manifest.get("profile") != PUBLICATION_PROFILE
+            or manifest.get("pageId") != page_id):
+        raise ValueError("Production weekly stage requires the v2 three-locale file contract")
     entries = manifest.get("files")
-    if not isinstance(entries, list) or not entries:
-        raise ValueError("Stage manifest is empty")
+    if not isinstance(entries, list) or len(entries) != STAGE_FILE_COUNT:
+        raise ValueError(f"Production weekly stage requires exactly {STAGE_FILE_COUNT} assets")
+    validate_schema(manifest, STAGE_SCHEMA_FILE)
     actual = regular_files(stage_public)
     listed: set[str] = set()
     for entry in entries:
@@ -191,29 +205,22 @@ def assemble(base_public: Path, stage_public: Path, stage_manifest: Path, out: P
     if len(incoming["pages"]) != 1 or incoming["defaultPageId"] != incoming["pages"][0]["id"]:
         raise ValueError("Stage catalog must contain one new default page")
     page = incoming["pages"][0]
-    if (not set(page["targets"]) <= SUPPORTED_LOCALES
+    if (set(page["targets"]) != SUPPORTED_LOCALES
             or any(target["audioStatus"] != "human_reviewed"
+                   or "alignment" not in target["capabilities"]
+                   or target.get("audioFingerprint") is None
                    for target in page["targets"].values())):
-        raise ValueError("Current Production clients require zh-Hans/ko/es with reviewed audio")
+        raise ValueError("Current Production weekly profile requires zh-Hans/ko/es reviewed audio and alignment")
     if any(prior["id"] == page["id"] for prior in old["pages"]):
         raise ValueError("Existing page ID cannot be overwritten")
     for prior in old["pages"]:
         validate_page(base_public, prior)
-    stage_files = stage_files_from_manifest(stage_public, stage_manifest)
+    stage_files = stage_files_from_manifest(stage_public, stage_manifest, page["id"])
     if set(stage_files) & set(base_files):
         raise ValueError("Stage would overwrite an existing Production file")
     required = validate_page(stage_public, page)
-    if not required <= set(stage_files):
-        raise ValueError("Stage manifest lacks a referenced asset")
-    permitted_prefixes = (
-        f"pages/{page['id']}/", f"releases-v2/{page['id']}/",
-        f"content/{page['id']}/", f"captions/{page['id']}/",
-        f"media/{page['id']}/", "fingerprints/",
-    )
-    permitted_exact = {f"english-reference/{page['id']}.json", f"alignment/{page['id']}.json"}
-    if any(name not in permitted_exact and not name.startswith(permitted_prefixes)
-           for name in stage_files):
-        raise ValueError("Stage contains a non-page asset")
+    if len(required) != STAGE_FILE_COUNT or required != set(stage_files):
+        raise ValueError("Stage must contain exactly the 21 referenced weekly assets, without aliases")
     merged = {
         "schemaVersion": "sermon-multilingual-catalog-v3",
         "generatedAt": incoming["generatedAt"],
@@ -241,14 +248,17 @@ def assemble(base_public: Path, stage_public: Path, stage_manifest: Path, out: P
             if name != CATALOG and digest(public / name) != digest(source):
                 raise ValueError(f"Base file changed: {name}")
         report = {
-            "schemaVersion": "sermon-multilingual-v3-update-candidate-v1",
+            "schemaVersion": "sermon-multilingual-v3-update-candidate-v2",
             "status": "validated_not_deployed",
+            "publicationProfile": PUBLICATION_PROFILE,
             "pageId": page["id"],
             "targetLocales": sorted(page["targets"]),
             "oldCatalogSha256": old_catalog_sha,
             "newCatalogSha256": digest(public / CATALOG),
             "baseFileCount": len(base_files),
             "addedFileCount": len(stage_files),
+            "catalogUpdateFileCount": 1,
+            "weeklyFileCount": WEEKLY_FILE_COUNT,
             "createdAt": datetime.now(timezone.utc).isoformat(),
             "files": [
                 {"path": name, "bytes": path.stat().st_size, "sha256": digest(path)}
@@ -272,7 +282,7 @@ def main() -> None:
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     report = assemble(args.base_public, args.stage_public, args.stage_manifest, args.out)
-    print(json.dumps({key: report[key] for key in ("status", "pageId", "targetLocales", "addedFileCount")},
+    print(json.dumps({key: report[key] for key in ("status", "pageId", "targetLocales", "addedFileCount", "weeklyFileCount")},
                      ensure_ascii=False))
 
 

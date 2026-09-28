@@ -20,76 +20,89 @@ def write(path: Path, value: dict | bytes) -> str:
 
 
 def page_fixture(public: Path, page_id: str, date: str) -> dict:
-    locale = "zh-Hans"
     video_sha = write(public / f"pages/{page_id}/full-video-browser.mp4", b"complete sermon video")
-    write(public / f"pages/{page_id}/{locale}/index.html", b"<html>reviewed sermon</html>")
-    content_sha = write(public / f"content/{page_id}/{locale}.json", {
-        "pageId": page_id, "targetLocale": locale, "series": "启示录",
-        "title": "耶稣配得", "browserVideoSha256": video_sha,
-    })
-    captions_sha = write(public / f"captions/{page_id}/{locale}.json", {"cues": []})
-    audio_sha = write(public / f"media/{page_id}/{locale}.mp3", b"reviewed audio")
-    index = {
-        "schemaVersion": "sermon-landmark-index-v1", "pageId": page_id,
-        "sourceSha256": SHA, "trackSha256": audio_sha,
-    }
-    index_sha = write(public / "fingerprints/tmp.json", index)
-    index_name = f"fingerprints/{index_sha[:16]}-landmarks.json"
-    (public / "fingerprints/tmp.json").rename(public / index_name)
-    binding = {
-        "schemaVersion": "sermon-audio-fingerprint-binding-v1",
-        "pageId": page_id, "sourceSha256": SHA, "trackSha256": audio_sha,
-        "sourceStartSeconds": 0, "sourceEndSeconds": 60,
-        "algorithmVersion": "spectral-landmarks-v1", "captureSeconds": 10,
-        "indexSha256": index_sha, "indexUrl": "/" + index_name,
-    }
-    release = {
-        "schemaVersion": "sermon-target-language-release-package-v2",
-        "packageId": f"{page_id}-{locale}", "pageId": page_id,
-        "sourceLocale": "en", "targetLocale": locale,
-        "targetLanguageCandidateJsonSha256": SHA,
-        "spokenTargetLanguageCandidateJsonSha256": SHA,
-        "targetLanguageAudioPackageJsonSha256": SHA,
-        "status": "published_http_verified", "contentStatus": "human_reviewed",
-        "audioStatus": "human_reviewed", "interfaceLocale": locale,
-        "contentLocale": locale, "audioLocale": locale,
-        "assets": [
-            {"role": "page", "path": f"/pages/{page_id}/{locale}/index.html",
-             "sha256": update.digest(public / f"pages/{page_id}/{locale}/index.html")},
-            {"role": "content", "path": f"/content/{page_id}/{locale}.json", "sha256": content_sha},
-            {"role": "captions", "path": f"/captions/{page_id}/{locale}.json", "sha256": captions_sha},
-            {"role": "audio", "path": f"/media/{page_id}/{locale}.mp3", "sha256": audio_sha},
-        ],
-        "httpVerification": {"status": "pass", "evidenceSha256": SHA},
-        "deviceAcceptance": {"status": "not_run", "evidenceSha256": None},
-        "venueAcceptance": {"status": "not_run", "evidenceSha256": None},
-        "issues": [],
-    }
-    release_sha = write(public / f"releases-v2/{page_id}/{locale}.json", release)
-    write(public / f"english-reference/{page_id}.json", {
-        "schemaVersion": "sermon-published-english-reference-v1",
-        "pageId": page_id, "sourceIdentitySha256": SHA,
-        "sourceMediaSha256": SHA, "reviewState": "human_approved",
-        "targets": {locale: {"releasePackageJsonSha256": release_sha,
-                             "contentSha256": content_sha, "captionsSha256": captions_sha}},
-    })
-    write(public / f"alignment/{page_id}.json", {
-        "schemaVersion": "sermon-published-alignment-v1",
-        "pageId": page_id, "sourceIdentitySha256": SHA,
-        "targets": {locale: {"releasePackageJsonSha256": release_sha,
-                             "audioFingerprint": binding}},
-    })
-    return {
-        "id": page_id, "date": date, "sourceLocale": "en",
-        "sourceIdentitySha256": SHA, "sourceMediaSha256": SHA,
-        "title": "启示录 · 耶稣配得", "defaultTargetLocale": locale,
-        "targets": {locale: {
+    targets = {}
+    english_targets = {}
+    alignment_targets = {}
+    for locale in ("zh-Hans", "ko", "es"):
+        page_sha = write(public / f"pages/{page_id}/{locale}/index.html",
+                         f"<html>{locale} reviewed sermon</html>".encode())
+        content_sha = write(public / f"content/{page_id}/{locale}.json", {
+            "pageId": page_id, "targetLocale": locale, "series": "启示录",
+            "title": "耶稣配得", "browserVideoSha256": video_sha,
+        })
+        captions_sha = write(public / f"captions/{page_id}/{locale}.json", {"cues": []})
+        audio_sha = write(public / f"media/{page_id}/{locale}.mp3",
+                          f"{locale} reviewed audio".encode())
+        index = {
+            "schemaVersion": "sermon-landmark-index-v1", "pageId": page_id,
+            "sourceSha256": SHA, "trackSha256": audio_sha,
+        }
+        temporary_index = public / f"fingerprints/{locale}-tmp.json"
+        index_sha = write(temporary_index, index)
+        index_name = f"fingerprints/{index_sha[:16]}-landmarks.json"
+        temporary_index.rename(public / index_name)
+        binding = {
+            "schemaVersion": "sermon-audio-fingerprint-binding-v1",
+            "pageId": page_id, "sourceSha256": SHA, "trackSha256": audio_sha,
+            "sourceStartSeconds": 0, "sourceEndSeconds": 60,
+            "algorithmVersion": "spectral-landmarks-v1", "captureSeconds": 10,
+            "indexSha256": index_sha, "indexUrl": "/" + index_name,
+        }
+        release = {
+            "schemaVersion": "sermon-target-language-release-package-v2",
+            "packageId": f"{page_id}-{locale}", "pageId": page_id,
+            "sourceLocale": "en", "targetLocale": locale,
+            "targetLanguageCandidateJsonSha256": SHA,
+            "spokenTargetLanguageCandidateJsonSha256": SHA,
+            "targetLanguageAudioPackageJsonSha256": SHA,
+            "status": "published_http_verified", "contentStatus": "human_reviewed",
+            "audioStatus": "human_reviewed", "interfaceLocale": locale,
+            "contentLocale": locale, "audioLocale": locale,
+            "assets": [
+                {"role": "page", "path": f"/pages/{page_id}/{locale}/index.html",
+                 "sha256": page_sha},
+                {"role": "content", "path": f"/content/{page_id}/{locale}.json",
+                 "sha256": content_sha},
+                {"role": "captions", "path": f"/captions/{page_id}/{locale}.json",
+                 "sha256": captions_sha},
+                {"role": "audio", "path": f"/media/{page_id}/{locale}.mp3",
+                 "sha256": audio_sha},
+            ],
+            "httpVerification": {"status": "pass", "evidenceSha256": SHA},
+            "deviceAcceptance": {"status": "not_run", "evidenceSha256": None},
+            "venueAcceptance": {"status": "not_run", "evidenceSha256": None},
+            "issues": [],
+        }
+        release_sha = write(public / f"releases-v2/{page_id}/{locale}.json", release)
+        targets[locale] = {
             "releasePackageUrl": f"/releases-v2/{page_id}/{locale}.json",
             "releasePackageJsonSha256": release_sha,
             "contentStatus": "human_reviewed", "audioStatus": "human_reviewed",
             "capabilities": ["text", "captions", "audio", "alignment"],
             "audioFingerprint": binding,
-        }},
+        }
+        english_targets[locale] = {"releasePackageJsonSha256": release_sha,
+                                   "contentSha256": content_sha,
+                                   "captionsSha256": captions_sha}
+        alignment_targets[locale] = {"releasePackageJsonSha256": release_sha,
+                                     "audioFingerprint": binding}
+    write(public / f"english-reference/{page_id}.json", {
+        "schemaVersion": "sermon-published-english-reference-v1",
+        "pageId": page_id, "sourceIdentitySha256": SHA,
+        "sourceMediaSha256": SHA, "reviewState": "human_approved",
+        "targets": english_targets,
+    })
+    write(public / f"alignment/{page_id}.json", {
+        "schemaVersion": "sermon-published-alignment-v1",
+        "pageId": page_id, "sourceIdentitySha256": SHA,
+        "targets": alignment_targets,
+    })
+    return {
+        "id": page_id, "date": date, "sourceLocale": "en",
+        "sourceIdentitySha256": SHA, "sourceMediaSha256": SHA,
+        "title": "启示录 · 耶稣配得", "defaultTargetLocale": "zh-Hans",
+        "targets": targets,
     }
 
 
@@ -121,7 +134,9 @@ class AssembleMultilingualV3UpdateTests(unittest.TestCase):
 
     def write_manifest(self) -> None:
         write(self.manifest, {
-            "schemaVersion": "sermon-multilingual-v3-stage-manifest-v1",
+            "schemaVersion": update.STAGE_SCHEMA,
+            "profile": update.PUBLICATION_PROFILE,
+            "pageId": "new-week",
             "files": [
                 {"path": "/" + name, "sha256": update.digest(path)}
                 for name, path in sorted(update.regular_files(self.stage).items())
@@ -133,6 +148,10 @@ class AssembleMultilingualV3UpdateTests(unittest.TestCase):
         out = self.root / "candidate"
         report = update.assemble(self.base, self.stage, self.manifest, out)
         self.assertEqual(report["status"], "validated_not_deployed")
+        self.assertEqual(report["schemaVersion"], "sermon-multilingual-v3-update-candidate-v2")
+        self.assertEqual(report["addedFileCount"], 21)
+        self.assertEqual(report["catalogUpdateFileCount"], 1)
+        self.assertEqual(report["weeklyFileCount"], 22)
         self.assertEqual(report["oldCatalogSha256"],
                          update.digest(out / f"rollback-{update.CATALOG}"))
         self.assertEqual((out / "public/app.mjs").read_bytes(), b"current reader")
@@ -166,12 +185,33 @@ class AssembleMultilingualV3UpdateTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "manifest differs"):
             update.assemble(self.base, self.stage, self.manifest, self.root / "candidate")
 
+    def test_rejects_listed_duplicate_audio_alias(self) -> None:
+        write(self.stage / "media/new-week/spoken/zh-Hans-copy.mp3",
+              (self.stage / "media/new-week/zh-Hans.mp3").read_bytes())
+        self.write_manifest()
+        with self.assertRaisesRegex(ValueError, "exactly 21 assets"):
+            update.assemble(self.base, self.stage, self.manifest, self.root / "candidate")
+
+    def test_rejects_missing_fingerprint(self) -> None:
+        index = self.new_page["targets"]["ko"]["audioFingerprint"]["indexUrl"]
+        (self.stage / index.lstrip("/")).unlink()
+        self.write_manifest()
+        with self.assertRaisesRegex(ValueError, "exactly 21 assets"):
+            update.assemble(self.base, self.stage, self.manifest, self.root / "candidate")
+
+    def test_rejects_v1_stage_manifest(self) -> None:
+        manifest = update.load(self.manifest)
+        manifest["schemaVersion"] = "sermon-multilingual-v3-stage-manifest-v1"
+        write(self.manifest, manifest)
+        with self.assertRaisesRegex(ValueError, "v2 three-locale file contract"):
+            update.assemble(self.base, self.stage, self.manifest, self.root / "candidate")
+
     def test_rejects_client_unsupported_locale(self) -> None:
         candidate = catalog(copy.deepcopy(self.new_page))
         candidate["pages"][0]["targets"]["vi"] = candidate["pages"][0]["targets"].pop("zh-Hans")
         candidate["pages"][0]["defaultTargetLocale"] = "vi"
         write(self.stage / update.CATALOG, candidate)
-        with self.assertRaisesRegex(ValueError, "Current Production clients require"):
+        with self.assertRaisesRegex(ValueError, "Current Production weekly profile requires"):
             update.assemble(self.base, self.stage, self.manifest, self.root / "candidate")
 
 
