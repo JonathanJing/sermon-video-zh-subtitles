@@ -38,7 +38,8 @@ English index: [backlog.md](./backlog.md)
 | `DEV-L3-001` | Layer 3 正式整篇音频包 | `in_progress` | 同语言正式 Candidate 经授权音色、自然语速合成、完整解码、回转写、滚动排程、字幕、全文听审与 1 倍速同步形成可移植 Audio Package | [Layer 2/3 backlog](multilingual-layer-2-3-backlog.zh.md#4-layer-3目标语言音频与同步-backlog) |
 | `DEV-L3-002` | 英文声学停顿驱动的自然表达 | `in_progress` | 目标语言完整自然句只在已审英文声学锚点处排程；局部 overrun 返回翻译／句界修订，不以词组拼接或拉伸掩盖 | [多语言 Prosody POC](multilingual-prosody-poc.zh.md) |
 | `DEV-L4-001` | 可重复的 Firebase Dev 周更新 | `in_progress` | `build-update → preflight → deploy → verify` 从完整线上 Dev 基线追加新周，保留所有仍被 catalog 引用的旧资产，并生成逐文件 HTTP／SHA／Range 收据 | [Dev 预演](evidence/2026-09-23-production-readiness/DEV-PREVIEW.zh.md#后续-dev-周次) |
-| `DEV-L4-005` | 正式制作前的 v3 Dev dry run | `in_progress` | Dev 先包含最新 App 功能，再生成独立 `preview_only` App 测试页；已批准样本验证语言、播放、字幕及定位，未审 fixture 不进正式目录。下一步接入真实新周的通用 v3 追加构建器 | [演练合同](firebase-dev-weekly-dry-run.zh.md) |
+| `DEV-L4-005` | 正式制作前的 v3 Dev 页面预演 | `in_progress` | Dev 先包含最新 App 功能，再生成独立 `preview_only` App 测试页；已批准样本验证语言、播放、字幕及定位。可附带后端模拟报告，未审 fixture 不进正式目录。下一步接入真实新周的通用 v3 追加构建器 | [页面预演](firebase-dev-weekly-dry-run.zh.md) |
+| `DEV-E2E-001` | 模拟链接到四层的快速后端 dry run | `in_progress` | 固定短夹具验证链接接入、真实 Layer 1 锚点、三语 shadow 调度、1 倍速同步排程、隔离的 Layer 4 Dev 页面、逐步耗时和故障阻断；下一步让正式四层控制循环共享可注入端口，并增加真实批准包只读回放 | [后端 dry run](backend-four-layer-dry-run.zh.md) |
 | `DEV-IOS-001` | 原生多语言消费与真机验收 | `in_progress` | 补齐原生三语音频切换、跨轨 source-unit 定位、`PlaybackHistory` v2 和韩／西语支持，再由真机完成 v2 catalog 刷新、下载、离线恢复、历史隔离、WebView 正文、VoiceOver 和系统媒体验证 | [iOS backlog](../apps/tongxing-ios/BACKLOG.zh.md) |
 | `DEV-FIELD-001` | 远场声音指纹对齐 | `pending` | Web 与 iOS 实现隐私受限诊断、AGC profile 和同一次 10→15 秒自适应采集；不降低匹配门槛，远处同源至少 9/10 正确、30 次负样本零误跳 | [本页专项设计](#dev-field-001远场声音对齐) |
 | `DEV-TRACK-001` | Producer 自动记账、状态与 ETA | `in_progress` | 正式 Layer 1–4 producer 自动写实际运行、等待、重试与审核事件；公开 Tracker 只投影脱敏状态，ETA 只来自可追溯速率／估时 | [Tracker 接入项](four-layer-production-tracker.zh.md#tracker-接入-backlog) |

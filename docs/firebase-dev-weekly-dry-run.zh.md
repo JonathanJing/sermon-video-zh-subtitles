@@ -1,6 +1,6 @@
-# 每周正式制作前的 Firebase Dev 演练
+# 每周正式制作前的 Firebase Dev App 页面预演
 
-目标是在新一周 Layer 1 开始前，先让 Firebase Dev 运行**最新通过代码门禁的 App 功能**，再用上一期已审核、已发布的固定样本在 Dev App 内生成测试页面，检验页面、语言和播放链路。演练不产生新一周的英文源稿、翻译、配音或人工批准收据，也不改变 Production。
+本页记录 App 页面、语言和播放链路的 Dev 预演。完整的“模拟收到链接 → Layer 1–4 → Dev 测试页”后端 dry run 见[后端四层快速 Dry Run](backend-four-layer-dry-run.zh.md)。页面预演先让 Firebase Dev 运行**最新通过代码门禁的 App 功能**，再用上一期已审核、已发布的固定样本在 Dev App 内生成测试页面；单独运行本页命令不会执行 Layer 1–3。
 
 ## 环境边界
 
@@ -34,7 +34,7 @@ OUT=/absolute/path/to/ignored/dev-dry-run
 
 ## Dev App 内生成测试页面
 
-`scripts/firebase_dev_weekly_dry_run.py` 从**已部署且有完整收据的 Dev 候选**生成 `/dry-run/<preview-id>/index.html`，复用站点根目录的 App 模块、样式和已审核的三语样本。首页 Dev 提示条会出现「每周演练页」入口；演练页提供中／韩／西三种内容语言链接，并显示 `DRY RUN · preview_only` 和样本来源。它不加入 `multilingual-v3.json`，不新建 Release 包，也不假称下一周内容已经审核。
+`scripts/firebase_dev_weekly_dry_run.py` 从**已部署且有完整收据的 Dev 候选**生成 `/dry-run/<preview-id>/index.html`，复用站点根目录的 App 模块、样式和已审核的三语样本。首页 Dev 提示条会出现「每周演练页」入口；演练页提供中／韩／西三种内容语言链接，并显示 `DRY RUN · preview_only` 和样本来源。给 `build` 增加 `--backend-run` 时，它还会把已通过的后端模拟产物纳入隔离的 `/dry-run/<id>/flow/`，并在演练页显示入口。它不加入 `multilingual-v3.json`，不新建正式 Release 包。
 
 ```bash
 PY=/absolute/path/to/repo/.venv/bin/python
