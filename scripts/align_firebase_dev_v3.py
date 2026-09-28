@@ -29,7 +29,6 @@ except ImportError:
 ROOT = Path(__file__).resolve().parents[1]
 ORIGIN = old_dev.DEV_ORIGIN
 SITE = old_dev.DEV_SITE
-PAGE_ID = "2026-09-27-weekend-sermon-drive-530"
 RUNTIME_REPLACEMENTS = {
     "app.mjs", "catalog.mjs", "i18n.mjs", "locales-app.mjs",
     "locales-feedback.mjs", "locales-interface.mjs", "usage.mjs",
@@ -79,9 +78,8 @@ def validate_published_week(public: Path) -> tuple[str, list[str]]:
     catalog = load(public / "multilingual-v3.json")
     schema = load(ROOT / "schemas/sermon-multilingual-catalog-v3.schema.json")
     Draft202012Validator(schema, format_checker=FormatChecker()).validate(catalog)
-    if catalog["defaultPageId"] != PAGE_ID:
-        raise ValueError("Production snapshot has a different default week")
-    page = next((p for p in catalog["pages"] if p["id"] == PAGE_ID), None)
+    page_id = catalog["defaultPageId"]
+    page = next((p for p in catalog["pages"] if p["id"] == page_id), None)
     if page is None or set(page["targets"]) != {"zh-Hans", "ko", "es"}:
         raise ValueError("Published week lacks three target languages")
     release_schema = load(ROOT / "schemas/sermon-target-language-release-package-v2.schema.json")
@@ -89,12 +87,12 @@ def validate_published_week(public: Path) -> tuple[str, list[str]]:
     for locale, target in page["targets"].items():
         if target["contentStatus"] != "human_reviewed" or target["audioStatus"] != "human_reviewed":
             raise ValueError(f"Unreviewed target: {locale}")
-        release_url = f"/releases-v2/{PAGE_ID}/{locale}.json"
+        release_url = f"/releases-v2/{page_id}/{locale}.json"
         if target["releasePackageUrl"] != release_url:
             raise ValueError(f"Wrong release path: {locale}")
         release = load(checked(public / release_url[1:], target["releasePackageJsonSha256"]))
         Draft202012Validator(release_schema, format_checker=FormatChecker()).validate(release)
-        if (release["pageId"] != PAGE_ID or release["targetLocale"] != locale
+        if (release["pageId"] != page_id or release["targetLocale"] != locale
                 or release["status"] != "published_http_verified"
                 or release["httpVerification"]["status"] != "pass"):
             raise ValueError(f"Unpublished or mismatched release: {locale}")
@@ -103,7 +101,7 @@ def validate_published_week(public: Path) -> tuple[str, list[str]]:
             asset = roles[role]
             checked(public / asset["path"].lstrip("/"), asset["sha256"])
         content = load(public / roles["content"]["path"].lstrip("/"))
-        if content["pageId"] != PAGE_ID or content["targetLocale"] != locale:
+        if content["pageId"] != page_id or content["targetLocale"] != locale:
             raise ValueError(f"Content identity mismatch: {locale}")
         if video_sha is None:
             video_sha = content["browserVideoSha256"]
@@ -114,14 +112,14 @@ def validate_published_week(public: Path) -> tuple[str, list[str]]:
             checked(public / binding["indexUrl"].lstrip("/"), binding["indexSha256"])
             if binding["trackSha256"] != roles["audio"]["sha256"]:
                 raise ValueError(f"Fingerprint/audio mismatch: {locale}")
-    checked(public / f"pages/{PAGE_ID}/full-video-browser.mp4", video_sha)
+    checked(public / f"pages/{page_id}/full-video-browser.mp4", video_sha)
     for directory in ("english-reference", "alignment"):
-        sidecar = load(public / directory / f"{PAGE_ID}.json")
-        if sidecar["pageId"] != PAGE_ID or set(sidecar["targets"]) != set(page["targets"]):
+        sidecar = load(public / directory / f"{page_id}.json")
+        if sidecar["pageId"] != page_id or set(sidecar["targets"]) != set(page["targets"]):
             raise ValueError(f"Sidecar identity mismatch: {directory}")
-    if load(public / "english-reference" / f"{PAGE_ID}.json")["reviewState"] != "human_approved":
+    if load(public / "english-reference" / f"{page_id}.json")["reviewState"] != "human_approved":
         raise ValueError("English reference is not human approved")
-    return PAGE_ID, sorted(page["targets"])
+    return page_id, sorted(page["targets"])
 
 
 def prepare(base: Path, production_public: Path, production_config: Path, out: Path) -> dict:
@@ -241,7 +239,7 @@ def candidate_report(candidate: Path) -> dict:
     report = load(candidate / "build-report.json")
     if (report.get("schemaVersion") != SCHEMA or report.get("status") != "validated_not_deployed"
             or report.get("siteId") != SITE or report.get("origin") != ORIGIN
-            or report.get("pageId") != PAGE_ID or report.get("files") != inventory(candidate / "public")
+            or not report.get("pageId") or report.get("files") != inventory(candidate / "public")
             or report.get("firebaseConfigSha256") != digest(candidate / "firebase.json")):
         raise ValueError("Dev v3 candidate changed")
     if load(candidate / "firebase.json")["hosting"].get("site") != SITE:
@@ -252,7 +250,9 @@ def candidate_report(candidate: Path) -> dict:
         if (set(before) != set(after)
                 or {name for name in before if before[name] != after[name]} != {"dev-preview-label.mjs"}):
             raise ValueError("Dev label update changed another file")
-    validate_published_week(candidate / "public")
+    page_id, _ = validate_published_week(candidate / "public")
+    if page_id != report["pageId"]:
+        raise ValueError("Dev v3 default page changed")
     old_dev.verify_dev_poc_assets(candidate / "public")
     return report
 
@@ -293,7 +293,7 @@ def deploy(candidate: Path, receipt: Path) -> dict:
     subprocess.run(command, cwd=candidate, check=True)
     return {"schemaVersion": "sermon-firebase-dev-v3-deployment-v1",
             "status": "deployed_http_verification_pending", "origin": ORIGIN,
-            "pageId": PAGE_ID, "deployedAt": datetime.now(timezone.utc).isoformat(),
+            "pageId": report["pageId"], "deployedAt": datetime.now(timezone.utc).isoformat(),
             "buildReportSha256": digest(candidate / "build-report.json"),
             "preflightSha256": digest(receipt), "files": len(report["files"])}
 
@@ -308,7 +308,7 @@ def verify(candidate: Path) -> dict:
             raise ValueError(f"Dev HTTP file mismatch: {name}")
         results.append({"path": name, "sha256": sha, "bytes": size})
     catalog = load(candidate / "public/multilingual-v3.json")
-    page = next(p for p in catalog["pages"] if p["id"] == PAGE_ID)
+    page = next(p for p in catalog["pages"] if p["id"] == report["pageId"])
     for locale, target in page["targets"].items():
         release = load(candidate / "public" / target["releasePackageUrl"].lstrip("/"))
         audio = next(a for a in release["assets"] if a["role"] == "audio")
@@ -319,14 +319,14 @@ def verify(candidate: Path) -> dict:
         if (status != 206 or first != expected_first
                 or headers.get("content-range") != f"bytes 0-0/{audio_file.stat().st_size}"):
             raise ValueError(f"Dev audio Range failed: {locale}")
-        route = f"/pages/{PAGE_ID}/{locale}/index.html"
+        route = f"/pages/{report['pageId']}/{locale}/index.html"
         status, headers, html = http.request_bytes(ORIGIN, route)
         if (status != 200 or "text/html" not in headers.get("content-type", "")
                 or b"cue-1" not in html or len(html) < 10000):
             raise ValueError(f"Dev page content failed: {locale}")
         results.append({"path": route, "pageContent": True, "audioRange206": True})
     return {"schemaVersion": "sermon-firebase-dev-v3-http-v1", "status": "pass",
-            "origin": ORIGIN, "pageId": PAGE_ID,
+            "origin": ORIGIN, "pageId": report["pageId"],
             "verifiedAt": datetime.now(timezone.utc).isoformat(), "checkedFiles": len(report["files"]),
             "buildReportSha256": digest(candidate / "build-report.json"),
             "results": results, "browserAcceptance": "not_run", "deviceAcceptance": "not_run"}
@@ -359,7 +359,7 @@ def verify_label_update(candidate: Path, base: Path, full_receipt: Path) -> dict
         checks.append({"path": path, "sha256": sha, "bytes": size,
                        "contentType": headers.get("content-type")})
     catalog = load(public / "multilingual-v3.json")
-    page = next(p for p in catalog["pages"] if p["id"] == PAGE_ID)
+    page = next(p for p in catalog["pages"] if p["id"] == report["pageId"])
     for locale, target in page["targets"].items():
         release = load(public / target["releasePackageUrl"].lstrip("/"))
         audio = next(a for a in release["assets"] if a["role"] == "audio")
@@ -372,7 +372,7 @@ def verify_label_update(candidate: Path, base: Path, full_receipt: Path) -> dict
             raise ValueError(f"Dev audio Range failed after label update: {locale}")
         checks.append({"path": audio["path"], "range206": True})
     return {"schemaVersion": "sermon-firebase-dev-v3-label-http-v1",
-            "status": "pass_delta", "origin": ORIGIN, "pageId": PAGE_ID,
+            "status": "pass_delta", "origin": ORIGIN, "pageId": report["pageId"],
             "verifiedAt": datetime.now(timezone.utc).isoformat(),
             "buildReportSha256": digest(candidate / "build-report.json"),
             "priorFullReceiptSha256": digest(full_receipt),
