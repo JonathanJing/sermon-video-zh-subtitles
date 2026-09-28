@@ -435,6 +435,36 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
         partial_repair_brief: dict[str, Any] | None = None,
         resume_cache_from: Path | None = None) -> dict[str, Any]:
     request = producer.prepare_request(source, anchor, policy)
+    return _run_prepared_groups(
+        request, anchor, policy, out, api_key, caller, custom_plan, plugin_path,
+        revision_brief, reuse_from, partial_repair_brief, resume_cache_from)
+
+
+def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
+                         policy: dict[str, Any], out: Path, api_key: str,
+                         caller: Callable[[str, dict[str, Any]], dict[str, Any]],
+                         custom_plan: list[dict[str, Any]] | None = None,
+                         plugin_path: Path | None = None,
+                         revision_brief: dict[str, Any] | None = None,
+                         reuse_from: Path | None = None,
+                         partial_repair_brief: dict[str, Any] | None = None,
+                         resume_cache_from: Path | None = None,
+                         *, simulation_only: bool = False) -> dict[str, Any]:
+    """Shared group loop; the formal entry above still enforces Layer 1 approval.
+
+    Simulated requests carry an extra marker that prevents formal candidate
+    admission, and cannot reuse or repair a production response cache.
+    """
+    if simulation_only:
+        require(request.get("simulationOnly") is True
+                and request.get("schemaVersion") == "sermon-dry-run-layer2-request-v1"
+                and reuse_from is None and resume_cache_from is None
+                and revision_brief is None and partial_repair_brief is None
+                and plugin_path is None,
+                "Simulated group loop requires an isolated request and new output")
+    else:
+        require("simulationOnly" not in request,
+                "Formal group loop cannot consume a simulated request")
     for role, expected in MODEL_ROLES.items():
         require(policy[role]["model"] == expected,
                 f"Production {role} model must be {expected}; freeze a new policy")
@@ -576,7 +606,8 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
                             "Do not claim human approval. Prompt version: " + policy["translator"]["promptVersion"]),
             "input": common}
         stem = f"group-{index:04d}"
-        with measure.producer_substage("initial_translation", billing="api"):
+        with measure.producer_substage("initial_translation",
+                                       billing="local" if simulation_only else "api"):
             translated = _model_call("translator", translate_prompt, policy,
                                      out / f"{stem}-astra.json", api_key, caller,
                                      reusable_cache(resume_cache_from, stem, "astra")
@@ -625,7 +656,8 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
                             "issues empty. Mark status fail for any unresolved concern. "
                             "Do not claim human approval. Prompt version: " + policy["reviewer"]["promptVersion"]),
             "input": {**common, "astraDraft": draft}}
-        with measure.producer_substage("independent_review", billing="api"):
+        with measure.producer_substage("independent_review",
+                                       billing="local" if simulation_only else "api"):
             reviewed_response = _model_call("reviewer", review_prompt, policy,
                                             out / f"{stem}-sol.json", api_key, caller,
                                             reusable_cache(resume_cache_from, stem, "sol")
