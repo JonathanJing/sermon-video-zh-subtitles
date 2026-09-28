@@ -319,6 +319,118 @@ class AudioPackageTests(unittest.TestCase):
         self.assertEqual([unit["textGroupId"] for unit in package["units"]], ["g1", "g2"])
         self.assertEqual(len(package["downstreamInvalidationKey"]), 64)
 
+    def test_full_source_media_is_checked_per_batch_not_per_unit(self):
+        original = interpretation.sha256
+        media_hashes = 0
+
+        def counting_sha(path):
+            nonlocal media_hashes
+            if Path(path).resolve() == self.clip_media_path.resolve():
+                media_hashes += 1
+            return original(path)
+
+        with mock.patch.object(interpretation, "sha256", side_effect=counting_sha):
+            self.build()
+        self.assertEqual(media_hashes, 2)
+
+    def test_source_media_change_during_batch_is_rejected(self):
+        original = unit_integrity.validate_receipt
+        changed = False
+
+        def change_media_after_first_unit(*args, **kwargs):
+            nonlocal changed
+            original(*args, **kwargs)
+            if not changed:
+                self.clip_media_path.write_bytes(self.clip_media_path.read_bytes() + b"changed")
+                changed = True
+
+        with mock.patch.object(unit_integrity, "validate_receipt",
+                               side_effect=change_media_after_first_unit):
+            with self.assertRaisesRegex(ValueError, "Clip media|source media|timeline|clip"):
+                self.build()
+        self.assertTrue(changed)
+
+    def test_source_voice_receipt_uses_separate_job_binding(self):
+        # The dedicated validator's full-source checks are tested in the
+        # speech-job suite; here exercise the Audio Package binding path.
+        source_auth = copy.deepcopy(self.clip_auth)
+        path = self.root / "source-voice-authorization.json"
+        write_json(path, source_auth)
+        self.paths.pop("clip_voice_authorization")
+        self.paths["source_voice_authorization"] = path
+        self.job["inputs"]["sourceVoiceAuthorization"] = self.job["inputs"].pop(
+            "clipVoiceAuthorization")
+        self.job["inputs"]["sourceVoiceAuthorization"] = {
+            "path": str(path.resolve()), "sha256": subject.file_sha256(path),
+            "jsonSha256": subject.json_sha256(source_auth),
+        }
+        write_json(self.paths["job"], self.job)
+        with mock.patch.object(speech, "validate_source_voice_authorization") as source_gate:
+            subject.validate_job(self.source, self.anchor, self.candidate,
+                                 self.job, self.adapter, self.policy,
+                                 self.human_receipt, self.registry, None,
+                                 self.clip_cap, self.clip_timeline, self.paths,
+                                 source_voice_authorization=source_auth)
+        source_gate.assert_called_once()
+        self.job["inputs"]["sourceVoiceAuthorization"]["jsonSha256"] = "0" * 64
+        with mock.patch.object(speech, "validate_source_voice_authorization"):
+            with self.assertRaisesRegex(ValueError, "sourceVoiceAuthorization"):
+                subject.validate_job(self.source, self.anchor, self.candidate,
+                                     self.job, self.adapter, self.policy,
+                                     self.human_receipt, self.registry, None,
+                                     self.clip_cap, self.clip_timeline, self.paths,
+                                     source_voice_authorization=source_auth)
+
+    def test_source_attestation_manifest_branch_keeps_machine_review_status(self):
+        # All upstream job gates are covered separately; exercise the new
+        # manifest/Audio Package authorization dispatch with fixture media.
+        self.source["source"]["sourceId"] = "drive:fixture-full-file"
+        write_json(self.paths["source"], self.source)
+        self.manifest["englishSourcePackageJsonSha256"] = subject.json_sha256(self.source)
+        attestation = {
+            "schemaVersion": "sermon-source-user-voice-attestation-v1",
+            "scope": "source_bound_formal_audio_and_page_only",
+            "sourceId": self.source["source"]["sourceId"],
+            "sourceMediaSha256": self.source["source"]["media"]["sha256"],
+            "approvedWindow": {"startSeconds": 0, "endSeconds": 0.7},
+            "targetLocales": ["ko"], "speakerId": self.adapter["speakerId"],
+            "voiceCheckpointSha256": self.adapter["conditioningSha256"],
+            "authorizedUses": ["formal_audio_generation", "formal_page_publication"],
+            "permissionClaimed": True, "userStatement": "Synthetic fixture permission.",
+            "recordedAt": "2026-09-27T06:03:43Z",
+        }
+        attestation_path = self.asset_root / "review/voice-authorization.json"
+        write_json(attestation_path, attestation)
+        self.manifest["voiceAuthorization"] = self.artifact(
+            "review/voice-authorization.json", json_artifact=True)
+        source_auth = {"userRightsAttestation": {
+            "path": str(attestation_path.resolve()),
+            "sha256": subject.file_sha256(attestation_path),
+            "jsonSha256": subject.json_sha256(attestation),
+        }}
+        self.paths.pop("clip_voice_authorization")
+        self.paths["source_voice_authorization"] = self.root / "source-voice-authorization.json"
+        write_json(self.paths["source_voice_authorization"], source_auth)
+        with mock.patch.object(subject, "validate_job"), mock.patch.object(
+                subject.unit_integrity, "validate_receipt"):
+            package = self.build()
+        self.assertEqual(package["status"], "machine_screened")
+        self.assertFalse(package["humanReview"]["humanApproval"])
+        attestation["sourceId"] = "drive:another-file"
+        write_json(attestation_path, attestation)
+        self.manifest["voiceAuthorization"] = self.artifact(
+            "review/voice-authorization.json", json_artifact=True)
+        source_auth["userRightsAttestation"] = {
+            "path": str(attestation_path.resolve()),
+            "sha256": subject.file_sha256(attestation_path),
+            "jsonSha256": subject.json_sha256(attestation),
+        }
+        write_json(self.paths["source_voice_authorization"], source_auth)
+        with mock.patch.object(subject, "validate_job"), mock.patch.object(
+                subject.unit_integrity, "validate_receipt"):
+            with self.assertRaisesRegex(ValueError, "complete source media"):
+                self.build()
+
     def test_changed_candidate_rejected(self):
         self.candidate["groups"][0]["targetText"] = "다른 말"
         write_json(self.paths["candidate"], self.candidate)

@@ -216,7 +216,9 @@ def release_packages(paths: list[Path], page_id: str, locales: list[str]) -> dic
     result = {}
     for path in paths:
         package = read_json(path)
-        if package.get("schemaVersion") != "sermon-target-language-release-package-v1":
+        version = package.get("schemaVersion")
+        if version not in {"sermon-target-language-release-package-v1",
+                           "sermon-target-language-release-package-v2"}:
             raise ValueError(f"unsupported release package: {path}")
         locale = package.get("targetLocale")
         if package.get("pageId") != page_id or locale not in locales or locale in result:
@@ -230,6 +232,8 @@ def release_packages(paths: list[Path], page_id: str, locales: list[str]) -> dic
                 or package.get("audioStatus") not in {"unavailable", "candidate", "human_reviewed"}
                 or package.get("audioLocale") not in {None, locale}
                 or not sha(package.get("targetLanguageCandidateJsonSha256"))
+                or (version == "sermon-target-language-release-package-v2"
+                    and not sha(package.get("spokenTargetLanguageCandidateJsonSha256")))
                 or (package.get("targetLanguageAudioPackageJsonSha256") is not None
                     and not sha(package.get("targetLanguageAudioPackageJsonSha256")))
                 or not isinstance(assets, list) or not assets
@@ -282,7 +286,10 @@ def locale_delivery(locale: str, package: dict | None, week: dict | None,
         audio_status = package.get("audioStatus", "unknown")
         return {
             "pageStatus": "published_http_verified" if published else "release_candidate",
-            "pageUrl": f"{site_url}/?week={page_id}&lang={locale}" if published and site_url else None,
+            "pageUrl": (f"{site_url.rstrip('/')}/pages/{page_id}/{locale}/index.html"
+                        if package.get("schemaVersion") == "sermon-target-language-release-package-v2"
+                        else f"{site_url.rstrip('/')}/?week={page_id}&lang={locale}")
+                       if published and site_url else None,
             "voiceStatus": audio_status,
             "voicePublished": published and audio_status == "human_reviewed"
                               and any(a.get("role") == "audio" for a in package.get("assets", [])),

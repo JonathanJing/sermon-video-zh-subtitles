@@ -1,3 +1,4 @@
+import AVKit
 import CryptoKit
 import SwiftUI
 import TongxingCore
@@ -12,7 +13,7 @@ private struct ToolbarVerticalEdgeReader<Content: View>: View {
     let content: (HorizontalEdge?) -> Content
 
     var body: some View {
-        #if compiler(>=6.4)
+        #if os(iOS) && compiler(>=6.4)
         if #available(iOS 27.1, macOS 27.1, *) {
             CurrentToolbarVerticalEdge(content: content)
         } else {
@@ -24,7 +25,7 @@ private struct ToolbarVerticalEdgeReader<Content: View>: View {
     }
 }
 
-#if compiler(>=6.4)
+#if os(iOS) && compiler(>=6.4)
 @available(iOS 27.1, macOS 27.1, *)
 private struct CurrentToolbarVerticalEdge<Content: View>: View {
     @Environment(\.toolbarVerticalEdge) private var edge
@@ -65,6 +66,9 @@ struct ContentView: View {
             .overlay { playbackMoreOverlay }
         }
         .environment(\.locale, localization.locale)
+        .task(id: model.publishedTranscriptSelectionKey) {
+            await model.loadSelectedPublishedTranscript()
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active { playback.saveProgress() }
             else { localization.refreshSystemLanguage() }
@@ -116,12 +120,21 @@ struct ContentView: View {
                             VStack(alignment: .leading, spacing: 12) {
                                 Text(localization.text("已发布页面"))
                                     .font(.caption.weight(.medium)).foregroundStyle(.secondary)
-                                Text(page.id).font(.largeTitle.bold())
+                                Text(model.publishedTranscript?.title ?? page.title ?? page.id).font(.largeTitle.bold())
                                     .fixedSize(horizontal: false, vertical: true)
                                     .accessibilityAddTraits(.isHeader)
                                     .accessibilityIdentifier("published-page-title")
                                 Text(page.date).font(.subheadline).foregroundStyle(.secondary)
                                 languageButton
+                                if model.fullVideoURL != nil {
+                                    Button {
+                                        playback.pause()
+                                        sheet = .video
+                                    } label: {
+                                        Label(localization.text("观看完整视频"), systemImage: "play.rectangle")
+                                    }
+                                    .accessibilityIdentifier("watch-full-video")
+                                }
                                 Text("\(localization.text("内容语言")) · \(model.selectedContentLanguageName)")
                                     .font(.footnote).foregroundStyle(.secondary)
                                 if let audioLanguage = model.selectedAudioLanguageName {
@@ -147,8 +160,10 @@ struct ContentView: View {
                                         .font(.footnote).foregroundStyle(.secondary)
                                 }
                                 if model.selectedAudioLocale != nil {
+                                    if let saved = playback.resumePosition { resumeCard(saved) }
                                     playbackStatusDetail
                                 }
+                                if model.usesNativePublishedReader { publishedReading }
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                         } else if model.isLoading {
@@ -236,7 +251,7 @@ struct ContentView: View {
                             .labelStyle(.iconOnly).accessibilityIdentifier("more-options")
                     }
                 }
-                #if compiler(>=6.4)
+                #if os(iOS) && compiler(>=6.4)
                 if #available(iOS 27.1, macOS 27.1, *), usesSystemVerticalBar,
                    model.selectedTrack != nil || model.selectedAudioLocale != nil {
                     ToolbarItem(placement: .primaryAction) {
@@ -268,6 +283,8 @@ struct ContentView: View {
                 case .about:
                     AboutSheet(model: model)
                         .presentationDetents([.large]).presentationDragIndicator(.visible)
+                case .video:
+                    if let url = model.fullVideoURL { FullVideoSheet(url: url) }
                 }
             }
             }
@@ -373,7 +390,7 @@ struct ContentView: View {
 
     private func dockControlRegion(in geometry: GeometryProxy) -> CGRect {
         let bounds = CGRect(origin: .zero, size: geometry.size)
-        #if compiler(>=6.4)
+        #if os(iOS) && compiler(>=6.4)
         if #available(iOS 27.1, macOS 27.1, *) {
             let divisions = geometry.reservedRegions(kind: .division)
                 .filter(\.isActive)
@@ -540,6 +557,73 @@ struct ContentView: View {
             .background(Brand.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
     }
 
+    @ViewBuilder private var publishedReading: some View {
+        if model.isLoadingPublishedTranscript {
+            ProgressView(localization.text("正在读取本周证道…"))
+        } else if let error = model.publishedTranscriptError {
+            Text(localization.text(error)).font(.footnote)
+            Button(localization.text("重新加载")) { Task { await model.loadSelectedPublishedTranscript() } }
+        } else if let transcript = model.publishedTranscript {
+            Picker(localization.text("收听内容"), selection: $model.display) {
+                ForEach(AppModel.ListeningDisplay.allCases, id: \.self) {
+                    Text(localization.text($0.rawValue)).tag($0)
+                }
+            }.pickerStyle(.segmented).accessibilityIdentifier("listening-display")
+            if model.display == .current {
+                let cue = transcript.captions.first { $0.start <= playback.position && playback.position < $0.end }
+                    ?? (playback.position < (transcript.captions.first?.start ?? 0) ? transcript.captions.first : nil)
+                VStack(alignment: .leading, spacing: 16) {
+                    Text(localization.text("当前字幕")).font(.subheadline).foregroundStyle(Brand.accent)
+                    sourceText(cue?.text ?? localization.text("等待下一段字幕…"), language: model.selectedContentLocale)
+                        .font(.system(size: readingSize, weight: .medium)).lineSpacing(6)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("published-current-subtitle")
+                    if let english = cue?.english {
+                        sourceText(english, language: "en").font(.body).foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("published-current-english")
+                    }
+                }.padding(20).frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Brand.surface, in: RoundedRectangle(cornerRadius: 28))
+            } else {
+                publishedRows(transcript.captions, captions: transcript.captions, prefix: "published-caption")
+            }
+            DisclosureGroup(localization.text("完整文稿 · 英文对照")) {
+                publishedRows(transcript.fullText, captions: transcript.captions, prefix: "published-full")
+            }.accessibilityIdentifier("published-full-transcript")
+            Text(localization.text(model.alignmentDisplayStatus, ["time": model.alignmentPosition.map(PlaybackTime.format) ?? ""]))
+                .font(.footnote).foregroundStyle(.secondary)
+                .accessibilityIdentifier("alignment-status")
+        }
+    }
+
+    private func publishedRows(_ rows: [PublishedTranscriptCue], captions: [PublishedTranscriptCue], prefix: String) -> some View {
+        LazyVStack(alignment: .leading, spacing: 20) {
+            ForEach(rows, id: \.id) { cue in
+                let audioCue = captions.first { $0.id == cue.id }
+                VStack(alignment: .leading, spacing: 10) {
+                    Button(PlaybackTime.format(audioCue?.start ?? cue.start)) {
+                        if let audioCue { playback.jump(to: audioCue.start) }
+                    }.buttonStyle(.bordered).font(.caption.monospacedDigit())
+                        .disabled(!playback.isReady || audioCue == nil)
+                        .accessibilityIdentifier("\(prefix)-time-\(cue.id)")
+                    sourceText(cue.text, language: model.selectedContentLocale)
+                        .font(.title3).lineSpacing(7).textSelection(.enabled)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("\(prefix)-text-\(cue.id)")
+                    if let english = cue.english {
+                        sourceText(english, language: "en").font(.body).lineSpacing(5)
+                            .foregroundStyle(.secondary).textSelection(.enabled)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("\(prefix)-english-\(cue.id)")
+                    }
+                }.padding(16).frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Brand.surface, in: RoundedRectangle(cornerRadius: 20))
+                    .id("\(prefix)-\(cue.id)")
+            }
+        }
+    }
+
     private func currentSubtitle(_ track: SermonTrack) -> some View {
         let cue = track.cue(at: playback.position) ?? (playback.position < (track.cues.first?.start ?? 0) ? track.cues.first : nil)
         let next = track.cues.first { $0.start > max(playback.position, cue?.start ?? -1) }
@@ -694,8 +778,34 @@ struct AlignmentControls: View {
 }
 
 private enum ListeningSheet: String, Identifiable {
-    case weeks, languages, precision, outline, about
+    case weeks, languages, precision, outline, about, video
     var id: String { rawValue }
+}
+
+private struct FullVideoSheet: View {
+    @ObservedObject private var localization = AppLocalization.shared
+    @Environment(\.dismiss) private var dismiss
+    @ViewState private var player: AVPlayer
+
+    init(url: URL) { _player = ViewState(initialValue: AVPlayer(url: url)) }
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 16) {
+                VideoPlayer(player: player)
+                    .aspectRatio(16 / 9, contentMode: .fit)
+                    .accessibilityIdentifier("native-full-video-player")
+                Text(localization.text("原始英文视频"))
+                    .font(.footnote).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("native-full-video")
+                Spacer(minLength: 0)
+            }
+            .padding()
+            .navigationTitle(localization.text("观看完整视频"))
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button(localization.text("完成")) { dismiss() } } }
+        }
+        .onDisappear { player.pause() }
+    }
 }
 
 private struct TargetLanguageSheet: View {
@@ -744,8 +854,13 @@ private struct TargetLanguageSheet: View {
                     ForEach(model.availableContentLanguages, id: \.locale) { option in
                         Button {
                             Task {
-                                guard let page = await model.selectContentLanguage(option.locale) else { return }
-                                verifiedPage = page
+                                if model.usesNativePublishedReader {
+                                    model.selectPublishedContentLanguage(option.locale)
+                                    dismiss()
+                                } else {
+                                    guard let page = await model.selectContentLanguage(option.locale) else { return }
+                                    verifiedPage = page
+                                }
                             }
                         } label: {
                             HStack(spacing: 14) {
@@ -772,7 +887,7 @@ private struct TargetLanguageSheet: View {
                 } header: {
                     Text(localization.text("证道语言"))
                 } footer: {
-                    Text(localization.text("选择后打开该语言自己的已发布页面。界面语言和证道音频语言不会被静默更改。"))
+                    Text(localization.text(model.usesNativePublishedReader ? "选择语言后，在 App 内阅读并准备对应配音。" : "选择后打开该语言自己的已发布页面。界面语言和证道音频语言不会被静默更改。"))
                 }
             }
             if let error = model.languageSelectionError {
@@ -890,6 +1005,33 @@ private struct WeekSheet: View {
         NavigationStack {
             ScrollView {
                 LazyVStack(spacing: 0) {
+                    if !model.independentPages.isEmpty {
+                        Text(localization.text("已发布页面"))
+                            .font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 20).padding(.top, 18)
+                        ForEach(model.independentPages.sorted { $0.date > $1.date }) { page in
+                            Button {
+                                model.selectPublishedPage(page)
+                                dismiss()
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 7) {
+                                        Text(page.title ?? page.id).font(.headline)
+                                        Text("\(page.date) · \(page.publishedTargets.map { AppModel.languageName($0.locale) }.joined(separator: " · "))")
+                                            .font(.subheadline).foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    if page.id == model.selectedPageID { Image(systemName: "checkmark") }
+                                }
+                                .padding(20).frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("published-page-\(page.id)")
+                            Divider().padding(.horizontal, 20)
+                        }
+                    }
                     ForEach(model.weeks) { week in
                         Button {
                             dismiss()
@@ -910,33 +1052,6 @@ private struct WeekSheet: View {
                         .accessibilityLabel("\(week.title)，\(week.date)")
                         .accessibilityIdentifier("legacy-week-\(week.id)")
                         Divider().padding(.horizontal, 20)
-                    }
-                    if !model.independentPages.isEmpty {
-                        Text(localization.text("已发布页面"))
-                            .font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 20).padding(.top, 18)
-                        ForEach(model.independentPages) { page in
-                            Button {
-                                model.selectPublishedPage(page)
-                                dismiss()
-                            } label: {
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 7) {
-                                        Text(page.id).font(.headline)
-                                        Text("\(page.date) · \(page.publishedTargets.map { AppModel.languageName($0.locale) }.joined(separator: " · "))")
-                                            .font(.subheadline).foregroundStyle(.secondary)
-                                    }
-                                    Spacer()
-                                    if page.id == model.selectedPageID { Image(systemName: "checkmark") }
-                                }
-                                .padding(20).frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityIdentifier("published-page-\(page.id)")
-                            Divider().padding(.horizontal, 20)
-                        }
                     }
                 }
             }.navigationTitle(localization.text("选择证道"))
@@ -1068,7 +1183,7 @@ private struct AboutSheet: View {
         NavigationStack {
             Form {
                 Section {
-                    NavigationLink { PrivacySupportView() } label: {
+                    NavigationLink { PrivacySupportView(playback: model.playback) } label: {
                         Label(localization.text("隐私与支持"), systemImage: "hand.raised")
                     }
                     .accessibilityIdentifier("privacy-support-link")

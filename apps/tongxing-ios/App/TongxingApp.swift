@@ -16,6 +16,7 @@ struct TongxingApp: App {
                 .tint(Brand.accent)
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .background { model.suspendAlignment() }
+                    model.playback.setStatisticsForeground(phase == .active)
                 }
                 #if DEBUG
                 .modifier(UITestTextSize())

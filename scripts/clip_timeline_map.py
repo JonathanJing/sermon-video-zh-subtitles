@@ -17,7 +17,8 @@ except ImportError:
     import sermon_sentence_interpretation as interpretation
 
 
-SCHEMA = "sermon-clip-timeline-map-v1"
+CLIP_SCHEMA = "sermon-clip-timeline-map-v1"
+COMPLETE_MEDIA_SCHEMA = "sermon-clip-timeline-map-v2"
 EPSILON = 0.025
 MAX_TRAILING_SILENCE_SECONDS = 0.25
 
@@ -112,9 +113,16 @@ def mp4_movie_duration(path: Path) -> float:
         raise ValueError(f"Cannot probe clip media duration: {path}: {exc}") from exc
 
 
+def _complete_media_window(start: float, end: float, duration: float) -> bool:
+    return abs(start) <= EPSILON and abs(end - duration) <= EPSILON
+
+
 def validate(value: dict[str, Any], source: dict[str, Any], anchor: dict[str, Any]) -> float:
+    version = value.get("schemaVersion")
+    require(version in {CLIP_SCHEMA, COMPLETE_MEDIA_SCHEMA},
+            "Unsupported clip timeline map schema")
     schema = read_object(Path(__file__).parents[1] / "schemas" /
-                         "sermon-clip-timeline-map-v1.schema.json")
+                         f"{version}.schema.json")
     errors = list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(value))
     require(not errors, f"Clip timeline map schema error: {errors[0].message if errors else ''}")
     require(value["englishSourcePackageJsonSha256"] == interpretation.json_sha256(source)
@@ -154,23 +162,30 @@ def validate(value: dict[str, Any], source: dict[str, Any], anchor: dict[str, An
     require(abs(seconds(approval["startTime"]) - start) <= EPSILON
             and abs(seconds(approval["endTime"]) - end) <= EPSILON,
             "Clip timeline map approval time differs from source")
-    original = approval.get("originalRecordingWindow", "")
-    parts = original.split("-")
-    require(len(parts) == 2, "Clip timeline map lacks original recording window")
-    original_start, original_end = seconds(parts[0]), seconds(parts[1])
-    require(abs(original_start - value["originalRecordingStartSeconds"]) <= EPSILON
-            and abs(original_end - value["originalRecordingEndSeconds"]) <= EPSILON
-            and abs((original_end - original_start) - (end - start)) <= EPSILON,
-            "Clip timeline map original recording window mismatch")
     units = anchor.get("sourceUnits", [])
     require(isinstance(units, list) and bool(units), "Clip timeline map has no source units")
     offset = value["anchorOffsetSeconds"]
     require(abs(units[0]["start"] - value["anchorFirstStartSeconds"]) <= EPSILON
-            and abs(units[-1]["end"] - value["anchorLastEndSeconds"]) <= EPSILON
-            and abs(units[0]["start"] - offset - start) <= EPSILON
-            and -EPSILON <= end - (units[-1]["end"] - offset)
-            <= MAX_TRAILING_SILENCE_SECONDS + EPSILON,
-            "Clip timeline map anchor offset does not align approved clip edges")
+            and abs(units[-1]["end"] - value["anchorLastEndSeconds"]) <= EPSILON,
+            "Clip timeline map anchor endpoints differ from approved anchors")
+    if version == CLIP_SCHEMA:
+        original = approval.get("originalRecordingWindow", "")
+        parts = original.split("-")
+        require(len(parts) == 2, "Clip timeline map lacks original recording window")
+        original_start, original_end = seconds(parts[0]), seconds(parts[1])
+        require(abs(original_start - value["originalRecordingStartSeconds"]) <= EPSILON
+                and abs(original_end - value["originalRecordingEndSeconds"]) <= EPSILON
+                and abs((original_end - original_start) - (end - start)) <= EPSILON,
+                "Clip timeline map original recording window mismatch")
+        require(abs(units[0]["start"] - offset - start) <= EPSILON
+                and -EPSILON <= end - (units[-1]["end"] - offset)
+                <= MAX_TRAILING_SILENCE_SECONDS + EPSILON,
+                "Clip timeline map anchor offset does not align approved clip edges")
+    else:
+        require(_complete_media_window(start, end, actual_duration)
+                and not approval.get("originalRecordingWindow")
+                and offset == start,
+                "Complete-media timebase requires a full-media approval and its source offset")
     previous = start
     for unit in units:
         unit_start, unit_end = unit["start"] - offset, unit["end"] - offset
@@ -182,26 +197,46 @@ def validate(value: dict[str, Any], source: dict[str, Any], anchor: dict[str, An
 
 
 def prepare(source_path: Path, anchor_path: Path, clip_path: Path,
-            anchor_offset_seconds: float, out: Path) -> dict[str, Any]:
+            anchor_offset_seconds: float | None, out: Path) -> dict[str, Any]:
     require(not out.exists(), "Clip timeline map is immutable; choose a new path")
     source, anchor = read_object(source_path), read_object(anchor_path)
     evidence = source["source"]["approvedWindow"]["evidence"]
     approval = read_object(Path(evidence["path"]))
-    original_start, original_end = (seconds(part) for part in approval["originalRecordingWindow"].split("-"))
+    window = source["source"]["approvedWindow"]
+    duration = media_duration(clip_path)
+    complete_media = (_complete_media_window(window["startSeconds"],
+                                             window["endSeconds"], duration)
+                      and not approval.get("originalRecordingWindow"))
+    if complete_media:
+        # The approved window is the entire same-hash media, so source and
+        # playback coordinates share the media origin. Derive it from the
+        # approved start; never infer an offset from the first spoken word.
+        offset = window["startSeconds"]
+        require(anchor_offset_seconds is None
+                or abs(anchor_offset_seconds - offset) <= EPSILON,
+                "Complete-media anchor offset differs from the approved media origin")
+    else:
+        require(anchor_offset_seconds is not None,
+                "Clip timeline map requires an explicit anchor offset")
+        offset = anchor_offset_seconds
     value = {
-        "schemaVersion": SCHEMA,
-        "timebase": "anchor_sermon_relative_to_clip_media",
+        "schemaVersion": COMPLETE_MEDIA_SCHEMA if complete_media else CLIP_SCHEMA,
+        "timebase": ("anchor_source_relative_to_complete_media" if complete_media
+                     else "anchor_sermon_relative_to_clip_media"),
         "englishSourcePackageJsonSha256": interpretation.json_sha256(source),
         "anchorManifestJsonSha256": interpretation.json_sha256(anchor),
         "clipMedia": {"path": str(clip_path.resolve()), "sha256": interpretation.sha256(clip_path)},
-        "clipDurationSeconds": media_duration(clip_path),
+        "clipDurationSeconds": duration,
         "windowApproval": evidence,
-        "anchorOffsetSeconds": anchor_offset_seconds,
+        "anchorOffsetSeconds": offset,
         "anchorFirstStartSeconds": anchor["sourceUnits"][0]["start"],
         "anchorLastEndSeconds": anchor["sourceUnits"][-1]["end"],
-        "originalRecordingStartSeconds": original_start,
-        "originalRecordingEndSeconds": original_end,
     }
+    if not complete_media:
+        original_start, original_end = (seconds(part) for part in
+                                        approval["originalRecordingWindow"].split("-"))
+        value["originalRecordingStartSeconds"] = original_start
+        value["originalRecordingEndSeconds"] = original_end
     validate(value, source, anchor)
     out.parent.mkdir(parents=True, exist_ok=True)
     interpretation.write_json(out, value)
@@ -213,7 +248,8 @@ def main() -> None:
     parser.add_argument("--source", type=Path, required=True)
     parser.add_argument("--anchor", type=Path, required=True)
     parser.add_argument("--clip-media", type=Path, required=True)
-    parser.add_argument("--anchor-offset-seconds", type=float, required=True)
+    parser.add_argument("--anchor-offset-seconds", type=float,
+                        help="Required for extracted clips; complete media derives its source origin")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     value = prepare(args.source, args.anchor, args.clip_media, args.anchor_offset_seconds, args.out)

@@ -34,6 +34,8 @@ REQUEST_SCHEMA = "sermon-target-language-evidence-request-v1"
 LANGUAGE_RECEIPT_SCHEMA = "sermon-target-language-plugin-receipt-v1"
 BUILTIN_PLUGIN_NAMES = {"zh_hans_sermon.py", "ko_sermon.py", "es_sermon.py"}
 LAODICEA_PLUGIN_NAMES = {"zh_hans_laodicea.py", "ko_laodicea.py", "es_laodicea.py"}
+WEEKLY_REFERENCE_PLUGIN_NAMES = {"ko_weekly_reference.py", "es_weekly_reference.py"}
+ZH_WEEKLY_CUV_PLUGIN_NAMES = {"zh_hans_weekly_cuv.py"}
 
 
 def _require(condition: bool, message: str) -> None:
@@ -55,6 +57,11 @@ def plugin_implementation_sources(plugin_path: Path) -> list[Path]:
         return [path, builtins / "common.py"]
     if path.parent == builtins and path.name in LAODICEA_PLUGIN_NAMES:
         return [path, builtins / "common.py", builtins / "laodicea_common.py"]
+    if path.parent == builtins and path.name in WEEKLY_REFERENCE_PLUGIN_NAMES:
+        return [path, builtins / "common.py", builtins / "weekly_reference_common.py"]
+    if path.parent == builtins and path.name in ZH_WEEKLY_CUV_PLUGIN_NAMES:
+        return [path, builtins / "common.py", builtins.parent / "cuv_scripture.py",
+                builtins.parent / "build_scripture_index.py"]
     return [path]
 
 
@@ -150,7 +157,7 @@ def admit_evidence(source: dict[str, Any], anchor: dict[str, Any],
                  "Target utterances are missing")
         candidate_group = {key: copy.deepcopy(value) for key, value in group.items()
                            if key not in {"translatorRequestId", "reviewerRequestId"}}
-        candidate_group["targetText"] = "".join(text.strip() for text in utterances)
+        candidate_group["targetText"] = "".join(utterances)
         candidate_groups.append(candidate_group)
     t_receipt, r_receipt = generation["translator"], generation["reviewer"]
     _require(isinstance(t_receipt, dict) and isinstance(r_receipt, dict),
@@ -238,7 +245,7 @@ def run_language_plugin(source: dict[str, Any], anchor: dict[str, Any],
                  and isinstance(utterances, list) and utterances
                  and all(isinstance(text, str) and text.strip() for text in utterances),
                  "Language plugin group lacks bound source or target text")
-        target_text = "".join(text.strip() for text in utterances)
+        target_text = "".join(utterances)
         plugin_group = {
             "translationGroupId": group_id,
             "sourceUnitIds": unit_ids,

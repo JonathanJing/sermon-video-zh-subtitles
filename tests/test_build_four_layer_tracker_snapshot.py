@@ -283,6 +283,35 @@ class TrackerSnapshotTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "evidence"):
                 tracker.release_packages([path], self.ledger["pageId"], self.ledger["locales"])
 
+    def test_dual_script_release_uses_static_same_locale_page(self):
+        package = {
+            "schemaVersion": "sermon-target-language-release-package-v2",
+            "pageId": self.ledger["pageId"], "targetLocale": "es", "sourceLocale": "en",
+            "contentLocale": "es", "audioLocale": "es", "status": "published_http_verified",
+            "contentStatus": "human_reviewed", "audioStatus": "human_reviewed",
+            "targetLanguageCandidateJsonSha256": "a" * 64,
+            "spokenTargetLanguageCandidateJsonSha256": "b" * 64,
+            "targetLanguageAudioPackageJsonSha256": "c" * 64,
+            "assets": [{"role": "page", "path": f"/pages/{self.ledger['pageId']}/es/index.html",
+                        "sha256": "d" * 64},
+                       {"role": "audio", "path": f"/media/{self.ledger['pageId']}/es.mp3",
+                        "sha256": "e" * 64}],
+            "httpVerification": {"status": "pass", "evidenceSha256": "f" * 64},
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "release.json"
+            path.write_text(json.dumps(package), encoding="utf-8")
+            release = tracker.release_packages([path], self.ledger["pageId"], self.ledger["locales"])["es"]
+            delivery = tracker.locale_delivery("es", release, None, None, None,
+                                               "https://example.web.app", self.ledger["pageId"])
+            self.assertEqual(delivery["pageUrl"],
+                             f"https://example.web.app/pages/{self.ledger['pageId']}/es/index.html")
+            self.assertTrue(delivery["voicePublished"])
+            package.pop("spokenTargetLanguageCandidateJsonSha256")
+            path.write_text(json.dumps(package), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "evidence"):
+                tracker.release_packages([path], self.ledger["pageId"], self.ledger["locales"])
+
 
 if __name__ == "__main__":
     unittest.main()

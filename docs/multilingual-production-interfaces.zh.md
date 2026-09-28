@@ -113,7 +113,7 @@ Target-Language Candidate + Target-Language Audio Package
 
 处理：按 `pageId + targetLocale` 聚合，分别记录 `interfaceLocale`、`contentLocale` 和 `audioLocale`，构建 allowlist，验证文件 hash、HTTP、Range 和客户端播放。
 
-输出 schema：[Target-Language Release Package](../schemas/sermon-target-language-release-package-v1.schema.json)。schema 中可空的音频包 hash 只用于迁移期 legacy 兼容；新的四层生产须绑定 Layer 3 包。HTTP 通过、设备通过和现场通过是三个独立状态。
+输出 schema：[Target-Language Release Package v1](../schemas/sermon-target-language-release-package-v1.schema.json)。schema 中可空的音频包 hash 只用于迁移期 legacy 兼容；新的四层生产须绑定 Layer 3 包。完整阅读稿与已审短口播稿并存时，使用[双稿 Release Package v2](../schemas/sermon-target-language-release-package-v2.schema.json)和独立[新 App 目录 v3](../schemas/sermon-multilingual-catalog-v3.schema.json)，两份候选分别绑定各自 hash，详见[本周 App 发布路径](sep27-full-video-app-layer4.zh.md)。HTTP 通过、设备通过和现场通过是三个独立状态。
 
 ## 当前实现边界
 

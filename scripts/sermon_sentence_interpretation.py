@@ -116,12 +116,16 @@ def write_json(path: Path, value: object) -> None:
     temporary.replace(path)
 
 
-def _word_text(words: list[dict[str, Any]]) -> str:
-    # MFA retains punctuation on the word token.  Whitespace is presentation;
-    # the immutable identity is the ordered word IDs and token text.
-    text = " ".join(str(word["text"]) for word in words)
+def _presentation_text(text: str) -> str:
+    # Spacing around punctuation is presentation, not a change to frozen words.
+    text = re.sub(r"\s+", " ", text.strip())
     text = re.sub(r"\s+([,.;:!?])", r"\1", text)
     return re.sub(r"([\u2014\u2013-])\s+", r"\1", text)
+
+
+def _word_text(words: list[dict[str, Any]]) -> str:
+    # MFA retains punctuation on the word token; word IDs and token text are identity.
+    return _presentation_text(" ".join(str(word["text"]) for word in words))
 
 
 def _split_internal_pause_token(raw: dict[str, Any], *, pause_seconds: float
@@ -267,8 +271,36 @@ def _clause_boundary_evidence(words: list[dict[str, Any]], index: int,
     }
 
 
+def _dependent_clause_boundary(words: list[dict[str, Any]], index: int) -> bool:
+    """Reject pauses that leave a short grammatical dependency unresolved."""
+    previous = re.sub(r"[^a-z]+$", "", str(words[index]["text"]).lower())
+    next_word = re.sub(r"^[^a-z]+", "", str(words[index + 1]["text"]).lower())
+    if previous in {"on", "be"}:
+        return True
+    if previous == "there" and next_word in {"is", "are", "was", "were"}:
+        return True
+    if previous == "means" and next_word == "that":
+        return True
+    if previous in {"everything", "anything", "something", "nothing", "all"} and next_word == "that":
+        return True
+    if str(words[index]["text"]).endswith(",") and next_word == "as":
+        return True
+    if previous in {"choose", "chooses", "chose", "chosen"} and next_word in {"out", "to"}:
+        return True
+    if str(words[index]["text"]).endswith(",") and next_word == "to":
+        return True
+    if previous == "blood" and next_word == "purchases":
+        return True
+    if str(words[index]["text"]).endswith(",") and next_word in {"your", "his", "her", "their", "our", "my"}:
+        return True
+    if previous == "sorry" and index > 0 and re.search(r"(?:i['’]m|i am)$", str(words[index - 1]["text"]).lower()):
+        return True
+    return False
+
+
 def _split_clause_stable(words: list[dict[str, Any]], *, max_seconds: float,
-                         min_unit_seconds: float, pause_seconds: float
+                         min_unit_seconds: float, pause_seconds: float,
+                         forced_after_word_id: str | None = None
                          ) -> tuple[list[tuple[list[dict[str, Any]], dict[str, Any]]], bool]:
     """Build v2 subunits without inventing a word-level boundary.
 
@@ -278,6 +310,33 @@ def _split_clause_stable(words: list[dict[str, Any]], *, max_seconds: float,
     1.5x boundary search window let the judge prefer a later punctuation/pause
     boundary while retaining explicit evidence when a unit exceeds the target.
     """
+    if forced_after_word_id is not None:
+        if float(words[-1]["end"]) - float(words[0]["start"]) <= max_seconds + 0.5:
+            raise ValueError("Boundary override is unnecessary for a sentence within the duration target")
+        matches = [index for index, word in enumerate(words[:-1])
+                   if word["wordId"] == forced_after_word_id]
+        if len(matches) != 1:
+            raise ValueError(f"Boundary override word is missing or terminal: {forced_after_word_id}")
+        index = matches[0]
+        first_duration = float(words[index]["end"]) - float(words[0]["start"])
+        second_duration = float(words[-1]["end"]) - float(words[index + 1]["start"])
+        gap = float(words[index + 1]["start"]) - float(words[index]["end"])
+        if (first_duration < min_unit_seconds or second_duration < min_unit_seconds
+                or max(first_duration, second_duration) > max_seconds + 0.5
+                or not (gap >= pause_seconds or BREAK_PUNCTUATION.search(str(words[index]["text"])))
+                or _dependent_clause_boundary(words, index)):
+            raise ValueError(f"Boundary override lacks a safe clause split: {forced_after_word_id}")
+        return [
+            (words[:index + 1], _clause_boundary_evidence(words, index, pause_seconds, max_seconds)),
+            (words[index + 1:], {
+                "kind": "source_sentence_end",
+                "afterWordId": words[-1]["wordId"],
+                "pauseSeconds": 0.0,
+                "punctuation": None,
+                "withinTargetSeconds": second_duration <= max_seconds,
+            }),
+        ], False
+
     parts: list[tuple[list[dict[str, Any]], dict[str, Any]]] = []
     cursor = 0
     unresolved = False
@@ -299,8 +358,12 @@ def _split_clause_stable(words: list[dict[str, Any]], *, max_seconds: float,
             duration = float(words[index]["end"]) - float(words[cursor]["start"])
             if duration < min_unit_seconds or duration > semantic_window_seconds:
                 continue
+            remaining_after_split = float(words[-1]["end"]) - float(words[index + 1]["start"])
+            if remaining_after_split < min_unit_seconds:
+                continue
             gap = float(words[index + 1]["start"]) - float(words[index]["end"])
-            if gap >= pause_seconds or BREAK_PUNCTUATION.search(str(words[index]["text"])):
+            if ((gap >= pause_seconds or BREAK_PUNCTUATION.search(str(words[index]["text"])))
+                    and not _dependent_clause_boundary(words, index)):
                 safe_candidates.append((index + 1, _clause_boundary_evidence(
                     words[cursor:], index - cursor, pause_seconds, max_seconds,
                 )))
@@ -333,7 +396,8 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
                           inter_utterance_gap_seconds: float = 0.12,
                           max_end_lag_seconds: float = 8.0,
                           unit_policy: str = UNIT_POLICY_V1,
-                          word_duration_outlier_seconds: float = 2.5) -> dict[str, Any]:
+                          word_duration_outlier_seconds: float = 2.5,
+                          boundary_overrides: dict[str, str] | None = None) -> dict[str, Any]:
     _require(segments, "MFA segments must be a nonempty list")
     _require(source_path.is_file(), "MFA segment source file is missing")
     _require(json.loads(source_path.read_text(encoding="utf-8")) == segments,
@@ -353,6 +417,11 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
         _require(_finite(value) and value >= 0, f"{name} must be a finite nonnegative number")
     _require(max_unit_seconds > min_unit_seconds > 0, "Unit duration limits are invalid")
     _require(word_duration_outlier_seconds > 0, "Word duration outlier limit must be positive")
+    overrides = dict(boundary_overrides or {})
+    _require(unit_policy == UNIT_POLICY_V2 or not overrides,
+             "Boundary overrides require clause_stable_v2")
+    _require(all(isinstance(key, str) and key and isinstance(value, str) and value
+                 for key, value in overrides.items()), "Boundary override IDs must be nonempty strings")
 
     ordered = sorted(segments, key=lambda item: (float(item.get("start", -1)), int(item.get("id", 0))))
     units: list[dict[str, Any]] = []
@@ -378,7 +447,7 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
         chunk_word_counts[chunk_id] = chunk_word_counts.get(chunk_id, 0) + len(segment.get("wordTimes") or [])
         if not words:
             continue
-        if re.sub(r"\s+", " ", str(segment.get("text", "")).strip()) != _word_text(words):
+        if _presentation_text(str(segment.get("text", ""))) != _word_text(words):
             issues.append({
                 "type": "segment_word_text_mismatch",
                 "sourceSentenceId": sentence_id,
@@ -405,6 +474,7 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
                 max_seconds=max_unit_seconds,
                 min_unit_seconds=min_unit_seconds,
                 pause_seconds=internal_pause_seconds,
+                forced_after_word_id=overrides.pop(sentence_id, None),
             )
             parts_with_evidence = clause_parts
         else:
@@ -459,6 +529,8 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
                 })
             issues.append(issue)
 
+    _require(not overrides, f"Boundary overrides reference missing sentences: {sorted(overrides)}")
+
     for index, unit in enumerate(units):
         next_start = units[index + 1]["start"] if index + 1 < len(units) else unit["end"]
         unit["boundary"]["pauseAfterSeconds"] = round(max(0.0, next_start - unit["end"]), 6)
@@ -495,6 +567,8 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
             "internalPauseSeconds": internal_pause_seconds,
             **({"wordDurationOutlierSeconds": word_duration_outlier_seconds}
                if unit_policy == UNIT_POLICY_V2 else {}),
+            **({"boundaryOverrides": dict(sorted(boundary_overrides.items()))}
+               if boundary_overrides else {}),
             "interpretationSchedule": "rolling_interpreter_v1",
             "reactionLagSeconds": reaction_lag_seconds,
             "interUtteranceGapSeconds": inter_utterance_gap_seconds,

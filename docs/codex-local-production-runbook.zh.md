@@ -44,6 +44,16 @@ OpenAI 云端转写与语言 API 保持不变。每周 TTS 和配音质检也采
 
 ### Layer 1：英文事实与锚点 shadow
 
+已有完整本地礼拜录像、且不应重新下载时，可先用 `sermon_pipeline.py` 的 `--english-source-only` 从原文件和已批准的绝对窗口生成英文 ASR、MFA 词时间与 `summary.json`。该模式要求 reading/MFA，写入 `status=english_source_candidate`，不调用中文翻译，也不授予 Layer 2 正式资格。`summary.json` 将原媒体 SHA-256 绑定到 `pipelineInputIdentity.sourceAudio`；仍须用同一媒体哈希、来源 URL hash 和窗口另存人工范围收据，再生成锚点、机器裁判和英文人工审核收据。没有可用的本机或 Spark MFA 时，默认按预检要求停在付费转写之前。若操作员明确授权这份媒体的外部转写，可单独选择 `--english-transcript-only`：它保存原始英文 ASR 和 `transcript-only-summary.json`，不运行 MFA、翻译或正式 Layer 1 放行；MFA 恢复后以同一 `--outdir` 运行 `--english-source-only`，按输入身份复用仍有效的 ASR 缓存。
+
+```bash
+.venv/bin/python scripts/sermon_pipeline.py \
+  --input /absolute/path/to/service-complete.mp4 \
+  --start-time HH:MM:SS --end-time HH:MM:SS \
+  --slug weekly-source --outdir /absolute/path/to/ignored/run/pipeline \
+  --output-mode reading --reading-aligner mfa --english-source-only
+```
+
 配置 `--dubbing-config` 的未来周生产，会在冻结英文和 MFA 对齐完成后自动运行 clause-stable v2 shadow。入口读取 `pipeline/segments_timed_en_corrected.json`，在 `pipeline/sentence-interpretation-v2/<identity>/` 保存不可变的 `anchor-manifest.json`、`english-source-package.json` 和 `receipt.json`。单元目标为约 6–8 秒；内部切点必须有分句标点或至少 0.35 秒词间停顿，并保留父句、原始 `wordId` 和 `splitEvidence`。Layer 1 不包含中文 prompt、译文、TTS 或发布状态。
 
 shadow receipt 的 `ready_for_model_translation` 只表示自动锚点结构干净；English Source Package 的 `candidate_ready_for_translation` 也只能用于 shadow 模型实验。生产 Layer 2 必须另外绑定 `sermon-english-source-review-v1` 人工收据：重用同一来源与全部已核实的原生成参数，并追加 `--sentence-interpretation-shadow --sentence-interpretation-english-review /absolute/path/english-source-review.json` 后重跑。

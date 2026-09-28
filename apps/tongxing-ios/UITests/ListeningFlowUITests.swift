@@ -90,6 +90,23 @@ final class ListeningFlowUITests: XCTestCase {
         screenshot("duo-inner-trailing-player", app: app)
     }
 
+    func testAnonymousStatisticsDefaultOffAndOptInOut() throws {
+        let app = launchFixture()
+        app.buttons["more-options"].tap()
+        let link = element("privacy-support-link", in: app)
+        XCTAssertTrue(link.waitForExistence(timeout: 5))
+        link.tap()
+        let toggle = app.switches["anonymous-statistics-toggle"]
+        try reveal(toggle, in: app, direction: .up)
+        XCTAssertEqual(toggle.value as? String, "0")
+        toggle.switches.firstMatch.tap()
+        XCTAssertEqual(toggle.value as? String, "1")
+        screenshot("anonymous-statistics-enabled", app: app)
+        toggle.switches.firstMatch.tap()
+        XCTAssertEqual(toggle.value as? String, "0")
+        screenshot("anonymous-statistics-disabled", app: app)
+    }
+
     func testPrivacySupportIsAvailableOfflineFromMoreOptions() throws {
         let app = launchFixture(offline: true)
         app.buttons["more-options"].tap()
@@ -185,6 +202,82 @@ final class ListeningFlowUITests: XCTestCase {
         app.buttons["choose-content-language"].tap()
         XCTAssertTrue(app.buttons["content-language-ko"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["content-language-es"].exists)
+    }
+
+    func testDualScriptCatalogOpensCurrentPageBeforeLegacyAndPreparesAudio() throws {
+        let app = launchFixture(dualScript: true)
+        XCTAssertEqual(app.staticTexts["published-page-title"].label, "测试完整视频证道")
+        XCTAssertTrue(element("watch-full-video", in: app).exists)
+        app.buttons["watch-full-video"].tap()
+        XCTAssertTrue(app.staticTexts["native-full-video"].waitForExistence(timeout: 5))
+        app.buttons["完成"].tap()
+        let prepare = app.buttons["prepare-published-audio"]
+        XCTAssertTrue(prepare.waitForExistence(timeout: 5))
+        prepare.tap()
+        XCTAssertTrue(app.staticTexts["published-audio-locale"].waitForExistence(timeout: 10))
+        app.buttons["choose-content-language"].tap()
+        app.buttons["content-language-ko"].tap()
+        XCTAssertTrue(app.staticTexts["published-current-subtitle"].waitForExistence(timeout: 10))
+        XCTAssertEqual(app.staticTexts["published-current-subtitle"].label, "짧은 자막입니다.")
+        XCTAssertEqual(app.staticTexts["published-current-english"].label, "This is the approved English source.")
+        app.segmentedControls["listening-display"].buttons["字幕全文"].tap()
+        XCTAssertTrue(app.staticTexts["published-caption-english-g1"].waitForExistence(timeout: 5))
+        screenshot("dual-script-native-english-captions", app: app)
+        app.buttons["choose-sermon"].tap()
+        XCTAssertTrue(app.buttons["published-page-ui-test-full-video"].waitForExistence(timeout: 5))
+        app.buttons["legacy-week-ui-test-week"].tap()
+        XCTAssertEqual(app.staticTexts["sermon-title"].label, "界面测试证道")
+    }
+
+    /// Explicit Release-only production check; default Debug UI runs skip it.
+    func testLiveProductionCurrentWeekNativeThreeLanguages() throws {
+        #if DEBUG
+        throw XCTSkip("Run this selected test with Release to verify production content.")
+        #else
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
+        app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
+        app.launch()
+        defer { app.terminate() }
+        XCTAssertTrue(app.staticTexts["published-page-title"].waitForExistence(timeout: 30))
+        app.buttons["choose-sermon"].tap()
+        let currentPage = app.buttons["published-page-2026-09-27-weekend-sermon-drive-530"]
+        let previousWeek = app.buttons["legacy-week-2026-09-20-same_video-7c193fd4-bc90-4f3b-aa00-37dfe8423aa0"]
+        XCTAssertTrue(currentPage.waitForExistence(timeout: 10))
+        XCTAssertTrue(previousWeek.waitForExistence(timeout: 5))
+        XCTAssertLessThan(currentPage.frame.minY, previousWeek.frame.minY)
+        screenshot("production-native-current-week-first-in-picker", app: app)
+        currentPage.tap()
+        app.buttons["watch-full-video"].tap()
+        XCTAssertTrue(app.staticTexts["native-full-video"].waitForExistence(timeout: 5))
+        screenshot("production-native-full-video-in-app", app: app)
+        app.buttons["完成"].tap()
+        for locale in ["zh-Hans", "ko", "es"] {
+            app.buttons["choose-content-language"].tap()
+            app.buttons["content-language-\(locale)"].tap()
+            XCTAssertTrue(app.staticTexts["published-current-subtitle"].waitForExistence(timeout: 30))
+            XCTAssertTrue(app.staticTexts["published-current-english"].waitForExistence(timeout: 10))
+            let prepare = app.buttons["prepare-published-audio"]
+            if prepare.exists {
+                prepare.tap()
+                XCTAssertTrue(app.staticTexts["published-audio-locale"].waitForExistence(timeout: 60))
+            }
+            XCTAssertTrue(app.staticTexts["published-audio-locale"].label.contains(appLanguageNames[locale]!))
+            app.buttons["playback-toggle"].tap()
+            try waitFor(element("playback-progress", in: app), "NOT (value BEGINSWITH '00:00，')")
+            screenshot("production-native-\(locale)-playing-english", app: app)
+            app.buttons["playback-toggle"].tap()
+            app.segmentedControls["listening-display"].buttons["字幕全文"].tap()
+            XCTAssertTrue(app.staticTexts["published-caption-english-translation-0-u001"].waitForExistence(timeout: 10))
+            screenshot("production-native-\(locale)-transcript-english", app: app)
+            app.segmentedControls["listening-display"].buttons["现场收听"].tap()
+        }
+        #endif
+    }
+
+    private var appLanguageNames: [String: String] {
+        ["zh-Hans": "简体中文", "ko": "한국어", "es": "Español"]
     }
 
     func testLiveDevSecondClipShowsThreeLanguagesAndPlaysReviewedAudio() throws {
@@ -566,11 +659,13 @@ final class ListeningFlowUITests: XCTestCase {
         if more.exists && !app.buttons["playback-more-close"].exists { more.tap() }
     }
 
-    private func launchFixture(largeText: Bool = false, offline: Bool = false) -> XCUIApplication {
+    private func launchFixture(largeText: Bool = false, offline: Bool = false,
+                               dualScript: Bool = false) -> XCUIApplication {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing"] + (largeText ? ["--ui-testing-large-text"] : [])
             + (offline ? ["--ui-testing-offline"] : [])
+            + (dualScript ? ["--ui-testing-dual-script"] : [])
         app.launchArguments += ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
         app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
         app.launchEnvironment["TONGXING_UI_TEST_RUN_ID"] = UUID().uuidString
@@ -588,6 +683,8 @@ final class ListeningFlowUITests: XCTestCase {
         app.launch()
         if offline {
             XCTAssertTrue(app.staticTexts["暂时无法读取证道"].waitForExistence(timeout: 15))
+        } else if dualScript {
+            XCTAssertTrue(app.staticTexts["published-page-title"].waitForExistence(timeout: 15))
         } else {
             XCTAssertTrue(element("sermon-title", in: app).waitForExistence(timeout: 15))
             XCTAssertEqual(element("sermon-title", in: app).label, "界面测试证道")

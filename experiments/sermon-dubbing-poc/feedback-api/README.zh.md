@@ -87,3 +87,43 @@ GOOGLE_CLOUD_PROJECT=ai-for-god-caption-dev node admin.mjs usage --from 2026-09-
 ```
 
 `list` 一次最多显示 100 条反馈，输出为私人审阅资料，不写入 Git、公共 App 或公开日志。
+
+## 界面语言与收听语言统计（新增 v1）
+
+2026-09-27 起新增两个独立统计接口，旧 `/api/events`、`/api/usage`、反馈及令牌协议不变。没有历史回填，不将旧浏览记录推算成收听记录。
+
+- `POST /api/interface-usage`：记录应用打开或界面语言切换，即使没有播放。集合 `interfaceUsageSessions30d`。
+- `POST /api/listening`：实际播放累计，集合 `languageListeningSessions30d`。暂停、等待缓冲、跳转不计播放时长。
+- 两者复用 `/api/session` 的来源绑定凭据、请求大小及频率限制；客户端各自申请凭据。`expiresAt` 仍为 ISO 8601 字符串。
+- 两个集合均须启用 `expiresAt` TTL；不是 Firestore 客户端直写。现有规则继续拒绝所有客户端直接读写。私有报告需要运营人员 IAM/ADC 权限。
+
+两条接口的 `schemaVersion` 都是 `1`，公共字段为 `schemaVersion/week/trackId/audioSha256/appVersion/action/seq`，不接受额外字段。
+
+`action: "upsert"` 增加 `day`（洛杉矶 YYYY-MM-DD）、`clientId`（每日轮换随机 UUIDv4 或 null）、`platform`（`web` 或 `ios`）、`interfaceLocale`（`zh-Hans/en/ko/es/vi`）。`/api/listening` 另需 `contentLocale`（同语言枚举）、`listenedSeconds`（累计实际播放秒数，可为小数）、`ranges`（音频时间轴上已听区间，排序且合并相邻区间的 `[start,end]`，最多 256 组）。累计时长及已覆盖区间不得回退；时长不能超过凭据创建以来的墙钟时间加 10 秒容差；覆盖不能超过播放时长的 3 倍加 1 秒。
+
+来源目录每条已标注音轨增加成对的 `pageId/audioLocale`，其中 `audioLocale` 由服务端读取；客户端不可上传或冒充。`contentLocale` 必须属于同一页面的已发布目录语言集合。没有标注的旧来源仍可记录界面访问，不能冒充某语言页面收听；先补目录来源证据。界面语言与内容语言都冻结于该接口凭据，切换时先发旧快照，再换新凭据。每日匿名键只在服务端保存 `SHA256(day + NUL + platform + NUL + lowercaseUUID)`，不保存原 UUID。
+
+凭据固定到签发时的洛杉矶日期。跨日必须换每日 ID 和新凭据；前一天延迟快照仍归属前一天，不可通过改 `day` 重归属。统计时间不足以证明真实人在场或确实听见音频。
+
+首次或更大序号返回 `{ok:true,accepted:true,lastSeq,...}`。同序号同内容重试返回 `{ok:true,accepted:false,lastSeq}`，视为已收到；同序号改内容返回 409。低序号不会覆写新状态。无需连续序号，因为本接口上传的是累计快照。
+
+`action: "delete"` 只带公共字段和正整数 `seq`；撤回为终止动作，即使删除序号小于已收到快照也删除该统计记录并留下凭据墓碑。延迟或更大序号 upsert 无法重建。返回 `{ok:true,accepted:true,deleted:true,lastSeq}`。重新启用须用新凭据；客户端应对本次运行保留的所有统计凭据发撤回，网络重试保留到成功或凭据过期。
+
+### 查看私有后台报表
+
+```sh
+GOOGLE_CLOUD_PROJECT=ai-for-god-caption-dev \
+FEEDBACK_DATABASE_ID=sermon-dubbing-feedback \
+node admin.mjs listening --from 2026-09-27 --to 2026-09-27 --out /private/path/listening-20260927
+```
+
+生成仅本机可读的 `index.html` 与 `summary.json`（新目录 0700，文件 0600，不覆盖已有目录）。报表含界面访问（无需播放）、页面语言 × 实际音频语言 × 平台、界面语言交叉统计、每日统计、各周内容、播放时长及完播率。无设备标识、哈希、令牌或数据库文档 ID。
+
+口径：
+
+- **收听设备日**：先按同日、平台、设备、页面和实际音轨，将界面切换前后的播放片段累计；满 30 秒后，在相应分组按设备去重。跨日仅相加为设备日，不是跨日独立人数。语言分组可能重叠，不能简单相加为总人数。
+- **收听次数**：单个片段会话累计满 30 秒；界面/内容语言切换形成新片段。没有每日 ID 时只按片段判断满 30 秒，不推算设备数。
+- **时长**：全部已送达会话的实际播放秒数，重复收听可累加。
+- **完播率**：满 30 秒的片段会话中、不重复覆盖达到全长 90% 的比例；不将拖动到结尾算作完播。
+- **界面访问**：打开及切换形成的访问会话，同日匿名设备去重，与是否播放无关。一个设备使用多种界面语言会出现在多个语言分组。
+- 仅统计成功上报、未撤回且最近 30 天未过期的数据；旧客户端、关闭统计和未送达内容无法回填。查询分页并限量，截断时报告须按部分样本解释。

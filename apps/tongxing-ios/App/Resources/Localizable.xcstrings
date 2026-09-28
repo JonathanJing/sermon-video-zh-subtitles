@@ -1,6 +1,233 @@
 {
   "sourceLanguage": "zh-Hans",
   "strings": {
+    "匿名使用统计": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anonymous usage statistics"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "익명 사용 통계"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estadísticas de uso anónimas"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thống kê sử dụng ẩn danh"
+          }
+        }
+      }
+    },
+    "分享匿名使用统计": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share anonymous usage statistics"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "익명 사용 통계 공유"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compartir estadísticas anónimas"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chia sẻ thống kê sử dụng ẩn danh"
+          }
+        }
+      }
+    },
+    "默认关闭。开启后上传界面语言访问、内容与音频语言、收听时长和播放覆盖范围；只使用每日更新的随机标识，不含姓名、邮箱或广告标识，不跨日追踪。设备数不等于人数。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Off by default. When enabled, the app sends interface-language visits, content and audio languages, listening time and playback coverage. It uses a random identifier that changes daily, with no name, email or advertising ID and no tracking across days. Device counts are not people counts."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기본적으로 꺼져 있습니다. 켜면 화면 언어별 방문, 콘텐츠 및 오디오 언어, 청취 시간과 재생 범위를 전송합니다. 매일 바뀌는 무작위 식별자만 사용하며 이름, 이메일, 광고 식별자는 포함하지 않고 날짜 간 추적을 하지 않습니다. 기기 수는 사람 수와 다릅니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desactivado por defecto. Al activarlo, la app envía visitas por idioma de interfaz, idiomas del contenido y audio, tiempo de escucha y cobertura de reproducción. Solo usa un identificador aleatorio que cambia cada día, sin nombre, correo ni identificador publicitario y sin seguimiento entre días. Los dispositivos no equivalen a personas."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mặc định tắt. Khi bật, ứng dụng gửi lượt truy cập theo ngôn ngữ giao diện, ngôn ngữ nội dung và âm thanh, thời gian nghe và mức độ phát. Ứng dụng chỉ dùng mã định danh ngẫu nhiên thay đổi hằng ngày, không có tên, email hoặc mã quảng cáo và không theo dõi qua các ngày. Số thiết bị không phải số người."
+          }
+        }
+      }
+    },
+    "关闭后立即停止，并尝试撤回本次 App 运行中已上传的统计；断网时无法保证撤回。没有离线上传队列，未联网期间的使用可能不计入。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turning this off stops reporting immediately and attempts to remove statistics uploaded during this app run. Removal cannot be guaranteed offline. There is no offline upload queue; use without connectivity may not be counted."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "끄면 전송이 즉시 중단되며 이번 앱 실행 중 전송된 통계 삭제를 시도합니다. 오프라인에서는 삭제를 보장할 수 없습니다. 오프라인 업로드 대기열이 없으므로 연결되지 않은 동안의 사용은 집계되지 않을 수 있습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Al desactivarlo, se detienen los envíos y se intenta retirar las estadísticas enviadas durante esta ejecución de la app. Sin conexión no se garantiza su eliminación. No hay cola de envíos sin conexión; ese uso puede no contabilizarse."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khi tắt, việc gửi dữ liệu dừng ngay và ứng dụng cố gắng thu hồi số liệu đã gửi trong lần chạy này; không thể bảo đảm thu hồi khi mất mạng. Không có hàng đợi tải lên ngoại tuyến, nên việc sử dụng khi không có mạng có thể không được tính."
+          }
+        }
+      }
+    },
+    "本说明适用于同行原生 App。同行是独立个人项目，不设登录或广告。匿名统计由你自愿开启。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This notice covers the native Tongxing app, an independent personal project with no sign-in or advertising. Anonymous statistics are optional and require you to enable them."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 안내는 로그인이나 광고가 없는 독립 개인 프로젝트인 Tongxing 네이티브 앱에 적용됩니다. 익명 통계는 선택 사항이며 직접 켜야 합니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este aviso cubre la app nativa Tongxing, un proyecto personal independiente sin inicio de sesión ni publicidad. Las estadísticas anónimas son opcionales y debes activarlas."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thông báo này áp dụng cho ứng dụng Tongxing bản gốc, một dự án cá nhân độc lập không yêu cầu đăng nhập và không có quảng cáo. Thống kê ẩn danh là tùy chọn và chỉ được bật khi bạn đồng ý."
+          }
+        }
+      }
+    },
+    "文稿暂时无法读取，请重试。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The transcript could not be loaded. Please try again."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "원고를 불러올 수 없습니다. 다시 시도해 주세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo cargar el texto. Inténtalo de nuevo."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể tải bản thảo. Vui lòng thử lại."
+          }
+        }
+      }
+    },
+    "选择语言后，在 App 内阅读并准备对应配音。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select a language to read and prepare its audio in the app."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "언어를 선택하여 앱에서 원고를 읽고 해당 음성을 준비하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige un idioma para leer y preparar su audio en la app."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn ngôn ngữ để đọc và chuẩn bị âm thanh tương ứng trong ứng dụng."
+          }
+        }
+      }
+    },
+    "完整文稿 · 英文对照": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Full text · English reference"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "전체 원고 · 영어 대조"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Texto completo · Referencia en inglés"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toàn văn · Đối chiếu tiếng Anh"
+          }
+        }
+      }
+    },
     "更多": {
       "extractionState": "manual",
       "localizations": {
@@ -4218,6 +4445,24 @@
             "value": "Không có nguyên văn tiếng Anh. Văn bản tiếng Trung vẫn được giữ lại."
           }
         }
+      }
+    },
+    "原始英文视频": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Original English video" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "영어 원본 영상" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Video original en inglés" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Video gốc tiếng Anh" } }
+      }
+    },
+    "观看完整视频": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Watch full video" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "전체 영상 보기" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Ver video completo" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Xem video đầy đủ" } }
       }
     },
     "英文原视频 ↗": {

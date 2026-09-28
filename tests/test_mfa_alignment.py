@@ -174,6 +174,31 @@ class AlignmentTest(unittest.TestCase):
                                  [title + ' Smith spoke.', 'We listened.'])
                 self.assertEqual(len(result[0]['wordTimes']), 3)
 
+    def test_long_phone_empty_duplicate_is_recorded_and_excluded(self):
+        text, spoken, mapping = mfa._reference('Amen. Anybody else.')
+        raw = {'tiers': {
+            'words': {'entries': [[0, 8, 'amen'], [8, 8.2, 'amen'],
+                                  [8.2, 15, 'anybody'], [15, 15.3, 'anybody'],
+                                  [15.3, 15.6, 'else']]},
+            'phones': {'entries': [[8, 8.2, 'AH'], [15, 15.3, 'AH'],
+                                   [15.3, 15.6, 'AH']]},
+        }}
+        events = []
+        result = mfa._segments(raw, {'id': 2, 'start': 0, 'end': 16},
+                               text, spoken, mapping, normalization_events=events)
+        self.assertEqual([s['text'] for s in result], ['Amen.', 'Anybody else.'])
+        self.assertEqual([event['word'] for event in events], ['amen', 'anybody'])
+        self.assertEqual([event['reason'] for event in events],
+                         ['long_phone_empty_duplicate'] * 2)
+        self.assertEqual(result[0]['wordTimes'][0]['start'], 8)
+
+    def test_duplicate_with_phones_still_fails_exact_word_check(self):
+        text, spoken, mapping = mfa._reference('Amen.')
+        raw = {'tiers': {'words': {'entries': [[0, 6, 'amen'], [6, 6.2, 'amen']]},
+                         'phones': {'entries': [[0, 6, 'AH'], [6, 6.2, 'AH']]}}}
+        with self.assertRaisesRegex(ValueError, 'differ from frozen reference'):
+            mfa._segments(raw, {'id': 1, 'start': 0, 'end': 7}, text, spoken, mapping)
+
     def test_spoken_forms_schema_rejects_empty_or_nonword_expansions(self):
         forms = self.root / 'spoken.json'
         for value in ([], {'73:16': []}, {'73:16': ['73']}, {'two tokens': ['two']}):

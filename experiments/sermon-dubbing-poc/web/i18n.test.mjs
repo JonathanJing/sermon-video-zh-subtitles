@@ -24,9 +24,9 @@ class Element {
     for (const { callback } of listeners) callback(event);
   }
 }
-async function fixture(run, { saved = null, blockedStorage = false, beforeImport } = {}) {
+async function fixture(run, { saved = null, blockedStorage = false, search = '', beforeImport } = {}) {
   const dir = await mkdtemp(join(tmpdir(), 'sermon-i18n-'));
-  const originals = new Map(['document', 'localStorage', 'CustomEvent'].map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
+  const originals = new Map(['document', 'localStorage', 'CustomEvent', 'location'].map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
   const writes = [];
   const sourceText = new Element(); sourceText.textContent = 'Original sermon content';
   const label = new Element({ 'data-i18n': 'nav.listen' });
@@ -42,6 +42,7 @@ async function fixture(run, { saved = null, blockedStorage = false, beforeImport
   const themeMeta = { content: '' };
   doc.querySelector = () => themeMeta;
   globalThis.document = doc;
+  Object.defineProperty(globalThis, 'location', {configurable:true,value:{search}});
   globalThis.CustomEvent = class { constructor(type, options = {}) { this.type = type; this.detail = options.detail; } };
   Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: {
     getItem() { if (blockedStorage) throw new Error('Storage blocked'); return saved; },
@@ -235,4 +236,10 @@ test('locale initialization and switching derive unmarked theme labels from the 
     theme = mountTheme(doc);
     doc.documentElement.dataset.theme = 'light';
   } });
+});
+
+test('poster links explicitly select UI language without conflating content language or stored choice', async () => {
+  for(const lang of ['zh','ko','es']) await fixture(({core})=>assert.equal(core.getLocale(),lang),{saved:'en',search:`?week=2026-09-27&contentLang=es&lang=${lang}`});
+  await fixture(({core})=>assert.equal(core.getLocale(),'en'),{saved:'en',search:'?lang=invalid&contentLang=ko'});
+  await fixture(({core})=>assert.equal(core.getLocale(),'ko'),{blockedStorage:true,search:'?lang=ko'});
 });

@@ -54,7 +54,7 @@ export function validateCatalog(catalog) {
     ids.add(week.id);
     validateTranscript(week);
     for (const track of week.tracks) {
-      if (!/^\/media\/[a-zA-Z0-9_.-]+\.mp3$/.test(track.audioUrl) || !(track.durationSeconds > 0) || !track.cues?.length) throw new Error("Invalid track");
+      if (!/^\/media\/(?:[a-zA-Z0-9_-]+\/)*[a-zA-Z0-9_.-]+\.mp3$/.test(track.audioUrl) || !(track.durationSeconds > 0) || !track.cues?.length) throw new Error("Invalid track");
       let previous = 0;
       for (const cue of track.cues) {
         if (!(previous <= cue.start && cue.start < cue.end && cue.end <= track.durationSeconds + 0.001) || !cue.text?.trim()) throw new Error("Invalid cues");
@@ -92,7 +92,7 @@ export function downloadFilename(week, track) {
     .replace(/[<>:"/\\|?*\u0000-\u001f\u007f]/g, " ")
     .replace(/\s+/g, " ").trim().replace(/[. ]+$/g, "");
   const speaker = week.speaker.split(" · ")[0];
-  const parts = [week.date, "证道中文转译", week.title, speaker];
+  const parts = [week.date, week.targetLocale ? `证道配音_${week.targetLocale}` : "证道中文转译", week.title, speaker];
   const sourceLabels = { live_archive: '主日聚会版', same_video: 'YouTube 版', archive_caption: 'YouTube 版' };
   const sourceLabel = week.sourceLabel?.trim() || sourceLabels[week.sourceRoute];
   if (sourceLabel && !week.title.includes(sourceLabel)) parts.push(sourceLabel);

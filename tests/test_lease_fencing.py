@@ -222,8 +222,8 @@ class SupervisorLeaseExecutionTests(unittest.TestCase):
     def test_real_timeline_child_completes_after_multiple_original_ttls(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            command = [sys.executable, "-c", "import time,json,pathlib;time.sleep(1);pathlib.Path(" + repr(str(root / "report.json")) + ").write_text(json.dumps({'status':'requires_operator_review'}))"]
-            config, _, patches = self.fixture(root, command, ttl=.3)
+            command = [sys.executable, "-c", "import time,json,pathlib;time.sleep(2);pathlib.Path(" + repr(str(root / "report.json")) + ").write_text(json.dumps({'status':'requires_operator_review'}))"]
+            config, _, patches = self.fixture(root, command, ttl=.75)
             with patches[0], patches[1], patches[2]:
                 result = supervisor.run_timeline_probe(config)
             self.assertEqual(result["status"], "requires_operator_review")
