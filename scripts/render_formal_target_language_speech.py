@@ -574,6 +574,30 @@ def schedule(context: dict[str, Any], rows: list[dict[str, Any]],
             "entries": entries}
 
 
+def assemble_pcm16_track(plan: dict[str, Any], signals: list[bytes],
+                         sample_rate: int, channels: int, clip_duration: float) -> bytes:
+    """Place decoded PCM16 units on the 1x timeline without granting release status."""
+    require(plan.get("status") == "pass"
+            and len(plan.get("entries", [])) == len(signals)
+            and type(sample_rate) is int and sample_rate > 0
+            and type(channels) is int and channels > 0
+            and isinstance(clip_duration, (int, float))
+            and math.isfinite(clip_duration) and clip_duration > 0,
+            "Invalid PCM16 assembly inputs")
+    frame_bytes = channels * 2
+    length = round(clip_duration * sample_rate)
+    track = bytearray(length * frame_bytes)
+    for entry, encoded in zip(plan["entries"], signals):
+        require(bool(encoded) and len(encoded) % frame_bytes == 0,
+                f"Invalid PCM16 unit: {entry['textGroupId']}")
+        start = round(entry["plannedStart"] * sample_rate)
+        require(start >= 0 and start + len(encoded) // frame_bytes <= length,
+                f"Sample-exact unit exceeds clip length: {entry['textGroupId']}")
+        offset = start * frame_bytes
+        track[offset:offset + len(encoded)] = encoded
+    return bytes(track)
+
+
 def assemble(context: dict[str, Any], paths: dict[str, Path], root: Path,
              rows: list[dict[str, Any]], *, policy: dict[str, float] | None = None,
              track_format: str = "wav") -> dict[str, Any]:
@@ -627,14 +651,7 @@ def assemble(context: dict[str, Any], paths: dict[str, Path], root: Path,
         require(rate == sample_rate and channel_count == channels,
                 "Units differ in sample rate or channel count; renderer does not resample")
         waves.append(signal)
-    length = round(clip_duration * sample_rate)
-    track = bytearray(length * channels * 2)
-    for entry, encoded in zip(plan["entries"], waves):
-        start = round(entry["plannedStart"] * sample_rate)
-        require(start + len(encoded) // (channels * 2) <= length,
-                f"Sample-exact unit exceeds clip length: {entry['textGroupId']}")
-        offset = start * channels * 2
-        track[offset:offset + len(encoded)] = encoded
+    track = assemble_pcm16_track(plan, waves, sample_rate, channels, clip_duration)
     # No time stretching, truncation, loudness normalization, or omitted units.
     wav_path.parent.mkdir(parents=True, exist_ok=True)
     partial = wav_path.with_suffix(".partial.wav")

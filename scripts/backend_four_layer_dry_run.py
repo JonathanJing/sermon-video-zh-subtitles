@@ -27,10 +27,14 @@ try:
     from scripts import prepare_sentence_interpretation_shadow as layer1
     from scripts import prepare_multilingual_weekly_plan as planner
     from scripts import render_formal_target_language_speech as layer3
+    from scripts import run_target_language_models as layer2_runner
+    from scripts import produce_target_language_candidate as layer2_producer
 except ImportError:
     import prepare_sentence_interpretation_shadow as layer1
     import prepare_multilingual_weekly_plan as planner
     import render_formal_target_language_speech as layer3
+    import run_target_language_models as layer2_runner
+    import produce_target_language_candidate as layer2_producer
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -112,6 +116,21 @@ def wav(path: Path, signal: bytes) -> None:
         handle.writeframes(signal)
 
 
+def simulated_policy(locale: str) -> dict:
+    """Prompt inputs for a short fixture, never a frozen production policy."""
+    return {"schemaVersion": "sermon-dry-run-model-policy-v1", "simulationOnly": True,
+            "targetLocale": locale,
+            "translator": {"model": "gpt-6-astra", "reasoningEffort": "medium",
+                           "promptVersion": "dry-run-fixture-v1"},
+            "reviewer": {"model": "gpt-6-sol", "reasoningEffort": "medium",
+                         "promptVersion": "dry-run-fixture-v1"},
+            "batching": {"batchSize": 1, "workers": 1},
+            "terminology": {"seriesNames": [], "properNames": []},
+            "scripture": {"quoteCheckPolicy": "references_only"},
+            "formatting": {"speechRegister": "fixture_only"},
+            "languageReview": {"registerRules": ["Use the fixed dry-run wording only."]}}
+
+
 def render_preview(report: dict, fixture: dict, translated: dict, audio: dict) -> str:
     esc = html.escape
     blocks = []
@@ -140,8 +159,11 @@ def render_preview(report: dict, fixture: dict, translated: dict, audio: dict) -
 def run(fixture_path: Path, out: Path, *, fail_at: str | None = None) -> dict:
     if out.exists() or out.is_symlink():
         raise ValueError("Use a new dry-run output directory")
-    if fail_at and fail_at not in {"intake", "layer1", "layer4"} | {
-            f"layer2:{locale}" for locale in LOCALES} | {f"layer3:{locale}" for locale in LOCALES}:
+    if fail_at and fail_at not in ({"intake", "layer1", "layer4"} | {
+            f"layer2:{locale}" for locale in LOCALES} | {
+            f"layer3:{locale}" for locale in LOCALES} | {
+            f"layer2:{locale}:unit-{index}:{role}"
+            for locale in LOCALES for index in range(8) for role in ("astra", "sol")}):
         raise ValueError("Unknown failure injection point")
     out.parent.mkdir(parents=True, exist_ok=True)
     temporary = Path(tempfile.mkdtemp(prefix=f".{out.name}-", dir=out.parent))
@@ -150,6 +172,8 @@ def run(fixture_path: Path, out: Path, *, fail_at: str | None = None) -> dict:
               "fixtureSha256": digest(fixture_path), "sourceAcquisition": "simulated_no_network",
               "externalCalls": {"download": 0, "asr": 0, "translation": 0, "tts": 0, "firebase": 0},
               "formalApproval": False, "productionReleaseEligible": False,
+              "sharedControlLoops": {"layer2": "astra_sol_group_runner",
+                                     "layer3": "pcm16_schedule_and_assembly"},
               "layers": {}, "events": events}
 
     def step(name, action):
@@ -236,23 +260,84 @@ def run(fixture_path: Path, out: Path, *, fail_at: str | None = None) -> dict:
         translated = {}
         for locale in LOCALES:
             def make_text(locale=locale):
-                groups = []
-                for index, (unit, text) in enumerate(zip(anchor["sourceUnits"],
-                                                         fixture["translations"][locale])):
-                    groups.append(step(f"layer2:{locale}:unit-{index}",
-                        lambda unit=unit, text=text, index=index: {
-                            "translationGroupId": f"dry-{locale}-{index:03d}",
-                            "sourceUnitIds": [unit["sourceUnitId"]], "targetText": text}))
+                policy = simulated_policy(locale)
+                units = anchor["sourceUnits"]
+                by_id = {unit["sourceUnitId"]: text for unit, text in
+                         zip(units, fixture["translations"][locale])}
+                request = {"schemaVersion": "sermon-dry-run-layer2-request-v1",
+                           "simulationOnly": True, "sourceLocale": "en",
+                           "targetLocale": locale,
+                           "englishSourcePackageJsonSha256": canonical_sha(source),
+                           "anchorManifestSha256": canonical_sha(anchor),
+                           "translationPolicySha256": canonical_sha(policy),
+                           "sourceUnits": [{"sourceUnitId": unit["sourceUnitId"],
+                                            "english": unit["english"]} for unit in units],
+                           "generation": None, "groups": None}
+                group_plan = layer2_runner.group_plan(request, anchor)
+                group_index = {row["translationGroupId"]: index
+                               for index, row in enumerate(group_plan)}
+                calls = []
+
+                def fake_model_call(api_key, payload):
+                    if api_key != "simulation-no-secret":
+                        raise ValueError("Dry run attempted to use a model API key")
+                    inputs = json.loads(payload["messages"][1]["content"])
+                    group_id = inputs["translationGroupId"]
+                    source_ids = inputs["sourceUnitIds"]
+                    if group_id not in group_index or source_ids != group_plan[group_index[group_id]]["sourceUnitIds"]:
+                        raise ValueError("Simulated model group identity changed")
+                    role = "astra" if payload["model"] == "gpt-6-astra" else "sol"
+                    if role == "sol" and payload["model"] != "gpt-6-sol":
+                        raise ValueError("Unexpected simulated model role")
+                    texts = [by_id[unit_id] for unit_id in source_ids]
+                    result = {"translationGroupId": group_id,
+                              "sourceUnitIds": source_ids, "targetUtterances": texts,
+                              "coverage": [{"sourceUnitId": unit_id, "targetText": text}
+                                           for unit_id, text in zip(source_ids, texts)]}
+                    if role == "sol":
+                        if inputs.get("astraDraft", {}).get("sourceUnitIds") != source_ids:
+                            raise ValueError("Sol did not receive the matching Astra draft")
+                        result["semanticReview"] = {
+                            "status": "pass", "checks": {check: "pass" for check in
+                                                          layer2_runner.SEMANTIC_CHECKS},
+                            "evidence": "Deterministic fixture response; no semantic judgement.",
+                            "uncertainty": [], "issues": []}
+                    calls.append({"role": role, "groupId": group_id})
+                    response_id = f"dry-{locale}-{group_index[group_id]:03d}-{role}"
+                    return step(f"layer2:{locale}:unit-{group_index[group_id]}:{role}",
+                                lambda: {"id": response_id, "model": payload["model"],
+                                         "choices": [{"finish_reason": "stop", "message": {
+                                             "content": json.dumps(result, ensure_ascii=False)}}]})
+
+                evidence = layer2_runner._run_prepared_groups(
+                    request, anchor, policy, temporary / "layer2-model-loop" / locale,
+                    "simulation-no-secret", fake_model_call, simulation_only=True)
+                if len(calls) != 2 * len(group_plan) or [call["role"] for call in calls] != [
+                        role for _ in group_plan for role in ("astra", "sol")]:
+                    raise ValueError("Simulated Astra/Sol call order changed")
+                try:
+                    layer2_producer.prepare_request(source, anchor, policy)
+                except ValueError as exc:
+                    if "Approved English Source Package" not in str(exc):
+                        raise
+                else:
+                    raise ValueError("Formal Layer 2 accepted simulated source")
+                groups = [{"translationGroupId": row["translationGroupId"],
+                           "sourceUnitIds": row["sourceUnitIds"],
+                           "targetText": "".join(row["targetUtterances"])}
+                          for row in evidence["groups"]]
                 value = {"schemaVersion": "sermon-dry-run-layer2-shadow-v1",
                          "simulationOnly": True, "status": "simulated_text",
                          "targetLocale": locale,
                          "englishSourcePackageJsonSha256": canonical_sha(source),
                          "anchorManifestJsonSha256": canonical_sha(anchor),
-                         "groups": groups, "texts": fixture["translations"][locale]}
+                         "groups": groups, "texts": fixture["translations"][locale],
+                         "modelLoopEvidenceJsonSha256": canonical_sha(evidence)}
                 write_json(temporary / "layer2" / f"{locale}.json", value)
                 report["layers"].setdefault("layer2", {})[locale] = {
                     "status": "simulated_text", "groups": len(groups),
-                    "jsonSha256": canonical_sha(value), "humanReview": "not_run"}
+                    "jsonSha256": canonical_sha(value), "humanReview": "not_run",
+                    "modelCalls": len(calls), "formalGate": "rejected_simulated_source"}
                 return value
             translated[locale] = step(f"layer2:{locale}", make_text)
 
@@ -268,15 +353,16 @@ def run(fixture_path: Path, out: Path, *, fail_at: str | None = None) -> dict:
                 schedule = layer3.schedule(context, rows, layer3.DEFAULT_POLICY)
                 if schedule["status"] != "pass" or len(schedule["entries"]) != len(groups):
                     raise ValueError(f"Simulated 1x scheduling failed: {locale}")
-                signal = bytearray(round(float(fixture["durationSeconds"]) * RATE) * 2)
+                signals = []
                 for unit_index, entry in enumerate(schedule["entries"]):
-                    def place_tone(entry=entry):
+                    def make_tone():
                         tone = pcm(0.55, 330 + index * 110)
-                        start = round(entry["plannedStart"] * RATE) * 2
-                        signal[start:start + len(tone)] = tone
-                    step(f"layer3:{locale}:unit-{unit_index}", place_tone)
+                        signals.append(tone)
+                    step(f"layer3:{locale}:unit-{unit_index}", make_tone)
                 path = temporary / "public/flow/media" / f"{locale}.wav"
-                wav(path, bytes(signal))
+                signal = layer3.assemble_pcm16_track(
+                    schedule, signals, RATE, 1, float(fixture["durationSeconds"]))
+                wav(path, signal)
                 with wave.open(str(path), "rb") as handle:
                     if handle.getnframes() != round(float(fixture["durationSeconds"]) * RATE):
                         raise ValueError("Simulated audio duration changed")

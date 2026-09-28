@@ -28,6 +28,20 @@ class FakeSynth:
 
 
 class FormalRenderTests(unittest.TestCase):
+    def test_shared_pcm16_assembly_places_units_at_sample_exact_offsets(self):
+        plan = {"status": "pass", "entries": [
+            {"textGroupId": "a", "plannedStart": 0.1},
+            {"textGroupId": "b", "plannedStart": 0.5}]}
+        first = b"\x01\x00" * 2
+        second = b"\x02\x00" * 3
+        track = subject.assemble_pcm16_track(plan, [first, second], 10, 1, 1.0)
+        self.assertEqual(track, b"\x00\x00" + first + b"\x00\x00" * 2
+                         + second + b"\x00\x00" * 2)
+        with self.assertRaisesRegex(ValueError, "exceeds clip length"):
+            subject.assemble_pcm16_track(
+                {"status": "pass", "entries": [{"textGroupId": "a", "plannedStart": 0.9}]},
+                [first], 10, 1, 1.0)
+
     def setUp(self):
         fixture = fixture_module.AudioPackageTests("test_builds_machine_screened_package_but_never_human_approved")
         fixture.setUp()
