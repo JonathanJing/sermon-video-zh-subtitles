@@ -32,9 +32,19 @@ function assetPath(value) {
   return value;
 }
 
-async function readJson(fetchImpl, path, expectedHash, timeoutMs, optional = false) {
+async function readJson(fetchImpl, path, expectedHash, timeoutMs, optional = false, pageSignal) {
   const controller = new AbortController();
   let timer;
+  let rejectCancelled;
+  const onCancel = () => {
+    controller.abort();
+    rejectCancelled(new Error(`Published page loading timed out: ${path}`));
+  };
+  const cancelled = new Promise((_, reject) => { rejectCancelled = reject; });
+  if (pageSignal) {
+    if (pageSignal.aborted) onCancel();
+    else pageSignal.addEventListener('abort', onCancel, { once: true });
+  }
   const request = async () => {
     const response = await fetchImpl(assetPath(path), { cache: 'no-cache', signal: controller.signal });
     if (optional && response.status === 404) return null;
@@ -49,13 +59,16 @@ async function readJson(fetchImpl, path, expectedHash, timeoutMs, optional = fal
     return JSON.parse(new TextDecoder().decode(bytes));
   };
   try {
-    return await Promise.race([request(), new Promise((_, reject) => {
+    return await Promise.race([request(), cancelled, new Promise((_, reject) => {
       timer = setTimeout(() => {
         controller.abort();
         reject(new Error(`Published asset request timed out: ${path}`));
       }, timeoutMs);
     })]);
-  } finally { clearTimeout(timer); }
+  } finally {
+    clearTimeout(timer);
+    pageSignal?.removeEventListener('abort', onCancel);
+  }
 }
 
 function validatedCues(cues, duration) {
@@ -72,11 +85,11 @@ function validatedCues(cues, duration) {
   });
 }
 
-async function loadVariant(fetchImpl, page, locale, timeoutMs) {
+async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal) {
   const target = page.targets[locale];
   required(target?.contentStatus === 'human_reviewed' && target.audioStatus === 'human_reviewed'
     && ['text', 'captions', 'audio'].every(capability => target.capabilities?.includes(capability)), 'Target is not ready for playback');
-  const release = await readJson(fetchImpl, target.releasePackageUrl, target.releasePackageJsonSha256, timeoutMs);
+  const release = await readJson(fetchImpl, target.releasePackageUrl, target.releasePackageJsonSha256, timeoutMs, false, pageSignal);
   required(release.schemaVersion === 'sermon-target-language-release-package-v2'
     && release.pageId === page.id && release.targetLocale === locale && release.contentLocale === locale
     && release.audioLocale === locale && release.sourceLocale === 'en'
@@ -92,8 +105,8 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs) {
     required(assets[role].path === `/${directory}/${page.id}/${locale}.${extension}`, 'Published asset identity mismatch');
   }
   const [content, captions] = await Promise.all([
-    readJson(fetchImpl, assets.content.path, assets.content.sha256, timeoutMs),
-    readJson(fetchImpl, assets.captions.path, assets.captions.sha256, timeoutMs),
+    readJson(fetchImpl, assets.content.path, assets.content.sha256, timeoutMs, false, pageSignal),
+    readJson(fetchImpl, assets.captions.path, assets.captions.sha256, timeoutMs, false, pageSignal),
   ]);
   required(content.schemaVersion === 'sermon-full-video-text-content-v1'
     && content.pageId === page.id && content.targetLocale === locale && content.sourceLocale === 'en'
@@ -138,8 +151,78 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs) {
  * spoken cues and fullTranscript. An unavailable optional catalog leaves legacy
  * weeks usable; a rejected locale is reported in errors and is never selectable.
  */
-export async function loadPublishedWeeks(fetchImpl = globalThis.fetch, { requestTimeoutMs = 10000 } = {}) {
+async function loadPage(fetchImpl, page, timeoutMs, pageSignal) {
+  const errors = [];
+  const variants = await Promise.all(LOCALES.filter(locale => page.targets[locale]).map(async locale => {
+    try { return [locale, await loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal)]; }
+    catch (error) { errors.push(`${page.id}/${locale}: ${error.message}`); return null; }
+  }));
+  const contentVariants = Object.fromEntries(variants.filter(Boolean));
+  // Optional delivery sidecar: never change a reviewed release or hide its audio
+  // because listening alignment is unavailable. Each locale binds its own track.
+  try {
+    const alignment = await readJson(fetchImpl, `/alignment/${page.id}.json`, undefined, timeoutMs, true, pageSignal);
+    if (alignment !== null) {
+      required(alignment.schemaVersion === 'sermon-published-alignment-v1'
+        && alignment.pageId === page.id && alignment.sourceIdentitySha256 === page.sourceIdentitySha256,
+      'Invalid alignment catalog identity');
+      for (const [locale, variant] of Object.entries(contentVariants)) {
+        try {
+          const target = alignment.targets?.[locale], m = target?.audioFingerprint;
+          required(target?.releasePackageJsonSha256 === variant.releasePackageJsonSha256
+            && m?.schemaVersion === 'sermon-audio-fingerprint-binding-v1'
+            && m.algorithmVersion === 'spectral-landmarks-v1' && m.pageId === page.id
+            && HASH.test(m.sourceSha256) && m.sourceSha256 === variant.sourceSha256
+            && m.trackSha256 === variant.tracks[0].sha256 && HASH.test(m.indexSha256)
+            && m.sourceStartSeconds === 0 && m.sourceEndSeconds === variant.sourceDurationSeconds
+            && m.captureSeconds === 10
+            && m.indexUrl === `/fingerprints/${m.indexSha256.slice(0, 16)}-landmarks.json`,
+          'Invalid alignment track/source binding');
+          variant.audioFingerprint = { ...m };
+          variant.automaticAudioAlignment = { schemaVersion: 'sermon-automatic-audio-alignment-v1', status: 'ready', required: true };
+        } catch (error) { errors.push(`${page.id}/${locale}: ${error.message}`); }
+      }
+    }
+  } catch (error) { errors.push(`${page.id}: ${error.message}`); }
+  try {
+    const reference = await readJson(fetchImpl, `/english-reference/${page.id}.json`, undefined, timeoutMs, true, pageSignal);
+    if (reference !== null) {
+      required(reference.schemaVersion === 'sermon-published-english-reference-v1'
+        && reference.pageId === page.id && reference.sourceIdentitySha256 === page.sourceIdentitySha256
+        && reference.reviewState === 'human_approved', 'Invalid English reference identity');
+      for (const [locale, variant] of Object.entries(contentVariants)) {
+        try {
+          const target = reference.targets?.[locale];
+          required(reference.sourceMediaSha256 === variant.sourceSha256
+            && target?.releasePackageJsonSha256 === variant.releasePackageJsonSha256
+            && target.contentSha256 === variant.contentSha256 && target.captionsSha256 === variant.captionsSha256
+            && Array.isArray(target.blocks) && target.blocks.length === variant.fullTranscript.length,
+          'English reference is not bound to this release');
+          const blocks = new Map();
+          for (const [i, block] of target.blocks.entries()) {
+            const cue = variant.fullTranscript[i];
+            required(block.textGroupId === cue.textGroupId && !blocks.has(block.textGroupId)
+              && text(block.english) && Array.isArray(block.sourceUnitIds) && block.sourceUnitIds.length > 0
+              && JSON.stringify(block.sourceUnitIds) === JSON.stringify(cue.sourceUnitIds),
+            'English reference group mismatch');
+            blocks.set(block.textGroupId, block);
+          }
+          // Associate by approved group IDs, never by translated wording or timing.
+          variant.transcript = { schemaVersion: 'sermon-bilingual-transcript-v1', blocks: target.blocks.map(block => ({
+            blockId: block.textGroupId, english: block.english, sourceTextOrigin: 'approved_english_source', reviewState: 'human_approved',
+          })) };
+          variant.tracks[0].cues = variant.tracks[0].cues.map(cue => ({...cue, blockId: cue.textGroupId}));
+          variant.fullTranscript = variant.fullTranscript.map(cue => ({...cue, english: blocks.get(cue.textGroupId).english}));
+        } catch (error) { errors.push(`${page.id}/${locale}: ${error.message}`); }
+      }
+    }
+  } catch (error) { errors.push(`${page.id}: ${error.message}`); }
+  const defaultLocale = contentVariants[page.defaultTargetLocale] ? page.defaultTargetLocale : Object.keys(contentVariants)[0];
+  return { week: defaultLocale ? { ...contentVariants[defaultLocale], defaultTargetLocale: defaultLocale, contentVariants } : null, errors };
+}
+export async function loadPublishedWeeks(fetchImpl = globalThis.fetch, { requestTimeoutMs = 10000, pageLoadTimeoutMs = 30000 } = {}) {
   const timeoutMs = Number.isFinite(requestTimeoutMs) && requestTimeoutMs > 0 ? Math.min(requestTimeoutMs, 30000) : 10000;
+  const loadTimeoutMs = Number.isFinite(pageLoadTimeoutMs) && pageLoadTimeoutMs > 0 ? Math.min(pageLoadTimeoutMs, 30000) : 30000;
   const empty = { weeks: [], defaultWeekId: null, errors: [] };
   let catalog;
   try {
@@ -149,7 +232,7 @@ export async function loadPublishedWeeks(fetchImpl = globalThis.fetch, { request
   } catch (error) { return { ...empty, errors: [error.message] }; }
   const errors = [];
   const seen = new Set();
-  const weeks = [];
+  const pages = [];
   for (const page of catalog.pages) {
     if (!page || typeof page !== 'object' || !ID.test(page.id) || !/^\d{4}-\d{2}-\d{2}$/.test(page.date) || seen.has(page.id)
       || page.sourceLocale !== 'en' || !HASH.test(page.sourceIdentitySha256) || !page.targets) {
@@ -157,73 +240,28 @@ export async function loadPublishedWeeks(fetchImpl = globalThis.fetch, { request
       continue;
     }
     seen.add(page.id);
-    const variants = await Promise.all(LOCALES.filter(locale => page.targets[locale]).map(async locale => {
-      try { return [locale, await loadVariant(fetchImpl, page, locale, timeoutMs)]; }
-      catch (error) { errors.push(`${page.id}/${locale}: ${error.message}`); return null; }
-    }));
-    const contentVariants = Object.fromEntries(variants.filter(Boolean));
-    // Optional delivery sidecar: never change a reviewed release or hide its audio
-    // because listening alignment is unavailable. Each locale binds its own track.
-    try {
-      const alignment = await readJson(fetchImpl, `/alignment/${page.id}.json`, undefined, timeoutMs, true);
-      if (alignment !== null) {
-        required(alignment.schemaVersion === 'sermon-published-alignment-v1'
-          && alignment.pageId === page.id && alignment.sourceIdentitySha256 === page.sourceIdentitySha256,
-        'Invalid alignment catalog identity');
-        for (const [locale, variant] of Object.entries(contentVariants)) {
-          try {
-            const target = alignment.targets?.[locale], m = target?.audioFingerprint;
-            required(target?.releasePackageJsonSha256 === variant.releasePackageJsonSha256
-              && m?.schemaVersion === 'sermon-audio-fingerprint-binding-v1'
-              && m.algorithmVersion === 'spectral-landmarks-v1' && m.pageId === page.id
-              && HASH.test(m.sourceSha256) && m.sourceSha256 === variant.sourceSha256
-              && m.trackSha256 === variant.tracks[0].sha256 && HASH.test(m.indexSha256)
-              && m.sourceStartSeconds === 0 && m.sourceEndSeconds === variant.sourceDurationSeconds
-              && m.captureSeconds === 10
-              && m.indexUrl === `/fingerprints/${m.indexSha256.slice(0, 16)}-landmarks.json`,
-            'Invalid alignment track/source binding');
-            variant.audioFingerprint = { ...m };
-            variant.automaticAudioAlignment = { schemaVersion: 'sermon-automatic-audio-alignment-v1', status: 'ready', required: true };
-          } catch (error) { errors.push(`${page.id}/${locale}: ${error.message}`); }
-        }
-      }
-    } catch (error) { errors.push(`${page.id}: ${error.message}`); }
-    try {
-      const reference = await readJson(fetchImpl, `/english-reference/${page.id}.json`, undefined, timeoutMs, true);
-      if (reference !== null) {
-        required(reference.schemaVersion === 'sermon-published-english-reference-v1'
-          && reference.pageId === page.id && reference.sourceIdentitySha256 === page.sourceIdentitySha256
-          && reference.reviewState === 'human_approved', 'Invalid English reference identity');
-        for (const [locale, variant] of Object.entries(contentVariants)) {
-          try {
-            const target = reference.targets?.[locale];
-            required(reference.sourceMediaSha256 === variant.sourceSha256
-              && target?.releasePackageJsonSha256 === variant.releasePackageJsonSha256
-              && target.contentSha256 === variant.contentSha256 && target.captionsSha256 === variant.captionsSha256
-              && Array.isArray(target.blocks) && target.blocks.length === variant.fullTranscript.length,
-            'English reference is not bound to this release');
-            const blocks = new Map();
-            for (const [i, block] of target.blocks.entries()) {
-              const cue = variant.fullTranscript[i];
-              required(block.textGroupId === cue.textGroupId && !blocks.has(block.textGroupId)
-                && text(block.english) && Array.isArray(block.sourceUnitIds) && block.sourceUnitIds.length > 0
-                && JSON.stringify(block.sourceUnitIds) === JSON.stringify(cue.sourceUnitIds),
-              'English reference group mismatch');
-              blocks.set(block.textGroupId, block);
-            }
-            // Associate by approved group IDs, never by translated wording or timing.
-            variant.transcript = { schemaVersion: 'sermon-bilingual-transcript-v1', blocks: target.blocks.map(block => ({
-              blockId: block.textGroupId, english: block.english, sourceTextOrigin: 'approved_english_source', reviewState: 'human_approved',
-            })) };
-            variant.tracks[0].cues = variant.tracks[0].cues.map(cue => ({...cue, blockId: cue.textGroupId}));
-            variant.fullTranscript = variant.fullTranscript.map(cue => ({...cue, english: blocks.get(cue.textGroupId).english}));
-          } catch (error) { errors.push(`${page.id}/${locale}: ${error.message}`); }
-        }
-      }
-    } catch (error) { errors.push(`${page.id}: ${error.message}`); }
-    const defaultLocale = contentVariants[page.defaultTargetLocale] ? page.defaultTargetLocale : Object.keys(contentVariants)[0];
-    if (defaultLocale) weeks.push({ ...contentVariants[defaultLocale], defaultTargetLocale: defaultLocale, contentVariants });
+    pages.push(page);
   }
+  pages.sort((a, b) => (b.id === catalog.defaultPageId) - (a.id === catalog.defaultPageId) || b.date.localeCompare(a.date));
+  const pageController = new AbortController();
+  const timer = setTimeout(() => pageController.abort(), loadTimeoutMs);
+  const results = new Array(pages.length);
+  let next = 0;
+  try {
+    // Load the current page before the archive competes for browser connections.
+    if (pages.length) results[0] = await loadPage(fetchImpl, pages[0], timeoutMs, pageController.signal);
+    // Historical pages are independent; cap simultaneous pages and the total wait.
+    const worker = async () => {
+      while (!pageController.signal.aborted && next < pages.length - 1) {
+        const index = ++next;
+        results[index] = await loadPage(fetchImpl, pages[index], timeoutMs, pageController.signal);
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(12, pages.length - 1) }, worker));
+  } finally { clearTimeout(timer); }
+  if (pageController.signal.aborted) errors.push('Published page loading timed out');
+  const weeks = results.flatMap(result => result?.week ? [result.week] : []);
+  for (const result of results) if (result) errors.push(...result.errors);
   weeks.sort((a, b) => b.date.localeCompare(a.date));
   return { weeks, defaultWeekId: weeks.find(week => week.id === catalog.defaultPageId)?.id || weeks[0]?.id || null, errors };
 }
