@@ -20,6 +20,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 from scripts import four_layer_progress as progress
 from scripts import four_layer_measure as measure
+from scripts import build_four_layer_timeline as timeline
 from scripts import sermon_accounting as accounting
 
 
@@ -27,6 +28,56 @@ SCHEMA = "sermon-public-tracker-snapshot-v2"
 VIDEO_ID = re.compile(r"[A-Za-z0-9_-]{11}")
 MAX_BYTES = 512 * 1024
 MAX_ELAPSED_SECONDS = 366 * 24 * 60 * 60
+
+
+def public_timeline(ledger: dict, events: list[dict]) -> dict | None:
+    """Project source-bound private spans onto a bounded relative public axis."""
+    source = timeline.production_data(ledger, events)
+    observed = []
+    for row in source["rows"]:
+        for span in [*row["intervals"], *row["attempts"],
+                     *(item for sub in row["substeps"] for item in sub["attempts"])]:
+            observed.extend((datetime.fromisoformat(span["start"]),
+                             datetime.fromisoformat(span["end"])))
+        if row["completedAt"]:
+            observed.append(datetime.fromisoformat(row["completedAt"]))
+    if not observed:
+        return None
+    origin, latest = min(observed), max(observed)
+    if not 0 <= (latest - origin).total_seconds() <= MAX_ELAPSED_SECONDS:
+        return None
+
+    def offset(value: str) -> float:
+        return round((datetime.fromisoformat(value) - origin).total_seconds(), 1)
+
+    def spans(rows: list[dict], maximum: int) -> list[dict]:
+        top = sorted(rows, key=lambda item: item["seconds"], reverse=True)[:maximum]
+        return [{"startSeconds": offset(item["start"]), "endSeconds": offset(item["end"]),
+                 "kind": item["kind"]} for item in sorted(top, key=lambda item: item["start"])]
+
+    rows = []
+    for row in source["rows"]:
+        children = []
+        for child in row["substeps"]:
+            attempts = child["attempts"]
+            children.append({"code": child["id"].split("/", 1)[1],
+                             "dependsOn": [item.split("/", 1)[1] for item in child["dependsOn"]],
+                             "observedCount": len(attempts),
+                             "longestSeconds": round(max((item["seconds"] for item in attempts), default=0), 1)
+                             if attempts else None,
+                             "attempts": spans(attempts, 5)})
+        rows.append({"id": row["id"],
+                     "intervals": spans(row["intervals"], 12),
+                     "attempts": spans(row["attempts"], 8),
+                     "completedAtSeconds": offset(row["completedAt"]) if row["completedAt"] else None,
+                     "substeps": children})
+    return {"schemaVersion": "sermon-tracker-relative-timeline-v1",
+            "axis": "seconds_since_first_recorded_event",
+            "durationSeconds": round((latest - origin).total_seconds(), 1),
+            "coverage": {"measuredSteps": source["coverage"]["measured"],
+                         "plannedSubsteps": source["coverage"]["plannedSubsteps"],
+                         "measuredSubsteps": source["coverage"]["measuredSubsteps"]},
+            "rows": rows}
 
 
 def read_json(path: Path | None) -> dict | None:
@@ -349,7 +400,8 @@ def build_snapshot(ledger: dict, *, monitor: dict | None = None,
                    receipt: dict | None = None, packages: dict | None = None,
                    fingerprints: dict | None = None,
                    site_url: str | None = None,
-                   timing_report: dict | None = None) -> dict:
+                   timing_report: dict | None = None,
+                   timeline_report: dict | None = None) -> dict:
     if site_url and not https_url(site_url):
         raise ValueError("site URL must be HTTPS")
     if catalog and catalog.get("schemaVersion") != "sermon-weekly-catalog-v1":
@@ -435,6 +487,7 @@ def build_snapshot(ledger: dict, *, monitor: dict | None = None,
         "sharedLayer1": public_row(next(row for row in report["rows"] if row["layer"] == 1)),
         "locales": locales,
         "steps": steps,
+        "timeline": timeline_report,
         "readOnly": True,
     }
     if len(json.dumps(snapshot, ensure_ascii=False).encode("utf-8")) > MAX_BYTES:
@@ -471,6 +524,7 @@ def main() -> None:
     accounting_dir = args.ledger.parent / "accounting"
     events, damaged = accounting.read_events(accounting_dir) if (accounting_dir / "events.jsonl").exists() else ([], [])
     timing_report = measure.timing_audit(ledger, events, damaged_rows=len(damaged))
+    timeline_report = public_timeline(ledger, events)
     monitor = read_json(args.source_monitor)
     snapshot = build_snapshot(ledger, monitor=monitor,
                               previous_source_state=private_source_state,
@@ -479,6 +533,7 @@ def main() -> None:
                               receipt=read_json(args.http_receipt), packages=packages,
                               fingerprints=fingerprints,
                               timing_report=timing_report,
+                              timeline_report=timeline_report,
                               site_url=args.site_url)
     progress.save(args.out, snapshot)
     if monitor:

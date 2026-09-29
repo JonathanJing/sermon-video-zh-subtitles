@@ -21,6 +21,26 @@ class TrackerSnapshotTest(unittest.TestCase):
                                "state": "was_live", "kind": "youtube-stream"},
         }
 
+    def test_relative_timeline_exposes_only_bounded_offsets_and_substep_codes(self):
+        fake = {"rows": [{"id": "L2-02@ko", "intervals": [
+            {"start": "2026-09-27T10:00:00+00:00", "end": "2026-09-27T10:01:00+00:00",
+             "seconds": 60, "kind": "waiting_review", "privatePath": "/private"}],
+            "attempts": [], "completedAt": "2026-09-27T10:02:00+00:00",
+            "substeps": [{"id": "L2-02@ko/reviewer", "dependsOn": ["L2-02@ko/translator"],
+                          "attempts": [{"start": "2026-09-27T10:01:00+00:00",
+                                        "end": "2026-09-27T10:01:15+00:00",
+                                        "seconds": 15, "kind": "measured", "stage": "private-model"}]}]}],
+                "coverage": {"measured": 0, "plannedSubsteps": 1, "measuredSubsteps": 1}}
+        with patch.object(tracker.timeline, "production_data", return_value=fake):
+            public = tracker.public_timeline(self.ledger, [])
+        self.assertEqual(public["axis"], "seconds_since_first_recorded_event")
+        self.assertEqual(public["durationSeconds"], 120)
+        self.assertEqual(public["rows"][0]["substeps"][0]["dependsOn"], ["translator"])
+        self.assertEqual(public["rows"][0]["substeps"][0]["longestSeconds"], 15)
+        self.assertNotIn("2026-09-27", json.dumps(public))
+        self.assertNotIn("private", json.dumps(public))
+        self.assertEqual(tracker.build_snapshot(self.ledger, timeline_report=public)["timeline"], public)
+
     def test_source_video_change_uses_private_state_and_public_snapshot_is_redacted(self):
         first = tracker.build_snapshot(self.ledger, monitor=self.monitor,
                                        source_page_url="https://www.marinerschurch.org/irvine/",

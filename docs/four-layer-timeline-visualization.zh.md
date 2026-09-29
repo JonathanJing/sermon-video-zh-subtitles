@@ -13,6 +13,8 @@ python3 scripts/build_four_layer_timeline.py \
 
 ## 时间含义
 
+同一份正式账本还可由 `scripts/build_four_layer_tracker_snapshot.py` 生成 Tracker 的公开相对时间线。它在 [Firebase 四层 Tracker](../experiments/sermon-dubbing-poc/tracker-admin/README.zh.md) 内按层显示，不再需要打开独立报告；本地报告仍保留绝对时间与可选 Dev 模拟视图。公开视图不含绝对起点、原始日志或私有阶段名，旧快照需重建后才有时间线。
+
 - **绿色实测条**：同一账本身份的 `stage_started` 到 `stage_finished`，或 Dev 模拟的 `startedAt` 到 `finishedAt`。失败尝试仍保留；未结束跨度不制造结束时间。
 - **蓝／黄／红状态条**：进度账本显示 `running`、`waiting_review`、`blocked` 的连续时段。它们是状态占用时间，不代表计算用时或人手实际工作时间。
 - **圆点**：只有完成记录，缺少开始时间。不能从前一层完成时间倒推该步骤耗时。
