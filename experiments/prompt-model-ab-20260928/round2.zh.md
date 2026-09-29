@@ -8,8 +8,9 @@
 
 ## 冻结设计
 
-- 4 条来自 `experiments/mobile-live-translation/runtime-samples.jsonl` 中上一轮未用的第 9、10、11、13 条；另外 20 条来自 `data/benchmarks/live-sermon-translation-v1/reference/` 下 5 个语料，每个语料在调用前按“最短、最长、首条经文、首条标记难点”选择 4 条。英文长度为 45–186 词。选择规则、样本原文、来源文件 SHA-256、提示词哈希和调用设置保存在本地 `artifacts/prompt-model-ab-20260928/round2/plan.json`。
+- 4 条来自 `experiments/mobile-live-translation/runtime-samples.jsonl` 中上一轮未用的第 9、10、11、13 条；另外 20 条来自 `data/benchmarks/live-sermon-translation-v1/reference/` 下 5 个语料，每个语料在调用前按“最短、最长、首条经文、首条标记难点”选择 4 条。英文长度为 45–186 词。[逐样本结果](round2-results.json)记录了选择规则、样本 ID、来源文件 SHA-256、提示词哈希、用量和两种呈现顺序的裁判判断；完整样本原文保存在本地 `artifacts/prompt-model-ab-20260928/round2/plan.json`。
 - 每条样本独立作为一个 `zh-Hans` 单元；相邻语境为空，两组使用相同的英文、模板 policy、输出字段及 JSON mode；候选调用顺序打乱。语料标记为 `youtube_caption_primary_model_unreviewed`／`audioAuditStatus=not_selected_yet`；仅作为文字诊断，不代表人工核对的讲章原文。
+- A/C 初译与双机器裁判实际发送的 system message 原文见[提示词快照](round2-prompts.md)；该文件的哈希与逐样本结果中的哈希一致。
 - `J_astra_low`（Astra `low`）与 `J_sol_medium`（Sol `medium`）使用同一评分提示词，匿名读取两版译文，给出忠实度、口语表达、关键错误标记和相对胜负。原始候选呈现顺序在两个裁判间相反；随后每个裁判对全部 24 条再以反向顺序评一次。
 - 调用真实译文前，两个裁判各评 5 组“明显植入错误译文／已修正译文”，均 5/5 选择修正版、5/5 标记错误版为关键错误，且未误标修正版。这只检验明显错误，不证明能可靠裁决术语、经文版本或细微语义。
 
@@ -39,4 +40,4 @@
 
 目前**不扩大为生产替换试验**，也不靠继续堆叠同类文字样本来声称 C 非劣效。若继续机器预筛，先给裁判提供对应讲章的已核对英文、适用术语表和中文经文版本规则，用较难的已知错误校准，再比较经过真实 Sol 复核、语言插件和候选准入链的最终候选；机器评价仍与人工审译、批准分开。若要分别识别模型和提示词的贡献，须在同一来源与评分标准下加入 B（改写提示词＋Astra）形成 A/B/C 配对比较。任何正式路由调整都需新的 policy 身份和完整验证。
 
-原始请求、响应 ID、用量、匿名映射、每条评分与本轮执行脚本均保存在被 Git 忽略的 `artifacts/prompt-model-ab-20260928/round2/` 及其上级目录。完成的 48 次候选、96 次裁判（首次及反向）、10 次校准响应均检查了完成状态与相应结构；它们没有进入 Git，也没有修改生产 prompt、模型路由或候选收据。
+原始请求、响应 ID、译文、裁判理由与本轮执行脚本保存在被 Git 忽略的 `artifacts/prompt-model-ab-20260928/round2/` 及其上级目录；提交的逐样本 JSON 不含译文原文或裁判自由文本。完成的 48 次候选、96 次裁判（首次及反向）、10 次校准响应均检查了完成状态与相应结构；没有修改生产 prompt、模型路由或候选收据。
