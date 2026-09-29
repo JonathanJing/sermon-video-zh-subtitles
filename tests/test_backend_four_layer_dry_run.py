@@ -15,6 +15,7 @@ class BackendFourLayerDryRunTests(unittest.TestCase):
             root = Path(folder) / "run"
             report = dry.run(self.fixture, root)
             self.assertEqual(report["status"], "pass_simulated")
+            self.assertEqual(report["schemaVersion"], "sermon-backend-four-layer-dry-run-v2")
             self.assertEqual(report["sourceAcquisition"], "simulated_no_network")
             self.assertEqual(set(report["layers"]), {"layer1", "layer2", "layer3", "layer4"})
             self.assertEqual(report["layers"]["layer1"]["status"],
@@ -24,9 +25,24 @@ class BackendFourLayerDryRunTests(unittest.TestCase):
             self.assertFalse(report["productionReleaseEligible"])
             self.assertEqual(report["productionPlannerGate"], "rejected_simulated_source")
             self.assertEqual(sum(report["externalCalls"].values()), 0)
-            self.assertEqual(len(report["events"]), 23)
+            self.assertEqual(len(report["events"]), 29)
             self.assertEqual(len([event for event in report["events"]
-                                  if ":unit-" in event["step"]]), 12)
+                                  if ":unit-" in event["step"]]), 18)
+            self.assertEqual(report["sharedControlLoops"], {
+                "layer2": "astra_sol_group_runner",
+                "layer3": "pcm16_schedule_and_assembly"})
+            self.assertEqual(sum(report["layers"]["layer2"][locale]["modelCalls"]
+                                 for locale in dry.LOCALES), 12)
+            for locale in dry.LOCALES:
+                self.assertEqual(report["layers"]["layer2"][locale]["formalGate"],
+                                 "rejected_simulated_source")
+                request = json.loads((root / "layer2-model-loop" / locale / "request.json")
+                                     .read_text(encoding="utf-8"))
+                self.assertTrue(request["simulationOnly"])
+                self.assertEqual(request["schemaVersion"],
+                                 "sermon-dry-run-layer2-request-v1")
+                self.assertFalse((root / "layer2-model-loop" / locale /
+                                  "candidate.json").exists())
             self.assertTrue(all(event["startedAt"] and event["endedAt"]
                                 and event["elapsedMs"] >= 0 for event in report["events"]))
             self.assertEqual(len(report["publicFiles"]), 5)
@@ -46,6 +62,31 @@ class BackendFourLayerDryRunTests(unittest.TestCase):
             self.assertEqual(report["status"], "failed")
             self.assertEqual(report["events"][-1]["step"], "layer2:ko")
             self.assertEqual(report["events"][-1]["status"], "fail")
+            self.assertFalse((root / "public/flow/index.html").exists())
+            with self.assertRaises(ValueError):
+                checked_backend_run(root)
+
+    def test_injected_independent_review_failure_stops_before_audio_and_layer4(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder) / "failed-review"
+            report = dry.run(self.fixture, root, fail_at="layer2:ko:unit-0:sol")
+            self.assertEqual(report["status"], "failed")
+            self.assertEqual(report["events"][-1]["step"], "layer2:ko:unit-0:sol")
+            self.assertEqual(report["events"][-1]["status"], "fail")
+            self.assertEqual(report["events"][-2]["step"], "layer2:ko:unit-0:astra")
+            self.assertEqual(next(event for event in report["events"]
+                                  if event["step"] == "layer2:ko")["status"], "fail")
+            self.assertNotIn("layer3", report["layers"])
+            self.assertFalse((root / "public/flow/index.html").exists())
+            with self.assertRaises(ValueError):
+                checked_backend_run(root)
+
+    def test_unreachable_failure_point_cannot_report_success(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder) / "unreachable"
+            report = dry.run(self.fixture, root, fail_at="layer2:ko:unit-7:sol")
+            self.assertEqual(report["status"], "failed")
+            self.assertIn("was not reached", report["failure"])
             self.assertFalse((root / "public/flow/index.html").exists())
             with self.assertRaises(ValueError):
                 checked_backend_run(root)

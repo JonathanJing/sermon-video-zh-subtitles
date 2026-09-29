@@ -81,6 +81,20 @@ jobs:
           scripts/run_sermon_production_supervisor_agent.py
           scripts/sermon_production_supervisor.py
 
+      - name: Evaluate simulated backend Layer 1-4 flow
+        if: matrix.shard_index == 1
+        run: >-
+          python scripts/evaluate_backend_four_layer_dry_run.py
+          --out "${RUNNER_TEMP}/backend-dry-run-evaluation.json"
+
+      - name: Preserve backend dry-run evaluation
+        if: always() && matrix.shard_index == 1
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-dry-run-evaluation
+          path: ${{ runner.temp }}/backend-dry-run-evaluation.json
+          if-no-files-found: warn
+
       - name: Run unit tests
         run: >-
           python scripts/run_unittest_ci.py

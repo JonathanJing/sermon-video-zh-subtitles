@@ -1,6 +1,6 @@
 # Codex 本地周末生产 Runbook
 
-每周正式制作前先运行[后端四层快速 Dry Run](backend-four-layer-dry-run.zh.md)：模拟拿到链接，走 Layer 1–4 的短夹具交接，并在 Firebase Dev 核对独立测试页。模拟通过只说明这条测试链路工作；正式周次仍从真实来源、审核和音频证据继续。本 runbook 下文的 Supervisor 仍只覆盖 `dual_pdf` 范围。
+每周正式制作前先运行 `python scripts/evaluate_backend_four_layer_dry_run.py --out <忽略目录内的评估收据>`，再按[后端四层快速 Dry Run](backend-four-layer-dry-run.zh.md)生成 Firebase Dev 独立测试页。该评估模拟拿到链接，走 Layer 1–4 的短夹具交接，并测试四处失败阻断及无效故障点；CI 也在非文档 PR 上执行。模拟通过只说明这条测试链路工作；正式周次仍从真实来源、审核和音频证据继续。本 runbook 下文的 Supervisor 仍只覆盖 `dual_pdf` 范围。
 
 2026-09-11 的安装与验收状态见 [Agents API 生产切换记录](agents-api-production-cutover-20260911.zh.md)：当时代码已安装，正式入口 shadow/execute 验收通过，每周调度已启用，业务状态为等待目标周日匹配源。该状态是切换收据，不是永久运行状态；每次执行必须重新读取当前 source、lease、审批、run status 与 QA。2026-09-20 的完整内容制作证据另见[本周制作记录](production-2026-09-20.zh.md)。
 
