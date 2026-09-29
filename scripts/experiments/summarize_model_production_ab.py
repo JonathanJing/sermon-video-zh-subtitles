@@ -19,6 +19,9 @@ RATES = {"gpt-6-astra": (10.0, 1.0, 12.5, 50.0),
          "gpt-6-luna": (0.1, 0.01, 0.125, 0.5)}
 LOCALES = ("zh-Hans", "ko", "es")
 ARMS = ("A", "B", "C")
+SCORE_FIELDS = {"omissionOrDistortion", "negationNumberName", "scriptureOrQuotation",
+                "addedMeaning", "naturalness1to5", "editMinutes", "criticalError", "evidence"}
+REQUIRED_SCORE_FIELDS = SCORE_FIELDS - {"evidence"}
 
 
 def load(path: Path) -> dict:
@@ -45,6 +48,41 @@ def token_cost(model: str, input_tokens: int, cached: int,
     return ((input_tokens - cached - writes) * uncached_rate
             + cached * cached_rate + writes * write_rate
             + output_tokens * output_rate) / 1_000_000
+
+
+def completed_blind_options(scores: dict) -> int:
+    """Keep old blank templates readable; require v2 for any human scores."""
+    version = scores.get("schemaVersion")
+    require(version in {"layer2-ab-blind-scores-v1", "layer2-ab-blind-scores-v2"},
+            "unsupported blind scoring schema")
+    require(isinstance(scores.get("ratings"), list), "missing blind ratings")
+    if version == "layer2-ab-blind-scores-v1":
+        require(scores.get("ratedOptions") == 0 and all(
+            row.get("reviewerId") is None
+            and all(value is None for value in row.get("draft", {}).values())
+            and all(value is None for value in row.get("reviewed", {}).values())
+            for row in scores["ratings"]),
+            "reviewed v1 scores require lossless v2 migration")
+        return 0
+    completed = 0
+    for row in scores["ratings"]:
+        reviews = row.get("reviews")
+        require(isinstance(reviews, list), "v2 option lacks reviewer records")
+        reviewer_ids = set()
+        option_completed = False
+        for review in reviews:
+            reviewer = review.get("reviewerId") if isinstance(review, dict) else None
+            require(isinstance(reviewer, str) and bool(reviewer.strip())
+                    and reviewer not in reviewer_ids, "duplicate or missing reviewer identity")
+            reviewer_ids.add(reviewer)
+            draft, revised = review.get("draft"), review.get("reviewed")
+            require(isinstance(draft, dict) and isinstance(revised, dict)
+                    and set(draft) == set(revised) == SCORE_FIELDS,
+                    "invalid reviewer score fields")
+            option_completed |= all(draft[field] is not None and revised[field] is not None
+                                    for field in REQUIRED_SCORE_FIELDS)
+        completed += option_completed
+    return completed
 
 
 def supervisor_summary(root: Path) -> dict:
@@ -115,6 +153,7 @@ def layer2_summary(root: Path) -> dict:
         sheet = json.loads(sheet_bytes)
         scores = load(directory / "blind-review-scores.json")
         key = load(directory / "blinding-key.json")
+        human_completed = completed_blind_options(scores)
         require(comparison["status"] == "shadow_only" and comparison["groups"] == 45,
                 f"{locale}: run incomplete")
         require(comparison["sourceHash"] == identity["sourceHash"]
@@ -211,7 +250,7 @@ def layer2_summary(root: Path) -> dict:
         locales[locale] = {"groups": 45, "pairedGroups": paired,
                            "excludedGroups": len(sheet["excludedGroups"]),
                            "blindOptions": len(scores["ratings"]),
-                           "humanRatingsCompleted": scores["ratedOptions"],
+                           "humanRatingsCompleted": human_completed,
                            "arms": by_arm}
     require(len(source_hashes) == len(anchor_hashes) == len(group_plans) == 1,
             "locales do not share one English source, anchor and group plan")

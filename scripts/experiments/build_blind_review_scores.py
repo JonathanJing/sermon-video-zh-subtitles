@@ -37,13 +37,45 @@ def build(sheet: dict, sha256: str) -> dict:
                 raise ValueError("invalid or duplicate anonymous code")
             codes.add(code)
             ratings.append({"translationGroupId": group["translationGroupId"],
-                            "code": code, "reviewerId": None,
-                            "draft": blank_score(), "reviewed": blank_score()})
-    return {"schemaVersion": "layer2-ab-blind-scores-v1",
+                            "code": code, "reviews": []})
+    return {"schemaVersion": "layer2-ab-blind-scores-v2",
             "targetLocale": sheet["targetLocale"],
             "sourceSheetSha256": sha256, "ratedOptions": 0,
             "ratings": ratings, "adjudications": [],
             "blindingKeyOpenedAt": None}
+
+
+def migrate_v1(scores: dict, template: dict) -> dict:
+    """Copy a v1 sheet into independent per-reviewer records without losing scores."""
+    if scores.get("schemaVersion") != "layer2-ab-blind-scores-v1":
+        raise ValueError("migration requires a v1 scoring sheet")
+    if (scores.get("targetLocale") != template["targetLocale"]
+            or scores.get("sourceSheetSha256") != template["sourceSheetSha256"]
+            or len(scores.get("ratings", [])) != len(template["ratings"])):
+        raise ValueError("v1 scoring sheet does not match the blind source")
+    old = {(row["translationGroupId"], row["code"]): row
+           for row in scores["ratings"]}
+    if len(old) != len(template["ratings"]):
+        raise ValueError("duplicate v1 scoring option")
+    for row in template["ratings"]:
+        previous = old.get((row["translationGroupId"], row["code"]))
+        if previous is None:
+            raise ValueError("v1 scoring option does not match the blind source")
+        reviewer = previous.get("reviewerId")
+        draft = previous.get("draft")
+        reviewed = previous.get("reviewed")
+        if reviewer is None:
+            if draft != blank_score() or reviewed != blank_score():
+                raise ValueError("v1 score has no reviewer identity")
+        else:
+            if not isinstance(reviewer, str) or not reviewer.strip():
+                raise ValueError("invalid v1 reviewer identity")
+            row["reviews"].append({"reviewerId": reviewer, "draft": draft,
+                                   "reviewed": reviewed})
+    template["ratedOptions"] = scores.get("ratedOptions", 0)
+    template["adjudications"] = scores.get("adjudications", [])
+    template["blindingKeyOpenedAt"] = scores.get("blindingKeyOpenedAt")
+    return template
 
 
 def ignored_or_external(path: Path) -> bool:
@@ -59,11 +91,15 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--sheet", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--migrate-from", type=Path,
+                        help="Copy existing v1 scores into a new v2 file without overwriting either")
     args = parser.parse_args()
     if not ignored_or_external(args.out):
         parser.error("scoring sheet must stay in an ignored or external directory")
     raw = args.sheet.read_bytes()
     template = build(json.loads(raw), hashlib.sha256(raw).hexdigest())
+    if args.migrate_from is not None:
+        template = migrate_v1(json.loads(args.migrate_from.read_text(encoding="utf-8")), template)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with args.out.open("x", encoding="utf-8") as stream:
         json.dump(template, stream, ensure_ascii=False, indent=2)

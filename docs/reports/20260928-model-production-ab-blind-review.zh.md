@@ -1,6 +1,8 @@
 # Layer 2 三语模型实验盲评表使用说明
 
-对应[实验计划](20260928-model-production-ab-plan.zh.md)与[结果](20260928-model-production-ab-results.zh.md)。本机 `artifacts/model-production-ab-20260928/layer2-{zh-Hans,ko,es}/blind-review.json` 含英文源单元、随机排列的三个选项、初译和 Sol 复核稿；同目录的 `blinding-key.json` 只在评分锁定后揭盲。两份文件均留在 Git 忽略目录，因为包含讲稿与译文。`scripts/experiments/build_blind_review_scores.py` 从匿名包生成同目录 `blind-review-scores.json`，保留每个选项的初译／复核双份空白评分，并绑定匿名包 SHA-256；使用排他创建，防止覆盖已填写的人审数据。
+对应[实验计划](20260928-model-production-ab-plan.zh.md)与[结果](20260928-model-production-ab-results.zh.md)。本机 `artifacts/model-production-ab-20260928/layer2-{zh-Hans,ko,es}/blind-review.json` 含英文源单元、随机排列的三个选项、初译和 Sol 复核稿；同目录的 `blinding-key.json` 只在评分锁定后揭盲。两份文件均留在 Git 忽略目录，因为包含讲稿与译文。`scripts/experiments/build_blind_review_scores.py` 从匿名包生成同目录 `blind-review-scores.json`，并绑定匿名包 SHA-256；使用排他创建，防止覆盖已填写的人审数据。
+
+评分表 v2 中每个匿名选项有一个 `ratings[]` 记录，其中 `reviews[]` 按 `reviewerId` 分别保存每位审核者的 `draft`／`reviewed` 分数。增加第二位审核者时追加一条 `reviews[]`，不得覆盖第一位的原始分数；分歧裁决写入独立的 `adjudications[]`。`humanRatingsCompleted` 只统计至少有一份完整人审的匿名选项，不代表正式翻译批准。旧 v1 空白模板仍可用于重现原实验统计；开始人审前应使用 `--migrate-from` 生成独立的 v2 文件，核对来源 hash、选项数和原始分数后，再把旧文件保留为备份并将 v2 文件作为评分表。迁移拒绝没有审核者身份的非空旧评分。
 
 ## 评分单位与顺序
 

@@ -13,6 +13,7 @@ import copy
 import hashlib
 import json
 import math
+import os
 import sys
 import tempfile
 import time
@@ -143,6 +144,44 @@ def payload(model: str, sunday: str, *, page_release: bool = False) -> dict:
     }
 
 
+def write_case_report(run_dir: Path, row: dict) -> None:
+    """Atomically preserve the measured row before batch progress is rewritten."""
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=run_dir,
+                                     prefix=".case-report-", suffix=".tmp", delete=False) as stream:
+        json.dump(row, stream, ensure_ascii=False, sort_keys=True)
+        stream.write("\n")
+        stream.flush()
+        os.fsync(stream.fileno())
+        pending = Path(stream.name)
+    pending.replace(run_dir / "case-report.json")
+
+
+def restore_case_reports(cases: list[dict], root: Path, prior_rows: list[dict]) -> None:
+    """Import timings from an older progress/final report after checking session identity."""
+    fixtures = {case["id"]: case for case in cases}
+    seen = set()
+    for row in prior_rows:
+        case_id, model = row.get("caseId"), row.get("model")
+        if case_id not in fixtures or model not in MODELS or (case_id, model) in seen:
+            raise ValueError("prior live report has an unknown or duplicate case")
+        seen.add((case_id, model))
+        case = fixtures[case_id]
+        run_dir = root / case_id / model
+        bound = payload(model, "2026-09-27",
+                        page_release=case["snapshot"].get("workflowScope") == "page_release")
+        bound["agent"]["model"] = "<arm>"
+        result_path = run_dir / "result.json"
+        if (row.get("backend") != "live" or row.get("runDirectory") != str(run_dir)
+                or row.get("caseSha256") != digest(case["snapshot"])
+                or row.get("commonPayloadSha256") != digest(bound)
+                or not isinstance(row.get("elapsedSeconds"), (int, float))
+                or not result_path.exists()
+                or row.get("sessionId") != json.loads(result_path.read_text(encoding="utf-8")).get("session_id")):
+            raise ValueError("prior live case does not match its bound session")
+        if not (run_dir / "case-report.json").exists():
+            write_case_report(run_dir, row)
+
+
 def run_case(case: dict, model: str, *, backend: str, root: Path,
              max_seconds: float = 120) -> dict:
     if model not in MODELS or backend not in {"replay", "live"}:
@@ -156,21 +195,38 @@ def run_case(case: dict, model: str, *, backend: str, root: Path,
     outbound = supervisor.remote_snapshot(snapshot, config.sunday)
     tool = supervisor.ProductionTools(config, False, run_dir, SupervisorDecision)
     script = (case.get("scripts_by_model") or {}).get(model, case["script"])
-    client = ReplayClient(script) if backend == "replay" else AgentsAPIClient()
     experiment_payload = payload(model, config.sunday,
                                  page_release=snapshot.get("workflowScope") == "page_release")
     common_payload = copy.deepcopy(experiment_payload)
     common_payload["agent"]["model"] = "<arm>"
+    case_hash = digest(snapshot)
+    common_hash = digest(common_payload)
     if backend == "live":
         # The fixture must remain identical on restart. The binding is outside
         # the session directory so the Agents runner's empty-directory rule holds.
         binding_path = run_dir.parent / f"{model}-binding.json"
-        binding = {"caseSha256": digest(snapshot), "payloadSha256": digest(experiment_payload)}
+        binding = {"caseSha256": case_hash, "payloadSha256": digest(experiment_payload)}
         if binding_path.exists():
             if json.loads(binding_path.read_text(encoding="utf-8")) != binding:
                 raise ValueError("live case or payload changed; use a new run root")
         else:
             binding_path.write_text(json.dumps(binding, sort_keys=True) + "\n", encoding="utf-8")
+        report_path = run_dir / "case-report.json"
+        result_path = run_dir / "result.json"
+        if report_path.exists():
+            saved = json.loads(report_path.read_text(encoding="utf-8"))
+            if (not result_path.exists() or saved.get("caseId") != case_id
+                    or saved.get("model") != model or saved.get("backend") != backend
+                    or saved.get("caseSha256") != case_hash
+                    or saved.get("commonPayloadSha256") != common_hash
+                    or saved.get("runDirectory") != str(run_dir)
+                    or saved.get("sessionId") != json.loads(result_path.read_text(encoding="utf-8")).get("session_id")
+                    or not isinstance(saved.get("elapsedSeconds"), (int, float))):
+                raise ValueError("saved live case report does not match its bound session")
+            return saved
+        if result_path.exists():
+            raise ValueError("completed live session lacks its elapsed-time report; reconcile before resuming")
+    client = ReplayClient(script) if backend == "replay" else AgentsAPIClient()
     started = time.monotonic()
     # Patch only the snapshot reader. ProductionTools retains its actual
     # allowlist, submit guards and persisted tool ledger.
@@ -184,9 +240,9 @@ def run_case(case: dict, model: str, *, backend: str, root: Path,
     truth = verify_decision({}, snapshot, "shadow")
     verified = verify_decision(decision or {}, snapshot, "shadow")
     trace = client.submitted if backend == "replay" else live_tool_trace(result, run_dir)
-    return {
+    row = {
         "caseId": case_id, "model": model, "reasoningEffort": "medium", "backend": backend,
-        "caseSha256": digest(snapshot), "commonPayloadSha256": digest(common_payload),
+        "caseSha256": case_hash, "commonPayloadSha256": common_hash,
         "outboundSnapshot": outbound, "outboundSha256": digest(outbound),
         "sessionStatus": result["status"], "sessionId": result["session_id"],
         "requestIds": request_ids(result), "usage": result.get("usage"),
@@ -201,11 +257,19 @@ def run_case(case: dict, model: str, *, backend: str, root: Path,
                                      and truth["status"] != "complete"),
         "runDirectory": str(run_dir),
     }
+    if backend == "live":
+        # Cache the complete row before the batch progress file is rewritten.
+        # Reopening result.json is nearly instant and cannot measure the original run.
+        write_case_report(run_dir, row)
+    return row
 
 
 def run_experiment(cases: list[dict], *, backend: str, root: Path,
                    max_seconds: float = 120,
+                   prior_rows: list[dict] | None = None,
                    on_result: Callable[[list[dict]], None] | None = None) -> dict:
+    if backend == "live" and prior_rows is not None:
+        restore_case_reports(cases, root, prior_rows)
     rows = []
     # Alternating order avoids consistently giving one model the earlier live slot.
     for index, case in enumerate(cases):
@@ -270,8 +334,15 @@ def main() -> int:
         if args.out.resolve().is_relative_to(root):
             parser.error("--out must be outside --run-root")
         root.mkdir(parents=True, exist_ok=True)
+        prior_rows = None
+        if args.out.exists():
+            prior = json.loads(args.out.read_text(encoding="utf-8"))
+            if prior.get("backend") != "live" or not isinstance(prior.get("cases"), list):
+                parser.error("existing --out is not a live experiment report")
+            prior_rows = prior["cases"]
         report = run_experiment(cases, backend="live", root=root,
                                 max_seconds=args.max_seconds_per_case,
+                                prior_rows=prior_rows,
                                 on_result=save_progress)
     else:
         with tempfile.TemporaryDirectory(prefix="supervisor-ab-") as temporary:

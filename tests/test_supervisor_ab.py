@@ -102,6 +102,28 @@ class SupervisorABTests(unittest.TestCase):
         self.assertEqual(trace, [{"name": "submit_supervisor_decision",
                                   "output": {"status": "recorded"}, "error": None}])
 
+    def test_live_restart_reuses_original_case_elapsed_time(self):
+        cases = self.cases[:1]
+        with patch.object(ab, "AgentsAPIClient", side_effect=lambda: ab.ReplayClient(cases[0]["script"])):
+            original = ab.run_experiment(cases, backend="live", root=self.root)
+        self.assertEqual(len(original["cases"]), 2)
+        # Older runs have result.json and a progress row, but no per-case cache.
+        (Path(original["cases"][0]["runDirectory"]) / "case-report.json").unlink()
+        with patch.object(ab, "run_agent_session", side_effect=AssertionError("replayed paid session")):
+            resumed = ab.run_experiment(cases, backend="live", root=self.root,
+                                        prior_rows=original["cases"])
+        self.assertEqual(resumed, original)
+        for row in resumed["cases"]:
+            self.assertTrue((Path(row["runDirectory"]) / "case-report.json").exists())
+
+    def test_live_cached_result_without_timing_is_not_remeasured(self):
+        case = self.cases[0]
+        with patch.object(ab, "AgentsAPIClient", return_value=ab.ReplayClient(case["script"])):
+            row = ab.run_case(case, ab.MODELS[0], backend="live", root=self.root)
+        (Path(row["runDirectory"]) / "case-report.json").unlink()
+        with self.assertRaisesRegex(ValueError, "lacks its elapsed-time report"):
+            ab.run_case(case, ab.MODELS[0], backend="live", root=self.root)
+
 
 if __name__ == "__main__":
     unittest.main()
