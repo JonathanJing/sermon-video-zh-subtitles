@@ -2,7 +2,22 @@
 const PAGE_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,159}$/;
 const LOCALE = /^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/;
 const STEP = /^L[1-4]-\d{2}(?:@[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*)?$/;
+const SUBSTAGE = ['initial_translation', 'independent_review', 'unit_synthesis',
+  'audio_validation', 'schedule_sync'];
 const STATUS = ['pending', 'running', 'waiting_review', 'blocked', 'complete'];
+const TIMELINE_SCHEMA = 'sermon-tracker-relative-timeline-v1';
+const MAX_TIMELINE_SECONDS = 366 * 24 * 60 * 60;
+const SUBSTEP_CODES = {
+  'L1-02': ['transcribe', 'align', 'freeze'],
+  'L1-03': ['anchors', 'boundary_check'],
+  'L2-02': ['group', 'translator', 'reviewer', 'repair'],
+  'L2-03': ['coverage', 'language', 'admission'],
+  'L3-02': ['inputs', 'validate', 'model_load', 'render_units', 'unit', 'assemble'],
+  'L3-03': ['decode', 'hash', 'asr'],
+  'L3-04': ['schedule', 'captions', 'mix'],
+  'L4-02': ['build', 'upload'],
+  'L4-03': ['get', 'range'],
+};
 const DELIVERY = ['unknown', 'not_generated', 'generated_local', 'http_verified',
   'declared_unchecked', 'index_missing', 'hash_mismatch', 'binding_invalid',
   'legacy_catalog_local', 'legacy_catalog_http_verified', 'legacy_track_listed',
@@ -13,6 +28,47 @@ const DELIVERY = ['unknown', 'not_generated', 'generated_local', 'http_verified'
 const enumValue = (value, allowed, fallback = 'unknown') => allowed.includes(value) ? value : fallback;
 const number = (value) => Number.isFinite(value) && value >= 0 ? value : 0;
 const elapsed = (value) => Number.isInteger(value) && value >= 0 && value <= 366 * 24 * 60 * 60 ? value : null;
+const elapsedDuration = (value) => Number.isFinite(value) && value >= 0 && value <= 366 * 24 * 60 * 60 ? value : null;
+const offset = (value, duration) => Number.isFinite(value) && value >= 0 && value <= duration
+  ? Math.round(value * 10) / 10 : null;
+
+function publicTimeline(value, stepIds) {
+  if (value?.schemaVersion !== TIMELINE_SCHEMA || value.axis !== 'seconds_since_first_recorded_event'
+      || !Number.isFinite(value.durationSeconds) || value.durationSeconds < 0
+      || value.durationSeconds > MAX_TIMELINE_SECONDS || !Array.isArray(value.rows)) return null;
+  const durationSeconds = Math.round(value.durationSeconds * 10) / 10;
+  const spans = (items, max, allowed) => (Array.isArray(items) ? items : []).slice(0, max)
+    .map((item) => ({ startSeconds: offset(item?.startSeconds, durationSeconds),
+      endSeconds: offset(item?.endSeconds, durationSeconds),
+      kind: allowed.includes(item?.kind) ? item.kind : null }))
+    .filter((item) => item.startSeconds !== null && item.endSeconds !== null
+      && item.startSeconds <= item.endSeconds && item.kind);
+  const rows = value.rows.slice(0, 100).filter((item) => stepIds.has(item?.id)).map((item) => {
+    const allowed = SUBSTEP_CODES[item.id.split('@')[0]] || [];
+    return { id: item.id,
+      intervals: spans(item.intervals, 12, ['running', 'waiting_review', 'blocked']),
+      attempts: spans(item.attempts, 8, ['measured']),
+      completedAtSeconds: offset(item.completedAtSeconds, durationSeconds),
+      substeps: (Array.isArray(item.substeps) ? item.substeps : []).slice(0, allowed.length)
+        .filter((child) => allowed.includes(child?.code)).map((child) => ({
+          code: child.code,
+          dependsOn: (Array.isArray(child.dependsOn) ? child.dependsOn : [])
+            .filter((code) => allowed.includes(code)).slice(0, 3),
+          observedCount: Number.isInteger(child.observedCount) && child.observedCount >= 0
+            && child.observedCount <= 100000 ? child.observedCount : 0,
+          longestSeconds: offset(child.longestSeconds, MAX_TIMELINE_SECONDS),
+          attempts: spans(child.attempts, 5, ['measured']),
+        })),
+    };
+  });
+  return { schemaVersion: TIMELINE_SCHEMA, axis: 'seconds_since_first_recorded_event',
+    durationSeconds, coverage: {
+      measuredSteps: Math.min(rows.length, number(value.coverage?.measuredSteps)),
+      plannedSubsteps: rows.reduce((total, row) => total + row.substeps.length, 0),
+      measuredSubsteps: rows.reduce((total, row) => total
+        + row.substeps.filter((child) => child.observedCount > 0).length, 0),
+    }, rows };
+}
 const stamp = (value) => typeof value === 'string' && /^\d{4}-\d\d-\d\dT/.test(value)
   && !Number.isNaN(Date.parse(value)) ? value : null;
 const row = (value) => ({ layer: [1, 2, 3, 4].includes(value?.layer) ? value.layer : null,
@@ -48,6 +104,8 @@ export function sanitizeSnapshot(input) {
     .filter((step) => STEP.test(step?.id || '') && step.status === 'complete'
       && step.timing?.measuredExecutionSeconds == null)
     .map((step) => step.id);
+  const publicStepIds = new Set(input.steps.slice(0, 150)
+    .filter((step) => STEP.test(step?.id || '')).map((step) => step.id));
   return {
     // Upgrade existing v1 records to v2; missing elapsed counters remain null.
     schemaVersion: 'sermon-public-tracker-snapshot-v2', pageId: input.pageId,
@@ -83,6 +141,7 @@ export function sanitizeSnapshot(input) {
       completedWithoutMeasuredExecutionCount: missingTimingStepIds.length,
       completedWithoutMeasuredExecutionStepIds: missingTimingStepIds,
     },
+    timeline: publicTimeline(input.timeline, publicStepIds),
     sharedLayer1: row(input.sharedLayer1),
     locales: input.locales.slice(0, 20).filter((item) => LOCALE.test(item?.locale || '')).map((item) => ({
       locale: item.locale,
@@ -122,6 +181,21 @@ export function sanitizeSnapshot(input) {
         closedReviewWaits: number(step.timing?.closedReviewWaits),
         operatorReviewWaitSeconds: step.timing?.operatorReviewWaitSeconds == null ? null : number(step.timing.operatorReviewWaitSeconds),
         openReviewWait: step.timing?.openReviewWait === true,
+        subStages: (Array.isArray(step.timing?.subStages) ? step.timing.subStages : [])
+          .filter((child) => SUBSTAGE.includes(child?.id)).slice(0, 8).map((child) => ({
+            id: child.id,
+            attempts: number(child.attempts),
+            failedAttempts: number(child.failedAttempts),
+            completedUnits: number(child.completedUnits),
+            totalUnits: child.totalUnits == null ? null : number(child.totalUnits),
+            running: number(child.running),
+            executionSeconds: number(child.executionSeconds),
+            openElapsedSeconds: child.openElapsedSeconds == null ? null : elapsedDuration(child.openElapsedSeconds),
+            audioSeconds: child.audioSeconds == null ? null : number(child.audioSeconds),
+            overLimitUnits: child.overLimitUnits == null ? null : number(child.overLimitUnits),
+            clipDurationSeconds: child.clipDurationSeconds == null ? null : number(child.clipDurationSeconds),
+            plannedDurationSeconds: child.plannedDurationSeconds == null ? null : number(child.plannedDurationSeconds),
+          })),
       },
     })),
   };

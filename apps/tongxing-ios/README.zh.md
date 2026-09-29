@@ -8,7 +8,7 @@
 
 Dev Debug 与正式版沿用同一原生收听界面、播放器、下载、字幕和现场对齐流程。顶部的短语言标记或“更多 → 界面语言”可选择跟随系统、简体中文、English、한국어、Español、Tiếng Việt；切换只更新 App 的按钮与提示，不改变证道内容、音轨、进度或对齐状态。Debug 读取 Firebase Dev，Release 读取正式站点；Dev POC 目录不符合人工审核的 v2 发布条件时，继续显示原生中文版本，不以演示页替换播放器。
 
-“更多选项 → 多语种音色试听 · Demo”按需读取当前环境同源的试听目录。展开讲员后先列英语原声，再列四语 AI 样音；点击音频会暂停原生证道播放器，并在系统浏览器打开试听链接，不建立第二个原生播放器或改变当前证道音轨。目录缺失时显示重试入口；Release 不会借用 Dev 音频。试听仍标为待人工听审，不进入正式 Layer 3 审核状态。
+“更多选项 → 多语种音色试听 · Demo”按需读取当前环境同源的试听目录。Release 使用正式站 `weekly.json.voiceBank` 的英文原声／中文样音及 `production-ko-es.json` 的韩语／西班牙语样音；Debug 保留 Dev 的四语试听目录。音频在播放前核对同源地址与 SHA-256，试听结束后恢复当前正式音轨。韩语和西班牙语样音仍待人工听审，不进入正式 Layer 3 审核状态。
 
 界面按用户选定的 **iOS 27 设计语言** 实施：系统导航与 Sheet、26 pt 起的动态字幕、单层 Liquid Glass 悬浮播放栏、深色语义配色，以及窄屏、横屏和大字布局。具体规则与 Apple 官方来源见 [设计约定](DESIGN.zh.md)。
 
@@ -18,7 +18,7 @@ Dev Debug 与正式版沿用同一原生收听界面、播放器、下载、字�
 
 1. 在 Xcode 选择 `Tongxing` scheme 与 iPhone 模拟器或已连接的 iPhone。本机 macOS 27 使用已安装的 `Xcode-beta.app`。
 2. 真机运行时，复制 `Config/Local.example.xcconfig` 为被 Git 忽略的 `Config/Local.xcconfig` 并填写自己的开发者 Team；也可在 Xcode 的 `Signing & Capabilities` 检查实际签名。开发用 Bundle ID 默认 `com.jonathanjing.tongxing.dev`，注册前可根据账号调整。
-3. 点击 Run。首次读取目录需要网络；选择“下载本篇”，待显示“正在使用已下载音频”后可断网收听。
+3. 点击 Run。首次读取目录需要网络；正式多语言页面会自动准备当前语言音频，已验证的本地音频下次直接复用。旧周次仍可手动选择“下载本篇”以离线收听。
 4. 使用 Product → Test（⌘U）运行 `TongxingTests` 和 `TongxingUITests`。播放器测试使用合成静音和独立临时历史；UI 测试使用显式启动的隔离目录与音频夹具。正常 Run 仍加载已发布内容。
 
 Apple 账号、Team 配置、设备信息和签名凭据不进入 Git。App Store Connect 已创建「同行·证道中文听译」记录；旧 build 2 曾完成分发 IPA 导出；本轮 build 3 已完成签名 Archive，新增扩展的分发导出受 Xcode 账号与描述文件阻塞，尚未上传 TestFlight。详见 [Beta 资料与实测](BETA-TESTING.zh.md)。
@@ -42,11 +42,11 @@ xcodegen generate
 
 下载目前应保持 App 打开；取消会清理临时文件，已经完整下载的音频不受影响。尚未实现系统后台下载与跨进程断点续传。正在播放或已手动定位时，下载完成不自动切换音源；可明确选择“使用离线版”。
 
-反馈/使用统计的原生接入、离线文件管理页面、隐私申报和 TestFlight 分发属于后续交付。本阶段原生客户端没有业务统计上传；网页现有统计行为不受影响。App 图标和页头使用用户提供的「同」字与书本组合标识；原图及品牌参考保存在 `Branding/`，尺寸由 `scripts/generate-app-icon.swift` 生成。现已接入浅色/深色外观，配色、资源配置及版本边界见 [品牌标识说明](Branding/README.md)。
+原生 App 在“更多选项 → 隐私与支持”提供默认关闭的匿名使用统计开关。自愿开启后，分别记录界面语言访问和实际音轨收听，以每日更换的随机标识统计设备、时长及覆盖范围；不上传姓名、邮箱、广告标识或麦克风录音，不跨日追踪。关闭时立即停止并尝试撤回本次运行中各语言的统计，断网不能保证撤回。网络请求仅在当前进程重试，无持久离线上传队列。设备数不等于人数。反馈原生接入和离线文件管理页面仍属于后续交付。App 图标和页头使用用户提供的「同」字与书本组合标识；原图及品牌参考保存在 `Branding/`，尺寸由 `scripts/generate-app-icon.swift` 生成。现已接入浅色/深色外观，配色、资源配置及版本边界见 [品牌标识说明](Branding/README.md)。
 
 ## 数据与模块
 
-Release build 读取 `https://ai-for-god-sermon-audio.web.app/weekly.json` 与同源 `/media/*.mp3`；Debug build 使用隔离的 `https://ai-for-god-sermon-audio-dev.web.app`。legacy 契约为 `sermon-weekly-catalog-v1`，新增 Layer 4 POC 同源读取 `/multilingual-v2.json` 和 immutable `/releases/<page>/<locale>.json`。正式来源只接受 `published_http_verified` 的静态页面包；Firebase Dev 的不可变 `candidate` 包仅在明确的 Dev 来源开放，校验其内容 JSON 哈希后生成无脚本的 App 阅读页。客户端选择内容语言时先校验发布包与页面 SHA-256，再在 App 内显示已验证页面；离线缓存每次打开都重新校验。页面预览限制脚本、外部资源和导航，避免显示未验证的网络内容。原生中文播放器与现场对齐保持正式版实现，不重生成、不重新审核文字与音频。
+Release build 读取 `https://ai-for-god-sermon-audio.web.app/weekly.json` 与同源 `/media/*.mp3`；Debug build 使用隔离的 `https://ai-for-god-sermon-audio-dev.web.app`。legacy 契约为 `sermon-weekly-catalog-v1`。正式站多语言目录现读取 `/multilingual-v3.json` 和 immutable `/releases-v2/<page>/<locale>.json`；Dev POC 继续读取 v2 目录及 v1 发布包。正式来源只接受 `published_http_verified` 的静态页面包；Firebase Dev 的不可变 `candidate` 包仅在明确的 Dev 来源开放，校验其内容 JSON 哈希后生成无脚本的 App 阅读页。客户端选择内容语言时先校验发布包与页面 SHA-256，再在 App 内显示已验证页面；离线缓存每次打开都重新校验。页面预览限制脚本、外部资源和导航，避免显示未验证的网络内容。原生中文播放器与现场对齐保持正式版实现，不重生成、不重新审核文字与音频。
 
 | 路径 | 职责 |
 |---|---|

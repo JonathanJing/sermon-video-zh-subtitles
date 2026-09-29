@@ -37,6 +37,7 @@ SCHEMA = "sermon-target-language-audio-package-v1"
 RENDER_SCHEMA = "sermon-target-language-render-manifest-v1"
 RECEIPT_SCHEMA = unit_integrity.RECEIPT_SCHEMA
 EPSILON = 0.035
+MP3_CONTAINER_PADDING_SECONDS = 0.10
 
 
 def require(ok: bool, message: str) -> None:
@@ -116,10 +117,11 @@ def near(actual: float, expected: object, label: str) -> None:
 def validate_job(source: dict[str, Any], anchor: dict[str, Any], candidate: dict[str, Any],
                  job: dict[str, Any], adapter: dict[str, Any], policy: dict[str, Any],
                  human_receipt: dict[str, Any], registry: dict[str, Any],
-                 clip_voice_authorization: dict[str, Any],
+                 clip_voice_authorization: dict[str, Any] | None,
                  clip_voice_capability: dict[str, Any] | None,
                  clip_timeline: dict[str, Any],
-                 paths: dict[str, Path]) -> None:
+                 paths: dict[str, Path], *,
+                 source_voice_authorization: dict[str, Any] | None = None) -> None:
     speech.validate_target_candidate(source, anchor, candidate)
     review = source.get("review", {})
     window = source.get("source", {}).get("approvedWindow", {})
@@ -135,6 +137,7 @@ def validate_job(source: dict[str, Any], anchor: dict[str, Any], candidate: dict
     speech.validate_human_review_receipt(source, anchor, candidate, human_receipt)
     speech.validate_adapter(adapter, candidate["targetLocale"], registry,
                             clip_voice_authorization=clip_voice_authorization,
+                            source_voice_authorization=source_voice_authorization,
                             clip_voice_capability=clip_voice_capability,
                             source_package=source, candidate=candidate)
     timeline_map.validate(clip_timeline, source, anchor)
@@ -148,11 +151,18 @@ def validate_job(source: dict[str, Any], anchor: dict[str, Any], candidate: dict
     require(adapter.get("capabilityStatus") == "verified", "Unverified speech adapter")
     require((clip_voice_capability is None) == ("clipVoiceCapability" not in job.get("inputs", {})),
             "Speech job clip capability input presence mismatch")
+    require((clip_voice_authorization is None) != (source_voice_authorization is None),
+            "Formal audio requires exactly one source-bound voice authorization")
+    authorization_key = ("clipVoiceAuthorization", "clip_voice_authorization") if clip_voice_authorization else (
+        "sourceVoiceAuthorization", "source_voice_authorization")
+    require(("clipVoiceAuthorization" in job.get("inputs", {})) == (clip_voice_authorization is not None)
+            and ("sourceVoiceAuthorization" in job.get("inputs", {})) == (source_voice_authorization is not None),
+            "Speech job voice authorization input presence mismatch")
     bindings = (("englishSourcePackage", "source"), ("anchorManifest", "anchor"),
                       ("targetLanguageCandidate", "candidate"),
                       ("humanReviewReceipt", "human_receipt"),
                       ("targetLanguagePolicy", "policy"), ("speakerRegistry", "registry"),
-                      ("clipVoiceAuthorization", "clip_voice_authorization"),
+                      authorization_key,
                       ("clipTimelineMap", "clip_timeline_map"))
     if clip_voice_capability is not None:
         bindings += (("clipVoiceCapability", "clip_voice_capability"),)
@@ -161,6 +171,7 @@ def validate_job(source: dict[str, Any], anchor: dict[str, Any], candidate: dict
         value = {"source": source, "anchor": anchor, "candidate": candidate,
                  "human_receipt": human_receipt, "policy": policy, "registry": registry,
                  "clip_voice_authorization": clip_voice_authorization,
+                 "source_voice_authorization": source_voice_authorization,
                  "clip_voice_capability": clip_voice_capability,
                  "clip_timeline_map": clip_timeline}[name]
         require(bound.get("sha256") == file_sha256(paths[name])
@@ -198,15 +209,26 @@ def validate_job(source: dict[str, Any], anchor: dict[str, Any], candidate: dict
 
 def validate_schedule(schedule: dict[str, Any], candidate: dict[str, Any], anchor: dict[str, Any],
                       durations: list[float], track_duration: float,
-                      anchor_offset_seconds: float, clip_duration_seconds: float) -> None:
+                      anchor_offset_seconds: float, clip_duration_seconds: float, *,
+                      track_format: str = "wav") -> None:
     require(schedule.get("targetLocale") == candidate["targetLocale"],
             "Schedule locale mismatch")
     require(schedule.get("timingKind") == "measured_target_audio",
             "Schedule must use measured target audio timing")
     require(schedule.get("status") == "pass" and schedule.get("issues") == [],
             "Schedule has unresolved issues")
-    near(track_duration, schedule.get("trackDurationSeconds"), "Schedule track duration")
-    require(track_duration <= clip_duration_seconds + EPSILON,
+    require(track_format in {"wav", "mp3"}, "Unsupported track format")
+    # Older ffprobe counts MP3 encoder padding even when Xing/LAME metadata
+    # gives the exact presentation duration. The source PCM is checked below.
+    track_tolerance = MP3_CONTAINER_PADDING_SECONDS if track_format == "mp3" else EPSILON
+    scheduled_duration = schedule.get("trackDurationSeconds")
+    require(isinstance(scheduled_duration, (int, float))
+            and not isinstance(scheduled_duration, bool)
+            and math.isfinite(scheduled_duration)
+            and abs(track_duration - scheduled_duration) <= track_tolerance,
+            "Schedule track duration differs from measured audio")
+    require(track_duration <= clip_duration_seconds + track_tolerance
+            and scheduled_duration <= clip_duration_seconds + track_tolerance,
             "Dubbed track exceeds approved 1x source clip duration")
     policy = schedule.get("policy", {})
     reaction = policy.get("reactionLagSeconds")
@@ -261,14 +283,18 @@ def validate_captions(captions: dict[str, Any], candidate: dict[str, Any],
 
 
 def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_root: Path) -> dict[str, Any]:
-    source, anchor, candidate, job, adapter, policy, human_receipt, registry, clip_auth, clip_timeline = (
+    source, anchor, candidate, job, adapter, policy, human_receipt, registry, clip_timeline = (
         read_object(paths[key]) for key in ("source", "anchor", "candidate", "job",
                                            "adapter", "policy", "human_receipt", "registry",
-                                           "clip_voice_authorization", "clip_timeline_map")
+                                           "clip_timeline_map")
     )
+    clip_auth = read_object(paths["clip_voice_authorization"]) if paths.get("clip_voice_authorization") else None
+    source_auth = read_object(paths["source_voice_authorization"]) if paths.get("source_voice_authorization") else None
     clip_cap = read_object(paths["clip_voice_capability"]) if paths.get("clip_voice_capability") else None
     validate_job(source, anchor, candidate, job, adapter, policy, human_receipt, registry,
-                 clip_auth, clip_cap, clip_timeline, paths)
+                 clip_auth, clip_cap, clip_timeline, paths,
+                 source_voice_authorization=source_auth)
+    job_file_sha256 = file_sha256(paths["job"])
     manifest = read_object(render_manifest_path)
     locale = candidate["targetLocale"]
     job_hash = json_sha256(job)
@@ -293,27 +319,40 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
             "Voice/checkpoint authorization or locale capability missing")
     authorization_artifact = checked_artifact(
         artifact_root, manifest.get("voiceAuthorization"), json_artifact=True)
-    require(authorization_artifact["sha256"] == clip_auth["userRightsAttestation"]["sha256"]
-            and authorization_artifact["jsonSha256"] == clip_auth["userRightsAttestation"]["jsonSha256"],
-            "Render voice authorization differs from speech job clip receipt")
+    authorization_receipt = source_auth if source_auth is not None else clip_auth
+    require(authorization_artifact["sha256"] == authorization_receipt["userRightsAttestation"]["sha256"]
+            and authorization_artifact["jsonSha256"] == authorization_receipt["userRightsAttestation"]["jsonSha256"],
+            "Render voice authorization differs from speech job receipt")
     authorization = read_object(Path(authorization_artifact["path"]))
-    approval_time = authorization.get("attestedAt")
+    approval_time = authorization.get("recordedAt" if source_auth is not None else "attestedAt")
     try:
         parsed_approval_time = datetime.fromisoformat(approval_time.replace("Z", "+00:00"))
     except (AttributeError, ValueError) as exc:
         raise ValueError("Voice authorization approval time is invalid") from exc
-    require(authorization.get("schemaVersion") == "sermon-clip-user-rights-attestation-v1"
-            and isinstance(authorization.get("scope"), str)
-            and authorization["scope"].endswith("-dev-app-and-audio_only")
-            and authorization.get("englishSourcePackageJsonSha256") == json_sha256(source)
-            and locale in authorization.get("targetLocales", [])
-            and authorization.get("speakerId") == voice.get("speakerId")
-            and authorization.get("voiceCheckpointSha256") == voice["checkpointSha256"]
-            and authorization.get("permissionClaimed") is True
-            and isinstance(authorization.get("userStatement"), str)
-            and bool(authorization["userStatement"].strip())
-            and parsed_approval_time.tzinfo is not None,
-            "Voice authorization is not bound to this clip, locale and checkpoint")
+    if source_auth is not None:
+        speech._validate_schema(authorization,
+                                "sermon-source-user-voice-attestation-v1.schema.json",
+                                "source voice user attestation")
+        require(authorization["sourceId"] == source["source"]["sourceId"]
+                and authorization["sourceMediaSha256"] == source["source"]["media"]["sha256"]
+                and authorization["approvedWindow"]["endSeconds"]
+                == source["source"]["approvedWindow"]["endSeconds"]
+                and locale in authorization["targetLocales"]
+                and parsed_approval_time.tzinfo is not None,
+                "Voice authorization is not bound to this complete source media and locale")
+    else:
+        require(authorization.get("schemaVersion") == "sermon-clip-user-rights-attestation-v1"
+                and isinstance(authorization.get("scope"), str)
+                and authorization["scope"].endswith("-dev-app-and-audio_only")
+                and authorization.get("englishSourcePackageJsonSha256") == json_sha256(source)
+                and locale in authorization.get("targetLocales", [])
+                and authorization.get("speakerId") == voice.get("speakerId")
+                and authorization.get("voiceCheckpointSha256") == voice["checkpointSha256"]
+                and authorization.get("permissionClaimed") is True
+                and isinstance(authorization.get("userStatement"), str)
+                and bool(authorization["userStatement"].strip())
+                and parsed_approval_time.tzinfo is not None,
+                "Voice authorization is not bound to this clip, locale and checkpoint")
     package_voice = {key: voice[key] for key in (
         "provider", "model", "checkpointSha256", "targetLocaleCapability", "authorizationStatus")}
     rows = manifest.get("units")
@@ -336,7 +375,9 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
         receipt = read_object(Path(receipt_artifact["path"]))
         require(receipt.get("schemaVersion") == RECEIPT_SCHEMA,
                 f"Unsupported unit receipt schema at {index}")
-        unit_integrity.validate_receipt(paths["job"], index, Path(audio["path"]), receipt)
+        unit_integrity.validate_receipt(
+            paths["job"], index, Path(audio["path"]), receipt,
+            validated_job=job, validated_job_file_sha256=job_file_sha256)
         require(receipt["translationGroupId"] == group_id
                 and receipt["targetTextSha256"] == text_hash
                 and receipt["audioSha256"] == audio["sha256"]
@@ -392,6 +433,14 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
                         f"Edge silence trim duration differs from unit {index}")
     track = checked_artifact(artifact_root, manifest.get("track"))
     track_duration, _, _ = probe_audio(Path(track["path"]))
+    track_format = Path(track["path"]).suffix.removeprefix(".").lower()
+    require(track_format in {"wav", "mp3"}, "Unsupported formal track format")
+    if track_format == "mp3":
+        pcm_track = Path(track["path"]).with_suffix(".wav")
+        require(pcm_track.is_file(), "MP3 source PCM track is missing")
+        pcm_duration, _, _ = probe_audio(pcm_track)
+        require(abs(pcm_duration - clip_timeline["clipDurationSeconds"]) <= EPSILON,
+                "MP3 source PCM differs from approved 1x source clip duration")
     schedule_artifact = checked_artifact(artifact_root, manifest.get("schedule"), json_artifact=True)
     captions_artifact = checked_artifact(artifact_root, manifest.get("captions"))
     locale_root = (artifact_root / "languages" / locale).resolve()
@@ -407,7 +456,7 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
     captions = read_object(Path(captions_artifact["path"]))
     validate_schedule(schedule, candidate, anchor, durations, track_duration,
                       clip_timeline["anchorOffsetSeconds"],
-                      clip_timeline["clipDurationSeconds"])
+                      clip_timeline["clipDurationSeconds"], track_format=track_format)
     validate_captions(captions, candidate, schedule, track_duration)
     screen = manifest.get("machineScreening", {})
     require(isinstance(screen, dict) and screen.get("status") in {"not_run", "pass", "requires_review", "fail"}
@@ -474,6 +523,13 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
     schema_path = Path(__file__).parents[1] / "schemas" / "sermon-target-language-audio-package-v1.schema.json"
     errors = list(Draft202012Validator(read_object(schema_path), format_checker=FormatChecker()).iter_errors(package))
     require(not errors, f"Audio Package schema error: {errors[0].message if errors else ''}")
+    # Recheck the bound inputs once after the batch so a mid-run change still
+    # fails, without rehashing the source video for every audio unit.
+    validate_job(source, anchor, candidate, job, adapter, policy, human_receipt, registry,
+                 clip_auth, clip_cap, clip_timeline, paths,
+                 source_voice_authorization=source_auth)
+    require(file_sha256(paths["job"]) == job_file_sha256,
+            "Speech job changed during audio package build")
     return package
 
 
@@ -483,8 +539,9 @@ def main() -> None:
         parser.add_argument(f"--{name}", type=Path, required=True)
     parser.add_argument("--human-review-receipt", dest="human_receipt", type=Path, required=True)
     parser.add_argument("--speaker-registry", dest="registry", type=Path, required=True)
-    parser.add_argument("--clip-voice-authorization", dest="clip_voice_authorization",
-                        type=Path, required=True)
+    authorization = parser.add_mutually_exclusive_group(required=True)
+    authorization.add_argument("--clip-voice-authorization", dest="clip_voice_authorization", type=Path)
+    authorization.add_argument("--source-voice-authorization", dest="source_voice_authorization", type=Path)
     parser.add_argument("--clip-voice-capability", dest="clip_voice_capability", type=Path)
     parser.add_argument("--clip-timeline-map", dest="clip_timeline_map",
                         type=Path, required=True)
@@ -494,8 +551,11 @@ def main() -> None:
     args = parser.parse_args()
     require(not args.out.exists(), "Audio Package output is immutable; choose a new path")
     paths = {name: getattr(args, name) for name in ("source", "anchor", "candidate", "job",
-                                                  "adapter", "policy", "human_receipt", "registry",
-                                                  "clip_voice_authorization")}
+                                                  "adapter", "policy", "human_receipt", "registry")}
+    if args.clip_voice_authorization:
+        paths["clip_voice_authorization"] = args.clip_voice_authorization
+    if args.source_voice_authorization:
+        paths["source_voice_authorization"] = args.source_voice_authorization
     if args.clip_voice_capability:
         paths["clip_voice_capability"] = args.clip_voice_capability
     paths["clip_timeline_map"] = args.clip_timeline_map

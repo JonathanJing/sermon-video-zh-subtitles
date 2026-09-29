@@ -5,6 +5,108 @@ import XCTest
 /// these tests do not establish real-network, audible, lock-screen, or venue QA.
 @MainActor
 final class ListeningFlowUITests: XCTestCase {
+    func testPlaybackStatusAndMoreLabelAreVisibleAtRegularTextSize() {
+        let app = launchFixture()
+        let status = app.staticTexts["playback-status-detail"]
+        XCTAssertTrue(status.waitForExistence(timeout: 5))
+        XCTAssertTrue(status.isHittable)
+        XCTAssertFalse(status.label.isEmpty)
+        let more = app.buttons["playback-more"]
+        XCTAssertEqual(more.label, "更多")
+        let play = app.buttons["playback-toggle"]
+        let moreFrame = more.frame
+        let besideTrailingRail = abs(play.frame.midX - more.frame.midX) < 16
+            && more.frame.minY > play.frame.maxY
+        more.tap()
+        assertPlaybackMorePopoverNearButton(in: app, buttonFrame: moreFrame,
+                                          besideTrailingRail: besideTrailingRail)
+        XCTAssertTrue(app.alerts["playback-more-panel"].exists)
+        screenshot("playback-more-near-button", app: app)
+        app.buttons["playback-more-close"].tap()
+    }
+
+    func testDuoOuterPlayerKeepsReadingAreaWhenMoreOpens() throws {
+        let app = launchFixture()
+        try XCTSkipUnless(abs(app.frame.width - 466) < 2 && abs(app.frame.height - 678) < 2,
+                          "This geometry check targets the iPhone Duo outer portrait display; observed \(app.frame)")
+
+        let more = app.buttons["playback-more"]
+        XCTAssertTrue(more.waitForExistence(timeout: 5))
+        XCTAssertEqual(more.label, "更多")
+        XCTAssertTrue(app.staticTexts["playback-status-detail"].isHittable,
+                      "播放状态应在正常字号下可见")
+        let sideRegionStart = app.frame.maxX - 84
+        for identifier in ["nudge-backward", "playback-toggle", "nudge-forward", "playback-more"] {
+            let button = app.buttons[identifier]
+            XCTAssertTrue(button.isHittable, "\(identifier) must remain usable")
+            XCTAssertGreaterThanOrEqual(button.frame.midX, sideRegionStart,
+                                        "\(identifier) should share the system side region")
+        }
+        assertNavigationActionsAbovePlayer(in: app)
+        XCTAssertLessThanOrEqual(app.buttons["playback-toggle"].frame.width, 45,
+                                 "系统侧边栏的播放按钮应收进栏宽")
+        app.buttons["choose-sermon"].tap()
+        XCTAssertTrue(app.buttons["legacy-week-ui-test-week"].waitForExistence(timeout: 5))
+        app.buttons["完成"].tap()
+        app.buttons["more-options"].tap()
+        XCTAssertTrue(element("privacy-support-link", in: app).waitForExistence(timeout: 5))
+        app.buttons["完成"].tap()
+        XCTAssertFalse(app.buttons["align-live-audio"].exists)
+        let playerFrame = app.buttons["playback-toggle"].frame
+        let moreFrame = more.frame
+        more.tap()
+        XCTAssertTrue(app.buttons["align-live-audio"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["precision-controls"].exists)
+        assertPlaybackMorePopoverNearButton(in: app, buttonFrame: moreFrame, besideTrailingRail: true)
+        XCTAssertTrue(app.alerts["playback-more-panel"].exists,
+                      "更多浮窗应呈现模态辅助功能特征")
+        screenshot("duo-outer-more-popover", app: app)
+        app.buttons["playback-more-close"].tap()
+        XCTAssertTrue(more.waitForExistence(timeout: 5))
+        XCTAssertEqual(app.buttons["playback-toggle"].frame, playerFrame,
+                       "更多不能撑高或移动常驻播放栏")
+        screenshot("duo-outer-player", app: app)
+    }
+
+    func testDuoInnerLandscapeUsesTrailingPlayerRail() throws {
+        XCUIDevice.shared.orientation = .landscapeLeft
+        defer { XCUIDevice.shared.orientation = .portrait }
+        let app = launchFixture()
+        try XCTSkipUnless(abs(app.frame.width - 951) < 2 && abs(app.frame.height - 669) < 2,
+                          "This geometry check targets the iPhone Duo inner landscape display; observed \(app.frame)")
+        let play = app.buttons["playback-toggle"]
+        XCTAssertTrue(play.waitForExistence(timeout: 5))
+        XCTAssertGreaterThan(play.frame.minX, app.frame.midX)
+        XCTAssertGreaterThanOrEqual(play.frame.midX, app.frame.maxX - 84,
+                                    "播放栏应进入状态栏下方的系统侧边区域")
+        assertNavigationActionsAbovePlayer(in: app)
+        let more = app.buttons["playback-more"]
+        XCTAssertTrue(more.isHittable)
+        let moreFrame = more.frame
+        more.tap()
+        assertPlaybackMorePopoverNearButton(in: app, buttonFrame: moreFrame, besideTrailingRail: true)
+        screenshot("duo-inner-more-popover", app: app)
+        app.buttons["playback-more-close"].tap()
+        screenshot("duo-inner-trailing-player", app: app)
+    }
+
+    func testAnonymousStatisticsDefaultOffAndOptInOut() throws {
+        let app = launchFixture()
+        app.buttons["more-options"].tap()
+        let link = element("privacy-support-link", in: app)
+        XCTAssertTrue(link.waitForExistence(timeout: 5))
+        link.tap()
+        let toggle = app.switches["anonymous-statistics-toggle"]
+        try reveal(toggle, in: app, direction: .up)
+        XCTAssertEqual(toggle.value as? String, "0")
+        toggle.switches.firstMatch.tap()
+        XCTAssertEqual(toggle.value as? String, "1")
+        screenshot("anonymous-statistics-enabled", app: app)
+        toggle.switches.firstMatch.tap()
+        XCTAssertEqual(toggle.value as? String, "0")
+        screenshot("anonymous-statistics-disabled", app: app)
+    }
+
     func testPrivacySupportIsAvailableOfflineFromMoreOptions() throws {
         let app = launchFixture(offline: true)
         app.buttons["more-options"].tap()
@@ -60,6 +162,7 @@ final class ListeningFlowUITests: XCTestCase {
         // own device acceptance rather than making this routing test intermittent.
         app.buttons["完成"].tap()
         XCTAssertTrue(app.buttons["playback-toggle"].waitForExistence(timeout: 5))
+        expandCompactDockIfNeeded(in: app)
         XCTAssertTrue(app.buttons["align-live-audio"].exists)
         XCTAssertEqual(app.staticTexts["sermon-title"].label, "界面测试证道")
     }
@@ -71,7 +174,7 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertTrue(independent.waitForExistence(timeout: 5))
         independent.tap()
         XCTAssertEqual(app.staticTexts["published-page-title"].label, "ui-test-clip")
-        XCTAssertFalse(app.buttons["playback-toggle"].exists)
+        XCTAssertTrue(app.staticTexts["published-audio-locale"].waitForExistence(timeout: 10))
 
         app.buttons["choose-content-language"].tap()
         XCTAssertTrue(app.buttons["content-language-es"].waitForExistence(timeout: 5))
@@ -80,9 +183,7 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertTrue(app.webViews["verified-content-page"].waitForExistence(timeout: 10))
         app.buttons["完成"].tap()
 
-        let prepare = app.buttons["prepare-published-audio"]
-        XCTAssertTrue(prepare.waitForExistence(timeout: 5))
-        prepare.tap()
+        XCTAssertFalse(app.buttons["prepare-published-audio"].exists)
         XCTAssertTrue(app.staticTexts["published-audio-locale"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.staticTexts["published-audio-locale"].label.contains("Español"))
         let play = app.buttons["playback-toggle"]
@@ -99,6 +200,91 @@ final class ListeningFlowUITests: XCTestCase {
         app.buttons["choose-content-language"].tap()
         XCTAssertTrue(app.buttons["content-language-ko"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["content-language-es"].exists)
+    }
+
+    func testDualScriptCatalogOpensCurrentPageBeforeLegacyAndPreparesAudio() throws {
+        let app = launchFixture(dualScript: true)
+        XCTAssertEqual(app.staticTexts["published-page-title"].label, "测试完整视频证道")
+        XCTAssertTrue(element("watch-full-video", in: app).exists)
+        app.buttons["watch-full-video"].tap()
+        XCTAssertTrue(app.staticTexts["native-full-video"].waitForExistence(timeout: 5))
+        app.buttons["完成"].tap()
+        XCTAssertTrue(app.staticTexts["published-audio-locale"].waitForExistence(timeout: 10))
+        app.buttons["choose-content-language"].tap()
+        app.buttons["content-language-ko"].tap()
+        try waitFor(app.staticTexts["published-audio-locale"], "label CONTAINS '한국어'")
+        XCTAssertFalse(app.buttons["prepare-published-audio"].exists)
+        XCTAssertTrue(app.buttons["playback-toggle"].isEnabled)
+        XCTAssertTrue(app.staticTexts["published-current-subtitle"].waitForExistence(timeout: 10))
+        XCTAssertEqual(app.staticTexts["published-current-subtitle"].label, "짧은 자막입니다.")
+        XCTAssertEqual(app.staticTexts["published-current-english"].label, "This is the approved English source.")
+        app.segmentedControls["listening-display"].buttons["字幕全文"].tap()
+        XCTAssertTrue(app.staticTexts["published-caption-english-g1"].waitForExistence(timeout: 5))
+        screenshot("dual-script-native-english-captions", app: app)
+        app.buttons["choose-sermon"].tap()
+        XCTAssertTrue(app.buttons["published-page-ui-test-full-video"].waitForExistence(timeout: 5))
+        app.buttons["legacy-week-ui-test-week"].tap()
+        XCTAssertEqual(app.staticTexts["sermon-title"].label, "界面测试证道")
+    }
+
+    /// Explicit Release-only production check; default Debug UI runs skip it.
+    func testLiveProductionCurrentWeekNativeThreeLanguages() throws {
+        #if DEBUG
+        throw XCTSkip("Run this selected test with Release to verify production content.")
+        #else
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
+        app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
+        app.launch()
+        defer { app.terminate() }
+        XCTAssertTrue(app.staticTexts["published-page-title"].waitForExistence(timeout: 30))
+        app.buttons["choose-sermon"].tap()
+        let currentPage = app.buttons["published-page-2026-09-27-weekend-sermon-drive-530"]
+        let previousWeek = app.buttons["legacy-week-2026-09-20-same_video-7c193fd4-bc90-4f3b-aa00-37dfe8423aa0"]
+        XCTAssertTrue(currentPage.waitForExistence(timeout: 10))
+        XCTAssertTrue(previousWeek.waitForExistence(timeout: 5))
+        XCTAssertLessThan(currentPage.frame.minY, previousWeek.frame.minY)
+        screenshot("production-native-current-week-first-in-picker", app: app)
+        currentPage.tap()
+        app.buttons["watch-full-video"].tap()
+        XCTAssertTrue(app.staticTexts["native-full-video"].waitForExistence(timeout: 5))
+        screenshot("production-native-full-video-in-app", app: app)
+        app.buttons["完成"].tap()
+        for locale in ["zh-Hans", "ko", "es"] {
+            app.buttons["choose-content-language"].tap()
+            app.buttons["content-language-\(locale)"].tap()
+            XCTAssertTrue(app.staticTexts["published-current-subtitle"].waitForExistence(timeout: 30))
+            XCTAssertTrue(app.staticTexts["published-current-english"].waitForExistence(timeout: 10))
+            let prepare = app.buttons["prepare-published-audio"]
+            if prepare.exists {
+                prepare.tap()
+                XCTAssertTrue(app.staticTexts["published-audio-locale"].waitForExistence(timeout: 60))
+            }
+            XCTAssertTrue(app.staticTexts["published-audio-locale"].label.contains(appLanguageNames[locale]!))
+            app.buttons["playback-toggle"].tap()
+            try waitFor(element("playback-progress", in: app), "NOT (value BEGINSWITH '00:00，')")
+            screenshot("production-native-\(locale)-playing-english", app: app)
+            app.buttons["playback-toggle"].tap()
+            app.segmentedControls["listening-display"].buttons["字幕全文"].tap()
+            XCTAssertTrue(app.staticTexts["published-caption-english-translation-0-u001"].waitForExistence(timeout: 10))
+            screenshot("production-native-\(locale)-transcript-english", app: app)
+            app.segmentedControls["listening-display"].buttons["现场收听"].tap()
+        }
+        #endif
+    }
+
+    private var appLanguageNames: [String: String] {
+        ["zh-Hans": "简体中文", "ko": "한국어", "es": "Español"]
+    }
+
+    func testFreshLaunchOpensCurrentPublishedPageAndPreparesAudio() throws {
+        let app = launchFixture(independentDefault: true)
+        XCTAssertTrue(app.staticTexts["published-page-title"].waitForExistence(timeout: 10))
+        XCTAssertEqual(app.staticTexts["published-page-title"].label, "ui-test-clip")
+        XCTAssertTrue(app.staticTexts["published-audio-locale"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["prepare-published-audio"].exists)
+        XCTAssertTrue(app.buttons["playback-toggle"].exists)
     }
 
     func testLiveDevSecondClipShowsThreeLanguagesAndPlaysReviewedAudio() throws {
@@ -140,9 +326,7 @@ final class ListeningFlowUITests: XCTestCase {
             screenshot("live-dev-second-clip-\(locale)-content", app: app)
             app.buttons["完成"].tap()
         }
-        let prepare = app.buttons["prepare-published-audio"]
-        XCTAssertTrue(prepare.waitForExistence(timeout: 10))
-        prepare.tap()
+        XCTAssertFalse(app.buttons["prepare-published-audio"].exists)
         XCTAssertTrue(app.staticTexts["published-audio-locale"].waitForExistence(timeout: 30))
         XCTAssertTrue(app.staticTexts["published-audio-locale"].label.contains("한국어"))
         let play = app.buttons["playback-toggle"]
@@ -155,6 +339,7 @@ final class ListeningFlowUITests: XCTestCase {
 
     func testUnavailableAlignmentExplainsReason() throws {
         let app = launchFixture()
+        expandCompactDockIfNeeded(in: app)
         let alignment = app.buttons["align-live-audio"]
         try waitFor(alignment, "exists == true AND enabled == true AND hittable == true")
         alignment.tap()
@@ -166,6 +351,17 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertFalse(explanation.exists)
     }
 
+    func testMorePrecisionOpensSheetAfterPopoverCloses() throws {
+        let app = launchFixture()
+        try downloadSelection(in: app)
+        expandCompactDockIfNeeded(in: app)
+        let precision = app.buttons["precision-controls"]
+        try waitFor(precision, "exists == true AND enabled == true AND hittable == true")
+        precision.tap()
+        XCTAssertTrue(app.navigationBars["定位 / 精调"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["playback-more-close"].exists)
+    }
+
     func testPlaybackDockSwipeCollapsesWithoutPausingAndExpands() throws {
         let app = launchFixture()
         try downloadSelection(in: app)
@@ -173,21 +369,19 @@ final class ListeningFlowUITests: XCTestCase {
         play.tap()
         try waitFor(play, "label == '暂停播放'")
         try waitFor(element("playback-progress", in: app), "NOT (value BEGINSWITH '00:00，')")
-        let expandedPlayFrame = play.frame
         collapseDock(in: app)
         try waitFor(element("playback-progress", in: app), "exists == false")
         XCTAssertFalse(app.buttons["nudge-forward"].exists)
         XCTAssertFalse(app.buttons["align-live-audio"].exists)
         XCTAssertEqual(app.buttons.matching(identifier: "playback-toggle").count, 1)
         XCTAssertEqual(play.label, "暂停播放", "收起操作不能暂停音频")
-        XCTAssertLessThan(play.frame.width, expandedPlayFrame.width)
         XCTAssertTrue(play.isHittable)
         play.tap()
         try waitFor(play, "label == '开始播放'")
         screenshot("collapsed-player-paused", app: app)
         expandDock(in: app)
         try waitFor(element("playback-progress", in: app), "exists == true")
-        try assertAlignmentBelowPlayback(in: app)
+        try assertAlignmentAvailableInMore(in: app)
         XCTAssertEqual(play.label, "开始播放", "展开操作不能改变暂停状态")
         screenshot("expanded-player-restored", app: app)
     }
@@ -203,7 +397,7 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertTrue(app.frame.contains(play.frame))
         expandDock(in: app)
         try waitFor(element("playback-progress", in: app), "exists == true")
-        try assertAlignmentBelowPlayback(in: app)
+        try assertAlignmentAvailableInMore(in: app)
     }
 
     private func collapseDock(in app: XCUIApplication) {
@@ -217,20 +411,44 @@ final class ListeningFlowUITests: XCTestCase {
         start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: -100)))
     }
 
-    func testLiveAlignmentStaysBelowPlaybackOnFirstScreenAndTranscript() throws {
+    func testLiveAlignmentRemainsAvailableOnFirstScreenAndTranscript() throws {
         let app = launchFixture()
-        try assertAlignmentBelowPlayback(in: app)
+        try assertAlignmentAvailableInMore(in: app)
         app.segmentedControls["listening-display"].buttons["字幕全文"].tap()
-        try assertAlignmentBelowPlayback(in: app)
-        screenshot("alignment-below-playback-transcript", app: app)
+        try assertAlignmentAvailableInMore(in: app)
+        screenshot("alignment-in-more-transcript", app: app)
     }
 
-    func testLandscapeKeepsLiveAlignmentBelowPlayback() throws {
+    func testLandscapeKeepsLiveAlignmentAvailableInMore() throws {
         XCUIDevice.shared.orientation = .landscapeLeft
         defer { XCUIDevice.shared.orientation = .portrait }
         let app = launchFixture()
-        try assertAlignmentBelowPlayback(in: app)
-        screenshot("landscape-alignment-below-playback", app: app)
+        let play = app.buttons["playback-toggle"]
+        XCTAssertGreaterThan(play.frame.minX, app.frame.midX,
+                             "宽而矮的阅读区应把播放栏移到右侧")
+        assertNavigationActionsAbovePlayer(in: app)
+        app.buttons["choose-sermon"].tap()
+        XCTAssertTrue(app.buttons["legacy-week-ui-test-week"].waitForExistence(timeout: 5))
+        app.buttons["完成"].tap()
+        app.buttons["more-options"].tap()
+        XCTAssertTrue(element("privacy-support-link", in: app).waitForExistence(timeout: 5))
+        app.buttons["完成"].tap()
+        try assertAlignmentAvailableInMore(in: app)
+        screenshot("landscape-alignment-in-more", app: app)
+    }
+
+    private func assertNavigationActionsAbovePlayer(in app: XCUIApplication,
+                                                    file: StaticString = #filePath, line: UInt = #line) {
+        let choose = app.buttons["choose-sermon"]
+        let options = app.buttons["more-options"]
+        let progress = element("playback-progress", in: app)
+        XCTAssertTrue(choose.isHittable, file: file, line: line)
+        XCTAssertTrue(options.isHittable, file: file, line: line)
+        XCTAssertLessThan(choose.frame.maxY, options.frame.minY + 1, file: file, line: line)
+        XCTAssertLessThan(options.frame.maxY + 8, progress.frame.minY,
+                          "导航组和播放组需要清晰间距", file: file, line: line)
+        XCTAssertEqual(choose.frame.midX, app.buttons["playback-toggle"].frame.midX, accuracy: 8,
+                       "两组控件应在同一右侧轴线上", file: file, line: line)
     }
 
     func testOpeningTranscriptWhilePlayingLocatesCurrentCueOnlyOnce() throws {
@@ -326,7 +544,9 @@ final class ListeningFlowUITests: XCTestCase {
             try waitFor(app.buttons["playback-toggle"], "label == '\(playLabel)'")
             try waitFor(element("playback-progress", in: app), "value BEGINSWITH '00:12'")
             XCTAssertEqual(element("sermon-title", in: app).label, "界面测试证道")
+            expandCompactDockIfNeeded(in: app)
             XCTAssertTrue(app.buttons["align-live-audio"].exists)
+            app.buttons["playback-more-close"].tap()
         }
     }
 
@@ -355,6 +575,7 @@ final class ListeningFlowUITests: XCTestCase {
         try waitFor(element("playback-progress", in: app), "value CONTAINS '已暂停'")
 
         try seekToSecondSubtitle(in: app)
+        expandCompactDockIfNeeded(in: app)
         let current = app.buttons["current-cue"]
         XCTAssertTrue(current.isHittable)
         current.tap()
@@ -406,7 +627,7 @@ final class ListeningFlowUITests: XCTestCase {
         let app = launchFixture(largeText: true)
         try downloadSelection(in: app)
         let play = app.buttons["playback-toggle"]
-        try assertAlignmentBelowPlayback(in: app)
+        try assertAlignmentAvailableInMore(in: app)
         let forward = app.buttons["nudge-forward"]
         let backward = app.buttons["nudge-backward"]
         for control in [play, forward, backward] {
@@ -426,24 +647,32 @@ final class ListeningFlowUITests: XCTestCase {
         screenshot("accessibility3-download-and-playback-controls", app: app)
     }
 
-    private func assertAlignmentBelowPlayback(in app: XCUIApplication,
+    private func assertAlignmentAvailableInMore(in app: XCUIApplication,
                                               file: StaticString = #filePath, line: UInt = #line) throws {
+        expandCompactDockIfNeeded(in: app)
         let align = app.buttons["align-live-audio"]
         try waitFor(align, "exists == true AND hittable == true")
-        let play = app.buttons["playback-toggle"]
         XCTAssertEqual(app.buttons.matching(identifier: "align-live-audio").count, 1,
                        "首页只能出现一个现场对齐入口", file: file, line: line)
-        XCTAssertGreaterThanOrEqual(align.frame.minY, play.frame.maxY,
-                                    "现场对齐按钮应在播放按钮下方", file: file, line: line)
         XCTAssertTrue(app.frame.contains(align.frame),
                       "无需滚动就应完整显示现场对齐按钮", file: file, line: line)
+        app.buttons["playback-more-close"].tap()
     }
 
-    private func launchFixture(largeText: Bool = false, offline: Bool = false) -> XCUIApplication {
+    private func expandCompactDockIfNeeded(in app: XCUIApplication) {
+        let more = app.buttons["playback-more"]
+        if more.exists && !app.buttons["playback-more-close"].exists { more.tap() }
+    }
+
+    private func launchFixture(largeText: Bool = false, offline: Bool = false,
+                               dualScript: Bool = false,
+                               independentDefault: Bool = false) -> XCUIApplication {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing"] + (largeText ? ["--ui-testing-large-text"] : [])
             + (offline ? ["--ui-testing-offline"] : [])
+            + (dualScript ? ["--ui-testing-dual-script"] : [])
+            + (independentDefault ? ["--ui-testing-current-page-default"] : [])
         app.launchArguments += ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
         app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
         app.launchEnvironment["TONGXING_UI_TEST_RUN_ID"] = UUID().uuidString
@@ -461,6 +690,8 @@ final class ListeningFlowUITests: XCTestCase {
         app.launch()
         if offline {
             XCTAssertTrue(app.staticTexts["暂时无法读取证道"].waitForExistence(timeout: 15))
+        } else if dualScript || independentDefault {
+            XCTAssertTrue(app.staticTexts["published-page-title"].waitForExistence(timeout: 15))
         } else {
             XCTAssertTrue(element("sermon-title", in: app).waitForExistence(timeout: 15))
             XCTAssertEqual(element("sermon-title", in: app).label, "界面测试证道")
@@ -540,6 +771,27 @@ final class ListeningFlowUITests: XCTestCase {
 
     private func element(_ identifier: String, in app: XCUIApplication) -> XCUIElement {
         app.descendants(matching: .any).matching(identifier: identifier).firstMatch
+    }
+
+    private func assertPlaybackMorePopoverNearButton(in app: XCUIApplication, buttonFrame: CGRect,
+                                                    besideTrailingRail: Bool,
+                                                    file: StaticString = #filePath, line: UInt = #line) {
+        let panel = element("playback-more-panel", in: app)
+        XCTAssertTrue(panel.waitForExistence(timeout: 5), file: file, line: line)
+        guard panel.exists else { return }
+        let panelFrame = panel.frame
+        let horizontalGap = max(0, max(panelFrame.minX - buttonFrame.maxX, buttonFrame.minX - panelFrame.maxX))
+        let verticalGap = max(0, max(panelFrame.minY - buttonFrame.maxY, buttonFrame.minY - panelFrame.maxY))
+        XCTAssertLessThanOrEqual((horizontalGap * horizontalGap + verticalGap * verticalGap).squareRoot(), 44,
+                                 "播放更多浮窗应贴近更多按钮", file: file, line: line)
+        if besideTrailingRail {
+            XCTAssertLessThanOrEqual(panelFrame.maxX, buttonFrame.minX + 4,
+                                     "竖栏的更多浮窗应在按钮左侧", file: file, line: line)
+        } else {
+            XCTAssertLessThanOrEqual(panelFrame.maxY, buttonFrame.minY + 4,
+                                     "底栏的更多浮窗应在按钮上方", file: file, line: line)
+        }
+        XCTAssertTrue(app.frame.contains(panelFrame), "播放更多浮窗应完整位于屏幕内", file: file, line: line)
     }
 
     private func waitFor(_ element: XCUIElement, _ predicate: String,

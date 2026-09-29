@@ -8,6 +8,8 @@ Legacy snapshot last updated: 2026-06-22
 
 Canonical backlog: [backlog.zh.md](./backlog.zh.md)
 
+CI/CD implementation details: [CI/CD backlog (Chinese)](./ci-cd-backlog.zh.md). The canonical backlog retains the priorities and stable IDs.
+
 Current native-client requests are maintained in the [Tongxing iOS backlog (Chinese)](../apps/tongxing-ios/BACKLOG.zh.md): Dynamic Island, on-demand microphone alignment, localization, and bilingual transcripts.
 
 This backlog keeps implementation work aligned with the product north star: Chinese-speaking congregants should have usable Chinese captions during the Sunday 11:30 PT sermon.

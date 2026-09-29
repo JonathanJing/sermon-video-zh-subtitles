@@ -27,13 +27,19 @@ final class AppModel: ObservableObject {
     @Published private(set) var multilingualCatalog: MultilingualCatalog?
     @Published private(set) var multilingualNotice: String?
     @Published private(set) var selectedPageID: String?
-    @Published private(set) var selectedContentLocale = "zh-Hans"
+    @Published private(set) var selectedContentLocale = "zh-Hans" {
+        didSet { playback.statisticsContentLocale = selectedContentLocale }
+    }
     @Published private(set) var isSelectingLanguage = false
     @Published private(set) var languageSelectionError: String?
     @Published private(set) var selectedAudioLocale: String?
     @Published private(set) var publishedAudioSha256: String?
     @Published private(set) var isPreparingPublishedAudio = false
     @Published private(set) var publishedAudioError: String?
+    @Published private(set) var publishedTranscript: VerifiedPublishedTranscript?
+    @Published private(set) var isLoadingPublishedTranscript = false
+    @Published private(set) var publishedTranscriptError: String?
+    private var transcriptRequest = UUID()
     @Published private(set) var downloadStates: [String: DownloadState] = [:]
     @Published private(set) var usingOfflineAudio = false
     @Published var display: ListeningDisplay = .current
@@ -115,7 +121,14 @@ final class AppModel: ObservableObject {
         isPreparingPublishedAudio = false
     }
 
-    init(supportDirectory: URL? = nil, contentOrigin: URL? = nil, session: URLSession = .shared) {
+    private func preparePublishedAudioIfNeeded() {
+        guard selectedWeek == nil, selectedAudioLocale == nil,
+              selectedContentTarget?.audioStatus == "human_reviewed",
+              !isPreparingPublishedAudio, !playback.isPreview else { return }
+        Task { [weak self] in await self?.prepareSelectedPublishedAudio() }
+    }
+
+    init(supportDirectory: URL? = nil, contentOrigin: URL? = nil, session: URLSession = .shared, statisticsDefaults: UserDefaults = .standard) {
         let support = supportDirectory ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
             .appendingPathComponent("Tongxing", isDirectory: true)
         mediaOrigin = contentOrigin ?? Self.contentOrigin
@@ -126,6 +139,7 @@ final class AppModel: ObservableObject {
         languagePreferences = savedPreferences?.schemaVersion == "tongxing-language-preferences-v2"
             ? savedPreferences! : .empty
         playback = PlaybackController(historyURL: support.appendingPathComponent("playback-history-v1.json"))
+        playback.configureStatistics(origin: mediaOrigin, defaults: statisticsDefaults, session: contentOrigin == nil ? nil : session)
         repository = CatalogRepository(
                 catalogURL: mediaOrigin.appendingPathComponent("weekly.json"),
                 cacheDirectory: support.appendingPathComponent("Catalog", isDirectory: true),
@@ -199,6 +213,65 @@ final class AppModel: ObservableObject {
         selectedMultilingualPage?.publishedTargets ?? []
     }
     var selectedContentTarget: PageTarget? { selectedMultilingualPage?.targets[selectedContentLocale] }
+    var fullVideoURL: URL? {
+        guard multilingualCatalog?.schemaVersion == MultilingualCatalog.dualScriptSchemaVersion,
+              let page = selectedMultilingualPage else { return nil }
+        return mediaOrigin.appendingPathComponent("pages/\(page.id)/full-video-browser.mp4")
+    }
+    var usesNativePublishedReader: Bool {
+        selectedWeek == nil && multilingualCatalog?.schemaVersion == MultilingualCatalog.dualScriptSchemaVersion
+    }
+    var publishedTranscriptSelectionKey: String? {
+        guard usesNativePublishedReader, let page = selectedMultilingualPage,
+              let target = selectedContentTarget else { return nil }
+        return "\(page.id):\(selectedContentLocale):\(target.releasePackageJsonSha256)"
+    }
+
+    func loadSelectedPublishedTranscript() async {
+        let request = UUID()
+        transcriptRequest = request
+        publishedTranscript = nil
+        publishedTranscriptError = nil
+        isLoadingPublishedTranscript = false
+        guard let key = publishedTranscriptSelectionKey,
+              let page = selectedMultilingualPage, let multilingualRepository else { return }
+        let locale = selectedContentLocale
+        isLoadingPublishedTranscript = true
+        defer { if transcriptRequest == request { isLoadingPublishedTranscript = false } }
+        do {
+            let package = try await multilingualRepository.loadRelease(page: page, locale: locale)
+            let transcript = try await multilingualRepository.loadPublishedTranscript(for: package, page: page)
+            try Task.checkCancellation()
+            guard transcriptRequest == request, publishedTranscriptSelectionKey == key else { return }
+            publishedTranscript = transcript
+        } catch is CancellationError {
+            return
+        } catch {
+            guard transcriptRequest == request, publishedTranscriptSelectionKey == key else { return }
+            publishedTranscriptError = "文稿暂时无法读取，请重试。"
+        }
+    }
+
+    func selectPublishedContentLanguage(_ locale: String) {
+        guard usesNativePublishedReader, let page = selectedMultilingualPage,
+              page.targets[locale]?.contentStatus == "human_reviewed" else { return }
+        guard locale != selectedContentLocale else { return }
+        cancelPublishedAudioPreparation()
+        alignmentController.cancel()
+        playback.clear()
+        selectedAudioLocale = nil
+        publishedAudioSha256 = nil
+        publishedAudioError = nil
+        publishedTranscript = nil
+        publishedTranscriptError = nil
+        transcriptRequest = UUID()
+        selectedContentLocale = locale
+        languagePreferences.preferredContentLocale = locale
+        languagePreferences.pageSelections[page.id] = locale
+        persistLanguagePreferences()
+        resetAlignmentState()
+        preparePublishedAudioIfNeeded()
+    }
     var selectedContentLanguageName: String { Self.languageName(selectedContentLocale) }
     var selectedAudioLanguageName: String? { selectedAudioLocale.map(Self.languageName) }
     var selectedContentCapabilitySummary: String {
@@ -219,30 +292,39 @@ final class AppModel: ObservableObject {
 
     func refresh() async {
         guard !isLoading, let repository else { return }
+        let preferPublishedDefault = selectedWeek == nil && selectedPageID == nil
         if isPreparingPublishedAudio { cancelPublishedAudioPreparation() }
         isLoading = true
         defer { isLoading = false }
         do {
             let result = try await repository.load()
             catalog = result.catalog
+            if let track = result.catalog.defaultWeek.tracks.first {
+                playback.statisticsInterfaceVisit(source: ListeningSource(week: result.catalog.defaultWeek.date,
+                    trackId: track.id, audioSha256: track.sha256))
+            }
             catalogNotice = result.warning
             if result.source == .cache {
                 catalogNotice = "当前使用上次保存的证道目录。\(result.warning ?? "连接网络后可刷新。")"
             }
             errorMessage = nil
-            if selectedWeek != nil || selectedPageID == nil {
-                let next = result.catalog.weeks.first { $0.id == selectedWeek?.id } ?? result.catalog.defaultWeek
+            if let selectedWeek {
+                let next = result.catalog.weeks.first { $0.id == selectedWeek.id } ?? result.catalog.defaultWeek
                 let track = next.tracks.first { $0.id == selectedTrack?.id } ?? next.tracks.first
                 await select(week: next, track: track)
             }
-            await refreshMultilingualCatalog(pageID: selectedPageID)
+            await refreshMultilingualCatalog(pageID: selectedPageID, preferPublishedDefault: preferPublishedDefault)
+            if selectedWeek == nil, selectedPageID == nil {
+                let next = result.catalog.defaultWeek
+                await select(week: next, track: next.tracks.first)
+            }
         } catch {
             errorMessage = "暂时无法读取证道目录。请连接网络后重试。"
-            await refreshMultilingualCatalog(pageID: selectedPageID)
+            await refreshMultilingualCatalog(pageID: selectedPageID, preferPublishedDefault: preferPublishedDefault)
         }
     }
 
-    private func refreshMultilingualCatalog(pageID: String?) async {
+    private func refreshMultilingualCatalog(pageID: String?, preferPublishedDefault: Bool = false) async {
         guard let multilingualRepository else { return }
         do {
             let oldAudioTarget = selectedAudioLocale.flatMap { selectedMultilingualPage?.targets[$0] }
@@ -250,9 +332,16 @@ final class AppModel: ObservableObject {
             let result = try await multilingualRepository.loadCatalog()
             multilingualCatalog = result.catalog
             multilingualNotice = result.warning
-            if let pageID, result.catalog.pages.contains(where: { $0.id == pageID }) {
+            let usePublishedDefault = preferPublishedDefault
+                && result.catalog.schemaVersion == MultilingualCatalog.dualScriptSchemaVersion
+                && independentPages.contains(where: { $0.id == result.catalog.defaultPageId })
+            if usePublishedDefault {
+                selectPublishedPage(result.catalog.defaultPage)
+            }
+            if !usePublishedDefault, let pageID, result.catalog.pages.contains(where: { $0.id == pageID }) {
                 selectedPageID = pageID
-            } else if selectedWeek == nil {
+            } else if selectedWeek == nil,
+                      !weeks.contains(where: { $0.id == result.catalog.defaultPageId }) {
                 selectedPageID = result.catalog.defaultPageId
             }
             resolveContentLanguage(pageID: selectedPageID)
@@ -266,6 +355,7 @@ final class AppModel: ObservableObject {
                 alignmentController.cancel()
                 resetAlignmentState()
             }
+            preparePublishedAudioIfNeeded()
         } catch {
             // The legacy Chinese catalog remains a valid migration path while a
             // multilingual catalog has not been published to this environment.
@@ -296,6 +386,7 @@ final class AppModel: ObservableObject {
             languagePreferences.preferredContentLocale = locale
             languagePreferences.pageSelections[page.id] = locale
             persistLanguagePreferences()
+            preparePublishedAudioIfNeeded()
             return verifiedPage
         } catch {
             languageSelectionError = "暂时无法打开这个语言版本；当前内容和音频没有改变。"
@@ -332,6 +423,7 @@ final class AppModel: ObservableObject {
 
     func selectPublishedPage(_ page: MultilingualPage) {
         guard independentPages.contains(where: { $0.id == page.id }) else { return }
+        guard selectedWeek != nil || selectedPageID != page.id else { return }
         cancelPublishedAudioPreparation()
         playback.clear()
         preparation = UUID()
@@ -339,6 +431,9 @@ final class AppModel: ObservableObject {
         selectedWeek = nil
         selectedTrack = nil
         selectedPageID = page.id
+        publishedTranscript = nil
+        publishedTranscriptError = nil
+        transcriptRequest = UUID()
         selectedAudioLocale = nil
         publishedAudioSha256 = nil
         publishedAudioError = nil
@@ -348,6 +443,7 @@ final class AppModel: ObservableObject {
         languageSelectionError = nil
         resolveContentLanguage(pageID: page.id)
         resetAlignmentState()
+        preparePublishedAudioIfNeeded()
     }
 
     func prepareSelectedPublishedAudio() async {
@@ -356,6 +452,7 @@ final class AppModel: ObservableObject {
               page.targets[selectedContentLocale]?.audioStatus == "human_reviewed",
               let multilingualRepository else { return }
         let locale = selectedContentLocale
+        guard selectedAudioLocale != locale || !playback.isReady else { return }
         guard let requestedTarget = page.targets[locale] else { return }
         let request = UUID()
         publishedAudioRequest = request
@@ -384,7 +481,8 @@ final class AppModel: ObservableObject {
                   currentPage.id == page.id,
                   currentPage.sourceIdentitySha256 == page.sourceIdentitySha256,
                   currentPage.targets[locale] == requestedTarget,
-                  selectedContentLocale == locale else { return }
+                  selectedContentLocale == locale,
+                  !playback.isPreview else { return }
             playback.loadPublishedAudio(audio)
             selectedAudioLocale = locale
             publishedAudioSha256 = audio.sha256
@@ -395,6 +493,17 @@ final class AppModel: ObservableObject {
             guard publishedAudioRequest == request else { return }
             publishedAudioError = "无法下载或校验所选语言音频，请联网后重试。"
         }
+    }
+
+    func restorePublishedAudioAfterPreview() {
+        guard selectedWeek == nil,
+              selectedContentTarget?.audioStatus == "human_reviewed" else { return }
+        cancelPublishedAudioPreparation()
+        selectedAudioLocale = nil
+        publishedAudioSha256 = nil
+        alignmentController.cancel()
+        resetAlignmentState()
+        preparePublishedAudioIfNeeded()
     }
 
     static func languageName(_ locale: String) -> String {
@@ -413,6 +522,8 @@ final class AppModel: ObservableObject {
         selectedAudioLocale = nil
         publishedAudioSha256 = nil
         publishedAudioError = nil
+        publishedTranscript = nil
+        transcriptRequest = UUID()
         let nextTrack = track ?? week.tracks.first
         let unchanged = selectedWeek?.id == week.id && selectedTrack?.id == nextTrack?.id
             && selectedTrack?.sha256 == nextTrack?.sha256
@@ -472,8 +583,15 @@ final class AppModel: ObservableObject {
     }
 
     func retryAudio() async {
-        guard let week = selectedWeek else { return }
-        await select(week: week, track: selectedTrack, force: true)
+        if let week = selectedWeek {
+            await select(week: week, track: selectedTrack, force: true)
+        } else if selectedContentTarget?.audioStatus == "human_reviewed" {
+            cancelPublishedAudioPreparation()
+            playback.clear()
+            selectedAudioLocale = nil
+            publishedAudioSha256 = nil
+            await prepareSelectedPublishedAudio()
+        }
     }
 
     func downloadSelected() {

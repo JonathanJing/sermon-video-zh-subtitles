@@ -112,7 +112,7 @@ def validate_target_candidate(source_package: dict[str, Any], anchor: dict[str, 
         _require(isinstance(utterances, list) and utterances
                  and all(isinstance(item, str) and item.strip() for item in utterances),
                  f"Invalid target utterances: {group_id}")
-        _require(group.get("targetText") == "".join(item.strip() for item in utterances),
+        _require(group.get("targetText") == "".join(utterances),
                  f"Target text differs from utterances: {group_id}")
         coverage = group.get("coverage")
         _require(isinstance(coverage, list)
@@ -250,6 +250,69 @@ def validate_clip_voice_authorization(receipt: dict[str, Any], source_package: d
              "User attestation does not authorize this Dev clip voice")
 
 
+def validate_source_voice_authorization(receipt: dict[str, Any], source_package: dict[str, Any],
+                                        candidate: dict[str, Any], adapter: dict[str, Any]) -> None:
+    """Allow formal use only for the user's approved complete source media."""
+    _validate_schema(receipt, "sermon-source-voice-authorization-v1.schema.json",
+                     "source voice authorization")
+    attestation = _bound_evidence(receipt["userRightsAttestation"], json_artifact=True)
+    _validate_schema(attestation, "sermon-source-user-voice-attestation-v1.schema.json",
+                     "source voice user attestation")
+    source = source_package.get("source", {})
+    media = source.get("media", {})
+    window = source.get("approvedWindow", {})
+    _require(source_package.get("status") == "ready_for_translation"
+             and source_package.get("translationEligible") is True
+             and source.get("sourceId") == attestation["sourceId"]
+             and media.get("sha256") == attestation["sourceMediaSha256"]
+             and media.get("durationSeconds") == attestation["approvedWindow"]["endSeconds"]
+             and window.get("startSeconds") == attestation["approvedWindow"]["startSeconds"]
+             and window.get("endSeconds") == attestation["approvedWindow"]["endSeconds"]
+             and window.get("status") == "approved"
+             and window.get("humanApproval") is True,
+             "Source voice permission requires the approved complete source media")
+    _require(receipt["englishSourcePackageJsonSha256"] == interpretation.json_sha256(source_package)
+             and receipt["targetLanguageCandidateJsonSha256"] == interpretation.json_sha256(candidate)
+             and candidate.get("englishSourcePackageJsonSha256") == receipt["englishSourcePackageJsonSha256"]
+             and receipt["targetLocale"] == candidate.get("targetLocale") == adapter["targetLocale"]
+             and receipt["targetLocale"] in attestation["targetLocales"]
+             and receipt["speakerId"] == adapter["speakerId"] == attestation["speakerId"]
+             and receipt["voiceCheckpointSha256"] == adapter["conditioningSha256"]
+             == attestation["voiceCheckpointSha256"]
+             and _reviewed_at(attestation["recordedAt"])
+             and attestation["userStatement"].strip(),
+             "Source voice permission differs from candidate, locale, speaker or checkpoint")
+
+
+def prepare_source_voice_authorization(source_path: Path, candidate_path: Path,
+                                       adapter_path: Path, attestation_path: Path,
+                                       out: Path) -> dict[str, Any]:
+    """Write an immutable candidate-bound receipt from the user's source attestation."""
+    _require(not out.exists(), "Source voice authorization is immutable; choose a new path")
+    for path in (source_path, candidate_path, adapter_path, attestation_path):
+        _require(path.is_file(), f"Missing source voice authorization input: {path}")
+    source, candidate, adapter = (_load(path) for path in (source_path, candidate_path,
+                                                          adapter_path))
+    receipt = {
+        "schemaVersion": "sermon-source-voice-authorization-v1",
+        "scope": "source_bound_formal_audio_and_page_only",
+        "englishSourcePackageJsonSha256": interpretation.json_sha256(source),
+        "targetLanguageCandidateJsonSha256": interpretation.json_sha256(candidate),
+        "targetLocale": candidate["targetLocale"],
+        "speakerId": adapter["speakerId"],
+        "voiceCheckpointSha256": adapter["conditioningSha256"],
+        "userRightsAttestation": {
+            "path": str(attestation_path.resolve()),
+            "sha256": interpretation.sha256(attestation_path),
+            "jsonSha256": interpretation.json_sha256(_load(attestation_path)),
+        },
+    }
+    validate_source_voice_authorization(receipt, source, candidate, adapter)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    interpretation.write_json(out, receipt)
+    return receipt
+
+
 def _bound_evidence(value: dict[str, Any], *, json_artifact: bool) -> dict[str, Any] | Path:
     path = Path(value["path"])
     _require(path.is_file() and interpretation.sha256(path) == value["sha256"],
@@ -338,9 +401,11 @@ def validate_clip_voice_capability(receipt: dict[str, Any], source_package: dict
 def validate_adapter(adapter: dict[str, Any], target_locale: str,
                      registry: dict[str, Any], *,
                      clip_voice_authorization: dict[str, Any] | None = None,
+                     source_voice_authorization: dict[str, Any] | None = None,
                      clip_voice_capability: dict[str, Any] | None = None,
                      source_package: dict[str, Any] | None = None,
-                     candidate: dict[str, Any] | None = None) -> None:
+                     candidate: dict[str, Any] | None = None,
+                     preview_only: bool = False) -> None:
     """Bind the adapter to registry identity, authorized purpose, and locale evidence."""
     _validate_schema(adapter, "sermon-target-language-speech-adapter-v1.schema.json", "speech adapter")
     _validate_schema(registry, "sermon-speaker-voice-registry-v1.schema.json", "Speaker Voice Registry")
@@ -391,21 +456,33 @@ def validate_adapter(adapter: dict[str, Any], target_locale: str,
              and adapter["languageParameter"] == capability["modelLanguage"],
              "Speech adapter model, checkpoint, or language differs from registry")
     status = adapter["capabilityStatus"]
+    _require(not (clip_voice_authorization is not None and source_voice_authorization is not None),
+             "Select one source-bound voice authorization")
     if clip_voice_authorization is not None:
         _require(source_package is not None and candidate is not None,
                  "Clip voice authorization requires source and candidate")
         validate_clip_voice_authorization(
             clip_voice_authorization, source_package, candidate, adapter)
+    if source_voice_authorization is not None:
+        _require(source_package is not None and candidate is not None,
+                 "Source voice authorization requires source and candidate")
+        validate_source_voice_authorization(
+            source_voice_authorization, source_package, candidate, adapter)
     if clip_voice_capability is not None:
         _require(source_package is not None, "Clip voice capability requires source")
         validate_clip_voice_capability(clip_voice_capability, source_package, adapter)
+    if preview_only:
+        _require(clip_voice_authorization is None and source_voice_authorization is None
+                 and clip_voice_capability is None,
+                 "Preview-only adapter check cannot grant formal voice authorization")
+        return
     if status == "verified":
         purpose = "chinese_dubbing" if target_locale == "zh-Hans" else "multilingual_dubbing"
-        clip_scoped = (clip_voice_authorization is not None
-                       and adapter["authorizationPurpose"] == "multilingual_voice_demo")
-        _require((adapter["authorizationPurpose"] == purpose or clip_scoped)
+        scoped = ((clip_voice_authorization is not None or source_voice_authorization is not None)
+                  and adapter["authorizationPurpose"] == "multilingual_voice_demo")
+        _require((adapter["authorizationPurpose"] == purpose or scoped)
                  and ((capability["status"] == "human_reviewed" and bool(capability["reviewEvidence"]))
-                      or (clip_scoped and clip_voice_capability is not None))
+                      or (scoped and clip_voice_capability is not None))
                  and (not override or bool(override.get("provider"))),
                  "Verified speech adapter lacks production authorization or human-reviewed locale capability")
     elif status == "candidate":
@@ -418,12 +495,14 @@ def validate_adapter(adapter: dict[str, Any], target_locale: str,
 def prepare_job(source_package_path: Path, anchor_path: Path, candidate_path: Path, policy_path: Path,
                 human_review_receipt_path: Path, adapter_path: Path, registry_path: Path,
                 out: Path, *, clip_voice_authorization_path: Path | None = None,
+                source_voice_authorization_path: Path | None = None,
                 clip_voice_capability_path: Path | None = None,
                 clip_timeline_map_path: Path | None = None) -> dict[str, Any]:
     _require(not out.exists(), "Use a new speech job directory; prior jobs are immutable")
     for path in (source_package_path, anchor_path, candidate_path, policy_path,
                  human_review_receipt_path, adapter_path, registry_path,
                  *((clip_voice_authorization_path,) if clip_voice_authorization_path else ()),
+                 *((source_voice_authorization_path,) if source_voice_authorization_path else ()),
                  *((clip_voice_capability_path,) if clip_voice_capability_path else ()),
                  *((clip_timeline_map_path,) if clip_timeline_map_path else ())):
         _require(path.is_file(), f"Missing input: {path}")
@@ -433,6 +512,8 @@ def prepare_job(source_package_path: Path, anchor_path: Path, candidate_path: Pa
     )
     clip_voice_authorization = (
         _load(clip_voice_authorization_path) if clip_voice_authorization_path else None)
+    source_voice_authorization = (
+        _load(source_voice_authorization_path) if source_voice_authorization_path else None)
     clip_voice_capability = (
         _load(clip_voice_capability_path) if clip_voice_capability_path else None)
     clip_timeline = _load(clip_timeline_map_path) if clip_timeline_map_path else None
@@ -443,6 +524,7 @@ def prepare_job(source_package_path: Path, anchor_path: Path, candidate_path: Pa
     validate_human_review_receipt(source_package, anchor, candidate, human_review_receipt)
     validate_adapter(adapter, locale, registry,
                      clip_voice_authorization=clip_voice_authorization,
+                     source_voice_authorization=source_voice_authorization,
                      clip_voice_capability=clip_voice_capability,
                      source_package=source_package, candidate=candidate)
     if clip_timeline is not None:
@@ -525,6 +607,12 @@ def prepare_job(source_package_path: Path, anchor_path: Path, candidate_path: Pa
             "sha256": interpretation.sha256(clip_voice_authorization_path),
             "jsonSha256": interpretation.json_sha256(clip_voice_authorization),
         }
+    if source_voice_authorization_path is not None:
+        job["inputs"]["sourceVoiceAuthorization"] = {
+            "path": str(source_voice_authorization_path.resolve()),
+            "sha256": interpretation.sha256(source_voice_authorization_path),
+            "jsonSha256": interpretation.json_sha256(source_voice_authorization),
+        }
     if clip_voice_capability_path is not None:
         job["inputs"]["clipVoiceCapability"] = {
             "path": str(clip_voice_capability_path.resolve()),
@@ -553,6 +641,7 @@ def main() -> None:
     parser.add_argument("--adapter", type=Path, required=True)
     parser.add_argument("--speaker-registry", type=Path, required=True)
     parser.add_argument("--clip-voice-authorization", type=Path)
+    parser.add_argument("--source-voice-authorization", type=Path)
     parser.add_argument("--clip-voice-capability", type=Path)
     parser.add_argument("--clip-timeline-map", type=Path)
     parser.add_argument("--progress-ledger", type=Path,
@@ -571,6 +660,7 @@ def main() -> None:
             args.human_review_receipt,
             args.adapter, args.speaker_registry, args.out,
             clip_voice_authorization_path=args.clip_voice_authorization,
+            source_voice_authorization_path=args.source_voice_authorization,
             clip_voice_capability_path=args.clip_voice_capability,
             clip_timeline_map_path=args.clip_timeline_map,
         )

@@ -37,7 +37,11 @@
             "maxUnitSeconds": { "type": "number", "exclusiveMinimum": 0 },
             "minUnitSeconds": { "type": "number", "exclusiveMinimum": 0 },
             "internalPauseSeconds": { "type": "number", "minimum": 0 },
-            "wordDurationOutlierSeconds": { "type": "number", "exclusiveMinimum": 0 }
+            "wordDurationOutlierSeconds": { "type": "number", "exclusiveMinimum": 0 },
+            "boundaryOverrides": {
+              "type": "object", "minProperties": 1,
+              "additionalProperties": { "type": "string", "minLength": 1 }
+            }
           }
         },
         "sourceContext": {
@@ -51,7 +55,8 @@
             "summarySha256": { "$ref": "#/$defs/nullableSha256" },
             "approvalEvidenceSha256": { "$ref": "#/$defs/nullableSha256" },
             "reviewSha256": { "$ref": "#/$defs/nullableSha256" },
-            "machineJudgeSha256": { "$ref": "#/$defs/nullableSha256" }
+            "machineJudgeSha256": { "$ref": "#/$defs/nullableSha256" },
+            "boundaryOverridesEvidenceSha256": { "$ref": "#/$defs/sha256" }
           }
         }
       }
@@ -83,7 +88,7 @@
     "anchorIssueCount": { "type": "integer", "minimum": 0 },
     "anchorIssueTypes": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
     "nextStage": { "enum": ["run_sentence_interpretation_models", "operator_anchor_review", "run_english_source_machine_judge"] },
-    "humanReview": { "const": "pending" }
+    "humanReview": { "enum": ["pending", "approved"] }
   },
   "$defs": {
     "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseArgs, validateSnapshot } from '../publish.mjs';
 import { formatDuration, stepTimingSummary, timingCoverageNote } from '../src/timing.js';
+import { substageProgressLabel } from '../src/substage.js';
 
 test('publishing requires an explicit project, database and snapshot', () => {
   assert.throws(() => parseArgs(['--project', 'example-project', '--database', 'sermon-tracker']), /snapshot/);
@@ -26,6 +27,71 @@ test('snapshot validation rejects unsafe IDs and missing scope', () => {
   const publicData = JSON.stringify(validateSnapshot(secret));
   for (const value of ['private note', 'private title', 'private reason', 'abcdefghijk', 'evil.example', 'trackSha256']) {
     assert.equal(publicData.includes(value), false, value);
+  }
+});
+
+test('snapshot sanitizer preserves only approved aggregate substage metrics', () => {
+  const valid = { schemaVersion: 'sermon-public-tracker-snapshot-v2', pageId: 'week-2026-09-20',
+    target: 'dev', locales: [], source: {}, progress: {}, readOnly: true,
+    steps: [{ id: 'L2-02@ko', layer: 2, locale: 'ko', status: 'running',
+      timing: { subStages: [
+        { id: 'initial_translation', attempts: 3, failedAttempts: 1, completedUnits: 2,
+          totalUnits: 5, running: 1, executionSeconds: 42.5, openElapsedSeconds: 8.375 },
+        { id: 'schedule_sync', attempts: 1, failedAttempts: 0, completedUnits: 1,
+          totalUnits: null, running: 0, executionSeconds: 1.5, openElapsedSeconds: null,
+          audioSeconds: null, overLimitUnits: 2, clipDurationSeconds: 1800,
+          plannedDurationSeconds: 1840 },
+        { id: 'raw_error_text', reason: 'private content' },
+      ] } }] };
+  const publicSnapshot = validateSnapshot(valid);
+  assert.deepEqual(publicSnapshot.steps[0].timing.subStages, [{
+    id: 'initial_translation', attempts: 3, failedAttempts: 1, completedUnits: 2,
+    totalUnits: 5, running: 1, executionSeconds: 42.5, openElapsedSeconds: 8.375,
+    audioSeconds: null, overLimitUnits: null, clipDurationSeconds: null, plannedDurationSeconds: null,
+  }, {
+    id: 'schedule_sync', attempts: 1, failedAttempts: 0, completedUnits: 1,
+    totalUnits: null, running: 0, executionSeconds: 1.5, openElapsedSeconds: null,
+    audioSeconds: null, overLimitUnits: 2, clipDurationSeconds: 1800, plannedDurationSeconds: 1840,
+  }]);
+  assert.equal(JSON.stringify(publicSnapshot).includes('private content'), false);
+  const tooLong = { ...valid, steps: [{ ...valid.steps[0], timing: { subStages: [
+    { id: 'unit_synthesis', openElapsedSeconds: 366 * 24 * 60 * 60 + 1 },
+  ] } }] };
+  assert.equal(validateSnapshot(tooLong).steps[0].timing.subStages[0].openElapsedSeconds, null);
+});
+
+test('substage progress labels audio work as units and translation work as groups', () => {
+  assert.equal(substageProgressLabel('unit_synthesis', 12, 45), '12/45 单元');
+  assert.equal(substageProgressLabel('audio_validation', 11, 45, 'en'), '11/45 units');
+  assert.equal(substageProgressLabel('initial_translation', 18, 42), '18/42 组');
+  assert.equal(substageProgressLabel('independent_review', 14, 42, 'en'), '14/42 groups');
+});
+
+test('relative timeline projection keeps safe spans and strips private evidence', () => {
+  const base = { schemaVersion: 'sermon-public-tracker-snapshot-v2', pageId: 'week-2026-09-27',
+    target: 'dev', locales: [], source: {}, progress: {}, readOnly: true,
+    steps: [{ id: 'L2-02@ko', layer: 2, locale: 'ko', status: 'complete' }] };
+  assert.equal(validateSnapshot(base).timeline, null);
+  const input = { ...base, timeline: {
+    schemaVersion: 'sermon-tracker-relative-timeline-v1', axis: 'seconds_since_first_recorded_event',
+    durationSeconds: 120, privateStart: '2026-09-27T10:00:00Z', coverage: { measuredSteps: 1 },
+    rows: [{ id: 'L2-02@ko', sourceUrl: 'https://private.example/',
+      intervals: [{ startSeconds: 0, endSeconds: 60, kind: 'waiting_review', stage: 'private-stage' },
+        { startSeconds: -1, endSeconds: 100, kind: 'blocked' }],
+      attempts: [{ startSeconds: 60, endSeconds: 75, kind: 'measured', privatePath: '/private' }],
+      substeps: [{ code: 'reviewer', dependsOn: ['translator', 'secret'], observedCount: 1,
+        longestSeconds: 15, attempts: [{ startSeconds: 60, endSeconds: 75, kind: 'measured' }],
+        modelPrompt: 'private-prompt' }, { code: 'secret', observedCount: 1 }] },
+    { id: 'private-step', intervals: [{ startSeconds: 0, endSeconds: 10, kind: 'blocked' }] }],
+  } };
+  const publicData = validateSnapshot(input).timeline;
+  assert.equal(publicData.rows.length, 1);
+  assert.equal(publicData.rows[0].intervals.length, 1);
+  assert.deepEqual(publicData.rows[0].substeps[0].dependsOn, ['translator']);
+  assert.equal(publicData.coverage.measuredSubsteps, 1);
+  for (const secret of ['2026-09-27T10:00:00Z', 'private.example', 'private-stage',
+    '/private', 'private-prompt', 'private-step', 'secret']) {
+    assert.equal(JSON.stringify(publicData).includes(secret), false, secret);
   }
 });
 

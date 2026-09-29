@@ -340,6 +340,7 @@ def update_step(ledger: dict, key: str, status: str, *, evidence: str | None = N
         raise ValueError("done units require a valid total")
     if status == "complete" and new_total is not None and new_done != new_total:
         raise ValueError("all units must be done before completion")
+    previous_status = step["status"]
     step["status"] = status
     if evidence and evidence not in step["evidence"]:
         step["evidence"].append(evidence)
@@ -349,9 +350,14 @@ def update_step(ledger: dict, key: str, status: str, *, evidence: str | None = N
     if elapsed_minutes is not None:
         step["elapsedMinutes"] = round(elapsed_minutes, 2)
     step["doneUnits"], step["totalUnits"] = new_done, new_total
-    step["updatedAt"] = timestamp()
-    ledger["updatedAt"] = timestamp()
-    ledger["history"].append({"at": timestamp(), "action": "update", "step": key, "status": status})
+    occurred_at = timestamp()
+    step["updatedAt"] = occurred_at
+    ledger["updatedAt"] = occurred_at
+    ledger["history"].append({"at": occurred_at, "action": "update", "step": key,
+                              "fromStatus": previous_status, "status": status,
+                              "statusChanged": previous_status != status,
+                              "reason": step["reason"], "evidence": evidence,
+                              "doneUnits": new_done, "totalUnits": new_total})
 
 
 def invalidate(ledger: dict, layer: int, locale: str | None, reason: str) -> list[str]:

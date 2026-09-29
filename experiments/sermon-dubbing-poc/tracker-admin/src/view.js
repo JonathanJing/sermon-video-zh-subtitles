@@ -1,6 +1,8 @@
 import './style.css';
-import { stepTimingSummary, timingCoverageNote } from './timing.js';
+import { formatDuration, stepTimingSummary, timingCoverageNote } from './timing.js';
+import { substageProgressLabel } from './substage.js';
 import { tr, uiLanguage } from './i18n.js';
+import { renderTimeline } from './timeline.js';
 
 const LABELS = {
   pending: '待开始', running: '进行中', waiting_review: '待审核', blocked: '阻塞', complete: '已记录',
@@ -301,6 +303,67 @@ function renderLocales(locales, steps) {
         if (step.totalUnits != null) description.append(make('small', 'unit-count', tr(`${step.doneUnits || 0}/${step.totalUnits} 单元`, `${step.doneUnits || 0}/${step.totalUnits} units`)));
         const timing = stepTimingSummary(step);
         if (timing.length) description.append(make('small', 'step-timing', timing.join(' · ')));
+        const childStages = step.timing?.subStages || [];
+        if (childStages.length) {
+          const details = make('details', 'substage-details');
+          details.append(make('summary', '', tr('阶段进度明细', 'Stage progress details')));
+          details.append(make('small', 'substage-note', tr(
+            '数量与耗时表示该子阶段实测处理；不代表人工批准或检查点通过。',
+            'Counts and durations show measured substage work; they do not mean human approval or checkpoint completion.')));
+          const rows = make('ul', 'substage-list');
+          rows.replaceChildren(...childStages.map((child) => {
+            const row = make('li', 'substage-row');
+            const stageName = child.id === 'initial_translation'
+              ? tr('分组初译', 'Group translation')
+              : child.id === 'independent_review'
+                ? tr('独立复核', 'Independent review')
+                : child.id === 'unit_synthesis'
+                  ? tr('音频单元合成', 'Audio unit synthesis')
+                  : child.id === 'audio_validation'
+                    ? tr('音频解码与校验', 'Audio decode and validation')
+                    : child.id === 'schedule_sync'
+                      ? tr('排程与同步检查', 'Scheduling and sync check') : child.id;
+            const total = Number.isInteger(child.totalUnits) ? child.totalUnits : null;
+            const progress = substageProgressLabel(child.id, child.completedUnits || 0, total,
+              uiLanguage() === 'en' ? 'en' : 'zh');
+            const metrics = [progress,
+              tr(`尝试 ${child.attempts || 0}`, `${child.attempts || 0} attempts`),
+              tr(`运行 ${child.running || 0}`, `${child.running || 0} running`),
+              tr(`失败 ${child.failedAttempts || 0}`, `${child.failedAttempts || 0} failed`),
+              tr(`实测 ${formatDuration(child.executionSeconds || 0)}`,
+                `Measured ${formatDuration(child.executionSeconds || 0)}`)];
+            if (child.audioSeconds != null) {
+              metrics.push(tr(`已解码音频 ${formatDuration(child.audioSeconds)}`,
+                `Decoded audio ${formatDuration(child.audioSeconds)}`));
+            }
+            if (child.overLimitUnits != null) {
+              metrics.push(tr(`超同步上限 ${child.overLimitUnits} 段`,
+                `${child.overLimitUnits} segments over sync limit`));
+            }
+            if (child.plannedDurationSeconds != null && child.clipDurationSeconds != null) {
+              metrics.push(tr(`排程末尾 ${formatDuration(child.plannedDurationSeconds)} / 视频 ${formatDuration(child.clipDurationSeconds)}`,
+                `Schedule end ${formatDuration(child.plannedDurationSeconds)} / video ${formatDuration(child.clipDurationSeconds)}`));
+            }
+            if (child.openElapsedSeconds != null) {
+              metrics.push(tr(`当前运行 ${formatDuration(child.openElapsedSeconds)}`,
+                `Current run ${formatDuration(child.openElapsedSeconds)}`));
+            }
+            const attentionNeeded = (child.overLimitUnits || 0) > 0 || (child.failedAttempts || 0) > 0;
+            row.append(make('span', '', stageName), make('small',
+              attentionNeeded ? 'substage-alert' : '', metrics.join(' · ')));
+            if (total != null) {
+              const meter = make('div', 'substage-meter');
+              const fill = make('div', 'progress-fill');
+              fill.style.width = `${Math.max(0, Math.min(100,
+                100 * (child.completedUnits || 0) / total))}%`;
+              meter.append(fill);
+              row.append(meter);
+            }
+            return row;
+          }));
+          details.append(rows);
+          description.append(details);
+        }
         line.append(description, pill(step.status));
         return line;
       }));
@@ -403,9 +466,12 @@ export function renderSnapshot(snapshot) {
   byId('empty').hidden = true;
   byId('dashboard').hidden = false;
   text('page-title', snapshot.pageId);
+  const weekDate = /^\d{4}-\d{2}-\d{2}/.exec(snapshot.pageId)?.[0] || snapshot.serviceDate;
+  const sourceDate = snapshot.serviceDate && snapshot.serviceDate !== weekDate
+    ? tr(` · 来源日期 ${snapshot.serviceDate}`, ` · source date ${snapshot.serviceDate}`) : '';
   text('page-subtitle', tr(
-    `${snapshot.serviceDate || '日期未登记'} · ${snapshot.target || '目标环境未知'} · 来源与多语言制作`,
-    `${snapshot.serviceDate || 'Date not recorded'} · ${snapshot.target || 'Unknown target'} · Source and multilingual production`));
+    `${weekDate || '日期未登记'} · ${snapshot.target || '目标环境未知'} · 来源与多语言制作${sourceDate}`,
+    `${weekDate || 'Date not recorded'} · ${snapshot.target || 'Unknown target'} · Source and multilingual production${sourceDate}`));
   text('updated-at', tr(
     `状态更新 ${dateTime(snapshot.ledgerUpdatedAt)} · 快照 ${dateTime(snapshot.generatedAt)}`,
     `Status updated ${dateTime(snapshot.ledgerUpdatedAt)} · Snapshot ${dateTime(snapshot.generatedAt)}`));
@@ -420,6 +486,7 @@ export function renderSnapshot(snapshot) {
   renderEta(report);
   renderBlockers(report, snapshot.steps || []);
   renderFlow(snapshot);
+  renderTimeline(snapshot, stepName);
   renderSource(snapshot.source);
   renderShared(snapshot.sharedLayer1, snapshot.steps || []);
   renderLocales(snapshot.locales || [], snapshot.steps || []);

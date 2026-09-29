@@ -39,6 +39,32 @@ func publishedCatalogAndAudioSurviveOfflineReload() async throws {
     #expect(try await restartedLibrary.offlineFile(for: track) == nil)
 }
 
+@Test(.enabled(if: ProcessInfo.processInfo.environment["TONGXING_LIVE_SMOKE"] == "1"),
+      .timeLimit(.minutes(3)))
+func publishedDualScriptCatalogLoadsAllLocalesAndAudio() async throws {
+    let base = URL(string: "https://ai-for-god-sermon-audio.web.app")!
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent("tongxing-v3-live-\(UUID().uuidString)")
+    defer { try? FileManager.default.removeItem(at: root) }
+    let repository = MultilingualCatalogRepository(origin: base, cacheDirectory: root)
+    let result = try await repository.loadCatalog()
+    #expect(result.source == .network)
+    #expect(result.catalog.schemaVersion == MultilingualCatalog.dualScriptSchemaVersion)
+    let page = try #require(result.catalog.pages.first(where: { $0.id == result.catalog.defaultPageId }))
+    #expect(page.id == "2026-09-27-weekend-sermon-drive-530")
+    for locale in ["zh-Hans", "ko", "es"] {
+        let release = try await repository.loadRelease(page: page, locale: locale)
+        #expect(release.schemaVersion == TargetLanguageReleasePackage.dualScriptSchemaVersion)
+        #expect(release.status == "published_http_verified")
+        #expect(release.audioStatus == "human_reviewed")
+        let html = try await repository.loadPage(for: release)
+        #expect(html.html.contains("<body"))
+    }
+    let chinese = try await repository.loadRelease(page: page, locale: "zh-Hans")
+    let audio = try await repository.loadAudio(for: chinese, page: page)
+    #expect(audio.locale == "zh-Hans")
+    #expect((try audio.localURL.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0) > 0)
+}
+
 private final class UnavailableNetworkProtocol: URLProtocol {
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }

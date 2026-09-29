@@ -95,6 +95,15 @@ class ServerTests(unittest.TestCase):
             urlopen(self.base + '/library.json')
         self.assertEqual(error.exception.code, 503)
 
+    def test_weekly_pack_serves_published_weeks_import(self):
+        (self.pack / 'weekly.json').write_text('{}')
+        module = b'export const ready = true;'
+        (self.pack / 'published-weeks.mjs').write_bytes(module)
+        with urlopen(self.base + '/published-weeks.mjs') as response:
+            self.assertEqual(response.status, 200)
+            self.assertEqual(response.headers['Content-Type'], 'text/javascript')
+            self.assertEqual(response.read(), module)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -10,6 +10,9 @@ import unittest
 from unittest.mock import patch
 
 from scripts import render_formal_target_language_speech as subject
+from scripts import four_layer_measure as measure
+from scripts import four_layer_progress as progress
+from scripts import sermon_accounting as accounting
 from tests import test_build_target_language_audio_package as fixture_module
 
 
@@ -25,6 +28,20 @@ class FakeSynth:
 
 
 class FormalRenderTests(unittest.TestCase):
+    def test_shared_pcm16_assembly_places_units_at_sample_exact_offsets(self):
+        plan = {"status": "pass", "entries": [
+            {"textGroupId": "a", "plannedStart": 0.1},
+            {"textGroupId": "b", "plannedStart": 0.5}]}
+        first = b"\x01\x00" * 2
+        second = b"\x02\x00" * 3
+        track = subject.assemble_pcm16_track(plan, [first, second], 10, 1, 1.0)
+        self.assertEqual(track, b"\x00\x00" + first + b"\x00\x00" * 2
+                         + second + b"\x00\x00" * 2)
+        with self.assertRaisesRegex(ValueError, "exceeds clip length"):
+            subject.assemble_pcm16_track(
+                {"status": "pass", "entries": [{"textGroupId": "a", "plannedStart": 0.9}]},
+                [first], 10, 1, 1.0)
+
     def setUp(self):
         fixture = fixture_module.AudioPackageTests("test_builds_machine_screened_package_but_never_human_approved")
         fixture.setUp()
@@ -51,15 +68,144 @@ class FormalRenderTests(unittest.TestCase):
                                     self.root / "checkpoint-map.json",
                                     synth_factory=FakeSynth)
 
+    def stamp_cached_renderer(self, renderer_sha256):
+        for index in range(len(self.context["job"]["units"])):
+            intent_path = self.root / f"receipts/unit-{index:04d}.intent.json"
+            commit_path = self.root / f"receipts/unit-{index:04d}.render.json"
+            intent = subject.package.read_object(intent_path)
+            intent["rendererSha256"] = renderer_sha256
+            intent_path.write_text(json.dumps(intent))
+            commit = subject.package.read_object(commit_path)
+            commit["identity"] = intent
+            commit_path.write_text(json.dumps(commit))
+
     def test_two_units_full_decode_and_resume_without_synthesis(self):
         rows = self.render_units()
         self.assertEqual(len(rows), 2)
         self.assertEqual(len(FakeSynth.calls), 2)
+
+    def test_integrated_parent_audio_resumes_in_place_with_verified_intent(self):
+        rows = self.render_units()
+        parent_hash = "e17cd486a63c792bb36b0fcdecab1e02b66fac9c6fd8005f4a9363f3eaffe3d5"
+        self.assertIn(parent_hash, subject.COMPATIBLE_INTEGRATED_PARENT_RENDERER_SHA256)
+        self.stamp_cached_renderer(parent_hash)
+        FakeSynth.calls.clear()
+        self.assertEqual(self.render_units(), rows)
+        self.assertEqual(FakeSynth.calls, [])
+        self.stamp_cached_renderer("0" * 64)
+        with self.assertRaisesRegex(ValueError, "Cached render identity differs"):
+            self.render_units()
+
+    def test_integrated_parent_audio_reuses_only_matching_units_in_new_job(self):
+        old_rows = self.render_units()
+        self.stamp_cached_renderer(
+            "e17cd486a63c792bb36b0fcdecab1e02b66fac9c6fd8005f4a9363f3eaffe3d5")
+        next_root = self.root.parent / "parent-render-reuse"
+        next_root.mkdir()
+        next_paths = dict(self.paths)
+        for name in ("job", "candidate"):
+            next_paths[name] = next_root / f"{name}.json"
+            next_paths[name].write_text(json.dumps(self.context[name]))
+        FakeSynth.calls.clear()
+        with patch.object(subject.integrity, "build_receipt",
+                          return_value={"fullDecode": "pass", "durationSeconds": 0.08}):
+            rows = subject.render_units(
+                self.context, next_paths, next_root, self.root / "checkpoint-map.json",
+                reuse_from=self.root, synth_factory=FakeSynth)
+        self.assertEqual(FakeSynth.calls, [])
+        self.assertEqual([row["audio"]["sha256"] for row in rows],
+                         [row["audio"]["sha256"] for row in old_rows])
+        intent_path = self.root / "receipts/unit-0000.intent.json"
+        commit_path = self.root / "receipts/unit-0000.render.json"
+        unknown = subject.package.read_object(intent_path)
+        unknown["rendererSha256"] = "0" * 64
+        intent_path.write_text(json.dumps(unknown))
+        commit = subject.package.read_object(commit_path)
+        commit["identity"] = unknown
+        commit_path.write_text(json.dumps(commit))
+        another_root = self.root.parent / "unknown-renderer-reuse"
+        another_root.mkdir()
+        another_paths = dict(next_paths)
+        for name in ("job", "candidate"):
+            another_paths[name] = another_root / f"{name}.json"
+            another_paths[name].write_text(json.dumps(self.context[name]))
+        with patch.object(subject.integrity, "build_receipt",
+                          return_value={"fullDecode": "pass", "durationSeconds": 0.08}):
+            subject.render_units(
+                self.context, another_paths, another_root,
+                self.root / "checkpoint-map.json",
+                reuse_from=self.root, synth_factory=FakeSynth)
+        self.assertEqual(len(FakeSynth.calls), 1)
+
+    def test_progress_ledger_tracks_audio_render_validation_and_sync(self):
+        ledger_path = self.root.parent / "four-layer-progress.json"
+        progress.save(ledger_path, progress.new_ledger("audio-page", ["ko"]))
+        step = "L3-02@ko"
+        with measure.producer_step(ledger_path, step, locale="ko"):
+            accounting.record_workload(measure.stage_name(step), {"speechUnits": len(self.context["job"]["units"])})
+            rows = self.render_units()
+            subject.assemble(self.context, self.paths, self.root, rows)
+        events, damaged = accounting.read_events(ledger_path.parent / "accounting")
+        self.assertFalse(damaged)
+        row = next(row for row in measure.timing_audit(progress.load(ledger_path), events)["rows"]
+                   if row["step"] == step)
+        substages = {child["id"]: child for child in row["subStages"]}
+        self.assertEqual(substages["unit_synthesis"]["completedUnits"], 2)
+        self.assertEqual(substages["audio_validation"]["completedUnits"], 2)
+        self.assertGreater(substages["audio_validation"]["audioSeconds"], 0)
+        self.assertEqual(substages["schedule_sync"]["completedUnits"], 1)
+        self.assertEqual(substages["schedule_sync"]["overLimitUnits"], 0)
         for row in rows:
             self.assertEqual(subject.package.read_object(self.root / row["receipt"]["path"])
                              ["fullDecode"], "pass")
         self.assertEqual(self.render_units(), rows)
         self.assertEqual(len(FakeSynth.calls), 2)
+
+    def test_each_audio_unit_records_generation_then_verified_reuse(self):
+        directory = self.root / "accounting"
+        with accounting.accounting_session(directory, "layer3_formal_render"):
+            self.render_units()
+            self.render_units()
+        events, damaged = accounting.read_events(directory)
+        self.assertFalse(damaged)
+        attempts = [row for row in accounting.summarize(directory)["stageAttempts"]
+                    if row["stage"].startswith("layer3.unit.")]
+        self.assertEqual(len(attempts), 4)
+        self.assertEqual([row["cacheHit"] for row in attempts], [False, False, True, True])
+        self.assertTrue(all(row["startedAt"] and row["finishedAt"] for row in attempts))
+        workloads = [event["metrics"] for event in events
+                     if event["event"] == "workload" and event["stage"].startswith("layer3.unit.")]
+        self.assertEqual(sum(item["synthesized"] for item in workloads), 2)
+        self.assertEqual(sum(item["reusedCurrent"] for item in workloads), 2)
+        self.assertEqual(sum(event["event"] == "stage_finished" and
+                             event["stage"].startswith("layer3.model_load.") for event in events), 1)
+
+    def test_formal_render_binds_unit_spans_to_layer3_ledger(self):
+        ledger_path = self.root.parent / "four-layer-progress.json"
+        progress.save(ledger_path, progress.new_ledger("test-page", ["ko"]))
+
+        def fake_render(*_args, **_kwargs):
+            with accounting.stage("layer3.unit.ko.0000"):
+                pass
+            return {"units": [{}, {}]}
+
+        with patch.object(subject, "render", side_effect=fake_render):
+            subject.render_accounted(self.paths, self.root / "checkpoint-map.json",
+                                     self.root / "audio-operation-policies.json",
+                                     progress_ledger=ledger_path)
+        events, damaged = accounting.read_events(ledger_path.parent / "accounting")
+        self.assertFalse(damaged)
+        report = measure.timing_audit(progress.load(ledger_path), events)
+        row = next(row for row in report["rows"] if row["step"] == "L3-02@ko")
+        self.assertEqual(row["executionAttempts"], 1)
+        self.assertEqual(row["attemptHistory"][0]["workload"]["doneUnits"], 2)
+        parent = next(event for event in events if event["event"] == "stage_started"
+                      and event["stage"] == "four_layer.L3-02:ko")
+        child = next(event for event in events if event["event"] == "stage_started"
+                     and event["stage"] == "layer3_formal_render")
+        self.assertEqual(child["parentSpanId"], parent["spanId"])
+        self.assertTrue(any(event["event"] == "stage_finished"
+                            and event["stage"] == "layer3.unit.ko.0000" for event in events))
 
     def test_unchanged_unit_reuses_verified_audio_across_candidate_revision(self):
         old_rows = self.render_units()
@@ -366,6 +512,19 @@ class FormalRenderTests(unittest.TestCase):
                          [group["targetText"] for group in self.context["candidate"]["groups"]])
         self.assertTrue((self.root / manifest["track"]["path"]).is_file())
 
+    def test_assembly_copies_source_voice_attestation_without_review_claim(self):
+        self.context["source_voice_authorization"] = self.context.pop("clip_voice_authorization")
+        self.paths["source_voice_authorization"] = self.paths.pop("clip_voice_authorization")
+        rows = self.render_units()
+        manifest = subject.assemble(self.context, self.paths, self.root, rows,
+                                    policy={"reactionLagSeconds": 0.0,
+                                            "interUtteranceGapSeconds": 0.0,
+                                            "maxEndLagSeconds": 8.0})
+        self.assertEqual(manifest["voiceAuthorization"]["sha256"],
+                         subject.identity.sha256(Path(self.context[
+                             "source_voice_authorization"]["userRightsAttestation"]["path"])))
+        self.assertEqual(manifest["machineScreening"]["status"], "not_run")
+
     def test_fresh_full_length_delivery_can_use_hash_bound_mp3_track(self):
         rows = self.render_units()
         plan_policy = {"reactionLagSeconds": 0.0, "interUtteranceGapSeconds": 0.0,
@@ -378,6 +537,27 @@ class FormalRenderTests(unittest.TestCase):
         self.assertLess(track.stat().st_size,
                         (self.root / "languages/ko/audio/track.wav").stat().st_size)
         self.assertEqual(subject.integrity.probe_full_decode(track)["codec"], "mp3")
+        self.assertAlmostEqual(subject.integrity.probe_full_decode(track)["durationSeconds"],
+                               self.context["clip_timeline_map"]["clipDurationSeconds"],
+                               delta=subject.package.MP3_CONTAINER_PADDING_SECONDS)
+        package = subject.package.build_package(
+            self.paths, self.root / "render-manifest.json", self.root)
+        self.assertEqual(package["track"]["sha256"], manifest["track"]["sha256"])
+        schedule_path = self.root / manifest["schedule"]["path"]
+        schedule = subject.package.read_object(schedule_path)
+        # Move inside the tolerated MP3 container padding without crossing the
+        # approved clip end on encoders that report a longer final MP3 frame.
+        schedule["trackDurationSeconds"] -= 0.06
+        subject.write_json_atomic(schedule_path, schedule)
+        manifest["schedule"] = subject.artifact(self.root, schedule_path, json_artifact=True)
+        subject.write_json_atomic(self.root / "render-manifest.json", manifest)
+        subject.package.build_package(self.paths, self.root / "render-manifest.json", self.root)
+        schedule["trackDurationSeconds"] += 0.20
+        subject.write_json_atomic(schedule_path, schedule)
+        manifest["schedule"] = subject.artifact(self.root, schedule_path, json_artifact=True)
+        subject.write_json_atomic(self.root / "render-manifest.json", manifest)
+        with self.assertRaisesRegex(ValueError, "Schedule track duration"):
+            subject.package.build_package(self.paths, self.root / "render-manifest.json", self.root)
         with self.assertRaisesRegex(ValueError, "different track format"):
             subject.assemble(self.context, self.paths, self.root, rows,
                              policy=plan_policy, track_format="wav")

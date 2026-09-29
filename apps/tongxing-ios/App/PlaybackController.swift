@@ -56,6 +56,65 @@ final class PlaybackController: ObservableObject {
 
     private let liveActivity = ListeningLiveActivityCoordinator()
     private var languageObservation: AnyCancellable?
+    @Published private(set) var statisticsEnabled = UserDefaults.standard.bool(forKey: ListeningStatistics.preferenceKey)
+    var statisticsContentLocale = "zh-Hans"
+    private var statistics: ListeningStatistics?
+    private var statisticsDefaults = UserDefaults.standard
+    private var statisticsBootstrap: ListeningSource?
+    private var statisticsForeground = true
+    func setStatisticsForeground(_ value: Bool) {
+        statisticsForeground = value
+        if value { statisticsInterfaceVisit() }
+        else { flushStatistics() }
+    }
+
+    func configureStatistics(origin: URL, defaults: UserDefaults = .standard, session: URLSession? = nil) {
+        statisticsDefaults = defaults
+        statisticsEnabled = defaults.bool(forKey: ListeningStatistics.preferenceKey)
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0"
+        statistics = ListeningStatistics(origin: origin, appVersion: version, defaults: defaults, session: session)
+    }
+
+    func setStatisticsEnabled(_ enabled: Bool) {
+        statisticsEnabled = enabled
+        statisticsDefaults.set(enabled, forKey: ListeningStatistics.preferenceKey)
+        Task { await statistics?.setEnabled(enabled) }
+    }
+
+    func statisticsInterfaceVisit(source: ListeningSource? = nil) {
+        if let source { statisticsBootstrap = source }
+        guard statisticsForeground, let source = statisticsBootstrap else { return }
+        let locale = statisticsInterfaceLocale
+        Task { await statistics?.interfaceVisit(source: source, locale: locale) }
+    }
+
+    private var statisticsInterfaceLocale: String {
+        let code = AppLocalization.shared.language.rawValue
+        return code.hasPrefix("zh") ? "zh-Hans" : code
+    }
+
+    func flushStatistics() { Task { await statistics?.flush() } }
+
+    private func sampleStatistics(playing: Bool? = nil, clearing: Bool = false) {
+        guard let statistics else { return }
+        let source: ListeningSource?
+        switch loadedSource {
+        case .legacy(let week, let track, _):
+            source = ListeningSource(week: week.date, trackId: track.id, audioSha256: track.sha256)
+        case .published(let audio):
+            source = .published(pageID: audio.pageID, locale: audio.locale, sha256: audio.sha256)
+        case nil: source = nil
+        }
+        let observedPosition = currentPosition(), observedDuration = duration
+        let observedPlaying = playing ?? (player.timeControlStatus == .playing && pendingSeek == nil)
+        let uptime = ProcessInfo.processInfo.systemUptime
+        let ui = statisticsInterfaceLocale, content = statisticsContentLocale
+        Task {
+            await statistics.sample(source: clearing ? nil : source, position: observedPosition,
+                                    duration: observedDuration, playing: observedPlaying, uptime: uptime,
+                                    interfaceLocale: ui, contentLocale: content)
+        }
+    }
     private var player = AVPlayer()
     private let historyURL: URL
     private let audioSessionActivator: any AudioSessionActivating
@@ -98,7 +157,7 @@ final class PlaybackController: ObservableObject {
         observeNotifications()
         configureRemoteCommands()
         languageObservation = AppLocalization.shared.$language.dropFirst().sink { [weak self] _ in
-            Task { @MainActor [weak self] in self?.publishNowPlaying() }
+            Task { @MainActor [weak self] in self?.publishNowPlaying(); self?.statisticsInterfaceVisit(); self?.sampleStatistics(playing: false) }
         }
     }
 
@@ -146,6 +205,7 @@ final class PlaybackController: ObservableObject {
     private func loadSource(identity next: TrackIdentity, sourceID nextSourceID: String,
                             title nextTitle: String, speaker nextSpeaker: String, url: URL,
                             duration estimatedDuration: Double, source: LoadedSource) {
+        sampleStatistics(playing: false, clearing: true)
         manualInteraction()
         saveProgress()
         invalidateActivation()
@@ -253,6 +313,7 @@ final class PlaybackController: ObservableObject {
     }
 
     func clear() {
+        sampleStatistics(playing: false, clearing: true)
         saveProgress()
         pause()
         generation = UUID()
@@ -362,6 +423,7 @@ final class PlaybackController: ObservableObject {
     }
 
     func pause(automatic: Bool = false) {
+        sampleStatistics(playing: false)
         if !automatic { manualInteraction() }
         wantsPlayback = false
         interruptedIntent = false
@@ -413,6 +475,7 @@ final class PlaybackController: ObservableObject {
             undoSnapshot = pendingSeek ?? (currentPosition(), offset)
             undoPosition = undoSnapshot?.position
         }
+        sampleStatistics(playing: false)
         let destination = min(max(0, value), duration)
         let destinationOffset = min(duration, max(-duration, newOffset))
         let token = generation
@@ -466,11 +529,14 @@ final class PlaybackController: ObservableObject {
         guard identity != nil || isPreview else { return }
         guard pendingSeek == nil else { return }
         position = currentPosition()
+        sampleStatistics()
+        statisticsInterfaceVisit()
         publishLiveActivity()
         if positionTouched, Date().timeIntervalSince(lastSave) >= 4 { saveProgress() }
     }
 
     private func refreshTransport() {
+        sampleStatistics()
         isPlaying = player.timeControlStatus == .playing
         isWaiting = activationTask != nil || player.timeControlStatus == .waitingToPlayAtSpecifiedRate
         if isPlaying { message = "正在收听" }

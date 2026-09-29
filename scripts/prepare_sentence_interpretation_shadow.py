@@ -46,6 +46,7 @@ def prepare_shadow(
     approval_evidence_path: Path | None = None,
     review_path: Path | None = None,
     machine_judge_path: Path | None = None,
+    boundary_overrides_path: Path | None = None,
     source_id: str | None = None,
     source_url_hash: str | None = None,
     service_date: str | None = None,
@@ -61,6 +62,17 @@ def prepare_shadow(
     segments = json.loads(source_path.read_text(encoding="utf-8"))
     if not isinstance(segments, list) or not segments:
         raise ValueError("Frozen MFA-aligned English segments must be a nonempty JSON list")
+    boundary_overrides: dict[str, str] = {}
+    if boundary_overrides_path is not None:
+        boundary_overrides_path = boundary_overrides_path.resolve()
+        evidence = json.loads(boundary_overrides_path.read_text(encoding="utf-8"))
+        if (not isinstance(evidence, dict)
+                or evidence.get("schemaVersion") != "sermon-anchor-boundary-overrides-v1"
+                or evidence.get("alignedSegmentsSha256") != contract.sha256(source_path)
+                or not isinstance(evidence.get("overrides"), dict)
+                or not evidence["overrides"]):
+            raise ValueError("Boundary overrides must bind this aligned English source")
+        boundary_overrides = evidence["overrides"]
 
     identity = {
         "schemaVersion": RECEIPT_SCHEMA,
@@ -76,6 +88,8 @@ def prepare_shadow(
             "minUnitSeconds": min_unit_seconds,
             "internalPauseSeconds": internal_pause_seconds,
             "wordDurationOutlierSeconds": word_duration_outlier_seconds,
+            **({"boundaryOverrides": dict(sorted(boundary_overrides.items()))}
+               if boundary_overrides else {}),
         },
         "sourceContext": {
             "sourceId": source_id,
@@ -85,6 +99,8 @@ def prepare_shadow(
             "approvalEvidenceSha256": contract.sha256(approval_evidence_path.resolve()) if approval_evidence_path and approval_evidence_path.is_file() else None,
             "reviewSha256": contract.sha256(review_path.resolve()) if review_path and review_path.is_file() else None,
             "machineJudgeSha256": contract.sha256(machine_judge_path.resolve()) if machine_judge_path and machine_judge_path.is_file() else None,
+            **({"boundaryOverridesEvidenceSha256": contract.sha256(boundary_overrides_path)}
+               if boundary_overrides_path else {}),
         },
     }
     run_dir = out_root / contract.json_sha256(identity)
@@ -96,6 +112,7 @@ def prepare_shadow(
         min_unit_seconds=min_unit_seconds,
         internal_pause_seconds=internal_pause_seconds,
         word_duration_outlier_seconds=word_duration_outlier_seconds,
+        boundary_overrides=boundary_overrides,
     )
     if not manifest.get("sourceUnits"):
         raise ValueError("Clause-stable shadow produced no source units; inspect MFA word timing input")
@@ -162,6 +179,7 @@ def main() -> int:
     parser.add_argument("--approval-evidence", type=Path)
     parser.add_argument("--review", type=Path)
     parser.add_argument("--machine-judge", type=Path)
+    parser.add_argument("--boundary-overrides", type=Path)
     parser.add_argument("--source-id")
     parser.add_argument("--source-url-hash")
     parser.add_argument("--service-date")
@@ -177,6 +195,7 @@ def main() -> int:
         approval_evidence_path=args.approval_evidence,
         review_path=args.review,
         machine_judge_path=args.machine_judge,
+        boundary_overrides_path=args.boundary_overrides,
         source_id=args.source_id,
         source_url_hash=args.source_url_hash,
         service_date=args.service_date,

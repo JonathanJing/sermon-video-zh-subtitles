@@ -171,6 +171,12 @@ class WeeklyReleaseTests(unittest.TestCase):
             self.assertEqual((out / "public" / name).read_bytes(), (self.base / "public" / name).read_bytes())
         self.assertEqual(report["appVersion"], json.loads((out / "public/engagement.json").read_text())["appVersion"])
         self.assertEqual((out / "public/locales-es.mjs").read_text(), "// refreshed locales-es.mjs\n")
+        manifest = {entry["path"] for entry in report["files"]}
+        for name in ("usage.mjs", "usage-client.mjs", "language-listening.mjs",
+                     "language-listening-client.mjs"):
+            with self.subTest(name=name):
+                self.assertEqual((out / "public" / name).read_bytes(), (source / name).read_bytes())
+                self.assertIn(name, manifest)
 
     def test_ui_refresh_requires_complete_regular_source(self):
         self.bootstrap()

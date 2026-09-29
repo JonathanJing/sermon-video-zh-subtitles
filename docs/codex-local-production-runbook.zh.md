@@ -1,5 +1,7 @@
 # Codex 本地周末生产 Runbook
 
+每周正式制作前先运行 `python scripts/evaluate_backend_four_layer_dry_run.py --out <忽略目录内的评估收据>`，再按[后端四层快速 Dry Run](backend-four-layer-dry-run.zh.md)生成 Firebase Dev 独立测试页。该评估模拟拿到链接，走 Layer 1–4 的短夹具交接，并测试四处失败阻断及无效故障点；CI 也在非文档 PR 上执行。模拟通过只说明这条测试链路工作；正式周次仍从真实来源、审核和音频证据继续。本 runbook 下文的 Supervisor 仍只覆盖 `dual_pdf` 范围。
+
 2026-09-11 的安装与验收状态见 [Agents API 生产切换记录](agents-api-production-cutover-20260911.zh.md)：当时代码已安装，正式入口 shadow/execute 验收通过，每周调度已启用，业务状态为等待目标周日匹配源。该状态是切换收据，不是永久运行状态；每次执行必须重新读取当前 source、lease、审批、run status 与 QA。2026-09-20 的完整内容制作证据另见[本周制作记录](production-2026-09-20.zh.md)。
 
 ## 生产边界
@@ -43,6 +45,16 @@
 OpenAI 云端转写与语言 API 保持不变。每周 TTS 和配音质检也采用 MacBook 优先、Spark 备用。MacBook MPS 已用授权讲员检查点完成 10 字中文单元的真实合成，输出 2.56 秒音频；短样本成功不代表整篇吞吐、音质或人工听审获准。媒体处理、排版和校验保留在调度端；无模型声音指纹匹配继续在听众浏览器内执行。
 
 ### Layer 1：英文事实与锚点 shadow
+
+已有完整本地礼拜录像、且不应重新下载时，可先用 `sermon_pipeline.py` 的 `--english-source-only` 从原文件和已批准的绝对窗口生成英文 ASR、MFA 词时间与 `summary.json`。该模式要求 reading/MFA，写入 `status=english_source_candidate`，不调用中文翻译，也不授予 Layer 2 正式资格。`summary.json` 将原媒体 SHA-256 绑定到 `pipelineInputIdentity.sourceAudio`；仍须用同一媒体哈希、来源 URL hash 和窗口另存人工范围收据，再生成锚点、机器裁判和英文人工审核收据。没有可用的本机或 Spark MFA 时，默认按预检要求停在付费转写之前。若操作员明确授权这份媒体的外部转写，可单独选择 `--english-transcript-only`：它保存原始英文 ASR 和 `transcript-only-summary.json`，不运行 MFA、翻译或正式 Layer 1 放行；MFA 恢复后以同一 `--outdir` 运行 `--english-source-only`，按输入身份复用仍有效的 ASR 缓存。
+
+```bash
+.venv/bin/python scripts/sermon_pipeline.py \
+  --input /absolute/path/to/service-complete.mp4 \
+  --start-time HH:MM:SS --end-time HH:MM:SS \
+  --slug weekly-source --outdir /absolute/path/to/ignored/run/pipeline \
+  --output-mode reading --reading-aligner mfa --english-source-only
+```
 
 配置 `--dubbing-config` 的未来周生产，会在冻结英文和 MFA 对齐完成后自动运行 clause-stable v2 shadow。入口读取 `pipeline/segments_timed_en_corrected.json`，在 `pipeline/sentence-interpretation-v2/<identity>/` 保存不可变的 `anchor-manifest.json`、`english-source-package.json` 和 `receipt.json`。单元目标为约 6–8 秒；内部切点必须有分句标点或至少 0.35 秒词间停顿，并保留父句、原始 `wordId` 和 `splitEvidence`。Layer 1 不包含中文 prompt、译文、TTS 或发布状态。
 

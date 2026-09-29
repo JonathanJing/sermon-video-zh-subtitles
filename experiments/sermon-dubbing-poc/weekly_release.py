@@ -421,7 +421,10 @@ def prepare(registry, candidate, out, replace_ids=()):
             shutil.rmtree(temporary)
 
 
-UI_REFRESH_FILES = ("index.html", "style.css", "app.mjs", "i18n.mjs",
+UI_REFRESH_FILES = ("index.html", "style.css", "app.mjs", "usage.mjs", "usage-client.mjs",
+                    "language-listening.mjs", "language-listening-client.mjs",
+                    "catalog.mjs", "published-weeks.mjs",
+                    "media-session.mjs", "locales-app.mjs", "locales-feedback.mjs", "i18n.mjs",
                     "locales-interface.mjs", "locales-ko.mjs", "locales-es.mjs")
 
 

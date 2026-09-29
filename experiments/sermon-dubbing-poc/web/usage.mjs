@@ -1,4 +1,6 @@
 import { UsageSession, lockedDailyBrowserId, usageDay, DAILY_BROWSER_KEY } from './usage-client.mjs';
+import { createLanguageListening } from './language-listening.mjs';
+import { getLocale, onLocaleChange } from './i18n.mjs';
 
 const buttonActions = {
   back: 'back_5_click', forward: 'forward_5_click', 'theme-toggle': 'theme_toggle', download: 'download_click',
@@ -18,6 +20,8 @@ export function createUsage({ catalog, config, audio, context, onError = () => {
   if (!config?.enabled || !bootstrapWeek) return { setEnabled() {}, retract: async () => {}, record() {} };
   const bootstrapTrack = bootstrapWeek.tracks[0];
   const source = { week: bootstrapWeek.id, trackId: bootstrapTrack.id, audioSha256: bootstrapTrack.sha256, appVersion: config.appVersion };
+  const listening = createLanguageListening({ audio, config, onError, bootstrapSource: source,
+    getInterfaceLocale: getLocale, onInterfaceLocaleChange: onLocaleChange });
   const sessions = []; let current = null, enabled = false, timer = null;
   let storage; try { storage = localStorage; } catch { storage = null; }
   function session() {
@@ -80,6 +84,7 @@ export function createUsage({ catalog, config, audio, context, onError = () => {
   }, 60000);
   return {
     setEnabled(value) {
+      listening.setEnabled(value);
       if (value === enabled) return;
       enabled = value;
       if (enabled) { current = null; record('app_open'); flush(); }
@@ -88,10 +93,11 @@ export function createUsage({ catalog, config, audio, context, onError = () => {
       enabled = false;
       if (timer) clearTimeout(timer); timer = null;
       try { storage?.removeItem(DAILY_BROWSER_KEY); } catch {}
-      const results = await Promise.allSettled(sessions.map(item => item.retract()));
+      const results = await Promise.allSettled([listening.retract(), ...sessions.map(item => item.retract())]);
       const failed = results.find(result => result.status === 'rejected');
       if (failed) throw failed.reason;
     },
     record,
+    select: (week, track) => listening.select(week, track),
   };
 }

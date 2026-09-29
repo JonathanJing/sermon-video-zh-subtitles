@@ -181,6 +181,9 @@ body{padding-bottom:calc(var(--dock-height,196px) + 18px)}
 
 .voice-source-link{display:inline-flex;align-items:center;min-height:44px;margin-top:8px;color:var(--teal);font-size:13px}
 
+.full-reading{margin:0 0 24px;padding:16px;border:1px solid var(--line);border-radius:12px}.full-reading summary{cursor:pointer;font-weight:650}.full-reading>p{line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere}
+
+.full-reading .full-reading-english{margin-top:-.5em;color:var(--muted);line-height:1.6}
 /* Dev-only controls share the production page's palette, rhythm and component grid. */
 .field-main { padding-bottom: 250px; }
 .topbar-actions { position: relative; }

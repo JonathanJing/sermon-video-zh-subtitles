@@ -22,7 +22,8 @@ enum UITestLaunch {
         configuration.protocolClasses = [UITestContentProtocol.self]
         configuration.urlCache = nil
         return AppModel(supportDirectory: support, contentOrigin: UITestContent.origin,
-                        session: URLSession(configuration: configuration))
+                        session: URLSession(configuration: configuration),
+                        statisticsDefaults: UserDefaults(suiteName: "Tongxing-UITests-\(runID.uuidString)")!)
     }
 }
 
@@ -111,7 +112,8 @@ private enum UITestContent {
         let sourceHash = String(repeating: "b", count: 64)
         let multilingual: [String: Any] = [
             "schemaVersion": "sermon-multilingual-catalog-v2", "generatedAt": "2026-09-21T00:00:00Z",
-            "defaultPageId": "ui-test-week", "pages": [[
+            "defaultPageId": ProcessInfo.processInfo.arguments.contains("--ui-testing-current-page-default")
+                ? "ui-test-clip" : "ui-test-week", "pages": [[
                 "id": "ui-test-week", "date": "2026-09-06", "sourceLocale": "en",
                 "sourceIdentitySha256": sourceHash, "defaultTargetLocale": "zh-Hans", "targets": [
                     "zh-Hans": ["releasePackageUrl": "/releases/ui-test-week/zh-Hans.json",
@@ -169,6 +171,78 @@ private enum UITestContent {
                 "/media/fixture-second.mp3": secondAudio,
                 "/media/ui-test-clip/es.mp3": spanishAudio]
     }()
+
+    static let dualScriptResponses: [String: Data] = {
+        let pageID = "ui-test-full-video"
+        let locale = "ko"
+        let audio = responses["/media/ui-test-clip/es.mp3"]!
+        let html = Data("<html><head><style>body{font-size:20px}</style></head><body><h1>完整韩语文稿</h1></body></html>".utf8)
+        func hash(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
+        let displayHash = String(repeating: "a", count: 64)
+        let spokenHash = String(repeating: "b", count: 64)
+        let content = try! JSONSerialization.data(withJSONObject: [
+            "schemaVersion": "sermon-full-video-text-content-v1", "pageId": pageID,
+            "sourceLocale": "en", "targetLocale": locale, "status": "human_reviewed",
+            "englishSourcePackageJsonSha256": displayHash,
+            "sourceMediaSha256": displayHash,
+            "targetLanguageCandidateJsonSha256": displayHash,
+            "durationSeconds": 20.0, "title": "测试完整视频证道",
+            "cues": [["textGroupId": "g1", "sourceUnitIds": ["u1"], "start": 0.0, "end": 10.0, "text": "전체 원고입니다."]]
+        ], options: [.sortedKeys])
+        let captions = try! JSONSerialization.data(withJSONObject: [
+            "cues": [["textGroupId": "g1", "start": 0.0, "end": 10.0, "text": "짧은 자막입니다."]]
+        ], options: [.sortedKeys])
+        let release: [String: Any] = [
+            "schemaVersion": "sermon-target-language-release-package-v2",
+            "packageId": "\(pageID)-\(locale)", "pageId": pageID,
+            "sourceLocale": "en", "targetLocale": locale,
+            "targetLanguageCandidateJsonSha256": displayHash,
+            "spokenTargetLanguageCandidateJsonSha256": spokenHash,
+            "targetLanguageAudioPackageJsonSha256": spokenHash,
+            "status": "published_http_verified", "contentStatus": "human_reviewed",
+            "audioStatus": "human_reviewed", "interfaceLocale": locale,
+            "contentLocale": locale, "audioLocale": locale,
+            "assets": [
+                ["role": "page", "path": "/pages/\(pageID)/\(locale)/index.html", "sha256": hash(html)],
+                ["role": "content", "path": "/content/\(pageID)/\(locale).json", "sha256": hash(content)],
+                ["role": "captions", "path": "/captions/\(pageID)/\(locale).json", "sha256": hash(captions)],
+                ["role": "audio", "path": "/media/\(pageID)/\(locale).mp3", "sha256": hash(audio)],
+            ],
+            "httpVerification": ["status": "pass", "evidenceSha256": displayHash],
+            "deviceAcceptance": ["status": "not_run", "evidenceSha256": NSNull()],
+            "venueAcceptance": ["status": "not_run", "evidenceSha256": NSNull()],
+            "issues": [],
+        ]
+        let releaseData = try! JSONSerialization.data(withJSONObject: release, options: [.sortedKeys])
+        let english = try! JSONSerialization.data(withJSONObject: [
+            "schemaVersion": "sermon-published-english-reference-v1", "pageId": pageID,
+            "sourceIdentitySha256": displayHash, "sourceMediaSha256": displayHash,
+            "reviewState": "human_approved",
+            "targets": [locale: ["contentSha256": hash(content), "captionsSha256": hash(captions),
+                "releasePackageJsonSha256": hash(releaseData),
+                "blocks": [["textGroupId": "g1", "sourceUnitIds": ["u1"], "english": "This is the approved English source."]]]]
+        ], options: [.sortedKeys])
+        let catalog: [String: Any] = [
+            "schemaVersion": "sermon-multilingual-catalog-v3", "generatedAt": "2026-09-27T00:00:00Z",
+            "defaultPageId": pageID,
+            "pages": [["id": pageID, "title": "测试完整视频证道", "date": "2026-09-27",
+                       "sourceLocale": "en", "sourceIdentitySha256": displayHash,
+                       "defaultTargetLocale": locale,
+                       "targets": [locale: ["releasePackageUrl": "/releases-v2/\(pageID)/\(locale).json",
+                                             "releasePackageJsonSha256": hash(releaseData),
+                                             "contentStatus": "human_reviewed", "audioStatus": "human_reviewed",
+                                             "capabilities": ["text", "captions", "audio"]]]]],
+        ]
+        return [
+            "/multilingual-v3.json": try! JSONSerialization.data(withJSONObject: catalog, options: [.sortedKeys]),
+            "/releases-v2/\(pageID)/\(locale).json": releaseData,
+            "/pages/\(pageID)/\(locale)/index.html": html,
+            "/content/\(pageID)/\(locale).json": content,
+            "/captions/\(pageID)/\(locale).json": captions,
+            "/english-reference/\(pageID).json": english,
+            "/media/\(pageID)/\(locale).mp3": audio,
+        ]
+    }()
 }
 
 /// This transport belongs only to the explicitly constructed fixture session.
@@ -185,6 +259,25 @@ private final class UITestContentProtocol: URLProtocol {
         }
         guard !ProcessInfo.processInfo.arguments.contains("--ui-testing-offline") else {
             client?.urlProtocol(self, didFailWithError: URLError(.notConnectedToInternet))
+            return
+        }
+        let dualScript = ProcessInfo.processInfo.arguments.contains("--ui-testing-dual-script")
+        if dualScript, let data = UITestContent.dualScriptResponses[url.path] {
+            let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "HTTP/1.1",
+                headerFields: ["Content-Length": String(data.count),
+                               "Content-Type": url.path.hasSuffix(".json") ? "application/json"
+                                   : url.path.hasSuffix(".mp3") ? "audio/mpeg" : "text/html"])!
+            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            client?.urlProtocol(self, didLoad: data)
+            client?.urlProtocolDidFinishLoading(self)
+            return
+        }
+        if url.path == "/multilingual-v3.json" {
+            let response = HTTPURLResponse(url: url, statusCode: 404, httpVersion: "HTTP/1.1",
+                headerFields: ["Content-Length": "1"])!
+            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            client?.urlProtocol(self, didLoad: Data("0".utf8))
+            client?.urlProtocolDidFinishLoading(self)
             return
         }
         guard let data = UITestContent.responses[url.path] else {

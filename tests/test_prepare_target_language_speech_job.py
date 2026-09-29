@@ -226,6 +226,88 @@ class TargetLanguageSpeechJobTests(unittest.TestCase):
             )
         self.assertFalse((self.root / "forged-job").exists())
 
+    def test_full_drive_voice_receipt_is_candidate_bound_and_does_not_approve_capability(self):
+        self.source_package["source"] = {
+            "sourceId": "drive:1wpixHcwnlS3WfOPdZ-oek_Y1YZG53NN5",
+            "media": {"sha256": "374662dc7c00993820360b2095e277ecd7ebf17bc4d873ccf7e2b76a6c7c7930",
+                      "durationSeconds": 1891.677333},
+            "approvedWindow": {"startSeconds": 0, "endSeconds": 1891.677333,
+                               "status": "approved", "humanApproval": True},
+        }
+        source_hash = interpretation.json_sha256(self.source_package)
+        self.candidate["englishSourcePackageJsonSha256"] = source_hash
+        draft = copy.deepcopy(self.policy)
+        draft.pop("componentSha256")
+        draft["sourceScope"]["englishSourcePackageJsonSha256"] = source_hash
+        self.policy = policy_tools.freeze_policy(draft)
+        self.candidate["translationPolicySha256"] = policy_tools.validate_policy(self.policy)["translationPolicySha256"]
+        self.human_review_receipt["englishSourcePackageJsonSha256"] = source_hash
+        self.human_review_receipt["translationPolicySha256"] = self.candidate["translationPolicySha256"]
+        self.human_review_receipt["candidateJsonSha256"] = interpretation.json_sha256(self.candidate)
+        for path, value in ((self.source_package_path, self.source_package),
+                            (self.candidate_path, self.candidate), (self.policy_path, self.policy),
+                            (self.human_review_receipt_path, self.human_review_receipt)):
+            write_json(path, value)
+        attestation = {
+            "schemaVersion": "sermon-source-user-voice-attestation-v1",
+            "scope": "source_bound_formal_audio_and_page_only",
+            "sourceId": self.source_package["source"]["sourceId"],
+            "sourceMediaSha256": self.source_package["source"]["media"]["sha256"],
+            "approvedWindow": {"startSeconds": 0, "endSeconds": 1891.677333},
+            "targetLocales": ["zh-Hans", "ko", "es"],
+            "speakerId": self.adapter["speakerId"],
+            "voiceCheckpointSha256": self.adapter["conditioningSha256"],
+            "authorizedUses": ["formal_audio_generation", "formal_page_publication"],
+            "permissionClaimed": True, "userStatement": "Synthetic user authorization for this file only.",
+            "recordedAt": "2026-09-27T06:03:43Z",
+        }
+        attestation_path = self.root / "user-attestation.json"
+        receipt_path = self.root / "source-voice-authorization.json"
+        write_json(attestation_path, attestation)
+        receipt = subject.prepare_source_voice_authorization(
+            self.source_package_path, self.candidate_path, self.adapter_path,
+            attestation_path, receipt_path)
+        self.assertEqual(self.validate_schema("sermon-source-voice-authorization-v1.schema.json", receipt), [])
+        self.assertEqual(self.validate_schema("sermon-source-user-voice-attestation-v1.schema.json", attestation), [])
+        self.adapter["capabilityStatus"] = "verified"
+        write_json(self.adapter_path, self.adapter)
+        with self.assertRaisesRegex(ValueError, "production authorization or human-reviewed"):
+            subject.prepare_job(self.source_package_path, self.anchor_path, self.candidate_path,
+                                self.policy_path, self.human_review_receipt_path, self.adapter_path,
+                                self.registry_path, self.root / "without-capability",
+                                source_voice_authorization_path=receipt_path)
+        capability = next(row for row in self.registry["speakers"][0]["localeCapabilities"]
+                          if row["targetLocale"] == "ko")
+        capability["status"] = "human_reviewed"
+        capability["reviewEvidence"] = ["separate synthetic human capability review"]
+        self.adapter["registryJsonSha256"] = interpretation.json_sha256(self.registry)
+        self.adapter["capabilityEvidenceSha256"] = interpretation.json_sha256(capability["reviewEvidence"])
+        write_json(self.registry_path, self.registry)
+        write_json(self.adapter_path, self.adapter)
+        job = subject.prepare_job(self.source_package_path, self.anchor_path, self.candidate_path,
+                                  self.policy_path, self.human_review_receipt_path, self.adapter_path,
+                                  self.registry_path, self.root / "with-capability",
+                                  source_voice_authorization_path=receipt_path)
+        self.assertTrue(job["synthesisEligible"])
+        self.assertFalse(job["releaseEligible"])
+        self.assertEqual(job["renderContract"]["humanListeningReview"], "pending")
+        self.assertIn("sourceVoiceAuthorization", job["inputs"])
+        self.assertNotIn("clipVoiceAuthorization", job["inputs"])
+        self.assertEqual(audio_integrity._load_job(self.root / "with-capability/job.json"), job)
+        changed = copy.deepcopy(self.candidate)
+        changed["groups"][0]["targetText"] = "changed"
+        with self.assertRaisesRegex(ValueError, "candidate, locale, speaker or checkpoint"):
+            subject.validate_source_voice_authorization(receipt, self.source_package, changed, self.adapter)
+        changed_source = copy.deepcopy(self.source_package)
+        changed_source["source"]["media"]["sha256"] = "0" * 64
+        with self.assertRaisesRegex(ValueError, "approved complete source media"):
+            subject.validate_source_voice_authorization(receipt, changed_source, self.candidate, self.adapter)
+        changed_attestation = copy.deepcopy(attestation)
+        changed_attestation["sourceId"] = "drive:other"
+        write_json(attestation_path, changed_attestation)
+        with self.assertRaisesRegex(ValueError, "file hash mismatch"):
+            subject.validate_source_voice_authorization(receipt, self.source_package, self.candidate, self.adapter)
+
     def test_synthetic_verified_registry_allows_preparation_but_not_release(self):
         job = self.make_verified_speech_job()
         self.assertEqual(job["status"], "prepared_for_target_language_speech")

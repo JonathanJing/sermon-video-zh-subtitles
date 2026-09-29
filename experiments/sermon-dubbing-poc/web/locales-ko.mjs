@@ -2,7 +2,7 @@ import { messages as interfaceMessages } from './locales-interface.mjs';
 import { messages as appMessages } from './locales-app.mjs';
 import { messages as feedbackMessages } from './locales-feedback.mjs';
 
-// Korean is an interface-only POC. Untranslated low-frequency diagnostics stay
+// Untranslated low-frequency diagnostics stay
 // in English instead of silently falling back to Chinese. Weekly sermon content
 // is localized separately through contentLocalizations in the catalog.
 export const fallbackLocale = 'en';
@@ -10,6 +10,8 @@ export const messages = Object.freeze({
   ...interfaceMessages.en,
   ...appMessages.en,
   ...feedbackMessages.en,
+
+  'privacy.summary': '서비스 개선을 위해 화면 언어, 선택한 설교 페이지와 본문 언어, 실제 재생한 음성의 언어와 청취 시간, 이용 시간, 페이지 및 버튼 조작, 음색 미리듣기를 수집합니다. 통계를 언제든지 끌 수 있으며, 청취와 의견 제출은 계속 이용할 수 있습니다.',
 
   'app.title': '동행 · 설교 중국어 통역',
   'app.name': '동행',
@@ -31,7 +33,7 @@ export const messages = Object.freeze({
   'download.mp3': 'MP3 다운로드',
   'voices.version': '보이스 버전 선택',
   'feedback.section': '평가 및 피드백',
-  'feedback.heading': '이 중국어 통역이 도움이 되었나요?',
+  'feedback.heading': '이 통역이 도움이 되었나요?',
   'feedback.helpful': '👍 도움이 됨',
   'feedback.improve': '👎 개선이 필요함',
   'feedback.retractVote': '평가 취소',
@@ -63,9 +65,9 @@ export const messages = Object.freeze({
   'footer.independent': 'Mariners Church와 소속 또는 공식 후원 관계가 없는 독립 개인 프로젝트입니다.',
   'privacy.title': '개인정보 및 익명 통계',
   'privacy.optIn': '익명 통계로 재생 경험 개선에 동의',
-  'player.region': '중국어 오디오 플레이어',
-  'player.ahead': '중국어가 빠름',
-  'player.behind': '중국어가 느림',
+  'player.region': '음성 플레이어',
+  'player.ahead': '음성이 빠름',
+  'player.behind': '음성이 느림',
   'player.backOne': '1초 뒤로',
   'player.forwardOne': '1초 앞으로',
   'player.currentCue': '현재 문장으로',
@@ -113,22 +115,22 @@ export const messages = Object.freeze({
   'app.subtitle.show': '중·영 자막 표시',
   'app.subtitle.hide': '중국어 자막만 표시',
   'app.subtitle.missing': '이 부분의 영어 원문이 없습니다.',
-  'app.subtitle.follow': '자막은 중국어 오디오를 따릅니다',
+  'app.subtitle.follow': '자막은 더빙 음성을 따릅니다',
   'app.transcript.title': '전체 자막',
   'app.transcript.description': '현재 오디오의 전체 자막입니다.',
   'app.transcript.englishReference': '영어 원문 참고 · 문단별',
-  'app.transcript.chineseReference': '중국어 번역',
+  'app.transcript.chineseReference': '번역문',
   'app.release.formal': '공식 재생판',
   'app.release.preview': '미리보기',
-  'app.release.full': '전체 중국어',
+  'app.release.full': '전체 더빙',
   'app.release.review': '검토 중',
   'app.release.pending': '준비 중',
-  'app.week.published': '공식 재생판 · 중국어 오디오 준비 완료',
-  'app.week.ready': '전체 중국어 준비 완료',
-  'app.week.review': '전체 중국어 · 검토 중',
+  'app.week.published': '공식 재생판 · 더빙 음성 준비 완료',
+  'app.week.ready': '전체 더빙 준비 완료',
+  'app.week.review': '전체 더빙 · 검토 중',
   'app.week.outline': '설교 개요 준비 완료',
-  'app.voice.pending': '중국어 오디오 준비 중',
-  'app.content.disclosure': 'AI로 합성한 중국어 오디오와 정리한 글은 개인 따라 듣기를 위한 참고 자료입니다.',
+  'app.voice.pending': '더빙 음성 준비 중',
+  'app.content.disclosure': 'AI로 합성한 더빙 음성과 정리한 글은 개인 따라 듣기를 위한 참고 자료입니다.',
   'app.source.open': '영어 원본 영상 열기',
   'app.source.link': '{label} ↗',
   'app.next': '다음: {text}',
@@ -151,4 +153,12 @@ export const messages = Object.freeze({
   'feedback.voteWithdrawn': '평가가 취소되었습니다.',
   'feedback.selectIssue': '문제를 선택하거나 설명을 추가해 주세요.',
   'feedback.issueSaved': '피드백이 저장되었습니다. 개선에 도움을 주셔서 감사합니다.',
+  "app.content.available": "이 설교에 제공되는 음성과 자막 언어를 선택하세요.",
+  "app.content.legacy": "이 설교는 중국어 콘텐츠와 음성만 제공됩니다.",
+  "app.content.fullText": "전체 읽기 원고",
+  "app.content.fullTextHint": "검토가 완료된 전체 읽기 원고입니다. 시간은 영어 원본 영상을 기준으로 합니다. 음성에는 짧게 다듬은 원고를 사용하므로 들으면서 따라 읽을 때는 음성 자막을 보세요.",
+  "app.content.spokenHint": "현재 자막은 검토가 완료된 짧은 낭독 원고의 음성을 따릅니다.",
+  "player.aheadAria": "음성이 빠르면 1초 뒤로 이동",
+  "player.behindAria": "음성이 느리면 1초 앞으로 이동",
+  "app.voice.active": "AI 합성 더빙 · {speaker}",
 });

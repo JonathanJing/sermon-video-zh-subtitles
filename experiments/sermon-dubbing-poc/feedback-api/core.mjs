@@ -1,5 +1,6 @@
 import { createHash, createHmac, randomBytes } from 'node:crypto';
 import { createUsageHandler } from './usage-core.mjs';
+import { createListeningHandler } from './listening-core.mjs';
 
 export const DAY = 86_400_000;
 export const CATEGORIES = ['translation', 'pronunciation', 'fluency', 'voice', 'sync', 'volume', 'playback'];
@@ -22,6 +23,7 @@ export function prepareCatalog(catalog) {
   const map = new Map();
   for (const item of catalog.sources) {
     assert(/^\d{4}-\d{2}-\d{2}$/.test(item.week) && typeof item.trackId === 'string' && item.trackId.length <= 160 && /^[a-f0-9]{64}$/.test(item.audioSha256) && finite(item.durationSeconds, 21600) && item.durationSeconds > 0 && Array.isArray(item.cueIds) && Array.isArray(item.blockIds) && Array.isArray(item.cues), 'invalid_catalog', 503);
+    assert((item.pageId === undefined && item.audioLocale === undefined) || (typeof item.pageId === 'string' && /^[A-Za-z0-9_-]{1,160}$/.test(item.pageId) && ['zh-Hans', 'ko', 'es', 'en', 'vi'].includes(item.audioLocale)), 'invalid_catalog_listening_identity', 503);
     const cues = new Map();
     for (const cue of item.cues) {
       assert(typeof cue.id === 'string' && item.cueIds.includes(cue.id) && !cues.has(cue.id) && finite(cue.start, item.durationSeconds + 1) && finite(cue.end, item.durationSeconds + 1) && cue.end > cue.start && (cue.blockId === null || item.blockIds.includes(cue.blockId)), 'invalid_catalog', 503);
@@ -94,6 +96,8 @@ function eventContribution(record) {
 export function createService({ store, catalog, origins, now = Date.now, randomToken = () => randomBytes(32).toString('base64url'), ipLimiter = createIpLimiter({ now }), limits = {} }) {
   const sources = prepareCatalog(catalog), allowedOrigins = new Set(origins);
   const usage = createUsageHandler({ catalog, ApiError });
+  const listening = createListeningHandler({ ApiError, catalog });
+  const interfaceUsage = createListeningHandler({ ApiError, catalog, interfaceUsage: true });
   const budget = { mintsPerMinute: 100, mintsPerDay: 3000, sessionRequestsPerMinute: 30, ...limits };
   for (const value of Object.values(budget)) assert(integer(value, 100000) && value > 0, 'invalid_limits', 503);
   return async ({ method, path, origin, contentType, body, rawBytes, authorization, address }) => {
@@ -102,7 +106,7 @@ export function createService({ store, catalog, origins, now = Date.now, randomT
     assert(/^application\/json(?:\s*;|$)/i.test(contentType || ''), 'json_required', 415);
     assert(Number.isInteger(rawBytes) && rawBytes <= 16384, 'payload_too_large', 413);
     assert(object(body));
-    assert(['/api/session', '/api/feedback', '/api/events', '/api/usage'].includes(path), 'not_found', 404);
+    assert(['/api/session', '/api/feedback', '/api/events', '/api/usage', '/api/listening', '/api/interface-usage'].includes(path), 'not_found', 404);
     ipLimiter(address, path);
     const { source, stored } = identity(body, sources);
     const timestamp = now();
@@ -131,6 +135,8 @@ export function createService({ store, catalog, origins, now = Date.now, randomT
       const minute = Math.floor(timestamp / 60000);
       const nextSession = { ...session, windowMinute: minute, windowCount: session.windowMinute === minute ? session.windowCount + 1 : 1 };
       assert(nextSession.windowCount <= budget.sessionRequestsPerMinute, 'rate_limited', 429);
+      if (path === '/api/interface-usage') return interfaceUsage({ tx, body, source, stored, session, nextSession, sessionPath, sessionId, timestamp });
+      if (path === '/api/listening') return listening({ tx, body, source, stored, session, nextSession, sessionPath, sessionId, timestamp });
       if (path === '/api/usage') return usage({ tx, body, session, nextSession, sessionPath, sessionId, stored, timestamp });
       const metric = await tx.get(metricPath) || { ...stored, durationSeconds: source.durationSeconds };
       if (path === '/api/feedback') {

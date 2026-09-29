@@ -69,7 +69,7 @@ def build(args: argparse.Namespace) -> dict:
     source = stage.read_package(args.source, "sermon-english-source-package-v1.schema.json")
     source_hash = stage.canonical_sha(source)
     require(source["status"] == "ready_for_translation"
-            and source["source"]["serviceDate"] == args.date,
+            and source["source"]["serviceDate"] == (getattr(args, "service_date", None) or args.date),
             "Source package or service date differs")
     metadata = checked_metadata(args.metadata, args.metadata_proposal, args.page_id, args.date)
     candidate_paths = stage.assignment_map(args.candidate, "--candidate")
@@ -200,6 +200,8 @@ def main() -> None:
     parser.add_argument("--metadata-proposal", type=Path, required=True)
     parser.add_argument("--page-id", required=True)
     parser.add_argument("--date", required=True)
+    parser.add_argument("--service-date",
+                        help="Recording service date when the public page is dated differently")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     try:

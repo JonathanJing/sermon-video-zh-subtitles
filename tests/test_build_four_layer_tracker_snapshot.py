@@ -21,6 +21,26 @@ class TrackerSnapshotTest(unittest.TestCase):
                                "state": "was_live", "kind": "youtube-stream"},
         }
 
+    def test_relative_timeline_exposes_only_bounded_offsets_and_substep_codes(self):
+        fake = {"rows": [{"id": "L2-02@ko", "intervals": [
+            {"start": "2026-09-27T10:00:00+00:00", "end": "2026-09-27T10:01:00+00:00",
+             "seconds": 60, "kind": "waiting_review", "privatePath": "/private"}],
+            "attempts": [], "completedAt": "2026-09-27T10:02:00+00:00",
+            "substeps": [{"id": "L2-02@ko/reviewer", "dependsOn": ["L2-02@ko/translator"],
+                          "attempts": [{"start": "2026-09-27T10:01:00+00:00",
+                                        "end": "2026-09-27T10:01:15+00:00",
+                                        "seconds": 15, "kind": "measured", "stage": "private-model"}]}]}],
+                "coverage": {"measured": 0, "plannedSubsteps": 1, "measuredSubsteps": 1}}
+        with patch.object(tracker.timeline, "production_data", return_value=fake):
+            public = tracker.public_timeline(self.ledger, [])
+        self.assertEqual(public["axis"], "seconds_since_first_recorded_event")
+        self.assertEqual(public["durationSeconds"], 120)
+        self.assertEqual(public["rows"][0]["substeps"][0]["dependsOn"], ["translator"])
+        self.assertEqual(public["rows"][0]["substeps"][0]["longestSeconds"], 15)
+        self.assertNotIn("2026-09-27", json.dumps(public))
+        self.assertNotIn("private", json.dumps(public))
+        self.assertEqual(tracker.build_snapshot(self.ledger, timeline_report=public)["timeline"], public)
+
     def test_source_video_change_uses_private_state_and_public_snapshot_is_redacted(self):
         first = tracker.build_snapshot(self.ledger, monitor=self.monitor,
                                        source_page_url="https://www.marinerschurch.org/irvine/",
@@ -106,11 +126,19 @@ class TrackerSnapshotTest(unittest.TestCase):
             {"event": "stage_finished", "workflowId": "w1",
              "stage": "four_layer.L2-03:ko", "status": "failed",
              "elapsedSeconds": 12.5, "recordedAt": "2026-09-23T12:00:00+00:00"}])
+        row = next(row for row in report["rows"] if row["step"] == "L2-03@ko")
+        row["subStages"] = [{"id": "independent_review", "attempts": 5,
+                             "failedAttempts": 1, "completedUnits": 4,
+                             "totalUnits": 7, "running": 1,
+                             "executionSeconds": 23.0, "openElapsedSeconds": 9.0},
+                            {"id": "private_raw_error", "attempts": 1}]
         snapshot = tracker.build_snapshot(self.ledger, timing_report=report)
         step = next(row for row in snapshot["steps"] if row["id"] == "L2-03@ko")
         self.assertEqual(step["timing"]["measuredExecutionSeconds"], 12.5)
         self.assertEqual(step["timing"]["failedExecutionAttempts"], 1)
         self.assertEqual(step["status"], "pending")
+        self.assertEqual(step["timing"]["subStages"][0]["id"], "independent_review")
+        self.assertNotIn("private_raw_error", json.dumps(snapshot))
         self.assertEqual(snapshot["timingCoverage"]["measuredStepCount"], 1)
 
     def test_snapshot_exposes_completed_steps_missing_real_timing(self):
@@ -271,6 +299,35 @@ class TrackerSnapshotTest(unittest.TestCase):
             path.write_text(json.dumps(package), encoding="utf-8")
             self.assertIn("ko", tracker.release_packages([path], self.ledger["pageId"], self.ledger["locales"]))
             package["httpVerification"]["evidenceSha256"] = None
+            path.write_text(json.dumps(package), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "evidence"):
+                tracker.release_packages([path], self.ledger["pageId"], self.ledger["locales"])
+
+    def test_dual_script_release_uses_static_same_locale_page(self):
+        package = {
+            "schemaVersion": "sermon-target-language-release-package-v2",
+            "pageId": self.ledger["pageId"], "targetLocale": "es", "sourceLocale": "en",
+            "contentLocale": "es", "audioLocale": "es", "status": "published_http_verified",
+            "contentStatus": "human_reviewed", "audioStatus": "human_reviewed",
+            "targetLanguageCandidateJsonSha256": "a" * 64,
+            "spokenTargetLanguageCandidateJsonSha256": "b" * 64,
+            "targetLanguageAudioPackageJsonSha256": "c" * 64,
+            "assets": [{"role": "page", "path": f"/pages/{self.ledger['pageId']}/es/index.html",
+                        "sha256": "d" * 64},
+                       {"role": "audio", "path": f"/media/{self.ledger['pageId']}/es.mp3",
+                        "sha256": "e" * 64}],
+            "httpVerification": {"status": "pass", "evidenceSha256": "f" * 64},
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "release.json"
+            path.write_text(json.dumps(package), encoding="utf-8")
+            release = tracker.release_packages([path], self.ledger["pageId"], self.ledger["locales"])["es"]
+            delivery = tracker.locale_delivery("es", release, None, None, None,
+                                               "https://example.web.app", self.ledger["pageId"])
+            self.assertEqual(delivery["pageUrl"],
+                             f"https://example.web.app/pages/{self.ledger['pageId']}/es/index.html")
+            self.assertTrue(delivery["voicePublished"])
+            package.pop("spokenTargetLanguageCandidateJsonSha256")
             path.write_text(json.dumps(package), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "evidence"):
                 tracker.release_packages([path], self.ledger["pageId"], self.ledger["locales"])

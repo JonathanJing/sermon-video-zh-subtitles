@@ -4,9 +4,24 @@
 
 2026-09-24 第二片段 POC 复盘、正式站仅保留九个旧中文周次的范围与本轮 release 门槛见 [Firebase Release Backlog](multilingual-firebase-release-backlog-2026-09-24.zh.md)。iOS 后续调整等待当前 review 结果。
 
-状态：**Dev 三语审核样片已发布；每周 Production 与 iOS 原生多语言仍在开发**。本文覆盖 Layer 4「多语言发布与播放」以及 Web/iOS 客户端的语言选择体验。v2 catalog／release receipt schema、fail-closed catalog builder，以及 iOS 语言发布页选择已开始实现；样片韩语音频和 Dev HTTP 验证不代表整篇周更、Production、设备或现场验收完成。
+状态：**Dev 三语审核样片与 2026-09-27 整篇 Production 页面均有发布收据；iOS 真机与现场验收仍待完成**。本文覆盖 Layer 4「多语言发布与播放」以及 Web/iOS 客户端的语言选择体验。正式站 HTTP、Range 和浏览器播放证据不等于设备或现场验收。
 
-## 2026-09-23 Production 候选进度
+2026-09-28 的 [Firebase Dev 四层模拟演练](firebase-dev-four-layer-bucket-dry-run.zh.md)已把 9/27 的 30 秒截片接入 **Dev App 内选页**：`dryrun-20260927-clip-03` 能从首页周次选择器进入、切换中韩西内容并在 App 内试播三语音轨；正式 9/27 整篇仍是默认周次。今后 Dev dry run 的 Layer 4 通过条件须包含 App 选页、语言、播放和模拟标识；三种独立 HTML 只作调试展示。此结果不代替正式 v3 发布门禁或 iOS 验收。
+
+## 2026-09-27 整篇正式发布复盘：`DEV-L4-003`
+
+本周 Production 已新增 `multilingual-v3.json`、三语 `releases-v2/` 和音轨，并有 HTTP、Range 与浏览器短时播放收据。旧 `releases/` v1 候选仍绑定旧 `packages/layer3/` 的 `audio_unavailable` 文字版包；v2 Release 则绑定私有已听审 Layer 3 包的规范化 JSON hash。两套版本各有用途，不覆盖旧不可变路径。已听审包包含本机绝对路径，不能直接复制到公开 Hosting。
+
+本分支新增只读本地审计入口 [`audit_production_release_bindings.py`](../scripts/audit_production_release_bindings.py)：输入公开目录和每种语言私有的已批准短口播稿、口播人审收据、已听审音频包、音频人审收据，检查 v3→v2→口播稿→音频→公开文件的身份与 SHA。9 月 27 日本地发布快照三语通过，覆盖西语 420、韩语 420、中文 419 个已听审音频单元；这不是重新执行 Production 部署或真机验收。尚未把该入口接入发布命令，公开目录的额外私有资料泄漏扫描也尚未实现。
+
+后续周更使用 [Production v3 内容与刷新合同](multilingual-production-interfaces.zh.md#每周-app-内容合同与刷新门槛)：逐语言 v2 Release 和 v3 catalog 的 Schema 已入库。`DEV-L4-004` 已于 2026-09-27 开始，新增只在本地生成候选的 [`assemble_multilingual_v3_update.py`](../scripts/assemble_multilingual_v3_update.py)，验证新旧 v3 目录、v2 Release、公开资产、英文对照、定位侧文件、完整视频与 stage allowlist，拒绝覆盖旧文件，输出回滚目录及文件哈希报告。它尚不部署或做在线预检。旧 `assemble_multilingual_hosting.py`、`deploy_multilingual_hosting.py`、`verify_multilingual_hosting.py` 仍只支持 v2 catalog／v1 Release。本周一次性 Web 桥接运行时还在忽略的 staging 目录。正式音频审计接入、线上基线 CAS、部署后 HTTP／Range 与同版本双 App 客户端验收仍待完成，不能把本地候选当成正式周更发布收据。
+
+- [ ] 正式 v2 构建前逐 locale 运行私有跨层审计：v3 目录指向的 v2 Release 必须绑定同 locale、同来源、同已批准短口播稿的 `human_reviewed` Layer 3 原件和人工音频审核收据，并核对公开 MP3、字幕 SHA。错绑、缺收据或私有路径进入公开目录都失败。
+- [ ] 审计只输出无正文、无本机路径的 hash／状态摘要；旧文字版包和旧 v1 Release 保持不变。未来若需要公开音频包证明，另建版本化、可移植的派生证明清单，不能把私有原包改名上传。
+- [ ] 将审计接在 build → preflight → deploy 之间；再以真实 Production 候选和故意错绑负例验证。HTTP 200／SHA 仅证明上传文件自身完整，不代替上述跨层关系。
+- [ ] Web、iOS 真机、麦克风现场定位和会场验收分别保存收据；公开 Tracker 的步骤完成数不自动提升这些状态。
+
+## 2026-09-23 Production 候选进度（历史快照）
 
 9 月 20 日 2:58 三语正式样片已在 Firebase Dev 发布并完成 HTTP 与浏览器播放核验；Production 仍只有 legacy 中文 weekly.json，线上 multilingual-v2.json 为 404。当前分支新增可在完整旧站点上叠加单个已审三语页面的不可变 Hosting 候选；可把多语言阅读器设为首页，旧中文九周页面、下载资源和 `/?week=` 链接保留。本地 Firebase Hosting 模拟器已验证首页、三语深链、韩／西语界面切换、韩语播放时间推进与旧中文页面。前端可读多个正式 page、部分已发布 locale 和已审 MP3；新 Layer 3 job 可选 64 kbps MP3 以适应整篇播放。部署前完整基线检查、限定站点的显式发布入口和发布后逐文件 HTTP 核验已有定向测试。具体范围与剩余门槛见[合并 main 前检查](multilingual-production-premerge-2026-09-23.zh.md)。
 

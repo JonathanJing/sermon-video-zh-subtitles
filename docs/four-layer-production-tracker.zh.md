@@ -41,7 +41,7 @@ Layer 4 的发布包、catalog、Web／iOS 语言选择、回滚和验证矩阵�
 - [ ] **TRK-004**：将 Dev／正式环境的 HTTP、设备、现场收据自动关联到对应 `pageId + targetLocale`，保留部署、设备和现场三个不同终点。
 - [x] **TRK-005a**：提供四层步骤命令计时入口，复用现有追加式 `sermon-workflow-accounting-v2`，按检查点和语言记录实际执行、失败与重试；提供只读计时覆盖预检。旧步骤不得按文件时间补造耗时。
 - [ ] **TRK-005b**：把 Layer 1–4 正式 producer 逐一接入计时入口，并将审核发出／回复、依赖就绪／开始的时间作为独立事件记录。区分程序执行、资源排队、人工审核等待、外部阻塞和返工；记录输入单元数、模型／prompt、缓存与 API 用量的可用性。
-  - 首批已接入 L1-04 Source Package、L2-01 请求准备、L2-03 语言插件复核／候选准入、L2-04 人工审核稿／批准收据和 L3-01 Speech Job。正式译文模型调用、音频合成、同步与 Layer 4 producer 尚无自动 span；审核发出／回复和资源排队仍待独立事件接入。
+  - 已接入 L1-04 Source Package、L2-01 请求准备、L2-02 分组初译／独立复核、L2-03 语言插件复核／候选准入、L2-04 人工审核稿／批准收据、L3-01 Speech Job 和 L3-02 音频单元合成／解码校验／排程同步。公开快照只展示允许的子阶段聚合计数与耗时，不改变检查点状态。其余正式 producer、模型加载／资源排队、审核发出／回复和 Layer 4 producer 仍待接入。
 - [ ] **TRK-006**：本轮三语 Dev 流程结束后，对同一 `pageId + source hash + locale` 做完整审计：核对日志覆盖、重试、并行重叠、人工等待、资源竞争及真实关键路径；用实测墙钟时间校准 Tracker ETA，并列出仍未知的时间。审计前不依据检查点百分比或文件时间给瓶颈排名。
 
 ### 多语言人工审核后台 Backlog
@@ -126,7 +126,7 @@ python scripts/four_layer_progress.py artifacts/my-multilingual-run/four-layer-p
   --layer 2 --locale ko --reason '韩语批准译文修订'
 ```
 
-上述首批正式 producer 已支持 `--progress-ledger`，也可对同一周运行设置 `SERMON_FOUR_LAYER_LEDGER`。它们会在账本旁的私有 `accounting/events.jsonl` 写账本运行身份、page ID／语言／目标环境、开始／结束 span、失败类型、输入单元数、组数及相关 JSON／策略／模型标识 hash；不会自动修改账本状态或授予人工批准。审计只采纳运行身份匹配的事件；同目录重建账本后，旧日志保留但不计入新页面。未带身份的旧计时记录保持未知。Tracker 公开快照 v2 按检查点显示累计实测执行耗时（含失败重试）、未结束执行记录截至快照的时长，以及 `running`／`waiting_review` 账本状态持续时间；旧版 v1 快照仍可读取，缺少的活动计时保持未知。后两项不是已完成执行耗时，也不证明进程或审核者仍在线。快照不公开私有开始时间、hash、原文、路径或错误消息。设备／现场验收按语言独立记录，须以各自收据为准。制作正式环境时把 `--target dev` 改为 `--target production`，重新建账本并重新核验，不能把 Dev 状态原样晋升。
+上述正式 producer 已支持 `--progress-ledger`，也可对同一周运行设置 `SERMON_FOUR_LAYER_LEDGER`。它们会在账本旁的私有 `accounting/events.jsonl` 写账本运行身份、page ID／语言／目标环境、开始／结束 span、失败类型、输入单元数、组数及相关 JSON／策略／模型标识 hash；不会自动修改账本状态或授予人工批准。L2-02 子阶段按当前模型运行显示初译、独立复核的组数、运行／失败数量与实测耗时；L3-02 显示本次运行的单元合成、解码校验、解码音频总时长、排程末尾和超同步上限单元数。重用旧音频的运行不会伪报为新合成；子阶段计数不表示人工批准。审计只采纳运行身份匹配的事件；同目录重建账本后，旧日志保留但不计入新页面。未带身份的旧计时记录保持未知。Tracker 公开快照 v2 按检查点显示累计实测执行耗时（含失败重试）、未结束执行记录截至快照的时长，以及 `running`／`waiting_review` 账本状态持续时间；旧版 v1 快照仍可读取，缺少的活动计时保持未知。后两项不是已完成执行耗时，也不证明进程或审核者仍在线。快照不公开私有开始时间、hash、原文、路径或错误消息。设备／现场验收按语言独立记录，须以各自收据为准。制作正式环境时把 `--target dev` 改为 `--target production`，重新建账本并重新核验，不能把 Dev 状态原样晋升。
 
 ### 从现在开始保留真实耗时
 
@@ -140,6 +140,8 @@ python scripts/produce_target_language_candidate.py prepare \
   --progress-ledger artifacts/my-multilingual-run/four-layer-progress.json \
   --out artifacts/my-multilingual-run/ko/request.json
 ```
+
+9 月 27 日整篇复盘后，`run_target_language_models.py` 的实际付费逐组模型调用接入 `L2-02@<locale>`，`render_formal_target_language_speech.py` 的正式逐单元合成接入 `L3-02@<locale>`。这两个入口各自接受 `--progress-ledger <同一周账本>`，或读取 `SERMON_FOUR_LAYER_LEDGER`；子 span 与父检查点写入账本旁同一个私有 `accounting/events.jsonl`，保留每组／每单元尝试、失败和缓存复用。若未配置账本，仍在原输出目录记录自身计时，不能算作 Tracker 的已测步骤。
 
 同一 producer 不要再套相同检查点的手动计时命令，否则会重复统计。产出候选或审核稿的命令即使执行成功，也不代表 Layer 2 的人工放行；`L1-04` 生成阻塞包时同样只证明执行完成，不表示可进入正式翻译。日志中的模型标识为 hash，须用冻结策略文件核对；外部翻译调用的 Token、缓存、费用和等待时间若没有原始收据，仍列为未知。
 
@@ -160,4 +162,4 @@ python scripts/four_layer_measure.py audit \
 
 `audit` 输出 `completedWithoutMeasuredExecutionCount` 与具体步骤 ID。快照及公开页也显示缺实测计时的已完成检查点数；本地旧账本和线上旧快照须重新生成、重新发布后才会带新字段。即使已有步骤标记为 `complete`，没有匹配本账本与来源窗口的真实 span，耗时仍为未知。
 
-当前 9 月 20 日 178 秒片段的 19 个已登记完成步骤是事后根据正式收据回填，均无执行计时。新入口只对**此后通过它运行**的步骤建立实测时间；本轮结束时审计必须把这 19 项列为计时缺口，并结合已有正式收据与人工审核时间线说明可证范围。
+9 月 27 日 31:31 整篇的公开快照虽标为 46/46，只有 3 步有实测执行 span，另外 43 步的执行时长未知；细分产物的音频时长和文件时间不能补造生产耗时。当前入口只对**此后通过它运行**的步骤建立实测时间。后续按 TRK-005b 接入筛查、同步、构建、部署与审核等待，再按 TRK-006 核对并行重叠和真实关键路径。9 月 20 日 178 秒片段的 19 个已登记完成步骤同样是事后根据正式收据回填，继续列为计时缺口。

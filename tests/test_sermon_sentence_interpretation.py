@@ -97,6 +97,32 @@ class SentenceInterpretationTests(unittest.TestCase):
         self.assertEqual(self.manifest["translationRequests"][0]["contextAfter"], "I am with you.")
         self.assertFalse(self.manifest["releaseEligible"])
 
+    def test_explicit_boundary_override_uses_existing_safe_punctuation(self):
+        words = ["Alpha", "bravo", "charlie", "delta,", "echo", "foxtrot,",
+                 "golf", "hotel", "india", "juliet."]
+        source = [segment(" ".join(words), words)]
+        self.source.write_text(json.dumps(source), encoding="utf-8")
+        manifest = subject.build_anchor_manifest(
+            source, source_path=self.source, unit_policy=subject.UNIT_POLICY_V2,
+            max_unit_seconds=3.0,
+            boundary_overrides={"block-00-s001": "block-00-w0004"},
+        )
+        self.assertEqual(manifest["policy"]["boundaryOverrides"],
+                         {"block-00-s001": "block-00-w0004"})
+        self.assertEqual(manifest["sourceUnits"][0]["boundary"]["splitEvidence"]["afterWordId"],
+                         "block-00-w0004")
+        self.assertEqual(manifest["counts"]["sourceWords"], len(words))
+        self.assertEqual(manifest["issues"], [])
+
+        for invalid in ({"block-00-s001": "block-00-w0003"},
+                        {"block-00-s001": "block-00-w9999"},
+                        {"block-00-s999": "block-00-w0004"}):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                subject.build_anchor_manifest(
+                    source, source_path=self.source, unit_policy=subject.UNIT_POLICY_V2,
+                    max_unit_seconds=3.0, boundary_overrides=invalid,
+                )
+
     def test_long_sentence_splits_only_at_pause_and_keeps_word_ids(self):
         long = segment(
             "One two three, four five six seven.",
@@ -193,6 +219,133 @@ class SentenceInterpretationTests(unittest.TestCase):
         self.assertEqual(issue["wordId"], "block-00-w0002")
         self.assertAlmostEqual(issue["durationSeconds"], 6.2)
 
+    def test_clause_stable_v2_keeps_existential_clause_together_across_pause(self):
+        raw = segment(
+            "We know that there are different views.",
+            ["We", "know", "that", "there", "are", "different", "views."],
+            gaps=[0.1, 0.1, 0.1, 0.6, 0.1, 0.1],
+        )
+        self.source.write_text(json.dumps([raw]), encoding="utf-8")
+        manifest = subject.build_anchor_manifest(
+            [raw], source_path=self.source, max_unit_seconds=2.0,
+            min_unit_seconds=0.5, unit_policy=subject.UNIT_POLICY_V2,
+        )
+        self.assertEqual([unit["english"] for unit in manifest["sourceUnits"]], [raw["text"]])
+        self.assertIn("clause_unit_exceeds_target_without_safe_boundary",
+                      {issue["type"] for issue in manifest["issues"]})
+
+    def test_clause_stable_v2_keeps_self_correction_together(self):
+        raw = segment(
+            "He said Hungary—I'm sorry, Austria-Hungary is the name.",
+            ["He", "said", "Hungary—I'm", "sorry,", "Austria-Hungary", "is", "the", "name."],
+        )
+        self.source.write_text(json.dumps([raw]), encoding="utf-8")
+        manifest = subject.build_anchor_manifest(
+            [raw], source_path=self.source, max_unit_seconds=2.0,
+            min_unit_seconds=0.5, unit_policy=subject.UNIT_POLICY_V2,
+        )
+        self.assertEqual([unit["english"] for unit in manifest["sourceUnits"]], [raw["text"]])
+        self.assertIn("clause_unit_exceeds_target_without_safe_boundary",
+                      {issue["type"] for issue in manifest["issues"]})
+
+    def test_clause_stable_v2_does_not_leave_a_short_trailing_phrase(self):
+        raw = segment(
+            "Let's celebrate with those who placed their faith in Jesus.",
+            ["Let's", "celebrate", "with", "those", "who", "placed", "their", "faith", "in", "Jesus."],
+            gaps=[0.1] * 7 + [3.0, 0.1],
+        )
+        self.source.write_text(json.dumps([raw]), encoding="utf-8")
+        manifest = subject.build_anchor_manifest(
+            [raw], source_path=self.source, max_unit_seconds=4.0,
+            min_unit_seconds=1.5, unit_policy=subject.UNIT_POLICY_V2,
+        )
+        self.assertEqual([unit["english"] for unit in manifest["sourceUnits"]], [raw["text"]])
+
+    def test_clause_stable_v2_keeps_a_definition_with_its_that_clause(self):
+        raw = segment(
+            "Believing means that you trust what Jesus did for you.",
+            ["Believing", "means", "that", "you", "trust", "what", "Jesus", "did", "for", "you."],
+            gaps=[0.1, 0.7] + [0.1] * 7,
+        )
+        self.source.write_text(json.dumps([raw]), encoding="utf-8")
+        manifest = subject.build_anchor_manifest(
+            [raw], source_path=self.source, max_unit_seconds=2.0,
+            min_unit_seconds=0.5, unit_policy=subject.UNIT_POLICY_V2,
+        )
+        self.assertFalse(any(unit["english"].endswith("means") for unit in manifest["sourceUnits"]))
+
+    def test_clause_stable_v2_keeps_enumerated_objects_with_their_condition(self):
+        raw = segment(
+            "His blood purchases your forgiveness, your freedom, your salvation if you believe.",
+            ["His", "blood", "purchases", "your", "forgiveness,", "your", "freedom,",
+             "your", "salvation", "if", "you", "believe."],
+        )
+        self.source.write_text(json.dumps([raw]), encoding="utf-8")
+        manifest = subject.build_anchor_manifest(
+            [raw], source_path=self.source, max_unit_seconds=2.0,
+            min_unit_seconds=0.5, unit_policy=subject.UNIT_POLICY_V2,
+        )
+        self.assertFalse(any(unit["english"].endswith(("forgiveness,", "freedom,"))
+                             for unit in manifest["sourceUnits"]))
+
+    def test_clause_stable_v2_does_not_split_subject_from_purchases(self):
+        raw = segment(
+            "His blood purchases your forgiveness, your freedom if you believe.",
+            ["His", "blood", "purchases", "your", "forgiveness,", "your", "freedom",
+             "if", "you", "believe."],
+            gaps=[0.1, 0.8] + [0.1] * 7,
+        )
+        self.source.write_text(json.dumps([raw]), encoding="utf-8")
+        manifest = subject.build_anchor_manifest(
+            [raw], source_path=self.source, max_unit_seconds=2.0,
+            min_unit_seconds=0.5, unit_policy=subject.UNIT_POLICY_V2,
+        )
+        self.assertFalse(any(unit["english"].endswith("blood") for unit in manifest["sourceUnits"]))
+
+    def test_clause_stable_v2_keeps_choice_with_infinitive_after_parenthetical(self):
+        raw = segment(
+            "He chose, out of his great love for you, to make himself weak for you.",
+            ["He", "chose,", "out", "of", "his", "great", "love", "for", "you,",
+             "to", "make", "himself", "weak", "for", "you."],
+        )
+        self.source.write_text(json.dumps([raw]), encoding="utf-8")
+        manifest = subject.build_anchor_manifest(
+            [raw], source_path=self.source, max_unit_seconds=3.0,
+            min_unit_seconds=0.5, unit_policy=subject.UNIT_POLICY_V2,
+        )
+        self.assertFalse(any(unit["english"].startswith("to make")
+                             for unit in manifest["sourceUnits"]))
+        self.assertFalse(any(unit["english"].endswith("chose,")
+                             for unit in manifest["sourceUnits"]))
+
+    def test_clause_stable_v2_keeps_restrictive_that_with_everything(self):
+        raw = segment(
+            "Worthy is the Lamb to receive everything that you are.",
+            ["Worthy", "is", "the", "Lamb", "to", "receive", "everything", "that", "you", "are."],
+            gaps=[0.1] * 6 + [1.2, 0.1, 0.1],
+        )
+        self.source.write_text(json.dumps([raw]), encoding="utf-8")
+        manifest = subject.build_anchor_manifest(
+            [raw], source_path=self.source, max_unit_seconds=3.0,
+            min_unit_seconds=0.5, unit_policy=subject.UNIT_POLICY_V2,
+        )
+        self.assertFalse(any(unit["english"].endswith("everything")
+                             for unit in manifest["sourceUnits"]))
+
+    def test_clause_stable_v2_keeps_parallel_as_complements_together(self):
+        raw = segment(
+            "If you reject Jesus as your Savior, as your sacrifice, he will judge you.",
+            ["If", "you", "reject", "Jesus", "as", "your", "Savior,", "as", "your",
+             "sacrifice,", "he", "will", "judge", "you."],
+        )
+        self.source.write_text(json.dumps([raw]), encoding="utf-8")
+        manifest = subject.build_anchor_manifest(
+            [raw], source_path=self.source, max_unit_seconds=3.0,
+            min_unit_seconds=0.5, unit_policy=subject.UNIT_POLICY_V2,
+        )
+        self.assertFalse(any(unit["english"].endswith("Savior,")
+                             for unit in manifest["sourceUnits"]))
+
     def test_clause_stable_v2_recovers_internal_pause_from_phone_clusters(self):
         raw = [{
             "id": 0,
@@ -254,6 +407,12 @@ class SentenceInterpretationTests(unittest.TestCase):
         self.source.write_text(json.dumps(changed), encoding="utf-8")
         manifest = subject.build_anchor_manifest(changed, source_path=self.source)
         self.assertIn("segment_word_text_mismatch", {issue["type"] for issue in manifest["issues"]})
+
+    def test_dash_spacing_is_only_presentation(self):
+        segments = [segment("And you— Purchased.", ["And", "you—", "Purchased."], start=0.0)]
+        self.source.write_text(json.dumps(segments), encoding="utf-8")
+        manifest = subject.build_anchor_manifest(segments, source_path=self.source)
+        self.assertNotIn("segment_word_text_mismatch", {issue["type"] for issue in manifest["issues"]})
 
     def test_valid_candidate_builds_rolling_schedule_but_is_not_release_eligible(self):
         report = subject.validate_candidate(self.manifest, self.candidate())

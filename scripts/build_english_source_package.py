@@ -47,6 +47,9 @@ APPROVED_CHECKS = (
     "wordAlignment",
     "sentenceAndPauseBoundaries",
 )
+MACHINE_AND_HUMAN_REVIEWABLE_ANCHOR_ISSUES = frozenset({
+    "clause_unit_exceeds_target_without_safe_boundary",
+})
 
 
 def file_sha256(path: Path) -> str:
@@ -352,9 +355,14 @@ def build_package(
         manifest_issues=[item for item in manifest_issues if isinstance(item, dict)],
     )
     media = _source_media(summary)
+    # A long intact clause is a latency warning when both reviews explicitly
+    # accept this exact manifest. Keep the warning in the bound anchor manifest.
+    accepted_anchor_warnings = machine_judge_pass and review["humanApproval"]
     issues: list[dict[str, Any]] = [
         {"stage": "anchors", "type": str(item.get("type", "unknown_anchor_issue")), "detail": item}
         for item in manifest_issues if isinstance(item, dict)
+        and not (accepted_anchor_warnings
+                 and item.get("type") in MACHINE_AND_HUMAN_REVIEWABLE_ANCHOR_ISSUES)
     ]
     if media is None:
         issues.append({"stage": "source", "type": "source_media_identity_missing"})
