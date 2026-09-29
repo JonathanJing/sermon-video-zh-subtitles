@@ -120,6 +120,18 @@ def request_ids(result: dict) -> list[str] | None:
     return sorted(found) or None
 
 
+def live_tool_trace(result: dict, run_dir: Path) -> list[dict]:
+    """Bind durable tool receipts to the API's function-call item names."""
+    names = {item.get("call_id"): item.get("name")
+             for item in result.get("items", [])
+             if isinstance(item, dict) and item.get("type") == "function_call"
+             and isinstance(item.get("call_id"), str)}
+    return [{"name": names.get(record.get("call_id")),
+             "output": record.get("output"), "error": record.get("error")}
+            for record in (json.loads(path.read_text(encoding="utf-8"))
+                           for path in (run_dir / "tool-results").glob("*.json"))]
+
+
 def payload(model: str, sunday: str, *, page_release: bool = False) -> dict:
     return {
         "agent": {"model": model, "reasoning": {"effort": "medium"},
@@ -171,10 +183,7 @@ def run_case(case: dict, model: str, *, backend: str, root: Path,
     decision = tool.state["decision"]
     truth = verify_decision({}, snapshot, "shadow")
     verified = verify_decision(decision or {}, snapshot, "shadow")
-    trace = client.submitted if backend == "replay" else [
-        {"name": record.get("name"), "output": record.get("output"), "error": record.get("error")}
-        for record in (json.loads(path.read_text(encoding="utf-8"))
-                       for path in (run_dir / "tool-results").glob("*.json"))]
+    trace = client.submitted if backend == "replay" else live_tool_trace(result, run_dir)
     return {
         "caseId": case_id, "model": model, "reasoningEffort": "medium", "backend": backend,
         "caseSha256": digest(snapshot), "commonPayloadSha256": digest(common_payload),
