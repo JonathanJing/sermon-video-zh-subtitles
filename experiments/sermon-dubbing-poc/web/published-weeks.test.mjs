@@ -192,10 +192,52 @@ test('current page loads first and slow archive pages cannot hold the player ind
   assert.ok(Date.now() - started < 500);
   assert.equal(result.defaultWeekId, pageId);
   assert.ok(result.weeks.some(week => week.id === pageId));
-  assert.ok(f.requests.indexOf(`/english-reference/${pageId}.json`) < f.requests.findIndex(path => path.startsWith('/releases-v2/history-')));
+  assert.ok(f.requests.indexOf(`/releases-v2/${pageId}/zh-Hans.json`) < f.requests.findIndex(path => path.startsWith('/releases-v2/history-')));
   assert.ok(peak > 1 && peak <= 12, `expected bounded history concurrency, saw ${peak}`);
   assert.ok(pendingSignals.every(signal => signal.aborted));
   assert.ok(result.errors.some(error => /loading timed out/.test(error)));
+});
+
+test('healthy archive pages load while the current-page sidecar is stalled', async () => {
+  const f = fixture();
+  addHistory(f, 3);
+  let stalledSignal;
+  let defaultAborted = false;
+  let historyRequestedBeforeAbort = false;
+  const fetchImpl = (path, options) => {
+    if (path === `/alignment/${pageId}.json`) {
+      stalledSignal = options.signal;
+      stalledSignal.addEventListener('abort', () => { defaultAborted = true; }, { once: true });
+      return new Promise(() => {});
+    }
+    if (path.startsWith('/releases-v2/history-')) {
+      historyRequestedBeforeAbort ||= !defaultAborted;
+    }
+    return f.fetchImpl(path, options);
+  };
+  const result = await loadPublishedWeeks(fetchImpl, { requestTimeoutMs: 1000, pageLoadTimeoutMs: 50 });
+  assert.equal(result.weeks.length, 3);
+  assert.equal(result.defaultWeekId, pageId);
+  assert.equal(historyRequestedBeforeAbort, true);
+  assert.equal(stalledSignal.aborted, true);
+});
+
+test('healthy archive remains selectable when current-page release assets stall', async () => {
+  const f = fixture();
+  addHistory(f, 3);
+  const stalledSignals = [];
+  const fetchImpl = (path, options) => {
+    if (path.startsWith(`/releases-v2/${pageId}/`)) {
+      stalledSignals.push(options.signal);
+      return new Promise(() => {});
+    }
+    return f.fetchImpl(path, options);
+  };
+  const result = await loadPublishedWeeks(fetchImpl, { requestTimeoutMs: 1000, pageLoadTimeoutMs: 50 });
+  assert.equal(result.weeks.length, 2);
+  assert.ok(result.weeks.every(week => week.id.startsWith('history-')));
+  assert.ok(result.defaultWeekId.startsWith('history-'));
+  assert.ok(stalledSignals.every(signal => signal.aborted));
 });
 
 test('all 104 published pages remain available when archive endpoints respond', async () => {

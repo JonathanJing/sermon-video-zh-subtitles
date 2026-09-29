@@ -249,8 +249,11 @@ export async function loadPublishedWeeks(fetchImpl = globalThis.fetch, { request
   const results = new Array(pages.length);
   let next = 0;
   try {
-    // Load the current page before the archive competes for browser connections.
-    if (pages.length) results[0] = await loadPage(fetchImpl, pages[0], timeoutMs, pageController.signal);
+    // Issue current-page requests first, then let the archive make progress even
+    // if a current-page asset or optional sidecar stalls.
+    const currentPage = pages.length
+      ? loadPage(fetchImpl, pages[0], timeoutMs, pageController.signal).then(result => { results[0] = result; })
+      : Promise.resolve();
     // Historical pages are independent; cap simultaneous pages and the total wait.
     const worker = async () => {
       while (!pageController.signal.aborted && next < pages.length - 1) {
@@ -258,7 +261,7 @@ export async function loadPublishedWeeks(fetchImpl = globalThis.fetch, { request
         results[index] = await loadPage(fetchImpl, pages[index], timeoutMs, pageController.signal);
       }
     };
-    await Promise.all(Array.from({ length: Math.min(12, pages.length - 1) }, worker));
+    await Promise.all([currentPage, ...Array.from({ length: Math.min(12, pages.length - 1) }, worker)]);
   } finally { clearTimeout(timer); }
   if (pageController.signal.aborted) errors.push('Published page loading timed out');
   const weeks = results.flatMap(result => result?.week ? [result.week] : []);
