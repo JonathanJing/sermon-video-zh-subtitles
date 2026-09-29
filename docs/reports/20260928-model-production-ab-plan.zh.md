@@ -1,6 +1,6 @@
 # GPT-6 模型分工与每周生产核验实验计划
 
-日期：2026-09-28。分支：`codex/model-production-experiments`。状态：实施中。
+日期：2026-09-28。分支：`codex/model-production-experiments`。状态：模型调用与自动核验完成；人审评分待审核者填写。实测见[结果](20260928-model-production-ab-results.zh.md)。
 
 ## 目标与边界
 

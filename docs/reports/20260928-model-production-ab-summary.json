@@ -1,0 +1,337 @@
+{
+  "schemaVersion": "model-production-ab-summary-v1",
+  "asOfLocalDate": "2026-09-28",
+  "shadowOnly": true,
+  "pricing": {
+    "source": "https://developers.openai.com/api/docs/pricing",
+    "snapshotDate": "2026-09-28",
+    "tierAssumption": "Standard short context",
+    "usdPerMillionTokens": {
+      "gpt-6-astra": {
+        "input": 10.0,
+        "cachedInput": 1.0,
+        "cacheWrite": 12.5,
+        "output": 50.0
+      },
+      "gpt-6-sol": {
+        "input": 2.0,
+        "cachedInput": 0.2,
+        "cacheWrite": 2.5,
+        "output": 10.0
+      },
+      "gpt-6-luna": {
+        "input": 0.1,
+        "cachedInput": 0.01,
+        "cacheWrite": 0.125,
+        "output": 0.5
+      }
+    },
+    "billVerified": false,
+    "toolFeesIncluded": false,
+    "supervisorCacheWriteEvidence": "unavailable"
+  },
+  "supervisor": {
+    "models": {
+      "gpt-6-sol": {
+        "cases": 12,
+        "actionMatches": 12,
+        "humanActionMatches": 12,
+        "acceptedDecisions": 7,
+        "falseCompletionClaims": 0,
+        "completedSessions": 12,
+        "elapsedP50Seconds": 22.664,
+        "elapsedP95Seconds": 83.521,
+        "inputTokens": 323518,
+        "cachedInputTokens": 225876,
+        "outputTokens": 3870,
+        "estimatedTokenUsd": 0.279159,
+        "httpRequestIdsAvailable": 0
+      },
+      "gpt-6-luna": {
+        "cases": 12,
+        "actionMatches": 12,
+        "humanActionMatches": 12,
+        "acceptedDecisions": 6,
+        "falseCompletionClaims": 0,
+        "completedSessions": 12,
+        "elapsedP50Seconds": 79.124,
+        "elapsedP95Seconds": 82.399,
+        "inputTokens": 386247,
+        "cachedInputTokens": 289395,
+        "outputTokens": 4825,
+        "estimatedTokenUsd": 0.014992,
+        "httpRequestIdsAvailable": 0
+      }
+    },
+    "pairedLunaMinusSolMedianSeconds": -1.03,
+    "pairedFasterCases": {
+      "luna": 7,
+      "sol": 5
+    }
+  },
+  "layer2": {
+    "sharedSourceHash": "4d645ff0aad0b55b2eb913fd0749ebcb3bed010ddfc037e89e1f8a98f44a227b",
+    "locales": {
+      "zh-Hans": {
+        "groups": 45,
+        "pairedGroups": 41,
+        "excludedGroups": 4,
+        "blindOptions": 123,
+        "humanRatingsCompleted": 0,
+        "arms": {
+          "A": {
+            "translator": "gpt-6-astra",
+            "reviewer": "gpt-6-sol",
+            "attemptedGroups": 45,
+            "completedGroups": 45,
+            "failedGroups": 0,
+            "failureStages": {},
+            "semanticReviewPassGroups": 45,
+            "languagePluginPassGroups": 43,
+            "combinedMachinePassGroups": 43,
+            "reviewerChangedGroups": 14,
+            "apiResponses": 90,
+            "inputTokens": 55862,
+            "cachedInputTokens": 0,
+            "cacheWriteTokens": 0,
+            "outputTokens": 21824,
+            "completeGroupElapsedP50Seconds": 9.21,
+            "completeGroupElapsedP95Seconds": 14.383,
+            "estimatedTokenUsd": 0.739964,
+            "estimatedTokenUsdPerCompletedGroup": 0.016444
+          },
+          "B": {
+            "translator": "gpt-6-sol",
+            "reviewer": "gpt-6-sol",
+            "attemptedGroups": 45,
+            "completedGroups": 45,
+            "failedGroups": 0,
+            "failureStages": {},
+            "semanticReviewPassGroups": 45,
+            "languagePluginPassGroups": 43,
+            "combinedMachinePassGroups": 43,
+            "reviewerChangedGroups": 6,
+            "apiResponses": 90,
+            "inputTokens": 55760,
+            "cachedInputTokens": 0,
+            "cacheWriteTokens": 0,
+            "outputTokens": 25018,
+            "completeGroupElapsedP50Seconds": 10.239,
+            "completeGroupElapsedP95Seconds": 17.126,
+            "estimatedTokenUsd": 0.3617,
+            "estimatedTokenUsdPerCompletedGroup": 0.008038
+          },
+          "C": {
+            "translator": "gpt-6-luna",
+            "reviewer": "gpt-6-sol",
+            "attemptedGroups": 45,
+            "completedGroups": 41,
+            "failedGroups": 4,
+            "failureStages": {
+              "translator": 4
+            },
+            "semanticReviewPassGroups": 41,
+            "languagePluginPassGroups": 39,
+            "combinedMachinePassGroups": 39,
+            "reviewerChangedGroups": 18,
+            "apiResponses": 86,
+            "inputTokens": 52962,
+            "cachedInputTokens": 0,
+            "cacheWriteTokens": 0,
+            "outputTokens": 27345,
+            "completeGroupElapsedP50Seconds": 9.212,
+            "completeGroupElapsedP95Seconds": 16.095,
+            "estimatedTokenUsd": 0.224476,
+            "estimatedTokenUsdPerCompletedGroup": 0.005475
+          }
+        }
+      },
+      "ko": {
+        "groups": 45,
+        "pairedGroups": 42,
+        "excludedGroups": 3,
+        "blindOptions": 126,
+        "humanRatingsCompleted": 0,
+        "arms": {
+          "A": {
+            "translator": "gpt-6-astra",
+            "reviewer": "gpt-6-sol",
+            "attemptedGroups": 45,
+            "completedGroups": 45,
+            "failedGroups": 0,
+            "failureStages": {},
+            "semanticReviewPassGroups": 45,
+            "languagePluginPassGroups": 43,
+            "combinedMachinePassGroups": 43,
+            "reviewerChangedGroups": 14,
+            "apiResponses": 90,
+            "inputTokens": 53367,
+            "cachedInputTokens": 0,
+            "cacheWriteTokens": 0,
+            "outputTokens": 22651,
+            "completeGroupElapsedP50Seconds": 9.167,
+            "completeGroupElapsedP95Seconds": 14.854,
+            "estimatedTokenUsd": 0.763604,
+            "estimatedTokenUsdPerCompletedGroup": 0.016969
+          },
+          "B": {
+            "translator": "gpt-6-sol",
+            "reviewer": "gpt-6-sol",
+            "attemptedGroups": 45,
+            "completedGroups": 45,
+            "failedGroups": 0,
+            "failureStages": {},
+            "semanticReviewPassGroups": 45,
+            "languagePluginPassGroups": 42,
+            "combinedMachinePassGroups": 42,
+            "reviewerChangedGroups": 12,
+            "apiResponses": 90,
+            "inputTokens": 53339,
+            "cachedInputTokens": 0,
+            "cacheWriteTokens": 0,
+            "outputTokens": 27093,
+            "completeGroupElapsedP50Seconds": 10.81,
+            "completeGroupElapsedP95Seconds": 16.788,
+            "estimatedTokenUsd": 0.377608,
+            "estimatedTokenUsdPerCompletedGroup": 0.008391
+          },
+          "C": {
+            "translator": "gpt-6-luna",
+            "reviewer": "gpt-6-sol",
+            "attemptedGroups": 45,
+            "completedGroups": 42,
+            "failedGroups": 3,
+            "failureStages": {
+              "reviewer": 1,
+              "translator": 2
+            },
+            "semanticReviewPassGroups": 42,
+            "languagePluginPassGroups": 39,
+            "combinedMachinePassGroups": 39,
+            "reviewerChangedGroups": 17,
+            "apiResponses": 88,
+            "inputTokens": 51946,
+            "cachedInputTokens": 0,
+            "cacheWriteTokens": 0,
+            "outputTokens": 29795,
+            "completeGroupElapsedP50Seconds": 8.939,
+            "completeGroupElapsedP95Seconds": 15.291,
+            "estimatedTokenUsd": 0.236808,
+            "estimatedTokenUsdPerCompletedGroup": 0.005638
+          }
+        }
+      },
+      "es": {
+        "groups": 45,
+        "pairedGroups": 42,
+        "excludedGroups": 3,
+        "blindOptions": 126,
+        "humanRatingsCompleted": 0,
+        "arms": {
+          "A": {
+            "translator": "gpt-6-astra",
+            "reviewer": "gpt-6-sol",
+            "attemptedGroups": 45,
+            "completedGroups": 45,
+            "failedGroups": 0,
+            "failureStages": {},
+            "semanticReviewPassGroups": 45,
+            "languagePluginPassGroups": 42,
+            "combinedMachinePassGroups": 42,
+            "reviewerChangedGroups": 6,
+            "apiResponses": 90,
+            "inputTokens": 53251,
+            "cachedInputTokens": 0,
+            "cacheWriteTokens": 0,
+            "outputTokens": 19632,
+            "completeGroupElapsedP50Seconds": 8.426,
+            "completeGroupElapsedP95Seconds": 12.761,
+            "estimatedTokenUsd": 0.709702,
+            "estimatedTokenUsdPerCompletedGroup": 0.015771
+          },
+          "B": {
+            "translator": "gpt-6-sol",
+            "reviewer": "gpt-6-sol",
+            "attemptedGroups": 45,
+            "completedGroups": 45,
+            "failedGroups": 0,
+            "failureStages": {},
+            "semanticReviewPassGroups": 45,
+            "languagePluginPassGroups": 42,
+            "combinedMachinePassGroups": 42,
+            "reviewerChangedGroups": 8,
+            "apiResponses": 90,
+            "inputTokens": 53239,
+            "cachedInputTokens": 0,
+            "cacheWriteTokens": 0,
+            "outputTokens": 23714,
+            "completeGroupElapsedP50Seconds": 8.877,
+            "completeGroupElapsedP95Seconds": 14.346,
+            "estimatedTokenUsd": 0.343618,
+            "estimatedTokenUsdPerCompletedGroup": 0.007636
+          },
+          "C": {
+            "translator": "gpt-6-luna",
+            "reviewer": "gpt-6-sol",
+            "attemptedGroups": 45,
+            "completedGroups": 42,
+            "failedGroups": 3,
+            "failureStages": {
+              "translator": 3
+            },
+            "semanticReviewPassGroups": 42,
+            "languagePluginPassGroups": 40,
+            "combinedMachinePassGroups": 40,
+            "reviewerChangedGroups": 11,
+            "apiResponses": 87,
+            "inputTokens": 51116,
+            "cachedInputTokens": 0,
+            "cacheWriteTokens": 0,
+            "outputTokens": 23992,
+            "completeGroupElapsedP50Seconds": 7.985,
+            "completeGroupElapsedP95Seconds": 11.332,
+            "estimatedTokenUsd": 0.199063,
+            "estimatedTokenUsdPerCompletedGroup": 0.00474
+          }
+        }
+      }
+    },
+    "aggregate": {
+      "A": {
+        "attemptedGroups": 135,
+        "completedGroups": 135,
+        "failedGroups": 0,
+        "combinedMachinePassGroups": 128,
+        "apiResponses": 270,
+        "estimatedTokenUsd": 2.21327,
+        "estimatedTokenUsdPerCompletedGroup": 0.016395,
+        "completeGroupElapsedP50Seconds": 8.804,
+        "completeGroupElapsedP95Seconds": 14.383
+      },
+      "B": {
+        "attemptedGroups": 135,
+        "completedGroups": 135,
+        "failedGroups": 0,
+        "combinedMachinePassGroups": 127,
+        "apiResponses": 270,
+        "estimatedTokenUsd": 1.082926,
+        "estimatedTokenUsdPerCompletedGroup": 0.008022,
+        "completeGroupElapsedP50Seconds": 9.707,
+        "completeGroupElapsedP95Seconds": 17.078
+      },
+      "C": {
+        "attemptedGroups": 135,
+        "completedGroups": 125,
+        "failedGroups": 10,
+        "combinedMachinePassGroups": 118,
+        "apiResponses": 261,
+        "estimatedTokenUsd": 0.660348,
+        "estimatedTokenUsdPerCompletedGroup": 0.005283,
+        "completeGroupElapsedP50Seconds": 8.729,
+        "completeGroupElapsedP95Seconds": 15.291
+      }
+    }
+  },
+  "humanTranslationApproval": false,
+  "releaseEligible": false
+}
