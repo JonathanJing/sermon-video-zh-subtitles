@@ -15,6 +15,7 @@ import subprocess
 import sys
 from collections import defaultdict
 from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -32,6 +33,7 @@ PUBLIC_SUBSTAGES = {
     "initial_translation", "independent_review", "unit_synthesis",
     "audio_validation", "schedule_sync",
 }
+_producer_stage: ContextVar[str | None] = ContextVar("four_layer_producer_stage", default=None)
 
 
 def stage_name(step_id: str) -> str:
@@ -45,7 +47,7 @@ def producer_substage(name: str, *, billing: str = "api"):
     """Record one bounded child operation inside an active four-layer producer."""
     if not SUBSTAGE_PATTERN.fullmatch(name):
         raise ValueError("invalid four-layer substage ID")
-    parent = accounting._stage.get() or os.environ.get("SERMON_ACCOUNTING_STAGE", "")
+    parent = _producer_stage.get() or accounting._stage.get() or os.environ.get("SERMON_ACCOUNTING_STAGE", "")
     if not parent.startswith("four_layer.L"):
         yield
         return
@@ -94,6 +96,7 @@ def producer_step(ledger_path: Path | None, step_id: str, *, locale: str | None 
                                         "ledgerIdentitySha256": progress.ledger_identity(ledger)},
                                        evidence_directory=ledger_path.parent):
         with accounting.stage(stage_name(step_id), billing="local"):
+            producer_token = _producer_stage.set(stage_name(step_id))
             original_error = None
             try:
                 yield metrics
@@ -101,10 +104,13 @@ def producer_step(ledger_path: Path | None, step_id: str, *, locale: str | None 
                 original_error = exc
                 raise
             finally:
-                accounting._finalize(
-                    lambda: accounting.record_workload(stage_name(step_id), metrics),
-                    original_error,
-                )
+                try:
+                    accounting._finalize(
+                        lambda: accounting.record_workload(stage_name(step_id), metrics),
+                        original_error,
+                    )
+                finally:
+                    _producer_stage.reset(producer_token)
 
 
 def execute(ledger_path: Path, step_id: str, command: list[str], *, billing: str = "local") -> int:
@@ -135,6 +141,10 @@ def timing_audit(ledger: dict, events: list[dict], *, damaged_rows: int = 0) -> 
                 and metadata.get("ledgerIdentitySha256") == identity)
     workflow_ids = {event.get("workflowId") for event in events
                     if event.get("event") == "workflow_started" and matching(event.get("metadata"))}
+    # Producer accounting sessions inherit the canonical step's workflow.
+    for event in events:
+        if event.get("event") == "workflow_started" and event.get("parentWorkflowId") in workflow_ids:
+            workflow_ids.add(event.get("workflowId"))
     scoped_events = [event for event in events
                      if event.get("workflowId") in workflow_ids
                      and event.get("workflowId") is not None]
@@ -149,10 +159,13 @@ def timing_audit(ledger: dict, events: list[dict], *, damaged_rows: int = 0) -> 
             "attempts": 0, "failedAttempts": 0, "executionSeconds": 0.0,
             "completedUnits": 0, "running": 0, "metrics": {}})))
     substage_spans: dict[str, tuple[str, str, str]] = {}
+    span_parents: dict[str, str | None] = {}
     step_stage_names = {stage_name(step): step for step in ledger["steps"]}
     for event in scoped_events:
         if event.get("event") not in {"stage_started", "stage_finished", "workload"}:
             continue
+        if event.get("event") == "stage_started" and isinstance(event.get("spanId"), str):
+            span_parents[event["spanId"]] = event.get("parentSpanId")
         event_stage = str(event.get("stage") or "")
         step = step_stage_names.get(event_stage)
         substage = None
@@ -172,6 +185,10 @@ def timing_audit(ledger: dict, events: list[dict], *, damaged_rows: int = 0) -> 
             if step in ledger["steps"] and isinstance(span_id, str):
                 if substage:
                     parent_span = event.get("parentSpanId")
+                    while isinstance(parent_span, str) and parent_span not in by_span:
+                        parent_span = span_parents.get(parent_span)
+                    if parent_span not in by_span:
+                        continue
                     row = substage_runs[step][parent_span][substage]
                     row["attempts"] += 1
                     row["running"] += 1
@@ -230,7 +247,9 @@ def timing_audit(ledger: dict, events: list[dict], *, damaged_rows: int = 0) -> 
 
     reviews: dict[str, dict] = defaultdict(lambda: {"closedWaitSeconds": 0.0,
                                                     "closedWaits": 0, "openWait": False})
-    opened: dict[str, datetime] = {}
+    blockers: dict[str, dict] = defaultdict(lambda: {"closedWaitSeconds": 0.0,
+                                                     "closedWaits": 0, "openWait": False})
+    opened: dict[tuple[str, str], datetime] = {}
     for event in ledger.get("history", []):
         try:
             occurred = datetime.fromisoformat(event["at"].replace("Z", "+00:00"))
@@ -238,24 +257,45 @@ def timing_audit(ledger: dict, events: list[dict], *, damaged_rows: int = 0) -> 
             continue
         if event.get("action") == "invalidate":
             for invalidated_step in event.get("steps", []):
-                if invalidated_step in opened:
-                    seconds = (occurred - opened.pop(invalidated_step)).total_seconds()
-                    if seconds >= 0:
-                        reviews[invalidated_step]["closedWaitSeconds"] += seconds
-                        reviews[invalidated_step]["closedWaits"] += 1
+                for state, bucket in (("waiting_review", reviews), ("blocked", blockers)):
+                    key = (invalidated_step, state)
+                    if key in opened:
+                        seconds = (occurred - opened.pop(key)).total_seconds()
+                        if seconds >= 0:
+                            bucket[invalidated_step]["closedWaitSeconds"] += seconds
+                            bucket[invalidated_step]["closedWaits"] += 1
             continue
         step = event.get("step")
         if event.get("action") != "update" or step not in ledger["steps"]:
             continue
-        if step in opened and event.get("status") != "waiting_review":
-            seconds = (occurred - opened.pop(step)).total_seconds()
-            if seconds >= 0:
-                reviews[step]["closedWaitSeconds"] += seconds
-                reviews[step]["closedWaits"] += 1
-        if event.get("status") == "waiting_review" and step not in opened:
-            opened[step] = occurred
-    for step in opened:
-        reviews[step]["openWait"] = True
+        for state, bucket in (("waiting_review", reviews), ("blocked", blockers)):
+            key = (step, state)
+            if key in opened and event.get("status") != state:
+                seconds = (occurred - opened.pop(key)).total_seconds()
+                if seconds >= 0:
+                    bucket[step]["closedWaitSeconds"] += seconds
+                    bucket[step]["closedWaits"] += 1
+            if event.get("status") == state and key not in opened:
+                opened[key] = occurred
+    for step, state in opened:
+        (reviews if state == "waiting_review" else blockers)[step]["openWait"] = True
+
+    reported: dict[str, dict] = defaultdict(dict)
+    for event in ledger.get("history", []):
+        if event.get("action") == "invalidate":
+            for key in event.get("steps", []):
+                if key in ledger["steps"]:
+                    reported[key] = {"lastStatus": "pending"}
+            continue
+        key = event.get("step")
+        if event.get("action") != "update" or key not in ledger["steps"]:
+            continue
+        status = event.get("status")
+        if status == "running" and "firstRunningAt" not in reported[key]:
+            reported[key]["firstRunningAt"] = event.get("at")
+        if status == "complete":
+            reported[key]["lastCompletedAt"] = event.get("at")
+        reported[key]["lastStatus"] = status
 
     rows = []
     now_utc = datetime.now(timezone.utc)
@@ -293,7 +333,12 @@ def timing_audit(ledger: dict, events: list[dict], *, damaged_rows: int = 0) -> 
                                "executionSeconds": round(data["executionSeconds"], 3),
                                "openElapsedSeconds": round(max(open_ages), 3) if open_ages else None,
                                **data["metrics"]})
+        blocker = blockers.get(step)
+        reported_step = reported.get(step, {})
         rows.append({"step": step, "status": state["status"],
+                     "reportedFirstRunningAt": reported_step.get("firstRunningAt"),
+                     "reportedLastCompletedAt": reported_step.get("lastCompletedAt"),
+                     "statusHistoryMatchesCurrent": reported_step.get("lastStatus", "pending") == state["status"],
                      "measuredExecutionSeconds": round(execution["executionSeconds"], 3) if execution else None,
                      "executionAttempts": execution["attempts"] if execution else 0,
                      "failedExecutionAttempts": execution["failedAttempts"] if execution else 0,
@@ -303,11 +348,17 @@ def timing_audit(ledger: dict, events: list[dict], *, damaged_rows: int = 0) -> 
                      "attemptHistory": attempt_history.get(step, []),
                      "operatorReviewWaitSeconds": round(review["closedWaitSeconds"], 3) if review and review["closedWaits"] else None,
                      "closedReviewWaits": review["closedWaits"] if review else 0,
-                     "openReviewWait": review["openWait"] if review else False})
-        rows[-1]["subStages"] = child_rows
+                     "openReviewWait": review["openWait"] if review else False,
+                     "blockedWaitSeconds": round(blocker["closedWaitSeconds"], 3) if blocker and blocker["closedWaits"] else None,
+                     "closedBlockedWaits": blocker["closedWaits"] if blocker else 0,
+                     "openBlockedWait": blocker["openWait"] if blocker else False,
+                     "subStages": child_rows})
     missing_completed = [row["step"] for row in rows
                          if row["status"] == "complete"
                          and row["measuredExecutionSeconds"] is None]
+    missing_starts = [row["step"] for row in rows
+                      if row["status"] == "complete" and row["reportedFirstRunningAt"] is None]
+    mismatched_history = [row["step"] for row in rows if not row["statusHistoryMatchesCurrent"]]
     return {"schemaVersion": AUDIT_SCHEMA, "pageId": ledger["pageId"],
             "target": ledger["target"], "accountingEvents": len(events),
             "scopedAccountingEvents": len(scoped_events),
@@ -315,6 +366,10 @@ def timing_audit(ledger: dict, events: list[dict], *, damaged_rows: int = 0) -> 
             "measuredStepCount": len(measured),
             "completedWithoutMeasuredExecutionCount": len(missing_completed),
             "completedWithoutMeasuredExecution": missing_completed,
+            "completedWithoutReportedStartCount": len(missing_starts),
+            "completedWithoutReportedStart": missing_starts,
+            "statusHistoryMismatchCount": len(mismatched_history),
+            "statusHistoryMismatch": mismatched_history,
             "rows": rows,
             "limits": ["Operator review intervals use tracker update timestamps, not measured attention time.",
                        "Unscoped or different-ledger accounting events are excluded from timing.",

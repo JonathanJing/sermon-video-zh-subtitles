@@ -131,6 +131,52 @@ final class StorageTests {
         }
     }
 
+    @Test func productionCatalogV3LoadsV2ReleaseAndVerifiedPage() async throws {
+        let fixture = try multilingualFixture()
+        var releaseValue = try #require(JSONSerialization.jsonObject(with: fixture.release) as? [String: Any])
+        releaseValue["schemaVersion"] = TargetLanguageReleasePackage.productionSchemaVersion
+        releaseValue["spokenTargetLanguageCandidateJsonSha256"] = String(repeating: "a", count: 64)
+        releaseValue["assets"] = [
+            ["role": "page", "path": "/pages/page-1/ko/index.html",
+             "sha256": SHA256.hash(data: fixture.page).map { String(format: "%02x", $0) }.joined()],
+            ["role": "content", "path": "/content/page-1/ko.json", "sha256": String(repeating: "a", count: 64)],
+            ["role": "captions", "path": "/captions/page-1/ko.json", "sha256": String(repeating: "b", count: 64)],
+        ]
+        let release = try JSONSerialization.data(withJSONObject: releaseValue, options: [.sortedKeys])
+        let releaseHash = SHA256.hash(data: release).map { String(format: "%02x", $0) }.joined()
+        var catalogValue = try #require(JSONSerialization.jsonObject(with: fixture.catalog) as? [String: Any])
+        catalogValue["schemaVersion"] = MultilingualCatalog.productionSchemaVersion
+        var pages = catalogValue["pages"] as! [[String: Any]]
+        var pageValue = pages[0]
+        pageValue["title"] = "正式页面"
+        var targets = pageValue["targets"] as! [String: Any]
+        var korean = targets["ko"] as! [String: Any]
+        korean["releasePackageUrl"] = "/releases-v2/page-1/ko.json"
+        korean["releasePackageJsonSha256"] = releaseHash
+        targets["ko"] = korean
+        pageValue["targets"] = targets
+        pages[0] = pageValue
+        catalogValue["pages"] = pages
+        let catalog = try JSONSerialization.data(withJSONObject: catalogValue, options: [.sortedKeys])
+        let production = URL(string: "https://ai-for-god-sermon-audio.web.app")!
+        StubURLProtocol.install(host: production.host!) { request in
+            switch request.url?.path {
+            case "/multilingual-v3.json": return .init(chunks: [catalog])
+            case "/releases-v2/page-1/ko.json": return .init(chunks: [release])
+            case "/pages/page-1/ko/index.html": return .init(chunks: [fixture.page])
+            default: return .init(status: 404, chunks: [Data("missing".utf8)])
+            }
+        }
+        defer { StubURLProtocol.remove(host: production.host!) }
+        let repository = MultilingualCatalogRepository(origin: production,
+            cacheDirectory: directory.appendingPathComponent("production-v3"), session: session)
+        let loaded = try await repository.loadCatalog()
+        #expect(loaded.catalog.defaultPage.title == "正式页面")
+        let package = try await repository.loadRelease(page: loaded.catalog.defaultPage, locale: "ko")
+        #expect(package.schemaVersion == TargetLanguageReleasePackage.productionSchemaVersion)
+        #expect(try await repository.loadPage(for: package).html.contains("한국어"))
+    }
+
     @Test func reviewedLocaleAudioIsDownloadedByHashAndCachedBytesAreRechecked() async throws {
         let audio = Data("synthetic reviewed audio bytes".utf8)
         let fixture = try multilingualFixture(audio: audio)

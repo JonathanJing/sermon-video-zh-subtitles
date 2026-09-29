@@ -1,0 +1,8 @@
+[
+  {
+    "origin": ["https://ai-for-god-sermon-audio.web.app"],
+    "method": ["GET", "HEAD"],
+    "responseHeader": ["Content-Type", "Content-Range", "Accept-Ranges", "ETag"],
+    "maxAgeSeconds": 3600
+  }
+]

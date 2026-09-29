@@ -7,6 +7,7 @@ public enum LanguageCapability: String, Codable, CaseIterable, Sendable {
 public struct MultilingualCatalog: Codable, Sendable, Equatable {
     public static let supportedSchemaVersion = "sermon-multilingual-catalog-v2"
     public static let dualScriptSchemaVersion = "sermon-multilingual-catalog-v3"
+    public static let productionSchemaVersion = dualScriptSchemaVersion
     public let schemaVersion: String
     public let generatedAt: String
     public let defaultPageId: String
@@ -45,6 +46,7 @@ public struct MultilingualPage: Codable, Sendable, Equatable, Identifiable {
         guard Validation.identifier(id), Validation.isoDate(date), sourceLocale == "en",
               Validation.sha256(sourceIdentitySha256), Validation.locale(defaultTargetLocale),
               sourceMediaSha256.map(Validation.sha256) ?? true,
+              title.map({ !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) ?? true,
               !targets.isEmpty, targets.count <= 16, targets[defaultTargetLocale] != nil
         else { throw CatalogError.invalid("多语言页面来源、日期或默认语言无效") }
         if catalogSchemaVersion == MultilingualCatalog.dualScriptSchemaVersion {
@@ -103,6 +105,7 @@ public struct PageTarget: Codable, Sendable, Equatable {
 public struct TargetLanguageReleasePackage: Codable, Sendable, Equatable {
     public static let supportedSchemaVersion = "sermon-target-language-release-package-v1"
     public static let dualScriptSchemaVersion = "sermon-target-language-release-package-v2"
+    public static let productionSchemaVersion = dualScriptSchemaVersion
     public let schemaVersion: String
     public let packageId: String
     public let pageId: String

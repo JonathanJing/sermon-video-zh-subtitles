@@ -2,15 +2,71 @@
 
 本流程接收既有生产脚本生成的单周候选包，保存完整历史目录，再核验发布后的公共资源。它不调用模型、不重新生成音频、不授予内容审核或现场同步批准，也不创建或替换现有定时任务。生产和配音仍按 [本地生产 runbook](codex-local-production-runbook.zh.md) 执行。
 
-当前 registry／`weekly.json` 流程是 Layer 4 的 legacy adapter。今后的预制多语言生产必须输入同一 `targetLocale` 已批准的 `Target-Language Candidate` 和 `Target-Language Audio Package`；纯文字发行也必须由后者显式记录 `audio_unavailable`。只有实际生成并校验[四层接口合同](multilingual-production-interfaces.zh.md)中的 `Target-Language Release Package`，才建立规范的 Layer 4 完成。现有 `published_http_verified` 仍是 legacy 发行证据，不能反向提升翻译、音频或现场审核状态。
+当前 registry／`weekly.json` 流程是 Layer 4 的 legacy adapter。今后的 Production 多语言周更必须输入同一 `targetLocale` 已批准的 `Target-Language Candidate` 和 `Target-Language Audio Package`，生成逐语言 [Release Package v2](../schemas/sermon-target-language-release-package-v2.schema.json)，并以 [Catalog v3](../schemas/sermon-multilingual-catalog-v3.schema.json) 让 Firebase 与已安装 iOS App 刷新发现页面。纯文字发行也必须由同语言 Layer 3 显式记录 `audio_unavailable`，且先确认 Web/iOS 都支持该能力。旧 v1/v2 CLI 不能作为正式 v3 周更证据。`published_http_verified` 不反向提升翻译、音频或现场审核状态。
 
 ## 每周路径
 
-来源完整可用 → 现有流程生成候选 → 内容审阅与对应音轨收据 → 自动生成并绑定听音定位指纹 → 组装完整发行包 → 检查目录差异 → 发布 → HTTP 文件核验 → App 刷新/下载验收与本周海报交付（分别验收）。
+来源完整可用 → 现有流程生成候选 → 内容审阅与对应音轨收据 → 自动生成并绑定听音定位指纹 → 在正式站完整快照上追加 v2 Release／v3 Catalog 候选 → 检查历史文件与目录差异 → 资产先发、v3 目录最后发 → HTTP 文件核验 → Firebase App 和同版本 iOS App 刷新选页／播放验收 → 本周海报交付（分别验收）。每周只更新内容；客户端出现不支持的新 schema、语言或能力时才安排 App 版本更新。
 
 对听众而言，每周目标是从 App 的“选择证道”进入本周内容，在原有界面中观看视频、切换已发布语言、收听配音和阅读文稿；单独的 `/pages/<pageId>/index.html` 只是资产地址与浏览器兼容入口。HTTP 核验可先记录 `published_http_verified`，但本周 App 交付须另外核对 Web App 根路径及原生 iOS 的目录展示、页内播放，并在实际安装版本上验收。未分发的新二进制不能视作用户手机已经拥有本周页面。
 
 周次、source route 和 source ID 共同决定内容项。同一周的直播归档与独立 YouTube 视频分别保留。已存在的源身份不能借同一个 page ID 改写。音频与审核声明沿用各页原始数据，不因进入发行清单而升级。
+
+正式多语言目录的页面名称采用默认内容语言已批准的「系列名 · 本篇标题」，例如「启示录：耶稣带来的安慰与盼望 · 耶稣配得」。`multilingual-v3.json` 的 `pages[].title` 供 iOS 选页列表和本周页头直接读取；只改目录元数据即可让已安装的 App 在刷新目录后显示新名称。每周发布前用同语言 `content/<pageId>/<locale>.json` 的 `series`、`title` 校验该字段，不能只写简称或从未审核文字另造系列名。
+
+### v3 周更发布清单与验收
+
+这一清单优先于下文仅适用于 `weekly.json` 的 legacy 命令。当前仓库的 `assemble_multilingual_hosting.py`、`deploy_multilingual_hosting.py`、`verify_multilingual_hosting.py` 仍只处理 v2 Catalog／v1 Release；在 v3 入口实现并通过定向测试前，不得用这些命令部署新周后宣称两端已经刷新可用。
+
+### 正式三语周更文件数合同
+
+已发行的 Hosting 视频周次沿用 `three_locale_full_video_v1`：**21 个新周 Hosting 资源 + 1 个更新的 `/multilingual-v3.json` = 22 个 Hosting 文件**。新的 bucket 视频周次使用 `three_locale_bucket_video_v2`：**20 个新周 Hosting 资源 + 1 个更新的 catalog = 21 个 Hosting 文件，另有 1 个不可变 Cloud Storage 视频对象**；合计处理 22 个 Firebase 资源，但不可把它写成 22 个 Hosting 文件。两个配置都只约束单周增量，既有完整站点、客户端代码、海报和 Dev dry run 分别计数。
+
+从模拟链接到 Layer 1–4 的快速测试使用独立的 [Firebase Dev 四层演练](firebase-dev-four-layer-bucket-dry-run.zh.md)。它按正式周资源的 20+1+1 形状验证资产，再额外更新 1 个 Dev App 演练周次指针；**App 内选页、三语切换与播放是演练通过条件**，独立 HTML 仅供调试。模拟包不取得正式人审资格，也不写入 Production catalog。
+
+| 资源 | 数量 | 固定路径 |
+| --- | ---: | --- |
+| 完整视频，旧配置 | 1 Hosting | `/pages/<pageId>/full-video-browser.mp4` |
+| 完整视频，新配置 | 1 bucket 对象、0 Hosting 文件 | `https://storage.googleapis.com/<专用媒体bucket>/weekly/<pageId>/<播放文件SHA>.mp4`；原同源路径用精确 302 指向该对象 |
+| 中文、韩语、西语的页面、全文、字幕、音轨、v2 Release、听音定位指纹 | 18（每语 6） | `/pages/<pageId>/<locale>/index.html`、`/content/<pageId>/<locale>.json`、`/captions/<pageId>/<locale>.json`、`/media/<pageId>/<locale>.mp3`、`/releases-v2/<pageId>/<locale>.json`、`/fingerprints/<sha前16位>-landmarks.json` |
+| 英文对照与对齐索引 | 2 | `/english-reference/<pageId>.json`、`/alignment/<pageId>.json` |
+| v3 目录 | 1（更新） | `/multilingual-v3.json` |
+
+旧配置的 `stage-public`、manifest v2 和 21 文件校验保持可读。新配置的 `stage-public` **不包含 MP4**，manifest v3 使用 `profile=three_locale_bucket_video_v2`，列出恰好 20 个新 Hosting 文件及 `videoDelivery`（同源固定路径、bucket HTTPS URL、播放文件 SHA-256、字节数）。同一 `videoDelivery` 必须写入 v3 catalog 的本周 page；三语 content 的 `sourceVideoUrl` 仍是同源路径，`browserVideoSha256` 均等于视频对象 SHA。`--video-file` 指向暂存区外的已审完整 MP4，组装时实测字节数与 SHA；来源母版的 `sourceMediaSha256` 保持原身份，不能混用。组装器拒绝缺失／多余文件、对象不匹配及不安全 URL。新报告分别记录 `addedFileCount=20`、`catalogUpdateFileCount=1`、`weeklyFileCount=21`、`bucketObjectCount=1`、`weeklyFirebaseObjectCount=22`。
+
+发布顺序是：在与正式站分离的 Dev 项目用模拟视频和真实 bucket 完成端到端测试；正式发布时先上传并验证不可变对象的大小、哈希、`Content-Type: video/mp4`、公开 GET、首尾 206／`Content-Range`，再准备 Hosting 完整快照及精确 302、限定 `media-src` 的 CSP，最后更新 catalog。发布后的同源视频 URL 必须返回预期重定向并可在 Web 播放和拖动；未点视频时不应下载完整视频。当前独立页面使用 `preload="metadata"`，仍可能下载少量视频数据；若要零预取，须在新周页面生成时改为 `preload="none"` 并重算页面及 Release 哈希。回退保留上一版 catalog、Hosting 配置及旧视频文件，不能先删除旧资源。iOS 当前已安装版本只提供文稿／音频，没有原生原视频播放器；本合同不把 bucket 视频 HTTP 验证宣称为 iOS 视频验收。要让 iOS App 内看原视频须另行开发并发布一次客户端更新。
+
+旧 `sermon-multilingual-v3-stage-manifest-v1` 候选只需保留原始文件与审核证据，按实际选择的配置重新生成清单；组装器不自动迁移或替旧清单补齐文件。输出状态固定为 `validated_not_deployed`，不能直接作为上线收据。bucket 配置还须传 `--video-file`；入口如下：
+
+```bash
+.venv/bin/python scripts/assemble_multilingual_v3_update.py \
+  --base-public artifacts/<已核对的完整正式站快照>/public \
+  --stage-public artifacts/<本周已审公开资产>/public \
+  --stage-manifest artifacts/<本周已审公开资产>/stage-manifest.json \
+  --base-firebase-json artifacts/<已核对的完整正式站快照>/firebase.json \
+  --video-file artifacts/<本周已审完整播放视频>.mp4 \
+  --out artifacts/<本周-v3-候选>
+```
+
+上例用于 bucket 配置；旧 Hosting 视频配置不传 `--video-file` 和 `--base-firebase-json`。bucket 配置的候选同时输出带精确 302 与视频 CSP 的 `firebase.json`，但组装器不上传对象、不部署站点。发布后以如下命令单独取得视频的线上收据；它会完整读回一次 MP4 核对 SHA，并检查旧同源 URL 的 302、首尾 206／Range 和 CORS，因此会产生一次视频大小的下载流量：
+
+```bash
+.venv/bin/python scripts/verify_v3_bucket_video.py \
+  --origin https://ai-for-god-sermon-audio.web.app \
+  --catalog artifacts/<本周已发布候选>/public/multilingual-v3.json \
+  --page-id <本周pageId> \
+  --out artifacts/<本周视频HTTP收据>.json
+```
+
+| 阶段 | 必须保存的结果 |
+| --- | --- |
+| 构建 | 从冻结的 Layer 1–3 包与批准的系列／标题生成本周各语言 v2 Release、页面、全文、英文对照、字幕、完整播放视频、音频和定位 sidecar；按所选配置把视频放在 Hosting 或独立 bucket。每个公开资源有固定路径及 SHA；不公开含绝对路径的私有包。 |
+| 合并 | 读取正式站完整基线与旧 v3 hash，追加本周 `pageId` 和 target，设置本周 `defaultPageId`；旧周、旧语言、legacy 功能及被引用资产逐一保留，覆盖／丢失即失败。 |
+| 发布 | 先上传不可变资产与 Release，最后更新 `/multilingual-v3.json`；目录明确 `no-store`，记录新旧目录 hash 和可回退的旧版本。 |
+| HTTP | 对 catalog、Release、页面、全文、英文对照、字幕、定位文件和音频逐项 GET／SHA；音频验证 206／Range。bucket 配置另验对象身份、视频首尾 Range 及同源 URL 的重定向和播放；确认三语和功能声明与真实资产相符。 |
+| App | Firebase App 重新加载后，在 App 选页中打开本周每个已发布语言并试播；同一已安装 iOS 版本点击“刷新证道目录”后完成相同检查。记录构建版本、时间、所选 pageId／locale、结果；不得以独立 HTML 页、HTTP 收据或模拟器代替真机结论。 |
+
+当用户正听旧周时，刷新只增加本周选项，不强制中断播放；本周仍须在选页入口容易找到。设备、现场和海报分别记录，不阻塞已通过的 HTTP 状态。
 
 [可选 Agents API 全流程](agents-end-to-end-workflow.zh.md)可通过 `--release-workflow-config` 连接配音、同步、页面、发行准备、授权部署、HTTP 核验与登记；默认入口和现有定时任务未自动切换。海报继续由 Codex 按下述默认交付环节完成，端到端入口尚未自动调用 ImageGen。
 

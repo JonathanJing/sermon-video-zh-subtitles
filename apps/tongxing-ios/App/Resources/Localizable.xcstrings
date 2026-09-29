@@ -5797,6 +5797,15 @@
         }
       }
     },
+    "先听讲员英语原声，再比较中文、韩语和西班牙语 AI 样音。示例文稿并非本周证道。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Hear the speaker’s original English clip, then compare the Chinese, Korean, and Spanish AI samples. The sample scripts are not this week’s sermon." } },
+        "ko": { "stringUnit": { "state": "translated", "value": "설교자의 영어 원음을 먼저 듣고 중국어, 한국어, 스페인어 AI 샘플을 비교하세요. 예문은 이번 주 설교가 아닙니다." } },
+        "es": { "stringUnit": { "state": "translated", "value": "Escucha primero el audio original en inglés y luego compara las muestras de IA en chino, coreano y español. Los textos de muestra no son el sermón de esta semana." } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Nghe đoạn tiếng Anh gốc của diễn giả, rồi so sánh các mẫu AI bằng tiếng Trung, Hàn và Tây Ban Nha. Văn bản mẫu không phải bài giảng tuần này." } }
+      }
+    },
     "先听讲员英语原声，再比较四种 AI 样音。示例文稿并非本周证道。": {
       "extractionState": "manual",
       "localizations": {
@@ -6027,6 +6036,15 @@
             "value": "Xem văn bản mẫu"
           }
         }
+      }
+    },
+    "韩语、西班牙语样音待人工听审；试听并非本周证道音轨。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The Korean and Spanish samples await human listening review; these demos are not this week’s sermon tracks." } },
+        "ko": { "stringUnit": { "state": "translated", "value": "한국어와 스페인어 샘플은 사람의 청취 검토를 기다리고 있습니다. 이 데모는 이번 주 설교 음성이 아닙니다." } },
+        "es": { "stringUnit": { "state": "translated", "value": "Las muestras en coreano y español esperan revisión auditiva humana; estas demos no son las pistas del sermón de esta semana." } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Các bản mẫu tiếng Hàn và Tây Ban Nha đang chờ người nghe kiểm duyệt; đây không phải bản âm thanh bài giảng tuần này." } }
       }
     },
     "样音待人工听审，不代表正式证道音轨。": {

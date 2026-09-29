@@ -2,6 +2,7 @@ import './style.css';
 import { formatDuration, stepTimingSummary, timingCoverageNote } from './timing.js';
 import { substageProgressLabel } from './substage.js';
 import { tr, uiLanguage } from './i18n.js';
+import { renderTimeline } from './timeline.js';
 
 const LABELS = {
   pending: '待开始', running: '进行中', waiting_review: '待审核', blocked: '阻塞', complete: '已记录',
@@ -465,9 +466,12 @@ export function renderSnapshot(snapshot) {
   byId('empty').hidden = true;
   byId('dashboard').hidden = false;
   text('page-title', snapshot.pageId);
+  const weekDate = /^\d{4}-\d{2}-\d{2}/.exec(snapshot.pageId)?.[0] || snapshot.serviceDate;
+  const sourceDate = snapshot.serviceDate && snapshot.serviceDate !== weekDate
+    ? tr(` · 来源日期 ${snapshot.serviceDate}`, ` · source date ${snapshot.serviceDate}`) : '';
   text('page-subtitle', tr(
-    `${snapshot.serviceDate || '日期未登记'} · ${snapshot.target || '目标环境未知'} · 来源与多语言制作`,
-    `${snapshot.serviceDate || 'Date not recorded'} · ${snapshot.target || 'Unknown target'} · Source and multilingual production`));
+    `${weekDate || '日期未登记'} · ${snapshot.target || '目标环境未知'} · 来源与多语言制作${sourceDate}`,
+    `${weekDate || 'Date not recorded'} · ${snapshot.target || 'Unknown target'} · Source and multilingual production${sourceDate}`));
   text('updated-at', tr(
     `状态更新 ${dateTime(snapshot.ledgerUpdatedAt)} · 快照 ${dateTime(snapshot.generatedAt)}`,
     `Status updated ${dateTime(snapshot.ledgerUpdatedAt)} · Snapshot ${dateTime(snapshot.generatedAt)}`));
@@ -482,6 +486,7 @@ export function renderSnapshot(snapshot) {
   renderEta(report);
   renderBlockers(report, snapshot.steps || []);
   renderFlow(snapshot);
+  renderTimeline(snapshot, stepName);
   renderSource(snapshot.source);
   renderShared(snapshot.sharedLayer1, snapshot.steps || []);
   renderLocales(snapshot.locales || [], snapshot.steps || []);

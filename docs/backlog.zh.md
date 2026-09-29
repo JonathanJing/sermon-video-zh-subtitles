@@ -24,10 +24,17 @@ English index: [backlog.md](./backlog.md)
 
 - 2026-09-20 的 2:58 中文、韩语、西语样片已有正式 Layer 1–4 包、三语文字和音频人审、Firebase Dev HTTP／Range 及浏览器短时播放证据；iOS 真机和现场仍是 `not_run`。
 - Firebase Dev 已有可保留旧 POC、旧中文九周和正式三语样片的完整预览；Production 仍按独立发布授权和核验流程处理，不能从 Dev 自动晋升。
-- Layer 2 的 Astra 初译 → Sol 独立逐组复核、语言插件和人工批准链已有通用实现；Layer 3 的正式 renderer、筛查、排程和包构建已有样片证据，但完整周产、可移植媒体恢复和第二周复现仍未完成。
-- iOS v2 catalog／Release Package reader、语言选择和 Dev origin 适配已有实现候选及自动化测试；实体设备上的三语下载、离线、播放和 WebView 正文可见性仍须验收。
+- Layer 2 的 Astra 初译 → Sol 独立逐组复核、语言插件和人工批准链已有通用实现；9 月 27 日整篇三语音轨、听审与正式站 HTTP 已有本次收据。可移植媒体恢复和第二周复现仍未完成。
+- iOS 已有正式站 v3 catalog／v2 Release reader、自动准备同语言音频和试听资料修复，代码已推送工作分支并通过模拟器定向检查；实体设备上的三语下载、离线、播放和 WebView 正文可见性仍须验收。
 - 远距离座位的自动声音对齐“不容易触发”是已观察现场问题；当前只有 backlog 设计，没有 AGC／10→15 秒自适应采集的运行实现或现场通过证据。
 - GitHub Actions 已按改动范围运行 Python、Web／反馈 API、Swift 合同或 iOS 模拟器检查，并保持固定的 required-check 名称；Firebase 内容发布仍使用本机显式入口和独立 HTTP 收据。代码合并、内容发布、TestFlight、设备与现场各自留证。
+
+### 2026-09-27 完整视频复盘输入
+
+- 正式站已对指定的 31:31.677 视频提供三语页面与音轨；111/111 文件 HTTP／SHA、三条 MP3 Range 206 和 App 内浏览器短时播放有收据。它们不代替 iOS 新版安装、现场麦克风定位和会场验收。
+- 当前公开 `/packages/layer3/<page>/<locale>.json` 是旧文字版 `audio_unavailable` 包，与旧 `/releases/` v1 候选哈希一致；`/releases-v2/` 绑定的是私有、已听审的正式音频包规范化 JSON 哈希。两条版本链各自成立，不能覆盖旧路径，也不能把含本机绝对路径的正式包直接放进 Hosting。缺的是正式 v2 发布前可复查的跨包证明与版本说明。
+- 本周 Tracker 虽显示 46/46，公开快照仍有 43 个已完成步骤缺实测执行 span。Layer 2 模型 runner 和 Layer 3 renderer 已有逐组／逐单元计时能力，但本次正式运行没有统一归入周账本；历史时长保持未知。
+- 本周先产出独立 `/pages/` 页面，后经 App 截图纠正为 App 内本周入口。下次在制作前冻结入口、语言、音频、英文对照、二维码及 Web／iOS 验收定义；页面 HTTP、浏览器、真机与现场状态分别报告。
 
 ## P0：下一次完整 Dev 周产与已观察问题
 
@@ -38,13 +45,16 @@ English index: [backlog.md](./backlog.md)
 | `DEV-L2-001` | Layer 2 每周多语言文字 | `in_progress` | `zh-Hans`、`ko`、`es` 从同一正式 Layer 1 独立运行 Astra→Sol→语言插件→人工批准；逐组失败可恢复且不污染其他语言 | [Layer 2/3 backlog](multilingual-layer-2-3-backlog.zh.md#3-layer-2目标语言文字-backlog) |
 | `DEV-L3-001` | Layer 3 正式整篇音频包 | `in_progress` | 同语言正式 Candidate 经授权音色、自然语速合成、完整解码、回转写、滚动排程、字幕、全文听审与 1 倍速同步形成可移植 Audio Package | [Layer 2/3 backlog](multilingual-layer-2-3-backlog.zh.md#4-layer-3目标语言音频与同步-backlog) |
 | `DEV-L3-002` | 英文声学停顿驱动的自然表达 | `in_progress` | 目标语言完整自然句只在已审英文声学锚点处排程；局部 overrun 返回翻译／句界修订，不以词组拼接或拉伸掩盖 | [多语言 Prosody POC](multilingual-prosody-poc.zh.md) |
+| `DEV-WEEK-001` | 周产交付定义与时长预检 | `pending` | 在正式合成前锁定完整视频、App 内入口、三种语言的页面／音轨／英文对照、二维码落点及 Web／iOS 验收矩阵；对已审全文先测自然语速时长，超出窗口时先形成另审的短口播稿 | 本节复盘输入；[四层接口合同](multilingual-production-interfaces.zh.md) |
 | `DEV-L4-001` | 可重复的 Firebase Dev 周更新 | `in_progress` | `build-update → preflight → deploy → verify` 从完整线上 Dev 基线追加新周，保留所有仍被 catalog 引用的旧资产，并生成逐文件 HTTP／SHA／Range 收据 | [Dev 预演](evidence/2026-09-23-production-readiness/DEV-PREVIEW.zh.md#后续-dev-周次) |
 | `DEV-L4-005` | 正式制作前的 v3 Dev 页面预演 | `in_progress` | Dev 先包含最新 App 功能，再生成独立 `preview_only` App 测试页；已批准样本验证语言、播放、字幕及定位。可附带后端模拟报告，未审 fixture 不进正式目录。下一步接入真实新周的通用 v3 追加构建器 | [页面预演](firebase-dev-weekly-dry-run.zh.md) |
 | `DEV-E2E-001` | 模拟链接到四层的快速后端 dry run | `in_progress` | 固定短夹具已共用真实 Layer 1 锚点、Layer 2 Astra→Sol 逐组调度、Layer 3 排程与 PCM16 拼接、隔离的 Layer 4 Dev 页面；CI 运行成功与四处失败注入并保存收据。后续补真实批准包只读回放、Layer 4 纯资产组装共用，以及从模拟视频链接到 Dev 测试页的可检查入口；正式门禁仍独立 | [后端 dry run](backend-four-layer-dry-run.zh.md)、[CI/CD backlog](ci-cd-backlog.zh.md) |
 | `DEV-CICD-001` | 代码与每周内容发布的统一身份和收据 | `pending` | 每次 Dev／Production 发布都绑定目标环境、站点或服务、代码 SHA、线上基线和发布计划；内容发布再绑定候选包与上游审核 hash，纯功能部署明确记录内容未变；部署后分别记录 HTTP、Web、iOS 设备和现场状态，可指向上一可恢复版本 | [CI/CD backlog](ci-cd-backlog.zh.md) |
+| `DEV-L4-003` | 正式 v2 发布包跨层绑定审计 | `in_progress` | 发布前逐语言校验 v3 catalog → v2 Release → 私有已听审 Layer 3 原件／审核收据 → 已批准短口播稿与公开 MP3／字幕 SHA；旧 v1 文字包保留，报告不泄露本机路径；错绑时阻止发布 | [Layer 4 backlog](multilingual-layer-4-delivery-app-backlog.zh.md) |
+| `DEV-L4-004` | Production v3 每周内容发布器与双 App 刷新验收 | `in_progress`（2026-09-27 开始） | 已入库未部署的 v3 候选组装器与负例测试；仍须接入正式音频审计、完整线上基线预检、目录最后发布、逐文件 HTTP／Range，以及同一 Web/iOS App 版本刷新选页与播放收据 | [每周发行清单](tongxing-weekly-release.zh.md#v3-周更发布清单与验收) |
 | `DEV-IOS-001` | 原生多语言消费与真机验收 | `in_progress` | 补齐原生三语音频切换、跨轨 source-unit 定位、`PlaybackHistory` v2 和韩／西语支持，再由真机完成 v2 catalog 刷新、下载、离线恢复、历史隔离、WebView 正文、VoiceOver 和系统媒体验证 | [iOS backlog](../apps/tongxing-ios/BACKLOG.zh.md) |
 | `DEV-FIELD-001` | 远场声音指纹对齐 | `pending` | Web 与 iOS 实现隐私受限诊断、AGC profile 和同一次 10→15 秒自适应采集；不降低匹配门槛，远处同源至少 9/10 正确、30 次负样本零误跳 | [本页专项设计](#dev-field-001远场声音对齐) |
-| `DEV-TRACK-001` | Producer 自动记账、状态与 ETA | `in_progress` | 正式 Layer 1–4 producer 自动写实际运行、等待、重试与审核事件；公开 Tracker 只投影脱敏状态，ETA 只来自可追溯速率／估时 | [Tracker 接入项](four-layer-production-tracker.zh.md#tracker-接入-backlog) |
+| `DEV-TRACK-001` | Producer 自动记账、状态与 ETA | `in_progress` | 先把 Layer 2 付费逐组调用与 Layer 3 正式逐单元合成接入同一周账本，再覆盖筛查、同步、构建、部署、审核等待与重试；公开 Tracker 只投影脱敏状态，未测步骤保持未知 | [Tracker 接入项](four-layer-production-tracker.zh.md#tracker-接入-backlog) |
 | `DEV-REVIEW-001` | 私有多语言人工审核后台 | `pending` | 两位不同语言审核者可并行审阅 Layer 2/3；权限、hash、版本、移交、修订失效和不可变收据均 fail closed | [审核后台设计](four-layer-production-tracker.zh.md#多语言人工审核后台-backlog) |
 | `DEV-LIVE-001` | 独立 Sunday `live_session` | `in_progress` | 现场 ASR final 保持事实源；翻译、术语、延迟、发布和 fallback 有独立真实回放／现场证据，不借用四层预制完成状态 | [工作流总览](workflows/README.zh.md)及本页历史附录 |
 | `DEV-PROD-001` | Dev 晋升 Production | `blocked` | 只有完整周产、Dev HTTP、回滚基线、Production 发布授权和部署前核验齐全后，才从 `dev` 晋升 `main` 并执行 Production 发布；设备／现场仍独立 | [Production 合并检查](multilingual-production-premerge-2026-09-23.zh.md) |
@@ -75,6 +85,7 @@ Firebase Hosting 只发布静态运行时和指纹索引；采集、特征和匹
 | `DEV-TRK-002` | 第二周真实全流程复现与恢复 | `pending` | 用新周次验证缓存、断点恢复、上游失效、旧资产保留和 ETA 校准，不复用第一周人工结论 | [四层 Tracker](four-layer-production-tracker.zh.md) |
 | `DEV-SPD-001` | 并发、审核等待与模型路由优化 | `pending` | 先完成完整 trace 审计，再逐一比较语言并行、Layer 3 并发和 Astra／Luna shadow；只采用端到端更快且质量门禁不降的方案 | [提速 backlog](four-layer-production-tracker.zh.md#周日页面提速-backlog本轮结束后按审计证据实施) |
 | `DEV-LOCALE-001` | 界面本地化母语复核 | `in_progress` | 中文、英文、韩语、西语、越南语界面候选分别完成核心流程、错误、权限、VoiceOver 和长文本复核；界面语言不改变内容／音频选择 | [Layer 4 语言设计](multilingual-layer-4-delivery-app-backlog.zh.md#24-app-界面语言) |
+| `DEV-USAGE-001` | 按三种语言维度统计收听 | `pending` | 匿名事件分别记录界面语言、页面内容语言、实际播放音频语言及 pageId；后台按天和语言组合汇总去重会话与收听时长，Web／iOS 都有同意与真实事件验证，不从界面选择推断收听 | [使用统计](sermon-app-usage.zh.md) |
 
 ## P2：实验与非阻塞扩展
 

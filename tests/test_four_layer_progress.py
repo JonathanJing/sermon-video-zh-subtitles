@@ -25,6 +25,19 @@ class FourLayerProgressTest(unittest.TestCase):
         self.assertEqual((ko["complete"], es["complete"]), (1, 0))
         self.assertIsNone(report["earliestContinuousEta"])
 
+    def test_status_transition_keeps_one_timestamp_and_previous_state(self):
+        tracker.update_step(self.ledger, "L3-02@ko", "running", done_units=0, total_units=2)
+        event = self.ledger["history"][-1]
+        self.assertEqual((event["fromStatus"], event["status"]), ("pending", "running"))
+        self.assertTrue(event["statusChanged"])
+        self.assertEqual(event["at"], self.ledger["steps"]["L3-02@ko"]["updatedAt"])
+        tracker.update_step(self.ledger, "L3-02@ko", "running", done_units=1)
+        self.assertFalse(self.ledger["history"][-1]["statusChanged"])
+        tracker.update_step(self.ledger, "L3-02@ko", "blocked", reason="api_quota")
+        self.assertEqual(self.ledger["history"][-1]["reason"], "api_quota")
+        tracker.update_step(self.ledger, "L3-02@ko", "running", evidence="quota-restored.json")
+        self.assertEqual(self.ledger["history"][-1]["evidence"], "quota-restored.json")
+
     def test_poc_ledger_binds_exact_source_window_without_granting_approval(self):
         ledger = tracker.new_poc_ledger(
             "2026-09-27-sermon-clip", ["zh-Hans", "ko", "es"], target="dev",

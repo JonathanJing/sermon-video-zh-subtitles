@@ -550,4 +550,63 @@ final class VoiceDemoCatalogTests: XCTestCase {
         value["speakers"] = changed
         XCTAssertThrowsError(try VoiceDemoCatalog.validated(encode(value)))
     }
+
+    func testProductionVoiceDemosMergePublishedEnglishChineseAndKoreanSpanish() throws {
+        func track(_ locale: String, _ index: Int) -> [String: Any] {
+            ["audioUrl": "/media/speaker_\(index)-\(locale).mp3",
+             "sha256": String(repeating: "a", count: 64),
+             "cues": [["text": "Sample \(locale)"]]]
+        }
+        let bank: [[String: Any]] = (0..<6).map { index in
+            ["id": "speaker_\(index)", "name": "Speaker \(index)",
+             "humanListeningStatus": "accepted",
+             "referenceSourceUrl": "https://example.test/source/\(index)",
+             "reference": track("en", index), "chinese": track("zh-Hans", index)]
+        }
+        let auditions: [[String: Any]] = (0..<6).reversed().map { index in
+            ["speakerId": "speaker_\(index)", "displayName": "Speaker \(index)",
+             "samples": ["ko", "es"].map { locale in
+                ["path": "/voice-demos/2026-09-21-v2/speaker_\(index)/\(locale).mp3",
+                 "sha256": String(repeating: "b", count: 64), "bytes": 200,
+                 "locale": locale, "text": "Sample \(locale)",
+                 "humanListeningStatus": "pending"]
+             }]
+        }
+        let weekly: [String: Any] = ["schemaVersion": "sermon-weekly-catalog-v1",
+                                     "voiceBank": ["speakers": bank]]
+        let production: [String: Any] = [
+            "schemaVersion": "sermon-production-voice-auditions-v1",
+            "status": "audition_demo", "sourceScope": "voice_capability_audition_not_sermon_translation",
+            "humanListeningStatus": "pending", "speakerCount": 6, "sampleCount": 12,
+            "speakers": auditions]
+        func encode(_ value: [String: Any]) throws -> Data {
+            try JSONSerialization.data(withJSONObject: value)
+        }
+        let merged = try VoiceDemoCatalog.productionMerged(
+            weeklyData: encode(weekly), auditionData: encode(production))
+        XCTAssertTrue(merged.isProductionMerged)
+        XCTAssertEqual(merged.speakers.count, 6)
+        XCTAssertEqual(merged.speakers[0].samples.map(\.locale), ["zh-Hans", "es", "ko"])
+        XCTAssertEqual(merged.speakers[0].original.path, "/media/speaker_0-en.mp3")
+        var unsafe = production
+        var changed = auditions
+        var first = changed[0]
+        first["displayName"] = "Another speaker"
+        changed[0] = first
+        unsafe["speakers"] = changed
+        XCTAssertThrowsError(try VoiceDemoCatalog.productionMerged(
+            weeklyData: encode(weekly), auditionData: encode(unsafe)))
+    }
+
+    func testCurrentProductionVoiceDemosDecode() async throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["TONGXING_LIVE_SMOKE"] == "1",
+                          "Run explicitly against Production Hosting")
+        let origin = URL(string: "https://ai-for-god-sermon-audio.web.app")!
+        let (weekly, _) = try await URLSession.shared.data(from: origin.appendingPathComponent("weekly.json"))
+        let (auditions, _) = try await URLSession.shared.data(
+            from: origin.appendingPathComponent(VoiceDemoCatalog.productionPath))
+        let merged = try VoiceDemoCatalog.productionMerged(weeklyData: weekly, auditionData: auditions)
+        XCTAssertEqual(merged.speakers.count, 6)
+        XCTAssertEqual(merged.sampleCount, 18)
+    }
 }

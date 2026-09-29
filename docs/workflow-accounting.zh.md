@@ -12,7 +12,8 @@
 |---|---|
 | `events.jsonl` | 追加写入的开始、结束、失败、缓存命中及逐次 API 用量收据；事实来源 |
 | `summary.json` | 每次执行与各阶段汇总，保留缺失用量、未知费用和未结束阶段 |
-| `stages.csv` | 可用 Excel 打开的逐次、逐阶段明细 |
+| `stages.csv` | 可用 Excel 打开的逐阶段汇总；同名阶段的多次尝试会合并 |
+| `stage-attempts.csv` | 每个阶段／单元每次尝试的 UTC 开始、完成、状态、耗时、父 span 与缓存标记；中断未结束时完成时间和耗时留空 |
 | `operations.log` | 自动汇总时重建的可读事件列表，含运行、阶段、错误类型及项目内代码位置；实时查看以 `events.jsonl` 为准 |
 
 先查看最近一次执行，命令不会重写文件、调用模型或读取远端：
@@ -62,6 +63,14 @@ with accounting_session(work / "accounting", "weekly_task", {"sunday": sunday}):
 Supervisor 的 `Runner.run` 另记录 `sdk_call_started/finished`，保存 SDK 报告的请求数、输入／输出／总 Token 和整次调用耗时，位于 `runs[].sdkCalls`。该耗时含工具执行；SDK 聚合值不是原始逐 HTTP 收据，缺失值为 `null`，失败后拿不到用量也不补零。`httpAttemptsKnown=false`、`unpricedSdkInvocations` 和 `overallCostStatus=partial` 明确保留内部重试／费用缺口，不把它们混入直接 HTTP API 的次数、延迟分位数或已知费用小计。
 
 记录覆盖元数据、下载、时间线 ASR 与分类、裁剪、分段、来源修订、翻译、两轮阅读审核、PDF、Context Pack、上传，以及配音传输、渲染、恢复、装配、对齐、ASR 筛查和时间预算。对话内额外模型审核、人工审听与手工操作无法由子进程计时器自动归属；若没有独立收据，报告必须明确列为未记录，不将整段对话时间或音频长度当作执行耗时。
+
+四层正式生产的 Layer 2 模型入口按 `layer2.group.<locale>.<index>` 保存组的完整尝试，并在其下分别计时 Astra 翻译和 Sol 独立复核。Layer 3 正式音频入口按 `layer3.unit.<locale>.<index>` 保存每个音频单元的尝试，另计模型首次加载、输入核验和音轨装配。单元工作量事件只含索引、生成／复用类别和音频时长；音频时长不是执行耗时。恢复重跑会追加尝试，不回填或覆盖前一次记录。两入口独立运行时分别写入输出目录的 `accounting/`；由四层计时命令启动时继承同一 run 账本。
+
+本次仅增加日志，不改变模型请求或声音合成；Layer 2 运行身份与 Layer 3 声音身份保持原值，让既有缓存继续通过原有输入与 hash 校验。以后若修改翻译规则或合成行为，必须同步更新对应生产身份，不能靠日志改动使旧结果重新生成。
+
+四层进度账本的 `history` 保存状态变化时间、前后状态、阻塞／待审原因、证据引用及完成单元数；`running` 到 `complete` 的间隔只表示操作员报告的状态区间，不代替上述执行 span。审核等待与 `blocked` 等待分别在 `four_layer_measure.py audit` 中计算。直接从 `pending` 标成 `complete` 的旧步骤只有完成更新时间，开始时间保持未知。对话中的审批等待、API 额度恢复、设备解锁及远端机器占用，只有显式更新为对应 `waiting_review`／`blocked` 状态时才能计算等待区间；不能用对话时间或文件时间戳倒推。本次 2026-09-27 的旧记录不作追溯补造。
+
+`audit` 另列出 `completedWithoutReportedStart`、`completedWithoutMeasuredExecution` 与 `statusHistoryMismatch`。第一项表示缺少操作员开始状态，第二项表示没有真实执行 span，第三项表示当前步骤状态无法由历史事件重建；这些缺口均不自动用文件时间戳补齐。
 
 ## 已接入的指标与保留边界
 

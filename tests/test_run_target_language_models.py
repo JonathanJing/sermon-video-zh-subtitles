@@ -10,6 +10,9 @@ import unittest
 from pathlib import Path
 
 from scripts import run_target_language_models as subject
+from scripts import four_layer_measure as measure
+from scripts import four_layer_progress as progress
+from scripts import sermon_accounting as accounting
 from scripts import produce_target_language_candidate as producer
 from scripts import target_language_policy as policy_tools
 from tests import test_produce_target_language_candidate as fixture_module
@@ -96,6 +99,28 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
                                      "fixture-key", self.fake_call), evidence)
         self.assertEqual(self.calls, [])
 
+    def test_known_runner_identities_resume_paid_cache_but_unknown_identity_fails(self):
+        f = self.fixture
+        parent_hash = "1922f23b881363ac4f1a32a99de7184fecd1ae445befde5f2282d400bd762e40"
+        self.assertEqual(subject.RUNNER_PRODUCTION_IDENTITY_SHA256, parent_hash)
+        evidence = subject.run(f.source, f.anchor, f.policy, self.out,
+                               "fixture-key", self.fake_call)
+        request = producer.prepare_request(f.source, f.anchor, f.policy)
+        plan = subject.group_plan(request, f.anchor)
+        manifest = self.out / "run-identity.json"
+        for implementation_hash in (parent_hash, *subject.COMPATIBLE_RUNNER_IDENTITIES):
+            digest = policy_tools.canonical_sha256({
+                "request": request, "groupPlan": plan,
+                "runnerImplementationSha256": implementation_hash})
+            manifest.write_text(json.dumps({"sha256": digest}))
+            self.assertEqual(subject.run(
+                f.source, f.anchor, f.policy, self.out, "fixture-key",
+                lambda *_: self.fail("verified paid calls must be reused")), evidence)
+        manifest.write_text(json.dumps({"sha256": "0" * 64}))
+        with self.assertRaisesRegex(ValueError, "Output directory belongs"):
+            subject.run(f.source, f.anchor, f.policy, self.out, "fixture-key",
+                        lambda *_: self.fail("unknown identity must fail before paid calls"))
+
     def test_progress_ledger_tracks_translation_and_review_groups_separately(self):
         f = self.fixture
         ledger_path = self.out.parent / "four-layer-progress.json"
@@ -117,6 +142,45 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         self.assertEqual(substages["initial_translation"]["completedUnits"], len(plan))
         self.assertEqual(substages["independent_review"]["completedUnits"], len(plan))
         self.assertEqual(progress.load(ledger_path)["steps"][step]["status"], "pending")
+    def test_each_group_and_model_role_has_measured_attempts_on_resume(self):
+        f = self.fixture
+        with accounting.accounting_session(self.out / "accounting", "layer2_models",
+                                           {"targetLocale": f.policy["targetLocale"]}):
+            subject.run(f.source, f.anchor, f.policy, self.out,
+                        "fixture-key", self.fake_call)
+            subject.run(f.source, f.anchor, f.policy, self.out,
+                        "fixture-key", lambda *_: self.fail("must reuse"))
+        attempts = accounting.summarize(self.out / "accounting")["stageAttempts"]
+        unit_attempts = [row for row in attempts if row["stage"].startswith("layer2.")]
+        self.assertEqual(len(unit_attempts), 12)
+        self.assertEqual(sum(row["cacheHit"] for row in unit_attempts), 4)
+        self.assertTrue(all(row["finishedAt"] and row["elapsedSeconds"] is not None
+                            for row in unit_attempts))
+
+    def test_model_groups_share_the_canonical_layer2_timing_ledger(self):
+        f = self.fixture
+        ledger_path = self.out.parent / "four-layer-progress.json"
+        progress.save(ledger_path, progress.new_ledger("test-page", ["zh-Hans"]))
+        result = subject.run_accounted(
+            f.source, f.anchor, f.policy, self.out, "fixture-key", self.fake_call,
+            None, f.plugin_path, None, None, progress_ledger=ledger_path)
+        self.assertEqual(len(result["groups"]), 2)
+        events, damaged = accounting.read_events(ledger_path.parent / "accounting")
+        self.assertFalse(damaged)
+        report = measure.timing_audit(progress.load(ledger_path), events)
+        row = next(row for row in report["rows"] if row["step"] == "L2-02@zh-Hans")
+        self.assertEqual(row["executionAttempts"], 1)
+        self.assertEqual(row["attemptHistory"][0]["workload"]["doneUnits"], 2)
+        substages = {child["id"]: child for child in row["subStages"]}
+        self.assertEqual(substages["initial_translation"]["completedUnits"], 2)
+        self.assertEqual(substages["independent_review"]["completedUnits"], 2)
+        parent = next(event for event in events if event["event"] == "stage_started"
+                      and event["stage"] == "four_layer.L2-02:zh-Hans")
+        child = next(event for event in events if event["event"] == "stage_started"
+                     and event["stage"] == "layer2_models")
+        self.assertEqual(child["parentSpanId"], parent["spanId"])
+        self.assertTrue(any(event["event"] == "stage_finished"
+                            and event["stage"].startswith("layer2.group.") for event in events))
 
     def test_two_workers_overlap_groups_but_review_each_after_its_draft(self):
         f = self.fixture
