@@ -145,12 +145,6 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal) {
   };
 }
 
-/**
- * Returns { weeks, defaultWeekId, errors }. Each week has a contentVariants map
- * keyed by the exact published target locale. Variants contain their own track,
- * spoken cues and fullTranscript. An unavailable optional catalog leaves legacy
- * weeks usable; a rejected locale is reported in errors and is never selectable.
- */
 async function loadPage(fetchImpl, page, timeoutMs, pageSignal) {
   const errors = [];
   const variants = await Promise.all(LOCALES.filter(locale => page.targets[locale]).map(async locale => {
@@ -220,6 +214,13 @@ async function loadPage(fetchImpl, page, timeoutMs, pageSignal) {
   const defaultLocale = contentVariants[page.defaultTargetLocale] ? page.defaultTargetLocale : Object.keys(contentVariants)[0];
   return { week: defaultLocale ? { ...contentVariants[defaultLocale], defaultTargetLocale: defaultLocale, contentVariants } : null, errors };
 }
+
+/**
+ * Returns { weeks, defaultWeekId, errors }. Each week has a contentVariants map
+ * keyed by the exact published target locale. Variants contain their own track,
+ * spoken cues and fullTranscript. An unavailable optional catalog leaves legacy
+ * weeks usable; a rejected locale is reported in errors and is never selectable.
+ */
 export async function loadPublishedWeeks(fetchImpl = globalThis.fetch, { requestTimeoutMs = 10000, pageLoadTimeoutMs = 30000 } = {}) {
   const timeoutMs = Number.isFinite(requestTimeoutMs) && requestTimeoutMs > 0 ? Math.min(requestTimeoutMs, 30000) : 10000;
   const loadTimeoutMs = Number.isFinite(pageLoadTimeoutMs) && pageLoadTimeoutMs > 0 ? Math.min(pageLoadTimeoutMs, 30000) : 30000;
