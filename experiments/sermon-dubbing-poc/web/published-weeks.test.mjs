@@ -143,6 +143,112 @@ test('optional requests have a bounded timeout and abort pending network work', 
   assert.equal(signal.aborted, true);
 });
 
+function addHistory(f, count) {
+  const catalog = JSON.parse(f.files.get('/multilingual-v3.json'));
+  const template = [...f.files].filter(([path]) => path !== '/multilingual-v3.json');
+  for (let index = 1; index < count; index++) {
+    const id = `history-${index}`;
+    const page = structuredClone(catalog.pages[0]);
+    page.id = id;
+    page.date = `2025-01-${String(index % 28 + 1).padStart(2, '0')}`;
+    for (const [path, body] of template) {
+      if (path.includes('/releases-v2/')) continue;
+      f.files.set(path.replaceAll(pageId, id), body.replaceAll(pageId, id));
+    }
+    for (const locale of ['zh-Hans', 'ko', 'es']) {
+      const releasePath = `/releases-v2/${id}/${locale}.json`;
+      const release = JSON.parse(f.files.get(`/releases-v2/${pageId}/${locale}.json`).replaceAll(pageId, id));
+      for (const role of ['content', 'captions']) {
+        const asset = release.assets.find(item => item.role === role);
+        asset.sha256 = hash(f.files.get(asset.path));
+      }
+      const body = JSON.stringify(release);
+      f.files.set(releasePath, body);
+      page.targets[locale].releasePackageUrl = releasePath;
+      page.targets[locale].releasePackageJsonSha256 = hash(body);
+    }
+    catalog.pages.push(page);
+  }
+  f.files.set('/multilingual-v3.json', JSON.stringify(catalog));
+}
+
+test('current page loads first and slow archive pages cannot hold the player indefinitely', async () => {
+  const f = fixture();
+  addHistory(f, 104);
+  let active = 0, peak = 0;
+  const pendingSignals = [];
+  const fetchImpl = (path, options) => {
+    if (path.startsWith('/alignment/history-')) {
+      active++;
+      peak = Math.max(peak, active);
+      pendingSignals.push(options.signal);
+      options.signal.addEventListener('abort', () => { active--; }, { once: true });
+      return new Promise(() => {});
+    }
+    return f.fetchImpl(path, options);
+  };
+  const started = Date.now();
+  const result = await loadPublishedWeeks(fetchImpl, { requestTimeoutMs: 1000, pageLoadTimeoutMs: 50 });
+  assert.ok(Date.now() - started < 500);
+  assert.equal(result.defaultWeekId, pageId);
+  assert.ok(result.weeks.some(week => week.id === pageId));
+  assert.ok(f.requests.indexOf(`/releases-v2/${pageId}/zh-Hans.json`) < f.requests.findIndex(path => path.startsWith('/releases-v2/history-')));
+  assert.ok(peak > 1 && peak <= 12, `expected bounded history concurrency, saw ${peak}`);
+  assert.ok(pendingSignals.every(signal => signal.aborted));
+  assert.ok(result.errors.some(error => /loading timed out/.test(error)));
+});
+
+test('healthy archive pages load while the current-page sidecar is stalled', async () => {
+  const f = fixture();
+  addHistory(f, 3);
+  let stalledSignal;
+  let defaultAborted = false;
+  let historyRequestedBeforeAbort = false;
+  const fetchImpl = (path, options) => {
+    if (path === `/alignment/${pageId}.json`) {
+      stalledSignal = options.signal;
+      stalledSignal.addEventListener('abort', () => { defaultAborted = true; }, { once: true });
+      return new Promise(() => {});
+    }
+    if (path.startsWith('/releases-v2/history-')) {
+      historyRequestedBeforeAbort ||= !defaultAborted;
+    }
+    return f.fetchImpl(path, options);
+  };
+  const result = await loadPublishedWeeks(fetchImpl, { requestTimeoutMs: 1000, pageLoadTimeoutMs: 50 });
+  assert.equal(result.weeks.length, 3);
+  assert.equal(result.defaultWeekId, pageId);
+  assert.equal(historyRequestedBeforeAbort, true);
+  assert.equal(stalledSignal.aborted, true);
+});
+
+test('healthy archive remains selectable when current-page release assets stall', async () => {
+  const f = fixture();
+  addHistory(f, 3);
+  const stalledSignals = [];
+  const fetchImpl = (path, options) => {
+    if (path.startsWith(`/releases-v2/${pageId}/`)) {
+      stalledSignals.push(options.signal);
+      return new Promise(() => {});
+    }
+    return f.fetchImpl(path, options);
+  };
+  const result = await loadPublishedWeeks(fetchImpl, { requestTimeoutMs: 1000, pageLoadTimeoutMs: 50 });
+  assert.equal(result.weeks.length, 2);
+  assert.ok(result.weeks.every(week => week.id.startsWith('history-')));
+  assert.ok(result.defaultWeekId.startsWith('history-'));
+  assert.ok(stalledSignals.every(signal => signal.aborted));
+});
+
+test('all 104 published pages remain available when archive endpoints respond', async () => {
+  const f = fixture();
+  addHistory(f, 104);
+  const result = await loadPublishedWeeks(f.fetchImpl);
+  assert.equal(result.weeks.length, 104);
+  assert.equal(result.defaultWeekId, pageId);
+  assert.deepEqual(result.errors, []);
+});
+
 function addAlignment(f, mutate = () => {}) {
   const catalog = JSON.parse(f.files.get('/multilingual-v3.json')), page = catalog.pages[0];
   const targets = Object.fromEntries(Object.entries(page.targets).map(([locale, target]) => [locale, {
