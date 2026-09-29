@@ -39,6 +39,9 @@ except ImportError:
 
 
 VERSION = "sermon-formal-target-speech-render-v1"
+# Observability-only edits must not invalidate already rendered sound. The
+# accounting execution identity still records the current file's actual hash.
+RENDERER_SOUND_IDENTITY_SHA256 = "fef7604882470137f46f1b01fbd06c7c3c9a07166da91003243608785fa47f0b"
 DEFAULT_POLICY = {"reactionLagSeconds": 0.05, "interUtteranceGapSeconds": 0.05,
                   "maxEndLagSeconds": 8.0}
 
@@ -236,7 +239,7 @@ def _intent(context: dict[str, Any], paths: dict[str, Path], index: int, *, seed
         "groupId": unit["translationGroupId"],
         "sourceUnitIds": unit["sourceUnitIds"],
         "textSha256": hashlib.sha256(unit["text"].encode()).hexdigest(),
-        "rendererSha256": identity.sha256(Path(__file__)),
+        "rendererSha256": RENDERER_SOUND_IDENTITY_SHA256,
         "seed": seed, "temperature": 0.7, "repetitionPenalty": 1.05,
         "maxNewTokens": 768, "dtype": dtype, "attention": attention,
         "deliveryInstruction": instruct,
@@ -390,7 +393,10 @@ def _reusable_speculative_audio(previous_root: Path, unit: dict[str, Any], index
     expected_sound = {key: expected[key] for key in SPECULATIVE_MATCH_FIELDS}
     if sound != expected_sound:
         previous_renderer = sound.get("rendererSha256")
-        if previous_renderer not in COMPATIBLE_PREVIEW_ADMISSION_RENDERER_SHA256:
+        # Preview receipts bind the renderer file hash, while formal intents
+        # keep the stable sound identity across observability-only edits.
+        if (previous_renderer not in COMPATIBLE_PREVIEW_ADMISSION_RENDERER_SHA256
+                and previous_renderer != identity.sha256(Path(__file__))):
             return None
         expected_sound["rendererSha256"] = previous_renderer
         if sound != expected_sound:
@@ -483,63 +489,74 @@ def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
         expected = _intent(context, paths, index, seed=seed, dtype=dtype,
                            attention=attention, instruct=unit_instruct,
                            spoken_text=spoken_text)
-        if intent_path.exists():
-            require(package.read_object(intent_path) == expected,
-                    f"Cached render identity differs: {unit['translationGroupId']}")
-        else:
-            require(not any(path.exists() for path in (wav_path, receipt_path, commit_path)),
-                    f"Orphaned audio/receipt cannot be reused: {unit['translationGroupId']}")
-            write_json_atomic(intent_path, expected)
-        if commit_path.exists():
-            commit = package.read_object(commit_path)
-            require(commit.get("identity") == expected,
-                    f"Cached audio identity or hash changed: {unit['translationGroupId']}")
-            if not wav_path.exists():
-                partial = wav_path.with_suffix(".partial.wav")
-                require(partial.is_file() and commit.get("audioSha256") == identity.sha256(partial),
-                        f"Committed partial audio is missing or changed: {unit['translationGroupId']}")
-                os.replace(partial, wav_path)
-            require(commit.get("audioSha256") == identity.sha256(wav_path),
-                    f"Cached audio identity or hash changed: {unit['translationGroupId']}")
-        else:
-            require(not wav_path.exists(), f"Uncommitted audio cannot be reused: {wav_path}")
-            wav_path.parent.mkdir(parents=True, exist_ok=True)
-            partial = wav_path.with_suffix(".partial.wav")
-            previous = (_reusable_audio(reuse_from, unit, index, expected)
-                        if reuse_from is not None else None)
-            if previous is None and speculative_from is not None:
-                previous = _reusable_speculative_audio(speculative_from, unit, index, expected)
-            if previous is not None:
-                shutil.copyfile(previous, partial)
+        stage_name = f"layer3.unit.{job['targetLocale']}.{index:04d}"
+        unit_metrics = {"unitIndex": index, "reusedCurrent": commit_path.exists(),
+                        "reusedPrior": False, "reusedPreview": False,
+                        "synthesized": False}
+        with accounting.stage(stage_name, cache_hit=commit_path.exists()):
+            if intent_path.exists():
+                require(package.read_object(intent_path) == expected,
+                        f"Cached render identity differs: {unit['translationGroupId']}")
             else:
-                with measure.producer_substage("unit_synthesis", billing="local"):
-                    if model is None:
-                        model = synth_factory(context["checkpoint"], device=device, dtype=dtype,
-                                              attention=attention, instruct=unit_instruct)
-                    else:
-                        model.instruct = unit_instruct
-                    wavs, rate = model(spoken_text or unit["text"], adapter["languageParameter"],
-                                       adapter["speakerKey"], seed=seed + index)
-                    # A partial belongs to this same intent and is safe to replace on resume.
-                    write_pcm16(partial, wavs, int(rate))
-            with measure.producer_substage("audio_validation", billing="local"):
-                decoded = integrity.probe_full_decode(partial)
-                measure.record_substage_metrics({"audioSeconds": decoded["durationSeconds"]})
-            commit = {"identity": expected, "audioSha256": identity.sha256(partial)}
-            write_json_atomic(commit_path, commit)
-            os.replace(partial, wav_path)
-        if receipt_path.exists():
-            integrity.validate_receipt(paths["job"], index, wav_path,
-                                       package.read_object(receipt_path))
-        else:
-            receipt = integrity.build_receipt(paths["job"], index, wav_path)
-            write_json_atomic(receipt_path, receipt)
-        receipt = package.read_object(receipt_path)
-        rows.append({"textGroupId": unit["translationGroupId"],
-                     "targetTextSha256": expected["textSha256"],
-                     "audio": artifact(root, wav_path),
-                     "durationSeconds": receipt["durationSeconds"],
-                     "receipt": artifact(root, receipt_path, json_artifact=True)})
+                require(not any(path.exists() for path in (wav_path, receipt_path, commit_path)),
+                        f"Orphaned audio/receipt cannot be reused: {unit['translationGroupId']}")
+                write_json_atomic(intent_path, expected)
+            if commit_path.exists():
+                commit = package.read_object(commit_path)
+                require(commit.get("identity") == expected,
+                        f"Cached audio identity or hash changed: {unit['translationGroupId']}")
+                if not wav_path.exists():
+                    partial = wav_path.with_suffix(".partial.wav")
+                    require(partial.is_file() and commit.get("audioSha256") == identity.sha256(partial),
+                            f"Committed partial audio is missing or changed: {unit['translationGroupId']}")
+                    os.replace(partial, wav_path)
+                require(commit.get("audioSha256") == identity.sha256(wav_path),
+                        f"Cached audio identity or hash changed: {unit['translationGroupId']}")
+            else:
+                require(not wav_path.exists(), f"Uncommitted audio cannot be reused: {wav_path}")
+                wav_path.parent.mkdir(parents=True, exist_ok=True)
+                partial = wav_path.with_suffix(".partial.wav")
+                previous = (_reusable_audio(reuse_from, unit, index, expected)
+                            if reuse_from is not None else None)
+                unit_metrics["reusedPrior"] = previous is not None
+                if previous is None and speculative_from is not None:
+                    previous = _reusable_speculative_audio(speculative_from, unit, index, expected)
+                    unit_metrics["reusedPreview"] = previous is not None
+                if previous is not None:
+                    shutil.copyfile(previous, partial)
+                else:
+                    unit_metrics["synthesized"] = True
+                    with measure.producer_substage("unit_synthesis", billing="local"):
+                        if model is None:
+                            with accounting.stage(f"layer3.model_load.{job['targetLocale']}"):
+                                model = synth_factory(context["checkpoint"], device=device, dtype=dtype,
+                                                      attention=attention, instruct=unit_instruct)
+                        else:
+                            model.instruct = unit_instruct
+                        wavs, rate = model(spoken_text or unit["text"], adapter["languageParameter"],
+                                           adapter["speakerKey"], seed=seed + index)
+                        # A partial belongs to this same intent and is safe to replace on resume.
+                        write_pcm16(partial, wavs, int(rate))
+                with measure.producer_substage("audio_validation", billing="local"):
+                    decoded = integrity.probe_full_decode(partial)
+                    measure.record_substage_metrics({"audioSeconds": decoded["durationSeconds"]})
+                commit = {"identity": expected, "audioSha256": identity.sha256(partial)}
+                write_json_atomic(commit_path, commit)
+                os.replace(partial, wav_path)
+            if receipt_path.exists():
+                integrity.validate_receipt(paths["job"], index, wav_path,
+                                           package.read_object(receipt_path))
+            else:
+                receipt = integrity.build_receipt(paths["job"], index, wav_path)
+                write_json_atomic(receipt_path, receipt)
+            receipt = package.read_object(receipt_path)
+            rows.append({"textGroupId": unit["translationGroupId"],
+                         "targetTextSha256": expected["textSha256"],
+                         "audio": artifact(root, wav_path),
+                         "durationSeconds": receipt["durationSeconds"],
+                         "receipt": artifact(root, receipt_path, json_artifact=True)})
+            unit_metrics["audioSeconds"] = receipt["durationSeconds"]
+            accounting.record_workload(stage_name, unit_metrics)
     return rows
 
 
@@ -738,24 +755,35 @@ def render(paths: dict[str, Path], checkpoint_map_path: Path,
            synth_factory: Callable[..., Any] = QwenSynthesizer,
            progress_ledger: Path | None = None) -> dict[str, Any]:
     if path_map_path is not None:
-        materialize_path_map(paths["job"], path_map_path)
-    context = checked_context(paths, checkpoint_map_path, operation_policies_path)
+        with accounting.stage("layer3.materialize_inputs"):
+            materialize_path_map(paths["job"], path_map_path)
+    with accounting.stage("layer3.validate_inputs"):
+        context = checked_context(paths, checkpoint_map_path, operation_policies_path)
     instructions_by_group = unit_instructions(context["job"], unit_instructions_path)
     root = paths["job"].parent.resolve()
-    locale = context["job"]["targetLocale"]
-    step_id = f"L3-02@{locale}"
-    with measure.producer_step(progress_ledger, step_id, locale=locale) as metrics:
-        metrics["speechUnits"] = len(context["job"].get("units") or [])
-        if measure.configured_ledger(progress_ledger) is not None:
-            accounting.record_workload(measure.stage_name(step_id), {
-                "speechUnits": metrics["speechUnits"], "countStatus": "current_execution"})
+    with accounting.stage("layer3.render_units"):
         rows = render_units(context, paths, root, checkpoint_map_path, seed=seed,
                             device=device, dtype=dtype, attention=attention, instruct=instruct,
                             instructions_by_group=instructions_by_group,
                             reuse_from=reuse_from,
                             speculative_from=speculative_from,
                             synth_factory=synth_factory)
+    with accounting.stage("layer3.assemble"):
         return assemble(context, paths, root, rows, policy=policy, track_format=track_format)
+
+
+def render_accounted(paths: dict[str, Path], checkpoint_map_path: Path,
+                     operation_policies_path: Path, *, progress_ledger: Path | None = None,
+                     **kwargs: Any) -> dict[str, Any]:
+    locale = package.read_object(paths["job"])["targetLocale"]
+    with measure.producer_step(progress_ledger, f"L3-02@{locale}", locale=locale) as metrics:
+        metrics["speechUnits"] = len(package.read_object(paths["job"]).get("units") or [])
+        with accounting.accounting_session(paths["job"].parent / "accounting",
+                                           "layer3_formal_render",
+                                           evidence_directory=paths["job"].parent):
+            result = render(paths, checkpoint_map_path, operation_policies_path, **kwargs)
+        metrics["doneUnits"] = len(result["units"])
+    return result
 
 
 def main() -> None:
@@ -790,7 +818,7 @@ def main() -> None:
     parser.add_argument("--speculative-from", type=Path,
                         help="Preview-only unit audio; formal human and rights gates still run first")
     parser.add_argument("--progress-ledger", type=Path,
-                        help="Record checkpoint and audio substage timing in the four-layer ledger")
+                        help="Bind render and per-unit timing to this week's four-layer ledger")
     args = parser.parse_args()
     paths = {name: getattr(args, name) for name in ("source", "anchor", "candidate",
                                                    "job", "adapter", "policy", "human_receipt",
@@ -805,14 +833,15 @@ def main() -> None:
     policy = {"reactionLagSeconds": args.reaction_lag_seconds,
               "interUtteranceGapSeconds": args.inter_utterance_gap_seconds,
               "maxEndLagSeconds": args.max_end_lag_seconds}
-    result = render(paths, args.checkpoint_map, args.audio_operation_policies,
-                    path_map_path=args.path_map, reuse_from=args.reuse_from,
-                    speculative_from=args.speculative_from,
-                    seed=args.seed, device=args.device,
-                    dtype=args.dtype, attention=args.attention, instruct=args.instruct,
-                    unit_instructions_path=args.unit_instructions,
-                    policy=policy, track_format=args.track_format,
-                    progress_ledger=args.progress_ledger)
+    result = render_accounted(
+        paths, args.checkpoint_map, args.audio_operation_policies,
+        progress_ledger=args.progress_ledger,
+        path_map_path=args.path_map, reuse_from=args.reuse_from,
+        speculative_from=args.speculative_from,
+        seed=args.seed, device=args.device,
+        dtype=args.dtype, attention=args.attention, instruct=args.instruct,
+        unit_instructions_path=args.unit_instructions,
+        policy=policy, track_format=args.track_format)
     print(json.dumps({"status": "candidate", "targetLocale": result["targetLocale"],
                       "renderManifest": str((paths["job"].parent / "render-manifest.json").resolve()),
                       "machineScreening": "not_run", "humanListeningReview": "pending"},

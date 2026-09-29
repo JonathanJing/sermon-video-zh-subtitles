@@ -590,7 +590,8 @@ def _summarize_locked(directory):
     sdk_calls = {}
     token_fields = ("inputTokens", "outputTokens", "cachedInputTokens", "cacheWriteTokens", "reasoningTokens")
     started_spans = {e["spanId"]: e for e in events if e["event"] == "stage_started"}
-    ended_spans = {e["spanId"] for e in events if e["event"] == "stage_finished"}
+    finished_spans = {e["spanId"]: e for e in events if e["event"] == "stage_finished"}
+    ended_spans = set(finished_spans)
     for event in events:
         rid = event["runId"]
         run = runs.setdefault(rid, {"runId": rid, "status": "interrupted_or_running"})
@@ -712,6 +713,21 @@ def _summarize_locked(directory):
                         "Known USD is an API list-price estimate, not an invoice or complete project cost.",
                         "Local compute, storage, network and in-conversation Codex costs are not allocated.",
                         "Missing usage/cost remains unknown; caches do not re-bill old responses."]}
+    # One row per attempt, including a killed process with no finish event. The
+    # grouped stages.csv intentionally remains an aggregate for old consumers.
+    attempts = []
+    for span_id, start in started_spans.items():
+        finish = finished_spans.get(span_id)
+        attempts.append({"runId": start["runId"], "workflowId": start.get("workflowId"),
+                         "stage": start["stage"], "spanId": span_id,
+                         "parentSpanId": start.get("parentSpanId"),
+                         "startedAt": start["startedAt"],
+                         "finishedAt": finish["recordedAt"] if finish else None,
+                         "status": finish["status"] if finish else "interrupted_or_running",
+                         "elapsedSeconds": finish["elapsedSeconds"] if finish else None,
+                         "cacheHit": finish["cacheHit"] if finish else start.get("cacheHit"),
+                         "billing": finish["billing"] if finish else start.get("billing")})
+    result["stageAttempts"] = attempts
     temp = directory / (".summary-" + uuid.uuid4().hex + ".json")
     with open(temp, "w", opener=_private_open) as stream:
         stream.write(json.dumps(result, ensure_ascii=False, indent=2) + "\n")
@@ -722,6 +738,13 @@ def _summarize_locked(directory):
             writer = csv.DictWriter(stream, fieldnames=list(result["stages"][0]))
             writer.writeheader(); writer.writerows(result["stages"])
     csv_temp.replace(directory / "stages.csv")
+    attempts_temp = directory / (".stage-attempts-" + uuid.uuid4().hex + ".csv")
+    with open(attempts_temp, "w", newline="", encoding="utf-8-sig", opener=_private_open) as stream:
+        writer = csv.DictWriter(stream, fieldnames=("runId", "workflowId", "stage", "spanId",
+            "parentSpanId", "startedAt", "finishedAt", "status", "elapsedSeconds",
+            "cacheHit", "billing"))
+        writer.writeheader(); writer.writerows(attempts)
+    attempts_temp.replace(directory / "stage-attempts.csv")
     log_temp = directory / (".operations-" + uuid.uuid4().hex + ".log")
     with open(log_temp, "w", opener=_private_open) as stream:
         for event in events:

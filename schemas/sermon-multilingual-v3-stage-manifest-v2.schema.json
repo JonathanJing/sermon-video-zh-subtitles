@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-multilingual-v3-stage-manifest-v2.schema.json",
+  "title": "Production three-locale full-video weekly stage manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "profile", "pageId", "files"],
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-multilingual-v3-stage-manifest-v2"
+    },
+    "profile": {
+      "const": "three_locale_full_video_v1"
+    },
+    "pageId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "files": {
+      "type": "array",
+      "minItems": 21,
+      "maxItems": 21,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "pattern": "^/[^/].*"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        }
+      }
+    }
+  }
+}

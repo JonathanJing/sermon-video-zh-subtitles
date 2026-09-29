@@ -47,7 +47,10 @@ function renderRunList() {
   select.replaceChildren(...runs.map((run) => {
     const option = document.createElement('option');
     option.value = run.pageId;
-    option.textContent = `${run.serviceDate || tr('未登记日期', 'Date not recorded')} · ${run.pageId}`;
+    const weekDate = /^\d{4}-\d{2}-\d{2}/.exec(run.pageId)?.[0] || run.serviceDate;
+    const sourceDate = run.serviceDate && run.serviceDate !== weekDate
+      ? tr(` · 来源日期 ${run.serviceDate}`, ` · source date ${run.serviceDate}`) : '';
+    option.textContent = `${weekDate || tr('未登记日期', 'Date not recorded')} · ${run.pageId}${sourceDate}`;
     return option;
   }));
   const next = runs.some((run) => run.pageId === previous) ? previous : runs[0]?.pageId;

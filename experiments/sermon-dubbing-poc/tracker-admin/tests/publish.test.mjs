@@ -67,6 +67,34 @@ test('substage progress labels audio work as units and translation work as group
   assert.equal(substageProgressLabel('independent_review', 14, 42, 'en'), '14/42 groups');
 });
 
+test('relative timeline projection keeps safe spans and strips private evidence', () => {
+  const base = { schemaVersion: 'sermon-public-tracker-snapshot-v2', pageId: 'week-2026-09-27',
+    target: 'dev', locales: [], source: {}, progress: {}, readOnly: true,
+    steps: [{ id: 'L2-02@ko', layer: 2, locale: 'ko', status: 'complete' }] };
+  assert.equal(validateSnapshot(base).timeline, null);
+  const input = { ...base, timeline: {
+    schemaVersion: 'sermon-tracker-relative-timeline-v1', axis: 'seconds_since_first_recorded_event',
+    durationSeconds: 120, privateStart: '2026-09-27T10:00:00Z', coverage: { measuredSteps: 1 },
+    rows: [{ id: 'L2-02@ko', sourceUrl: 'https://private.example/',
+      intervals: [{ startSeconds: 0, endSeconds: 60, kind: 'waiting_review', stage: 'private-stage' },
+        { startSeconds: -1, endSeconds: 100, kind: 'blocked' }],
+      attempts: [{ startSeconds: 60, endSeconds: 75, kind: 'measured', privatePath: '/private' }],
+      substeps: [{ code: 'reviewer', dependsOn: ['translator', 'secret'], observedCount: 1,
+        longestSeconds: 15, attempts: [{ startSeconds: 60, endSeconds: 75, kind: 'measured' }],
+        modelPrompt: 'private-prompt' }, { code: 'secret', observedCount: 1 }] },
+    { id: 'private-step', intervals: [{ startSeconds: 0, endSeconds: 10, kind: 'blocked' }] }],
+  } };
+  const publicData = validateSnapshot(input).timeline;
+  assert.equal(publicData.rows.length, 1);
+  assert.equal(publicData.rows[0].intervals.length, 1);
+  assert.deepEqual(publicData.rows[0].substeps[0].dependsOn, ['translator']);
+  assert.equal(publicData.coverage.measuredSubsteps, 1);
+  for (const secret of ['2026-09-27T10:00:00Z', 'private.example', 'private-stage',
+    '/private', 'private-prompt', 'private-step', 'secret']) {
+    assert.equal(JSON.stringify(publicData).includes(secret), false, secret);
+  }
+});
+
 test('withdrawn delivery survives the public projection', () => {
   const snapshot = { schemaVersion: 'sermon-public-tracker-snapshot-v1',
     pageId: 'week-2026-09-20', target: 'dev', locales: [{ locale: 'ko', delivery: {

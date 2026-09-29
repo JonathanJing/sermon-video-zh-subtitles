@@ -54,6 +54,8 @@ func publishedDualScriptCatalogLoadsAllLocalesAndAudio() async throws {
     for locale in ["zh-Hans", "ko", "es"] {
         let release = try await repository.loadRelease(page: page, locale: locale)
         #expect(release.schemaVersion == TargetLanguageReleasePackage.dualScriptSchemaVersion)
+        #expect(release.status == "published_http_verified")
+        #expect(release.audioStatus == "human_reviewed")
         let html = try await repository.loadPage(for: release)
         #expect(html.html.contains("<body"))
     }

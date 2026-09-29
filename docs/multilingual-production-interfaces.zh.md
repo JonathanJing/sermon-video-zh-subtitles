@@ -1,6 +1,6 @@
 # 多语言生产四层接口
 
-状态：本文是今后所有预制多语言生产的规范合同。四个层间接口名称和 JSON Schema 已冻结为 v1；Layer 1 已有确定性生成器和独立机器裁判，机器裁判不授予生产翻译资格。2026-09-20 的 2:58 三语样片已有正式 Layer 1–4 包、全文人工审核和 Dev HTTP 收据；当前周更整篇与 Production 尚未通过。可用代码路径及缺口见[合并 main 前检查](multilingual-production-premerge-2026-09-23.zh.md)。
+状态：本文是今后所有预制多语言生产的规范合同。四层名称保持不变；版本号按各接口演进，不能把 v1 Schema 当作 Production 周更的现行格式。2026-09-27 整篇已在 Production 使用 v3 catalog 与逐语言 v2 Release Package，并有 HTTP 收据；客户端和现场验收分别记录。可复用的 v3 周更组装／部署工具仍待完成，不能把本周的一次性 staging 当作自动化发布器。
 
 现有双 PDF、中文配音和 `weekly.json` 发布工具在迁移期间作为 legacy adapter 保留。它们可以完成各自明确 scope，但只有四个正式包及其门禁均有证据时，才可报告 `workflowScope=four_layer_release`。周日实时字幕属于独立 `live_session`，不在现场强制生成这些预制包；若会后复用录音，应从 Layer 1 开始。
 
@@ -13,7 +13,7 @@
 | Layer 1 | 共享英文事实与锚点 | Shared English Source & Anchors | `English Source Package` / `sermon-english-source-package-v1` |
 | Layer 2 | 目标语言文字 | Target-Language Text | `Target-Language Candidate` / `sermon-target-language-candidate-v2` |
 | Layer 3 | 目标语言音频与同步 | Target-Language Audio & Synchronization | `Target-Language Audio Package` / `sermon-target-language-audio-package-v1` |
-| Layer 4 | 多语言发布与播放 | Multilingual Delivery & Playback | `Target-Language Release Package` / `sermon-target-language-release-package-v1` |
+| Layer 4 | 多语言发布与播放 | Multilingual Delivery & Playback | 每个 `pageId + targetLocale` 一个 `Target-Language Release Package`；Production 周更使用 `sermon-target-language-release-package-v2` |
 
 `targetLocale` 一律使用 BCP 47：英文事实源为 `en`，简体中文内容为 `zh-Hans`，韩语为 `ko`，西班牙语为 `es`，越南语为 `vi`。现有 Web 界面使用的 `zh-CN` 是 legacy interface-locale adapter，不得写入新的内容、音频或发布包。
 
@@ -33,7 +33,7 @@ Target-Language Candidate + Target-Language Audio Package
   └─────────────────────────────> Target-Language Release Package
 ```
 
-流程图可将各语言 Layer 2–3 分支汇入一个 Layer 4 发布阶段，便于显示同一次多语言发布的等待与整体进度。这是调度与界面上的汇合，**不是**合并正式输出：Layer 4 仍为每个 `pageId + targetLocale` 生成独立 Release Package，并逐语言记录 HTTP、设备与现场结果。是否等待全部语言由该次发布计划决定；本次三语 Dev 发布明确要求三条正式音轨齐全。
+流程图可将各语言 Layer 2–3 分支汇入一个 Layer 4 发布阶段，便于显示同一次多语言发布的等待与整体进度。这是调度与界面上的汇合，**不是**合并正式输出：Layer 4 仍为每个 `pageId + targetLocale` 生成独立 Release Package，并逐语言记录 HTTP、设备与现场结果。是否等待全部语言由该次发布计划决定；不能把某次片段或周次的发布计划永久套用到以后每周。
 
 - Layer 1 的 `downstreamInvalidationKey` 改变时，所有目标语言文字、音频和发布审核失效。
 - Layer 2 的 `downstreamInvalidationKey` 改变时，只使同一 `targetLocale` 的音频和发布失效，不影响其他语言。
@@ -47,7 +47,7 @@ Target-Language Candidate + Target-Language Audio Package
 1. **Layer 1 一轮来源审核**：确定窗口，并确认英文完整性、词时间、句界和停顿；窗口批准与英文审核仍分别保存原有收据。来源或锚点变化才重审受影响范围。
 2. **Layer 2 每个 locale 一次全文文字审核**：审核最终候选及经文、术语、否定、数字；页面显示文案准备好时在同一轮展示，仍保存独立的页面字段批准记录。可用 `review_target_language_candidate.py approve-batch` 将审核者明确的全文决定展开为原有逐组收据；有疑点时先按组修订并重新生成候选，不使用批量批准。经文边界、机器初译、独立复核和页面文案不另设重复的聊天批准问题。
 3. **Layer 3 每个 locale 一次正式整轨听审**：听完 1 倍速音轨并对照视频检查同步，同时裁决 ASR 标出的组；三语可在同一轮分别给出决定，收据仍按 locale 保存。已登记且授权范围、checkpoint、adapter 与 locale 能力均未变化的音色，不每周重做短样／长句能力听审；首次扩展到新语言、模型或用途时仍需能力证据。文字变动只重做该语言的音轨和听审。
-4. **Layer 4 不重复内容审核**：三语资产和页面字段均与已审 hash 一致后，自动预检目标站点、发布清单、文件和 HTTP。已有明确发布授权时直接执行相应 Dev 发布；Production 按其独立授权和发布窗口执行。新三语周更仍按本次约定等待三条正式音轨齐全。
+4. **Layer 4 不重复内容审核**：本次发布计划中的各语言资产和页面字段均与已审 hash 一致后，自动预检目标站点、发布清单、文件和 HTTP。已有明确发布授权时直接执行对应环境发布；受影响的内容或绑定发生变化才重审。音频或纯文字交付遵守该周已经批准的计划及客户端能力，不追加无关审批。
 
 这里的“批量”只减少填写动作，不把模型结果升级为人工批准，也不允许跳过完整阅读、完整听播、ASR 疑点裁决或来源失效检查。设备与现场验收仍单列。
 
@@ -62,7 +62,7 @@ Target-Language Candidate + Target-Language Audio Package
 | 某 locale 的 Layer 3 整轨听审 | 其他 locale 的 Layer 3；本 locale 解码、ASR 筛查、排程及供听审的候选音轨 | 带正式音频的 Release Package 需 `human_reviewed` Audio Package 和全文／同步收据 |
 | Layer 4 发布后设备／现场验收 | HTTP 核验完成后独立安排设备及现场检查 | HTTP、设备、现场状态分别记录，不互相推断 |
 
-调度以 `sourceHash + targetLocale + policyHash + candidateHash` 为任务身份。某语言的审核未回只挂起该语言的后继正式任务，不阻塞其他语言；Layer 1 身份变化使所有语言失效，Layer 2/3 变化只使本语言下游失效。本项目本次三语 Dev 发布在 Layer 4 汇合：中、韩、西三条正式音轨都通过后才更新公开页面；合同允许 `audio_unavailable` 的文字页，但不能用来绕开这次明确的三语音轨要求。
+调度以 `sourceHash + targetLocale + policyHash + candidateHash` 为任务身份。某语言的审核未回只挂起该语言的后继正式任务，不阻塞其他语言；Layer 1 身份变化使所有语言失效，Layer 2/3 变化只使本语言下游失效。合同允许显式 `audio_unavailable` 的文字页，但现有 Production Web 桥接只支持 `zh-Hans`、`ko`、`es` 且要求正式音轨；纯文字页或新语言须先有两端客户端兼容证据，不能只改目录宣称可用。
 
 以上是**目前的整包门禁**，尚未实现“同一语言内某段已审即可独立进入下一层”。单段待改仍会挡住本 locale 的正式 speech job。第一阶段代码加入段级人审收据及旧音频单元的显式哈希复用，但正式聚合仍要求全部段获批，新整轨仍需完整排程与听审；见[四层内解耦设计与当前边界](multilingual-intralayer-review-decoupling.zh.md)。
 
@@ -109,16 +109,25 @@ Target-Language Candidate + Target-Language Audio Package
 
 ## Layer 4：多语言发布与播放
 
-输入：目标语言文字包，以及同 locale 的音频包（可以为 `audio_unavailable`）；页面来源身份和显式发布文件清单。
+输入：已批准的目标语言文字包、同 locale 的音频包（发布计划允许时可为 `audio_unavailable`）、经批准的口播文字身份、页面元数据批准、来源身份及显式发布文件清单。若未另写短稿，口播文字身份仍指向批准的全文候选；Layer 4 不修改文字、音轨或上游审核状态。
 
-处理：按 `pageId + targetLocale` 聚合，分别记录 `interfaceLocale`、`contentLocale` 和 `audioLocale`，构建 allowlist，验证文件 hash、HTTP、Range 和客户端播放。
+处理：按 `pageId + targetLocale` 聚合、检查上游 hash／审核收据并构建 allowlist。`interfaceLocale` 是用户客户端偏好，不由发布包替用户切换；`contentLocale` 与 `audioLocale` 分别对应实际文字和音轨，不静默借用另一语言。新周次在当前正式站完整快照上**只追加**页面和资产，保留 legacy `weekly.json`、旧 catalog、历史页面、反馈功能和仍被引用的文件；同 page ID 的来源身份变动须新建 ID。先上传内容、音频、字幕、英文对照、定位索引及逐语言 Release，最后更新唯一可变入口 `/multilingual-v3.json`。发布前后对照 catalog 与文件清单，拒绝意外删除、覆盖旧 hash 或回退到 v1/v2 目录。
 
-输出 schema：[Target-Language Release Package v1](../schemas/sermon-target-language-release-package-v1.schema.json)。schema 中可空的音频包 hash 只用于迁移期 legacy 兼容；新的四层生产须绑定 Layer 3 包。完整阅读稿与已审短口播稿并存时，使用[双稿 Release Package v2](../schemas/sermon-target-language-release-package-v2.schema.json)和独立[新 App 目录 v3](../schemas/sermon-multilingual-catalog-v3.schema.json)，两份候选分别绑定各自 hash，详见[本周 App 发布路径](sep27-full-video-app-layer4.zh.md)。HTTP 通过、设备通过和现场通过是三个独立状态。
+输出：每种语言一个 [Target-Language Release Package v2](../schemas/sermon-target-language-release-package-v2.schema.json)，再汇总成 [Multilingual Catalog v3](../schemas/sermon-multilingual-catalog-v3.schema.json)。v2 包必须绑定 Layer 2 全文、已批准口播稿和 Layer 3 Audio Package 的 hash；实际资产也须匹配。v1 Release 与 v2 Catalog 继续供历史／Dev 读取，不可覆盖到正式 v3 路径。公开包不得复制含本机绝对路径、凭据或私有收据的上游原件。
+
+已发行的 Hosting 视频周次沿用 [`three_locale_full_video_v1` 文件数合同](tongxing-weekly-release.zh.md#正式三语周更文件数合同)：21 个新周 Hosting 资源加 1 个 catalog 更新。新的 `three_locale_bucket_video_v2` 合同为 20 个新周 Hosting 资源、1 个 catalog 更新及 1 个 Cloud Storage 视频对象；两种配置不能混报文件数。bucket 视频对客户端保留同源 `/pages/<pageId>/full-video-browser.mp4`，Hosting 以精确 302 指向不可变对象，catalog 的可选 `videoDelivery` 记录对象身份与哈希。Dev、Production 对象及凭据分离；完整上线顺序、回退与 Web／iOS 验收见每周发行合同。其他语言或纯文字发行仍需独立版本化配置。
+
+### 每周 App 内容合同与刷新门槛
+
+1. v3 catalog 的 `defaultPageId` 指向本周 `pages[].id`；本周页 `title` 使用默认内容语言已批准的「系列名 · 本篇标题」，并与该语言 `content/<pageId>/<locale>.json` 的 `series`、`title` 一致。每个 target 的 `releasePackageUrl` 固定为同源 `/releases-v2/<pageId>/<locale>.json`，其 SHA 指向不可变 v2 包。页面、内容、字幕、音轨和完整原视频均为本周同一来源；页面须在 App 内打开，独立 HTML URL 只能是兼容入口，不能代替 App 的本周页。
+2. 目录只声明真实可用的语言和能力。正式音轨需要已听审 Layer 3 与可 Range 读取的同语言音频；全文字幕、英文对照、现场声音定位若列为本周交付，就必须发布各自 sidecar、验证身份绑定与公开 GET。缺少 sidecar 时不能静默把对应功能标为可用。Web 与 iOS 共同支持的现行周更范围是中、韩、西正式音轨；扩展语言／文字版先改客户端并验收。
+3. `/multilingual-v3.json` 必须能在刷新时取到最新版本，明确设置 `Cache-Control: no-store`；逐语言 Release 及资产按路径／hash 校验缓存。客户端读取新目录失败时保留上一次已验证内容，显示刷新失败，不把网络错误说成“未发布”。切换页面不覆盖正在播放的旧周次；刷新后本周页必须在 **Firebase App 内的选页入口**和 **已安装 iOS App 的选页入口**出现，选择后在原 App 内加载本周三语页面，无须每周发新版 IPA 或让用户另开网页。iOS 显式刷新目录、Web 重新加载 App 是当前可执行入口；若要求 Web 内按钮或返回前台自动刷新，须先实现并单独验收。
+4. 发布收据分别记录：完整站点基线与变更差异、catalog 旧／新 hash、逐语言 Release 和每个公开资产的 GET／SHA、MP3 HTTP 206／Range、Web 刷新选页与播放、iOS 同一已安装版本刷新选页与播放、设备验收、现场验收。`published_http_verified` 只表示线上文件通过；客户端与现场未测时各记 `not_run`。回滚只切换已验证的 catalog 指针，保留可恢复的旧资产。
 
 ## 当前实现边界
 
 - Layer 1：确定性锚点和机器裁判代码可运行；无机器裁判且无正式英文人工收据的干净 shadow 输入停在 `waiting_machine_judge`。机器裁判通过只允许 Layer 2 shadow，正式 `ready_for_translation` 仍需英文人工收据。
 - Layer 2：中文 legacy runner 可工作；`zh-Hans`、`ko`、`es`、`vi` 有同源六句 shadow 候选及机器复核。通用模型执行器、语言插件和候选准入器已实现，新生产策略采用 Astra 初译与 Sol 逐组独立复核；每次正式运行仍需就绪的来源、冻结 policy、逐组机器证据及独立人工批准，代码可运行不等于整篇生产验收。
-- Layer 3：中文 legacy TTS／同步可工作；9 月 20 日样片的中、韩、西正式 renderer、实测同步、ASR 筛查和 Audio Package producer 已通过对应人工门禁。整篇周更尚未实跑；新的 MP3 输出仅有合成测试，仍需逐语言完整听审及同步批准。
-- Layer 4：Dev 样片已有正式同语言 Release Package、三语发布与 HTTP 收据；Production 的完整旧站点叠加、首页替换、部署前基线和发布后核验已有候选代码及本地模拟器验证。实际 Production 发布、设备／现场验收和周更整篇仍未完成。
+- Layer 3：中文 legacy TTS／同步及三语正式 renderer 可工作；整篇音轨的听审、同步与批准以各周实际收据为准，不由本合同自动继承。
+- Layer 4：2026-09-27 Production 已发布 v3 目录、逐语言 v2 包及整篇三语资产并通过 HTTP／Range 核验。本周 Web 桥接实现仍在忽略的 staging 产物，可复用的 v3 组装／发布／核验脚本尚未入库；已有 iOS 版本可主动刷新 v3 目录，Web 可通过重新加载读取目录，但跨周同版本设备验收仍需单独做。现有 v2／legacy CLI 不能作为 v3 周更成功证据。
 - Canonical English Content 是从英文事实派生的页面内容输入，可以作为 English Source Package 的可选绑定；它不是英文逐字稿，也不能替代 Layer 1 审核。

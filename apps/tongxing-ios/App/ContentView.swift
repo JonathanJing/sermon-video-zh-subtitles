@@ -142,18 +142,16 @@ struct ContentView: View {
                                         .font(.footnote.weight(.medium))
                                         .accessibilityIdentifier("published-audio-locale")
                                 } else if model.selectedContentTarget?.audioStatus == "human_reviewed" {
-                                    Button {
-                                        Task { await model.prepareSelectedPublishedAudio() }
-                                    } label: {
-                                        Label(localization.text("下载并准备本语言音频"), systemImage: "arrow.down.circle")
-                                    }
-                                    .buttonStyle(.borderedProminent)
-                                    .disabled(model.isPreparingPublishedAudio)
-                                    .accessibilityIdentifier("prepare-published-audio")
-                                    if model.isPreparingPublishedAudio { ProgressView() }
                                     if let error = model.publishedAudioError {
                                         Label(localization.text(error), systemImage: "exclamationmark.circle")
                                             .font(.footnote)
+                                        Button(localization.text("重新加载当前音频")) {
+                                            Task { await model.prepareSelectedPublishedAudio() }
+                                        }
+                                        .accessibilityIdentifier("retry-published-audio")
+                                    } else {
+                                        ProgressView(localization.text("正在准备音频…"))
+                                            .accessibilityIdentifier("preparing-published-audio")
                                     }
                                 } else {
                                     Text(localization.text("本语言仅提供文字"))
@@ -1259,7 +1257,7 @@ struct VoiceDemoCatalog: Decodable {
     struct Asset: Decodable {
         let path: String
         let sha256: String
-        let bytes: Int
+        let bytes: Int?
         let text: String
         let transcriptStatus: String?
         let humanListeningStatus: String?
@@ -1272,7 +1270,9 @@ struct VoiceDemoCatalog: Decodable {
 
         func verify(_ data: Data) throws {
             let digest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
-            guard data.count == bytes, digest == sha256 else { throw CocoaError(.fileReadCorruptFile) }
+            guard !data.isEmpty, data.count <= 5_000_000,
+                  bytes.map({ data.count == $0 }) ?? true,
+                  digest == sha256 else { throw CocoaError(.fileReadCorruptFile) }
         }
 
         func verifiedLocalURL(origin: URL, session: URLSession, directory: URL) async throws -> URL {
@@ -1290,7 +1290,9 @@ struct VoiceDemoCatalog: Decodable {
             request.timeoutInterval = 30
             let (data, response) = try await session.data(for: request)
             try Task.checkCancellation()
-            guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw CocoaError(.fileReadUnknown) }
+            guard (response as? HTTPURLResponse)?.statusCode == 200,
+                  response.url?.scheme == "https", response.url?.host == origin.host,
+                  response.url?.port == origin.port else { throw CocoaError(.fileReadUnknown) }
             try verify(data)
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             try data.write(to: file, options: .atomic)
@@ -1319,9 +1321,118 @@ struct VoiceDemoCatalog: Decodable {
     let sampleCount: Int
     let speakers: [Speaker]
 
+    var isProductionMerged: Bool { schemaVersion == "sermon-production-voice-auditions-v1" }
+
     static let relativePath = "voice-demos/2026-09-21-v2/catalog.json"
+    static let productionPath = "voice-demos/2026-09-21-v2/production-ko-es.json"
     private static let prefix = "/voice-demos/2026-09-21-v2/"
     private static let locales: Set<String> = ["zh-Hans", "ko", "es", "vi"]
+
+    private struct PublishedWeekly: Decodable {
+        let schemaVersion: String
+        let voiceBank: VoiceBank
+    }
+    private struct VoiceBank: Decodable { let speakers: [BankSpeaker] }
+    private struct BankSpeaker: Decodable {
+        let id: String
+        let name: String
+        let humanListeningStatus: String
+        let referenceSourceUrl: String
+        let reference: BankTrack
+        let chinese: BankTrack
+    }
+    private struct BankTrack: Decodable {
+        struct Cue: Decodable { let text: String }
+        let audioUrl: String
+        let sha256: String
+        let cues: [Cue]
+        var text: String { cues.map(\.text).joined(separator: " ") }
+    }
+    private struct ProductionAuditions: Decodable {
+        struct Speaker: Decodable {
+            let speakerId: String
+            let displayName: String
+            let samples: [Asset]
+        }
+        let schemaVersion: String
+        let status: String
+        let sourceScope: String
+        let humanListeningStatus: String
+        let speakerCount: Int
+        let sampleCount: Int
+        let speakers: [Speaker]
+    }
+
+    private static func safePath(_ path: String, prefix: String) -> Bool {
+        let allowed = CharacterSet(charactersIn:
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._/")
+        return path.hasPrefix(prefix) && path.hasSuffix(".mp3")
+            && !path.contains("..") && !path.contains("//")
+            && path.unicodeScalars.allSatisfy { allowed.contains($0) }
+    }
+
+    /// The Production web reader combines weekly voiceBank (English/Chinese)
+    /// with the separately published Korean/Spanish auditions. Keep the same
+    /// provenance split while returning one native display model.
+    static func productionMerged(weeklyData: Data, auditionData: Data) throws -> VoiceDemoCatalog {
+        let weekly = try JSONDecoder().decode(PublishedWeekly.self, from: weeklyData)
+        let auditions = try JSONDecoder().decode(ProductionAuditions.self, from: auditionData)
+        guard weekly.schemaVersion == "sermon-weekly-catalog-v1",
+              auditions.schemaVersion == "sermon-production-voice-auditions-v1",
+              auditions.status == "audition_demo",
+              auditions.sourceScope == "voice_capability_audition_not_sermon_translation",
+              auditions.humanListeningStatus == "pending",
+              weekly.voiceBank.speakers.count == 6,
+              auditions.speakerCount == 6, auditions.sampleCount == 12,
+              auditions.speakers.count == 6,
+              Set(weekly.voiceBank.speakers.map(\.id)).count == 6,
+              Set(auditions.speakers.map(\.speakerId)).count == 6 else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        let byID = Dictionary(uniqueKeysWithValues: auditions.speakers.map { ($0.speakerId, $0) })
+        let hex = CharacterSet(charactersIn: "0123456789abcdef")
+        func validHash(_ value: String) -> Bool {
+            value.count == 64 && value.unicodeScalars.allSatisfy { hex.contains($0) }
+        }
+        let speakers = try weekly.voiceBank.speakers.map { bank -> Speaker in
+            guard let audition = byID[bank.id], audition.displayName == bank.name,
+                  bank.humanListeningStatus == "accepted",
+                  URL(string: bank.referenceSourceUrl)?.scheme == "https",
+                  audition.samples.count == 2,
+                  Set(audition.samples.compactMap(\.locale)) == Set(["ko", "es"]),
+                  safePath(bank.reference.audioUrl, prefix: "/media/"),
+                  safePath(bank.chinese.audioUrl, prefix: "/media/"),
+                  validHash(bank.reference.sha256), validHash(bank.chinese.sha256),
+                  !bank.reference.text.isEmpty, !bank.chinese.text.isEmpty else {
+                throw CocoaError(.fileReadCorruptFile)
+            }
+            for sample in audition.samples {
+                guard let locale = sample.locale,
+                      sample.path == "\(prefix)\(bank.id)/\(locale).mp3",
+                      safePath(sample.path, prefix: prefix),
+                      validHash(sample.sha256),
+                      sample.bytes.map({ $0 > 0 && $0 <= 5_000_000 }) == true,
+                      sample.humanListeningStatus == "pending",
+                      !sample.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                    throw CocoaError(.fileReadCorruptFile)
+                }
+            }
+            let original = Asset(path: bank.reference.audioUrl, sha256: bank.reference.sha256,
+                                 bytes: nil, text: bank.reference.text,
+                                 transcriptStatus: "machine_screening_only", humanListeningStatus: nil,
+                                 sourceUrl: bank.referenceSourceUrl, locale: nil)
+            let chinese = Asset(path: bank.chinese.audioUrl, sha256: bank.chinese.sha256,
+                                bytes: nil, text: bank.chinese.text,
+                                transcriptStatus: nil, humanListeningStatus: "accepted",
+                                sourceUrl: nil, locale: "zh-Hans")
+            return Speaker(speakerId: bank.id, displayName: bank.name,
+                           original: original, samples: [chinese] + audition.samples.sorted { $0.locale! < $1.locale! })
+        }
+        return VoiceDemoCatalog(schemaVersion: auditions.schemaVersion, status: auditions.status,
+                                sourceScope: auditions.sourceScope,
+                                humanListeningStatus: auditions.humanListeningStatus,
+                                speakerCount: 6, sampleCount: 18, speakers: speakers)
+    }
 
     static func validated(_ data: Data) throws -> VoiceDemoCatalog {
         let catalog = try JSONDecoder().decode(VoiceDemoCatalog.self, from: data)
@@ -1352,7 +1463,7 @@ struct VoiceDemoCatalog: Decodable {
                       asset.path.unicodeScalars.allSatisfy({ allowed.contains($0) }),
                       asset.sha256.count == 64,
                       asset.sha256.unicodeScalars.allSatisfy({ CharacterSet(charactersIn: "0123456789abcdef").contains($0) }),
-                      asset.bytes > 0, asset.bytes <= 5_000_000,
+                      asset.bytes.map({ $0 > 0 && $0 <= 5_000_000 }) == true,
                       paths.insert(asset.path).inserted else {
                     throw CocoaError(.fileReadCorruptFile)
                 }
@@ -1381,7 +1492,9 @@ private struct VoiceDemoSection: View {
 
     var body: some View {
         DisclosureGroup(isExpanded: $expanded) {
-            Text(localization.text("先听讲员英语原声，再比较四种 AI 样音。示例文稿并非本周证道。"))
+            Text(localization.text(catalog?.isProductionMerged == true
+                ? "先听讲员英语原声，再比较中文、韩语和西班牙语 AI 样音。示例文稿并非本周证道。"
+                : "先听讲员英语原声，再比较四种 AI 样音。示例文稿并非本周证道。"))
                 .font(.footnote).foregroundStyle(.secondary)
             if loading { ProgressView(localization.text("正在读取试听资料…")) }
             if unavailable {
@@ -1412,7 +1525,9 @@ private struct VoiceDemoSection: View {
                                 sourceText(sample.text, language: sample.locale ?? "en").font(.footnote)
                             }
                         }
-                        Text(localization.text("样音待人工听审，不代表正式证道音轨。"))
+                        Text(localization.text(catalog.isProductionMerged
+                            ? "韩语、西班牙语样音待人工听审；试听并非本周证道音轨。"
+                            : "样音待人工听审，不代表正式证道音轨。"))
                             .font(.footnote).foregroundStyle(.secondary)
                     } label: {
                         Text(speaker.displayName)
@@ -1435,6 +1550,8 @@ private struct VoiceDemoSection: View {
                 model.playback.clear()
                 if let week = model.selectedWeek {
                     Task { await model.select(week: week, track: model.selectedTrack, force: true) }
+                } else {
+                    model.restorePublishedAudioAfterPreview()
                 }
             }
         }
@@ -1477,22 +1594,39 @@ private struct VoiceDemoSection: View {
     }
 
     @MainActor private func load() async {
-        guard !loading, let url = URL(string: VoiceDemoCatalog.relativePath,
-                                     relativeTo: model.mediaOrigin)?.absoluteURL,
-              url.scheme == "https", url.host == model.mediaOrigin.host else { return }
+        guard !loading else { return }
         loading = true
         unavailable = false
         defer { loading = false }
         do {
-            var request = URLRequest(url: url)
-            request.cachePolicy = .reloadIgnoringLocalCacheData
-            request.timeoutInterval = 15
-            let (data, response) = try await model.mediaSession.data(for: request)
-            guard (response as? HTTPURLResponse)?.statusCode == 200,
-                  data.count < 200_000 else { throw CocoaError(.fileReadCorruptFile) }
-            catalog = try VoiceDemoCatalog.validated(data)
+            if model.mediaOrigin.host == AppModel.productionContentOrigin.host {
+                let weekly = try await fetchCatalog("weekly.json")
+                let auditions = try await fetchCatalog(VoiceDemoCatalog.productionPath)
+                catalog = try VoiceDemoCatalog.productionMerged(weeklyData: weekly, auditionData: auditions)
+            } else {
+                catalog = try VoiceDemoCatalog.validated(
+                    await fetchCatalog(VoiceDemoCatalog.relativePath))
+            }
         } catch {
             unavailable = true
         }
+    }
+
+    private func fetchCatalog(_ path: String) async throws -> Data {
+        guard let url = URL(string: path, relativeTo: model.mediaOrigin)?.absoluteURL,
+              url.scheme == "https", url.host == model.mediaOrigin.host,
+              url.port == model.mediaOrigin.port, url.user == nil,
+              url.password == nil, url.query == nil, url.fragment == nil else {
+            throw CocoaError(.fileReadNoPermission)
+        }
+        var request = URLRequest(url: url)
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        request.timeoutInterval = 15
+        let (data, response) = try await model.mediaSession.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200,
+              response.url?.scheme == "https", response.url?.host == model.mediaOrigin.host,
+              response.url?.port == model.mediaOrigin.port,
+              !data.isEmpty, data.count < 2_000_000 else { throw CocoaError(.fileReadCorruptFile) }
+        return data
     }
 }

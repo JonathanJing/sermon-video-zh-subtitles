@@ -6,6 +6,8 @@
 
 ## 配置与部署
 
+Tracker 内的时间线按首次有记录的事件计算**相对秒数**，只发布已登记步骤、预定义细分代码、状态跨度与同账本身份的执行跨度。原始日志、绝对起点、模型阶段名和本机路径均不发布。图表按层筛选、展开细分步骤，并分别列出最长状态区间和最长实测执行；没有起止计时的细分项明确显示“未计时”。旧快照没有时间线时显示缺数据提示。生成和筛选时间线不会推进任何正式检查点。
+
 1. 在目标 Firebase 项目中新建**专用** Firestore 命名数据库 `sermon-tracker` 和独立 Hosting 站点。不要把本目录的规则部署到现有反馈数据库；规则部署会覆盖目标数据库现有规则。参见 Firebase 的[多站点 Hosting](https://firebase.google.com/docs/hosting/multisites)和[规则部署说明](https://firebase.google.com/docs/rules/manage-deploy)。
 2. 复制 `public/tracker-config.example.json` 为被忽略的 `public/tracker-config.json`，填写 Firebase Web App 的**公开**配置与数据库 ID。不要放管理员令牌、服务账号密钥或其他凭据。
 3. 安装依赖、运行测试并构建。为新站点绑定 Hosting target `sermonTrackerAdmin`，再把规则及静态页部署到**指定**的数据库和站点。先检查目标项目／target 绑定。
