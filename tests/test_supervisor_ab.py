@@ -91,6 +91,17 @@ class SupervisorABTests(unittest.TestCase):
                                          "items": [{"requestId": "req_1"}]}),
                          ["req_1", "req_2"])
 
+    def test_live_trace_recovers_function_names_from_items(self):
+        directory = self.root / "session"
+        receipts = directory / "tool-results"
+        receipts.mkdir(parents=True)
+        (receipts / "a.json").write_text(json.dumps({"call_id": "call_1",
+            "output": {"status": "recorded"}, "error": None}), encoding="utf-8")
+        trace = ab.live_tool_trace({"items": [{"type": "function_call",
+            "call_id": "call_1", "name": "submit_supervisor_decision"}]}, directory)
+        self.assertEqual(trace, [{"name": "submit_supervisor_decision",
+                                  "output": {"status": "recorded"}, "error": None}])
+
 
 if __name__ == "__main__":
     unittest.main()
