@@ -1,5 +1,7 @@
 # 讲章 Layer 2 提示词与模型小样本 A/B（2026-09-28）
 
+后续 24 条 A/C 扩样、双机器裁判及反向呈现复判见 [第二轮报告](round2.zh.md)。第二轮未确立质量赢家，也未改变正式策略。
+
 ## 结论范围
 
 这是 **zh-Hans 单组初译与独立复核的诊断试验**，不是正式 Layer 2 策略、人工批准、整篇质量或发布验收。没有修改生产 prompt、模型路由、policy、候选或收据。现行正式策略仍要求 Astra 初译、Sol 独立复核及来源绑定的冻结 v2 policy；仓库中的 `config/target-language-policies/zh-Hans.json` 只是待完成模板。
