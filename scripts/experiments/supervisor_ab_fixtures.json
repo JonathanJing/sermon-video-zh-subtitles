@@ -1,0 +1,423 @@
+[
+  {
+    "id": "complete-gates",
+    "snapshot": {
+      "recommendedAction": {
+        "action": "complete",
+        "humanActionRequired": false
+      },
+      "source": {
+        "present": true
+      },
+      "timeline": {
+        "present": true
+      },
+      "windowApproval": {
+        "valid": true
+      },
+      "generation": {
+        "status": "completed",
+        "publication": {
+          "status": "pass"
+        }
+      },
+      "quality": {
+        "readingEdition": {
+          "status": "pass"
+        },
+        "readingPdf": {
+          "status": "pass"
+        },
+        "sermonInterpretationPdf": {
+          "status": "pass"
+        }
+      }
+    },
+    "script": [
+      {
+        "name": "inspect_production_state",
+        "arguments": {}
+      },
+      {
+        "name": "submit_supervisor_decision",
+        "arguments": {
+          "status": "complete",
+          "action": "complete",
+          "summary_zh": "合成状态回放",
+          "human_action_required": false,
+          "evidence": []
+        }
+      }
+    ]
+  },
+  {
+    "id": "missing-source",
+    "snapshot": {
+      "recommendedAction": {
+        "action": "wait_for_source",
+        "humanActionRequired": false
+      }
+    },
+    "script": [
+      {
+        "name": "inspect_production_state",
+        "arguments": {}
+      },
+      {
+        "name": "submit_supervisor_decision",
+        "arguments": {
+          "status": "observed",
+          "action": "wait_for_source",
+          "summary_zh": "合成状态回放",
+          "human_action_required": false,
+          "evidence": []
+        }
+      }
+    ]
+  },
+  {
+    "id": "matching-sunday",
+    "snapshot": {
+      "recommendedAction": {
+        "action": "waiting_for_matching_sunday",
+        "humanActionRequired": false
+      },
+      "source": {
+        "present": true
+      }
+    },
+    "script": [
+      {
+        "name": "inspect_production_state",
+        "arguments": {}
+      },
+      {
+        "name": "submit_supervisor_decision",
+        "arguments": {
+          "status": "observed",
+          "action": "waiting_for_matching_sunday",
+          "summary_zh": "合成状态回放",
+          "human_action_required": false,
+          "evidence": []
+        }
+      }
+    ]
+  },
+  {
+    "id": "approval-required",
+    "snapshot": {
+      "recommendedAction": {
+        "action": "request_window_approval",
+        "humanActionRequired": true
+      },
+      "source": {
+        "present": true
+      },
+      "timeline": {
+        "present": true
+      },
+      "windowApproval": {
+        "valid": false
+      }
+    },
+    "script": [
+      {
+        "name": "inspect_production_state",
+        "arguments": {}
+      },
+      {
+        "name": "submit_supervisor_decision",
+        "arguments": {
+          "status": "blocked",
+          "action": "request_window_approval",
+          "summary_zh": "合成状态回放",
+          "human_action_required": true,
+          "evidence": []
+        }
+      }
+    ]
+  },
+  {
+    "id": "timeline-running",
+    "snapshot": {
+      "recommendedAction": {
+        "action": "wait_for_active_run",
+        "humanActionRequired": false
+      },
+      "source": {
+        "present": true
+      },
+      "activeLeases": {
+        "timeline": true
+      }
+    },
+    "script": [
+      {
+        "name": "inspect_production_state",
+        "arguments": {}
+      },
+      {
+        "name": "submit_supervisor_decision",
+        "arguments": {
+          "status": "observed",
+          "action": "wait_for_active_run",
+          "summary_zh": "合成状态回放",
+          "human_action_required": false,
+          "evidence": []
+        }
+      }
+    ]
+  },
+  {
+    "id": "timeline-ready-shadow",
+    "snapshot": {
+      "recommendedAction": {
+        "action": "run_timeline_probe",
+        "humanActionRequired": false
+      },
+      "source": {
+        "present": true
+      }
+    },
+    "script": [
+      {
+        "name": "inspect_production_state",
+        "arguments": {}
+      },
+      {
+        "name": "submit_supervisor_decision",
+        "arguments": {
+          "status": "observed",
+          "action": "run_timeline_probe",
+          "summary_zh": "合成状态回放",
+          "human_action_required": false,
+          "evidence": []
+        }
+      }
+    ]
+  },
+  {
+    "id": "pdf-ready-shadow",
+    "snapshot": {
+      "recommendedAction": {
+        "action": "run_reading_pdf_generation",
+        "humanActionRequired": false
+      },
+      "source": {
+        "present": true
+      },
+      "timeline": {
+        "present": true
+      },
+      "windowApproval": {
+        "valid": true
+      }
+    },
+    "script": [
+      {
+        "name": "inspect_production_state",
+        "arguments": {}
+      },
+      {
+        "name": "submit_supervisor_decision",
+        "arguments": {
+          "status": "observed",
+          "action": "run_reading_pdf_generation",
+          "summary_zh": "合成状态回放",
+          "human_action_required": false,
+          "evidence": []
+        }
+      }
+    ]
+  },
+  {
+    "id": "quality-needs-review",
+    "snapshot": {
+      "recommendedAction": {
+        "action": "review_quality_failure",
+        "humanActionRequired": true
+      },
+      "source": {
+        "present": true
+      },
+      "timeline": {
+        "present": true
+      },
+      "windowApproval": {
+        "valid": true
+      },
+      "generation": {
+        "status": "completed"
+      },
+      "quality": {
+        "readingEdition": {
+          "status": "fail"
+        }
+      }
+    },
+    "script": [
+      {
+        "name": "inspect_production_state",
+        "arguments": {}
+      },
+      {
+        "name": "submit_supervisor_decision",
+        "arguments": {
+          "status": "blocked",
+          "action": "review_quality_failure",
+          "summary_zh": "合成状态回放",
+          "human_action_required": true,
+          "evidence": []
+        }
+      }
+    ]
+  },
+  {
+    "id": "generation-failed",
+    "snapshot": {
+      "recommendedAction": {
+        "action": "inspect_generation_failure",
+        "humanActionRequired": true
+      },
+      "source": {
+        "present": true
+      },
+      "timeline": {
+        "present": true
+      },
+      "windowApproval": {
+        "valid": true
+      },
+      "generation": {
+        "status": "failed"
+      }
+    },
+    "script": [
+      {
+        "name": "inspect_production_state",
+        "arguments": {}
+      },
+      {
+        "name": "submit_supervisor_decision",
+        "arguments": {
+          "status": "blocked",
+          "action": "inspect_generation_failure",
+          "summary_zh": "合成状态回放",
+          "human_action_required": true,
+          "evidence": []
+        }
+      }
+    ]
+  },
+  {
+    "id": "publication-unverified",
+    "snapshot": {
+      "recommendedAction": {
+        "action": "inspect_publication_evidence",
+        "humanActionRequired": true
+      },
+      "source": {
+        "present": true
+      },
+      "timeline": {
+        "present": true
+      },
+      "windowApproval": {
+        "valid": true
+      },
+      "generation": {
+        "status": "completed",
+        "publication": {
+          "status": "missing"
+        }
+      }
+    },
+    "script": [
+      {
+        "name": "inspect_production_state",
+        "arguments": {}
+      },
+      {
+        "name": "submit_supervisor_decision",
+        "arguments": {
+          "status": "blocked",
+          "action": "inspect_publication_evidence",
+          "summary_zh": "合成状态回放",
+          "human_action_required": true,
+          "evidence": []
+        }
+      }
+    ]
+  },
+  {
+    "id": "approval-invalidated",
+    "snapshot": {
+      "recommendedAction": {
+        "action": "request_window_approval",
+        "humanActionRequired": true
+      },
+      "source": {
+        "present": true
+      },
+      "timeline": {
+        "present": true
+      },
+      "windowApproval": {
+        "valid": false
+      },
+      "generation": {
+        "status": "completed"
+      }
+    },
+    "script": [
+      {
+        "name": "inspect_production_state",
+        "arguments": {}
+      },
+      {
+        "name": "submit_supervisor_decision",
+        "arguments": {
+          "status": "blocked",
+          "action": "request_window_approval",
+          "summary_zh": "合成状态回放",
+          "human_action_required": true,
+          "evidence": []
+        }
+      }
+    ]
+  },
+  {
+    "id": "release-job-wait",
+    "snapshot": {
+      "recommendedAction": {
+        "action": "wait_for_workflow_job",
+        "humanActionRequired": false
+      },
+      "workflowScope": "page_release",
+      "workflowComplete": false,
+      "workflowJob": {
+        "status": "running",
+        "jobId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "source": {
+        "present": true
+      }
+    },
+    "script": [
+      {
+        "name": "inspect_production_state",
+        "arguments": {}
+      },
+      {
+        "name": "submit_supervisor_decision",
+        "arguments": {
+          "status": "observed",
+          "action": "wait_for_workflow_job",
+          "summary_zh": "合成状态回放",
+          "human_action_required": false,
+          "evidence": []
+        }
+      }
+    ]
+  }
+]
