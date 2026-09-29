@@ -99,6 +99,28 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
                                      "fixture-key", self.fake_call), evidence)
         self.assertEqual(self.calls, [])
 
+    def test_known_runner_identities_resume_paid_cache_but_unknown_identity_fails(self):
+        f = self.fixture
+        parent_hash = "1922f23b881363ac4f1a32a99de7184fecd1ae445befde5f2282d400bd762e40"
+        self.assertEqual(subject.RUNNER_PRODUCTION_IDENTITY_SHA256, parent_hash)
+        evidence = subject.run(f.source, f.anchor, f.policy, self.out,
+                               "fixture-key", self.fake_call)
+        request = producer.prepare_request(f.source, f.anchor, f.policy)
+        plan = subject.group_plan(request, f.anchor)
+        manifest = self.out / "run-identity.json"
+        for implementation_hash in (parent_hash, *subject.COMPATIBLE_RUNNER_IDENTITIES):
+            digest = policy_tools.canonical_sha256({
+                "request": request, "groupPlan": plan,
+                "runnerImplementationSha256": implementation_hash})
+            manifest.write_text(json.dumps({"sha256": digest}))
+            self.assertEqual(subject.run(
+                f.source, f.anchor, f.policy, self.out, "fixture-key",
+                lambda *_: self.fail("verified paid calls must be reused")), evidence)
+        manifest.write_text(json.dumps({"sha256": "0" * 64}))
+        with self.assertRaisesRegex(ValueError, "Output directory belongs"):
+            subject.run(f.source, f.anchor, f.policy, self.out, "fixture-key",
+                        lambda *_: self.fail("unknown identity must fail before paid calls"))
+
     def test_progress_ledger_tracks_translation_and_review_groups_separately(self):
         f = self.fixture
         ledger_path = self.out.parent / "four-layer-progress.json"

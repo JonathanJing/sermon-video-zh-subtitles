@@ -270,6 +270,7 @@ final class AppModel: ObservableObject {
         languagePreferences.pageSelections[page.id] = locale
         persistLanguagePreferences()
         resetAlignmentState()
+        preparePublishedAudioIfNeeded()
     }
     var selectedContentLanguageName: String { Self.languageName(selectedContentLocale) }
     var selectedAudioLanguageName: String? { selectedAudioLocale.map(Self.languageName) }

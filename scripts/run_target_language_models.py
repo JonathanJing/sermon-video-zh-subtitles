@@ -33,8 +33,12 @@ except ImportError:
 
 
 # Timing-only edits do not change the model request or group admission rules.
-# Update this identity when the model-facing production logic changes.
-RUNNER_PRODUCTION_IDENTITY_SHA256 = "8bcd568926f2062919268c185a6d67bf2be4113158e28cd8ca1b6e6e1d7071f3"
+# Use the direct dev parent's runner hash for existing in-place paid runs.
+RUNNER_PRODUCTION_IDENTITY_SHA256 = "1922f23b881363ac4f1a32a99de7184fecd1ae445befde5f2282d400bd762e40"
+COMPATIBLE_RUNNER_IDENTITIES = {
+    # Existing run directories created after the W40 merge or on its release side.
+    "8bcd568926f2062919268c185a6d67bf2be4113158e28cd8ca1b6e6e1d7071f3",
+}
 
 
 MODEL_ROLES = {"translator": "gpt-6-astra", "reviewer": "gpt-6-sol"}
@@ -521,7 +525,12 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
     identity_hash = policy_tools.canonical_sha256(identity)
     manifest = out / "run-identity.json"
     if manifest.exists():
-        require(producer._load(manifest) == {"sha256": identity_hash},
+        accepted_hashes = {policy_tools.canonical_sha256({
+            **identity, "runnerImplementationSha256": implementation_hash})
+            for implementation_hash in
+            {RUNNER_PRODUCTION_IDENTITY_SHA256, *COMPATIBLE_RUNNER_IDENTITIES}}
+        require(producer._load(manifest) in
+                [{"sha256": accepted_hash} for accepted_hash in accepted_hashes],
                 "Output directory belongs to another source, policy, or group plan")
     else:
         require(not out.exists() or all(entry.name == "accounting" and entry.is_dir()

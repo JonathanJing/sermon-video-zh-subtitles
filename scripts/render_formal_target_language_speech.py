@@ -271,6 +271,18 @@ COMPATIBLE_NO_SPOKEN_FORM_RENDERER_SHA256 = {
 COMPATIBLE_PREVIEW_ADMISSION_RENDERER_SHA256 = {
     "462f63dfd3cc215ce923c187d9904ab89145a587a732a7ed1b5f6a9d41fb7985"
 }
+# The direct dev parent used its complete file hash before sound identity was
+# stabilized. Its synthesis inputs are unchanged by the merge's accounting edits.
+COMPATIBLE_INTEGRATED_PARENT_RENDERER_SHA256 = {
+    "e17cd486a63c792bb36b0fcdecab1e02b66fac9c6fd8005f4a9363f3eaffe3d5"
+}
+
+
+def _same_integrated_parent_sound_intent(actual: dict[str, Any],
+                                         expected: dict[str, Any]) -> bool:
+    return (actual.get("rendererSha256") in COMPATIBLE_INTEGRATED_PARENT_RENDERER_SHA256
+            and {key: value for key, value in actual.items() if key != "rendererSha256"}
+            == {key: value for key, value in expected.items() if key != "rendererSha256"})
 
 
 def _spoken_equivalent(approved: str, spoken: str) -> bool:
@@ -396,6 +408,7 @@ def _reusable_speculative_audio(previous_root: Path, unit: dict[str, Any], index
         # Preview receipts bind the renderer file hash, while formal intents
         # keep the stable sound identity across observability-only edits.
         if (previous_renderer not in COMPATIBLE_PREVIEW_ADMISSION_RENDERER_SHA256
+                and previous_renderer not in COMPATIBLE_INTEGRATED_PARENT_RENDERER_SHA256
                 and previous_renderer != identity.sha256(Path(__file__))):
             return None
         expected_sound["rendererSha256"] = previous_renderer
@@ -429,6 +442,9 @@ def _reusable_audio(previous_root: Path, unit: dict[str, Any], index: int,
     new_unit_identity = {key: value for key, value in expected.items()
                          if key not in whole_job_fields}
     if old_unit_identity != new_unit_identity:
+        if _same_integrated_parent_sound_intent(old_unit_identity, new_unit_identity):
+            integrity.probe_full_decode(old_audio_path)
+            return old_audio_path
         previous_renderer = old_unit_identity.get("rendererSha256")
         old_unit_identity.pop("rendererSha256", None)
         new_unit_identity.pop("rendererSha256", None)
@@ -495,7 +511,9 @@ def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                         "synthesized": False}
         with accounting.stage(stage_name, cache_hit=commit_path.exists()):
             if intent_path.exists():
-                require(package.read_object(intent_path) == expected,
+                stored_intent = package.read_object(intent_path)
+                require(stored_intent == expected
+                        or _same_integrated_parent_sound_intent(stored_intent, expected),
                         f"Cached render identity differs: {unit['translationGroupId']}")
             else:
                 require(not any(path.exists() for path in (wav_path, receipt_path, commit_path)),
@@ -503,7 +521,7 @@ def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                 write_json_atomic(intent_path, expected)
             if commit_path.exists():
                 commit = package.read_object(commit_path)
-                require(commit.get("identity") == expected,
+                require(commit.get("identity") == stored_intent,
                         f"Cached audio identity or hash changed: {unit['translationGroupId']}")
                 if not wav_path.exists():
                     partial = wav_path.with_suffix(".partial.wav")
