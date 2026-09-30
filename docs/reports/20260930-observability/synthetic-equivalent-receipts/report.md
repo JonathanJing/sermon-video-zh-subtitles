@@ -36,7 +36,7 @@ Direct receipt usage (SDK aggregates remain separate):
 | production_model | 0 | None | None | None | None | None |
 | unknown | 0 | None | None | None | None | None |
 
-Diagnostics: 
+Diagnostics:
 
 ## Run 56e552de2df8
 
@@ -70,5 +70,4 @@ Direct receipt usage (SDK aggregates remain separate):
 | production_model | 1 | 100 | 0 | 100 | 20 | 5 |
 | unknown | 0 | None | None | None | None | None |
 
-Diagnostics: 
-
+Diagnostics:

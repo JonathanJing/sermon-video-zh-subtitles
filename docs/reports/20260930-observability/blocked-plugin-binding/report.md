@@ -42,5 +42,4 @@ Direct receipt usage (SDK aggregates remain separate):
 | production_model | 0 | None | None | None | None | None |
 | unknown | 0 | None | None | None | None | None |
 
-Diagnostics: 
-
+Diagnostics:

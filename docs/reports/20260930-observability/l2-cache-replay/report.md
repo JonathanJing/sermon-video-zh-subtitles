@@ -152,5 +152,4 @@ Historical cache receipts (excluded from current API usage/spend):
 | translator | gpt-6-astra / gpt-6-astra | d0749cd497a4 | 770aa9468e41 | 0964f956a888 | historical_bound_provider_receipt | 578 / 364 |
 | reviewer | gpt-6-sol / gpt-6-sol | d0749cd497a4 | 46d81a20abb7 | 4267ac50a88b | historical_bound_provider_receipt | 864 / 527 |
 
-Diagnostics: 
-
+Diagnostics:

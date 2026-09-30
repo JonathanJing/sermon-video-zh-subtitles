@@ -395,7 +395,7 @@ def markdown(report):
                           timing['modelLatencyMs'], timing['decisionValidationMs'], timing['stateCommitMs']]
                 lines.append('| ' + ' | '.join(map(str, values)) + ' |')
         lines += ['', 'Diagnostics: ' + ', '.join(run['diagnostics']), '']
-    return '\n'.join(lines) + '\n'
+    return '\n'.join(line.rstrip() for line in lines).rstrip() + '\n'
 
 
 def main():

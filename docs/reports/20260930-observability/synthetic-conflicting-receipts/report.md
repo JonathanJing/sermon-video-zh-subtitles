@@ -71,4 +71,3 @@ Direct receipt usage (SDK aggregates remain separate):
 | unknown | None | None | None | None | None | None |
 
 Diagnostics: conflicting_usage_receipts
-

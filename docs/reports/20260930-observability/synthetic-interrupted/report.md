@@ -36,4 +36,3 @@ Direct receipt usage (SDK aggregates remain separate):
 | unknown | 0 | None | None | None | None | None |
 
 Diagnostics: unfinished_or_ambiguous_span, no_complete_execution_spans, run_wall_unknown
-
