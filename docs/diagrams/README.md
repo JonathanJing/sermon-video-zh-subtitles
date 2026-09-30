@@ -1,5 +1,14 @@
 # 项目流程图 / Diagram Assets
 
+## 2026-09-30 当前架构图：SVG 预览与 Mermaid 拓扑
+
+[英文 README](../../README.md)与[中英后端设计](../backend-workflow-system-design.zh-en.md)各包含四层业务 DAG 和计划中的有界修订 DAG；[App 系统图](../app-system-design.zh.md)与[执行环境图](../execution-environment-design.zh.md)补充另两个设计面。默认展示原生 SVG，Markdown 折叠区保留可复制的 Mermaid 拓扑源。GitHub rich Mermaid 预览曾返回无法渲染，因此静态图不依赖该服务。
+
+六张新图沿用现有 `diagram-specs.json` 与 `render_diagrams.py`，既有 SVG 图稿输出保持不变；渲染器仅增加新图显式箭头颜色的可选字段，兼容静态 SVG 预览。节点 ID、边、状态与英/双语源对应；PR164 strict review/gate/repair 明确为 planned，PR165 D1 的 schema 不代表执行已完成。渲染命令、文件映射与校验见[架构 SVG 再生成](architecture-rendering.md)。纯文档 PR 的 `scripts/docs_change_gate.py` 在 spec 改变时重建全组并比较；修改 renderer 会触发完整代码 CI，仍须单独执行图稿再生成比较；另外核查无环、L3 必经、locale 隔离、实际字号、箭头与文字边界。
+
+以下保留既有 SVG 的来源、时间和再生成说明。
+
+
 本组包含 2026-09-11 校准的 11 张流程图、2026-09-20 新增的四层生产主图，以及 2026-09-25 新增的 Firebase 发布边界图。2026-09-25 对两个根 README 引用的 8 张图统一重新设计为原生 SVG：白色阶段卡片、角色色条、明确的主路径与条件箭头，以及单独的审核门槛。图中的文字和连接仍来自校准后的项目图稿；本轮没有调用 ImageGen。SVG 没有嵌入 PNG、外链字体或脚本。
 
 图面更新时间不等于所有路径的最新实测日期。Agents API 控制层与每周调度已安装；周日实时字幕仍以既有浏览器回放等证据为限，人工语义、真实现场、实体手机与资源上限分别验收。配音候选、人工听审、现场同步与正式发布各自保留边界。历史云端图继续标为 Historical / Discovery；旧 timeline Cloud Run Job 已退役。
@@ -31,7 +40,7 @@
 
 ## 可复现来源
 
-`diagram-specs.json` 保存原有 12 张图的节点、文案与连接坐标；`render_diagrams.py` 生成全部 13 张 SVG。`readme_diagram_renderer.py` 为根 README 的 7 张图提供新版样式，并生成 Firebase 发布边界图；其余 5 张继续使用原有渲染器：
+历史部分的 `diagram-specs.json` 保存原有 12 张图的节点、文案与连接坐标；加上本次 6 张架构图共 18 个 spec，`render_diagrams.py` 连同独立 Firebase 图生成 19 张 SVG。`readme_diagram_renderer.py` 为根 README 的 7 张图提供新版样式，并生成 Firebase 发布边界图；其余 5 张继续使用原有渲染器：
 
 ```bash
 python3 docs/diagrams/render_diagrams.py \
