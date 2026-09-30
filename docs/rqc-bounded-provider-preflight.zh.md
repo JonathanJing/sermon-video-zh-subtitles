@@ -43,7 +43,7 @@
 
 ## 唯一诊断入口与复核修复
 
-`python -m scripts.run_bounded_diagnostic` 是本轮 ASR、source check 和严格 L2 的入口。每个阶段使用同一份私有 `run-plan.json`：固定 `runDirectory`、provider config、批准依据、D5 authority 与实际 execution identity；共享目录内的 `budget/`、`logs/` 和 `results/`。不得通过复制目录或新建 run ID 重置本轮额度。计划中的哈希是审批引用，不能自行授予权限。
+`python -m scripts.run_bounded_diagnostic` 是本轮 ASR、source check 和严格 L2 的入口。每个阶段使用同一份私有 `run-plan.json`：固定 `runDirectory`、`sourceClipPath`、provider config、批准依据、D5 authority 与实际 execution identity；共享目录内的 `budget/`、`logs/` 和 `results/`。不得通过复制目录或新建 run ID 重置本轮额度。计划中的哈希是审批引用，不能自行授予权限。
 
 从复核通过、合入后固定的干净 dev 执行以下命令形状；`RUN_PLAN`、`ASR_WAV` 和 `LOCALE_SPEC` 是本轮私有路径。`--key-fd 3` 由获授权的凭证复用启动器提供私有继承 FD；命令本身不寻找、创建或打印 key。这些命令在文档中不代表已执行：
 
@@ -59,3 +59,5 @@ source check 只接受本轮哈希绑定音频的已验证 ASR 回执，由固�
 入口只允许父进程以私有管道启动固定隔离 HTTP worker，禁止父进程直接联网和启动 legacy/curl/provider 子命令。离线 capture 回归真实执行 ASR → source check → 两组 generator/reviewer，共六次模拟传输，核对唯一账本、调用 ID、provider scope、usage 和日志，重复运行不增加调用。这是 synthetic 路径验证，不是已完成真实三分钟运行或三语内容验收。
 
 复核修复还包括：绝对单调时钟 deadline 跨编码、进程启动、管道读取和实际 HTTP dispatch 传递，超时不续期；不接受 API 未声明的 Astra `ultra`；模型/usage 校验失败保存原回执及预留费用供对账，fresh 与 cache 均不返回普通成功结果；完整 multipart（含封装）超过 25 MiB 在额度预留前拒绝。未报告的 duration-billed ASR token 仍为 unknown，不与无效 provider 数据混淆。
+
+入口在读取凭证前以及每个调用阶段开始前，流式读取实际 `sourceClipPath` 并核对 `sourceClipSha256`；文件变更时拒绝，不创建额度预留、不发起 transport。实际 ASR WAV 仍独立核对 `sourceAudioSha256`。

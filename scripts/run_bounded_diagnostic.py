@@ -9,6 +9,7 @@ accepted by the command. The only network child is the bounded HTTP worker.
 """
 from contextlib import contextmanager
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -53,19 +54,37 @@ def bounded_network_only():
         yield
 
 
+def verify_source_clip(path, expected_sha256):
+    """Read the approved clip before credentials, reservations or transport."""
+    path = _safe_path(Path(path))
+    digest = hashlib.sha256()
+    with path.open('rb') as stream:
+        c.require(path.is_file(), 'diagnostic_source_clip_required')
+        before = os.fstat(stream.fileno())
+        for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+            digest.update(chunk)
+        after = os.fstat(stream.fileno())
+    c.require((before.st_size, before.st_mtime_ns) == (after.st_size, after.st_mtime_ns) and
+              digest.hexdigest() == expected_sha256, 'diagnostic_source_clip_changed')
+    return path
+
+
 class BoundedRun:
     """Pinned provider/store; phase arguments cannot replace either or the key."""
-    def __init__(self, subject, api_key, root):
+    def __init__(self, subject, api_key, root, *, source_clip):
         c.require(type(subject) is provider.DiagnosticProvider, 'diagnostic_provider_required')
         self.provider, self.key, self.root = subject, api_key, _safe_path(Path(root))
         c.require(subject.store.root == self.root / 'budget', 'diagnostic_pinned_store_required')
+        self.source_clip = verify_source_clip(source_clip, subject.config['sourceClipSha256'])
         self.provider.domain()  # Resolve boot identity before subprocess guard.
 
     def transcribe(self, wav_bytes):
+        verify_source_clip(self.source_clip, self.provider.config['sourceClipSha256'])
         with bounded_network_only():
             return self.provider.transcribe(self.key, wav_bytes)
 
     def source_check(self, *, operation_id):
+        verify_source_clip(self.source_clip, self.provider.config['sourceClipSha256'])
         selected = limits.MAX_REQUEST_LIMITS
         payload = self.provider.source_check_payload()
         with bounded_network_only():
@@ -74,6 +93,7 @@ class BoundedRun:
 
     def run_locale(self, source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *,
                    graph, plugin_path, plugin_sha256, group_plan=None):
+        verify_source_clip(self.source_clip, self.provider.config['sourceClipSha256'])
         source, policy = map(c.decode_json, (source_bytes, policy_bytes))
         target = policy['targetLocale']
         c.require(target in ('zh-Hans', 'ko', 'es'), 'invalid_diagnostic_locale')
@@ -92,7 +112,7 @@ class BoundedRun:
 
 def prepare_plan(plan):
     c.require(type(plan) is dict and set(plan) == {'schemaVersion', 'runDirectory',
-        'providerConfig', 'authority', 'executionIdentity'}, 'invalid_diagnostic_plan')
+        'providerConfig', 'authority', 'executionIdentity', 'sourceClipPath'}, 'invalid_diagnostic_plan')
     c.require(plan['schemaVersion'] == 'sermon-bounded-diagnostic-plan-v1', 'invalid_diagnostic_plan')
     config = provider.validate_config(plan['providerConfig'])
     identity = accounting.execution_identity()
@@ -102,6 +122,7 @@ def prepare_plan(plan):
               'diagnostic_code_identity_changed')
     root = _safe_path(Path(plan['runDirectory']))
     c.require(root.is_absolute(), 'diagnostic_absolute_directory_required')
+    verify_source_clip(plan['sourceClipPath'], config['sourceClipSha256'])
     store = budget.BudgetStore(root / 'budget', plan['authority'])
     subject = provider.DiagnosticProvider(store, config)
     # Constructor/preflight does not initialize ledger or start its deadline.
@@ -130,7 +151,7 @@ def main(argv=None):
     key = raw.decode('ascii').strip()
     root.mkdir(parents=True, exist_ok=True, mode=0o700)
     strict.save_once(root / 'run-plan.json', plan)
-    runner = BoundedRun(subject, key, root)
+    runner = BoundedRun(subject, key, root, source_clip=plan['sourceClipPath'])
     with profile.session(root / 'logs', 'bounded-diagnostic', work_kind='production',
             evidence_mode='current_execution', production_run_id=subject.config['runId']):
         if args.phase == 'transcribe':

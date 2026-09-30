@@ -29,10 +29,12 @@ class BoundedRunTests(unittest.TestCase):
         self.f=self.fixture.f
         self.raw=wav(frames=16000*180)
         self.calls=[]
+        self.clip=self.f.root/'source-180s.mp4'
+        self.clip.write_bytes(b'synthetic approved clip')
         self.subject=provider.DiagnosticProvider(self.fixture.store,
-            config(sourceAudioSha256=c.bytes_sha256(self.raw)), executor=self.capture,
+            config(sourceAudioSha256=c.bytes_sha256(self.raw), sourceClipSha256=c.bytes_sha256(self.clip.read_bytes())), executor=self.capture,
             monotonic=lambda:100.,domain=lambda:'7'*64)
-        self.runner=run.BoundedRun(self.subject,'synthetic',self.f.root)
+        self.runner=run.BoundedRun(self.subject,'synthetic',self.f.root,source_clip=self.clip)
         self.groups=self.f.f.evidence['groups'].copy()
         self.plan=[{k:row[k] for k in ('translationGroupId','sourceUnitIds')} for row in self.groups]
         self.graph=[{'workUnitId':strict.prepare(*self.f.args,row)['workUnitId'],
@@ -86,6 +88,15 @@ class BoundedRunTests(unittest.TestCase):
         self.assertTrue(all(row['usage']['inputTokens']==100 for row in receipts[1:]))
         checks=[row for row in rows if row['event']=='rqc_observation']
         self.assertTrue(checks)
+
+    def test_changed_clip_rejects_every_phase_before_reservation(self):
+        self.clip.write_bytes(b'different unapproved clip')
+        for action in (lambda: run.BoundedRun(self.subject,'synthetic',self.f.root,source_clip=self.clip),
+                       lambda: self.runner.transcribe(self.raw),
+                       lambda: self.runner.source_check(operation_id='source.initial'), self.locale):
+            with self.assertRaisesRegex(ValueError,'diagnostic_source_clip_changed'):action()
+        self.assertFalse(self.subject.store.root.exists())
+        self.assertEqual(self.calls,[])
 
     def test_source_check_requires_actual_saved_asr_and_cannot_substitute_prompt(self):
         with self.f.session():
