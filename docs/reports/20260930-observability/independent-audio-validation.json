@@ -1,0 +1,77 @@
+{
+  "codeCommit": "fd788ac8517d381d24bb1a834689e88bcfa4f6c7",
+  "codeClean": true,
+  "scope": "new_read_only_validation_of_historical_audio_and_reviews_not_new_tts_or_human_signoff",
+  "stage1PromotionAllowed": false,
+  "locales": [
+    {
+      "locale": "zh-Hans",
+      "status": "historical_audio_and_bound_review_validated",
+      "units": 11,
+      "outputSha256": "883cf75f19cce22226d445cf99e92cee49289ce9674ec8d4611e1193e15468f7",
+      "listeningReviewSha256": "b0148e0afcf13659b1dbb753e05515a3697aa2554578b539d2e0051ec191185e",
+      "originalFilesUnchanged": true,
+      "newTtsCalls": 0,
+      "expectedAudioSha256s": [
+        "bce23df96af408634ed43b37e08f3d46d7814b94b87248ef9f6d36f76f731574",
+        "37df1b34d8e4df35733b67d7b91990ac8451d13becd0fd46ed50dee8b98e567c",
+        "7e6ff3487bc16d4ddc39fe94524fc20f81277f47fb3aaf1fcf7de2902c366213",
+        "a498aa0e442d11df9c9f08a96dc64606c778fc9d06e1730bed101a76853335f3",
+        "c7adc0ae6cab0ca21306214931e50d946d26514aa9d075f8e449e39f6801116e",
+        "0a49997f330fd528fde11ed1ac8aa8f49c905424d3e7a878fa840ceab2dca8ad",
+        "530bce2c3828cddeb2d06086977875c6ace6f4e4a0d8d81a865e16b9263be489",
+        "2b1e09ebfc43d4a554d59a2f376cf7a87aac6684fdad38f3dfc86d31aa64435b",
+        "b8b225d63893a211b0fed00c285891afcfb7b1f222e0b8ecf5f37788f68e099c",
+        "4546f652d71c3fb39577b185539c9a390456c275d02f1dae85738512060765f8",
+        "d4d61f96cc68e17f1ad528e63ce465a8928ff405824fc23c072e663ef2c0f384"
+      ],
+      "elapsedSeconds": 2.5543582089594565
+    },
+    {
+      "locale": "ko",
+      "status": "historical_audio_and_bound_review_validated",
+      "units": 11,
+      "outputSha256": "8fcefa16669528418bb84e630ce20207e49592c647e0cf463d810bbc5dbcb9e7",
+      "listeningReviewSha256": "10254b52eb108c941da1dfcf2d627dda8152a9a4c828aeb50561fa0ea5a9988d",
+      "originalFilesUnchanged": true,
+      "newTtsCalls": 0,
+      "expectedAudioSha256s": [
+        "8e4b238be26b03771dbb96cebc80bdab44c25830fbdbe086b7209b36742c427c",
+        "4da0121dc8144264ed6b044de09d967c3cf327cd73aac8e18b84c4756116e26b",
+        "77433296614adced82d7f673f127c35a519fd46e54883f8487ae9459ece2ec61",
+        "5afbd5d5a0deb073ec8dc929e16ea5b225b7ff9e01a782f8752ee91689e70a22",
+        "fe2860c4edfd83475a94ff763529100d3d94fd90950803e56a72b38e042de33f",
+        "da2017c45b32c02e4b45baa18dba643abda73af25bc472ee3f6d40d111993b62",
+        "51f36f593db3b395c9dd408f50f8f71741d89e9db2810ce71c38e694e080013c",
+        "d2e69145876a70c4b901f14af50e922d6ed3de3a32acbc29d92ed6eecda0ce02",
+        "a77f7d98d61be7da3e09f2c3af7bd9d6a44184a03a65e9c9915ff47cc4c278e2",
+        "6c0784dbebff8847524b7d1a00e7560b1f9767390d682363fc80f1e9ed7829a2",
+        "40b63e90f7b9b1ada7c70707c5e5c7c813b1d9fa7ddf8a9e6e4ac949771742e9"
+      ],
+      "elapsedSeconds": 2.4603144169668667
+    },
+    {
+      "locale": "es",
+      "status": "historical_audio_and_bound_review_validated",
+      "units": 11,
+      "outputSha256": "a0c517e53173405cdec74897fafd20d26b7a993088ae5f396b1aa8f03d26ee46",
+      "listeningReviewSha256": "b2b80731da63070eb0ad9f437237b2ac1bbde2d941ac0c5e1e0d000e50f3bcf7",
+      "originalFilesUnchanged": true,
+      "newTtsCalls": 0,
+      "expectedAudioSha256s": [
+        "6fc772b6b305812b914598aa272a46cb425d57fd75edcd73da752aa80ec78802",
+        "da662050b71a7aee0695059d019b8eee23350ba401d199a26fab2b100bbb885c",
+        "3dc91278349b39618057fa5bc26006c8ce1c43f1f1d3cf211d0513c16fa3b6a2",
+        "aa19f38754a37102bd1c83e381462bb6666f1c6c6f2605ead8e3b7c7c1371465",
+        "4c266dfe41115c532b9482aea970da17762335bdedeeb935df7f21aeab6b9d81",
+        "f452b74976d62b620e4c22d51d86158da0247257118a9cd8a96e875472679815",
+        "3d6cb8e6dff9b091894d28d3880a6b13e35d448b8aece18b6b4b913477d93193",
+        "d619a9a2707b4ed4e9560c18f5a3a84dc0b1b5e550a53527570c2c35c6277706",
+        "2c70adb6a45929bc1e229a0277467cb2a1e6a471ac0d894cce64bae66bddd19b",
+        "bd56281106519fd1a86e6e51972902b4ecab4b130274c26a0ef94d0f344e6efa",
+        "0b55b6be285d4dffc1ec4b5146a05f4c0674f07346338066af17e71bd786aa72"
+      ],
+      "elapsedSeconds": 2.334993416967336
+    }
+  ]
+}
