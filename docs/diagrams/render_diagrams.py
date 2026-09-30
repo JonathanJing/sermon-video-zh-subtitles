@@ -180,7 +180,9 @@ class SVG:
         self.add(f'<svg xmlns="http://www.w3.org/2000/svg" width="{self.w}" height="{self.h}" viewBox="0 0 {self.w} {self.h}" role="img" aria-labelledby="title desc">')
         self.add(f'<title id="title">{esc(p["title"])}</title><desc id="desc">{esc(p["subtitle"]+" "+" ".join(p["footer"]))}</desc>')
         self.add(f'<style>text{{font-family:{FONT};}} text{{font-variant-ligatures:none}}</style>')
-        self.add('<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M1 1 L7 4 L1 7" fill="none" stroke="context-stroke" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>')
+        # Explicit fallback keeps new diagrams portable in static SVG rasterizers.
+        arrow_stroke=esc(p.get('arrowStroke', 'context-stroke'))
+        self.add(f'<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M1 1 L7 4 L1 7" fill="none" stroke="{arrow_stroke}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>')
         self.header()
         for b in p.get('bands',[]):self.band(b)
         if p.get('kind')=='sequence': self.sequence()

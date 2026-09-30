@@ -1,5 +1,7 @@
 # System Design
 
+Current architecture map: [App](app-system-design.zh.md) · [Backend DAG](backend-workflow-system-design.zh-en.md) · [Execution environments](execution-environment-design.zh.md) · [Experiments](experiment-directions.zh.md).
+
 > **Historical/Discovery snapshot.** This cloud-oriented design is retained for research context; it is not the current operator architecture. See the [workflow source of truth](./workflows/README.zh.md) and [local live POC](../experiments/local-live-poc/README.md).
 
 Last updated: 2026-06-23

@@ -3352,5 +3352,2442 @@
     "height": 1580,
     "calibratedAt": "2026-09-25",
     "designReference": "built-in ImageGen 2026-09-20"
+  },
+  {
+    "name": "architecture-dag-en",
+    "title": "Four-layer production DAG",
+    "english": "CURRENT PACKAGE DEPENDENCIES",
+    "subtitle": "One shared English source; independent zh-Hans, ko and es branches",
+    "nodes": [
+      {
+        "id": "SRC",
+        "title": "L1 English Source + Anchors",
+        "lines": [
+          "Frozen identity, hashes, provenance and review"
+        ],
+        "role": "input",
+        "label": "INPUT",
+        "box": [
+          380,
+          230,
+          840,
+          170
+        ],
+        "step": "01"
+      },
+      {
+        "id": "ZT",
+        "title": "L2 zh-Hans Text",
+        "lines": [
+          "Locale review + human approval"
+        ],
+        "role": "process",
+        "label": "CONTRACT / COMPONENT",
+        "box": [
+          64,
+          480,
+          448,
+          190
+        ],
+        "step": "02"
+      },
+      {
+        "id": "ZA",
+        "title": "L3 zh-Hans Audio Package",
+        "lines": [
+          "human_reviewed",
+          "or explicit audio_unavailable"
+        ],
+        "role": "process",
+        "label": "CONTRACT / COMPONENT",
+        "box": [
+          64,
+          740,
+          448,
+          260
+        ],
+        "step": "03"
+      },
+      {
+        "id": "ZR",
+        "title": "L4 zh-Hans Release Package",
+        "lines": [
+          "Bound hashes + page approval"
+        ],
+        "role": "process",
+        "label": "CONTRACT / COMPONENT",
+        "box": [
+          64,
+          1070,
+          448,
+          230
+        ],
+        "step": "04"
+      },
+      {
+        "id": "KT",
+        "title": "L2 ko Text",
+        "lines": [
+          "Locale review + human approval"
+        ],
+        "role": "process",
+        "label": "CONTRACT / COMPONENT",
+        "box": [
+          576,
+          480,
+          448,
+          190
+        ],
+        "step": "05"
+      },
+      {
+        "id": "KA",
+        "title": "L3 ko Audio Package",
+        "lines": [
+          "human_reviewed",
+          "or explicit audio_unavailable"
+        ],
+        "role": "process",
+        "label": "CONTRACT / COMPONENT",
+        "box": [
+          576,
+          740,
+          448,
+          260
+        ],
+        "step": "06"
+      },
+      {
+        "id": "KR",
+        "title": "L4 ko Release Package",
+        "lines": [
+          "Bound hashes + page approval"
+        ],
+        "role": "process",
+        "label": "CONTRACT / COMPONENT",
+        "box": [
+          576,
+          1070,
+          448,
+          230
+        ],
+        "step": "07"
+      },
+      {
+        "id": "ET",
+        "title": "L2 es Text",
+        "lines": [
+          "Locale review + human approval"
+        ],
+        "role": "process",
+        "label": "CONTRACT / COMPONENT",
+        "box": [
+          1088,
+          480,
+          448,
+          190
+        ],
+        "step": "08"
+      },
+      {
+        "id": "EA",
+        "title": "L3 es Audio Package",
+        "lines": [
+          "human_reviewed",
+          "or explicit audio_unavailable"
+        ],
+        "role": "process",
+        "label": "CONTRACT / COMPONENT",
+        "box": [
+          1088,
+          740,
+          448,
+          260
+        ],
+        "step": "09"
+      },
+      {
+        "id": "ER",
+        "title": "L4 es Release Package",
+        "lines": [
+          "Bound hashes + page approval"
+        ],
+        "role": "process",
+        "label": "CONTRACT / COMPONENT",
+        "box": [
+          1088,
+          1070,
+          448,
+          230
+        ],
+        "step": "10"
+      },
+      {
+        "id": "PLAN",
+        "title": "Selected locales only, per release plan",
+        "lines": [
+          "Text-only needs client capability"
+        ],
+        "role": "gate",
+        "label": "GATE",
+        "box": [
+          300,
+          1370,
+          1000,
+          200
+        ],
+        "step": "11"
+      },
+      {
+        "id": "AUTH",
+        "title": "Release authorization + target check",
+        "lines": [],
+        "role": "gate",
+        "label": "GATE",
+        "box": [
+          300,
+          1640,
+          1000,
+          170
+        ],
+        "step": "12"
+      },
+      {
+        "id": "HTTP",
+        "title": "Deploy + HTTP and hash verification",
+        "lines": [],
+        "role": "output",
+        "label": "OUTPUT",
+        "box": [
+          300,
+          1880,
+          1000,
+          170
+        ],
+        "step": "13"
+      },
+      {
+        "id": "CLIENT",
+        "title": "iOS primary, Web secondary",
+        "lines": [
+          "Separate device and venue acceptance"
+        ],
+        "role": "output",
+        "label": "OUTPUT",
+        "box": [
+          300,
+          2120,
+          1000,
+          200
+        ],
+        "step": "14"
+      }
+    ],
+    "edges": [
+      {
+        "from": "SRC",
+        "to": "ZT"
+      },
+      {
+        "from": "SRC",
+        "to": "KT"
+      },
+      {
+        "from": "SRC",
+        "to": "ET"
+      },
+      {
+        "from": "ZT",
+        "to": "ZA"
+      },
+      {
+        "from": "KT",
+        "to": "KA"
+      },
+      {
+        "from": "ET",
+        "to": "EA"
+      },
+      {
+        "from": "ZA",
+        "to": "ZR"
+      },
+      {
+        "from": "KA",
+        "to": "KR"
+      },
+      {
+        "from": "EA",
+        "to": "ER"
+      },
+      {
+        "from": "ZR",
+        "to": "PLAN"
+      },
+      {
+        "from": "KR",
+        "to": "PLAN"
+      },
+      {
+        "from": "ER",
+        "to": "PLAN"
+      },
+      {
+        "from": "PLAN",
+        "to": "AUTH"
+      },
+      {
+        "from": "AUTH",
+        "to": "HTTP"
+      },
+      {
+        "from": "HTTP",
+        "to": "CLIENT"
+      }
+    ],
+    "footer": [
+      "Contract view; general L1-4 automatic dispatch is incomplete.",
+      "Every locale requires L3, including explicit audio_unavailable. Selected locales follow the release plan."
+    ],
+    "height": 2520,
+    "indexLabel": "EN",
+    "calibratedAt": "2026-09-30",
+    "designReference": "Repository source / no ImageGen",
+    "arrowStroke": "#648A86"
+  },
+  {
+    "name": "architecture-dag-zh-en",
+    "title": "四层业务 DAG / Four-layer production",
+    "english": "CURRENT PACKAGE DEPENDENCIES / 当前包依赖",
+    "subtitle": "共享英文；三语独立 Text → Audio → Release；通用全链调度仍未完成",
+    "nodes": [
+      {
+        "id": "SRC",
+        "title": "L1 英文源与锚点 / English Source + Anchors",
+        "lines": [
+          "冻结身份、hash、来源与审核 / Frozen identity and review"
+        ],
+        "role": "input",
+        "label": "INPUT",
+        "box": [
+          380,
+          230,
+          840,
+          170
+        ],
+        "step": "01"
+      },
+      {
+        "id": "ZT",
+        "title": "L2 zh-Hans 文字 / Text",
+        "lines": [
+          "本语言审核与批准 / Locale review + approval"
+        ],
+        "role": "process",
+        "label": "CONTRACT / COMPONENT",
+        "box": [
+          64,
+          480,
+          448,
+          190
+        ],
+        "step": "02"
+      },
+      {
+        "id": "ZA",
+        "title": "L3 zh-Hans Audio Package",
+        "lines": [
+          "已听审 / human_reviewed",
+          "或显式 / or explicit audio_unavailable"
+        ],
+        "role": "process",
+        "label": "CONTRACT / COMPONENT",
+        "box": [
+          64,
+          740,
+          448,
+          260
+        ],
+        "step": "03"
+      },
+      {
+        "id": "ZR",
+        "title": "L4 zh-Hans Release Package",
+        "lines": [
+          "同语言 hash 与页面批准 / Bound hashes + page approval"
+        ],
+        "role": "process",
+        "label": "CONTRACT / COMPONENT",
+        "box": [
+          64,
+          1070,
+          448,
+          230
+        ],
+        "step": "04"
+      },
+      {
+        "id": "KT",
+        "title": "L2 ko 文字 / Text",
+        "lines": [
+          "本语言审核与批准 / Locale review + approval"
+        ],
+        "role": "process",
+        "label": "CONTRACT / COMPONENT",
+        "box": [
+          576,
+          480,
+          448,
+          190
+        ],
+        "step": "05"
+      },
+      {
+        "id": "KA",
+        "title": "L3 ko Audio Package",
+        "lines": [
+          "已听审 / human_reviewed",
+          "或显式 / or explicit audio_unavailable"
+        ],
+        "role": "process",
+        "label": "CONTRACT / COMPONENT",
+        "box": [
+          576,
+          740,
+          448,
+          260
+        ],
+        "step": "06"
+      },
+      {
+        "id": "KR",
+        "title": "L4 ko Release Package",
+        "lines": [
+          "同语言 hash 与页面批准 / Bound hashes + page approval"
+        ],
+        "role": "process",
+        "label": "CONTRACT / COMPONENT",
+        "box": [
+          576,
+          1070,
+          448,
+          230
+        ],
+        "step": "07"
+      },
+      {
+        "id": "ET",
+        "title": "L2 es 文字 / Text",
+        "lines": [
+          "本语言审核与批准 / Locale review + approval"
+        ],
+        "role": "process",
+        "label": "CONTRACT / COMPONENT",
+        "box": [
+          1088,
+          480,
+          448,
+          190
+        ],
+        "step": "08"
+      },
+      {
+        "id": "EA",
+        "title": "L3 es Audio Package",
+        "lines": [
+          "已听审 / human_reviewed",
+          "或显式 / or explicit audio_unavailable"
+        ],
+        "role": "process",
+        "label": "CONTRACT / COMPONENT",
+        "box": [
+          1088,
+          740,
+          448,
+          260
+        ],
+        "step": "09"
+      },
+      {
+        "id": "ER",
+        "title": "L4 es Release Package",
+        "lines": [
+          "同语言 hash 与页面批准 / Bound hashes + page approval"
+        ],
+        "role": "process",
+        "label": "CONTRACT / COMPONENT",
+        "box": [
+          1088,
+          1070,
+          448,
+          230
+        ],
+        "step": "10"
+      },
+      {
+        "id": "PLAN",
+        "title": "发布计划选择的 locale / Selected locales only",
+        "lines": [
+          "文字页还需客户端能力 / Text-only needs client capability"
+        ],
+        "role": "gate",
+        "label": "GATE",
+        "box": [
+          300,
+          1370,
+          1000,
+          200
+        ],
+        "step": "11"
+      },
+      {
+        "id": "AUTH",
+        "title": "发布授权与目标核对 / Release authorization + target check",
+        "lines": [],
+        "role": "gate",
+        "label": "GATE",
+        "box": [
+          300,
+          1640,
+          1000,
+          170
+        ],
+        "step": "12"
+      },
+      {
+        "id": "HTTP",
+        "title": "部署并核验字节 / Deploy + HTTP and hash verification",
+        "lines": [],
+        "role": "output",
+        "label": "OUTPUT",
+        "box": [
+          300,
+          1880,
+          1000,
+          170
+        ],
+        "step": "13"
+      },
+      {
+        "id": "CLIENT",
+        "title": "iOS 主端、Web 辅端 / iOS primary, Web secondary",
+        "lines": [
+          "设备与现场另验 / Separate device and venue acceptance"
+        ],
+        "role": "output",
+        "label": "OUTPUT",
+        "box": [
+          300,
+          2120,
+          1000,
+          200
+        ],
+        "step": "14"
+      }
+    ],
+    "edges": [
+      {
+        "from": "SRC",
+        "to": "ZT"
+      },
+      {
+        "from": "SRC",
+        "to": "KT"
+      },
+      {
+        "from": "SRC",
+        "to": "ET"
+      },
+      {
+        "from": "ZT",
+        "to": "ZA"
+      },
+      {
+        "from": "KT",
+        "to": "KA"
+      },
+      {
+        "from": "ET",
+        "to": "EA"
+      },
+      {
+        "from": "ZA",
+        "to": "ZR"
+      },
+      {
+        "from": "KA",
+        "to": "KR"
+      },
+      {
+        "from": "EA",
+        "to": "ER"
+      },
+      {
+        "from": "ZR",
+        "to": "PLAN"
+      },
+      {
+        "from": "KR",
+        "to": "PLAN"
+      },
+      {
+        "from": "ER",
+        "to": "PLAN"
+      },
+      {
+        "from": "PLAN",
+        "to": "AUTH"
+      },
+      {
+        "from": "AUTH",
+        "to": "HTTP"
+      },
+      {
+        "from": "HTTP",
+        "to": "CLIENT"
+      }
+    ],
+    "footer": [
+      "每个 locale 都必须经过 L3；纯文字也须显式 audio_unavailable 包。",
+      "发布计划决定汇合语言；代码、部署、人审、设备和现场状态分别记录。"
+    ],
+    "height": 2520,
+    "indexLabel": "ZH–EN",
+    "calibratedAt": "2026-09-30",
+    "designReference": "Repository source / no ImageGen",
+    "arrowStroke": "#648A86"
+  },
+  {
+    "name": "review-revision-dag-en",
+    "title": "Planned generation, review and repair",
+    "english": "PLANNED STRICT WORKFLOW",
+    "subtitle": "Immutable r1 → new r2 → new r3; upward edges create new revisions, never cycles.",
+    "nodes": [
+      {
+        "id": "F",
+        "title": "PLANNED: strict workflow",
+        "lines": [
+          "Frozen source, policy and rubric"
+        ],
+        "role": "input",
+        "label": "PLANNED",
+        "box": [
+          64,
+          230,
+          1472,
+          170
+        ],
+        "step": "01"
+      },
+      {
+        "id": "G1",
+        "title": "Generate immutable r1",
+        "lines": [],
+        "role": "agent",
+        "label": "PLANNED",
+        "box": [
+          64,
+          470,
+          448,
+          170
+        ],
+        "step": "02"
+      },
+      {
+        "id": "P1",
+        "title": "Deterministic precheck r1",
+        "lines": [],
+        "role": "gate",
+        "label": "PLANNED",
+        "box": [
+          64,
+          690,
+          448,
+          170
+        ],
+        "step": "03"
+      },
+      {
+        "id": "R1",
+        "title": "Independent read-only review r1",
+        "lines": [],
+        "role": "agent",
+        "label": "PLANNED",
+        "box": [
+          64,
+          910,
+          448,
+          170
+        ],
+        "step": "04"
+      },
+      {
+        "id": "Q1",
+        "title": "Deterministic gate r1",
+        "lines": [],
+        "role": "gate",
+        "label": "PLANNED",
+        "box": [
+          64,
+          1130,
+          448,
+          170
+        ],
+        "step": "05"
+      },
+      {
+        "id": "G2",
+        "title": "Generate immutable r2",
+        "lines": [],
+        "role": "agent",
+        "label": "PLANNED",
+        "box": [
+          576,
+          470,
+          448,
+          170
+        ],
+        "step": "06"
+      },
+      {
+        "id": "P2",
+        "title": "Deterministic precheck r2",
+        "lines": [],
+        "role": "gate",
+        "label": "PLANNED",
+        "box": [
+          576,
+          690,
+          448,
+          170
+        ],
+        "step": "07"
+      },
+      {
+        "id": "R2",
+        "title": "Independent read-only re-review r2",
+        "lines": [],
+        "role": "agent",
+        "label": "PLANNED",
+        "box": [
+          576,
+          910,
+          448,
+          170
+        ],
+        "step": "08"
+      },
+      {
+        "id": "Q2",
+        "title": "Deterministic gate r2",
+        "lines": [],
+        "role": "gate",
+        "label": "PLANNED",
+        "box": [
+          576,
+          1130,
+          448,
+          170
+        ],
+        "step": "09"
+      },
+      {
+        "id": "G3",
+        "title": "Generate immutable r3",
+        "lines": [],
+        "role": "agent",
+        "label": "PLANNED",
+        "box": [
+          1088,
+          470,
+          448,
+          170
+        ],
+        "step": "10"
+      },
+      {
+        "id": "P3",
+        "title": "Deterministic precheck r3",
+        "lines": [],
+        "role": "gate",
+        "label": "PLANNED",
+        "box": [
+          1088,
+          690,
+          448,
+          170
+        ],
+        "step": "11"
+      },
+      {
+        "id": "R3",
+        "title": "Independent read-only re-review r3",
+        "lines": [],
+        "role": "agent",
+        "label": "PLANNED",
+        "box": [
+          1088,
+          910,
+          448,
+          170
+        ],
+        "step": "12"
+      },
+      {
+        "id": "Q3",
+        "title": "Deterministic gate r3",
+        "lines": [],
+        "role": "gate",
+        "label": "PLANNED",
+        "box": [
+          1088,
+          1130,
+          448,
+          170
+        ],
+        "step": "13"
+      },
+      {
+        "id": "B1",
+        "title": "Bounded repair plan 1",
+        "lines": [],
+        "role": "gate",
+        "label": "PLANNED",
+        "box": [
+          320,
+          1400,
+          440,
+          190
+        ],
+        "step": "14"
+      },
+      {
+        "id": "B2",
+        "title": "Bounded repair plan 2",
+        "lines": [],
+        "role": "gate",
+        "label": "PLANNED",
+        "box": [
+          832,
+          1400,
+          440,
+          190
+        ],
+        "step": "15"
+      },
+      {
+        "id": "H",
+        "title": "Whole-locale aggregation + human gate",
+        "lines": [],
+        "role": "gate",
+        "label": "PLANNED",
+        "box": [
+          300,
+          1710,
+          1000,
+          190
+        ],
+        "step": "16"
+      },
+      {
+        "id": "L3",
+        "title": "Admit this locale to L3",
+        "lines": [],
+        "role": "input",
+        "label": "PLANNED",
+        "box": [
+          64,
+          2010,
+          448,
+          180
+        ],
+        "step": "17"
+      },
+      {
+        "id": "WAIT",
+        "title": "Durable wait",
+        "lines": [],
+        "role": "gate",
+        "label": "PLANNED",
+        "box": [
+          576,
+          2010,
+          448,
+          180
+        ],
+        "step": "18"
+      },
+      {
+        "id": "STOP",
+        "title": "Stop and escalate with evidence",
+        "lines": [],
+        "role": "gate",
+        "label": "PLANNED",
+        "box": [
+          1088,
+          2010,
+          448,
+          180
+        ],
+        "step": "19"
+      }
+    ],
+    "edges": [
+      {
+        "from": "F",
+        "to": "G1"
+      },
+      {
+        "from": "G1",
+        "to": "P1"
+      },
+      {
+        "from": "P1",
+        "to": "R1",
+        "label": "valid"
+      },
+      {
+        "from": "R1",
+        "to": "Q1"
+      },
+      {
+        "from": "P1",
+        "to": "B1",
+        "label": "invalid",
+        "points": [
+          [
+            64,
+            775
+          ],
+          [
+            38,
+            775
+          ],
+          [
+            38,
+            1495
+          ],
+          [
+            320,
+            1495
+          ]
+        ],
+        "labelAt": [
+          120,
+          1380
+        ]
+      },
+      {
+        "from": "Q1",
+        "to": "B1",
+        "label": "needs_rework"
+      },
+      {
+        "from": "B1",
+        "to": "G2",
+        "points": [
+          [
+            540,
+            1400
+          ],
+          [
+            540,
+            555
+          ],
+          [
+            576,
+            555
+          ]
+        ],
+        "label": "new r2",
+        "labelAt": [
+          540,
+          895
+        ]
+      },
+      {
+        "from": "G2",
+        "to": "P2"
+      },
+      {
+        "from": "P2",
+        "to": "R2",
+        "label": "valid"
+      },
+      {
+        "from": "R2",
+        "to": "Q2"
+      },
+      {
+        "from": "P2",
+        "to": "B2",
+        "label": "invalid",
+        "points": [
+          [
+            1024,
+            775
+          ],
+          [
+            1040,
+            775
+          ],
+          [
+            1040,
+            1360
+          ],
+          [
+            1150,
+            1360
+          ],
+          [
+            1150,
+            1400
+          ]
+        ],
+        "labelAt": [
+          1220,
+          1380
+        ]
+      },
+      {
+        "from": "Q2",
+        "to": "B2",
+        "label": "needs_rework"
+      },
+      {
+        "from": "B2",
+        "to": "G3",
+        "points": [
+          [
+            1052,
+            1400
+          ],
+          [
+            1052,
+            555
+          ],
+          [
+            1088,
+            555
+          ]
+        ],
+        "label": "new r3",
+        "labelAt": [
+          1052,
+          895
+        ]
+      },
+      {
+        "from": "G3",
+        "to": "P3"
+      },
+      {
+        "from": "P3",
+        "to": "R3",
+        "label": "valid"
+      },
+      {
+        "from": "R3",
+        "to": "Q3"
+      },
+      {
+        "from": "P3",
+        "to": "STOP",
+        "label": "invalid",
+        "points": [
+          [
+            1536,
+            775
+          ],
+          [
+            1575,
+            775
+          ],
+          [
+            1575,
+            2100
+          ],
+          [
+            1536,
+            2100
+          ]
+        ],
+        "labelAt": [
+          1460,
+          1780
+        ]
+      },
+      {
+        "from": "Q3",
+        "to": "STOP",
+        "label": "needs_rework",
+        "points": [
+          [
+            1536,
+            1215
+          ],
+          [
+            1550,
+            1215
+          ],
+          [
+            1550,
+            2070
+          ],
+          [
+            1536,
+            2070
+          ]
+        ],
+        "labelAt": [
+          1410,
+          1940
+        ]
+      },
+      {
+        "from": "Q1",
+        "to": "H",
+        "label": "machine pass",
+        "points": [
+          [
+            220,
+            1300
+          ],
+          [
+            220,
+            1680
+          ],
+          [
+            600,
+            1680
+          ],
+          [
+            600,
+            1710
+          ]
+        ],
+        "labelAt": [
+          160,
+          1640
+        ]
+      },
+      {
+        "from": "Q2",
+        "to": "H",
+        "label": "machine pass",
+        "points": [
+          [
+            800,
+            1300
+          ],
+          [
+            800,
+            1710
+          ]
+        ],
+        "labelAt": [
+          800,
+          1640
+        ]
+      },
+      {
+        "from": "Q3",
+        "to": "H",
+        "label": "machine pass",
+        "points": [
+          [
+            1370,
+            1300
+          ],
+          [
+            1370,
+            1680
+          ],
+          [
+            1000,
+            1680
+          ],
+          [
+            1000,
+            1710
+          ]
+        ],
+        "labelAt": [
+          1370,
+          1640
+        ]
+      },
+      {
+        "from": "H",
+        "to": "L3",
+        "label": "matching receipt"
+      },
+      {
+        "from": "H",
+        "to": "WAIT",
+        "label": "pending"
+      }
+    ],
+    "footer": [
+      "PLANNED: strict read-only review, deterministic gates and bounded repair integration.",
+      "Two repair revisions are a proposed cap. Execution failures reconcile or retry review; human approval remains separate."
+    ],
+    "height": 2400,
+    "indexLabel": "EN",
+    "calibratedAt": "2026-09-30",
+    "designReference": "Repository source / no ImageGen",
+    "arrowStroke": "#648A86"
+  },
+  {
+    "name": "review-revision-dag-zh-en",
+    "title": "计划：生成、独立审核、门禁与新修订",
+    "english": "PLANNED STRICT WORKFLOW",
+    "subtitle": "Planned r1 → r2 → r3；返工边通向新版本，不回到旧节点。",
+    "nodes": [
+      {
+        "id": "F",
+        "title": "计划 / Planned strict workflow",
+        "lines": [
+          "冻结源、policy、rubric / Frozen inputs"
+        ],
+        "role": "input",
+        "label": "PLANNED",
+        "box": [
+          64,
+          230,
+          1472,
+          170
+        ],
+        "step": "01"
+      },
+      {
+        "id": "G1",
+        "title": "生成 r1 / Generate immutable r1",
+        "lines": [],
+        "role": "agent",
+        "label": "PLANNED",
+        "box": [
+          64,
+          470,
+          448,
+          170
+        ],
+        "step": "02"
+      },
+      {
+        "id": "P1",
+        "title": "确定性预检 r1 / Precheck",
+        "lines": [],
+        "role": "gate",
+        "label": "PLANNED",
+        "box": [
+          64,
+          690,
+          448,
+          170
+        ],
+        "step": "03"
+      },
+      {
+        "id": "R1",
+        "title": "独立只读审核 r1 / Read-only review",
+        "lines": [],
+        "role": "agent",
+        "label": "PLANNED",
+        "box": [
+          64,
+          910,
+          448,
+          170
+        ],
+        "step": "04"
+      },
+      {
+        "id": "Q1",
+        "title": "确定性门禁 r1 / Deterministic gate",
+        "lines": [],
+        "role": "gate",
+        "label": "PLANNED",
+        "box": [
+          64,
+          1130,
+          448,
+          170
+        ],
+        "step": "05"
+      },
+      {
+        "id": "G2",
+        "title": "生成新 r2 / Generate immutable r2",
+        "lines": [],
+        "role": "agent",
+        "label": "PLANNED",
+        "box": [
+          576,
+          470,
+          448,
+          170
+        ],
+        "step": "06"
+      },
+      {
+        "id": "P2",
+        "title": "确定性预检 r2 / Precheck",
+        "lines": [],
+        "role": "gate",
+        "label": "PLANNED",
+        "box": [
+          576,
+          690,
+          448,
+          170
+        ],
+        "step": "07"
+      },
+      {
+        "id": "R2",
+        "title": "独立只读重审 r2 / Read-only re-review",
+        "lines": [],
+        "role": "agent",
+        "label": "PLANNED",
+        "box": [
+          576,
+          910,
+          448,
+          170
+        ],
+        "step": "08"
+      },
+      {
+        "id": "Q2",
+        "title": "确定性门禁 r2 / Deterministic gate",
+        "lines": [],
+        "role": "gate",
+        "label": "PLANNED",
+        "box": [
+          576,
+          1130,
+          448,
+          170
+        ],
+        "step": "09"
+      },
+      {
+        "id": "G3",
+        "title": "生成新 r3 / Generate immutable r3",
+        "lines": [],
+        "role": "agent",
+        "label": "PLANNED",
+        "box": [
+          1088,
+          470,
+          448,
+          170
+        ],
+        "step": "10"
+      },
+      {
+        "id": "P3",
+        "title": "确定性预检 r3 / Precheck",
+        "lines": [],
+        "role": "gate",
+        "label": "PLANNED",
+        "box": [
+          1088,
+          690,
+          448,
+          170
+        ],
+        "step": "11"
+      },
+      {
+        "id": "R3",
+        "title": "独立只读重审 r3 / Read-only re-review",
+        "lines": [],
+        "role": "agent",
+        "label": "PLANNED",
+        "box": [
+          1088,
+          910,
+          448,
+          170
+        ],
+        "step": "12"
+      },
+      {
+        "id": "Q3",
+        "title": "确定性门禁 r3 / Deterministic gate",
+        "lines": [],
+        "role": "gate",
+        "label": "PLANNED",
+        "box": [
+          1088,
+          1130,
+          448,
+          170
+        ],
+        "step": "13"
+      },
+      {
+        "id": "B1",
+        "title": "修复计划 1 / Bounded repair plan",
+        "lines": [],
+        "role": "gate",
+        "label": "PLANNED",
+        "box": [
+          320,
+          1400,
+          440,
+          190
+        ],
+        "step": "14"
+      },
+      {
+        "id": "B2",
+        "title": "修复计划 2 / Bounded repair plan",
+        "lines": [],
+        "role": "gate",
+        "label": "PLANNED",
+        "box": [
+          832,
+          1400,
+          440,
+          190
+        ],
+        "step": "15"
+      },
+      {
+        "id": "H",
+        "title": "完整 locale 聚合与人审 / Whole-locale human gate",
+        "lines": [],
+        "role": "gate",
+        "label": "PLANNED",
+        "box": [
+          300,
+          1710,
+          1000,
+          190
+        ],
+        "step": "16"
+      },
+      {
+        "id": "L3",
+        "title": "进入本语言 L3 / Admit this locale to L3",
+        "lines": [],
+        "role": "input",
+        "label": "PLANNED",
+        "box": [
+          64,
+          2010,
+          448,
+          180
+        ],
+        "step": "17"
+      },
+      {
+        "id": "WAIT",
+        "title": "持久等待 / Durable wait",
+        "lines": [],
+        "role": "gate",
+        "label": "PLANNED",
+        "box": [
+          576,
+          2010,
+          448,
+          180
+        ],
+        "step": "18"
+      },
+      {
+        "id": "STOP",
+        "title": "停止并留证 / Stop and escalate",
+        "lines": [],
+        "role": "gate",
+        "label": "PLANNED",
+        "box": [
+          1088,
+          2010,
+          448,
+          180
+        ],
+        "step": "19"
+      }
+    ],
+    "edges": [
+      {
+        "from": "F",
+        "to": "G1"
+      },
+      {
+        "from": "G1",
+        "to": "P1"
+      },
+      {
+        "from": "P1",
+        "to": "R1",
+        "label": "通过 / valid"
+      },
+      {
+        "from": "R1",
+        "to": "Q1"
+      },
+      {
+        "from": "P1",
+        "to": "B1",
+        "label": "结构失败 / invalid",
+        "points": [
+          [
+            64,
+            775
+          ],
+          [
+            38,
+            775
+          ],
+          [
+            38,
+            1495
+          ],
+          [
+            320,
+            1495
+          ]
+        ],
+        "labelAt": [
+          120,
+          1380
+        ]
+      },
+      {
+        "from": "Q1",
+        "to": "B1",
+        "label": "需返工 / needs_rework"
+      },
+      {
+        "from": "B1",
+        "to": "G2",
+        "points": [
+          [
+            540,
+            1400
+          ],
+          [
+            540,
+            555
+          ],
+          [
+            576,
+            555
+          ]
+        ],
+        "label": "new r2",
+        "labelAt": [
+          540,
+          895
+        ]
+      },
+      {
+        "from": "G2",
+        "to": "P2"
+      },
+      {
+        "from": "P2",
+        "to": "R2",
+        "label": "通过 / valid"
+      },
+      {
+        "from": "R2",
+        "to": "Q2"
+      },
+      {
+        "from": "P2",
+        "to": "B2",
+        "label": "结构失败 / invalid",
+        "points": [
+          [
+            1024,
+            775
+          ],
+          [
+            1040,
+            775
+          ],
+          [
+            1040,
+            1360
+          ],
+          [
+            1150,
+            1360
+          ],
+          [
+            1150,
+            1400
+          ]
+        ],
+        "labelAt": [
+          1220,
+          1380
+        ]
+      },
+      {
+        "from": "Q2",
+        "to": "B2",
+        "label": "需返工 / needs_rework"
+      },
+      {
+        "from": "B2",
+        "to": "G3",
+        "points": [
+          [
+            1052,
+            1400
+          ],
+          [
+            1052,
+            555
+          ],
+          [
+            1088,
+            555
+          ]
+        ],
+        "label": "new r3",
+        "labelAt": [
+          1052,
+          895
+        ]
+      },
+      {
+        "from": "G3",
+        "to": "P3"
+      },
+      {
+        "from": "P3",
+        "to": "R3",
+        "label": "通过 / valid"
+      },
+      {
+        "from": "R3",
+        "to": "Q3"
+      },
+      {
+        "from": "P3",
+        "to": "STOP",
+        "label": "结构失败 / invalid",
+        "points": [
+          [
+            1536,
+            775
+          ],
+          [
+            1575,
+            775
+          ],
+          [
+            1575,
+            2100
+          ],
+          [
+            1536,
+            2100
+          ]
+        ],
+        "labelAt": [
+          1460,
+          1780
+        ]
+      },
+      {
+        "from": "Q3",
+        "to": "STOP",
+        "label": "仍需返工 / needs_rework",
+        "points": [
+          [
+            1536,
+            1215
+          ],
+          [
+            1550,
+            1215
+          ],
+          [
+            1550,
+            2070
+          ],
+          [
+            1536,
+            2070
+          ]
+        ],
+        "labelAt": [
+          1410,
+          1940
+        ]
+      },
+      {
+        "from": "Q1",
+        "to": "H",
+        "label": "机器通过 / machine pass",
+        "points": [
+          [
+            220,
+            1300
+          ],
+          [
+            220,
+            1680
+          ],
+          [
+            600,
+            1680
+          ],
+          [
+            600,
+            1710
+          ]
+        ],
+        "labelAt": [
+          160,
+          1640
+        ]
+      },
+      {
+        "from": "Q2",
+        "to": "H",
+        "label": "机器通过 / machine pass",
+        "points": [
+          [
+            800,
+            1300
+          ],
+          [
+            800,
+            1710
+          ]
+        ],
+        "labelAt": [
+          800,
+          1640
+        ]
+      },
+      {
+        "from": "Q3",
+        "to": "H",
+        "label": "机器通过 / machine pass",
+        "points": [
+          [
+            1370,
+            1300
+          ],
+          [
+            1370,
+            1680
+          ],
+          [
+            1000,
+            1680
+          ],
+          [
+            1000,
+            1710
+          ]
+        ],
+        "labelAt": [
+          1370,
+          1640
+        ]
+      },
+      {
+        "from": "H",
+        "to": "L3",
+        "label": "同版本收据 / matching receipt"
+      },
+      {
+        "from": "H",
+        "to": "WAIT",
+        "label": "尚未批准 / pending"
+      }
+    ],
+    "footer": [
+      "计划中的 strict-verifier 与有界返工；D1 私有合同不代表 D3–D5 执行已完成。",
+      "两次修订为建议上限；执行失败恢复审核，结果未知先对账，人审仍独立。"
+    ],
+    "height": 2400,
+    "indexLabel": "ZH–EN",
+    "calibratedAt": "2026-09-30",
+    "designReference": "Repository source / no ImageGen",
+    "arrowStroke": "#648A86"
+  },
+  {
+    "name": "app-system-architecture",
+    "title": "App 系统设计 / Client architecture",
+    "english": "IOS PRIMARY / WEB SECONDARY",
+    "subtitle": "产品优先级不等于功能齐备、二进制分发或真实现场验收。",
+    "nodes": [
+      {
+        "id": "RELEASE",
+        "title": "L4 已核验发布资产 / Verified release assets",
+        "lines": [
+          "catalog + locale Release + hashes"
+        ],
+        "role": "input",
+        "label": "INPUT",
+        "box": [
+          380,
+          230,
+          840,
+          190
+        ],
+        "step": "01"
+      },
+      {
+        "id": "IOS",
+        "title": "主端 / Primary: native iOS",
+        "lines": [
+          "SwiftUI + AppModel"
+        ],
+        "role": "process",
+        "label": "CONTRACT / COMPONENT",
+        "box": [
+          64,
+          510,
+          448,
+          220
+        ],
+        "step": "02"
+      },
+      {
+        "id": "WEB",
+        "title": "辅端 / Secondary: Firebase Web",
+        "lines": [
+          "catalog + published-weeks"
+        ],
+        "role": "process",
+        "label": "CONTRACT / COMPONENT",
+        "box": [
+          1088,
+          510,
+          448,
+          220
+        ],
+        "step": "03"
+      },
+      {
+        "id": "ALIGN",
+        "title": "可选同源定位索引 / Optional source-bound index",
+        "lines": [],
+        "role": "input",
+        "label": "INPUT",
+        "box": [
+          576,
+          510,
+          448,
+          220
+        ],
+        "step": "04"
+      },
+      {
+        "id": "STORE",
+        "title": "HTTPS 获取、hash 校验、缓存 / Verified cache",
+        "lines": [],
+        "role": "gate",
+        "label": "GATE",
+        "box": [
+          64,
+          830,
+          448,
+          210
+        ],
+        "step": "05"
+      },
+      {
+        "id": "WP",
+        "title": "Web 播放、全文与视频 / Web playback and text",
+        "lines": [],
+        "role": "output",
+        "label": "OUTPUT",
+        "box": [
+          1088,
+          1150,
+          448,
+          240
+        ],
+        "step": "06"
+      },
+      {
+        "id": "PLAYER",
+        "title": "唯一 AVPlayer / PlaybackController",
+        "lines": [
+          "字幕、锁屏、手动微调 / Captions + controls"
+        ],
+        "role": "output",
+        "label": "OUTPUT",
+        "box": [
+          576,
+          1150,
+          448,
+          240
+        ],
+        "step": "07"
+      },
+      {
+        "id": "READER",
+        "title": "多语言阅读 / Multilingual reading",
+        "lines": [
+          "校验内容，受限页面 / Verified restricted page"
+        ],
+        "role": "output",
+        "label": "OUTPUT",
+        "box": [
+          64,
+          1150,
+          448,
+          240
+        ],
+        "step": "08"
+      }
+    ],
+    "edges": [
+      {
+        "from": "RELEASE",
+        "to": "IOS"
+      },
+      {
+        "from": "RELEASE",
+        "to": "WEB"
+      },
+      {
+        "from": "IOS",
+        "to": "STORE"
+      },
+      {
+        "from": "STORE",
+        "to": "PLAYER"
+      },
+      {
+        "from": "STORE",
+        "to": "READER"
+      },
+      {
+        "from": "WEB",
+        "to": "WP"
+      },
+      {
+        "from": "ALIGN",
+        "to": "PLAYER"
+      },
+      {
+        "from": "ALIGN",
+        "to": "WP"
+      }
+    ],
+    "footer": [
+      "L4 发布包决定可用能力；客户端不修复上游内容或签发人审。",
+      "缺定位索引只禁用定位；内容语言、界面语言和播放状态分别处理。"
+    ],
+    "height": 1600,
+    "indexLabel": "APP",
+    "calibratedAt": "2026-09-30",
+    "designReference": "Repository source / no ImageGen",
+    "arrowStroke": "#648A86"
+  },
+  {
+    "name": "execution-environments",
+    "title": "执行环境 / Execution environments",
+    "english": "REPOSITORY EVIDENCE; NOT A LIVE INVENTORY",
+    "subtitle": "本地生产、可选远端模型、公开交付和 CI 分开；未重新检查服务在线状态。",
+    "nodes": [
+      {
+        "id": "SOURCE",
+        "title": "公开或授权媒体 / Authorized source",
+        "lines": [],
+        "role": "input",
+        "label": "INPUT",
+        "box": [
+          64,
+          230,
+          448,
+          170
+        ],
+        "step": "01"
+      },
+      {
+        "id": "GIT",
+        "title": "Git branch / PR",
+        "lines": [],
+        "role": "input",
+        "label": "INPUT",
+        "box": [
+          1088,
+          230,
+          448,
+          170
+        ],
+        "step": "02"
+      },
+      {
+        "id": "TEMP",
+        "title": "可选 Temporal / Optional loopback + SQLite",
+        "lines": [
+          "保留原业务门禁 / Original gates remain"
+        ],
+        "role": "archive",
+        "label": "EVIDENCE",
+        "box": [
+          64,
+          470,
+          448,
+          210
+        ],
+        "step": "03"
+      },
+      {
+        "id": "LOCAL",
+        "title": "Python producers + durable jobs",
+        "lines": [
+          "hash、lease、人工收据 / Evidence and admission"
+        ],
+        "role": "process",
+        "label": "CONTRACT / COMPONENT",
+        "box": [
+          576,
+          470,
+          448,
+          210
+        ],
+        "step": "04"
+      },
+      {
+        "id": "CI",
+        "title": "GitHub Actions",
+        "lines": [
+          "docs, Python, native checks"
+        ],
+        "role": "gate",
+        "label": "GATE",
+        "box": [
+          1088,
+          470,
+          448,
+          210
+        ],
+        "step": "05"
+      },
+      {
+        "id": "MODELS",
+        "title": "本地 ASR、对齐、TTS / Local model runtimes",
+        "lines": [],
+        "role": "agent",
+        "label": "MODEL",
+        "box": [
+          64,
+          790,
+          448,
+          200
+        ],
+        "step": "06"
+      },
+      {
+        "id": "PRIVATE",
+        "title": "私有 artifacts / Media, caches, receipts",
+        "lines": [
+          "Git ignored"
+        ],
+        "role": "archive",
+        "label": "EVIDENCE",
+        "box": [
+          576,
+          790,
+          448,
+          200
+        ],
+        "step": "07"
+      },
+      {
+        "id": "CHECKS",
+        "title": "代码门禁结果 / Code checks",
+        "lines": [
+          "不自动发布内容 / No automatic content deploy"
+        ],
+        "role": "output",
+        "label": "OUTPUT",
+        "box": [
+          1088,
+          790,
+          448,
+          200
+        ],
+        "step": "08"
+      },
+      {
+        "id": "API",
+        "title": "云模型 API / Cloud model APIs",
+        "lines": [
+          "transcription, translation, review"
+        ],
+        "role": "agent",
+        "label": "MODEL",
+        "box": [
+          64,
+          1130,
+          448,
+          220
+        ],
+        "step": "09"
+      },
+      {
+        "id": "SPARK",
+        "title": "DGX Spark / CUDA runtimes",
+        "lines": [
+          "声音训练、后备推理、隔离实验"
+        ],
+        "role": "agent",
+        "label": "MODEL",
+        "box": [
+          576,
+          1130,
+          448,
+          220
+        ],
+        "step": "10"
+      },
+      {
+        "id": "GCS",
+        "title": "Cloud Storage",
+        "lines": [
+          "来源证据与视频对象 / Evidence and video objects"
+        ],
+        "role": "archive",
+        "label": "EVIDENCE",
+        "box": [
+          1088,
+          1130,
+          448,
+          220
+        ],
+        "step": "11"
+      },
+      {
+        "id": "HOST",
+        "title": "Firebase Hosting",
+        "lines": [
+          "Dev 与 Production 分离 / Separate environments"
+        ],
+        "role": "output",
+        "label": "OUTPUT",
+        "box": [
+          64,
+          1490,
+          448,
+          220
+        ],
+        "step": "12"
+      },
+      {
+        "id": "CLIENT",
+        "title": "iOS 主端 + Web 辅端 / Clients",
+        "lines": [],
+        "role": "output",
+        "label": "OUTPUT",
+        "box": [
+          576,
+          1790,
+          448,
+          200
+        ],
+        "step": "13"
+      },
+      {
+        "id": "LIVE",
+        "title": "独立 MacBook live_session",
+        "lines": [
+          "mic → ASR → translation → local display"
+        ],
+        "role": "process",
+        "label": "CONTRACT / COMPONENT",
+        "box": [
+          1088,
+          1490,
+          448,
+          220
+        ],
+        "step": "14"
+      },
+      {
+        "id": "RTDB",
+        "title": "Firebase RTDB + read-only viewer",
+        "lines": [],
+        "role": "output",
+        "label": "OUTPUT",
+        "box": [
+          1088,
+          1790,
+          448,
+          200
+        ],
+        "step": "15"
+      },
+      {
+        "id": "FEEDBACK",
+        "title": "Cloud Functions v2 feedback + Firestore",
+        "lines": [
+          "独立权限 / Separate authority"
+        ],
+        "role": "archive",
+        "label": "EVIDENCE",
+        "box": [
+          576,
+          2130,
+          448,
+          220
+        ],
+        "step": "16"
+      }
+    ],
+    "edges": [
+      {
+        "from": "SOURCE",
+        "to": "LOCAL",
+        "points": [
+          [
+            288,
+            400
+          ],
+          [
+            288,
+            435
+          ],
+          [
+            800,
+            435
+          ],
+          [
+            800,
+            470
+          ]
+        ]
+      },
+      {
+        "from": "LOCAL",
+        "to": "MODELS"
+      },
+      {
+        "from": "LOCAL",
+        "to": "PRIVATE"
+      },
+      {
+        "from": "TEMP",
+        "to": "LOCAL",
+        "dashed": true
+      },
+      {
+        "from": "LOCAL",
+        "to": "API",
+        "label": "必要音频或文字 / Required model input",
+        "points": [
+          [
+            576,
+            590
+          ],
+          [
+            40,
+            590
+          ],
+          [
+            40,
+            1240
+          ],
+          [
+            64,
+            1240
+          ]
+        ],
+        "labelAt": [
+          185,
+          1080
+        ]
+      },
+      {
+        "from": "LOCAL",
+        "to": "SPARK",
+        "label": "受控 SSH 与任务 / Authorized remote job",
+        "dashed": true,
+        "points": [
+          [
+            1024,
+            610
+          ],
+          [
+            1055,
+            610
+          ],
+          [
+            1055,
+            1080
+          ],
+          [
+            800,
+            1080
+          ],
+          [
+            800,
+            1130
+          ]
+        ],
+        "labelAt": [
+          770,
+          1050
+        ]
+      },
+      {
+        "from": "LOCAL",
+        "to": "HOST",
+        "label": "批准资产与显式 CD / Approved assets + explicit CD",
+        "points": [
+          [
+            576,
+            650
+          ],
+          [
+            548,
+            650
+          ],
+          [
+            548,
+            1440
+          ],
+          [
+            288,
+            1440
+          ],
+          [
+            288,
+            1490
+          ]
+        ],
+        "labelAt": [
+          230,
+          1450
+        ]
+      },
+      {
+        "from": "LOCAL",
+        "to": "GCS",
+        "label": "版本化媒体或状态 / Versioned media or state",
+        "points": [
+          [
+            1024,
+            650
+          ],
+          [
+            1068,
+            650
+          ],
+          [
+            1068,
+            1100
+          ],
+          [
+            1312,
+            1100
+          ],
+          [
+            1312,
+            1130
+          ]
+        ],
+        "labelAt": [
+          1330,
+          1080
+        ]
+      },
+      {
+        "from": "HOST",
+        "to": "CLIENT"
+      },
+      {
+        "from": "GCS",
+        "to": "CLIENT",
+        "label": "获准公开媒体 / Approved public media",
+        "points": [
+          [
+            1312,
+            1350
+          ],
+          [
+            1312,
+            1400
+          ],
+          [
+            1038,
+            1400
+          ],
+          [
+            1038,
+            1740
+          ],
+          [
+            800,
+            1740
+          ],
+          [
+            800,
+            1790
+          ]
+        ],
+        "labelAt": [
+          795,
+          1720
+        ]
+      },
+      {
+        "from": "LIVE",
+        "to": "RTDB",
+        "label": "脱敏字幕 / Sanitized captions",
+        "dashed": true,
+        "labelAt": [
+          1320,
+          1740
+        ]
+      },
+      {
+        "from": "CLIENT",
+        "to": "FEEDBACK",
+        "label": "自愿统计或反馈 / Opt-in usage or feedback",
+        "dashed": true,
+        "points": [
+          [
+            800,
+            1990
+          ],
+          [
+            800,
+            2130
+          ]
+        ],
+        "labelAt": [
+          800,
+          2070
+        ]
+      },
+      {
+        "from": "GIT",
+        "to": "CI"
+      },
+      {
+        "from": "CI",
+        "to": "CHECKS"
+      }
+    ],
+    "footer": [
+      "Dev / Production 隔离；私有生产证据与获准公开媒体分开。",
+      "CI 只验证代码；内容 CD、iOS 分发、设备与现场验收各自留证。"
+    ],
+    "height": 2560,
+    "indexLabel": "ENV",
+    "calibratedAt": "2026-09-30",
+    "designReference": "Repository source / no ImageGen",
+    "arrowStroke": "#648A86"
   }
 ]
