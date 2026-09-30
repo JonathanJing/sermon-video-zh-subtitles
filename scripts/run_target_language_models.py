@@ -474,6 +474,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                          partial_repair_brief: dict[str, Any] | None = None,
                          resume_cache_from: Path | None = None,
                          *, simulation_only: bool = False, cache_only: bool = False,
+                         progress_callback=None,
                          source_admission_span: str | None = None) -> dict[str, Any]:
     """Shared group loop; the formal entry above still enforces Layer 1 approval.
 
@@ -664,6 +665,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                          if resume_cache_from is not None else
                                          reusable_cache(reuse_from, stem, "astra")
                                          if brief is None and repair is None else None, cache_only=cache_only)
+                if progress_callback is not None:
+                    progress_callback('translator_response_saved')
         with accounting.stage(f"layer2.draft_validation.{request['targetLocale']}.{stem}",
                               depends_on=[translator_span], executor_type="deterministic_program",
                               work_unit_id=f"l2.{request['targetLocale']}.{stem}.draft_validation") as draft_span:
@@ -725,6 +728,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                                 if resume_cache_from is not None else
                                                 reusable_cache(reuse_from, stem, "sol")
                                                 if brief is None and repair is None else None, cache_only=cache_only)
+                if progress_callback is not None:
+                    progress_callback('reviewer_response_saved')
         with accounting.stage(f"layer2.review_validation.{request['targetLocale']}.{stem}",
                               depends_on=[reviewer_span], executor_type="deterministic_program",
                               work_unit_id=f"l2.{request['targetLocale']}.{stem}.review_validation") as validation_span:
@@ -794,7 +799,7 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
                   *, partial_repair_brief: dict | None = None,
                   resume_cache_from: Path | None = None,
                   progress_ledger: Path | None = None,
-                  cache_only: bool = False) -> dict:
+                  cache_only: bool = False, progress_callback=None) -> dict:
     locale = policy["targetLocale"]
     with measure.producer_step(progress_ledger, f"L2-02@{locale}", locale=locale) as metrics:
         with accounting.accounting_session(out_dir / "accounting", "layer2_models",
@@ -809,7 +814,8 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
             evidence = _run_prepared_groups(
                 request, anchor, policy, out_dir, api_key, call, plan, plugin,
                 revision_brief, reuse_from, partial_repair_brief, resume_cache_from,
-                source_admission_span=source_span, cache_only=cache_only)
+                source_admission_span=source_span, cache_only=cache_only,
+                progress_callback=progress_callback)
         metrics["doneUnits"] = len(evidence["groups"])
     return evidence
 

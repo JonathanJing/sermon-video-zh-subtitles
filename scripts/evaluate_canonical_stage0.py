@@ -29,7 +29,7 @@ SUITES = {
     'bounded_decision': ('tests.test_sermon_bounded_decision', 'tests.test_sermon_decision_budget',
                          'tests.test_sermon_decision_accounting'),
     'legacy_controller_reliability': ('tests.test_sermon_deterministic_controller', 'tests.test_controller_crash_windows',
-                                      'tests.test_sermon_workflow_jobs'),
+                                      'tests.test_sermon_workflow_jobs', 'tests.test_sermon_job_liveness'),
     'accounting': ('tests.test_sermon_accounting', 'tests.test_accounting_retry_safety',
                    'tests.test_accounting_observability', 'tests.test_weekly_pipeline_report'),
     'release_asset_assembly': ('tests.test_release_asset_io', 'tests.test_backend_four_layer_dry_run',

@@ -63,7 +63,7 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
         key, code = jobs._digest(ident), subject.code_identity()
         command = subject._worker_command(config, locale, key, code)
         request = {'schemaVersion': jobs.SCHEMA, 'jobId': key, 'identity': ident,
-                   'command': command, 'commandSha256': jobs._digest(command), 'timeoutSeconds': 21600.0}
+                   'command': command, 'commandSha256': jobs._digest(command), 'timeoutSeconds': 21600.0, 'livenessPolicy': subject.LIVENESS_POLICY}
         with jobs._lock(config.job_root, key) as (folder, _, held):
             self.assertTrue(held)
             folder.mkdir()
@@ -104,11 +104,12 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
             result = controller.tick()
         start.assert_not_called()
         self.assertEqual(result['status'], 'blocked')
-        def admitted(root, ident, command, *, timeout_seconds):
+        def admitted(root, ident, command, *, timeout_seconds, liveness_policy):
             with jobs._lock(root, subject.ADMISSION_LOCK) as (_, _, held):
                 self.assertFalse(held)
             self.assertEqual(command[:3], [sys.executable, str(Path(subject.__file__).resolve()), 'worker'])
             self.assertEqual(timeout_seconds, 21600)
+            self.assertEqual(liveness_policy, subject.LIVENESS_POLICY)
             self.assertEqual(ident['workUnitId'], 'text.zh-Hans')
             self.assertNotIn('fixture-key', str(command))
             return {'jobId': jobs._digest(ident), 'status': 'queued'}

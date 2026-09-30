@@ -25,6 +25,7 @@ from scripts import produce_target_language_candidate as producer
 from scripts import run_target_language_models as models
 from scripts import sermon_accounting as accounting
 from scripts import sermon_workflow_jobs as jobs
+from scripts import sermon_job_liveness as liveness
 from scripts.sermon_execution_harness import work_lock
 from scripts.sermon_release_workflow import _safe_path
 
@@ -34,6 +35,9 @@ MODES = ('deterministic_shadow', 'deterministic_execute')
 ADMISSION_LOCK = jobs._digest({'purpose': 'canonical-layer2-admission-v1'})
 MAX_CONFIG_BYTES = 1024 * 1024
 MAX_ACTIVE_LAYER2_JOBS = 1
+LIVENESS_POLICY = {'schemaVersion': liveness.SCHEMA, 'startTimeoutSeconds': 60,
+                   'heartbeatIntervalSeconds': 30, 'heartbeatTimeoutSeconds': 90,
+                   'noProgressTimeoutSeconds': 900}
 
 
 def require(ok, reason):
@@ -231,7 +235,7 @@ class Controller:
                 ident = durable.identity(fresh, config.run_id, 'text.' + locale)
                 key = jobs._digest(ident)
                 outcome = jobs.start_job(config.job_root, ident, _worker_command(config, locale, key, self.code_sha),
-                                         timeout_seconds=21600)
+                                         timeout_seconds=21600, liveness_policy=LIVENESS_POLICY)
             except (ValueError, OSError, KeyError, TypeError):
                 # Any persisted job intent remains discoverable; never retry an
                 # uncertain start merely because this controller got an error.
@@ -260,44 +264,51 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
         request = jobs._read(request_path)
         require(jobs._request_valid(request, expected_job) and request['identity'] == ident
                 and request['command'] == _worker_command(config, locale, expected_job, expected_code)
+                and request.get('livenessPolicy') == LIVENESS_POLICY
                 and jobs.peek_job(config.job_root, expected_job)['status'] == 'running',
                 'worker_requires_active_bound_durable_job')
-        source, anchor, policy = _inputs(config, locale, current)
-        if caller is None:
-            api_key = os.environ.get('OPENAI_API_KEY')
-            require(bool(api_key), 'OPENAI_API_KEY_is_not_configured')
-            caller = lambda key, payload: models.sermon_pipeline.chat_json(key, payload, retries=1)
-        def current_binding():
-            fresh_config = load_configuration(config.path)
-            require(fresh_config.sha256 == expected_configuration and code_identity() == expected_code,
-                    'worker_configuration_or_code_changed_during_models')
-            fresh = package_view(fresh_config)
-            require(fresh['nodes']['text.' + locale]['status'] == 'ready'
-                    and jobs._digest(durable.identity(fresh, config.run_id, 'text.' + locale)) == expected_job,
-                    'worker_inputs_changed_during_models')
-            return fresh_config
-        def bound_call(key, payload):
-            current_binding()
-            return caller(key, payload)
-        evidence = models.run_accounted(source, anchor, policy, lane['output'], api_key,
-                                         bound_call, None, lane['plugin'], None, None)
-        # Paid results remain recoverable if approval/source/config/code drifted
-        # while a request was outstanding. Never turn those results into approval.
-        fresh_config = current_binding()
-        with accounting.accounting_session(lane['output'] / 'accounting', 'canonical_layer2_candidate',
-                                           {'targetLocale': locale}, evidence_directory=lane['output']):
-            with accounting.stage('layer2.language_and_candidate.' + locale, depends_on=[],
-                                  executor_type='deterministic_program', work_unit_id='l2.' + locale + '.candidate_admission'):
-                original_request = producer._load(lane['output'] / 'request.json')
-                plugin_sha = policy['languageReview']['pluginImplementationSha256']
-                receipt = producer.run_language_plugin(source, anchor, policy, original_request, evidence, lane['plugin'], plugin_sha)
-                candidate = producer.admit_evidence(source, anchor, policy, original_request, evidence, receipt, lane['plugin'], plugin_sha)
-                models.save_new(lane['output'] / 'language-review.json', receipt)
-                models.save_new(lane['candidate'], candidate)
-        checked = package_view(fresh_config)
-        require(checked['nodes']['text.' + locale]['status'] == 'validated', 'worker_candidate_not_validated')
-        return {'status': 'machine_review_pass_human_review_pending',
-                'candidateJsonSha256': jobs._digest(candidate), 'releaseEligible': False}
+        with liveness.report(request_path.parent, request) as progress:
+            source, anchor, policy = _inputs(config, locale, current)
+            if caller is None:
+                api_key = os.environ.get('OPENAI_API_KEY')
+                require(bool(api_key), 'OPENAI_API_KEY_is_not_configured')
+                caller = lambda key, payload: models.sermon_pipeline.chat_json(key, payload, retries=1)
+            def current_binding():
+                fresh_config = load_configuration(config.path)
+                require(fresh_config.sha256 == expected_configuration and code_identity() == expected_code,
+                        'worker_configuration_or_code_changed_during_models')
+                fresh = package_view(fresh_config)
+                require(fresh['nodes']['text.' + locale]['status'] == 'ready'
+                        and jobs._digest(durable.identity(fresh, config.run_id, 'text.' + locale)) == expected_job,
+                        'worker_inputs_changed_during_models')
+                return fresh_config
+            def bound_call(key, payload):
+                current_binding()
+                progress.progress('model_request')
+                return caller(key, payload)
+            evidence = models.run_accounted(source, anchor, policy, lane['output'], api_key,
+                                             bound_call, None, lane['plugin'], None, None,
+                                             progress_callback=progress.progress)
+            # Paid results remain recoverable if approval/source/config/code drifted
+            # while a request was outstanding. Never turn those results into approval.
+            progress.progress('models_validated')
+            fresh_config = current_binding()
+            with accounting.accounting_session(lane['output'] / 'accounting', 'canonical_layer2_candidate',
+                                               {'targetLocale': locale}, evidence_directory=lane['output']):
+                with accounting.stage('layer2.language_and_candidate.' + locale, depends_on=[],
+                                      executor_type='deterministic_program', work_unit_id='l2.' + locale + '.candidate_admission'):
+                    original_request = producer._load(lane['output'] / 'request.json')
+                    plugin_sha = policy['languageReview']['pluginImplementationSha256']
+                    receipt = producer.run_language_plugin(source, anchor, policy, original_request, evidence, lane['plugin'], plugin_sha)
+                    candidate = producer.admit_evidence(source, anchor, policy, original_request, evidence, receipt, lane['plugin'], plugin_sha)
+                    current_binding()
+                    progress.progress('candidate_validated')
+                    models.save_new(lane['output'] / 'language-review.json', receipt)
+                    models.save_new(lane['candidate'], candidate)
+            checked = package_view(fresh_config)
+            require(checked['nodes']['text.' + locale]['status'] == 'validated', 'worker_candidate_not_validated')
+            return {'status': 'machine_review_pass_human_review_pending',
+                    'candidateJsonSha256': jobs._digest(candidate), 'releaseEligible': False}
 
 
 def main():

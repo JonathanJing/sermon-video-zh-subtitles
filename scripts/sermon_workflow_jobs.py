@@ -31,6 +31,8 @@ from scripts.sermon_execution_harness import (  # noqa: E402
     ExecutionTerminated, _LOCK_FDS, bounded_process, utc_now,
 )
 
+from scripts import sermon_job_liveness as liveness
+
 SCHEMA = "sermon-workflow-job-v1"
 STATUSES = {"queued", "running", "succeeded", "failed", "uncertain"}
 ACTIVE = {"queued", "running"}
@@ -193,7 +195,8 @@ def _lock(root, job_id):
 def _request_valid(request, job_id):
     return (isinstance(request, dict) and request.get("schemaVersion") == SCHEMA
             and request.get("jobId") == job_id and _digest(request.get("identity")) == job_id
-            and request.get("commandSha256") == _digest(request.get("command")))
+            and request.get("commandSha256") == _digest(request.get("command"))
+            and ("livenessPolicy" not in request or liveness.valid_policy(request["livenessPolicy"])))
 
 
 def _state(folder, job_id):
@@ -278,7 +281,8 @@ def peek_job(root: Path, job_id: str) -> dict:
         os.close(fd)
 
 
-def start_job(root: Path, identity: dict, command: list[str], timeout_seconds: float) -> dict:
+def start_job(root: Path, identity: dict, command: list[str], timeout_seconds: float,
+              *, liveness_policy: dict | None = None) -> dict:
     """Launch exactly once per identity; caller supplies a fixed trusted argv.
 
     This is a backend function, not a model tool accepting arbitrary commands.
@@ -295,6 +299,8 @@ def start_job(root: Path, identity: dict, command: list[str], timeout_seconds: f
     root = Path(root).resolve()
     request = {"schemaVersion": SCHEMA, "jobId": job_id, "identity": identity,
                "command": command, "commandSha256": _digest(command), "timeoutSeconds": float(timeout_seconds)}
+    if liveness_policy is not None:
+        request["livenessPolicy"] = liveness.validate_policy(liveness_policy)
     with _lock(root, job_id) as (folder, fd, held):
         if folder.exists():
             try:
@@ -362,21 +368,31 @@ def _worker(root, job_id, lock_fd):
     token = _LOCK_FDS.set((lock_fd,))
     os.environ["SERMON_HARNESS_GUARDED_CHILDREN"] = "1"
     _write_state(folder, job_id, "running", workerPid=os.getpid(), startedAt=utc_now())
+    monitor = liveness.Monitor(folder, request).start() if 'livenessPolicy' in request else None
     try:
+        options = {'cancel_event': monitor.cancel} if monitor else {}
         result = bounded_process(request["command"], timeout=request["timeoutSeconds"], cwd=REPO_ROOT,
-                                 stdin=subprocess.DEVNULL, check=False)
+                                 stdin=subprocess.DEVNULL, check=False, **options)
+        if monitor and (monitor.reason or (result.returncode == 0 and not monitor.completed())):
+            _write_state(folder, job_id, "uncertain", reason=monitor.reason,
+                         completedAt=utc_now(), automaticRetryAllowed=False)
+            return 0
         _write_state(folder, job_id, "succeeded" if result.returncode == 0 else "failed",
                      returnCode=result.returncode, reason="command_completed", completedAt=utc_now())
     except (subprocess.TimeoutExpired, ExecutionTerminated) as exc:
         cleanup_uncertain = any("cleanup failed" in note.lower() for note in getattr(exc, "__notes__", []))
-        _write_state(folder, job_id, "uncertain" if cleanup_uncertain else "failed",
-                     reason="cleanup_uncertain" if cleanup_uncertain else "timeout_or_termination",
+        liveness_reason = monitor.reason if monitor else None
+        reason = "cleanup_uncertain" if cleanup_uncertain else liveness_reason or "timeout_or_termination"
+        _write_state(folder, job_id, "uncertain" if cleanup_uncertain or liveness_reason else "failed",
+                     reason=reason,
                      errorType=type(exc).__name__, completedAt=utc_now())
     except OSError as exc:
         _write_state(folder, job_id, "failed", reason="command_launch_failed", errorType=type(exc).__name__)
     except BaseException as exc:
         _write_state(folder, job_id, "uncertain", reason="worker_interrupted", errorType=type(exc).__name__)
     finally:
+        if monitor:
+            monitor.close()
         _LOCK_FDS.reset(token)
         os.close(lock_fd)
     return 0
