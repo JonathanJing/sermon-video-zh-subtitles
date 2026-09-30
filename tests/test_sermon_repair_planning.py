@@ -327,12 +327,29 @@ class BudgetAndLineageTests(unittest.TestCase):
         second = p.plan_repair(**args)
         self.assertNotEqual(second['toRevisionId'], first['toRevisionId'])
         self.assertEqual(second['constraints']['rootRevisionId'], 'r1')
+        args['budget'] = replace(args['budget'], prior_failure_fingerprints=(first['failureFingerprint'],))
+        self.assertEqual(p.plan_repair(**args)['reasonCode'], 'repeated_failure_without_new_evidence')
         args['budget'] = replace(args['budget'], content_revisions_reserved=0)
         with self.assertRaisesRegex(c.ContractError, 'budget_counter_reset'):
             p.plan_repair(**args)
         changed = copy.deepcopy(child); changed['sourceIdentitySha256'] = '0' * 64
         with self.assertRaises(c.ContractError):
             c.validate_revision_lineage(changed, parent, first['repairPlan'])
+
+    def test_new_bound_context_evidence_can_distinguish_repeated_failure(self):
+        args = inputs()
+        first = p.plan_repair(**args)
+        args['budget'] = budget(prior_failure_fingerprints=(first['failureFingerprint'],))
+        args['input_manifest']['materialRefs']['context'].update(canonicalJsonSha256='c' * 64,
+                                                               fileBytesSha256='d' * 64)
+        args['review']['reviewerInputManifestSha256'] = c.canonical_sha256(args['input_manifest'])
+        args['review'] = seal(args['review'])
+        args['review_bytes'] = c.canonical_bytes(args['review'])
+        args['gate']['reviewReceiptRefs'][0].update(canonicalJsonSha256=c.canonical_sha256(args['review']),
+                                                  fileBytesSha256=c.bytes_sha256(args['review_bytes']))
+        result = p.plan_repair(**args)
+        self.assertEqual(result['status'], 'proposal')
+        self.assertNotEqual(result['failureFingerprint'], first['failureFingerprint'])
 
 
 class DecisionTests(unittest.TestCase):
