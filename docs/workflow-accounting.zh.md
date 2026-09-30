@@ -1,5 +1,9 @@
 # 周六流程日志、耗时、Token 与费用记录
 
+> 2026-09-30 合同补充：[Accounting v3 Log Contract：七项补齐与 E1.0 验收](workflow-accounting-log-contract.zh.md)细化事件字段、去重顺序、时钟、上下文传播、token 收据、状态机和可靠性。该合同区分 `dev` 已合入内容与 #161 未合入实现；新 profile/schema/validator 仍须实现和验收，不因本文链接而启用。下文原有运行说明、历史 v2 证据及价格快照保留原日期和范围。
+>
+> 开发顺序：E1.0 schema／validator／正反例及当前实现差异核对 → instrumentation → DAG projector → Weekly Report；`LOGC-01`—`LOGC-07` 是既有 `DEV-SPD-006 / SPD6-LOG-*` 的验收子项，不新增顶层排期。规范细节以新合同为准；现有命令、原始账本、内容身份和人工／发布门禁不因文档变更而改变。
+
 自 2026-09-05 起，正式时间线、生成和配音入口自动记录本次执行。失败后续跑会追加新 `runId`，不会覆盖第一次失败的耗时和用量。原有生产 QA、审批及缓存判断保持独立。
 
 每次本地周六流程必须持久保存各环节耗时、Token 与费用字段，包括失败、重试、缓存复用和未完成运行。无法取得的数值写为 `null`，同时说明缺失原因或计量不适用；不能省略字段或以 0 代替未知。这里的 log 包含结构化事件和可关联的业务证据文件，不能只依赖对话中的总结。费用完整性与产物质量分别判断。
@@ -84,7 +88,7 @@ Supervisor 的 `Runner.run` 另记录 `sdk_call_started/finished`，保存 SDK �
 | 可复现版本 | Git commit、已跟踪文件修改标志、已加载项目 Python 文件 hash、Python／平台、模型、reasoning effort、请求 payload hash、声音检查点 hash | 本地代码身份与请求设置已记录；未导入模块、远程代码和训练环境仍以各自收据为准。请求仅保存摘要，不保存正文或密钥 |
 | 输入与工作量 | 音视频 hash／时长、已批准起止点、段数、字符数、批数、并发数、预期／已有／新生成／修订复用单元数 | 翻译、阅读和配音已接入工作量事件；配音仅按有效收据核算。新增文件数不能代替模型实际批输入数，旧报告未保存的批输入数为 `null` |
 | 速度与资源 | 阶段／API 延迟、重试退避、传输、延迟 p50／p95 与样本数、进程内存高水位／CPU 计数、磁盘余量 | 已接入上述本地指标；RSS 是进程生命周期高水位，子进程 CPU 只含已结束子进程。GPU 峰值为 `null` 并说明不可用；历史 TTS 时间注明模型加载后口径。进程外等待、远程模型加载和统一音频处理倍率仍需专门收据 |
-| 失败与恢复 | 脱敏错误类别、HTTP 状态、发生阶段、逐次尝试、退避、被中断请求、缓存命中、业务阻塞 | 已记录失败／完成 API 数和未结束调用；无结束收据的调用保持费用未知。详细退出码和缓存失效原因以已有业务收据为准，不记录异常响应全文 |
+| 失败与恢复 | 脱敏错误类别、HTTP 状态、發生阶段、逐次尝试、退避、被中断请求、缓存命中、业务阻塞 | 已记录失败／完成 API 数和未结束调用；无结束收据的调用保持费用未知。详细退出码和缓存失效原因以已有业务收据为准，不记录异常响应全文 |
 | 内容质量 | ASR 覆盖、空译／缺段／ID 错配／时间重叠计数；阅读两轮修改数量与未解决问题；PDF 页数、文字 QA 和视觉检查状态 | 对每项结果保留检测方法、工具版本、样本范围及证据 hash。没有参考稿时不把 ASR 自评分当作真实准确率 |
 | 配音与同步 | 自然／同步音轨时长、超时段数与最大超时、播放位置调整、漏读／重复的筛查疑问、解码／波形核验、待听审清单 | ASR 文字差异、模型复核与实际听到的错误分开记录；时间预算通过不能替代视频播放听审 |
 | 审批与交付 | 人工／模型审核类型、审核对象 hash、时间与范围；PDF／音频／Context Pack 证据路径和 hash、过期／同篇确认／降级原因、发布状态 | 已关联业务报告快照，包括实际 `pipeline/sunday-context` 四文件；文件存在不代表本次批准、发布或远端仍可用 |
@@ -109,7 +113,7 @@ Supervisor 的 `Runner.run` 另记录 `sdk_call_started/finished`，保存 SDK �
 
 当前 Astra 标准短上下文每百万 Token：普通输入 $10、缓存读取 $1、缓存写入 $12.50、输出 $50。费用公式为 `(input − cached − cache_write) × 输入单价 + cached × 缓存读取单价 + cache_write × 缓存写入单价 + output × 输出单价`，再除以一百万。Astra 超过 272K 输入 Token 时及 Fast／Batch／Flex 档位按对应倍率记录。依据：[官方价格](https://developers.openai.com/api/docs/pricing)、[缓存计价公式](https://developers.openai.com/api/docs/guides/prompt-caching)、[Astra 模型计价说明](https://developers.openai.com/api/docs/models/gpt-6-astra)。
 
-`knownEstimatedUsd` 是有收据、能估价的 API 小计；必须同时查看 `unknownCostAttempts`、`usageMissingAttempts`、`missingTokenFields` 和阶段 `billing`。不能仅因小计为 0 就宣称整次流程免费，也不能用 API Token 单价替 Codex 订阅或对话额度生成账单。
+`knownEstimatedUsd` 是有收据、能估价的 API 小计；必须同时查看 `unknownCostAttempts`、`usageMissingAttempts` 和阶段 `billing`。不能仅因小计为 0 就宣称整次流程免费，也不能用 API Token 单价替 Codex 订阅或对话额度生成账单。
 
 ## 本次历史验证补录
 
