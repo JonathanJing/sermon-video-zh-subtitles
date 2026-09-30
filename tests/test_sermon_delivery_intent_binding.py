@@ -547,6 +547,26 @@ class FormalStrictDeliveryTests(unittest.TestCase):
         with self.assertRaises(ValueError): self.prepare()
         self.assertFalse(self.args.out.exists())
 
+    def test_formal_operation_emits_measured_program_span_and_safe_output_identity(self):
+        from scripts import sermon_log_profile as profile
+        logs = self.formal.root / 'formal-logs'
+        finished = []
+        with profile.session(logs, 'formal-test', work_kind='production', evidence_mode='synthetic'):
+            with subject.accounting.stage('previous_audio_validation', executor_type='deterministic_program') as previous:
+                pass
+            result = subject.prepare_formal_delivery(self.manifest, root=self.formal.root,
+                configuration=self.config, stage_args=self.args, preparation_receipt_path=self.preparation_receipt_path,
+                strict_admissions=self.admissions, depends_on=[previous], completion_spans=finished)
+        events, invalid = subject.accounting.read_events(logs)
+        self.assertEqual(invalid, [])
+        start = next(row for row in events if row['event']=='stage_started' and row['spanId']==finished[0])
+        self.assertEqual(start['executorType'], 'deterministic_program')
+        self.assertEqual(start['dependsOn'], [previous])
+        end = next(row for row in events if row['event']=='stage_finished' and row['spanId']==finished[0])
+        self.assertGreater(end['elapsedSeconds'], 0)
+        self.assertTrue(any(row.get('metrics', {}).get('resultSha256')==result['resultSha256'] for row in events))
+        self.assertFalse(any(row['event']=='api_attempt' for row in events))
+
     def test_mutation_after_stage_preserves_untrusted_output_without_success(self):
         real = subject.stage.stage
         def mutate(args):

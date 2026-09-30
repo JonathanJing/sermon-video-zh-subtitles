@@ -44,6 +44,7 @@ from scripts import stage_formal_multilingual_dev as stage
 from scripts import sermon_review_contracts as contracts
 from scripts import sermon_review_budget as budget
 from scripts import sermon_strict_gate_admission as admission
+from scripts import sermon_accounting as accounting
 from scripts.sermon_release_workflow import _safe_path
 
 SCHEMA = 'private-sermon-delivery-release-binding-v1'
@@ -493,6 +494,30 @@ def _formal_output(args, descriptor, receipt):
 
 
 def prepare_formal_delivery(manifest, *, root, configuration, stage_args, preparation_receipt_path,
+                            weekly_plan=None, strict_admissions=None, depends_on=None,
+                            completion_spans=None):
+    """Run actual local preflight/staging as one measured deterministic operation.
+
+    Explicit dependency IDs must name actual prior operations in the session.
+    Missing queue/cross-process timing is not inferred. Logging failure after
+    staging preserves output and requires reconciliation, never a fresh retry.
+    """
+    require(completion_spans is None or type(completion_spans) is list, 'invalid_formal_span_sink')
+    with accounting.stage('rqc.formal_delivery', depends_on=depends_on,
+                          executor_type='deterministic_program') as span:
+        result = _prepare_formal_delivery(manifest, root=root, configuration=configuration,
+            stage_args=stage_args, preparation_receipt_path=preparation_receipt_path,
+            weekly_plan=weekly_plan, strict_admissions=strict_admissions)
+        accounting.record_workload('rqc.formal_delivery_result', {
+            'resultSha256': result['resultSha256'],
+            'intentSha256': manifest['intentSha256'],
+            'stageReceiptSha256': result['stageReceiptJsonSha256'],
+            'outputFileCount': len(result['outputFileBytesSha256'])})
+    if completion_spans is not None: completion_spans.append(span)
+    return result
+
+
+def _prepare_formal_delivery(manifest, *, root, configuration, stage_args, preparation_receipt_path,
                             weekly_plan=None, strict_admissions=None):
     """Prepare immutable local formal assets via actual preflight -> stage -> recheck.
 
