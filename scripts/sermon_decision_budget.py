@@ -4,6 +4,7 @@ No model SDK or dispatch is added. The initial conservative policy permits two
 decision calls per production run, not two per changed packet or per locale.
 An interrupted/unknown outcome requires reconciliation; it never resets budget.
 """
+import os
 from pathlib import Path
 
 from scripts import sermon_bounded_decision as decision
@@ -62,7 +63,13 @@ class Budget:
         if not self.folder.exists() and packet['retryBudget']['remainingDecisionAttempts'] != decision.MAX_ATTEMPTS:
             return False
         had_lock = self.lock_path.exists()
-        with jobs._lock(self.root, self.key) as (folder, _, held):
+        # _lock may create root and multiple missing ancestors. Remember their
+        # parent entries before creation so a host crash cannot erase the run's
+        # uncertainty markers and reopen its budget after a model call.
+        parents_to_sync = [self.root.parent]
+        while not parents_to_sync[-1].exists():
+            parents_to_sync.append(parents_to_sync[-1].parent)
+        with jobs._lock(self.root, self.key) as (folder, lock_fd, held):
             if not held:
                 return False
             if folder.exists():
@@ -81,6 +88,15 @@ class Budget:
             # Existence is an initialization marker. A crash before state.json
             # becomes durable is uncertainty, never permission to start over.
             folder.mkdir(exist_ok=True)
+            # Persist the lock inode, lock directory entry, budget-folder entry
+            # and root/ancestor entries BEFORE publishing the reservation. The
+            # existing atomic writer then fsyncs state.json and its directory.
+            # Any failed sync aborts admission before the responder is invoked.
+            os.fsync(lock_fd)
+            jobs._sync_directory(self.lock_path.parent)
+            jobs._sync_directory(self.root)
+            for parent in parents_to_sync:
+                jobs._sync_directory(parent)
             jobs._persist(folder / 'state.json', saved)
             return True
 

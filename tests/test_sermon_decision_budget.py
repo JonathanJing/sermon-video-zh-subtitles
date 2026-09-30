@@ -1,3 +1,4 @@
+import os
 import json
 from pathlib import Path
 import subprocess
@@ -140,6 +141,65 @@ print(json.dumps(Budget(sys.argv[1],p['productionRunId']).reserve(p)))
             respond.assert_not_called()
         self.assertTrue(self.budget.folder.exists())
         with self.assertRaises(OSError): self.budget.reserve(packet())
+
+    def test_directory_entries_are_durable_before_reservation_and_responder(self):
+        self.root = self.root.parent / 'new-parent' / 'nested' / 'jobs'
+        self.budget = subject.Budget(self.root, 'a' * 64)
+        self.root = self.budget.root
+        events = []
+        original_sync, original_persist, original_fsync = jobs._sync_directory, jobs._persist, os.fsync
+        required = [self.budget.lock_path.parent, self.root, self.root.parent,
+                    self.root.parent.parent, self.root.parent.parent.parent]
+        def sync(path):
+            original_sync(path)
+            events.append(('directory', path))
+        def fsync(fd):
+            original_fsync(fd)
+            actual, lock = os.fstat(fd), self.budget.lock_path.stat()
+            if (actual.st_dev, actual.st_ino) == (lock.st_dev, lock.st_ino):
+                events.append(('lock', self.budget.lock_path))
+        def persist(path, value):
+            self.assertIn(('lock', self.budget.lock_path), events)
+            for directory in required:
+                self.assertIn(('directory', directory), events)
+            original_persist(path, value)
+            events.append(('state', value['attempts'][-1]['status']))
+        def respond(p):
+            self.assertIn(('state', 'reserved'), events)
+            self.assertEqual(self.budget.remaining(), 0)
+            events.append(('responder', None))
+            return response(p)
+        with patch.object(jobs, '_sync_directory', side_effect=sync), \
+             patch.object(jobs, '_persist', side_effect=persist), \
+             patch.object(os, 'fsync', side_effect=fsync):
+            result = self.propose(packet(), respond)
+        self.assertEqual(result['status'], 'proposal_requires_locked_admission')
+        self.assertLess(events.index(('state', 'reserved')), events.index(('responder', None)))
+        self.assertEqual(events[:6], [('lock', self.budget.lock_path)] + [('directory', p) for p in required])
+
+    def test_each_directory_sync_failure_blocks_call_and_never_resets_evidence(self):
+        for boundary in ('lock', 'locks-directory', 'root', 'parent'):
+            with self.subTest(boundary=boundary):
+                self.root = self.root.parent / boundary / 'jobs'
+                self.budget = subject.Budget(self.root, 'a' * 64)
+                self.root = self.budget.root
+                original_sync, original_fsync = jobs._sync_directory, os.fsync
+                fail_path = {'locks-directory': self.budget.lock_path.parent,
+                             'root': self.root, 'parent': self.root.parent}.get(boundary)
+                def sync(path):
+                    if path == fail_path: raise OSError('injected metadata persistence failure')
+                    original_sync(path)
+                def fsync(fd):
+                    if boundary == 'lock': raise OSError('injected lock persistence failure')
+                    original_fsync(fd)
+                with patch.object(jobs, '_sync_directory', side_effect=sync), \
+                     patch.object(os, 'fsync', side_effect=fsync), \
+                     patch('tests.test_sermon_decision_budget.response') as respond:
+                    with self.assertRaises(OSError): self.propose(packet(), respond)
+                    respond.assert_not_called()
+                self.assertTrue(self.budget.folder.is_dir())
+                self.assertTrue(self.budget.lock_path.is_file())
+                with self.assertRaises(OSError): self.budget.reserve(packet())
 
     def test_run_binding_and_symlink_evidence_fail_closed(self):
         other = subject.Budget(self.root, 'e' * 64)
