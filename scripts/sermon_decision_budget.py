@@ -65,12 +65,6 @@ class Budget:
         if not self.folder.exists() and packet['retryBudget']['remainingDecisionAttempts'] != decision.MAX_ATTEMPTS:
             return False
         had_lock = self.lock_path.exists()
-        # _lock may create root and multiple missing ancestors. Remember their
-        # parent entries before creation so a host crash cannot erase the run's
-        # uncertainty markers and reopen its budget after a model call.
-        parents_to_sync = [self.root.parent]
-        while not parents_to_sync[-1].exists():
-            parents_to_sync.append(parents_to_sync[-1].parent)
         with jobs._lock(self.root, self.key) as (folder, lock_fd, held):
             if not held:
                 return False
@@ -96,9 +90,9 @@ class Budget:
             # Any failed sync aborts admission before the responder is invoked.
             os.fsync(lock_fd)
             jobs._sync_directory(self.lock_path.parent)
-            jobs._sync_directory(self.root)
-            for parent in parents_to_sync:
-                jobs._sync_directory(parent)
+            # Existing ancestors can belong to a concurrent creator whose
+            # metadata is not durable yet; sync to the filesystem boundary.
+            jobs._sync_directory_ancestry(self.root)
             jobs._persist(folder / 'state.json', saved)
             return True
 

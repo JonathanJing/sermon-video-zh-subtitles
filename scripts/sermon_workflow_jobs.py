@@ -80,6 +80,22 @@ def _sync_directory(path):
         os.close(fd)
 
 
+def _sync_directory_ancestry(path):
+    """Persist every containing entry on this filesystem before side effects.
+
+    An existing parent may have just been created by a concurrent admission,
+    so stopping at the first directory that exists is insufficient. A mount
+    boundary is pre-existing infrastructure, not a directory created here.
+    """
+    current = Path(path).resolve()
+    while True:
+        _sync_directory(current)
+        parent = current.parent
+        if parent == current or parent.stat().st_dev != current.stat().st_dev:
+            break
+        current = parent
+
+
 def _persist(path, value):
     # Anchor every operation to an already-open, non-symlink directory. A
     # descendant path cannot redirect the durable state write outside the job.
@@ -292,8 +308,11 @@ def start_job(root: Path, identity: dict, command: list[str], timeout_seconds: f
             # A creator has the lock but has not yet published the directory.
             return _public(job_id, "queued")
         folder.mkdir(mode=0o700)
-        _sync_directory(root.parent)
-        _sync_directory(root)
+        # Publish the uncertainty marker and its entire directory chain before
+        # a worker can start. Other admissions may have just created ancestors.
+        os.fsync(fd)
+        _sync_directory(root / ".locks")
+        _sync_directory_ancestry(root)
         _persist(folder / "request.json", request)
         _write_state(folder, job_id, "queued", queuedAt=utc_now(), requestSha256=_digest(request))
         # State precedes spawn. Any crash in this interval becomes uncertain;
