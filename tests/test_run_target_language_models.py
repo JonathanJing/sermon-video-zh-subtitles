@@ -183,18 +183,19 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         self.assertFalse(damaged)
         roles = [e for e in events if e['event'] == 'stage_started' and
                  (e['stage'].startswith('layer2.translator.') or e['stage'].startswith('layer2.reviewer.'))]
-        by_span = {e['spanId']: e for e in roles}
+        by_span = {e['spanId']: e for e in events if e['event'] == 'stage_started'}
         for role in roles:
             self.assertEqual(role['executorType'], 'deterministic_program' if role['cacheHit'] else 'production_model')
             self.assertIsNotNone(role['workUnitId'])
+            self.assertEqual(len(role['dependsOn']), 1)
+            predecessor = by_span[role['dependsOn'][0]]
             if '.reviewer.' in role['stage']:
-                self.assertEqual(len(role['dependsOn']), 1)
-                translator = by_span[role['dependsOn'][0]]
+                self.assertEqual(predecessor['stage'].replace('.draft_validation.', '.reviewer.'), role['stage'])
+                translator = by_span[predecessor['dependsOn'][0]]
                 self.assertEqual(translator['stage'].replace('.translator.', '.reviewer.'), role['stage'])
             else:
-                # No invented root: source producer boundary is still uninstrumented.
-                self.assertIsNone(role['dependsOn'])
-        self.assertEqual(len(unit_attempts), 12)
+                self.assertEqual(predecessor['stage'].replace('.prepare.', '.translator.'), role['stage'])
+        self.assertEqual(len(unit_attempts), 30)
         self.assertEqual(sum(row["cacheHit"] for row in unit_attempts), 4)
         self.assertTrue(all(row["finishedAt"] and row["elapsedSeconds"] is not None
                             for row in unit_attempts))

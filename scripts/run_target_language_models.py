@@ -453,10 +453,14 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
         reuse_from: Path | None = None,
         partial_repair_brief: dict[str, Any] | None = None,
         resume_cache_from: Path | None = None) -> dict[str, Any]:
-    request = producer.prepare_request(source, anchor, policy)
+    with accounting.stage(f"layer2.source_admission.{policy['targetLocale']}",
+                          depends_on=[], executor_type="deterministic_program",
+                          work_unit_id=f"l2.{policy['targetLocale']}.source_admission") as source_span:
+        request = producer.prepare_request(source, anchor, policy)
     return _run_prepared_groups(
         request, anchor, policy, out, api_key, caller, custom_plan, plugin_path,
-        revision_brief, reuse_from, partial_repair_brief, resume_cache_from)
+        revision_brief, reuse_from, partial_repair_brief, resume_cache_from,
+        source_admission_span=source_span)
 
 
 def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
@@ -468,179 +472,190 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                          reuse_from: Path | None = None,
                          partial_repair_brief: dict[str, Any] | None = None,
                          resume_cache_from: Path | None = None,
-                         *, simulation_only: bool = False) -> dict[str, Any]:
+                         *, simulation_only: bool = False,
+                         source_admission_span: str | None = None) -> dict[str, Any]:
     """Shared group loop; the formal entry above still enforces Layer 1 approval.
 
     Simulated requests carry an extra marker that prevents formal candidate
     admission, and cannot reuse or repair a production response cache.
     """
-    if simulation_only:
-        require(request.get("simulationOnly") is True
-                and request.get("schemaVersion") == "sermon-dry-run-layer2-request-v1"
-                and reuse_from is None and resume_cache_from is None
-                and revision_brief is None and partial_repair_brief is None
-                and plugin_path is None,
-                "Simulated group loop requires an isolated request and new output")
-    else:
-        require("simulationOnly" not in request,
-                "Formal group loop cannot consume a simulated request")
-    for role, expected in MODEL_ROLES.items():
-        require(policy[role]["model"] == expected,
-                f"Production {role} model must be {expected}; freeze a new policy")
-    workers = policy["batching"].get("workers")
-    require(policy["batching"].get("batchSize") == 1
-            and type(workers) is int and 1 <= workers <= 3,
-            "Per-group production runner requires batchSize=1 and workers=1..3")
-    if plugin_path is not None:
-        require(producer.plugin_implementation_sha256(plugin_path)
-                == policy["languageReview"]["pluginImplementationSha256"],
-                "Language plugin implementation differs from frozen policy")
-    plan = group_plan(request, anchor, custom_plan)
-    require(revision_brief is None or partial_repair_brief is None,
-            "Use one changed-group revision mechanism at a time")
-    prior_evidence = (producer._load(reuse_from / "evidence.json")
-                      if reuse_from and (reuse_from / "evidence.json").is_file() else None)
-    if prior_evidence is not None:
-        for key in ("schemaVersion", "sourceLocale", "targetLocale",
-                    "englishSourcePackageJsonSha256", "anchorManifestSha256",
-                    "translationPolicySha256", "sourceUnits"):
-            require(prior_evidence.get(key) == request[key],
-                    f"Prior complete evidence source or policy changed: {key}")
-        prior_groups = prior_evidence.get("groups")
-        require(isinstance(prior_groups, list)
-                and [(row.get("translationGroupId"), row.get("sourceUnitIds"))
-                     for row in prior_groups] ==
-                [(row["translationGroupId"], row["sourceUnitIds"]) for row in plan],
-                "Prior complete evidence group plan changed")
-    briefs = validate_revision_brief(revision_brief, request, plan, prior_evidence)
-    repairs = validate_partial_repair_brief(partial_repair_brief, request, plan,
-                                             reuse_from)
-    if reuse_from is not None:
-        require(reuse_from.resolve() != out.resolve(), "Reuse source and output must differ")
-    if resume_cache_from is not None:
-        require(reuse_from is not None and resume_cache_from.resolve() != out.resolve()
-                and resume_cache_from.resolve() != reuse_from.resolve()
-                and (resume_cache_from / "request.json").is_file()
-                and producer._load(resume_cache_from / "request.json") == request,
-                "Resume cache must be a separate attempt for this source and policy")
-    identity = {"request": request, "groupPlan": plan,
-                "runnerImplementationSha256": RUNNER_PRODUCTION_IDENTITY_SHA256}
-    if revision_brief is not None:
-        identity["revisionBriefSha256"] = policy_tools.canonical_sha256(revision_brief)
-    if partial_repair_brief is not None:
-        identity["partialRepairBriefSha256"] = policy_tools.canonical_sha256(
-            partial_repair_brief)
-    if resume_cache_from is not None:
-        identity["resumeCacheFrom"] = str(resume_cache_from.resolve())
-    identity_hash = policy_tools.canonical_sha256(identity)
-    manifest = out / "run-identity.json"
-    if manifest.exists():
-        accepted_hashes = {policy_tools.canonical_sha256({
-            **identity, "runnerImplementationSha256": implementation_hash})
-            for implementation_hash in
-            {RUNNER_PRODUCTION_IDENTITY_SHA256, *COMPATIBLE_RUNNER_IDENTITIES}}
-        require(producer._load(manifest) in
-                [{"sha256": accepted_hash} for accepted_hash in accepted_hashes],
-                "Output directory belongs to another source, policy, or group plan")
-    else:
-        require(not out.exists() or all(entry.name == "accounting" and entry.is_dir()
-                                        for entry in out.iterdir()),
-                "Output directory is not empty")
-        save_new(manifest, {"sha256": identity_hash})
-    request_path = out / "request.json"
-    if not request_path.exists():
-        save_new(request_path, request)
-    else:
-        require(producer._load(request_path) == request, "Cached request changed")
-    units = {row["sourceUnitId"]: row["english"] for row in request["sourceUnits"]}
+    with accounting.stage(f"layer2.run_admission.{request['targetLocale']}",
+                          depends_on=[source_admission_span] if source_admission_span else [],
+                          executor_type="deterministic_program",
+                          work_unit_id=f"l2.{request['targetLocale']}.run_admission") as admission_span:
+        if simulation_only:
+            require(request.get("simulationOnly") is True
+                    and request.get("schemaVersion") == "sermon-dry-run-layer2-request-v1"
+                    and reuse_from is None and resume_cache_from is None
+                    and revision_brief is None and partial_repair_brief is None
+                    and plugin_path is None,
+                    "Simulated group loop requires an isolated request and new output")
+        else:
+            require("simulationOnly" not in request,
+                    "Formal group loop cannot consume a simulated request")
+        for role, expected in MODEL_ROLES.items():
+            require(policy[role]["model"] == expected,
+                    f"Production {role} model must be {expected}; freeze a new policy")
+        workers = policy["batching"].get("workers")
+        require(policy["batching"].get("batchSize") == 1
+                and type(workers) is int and 1 <= workers <= 3,
+                "Per-group production runner requires batchSize=1 and workers=1..3")
+        if plugin_path is not None:
+            require(producer.plugin_implementation_sha256(plugin_path)
+                    == policy["languageReview"]["pluginImplementationSha256"],
+                    "Language plugin implementation differs from frozen policy")
+        plan = group_plan(request, anchor, custom_plan)
+        require(revision_brief is None or partial_repair_brief is None,
+                "Use one changed-group revision mechanism at a time")
+        prior_evidence = (producer._load(reuse_from / "evidence.json")
+                          if reuse_from and (reuse_from / "evidence.json").is_file() else None)
+        if prior_evidence is not None:
+            for key in ("schemaVersion", "sourceLocale", "targetLocale",
+                        "englishSourcePackageJsonSha256", "anchorManifestSha256",
+                        "translationPolicySha256", "sourceUnits"):
+                require(prior_evidence.get(key) == request[key],
+                        f"Prior complete evidence source or policy changed: {key}")
+            prior_groups = prior_evidence.get("groups")
+            require(isinstance(prior_groups, list)
+                    and [(row.get("translationGroupId"), row.get("sourceUnitIds"))
+                         for row in prior_groups] ==
+                    [(row["translationGroupId"], row["sourceUnitIds"]) for row in plan],
+                    "Prior complete evidence group plan changed")
+        briefs = validate_revision_brief(revision_brief, request, plan, prior_evidence)
+        repairs = validate_partial_repair_brief(partial_repair_brief, request, plan,
+                                                 reuse_from)
+        if reuse_from is not None:
+            require(reuse_from.resolve() != out.resolve(), "Reuse source and output must differ")
+        if resume_cache_from is not None:
+            require(reuse_from is not None and resume_cache_from.resolve() != out.resolve()
+                    and resume_cache_from.resolve() != reuse_from.resolve()
+                    and (resume_cache_from / "request.json").is_file()
+                    and producer._load(resume_cache_from / "request.json") == request,
+                    "Resume cache must be a separate attempt for this source and policy")
+        identity = {"request": request, "groupPlan": plan,
+                    "runnerImplementationSha256": RUNNER_PRODUCTION_IDENTITY_SHA256}
+        if revision_brief is not None:
+            identity["revisionBriefSha256"] = policy_tools.canonical_sha256(revision_brief)
+        if partial_repair_brief is not None:
+            identity["partialRepairBriefSha256"] = policy_tools.canonical_sha256(
+                partial_repair_brief)
+        if resume_cache_from is not None:
+            identity["resumeCacheFrom"] = str(resume_cache_from.resolve())
+        identity_hash = policy_tools.canonical_sha256(identity)
+        manifest = out / "run-identity.json"
+        if manifest.exists():
+            accepted_hashes = {policy_tools.canonical_sha256({
+                **identity, "runnerImplementationSha256": implementation_hash})
+                for implementation_hash in
+                {RUNNER_PRODUCTION_IDENTITY_SHA256, *COMPATIBLE_RUNNER_IDENTITIES}}
+            require(producer._load(manifest) in
+                    [{"sha256": accepted_hash} for accepted_hash in accepted_hashes],
+                    "Output directory belongs to another source, policy, or group plan")
+        else:
+            require(not out.exists() or all(entry.name == "accounting" and entry.is_dir()
+                                            for entry in out.iterdir()),
+                    "Output directory is not empty")
+            save_new(manifest, {"sha256": identity_hash})
+        request_path = out / "request.json"
+        if not request_path.exists():
+            save_new(request_path, request)
+        else:
+            require(producer._load(request_path) == request, "Cached request changed")
+        units = {row["sourceUnitId"]: row["english"] for row in request["sourceUnits"]}
     def _process_group(item):
         index, group = item
-        brief = briefs.get(group["translationGroupId"])
-        repair = repairs.get(group["translationGroupId"])
-        if prior_evidence is not None and brief is None and repair is None:
-            return carry_forward_group(reuse_from, out, index, group,
-                                       prior_evidence["groups"][index - 1], policy)
-        source_rows = [{"sourceUnitId": unit_id, "english": units[unit_id]}
-                       for unit_id in group["sourceUnitIds"]]
-        context = surrounding_context(request, plan, index - 1)
-        korean_boundary = revision_boundary_instruction(
-            request["targetLocale"], revising=brief is not None)
-        common = {"translationGroupId": group["translationGroupId"],
-                  "sourceUnitIds": group["sourceUnitIds"], "englishUnits": source_rows,
-                  "context": context, "targetLocale": request["targetLocale"],
-                  "terminology": policy["terminology"], "scripture": policy["scripture"],
-                  "formatting": policy["formatting"]}
-        if brief is not None:
-            common["revisionBrief"] = {
-                "instruction": ("This is a shorter spoken adaptation for a fixed video cue. "
-                                "Use proposedTargetText as the wording and length target, "
-                                "not as verified source truth. Keep it when it conveys the "
-                                "source's facts and rhetorical purpose. Repair only a specific "
-                                "missing or changed fact, name, number, negation, quotation, "
-                                "theological distinction, or necessary rhetorical beat. "
-                                "Prefer a concise repair over restoring the prior full "
-                                "translation. Do not restore conversational filler or expand "
-                                "for style. Do not add parenthetical verse citations or "
-                                "editorial references that are absent from the spoken English. "
-                                "Keep references at the speaker's spoken specificity: if "
-                                "English only says 'verse 5', do not add a book or chapter "
-                                "name even when context identifies it. "
-                                "Preserve an unfinished source clause when the next source "
-                                "unit completes it; do not finish or repeat that continuation "
-                                "inside this group. " + korean_boundary +
-                                "If the essential meaning cannot fit, report the "
-                                "conflict in independent review."),
-                "priorTargetTextSha256": brief["priorTargetTextSha256"],
-                "proposedTargetText": brief["proposedTargetText"],
-            }
-        if repair is not None:
-            common["partialRepair"] = {
-                "priorFailedRole": repair["failedRole"],
-                "priorFailedCacheSha256": repair["failedCacheSha256"],
-                "failureReason": repair["failureReason"],
-                "instruction": repair["instruction"],
-            }
-        repair_instruction = (
-            " This group is a new revision after a prior machine failure. "
-            "Follow the source-bound repair instruction while independently "
-            "checking the English source; do not assume the prior answer was correct. "
-            + repair["instruction"] + " " if repair is not None else "")
-        translate_prompt = {
-            "instruction": (("Revise the proposed shorter spoken text against the English "
-                            "sermon group. Stay close to the proposal's length and wording; "
-                            "change it only to repair a specific essential meaning error. "
-                            "Preserve the source's facts, negations, numbers, names, quotations, "
-                            "theological distinctions and rhetorical purpose. "
-                            "Do not add parenthetical verse citations or editorial references "
-                            "absent from the spoken English. "
-                            "If English only says a relative verse number, do not add an "
-                            "unspoken book or chapter name. "
-                            "Keep unfinished clauses open for the next source unit instead "
-                            "of completing or repeating the next unit's words. "
-                            if brief is not None else
-                            "Translate the English sermon group into the target locale. Preserve every "
-                            "meaning, negation, number, name, quotation and theological distinction. ") +
-                            korean_boundary +
-                            scripture_prompt_instruction(policy) +
-                            register_prompt_instruction(policy) +
-                            repair_instruction +
-                            "Resolve pronouns and elliptical repetitions using the surrounding "
-                            "source units; translate only the requested English units. "
-                            "Use context only for interpretation. Return JSON with exactly "
-                            "translationGroupId, sourceUnitIds, targetUtterances and coverage. "
-                            "Coverage has one sourceUnitId and exact targetText substring per source unit. "
-                            "Do not claim human approval. Prompt version: " + policy["translator"]["promptVersion"]),
-            "input": common}
-        stem = f"group-{index:04d}"
-        astra_path = out / f"{stem}-astra.json"
-        prior_cache_root = resume_cache_from if resume_cache_from is not None else reuse_from if brief is None and repair is None else None
-        translator_cached = (astra_path.exists() or astra_path.with_suffix(".raw.json").exists()
-                             or (prior_cache_root is not None and (prior_cache_root / f"{stem}-astra.json").is_file()))
+        with accounting.stage(f"layer2.prepare.{request['targetLocale']}.group-{index:04d}",
+                              cache_hit=prior_evidence is not None and group['translationGroupId'] not in briefs
+                                        and group['translationGroupId'] not in repairs,
+                              depends_on=[admission_span], executor_type="deterministic_program",
+                              work_unit_id=f"l2.{request['targetLocale']}.group-{index:04d}.prepare") as prepare_span:
+            brief = briefs.get(group["translationGroupId"])
+            repair = repairs.get(group["translationGroupId"])
+            if prior_evidence is not None and brief is None and repair is None:
+                return carry_forward_group(reuse_from, out, index, group,
+                                           prior_evidence["groups"][index - 1], policy), prepare_span
+            source_rows = [{"sourceUnitId": unit_id, "english": units[unit_id]}
+                           for unit_id in group["sourceUnitIds"]]
+            context = surrounding_context(request, plan, index - 1)
+            korean_boundary = revision_boundary_instruction(
+                request["targetLocale"], revising=brief is not None)
+            common = {"translationGroupId": group["translationGroupId"],
+                      "sourceUnitIds": group["sourceUnitIds"], "englishUnits": source_rows,
+                      "context": context, "targetLocale": request["targetLocale"],
+                      "terminology": policy["terminology"], "scripture": policy["scripture"],
+                      "formatting": policy["formatting"]}
+            if brief is not None:
+                common["revisionBrief"] = {
+                    "instruction": ("This is a shorter spoken adaptation for a fixed video cue. "
+                                    "Use proposedTargetText as the wording and length target, "
+                                    "not as verified source truth. Keep it when it conveys the "
+                                    "source's facts and rhetorical purpose. Repair only a specific "
+                                    "missing or changed fact, name, number, negation, quotation, "
+                                    "theological distinction, or necessary rhetorical beat. "
+                                    "Prefer a concise repair over restoring the prior full "
+                                    "translation. Do not restore conversational filler or expand "
+                                    "for style. Do not add parenthetical verse citations or "
+                                    "editorial references that are absent from the spoken English. "
+                                    "Keep references at the speaker's spoken specificity: if "
+                                    "English only says 'verse 5', do not add a book or chapter "
+                                    "name even when context identifies it. "
+                                    "Preserve an unfinished source clause when the next source "
+                                    "unit completes it; do not finish or repeat that continuation "
+                                    "inside this group. " + korean_boundary +
+                                    "If the essential meaning cannot fit, report the "
+                                    "conflict in independent review."),
+                    "priorTargetTextSha256": brief["priorTargetTextSha256"],
+                    "proposedTargetText": brief["proposedTargetText"],
+                }
+            if repair is not None:
+                common["partialRepair"] = {
+                    "priorFailedRole": repair["failedRole"],
+                    "priorFailedCacheSha256": repair["failedCacheSha256"],
+                    "failureReason": repair["failureReason"],
+                    "instruction": repair["instruction"],
+                }
+            repair_instruction = (
+                " This group is a new revision after a prior machine failure. "
+                "Follow the source-bound repair instruction while independently "
+                "checking the English source; do not assume the prior answer was correct. "
+                + repair["instruction"] + " " if repair is not None else "")
+            translate_prompt = {
+                "instruction": (("Revise the proposed shorter spoken text against the English "
+                                "sermon group. Stay close to the proposal's length and wording; "
+                                "change it only to repair a specific essential meaning error. "
+                                "Preserve the source's facts, negations, numbers, names, quotations, "
+                                "theological distinctions and rhetorical purpose. "
+                                "Do not add parenthetical verse citations or editorial references "
+                                "absent from the spoken English. "
+                                "If English only says a relative verse number, do not add an "
+                                "unspoken book or chapter name. "
+                                "Keep unfinished clauses open for the next source unit instead "
+                                "of completing or repeating the next unit's words. "
+                                if brief is not None else
+                                "Translate the English sermon group into the target locale. Preserve every "
+                                "meaning, negation, number, name, quotation and theological distinction. ") +
+                                korean_boundary +
+                                scripture_prompt_instruction(policy) +
+                                register_prompt_instruction(policy) +
+                                repair_instruction +
+                                "Resolve pronouns and elliptical repetitions using the surrounding "
+                                "source units; translate only the requested English units. "
+                                "Use context only for interpretation. Return JSON with exactly "
+                                "translationGroupId, sourceUnitIds, targetUtterances and coverage. "
+                                "Coverage has one sourceUnitId and exact targetText substring per source unit. "
+                                "Do not claim human approval. Prompt version: " + policy["translator"]["promptVersion"]),
+                "input": common}
+            stem = f"group-{index:04d}"
+            astra_path = out / f"{stem}-astra.json"
+            prior_cache_root = resume_cache_from if resume_cache_from is not None else reuse_from if brief is None and repair is None else None
+            translator_cached = (astra_path.exists() or astra_path.with_suffix(".raw.json").exists()
+                                 or (prior_cache_root is not None and (prior_cache_root / f"{stem}-astra.json").is_file()))
         with measure.producer_substage("initial_translation",
                                        billing="local" if simulation_only else "api"):
             with accounting.stage(f"layer2.translator.{request['targetLocale']}.{stem}",
                                   cache_hit=translator_cached, billing="local" if simulation_only or translator_cached else "api",
                                   work_unit_id=f"l2.{request['targetLocale']}.{stem}.translator",
+                                  depends_on=[prepare_span],
                                   executor_type="deterministic_program" if simulation_only or translator_cached else "production_model") as translator_span:
                 translated = _model_call("translator", translate_prompt, policy,
                                          astra_path, api_key, caller,
@@ -648,118 +663,128 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                          if resume_cache_from is not None else
                                          reusable_cache(reuse_from, stem, "astra")
                                          if brief is None and repair is None else None)
-        draft = translated["result"]
-        require(draft.get("translationGroupId") == group["translationGroupId"]
-                and draft.get("sourceUnitIds") == group["sourceUnitIds"],
-                f"Astra group identity changed: {stem}")
-        draft_text = "".join(_utterances(draft.get("targetUtterances")))
-        require(isinstance(draft.get("coverage"), list)
-                and [row.get("sourceUnitId") for row in draft["coverage"]] == group["sourceUnitIds"]
-                and all(isinstance(row.get("targetText"), str)
-                        and _coverage_substring(row["targetText"], draft_text)
-                        for row in draft["coverage"]),
-                f"Astra source coverage is incomplete: {stem}")
-        review_prompt = {
-            "instruction": ("Independently compare the English source and Astra draft, one group at a time. "
-                            + ("This is a shorter spoken adaptation: keep the final text close "
-                               "to proposedTargetText in wording and length. Expand only to fix "
-                               "a specific essential error; do not restore filler or stylistic "
-                               "detail from the prior full translation. Explain any necessary "
-                               "expansion in semanticReview.evidence. Do not restore "
-                               "parenthetical verse citations or editorial references "
-                               "absent from the spoken English. Keep a relative verse "
-                               "reference relative; do not add an unspoken book or chapter "
-                               "name. Check adjacent source units: preserve an unfinished "
-                               "clause and do not duplicate its completion in this group. "
-                               if brief is not None else "")
-                            + korean_boundary
-                            + scripture_prompt_instruction(policy) +
-                            register_prompt_instruction(policy) +
-                            repair_instruction +
-                            "Check that pronouns and elliptical repetitions retain the intended "
-                            "referent and predicate from surrounding source units. "
-                            "Correct any error in final targetUtterances and coverage. Check every English "
-                            "unit for omitted or added meaning, negations, numbers, names, and quotation "
-                            "attribution. If uncertain or unresolved, mark fail. Return JSON with exactly "
-                            "translationGroupId, sourceUnitIds, targetUtterances, coverage, semanticReview. "
-                            "semanticReview has status, checks (completeMeaning, negationsNumbersNames, "
-                            "quotationAttribution, noAddedMeaning), evidence, uncertainty, issues. "
-                            "Each check value must be the string pass or fail. uncertainty and issues "
-                            "must be arrays of unresolved concerns only; if you correct an Astra draft "
-                            "issue in the final text, describe that correction in evidence and leave "
-                            "issues empty. Mark status fail for any unresolved concern. "
-                            "Do not claim human approval. Prompt version: " + policy["reviewer"]["promptVersion"]),
-            "input": {**common, "astraDraft": draft}}
-        sol_path = out / f"{stem}-sol.json"
-        reviewer_cached = (sol_path.exists() or sol_path.with_suffix(".raw.json").exists()
-                           or (prior_cache_root is not None and (prior_cache_root / f"{stem}-sol.json").is_file()))
+        with accounting.stage(f"layer2.draft_validation.{request['targetLocale']}.{stem}",
+                              depends_on=[translator_span], executor_type="deterministic_program",
+                              work_unit_id=f"l2.{request['targetLocale']}.{stem}.draft_validation") as draft_span:
+            draft = translated["result"]
+            require(draft.get("translationGroupId") == group["translationGroupId"]
+                    and draft.get("sourceUnitIds") == group["sourceUnitIds"],
+                    f"Astra group identity changed: {stem}")
+            draft_text = "".join(_utterances(draft.get("targetUtterances")))
+            require(isinstance(draft.get("coverage"), list)
+                    and [row.get("sourceUnitId") for row in draft["coverage"]] == group["sourceUnitIds"]
+                    and all(isinstance(row.get("targetText"), str)
+                            and _coverage_substring(row["targetText"], draft_text)
+                            for row in draft["coverage"]),
+                    f"Astra source coverage is incomplete: {stem}")
+            review_prompt = {
+                "instruction": ("Independently compare the English source and Astra draft, one group at a time. "
+                                + ("This is a shorter spoken adaptation: keep the final text close "
+                                   "to proposedTargetText in wording and length. Expand only to fix "
+                                   "a specific essential error; do not restore filler or stylistic "
+                                   "detail from the prior full translation. Explain any necessary "
+                                   "expansion in semanticReview.evidence. Do not restore "
+                                   "parenthetical verse citations or editorial references "
+                                   "absent from the spoken English. Keep a relative verse "
+                                   "reference relative; do not add an unspoken book or chapter "
+                                   "name. Check adjacent source units: preserve an unfinished "
+                                   "clause and do not duplicate its completion in this group. "
+                                   if brief is not None else "")
+                                + korean_boundary
+                                + scripture_prompt_instruction(policy) +
+                                register_prompt_instruction(policy) +
+                                repair_instruction +
+                                "Check that pronouns and elliptical repetitions retain the intended "
+                                "referent and predicate from surrounding source units. "
+                                "Correct any error in final targetUtterances and coverage. Check every English "
+                                "unit for omitted or added meaning, negations, numbers, names, and quotation "
+                                "attribution. If uncertain or unresolved, mark fail. Return JSON with exactly "
+                                "translationGroupId, sourceUnitIds, targetUtterances, coverage, semanticReview. "
+                                "semanticReview has status, checks (completeMeaning, negationsNumbersNames, "
+                                "quotationAttribution, noAddedMeaning), evidence, uncertainty, issues. "
+                                "Each check value must be the string pass or fail. uncertainty and issues "
+                                "must be arrays of unresolved concerns only; if you correct an Astra draft "
+                                "issue in the final text, describe that correction in evidence and leave "
+                                "issues empty. Mark status fail for any unresolved concern. "
+                                "Do not claim human approval. Prompt version: " + policy["reviewer"]["promptVersion"]),
+                "input": {**common, "astraDraft": draft}}
+            sol_path = out / f"{stem}-sol.json"
+            reviewer_cached = (sol_path.exists() or sol_path.with_suffix(".raw.json").exists()
+                               or (prior_cache_root is not None and (prior_cache_root / f"{stem}-sol.json").is_file()))
         with measure.producer_substage("independent_review",
                                        billing="local" if simulation_only else "api"):
             with accounting.stage(f"layer2.reviewer.{request['targetLocale']}.{stem}",
                                   cache_hit=reviewer_cached, billing="local" if simulation_only or reviewer_cached else "api",
                                   work_unit_id=f"l2.{request['targetLocale']}.{stem}.reviewer",
-                                  depends_on=[translator_span] if translator_span else None,
-                                  executor_type="deterministic_program" if simulation_only or reviewer_cached else "production_model"):
+                                  depends_on=[draft_span],
+                                  executor_type="deterministic_program" if simulation_only or reviewer_cached else "production_model") as reviewer_span:
                 reviewed_response = _model_call("reviewer", review_prompt, policy,
                                                 sol_path, api_key, caller,
                                                 reusable_cache(resume_cache_from, stem, "sol")
                                                 if resume_cache_from is not None else
                                                 reusable_cache(reuse_from, stem, "sol")
                                                 if brief is None and repair is None else None)
-        result = reviewed_response["result"]
-        require(result.get("translationGroupId") == group["translationGroupId"]
-                and result.get("sourceUnitIds") == group["sourceUnitIds"],
-                f"Sol group identity changed: {stem}")
-        utterances = _utterances(result.get("targetUtterances"))
-        final_text = "".join(utterances)
-        coverage = result.get("coverage")
-        require(isinstance(coverage, list)
-                and [row.get("sourceUnitId") for row in coverage] == group["sourceUnitIds"]
-                and all(isinstance(row.get("targetText"), str)
-                        and _coverage_substring(row["targetText"], final_text)
-                        for row in coverage),
-                f"Sol source coverage is incomplete: {stem}")
-        semantic = normalize_semantic_review(result.get("semanticReview"))
-        require(isinstance(semantic, dict) and semantic.get("status") in {"pass", "fail"}
-                and isinstance(semantic.get("checks"), dict)
-                and set(semantic["checks"]) == set(SEMANTIC_CHECKS)
-                and all(value in {"pass", "fail"} for value in semantic["checks"].values())
-                and isinstance(semantic.get("evidence"), str) and semantic["evidence"].strip()
-                and isinstance(semantic.get("uncertainty"), list)
-                and isinstance(semantic.get("issues"), list),
-                f"Sol semantic review is incomplete: {stem}")
-        reviewed_row = {**copy.deepcopy(group), "targetUtterances": utterances,
-                        "coverage": coverage, "semanticReview": semantic,
-                        "translatorRequestId": translated["requestId"],
-                        "reviewerRequestId": reviewed_response["requestId"]}
-        if semantic["status"] != "pass" or any(value != "pass" for value in semantic["checks"].values()) \
-                or semantic["uncertainty"] or semantic["issues"]:
-            raise ValueError(f"Sol flagged group {stem}; inspect saved response before admission")
-        return reviewed_row
+        with accounting.stage(f"layer2.review_validation.{request['targetLocale']}.{stem}",
+                              depends_on=[reviewer_span], executor_type="deterministic_program",
+                              work_unit_id=f"l2.{request['targetLocale']}.{stem}.review_validation") as validation_span:
+            result = reviewed_response["result"]
+            require(result.get("translationGroupId") == group["translationGroupId"]
+                    and result.get("sourceUnitIds") == group["sourceUnitIds"],
+                    f"Sol group identity changed: {stem}")
+            utterances = _utterances(result.get("targetUtterances"))
+            final_text = "".join(utterances)
+            coverage = result.get("coverage")
+            require(isinstance(coverage, list)
+                    and [row.get("sourceUnitId") for row in coverage] == group["sourceUnitIds"]
+                    and all(isinstance(row.get("targetText"), str)
+                            and _coverage_substring(row["targetText"], final_text)
+                            for row in coverage),
+                    f"Sol source coverage is incomplete: {stem}")
+            semantic = normalize_semantic_review(result.get("semanticReview"))
+            require(isinstance(semantic, dict) and semantic.get("status") in {"pass", "fail"}
+                    and isinstance(semantic.get("checks"), dict)
+                    and set(semantic["checks"]) == set(SEMANTIC_CHECKS)
+                    and all(value in {"pass", "fail"} for value in semantic["checks"].values())
+                    and isinstance(semantic.get("evidence"), str) and semantic["evidence"].strip()
+                    and isinstance(semantic.get("uncertainty"), list)
+                    and isinstance(semantic.get("issues"), list),
+                    f"Sol semantic review is incomplete: {stem}")
+            reviewed_row = {**copy.deepcopy(group), "targetUtterances": utterances,
+                            "coverage": coverage, "semanticReview": semantic,
+                            "translatorRequestId": translated["requestId"],
+                            "reviewerRequestId": reviewed_response["requestId"]}
+            if semantic["status"] != "pass" or any(value != "pass" for value in semantic["checks"].values()) \
+                    or semantic["uncertainty"] or semantic["issues"]:
+                raise ValueError(f"Sol flagged group {stem}; inspect saved response before admission")
+            return reviewed_row, validation_span
     def process_group(item):
         index, _ = item
         with accounting.stage(f"layer2.group.{request['targetLocale']}.{index:04d}",
                               billing="orchestrator"):
             return _process_group(item)
-    reviewed = ordered_group_results(list(enumerate(plan, 1)), process_group, workers)
-    translator_ids = list(dict.fromkeys(row["translatorRequestId"] for row in reviewed))
-    reviewer_ids = list(dict.fromkeys(row["reviewerRequestId"] for row in reviewed))
-    require(len(translator_ids) == len(reviewed) and len(reviewer_ids) == len(reviewed)
-            and not set(translator_ids).intersection(reviewer_ids),
-            "Model response IDs must be distinct across groups and roles")
-    evidence = copy.deepcopy(request)
-    evidence["generation"] = {role: {"model": policy[role]["model"],
-                                     "promptVersion": policy[role]["promptVersion"],
-                                     "requestIds": ids}
-                              for role, ids in (("translator", translator_ids),
-                                                ("reviewer", reviewer_ids))}
-    evidence["groups"] = reviewed
-    evidence_path = out / "evidence.json"
-    if evidence_path.exists():
-        require(producer._load(evidence_path) == evidence, "Cached evidence changed")
-    else:
-        save_new(evidence_path, evidence)
-    return evidence
+    results = ordered_group_results(list(enumerate(plan, 1)), process_group, workers)
+    with accounting.stage(f"layer2.evidence_assembly.{request['targetLocale']}",
+                          depends_on=[span for _, span in results], executor_type="deterministic_program",
+                          work_unit_id=f"l2.{request['targetLocale']}.evidence_assembly"):
+        reviewed = [row for row, _ in results]
+        translator_ids = list(dict.fromkeys(row["translatorRequestId"] for row in reviewed))
+        reviewer_ids = list(dict.fromkeys(row["reviewerRequestId"] for row in reviewed))
+        require(len(translator_ids) == len(reviewed) and len(reviewer_ids) == len(reviewed)
+                and not set(translator_ids).intersection(reviewer_ids),
+                "Model response IDs must be distinct across groups and roles")
+        evidence = copy.deepcopy(request)
+        evidence["generation"] = {role: {"model": policy[role]["model"],
+                                         "promptVersion": policy[role]["promptVersion"],
+                                         "requestIds": ids}
+                                  for role, ids in (("translator", translator_ids),
+                                                    ("reviewer", reviewer_ids))}
+        evidence["groups"] = reviewed
+        evidence_path = out / "evidence.json"
+        if evidence_path.exists():
+            require(producer._load(evidence_path) == evidence, "Cached evidence changed")
+        else:
+            save_new(evidence_path, evidence)
+        return evidence
 
 
 def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
@@ -770,15 +795,19 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
                   progress_ledger: Path | None = None) -> dict:
     locale = policy["targetLocale"]
     with measure.producer_step(progress_ledger, f"L2-02@{locale}", locale=locale) as metrics:
-        request = producer.prepare_request(source, anchor, policy)
-        plan = group_plan(request, anchor, group_plan_data)
-        metrics.update(translationGroups=len(plan), sourceUnits=len(request["sourceUnits"]))
         with accounting.accounting_session(out_dir / "accounting", "layer2_models",
                                            {"targetLocale": locale},
                                            evidence_directory=out_dir):
-            evidence = run(source, anchor, policy, out_dir, api_key, call,
-                           plan, plugin, revision_brief, reuse_from,
-                           partial_repair_brief, resume_cache_from)
+            with accounting.stage(f"layer2.source_admission.{locale}", depends_on=[],
+                                  executor_type="deterministic_program",
+                                  work_unit_id=f"l2.{locale}.source_admission") as source_span:
+                request = producer.prepare_request(source, anchor, policy)
+                plan = group_plan(request, anchor, group_plan_data)
+            metrics.update(translationGroups=len(plan), sourceUnits=len(request["sourceUnits"]))
+            evidence = _run_prepared_groups(
+                request, anchor, policy, out_dir, api_key, call, plan, plugin,
+                revision_brief, reuse_from, partial_repair_brief, resume_cache_from,
+                source_admission_span=source_span)
         metrics["doneUnits"] = len(evidence["groups"])
     return evidence
 
