@@ -116,6 +116,56 @@ class WeeklyPipelineReportTests(unittest.TestCase):
         self.assertIsNone(usage['combinedTokenTotal'])
         self.assertEqual(usage['unresolvedAttempts'], 1)
 
+    def test_conflicting_receipts_are_order_independent_and_never_totalled(self):
+        baseline = copy.deepcopy(self.rows)
+        for kind in ('api_attempt', 'sdk_call_finished'):
+            for field in ('usage', 'status', 'executor'):
+                with self.subTest(kind=kind, field=field):
+                    self.rows = copy.deepcopy(baseline)
+                    if kind == 'api_attempt':
+                        original = self.event(kind, 7, spanId='ko', stage='ko', responseId='same',
+                                              status='completed', usage=dict(inputTokens=100, outputTokens=None, cachedInputTokens=None, cacheWriteTokens=None, reasoningTokens=None), cost={})
+                    else:
+                        original = self.event(kind, 7, spanId='ko', invocationId='same', model='test',
+                                              status='completed', usage={'input_tokens': 100})
+                    other = copy.deepcopy(original)
+                    other['eventId'] = 'conflict'
+                    if field == 'usage':
+                        other['usage']['inputTokens' if kind == 'api_attempt' else 'input_tokens'] = 200
+                    elif field == 'status':
+                        other['status'] = 'failed'
+                    else:
+                        other['spanId'] = 'source'
+                    self.rows.append(other)
+                    first = self.result()['runs'][0]
+                    self.rows.reverse()
+                    second = self.result()['runs'][0]
+                    self.assertEqual(first, second)
+                    self.assertEqual(first['status'], 'partial')
+                    self.assertIn('conflicting_usage_receipts', first['diagnostics'])
+                    self.assertEqual(len(first['usage']['conflicts']), 1)
+                    self.assertTrue(all(row['knownSubtotal']['inputTokens'] is None
+                                        for row in first['usage']['byExecutor'].values()))
+
+    def test_dependency_must_finish_before_ready_with_timestamp_tolerance(self):
+        self.rows = []
+        self.event('run_started', 0, workflow='test')
+        self.stage('dep', 0, 5, [])
+        self.stage('child', 6, 7, ['dep'], dependencyReadyAt='2026-09-30T00:00:02+00:00',
+                   queuedAt='2026-09-30T00:00:03+00:00')
+        self.event('run_finished', 7, workflow='test', status='completed')
+        result = self.result()['runs'][0]
+        self.assertEqual(result['status'], 'partial')
+        self.assertIn('dependency_not_finished_at_ready', result['diagnostics'])
+        child = next(n for n in result['workUnits'] if n['workUnitId'] == 'child')
+        self.assertEqual(child['dependencyReadyAt'], '2026-09-30T00:00:02+00:00')
+        self.assertIsNone(child['queueWaitSeconds'])
+        for row in self.rows:
+            if row.get('spanId') == 'child':
+                row['dependencyReadyAt'] = '2026-09-30T00:00:04.999+00:00'
+                row['queuedAt'] = '2026-09-30T00:00:05+00:00'
+        self.assertEqual(self.result()['status'], 'projected')
+
     def test_invalid_queue_and_parent_cycles_are_rejected(self):
         baseline = copy.deepcopy(self.rows)
         for key, value, code in [('queuedAt', '2026-09-30T00:00:09+00:00', 'invalid_interval'),
