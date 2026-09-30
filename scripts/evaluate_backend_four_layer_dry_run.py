@@ -28,6 +28,8 @@ def evaluate() -> dict:
                 or passed["productionReleaseEligible"] is not False
                 or any(passed["externalCalls"].values())
                 or set(passed["layers"]) != {"layer1", "layer2", "layer3", "layer4"}
+                or passed["layers"]["layer4"].get("assetAssembly") != "copy_bound_asset_v1"
+                or len(passed["layers"]["layer4"].get("assets", [])) != 3
                 or any(passed["layers"]["layer2"][locale]["modelCalls"] != 4
                        for locale in dry.LOCALES)
                 or not all(event["status"] == "pass" and "elapsedMs" in event
