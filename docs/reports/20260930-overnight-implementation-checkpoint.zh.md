@@ -207,3 +207,17 @@ E6 兼容性审查与完整canonical Stage0继续未完成，stage1PromotionAllo
 本地组合快照 **`1fadd47c837e3afc79945c3d5e1bfda4568613b7`** 包含 #157 及 #156 的迟到 receipt 修复。重新执行完整 Root Python：991+1047=2038 reported，**2032 实际通过，6 条件 smoke skipped**；工作树 clean。汇总 `evidence/stack-with157-validation-summary.json` 绑定日志和报告哈希。Web/native 路径与完整验证的 `8f608a97` 无差异，但没有把那些旧测试声称为在新快照重跑。
 
 下一批同进程 L2 worker/cache-recovery DAG 正在验证，尚不计入交付。跨进程四层 DAG、完整 canonical Stage0、真实媒体/人工/设备/现场与发布门槛保持开放。#157 仅后端账务；整批仍含需要新 iOS binary 的 Swift catalog 变更。
+
+## 2026-09-30 13:36 UTC：回答 Dry run 的实际范围与新增真实证据
+
+本夜此前已运行的是 Stage0 synthetic/component/failure drills，并非正式 Stage1 新推理全流程。收到真实 dry run 问题后，另完成以下本机零付费诊断，保留新输出和计时，不覆写历史产物：
+
+- **178.178 秒真实历史片段**：SHA-256 `c931d6f716bd30b9ba9b75ca6cbc9a4f4fd708b8bf8f8e3668187e67bac44c30`，使用既有批准窗口 0–178.16s。新执行音频解码与本地已缓存 MLX Whisper large-v3-turbo-q4，网络 socket 被禁；总耗时 10.135s、ASR 9.084s，41 段/512 词，新增付费调用 0，原媒体不变。对既有冻结英文按小写词归一化比较为 8/513 edits（1.5595%）；这是自动差异诊断，不是内容质量签字，也不是正式 gpt-transcribe/MFA 路径。当前 Source inspector 重验两份已批准 Source 为 validated；这个片段的旧 shadow Astra→Astra policy 被当前生产 gate 拒绝。
+- **138.004534 秒真实历史片段**：SHA-256 `a40c1a37a3c15bea58db26806c117c77cfd91b983eefe98536f72ad633dd956a`。进一步找到匹配当前 source/policy/plugin identity 的三语 Astra→Sol 完整历史缓存。当前 producer 在隔离目录 cache-only 重放每语 11 组，插件与 candidate admission 全部通过；连同真实视频解码共 2.280s，新增模型调用 0，原缓存不变。新候选是 human-pending/releaseEligible=false。Weekly report 为 projected、无诊断，production_model elapsed=0，正确区分缓存和新推理。
+- 同一 138 秒片段的三语旧 Audio Package 经当前真实 builder/full decode 与独立已有听审收据重验，**共33 units通过**，每语约2.1s。没有新TTS或新人工签字。中文最初诊断选了同哈希但不在音频bundle中的job副本；改为对应bundle内job后通过，原文件均未修改。
+
+本地证据在 `evidence/real-clip-178s-diagnostic/`（新ASR、Source gate复核、diff、accounting）和 `evidence/real-clip-138s-cache-replay/`（新cache-only输出、Weekly report、audio-revalidation-final.json）；原媒体、缓存、审批仍在原checkout的ignored artifacts。下载过的本地Whisper、Qwen ASR/TTS、MiLMMT等模型存在不等于它们都是当前正式policy允许的替代；本次实际只新运行上述Whisper诊断。没有读取/验证API credentials，没有新增服务或调用付费API。
+
+**正式 Stage1仍未完成**：Stage0独立sign-off与完整canonical端到端适配器尚缺；本次是新ASR诊断加旧生产缓存/音频重验，不是新跑三语模型、TTS及Dev候选。若之后需要新付费推理，最小待决问题是：在Stage0独立签字及绑定样本/policy就绪后，批准这份138秒三语新运行的预算上限是多少？新内容/声音或candidate身份若改变，仍需其绑定的人审；当前不提前跨入10分钟/整篇验证。
+
+同时修复 #158 的长片段障碍：当前head `b6e793b48d9ecee2f3fe1c6d70ea602e42f5a068` 使用bounded fan-in joins保留全部组依赖，事件上限仍64。65/129组旧代码在所有合成模型返回后失败已复现；新代码实际producer、65组cache-only recovery及4097依赖树通过，51相关测试与最终3项回归通过，干净head341组件+后端模拟通过。精确head远端CI与新集成全量仍在运行，不借用旧head结果。
