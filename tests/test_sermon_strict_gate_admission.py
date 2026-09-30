@@ -91,6 +91,20 @@ class AdmissionTests(unittest.TestCase):
         self.assertEqual(len(self.boundary.reconcile()['intents']), 1)
         self.assertEqual(len(self.f.f.calls), 4)
 
+    def test_profile_records_group_decisions_and_commit_failure_keeps_unique_intent(self):
+        from scripts import sermon_accounting as accounting
+        with self.f.f.session():
+            with patch.object(accounting,'record_log',side_effect=accounting.AccountingWriteError('fault')):
+                result=self.admit()
+            self.assertEqual(result['status'],'outcome_unknown')
+            self.assertEqual(len(self.boundary.reconcile()['intents']),1)
+            self.assertEqual(self.admit()['status'],'existing')
+        rows,_=accounting.read_events(self.root/'logs')
+        gates=[row for row in rows if row['event']=='rqc_observation' and row['role']=='gate']
+        self.assertEqual({r['rqcEvidence']['admissionStatus'] for r in gates},{'admitted'})
+        self.assertEqual({r['workUnitId'] for r in gates},{'l2.zh-Hans.g1','l2.zh-Hans.g2'})
+        self.assertEqual(len(self.f.f.calls),4)
+
     def test_known_execution_failure_recovers_only_latest_bound_pass(self):
         self.store = budget.BudgetStore(self.root / 'recovery-budget', self.store.authority)
         self.generate_groups(first_mode='rewrite')

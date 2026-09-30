@@ -34,6 +34,9 @@ from scripts import sermon_strict_candidate_bridge as bridge
 from scripts import sermon_strict_budget_adapter as adapter
 from scripts import sermon_strict_layer2 as strict
 from scripts import sermon_workflow_jobs as jobs
+from scripts import sermon_accounting as accounting
+from scripts import sermon_log_profile as profile
+from scripts import sermon_review_observation as observations
 from scripts.sermon_release_workflow import _safe_path
 
 SCHEMA = 'sermon-strict-gate-admission-v1'
@@ -375,6 +378,8 @@ class AdmissionBoundary:
                     self.store.root / budget.STORE_ID / 'state.json')[0])
                 if fresh.snapshot_sha256 != snapshot.snapshot_sha256:
                     return self._result('stale', reasons=['snapshot_changed'])
+                if profile.current() is not None:
+                    for decision in decisions:observations.record(decision)
                 identity = {'schemaVersion': SCHEMA, 'productionRunId': self.config.production_run_id,
                     'targetLocale': self.config.target_locale, 'action': 'prepare_layer3',
                     'sourceIdentitySha256': snapshot.groups[0].current.source_identity_sha256,
@@ -395,6 +400,8 @@ class AdmissionBoundary:
                 try:
                     jobs._persist(path, record)
                     jobs._sync_directory_ancestry(path.parent)
+                    if profile.current() is not None:
+                        accounting.record_log('rqc_gate_commit',fields={'status':'committed','reasonCode':'prepare_layer3_intent'})
                 except Exception:
                     return self._result('outcome_unknown', reasons=['reconcile_durable_intent'])
                 return self._result('committed', intent=intent)
@@ -413,4 +420,5 @@ class AdmissionBoundary:
     @staticmethod
     def _result(status, **fields):
         return {'schemaVersion': SCHEMA, 'status': status, 'dispatched': False,
+                'accountingCoverage': 'profile_active' if profile.current() is not None else 'not_observed',
                 'layer4Authority': 'none', **fields}
