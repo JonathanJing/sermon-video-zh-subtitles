@@ -190,6 +190,26 @@ class ReceiptExportTests(unittest.TestCase):
     write = SermonTraceExportTests.write
     result = SermonTraceExportTests.result
 
+    def test_outbox_postappend_preack_replay_is_exported_once(self):
+        from scripts import sermon_accounting as accounting
+        from scripts import sermon_log_profile as profile
+        import copy
+        logdir=self.work/'profile-log'
+        with profile.session(logdir,'export-replay-test',work_kind='production',evidence_mode='synthetic'):
+            with accounting.accounting_session(logdir,'weekly_dubbing'):
+                with accounting.stage('render'):
+                    pass
+        self.events,_=accounting.read_events(logdir)
+        end=next(row for row in self.events if row['event']=='stage_finished' and row['stage']=='render')
+        self.events.append(copy.deepcopy(end))
+        _,diag,_=self.result()
+        self.assertEqual(diag['status'],'exported')
+        self.assertNotIn('duplicate_event_id',[row['code'] for row in diag['diagnostics']])
+        self.events.append(dict(copy.deepcopy(end),status='failed'))
+        _,diag,_=self.result()
+        self.assertEqual(diag['status'],'partial')
+        self.assertIn('incomplete_or_conflicting_profile_events',[row['code'] for row in diag['diagnostics']])
+
     def test_unfinished_attempts_keep_usage_partial_with_or_without_completed_receipts(self):
         import copy
         from scripts.export_sermon_trace import TOKEN_KEYS
