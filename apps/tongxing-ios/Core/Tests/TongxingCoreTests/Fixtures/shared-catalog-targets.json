@@ -1,0 +1,635 @@
+{
+  "schemaVersion": "sermon-shared-catalog-target-fixtures-v1",
+  "scope": "synthetic_decoder_tests_not_production_approval",
+  "cases": [
+    {
+      "id": "reviewed-audio",
+      "pageId": "page-1",
+      "locale": "ko",
+      "target": {
+        "releasePackageUrl": "/releases-v2/page-1/ko.json",
+        "releasePackageJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "capabilities": [
+          "text",
+          "captions",
+          "audio"
+        ]
+      },
+      "expected": "accept",
+      "webPlayback": true
+    },
+    {
+      "id": "text-only",
+      "pageId": "page-1",
+      "locale": "ko",
+      "target": {
+        "releasePackageUrl": "/releases-v2/page-1/ko.json",
+        "releasePackageJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "unavailable",
+        "capabilities": [
+          "text"
+        ]
+      },
+      "expected": "accept",
+      "webPlayback": false
+    },
+    {
+      "id": "text-captions-only",
+      "pageId": "page-1",
+      "locale": "ko",
+      "target": {
+        "releasePackageUrl": "/releases-v2/page-1/ko.json",
+        "releasePackageJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "unavailable",
+        "capabilities": [
+          "text",
+          "captions"
+        ]
+      },
+      "expected": "accept",
+      "webPlayback": false
+    },
+    {
+      "id": "reviewed-audio-without-captions",
+      "pageId": "page-1",
+      "locale": "ko",
+      "target": {
+        "releasePackageUrl": "/releases-v2/page-1/ko.json",
+        "releasePackageJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "capabilities": [
+          "text",
+          "audio"
+        ]
+      },
+      "expected": "accept",
+      "webPlayback": false
+    },
+    {
+      "id": "reviewed-audio-download",
+      "pageId": "page-1",
+      "locale": "ko",
+      "target": {
+        "releasePackageUrl": "/releases-v2/page-1/ko.json",
+        "releasePackageJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "capabilities": [
+          "text",
+          "captions",
+          "audio",
+          "download"
+        ]
+      },
+      "expected": "accept",
+      "webPlayback": true
+    },
+    {
+      "id": "locale-zh-Hans",
+      "pageId": "page-1",
+      "locale": "zh-Hans",
+      "target": {
+        "releasePackageUrl": "/releases-v2/page-1/zh-Hans.json",
+        "releasePackageJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "capabilities": [
+          "text",
+          "captions",
+          "audio"
+        ]
+      },
+      "expected": "accept",
+      "webPlayback": true
+    },
+    {
+      "id": "locale-es",
+      "pageId": "page-1",
+      "locale": "es",
+      "target": {
+        "releasePackageUrl": "/releases-v2/page-1/es.json",
+        "releasePackageJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "capabilities": [
+          "text",
+          "captions",
+          "audio"
+        ]
+      },
+      "expected": "accept",
+      "webPlayback": true
+    },
+    {
+      "id": "page-boundary-140",
+      "pageId": "pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+      "locale": "ko",
+      "target": {
+        "releasePackageUrl": "/releases-v2/pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/ko.json",
+        "releasePackageJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "capabilities": [
+          "text",
+          "captions",
+          "audio"
+        ]
+      },
+      "expected": "accept",
+      "webPlayback": true
+    },
+    {
+      "id": "page-boundary-141",
+      "pageId": "ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+      "locale": "ko",
+      "target": {
+        "releasePackageUrl": "/releases-v2/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/ko.json",
+        "releasePackageJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "capabilities": [
+          "text",
+          "captions",
+          "audio"
+        ]
+      },
+      "expected": "accept",
+      "webPlayback": true
+    },
+    {
+      "id": "page-boundary-160",
+      "pageId": "pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+      "locale": "ko",
+      "target": {
+        "releasePackageUrl": "/releases-v2/pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/ko.json",
+        "releasePackageJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "capabilities": [
+          "text",
+          "captions",
+          "audio"
+        ]
+      },
+      "expected": "accept",
+      "webPlayback": true
+    },
+    {
+      "id": "wrong-page-path",
+      "pageId": "page-1",
+      "locale": "ko",
+      "target": {
+        "releasePackageUrl": "/releases-v2/other/ko.json",
+        "releasePackageJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "capabilities": [
+          "text",
+          "captions",
+          "audio"
+        ]
+      },
+      "expected": "reject",
+      "webPlayback": false
+    },
+    {
+      "id": "wrong-locale-path",
+      "pageId": "page-1",
+      "locale": "ko",
+      "target": {
+        "releasePackageUrl": "/releases-v2/page-1/es.json",
+        "releasePackageJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "capabilities": [
+          "text",
+          "captions",
+          "audio"
+        ]
+      },
+      "expected": "reject",
+      "webPlayback": false
+    },
+    {
+      "id": "legacy-path",
+      "pageId": "page-1",
+      "locale": "ko",
+      "target": {
+        "releasePackageUrl": "/releases/page-1/ko.json",
+        "releasePackageJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "capabilities": [
+          "text",
+          "captions",
+          "audio"
+        ]
+      },
+      "expected": "reject",
+      "webPlayback": false
+    },
+    {
+      "id": "absolute-url",
+      "pageId": "page-1",
+      "locale": "ko",
+      "target": {
+        "releasePackageUrl": "https://example.invalid/releases-v2/page-1/ko.json",
+        "releasePackageJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "capabilities": [
+          "text",
+          "captions",
+          "audio"
+        ]
+      },
+      "expected": "reject",
+      "webPlayback": false
+    },
+    {
+      "id": "query-path",
+      "pageId": "page-1",
+      "locale": "ko",
+      "target": {
+        "releasePackageUrl": "/releases-v2/page-1/ko.json?x=1",
+        "releasePackageJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "capabilities": [
+          "text",
+          "captions",
+          "audio"
+        ]
+      },
+      "expected": "reject",
+      "webPlayback": false
+    },
+    {
+      "id": "bad-hash",
+      "pageId": "page-1",
+      "locale": "ko",
+      "target": {
+        "releasePackageUrl": "/releases-v2/page-1/ko.json",
+        "releasePackageJsonSha256": "bad",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "capabilities": [
+          "text",
+          "captions",
+          "audio"
+        ]
+      },
+      "expected": "reject",
+      "webPlayback": false
+    },
+    {
+      "id": "candidate-content",
+      "pageId": "page-1",
+      "locale": "ko",
+      "target": {
+        "releasePackageUrl": "/releases-v2/page-1/ko.json",
+        "releasePackageJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contentStatus": "candidate",
+        "audioStatus": "human_reviewed",
+        "capabilities": [
+          "text",
+          "captions",
+          "audio"
+        ]
+      },
+      "expected": "reject",
+      "webPlayback": false
+    },
+    {
+      "id": "candidate-audio",
+      "pageId": "page-1",
+      "locale": "ko",
+      "target": {
+        "releasePackageUrl": "/releases-v2/page-1/ko.json",
+        "releasePackageJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "candidate",
+        "capabilities": [
+          "text",
+          "captions",
+          "audio"
+        ]
+      },
+      "expected": "reject",
+      "webPlayback": false
+    },
+    {
+      "id": "duplicate-capability",
+      "pageId": "page-1",
+      "locale": "ko",
+      "target": {
+        "releasePackageUrl": "/releases-v2/page-1/ko.json",
+        "releasePackageJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "capabilities": [
+          "text",
+          "captions",
+          "audio",
+          "audio"
+        ]
+      },
+      "expected": "reject",
+      "webPlayback": false
+    },
+    {
+      "id": "unknown-capability",
+      "pageId": "page-1",
+      "locale": "ko",
+      "target": {
+        "releasePackageUrl": "/releases-v2/page-1/ko.json",
+        "releasePackageJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "capabilities": [
+          "text",
+          "captions",
+          "audio",
+          "teleport"
+        ]
+      },
+      "expected": "reject",
+      "webPlayback": false
+    },
+    {
+      "id": "missing-text",
+      "pageId": "page-1",
+      "locale": "ko",
+      "target": {
+        "releasePackageUrl": "/releases-v2/page-1/ko.json",
+        "releasePackageJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "capabilities": [
+          "captions",
+          "audio"
+        ]
+      },
+      "expected": "reject",
+      "webPlayback": false
+    },
+    {
+      "id": "reviewed-without-audio-capability",
+      "pageId": "page-1",
+      "locale": "ko",
+      "target": {
+        "releasePackageUrl": "/releases-v2/page-1/ko.json",
+        "releasePackageJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "capabilities": [
+          "text",
+          "captions"
+        ]
+      },
+      "expected": "reject",
+      "webPlayback": false
+    },
+    {
+      "id": "unavailable-with-audio-capability",
+      "pageId": "page-1",
+      "locale": "ko",
+      "target": {
+        "releasePackageUrl": "/releases-v2/page-1/ko.json",
+        "releasePackageJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "unavailable",
+        "capabilities": [
+          "text",
+          "captions",
+          "audio"
+        ]
+      },
+      "expected": "reject",
+      "webPlayback": false
+    },
+    {
+      "id": "capabilities-not-array",
+      "pageId": "page-1",
+      "locale": "ko",
+      "target": {
+        "releasePackageUrl": "/releases-v2/page-1/ko.json",
+        "releasePackageJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "capabilities": "text,captions,audio"
+      },
+      "expected": "reject",
+      "webPlayback": false
+    },
+    {
+      "id": "missing-alignment-binding",
+      "pageId": "page-1",
+      "locale": "ko",
+      "target": {
+        "releasePackageUrl": "/releases-v2/page-1/ko.json",
+        "releasePackageJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "capabilities": [
+          "text",
+          "captions",
+          "audio",
+          "alignment"
+        ]
+      },
+      "expected": "reject",
+      "webPlayback": false
+    },
+    {
+      "id": "aligned-audio",
+      "pageId": "page-1",
+      "locale": "ko",
+      "target": {
+        "releasePackageUrl": "/releases-v2/page-1/ko.json",
+        "releasePackageJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "capabilities": [
+          "text",
+          "captions",
+          "audio",
+          "alignment"
+        ],
+        "audioFingerprint": {
+          "schemaVersion": "sermon-audio-fingerprint-binding-v1",
+          "pageId": "page-1",
+          "sourceSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "trackSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "sourceStartSeconds": 0,
+          "sourceEndSeconds": 60,
+          "algorithmVersion": "spectral-landmarks-v1",
+          "captureSeconds": 10,
+          "indexSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "indexUrl": "/fingerprints/dddddddddddddddd-landmarks.json"
+        }
+      },
+      "expected": "accept",
+      "webPlayback": true
+    },
+    {
+      "id": "alignment-wrong-page",
+      "pageId": "page-1",
+      "locale": "ko",
+      "target": {
+        "releasePackageUrl": "/releases-v2/page-1/ko.json",
+        "releasePackageJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "capabilities": [
+          "text",
+          "captions",
+          "audio",
+          "alignment"
+        ],
+        "audioFingerprint": {
+          "schemaVersion": "sermon-audio-fingerprint-binding-v1",
+          "pageId": "other",
+          "sourceSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "trackSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "sourceStartSeconds": 0,
+          "sourceEndSeconds": 60,
+          "algorithmVersion": "spectral-landmarks-v1",
+          "captureSeconds": 10,
+          "indexSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "indexUrl": "/fingerprints/dddddddddddddddd-landmarks.json"
+        }
+      },
+      "expected": "reject",
+      "webPlayback": false
+    },
+    {
+      "id": "alignment-reversed-window",
+      "pageId": "page-1",
+      "locale": "ko",
+      "target": {
+        "releasePackageUrl": "/releases-v2/page-1/ko.json",
+        "releasePackageJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "capabilities": [
+          "text",
+          "captions",
+          "audio",
+          "alignment"
+        ],
+        "audioFingerprint": {
+          "schemaVersion": "sermon-audio-fingerprint-binding-v1",
+          "pageId": "page-1",
+          "sourceSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "trackSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "sourceStartSeconds": 0,
+          "sourceEndSeconds": 0,
+          "algorithmVersion": "spectral-landmarks-v1",
+          "captureSeconds": 10,
+          "indexSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "indexUrl": "/fingerprints/dddddddddddddddd-landmarks.json"
+        }
+      },
+      "expected": "reject",
+      "webPlayback": false
+    },
+    {
+      "id": "alignment-index-path",
+      "pageId": "page-1",
+      "locale": "ko",
+      "target": {
+        "releasePackageUrl": "/releases-v2/page-1/ko.json",
+        "releasePackageJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "capabilities": [
+          "text",
+          "captions",
+          "audio",
+          "alignment"
+        ],
+        "audioFingerprint": {
+          "schemaVersion": "sermon-audio-fingerprint-binding-v1",
+          "pageId": "page-1",
+          "sourceSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "trackSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "sourceStartSeconds": 0,
+          "sourceEndSeconds": 60,
+          "algorithmVersion": "spectral-landmarks-v1",
+          "captureSeconds": 10,
+          "indexSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "indexUrl": "/fingerprints/other.json"
+        }
+      },
+      "expected": "reject",
+      "webPlayback": false
+    },
+    {
+      "id": "alignment-bad-track-hash",
+      "pageId": "page-1",
+      "locale": "ko",
+      "target": {
+        "releasePackageUrl": "/releases-v2/page-1/ko.json",
+        "releasePackageJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "capabilities": [
+          "text",
+          "captions",
+          "audio",
+          "alignment"
+        ],
+        "audioFingerprint": {
+          "schemaVersion": "sermon-audio-fingerprint-binding-v1",
+          "pageId": "page-1",
+          "sourceSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "trackSha256": "bad",
+          "sourceStartSeconds": 0,
+          "sourceEndSeconds": 60,
+          "algorithmVersion": "spectral-landmarks-v1",
+          "captureSeconds": 10,
+          "indexSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "indexUrl": "/fingerprints/dddddddddddddddd-landmarks.json"
+        }
+      },
+      "expected": "reject",
+      "webPlayback": false
+    },
+    {
+      "id": "binding-without-capability",
+      "pageId": "page-1",
+      "locale": "ko",
+      "target": {
+        "releasePackageUrl": "/releases-v2/page-1/ko.json",
+        "releasePackageJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "capabilities": [
+          "text",
+          "captions",
+          "audio"
+        ],
+        "audioFingerprint": {
+          "schemaVersion": "sermon-audio-fingerprint-binding-v1",
+          "pageId": "page-1",
+          "sourceSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "trackSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "sourceStartSeconds": 0,
+          "sourceEndSeconds": 60,
+          "algorithmVersion": "spectral-landmarks-v1",
+          "captureSeconds": 10,
+          "indexSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "indexUrl": "/fingerprints/dddddddddddddddd-landmarks.json"
+        }
+      },
+      "expected": "reject",
+      "webPlayback": false
+    }
+  ]
+}

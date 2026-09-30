@@ -8,6 +8,24 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class SharedClientContractFixturesTests(unittest.TestCase):
+    def test_accepted_shared_catalog_targets_satisfy_production_schema(self):
+        matrix = json.loads((ROOT / 'apps/tongxing-ios/Core/Tests/TongxingCoreTests/Fixtures/shared-catalog-targets.json').read_text())
+        schema = json.loads((ROOT / 'schemas/sermon-multilingual-catalog-v3.schema.json').read_text())
+        validator = Draft202012Validator(schema)
+        accepted = [row for row in matrix['cases'] if row['expected'] == 'accept']
+        self.assertEqual(len(matrix['cases']), 31)
+        self.assertTrue(any(row['target']['audioStatus'] == 'unavailable' for row in accepted))
+        for row in accepted:
+            page = {'id': row['pageId'], 'title': 'Synthetic fixture', 'date': '2026-09-30',
+                    'sourceLocale': 'en', 'sourceIdentitySha256': 'a' * 64,
+                    'sourceMediaSha256': 'b' * 64, 'defaultTargetLocale': row['locale'],
+                    'targets': {row['locale']: row['target']}}
+            catalog = {'schemaVersion': 'sermon-multilingual-catalog-v3',
+                       'generatedAt': '2026-09-30T00:00:00Z',
+                       'defaultPageId': row['pageId'], 'pages': [page]}
+            with self.subTest(case=row['id']):
+                validator.validate(catalog)
+
     def test_accepted_web_native_fixture_is_valid_production_release_schema(self):
         matrix = json.loads((ROOT / 'apps/tongxing-ios/Core/Tests/TongxingCoreTests/Fixtures/shared-release-contracts.json').read_text())
         schema = json.loads((ROOT / 'schemas/sermon-target-language-release-package-v2.schema.json').read_text())

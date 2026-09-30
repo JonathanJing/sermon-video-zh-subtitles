@@ -118,8 +118,37 @@ export function validatePublishedRelease(release, page, locale) {
   return assets;
 }
 
+// Catalog admission is distinct from this audio player's capabilities. A valid
+// text-only target stays valid, but must never trigger an audio-release request.
+export function validatePublishedTarget(target, page, locale) {
+  const capabilities = target?.capabilities;
+  required(target && target.releasePackageUrl === `/releases-v2/${page.id}/${locale}.json`
+    && HASH.test(target.releasePackageJsonSha256) && target.contentStatus === 'human_reviewed'
+    && ['unavailable', 'human_reviewed'].includes(target.audioStatus)
+    && Array.isArray(capabilities) && capabilities.includes('text')
+    && capabilities.every(value => ['text', 'captions', 'audio', 'download', 'alignment'].includes(value))
+    && new Set(capabilities).size === capabilities.length
+    && (target.audioStatus === 'human_reviewed') === capabilities.includes('audio')
+    && (target.audioFingerprint != null) === capabilities.includes('alignment'),
+  'Invalid published catalog target');
+  const binding = target.audioFingerprint;
+  if (binding != null) {
+    const duration = binding.sourceEndSeconds - binding.sourceStartSeconds;
+    required(binding.schemaVersion === 'sermon-audio-fingerprint-binding-v1'
+      && binding.algorithmVersion === 'spectral-landmarks-v1'
+      && binding.pageId === page.id && target.audioStatus === 'human_reviewed'
+      && HASH.test(binding.sourceSha256) && HASH.test(binding.trackSha256) && HASH.test(binding.indexSha256)
+      && Number.isFinite(binding.sourceStartSeconds) && binding.sourceStartSeconds >= 0
+      && Number.isFinite(binding.sourceEndSeconds) && duration > 0
+      && binding.captureSeconds === 10
+      && binding.indexUrl === `/fingerprints/${binding.indexSha256.slice(0, 16)}-landmarks.json`,
+    'Invalid published catalog alignment binding');
+  }
+  return target;
+}
+
 async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal) {
-  const target = page.targets[locale];
+  const target = validatePublishedTarget(page.targets[locale], page, locale);
   required(target?.contentStatus === 'human_reviewed' && target.audioStatus === 'human_reviewed'
     && ['text', 'captions', 'audio'].every(capability => target.capabilities?.includes(capability)), 'Target is not ready for playback');
   const release = await readJson(fetchImpl, target.releasePackageUrl, target.releasePackageJsonSha256, timeoutMs, false, pageSignal);
