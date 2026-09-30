@@ -95,6 +95,8 @@ Firebase Hosting 只发布静态运行时和指纹索引；采集、特征和匹
 
 2026-09-29 确认：下一阶段先搞清楚每周制作的实际环节，再减少从视频链接到 Dev App 交付的总时间和流程总 token。以下是待实施／验收的工程计划，不是已完成优化，也不预设节省百分比。工程优先级只在本页维护；`TRK-*`、`SPD-*` 继续作为专项验收项，复用现有 `DEV-TRACK-001`、`DEV-E2E-001`、`DEV-L2-001`、`DEV-L3-001` 和 `DEV-TRK-002`。
 
+研究依据见[每周证道流程耗时与 token 研究发现](reports/20260929-weekly-workflow-efficiency-findings.zh.md)，记录核查版本、代码与测试入口、缓存计量风险、模型实验边界及旧分支结论的修正。
+
 **当前可复用能力与证据边界**
 
 - [后端快速 dry run](backend-four-layer-dry-run.zh.md)已共用部分生产控制循环、保存逐步计时及失败报告，并有 CI 故障注入；固定响应和测试音不测真实 ASR／翻译／TTS 性能。较早的 [30 秒 bucket 演练](firebase-dev-four-layer-bucket-dry-run.zh.md)是另一条复用素材的交付检查，不能替代真实生成基线，也不应据其旧失败处理推断新版模拟器行为。
