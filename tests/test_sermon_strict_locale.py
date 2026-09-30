@@ -125,5 +125,32 @@ class LocaleTests(unittest.TestCase):
             self.assertEqual(subject.public.read_snapshot(path)[1], raw)
         self.assertEqual(len(self.f.calls), 4)
 
+    def test_locale_outputs_feed_real_gate_with_separate_synthetic_human_receipt(self):
+        from scripts import review_target_language_candidate as human
+        from scripts import sermon_strict_gate_admission as admission
+        with self.f.session():
+            result = self.run_locale()
+        source, anchor, policy, rubric = map(c.decode_json, self.f.args)
+        pending = subject.public.read_snapshot(Path(result['output']) / 'candidate.json')[0]
+        sheet = human.build_worksheet(source, anchor, pending, policy, strict_rubric=rubric)
+        sheet = human.apply_batch_approval(sheet, reviewer='Synthetic integration fixture',
+            reviewed_at=self.kw['created_at'], evidence='Developer fixture only, not human acceptance')
+        approved, receipt = human.approve_worksheet(source, anchor, pending, policy, sheet, strict_rubric=rubric)
+        paths = {}
+        for key, value in zip(('source', 'anchor', 'policy', 'rubric', 'public_candidate', 'human_receipt'),
+                             (source, anchor, policy, rubric, approved, receipt)):
+            paths[key] = self.f.root / (key + '.json')
+            subject.public.save_once(paths[key], value)
+        boundary = admission.AdmissionBoundary(admission.Configuration(
+            self.kw['production_run_id'], 'zh-Hans', self.kw['job_root'], self.kw['root'],
+            tuple(Path(row['root']) for row in result['revisions']), **paths,
+            plugin=self.kw['plugin_path'], plugin_sha256=self.kw['expected_plugin_sha256']), self.store)
+        snapshot = boundary.snapshot()
+        outcome = boundary.admit(expected_state_revision=snapshot.state_revision, created_at=self.kw['created_at'])
+        self.assertEqual(outcome['status'], 'committed', outcome)
+        self.assertEqual(outcome['intent']['action'], 'prepare_layer3')
+        self.assertFalse(outcome['dispatched'])
+        self.assertEqual(len(self.f.calls), 4)
+
 
 if __name__ == '__main__': unittest.main()
