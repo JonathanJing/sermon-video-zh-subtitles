@@ -199,3 +199,11 @@ E6 兼容性审查与完整canonical Stage0继续未完成，stage1PromotionAllo
 - 本地集成 `503d274` 包含 #155 和 #156 初始版，完整 Python 报告 2027 项，其中 6 skipped，实际 2021 通过；这是初始版证据。审查修复后的最新集成为 `4c3f05a7cc5e1ae3e9f82d88f2150c6da1cc4400`，新跑 327 项 Stage0 组件与后端模拟通过，`stage1PromotionAllowed=false`。日志在 `stack-with156-expiry-fix-stage0/`；没有把旧全量结果改写成新 head 的全量测试。
 - 完整 Web/Swift/iOS 模拟器证据仍精确绑定前述 `8f608a97`；#155/#156 仅后端 Python 与文档/测试，未再改 native production source。总体交付仍含前述 Swift catalog 行为变更，要到已安装用户仍需新 iOS binary 及对应审核/设备/发布链；不能把整批称为 backend-only。
 - 继续实施：旧 `summary.json` 的 provider/SDK 收据冲突保护已本地复现并在隔离分支修复，尚未完成该批远端交付；不据此关闭 backlog。完整 canonical dispatch、跨进程 DAG、全局资源、真实阶段验证、独立人工/真机/现场门槛仍开放。
+
+## 2026-09-30 13:12 UTC：收据一致性与最新完整 Python 集成
+
+[#157](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/157) `1a3720d6d4ef9c3738958a936049e9f048db05fa` 修复 legacy summary/logs 对冲突 provider/SDK receipts 按输入顺序择一的问题。只有等价事实去重；相同 identity 的 usage/status/model/executor/cost/latency 冲突明确诊断，受影响总量保持未知，SDK 跨 run 导入不重复计费。原始事件不重写。93 项相关测试及最后 13 项跨 run/log 检查通过；干净 head 的 335 项组件与后端模拟通过。精确 head 两 Python 分片和 aggregate SUCCESS，draft iOS/contract validation 仍 skipped。
+
+本地组合快照 **`1fadd47c837e3afc79945c3d5e1bfda4568613b7`** 包含 #157 及 #156 的迟到 receipt 修复。重新执行完整 Root Python：991+1047=2038 reported，**2032 实际通过，6 条件 smoke skipped**；工作树 clean。汇总 `evidence/stack-with157-validation-summary.json` 绑定日志和报告哈希。Web/native 路径与完整验证的 `8f608a97` 无差异，但没有把那些旧测试声称为在新快照重跑。
+
+下一批同进程 L2 worker/cache-recovery DAG 正在验证，尚不计入交付。跨进程四层 DAG、完整 canonical Stage0、真实媒体/人工/设备/现场与发布门槛保持开放。#157 仅后端账务；整批仍含需要新 iOS binary 的 Swift catalog 变更。
