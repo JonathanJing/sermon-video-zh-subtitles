@@ -74,8 +74,24 @@ def inspect(config_path):
         source = _read_package(path.parent, config['source'], hashes, 'source')
         anchor = _read_package(path.parent, config['anchor'], hashes, 'anchor')
         handoff._validate_schema(source, 'sermon-english-source-package-v1.schema.json', 'source package')
+        english.validate_ready_package(source)
         producer.validate_source_for_translation(source, anchor)
+        summary_evidence = source['evidence']['pipelineSummary']
+        if summary_evidence is None:
+            raise ValueError('source_media_summary_missing')
+        summary = _read_package(path.parent, summary_evidence['path'], hashes, 'sourceSummary')
+        if (english.file_sha256(_safe_path(path.parent / summary_evidence['path'])) != summary_evidence['sha256']
+                or hashes['sourceSummary'] != summary_evidence['jsonSha256']
+                or english._source_media(summary) != source['source']['media']):
+            raise ValueError('source_media_summary_changed')
         window = source['source']['approvedWindow']
+        start, end = summary.get('sermonStartSeconds'), summary.get('sermonEndSeconds')
+        if not english._finite(start) or start < 0:
+            start = min(float(unit['start']) for unit in anchor['sourceUnits'])
+        if not english._finite(end) or end <= start:
+            end = max(float(unit['end']) for unit in anchor['sourceUnits'])
+        if window['startSeconds'] != start or window['endSeconds'] != end:
+            raise ValueError('source_window_summary_changed')
         window_evidence = window['evidence']
         window_receipt = _read_package(path.parent, window_evidence['path'], hashes, 'sourceWindowReview')
         if (source['issues'] or window['status'] != 'approved'
