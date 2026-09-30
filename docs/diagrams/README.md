@@ -1,10 +1,10 @@
 # 项目流程图 / Diagram Assets
 
-## 2026-09-30 原生 Mermaid 架构图
+## 2026-09-30 当前架构图：SVG 预览与 Mermaid 拓扑
 
-新增的英文 DAG 直接维护在[根 README](../../README.md)，中英对应版维护在[后端系统设计](../backend-workflow-system-design.zh-en.md)。两处各包含四层业务 DAG 与计划中的有界修订 DAG；节点 ID 与边保持一致，文案按语言对应。它们是当前依赖视图，不替代旧 SVG 的历史模型／处理记录。PR164 的只读 reviewer/gate/自动返工明确标为 planned。
+[英文 README](../../README.md)与[中英后端设计](../backend-workflow-system-design.zh-en.md)各包含四层业务 DAG 和计划中的有界修订 DAG；[App 系统图](../app-system-design.zh.md)与[执行环境图](../execution-environment-design.zh.md)补充另两个设计面。默认展示原生 SVG，Markdown 折叠区保留可复制的 Mermaid 拓扑源。GitHub rich Mermaid 预览曾返回无法渲染，因此静态图不依赖该服务。
 
-[App 系统图](../app-system-design.zh.md)与[执行环境图](../execution-environment-design.zh.md)也使用 Markdown 内嵌 Mermaid。源就在文档，无需 ImageGen、SVG renderer 或生成文件；GitHub 原生渲染。维护时校验 Mermaid 语法、英文/双语拓扑一致、所有 locale 的 L3 必经、无修订回边，并目视检查渲染文字与连线。业务汇合只等待 release plan 选择的语言。`git diff --check` 和 `scripts/docs_change_gate.py` 校验文档路径/链接；该 gate 不检查 Mermaid 语法，须另行渲染验证。
+六张新图沿用现有 `diagram-specs.json` 与 `render_diagrams.py`，既有 SVG 图稿输出保持不变；渲染器仅增加新图显式箭头颜色的可选字段，兼容静态 SVG 预览。节点 ID、边、状态与英/双语源对应；PR164 strict review/gate/repair 明确为 planned，PR165 D1 的 schema 不代表执行已完成。渲染命令、文件映射与校验见[架构 SVG 再生成](architecture-rendering.md)。纯文档 PR 的 `scripts/docs_change_gate.py` 在 spec 改变时重建全组并比较；修改 renderer 会触发完整代码 CI，仍须单独执行图稿再生成比较；另外核查无环、L3 必经、locale 隔离、实际字号、箭头与文字边界。
 
 以下保留既有 SVG 的来源、时间和再生成说明。
 
@@ -40,7 +40,7 @@
 
 ## 可复现来源
 
-`diagram-specs.json` 保存原有 12 张图的节点、文案与连接坐标；`render_diagrams.py` 生成全部 13 张 SVG。`readme_diagram_renderer.py` 为根 README 的 7 张图提供新版样式，并生成 Firebase 发布边界图；其余 5 张继续使用原有渲染器：
+历史部分的 `diagram-specs.json` 保存原有 12 张图的节点、文案与连接坐标；加上本次 6 张架构图共 18 个 spec，`render_diagrams.py` 连同独立 Firebase 图生成 19 张 SVG。`readme_diagram_renderer.py` 为根 README 的 7 张图提供新版样式，并生成 Firebase 发布边界图；其余 5 张继续使用原有渲染器：
 
 ```bash
 python3 docs/diagrams/render_diagrams.py \

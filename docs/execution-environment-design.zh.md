@@ -8,7 +8,12 @@
 
 箭头标明跨边界的数据或动作；可选路径不意味着当前所有服务在线。
 
-```mermaid
+![执行环境 / Execution environments](diagrams/execution-environments.svg)
+
+<details>
+<summary>Mermaid source / 可编辑拓扑源</summary>
+
+```text
 flowchart TB
     SOURCE["公开或授权媒体 / Authorized source"] --> LOCAL
     subgraph MAC["MacBook：生产协调与本地计算 / Local execution"]
@@ -31,6 +36,8 @@ flowchart TB
     GIT["Git branch / PR"] --> CI["GitHub Actions<br/>docs, Python, native checks"]
     CI --> CHECKS["代码门禁结果 / Code checks<br/>不自动发布内容 / No automatic content deploy"]
 ```
+
+</details>
 
 ## 具体运行边界与证据
 

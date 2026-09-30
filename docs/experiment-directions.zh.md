@@ -21,6 +21,7 @@
 | 问题与冻结范围 | 状态与已有观察 | 证据 | 退出门槛 |
 |---|---|---|---|
 | 本地翻译模型的质量、速度、资源如何取舍？239 个冻结英文段、四模型同源文本比较 | 已运行／未替换周日默认；BLEU 和请求延迟不是人审语义或字幕共存证据 | [榜单](../data/benchmarks/live-sermon-translation-v1/runs/macbook-text-baselines/translation-only-leaderboard-20260903.md) · [基准合同](live-sermon-translation-benchmark.zh.md) | 独立双语语义审核、统一 runtime/量化说明、ASR 共存与资源上限通过 |
+| 实时链路能否持续运行并恢复？20 分钟唯一音频以 1 倍速循环三轮、浏览器测试 MediaStream 注入 | 已运行／仅受控浏览器回放；60 分钟链路含真实模型，但没有经过扬声器、物理麦克风或教会调音台，实体手机与人审未完成 | [原始 60 分钟验收报告](../experiments/local-live-poc/benchmarks/SUNDAY_READINESS_20260904.zh.md) · [已校正传输说明](../experiments/local-live-poc/STREAMING.zh.md) | 真实声学输入、实体手机显示、人工语义与现场彩排分别留证；循环材料和浏览器注入不能替代物理输入验收 |
 | 3 秒与 6 秒 ASR 最大窗口能否减少碎片？90 秒同源 replay | 已运行／保留 3 秒默认；6 秒有部分改善，也增加延迟并出现关系截断／增译 | [窗口 A/B](../experiments/local-live-poc/benchmarks/asr-window-ab-20260904.md) | 扩大冻结样本、语义审核、屏幕呈现延迟与现场输入验证；字幕事件不等于屏幕可读 |
 | 合并 translation units 是否更完整？42 个变化单元、126 次 MiLMMT 请求 | 已运行／保留 legacy；有修复也有否定、因果、经文退化 | [单元 A/B](../experiments/local-live-poc/benchmarks/translation-unit-ab-20260904.md) | 风险语义不得退化，并在同输入上验证端到端显示延迟和恢复 |
 | Astra/Sol 的初译与独立复核如何分工？韩语 14 单元植错与 45 单元／44 组扩样、Gemini 裁判 | 已运行／保留 Astra 初译 → Sol 逐组复核；支持逐组审核价值，不能证明某 reviewer 全面更好 | [Layer 2 A/B](reports/20260923-layer2-astra-sol-gemini-ab.zh.md) · [正式 policy](target-language-astra-sol-production.zh.md) | 更广语料与母语审核、完整用量/延迟收据；实验裁判不成为常规第三遍 gate |

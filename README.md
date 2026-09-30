@@ -41,7 +41,12 @@ The production pipeline has four layers: **Shared English Source & Anchors → T
 | 3. Target-Language Audio & Synchronization | Generate natural-rate speech from approved text, measure actual duration and schedule it against English clauses and pauses | Qwen3-TTS and similar speech models synthesize audio; Qwen3-ASR-style back-transcription is a machine screen only; a deterministic scheduler owns duration, gaps and timeline placement, followed by complete human listening | `Target-Language Audio Package`: audio, captions, schedule, screening and listening state |
 | 4. Multilingual Delivery & Playback | Bind the correct video, text, audio, captions, page and language selectors, then deploy, download and play them on supported clients | Page builders, FFmpeg, Firebase, Web/iOS clients and validators deliver artifacts; a Supervisor/Agent orchestrates state but does not replace content truth or human acceptance | `Target-Language Release Package`: locale-isolated assets, hashes, HTTP/download checks and player verification |
 
-```mermaid
+![Four-layer production DAG](docs/diagrams/architecture-dag-en.svg)
+
+<details>
+<summary>Mermaid source / 可编辑拓扑源</summary>
+
+```text
 flowchart TB
     SRC["L1 English Source + Anchors<br/>Frozen identity, hashes, provenance and review"]
     SRC --> ZT["L2 zh-Hans Text<br/>Locale review + human approval"]
@@ -61,6 +66,8 @@ flowchart TB
     HTTP --> CLIENT["iOS primary, Web secondary<br/>Separate device and venue acceptance"]
 ```
 
+</details>
+
 Every locale must pass through **L3 Audio Package**, including explicit `audio_unavailable` when its release plan permits text-only delivery. The selected-locale join does not require all three languages unless the release plan says so. Source changes invalidate all locales; text/audio changes invalidate only that locale’s descendants. Existing text-only readers and catalog validation do not establish support in every producer; see the [implementation map](docs/backend-workflow-system-design.zh-en.md#实际实现地图--implementation-map).
 
 The earlier [four-layer SVG](docs/diagrams/four-layer-production-workflow.svg) is a dated September 25 model/process overview; the DAG above is the maintained dependency view.
@@ -71,9 +78,14 @@ The release diagram separates **content review, Git promotion, and Firebase depl
 
 ### Planned generation, review and bounded repair DAG
 
-**Planned:** PR164’s [design snapshot](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/fb0da4903717be3844e8114a44c7fcb46d5c9f35/docs/generation-review-gate-design.zh.md) separates immutable generation, independent read-only review and a deterministic gate. At the inspected `dev@fc3e2fb` baseline, the [L2 runner](scripts/run_target_language_models.py) still allows Sol to edit text; the [fixed L2 controller](docs/canonical-layer2-controller.zh.md) stops at human review. Strict-verifier receipts and automatic repair integration are pending, and the full four-layer controller is incomplete. The in-flight [PR165 D1 private contracts](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/56cb444bd9f6d5ea2d3a2c9f990ea7c7e4c00ece/docs/rqc-private-contracts.zh.md) add schemas and explicit policy parsing on a separate unmerged branch; they do not yet execute strict review, gate admission or repairs.
+**Planned:** PR164’s [design snapshot](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/fb0da4903717be3844e8114a44c7fcb46d5c9f35/docs/generation-review-gate-design.zh.md) separates immutable generation, independent read-only review and a deterministic gate. At the inspected `dev@fc3e2fb` baseline, the [L2 runner](scripts/run_target_language_models.py) still allows Sol to edit text; the [fixed L2 controller](docs/canonical-layer2-controller.zh.md) stops at human review. Strict-verifier receipts and automatic repair integration are pending, and the full four-layer controller is incomplete. The in-flight [PR165 D1 private contracts](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/f731e98863761366836787bab56a5d61a77c281d/docs/rqc-private-contracts.zh.md) add schemas and explicit policy parsing on a separate unmerged branch; they do not yet execute strict review, gate admission or repairs.
 
-```mermaid
+![Planned generation, review and repair](docs/diagrams/review-revision-dag-en.svg)
+
+<details>
+<summary>Mermaid source / 可编辑拓扑源</summary>
+
+```text
 flowchart TB
     F["PLANNED: strict workflow<br/>Frozen source, policy and rubric"]
     F --> G1["Generate immutable r1"]
@@ -102,6 +114,8 @@ flowchart TB
     classDef planned fill:#fff4d6,stroke:#8a5a00,color:#202020;
     class F,G1,P1,R1,Q1,B1,G2,P2,R2,Q2,B2,G3,P3,R3,Q3,STOP,H,L3,WAIT planned;
 ```
+
+</details>
 
 This expands one locale/work unit into new revisions without cycles. Two repairs after r1 are a proposed experimental cap, not an implemented budget. Gates bind the exact candidate, source, policy, rubric, coverage and approval receipts. Execution failure may resume review of the same frozen candidate; unknown outcomes require reconciliation, and inconclusive evidence waits for resolution. Machine pass still requires whole-locale human approval before formal L3. See the [bilingual design](docs/backend-workflow-system-design.zh-en.md) for failure routes, current code and remaining limits.
 

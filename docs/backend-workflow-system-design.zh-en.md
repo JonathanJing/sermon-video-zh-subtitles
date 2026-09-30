@@ -10,7 +10,12 @@
 
 三语直接消费同一已审英文来源，各自经过 Text → Audio → Release。下面展示业务依赖；不表示当前 controller 已能自动执行整条链。每个 L2 节点包括机器审核、语言插件、候选准入和本语言文字人审；带音频的 L3 包还要求整轨听审。Every locale must produce an L3 Audio Package, including explicit `audio_unavailable` for a permitted text-only release. There is no L2 → L4 bypass.
 
-```mermaid
+![四层业务 DAG / Four-layer production](diagrams/architecture-dag-zh-en.svg)
+
+<details>
+<summary>Mermaid source / 可编辑拓扑源</summary>
+
+```text
 flowchart TB
     SRC["L1 英文源与锚点 / English Source + Anchors<br/>冻结身份、hash、来源与审核 / Frozen identity and review"]
     SRC --> ZT["L2 zh-Hans 文字 / Text<br/>本语言审核与批准 / Locale review + approval"]
@@ -29,6 +34,8 @@ flowchart TB
     AUTH --> HTTP["部署并核验字节 / Deploy + HTTP and hash verification"]
     HTTP --> CLIENT["iOS 主端、Web 辅端 / iOS primary, Web secondary<br/>设备与现场另验 / Separate device and venue acceptance"]
 ```
+
+</details>
 
 `PLAN` 是发布计划选择的汇合，不是永远等待三语。某语言失败只阻止自己的后继；明确要求同时发布三语时才等待三语。L1 身份变化使所有 locale 下游失效；L2/L3 变化只使相应 locale 下游失效。[Canonical DAG 定义](../scripts/canonical_pipeline_definition.py)与[包检查边界](canonical-package-inspection.zh.md)进一步区分依赖结构、观察和执行。
 
@@ -49,11 +56,16 @@ Text-only 的现状须分入口看：[catalog builder](../scripts/build_multilin
 
 **计划 / Planned，尚非当前 runner 行为。** [PR164 设计快照](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/fb0da4903717be3844e8114a44c7fcb46d5c9f35/docs/generation-review-gate-design.zh.md)与[对应任务拆分](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/fb0da4903717be3844e8114a44c7fcb46d5c9f35/docs/generation-review-gate-backlog.zh.md)定义 strict-verifier、review receipt、deterministic gate 与自动修复接线。核查时 PR 仍 open；其他实现分支的进展须以合并后的代码和证据重新校准。本图不修改该 PR 的设计或 backlog。
 
-**进行中 / In flight:** [PR165](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/165) 在 `56cb444bd9f6d5ea2d3a2c9f990ea7c7e4c00ece` 新增 [D1 私有合同与兼容边界](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/56cb444bd9f6d5ea2d3a2c9f990ea7c7e4c00ece/docs/rqc-private-contracts.zh.md)：schema、只读快照/binding validator 与显式 strict policy 解析已有实现分支；尚未合入上述 dev 基线，不实现模型调用、固定 Gate 准入或人工批准。D2 日志、D3 strict runner、D4 Gate 和 D5 修复/预算须分别跟随后续 PR 证据；本文不编辑它们的合同或实施矩阵。
+**进行中 / In flight:** [PR165](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/165) 在 `f731e98863761366836787bab56a5d61a77c281d` 新增 [D1 私有合同与兼容边界](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/f731e98863761366836787bab56a5d61a77c281d/docs/rqc-private-contracts.zh.md)：schema、只读快照/binding validator 与显式 strict policy 解析已有实现分支；尚未合入上述 dev 基线，不实现模型调用、固定 Gate 准入或人工批准。D2 日志、D3 strict runner、D4 Gate 和 D5 修复/预算须分别跟随后续 PR 证据；本文不编辑它们的合同或实施矩阵。
 
 以下展开单个 locale/work unit 的修订节点。每次 Generator 写新候选，Reviewer 只读该候选与实际英文，Gate 核对候选 hash、policy、rubric、完整覆盖和批准。The graph is acyclic: repair creates a new revision, never an edge back to an old generation or review node.
 
-```mermaid
+![计划：生成、独立审核、门禁与新修订](diagrams/review-revision-dag-zh-en.svg)
+
+<details>
+<summary>Mermaid source / 可编辑拓扑源</summary>
+
+```text
 flowchart TB
     F["计划 / Planned strict workflow<br/>冻结源、policy、rubric / Frozen inputs"]
     F --> G1["生成 r1 / Generate immutable r1"]
@@ -83,6 +95,8 @@ flowchart TB
     class F,G1,P1,R1,Q1,B1,G2,P2,R2,Q2,B2,G3,P3,R3,Q3,STOP,H,L3,WAIT planned;
 ```
 
+</details>
+
 图中最多两次内容修订（r1 加 r2/r3）是 PR164 的**建议实验上限**，不是现有 runner 已具备的硬预算。修复计划也须核对依赖闭包、预算和 fresh state；无新证据的相同失败可提前停止。审核调用执行失败与内容失败不同：保留候选，按受限新 attempt 恢复审核；结果未知先对账；inconclusive 等待真实证据或人工裁决，不进入 pass 路径。为了可读，图只展开内容返工主路，完整错误路由以 PR164 为准。
 
 当前 reviewer-editor 的独立调用不代表修改后的文本又经另一个只读请求验证。历史收据保持原语义，不能重标 strict-verifier。API 执行成功、机器审核通过、业务准入是三种状态；机器通过缺人审仍等待。已知修复由固定程序决定；有歧义才使用预算内 Decision proposal；未知程序错误进入独立工程分支，不让工程 Agent 成为每组生产的常规依赖。
@@ -91,4 +105,4 @@ flowchart TB
 
 [Dual-PDF Supervisor](sermon-production-supervisor-agent.md)的 `complete` 只代表 `dual_pdf`；[周日现场字幕](../experiments/local-live-poc/DESIGN.zh.md)属于 `live_session`。两者不接到 L4 冒充 `four_layer_release`；最终录音进入耐久内容生产时重新从 L1 开始。`preview_only` 预生成 WAV 也不是 L3 包，正式复用须按[层内解耦合同](multilingual-intralayer-review-decoupling.zh.md)重核身份并重新排程、听审。
 
-英文主图在 [README](../README.md#four-layer-production-architecture-shared-english-source-to-multilingual-playback)，本页为中英对应版。修改时同时核对节点 ID、边集合、L3 必经、locale 隔离、修订无回边和状态标签；Mermaid 源直接保存在 Markdown，GitHub 可原生渲染。[图表维护入口](diagrams/README.md)记录验证方式。历史云图继续保留在 [system-design](system-design.zh.md)，不作为当前执行拓扑。
+英文主图在 [README](../README.md#four-layer-production-architecture-shared-english-source-to-multilingual-playback)，本页为中英对应版。修改时同时核对节点 ID、边集合、L3 必经、locale 隔离、修订无回边和状态标签；原生 SVG 由现有 JSON 图稿与 renderer 重建，Markdown 折叠区保留可复制 Mermaid 源；GitHub 默认显示 SVG，不依赖 rich Mermaid 服务。[图表维护入口](diagrams/README.md)记录验证方式。历史云图继续保留在 [system-design](system-design.zh.md)，不作为当前执行拓扑。

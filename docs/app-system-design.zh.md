@@ -6,9 +6,16 @@
 
 **产品方向：原生 iOS 为主要收听端，Firebase Web 为辅助访问与兼容入口。** 这是优先级决策，不表示 iOS 已覆盖 Web 全部功能或完成分发。现有 SwiftUI/AVPlayer 客户端、缓存与声音定位代码支持此方向；Firebase Web 已有独立发布记录。iOS 二进制分发、真机、完整视频入口与现场验收仍按各自证据确认。
 
+**进行中：UI／UX 协作流程。** [PR168](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/168) 在 `9dfff4d6a7d4d0c0bd08fbfd79f5ffce5707f8b6` 提供 [Xcode-first 中文流程](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/9dfff4d6a7d4d0c0bd08fbfd79f5ffce5707f8b6/apps/tongxing-ios/UI-ITERATION-WORKFLOW.zh.md)与[英文版](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/9dfff4d6a7d4d0c0bd08fbfd79f5ffce5707f8b6/apps/tongxing-ios/UI-ITERATION-WORKFLOW.md)：先在实际 SwiftUI／Xcode 中迭代，以确认的 iOS revision、截图和交互规则判断 Web 适配。核查时 PR open，未合入本文 dev 基线；这是工作方式文档，首轮收听页试点、预览自动化、真实前后截图与网页适配均未由该 PR 实现。流程、UI 规范和试点证据由其 iOS 文档维护；本文只链接，不复制或改写。
+
 ## 客户端依赖与数据边界
 
-```mermaid
+![App 系统设计 / Client architecture](diagrams/app-system-architecture.svg)
+
+<details>
+<summary>Mermaid source / 可编辑拓扑源</summary>
+
+```text
 flowchart TB
     RELEASE["L4 已核验发布资产 / Verified release assets<br/>catalog + locale Release + hashes"]
     RELEASE --> IOS["主端 / Primary: native iOS<br/>SwiftUI + AppModel"]
@@ -20,6 +27,8 @@ flowchart TB
     ALIGN["可选同源定位索引 / Optional source-bound index"] --> PLAYER
     ALIGN --> WP
 ```
+
+</details>
 
 读者操作路径为选择周次 → 选择可用内容语言 → 校验发布包与资源 → 阅读／播放 → 需要时下载或声音定位。界面语言只改变控件文案，不能将未发布音轨变成可用；语言切换不能继承上一条音轨的定位结果。缺失或错误的指纹索引只禁用声音定位，不伪造上游通过，也不必阻塞普通播放。
 
