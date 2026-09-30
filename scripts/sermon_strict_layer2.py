@@ -254,7 +254,7 @@ def require_call_binding(output,saved):
     c.require(raw.get('payloadSha256')==saved['payloadSha256'] and
         response.get('id')==saved['requestId'] and response.get('model')==saved['model'] and
         raw.get('accounting',{}).get('modelCallId')==call.get('modelCallId'), 'strict_raw_receipt_binding_changed')
-    try:content=c.decode_json(response['choices'][0]['message']['content'].encode('utf-8'))
+    try:content=c.decode_json(shared.completed_response_content(response,saved['model'],'strict cached').encode('utf-8'))
     except (KeyError,TypeError,IndexError,ValueError) as exc:raise c.ContractError('invalid_strict_raw_content') from exc
     c.require(content==saved['result'],'strict_raw_content_changed')
     return raw

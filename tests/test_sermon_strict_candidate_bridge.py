@@ -99,6 +99,23 @@ class StrictBridgeTests(unittest.TestCase):
                 plugin_path=self.f.f.plugin_path, expected_plugin_sha256='0' * 64)
         self.assertEqual(len(self.f.calls), 4)
 
+    def test_cached_terminal_envelope_must_match_fresh_response_requirements(self):
+        root = self.revisions[0][0]
+        for role in ('generator', 'reviewer'):
+            path = root / (role + '.raw.json')
+            original = path.read_bytes()
+            for kind in ('length', 'content_filter', 'multiple_choices', 'missing_choice', 'invalid_choice'):
+                with self.subTest(role=role, corruption=kind):
+                    row = json.loads(original)
+                    if kind == 'multiple_choices': row['response']['choices'] *= 2
+                    elif kind == 'missing_choice': row['response']['choices'] = []
+                    elif kind == 'invalid_choice': row['response']['choices'] = [None]
+                    else: row['response']['choices'][0]['finish_reason'] = kind
+                    path.write_text(json.dumps(row))
+                    with self.assertRaises(c.ContractError): self.compile()
+                    path.write_bytes(original)
+        self.assertEqual(len(self.f.calls), 4)
+
     def test_plugin_cannot_change_an_earlier_group_after_it_was_validated(self):
         original=producer.run_language_plugin
         def mutate(*args,**kwargs):
