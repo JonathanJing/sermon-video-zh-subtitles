@@ -1,3 +1,4 @@
+import { diagnosticSummary, matchReason } from './fingerprint-diagnostics.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -21,7 +22,7 @@ function fixture(filename, injected = {}) {
   let locale = 'zh';
   const get = id => { if (!elements.has(id)) elements.set(id, new Element()); return elements.get(id); };
   const context = vm.createContext({
-    console, URL, AbortController, performance, Promise, Map, Set,
+    console, URL, AbortController, performance, Promise, Map, Set, diagnosticSummary, matchReason,
     document: { getElementById: get, createElement: () => new Element(), addEventListener() {}, querySelectorAll: () => [], visibilityState: 'visible' },
     window: { addEventListener() {} }, localStorage: { getItem: () => 'no', setItem() {} },
     t: (key, params = {}) => (messages[locale][key] || appMessages[locale][key] || key).replace(/\{(\w+)\}/g, (_, name) => String(params[name] ?? `{${name}}`)),
