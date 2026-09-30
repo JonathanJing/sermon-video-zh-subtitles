@@ -1,6 +1,8 @@
 import { fingerprint, matchFingerprint } from './fingerprint-core.mjs';
+import { captureQuality, summarizeMatch } from './fingerprint-diagnostics.mjs';
 const same = (a, b) => a === b;
 self.onmessage = async ({ data }) => {
+  const timings = {}, started = performance.now();
   try {
     const { samples, sampleRate, metadata: m, requestId } = data;
     const url = new URL(m.indexUrl, self.location.href);
@@ -14,10 +16,17 @@ self.onmessage = async ({ data }) => {
     const index = JSON.parse(new TextDecoder().decode(bytes));
     if (index.schemaVersion !== 'sermon-landmark-index-v1' || !same(index.pageId, m.pageId) || !same(index.sourceSha256, m.sourceSha256) || !same(index.trackSha256, m.trackSha256) || !same(index.algorithmVersion, m.algorithmVersion) || !same(index.sourceStartSeconds, m.sourceStartSeconds) || !same(index.sourceEndSeconds, m.sourceEndSeconds) || !same(index.durationSeconds, m.sourceEndSeconds - m.sourceStartSeconds)) throw new Error('index_binding');
     if (index.window && (Array.isArray(index.window) ? index.window[0] !== m.sourceStartSeconds || index.window[1] !== m.sourceEndSeconds : index.window.startSeconds !== m.sourceStartSeconds || index.window.endSeconds !== m.sourceEndSeconds)) throw new Error('index_binding');
+    timings.indexMs = performance.now() - started;
+    const featureStart = performance.now();
     const query = fingerprint(samples, sampleRate);
+    const quality = captureQuality(samples, query.rms);
     samples.fill(0);
+    timings.featureMs = performance.now() - featureStart;
+    const matchStart = performance.now();
     const result = matchFingerprint(query, index);
+    timings.matchMs = performance.now() - matchStart;
     // Only the content location and confidence cross back to UI; never persist PCM/features.
-    self.postMessage({ requestId, result: { matched: result.matched === true, queryStartSeconds: result.queryStartSeconds, confidence: result.confidence, diagnostics: result.diagnostics }, durationSeconds: query.durationSeconds });
-  } catch (error) { self.postMessage({ requestId: data.requestId, error: error.message || 'match_failed' }); }
+    self.postMessage({ requestId, result: { matched: result.matched === true, queryStartSeconds: result.queryStartSeconds, confidence: result.confidence, diagnostics: result.diagnostics }, durationSeconds: query.durationSeconds, summary: summarizeMatch(query, result, quality), timings });
+  } catch (error) { self.postMessage({ requestId: data.requestId, error: ['index_binding', 'index_unavailable'].includes(error.message) ? error.message : 'match_failed' }); }
+  finally { if (data.samples instanceof Float32Array) data.samples.fill(0); }
 };

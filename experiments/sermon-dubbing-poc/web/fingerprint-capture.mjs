@@ -40,20 +40,24 @@ async function waitForInputReady(stream, context, signal) {
     return await abortable(ready, signal);
   } finally { cleanup(); }
 }
-export async function captureFingerprintAttempt({ seconds = 10, signal, onPreparing = () => {}, onRecording = () => {}, env = globalThis }) {
+export async function captureFingerprintAttempt({ seconds = 10, signal, onPreparing = () => {}, onRecording = () => {}, onTiming = () => {}, env = globalThis }) {
   if (!microphoneSupported(env)) throw new Error('unsupported');
   if (signal.aborted) throw abortError();
   const operation = new AbortController(), localSignal = operation.signal;
   const cancel = () => operation.abort(); signal.addEventListener('abort', cancel, { once: true });
   const timers = env.setTimeout ? env : globalThis;
   let stream, context, source, node, mute, detach = () => {}, started = false, startupTimer, startupTimedOut = false, stage = 'context';
+  const clock = () => (env.performance || globalThis.performance).now();
+  const attemptStarted = clock();
+  let permissionStarted, grantedAt, recordingAt, stoppedAt;
   const stopStream = value => value?.getTracks().forEach(track => track.stop());
   try {
     context = new env.AudioContext();
     // Unlock in the click, but resume again after iOS changes the microphone route.
     Promise.resolve(context.resume()).catch(() => {});
-    stage = 'permission';
+    stage = 'permission'; permissionStarted = clock();
     stream = await abortable(env.navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: false, noiseSuppression: false, autoGainControl: false }, video: false }), localSignal, stopStream);
+    grantedAt = clock();
     if (localSignal.aborted) throw abortError();
     onPreparing(); stage = 'startup';
     startupTimer = timers.setTimeout(() => { startupTimedOut = true; operation.abort(); }, 5000);
@@ -97,7 +101,7 @@ export async function captureFingerprintAttempt({ seconds = 10, signal, onPrepar
         if (data.started === true) {
           if (!Number.isFinite(data.startContextTime)) { reject(new Error('capture_failed')); return; }
           if (context.state !== 'running' || stream.getAudioTracks().some(t => t.muted === true || t.readyState === 'ended')) { reject(interrupted('start_route')); return; }
-          if (!started) { started = true; stage = 'recording'; timers.clearTimeout(startupTimer); onRecording(); }
+          if (!started) { started = true; recordingAt = clock(); stage = 'recording'; timers.clearTimeout(startupTimer); onRecording(); }
           return;
         }
         if (!(data.samples instanceof Float32Array) || !Number.isFinite(data.endContextTime) || !(data.sampleRate >= 4000 && data.sampleRate <= 192000)) { reject(new Error('capture_failed')); return; }
@@ -117,10 +121,18 @@ export async function captureFingerprintAttempt({ seconds = 10, signal, onPrepar
     error.captureStage = stage; throw error;
   } finally {
     timers.clearTimeout(startupTimer); signal.removeEventListener('abort', cancel); operation.abort();
-    detach(); stopStream(stream);
+    detach(); stopStream(stream); stoppedAt = clock();
     for (const item of [source, node, mute]) { try { item?.disconnect(); } catch { /* Release remaining resources. */ } }
     if (node) { node.port.onmessage = null; node.onprocessorerror = null; node.port.close(); }
     if (context && context.state !== 'closed') await context.close().catch(() => {});
+    // Observational callbacks cannot prevent microphone cleanup or alter retries.
+    try { onTiming({
+      permissionMs: permissionStarted === undefined ? null : (grantedAt ?? stoppedAt) - permissionStarted,
+      startupMs: grantedAt === undefined ? null : (recordingAt ?? stoppedAt) - grantedAt,
+      captureMs: recordingAt === undefined ? null : stoppedAt - recordingAt,
+      microphoneObservedMs: grantedAt === undefined ? null : stoppedAt - grantedAt,
+      attemptMs: stoppedAt - attemptStarted,
+    }); } catch { /* Diagnostics are best effort. */ }
   }
 }
 

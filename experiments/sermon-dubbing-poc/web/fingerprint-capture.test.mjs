@@ -2,14 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {captureFingerprintAttempt as captureFingerprintAudio, captureFingerprintAudio as captureWithRecovery} from './fingerprint-capture.mjs';
 const flush=()=>new Promise(r=>setImmediate(r));
-function make({muted=false,state='running',latePermission=false,resumePending=false, recovery=false}={}) {
+function make({muted=false,state='running',latePermission=false,resumePending=false, recovery=false,onTiming=()=>{}}={}) {
  const stats={stops:0,closes:0,connects:0,preparing:0,recording:0},jobs=[];let ctx,node,grant;
  class Track extends EventTarget {constructor(){super();this.muted=muted;this.readyState='live';}stop(){stats.stops++;this.readyState='ended';}}
  const track=new Track(),stream={getTracks:()=>[track],getAudioTracks:()=>[track]};
  class Context extends EventTarget {constructor(){super();ctx=this;this.state=state;this.currentTime=20;this.audioWorklet={addModule:async()=>{}};this.destination={};}resume(){return resumePending?new Promise(()=>{}):Promise.resolve();}close(){stats.closes++;this.state='closed';return Promise.resolve();}createMediaStreamSource(){return {connect(){stats.connects++;},disconnect(){}};}createGain(){return {gain:{},connect(){},disconnect(){}};}}
  class Node {constructor(){node=this;this.port={close(){},onmessage:null};}connect(){}disconnect(){}}
  const env={isSecureContext:true,navigator:{mediaDevices:{getUserMedia:()=>latePermission?new Promise(r=>grant=r):Promise.resolve(stream)}},AudioContext:Context,AudioWorkletNode:Node,Worker:class{},crypto:{subtle:{}},performance:{now:()=>12000},setTimeout(fn,ms){const job={fn,ms,cancelled:false};jobs.push(job);return job;},clearTimeout(job){if(job)job.cancelled=true;}};
- const abort=new AbortController();const p=(recovery?captureWithRecovery:captureFingerprintAudio)({signal:abort.signal,env,onPreparing(){stats.preparing++;},onRecording(){stats.recording++;}});p.catch(()=>{});
+ const abort=new AbortController();const p=(recovery?captureWithRecovery:captureFingerprintAudio)({signal:abort.signal,env,onTiming,onPreparing(){stats.preparing++;},onRecording(){stats.recording++;}});p.catch(()=>{});
  return {p,abort,track,stats,jobs,env,grant:()=>grant(stream),get context(){return ctx;},get node(){return node;},started(){node.port.onmessage({data:{started:true,startContextTime:10}});},complete(){node.port.onmessage({data:{samples:new Float32Array(480000),sampleRate:48000,endContextTime:20}});}};
 }
 test('startup mute waits before connecting PCM; unmute starts a fresh full capture',async()=>{
@@ -47,4 +47,12 @@ test('permanent repeated interruptions stop after three complete attempts',async
 });
 test('malformed channel input is not retried',async()=>{
  const h=make({recovery:true});await flush();h.started();h.node.port.onmessage({data:{error:'capture_interrupted',captureDetail:'channel_shape'}});await assert.rejects(h.p,/capture_interrupted/);assert.equal(h.jobs.filter(j=>j.ms===600).length,0);
+});
+
+ test('diagnostic callback failure happens after cleanup and cannot reject a valid capture',async()=>{
+ let observations=0;const h=make({onTiming(value){observations++;assert.equal(h.stats.stops,1);assert.equal(h.stats.closes,1);assert.equal(value.microphoneObservedMs,0);throw new Error('broken diagnostic consumer');}});
+ await flush();h.started();h.complete();const result=await h.p;assert.equal(result.durationSeconds,10);assert.equal(observations,1);assert.equal(h.node.port.onmessage,null);
+});
+test('diagnostic timing on failed attempts does not change retry and cancellation cleanup',async()=>{
+ const observations=[];const h=make({recovery:true,onTiming:value=>observations.push(value)});await flush();h.started();h.node.port.onmessage({data:{error:'capture_interrupted',captureDetail:'frame_gap'}});await flush();assert.equal(observations.length,1);assert.equal(h.stats.stops,1);h.abort.abort();await assert.rejects(h.p,{name:'AbortError'});assert.equal(h.stats.stops,1);
 });

@@ -117,3 +117,7 @@
 [W3C Media Capture and Streams](https://www.w3.org/TR/mediacapture-streams/) 区分 requested constraints、capabilities 与 current settings；`getSettings()` 给出当前报告设置，但本身不是远场声学性能测量。自动增益/降噪的支持和可控范围不能由请求参数推断。此规范核查不构成任何具体 Safari/iPhone 的兼容或效果证明。
 
 本次 Apple 在线文档未能成功读取；iOS 时钟和 Voice Processing 的 API、最低系统支持及 route 行为作为开发前 SDK/官方文档与真机核对项，没有据此新增已验证平台声明。上述具体代码限制来自冻结仓库源码；所有新数值是候选验收目标，不是测得结果。现场 PCM 和原始私有实验素材不进入 Git；文档/代码合并不自动授权录音收集、上传、部署或内容发布。
+
+## 4. 2026-09-30 Web 首批代码进展
+
+`FIELD-01` 进入 **in_progress**：已接入本地质量区间、匹配拒绝分类、采集重试累计计时、Worker 子阶段计时和控制器白名单诊断。实现及证据边界见 [会话诊断说明](field-session-diagnostics.zh.md)。以上未勾选验收项继续保留，尤其分享流程、完整失败注入、真机、现场和物理输出计时尚未完成。`FIELD-02`—`FIELD-10` 状态不因本批改变。

@@ -1,5 +1,6 @@
 import { t, onLocaleChange } from './i18n.mjs';
 import { captureFingerprintAudio, microphoneSupported, abortError } from './fingerprint-capture.mjs';
+import { diagnosticSummary, matchReason } from './fingerprint-diagnostics.mjs';
 const HASH = /^[a-f0-9]{64}$/;
 export function fingerprintBinding(context) {
   const { week, track, generation } = context || {}, m = week?.audioFingerprint;
@@ -67,13 +68,25 @@ export function playAlignmentAudio(audio, { signal, timeoutMs = 8000, timers = g
 }
 export function createFingerprintController({ context, pause, seek, play, position = () => NaN, onState = () => {}, capture = captureFingerprintAudio, match = matchInWorker, supported = microphoneSupported, now = () => performance.now(), timers = globalThis, expirySeconds = 15, autoApply = true }) {
   let serial = 0, active = null, result = null, expiryTimer = null, pendingPlay = null;
-  let state = { phase: 'idle' };
-  const emit = value => { state = value; onState(value); };
+  let state = { phase: 'idle' }, session = null;
+  const elapsedMs = started => Math.max(0, now() - started);
+  const emit = value => {
+    state = value;
+    if (session) {
+      session.phase = value.phase;
+      if (value.diagnostic) session.errorCode = value.diagnostic.code;
+      if (!session.finished) session.timings.totalMs = elapsedMs(session.started);
+      if (['no_match', 'error', 'permission_denied', 'unavailable', 'unsupported', 'expired', 'timeout', 'cancelled', 'applied'].includes(value.phase)) session.finished = true;
+    }
+    onState(value);
+  };
+  const diagnostics = () => session ? diagnosticSummary(session) : null;
   const clearExpiry = () => { timers.clearTimeout(expiryTimer); expiryTimer = null; };
   function cancel(reason = 'cancelled') {
     const pending = pendingPlay; pendingPlay = null;
     serial++; active?.abort(); active = null; result = null; clearExpiry();
     if (pending) { pending.controller.abort(); pause(); }
+    if (reason === 'idle') session = null;
     emit({ phase: reason });
   }
   const valid = (token, binding) => serial === token && key(binding) === key(fingerprintBinding(context()));
@@ -84,6 +97,8 @@ export function createFingerprintController({ context, pause, seek, play, positi
   async function start() {
     cancel('idle');
     const binding = fingerprintBinding(context());
+    session = { started: now(), phase: 'idle', content: binding?.metadata, attempts: 0, timings: {} };
+    const observation = session;
     if (!binding) { emit({ phase: 'unavailable' }); return; }
     if (!supported()) { emit({ phase: 'unsupported' }); return; }
     const token = serial, controller = new AbortController(); active = controller;
@@ -91,14 +106,24 @@ export function createFingerprintController({ context, pause, seek, play, positi
     let timedOut = false;
     const timeout = timers.setTimeout(() => { timedOut = true; controller.abort(); }, 35000);
     try {
-      const recording = await capture({ seconds: 10, signal: controller.signal, onRecovering: () => { if (valid(token, binding)) emit({ phase: 'recovering' }); }, onPreparing: () => { if (valid(token, binding)) emit({ phase: 'starting' }); }, onRecording: () => { if (valid(token, binding)) emit({ phase: 'recording' }); } });
+      const recording = await capture({ onTiming: value => {
+        observation.attempts++;
+        for (const name of ['permissionMs', 'startupMs', 'captureMs', 'microphoneObservedMs']) {
+          if (typeof value[name] === 'number' && Number.isFinite(value[name]) && value[name] >= 0)
+            observation.timings[name] = (observation.timings[name] || 0) + value[name];
+        }
+      }, seconds: 10, signal: controller.signal, onRecovering: () => { if (valid(token, binding)) emit({ phase: 'recovering' }); }, onPreparing: () => { if (valid(token, binding)) emit({ phase: 'starting' }); }, onRecording: () => { if (valid(token, binding)) emit({ phase: 'recording' }); } });
       if (!valid(token, binding) || controller.signal.aborted) return;
       if (!Number.isFinite(recording.endedAt) || !Number.isFinite(recording.durationSeconds) || recording.durationSeconds < 9 || recording.durationSeconds > 11 || recording.endedAt > now() + 50) throw new Error('capture_failed');
       emit({ phase: 'matching' });
+      const workerStarted = now();
       const answer = await match(recording, binding.metadata, controller.signal);
       if (!valid(token, binding) || controller.signal.aborted) return;
+      observation.timings.workerMs = elapsedMs(workerStarted);
+      for (const name of ['indexMs', 'featureMs', 'matchMs']) observation.timings[name] = answer.timings?.[name];
+      observation.match = answer.summary;
       const found = answer.result;
-      if (!found?.matched) { emit({ phase: 'no_match', reason: found?.diagnostics?.reason || 'low_confidence' }); return; }
+      if (!found?.matched) { emit({ phase: 'no_match', reason: matchReason(found?.diagnostics?.reason) }); return; }
       const end = found.queryStartSeconds + recording.durationSeconds;
       const elapsed = (now() - recording.endedAt) / 1000;
       if (!Number.isFinite(found.queryStartSeconds) || found.queryStartSeconds < 0 || !Number.isFinite(found.confidence) || found.confidence <= 0 || end >= binding.metadata.sourceEndSeconds - binding.metadata.sourceStartSeconds || elapsed < 0 || elapsed >= expirySeconds) { emit({ phase: 'expired' }); return; }
@@ -119,6 +144,7 @@ export function createFingerprintController({ context, pause, seek, play, positi
     const target = targetFor(item);
     if (target === null) { cancel('expired'); return false; }
     if (!context().ready) { emit({ phase: 'play_failed' }); return false; }
+    const observation = session;
     const pending = { controller: new AbortController() }; pendingPlay = pending;
     const current = () => pendingPlay === pending && result === item && valid(item.token, item.binding);
     const failed = error => {
@@ -130,10 +156,15 @@ export function createFingerprintController({ context, pause, seek, play, positi
     emit({ phase: 'play_starting', sourceTimeSeconds: target + item.binding.metadata.sourceStartSeconds });
     try {
       // Invoke seek and play synchronously; the fallback click retains its gesture.
-      if (!seek(target, { correction: Boolean(item.positioned) })) { failed(); return false; }
+      const seekStarted = now();
+      const positioned = seek(target, { correction: Boolean(item.positioned) });
+      observation.timings.seekCallMs = elapsedMs(seekStarted);
+      if (!positioned) { failed(); return false; }
       item.positioned = true;
+      const playStarted = now();
       Promise.resolve(play({ signal: pending.controller.signal })).then(() => {
         if (!current()) { if (pendingPlay === pending) cancel('cancelled'); return; }
+        observation.timings.playStartMs = elapsedMs(playStarted);
         const latest = targetFor(item);
         if (latest === null) { cancel('expired'); return; }
         // One bounded correction for buffering delay, never a tracking loop.
@@ -145,7 +176,7 @@ export function createFingerprintController({ context, pause, seek, play, positi
     } catch (error) { failed(error); return false; }
     return true;
   }
-  return { start, apply, cancel, playbackStarted() { if (!pendingPlay) this.invalidate(); }, invalidate() { if (active || result || pendingPlay) cancel('cancelled'); }, getState: () => state, available: () => Boolean(fingerprintBinding(context())) };
+  return { start, apply, cancel, playbackStarted() { if (!pendingPlay) this.invalidate(); }, invalidate() { if (active || result || pendingPlay) cancel('cancelled'); }, getState: () => state, getDiagnostics: diagnostics, available: () => Boolean(fingerprintBinding(context())) };
 }
 
 function clock(seconds) {
@@ -162,14 +193,26 @@ export function mountFingerprintUI(options) {
     $('fingerprint-start').textContent = t(value.phase === 'idle' ? 'fingerprint.start' : 'fingerprint.restart');
     $('fingerprint-apply').hidden = !['matched', 'play_blocked', 'play_failed'].includes(value.phase);
     $('fingerprint-apply').textContent = t('fingerprint.apply');
-    $('fingerprint-message').textContent = value.phase === 'matched' ? t('fingerprint.matched', { time: clock(value.sourceTimeSeconds) }) : value.phase === 'applied' ? t('fingerprint.applied', { time: clock(value.sourceTimeSeconds) }) : value.phase === 'error' && value.diagnostic ? diagnosticMessage(value.diagnostic) : t(`fingerprint.phase.${phases.has(value.phase) ? value.phase : 'error'}`);
+    $('fingerprint-message').textContent = value.phase === 'matched' ? t('fingerprint.matched', { time: clock(value.sourceTimeSeconds) }) : value.phase === 'applied' ? t('fingerprint.applied', { time: clock(value.sourceTimeSeconds) }) : value.phase === 'no_match' ? t(`fingerprint.reason.${matchReason(value.reason)}`) : value.phase === 'error' && value.diagnostic ? diagnosticMessage(value.diagnostic) : t(`fingerprint.phase.${phases.has(value.phase) ? value.phase : 'error'}`);
   }
   const controller = createFingerprintController({ ...options, onState(value) {
     renderState(value);
+    renderDiagnostics();
     if (value.phase === 'applied' && dialog.open) dialog.close();
   } });
-  onLocaleChange(() => renderState(controller.getState()));
-  renderState(controller.getState());
+  function renderDiagnostics() {
+    const node = $('fingerprint-diagnostics');
+    if (!node) return;
+    const d = controller.getDiagnostics();
+    node.textContent = d ? t('fingerprint.sessionSummary', {
+      level: t(`fingerprint.level.${d.match.level}`), clipping: t(`fingerprint.clipping.${d.match.clipping}`),
+      landmarks: d.match.landmarks ?? '—', anchors: d.match.supportingAnchors ?? '—',
+      total: d.timings.totalMs === null ? '—' : d.timings.totalMs / 1000,
+      microphone: d.timings.microphoneObservedMs === null ? '—' : d.timings.microphoneObservedMs / 1000,
+    }) : t('fingerprint.sessionEmpty');
+  }
+  onLocaleChange(() => { renderState(controller.getState()); renderDiagnostics(); });
+  renderState(controller.getState()); renderDiagnostics();
   $('fingerprint-open').addEventListener('click', () => { controller.cancel('idle'); dialog.showModal(); });
   $('fingerprint-start').addEventListener('click', () => controller.start());
   $('fingerprint-apply').addEventListener('click', () => controller.apply());
