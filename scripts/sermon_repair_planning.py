@@ -258,6 +258,8 @@ def plan_repair(*, candidate, candidate_bytes, review, review_bytes, rubric, inp
             status, reason = 'blocked', 'durable_budget_snapshot_required'
         elif action == 'repair_translation' and budget.content_revisions_reserved >= budget.limits.content_revisions:
             status, reason = 'blocked', 'content_revision_limit_reached'
+        elif action == 'repair_translation' and budget.limits.review_attempts_per_revision < 1:
+            status, reason = 'blocked', 'review_execution_limit_reached'
         elif action == 'retry_review' and budget.review_attempts_reserved >= budget.limits.review_attempts_per_revision:
             status, reason = 'blocked', 'review_execution_limit_reached'
         elif action == 'repair_translation' and fingerprint in budget.prior_failure_fingerprints:

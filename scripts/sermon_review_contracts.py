@@ -247,11 +247,32 @@ def validate_repair_binding(plan, review, candidate):
             plan['fromRevisionId'] == review['revisionId'] == candidate['revisionId'] and
             review['reviewedArtifactSha256'] == candidate['artifactSha256'], 'repair_revision_binding_mismatch')
     require(set(candidate['workUnitIds']) <= set(plan['affectedWorkUnitIds']), 'repair_scope_omits_failed_unit')
+    issue_codes = {issue['reasonCode'] for issue in review['issues']}
+    plan_reasons = set(plan['reasonCodes'])
     if plan['repairAction'] == 'repair_translation':
         require(review['executionStatus'] == 'succeeded' and review['reviewVerdict'] == 'needs_rework', 'content_repair_requires_content_failure')
-        require(set(plan['reasonCodes']) <= {i['reasonCode'] for i in review['issues']}, 'repair_reason_not_in_review')
-    if plan['repairAction'] == 'retry_review':
+        require(plan_reasons <= issue_codes, 'repair_reason_not_in_review')
+        require(not plan_reasons & {'source_ambiguity','evidence_insufficient','contradictory_reviews'},
+                'content_repair_reason_requires_escalation')
+    elif plan['repairAction'] == 'retry_review':
         require(review['executionStatus'] in {'failed','cancelled'} and review['reviewVerdict'] == 'not_assessed', 'review_retry_requires_known_execution_failure')
+        require(plan_reasons == {'review_execution_failed'}, 'review_retry_reason_mismatch')
+    elif plan['repairAction'] == 'request_source_review':
+        require(review['executionStatus'] == 'succeeded' and review['reviewVerdict'] in {'needs_rework','inconclusive'}
+                and 'source_ambiguity' in issue_codes, 'source_review_requires_source_ambiguity')
+        require(plan_reasons <= issue_codes and 'source_ambiguity' in plan_reasons, 'repair_reason_not_in_review')
+    elif plan['repairAction'] == 'request_human_review':
+        require(review['executionStatus'] == 'succeeded' and review['reviewVerdict'] in {'needs_rework','inconclusive'},
+                'human_review_requires_unresolved_review')
+        require(plan_reasons <= issue_codes, 'repair_reason_not_in_review')
+    elif plan['repairAction'] == 'escalate_engineering':
+        require(review['executionStatus'] in {'failed','cancelled'} and review['reviewVerdict'] == 'not_assessed',
+                'engineering_escalation_requires_execution_failure')
+        require(plan_reasons == {'review_execution_failed'}, 'engineering_escalation_reason_mismatch')
+    else:
+        # Timing and synthesis evidence is outside the semantic review receipt;
+        # this binding cannot authorize those actions without their own evidence.
+        require(False, 'repair_action_requires_nonreview_evidence')
     require(review['executionStatus'] != 'outcome_unknown', 'unknown_outcome_requires_reconciliation')
     return {'bindingStatus':'consistent','executionAuthority':'none'}
 
