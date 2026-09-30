@@ -39,6 +39,42 @@ class LivenessTests(unittest.TestCase):
         self.assertFalse(monitor.completed())
         self.assertEqual(monitor.reason, 'liveness_completion_receipt_missing')
 
+    def test_late_first_receipt_cannot_revive_expired_start_deadline(self):
+        self.now = .51
+        self.save()
+        self.monitor.poll()
+        self.assertEqual(self.monitor.reason, 'liveness_start_timeout')
+        self.assertEqual(self.monitor.sequence, 0)
+
+    def test_late_progress_and_finished_receipts_cannot_reset_expired_budget(self):
+        for phase in ('running', 'finished'):
+            with self.subTest(phase=phase):
+                self.now = 0
+                self.monitor = subject.Monitor(self.folder, self.request, clock=lambda: self.now)
+                self.save(); self.monitor.poll()
+                self.now = .2; self.save(2); self.monitor.poll()
+                self.now = .4; self.save(3); self.monitor.poll()
+                self.now = .61; self.save(4, 2, phase=phase)
+                self.assertFalse(self.monitor.completed())
+                self.assertEqual(self.monitor.reason, 'liveness_no_progress_timeout')
+                self.assertEqual(self.monitor.progress_sequence, 1)
+                self.now = .62; self.save(5, 3, phase='finished'); self.monitor.poll()
+                self.assertEqual(self.monitor.reason, 'liveness_no_progress_timeout')
+
+    def test_late_heartbeat_and_slow_receipt_read_cannot_renew_deadline(self):
+        self.save(); self.monitor.poll()
+        self.now = .31; self.save(2, 2); self.monitor.poll()
+        self.assertEqual(self.monitor.reason, 'liveness_heartbeat_timeout')
+        self.now = 0
+        monitor = subject.Monitor(self.folder, self.request, clock=lambda: self.now)
+        original = jobs._read
+        def slow_read(path):
+            self.now = .51
+            return original(path)
+        with patch.object(jobs, '_read', side_effect=slow_read):
+            monitor.poll()
+        self.assertEqual(monitor.reason, 'liveness_start_timeout')
+
     def test_live_heartbeats_cannot_hide_no_progress(self):
         self.save(); self.monitor.poll()
         for sequence in range(2, 5):

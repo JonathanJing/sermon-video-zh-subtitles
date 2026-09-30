@@ -130,10 +130,22 @@ class Monitor:
         self.reason = reason
         self.cancel.set()
 
+    def _expired(self, now):
+        if not self.sequence and now - self.started >= self.policy['startTimeoutSeconds']:
+            return 'liveness_start_timeout'
+        if self.sequence and now - self.last_heartbeat >= self.policy['heartbeatTimeoutSeconds']:
+            return 'liveness_heartbeat_timeout'
+        if self.sequence and now - self.last_progress >= self.policy['noProgressTimeoutSeconds']:
+            return 'liveness_no_progress_timeout'
+        return None
+
     def poll(self):
         if self.reason:
             return
-        now = self.clock()
+        expired = self._expired(self.clock())
+        if expired:
+            self._fail(expired)
+            return
         try:
             path = self.folder / FILE
             try:
@@ -144,6 +156,13 @@ class Monitor:
                 value = self.jobs._read(path)
             except FileNotFoundError:
                 value = None
+            # A read may itself cross the deadline. Never renew from a late
+            # receipt, including finished receipts observed by completed().
+            now = self.clock()
+            expired = self._expired(now)
+            if expired:
+                self._fail(expired)
+                return
             if value is not None:
                 if (not isinstance(value, dict) or set(value) != {'schemaVersion', 'jobId', 'requestSha256',
                         'sequence', 'progressSequence', 'stage', 'phase'}
@@ -161,12 +180,6 @@ class Monitor:
                 if value['progressSequence'] > self.progress_sequence:
                     self.progress_sequence, self.last_progress = value['progressSequence'], now
                 self.last = value
-            if not self.sequence and now - self.started >= self.policy['startTimeoutSeconds']:
-                self._fail('liveness_start_timeout')
-            elif self.sequence and now - self.last_heartbeat >= self.policy['heartbeatTimeoutSeconds']:
-                self._fail('liveness_heartbeat_timeout')
-            elif self.sequence and now - self.last_progress >= self.policy['noProgressTimeoutSeconds']:
-                self._fail('liveness_no_progress_timeout')
         except (OSError, ValueError, TypeError, KeyError, RecursionError, OverflowError):
             self._fail('liveness_invalid_receipt')
 

@@ -29,3 +29,5 @@ monitor 用本机 monotonic 计时，只接受有序、有限、绑定正确且�
 回归覆盖 monotonic 时钟、heartbeat 与进展分离、无/坏/过大/符号链接收据、非法 policy、持久化失败、真实短子进程与后代取消、无完成收据的零退出、同一身份不重复启动、固定 L2 producer 的实际检查点，以及响应缓存先于失败检查点保存。响应均为固定合成夹具，空 key CLI 没有真实 API 调用。
 
 本子项不是完整 E4 或 Stage0 完成标签。真实片段、10分钟、整篇、第二周以及工程/内容/兼容性/设备/现场验收门槛保持不变。
+
+审查补充：每次 poll 在读取前及读取后、接纳更新 sequence 前检查原截止时间。已经超过 startup/heartbeat/no-progress 的任务锁定失败；迟到的首条、progress 或 finished receipt 不能续命，`completed()` 同样受此约束。fake-clock 回归在旧代码复现了 4 个失败断言，并覆盖读取本身跨越期限的窗口。
