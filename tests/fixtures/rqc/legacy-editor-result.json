@@ -1,0 +1,13 @@
+{
+  "translationGroupId": "fixture-group",
+  "sourceUnitIds": ["fixture-source-unit"],
+  "targetUtterances": ["合成审校后的文字。"],
+  "coverage": [{"sourceUnitId": "fixture-source-unit", "targetText": "合成审校后的文字。"}],
+  "semanticReview": {
+    "status": "pass",
+    "checks": {"completeMeaning": true, "negationsNumbersNames": true, "quotationAttribution": true, "noAddedMeaning": true},
+    "evidence": "Synthetic legacy editor fixture; not a human approval.",
+    "uncertainty": [],
+    "issues": []
+  }
+}

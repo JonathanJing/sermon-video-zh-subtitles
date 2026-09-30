@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import json
 import re
@@ -22,6 +23,7 @@ SCHEMA_PATH = ROOT / "schemas/sermon-target-language-policy-v1.schema.json"
 SERIES_TABLE = ROOT / "docs/series-terminology.zh.md"
 COMPONENTS = ("translator", "reviewer", "terminology", "scripture", "languageReview", "formatting", "batching")
 POLICY_V2 = "sermon-target-language-policy-v2"
+POLICY_V3 = "sermon-target-language-policy-v3"
 
 
 def canonical_sha256(value: object) -> str:
@@ -123,6 +125,59 @@ def validate_policy(policy: dict[str, Any], *, series_table: Path = SERIES_TABLE
         "productionPolicyReady": not unresolved,
         "unresolved": unresolved,
     }
+
+
+def _strict_legacy_validation_view(policy):
+    """Validation-only view. Never pass this view to a producer or cache writer."""
+    view = copy.deepcopy(policy)
+    view["schemaVersion"] = POLICY_V2
+    view.pop("reviewMode")
+    view.pop("reviewContract")
+    view["componentSha256"].pop("reviewContract")
+    return view
+
+
+def validate_strict_policy(policy, rubric, *, series_table=SERIES_TABLE):
+    """Explicit v3 parser. Existing validate_policy/runner defaults still reject v3."""
+    try:
+        from scripts import sermon_review_contracts as contracts
+    except ImportError:
+        import sermon_review_contracts as contracts
+    contracts.require(type(policy) is dict and contracts._strict_json(policy), 'invalid_strict_policy')
+    contracts.require(len(contracts.canonical_bytes(policy)) <= contracts.MAX_BYTES, 'strict_policy_size_limit')
+    contracts.require(next(contracts.validator(POLICY_V3).iter_errors(policy), None) is None, 'invalid_strict_policy_schema')
+    contracts.validate_contract(rubric)
+    contracts.require(rubric['schemaVersion'] == 'sermon-review-rubric-v1'
+        and rubric['targetLocale'] == policy['targetLocale']
+        and policy['reviewContract']['rubricCanonicalJsonSha256'] == contracts.canonical_sha256(rubric), 'strict_rubric_binding_mismatch')
+    contracts.require(policy['componentSha256']['reviewContract'] == contracts.canonical_sha256(policy['reviewContract']), 'strict_review_contract_hash_mismatch')
+    contracts.require(set(rubric['requiredLanguagePluginChecks']) == set(policy['languageReview']['requiredChecks']), 'strict_plugin_rubric_checks_mismatch')
+    result = validate_policy(_strict_legacy_validation_view(policy), series_table=series_table)
+    return {**result, 'translationPolicySha256': contracts.canonical_sha256(policy),
+            'componentSha256': policy['componentSha256'], 'reviewMode': 'strict_verifier',
+            'executionAuthority': 'none'}
+
+
+def freeze_strict_policy(draft, rubric, *, series_table=SERIES_TABLE,
+                         shadow_candidate=None, content_approval=None):
+    """Freeze a NEW strict policy; no mode migration or old-artifact mutation."""
+    if not isinstance(draft, dict) or draft.get('schemaVersion') != POLICY_V3 or 'componentSha256' in draft:
+        raise ValueError('Strict freeze requires a new v3 draft without component hashes')
+    legacy = copy.deepcopy(draft)
+    legacy['schemaVersion'] = POLICY_V2
+    legacy.pop('reviewMode', None); legacy.pop('reviewContract', None)
+    frozen = freeze_policy(legacy, series_table=series_table,
+                           shadow_candidate=shadow_candidate, content_approval=content_approval)
+    result = copy.deepcopy(draft)
+    result['componentSha256'] = {**frozen['componentSha256'],
+        'reviewContract': canonical_sha256(result.get('reviewContract'))}
+    validate_strict_policy(result, rubric, series_table=series_table)
+    return result
+
+
+def validate_strict_source_scope(policy, rubric, source, anchor):
+    validate_strict_policy(policy, rubric)
+    validate_source_scope(_strict_legacy_validation_view(policy), source, anchor)
 
 
 def verify_shadow_term_evidence(policy: dict[str, Any], candidate: dict[str, Any],

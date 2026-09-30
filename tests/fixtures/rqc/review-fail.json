@@ -1,0 +1,117 @@
+{
+  "schemaVersion": "sermon-review-receipt-v1",
+  "candidateId": "synthetic-candidate",
+  "revisionId": "r1",
+  "targetLocale": "zh-Hans",
+  "workUnitIds": [
+    "l2.zh-Hans.group.001"
+  ],
+  "sourceIdentitySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "sourcePackageSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "anchorSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+  "policySha256": "4444444444444444444444444444444444444444444444444444444444444444",
+  "reviewId": "synthetic-failed-review",
+  "reviewAttemptId": "review-attempt-1",
+  "reviewedArtifactSha256": "cf10cf7f8396b01c9c00758e03b1d87bd63420c51b5d845c0e6c536878e80db0",
+  "rubricSha256": "bab7ce24b27e69770b641152e28ea37f09126b1ea2bbc8ed182b6e05224c1533",
+  "reviewerInputManifestSha256": "45639eb89b83ee0bfb07a31aca2311da95a93fb86330db8be7d93b430719caf5",
+  "reviewMode": "strict_verifier",
+  "reviewerModelRequested": "gpt-6-sol",
+  "reviewerModelActual": "gpt-6-sol",
+  "reviewerPromptVersion": "sol-strict-verifier-v1",
+  "modelCallId": "synthetic-call",
+  "providerResponseId": "synthetic-response",
+  "executionStatus": "succeeded",
+  "reviewVerdict": "needs_rework",
+  "checks": [
+    {
+      "checkId": "completeMeaning",
+      "result": "fail",
+      "evidenceRefs": [
+        {
+          "artifactId": "review-evidence",
+          "canonicalJsonSha256": "000000000000000000000000000000000000000000000000000000000000001e",
+          "fileBytesSha256": "0000000000000000000000000000000000000000000000000000000000000082",
+          "mediaType": "application/json"
+        }
+      ]
+    },
+    {
+      "checkId": "negationsNumbersNames",
+      "result": "pass",
+      "evidenceRefs": [
+        {
+          "artifactId": "review-evidence",
+          "canonicalJsonSha256": "000000000000000000000000000000000000000000000000000000000000001e",
+          "fileBytesSha256": "0000000000000000000000000000000000000000000000000000000000000082",
+          "mediaType": "application/json"
+        }
+      ]
+    },
+    {
+      "checkId": "noAddedMeaning",
+      "result": "pass",
+      "evidenceRefs": [
+        {
+          "artifactId": "review-evidence",
+          "canonicalJsonSha256": "000000000000000000000000000000000000000000000000000000000000001e",
+          "fileBytesSha256": "0000000000000000000000000000000000000000000000000000000000000082",
+          "mediaType": "application/json"
+        }
+      ]
+    },
+    {
+      "checkId": "quotationAttribution",
+      "result": "pass",
+      "evidenceRefs": [
+        {
+          "artifactId": "review-evidence",
+          "canonicalJsonSha256": "000000000000000000000000000000000000000000000000000000000000001e",
+          "fileBytesSha256": "0000000000000000000000000000000000000000000000000000000000000082",
+          "mediaType": "application/json"
+        }
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "issueId": "issue-1",
+      "reasonCode": "meaning_omission",
+      "severity": "major",
+      "sourceUnitIds": [
+        "source.001"
+      ],
+      "targetUnitIds": [
+        "l2.zh-Hans.group.001.utterance.0001"
+      ],
+      "evidenceRefs": [
+        {
+          "artifactId": "review-evidence",
+          "canonicalJsonSha256": "000000000000000000000000000000000000000000000000000000000000001e",
+          "fileBytesSha256": "0000000000000000000000000000000000000000000000000000000000000082",
+          "mediaType": "application/json"
+        }
+      ]
+    }
+  ],
+  "coverage": {
+    "expectedUnitIds": [
+      "source.001"
+    ],
+    "assessedUnitIds": [
+      "source.001"
+    ],
+    "unassessedUnitIds": []
+  },
+  "evidenceRefs": [
+    {
+      "artifactId": "review-evidence",
+      "canonicalJsonSha256": "000000000000000000000000000000000000000000000000000000000000001e",
+      "fileBytesSha256": "0000000000000000000000000000000000000000000000000000000000000082",
+      "mediaType": "application/json"
+    }
+  ],
+  "missingReasons": {},
+  "createdAt": "2026-09-30T00:00:00Z",
+  "receiptSha256": "3d2836bc27a09cc57c12b3d3c9739b722f649c32bc73e6b0b93412a1b48ff192"
+}

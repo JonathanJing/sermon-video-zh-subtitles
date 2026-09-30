@@ -51,14 +51,18 @@
               -> deterministic precheck(r1)
               -> read-only review(r1)
               -> gate(r1)
-                    | pass + required human receipt -> 本语言下一层
+                    | pass + required text-human receipt
+                    |     -> 同语种 Layer 3 Audio Package
+                    |        （真实音频或显式 audio_unavailable）
+                    |     -> 适用同步校验 / 音频审核门禁
                     | needs_rework -> repair-plan -> generate(r2)
                     |                                -> review(r2) -> gate(r2)
                     | inconclusive -> 补证据/人工裁决
                     | execution failed -> 恢复审核，不默认重生成
                     | outcome unknown -> reconciliation
        |
-       +-- 按 release plan 的 required locales / text-only 规则汇合
+       +-- 按 release plan 汇合同语种 L2 + L3 包
+              （text-only 也须 L3 audio_unavailable 包；不跳层）
               -> Layer 4 -> release authorization -> deploy -> HTTP verify
 ```
 
