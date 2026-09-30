@@ -180,6 +180,17 @@ class DeliveryIntentTest(unittest.TestCase):
             self.assertEqual(row["audioRequirement"], "required")
             self.assertIn("separately_reviewed_short_script", row["nextAction"])
 
+    def test_full_text_overrun_stays_failure_when_spoken_script_is_not_approved(self):
+        self.request["requestedLocales"][0]["approvedSpokenText"] = None
+        manifest = self.freeze()
+        report = subject.preflight(manifest, self.bundle(manifest, seconds=180.01))
+        row = next(row for row in report["locales"] if row["targetLocale"] == "zh-Hans")
+        self.assertEqual(row["fullTextDuration"]["status"], "overrun")
+        self.assertEqual(row["spokenDuration"]["status"], "unknown")
+        self.assertEqual(row["status"], "fail")
+        self.assertEqual(report["offlineStatus"], "fail")
+        self.assertIn("separately_reviewed_short_script", row["nextAction"])
+
     def test_decimal_window_boundary_does_not_use_float_rounding(self):
         self.request["source"]["window"].update(startSeconds=0.1, endSeconds=0.3)
         manifest = self.freeze()

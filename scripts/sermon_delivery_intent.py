@@ -343,6 +343,8 @@ def preflight(manifest: dict, measurements: dict | None = None,
                       if spoken_identity else duration(locale, "full_text", None))
             if spoken["status"] == "overrun":
                 status, action = "fail", "prepare_separately_reviewed_short_script_or_revise_it"
+            elif full["status"] == "overrun" and spoken_identity is None:
+                status, action = "fail", "prepare_separately_reviewed_short_script_or_revise_it"
             elif "unknown" in (full["status"], spoken["status"]):
                 status, action = "unknown", "supply_approved_identities_and_decoded_audio_measurements"
             else:
