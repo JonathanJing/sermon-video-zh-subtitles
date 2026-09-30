@@ -536,3 +536,9 @@ L4-014 Web locale split
 - 不自动部署 Firebase、上传 TestFlight 或发布 App Store；
 - 不因模拟器、schema 测试或 HTTP 200 宣称设备/现场通过；
 - 不把 App 界面翻译完成等同于该语言内容或音频已经发布。
+
+### 周更组装的准入快照绑定（2026-09-30）
+
+`assemble_multilingual_v3_update` 复用共享 `copy_bound_asset`，复制时对照已验证 manifest 中的 SHA，而非复制后再读取可能变化的源文件。完整旧站点在准入时冻结文件集合与 hash；复制后拒绝变化字节、新增文件及 symlink，重验旧页面，rollback catalog 仍绑定原基线。候选最终文件集合必须等于已准入基线加本周 stage。生产 v2/v3 manifest、bucket/Hosting profile、语言审核要求和部署状态不变。
+
+三个旧实现反例（准入后 sidecar 改动、旧 reader 替换、新基线文件）已由本地合成回归复现并阻断；另测准入后 symlink 拒绝与失败临时目录清理。该范围为本机可信 staging 输入的并发改动检测，不是生产部署、跨层私有人审收据接入、恶意主机防护或真实 HTTP/设备/现场验收。DEV-L4-001/003 仍需上述证据，不自动关闭。
