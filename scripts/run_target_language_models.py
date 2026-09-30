@@ -843,6 +843,7 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
                 accounting.record_workload("layer2.source_identity", {
                     **{k: request[k] for k in ("englishSourcePackageJsonSha256", "anchorManifestSha256", "translationPolicySha256")},
                     "sourceDurationSeconds": window["endSeconds"] - window["startSeconds"],
+                    "sourceMediaSha256": source["source"]["media"]["sha256"],
                     "translationGroups": len(plan), "sourceUnits": len(request["sourceUnits"])})
             metrics.update(translationGroups=len(plan), sourceUnits=len(request["sourceUnits"]))
             evidence = _run_prepared_groups(

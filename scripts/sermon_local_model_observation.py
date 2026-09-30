@@ -23,8 +23,12 @@ def safe_observation(value):
     return dict(value)
 
 
-def record(model, checkpoint_sha256, input_sha256, *, status, output_sha256=None, elapsed_seconds=None):
+def record(model, checkpoint_sha256, input_sha256, *, status, output_sha256=None, elapsed_seconds=None, span_id=None):
     fields = safe_observation(dict(schemaVersion=SCHEMA, model=model, checkpointSha256=checkpoint_sha256,
         inputSha256=input_sha256, outputSha256=output_sha256, status=status, elapsedSeconds=elapsed_seconds,
         usageProvenance='local_execution_no_provider_receipt', providerTokens=None, providerCostUsd=None))
-    accounting._emit({'event': 'log', 'code': CODE, 'level': 'INFO', 'fields': fields})
+    event = {'event': 'log', 'code': CODE, 'level': 'INFO', 'fields': fields}
+    if span_id is not None:
+        if accounting._label(span_id, None) is None: raise ValueError('invalid_local_model_span')
+        event['spanId'] = span_id
+    accounting._emit(event)
