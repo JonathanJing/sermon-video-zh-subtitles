@@ -2,7 +2,9 @@
 import copy
 import importlib.util
 from pathlib import Path
+import sys
 import unittest
+from unittest.mock import patch
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / 'experiments/mobile-live-translation/runtime_tts_mac.py'
@@ -13,7 +15,7 @@ SPEC.loader.exec_module(MOD)
 
 def fake_call(*, stream=True, samples=(24000, 24000), elapsed_ms=1000, warmup=False):
     chunks = [
-        {'index': index, 'sampleCount': count, 'sampleRate': 24000,
+        {'index': index, 'sampleCount': count, 'reportedSampleCount': count, 'sampleRate': 24000,
          'is_streaming': stream, 'is_final': index == len(samples) - 1}
         for index, count in enumerate(samples)
     ]
@@ -141,13 +143,35 @@ class MobileTtsDiagnosticScoringTest(unittest.TestCase):
                 elif failure == 'mixed_rate':
                     last['sampleRate'] = 16000
                 elif failure == 'count_disagreement':
-                    last['sampleCount'] = 23000
+                    last['reportedSampleCount'] = 23000
                 else:
                     first['sampleCount'], last['sampleCount'] = -1, 48001
                 score = self.score(record)
                 self.assertFalse(score['transportIntegrityPassed'])
                 self.assertIsNone(score['qualifiedRtf'])
                 self.assertFalse(score['qualifiedIncrementalAudio'])
+
+    def test_missing_or_invalid_reported_chunk_count_fails_closed(self):
+        for change in ('missing', True, '24000'):
+            with self.subTest(change=change):
+                record = fake_call()
+                if change == 'missing':
+                    del record['chunks'][0]['reportedSampleCount']
+                else:
+                    record['chunks'][0]['reportedSampleCount'] = change
+                score = self.score(record)
+                self.assertFalse(score['transportIntegrityPassed'])
+                self.assertIsNone(score['qualifiedRtf'])
+                self.assertFalse(score['qualifiedIncrementalAudio'])
+
+    def test_v2_default_output_is_separate_from_legacy_v1_directory(self):
+        self.assertEqual(MOD.DEFAULT_OUTPUT.name, 'mac-v2')
+        self.assertEqual(MOD.DEFAULT_OUTPUT.parent.name, 'tts-20260906')
+        legacy_output = MOD.DEFAULT_OUTPUT.parent / 'mac'
+        with patch.object(sys, 'argv', ['runtime_tts_mac.py', '--output', str(legacy_output)]):
+            with self.assertRaises(SystemExit) as error:
+                MOD.main()
+        self.assertEqual(error.exception.code, 2)
 
     def test_summary_distinguishes_stages_and_excludes_warmups(self):
         eligible = fake_call()
