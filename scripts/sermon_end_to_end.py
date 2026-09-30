@@ -134,7 +134,13 @@ def snapshot(config):
     return result
 
 
-def start_action(config, action, *, timeout_seconds=21600):
+def state_revision(observed):
+    from scripts.sermon_workflow_jobs import _digest
+    return _digest({key: value for key, value in observed.items() if key != 'checkedAt'})
+
+
+def start_action(config, action, *, timeout_seconds=21600, expected_config_sha=None,
+                 expected_state_revision=None):
     if type(timeout_seconds) is not int or not 1 <= timeout_seconds <= 21600:
         raise ValueError("Invalid release action timeout")
     path = configuration(config)
@@ -146,13 +152,18 @@ def start_action(config, action, *, timeout_seconds=21600):
     with _lock(week_root, _digest({'purpose': 'release-admission'})) as (_, _, held):
         if not held:
             return {'status': 'blocked'}
-        return _start_action_locked(config, action, timeout_seconds=timeout_seconds)
+        return _start_action_locked(config, action, timeout_seconds=timeout_seconds,
+                                    expected_config_sha=expected_config_sha,
+                                    expected_state_revision=expected_state_revision)
 
 
-def _start_action_locked(config, action, *, timeout_seconds=21600):
+def _start_action_locked(config, action, *, timeout_seconds=21600, expected_config_sha=None,
+                         expected_state_revision=None):
     if action not in ACTIONS:
         raise ValueError('Unknown release operation')
     current = snapshot(config)
+    if expected_state_revision is not None and state_revision(current) != expected_state_revision:
+        return {'status': 'blocked'}
     rec = current.get('recommendedAction') or {}
     if rec.get('action') != action or rec.get('humanActionRequired'):
         return {'status': 'blocked'}
@@ -160,6 +171,8 @@ def _start_action_locked(config, action, *, timeout_seconds=21600):
     if path is None:
         return {'status': 'blocked'}
     digest = config_hash(path)
+    if expected_config_sha is not None and digest != expected_config_sha:
+        return {'status': 'blocked'}
     root = job_root(config, path)
     # The downstream config fixes the work/source/release; each stage is allowed
     # one durable attempt for this configuration, across all agent sessions.

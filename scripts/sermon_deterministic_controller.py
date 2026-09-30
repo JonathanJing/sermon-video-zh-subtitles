@@ -53,7 +53,7 @@ def definition():
 def revision(snapshot):
     # Inspection wall-clock is not a production revision. Everything else,
     # including evidence identity and approval/lease changes, remains bound.
-    return jobs._digest({k: v for k, v in snapshot.items() if k != 'checkedAt'})
+    return workflow.state_revision(snapshot)
 
 
 def recommend(snapshot, terminal_scope='page_ready'):
@@ -150,7 +150,9 @@ class Controller:
             saved['pendingIntent'] = intent
             jobs._persist(state_path, saved)
             try:
-                outcome = workflow.start_action(self.config, name, timeout_seconds=ACTIONS[name].timeout_seconds)
+                outcome = workflow.start_action(
+                    self.config, name, timeout_seconds=ACTIONS[name].timeout_seconds,
+                    expected_config_sha=self.config_sha, expected_state_revision=state_revision)
             except Exception:
                 # No exception bodies or command output escape into packets.
                 return self._result({'status': 'blocked', 'reasonCode': 'dispatch_outcome_unknown', 'action': name}, dispatched=None)

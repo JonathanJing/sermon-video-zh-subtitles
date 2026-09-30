@@ -72,6 +72,8 @@ class ControllerTests(unittest.TestCase):
             state = json.loads((controller.root / 'controller-state.json').read_text())
             self.assertEqual(state['pendingIntent']['action'], action)
             self.assertEqual(kwargs['timeout_seconds'], 600)
+            self.assertEqual(kwargs['expected_config_sha'], controller.config_sha)
+            self.assertEqual(kwargs['expected_state_revision'], ctrl.revision(snapshot('build_page')))
             return {'status': 'queued', 'jobId': 'a' * 64}
         with patch.object(ctrl.workflow, 'snapshot', return_value=snapshot('build_page')), \
              patch.object(ctrl.workflow, 'start_action', side_effect=dispatch) as start:
