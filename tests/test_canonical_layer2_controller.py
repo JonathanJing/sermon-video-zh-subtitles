@@ -13,6 +13,7 @@ from scripts import canonical_layer2_controller as subject
 from scripts import canonical_durable_jobs as durable
 from scripts import sermon_workflow_jobs as jobs
 from scripts import sermon_execution_harness as harness
+from scripts import target_language_policy as policies
 from tests import test_inspect_canonical_packages as fixtures
 
 
@@ -51,16 +52,16 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
             fields += ['semanticReview']
         answer = {k: copy.deepcopy(group[k]) for k in fields}
         answer['translationGroupId'] = input_group['translationGroupId']
-        return {'id': 'fixture-response-' + str(len(self.calls)), 'model': payload['model'],
+        return {'id': 'fixture-' + input_group['targetLocale'] + '-response-' + str(len(self.calls)), 'model': payload['model'],
                 'choices': [{'finish_reason': 'stop', 'message': {'content': json.dumps(answer)}}]}
 
     @contextmanager
-    def active(self, *, status='running'):
+    def active(self, *, status='running', locale='zh-Hans'):
         config = subject.load_configuration(self.path)
         view = subject.package_view(config)
-        ident = durable.identity(view, config.run_id, 'text.zh-Hans')
+        ident = durable.identity(view, config.run_id, 'text.' + locale)
         key, code = jobs._digest(ident), subject.code_identity()
-        command = subject._worker_command(config, 'zh-Hans', key, code)
+        command = subject._worker_command(config, locale, key, code)
         request = {'schemaVersion': jobs.SCHEMA, 'jobId': key, 'identity': ident,
                    'command': command, 'commandSha256': jobs._digest(command), 'timeoutSeconds': 21600.0}
         with jobs._lock(config.job_root, key) as (folder, _, held):
@@ -71,8 +72,8 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
                           'status': status, 'requestSha256': jobs._digest(request)})
             yield config, code, key, folder
 
-    def execute(self, config, code, key, *, caller=None):
-        return subject.execute(self.path, 'zh-Hans', config.sha256, code, key,
+    def execute(self, config, code, key, *, caller=None, locale='zh-Hans'):
+        return subject.execute(self.path, locale, config.sha256, code, key,
                                caller=caller or self.fake_call, api_key='fixture-key')
 
     def test_default_shadow_is_read_only_and_never_loads_credentials_or_dispatches(self):
@@ -286,6 +287,58 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
         start.assert_not_called()
         self.assertEqual(retry['nodes']['text.zh-Hans']['status'], 'reconciliation_required')
         self.assertEqual(self.calls, [])
+
+    def test_unknown_owner_retains_capacity_until_reconciliation(self):
+        with self.active(status='queued'):
+            pass
+        controller = subject.Controller(self.path)
+        view = subject.snapshot(controller.config)
+        view['nodes']['text.ko'] = {'status': 'ready'}
+        controller.config.lanes['ko'] = {}
+        self.assertTrue(controller._capacity_full(view))
+        self.assertIsNone(controller._choose(view))
+
+    def test_three_synthetic_locales_use_the_same_fixed_producer_gates_and_capacity(self):
+        original_groups = copy.deepcopy(self.fixture.fixture.evidence['groups'])
+        samples = {'ko': ['처음 사랑을 기억하세요.', '돌아가세요.'],
+                   'es': ['Recuerda tu primer amor.', 'Vuelve a él.']}
+        for locale in samples:
+            plugin = self.root / (locale + '-synthetic-plugin.py')
+            plugin.write_text(self.fixture.fixture.plugin_path.read_text().replace('zh-Hans-sermon-v1', locale + '-sermon-v1'))
+            policy = copy.deepcopy(self.fixture.fixture.policy); policy.pop('componentSha256')
+            policy['targetLocale'] = locale
+            policy['scripture']['quoteCheckPolicy'] = 'references_only'
+            policy['languageReview'].update(pluginId=locale + '-sermon-v1',
+                pluginImplementationSha256=subject.producer.plugin_implementation_sha256(plugin))
+            self.fixture.write(locale + '-policy.json', policies.freeze_policy(policy))
+            self.fixture.config['locales'][locale] = {'policy': locale + '-policy.json'}
+            self.config_data['locales'][locale] = {'outputDirectory': 'outputs/' + locale, 'plugin': str(plugin)}
+        self.fixture.write('inspection.json', self.fixture.config); self.save_config()
+        counts = {}
+        for locale in ('es', 'ko', 'zh-Hans'):
+            self.calls.clear()
+            self.fixture.fixture.evidence['groups'] = copy.deepcopy(original_groups)
+            if locale in samples:
+                for group, text in zip(self.fixture.fixture.evidence['groups'], samples[locale]):
+                    group['targetUtterances'] = [text]
+                    for row in group['coverage']:
+                        row['targetText'] = text
+            self.assertEqual(subject.Controller(self.path).tick()['proposedWorkUnit'], 'text.' + locale)
+            with self.active(locale=locale) as (config, code, key, folder):
+                held = subject.Controller(self.path).tick()
+                self.assertEqual(held['reasonCode'], 'layer2_capacity_reached')
+                self.execute(config, code, key, locale=locale)
+                jobs._write_state(folder, key, 'succeeded')
+            candidate = json.loads((self.root / 'outputs' / locale / 'candidate.json').read_text())
+            self.assertEqual(candidate['targetLocale'], locale)
+            self.assertEqual(candidate['humanReview']['translation'], 'pending')
+            self.assertFalse(candidate['releaseEligible'])
+            counts[locale] = len(self.calls)
+        self.assertEqual(counts, {'es': 4, 'ko': 4, 'zh-Hans': 4})
+        done = subject.Controller(self.path).tick()
+        self.assertIsNone(done['proposedWorkUnit'])
+        self.assertTrue(all(done['nodes']['text.' + locale]['status'] == 'validated' for locale in counts))
+        self.assertTrue(all(done['nodes']['audio.' + locale]['status'] == 'human_gate' for locale in counts))
 
 
 if __name__ == '__main__':

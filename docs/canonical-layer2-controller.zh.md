@@ -37,7 +37,7 @@ python scripts/canonical_layer2_controller.py tick \
 ```
 
 一个 tick 至多派发一个固定 worker 然后返回。第一版同一 production run 至多一个 active
-locale job，组内仍使用冻结 policy 的 1–3 workers；不是跨 run 的全局 API/TTS 资源调度器。
+locale job；uncertain owner 继续占用该名额直到 reconciliation。组内仍使用冻结 policy 的 1–3 workers；不是跨 run 的全局 API/TTS 资源调度器。
 默认顺序是排序后的可准入 locale，没有循环轮询或无限 Agent 对话。工作中可重复调用 tick
 检查，但 active/failed/unknown durable receipt 不会产生第二个相同工作。
 
@@ -52,7 +52,7 @@ locale job，组内仍使用冻结 policy 的 1–3 workers；不是跨 run 的�
 job evidence。正式 CLI 只在实际生产 gate 后读取既有 `OPENAI_API_KEY`，不会保存它。
 
 本批验证界限：真实双控制器/worker 进程使用空 key，证明重复准入和缺配置失败保留；
-成功模型路径由注入式固定响应驱动实际 runner/plugin/validator。没有真实模型 token、
+成功模型路径由注入式固定响应驱动实际 runner/plugin/validator；三语合成回归各完成 4 次假响应后全部停在人工翻译审核门槛。没有真实模型 token、
 付费金额、翻译内容质量或现场验收结论。候选 admission 的独立 deterministic 计时 run
 消费已完成模型 evidence，不伪造跨进程四层关键路径。
 

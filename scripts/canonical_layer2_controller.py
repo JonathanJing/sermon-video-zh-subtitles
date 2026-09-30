@@ -195,7 +195,7 @@ class Controller:
         # Initial fixed adapter permits one locale job at a time within this
         # production run. Existing policy still bounds its group workers 1..3.
         active = [row for row in view['durableJobInspection']['jobs']
-                  if row['workUnitId'].startswith('text.') and row['status'] in jobs.ACTIVE]
+                  if row['workUnitId'].startswith('text.') and row['status'] in jobs.ACTIVE | {'uncertain'}]
         return len(active) >= MAX_ACTIVE_LAYER2_JOBS
 
     def _choose(self, view):
