@@ -3,6 +3,7 @@ import CryptoKit
 import Foundation
 import SwiftUI
 import TongxingCore
+import TongxingInfrastructure
 
 /// Explicit UI-test launch only. No global URLProtocol registration, production
 /// state writes, preloaded downloads, or AVPlayer substitutions are involved.
@@ -37,7 +38,7 @@ struct UITestTextSize: ViewModifier {
     }
 }
 
-private enum UITestContent {
+enum UITestContent {
     static let origin = URL(string: "https://tongxing-ui-fixture.example.test")!
 
     // One independently decodable silent MPEG-2.5 Layer III frame: 8 kHz,
@@ -248,7 +249,9 @@ private enum UITestContent {
 /// This transport belongs only to the explicitly constructed fixture session.
 /// Offline launch reports a real URLSession error; the production repositories
 /// must recover from their own previously written cache and verified audio.
-private final class UITestContentProtocol: URLProtocol {
+class UITestContentProtocol: URLProtocol {
+    var isOffline: Bool { ProcessInfo.processInfo.arguments.contains("--ui-testing-offline") }
+    var usesDualScript: Bool { ProcessInfo.processInfo.arguments.contains("--ui-testing-dual-script") }
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
@@ -257,11 +260,11 @@ private final class UITestContentProtocol: URLProtocol {
             client?.urlProtocol(self, didFailWithError: URLError(.unsupportedURL))
             return
         }
-        guard !ProcessInfo.processInfo.arguments.contains("--ui-testing-offline") else {
+        guard !isOffline else {
             client?.urlProtocol(self, didFailWithError: URLError(.notConnectedToInternet))
             return
         }
-        let dualScript = ProcessInfo.processInfo.arguments.contains("--ui-testing-dual-script")
+        let dualScript = usesDualScript
         if dualScript, let data = UITestContent.dualScriptResponses[url.path] {
             let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "HTTP/1.1",
                 headerFields: ["Content-Length": String(data.count),

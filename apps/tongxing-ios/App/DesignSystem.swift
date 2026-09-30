@@ -5,6 +5,14 @@ import UIKit
 import AppKit
 #endif
 
+/// Shared measurements for custom controls; native controls keep system metrics.
+enum ListeningMetrics {
+    static let minimumHitTarget: CGFloat = 44
+    static let primaryPlaybackDiameter: CGFloat = 56
+    static let readingBaseSize: CGFloat = 26
+    static let controlCornerRadius: CGFloat = 30
+}
+
 enum Brand {
     static let ink = Color(red: 0.09, green: 0.20, blue: 0.22)
     static let sage = Color(red: 0.68, green: 0.82, blue: 0.75)
@@ -72,7 +80,7 @@ private struct ListeningGlassSurface: ViewModifier {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
 
-    private let shape = RoundedRectangle(cornerRadius: 30, style: .continuous)
+    private let shape = RoundedRectangle(cornerRadius: ListeningMetrics.controlCornerRadius, style: .continuous)
 
     func body(content: Content) -> some View {
         surface(content)

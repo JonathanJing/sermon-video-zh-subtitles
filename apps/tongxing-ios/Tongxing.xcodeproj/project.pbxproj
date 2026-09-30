@@ -34,6 +34,7 @@
 		F104CF6576ABBCDDF4B54A62 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F81E8D165D65FEF70E65FFF /* AppModel.swift */; };
 		FA2D8C343F2F8AC19D4CB662 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = E8AB6F9FA25BB0980EF2FE48 /* InfoPlist.strings */; };
 		FEDBAD81783CCD9C4BCAC030 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = EEFE877B3072430F0D7A31CB /* AppIcon.icon */; };
+		FF1CD3F5DC54A7149E23958A /* UIComponentPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD4BED50DC6F96EA26C04666 /* UIComponentPreviews.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -99,6 +100,7 @@
 		BD0FEA1F83F4300CB78A0935 /* UITestLaunch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestLaunch.swift; sourceTree = "<group>"; };
 		BDD37841E68B061E39E91375 /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
 		D76315F9ECA722C00FEE69F2 /* TongxingUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TongxingUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		DD4BED50DC6F96EA26C04666 /* UIComponentPreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIComponentPreviews.swift; sourceTree = "<group>"; };
 		E5859794C1B0B7852C183B63 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		E89C7099077BFCEE7659F81B /* TongxingTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TongxingTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E8CDE0AD081CB32BAE3CD0CB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -172,6 +174,7 @@
 				E8CDE0AD081CB32BAE3CD0CB /* PrivacyInfo.xcprivacy */,
 				3E53066E0326AFD8370B5145 /* PrivacySupportView.swift */,
 				61FE1B88425139B2F592ED0A /* TongxingApp.swift */,
+				DD4BED50DC6F96EA26C04666 /* UIComponentPreviews.swift */,
 				BD0FEA1F83F4300CB78A0935 /* UITestLaunch.swift */,
 				E8AB6F9FA25BB0980EF2FE48 /* InfoPlist.strings */,
 				8DE1B32273C5ED188D2CD1CC /* Resources */,
@@ -428,6 +431,7 @@
 				318C506CF300A57522C9F2F9 /* PlaybackDock.swift in Sources */,
 				23FBE0C19259FFC619DE3B8B /* PrivacySupportView.swift in Sources */,
 				272F205288C38B205D9DE540 /* TongxingApp.swift in Sources */,
+				FF1CD3F5DC54A7149E23958A /* UIComponentPreviews.swift in Sources */,
 				B415795B942C6189370AAE61 /* UITestLaunch.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

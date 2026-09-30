@@ -5,6 +5,20 @@ import XCTest
 /// these tests do not establish real-network, audible, lock-screen, or venue QA.
 @MainActor
 final class ListeningFlowUITests: XCTestCase {
+    func testUnavailableAudioExposesDisabledPlaybackControl() {
+        let app = launchFixture()
+        let play = app.buttons["playback-toggle"]
+        XCTAssertTrue(play.waitForExistence(timeout: 5))
+        XCTAssertFalse(play.isEnabled, "Unavailable audio must expose disabled semantics to assistive technology")
+    }
+
+    func testPlaybackMoreAccessibilityAudit() throws {
+        let app = launchFixture()
+        app.buttons["playback-more"].tap()
+        XCTAssertTrue(app.buttons["playback-more-close"].waitForExistence(timeout: 5))
+        try app.performAccessibilityAudit(for: [.elementDetection, .sufficientElementDescription, .trait])
+    }
+
     func testPlaybackStatusAndMoreLabelAreVisibleAtRegularTextSize() {
         let app = launchFixture()
         let status = app.staticTexts["playback-status-detail"]

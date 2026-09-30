@@ -45,7 +45,7 @@ struct ContentView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.verticalSizeClass) private var verticalSizeClass
-    @ScaledMetric(relativeTo: .title2) private var readingSize: CGFloat = 26
+    @ScaledMetric(relativeTo: .title2) private var readingSize: CGFloat = ListeningMetrics.readingBaseSize
     @ViewState private var sheet: ListeningSheet?
     @ViewState private var returnToCurrent = UUID()
     @ViewState private var showingPlaybackMore = false

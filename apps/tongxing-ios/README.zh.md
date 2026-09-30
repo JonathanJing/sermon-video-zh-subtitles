@@ -12,6 +12,16 @@ Dev Debug 与正式版沿用同一原生收听界面、播放器、下载、字�
 
 界面按用户选定的 **iOS 27 设计语言** 实施：系统导航与 Sheet、26 pt 起的动态字幕、单层 Liquid Glass 悬浮播放栏、深色语义配色，以及窄屏、横屏和大字布局。具体规则与 Apple 官方来源见 [设计约定](DESIGN.zh.md)。
 
+## 组件规范与 Canvas
+
+组件职责、输入状态与原生控件对应见 [UI 组件规范](UI-COMPONENTS.zh.md)，检查步骤和证据记录见 [UI 验收矩阵](UI-ACCEPTANCE.zh.md)。共用尺寸在 `App/DesignSystem.swift` 的 `ListeningMetrics` 中；语义颜色仍沿用 `Brand`。
+
+在 Xcode 打开 `App/UIComponentPreviews.swift`，选择 `Tongxing` scheme、一个 iPhone 模拟器，再开启 **Editor → Canvas** 并点击 **Resume**。底部可切换 10 个命名预览：浅色、深色、最大字号、韩语发布阅读页、加载、断网、底部播放器、准备中的播放器、侧边播放器和最大字号的“更多”。选择小屏、横屏或 iPad 目标可进一步检查尺寸；普通横屏不能代替 Duo 展开/半折验证。
+
+预览使用现有 UI 测试的合成文稿和静音，独立 URLSession 只返回本地 fixture，每个场景使用临时目录；可播放页面预先写入通过哈希校验的本地音轨。数据中的审核字段仅用于解析器场景，不代表真实内容审批。预览不会启动正式目录请求，也不写入正常 App 的语言偏好或播放历史。独立组件的关闭、当前句与精调回调仅用于展示；完整流程请在页面 Live Preview 或模拟器中操作。界面语言在页面的语言菜单切换，与文稿/音轨语言独立；同一预览进程仍共享界面语言。
+
+增强对比、减少透明度、减少动态效果通过 Xcode 调试栏 **Environment Overrides** 或模拟器的系统辅助功能设置检查。它们是只读系统环境，不能把普通 SwiftUI `.environment` 赋值当作模拟已生效。Canvas 编译通过也不等于已完成视觉、VoiceOver 或真机验收。
+
 ## 打开与运行
 
 直接打开 [Tongxing.xcodeproj](Tongxing.xcodeproj)。工程文件已保存，无需先安装依赖管理器；两个 Swift package 都在本地，没有第三方 SDK。

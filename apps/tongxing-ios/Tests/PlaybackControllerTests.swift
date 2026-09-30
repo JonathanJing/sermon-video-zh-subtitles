@@ -11,6 +11,38 @@ import XCTest
 /// not represent a real phone call, headphone route, lock-screen or venue test.
 @MainActor
 final class PlaybackControllerTests: XCTestCase {
+    func testCanvasFixtureLoadsVerifiedLocalAudioWithoutProductionCatalog() async throws {
+        let fixture = CanvasFixture()
+        await fixture.start()
+        XCTAssertNil(fixture.error)
+        XCTAssertEqual(fixture.model.mediaOrigin.host, "tongxing-ui-fixture.example.test")
+        XCTAssertEqual(fixture.model.selectedWeek?.id, "ui-test-week")
+        XCTAssertTrue(fixture.model.usingOfflineAudio)
+        XCTAssertFalse(fixture.model.playback.statisticsEnabled)
+        try await eventually("Canvas local audio ready") { fixture.model.playback.isReady }
+        XCTAssertFalse(fixture.model.playback.isPlaying)
+    }
+
+    func testPublishedCanvasCanSwitchToVerifiedLocalLegacyAudio() async throws {
+        let fixture = CanvasFixture(.published)
+        await fixture.start()
+        XCTAssertNil(fixture.error)
+        XCTAssertTrue(fixture.model.usesNativePublishedReader)
+        let week = try XCTUnwrap(fixture.model.weeks.first)
+        await fixture.model.select(week: week, track: week.tracks.first)
+        XCTAssertTrue(fixture.model.usingOfflineAudio)
+        try await eventually("Canvas switched local audio ready") { fixture.model.playback.isReady }
+        XCTAssertFalse(fixture.model.playback.isPlaying)
+    }
+
+    func testCanvasUnavailableFixtureHasNoCachedContent() async {
+        let fixture = CanvasFixture(.unavailable)
+        await fixture.start()
+        XCTAssertNil(fixture.model.selectedWeek)
+        XCTAssertNotNil(fixture.model.errorMessage)
+        XCTAssertFalse(fixture.model.playback.isReady)
+    }
+
     func testVerifiedVoicePreviewUsesSharedPlayerWithoutBookmark() async throws {
         let fixture = try Fixture()
         defer { fixture.dispose() }

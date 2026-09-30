@@ -5,6 +5,9 @@ struct TongxingApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var model: AppModel = {
         #if DEBUG
+        if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
+            return CanvasFixture().model
+        }
         if let fixtureModel = UITestLaunch.makeModel() { return fixtureModel }
         #endif
         return AppModel()
@@ -23,6 +26,7 @@ struct TongxingApp: App {
                 #endif
                 .task {
                     #if DEBUG
+                    guard ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] != "1" else { return }
                     // Hosted tests provide their own local media and history.
                     // Keep the app host from also fetching the live catalog.
                     guard ProcessInfo.processInfo.environment["TONGXING_TEST_HOST"] != "1"

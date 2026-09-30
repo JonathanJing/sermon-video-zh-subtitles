@@ -137,13 +137,17 @@ struct PlaybackDock: View {
         Button { playback.nudge(seconds) } label: {
             Image(systemName: seconds < 0 ? "gobackward" : "goforward")
                 .font(.title3.weight(.medium))
-                .frame(width: 44, height: 52)
+                .frame(width: ListeningMetrics.minimumHitTarget, height: 52)
                 .contentShape(Rectangle())
         }
         .disabled(!playback.isReady || isPreparing)
         .accessibilityLabel(localization.text(seconds < 0 ? "中文抢先，后退1秒" : "中文落后，前进1秒"))
         .accessibilityHint(localization.text("调整中文音频的位置"))
         .accessibilityIdentifier(seconds < 0 ? "nudge-backward" : "nudge-forward")
+    }
+
+    private var playDiameter: CGFloat {
+        inSystemBar ? ListeningMetrics.minimumHitTarget : ListeningMetrics.primaryPlaybackDiameter
     }
 
     private var playButton: some View {
@@ -153,12 +157,13 @@ struct PlaybackDock: View {
             Image(systemName: playback.isPlaying || playback.isWaiting ? "pause.fill" : "play.fill")
                 .font(.title3.weight(.semibold))
                 .contentTransition(.identity)
-                .frame(width: inSystemBar ? 44 : 56, height: inSystemBar ? 44 : 56)
+                .frame(width: playDiameter, height: playDiameter)
                 .foregroundStyle(Brand.prominentLabel(scheme))
                 .background(Brand.accent, in: Circle())
                 .opacity(playback.isReady && !isPreparing ? 1 : 0.5)
         }
         .buttonStyle(.plain)
+        .disabled(!playback.isReady || isPreparing)
         .accessibilityLabel(playLabel)
         .accessibilityValue(statusLabel)
         .accessibilityIdentifier("playback-toggle")
@@ -220,7 +225,7 @@ struct PlaybackMoreControls: View {
                 Button(action: onClose) {
                     Image(systemName: "xmark")
                         .font(.footnote.weight(.semibold))
-                        .frame(width: 44, height: 44)
+                        .frame(width: ListeningMetrics.minimumHitTarget, height: ListeningMetrics.minimumHitTarget)
                 }
                 .accessibilityLabel(localization.text("关闭"))
                 .accessibilityIdentifier("playback-more-close")
@@ -267,7 +272,7 @@ struct PlaybackMoreControls: View {
             action()
         } label: {
             Label(localization.text("当前句"), systemImage: "text.line.first.and.arrowtriangle.forward")
-                .frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
+                .frame(minWidth: ListeningMetrics.minimumHitTarget, minHeight: ListeningMetrics.minimumHitTarget).contentShape(Rectangle())
         }
         .accessibilityLabel(localization.text("回到当前句"))
         .accessibilityIdentifier("current-cue")
@@ -279,7 +284,7 @@ struct PlaybackMoreControls: View {
             DispatchQueue.main.async(execute: action)
         } label: {
             Label(localization.text("定位 / 精调"), systemImage: "slider.horizontal.3")
-                .frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
+                .frame(minWidth: ListeningMetrics.minimumHitTarget, minHeight: ListeningMetrics.minimumHitTarget).contentShape(Rectangle())
         }
         .disabled(!playback.isReady || isPreparing)
         .accessibilityIdentifier("precision-controls")
@@ -291,7 +296,7 @@ struct PlaybackMoreControls: View {
             playback.undo()
         } label: {
             Label(localization.text("撤销"), systemImage: "arrow.uturn.backward")
-                .frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
+                .frame(minWidth: ListeningMetrics.minimumHitTarget, minHeight: ListeningMetrics.minimumHitTarget).contentShape(Rectangle())
         }
         .accessibilityLabel(localization.text("撤销跳转，返回 {time}", ["time": PlaybackTime.format(previous)]))
         .accessibilityIdentifier("undo-seek")
