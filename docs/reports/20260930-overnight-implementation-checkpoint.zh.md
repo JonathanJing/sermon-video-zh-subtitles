@@ -143,3 +143,26 @@
 以该组合对 `dev f95346ab` 的文件差异核实，新增原生 production Swift 改动仅上述 Core decoder；App 播放控制器/Infrastructure 的 production Swift 文件未改。模拟器运行覆盖既有播放与对齐回归，而不是新的物理设备证据。Apple 1.1.0 Ready for Distribution 属于既有构建状态，不能证明这些新提交已包含、已安装或已验收。
 
 麦克风/指纹/字幕对齐的真实现场阈值、15 秒协议、AGC/时钟、噪声/距离和人工盲测门槛均未降低。FIELD-02 仍缺完整离线包 readiness、浏览器重启/驱逐、Safari/iPhone 与现场证据；内容/听审及设备 sign-off 仍待真实执行。
+
+## 12:04 UTC：固定 L2 执行、恢复与新增集成证据
+
+- #148 `bf0a404ace346583391bafd6ef3907fb01b9bdbe`：L2 真实 producer 的 Source/准入、group 准备、缓存验证、语义验证与 evidence 汇合均计入 deterministic leaf；不是只统计模型调用。#149 `b0f2b0bfb60c4353b692a84510c80f2e24b2fca3` 将真实 package validator 与现有 durable job receipts 联合检查，保留 unknown outcome、逐语隔离及只读证据。
+- #150 `f66cdf641132cc678678f06bf17f222ec7f2d410`：显式 opt-in 固定 L2 controller/worker，既有 admission/output locks、固定 Astra→Sol、pinned plugin、每 run 一个 locale job、组内原 1–3 workers；每个模型调用前重验 Source/config/code。只生成 human-pending candidate，不做 TTS、页面或发布。三语合成成功路径与真实空 key 双进程/崩溃测试通过；282 项 Stage0 组件与模拟通过。
+- #152 `386c27aaad9506a3aa7f97bc3a7f8a9c2d154cdd`：已有有效 candidate 但 worker 无最终成功状态时，显式按当前 revision 对账。原 request/state/log 不变；独立不可变收据与当前 validator 决定 canonical `artifact_reconciled`，不会把原命令写成 succeeded。15 项新回归、47 项相关测试、297 项 Stage0 组件与模拟通过。缺候选/未知付费结果、跨版本和 group repair 仍未解决。
+- #151 `ed52a2bd00414c089925835c50fe53f7285b9b8b`：Web 现有 10 秒采集与自动恢复共享 15 秒占麦预算；启动计入预算、不足完整窗口拒绝、迟到缓冲拒绝。228 项 Web、20 项打包/部署保护通过；9 项新预算测试在旧实现全部失败。Chrome 154 合成输入运行真实 AudioWorklet，连续 10 秒 PCM 成功，短预算拒绝且两个流/contexts 清理；观察到约 5ms timer 调度超限，明确没有硬实时保证。没有物理麦克风/Safari 证据或连续 10→15 秒新协议。
+- #153 `1b0f0af4c0520b8f76492c2c755d3a16566886e8`：补齐 3 个 source-monitor 测试遗漏的 YouTube/yt-dlp fallback mocks，加禁止未注入 extractor 的 guard；26 项测试离线通过。只改测试，生产采源行为不变。
+- #154 `77eebd9139b2bef67392d644cbd2a9b042afb9f0`：27-case 纯文字 Release 共用矩阵，分别验证 schema、原生页面阅读与 Web 音频能力。三语 v1 同一 release 字节经实际 catalog producer 验证，无音频输出；v2 decoder 支持不冒充 v1 producer 支持。13 项 Python、324 项 Web、Swift Core 实际执行 61 项通过（67 reported，6 条件 smoke skipped）。只新增 fixtures/tests，未新增 production Swift 行为。
+
+截至本检查点，#148–153 exact-head Python 两分片与 aggregate 均已核验 SUCCESS；#154 刚提交，CI 仍待核验。所有 draft 的 iOS/contract-validation 仍 skipped，native-client 仅路由汇总。父线程独立审查已确认至 #149；不能把这个旧审查范围延伸成 #150–154 已独立通过。
+
+新本地集成快照 `410482d2f676dc11b7fbe54e44beea95254db6ef` 在前述 `ccdcf38f` 上组合 #148–151，零文本冲突；282 项 Stage0 组件、后端模拟及 336 项 Web 通过。它尚未包括 #152–154；更早 649dc908 的整套 Root Python 和两个模拟器各 37 项结果仍仅绑定原快照。本轮没有新 App/Infrastructure production Swift 改动，原生交付边界继续遵守上表。
+
+### 仍可本地继续的实际工作
+
+- L2 已完成付费缓存、但 evidence/candidate 尚未落盘的确定性恢复；必须避免重发未知请求。部分失败 group 的新 revision/repair 接线、完整跨进程 DAG/usage 仍欠缺。
+- 固定 Layer 1/3/4 执行适配器、stage heartbeat/no-progress timeout、跨 run 资源限额、生产 bounded decision runner 与锁内 action admission；已有 reader/planner 不等于这些已交付。
+- E6 videoDelivery/其他消费边界、已交付分支组合验证及最新 SHA CI/审查；FIELD 连续采集协议、完整离线包 readiness、生命周期/路由的本地故障注入。
+
+### 仍需外部证据或明确运行授权
+
+完整 canonical Stage0 尚未完成，stage1PromotionAllowed=false。批准/预算绑定的短片段→10分钟→完整历史视频→第二个真实周、工程/内容/发布/兼容/性能签字仍缺；没有用本地模拟签字。人工翻译审核、整篇1x听审、声音授权、物理 iPhone/Safari/耳机/锁屏/现场盲测与误跳/字幕误差门槛保持原要求。尚未执行付费验证、merge、Web部署、App Store构建上传或发布。
