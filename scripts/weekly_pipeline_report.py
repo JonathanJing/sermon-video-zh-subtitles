@@ -15,6 +15,7 @@ from scripts.sermon_accounting import EXECUTOR_TYPES, READABLE_SCHEMAS, _label, 
 
 TOKENS = ('inputTokens', 'cachedInputTokens', 'outputTokens', 'reasoningTokens')
 ACTIVE = {'deterministic_program', 'production_model', 'decision_agent'}
+TIMESTAMP_TOLERANCE_SECONDS = 0.01
 
 
 def seconds(value):
@@ -27,42 +28,54 @@ def digest(value):
 
 def usage_report(events, nodes):
     """Provider receipts are facts; SDK aggregates are separate, never added."""
-    seen, sdk_seen, rows, sdk = set(), set(), [], []
+    receipts, aggregates = defaultdict(dict), defaultdict(dict)
     for event in events:
+        node = nodes.get(event.get('spanId'), {})
         if event['event'] == 'sdk_call_finished':
-            key = event['invocationId']
-            if key not in sdk_seen:
-                sdk_seen.add(key)
-                sdk.append({'invocationSha256': digest(key), 'usage': {
-                    k: v if type(v) is int and v >= 0 else None
-                    for k, v in ((k, event['usage'].get(k)) for k in
-                                 ('requests', 'input_tokens', 'output_tokens', 'total_tokens'))}})
+            fact = {'executorType': node.get('executorType'),
+                    'status': _label(event['status']), 'model': _label(event.get('model'), None),
+                    'usage': event['usage']}
+            key = digest(event['invocationId'])
+            aggregates[key][json.dumps(fact, sort_keys=True)] = fact
         if event['event'] != 'api_attempt':
             continue
-        # A provider response reimport is not a new billable attempt. Scope by
-        # provider when present; absent provider remains explicitly unknown.
-        key = (_label(event.get('provider'), None), event.get('responseId') or event.get('attemptId') or event['eventId'])
-        if key in seen:
-            continue
-        seen.add(key)
-        usage = {k: event['usage'].get(k) for k in TOKENS}
-        inp, cached = usage['inputTokens'], usage['cachedInputTokens']
-        usage['nonCachedInputTokens'] = inp - cached if inp is not None and cached is not None and inp >= cached else None
-        node = nodes.get(event.get('spanId'), {})
-        rows.append({'receiptSha256': digest(key), 'executorType': node.get('executorType'),
-                     'status': _label(event['status']), 'usage': usage})
+        # Only equivalent facts may collapse, never first-writer-wins usage.
+        key = digest((_label(event.get('provider'), None),
+                      event.get('responseId') or event.get('attemptId') or event['eventId']))
+        fact = {'executorType': node.get('executorType'),
+                'status': _label(event['status']), 'usage': event['usage']}
+        receipts[key][json.dumps(fact, sort_keys=True)] = fact
+    rows, sdk, conflicts = [], [], []
+    for groups, target, identity, kind in (
+            (receipts, rows, 'receiptSha256', 'provider'),
+            (aggregates, sdk, 'invocationSha256', 'sdk')):
+        for key, variants in sorted(groups.items()):
+            if len(variants) != 1:
+                conflicts.append({'kind': kind, identity: key,
+                                  'variantSha256': sorted(digest(v) for v in variants)})
+                continue
+            fact = next(iter(variants.values()))
+            usage = {k: fact['usage'].get(k) for k in TOKENS} if kind == 'provider' else {
+                k: v if type(v) is int and v >= 0 else None
+                for k, v in ((k, fact['usage'].get(k)) for k in
+                             ('requests', 'input_tokens', 'output_tokens', 'total_tokens'))}
+            if kind == 'provider':
+                inp, cached = usage['inputTokens'], usage['cachedInputTokens']
+                usage['nonCachedInputTokens'] = inp - cached if inp is not None and cached is not None and inp >= cached else None
+            target.append({identity: key, **fact, 'usage': usage})
     totals = {}
     for executor in sorted(EXECUTOR_TYPES | {'unknown'}):
         selected = [r for r in rows if (r['executorType'] or 'unknown') == executor]
-        totals[executor] = {'calls': len(selected), 'knownSubtotal': {
+        totals[executor] = {'calls': None if conflicts else len(selected), 'knownSubtotal': {
             k: sum(r['usage'][k] for r in selected if r['usage'][k] is not None)
-            if any(r['usage'][k] is not None for r in selected) else None
+            if not conflicts and any(r['usage'][k] is not None for r in selected) else None
             for k in (*TOKENS, 'nonCachedInputTokens')},
             'missingFields': {k: sum(r['usage'][k] is None for r in selected)
                               for k in (*TOKENS, 'nonCachedInputTokens')}}
     started = {e['attemptId'] for e in events if e['event'] == 'api_attempt_started'}
     ended = {e.get('attemptId') for e in events if e['event'] == 'api_attempt'}
     return {'directReceipts': rows, 'byExecutor': totals, 'sdkAggregates': sdk,
+            'conflicts': conflicts, 'status': 'conflicted' if conflicts else 'consistent',
             'unresolvedAttempts': len(started - ended), 'combinedTokenTotal': None,
             'scope': 'direct_receipts_and_sdk_aggregates_separate_no_cross_scope_sum'}
 
@@ -102,6 +115,7 @@ def project_run(run_id, events):
             'status': end['status'], 'dependsOn': start.get('dependsOn') or [],
             'dependencyRecorded': isinstance(start.get('dependsOn'), list),
             'parent': start.get('parentSpanId'), 'begin': begin, 'finish': finish,
+            'dependencyReadyAt': start.get('dependencyReadyAt'), 'ready': ready,
             'elapsedSeconds': end['elapsedSeconds'],
             'queueWaitSeconds': begin - queued if queued is not None else None,
             'dependencyReadyToQueueSeconds': queued - ready if ready is not None and queued is not None else None}
@@ -128,8 +142,13 @@ def project_run(run_id, events):
         for dep in n['dependsOn']:
             if dep not in leaves:
                 issue('missing_or_container_dependency')
-            elif leaves[dep]['finish'] > n['begin']:
-                issue('dependency_interval_overlap')
+            else:
+                if leaves[dep]['finish'] > n['begin'] + TIMESTAMP_TOLERANCE_SECONDS:
+                    issue('dependency_interval_overlap')
+                if n['ready'] is not None and leaves[dep]['finish'] > n['ready'] + TIMESTAMP_TOLERANCE_SECONDS:
+                    issue('dependency_not_finished_at_ready')
+                    n['queueWaitSeconds'] = None
+                    n['dependencyReadyToQueueSeconds'] = None
     pending, order = set(leaves), []
     while pending:
         ready = sorted(k for k in pending if not (set(leaves[k]['dependsOn']) & pending))
@@ -172,14 +191,17 @@ def project_run(run_id, events):
             issue('span_outside_run_interval')
     else:
         issue('run_wall_unknown')
+    usage = usage_report(events, nodes)
+    if usage['conflicts']:
+        issue('conflicting_usage_receipts')
     if diagnostics:
         critical = None
     totals = {executor: round(sum(n['elapsedSeconds'] for n in leaves.values() if n['executorType'] == executor), 6)
               for executor in sorted(EXECUTOR_TYPES)}
-    safe_nodes = [{k: v for k, v in n.items() if k not in {'dependsOn', 'parent', 'begin', 'finish'}} for n in leaves.values()]
+    safe_nodes = [{k: v for k, v in n.items() if k not in {'dependsOn', 'parent', 'begin', 'finish', 'ready'}} for n in leaves.values()]
     return {'runSha256': digest(run_id), 'status': 'partial' if diagnostics else 'projected',
             'endToEndWallSeconds': wall, 'criticalPath': critical, 'diagnostics': diagnostics,
-            'leafElapsedByExecutor': totals, 'usage': usage_report(events, nodes),
+            'leafElapsedByExecutor': totals, 'usage': usage,
             'workUnits': sorted(safe_nodes, key=lambda n: (-n['elapsedSeconds'], n['spanSha256'])),
             'sourceDurationSeconds': None, 'locales': None, 'pageReadyAt': None,
             'acceptance': 'not_evaluated', 'notes': [
