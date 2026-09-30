@@ -29,7 +29,8 @@ CONTENT_FAILURES = frozenset({'meaning_omission', 'meaning_addition', 'negation_
 FAILURE_ACTIONS = MappingProxyType({**{code: 'repair_translation' for code in CONTENT_FAILURES},
     'review_execution_failed': 'retry_review', 'review_outcome_unknown': 'reconcile',
     'log_persistence_failed': 'reconcile', 'source_ambiguity': 'request_source_review',
-    'evidence_insufficient': 'request_human_review', 'contradictory_reviews': 'request_human_review'})
+    'evidence_insufficient': 'request_human_review', 'contradictory_reviews': 'request_human_review',
+    'language_plugin_failed': 'escalate_engineering'})
 REQUIRED_DURABLE_CHECKS = (
     'recheck_state_evidence_and_complete_dependency_graph_under_lock',
     'atomically_reserve_unit_chain_and_global_request_token_time_cost_budgets',
@@ -240,6 +241,10 @@ def plan_repair(*, candidate, candidate_bytes, review, review_bytes, rubric, inp
         action, reason = 'repair_translation', 'known_content_failure'
         if not reasons or not set(reasons) <= CONTENT_FAILURES:
             action, reason = 'escalate_engineering', 'unsupported_content_failure'
+    elif 'language_plugin_failed' in gate['reasonCodes']:
+        # A gate-only plugin failure is not a reviewer content finding. Preserve
+        # the passing candidate and use the existing Gate action, not a revision.
+        action, reason = route_failure('language_plugin_failed'), 'language_plugin_failed'
     elif gate['admissionStatus'] != 'admitted':
         action, reason = 'request_human_review', 'gate_requires_review'
     status = 'proposal' if action else 'no_repair'
