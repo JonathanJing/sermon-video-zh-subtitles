@@ -98,3 +98,27 @@
 完整 Stage0 后，按冻结设计先选择有授权和预算的2–3分钟真实片段，冻结 Source/policy/voice/approval身份，验证冷暖缓存与三语恢复；人工角色分别签署后再进入连续10分钟A/B及完整历史视频。最后还需第二个真实周次。代码、合成测试、历史人审、旧head审查和Apple distribution状态均不能替代这些门槛。
 
 额外付费、凭据/权限扩展、真实对外内容发布须报告具体批准需求；本轮没有据此请求或执行。merge/auto-merge/production/App Store发布不在本轮授权内。
+
+## 10:24 UTC 整合快照与原生本地验证补充
+
+`649dc9081cb7227358cff9704b022d814328e905` 是独立 detached 本地 QA 快照：以 #144 为基础，组合 #132/#133/#135/#137/#138/#139/#142 的已审核独立修改，无文本冲突。它未 push、未 merge、未部署，不替代各原始 PR 的 review 或 exact-head CI。输入 SHA 与逐文件组合记录保存在本机 `evidence/stack-composition.json`，结果摘要在 `evidence/stack-validation-summary.json`；QA 工作区保持干净。
+
+| 实际验证 | 结果与边界 |
+|---|---|
+| Root Python 两分片 | 1,947 项，6 skipped；1,941 实际通过。首轮 20 项受 sandbox 的进程检查/loopback 限制，仅这 20 项授权重跑后全部通过，原失败日志保留。 |
+| Web / Feedback API / Dubbing Python | 280 / 61 / 343 通过。Dubbing 首轮 5 项 loopback 权限错误，授权重跑后通过。 |
+| Swift Core | 59 实际执行通过，6 条件式真实/冻结内容测试 skipped。 |
+| Swift Infrastructure | 39 实际执行通过，5 真实站点 smoke skipped。 |
+| 现有 iOS 27.0 模拟器 | PlaybackController 17 + AudioAlignmentController 20 = 37 通过；xcresult 中 0 failures / skips / runtime warnings。 |
+| 现有 iOS 17.5 模拟器 | 同一 37 项通过；xcresult 中 0 failures / skips / runtime warnings。 |
+| 四层 backend dry run | pass；外部下载、ASR、翻译、TTS、Firebase 调用均为 0。 |
+
+两个模拟器按顺序执行，使用独立 DerivedData/result 目录；没有创建/抹除设备，没有签名、安装到物理设备或发布。合成音频、mock capture 和模拟系统中断不能替代真实 iPhone、Safari 拒绝后重试、麦克风/房间声学或锁屏耳机验收。GitHub draft `ios-validation` / `contract-validation` 仍 skipped；本地执行证据单列。
+
+截至本补充，#144 `bbd88b55` 的 exact-head Python 两分片与 aggregate 已通过。#145 是文档改动，aggregate 通过而测试分片 skipped，不能拿该结果代表新 runtime 测试。
+
+### 仍可实施与仍需外部证据
+
+可独立继续：canonical 四层 durable adapter/dispatch、production bounded responder 的锁内 admission、stage-specific timeout/heartbeat、资源 backpressure、版本迁移 receipt，以及 shared catalog/page 与 text-only Release 的更多真实消费端契约覆盖。当前 shadow inspection 和注入式 responder 测试尚未完成这些能力。
+
+外部门槛保持：受预算与批准约束的 2–3 分钟/10 分钟/完整历史视频运行、内容/完整听审 sign-off、第二个真实周、物理设备和现场盲测。没有关闭这些项或把现有 Apple 1.1.0 分发状态算作新代码验收。
