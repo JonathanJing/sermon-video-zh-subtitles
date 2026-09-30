@@ -4,6 +4,14 @@
 
 Apple 已发布 iOS 27 设计资源，并继续完善 Liquid Glass，包括让用户在系统设置中调整透明程度。因此，优先采用系统组件及其自适应行为。[设计更新](https://developer.apple.com/design/whats-new/) · [iOS 27 公告](https://www.apple.com/newsroom/2026/06/apple-unveils-next-generation-of-apple-intelligence-siri-ai-and-more/)
 
+## 设计与迭代方式（2026-09-30）
+
+**先不使用 Figma；在 Xcode／SwiftUI 实际页面中设计，以 iOS 为主，Firebase 浏览器端按需跟进。** 小幅 UI／UX 修改走“截图批注 → 原生实现 → 构建与实际操作 → 独立审核／人工确认 → 网页适用性判断与适配 → 获授权的每周发布”。不为每次微调维护另一套设计稿。
+
+已确认的 iOS revision、真实截图和交互规则共同构成基准。网页统一品牌、信息层级和文案语义，保留响应式、键盘操作与平台能力差异；截图不能代替交互、真机或现场验收。仅文档变更不更新已安装 App，SwiftUI 交付与网页部署分别按发布约定处理。
+
+完整流程、Codex 任务模板、证据要求和首批落地范围：[English](UI-ITERATION-WORKFLOW.md) · [简体中文](UI-ITERATION-WORKFLOW.zh.md)。本次只补流程，不改变下方既有视觉规范、平台兼容约定或历史验证记录。
+
 ## 视觉与交互
 
 | 区域 | 实施方向 |
