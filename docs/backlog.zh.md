@@ -330,7 +330,7 @@ Debug owner：Fix/Debug agent
 
 验收标准：
 
-- 从 reviewed/published captions 生成摘要、大纲、应用问题和金句候选。
+- 从 reviewed/published captions 生成摘要、大纲、应用问题、金句候选。
 - 每条金句保留 source segment id、英文原文、中文字幕、timecode。
 - 生成结果写入 GCS `insights/*.json`。
 - UI notes tab 可以显示生成结果。
