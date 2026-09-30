@@ -156,6 +156,7 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
                 reuse_from: Path | None = None, *, cache_only: bool = False,
                 response_observer=None) -> dict[str, Any]:
     model = policy[role]["model"]
+    save_options = {"private": True} if response_observer is not None else {}
     payload = {"model": model, "reasoning_effort": policy[role]["reasoningEffort"],
                "messages": [{"role": "system", "content": prompt["instruction"]},
                             {"role": "user", "content": json.dumps(prompt["input"], ensure_ascii=False)}],
@@ -200,7 +201,7 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
         require(not cache_only, f"Cache-only recovery has no returned {role} response: {output}")
         require(not marker.exists(), f"Uncertain paid {role} call; inspect before retry: {marker}")
         save_new(marker, {"role": role, "payloadSha256": fingerprint,
-                          "status": "started_response_unconfirmed"}, private=response_observer is not None)
+                          "status": "started_response_unconfirmed"}, **save_options)
         if response_observer is None:
             response = caller(api_key, payload)
         else:
@@ -230,7 +231,7 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
     require(isinstance(parsed, dict), f"{role} response must be a JSON object")
     saved = {"payloadSha256": fingerprint, "requestId": response["id"],
              "model": model, "result": parsed}
-    save_new(output, saved, private=response_observer is not None)
+    save_new(output, saved, **save_options)
     # Both the raw response and validated cache are durable before retiring the
     # uncertainty marker. A failed sync propagates and leaves it for recovery.
     marker.unlink(missing_ok=True)

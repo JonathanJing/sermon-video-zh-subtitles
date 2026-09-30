@@ -154,7 +154,24 @@ def ffprobe_duration(path):
     return float(json.loads(proc.stdout)["format"]["duration"])
 
 
+# Strict adapters may recognize only these unambiguous request rejections.
+# Other HTTP errors (including 408/409/5xx) do not prove execution did not occur.
+KNOWN_REQUEST_REJECTIONS = frozenset({400, 401, 429})
+
+
+class TransportRejection(RuntimeError):
+    """Typed, body-free evidence of a known HTTP request rejection."""
+    def __init__(self, http_status):
+        if type(http_status) is not int or http_status not in KNOWN_REQUEST_REJECTIONS:
+            raise ValueError('invalid_transport_rejection_status')
+        self.http_status = http_status
+        super().__init__('http_request_rejected')
+
+
 def request_json(req, retries=3, *, response_observer=None):
+    # Strict recovery is explicitly authorized by D5, never an HTTP retry loop.
+    if response_observer is not None:
+        retries = 1
     for attempt in range(retries):
         started = time.monotonic()
         attempt_id = record_api_started(getattr(req, "accounting_model", "unknown"), getattr(req, "accounting_settings", {}))
@@ -164,9 +181,21 @@ def request_json(req, retries=3, *, response_observer=None):
             with urllib.request.urlopen(req, timeout=300) as response:
                 result = json.loads(response.read().decode())
         except urllib.error.HTTPError as exc:
+            if response_observer is not None and exc.code in KNOWN_REQUEST_REJECTIONS:
+                rejection = TransportRejection(exc.code)
+                if hasattr(response_observer, "request_rejected"):
+                    # Publish typed durable proof BEFORE finish telemetry. A failed
+                    # observer write propagates and never permits another request.
+                    response_observer.request_rejected(rejection, attempt_id)
+                _finalize(lambda: record_api_attempt(getattr(req, "accounting_model", "unknown"), None,
+                    time.monotonic() - started, "failed", type(rejection).__name__,
+                    attempt_id=attempt_id, http_status=exc.code), rejection)
+                raise rejection from None
             _finalize(lambda: record_api_attempt(getattr(req, "accounting_model", "unknown"), None, time.monotonic() - started, "failed", type(exc).__name__, attempt_id=attempt_id, http_status=exc.code), exc)
             if getattr(exc, "sermon_logging_failed", False):
                 raise
+            if response_observer is not None:
+                raise RuntimeError("strict_transport_http_outcome_unknown") from None
             body = exc.read().decode(errors="replace")
             if attempt == retries - 1 or exc.code < 500:
                 raise RuntimeError(f"HTTP {exc.code}: {body}") from exc
