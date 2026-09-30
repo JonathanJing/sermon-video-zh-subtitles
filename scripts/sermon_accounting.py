@@ -326,6 +326,9 @@ def _write_event(event):
         return log_profile.write(directory, event, payload)
     with open(path, "a+b", opener=_private_open) as stream:
         fcntl.flock(stream.fileno(), fcntl.LOCK_EX)
+        # Profile markers are created under this same ledger lock. The early
+        # check alone can race a new-profile writer waiting to append.
+        log_profile.reject_downgrade(directory, run_id)
         # Preserve a killed writer's partial bytes, but never concatenate the
         # next valid event onto its damaged line. The summary reports the gap.
         stream.seek(0, os.SEEK_END)
@@ -817,16 +820,20 @@ def receipt_integrity(events, *, event_integrity=None):
 def _summarize_locked(directory):
     events, damaged, ledger_hash = read_event_snapshot(directory)
     replay = profile_integrity(events)
-    completed_attempts = {e.get("attemptId") for e in events if e["event"] == "api_attempt"}
-    unfinished_api = [e for e in events if e["event"] == "api_attempt_started" and e["attemptId"] not in completed_attempts]
+    # Reconcile all raw receipts below, but aggregate one representative of
+    # every equivalent profile fact, including stage/review/start events.
+    projected = [e for e in events if 'contractVersion' not in e or id(e) in replay['_selected']]
+    completed_attempts = {(e['runId'], e.get('attemptId')) for e in projected if e['event'] == 'api_attempt'}
+    unfinished_api = [e for e in projected if e['event'] == 'api_attempt_started'
+                      and (e['runId'], e['attemptId']) not in completed_attempts]
     # A process can disappear after sending a billable request. Preserve uncertainty.
-    events.extend({**e, "event": "api_attempt", "eventId": hashlib.sha256((e["eventId"] + ":unresolved_projection").encode()).hexdigest()[:32],
+    unresolved = [{**e, "event": "api_attempt", "eventId": hashlib.sha256((e["eventId"] + ":unresolved_projection").encode()).hexdigest()[:32],
                    "status": "interrupted_or_running",
                    "elapsedSeconds": None, "usage": normalize_usage(None),
                    "cost": {"estimatedUsd": None, "status": "unknown"}}
-                  for e in unfinished_api)
-    integrity = receipt_integrity(events, event_integrity=replay)
-    events = [e for e in events if id(e) not in replay["_excluded"]]
+                  for e in unfinished_api]
+    integrity = receipt_integrity(events + unresolved, event_integrity=replay)
+    events = projected + unresolved
     selected_receipts = integrity.pop("_selected")
     affected_receipts = integrity.pop("_affected")
     sdk_conflicts = integrity.pop("_sdkConflicts")
