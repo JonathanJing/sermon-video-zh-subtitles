@@ -8,6 +8,8 @@ Legacy snapshot last updated: 2026-06-22
 
 Canonical backlog: [backlog.zh.md](./backlog.zh.md)
 
+Dated implementation evidence and the remaining gates for all 38 active items: [2026-09-30 checkpoint (Chinese)](./reports/20260930-overnight-implementation-checkpoint.zh.md). Draft PRs and synthetic tests do not establish merged, real-media, device, or venue acceptance.
+
 CI/CD implementation details: [CI/CD backlog (Chinese)](./ci-cd-backlog.zh.md). The canonical backlog retains the priorities and stable IDs.
 
 Current native-client requests are maintained in the [Tongxing iOS backlog (Chinese)](../apps/tongxing-ios/BACKLOG.zh.md): Dynamic Island, on-demand microphone alignment, localization, and bilingual transcripts.

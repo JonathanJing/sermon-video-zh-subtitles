@@ -1,6 +1,6 @@
 # 现场麦克风与音频指纹对齐：优化与验收 Backlog
 
-更新：2026-09-29（洛杉矶时间）。归属 [Dev 统一 Backlog](backlog.zh.md) 的 `DEV-FIELD-001`；本文的 `FIELD-01`—`FIELD-10` 是其专项子项，不新增另一套顶层排期。本文为待实施计划，新增子项均为 `pending`，不是实现、发布或现场通过声明。
+更新：2026-09-30（UTC；实施对照）。归属 [Dev 统一 Backlog](backlog.zh.md) 的 `DEV-FIELD-001`；本文的 `FIELD-01`—`FIELD-10` 是其专项子项，不新增另一套顶层排期。FIELD-01／02／09 已有 draft PR 的局部实现，状态为 `in_progress`；其他新增优化仍为 `pending`。详见 [2026-09-30 对照](reports/20260930-overnight-implementation-checkpoint.zh.md)。诊断、单会话索引预检和合成数值夹具不表示已发布、离线完整就绪或现场通过。
 
 ## 1. 范围和核查基线
 
