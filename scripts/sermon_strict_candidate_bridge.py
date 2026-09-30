@@ -50,7 +50,8 @@ def compile_candidate(source_bytes, anchor_bytes, policy_bytes, rubric_bytes,
                 read(name+'.json')
         c.validate_revision_lineage(manifest,repair['parentRevision'] if repair else None,repair['plan'] if repair else None)
         group = {k: artifact[k] for k in ('translationGroupId', 'sourceUnitIds')}
-        prepared = strict.prepare(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, group)
+        limits = read('request-limits.json')[0] if (root / 'request-limits.json').exists() else None
+        prepared = strict.prepare(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, group, request_limits=limits)
         if repair is not None:strict.validate_repair(prepared,manifest['candidateId'],manifest['revisionId'],repair)
         for key, value in strict.common_identity(prepared, manifest['candidateId'], manifest['revisionId']).items():
             c.require(manifest[key] == value, 'strict_bridge_current_identity_changed')
@@ -77,11 +78,7 @@ def compile_candidate(source_bytes, anchor_bytes, policy_bytes, rubric_bytes,
             # Bind persisted request identity to the current immutable inputs.
             prompt = (strict.generation_prompt(prepared, repair) if role=='translator' else
                       strict.prompt(prepared, role, candidate=artifact, input_manifest=inputs))
-            import json
-            payload = {'model': policy[role]['model'], 'reasoning_effort': policy[role]['reasoningEffort'],
-                'messages': [{'role': 'system', 'content': prompt['instruction']},
-                             {'role': 'user', 'content': json.dumps(prompt['input'], ensure_ascii=False)}],
-                'response_format': {'type': 'json_object'}}
+            payload = strict._payload(prepared, role, prompt)
             c.require(result['payloadSha256'] == c.canonical_sha256(payload),
                       'strict_bridge_request_payload_changed')
             if role == 'translator':

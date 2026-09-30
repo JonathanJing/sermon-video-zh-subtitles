@@ -24,7 +24,7 @@ from scripts.sermon_release_workflow import _safe_path
 def run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *, root,
                store, job_root, production_run_id, graph, plugin_path,
                expected_plugin_sha256, api_key, caller, bounds,
-               usage_resolver=None, group_plan=None, created_at=None):
+               usage_resolver=None, group_plan=None, created_at=None, request_limits=None):
     """Run fixed groups and bounded repairs, then the real public/plugin bridge.
 
     All group inputs and the complete locale coverage are validated before the
@@ -40,7 +40,9 @@ def run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *, root,
     # The current whole-locale Gate accepts at most 128 current revisions.
     # Do not spend on a locale that cannot reach that existing boundary.
     c.require(len(plan) <= 128, 'strict_locale_admission_inventory_limit')
-    prepared = [strict.prepare(*raw, group) for group in plan]
+    prepared = [strict.prepare(*raw, group, request_limits=request_limits) for group in plan]
+    if hasattr(caller, 'preflight_locale'):
+        caller.preflight_locale(prepared)
     units = [item['workUnitId'] for item in prepared]
     planning.dependency_closure(graph, units)
     by_id = {row['workUnitId']: row for row in graph}
@@ -62,7 +64,7 @@ def run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *, root,
         'inputBytesSha256': [c.bytes_sha256(data) for data in raw],
         'groups': plan, 'graph': graph, 'pluginSha256': expected_plugin_sha256,
         'storeSha256': store.store_sha256, 'authoritySha256': store.authority_sha256,
-        'bounds': bounds}
+        'bounds': bounds, **({'requestLimits': prepared[0]['requestLimits']} if request_limits is not None else {})}
     lock_key = c.canonical_sha256({'purpose': 'strict-locale-run',
         'productionRunId': production_run_id, 'targetLocale': policy['targetLocale']})
     with jobs._lock(job_root, lock_key) as (_, _, held):
