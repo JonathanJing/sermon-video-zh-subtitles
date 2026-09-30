@@ -9,7 +9,7 @@ struct SharedReleaseContractTests {
         #expect(matrix["schemaVersion"] as? String == "sermon-shared-release-contract-fixtures-v1")
         #expect(matrix["scope"] as? String == "synthetic_decoder_tests_not_production_approval")
         let cases = try #require(matrix["cases"] as? [[String: Any]])
-        #expect(cases.count == 18)
+        #expect(cases.count == 30)
         for row in cases {
             let id = try #require(row["id"] as? String)
             let expected = try #require(row["expected"] as? String)

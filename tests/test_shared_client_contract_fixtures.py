@@ -17,3 +17,15 @@ class SharedClientContractFixturesTests(unittest.TestCase):
         for row in accepted:
             with self.subTest(case=row['id']):
                 validator.validate(row['release'])
+
+    def test_producer_page_boundary_is_not_reused_as_package_identifier_limit(self):
+        from scripts import build_full_video_app_release as producer
+        matrix = json.loads((ROOT / 'apps/tongxing-ios/Core/Tests/TongxingCoreTests/Fixtures/shared-release-contracts.json').read_text())
+        boundaries = [row for row in matrix['cases'] if row['id'].startswith('producer-page-')]
+        self.assertEqual(len(boundaries), 9)
+        for row in boundaries:
+            package = row['release']
+            self.assertIsNotNone(producer.PAGE_ID.fullmatch(package['pageId']))
+            self.assertEqual(package['packageId'], f"{package['pageId']}-{package['targetLocale']}-dual-script")
+            self.assertEqual(row['expected'], 'accept')
+        self.assertEqual(max(len(row['release']['packageId']) for row in boundaries), 180)

@@ -7,7 +7,7 @@ import { validatePublishedRelease } from './published-weeks.mjs';
 const matrix = JSON.parse(readFileSync(new URL('../../../apps/tongxing-ios/Core/Tests/TongxingCoreTests/Fixtures/shared-release-contracts.json', import.meta.url)));
 assert.equal(matrix.schemaVersion, 'sermon-shared-release-contract-fixtures-v1');
 assert.equal(matrix.scope, 'synthetic_decoder_tests_not_production_approval');
-assert.equal(matrix.cases.length, 18);
+assert.equal(matrix.cases.length, 30);
 for (const row of matrix.cases) {
   test(`shared production release contract: ${row.id}`, () => {
     const validate = () => validatePublishedRelease(row.release, { id: row.release.pageId }, row.release.targetLocale);

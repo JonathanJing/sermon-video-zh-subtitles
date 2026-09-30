@@ -931,8 +931,8 @@
       }
     },
     {
-      "id": "oversize-package-id",
-      "expected": "reject",
+      "id": "schema-valid-long-package-id",
+      "expected": "accept",
       "release": {
         "schemaVersion": "sermon-target-language-release-package-v2",
         "packageId": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
@@ -967,6 +967,666 @@
           {
             "role": "audio",
             "path": "/media/synthetic-contract-page/ko.mp3",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          }
+        ],
+        "httpVerification": {
+          "status": "pass",
+          "evidenceSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        },
+        "deviceAcceptance": {
+          "status": "not_run",
+          "evidenceSha256": null
+        },
+        "venueAcceptance": {
+          "status": "not_run",
+          "evidenceSha256": null
+        },
+        "issues": []
+      }
+    },
+    {
+      "id": "producer-page-140-zh-Hans",
+      "expected": "accept",
+      "release": {
+        "schemaVersion": "sermon-target-language-release-package-v2",
+        "packageId": "pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp-zh-Hans-dual-script",
+        "pageId": "pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+        "sourceLocale": "en",
+        "targetLocale": "zh-Hans",
+        "targetLanguageCandidateJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spokenTargetLanguageCandidateJsonSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "targetLanguageAudioPackageJsonSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "status": "published_http_verified",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "interfaceLocale": "zh-Hans",
+        "contentLocale": "zh-Hans",
+        "audioLocale": "zh-Hans",
+        "assets": [
+          {
+            "role": "page",
+            "path": "/pages/pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/zh-Hans/index.html",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "content",
+            "path": "/content/pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/zh-Hans.json",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "captions",
+            "path": "/captions/pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/zh-Hans.json",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "audio",
+            "path": "/media/pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/zh-Hans.mp3",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          }
+        ],
+        "httpVerification": {
+          "status": "pass",
+          "evidenceSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        },
+        "deviceAcceptance": {
+          "status": "not_run",
+          "evidenceSha256": null
+        },
+        "venueAcceptance": {
+          "status": "not_run",
+          "evidenceSha256": null
+        },
+        "issues": []
+      }
+    },
+    {
+      "id": "producer-page-140-ko",
+      "expected": "accept",
+      "release": {
+        "schemaVersion": "sermon-target-language-release-package-v2",
+        "packageId": "pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp-ko-dual-script",
+        "pageId": "pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+        "sourceLocale": "en",
+        "targetLocale": "ko",
+        "targetLanguageCandidateJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spokenTargetLanguageCandidateJsonSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "targetLanguageAudioPackageJsonSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "status": "published_http_verified",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "interfaceLocale": "ko",
+        "contentLocale": "ko",
+        "audioLocale": "ko",
+        "assets": [
+          {
+            "role": "page",
+            "path": "/pages/pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/ko/index.html",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "content",
+            "path": "/content/pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/ko.json",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "captions",
+            "path": "/captions/pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/ko.json",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "audio",
+            "path": "/media/pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/ko.mp3",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          }
+        ],
+        "httpVerification": {
+          "status": "pass",
+          "evidenceSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        },
+        "deviceAcceptance": {
+          "status": "not_run",
+          "evidenceSha256": null
+        },
+        "venueAcceptance": {
+          "status": "not_run",
+          "evidenceSha256": null
+        },
+        "issues": []
+      }
+    },
+    {
+      "id": "producer-page-140-es",
+      "expected": "accept",
+      "release": {
+        "schemaVersion": "sermon-target-language-release-package-v2",
+        "packageId": "pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp-es-dual-script",
+        "pageId": "pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+        "sourceLocale": "en",
+        "targetLocale": "es",
+        "targetLanguageCandidateJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spokenTargetLanguageCandidateJsonSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "targetLanguageAudioPackageJsonSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "status": "published_http_verified",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "interfaceLocale": "es",
+        "contentLocale": "es",
+        "audioLocale": "es",
+        "assets": [
+          {
+            "role": "page",
+            "path": "/pages/pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/es/index.html",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "content",
+            "path": "/content/pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/es.json",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "captions",
+            "path": "/captions/pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/es.json",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "audio",
+            "path": "/media/pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/es.mp3",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          }
+        ],
+        "httpVerification": {
+          "status": "pass",
+          "evidenceSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        },
+        "deviceAcceptance": {
+          "status": "not_run",
+          "evidenceSha256": null
+        },
+        "venueAcceptance": {
+          "status": "not_run",
+          "evidenceSha256": null
+        },
+        "issues": []
+      }
+    },
+    {
+      "id": "producer-page-141-zh-Hans",
+      "expected": "accept",
+      "release": {
+        "schemaVersion": "sermon-target-language-release-package-v2",
+        "packageId": "ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp-zh-Hans-dual-script",
+        "pageId": "ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+        "sourceLocale": "en",
+        "targetLocale": "zh-Hans",
+        "targetLanguageCandidateJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spokenTargetLanguageCandidateJsonSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "targetLanguageAudioPackageJsonSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "status": "published_http_verified",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "interfaceLocale": "zh-Hans",
+        "contentLocale": "zh-Hans",
+        "audioLocale": "zh-Hans",
+        "assets": [
+          {
+            "role": "page",
+            "path": "/pages/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/zh-Hans/index.html",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "content",
+            "path": "/content/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/zh-Hans.json",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "captions",
+            "path": "/captions/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/zh-Hans.json",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "audio",
+            "path": "/media/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/zh-Hans.mp3",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          }
+        ],
+        "httpVerification": {
+          "status": "pass",
+          "evidenceSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        },
+        "deviceAcceptance": {
+          "status": "not_run",
+          "evidenceSha256": null
+        },
+        "venueAcceptance": {
+          "status": "not_run",
+          "evidenceSha256": null
+        },
+        "issues": []
+      }
+    },
+    {
+      "id": "producer-page-141-ko",
+      "expected": "accept",
+      "release": {
+        "schemaVersion": "sermon-target-language-release-package-v2",
+        "packageId": "ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp-ko-dual-script",
+        "pageId": "ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+        "sourceLocale": "en",
+        "targetLocale": "ko",
+        "targetLanguageCandidateJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spokenTargetLanguageCandidateJsonSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "targetLanguageAudioPackageJsonSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "status": "published_http_verified",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "interfaceLocale": "ko",
+        "contentLocale": "ko",
+        "audioLocale": "ko",
+        "assets": [
+          {
+            "role": "page",
+            "path": "/pages/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/ko/index.html",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "content",
+            "path": "/content/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/ko.json",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "captions",
+            "path": "/captions/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/ko.json",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "audio",
+            "path": "/media/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/ko.mp3",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          }
+        ],
+        "httpVerification": {
+          "status": "pass",
+          "evidenceSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        },
+        "deviceAcceptance": {
+          "status": "not_run",
+          "evidenceSha256": null
+        },
+        "venueAcceptance": {
+          "status": "not_run",
+          "evidenceSha256": null
+        },
+        "issues": []
+      }
+    },
+    {
+      "id": "producer-page-141-es",
+      "expected": "accept",
+      "release": {
+        "schemaVersion": "sermon-target-language-release-package-v2",
+        "packageId": "ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp-es-dual-script",
+        "pageId": "ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+        "sourceLocale": "en",
+        "targetLocale": "es",
+        "targetLanguageCandidateJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spokenTargetLanguageCandidateJsonSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "targetLanguageAudioPackageJsonSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "status": "published_http_verified",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "interfaceLocale": "es",
+        "contentLocale": "es",
+        "audioLocale": "es",
+        "assets": [
+          {
+            "role": "page",
+            "path": "/pages/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/es/index.html",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "content",
+            "path": "/content/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/es.json",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "captions",
+            "path": "/captions/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/es.json",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "audio",
+            "path": "/media/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/es.mp3",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          }
+        ],
+        "httpVerification": {
+          "status": "pass",
+          "evidenceSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        },
+        "deviceAcceptance": {
+          "status": "not_run",
+          "evidenceSha256": null
+        },
+        "venueAcceptance": {
+          "status": "not_run",
+          "evidenceSha256": null
+        },
+        "issues": []
+      }
+    },
+    {
+      "id": "producer-page-160-zh-Hans",
+      "expected": "accept",
+      "release": {
+        "schemaVersion": "sermon-target-language-release-package-v2",
+        "packageId": "pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp-zh-Hans-dual-script",
+        "pageId": "pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+        "sourceLocale": "en",
+        "targetLocale": "zh-Hans",
+        "targetLanguageCandidateJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spokenTargetLanguageCandidateJsonSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "targetLanguageAudioPackageJsonSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "status": "published_http_verified",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "interfaceLocale": "zh-Hans",
+        "contentLocale": "zh-Hans",
+        "audioLocale": "zh-Hans",
+        "assets": [
+          {
+            "role": "page",
+            "path": "/pages/pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/zh-Hans/index.html",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "content",
+            "path": "/content/pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/zh-Hans.json",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "captions",
+            "path": "/captions/pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/zh-Hans.json",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "audio",
+            "path": "/media/pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/zh-Hans.mp3",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          }
+        ],
+        "httpVerification": {
+          "status": "pass",
+          "evidenceSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        },
+        "deviceAcceptance": {
+          "status": "not_run",
+          "evidenceSha256": null
+        },
+        "venueAcceptance": {
+          "status": "not_run",
+          "evidenceSha256": null
+        },
+        "issues": []
+      }
+    },
+    {
+      "id": "producer-page-160-ko",
+      "expected": "accept",
+      "release": {
+        "schemaVersion": "sermon-target-language-release-package-v2",
+        "packageId": "pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp-ko-dual-script",
+        "pageId": "pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+        "sourceLocale": "en",
+        "targetLocale": "ko",
+        "targetLanguageCandidateJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spokenTargetLanguageCandidateJsonSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "targetLanguageAudioPackageJsonSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "status": "published_http_verified",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "interfaceLocale": "ko",
+        "contentLocale": "ko",
+        "audioLocale": "ko",
+        "assets": [
+          {
+            "role": "page",
+            "path": "/pages/pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/ko/index.html",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "content",
+            "path": "/content/pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/ko.json",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "captions",
+            "path": "/captions/pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/ko.json",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "audio",
+            "path": "/media/pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/ko.mp3",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          }
+        ],
+        "httpVerification": {
+          "status": "pass",
+          "evidenceSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        },
+        "deviceAcceptance": {
+          "status": "not_run",
+          "evidenceSha256": null
+        },
+        "venueAcceptance": {
+          "status": "not_run",
+          "evidenceSha256": null
+        },
+        "issues": []
+      }
+    },
+    {
+      "id": "producer-page-160-es",
+      "expected": "accept",
+      "release": {
+        "schemaVersion": "sermon-target-language-release-package-v2",
+        "packageId": "pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp-es-dual-script",
+        "pageId": "pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+        "sourceLocale": "en",
+        "targetLocale": "es",
+        "targetLanguageCandidateJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spokenTargetLanguageCandidateJsonSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "targetLanguageAudioPackageJsonSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "status": "published_http_verified",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "interfaceLocale": "es",
+        "contentLocale": "es",
+        "audioLocale": "es",
+        "assets": [
+          {
+            "role": "page",
+            "path": "/pages/pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/es/index.html",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "content",
+            "path": "/content/pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/es.json",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "captions",
+            "path": "/captions/pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/es.json",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "audio",
+            "path": "/media/pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/es.mp3",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          }
+        ],
+        "httpVerification": {
+          "status": "pass",
+          "evidenceSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        },
+        "deviceAcceptance": {
+          "status": "not_run",
+          "evidenceSha256": null
+        },
+        "venueAcceptance": {
+          "status": "not_run",
+          "evidenceSha256": null
+        },
+        "issues": []
+      }
+    },
+    {
+      "id": "empty-package-id",
+      "expected": "reject",
+      "release": {
+        "schemaVersion": "sermon-target-language-release-package-v2",
+        "packageId": "",
+        "pageId": "synthetic-contract-page",
+        "sourceLocale": "en",
+        "targetLocale": "zh-Hans",
+        "targetLanguageCandidateJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spokenTargetLanguageCandidateJsonSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "targetLanguageAudioPackageJsonSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "status": "published_http_verified",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "interfaceLocale": "zh-Hans",
+        "contentLocale": "zh-Hans",
+        "audioLocale": "zh-Hans",
+        "assets": [
+          {
+            "role": "page",
+            "path": "/pages/synthetic-contract-page/zh-Hans/index.html",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "content",
+            "path": "/content/synthetic-contract-page/zh-Hans.json",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "captions",
+            "path": "/captions/synthetic-contract-page/zh-Hans.json",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "audio",
+            "path": "/media/synthetic-contract-page/zh-Hans.mp3",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          }
+        ],
+        "httpVerification": {
+          "status": "pass",
+          "evidenceSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        },
+        "deviceAcceptance": {
+          "status": "not_run",
+          "evidenceSha256": null
+        },
+        "venueAcceptance": {
+          "status": "not_run",
+          "evidenceSha256": null
+        },
+        "issues": []
+      }
+    },
+    {
+      "id": "non-string-package-id",
+      "expected": "reject",
+      "release": {
+        "schemaVersion": "sermon-target-language-release-package-v2",
+        "packageId": 42,
+        "pageId": "synthetic-contract-page",
+        "sourceLocale": "en",
+        "targetLocale": "zh-Hans",
+        "targetLanguageCandidateJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spokenTargetLanguageCandidateJsonSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "targetLanguageAudioPackageJsonSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "status": "published_http_verified",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "interfaceLocale": "zh-Hans",
+        "contentLocale": "zh-Hans",
+        "audioLocale": "zh-Hans",
+        "assets": [
+          {
+            "role": "page",
+            "path": "/pages/synthetic-contract-page/zh-Hans/index.html",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "content",
+            "path": "/content/synthetic-contract-page/zh-Hans.json",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "captions",
+            "path": "/captions/synthetic-contract-page/zh-Hans.json",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "audio",
+            "path": "/media/synthetic-contract-page/zh-Hans.mp3",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          }
+        ],
+        "httpVerification": {
+          "status": "pass",
+          "evidenceSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        },
+        "deviceAcceptance": {
+          "status": "not_run",
+          "evidenceSha256": null
+        },
+        "venueAcceptance": {
+          "status": "not_run",
+          "evidenceSha256": null
+        },
+        "issues": []
+      }
+    },
+    {
+      "id": "opaque-package-id",
+      "expected": "accept",
+      "release": {
+        "schemaVersion": "sermon-target-language-release-package-v2",
+        "packageId": "opaque receipt / 非路径",
+        "pageId": "synthetic-contract-page",
+        "sourceLocale": "en",
+        "targetLocale": "zh-Hans",
+        "targetLanguageCandidateJsonSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "spokenTargetLanguageCandidateJsonSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "targetLanguageAudioPackageJsonSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "status": "published_http_verified",
+        "contentStatus": "human_reviewed",
+        "audioStatus": "human_reviewed",
+        "interfaceLocale": "zh-Hans",
+        "contentLocale": "zh-Hans",
+        "audioLocale": "zh-Hans",
+        "assets": [
+          {
+            "role": "page",
+            "path": "/pages/synthetic-contract-page/zh-Hans/index.html",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "content",
+            "path": "/content/synthetic-contract-page/zh-Hans.json",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "captions",
+            "path": "/captions/synthetic-contract-page/zh-Hans.json",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "role": "audio",
+            "path": "/media/synthetic-contract-page/zh-Hans.mp3",
             "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
           }
         ],

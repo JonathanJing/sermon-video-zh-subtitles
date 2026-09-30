@@ -134,7 +134,7 @@ public struct TargetLanguageReleasePackage: Codable, Sendable, Equatable {
 
     public func validate(allowDevCandidate: Bool = false) throws {
         guard [Self.supportedSchemaVersion, Self.dualScriptSchemaVersion].contains(schemaVersion),
-              Validation.identifier(packageId),
+              !packageId.isEmpty, // Opaque schema ID; producer suffix can exceed the page ID limit.
               Validation.identifier(pageId), sourceLocale == "en", Validation.locale(targetLocale),
               Validation.sha256(targetLanguageCandidateJsonSha256),
               contentStatus == "human_reviewed", interfaceLocale == targetLocale,

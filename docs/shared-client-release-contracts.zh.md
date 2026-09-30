@@ -4,7 +4,7 @@
 
 ## 范围与修复
 
-18 个确定性场景覆盖三语合法 production Release v2、缺短口播候选绑定、坏音频包 hash、缺 Page／Audio、重复 Audio、跨语言字幕路径、坏资产 hash、缺／错验收证据、未审内容、未发布 candidate，以及缺失／超长 package ID。
+30 个确定性场景覆盖三语合法 production Release v2、缺短口播候选绑定、坏音频包 hash、缺 Page／Audio、重复 Audio、跨语言字幕路径、坏资产 hash、缺／错验收证据、未审内容、未发布 candidate，以及缺失／空／非字符串 package ID。新增 pageId 长度 140／141／160 的三语 producer 边界、合法长 packageId 和 opaque ID。
 
 Web production loader 现在使用可独立验证的 `validatePublishedRelease`，要求现有 v2 合同的完整绑定与页面资产；验收状态与 evidence hash 必须匹配。原生 Core 同样校验 HTTP／设备／现场 receipt：`not_run` 必须没有 evidence，`pass/fail` 必须有有效 SHA；Dev candidate 不能自称已做设备或现场验收。这些是已有字段的入站验证，不会生成或提升审核收据。
 
@@ -28,3 +28,9 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test --package-pa
 ```
 
 `DEV-CICD-002` 与 E6 继续为 in_progress，未完成未知路径全矩阵、全部跨端协议 fixture、人工兼容性签署或设备验收。
+
+## packageId 长度回归
+
+Release v1/v2 schema 对 `packageId` 规定非空字符串，没有 160 字符上限；它不参与资产路径或缓存文件名。正式 producer 允许最长 160 字符的 pageId，再追加 `-<locale>-dual-script`，中文最长 packageId 为 180 字符。Web 和 Swift 因此只对 packageId 使用 schema 的非空字符串要求，不复用 pageId 的限制，也不收紧 schema 拒绝既有有效包。pageId、同语言资产路径、hash 和状态验证保持原有合同。
+
+新增 fixture 在旧 Web head 有 6 项失败，修复后完整 Web 224 项、legacy adapter 9 项、相关 Python 11 项通过。Swift Core 64 项报告中 6 项条件 smoke 跳过，实际执行 58 项通过；共用 30-case 夹具包含在其中。这是 decoder/本地行为证据，不是长 ID 的真实设备播放或任何内容批准。

@@ -91,8 +91,7 @@ export function validatePublishedRelease(release, page, locale) {
   required(release.schemaVersion === 'sermon-target-language-release-package-v2'
     && release.pageId === page.id && release.targetLocale === locale && release.contentLocale === locale
     && release.audioLocale === locale && release.sourceLocale === 'en'
-    && typeof release.packageId === 'string' && release.packageId.length <= 160
-    && /^[A-Za-z0-9_-]+$/.test(release.packageId) && release.interfaceLocale === locale
+    && typeof release.packageId === 'string' && release.packageId.length > 0 && release.interfaceLocale === locale
     && HASH.test(release.targetLanguageCandidateJsonSha256)
     && HASH.test(release.spokenTargetLanguageCandidateJsonSha256)
     && HASH.test(release.targetLanguageAudioPackageJsonSha256)
