@@ -4,6 +4,17 @@
 
 执行代码：`fd788ac8517d381d24bb1a834689e88bcfa4f6c7`，三个正常实际样本均在干净工作区运行。PR：[#161](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/161)。原始媒体、缓存、已有审批与音频未改；新候选仍是 human review pending。本文属于观测/汇总修复，未改变翻译策略、请求、渲染内容或拒绝条件。
 
+## 15:07 UTC 修复后的再次实际运行
+
+最新执行代码为 `ebaea29e857afba3bf6d6313ce9a8e3ccb8d66ec`，三条路径分别运行，均为干净代码。前一轮原始证据保留在下方，不能将新数据追认到旧 trace。
+
+- **源媒体身份**：L2 decode workload 及三语 source admission 均记录同一 `sourceMediaSha256`；66 条历史缓存观测与原件 oracle 完全一致，三个 candidate hash 未变。
+- **ASR 时间边界**：decode 0.202493s、设置/模块导入/checkpoint 校验 1.548344s、模型调用 9.618410s、输出处理 0.003893s。模型 span 为 9.618916s，额外约 0.000506s 是包含日志调用的边界差额，未命名为调度开销。模型精确 checkpoint 被固定校验；输出 hash 不变。这里的模型调用仍包括 MLX 内部加载/推理，未拆分库内部 GPU 时间。
+- **音频串行依赖**：实际 zh-Hans → ko → es 三次调用的顺序边已记录，active dependency path **6.388333s** 等于三个 wrapper 小计；33 次开始/结束、音频 hash 全匹配，逐单元验证小计 **5.567545s**。没有把独立 roots 的最大值误称为串行总路径。
+- 三条导出 ledger 均可单独重新生成完全一致的 JSON report；0 transport 尝试由运行守卫独立确认。历史 token/cost 与当前运行仍分开；队列、ready、调度开销和跨进程路径仍缺实测，不能填零。
+
+查看 [本轮对账](timing-rerun/reconciliation.json)、[紧凑事件](timing-rerun/representative-events.json)、[可复现 driver/命令](timing-rerun/commands.json)，及 [L2](timing-rerun/cache/report.md)、[ASR](timing-rerun/asr/report.md)、[音频](timing-rerun/audio/report.md) 报告。每个目录同时保留 `events.jsonl`、`report.json` 和同一快照的 `export.json`。独立执行记录：[cache](timing-rerun/independent-cache.json)、[ASR](timing-rerun/independent-asr.json)、[audio](timing-rerun/independent-audio.json)。
+
 ## 实际运行及独立对账
 
 | 路径 | 本次实际行为 | 从日志重建与独立记录比较 |
