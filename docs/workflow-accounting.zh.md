@@ -156,6 +156,6 @@ L3 实际 render_units 将模型加载、每单元本地模型推理、音频复
 
 `summary.json` / `stages.csv` 与只读 `sermon_logs --check` 先检查收据等价性。provider + response identity（缺失时退回 attempt/event identity）相同的记录，只有 status、usage、实际/请求 model、估计费用、latency 和 stage executor 全部一致才去重。不同 provider 的相同 response ID 不合并。等价跨 run 导入按稳定的 receipt 时间/标识选定归属；不能因 JSONL 行顺序不同改变费用归属。
 
-相同 identity 有冲突事实时，`receiptIntegrity.status=conflicted`，记录 identity/variant hash 与受影响 run，保留所有原始字节。受影响的非限定 token、调用次数、latency 和 `knownEstimatedUsd` 为 null，状态明确为 conflicted；另外的 `knownNonconflicting*` 只是剔除冲突后的可核验子集，不能当作整周总量或实际账单。SDK invocation 的冲突同样不能 last-writer-wins；聚合 usage 保持未知，仍与直接 HTTP receipts 分开。
+相同 identity 有冲突事实时，`receiptIntegrity.status=conflicted`，记录 identity/variant hash 与受影响 run，保留所有原始字节。受影响的非限定 token、调用次数、latency 和 `knownEstimatedUsd` 为 null，状态明确为 conflicted；另外的 `knownNonconflicting*` 只是剔除冲突后的可核验子集，不能当作整周总量或实际账单。SDK invocation 在跨 run 导入时也按同一 identity 检查；等价导入标记 `duplicate_import`，不再贡献 SDK token 或 invocation 次数。冲突同样不能 last-writer-wins；聚合 usage 保持未知，仍与直接 HTTP receipts 分开。
 
 只读检查在跨 run 范围先查冲突，再筛选当前 run；`--check` 对相关冲突退出 2，终端显示冲突数量，不改写 summary 或原账本。语法损坏与语义冲突分开记录，缺失历史字段保持未知。运行本身的完成状态、有效执行 span、人工审批和发布状态不会因用量冲突被改写；用量报告也不会自动调模型或重试。

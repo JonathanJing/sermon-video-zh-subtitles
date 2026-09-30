@@ -102,6 +102,29 @@ class ReceiptConflictTests(unittest.TestCase):
             self.assertEqual(direct['apiAttempts'], 1)
             self.assertAlmostEqual(direct['knownEstimatedUsd'], .0201)
 
+    def test_sdk_cross_run_import_deduplicates_or_conflicts_on_the_same_invocation(self):
+        with accounting.accounting_session(self.root, 'sdk-origin'):
+            with accounting.sdk_invocation('gpt-6-sol') as receipt:
+                receipt['usage'] = {'requests':1,'input_tokens':50,'output_tokens':5,'total_tokens':55}
+        events, _ = accounting.read_events(self.root)
+        original = next(e for e in events if e['event']=='sdk_call_finished')
+        imported = {**copy.deepcopy(original), 'eventId':'sdk-cross-run-import',
+                    'runId':'imported-sdk-run', 'recordedAt':'2026-10-01T00:00:00+00:00'}
+        parent = next(e for e in events if e['event']=='stage_started' and e['spanId']==original['spanId'])
+        events.append({**copy.deepcopy(parent), 'runId':'imported-sdk-run', 'eventId':'imported-sdk-stage'})
+        report = self.summarize([imported, *events])
+        copied = next(r for r in report['runs'] if r['runId']=='imported-sdk-run')
+        self.assertEqual(report['receiptIntegrity']['equivalentDuplicatesIgnored'], 1)
+        self.assertEqual(copied['sdkCalls'][0]['status'], 'duplicate_import')
+        self.assertIsNone(copied['sdkCalls'][0]['usage']['input_tokens'])
+        self.assertEqual(copied['unpricedSdkInvocations'], 0)
+        imported['usage']['input_tokens'] = 500
+        report = self.summarize([*events, imported])
+        for run in report['runs']:
+            if run['runId'] in (original['runId'], 'imported-sdk-run'):
+                self.assertEqual(run['overallCostStatus'], 'conflicted')
+                self.assertEqual(run['sdkCalls'][0]['status'], 'usage_conflict')
+
     def test_legacy_sdk_nonfinite_usage_stays_unknown_without_breaking_summary(self):
         with accounting.accounting_session(self.root, 'legacy-sdk'):
             with accounting.sdk_invocation('gpt-6-sol'):

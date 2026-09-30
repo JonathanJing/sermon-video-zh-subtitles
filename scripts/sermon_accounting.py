@@ -666,12 +666,12 @@ def receipt_integrity(events):
         if kind not in {'api_attempt', 'sdk_call_finished'}:
             continue
         if kind == 'api_attempt':
-            identity = ['provider', _label(event.get('provider'), None),
+            identity = ['provider', event.get('provider'),
                         event.get('responseId') or event.get('attemptId') or event['eventId']]
             fact = {key: event.get(key) for key in
                     ('status', 'usage', 'cost', 'model', 'requestedModel', 'elapsedSeconds')}
         else:
-            identity = ['sdk', event['runId'], event['invocationId']]
+            identity = ['sdk', event['invocationId']]
             fact = {key: event.get(key) for key in ('status', 'usage', 'model', 'elapsedSeconds', 'measurementScope')}
         key = digest(identity)
         group = groups.setdefault(key, {'kind': identity[0], 'variants': {}, 'events': []})
@@ -716,6 +716,10 @@ def _summarize_locked(directory):
     selected_receipts = integrity.pop("_selected")
     affected_receipts = integrity.pop("_affected")
     sdk_conflicts = integrity.pop("_sdkConflicts")
+    sdk_finished = {(e['runId'], e['invocationId']) for e in events if e['event'] == 'sdk_call_finished'}
+    sdk_selected = {(e['runId'], e['invocationId']) for e in events
+                    if e['event'] == 'sdk_call_finished' and id(e) in selected_receipts}
+    sdk_duplicates = sdk_finished - sdk_selected - sdk_conflicts
     runs, groups = {}, {}
     latencies, workflows = {}, {}
     sdk_calls = {}
@@ -821,6 +825,9 @@ def _summarize_locked(directory):
         if key in sdk_conflicts:
             call.update(status='usage_conflict', model=None, elapsedSeconds=None,
                         usage={field: None for field in call['usage']}, costStatus='conflicted')
+        elif key in sdk_duplicates:
+            call.update(status='duplicate_import', elapsedSeconds=None,
+                        usage={field: None for field in call['usage']})
     for row in groups.values():
         conflict_ids = sorted(affected_receipts.get((row['runId'], row['stage']), ()))
         row['receiptConflictSha256'] = conflict_ids
@@ -842,7 +849,8 @@ def _summarize_locked(directory):
         run["failedApiAttempts"] = sum(r["failedApiAttempts"] for r in rows)
         run["workflows"] = [w for w in workflows.values() if w["runId"] == rid]
         run["sdkCalls"] = [call for (run_id, _), call in sdk_calls.items() if run_id == rid]
-        run["unpricedSdkInvocations"] = len(run["sdkCalls"])
+        run["duplicateSdkInvocations"] = sum(call["status"] == "duplicate_import" for call in run["sdkCalls"])
+        run["unpricedSdkInvocations"] = len(run["sdkCalls"]) - run["duplicateSdkInvocations"]
         run["overallCostStatus"] = "partial" if run["unknownCostAttempts"] or run["sdkCalls"] or damaged else "recorded_api_only"
         run['receiptConflictSha256'] = sorted({key for (run_id, _), keys in affected_receipts.items()
                                                if run_id == rid for key in keys})

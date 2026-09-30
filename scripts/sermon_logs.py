@@ -28,7 +28,9 @@ def inspect_logs(directory, *, run_id="latest", level="INFO", tail=50):
     # Compare the whole ledger before filtering: a conflicting duplicate in
     # another run also invalidates this run's attributed receipt.
     integrity = receipt_integrity(events)
-    conflicts = [c for c in integrity['conflicts'] if selected == 'all' or selected in c['runIds']]
+    affected = {key for (rid, _), keys in integrity['_affected'].items()
+                if selected == 'all' or rid == selected for key in keys}
+    conflicts = [c for c in integrity['conflicts'] if c['identitySha256'] in affected]
     diagnostics = [diagnostic_event(e) for e in selected_events]
     failed = [d for d in diagnostics if LEVELS[d["level"]] >= LEVELS["ERROR"]]
     warnings = [d for d in diagnostics if d["level"] == "WARNING"]
