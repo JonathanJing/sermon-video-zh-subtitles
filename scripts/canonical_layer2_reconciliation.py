@@ -64,6 +64,7 @@ def reconcile(config_path, locale, expected_revision):
                 layer2.require(jobs._request_valid(request, key) and request['identity'] == ident
                                and request['command'] == layer2._worker_command(config, locale, key, code)
                                and request['timeoutSeconds'] == 21600.0
+                                   and request.get('livenessPolicy') == layer2.LIVENESS_POLICY
                                and state is not None and state.get('requestSha256') == jobs._digest(request)
                                and admitted_row['requestSha256'] == jobs._digest(request)
                                and admitted_row['stateSha256'] == jobs._digest(state),

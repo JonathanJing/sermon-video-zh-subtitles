@@ -67,3 +67,7 @@ job evidence。正式 CLI 只在实际生产 gate 后读取既有 `OPENAI_API_KE
 若 owner 已退出但当前候选完整且通过原 validator，可用 [固定 L2 产物对账](canonical-layer2-reconciliation.zh.md) 显式绑定当前 stateRevision。它保留命令原始失败/未知状态并新增独立不可变收据，不自动重试，不消除缺失产物或未知付费调用的门槛。没有有效候选的失败仍阻塞；跨版本与 group repair 继续未完成。
 
 若候选缺失但原执行的所有模型响应均完整返回，可先用[cache-only 本地恢复](canonical-layer2-cache-recovery.zh.md)重建证据与候选，再独立对账。任何未返回调用继续阻塞；不会扩大重试预算。
+
+## 运行心跳边界
+
+固定执行路径绑定[专项心跳与无进展超时](canonical-layer2-liveness.zh.md)：command startup 60 秒、heartbeat 30/90 秒、no-progress 900 秒，以及原总上限。超时仍是需要对账的未知结果，不重新派发；默认 shadow 保持只读。L1/3/4、全局资源与真实吞吐验收没有因此完成。
