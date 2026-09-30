@@ -126,7 +126,10 @@ def export(directory):
         if any(start.get(field) != end.get(field) for field in match_fields):
             diagnostic("span_identity_mismatch", key)
             continue
-        if end.get("status") not in {"completed", "failed"}:
+        allowed_statuses = {"completed", "failed"}
+        if start.get("contractVersion") is not None:
+            allowed_statuses |= {"cancelled", "outcome_unknown"}
+        if end.get("status") not in allowed_statuses:
             diagnostic("unknown_finished_status", key)
             continue
         try:
