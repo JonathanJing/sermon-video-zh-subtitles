@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1600" viewBox="0 0 1600 1600" role="img" aria-labelledby="title desc">
+<title id="title">App 系统设计 / Client architecture</title><desc id="desc">产品优先级不等于功能齐备、二进制分发或真实现场验收。 L4 发布包决定可用能力；客户端不修复上游内容或签发人审。 缺定位索引只禁用定位；内容语言、界面语言和播放状态分别处理。</desc>
+<style>text{font-family:"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;} text{font-variant-ligatures:none}</style>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M1 1 L7 4 L1 7" fill="none" stroke="#648A86" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect x="0" y="0" width="1600" height="1600" rx="0" fill="#F5F4EF" stroke="none" />
+<rect x="64" y="57" width="44" height="5" rx="2" fill="#267D72" stroke="none" />
+<text x="124" y="69" font-size="17" font-weight="600" fill="#64787A" text-anchor="start" letter-spacing="2">IOS PRIMARY / WEB SECONDARY</text>
+<text x="64" y="127" font-size="44" font-weight="650" fill="#19343D" text-anchor="start" >App 系统设计 / Client architecture</text>
+<text x="64" y="172" font-size="22" font-weight="400" fill="#60737A" text-anchor="start" >产品优先级不等于功能齐备、二进制分发或真实现场验收。</text>
+<text x="1536" y="69" font-size="18" font-weight="500" fill="#82918F" text-anchor="end" >APP</text>
+<path d="M64 197H1536" stroke="#D8DEDA" stroke-width="1.3"/>
+<path data-edge="RELEASE:IOS" d="M800.0 420 L800.0 465.0 L288.0 465.0 L288.0 510" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="RELEASE:WEB" d="M800.0 420 L800.0 465.0 L1312.0 465.0 L1312.0 510" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="IOS:STORE" d="M288.0 730 L288.0 830" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="STORE:PLAYER" d="M288.0 1040 L288.0 1095.0 L800.0 1095.0 L800.0 1150" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="STORE:READER" d="M288.0 1040 L288.0 1150" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="WEB:WP" d="M1312.0 730 L1312.0 1150" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="ALIGN:PLAYER" d="M800.0 730 L800.0 1150" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<path data-edge="ALIGN:WP" d="M800.0 730 L800.0 940.0 L1312.0 940.0 L1312.0 1150" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
+<g id="node-RELEASE" data-node="RELEASE">
+<rect x="380" y="234" width="840" height="190" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="380" y="230" width="840" height="190" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="381" y="248" width="4" height="154" rx="2" fill="#46799B" stroke="none" />
+<rect x="404" y="251" width="35" height="28" rx="8" fill="#EAF1F6" stroke="none" />
+<text x="421.5" y="271" font-size="16" font-weight="700" fill="#46799B" text-anchor="middle" data-box="404,251,35,28" >01</text>
+<text x="453" y="271" font-size="15" font-weight="600" fill="#46799B" text-anchor="start" data-box="448,248,752,35" >INPUT</text>
+<text x="404" y="312" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="400,285,800,122" >L4 已核验发布资产 / Verified release assets</text>
+<text x="404" y="352" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="400,285,800,122" >catalog + locale Release + hashes</text>
+</g>
+<g id="node-IOS" data-node="IOS">
+<rect x="64" y="514" width="448" height="220" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="64" y="510" width="448" height="220" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="65" y="528" width="4" height="184" rx="2" fill="#267D72" stroke="none" />
+<rect x="88" y="531" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="105.5" y="551" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="88,531,35,28" >02</text>
+<text x="137" y="551" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="132,528,360,35" >CONTRACT / COMPONENT</text>
+<text x="88" y="592" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="84,565,408,152" >主端 / Primary: native iOS</text>
+<text x="88" y="632" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="84,565,408,152" >SwiftUI + AppModel</text>
+</g>
+<g id="node-WEB" data-node="WEB">
+<rect x="1088" y="514" width="448" height="220" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="1088" y="510" width="448" height="220" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="1089" y="528" width="4" height="184" rx="2" fill="#267D72" stroke="none" />
+<rect x="1112" y="531" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="1129.5" y="551" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="1112,531,35,28" >03</text>
+<text x="1161" y="551" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="1156,528,360,35" >CONTRACT / COMPONENT</text>
+<text x="1112" y="592" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1108,565,408,152" >辅端 / Secondary: Firebase</text>
+<text x="1112" y="624" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1108,565,408,152" >Web</text>
+<text x="1112" y="664" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1108,565,408,152" >catalog + published-weeks</text>
+</g>
+<g id="node-ALIGN" data-node="ALIGN">
+<rect x="576" y="514" width="448" height="220" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="576" y="510" width="448" height="220" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="577" y="528" width="4" height="184" rx="2" fill="#46799B" stroke="none" />
+<rect x="600" y="531" width="35" height="28" rx="8" fill="#EAF1F6" stroke="none" />
+<text x="617.5" y="551" font-size="16" font-weight="700" fill="#46799B" text-anchor="middle" data-box="600,531,35,28" >04</text>
+<text x="649" y="551" font-size="15" font-weight="600" fill="#46799B" text-anchor="start" data-box="644,528,360,35" >INPUT</text>
+<text x="600" y="592" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="596,565,408,152" >可选同源定位索引 / Optional</text>
+<text x="600" y="624" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="596,565,408,152" >source-bound index</text>
+</g>
+<g id="node-STORE" data-node="STORE">
+<rect x="64" y="834" width="448" height="210" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="64" y="830" width="448" height="210" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="65" y="848" width="4" height="174" rx="2" fill="#AA7930" stroke="none" />
+<rect x="88" y="851" width="35" height="28" rx="8" fill="#FAF2E5" stroke="none" />
+<text x="105.5" y="871" font-size="16" font-weight="700" fill="#AA7930" text-anchor="middle" data-box="88,851,35,28" >05</text>
+<text x="137" y="871" font-size="15" font-weight="600" fill="#AA7930" text-anchor="start" data-box="132,848,360,35" >GATE</text>
+<text x="88" y="912" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="84,885,408,142" >HTTPS 获取、hash 校验、缓存 /</text>
+<text x="88" y="944" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="84,885,408,142" >Verified cache</text>
+</g>
+<g id="node-WP" data-node="WP">
+<rect x="1088" y="1154" width="448" height="240" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="1088" y="1150" width="448" height="240" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="1089" y="1168" width="4" height="204" rx="2" fill="#267D72" stroke="none" />
+<rect x="1112" y="1171" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="1129.5" y="1191" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="1112,1171,35,28" >06</text>
+<text x="1161" y="1191" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="1156,1168,360,35" >OUTPUT</text>
+<text x="1112" y="1232" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1108,1205,408,172" >Web 播放、全文与视频 / Web</text>
+<text x="1112" y="1264" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1108,1205,408,172" >playback and text</text>
+</g>
+<g id="node-PLAYER" data-node="PLAYER">
+<rect x="576" y="1154" width="448" height="240" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="576" y="1150" width="448" height="240" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="577" y="1168" width="4" height="204" rx="2" fill="#267D72" stroke="none" />
+<rect x="600" y="1171" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="617.5" y="1191" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="600,1171,35,28" >07</text>
+<text x="649" y="1191" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="644,1168,360,35" >OUTPUT</text>
+<text x="600" y="1232" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="596,1205,408,172" >唯一 AVPlayer /</text>
+<text x="600" y="1264" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="596,1205,408,172" >PlaybackController</text>
+<text x="600" y="1304" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="596,1205,408,172" >字幕、锁屏、手动微调 / Captions +</text>
+<text x="600" y="1333" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="596,1205,408,172" >controls</text>
+</g>
+<g id="node-READER" data-node="READER">
+<rect x="64" y="1154" width="448" height="240" rx="18" fill="#E7E8E2" stroke="none" />
+<rect x="64" y="1150" width="448" height="240" rx="18" fill="#FFFFFF" stroke="#DAE0DC" stroke-width="1.25" stroke-dasharray="none"/>
+<rect x="65" y="1168" width="4" height="204" rx="2" fill="#267D72" stroke="none" />
+<rect x="88" y="1171" width="35" height="28" rx="8" fill="#EAF3EF" stroke="none" />
+<text x="105.5" y="1191" font-size="16" font-weight="700" fill="#267D72" text-anchor="middle" data-box="88,1171,35,28" >08</text>
+<text x="137" y="1191" font-size="15" font-weight="600" fill="#267D72" text-anchor="start" data-box="132,1168,360,35" >OUTPUT</text>
+<text x="88" y="1232" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="84,1205,408,172" >多语言阅读 / Multilingual</text>
+<text x="88" y="1264" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="84,1205,408,172" >reading</text>
+<text x="88" y="1304" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="84,1205,408,172" >校验内容，受限页面 / Verified</text>
+<text x="88" y="1333" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="84,1205,408,172" >restricted page</text>
+</g>
+<rect x="64" y="1471" width="1472" height="78" rx="16" fill="#E9EEE8" stroke="none" />
+<text x="84" y="1500" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >L4 发布包决定可用能力；客户端不修复上游内容或签发人审。</text>
+<text x="84" y="1529" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >缺定位索引只禁用定位；内容语言、界面语言和播放状态分别处理。</text>
+<text x="64" y="1578" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="start" >内容校准 2026-09-30 · 设计参考 Repository source / no ImageGen · 原生可编辑 SVG</text>
+<text x="1536" y="1578" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="end" >实线：主路径   虚线：条件 / 实验 / 历史</text>
+</svg>
