@@ -57,6 +57,9 @@ def prepare(source_bytes,anchor_bytes,policy_bytes,rubric_bytes,group):
     c.require(identity['productionPolicyReady'],'strict_policy_not_ready')
     c.require(type(group) is dict and set(group)=={'translationGroupId','sourceUnitIds'},'invalid_strict_group')
     label(group['translationGroupId']);unit=label('l2.'+policy['targetLocale']+'.'+group['translationGroupId'])
+    # Every supported candidate has at most 64 utterances, hence a four-digit
+    # suffix. Reject an impossible D1 target ID before any model work is started.
+    c.require(len(unit+'.utterance.0001')<=100,'invalid_strict_target_unit_label')
     ids=group['sourceUnitIds'];all_ids=[u['sourceUnitId'] for u in anchor['sourceUnits']]
     c.require(type(ids) is list and 1<=len(ids)<=64 and len(set(ids))==len(ids) and
               all(x in all_ids for x in ids) and sorted(ids,key=all_ids.index)==ids,'invalid_strict_source_group')
@@ -116,17 +119,58 @@ def prompt(prepared,role,*,candidate=None,input_manifest=None):
     return {'instruction':instruction+' Prompt version: '+policy[role]['promptVersion'],'input':common}
 
 
+def _payload(prepared,role,request):
+    return {'model':prepared['policy'][role]['model'],'reasoning_effort':prepared['policy'][role]['reasoningEffort'],
+        'messages':[{'role':'system','content':request['instruction']},{'role':'user','content':json.dumps(request['input'],ensure_ascii=False)}],
+        'response_format':{'type':'json_object'}}
+
+
+def _transport_rejection(output,payload_sha256):
+    path=output.with_suffix('.rejection.json')
+    if not path.exists():return None
+    from scripts.sermon_pipeline import KNOWN_REQUEST_REJECTIONS
+    evidence,_=c.read_snapshot(path)
+    call,_=c.read_snapshot(output.with_suffix('.call.json'))
+    started,_=c.read_snapshot(output.with_suffix('.started.json'))
+    c.require(type(evidence) is dict and set(evidence)=={'schemaVersion','modelCallId','payloadSha256',
+        'httpStatus','executionStatus','reasonCode'},'invalid_strict_transport_rejection')
+    c.require(evidence['schemaVersion']=='sermon-strict-transport-rejection-v1' and
+        type(evidence['httpStatus']) is int and evidence['httpStatus'] in KNOWN_REQUEST_REJECTIONS and
+        evidence['executionStatus']=='failed' and evidence['reasonCode']=='http_request_rejected',
+        'invalid_strict_transport_rejection')
+    c.require(evidence['modelCallId']==label(call['modelCallId']) and
+        evidence['payloadSha256']==payload_sha256==started.get('payloadSha256') and
+        started.get('status')=='started_response_unconfirmed','strict_transport_rejection_binding_changed')
+    c.require(not output.exists() and not output.with_suffix('.raw.json').exists(),
+        'conflicting_strict_transport_evidence')
+    return evidence
+
+
 def call_model(prepared,role,request,output,api_key,caller,*,attempt_number=1,cache_only=False):
     """Shared cache path; the transport must save response before logging finish."""
+    payload_sha256=policies.canonical_sha256(_payload(prepared,role,request))
+    rejection=_transport_rejection(output,payload_sha256)
+    if rejection is not None:
+        from scripts.sermon_pipeline import TransportRejection
+        raise TransportRejection(rejection['httpStatus'])
     def persist_response(response,model_call_id,elapsed):
-        payload={'model':prepared['policy'][role]['model'],'reasoning_effort':prepared['policy'][role]['reasoningEffort'],
-            'messages':[{'role':'system','content':request['instruction']},{'role':'user','content':json.dumps(request['input'],ensure_ascii=False)}],
-            'response_format':{'type':'json_object'}}
-        save_once(output.with_suffix('.raw.json'),dict(payloadSha256=policies.canonical_sha256(payload),response=response,
+        save_once(output.with_suffix('.raw.json'),dict(payloadSha256=payload_sha256,response=response,
             accounting=dict(modelCallId=label(model_call_id),elapsedSeconds=elapsed)))
     def request_started(model_call_id):
         save_once(output.with_suffix('.call.json'),{'modelCallId':label(model_call_id)})
+    def request_rejected(error,model_call_id):
+        from scripts.sermon_pipeline import TransportRejection
+        c.require(type(error) is TransportRejection,'invalid_strict_transport_rejection')
+        try:
+            save_once(output.with_suffix('.rejection.json'),{
+                'schemaVersion':'sermon-strict-transport-rejection-v1','modelCallId':label(model_call_id),
+                'payloadSha256':payload_sha256,'httpStatus':error.http_status,
+                'executionStatus':'failed','reasonCode':'http_request_rejected'})
+            _transport_rejection(output,payload_sha256)
+        except (OSError,ValueError,TypeError,KeyError) as exc:
+            raise accounting.AccountingWriteError('strict_transport_rejection_evidence_failed') from exc
     persist_response.request_started=request_started
+    persist_response.request_rejected=request_rejected
     with profile.context(logicalCallId=role+'.'+c.canonical_sha256([prepared['workUnitId'],(profile.current() or {}).get('revisionId')])[:32],attemptNumber=attempt_number):
         return shared._model_call(role,request,prepared['policy'],output,api_key,caller,
                                   cache_only=cache_only,response_observer=persist_response)
@@ -150,7 +194,7 @@ def generate(prepared,root,candidate_id,revision_id,api_key,caller,*,cache_only=
     """Generate the initial immutable revision. D5 authorizes later revisions."""
     with unit_lock(root,prepared,candidate_id,revision_id) as root:
         with profile.context(workUnitId=prepared['workUnitId'],revisionId=revision_id,role='generation'):
-            out=root/'generator.json';cached=out.exists() or out.with_suffix('.raw.json').exists()
+            out=root/'generator.json';cached=out.exists() or out.with_suffix('.raw.json').exists() or out.with_suffix('.rejection.json').exists()
             with accounting.stage('rqc.generation',depends_on=depends_on,cache_hit=cached,
                                   executor_type='deterministic_program' if cached else 'production_model') as model_span:
                 result=call_model(prepared,'translator',prompt(prepared,'translator'),out,api_key,caller,cache_only=cache_only)
@@ -222,6 +266,10 @@ def _review_receipt_base(prepared,manifest,inputs,attempt_number):
 def _failed_review(prepared,manifest,inputs,output,attempt_number,error):
     # No observed transport identity means no model receipt can be manufactured.
     call,_=c.read_snapshot(output.with_suffix('.call.json'))
+    candidate,_=c.read_snapshot(output.parent/'candidate.json')
+    payload_sha256=policies.canonical_sha256(_payload(prepared,'reviewer',
+        prompt(prepared,'reviewer',candidate=candidate,input_manifest=inputs)))
+    rejection=_transport_rejection(output,payload_sha256)
     raw=None
     try:
         raw,_=c.read_snapshot(output.with_suffix('.raw.json'))
@@ -229,18 +277,21 @@ def _failed_review(prepared,manifest,inputs,output,attempt_number,error):
     returned=isinstance(raw,dict) and isinstance(raw.get('response'),dict)
     response=raw['response'] if returned else {}
     model=accounting._label(response.get('model'),None);provider_id=accounting._label(response.get('id'),None)
+    known=returned or rejection is not None
     failure={'schemaVersion':'sermon-strict-review-execution-failure-v1',
-        'reasonCode':'invalid_review_response' if returned else 'transport_outcome_unknown',
+        'reasonCode':'http_request_rejected' if rejection is not None else
+                     'invalid_review_response' if returned else 'transport_outcome_unknown',
         'errorType':accounting._label(type(error).__name__)}
     evidence_path=output.with_suffix('.failure.json');save_once(evidence_path,failure)
-    accounting.record_log('rqc_review_execution',fields={'status':'failed' if returned else 'outcome_unknown','reasonCode':failure['reasonCode']})
+    accounting.record_log('rqc_review_execution',fields={'status':'failed' if known else 'outcome_unknown','reasonCode':failure['reasonCode']})
     return {**_review_receipt_base(prepared,manifest,inputs,attempt_number),
         'modelCallId':label(call['modelCallId']),'reviewerModelActual':model,'providerResponseId':provider_id,
-        'executionStatus':'failed' if returned else 'outcome_unknown','reviewVerdict':'not_assessed',
+        'executionStatus':'failed' if known else 'outcome_unknown','reviewVerdict':'not_assessed',
         'checks':[],'issues':[],
         'coverage':dict(expectedUnitIds=manifest['sourceUnitIds'],assessedUnitIds=[],unassessedUnitIds=manifest['sourceUnitIds']),
-        'evidenceRefs':[reference('review-execution-failure',evidence_path.read_bytes())],
-        'missingReasons':{k:'not_observed' if returned else 'outcome_unknown' for k,v in
+        'evidenceRefs':[reference('review-execution-failure',evidence_path.read_bytes())]+
+            ([reference('review-transport-rejection',output.with_suffix('.rejection.json').read_bytes())] if rejection else []),
+        'missingReasons':{k:'not_observed' if known else 'outcome_unknown' for k,v in
             [('reviewerModelActual',model),('providerResponseId',provider_id)] if v is None}}
 
 
@@ -270,7 +321,7 @@ def review(prepared,root,candidate_id,revision_id,api_key,caller,*,cache_only=Fa
                     observation.record(receipt)
                 if completion_spans is not None:completion_spans.append(cached_span)
                 return receipt
-            output=root/('reviewer'+suffix+'.json');cached=output.exists() or output.with_suffix('.raw.json').exists()
+            output=root/('reviewer'+suffix+'.json');cached=output.exists() or output.with_suffix('.raw.json').exists() or output.with_suffix('.rejection.json').exists()
             error=None;result=None
             try:
                 with accounting.stage('rqc.review',depends_on=depends_on,cache_hit=cached,

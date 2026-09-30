@@ -1,6 +1,8 @@
 """D3 focused developer tests: synthetic provider responses only."""
 import copy
 import json
+import io
+import urllib.error
 from pathlib import Path
 import tempfile
 import unittest
@@ -183,6 +185,146 @@ class StrictAdapterTests(unittest.TestCase):
             raw['accounting']['modelCallId']='other-call';raw_path.write_text(json.dumps(raw))
             with self.assertRaisesRegex(c.ContractError,'strict_raw_receipt_binding_changed'):self.generate()
             self.assertEqual(len(self.calls),1)
+
+    def test_known_http_rejections_are_failed_without_content_assessment_or_retry(self):
+        from scripts import sermon_pipeline as pipeline
+        base=self.root
+        def caller(key,payload,*,response_observer):
+            # Deliberately use the legacy default; a strict observer must remain single-attempt.
+            return pipeline.json_request(pipeline.CHAT_URL,key,payload,response_observer=response_observer)
+        for status in (400,401,429):
+            with self.subTest(status=status):
+                self.root=base/str(status)
+                with self.session():
+                    self.generate()
+                    error=urllib.error.HTTPError(pipeline.CHAT_URL,status,'private status text',{},io.BytesIO(b'private rejection body'))
+                    with patch.object(pipeline.urllib.request,'urlopen',side_effect=error) as transport:
+                        receipt=s.review(self.prepared,self.root/'revision','candidate','r1','fixture',caller)
+                        self.assertEqual(receipt['executionStatus'],'failed')
+                        self.assertEqual(receipt['reviewVerdict'],'not_assessed')
+                        self.assertEqual(s.review(self.prepared,self.root/'revision','candidate','r1','fixture',caller),receipt)
+                    self.assertEqual(transport.call_count,1)
+                    self.assertEqual(receipt['checks'],[]);self.assertEqual(receipt['issues'],[])
+                    self.assertEqual(receipt['coverage']['assessedUnitIds'],[])
+                    for path in self.root.rglob('*.json*'):
+                        self.assertNotIn('private rejection body',path.read_text())
+                        self.assertNotIn('private status text',path.read_text())
+
+    @staticmethod
+    def http_caller(key,payload,*,response_observer):
+        from scripts import sermon_pipeline as pipeline
+        return pipeline.json_request(pipeline.CHAT_URL,key,payload,response_observer=response_observer)
+
+    def test_ambiguous_http_and_transport_failures_stay_unknown_without_retry(self):
+        from scripts import sermon_pipeline as pipeline
+        base=self.root
+        errors=[urllib.error.HTTPError(pipeline.CHAT_URL,status,'private',{},io.BytesIO(b'private'))
+                for status in (408,409,500,502,503,504)]
+        errors += [urllib.error.URLError('private network detail'),TimeoutError('private timeout')]
+        for index,error in enumerate(errors):
+            with self.subTest(error=type(error).__name__,index=index):
+                self.root=base/str(index)
+                with self.session():
+                    self.generate()
+                    with patch.object(pipeline.urllib.request,'urlopen',side_effect=error) as transport, patch.object(pipeline.time,'sleep') as sleep:
+                        receipt=s.review(self.prepared,self.root/'revision','candidate','r1','fixture',self.http_caller)
+                        self.assertEqual(receipt['executionStatus'],'outcome_unknown')
+                        self.assertEqual(receipt['reviewVerdict'],'not_assessed')
+                        self.assertEqual(s.review(self.prepared,self.root/'revision','candidate','r1','fixture',self.http_caller),receipt)
+                    self.assertEqual(transport.call_count,1);sleep.assert_not_called()
+                    self.assertFalse((self.root/'revision/reviewer.rejection.json').exists())
+
+    def test_rejection_is_durable_before_finish_logging_and_recovery_does_not_call(self):
+        from scripts import sermon_pipeline as pipeline
+        with self.session():
+            self.generate()
+            error=urllib.error.HTTPError(pipeline.CHAT_URL,429,'private',{},io.BytesIO(b'private'))
+            def fail_finish(*args,**kwargs):
+                marker=json.loads((self.root/'revision/reviewer.rejection.json').read_text())
+                self.assertEqual(marker['httpStatus'],429)
+                self.assertEqual(marker['modelCallId'],json.loads((self.root/'revision/reviewer.call.json').read_text())['modelCallId'])
+                raise accounting.AccountingWriteError('injected finish failure')
+            with patch.object(pipeline.urllib.request,'urlopen',side_effect=error) as transport:
+                with patch.object(pipeline,'record_api_attempt',side_effect=fail_finish):
+                    with self.assertRaises(pipeline.TransportRejection) as raised:
+                        s.review(self.prepared,self.root/'revision','candidate','r1','fixture',self.http_caller)
+                self.assertTrue(raised.exception.sermon_logging_failed)
+                self.assertFalse((self.root/'revision/review-receipt.json').exists())
+                # Same persisted evidence is sufficient after the logging failure;
+                # no new request or fabricated model/content result is needed.
+                receipt=s.review(self.prepared,self.root/'revision','candidate','r1','fixture',self.http_caller,cache_only=True)
+                self.assertEqual(receipt['executionStatus'],'failed')
+                self.assertIsNone(receipt['reviewerModelActual'])
+                self.assertIsNone(receipt['providerResponseId'])
+            self.assertEqual(transport.call_count,1)
+            self.assertEqual((self.root/'revision/reviewer.rejection.json').stat().st_mode&0o777,0o600)
+
+    def test_rejection_marker_must_bind_original_payload_and_call(self):
+        from scripts import sermon_pipeline as pipeline
+        base=self.root
+        for field,value in [('modelCallId','different-call'),('payloadSha256','0'*64),('httpStatus',500),('httpStatus',True)]:
+            with self.subTest(field=field,value=value):
+                self.root=base/(field+str(value))
+                with self.session():
+                    self.generate()
+                    error=urllib.error.HTTPError(pipeline.CHAT_URL,400,'private',{},io.BytesIO(b'private'))
+                    with patch.object(pipeline.urllib.request,'urlopen',side_effect=error) as transport:
+                        with patch.object(pipeline,'record_api_attempt',side_effect=accounting.AccountingWriteError('injected')):
+                            with self.assertRaises(pipeline.TransportRejection):
+                                s.review(self.prepared,self.root/'revision','candidate','r1','fixture',self.http_caller)
+                        path=self.root/'revision/reviewer.rejection.json'
+                        marker=json.loads(path.read_text());marker[field]=value;path.write_text(json.dumps(marker))
+                        with self.assertRaises(c.ContractError):
+                            s.review(self.prepared,self.root/'revision','candidate','r1','fixture',self.http_caller)
+                    self.assertEqual(transport.call_count,1)
+                    self.assertFalse((self.root/'revision/review-receipt.json').exists())
+
+    def test_typed_exception_without_durable_rejection_proof_stays_unknown(self):
+        from scripts import sermon_pipeline as pipeline
+        def unproven(key,payload,*,response_observer):
+            aid=accounting.record_api_started(payload['model'])
+            response_observer.request_started(aid)
+            raise pipeline.TransportRejection(400)
+        with self.session():
+            self.generate()
+            receipt=s.review(self.prepared,self.root/'revision','candidate','r1','fixture',unproven)
+            self.assertEqual(receipt['executionStatus'],'outcome_unknown')
+
+    def test_rejection_persistence_failure_keeps_pending_and_propagates(self):
+        from scripts import sermon_pipeline as pipeline
+        original=s.save_once
+        def fail(path,value):
+            if path.name.endswith('.rejection.json'):raise OSError('injected persistence fault')
+            return original(path,value)
+        with self.session():
+            self.generate()
+            error=urllib.error.HTTPError(pipeline.CHAT_URL,401,'private',{},io.BytesIO(b'private'))
+            with patch.object(pipeline.urllib.request,'urlopen',side_effect=error) as transport:
+                with patch.object(s,'save_once',side_effect=fail),patch.object(pipeline,'record_api_attempt') as finish:
+                    with self.assertRaises(accounting.AccountingWriteError):
+                        s.review(self.prepared,self.root/'revision','candidate','r1','fixture',self.http_caller)
+                    finish.assert_not_called()
+                self.assertTrue((self.root/'revision/reviewer.started.json').exists())
+                self.assertFalse((self.root/'revision/review-receipt.json').exists())
+                receipt=s.review(self.prepared,self.root/'revision','candidate','r1','fixture',self.http_caller)
+                self.assertEqual(receipt['executionStatus'],'outcome_unknown')
+            self.assertEqual(transport.call_count,1)
+
+    def test_target_unit_id_boundary_is_validated_before_transport(self):
+        prefix='l2.zh-Hans.'
+        valid=dict(self.group,translationGroupId='g'*(85-len(prefix)))
+        prepared=s.prepare(*self.args,valid)
+        self.assertEqual(len(prepared['workUnitId']),85)
+        self.f.evidence['groups'][0]['translationGroupId']=valid['translationGroupId']
+        with self.session():
+            manifest=s.generate(prepared,self.root/'valid-boundary','candidate','r1','fixture',self.transport)
+        self.assertTrue(all(len(unit)==100 for unit in manifest['targetUnitIds']))
+        invalid=dict(self.group,translationGroupId='g'*(86-len(prefix)))
+        with patch.object(self,'transport') as transport:
+            with self.assertRaisesRegex(c.ContractError,'invalid_strict_target_unit_label'):
+                prepared=s.prepare(*self.args,invalid)
+                s.generate(prepared,self.root/'invalid-boundary','candidate','r1','fixture',transport)
+            transport.assert_not_called()
 
     def test_duplicate_model_json_keys_do_not_silently_choose_last_value(self):
         from scripts import run_target_language_models as shared
