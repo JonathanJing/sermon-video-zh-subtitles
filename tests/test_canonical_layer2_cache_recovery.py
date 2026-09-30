@@ -70,6 +70,14 @@ class CanonicalLayer2CacheRecoveryTests(unittest.TestCase):
         self.assertTrue(new)
         self.assertTrue(all(e['executorType'] == 'deterministic_program' for e in new))
         recovery_runs = {e['runId'] for e in new}
+        self.assertEqual(len(recovery_runs), 1)
+        starts = {e['stage']: e for e in new}
+        chain = ['evidence_assembly', 'cache_binding', 'cache_candidate', 'cache_final_validation']
+        for parent, child in zip(chain, chain[1:]):
+            self.assertEqual(starts['layer2.' + child + '.zh-Hans']['dependsOn'],
+                             [starts['layer2.' + parent + '.zh-Hans']['spanId']])
+        self.assertEqual(starts['layer2.source_admission.zh-Hans']['dependsOn'],
+                         [starts['layer2.cache_admission.zh-Hans']['spanId']])
         for run_id in recovery_runs:
             report = weekly.project_run(run_id, [e for e in events if e['runId'] == run_id])
             self.assertEqual(report['status'], 'projected')

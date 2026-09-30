@@ -115,3 +115,19 @@ class Layer2LeafAccountingTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             runner.run_accounted(damaged_source, self.f.anchor, self.f.policy, self.out.parent / 'bad',
                 'fixture-key', lambda *_: self.fail('invalid source reached model'), None, self.f.plugin_path, None, None)
+
+    def test_failed_assembly_logging_never_exports_a_completion_dependency(self):
+        completion = []
+        original = accounting._emit
+        def fail_finish(event):
+            if event.get('event') == 'stage_finished' and event.get('stage', '').startswith('layer2.evidence_assembly.'):
+                raise accounting.AccountingWriteError('fixture_final_log_failure')
+            return original(event)
+        with patch.object(accounting, '_emit', side_effect=fail_finish):
+            with self.assertRaises(accounting.AccountingWriteError):
+                runner.run_accounted(self.f.source, self.f.anchor, self.f.policy, self.out,
+                    'fixture-key', self.fixture.fake_call, None, self.f.plugin_path, None, None,
+                    completion_spans=completion)
+        self.assertEqual(completion, [])
+        self.assertTrue((self.out / 'evidence.json').exists())
+        self.assertEqual(len(self.fixture.calls), 4)

@@ -475,7 +475,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                          resume_cache_from: Path | None = None,
                          *, simulation_only: bool = False, cache_only: bool = False,
                          progress_callback=None,
-                         source_admission_span: str | None = None) -> dict[str, Any]:
+                         source_admission_span: str | None = None,
+                         completion_spans: list[str] | None = None) -> dict[str, Any]:
     """Shared group loop; the formal entry above still enforces Layer 1 approval.
 
     Simulated requests carry an extra marker that prevents formal candidate
@@ -769,9 +770,12 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                               billing="orchestrator"):
             return _process_group(item)
     results = ordered_group_results(list(enumerate(plan, 1)), process_group, workers)
+    dependencies = accounting.bounded_dependencies(
+        f"layer2.evidence_join.{request['targetLocale']}", [span for _, span in results],
+        work_unit_id=f"l2.{request['targetLocale']}.evidence_join")
     with accounting.stage(f"layer2.evidence_assembly.{request['targetLocale']}",
-                          depends_on=[span for _, span in results], executor_type="deterministic_program",
-                          work_unit_id=f"l2.{request['targetLocale']}.evidence_assembly"):
+                          depends_on=dependencies, executor_type="deterministic_program",
+                          work_unit_id=f"l2.{request['targetLocale']}.evidence_assembly") as assembly_span:
         reviewed = [row for row, _ in results]
         translator_ids = list(dict.fromkeys(row["translatorRequestId"] for row in reviewed))
         reviewer_ids = list(dict.fromkeys(row["reviewerRequestId"] for row in reviewed))
@@ -790,7 +794,11 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             require(producer._load(evidence_path) == evidence, "Cached evidence changed")
         else:
             save_new(evidence_path, evidence)
-        return evidence
+    # Export only after the completion event is durable. Trace identity never
+    # enters the canonical evidence payload or its hashes.
+    if completion_spans is not None:
+        completion_spans.append(assembly_span)
+    return evidence
 
 
 def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
@@ -799,13 +807,14 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
                   *, partial_repair_brief: dict | None = None,
                   resume_cache_from: Path | None = None,
                   progress_ledger: Path | None = None,
-                  cache_only: bool = False, progress_callback=None) -> dict:
+                  cache_only: bool = False, progress_callback=None,
+                  predecessor_spans=(), completion_spans: list[str] | None = None) -> dict:
     locale = policy["targetLocale"]
     with measure.producer_step(progress_ledger, f"L2-02@{locale}", locale=locale) as metrics:
         with accounting.accounting_session(out_dir / "accounting", "layer2_models",
                                            {"targetLocale": locale},
                                            evidence_directory=out_dir):
-            with accounting.stage(f"layer2.source_admission.{locale}", depends_on=[],
+            with accounting.stage(f"layer2.source_admission.{locale}", depends_on=list(predecessor_spans),
                                   executor_type="deterministic_program",
                                   work_unit_id=f"l2.{locale}.source_admission") as source_span:
                 request = producer.prepare_request(source, anchor, policy)
@@ -815,7 +824,7 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
                 request, anchor, policy, out_dir, api_key, call, plan, plugin,
                 revision_brief, reuse_from, partial_repair_brief, resume_cache_from,
                 source_admission_span=source_span, cache_only=cache_only,
-                progress_callback=progress_callback)
+                progress_callback=progress_callback, completion_spans=completion_spans)
         metrics["doneUnits"] = len(evidence["groups"])
     return evidence
 

@@ -107,18 +107,24 @@ def recover(config_path, locale, expected_revision):
                                    and jobs._digest(state) == row['stateSha256'],
                                    'original_execution_binding_changed')
                     return layer2._inputs(current_config, locale, current)
-                source, anchor, policy = current_inputs()
-                hashes = _returned_cache_files(lane, source, anchor, policy)
-                def forbidden_call(*_args):
-                    raise AssertionError('cache_only_transport_must_never_be_called')
-                evidence = layer2.models.run_accounted(source, anchor, policy, lane['output'], '',
-                    forbidden_call, None, lane['plugin'], None, None, cache_only=True)
-                current_inputs()
-                _unchanged(lane['output'], hashes)
                 with accounting.accounting_session(lane['output'] / 'accounting', 'canonical_layer2_cache_recovery',
                         {'targetLocale': locale}, evidence_directory=lane['output']):
-                    with accounting.stage('layer2.cache_candidate.' + locale, depends_on=[],
-                            executor_type='deterministic_program', work_unit_id='l2.' + locale + '.cache_candidate'):
+                    with accounting.stage('layer2.cache_admission.' + locale, depends_on=[],
+                            executor_type='deterministic_program', work_unit_id='l2.' + locale + '.cache_admission') as admission_span:
+                        source, anchor, policy = current_inputs()
+                        hashes = _returned_cache_files(lane, source, anchor, policy)
+                    def forbidden_call(*_args):
+                        raise AssertionError('cache_only_transport_must_never_be_called')
+                    model_completion = []
+                    evidence = layer2.models.run_accounted(source, anchor, policy, lane['output'], '',
+                        forbidden_call, None, lane['plugin'], None, None, cache_only=True,
+                        predecessor_spans=[admission_span], completion_spans=model_completion)
+                    with accounting.stage('layer2.cache_binding.' + locale, depends_on=model_completion,
+                            executor_type='deterministic_program', work_unit_id='l2.' + locale + '.cache_binding') as binding_span:
+                        current_inputs()
+                        _unchanged(lane['output'], hashes)
+                    with accounting.stage('layer2.cache_candidate.' + locale, depends_on=[binding_span],
+                            executor_type='deterministic_program', work_unit_id='l2.' + locale + '.cache_candidate') as candidate_span:
                         request = layer2.producer._load(lane['output'] / 'request.json')
                         plugin_sha = policy['languageReview']['pluginImplementationSha256']
                         receipt = layer2.producer.run_language_plugin(source, anchor, policy, request,
@@ -129,12 +135,14 @@ def recover(config_path, locale, expected_revision):
                         _unchanged(lane['output'], hashes)
                         _save_or_match(lane['output'] / 'language-review.json', receipt)
                         _save_or_match(lane['candidate'], candidate)
-                checked = layer2.package_view(config)
-                layer2.require(checked['nodes'][unit]['status'] == 'validated', 'recovered_candidate_not_validated')
-                return {'status': 'candidate_recovered_reconciliation_required', 'jobId': key,
-                        'candidateJsonSha256': jobs._digest(candidate), 'modelCalls': 0,
-                        'humanApprovalCreated': False, 'releaseEligible': False,
-                        'returnedCacheSetSha256': jobs._digest(hashes)}
+                    with accounting.stage('layer2.cache_final_validation.' + locale, depends_on=[candidate_span],
+                            executor_type='deterministic_program', work_unit_id='l2.' + locale + '.cache_final_validation'):
+                        checked = layer2.package_view(config)
+                        layer2.require(checked['nodes'][unit]['status'] == 'validated', 'recovered_candidate_not_validated')
+                    return {'status': 'candidate_recovered_reconciliation_required', 'jobId': key,
+                            'candidateJsonSha256': jobs._digest(candidate), 'modelCalls': 0,
+                            'humanApprovalCreated': False, 'releaseEligible': False,
+                            'returnedCacheSetSha256': jobs._digest(hashes)}
 
 
 def main():

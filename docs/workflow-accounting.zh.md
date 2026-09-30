@@ -159,3 +159,11 @@ L3 实际 render_units 将模型加载、每单元本地模型推理、音频复
 相同 identity 有冲突事实时，`receiptIntegrity.status=conflicted`，记录 identity/variant hash 与受影响 run，保留所有原始字节。受影响的非限定 token、调用次数、latency 和 `knownEstimatedUsd` 为 null，状态明确为 conflicted；另外的 `knownNonconflicting*` 只是剔除冲突后的可核验子集，不能当作整周总量或实际账单。SDK invocation 在跨 run 导入时也按同一 identity 检查；等价导入标记 `duplicate_import`，不再贡献 SDK token 或 invocation 次数。冲突同样不能 last-writer-wins；聚合 usage 保持未知，仍与直接 HTTP receipts 分开。
 
 只读检查在跨 run 范围先查冲突，再筛选当前 run；`--check` 对相关冲突退出 2，终端显示冲突数量，不改写 summary 或原账本。语法损坏与语义冲突分开记录，缺失历史字段保持未知。运行本身的完成状态、有效执行 span、人工审批和发布状态不会因用量冲突被改写；用量报告也不会自动调模型或重试。
+
+### 固定 L2 worker 的同进程依赖链
+
+固定 L2 worker 与 cache-only recovery 各自使用一个 accounting run，把准入、模型组（或返回缓存）、evidence assembly、身份复核、language plugin/candidate admission 和最终 package validation 连起来。嵌套 workflow/group 仍是 container，报表只累计叶子；completion span 仅在成功写完结束事件后交给调用方，不进入规范 evidence/candidate JSON 或包哈希。失败准入可以留下失败账务日志，但不等同于模型缓存或候选产物。
+
+这覆盖同一个 L2 worker 内的实际依赖；不宣称已覆盖跨进程四层 DAG、人工等待、真实媒体表现或完整 Stage 0 验收。缓存恢复仍保留原 job 的 uncertain 状态，必须走独立 reconciliation。
+
+L2 evidence assembly 对超过 64 个完成组建立有界 fan-in tree；单条事件的 `dependsOn` 仍最多 64 项，每个 deterministic join 保留全部上游可达性。65/129 组真实 producer（合成模型回复）及 65 组 cache-only recovery 回归覆盖，不截断依赖、不在所有模型返回后因日志上限失败。4097 个依赖另有多层 join 单元测试。

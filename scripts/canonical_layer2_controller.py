@@ -250,25 +250,29 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
     require(locale in config.lanes and config.sha256 == expected_configuration
             and code_identity() == expected_code, 'worker_configuration_or_code_changed')
     lane = config.lanes[locale]
-    with work_lock(lane['output']):
-        current = package_view(config)
-        require(current['nodes']['text.' + locale]['status'] == 'ready', 'worker_node_not_ready')
-        joined = durable.project(current, config.job_root, config.run_id)
-        require(joined['nodes']['source']['status'] == 'validated'
-                and joined['nodes']['text.' + locale]['status'] == 'waiting_job'
-                and joined['nodes']['text.' + locale].get('reasonCode') == 'durable_job_active',
-                'worker_durable_admission_changed')
-        ident = durable.identity(current, config.run_id, 'text.' + locale)
-        require(jobs._digest(ident) == expected_job, 'worker_inputs_changed')
-        request_path = config.job_root / expected_job / 'request.json'
-        request = jobs._read(request_path)
-        require(jobs._request_valid(request, expected_job) and request['identity'] == ident
-                and request['command'] == _worker_command(config, locale, expected_job, expected_code)
-                and request.get('livenessPolicy') == LIVENESS_POLICY
-                and jobs.peek_job(config.job_root, expected_job)['status'] == 'running',
-                'worker_requires_active_bound_durable_job')
-        with liveness.report(request_path.parent, request) as progress:
+    with work_lock(lane['output']), accounting.accounting_session(
+            lane['output'] / 'accounting', 'canonical_layer2_worker',
+            {'targetLocale': locale}, evidence_directory=lane['output']):
+        with accounting.stage('layer2.worker_admission.' + locale, depends_on=[],
+                executor_type='deterministic_program', work_unit_id='l2.' + locale + '.worker_admission') as admission_span:
+            current = package_view(config)
+            require(current['nodes']['text.' + locale]['status'] == 'ready', 'worker_node_not_ready')
+            joined = durable.project(current, config.job_root, config.run_id)
+            require(joined['nodes']['source']['status'] == 'validated'
+                    and joined['nodes']['text.' + locale]['status'] == 'waiting_job'
+                    and joined['nodes']['text.' + locale].get('reasonCode') == 'durable_job_active',
+                    'worker_durable_admission_changed')
+            ident = durable.identity(current, config.run_id, 'text.' + locale)
+            require(jobs._digest(ident) == expected_job, 'worker_inputs_changed')
+            request_path = config.job_root / expected_job / 'request.json'
+            request = jobs._read(request_path)
+            require(jobs._request_valid(request, expected_job) and request['identity'] == ident
+                    and request['command'] == _worker_command(config, locale, expected_job, expected_code)
+                    and request.get('livenessPolicy') == LIVENESS_POLICY
+                    and jobs.peek_job(config.job_root, expected_job)['status'] == 'running',
+                    'worker_requires_active_bound_durable_job')
             source, anchor, policy = _inputs(config, locale, current)
+        with liveness.report(request_path.parent, request) as progress:
             if caller is None:
                 api_key = os.environ.get('OPENAI_API_KEY')
                 require(bool(api_key), 'OPENAI_API_KEY_is_not_configured')
@@ -286,27 +290,31 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                 current_binding()
                 progress.progress('model_request')
                 return caller(key, payload)
+            model_completion = []
             evidence = models.run_accounted(source, anchor, policy, lane['output'], api_key,
                                              bound_call, None, lane['plugin'], None, None,
-                                             progress_callback=progress.progress)
+                                             progress_callback=progress.progress, predecessor_spans=[admission_span],
+                                             completion_spans=model_completion)
             # Paid results remain recoverable if approval/source/config/code drifted
             # while a request was outstanding. Never turn those results into approval.
-            progress.progress('models_validated')
-            fresh_config = current_binding()
-            with accounting.accounting_session(lane['output'] / 'accounting', 'canonical_layer2_candidate',
-                                               {'targetLocale': locale}, evidence_directory=lane['output']):
-                with accounting.stage('layer2.language_and_candidate.' + locale, depends_on=[],
-                                      executor_type='deterministic_program', work_unit_id='l2.' + locale + '.candidate_admission'):
-                    original_request = producer._load(lane['output'] / 'request.json')
-                    plugin_sha = policy['languageReview']['pluginImplementationSha256']
-                    receipt = producer.run_language_plugin(source, anchor, policy, original_request, evidence, lane['plugin'], plugin_sha)
-                    candidate = producer.admit_evidence(source, anchor, policy, original_request, evidence, receipt, lane['plugin'], plugin_sha)
-                    current_binding()
-                    progress.progress('candidate_validated')
-                    models.save_new(lane['output'] / 'language-review.json', receipt)
-                    models.save_new(lane['candidate'], candidate)
-            checked = package_view(fresh_config)
-            require(checked['nodes']['text.' + locale]['status'] == 'validated', 'worker_candidate_not_validated')
+            with accounting.stage('layer2.post_model_binding.' + locale, depends_on=model_completion,
+                    executor_type='deterministic_program', work_unit_id='l2.' + locale + '.post_model_binding') as binding_span:
+                progress.progress('models_validated')
+                fresh_config = current_binding()
+            with accounting.stage('layer2.language_and_candidate.' + locale, depends_on=[binding_span],
+                    executor_type='deterministic_program', work_unit_id='l2.' + locale + '.candidate_admission') as candidate_span:
+                original_request = producer._load(lane['output'] / 'request.json')
+                plugin_sha = policy['languageReview']['pluginImplementationSha256']
+                receipt = producer.run_language_plugin(source, anchor, policy, original_request, evidence, lane['plugin'], plugin_sha)
+                candidate = producer.admit_evidence(source, anchor, policy, original_request, evidence, receipt, lane['plugin'], plugin_sha)
+                current_binding()
+                progress.progress('candidate_validated')
+                models.save_new(lane['output'] / 'language-review.json', receipt)
+                models.save_new(lane['candidate'], candidate)
+            with accounting.stage('layer2.final_package_validation.' + locale, depends_on=[candidate_span],
+                    executor_type='deterministic_program', work_unit_id='l2.' + locale + '.final_package_validation'):
+                checked = package_view(fresh_config)
+                require(checked['nodes']['text.' + locale]['status'] == 'validated', 'worker_candidate_not_validated')
             return {'status': 'machine_review_pass_human_review_pending',
                     'candidateJsonSha256': jobs._digest(candidate), 'releaseEligible': False}
 
