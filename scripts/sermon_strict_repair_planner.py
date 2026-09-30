@@ -182,8 +182,9 @@ class RepairPlanner:
                 'repair_review_budget_status_mismatch')
             stem='reviewer'+suffix
             for ref in review['evidenceRefs']:
-                filename={'review-result':stem+'.json','review-execution-failure':stem+'.failure.json',
-                          'review-transport-rejection':stem+'.rejection.json'}.get(ref['artifactId'])
+                filename={'review-result':stem+'.json',
+                          strict.review_failure_evidence_id('review-execution-failure',attempt):stem+'.failure.json',
+                          strict.review_failure_evidence_id('review-transport-rejection',attempt):stem+'.rejection.json'}.get(ref['artifactId'])
                 c.require(filename is not None,'unknown_repair_review_evidence')
                 _,evidence_bytes=read(filename)
                 c.require(strict.reference(ref['artifactId'],evidence_bytes)==ref,'repair_review_evidence_changed')

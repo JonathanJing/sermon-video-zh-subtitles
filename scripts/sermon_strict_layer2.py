@@ -340,6 +340,13 @@ def _review_receipt_base(prepared,manifest,inputs,attempt_number):
         'reviewerPromptVersion':prepared['policy']['reviewer']['promptVersion'],'createdAt':utc()}
 
 
+def review_failure_evidence_id(kind, attempt_number):
+    """Keep both bounded executions' different immutable evidence addressable."""
+    c.require(kind in {'review-execution-failure', 'review-transport-rejection'} and
+        type(attempt_number) is int and 1 <= attempt_number <= 2, 'invalid_review_evidence_identity')
+    return kind + ('' if attempt_number == 1 else '-2')
+
+
 def _failed_review(prepared,manifest,inputs,output,attempt_number,error):
     # No observed transport identity means no model receipt can be manufactured.
     call,_=c.read_snapshot(output.with_suffix('.call.json'))
@@ -366,14 +373,16 @@ def _failed_review(prepared,manifest,inputs,output,attempt_number,error):
         'executionStatus':'failed' if known else 'outcome_unknown','reviewVerdict':'not_assessed',
         'checks':[],'issues':[],
         'coverage':dict(expectedUnitIds=manifest['sourceUnitIds'],assessedUnitIds=[],unassessedUnitIds=manifest['sourceUnitIds']),
-        'evidenceRefs':[reference('review-execution-failure',evidence_path.read_bytes())]+
-            ([reference('review-transport-rejection',output.with_suffix('.rejection.json').read_bytes())] if rejection else []),
+        'evidenceRefs':[reference(review_failure_evidence_id('review-execution-failure',attempt_number),evidence_path.read_bytes())]+
+            ([reference(review_failure_evidence_id('review-transport-rejection',attempt_number),output.with_suffix('.rejection.json').read_bytes())] if rejection else []),
         'missingReasons':{k:'not_observed' if known else 'outcome_unknown' for k,v in
             [('reviewerModelActual',model),('providerResponseId',provider_id)] if v is None}}
 
 
 def _validate_cached_review_evidence(receipt,manifest,output):
     """Reopen the immutable reviewer evidence before trusting a cached receipt."""
+    c.require(output.stem in {'reviewer','reviewer-2'},'invalid_review_evidence_identity')
+    attempt_number=1 if output.stem=='reviewer' else 2
     call,_=c.read_snapshot(output.with_suffix('.call.json'))
     c.require(call.get('modelCallId')==receipt['modelCallId'],'strict_review_call_identity_changed')
     if receipt['executionStatus']=='succeeded':
@@ -392,10 +401,10 @@ def _validate_cached_review_evidence(receipt,manifest,output):
     else:
         failure_path=output.with_suffix('.failure.json')
         failure_bytes=failure_path.read_bytes()
-        expected=[reference('review-execution-failure',failure_bytes)]
+        expected=[reference(review_failure_evidence_id('review-execution-failure',attempt_number),failure_bytes)]
         rejection_path=output.with_suffix('.rejection.json')
         if rejection_path.exists():
-            expected.append(reference('review-transport-rejection',rejection_path.read_bytes()))
+            expected.append(reference(review_failure_evidence_id('review-transport-rejection',attempt_number),rejection_path.read_bytes()))
         c.require(receipt['evidenceRefs']==expected,'strict_review_failure_evidence_changed')
 
 

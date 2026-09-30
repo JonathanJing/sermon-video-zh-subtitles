@@ -264,3 +264,73 @@ class AdmissionTests(unittest.TestCase):
 
 
 if __name__ == '__main__': unittest.main()
+
+
+class FailedReviewInventoryTests(unittest.TestCase):
+    def test_two_failed_attempts_remain_distinct_through_planner_and_admission(self):
+        import io
+        import urllib.error
+        from scripts import sermon_pipeline as pipeline
+        from scripts.sermon_strict_repair_planner import RepairPlanner
+
+        class InvalidJSONResponse:
+            def __enter__(self): return self
+            def __exit__(self, *_): return False
+            def read(self):
+                return json.dumps(dict(id='invalid-json-response',model='gpt-6-sol',
+                    choices=[dict(finish_reason='stop',message={'content':'not JSON'})],
+                    usage={'input_tokens':100,'output_tokens':20})).encode()
+
+        for second_kind in ('invalid_json', 'rejection'):
+            with self.subTest(second_kind=second_kind):
+                runtime=budget_fixtures.StrictBudgetTests();runtime.setUp()
+                self.addCleanup(runtime.doCleanups)
+                fixture=runtime.f;root=fixture.root
+                paths={}
+                for name,raw in zip(('source','anchor','policy','rubric'),fixture.args):
+                    paths[name]=root/(name+'.json');paths[name].write_bytes(raw)
+                # Intentionally no public/human approval: failure inventories must
+                # remain inspectable before any public-candidate bridge can run.
+                (root/'public.json').write_text('{}');(root/'human.json').write_text('{}')
+                first_error=urllib.error.HTTPError(pipeline.CHAT_URL,400,'synthetic',{},io.BytesIO(b''))
+                second=(InvalidJSONResponse() if second_kind=='invalid_json' else
+                    urllib.error.HTTPError(pipeline.CHAT_URL,429,'synthetic',{},io.BytesIO(b'')))
+                with fixture.session():
+                    runtime.generate();candidate_bytes=(runtime.root/'candidate.json').read_bytes()
+                    with patch.object(pipeline.urllib.request,'urlopen',side_effect=[first_error,second]) as calls:
+                        one=runtime.review(caller=fixture.http_caller)
+                        two=runtime.review(caller=fixture.http_caller,attempt_number=2)
+                        self.assertEqual(one['executionStatus'],'failed')
+                        self.assertEqual(two['executionStatus'],'failed')
+                        self.assertEqual(runtime.review(caller=fixture.http_caller,attempt_number=2),two)
+                        with self.assertRaisesRegex(ValueError,'invalid_review_attempt_number'):
+                            runtime.review(caller=fixture.http_caller,attempt_number=3)
+                        self.assertEqual(calls.call_count,2)
+                    first_ids={r['artifactId'] for r in one['artifact']['evidenceRefs']}
+                    second_ids={r['artifactId'] for r in two['artifact']['evidenceRefs']}
+                    self.assertFalse(first_ids & second_ids)
+                    self.assertIn('review-execution-failure-2',second_ids)
+                    renamed=copy.deepcopy(two['artifact'])
+                    for ref in renamed['evidenceRefs']:ref['artifactId']=ref['artifactId'].removesuffix('-2')
+                    with self.assertRaisesRegex(ValueError,'strict_review_failure_evidence_changed'):
+                        strict._validate_cached_review_evidence(renamed,
+                            c.read_snapshot(runtime.root/'revision.json')[0],runtime.root/'reviewer-2.json')
+                    if second_kind=='rejection':self.assertIn('review-transport-rejection-2',second_ids)
+                    result=RepairPlanner(runtime.store,root/'jobs','7'*64).plan_group(
+                        fixture.prepared,runtime.root,
+                        [dict(workUnitId=fixture.prepared['workUnitId'],layer=2,targetLocale='zh-Hans',dependsOn=[])],
+                        created_at=NOW)
+                    self.assertEqual(result['planning']['reasonCode'],'review_execution_limit_reached')
+                    self.assertIsNone(result['repair'])
+                    config=admission.Configuration('7'*64,'zh-Hans',root/'jobs',root,(runtime.root,),
+                        **paths,public_candidate=root/'public.json',human_receipt=root/'human.json',
+                        plugin=fixture.f.plugin_path,plugin_sha256=fixture.f.plugin_sha)
+                    boundary=admission.AdmissionBoundary(config,runtime.store)
+                    snapshot=boundary.snapshot()
+                    self.assertEqual(len(snapshot.groups[0].reviews),2)
+                    self.assertIn('latest_review_not_passed',snapshot.diagnostics)
+                    outcome=boundary.admit(expected_state_revision=snapshot.state_revision,created_at=NOW)
+                    self.assertEqual(outcome['status'],'blocked')
+                    self.assertIn('latest_review_not_passed',outcome['reasons'])
+                    self.assertEqual((runtime.root/'candidate.json').read_bytes(),candidate_bytes)
+                    self.assertEqual(len(fixture.calls),1)
