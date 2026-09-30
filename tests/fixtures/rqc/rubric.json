@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "sermon-review-rubric-v1",
+  "rubricId": "synthetic-rubric",
+  "rubricVersion": "fixture-v1",
+  "targetLocale": "zh-Hans",
+  "requiredChecks": [
+    "completeMeaning",
+    "negationsNumbersNames",
+    "noAddedMeaning",
+    "quotationAttribution"
+  ],
+  "allUnresolvedConcernsBlock": true,
+  "requiredLanguagePluginChecks": [
+    "fixture_language_rule"
+  ],
+  "createdAt": "2026-09-30T00:00:00Z"
+}

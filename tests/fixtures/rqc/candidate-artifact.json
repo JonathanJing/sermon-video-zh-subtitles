@@ -1,0 +1,15 @@
+{
+  "translationGroupId": "group.001",
+  "sourceUnitIds": [
+    "source.001"
+  ],
+  "targetUtterances": [
+    "合成测试文字。"
+  ],
+  "coverage": [
+    {
+      "sourceUnitId": "source.001",
+      "targetText": "合成测试文字。"
+    }
+  ]
+}
