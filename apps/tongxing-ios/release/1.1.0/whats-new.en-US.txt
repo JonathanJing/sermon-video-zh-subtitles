@@ -1,0 +1,7 @@
+This update expands multilingual sermon listening and reading:
+• Read published sermon transcripts in the app and select available content languages and their corresponding audio.
+• Choose a Simplified Chinese, English, Korean, Spanish, or Vietnamese interface independently of the sermon language.
+• Watch the complete original English video on supported sermon pages.
+• Optional anonymous usage statistics are disabled by default and can be managed in Privacy and Support.
+
+Text, audio, and sound alignment availability depend on each published sermon. AI-prepared text and synthesized audio are reference material.

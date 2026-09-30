@@ -1,0 +1,19 @@
+Tongxing helps you listen to and read multilingual reference material for English sermons. Choose a published sermon on iPhone or iPad, read its transcript, listen to available AI-synthesized audio, and consult the original English source.
+
+Listening and reading
+• Read published sermon transcripts in the app, with English source references where matching source text is available.
+• Select the content language and its corresponding published audio. Text-only versions show audio as unavailable rather than substituting another language.
+• Play, pause, seek, and fine-tune timing while viewing playback time and captions.
+• Watch the complete original English video on supported pages and choose other published sermon dates.
+• Keep listening positions locally. Tracks with a download option can be downloaded in advance for offline playback after download completion.
+
+Interface and content languages
+Choose a Simplified Chinese, English, Korean, Spanish, or Vietnamese interface, or follow the system setting. Changing the interface does not translate sermon text or switch audio. Content and audio languages depend on each published sermon; not every interface language has corresponding sermon text or audio.
+
+Optional sound alignment
+Supported tracks offer sound alignment. When you start it, the app requests microphone permission and listens for approximately 8 or 10 seconds to find the position of the same original English recording played at normal speed. Sound is processed only in device memory, without saving a recording or uploading it. Cancelling or backgrounding stops capture. This feature does not continuously track a live service or match different recordings by meaning. Manual seeking remains available when a reliable match is not found.
+
+Privacy and choice
+No sign-in, subscription, or in-app purchase is required. Anonymous usage statistics are disabled by default and can be enabled in Privacy and Support. When enabled, the app reports language visits, the selected sermon, listening time, and played ranges, using a daily random identifier for daily statistics. It does not include a name, email, or advertising identifier and is not used for cross-app advertising tracking. Disabling statistics stops new reporting and attempts to retract records sent during the current app run; offline requests may prevent retraction. Firebase providers process content requests under their own privacy practices. See Privacy and Support and the public privacy policy for details.
+
+Tongxing is an independent personal project, unaffiliated with and not endorsed by Mariners Church. AI-prepared text and synthesized audio are reference material. Consult each item's review information and the original English source.
