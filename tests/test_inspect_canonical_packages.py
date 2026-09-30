@@ -157,6 +157,37 @@ class PackageInspectionTests(unittest.TestCase):
         self.assertEqual(result['nodes']['source']['status'], 'blocked')
         self.assertNotEqual(original['stateRevision'], result['stateRevision'])
 
+    def test_ready_flags_cannot_replace_media_window_or_derived_identity(self):
+        original = inspect.inspect(self.path)
+        source = copy.deepcopy(self.fixture.source)
+        mutations = []
+        missing_media = copy.deepcopy(source); missing_media['source']['media'] = None
+        mutations.append(missing_media)
+        for start, end in ((20, 10), (10, 301), (11, 20)):
+            changed = copy.deepcopy(source)
+            changed['source']['approvedWindow'].update(startSeconds=start, endSeconds=end)
+            mutations.append(changed)
+        stale_identity = copy.deepcopy(source); stale_identity['downstreamInvalidationKey'] = '0' * 64
+        mutations.append(stale_identity)
+        wrong_duration = copy.deepcopy(source); wrong_duration['source']['media']['durationSeconds'] = 900
+        mutations.append(wrong_duration)
+        for changed in mutations:
+            with self.subTest(source=changed['source']):
+                self.write('source.json', changed)
+                result = inspect.inspect(self.path)
+                self.assertEqual(result['nodes']['source']['status'], 'blocked')
+                self.assertEqual(result['nodes']['text.zh-Hans']['status'], 'waiting_dependency')
+                self.assertNotEqual(original['stateRevision'], result['stateRevision'])
+
+    def test_rehashing_window_without_changing_frozen_summary_is_rejected(self):
+        source = copy.deepcopy(self.fixture.source)
+        source['source']['approvedWindow']['startSeconds'] += 1
+        identity = english.source_identity(source['source'], source['transcript']['artifact'],
+            source['anchors']['artifact'], source['review'], source['evidence']['machineJudge'], source['implementation'])
+        source.update(downstreamInvalidationKey=identity, packageId='english-source-' + identity[:24])
+        self.write('source.json', source)
+        self.assertEqual(inspect.inspect(self.path)['nodes']['source']['status'], 'blocked')
+
     def test_no_tracker_or_command_configuration(self):
         for field in ('tracker', 'command', 'humanApproval'):
             self.write('inspection.json', {**self.config, field: 'not admissible'})
