@@ -126,6 +126,19 @@ class SermonTraceExportTests(unittest.TestCase):
         self.assertEqual(diag["status"], "exported")
         self.assertEqual(len(spans), 4)
 
+    def test_v1_and_v2_non_success_terminal_states_remain_unknown(self):
+        for status in ("cancelled", "outcome_unknown"):
+            with self.subTest(status=status):
+                self.events = []
+                self.fixture()
+                for index, event in enumerate(self.events):
+                    event["schemaVersion"] = "sermon-workflow-accounting-v1" if index % 2 else "sermon-workflow-accounting-v2"
+                    if event["event"] == "stage_finished" and event["spanId"] == "render":
+                        event["status"] = status
+                _, diag, spans = self.result()
+                self.assertIn("unknown_finished_status", [row["code"] for row in diag["diagnostics"]])
+                self.assertNotIn(span_id(("run-one", "stage", "render")), spans)
+
     def test_dependency_extensions_reject_unsafe_imports_on_all_schemas(self):
         for schema in ('sermon-workflow-accounting-v1', 'sermon-workflow-accounting-v2', SCHEMA):
             for field, value in [('dependsOn', ['PRIVATE text']), ('blockedBy', ['x'] * 65),
@@ -248,6 +261,42 @@ class ReceiptExportTests(unittest.TestCase):
                         self.assertEqual(attrs['sermon.knownSubtotal.inputTokens'], {'intValue': '100'})
                     else:
                         self.assertFalse(any(key.startswith('sermon.knownSubtotal.') for key in attrs))
+
+    def test_replay_excluded_terminal_does_not_close_started_attempt(self):
+        from unittest.mock import patch
+
+        self.events = []
+        self.fixture()
+        self.event('api_attempt_started', stage='render', spanId='render', attemptId='call-1',
+                   contractVersion='sermon-accounting-log-contract-v1', modelCallId='call-1',
+                   producerId='profile-producer', sequence=1)
+        terminal = self.event('api_attempt', stage='render', spanId='render', attemptId='call-1',
+                              status='completed', usage=dict(inputTokens=100, outputTokens=20,
+                              cachedInputTokens=0, cacheWriteTokens=0, reasoningTokens=0),
+                              cost={}, elapsedSeconds=1, responseId='response-1',
+                              contractVersion='sermon-accounting-log-contract-v1', modelCallId='call-1',
+                              producerId='profile-producer', sequence=2, provider='openai',
+                              providerScopeKey=None, providerResponseId='response-1')
+
+        def replay_with_quarantined_terminal(events):
+            excluded = {id(event) for event in events if event.get('eventId') == terminal['eventId']}
+            selected = {id(event) for event in events
+                        if 'contractVersion' in event and id(event) not in excluded}
+            return {'status': 'partial', 'diagnostics': [], 'profileEventCount': 2,
+                    '_excluded': excluded, '_selected': selected}
+
+        with patch('scripts.export_sermon_trace.read_events', return_value=(self.events, [])), \
+             patch('scripts.export_sermon_trace.profile_integrity', side_effect=replay_with_quarantined_terminal), \
+             patch('scripts.sermon_accounting.profile_integrity', side_effect=replay_with_quarantined_terminal):
+            payload, diagnostics = export(self.work)
+        spans = {s['spanId']: s for s in payload['resourceSpans'][0]['scopeSpans'][0]['spans']}
+
+        attrs = {a['key']: a['value'] for a in spans[span_id(('run-one', 'stage', 'render'))]['attributes']}
+        self.assertIn('unfinished_api_attempts', [row['code'] for row in diagnostics['diagnostics']])
+        self.assertEqual(attrs['sermon.unresolvedApiAttempts'], {'intValue': '1'})
+        self.assertEqual(attrs['sermon.apiAttempts'], {'intValue': '1'})
+        self.assertNotIn('sermon.inputTokens', attrs)
+        self.assertEqual(attrs['sermon.unknownCalls.inputTokens'], {'intValue': '1'})
 
     def test_receipt_in_other_run_or_span_cannot_complete_started_attempt(self):
         for receipt_run, receipt_span in (('run-two', 'render'), ('run-one', 'assemble')):
