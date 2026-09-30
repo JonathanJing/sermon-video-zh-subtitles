@@ -1,0 +1,190 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-review-gate-decision-v1.schema.json",
+  "title": "sermon-review-gate-decision-v1",
+  "$defs": {
+    "label": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.:-]{1,100}(?![\\s\\S])"
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+    },
+    "utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(?:\\.\\d{1,6})?Z(?![\\s\\S])"
+    },
+    "evidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "artifactId": {
+          "$ref": "#/$defs/label"
+        },
+        "canonicalJsonSha256": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/hash"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fileBytesSha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "mediaType": {
+          "enum": [
+            "application/json",
+            "text/plain",
+            "audio/wav",
+            "audio/mpeg"
+          ]
+        }
+      },
+      "required": [
+        "artifactId",
+        "canonicalJsonSha256",
+        "fileBytesSha256",
+        "mediaType"
+      ]
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-review-gate-decision-v1"
+    },
+    "candidateId": {
+      "$ref": "#/$defs/label"
+    },
+    "revisionId": {
+      "$ref": "#/$defs/label"
+    },
+    "targetLocale": {
+      "enum": [
+        "zh-Hans",
+        "ko",
+        "es"
+      ]
+    },
+    "workUnitIds": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/label"
+      },
+      "uniqueItems": true,
+      "maxItems": 64,
+      "minItems": 1
+    },
+    "gateDecisionId": {
+      "$ref": "#/$defs/label"
+    },
+    "gateVersion": {
+      "const": "rqc-layer2-gate-v1"
+    },
+    "stateRevision": {
+      "$ref": "#/$defs/hash"
+    },
+    "artifactSha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "reviewReceiptRefs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/evidenceRef"
+      },
+      "uniqueItems": true,
+      "maxItems": 64,
+      "minItems": 0
+    },
+    "policySha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "rubricSha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "approvalReceiptRefs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/evidenceRef"
+      },
+      "uniqueItems": true,
+      "maxItems": 16,
+      "minItems": 0
+    },
+    "admissionStatus": {
+      "enum": [
+        "admitted",
+        "blocked",
+        "waiting_human"
+      ]
+    },
+    "reasonCodes": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "all_required_evidence_passed",
+          "human_approval_missing",
+          "stale_identity",
+          "review_conflict",
+          "review_failed",
+          "review_not_assessed",
+          "review_inconclusive",
+          "coverage_incomplete",
+          "hard_check_failed",
+          "language_plugin_failed",
+          "source_not_ready",
+          "unknown_rubric",
+          "approval_invalid"
+        ]
+      },
+      "uniqueItems": true,
+      "maxItems": 16,
+      "minItems": 1
+    },
+    "allowedNextActions": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "prepare_layer3",
+          "request_human_review",
+          "repair_translation",
+          "retry_review",
+          "request_source_review",
+          "reconcile",
+          "escalate_engineering"
+        ]
+      },
+      "uniqueItems": true,
+      "maxItems": 8,
+      "minItems": 0
+    },
+    "createdAt": {
+      "$ref": "#/$defs/utc"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "candidateId",
+    "revisionId",
+    "targetLocale",
+    "workUnitIds",
+    "gateDecisionId",
+    "gateVersion",
+    "stateRevision",
+    "artifactSha256",
+    "reviewReceiptRefs",
+    "policySha256",
+    "rubricSha256",
+    "approvalReceiptRefs",
+    "admissionStatus",
+    "reasonCodes",
+    "allowedNextActions",
+    "createdAt"
+  ]
+}

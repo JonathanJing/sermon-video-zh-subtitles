@@ -1,0 +1,379 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-review-receipt-v1.schema.json",
+  "title": "sermon-review-receipt-v1",
+  "$defs": {
+    "label": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.:-]{1,100}(?![\\s\\S])"
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+    },
+    "utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(?:\\.\\d{1,6})?Z(?![\\s\\S])"
+    },
+    "evidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "artifactId": {
+          "$ref": "#/$defs/label"
+        },
+        "canonicalJsonSha256": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/hash"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fileBytesSha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "mediaType": {
+          "enum": [
+            "application/json",
+            "text/plain",
+            "audio/wav",
+            "audio/mpeg"
+          ]
+        }
+      },
+      "required": [
+        "artifactId",
+        "canonicalJsonSha256",
+        "fileBytesSha256",
+        "mediaType"
+      ]
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-review-receipt-v1"
+    },
+    "candidateId": {
+      "$ref": "#/$defs/label"
+    },
+    "revisionId": {
+      "$ref": "#/$defs/label"
+    },
+    "targetLocale": {
+      "enum": [
+        "zh-Hans",
+        "ko",
+        "es"
+      ]
+    },
+    "workUnitIds": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/label"
+      },
+      "uniqueItems": true,
+      "maxItems": 64,
+      "minItems": 1
+    },
+    "sourceIdentitySha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "sourcePackageSha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "anchorSha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "policySha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "reviewId": {
+      "$ref": "#/$defs/label"
+    },
+    "reviewAttemptId": {
+      "$ref": "#/$defs/label"
+    },
+    "reviewedArtifactSha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "rubricSha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "reviewerInputManifestSha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "reviewMode": {
+      "const": "strict_verifier"
+    },
+    "reviewerModelRequested": {
+      "const": "gpt-6-sol"
+    },
+    "reviewerModelActual": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "reviewerPromptVersion": {
+      "$ref": "#/$defs/label"
+    },
+    "modelCallId": {
+      "$ref": "#/$defs/label"
+    },
+    "providerResponseId": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/label"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "executionStatus": {
+      "enum": [
+        "succeeded",
+        "failed",
+        "cancelled",
+        "outcome_unknown"
+      ]
+    },
+    "reviewVerdict": {
+      "enum": [
+        "pass",
+        "needs_rework",
+        "inconclusive",
+        "not_assessed"
+      ]
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "checkId": {
+            "enum": [
+              "completeMeaning",
+              "negationsNumbersNames",
+              "quotationAttribution",
+              "noAddedMeaning"
+            ]
+          },
+          "result": {
+            "enum": [
+              "pass",
+              "fail",
+              "not_assessed"
+            ]
+          },
+          "evidenceRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/evidenceRef"
+            },
+            "uniqueItems": true,
+            "maxItems": 16,
+            "minItems": 0
+          }
+        },
+        "required": [
+          "checkId",
+          "result",
+          "evidenceRefs"
+        ]
+      },
+      "uniqueItems": true,
+      "maxItems": 4,
+      "minItems": 0
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "issueId": {
+            "$ref": "#/$defs/label"
+          },
+          "reasonCode": {
+            "enum": [
+              "meaning_omission",
+              "meaning_addition",
+              "negation_error",
+              "number_error",
+              "name_error",
+              "quotation_attribution_error",
+              "source_coverage_missing",
+              "source_ambiguity",
+              "terminology_error",
+              "language_rule_failed",
+              "evidence_insufficient",
+              "contradictory_reviews"
+            ]
+          },
+          "severity": {
+            "enum": [
+              "critical",
+              "major",
+              "minor",
+              "uncertain"
+            ]
+          },
+          "sourceUnitIds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/label"
+            },
+            "uniqueItems": true,
+            "maxItems": 64,
+            "minItems": 1
+          },
+          "targetUnitIds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/label"
+            },
+            "uniqueItems": true,
+            "maxItems": 64,
+            "minItems": 0
+          },
+          "evidenceRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/evidenceRef"
+            },
+            "uniqueItems": true,
+            "maxItems": 16,
+            "minItems": 1
+          }
+        },
+        "required": [
+          "issueId",
+          "reasonCode",
+          "severity",
+          "sourceUnitIds",
+          "targetUnitIds",
+          "evidenceRefs"
+        ]
+      },
+      "uniqueItems": true,
+      "maxItems": 64,
+      "minItems": 0
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "expectedUnitIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/label"
+          },
+          "uniqueItems": true,
+          "maxItems": 64,
+          "minItems": 1
+        },
+        "assessedUnitIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/label"
+          },
+          "uniqueItems": true,
+          "maxItems": 64,
+          "minItems": 0
+        },
+        "unassessedUnitIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/label"
+          },
+          "uniqueItems": true,
+          "maxItems": 64,
+          "minItems": 0
+        }
+      },
+      "required": [
+        "expectedUnitIds",
+        "assessedUnitIds",
+        "unassessedUnitIds"
+      ]
+    },
+    "evidenceRefs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/evidenceRef"
+      },
+      "uniqueItems": true,
+      "maxItems": 16,
+      "minItems": 0
+    },
+    "missingReasons": {
+      "type": "object",
+      "properties": {
+        "reviewerModelActual": {
+          "enum": [
+            "not_observed",
+            "provider_not_reported",
+            "outcome_unknown"
+          ]
+        },
+        "providerResponseId": {
+          "enum": [
+            "not_observed",
+            "provider_not_reported",
+            "outcome_unknown"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "createdAt": {
+      "$ref": "#/$defs/utc"
+    },
+    "receiptSha256": {
+      "$ref": "#/$defs/hash"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "candidateId",
+    "revisionId",
+    "targetLocale",
+    "workUnitIds",
+    "sourceIdentitySha256",
+    "sourcePackageSha256",
+    "anchorSha256",
+    "policySha256",
+    "reviewId",
+    "reviewAttemptId",
+    "reviewedArtifactSha256",
+    "rubricSha256",
+    "reviewerInputManifestSha256",
+    "reviewMode",
+    "reviewerModelRequested",
+    "reviewerModelActual",
+    "reviewerPromptVersion",
+    "modelCallId",
+    "providerResponseId",
+    "executionStatus",
+    "reviewVerdict",
+    "checks",
+    "issues",
+    "coverage",
+    "evidenceRefs",
+    "missingReasons",
+    "createdAt",
+    "receiptSha256"
+  ]
+}

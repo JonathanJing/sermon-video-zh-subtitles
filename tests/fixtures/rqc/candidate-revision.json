@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-candidate-revision-v1",
+  "candidateId": "synthetic-candidate",
+  "revisionId": "r1",
+  "targetLocale": "zh-Hans",
+  "workUnitIds": [
+    "l2.zh-Hans.group.001"
+  ],
+  "sourceIdentitySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "sourcePackageSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "anchorSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+  "policySha256": "4444444444444444444444444444444444444444444444444444444444444444",
+  "sourcePackageBytesSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+  "anchorBytesSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+  "policyBytesSha256": "7777777777777777777777777777777777777777777777777777777777777777",
+  "artifactSha256": "cf10cf7f8396b01c9c00758e03b1d87bd63420c51b5d845c0e6c536878e80db0",
+  "artifactCanonicalJsonSha256": "cf10cf7f8396b01c9c00758e03b1d87bd63420c51b5d845c0e6c536878e80db0",
+  "artifactBytesSha256": "3b69519bfea309746a49530eee744c09dbc30407a154c384316194d0ac2a584c",
+  "generationReceiptRef": {
+    "artifactId": "generation",
+    "canonicalJsonSha256": "0000000000000000000000000000000000000000000000000000000000000001",
+    "fileBytesSha256": "0000000000000000000000000000000000000000000000000000000000000065",
+    "mediaType": "application/json"
+  },
+  "parentRevisionId": null,
+  "repairPlanId": null,
+  "revisionNumber": 1,
+  "revisionGranularity": "translation_group",
+  "sourceUnitIds": [
+    "source.001"
+  ],
+  "targetUnitIds": [
+    "l2.zh-Hans.group.001.utterance.0001"
+  ],
+  "createdAt": "2026-09-30T00:00:00Z"
+}

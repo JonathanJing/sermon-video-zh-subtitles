@@ -2,6 +2,12 @@
 
 本流程只生成单一 locale 的目标语言文字候选。适用于 `zh-Hans`、`ko`、`es` 等已具备语言插件的 locale。它不授予人工批准，也不自动启动音频或发布。旧运行的 policy、候选和人工收据保持原样；修改模型组合必须为新运行冻结新 policy。
 
+## 2026-09-30：当前模式与后续只读审核设计
+
+本页命令仍描述当前 **reviewer-editor**：Sol 可以修订 Astra 文本并对最终版本给出语义审查。独立请求不等于修改后的文本又经过另一个独立 verifier；语言插件和人工门禁仍按下文执行。
+
+新的 **strict-verifier** 方案将生成、只读审核、固定 Gate 与有界返工分离，见 [完整设计](generation-review-gate-design.zh.md)和 [RQC-01—06 开发步骤](generation-review-gate-backlog.zh.md)。这是待实施的独立 policy/prompt 版本，不是本页命令已经支持的开关。不得仅修改当前 prompt 后沿用旧 policy/cache/批准；也不常规增加第三遍 Astra/Gemini。约3分钟→10分钟→完整往期视频的 A/B 和 sign-off 通过前，正式默认行为不变。
+
 ## 输入与门禁
 
 1. 使用状态为 `ready_for_translation`、`translationEligible=true` 的 `English Source Package`，并提供与其 hash 相符的 anchor manifest。来源范围与英文单元必须已有完整人工审核。
