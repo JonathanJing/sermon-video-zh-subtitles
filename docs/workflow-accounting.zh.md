@@ -167,3 +167,9 @@ L3 实际 render_units 将模型加载、每单元本地模型推理、音频复
 这覆盖同一个 L2 worker 内的实际依赖；不宣称已覆盖跨进程四层 DAG、人工等待、真实媒体表现或完整 Stage 0 验收。缓存恢复仍保留原 job 的 uncertain 状态，必须走独立 reconciliation。
 
 L2 evidence assembly 对超过 64 个完成组建立有界 fan-in tree；单条事件的 `dependsOn` 仍最多 64 项，每个 deterministic join 保留全部上游可达性。65/129 组真实 producer（合成模型回复）及 65 组 cache-only recovery 回归覆盖，不截断依赖、不在所有模型返回后因日志上限失败。4097 个依赖另有多层 join 单元测试。
+
+### Layer 3 单进程实际 renderer DAG（2026-09-30）
+
+正式 `render_accounted` 现在连接实际输入核验→串行单元缓存准入/模型加载/合成或复制/完整解码/提交/收据→排程→整轨组装与解码→manifest提交。下个单元依赖前个已结束收据，符合现有单模型串行执行，不虚构并行路径。已有manifest的恢复把真实package与音频复验计入确定性准入leaf；缓存复用不计新模型时间。四层progress ledger的旧substage指标保留，整轨组装不再因schedule子span使自身耗时被leaf projector排除。
+
+完成span只在finish日志成功后返回；日志失败不提供可供下游使用的完成身份，已持久化的音频/manifest保留给显式恢复。声音identity、模型参数、文字/声音批准、1x排程与筛查/听审状态未变。这里是同一renderer进程的生产路径账务，未实现canonical L3 durable controller dispatch、跨进程DAG或新的真实TTS/人工验收。

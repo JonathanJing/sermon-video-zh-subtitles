@@ -38,7 +38,8 @@ SUITES = {
                                'tests.test_stage_formal_multilingual_dev', 'tests.test_assemble_multilingual_v3_update',
                                'tests.test_inspect_multilingual_v3_release'),
     'producer_accounting': ('tests.test_run_target_language_models', 'tests.test_render_formal_target_language_speech',
-                            'tests.test_paid_model_cache_durability', 'tests.test_layer2_leaf_accounting', 'tests.test_layer2_large_fan_in'),
+                            'tests.test_paid_model_cache_durability', 'tests.test_layer2_leaf_accounting', 'tests.test_layer2_large_fan_in',
+                            'tests.test_layer3_dependency_accounting'),
 }
 UNIMPLEMENTED = (
     'canonical_durable_dispatch_and_cross_process_dag',
