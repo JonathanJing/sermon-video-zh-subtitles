@@ -29,6 +29,7 @@ from scripts import canonical_layer2_controller as controller
 from scripts import produce_target_language_candidate as producer
 from scripts import sermon_review_budget as budget
 from scripts import sermon_review_contracts as c
+from scripts import sermon_public_snapshot as public_snapshot
 from scripts import sermon_review_gate as gate
 from scripts import sermon_strict_candidate_bridge as bridge
 from scripts import sermon_strict_budget_adapter as adapter
@@ -127,9 +128,10 @@ class AdmissionBoundary:
     def _load(self, record_bytes, ledger):
         files = {}
         def read(key, path):
-            _, data = c.read_snapshot(self._path(path))
+            reader = public_snapshot if key == 'public_candidate' else c
+            value, data = reader.read_snapshot(self._path(path))
             files[key] = data
-            return c.decode_json(data)
+            return value
         values = {key: read(key, getattr(self.config, key)) for key in
                   ('source', 'anchor', 'policy', 'rubric', 'public_candidate', 'human_receipt')}
         c.require(values['policy']['targetLocale'] == self.config.target_locale,
@@ -278,8 +280,15 @@ class AdmissionBoundary:
         inventory = {key: c.bytes_sha256(raw) for key, raw in sorted(files.items())}
         selection = [str(self._path(path)) for path in self.config.revision_roots]
         state_revision = c.canonical_sha256({'binding': self.binding, 'files': inventory, 'revisions': selection})
-        common = [gate.JsonArtifact(key, files[key]) for key in
-                  ('public_candidate', 'human_receipt', 'budget-ledger', 'plugin-identity')]
+        # Public aggregate bytes stay in the authoritative CAS inventory and
+        # real bridge validation. A compact descriptor keeps PRIVATE per-group
+        # Gate artifacts bounded without relabeling an approval receipt.
+        public_binding = {'schemaVersion': 'sermon-public-candidate-binding-v1',
+            'canonicalJsonSha256': c.canonical_sha256(values['public_candidate']),
+            'fileBytesSha256': c.bytes_sha256(files['public_candidate'])}
+        common = [gate.JsonArtifact('public-candidate-binding', c.canonical_bytes(public_binding))]
+        common.extend(gate.JsonArtifact(key, files[key]) for key in
+                      ('human_receipt', 'budget-ledger', 'plugin-identity'))
         common.append(gate.JsonArtifact('full-byte-inventory', c.canonical_bytes(inventory)))
         snapshots = []
         for root, data, manifest, prepared, receipts, pending, unknown, attempt in parsed:
@@ -350,7 +359,7 @@ class AdmissionBoundary:
         f = snapshot.files
         # Never synthesize BoundaryChecks for a failed/pending bridge.
         validated = bridge.validate_approved_chain(*(f[k] for k in ('source', 'anchor', 'policy', 'rubric')),
-            snapshot.revisions, candidate=c.decode_json(f['public_candidate']),
+            snapshot.revisions, candidate=public_snapshot.decode_json(f['public_candidate']),
             human_receipt=c.decode_json(f['human_receipt']), plugin_path=self.config.plugin,
             expected_plugin_sha256=self.config.plugin_sha256)
         decisions = []

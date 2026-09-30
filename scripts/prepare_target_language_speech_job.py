@@ -641,6 +641,7 @@ def main() -> None:
     parser.add_argument("--anchor", type=Path, required=True)
     parser.add_argument("--candidate", type=Path, required=True)
     parser.add_argument("--policy", type=Path, required=True)
+    parser.add_argument("--strict-rubric", type=Path, help="Explicit frozen rubric for strict-v3 policy validation")
     parser.add_argument("--human-review-receipt", type=Path, required=True)
     parser.add_argument("--adapter", type=Path, required=True)
     parser.add_argument("--speaker-registry", type=Path, required=True)
@@ -667,6 +668,7 @@ def main() -> None:
             source_voice_authorization_path=args.source_voice_authorization,
             clip_voice_capability_path=args.clip_voice_capability,
             clip_timeline_map_path=args.clip_timeline_map,
+            strict_rubric=_load(args.strict_rubric) if args.strict_rubric else None,
         )
         metrics["speechUnits"] = len(job.get("units") or [])
     print(json.dumps({

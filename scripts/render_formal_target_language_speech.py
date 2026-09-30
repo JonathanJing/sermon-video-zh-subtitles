@@ -146,7 +146,8 @@ def materialize_path_map(job_path: Path, path_map_path: Path) -> None:
 
 
 def checked_context(paths: dict[str, Path], checkpoint_map_path: Path,
-                    operation_policies_path: Path) -> dict[str, Any]:
+                    operation_policies_path: Path, *,
+                    strict_rubric: dict[str, Any] | None = None) -> dict[str, Any]:
     required = ("source", "anchor", "candidate", "job", "adapter", "policy",
                 "human_receipt", "registry", "clip_timeline_map")
     require(all(name in paths and paths[name].is_file() for name in required),
@@ -159,7 +160,10 @@ def checked_context(paths: dict[str, Path], checkpoint_map_path: Path,
                          data["human_receipt"], data["registry"],
                          data.get("clip_voice_authorization"),
                          data.get("clip_voice_capability"), data["clip_timeline_map"], paths,
-                         source_voice_authorization=data.get("source_voice_authorization"))
+                         source_voice_authorization=data.get("source_voice_authorization"),
+                         strict_rubric=strict_rubric)
+    if strict_rubric is not None:
+        data["strict_rubric"] = strict_rubric
     adapter, registry, job = data["adapter"], data["registry"], data["job"]
     policies = package.read_object(operation_policies_path)
     validate_operation_policies(policies, adapter, job)
@@ -324,7 +328,7 @@ def unit_instructions(job: dict[str, Any], path: Path | None) -> dict[str, dict[
 
 
 def _reusable_speculative_audio(previous_root: Path, unit: dict[str, Any], index: int,
-                                expected: dict[str, Any]) -> Path | None:
+                                expected: dict[str, Any], *, strict_rubric=None) -> Path | None:
     """Admit only the same sound from an explicitly non-formal pre-render lane."""
     if expected.get("spokenTextSha256") is not None:
         return None
@@ -354,7 +358,7 @@ def _reusable_speculative_audio(previous_root: Path, unit: dict[str, Any], index
     require(snapshot.get("status") == "machine_review_pass_human_review_pending"
             and snapshot.get("humanReview", {}).get("translation") == "pending",
             "Speculative candidate was not human-pending")
-    package.speech.validate_policy_binding(snapshot, evidence["policy"])
+    package.speech.validate_policy_binding(snapshot, evidence["policy"], strict_rubric=strict_rubric)
     package.speech.validate_adapter(evidence["adapter"], snapshot["targetLocale"],
                                     evidence["registry"],
                                     source_package=evidence["source"], candidate=snapshot,
@@ -548,7 +552,8 @@ def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                                 if reuse_from is not None else None)
                     unit_metrics["reusedPrior"] = previous is not None
                     if previous is None and speculative_from is not None:
-                        previous = _reusable_speculative_audio(speculative_from, unit, index, expected)
+                        previous = _reusable_speculative_audio(speculative_from, unit, index, expected,
+                            strict_rubric=context.get("strict_rubric"))
                         unit_metrics["reusedPreview"] = previous is not None
             if not has_commit:
                 if previous is not None:
@@ -590,9 +595,13 @@ def render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                                   depends_on=[admission_span if has_commit else commit_span]) as receipt_span:
                 if receipt_path.exists():
                     integrity.validate_receipt(paths["job"], index, wav_path,
-                                               package.read_object(receipt_path))
+                                               package.read_object(receipt_path),
+                                               **({"strict_rubric": context["strict_rubric"]}
+                                                  if context.get("strict_rubric") is not None else {}))
                 else:
-                    receipt = integrity.build_receipt(paths["job"], index, wav_path)
+                    receipt = integrity.build_receipt(paths["job"], index, wav_path,
+                        **({"strict_rubric": context["strict_rubric"]}
+                           if context.get("strict_rubric") is not None else {}))
                     write_json_atomic(receipt_path, receipt)
                 receipt = package.read_object(receipt_path)
                 rows.append({"textGroupId": unit["translationGroupId"],
@@ -829,7 +838,8 @@ def render(paths: dict[str, Path], checkpoint_map_path: Path,
            unit_instructions_path: Path | None = None,
            policy: dict[str, float] | None = None, track_format: str = "wav",
            synth_factory: Callable[..., Any] = QwenSynthesizer,
-           progress_ledger: Path | None = None) -> dict[str, Any]:
+           progress_ledger: Path | None = None,
+           strict_rubric: dict[str, Any] | None = None) -> dict[str, Any]:
     dependencies = []
     if path_map_path is not None:
         with accounting.stage("layer3.materialize_inputs", depends_on=[],
@@ -838,7 +848,8 @@ def render(paths: dict[str, Path], checkpoint_map_path: Path,
         dependencies = [materialize_span]
     with accounting.stage("layer3.validate_inputs", depends_on=dependencies,
                           work_unit_id="l3.validate_inputs") as validation_span:
-        context = checked_context(paths, checkpoint_map_path, operation_policies_path)
+        context = checked_context(paths, checkpoint_map_path, operation_policies_path,
+            **({"strict_rubric": strict_rubric} if strict_rubric is not None else {}))
         instructions_by_group = unit_instructions(context["job"], unit_instructions_path)
         root = paths["job"].parent.resolve()
     completed_units = []
@@ -873,6 +884,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("source", "anchor", "candidate", "job", "adapter", "policy"):
         parser.add_argument(f"--{name}", type=Path, required=True)
+    parser.add_argument("--strict-rubric", type=Path, help="Explicit frozen rubric for strict-v3 policy validation")
     parser.add_argument("--human-review-receipt", dest="human_receipt", type=Path, required=True)
     parser.add_argument("--speaker-registry", dest="registry", type=Path, required=True)
     authorization = parser.add_mutually_exclusive_group(required=True)
@@ -924,7 +936,8 @@ def main() -> None:
         seed=args.seed, device=args.device,
         dtype=args.dtype, attention=args.attention, instruct=args.instruct,
         unit_instructions_path=args.unit_instructions,
-        policy=policy, track_format=args.track_format)
+        policy=policy, track_format=args.track_format,
+        strict_rubric=package.read_object(args.strict_rubric) if args.strict_rubric else None)
     print(json.dumps({"status": "candidate", "targetLocale": result["targetLocale"],
                       "renderManifest": str((paths["job"].parent / "render-manifest.json").resolve()),
                       "machineScreening": "not_run", "humanListeningReview": "pending"},
