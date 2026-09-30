@@ -2,6 +2,14 @@
 
 本目录补充仓库根 `AGENTS.md`。先阅读 [README.zh.md](README.zh.md) 的模块与验收边界；界面变更同时参考 [DESIGN.zh.md](DESIGN.zh.md)，工具链或平台故障先查 [PLATFORM-NOTES.zh.md](PLATFORM-NOTES.zh.md)。
 
+## UI／UX 小迭代
+
+遵循 [Xcode-first workflow (English)](UI-ITERATION-WORKFLOW.md)／[中文流程](UI-ITERATION-WORKFLOW.zh.md)：当前不使用 Figma，以 Xcode／SwiftUI 的实际 iOS 页面为主，Firebase 网页端为辅。
+
+截图批注只需说明改哪里；交互需补“状态 → 操作 → 预期结果”。在独立开发分支复用既有组件，先记录基线，再构建、实际操作并返回同条件前后截图。独立审核者只读审核精确 revision；实现者修复后重验，机器审核不代替人工确认。默认两轮定向修复，超限保留证据并报告阻塞，不无限重做。
+
+iOS 确认后记录网页 `required`／`not_applicable`／`deferred`，再按需适配品牌、信息层级和交互语义，不强求像素相同或原生能力照搬。每周汇总候选；PR、合并、TestFlight、App Store 和网页部署分别按授权处理。不得为了 UI 微调重跑上游生产、引入新播放器或把未执行测试写为通过。具体证据、兼容和发布边界见上述流程。
+
 ## 范围与实现
 
 - 原生客户端沿用 `weekly.json` 和同源音频，不重生成、不重新审核内容，不改变周六生产或周日实时字幕流程。

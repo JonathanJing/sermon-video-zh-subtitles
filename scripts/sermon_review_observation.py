@@ -65,6 +65,8 @@ def validate_observation(row):
             raise ValueError('unsupported_observed_content_pass')
     if (version=='sermon-review-gate-decision-v1') != (value['admissionStatus'] is not None):
         raise ValueError('review_observation_gate_conflict')
+    if version=='sermon-review-gate-decision-v1':
+        contracts.validate_gate_admission(value['admissionStatus'], value['reasonCodes'], value['allowedNextActions'])
 
 
 def record(receipt):
