@@ -174,7 +174,7 @@ A/B 顺序固定为：**A 当前 Agent-heavy 基线 → B1 只引入 bounded Sta
 |---|---|---|---|
 | `SPD6-ARCH-01` | `in_progress` | 将现有 snapshot/recommendedAction 明确建模为 dependency DAG + deterministic controller | 依赖、convergence、human gate、waiting、terminal scope 均有机器可读状态；不改变现有业务 gate |
 | `SPD6-ARCH-02` | `in_progress` | Layer A dispatch durable job、wait、reconcile、idempotency、retry budget、hard stop | outstanding job 不重复启动；exit 0 不代替 evidence；未知 outcome fail closed |
-| `SPD6-ARCH-03` | `pending` | Layer B State Packet / Decision schema、allowed actions、state revision、budget | 只处理窄歧义；旧 state decision 作废；未知 action 拒绝 |
+| `SPD6-ARCH-03` | `in_progress` | Layer B State Packet / Decision schema、allowed actions、state revision、budget | 只处理窄歧义；旧 state decision 作废；未知 action 拒绝 |
 | `SPD6-ARCH-04` | `pending` | Layer C engineering run 与 production run 解耦 | engineeringRunId 独立；生产报表不混入 Codex 工程 token/time |
 | `SPD6-LOG-01` | `in_progress` | accounting v3 已开始写入 executorType、dependsOn、blockedBy、ready/queue、workUnit/attempt/decision identity；DAG/critical-path 初始投影已实现，下一步接入 producer 完整依赖与等待证据 | 可重建 DAG 和 critical path；旧 v1/v2 历史仍可读 |
 | `SPD6-LOG-02` | `pending` | 固定程序记录 script/hash/input/output receipt/runtime/CPU/RSS/cache | 固定程序耗时不记为 Codex orchestration |
@@ -493,3 +493,5 @@ Debug owner：Fix/Debug agent
 E2 后续批次：版本化 action registry 与 opt-in deterministic controller 已开始接入既有 `legacy page_release` adapter；默认 shadow、page_ready hard stop，复用 durable jobs/admission locks/outcome reconciliation。canonical 四层 DAG/三语汇合、E3 Decision Agent、迁移收据与阶段人工验收仍待实现，不能按 legacy fixture 关闭 DEV-SPD-006。
 
 E1 producer 后续批次：已接入真实 L2 同组翻译→审校 span、L3 模型加载→推理→校验 span，并以缓存恢复与模拟音频测试验证；跨 layer/source/queue 尚不完整，SPD6-LOG-01/03 保持实现中。#122/#123 审查回归覆盖冲突 usage、非法 dependency-ready、shadow 无文件变更以及 bridge/candidate 身份变化，不能替代新 head 独立审查或真实媒体分阶段 sign-off。
+
+E2/E3 契约后续批次：canonical definition 已编码共享 source、zh-Hans/ko/es 独立 Text→Audio→Page、显式 text-only Layer 3 与 delivery terminal 汇合；纯 shadow planner 测试按 source/单语身份失效，不读取 tracker 作为批准。它只消费本地 validator adapter 的观察，尚未接入真实 package inspection/durable dispatch，dispatchEnabled 固定 false。Bounded Decision 契约限制 32 KiB/16 refs/一个 structured turn、两次以内预留预算，固定 failure/action/reason allowlist、hash-only evidence、二次 revision/approval identity 检查，fake responder 与真实锁/预留文件验证 crash 后不重放。未接 SDK、没有付费模型或 mutation tools，返回 proposal 仍须原有锁内业务 admission；不是生产 E2/E3/E4 全验收。
