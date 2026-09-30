@@ -190,3 +190,12 @@
 #154 的 exact-head Python 两分片和 aggregate 也已核验通过，故 #148–154 各自分支 CI 与上述本地组合证据现均齐备。草稿 PR 的远端 `ios-validation/contract-validation` 仍 skipped，不把它们写成执行通过。原生 production Swift 差异再核对仍仅 `Core/Sources/TongxingCore/MultilingualCatalog.swift`；该编译代码变更仍需新binary及适用审核发布才能到达安装用户。
 
 E6 兼容性审查与完整canonical Stage0继续未完成，stage1PromotionAllowed=false。真实短片段/10分钟/整篇/第二周、真实质量/设备/现场和人工签字门槛均未被这些合成/模拟器结果替代。
+
+
+## 2026-09-30 12:56 UTC：缓存恢复、L2 心跳与新 head 审查修复
+
+- [#155](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/155) `b85f863d97dd2cd38b31a6d560647ebc23c69a14`：原执行 identity 下，只从完整已返回 Astra/Sol 缓存重建 evidence/plugin receipt/candidate；无 key 读取、模型调用或自动重试，原 job 状态保留，之后仍需显式 artifact reconciliation 与人工翻译批准。50 项 focused、310 项组件及后端模拟通过，精确 head 两 Python 分片和汇总通过。
+- [#156](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/156) 当前 `f1c111216849c70d9f888a1b57929213def04367`：固定 L2 在既有 jobs/guardian 中绑定 startup/heartbeat/no-progress policy。心跳不等于进展；本地取消不证明远端模型未收费。返回响应先持久化，再写进展。新审查发现旧 `d71319b` 会让迟到 receipt 延长期限，已用 3 个 fake-clock 测试复现 4 个失败断言；现修复为读前/读后锁定旧 deadline。49 项相关测试通过，当前 head 两 Python 分片与汇总通过。draft iOS/contract 仍 skipped。
+- 本地集成 `503d274` 包含 #155 和 #156 初始版，完整 Python 报告 2027 项，其中 6 skipped，实际 2021 通过；这是初始版证据。审查修复后的最新集成为 `4c3f05a7cc5e1ae3e9f82d88f2150c6da1cc4400`，新跑 327 项 Stage0 组件与后端模拟通过，`stage1PromotionAllowed=false`。日志在 `stack-with156-expiry-fix-stage0/`；没有把旧全量结果改写成新 head 的全量测试。
+- 完整 Web/Swift/iOS 模拟器证据仍精确绑定前述 `8f608a97`；#155/#156 仅后端 Python 与文档/测试，未再改 native production source。总体交付仍含前述 Swift catalog 行为变更，要到已安装用户仍需新 iOS binary 及对应审核/设备/发布链；不能把整批称为 backend-only。
+- 继续实施：旧 `summary.json` 的 provider/SDK 收据冲突保护已本地复现并在隔离分支修复，尚未完成该批远端交付；不据此关闭 backlog。完整 canonical dispatch、跨进程 DAG、全局资源、真实阶段验证、独立人工/真机/现场门槛仍开放。
