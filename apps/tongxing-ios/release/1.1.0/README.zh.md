@@ -1,12 +1,12 @@
 # 同行 iOS 1.1.0 审核材料
 
-准备日期：2026-09-29（America/Los_Angeles）。目标候选为 **1.1.0 (44)**。本目录保存待用户审阅的更新说明、商店描述、推广文字和英文审核说明；1.1.0 的二进制、截图及新录屏尚未上传，正式提交尚未执行。材料准备不代表本候选已通过真机、麦克风、锁屏、离线或现场验收。
+准备与提交日期：2026-09-29（America/Los_Angeles）。目标审核构建为 **1.1.0 (45)**。本目录保存中英文更新说明、商店描述、推广文字和英文审核说明。用户已明确要求提交审核；实际提交状态记录在文末，材料、签名构建、上传处理与审核结果分别记录。本轮结果不代表真机、麦克风、锁屏、离线或现场验收。
 
 ## 版本选择与当前门户观察
 
 主 Agent 本轮实时查看 ASC，旧 **1.0.0 (34)** 为 **Ready for Distribution**，TestFlight 最新 **1.0.0 (43)** 为 **Approved**。这些状态分别记录，不把 TestFlight 审核结果当成 1.1.0 已获批准。
 
-Apple 要求已可分发 App 的下一版使用递增版本号，并在上传前增加 build string；没有规定新增功能只能使用 1.1.0。本次新增多语言原生听读与完整视频入口，建议使用 **1.1.0** 表达功能更新，build **44** 高于本轮已观察的 43。提交前仍需读回最终 Archive 的 App/Widget 版本和 ASC 最新 build。[Apple 创建新版本](https://developer.apple.com/help/app-store-connect/update-your-app/create-a-new-version)、[Apple 构建上传与版本关联](https://developer.apple.com/help/app-store-connect/manage-builds/upload-builds)
+Apple 要求已可分发 App 的下一版使用递增版本号，并在上传前增加 build string；没有规定新增功能只能使用 1.1.0。本次新增多语言原生听读与完整视频入口，使用 **1.1.0** 表达功能更新。初始 build **44** 上传成功，但 Apple 阻止其加入正式审核，因为 Xcode 27.1 是 beta；随后改用允许提交的 Xcode 27.0 / 27A266a 重建 build **45**。最终 Archive 已读回 App/扩展均为 1.1.0 (45)。[Apple 创建新版本](https://developer.apple.com/help/app-store-connect/update-your-app/create-a-new-version)、[Apple 构建上传与版本关联](https://developer.apple.com/help/app-store-connect/manage-builds/upload-builds)、[Apple 对 RC/正式与 beta 构建的提交范围](https://developer.apple.com/help/app-store-connect/release-notes/)
 
 ## 文件与填写位置
 
@@ -20,7 +20,7 @@ Apple 要求已可分发 App 的下一版使用递增版本号，并在上传前
 | [promotional-text.en-US.txt](promotional-text.en-US.txt) | 英文推广文字 |
 | [app-review-notes.en.txt](app-review-notes.en.txt) | 英文 App Review Notes |
 
-这些是候选文案，尚未回写 ASC。保留已核实的审核联系方式，App 无登录，不需要演示账户。本目录不记录私人联系人、账号、签名身份或设备标识。更新说明与描述上限各 4,000 字符、推广文字上限 170 字符、审核说明上限 4,000 字节；以 [Apple 版本字段定义](https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information/) 为准。审核说明含当前完整视频测试流 URL；本轮 HEAD 为 HTTP 200、video/mp4，仅证明请求元数据，播放与蜂窝网络验收另记录。
+中英文资料已回写 ASC 并逐字段读回一致；英文审核说明已更新为 build 45。保留已有审核联系方式，App 无登录，不需要演示账户。本目录不记录私人联系人、账号、签名身份或设备标识。更新说明与描述上限各 4,000 字符、推广文字上限 170 字符、审核说明上限 4,000 字节；以 [Apple 版本字段定义](https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information/) 为准。审核说明含当前完整视频测试流 URL；本轮 HEAD 为 HTTP 200、video/mp4，仅证明请求元数据，播放与蜂窝网络验收另记录。
 
 ## 文案依据与能力边界
 
@@ -36,7 +36,7 @@ Apple 要求已可分发 App 的下一版使用递增版本号，并在上传前
 
 主 Agent 本轮实时查看 ASC 已发布三类：Other Data Types（App Functionality + Analytics、Linked）、Product Interaction（Analytics、Not Linked）、Device ID（Analytics、Not Linked）。后两类与当前 [隐私清单](../../App/PrivacyInfo.xcprivacy) 基本一致；本次保留既有 Other Data Types 申报。Apple 明确将收听归为 Product Interaction；每日设备级随机标识应按 Device ID 披露。自愿开启后的持续收集仍需申报。Not Linked 的判断要求去标识保护及收集后不重新关联身份。[Apple App Privacy 定义与申报](https://developer.apple.com/app-store/app-privacy-details/)、[Apple 隐私清单数据类型](https://developer.apple.com/documentation/bundleresources/app-privacy-configuration/nsprivacycollecteddatatypes/nsprivacycollecteddatatype)
 
-本轮只读核验公开 [隐私政策](https://ai-for-god-tongxing-support.web.app/privacy.html) 返回 HTTP 200，并与核验时的 [仓库政策](../../../../firebase/tongxing-support/public/privacy.html) 逐字节相同。该快照仍有两处文字需随本候选修正：中英麦克风说明只写约 8 秒，应改为按内容约 8 或 10 秒；系统播放展示仍写“中文音频进度”，应改为“当前音轨进度”。仓库政策已完成这两处文字修正，修订版本为 2026-09-29，尚未部署。上线后需另检查实际部署和 HTTP 读回，不能用本轮旧快照证明修正已上线。
+公开 [隐私政策](https://ai-for-god-tongxing-support.web.app/privacy.html) 已部署并 HTTP 200 读回，与 [仓库政策](../../../../firebase/tongxing-support/public/privacy.html) 逐字节相同，SHA-256 为 `91ff7bb7a4da34d9d515e311c88394ae76f5246a7fe0697708b952e567404942`。中英麦克风说明已改为按内容约 8 或 10 秒，系统播放展示已改为“当前音轨进度”，修订版本为 2026-09-29。仅部署 `ai-for-god-tongxing-support` site；首页、支持页与样式文件的线上哈希保持一致。证据为本机 `submission/privacy-deployment.json`。
 
 ## 截图与提交前核对
 
@@ -46,7 +46,9 @@ Apple 要求已可分发 App 的下一版使用递增版本号，并在上传前
 
 ## 本轮本地构建与截图证据
 
-最新基线为远端 main `c2dcedf`，本候选 App 与 ListeningActivityExtension 均为 1.1.0 (44)。Xcode 27.1 的 Release 模拟器构建通过。截图从 iOS 27.0 的 iPhone 17 Pro Max 与 iPad Pro 13-inch (M5) 实际运行画面取得，连接正式内容，不使用 UI 测试夹具。
+基线为远端 main `c2dcedf`，build 45 的源代码提交为 `fd57e98`。App 与 ListeningActivityExtension 的正式 Archive 均为 1.1.0 (45)，使用 Xcode 27.0 / 27A266a、iOS 27.0 SDK，严格签名检查通过。修复后的代码也通过 Xcode 27.1 beta 的 Release 模拟器编译。
+
+14 张截图保留在 build 44 阶段取得的真实画面与原始身份：iOS 27.0 的 iPhone 17 Pro Max 与 iPad Pro 13-inch (M5)，连接正式内容，不使用 UI 测试夹具。build 45 只修正 SDK 能力编译判断及 build number；原有 iOS 27.0 界面分支未变，截图继续用于 1.1.0。不能把它们改称 build 45 重新拍摄的图片。
 
 本机证据目录为仓库根下 `artifacts/tongxing-ios/2026-09-29/review/`，媒体及结果包被 Git 忽略。最终截图索引、尺寸、SHA-256 与来源结果包见该目录的 `screenshots-manifest.json`；截图预览为 `gallery.html`。每种尺寸含 5 张中文画面和 2 张英文画面。`01` 展示播放与当前字幕，`02` 展示全文及英文对照，`03` 展示目录实际提供的三种内容语言，`04` 展示证道列表，`05` 展示五种界面语言。英文正文仍属于来源参考，不是英文配音可用的声明。
 
@@ -54,4 +56,10 @@ Apple 要求已可分发 App 的下一版使用递增版本号，并在上传前
 
 本次观察确认，新发布页面可点击字幕时间跳转、使用底栏微调；独立“定位 / 精调”弹层仍由旧音轨入口提供。审核与截图不把旧入口的能力套在新发布页面上。当前 9 月 27 日页面也未提供现场对齐资料，主流程不依赖麦克风。
 
-提交前剩余工作：审阅文案与截图；部署并读回隐私页文字修正；完成正式签名 Archive 并核对 App/扩展版本；在 ASC 建立 1.1.0、上传最终构建与截图、选定构建和提交审核。本轮未执行这些外部写入。
+## 正式提交进度
+
+已完成：用户授权提交、建立 ASC 1.1.0、上传 14 张中英文 iPhone/iPad 截图、保存并读回资料、隐私页部署与线上核验、正式 SDK build 45 的 Archive 与签名验证。build 44 的 Apple beta 工具链拒绝证据与 build 45 修复、上传证据分别保存在本机 `submission/` 目录。发布方式设为 **Manually release this version**。
+
+正式 build 45 已上传成功并经 Apple 处理完成，已选定并提交。门户提交时间为 **2026-09-29 18:34（America/Los_Angeles）**，提交回执为 **1 Item Submitted**，详情页的版本 **1.1.0 (45)** 与整体状态均为 **Waiting for Review**。Submission ID 为 `59f1c24a-d43e-4bac-ab85-9511d42868bc`。[审核提交详情](https://appstoreconnect.apple.com/apps/6809255441/distribution/reviewsubmissions/details/59f1c24a-d43e-4bac-ab85-9511d42868bc)
+
+本机 `submission/submission-receipt.json` 与 `submission/submitted-waiting-for-review.png` 保存实际回执。审核尚未获批，版本尚未发布；通过后仍需手动发布。未执行真机或现场验收，本轮也未制作或上传新的审核录屏。
