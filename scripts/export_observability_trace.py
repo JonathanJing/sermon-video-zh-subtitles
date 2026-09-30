@@ -20,7 +20,7 @@ from scripts import weekly_pipeline_report as weekly
 
 LABELS = {'event', 'eventId', 'runId', 'workflow', 'workflowId', 'parentWorkflowId', 'spanId', 'parentSpanId',
           'stage', 'status', 'billing', 'executorType', 'workUnitId', 'attemptId', 'decisionId',
-          'invocationId', 'provider', 'model', 'requestedModel', 'measurementScope', 'phase', 'code', 'level'}
+          'invocationId', 'clockDomainId', 'monotonicStartNs', 'monotonicEndNs', 'provider', 'model', 'requestedModel', 'measurementScope', 'phase', 'code', 'level'}
 TIMES = {'recordedAt', 'startedAt', 'dependencyReadyAt', 'queuedAt'}
 
 
