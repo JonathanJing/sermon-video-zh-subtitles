@@ -47,3 +47,13 @@ class SharedClientContractFixturesTests(unittest.TestCase):
             self.assertEqual(package['packageId'], f"{package['pageId']}-{package['targetLocale']}-dual-script")
             self.assertEqual(row['expected'], 'accept')
         self.assertEqual(max(len(row['release']['packageId']) for row in boundaries), 180)
+
+    def test_accepted_shared_catalog_pages_satisfy_producer_schema(self):
+        matrix = json.loads((ROOT / 'apps/tongxing-ios/Core/Tests/TongxingCoreTests/Fixtures/shared-catalog-pages.json').read_text())
+        schema = json.loads((ROOT / 'schemas/sermon-multilingual-catalog-v3.schema.json').read_text())
+        validator = Draft202012Validator(schema, format_checker=Draft202012Validator.FORMAT_CHECKER)
+        self.assertEqual(len(matrix['cases']), 33)
+        for row in matrix['cases']:
+            if row['expected'] == 'accept':
+                with self.subTest(case=row['id']):
+                    validator.validate(row['catalog'])
