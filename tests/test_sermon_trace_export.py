@@ -126,6 +126,19 @@ class SermonTraceExportTests(unittest.TestCase):
         self.assertEqual(diag["status"], "exported")
         self.assertEqual(len(spans), 4)
 
+    def test_v1_and_v2_non_success_terminal_states_remain_unknown(self):
+        for status in ("cancelled", "outcome_unknown"):
+            with self.subTest(status=status):
+                self.events = []
+                self.fixture()
+                for index, event in enumerate(self.events):
+                    event["schemaVersion"] = "sermon-workflow-accounting-v1" if index % 2 else "sermon-workflow-accounting-v2"
+                    if event["event"] == "stage_finished" and event["spanId"] == "render":
+                        event["status"] = status
+                _, diag, spans = self.result()
+                self.assertIn("unknown_finished_status", [row["code"] for row in diag["diagnostics"]])
+                self.assertNotIn(span_id(("run-one", "stage", "render")), spans)
+
     def test_dependency_extensions_reject_unsafe_imports_on_all_schemas(self):
         for schema in ('sermon-workflow-accounting-v1', 'sermon-workflow-accounting-v2', SCHEMA):
             for field, value in [('dependsOn', ['PRIVATE text']), ('blockedBy', ['x'] * 65),

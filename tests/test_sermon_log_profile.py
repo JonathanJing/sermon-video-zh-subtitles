@@ -254,6 +254,25 @@ for i in range(3):
             invalid['rqcEvidence']['prompt']='private'
             self.assertFalse(contract.valid_event(invalid))
 
+    def test_cancelled_and_unknown_profile_spans_export_attached_rqc(self):
+        for status in ('cancelled','outcome_unknown'):
+            with self.subTest(status=status), tempfile.TemporaryDirectory() as tmp:
+                with profile.session(tmp,'synthetic',work_kind='production',evidence_mode='synthetic'):
+                    with accounting.stage('rqc',work_unit_id='l2.zh-Hans.group.001',depends_on=[]):
+                        review.record(load('gate-waiting'))
+                rows,damaged=accounting.read_events(tmp);self.assertFalse(damaged)
+                finished=next(r for r in rows if r['event']=='stage_finished')
+                finished['status']=status
+                (Path(tmp)/'events.jsonl').write_text(''.join(json.dumps(r)+'\n' for r in rows))
+                self.assertTrue(all(contract.valid_event(r) for r in rows))
+                payload,report=otlp.export(tmp)
+                self.assertEqual(report['status'],'exported')
+                span=next(s for s in payload['resourceSpans'][0]['scopeSpans'][0]['spans']
+                          if s['spanId']==otlp.span_id((finished['runId'],'stage',finished['spanId'])))
+                self.assertEqual(span['status']['code'],2)
+                self.assertEqual([e['name'] for e in span['events']],['sermon.rqc.observation'])
+                self.assertEqual(report['reviewObservations'][0]['evidence']['admissionStatus'],'waiting_human')
+
     def test_direct_gate_observations_cannot_manufacture_admission(self):
         with tempfile.TemporaryDirectory() as tmp:
             with profile.session(tmp,'synthetic',work_kind='production',evidence_mode='synthetic'):
