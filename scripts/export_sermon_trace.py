@@ -108,6 +108,9 @@ def export(directory):
             continue
         start, end = edges["start"][0], edges["end"][0]
         match_fields = ("workflow",) if key[1] == "run" else (("workflow", "parentWorkflowId") if key[1] == "workflow" else ("stage", "workflowId", "parentSpanId"))
+        if key[1] == "stage":
+            match_fields += ("executorType", "workUnitId", "attemptId", "decisionId",
+                             "dependsOn", "blockedBy", "dependencyReadyAt", "queuedAt")
         # workflow_finished does not repeat parentWorkflowId in accounting v2.
         match_fields = tuple(field for field in match_fields if field != "parentWorkflowId")
         if any(start.get(field) != end.get(field) for field in match_fields):
@@ -144,7 +147,7 @@ def export(directory):
                 values = start.get(field)
                 if isinstance(values, list):
                     attrs.append(attribute("sermon." + field, json.dumps(values, separators=(",", ":"))))
-            for field in ("readyAt", "queuedAt"):
+            for field in ("dependencyReadyAt", "queuedAt"):
                 if isinstance(start.get(field), str):
                     attrs.append(attribute("sermon." + field, start[field]))
         metadata = start.get("metadata", {})
