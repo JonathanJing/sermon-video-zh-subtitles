@@ -26,7 +26,8 @@ export function matchInWorker(recording, metadata, signal, WorkerClass = globalT
   });
 }
 // Keep one verified index in one bounded operation's Worker. Closing the session
-// discards it; HTTP cache hints are not a claim of persistent offline readiness.
+// discards session state. Persistent public bytes are revalidated by each Worker;
+// cached indexes alone do not establish offline audio/catalog readiness.
 export async function prepareInWorker(metadata, signal, WorkerClass = globalThis.Worker) {
   const worker = new WorkerClass(new URL('./fingerprint-worker.mjs', import.meta.url), { type: 'module' });
   let pending = null, serial = 0, closed = false;
