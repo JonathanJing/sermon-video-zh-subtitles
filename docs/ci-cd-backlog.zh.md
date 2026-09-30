@@ -37,6 +37,10 @@
 - [ ] PR CI 使用短小、确定性的 fixture；付费模型、整篇 TTS、真实媒体下载、生产凭据和部署不在每次 PR 上重复运行。producer 改动至少运行模拟链接到 Layer 1–4 的快速 `DEV-E2E-001`，明确它只证明模拟路径。
 - [ ] 用 iOS-only、Web-only、API-only、共享合同、producer-only、docs-only 和未知路径的测试 PR／等价事件矩阵证明路由；检查失败报告保留提交 SHA、执行／跳过项和具体失败，不以通知邮件代替日志诊断。
 
+2026-09-30 路由回归补充（`DEV-CICD-002` 仍为 `in_progress`）：iOS workflow 的共享路径扩展到 catalog v3／Release v2 及其后续版本、legacy weekly catalog family、实际 v3／v2 producer 和 Web 合同 adapter。Git diff 禁用 rename 合并，删除或移动旧合同仍触发检查。真实 Git fixture 和工作流内原脚本覆盖已知路径、混合改动、删除／重命名、手动运行及 draft／失败／取消／跳过汇总；未知 scope 拒绝通过。
+
+本批只修正测试选择，不修改 draft 的 macOS 跳过策略、required check 名称、客户端协议或发布行为。`native-client` 成功且 `contract-validation`／`ios-validation` skipped 仍不是 Swift／模拟器通过。未知路径走全检查的策略、同一跨端合同 fixture 和真实设备验收仍待后续，不能据本批关闭矩阵全部验收。
+
 ### `DEV-CICD-003`：页面与后端功能交付
 
 依赖：`DEV-CICD-002`、独立 Dev 项目／服务与 `DEV-CICD-001` 的发布身份。按 Hosting 页面、反馈／会话 API、Cloud Run 服务各自实际范围实施，不让一个成功的健康检查替另一服务的业务验证。

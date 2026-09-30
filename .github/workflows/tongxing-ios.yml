@@ -42,19 +42,33 @@ jobs:
               if not base or not head:
                   raise SystemExit("Pull request SHAs are missing")
               paths = [p.decode("utf-8") for p in subprocess.check_output(
-                  ["git", "diff", "--name-only", "-z", f"{base}...{head}"]
+                  ["git", "diff", "--no-renames", "--name-only", "-z", f"{base}...{head}"]
               ).split(b"\0") if p]
+              # Cover current and future catalog/Release versions. Rename
+              # detection is disabled so removing a contract still routes here.
+              shared_schema_prefixes = (
+                  "schemas/sermon-multilingual-catalog-",
+                  "schemas/sermon-target-language-release-package-",
+                  "schemas/sermon-weekly-catalog-",
+              )
               shared_contracts = {
-                  "schemas/sermon-multilingual-catalog-v2.schema.json",
-                  "schemas/sermon-target-language-release-package-v1.schema.json",
                   "scripts/build_multilingual_catalog.py",
                   "scripts/stage_formal_multilingual_dev.py",
+                  "scripts/build_formal_dev_release_assets.py",
+                  "scripts/build_full_video_app_release.py",
+                  "scripts/assemble_multilingual_hosting.py",
+                  "scripts/assemble_multilingual_v3_update.py",
+                  "scripts/bind_published_alignment_catalog.py",
+                  "scripts/refresh_multilingual_hosting_with_legacy.py",
+                  "scripts/seal_multilingual_dev_catalog.py",
+                  "experiments/sermon-dubbing-poc/web/catalog.mjs",
+                  "experiments/sermon-dubbing-poc/web/published-weeks.mjs",
                   "firebase/dev/public/formal-dev-adapter.mjs",
               }
               if any(p.startswith("apps/tongxing-ios/") or
                      p == ".github/workflows/tongxing-ios.yml" for p in paths):
                   scope = "native"
-              elif any(p in shared_contracts for p in paths):
+              elif any(p in shared_contracts or p.startswith(shared_schema_prefixes) for p in paths):
                   scope = "contract"
               else:
                   scope = "none"
@@ -150,6 +164,7 @@ jobs:
         run: |
           set -euo pipefail
           test "$CHANGE_RESULT" = success
+          case "$SCOPE" in none|contract|native) ;; *) exit 1 ;; esac
           if test "$EVENT_NAME" != workflow_dispatch && test "$IS_DRAFT" = true; then
             test "$CONTRACT_RESULT" = skipped
             test "$IOS_RESULT" = skipped
