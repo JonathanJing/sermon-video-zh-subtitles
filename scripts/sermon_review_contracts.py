@@ -138,6 +138,16 @@ def _review_semantics(row):
         require(not assessed and all(c['result'] == 'not_assessed' for c in checks), 'not_assessed_has_assessment')
 
 
+def validate_gate_admission(admission_status, reason_codes, allowed_next_actions):
+    """Enforce the public admission/action relationship shared by receipts and observations."""
+    actions = set(allowed_next_actions)
+    if admission_status == 'admitted':
+        require(actions == {'prepare_layer3'} and reason_codes == ['all_required_evidence_passed'],
+                'admitted_gate_evidence_missing')
+    else:
+        require('prepare_layer3' not in actions, 'blocked_gate_cannot_prepare_layer3')
+
+
 def validate_contract(value):
     require(type(value) is dict and _strict_json(value), 'invalid_review_contract_value')
     require(len(canonical_bytes(value)) <= MAX_BYTES, 'private_contract_size_limit')
@@ -164,12 +174,9 @@ def validate_contract(value):
     elif version == 'sermon-review-rubric-v1':
         require(set(value['requiredChecks']) == HARD_CHECKS, 'rubric_hard_checks_changed')
     elif version == 'sermon-review-gate-decision-v1':
-        actions = set(value['allowedNextActions'])
+        validate_gate_admission(value['admissionStatus'], value['reasonCodes'], value['allowedNextActions'])
         if value['admissionStatus'] == 'admitted':
-            require(actions == {'prepare_layer3'} and value['reviewReceiptRefs'] and value['approvalReceiptRefs']
-                    and value['reasonCodes'] == ['all_required_evidence_passed'], 'admitted_gate_evidence_missing')
-        else:
-            require('prepare_layer3' not in actions, 'blocked_gate_cannot_prepare_layer3')
+            require(value['reviewReceiptRefs'] and value['approvalReceiptRefs'], 'admitted_gate_evidence_missing')
     elif version == 'sermon-review-repair-plan-v1':
         if value['repairAction'] == 'repair_translation':
             require(value['fromRevisionId'] != value['toRevisionId'], 'content_repair_requires_new_revision')

@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "sermon-review-budget-snapshot-v1",
+  "chainId": "8e01c5e26742ed42ad5d09214a2414b3974ee75e55bd9a8c0be0b3aaef852eaa",
+  "identity": {
+    "sourceIdentitySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "sourcePackageSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "anchorSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "policySha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "rubricSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "targetLocale": "zh-Hans",
+    "workUnitId": "l2.zh-Hans.group-1"
+  },
+  "stateRevision": "bbfbb44b250a51335edacaa9e25da053d58b610e7136d9957c95add8f6179af2",
+  "authoritySha256": "38ee726cdc868e7a3bf566e411456caa23e8328c30f43176b58af2031079a11f",
+  "storeSha256": "2c58f192a1784aec119c671d71f94167696c73afedf4bc949092f867945a8a9d",
+  "approvalSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "limits": {
+    "contentRevisions": 2,
+    "reviewAttemptsPerRevision": 2,
+    "decisionProposals": 1
+  },
+  "revisions": {
+    "1": {
+      "revisionId": "r1",
+      "reviewAttempts": 1,
+      "lastReviewExecutionStatus": "failed",
+      "lastReviewContentStatus": "not_assessed",
+      "lastReviewReceiptSha256": "2222222222222222222222222222222222222222222222222222222222222222"
+    }
+  },
+  "contentRevisions": 0,
+  "decisionProposals": 0,
+  "unknownReservations": [],
+  "remaining": {
+    "global": {
+      "requests": 19,
+      "inputTokens": 380,
+      "outputTokens": 190,
+      "wallTimeMs": 1900,
+      "costMicrousd": 950
+    },
+    "unit": {
+      "requests": 19,
+      "inputTokens": 380,
+      "outputTokens": 190,
+      "wallTimeMs": 1900,
+      "costMicrousd": 950
+    }
+  },
+  "availability": {
+    "initial_generation": false,
+    "review": true,
+    "content_revision": false,
+    "decision_proposal": true
+  },
+  "reservations": [
+    {
+      "reservationId": "56f88dd7f7bea3382a2716d690567eec658baa92f709c337a03b43d61ab44ca2",
+      "operationId": "op-1",
+      "kind": "review",
+      "revisionId": "r1",
+      "revisionNumber": 1,
+      "inputSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "phase": "result",
+      "executionStatus": "failed",
+      "receiptSha256": "2222222222222222222222222222222222222222222222222222222222222222"
+    }
+  ],
+  "boundExceeded": false,
+  "executionAuthority": "none"
+}
