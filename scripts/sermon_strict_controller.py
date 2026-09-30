@@ -14,7 +14,6 @@ No credentials are read and no default provider, CLI, publication or L3 is wired
 """
 from __future__ import annotations
 
-from datetime import datetime
 from pathlib import Path
 
 from scripts import sermon_accounting as accounting
@@ -32,12 +31,11 @@ SCHEMA = 'sermon-strict-group-controller-v1'
 
 
 def _timestamp(value):
-    c.require(type(value) is str, 'invalid_controller_created_at')
-    try:
-        parsed = datetime.fromisoformat(value.replace('Z', '+00:00'))
-    except ValueError as exc:
-        raise c.ContractError('invalid_controller_created_at') from exc
-    c.require(parsed.utcoffset() is not None, 'invalid_controller_created_at')
+    # Use the downstream Gate contract before any transport. Python's ISO
+    # parser also accepts offsets/precision the frozen D1 contract rejects.
+    validator = c.validator('sermon-review-gate-decision-v1')
+    c.require(validator.evolve(schema=validator.schema['$defs']['utc']).is_valid(value),
+              'invalid_controller_created_at')
     return value
 
 

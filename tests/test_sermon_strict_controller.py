@@ -287,5 +287,17 @@ class StrictControllerTests(unittest.TestCase):
             with self.assertRaises(ValueError): self.run_group(completion_spans=())
         self.assertEqual(self.f.calls, [])
 
+    def test_timestamp_contract_rejects_offsets_and_excess_precision_before_calls(self):
+        self.f.mode = 'fail'
+        with self.f.session():
+            for stamp in ('2026-09-30T00:00:00+00:00', '2026-09-30T00:00:00.1234567Z',
+                          '2026-09-30', '2026-02-30T00:00:00Z'):
+                with self.subTest(stamp=stamp), self.assertRaisesRegex(ValueError, 'invalid_controller_created_at'):
+                    self.run_group(created_at=stamp)
+            self.assertEqual(self.f.calls, [])
+            result = self.run_group(created_at='2026-09-30T00:00:00.123456Z')
+            self.assertEqual(result['reasonCode'], 'repeated_failure_without_new_evidence')
+        self.assertEqual(len(self.f.calls), 4)
+
 
 if __name__ == '__main__': unittest.main()
