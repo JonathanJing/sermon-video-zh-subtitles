@@ -143,6 +143,53 @@ def _source_media(summary: dict[str, Any]) -> dict[str, Any] | None:
     return media
 
 
+def source_gate_issues(media, start, end, approved):
+    """Production source invariants shared by construction and read-side checks."""
+    issues = []
+    if not isinstance(media, dict) or _sha_or_none(media.get("sha256")) is None:
+        issues.append({"stage": "source", "type": "source_media_identity_missing"})
+    if not approved:
+        issues.append({"stage": "source", "type": "approved_sermon_window_missing"})
+    duration = media.get("durationSeconds") if isinstance(media, dict) else None
+    if (not _finite(start) or not _finite(end) or not 0 <= start < end
+            or (duration is not None and (not _finite(duration) or end > duration + 0.01))):
+        issues.append({"stage": "source", "type": "source_window_incoherent"})
+    return issues
+
+
+def source_identity(source, transcript_artifact, anchor_artifact, review, machine_judge, implementation):
+    """Use recorded implementation identity so valid older packages remain valid."""
+    window, media = source["approvedWindow"], source["media"]
+    approval = window["evidence"]
+    return json_sha256({
+        "sourceId": source["sourceId"], "sourceUrlHash": source["sourceUrlHash"],
+        "serviceDate": source["serviceDate"],
+        "approvedWindow": {"startSeconds": float(window["startSeconds"]), "endSeconds": float(window["endSeconds"])},
+        "alignedSegmentsSha256": transcript_artifact["sha256"],
+        "anchorManifestJsonSha256": anchor_artifact["jsonSha256"],
+        "sourceMediaSha256": media.get("sha256") if media else None,
+        "approvalEvidenceSha256": approval.get("sha256") if approval else None,
+        "reviewEvidenceSha256": review["evidence"].get("sha256") if review["evidence"] else None,
+        "machineJudgeEvidenceSha256": machine_judge.get("sha256") if machine_judge else None,
+        "implementation": implementation,
+    })
+
+
+def validate_ready_package(package):
+    source = package["source"]
+    window = source["approvedWindow"]
+    if (package["status"] != "ready_for_translation" or package["translationEligible"] is not True
+            or package["candidateTranslationEligible"] is not True or package["issues"]
+            or source_gate_issues(source["media"], window["startSeconds"], window["endSeconds"],
+                                 window["status"] == "approved" and window["humanApproval"] is True)):
+        raise ValueError("Source package does not satisfy production readiness invariants")
+    identity = source_identity(source, package["transcript"]["artifact"], package["anchors"]["artifact"],
+                               package["review"], package["evidence"]["machineJudge"], package["implementation"])
+    if (package["downstreamInvalidationKey"] != identity
+            or package["packageId"] != f"english-source-{identity[:24]}"):
+        raise ValueError("Source derived identity differs from bound evidence")
+
+
 def _review_payload(
     review_path: Path | None,
     *,
@@ -364,10 +411,7 @@ def build_package(
         and not (accepted_anchor_warnings
                  and item.get("type") in MACHINE_AND_HUMAN_REVIEWABLE_ANCHOR_ISSUES)
     ]
-    if media is None:
-        issues.append({"stage": "source", "type": "source_media_identity_missing"})
-    if not approval_pass:
-        issues.append({"stage": "source", "type": "approved_sermon_window_missing"})
+    issues.extend(source_gate_issues(media, start, end, approval_pass))
     for name, value in review["checks"].items():
         if value != "approved":
             issues.append({"stage": "review", "type": f"{name}_review_pending"})
@@ -379,25 +423,19 @@ def build_package(
         else "candidate_ready_for_translation" if candidate_ready
         else "blocked"
     )
-    invalidation_identity = {
-        "sourceId": source_id,
-        "sourceUrlHash": source_url_hash,
-        "serviceDate": service_date,
-        "approvedWindow": {"startSeconds": float(start), "endSeconds": float(end)},
-        "alignedSegmentsSha256": aligned_sha,
-        "anchorManifestJsonSha256": anchor_json_sha,
-        "sourceMediaSha256": media.get("sha256") if media else None,
-        "approvalEvidenceSha256": approval_artifact.get("sha256") if approval_artifact else None,
-        "reviewEvidenceSha256": review["evidence"].get("sha256") if review["evidence"] else None,
-        "machineJudgeEvidenceSha256": machine_judge_artifact.get("sha256") if machine_judge_artifact else None,
-        "implementation": {
-            "builderSha256": file_sha256(Path(__file__).resolve()),
-            "anchorGeneratorSha256": file_sha256(
-                Path(__file__).resolve().with_name("sermon_sentence_interpretation.py")
-            ),
-        },
+    implementation = {
+        "builderSha256": file_sha256(Path(__file__).resolve()),
+        "anchorGeneratorSha256": file_sha256(Path(__file__).resolve().with_name("sermon_sentence_interpretation.py")),
     }
-    downstream_key = json_sha256(invalidation_identity)
+    source_metadata = {
+        "sourceId": source_id, "sourceUrlHash": source_url_hash, "serviceDate": service_date,
+        "media": media, "approvedWindow": {
+            "startSeconds": float(start), "endSeconds": float(end),
+            "status": "approved" if approval_pass else "pending", "humanApproval": approval_pass,
+            "evidence": approval_artifact},
+    }
+    downstream_key = source_identity(source_metadata, aligned_artifact, anchor_artifact,
+                                     review, machine_judge_artifact, implementation)
     identity = summary.get("pipelineInputIdentity")
     runtime = summary.get("readingAlignmentRuntime")
     if runtime is None and isinstance(identity, dict):
@@ -410,20 +448,8 @@ def build_package(
         "status": status,
         "candidateTranslationEligible": candidate_ready,
         "translationEligible": production_ready,
-        "implementation": invalidation_identity["implementation"],
-        "source": {
-            "sourceId": source_id,
-            "sourceUrlHash": source_url_hash,
-            "serviceDate": service_date,
-            "media": media,
-            "approvedWindow": {
-                "startSeconds": float(start),
-                "endSeconds": float(end),
-                "status": "approved" if approval_pass else "pending",
-                "humanApproval": approval_pass,
-                "evidence": approval_artifact,
-            },
-        },
+        "implementation": implementation,
+        "source": source_metadata,
         "transcript": {
             "artifact": aligned_artifact,
             "provenance": {

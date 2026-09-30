@@ -74,9 +74,8 @@ def plugin_implementation_sha256(plugin_path: Path) -> str:
     return digest.hexdigest()
 
 
-def prepare_request(source: dict[str, Any], anchor: dict[str, Any],
-                    policy: dict[str, Any]) -> dict[str, Any]:
-    """Freeze exactly one source and locale; leave all generated fields blank."""
+def validate_source_for_translation(source: dict[str, Any], anchor: dict[str, Any]) -> str:
+    """Reuse the production source/anchor gate without a locale policy or writes."""
     _require(source.get("schemaVersion") == handoff.SOURCE_PACKAGE_SCHEMA
              and source.get("status") == "ready_for_translation"
              and source.get("translationEligible") is True,
@@ -100,6 +99,14 @@ def prepare_request(source: dict[str, Any], anchor: dict[str, Any],
     anchor_hash = interpretation.json_sha256(anchor)
     _require(source.get("anchors", {}).get("artifact", {}).get("jsonSha256") == anchor_hash,
              "Source package and anchor manifest differ")
+    return anchor_hash
+
+
+def prepare_request(source: dict[str, Any], anchor: dict[str, Any],
+                    policy: dict[str, Any]) -> dict[str, Any]:
+    """Freeze exactly one source and locale; leave all generated fields blank."""
+    anchor_hash = validate_source_for_translation(source, anchor)
+    units = anchor["sourceUnits"]
     identity = policy_tools.validate_policy(policy)
     policy_tools.validate_source_scope(policy, source, anchor)
     _require(identity["productionPolicyReady"],
