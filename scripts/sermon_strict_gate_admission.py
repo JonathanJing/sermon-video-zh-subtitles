@@ -150,7 +150,7 @@ class AdmissionBoundary:
             names = sorted(p.name for p in root.iterdir() if p.name != '.admission')
             c.require(len(names) <= 64 and all(name.endswith('.json') for name in names),
                       'unrecognized_revision_evidence')
-            fixed = {'strict-identity.json', 'revision.json', 'candidate.json', 'review-input.json',
+            fixed = {'request-limits.json', 'strict-identity.json', 'revision.json', 'candidate.json', 'review-input.json',
                      'parent-revision.json', 'parent-candidate.json', 'repair-plan.json', 'trigger-review.json',
                      'repair-input.json', 'repair-sidecars.json', 'repair-history.json'}
             c.require(all(name in fixed or re.fullmatch(
@@ -163,7 +163,8 @@ class AdmissionBoundary:
             manifest = c.decode_json(data['revision.json'])
             candidate = c.decode_json(data['candidate.json'])
             prepared = strict.prepare(*(files[k] for k in ('source', 'anchor', 'policy', 'rubric')),
-                {k: candidate[k] for k in ('translationGroupId', 'sourceUnitIds')})
+                {k: candidate[k] for k in ('translationGroupId', 'sourceUnitIds')},
+                request_limits=c.decode_json(data['request-limits.json']) if 'request-limits.json' in data else None)
             identity = {key: manifest[key] for key in budget.IDENTITY_FIELDS if key not in ('workUnitId', 'rubricSha256')}
             identity['workUnitId'] = prepared['workUnitId']
             identity['rubricSha256'] = c.canonical_sha256(values['rubric'])

@@ -70,7 +70,8 @@ def run_group(prepared, *, root, store, job_root, production_run_id, graph,
         'authoritySha256': store.authority_sha256, 'identity': identity,
         'materialBytesSha256': {key: c.bytes_sha256(raw) for key, raw in prepared['bytes'].items()},
         'graphSha256': closure['graphSha256'], 'candidateId': candidate_id,
-        'initialRevisionId': initial_revision_id, 'bounds': dict(bounds)}
+        'initialRevisionId': initial_revision_id, 'bounds': dict(bounds),
+        **({'requestLimits': prepared['requestLimits']} if 'requestLimits' in prepared else {})}
     # Identity excludes output/revision/issue names, so a second local caller
     # cannot run the same chain concurrently by choosing another output folder.
     lock_id = jobs._digest({'scope': SCHEMA, 'store': store.store_sha256, 'chain': identity})
