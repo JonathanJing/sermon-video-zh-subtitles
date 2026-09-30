@@ -127,7 +127,7 @@ v1/v2 无扩展字段仍可读取，不补造依赖或时间；所有导入事�
 
 运行 `python3 -m scripts.weekly_pipeline_report --accounting-dir PATH --out-dir NEW_DIRECTORY`，产生只读 `report.json` 与由该 JSON 投影的 `report.md`。输出目录必须不存在；不修改源账本，不调用网络或模型。返回 0 表示投影可计算，1 表示证据不完整；这不是生产或人工验收。
 
-`with stage("source") as source_span:` 返回本次 attempt 的 span ID。下游 `depends_on=[source_span]` 绑定同一 run 中的准确 attempt；不能使用含糊 stage 名称，也不把 parent containment 当成执行依赖。每个 root 显式记录空 dependsOn。汇合节点引用全部必需前置；重试引用实际前一 attempt。
+`with stage("source") as source_span:` 返回本次 attempt 的 span ID。下游 `depends_on=[source_span]` 绑定同一 run 中的准确 attempt；不能使用含糊 stage 名称，也不把 parent containment 当成执行依赖。每个 root 显式记录空 dependsOn；未传 depends_on 的旧调用写 null，不能冒充无依赖 root。汇合节点引用全部必需前置；重试引用实际前一 attempt。
 
 投影器检查重复身份冲突、缺依赖、循环、依赖时间重叠、负区间、parent 循环/越界和未完成 span。相同事件重导入不重复计数。父容器不参与 leaf active 时间合计；关键路径只计算 deterministic_program、production_model、decision_agent 的 active leaf duration，human/external wait 和 engineering_codex 单列。并行分支合计不代表端到端 wall。老 v1/v2 未记录依赖时仍可读取，但 criticalPath 为 null，绝不猜测 DAG。
 

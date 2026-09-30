@@ -163,6 +163,14 @@ class WeeklyPipelineReportTests(unittest.TestCase):
         self.assertIn('span_outside_run_interval', run['diagnostics'])
         self.assertIsNone(run['criticalPath'])
 
+    def test_uninstrumented_dependency_is_unknown_not_an_independent_root(self):
+        for row in self.rows:
+            if row.get('spanId') == 'ko':
+                row['dependsOn'] = None
+        run = self.result()['runs'][0]
+        self.assertIsNone(run['criticalPath'])
+        self.assertIn('legacy_dependency_or_executor_unknown', run['diagnostics'])
+
     def test_identical_span_ids_in_distinct_runs_never_join(self):
         second = [dict(row, runId='second') for row in self.rows]
         self.rows += second

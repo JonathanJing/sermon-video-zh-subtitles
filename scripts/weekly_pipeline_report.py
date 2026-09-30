@@ -97,11 +97,10 @@ def project_run(run_id, events):
         except (ValueError, TypeError, OverflowError):
             issue('invalid_interval'); continue
         executor = start.get('executorType')
-        if executor is None or 'dependsOn' not in start:
-            issue('legacy_dependency_or_executor_unknown')
         nodes[ident] = {'spanSha256': digest(ident), 'stage': _label(start['stage']),
             'workUnitId': start.get('workUnitId'), 'executorType': executor,
-            'status': end['status'], 'dependsOn': start.get('dependsOn', []),
+            'status': end['status'], 'dependsOn': start.get('dependsOn') or [],
+            'dependencyRecorded': isinstance(start.get('dependsOn'), list),
             'parent': start.get('parentSpanId'), 'begin': begin, 'finish': finish,
             'elapsedSeconds': end['elapsedSeconds'],
             'queueWaitSeconds': begin - queued if queued is not None else None,
@@ -124,6 +123,8 @@ def project_run(run_id, events):
     if not leaves:
         issue('no_complete_execution_spans')
     for key, n in leaves.items():
+        if n['executorType'] is None or not n['dependencyRecorded']:
+            issue('legacy_dependency_or_executor_unknown')
         for dep in n['dependsOn']:
             if dep not in leaves:
                 issue('missing_or_container_dependency')

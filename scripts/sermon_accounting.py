@@ -354,7 +354,7 @@ def stage(name, *, cache_hit=False, billing="local", executor_type=None,
             raise ValueError("invalid_queue_timestamp")
     base = {"stage": name, "spanId": span_id, "parentSpanId": parent,
             "cacheHit": bool(cache_hit), "billing": billing,
-            "executorType": executor_type, "dependsOn": _labels(depends_on),
+            "executorType": executor_type, "dependsOn": None if depends_on is None else _labels(depends_on),
             "blockedBy": _labels(blocked_by), "dependencyReadyAt": dependency_ready_at,
             "queuedAt": queued_at, **identities}
     started = time.monotonic()

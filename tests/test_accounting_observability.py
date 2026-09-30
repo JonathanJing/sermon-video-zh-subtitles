@@ -109,7 +109,9 @@ class ObservabilityTests(unittest.TestCase):
                         pass
             rows, damaged = accounting.read_events(t)
             self.assertEqual(damaged, [])
-            actual = {r['stage']: r['executorType'] for r in rows if r['event'] == 'stage_started'}
+            stages = [r for r in rows if r['event'] == 'stage_started']
+            self.assertTrue(all(r['dependsOn'] is None for r in stages))
+            actual = {r['stage']: r['executorType'] for r in stages}
             for billing, executor in {'api': 'production_model', 'codex': 'production_model',
                     'local': 'deterministic_program', 'orchestrator': 'deterministic_program',
                     'cloud': 'external_service'}.items():
