@@ -172,6 +172,25 @@ def _authorization(config, sunday, settings, state, plan):
     return (all(actual.get(k) == v for k, v in expected.items()) and bool(actual.get("approvedBy")) and bool(actual.get("approvedAt"))), expected
 
 
+def _evidence_identity(settings, binding):
+    """Bind revisions to the exact local inputs/receipts used by validators.
+
+    Missing evidence is explicit. Logs and wall-clock inspection timestamps are
+    excluded; content-addressed manifests are still fully validated below.
+    """
+    work, state, candidate, release = (Path(settings[k]) for k in ('work', 'stateDir', 'candidate', 'release'))
+    paths = {'authorization': Path(settings['authorization'])}
+    paths.update({'action.' + action: state / (action + '.json') for action in sorted(ACTIONS)})
+    for name in ('job.json', 'audio-review-synced.json', 'synchronization/zh-synced.mp3',
+                 'synchronization/assembly.json', 'synchronization/report.json'):
+        paths['audio.' + name] = work / name
+    paths['candidate.buildReport'] = candidate / 'build-report.json'
+    for name in ('build-report.json', 'release-plan.json', 'deployment-receipt.json', 'http-verification.json'):
+        paths['release.' + name] = release / name
+    return {'binding': binding, 'artifactSha256': {
+        key: digest(path) if path.exists() else None for key, path in paths.items()}}
+
+
 def _snapshot(config, sunday):
     settings = _settings(config, sunday)
     result = {"schemaVersion": "sermon-release-workflow-state-v1", "sunday": sunday, "configSha256": config["configSha256"],
@@ -182,6 +201,7 @@ def _snapshot(config, sunday):
             result["blockers"].append(reason)
         return result
     binding = _binding(config, sunday, settings)
+    result["evidence"]["revisionIdentity"] = _evidence_identity(settings, binding)
     state_dir, work = Path(settings["stateDir"]), Path(settings["work"])
     for action in ACTIONS:
         receipt_path = state_dir / f"{action}.json"
@@ -217,6 +237,7 @@ def _snapshot(config, sunday):
         return stop("waiting_audio_review", "A current human listening and same-video synchronization review is required", True)
     _module("weekly_dubbing").validate_review(work, write_receipt=False)
     audio_binding = _audio_binding(work, job)
+    result["evidence"]["audioBinding"] = audio_binding
     candidate, release, registry = (Path(settings[k]) for k in ("candidate", "release", "registry"))
     if not candidate.exists():
         return stop("build_page", "Build the reviewed weekly page with existing complete review validators")
@@ -226,6 +247,7 @@ def _snapshot(config, sunday):
     releases = _module("weekly_release")
     releases.read_release(candidate)
     state, _, _, _ = releases.load_registry(registry)
+    result["evidence"]["registryStateSha256"] = hashlib.sha256(json.dumps(state, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     if state["origin"] != settings["origin"]:
         raise ValueError("Registry origin differs from configured deployment")
     if not release.exists():
@@ -278,7 +300,8 @@ def snapshot(config_path, sunday):
                 "recommendedAction": {"action": "waiting_evidence_repair", "humanActionRequired": True, "reason": str(exc)}}
 
 
-def execute(config_path, sunday, action, *, expected_source_run_root=None, expected_config_sha=None):
+def execute(config_path, sunday, action, *, expected_source_run_root=None, expected_config_sha=None,
+            expected_release_revision=None):
     if action not in ACTIONS:
         raise ValueError("Unsupported release action")
     config = load_config(config_path)
@@ -297,6 +320,10 @@ def execute(config_path, sunday, action, *, expected_source_run_root=None, expec
         if fresh_config != config:
             raise ValueError("Workflow configuration changed while acquiring locks")
         current = _snapshot(config, sunday)
+        if expected_release_revision is not None:
+            from scripts.sermon_workflow_jobs import _digest
+            if _digest(current) != expected_release_revision:
+                return {"executed": False, "snapshot": current}
         if expected_source_run_root:
             observed = current.get("evidence", {}).get("sourceRunRoot")
             if not observed or Path(observed).resolve() != Path(expected_source_run_root).resolve():
@@ -335,12 +362,14 @@ def main(argv=None):
     parser.add_argument("--action", choices=sorted(ACTIONS))
     parser.add_argument("--expected-config-sha")
     parser.add_argument("--expected-source-run-root")
+    parser.add_argument("--expected-release-revision")
     args = parser.parse_args(argv)
     if args.expected_config_sha and digest(Path(args.config)) != args.expected_config_sha:
         raise ValueError("Workflow configuration changed since dispatch")
     result = (execute(args.config, args.sunday, args.action,
                       expected_source_run_root=args.expected_source_run_root,
-                      expected_config_sha=args.expected_config_sha)
+                      expected_config_sha=args.expected_config_sha,
+                      expected_release_revision=args.expected_release_revision)
               if args.action else snapshot(args.config, args.sunday))
     print(json.dumps(result, ensure_ascii=False))
     return 0
