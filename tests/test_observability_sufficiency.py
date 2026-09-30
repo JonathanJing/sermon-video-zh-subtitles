@@ -281,3 +281,50 @@ class ObservabilitySufficiencyTests(unittest.TestCase):
                 self.assertEqual(sermon_logs.inspect_logs(root, run_id='all')['ledgerIntegrity'], 'conflicting_receipts')
                 exporter.export(root, root/str(i))
                 self.assertEqual(weekly.project(root/str(i))['receiptIntegrity']['status'], 'conflicted')
+
+    def test_export_preserves_safe_execution_request_and_parent_identities(self):
+        from scripts import export_observability_trace as exporter
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with accounting.accounting_session(root, 'parent'):
+                with accounting.accounting_session(root, 'child'):
+                    with accounting.stage('call', executor_type='production_model', depends_on=[]):
+                        accounting.record_api_started('model-a', {'requestPayloadSha256': 'a'*64, 'reasoning_effort': 'medium', 'prompt': 'SECRET'})
+            rows, _ = accounting.read_events(root)
+            child = next(e for e in rows if e['event'] == 'workflow_started' and e['workflow'] == 'child')
+            child['executionIdentity']['loadedProjectCodeSha256'].update({'/private/machine.py': 'b'*64, 'scripts/../private.py': 'c'*64})
+            (root/'events.jsonl').write_text(''.join(json.dumps(e)+'\n' for e in rows))
+            exporter.export(root, root/'export'); exported, bad = accounting.read_events(root/'export'); self.assertFalse(bad)
+            saved = next(e for e in exported if e.get('workflowId') == child['workflowId'] and e['event'] == 'workflow_started')
+            self.assertEqual(saved['parentWorkflowId'], child['parentWorkflowId'])
+            self.assertEqual(saved['executionIdentity']['gitCommit'], child['executionIdentity']['gitCommit'])
+            self.assertEqual(saved['executionIdentity']['trackedWorkingTreeDirty'], child['executionIdentity']['trackedWorkingTreeDirty'])
+            self.assertIn('scripts/sermon_accounting.py', saved['executionIdentity']['loadedProjectCodeSha256'])
+            self.assertNotIn('/private/machine.py', saved['executionIdentity']['loadedProjectCodeSha256'])
+            self.assertNotIn('scripts/../private.py', saved['executionIdentity']['loadedProjectCodeSha256'])
+            attempt = next(e for e in exported if e['event'] == 'api_attempt_started')
+            self.assertEqual(attempt['settings']['requestPayloadSha256'], 'a'*64)
+            self.assertNotIn('SECRET', (root/'export/events.jsonl').read_text())
+
+    def test_export_hash_and_events_share_locked_snapshot_despite_later_append(self):
+        from scripts import export_observability_trace as exporter
+        import fcntl
+        import threading
+        t = self.fixture(weekly_tests.WeeklyPipelineReportTests); t.result()
+        path = t.root/'events.jsonl'; original_bytes = path.read_bytes()
+        appended = {**t.rows[-1], 'eventId': 'later-append'}
+        project = weekly.project
+        def append_and_project(directory):
+            def append():
+                with path.open('ab') as stream:
+                    fcntl.flock(stream.fileno(), fcntl.LOCK_EX)
+                    stream.write((json.dumps(appended)+'\n').encode())
+            thread = threading.Thread(target=append);thread.start();thread.join(timeout=5)
+            self.assertFalse(thread.is_alive())
+            return project(directory)
+        with mock.patch.object(weekly, 'project', side_effect=append_and_project):
+            result = exporter.export(t.root, t.root/'export')
+        self.assertEqual(result['sourceLedgerSha256'], hashlib.sha256(original_bytes).hexdigest())
+        self.assertNotEqual(result['sourceLedgerSha256'], hashlib.sha256(path.read_bytes()).hexdigest())
+        self.assertEqual(result['exportedEventCount'], len(t.rows))
+        self.assertEqual(len(accounting.read_events(t.root)[0]), len(t.rows)+1)

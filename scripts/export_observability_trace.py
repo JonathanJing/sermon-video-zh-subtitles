@@ -18,7 +18,7 @@ from scripts import sermon_decision_accounting as decision
 from scripts import sermon_workflow_evidence as evidence
 from scripts import weekly_pipeline_report as weekly
 
-LABELS = {'event', 'eventId', 'runId', 'workflow', 'workflowId', 'spanId', 'parentSpanId',
+LABELS = {'event', 'eventId', 'runId', 'workflow', 'workflowId', 'parentWorkflowId', 'spanId', 'parentSpanId',
           'stage', 'status', 'billing', 'executorType', 'workUnitId', 'attemptId', 'decisionId',
           'invocationId', 'provider', 'model', 'requestedModel', 'measurementScope', 'phase', 'code', 'level'}
 TIMES = {'recordedAt', 'startedAt', 'dependencyReadyAt', 'queuedAt'}
@@ -37,6 +37,8 @@ def safe_event(row):
         if key in row: result[key] = accounting._number(row[key])
     if 'cacheHit' in row: result['cacheHit'] = row['cacheHit'] is True
     if 'metadata' in row: result['metadata'] = accounting._safe_metadata(row['metadata'])
+    if 'executionIdentity' in row: result['executionIdentity'] = accounting.safe_execution_identity(row['executionIdentity'])
+    if 'settings' in row: result['settings'] = accounting._safe_settings(row['settings'])
     if 'responseId' in row:
         # Consistent replacement preserves direct-receipt joins without public provider IDs.
         result['responseId'] = hashlib.sha256(row['responseId'].encode()).hexdigest() if row['responseId'] else None
@@ -75,7 +77,7 @@ def safe_event(row):
 
 
 def export(directory, output):
-    events, damaged = accounting.read_events(directory)
+    events, damaged, source_hash = accounting.read_event_snapshot(directory)
     if damaged: raise ValueError('damaged_source_ledger_requires_inspection')
     safe = [safe_event(e) for e in events]
     before, after = accounting.receipt_integrity(events), accounting.receipt_integrity(safe)
@@ -88,7 +90,7 @@ def export(directory, output):
     (output/'report.json').write_text(json.dumps(report, indent=2, allow_nan=False)+'\n')
     (output/'report.md').write_text(weekly.markdown(report))
     manifest = {'schemaVersion': 'sermon-safe-observability-export-v1', 'sourceEventCount': len(events),
-        'exportedEventCount': len(events), 'sourceLedgerSha256': hashlib.sha256((directory/'events.jsonl').read_bytes()).hexdigest(),
+        'exportedEventCount': len(events), 'sourceLedgerSha256': source_hash,
         'exportedLedgerSha256': hashlib.sha256(serialized.encode()).hexdigest(),
         'excluded': ['pid', 'thread', 'error_payloads', 'resource_host_details', 'paths', 'unknown_log_fields', 'transcript_and_response_text'],
         'responseIdTransform': 'sha256_preserves_equality_not_original_provider_identifier',

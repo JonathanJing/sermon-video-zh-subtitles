@@ -11,7 +11,7 @@ import sys
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts.sermon_accounting import EXECUTOR_TYPES, READABLE_SCHEMAS, _label, _number, _safe_metadata, read_events, receipt_integrity
+from scripts.sermon_accounting import EXECUTOR_TYPES, READABLE_SCHEMAS, _label, _number, _safe_metadata, safe_execution_identity, read_events, receipt_integrity
 
 from scripts import sermon_cache_observation as cache_observation
 from scripts import sermon_local_model_observation as local_model
@@ -280,7 +280,9 @@ def project_run(run_id, events, integrity=None, receipt_events=None):
                       if e['event'] == 'workflow_started' and _label(e.get('metadata', {}).get('targetLocale'), None)})
     source_duration = next(iter(source_durations)) if len(source_durations) == 1 else None
     provenance = [{'workflowSha256': digest(e['workflowId']) if e.get('workflowId') else None,
-                   'metadata': _safe_metadata(e.get('metadata', {}))}
+                   'metadata': _safe_metadata(e.get('metadata', {})),
+                   'parentWorkflowSha256': digest(e['parentWorkflowId']) if e.get('parentWorkflowId') else None,
+                   'executionIdentity': safe_execution_identity(e.get('executionIdentity'))}
                   for e in events if e['event'] == 'workflow_started']
     workload = [{'stage': _label(e.get('stage')), 'spanSha256': digest(e['spanId']) if e.get('spanId') else None,
                  'metrics': {k: v for k, v in e['metrics'].items()
