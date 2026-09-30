@@ -179,7 +179,7 @@ A/B 顺序固定为：**A 当前 Agent-heavy 基线 → B1 只引入 bounded Sta
 | `SPD6-LOG-01` | `in_progress` | accounting v3 已开始写入 executorType、dependsOn、blockedBy、ready/queue、workUnit/attempt/decision identity；DAG/critical-path 初始投影已实现，下一步接入 producer 完整依赖与等待证据 | 可重建 DAG 和 critical path；旧 v1/v2 历史仍可读 |
 | `SPD6-LOG-02` | `pending` | 固定程序记录 script/hash/input/output receipt/runtime/CPU/RSS/cache | 固定程序耗时不记为 Codex orchestration |
 | `SPD6-LOG-03` | `in_progress` | 模型调用记录 requested/actual model、role、input/cached/non-cached/output/reasoning、latency/attempt | 关键 model call usage 覆盖 100% 或显式 unknown；不重复计量 SDK 聚合与底层 receipt |
-| `SPD6-LOG-04` | `pending` | Decision Agent 记录 State Packet bytes/hash、evidence refs、model latency、validation/commit time | 能单独得到 orchestration time/token；parentContextInherited 目标为 false |
+| `SPD6-LOG-04` | `in_progress` | bounded proposal 已记录 packet bytes/hash、引用/动作数量、预约/响应/验证/提交耗时；真实 SDK/model usage 与 packet 构建仍待接入，未知不补零 | 能单独得到 orchestration time/token；parentContextInherited 目标为 false |
 | `SPD6-LOG-05` | `in_progress` | 生成 Weekly Pipeline Report JSON + Markdown | 同时给 end-to-end、critical path、active compute、human/external wait、production model、Decision Agent、engineering Codex、热点 work unit |
 | `SPD6-VAL-00` | `pending` | 现有 synthetic/短 fixture dry run | happy path 0 runtime Codex turn；failure injection、stale decision、convergence、hard stop、账本重建全通过并生成 Stage 0 sign-off |
 | `SPD6-VAL-01` | `pending` | 经授权往期视频约 2–3 分钟真实小片段 dry run | 三语真实 ASR/翻译/review/TTS/组装/Dev candidate；happy path 0 Codex turn；bounded decision 注入通过；相同输入 rerun 未影响单元不新增付费调用；Stage 1 sign-off |

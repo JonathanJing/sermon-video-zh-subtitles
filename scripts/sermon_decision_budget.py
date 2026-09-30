@@ -9,6 +9,8 @@ from pathlib import Path
 
 from scripts import sermon_bounded_decision as decision
 from scripts import sermon_workflow_jobs as jobs
+from scripts.sermon_decision_accounting import Observation
+from scripts.sermon_accounting import AccountingWriteError
 from scripts.sermon_release_workflow import _safe_path
 
 SCHEMA = 'sermon-decision-budget-v1'
@@ -122,10 +124,18 @@ def propose(packet, *, budget, responder, fresh_packet):
         return {'status': 'blocked', 'reasonCode': 'stale_state_before_reservation', 'dispatchEnabled': False}
     result = decision.propose(packet, reserve_attempt=budget.reserve, responder=responder, fresh_packet=fresh_packet)
     if result['status'] == 'proposal_requires_locked_admission' or result.get('reasonCode') == 'decision_rejected':
+        observation = Observation(packet, phase='commit', observation_id=result['decisionObservationId'],
+                                  depends_on=[result['decisionValidationSpanId']])
         try:
-            recorded = budget._record_returned(packet, result)
+            with observation.measure('stateCommitMs'):
+                recorded = budget._record_returned(packet, result)
+        except AccountingWriteError:
+            # A trace failure can occur after the durable commit succeeded.
+            # Preserve that distinction; never relabel it as a failed commit.
+            raise
         except (OSError, ValueError):
             recorded = False
+        observation.finish('commit_recorded' if recorded else 'commit_failed')
         if not recorded:
             return {'status': 'blocked', 'reasonCode': 'decision_return_not_durably_recorded', 'dispatchEnabled': False}
     # Unknown outcome leaves the reserved record untouched, consuming the call

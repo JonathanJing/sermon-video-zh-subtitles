@@ -13,6 +13,8 @@ if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.sermon_accounting import EXECUTOR_TYPES, READABLE_SCHEMAS, _label, read_events
 
+from scripts.sermon_decision_accounting import CODE as DECISION_CODE, safe_observation
+
 TOKENS = ('inputTokens', 'cachedInputTokens', 'outputTokens', 'reasoningTokens')
 ACTIVE = {'deterministic_program', 'production_model', 'decision_agent'}
 TIMESTAMP_TOLERANCE_SECONDS = 0.01
@@ -191,6 +193,21 @@ def project_run(run_id, events):
             issue('span_outside_run_interval')
     else:
         issue('run_wall_unknown')
+    decision_observations, decision_facts = [], defaultdict(dict)
+    for event in events:
+        if event.get('event') == 'log' and event.get('code') == DECISION_CODE:
+            try:
+                fact = safe_observation(event.get('fields'))
+                identity = (fact['observationId'], fact['phase'])
+                decision_facts[identity][json.dumps(fact, sort_keys=True)] = fact
+            except (ValueError, TypeError):
+                issue('invalid_decision_observation')
+    for identity in sorted(decision_facts):
+        facts = decision_facts[identity]
+        if len(facts) != 1:
+            issue('conflicting_decision_observations')
+        else:
+            decision_observations.append(next(iter(facts.values())))
     usage = usage_report(events, nodes)
     if usage['conflicts']:
         issue('conflicting_usage_receipts')
@@ -201,7 +218,7 @@ def project_run(run_id, events):
     safe_nodes = [{k: v for k, v in n.items() if k not in {'dependsOn', 'parent', 'begin', 'finish', 'ready'}} for n in leaves.values()]
     return {'runSha256': digest(run_id), 'status': 'partial' if diagnostics else 'projected',
             'endToEndWallSeconds': wall, 'criticalPath': critical, 'diagnostics': diagnostics,
-            'leafElapsedByExecutor': totals, 'usage': usage,
+            'leafElapsedByExecutor': totals, 'usage': usage, 'decisionObservations': decision_observations,
             'workUnits': sorted(safe_nodes, key=lambda n: (-n['elapsedSeconds'], n['spanSha256'])),
             'sourceDurationSeconds': None, 'locales': None, 'pageReadyAt': None,
             'acceptance': 'not_evaluated', 'notes': [
@@ -252,6 +269,15 @@ def markdown(report):
         for executor, row in run['usage']['byExecutor'].items():
             values = [row['knownSubtotal'][k] for k in ('inputTokens', 'cachedInputTokens', 'nonCachedInputTokens', 'outputTokens', 'reasoningTokens')]
             lines.append('| ' + ' | '.join(map(str, [executor, row['calls'], *values])) + ' |')
+        if run.get('decisionObservations'):
+            lines += ['', 'Decision observations (commit is separate; missing usage remains unknown):', '',
+                      '| Phase | Status | Packet bytes | Responder ms | Validation ms | Commit ms |',
+                      '|---|---|---:|---:|---:|---:|']
+            for observation in run['decisionObservations']:
+                timing = observation['timings']
+                values = [observation['phase'], observation['status'], observation['statePacketBytes'],
+                          timing['modelLatencyMs'], timing['decisionValidationMs'], timing['stateCommitMs']]
+                lines.append('| ' + ' | '.join(map(str, values)) + ' |')
         lines += ['', 'Diagnostics: ' + ', '.join(run['diagnostics']), '']
     return '\n'.join(lines) + '\n'
 
