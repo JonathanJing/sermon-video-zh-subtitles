@@ -23,7 +23,8 @@ from scripts import pipeline_compatibility_gate as compatibility
 ROOT = Path(__file__).resolve().parents[1]
 SUITES = {
     'canonical_packages': ('tests.test_inspect_canonical_packages', 'tests.test_inspect_canonical_audio',
-                           'tests.test_inspect_canonical_release', 'tests.test_canonical_pipeline_definition'),
+                           'tests.test_inspect_canonical_release', 'tests.test_canonical_pipeline_definition',
+                           'tests.test_canonical_durable_jobs'),
     'bounded_decision': ('tests.test_sermon_bounded_decision', 'tests.test_sermon_decision_budget',
                          'tests.test_sermon_decision_accounting'),
     'legacy_controller_reliability': ('tests.test_sermon_deterministic_controller', 'tests.test_controller_crash_windows',
