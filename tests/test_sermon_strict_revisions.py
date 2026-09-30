@@ -28,6 +28,7 @@ class RevisionTests(unittest.TestCase):
             'rubricSha256':c.canonical_sha256(self.f.prepared['rubric']), 'approvalReceiptRefs':[],
             'admissionStatus':'blocked','reasonCodes':['review_failed'],'allowedNextActions':['repair_translation'],
             'createdAt':'2026-09-30T00:00:00Z'}
+        self.gate=gate
         result=planning.plan_repair(candidate=self.parent,candidate_bytes=self.parent_bytes,review=self.review,
             review_bytes=(self.root/'review-receipt.json').read_bytes(),rubric=self.f.prepared['rubric'],
             input_manifest=self.inputs,gate=gate,state_revision=self.state,budget=budget,
