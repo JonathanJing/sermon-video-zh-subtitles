@@ -88,12 +88,14 @@ def plan(spec, *, input_identity, observations, approvals):
                    or not _sha(gate[g].get('receiptSha256'))]
         observed = observations.get(ident, {})
         state = {'identity': binding, 'status': 'human_gate' if missing else 'ready', 'missingGates': missing}
-        if not missing and isinstance(observed, dict) and observed.get('identity') == binding:
+        if isinstance(observed, dict) and observed.get('status') in {'running', 'uncertain', 'failed'}:
+            # Changed inputs cannot abandon an older job still needing review.
+            state['status'] = ('reconciliation_required' if observed.get('identity') != binding else
+                               {'running': 'waiting_job', 'uncertain': 'reconciliation_required', 'failed': 'blocked'}[observed['status']])
+        elif not missing and isinstance(observed, dict) and observed.get('identity') == binding:
             if observed.get('status') == 'validated' and _sha(observed.get('outputSha256')):
                 outputs[ident] = observed['outputSha256']
                 state['status'] = 'validated'
-            elif observed.get('status') in {'running', 'uncertain', 'failed'}:
-                state['status'] = {'running': 'waiting_job', 'uncertain': 'reconciliation_required', 'failed': 'blocked'}[observed['status']]
         states[ident] = state
     return {'schemaVersion': 'sermon-canonical-shadow-plan-v1', 'workflowDefinitionVersion': VERSION,
             'stateRevision': _digest({'spec': spec, 'input': input_identity, 'observations': observations, 'approvals': approvals}),
