@@ -225,3 +225,59 @@ class ObservabilitySufficiencyTests(unittest.TestCase):
             with mock.patch.object(runner.producer, 'plugin_implementation_sha256', return_value='b'*64), mock.patch.object(accounting, 'record_workload', side_effect=accounting.AccountingWriteError('injected')):
                 with self.assertRaisesRegex(ValueError, 'Language plugin implementation'):
                     runner.require_plugin_identity(Path('unused'), 'a'*64)
+
+    def test_same_event_identity_conflicting_receipts_never_select_first_usage(self):
+        from scripts import export_observability_trace as exporter
+        from scripts import sermon_logs
+        t = self.fixture(receipt_tests.ReceiptConflictTests)
+        for changes in ({'usage': {**t.api['usage'], 'inputTokens': 200}},
+                        {'model': 'gpt-6-sol'}, {'cost': {**t.api['cost'], 'estimatedUsd': 999}}):
+            other = {**copy.deepcopy(t.api), **changes}  # Intentionally same eventId.
+            integrity_results = []
+            for order, rows in enumerate(([other, *t.events], [*t.events, other])):
+                summary = t.summarize(rows); report = weekly.project(t.root)
+                self.assertEqual(report['receiptIntegrity'], summary['receiptIntegrity'])
+                self.assertEqual(report['receiptIntegrity']['status'], 'conflicted')
+                self.assertIn('conflicting_event_identity', report['diagnostics'])
+                self.assertEqual(sermon_logs.inspect_logs(t.root, run_id='all')['ledgerIntegrity'], 'conflicting_receipts')
+                row = report['runs'][0]['usage']['byExecutor']['production_model']
+                self.assertIsNone(row['calls']); self.assertIsNone(row['knownSubtotal']['inputTokens'])
+                target = t.root/('export-'+str(len(list(t.root.glob('export-*')))))
+                exporter.export(t.root, target)
+                exported = weekly.project(target)
+                self.assertEqual(exported['receiptIntegrity']['status'], 'conflicted')
+                self.assertIsNone(exported['runs'][0]['usage']['byExecutor']['production_model']['calls'])
+                integrity_results.append(report['receiptIntegrity'])
+            self.assertEqual(*integrity_results)
+
+    def test_same_event_identity_equivalent_usage_is_selected_even_if_earlier_copy_last(self):
+        t = self.fixture(receipt_tests.ReceiptConflictTests)
+        other = {**copy.deepcopy(t.api), 'recordedAt': '2026-09-01T00:00:00+00:00'}
+        for rows in ([other, *t.events], [*t.events, other]):
+            summary = t.summarize(rows); report = weekly.project(t.root)
+            self.assertEqual(report['receiptIntegrity'], summary['receiptIntegrity'])
+            self.assertEqual(sum(len(r['usage']['directReceipts']) for r in report['runs']), 1)
+            self.assertEqual(report['receiptIntegrity']['status'], 'consistent')
+
+    def test_same_event_identity_sdk_conflict_survives_export(self):
+        from scripts import export_observability_trace as exporter
+        from scripts import sermon_logs
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with accounting.accounting_session(root, 'sdk-test'):
+                with accounting.stage('sdk', depends_on=[], executor_type='decision_agent'):
+                    accounting._emit({'event': 'sdk_call_finished', 'invocationId': 'sdk-same', 'status': 'completed',
+                        'model': 'model-a', 'elapsedSeconds': 1, 'measurementScope': 'sdk_call_aggregate',
+                        'usage': {'requests': 1, 'input_tokens': 10, 'output_tokens': 2, 'total_tokens': 12}})
+            rows, _ = accounting.read_events(root)
+            event = next(e for e in rows if e['event'] == 'sdk_call_finished')
+            copy_event = {**event, 'model': 'model-b'}
+            for i, all_rows in enumerate(([copy_event, *rows], [*rows, copy_event])):
+                (root/'events.jsonl').write_text(''.join(json.dumps(e)+'\n' for e in all_rows))
+                summary = accounting.summarize(root); report = weekly.project(root)
+                self.assertEqual(summary['receiptIntegrity'], report['receiptIntegrity'])
+                self.assertEqual(report['receiptIntegrity']['status'], 'conflicted')
+                self.assertEqual(report['runs'][0]['usage']['sdkAggregates'], [])
+                self.assertEqual(sermon_logs.inspect_logs(root, run_id='all')['ledgerIntegrity'], 'conflicting_receipts')
+                exporter.export(root, root/str(i))
+                self.assertEqual(weekly.project(root/str(i))['receiptIntegrity']['status'], 'conflicted')

@@ -81,7 +81,7 @@ def usage_report(events, nodes, integrity=None):
             'countMeaning': 'observed_receipt_count_not_proof_of_no_uninstrumented_calls'}
 
 
-def project_run(run_id, events, integrity=None):
+def project_run(run_id, events, integrity=None, receipt_events=None):
     diagnostics, pairs = [], defaultdict(lambda: {'start': [], 'end': []})
     def issue(code):
         if code not in diagnostics:
@@ -245,7 +245,7 @@ def project_run(run_id, events, integrity=None):
             if not history_conflicts and any(f['usage'][k] is not None for f in historical) else None
             for k in TOKENS},
         'missingHistoricalFields': {k: sum(f['usage'][k] is None for f in historical) for k in TOKENS}}
-    usage = usage_report(events, nodes, integrity)
+    usage = usage_report(events if receipt_events is None else receipt_events, nodes, integrity)
     if usage['conflicts']:
         issue('conflicting_usage_receipts')
     if diagnostics:
@@ -323,11 +323,14 @@ def project_run(run_id, events, integrity=None):
 
 def project(directory):
     events, damaged = read_events(directory)
-    runs, seen, diagnostics = defaultdict(list), {}, []
+    runs, receipt_events, seen, diagnostics = defaultdict(list), defaultdict(list), {}, []
     duplicates = 0
     for event in events:
         if event.get('schemaVersion') not in READABLE_SCHEMAS:
             diagnostics.append('unsupported_schema'); continue
+        # Conflicting copies of the same event identity are still receipt facts.
+        # Reconcile them before selecting representatives for DAG projection.
+        receipt_events[event['runId']].append(event)
         key = (event['runId'], event['eventId'])
         if key in seen:
             if event != seen[key]:
@@ -338,8 +341,8 @@ def project(directory):
         seen[key] = event; runs[event['runId']].append(event)
     if damaged:
         diagnostics.append('damaged_events')
-    integrity = receipt_integrity(list(seen.values()))
-    result = [project_run(k, v, integrity) for k, v in sorted(runs.items())]
+    integrity = receipt_integrity([event for rows in receipt_events.values() for event in rows])
+    result = [project_run(k, v, integrity, receipt_events[k]) for k, v in sorted(runs.items())]
     if diagnostics:
         # A damaged record can hide a dependency: never claim a complete DAG.
         for run in result:
