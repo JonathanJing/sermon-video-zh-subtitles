@@ -148,6 +148,15 @@ class PackageInspectionTests(unittest.TestCase):
         aligned.write_text('[]')
         self.assertEqual(inspect.inspect(self.path)['nodes']['source']['status'], 'blocked')
 
+    def test_changed_window_approval_receipt_blocks_source(self):
+        original = inspect.inspect(self.path)
+        approval = Path(self.fixture.source['source']['approvedWindow']['evidence']['path'])
+        changed = json.loads(approval.read_text()); changed['humanApproval'] = False
+        approval.write_text(json.dumps(changed))
+        result = inspect.inspect(self.path)
+        self.assertEqual(result['nodes']['source']['status'], 'blocked')
+        self.assertNotEqual(original['stateRevision'], result['stateRevision'])
+
     def test_no_tracker_or_command_configuration(self):
         for field in ('tracker', 'command', 'humanApproval'):
             self.write('inspection.json', {**self.config, field: 'not admissible'})

@@ -69,6 +69,15 @@ def inspect(config_path):
         anchor = _read_package(path.parent, config['anchor'], hashes, 'anchor')
         handoff._validate_schema(source, 'sermon-english-source-package-v1.schema.json', 'source package')
         producer.validate_source_for_translation(source, anchor)
+        window = source['source']['approvedWindow']
+        window_evidence = window['evidence']
+        window_receipt = _read_package(path.parent, window_evidence['path'], hashes, 'sourceWindowReview')
+        if (source['issues'] or window['status'] != 'approved'
+                or window_receipt.get('status') != 'approved' or window_receipt.get('humanApproval') is not True
+                or english.file_sha256(_safe_path(path.parent / window_evidence['path'])) != window_evidence['sha256']
+                or hashes['sourceWindowReview'] != window_evidence['jsonSha256']
+                or window_receipt.get('sourceUrlHash') not in (None, source['source']['sourceUrlHash'])):
+            raise ValueError('source_window_approval_changed')
         # The source's independent human receipt and aligned transcript remain
         # immutable evidence; do not accept a copied approval flag alone.
         aligned = source['transcript']['artifact']
