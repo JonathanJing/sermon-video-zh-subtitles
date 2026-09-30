@@ -1,3 +1,4 @@
+import { diagnosticSummary, matchReason } from './fingerprint-diagnostics.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -21,7 +22,7 @@ function fixture(filename, injected = {}) {
   let locale = 'zh';
   const get = id => { if (!elements.has(id)) elements.set(id, new Element()); return elements.get(id); };
   const context = vm.createContext({
-    console, URL, AbortController, performance, Promise, Map, Set,
+    console, URL, AbortController, performance, Promise, Map, Set, diagnosticSummary, matchReason,
     document: { getElementById: get, createElement: () => new Element(), addEventListener() {}, querySelectorAll: () => [], visibilityState: 'visible' },
     window: { addEventListener() {} }, localStorage: { getItem: () => 'no', setItem() {} },
     t: (key, params = {}) => (messages[locale][key] || appMessages[locale][key] || key).replace(/\{(\w+)\}/g, (_, name) => String(params[name] ?? `{${name}}`)),
@@ -75,11 +76,20 @@ test('fingerprint locale redraw keeps the same active capture and diagnostic sta
   const metadata = { schemaVersion: 'sermon-audio-fingerprint-binding-v1', algorithmVersion: 'spectral-landmarks-v1', pageId: 'week', sourceSha256: sha, trackSha256: sha, indexSha256: sha, indexUrl: '/fingerprints/test.json', captureSeconds: 10, sourceStartSeconds: 100, sourceEndSeconds: 200 };
   const controller = h.context.mountFingerprintUI({
     context: () => ({ week: { id: 'week', sourceStartSeconds: 100, audioFingerprint: metadata }, track: { id: 'track', sha256: sha, durationSeconds: 100 }, ready: true }),
+    prepare: async () => ({close(){}}),
     pause: () => pauses++, seek: () => seeks++, play: () => plays++,
     capture: options => { captures++; signal = options.signal; options.onRecording(); return new Promise((resolve, reject) => { rejectCapture = reject; }); },
     timers: { setTimeout() {}, clearTimeout() {} },
   });
   h.get('fingerprint-open').emit('click');
+  const preparing = controller.start();
+  assert.equal(controller.getState().phase, 'preparing_index');
+  h.setLocale('en');
+  assert.equal(h.get('fingerprint-message').textContent, messages.en['fingerprint.phase.preparing_index']);
+  assert.equal(captures, 0); assert.equal(pauses, 0);
+  await preparing;
+  assert.equal(controller.getState().phase, 'ready_to_record');
+  assert.equal(h.get('fingerprint-start').textContent, messages.en['fingerprint.record']);
   const running = controller.start();
   assert.equal(controller.getState().phase, 'recording');
   h.setLocale('en');

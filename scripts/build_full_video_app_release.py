@@ -25,9 +25,11 @@ from jsonschema import Draft202012Validator, FormatChecker
 try:
     from scripts import stage_formal_multilingual_dev as stage
     from scripts import build_formal_dev_release_assets as formal_assets
+    from scripts.release_asset_io import copy_bound_asset
 except ImportError:
     import stage_formal_multilingual_dev as stage
     import build_formal_dev_release_assets as formal_assets
+    from release_asset_io import copy_bound_asset
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -179,7 +181,9 @@ def prepare(args: argparse.Namespace) -> dict:
                     f"{locale}: captions differ from approved spoken text")
             require(track.suffix == ".mp3", f"{locale}: App track must be MP3")
             content_source = maps["full_content"][locale]
-            content = read(content_source)
+            content_bytes = content_source.read_bytes()
+            content_sha = hashlib.sha256(content_bytes).hexdigest()
+            content = json.loads(content_bytes)
             require(content.get("schemaVersion") == "sermon-full-video-text-content-v1"
                     and content.get("status") == "human_reviewed"
                     and content.get("pageId") == args.page_id
@@ -199,12 +203,11 @@ def prepare(args: argparse.Namespace) -> dict:
             content_path = f"/content/{args.page_id}/{locale}.json"
             audio_url = f"/media/{args.page_id}/{locale}.mp3"
             captions_url = f"/captions/{args.page_id}/{locale}.json"
-            for source_path, public_path in ((content_source, content_path), (track, audio_url),
-                                             (captions, captions_url)):
-                dest = public / public_path.lstrip("/")
-                dest.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(source_path, dest)
-                require(digest(dest) == digest(source_path), f"Copied asset differs: {public_path}")
+            for source_path, public_path, expected_sha in (
+                    (content_source, content_path, content_sha),
+                    (track, audio_url, audio["track"]["sha256"]),
+                    (captions, captions_url, audio["captions"]["sha256"])):
+                copy_bound_asset(source_path, public, public_path, expected_sha)
             page_file = public / page_path.lstrip("/")
             page_file.parent.mkdir(parents=True, exist_ok=True)
             page_file.write_text(static_page(content, locale, args.page_id), encoding="utf-8")

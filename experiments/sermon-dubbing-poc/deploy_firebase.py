@@ -15,7 +15,7 @@ from poc import sha256, write_json
 HERE = Path(__file__).resolve().parent
 DOWNLOAD_EXTENSIONS = {"readingPdf": "pdf", "companionPdf": "pdf", "fullVideoMp3": "mp3", "fullVideoSrt": "srt"}
 DOWNLOAD_PATH = re.compile(r"/downloads/([a-f0-9]{16})-[A-Za-z0-9][A-Za-z0-9._-]*\.(pdf|mp3|srt)")
-FINGERPRINT_UI = {"fingerprint-core.mjs", "fingerprint-capture.mjs", "fingerprint-worklet.mjs", "fingerprint-worker.mjs", "fingerprint-ui.mjs"}
+FINGERPRINT_UI = {"fingerprint-core.mjs", "fingerprint-diagnostics.mjs", "fingerprint-capture.mjs", "fingerprint-worklet.mjs", "fingerprint-worker.mjs", "fingerprint-ui.mjs"}
 PRODUCTION_SITE = "ai-for-god-sermon-audio"
 PRODUCTION_PROJECT = "ai-for-god-caption-dev"
 

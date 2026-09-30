@@ -137,11 +137,20 @@ class EnglishSourcePackageTests(unittest.TestCase):
         )
         package = self.build(review_path=review_path)
         self.assertEqual(package["status"], "ready_for_translation")
+        subject.validate_ready_package(package)
         self.assertTrue(package["translationEligible"])
         self.assertEqual(package["issues"], [])
         self.assertEqual(
             self.schema_errors("sermon-english-source-package-v1.schema.json", package), [],
         )
+
+    def test_builder_blocks_window_beyond_known_media_duration(self):
+        summary = json.loads(self.summary_path.read_text())
+        summary['sermonEndSeconds'] = summary['sourceDurationSeconds'] + 1
+        write_json(self.summary_path, summary)
+        package = self.build()
+        self.assertFalse(package['translationEligible'])
+        self.assertIn('source_window_incoherent', [issue['type'] for issue in package['issues']])
 
     def test_long_intact_clause_needs_both_reviews_to_clear_production_gate(self):
         self.manifest["issues"] = [{

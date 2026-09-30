@@ -52,6 +52,15 @@ def write_fixture(root, sources):
 
 
 class LiveSourceMonitorTest(unittest.TestCase):
+    def setUp(self):
+        # These are deterministic source-selection tests. Any extractor fallback
+        # must be supplied by the test rather than reaching YouTube/yt-dlp.
+        self.unexpected_extractor = self.enterContext(mock.patch.object(
+            mod, "youtube_extract_info", side_effect=AssertionError("unmocked live extractor in unit test")))
+        # Production callers may catch an exception; still fail the test if a
+        # forgotten fallback crossed the network boundary.
+        self.addCleanup(self.unexpected_extractor.assert_not_called)
+
     def test_actual_start_time_classifies_520_stream_as_sat530(self):
         candidate = mod.SourceCandidate(
             kind="youtube-live",
@@ -182,6 +191,8 @@ class LiveSourceMonitorTest(unittest.TestCase):
         self.assertIn("5:30 Saturday", report["fallbackReason"])
         self.assertEqual(report["generationRequest"]["service"], "sat530")
 
+    @mock.patch.object(mod, "youtube_stream_watch_urls_from_tab", new=lambda _url: [])
+    @mock.patch.object(mod, "youtube_live_watch_url_from_channel", new=lambda _url: None)
     def test_saturday_default_candidates_do_not_use_generic_mariners_page(self):
         original_fetcher = mod.default_fetcher
         original_metadata = mod.youtube_video_metadata
@@ -283,6 +294,7 @@ class LiveSourceMonitorTest(unittest.TestCase):
         self.assertEqual(candidate.title, "The Cure for Our Rebellion - Eric Geiger | Mariners Church")
         self.assertGreaterEqual(candidate.same_sermon_confidence, 0.99)
 
+    @mock.patch.object(mod, "youtube_stream_watch_urls_from_tab", new=lambda _url: [])
     def test_fetch_youtube_streams_candidate_prefers_actual_watch_url(self):
         channel_html = """
         <html><head><title>Mariners Church - Live</title></head>
@@ -315,6 +327,7 @@ class LiveSourceMonitorTest(unittest.TestCase):
         self.assertEqual(candidate.state, "was_live")
         self.assertEqual(candidate.evidence, "yt-dlp-watch-metadata")
 
+    @mock.patch.object(mod, "youtube_stream_watch_urls_from_tab", new=lambda _url: [])
     def test_fetch_youtube_streams_skips_stale_first_watch_url(self):
         channel_html = """
         <html><body>

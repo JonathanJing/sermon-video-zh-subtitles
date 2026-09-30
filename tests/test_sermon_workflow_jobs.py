@@ -108,6 +108,72 @@ class WorkflowJobsTests(unittest.TestCase):
             self.assertEqual(jobs.start_job(self.root, identity, command, 5)["status"], "uncertain")
         spawn.assert_not_called()
 
+    def test_all_directory_entries_are_synced_before_worker_spawn(self):
+        original_sync, original_fsync = jobs._sync_directory, os.fsync
+        for precreated in (False, True):
+            with self.subTest(precreated=precreated):
+                root = (Path(self.temp.name) / str(precreated) / "nested" / "jobs").resolve()
+                # Models another admission that created the hierarchy but has
+                # not persisted it: existence alone must not skip ancestors.
+                if precreated:
+                    root.mkdir(parents=True)
+                identity = {"stage": "directory-barriers"}
+                key = jobs._digest(identity)
+                lock = root / ".locks" / (key + ".lock")
+                events = []
+                def sync(path):
+                    original_sync(path)
+                    events.append(("directory", path))
+                def fsync(fd):
+                    original_fsync(fd)
+                    actual, expected = os.fstat(fd), lock.stat()
+                    if (actual.st_dev, actual.st_ino) == (expected.st_dev, expected.st_ino):
+                        events.append(("lock", lock))
+                def spawn(*args, **kwargs):
+                    self.assertEqual(events[0], ("lock", lock))
+                    for directory in (root / ".locks", root, root.parent, root.parent.parent,
+                                      root.parent.parent.parent):
+                        self.assertIn(("directory", directory), events)
+                    state = jobs._read(root / key / "state.json")
+                    self.assertEqual(state["status"], "queued")
+                    self.assertTrue((root / key / "request.json").is_file())
+                    raise KeyboardInterrupt("stop after verified persistence, before launch")
+                with patch.object(jobs, "_sync_directory", side_effect=sync), \
+                     patch.object(os, "fsync", side_effect=fsync), \
+                     patch.object(jobs.subprocess, "Popen", side_effect=spawn) as spawned:
+                    with self.assertRaises(KeyboardInterrupt):
+                        jobs.start_job(root, identity, [sys.executable, "-c", "pass"], 5)
+                spawned.assert_called_once()
+                self.assertEqual(jobs.peek_job(root, key)["status"], "uncertain")
+
+    def test_metadata_sync_failures_prevent_spawn_and_preserve_uncertainty(self):
+        original_sync, original_fsync = jobs._sync_directory, os.fsync
+        for boundary in ("lock", "locks", "root", "parent", "ancestor"):
+            with self.subTest(boundary=boundary):
+                root = (Path(self.temp.name) / boundary / "nested" / "jobs").resolve()
+                identity, command = {"stage": "barrier-failure"}, [sys.executable, "-c", "pass"]
+                key = jobs._digest(identity)
+                fail_path = {"locks": root / ".locks", "root": root, "parent": root.parent,
+                             "ancestor": root.parent.parent.parent}.get(boundary)
+                def sync(path):
+                    if path == fail_path:
+                        raise OSError("injected metadata sync failure")
+                    original_sync(path)
+                def fsync(fd):
+                    if boundary == "lock":
+                        raise OSError("injected lock sync failure")
+                    original_fsync(fd)
+                with patch.object(jobs, "_sync_directory", side_effect=sync), \
+                     patch.object(os, "fsync", side_effect=fsync), \
+                     patch.object(jobs.subprocess, "Popen") as spawn:
+                    with self.assertRaises(OSError):
+                        jobs.start_job(root, identity, command, 5)
+                    spawn.assert_not_called()
+                self.assertTrue((root / key).is_dir())
+                with patch.object(jobs.subprocess, "Popen") as retry:
+                    self.assertEqual(jobs.start_job(root, identity, command, 5)["status"], "uncertain")
+                    retry.assert_not_called()
+
     def test_same_identity_cannot_change_command_or_timeout(self):
         identity, command = {"stage": "fixed"}, [sys.executable, "-c", "pass"]
         result = jobs.start_job(self.root, identity, command, 5)

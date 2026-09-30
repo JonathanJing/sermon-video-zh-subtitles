@@ -1,0 +1,74 @@
+{
+  "synthetic-equivalent-receipts": {
+    "synthetic": true,
+    "noTransportInvoked": true,
+    "readerIntegrityEqual": true,
+    "receiptIntegrity": {
+      "status": "consistent",
+      "conflicts": [],
+      "equivalentDuplicatesIgnored": 2
+    }
+  },
+  "synthetic-conflicting-receipts": {
+    "synthetic": true,
+    "noTransportInvoked": true,
+    "readerIntegrityEqual": true,
+    "receiptIntegrity": {
+      "status": "conflicted",
+      "conflicts": [
+        {
+          "kind": "sdk",
+          "identitySha256": "374f15efd58d3d9b272c11c0c7533d9d0a89b243f6b303c0ccda457be875612f",
+          "variantSha256": [
+            "5b4501f91c98d0e838b1fe4de30a4ce9ebe08c609ffdc9f1faaf1d613a490a7c",
+            "d93e067f36ce2dee5ba8113e5d66ba23116822563147a74e7d37fffc66b31f3b"
+          ],
+          "runIds": [
+            "3727e32208bf4e479b40d363e3f703f8",
+            "e9c4dfdfa16744f49dce63c1cce333c8"
+          ]
+        },
+        {
+          "kind": "provider",
+          "identitySha256": "c4539cd203b7181c3eafb5f855916701895a9b585bd01a4a650c53c8d053a136",
+          "variantSha256": [
+            "21204613a26b285e893fcc4b177bf48b133eba092d0c27516ad76f53478bfba0",
+            "54d9eec1f78b909259f20a6000309ca4fbc627799ae9fc79a70015d4069dea5b"
+          ],
+          "runIds": [
+            "3727e32208bf4e479b40d363e3f703f8",
+            "e9c4dfdfa16744f49dce63c1cce333c8"
+          ]
+        }
+      ],
+      "equivalentDuplicatesIgnored": 0
+    }
+  },
+  "synthetic-interrupted": {
+    "synthetic": true,
+    "noTransportInvoked": true,
+    "independentExitCode": 73,
+    "unresolvedAttempts": 1,
+    "unfinishedSpans": 2,
+    "modelTotalSeconds": null
+  },
+  "synthetic-parallel": {
+    "synthetic": true,
+    "activeCriticalPathSeconds": 8,
+    "modelCompletedSpanSubtotalSeconds": 8,
+    "wallSeconds": 8.0,
+    "branchSlackSeconds": {
+      "41cf6794ba4200b839c53531555f0f3998df4cbb01a4d5cb0b94e3ca5e23947d": 0,
+      "1fdbc74ccfd68d0714ae539c0d93f2f3a1805387632eca33d3bd6a5013afb13e": 0,
+      "60cae1d01739facc4543771db2e8fbc4d1ebe5fc66284a5b8b4bd1ed585f452e": 2,
+      "58393216032be6257784ac0c6a73efb2a084e27b4cfff1e6acee7b7e6ab93b10": 0
+    }
+  },
+  "synthetic-same-event-conflict": {
+    "synthetic": true,
+    "sameEventId": true,
+    "allThreeReadersDetectConflict": true,
+    "reversedOrderCoveredByRegression": true,
+    "observedUsageTotal": null
+  }
+}

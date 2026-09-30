@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 
 from scripts import backend_four_layer_dry_run as dry
 from scripts.firebase_dev_weekly_dry_run import checked_backend_run
@@ -25,6 +26,13 @@ class BackendFourLayerDryRunTests(unittest.TestCase):
             self.assertFalse(report["productionReleaseEligible"])
             self.assertEqual(report["productionPlannerGate"], "rejected_simulated_source")
             self.assertEqual(sum(report["externalCalls"].values()), 0)
+            layer4 = report["layers"]["layer4"]
+            self.assertEqual(layer4["assetAssembly"], "copy_bound_asset_v1")
+            self.assertEqual(len(layer4["assets"]), 3)
+            for row in layer4["assets"]:
+                copied = root / "public/flow" / row["path"].lstrip("/")
+                self.assertEqual(dry.digest(copied), row["sha256"])
+                self.assertEqual(copied.stat().st_size, row["sizeBytes"])
             self.assertEqual(len(report["events"]), 29)
             self.assertEqual(len([event for event in report["events"]
                                   if ":unit-" in event["step"]]), 18)
@@ -54,6 +62,29 @@ class BackendFourLayerDryRunTests(unittest.TestCase):
                 self.assertIn(f"media/{locale}.wav", public)
                 self.assertEqual(report["layers"]["layer3"][locale]["schedule"], "pass")
             checked_backend_run(root)
+
+    def test_layer4_uses_formal_copy_gate_and_changed_upstream_never_creates_preview(self):
+        from scripts import build_formal_dev_release_assets as formal
+        from scripts import build_full_video_app_release as full
+        self.assertIs(dry.copy_bound_asset, formal.copy_bound_asset)
+        self.assertIs(dry.copy_bound_asset, full.copy_bound_asset)
+        real_copy = dry.copy_bound_asset
+        def changed(source, root, path, expected):
+            if path == "/media/ko.wav":
+                source.write_bytes(b"changed after Layer 3 receipt")
+            return real_copy(source, root, path, expected)
+        with TemporaryDirectory() as folder, patch.object(dry, "copy_bound_asset", side_effect=changed):
+            root = Path(folder) / "failed-copy"
+            report = dry.run(self.fixture, root)
+            self.assertEqual(report["status"], "failed")
+            self.assertEqual(report["events"][-1]["step"], "layer4")
+            self.assertIn("admitted_identity", report["failure"])
+            self.assertFalse((root / "public/flow/index.html").exists())
+            self.assertFalse((root / "public/flow/media/ko.wav").exists())
+            self.assertFalse(list(root.rglob(".asset-*")))
+            self.assertFalse(report["formalApproval"])
+            with self.assertRaises(ValueError):
+                checked_backend_run(root)
 
     def test_injected_locale_failure_stops_before_layer4_and_is_not_publishable(self):
         with TemporaryDirectory() as folder:

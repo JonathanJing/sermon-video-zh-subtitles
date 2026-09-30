@@ -72,10 +72,72 @@ class ObservabilityTests(unittest.TestCase):
             event = {'schemaVersion':'sermon-workflow-accounting-v1','eventId':'legacy','runId':'old','event':'run_started','workflow':'old','recordedAt':'2026-09-05T00:00:00+00:00'}
             (Path(t)/'events.jsonl').write_text(json.dumps(event)+'\n')
             d = accounting.summarize(t)
-            self.assertEqual(d['schemaVersion'],'sermon-workflow-accounting-v2')
+            self.assertEqual(d['schemaVersion'],'sermon-workflow-accounting-v3')
             self.assertEqual(d['runs'][0]['workflows'],[])
             self.assertNotIn('wallSeconds',d['runs'][0])
             self.assertEqual(json.loads((Path(t)/'events.jsonl').read_text())['schemaVersion'],'sermon-workflow-accounting-v1')
+
+    def test_v3_stage_records_dependency_and_executor_identity(self):
+        with tempfile.TemporaryDirectory() as t:
+            with accounting.accounting_session(t, 'test'):
+                with accounting.stage('translate', executor_type='production_model',
+                        depends_on=['source-ready'], blocked_by=['human-review'],
+                        work_unit_id='zh-CN.group-0001', attempt_id='attempt-2',
+                        decision_id='decision-7', dependency_ready_at='2026-09-30T01:00:00+00:00',
+                        queued_at='2026-09-30T01:00:01+00:00'):
+                    pass
+            rows = [json.loads(line) for line in (Path(t) / 'events.jsonl').read_text().splitlines()]
+            event = next(row for row in rows if row['event'] == 'stage_started' and row['stage'] == 'translate')
+            self.assertEqual(event['schemaVersion'], 'sermon-workflow-accounting-v3')
+            self.assertEqual(event['executorType'], 'production_model')
+            self.assertEqual(event['dependsOn'], ['source-ready'])
+            self.assertEqual(event['blockedBy'], ['human-review'])
+            self.assertEqual(event['workUnitId'], 'zh-CN.group-0001')
+            self.assertEqual(event['attemptId'], 'attempt-2')
+            self.assertEqual(event['decisionId'], 'decision-7')
+            self.assertEqual(event['dependencyReadyAt'], '2026-09-30T01:00:00+00:00')
+            self.assertNotIn('readyAt', event)
+
+    def test_legacy_billing_and_explicit_executor_classification(self):
+        with tempfile.TemporaryDirectory() as t:
+            with accounting.accounting_session(t, 'test'):
+                for billing in ('api', 'local', 'orchestrator', 'cloud', 'codex'):
+                    with accounting.stage(billing, billing=billing):
+                        pass
+                for executor in accounting.EXECUTOR_TYPES:
+                    with accounting.stage(executor, executor_type=executor):
+                        pass
+            rows, damaged = accounting.read_events(t)
+            self.assertEqual(damaged, [])
+            stages = [r for r in rows if r['event'] == 'stage_started']
+            self.assertTrue(all(r['dependsOn'] is None for r in stages))
+            actual = {r['stage']: r['executorType'] for r in stages}
+            for billing, executor in {'api': 'production_model', 'codex': 'production_model',
+                    'local': 'deterministic_program', 'orchestrator': 'deterministic_program',
+                    'cloud': 'external_service'}.items():
+                self.assertEqual(actual[billing], executor)
+            for executor in accounting.EXECUTOR_TYPES:
+                self.assertEqual(actual[executor], executor)
+
+    def test_stage_yields_exact_attempt_span_for_downstream_dependencies(self):
+        with tempfile.TemporaryDirectory() as t:
+            with accounting.accounting_session(t, 'test'):
+                with accounting.stage('source') as source_span:
+                    self.assertIsInstance(source_span, str)
+                with accounting.stage('downstream', depends_on=[source_span]):
+                    pass
+            events, damaged = accounting.read_events(t)
+            row = next(e for e in events if e['event'] == 'stage_started' and e['stage'] == 'downstream')
+            self.assertEqual(row['dependsOn'], [source_span])
+            self.assertFalse(damaged)
+
+    def test_stage_rejects_unbounded_or_unsafe_dependency_data(self):
+        with self.assertRaises(ValueError):
+            with accounting.stage('translate', depends_on=['contains private text']):
+                pass
+        with self.assertRaises(ValueError):
+            with accounting.stage('translate', executor_type='shell_from_model'):
+                pass
 
 
 if __name__=='__main__': unittest.main()

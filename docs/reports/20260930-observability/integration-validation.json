@@ -1,0 +1,28 @@
+{
+  "integrationCommit": "cd08cdf350f6e0bf20620092e233dd09ba96746c",
+  "implementationCodeCommit": "fd788ac8517d381d24bb1a834689e88bcfa4f6c7",
+  "workingTreeClean": true,
+  "rootPython": [
+    {
+      "shard": 0,
+      "testsReported": 1009,
+      "successful": true,
+      "conditionalSkips": 6,
+      "elapsedSeconds": 133.258,
+      "reportSha256": "ae348b5c55e056e41d4ec095fe65bcc07763b92acbe98546f753b6920ab48b60"
+    },
+    {
+      "shard": 1,
+      "testsReported": 1068,
+      "successful": true,
+      "conditionalSkips": 0,
+      "elapsedSeconds": 161.912,
+      "reportSha256": "632c438efd8e68c726a8453117840058a78e027c64e5a36975837345f151f551"
+    }
+  ],
+  "testsReported": 2077,
+  "conditionalSkips": 6,
+  "actualPassed": 2071,
+  "nativeWebBaseline": "8f608a9733f8928b654084e95046200e6e2ae43b; exact consumer tree comparison and final local checks recorded separately",
+  "stage1PromotionAllowed": false
+}

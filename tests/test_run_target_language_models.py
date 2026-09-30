@@ -99,6 +99,33 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
                                      "fixture-key", self.fake_call), evidence)
         self.assertEqual(self.calls, [])
 
+    def test_incoherent_ready_source_never_reaches_model_or_creates_paid_cache(self):
+        mutations = {
+            "missing-media": lambda s: s["source"].update(media=None),
+            "negative-window": lambda s: s["source"]["approvedWindow"].update(startSeconds=-1),
+            "reversed-window": lambda s: s["source"]["approvedWindow"].update(endSeconds=0),
+            "window-beyond-media": lambda s: s["source"]["approvedWindow"].update(endSeconds=301),
+            "changed-media": lambda s: s["source"]["media"].update(sha256="f" * 64),
+            "stale-derived-identity": lambda s: s.update(downstreamInvalidationKey="f" * 64),
+            "stale-package-id": lambda s: s.update(packageId="english-source-other"),
+            "candidate-not-eligible": lambda s: s.update(candidateTranslationEligible=False),
+        }
+        f = self.fixture
+        for name, mutate in mutations.items():
+            with self.subTest(name=name):
+                source = copy.deepcopy(f.source)
+                mutate(source)
+                # Coherently refresh policy scope so rejection proves source
+                # admission, rather than merely a stale downstream policy hash.
+                policy = copy.deepcopy(f.policy)
+                policy.pop("componentSha256")
+                policy["sourceScope"]["englishSourcePackageJsonSha256"] = producer.interpretation.json_sha256(source)
+                policy = policy_tools.freeze_policy(policy)
+                with self.assertRaises(ValueError):
+                    subject.run(source, f.anchor, policy, self.out, "fixture-key", self.fake_call)
+                self.assertEqual(self.calls, [])
+                self.assertFalse(self.out.exists())
+
     def test_known_runner_identities_resume_paid_cache_but_unknown_identity_fails(self):
         f = self.fixture
         parent_hash = "1922f23b881363ac4f1a32a99de7184fecd1ae445befde5f2282d400bd762e40"
@@ -152,7 +179,23 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
                         "fixture-key", lambda *_: self.fail("must reuse"))
         attempts = accounting.summarize(self.out / "accounting")["stageAttempts"]
         unit_attempts = [row for row in attempts if row["stage"].startswith("layer2.")]
-        self.assertEqual(len(unit_attempts), 12)
+        events, damaged = accounting.read_events(self.out / "accounting")
+        self.assertFalse(damaged)
+        roles = [e for e in events if e['event'] == 'stage_started' and
+                 (e['stage'].startswith('layer2.translator.') or e['stage'].startswith('layer2.reviewer.'))]
+        by_span = {e['spanId']: e for e in events if e['event'] == 'stage_started'}
+        for role in roles:
+            self.assertEqual(role['executorType'], 'deterministic_program' if role['cacheHit'] else 'production_model')
+            self.assertIsNotNone(role['workUnitId'])
+            self.assertEqual(len(role['dependsOn']), 1)
+            predecessor = by_span[role['dependsOn'][0]]
+            if '.reviewer.' in role['stage']:
+                self.assertEqual(predecessor['stage'].replace('.draft_validation.', '.reviewer.'), role['stage'])
+                translator = by_span[predecessor['dependsOn'][0]]
+                self.assertEqual(translator['stage'].replace('.translator.', '.reviewer.'), role['stage'])
+            else:
+                self.assertEqual(predecessor['stage'].replace('.prepare.', '.translator.'), role['stage'])
+        self.assertEqual(len(unit_attempts), 30)
         self.assertEqual(sum(row["cacheHit"] for row in unit_attempts), 4)
         self.assertTrue(all(row["finishedAt"] and row["elapsedSeconds"] is not None
                             for row in unit_attempts))

@@ -1,0 +1,19 @@
+{
+  "driver": "scripts/run_observability_diagnostic.py",
+  "driverSha256": "b9286e5046ed27aeeb7e2e666077db208ee837fdec2271eba2652829d101398e",
+  "codeCommit": "ebaea29e857afba3bf6d6313ce9a8e3ccb8d66ec",
+  "executionOrder": [
+    "cache",
+    "asr",
+    "audio"
+  ],
+  "commands": [
+    "OPENAI_API_KEY= python scripts/run_observability_diagnostic.py cache --inputs \"$LOCAL_CACHE_INPUTS\" --source-media \"$SOURCE_138S\" --out \"$NEW_CACHE_OUT\"",
+    "OPENAI_API_KEY= HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 mlx-python scripts/run_observability_diagnostic.py asr --source-media \"$SOURCE_178S\" --model-directory \"$CACHED_MLX_MODEL\" --window-seconds 178.16 --out \"$NEW_ASR_OUT\"",
+    "OPENAI_API_KEY= python scripts/run_observability_diagnostic.py audio --inputs \"$LOCAL_AUDIO_INPUTS\" --out \"$NEW_AUDIO_OUT\""
+  ],
+  "privateInputManifestSha256": {
+    "cache": "b2d13d546a77c4b6cec689e38e06e020d99d79e836d3e72f14924026d3d406ba",
+    "audio": "0ef4d7554d83bbb241eeb16289ec54e053a81416d2094ad471b793e8b3159292"
+  }
+}

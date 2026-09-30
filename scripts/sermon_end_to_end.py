@@ -45,16 +45,16 @@ def _recommend(action, human=False):
     return {'action': action, 'reason': action, 'humanActionRequired': human}
 
 
-def _inspect_job(root, job_id):
-    from scripts.sermon_workflow_jobs import inspect_job
+def _inspect_job(root, job_id, *, read_only=False):
+    from scripts.sermon_workflow_jobs import inspect_job, peek_job
     try:
-        return inspect_job(root, job_id)
+        return (peek_job if read_only else inspect_job)(root, job_id)
     except FileNotFoundError:
         # A persisted launch intent without a job needs reconciliation, not retry.
         return {'jobId': job_id, 'status': 'uncertain'}
 
 
-def _outstanding_jobs(root):
+def _outstanding_jobs(root, *, read_only=False):
     """Discover durable jobs even if an older launcher lost its active pointer."""
     if not root.parent.exists():
         return
@@ -71,12 +71,12 @@ def _outstanding_jobs(root):
         if pointer.exists():
             ids.add(json.loads(pointer.read_text())['jobId'])
         for job_id in sorted(ids):
-            job = _inspect_job(config_root, job_id)
+            job = _inspect_job(config_root, job_id, read_only=read_only)
             if job['status'] in ('queued', 'running', 'uncertain'):
                 yield config_root, job
 
 
-def snapshot(config):
+def snapshot(config, *, read_only=False):
     upstream = production.production_snapshot(config)
     path = configuration(config)
     if path is None:
@@ -90,7 +90,7 @@ def snapshot(config):
     if (upstream.get('recommendedAction') or {}).get('action') != 'complete':
         # Do not start new upstream mutations over an outstanding downstream job.
         root = job_root(config, path)
-        for _, job in _outstanding_jobs(root):
+        for _, job in _outstanding_jobs(root, read_only=read_only):
             result['workflowJob'] = job
             result['recommendedAction'] = _recommend(
                 'inspect_workflow_job_failure' if job['status'] == 'uncertain' else 'wait_for_workflow_job',
@@ -109,7 +109,7 @@ def snapshot(config):
     result['recommendedAction'] = recommended
     root = job_root(config, path)
     # A configuration change cannot abandon a still-running or uncertain job.
-    for previous, prior in _outstanding_jobs(root):
+    for previous, prior in _outstanding_jobs(root, read_only=read_only):
         result['workflowJob'] = prior
         human = previous != root or prior['status'] == 'uncertain'
         result['recommendedAction'] = _recommend(
@@ -120,7 +120,7 @@ def snapshot(config):
         if active.is_symlink():
             raise ValueError('Invalid active release job pointer')
         pointer = json.loads(active.read_text())
-        state = _inspect_job(root, pointer['jobId'])
+        state = _inspect_job(root, pointer['jobId'], read_only=read_only)
         result['workflowJob'] = state
         if state['status'] in ('queued', 'running'):
             result['recommendedAction'] = _recommend('wait_for_workflow_job')
@@ -134,7 +134,15 @@ def snapshot(config):
     return result
 
 
-def start_action(config, action):
+def state_revision(observed):
+    from scripts.sermon_workflow_jobs import _digest
+    return _digest({key: value for key, value in observed.items() if key != 'checkedAt'})
+
+
+def start_action(config, action, *, timeout_seconds=21600, expected_config_sha=None,
+                 expected_state_revision=None):
+    if type(timeout_seconds) is not int or not 1 <= timeout_seconds <= 21600:
+        raise ValueError("Invalid release action timeout")
     path = configuration(config)
     if path is None:
         return {'status': 'blocked'}
@@ -144,13 +152,18 @@ def start_action(config, action):
     with _lock(week_root, _digest({'purpose': 'release-admission'})) as (_, _, held):
         if not held:
             return {'status': 'blocked'}
-        return _start_action_locked(config, action)
+        return _start_action_locked(config, action, timeout_seconds=timeout_seconds,
+                                    expected_config_sha=expected_config_sha,
+                                    expected_state_revision=expected_state_revision)
 
 
-def _start_action_locked(config, action):
+def _start_action_locked(config, action, *, timeout_seconds=21600, expected_config_sha=None,
+                         expected_state_revision=None):
     if action not in ACTIONS:
         raise ValueError('Unknown release operation')
     current = snapshot(config)
+    if expected_state_revision is not None and state_revision(current) != expected_state_revision:
+        return {'status': 'blocked'}
     rec = current.get('recommendedAction') or {}
     if rec.get('action') != action or rec.get('humanActionRequired'):
         return {'status': 'blocked'}
@@ -158,6 +171,8 @@ def _start_action_locked(config, action):
     if path is None:
         return {'status': 'blocked'}
     digest = config_hash(path)
+    if expected_config_sha is not None and digest != expected_config_sha:
+        return {'status': 'blocked'}
     root = job_root(config, path)
     # The downstream config fixes the work/source/release; each stage is allowed
     # one durable attempt for this configuration, across all agent sessions.
@@ -170,6 +185,8 @@ def _start_action_locked(config, action):
         raise ValueError('Current production source run is required for release execution')
     command.extend(['--expected-source-run-root', str(Path(source_root).resolve())])
     from scripts.sermon_workflow_jobs import start_job, _digest, _persist
+    if current.get('releaseWorkflow') is not None:
+        command.extend(['--expected-release-revision', _digest(current['releaseWorkflow'])])
     root.mkdir(parents=True, exist_ok=True, mode=0o700)
     _persist(root / 'active.json', {'jobId': _digest(identity), 'action': action})
-    return start_job(root, identity, command, timeout_seconds=21600)
+    return start_job(root, identity, command, timeout_seconds=timeout_seconds)

@@ -1,0 +1,1061 @@
+{
+  "scope": "hash_and_usage_inventory_of_original_preserved_receipts_independent_of_trace",
+  "rows": [
+    {
+      "locale": "zh-Hans",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "143c0fb7cd086db181f67a3ae4acfbe2334fa4842f03794b87889f278326667a",
+      "rawReceiptSha256": "d3ae945b3ebbc43dbe38bc9f71a9606090aea2344fcd79795afa4fe8f36a51cd",
+      "payloadSha256": "bc9b9e54614fe238b871487908810a071fecb2e72b6d94d93d83cfbd00af7d7e",
+      "responseIdSha256": "634a0af7c9d81873cec9d1abb78d3620cd35e96b4d441adbe4339f2bd920189c",
+      "usage": {
+        "inputTokens": 577,
+        "outputTokens": 439,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 182
+      }
+    },
+    {
+      "locale": "zh-Hans",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "5a78e2cfee9413ca1505d08d42b06e8fb57373d4e7637b5e50a58ef37b380be1",
+      "rawReceiptSha256": "ad86ca32367e18e213e819838b16eeaab01a6f44f05021709eb98b50031ae38c",
+      "payloadSha256": "a1fdff143ffbef856c080e369a44db2a4325b3148c17f6e4c1a44d2c2cfbf21c",
+      "responseIdSha256": "93cbe6d158ed5c8c3ba1723872ce773c09d8b00326b357bf3966f6f35675ccf3",
+      "usage": {
+        "inputTokens": 592,
+        "outputTokens": 324,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 110
+      }
+    },
+    {
+      "locale": "zh-Hans",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "ef4050ff0f3b4f32a35ba266af7c14f282a2199969ee6c98d89136c3ad368201",
+      "rawReceiptSha256": "3a450676ecefde38f54dea2749433f3466e3e64b5429fee94ddda7488da6dfa9",
+      "payloadSha256": "71efd50559536ca19ac1127b8811b8351e8503fea8386fda29414d9411babfe4",
+      "responseIdSha256": "c5aba0e7f6bbd745ecf2b979675e39024b5e327c1befbeaf67b25980dea04307",
+      "usage": {
+        "inputTokens": 598,
+        "outputTokens": 269,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      }
+    },
+    {
+      "locale": "zh-Hans",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "dc707b845639eb51f5c532ae447edb3fd730d543e60622ebc6a37a3a90cf87c0",
+      "rawReceiptSha256": "cd829eb6e3105ab2ae8a9b31a165866b26f1e8d3b352e0e2e07a2b8eb2c03e23",
+      "payloadSha256": "f397c024297deec853b37f4b75e6c27397191d9fb6a99d988ddb958df2d2e671",
+      "responseIdSha256": "d86bcbf18277902699fb237fa00e3b67da1903a618af6d741b44939c4ed2f941",
+      "usage": {
+        "inputTokens": 584,
+        "outputTokens": 267,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      }
+    },
+    {
+      "locale": "zh-Hans",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "27510980c79be6b0f471981276035f5886c60f7743b01d36c54861e894650e74",
+      "rawReceiptSha256": "d8afc14b1ada98aed4e116267d39844b88220d9a12dd71fc3da448683bb13838",
+      "payloadSha256": "34bb3bb8e1240111d87ff95fc8d7a02b08a2a10c70f4dbe926daaf44d2c1d430",
+      "responseIdSha256": "f2a175477e8a63a0a2514961e0cac20dfe21d01b672d76cfb49df89f1afd4a51",
+      "usage": {
+        "inputTokens": 595,
+        "outputTokens": 375,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 102
+      }
+    },
+    {
+      "locale": "zh-Hans",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "b63d49c0cc71f4553c40b41482b7520ee3b2f593411833ed4a15ce735e841a7f",
+      "rawReceiptSha256": "4f6fb1fdd0fbc931d191893c661e3f6881f976c2cd5995a9e538f22befd93418",
+      "payloadSha256": "9eb261a8633eae457498db8f65c4408708f7a770ffdba31610ad547555bd8cc8",
+      "responseIdSha256": "9269e8bf89161a44ae929f74942a50500a2d6ef36656b0b0583ce28fbefdf5d1",
+      "usage": {
+        "inputTokens": 575,
+        "outputTokens": 373,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 140
+      }
+    },
+    {
+      "locale": "zh-Hans",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "462a588d40f57dd1810235613fe7db1599d58ce5b7f0617dc0e1bfee1a1e2f16",
+      "rawReceiptSha256": "78ae7c704ee88a9b05f53246823ada3d812675177f13a2d2756135eb0cea33c3",
+      "payloadSha256": "2355814612094d70a51dd40839c4e3e8dabd1a9838abb249eb47e578e8fe35ea",
+      "responseIdSha256": "d0d3579b325f487349ed36c505c23d726be47797a7ba3916ddd1de7afdf48267",
+      "usage": {
+        "inputTokens": 580,
+        "outputTokens": 398,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 162
+      }
+    },
+    {
+      "locale": "zh-Hans",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "9c0dda2df67ab1feb1d7aeb6cf9a385c917554839acc2abfa7508e0e8edaef84",
+      "rawReceiptSha256": "66105ae4bfdd5a41d01c20efda2841a62524f5ba709d2f5bfb44f64dc1935b10",
+      "payloadSha256": "ad34ba87c3d1e1bd0b2db08d8ab5b2962923f3eac7f2d3df02dbe3b07edad552",
+      "responseIdSha256": "8747154b3fbc1f28c95aca03325e5ebff7f1161db4a77206d9e13361cd2b0510",
+      "usage": {
+        "inputTokens": 592,
+        "outputTokens": 376,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 141
+      }
+    },
+    {
+      "locale": "zh-Hans",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "716bddd0a426c3a4eda9bb8953386ea433615fcab2e2c78a2f71bb3e57492a6e",
+      "rawReceiptSha256": "492894f0b66afc2a70fb91992dbac30f8f7d01026e04908b55b6c6473c2e42d8",
+      "payloadSha256": "4553846eaacc6672c275b862b2a15721025776975f8c08a9ada4987777003192",
+      "responseIdSha256": "208340cfc049ef0ad4dee06bfef35eef209ea224f571a87134ccc50bd9c5ccfc",
+      "usage": {
+        "inputTokens": 631,
+        "outputTokens": 511,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 183
+      }
+    },
+    {
+      "locale": "zh-Hans",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "bccad4fc70227e4656a6506d528d7b5276adae44eb835824731f4fe38f232913",
+      "rawReceiptSha256": "fe28689d7ef95e9149623a5a23cdead6d11201fabb3b56a8d5ff4b31e5e0e0bd",
+      "payloadSha256": "63fb3abe68e8031a1be240971e1ae10cd9180a9146d48e495df134fef65b81ed",
+      "responseIdSha256": "93db9f95d83b9b2a68fe8e8869eef7f1b4fd2d3d6695eda8195a80e5b3fb8352",
+      "usage": {
+        "inputTokens": 629,
+        "outputTokens": 425,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 125
+      }
+    },
+    {
+      "locale": "zh-Hans",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "0d2bd5fea547c02a6795a1183db608444bfb3f8c2b99cb19ac9895232e1a8c9b",
+      "rawReceiptSha256": "9368592bcd5906f962264ff2aaf7f3249689956214036060fbf9467adebc9e82",
+      "payloadSha256": "c04b7e7bc8c63603e3df181577f92687b6a98d095a4b0a464141b4b58c286c5c",
+      "responseIdSha256": "f3c10c8ddcec21820b6bebdbaab5e26b0ca20fb824dcfeb24a7ce44d37fb74b1",
+      "usage": {
+        "inputTokens": 580,
+        "outputTokens": 426,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 167
+      }
+    },
+    {
+      "locale": "zh-Hans",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "750e97946600cd5e8aa29546f6ad4e43b27fcc954ee386ac275d0cbd2cad8a12",
+      "rawReceiptSha256": "df88048d280aa7b4692959e40bff3ba8b1f3b6103158e01a6affbd04289b1813",
+      "payloadSha256": "51db3867c8c3f23b50acb2d4f818cb2479e0b9ee11a5262508f800f66134385a",
+      "responseIdSha256": "965b3cb18bbe685b911175f742724ba1cbe0d70c1f8200672f74ab3879b41a2d",
+      "usage": {
+        "inputTokens": 885,
+        "outputTokens": 465,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 89
+      }
+    },
+    {
+      "locale": "zh-Hans",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "60e1d36ad9ae305578dcc452c2203c8c09e9a0424258f8aaf8fd146a1cbf3f22",
+      "rawReceiptSha256": "0aef4ad355b0f6d9552584e7a5c030702b8fce605f9d1edae5ebbe22827ae58b",
+      "payloadSha256": "a36ce318f2db20a5a68704a62ad8b12631d8a6901eca2a35c5f396805af4a57a",
+      "responseIdSha256": "8ad9782f894551f5fdb384137595dcc4417aad88db03ab79457c24932cf181ae",
+      "usage": {
+        "inputTokens": 857,
+        "outputTokens": 639,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 294
+      }
+    },
+    {
+      "locale": "zh-Hans",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "0ace4d0727ff4a656171cab46b428def024e31cab8c7469931540c49fbd8349e",
+      "rawReceiptSha256": "a8a3e3192391f416d57a7eb6037f0fa4190f83bba48a42c5aa7eb4a0b647ca15",
+      "payloadSha256": "6784ef77b38c3b8375a6d4e79843e98f2c1150544debe64297d06d70e0f11238",
+      "responseIdSha256": "0f914f77e63b3e1ba3837473c7f0691a9d49a73d4eac41a7381a63c249ef1395",
+      "usage": {
+        "inputTokens": 922,
+        "outputTokens": 566,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 161
+      }
+    },
+    {
+      "locale": "zh-Hans",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "890fbb1752452d21818192df5a1164c82032cda438847adc6c1f5ecce72a1014",
+      "rawReceiptSha256": "0be3ec8a651f42c403d9a1d069d14af4790abde992fd830222766bdfc74dff38",
+      "payloadSha256": "14ed118c25d4546ce9b2a3518b8913e9dd8dda02e6d073ebcf1aac4c253f63b5",
+      "responseIdSha256": "2836ca29d9ea2575da8dd60f01840a11d6bfa1528cd59b6b4e185bdc3aeb8a4c",
+      "usage": {
+        "inputTokens": 908,
+        "outputTokens": 853,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 434
+      }
+    },
+    {
+      "locale": "zh-Hans",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "8f03845fbd98afb06b2745c709e85e3861c5f7a40416e3f8900724ec2a3dd9b0",
+      "rawReceiptSha256": "bf7d5663b95c1c02976292d11f20ef46fdd5be07b5b1f28253b805ec78b1a625",
+      "payloadSha256": "8715cba637e1fcefa1f7700c1e160dbf522ae07cf8050f625ae56f31523a75fd",
+      "responseIdSha256": "4fe0a8c6e8a6219bfb104d50840790f950bb168468bad38871109db45e0ce2a3",
+      "usage": {
+        "inputTokens": 917,
+        "outputTokens": 490,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 96
+      }
+    },
+    {
+      "locale": "zh-Hans",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "7c92ae2fb7ff81c3f4b0d04728707f8c0dc00b6ca87a4f294533b6508c7a50be",
+      "rawReceiptSha256": "169205046cc2ff6cece21a1c2441d892b0c8ee4a00c71e6787cffb6dea78d26c",
+      "payloadSha256": "e2732a7db433ec9f594f0d274eb332dd692320e702b42dd4b563201b66f9f16f",
+      "responseIdSha256": "a293e43c3d413a9607fb55f356bd8db8909d07ecaca2584f8f9833983a5b7faf",
+      "usage": {
+        "inputTokens": 859,
+        "outputTokens": 427,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 82
+      }
+    },
+    {
+      "locale": "zh-Hans",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "563d9be1ded3ee5144953b242cad631f43802216c89655f6e687818382fb5f6e",
+      "rawReceiptSha256": "523992ff273dc213498562b346651f4e0a07da3fb9c0e79117b95cc01866aaca",
+      "payloadSha256": "4618808bbee56abacf360646bc35940f50ea07c17768d672a54f6bd3c5ff127e",
+      "responseIdSha256": "ccb47f0f661dcc95def6d39ed75c4a95c17f87e107bd0b2428980d02f23430b3",
+      "usage": {
+        "inputTokens": 866,
+        "outputTokens": 447,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 69
+      }
+    },
+    {
+      "locale": "zh-Hans",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "0402e89c9b71a80085d7b613b05ce0deefddf222435640b7cac6ddfaadeaf108",
+      "rawReceiptSha256": "5f64b91bc2fde158ff5dbcf2702405bc9b9bd035708de550b116e78f72b1b08f",
+      "payloadSha256": "1b7476b2154ee759ecd12156f80dc4868e6f9fa637652c8e3b71c874339e010e",
+      "responseIdSha256": "ff341c3cb845181892dcdd92bbc66f49f06fa5a38f4cb0d50edfde2cf808a9a2",
+      "usage": {
+        "inputTokens": 878,
+        "outputTokens": 543,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 157
+      }
+    },
+    {
+      "locale": "zh-Hans",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "cd6608e18b19848eaab09be2e5b35c1db7c95602eac0961c87ac570d47fcec1e",
+      "rawReceiptSha256": "4861e098d053a8f3ba614860f1b7f4adec81276e947c9c79ec2c15fc1ec10622",
+      "payloadSha256": "5b7ad7ef3d26a123422127d69a2a398d3c5085ba2cf4aa34e47b20846073e86f",
+      "responseIdSha256": "d0f4b66c35b14cc06dc407a0d5903e874c69491900d2345105e83461125f44a8",
+      "usage": {
+        "inputTokens": 1009,
+        "outputTokens": 610,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 139
+      }
+    },
+    {
+      "locale": "zh-Hans",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "bc9790b8997b2186c62ed5e51836539fd94c04df581d6bec7afb421739393c02",
+      "rawReceiptSha256": "ce10c343b809337048bd9ad221bf587f30ccbd175012836071ef8d2fb66a152d",
+      "payloadSha256": "dcc023ab3e3f53e6d982a3ee10853fdbee47ac8fc34bcc2cedb0bfefc3730948",
+      "responseIdSha256": "11078f7d2f8e0d42aa999db4fe76c7b0db054af59b732e188aa9d73986d28b14",
+      "usage": {
+        "inputTokens": 980,
+        "outputTokens": 964,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 512
+      }
+    },
+    {
+      "locale": "zh-Hans",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "e11112fc327de99b2fe6a3b0cef7c94420437f8585448c0dd841c737ae87f037",
+      "rawReceiptSha256": "e77b71fb867acf891104914d3c828c9fb6ff80778897f32aae0961385b2b62e6",
+      "payloadSha256": "9c91a9a1d77c2edfaf9554d04e77f616269eb25167608f6bd2d90d0b9d2cfad8",
+      "responseIdSha256": "5edca33aa881eb5c9aefedda699092b1723e924983637074986841b315ba6da8",
+      "usage": {
+        "inputTokens": 890,
+        "outputTokens": 818,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 412
+      }
+    },
+    {
+      "locale": "ko",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "54a66891ac1ed852200733f81433739fe421addf4d20c4903c530448ffa75e0e",
+      "rawReceiptSha256": "06fdc0059129ce076fdc4ede0a7d16aaed4b95f0b232abe376dcd965901acab6",
+      "payloadSha256": "73f6165a3c65a40be64334c97f1e184275a9068d5f37d3c6e6902b3bcfc38494",
+      "responseIdSha256": "6f894cafec13fa1af9491f6d118269f4ecc95e978d274a913408e4c204e1c25d",
+      "usage": {
+        "inputTokens": 574,
+        "outputTokens": 269,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      }
+    },
+    {
+      "locale": "ko",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "cbe3fa9a74e1dd003cc95fcfe4e7f5f2d34c07fb9939cf5a2ce1135e99679c48",
+      "rawReceiptSha256": "501adbe10d275b0e27cf963b75429d45147e278661b027aad69fd87ec4a8df89",
+      "payloadSha256": "69767f5306661bd3e75e7559e192f4904819ced90ef0940cbe7b5dedac90740b",
+      "responseIdSha256": "da412150c8c54309c9925efec4dfb435680f5204d916a52284efbf11316dbd82",
+      "usage": {
+        "inputTokens": 589,
+        "outputTokens": 314,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 81
+      }
+    },
+    {
+      "locale": "ko",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "9dce43c264520a8d0af991afe3728fec9b535052e9e4835d04c4d5d4d3f6f046",
+      "rawReceiptSha256": "d1134cd259beab70d4b2342406b1260724380e1dbcf271ecd20e45f8a83a23a5",
+      "payloadSha256": "1c8de8994a8e3f61a9da539530063d4cd53c56847f32bd5ef975e1705ee2ed98",
+      "responseIdSha256": "05aaecd9d37939f75e3011f1ffb88ad32d865f02214222fa74fd13339d1d9994",
+      "usage": {
+        "inputTokens": 595,
+        "outputTokens": 303,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      }
+    },
+    {
+      "locale": "ko",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "dffcf375e9225a6f8edd16287989d558618ce28f2817f48eb309d8c15bac21c1",
+      "rawReceiptSha256": "e841a9991df67fe642189decd4dfac8d595723ce4f0a7e08d4f6d0443677538d",
+      "payloadSha256": "06b883bff34802bbfc415ba3a51bbf02d505d3560e977fa9d9b9295fa25c498a",
+      "responseIdSha256": "e64215e7fc360cad1eced72150f872439ad5d6c5917c36508d995d4e882d11a8",
+      "usage": {
+        "inputTokens": 581,
+        "outputTokens": 275,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      }
+    },
+    {
+      "locale": "ko",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "4690eed84b4ad666d29e6e0706f9ef91343505dcb11465aaa5ba075eacdfb508",
+      "rawReceiptSha256": "ccf4a093a0d1563a85919fb1d25baa367468635458a75448e94e120f4c7ccb35",
+      "payloadSha256": "380bdad5f40a9ee8dd720c184641fb58f8949b13db4d93d10352eeac0ec10a82",
+      "responseIdSha256": "b52f840fed31987d3832eef934fd01c21fccb1e184ac93ceddf11bd7e1303a39",
+      "usage": {
+        "inputTokens": 592,
+        "outputTokens": 421,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 106
+      }
+    },
+    {
+      "locale": "ko",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "b6380dba94d89ebe3353e3f8ac3132c38871d92f3c06b1abfc2e1cffda212b90",
+      "rawReceiptSha256": "b875c4ec0304ffda2d7e80b9a5a4940983fc9e8381e39ccd3757bcd30c6b244a",
+      "payloadSha256": "36f8efebb6648d22053d8d803b60dc2b67fb3cc403a134da0a7d5947de23a769",
+      "responseIdSha256": "a3041c4a1529701018225c6b9b877f7944659d108fd7ec4702967af8c1ca8615",
+      "usage": {
+        "inputTokens": 572,
+        "outputTokens": 474,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 207
+      }
+    },
+    {
+      "locale": "ko",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "ed9dbdbece7dc554a2f7736e33182968ed0f0b763ea41948aa40f789aacedc2e",
+      "rawReceiptSha256": "d8a7623204d0e7baa2c9ddff3d5c151fbfa8174cfa5fda2cb904a068b04529f0",
+      "payloadSha256": "8260fa3f4da061e801b0fc0675902cd927137ef2a316dbc938594b8afafc70f8",
+      "responseIdSha256": "e1376ef9a063fa8c4d44eead98385d80f6493f5d8a313b42438df732e9985a1e",
+      "usage": {
+        "inputTokens": 577,
+        "outputTokens": 434,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 173
+      }
+    },
+    {
+      "locale": "ko",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "0fee79583173d6ddb06e05777d7751f1d135d3d08cc82f33db798a52e977abbe",
+      "rawReceiptSha256": "c072e27a9fc8ffc6f59211cf0dfc6e276a2ff4b3a9aa823d34e379a11074c909",
+      "payloadSha256": "6c82640857788f2febe2ff2ffbec87fba8cf8307c1b34665f98f191a39d9f4af",
+      "responseIdSha256": "042fef40e1afa539470ccc43414e485532f6b3b31d5d04018fd9f155c2371d46",
+      "usage": {
+        "inputTokens": 589,
+        "outputTokens": 267,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      }
+    },
+    {
+      "locale": "ko",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "ad7e1fa8703cdc860f5ff9906c47b94d336db92876e873ea21fcf01c4dfc6938",
+      "rawReceiptSha256": "7d8b6ea9de24611bec70829a58ce5b51ca2fa6b0af85e6ec074d77d6d4f1ed2e",
+      "payloadSha256": "e99f11bbe5699121a105880bcd2e21f8306571a3ef379e8461927c28ff53ca3f",
+      "responseIdSha256": "df9de1201740e1589d64fa3c4045f30bf15fc5eca52c2e195450ceb54c6344ab",
+      "usage": {
+        "inputTokens": 628,
+        "outputTokens": 607,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 232
+      }
+    },
+    {
+      "locale": "ko",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "78e0ee94633b963b9aee509da6bf2b47b7535b293a61d7978d5b5c5c729c76a6",
+      "rawReceiptSha256": "e68709d252739127c18854ae5c52a5ac22fcbe15b8e9afdb0b5a61e28517f4b8",
+      "payloadSha256": "b9fde3aa18c4d6e4f4c09a97f632fdcd26380f092369f989fe76aacd1c0dc9fa",
+      "responseIdSha256": "363603c78bd62fb3c0180a697b2772cf0888c5e537de9e7b825677da045dcdeb",
+      "usage": {
+        "inputTokens": 626,
+        "outputTokens": 495,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 165
+      }
+    },
+    {
+      "locale": "ko",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "be297a89bff4cdfdfdc62e20ac22103da7efbc51bc6081c31a018d5ff8600599",
+      "rawReceiptSha256": "76fa8c0d47342649806c300a242e04d52ca411b9b738ab97ab7b5f8d7b5225d1",
+      "payloadSha256": "b3dd4def02ed5403b7af64e4e5ff75a229113aabcda0ebf748bebddc00135236",
+      "responseIdSha256": "34328e5e55a3f131854cd1e0ff6540dd46124cbb88404a939bd97212e8a87d7c",
+      "usage": {
+        "inputTokens": 577,
+        "outputTokens": 386,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 109
+      }
+    },
+    {
+      "locale": "ko",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "dd0e86d8fed4bfe99a581fdf95bcdcf9012818adf24a09800efae355d85bd3a1",
+      "rawReceiptSha256": "a90f80f7da3aea934f4512442b3ce2f825be7663acb8756b31b39e829ff2f298",
+      "payloadSha256": "6dafda4ec62e7557f0989d20a5bbf8a0d50f1a46e7587b368b12020f14834a76",
+      "responseIdSha256": "810c92179998b0ab6825e76e7c85bf70408c9f77534f927c2424d51aff787a9f",
+      "usage": {
+        "inputTokens": 901,
+        "outputTokens": 703,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 280
+      }
+    },
+    {
+      "locale": "ko",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "a1b5f23ae267eb0143fbd4a94d9c907e9ca535c03fdf55feff7892f4e5b6ae5a",
+      "rawReceiptSha256": "73da1e808cb44272b2d0c63117330eb938293cbf0e6ca3773b817dfc7fad2f30",
+      "payloadSha256": "775432df77095b270463edb47122a03e7cfe91bd3dc483180385ec8ce66f8aa4",
+      "responseIdSha256": "d21dbfce9c90cd3bce4f77af639cd1446e36528a692cd3a4413afba2b8c06546",
+      "usage": {
+        "inputTokens": 875,
+        "outputTokens": 695,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 320
+      }
+    },
+    {
+      "locale": "ko",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "7aa23f6c75b91869f8b18920dd3e99381f89a275a2f661b54db6a9cbc0bd7fa1",
+      "rawReceiptSha256": "33663c855d3898a78971880eb6831752ca147203bb811bd9b77bb645b2c6e761",
+      "payloadSha256": "e14d1c44a390b7bbdbc64a744afdc69eb1ee29fcd3732d0591b3ea9105c06fc0",
+      "responseIdSha256": "f51c08654454e1238a8fcbf150cb9df10195b618371cd081814a7a1e1401dbad",
+      "usage": {
+        "inputTokens": 955,
+        "outputTokens": 663,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 200
+      }
+    },
+    {
+      "locale": "ko",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "94deca5b37fbab3455a1d5d7fde9053500d2cfd9c920ba0c9566f66681747657",
+      "rawReceiptSha256": "e8b089a11f912b5eb8b7352852f00142335fc9e68fac28c910c02fa14b97d1da",
+      "payloadSha256": "19b3e1b0e5e56d15c11ab2cacd20a0fdb7d278089eccae00d3e3e9781e1e6cb9",
+      "responseIdSha256": "174f5040386d00d784def9b71776de31a4e64d8bcd9bc428bb194a199ae27b63",
+      "usage": {
+        "inputTokens": 914,
+        "outputTokens": 784,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 372
+      }
+    },
+    {
+      "locale": "ko",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "b11ff2d513d525c0337b7ddc9fa8c2068cef5703e3ca9702ee5f5456bd2d9f8a",
+      "rawReceiptSha256": "b57e805e1586b3f3ba421276a729dcd9bcd9521efc234c5ed52a4b46d1226d70",
+      "payloadSha256": "4df1087432dfcc38edec2123bbd1aebd1491f0211888f335b6d86bebe1046913",
+      "responseIdSha256": "57d00259a4de392fe7a670bfd09714252b5c7514c71f05547855b88fb558d902",
+      "usage": {
+        "inputTokens": 959,
+        "outputTokens": 691,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 230
+      }
+    },
+    {
+      "locale": "ko",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "8449dd93ac48cc919c2c2bf9b63f2ea805ca5978fe3bf27f1bfd2a192de98bda",
+      "rawReceiptSha256": "81cdcb0ed3e5cc92870cffa668447d7611151a0ff2313a910de3f3b80cb52270",
+      "payloadSha256": "adabe5893ff848a9bc45bf2403f5e0b28e5ad11f7692939d9c77a70bfa394442",
+      "responseIdSha256": "57d9385705f45ef98d9460d696c929999a5ee215d045f7154e6c80cc02657c73",
+      "usage": {
+        "inputTokens": 891,
+        "outputTokens": 866,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 430
+      }
+    },
+    {
+      "locale": "ko",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "5e698f5832ff531ab8b07ed888d2f17c09b7e81630a9f82ece12d0e04a18a73b",
+      "rawReceiptSha256": "682d8e78518d8d58c0cf1b5ad72fccd3c2cfada59b6c6d399f2737785ac23d73",
+      "payloadSha256": "adf8eb3ecd3720ba7df332b86acec2162713638a49877582bb07d81499479b93",
+      "responseIdSha256": "860ca2f8462ff9b139a6b68e9368e0b01e3159e0e2ac23c63afddc65f6bc7f11",
+      "usage": {
+        "inputTokens": 890,
+        "outputTokens": 658,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 253
+      }
+    },
+    {
+      "locale": "ko",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "ab6df92e5d5ebaf3f6cceb57fff541f6429f18ed7212435369cea04d3907f5ea",
+      "rawReceiptSha256": "3ba2d9ca92a345fb63a0c4262bfeaa7e4faa764804602ded636f7d088aedd08a",
+      "payloadSha256": "20a4cd897808d142d09a903b63b954997da16389cefde3ef1ba7a4bd0f2f68ff",
+      "responseIdSha256": "c5138b68a9a6dd6e2ed853a5f2b6f52a83ad05a5ebbd3ffdd54c6d25086252d5",
+      "usage": {
+        "inputTokens": 913,
+        "outputTokens": 637,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 237
+      }
+    },
+    {
+      "locale": "ko",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "55d6e9ff177b1e3b372001bb7625a2cf09e68e409e636ff77c6eedd53cba949e",
+      "rawReceiptSha256": "02c7db87934f2f45ea059b4055c8511a78ca5a9f71d05adbf1c3a22369b77ee8",
+      "payloadSha256": "fbf151eef25f5fd1049bb32f15068038d60028ebb833e19416d092d131a0e045",
+      "responseIdSha256": "440a20be4e03ff8f990b1bb29d5c8f84670c8b5b58f0b14a086686bbf204d2a1",
+      "usage": {
+        "inputTokens": 1055,
+        "outputTokens": 1164,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 1052,
+        "reasoningTokens": 629
+      }
+    },
+    {
+      "locale": "ko",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "1d4c11a4125b969904a79b7fe9f6111e98358df1e227e64691a9da73ebeffaa1",
+      "rawReceiptSha256": "395552bc160804d5bb97e2b43265c386068deb1d52b67d6d63b3ba36aa087084",
+      "payloadSha256": "5c07d1ccaa3eb0835546d415dd116989e53741a501b0d9b8085ec2694ef21d68",
+      "responseIdSha256": "d6d3dad2b6ef629dc0426594e0e705d2a1869c53ff87bfbc2a8400b0cc12af69",
+      "usage": {
+        "inputTokens": 1008,
+        "outputTokens": 885,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 403
+      }
+    },
+    {
+      "locale": "ko",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "3d1a412c04cc6dd09b226c4c976895f679deca01e6f6c90cf34c81941b3fcd62",
+      "rawReceiptSha256": "3fdc8c30a3dd3f263d74e4dea2970fa40f835e3b592aaddd82d5b2dbec97d79f",
+      "payloadSha256": "e411031264b706c0f5ecfa45d2e303060e93f0e7beed7232440852028056044e",
+      "responseIdSha256": "4b39e0a9ca62ef4c1e53c24a611d112eb4fc444b07ddfbe80b83aed4c7158765",
+      "usage": {
+        "inputTokens": 906,
+        "outputTokens": 955,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 512
+      }
+    },
+    {
+      "locale": "es",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "ad6fb0e5406e98fa9b6ac3cf23c2d63e41ed7975742140a8c37a70f06ea47694",
+      "rawReceiptSha256": "14d3edc6981fc3525f0910d650f3fa212a940d9654923498c81a4d042b86915e",
+      "payloadSha256": "bb8a24dc1a6112c317bf5c96b74fa7b788e26538c5acc335dbe8afd2499d0dd6",
+      "responseIdSha256": "e02146a3dc9b768ea29d81bc4a16254fd413893609f65ed2a9b3adf2f85929fc",
+      "usage": {
+        "inputTokens": 575,
+        "outputTokens": 488,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 231
+      }
+    },
+    {
+      "locale": "es",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "3027955a4273c4bbb3bc24a3448fa17913f199a14c6461989cb9a20d7508a9eb",
+      "rawReceiptSha256": "94706c5306719f5dadfd97a1e8edc57e6e648c9dd226e5f1106004be96f8bfa1",
+      "payloadSha256": "0a9e82f80c238642ea16a0064f944b8d8efad9da9b957682d95ce682bb1f013b",
+      "responseIdSha256": "00484a986890d942ee6f42e1565bb6dc52b1f919097b8a96d35474c54675c071",
+      "usage": {
+        "inputTokens": 590,
+        "outputTokens": 340,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 129
+      }
+    },
+    {
+      "locale": "es",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "89a198286e3e796755016f892ec07c35030d1d18228613b088be9735b74f0f5b",
+      "rawReceiptSha256": "7b7bab242773482aff923a40017a67ae24c82b5988cc51ffcbcfeef96a1dd0c2",
+      "payloadSha256": "de0f8c67bc82e3a9d9e30a3dfc12dd67a4fd64382d74df7bad3f50051f1feda1",
+      "responseIdSha256": "7bbe66466b6930eddd75cc1704ee7af2c547d39f0653e0add8fa7aa093c05ff8",
+      "usage": {
+        "inputTokens": 596,
+        "outputTokens": 250,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      }
+    },
+    {
+      "locale": "es",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "5c74d518838e4de6a7cb8fa48df6f8c4343d9e084279ceb55794534d69133921",
+      "rawReceiptSha256": "db25efd0b2b05870322f44a3ca57485867c62a3be34a49d7b9f0f418bc5d6904",
+      "payloadSha256": "30e4638c66f59cee9d4371f9d06753beb56e75e3e69fe90b51659e2201729c00",
+      "responseIdSha256": "7df75bf93f9645a735a04a98a9b7eb7e908fb09d79750bc85c6781a4f8883a76",
+      "usage": {
+        "inputTokens": 582,
+        "outputTokens": 255,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      }
+    },
+    {
+      "locale": "es",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "a00a995eca435f7afd1b3dcb80f7f152ac3d87beb6830ab9f4bbc13b1804953b",
+      "rawReceiptSha256": "2e281a714d1355841c4968d641de9e141db82ad37b81eaf194fd3d9a22ba7b24",
+      "payloadSha256": "f3581817b2ea4e9f77a9d619c70af24df4e8e54228100b4e9d9aa69c97a4f893",
+      "responseIdSha256": "bfc73c73aa72c98c21e4952b812d0f2543249bc3a63924eeaa16b07499c7dde1",
+      "usage": {
+        "inputTokens": 593,
+        "outputTokens": 447,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 174
+      }
+    },
+    {
+      "locale": "es",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "bcae76fa20f7a85a51c00204b59dc7e6fd09acda94f0bb1afac8ee5a5ed4483d",
+      "rawReceiptSha256": "bb8990441bb10270035e568550e2a3b5c54a6fb36151af86a3cccb4a531c958d",
+      "payloadSha256": "8fdfe1667cabd352a3f54d4e81db5323e098cd5e7d9b850481840c37d0237ebb",
+      "responseIdSha256": "bf50bfe1ee6d84a51281b9337dfebed7b0a562a403bda2734e82c191188a7129",
+      "usage": {
+        "inputTokens": 573,
+        "outputTokens": 332,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 107
+      }
+    },
+    {
+      "locale": "es",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "1b80f042dad71e06a88e86130611e3069802c24851d26a6ee9271aad5b048f01",
+      "rawReceiptSha256": "865e4c25702a79db45deb4ac5ae9b239234bc7e120ff17006d8bac87abe58de2",
+      "payloadSha256": "074dfa854ea7df68791ef92abb38c3992991a85112eba67a536f7535f6b65109",
+      "responseIdSha256": "c5d7083e4ccf372996a5dc40822986fa081a7986dfc01a27dd3c4080b1a41462",
+      "usage": {
+        "inputTokens": 578,
+        "outputTokens": 377,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 154
+      }
+    },
+    {
+      "locale": "es",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "5b6d89ac8d023d65f7850d03708fbd045ddc3db895b460444e16141c867988fd",
+      "rawReceiptSha256": "5626d4fa31aa9ff2ab1d907cf11856984035655a648680e483b7f50d7037fc93",
+      "payloadSha256": "e1c724c576624130921a3748ffe1943a76b044efff7980f96fe41813f9793f59",
+      "responseIdSha256": "600cd8d3cc091078a1a7806d0d91c90c4aa6691036bd25bb80ba9f836bec6e5d",
+      "usage": {
+        "inputTokens": 590,
+        "outputTokens": 331,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 102
+      }
+    },
+    {
+      "locale": "es",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "f3be4a0580ed7988376b8eaa56428729a82ff1c1cff8e6fc3ebf2be6e88e7de5",
+      "rawReceiptSha256": "65920d3d46840f8138079fe1ced23f52560575e107aede701ce96c52faae7744",
+      "payloadSha256": "50d175a7e727e1b936e5f1ecba2e98170c9133c978a013b25ec3ad37d22baf77",
+      "responseIdSha256": "01fc7ccfc299f90df3f781c995570baf78240dfec9bc95ea140943f94bb2b706",
+      "usage": {
+        "inputTokens": 629,
+        "outputTokens": 294,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0
+      }
+    },
+    {
+      "locale": "es",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "13dfa232472185e41c21c29d16ac340f20e52be6b7eda2ff4624ed57947ba53e",
+      "rawReceiptSha256": "e2eadd22ce71a1c01ce4cd79aee3d8909aadb2c449bf75341379d9fca0c66293",
+      "payloadSha256": "7ab4ab26e65047104923dc79de6bd035b574ee71cf2d1049fb3fdd96fe5ed835",
+      "responseIdSha256": "4dcafbf935529f4bf30d120d10ecc4dd04f17bbd6913a5dd7116ea83e8bdaa2f",
+      "usage": {
+        "inputTokens": 627,
+        "outputTokens": 410,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 140
+      }
+    },
+    {
+      "locale": "es",
+      "role": "translator",
+      "model": "gpt-6-astra",
+      "cacheSha256": "770aa9468e4139008bbe94001e75efc1f358f08c8e64d8dc4ff62bd6f0230cec",
+      "rawReceiptSha256": "829e0650c12411a4b4c684f2984df4b51030dcce63a7071e490ebddbdf365c1f",
+      "payloadSha256": "a8b4b739a2d54b106c2443a93fdb74b7485778ce053dbc209f5a57554c8715a2",
+      "responseIdSha256": "0964f956a888a76725d61cf8902494acb783344afa73369620dac2138c823cb2",
+      "usage": {
+        "inputTokens": 578,
+        "outputTokens": 364,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 131
+      }
+    },
+    {
+      "locale": "es",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "c7c5e1c159565ba3971295cca88a762f1e5f5e3f194176063b50ecfaee694f7f",
+      "rawReceiptSha256": "bed5adb60970e4974bc4d4b8cb90846977da5f75a3fa5d77204c9f50149af458",
+      "payloadSha256": "21ca550b1190b5b09a96f8a9b7d789278958dc85a3336eb6a65811f41f7885f3",
+      "responseIdSha256": "c547d03ed5c58a67b5af8971aa53b7c9f5f6263114a960e716cb98951511457d",
+      "usage": {
+        "inputTokens": 884,
+        "outputTokens": 784,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 405
+      }
+    },
+    {
+      "locale": "es",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "59d841d7b88a4bb40e5653360f5e91eafec2215f5adbe4b0f5063b454faa248c",
+      "rawReceiptSha256": "e40cea491baf14eb6c8cc64242cbcf99136a5e7a5d18515866063d48416aec71",
+      "payloadSha256": "c4f7d8b9404ea1d2f87175d43737328ffbc018babcc32856f0b5a4f39fbbf824",
+      "responseIdSha256": "70c5a3ce95d705ca8935a722febbae6f240ee1655b99fc74e86f2df9940ca324",
+      "usage": {
+        "inputTokens": 852,
+        "outputTokens": 658,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 347
+      }
+    },
+    {
+      "locale": "es",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "ca21004487537c7feacdbf8e35c9264768fc74262d1acd904c605641f30f8a49",
+      "rawReceiptSha256": "950b3521b5b2b0039e07f5d3582ae6d247cc064482c634ba26f82050ca84d7ff",
+      "payloadSha256": "ac70b41cf24209682dbf345e1512a388b8d76a321cb308ad41e4464962da8b43",
+      "responseIdSha256": "e734a9464c4b7177bf27d1b04cc0f5ce18fce56a3bf6ee8e1c2802c8c26c4805",
+      "usage": {
+        "inputTokens": 904,
+        "outputTokens": 639,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 267
+      }
+    },
+    {
+      "locale": "es",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "2cec8bdac9c8a9f400059a85197d4b7ed89e7f065771630de8b667abdcef441c",
+      "rawReceiptSha256": "82f5ff9af9440a0e08feaedda89bc1f8861dad5bf1167d4fc9056a13cc3bfcb2",
+      "payloadSha256": "b1e5fab6ed46bc9cdee04fadabec668cdd4603a7009562f577874605ab1166af",
+      "responseIdSha256": "d08d14769720329c003b462a610841b6d8b7408331ac41ac6f11429135ea654d",
+      "usage": {
+        "inputTokens": 895,
+        "outputTokens": 611,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 233
+      }
+    },
+    {
+      "locale": "es",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "eaa9ce42b3146529485f9ed447594159fa20c62dc21bc23ea6875162ff554489",
+      "rawReceiptSha256": "a1c177fd9b3ebcfe199a96524ac289bb0ccee2151367edf0526a3fc075a3c38d",
+      "payloadSha256": "c4e9c2fc68bb6959ad40d6c1ce90a317182f4dd34bea6c2f475c27c18447386a",
+      "responseIdSha256": "bedd699592fa19c50ce93dbbdae03d08013517a4ecdca303db6a38999a23ff58",
+      "usage": {
+        "inputTokens": 917,
+        "outputTokens": 520,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 119
+      }
+    },
+    {
+      "locale": "es",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "6a9aebe8a7fdd321ac0529b456eb37b02843773c5e9056a2a4a0c89d118c5e5b",
+      "rawReceiptSha256": "464db44f08115f3fc872c644a2902fdf9ec99c6b344aee2023a2dc48ca62e1ad",
+      "payloadSha256": "ea4788ad707cbda9a7cbe29477ffe950ee054785b789fbc85e7911440b26934f",
+      "responseIdSha256": "7ef7e1525841c4e408d61467e7e1292814ca5e5b581059ab762da60cb505fee6",
+      "usage": {
+        "inputTokens": 850,
+        "outputTokens": 714,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 340
+      }
+    },
+    {
+      "locale": "es",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "75b31f4360536eb73d87e3fefd6597780d3d8764664c1159909713426bcc3fb8",
+      "rawReceiptSha256": "c513e8858b577e670eccccef33c1be9e9f933987930759ffa4c0a6a077089b2d",
+      "payloadSha256": "81fd2a1fb69ac40830244578cff664e1e25590899e1779e21ad15e16ecddbbec",
+      "responseIdSha256": "db8ff45d7b88749169c0e2cfe39a9d9709752991893b8aeff8fd2551aa18b5c1",
+      "usage": {
+        "inputTokens": 852,
+        "outputTokens": 589,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 244
+      }
+    },
+    {
+      "locale": "es",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "fb6fbb1dabf6c240b4c08f38a3a83729a822438bbb2cb8fd71c789f14a08140d",
+      "rawReceiptSha256": "980f16f3a4448ee7986085b9a30155e34b8309b1b1f82e70a6943ae1321c8b84",
+      "payloadSha256": "ee7c2497de5765cab6a9a99b8a92f8a227cfb10225534b665593624a21f32f89",
+      "responseIdSha256": "2befa194f5d52c8601c5f592ed38de52ac84bdd511ca186aab283bc36ea35b91",
+      "usage": {
+        "inputTokens": 871,
+        "outputTokens": 448,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 110
+      }
+    },
+    {
+      "locale": "es",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "42939d7f8e0f997260522c10397a80b68e251bd739fd7d9ef8bb18e06eebf44f",
+      "rawReceiptSha256": "b1251d62fce4e975b7f0ffc2e509c69aa97bd727f6d777c6def5b4bf2eb4e6c3",
+      "payloadSha256": "033f3036298452bb0d38152cb3fc7de2fbbaad2c95ec2408534331a504b04490",
+      "responseIdSha256": "d7c04e2dbf73cd77735f0e651f080e22bcf0eba691b5d17ded1ea98374e2d2fc",
+      "usage": {
+        "inputTokens": 980,
+        "outputTokens": 861,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 424
+      }
+    },
+    {
+      "locale": "es",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "d3869db767bb3e16ecc591f39b754e18fa463088b5473008429e2716b1c4d44e",
+      "rawReceiptSha256": "f5fe54893c6a7130d9bdacf4de219aac03b6a85d6be0c44722fe9e279bee4292",
+      "payloadSha256": "21c6b14f90a22ee8774ad83f8694468b6c759717406eb9b2ae807b259b20c319",
+      "responseIdSha256": "19be717c9ddbba8dbb6dcac5c7faccb7164829b6598d8a311048d23806adfac9",
+      "usage": {
+        "inputTokens": 949,
+        "outputTokens": 799,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 390
+      }
+    },
+    {
+      "locale": "es",
+      "role": "reviewer",
+      "model": "gpt-6-sol",
+      "cacheSha256": "46d81a20abb7540607b4cdf1dae5d0a3cab7d830675169c835461963c6c38a3e",
+      "rawReceiptSha256": "daba9ee38904b673d08c9e3d1de293c55b7c8a17a87b5a2936340ee5f292df4b",
+      "payloadSha256": "35fd28496dd26110951c4bfc4ea60513e540fc0517ad7ceeeb25f75c12d14d0e",
+      "responseIdSha256": "4267ac50a88ba6da3b45935de8eb56a316a8b1abe1a5a1dd9c280adc088a8a28",
+      "usage": {
+        "inputTokens": 864,
+        "outputTokens": 527,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 173
+      }
+    }
+  ]
+}

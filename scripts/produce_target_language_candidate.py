@@ -23,11 +23,13 @@ try:
     from scripts import prepare_target_language_speech_job as handoff
     from scripts import sermon_sentence_interpretation as interpretation
     from scripts import target_language_policy as policy_tools
+    from scripts import build_english_source_package as english_source
 except ImportError:  # Direct execution via ``python scripts/...``.
     import four_layer_measure as measure
     import prepare_target_language_speech_job as handoff
     import sermon_sentence_interpretation as interpretation
     import target_language_policy as policy_tools
+    import build_english_source_package as english_source
 
 
 REQUEST_SCHEMA = "sermon-target-language-evidence-request-v1"
@@ -74,9 +76,8 @@ def plugin_implementation_sha256(plugin_path: Path) -> str:
     return digest.hexdigest()
 
 
-def prepare_request(source: dict[str, Any], anchor: dict[str, Any],
-                    policy: dict[str, Any]) -> dict[str, Any]:
-    """Freeze exactly one source and locale; leave all generated fields blank."""
+def validate_source_for_translation(source: dict[str, Any], anchor: dict[str, Any]) -> str:
+    """Reuse the production source/anchor gate without a locale policy or writes."""
     _require(source.get("schemaVersion") == handoff.SOURCE_PACKAGE_SCHEMA
              and source.get("status") == "ready_for_translation"
              and source.get("translationEligible") is True,
@@ -100,6 +101,18 @@ def prepare_request(source: dict[str, Any], anchor: dict[str, Any],
     anchor_hash = interpretation.json_sha256(anchor)
     _require(source.get("anchors", {}).get("artifact", {}).get("jsonSha256") == anchor_hash,
              "Source package and anchor manifest differ")
+    # Status flags and human-review fields cannot make an incoherent package
+    # ready. Reuse construction/read-side invariants before any paid request.
+    handoff._validate_schema(source, "sermon-english-source-package-v1.schema.json", "source package")
+    english_source.validate_ready_package(source)
+    return anchor_hash
+
+
+def prepare_request(source: dict[str, Any], anchor: dict[str, Any],
+                    policy: dict[str, Any]) -> dict[str, Any]:
+    """Freeze exactly one source and locale; leave all generated fields blank."""
+    anchor_hash = validate_source_for_translation(source, anchor)
+    units = anchor["sourceUnits"]
     identity = policy_tools.validate_policy(policy)
     policy_tools.validate_source_scope(policy, source, anchor)
     _require(identity["productionPolicyReady"],

@@ -1,6 +1,6 @@
 # 现场麦克风与音频指纹对齐：优化与验收 Backlog
 
-更新：2026-09-29（洛杉矶时间）。归属 [Dev 统一 Backlog](backlog.zh.md) 的 `DEV-FIELD-001`；本文的 `FIELD-01`—`FIELD-10` 是其专项子项，不新增另一套顶层排期。本文为待实施计划，新增子项均为 `pending`，不是实现、发布或现场通过声明。
+更新：2026-09-30（UTC；实施对照）。归属 [Dev 统一 Backlog](backlog.zh.md) 的 `DEV-FIELD-001`；本文的 `FIELD-01`—`FIELD-10` 是其专项子项，不新增另一套顶层排期。FIELD-01／02／09 已有 draft PR 的局部实现，状态为 `in_progress`；其他新增优化仍为 `pending`。详见 [2026-09-30 对照](reports/20260930-overnight-implementation-checkpoint.zh.md)。诊断、单会话索引预检和合成数值夹具不表示已发布、离线完整就绪或现场通过。
 
 ## 1. 范围和核查基线
 
@@ -98,6 +98,8 @@
 
 ### FIELD-09：真实声学基准、跨端 parity 与发布门禁
 
+2026-09-30 首批代码状态 **in_progress**：现有 JS→Swift golden 生成器新增不重写 fixture 的检查与 hash 绑定报告，12 个合成场景和独立本地 Swift matcher 对照通过。见 [冻结数值合同检查](field-fingerprint-contract-baseline.zh.md)。仅覆盖 published 数值合同，以下声学、legacy packed、设备和现场验收继续待证据。
+
 - [ ] 复用 [JS→Swift golden 生成器](../apps/tongxing-ios/scripts/generate-published-fingerprint-golden.mjs) 做确定性数值和拒绝原因对照；记录算法/索引版本，覆盖旧 packed 与 published 的隔离。合成音只证明合同，不代替语音/现场。
 - [ ] 使用经授权的录音/受控房间回放，分开生成开发集与保留集，按完整源录音/录制会话分割，避免把同段重叠窗口随机分入两组。包含不同证道、不同起点、转码、音量、EQ、混响、邻近人声、手机遮挡与网络状态；改剪辑/变速仍为不支持或负例。
 - [ ] Web Safari 与原生 iOS 分开，最低支持设备/系统与当前设备/系统、内置/已支持耳机路线分层；正例失败、拒绝和超时全部保留。报告成功率、误跳率、首次/二次命中、P50/P95 总耗时、源定位/可听输出/字幕误差、峰值内存及占麦时间。
@@ -117,3 +119,15 @@
 [W3C Media Capture and Streams](https://www.w3.org/TR/mediacapture-streams/) 区分 requested constraints、capabilities 与 current settings；`getSettings()` 给出当前报告设置，但本身不是远场声学性能测量。自动增益/降噪的支持和可控范围不能由请求参数推断。此规范核查不构成任何具体 Safari/iPhone 的兼容或效果证明。
 
 本次 Apple 在线文档未能成功读取；iOS 时钟和 Voice Processing 的 API、最低系统支持及 route 行为作为开发前 SDK/官方文档与真机核对项，没有据此新增已验证平台声明。上述具体代码限制来自冻结仓库源码；所有新数值是候选验收目标，不是测得结果。现场 PCM 和原始私有实验素材不进入 Git；文档/代码合并不自动授权录音收集、上传、部署或内容发布。
+
+## 4. 2026-09-30 Web 首批代码进展
+
+`FIELD-01` 进入 **in_progress**：已接入本地质量区间、匹配拒绝分类、采集重试累计计时、Worker 子阶段计时和控制器白名单诊断。实现及证据边界见 [会话诊断说明](field-session-diagnostics.zh.md)。以上未勾选验收项继续保留，尤其分享流程、完整失败注入、真机、现场和物理输出计时尚未完成。`FIELD-02`—`FIELD-10` 状态不因本批改变。
+
+### 2026-09-30 FIELD-02 会话预检批次
+
+`FIELD-02` 进入 **in_progress**：Web 自动对齐先校验当前索引再请求麦克风，并在同一个 Worker 内复用且复核身份。实现与本地证据见 [采音前索引预检](field-index-preflight.zh.md)。上方验收勾选保留为空：持久离线 readiness、选篇/下载预备、坏缓存/撤回流程、峰值内存及真实设备/网络场景尚未完成。FIELD-01 的诊断不因本批变成现场验收。
+
+### 2026-09-30 FIELD-03 Web 累计预算批次
+
+`FIELD-03` 进入 **in_progress**：现有 10 秒 Web 采集和瞬态恢复共享 15 秒占麦预算，额度不足安全拒绝，迟到缓冲不接纳。实现、Chrome 合成设备测量和调度限制见 [Web 占麦累计预算](field-microphone-budget.zh.md)。保留上方全部未验收勾选：连续 10→15 秒、新能力合同、原生实现和物理设备/现场验证仍未完成。FIELD-02 的当前单索引持久缓存已有独立实现，亦不等于整页离线 readiness。

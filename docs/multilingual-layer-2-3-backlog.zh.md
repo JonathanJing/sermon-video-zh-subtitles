@@ -35,6 +35,8 @@
 
 若 English Source Package 只有 `candidate_ready_for_translation`，只允许 shadow fixture，不得生成带人工批准或发布含义的正式候选。
 
+2026-09-30 准入回归：正式 `prepare_request`／模型 runner 在任何模型调用前复用 Source schema 与 `validate_ready_package`，检查 media identity、有效且不超出已知媒体时长的批准窗口、候选/正式资格、空 issues 及 derived package identity。仅保留 ready 标志而删除媒体或改窗口/身份会被拒绝；即使同步刷新下游 policy hash 也不能使不一致来源可用。现有 anchor、人审检查和 policy 门禁保留，不改变模型角色或缓存身份。测试使用真实 Source builder 生成完整合成包；不把这些合成审核标志当实际内容审批。真实整篇门槛仍按下方待验收项处理。
+
 共同不变量：
 
 - 各语言直接读取同一份英文 package；禁止 `en → zh-Hans → ko`。
@@ -404,3 +406,9 @@ Layer 2 的 P0 全部通过后才能开始正式 Layer 3 韩语合成。Layer 3 
 ### 可选：已审文字辅助周日实时字幕
 
 四层预制音轨不进入现场低延迟字幕链。若需复用 Layer 2 已审译文，新增确定性投影 adapter，把已批准的来源、locale、候选、人审 hash 映射进 Saturday Evidence Bundle / Sunday Runtime Pack；仅允许审核过的术语、经文和受控示例进入现场 prompt。仍须人工确认周六/周日同篇、检查有效期和 capability；现场 `asr.final` 是唯一事实源，Pack 不合格降为 `none` 基线。韩语/西语实时字幕另需模型、UI、设备和现场验收，不由预制韩语音轨自动获得资格。参见[Context Pack 合同](saturday-to-sunday-context-pack-plan.zh.md)和[周日运行入口](sunday-live-agent-runbook.zh.md)。
+
+### Layer 2 付费缓存的 host-crash 边界（2026-09-30）
+
+`run_target_language_models.save_new` 保留 exclusive-create 和已有请求/cache identity，现在在返回前 flush/fsync 文件并同步完整同文件系统目录祖先链，复用 durable jobs 的工具。模型 responder 只能在 started intent 持久化后调用；raw response 与 validated result 同样落盘后才移除 uncertainty marker。任何 fsync 失败向上传播，不把未知结果当可自动重试。已有正确缓存仍直接读取，不为此更换模型、prompt 或 paid-cache identity。
+
+合成回归覆盖新目录、marker 文件/目录 sync 失败、响应已返回但 raw 持久化失败、从 durable raw 恢复 result、进程在 responder 入口退出、同 identity 并发和已有缓存复用。旧实现的持久化次序/失败注入有 5 个 assertion failure，修复后通过。该证据是 OS fsync 调用顺序与故障注入，不是实际断电硬件实验；不关闭完整 E4、真实模型跑批、人工审核或后续阶段 sign-off。

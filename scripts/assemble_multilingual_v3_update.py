@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime, timezone
+import hashlib
 import json
 from pathlib import Path
 import shutil
@@ -18,8 +19,10 @@ from jsonschema import Draft202012Validator, FormatChecker
 
 try:
     from scripts.assemble_multilingual_hosting import digest, load, regular_files, checked_public_path
+    from scripts.release_asset_io import copy_bound_asset
 except ImportError:
     from assemble_multilingual_hosting import digest, load, regular_files, checked_public_path
+    from release_asset_io import copy_bound_asset
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -222,7 +225,7 @@ def require_video_redirect(config: dict, delivery: dict) -> None:
 
 
 def stage_files_from_manifest(stage_public: Path, manifest_path: Path,
-                              page_id: str) -> tuple[dict[str, Path], dict | None]:
+                              page_id: str) -> tuple[dict[str, Path], dict[str, str], dict | None]:
     manifest = load(manifest_path)
     profile = manifest.get("profile")
     bucket = profile == BUCKET_PROFILE
@@ -241,6 +244,7 @@ def stage_files_from_manifest(stage_public: Path, manifest_path: Path,
     validate_schema(manifest, f"{schema}.schema.json")
     actual = regular_files(stage_public)
     listed: set[str] = set()
+    identities: dict[str, str] = {}
     for entry in entries:
         if not isinstance(entry, dict) or set(entry) != {"path", "sha256"}:
             raise ValueError("Invalid stage manifest entry")
@@ -251,9 +255,10 @@ def stage_files_from_manifest(stage_public: Path, manifest_path: Path,
             raise ValueError("Catalog must be staged separately; duplicate stage file")
         require_file(stage_public, url, entry["sha256"])
         listed.add(name)
+        identities[name] = entry["sha256"]
     if set(actual) != listed | {CATALOG}:
         raise ValueError("Stage manifest differs from staged public files")
-    return {name: actual[name] for name in listed}, manifest.get("videoDelivery")
+    return {name: actual[name] for name in listed}, identities, manifest.get("videoDelivery")
 
 
 def assemble(base_public: Path, stage_public: Path, stage_manifest: Path, out: Path,
@@ -264,7 +269,13 @@ def assemble(base_public: Path, stage_public: Path, stage_manifest: Path, out: P
     base_files = regular_files(base_public)
     if CATALOG not in base_files or "weekly.json" not in base_files:
         raise ValueError("Base is not a complete Production snapshot")
-    old = load(base_public / CATALOG)
+    # Freeze the baseline before validation/copy. Comparing a copied file to a
+    # later read of its source can silently accept a concurrently changed input.
+    base_identities = {name: digest(path) for name, path in base_files.items()}
+    old_bytes = (base_public / CATALOG).read_bytes()
+    if hashlib.sha256(old_bytes).hexdigest() != base_identities[CATALOG]:
+        raise ValueError("Base catalog changed after admission")
+    old = json.loads(old_bytes)
     incoming = load(stage_public / CATALOG)
     validate_schema(old, SCHEMA)
     validate_schema(incoming, SCHEMA)
@@ -281,7 +292,7 @@ def assemble(base_public: Path, stage_public: Path, stage_manifest: Path, out: P
         raise ValueError("Existing page ID cannot be overwritten")
     for prior in old["pages"]:
         validate_page(base_public, prior)
-    stage_files, delivery = stage_files_from_manifest(stage_public, stage_manifest, page["id"])
+    stage_files, stage_identities, delivery = stage_files_from_manifest(stage_public, stage_manifest, page["id"])
     if delivery != page.get("videoDelivery"):
         raise ValueError("Stage video delivery differs from catalog")
     if delivery is not None:
@@ -321,13 +332,18 @@ def assemble(base_public: Path, stage_public: Path, stage_manifest: Path, out: P
     temporary = Path(tempfile.mkdtemp(prefix=f".{out.name}-", dir=out.parent))
     try:
         public = temporary / "public"
-        shutil.copytree(base_public, public)
+        # Preserve any newly introduced symlink as a link so regular_files can
+        # reject it, rather than copying the link target into the candidate.
+        shutil.copytree(base_public, public, symlinks=True)
+        if set(regular_files(public)) != set(base_files):
+            raise ValueError("Base file set changed after admission")
+        for name, expected in base_identities.items():
+            if digest(public / name) != expected:
+                raise ValueError(f"Base bytes changed after admission: {name}")
+        for prior in old["pages"]:
+            validate_page(public, prior)
         for name, source in stage_files.items():
-            target = public / name
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(source, target)
-            if digest(target) != digest(source):
-                raise ValueError(f"Stage copy changed: {name}")
+            copy_bound_asset(source, public, "/" + name, stage_identities[name])
         old_catalog_sha = digest(public / CATALOG)
         shutil.copyfile(public / CATALOG, temporary / f"rollback-{CATALOG}")
         (public / CATALOG).write_text(json.dumps(merged, ensure_ascii=False, sort_keys=True, indent=2) + "\n")
@@ -335,9 +351,11 @@ def assemble(base_public: Path, stage_public: Path, stage_manifest: Path, out: P
             (temporary / "firebase.json").write_text(
                 json.dumps(config, ensure_ascii=False, sort_keys=True, indent=2) + "\n")
         validate_page(public, page)
-        for name, source in base_files.items():
-            if name != CATALOG and digest(public / name) != digest(source):
+        for name, expected in base_identities.items():
+            if name != CATALOG and digest(public / name) != expected:
                 raise ValueError(f"Base file changed: {name}")
+        if set(regular_files(public)) != set(base_files) | set(stage_files):
+            raise ValueError("Candidate contains files outside the admitted snapshot")
         report = {
             "schemaVersion": "sermon-multilingual-v3-update-candidate-v2",
             "status": "validated_not_deployed",
