@@ -1020,3 +1020,338 @@ Apple 当前 App Store Connect 流程是：**当要发布新的 App 版本时，
 12. backend-only diff 已再次核对，若无 iOS binary/client contract change，则记录 `ios_review_required=false` 和依据；若有任何客户端改动，则转入 iOS 交付 backlog，不能继续沿用该结论；
 13. 第二个真实新周由 `DEV-TRK-002` 证明可重复恢复和计量。
 
+
+
+---
+
+## 19. 工业界模式对照与本项目取舍
+
+本方案不是自创一套新的 orchestration 范式，主要对应成熟 durable workflow 的共同做法：
+
+| 工业界常见模式 | 本项目对应 |
+|---|---|
+| Orchestrator 与 Activity/Worker 分离 | Layer A controller 与 production durable jobs 分离 |
+| Durable state / execution history | receipts + accounting + workflow state |
+| Deterministic orchestration | snapshot/recommendedAction → deterministic transition |
+| At-least-once activity + idempotency | action/work-unit identity + receipt + side-effect key |
+| Retry/Catch / bounded retry | retry policy + failure class + reconciliation |
+| External event / human approval | audio review / release authorization durable receipt |
+| Parallel branches + join | zh/ko/es branch + required-locale convergence |
+| Long-running wait without holding compute | durable job + waiting state |
+| Replay-safe observability | append-only accounting + dedupe + critical-path projection |
+| Agent only for ambiguous decisions | Layer B bounded Decision Agent |
+| Versioned workflow migration | 本轮新增 workflowDefinitionVersion / migration policy |
+
+本项目不直接引入新的 Temporal/Step Functions/Azure runtime；先在现有 Python durable-job/receipt 基础上实现相同的核心语义。若未来跨机器、跨天任务量、并发或运维复杂度超过本地 controller 能力，再单独评估迁移到专用 durable workflow engine。当前开发不得同时做“架构重构 + 更换 orchestration 平台”，避免无法归因。
+
+---
+
+## 20. 开工前必须冻结的工程合同
+
+以下项目是从设计稿进入 ready-to-start-dev 前的缺口；未冻结前不开始核心 controller 改造。
+
+### 20.1 Workflow Definition Version
+
+新增：
+
+- `workflowDefinitionVersion`
+- `stateSchemaVersion`
+- `decisionSchemaVersion`
+- `accountingSchemaVersion`
+
+规则：
+
+- 已开始 productionRun 固定 workflowDefinitionVersion；
+- 新代码部署不得让进行中的 run 悄悄切换 DAG；
+- 不兼容升级必须明确 migrate / finish-on-old / abort-and-restart 三选一；
+- migration 自身产生 receipt；
+- 历史 receipt 永不原地改写。
+
+### 20.2 Side-effect Idempotency
+
+所有会产生外部/昂贵副作用的 activity 必须有稳定 idempotency key：
+
+    productionRunId + stageId + workUnitId + revisionId + inputIdentityHash
+
+覆盖：
+
+- 付费模型调用；
+- TTS；
+- 文件/包生成；
+- Firebase deploy；
+- registry mutation；
+- notification（若接入）。
+
+要求：
+
+- dispatch 前持久化 intent；
+- outcome unknown 时先 reconcile，禁止直接 retry；
+- 已成功 side effect 在相同 identity 下返回 receipt/reuse；
+- side effect 与 receipt 写入之间崩溃有专门 failure injection。
+
+### 20.3 Timeout / Heartbeat / Reconciliation
+
+每种 durable activity 冻结：
+
+- start timeout；
+- execution timeout；
+- heartbeat/progress（长任务适用）；
+- no-progress timeout；
+- retryable failure codes；
+- non-retryable failure codes；
+- maximum attempts；
+- reconciliation procedure。
+
+不能用统一 6 小时 timeout 代替 stage-specific policy。
+
+### 20.4 Compensation / Rollback
+
+不是所有 action 都能“undo”。逐 action 冻结：
+
+- reversible；
+- compensatable；
+- append-only；
+- manual reconciliation only。
+
+特别：
+
+- deploy_release：回滚到绑定的 previous release；
+- record_published：不得通过删除历史伪装回滚；
+- 已付费模型调用：不可撤销，只能复用 receipt；
+- 人工批准：新 revision 使旧批准失效，不覆盖旧 receipt。
+
+### 20.5 Concurrency / Backpressure / Resource Budget
+
+冻结：
+
+- 每 locale Layer 2 最大并发；
+- Layer 3 每设备/模型最大并发；
+- 全局 paid-model inflight 上限；
+- rate-limit/backoff；
+- 本地 CPU/RAM/GPU 阈值；
+- queue fairness；
+- 同一 source/revision 禁止重复 worker；
+- convergence 前允许的 branch skew。
+
+并发提升属于后续 A/B，不允许 controller 初版默认“尽量并发”。
+
+### 20.6 Human Approval Correlation
+
+每个 human gate receipt 必须绑定：
+
+- productionRunId；
+- stage/workflow scope；
+- candidate/artifact hash；
+- source/revision；
+- reviewer；
+- approvedAt；
+- approval schema version。
+
+新 revision / hash 改变自动使旧批准对当前候选无效；不删除旧批准。
+
+### 20.7 Decision Agent Security Boundary
+
+State Packet：
+
+- allowlist 字段；
+- artifact text 默认不内联；
+- evidence 内容视为 data，不是 instruction；
+- tool/action 由 controller allowlist；
+- Decision Agent 无 shell/path/deploy 参数控制权；
+- selectedAction 必须二次校验；
+- prompt injection fixture 必须进入 Stage 0。
+
+### 20.8 Trace / Metrics Contract
+
+在现有 accounting 上冻结最小 trace identity：
+
+- traceId = productionRunId；
+- spanId；
+- parentSpanId；
+- workflowId；
+- stageId；
+- workUnitId；
+- attemptId；
+- executorType。
+
+不要求本轮引入 OpenTelemetry backend，但字段命名/语义要能未来映射到标准 trace，避免再次迁移日志模型。
+
+### 20.9 SLO / Promotion Gate
+
+Stage 2 前冻结候选 SLO，而不是测试后挑指标：
+
+- 关键 stage accounting coverage = 100% 或明确 unknown + blocker；
+- duplicate external side effect = 0；
+- stale decision execution = 0；
+- missed mandatory gate = 0；
+- happy-path runtime Codex orchestration turn = 0；
+- recovery 不重做 unaffected paid work；
+- quality 不低于 frozen baseline；
+- State Packet 不超预算；
+- end-to-end/token 目标由 Stage 1 baseline 后冻结。
+
+### 20.10 Ownership
+
+每个 sign-off 明确角色，不用同一自动化自签：
+
+- Engineering sign-off：controller/state/idempotency/logging；
+- Content sign-off：语言/音频质量；
+- Release sign-off：Dev deploy/HTTP/rollback；
+- Compatibility sign-off：Web/iOS contract；
+- Performance sign-off：A/B 计量。
+
+同一人可以实际承担多个角色，但 receipt 中 role 必须分开。
+
+---
+
+## 21. Ready-to-Start-Dev 实施包
+
+### Epic 1 — Accounting / Trace foundation
+
+**E1.1 Schema extension**
+- 文件目标：`scripts/sermon_accounting.py`、`scripts/export_sermon_trace.py`、对应 tests。
+- 增加 executor/dependency/queue/decision/work-unit 字段。
+- 兼容读取 v1/v2；历史事件不改写。
+
+**E1.2 Critical-path projector**
+- 从 events/receipts 重建 DAG。
+- 检测 cycle、missing dependency、negative/overlapping invalid interval。
+- 输出 critical path + branch slack。
+
+**E1.3 Weekly report**
+- JSON 为事实源，Markdown 为 projection。
+- token 去重规则与 SDK/direct receipt 分列。
+
+依赖：无。完成后才进入 Epic 2/3 的正式计量。
+
+### Epic 2 — Deterministic Controller
+
+**E2.1 Workflow definition**
+- 版本化 DAG/action registry。
+- 明确 stage dependencies、human gates、convergence、terminal scope。
+
+**E2.2 Controller loop**
+- inspect → compute next state → dispatch/wait/stop。
+- 不调用 LLM。
+
+**E2.3 Durable dispatch**
+- intent-before-side-effect；
+- idempotency key；
+- active job reconciliation；
+- stage-specific timeout/retry。
+
+**E2.4 Version/migration**
+- in-flight run 固定 definition version；
+- 新旧 controller 并存；
+- migration receipt。
+
+**E2.5 Feature flag**
+- legacy_agent / deterministic_shadow / deterministic_execute。
+- flag 为 operator config，不来自远程页面。
+
+依赖：E1.1。
+
+### Epic 3 — Bounded Decision Agent
+
+**E3.1 State Packet builder**
+- allowlist、32 KiB 初始预算、16 evidence refs 初始预算。
+- packet hash/revision。
+
+**E3.2 Decision runner**
+- 结构化 schema；
+- allowed actions；
+- max turns/attempts；
+- no mutation tools。
+
+**E3.3 Decision validator**
+- stale revision；
+- changed identity；
+- exhausted budget；
+- unknown action；
+- injection evidence。
+
+**E3.4 Failure taxonomy**
+- 先覆盖测试中真实需要的少量 ambiguity；
+- 已知 deterministic failure 不进入 Agent。
+
+依赖：E1.1、E2.1。
+
+### Epic 4 — Reliability / Safety
+
+**E4.1 Side-effect matrix**
+- 为每个 action 标 idempotent/reconcile/compensate/manual。
+
+**E4.2 Timeout/heartbeat matrix**
+- stage-specific policy + tests。
+
+**E4.3 Concurrency/backpressure**
+- paid API、TTS、本地资源的 bounded semaphore/queue policy。
+
+**E4.4 Human event correlation**
+- approval hash/revision/version。
+
+**E4.5 Crash-window tests**
+- intent 写后/side-effect 前；
+- side-effect 后/receipt 前；
+- receipt 后/controller commit 前。
+
+依赖：E2。
+
+### Epic 5 — Validation harness
+
+**E5.0 Stage 0**
+- synthetic fixture + failure matrix + sign-off generator。
+
+**E5.1 Stage 1**
+- 2–3 分钟 frozen real slice manifest + sign-off。
+
+**E5.2 Stage 2**
+- 10 分钟 A/B harness；冷/热 cache；指标冻结。
+
+**E5.3 Stage 3**
+- full historical replay；isolated release；guarded Dev delivery。
+
+**E5.4 Rollout**
+- shadow compare legacy vs deterministic recommendation；
+- mismatch report；
+- guarded execute；
+- rollback drill。
+
+依赖：E1–E4 对应功能完成。
+
+### Epic 6 — Compatibility gate
+
+**E6.1 Contract snapshot**
+- freeze current catalog/Release/URL fields consumed by Web/iOS。
+
+**E6.2 Automated compatibility diff**
+- backend candidate 对旧 contract fixture。
+- incompatible change 阻止 backend-only sign-off。
+
+**E6.3 iOS review decision receipt**
+- code/bundle/client contract/permission/privacy/background behavior diff。
+- 全部未变才写 `ios_review_required=false`。
+
+依赖：可与 E1–E4 并行开发；Stage 1–3 sign-off 必须调用。
+
+---
+
+## 22. Definition of Ready
+
+只有以下全部满足，`DEV-SPD-006` 才标记 `ready_to_start_dev`：
+
+- [x] 目标架构和 non-goals 已冻结；
+- [x] 当前 codebase 的复用点已识别；
+- [x] Epic / dependency / 文件目标 / 验收已拆分；
+- [x] workflow version/migration 策略已定义；
+- [x] idempotency / reconciliation / compensation 原则已定义；
+- [x] timeout / heartbeat / retry 需要 stage-specific matrix 已定义；
+- [x] concurrency/backpressure 需要 bounded policy 已定义；
+- [x] human approval correlation 已定义；
+- [x] Decision Agent security boundary 已定义；
+- [x] logging/trace/critical-path 合同已定义；
+- [x] Stage 0 → 1 → 2 → 3 sign-off 顺序已定义；
+- [x] backend-only / iOS compatibility gate 已定义；
+- [ ] 开发开始时为 E1–E6 建立实际 implementation branch/issue/owner（执行动作，不属于设计缺口）。
+
+因此设计 backlog 可进入 `ready_to_start_dev`；具体开发 ticket 在开始实现时从上述 Epic 逐项领取，不需要再做一次架构 discovery。
