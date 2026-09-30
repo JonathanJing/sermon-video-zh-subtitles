@@ -252,3 +252,12 @@ E6 兼容性审查与完整canonical Stage0继续未完成，stage1PromotionAllo
 - 新付费 provider 的真实 request/response/usage telemetry 与历史账单尚未验证。本轮日志目标无需新增付费推理；若未来要验证该窄缺口，再申请明确服务/样本/预算。
 - 完整 canonical L1/L3/L4 durable adapters、生产 bounded decision runner/锁内 admission、跨 run 资源、Stage0 独立签字、短片段→10分钟→整篇→第二周仍开放。真实人审/声音授权/1x听审、物理设备/Safari/现场误差门槛不变。
 - #159–161 本身为本地产线/观测代码；整夜交付仍含前述 Swift catalog decoder，需要新 iOS binary 与适用审核发布才能到达已安装用户。没有 merge、部署、TestFlight 或 App Store 发布。
+
+
+## 2026-09-30 15:16 UTC：最终日志复跑与冻结检查
+
+[精简晨间交接](20260930-morning-handoff.zh.md)汇总实际行为、最终证据及未完成门槛。#161冻结在`7250a72a6d88261ae23b74b037e9f0b64a43348f`：两个Python分片与unittest汇总均SUCCESS；iOS/contract validation仍SKIPPED。
+
+真实复跑代码`ebaea29`补齐视频SHA、ASR设置/调用/输出分段及三语音频串行边；独立artifact复核确认全部匹配且输出未变。新集成`a709561e5a8fa4ca5fe8df78cc2c2f9df7cd21e8`完整Root Python为2084 reported / 2078实际通过 / 6条件skipped。完整脱敏trace、对账、driver和命令都在#161，可离开本机私有文件独立复算。
+
+此后冻结实现，不为文档更新取消该head CI。日志支持有限离线/cache样本，仍不支持完整生产queue/ready、调度开销、跨进程路径、fresh paid telemetry或历史账单；canonical其余adapter/Stage0、真实阶段/第二周、人审/设备/现场以及原生binary/发布门槛继续开放。没有merge/deploy/App Store动作，也未新增付费调用。
