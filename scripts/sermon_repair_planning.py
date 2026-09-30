@@ -214,10 +214,13 @@ def plan_repair(*, candidate, candidate_bytes, review, review_bytes, rubric, inp
     closure = dependency_closure(graph, candidate['workUnitIds'])
     c.require(candidate['workUnitIds'][0] in closure['regenerateWorkUnitIds'], 'candidate_not_layer2_dependency')
     reasons = sorted({issue['reasonCode'] for issue in review['issues']})
+    context_ref = input_manifest['materialRefs']['context']
     fingerprint = c.canonical_sha256({'candidateId': candidate['candidateId'],
         'artifactSha256': candidate['artifactSha256'], 'sourceIdentitySha256': candidate['sourceIdentitySha256'],
         'sourcePackageSha256': candidate['sourcePackageSha256'], 'anchorSha256': candidate['anchorSha256'],
-        'policySha256': candidate['policySha256'], 'rubricSha256': review['rubricSha256'], 'reasonCodes': reasons})
+        'policySha256': candidate['policySha256'], 'rubricSha256': review['rubricSha256'],
+        'contextSha256': context_ref['canonicalJsonSha256'] or context_ref['fileBytesSha256'],
+        'contextSourceUnitIds': input_manifest['contextSourceUnitIds'], 'reasonCodes': reasons})
     action, reason = None, 'no_repair_required'
     if review['executionStatus'] == 'outcome_unknown' or budget is not None and budget.unresolved_operation_ids:
         action, reason = 'reconcile', 'review_outcome_unknown'
