@@ -433,8 +433,9 @@ def project(directory):
 def markdown(report):
     lines = ['# Weekly Pipeline Report', '', 'Status: ' + report['status'], '',
              'Projected means a computable recorded DAG, not complete telemetry. Content/device/venue/release acceptance: not evaluated.', '']
-    lines += ['Report generation network calls: ' + str(report['reportGenerationNetworkCalls']),
-              'Observed provider calls: ' + json.dumps(report['observedProviderCalls'], sort_keys=True), '']
+    lines += ['Report generation network calls: ' + str(report.get('reportGenerationNetworkCalls', report.get('networkCalls'))),
+              'Observed provider calls: ' + json.dumps(report.get('observedProviderCalls',
+                  {'status': 'not_recorded_by_this_report_version', 'totalNetworkCalls': None}), sort_keys=True), '']
     for run in report['runs']:
         lines += ['## Run ' + run['runSha256'][:12], '',
                   'End-to-end wall seconds: ' + str(run['endToEndWallSeconds']),
