@@ -120,8 +120,14 @@ def _receipts(root, production_run_id, known):
 def inspect(config_path, job_root, production_run_id):
     if not pipeline._sha(production_run_id):
         raise ValueError('invalid_production_run_id')
+    return project(packages.inspect(config_path), job_root, production_run_id)
+
+
+def project(observed, job_root, production_run_id):
+    """Join a trusted backend's already-validated package view with job facts."""
+    if not pipeline._sha(production_run_id):
+        raise ValueError('invalid_production_run_id')
     root = _safe_path(Path(job_root).absolute())
-    observed = packages.inspect(config_path)
     result = copy.deepcopy(observed)
     known = set(observed['nodes'])
     receipts, errors = _receipts(root, production_run_id, known)
